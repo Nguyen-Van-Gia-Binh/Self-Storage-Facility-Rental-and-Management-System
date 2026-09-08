@@ -1,0 +1,274 @@
+@startuml use-case-diagram
+' =====================================================================
+'  Self-Storage Facility Rental and Management System
+'  Use Case Diagram tong - 5 actor, 7 flow, 73 use case
+'
+'  Nguon: docs/USE-CASES.md (danh sach use case la ban goc, so hoa o day
+'  phai khop voi bang trong tai lieu do).
+'  Xuat anh: VS Code + extension PlantUML -> PlantUML: Export Current Diagram
+' =====================================================================
+
+left to right direction
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam actor {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+}
+skinparam usecase {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+  ArrowColor #37474F
+}
+skinparam package {
+  BackgroundColor #FAFAFA
+  BorderColor #90A4AE
+  FontStyle bold
+}
+
+actor "Storage Customer" as SC
+actor "Facility Staff" as FS
+actor "Facility Manager" as FM
+actor "Business\nOperations Manager" as BM
+actor "System Administrator" as SA
+actor "System\n(scheduled job)" as SYS
+
+rectangle "Self-Storage Facility Rental and Management System" {
+
+  package "Flow 1 — Storage Unit Reservation" {
+    usecase "UC-F1-01\nTìm kiếm và xem danh sách Facility" as UCF101
+    usecase "UC-F1-02\nXem Unit Type, kích thước và giá thuê" as UCF102
+    usecase "UC-F1-03\nKiểm tra ô kho còn trống" as UCF103
+    usecase "UC-F1-04\nTạo Reservation" as UCF104
+    usecase "UC-F1-05\nƯớc tính chi phí thuê và Deposit" as UCF105
+    usecase "UC-F1-06\nGiữ chỗ ô kho tạm thời" as UCF106
+    usecase "UC-F1-07\nThanh toán Deposit và phí thuê kỳ đầu" as UCF107
+    usecase "UC-F1-08\nPhân bổ ô kho cho Reservation" as UCF108
+    usecase "UC-F1-09\nNhận lịch hẹn Check-in" as UCF109
+    usecase "UC-F1-10\nHủy Reservation" as UCF110
+    usecase "UC-F1-11\nTự động hủy Reservation quá hạn thanh toán" as UCF111
+  }
+
+  package "Flow 2 — Check-in and Handover" {
+    usecase "UC-F2-01\nTra cứu Reservation khi khách đến" as UCF201
+    usecase "UC-F2-02\nXác minh danh tính và tình trạng thanh toán" as UCF202
+    usecase "UC-F2-03\nBàn giao ô kho và lập biên bản" as UCF203
+    usecase "UC-F2-04\nCấp Access Code / Access Card" as UCF204
+    usecase "UC-F2-05\nXác nhận Check-in nhận ô kho" as UCF205
+    usecase "UC-F2-06\nCập nhật trạng thái ô kho sang đang sử dụng" as UCF206
+    usecase "UC-F2-07\nKích hoạt hợp đồng thuê" as UCF207
+    usecase "UC-F2-08\nXử lý khách đến trễ hoặc không đến" as UCF208
+    usecase "UC-F2-09\nPhân công Staff trực bàn giao" as UCF209
+  }
+
+  package "Flow 3 — Rented Storage Unit Management" {
+    usecase "UC-F3-01\nXem danh sách ô kho đang thuê" as UCF301
+    usecase "UC-F3-02\nXem hợp đồng và lịch sử thanh toán" as UCF302
+    usecase "UC-F3-03\nCập nhật liên hệ và người ủy quyền" as UCF303
+    usecase "UC-F3-04\nXem lịch sử ra vào và Access Code" as UCF304
+    usecase "UC-F3-05\nĐăng ký trả kho (Return)" as UCF305
+    usecase "UC-F3-06\nXác nhận hiện trạng ô kho khi trả" as UCF306
+    usecase "UC-F3-07\nThu hồi Access Card, vô hiệu Access Code" as UCF307
+    usecase "UC-F3-08\nQuyết toán và hoàn Deposit" as UCF308
+    usecase "UC-F3-09\nCập nhật trạng thái ô kho sau khi trả" as UCF309
+    usecase "UC-F3-10\nTheo dõi khách và hợp đồng hiệu lực" as UCF310
+    usecase "UC-F3-11\nTheo dõi tình trạng thanh toán hợp đồng" as UCF311
+    usecase "UC-F3-12\nĐánh dấu ô kho cần kiểm tra / bảo trì" as UCF312
+  }
+
+  package "Flow 4 — Business Rules, Fees and Revenue" {
+    usecase "UC-F4-01\nQuản lý danh sách Facility" as UCF401
+    usecase "UC-F4-02\nThiết lập chính sách Deposit" as UCF402
+    usecase "UC-F4-03\nThiết lập chính sách Renewal" as UCF403
+    usecase "UC-F4-04\nThiết lập chính sách Cancellation" as UCF404
+    usecase "UC-F4-05\nThiết lập chính sách Return" as UCF405
+    usecase "UC-F4-06\nThiết lập chính sách Overdue" as UCF406
+    usecase "UC-F4-07\nQuản lý khung giá thuê" as UCF407
+    usecase "UC-F4-08\nQuản lý phụ phí và phí quá hạn" as UCF408
+    usecase "UC-F4-09\nQuản lý giảm giá và miễn phí" as UCF409
+    usecase "UC-F4-10\nGiám sát doanh thu" as UCF410
+    usecase "UC-F4-11\nGiám sát Usage Rate và hiệu quả vận hành" as UCF411
+    usecase "UC-F4-12\nXem và xuất báo cáo toàn hệ thống" as UCF412
+  }
+
+  package "Flow 5 — Facility Storage and Staff Management" {
+    usecase "UC-F5-01\nQuản lý Unit Type và kích thước" as UCF501
+    usecase "UC-F5-02\nQuản lý Storage Unit" as UCF502
+    usecase "UC-F5-03\nCập nhật trạng thái ô kho tại cơ sở" as UCF503
+    usecase "UC-F5-04\nPhân công Staff theo công việc trong ngày" as UCF504
+    usecase "UC-F5-05\nXem công việc hằng ngày được phân công" as UCF505
+    usecase "UC-F5-06\nXem báo cáo cơ sở" as UCF506
+    usecase "UC-F5-07\nGán vai trò cho người dùng" as UCF507
+    usecase "UC-F5-08\nCấu hình quyền truy cập dữ liệu" as UCF508
+  }
+
+  package "Flow 6 — Renewal and Overdue Handling" {
+    usecase "UC-F6-01\nNhận thông báo nhắc hạn" as UCF601
+    usecase "UC-F6-02\nYêu cầu gia hạn hợp đồng" as UCF602
+    usecase "UC-F6-03\nThanh toán phí gia hạn" as UCF603
+    usecase "UC-F6-04\nDuyệt và ghi nhận gia hạn" as UCF604
+    usecase "UC-F6-05\nPhát hiện hợp đồng quá hạn" as UCF605
+    usecase "UC-F6-06\nTính và áp phí quá hạn" as UCF606
+    usecase "UC-F6-07\nKhóa quyền truy cập ô kho quá hạn" as UCF607
+    usecase "UC-F6-08\nGửi thông báo chấm dứt hợp đồng" as UCF608
+    usecase "UC-F6-09\nChấm dứt hợp đồng và xử lý tài sản tồn" as UCF609
+    usecase "UC-F6-10\nTheo dõi hợp đồng quá hạn" as UCF610
+  }
+
+  package "Flow 7 — Support Request and Issue Handling" {
+    usecase "UC-F7-01\nGửi yêu cầu hỗ trợ" as UCF701
+    usecase "UC-F7-02\nTheo dõi trạng thái yêu cầu hỗ trợ" as UCF702
+    usecase "UC-F7-03\nTiếp nhận và phân loại yêu cầu" as UCF703
+    usecase "UC-F7-04\nPhân công Staff xử lý sự cố" as UCF704
+    usecase "UC-F7-05\nXử lý mất chìa khóa / lỗi Access Code" as UCF705
+    usecase "UC-F7-06\nXử lý ô kho hư hỏng và bảo trì" as UCF706
+    usecase "UC-F7-07\nCập nhật trạng thái ô kho sau xử lý" as UCF707
+    usecase "UC-F7-08\nĐóng yêu cầu hỗ trợ" as UCF708
+  }
+
+  package "Nền tảng" {
+    usecase "UC-SYS-01\nĐăng ký, đăng nhập, đăng xuất" as UCS01
+    usecase "UC-SYS-02\nQuản lý tài khoản người dùng" as UCS02
+    usecase "UC-SYS-03\nTheo dõi nhật ký hoạt động" as UCS03
+  }
+}
+
+' ---------------------------------------------------------------------
+'  Storage Customer
+' ---------------------------------------------------------------------
+SC --> UCF101
+SC --> UCF102
+SC --> UCF103
+SC --> UCF104
+SC --> UCF105
+SC --> UCF107
+SC --> UCF109
+SC --> UCF110
+SC --> UCF205
+SC --> UCF301
+SC --> UCF302
+SC --> UCF303
+SC --> UCF304
+SC --> UCF305
+SC --> UCF601
+SC --> UCF602
+SC --> UCF603
+SC --> UCF701
+SC --> UCF702
+
+' ---------------------------------------------------------------------
+'  Facility Staff
+' ---------------------------------------------------------------------
+FS --> UCF201
+FS --> UCF202
+FS --> UCF203
+FS --> UCF204
+FS --> UCF206
+FS --> UCF208
+FS --> UCF306
+FS --> UCF307
+FS --> UCF309
+FS --> UCF312
+FS --> UCF505
+FS --> UCF703
+FS --> UCF705
+FS --> UCF706
+FS --> UCF707
+FS --> UCF708
+
+' ---------------------------------------------------------------------
+'  Facility Manager
+' ---------------------------------------------------------------------
+FM --> UCF108
+FM --> UCF207
+FM --> UCF209
+FM --> UCF308
+FM --> UCF310
+FM --> UCF311
+FM --> UCF501
+FM --> UCF502
+FM --> UCF503
+FM --> UCF504
+FM --> UCF506
+FM --> UCF604
+FM --> UCF607
+FM --> UCF608
+FM --> UCF609
+FM --> UCF610
+FM --> UCF704
+
+' ---------------------------------------------------------------------
+'  Business Operations Manager
+' ---------------------------------------------------------------------
+BM --> UCF401
+BM --> UCF402
+BM --> UCF403
+BM --> UCF404
+BM --> UCF405
+BM --> UCF406
+BM --> UCF407
+BM --> UCF408
+BM --> UCF409
+BM --> UCF410
+BM --> UCF411
+BM --> UCF412
+
+' ---------------------------------------------------------------------
+'  System Administrator
+' ---------------------------------------------------------------------
+SA --> UCF507
+SA --> UCF508
+SA --> UCS02
+SA --> UCS03
+
+' ---------------------------------------------------------------------
+'  System (scheduled job)
+' ---------------------------------------------------------------------
+SYS --> UCF106
+SYS --> UCF111
+SYS --> UCF605
+SYS --> UCF606
+
+' ---------------------------------------------------------------------
+'  Quan he include / extend
+' ---------------------------------------------------------------------
+UCF104 ..> UCF103 : <<include>>
+UCF104 ..> UCF105 : <<include>>
+UCF104 ..> UCF106 : <<include>>
+UCF107 ..> UCF108 : <<include>>
+UCF109 ..> UCF107 : <<include>>
+UCF203 ..> UCF201 : <<include>>
+UCF203 ..> UCF202 : <<include>>
+UCF203 ..> UCF204 : <<include>>
+UCF205 ..> UCF206 : <<include>>
+UCF207 ..> UCF205 : <<include>>
+UCF305 ..> UCF306 : <<include>>
+UCF306 ..> UCF307 : <<include>>
+UCF306 ..> UCF308 : <<include>>
+UCF308 ..> UCF309 : <<include>>
+UCF602 ..> UCF603 : <<include>>
+UCF604 ..> UCF603 : <<include>>
+UCF703 ..> UCF704 : <<include>>
+UCF708 ..> UCF707 : <<include>>
+
+UCF110 .> UCF109 : <<extend>>
+UCF111 .> UCF106 : <<extend>>
+UCF208 .> UCF201 : <<extend>>
+UCF606 .> UCF605 : <<extend>>
+UCF607 .> UCF606 : <<extend>>
+UCF608 .> UCF607 : <<extend>>
+UCF609 .> UCF608 : <<extend>>
+UCF312 .> UCF309 : <<extend>>
+UCF706 .> UCF705 : <<extend>>
+
+note bottom of UCS01
+  Mọi use case còn lại đều
+  <<include>> UC-SYS-01.
+  Các đường nối được lược bỏ
+  để sơ đồ dễ đọc.
+end note
+
+@enduml
