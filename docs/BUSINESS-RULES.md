@@ -17,9 +17,12 @@
 5. [Renewal — Gia hạn](#5-renewal--gia-hạn)
 6. [Overdue — Quá hạn](#6-overdue--quá-hạn)
 7. [Return — Trả kho](#7-return--trả-kho)
-8. [Vòng đời trạng thái](#8-vòng-đời-trạng-thái)
-9. [Ví dụ tính tiền](#9-ví-dụ-tính-tiền)
-10. [Bản đồ quy tắc × use case](#10-bản-đồ-quy-tắc--use-case)
+8. [Check-in & Handover — Bàn giao ô kho](#8-check-in--handover--bàn-giao-ô-kho)
+9. [Access & Security — Phương tiện truy cập](#9-access--security--phương-tiện-truy-cập)
+10. [Support & On-site SLA — Hỗ trợ và Xử lý sự cố](#10-support--on-site-sla--hỗ-trợ-và-xử-lý-sự-cố)
+11. [Vòng đời trạng thái](#11-vòng-đời-trạng-thái)
+12. [Ví dụ tính tiền](#12-ví-dụ-tính-tiền)
+13. [Bản đồ quy tắc × use case](#13-bản-đồ-quy-tắc--use-case)
 
 ---
 
@@ -45,7 +48,7 @@ bảng chính sách của hệ thống (`BM-02`, `BM-03`).
 |---------------|---------|:--------:|---------|
 | `deposit.multiplier` | Hệ số Deposit trên tiền thuê một tháng | `1.0` | `BR-DEP-01` |
 | `reservation.hold_hours` | Thời gian giữ chỗ chờ thanh toán | `48 giờ` | `BR-DEP-03` |
-| `checkin.grace_days` | Số ngày được phép check-in trễ kể từ ngày bắt đầu thuê | `3 ngày` | `BR-CAN-04` |
+| `checkin.grace_days` | Số ngày được phép check-in trễ kể từ ngày bắt đầu thuê | `3 ngày` | `BR-CAN-04`, `BR-CHK-05` |
 | `cancel.full_refund_hours` | Hủy trước ngày bắt đầu bao nhiêu giờ thì hoàn 100% | `48 giờ` | `BR-CAN-01` |
 | `cancel.late_refund_rate` | Tỷ lệ hoàn Deposit khi hủy muộn | `50%` | `BR-CAN-02` |
 | `cancel.no_show_refund_rate` | Tỷ lệ hoàn Deposit khi no-show | `0%` | `BR-CAN-04` |
@@ -54,12 +57,14 @@ bảng chính sách của hệ thống (`BM-02`, `BM-03`).
 | `overdue.grace_days` | Ân hạn sau ngày hết hạn, chưa tính phí | `3 ngày` | `BR-OVD-02` |
 | `overdue.daily_rate` | Phí quá hạn mỗi ngày, tính trên tiền thuê một tháng | `5%` | `BR-OVD-03` |
 | `overdue.cap_rate` | Trần tổng phí quá hạn của một kỳ | `50%` | `BR-OVD-04` |
-| `overdue.lock_access_days` | Số ngày quá hạn thì khóa Access Code | `10 ngày` | `BR-OVD-05` |
+| `overdue.lock_access_days` | Số ngày quá hạn thì khóa Access Code | `10 ngày` | `BR-OVD-05`, `BR-ACC-02` |
 | `overdue.notice_days` | Số ngày quá hạn thì gửi thông báo chấm dứt | `30 ngày` | `BR-OVD-06` |
 | `overdue.termination_days` | Số ngày quá hạn thì chấm dứt hợp đồng | `60 ngày` | `BR-OVD-07` |
 | `return.notice_days` | Số ngày báo trước khi trả kho | `7 ngày` | `BR-RET-01` |
 | `return.refund_working_days` | Số ngày làm việc để hoàn Deposit | `7 ngày` | `BR-RET-05` |
 | `return.early_refund_rate` | Tỷ lệ hoàn tiền thuê phần chưa dùng khi trả sớm | `0%` | `BR-RET-06` |
+| `access.pin_length` | Độ dài chữ số của mã PIN truy cập | `6 số` | `BR-ACC-01` |
+| `support.urgent_sla_hours` | Thời hạn cam kết xử lý sự cố truy cập khẩn cấp tại cơ sở | `2 giờ` | `BR-SUP-01` |
 
 ---
 
@@ -154,14 +159,52 @@ Ngày quá hạn ký hiệu **D+n**, đếm từ ngày liền sau ngày kết th
 
 ---
 
-## 8. Vòng đời trạng thái
+## 8. Check-in & Handover — Bàn giao ô kho
 
-### 8.1. Reservation
+Áp dụng khi khách hàng đến cơ sở để nhận ô kho đã đặt chỗ (`FS-01`, `FS-02`).
+
+| Mã | Quy tắc |
+|----|---------|
+| `BR-CHK-01` | **Xác minh danh tính khi nhận kho:** Khách hàng hoặc người đại diện phải xuất trình bản gốc CCCD/Hộ chiếu trùng khớp với thông tin đã đăng ký trên đơn Reservation hoặc giấy ủy quyền hợp lệ được hệ thống ghi nhận (`UC-F2-02`) |
+| `BR-CHK-02` | **Điều kiện tiên quyết để bàn giao:** Đơn Reservation phải ở trạng thái đã thanh toán đủ 100% tiền thuê kỳ đầu và Deposit (`BR-DEP-02`); ô kho thực tế phải trống, sạch sẽ và không có hư hại kết cấu (`UC-F2-03`) |
+| `BR-CHK-03` | **Biên bản bàn giao tại chỗ:** Quá trình bàn giao bắt buộc phải lập biên bản nghiệm thu hiện trạng có chữ ký số/xác nhận điện tử của cả Facility Staff và khách hàng, kèm hình ảnh chụp hiện trạng ô kho trước khi giao chìa/mã (`UC-F2-03`) |
+| `BR-CHK-04` | **Kích hoạt hợp đồng và chuyển trạng thái ô kho:** Sau khi ký biên bản bàn giao thành công, ô kho lập tức chuyển từ *Reserved* sang *Occupied* (`UC-F2-06`), hợp đồng chuyển sang *Active* (`UC-F2-07`) và bắt đầu tính thời hạn thuê chính thức |
+| `BR-CHK-05` | **Xử lý No-show khi check-in trễ:** Khách được phép đến nhận kho trễ tối đa `checkin.grace_days` (3 ngày) tính từ ngày bắt đầu thuê. Quá thời hạn này mà khách không đến nhận và không báo hoãn, đơn bị đánh dấu *No-show* và xử lý theo `BR-CAN-04` (`UC-F2-08`) |
+
+---
+
+## 9. Access & Security — Phương tiện truy cập
+
+Quy tắc quản lý mã Access Code, thẻ từ RFID hoặc chìa khóa cơ tại cơ sở (`FS-02`, `FS-05`).
+
+| Mã | Quy tắc |
+|----|---------|
+| `BR-ACC-01` | **Định dạng và cấp phát mã Access Code:** Hệ thống tự động sinh mã PIN cá nhân ngẫu nhiên gồm `access.pin_length` (6 chữ số), không chứa chuỗi lặp hoặc tiến liên tiếp (vd: không dùng 111111, 123456); hoặc sinh mã QR động bảo mật hiển thị trên ứng dụng của khách (`UC-F2-04`) |
+| `BR-ACC-02` | **Phạm vi và hiệu lực truy cập:** Mã truy cập hoặc thẻ từ chỉ có hiệu lực mở cửa cổng chính cơ sở và đúng ô kho được phân bổ trong suốt thời hạn hợp đồng đang ở trạng thái *Active*. Khi hợp đồng bị *Overdue* quá 10 ngày, quyền truy cập tự động bị khóa (`BR-OVD-05`) |
+| `BR-ACC-03` | **Cấp lại và thu hồi phương tiện truy cập:** Chỉ chủ hợp đồng hoặc người được ủy quyền hợp pháp mới được yêu cầu cấp lại mã/thay khóa cơ khi báo mất/hỏng (`UC-F7-05`); khi hoàn tất thủ tục trả kho hoặc hợp đồng bị chấm dứt, mọi phương tiện truy cập phải bị vô hiệu hóa ngay lập tức trên hệ thống (`UC-F3-07`, `BR-RET-09`) |
+
+---
+
+## 10. Support & On-site SLA — Hỗ trợ và Xử lý sự cố
+
+Quy tắc xử lý các yêu cầu hỗ trợ và sự cố phát sinh tại cơ sở (`FS-05`, `FM-05`).
+
+| Mã | Quy tắc |
+|----|---------|
+| `BR-SUP-01` | **Thời hạn cam kết xử lý sự cố tại chỗ (SLA):** Các sự cố khẩn cấp liên quan đến quyền truy cập (quên mã PIN, kẹt khóa cửa ô kho, mất chìa khóa) phải được nhân viên cơ sở tiếp nhận và bắt đầu xử lý trong vòng `support.urgent_sla_hours` (2 giờ) kể từ khi tạo ticket (`UC-F7-04`, `UC-F7-05`) |
+| `BR-SUP-02` | **Trách nhiệm và chi phí khắc phục hư hại:** Nếu hư hỏng do lỗi kỹ thuật hoặc hạ tầng cơ sở (thấm dột, chập điện đèn kho), cơ sở chịu 100% chi phí sửa chữa và ưu tiên di dời đồ sang ô kho dự phòng nếu cần (`UC-F7-06`); nếu do lỗi chủ quan của khách, chi phí sửa chữa được tính theo bảng phụ phí `BM-03` |
+| `BR-SUP-03` | **Quy trình nghiệm thu và đóng yêu cầu hỗ trợ:** Ticket hỗ trợ chỉ được xem là hoàn tất khi nhân viên tải lên ảnh hiện trường sau khắc phục và khách hàng bấm xác nhận nghiệm thu (`UC-F7-08`); nếu khách không phản hồi sau 7 ngày làm việc kể từ khi nhân viên báo xong, hệ thống tự động đóng ticket |
+
+---
+
+## 11. Vòng đời trạng thái
+
+### 11.1. Reservation
 
 `Pending Payment` → `Confirmed` → `Checked-in`
 Nhánh kết thúc sớm: `Expired` (quá hạn thanh toán, `BR-DEP-03`) · `Cancelled` (`BR-CAN-01/02`) · `No-show` (`BR-CAN-04`)
 
-### 8.2. Contract — Hợp đồng thuê
+### 11.2. Contract — Hợp đồng thuê
 
 | Trạng thái | Ý nghĩa | Chuyển sang |
 |------------|---------|-------------|
@@ -171,7 +214,7 @@ Nhánh kết thúc sớm: `Expired` (quá hạn thanh toán, `BR-DEP-03`) · `Ca
 | `Closed` | Đã trả kho và quyết toán xong | — |
 | `Terminated` | Chấm dứt do quá hạn quá `overdue.termination_days` | — |
 
-### 8.3. Storage Unit
+### 11.3. Storage Unit
 
 | Trạng thái | Ý nghĩa |
 |------------|---------|
@@ -185,7 +228,7 @@ Nhánh kết thúc sớm: `Expired` (quá hạn thanh toán, `BR-DEP-03`) · `Ca
 
 ---
 
-## 9. Ví dụ tính tiền
+## 12. Ví dụ tính tiền
 
 **Giả thiết:** Unit Type M tại cơ sở Q7, giá **800.000 đ/tháng**. Khách thuê **3 tháng**,
 bắt đầu 01/10/2026, kết thúc 31/12/2026.
@@ -205,7 +248,7 @@ bắt đầu 01/10/2026, kết thúc 31/12/2026.
 
 ---
 
-## 10. Bản đồ quy tắc × use case
+## 13. Bản đồ quy tắc × use case
 
 | Nhóm quy tắc | Use case chịu ảnh hưởng | Use case cấu hình |
 |--------------|-------------------------|-------------------|
@@ -214,6 +257,9 @@ bắt đầu 01/10/2026, kết thúc 31/12/2026.
 | **Renewal** `BR-REN-*` | `UC-F6-01` `UC-F6-02` `UC-F6-03` `UC-F6-04` | `UC-F4-03` `UC-F4-07` |
 | **Overdue** `BR-OVD-*` | `UC-F6-05` `UC-F6-06` `UC-F6-07` `UC-F6-08` `UC-F6-09` `UC-F6-10` | `UC-F4-06` `UC-F4-08` |
 | **Return** `BR-RET-*` | `UC-F3-05` `UC-F3-06` `UC-F3-07` `UC-F3-08` `UC-F3-09` | `UC-F4-05` |
+| **Check-in & Handover** `BR-CHK-*` | `UC-F2-01` `UC-F2-02` `UC-F2-03` `UC-F2-06` `UC-F2-07` `UC-F2-08` | `UC-F4-04` |
+| **Access & Security** `BR-ACC-*` | `UC-F2-04` `UC-F3-07` `UC-F6-07` `UC-F7-05` | `UC-F4-06` |
+| **Support & On-site SLA** `BR-SUP-*` | `UC-F7-03` `UC-F7-04` `UC-F7-05` `UC-F7-06` `UC-F7-08` | `UC-F4-09` |
 | **Chung** `BR-GEN-*` | Toàn bộ | `UC-F4-07` `UC-F4-09` |
 
 > **Quy trình đổi quy tắc:** theo [PLAN.md § 7](PLAN.md#7-rủi-ro-và-đối-sách), business rules phải chốt

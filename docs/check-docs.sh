@@ -16,9 +16,8 @@
 
 # --- Chot chan: thieu file ma van chay tiep se cho ket qua "sach" gia --------
 MISSING=0
-for f in README.md CONTRIBUTING.md docs/TOPIC.md docs/PLAN.md docs/USE-CASES.md \
-         docs/USER-STORIES.md docs/BUSINESS-RULES.md docs/CONVENTIONS.md \
-         docs/diagrams/use-case-diagram.puml; do
+FILES="README.md CONTRIBUTING.md docs/TOPIC.md docs/PLAN.md docs/USE-CASES.md docs/USER-STORIES.md docs/USER-STORIES-FS-FM.md docs/BUSINESS-RULES.md docs/CONVENTIONS.md docs/diagrams/use-case-diagram.puml"
+for f in $FILES; do
   [ -f "$f" ] || { echo "THIEU FILE: $f"; MISSING=1; }
 done
 [ $MISSING -eq 0 ] || { echo; echo "Dung lai. Hay chay script tu thu muc goc repo."; exit 2; }
@@ -38,8 +37,7 @@ report "$T/l" "moi link tro toi file co that"
 
 echo "== 2. Ma UC duoc tham chieu nhung khong ton tai =="
 grep -o '^| `UC-[A-Z0-9-]*`' docs/USE-CASES.md | tr -d '|` ' | sort -u > "$T/uc_def"
-grep -oh 'UC-\(F[0-9]-[0-9][0-9]\|SYS-[0-9][0-9]\)' docs/USER-STORIES.md docs/BUSINESS-RULES.md \
-  docs/diagrams/use-case-diagram.puml README.md 2>/dev/null | sort -u > "$T/uc_ref"
+grep -oh 'UC-\(F[0-9]-[0-9][0-9]\|SYS-[0-9][0-9]\)' docs/USER-STORIES.md docs/USER-STORIES-FS-FM.md docs/BUSINESS-RULES.md docs/diagrams/use-case-diagram.puml README.md 2>/dev/null | sort -u > "$T/uc_ref"
 comm -13 "$T/uc_def" "$T/uc_ref" > "$T/uc_bad"
 report "$T/uc_bad" "moi ma UC duoc tham chieu deu co dinh nghia"
 
@@ -51,7 +49,7 @@ report "$T/br_bad" "moi ma BR duoc tham chieu deu co dinh nghia"
 
 echo "== 4. Ma yeu cau khong co trong TOPIC.md § 3 =="
 grep -o '^| `\?\(SC\|FS\|FM\|BM\|SA\)-[0-9][0-9]' docs/TOPIC.md | grep -o '[A-Z]\{2\}-[0-9][0-9]' | sort -u > "$T/rq_def"
-grep -oh '\(SC\|FS\|FM\|BM\|SA\)-[0-9][0-9]' docs/USE-CASES.md docs/USER-STORIES.md docs/BUSINESS-RULES.md | sort -u > "$T/rq_ref"
+grep -oh '\(SC\|FS\|FM\|BM\|SA\)-[0-9][0-9]' docs/USE-CASES.md docs/USER-STORIES.md docs/USER-STORIES-FS-FM.md docs/BUSINESS-RULES.md 2>/dev/null | sort -u > "$T/rq_ref"
 comm -13 "$T/rq_def" "$T/rq_ref" > "$T/rq_bad"
 report "$T/rq_bad" "moi ma yeu cau duoc tham chieu deu co trong TOPIC § 3"
 
