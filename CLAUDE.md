@@ -4,23 +4,71 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-This is a **specification-stage repository**. It contains no source code, no build system, no
-dependency manifest, and no git history — only `README.md` and `docs/TOPIC.md`.
+This is a **specification and planning repository**. It contains no source code, no build system and
+no dependency manifest — only `README.md`, `CONTRIBUTING.md` and the documents under `docs/`.
 
 There are therefore **no build, lint, test, or run commands**. Do not invent them, and do not
-scaffold a project skeleton unless explicitly asked. The technology stack is deliberately undecided
-(README § "Trạng thái dự án" tracks this). When implementation starts, the stack decision and
-setup/run instructions belong in `README.md`, and the commands should then be added to this file.
+scaffold a project skeleton unless explicitly asked. The stack has been decided — Spring Boot (Java),
+React, SQL Server, Flyway, JWT — but nothing has been scaffolded yet; scaffolding is tasks T1.16 and
+T1.17 of Phase 1 in `docs/PLAN.md`. When implementation starts, setup/run instructions belong in
+`README.md`, and the commands should then be added to this file.
 
-The planned next steps are listed in README § "Việc tiếp theo": decompose the 7 flows into use
-cases/user stories, pin down business rules (deposit, renewal, cancellation, return, overdue), design
-the data model, choose the stack, then document setup.
+The project runs 08/09/2026 – 16/11/2026 in five two-week phases. The current phase and its next
+steps live in `docs/PLAN.md`, mirrored in README § "Trạng thái dự án" and § "Việc tiếp theo".
 
 ## Document architecture
 
 `docs/TOPIC.md` is the **single source of truth** for the domain. `README.md` is a condensed mirror
 of it — actor table, flow tables, status. Any change to actors, functions, or flows must be applied
 to `docs/TOPIC.md` first and then reflected in `README.md`, or the two drift apart.
+
+`docs/PLAN.md` is the **execution plan** — phases, tasks, assignees, deadlines, risks. It consumes
+domain content rather than defining it: its tasks reference § 3 requirement codes and § 4–5 flows,
+and its § 5 coverage map asserts that all 27 requirement codes are assigned to a phase. Adding a
+requirement code to `docs/TOPIC.md` therefore breaks that assertion until the plan is updated too.
+The plan is mirrored in a Notion page and task database (linked at the top of `docs/PLAN.md`), and
+README § "Kế hoạch triển khai" carries a condensed copy of the roadmap and role tables — a change to
+phases or tasks has to land in all three.
+
+Three documents form the **analysis layer** built on top of `docs/TOPIC.md`. They consume domain
+content rather than defining it, and they are joined by stable codes:
+
+- `docs/USE-CASES.md` decomposes the 7 flows into use cases coded `UC-F<flow>-<nn>` (plus `UC-SYS-*`
+  for the three foundational ones outside the flows). Its § 10 coverage map asserts that all 27
+  requirement codes have at least one use case — adding a code to `TOPIC.md § 3` breaks that
+  assertion. Its § 9 records a deliberate gap: `SA-01` and `SA-04` belong to no flow's "Phạm vi liên
+  quan" in `TOPIC.md`, so they are handled as foundational use cases instead.
+- `docs/USER-STORIES.md` covers `SC-01`→`SC-06` only, coded `US-<mã yêu cầu>.<nn>`. Stories for the
+  other actors are tasks T1.3 and T1.4 and belong in this same file, following its § 1 template. The
+  totals stated in § 1 and § 8 (22 stories, 107 acceptance criteria, 95 story points) must be
+  recomputed whenever a story is added.
+- `docs/BUSINESS-RULES.md` defines rules coded `BR-<DEP|CAN|REN|OVD|RET|GEN>-<nn>`. Its § 2 parameter
+  table is the single place numeric values live; the prose rules reference the config keys rather
+  than repeating numbers. § 9 works those numbers into concrete money examples — changing a
+  parameter means recomputing that table too.
+
+`docs/diagrams/use-case-diagram.puml` and the Mermaid diagram in `USE-CASES.md § 11` are two views of
+the use case list; both must be updated when a use case is added. The `.puml` is not rendered in the
+repo — export PNG/SVG from VS Code when a report needs the image.
+
+`docs/CONVENTIONS.md` (coding and REST API conventions) and `CONTRIBUTING.md` (Git workflow) describe
+code that does not exist yet. Keep them aligned with `PLAN.md § 6`, which already fixed the branch
+naming pattern, the one-reviewer rule and the Definition of Done.
+
+`docs/check-docs.sh` enforces the cross-document invariants described above — run `bash
+docs/check-docs.sh` from the repo root after editing any analysis document, and before claiming an
+edit is complete. It has eight checks: dead relative links, `UC-*` / `BR-*` / requirement codes
+referenced but never defined, requirement codes absent from the coverage map, counts disagreeing
+between tables, task codes not in `PLAN.md`, and stated totals disagreeing with actual counts. Each
+check has been verified to fail on injected bad input, not just to pass on good input — keep that
+property when adding a check. It covers Layer 1 (consistency) only; semantic checks belong to the
+human layers and should not be added to it.
+
+`docs/REVIEW-CHECKLIST.md` defines the three-layer review process and the per-task stopping
+conditions. `docs/OPEN-ISSUES.md` is its escape valve: unresolved findings are recorded there rather
+than blocking a review from closing, and resolved entries move to its "Đã chốt" table rather than
+being deleted. When a decision recorded there is settled, the corresponding document must be updated
+in the same change.
 
 `docs/TOPIC.md` has an internal consistency structure that spans sections; changing one part usually
 requires updating others:
