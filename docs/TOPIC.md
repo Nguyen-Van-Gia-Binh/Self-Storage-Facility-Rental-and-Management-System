@@ -30,13 +30,13 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 
 ## 2. Danh sách tác nhân (Actors)
 
-| # | Tác nhân | Tên tiếng Việt | Vai trò tóm tắt |
-|---|----------|----------------|-----------------|
-| 1 | **Storage Customer** | Khách thuê kho | Tìm kiếm, đặt chỗ, thanh toán, nhận và quản lý ô kho đã thuê |
-| 2 | **Facility Staff** | Nhân viên cơ sở | Bàn giao / thu hồi ô kho, cập nhật trạng thái, xử lý sự cố tại chỗ |
-| 3 | **Facility Manager** | Quản lý cơ sở | Quản lý ô kho, hợp đồng, nhân sự và báo cáo của một cơ sở |
+| # | Tác nhân                            | Tên tiếng Việt               | Vai trò tóm tắt                                                                   |
+| - | ------------------------------------- | ------------------------------- | ------------------------------------------------------------------------------------ |
+| 1 | **Storage Customer**            | Khách thuê kho                | Tìm kiếm, đặt chỗ, thanh toán, nhận và quản lý ô kho đã thuê           |
+| 2 | **Facility Staff**              | Nhân viên cơ sở             | Bàn giao / thu hồi ô kho, cập nhật trạng thái, xử lý sự cố tại chỗ      |
+| 3 | **Facility Manager**            | Quản lý cơ sở               | Quản lý ô kho, hợp đồng, nhân sự và báo cáo của một cơ sở             |
 | 4 | **Business Operations Manager** | Quản lý vận hành kinh doanh | Quản lý toàn bộ cơ sở, chính sách, giá, phí và báo cáo toàn hệ thống |
-| 5 | **System Administrator** | Quản trị hệ thống | Quản lý tài khoản, phân quyền, theo dõi nhật ký hoạt động |
+| 5 | **System Administrator**        | Quản trị hệ thống           | Quản lý tài khoản, phân quyền, theo dõi nhật ký hoạt động                |
 
 ---
 
@@ -44,55 +44,55 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 
 ### 3.1. Storage Customer — Khách thuê kho
 
-| Mã | Chức năng | Mô tả |
-|----|-----------|-------|
-| SC-01 | Xem thông tin dịch vụ | Xem danh sách cơ sở lưu trữ, loại ô kho, kích thước, giá thuê và các ô kho còn trống |
-| SC-02 | Đặt chỗ ô kho | Đặt chỗ bằng cách chọn cơ sở, loại ô kho, ngày bắt đầu và thời hạn thuê |
-| SC-03 | Thanh toán | Thanh toán tiền cọc, phí thuê, phí gia hạn hoặc các khoản phụ thu |
-| SC-04 | Check-in nhận kho | Đến nhận ô kho được cấp theo lịch hẹn đã đặt |
-| SC-05 | Quản lý ô kho đã thuê | Theo dõi và quản lý một hoặc nhiều ô kho đang thuê |
-| SC-06 | Gửi yêu cầu hỗ trợ | Báo sự cố liên quan tới ô kho, khóa, mã truy cập, thanh toán hoặc tài sản lưu trữ |
+| Mã   | Chức năng                 | Mô tả                                                                                               |
+| ----- | --------------------------- | ----------------------------------------------------------------------------------------------------- |
+| SC-01 | Xem thông tin dịch vụ    | Xem danh sách cơ sở lưu trữ, loại ô kho, kích thước, giá thuê và các ô kho còn trống |
+| SC-02 | Đặt chỗ ô kho           | Đặt chỗ bằng cách chọn cơ sở, loại ô kho, ngày bắt đầu và thời hạn thuê             |
+| SC-03 | Thanh toán                 | Thanh toán tiền cọc, phí thuê, phí gia hạn hoặc các khoản phụ thu                          |
+| SC-04 | Check-in nhận kho          | Đến nhận ô kho được cấp theo lịch hẹn đã đặt                                            |
+| SC-05 | Quản lý ô kho đã thuê | Theo dõi và quản lý một hoặc nhiều ô kho đang thuê                                          |
+| SC-06 | Gửi yêu cầu hỗ trợ     | Báo sự cố liên quan tới ô kho, khóa, mã truy cập, thanh toán hoặc tài sản lưu trữ      |
 
 ### 3.2. Facility Staff — Nhân viên cơ sở
 
-| Mã | Chức năng | Mô tả |
-|----|-----------|-------|
-| FS-01 | Kiểm tra đặt chỗ | Kiểm tra thông tin đặt chỗ của khách khi khách đến nhận ô kho |
-| FS-02 | Hỗ trợ check-in & bàn giao | Bàn giao ô kho kèm khóa, thẻ truy cập hoặc mã truy cập |
-| FS-03 | Cập nhật trạng thái ô kho | Cập nhật sau bàn giao, trong quá trình sử dụng, sau khi trả kho, hoặc khi cần kiểm tra / bảo trì |
-| FS-04 | Xác nhận tình trạng khi trả kho | Kiểm tra và xác nhận hiện trạng ô kho lúc khách trả |
-| FS-05 | Xử lý sự cố tại chỗ | Tiếp nhận và xử lý mất chìa khóa, lỗi mã truy cập, ô kho hư hỏng, yêu cầu hỗ trợ của khách |
-| FS-06 | Theo dõi công việc hằng ngày | Danh sách khách cần nhận kho, trả kho hoặc cần hỗ trợ trong ngày |
+| Mã   | Chức năng                          | Mô tả                                                                                                        |
+| ----- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| FS-01 | Kiểm tra đặt chỗ                 | Kiểm tra thông tin đặt chỗ của khách khi khách đến nhận ô kho                                      |
+| FS-02 | Hỗ trợ check-in & bàn giao        | Bàn giao ô kho kèm khóa, thẻ truy cập hoặc mã truy cập                                                |
+| FS-03 | Cập nhật trạng thái ô kho       | Cập nhật sau bàn giao, trong quá trình sử dụng, sau khi trả kho, hoặc khi cần kiểm tra / bảo trì  |
+| FS-04 | Xác nhận tình trạng khi trả kho | Kiểm tra và xác nhận hiện trạng ô kho lúc khách trả                                                  |
+| FS-05 | Xử lý sự cố tại chỗ            | Tiếp nhận và xử lý mất chìa khóa, lỗi mã truy cập, ô kho hư hỏng, yêu cầu hỗ trợ của khách |
+| FS-06 | Theo dõi công việc hằng ngày    | Danh sách khách cần nhận kho, trả kho hoặc cần hỗ trợ trong ngày                                     |
 
 ### 3.3. Facility Manager — Quản lý cơ sở
 
-| Mã | Chức năng | Mô tả |
-|----|-----------|-------|
-| FM-01 | Quản lý ô kho tại cơ sở phụ trách | Quản lý loại ô kho, kích thước, vị trí, giá thuê và trạng thái ô kho |
-| FM-02 | Phân bổ ô kho cho khách | Gán ô kho phù hợp dựa trên loại ô kho, thời hạn thuê và tình trạng còn trống |
-| FM-03 | Theo dõi khách và hợp đồng | Giám sát khách đang thuê, hợp đồng thuê, thời hạn thuê và tình trạng thanh toán |
-| FM-04 | Quản lý quy trình vận hành thuê | Quản lý bàn giao, trả kho, gia hạn và xử lý quá hạn tại cơ sở |
-| FM-05 | Phân công nhân viên | Phân công Facility Staff hỗ trợ bàn giao, kiểm tra ô kho hoặc xử lý sự cố |
-| FM-06 | Xem báo cáo cơ sở | Báo cáo ô kho trống, ô kho đã thuê, doanh thu, tỷ lệ sử dụng và các trường hợp quá hạn |
+| Mã   | Chức năng                               | Mô tả                                                                                                   |
+| ----- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| FM-01 | Quản lý ô kho tại cơ sở phụ trách | Quản lý loại ô kho, kích thước, vị trí, giá thuê và trạng thái ô kho                       |
+| FM-02 | Phân bổ ô kho cho khách               | Gán ô kho phù hợp dựa trên loại ô kho, thời hạn thuê và tình trạng còn trống              |
+| FM-03 | Theo dõi khách và hợp đồng          | Giám sát khách đang thuê, hợp đồng thuê, thời hạn thuê và tình trạng thanh toán           |
+| FM-04 | Quản lý quy trình vận hành thuê     | Quản lý bàn giao, trả kho, gia hạn và xử lý quá hạn tại cơ sở                                |
+| FM-05 | Phân công nhân viên                   | Phân công Facility Staff hỗ trợ bàn giao, kiểm tra ô kho hoặc xử lý sự cố                     |
+| FM-06 | Xem báo cáo cơ sở                     | Báo cáo ô kho trống, ô kho đã thuê, doanh thu, tỷ lệ sử dụng và các trường hợp quá hạn |
 
 ### 3.4. Business Operations Manager — Quản lý vận hành kinh doanh
 
-| Mã | Chức năng | Mô tả |
-|----|-----------|-------|
-| BM-01 | Quản lý danh sách cơ sở | Quản lý toàn bộ cơ sở lưu trữ trong hệ thống |
-| BM-02 | Thiết lập chính sách thuê | Chính sách chung về đặt cọc, gia hạn, hủy, trả kho và xử lý quá hạn |
-| BM-03 | Quản lý giá và phí | Khung giá thuê, phụ phí, phí quá hạn, chính sách giảm giá / miễn phí |
+| Mã   | Chức năng                      | Mô tả                                                                                    |
+| ----- | -------------------------------- | ------------------------------------------------------------------------------------------ |
+| BM-01 | Quản lý danh sách cơ sở     | Quản lý toàn bộ cơ sở lưu trữ trong hệ thống                                     |
+| BM-02 | Thiết lập chính sách thuê   | Chính sách chung về đặt cọc, gia hạn, hủy, trả kho và xử lý quá hạn          |
+| BM-03 | Quản lý giá và phí          | Khung giá thuê, phụ phí, phí quá hạn, chính sách giảm giá / miễn phí          |
 | BM-04 | Giám sát hiệu quả vận hành | Theo dõi doanh thu, tỷ lệ lấp đầy kho và hiệu quả hoạt động của từng cơ sở |
-| BM-05 | Báo cáo toàn hệ thống | Xem và xuất báo cáo theo cơ sở, loại ô kho, doanh thu và tình trạng thuê |
+| BM-05 | Báo cáo toàn hệ thống       | Xem và xuất báo cáo theo cơ sở, loại ô kho, doanh thu và tình trạng thuê       |
 
 ### 3.5. System Administrator — Quản trị hệ thống
 
-| Mã | Chức năng | Mô tả |
-|----|-----------|-------|
-| SA-01 | Quản lý tài khoản người dùng | Quản lý tài khoản người dùng trong hệ thống |
-| SA-02 | Phân quyền vai trò | Gán vai trò Storage Customer, Facility Staff, Facility Manager, Business Operations Manager |
-| SA-03 | Cấu hình quyền truy cập dữ liệu | Phân quyền dữ liệu theo vai trò người dùng và theo cơ sở được gán |
-| SA-04 | Theo dõi nhật ký | Theo dõi lịch sử đăng nhập và nhật ký hoạt động của người dùng |
+| Mã   | Chức năng                           | Mô tả                                                                                       |
+| ----- | ------------------------------------- | --------------------------------------------------------------------------------------------- |
+| SA-01 | Quản lý tài khoản người dùng   | Quản lý tài khoản người dùng trong hệ thống                                          |
+| SA-02 | Phân quyền vai trò                 | Gán vai trò Storage Customer, Facility Staff, Facility Manager, Business Operations Manager |
+| SA-03 | Cấu hình quyền truy cập dữ liệu | Phân quyền dữ liệu theo vai trò người dùng và theo cơ sở được gán              |
+| SA-04 | Theo dõi nhật ký                   | Theo dõi lịch sử đăng nhập và nhật ký hoạt động của người dùng                |
 
 ---
 
@@ -177,13 +177,13 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 
 ## 6. Ma trận tác nhân – luồng nghiệp vụ
 
-| Tác nhân | Flow 1 | Flow 2 | Flow 3 | Flow 4 | Flow 5 | Flow 6 | Flow 7 |
-|----------|:------:|:------:|:------:|:------:|:------:|:------:|:------:|
-| Storage Customer | ● | ○ | ● | | | ● | ● |
-| Facility Staff | | ● | ○ | | ○ | | ● |
-| Facility Manager | ○ | ○ | ● | | ● | ● | ○ |
-| Business Operations Manager | | | | ● | | ○ | |
-| System Administrator | | | | | ○ | | |
+| Tác nhân                  | Flow 1 | Flow 2 | Flow 3 | Flow 4 | Flow 5 | Flow 6 | Flow 7 |
+| --------------------------- | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
+| Storage Customer            |   ●   |   ○   |   ●   |        |        |   ●   |   ●   |
+| Facility Staff              |        |   ●   |   ○   |        |   ○   |        |   ●   |
+| Facility Manager            |   ○   |   ○   |   ●   |        |   ●   |   ●   |   ○   |
+| Business Operations Manager |        |        |        |   ●   |        |   ○   |        |
+| System Administrator        |        |        |        |        |   ○   |        |        |
 
 **Chú thích:** ● tác nhân chính · ○ tác nhân liên quan
 
@@ -191,19 +191,19 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 
 ## 7. Thuật ngữ (Glossary)
 
-| Thuật ngữ | Giải thích |
-|-----------|------------|
-| **Facility** | Cơ sở lưu trữ — một địa điểm vật lý chứa nhiều ô kho |
-| **Storage Unit** | Ô kho — đơn vị cho thuê nhỏ nhất, có mã, vị trí và trạng thái riêng |
-| **Unit Type / Unit Size** | Loại và kích thước ô kho, quyết định khung giá thuê |
-| **Reservation** | Đặt chỗ ô kho trước khi nhận bàn giao, gắn với lịch hẹn check-in |
-| **Deposit** | Tiền cọc khách trả khi đặt chỗ |
-| **Check-in / Handover** | Thủ tục khách đến nhận và được bàn giao ô kho kèm phương tiện truy cập |
-| **Access Code / Access Card** | Mã hoặc thẻ truy cập cấp cho khách để vào khu vực kho |
-| **Renewal** | Gia hạn thời hạn thuê, kèm phí gia hạn |
-| **Overdue** | Quá hạn thuê hoặc quá hạn thanh toán, áp dụng phí và quy trình xử lý riêng |
-| **Return** | Trả kho — khách kết thúc thuê, nhân viên kiểm tra hiện trạng ô kho |
-| **Usage Rate** | Tỷ lệ sử dụng / lấp đầy kho của một cơ sở |
+| Thuật ngữ                         | Giải thích                                                                              |
+| ----------------------------------- | ----------------------------------------------------------------------------------------- |
+| **Facility**                  | Cơ sở lưu trữ — một địa điểm vật lý chứa nhiều ô kho                       |
+| **Storage Unit**              | Ô kho — đơn vị cho thuê nhỏ nhất, có mã, vị trí và trạng thái riêng       |
+| **Unit Type / Unit Size**     | Loại và kích thước ô kho, quyết định khung giá thuê                            |
+| **Reservation**               | Đặt chỗ ô kho trước khi nhận bàn giao, gắn với lịch hẹn check-in              |
+| **Deposit**                   | Tiền cọc khách trả khi đặt chỗ                                                     |
+| **Check-in / Handover**       | Thủ tục khách đến nhận và được bàn giao ô kho kèm phương tiện truy cập   |
+| **Access Code / Access Card** | Mã hoặc thẻ truy cập cấp cho khách để vào khu vực kho                           |
+| **Renewal**                   | Gia hạn thời hạn thuê, kèm phí gia hạn                                             |
+| **Overdue**                   | Quá hạn thuê hoặc quá hạn thanh toán, áp dụng phí và quy trình xử lý riêng |
+| **Return**                    | Trả kho — khách kết thúc thuê, nhân viên kiểm tra hiện trạng ô kho            |
+| **Usage Rate**                | Tỷ lệ sử dụng / lấp đầy kho của một cơ sở                                      |
 
 ---
 
