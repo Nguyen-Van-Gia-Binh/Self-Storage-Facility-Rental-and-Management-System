@@ -1,0 +1,27 @@
+# Bí mật
+.env
+.env.local
+application-local.yml
+application-secret.yml
+
+# Build
+target/
+build/
+node_modules/
+dist/
+out/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Hệ điều hành
+Thumbs.db
+.DS_Store
+
+# Dữ liệu và log
+*.log
+*.bak
+*.mdf
+*.ldf
