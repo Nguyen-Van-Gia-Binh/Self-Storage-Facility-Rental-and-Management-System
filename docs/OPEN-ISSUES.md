@@ -29,6 +29,7 @@
 | `ISS-06` | **File `.puml` chưa từng được render** nên chưa xác nhận không có lỗi cú pháp. Phải mở bằng extension PlantUML trong VS Code để kiểm | `diagrams/use-case-diagram.puml` | Bình | Mở |
 | `ISS-07` | **`BR-OVD-10` miễn/giảm phí quá hạn theo từng vụ** (Facility Manager đề xuất, Business Operations Manager duyệt) không có use case riêng. `UC-F4-09` chỉ quản lý *chính sách* giảm giá / miễn phí, không phải xử lý một khoản cụ thể. Phương án: thêm UC đề xuất–duyệt theo vụ, hoặc ghi rõ `UC-F4-09` kiêm cả hai | `BUSINESS-RULES.md`, `USE-CASES.md` | Cả nhóm | Mở |
 | `ISS-08` | **`BR-DEP-06` cho phép đổi Unit Type** (nộp chênh Deposit) trong khi **`BR-REN-08` cấm đổi ô kho** — muốn đổi thì phải trả kho rồi đặt hợp đồng mới. Không có use case đổi ô kho / đổi Unit Type. Cần chốt: bỏ hoặc thu hẹp `BR-DEP-06`, hoặc thêm UC đổi ô kho | `BUSINESS-RULES.md`, `USE-CASES.md` | Cả nhóm | Mở |
+| `ISS-09` | **Bổ sung nhóm quy tắc nghiệp vụ cho Vận hành & An ninh tại cơ sở:** Đề xuất của Tùng (Task T1.3) mở rộng thêm 3 nhóm quy tắc độc lập trong `BUSINESS-RULES.md`: `BR-CHK` (Thủ tục check-in & bàn giao ô kho), `BR-ACC` (Phương tiện truy cập & Mã mở khóa), `BR-SUP` (Xử lý sự cố & Thời hạn cam kết SLA). Tùng đã áp dụng tạm thời cho nhánh T1.3 để hoàn thiện User Stories và Acceptance Criteria cho FS & FM, chờ họp nhóm với Lead Bình để chốt chính thức | `BUSINESS-RULES.md`, `USER-STORIES-FS-FM.md` | Bình | Mở |
 
 ---
 
