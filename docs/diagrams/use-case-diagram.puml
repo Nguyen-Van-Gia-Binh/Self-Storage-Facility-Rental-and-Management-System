@@ -1,7 +1,7 @@
 @startuml use-case-diagram
 ' =====================================================================
 '  Self-Storage Facility Rental and Management System
-'  Use Case Diagram tong - 5 actor, 7 flow, 75 use case
+'  Use Case Diagram tong - 5 actor, 7 flow, 78 use case
 '
 '  Nguon: docs/USE-CASES.md (danh sach use case la ban goc, so hoa o day
 '  phai khop voi bang trong tai lieu do).
@@ -41,15 +41,15 @@ rectangle "Self-Storage Facility Rental and Management System" {
   package "Flow 1 — Storage Unit Reservation" {
     usecase "UC-F1-01\nTìm kiếm và xem danh sách Facility" as UCF101
     usecase "UC-F1-02\nXem Unit Type, kích thước và giá thuê" as UCF102
-    usecase "UC-F1-03\nKiểm tra ô kho còn trống" as UCF103
+    usecase "UC-F1-03\nKiểm tra capacity theo khoảng thuê" as UCF103
     usecase "UC-F1-04\nTạo Reservation" as UCF104
     usecase "UC-F1-05\nƯớc tính chi phí thuê và Deposit" as UCF105
-    usecase "UC-F1-06\nGiữ chỗ ô kho tạm thời" as UCF106
-    usecase "UC-F1-07\nThanh toán Deposit và phí thuê kỳ đầu" as UCF107
-    usecase "UC-F1-08\nPhân bổ ô kho cho Reservation" as UCF108
+    usecase "UC-F1-06\nGiữ capacity khi chờ thanh toán" as UCF106
+    usecase "UC-F1-07\nTrả phí N tháng và Deposit" as UCF107
+    usecase "UC-F1-08\nPhân bổ Storage Unit sau thanh toán" as UCF108
     usecase "UC-F1-09\nNhận lịch hẹn Check-in" as UCF109
     usecase "UC-F1-10\nHủy Reservation" as UCF110
-    usecase "UC-F1-11\nTự động hủy Reservation quá hạn thanh toán" as UCF111
+    usecase "UC-F1-11\nCho Reservation hết hạn, giải phóng capacity" as UCF111
     usecase "UC-F1-12\nHủy Reservation phía cơ sở" as UCF112
   }
 
@@ -58,9 +58,9 @@ rectangle "Self-Storage Facility Rental and Management System" {
     usecase "UC-F2-02\nXác minh danh tính và tình trạng thanh toán" as UCF202
     usecase "UC-F2-03\nBàn giao ô kho và lập biên bản" as UCF203
     usecase "UC-F2-04\nCấp Access Code / Access Card" as UCF204
-    usecase "UC-F2-05\nXác nhận Check-in nhận ô kho" as UCF205
-    usecase "UC-F2-06\nCập nhật trạng thái ô kho sang đang sử dụng" as UCF206
-    usecase "UC-F2-07\nKích hoạt hợp đồng thuê" as UCF207
+    usecase "UC-F2-05\nCheck-in và hoàn tất Reservation" as UCF205
+    usecase "UC-F2-06\nChuyển Storage Unit sang Occupied" as UCF206
+    usecase "UC-F2-07\nKích hoạt Contract sau bàn giao" as UCF207
     usecase "UC-F2-08\nXử lý khách đến trễ hoặc không đến" as UCF208
     usecase "UC-F2-09\nPhân công Staff trực bàn giao" as UCF209
   }
@@ -94,6 +94,7 @@ rectangle "Self-Storage Facility Rental and Management System" {
     usecase "UC-F4-10\nGiám sát doanh thu" as UCF410
     usecase "UC-F4-11\nGiám sát Usage Rate và hiệu quả vận hành" as UCF411
     usecase "UC-F4-12\nXem và xuất báo cáo toàn hệ thống" as UCF412
+    usecase "UC-F4-13\nDuyệt miễn/giảm phí quá hạn theo vụ" as UCF413
   }
 
   package "Flow 5 — Facility Storage and Staff Management" {
@@ -111,13 +112,15 @@ rectangle "Self-Storage Facility Rental and Management System" {
     usecase "UC-F6-01\nNhận thông báo nhắc hạn" as UCF601
     usecase "UC-F6-02\nYêu cầu gia hạn hợp đồng" as UCF602
     usecase "UC-F6-03\nThanh toán phí gia hạn" as UCF603
-    usecase "UC-F6-04\nDuyệt và ghi nhận gia hạn" as UCF604
+    usecase "UC-F6-04\nTự động ghi nhận gia hạn sau Payment" as UCF604
     usecase "UC-F6-05\nPhát hiện hợp đồng quá hạn" as UCF605
     usecase "UC-F6-06\nTính và áp phí quá hạn" as UCF606
-    usecase "UC-F6-07\nKhóa quyền truy cập ô kho quá hạn" as UCF607
-    usecase "UC-F6-08\nGửi thông báo chấm dứt hợp đồng" as UCF608
-    usecase "UC-F6-09\nChấm dứt hợp đồng và xử lý tài sản tồn" as UCF609
+    usecase "UC-F6-07\nTự động khóa Access Credential tại D+10" as UCF607
+    usecase "UC-F6-08\nTự động gửi thông báo chấm dứt tại D+30" as UCF608
+    usecase "UC-F6-09\nXử lý tài sản sau chấm dứt tại D+60" as UCF609
     usecase "UC-F6-10\nTheo dõi hợp đồng quá hạn" as UCF610
+    usecase "UC-F6-11\nTự động chấm dứt Contract tại D+60" as UCF611
+    usecase "UC-F6-12\nĐề xuất miễn/giảm phí quá hạn theo vụ" as UCF612
   }
 
   package "Flow 7 — Support Request and Issue Handling" {
@@ -197,11 +200,9 @@ FM --> UCF502
 FM --> UCF503
 FM --> UCF504
 FM --> UCF506
-FM --> UCF604
-FM --> UCF607
-FM --> UCF608
 FM --> UCF609
 FM --> UCF610
+FM --> UCF612
 FM --> UCF704
 
 ' ---------------------------------------------------------------------
@@ -219,6 +220,7 @@ BM --> UCF409
 BM --> UCF410
 BM --> UCF411
 BM --> UCF412
+BM --> UCF413
 
 ' ---------------------------------------------------------------------
 '  System Administrator
@@ -233,8 +235,12 @@ SA --> UCS03
 ' ---------------------------------------------------------------------
 SYS --> UCF106
 SYS --> UCF111
+SYS --> UCF604
 SYS --> UCF605
 SYS --> UCF606
+SYS --> UCF607
+SYS --> UCF608
+SYS --> UCF611
 
 ' ---------------------------------------------------------------------
 '  Quan he include / extend
@@ -243,7 +249,6 @@ UCF104 ..> UCF103 : <<include>>
 UCF104 ..> UCF105 : <<include>>
 UCF104 ..> UCF106 : <<include>>
 UCF107 ..> UCF108 : <<include>>
-UCF109 ..> UCF107 : <<include>>
 UCF203 ..> UCF201 : <<include>>
 UCF203 ..> UCF202 : <<include>>
 UCF203 ..> UCF204 : <<include>>
@@ -264,7 +269,8 @@ UCF208 .> UCF201 : <<extend>>
 UCF606 .> UCF605 : <<extend>>
 UCF607 .> UCF606 : <<extend>>
 UCF608 .> UCF607 : <<extend>>
-UCF609 .> UCF608 : <<extend>>
+UCF611 .> UCF608 : <<extend>>
+UCF609 .> UCF611 : <<extend>>
 UCF312 .> UCF309 : <<extend>>
 UCF706 .> UCF705 : <<extend>>
 

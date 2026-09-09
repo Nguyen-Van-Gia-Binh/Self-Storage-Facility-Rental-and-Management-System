@@ -41,7 +41,7 @@
 | **Giai đoạn** | Bám theo [bản đồ phủ yêu cầu của PLAN.md § 5](PLAN.md#5-bản-đồ-phủ-yêu-cầu) |
 | **Tham chiếu** | Mọi story trỏ về use case ở [USE-CASES.md](USE-CASES.md) và quy tắc ở [BUSINESS-RULES.md](BUSINESS-RULES.md) khi story chạm tiền, mốc thời hạn hoặc phiên bản chính sách |
 
-Tổng cộng **19 user story**, **95 acceptance criteria**, **95 story point**.
+Tổng cộng **20 user story**, **100 acceptance criteria**, **100 story point**.
 
 ---
 
@@ -114,7 +114,7 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 ### `US-BM-02.1` — Thiết lập chính sách Deposit
 
 > **Là** Business Operations Manager, **tôi muốn** sửa hệ số Deposit và thời gian giữ chỗ, **để**
-> thu cọc đúng chính sách đang áp dụng.
+> thu cọc và giữ capacity đúng chính sách đang áp dụng.
 
 | Use case | Ưu tiên | Story point | Giai đoạn |
 |----------|---------|:-----------:|:---------:|
@@ -126,7 +126,7 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
   `deposit.multiplier` và `reservation.hold_hours` đang hiệu lực, kèm ngày ban hành phiên bản.
 - **AC-2** — *Given* tôi nhập `deposit.multiplier` = `1.0` và `reservation.hold_hours` = `48`, *when*
   tôi ban hành phiên bản mới, *then* Reservation tạo **sau** thời điểm ban hành tính Deposit theo
-  `BR-DEP-01` và giữ chỗ theo `BR-DEP-03`.
+  `BR-DEP-01` và giữ capacity theo `BR-RES-02`, `BR-DEP-03`.
 - **AC-3** — *Given* đã có Reservation *Pending Payment* hoặc hợp đồng đang hiệu lực, *when* tôi ban
   hành phiên bản Deposit mới, *then* các bản ghi cũ **không** bị đổi số tiền cọc hay thời hạn giữ chỗ
   theo `BR-GEN-02`.
@@ -150,18 +150,17 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 **Acceptance Criteria**
 
 - **AC-1** — *Given* tôi mở chính sách Renewal, *when* trang tải xong, *then* tôi thấy
-  `renewal.reminder_days` (mặc định `7, 3, 1`) và `renewal.min_months` (mặc định `1`) theo
-  `BR-REN-01` và `BR-REN-03`.
+  `renewal.reminder_days` (mặc định `7, 3, 1`), `renewal.min_months` (mặc định `1`) và
+  `renewal.max_months` (mặc định `12`) theo `BR-REN-01`, `BR-REN-03`, `BR-REN-07`.
 - **AC-2** — *Given* tôi ban hành phiên bản mới, *when* scheduled job chạy, *then* chỉ hợp đồng chưa
   hết hạn nhận nhắc theo danh sách ngày mới; hợp đồng đã gửi nhắc theo phiên bản cũ không bị gửi trùng
   trong cùng một mốc.
-- **AC-3** — *Given* tôi nhập `renewal.min_months` khác số nguyên dương, hoặc một mốc trong
-  `renewal.reminder_days` nhỏ hơn hoặc bằng 0, *when* tôi lưu, *then* hệ thống từ chối.
+- **AC-3** — *Given* tôi nhập giới hạn tháng không phải số nguyên dương, min lớn hơn max, hoặc một
+  mốc trong `renewal.reminder_days` nhỏ hơn hoặc bằng 0, *when* tôi lưu, *then* hệ thống từ chối.
 - **AC-4** — *Given* tôi nhập hai mốc nhắc trùng nhau, *when* tôi lưu, *then* hệ thống từ chối và
   yêu cầu các mốc phân biệt.
-- **AC-5** — *Given* giới hạn 12 tháng mỗi lần gia hạn ở `BR-REN-07`, *when* tôi xem màn hình chính
-  sách, *then* hệ thống hiển thị trần này là quy tắc cố định của hệ thống, không phải tham số tôi sửa
-  được trên màn này.
+- **AC-5** — *Given* tôi đổi `renewal.max_months`, *when* ban hành phiên bản mới, *then* giới hạn mới
+  chỉ áp cho lần Renewal dùng phiên bản đó; các kỳ đã thanh toán không bị thay đổi.
 
 ---
 
@@ -181,8 +180,8 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
   `checkin.grace_days` đang hiệu lực.
 - **AC-2** — *Given* tôi ban hành phiên bản mới, *when* Storage Customer hủy Reservation tạo **sau**
   thời điểm ban hành, *then* số tiền hoàn tính theo `BR-CAN-01` hoặc `BR-CAN-02` của phiên bản đó.
-- **AC-3** — *Given* Reservation đã *Confirmed* trước khi ban hành, *when* khách hủy, *then* hệ thống
-  vẫn tính theo phiên bản gắn với Reservation đó theo `BR-GEN-02`.
+- **AC-3** — *Given* Reservation được tạo trước khi ban hành, dù còn *Pending Payment* hay đã
+  *Confirmed*, *when* khách hủy, *then* hệ thống vẫn tính theo snapshot gắn với Reservation đó.
 - **AC-4** — *Given* tôi nhập tỷ lệ hoàn nhỏ hơn 0% hoặc lớn hơn 100%, hoặc
   `cancel.full_refund_hours` / `checkin.grace_days` không phải số không âm, *when* tôi lưu, *then*
   hệ thống từ chối.
@@ -204,8 +203,9 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 
 - **AC-1** — *Given* tôi mở chính sách Return, *when* trang tải xong, *then* tôi thấy
   `return.notice_days`, `return.refund_working_days` và `return.early_refund_rate` đang hiệu lực.
-- **AC-2** — *Given* tôi ban hành phiên bản mới, *when* khách đăng ký Return trên hợp đồng ký **sau**
-  thời điểm ban hành, *then* hệ thống áp `BR-RET-01`, `BR-RET-05` và `BR-RET-06` của phiên bản đó.
+- **AC-2** — *Given* tôi ban hành phiên bản mới, *when* khách đăng ký Return trên Contract kế thừa
+  từ Reservation tạo **sau** thời điểm ban hành, *then* hệ thống áp `BR-RET-01`, `BR-RET-05` và
+  `BR-RET-06` của phiên bản đó.
 - **AC-3** — *Given* `return.early_refund_rate` đang là `0%`, *when* phiên bản được ban hành, *then*
   màn hình đặt chỗ của Storage Customer phải hiển thị quy tắc không hoàn phần thuê chưa dùng, đúng
   `BR-RET-06`.
@@ -231,8 +231,9 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
   `overdue.grace_days`, `overdue.daily_rate`, `overdue.cap_rate`, `overdue.lock_access_days`,
   `overdue.notice_days` và `overdue.termination_days` đang hiệu lực.
 - **AC-2** — *Given* các mốc thỏa `grace_days` < `lock_access_days` < `notice_days` <
-  `termination_days`, *when* tôi ban hành, *then* scheduled job của `UC-F6-05` đến `UC-F6-09` dùng
-  đúng bộ mốc mới cho hợp đồng hết hạn **sau** thời điểm ban hành.
+  `termination_days`, *when* tôi ban hành, *then* scheduled job của `UC-F6-05` đến `UC-F6-08` và
+  `UC-F6-11` dùng đúng snapshot cho Reservation được tạo **sau** thời điểm ban hành. `UC-F6-09`
+  là thao tác Facility Manager sau khi job chấm dứt, không thuộc chuỗi job.
 - **AC-3** — *Given* tôi nhập mốc lệch thứ tự (ví dụ khóa ngày 30 trong khi thông báo ngày 10),
   *when* tôi lưu, *then* hệ thống từ chối và nêu "Các mốc quá hạn phải tăng dần:
   ân hạn → khóa truy cập → thông báo chấm dứt → chấm dứt".
@@ -264,8 +265,8 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
   tại cơ sở đó có một đơn giá tháng (VND), làm tròn theo `BR-GEN-04`.
 - **AC-2** — *Given* tôi lưu giá mới cho một cặp Unit Type × Facility, *when* Storage Customer mở
   `UC-F1-02`, *then* giá hiển thị là giá vừa lưu; cơ sở khác với cùng Unit Type không bị đổi giá.
-- **AC-3** — *Given* đã có Reservation *Pending Payment* hoặc hợp đồng đang khóa giá theo
-  `BR-GEN-05`, *when* tôi đổi bảng giá, *then* các bản ghi đó giữ nguyên đơn giá đã khóa.
+- **AC-3** — *Given* đã có Reservation *Pending Payment*, *Confirmed* hoặc Contract kế thừa snapshot
+  theo `BR-GEN-02`, `BR-GEN-05`, *when* tôi đổi bảng giá, *then* các bản ghi đó giữ nguyên đơn giá.
 - **AC-4** — *Given* tôi nhập giá nhỏ hơn hoặc bằng 0, hoặc không phải số nguyên nghìn đồng, *when*
   tôi lưu, *then* hệ thống từ chối.
 - **AC-5** — *Given* một Unit Type chưa có giá tại Facility đang chọn, *when* Storage Customer xem
@@ -291,9 +292,9 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 - **AC-2** — *Given* tôi thêm phụ phí "Cấp lại Access Card" với số tiền cố định, *when* tôi lưu,
   *then* Facility Staff chọn được khoản này khi ghi nhận phụ thu cho hợp đồng, và khách thấy khoản đó
   ở `UC-F3-13`.
-- **AC-3** — *Given* tôi sửa `overdue.daily_rate`, *when* phiên bản có hiệu lực, *then* chỉ hợp đồng
-  chuyển *Overdue* **sau** thời điểm đó dùng mức mới; hợp đồng đang cộng dồn phí giữ nguyên cách tính
-  của phiên bản đã gắn.
+- **AC-3** — *Given* tôi sửa `overdue.daily_rate`, *when* phiên bản có hiệu lực, *then* chỉ Contract
+  kế thừa từ Reservation tạo **sau** thời điểm đó dùng mức mới; Contract cũ giữ cách tính của
+  snapshot đã gắn, kể cả chưa chuyển *Overdue*.
 - **AC-4** — *Given* tôi nhập số tiền phụ phí nhỏ hơn 0, hoặc trùng mã phụ phí đã có, *when* tôi lưu,
   *then* hệ thống từ chối.
 - **AC-5** — *Given* phụ phí đang được gán cho ít nhất một hợp đồng chưa tất toán, *when* tôi xóa
@@ -321,7 +322,30 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
   *when* tôi lưu, *then* hệ thống từ chối.
 - **AC-4** — *Given* story này chỉ cấu hình **chính sách / chương trình**, *when* Facility Manager
   đề xuất miễn một khoản phí quá hạn của **một hợp đồng cụ thể**, *then* màn hình này không phải nơi
-  duyệt vụ đó — việc duyệt theo vụ còn mở ở [ISS-07](OPEN-ISSUES.md).
+  duyệt vụ đó — việc đó thuộc `UC-F4-13` / `US-BM-03.4`.
+
+---
+
+### `US-BM-03.4` — Duyệt miễn hoặc giảm phí quá hạn theo vụ
+
+> **Là** Business Operations Manager, **tôi muốn** duyệt hoặc từ chối đề xuất miễn/giảm phí quá hạn
+> của một Contract, **để** ghi nhận đúng ledger và audit theo `BR-OVD-10`.
+
+| Use case | Ưu tiên | Story point | Giai đoạn |
+|----------|---------|:-----------:|:---------:|
+| `UC-F4-13` | Must | 5 | P4 |
+
+**Acceptance Criteria**
+
+- **AC-1** — *Given* có đề xuất `UC-F6-12` còn chờ, *when* tôi duyệt mức giảm (có thể khác mức đề
+  xuất, không vượt số phí chưa tất toán), *then* ledger sinh *Adjusted* và phí còn lại được cập nhật.
+- **AC-2** — *Given* tôi từ chối, *when* hệ thống ghi nhận, *then* phí giữ nguyên và Facility Manager
+  nhận thông báo kèm lý do.
+- **AC-3** — *Given* tôi duyệt, *when* nhật ký được lưu, *then* audit log có người đề xuất, người
+  duyệt, số tiền trước/sau và lý do.
+- **AC-4** — *Given* tôi vừa đề xuất với vai trò Facility Manager trên cùng vụ, *when* tôi mở màn
+  duyệt Business Operations Manager, *then* hệ thống từ chối tự duyệt.
+- **AC-5** — *Given* khoản đã tất toán, *when* tôi cố duyệt, *then* hệ thống từ chối.
 
 ---
 
@@ -366,10 +390,11 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 **Acceptance Criteria**
 
 - **AC-1** — *Given* tôi mở dashboard vận hành, *when* dữ liệu tải xong, *then* mỗi Facility có
-  Usage Rate = (số Storage Unit *Occupied* + *Overdue*) / (tổng ô không ở trạng thái ngừng dùng),
-  tính tại thời điểm xem.
-- **AC-2** — *Given* một Facility, *when* tôi xem chi tiết, *then* tôi thấy số ô *Available*,
-  *Occupied*, *Overdue*, *Cleaning* và số hợp đồng *Overdue* đang mở.
+  Usage Rate = số Storage Unit *Occupied* / tổng Storage Unit không *Out of service*, tính tại thời
+  điểm xem; Contract *Overdue* vẫn dùng unit *Occupied* nên không bị cộng hai lần.
+- **AC-2** — *Given* một Facility, *when* tôi xem chi tiết, *then* tôi thấy số unit *Available*,
+  *Reserved*, *Occupied*, *Cleaning*, *Maintenance*, *Out of service* và số Contract *Overdue*;
+  Access *Suspended* được báo riêng, không phải trạng thái Storage Unit.
 - **AC-3** — *Given* hai Facility, *when* tôi sắp xếp theo Usage Rate, *then* thứ tự giảm dần hoặc
   tăng dần đúng với số đã tính, không làm tròn trước khi so.
 - **AC-4** — *Given* Facility chưa có Storage Unit nào, *when* Usage Rate được tính, *then* hệ thống
@@ -591,6 +616,7 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 | `US-BM-03.1` | Quản lý khung giá thuê theo Unit Type và Facility | `BM-03` | Must | 5 | P2 | 5 |
 | `US-BM-03.2` | Quản lý phụ phí và phí quá hạn | `BM-03` | Must | 5 | P2 | 5 |
 | `US-BM-03.3` | Quản lý chính sách giảm giá và miễn phí | `BM-03` | Should | 3 | P2 | 4 |
+| `US-BM-03.4` | Duyệt miễn hoặc giảm phí quá hạn theo vụ | `BM-03` | Must | 5 | P4 | 5 |
 | `US-BM-04.1` | Giám sát doanh thu theo cơ sở và toàn hệ thống | `BM-04` | Must | 5 | P5 | 5 |
 | `US-BM-04.2` | Giám sát Usage Rate và hiệu quả vận hành | `BM-04` | Must | 5 | P5 | 5 |
 | `US-BM-05.1` | Xem và xuất báo cáo theo cơ sở, Unit Type, doanh thu và tình trạng thuê | `BM-05` | Must | 8 | P5 | 5 |
@@ -601,7 +627,7 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 | `US-SA-04.1` | Xem lịch sử đăng nhập | `SA-04` | Must | 3 | P5 | 4 |
 | `US-SA-04.2` | Xem nhật ký hoạt động người dùng | `SA-04` | Must | 5 | P5 | 5 |
 
-**Theo giai đoạn:** P2 — 9 story / 44 point · P4 — 5 story / 25 point · P5 — 5 story / 26 point.
-**Theo ưu tiên:** Must — 18 story / 92 point · Should — 1 story / 3 point · Could — 0 story.
-**Theo actor:** Business Operations Manager — 13 story / 66 point · System Administrator — 6 story / 29 point.
-**Tổng:** 19 story · 95 story point · 95 acceptance criteria.
+**Theo giai đoạn:** P2 — 9 story / 44 point · P4 — 6 story / 30 point · P5 — 5 story / 26 point.
+**Theo ưu tiên:** Must — 19 story / 97 point · Should — 1 story / 3 point · Could — 0 story.
+**Theo actor:** Business Operations Manager — 14 story / 71 point · System Administrator — 6 story / 29 point.
+**Tổng:** 20 story · 100 story point · 100 acceptance criteria.

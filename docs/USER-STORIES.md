@@ -36,7 +36,7 @@
 | **Giai đoạn** | Bám theo [bản đồ phủ yêu cầu của PLAN.md § 5](PLAN.md#5-bản-đồ-phủ-yêu-cầu) |
 | **Tham chiếu** | Mọi story trỏ về use case ở [USE-CASES.md](USE-CASES.md) và quy tắc ở [BUSINESS-RULES.md](BUSINESS-RULES.md) |
 
-Tổng cộng **22 user story**, **108 acceptance criteria**, **95 story point**.
+Tổng cộng **22 user story**, **111 acceptance criteria**, **95 story point**.
 
 ---
 
@@ -81,10 +81,10 @@ Tổng cộng **22 user story**, **108 acceptance criteria**, **95 story point**
 **Acceptance Criteria**
 
 - **AC-1** — *Given* tôi mở trang chi tiết một Facility, *when* trang tải xong, *then* tôi thấy danh
-  sách Unit Type kèm kích thước (dài × rộng × cao), diện tích, giá thuê theo tháng và số ô kho còn
-  trống của từng loại.
-- **AC-2** — *Given* một Unit Type có ô kho còn trống, *when* tôi xem, *then* nút "Đặt chỗ" ở trạng
-  thái bật; *given* Unit Type đã hết ô trống, *then* nút bị vô hiệu hóa kèm nhãn "Tạm hết".
+  sách Unit Type kèm kích thước (dài × rộng × cao), diện tích, giá thuê theo tháng và capacity hiện
+  có của từng loại.
+- **AC-2** — *Given* một Unit Type có capacity, *when* tôi xem, *then* nút "Đặt chỗ" ở trạng thái
+  bật; *given* Unit Type không còn capacity, *then* nút bị vô hiệu hóa kèm nhãn "Tạm hết".
 - **AC-3** — *Given* giá thuê được cấu hình theo `BM-03`, *when* trang hiển thị giá, *then* giá phải
   là giá hiện hành của **đúng cơ sở đó** — hai cơ sở khác nhau có thể có giá khác nhau cho cùng
   Unit Type.
@@ -112,8 +112,9 @@ Tổng cộng **22 user story**, **108 acceptance criteria**, **95 story point**
   báo lỗi "Ngày bắt đầu phải từ hôm nay trở đi" và không gọi tra cứu.
 - **AC-3** — *Given* thời hạn thuê tôi nhập nhỏ hơn 1 tháng hoặc không phải số tháng nguyên, *when*
   tôi gửi, *then* hệ thống báo lỗi theo `BR-GEN-03`.
-- **AC-4** — *Given* có ô kho đang được người khác giữ chỗ theo `BR-DEP-03`, *when* hệ thống đếm ô
-  trống, *then* các ô đang giữ chỗ **không** được tính là còn trống.
+- **AC-4** — *Given* có capacity slot đang được Reservation khác giữ cho khoảng thuê giao nhau,
+  *when* hệ thống tính Availability, *then* slot đó chỉ bị trừ **một lần** theo `BR-AVL-01` và không
+  được trả cho hai khách.
 - **AC-5** — *Given* không còn ô kho trống của Unit Type đã chọn, *when* kết quả trả về, *then* hệ
   thống gợi ý các Unit Type khác còn trống tại cùng cơ sở, hoặc cùng Unit Type ở cơ sở lân cận.
 
@@ -126,7 +127,7 @@ Tổng cộng **22 user story**, **108 acceptance criteria**, **95 story point**
 ### `US-SC-02.1` — Tạo đặt chỗ ô kho
 
 > **Là** Storage Customer, **tôi muốn** tạo Reservation bằng cách chọn cơ sở, loại ô kho, ngày bắt
-> đầu và thời hạn thuê, **để** giữ được một ô kho cho mình.
+> đầu và thời hạn thuê, **để** giữ được capacity phù hợp cho kỳ thuê của mình.
 
 | Use case | Ưu tiên | Story point | Giai đoạn |
 |----------|---------|:-----------:|:---------:|
@@ -135,20 +136,21 @@ Tổng cộng **22 user story**, **108 acceptance criteria**, **95 story point**
 **Acceptance Criteria**
 
 - **AC-1** — *Given* tôi đã đăng nhập và chọn đủ Facility, Unit Type, ngày bắt đầu, số tháng thuê,
-  *when* tôi xác nhận, *then* hệ thống tạo Reservation ở trạng thái *Pending Payment* và giữ một ô
-  kho cụ thể cho tôi.
-- **AC-2** — *Given* Reservation vừa tạo, *when* hệ thống giữ chỗ, *then* ô kho được giữ đúng
+  *when* tôi xác nhận, *then* hệ thống tạo Reservation *Pending Payment* và giữ một capacity slot
+  cho đúng khoảng thuê, chưa gắn Storage Unit cụ thể theo `BR-RES-02`.
+- **AC-2** — *Given* Reservation vừa tạo, *when* hệ thống giữ capacity, *then* slot được giữ đúng
   `reservation.hold_hours` (48 giờ) theo `BR-DEP-03`, và thời hạn còn lại được hiển thị dạng đếm
   ngược trên màn hình thanh toán.
 - **AC-3** — *Given* tôi **chưa đăng nhập**, *when* tôi bấm "Đặt chỗ", *then* hệ thống chuyển tôi
   sang màn hình đăng nhập và **giữ nguyên** lựa chọn để quay lại đúng bước đang dở.
-- **AC-4** — *Given* ô kho cuối cùng vừa bị người khác đặt trước tôi vài giây, *when* tôi xác nhận,
-  *then* hệ thống báo "Ô kho vừa được đặt, vui lòng chọn lại" chứ **không** tạo hai Reservation trùng
-  trên cùng một ô kho.
+- **AC-4** — *Given* capacity slot cuối cùng vừa được yêu cầu đồng thời khác giữ trước, *when* tôi
+  xác nhận, *then* hệ thống báo "Loại ô kho vừa hết chỗ, vui lòng chọn lại" và không overbook theo
+  `BR-AVL-03`.
 - **AC-5** — *Given* tôi đang có hợp đồng ở trạng thái *Overdue*, *when* tôi cố tạo Reservation mới,
   *then* hệ thống từ chối và nêu lý do theo `BR-OVD-09`.
 - **AC-6** — *Given* tôi đã có một Reservation *Pending Payment* chưa thanh toán, *when* tôi tạo
-  thêm Reservation mới, *then* hệ thống cho phép — mỗi Reservation được giữ chỗ độc lập.
+  thêm Reservation mới, *then* hệ thống cho phép — mỗi Reservation giữ capacity và hết hạn độc lập
+  theo `BR-RES-03`.
 
 ---
 
@@ -215,15 +217,16 @@ Tổng cộng **22 user story**, **108 acceptance criteria**, **95 story point**
 
 **Acceptance Criteria**
 
-- **AC-1** — *Given* Reservation của tôi đang *Confirmed* và chưa check-in, *when* tôi bấm hủy,
-  *then* hệ thống hiển thị **trước** số tiền sẽ được hoàn, tính theo `BR-CAN-01` hoặc `BR-CAN-02`
-  tùy thời điểm hủy, và yêu cầu tôi xác nhận lần nữa.
+- **AC-1** — *Given* Reservation của tôi đang *Confirmed* và chưa Check-in, *when* tôi bấm hủy,
+  *then* hệ thống hiển thị **trước** số tiền sẽ được hoàn, tính theo `BR-CAN-01`, `BR-CAN-02` hoặc
+  `BR-CAN-08` tùy thời điểm hủy, và yêu cầu tôi xác nhận lần nữa.
 - **AC-2** — *Given* tôi hủy sớm hơn 48 giờ so với ngày bắt đầu thuê, *when* tôi xác nhận, *then* số
   tiền hoàn bằng 100% phí thuê cộng 100% Deposit.
 - **AC-3** — *Given* tôi hủy trong vòng 48 giờ trước ngày bắt đầu, *when* tôi xác nhận, *then* số
   tiền hoàn bằng 100% phí thuê cộng 50% Deposit theo `BR-CAN-02`.
 - **AC-4** — *Given* tôi đã hủy Reservation, *when* việc hủy hoàn tất, *then* ô kho trở lại
-  *Available* ngay và Reservation chuyển sang *Cancelled*.
+  *Available* ngay và Reservation chuyển sang *Cancelled*; hoàn tiền được theo dõi riêng và lỗi hoàn
+  tiền không khôi phục Reservation theo `BR-PAY-05`.
 - **AC-5** — *Given* Reservation đã ở trạng thái *Cancelled*, *when* tôi cố hủy lần nữa hoặc khôi
   phục, *then* hệ thống từ chối theo `BR-CAN-07`.
 - **AC-6** — *Given* tôi đã check-in nhận kho, *when* tôi mở Reservation đó, *then* **không** có nút
@@ -235,10 +238,10 @@ Tổng cộng **22 user story**, **108 acceptance criteria**, **95 story point**
 
 *Thanh toán tiền cọc, phí thuê, phí gia hạn hoặc các khoản phụ thu.*
 
-### `US-SC-03.1` — Thanh toán tiền cọc và phí thuê
+### `US-SC-03.1` — Thanh toán Deposit và phí thuê N tháng
 
-> **Là** Storage Customer, **tôi muốn** thanh toán Deposit và phí thuê trong một lần, **để** hoàn tất
-> đặt chỗ.
+> **Là** Storage Customer, **tôi muốn** thanh toán Deposit và toàn bộ phí thuê N tháng trong một
+> lần, **để** hoàn tất đặt chỗ.
 
 | Use case | Ưu tiên | Story point | Giai đoạn |
 |----------|---------|:-----------:|:---------:|
@@ -247,20 +250,24 @@ Tổng cộng **22 user story**, **108 acceptance criteria**, **95 story point**
 **Acceptance Criteria**
 
 - **AC-1** — *Given* Reservation của tôi đang *Pending Payment*, *when* tôi mở màn hình thanh toán,
-  *then* tôi thấy đúng tổng số tiền đã hiển thị ở bước xác nhận, không phát sinh khoản lạ.
+  *then* tôi thấy tách bạch toàn bộ phí thuê N tháng, Deposit, giảm giá và phụ phí trả trước; không
+  chấp nhận thanh toán một phần theo `BR-PAY-01`.
 - **AC-2** — *Given* tôi chọn phương thức thanh toán và xác nhận, *when* cổng thanh toán trả về
-  thành công, *then* hệ thống ghi nhận một giao dịch, chuyển Reservation sang *Confirmed* và gửi
-  biên nhận.
+  thành công và unit được phân bổ, *then* hệ thống ghi nhận một giao dịch, chuyển Reservation sang
+  *Confirmed*, tạo Contract *Pending Check-in* và gửi biên nhận theo `BR-PAY-02`.
 - **AC-3** — *Given* Deposit và phí thuê được thu, *when* giao dịch được ghi nhận, *then* hai khoản
   được ghi **tách bạch** trong sổ giao dịch theo `BR-DEP-02`, vì Deposit sẽ được quyết toán riêng khi
   trả kho.
 - **AC-4** — *Given* cổng thanh toán trả về thất bại, *when* tôi quay lại ứng dụng, *then*
-  Reservation **vẫn** ở *Pending Payment*, ô kho vẫn được giữ tới hết 48 giờ, và tôi thanh toán lại
-  được.
+  Reservation **vẫn** ở *Pending Payment*, capacity vẫn được giữ tới hết 48 giờ, và tôi thanh toán
+  lại được theo `BR-PAY-03`.
 - **AC-5** — *Given* tôi bấm thanh toán hai lần liên tiếp hoặc cổng gửi callback trùng, *when* hệ
   thống xử lý, *then* chỉ **một** giao dịch được ghi nhận và tôi không bị trừ tiền hai lần.
 - **AC-6** — *Given* tôi thanh toán sau khi thời hạn giữ chỗ 48 giờ đã hết, *when* tôi gửi giao dịch,
   *then* hệ thống từ chối vì Reservation đã *Expired* theo `BR-DEP-03` và hướng dẫn tôi đặt lại.
+- **AC-7** — *Given* giao dịch vừa thành công nhưng không thể phân bổ Storage Unit do thay đổi ngoài
+  dự kiến, *when* hệ thống hoàn tất xử lý, *then* Reservation không được xác nhận và toàn bộ khoản
+  vừa thu được hoàn về phương thức gốc theo `BR-AVL-05`.
 
 ---
 
@@ -280,12 +287,13 @@ Tổng cộng **22 user story**, **108 acceptance criteria**, **95 story point**
   được nêu rõ nếu giá đã thay đổi.
 - **AC-2** — *Given* thanh toán gia hạn thành công, *when* giao dịch được ghi nhận, *then* ngày kết
   thúc hợp đồng được dời thêm đúng N tháng, tính từ ngày kết thúc cũ chứ không phải ngày thanh toán,
-  theo `BR-REN-04`.
+  theo `BR-REN-04`, không chờ Facility Manager duyệt thủ công.
 - **AC-3** — *Given* hợp đồng của tôi đang *Overdue*, *when* tôi gia hạn, *then* hệ thống gộp **phí
   quá hạn còn nợ + phí thuê kỳ mới** vào một giao dịch theo `BR-REN-06`, và không cho tôi thanh toán
   riêng phần phí thuê.
-- **AC-4** — *Given* thanh toán gia hạn thất bại, *when* tôi quay lại, *then* hợp đồng giữ nguyên
-  trạng thái cũ, không bị dời hạn, và không phát sinh khoản nợ mới.
+- **AC-4** — *Given* thanh toán gia hạn thất bại, *when* tôi quay lại, *then* Contract không bị dời
+  hạn và không phát sinh khoản nợ mới; nếu hết hạn trước lần thanh toán thành công thì Contract
+  chuyển *Overdue* theo `BR-REN-10`.
 - **AC-5** — *Given* tôi gia hạn khi hợp đồng đang *Overdue* và bị khóa truy cập, *when* thanh toán
   thành công, *then* Access Code của tôi được mở lại trong vòng 1 giờ theo `BR-OVD-08`.
 
@@ -376,7 +384,8 @@ Tổng cộng **22 user story**, **108 acceptance criteria**, **95 story point**
 **Acceptance Criteria**
 
 - **AC-1** — *Given* Facility Staff đã lập biên bản bàn giao ở `UC-F2-03`, *when* tôi xác nhận trên
-  ứng dụng, *then* Reservation chuyển sang *Checked-in* và hợp đồng chuyển sang *Active*.
+  ứng dụng, *then* Reservation chuyển sang *Fulfilled* và Contract chuyển từ *Pending Check-in*
+  sang *Active*.
 - **AC-2** — *Given* tôi đã xác nhận check-in, *when* hệ thống xử lý xong, *then* Access Code của tôi
   hiển thị trong ứng dụng và trạng thái ô kho chuyển sang *Occupied* theo `UC-F2-06`.
 - **AC-3** — *Given* tôi đã xác nhận check-in, *when* tôi mở biên bản bàn giao, *then* tôi xem lại
@@ -481,6 +490,9 @@ Tổng cộng **22 user story**, **108 acceptance criteria**, **95 story point**
   khoản nợ được gộp vào tổng phải trả theo `BR-REN-06`, hiển thị thành dòng riêng.
 - **AC-5** — *Given* hợp đồng của tôi đã *Terminated*, *when* tôi cố gia hạn, *then* hệ thống từ chối
   theo `BR-REN-02` và hướng dẫn tôi đặt hợp đồng mới.
+- **AC-6** — *Given* capacity cho khoảng gia hạn đã được Reservation khác cam kết trước, *when* tôi
+  xác nhận Renewal, *then* hệ thống từ chối trước khi thu tiền, không hủy commitment cũ và hướng dẫn
+  tôi Return hoặc tạo Reservation mới theo `BR-REN-09`.
 
 ---
 
@@ -495,20 +507,26 @@ Tổng cộng **22 user story**, **108 acceptance criteria**, **95 story point**
 
 **Acceptance Criteria**
 
-- **AC-1** — *Given* hợp đồng của tôi đang *Active*, *when* tôi đăng ký trả kho, *then* hệ thống yêu
-  cầu tôi chọn ngày trả cách hiện tại ít nhất `return.notice_days` (7 ngày) theo `BR-RET-01`.
-- **AC-2** — *Given* tôi chọn ngày trả hợp lệ, *when* tôi xác nhận, *then* hợp đồng chuyển sang
-  *Pending Return* và một lịch hẹn kiểm tra được tạo cho Facility Staff.
+- **AC-1** — *Given* Contract của tôi đang *Active*, *when* tôi đăng ký Return, *then* hệ thống yêu
+  cầu ngày hẹn cách hiện tại ít nhất `return.notice_days` (7 ngày); nếu ngày đó sau hạn Contract,
+  hệ thống cảnh báo Contract sẽ vào *Overdue* theo `BR-RET-10`.
+- **AC-2** — *Given* tôi chọn ngày trả hợp lệ, *when* tôi xác nhận, *then* hợp đồng chuyển *Pending
+  Return* và một lịch hẹn kiểm tra được tạo. Nếu ngày hẹn sau ngày kết thúc, Contract vẫn chuyển
+  *Overdue* từ D+1 theo `BR-RET-10` dù đang *Pending Return*.
 - **AC-3** — *Given* tôi đăng ký trả kho **sớm** hơn ngày kết thúc hợp đồng, *when* màn hình xác nhận
   hiển thị, *then* hệ thống nêu rõ phần phí thuê chưa dùng **không được hoàn** theo `BR-RET-06`, và
   tôi phải xác nhận đã đọc.
 - **AC-4** — *Given* tôi đã đăng ký trả kho, *when* tôi xem hợp đồng, *then* tôi thấy số tiền Deposit
   dự kiến được hoàn, kèm ghi chú rằng con số cuối phụ thuộc kết quả kiểm tra hiện trạng theo
   `BR-RET-04`.
-- **AC-5** — *Given* tôi đã đăng ký trả kho nhưng chưa tới ngày hẹn, *when* tôi hủy đăng ký, *then*
-  hợp đồng trở lại *Active* và lịch hẹn kiểm tra bị hủy.
+- **AC-5** — *Given* tôi đã đăng ký Return, Facility Staff chưa bắt đầu inspection và Contract chưa
+  hết hạn, *when* tôi hủy yêu cầu, *then* Contract trở lại *Active* và lịch hẹn bị hủy; các trường
+  hợp còn lại bị từ chối theo `BR-RET-12`.
 - **AC-6** — *Given* tôi không có mặt vào ngày hẹn kiểm tra và hợp đồng đã qua ngày kết thúc, *when*
   tác vụ quá hạn chạy, *then* hợp đồng chuyển sang *Overdue* theo `BR-RET-07`.
+- **AC-7** — *Given* Contract đang *Overdue* nhưng chưa tới D+60, *when* tôi chọn Return, *then*
+  Contract chuyển *Pending Return*, khoản nợ được đưa vào quyết toán và Access chỉ mở trong lịch
+  Return đã xác nhận theo `BR-RET-11`.
 
 ---
 
@@ -532,10 +550,11 @@ Tổng cộng **22 user story**, **108 acceptance criteria**, **95 story point**
 - **AC-4** — *Given* tôi quá hạn từ 10 ngày trở lên, *when* tôi thử dùng Access Code, *then* mã
   không hoạt động và ứng dụng giải thích lý do bị khóa theo `BR-OVD-05`.
 - **AC-5** — *Given* tôi quá hạn 30 ngày, *when* hệ thống gửi thông báo chấm dứt, *then* tôi nhận
-  được thông báo nêu rõ hạn chót D+60 và hệ quả với tài sản trong kho, theo `BR-OVD-06` và
-  `BR-OVD-07`.
-- **AC-6** — *Given* tôi thanh toán đủ khoản nợ trước D+60, *when* giao dịch thành công, *then*
-  Access Code được mở lại trong vòng 1 giờ và hợp đồng thoát trạng thái *Overdue* theo `BR-OVD-08`.
+  được thông báo nêu rõ tại D+60 Contract tự chuyển *Terminated*, Access bị *Revoked* và Facility
+  Manager lập biên bản tài sản theo `BR-OVD-06`, `BR-OVD-07`, `BR-OVD-11`.
+- **AC-6** — *Given* tôi thanh toán đủ khoản nợ trước D+60, *when* giao dịch thành công, *then* hệ
+  thống yêu cầu tôi chọn Renewal hoặc Return: Renewal đưa Contract về *Active* và mở Access trong
+  1 giờ; Return đưa Contract sang *Pending Return* theo `BR-OVD-08`.
 
 ---
 
@@ -622,7 +641,7 @@ Tổng cộng **22 user story**, **108 acceptance criteria**, **95 story point**
 | `US-SC-02.2` | Xem ước tính chi phí trước khi xác nhận | `SC-02` | Must | 3 | P3 | 6 |
 | `US-SC-02.3` | Nhận xác nhận đặt chỗ và lịch hẹn check-in | `SC-02` | Must | 3 | P3 | 4 |
 | `US-SC-02.4` | Hủy đặt chỗ trước khi nhận kho | `SC-02` | Must | 5 | P3 | 6 |
-| `US-SC-03.1` | Thanh toán tiền cọc và phí thuê | `SC-03` | Must | 8 | P3 | 6 |
+| `US-SC-03.1` | Thanh toán Deposit và phí thuê N tháng | `SC-03` | Must | 8 | P3 | 7 |
 | `US-SC-03.2` | Thanh toán phí gia hạn | `SC-03` | Must | 5 | P4 | 5 |
 | `US-SC-03.3` | Thanh toán phụ phí và khoản nộp bổ sung | `SC-03` | Should | 3 | P4 | 4 |
 | `US-SC-03.4` | Xem lịch sử giao dịch và hóa đơn | `SC-03` | Should | 3 | P4 | 4 |
@@ -631,8 +650,8 @@ Tổng cộng **22 user story**, **108 acceptance criteria**, **95 story point**
 | `US-SC-04.3` | Đổi lịch hẹn check-in | `SC-04` | Could | 3 | P3 | 4 |
 | `US-SC-05.1` | Xem danh sách ô kho đang thuê | `SC-05` | Must | 5 | P4 | 5 |
 | `US-SC-05.2` | Xem chi tiết hợp đồng và lịch sử truy cập | `SC-05` | Should | 5 | P4 | 4 |
-| `US-SC-05.3` | Nhận nhắc hạn và gia hạn hợp đồng | `SC-05` | Must | 5 | P4 | 5 |
-| `US-SC-05.4` | Đăng ký trả kho | `SC-05` | Must | 5 | P4 | 6 |
+| `US-SC-05.3` | Nhận nhắc hạn và gia hạn hợp đồng | `SC-05` | Must | 5 | P4 | 6 |
+| `US-SC-05.4` | Đăng ký trả kho | `SC-05` | Must | 5 | P4 | 7 |
 | `US-SC-05.5` | Theo dõi tình trạng quá hạn và khoản nợ | `SC-05` | Must | 5 | P4 | 6 |
 | `US-SC-06.1` | Gửi yêu cầu hỗ trợ | `SC-06` | Must | 5 | P4 | 5 |
 | `US-SC-06.2` | Theo dõi và trao đổi về yêu cầu hỗ trợ | `SC-06` | Must | 3 | P4 | 4 |
@@ -640,4 +659,4 @@ Tổng cộng **22 user story**, **108 acceptance criteria**, **95 story point**
 
 **Theo giai đoạn:** P2 — 3 story / 11 point · P3 — 8 story / 37 point · P4 — 11 story / 47 point.
 **Theo ưu tiên:** Must — 17 story / 78 point · Should — 4 story / 14 point · Could — 1 story / 3 point.
-**Tổng:** 22 story · 95 story point · 108 acceptance criteria.
+**Tổng:** 22 story · 95 story point · 111 acceptance criteria.
