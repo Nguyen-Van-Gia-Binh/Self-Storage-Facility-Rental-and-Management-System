@@ -116,7 +116,7 @@ một mã UC.
 >
 > Script xanh · 7 dòng "Nội dung dự kiến" tick hết · ma trận § 6 đã đối chiếu · 3 UC đáng nghi đã có
 > kết luận giữ hay gộp.
-> **Không cần đọc lại cả 73 use case lần hai.**
+> **Không cần đọc lại cả 75 use case lần hai.**
 
 ---
 
@@ -140,7 +140,7 @@ khi render không.
 
 - [X] Đủ **6 actor**: 5 actor của đề bài + `System`
 - [X] Đủ **8 package**: Flow 1–7 và nhóm Nền tảng
-- [X] Đủ **73 oval** use case
+- [X] Đủ **75 oval** use case
 
 ### Lớp 3 — phán đoán
 
@@ -154,7 +154,7 @@ Rà 27 quan hệ `include` / `extend` ở cuối file. Quy tắc chiều mũi t�
 
 > ### ⛔ ĐIỂM DỪNG T1.6
 >
-> Xuất được PNG không lỗi · đếm đủ 6 / 8 / 73 · 2 quan hệ đáng ngờ đã có kết luận.
+> Xuất được PNG không lỗi · đếm đủ 6 / 8 / 75 · 2 quan hệ đáng ngờ đã có kết luận.
 > **Không cần rà hết 27 quan hệ nếu 2 quan hệ trên đúng và ảnh đọc được.**
 
 ---

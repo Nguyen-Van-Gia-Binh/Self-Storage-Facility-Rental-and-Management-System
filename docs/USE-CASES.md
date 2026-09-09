@@ -4,7 +4,8 @@
 > [TOPIC.md § 4–5](TOPIC.md#4-các-luồng-nghiệp-vụ-chính-flow-15) thành danh sách use case chi tiết.
 >
 > Nhiệm vụ **T1.1** và **T1.6** · Giai đoạn 1 · [PLAN.md](PLAN.md).
-> Tài liệu liên quan: [USER-STORIES.md](USER-STORIES.md) · [BUSINESS-RULES.md](BUSINESS-RULES.md)
+> Tài liệu liên quan: [USER-STORIES.md](USER-STORIES.md) ·
+> [USER-STORIES-BM-SA.md](USER-STORIES-BM-SA.md) · [BUSINESS-RULES.md](BUSINESS-RULES.md)
 
 ---
 
@@ -37,7 +38,7 @@ Use case nền tảng không thuộc luồng nghiệp vụ nào dùng tiền t�
 | **Actor viết tiếng Anh**       | Storage Customer · Facility Staff · Facility Manager · Business Operations Manager · System Administrator                                                       |
 | **`System`**                   | Chỉ tác vụ hệ thống tự chạy theo lịch, không do người dùng kích hoạt                                                                                  |
 
-Tài liệu có **70 use case nghiệp vụ** (Flow 1–7) và **3 use case nền tảng**.
+Tài liệu có **72 use case nghiệp vụ** (Flow 1–7) và **3 use case nền tảng**.
 
 ---
 
@@ -58,6 +59,7 @@ Tài liệu có **70 use case nghiệp vụ** (Flow 1–7) và **3 use case nề
 | `UC-F1-09` | Nhận lịch hẹn Check-in và xác nhận đặt chỗ thành công                  | Storage Customer | —               | `SC-02`            |
 | `UC-F1-10` | Hủy Reservation trước ngày bắt đầu thuê                                   | Storage Customer | Facility Manager | `SC-02`, `BM-02` |
 | `UC-F1-11` | Tự động hủy Reservation quá hạn thanh toán và giải phóng ô kho         | System           | —               | `FM-02`            |
+| `UC-F1-12` | Hủy Reservation phía cơ sở — ô kho hư hỏng hoặc Facility đóng cửa   | Facility Manager | Storage Customer | `SC-02`, `FM-02`, `BM-02` |
 
 ---
 
@@ -97,6 +99,7 @@ Tài liệu có **70 use case nghiệp vụ** (Flow 1–7) và **3 use case nề
 | `UC-F3-10` | Theo dõi danh sách khách và hợp đồng đang hiệu lực                | Facility Manager | —               | `FM-03`            |
 | `UC-F3-11` | Theo dõi tình trạng thanh toán của từng hợp đồng                   | Facility Manager | —               | `FM-03`            |
 | `UC-F3-12` | Đánh dấu ô kho cần kiểm tra hoặc bảo trì                           | Facility Staff   | Facility Manager | `FS-03`            |
+| `UC-F3-13` | Thanh toán phụ phí và khoản nộp bổ sung                            | Storage Customer | Facility Manager | `SC-03`            |
 
 ---
 
@@ -190,7 +193,9 @@ kiện cần của mọi use case còn lại, tương ứng task T2.3.
 
 > **Cần thống nhất trong nhóm:** hoặc giữ ba use case này đứng ngoài 7 flow như trên, hoặc bổ sung
 > `SA-01`, `SA-04` vào "Phạm vi liên quan" của Flow 5 trong `TOPIC.md § 4`. Tài liệu này đang theo
-> phương án thứ nhất để không phải sửa `TOPIC.md`.
+> phương án thứ nhất để không phải sửa `TOPIC.md`. Quyết định còn lại thuộc [ISS-02](OPEN-ISSUES.md);
+> actor `System` và ba UC cập nhật trạng thái giữ nguyên theo [ISS-03](OPEN-ISSUES.md) và
+> [ISS-04](OPEN-ISSUES.md); chiều `include` trên diagram giữ nguyên theo [ISS-05](OPEN-ISSUES.md).
 
 ---
 
@@ -202,8 +207,8 @@ một use case tương ứng.
 | Mã yêu cầu | Use case tương ứng                                                                                   | Số UC |
 | ------------- | ------------------------------------------------------------------------------------------------------- | :----: |
 | `SC-01`     | `UC-F1-01` `UC-F1-02` `UC-F1-03`                                                                  |   3   |
-| `SC-02`     | `UC-F1-04` `UC-F1-05` `UC-F1-09` `UC-F1-10`                                                     |   4   |
-| `SC-03`     | `UC-F1-07` `UC-F6-03`                                                                               |   2   |
+| `SC-02`     | `UC-F1-04` `UC-F1-05` `UC-F1-09` `UC-F1-10` `UC-F1-12`                                     |   5   |
+| `SC-03`     | `UC-F1-07` `UC-F6-03` `UC-F3-13`                                                               |   3   |
 | `SC-04`     | `UC-F2-05`                                                                                            |   1   |
 | `SC-05`     | `UC-F3-01` `UC-F3-02` `UC-F3-03` `UC-F3-04` `UC-F3-05` `UC-F6-01` `UC-F6-02`              |   7   |
 | `SC-06`     | `UC-F7-01` `UC-F7-02`                                                                               |   2   |
@@ -214,13 +219,13 @@ một use case tương ứng.
 | `FS-05`     | `UC-F7-03` `UC-F7-05` `UC-F7-06` `UC-F7-08`                                                     |   4   |
 | `FS-06`     | `UC-F5-05`                                                                                            |   1   |
 | `FM-01`     | `UC-F5-01` `UC-F5-02` `UC-F5-03`                                                                  |   3   |
-| `FM-02`     | `UC-F1-06` `UC-F1-08` `UC-F1-11` `UC-F2-07` `UC-F2-08`                                        |   5   |
+| `FM-02`     | `UC-F1-06` `UC-F1-08` `UC-F1-11` `UC-F1-12` `UC-F2-07` `UC-F2-08`                      |   6   |
 | `FM-03`     | `UC-F3-10` `UC-F3-11`                                                                               |   2   |
 | `FM-04`     | `UC-F3-05` `UC-F3-08` `UC-F6-04` `UC-F6-05` `UC-F6-06` `UC-F6-07` `UC-F6-08` `UC-F6-09` |   8   |
 | `FM-05`     | `UC-F2-09` `UC-F5-04` `UC-F7-04`                                                                  |   3   |
 | `FM-06`     | `UC-F5-06` `UC-F6-10`                                                                               |   2   |
 | `BM-01`     | `UC-F4-01`                                                                                            |   1   |
-| `BM-02`     | `UC-F1-10` `UC-F4-02` `UC-F4-03` `UC-F4-04` `UC-F4-05` `UC-F4-06` `UC-F6-01` `UC-F6-09` |   8   |
+| `BM-02`     | `UC-F1-10` `UC-F1-12` `UC-F4-02` `UC-F4-03` `UC-F4-04` `UC-F4-05` `UC-F4-06` `UC-F6-01` `UC-F6-09` |   9   |
 | `BM-03`     | `UC-F1-05` `UC-F4-07` `UC-F4-08` `UC-F4-09` `UC-F6-06`                                        |   5   |
 | `BM-04`     | `UC-F4-10` `UC-F4-11`                                                                               |   2   |
 | `BM-05`     | `UC-F4-12`                                                                                            |   1   |
@@ -233,7 +238,7 @@ một use case tương ứng.
 
 ## 11. Use Case Diagram tổng
 
-Bản chuẩn UML đầy đủ 73 use case: **[diagrams/use-case-diagram.puml](diagrams/use-case-diagram.puml)**
+Bản chuẩn UML đầy đủ 75 use case: **[diagrams/use-case-diagram.puml](diagrams/use-case-diagram.puml)**
 — mở bằng extension *PlantUML* trong VS Code (`Alt+D` để xem trước; `Ctrl+Shift+P` → *PlantUML: Export
 Current Diagram* để xuất PNG/SVG nộp báo cáo).
 
@@ -254,6 +259,7 @@ flowchart LR
             U2["Tạo Reservation"]
             U3["Thanh toán Deposit"]
             U4["Phân bổ ô kho"]
+            U4b["Hủy Reservation<br/>phía cơ sở"]
         end
         subgraph G2["Flow 2 · Check-in and Handover"]
             U5["Kiểm tra Reservation"]
@@ -264,6 +270,7 @@ flowchart LR
             U8["Quản lý ô kho đang thuê"]
             U9["Đăng ký Return"]
             U10["Xác nhận hiện trạng<br/>và hoàn Deposit"]
+            U10b["Thanh toán phụ phí"]
             U11["Theo dõi hợp đồng"]
         end
         subgraph G4["Flow 4 · Rules, Fees and Revenue"]
@@ -301,6 +308,7 @@ flowchart LR
     SC --- U7
     SC --- U8
     SC --- U9
+    SC --- U10b
     SC --- U21
     SC --- U24
 
@@ -311,6 +319,7 @@ flowchart LR
     FS --- U25
 
     FM --- U4
+    FM --- U4b
     FM --- U11
     FM --- U16
     FM --- U17

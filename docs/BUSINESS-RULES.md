@@ -4,7 +4,8 @@
 > **Cancellation**, **Return** và **Overdue**.
 >
 > Nhiệm vụ **T1.5** · Giai đoạn 1 · [PLAN.md](PLAN.md).
-> Tài liệu liên quan: [TOPIC.md](TOPIC.md) · [USE-CASES.md](USE-CASES.md) · [USER-STORIES.md](USER-STORIES.md)
+> Tài liệu liên quan: [TOPIC.md](TOPIC.md) · [USE-CASES.md](USE-CASES.md) ·
+> [USER-STORIES.md](USER-STORIES.md) · [USER-STORIES-BM-SA.md](USER-STORIES-BM-SA.md)
 
 ---
 
@@ -92,7 +93,7 @@ kho sớm, xử lý theo § 7.
 | `BR-CAN-02` | Hủy **trong vòng** `cancel.full_refund_hours` trước ngày bắt đầu thuê → hoàn `cancel.late_refund_rate` (50%) Deposit và **100%** phí thuê |
 | `BR-CAN-03` | Reservation *Expired* do quá hạn thanh toán (`BR-DEP-03`) không phát sinh hoàn tiền vì chưa thu tiền |
 | `BR-CAN-04` | Khách không đến check-in trong `checkin.grace_days` kể từ ngày bắt đầu thuê → Reservation chuyển **No-show**: hoàn `cancel.no_show_refund_rate` (0%) Deposit, hoàn **100%** phí thuê sau khi trừ tiền thuê của những ngày đã giữ ô kho, ô kho trở lại *Available* |
-| `BR-CAN-05` | Cơ sở hủy vì lý do từ phía nhà cung cấp (ô kho hư hỏng, cơ sở đóng cửa) → hoàn **100%** mọi khoản, kèm ưu tiên bố trí ô kho tương đương. Không áp dụng tỷ lệ phạt nào |
+| `BR-CAN-05` | Cơ sở hủy vì lý do từ phía nhà cung cấp (ô kho hư hỏng, cơ sở đóng cửa) → hoàn **100%** mọi khoản, kèm ưu tiên bố trí ô kho tương đương. Không áp dụng tỷ lệ phạt nào (`UC-F1-12`) |
 | `BR-CAN-06` | Tiền hoàn được chuyển về phương thức thanh toán gốc trong `return.refund_working_days` ngày làm việc kể từ khi hủy được ghi nhận |
 | `BR-CAN-07` | Mỗi Reservation chỉ hủy được **một lần**; đã hủy thì không khôi phục, khách phải đặt lại từ đầu |
 
@@ -126,7 +127,7 @@ Ngày quá hạn ký hiệu **D+n**, đếm từ ngày liền sau ngày kết th
 | `BR-OVD-05` | Tại **D+10**, hệ thống khóa Access Code / vô hiệu Access Card, ô kho chuyển trạng thái *Overdue*. Khách **không** vào được ô kho cho tới khi thanh toán đủ (`UC-F6-07`) |
 | `BR-OVD-06` | Tại **D+30**, hệ thống gửi **thông báo chấm dứt hợp đồng** qua email và trong ứng dụng, nêu rõ hạn chót và hệ quả (`UC-F6-08`) |
 | `BR-OVD-07` | Tại **D+60**, hợp đồng bị **chấm dứt**. Tài sản trong ô kho được xử lý theo chính sách của Business Operations Manager; Deposit bị cấn trừ toàn bộ nợ phí thuê, phí quá hạn và chi phí xử lý (`UC-F6-09`) |
-| `BR-OVD-08` | Khách thanh toán đủ nợ ở bất kỳ thời điểm nào **trước D+60** → hợp đồng trở lại *Active* (nếu có gia hạn kèm theo) hoặc chuyển sang quy trình trả kho, Access Code được mở lại trong vòng 1 giờ |
+| `BR-OVD-08` | Khách thanh toán đủ nợ ở bất kỳ thời điểm nào **trước D+60** → hợp đồng trở lại *Active* (nếu có gia hạn kèm theo) hoặc chuyển sang quy trình trả kho, Access Code được mở lại trong vòng 1 giờ (`UC-F3-13`, `UC-F6-03`) |
 | `BR-OVD-09` | Khách đang có hợp đồng *Overdue* **không được** tạo Reservation mới tại bất kỳ cơ sở nào trong hệ thống |
 | `BR-OVD-10` | Miễn hoặc giảm phí quá hạn phải do Facility Manager đề xuất và Business Operations Manager duyệt theo `BM-03`; mọi lần miễn giảm đều ghi nhật ký kèm lý do |
 
@@ -150,7 +151,7 @@ Ngày quá hạn ký hiệu **D+n**, đếm từ ngày liền sau ngày kết th
 | `BR-RET-01` | Khách phải đăng ký trả kho trước ít nhất `return.notice_days` (7 ngày) so với ngày muốn trả, kèm chọn khung giờ hẹn để Facility Staff kiểm tra (`UC-F3-05`) |
 | `BR-RET-02` | Trả kho chỉ hoàn tất khi Facility Staff đã kiểm tra và xác nhận hiện trạng ô kho tại chỗ (`FS-04`, `UC-F3-06`). Khách dọn hết đồ nhưng chưa có xác nhận thì hợp đồng **vẫn** hiệu lực và vẫn tính phí |
 | `BR-RET-03` | Ô kho được coi là **nguyên trạng** khi: trống hoàn toàn, không hư hỏng kết cấu, cửa và khóa còn nguyên, sạch ở mức sử dụng bình thường |
-| `BR-RET-04` | Quyết toán khi trả kho: **Số tiền hoàn = Deposit − chi phí khắc phục hư hỏng − phí quá hạn còn nợ − phụ phí chưa thanh toán**. Nếu kết quả **âm**, khách phải nộp bổ sung phần thiếu trước khi hợp đồng đóng |
+| `BR-RET-04` | Quyết toán khi trả kho: **Số tiền hoàn = Deposit − chi phí khắc phục hư hỏng − phí quá hạn còn nợ − phụ phí chưa thanh toán**. Nếu kết quả **âm**, khách phải nộp bổ sung phần thiếu trước khi hợp đồng đóng (`UC-F3-13`) |
 | `BR-RET-05` | Tiền hoàn được chuyển về phương thức thanh toán gốc trong `return.refund_working_days` (7 ngày làm việc) kể từ ngày Facility Staff xác nhận |
 | `BR-RET-06` | **Trả sớm không được hoàn** tiền thuê của phần thời hạn chưa dùng (`return.early_refund_rate` = 0%). Quy tắc này phải hiển thị rõ trước khi khách xác nhận đặt chỗ |
 | `BR-RET-07` | Khách không trả kho đúng ngày kết thúc hợp đồng thì chuyển sang xử lý quá hạn theo § 6, kể cả khi đã đăng ký trả kho trước đó |
@@ -253,7 +254,7 @@ bắt đầu 01/10/2026, kết thúc 31/12/2026.
 | Nhóm quy tắc | Use case chịu ảnh hưởng | Use case cấu hình |
 |--------------|-------------------------|-------------------|
 | **Deposit** `BR-DEP-*` | `UC-F1-05` `UC-F1-06` `UC-F1-07` `UC-F1-11` `UC-F3-08` | `UC-F4-02` |
-| **Cancellation** `BR-CAN-*` | `UC-F1-10` `UC-F2-08` | `UC-F4-04` |
+| **Cancellation** `BR-CAN-*` | `UC-F1-10` `UC-F1-12` `UC-F2-08` | `UC-F4-04` |
 | **Renewal** `BR-REN-*` | `UC-F6-01` `UC-F6-02` `UC-F6-03` `UC-F6-04` | `UC-F4-03` `UC-F4-07` |
 | **Overdue** `BR-OVD-*` | `UC-F6-05` `UC-F6-06` `UC-F6-07` `UC-F6-08` `UC-F6-09` `UC-F6-10` | `UC-F4-06` `UC-F4-08` |
 | **Return** `BR-RET-*` | `UC-F3-05` `UC-F3-06` `UC-F3-07` `UC-F3-08` `UC-F3-09` | `UC-F4-05` |

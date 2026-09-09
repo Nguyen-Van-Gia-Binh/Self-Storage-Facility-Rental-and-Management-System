@@ -63,10 +63,14 @@ UC_PUML=$(grep -c '^    usecase "UC-' docs/diagrams/use-case-diagram.puml)
 ST=$(grep -c '^### `US-SC-' docs/USER-STORIES.md)
 ST_TBL=$(grep -c '^| `US-SC-' docs/USER-STORIES.md)
 AC=$(grep -c '^- \*\*AC-' docs/USER-STORIES.md)
+ST2=$(grep -c '^### `US-' docs/USER-STORIES-BM-SA.md)
+ST2_TBL=$(grep -c '^| `US-' docs/USER-STORIES-BM-SA.md)
+AC2=$(grep -c '^- \*\*AC-' docs/USER-STORIES-BM-SA.md)
 : > "$T/n"
 [ "$UC_TBL" = "$UC_PUML" ] || echo "use case: bang=$UC_TBL puml=$UC_PUML" >> "$T/n"
-[ "$ST" = "$ST_TBL" ] || echo "user story: so muc=$ST so dong bang tong hop=$ST_TBL" >> "$T/n"
-report "$T/n" "use case ($UC_TBL) va user story ($ST story / $AC AC) khop giua cac bang"
+[ "$ST" = "$ST_TBL" ] || echo "user story SC: so muc=$ST so dong bang tong hop=$ST_TBL" >> "$T/n"
+[ "$ST2" = "$ST2_TBL" ] || echo "user story BM/SA: so muc=$ST2 so dong bang tong hop=$ST2_TBL" >> "$T/n"
+report "$T/n" "use case ($UC_TBL), user story SC ($ST / $AC AC) va BM/SA ($ST2 / $AC2 AC) khop giua cac bang"
 
 echo "== 7. Ma task khong co trong PLAN.md =="
 grep -o '^| T[0-9]\+\.[0-9]\+' docs/PLAN.md | tr -d '| ' | sort -u > "$T/tk_def"
@@ -93,7 +97,18 @@ TOTAL_LINE=$(grep '^\*\*Tổng:\*\*' docs/USER-STORIES.md)
 echo "$TOTAL_LINE" | grep -q "$ST story" || echo "USER-STORIES § 8 dong Tong: so story khong khop ($ST)" >> "$T/c"
 echo "$TOTAL_LINE" | grep -q "$AC acceptance criteria" || echo "USER-STORIES § 8 dong Tong: so AC khong khop ($AC)" >> "$T/c"
 AC_SUM=$(awk '/^## 8\./,0' docs/USER-STORIES.md | grep '^| `US-SC-' | awk -F'|' '{gsub(/ /,"",$8); s+=$8} END {print s+0}')
-[ "$AC_SUM" = "$AC" ] || echo "Cot 'So AC' trong bang tong hop cong lai = $AC_SUM, dem thuc te = $AC" >> "$T/c"
+[ "$AC_SUM" = "$AC" ] || echo "Cot 'So AC' USER-STORIES cong lai = $AC_SUM, dem thuc te = $AC" >> "$T/c"
+for n in $(grep -o '\*\*[0-9]\+ user story\*\*' docs/USER-STORIES-BM-SA.md | grep -o '[0-9]\+'); do
+  [ "$n" = "$ST2" ] || echo "USER-STORIES-BM-SA noi $n user story, dem duoc $ST2" >> "$T/c"
+done
+for n in $(grep -o '\*\*[0-9]\+ acceptance criteria\*\*' docs/USER-STORIES-BM-SA.md | grep -o '[0-9]\+'); do
+  [ "$n" = "$AC2" ] || echo "USER-STORIES-BM-SA noi $n acceptance criteria, dem duoc $AC2" >> "$T/c"
+done
+TOTAL_LINE2=$(grep '^\*\*Tổng:\*\*' docs/USER-STORIES-BM-SA.md)
+echo "$TOTAL_LINE2" | grep -q "$ST2 story" || echo "USER-STORIES-BM-SA dong Tong: so story khong khop ($ST2)" >> "$T/c"
+echo "$TOTAL_LINE2" | grep -q "$AC2 acceptance criteria" || echo "USER-STORIES-BM-SA dong Tong: so AC khong khop ($AC2)" >> "$T/c"
+AC_SUM2=$(awk '/^## 11\./,0' docs/USER-STORIES-BM-SA.md | grep '^| `US-' | awk -F'|' '{gsub(/ /,"",$8); s+=$8} END {print s+0}')
+[ "$AC_SUM2" = "$AC2" ] || echo "Cot 'So AC' USER-STORIES-BM-SA cong lai = $AC_SUM2, dem thuc te = $AC2" >> "$T/c"
 report "$T/c" "con so trong van ban khop voi so dem duoc"
 
 rm -rf "$T"
