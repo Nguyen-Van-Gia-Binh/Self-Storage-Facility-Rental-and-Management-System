@@ -116,7 +116,7 @@ một mã UC.
 >
 > Script xanh · 7 dòng "Nội dung dự kiến" tick hết · ma trận § 6 đã đối chiếu · 3 UC đáng nghi đã có
 > kết luận giữ hay gộp.
-> **Không cần đọc lại cả 75 use case lần hai.**
+> **Không cần đọc lại cả 78 use case lần hai.**
 
 ---
 
@@ -140,21 +140,21 @@ khi render không.
 
 - [X] Đủ **6 actor**: 5 actor của đề bài + `System`
 - [X] Đủ **8 package**: Flow 1–7 và nhóm Nền tảng
-- [X] Đủ **75 oval** use case
+- [X] Đủ **78 oval** use case
 
 ### Lớp 3 — phán đoán
 
 Rà 27 quan hệ `include` / `extend` ở cuối file. Quy tắc chiều mũi tên: `include` đi từ use case
 **gọi** sang use case **bị gọi**; `extend` đi từ use case **mở rộng** sang use case **gốc**.
 
-- [ ] `UCF109 ..> UCF107` — "Nhận lịch hẹn check-in" include "Thanh toán" → có ngược chiều không?
-- [ ] `UCF107 ..> UCF108` — "Thanh toán" include "Phân bổ ô kho" → có nên là quan hệ include không?
+- [X] Đã bỏ `UCF109 ..> UCF107`: xem / nhận lại lịch hẹn không gọi thanh toán lần nữa (`ISS-05`)
+- [X] Giữ `UCF107 ..> UCF108`: thanh toán thành công gọi phân bổ Storage Unit theo `BR-AVL-04`
 - [ ] Không có oval nào mồ côi — mọi use case đều nối với ít nhất một actor, hoặc với một use case
   khác qua include/extend
 
 > ### ⛔ ĐIỂM DỪNG T1.6
 >
-> Xuất được PNG không lỗi · đếm đủ 6 / 8 / 75 · 2 quan hệ đáng ngờ đã có kết luận.
+> Xuất được PNG không lỗi · đếm đủ 6 / 8 / 78 · 2 quan hệ đáng ngờ đã có kết luận.
 > **Không cần rà hết 27 quan hệ nếu 2 quan hệ trên đúng và ảnh đọc được.**
 
 ---
@@ -172,14 +172,44 @@ quy tắc thì cái nào cũng thấy hợp lý.
 Cách duy nhất hiệu quả. **Tự tính trước, rồi mới mở tài liệu đối chiếu.** Dùng Unit Type
 800.000 đ/tháng, thuê 3 tháng. Mỗi kịch bản phải ra **một con số** và **một chuỗi trạng thái**.
 
-- [ ] **KB1** — Đặt rồi không thanh toán trong 48h → Reservation thành gì, ô kho thành gì, có mất tiền không
+- [ ] **KB1** — Đặt rồi không thanh toán trong 48h → Reservation thành gì, capacity được giải phóng
+  thế nào, Storage Unit có đổi trạng thái không, có mất tiền không
 - [ ] **KB2** — Hủy trước 48h so với hủy trong 48h → hoàn bao nhiêu, khác nhau chỗ nào
 - [ ] **KB3** — No-show hết 3 ngày → hoàn bao nhiêu, ai giữ tiền
-- [ ] **KB4** — Thuê xong, trả đúng hạn, nguyên trạng → hoàn bao nhiêu, sau bao lâu
-- [ ] **KB5** — Quá hạn 7 / 20 / 35 / 61 ngày → 4 con số phí, 4 trạng thái truy cập
-- [ ] **KB6** — Gia hạn khi đang quá hạn 7 ngày → tổng phải trả, Access Code mở lại khi nào
-- [ ] **KB7** — Trả kho, hư hỏng vượt tiền cọc → ai nợ ai, hợp đồng đóng được không
-- [ ] **KB8** — Trả kho sớm 1 tháng → có hoàn phần chưa dùng không
+- [X] **KB4** — Trả đúng hạn, nguyên trạng → hoàn **800.000 đ** Deposit trong 7 ngày làm việc;
+  Contract *Closed*, unit *Cleaning* → *Available*, Access *Revoked*
+- [X] **KB5** — Quá hạn 7 / 20 / 35 / 61 ngày → phí lần lượt **160.000 / 400.000 / 400.000 /
+  400.000 đ**; Access lần lượt *Active / Suspended / Suspended / Revoked*; ngày 61 Contract đã *Terminated*
+- [X] **KB6** — Overdue 7 ngày, Renewal 2 tháng giá mới 850.000 đ → trả **1.860.000 đ**; Contract
+  *Active* và Access mở lại trong 1 giờ
+- [X] **KB7** — Return với hư hỏng **1.000.000 đ**, không có nợ khác → Deposit 800.000 đ bị cấn hết,
+  khách còn nợ **200.000 đ** và Contract chưa đóng trước khi nộp đủ
+- [X] **KB8** — Return sớm 1 tháng, nguyên trạng → hoàn tiền thuê chưa dùng **0 đ**, hoàn Deposit
+  **800.000 đ**
+- [X] **KB9** — Hai khách đồng thời tranh capacity slot cuối → đúng một Reservation *Pending Payment*;
+  yêu cầu còn lại bị từ chối, không thu tiền và không overbook
+- [X] **KB10** — Payment **3.200.000 đ** thành công nhưng phân bổ unit thất bại → hoàn đủ
+  **3.200.000 đ**, Reservation không *Confirmed* và không tạo Contract
+- [X] **KB11** — Giá/policy đổi trong 48 giờ giữ capacity → Reservation cũ dùng snapshot lúc tạo;
+  với dữ liệu mẫu vẫn thu **3.200.000 đ**
+- [X] **KB12** — Hủy vào cuối ngày thuê thứ hai trước Check-in → trừ **54.000 đ** tiền thuê,
+  hoàn **2.346.000 đ**, hoàn Deposit **0 đ**; Reservation *Cancelled*, unit *Available*
+- [X] **KB13** — Contract tới D+10 → phí **280.000 đ**, Contract *Overdue*, unit *Occupied*,
+  Access *Suspended*
+- [X] **KB14** — Hủy đủ điều kiện hoàn **3.200.000 đ** nhưng refund thất bại → Reservation vẫn
+  *Cancelled*, giao dịch hoàn *Refund Failed* để retry
+- [X] **KB15** — Renewal xung đột commitment tạo trước → commitment cũ được ưu tiên, Renewal bị từ
+  chối và thu **0 đ**
+- [X] **KB16** — Yêu cầu Return trước hạn 3 ngày → hẹn sớm nhất sau 7 ngày, tức D+4; tại lịch hẹn
+  Contract *Overdue*, Access còn dùng được và phí là **40.000 đ**
+- [X] **KB17** — Contract tới D+60, không có chi phí khác → phí **400.000 đ**, còn **400.000 đ**
+  Deposit sau cấn trừ; Contract *Terminated*, Access *Revoked*, unit còn *Occupied* tới khi Facility
+  Manager lập biên bản, chuyển tài sản an toàn rồi đưa unit sang *Cleaning*
+- [X] **KB18** — Facility Manager đề xuất giảm **100.000 đ** từ phí 400.000 đ → Business Operations
+  Manager duyệt còn **300.000 đ**; ledger có *Adjusted* và audit log lưu người đề xuất, người duyệt, lý do
+- [X] **KB19** — Thanh toán Reservation bắt đầu sau khi Contract Occupied hiện tại kết thúc →
+  Reservation *Confirmed* gắn `unit_id`, unit **vẫn** *Occupied*; sau Return/Cleaning unit mới
+  *Reserved* cho claim đó, không nhảy *Available*
 
 > **Quy tắc phát hiện lỗ hổng:** kịch bản nào tính ra *"tùy"*, *"không rõ"*, hoặc ra **hai** con số
 > khác nhau tùy cách đọc → quy tắc đang thiếu hoặc mâu thuẫn. Ghi vào `OPEN-ISSUES.md`.
@@ -200,7 +230,7 @@ Cách duy nhất hiệu quả. **Tự tính trước, rồi mới mở tài li�
 
 > ### ⛔ ĐIỂM DỪNG T1.5
 >
-> 8 kịch bản đều ra **một** con số duy nhất · trục thời gian không mâu thuẫn · mỗi nhóm BR đã liệt kê
+> 19 kịch bản đều ra **một** kết quả duy nhất · trục thời gian không mâu thuẫn · mỗi nhóm BR đã liệt kê
 > trường dữ liệu cần · **và cả nhóm đã duyệt bảng § 2**.
 > Điều kiện cuối là bắt buộc: `PLAN.md § 7` quy định mọi thay đổi sau đó phải qua họp nhóm, nên chưa
 > họp thì T1.5 chưa đóng dù bạn thấy nó hoàn hảo.
@@ -213,7 +243,7 @@ Cách duy nhất hiệu quả. **Tự tính trước, rồi mới mở tài li�
 
 ### Lớp 3 — phép kiểm chính: "viết được test case thủ công không?"
 
-Đừng đọc tuần tự cả 108 acceptance criteria — đến cái thứ 30 sẽ mệt và duyệt bừa phần còn lại. Thay
+Đừng đọc tuần tự cả 111 acceptance criteria — đến cái thứ 30 sẽ mệt và duyệt bừa phần còn lại. Thay
 vào đó **lấy mẫu 10 AC ngẫu nhiên**, với mỗi cái thử viết một test case thủ công 3 bước: *chuẩn bị dữ
 liệu → thao tác → kết quả quan sát được*. Viết không nổi nghĩa là AC mơ hồ.
 

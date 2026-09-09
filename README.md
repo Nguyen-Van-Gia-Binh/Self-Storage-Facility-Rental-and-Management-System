@@ -30,7 +30,7 @@ Chi tiết chức năng của từng tác nhân: [docs/TOPIC.md § 3](docs/TOPIC
 
 | # | Luồng | Mô tả ngắn |
 |---|-------|-----------|
-| 1 | **Storage Unit Reservation** | Đặt chỗ ô kho: chọn cơ sở, loại ô kho, ngày bắt đầu, thời hạn thuê và thanh toán cọc |
+| 1 | **Storage Unit Reservation** | Chọn Facility, Unit Type và khoảng thuê; giữ capacity, trả trước phí thuê N tháng cùng Deposit rồi phân bổ Storage Unit |
 | 2 | **Storage Check-in and Handover** | Check-in theo lịch hẹn và bàn giao ô kho kèm khóa / thẻ / mã truy cập |
 | 3 | **Rented Storage Unit Management** | Quản lý các ô kho đang thuê, theo dõi hợp đồng và quy trình trả kho |
 | 4 | **Business Rules, Fee Management & Revenue Monitoring** | Chính sách thuê, khung giá, phụ phí và giám sát doanh thu toàn hệ thống |
@@ -40,7 +40,7 @@ Chi tiết chức năng của từng tác nhân: [docs/TOPIC.md § 3](docs/TOPIC
 
 | # | Luồng | Mô tả ngắn |
 |---|-------|-----------|
-| 6 | **Storage Renewal and Overdue Handling** | Gia hạn thuê, thu phí gia hạn và xử lý các trường hợp quá hạn |
+| 6 | **Storage Renewal and Overdue Handling** | Renewal tự động sau Payment; scheduled job Overdue tại D+1, D+4, D+10, D+30 và D+60 (`UC-F6-11`); FM xử lý tài sản |
 | 7 | **Support Request and Issue Handling** | Tiếp nhận yêu cầu hỗ trợ và xử lý sự cố (khóa, mã truy cập, hư hỏng, thanh toán) |
 
 Chi tiết từng luồng: [docs/TOPIC.md § 4–5](docs/TOPIC.md#4-các-luồng-nghiệp-vụ-chính-flow-15)
@@ -58,7 +58,7 @@ Chi tiết từng luồng: [docs/TOPIC.md § 4–5](docs/TOPIC.md#4-các-luồng
     ├── PLAN.md            # Kế hoạch triển khai: giai đoạn, nhiệm vụ, phân công, rủi ro
     ├── USE-CASES.md       # Phân rã Flow 1–7 thành 73 use case
     ├── USER-STORIES.md    # User story và acceptance criteria cho Storage Customer
-    ├── BUSINESS-RULES.md  # Deposit, Cancellation, Renewal, Overdue, Return
+    ├── BUSINESS-RULES.md  # Reservation, Availability, Pricing, Payment và vòng đời thuê
     ├── CONVENTIONS.md     # Coding convention và quy ước REST API
     ├── REVIEW-CHECKLIST.md # Quy trình tự review tài liệu, kèm điều kiện dừng
     ├── OPEN-ISSUES.md     # Sổ vấn đề mở đang chờ quyết
@@ -80,7 +80,7 @@ Dự án chạy trong **10 tuần (08/09/2026 – 16/11/2026)**, chia thành **5
 |----|------|-----------|-----------|---------|
 | **P1** | 1–2 | 08/09 – 21/09 | Phân tích yêu cầu, business rules, ERD, activity diagram, wireframe, khởi tạo dự án | #1 — 21/09 |
 | **P2** | 3–4 | 22/09 – 05/10 | Nền tảng: schema, Auth và phân quyền, quản lý Facility / Unit Type / Storage Unit, khung giá | #2 — 05/10 |
-| **P3** | 5–6 | 06/10 – 19/10 | Flow 1 + Flow 2: Reservation, thanh toán Deposit, Check-in / Handover | #3 — 19/10 |
+| **P3** | 5–6 | 06/10 – 19/10 | Flow 1 + Flow 2: giữ capacity, trả phí N tháng + Deposit, phân bổ unit, Check-in / Handover | #3 — 19/10 |
 | **P4** | 7–8 | 20/10 – 02/11 | Flow 3 + Flow 6 + Flow 7: quản lý ô kho đang thuê, Return, Renewal, Overdue, Support Request | #4 — 02/11 |
 | **P5** | 9–10 | 03/11 – 16/11 | Flow 4: báo cáo và doanh thu, kiểm thử, deploy, tài liệu và bảo vệ | #5 — 16/11 |
 
@@ -110,7 +110,8 @@ Chi tiết nhiệm vụ từng giai đoạn: [docs/PLAN.md](docs/PLAN.md) · B�
 | Business rules | ✅ Hoàn thành — [docs/BUSINESS-RULES.md](docs/BUSINESS-RULES.md) |
 | Coding convention & Git workflow | ✅ Hoàn thành — [docs/CONVENTIONS.md](docs/CONVENTIONS.md) · [CONTRIBUTING.md](CONTRIBUTING.md) |
 | User story — Storage Customer | ✅ Hoàn thành — [docs/USER-STORIES.md](docs/USER-STORIES.md) |
-| User story — các actor còn lại | 🔄 Đang thực hiện — nhiệm vụ T1.3, T1.4 |
+| User story — Facility Staff và Facility Manager | ✅ Hoàn thành — [docs/USER-STORIES-FS-FM.md](docs/USER-STORIES-FS-FM.md) |
+| User story — Business Operations Manager và System Administrator | ✅ Hoàn thành — [docs/USER-STORIES-BM-SA.md](docs/USER-STORIES-BM-SA.md) |
 | Activity Diagram 7 flow | 🔄 Đang thực hiện — nhiệm vụ T1.7, T1.8, T1.9 |
 | Thiết kế cơ sở dữ liệu (ERD) | 🔄 Đang thực hiện — nhiệm vụ T1.10, T1.11 |
 | Thiết kế giao diện (wireframe / UI) | 🔄 Đang thực hiện — nhiệm vụ T1.13, T1.14, T1.15 |
@@ -147,7 +148,7 @@ Còn lại trước Báo cáo #1:
 2. Vẽ Activity Diagram cho cả 7 flow (T1.7, T1.8, T1.9).
 3. Thiết kế ERD và data dictionary: Facility, Storage Unit, Unit Type, Reservation, Contract, Payment,
    Support Request, User & Role (T1.10, T1.11) — bám theo vòng đời trạng thái đã chốt ở
-   [docs/BUSINESS-RULES.md § 8](docs/BUSINESS-RULES.md#8-vòng-đời-trạng-thái).
+   [docs/BUSINESS-RULES.md § 13](docs/BUSINESS-RULES.md#13-vòng-đời-trạng-thái).
 4. Thiết kế sơ đồ phân quyền theo vai trò và theo cơ sở (T1.12).
 5. Wireframe / mockup cho 5 portal giao diện (T1.13, T1.14, T1.15).
 6. Khởi tạo khung Spring Boot + SQL Server + Flyway (T1.16) và React (T1.17) theo cấu trúc thư mục ở
@@ -168,8 +169,8 @@ Danh sách nhiệm vụ đầy đủ kèm người phụ trách và hạn: [docs
 **Phân tích yêu cầu**
 
 - [docs/USE-CASES.md](docs/USE-CASES.md) — Phân rã Flow 1–7 thành 73 use case, kèm bản đồ phủ 27 mã yêu cầu.
-- [docs/USER-STORIES.md](docs/USER-STORIES.md) — 22 user story và 107 acceptance criteria cho Storage Customer.
-- [docs/BUSINESS-RULES.md](docs/BUSINESS-RULES.md) — Quy tắc Deposit, Cancellation, Renewal, Overdue, Return kèm bảng tham số cấu hình.
+- [docs/USER-STORIES.md](docs/USER-STORIES.md) — 22 user story và 111 acceptance criteria cho Storage Customer.
+- [docs/BUSINESS-RULES.md](docs/BUSINESS-RULES.md) — Baseline Reservation, Availability, Pricing, Payment, Deposit, Cancellation, Renewal, Overdue và Return.
 - [docs/diagrams/use-case-diagram.puml](docs/diagrams/use-case-diagram.puml) — Use Case Diagram tổng (PlantUML).
 
 **Quy ước kỹ thuật**

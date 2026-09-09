@@ -48,7 +48,7 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 | ----- | --------------------------- | ----------------------------------------------------------------------------------------------------- |
 | SC-01 | Xem thông tin dịch vụ    | Xem danh sách cơ sở lưu trữ, loại ô kho, kích thước, giá thuê và các ô kho còn trống |
 | SC-02 | Đặt chỗ ô kho           | Đặt chỗ bằng cách chọn cơ sở, loại ô kho, ngày bắt đầu và thời hạn thuê             |
-| SC-03 | Thanh toán                 | Thanh toán tiền cọc, phí thuê, phí gia hạn hoặc các khoản phụ thu                          |
+| SC-03 | Thanh toán                 | Thanh toán Deposit cùng toàn bộ phí thuê N tháng khi đặt chỗ, phí gia hạn hoặc các khoản phụ thu |
 | SC-04 | Check-in nhận kho          | Đến nhận ô kho được cấp theo lịch hẹn đã đặt                                            |
 | SC-05 | Quản lý ô kho đã thuê | Theo dõi và quản lý một hoặc nhiều ô kho đang thuê                                          |
 | SC-06 | Gửi yêu cầu hỗ trợ     | Báo sự cố liên quan tới ô kho, khóa, mã truy cập, thanh toán hoặc tài sản lưu trữ      |
@@ -69,7 +69,7 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 | Mã   | Chức năng                               | Mô tả                                                                                                   |
 | ----- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | FM-01 | Quản lý ô kho tại cơ sở phụ trách | Quản lý loại ô kho, kích thước, vị trí, giá thuê và trạng thái ô kho                       |
-| FM-02 | Phân bổ ô kho cho khách               | Gán ô kho phù hợp dựa trên loại ô kho, thời hạn thuê và tình trạng còn trống              |
+| FM-02 | Phân bổ ô kho cho khách               | Giữ capacity theo Unit Type khi chờ thanh toán và gán Storage Unit cụ thể sau khi thanh toán thành công |
 | FM-03 | Theo dõi khách và hợp đồng          | Giám sát khách đang thuê, hợp đồng thuê, thời hạn thuê và tình trạng thanh toán           |
 | FM-04 | Quản lý quy trình vận hành thuê     | Quản lý bàn giao, trả kho, gia hạn và xử lý quá hạn tại cơ sở                                |
 | FM-05 | Phân công nhân viên                   | Phân công Facility Staff hỗ trợ bàn giao, kiểm tra ô kho hoặc xử lý sự cố                     |
@@ -108,8 +108,9 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 - **Tác nhân chính:** Storage Customer
 - **Tác nhân liên quan:** Facility Manager
 - **Phạm vi liên quan:** `SC-01`, `SC-02`, `SC-03`, `FM-02`
-- **Nội dung dự kiến:** Khách xem cơ sở / loại ô kho / giá thuê → chọn cơ sở, loại ô kho, ngày bắt đầu
-  và thời hạn thuê → tạo đặt chỗ → thanh toán tiền cọc và phí thuê → nhận lịch hẹn check-in.
+- **Nội dung dự kiến:** Khách xem Facility / Unit Type / giá thuê → chọn ngày bắt đầu và thời hạn
+  thuê → hệ thống giữ một capacity slot trong lúc chờ thanh toán → khách trả trước toàn bộ phí thuê
+  N tháng cùng Deposit → hệ thống phân bổ Storage Unit cụ thể và gửi lịch hẹn Check-in.
 
 ### Flow 2 — Storage Check-in and Handover Flow
 
@@ -119,7 +120,8 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 - **Tác nhân liên quan:** Storage Customer, Facility Manager
 - **Phạm vi liên quan:** `SC-04`, `FS-01`, `FS-02`, `FS-03`, `FM-02`, `FM-05`
 - **Nội dung dự kiến:** Khách đến theo lịch hẹn → nhân viên kiểm tra đặt chỗ → bàn giao ô kho kèm
-  khóa / thẻ / mã truy cập → cập nhật trạng thái ô kho sang *đang sử dụng*.
+  khóa / thẻ / mã truy cập → Reservation hoàn tất, Contract chuyển *Active* và Storage Unit chuyển
+  *Occupied*.
 
 ### Flow 3 — Rented Storage Unit Management Flow
 
@@ -160,8 +162,9 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 
 - **Tác nhân chính:** Storage Customer, Facility Manager
 - **Phạm vi liên quan:** `SC-03`, `SC-05`, `FM-03`, `FM-04`, `FM-06`, `BM-02`, `BM-03`
-- **Nội dung dự kiến:** Nhắc hạn và gia hạn hợp đồng thuê → thanh toán phí gia hạn; nếu quá hạn thì
-  áp dụng phí quá hạn và quy trình xử lý quá hạn theo chính sách chung của hệ thống.
+- **Nội dung dự kiến:** Nhắc hạn → kiểm tra capacity commitment → thanh toán và tự động ghi nhận
+  Renewal; nếu Overdue thì scheduled job tính phí từ D+4, khóa Access tại D+10, gửi thông báo tại
+  D+30, chấm dứt Contract tại D+60 (`UC-F6-11`) và giao Facility Manager xử lý tài sản tồn.
 
 ### Flow 7 — Support Request and Issue Handling Flow
 
@@ -196,7 +199,7 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 | **Facility**                  | Cơ sở lưu trữ — một địa điểm vật lý chứa nhiều ô kho                       |
 | **Storage Unit**              | Ô kho — đơn vị cho thuê nhỏ nhất, có mã, vị trí và trạng thái riêng       |
 | **Unit Type / Unit Size**     | Loại và kích thước ô kho, quyết định khung giá thuê                            |
-| **Reservation**               | Đặt chỗ ô kho trước khi nhận bàn giao, gắn với lịch hẹn check-in              |
+| **Reservation**               | Đặt chỗ theo Facility, Unit Type và khoảng thuê; giữ capacity khi chờ thanh toán, sau thanh toán mới gắn Storage Unit cụ thể và lịch hẹn Check-in |
 | **Deposit**                   | Tiền cọc khách trả khi đặt chỗ                                                     |
 | **Check-in / Handover**       | Thủ tục khách đến nhận và được bàn giao ô kho kèm phương tiện truy cập   |
 | **Access Code / Access Card** | Mã hoặc thẻ truy cập cấp cho khách để vào khu vực kho                           |

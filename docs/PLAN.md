@@ -49,7 +49,7 @@
 |----|------|-----------|-----------|---------|
 | **P1** | 1–2 | 08/09 – 21/09 | Phân tích yêu cầu, business rules, ERD, activity diagram, wireframe, khởi tạo dự án | **#1** — 21/09 |
 | **P2** | 3–4 | 22/09 – 05/10 | Nền tảng: schema, Auth và phân quyền, quản lý Facility / Unit Type / Storage Unit, khung giá | **#2** — 05/10 |
-| **P3** | 5–6 | 06/10 – 19/10 | Flow 1 + Flow 2: Reservation, thanh toán Deposit, phân bổ ô kho, Check-in / Handover | **#3** — 19/10 |
+| **P3** | 5–6 | 06/10 – 19/10 | Flow 1 + Flow 2: giữ capacity, trả phí N tháng + Deposit, phân bổ Storage Unit, Check-in / Handover | **#3** — 19/10 |
 | **P4** | 7–8 | 20/10 – 02/11 | Flow 3 + Flow 6 + Flow 7: quản lý ô kho đang thuê, Return, Renewal, Overdue, Support Request | **#4** — 02/11 |
 | **P5** | 9–10 | 03/11 – 16/11 | Flow 4: báo cáo và doanh thu, activity log, kiểm thử, deploy, tài liệu và bảo vệ | **#5** — 16/11 |
 
@@ -70,7 +70,7 @@ xong khung dự án trống chạy được.
 | T1.2 | Viết user story cho Storage Customer (`SC-01`→`SC-06`) | Bình | 21/09 |
 | T1.3 | Viết user story cho Facility Staff và Facility Manager (`FS-*`, `FM-*`) | Tùng | 21/09 |
 | T1.4 | Viết user story cho Business Operations Manager và System Administrator (`BM-*`, `SA-*`) — [USER-STORIES-BM-SA.md](USER-STORIES-BM-SA.md) | Nhật | 21/09 |
-| T1.5 | Chốt business rules: Deposit, Renewal, Cancellation, Return, Overdue | Bình | 21/09 |
+| T1.5 | Chốt business rules: Reservation, Availability, Pricing, Payment, Deposit, Cancellation, Renewal, Overdue, Return | Bình | 21/09 |
 | T1.6 | Vẽ Use Case Diagram tổng cho 5 actor | Bình | 14/09 |
 | T1.7 | Vẽ Activity Diagram Flow 1 và Flow 2 | Tùng | 14/09 |
 | T1.8 | Vẽ Activity Diagram Flow 3 và Flow 6 | Nhật | 14/09 |
@@ -85,6 +85,15 @@ xong khung dự án trống chạy được.
 | T1.17 | Khởi tạo React app và design system cơ bản | Nhi | 14/09 |
 | T1.18 | Thống nhất coding convention, Git workflow và quy ước API | Bình | 14/09 |
 | T1.19 | Chuẩn bị slide và demo Báo cáo #1 | Bình | 21/09 |
+
+**Baseline đầu vào cho T1.3 (`FS-*`, `FM-*`):**
+
+- Flow 3 phải phủ `UC-F3-06`→`UC-F3-12`; Flow 6 phải phủ `UC-F6-04`→`UC-F6-12`.
+- Renewal tự ghi nhận sau Payment (`BR-REN-04`), không tạo bước Facility Manager duyệt thủ công;
+  Facility Manager theo dõi và xử lý ngoại lệ.
+- D+1, D+10, D+30 do scheduled job; D+60 job `UC-F6-11` chấm dứt Contract, Facility Manager xử lý
+  tài sản (`UC-F6-09`) và đề xuất miễn/giảm phí theo vụ (`BR-OVD-10`, `UC-F6-12`).
+- Return phải có nhánh báo muộn, Contract *Overdue* và hủy yêu cầu (`BR-RET-10`→`BR-RET-12`).
 
 **Đầu ra báo cáo #1:** SRS v1 (use case + user story + business rules), ERD và data dictionary, bộ
 Activity Diagram 7 flow, wireframe 5 portal, repo có skeleton Backend + Frontend chạy được, README
@@ -110,13 +119,13 @@ Storage Unit — điều kiện cần cho mọi flow nghiệp vụ phía sau.
 | T2.7 | API quản lý Facility (`BM-01`) | Tùng | 28/09 |
 | T2.8 | API quản lý Unit Type và Storage Unit (`FM-01`) | Tùng | 05/10 |
 | T2.9 | API khung giá thuê, phụ phí và phí quá hạn (`BM-03`) | Nhật | 05/10 |
-| T2.10 | API tra cứu cơ sở, loại ô kho, giá và ô kho trống (`SC-01`) | Tùng | 05/10 |
+| T2.10 | API tra cứu Facility, Unit Type, giá và Availability theo khoảng thuê (`SC-01`) | Tùng | 05/10 |
 | T2.11 | Frontend: layout chung, sidebar theo vai trò, route guard | Nhi | 28/09 |
 | T2.12 | Frontend: màn hình đăng nhập và đăng ký | Nhi | 28/09 |
 | T2.13 | Frontend: màn hình quản lý cơ sở và bảng giá | Nhi | 05/10 |
 | T2.14 | Frontend: màn hình quản lý ô kho của Facility Manager | Nhi | 05/10 |
 | T2.15 | Frontend: màn hình Admin quản lý tài khoản và phân quyền | Bình | 05/10 |
-| T2.16 | Frontend: trang công khai danh sách cơ sở và ô kho trống | Bình | 05/10 |
+| T2.16 | Frontend: trang công khai Facility, Unit Type và Availability | Bình | 05/10 |
 | T2.17 | Unit test tầng service cho module quản trị | Tùng | 05/10 |
 | T2.18 | Rà soát API contract và chuẩn bị Báo cáo #2 | Bình | 05/10 |
 
@@ -129,15 +138,15 @@ CSDL đã có schema và dữ liệu mẫu.
 
 **Phạm vi yêu cầu:** `SC-02`, `SC-03`, `SC-04`, `FS-01`, `FS-02`, `FS-03`, `FM-02`
 
-**Mục tiêu:** chạy được trọn vẹn chuỗi đặt chỗ → thanh toán cọc → đến cơ sở → nhận bàn giao ô kho.
-Đây là trục xương sống của hệ thống.
+**Mục tiêu:** chạy được trọn vẹn chuỗi đặt chỗ → giữ capacity → trả trước phí thuê N tháng cùng
+Deposit → phân bổ Storage Unit cụ thể → đến cơ sở → nhận bàn giao. Đây là trục xương sống của hệ thống.
 
 | Mã | Nhiệm vụ | Người phụ trách | Hạn |
 |----|----------|-----------------|-----|
 | T3.1 | API tạo Reservation (`SC-02`) | Tùng | 12/10 |
-| T3.2 | Thuật toán phân bổ ô kho và giữ chỗ (`FM-02`) | Tùng | 12/10 |
-| T3.3 | API thanh toán tiền cọc và phí thuê (`SC-03`) | Nhật | 12/10 |
-| T3.4 | Sinh Contract và lịch hẹn check-in | Tùng | 19/10 |
+| T3.2 | Thuật toán giữ capacity nguyên tử và phân bổ Storage Unit sau thanh toán (`FM-02`) | Tùng | 12/10 |
+| T3.3 | API thanh toán toàn bộ phí thuê N tháng cùng Deposit (`SC-03`) | Nhật | 12/10 |
+| T3.4 | Sinh Contract *Pending Check-in* và lịch hẹn Check-in sau thanh toán | Tùng | 19/10 |
 | T3.5 | API kiểm tra đặt chỗ khi khách đến (`FS-01`) | Nhật | 19/10 |
 | T3.6 | API bàn giao ô kho và cấp Access Code / Access Card (`FS-02`) | Nhật | 19/10 |
 | T3.7 | API cập nhật trạng thái ô kho theo vòng đời (`FS-03`) | Tùng | 19/10 |
@@ -149,8 +158,9 @@ CSDL đã có schema và dữ liệu mẫu.
 | T3.13 | Test tích hợp Flow 1 → Flow 2 | Nhật | 19/10 |
 | T3.14 | Viết test case thủ công và chuẩn bị Báo cáo #3 | Bình | 19/10 |
 
-**Đầu ra báo cáo #3:** demo end-to-end một khách đặt chỗ, trả cọc, đến nhận kho và được cấp mã truy
-cập; trạng thái ô kho chuyển sang *đang sử dụng*.
+**Đầu ra báo cáo #3:** demo end-to-end một khách giữ capacity, trả phí N tháng cùng Deposit, được
+phân bổ Storage Unit, đến nhận kho và được cấp mã truy cập; Reservation thành *Fulfilled*, Contract
+thành *Active* và Storage Unit thành *Occupied*.
 
 ### Giai đoạn 4 — Flow 3, 6 và 7: Vòng đời thuê, Gia hạn, Hỗ trợ
 
@@ -165,10 +175,10 @@ sự cố.
 |----|----------|-----------------|-----|
 | T4.1 | API danh sách ô kho đang thuê của khách (`SC-05`) | Tùng | 26/10 |
 | T4.2 | API theo dõi khách và hợp đồng thuê (`FM-03`) | Tùng | 26/10 |
-| T4.3 | Quy trình trả kho: kiểm tra hiện trạng và hoàn cọc (`FS-04`, `FM-04`) | Tùng | 02/11 |
+| T4.3 | Quy trình Return từ *Active* / *Overdue*: inspection, quyết toán và hoàn Deposit (`FS-04`, `FM-04`) | Tùng | 02/11 |
 | T4.4 | API cấu hình chính sách thuê (`BM-02`) | Nhật | 26/10 |
-| T4.5 | API gia hạn thuê và tính phí gia hạn | Nhật | 02/11 |
-| T4.6 | Scheduled job nhắc hạn và xử lý Overdue | Nhật | 02/11 |
+| T4.5 | API Renewal tự động sau Payment, kiểm tra capacity commitment và tính phí | Nhật | 02/11 |
+| T4.6 | Scheduled job nhắc hạn và xử lý Overdue tại D+1 / D+4 / D+10 / D+30 / D+60 (`UC-F6-11`) | Nhật | 02/11 |
 | T4.7 | API gửi và theo dõi Support Request (`SC-06`) | Nhật | 02/11 |
 | T4.8 | API phân công nhân viên và xử lý sự cố (`FM-05`, `FS-05`) | Tùng | 02/11 |
 | T4.9 | API công việc hằng ngày của Facility Staff (`FS-06`) | Tùng | 02/11 |
@@ -248,7 +258,7 @@ một giai đoạn cụ thể, không mã nào bị bỏ sót.
 | Rủi ro | Ảnh hưởng | Đối sách |
 |--------|-----------|----------|
 | Chỉ có 1 Frontend cho 5 portal giao diện | Cao — nghẽn từ P3 trở đi | Leader gánh trực tiếp phần Frontend ở mỗi giai đoạn (đã phân cụ thể trong § 4); ưu tiên dựng component dùng chung ở P2 để P3–P5 chỉ lắp ráp. |
-| Business rules về Deposit / Renewal / Overdue chốt muộn | Cao — phải sửa lại code P3, P4 | Bắt buộc chốt xong trong P1 (T1.5) và ghi vào tài liệu; mọi thay đổi sau đó phải qua họp nhóm. |
+| Business rules về Reservation / Payment / Deposit / Renewal / Overdue chốt muộn | Cao — phải sửa lại code P3, P4 | Bắt buộc chốt xong trong P1 (T1.5) và ghi vào tài liệu; mọi thay đổi sau đó phải qua họp nhóm. |
 | Tích hợp thanh toán thật quá tốn thời gian | Trung bình | Dùng payment gateway giả lập ở P3; chỉ tích hợp thật nếu còn thời gian ở P5. |
 | ERD thay đổi sau khi đã code | Trung bình | Dùng Flyway migration ngay từ P2 để mọi thay đổi schema đều có phiên bản và rollback được. |
 | Dồn kiểm thử và tài liệu vào cuối kỳ | Trung bình | Mỗi giai đoạn đều có nhiệm vụ test và cập nhật tài liệu riêng, không để dồn sang P5. |

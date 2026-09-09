@@ -163,7 +163,7 @@ Nhờ vậy khi chính sách đổi, tìm theo mã `BR-*` là ra hết chỗ c�
 ### 3.6. Validation
 
 - Ràng buộc cú pháp đặt trên DTO bằng Bean Validation: `@NotNull`, `@Min`, `@Future`, `@Email`.
-- Ràng buộc **nghiệp vụ** (ô kho còn trống, hợp đồng đang `Overdue`) đặt ở tầng service, không đặt
+- Ràng buộc **nghiệp vụ** (capacity theo khoảng thuê, hợp đồng đang `Overdue`) đặt ở tầng service, không đặt
   bằng annotation.
 - Mọi endpoint nhận body đều phải có `@Valid`.
 
@@ -325,7 +325,7 @@ giá trị mới sẽ không làm hỏng dữ liệu cũ.
 | `401 Unauthorized` | Chưa đăng nhập hoặc token hết hạn |
 | `403 Forbidden` | Đã đăng nhập nhưng không đủ quyền theo vai trò hoặc không thuộc cơ sở được gán |
 | `404 Not Found` | Tài nguyên không tồn tại |
-| `409 Conflict` | Vi phạm quy tắc nghiệp vụ về trạng thái — ô kho vừa bị người khác đặt, hợp đồng đang `Overdue` |
+| `409 Conflict` | Vi phạm quy tắc nghiệp vụ về trạng thái — capacity cuối vừa được giữ, hợp đồng đang `Overdue` |
 | `422 Unprocessable Entity` | Dữ liệu đúng định dạng nhưng sai nghiệp vụ — thời hạn thuê nhỏ hơn 1 tháng |
 | `500 Internal Server Error` | Lỗi không lường trước. **Không bao giờ** lộ stack trace ra client |
 
@@ -368,8 +368,8 @@ Mọi lỗi dùng **chung một cấu trúc**, do `GlobalExceptionHandler` sinh 
 {
   "timestamp": "2026-09-08T10:15:30+07:00",
   "status": 409,
-  "errorCode": "UNIT_NOT_AVAILABLE",
-  "message": "Ô kho vừa được khách khác đặt, vui lòng chọn ô kho khác.",
+  "errorCode": "CAPACITY_NOT_AVAILABLE",
+  "message": "Loại ô kho vừa hết capacity cho kỳ thuê đã chọn.",
   "path": "/api/v1/reservations",
   "details": [
     { "field": "unitTypeId", "message": "Không còn ô kho trống cho loại đã chọn" }
@@ -381,7 +381,7 @@ Mọi lỗi dùng **chung một cấu trúc**, do `GlobalExceptionHandler` sinh 
 - `message` viết tiếng Việt, dùng được trực tiếp làm nội dung hiển thị cho người dùng.
 - `details` chỉ có khi lỗi gắn với từng trường cụ thể.
 
-Một số `errorCode` nghiệp vụ đã chốt: `UNIT_NOT_AVAILABLE` · `RESERVATION_EXPIRED` ·
+Một số `errorCode` nghiệp vụ đã chốt: `CAPACITY_NOT_AVAILABLE` · `UNIT_ASSIGNMENT_FAILED` · `RESERVATION_EXPIRED` ·
 `RESERVATION_ALREADY_CANCELLED` · `PAYMENT_FAILED` · `CONTRACT_OVERDUE` · `CONTRACT_TERMINATED` ·
 `RENEWAL_NOT_ALLOWED` · `RETURN_NOTICE_TOO_SHORT` · `INSUFFICIENT_DEPOSIT_BALANCE`.
 
@@ -408,7 +408,7 @@ Lọc dùng tham số query đặt tên đúng bằng tên trường: `GET /api/
 ### 6.7. Xác thực và phân quyền
 
 - `Authorization: Bearer <JWT>` cho mọi endpoint trừ nhóm công khai: đăng nhập, đăng ký, tra cứu
-  Facility và ô kho trống (`SC-01`).
+  Facility, Unit Type và Availability (`SC-01`).
 - JWT chứa `userId`, `role` và danh sách `facilityIds` được gán — phục vụ phân quyền dữ liệu theo cơ
   sở ở `SA-03`.
 - Phân quyền theo vai trò khai báo bằng `@PreAuthorize("hasRole('FACILITY_STAFF')")` ở tầng
