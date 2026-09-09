@@ -27,6 +27,8 @@
 | `ISS-04` | **`UC-F2-06`, `UC-F3-09`, `UC-F7-07` có phải use case độc lập không?** Cả ba đều là "cập nhật trạng thái ô kho", có thể chỉ là hệ quả của use case khác chứ không phải mục tiêu riêng của actor | `USE-CASES.md` | Bình | Mở |
 | `ISS-05` | **Chiều quan hệ include đáng ngờ** trong Use Case Diagram: `UCF109 ..> UCF107` ("Nhận lịch hẹn" include "Thanh toán") và `UCF107 ..> UCF108` ("Thanh toán" include "Phân bổ ô kho") | `diagrams/use-case-diagram.puml` | Bình | Mở |
 | `ISS-06` | **File `.puml` chưa từng được render** nên chưa xác nhận không có lỗi cú pháp. Phải mở bằng extension PlantUML trong VS Code để kiểm | `diagrams/use-case-diagram.puml` | Bình | Mở |
+| `ISS-07` | **`BR-OVD-10` miễn/giảm phí quá hạn theo từng vụ** (Facility Manager đề xuất, Business Operations Manager duyệt) không có use case riêng. `UC-F4-09` chỉ quản lý *chính sách* giảm giá / miễn phí, không phải xử lý một khoản cụ thể. Phương án: thêm UC đề xuất–duyệt theo vụ, hoặc ghi rõ `UC-F4-09` kiêm cả hai | `BUSINESS-RULES.md`, `USE-CASES.md` | Cả nhóm | Mở |
+| `ISS-08` | **`BR-DEP-06` cho phép đổi Unit Type** (nộp chênh Deposit) trong khi **`BR-REN-08` cấm đổi ô kho** — muốn đổi thì phải trả kho rồi đặt hợp đồng mới. Không có use case đổi ô kho / đổi Unit Type. Cần chốt: bỏ hoặc thu hẹp `BR-DEP-06`, hoặc thêm UC đổi ô kho | `BUSINESS-RULES.md`, `USE-CASES.md` | Cả nhóm | Mở |
 
 ---
 

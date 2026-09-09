@@ -6,8 +6,8 @@
 > Nhiệm vụ **T1.2** · Giai đoạn 1 · [PLAN.md](PLAN.md).
 > Tài liệu liên quan: [USE-CASES.md](USE-CASES.md) · [BUSINESS-RULES.md](BUSINESS-RULES.md)
 >
-> User story của các actor còn lại nằm ở nhiệm vụ **T1.3** (`FS-*`, `FM-*` — Tùng) và **T1.4**
-> (`BM-*`, `SA-*` — Nhật).
+> User story của các actor còn lại: **T1.3** (`FS-*`, `FM-*` — Tùng) và **T1.4**
+> ([USER-STORIES-BM-SA.md](USER-STORIES-BM-SA.md) — `BM-*`, `SA-*`).
 
 ---
 
@@ -298,7 +298,7 @@ Tổng cộng **22 user story**, **108 acceptance criteria**, **95 story point**
 
 | Use case | Ưu tiên | Story point | Giai đoạn |
 |----------|---------|:-----------:|:---------:|
-| `UC-F1-07` | Should | 3 | P4 |
+| `UC-F3-13` | Should | 3 | P4 |
 
 **Acceptance Criteria**
 

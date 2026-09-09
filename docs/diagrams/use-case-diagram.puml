@@ -1,7 +1,7 @@
 @startuml use-case-diagram
 ' =====================================================================
 '  Self-Storage Facility Rental and Management System
-'  Use Case Diagram tong - 5 actor, 7 flow, 73 use case
+'  Use Case Diagram tong - 5 actor, 7 flow, 75 use case
 '
 '  Nguon: docs/USE-CASES.md (danh sach use case la ban goc, so hoa o day
 '  phai khop voi bang trong tai lieu do).
@@ -50,6 +50,7 @@ rectangle "Self-Storage Facility Rental and Management System" {
     usecase "UC-F1-09\nNhận lịch hẹn Check-in" as UCF109
     usecase "UC-F1-10\nHủy Reservation" as UCF110
     usecase "UC-F1-11\nTự động hủy Reservation quá hạn thanh toán" as UCF111
+    usecase "UC-F1-12\nHủy Reservation phía cơ sở" as UCF112
   }
 
   package "Flow 2 — Check-in and Handover" {
@@ -77,6 +78,7 @@ rectangle "Self-Storage Facility Rental and Management System" {
     usecase "UC-F3-10\nTheo dõi khách và hợp đồng hiệu lực" as UCF310
     usecase "UC-F3-11\nTheo dõi tình trạng thanh toán hợp đồng" as UCF311
     usecase "UC-F3-12\nĐánh dấu ô kho cần kiểm tra / bảo trì" as UCF312
+    usecase "UC-F3-13\nThanh toán phụ phí và khoản nộp bổ sung" as UCF313
   }
 
   package "Flow 4 — Business Rules, Fees and Revenue" {
@@ -153,6 +155,7 @@ SC --> UCF302
 SC --> UCF303
 SC --> UCF304
 SC --> UCF305
+SC --> UCF313
 SC --> UCF601
 SC --> UCF602
 SC --> UCF603
@@ -183,6 +186,7 @@ FS --> UCF708
 '  Facility Manager
 ' ---------------------------------------------------------------------
 FM --> UCF108
+FM --> UCF112
 FM --> UCF207
 FM --> UCF209
 FM --> UCF308

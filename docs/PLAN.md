@@ -69,7 +69,7 @@ xong khung dự án trống chạy được.
 | T1.1 | Phân rã Flow 1–7 thành danh sách use case | Bình | 14/09 |
 | T1.2 | Viết user story cho Storage Customer (`SC-01`→`SC-06`) | Bình | 21/09 |
 | T1.3 | Viết user story cho Facility Staff và Facility Manager (`FS-*`, `FM-*`) | Tùng | 21/09 |
-| T1.4 | Viết user story cho Business Operations Manager và System Administrator (`BM-*`, `SA-*`) | Nhật | 21/09 |
+| T1.4 | Viết user story cho Business Operations Manager và System Administrator (`BM-*`, `SA-*`) — [USER-STORIES-BM-SA.md](USER-STORIES-BM-SA.md) | Nhật | 21/09 |
 | T1.5 | Chốt business rules: Deposit, Renewal, Cancellation, Return, Overdue | Bình | 21/09 |
 | T1.6 | Vẽ Use Case Diagram tổng cho 5 actor | Bình | 14/09 |
 | T1.7 | Vẽ Activity Diagram Flow 1 và Flow 2 | Tùng | 14/09 |
