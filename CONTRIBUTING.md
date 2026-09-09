@@ -107,9 +107,9 @@ Phía Frontend thêm tiền tố `fe`: `fe-reservation`. Việc thuộc CSDL dù
 ### 3.4. Ví dụ
 
 ```
-feat(reservation): thêm API tạo Reservation và giữ chỗ 48 giờ
+feat(reservation): thêm API tạo Reservation và giữ capacity 48 giờ
 
-Giữ chỗ theo BR-DEP-03, hết hạn thì scheduled job giải phóng ô kho.
+Giữ capacity theo BR-RES-02 và BR-DEP-03; hết hạn thì scheduled job giải phóng slot.
 
 Refs: T3.1
 ```
@@ -143,7 +143,7 @@ hai người sửa trùng file. Xong việc thì chuyển sang Ready for review.
 Đúng định dạng commit, kèm mã task ở đầu:
 
 ```
-[T3.1] feat(reservation): API tạo Reservation và giữ chỗ
+[T3.1] feat(reservation): API tạo Reservation và giữ capacity
 ```
 
 ### 4.3. Mô tả
@@ -154,12 +154,12 @@ T3.1 — API tạo Reservation (PLAN.md, Giai đoạn 3)
 
 ## Nội dung thay đổi
 - Thêm `ReservationController` với `POST /api/v1/reservations`
-- Thêm `ReservationServiceImpl` xử lý giữ chỗ theo `BR-DEP-03`
+- Thêm `ReservationServiceImpl` xử lý giữ capacity theo `BR-RES-02`, `BR-DEP-03`
 - Migration `V5__create_reservation_table.sql`
 
 ## Phạm vi nghiệp vụ
 Use case: `UC-F1-04`, `UC-F1-06` · User story: `US-SC-02.1`
-Business rule: `BR-DEP-03`, `BR-OVD-09`
+Business rule: `BR-RES-02`, `BR-AVL-03`, `BR-DEP-03`, `BR-OVD-09`
 
 ## Cách kiểm thử
 1. `mvn test` — 12 test mới đều xanh
@@ -312,7 +312,7 @@ git checkout -b feature/T3.1-create-reservation-api
 
 # Commit
 git add .
-git commit -m "feat(reservation): thêm API tạo Reservation và giữ chỗ 48 giờ"
+git commit -m "feat(reservation): thêm API tạo Reservation và giữ capacity 48 giờ"
 
 # Đẩy lên lần đầu
 git push -u origin feature/T3.1-create-reservation-api

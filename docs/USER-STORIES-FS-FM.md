@@ -5,7 +5,8 @@
 >
 > Nhiệm vụ **T1.3** · Giai đoạn 1 · [PLAN.md](PLAN.md).
 > Tài liệu liên quan: [USE-CASES.md](USE-CASES.md) · [BUSINESS-RULES.md](BUSINESS-RULES.md) ·
-> [USER-STORIES.md](USER-STORIES.md) (Storage Customer) · USER-STORIES-BM-SA.md (nhiệm vụ T1.4 — Business Manager & Admin).
+> [USER-STORIES.md](USER-STORIES.md) (Storage Customer) ·
+> [USER-STORIES-BM-SA.md](USER-STORIES-BM-SA.md) (Business Operations Manager và System Administrator).
 
 ---
 
@@ -42,7 +43,7 @@
 | **Giai đoạn** | Bám sát [PLAN.md § 5](PLAN.md#5-bản-đồ-phủ-yêu-cầu): P2 (Nền tảng danh mục), P3 (Flow 1 & 2), P4 (Flow 3, 6, 7), P5 (Báo cáo cơ sở) |
 | **Tham chiếu** | Mọi story đều trỏ về use case tại [USE-CASES.md](USE-CASES.md) và ràng buộc tại [BUSINESS-RULES.md](BUSINESS-RULES.md) |
 
-Tổng cộng **22 user story**, **87 acceptance criteria**, **106 story point**.
+Tổng cộng **23 user story**, **94 acceptance criteria**, **111 story point**.
 
 ---
 
@@ -60,9 +61,9 @@ Tổng cộng **22 user story**, **87 acceptance criteria**, **106 story point**
 
 **Acceptance Criteria**
 
-- **AC-1** — *Given* tôi đã đăng nhập với vai trò Facility Staff tại cơ sở phụ trách, *when* tôi nhập mã Reservation, số điện thoại hoặc số CCCD vào ô tìm kiếm, *then* hệ thống hiển thị chi tiết đơn đặt chỗ gồm họ tên khách, loại ô kho, ngày hẹn, số tiền cọc đã đóng và ô kho cụ thể đã được gán.
+- **AC-1** — *Given* tôi đã đăng nhập với vai trò Facility Staff tại Facility phụ trách, *when* tôi nhập mã Reservation, số điện thoại hoặc số CCCD vào ô tìm kiếm, *then* hệ thống hiển thị họ tên khách, Unit Type, ngày hẹn, toàn bộ phí thuê N tháng và Deposit đã thu, cùng Storage Unit đã phân bổ sau Payment.
 - **AC-2** — *Given* khách xuất trình giấy tờ tùy thân, *when* tôi đối chiếu thông tin trên hệ thống, *then* tên và số giấy tờ phải trùng khớp với thông tin đăng ký trên đơn đặt chỗ theo `BR-CHK-01` và `UC-F2-02`.
-- **AC-3** — *Given* khách chưa thanh toán đủ tiền cọc hoặc tiền thuê kỳ đầu theo `BR-DEP-02` và `BR-CHK-02`, *when* xem chi tiết, *then* hệ thống hiển thị cảnh báo đỏ "Chưa hoàn tất thanh toán" và nút tiến hành bàn giao bị vô hiệu hóa.
+- **AC-3** — *Given* khách chưa thanh toán đủ toàn bộ phí thuê N tháng và Deposit theo `BR-PAY-01` và `BR-CHK-02`, *when* xem chi tiết, *then* hệ thống hiển thị cảnh báo "Chưa hoàn tất Payment" và vô hiệu thao tác Handover.
 - **AC-4** — *Given* đơn đặt chỗ thuộc một Facility khác, *when* tôi tra cứu, *then* hệ thống thông báo "Đơn đặt chỗ thuộc cơ sở khác" và nêu rõ tên cơ sở đúng để hướng dẫn khách.
 - **AC-5** — *Given* mã Reservation không tồn tại hoặc đã bị hủy, *when* tôi tìm kiếm, *then* hệ thống thông báo "Không tìm thấy thông tin đặt chỗ hợp lệ".
 
@@ -70,7 +71,7 @@ Tổng cộng **22 user story**, **87 acceptance criteria**, **106 story point**
 
 ### `US-FS-01.2` — Xử lý khách đến trễ hoặc lỡ hẹn check-in
 
-> **Là** Facility Staff, **tôi muốn** ghi nhận tình trạng khách đến trễ hoặc cập nhật trạng thái vắng mặt, **để** cơ sở chủ động điều phối ô kho và xử lý giữ chỗ theo quy định.
+> **Là** Facility Staff, **tôi muốn** theo dõi khách đến trễ hoặc lỡ hẹn Check-in, **để** hỗ trợ khách trong thời gian grace period và biết kết quả No-show do hệ thống xử lý.
 
 | Use case | Ưu tiên | Story point | Giai đoạn |
 |----------|---------|:-----------:|:---------:|
@@ -79,8 +80,8 @@ Tổng cộng **22 user story**, **87 acceptance criteria**, **106 story point**
 **Acceptance Criteria**
 
 - **AC-1** — *Given* khách đến sau khung giờ hẹn trong ngày nhưng trước giờ đóng cửa cơ sở, *when* tôi mở đơn đặt chỗ, *then* hệ thống cho phép tiếp tục quy trình bàn giao bình thường và ghi nhận mốc thời gian thực tế.
-- **AC-2** — *Given* hết ngày làm việc mà khách không đến và không liên hệ dời lịch, *when* tôi rà soát danh sách trong ngày, *then* hệ thống cho phép đánh dấu trạng thái "Vắng mặt (No-show)" theo `BR-CAN-04` và `BR-CHK-05`.
-- **AC-3** — *Given* đơn đặt chỗ bị đánh dấu No-show quá thời hạn giữ chỗ 48 giờ theo `BR-DEP-03`, *when* hệ thống quét tự động, *then* đơn tự động chuyển sang trạng thái hết hạn và ô kho tạm giữ được giải phóng về trạng thái *Available*.
+- **AC-2** — *Given* hết ngày hẹn mà khách chưa đến, *when* tôi rà soát danh sách, *then* hệ thống hiển thị số ngày còn lại trong `checkin.grace_days`; Facility Staff không tự chuyển Reservation thành *No-show*.
+- **AC-3** — *Given* hết `checkin.grace_days` mà khách chưa hoàn tất Check-in, *when* scheduled job chạy, *then* Reservation chuyển *No-show*, Storage Unit đã phân bổ trở lại *Available* và tiền được quyết toán theo `BR-CAN-04`, `BR-CHK-05`.
 - **AC-4** — *Given* khách đến khi đơn đặt chỗ đã bị hủy tự động do quá hạn, *when* tôi tra cứu, *then* hệ thống hiển thị lý do hủy và hướng dẫn khách thực hiện đặt chỗ mới.
 
 ---
@@ -101,7 +102,7 @@ Tổng cộng **22 user story**, **87 acceptance criteria**, **106 story point**
 
 - **AC-1** — *Given* đơn đặt chỗ đã hợp lệ và khách đã đến tận nơi, *when* tôi dẫn khách kiểm tra ô kho, *then* tôi và khách kiểm tra hiện trạng cửa, khóa, sàn kho và thiết bị đi kèm.
 - **AC-2** — *Given* ô kho sạch sẽ và nguyên vẹn theo `BR-CHK-02` và `UC-F2-03`, *when* tôi tạo biên bản bàn giao, *then* hệ thống ghi nhận mã biên bản, mã ô kho, thời gian bàn giao, tên nhân viên thực hiện và họ tên khách theo `BR-CHK-03`.
-- **AC-3** — *Given* ô kho phát sinh lỗi vật lý (ví dụ: kẹt cửa, ẩm mốc), *when* tôi báo cáo tại màn hình bàn giao, *then* hệ thống cho phép hủy lượt bàn giao này, chuyển ô kho sang trạng thái *Under Maintenance* và gửi thông báo cho Facility Manager để gán ô kho thay thế.
+- **AC-3** — *Given* Storage Unit phát sinh lỗi vật lý (ví dụ: kẹt cửa, ẩm mốc), *when* tôi báo cáo tại màn hình Handover, *then* hệ thống hủy lượt Handover này, chuyển unit sang *Maintenance* và gửi thông báo cho Facility Manager xử lý ngoại lệ phân bổ.
 - **AC-4** — *Given* biên bản bàn giao đã hoàn tất, *when* khách xác nhận (ký điện tử hoặc nhập mã xác nhận), *then* biên bản được lưu trữ vĩnh viễn và gửi bản sao PDF về email của khách.
 
 ---
@@ -153,10 +154,10 @@ Tổng cộng **22 user story**, **87 acceptance criteria**, **106 story point**
 
 **Acceptance Criteria**
 
-- **AC-1** — *Given* khách hoàn tất thủ tục trả kho, *when* tôi bấm "Thu hồi quyền truy cập", *then* mã Access Code / PIN của khách bị vô hiệu hóa ngay lập tức theo `BR-ACC-03` và `BR-RET-09`.
+- **AC-1** — *Given* Facility Staff đã xác nhận inspection theo `BR-RET-02`, *when* tôi bấm "Thu hồi quyền truy cập", *then* Access Code / PIN bị vô hiệu ngay theo `BR-ACC-03` và `BR-RET-09`.
 - **AC-2** — *Given* khách dùng thẻ từ hoặc chìa khóa cơ, *when* khách bàn giao lại thẻ/chìa, *then* tôi xác nhận đã thu hồi vật phẩm trên hệ thống.
-- **AC-3** — *Given* quyền truy cập đã thu hồi, *when* biên bản trả kho được xác nhận, *then* trạng thái ô kho tự động chuyển từ *Occupied* sang *Cleaning* (Chờ vệ sinh) theo `BR-RET-03`.
-- **AC-4** — *Given* ô kho đã được dọn dẹp sạch sẽ, *when* tôi kiểm tra đạt yêu cầu và bấm "Sẵn sàng khai thác", *then* trạng thái ô kho chuyển sang *Available* để tiếp tục cho khách mới thuê.
+- **AC-3** — *Given* quyền truy cập đã thu hồi, *when* biên bản Return được xác nhận, *then* Storage Unit tự động chuyển từ *Occupied* sang *Cleaning* theo `BR-RET-09`.
+- **AC-4** — *Given* ô kho đã dọn xong, *when* tôi bấm "Sẵn sàng khai thác", *then* unit chuyển *Reserved* nếu còn Reservation *Confirmed* chưa Check-in (future claim); không thì *Available* theo `BR-RET-09`.
 
 ---
 
@@ -170,8 +171,8 @@ Tổng cộng **22 user story**, **87 acceptance criteria**, **106 story point**
 
 **Acceptance Criteria**
 
-- **AC-1** — *Given* ô kho đang trống (*Available*) bị phát sinh sự cố (thấm dột, kẹt cửa, hỏng đèn), *when* tôi báo cáo bảo trì, *then* trạng thái chuyển sang *Under Maintenance* kèm ghi chú nguyên nhân.
-- **AC-2** — *Given* ô kho đang ở trạng thái *Under Maintenance*, *when* người quản lý tìm phòng trống để gán khách, *then* hệ thống loại trừ ô kho này khỏi danh sách gợi ý.
+- **AC-1** — *Given* Storage Unit đang *Available* bị phát sinh sự cố (thấm dột, kẹt cửa, hỏng đèn), *when* tôi báo cáo bảo trì, *then* trạng thái chuyển sang *Maintenance* kèm ghi chú nguyên nhân.
+- **AC-2** — *Given* Storage Unit đang *Maintenance*, *when* hệ thống tính Availability hoặc tìm unit để phân bổ, *then* loại trừ unit này theo `BR-AVL-01`.
 - **AC-3** — *Given* công tác sửa chữa bảo dưỡng đã hoàn tất, *when* tôi nghiệm thu và cập nhật "Hoàn tất bảo trì", *then* trạng thái ô kho trở lại *Available*.
 - **AC-4** — *Given* ô kho đang có khách thuê (*Occupied*), *when* tôi muốn chuyển sang bảo trì, *then* hệ thống từ chối thao tác trực tiếp và yêu cầu xử lý qua quy trình Support Ticket hoặc chuyển kho.
 
@@ -288,7 +289,7 @@ Tổng cộng **22 user story**, **87 acceptance criteria**, **106 story point**
 
 **Acceptance Criteria**
 
-- **AC-1** — *Given* tôi mở danh sách ô kho của cơ sở, *when* trang tải xong, *then* hiển thị bảng ô kho gồm mã số (vd: A-101), khu vực dãy, tầng, loại ô kho, giá niêm yết và trạng thái hiện tại (*Available*, *Reserved*, *Occupied*, *Under Maintenance*, *Locked Overdue*).
+- **AC-1** — *Given* tôi mở danh sách Storage Unit của Facility, *when* trang tải xong, *then* hiển thị mã, vị trí, Unit Type, giá niêm yết và một trong các trạng thái *Available*, *Reserved*, *Occupied*, *Cleaning*, *Maintenance*, *Out of service*; Access *Suspended* được hiển thị riêng.
 - **AC-2** — *Given* tôi thêm danh sách ô kho hàng loạt theo mẫu (vd: Dãy B, Tầng 2, từ B-201 đến B-220), *when* tôi xác nhận, *then* hệ thống sinh đúng 20 bản ghi ô kho ở trạng thái *Available*.
 - **AC-3** — *Given* mã ô kho bị trùng lặp trong cùng một Facility, *when* lưu dữ liệu, *then* hệ thống chặn lại và báo lỗi trùng mã định danh.
 - **AC-4** — *Given* ô kho đang ở trạng thái *Occupied*, *when* tôi muốn đổi mã số hoặc xóa ô kho, *then* hệ thống không cho phép thực hiện để bảo toàn tính toàn vẹn của hợp đồng đang chạy.
@@ -299,9 +300,9 @@ Tổng cộng **22 user story**, **87 acceptance criteria**, **106 story point**
 
 *Phân bổ ô kho phù hợp cho khách hàng dựa trên loại ô kho, thời hạn thuê và tình trạng còn trống.*
 
-### `US-FM-02.1` — Phân bổ ô kho vật lý cho đơn đặt chỗ của khách
+### `US-FM-02.1` — Giám sát phân bổ Storage Unit cho Reservation
 
-> **Là** Facility Manager, **tôi muốn** gán một ô kho vật lý cụ thể đang trống cho đơn đặt chỗ của khách hàng, **để** nhân viên có số phòng chính xác để chuẩn bị bàn giao khi khách đến.
+> **Là** Facility Manager, **tôi muốn** giám sát kết quả phân bổ Storage Unit tự động sau Payment, **để** xử lý ngoại lệ mà không tạo Contract thiếu unit.
 
 | Use case | Ưu tiên | Story point | Giai đoạn |
 |----------|---------|:-----------:|:---------:|
@@ -309,10 +310,10 @@ Tổng cộng **22 user story**, **87 acceptance criteria**, **106 story point**
 
 **Acceptance Criteria**
 
-- **AC-1** — *Given* có đơn đặt chỗ mới đã thanh toán tiền cọc thành công (`UC-F1-07`), *when* tôi mở danh sách chờ phân bổ, *then* hệ thống hiển thị đơn đặt chỗ kèm gợi ý các ô kho trống (*Available*) có cùng Unit Type tại cơ sở.
-- **AC-2** — *Given* tôi chọn một ô kho cụ thể từ danh sách gợi ý và bấm "Xác nhận phân bổ", *then* ô kho đó chuyển trạng thái sang *Reserved* và được liên kết với mã Reservation của khách.
-- **AC-3** — *Given* ô kho vừa được người khác chọn hoặc vừa chuyển sang bảo trì trong lúc tôi đang thao tác, *when* tôi bấm gán, *then* hệ thống báo lỗi xung đột trạng thái và yêu cầu chọn ô kho trống khác.
-- **AC-4** — *Given* phân bổ thành công, *when* hệ thống lưu dữ liệu, *then* một thông báo xác nhận kèm số ô kho (vd: "Ô kho B-104") tự động gửi đến ứng dụng/email của khách và đưa vào danh sách làm việc của nhân viên trực.
+- **AC-1** — *Given* Payment gồm toàn bộ phí thuê N tháng và Deposit thành công (`UC-F1-07`), *when* giao dịch được xác nhận, *then* hệ thống nguyên tử gắn `unit_id` đúng Facility và Unit Type theo `BR-AVL-04`; Reservation chuyển *Confirmed*.
+- **AC-2** — *Given* unit đang *Available*, *when* phân bổ thành công, *then* unit chuyển *Reserved*. *Given* unit đang *Occupied* và kỳ Occupied kết thúc trước ngày bắt đầu kỳ mới, *when* phân bổ thành công, *then* unit **vẫn** *Occupied* (future claim) và màn hình giám sát nêu rõ claim; tôi không phải duyệt thủ công.
+- **AC-3** — *Given* phân bổ thất bại do capacity thay đổi ngoài dự kiến, *when* tôi xem hàng đợi ngoại lệ, *then* không có Contract thiếu unit, Reservation không được xác nhận và khoản vừa thu được hoàn theo `BR-AVL-05`.
+- **AC-4** — *Given* phân bổ thành công, *when* hệ thống lưu dữ liệu, *then* thông báo kèm mã Storage Unit tự động gửi cho khách; nhiệm vụ Handover chỉ xuất hiện khi ngày bắt đầu đã tới và unit đã *Reserved*.
 
 ---
 
@@ -327,7 +328,7 @@ Tổng cộng **22 user story**, **87 acceptance criteria**, **106 story point**
 **Acceptance Criteria**
 
 - **AC-1** — *Given* Facility Staff hoàn tất biên bản bàn giao và khách đã nhận kho (`US-FS-02.1`), *when* giao dịch hoàn tất, *then* hợp đồng thuê chuyển sang trạng thái *Active* và ngày bắt đầu thuê được chốt chính thức.
-- **AC-2** — *Given* đơn đặt chỗ chưa thanh toán bị quá hạn thời gian giữ chỗ 48h theo `BR-DEP-03`, *when* tác vụ nền chạy tự động (`UC-F1-11`), *then* hợp đồng nháp tự động hủy và ô kho được mở lại cho khách khác đặt.
+- **AC-2** — *Given* Reservation *Pending Payment* hết 48 giờ theo `BR-DEP-03`, *when* scheduled job chạy (`UC-F1-11`), *then* Reservation chuyển *Expired* và capacity được giải phóng; không có Contract hoặc Storage Unit cụ thể phải hủy.
 - **AC-3** — *Given* hợp đồng vừa kích hoạt, *when* tôi tra cứu danh mục hợp đồng cơ sở, *then* hợp đồng mới hiển thị đầy đủ thông tin: Mã HĐ, Tên khách, Mã ô kho, Ngày hết hạn dự kiến và Số tiền cọc đang giữ.
 
 ---
@@ -346,7 +347,7 @@ Tổng cộng **22 user story**, **87 acceptance criteria**, **106 story point**
 
 **Acceptance Criteria**
 
-- **AC-1** — *Given* tôi mở danh mục hợp đồng cơ sở, *when* trang hiển thị, *then* danh sách liệt kê đầy đủ các hợp đồng có trạng thái *Active*, *Near Expiration* (sắp hết hạn trong vòng 7 ngày) và *Overdue*.
+- **AC-1** — *Given* tôi mở danh mục Contract của Facility, *when* trang hiển thị, *then* danh sách có các trạng thái thật *Active* và *Overdue*; nhãn tính toán "Near Expiration" hiển thị riêng cho Contract còn tối đa 7 ngày.
 - **AC-2** — *Given* tôi lọc theo trạng thái "Sắp hết hạn", *when* áp dụng, *then* hiển thị danh sách các hợp đồng có ngày kết thúc trong vòng 7 ngày tới để quản lý chủ động theo dõi gia hạn.
 - **AC-3** — *Given* tôi nhấp vào một hợp đồng, *when* xem chi tiết, *then* hiển thị thông tin khách hàng, số điện thoại khẩn cấp, danh sách người được ủy quyền ra vào và biên bản bàn giao ban đầu.
 - **AC-4** — *Given* tôi tìm kiếm theo tên khách hoặc mã ô kho, *when* nhập từ khóa, *then* hệ thống trả về đúng các hợp đồng khớp điều kiện tìm kiếm.
@@ -363,9 +364,9 @@ Tổng cộng **22 user story**, **87 acceptance criteria**, **106 story point**
 
 **Acceptance Criteria**
 
-- **AC-1** — *Given* một hợp đồng đang thuê, *when* tôi xem chi tiết tài chính, *then* hiển thị rõ: Tiền cọc đang ký gửi, Số tiền thuê đã thanh toán, Hạn thanh toán kỳ tiếp theo và tổng nợ tồn đọng (nếu có).
+- **AC-1** — *Given* một Contract đang thuê, *when* tôi xem chi tiết tài chính, *then* hiển thị Deposit, toàn bộ phí thuê N tháng đã thanh toán, ngày kết thúc hiện tại, báo giá Renewal nếu có và tổng nợ tồn đọng.
 - **AC-2** — *Given* khách hàng có phát sinh khoản phụ phí (phí cấp lại khóa, phí vệ sinh), *when* khoản phí được tạo, *then* hệ thống cập nhật vào bảng kê công nợ của hợp đồng kèm trạng thái (Chưa thu / Đã thu).
-- **AC-3** — *Given* một khách hàng đã quá hạn đóng tiền trên 3 ngày theo `BR-OVD-02`, *when* tôi mở danh sách nợ, *then* hợp đồng được tô màu đỏ cảnh báo kèm số ngày quá hạn và tiền phạt tạm tính.
+- **AC-3** — *Given* Contract đã qua ngày kết thúc hơn `overdue.grace_days`, *when* tôi mở danh sách nợ, *then* Contract được cảnh báo kèm số ngày Overdue và phí tạm tính theo `BR-OVD-03`.
 - **AC-4** — *Given* tôi xuất danh sách công nợ cơ sở, *when* file tạo xong, *then* báo cáo định dạng Excel chứa đầy đủ danh sách các khoản phải thu của cơ sở phụ trách.
 
 ---
@@ -386,14 +387,14 @@ Tổng cộng **22 user story**, **87 acceptance criteria**, **106 story point**
 
 - **AC-1** — *Given* nhân viên đã nộp biên bản nghiệm thu ô kho đạt chuẩn (`US-FS-04.1`), *when* tôi mở yêu cầu duyệt trả kho, *then* hệ thống hiển thị số tiền cọc ban đầu và gợi ý hoàn trả 100% cọc theo `BR-RET-04` và `BR-DEP-04`.
 - **AC-2** — *Given* biên bản nghiệm thu có ghi nhận hư hại và đề xuất trừ cọc theo `BR-RET-04` và `BR-RET-08`, *when* tôi xem xét ảnh chụp và báo giá sửa chữa, *then* tôi có thể điều chỉnh số tiền khấu trừ trước khi phê duyệt.
-- **AC-3** — *Given* tôi bấm "Phê duyệt quyết toán", *when* hệ thống xác nhận, *then* lệnh hoàn cọc được chuyển sang cổng thanh toán/bộ phận kế toán, hợp đồng chuyển sang trạng thái *Terminated* và gửi hóa đơn quyết toán cho khách.
+- **AC-3** — *Given* tôi bấm "Phê duyệt quyết toán", *when* hệ thống xác nhận, *then* lệnh hoàn Deposit được chuyển sang cổng Payment, Contract chuyển *Closed* và hóa đơn quyết toán được gửi cho khách.
 - **AC-4** — *Given* khách hàng vẫn còn nợ tiền thuê hoặc phụ phí chưa thanh toán, *when* thực hiện quyết toán, *then* hệ thống tự động cấn trừ công nợ vào tiền cọc trước khi hoàn trả phần dư.
 
 ---
 
-### `US-FM-04.2` — Phê duyệt và ghi nhận gia hạn hợp đồng thuê
+### `US-FM-04.2` — Giám sát gia hạn Contract tự động
 
-> **Là** Facility Manager, **tôi muốn** duyệt yêu cầu gia hạn và cập nhật ngày kết thúc mới cho hợp đồng sau khi khách thanh toán phí gia hạn, **để** duy trì quyền sử dụng kho liên tục cho khách hàng.
+> **Là** Facility Manager, **tôi muốn** giám sát Renewal được hệ thống ghi nhận sau Payment, **để** xử lý ngoại lệ mà không làm chậm quyền sử dụng của khách.
 
 | Use case | Ưu tiên | Story point | Giai đoạn |
 |----------|---------|:-----------:|:---------:|
@@ -401,9 +402,9 @@ Tổng cộng **22 user story**, **87 acceptance criteria**, **106 story point**
 
 **Acceptance Criteria**
 
-- **AC-1** — *Given* khách hàng đã nộp yêu cầu gia hạn và thanh toán đủ phí gia hạn qua cổng thanh toán (`UC-F6-03`), *when* hệ thống nhận được giao dịch thành công, *then* hợp đồng tự động gia hạn thêm thời gian tương ứng theo `BR-REN-03`.
-- **AC-2** — *Given* khách hàng đóng tiền gia hạn trực tiếp bằng tiền mặt tại cơ sở, *when* tôi kiểm tra và nhập xác nhận thu tiền, *then* hệ thống cập nhật ngày kết thúc mới (*End Date*) và gia hạn hiệu lực của mã Access Code.
-- **AC-3** — *Given* ô kho đang nằm trong danh sách thu hồi để đại tu mặt bằng, *when* khách yêu cầu gia hạn, *then* hệ thống cảnh báo "Ô kho không thuộc diện được gia hạn" để tôi trực tiếp liên hệ hỗ trợ khách đổi ô kho khác.
+- **AC-1** — *Given* khách thanh toán Renewal thành công (`UC-F6-03`), *when* hệ thống nhận giao dịch, *then* Contract tự động dời ngày kết thúc theo `BR-REN-03`, `BR-REN-04`, không chờ Facility Manager duyệt.
+- **AC-2** — *Given* capacity commitment tạo trước giao với khoảng Renewal, *when* khách xác nhận gia hạn, *then* hệ thống từ chối trước khi thu tiền và màn hình của tôi hiển thị lý do theo `BR-REN-09`.
+- **AC-3** — *Given* Contract đang *Overdue*, *when* khách chọn Renewal, *then* hệ thống chỉ kích hoạt lại Contract và Access sau khi giao dịch gồm toàn bộ nợ cùng phí kỳ mới thành công theo `BR-REN-06`.
 
 ---
 
@@ -413,14 +414,34 @@ Tổng cộng **22 user story**, **87 acceptance criteria**, **106 story point**
 
 | Use case | Ưu tiên | Story point | Giai đoạn |
 |----------|---------|:-----------:|:---------:|
-| `UC-F6-05`, `UC-F6-06`, `UC-F6-07`, `UC-F6-08`, `UC-F6-09` | Must | 8 | P4 |
+| `UC-F6-05`, `UC-F6-06`, `UC-F6-07`, `UC-F6-08`, `UC-F6-09`, `UC-F6-11` | Must | 8 | P4 |
 
 **Acceptance Criteria**
 
-- **AC-1** — *Given* hợp đồng quá hạn chạm mốc D+10 mà khách chưa thanh toán theo `BR-OVD-05` và `BR-ACC-02`, *when* tác vụ hệ thống chạy định kỳ (`UC-F6-07`), *then* hệ thống tự động vô hiệu hóa mã Access Code của khách, đồng thời tự động tạo nhiệm vụ gắn khóa ngoài vật lý (Overlock task) đẩy vào ca trực của Facility Staff (`US-FS-06.1`) và hiển thị trạng thái "Đã khóa truy cập" trên danh sách của tôi; tôi cũng có thể chủ động bấm khóa thủ công nếu cần can thiệp sớm.
-- **AC-2** — *Given* hợp đồng quá hạn chạm mốc D+30 theo `BR-OVD-06`, *when* tác vụ hệ thống chạy định kỳ (`UC-F6-08`), *then* hệ thống tự động gửi "Thông báo chấm dứt hợp đồng và yêu cầu thanh lý tài sản" qua email và ứng dụng của khách, đồng thời tự động kết xuất văn bản PDF thông báo có đóng dấu điện tử để tôi in gửi chuyển phát bảo đảm đến địa chỉ thư tín của khách.
-- **AC-3** — *Given* hợp đồng quá hạn đến mốc D+60 và khách không phản hồi theo `BR-OVD-07`, *when* tôi kích hoạt thủ tục xử lý tài sản, *then* hệ thống hướng dẫn lập hội đồng kiểm kê, chụp ảnh niêm phong đồ đạc và chấm dứt hợp đồng.
-- **AC-4** — *Given* khách hàng quá hạn đến cơ sở thanh toán toàn bộ tiền nợ và tiền phạt quá hạn theo `BR-OVD-03`, *when* thanh toán được ghi nhận, *then* hệ thống cho phép mở lại mã Access Code theo `BR-OVD-08` và tự động gửi thông báo yêu cầu nhân viên tháo khóa ngoài.
+- **AC-1** — *Given* ngày kết thúc đã qua, chưa Renewal và chưa hoàn tất Return, *when* scheduled job D+1 chạy (`UC-F6-05`), *then* Contract chuyển *Overdue* theo `BR-OVD-01`.
+- **AC-2** — *Given* Contract chạm D+10 mà khách chưa hoàn tất phương án xử lý, *when* scheduled job chạy (`UC-F6-07`), *then* Access chuyển *Suspended*, Storage Unit vẫn *Occupied* và nhiệm vụ khóa vật lý được tạo cho Facility Staff theo `BR-OVD-05`.
+- **AC-3** — *Given* Contract chạm D+30, *when* scheduled job chạy (`UC-F6-08`), *then* hệ thống tự gửi thông báo nêu hạn D+60 và hệ quả, đồng thời cung cấp bản PDF để tôi theo dõi theo `BR-OVD-06`.
+- **AC-4** — *Given* Contract chạm D+60, *when* scheduled job `UC-F6-11` chạy, *then* Contract tự chuyển *Terminated*, Access chuyển *Revoked*, nợ được chốt và Deposit bị cấn trừ theo `BR-OVD-07`.
+- **AC-5** — *Given* `UC-F6-11` đã tạo nhiệm vụ tài sản, *when* tôi thực hiện `UC-F6-09`, *then* tôi lập biên bản kèm ảnh, niêm phong và chuyển tài sản sang khu lưu giữ trước khi unit sang *Cleaning* theo `BR-OVD-11`.
+- **AC-6** — *Given* khách thanh toán trước D+60, *when* giao dịch thành công, *then* hệ thống chỉ mở lại Access nếu khách chọn Renewal; nếu chọn Return thì Access chỉ mở trong lịch hẹn, không hỗ trợ chỉ trả nợ theo `BR-OVD-08`.
+- **AC-7** — *Given* Contract *Overdue* đã *Pending Return* nhưng chưa nghiệm thu, *when* tới D+60, *then* đồng hồ không dừng: Contract *Terminated*, lịch Return bị hủy và tôi tiếp tục `BR-OVD-11`.
+
+---
+
+### `US-FM-04.4` — Đề xuất miễn hoặc giảm phí quá hạn theo vụ
+
+> **Là** Facility Manager, **tôi muốn** đề xuất miễn hoặc giảm phí quá hạn của một Contract cụ thể, **để** Business Operations Manager duyệt theo `BR-OVD-10` mà tôi không tự quyết.
+
+| Use case | Ưu tiên | Story point | Giai đoạn |
+|----------|---------|:-----------:|:---------:|
+| `UC-F6-12` | Must | 5 | P4 |
+
+**Acceptance Criteria**
+
+- **AC-1** — *Given* Contract đang *Overdue* còn khoản phí chưa tất toán, *when* tôi gửi đề xuất kèm lý do và chứng cứ, *then* hệ thống ghi đề xuất ở trạng thái chờ duyệt và **không** tự trừ phí.
+- **AC-2** — *Given* tôi là người đề xuất, *when* tôi cố tự duyệt, *then* hệ thống từ chối theo `BR-OVD-10`.
+- **AC-3** — *Given* khoản phí đã tất toán hoặc Contract đã *Terminated*, *when* tôi đề xuất, *then* hệ thống từ chối vì chỉ áp cho khoản chưa tất toán.
+- **AC-4** — *Given* Business Operations Manager từ chối, *when* tôi xem lại, *then* phí giữ nguyên, audit log ghi người đề xuất, người từ chối và lý do.
 
 ---
 
@@ -460,7 +481,7 @@ Tổng cộng **22 user story**, **87 acceptance criteria**, **106 story point**
 **Acceptance Criteria**
 
 - **AC-1** — *Given* tôi mở Dashboard báo cáo cơ sở, *when* trang tải xong, *then* hiển thị 4 thẻ chỉ số chính: Tổng số ô kho, Số ô kho đang thuê (*Occupied*), Số ô kho trống (*Available*), Số ô kho bảo trì (*Maintenance*).
-- **AC-2** — *Given* các số liệu ô kho, *when* hệ thống tính toán, *then* hiển thị **Tỷ lệ lấp đầy (Usage Rate %)** theo công thức: `(Số ô kho đang thuê / Tổng số ô kho) * 100%` kèm biểu đồ tròn trực quan.
+- **AC-2** — *Given* các số liệu Storage Unit, *when* hệ thống tính toán, *then* hiển thị Usage Rate = số unit *Occupied* / tổng unit không *Out of service*; Contract *Overdue* vẫn dùng unit *Occupied* nên không bị cộng hai lần.
 - **AC-3** — *Given* tôi chọn khoảng thời gian (tháng này, quý này), *when* xem báo cáo tài chính, *then* hiển thị tổng doanh thu thu được từ phí thuê, phí cọc và các khoản phụ thu tại cơ sở phụ trách.
 - **AC-4** — *Given* danh sách nợ quá hạn, *when* xem báo cáo rủi ro, *then* hiển thị bảng chi tiết các hợp đồng quá hạn kèm tổng số tiền nợ đọng phân theo độ tuổi nợ (D+1 đến D+10, D+11 đến D+30, trên D+30).
 - **AC-5** — *Given* tôi là Facility Manager của Cơ sở A, *when* tôi mở báo cáo, *then* hệ thống **chỉ hiển thị dữ liệu của Cơ sở A**, tuyệt đối không xem được doanh thu hay ô kho của Cơ sở B theo đúng phân quyền `SA-03`.
@@ -484,17 +505,18 @@ Tổng cộng **22 user story**, **87 acceptance criteria**, **106 story point**
 | `US-FS-06.1` | Theo dõi danh sách công việc bàn giao, trả kho và sự cố trong ngày | `FS-06` | Must | 3 | P4 | 4 |
 | `US-FM-01.1` | Quản lý danh mục loại ô kho tại cơ sở | `FM-01` | Must | 5 | P2 | 4 |
 | `US-FM-01.2` | Quản lý danh sách ô kho vật lý, vị trí và trạng thái | `FM-01` | Must | 5 | P2 | 4 |
-| `US-FM-02.1` | Phân bổ ô kho vật lý cho đơn đặt chỗ của khách | `FM-02` | Must | 5 | P3 | 4 |
+| `US-FM-02.1` | Giám sát phân bổ Storage Unit cho Reservation | `FM-02` | Must | 5 | P3 | 4 |
 | `US-FM-02.2` | Giám sát kích hoạt hợp đồng thuê sau bàn giao | `FM-02` | Must | 5 | P3 | 3 |
 | `US-FM-03.1` | Giám sát danh sách khách hàng và hợp đồng thuê đang hiệu lực | `FM-03` | Must | 5 | P4 | 4 |
 | `US-FM-03.2` | Theo dõi tình trạng thanh toán và công nợ của từng hợp đồng | `FM-03` | Must | 5 | P4 | 4 |
 | `US-FM-04.1` | Phê duyệt quyết toán hợp đồng và hoàn trả tiền cọc khi trả kho | `FM-04` | Must | 5 | P4 | 4 |
-| `US-FM-04.2` | Phê duyệt và ghi nhận gia hạn hợp đồng thuê | `FM-04` | Must | 5 | P4 | 3 |
-| `US-FM-04.3` | Xử lý hợp đồng quá hạn, khóa quyền truy cập và xử lý tài sản tồn đọng | `FM-04` | Must | 8 | P4 | 4 |
+| `US-FM-04.2` | Giám sát gia hạn Contract tự động | `FM-04` | Must | 5 | P4 | 3 |
+| `US-FM-04.3` | Xử lý hợp đồng quá hạn, khóa quyền truy cập và xử lý tài sản tồn đọng | `FM-04` | Must | 8 | P4 | 7 |
+| `US-FM-04.4` | Đề xuất miễn hoặc giảm phí quá hạn theo vụ | `FM-04` | Must | 5 | P4 | 4 |
 | `US-FM-05.1` | Phân công công việc bàn giao, nghiệm thu và sự cố cho nhân viên cơ sở | `FM-05` | Must | 5 | P3 | 4 |
 | `US-FM-06.1` | Xem báo cáo thống kê hoạt động cơ sở, tỷ lệ lấp đầy, doanh thu và nợ quá hạn | `FM-06` | Must | 8 | P5 | 5 |
 
-**Theo giai đoạn:** P2 — 2 story / 10 point · P3 — 7 story / 31 point · P4 — 11 story / 53 point · P5 — 2 story / 12 point.
-**Theo ưu tiên:** Must — 20 story / 100 point · Should — 2 story / 6 point · Could — 0 story.
-**Theo actor:** Facility Staff — 11 story / 45 point · Facility Manager — 11 story / 61 point.
-**Tổng:** 22 story · 106 story point · 87 acceptance criteria.
+**Theo giai đoạn:** P2 — 2 story / 10 point · P3 — 7 story / 31 point · P4 — 12 story / 58 point · P5 — 2 story / 12 point.
+**Theo ưu tiên:** Must — 21 story / 105 point · Should — 2 story / 6 point · Could — 0 story.
+**Theo actor:** Facility Staff — 11 story / 45 point · Facility Manager — 12 story / 66 point.
+**Tổng:** 23 story · 111 story point · 94 acceptance criteria.

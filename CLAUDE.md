@@ -38,13 +38,14 @@ content rather than defining it, and they are joined by stable codes:
   requirement codes have at least one use case — adding a code to `TOPIC.md § 3` breaks that
   assertion. Its § 9 records a deliberate gap: `SA-01` and `SA-04` belong to no flow's "Phạm vi liên
   quan" in `TOPIC.md`, so they are handled as foundational use cases instead.
-- `docs/USER-STORIES.md` covers `SC-01`→`SC-06` only, coded `US-<mã yêu cầu>.<nn>`. Stories for the
-  other actors are tasks T1.3 and T1.4 and belong in this same file, following its § 1 template. The
-  totals stated in § 1 and § 8 (22 stories, 107 acceptance criteria, 95 story points) must be
-  recomputed whenever a story is added.
-- `docs/BUSINESS-RULES.md` defines rules coded `BR-<DEP|CAN|REN|OVD|RET|GEN>-<nn>`. Its § 2 parameter
+- `docs/USER-STORIES.md`, `docs/USER-STORIES-FS-FM.md` and `docs/USER-STORIES-BM-SA.md` hold stories
+  for Storage Customer (22 stories / 111 AC / 95 points), Facility Staff + Facility Manager
+  (23 / 94 / 111), and Business Operations Manager + System Administrator (20 / 100 / 100).
+  Stories use `US-<mã yêu cầu>.<nn>` and each file's stated totals must be recomputed when changed.
+- `docs/BUSINESS-RULES.md` defines rules coded
+  `BR-<GEN|RES|AVL|PRI|PAY|DEP|CAN|REN|OVD|RET|CHK|ACC|SUP>-<nn>`. Its § 2 parameter
   table is the single place numeric values live; the prose rules reference the config keys rather
-  than repeating numbers. § 9 works those numbers into concrete money examples — changing a
+  than repeating numbers. § 14 works those numbers into concrete money examples — changing a
   parameter means recomputing that table too.
 
 `docs/diagrams/use-case-diagram.puml` and the Mermaid diagram in `USE-CASES.md § 11` are two views of

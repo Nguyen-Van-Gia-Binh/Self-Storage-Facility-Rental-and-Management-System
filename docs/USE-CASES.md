@@ -5,6 +5,7 @@
 >
 > Nhiệm vụ **T1.1** và **T1.6** · Giai đoạn 1 · [PLAN.md](PLAN.md).
 > Tài liệu liên quan: [USER-STORIES.md](USER-STORIES.md) ·
+> [USER-STORIES-FS-FM.md](USER-STORIES-FS-FM.md) ·
 > [USER-STORIES-BM-SA.md](USER-STORIES-BM-SA.md) · [BUSINESS-RULES.md](BUSINESS-RULES.md)
 
 ---
@@ -38,7 +39,7 @@ Use case nền tảng không thuộc luồng nghiệp vụ nào dùng tiền t�
 | **Actor viết tiếng Anh**       | Storage Customer · Facility Staff · Facility Manager · Business Operations Manager · System Administrator                                                       |
 | **`System`**                   | Chỉ tác vụ hệ thống tự chạy theo lịch, không do người dùng kích hoạt                                                                                  |
 
-Tài liệu có **72 use case nghiệp vụ** (Flow 1–7) và **3 use case nền tảng**.
+Tài liệu có **75 use case nghiệp vụ** (Flow 1–7) và **3 use case nền tảng**.
 
 ---
 
@@ -50,15 +51,15 @@ Tài liệu có **72 use case nghiệp vụ** (Flow 1–7) và **3 use case nề
 | ------------ | --------------------------------------------------------------------------------- | ---------------- | ---------------- | -------------------- |
 | `UC-F1-01` | Tìm kiếm và xem danh sách Facility                                            | Storage Customer | —               | `SC-01`            |
 | `UC-F1-02` | Xem chi tiết Unit Type, kích thước và giá thuê                             | Storage Customer | —               | `SC-01`            |
-| `UC-F1-03` | Kiểm tra ô kho còn trống theo ngày bắt đầu và thời hạn                 | Storage Customer | —               | `SC-01`            |
+| `UC-F1-03` | Kiểm tra capacity còn trống theo Unit Type và khoảng thuê             | Storage Customer | —               | `SC-01`            |
 | `UC-F1-04` | Tạo Reservation — chọn Facility, Unit Type, ngày bắt đầu, thời hạn thuê | Storage Customer | Facility Manager | `SC-02`            |
 | `UC-F1-05` | Ước tính chi phí thuê và tiền Deposit phải trả                           | Storage Customer | —               | `SC-02`, `BM-03` |
-| `UC-F1-06` | Giữ chỗ ô kho tạm thời trong thời gian chờ thanh toán                     | System           | Facility Manager | `FM-02`            |
-| `UC-F1-07` | Thanh toán Deposit và phí thuê kỳ đầu                                      | Storage Customer | —               | `SC-03`            |
-| `UC-F1-08` | Phân bổ ô kho cụ thể cho Reservation đã thanh toán                        | Facility Manager | Storage Customer | `FM-02`            |
+| `UC-F1-06` | Giữ capacity theo Facility × Unit Type × khoảng thuê khi chờ thanh toán | System           | Facility Manager | `FM-02`            |
+| `UC-F1-07` | Thanh toán Deposit và toàn bộ phí thuê N tháng                              | Storage Customer | —               | `SC-03`            |
+| `UC-F1-08` | Phân bổ Storage Unit cụ thể sau khi thanh toán thành công                  | Facility Manager | Storage Customer | `FM-02`            |
 | `UC-F1-09` | Nhận lịch hẹn Check-in và xác nhận đặt chỗ thành công                  | Storage Customer | —               | `SC-02`            |
 | `UC-F1-10` | Hủy Reservation trước ngày bắt đầu thuê                                   | Storage Customer | Facility Manager | `SC-02`, `BM-02` |
-| `UC-F1-11` | Tự động hủy Reservation quá hạn thanh toán và giải phóng ô kho         | System           | —               | `FM-02`            |
+| `UC-F1-11` | Tự động cho Reservation hết hạn và giải phóng capacity                 | System           | —               | `FM-02`            |
 | `UC-F1-12` | Hủy Reservation phía cơ sở — ô kho hư hỏng hoặc Facility đóng cửa   | Facility Manager | Storage Customer | `SC-02`, `FM-02`, `BM-02` |
 
 ---
@@ -73,9 +74,9 @@ Tài liệu có **72 use case nghiệp vụ** (Flow 1–7) và **3 use case nề
 | `UC-F2-02` | Xác minh danh tính khách và tình trạng thanh toán     | Facility Staff   | Storage Customer | `FS-01`            |
 | `UC-F2-03` | Bàn giao ô kho và lập biên bản bàn giao               | Facility Staff   | Storage Customer | `FS-02`            |
 | `UC-F2-04` | Cấp Access Code hoặc Access Card cho khách                | Facility Staff   | Storage Customer | `FS-02`            |
-| `UC-F2-05` | Khách xác nhận đã Check-in và nhận ô kho             | Storage Customer | Facility Staff   | `SC-04`            |
-| `UC-F2-06` | Cập nhật trạng thái Storage Unit sang*đang sử dụng* | Facility Staff   | —               | `FS-03`            |
-| `UC-F2-07` | Kích hoạt hợp đồng thuê sau khi bàn giao              | Facility Manager | Facility Staff   | `FM-02`            |
+| `UC-F2-05` | Khách xác nhận Check-in, nhận ô kho và hoàn tất Reservation | Storage Customer | Facility Staff   | `SC-04`            |
+| `UC-F2-06` | Cập nhật trạng thái Storage Unit sang *Occupied*          | Facility Staff   | —               | `FS-03`            |
+| `UC-F2-07` | Kích hoạt Contract từ *Pending Check-in* sau bàn giao     | Facility Manager | Facility Staff   | `FM-02`            |
 | `UC-F2-08` | Xử lý khách đến trễ hoặc không đến theo lịch hẹn | Facility Staff   | Facility Manager | `FS-01`, `FM-02` |
 | `UC-F2-09` | Phân công Facility Staff trực bàn giao trong ngày       | Facility Manager | Facility Staff   | `FM-05`            |
 
@@ -121,6 +122,7 @@ Tài liệu có **72 use case nghiệp vụ** (Flow 1–7) và **3 use case nề
 | `UC-F4-10` | Giám sát doanh thu theo cơ sở và toàn hệ thống                      | Business Operations Manager | —               | `BM-04`     |
 | `UC-F4-11` | Giám sát Usage Rate và hiệu quả vận hành từng cơ sở               | Business Operations Manager | —               | `BM-04`     |
 | `UC-F4-12` | Xem và xuất báo cáo toàn hệ thống theo cơ sở, Unit Type, doanh thu | Business Operations Manager | —               | `BM-05`     |
+| `UC-F4-13` | Duyệt hoặc từ chối miễn/giảm phí quá hạn theo vụ                | Business Operations Manager | Facility Manager | `BM-03`     |
 
 ---
 
@@ -150,13 +152,15 @@ Tài liệu có **72 use case nghiệp vụ** (Flow 1–7) và **3 use case nề
 | `UC-F6-01` | Nhận thông báo nhắc hạn hợp đồng sắp hết hạn        | Storage Customer | System           | `SC-05`, `BM-02` |
 | `UC-F6-02` | Yêu cầu gia hạn hợp đồng thuê                           | Storage Customer | Facility Manager | `SC-05`            |
 | `UC-F6-03` | Thanh toán phí gia hạn                                      | Storage Customer | —               | `SC-03`            |
-| `UC-F6-04` | Duyệt và ghi nhận gia hạn hợp đồng                      | Facility Manager | Storage Customer | `FM-04`            |
+| `UC-F6-04` | Tự động ghi nhận gia hạn sau Payment thành công        | System           | Facility Manager  | `FM-04`            |
 | `UC-F6-05` | Phát hiện hợp đồng quá hạn theo lịch chạy tự động  | System           | Facility Manager | `FM-04`            |
 | `UC-F6-06` | Tính và áp phí quá hạn theo chính sách                 | System           | Facility Manager | `FM-04`, `BM-03` |
-| `UC-F6-07` | Khóa quyền truy cập ô kho quá hạn                        | Facility Manager | Facility Staff   | `FM-04`            |
-| `UC-F6-08` | Gửi thông báo chấm dứt hợp đồng quá hạn              | Facility Manager | Storage Customer | `FM-04`            |
-| `UC-F6-09` | Chấm dứt hợp đồng và xử lý tài sản tồn trong ô kho | Facility Manager | Facility Staff   | `FM-04`, `BM-02` |
+| `UC-F6-07` | Tự động khóa Access Credential tại D+10              | System           | Facility Manager  | `FM-04`            |
+| `UC-F6-08` | Tự động gửi thông báo chấm dứt tại D+30              | System           | Facility Manager  | `FM-04`            |
+| `UC-F6-09` | Xử lý tài sản sau khi hệ thống chấm dứt tại D+60 | Facility Manager | System            | `FM-04`, `BM-02` |
 | `UC-F6-10` | Theo dõi danh sách hợp đồng quá hạn tại cơ sở        | Facility Manager | —               | `FM-06`            |
+| `UC-F6-11` | Tự động chấm dứt Contract tại D+60                   | System           | Facility Manager  | `FM-04`            |
+| `UC-F6-12` | Đề xuất miễn hoặc giảm phí quá hạn theo vụ           | Facility Manager | Business Operations Manager | `FM-04` |
 
 ---
 
@@ -221,12 +225,12 @@ một use case tương ứng.
 | `FM-01`     | `UC-F5-01` `UC-F5-02` `UC-F5-03`                                                                  |   3   |
 | `FM-02`     | `UC-F1-06` `UC-F1-08` `UC-F1-11` `UC-F1-12` `UC-F2-07` `UC-F2-08`                      |   6   |
 | `FM-03`     | `UC-F3-10` `UC-F3-11`                                                                               |   2   |
-| `FM-04`     | `UC-F3-05` `UC-F3-08` `UC-F6-04` `UC-F6-05` `UC-F6-06` `UC-F6-07` `UC-F6-08` `UC-F6-09` |   8   |
+| `FM-04`     | `UC-F3-05` `UC-F3-08` `UC-F6-04` `UC-F6-05` `UC-F6-06` `UC-F6-07` `UC-F6-08` `UC-F6-09` `UC-F6-11` `UC-F6-12` |  10   |
 | `FM-05`     | `UC-F2-09` `UC-F5-04` `UC-F7-04`                                                                  |   3   |
 | `FM-06`     | `UC-F5-06` `UC-F6-10`                                                                               |   2   |
 | `BM-01`     | `UC-F4-01`                                                                                            |   1   |
 | `BM-02`     | `UC-F1-10` `UC-F1-12` `UC-F4-02` `UC-F4-03` `UC-F4-04` `UC-F4-05` `UC-F4-06` `UC-F6-01` `UC-F6-09` |   9   |
-| `BM-03`     | `UC-F1-05` `UC-F4-07` `UC-F4-08` `UC-F4-09` `UC-F6-06`                                        |   5   |
+| `BM-03`     | `UC-F1-05` `UC-F4-07` `UC-F4-08` `UC-F4-09` `UC-F4-13` `UC-F6-06`                  |   6   |
 | `BM-04`     | `UC-F4-10` `UC-F4-11`                                                                               |   2   |
 | `BM-05`     | `UC-F4-12`                                                                                            |   1   |
 | `SA-01`     | `UC-SYS-02`                                                                                           |   1   |
@@ -238,7 +242,7 @@ một use case tương ứng.
 
 ## 11. Use Case Diagram tổng
 
-Bản chuẩn UML đầy đủ 75 use case: **[diagrams/use-case-diagram.puml](diagrams/use-case-diagram.puml)**
+Bản chuẩn UML đầy đủ 78 use case: **[diagrams/use-case-diagram.puml](diagrams/use-case-diagram.puml)**
 — mở bằng extension *PlantUML* trong VS Code (`Alt+D` để xem trước; `Ctrl+Shift+P` → *PlantUML: Export
 Current Diagram* để xuất PNG/SVG nộp báo cáo).
 
@@ -251,14 +255,15 @@ flowchart LR
     FM(["Facility Manager"])
     BM(["Business Ops Manager"])
     SA(["System Administrator"])
+    Job(["System"])
 
-    subgraph SYS["Self-Storage Facility Rental and Management System"]
+    subgraph App["Self-Storage Facility Rental and Management System"]
         direction TB
         subgraph G1["Flow 1 · Reservation"]
-            U1["Tra cứu Facility<br/>và ô kho trống"]
+            U1["Tra cứu Facility<br/>và capacity theo kỳ thuê"]
             U2["Tạo Reservation"]
-            U3["Thanh toán Deposit"]
-            U4["Phân bổ ô kho"]
+            U3["Trả phí N tháng<br/>và Deposit"]
+            U4["Phân bổ Storage Unit<br/>sau thanh toán"]
             U4b["Hủy Reservation<br/>phía cơ sở"]
         end
         subgraph G2["Flow 2 · Check-in and Handover"]
@@ -288,8 +293,9 @@ flowchart LR
         end
         subgraph G6["Flow 6 · Renewal and Overdue"]
             U21["Gia hạn hợp đồng"]
-            U22["Áp phí quá hạn"]
-            U23["Khóa truy cập và<br/>chấm dứt hợp đồng"]
+            U22["Job Overdue<br/>D+1 đến D+60"]
+            U23["Xử lý tài sản D+60"]
+            U23b["Đề xuất miễn giảm phí"]
         end
         subgraph G7["Flow 7 · Support and Issues"]
             U24["Gửi yêu cầu hỗ trợ"]
@@ -324,8 +330,10 @@ flowchart LR
     FM --- U16
     FM --- U17
     FM --- U19
-    FM --- U22
     FM --- U23
+    FM --- U23b
+
+    Job --- U22
 
     BM --- U12
     BM --- U13
