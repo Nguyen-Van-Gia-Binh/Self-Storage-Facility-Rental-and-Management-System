@@ -250,7 +250,7 @@ Tổng cộng **22 user story**, **87 acceptance criteria**, **106 story point**
 
 **Acceptance Criteria**
 
-- **AC-1** — *Given* tôi mở màn hình ca trực hằng ngày, *when* trang tải xong, *then* tôi thấy 3 tab công việc rõ ràng: (1) Lịch hẹn nhận kho trong ngày, (2) Lịch hẹn trả kho trong ngày, (3) Danh sách sự cố được phân công.
+- **AC-1** — *Given* tôi mở màn hình ca trực hằng ngày, *when* trang tải xong, *then* tôi thấy 3 tab công việc rõ ràng: (1) Lịch hẹn nhận kho trong ngày, (2) Lịch hẹn trả kho trong ngày, (3) Danh sách sự cố và nhiệm vụ vận hành (bao gồm nhiệm vụ gắn/tháo khóa ngoài Overlock được hệ thống tự động giao theo `US-FM-04.3`).
 - **AC-2** — *Given* danh sách lịch hẹn nhận kho, *when* tôi xem chi tiết, *then* hiển thị giờ hẹn, tên khách, số điện thoại, mã ô kho được gán và trạng thái (Chưa đến / Đã đến / Đã bàn giao).
 - **AC-3** — *Given* có một khách hàng mới đặt lịch hẹn check-in gấp trong ngày, *when* cơ sở dữ liệu cập nhật, *then* danh sách tự động làm mới và hiển thị huy hiệu thông báo việc mới.
 - **AC-4** — *Given* tôi lọc công việc theo trạng thái "Chưa xử lý", *when* áp dụng, *then* chỉ hiển thị các lượt hẹn và sự cố còn tồn đọng trong ca trực.
@@ -409,7 +409,7 @@ Tổng cộng **22 user story**, **87 acceptance criteria**, **106 story point**
 
 ### `US-FM-04.3` — Xử lý hợp đồng quá hạn, khóa quyền truy cập và xử lý tài sản tồn đọng
 
-> **Là** Facility Manager, **tôi muốn** theo dõi các hợp đồng quá hạn để kích hoạt khóa kho từ xa hoặc lập biên bản xử lý tài sản, **để** thu hồi công nợ và giải phóng ô kho theo đúng luật.
+> **Là** Facility Manager, **tôi muốn** giám sát quy trình tự động xử lý hợp đồng quá hạn, vô hiệu hóa quyền truy cập và lập biên bản xử lý tài sản, **để** thu hồi công nợ và giải phóng ô kho theo đúng luật.
 
 | Use case | Ưu tiên | Story point | Giai đoạn |
 |----------|---------|:-----------:|:---------:|
@@ -417,10 +417,10 @@ Tổng cộng **22 user story**, **87 acceptance criteria**, **106 story point**
 
 **Acceptance Criteria**
 
-- **AC-1** — *Given* hợp đồng quá hạn đến mốc D+10 mà khách chưa thanh toán theo `BR-OVD-05` và `BR-ACC-02`, *when* tôi mở danh sách quá hạn, *then* hệ thống cho phép tôi bấm "Khóa quyền truy cập (Overlock)", tự động vô hiệu hóa Access Code và yêu cầu nhân viên gắn khóa ngoài vật lý.
-- **AC-2** — *Given* hợp đồng quá hạn đến mốc D+30 theo `BR-OVD-06`, *when* kiểm tra danh sách, *then* hệ thống cho phép tôi tạo và gửi "Thông báo chấm dứt hợp đồng và yêu cầu thanh lý tài sản" đến email và địa chỉ thư tín của khách.
+- **AC-1** — *Given* hợp đồng quá hạn chạm mốc D+10 mà khách chưa thanh toán theo `BR-OVD-05` và `BR-ACC-02`, *when* tác vụ hệ thống chạy định kỳ (`UC-F6-07`), *then* hệ thống tự động vô hiệu hóa mã Access Code của khách, đồng thời tự động tạo nhiệm vụ gắn khóa ngoài vật lý (Overlock task) đẩy vào ca trực của Facility Staff (`US-FS-06.1`) và hiển thị trạng thái "Đã khóa truy cập" trên danh sách của tôi; tôi cũng có thể chủ động bấm khóa thủ công nếu cần can thiệp sớm.
+- **AC-2** — *Given* hợp đồng quá hạn chạm mốc D+30 theo `BR-OVD-06`, *when* tác vụ hệ thống chạy định kỳ (`UC-F6-08`), *then* hệ thống tự động gửi "Thông báo chấm dứt hợp đồng và yêu cầu thanh lý tài sản" qua email và ứng dụng của khách, đồng thời tự động kết xuất văn bản PDF thông báo có đóng dấu điện tử để tôi in gửi chuyển phát bảo đảm đến địa chỉ thư tín của khách.
 - **AC-3** — *Given* hợp đồng quá hạn đến mốc D+60 và khách không phản hồi theo `BR-OVD-07`, *when* tôi kích hoạt thủ tục xử lý tài sản, *then* hệ thống hướng dẫn lập hội đồng kiểm kê, chụp ảnh niêm phong đồ đạc và chấm dứt hợp đồng.
-- **AC-4** — *Given* khách hàng quá hạn đến cơ sở thanh toán toàn bộ tiền nợ và tiền phạt quá hạn theo `BR-OVD-03`, *when* thanh toán được ghi nhận, *then* hệ thống cho phép mở lại mã Access Code theo `BR-OVD-08` và hướng dẫn nhân viên tháo khóa ngoài.
+- **AC-4** — *Given* khách hàng quá hạn đến cơ sở thanh toán toàn bộ tiền nợ và tiền phạt quá hạn theo `BR-OVD-03`, *when* thanh toán được ghi nhận, *then* hệ thống cho phép mở lại mã Access Code theo `BR-OVD-08` và tự động gửi thông báo yêu cầu nhân viên tháo khóa ngoài.
 
 ---
 
