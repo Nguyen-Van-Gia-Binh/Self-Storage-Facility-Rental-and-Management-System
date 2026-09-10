@@ -138,9 +138,12 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 *Luồng quy định nghiệp vụ, quản lý phí và giám sát doanh thu*
 
 - **Tác nhân chính:** Business Operations Manager
+- **Tác nhân liên quan:** Facility Manager
 - **Phạm vi liên quan:** `BM-01`, `BM-02`, `BM-03`, `BM-04`, `BM-05`
 - **Nội dung dự kiến:** Thiết lập chính sách đặt cọc / gia hạn / hủy / trả kho / quá hạn, khung giá và
   phụ phí → áp dụng cho toàn hệ thống → giám sát doanh thu, tỷ lệ sử dụng → xem và xuất báo cáo.
+  Facility Manager tham gia gián tiếp: nhận danh mục Facility để vận hành (sang Flow 5) và đề xuất
+  miễn / giảm phí quá hạn theo vụ để Business Operations Manager duyệt (`UC-F4-13` ↔ `UC-F6-12`).
 
 ### Flow 5 — Facility Storage and Staff Management Flow
 
@@ -161,6 +164,7 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 *Luồng gia hạn thuê và xử lý quá hạn*
 
 - **Tác nhân chính:** Storage Customer, Facility Manager
+- **Tác nhân liên quan:** Business Operations Manager
 - **Phạm vi liên quan:** `SC-03`, `SC-05`, `FM-03`, `FM-04`, `FM-06`, `BM-02`, `BM-03`
 - **Nội dung dự kiến:** Nhắc hạn → kiểm tra capacity commitment → thanh toán và tự động ghi nhận
   Renewal; nếu Overdue thì scheduled job tính phí từ D+4, khóa Access tại D+10, gửi thông báo tại
@@ -184,7 +188,7 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 | --------------------------- | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
 | Storage Customer            |   ●   |   ○   |   ●   |        |        |   ●   |   ●   |
 | Facility Staff              |        |   ●   |   ○   |        |   ○   |        |   ●   |
-| Facility Manager            |   ○   |   ○   |   ●   |        |   ●   |   ●   |   ○   |
+| Facility Manager            |   ○   |   ○   |   ●   |   ○   |   ●   |   ●   |   ○   |
 | Business Operations Manager |        |        |        |   ●   |        |   ○   |        |
 | System Administrator        |        |        |        |        |   ○   |        |        |
 
