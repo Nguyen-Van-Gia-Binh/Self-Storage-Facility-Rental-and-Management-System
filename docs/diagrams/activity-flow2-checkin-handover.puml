@@ -1,0 +1,96 @@
+@startuml activity-flow2-checkin-handover
+skinparam conditionStyle inside
+skinparam style strictuml
+
+title Activity Diagram — Flow 2: Storage Check-in and Handover
+
+|Facility Manager|
+start
+:Phân công Facility Staff\ntrực bàn giao trong ngày\n(UC-F2-09, FM-05);
+
+|Storage Customer|
+:Đến cơ sở theo lịch hẹn Check-in;
+
+|Facility Staff|
+:Tra cứu Reservation của khách\n(UC-F2-01);
+:Xác minh danh tính (CCCD/Hộ chiếu\nhoặc giấy ủy quyền) và tình trạng\nthanh toán (UC-F2-02, BR-CHK-01);
+
+if (Đã quá checkin.grace_days\n= 3 ngày kể từ ngày bắt đầu thuê?) then (quá hạn)
+  :Đánh dấu Reservation *No-show*,\ngiải phóng Storage Unit và xử lý\nhoàn tiền theo BR-CAN-04\n(UC-F2-08, BR-CHK-05);
+  stop
+else (còn trong hạn)
+  if (Khách đến trễ so với\nngày bắt đầu thuê?) then (đến trễ)
+    :Vẫn tiếp nhận Check-in bình thường;
+    note right
+      Đến trễ nhưng còn trong
+      checkin.grace_days (3 ngày):
+      vẫn nhận kho bình thường.
+      Ngày hết hạn hợp đồng GIỮ NGUYÊN,
+      không dời (BR-CHK-04)
+    end note
+  else (đến đúng hẹn)
+  endif
+endif
+
+if (Đủ điều kiện Handover?\n(Reservation *Confirmed*,\nthanh toán đủ toàn bộ — BR-CHK-02)) then (không đủ điều kiện)
+  :Thông báo lý do và hẹn khách\nbổ sung điều kiện / quay lại\n(UC-F2-08);
+  stop
+else (đủ điều kiện)
+endif
+
+|Facility Staff|
+repeat
+  :Dẫn khách kiểm tra thực tế ô kho\n(cửa, khóa, sàn, thiết bị);
+
+  if (Ô kho đạt yêu cầu chất lượng?\n(trống, sạch, không hư hại\nkết cấu — BR-CHK-02)) then (đạt yêu cầu)
+    break
+  else (không đạt / hư hại)
+    :Báo cáo sự cố ô kho trên hệ thống\n(US-FS-02.1 AC-3);
+
+    |System|
+    :Hủy lượt Handover hiện tại,\ntự động chuyển Storage Unit\nsang *Maintenance* và gửi cảnh báo\ncho Facility Manager\n(US-FS-02.1 AC-3);
+
+    |Facility Manager|
+    if (Còn Storage Unit trống khác\ncùng loại tại cơ sở?) then (hết phòng)
+      :Đề nghị khách chọn lịch hẹn\nCheck-in mới, hoặc hủy và xử lý\nhoàn tiền theo BR-CAN-*\n(chi phí sửa chữa cơ sở chịu\ntheo BR-SUP-02 nếu lỗi hạ tầng);
+      stop
+    else (còn phòng)
+      :Chỉ định ngay một Storage Unit\nthay thế cùng loại cho Reservation\nđể tiếp tục bàn giao tại chỗ\n(US-FS-02.1 AC-3, US-FM-02.1);
+    endif
+  endif
+
+  |Facility Staff|
+repeat while () is (Dẫn khách kiểm tra ô kho mới)
+
+|Facility Staff|
+:Lập biên bản bàn giao (kèm ảnh hiện trạng)\nvà cùng khách ký xác nhận điện tử\n(UC-F2-03, BR-CHK-03);
+
+|Storage Customer|
+:Ký số / bấm xác nhận biên bản bàn giao\nvà nhận bàn giao ô kho (UC-F2-05);
+
+|System|
+fork
+  :Tự động cập nhật Storage Unit\n*Reserved* → *Occupied*\n(UC-F2-06, BR-CHK-04);
+fork again
+  :Tự động kích hoạt Contract\n*Pending Check-in* → *Active*\n(UC-F2-07, BR-CHK-04);
+fork again
+  :Tự động kích hoạt mã Access Code / Thẻ từ\n(có hiệu lực mở cửa kho ngay lập tức)\n(UC-F2-04, BR-ACC-01, BR-ACC-02);
+fork again
+  :Cập nhật Reservation → *Fulfilled*,\ntự động xuất file PDF biên bản\nvà gửi Email cho khách;
+end fork
+note right
+  Toàn bộ 4 nhánh do HỆ THỐNG
+  tự động thực hiện ngay khi ký biên bản —
+  Facility Manager KHÔNG cần duyệt tay,
+  chỉ giám sát (US-FM-02.2)
+end note
+
+|Facility Staff|
+:Bàn giao chìa khóa cơ / Thẻ từ RFID\n(nếu có) và hướng dẫn khách sử dụng;
+
+|Facility Manager|
+:Giám sát hợp đồng mới kích hoạt\ntrên danh sách cơ sở\n(US-FM-02.2);
+
+stop
+
+@enduml
