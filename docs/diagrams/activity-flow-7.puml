@@ -1,0 +1,92 @@
+@startuml activity-flow-7
+' =====================================================================
+'  Flow 7 — Support Request and Issue Handling
+'  Nguon: TOPIC.md § 5, USE-CASES.md § 8, BUSINESS-RULES.md § 11-12
+'  Nhiem vu T1.9
+' =====================================================================
+
+title Flow 7 — Support Request and Issue Handling\nYêu cầu hỗ trợ và xử lý sự cố (UC-F7-01 đến UC-F7-08)
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam activity {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+  FontColor #0D47A1
+}
+skinparam activityDiamond {
+  BackgroundColor #FFF8E1
+  BorderColor #F9A825
+}
+skinparam swimlane {
+  BorderColor #90A4AE
+  TitleFontStyle bold
+}
+
+|Storage Customer|
+start
+:Phát sinh sự cố — ô kho, khóa, Access Code,\nthanh toán hoặc tài sản;
+note right
+  Nguồn kích hoạt khác:
+  Flow 2 phát hiện ô kho lỗi khi bàn giao;
+  Flow 3 tranh chấp chi phí hư hỏng — BR-RET-08.
+end note
+:UC-F7-01\nGửi yêu cầu hỗ trợ\nchọn loại, mô tả, đính kèm ảnh;
+
+split
+  |Facility Staff|
+  :UC-F7-03\nTiếp nhận và phân loại yêu cầu hỗ trợ;
+
+  |Facility Manager|
+  :UC-F7-04\nPhân công Facility Staff xử lý sự cố;
+  if (Sự cố khẩn cấp về truy cập?\n(quên PIN, kẹt khóa, mất chìa)) then (khẩn cấp)
+    :Tiếp nhận và bắt đầu xử lý trong\nsupport.urgent_sla_hours = 2 giờ — BR-SUP-01;
+  else (thường)
+  endif
+
+  |Facility Staff|
+  split
+    :UC-F7-05\nXử lý mất chìa khóa / lỗi Access Code —\ncấp lại mã PIN, sinh QR mới hoặc thay khóa cơ;
+    note right
+      Chỉ chủ hợp đồng hoặc người được ủy quyền
+      hợp pháp mới được yêu cầu cấp lại — BR-ACC-03.
+    end note
+  split again
+    :UC-F7-06\nXử lý ô kho hư hỏng và yêu cầu bảo trì;
+    if (Lỗi kỹ thuật / hạ tầng cơ sở?\n(thấm dột, chập điện)) then (lỗi cơ sở)
+      :Cơ sở chịu 100% chi phí sửa chữa,\nưu tiên di dời đồ sang ô kho dự phòng — BR-SUP-02;
+    else (lỗi chủ quan của khách)
+      :Tính chi phí sửa theo bảng phụ phí BM-03 — BR-SUP-02;
+    endif
+    :Storage Unit chuyển Maintenance;
+  split again
+    :Xử lý yêu cầu về thanh toán / tài sản —\nchuyển bộ phận liên quan xác minh;
+  end split
+
+  |Facility Staff|
+  :UC-F7-07\nCập nhật trạng thái ô kho sau khi xử lý sự cố\n(Maintenance -> Available khi đạt yêu cầu);
+  :Tải ảnh hiện trạng sau khắc phục;
+
+  |Storage Customer|
+  if (Khách xác nhận nghiệm thu?) then (xác nhận)
+    |Facility Staff|
+    :UC-F7-08\nĐóng yêu cầu hỗ trợ và ghi nhận kết quả xử lý;
+  else (không phản hồi quá\nsupport.auto_close_working_days = 7 ngày làm việc)
+    :Hệ thống tự đóng yêu cầu,\nghi rõ lý do tự động — BR-SUP-03;
+  endif
+  stop
+split again
+  |Storage Customer|
+  :UC-F7-02\nTheo dõi trạng thái và phản hồi của yêu cầu\n(song song, từ lúc gửi đến lúc đóng);
+  stop
+end split
+
+legend right
+  UC-F7-01 đến UC-F7-08
+  Nguồn: BR-SUP-01, BR-SUP-02, BR-SUP-03, BR-ACC-03
+  Kích hoạt từ Flow 2 và Flow 3 (BR-RET-08)
+endlegend
+
+@enduml

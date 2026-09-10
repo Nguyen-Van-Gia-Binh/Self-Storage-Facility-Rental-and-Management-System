@@ -16,7 +16,7 @@
 
 # --- Chot chan: thieu file ma van chay tiep se cho ket qua "sach" gia --------
 MISSING=0
-FILES="README.md CONTRIBUTING.md docs/TOPIC.md docs/PLAN.md docs/USE-CASES.md docs/USER-STORIES.md docs/USER-STORIES-FS-FM.md docs/USER-STORIES-BM-SA.md docs/BUSINESS-RULES.md docs/CONVENTIONS.md docs/diagrams/use-case-diagram.puml docs/diagrams/activity-flow-3.puml docs/diagrams/activity-flow-6.puml"
+FILES="README.md CONTRIBUTING.md docs/TOPIC.md docs/PLAN.md docs/USE-CASES.md docs/USER-STORIES.md docs/USER-STORIES-FS-FM.md docs/USER-STORIES-BM-SA.md docs/BUSINESS-RULES.md docs/CONVENTIONS.md docs/diagrams/use-case-diagram.puml docs/diagrams/activity-flow-3.puml docs/diagrams/activity-flow-4.puml docs/diagrams/activity-flow-5.puml docs/diagrams/activity-flow-6.puml docs/diagrams/activity-flow-7.puml"
 for f in $FILES; do
   [ -f "$f" ] || { echo "THIEU FILE: $f"; MISSING=1; }
 done

@@ -110,6 +110,8 @@ Activity Diagram: [diagrams/activity-flow-3.puml](diagrams/activity-flow-3.puml)
 
 *Luồng quy định nghiệp vụ, quản lý phí và giám sát doanh thu.* Tác nhân chính: **Business Operations Manager**
 
+Activity Diagram: [diagrams/activity-flow-4.puml](diagrams/activity-flow-4.puml) — các nhánh cấu hình độc lập: chính sách nghiệp vụ (`UC-F4-02`–`06`), khung giá và phụ phí (`UC-F4-07`–`09`), danh mục Facility (`UC-F4-01`), giám sát và báo cáo (`UC-F4-10`–`12`), duyệt miễn/giảm phí quá hạn theo vụ (`UC-F4-13` ↔ `UC-F6-12`).
+
 | Mã UC       | Use case                                                                    | Actor chính                | Actor liên quan | Mã yêu cầu |
 | ------------ | --------------------------------------------------------------------------- | --------------------------- | ---------------- | ------------- |
 | `UC-F4-01` | Quản lý danh sách Facility toàn hệ thống                              | Business Operations Manager | Facility Manager | `BM-01`     |
@@ -131,6 +133,8 @@ Activity Diagram: [diagrams/activity-flow-3.puml](diagrams/activity-flow-3.puml)
 ## 6. Flow 5 — Facility Storage and Staff Management
 
 *Luồng quản lý kho và nhân sự tại cơ sở.* Tác nhân chính: **Facility Manager** · Liên quan: **Facility Staff**, **System Administrator**
+
+Activity Diagram: [diagrams/activity-flow-5.puml](diagrams/activity-flow-5.puml) — các nhánh độc lập: danh mục ô kho và vòng đời trạng thái (`UC-F5-01`–`03`), phân công nhân sự (`UC-F5-04`–`05`), báo cáo cơ sở (`UC-F5-06`), phân quyền theo vai trò và cơ sở (`UC-F5-07`–`08`).
 
 | Mã UC       | Use case                                                                             | Actor chính         | Actor liên quan | Mã yêu cầu |
 | ------------ | ------------------------------------------------------------------------------------ | -------------------- | ---------------- | ------------- |
@@ -171,6 +175,8 @@ Activity Diagram: [diagrams/activity-flow-6.puml](diagrams/activity-flow-6.puml)
 ## 8. Flow 7 — Support Request and Issue Handling
 
 *Luồng yêu cầu hỗ trợ và xử lý sự cố.* Tác nhân chính: **Storage Customer**, **Facility Staff** · Liên quan: **Facility Manager**
+
+Activity Diagram: [diagrams/activity-flow-7.puml](diagrams/activity-flow-7.puml) — gửi và phân loại (`UC-F7-01`, `UC-F7-03`), phân công theo SLA (`UC-F7-04`), nhánh xử lý theo loại sự cố (`UC-F7-05`, `UC-F7-06`), cập nhật ô kho và nghiệm thu / tự đóng (`UC-F7-07`, `UC-F7-08`); khách theo dõi song song (`UC-F7-02`).
 
 | Mã UC       | Use case                                                                            | Actor chính     | Actor liên quan | Mã yêu cầu |
 | ------------ | ----------------------------------------------------------------------------------- | ---------------- | ---------------- | ------------- |
@@ -250,8 +256,13 @@ Bản chuẩn UML đầy đủ 78 use case: **[diagrams/use-case-diagram.puml](d
 — mở bằng extension *PlantUML* trong VS Code (`Alt+D` để xem trước; `Ctrl+Shift+P` → *PlantUML: Export
 Current Diagram* để xuất PNG/SVG nộp báo cáo).
 
-Activity Diagram đã có: Flow 3 [activity-flow-3.puml](diagrams/activity-flow-3.puml) · Flow 6
-[activity-flow-6.puml](diagrams/activity-flow-6.puml). Flow 1–2 (T1.7) và Flow 4, 5, 7 (T1.9) chưa vẽ.
+Activity Diagram đủ 7 flow: Flow 1 [activity-flow-1-booking.puml](diagrams/activity-flow-1-booking.puml) ·
+Flow 2 [activity-flow2-checkin-handover.puml](diagrams/activity-flow2-checkin-handover.puml) (T1.7) ·
+Flow 3 [activity-flow-3.puml](diagrams/activity-flow-3.puml) ·
+Flow 6 [activity-flow-6.puml](diagrams/activity-flow-6.puml) (T1.8) ·
+Flow 4 [activity-flow-4.puml](diagrams/activity-flow-4.puml) ·
+Flow 5 [activity-flow-5.puml](diagrams/activity-flow-5.puml) ·
+Flow 7 [activity-flow-7.puml](diagrams/activity-flow-7.puml) (T1.9).
 
 Bản rút gọn dưới đây gom use case theo nhóm chức năng để nắm nhanh quan hệ actor × luồng:
 
