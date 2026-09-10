@@ -34,7 +34,7 @@
 
 | Mã | Vấn đề | Kết luận | Ngày |
 |----|--------|----------|------|
-| `ISS-00` | `US-SC-02.2` có 5 acceptance criteria nhưng cả 5 đều là happy path, vi phạm quy ước "mỗi story phải có ít nhất một AC cho nhánh thất bại" ở `USER-STORIES.md § 1` | Bổ sung `AC-6`: bảng giá thay đổi trong lúc khách đang ở màn hình xác nhận thì hệ thống từ chối tạo Reservation theo giá cũ và bắt xác nhận lại | 08/09/2026 |
+| `ISS-00` | `US-SC-02.2` có 5 acceptance criteria nhưng cả 5 đều là happy path, vi phạm quy ước "mỗi story phải có ít nhất một AC cho nhánh thất bại" ở `USER-STORIES-SC.md § 1` | Bổ sung `AC-6`: bảng giá thay đổi trong lúc khách đang ở màn hình xác nhận thì hệ thống từ chối tạo Reservation theo giá cũ và bắt xác nhận lại | 08/09/2026 |
 | `ISS-01` | Chu kỳ thanh toán chưa được đề bài xác định | Chọn trả trước **toàn bộ phí thuê N tháng cùng Deposit** trong một giao dịch theo `BR-GEN-03`, `BR-PAY-01`; không hỗ trợ thu từng tháng trong baseline | 09/09/2026 |
 | `ISS-05` | Chiều quan hệ `include` giữa lịch hẹn, thanh toán và phân bổ Storage Unit chưa rõ | Giữ `UCF107 ..> UCF108` vì thanh toán thành công phải dẫn tới phân bổ unit; bỏ `UCF109 ..> UCF107` vì xem/nhận lại lịch hẹn không thực hiện thanh toán lần nữa | 09/09/2026 |
 | `ISS-08` | `BR-DEP-06` cho phép đổi Unit Type nhưng không có use case và mâu thuẫn `BR-REN-08` | Baseline không hỗ trợ đổi Unit Type / Storage Unit trên Reservation hoặc Contract hiện hữu: trước Check-in hủy và đặt lại, sau Check-in Return rồi tạo Reservation mới | 09/09/2026 |

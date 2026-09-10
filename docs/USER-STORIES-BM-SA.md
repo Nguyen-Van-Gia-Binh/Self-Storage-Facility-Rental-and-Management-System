@@ -5,7 +5,7 @@
 >
 > Nhiệm vụ **T1.4** · Giai đoạn 1 · [PLAN.md](PLAN.md).
 > Tài liệu liên quan: [USE-CASES.md](USE-CASES.md) · [BUSINESS-RULES.md](BUSINESS-RULES.md) ·
-> [USER-STORIES.md](USER-STORIES.md) (quy ước viết và story của Storage Customer).
+> [USER-STORIES-SC.md](USER-STORIES-SC.md) (quy ước viết và story của Storage Customer).
 >
 > User story của Facility Staff và Facility Manager nằm ở nhiệm vụ **T1.3** (`FS-*`, `FM-*` — Tùng).
 
@@ -29,7 +29,7 @@
 
 ## 1. Quy ước viết user story
 
-Áp dụng nguyên các quy ước đã chốt ở [USER-STORIES.md § 1](USER-STORIES.md#1-quy-ước-viết-user-story):
+Áp dụng nguyên các quy ước đã chốt ở [USER-STORIES-SC.md § 1](USER-STORIES-SC.md#1-quy-ước-viết-user-story):
 
 | Hạng mục | Quy ước |
 |----------|---------|

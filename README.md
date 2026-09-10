@@ -57,7 +57,7 @@ Chi tiết từng luồng: [docs/TOPIC.md § 4–5](docs/TOPIC.md#4-các-luồng
     ├── TOPIC.md           # Đặc tả đề tài: actors, chức năng, luồng nghiệp vụ, glossary
     ├── PLAN.md            # Kế hoạch triển khai: giai đoạn, nhiệm vụ, phân công, rủi ro
     ├── USE-CASES.md       # Phân rã Flow 1–7 thành 73 use case
-    ├── USER-STORIES.md    # User story và acceptance criteria cho Storage Customer
+    ├── USER-STORIES-SC.md # User story và acceptance criteria cho Storage Customer
     ├── BUSINESS-RULES.md  # Reservation, Availability, Pricing, Payment và vòng đời thuê
     ├── CONVENTIONS.md     # Coding convention và quy ước REST API
     ├── REVIEW-CHECKLIST.md # Quy trình tự review tài liệu, kèm điều kiện dừng
@@ -117,7 +117,7 @@ Chi tiết nhiệm vụ từng giai đoạn: [docs/PLAN.md](docs/PLAN.md) · B�
 | Use Case Diagram tổng | ✅ Hoàn thành — [docs/diagrams/](docs/diagrams/use-case-diagram.puml) |
 | Business rules | ✅ Hoàn thành — [docs/BUSINESS-RULES.md](docs/BUSINESS-RULES.md) |
 | Coding convention & Git workflow | ✅ Hoàn thành — [docs/CONVENTIONS.md](docs/CONVENTIONS.md) · [CONTRIBUTING.md](CONTRIBUTING.md) |
-| User story — Storage Customer | ✅ Hoàn thành — [docs/USER-STORIES.md](docs/USER-STORIES.md) |
+| User story — Storage Customer | ✅ Hoàn thành — [docs/USER-STORIES-SC.md](docs/USER-STORIES-SC.md) |
 | User story — Facility Staff và Facility Manager | ✅ Hoàn thành — [docs/USER-STORIES-FS-FM.md](docs/USER-STORIES-FS-FM.md) |
 | User story — Business Operations Manager và System Administrator | ✅ Hoàn thành — [docs/USER-STORIES-BM-SA.md](docs/USER-STORIES-BM-SA.md) |
 | Activity Diagram 7 flow | ✅ Hoàn thành — [docs/diagrams/](docs/diagrams/activity-flow-4.puml) (T1.7, T1.7b, T1.8, T1.9) |
@@ -152,7 +152,7 @@ Customer (T1.2).
 Còn lại trước Báo cáo #1:
 
 1. Viết user story và acceptance criteria cho các actor còn lại — `FS-*`, `FM-*` (T1.3) và `BM-*`,
-   `SA-*` (T1.4), theo đúng khuôn mẫu ở [docs/USER-STORIES.md § 1](docs/USER-STORIES.md#1-quy-ước-viết-user-story).
+   `SA-*` (T1.4), theo đúng khuôn mẫu ở [docs/USER-STORIES-SC.md § 1](docs/USER-STORIES-SC.md#1-quy-ước-viết-user-story).
 2. Vẽ Activity Diagram cho cả 7 flow (T1.7, T1.8, T1.9).
 3. Thiết kế ERD và data dictionary: Facility, Storage Unit, Unit Type, Reservation, Contract, Payment,
    Support Request, User & Role (T1.10, T1.11) — bám theo vòng đời trạng thái đã chốt ở
@@ -177,7 +177,7 @@ Danh sách nhiệm vụ đầy đủ kèm người phụ trách và hạn: [docs
 **Phân tích yêu cầu**
 
 - [docs/USE-CASES.md](docs/USE-CASES.md) — Phân rã Flow 1–7 thành 73 use case, kèm bản đồ phủ 27 mã yêu cầu.
-- [docs/USER-STORIES.md](docs/USER-STORIES.md) — 22 user story và 111 acceptance criteria cho Storage Customer.
+- [docs/USER-STORIES-SC.md](docs/USER-STORIES-SC.md) — 22 user story và 111 acceptance criteria cho Storage Customer.
 - [docs/BUSINESS-RULES.md](docs/BUSINESS-RULES.md) — Baseline Reservation, Availability, Pricing, Payment, Deposit, Cancellation, Renewal, Overdue và Return.
 - [docs/diagrams/use-case-diagram.puml](docs/diagrams/use-case-diagram.puml) — Use Case Diagram tổng (PlantUML).
 - [docs/diagrams/activity-flow-1-booking.puml](docs/diagrams/activity-flow-1-booking.puml) — Activity Diagram Flow 1 (Reservation).
