@@ -64,9 +64,15 @@ Chi tiết từng luồng: [docs/TOPIC.md § 4–5](docs/TOPIC.md#4-các-luồng
     ├── OPEN-ISSUES.md     # Sổ vấn đề mở đang chờ quyết
     ├── check-docs.sh      # Script kiểm tính nhất quán giữa các tài liệu
     └── diagrams/
-        ├── use-case-diagram.puml   # Use Case Diagram tổng (PlantUML)
-        ├── activity-flow-3.puml    # Activity Diagram Flow 3 — Return (T1.8)
-        └── activity-flow-6.puml    # Activity Diagram Flow 6 — Renewal / Overdue (T1.8)
+        ├── use-case-diagram.puml              # Use Case Diagram tổng (PlantUML)
+        ├── activity-flow-1-booking.puml       # Activity Diagram Flow 1 — Reservation (T1.7)
+        ├── activity-flow2-checkin-handover.puml # Activity Diagram Flow 2 — Check-in / Handover (T1.7)
+        ├── activity-main-flow-end-to-end.puml # Activity Diagram Main Flow end-to-end (T1.7b)
+        ├── activity-flow-3.puml               # Activity Diagram Flow 3 — Return (T1.8)
+        ├── activity-flow-4.puml               # Activity Diagram Flow 4 — Business Rules / Fee / Revenue (T1.9)
+        ├── activity-flow-5.puml               # Activity Diagram Flow 5 — Facility Storage / Staff (T1.9)
+        ├── activity-flow-6.puml               # Activity Diagram Flow 6 — Renewal / Overdue (T1.8)
+        └── activity-flow-7.puml               # Activity Diagram Flow 7 — Support Request (T1.9)
 ```
 
 Cấu trúc mã nguồn (`backend/`, `frontend/`) sẽ được bổ sung ở nhiệm vụ T1.16 và T1.17.
@@ -114,7 +120,7 @@ Chi tiết nhiệm vụ từng giai đoạn: [docs/PLAN.md](docs/PLAN.md) · B�
 | User story — Storage Customer | ✅ Hoàn thành — [docs/USER-STORIES.md](docs/USER-STORIES.md) |
 | User story — Facility Staff và Facility Manager | ✅ Hoàn thành — [docs/USER-STORIES-FS-FM.md](docs/USER-STORIES-FS-FM.md) |
 | User story — Business Operations Manager và System Administrator | ✅ Hoàn thành — [docs/USER-STORIES-BM-SA.md](docs/USER-STORIES-BM-SA.md) |
-| Activity Diagram 7 flow | 🔄 Đang thực hiện — nhiệm vụ T1.7, T1.8, T1.9 |
+| Activity Diagram 7 flow | ✅ Hoàn thành — [docs/diagrams/](docs/diagrams/activity-flow-4.puml) (T1.7, T1.7b, T1.8, T1.9) |
 | Thiết kế cơ sở dữ liệu (ERD) | 🔄 Đang thực hiện — nhiệm vụ T1.10, T1.11 |
 | Thiết kế giao diện (wireframe / UI) | 🔄 Đang thực hiện — nhiệm vụ T1.13, T1.14, T1.15 |
 | Khung dự án Backend + Frontend | ⬜ Chưa bắt đầu — nhiệm vụ T1.16, T1.17 |
@@ -174,8 +180,14 @@ Danh sách nhiệm vụ đầy đủ kèm người phụ trách và hạn: [docs
 - [docs/USER-STORIES.md](docs/USER-STORIES.md) — 22 user story và 111 acceptance criteria cho Storage Customer.
 - [docs/BUSINESS-RULES.md](docs/BUSINESS-RULES.md) — Baseline Reservation, Availability, Pricing, Payment, Deposit, Cancellation, Renewal, Overdue và Return.
 - [docs/diagrams/use-case-diagram.puml](docs/diagrams/use-case-diagram.puml) — Use Case Diagram tổng (PlantUML).
+- [docs/diagrams/activity-flow-1-booking.puml](docs/diagrams/activity-flow-1-booking.puml) — Activity Diagram Flow 1 (Reservation).
+- [docs/diagrams/activity-flow2-checkin-handover.puml](docs/diagrams/activity-flow2-checkin-handover.puml) — Activity Diagram Flow 2 (Check-in / Handover).
+- [docs/diagrams/activity-main-flow-end-to-end.puml](docs/diagrams/activity-main-flow-end-to-end.puml) — Activity Diagram Main Flow end-to-end (demo).
 - [docs/diagrams/activity-flow-3.puml](docs/diagrams/activity-flow-3.puml) — Activity Diagram Flow 3 (Return).
+- [docs/diagrams/activity-flow-4.puml](docs/diagrams/activity-flow-4.puml) — Activity Diagram Flow 4 (Business Rules, Fee Management, Revenue Monitoring).
+- [docs/diagrams/activity-flow-5.puml](docs/diagrams/activity-flow-5.puml) — Activity Diagram Flow 5 (Facility Storage and Staff Management).
 - [docs/diagrams/activity-flow-6.puml](docs/diagrams/activity-flow-6.puml) — Activity Diagram Flow 6 (Renewal / Overdue).
+- [docs/diagrams/activity-flow-7.puml](docs/diagrams/activity-flow-7.puml) — Activity Diagram Flow 7 (Support Request and Issue Handling).
 
 **Quy ước kỹ thuật**
 

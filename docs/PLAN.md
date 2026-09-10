@@ -75,7 +75,7 @@ xong khung dự án trống chạy được.
 | T1.7 | Vẽ Activity Diagram Flow 1 và Flow 2 | Tùng | 14/09 |
 | T1.7b | Vẽ Activity Diagram Main Flow End-to-End và Ánh xạ UI Demo ([UI-FLOW-MAPPING.md](UI-FLOW-MAPPING.md)) | Tùng | 14/09 |
 | T1.8 | Vẽ Activity Diagram Flow 3 và Flow 6 — [activity-flow-3.puml](diagrams/activity-flow-3.puml), [activity-flow-6.puml](diagrams/activity-flow-6.puml) | Nhật | 14/09 |
-| T1.9 | Vẽ Activity Diagram Flow 4, Flow 5 và Flow 7 | Bình | 21/09 |
+| T1.9 | Vẽ Activity Diagram Flow 4, Flow 5 và Flow 7 — [activity-flow-4.puml](diagrams/activity-flow-4.puml), [activity-flow-5.puml](diagrams/activity-flow-5.puml), [activity-flow-7.puml](diagrams/activity-flow-7.puml) | Bình | 21/09 |
 | T1.10 | Thiết kế ERD cho toàn hệ thống | Tùng | 14/09 |
 | T1.11 | Viết data dictionary cho ERD | Nhật | 21/09 |
 | T1.12 | Thiết kế sơ đồ phân quyền theo vai trò và theo cơ sở (`SA-02`, `SA-03`) | Nhật | 21/09 |

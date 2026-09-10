@@ -1,0 +1,87 @@
+@startuml activity-flow-5
+' =====================================================================
+'  Flow 5 — Facility Storage and Staff Management
+'  Nguon: TOPIC.md § 4, USE-CASES.md § 6, BUSINESS-RULES.md § 13.3
+'  Nhiem vu T1.9
+'
+'  Flow 5 la cong viec quan tri tai co so: quan ly danh muc o kho,
+'  phan cong nhan su, xem bao cao va cau hinh phan quyen. Cac nhanh
+'  duoi day doc lap, khong theo thu tu.
+' =====================================================================
+
+title Flow 5 — Facility Storage and Staff Management\nQuản lý danh mục ô kho và nhân sự tại cơ sở
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam activity {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+  FontColor #0D47A1
+}
+skinparam activityDiamond {
+  BackgroundColor #FFF8E1
+  BorderColor #F9A825
+}
+skinparam swimlane {
+  BorderColor #90A4AE
+  TitleFontStyle bold
+}
+
+|Facility Manager|
+start
+:Đăng nhập cổng cơ sở\n(chỉ thấy dữ liệu cơ sở được gán — UC-F5-08);
+note right
+  Bốn nhánh là thao tác độc lập, không bắt buộc
+  theo thứ tự. Danh mục Facility cấp trên nhận
+  từ Flow 4 (UC-F4-01).
+end note
+
+split
+  :UC-F5-01\nQuản lý danh mục Unit Type\nvà kích thước ô kho;
+  :UC-F5-02\nQuản lý Storage Unit — mã, vị trí,\ngiá thuê, trạng thái;
+  |Facility Staff|
+  :Ghi nhận thay đổi hiện trạng ô kho tại chỗ;
+  |Facility Manager|
+  :UC-F5-03\nCập nhật trạng thái ô kho theo vòng đời;
+  note right
+    Vòng đời Storage Unit — BR § 13.3
+    Available -> Reserved -> Occupied -> Cleaning -> Available
+    Maintenance / Out of service tách nhánh khi sửa chữa
+    hoặc ngừng khai thác.
+  end note
+  stop
+split again
+  :UC-F5-04\nPhân công Facility Staff theo công việc trong ngày\n(trực bàn giao, kiểm tra, xử lý sự cố);
+  |Facility Staff|
+  :UC-F5-05\nXem danh sách công việc hằng ngày\nđược phân công;
+  note right
+    Cùng cơ chế phân công dùng lại ở Flow 2
+    (UC-F2-09 trực Check-in) và Flow 7
+    (UC-F7-04 xử lý sự cố).
+  end note
+  stop
+split again
+  :UC-F5-06\nXem báo cáo cơ sở — ô kho trống / đã thuê,\ndoanh thu, Usage Rate, hợp đồng quá hạn;
+  note right
+    Danh sách hợp đồng quá hạn dùng chung nguồn
+    với UC-F6-10 của Flow 6.
+  end note
+  stop
+split again
+  |System Administrator|
+  :UC-F5-07\nGán vai trò cho người dùng trong hệ thống;
+  :UC-F5-08\nCấu hình quyền truy cập dữ liệu\ntheo vai trò và theo cơ sở;
+  :Facility Manager và Facility Staff chỉ thấy\ndữ liệu của cơ sở được gán;
+  stop
+end split
+
+legend right
+  UC-F5-01 đến UC-F5-08
+  Danh mục Facility nhận từ Flow 4 (UC-F4-01)
+  Phân công dùng lại ở Flow 2 (UC-F2-09) và Flow 7 (UC-F7-04)
+  Nguồn: BUSINESS-RULES.md § 13.3
+endlegend
+
+@enduml

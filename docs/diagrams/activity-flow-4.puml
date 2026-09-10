@@ -1,0 +1,92 @@
+@startuml activity-flow-4
+' =====================================================================
+'  Flow 4 — Business Rules, Fee Management and Revenue Monitoring
+'  Nguon: TOPIC.md § 4, USE-CASES.md § 5, BUSINESS-RULES.md § 1-2, § 15
+'  Nhiem vu T1.9
+'
+'  Flow 4 khong phai quy trinh tuyen tinh — day la cong viec cau hinh
+'  chinh sach va giam sat. Cac nhanh duoi day doc lap, khong theo thu tu.
+' =====================================================================
+
+title Flow 4 — Business Rules, Fee Management and Revenue Monitoring\nThiết lập chính sách, khung phí và giám sát doanh thu
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam activity {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+  FontColor #0D47A1
+}
+skinparam activityDiamond {
+  BackgroundColor #FFF8E1
+  BorderColor #F9A825
+}
+skinparam swimlane {
+  BorderColor #90A4AE
+  TitleFontStyle bold
+}
+
+|Business Operations Manager|
+start
+:Đăng nhập cổng vận hành kinh doanh;
+note right
+  Mỗi nhánh là một nhóm thao tác độc lập,
+  không bắt buộc theo thứ tự.
+  Cấu hình ở đây được Flow 1, 2, 3 và 6 đọc lại
+  qua snapshot chính sách — BR-GEN-02.
+end note
+
+split
+  :UC-F4-02\nThiết lập chính sách Deposit;
+  :UC-F4-03\nThiết lập chính sách Renewal\nvà lịch nhắc hạn;
+  :UC-F4-04\nThiết lập chính sách Cancellation\nvà tỷ lệ hoàn tiền;
+  :UC-F4-05\nThiết lập chính sách Return\nvà quyết toán;
+  :UC-F4-06\nThiết lập chính sách Overdue\nvà các mốc D+1 / D+4 / D+10 / D+30 / D+60;
+  :Ghi vào bảng tham số cấu hình (BR § 2)\nqua BM-02 — có phiên bản, không hồi tố\nBR-GEN-01, BR-GEN-02;
+  note right
+    Các mốc D+n là đầu vào cho scheduled job
+    xử lý Overdue của Flow 6.
+  end note
+  stop
+split again
+  :UC-F4-07\nQuản lý khung giá thuê\ntheo Unit Type và theo Facility;
+  :UC-F4-08\nQuản lý phụ phí và phí quá hạn;
+  :UC-F4-09\nQuản lý chính sách giảm giá và miễn phí;
+  :Đơn giá lưu snapshot theo Unit Type × Facility\nqua BM-03 — BR-GEN-04, BR-GEN-05;
+  stop
+split again
+  :UC-F4-01\nQuản lý danh sách Facility toàn hệ thống\nqua BM-01;
+  |Facility Manager|
+  :Nhận cấu hình cơ sở để vận hành\n(sang Flow 5);
+  stop
+split again
+  :UC-F4-10\nGiám sát doanh thu theo cơ sở\nvà toàn hệ thống;
+  :UC-F4-11\nGiám sát Usage Rate và hiệu quả\nvận hành từng cơ sở;
+  :UC-F4-12\nXem và xuất báo cáo toàn hệ thống\ntheo cơ sở, Unit Type, doanh thu;
+  stop
+split again
+  |Facility Manager|
+  :UC-F6-12\nĐề xuất miễn hoặc giảm phí quá hạn theo vụ\nkèm lý do và chứng cứ — BR-OVD-10;
+  |Business Operations Manager|
+  if (Hồ sơ đủ căn cứ?) then (duyệt)
+    :UC-F4-13\nDuyệt — áp mức miễn / giảm\nvào kỳ Overdue của Contract;
+  else (từ chối)
+    :UC-F4-13\nTừ chối — giữ nguyên phí quá hạn;
+  endif
+  note right
+    Người đề xuất (Facility Manager) và người duyệt
+    (Business Operations Manager) phải khác nhau —
+    BR-OVD-10.
+  end note
+  stop
+end split
+
+legend right
+  UC-F4-01 đến UC-F4-13
+  Cấu hình đọc bởi Flow 1, 2, 3, 6 · nhánh duyệt nối Flow 6 (UC-F6-12)
+  Nguồn: BR-GEN-01, BR-GEN-02, BR-GEN-04, BR-GEN-05, BR-OVD-10
+endlegend
+
+@enduml
