@@ -63,6 +63,7 @@ split again
   end note
   stop
 split again
+  |Facility Manager|
   :UC-F5-06\nXem báo cáo cơ sở — ô kho trống / đã thuê,\ndoanh thu, Usage Rate, hợp đồng quá hạn;
   note right
     Danh sách hợp đồng quá hạn dùng chung nguồn

@@ -62,6 +62,7 @@ split again
   :Nhận cấu hình cơ sở để vận hành\n(sang Flow 5);
   stop
 split again
+  |Business Operations Manager|
   :UC-F4-10\nGiám sát doanh thu theo cơ sở\nvà toàn hệ thống;
   :UC-F4-11\nGiám sát Usage Rate và hiệu quả\nvận hành từng cơ sở;
   :UC-F4-12\nXem và xuất báo cáo toàn hệ thống\ntheo cơ sở, Unit Type, doanh thu;
