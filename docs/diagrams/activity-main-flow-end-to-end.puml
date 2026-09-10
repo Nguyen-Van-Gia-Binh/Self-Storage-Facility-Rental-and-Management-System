@@ -30,9 +30,9 @@ start
 
 |Facility Manager|
 :Xem đơn Confirmed tại tab "Reservations & Unit Allocation"
-và bấm chỉ định ô kho vật lý cụ thể (ví dụ: A-104)
-(UC-F1-08, BR-AVL-04)
--- UI: SCR-FM-02.1 --;
+và chỉ định ô kho vật lý cụ thể (Locker Q7-M12)
+(UC-F1-08, BR-AVL-04, BR-RES-02)
+-- UI: SCR-FM-02.2 (Assign Unit Modal) --;
 
 |System|
 :Tạo Hợp đồng *Pending Check-in*

@@ -30,7 +30,7 @@ graph LR
         S2 --> S3["Ảnh 3: SCR-SC-03<br>Giữ slot 48h & VietQR"]
     end
     subgraph Facility Manager
-        S3 -->|"Thanh toán Confirmed"| S4["Ảnh 4: SCR-FM-02.1<br>Chỉ định ô kho Q7-M12"]
+        S3 -->|"Thanh toán Confirmed"| S4["Ảnh 4: SCR-FM-02.2<br>Modal gán ô kho Q7-M12"]
     end
     subgraph Facility Staff
         S4 -->|"Đến ngày hẹn Check-in"| S5["Ảnh 5: SCR-FS-01<br>Đón khách & Tra cứu CCCD"]
@@ -51,7 +51,7 @@ graph LR
 | **Ảnh 1** | **SCR-SC-01**<br>Storage Facility Directory & Search | Trỏ chuột vào thanh lọc khu vực (Quận 7), bấm chọn cơ sở **District 7 Flagship**, xem danh sách tiện ích (Máy lạnh 24/7, PCCC tự động, bảo vệ AI) và mức giá khởi điểm. | *"Thưa cô, luồng chính của hệ thống bắt đầu từ góc nhìn Khách hàng trên màn hình `SCR-SC-01`. Khách hàng tìm kiếm cơ sở theo khu vực mong muốn, xem đầy đủ tiện ích thực tế và mức giá niêm yết minh bạch trước khi bấm 'View Units' để chọn kho."* | `UC-F1-01`<br>`UC-F1-02` |
 | **Ảnh 2** | **SCR-SC-02**<br>Storage Unit Reservation & Duration Selection | Chọn loại kho **Medium (6.0 m²)**, chọn ngày bắt đầu thuê (12/03/2026), chọn thời hạn thuê **3 tháng**. Hệ thống kiểm tra số lượng kho trống khả dụng. | *"Tại màn hình `SCR-SC-02`, khách hàng cấu hình nhu cầu: chọn kích thước ô kho, ngày bắt đầu và thời hạn thuê 3 tháng. Hệ thống tự động kiểm tra năng lực chứa trống (Capacity) theo thời gian thực để đảm bảo không bị trùng lặp."* | `UC-F1-04`<br>`BR-GEN-03`<br>`BR-AVL-01` |
 | **Ảnh 3** | **SCR-SC-02.1** & **SCR-SC-03**<br>Booking Checkout & VietQR Gateway | Trỏ vào **Đồng hồ đếm ngược 48h**, bảng kê tài chính: Phí thuê 3 tháng (2.4M) + Tiền cọc Deposit 1 tháng (800k) = 3.2M VND. Hiển thị mã VietQR động để quét thanh toán. | *"Sau khi điền thông tin cá nhân, hệ thống chuyển sang cổng thanh toán `SCR-SC-03`. Theo Business Rule `BR-DEP-03`, hệ thống giữ một slot kho trong đúng 48 giờ. Khách hàng thanh toán toàn bộ tiền thuê N tháng cùng tiền cọc Deposit trong 1 giao dịch qua mã VietQR động."* | `UC-F1-06`<br>`UC-F1-07`<br>`BR-DEP-03`<br>`BR-PAY-01` |
-| **Ảnh 4** | **SCR-FM-02.1**<br>Facility Contracts Hub *(Default View)* | **[Chuyển Portal: Khách hàng $\rightarrow$ Quản lý cơ sở]**<br>Manager vào Hub `SCR-FM-02.1`, trỏ chuột vào Tab **Reservations & Unit Allocation (12)**, xem đơn của Nguyễn Hoàng Xuân đã *Confirmed* thanh toán, bấm chọn chỉ định ô kho vật lý cụ thể: **Locker Q7-M12 (Ground Floor)**. | *"Ngay khi thanh toán thành công, hệ thống chuyển dữ liệu sang Portal của Quản lý cơ sở. Manager mở tab 'Reservations & Unit Allocation' tại màn hình `SCR-FM-02.1`, kiểm tra đơn và thực hiện thao tác quan trọng nhất: chỉ định chính xác ô kho vật lý cụ thể (ví dụ Locker Q7-M12) cho khách. Hệ thống lập tức sinh Hợp đồng Pending Check-in và Lịch hẹn."* | `UC-F1-08`<br>`BR-AVL-04` |
+| **Ảnh 4** | **SCR-FM-02.2**<br>Assign Physical Storage Unit Modal *(Active Overlay on SCR-FM-02.1)* | **[Chuyển Portal: Khách hàng $\rightarrow$ Quản lý cơ sở]**<br>Manager vào Hub `SCR-FM-02.1`, chọn Tab **Reservations & Unit Allocation (12)**, bấm **[ Assign Unit ]** trên đơn của Nguyễn Hoàng Xuân (`RSV-2026-001042`).<br>Modal **`SCR-FM-02.2`** hiển thị: Manager tích chọn ô kho **Locker Q7-M12 (Ground Floor — Aisle B)** đang sạch sẽ sẵn sàng (`Recommended • Swept & Sanitized ✓`), rồi bấm **[ Confirm Unit Allocation & Issue Appointment → ]**. | *"Ngay khi thanh toán thành công, hệ thống chuyển dữ liệu sang Portal của Quản lý cơ sở. Manager mở tab 'Reservations & Unit Allocation' và bấm 'Assign Unit'. Màn hình Modal `SCR-FM-02.2` hiện lên trực quan: Manager tích chọn ô kho vật lý trống đạt chuẩn Locker Q7-M12 tại tầng trệt, rồi bấm xác nhận phân bổ. Hệ thống tự động kích hoạt rule BR-RES-02: liên kết kho với hợp đồng, gửi SMS thông báo lịch hẹn kèm mã vào cổng cho khách, và đưa khách vào hàng đợi đón tiếp hôm nay của nhân viên."* | `UC-F1-08`<br>`BR-AVL-04`<br>`BR-RES-02` |
 | **Ảnh 5** | **SCR-FS-01**<br>Staff Daily Operations Desk | **[Chuyển Portal: Đến ngày hẹn $\rightarrow$ Nhân viên trực bàn giao]**<br>Khách tới quầy. Nhân viên mở màn hình ca trực `SCR-FS-01`, tra cứu tên Nguyễn Hoàng Xuân / CCCD `079098001234`, thẻ trạng thái hiện xanh *Customer Arrived*, xác nhận đã thu đủ 100% tiền cọc và tiền thuê. | *"Đến ngày hẹn, khách hàng đến cơ sở thực tế. Nhân viên trực mở màn hình tác nghiệp `SCR-FS-01`. Hệ thống hiển thị danh sách ca trực hôm nay, nhân viên quét CCCD xác thực danh tính khách hàng và xác nhận tình trạng thanh toán đã hoàn tất."* | `UC-F2-01`<br>`UC-F2-02`<br>`BR-CHK-01` |
 | **Ảnh 6** | **SCR-FS-02**<br>Facility Units & Floor Status Board | Nhân viên mở sơ đồ mặt bằng `SCR-FS-02`, dẫn khách đến vị trí kho thực tế **Q7-M12 (Tầng trệt, Dãy B)**. Khách và nhân viên kiểm tra 4 tiêu chí: phòng trống sạch, cửa cuốn không kẹt, tường sàn không ẩm mốc, độ ẩm 54% RH. | *"Nhân viên dẫn khách đến vị trí ô kho thực tế trên sơ đồ mặt bằng `SCR-FS-02`. Tại đây, hai bên cùng đối soát hiện trạng ô kho: kiểm tra khóa số, cửa cuốn trơn tru và môi trường kho đạt chuẩn sạch sẽ trước khi bàn giao."* | `BR-CHK-02` |
 | **Ảnh 7** | **SCR-FS-01** *(Modal Ký số)* $\rightarrow$ **SCR-SC-04** *(App Khách)* | • Trên `SCR-FS-01`: Nhân viên chụp ảnh hiện trạng phòng, hai bên ký chữ ký điện tử trên tablet.<br>• **Hệ thống tự động kích hoạt tức thì**: Chuyển sang màn hình `SCR-SC-04` của khách: Hợp đồng chuyển **Active**, hiển thị **Mã PIN & Mã QR Code mở cổng bảo mật** màu xanh, tự động gửi email kèm file PDF biên bản. | *"Tại bước cuối cùng, nhân viên chụp ảnh hiện trạng và hai bên ký số biên bản bàn giao điện tử trên `SCR-FS-01`. Ngay khi bấm hoàn tất, HỆ THỐNG TỰ ĐỘNG 100%: kích hoạt hợp đồng sang Active, chuyển kho sang Occupied, và trên ứng dụng của khách `SCR-SC-04`, mã PIN và mã QR mở cửa bảo mật lập tức sáng xanh để khách bắt đầu cất đồ."* | `UC-F2-03`<br>`UC-F2-06`<br>`UC-F2-07`<br>`BR-ACC-01`<br>`BR-ACC-02` |
@@ -149,7 +149,7 @@ graph LR
 
 ---
 
-## 4. Danh Mục Đầy Đủ 25 Màn Hình Dự Án Trên Stitch (Cross-Reference)
+## 4. Danh Mục Đầy Đủ 26 Màn Hình Dự Án Trên Stitch (Cross-Reference)
 
 | STT | Nhóm Actor | Mã Màn hình | Tên Màn hình (Stitch Project `10748997868964560026`) | Vai trò trong hệ thống |
 | :---: | :--- | :--- | :--- | :--- |
@@ -166,15 +166,16 @@ graph LR
 | 11 | | `SCR-FM-01.1`| Facility Storage Units & Layout Management (Default View) | Chế độ xem mặc định danh sách ô kho cơ sở |
 | 12 | | `SCR-FM-02` | Facility Contracts, Allocations & Overdue Hub | Quản lý hợp đồng & phân bổ (Đang mở Modal D+60 Sealing Protocol) |
 | 13 | | `SCR-FM-02.1`| Facility Contracts, Allocations & Overdue Hub (Default View) | Giao diện chuẩn 4 Tab: Active Contracts, Reservations Allocation, Return, Overdue |
-| 14 | | `SCR-FM-03` | Staff Shift Scheduling & Task Dispatch Board | Phân công ca trực và nhiệm vụ bàn giao trong ngày |
-| 15 | | `SCR-FM-04` | Facility Performance & Occupancy Analytics | Thống kê hiệu suất và tỷ lệ lấp đầy Usage Rate |
-| 16 | | `SCR-FM-04.1`| Facility Performance & Occupancy Analytics (Default View) | Chế độ xem mặc định biểu đồ tỷ lệ lấp đầy cơ sở |
-| 17 | **Business** | `SCR-BM-01` | Multi-Facility Network Management | Quản lý mạng lưới toàn bộ cơ sở toàn quốc |
-| 18 | | `SCR-BM-01.1`| Multi-Facility Network Management (Default View) | Chế độ xem mặc định danh mục cơ sở toàn hệ thống |
-| 19 | | `SCR-BM-02` | Business Rules & Policy Parameter Engine | Cấu hình tham số nghiệp vụ (Deposit, Overdue, Grace) |
-| 20 | | `SCR-BM-03` | Pricing Matrix, Surcharges & Fee Waiver Approval | Quản lý khung giá thuê, phụ phí và duyệt miễn giảm |
-| 21 | | `SCR-BM-04` | Enterprise BI & Cross-Facility Report Export Hub | Báo cáo doanh thu và trích xuất dữ liệu toàn hệ thống |
-| 22 | **Admin** | `SCR-SA-01` | User Accounts, RBAC & Facility Scope Assignment Hub | Quản trị tài khoản và phân quyền theo cơ sở |
-| 23 | | `SCR-SA-01.1`| Edit User Role & Facility Scope Assignment (Modal Active) | Modal gán vai trò và phạm vi cơ sở phụ trách |
-| 24 | | `SCR-SA-02` | System Login & User Activity Audit Trail | Xem nhật ký hoạt động Activity Log toàn hệ thống |
-| 25 | **Common** | `SCR-SYS-01`| Unified Authentication & Customer Registration | Màn hình đăng nhập / đăng ký tài khoản tập trung |
+| 14 | | `SCR-FM-02.2`| Assign Physical Storage Unit Modal (Active Overlay on SCR-FM-02.1) | Modal gán ô kho vật lý cụ thể (Locker Q7-M12) cho đơn đặt chỗ |
+| 15 | | `SCR-FM-03` | Staff Shift Scheduling & Task Dispatch Board | Phân công ca trực và nhiệm vụ bàn giao trong ngày |
+| 16 | | `SCR-FM-04` | Facility Performance & Occupancy Analytics | Thống kê hiệu suất và tỷ lệ lấp đầy Usage Rate |
+| 17 | | `SCR-FM-04.1`| Facility Performance & Occupancy Analytics (Default View) | Chế độ xem mặc định biểu đồ tỷ lệ lấp đầy cơ sở |
+| 18 | **Business** | `SCR-BM-01` | Multi-Facility Network Management | Quản lý mạng lưới toàn bộ cơ sở toàn quốc |
+| 19 | | `SCR-BM-01.1`| Multi-Facility Network Management (Default View) | Chế độ xem mặc định danh mục cơ sở toàn hệ thống |
+| 20 | | `SCR-BM-02` | Business Rules & Policy Parameter Engine | Cấu hình tham số nghiệp vụ (Deposit, Overdue, Grace) |
+| 21 | | `SCR-BM-03` | Pricing Matrix, Surcharges & Fee Waiver Approval | Quản lý khung giá thuê, phụ phí và duyệt miễn giảm |
+| 22 | | `SCR-BM-04` | Enterprise BI & Cross-Facility Report Export Hub | Báo cáo doanh thu và trích xuất dữ liệu toàn hệ thống |
+| 23 | **Admin** | `SCR-SA-01` | User Accounts, RBAC & Facility Scope Assignment Hub | Quản trị tài khoản và phân quyền theo cơ sở |
+| 24 | | `SCR-SA-01.1`| Edit User Role & Facility Scope Assignment (Modal Active) | Modal gán vai trò và phạm vi cơ sở phụ trách |
+| 25 | | `SCR-SA-02` | System Login & User Activity Audit Trail | Xem nhật ký hoạt động Activity Log toàn hệ thống |
+| 26 | **Common** | `SCR-SYS-01`| Unified Authentication & Customer Registration | Màn hình đăng nhập / đăng ký tài khoản tập trung |
