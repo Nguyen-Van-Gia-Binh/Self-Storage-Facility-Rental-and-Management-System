@@ -6,7 +6,7 @@
 >
 > Nhiệm vụ **T1.5** · Giai đoạn 1 · [PLAN.md](PLAN.md).
 > Tài liệu liên quan: [TOPIC.md](TOPIC.md) · [USE-CASES.md](USE-CASES.md) ·
-> [USER-STORIES.md](USER-STORIES.md) · [USER-STORIES-FS-FM.md](USER-STORIES-FS-FM.md) ·
+> [USER-STORIES-SC.md](USER-STORIES-SC.md) · [USER-STORIES-FS-FM.md](USER-STORIES-FS-FM.md) ·
 > [USER-STORIES-BM-SA.md](USER-STORIES-BM-SA.md)
 
 ---

@@ -239,7 +239,7 @@ Cách duy nhất hiệu quả. **Tự tính trước, rồi mới mở tài li�
 
 ## 6. T1.2 — User story
 
-**Tài liệu:** [USER-STORIES.md](USER-STORIES.md) · **Hạn:** 21/09
+**Tài liệu:** [USER-STORIES-SC.md](USER-STORIES-SC.md) · **Hạn:** 21/09
 
 ### Lớp 3 — phép kiểm chính: "viết được test case thủ công không?"
 
@@ -260,7 +260,7 @@ liệu → thao tác → kết quả quan sát được*. Viết không nổi ng
 - [X] **Từ ngữ mơ hồ** ("nhanh chóng", "dễ dàng", "hợp lý", "phù hợp"…) — kết quả: **0 dòng**, đạt
 - [X] **Story thiếu AC nhánh thất bại** — thử tự động hoá bằng từ khoá, báo 7 story nhưng soi tay chỉ
   **1 là thật**: `US-SC-02.2` có 5 AC và cả 5 đều là happy path, vi phạm chính quy ước ở
-  [§ 1](USER-STORIES.md#1-quy-ước-viết-user-story). **Đã sửa** — bổ sung `AC-6` về trường hợp bảng
+  [§ 1](USER-STORIES-SC.md#1-quy-ước-viết-user-story). **Đã sửa** — bổ sung `AC-6` về trường hợp bảng
   giá thay đổi trong lúc khách đang xem màn hình xác nhận
 - [ ] Rà bằng mắt các story còn lại: mỗi story có ít nhất một AC mô tả nhánh thất bại, từ chối, hoặc
   dữ liệu rỗng

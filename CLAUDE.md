@@ -38,7 +38,7 @@ content rather than defining it, and they are joined by stable codes:
   requirement codes have at least one use case — adding a code to `TOPIC.md § 3` breaks that
   assertion. Its § 9 records a deliberate gap: `SA-01` and `SA-04` belong to no flow's "Phạm vi liên
   quan" in `TOPIC.md`, so they are handled as foundational use cases instead.
-- `docs/USER-STORIES.md`, `docs/USER-STORIES-FS-FM.md` and `docs/USER-STORIES-BM-SA.md` hold stories
+- `docs/USER-STORIES-SC.md`, `docs/USER-STORIES-FS-FM.md` and `docs/USER-STORIES-BM-SA.md` hold stories
   for Storage Customer (22 stories / 111 AC / 95 points), Facility Staff + Facility Manager
   (23 / 94 / 111), and Business Operations Manager + System Administrator (20 / 100 / 100).
   Stories use `US-<mã yêu cầu>.<nn>` and each file's stated totals must be recomputed when changed.

@@ -4,7 +4,7 @@
 > [TOPIC.md § 4–5](TOPIC.md#4-các-luồng-nghiệp-vụ-chính-flow-15) thành danh sách use case chi tiết.
 >
 > Nhiệm vụ **T1.1** và **T1.6** · Giai đoạn 1 · [PLAN.md](PLAN.md).
-> Tài liệu liên quan: [USER-STORIES.md](USER-STORIES.md) ·
+> Tài liệu liên quan: [USER-STORIES-SC.md](USER-STORIES-SC.md) ·
 > [USER-STORIES-FS-FM.md](USER-STORIES-FS-FM.md) ·
 > [USER-STORIES-BM-SA.md](USER-STORIES-BM-SA.md) · [BUSINESS-RULES.md](BUSINESS-RULES.md)
 
