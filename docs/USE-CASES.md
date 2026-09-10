@@ -86,6 +86,8 @@ Tài liệu có **75 use case nghiệp vụ** (Flow 1–7) và **3 use case nề
 
 *Luồng quản lý ô kho đang thuê.* Tác nhân chính: **Storage Customer** · Liên quan: **Facility Manager**, **Facility Staff**
 
+Activity Diagram: [diagrams/activity-flow-3.puml](diagrams/activity-flow-3.puml) — trang 1 giám sát (`UC-F3-01`–`04`, `UC-F3-10`–`12`); trang 2 quy trình Return (`UC-F3-05`–`09`, `UC-F3-13`).
+
 | Mã UC       | Use case                                                                    | Actor chính     | Actor liên quan | Mã yêu cầu        |
 | ------------ | --------------------------------------------------------------------------- | ---------------- | ---------------- | -------------------- |
 | `UC-F3-01` | Xem danh sách các ô kho đang thuê                                      | Storage Customer | —               | `SC-05`            |
@@ -146,6 +148,8 @@ Tài liệu có **75 use case nghiệp vụ** (Flow 1–7) và **3 use case nề
 ## 7. Flow 6 — Storage Renewal and Overdue Handling
 
 *Luồng gia hạn thuê và xử lý quá hạn.* Tác nhân chính: **Storage Customer**, **Facility Manager**
+
+Activity Diagram: [diagrams/activity-flow-6.puml](diagrams/activity-flow-6.puml) — trang 1 nhắc hạn và Renewal (`UC-F6-01`–`04`); trang 2 Overdue D+1 đến D+60 (`UC-F6-05`–`12`).
 
 | Mã UC       | Use case                                                       | Actor chính     | Actor liên quan | Mã yêu cầu        |
 | ------------ | -------------------------------------------------------------- | ---------------- | ---------------- | -------------------- |
@@ -245,6 +249,9 @@ một use case tương ứng.
 Bản chuẩn UML đầy đủ 78 use case: **[diagrams/use-case-diagram.puml](diagrams/use-case-diagram.puml)**
 — mở bằng extension *PlantUML* trong VS Code (`Alt+D` để xem trước; `Ctrl+Shift+P` → *PlantUML: Export
 Current Diagram* để xuất PNG/SVG nộp báo cáo).
+
+Activity Diagram đã có: Flow 3 [activity-flow-3.puml](diagrams/activity-flow-3.puml) · Flow 6
+[activity-flow-6.puml](diagrams/activity-flow-6.puml). Flow 1–2 (T1.7) và Flow 4, 5, 7 (T1.9) chưa vẽ.
 
 Bản rút gọn dưới đây gom use case theo nhóm chức năng để nắm nhanh quan hệ actor × luồng:
 

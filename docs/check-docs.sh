@@ -16,7 +16,7 @@
 
 # --- Chot chan: thieu file ma van chay tiep se cho ket qua "sach" gia --------
 MISSING=0
-FILES="README.md CONTRIBUTING.md docs/TOPIC.md docs/PLAN.md docs/USE-CASES.md docs/USER-STORIES.md docs/USER-STORIES-FS-FM.md docs/USER-STORIES-BM-SA.md docs/BUSINESS-RULES.md docs/CONVENTIONS.md docs/diagrams/use-case-diagram.puml"
+FILES="README.md CONTRIBUTING.md docs/TOPIC.md docs/PLAN.md docs/USE-CASES.md docs/USER-STORIES.md docs/USER-STORIES-FS-FM.md docs/USER-STORIES-BM-SA.md docs/BUSINESS-RULES.md docs/CONVENTIONS.md docs/diagrams/use-case-diagram.puml docs/diagrams/activity-flow-3.puml docs/diagrams/activity-flow-6.puml"
 for f in $FILES; do
   [ -f "$f" ] || { echo "THIEU FILE: $f"; MISSING=1; }
 done
@@ -38,13 +38,13 @@ report "$T/l" "moi link tro toi file co that"
 echo "== 2. Ma UC duoc tham chieu nhung khong ton tai =="
 grep -o '^| `UC-[A-Z0-9-]*`' docs/USE-CASES.md | tr -d '|` ' | sort -u > "$T/uc_def"
 grep -oh 'UC-\(F[0-9]-[0-9][0-9]\|SYS-[0-9][0-9]\)' docs/USER-STORIES.md docs/USER-STORIES-FS-FM.md \
-  docs/USER-STORIES-BM-SA.md docs/BUSINESS-RULES.md docs/diagrams/use-case-diagram.puml README.md 2>/dev/null | sort -u > "$T/uc_ref"
+  docs/USER-STORIES-BM-SA.md docs/BUSINESS-RULES.md docs/diagrams/*.puml README.md 2>/dev/null | sort -u > "$T/uc_ref"
 comm -13 "$T/uc_def" "$T/uc_ref" > "$T/uc_bad"
 report "$T/uc_bad" "moi ma UC duoc tham chieu deu co dinh nghia"
 
 echo "== 3. Ma BR duoc tham chieu nhung khong ton tai =="
 grep -o '^| `BR-[A-Z]*-[0-9][0-9]`' docs/BUSINESS-RULES.md | tr -d '|` ' | sort -u > "$T/br_def"
-grep -oh 'BR-[A-Z]\{3\}-[0-9][0-9]' docs/*.md README.md CONTRIBUTING.md | sort -u > "$T/br_ref"
+grep -oh 'BR-[A-Z]\{3\}-[0-9][0-9]' docs/*.md README.md CONTRIBUTING.md docs/diagrams/*.puml | sort -u > "$T/br_ref"
 comm -13 "$T/br_def" "$T/br_ref" > "$T/br_bad"
 report "$T/br_bad" "moi ma BR duoc tham chieu deu co dinh nghia"
 

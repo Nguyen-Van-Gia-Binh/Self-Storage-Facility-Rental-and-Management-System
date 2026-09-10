@@ -1,0 +1,165 @@
+@startuml activity-flow-6-renewal
+' =====================================================================
+'  Flow 6 — Renewal (trang 1/2)
+'  Nguon: TOPIC.md § 5, USE-CASES.md § 7, BUSINESS-RULES.md § 7
+'  Nhiem vu T1.8
+' =====================================================================
+
+title Flow 6 — Storage Renewal and Overdue Handling\nNhắc hạn và Renewal
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam activity {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+  FontColor #0D47A1
+}
+skinparam activityDiamond {
+  BackgroundColor #FFF8E1
+  BorderColor #F9A825
+}
+skinparam swimlane {
+  BorderColor #90A4AE
+  TitleFontStyle bold
+}
+
+|System|
+start
+:Contract Active, sắp hết hạn;
+
+:UC-F6-01 Gửi nhắc hạn\n7, 3 và 1 ngày trước ngày kết thúc\nrenewal.reminder_days, BR-REN-01;
+
+|Storage Customer|
+:UC-F6-02 Yêu cầu gia hạn\nchọn N tháng 1 đến 12;
+
+note right
+  BR-REN-10: yêu cầu chưa thanh toán
+  chỉ là báo giá — không kéo dài Contract,
+  không giữ capacity.
+end note
+
+|System|
+:Kiểm tra Availability khoảng gia hạn\nBR-AVL-01, BR-REN-09;
+
+if (còn capacity?) then (còn)
+  |Storage Customer|
+  :UC-F6-03 Thanh toán phí gia hạn N tháng\nNếu Overdue: kèm toàn bộ nợ BR-REN-06;
+  |System|
+  :UC-F6-04 Tự ghi nhận Renewal sau Payment\nkhông cần Facility Manager duyệt\nBR-REN-04;
+  :Cùng Storage Unit, không đổi ô\nBR-REN-08;
+  :Kỳ mới bắt đầu ngày liền sau ngày kết thúc kỳ cũ;
+  :Contract chuyển Active\nAccess mở lại nếu đang khóa;
+  stop
+else (hết capacity)
+  |Storage Customer|
+  :Từ chối Renewal — không hủy commitment đã tạo trước\nkể cả Reservation Pending Payment\nHướng dẫn Return hoặc tạo Reservation mới\nBR-REN-09;
+  stop
+endif
+
+legend right
+  UC-F6-01 đến UC-F6-04
+endlegend
+
+@enduml
+
+@startuml activity-flow-6-overdue
+' =====================================================================
+'  Flow 6 — Overdue D+1 den D+60 (trang 2/2)
+' =====================================================================
+
+title Flow 6 — Overdue D+1 đến D+60\nUC-F6-05 đến UC-F6-12
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam activity {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+  FontColor #0D47A1
+}
+skinparam activityDiamond {
+  BackgroundColor #FFF8E1
+  BorderColor #F9A825
+}
+skinparam swimlane {
+  BorderColor #90A4AE
+  TitleFontStyle bold
+}
+
+|System|
+start
+:Hết hạn, chưa Renewal thành công\nvà chưa hoàn tất Return;
+note right
+  Các mốc D+n chạy theo lịch.
+  Khách được chọn Renewal hoặc Return
+  bất kỳ lúc nào trước D+60 — không phải
+  chờ hết D+30 mới chọn. BR-OVD-08
+end note
+
+:UC-F6-05 D+1\nContract chuyển Overdue\nBR-OVD-01;
+note right
+  D+1 đến D+3: ân hạn, chưa tính phí,
+  Access vẫn dùng được — BR-OVD-02
+end note
+
+:UC-F6-06 Từ D+4 tính phí quá hạn\n5 phần trăm/ngày trên tiền thuê một tháng\ntrần 50 phần trăm từ D+13 — BR-OVD-03, BR-OVD-04;
+
+:UC-F6-07 D+10\nAccess chuyển Suspended\nô kho vẫn Occupied — BR-OVD-05;
+
+:UC-F6-08 D+30\nGửi thông báo chấm dứt\nBR-OVD-06;
+
+|Facility Manager|
+:UC-F6-10 Theo dõi danh sách hợp đồng quá hạn tại cơ sở;
+
+if (đề xuất miễn giảm phí theo vụ?) then (có)
+  :UC-F6-12 Đề xuất miễn hoặc giảm phí quá hạn\nkèm lý do và chứng cứ BR-OVD-10;
+  |Business Operations Manager|
+  :UC-F4-13 Duyệt hoặc từ chối\nFlow 4, không tự đề xuất rồi tự duyệt;
+  |Facility Manager|
+else (không)
+endif
+
+|Storage Customer|
+if (trước D+60 khách chọn?) then (Renewal)
+  :Thanh toán toàn bộ nợ kèm phí kỳ mới\nBR-OVD-08 nhánh a;
+  |System|
+  :UC-F6-04 Ghi nhận Renewal\nContract Active, Access mở trong 1 giờ\nBR-REN-06;
+  stop
+else (không Renewal)
+  if (chọn Return?) then (Return)
+    :Sang Flow 3 — UC-F3-05\nContract chuyển Pending Return;
+    note right
+      BR-OVD-08 nhánh b
+      BR-RET-11: đồng hồ D+60 không dừng.
+      Access chỉ mở theo lịch trả kho.
+      Không hỗ trợ chỉ trả nợ.
+    end note
+    if (nghiệm thu xong trước D+60?) then (có)
+      :Flow 3 đóng Contract Closed;
+      stop
+    else (chưa xong)
+      :Hủy lịch Return khi tới D+60;
+    endif
+  else (không chọn)
+  endif
+endif
+
+|System|
+:UC-F6-11 D+60 tự chấm dứt Contract\nAccess Revoked, chốt nợ, cấn Deposit\ntạo nhiệm vụ xử lý tài sản\nBR-OVD-07;
+:Không tự bán hoặc tiêu hủy tài sản;
+
+|Facility Manager|
+:UC-F6-09 Xử lý tài sản sau Terminated\nbiên bản + ảnh, niêm phong, khu lưu giữ\nBR-OVD-11;
+:Storage Unit chuyển Cleaning;
+
+stop
+
+legend right
+  Nguồn: BR-OVD-01 đến BR-OVD-11, BR-REN-06, BR-RET-11
+  Gọi UC-F4-13 (Flow 4) và UC-F3-05 (Flow 3)
+endlegend
+
+@enduml

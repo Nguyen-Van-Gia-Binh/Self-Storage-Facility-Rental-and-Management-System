@@ -49,8 +49,11 @@ content rather than defining it, and they are joined by stable codes:
   parameter means recomputing that table too.
 
 `docs/diagrams/use-case-diagram.puml` and the Mermaid diagram in `USE-CASES.md § 11` are two views of
-the use case list; both must be updated when a use case is added. The `.puml` is not rendered in the
-repo — export PNG/SVG from VS Code when a report needs the image.
+the use case list; both must be updated when a use case is added. Activity Diagrams live beside them:
+`docs/diagrams/activity-flow-3.puml` (T1.8, Return) and `docs/diagrams/activity-flow-6.puml` (T1.8,
+Renewal / Overdue). A change to Flow 3 or Flow 6 use cases or `BR-RET` / `BR-REN` / `BR-OVD` must be
+reflected there. The `.puml` files are not rendered in the repo — export PNG/SVG from VS Code when a
+report needs the image.
 
 `docs/CONVENTIONS.md` (coding and REST API conventions) and `CONTRIBUTING.md` (Git workflow) describe
 code that does not exist yet. Keep them aligned with `PLAN.md § 6`, which already fixed the branch

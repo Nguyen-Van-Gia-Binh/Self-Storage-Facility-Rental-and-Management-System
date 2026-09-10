@@ -64,7 +64,9 @@ Chi tiết từng luồng: [docs/TOPIC.md § 4–5](docs/TOPIC.md#4-các-luồng
     ├── OPEN-ISSUES.md     # Sổ vấn đề mở đang chờ quyết
     ├── check-docs.sh      # Script kiểm tính nhất quán giữa các tài liệu
     └── diagrams/
-        └── use-case-diagram.puml   # Use Case Diagram tổng (PlantUML)
+        ├── use-case-diagram.puml   # Use Case Diagram tổng (PlantUML)
+        ├── activity-flow-3.puml    # Activity Diagram Flow 3 — Return (T1.8)
+        └── activity-flow-6.puml    # Activity Diagram Flow 6 — Renewal / Overdue (T1.8)
 ```
 
 Cấu trúc mã nguồn (`backend/`, `frontend/`) sẽ được bổ sung ở nhiệm vụ T1.16 và T1.17.
@@ -172,6 +174,8 @@ Danh sách nhiệm vụ đầy đủ kèm người phụ trách và hạn: [docs
 - [docs/USER-STORIES.md](docs/USER-STORIES.md) — 22 user story và 111 acceptance criteria cho Storage Customer.
 - [docs/BUSINESS-RULES.md](docs/BUSINESS-RULES.md) — Baseline Reservation, Availability, Pricing, Payment, Deposit, Cancellation, Renewal, Overdue và Return.
 - [docs/diagrams/use-case-diagram.puml](docs/diagrams/use-case-diagram.puml) — Use Case Diagram tổng (PlantUML).
+- [docs/diagrams/activity-flow-3.puml](docs/diagrams/activity-flow-3.puml) — Activity Diagram Flow 3 (Return).
+- [docs/diagrams/activity-flow-6.puml](docs/diagrams/activity-flow-6.puml) — Activity Diagram Flow 6 (Renewal / Overdue).
 
 **Quy ước kỹ thuật**
 
