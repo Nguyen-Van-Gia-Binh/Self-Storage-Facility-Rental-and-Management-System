@@ -1,0 +1,192 @@
+@startuml activity-flow-3-monitor
+' =====================================================================
+'  Flow 3 — Rented Storage Unit Management (trang 1/2: giam sat)
+'  Nguon: TOPIC.md § 4, USE-CASES.md § 4, BUSINESS-RULES.md § 9
+'  Nhiem vu T1.8
+' =====================================================================
+
+title Flow 3 — Rented Storage Unit Management\nGiám sát ô kho đang thuê
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam activity {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+  FontColor #0D47A1
+}
+skinparam activityDiamond {
+  BackgroundColor #FFF8E1
+  BorderColor #F9A825
+}
+skinparam swimlane {
+  BorderColor #90A4AE
+  TitleFontStyle bold
+}
+
+|Storage Customer|
+start
+:Contract Active\nStorage Unit Occupied;
+note right
+  Các nhánh dưới là thao tác độc lập,
+  không bắt buộc theo thứ tự.
+  Quy trình Return nằm ở sơ đồ kế tiếp.
+end note
+
+split
+  :UC-F3-01\nXem danh sách ô kho đang thuê;
+  :UC-F3-02\nXem hợp đồng, thời hạn,\nlịch sử thanh toán;
+  :UC-F3-03\nCập nhật liên hệ\nvà người ủy quyền;
+  :UC-F3-04\nXem lịch sử ra vào\nvà trạng thái Access Code;
+  stop
+split again
+  |Facility Manager|
+  :UC-F3-10\nTheo dõi khách và hợp đồng hiệu lực;
+  :UC-F3-11\nTheo dõi tình trạng thanh toán;
+  stop
+split again
+  |Facility Staff|
+  :UC-F3-12\nĐánh dấu ô kho cần kiểm tra / bảo trì;
+  stop
+end split
+
+legend right
+  UC-F3-01 đến UC-F3-04, UC-F3-10 đến UC-F3-12
+endlegend
+
+@enduml
+
+@startuml activity-flow-3-return
+' =====================================================================
+'  Flow 3 — Quy trinh Return (trang 2/2)
+' =====================================================================
+
+title Flow 3 — Quy trình Return\nUC-F3-05 đến UC-F3-09, UC-F3-13
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam activity {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+  FontColor #0D47A1
+}
+skinparam activityDiamond {
+  BackgroundColor #FFF8E1
+  BorderColor #F9A825
+}
+skinparam swimlane {
+  BorderColor #90A4AE
+  TitleFontStyle bold
+}
+
+|Storage Customer|
+start
+:Contract Active hoặc Overdue\n(chưa Terminated);
+
+:UC-F3-05 Đăng ký Return\nchọn ngày và khung giờ hẹn;
+
+if (còn đủ return.notice_days\n7 ngày trước hạn?) then (có)
+else (ít hơn 7 ngày)
+  :Ngày hẹn sớm nhất =\nngày yêu cầu + 7 ngày;
+  note right
+    BR-RET-10
+    Nếu chưa hoàn tất Return trước ngày
+    kết thúc: Contract Overdue từ D+1
+  end note
+endif
+
+if (Contract đang Overdue?) then (có)
+  if (trước D+60?) then (có)
+  else (đã D+60)
+    :Từ chối Return\nContract đã Terminated;
+    stop
+  endif
+endif
+
+:Contract chuyển Pending Return;
+note right
+  BR-RET-11: Pending Return không dừng
+  đồng hồ D+60
+end note
+
+if (Access đang Suspended?) then (có)
+  :Chỉ mở Access trong khung giờ Return đã xác nhận;
+else (không)
+endif
+
+if (khách hủy yêu cầu trước khi Staff\nbắt đầu inspection?) then (có)
+  if (hợp đồng còn hạn?\nBR-RET-12) then (còn hạn)
+    :Contract chuyển Active;
+    stop
+  else (đã hết hạn)
+    :Không về Active\nphải Renewal hoặc Return theo BR-OVD-08;
+    stop
+  endif
+else (không hủy)
+endif
+
+if (tới D+60 trước khi nghiệm thu xong?) then (có)
+  :Hủy lịch Return\nContract chuyển Terminated;
+  :Sang Flow 6 — UC-F6-09\nxử lý tài sản;
+  stop
+else (chưa tới D+60)
+endif
+
+|Facility Staff|
+:UC-F3-06 Kiểm tra hiện trạng tại chỗ\nbiên bản + ảnh BR-RET-03;
+
+if (khách không đồng ý chi phí hư hỏng?\nBR-RET-08) then (không đồng ý)
+  :Mở Support Request Flow 7\nFacility Manager phân xử;
+else (đồng ý / nguyên trạng)
+endif
+
+note right
+  BR-RET-02: chưa xác nhận thì hợp đồng
+  vẫn hiệu lực, vẫn tính phí
+end note
+
+:UC-F3-07 Thu hồi Access Card\nvô hiệu hóa Access Code;
+:Storage Unit chuyển Cleaning;
+:Access chuyển Revoked;
+
+|Facility Manager|
+:UC-F3-08 Quyết toán Deposit\nBR-RET-04;
+note right
+  Số hoàn = Deposit trừ hư hỏng
+  trừ phí quá hạn còn nợ trừ phụ phí chưa trả.
+  Trả sớm: không hoàn tiền thuê chưa dùng
+  BR-RET-06.
+end note
+
+if (kết quả âm?) then (khách còn nợ)
+  |Storage Customer|
+  :UC-F3-13 Thanh toán phụ phí / khoản nộp bổ sung;
+  if (đã nộp đủ?) then (rồi)
+  else (chưa)
+    :Contract chưa Closed;
+    stop
+  endif
+else (dương hoặc 0)
+  :Hoàn về phương thức gốc\ntrong 7 ngày làm việc\nBR-RET-05;
+endif
+
+:Contract chuyển Closed;
+
+|Facility Staff|
+:UC-F3-09 Dọn xong, mở bán lại;
+if (còn Reservation Confirmed\nchưa Check-in — future claim?) then (có)
+  :Storage Unit chuyển Reserved;
+else (không)
+  :Storage Unit chuyển Available;
+endif
+
+stop
+
+legend right
+  Nguồn: BR-RET-01 đến BR-RET-12, BR-OVD-08
+endlegend
+
+@enduml
