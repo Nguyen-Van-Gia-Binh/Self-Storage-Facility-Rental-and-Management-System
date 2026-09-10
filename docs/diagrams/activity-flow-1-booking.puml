@@ -1,0 +1,71 @@
+@startuml activity-flow1-reservation
+title Activity Diagram — Flow 1: Storage Unit Reservation
+
+|Storage Customer|
+start
+:Tìm kiếm Facility, xem Unit Type\nvà giá thuê (UC-F1-01, UC-F1-02);
+:Chọn Facility, Unit Type,\nngày bắt đầu và thời hạn thuê (UC-F1-04);
+
+|System|
+:Kiểm tra Availability theo\nFacility × Unit Type × khoảng thuê\n(UC-F1-03, BR-AVL-01, BR-AVL-02);
+
+if (Còn capacity trống?\n(thao tác nguyên tử — BR-AVL-03)) then (không)
+  |Storage Customer|
+  :Nhận thông báo hết chỗ;
+  stop
+else (có)
+  :Giữ capacity slot,\ntạo Reservation *Pending Payment*\n(UC-F1-06, BR-RES-02);
+  note right
+    Giữ tối đa reservation.hold_hours
+    = 48 giờ (BR-DEP-03)
+  end note
+endif
+
+|Storage Customer|
+:Xem ước tính chi phí thuê N tháng\nvà Deposit (UC-F1-05, BR-DEP-01);
+
+if (Muốn hủy trước khi thanh toán?) then (có)
+  :Hủy Reservation *Pending Payment*\n(UC-F1-10, BR-RES-04);
+  :Capacity được giải phóng ngay,\nkhông phát sinh hoàn tiền;
+  stop
+else (không)
+endif
+
+repeat
+  |Storage Customer|
+  :Thanh toán Deposit + toàn bộ phí thuê\nN tháng trong một giao dịch\n(UC-F1-07, BR-PAY-01);
+
+  |System|
+  if (Còn trong reservation.hold_hours\n= 48 giờ giữ chỗ? (BR-DEP-03)) then (hết hạn)
+    :Reservation chuyển *Expired*,\ngiải phóng capacity, không hoàn tiền\n(UC-F1-11, BR-DEP-03, BR-CAN-03);
+    stop
+  else (còn hạn)
+  endif
+
+  if (Giao dịch thành công?) then (có)
+    :Ghi nhận giao dịch thanh toán\nthành công (chưa đổi trạng thái);
+  else (không)
+    :Giữ nguyên *Pending Payment*,\ncho phép thử lại (BR-PAY-03);
+  endif
+repeat while (Giao dịch thất bại?) is (đúng) not (sai — đã thành công)
+
+|Facility Manager|
+:Phân bổ nguyên tử một Storage Unit\ncụ thể không giao kỳ thuê mới\n(UC-F1-08, BR-AVL-04);
+
+if (Phân bổ thành công?) then (không\n— capacity thay đổi ngoài dự kiến)
+  |System|
+  :Hoàn toàn bộ khoản vừa thu\nvề phương thức gốc (BR-AVL-05);
+  :Không tạo Contract nếu\nkhông có Storage Unit;
+  stop
+else (có)
+  :Reservation chuyển *Confirmed*\n(BR-PAY-02, BR-AVL-04);
+endif
+
+|System|
+:Sinh Contract *Pending Check-in*\nvà lịch hẹn Check-in;
+
+|Storage Customer|
+:Nhận lịch hẹn Check-in,\nxác nhận đặt chỗ thành công (UC-F1-09);
+stop
+
+@enduml
