@@ -73,6 +73,7 @@ xong khung dự án trống chạy được.
 | T1.5 | Chốt business rules: Reservation, Availability, Pricing, Payment, Deposit, Cancellation, Renewal, Overdue, Return | Bình | 21/09 |
 | T1.6 | Vẽ Use Case Diagram tổng cho 5 actor | Bình | 14/09 |
 | T1.7 | Vẽ Activity Diagram Flow 1 và Flow 2 | Tùng | 14/09 |
+| T1.7b | Vẽ Activity Diagram Main Flow End-to-End và Ánh xạ UI Demo ([UI-FLOW-MAPPING.md](UI-FLOW-MAPPING.md)) | Tùng | 14/09 |
 | T1.8 | Vẽ Activity Diagram Flow 3 và Flow 6 — [activity-flow-3.puml](diagrams/activity-flow-3.puml), [activity-flow-6.puml](diagrams/activity-flow-6.puml) | Nhật | 14/09 |
 | T1.9 | Vẽ Activity Diagram Flow 4, Flow 5 và Flow 7 | Bình | 21/09 |
 | T1.10 | Thiết kế ERD cho toàn hệ thống | Tùng | 14/09 |
