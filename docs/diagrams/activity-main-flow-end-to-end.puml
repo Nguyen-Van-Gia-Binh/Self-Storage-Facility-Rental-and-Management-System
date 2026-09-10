@@ -1,0 +1,87 @@
+@startuml activity-main-flow-end-to-end
+skinparam conditionStyle inside
+skinparam style strictuml
+
+title Activity Diagram — Core End-to-End Main Flow (Booking to Handover)
+
+|Storage Customer|
+start
+:Tìm kiếm cơ sở và xem loại ô kho
+(UC-F1-01, UC-F1-02)
+-- UI: SCR-SC-01 --;
+:Chọn ô kho, ngày bắt đầu và thời hạn thuê
+(UC-F1-04, BR-GEN-03)
+-- UI: SCR-SC-02 --;
+
+|System|
+:Kiểm tra Availability còn capacity trống
+(UC-F1-03, BR-AVL-01);
+:Giữ capacity slot 48 giờ (Pending Payment)
+(UC-F1-06, BR-DEP-03);
+
+|Storage Customer|
+:Xem bảng kê chi phí và quét mã VietQR thanh toán
+(UC-F1-05, UC-F1-07, BR-PAY-01)
+-- UI: SCR-SC-03 --;
+
+|System|
+:Ghi nhận thanh toán cọc + tiền thuê thành công
+(BR-PAY-02);
+
+|Facility Manager|
+:Xem đơn Confirmed tại tab "Reservations & Unit Allocation"
+và bấm chỉ định ô kho vật lý cụ thể (ví dụ: A-104)
+(UC-F1-08, BR-AVL-04)
+-- UI: SCR-FM-02.1 --;
+
+|System|
+:Tạo Hợp đồng *Pending Check-in*
+và sinh lịch hẹn bàn giao kho;
+
+|Storage Customer|
+:Nhận xác nhận đặt chỗ và lịch hẹn Check-in
+(UC-F1-09)
+-- UI: SCR-SC-04 --;
+:Đến cơ sở lưu trữ theo đúng lịch hẹn;
+
+|Facility Staff|
+:Tra cứu đơn đặt chỗ và kiểm tra thanh toán/CCCD
+(UC-F2-01, UC-F2-02, BR-CHK-01)
+-- UI: SCR-FS-01 --;
+:Dẫn khách đến vị trí ô kho thực tế trên sơ đồ mặt bằng
+(BR-CHK-02)
+-- UI: SCR-FS-02 --;
+
+|Storage Customer|
+:Kiểm tra thực tế ô kho (cửa cuốn, sạch sẽ, không hư hại);
+
+|Facility Staff|
+:Chụp ảnh hiện trạng và lập biên bản bàn giao điện tử
+(UC-F2-03, BR-CHK-03)
+-- UI: SCR-FS-01 --;
+
+|Storage Customer|
+:Ký xác nhận biên bản bàn giao trên hệ thống
+(UC-F2-05);
+
+|System|
+fork
+  :Chuyển Storage Unit: *Reserved* → *Occupied*
+  (UC-F2-06, BR-CHK-04);
+fork again
+  :Chuyển Contract: *Pending Check-in* → *Active*
+  (UC-F2-07, BR-CHK-04);
+fork again
+  :Kích hoạt mã Access Code / Smart Lock mở cửa kho
+  (UC-F2-04, BR-ACC-01, BR-ACC-02);
+fork again
+  :Chuyển Reservation → *Fulfilled*
+  và tự động gửi Email file PDF biên bản;
+end fork
+
+|Storage Customer|
+:Nhận mã Access Code (PIN/QR) trên ứng dụng và bắt đầu cất đồ
+-- UI: SCR-SC-04 --;
+stop
+
+@enduml
