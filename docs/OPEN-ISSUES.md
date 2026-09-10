@@ -26,6 +26,7 @@
 | `ISS-04` | **`UC-F2-06`, `UC-F3-09`, `UC-F7-07` có phải use case độc lập không?** Cả ba đều là "cập nhật trạng thái ô kho", có thể chỉ là hệ quả của use case khác chứ không phải mục tiêu riêng của actor | `USE-CASES.md` | Bình | Mở |
 | `ISS-06` | **File `.puml` chưa từng được render** nên chưa xác nhận không có lỗi cú pháp. Phải mở bằng extension PlantUML trong VS Code để kiểm | `diagrams/use-case-diagram.puml` | Bình | Mở |
 | `ISS-09` | **Ba nhóm quy tắc Vận hành & An ninh đã được merge nhưng chưa được nhóm duyệt:** `BR-CHK-*` (Check-in & Handover), `BR-ACC-*` (Access Credential), `BR-SUP-*` (Support SLA). Cần review semantic và biểu quyết trước khi coi là baseline chính thức | `BUSINESS-RULES.md`, `USER-STORIES-FS-FM.md` | Bình + Tùng | Đang bàn |
+| `ISS-12` | **Ba commit trên `main` lệch quy trình Git:** `ad01766` và `6268bff` push thẳng vào `main` không qua PR; `b2c09a3` là merge commit do tự resolve conflict rồi push thẳng. Cả ba dùng message tiếng Anh, thiếu phạm vi và thiếu trailer `Refs:` — lệch `CONTRIBUTING.md § 1` (không commit thẳng `main`) và § 3 (Conventional Commits tiếng Việt). Nội dung "demo script & presentation speech" gần `T1.19` hơn `T1.7b`. **Đã quyết 10/09/2026:** giữ nguyên lịch sử (không force-push `main`), chặn tái diễn bằng branch protection, nhắc lại § 3 với người commit | `CONTRIBUTING.md § 1, § 3` | Bình (bật branch protection) | Mở |
 
 ---
 
