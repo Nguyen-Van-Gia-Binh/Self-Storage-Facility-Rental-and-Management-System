@@ -1,0 +1,180 @@
+@startuml erd-core-domain
+' ============================================================================
+'  Self-Storage Facility Rental and Management System
+'  Core Rental Domain ERD - Crow's Foot Notation (IE Standard)
+'  Tap trung vao phan nghiep vu loi cua Backend A (Le Thanh Tung)
+' ============================================================================
+
+!theme plain
+skinparam linetype ortho
+skinparam roundcorner 4
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam dpi 300
+
+skinparam class {
+    BackgroundColor #FFFFFF
+    ArrowColor #2C3E50
+    BorderColor #34495E
+    FontColor #2C3E50
+}
+
+package "Core Entities" {
+    entity "app_user" as app_user {
+        * id : BIGINT <<PK>>
+        --
+        * email : NVARCHAR(255) <<UQ>>
+        * full_name : NVARCHAR(150)
+        phone : NVARCHAR(20)
+        * role : VARCHAR(30)
+        * status : VARCHAR(20)
+    }
+
+    entity "facility" as facility {
+        * id : BIGINT <<PK>>
+        --
+        * code : NVARCHAR(20) <<UQ>>
+        * name : NVARCHAR(150)
+        * address : NVARCHAR(255)
+        * status : VARCHAR(20)
+    }
+
+    entity "unit_type" as unit_type {
+        * id : BIGINT <<PK>>
+        --
+        * code : NVARCHAR(20) <<UQ>>
+        * name : NVARCHAR(100)
+        * width_m : DECIMAL(5,2)
+        * length_m : DECIMAL(5,2)
+        * height_m : DECIMAL(5,2)
+    }
+
+    entity "storage_unit" as storage_unit {
+        * id : BIGINT <<PK>>
+        --
+        * facility_id : BIGINT <<FK>>
+        * unit_type_id : BIGINT <<FK>>
+        * code : NVARCHAR(30)
+        location_note : NVARCHAR(255)
+        * status : VARCHAR(20)
+        --
+        <<UQ(facility_id, code)>>
+    }
+
+    entity "reservation" as reservation {
+        * id : BIGINT <<PK>>
+        --
+        * code : NVARCHAR(30) <<UQ>>
+        * customer_id : BIGINT <<FK>>
+        * facility_id : BIGINT <<FK>>
+        * unit_type_id : BIGINT <<FK>>
+        * start_date : DATE
+        * rental_months : INT
+        * end_date_exclusive : DATE
+        * monthly_price_snapshot : BIGINT
+        * policy_version_id : BIGINT <<FK>>
+        * deposit_amount : BIGINT
+        * total_payable : BIGINT
+        storage_unit_id : BIGINT <<FK, nullable>>
+        * status : VARCHAR(20)
+        * hold_expires_at : DATETIMEOFFSET
+    }
+
+    entity "rental_contract" as rental_contract {
+        * id : BIGINT <<PK>>
+        --
+        * code : NVARCHAR(30) <<UQ>>
+        * reservation_id : BIGINT <<FK, UQ>>
+        * customer_id : BIGINT <<FK>>
+        * facility_id : BIGINT <<FK>>
+        * storage_unit_id : BIGINT <<FK>>
+        * start_date : DATE
+        * end_date : DATE
+        * policy_version_id : BIGINT <<FK>>
+        * monthly_price_snapshot : BIGINT
+        * deposit_amount : BIGINT
+        * status : VARCHAR(20)
+    }
+
+    entity "handover_record" as handover_record {
+        * id : BIGINT <<PK>>
+        --
+        * contract_id : BIGINT <<FK, UQ>>
+        * staff_id : BIGINT <<FK>>
+        condition_note : NVARCHAR(1000)
+        customer_signed_at : DATETIMEOFFSET
+        staff_signed_at : DATETIMEOFFSET
+    }
+
+    entity "contract_renewal" as contract_renewal {
+        * id : BIGINT <<PK>>
+        --
+        * contract_id : BIGINT <<FK>>
+        * previous_end_date : DATE
+        * new_end_date : DATE
+        * rental_months : INT
+        * total_paid : BIGINT
+    }
+
+    entity "return_request" as return_request {
+        * id : BIGINT <<PK>>
+        --
+        * contract_id : BIGINT <<FK>>
+        * requested_at : DATETIMEOFFSET
+        * requested_return_date : DATE
+        * status : VARCHAR(20)
+        inspected_by : BIGINT <<FK, nullable>>
+        * damage_cost : BIGINT
+        deposit_refund_amount : BIGINT
+    }
+
+    entity "access_credential" as access_credential {
+        * id : BIGINT <<PK>>
+        --
+        * contract_id : BIGINT <<FK>>
+        * storage_unit_id : BIGINT <<FK>>
+        * credential_type : VARCHAR(20)
+        * code_value_hash : NVARCHAR(255)
+        * status : VARCHAR(20)
+    }
+
+    entity "payment_transaction" as payment_transaction {
+        * id : BIGINT <<PK>>
+        --
+        reservation_id : BIGINT <<FK, nullable>>
+        contract_id : BIGINT <<FK, nullable>>
+        * transaction_type : VARCHAR(30)
+        * amount : BIGINT
+        * status : VARCHAR(20)
+    }
+}
+
+' Quan he trong mien nghiep vu loi
+facility ||--|{ storage_unit : "chua"
+unit_type ||--|{ storage_unit : "phan loai"
+
+app_user ||--o{ reservation : "dat giu cho"
+facility ||--o{ reservation : "tai co so"
+unit_type ||--o{ reservation : "loai kho"
+storage_unit |o--o{ reservation : "gan sau thanh toan (0..1)"
+
+reservation ||--o| rental_contract : "chuyen thanh (1:0..1)"
+app_user ||--o{ rental_contract : "khach hang"
+facility ||--o{ rental_contract : "co so"
+storage_unit ||--o{ rental_contract : "o kho thue"
+
+rental_contract ||--o| handover_record : "bien ban ban giao (1:0..1)"
+app_user ||--o{ handover_record : "nhan vien lap"
+
+rental_contract ||--o{ contract_renewal : "gia han"
+rental_contract ||--o{ return_request : "tra kho"
+app_user |o--o{ return_request : "nhan vien nghiem thu"
+
+rental_contract ||--|{ access_credential : "cap quyen mo kho"
+storage_unit ||--o{ access_credential : "mo o kho"
+
+reservation |o--o{ payment_transaction : "thanh toan ban dau"
+rental_contract |o--o{ payment_transaction : "thanh toan gia han/phi"
+
+@enduml
