@@ -1,0 +1,492 @@
+@startuml erd-database-model
+' ============================================================================
+'  Self-Storage Facility Rental and Management System
+'  Entity-Relationship Diagram (ERD) - Crow's Foot Notation (IE Standard)
+'  Nguon: database/Storage_Self.sql & CONVENTIONS.md Sec 5
+'  Chuan ky thuat: Information Engineering (Crow's Foot Notation)
+' ============================================================================
+
+!theme plain
+skinparam linetype ortho
+skinparam roundcorner 4
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam dpi 300
+
+' Phong cach cho cac thuc the ERD
+skinparam class {
+    BackgroundColor #FFFFFF
+    ArrowColor #2C3E50
+    BorderColor #34495E
+    FontColor #2C3E50
+    FontSize 11
+}
+
+skinparam package {
+    BackgroundColor #F8F9FA
+    BorderColor #BDC3C7
+    FontStyle bold
+    FontColor #2C3E50
+}
+
+' ============================================================================
+' 1. USER & ACCESS CONTROL DOMAIN (SA-01 .. SA-04)
+' ============================================================================
+package "User & Access Control Domain" {
+    entity "app_user" as app_user {
+        * id : BIGINT <<PK, generated>>
+        --
+        * email : NVARCHAR(255) <<UQ>>
+        * password_hash : NVARCHAR(255)
+        * full_name : NVARCHAR(150)
+        phone : NVARCHAR(20)
+        * role : VARCHAR(30)
+        * status : VARCHAR(20)
+        * created_at : DATETIMEOFFSET
+        * updated_at : DATETIMEOFFSET
+    }
+
+    entity "user_facility_assignment" as user_facility_assignment {
+        * id : BIGINT <<PK, generated>>
+        --
+        * user_id : BIGINT <<FK>>
+        * facility_id : BIGINT <<FK>>
+        * created_at : DATETIMEOFFSET
+        --
+        <<UQ(user_id, facility_id)>>
+    }
+
+    entity "login_history" as login_history {
+        * id : BIGINT <<PK, generated>>
+        --
+        * user_id : BIGINT <<FK>>
+        * logged_in_at : DATETIMEOFFSET
+        ip_address : NVARCHAR(64)
+        user_agent : NVARCHAR(255)
+        * is_success : BIT
+    }
+
+    entity "audit_log" as audit_log {
+        * id : BIGINT <<PK, generated>>
+        --
+        user_id : BIGINT <<FK, nullable>>
+        * action : NVARCHAR(100)
+        * entity_type : NVARCHAR(100)
+        * entity_id : BIGINT
+        before_value : NVARCHAR(MAX)
+        after_value : NVARCHAR(MAX)
+        * created_at : DATETIMEOFFSET
+    }
+}
+
+' ============================================================================
+' 2. FACILITY & STORAGE CATALOG DOMAIN (FM-01, BM-01, UC-F5-01/02)
+' ============================================================================
+package "Facility & Storage Catalog Domain" {
+    entity "facility" as facility {
+        * id : BIGINT <<PK, generated>>
+        --
+        * code : NVARCHAR(20) <<UQ>>
+        * name : NVARCHAR(150)
+        * address : NVARCHAR(255)
+        * status : VARCHAR(20)
+        * created_at : DATETIMEOFFSET
+        * updated_at : DATETIMEOFFSET
+    }
+
+    entity "unit_type" as unit_type {
+        * id : BIGINT <<PK, generated>>
+        --
+        * code : NVARCHAR(20) <<UQ>>
+        * name : NVARCHAR(100)
+        * width_m : DECIMAL(5,2)
+        * length_m : DECIMAL(5,2)
+        * height_m : DECIMAL(5,2)
+        description : NVARCHAR(500)
+        * created_at : DATETIMEOFFSET
+        * updated_at : DATETIMEOFFSET
+    }
+
+    entity "facility_unit_type_price" as facility_unit_type_price {
+        * id : BIGINT <<PK, generated>>
+        --
+        * facility_id : BIGINT <<FK>>
+        * unit_type_id : BIGINT <<FK>>
+        * monthly_price : BIGINT
+        * created_at : DATETIMEOFFSET
+        * updated_at : DATETIMEOFFSET
+        --
+        <<UQ(facility_id, unit_type_id)>>
+    }
+
+    entity "storage_unit" as storage_unit {
+        * id : BIGINT <<PK, generated>>
+        --
+        * facility_id : BIGINT <<FK>>
+        * unit_type_id : BIGINT <<FK>>
+        * code : NVARCHAR(30)
+        location_note : NVARCHAR(255)
+        * status : VARCHAR(20)
+        * created_at : DATETIMEOFFSET
+        * updated_at : DATETIMEOFFSET
+        --
+        <<UQ(facility_id, code)>>
+    }
+}
+
+' ============================================================================
+' 3. POLICY, PRICING & PROMOTION DOMAIN (BM-02, BM-03)
+' ============================================================================
+package "Policy & Pricing Domain" {
+    entity "policy_version" as policy_version {
+        * id : BIGINT <<PK, generated>>
+        --
+        * version_no : INT <<UQ>>
+        * effective_from : DATETIMEOFFSET
+        * deposit_multiplier : DECIMAL(5,2)
+        * reservation_hold_hours : INT
+        * checkin_grace_days : INT
+        * cancel_full_refund_hours : INT
+        * cancel_late_refund_rate : DECIMAL(5,2)
+        * cancel_no_show_refund_rate : DECIMAL(5,2)
+        * renewal_reminder_days : NVARCHAR(50)
+        * renewal_min_months : INT
+        * renewal_max_months : INT
+        * overdue_grace_days : INT
+        * overdue_daily_rate : DECIMAL(5,2)
+        * overdue_cap_rate : DECIMAL(5,2)
+        * overdue_lock_access_days : INT
+        * overdue_notice_days : INT
+        * overdue_termination_days : INT
+        * return_notice_days : INT
+        * return_refund_working_days : INT
+        * return_early_refund_rate : DECIMAL(5,2)
+        * access_pin_length : INT
+        * support_urgent_sla_hours : INT
+        * support_auto_close_working_days : INT
+        * published_by : BIGINT <<FK>>
+        * created_at : DATETIMEOFFSET
+    }
+
+    entity "extra_fee_type" as extra_fee_type {
+        * id : BIGINT <<PK, generated>>
+        --
+        * code : NVARCHAR(30) <<UQ>>
+        * name : NVARCHAR(150)
+        * amount : BIGINT
+        * is_active : BIT
+        * created_at : DATETIMEOFFSET
+        * updated_at : DATETIMEOFFSET
+    }
+
+    entity "discount_program" as discount_program {
+        * id : BIGINT <<PK, generated>>
+        --
+        * name : NVARCHAR(150)
+        * discount_type : VARCHAR(20)
+        * discount_value : DECIMAL(10,2)
+        * start_date : DATE
+        * end_date : DATE
+        * scope_type : VARCHAR(20)
+        facility_id : BIGINT <<FK, nullable>>
+        unit_type_id : BIGINT <<FK, nullable>>
+        * is_active : BIT
+        * created_at : DATETIMEOFFSET
+        * updated_at : DATETIMEOFFSET
+    }
+}
+
+' ============================================================================
+' 4. CORE RENTAL LIFECYCLE DOMAIN (Flow 1, 2, 3, 6)
+' ============================================================================
+package "Core Rental Lifecycle Domain" {
+    entity "reservation" as reservation {
+        * id : BIGINT <<PK, generated>>
+        --
+        * code : NVARCHAR(30) <<UQ>>
+        * customer_id : BIGINT <<FK>>
+        * facility_id : BIGINT <<FK>>
+        * unit_type_id : BIGINT <<FK>>
+        * start_date : DATE
+        * rental_months : INT
+        * end_date_exclusive : DATE
+        * monthly_price_snapshot : BIGINT
+        * policy_version_id : BIGINT <<FK>>
+        discount_program_id : BIGINT <<FK, nullable>>
+        * discount_amount : BIGINT
+        * deposit_amount : BIGINT
+        * total_rental_fee : BIGINT
+        * total_payable : BIGINT
+        storage_unit_id : BIGINT <<FK, nullable>>
+        * status : VARCHAR(20)
+        * hold_expires_at : DATETIMEOFFSET
+        confirmed_at : DATETIMEOFFSET
+        fulfilled_at : DATETIMEOFFSET
+        cancelled_at : DATETIMEOFFSET
+        * created_at : DATETIMEOFFSET
+        * updated_at : DATETIMEOFFSET
+    }
+
+    entity "rental_contract" as rental_contract {
+        * id : BIGINT <<PK, generated>>
+        --
+        * code : NVARCHAR(30) <<UQ>>
+        * reservation_id : BIGINT <<FK, UQ>>
+        * customer_id : BIGINT <<FK>>
+        * facility_id : BIGINT <<FK>>
+        * storage_unit_id : BIGINT <<FK>>
+        * start_date : DATE
+        * end_date : DATE
+        * policy_version_id : BIGINT <<FK>>
+        * monthly_price_snapshot : BIGINT
+        * deposit_amount : BIGINT
+        * status : VARCHAR(20)
+        overdue_since : DATE
+        * overdue_fee_accrued : BIGINT
+        activated_at : DATETIMEOFFSET
+        closed_at : DATETIMEOFFSET
+        terminated_at : DATETIMEOFFSET
+        * created_at : DATETIMEOFFSET
+        * updated_at : DATETIMEOFFSET
+    }
+
+    entity "contract_renewal" as contract_renewal {
+        * id : BIGINT <<PK, generated>>
+        --
+        * contract_id : BIGINT <<FK>>
+        * previous_end_date : DATE
+        * new_end_date : DATE
+        * rental_months : INT
+        * monthly_price_snapshot : BIGINT
+        * policy_version_id : BIGINT <<FK>>
+        * overdue_fee_settled : BIGINT
+        * rental_fee_amount : BIGINT
+        * total_paid : BIGINT
+        * created_at : DATETIMEOFFSET
+    }
+
+    entity "handover_record" as handover_record {
+        * id : BIGINT <<PK, generated>>
+        --
+        * contract_id : BIGINT <<FK, UQ>>
+        * staff_id : BIGINT <<FK>>
+        condition_note : NVARCHAR(1000)
+        customer_signed_at : DATETIMEOFFSET
+        staff_signed_at : DATETIMEOFFSET
+        * created_at : DATETIMEOFFSET
+    }
+
+    entity "return_request" as return_request {
+        * id : BIGINT <<PK, generated>>
+        --
+        * contract_id : BIGINT <<FK>>
+        * requested_at : DATETIMEOFFSET
+        * requested_return_date : DATE
+        appointment_slot : NVARCHAR(50)
+        * status : VARCHAR(20)
+        inspected_by : BIGINT <<FK, nullable>>
+        inspected_at : DATETIMEOFFSET
+        is_intact : BIT
+        condition_note : NVARCHAR(1000)
+        * damage_cost : BIGINT
+        deposit_refund_amount : BIGINT
+        cancelled_at : DATETIMEOFFSET
+        * created_at : DATETIMEOFFSET
+        * updated_at : DATETIMEOFFSET
+    }
+
+    entity "access_credential" as access_credential {
+        * id : BIGINT <<PK, generated>>
+        --
+        * contract_id : BIGINT <<FK>>
+        * storage_unit_id : BIGINT <<FK>>
+        * credential_type : VARCHAR(20)
+        * code_value_hash : NVARCHAR(255)
+        * status : VARCHAR(20)
+        * issued_at : DATETIMEOFFSET
+        suspended_at : DATETIMEOFFSET
+        revoked_at : DATETIMEOFFSET
+        * created_at : DATETIMEOFFSET
+        * updated_at : DATETIMEOFFSET
+    }
+}
+
+' ============================================================================
+' 5. PAYMENT & FINANCIAL LEDGER DOMAIN (BR-PAY-*, BR-DEP-*)
+' ============================================================================
+package "Payment & Ledger Domain" {
+    entity "payment_transaction" as payment_transaction {
+        * id : BIGINT <<PK, generated>>
+        --
+        reservation_id : BIGINT <<FK, nullable>>
+        contract_id : BIGINT <<FK, nullable>>
+        * transaction_type : VARCHAR(30)
+        * amount : BIGINT
+        * status : VARCHAR(20)
+        payment_method : NVARCHAR(50)
+        provider_reference : NVARCHAR(100)
+        * created_at : DATETIMEOFFSET
+        * updated_at : DATETIMEOFFSET
+    }
+
+    entity "ledger_entry" as ledger_entry {
+        * id : BIGINT <<PK, generated>>
+        --
+        reservation_id : BIGINT <<FK, nullable>>
+        contract_id : BIGINT <<FK, nullable>>
+        payment_transaction_id : BIGINT <<FK, nullable>>
+        * entry_type : VARCHAR(20)
+        * amount : BIGINT
+        description : NVARCHAR(500)
+        * created_at : DATETIMEOFFSET
+    }
+
+    entity "contract_extra_charge" as contract_extra_charge {
+        * id : BIGINT <<PK, generated>>
+        --
+        * contract_id : BIGINT <<FK>>
+        * extra_fee_type_id : BIGINT <<FK>>
+        * amount : BIGINT
+        reason : NVARCHAR(500)
+        * recorded_by : BIGINT <<FK>>
+        * created_at : DATETIMEOFFSET
+    }
+
+    entity "overdue_fee_adjustment_request" as overdue_fee_adjustment_request {
+        * id : BIGINT <<PK, generated>>
+        --
+        * contract_id : BIGINT <<FK>>
+        * requested_by : BIGINT <<FK>>
+        * requested_amount : BIGINT
+        * reason : NVARCHAR(500)
+        evidence_note : NVARCHAR(500)
+        * status : VARCHAR(20)
+        reviewed_by : BIGINT <<FK, nullable>>
+        reviewed_amount : BIGINT
+        review_reason : NVARCHAR(500)
+        * requested_at : DATETIMEOFFSET
+        reviewed_at : DATETIMEOFFSET
+    }
+}
+
+' ============================================================================
+' 6. OPERATIONS & SUPPORT DOMAIN (Flow 7, FM-05, Shared)
+' ============================================================================
+package "Operations & Support Domain" {
+    entity "support_request" as support_request {
+        * id : BIGINT <<PK, generated>>
+        --
+        * code : NVARCHAR(30) <<UQ>>
+        * customer_id : BIGINT <<FK>>
+        contract_id : BIGINT <<FK, nullable>>
+        storage_unit_id : BIGINT <<FK, nullable>>
+        * category : VARCHAR(30)
+        * description : NVARCHAR(1000)
+        * status : VARCHAR(20)
+        assigned_staff_id : BIGINT <<FK, nullable>>
+        sla_due_at : DATETIMEOFFSET
+        resolved_at : DATETIMEOFFSET
+        resolution_note : NVARCHAR(1000)
+        customer_confirmed_at : DATETIMEOFFSET
+        auto_closed_at : DATETIMEOFFSET
+        * created_at : DATETIMEOFFSET
+        * updated_at : DATETIMEOFFSET
+    }
+
+    entity "staff_daily_assignment" as staff_daily_assignment {
+        * id : BIGINT <<PK, generated>>
+        --
+        * staff_id : BIGINT <<FK>>
+        * facility_id : BIGINT <<FK>>
+        * work_date : DATE
+        * task_type : VARCHAR(20)
+        * reference_type : NVARCHAR(30)
+        * reference_id : BIGINT
+        * assigned_by : BIGINT <<FK>>
+        * created_at : DATETIMEOFFSET
+    }
+
+    entity "attachment" as attachment {
+        * id : BIGINT <<PK, generated>>
+        --
+        * entity_type : NVARCHAR(30)
+        * entity_id : BIGINT
+        * file_url : NVARCHAR(500)
+        * uploaded_by : BIGINT <<FK>>
+        * created_at : DATETIMEOFFSET
+    }
+}
+
+' ============================================================================
+' RELATIONSHIPS (Crow's Foot Notation / Information Engineering)
+' ============================================================================
+
+' --- User & Security Relationships ---
+app_user ||--o{ user_facility_assignment : "is assigned to"
+facility ||--o{ user_facility_assignment : "assigns staff"
+app_user ||--o{ login_history : "logs in"
+app_user |o--o{ audit_log : "performs audit action"
+app_user ||--o{ policy_version : "publishes policy"
+
+' --- Catalog & Pricing Relationships ---
+facility ||--o{ facility_unit_type_price : "offers price"
+unit_type ||--o{ facility_unit_type_price : "priced at"
+facility ||--|{ storage_unit : "contains"
+unit_type ||--|{ storage_unit : "defines size of"
+
+' --- Discount Program Relationships ---
+facility |o--o{ discount_program : "applies to"
+unit_type |o--o{ discount_program : "applies to"
+
+' --- Reservation Relationships ---
+app_user ||--o{ reservation : "places"
+facility ||--o{ reservation : "booked at"
+unit_type ||--o{ reservation : "books unit type"
+storage_unit |o--o{ reservation : "allocated to"
+policy_version ||--o{ reservation : "governs pricing"
+discount_program |o--o{ reservation : "discounts"
+
+' --- Contract Relationships ---
+reservation ||--o| rental_contract : "fulfills into (1:0..1)"
+app_user ||--o{ rental_contract : "rents"
+facility ||--o{ rental_contract : "located at"
+storage_unit ||--o{ rental_contract : "leased under"
+policy_version ||--o{ rental_contract : "governs contract"
+
+' --- Contract Extensions & Check-in / Return ---
+rental_contract ||--o{ contract_renewal : "renews"
+policy_version ||--o{ contract_renewal : "governs renewal"
+rental_contract ||--o| handover_record : "handed over via (1:0..1)"
+app_user ||--o{ handover_record : "staff signs"
+rental_contract ||--o{ return_request : "requests return"
+app_user |o--o{ return_request : "staff inspects"
+
+' --- Access Credential Relationships ---
+rental_contract ||--|{ access_credential : "grants access for"
+storage_unit ||--o{ access_credential : "accessed via"
+
+' --- Payment & Ledger Relationships ---
+reservation |o--o{ payment_transaction : "pays initial reservation"
+rental_contract |o--o{ payment_transaction : "pays renewal/fees"
+reservation |o--o{ ledger_entry : "ledgers deposit/rent"
+rental_contract |o--o{ ledger_entry : "ledgers revenue/penalties"
+payment_transaction |o--o{ ledger_entry : "records transaction entry"
+rental_contract ||--o{ contract_extra_charge : "incurs extra charge"
+extra_fee_type ||--o{ contract_extra_charge : "categorizes fee"
+app_user ||--o{ contract_extra_charge : "staff records"
+rental_contract ||--o{ overdue_fee_adjustment_request : "appeals overdue fee"
+app_user ||--o{ overdue_fee_adjustment_request : "staff requests"
+app_user |o--o{ overdue_fee_adjustment_request : "BOM reviews"
+
+' --- Operations & Support Relationships ---
+app_user ||--o{ support_request : "creates ticket"
+rental_contract |o--o{ support_request : "related to contract"
+storage_unit |o--o{ support_request : "related to unit"
+app_user |o--o{ support_request : "assigned staff resolves"
+facility ||--o{ staff_daily_assignment : "schedules at"
+app_user ||--o{ staff_daily_assignment : "staff executes"
+app_user ||--o{ staff_daily_assignment : "manager assigns"
+app_user ||--o{ attachment : "uploads"
+
+@enduml
