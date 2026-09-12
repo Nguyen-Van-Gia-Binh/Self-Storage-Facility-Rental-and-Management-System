@@ -1,0 +1,62 @@
+@startuml state-machine-storage-unit
+title State Machine Diagram — Storage Unit Lifecycle (Ô kho vật lý)
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundCorner 10
+skinparam nodesep 110
+skinparam ranksep 85
+
+skinparam state {
+  BackgroundColor #E0F2FE
+  BorderColor #0284C7
+  BorderThickness 2
+  FontName "Segoe UI", Arial, sans-serif
+  FontSize 13
+  FontColor #0F172A
+  FontStyle bold
+}
+
+skinparam arrow {
+  Color #0369A1
+  Thickness 1.8
+  FontName "Segoe UI", Arial, sans-serif
+  FontSize 11
+  FontColor #0F172A
+}
+
+' Khai báo các trạng thái
+state "Available\n(Trống khả dụng)" as Available #DCFCE7
+state "Reserved\n(Đã gán đơn chờ nhận)" as Reserved #FEF3C7
+state "Occupied\n(Đang sử dụng)" as Occupied #E0E7FF
+state "Cleaning\n(Đang dọn dẹp vệ sinh)" as Cleaning #FEF3C7
+state "Maintenance\n(Đang bảo trì/sửa chữa)" as Maintenance #FEE2E2
+state "Out of Service\n(Ngừng khai thác)" as Out_of_Service #F1F5F9
+
+' Khởi tạo ô kho
+[*] -down-> Available : Khởi tạo ô kho mới (FM-01)
+
+' Từ Available: 3 hướng hoàn toàn riêng biệt (Dưới, Phải, Trái)
+Available -down-> Reserved : [Gán cho đơn Confirmed]\n(UC-F1-08, BR-AVL-04)
+Available -right-> Maintenance : [Hư hỏng / bảo trì định kỳ]\n(US-FS-01.2)
+Available -left-> Out_of_Service : [Quyết định ngừng\nkhai thác ô kho]\n(*chưa có BR/US xác nhận —\ncần bổ sung*)
+
+' Từ Reserved: 2 hướng riêng biệt (Dưới & Vòng lên Available)
+Reserved -down-> Occupied : [Ký biên bản bàn giao Check-in]\n(UC-F2-06, BR-CHK-04)
+Reserved -left-> Available : [Đơn bị Hủy / No-show]\n(BR-CAN-01/02/04)
+
+' Từ Occupied: 2 hướng riêng biệt (Trái & Phải)
+Occupied -left-> Cleaning : [Hoàn tất trả kho]\n(UC-F3-08, BR-RET-09)
+Occupied -right-> Maintenance : [Sự cố khẩn cấp di dời đồ]\n(BR-SUP-02)
+
+' Sau khi dọn xong: rẽ nhánh theo future claim (BR-RET-09)
+state c_afterClean <<choice>>
+Cleaning -up-> c_afterClean
+c_afterClean -up-> Reserved : [có Reservation\n*Confirmed* future claim]\n(BR-RET-09, BR-AVL-04)
+c_afterClean -left-> Available : [không có\nfuture claim]
+
+Maintenance -up-> Available : [Sửa chữa xong nghiệm thu đạt chuẩn]
+
+' Kết thúc ngừng khai thác
+Out_of_Service -down-> [*]
+
+@enduml

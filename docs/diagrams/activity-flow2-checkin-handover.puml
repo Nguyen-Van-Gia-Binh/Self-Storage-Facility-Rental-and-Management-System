@@ -32,7 +32,7 @@ else (còn trong hạn)
   endif
 endif
 
-if (Đủ điều kiện Handover?\n(Reservation *Confirmed*,\nthanh toán đủ toàn bộ — BR-CHK-02)) then (không đủ điều kiện)
+if (Đủ điều kiện nhận bàn giao?\n(CCCD khớp chính chủ/ủy quyền,\nReservation *Confirmed* hợp lệ — BR-CHK-01, BR-CHK-02)) then (không đủ điều kiện\n(sai giấy tờ, đơn bị hủy/sai cơ sở))
   :Thông báo lý do và hẹn khách\nbổ sung điều kiện / quay lại\n(UC-F2-08);
   stop
 else (đủ điều kiện)

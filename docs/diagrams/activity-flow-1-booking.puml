@@ -4,7 +4,9 @@ title Activity Diagram — Flow 1: Storage Unit Reservation
 |Storage Customer|
 start
 :Tìm kiếm Facility, xem Unit Type\nvà giá thuê (UC-F1-01, UC-F1-02);
-:Chọn Facility, Unit Type,\nngày bắt đầu và thời hạn thuê (UC-F1-04);
+:Chọn Facility, Unit Type, ngày bắt đầu\nvà thời hạn thuê (UC-F1-04)\n-- UI: SCR-SC-02 --;
+:Xem bảng ước tính chi phí thuê N tháng\nvà Deposit (UC-F1-05, BR-DEP-01)\n-- Cột Booking Cost Breakdown --;
+:Tích đồng ý điều khoản và bấm nút\n"Proceed to Customer Info & Payment";
 
 |System|
 :Kiểm tra Availability theo\nFacility × Unit Type × khoảng thuê\n(UC-F1-03, BR-AVL-01, BR-AVL-02);
@@ -14,26 +16,26 @@ if (Còn capacity trống?\n(thao tác nguyên tử — BR-AVL-03)) then (không
   :Nhận thông báo hết chỗ;
   stop
 else (có)
-  :Giữ capacity slot,\ntạo Reservation *Pending Payment*\n(UC-F1-06, BR-RES-02);
+  :Tạo Reservation *Pending Payment*,\ngiữ 1 capacity slot trong 48 giờ\n(UC-F1-06, BR-RES-02, BR-DEP-03);
   note right
-    Giữ tối đa reservation.hold_hours
-    = 48 giờ (BR-DEP-03)
+    Kích hoạt đồng hồ đếm ngược
+    reservation.hold_hours = 48 giờ
   end note
 endif
 
 |Storage Customer|
-:Xem ước tính chi phí thuê N tháng\nvà Deposit (UC-F1-05, BR-DEP-01);
+:Chuyển sang màn hình Checkout (SCR-SC-03)\nhoặc quản lý đơn trong "My Rentals";
 
-if (Muốn hủy trước khi thanh toán?) then (có)
-  :Hủy Reservation *Pending Payment*\n(UC-F1-10, BR-RES-04);
-  :Capacity được giải phóng ngay,\nkhông phát sinh hoàn tiền;
+if (Khách chủ động bấm "Hủy đặt chỗ" trong 48h?\n(UC-F1-10, BR-RES-04)) then (có)
+  |System|
+  :Hủy Reservation *Pending Payment*,\ngiải phóng capacity ngay, không hoàn tiền;
   stop
-else (không)
+else (không / tiếp tục thanh toán)
 endif
 
 repeat
   |Storage Customer|
-  :Thanh toán Deposit + toàn bộ phí thuê\nN tháng trong một giao dịch\n(UC-F1-07, BR-PAY-01);
+  :Thanh toán Deposit + toàn bộ phí thuê\nN tháng trong một giao dịch\n(UC-F1-07, BR-PAY-01)\n-- UI: SCR-SC-03 --;
 
   |System|
   if (Còn trong reservation.hold_hours\n= 48 giờ giữ chỗ? (BR-DEP-03)) then (hết hạn)
@@ -50,9 +52,9 @@ repeat
 repeat while (Giao dịch thất bại?) is (đúng) not (sai — đã thành công)
 
 |Facility Manager|
-:Phân bổ nguyên tử một Storage Unit\ncụ thể không giao kỳ thuê mới\n(UC-F1-08, BR-AVL-04);
+:Phân bổ nguyên tử một Storage Unit\ncụ thể không giao kỳ thuê mới\n(UC-F1-08, BR-AVL-04)\n-- UI: SCR-FM-02.2 --;
 
-if (Phân bổ thành công?) then (không\n— capacity thay đổi ngoài dự kiến)
+if (Phân bổ thành công?) then (không\n— sự cố hạ tầng/kho hỏng đột xuất — BR-AVL-05)
   |System|
   :Hoàn toàn bộ khoản vừa thu\nvề phương thức gốc (BR-AVL-05);
   :Không tạo Contract nếu\nkhông có Storage Unit;
