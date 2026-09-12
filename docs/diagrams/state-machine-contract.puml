@@ -1,0 +1,73 @@
+@startuml state-machine-contract
+title State Machine Diagram — Rental Contract Lifecycle (Hợp đồng thuê)
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundCorner 10
+skinparam nodesep 130
+skinparam ranksep 90
+
+skinparam state {
+  BackgroundColor #E0F2FE
+  BorderColor #0284C7
+  BorderThickness 2
+  FontName "Segoe UI", Arial, sans-serif
+  FontSize 13
+  FontColor #0F172A
+  FontStyle bold
+}
+
+skinparam choice {
+  BackgroundColor #FEF08A
+  BorderColor #CA8A04
+  BorderThickness 2
+}
+
+skinparam arrow {
+  Color #0369A1
+  Thickness 1.8
+  FontName "Segoe UI", Arial, sans-serif
+  FontSize 11
+  FontColor #0F172A
+}
+
+' Khai báo các trạng thái
+state "Pending Check-in\n(Chờ bàn giao kho)" as Pending_Check_in
+state "Active\n(Đang hiệu lực thuê)" as Active #DCFCE7
+state "Pending Return\n(Chờ nghiệm thu trả kho)" as Pending_Return #E0E7FF
+state "Overdue\n(Quá hạn nợ)" as Overdue #FEF3C7
+state "Closed\n(Đã thanh lý & hoàn cọc)" as Closed #DCFCE7
+state "Cancelled\n(Đã hủy)" as Cancelled #FEE2E2
+state "Terminated\n(Chấm dứt D+60)" as Terminated #FEE2E2
+
+' Khởi tạo
+[*] -down-> Pending_Check_in : Reservation chuyển Confirmed\n(UC-F1-08, BR-GEN-02)
+
+' Từ Pending Check-in: 2 hướng riêng biệt (Phải & Dưới)
+Pending_Check_in -right-> Cancelled : [Hủy / No-show]
+Pending_Check_in -down-> Active : [Ký bàn giao kho]
+
+' Gia hạn khi đang Active: không đổi state, chỉ dời ngày hết hạn (self-transition)
+Active -right-> Active : [Gia hạn kỳ mới]\n(BR-REN-02/04/05)
+
+' Gia hạn khi đang Overdue: phải tất toán nợ trong cùng giao dịch, quay lại Active
+Overdue -up-> Active : [Nộp phạt & gia hạn]\n(BR-REN-06)
+
+' Trục chính từ Active
+Active -left-> Pending_Return : [Đăng ký trả kho]\n(báo trước 7 ngày)
+Active -down-> Overdue : [Hết hạn thuê]\n(chưa gia hạn/trả)
+
+' Từ Overdue
+Overdue -left-> Pending_Return : [Đăng ký trả kho\nkhi đang quá hạn]\n(BR-RET-11)
+Overdue -down-> Terminated : [Quá hạn mốc D+60]\n(chấm dứt, BR-OVD-07)
+
+' Từ Pending Return — đồng hồ D+60 vẫn chạy ngầm dù đang ở trạng thái này (BR-RET-11)
+Pending_Return -down-> Closed : [Nghiệm thu đạt chuẩn]\n& hoàn cọc
+Pending_Return -right-> Overdue : [Không đến dọn đồ,\nchưa tới D+60]
+Pending_Return -up-> Terminated : [Chưa nghiệm thu xong\nmà đã tới D+60]\n(BR-RET-11)
+
+' Kết thúc hợp đồng
+Cancelled -down-> [*]
+Closed -down-> [*]
+Terminated -down-> [*]
+
+@enduml

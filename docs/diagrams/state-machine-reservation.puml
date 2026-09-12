@@ -1,0 +1,56 @@
+@startuml state-machine-reservation
+title State Machine Diagram — Reservation Lifecycle (Đơn đặt chỗ)
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundCorner 10
+skinparam nodesep 120
+skinparam ranksep 90
+
+skinparam state {
+  BackgroundColor #E0F2FE
+  BorderColor #0284C7
+  BorderThickness 2
+  FontName "Segoe UI", Arial, sans-serif
+  FontSize 13
+  FontColor #0F172A
+  FontStyle bold
+}
+
+skinparam arrow {
+  Color #0369A1
+  Thickness 1.8
+  FontName "Segoe UI", Arial, sans-serif
+  FontSize 11
+  FontColor #0F172A
+}
+
+' Khai báo các trạng thái
+state "Pending Payment\n(Chờ thanh toán 48h)" as Pending_Payment
+state "Confirmed\n(Đã xác nhận & gán kho)" as Confirmed
+state "Fulfilled\n(Đã bàn giao kho)" as Fulfilled #DCFCE7
+state "Expired\n(Hết hạn 48h)" as Expired #FEE2E2
+state "Cancelled\n(Đã hủy đơn)" as Cancelled #FEE2E2
+state "No-show\n(Bỏ hẹn nhận kho)" as No_Show #FEF3C7
+
+' Khởi tạo
+[*] -down-> Pending_Payment : Khách đặt chỗ (UC-F1-06)\n[Giữ slot 48h (BR-DEP-03)]
+
+' Trục chính đi thẳng đứng xuống (Center Lane)
+Pending_Payment -down-> Confirmed : [Thanh toán 100%]\n& Manager gán kho
+Confirmed -down-> Fulfilled : [Ký bàn giao]\nCheck-in đạt chuẩn
+Fulfilled -down-> [*]
+
+' Nhánh Hủy đi hoàn toàn sang cánh Trái (Left Lane)
+Pending_Payment -left-> Cancelled : [Khách bấm Hủy]\n(trong 48h)
+Confirmed -left-> Cancelled : [Hủy trước Check-in]\nhoặc kho hỏng\n(BR-CAN-01/02/05/08)
+
+' Nhánh Hết hạn và Bỏ hẹn đi hoàn toàn sang cánh Phải (Right Lane)
+Pending_Payment -right-> Expired : [Hết hạn 48h]\nchưa thanh toán
+Confirmed -right-> No_Show : [Quá 3 ngày]\nkhông đến nhận
+
+' Các trạng thái cuối — kết thúc vòng đời Reservation
+Expired -down-> [*]
+Cancelled -down-> [*]
+No_Show -down-> [*]
+
+@enduml
