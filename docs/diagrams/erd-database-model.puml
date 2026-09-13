@@ -34,6 +34,8 @@ skinparam package {
 ' 1. USER & ACCESS CONTROL DOMAIN (SA-01 .. SA-04)
 ' ============================================================================
 package "User & Access Control Domain" {
+    ' identity_number: citizen ID (CCCD) or passport number, verified at check-in (BR-CHK-01).
+    ' Nullable because staff accounts do not need it.
     entity "app_user" as app_user {
         * id : BIGINT <<PK, generated>>
         --
@@ -41,6 +43,7 @@ package "User & Access Control Domain" {
         * password_hash : NVARCHAR(255)
         * full_name : NVARCHAR(150)
         phone : NVARCHAR(20)
+        identity_number : NVARCHAR(20)
         * role : VARCHAR(30)
         * status : VARCHAR(20)
         * created_at : DATETIMEOFFSET
@@ -266,6 +269,8 @@ package "Core Rental Lifecycle Domain" {
         * created_at : DATETIMEOFFSET
     }
 
+    ' status: PENDING_SIGNATURE (drafted, awaiting signatures), COMPLETED (signed by both parties),
+    ' CANCELLED (handover aborted because the unit is defective) - US-FS-02.1 AC-3/AC-4, BR-CHK-03
     entity "handover_record" as handover_record {
         * id : BIGINT <<PK, generated>>
         --
@@ -274,6 +279,7 @@ package "Core Rental Lifecycle Domain" {
         condition_note : NVARCHAR(1000)
         customer_signed_at : DATETIMEOFFSET
         staff_signed_at : DATETIMEOFFSET
+        * status : VARCHAR(20)
         * created_at : DATETIMEOFFSET
     }
 
@@ -342,6 +348,7 @@ package "Payment & Ledger Domain" {
         * created_at : DATETIMEOFFSET
     }
 
+    ' status: UNPAID, PAID (whether the charge has been collected) - US-FM-03.2 AC-2, BR-RET-04
     entity "contract_extra_charge" as contract_extra_charge {
         * id : BIGINT <<PK, generated>>
         --
@@ -350,6 +357,7 @@ package "Payment & Ledger Domain" {
         * amount : BIGINT
         reason : NVARCHAR(500)
         * recorded_by : BIGINT <<FK>>
+        * status : VARCHAR(20)
         * created_at : DATETIMEOFFSET
     }
 

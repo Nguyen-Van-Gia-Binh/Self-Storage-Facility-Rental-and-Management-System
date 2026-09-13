@@ -28,6 +28,7 @@ Lưu trữ thông tin tài khoản của toàn bộ người dùng trong hệ th
 | `password_hash` | `NVARCHAR(255)` | Có | | Mật khẩu băm (BCrypt) |
 | `full_name` | `NVARCHAR(150)` | Có | | Họ và tên đầy đủ |
 | `phone` | `NVARCHAR(20)` | Không | | Số điện thoại liên hệ |
+| `identity_number` | `NVARCHAR(20)` | Không | | Số CCCD / Hộ chiếu để xác minh danh tính khi nhận kho (`BR-CHK-01`); để trống với tài khoản nhân sự |
 | `role` | `VARCHAR(30)` | Có | `CHECK (role IN ('STORAGE_CUSTOMER', 'FACILITY_STAFF', 'FACILITY_MANAGER', 'BUSINESS_OPERATIONS_MANAGER', 'SYSTEM_ADMINISTRATOR'))` | Vai trò người dùng (`US-SA-02.1`: mỗi tài khoản đúng 1 vai trò) |
 | `status` | `VARCHAR(20)` | Có | `DEFAULT 'ACTIVE'`, `CHECK IN ('ACTIVE','INACTIVE')` | Trạng thái hoạt động của tài khoản |
 | `created_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Thời điểm tạo tài khoản |
@@ -165,7 +166,7 @@ Chính sách vận hành có phiên bản đầy đủ tại từng thời đi�
 | `return_early_refund_rate` | `DECIMAL(5,2)` | Có | | Tỷ lệ hoàn tiền khi trả kho trước hạn (`0.80` = 80% - `BR-RET-05`) |
 | `access_pin_length` | `INT` | Có | `DEFAULT 6` | Độ dài mã PIN bảo mật (`BR-ACC-01`) |
 | `support_urgent_sla_hours` | `INT` | Có | | Cam kết SLA xử lý sự cố khẩn (`4` giờ - `BR-SUP-01`) |
-| `support_auto_close_working_days` | `INT` | Có | | Ngày tự động đóng yêu cầu hỗ trợ (`3` ngày - `BR-SUP-05`) |
+| `support_auto_close_working_days` | `INT` | Có | | Ngày tự động đóng yêu cầu hỗ trợ (`3` ngày - `BR-SUP-03`) |
 | `published_by` | `BIGINT` | Có | `FK` $\rightarrow$ `app_user(id)` | Người ban hành phiên bản chính sách (BOM) |
 | `created_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Ngày tạo |
 
@@ -286,6 +287,7 @@ Biên bản nghiệm thu bàn giao khi Check-in (`Flow 2`, `BR-CHK-03`).
 | `condition_note`| `NVARCHAR(1000)`| Không | | Ghi chú hiện trạng ô kho trước khi nhận |
 | `customer_signed_at`| `DATETIMEOFFSET`| Không | | Mốc chữ ký điện tử của khách hàng |
 | `staff_signed_at`| `DATETIMEOFFSET`| Không | | Mốc chữ ký điện tử của nhân viên |
+| `status` | `VARCHAR(20)` | Có | `DEFAULT 'PENDING_SIGNATURE'`, `CHECK IN ('PENDING_SIGNATURE', 'COMPLETED', 'CANCELLED')` | Trạng thái biên bản: chờ ký, hai bên đã ký, hoặc hủy lượt bàn giao do ô kho lỗi (`US-FS-02.1`) |
 | `created_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Thời điểm lập biên bản |
 
 ### 4.5. Bảng `return_request`
@@ -371,6 +373,7 @@ Phụ phí hoặc đền bù thiệt hại ghi nhận vào hợp đồng (`BR-RE
 | `amount` | `BIGINT` | Có | | Số tiền tính phí |
 | `reason` | `NVARCHAR(500)` | Không | | Diễn giải nguyên nhân phát sinh |
 | `recorded_by` | `BIGINT` | Có | `FK` $\rightarrow$ `app_user(id)` | Nhân viên ghi nhận |
+| `status` | `VARCHAR(20)` | Có | `DEFAULT 'UNPAID'`, `CHECK IN ('UNPAID', 'PAID')` | Trạng thái thu phụ phí: chưa thu / đã thu (`US-FM-03.2`, dùng khi quyết toán theo `BR-RET-04`) |
 | `created_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Thời điểm lập phí |
 
 ### 5.4. Bảng `overdue_fee_adjustment_request`

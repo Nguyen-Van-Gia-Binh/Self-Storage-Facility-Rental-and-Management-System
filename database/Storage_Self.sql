@@ -23,6 +23,9 @@ CREATE TABLE app_user (
     password_hash       NVARCHAR(255)     NOT NULL,
     full_name           NVARCHAR(150)     NOT NULL,
     phone               NVARCHAR(20)      NULL,
+    -- BR-CHK-01: so CCCD / Ho chieu de xac minh danh tinh khi nhan kho;
+    -- NULL voi tai khoan nhan su
+    identity_number     NVARCHAR(20)      NULL,
     -- US-SA-02.1: dung DUNG MOT vai tro cho moi tai khoan
     role                VARCHAR(30)       NOT NULL,
     status              VARCHAR(20)       NOT NULL DEFAULT 'ACTIVE',
@@ -359,12 +362,16 @@ CREATE TABLE handover_record (
     condition_note          NVARCHAR(1000)    NULL,
     customer_signed_at      DATETIMEOFFSET    NULL,
     staff_signed_at         DATETIMEOFFSET    NULL,
+    -- Pending signature, Completed, Cancelled (US-FS-02.1 AC-3/AC-4)
+    status                  VARCHAR(20)       NOT NULL DEFAULT 'PENDING_SIGNATURE',
     created_at              DATETIMEOFFSET    NOT NULL DEFAULT SYSDATETIMEOFFSET(),
     CONSTRAINT fk_handover_record_contract_id
         FOREIGN KEY (contract_id) REFERENCES rental_contract(id),
     CONSTRAINT fk_handover_record_staff_id
         FOREIGN KEY (staff_id) REFERENCES app_user(id),
-    CONSTRAINT uq_handover_record_contract_id UNIQUE (contract_id)
+    CONSTRAINT uq_handover_record_contract_id UNIQUE (contract_id),
+    CONSTRAINT ck_handover_record_status CHECK (status IN
+        ('PENDING_SIGNATURE','COMPLETED','CANCELLED'))
 );
 
 -- BR-RET-01..12: dang ky tra kho va nghiem thu
@@ -402,13 +409,16 @@ CREATE TABLE contract_extra_charge (
     amount                  BIGINT            NOT NULL,
     reason                  NVARCHAR(500)     NULL,
     recorded_by             BIGINT            NOT NULL,
+    -- Unpaid, Paid (US-FM-03.2 AC-2, BR-RET-04: phu phi chua thanh toan)
+    status                  VARCHAR(20)       NOT NULL DEFAULT 'UNPAID',
     created_at              DATETIMEOFFSET    NOT NULL DEFAULT SYSDATETIMEOFFSET(),
     CONSTRAINT fk_contract_extra_charge_contract_id
         FOREIGN KEY (contract_id) REFERENCES rental_contract(id),
     CONSTRAINT fk_contract_extra_charge_extra_fee_type_id
         FOREIGN KEY (extra_fee_type_id) REFERENCES extra_fee_type(id),
     CONSTRAINT fk_contract_extra_charge_recorded_by
-        FOREIGN KEY (recorded_by) REFERENCES app_user(id)
+        FOREIGN KEY (recorded_by) REFERENCES app_user(id),
+    CONSTRAINT ck_contract_extra_charge_status CHECK (status IN ('UNPAID','PAID'))
 );
 CREATE INDEX ix_contract_extra_charge_contract_id ON contract_extra_charge(contract_id);
 
