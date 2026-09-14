@@ -29,6 +29,7 @@
 |------------|----------|
 | **Ngôn ngữ trong code** | Toàn bộ định danh (class, biến, hàm, bảng, endpoint) viết **tiếng Anh**. Thuật ngữ nghiệp vụ dùng đúng từ ở [TOPIC.md § 7](TOPIC.md#7-thuật-ngữ-glossary): `Facility`, `StorageUnit`, `UnitType`, `Reservation`, `Deposit`, `Renewal`, `Overdue`, `Return` |
 | **Ngôn ngữ trong tài liệu** | Tài liệu và mô tả Pull Request viết **tiếng Việt**, giữ nguyên thuật ngữ tiếng Anh |
+| **Ngôn ngữ trong sơ đồ** | Sơ đồ PlantUML trong `docs/diagrams/` — tiêu đề, nhãn, ghi chú và comment — viết **tiếng Anh**. Thuật ngữ nghiệp vụ dùng đúng từ ở [TOPIC.md § 7](TOPIC.md#7-thuật-ngữ-glossary); mã `UC-*`, `BR-*`, `US-*` giữ nguyên |
 | **Comment** | Chỉ viết comment giải thích **tại sao**, không diễn giải lại code đang làm gì. Comment tiếng Việt được chấp nhận |
 | **Encoding và xuống dòng** | UTF-8 không BOM, xuống dòng `LF`. Cấu hình sẵn trong `.gitattributes` và `.editorconfig` |
 | **Độ dài dòng** | Tối đa **120 ký tự** cho cả Java và TypeScript |

@@ -109,3 +109,7 @@ Access Card, Renewal, Overdue, Return, Usage Rate). Actor names are always writt
 Headings that name a domain concept give the English term first with the Vietnamese gloss after
 (e.g. "Storage Customer — Khách thuê kho"). Structured content is expressed as Markdown tables with
 a code column where the § 3 / flow numbering applies.
+
+Diagrams are the exception: titles, labels, notes and comments in `docs/diagrams/*.puml` are written
+in **English** (`docs/CONVENTIONS.md § 1`), still using the § 7 terms and unchanged `UC-*` / `BR-*` /
+`US-*` codes. Diagrams created before this rule still carry Vietnamese labels.
