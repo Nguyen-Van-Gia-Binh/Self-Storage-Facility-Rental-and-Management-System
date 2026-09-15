@@ -1,0 +1,72 @@
+@startuml erd-core-entities
+' ============================================================================
+'  Self-Storage Facility Rental and Management System
+'  Core Rental Domain - Entities
+'
+'  Scope: the core rental domain owned by Backend A (Le Thanh Tung).
+'  Entities only, grouped by area: no attributes and no relationships.
+'  The relationships between these entities are in erd-core-domain.puml.
+' ============================================================================
+
+!theme plain
+skinparam roundcorner 4
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam nodesep 40
+skinparam ranksep 40
+skinparam packageStyle rectangle
+
+skinparam class {
+    BackgroundColor #FFFFFF
+    BorderColor #34495E
+    FontColor #2C3E50
+    FontStyle bold
+}
+
+skinparam package {
+    BorderColor #7F8C8D
+    FontColor #2C3E50
+}
+
+hide circle
+hide members
+
+' Left to right: each group is one column, entities stack top to bottom in it.
+left to right direction
+
+title Core Rental Domain — Entities
+
+package "Users" as pkg_users {
+    entity "Storage Customer" as storage_customer
+    entity "Facility Staff" as facility_staff
+}
+
+package "Facility & Catalog" as pkg_catalog {
+    entity "Facility" as facility
+    entity "Unit Type" as unit_type
+    entity "Storage Unit" as storage_unit
+}
+
+package "Rental Lifecycle" as pkg_rental {
+    entity "Reservation" as reservation
+    entity "Rental Contract" as rental_contract
+    entity "Handover Record" as handover_record
+    entity "Access Credential" as access_credential
+    entity "Renewal" as renewal
+    entity "Return Request" as return_request
+}
+
+package "Payment" as pkg_payment {
+    entity "Payment Transaction" as payment_transaction
+}
+
+' Hidden links only fix the column order; they are not relationships.
+storage_customer -[hidden]- facility
+facility -[hidden]- reservation
+reservation -[hidden]- rental_contract
+rental_contract -[hidden]- payment_transaction
+handover_record -[hidden]- access_credential
+renewal -[hidden]- return_request
+
+@enduml
