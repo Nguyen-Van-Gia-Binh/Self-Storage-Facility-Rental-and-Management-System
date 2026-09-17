@@ -1,0 +1,193 @@
+@startuml erd-conceptual-model
+' ============================================================================
+'  Self-Storage Facility Rental and Management System
+'  MÔ HÌNH DỮ LIỆU QUAN NIỆM (CONCEPTUAL DATA MODEL - CDM)
+'
+'  Đặc tả theo đúng yêu cầu:
+'    - TÊN THỰC THỂ THUẦN TIẾNG ANH (ENGLISH ENTITY NAMES ONLY)
+'    - XÓA TOÀN BỘ CHÚ THÍCH TIẾNG VIỆT TRONG CÁC HỘP ENTITY
+'    - ĐỦ 24 THỰC THỂ (khớp 100% CSDL Storage_Self.sql)
+'    - ZERO ATTRIBUTES (chỉ có Tên thực thể, không thuộc tính)
+'    - Bố cục thông thoáng, các nét nối và biểu tượng Crow's Foot phân minh
+' ============================================================================
+
+!theme plain
+hide circle
+hide empty members
+skinparam linetype ortho
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam dpi 300
+
+' Khoảng cách thông thoáng giữa các thực thể và phân hệ
+skinparam nodesep 65
+skinparam ranksep 75
+
+' Kích thước tối thiểu và khoảng đệm bên trong hộp thực thể
+skinparam minClassWidth 170
+skinparam class {
+    Padding 10
+    BorderThickness 1.5
+    ArrowColor #2563EB
+    FontColor #0F172A
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam package {
+    BackgroundColor #F8FAFC
+    BorderColor #94A3B8
+    FontStyle bold
+    FontColor #1E293B
+}
+
+' ============================================================================
+' 1. USER & SECURITY (4 ENTITIES)
+' ============================================================================
+package "1. User & Security" {
+    class "app_user" as app_user #E0F2FE ##0284C7
+    class "user_facility_assignment" as user_facility_assignment #E0F2FE ##0284C7
+    class "login_history" as login_history #E0F2FE ##0284C7
+    class "audit_log" as audit_log #E0F2FE ##0284C7
+}
+
+' ============================================================================
+' 2. FACILITY & UNIT CATALOG (4 ENTITIES)
+' ============================================================================
+package "2. Facility & Unit Catalog" {
+    class "facility" as facility #ECFDF5 ##059669
+    class "unit_type" as unit_type #ECFDF5 ##059669
+    class "facility_unit_type_price" as facility_unit_type_price #ECFDF5 ##059669
+    class "storage_unit" as storage_unit #ECFDF5 ##059669
+}
+
+' ============================================================================
+' 3. POLICY & PRICING (3 ENTITIES)
+' ============================================================================
+package "3. Policy & Pricing" {
+    class "policy_version" as policy_version #FFF1F2 ##DC2626
+    class "extra_fee_type" as extra_fee_type #FFF1F2 ##DC2626
+    class "discount_program" as discount_program #FFF1F2 ##DC2626
+}
+
+' ============================================================================
+' 4. RESERVATION & RENTAL CONTRACT (6 ENTITIES)
+' ============================================================================
+package "4. Reservation & Rental Contract" {
+    class "reservation" as reservation #F5F3FF ##7C3AED
+    class "rental_contract" as rental_contract #F5F3FF ##7C3AED
+    
+    class "handover_record" as handover_record #EEF2FF ##4F46E5
+    class "access_credential" as access_credential #EEF2FF ##4F46E5
+    class "contract_renewal" as contract_renewal #EEF2FF ##4F46E5
+    class "return_request" as return_request #EEF2FF ##4F46E5
+}
+
+' ============================================================================
+' 5. PAYMENT & FINANCIAL LEDGER (4 ENTITIES)
+' ============================================================================
+package "5. Payment & Financial Ledger" {
+    class "payment_transaction" as payment_transaction #FEF3C7 ##D97706
+    class "ledger_entry" as ledger_entry #FEF3C7 ##D97706
+    class "contract_extra_charge" as contract_extra_charge #FEF3C7 ##D97706
+    class "overdue_fee_adjustment_request" as overdue_fee_adjustment_request #FEF3C7 ##D97706
+}
+
+' ============================================================================
+' 6. OPERATIONS & SUPPORT (3 ENTITIES)
+' ============================================================================
+package "6. Operations & Support" {
+    class "support_request" as support_request #ECFEFF ##0891B2
+    class "staff_daily_assignment" as staff_daily_assignment #ECFEFF ##0891B2
+    class "attachment" as attachment #ECFEFF ##0891B2
+}
+
+' ============================================================================
+' CÂN CHỈNH BỐ CỤC KHÔNG GIAN (SPATIAL GRID ALIGNMENT)
+' ============================================================================
+app_user -[hidden]d-> policy_version
+policy_version -[hidden]d-> payment_transaction
+
+facility -[hidden]d-> reservation
+reservation -[hidden]d-> rental_contract
+rental_contract -[hidden]d-> support_request
+
+' Dàn hàng ngang cho 4 nghiệp vụ thực thi hợp đồng để không dính chùm vào rental_contract
+handover_record -[hidden]r-> access_credential
+access_credential -[hidden]r-> contract_renewal
+contract_renewal -[hidden]r-> return_request
+
+' ============================================================================
+' MỐI QUAN HỆ CHUẨN CROW'S FOOT
+' ============================================================================
+
+' --- 1. User & Security (Nội bộ) ---
+app_user ||--o{ login_history : "ghi log"
+app_user |o--o{ audit_log : "thao tác"
+app_user ||--o{ user_facility_assignment : "phân công"
+facility ||--o{ user_facility_assignment : "thuộc cơ sở"
+app_user ||--o{ attachment : "tải lên"
+
+' --- 2. Facility & Unit Catalog ---
+facility ||--|{ storage_unit : "chứa"
+unit_type ||--|{ storage_unit : "định loại"
+facility ||--|{ facility_unit_type_price : "áp dụng"
+unit_type ||--|{ facility_unit_type_price : "định giá"
+
+' --- 3. Reservation ---
+app_user ||--o{ reservation : "khách đặt chỗ"
+facility ||--o{ reservation : "chọn cơ sở"
+unit_type ||--o{ reservation : "chọn loại kho"
+storage_unit |o--o{ reservation : "gán ô kho"
+policy_version ||--o{ reservation : "áp dụng chính sách"
+discount_program |o--o{ reservation : "áp dụng ưu đãi"
+
+' --- 4. Rental Contract ---
+reservation ||--o| rental_contract : "chuyển thành (1:0..1)"
+app_user ||--o{ rental_contract : "khách đứng tên"
+storage_unit ||--o{ rental_contract : "thuê cố định"
+
+' --- 5. Contract Execution ---
+rental_contract ||--o| handover_record : "bàn giao"
+rental_contract ||--|{ access_credential : "cấp quyền mở"
+rental_contract ||--o{ contract_renewal : "gia hạn"
+rental_contract ||--o{ return_request : "trả kho"
+app_user ||--o{ handover_record : "nhân viên bàn giao"
+app_user |o--o{ return_request : "nhân viên kiểm tra"
+
+' --- 6. Payment & Financial Ledger ---
+reservation |o--o{ payment_transaction : "thanh toán cọc"
+rental_contract |o--o{ payment_transaction : "thanh toán kỳ mới"
+payment_transaction |o--o{ ledger_entry : "hạch toán sổ cái"
+rental_contract ||--o{ contract_extra_charge : "phát sinh phụ phí"
+extra_fee_type ||--o{ contract_extra_charge : "loại phụ phí"
+rental_contract ||--o{ overdue_fee_adjustment_request : "đề xuất giảm nợ"
+app_user ||--o{ overdue_fee_adjustment_request : "nhân sự duyệt"
+
+' --- 7. Operations & Support ---
+app_user ||--o{ support_request : "gửi ticket"
+rental_contract |o--o{ support_request : "sự cố trên HĐ"
+app_user ||--o{ staff_daily_assignment : "nhân viên trực"
+facility ||--o{ staff_daily_assignment : "tại cơ sở"
+
+' ============================================================================
+' BẢNG CHÚ GIẢI (LEGEND)
+' ============================================================================
+legend right
+  |= Ký hiệu |= Ý nghĩa Bản số Crow's Foot |
+  | ||--|| | Đúng 1 (Bắt buộc) |
+  | ||--o| | 0 hoặc 1 (Tùy chọn) |
+  | ||--|{ | 1 hoặc Nhiều (Bắt buộc) |
+  | ||--o{ | 0 hoặc Nhiều (Tùy chọn) |
+  | **Màu sắc** | **Phân hệ nghiệp vụ (24 Entities)** |
+  |<#E0F2FE> | 1. User & Security (4) |
+  |<#ECFDF5> | 2. Facility & Unit Catalog (4) |
+  |<#FFF1F2> | 3. Policy & Pricing (3) |
+  |<#F5F3FF> | 4. Reservation & Rental Contract (6) |
+  |<#FEF3C7> | 5. Payment & Financial Ledger (4) |
+  |<#ECFEFF> | 6. Operations & Support (3) |
+endlegend
+
+@enduml
