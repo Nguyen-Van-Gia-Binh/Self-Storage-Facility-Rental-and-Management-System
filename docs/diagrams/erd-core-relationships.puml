@@ -1,23 +1,30 @@
-@startuml erd-core-domain
+@startuml erd-core-relationships
 ' ============================================================================
 '  Self-Storage Facility Rental and Management System
-'  Core Rental Domain - Conceptual ERD (Crow's Foot notation)
+'  Core Rental Domain - Entity Relationships (Crow's Foot notation)
 '
 '  Scope: the core rental domain owned by Backend A (Le Thanh Tung).
-'  Conceptual view only: entities and the relationships between them, with no
-'  attributes, keys or data types. The same entities with their business
-'  attributes are in erd-conceptual.puml; tables and columns are in
-'  erd-database-model.puml.
+'  The 12 entities of erd-core-entities.puml and the relationships between
+'  them, with no attributes. Lines are routed orthogonally.
+'
+'  Omitted as redundant (the physical model stores them for querying):
+'  Rental Contract -> Storage Customer (via Reservation),
+'  Rental Contract -> Facility (via Storage Unit),
+'  Access Credential -> Storage Unit (via Rental Contract).
+'
+'  Kept on purpose: Reservation -> Facility / Unit Type looks transitive through
+'  Storage Unit but is not - see the note on Reservation (BR-RES-02, BR-AVL-04).
 ' ============================================================================
 
+' ELK routes every relationship as horizontal / vertical segments and keeps each
+' label next to its own line; Graphviz's ortho mode lets labels drift away.
+!pragma layout elk
+
 !theme plain
-skinparam linetype polyline
 skinparam roundcorner 4
 skinparam shadowing false
 skinparam defaultFontName "Segoe UI"
 skinparam defaultFontSize 12
-skinparam nodesep 70
-skinparam ranksep 80
 
 skinparam class {
     BackgroundColor #FFFFFF
@@ -27,74 +34,68 @@ skinparam class {
     FontStyle bold
 }
 
+skinparam note {
+    BackgroundColor #FFF9E6
+    BorderColor #B7950B
+}
+
 hide circle
 hide members
 
-title Core Rental Domain — Conceptual ERD
+title Core Rental Domain — Entity Relationships
 
 ' ============================================================================
-' ENTITIES (declared top to bottom, in the order of the layers they sit in)
+' ENTITIES (same groups as erd-core-entities.puml)
 ' ============================================================================
 
+' --- Users ---
 entity "Storage Customer" as storage_customer
-entity "Unit Type" as unit_type
-entity "Facility" as facility
+entity "Facility Staff" as facility_staff
 
-entity "Reservation" as reservation
+' --- Facility & Catalog ---
+entity "Facility" as facility
+entity "Unit Type" as unit_type
 entity "Storage Unit" as storage_unit
 
-entity "Payment Transaction" as payment_transaction
+' --- Rental Lifecycle ---
+entity "Reservation" as reservation
 entity "Rental Contract" as rental_contract
-
 entity "Handover Record" as handover_record
-entity "Return Request" as return_request
 entity "Access Credential" as access_credential
 entity "Renewal" as renewal
+entity "Return Request" as return_request
 
-entity "Facility Staff" as facility_staff
+' --- Payment ---
+entity "Payment Transaction" as payment_transaction
 
 ' ============================================================================
 ' RELATIONSHIPS
-' Each line is written parent-first so the layout keeps the layers above; the
-' arrow in the label gives the reading direction ("< verb" reads right to left).
+' Each line is written parent-first so the layout keeps its layers top to
+' bottom; the arrow in the label gives the reading direction ("< verb" reads
+' right to left).
 ' ============================================================================
 
 ' --- Reservation and catalog (Flow 1) ---
 storage_customer ||--o{ reservation : places >
-unit_type ||--o{ reservation : < requests
 facility ||--o{ reservation : < is made at
-unit_type ||--|{ storage_unit : classifies >
+unit_type ||--o{ reservation : < requests
 facility ||--|{ storage_unit : contains >
-reservation }o-right-o| storage_unit : is allocated >
+unit_type ||--|{ storage_unit : classifies >
+reservation }o--o| storage_unit : is allocated (after payment) >
 
 ' --- Rental Contract and payment ---
 reservation ||--o| rental_contract : results in >
 storage_unit ||--o{ rental_contract : < leases
 reservation |o--o{ payment_transaction : is paid by >
-rental_contract |o-left-o{ payment_transaction : is paid by >
+rental_contract |o--o{ payment_transaction : is paid by >
 
 ' --- Check-in / Handover, Return, Renewal (Flow 2, 3, 6) ---
 rental_contract ||--o| handover_record : is handed over in >
-rental_contract ||--o{ return_request : is returned via >
 rental_contract ||--|{ access_credential : grants >
 rental_contract ||--o{ renewal : is extended by >
+rental_contract ||--o{ return_request : is returned via >
 handover_record }o--|| facility_staff : < conducts
 return_request }o--o| facility_staff : < inspects
 
-' ============================================================================
-' NOTES
-' ============================================================================
-
-legend right
-    |= Conceptual entity |= Physical table |
-    | Storage Customer, Facility Staff | app_user (column role) |
-    | Renewal | contract_renewal |
-    | Others | same name in snake_case |
-    ----
-    Omitted as redundant (the physical model stores them for querying):
-    Rental Contract → Storage Customer (via Reservation),
-    Rental Contract → Facility (via Storage Unit),
-    Access Credential → Storage Unit (via Rental Contract).
-endlegend
 
 @enduml

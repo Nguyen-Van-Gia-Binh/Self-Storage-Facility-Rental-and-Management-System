@@ -1,7 +1,7 @@
 # TỪ ĐIỂN DỮ LIỆU (DATA DICTIONARY)
 **Hệ thống**: Self-Storage Facility Rental and Management System  
 **Nhiệm vụ trong Kế hoạch**: `T1.11` · Giai đoạn 1 · [docs/PLAN.md](PLAN.md)  
-**Tài liệu tham chiếu**: [Storage_Self.sql](../database/Storage_Self.sql), [erd-database-model.puml](diagrams/erd-database-model.puml), [BUSINESS-RULES.md](BUSINESS-RULES.md)  
+**Tài liệu tham chiếu**: [Storage_Self.sql](../database/Storage_Self.sql), [erd-conceptual.puml](diagrams/erd-conceptual.puml) (ERD mức khái niệm), [erd-database-model.puml](diagrams/erd-database-model.puml) (Physical Data Model), [BUSINESS-RULES.md](BUSINESS-RULES.md)  
 **Quy ước CSDL**: [CONVENTIONS.md § 5](CONVENTIONS.md#5-cơ-sở-dữ-liệu--sql-server-và-flyway) (`snake_case`, đơn vị tiền `BIGINT`, mốc thời gian `DATETIMEOFFSET`, ngày `DATE`, chuẩn hoá 3NF/BCNF).
 
 ---

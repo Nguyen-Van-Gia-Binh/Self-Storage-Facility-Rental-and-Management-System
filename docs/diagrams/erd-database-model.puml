@@ -1,9 +1,10 @@
 @startuml erd-database-model
 ' ============================================================================
 '  Self-Storage Facility Rental and Management System
-'  Entity-Relationship Diagram (ERD) - Crow's Foot Notation (IE Standard)
+'  Physical Data Model - SQL Server tables, columns, data types and keys
 '  Nguon: database/Storage_Self.sql & CONVENTIONS.md Sec 5
 '  Chuan ky thuat: Information Engineering (Crow's Foot Notation)
+'  ERD muc khai niem (conceptual) nam o erd-conceptual.puml
 ' ============================================================================
 
 !theme plain
@@ -13,6 +14,8 @@ skinparam shadowing false
 skinparam defaultFontName "Segoe UI"
 skinparam defaultFontSize 11
 skinparam dpi 300
+
+title Self-Storage Facility Rental and Management System — Physical Data Model
 
 ' Phong cach cho cac thuc the ERD
 skinparam class {

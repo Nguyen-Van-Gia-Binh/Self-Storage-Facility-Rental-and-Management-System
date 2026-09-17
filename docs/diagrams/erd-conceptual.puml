@@ -1,0 +1,354 @@
+@startuml erd-conceptual
+' ============================================================================
+'  Self-Storage Facility Rental and Management System
+'  Conceptual Entity-Relationship Diagram (ERD) - Crow's Foot notation
+'
+'  Business view of the data: entities, their business attributes and the
+'  relationships between them. It deliberately leaves out what belongs to the
+'  physical model (erd-database-model.puml): data types, surrogate IDs, foreign
+'  key columns, junction tables and audit timestamps (created_at / updated_at).
+'
+'  Sources: TOPIC.md § 3 and § 7, BUSINESS-RULES.md, DATA-DICTIONARY.md
+' ============================================================================
+
+' ELK routes every relationship as horizontal / vertical segments and keeps each
+' label next to its own line; Graphviz's ortho mode lets labels drift away.
+!pragma layout elk
+
+!theme plain
+skinparam roundcorner 4
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+
+skinparam class {
+    BackgroundColor #FFFFFF
+    ArrowColor #2C3E50
+    BorderColor #34495E
+    FontColor #2C3E50
+    AttributeFontColor #2C3E50
+}
+
+hide circle
+hide empty members
+
+title Self-Storage Facility Rental and Management System — Conceptual ERD
+
+' ============================================================================
+' ENTITIES
+' ============================================================================
+
+' --- Users: one supertype, one subtype per actor (TOPIC.md § 2) ---
+entity "User" as user {
+    <u>email</u>
+    full name
+    phone
+    password
+    status
+}
+
+entity "Storage Customer" as storage_customer {
+    identity number
+}
+entity "Facility Staff" as facility_staff
+entity "Facility Manager" as facility_manager
+entity "Business Operations Manager" as bom
+entity "System Administrator" as sys_admin
+
+entity "Login History" as login_history {
+    login time
+    IP address
+    user agent
+    success flag
+}
+
+entity "Audit Log" as audit_log {
+    action
+    {field} target entity (type, id)
+    before value
+    after value
+    performed time
+}
+
+' --- Facility & catalog ---
+entity "Facility" as facility {
+    <u>code</u>
+    name
+    address
+    status
+}
+
+entity "Unit Type" as unit_type {
+    <u>code</u>
+    name
+    {field} dimensions (width, length, height)
+    description
+}
+
+' Associative entity: Facility and Unit Type are M:N, and the pair carries a price.
+entity "Unit Type Price" as unit_type_price {
+    monthly price
+}
+
+entity "Storage Unit" as storage_unit {
+    {field} <u>code</u> (unique within Facility)
+    location note
+    status
+}
+
+' --- Policy & pricing ---
+entity "Policy Version" as policy_version {
+    <u>version no</u>
+    effective from
+    deposit multiplier
+    {field} reservation terms (hold hours, check-in grace days)
+    {field} cancellation terms (full-refund hours, refund rates)
+    {field} renewal terms ({reminder days}, min / max months)
+    {field} overdue terms (grace days, daily rate, cap rate, milestones)
+    {field} return terms (notice days, refund days, early refund rate)
+    access PIN length
+    {field} support terms (urgent SLA hours, auto-close days)
+}
+
+entity "Discount Program" as discount_program {
+    name
+    {field} discount type (percent / amount)
+    discount value
+    {field} validity period (start date, end date)
+    {field} scope (system / facility / unit type)
+    active flag
+}
+
+entity "Extra Fee Type" as extra_fee_type {
+    <u>code</u>
+    name
+    amount
+    active flag
+}
+
+' --- Rental lifecycle ---
+entity "Reservation" as reservation {
+    <u>code</u>
+    start date
+    rental months
+    / end date
+    monthly price snapshot
+    discount amount
+    deposit amount
+    / total rental fee
+    / total payable
+    status
+    hold expiry time
+    confirmed / fulfilled / cancelled time
+}
+
+entity "Rental Contract" as rental_contract {
+    <u>code</u>
+    start date
+    end date
+    monthly price snapshot
+    deposit amount
+    status
+    overdue since
+    overdue fee accrued
+    activated / closed / terminated time
+}
+
+entity "Renewal" as renewal {
+    previous end date
+    new end date
+    rental months
+    monthly price snapshot
+    rental fee amount
+    overdue fee settled
+    / total paid
+    renewal time
+}
+
+entity "Handover Record" as handover_record {
+    condition note
+    customer signed time
+    staff signed time
+    status
+}
+
+entity "Return Request" as return_request {
+    requested time
+    requested return date
+    appointment slot
+    status
+    {field} inspection (time, intact flag, condition note)
+    damage cost
+    deposit refund amount
+    cancelled time
+}
+
+entity "Access Credential" as access_credential {
+    {field} credential type (PIN / QR / card / key)
+    {field} code value (hashed)
+    status
+    issued / suspended / revoked time
+}
+
+' --- Payment ---
+entity "Payment Transaction" as payment_transaction {
+    transaction type
+    amount
+    status
+    payment method
+    provider reference
+    created time
+}
+
+entity "Ledger Entry" as ledger_entry {
+    entry type
+    amount
+    description
+    recorded time
+}
+
+entity "Extra Charge" as extra_charge {
+    amount
+    reason
+    {field} status (unpaid / paid)
+    recorded time
+}
+
+entity "Overdue Fee Adjustment" as overdue_adjustment {
+    requested amount
+    reason
+    evidence note
+    status
+    reviewed amount
+    review reason
+    requested / reviewed time
+}
+
+' --- Operations & support ---
+entity "Support Request" as support_request {
+    <u>code</u>
+    category
+    description
+    status
+    SLA due time
+    resolution note
+    resolved / confirmed / auto-closed time
+}
+
+entity "Staff Task" as staff_task {
+    work date
+    task type
+}
+
+entity "Attachment" as attachment {
+    file URL
+    uploaded time
+}
+
+' ============================================================================
+' RELATIONSHIPS (read left to right: "<left> <verb> <right>")
+' ============================================================================
+
+' --- User subtypes: disjoint and complete, one role per account ---
+user <|-- storage_customer
+user <|-- facility_staff
+user <|-- facility_manager
+user <|-- bom
+user <|-- sys_admin
+
+user ||--o{ login_history : has >
+user |o--o{ audit_log : performs >
+user ||--o{ attachment : uploads >
+
+' --- Facility data access (UC-F5-08) ---
+facility_staff }o--o{ facility : works at >
+facility_manager }o--o{ facility : manages >
+
+' --- Catalog ---
+facility ||--o{ storage_unit : contains >
+unit_type ||--o{ storage_unit : classifies >
+facility ||--o{ unit_type_price : sets >
+unit_type ||--o{ unit_type_price : is priced by >
+
+' --- Policy & pricing (BR-GEN-02, BR-GEN-05) ---
+bom ||--o{ policy_version : publishes >
+discount_program }o--o| facility : is limited to >
+discount_program }o--o| unit_type : is limited to >
+
+' --- Reservation (Flow 1) ---
+storage_customer ||--o{ reservation : places >
+reservation }o--|| facility : is made at >
+reservation }o--|| unit_type : requests >
+reservation }o--o| storage_unit : is allocated >
+reservation }o--|| policy_version : is governed by >
+reservation }o--o| discount_program : applies >
+
+' --- Rental Contract, Check-in / Handover, Renewal, Return (Flow 2, 3, 6) ---
+reservation ||--o| rental_contract : results in >
+rental_contract }o--|| storage_unit : leases >
+rental_contract }o--|| policy_version : is governed by >
+rental_contract ||--o| handover_record : is handed over in >
+facility_staff ||--o{ handover_record : conducts >
+rental_contract ||--o{ access_credential : grants >
+rental_contract ||--o{ renewal : is extended by >
+renewal }o--|| policy_version : is governed by >
+rental_contract ||--o{ return_request : is returned via >
+facility_staff |o--o{ return_request : inspects >
+
+' --- Payment, ledger, charges (BR-PAY-06, BR-RET-04, BR-OVD-10) ---
+reservation |o--o{ payment_transaction : is paid by >
+rental_contract |o--o{ payment_transaction : is paid by >
+payment_transaction |o--o{ ledger_entry : is recorded in >
+reservation |o--o{ ledger_entry : is accounted in >
+rental_contract |o--o{ ledger_entry : is accounted in >
+rental_contract ||--o{ extra_charge : incurs >
+extra_fee_type ||--o{ extra_charge : classifies >
+facility_staff ||--o{ extra_charge : records >
+rental_contract ||--o{ overdue_adjustment : is subject to >
+facility_manager ||--o{ overdue_adjustment : proposes >
+bom |o--o{ overdue_adjustment : reviews >
+
+' --- Support (Flow 7) and daily staff tasks (UC-F5-04) ---
+storage_customer ||--o{ support_request : submits >
+support_request }o--o| rental_contract : concerns >
+support_request }o--o| storage_unit : concerns >
+facility_staff |o--o{ support_request : handles >
+facility_manager ||--o{ staff_task : assigns >
+facility_staff ||--o{ staff_task : performs >
+staff_task }o--|| facility : takes place at >
+staff_task }o--o| reservation : targets >
+staff_task }o--o| return_request : targets >
+staff_task }o--o| support_request : targets >
+attachment }o--o| handover_record : documents >
+attachment }o--o| return_request : documents >
+attachment }o--o| support_request : documents >
+
+' ============================================================================
+' NOTES
+' ============================================================================
+
+legend right
+    |= Notation |= Meaning |
+    | <u>attribute</u> | Identifier. Entities without one are identified by a system-generated ID (not shown) |
+    | / attribute | Derived attribute (e.g. end date = start date + rental months) |
+    | {attribute} | Multivalued attribute |
+    | attribute (a, b) | Composite attribute |
+    | Hollow triangle | Subtype of User: disjoint and complete, exactly one role per account |
+    ----
+    |= Conceptual entity / relationship |= Physical table |
+    | User + 5 subtypes | app_user (column role) |
+    | works at / manages | user_facility_assignment |
+    | Unit Type Price | facility_unit_type_price |
+    | Renewal | contract_renewal |
+    | Extra Charge | contract_extra_charge |
+    | Overdue Fee Adjustment | overdue_fee_adjustment_request |
+    | Staff Task | staff_daily_assignment |
+    ----
+    Omitted as redundant: Rental Contract → Facility / Storage Customer
+    (reached via Storage Unit / Reservation) and Access Credential → Storage Unit
+    (reached via Rental Contract). The physical model stores them for querying.
+    Staff Task targets and Attachment targets: exactly one per record, chosen by
+    task type / entity type (polymorphic reference in the physical model).
+endlegend
+
+@enduml

@@ -1,0 +1,267 @@
+@startuml erd-logical-model
+' ============================================================================
+'  Self-Storage Facility Rental and Management System
+'  Core Rental Domain - Logical Data Model (Crow's Foot notation)
+'
+'  Scope: the core rental domain owned by Backend A (Le Thanh Tung).
+'  Built on erd-core-relationships.puml: the same 12 entities and 16
+'  relationships, now with their attributes, primary keys and foreign keys.
+'
+'  What makes it logical rather than physical (erd-database-model.puml):
+'  - no data types, sizes or defaults;
+'  - attribute names follow DATA-DICTIONARY.md so each maps to one column;
+'  - audit timestamps (created_at / updated_at) are left out, except created_at
+'    where it records the business event (renewal, handover, payment);
+'  - no redundant foreign keys: rental_contract.customer_id (via Reservation),
+'    rental_contract.facility_id (via Storage Unit) and
+'    access_credential.storage_unit_id (via Rental Contract). The physical model
+'    stores them for querying.
+'
+'  Reservation -> Facility / Unit Type looks transitive through Storage Unit but
+'  is not: a Reservation holds capacity before any unit is allocated
+'  (BR-RES-02), and the unit allocated later must match both (BR-AVL-04).
+' ============================================================================
+
+' ELK routes every relationship as horizontal / vertical segments and keeps each
+' label next to its own line; Graphviz's ortho mode lets labels drift away.
+!pragma layout elk
+
+!theme plain
+skinparam roundcorner 4
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+
+skinparam class {
+    BackgroundColor #FFFFFF
+    ArrowColor #2C3E50
+    BorderColor #34495E
+    FontColor #2C3E50
+    FontStyle bold
+    AttributeFontColor #2C3E50
+}
+
+hide circle
+hide empty members
+
+title Core Rental Domain — Logical Data Model
+
+' ============================================================================
+' ENTITIES (same groups as erd-core-entities.puml)
+' "*" = mandatory; drawn as a small circle before the attribute.
+' ============================================================================
+
+' --- Users (both stored in app_user, told apart by role) ---
+entity "Storage Customer" as storage_customer {
+    * id <<PK>>
+    --
+    * email <<UQ>>
+    * password_hash
+    * full_name
+    phone
+    identity_number
+    * status
+}
+
+entity "Facility Staff" as facility_staff {
+    * id <<PK>>
+    --
+    * email <<UQ>>
+    * password_hash
+    * full_name
+    phone
+    * status
+}
+
+' --- Facility & Catalog ---
+entity "Facility" as facility {
+    * id <<PK>>
+    --
+    * code <<UQ>>
+    * name
+    * address
+    * status
+}
+
+entity "Unit Type" as unit_type {
+    * id <<PK>>
+    --
+    * code <<UQ>>
+    * name
+    * width_m
+    * length_m
+    * height_m
+    description
+}
+
+entity "Storage Unit" as storage_unit {
+    * id <<PK>>
+    --
+    * facility_id <<FK>>
+    * unit_type_id <<FK>>
+    * code
+    location_note
+    * status
+    --
+    <<UQ (facility_id, code)>>
+}
+
+' --- Rental Lifecycle ---
+entity "Reservation" as reservation {
+    * id <<PK>>
+    --
+    * code <<UQ>>
+    * customer_id <<FK>>
+    * facility_id <<FK>>
+    * unit_type_id <<FK>>
+    storage_unit_id <<FK>>
+    * policy_version_id <<FK>>
+    discount_program_id <<FK>>
+    * start_date
+    * rental_months
+    * end_date_exclusive
+    * monthly_price_snapshot
+    * discount_amount
+    * deposit_amount
+    * total_rental_fee
+    * total_payable
+    * status
+    * hold_expires_at
+    confirmed_at
+    fulfilled_at
+    cancelled_at
+}
+
+entity "Rental Contract" as rental_contract {
+    * id <<PK>>
+    --
+    * code <<UQ>>
+    * reservation_id <<FK, UQ>>
+    * storage_unit_id <<FK>>
+    * policy_version_id <<FK>>
+    * start_date
+    * end_date
+    * monthly_price_snapshot
+    * deposit_amount
+    * status
+    overdue_since
+    * overdue_fee_accrued
+    activated_at
+    closed_at
+    terminated_at
+}
+
+entity "Handover Record" as handover_record {
+    * id <<PK>>
+    --
+    * contract_id <<FK, UQ>>
+    * staff_id <<FK>>
+    condition_note
+    customer_signed_at
+    staff_signed_at
+    * status
+    * created_at
+}
+
+entity "Access Credential" as access_credential {
+    * id <<PK>>
+    --
+    * contract_id <<FK>>
+    * credential_type
+    * code_value_hash
+    * status
+    * issued_at
+    suspended_at
+    revoked_at
+}
+
+entity "Renewal" as renewal {
+    * id <<PK>>
+    --
+    * contract_id <<FK>>
+    * policy_version_id <<FK>>
+    * previous_end_date
+    * new_end_date
+    * rental_months
+    * monthly_price_snapshot
+    * rental_fee_amount
+    * overdue_fee_settled
+    * total_paid
+    * created_at
+}
+
+entity "Return Request" as return_request {
+    * id <<PK>>
+    --
+    * contract_id <<FK>>
+    inspected_by <<FK>>
+    * requested_at
+    * requested_return_date
+    appointment_slot
+    * status
+    inspected_at
+    is_intact
+    condition_note
+    * damage_cost
+    deposit_refund_amount
+    cancelled_at
+}
+
+' --- Payment ---
+entity "Payment Transaction" as payment_transaction {
+    * id <<PK>>
+    --
+    reservation_id <<FK>>
+    contract_id <<FK>>
+    * transaction_type
+    * amount
+    * status
+    payment_method
+    provider_reference
+    * created_at
+}
+
+' ============================================================================
+' RELATIONSHIPS (same as erd-core-relationships.puml)
+' Each line is written parent-first so the layout keeps its layers top to
+' bottom; the arrow in the label gives the reading direction ("< verb" reads
+' right to left).
+' ============================================================================
+
+' --- Reservation and catalog (Flow 1) ---
+storage_customer ||--o{ reservation : places >
+facility ||--o{ reservation : < is made at
+unit_type ||--o{ reservation : < requests
+facility ||--|{ storage_unit : contains >
+unit_type ||--|{ storage_unit : classifies >
+reservation }o--o| storage_unit : is allocated (after payment) >
+
+' --- Rental Contract and payment ---
+reservation ||--o| rental_contract : results in >
+storage_unit ||--o{ rental_contract : < leases
+reservation |o--o{ payment_transaction : is paid by >
+rental_contract |o--o{ payment_transaction : is paid by >
+
+' --- Check-in / Handover, Return, Renewal (Flow 2, 3, 6) ---
+rental_contract ||--o| handover_record : is handed over in >
+rental_contract ||--|{ access_credential : grants >
+rental_contract ||--o{ renewal : is extended by >
+rental_contract ||--o{ return_request : is returned via >
+handover_record }o--|| facility_staff : < conducts
+return_request }o--o| facility_staff : < inspects
+
+' ============================================================================
+' NOTES
+' ============================================================================
+
+legend right
+    |= Notation |= Meaning |
+    | Circle before an attribute | Mandatory (NOT NULL) |
+    | PK / FK / UQ | Primary key / foreign key / unique |
+    ----
+    Storage Customer and Facility Staff are one table, app_user, told apart by role.
+    policy_version_id and discount_program_id reference Policy Version and
+    Discount Program, which are outside the core domain.
+endlegend
+
+@enduml
