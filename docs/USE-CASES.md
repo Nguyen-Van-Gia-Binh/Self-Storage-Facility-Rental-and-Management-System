@@ -39,7 +39,7 @@ Use case nền tảng không thuộc luồng nghiệp vụ nào dùng tiền t�
 | **Actor viết tiếng Anh**       | Storage Customer · Facility Staff · Facility Manager · Business Operations Manager · System Administrator                                                       |
 | **`System`**                   | Chỉ tác vụ hệ thống tự chạy theo lịch, không do người dùng kích hoạt                                                                                  |
 
-Tài liệu có **75 use case nghiệp vụ** (Flow 1–7) và **3 use case nền tảng**.
+Tài liệu có **73 use case nghiệp vụ** (Flow 1–7) và **3 use case nền tảng**.
 
 ---
 
@@ -112,7 +112,7 @@ Activity Diagram: (lưu trữ: [diagrams/_archive/activity-flow-3.puml](diagrams
 
 *Luồng quy định nghiệp vụ, quản lý phí và giám sát doanh thu.* Tác nhân chính: **Business Operations Manager**
 
-Activity Diagram: [activity-diagram-flow-4-business-operations.drawio](diagrams/activity-diagram-flow-4-business-operations.drawio) (lưu trữ cũ: [diagrams/_archive/activity-flow-4.puml](diagrams/_archive/activity-flow-4.puml)) — các nhánh cấu hình độc lập: chính sách nghiệp vụ (`UC-F4-02`–`06`), khung giá và phụ phí (`UC-F4-07`–`09`), danh mục Facility (`UC-F4-01`), giám sát và báo cáo (`UC-F4-10`–`12`), duyệt miễn/giảm phí quá hạn theo vụ (`UC-F4-13` ↔ `UC-F6-12`).
+Activity Diagram: [activity-diagram-flow-4-business-operations.drawio](diagrams/activity-diagram-flow-4-business-operations.drawio) (lưu trữ cũ: [diagrams/_archive/activity-flow-4.puml](diagrams/_archive/activity-flow-4.puml)) — các nhánh cấu hình độc lập: chính sách nghiệp vụ (`UC-F4-02`–`06`), khung giá và phụ phí (`UC-F4-07`–`09`), danh mục Facility (`UC-F4-01`), giám sát và báo cáo (`UC-F4-10`–`12`).
 
 | Mã UC       | Use case                                                                    | Actor chính                | Actor liên quan | Mã yêu cầu |
 | ------------ | --------------------------------------------------------------------------- | --------------------------- | ---------------- | ------------- |
@@ -128,7 +128,6 @@ Activity Diagram: [activity-diagram-flow-4-business-operations.drawio](diagrams/
 | `UC-F4-10` | Giám sát doanh thu theo cơ sở và toàn hệ thống                      | Business Operations Manager | —               | `BM-04`     |
 | `UC-F4-11` | Giám sát Usage Rate và hiệu quả vận hành từng cơ sở               | Business Operations Manager | —               | `BM-04`     |
 | `UC-F4-12` | Xem và xuất báo cáo toàn hệ thống theo cơ sở, Unit Type, doanh thu | Business Operations Manager | —               | `BM-05`     |
-| `UC-F4-13` | Duyệt hoặc từ chối miễn/giảm phí quá hạn theo vụ                | Business Operations Manager | Facility Manager | `BM-03`     |
 
 ---
 
@@ -155,7 +154,7 @@ Activity Diagram: [activity-diagram-flow-5-facility-staff-management.drawio](dia
 
 *Luồng gia hạn thuê và xử lý quá hạn.* Tác nhân chính: **Storage Customer**, **Facility Manager**
 
-Activity Diagram: [activity-diagram-flow-3-1-contract-renewal.drawio](diagrams/activity-diagram-flow-3-1-contract-renewal.drawio) và [activity-diagram-flow-3-2-overdue-handling.drawio](diagrams/activity-diagram-flow-3-2-overdue-handling.drawio) (lưu trữ cũ: [diagrams/_archive/activity-flow-6.puml](diagrams/_archive/activity-flow-6.puml)) — Sub-flow 6.1 nhắc hạn và Renewal (`UC-F6-01`–`04`); Sub-flow 6.2 Overdue D+4 đến D+10 (`UC-F6-05`–`12`).
+Activity Diagram: [activity-diagram-flow-3-1-contract-renewal.drawio](diagrams/activity-diagram-flow-3-1-contract-renewal.drawio) và [activity-diagram-flow-6-2-overdue-handling.drawio](diagrams/activity-diagram-flow-6-2-overdue-handling.drawio) (lưu trữ cũ: [diagrams/_archive/activity-flow-6.puml](diagrams/_archive/activity-flow-6.puml)) — Sub-flow 6.1 nhắc hạn và Renewal (`UC-F6-01`–`04`); Sub-flow 6.2 Overdue D+4 đến D+10 (`UC-F6-05`–`11`).
 
 | Mã UC       | Use case                                                       | Actor chính     | Actor liên quan | Mã yêu cầu        |
 | ------------ | -------------------------------------------------------------- | ---------------- | ---------------- | -------------------- |
@@ -170,7 +169,6 @@ Activity Diagram: [activity-diagram-flow-3-1-contract-renewal.drawio](diagrams/a
 | `UC-F6-09` | Staff dọn kho, niêm phong đồ tồn về kho tổng offline sau D+10 | Facility Staff | Facility Manager | `FM-04`, `BM-02` |
 | `UC-F6-10` | Theo dõi danh sách hợp đồng quá hạn tại cơ sở        | Facility Manager | —               | `FM-06`            |
 | `UC-F6-11` | Tự động chấm dứt Contract và chuyển kho Cleaning tại D+10 | System     | Facility Manager  | `FM-04`            |
-| `UC-F6-12` | Đề xuất miễn hoặc giảm phí quá hạn theo vụ           | Facility Manager | Business Operations Manager | `FM-04` |
 
 ---
 
@@ -237,12 +235,12 @@ một use case tương ứng.
 | `FM-01`     | `UC-F5-01` `UC-F5-02` `UC-F5-03`                                                                  |   3   |
 | `FM-02`     | `UC-F1-06` `UC-F1-08` `UC-F1-11` `UC-F1-12` `UC-F2-07` `UC-F2-08`                      |   6   |
 | `FM-03`     | `UC-F3-10` `UC-F3-11`                                                                               |   2   |
-| `FM-04`     | `UC-F3-05` `UC-F3-08` `UC-F6-04` `UC-F6-05` `UC-F6-06` `UC-F6-07` `UC-F6-08` `UC-F6-09` `UC-F6-11` `UC-F6-12` |  10   |
+| `FM-04`     | `UC-F3-05` `UC-F3-08` `UC-F6-04` `UC-F6-05` `UC-F6-06` `UC-F6-07` `UC-F6-08` `UC-F6-09` `UC-F6-11` |   9   |
 | `FM-05`     | `UC-F2-09` `UC-F5-04` `UC-F7-04`                                                                  |   3   |
 | `FM-06`     | `UC-F5-06` `UC-F6-10`                                                                               |   2   |
 | `BM-01`     | `UC-F4-01`                                                                                            |   1   |
 | `BM-02`     | `UC-F1-10` `UC-F1-12` `UC-F4-02` `UC-F4-03` `UC-F4-04` `UC-F4-05` `UC-F4-06` `UC-F6-01` `UC-F6-09` |   9   |
-| `BM-03`     | `UC-F1-05` `UC-F4-07` `UC-F4-08` `UC-F4-09` `UC-F4-13` `UC-F6-06`                  |   6   |
+| `BM-03`     | `UC-F1-05` `UC-F4-07` `UC-F4-08` `UC-F4-09` `UC-F6-06`                                           |   5   |
 | `BM-04`     | `UC-F4-10` `UC-F4-11`                                                                               |   2   |
 | `BM-05`     | `UC-F4-12`                                                                                            |   1   |
 | `SA-01`     | `UC-SYS-02`                                                                                           |   1   |
@@ -260,7 +258,7 @@ Bản chuẩn UML lưu trữ: **[diagrams/_archive/use-case-diagram.puml](diagra
 Activity Diagram đủ 7 flow: Flow 1 [activity-diagram-flow-1-storage-reservation.drawio](diagrams/activity-diagram-flow-1-storage-reservation.drawio) (lưu trữ cũ: [activity-flow-1-booking.puml](diagrams/_archive/activity-flow-1-booking.puml)) ·
 Flow 2 [activity-diagram-flow-2-checkin-handover.drawio](diagrams/activity-diagram-flow-2-checkin-handover.drawio) (lưu trữ cũ: [activity-flow2-checkin-handover.puml](diagrams/_archive/activity-flow2-checkin-handover.puml)) ·
 Flow 3 (lưu trữ: [activity-flow-3.puml](diagrams/_archive/activity-flow-3.puml)) ·
-Flow 6 [activity-diagram-flow-3-1-contract-renewal.drawio](diagrams/activity-diagram-flow-3-1-contract-renewal.drawio) (Sub-flow 6.1 Renewal), [activity-diagram-flow-3-2-overdue-handling.drawio](diagrams/activity-diagram-flow-3-2-overdue-handling.drawio) (Sub-flow 6.2 Overdue, lưu trữ cũ: [activity-flow-6.puml](diagrams/_archive/activity-flow-6.puml)) ·
+Flow 6 [activity-diagram-flow-3-1-contract-renewal.drawio](diagrams/activity-diagram-flow-3-1-contract-renewal.drawio) (Sub-flow 6.1 Renewal), [activity-diagram-flow-6-2-overdue-handling.drawio](diagrams/activity-diagram-flow-6-2-overdue-handling.drawio) (Sub-flow 6.2 Overdue, lưu trữ cũ: [activity-flow-6.puml](diagrams/_archive/activity-flow-6.puml)) ·
 Flow 4 [activity-diagram-flow-4-business-operations.drawio](diagrams/activity-diagram-flow-4-business-operations.drawio) (lưu trữ cũ: [activity-flow-4.puml](diagrams/_archive/activity-flow-4.puml)) ·
 Flow 5 [activity-diagram-flow-5-facility-staff-management.drawio](diagrams/activity-diagram-flow-5-facility-staff-management.drawio) (lưu trữ cũ: [activity-flow-5.puml](diagrams/_archive/activity-flow-5.puml)) ·
 Flow 7 [activity-diagram-flow-7-support-incident-handling.drawio](diagrams/activity-diagram-flow-7-support-incident-handling.drawio) (lưu trữ cũ: [activity-flow-7.puml](diagrams/_archive/activity-flow-7.puml)).

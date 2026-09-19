@@ -41,7 +41,7 @@
 | **Giai đoạn** | Bám theo [bản đồ phủ yêu cầu của PLAN.md § 5](PLAN.md#5-bản-đồ-phủ-yêu-cầu) |
 | **Tham chiếu** | Mọi story trỏ về use case ở [USE-CASES.md](USE-CASES.md) và quy tắc ở [BUSINESS-RULES.md](BUSINESS-RULES.md) khi story chạm tiền, mốc thời hạn hoặc phiên bản chính sách |
 
-Tổng cộng **20 user story**, **100 acceptance criteria**, **100 story point**.
+Tổng cộng **19 user story**, **95 acceptance criteria**, **95 story point**.
 
 ---
 
@@ -228,7 +228,7 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 **Acceptance Criteria**
 
 - **AC-1** — *Given* tôi mở chính sách Overdue, *when* trang tải xong, *then* tôi thấy
-  `overdue.grace_days` (3), `overdue.daily_rate` (5%), `overdue.cap_rate` (35%),
+  `overdue.grace_days` (3), `overdue.daily_rate` (10%), `overdue.cap_rate` (70%),
   `overdue.notice_days` (4), `overdue.lock_access_days` (10) và `overdue.termination_days` (10)
   đang hiệu lực theo `BR-OVD-01..05`.
 - **AC-2** — *Given* các mốc thỏa `grace_days` (D+3) < `notice_days` (D+4) <= `termination_days` (D+10),
@@ -321,32 +321,7 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
   *then* hệ thống **không** cộng dòng giảm giá.
 - **AC-3** — *Given* tôi nhập mức giảm lớn hơn 100% hoặc thời gian kết thúc trước thời gian bắt đầu,
   *when* tôi lưu, *then* hệ thống từ chối.
-- **AC-4** — *Given* story này chỉ cấu hình **chính sách / chương trình**, *when* Facility Manager
-  đề xuất miễn một khoản phí quá hạn của **một hợp đồng cụ thể**, *then* màn hình này không phải nơi
-  duyệt vụ đó — việc đó thuộc `UC-F4-13` / `US-BM-03.4`.
-
----
-
-### `US-BM-03.4` — Duyệt miễn hoặc giảm phí quá hạn theo vụ
-
-> **Là** Business Operations Manager, **tôi muốn** duyệt hoặc từ chối đề xuất miễn/giảm phí quá hạn
-> của một Contract, **để** ghi nhận đúng ledger và audit theo `BR-OVD-10`.
-
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F4-13` | Must | 5 | P4 |
-
-**Acceptance Criteria**
-
-- **AC-1** — *Given* có đề xuất `UC-F6-12` còn chờ, *when* tôi duyệt mức giảm (có thể khác mức đề
-  xuất, không vượt số phí chưa tất toán), *then* ledger sinh *Adjusted* và phí còn lại được cập nhật.
-- **AC-2** — *Given* tôi từ chối, *when* hệ thống ghi nhận, *then* phí giữ nguyên và Facility Manager
-  nhận thông báo kèm lý do.
-- **AC-3** — *Given* tôi duyệt, *when* nhật ký được lưu, *then* audit log có người đề xuất, người
-  duyệt, số tiền trước/sau và lý do.
-- **AC-4** — *Given* tôi vừa đề xuất với vai trò Facility Manager trên cùng vụ, *when* tôi mở màn
-  duyệt Business Operations Manager, *then* hệ thống từ chối tự duyệt.
-- **AC-5** — *Given* khoản đã tất toán, *when* tôi cố duyệt, *then* hệ thống từ chối.
+- **AC-4** — *Given* story này chỉ cấu hình **chính sách / chương trình**, *when* xem xét các khoản nợ quá hạn, *then* hệ thống áp dụng thống nhất theo bảng phí quy định và không hỗ trợ tính năng duyệt miễn giảm phí theo vụ trên phần mềm theo `BR-OVD-10`.
 
 ---
 
@@ -617,7 +592,6 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 | `US-BM-03.1` | Quản lý khung giá thuê theo Unit Type và Facility | `BM-03` | Must | 5 | P2 | 5 |
 | `US-BM-03.2` | Quản lý phụ phí và phí quá hạn | `BM-03` | Must | 5 | P2 | 5 |
 | `US-BM-03.3` | Quản lý chính sách giảm giá và miễn phí | `BM-03` | Should | 3 | P2 | 4 |
-| `US-BM-03.4` | Duyệt miễn hoặc giảm phí quá hạn theo vụ | `BM-03` | Must | 5 | P4 | 5 |
 | `US-BM-04.1` | Giám sát doanh thu theo cơ sở và toàn hệ thống | `BM-04` | Must | 5 | P5 | 5 |
 | `US-BM-04.2` | Giám sát Usage Rate và hiệu quả vận hành | `BM-04` | Must | 5 | P5 | 5 |
 | `US-BM-05.1` | Xem và xuất báo cáo theo cơ sở, Unit Type, doanh thu và tình trạng thuê | `BM-05` | Must | 8 | P5 | 5 |
@@ -628,7 +602,7 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 | `US-SA-04.1` | Xem lịch sử đăng nhập | `SA-04` | Must | 3 | P5 | 4 |
 | `US-SA-04.2` | Xem nhật ký hoạt động người dùng | `SA-04` | Must | 5 | P5 | 5 |
 
-**Theo giai đoạn:** P2 — 9 story / 44 point · P4 — 6 story / 30 point · P5 — 5 story / 26 point.
-**Theo ưu tiên:** Must — 19 story / 97 point · Should — 1 story / 3 point · Could — 0 story.
-**Theo actor:** Business Operations Manager — 14 story / 71 point · System Administrator — 6 story / 29 point.
-**Tổng:** 20 story · 100 story point · 100 acceptance criteria.
+**Theo giai đoạn:** P2 — 9 story / 44 point · P4 — 5 story / 25 point · P5 — 5 story / 26 point.
+**Theo ưu tiên:** Must — 18 story / 92 point · Should — 1 story / 3 point · Could — 0 story.
+**Theo actor:** Business Operations Manager — 13 story / 66 point · System Administrator — 6 story / 29 point.
+**Tổng:** 19 story · 95 story point · 95 acceptance criteria.
