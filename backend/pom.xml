@@ -18,7 +18,7 @@
     <description>Mini Capstone SWP391 - Spring Boot 3 &amp; Java 17 Backend</description>
 
     <properties>
-        <java.version>25</java.version>
+        <java.version>17</java.version>
         <jjwt.version>0.12.5</jjwt.version>
         <springdoc.version>2.5.0</springdoc.version>
     </properties>
