@@ -43,7 +43,7 @@
 | **Giai đoạn** | Bám sát [PLAN.md § 5](PLAN.md#5-bản-đồ-phủ-yêu-cầu): P2 (Nền tảng danh mục), P3 (Flow 1 & 2), P4 (Flow 3, 6, 7), P5 (Báo cáo cơ sở) |
 | **Tham chiếu** | Mọi story đều trỏ về use case tại [USE-CASES.md](USE-CASES.md) và ràng buộc tại [BUSINESS-RULES.md](BUSINESS-RULES.md) |
 
-Tổng cộng **23 user story**, **94 acceptance criteria**, **111 story point**.
+Tổng cộng **22 user story**, **90 acceptance criteria**, **106 story point**.
 
 ---
 
@@ -419,29 +419,12 @@ Tổng cộng **23 user story**, **94 acceptance criteria**, **111 story point**
 **Acceptance Criteria**
 
 - **AC-1** — *Given* ngày kết thúc đã qua, chưa Renewal và chưa hoàn tất Return, *when* scheduled job D+1 chạy (`UC-F6-05`), *then* Contract chuyển *Overdue* theo `BR-OVD-01`.
-- **AC-2** — *Given* Contract trong khoảng D+4 đến D+10, *when* hệ thống chạy tính phí hàng ngày, *then* phí phạt 5%/ngày được cộng dồn và thông báo nhắc dọn đồ được gửi tự động mỗi ngày theo `BR-OVD-03` và `BR-OVD-06`.
-- **AC-3** — *Given* Contract chạm mốc D+10 mà khách chưa xử lý xong, *when* scheduled job chạy (`UC-F6-07`, `UC-F6-11`), *then* mã Access Code tự động chuyển *Suspended*, Contract chuyển *Terminated* và chốt công nợ cấn trừ tiền cọc theo `BR-OVD-04`, `BR-OVD-05`.
+- **AC-2** — *Given* Contract trong khoảng D+1 đến D+3 (ân hạn), *when* khách hoàn tất dọn kho trả phòng, *then* được hoàn 100% Deposit (`BR-OVD-02`); *given* bước sang D+4 đến D+10, *when* hệ thống chạy hằng ngày, *then* phí phạt 10% tiền cọc/ngày được cộng dồn và thông báo nhắc dọn đồ được gửi tự động mỗi ngày theo `BR-OVD-03` và `BR-OVD-06`.
+- **AC-3** — *Given* Contract chạm mốc D+10 mà khách chưa xử lý xong, *when* scheduled job chạy (`UC-F6-07`, `UC-F6-11`), *then* mã Access Code tự động chuyển *Suspended*, Contract chuyển *Terminated* và chốt công nợ cấn trừ tiền cọc theo mức trần 70% tiền cọc theo `BR-OVD-04`, `BR-OVD-05`.
 - **AC-4** — *Given* Contract bị chấm dứt tại D+10, *when* giao dịch lưu thành công, *then* ô kho chuyển sang trạng thái *Cleaning* hoặc *Maintaining* và tự động tạo nhiệm vụ dọn dẹp cho Facility Staff theo `BR-OVD-07`.
 - **AC-5** — *Given* nhiệm vụ dọn dẹp được tạo tại D+10, *when* nhân viên thực hiện (`UC-F6-09`), *then* đồ đạc tồn đọng của khách được kiểm kê, niêm phong và chuyển về kho tổng để tôi tự xử lý ngoại tuyến (offline) theo `BR-OVD-11`.
 - **AC-6** — *Given* khách thanh toán nợ trước D+10, *when* giao dịch thành công, *then* hợp đồng và quyền truy cập được kích hoạt lại; khi đã quá D+10, hợp đồng đã bị chấm dứt vĩnh viễn và khách muốn thuê phải tạo hợp đồng mới theo `BR-OVD-08`.
 - **AC-7** — *Given* khách hàng đang có hợp đồng quá hạn, *when* khách cố gắng tạo đơn đặt chỗ mới trên hệ thống, *then* hệ thống từ chối và cảnh báo yêu cầu tất toán hợp đồng quá hạn theo `BR-OVD-09`.
-
----
-
-### `US-FM-04.4` — Đề xuất miễn hoặc giảm phí quá hạn theo vụ
-
-> **Là** Facility Manager, **tôi muốn** đề xuất miễn hoặc giảm phí quá hạn của một Contract cụ thể, **để** Business Operations Manager duyệt theo `BR-OVD-10` mà tôi không tự quyết.
-
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F6-12` | Must | 5 | P4 |
-
-**Acceptance Criteria**
-
-- **AC-1** — *Given* Contract đang *Overdue* còn khoản phí chưa tất toán, *when* tôi gửi đề xuất kèm lý do và chứng cứ, *then* hệ thống ghi đề xuất ở trạng thái chờ duyệt và **không** tự trừ phí.
-- **AC-2** — *Given* tôi là người đề xuất, *when* tôi cố tự duyệt, *then* hệ thống từ chối theo `BR-OVD-10`.
-- **AC-3** — *Given* khoản phí đã tất toán hoặc Contract đã *Terminated*, *when* tôi đề xuất, *then* hệ thống từ chối vì chỉ áp cho khoản chưa tất toán.
-- **AC-4** — *Given* Business Operations Manager từ chối, *when* tôi xem lại, *then* phí giữ nguyên, audit log ghi người đề xuất, người từ chối và lý do.
 
 ---
 
@@ -512,11 +495,10 @@ Tổng cộng **23 user story**, **94 acceptance criteria**, **111 story point**
 | `US-FM-04.1` | Phê duyệt quyết toán hợp đồng và hoàn trả tiền cọc khi trả kho | `FM-04` | Must | 5 | P4 | 4 |
 | `US-FM-04.2` | Giám sát gia hạn Contract tự động | `FM-04` | Must | 5 | P4 | 3 |
 | `US-FM-04.3` | Xử lý hợp đồng quá hạn, khóa quyền truy cập và xử lý tài sản tồn đọng | `FM-04` | Must | 8 | P4 | 7 |
-| `US-FM-04.4` | Đề xuất miễn hoặc giảm phí quá hạn theo vụ | `FM-04` | Must | 5 | P4 | 4 |
 | `US-FM-05.1` | Phân công công việc bàn giao, nghiệm thu và sự cố cho nhân viên cơ sở | `FM-05` | Must | 5 | P3 | 4 |
 | `US-FM-06.1` | Xem báo cáo thống kê hoạt động cơ sở, tỷ lệ lấp đầy, doanh thu và nợ quá hạn | `FM-06` | Must | 8 | P5 | 5 |
 
-**Theo giai đoạn:** P2 — 2 story / 10 point · P3 — 7 story / 31 point · P4 — 12 story / 58 point · P5 — 2 story / 12 point.
-**Theo ưu tiên:** Must — 21 story / 105 point · Should — 2 story / 6 point · Could — 0 story.
-**Theo actor:** Facility Staff — 11 story / 45 point · Facility Manager — 12 story / 66 point.
-**Tổng:** 23 story · 111 story point · 94 acceptance criteria.
+**Theo giai đoạn:** P2 — 2 story / 10 point · P3 — 7 story / 31 point · P4 — 11 story / 53 point · P5 — 2 story / 12 point.
+**Theo ưu tiên:** Must — 20 story / 100 point · Should — 2 story / 6 point · Could — 0 story.
+**Theo actor:** Facility Staff — 11 story / 45 point · Facility Manager — 11 story / 61 point.
+**Tổng:** 22 story · 106 story point · 90 acceptance criteria.

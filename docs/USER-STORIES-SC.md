@@ -543,13 +543,9 @@ Tổng cộng **22 user story**, **111 acceptance criteria**, **95 story point**
 
 - **AC-1** — *Given* hợp đồng của tôi vào *Overdue*, *when* tôi mở hợp đồng, *then* tôi thấy số ngày
   quá hạn, phí quá hạn đã phát sinh và tổng số tiền cần thanh toán.
-- **AC-2** — *Given* tôi đang trong 3 ngày ân hạn (D+1..D+3), *when* tôi xem, *then* hệ thống nêu rõ
-  chưa phát sinh phí và ngày bắt đầu tính phí theo `BR-OVD-02`.
-- **AC-3** — *Given* phí quá hạn của tôi đã chạm trần 35%, *when* tôi xem, *then* hệ thống nêu rõ
-  phí đã đạt mức tối đa và không tăng thêm, theo `BR-OVD-03`.
-- **AC-4** — *Given* tôi quá hạn trong khoảng D+4 đến D+9, *when* hệ thống gửi thông báo nhắc nợ hằng
-  ngày, *then* tôi nhận được thông báo nêu rõ số phí phát sinh và hạn chót D+10 sẽ bị chấm dứt hợp
-  đồng theo `BR-OVD-04`, `BR-OVD-06`.
+- **AC-2** — *Given* tôi đang trong 3 ngày ân hạn (D+1..D+3), *when* tôi xem, *then* hệ thống nêu rõ chưa phát sinh phí và nếu hoàn tất dọn đồ trả kho trong giai đoạn này thì tôi được hoàn 100% tiền cọc Deposit theo `BR-OVD-02`.
+- **AC-3** — *Given* phí quá hạn của tôi đã chạm trần 70% tiền cọc, *when* tôi xem, *then* hệ thống nêu rõ phí đã đạt mức tối đa và không tăng thêm, theo `BR-OVD-04`.
+- **AC-4** — *Given* tôi quá hạn trong khoảng D+4 đến D+9, *when* hệ thống gửi thông báo nhắc nợ hằng ngày, *then* tôi nhận được thông báo nêu rõ số phí phát sinh (10% tiền cọc mỗi ngày) và hạn chót D+10 sẽ bị chấm dứt hợp đồng theo `BR-OVD-03`, `BR-OVD-06`.
 - **AC-5** — *Given* hợp đồng của tôi chạm mốc D+10, *when* hệ thống xử lý, *then* hợp đồng chuyển
   *Terminated*, mã truy cập bị thu hồi và Facility Manager lập danh sách thu dọn ô kho theo
   `BR-OVD-05`, `BR-OVD-07`, `BR-OVD-11`.
