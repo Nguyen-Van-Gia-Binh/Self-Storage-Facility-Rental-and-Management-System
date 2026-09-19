@@ -58,7 +58,7 @@ bảng chính sách của hệ thống (`BM-02`, `BM-03`).
 | `cancel.full_refund_hours` | Hủy trước ngày bắt đầu bao nhiêu giờ thì hoàn 100% | `48 giờ` | `BR-CAN-01` |
 | `cancel.late_refund_rate` | Tỷ lệ hoàn Deposit khi hủy muộn | `50%` | `BR-CAN-02` |
 | `cancel.no_show_refund_rate` | Tỷ lệ hoàn Deposit khi no-show | `0%` | `BR-CAN-04` |
-| `renewal.reminder_days` | Các mốc nhắc hạn trước ngày hết hạn | `30, 7, 3, 1` | `BR-REN-01` |
+| `renewal.reminder_days` | Các mốc nhắc gia hạn tự động: từ mốc trước 2 tháng (60 ngày) và đếm ngược 7, 3, 1 ngày trước thời điểm khóa gia hạn (mốc trước 1 tháng) | `60 ngày, và 7, 3, 1 ngày trước mốc khóa` | `BR-REN-01` |
 | `renewal.min_months` | Thời hạn gia hạn tối thiểu | `1 tháng` | `BR-REN-03` |
 | `renewal.max_months` | Thời hạn gia hạn tối đa trong một lần | `12 tháng` | `BR-REN-07` |
 | `overdue.grace_days` | Ân hạn sau ngày hết hạn, gửi thông báo dọn đồ, chưa tính phí | `3 ngày` | `BR-OVD-02` |
@@ -158,15 +158,15 @@ kho sớm, xử lý theo § 9.
 
 | Mã | Quy tắc |
 |----|---------|
-| `BR-REN-01` | Hệ thống gửi nhắc hạn tự động vào các mốc `renewal.reminder_days` — **30 ngày (1 tháng), 7, 3 và 1 ngày** trước ngày hết hạn hợp đồng (`UC-F6-01`). Trước ngày hết hạn 1 tháng, nếu khách không gửi yêu cầu gia hạn thì hệ thống mặc định coi như khách không tiếp tục thuê và tự động chuyển sang trạng thái chuẩn bị trả kho khi đến hạn |
-| `BR-REN-02` | Gia hạn chỉ hợp lệ khi Contract đang *Active* hoặc trong giai đoạn *Overdue* trước D+10. Khi hợp đồng đã hết hạn hoặc quá D+10, khách không thể gia hạn mà phải tạo hợp đồng mới |
+| `BR-REN-01` | Hệ thống gửi nhắc gia hạn tự động từ **trước 2 tháng (60 ngày)** trước ngày hết hạn và gửi các thông báo nhắc khẩn cấp vào các mốc **7, 3 và 1 ngày trước thời điểm khóa gia hạn** (mốc trước 1 tháng / 30 ngày) (`UC-F6-01`). Trước ngày hết hạn 1 tháng, nếu khách không gửi yêu cầu gia hạn thành công thì hệ thống tự động khóa tính năng gia hạn và kích hoạt tiến trình chuẩn bị trả kho khi đến hạn (không còn nút trả kho thủ công) |
+| `BR-REN-02` | Gia hạn chỉ hợp lệ khi Contract đang *Active* và thực hiện trước ngày hết hạn ít nhất 1 tháng. Khi hợp đồng đã qua mốc 1 tháng trước khi hết hạn hoặc đang trong tiến trình trả kho, khách không thể tự gia hạn mà hệ thống sẽ tiếp tục tiến trình trả kho khi hết hạn |
 | `BR-REN-03` | Thời hạn gia hạn tối thiểu là `renewal.min_months` (1 tháng), tính theo bội số tháng nguyên |
 | `BR-REN-04` | Gia hạn được hệ thống **tự động ghi nhận khi thanh toán thành công**, không cần Facility Manager duyệt thủ công. Ngày bắt đầu kỳ mới là ngày liền sau ngày kết thúc kỳ cũ, không phụ thuộc ngày thanh toán |
 | `BR-REN-05` | Giá gia hạn áp theo **bảng giá tại thời điểm gia hạn**, không phải giá của kỳ đầu. Nếu giá tăng, hệ thống phải hiển thị rõ mức chênh lệch trước khi khách xác nhận |
 | `BR-REN-06` | Gia hạn khi hợp đồng đang *Overdue* (trước D+10): khách phải thanh toán **phí quá hạn phát sinh + phí thuê kỳ mới** trong cùng một giao dịch. Thanh toán xong, hợp đồng trở lại *Active* |
 | `BR-REN-07` | Gia hạn không được vượt quá `renewal.max_months` (**12 tháng**) trong một lần thao tác, để tránh khóa giá quá dài |
 | `BR-REN-08` | Sau khi gia hạn thành công, ô kho giữ nguyên — hệ thống **không** đổi ô kho cho khách. Muốn đổi ô kho thì phải trả kho rồi đặt hợp đồng mới |
-| `BR-REN-09` | Trước khi nhận thanh toán Renewal, hệ thống phải kiểm tra Availability cho khoảng gia hạn theo `BR-AVL-01`. Nếu không còn capacity, yêu cầu gia hạn bị từ chối và khách được thông báo kết thúc hợp đồng khi đến hạn |
+| `BR-REN-09` | Trước khi nhận thanh toán Renewal, hệ thống phải kiểm tra Availability cho khoảng gia hạn theo `BR-AVL-01` xem ô kho có bất kỳ ai đặt trước trong tương lai hay không. Nếu bị trùng lịch đặt trước (không còn capacity), yêu cầu gia hạn bị từ chối trước khi thu tiền và hệ thống hiển thị lý do kèm hướng dẫn khách chuẩn bị trả kho khi hết hạn hoặc tạo Reservation đặt ô kho khác |
 | `BR-REN-10` | Yêu cầu Renewal chưa thanh toán chỉ là báo giá tạm thời, không kéo dài Contract và không giữ capacity. Khi đến hạn mà chưa thanh toán thành công thì chuyển *Overdue* theo `BR-OVD-01` |
 
 ---

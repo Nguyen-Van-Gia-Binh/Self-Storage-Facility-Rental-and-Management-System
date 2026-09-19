@@ -111,7 +111,7 @@ graph TD
  
 ### 3.3. Kịch Bản Demo Flow 3 — Quản Lý Ô Kho Đang Thuê & Trả Kho (Rented Unit & Return)
  
-*Sơ đồ hoạt động:* [activity-diagram-flow-3-1-contract-renewal.drawio](diagrams/activity-diagram-flow-3-1-contract-renewal.drawio) (lưu trữ cũ: [activity-flow-3.puml](diagrams/_archive/activity-flow-3.puml))
+*Sơ đồ hoạt động:* (lưu trữ: [diagrams/_archive/activity-flow-3.puml](diagrams/_archive/activity-flow-3.puml))
 
 ```mermaid
 graph LR

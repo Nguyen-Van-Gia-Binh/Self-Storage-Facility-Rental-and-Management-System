@@ -150,7 +150,7 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 **Acceptance Criteria**
 
 - **AC-1** — *Given* tôi mở chính sách Renewal, *when* trang tải xong, *then* tôi thấy
-  `renewal.reminder_days` (mặc định `30, 7, 3, 1`), `renewal.min_months` (mặc định `1`) và
+  `renewal.reminder_days` (mặc định gồm mốc trước 2 tháng và 7, 3, 1 ngày trước mốc khóa gia hạn), `renewal.min_months` (mặc định `1`) và
   `renewal.max_months` (mặc định `12`) theo `BR-REN-01`, `BR-REN-03`, `BR-REN-07`.
 - **AC-2** — *Given* tôi ban hành phiên bản mới, *when* scheduled job chạy, *then* chỉ hợp đồng chưa
   hết hạn nhận nhắc theo danh sách ngày mới; hợp đồng đã gửi nhắc theo phiên bản cũ không bị gửi trùng
