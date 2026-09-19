@@ -61,9 +61,9 @@ bảng chính sách của hệ thống (`BM-02`, `BM-03`).
 | `renewal.reminder_days` | Các mốc nhắc gia hạn tự động: từ mốc trước 2 tháng (60 ngày) và đếm ngược 7, 3, 1 ngày trước thời điểm khóa gia hạn (mốc trước 1 tháng) | `60 ngày, và 7, 3, 1 ngày trước mốc khóa` | `BR-REN-01` |
 | `renewal.min_months` | Thời hạn gia hạn tối thiểu | `1 tháng` | `BR-REN-03` |
 | `renewal.max_months` | Thời hạn gia hạn tối đa trong một lần | `12 tháng` | `BR-REN-07` |
-| `overdue.grace_days` | Ân hạn sau ngày hết hạn, gửi thông báo dọn đồ, chưa tính phí | `3 ngày` | `BR-OVD-02` |
-| `overdue.daily_rate` | Phí quá hạn mỗi ngày, tính trên tiền thuê một tháng (D+4..D+10) | `5%` | `BR-OVD-03` |
-| `overdue.cap_rate` | Trần tổng phí quá hạn (tối đa 7 ngày tính phí = 35%) | `35%` | `BR-OVD-04` |
+| `overdue.grace_days` | Ân hạn sau ngày hết hạn, gửi thông báo dọn đồ, chưa tính phí (hoàn 100% cọc nếu dọn xong) | `3 ngày` | `BR-OVD-02` |
+| `overdue.daily_rate` | Phí quá hạn mỗi ngày, tính trên tiền cọc Deposit (D+4..D+10) | `10%` | `BR-OVD-03` |
+| `overdue.cap_rate` | Trần tổng phí quá hạn (tối đa 7 ngày tính phí = 70% tiền cọc) | `70%` | `BR-OVD-04` |
 | `overdue.lock_access_days` | Số ngày quá hạn thì khóa mã truy cập và chấm dứt hợp đồng | `10 ngày` | `BR-OVD-04`, `BR-OVD-05`, `BR-ACC-02` |
 | `overdue.termination_days` | Số ngày quá hạn thì chấm dứt hợp đồng và chuyển kho sang dọn dẹp | `10 ngày` | `BR-OVD-04`, `BR-OVD-07` |
 | `checkin.refund_working_days` | Số ngày làm việc để FM xử lý hoàn tiền khi từ chối nhận kho | `3 ngày` | `BR-CHK-06` |
@@ -178,24 +178,24 @@ Ngày quá hạn ký hiệu **D+n**, đếm từ ngày liền sau ngày kết th
 | Mã | Quy tắc |
 |----|---------|
 | `BR-OVD-01` | Hợp đồng chuyển sang *Overdue* vào **D+1** nếu chưa gia hạn và chưa hoàn tất trả kho (`UC-F6-05`) |
-| `BR-OVD-02` | **D+1 → D+3** là giai đoạn ân hạn `overdue.grace_days`: hệ thống gửi thông báo nhắc dọn đồ mỗi ngày, **chưa** tính phí quá hạn, khách **vẫn** truy cập ô kho bình thường |
-| `BR-OVD-03` | Từ **D+4 đến D+10**, phí quá hạn = `overdue.daily_rate` (5%) × tiền thuê **một tháng** × số ngày tính phí. Phí được cộng dồn theo ngày và hệ thống tiếp tục gửi thông báo nhắc dọn đồ hàng ngày |
-| `BR-OVD-04` | Tổng phí quá hạn của một kỳ không vượt quá trần quy định. Với mức 5%/ngày tính từ D+4 đến D+10 (tổng cộng 7 ngày tính phí = 35% tiền thuê một tháng), phí chốt lại tại D+10 và không tăng thêm |
+| `BR-OVD-02` | **D+1 → D+3** là giai đoạn ân hạn `overdue.grace_days`: hệ thống gửi thông báo nhắc dọn đồ mỗi ngày, **chưa** tính phí quá hạn, khách **vẫn** truy cập ô kho bình thường. Nếu khách hoàn tất dọn đồ và nghiệm thu trả kho trong 3 ngày này thì được hoàn trả 100% tiền cọc Deposit theo quy trình Flow 3 |
+| `BR-OVD-03` | Từ **D+4 đến D+10**, phí quá hạn = `overdue.daily_rate` (10%) × tiền cọc **Deposit** × số ngày tính phí. Phí được cộng dồn theo ngày và hệ thống tiếp tục gửi thông báo nhắc dọn đồ hàng ngày |
+| `BR-OVD-04` | Tổng phí quá hạn của một kỳ không vượt quá trần quy định. Với mức 10%/ngày tính từ D+4 đến D+10 (tổng cộng 7 ngày tính phí = 70% tiền cọc), phí chốt lại tại D+10 và cấn trừ vào Deposit, không tăng thêm |
 | `BR-OVD-05` | Tại **D+10**, scheduled job tự động chuyển Access Code sang *Suspended*. Quyền ra vào ô kho của khách bị khóa hoàn toàn (`UC-F6-07`) |
 | `BR-OVD-06` | Hệ thống gửi **thông báo dọn đồ** tự động mỗi ngày một lần trong suốt 10 ngày quá hạn (`UC-F6-08`) qua email và ứng dụng |
 | `BR-OVD-07` | Tại **D+10**, hợp đồng chính thức chấm dứt do quá hạn (`TERMINATED_OVERDUE`, `UC-F6-11`), Storage Unit chuyển sang trạng thái *Cleaning* hoặc *Maintaining*. Hệ thống tự động tạo nhiệm vụ dọn dẹp cho Facility Staff |
 | `BR-OVD-08` | Trong thời gian từ D+1 đến trước D+10, khách có thể nộp phạt và phí gia hạn để kích hoạt lại hợp đồng. Khi đã qua D+10, hợp đồng đã bị chấm dứt và không thể gia hạn, khách muốn thuê tiếp phải lập hợp đồng mới |
 | `BR-OVD-09` | Khách đang có hợp đồng *Overdue* **không được** tạo Reservation mới tại bất kỳ cơ sở nào trong hệ thống |
-| `BR-OVD-10` | Miễn hoặc giảm phí quá hạn theo vụ phải do Facility Manager đề xuất kèm lý do và chứng cứ; Business Operations Manager duyệt hoặc từ chối, không được tự đề xuất rồi tự duyệt |
+| `BR-OVD-10` | Hệ thống **không hỗ trợ** tính năng đề xuất hoặc phê duyệt miễn/giảm phí quá hạn theo vụ trên phần mềm. Mọi trường hợp ngoại lệ (nếu có) do quản lý cơ sở và ban vận hành tự xử lý ngoại tuyến (offline) |
 | `BR-OVD-11` | **Xử lý tài sản tồn sau D+10:** Facility Staff theo phân công của Facility Manager tiến hành dọn dẹp ô kho, kiểm kê và niêm phong toàn bộ đồ đạc của khách chuyển về kho tổng để Facility Manager tự xử lý thủ công ngoại tuyến (offline). Phần mềm không xây dựng quy trình thanh lý phức tạp (`UC-F6-09`) |
 
 **Tóm tắt mốc thời gian:**
 
 | Mốc | Phí quá hạn | Thông báo | Truy cập ô kho | Trạng thái hợp đồng | Trạng thái ô kho |
 |-----|-------------|-----------|----------------|---------------------|-------------------|
-| D+1 → D+3 | Không (ân hạn) | Nhắc dọn đồ (hàng ngày) | Bình thường | Overdue (ân hạn) | Occupied |
-| D+4 → D+9 | 5%/ngày, cộng dồn | Nhắc dọn đồ (hàng ngày) | Bình thường | Overdue | Occupied |
-| D+10 | Chốt phí, cấn trừ cọc | Thông báo chấm dứt | **Khóa Access Code** | **Terminated** | **Cleaning / Maintaining** (niêm phong đồ về kho tổng) |
+| D+1 → D+3 | Không (ân hạn, hoàn cọc nếu dọn xong) | Nhắc dọn đồ (hàng ngày) | Bình thường | Overdue (ân hạn) | Occupied |
+| D+4 → D+9 | 10% cọc/ngày, cộng dồn | Nhắc dọn đồ & cảnh báo nợ (hàng ngày) | Bình thường | Overdue | Occupied |
+| D+10 | Chốt phí trần 70% cọc, cấn trừ cọc | Thông báo chấm dứt vĩnh viễn | **Khóa Access Code** | **Terminated** | **Cleaning / Maintaining** (niêm phong đồ về kho tổng) |
 
 ---
 
@@ -331,7 +331,7 @@ bắt đầu 01/10/2026, kết thúc 31/12/2026.
 | **Deposit** `BR-DEP-*` | `UC-F1-05` `UC-F1-06` `UC-F1-07` `UC-F1-11` `UC-F3-08` | `UC-F4-02` |
 | **Cancellation** `BR-CAN-*` | `UC-F1-10` `UC-F1-12` `UC-F2-08` | `UC-F4-04` |
 | **Renewal** `BR-REN-*` | `UC-F6-01` `UC-F6-02` `UC-F6-03` `UC-F6-04` | `UC-F4-03` `UC-F4-07` |
-| **Overdue** `BR-OVD-*` | `UC-F6-05` `UC-F6-06` `UC-F6-07` `UC-F6-08` `UC-F6-09` `UC-F6-10` `UC-F6-11` `UC-F6-12` `UC-F3-13` `UC-F4-13` | `UC-F4-06` `UC-F4-08` |
+| **Overdue** `BR-OVD-*` | `UC-F6-05` `UC-F6-06` `UC-F6-07` `UC-F6-08` `UC-F6-09` `UC-F6-10` `UC-F6-11` `UC-F3-13` | `UC-F4-06` `UC-F4-08` |
 | **Return** `BR-RET-*` | `UC-F3-05` `UC-F3-06` `UC-F3-07` `UC-F3-08` `UC-F3-09` `UC-F3-13` | `UC-F4-05` |
 | **Check-in & Handover** `BR-CHK-*` | `UC-F2-01` `UC-F2-02` `UC-F2-03` `UC-F2-06` `UC-F2-07` `UC-F2-08` | `UC-F4-04` |
 | **Access & Security** `BR-ACC-*` | `UC-F2-04` `UC-F3-07` `UC-F6-07` `UC-F7-05` | `UC-F4-06` |

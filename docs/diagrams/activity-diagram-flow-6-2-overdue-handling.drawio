@@ -1,0 +1,206 @@
+<mxfile host="65bd71144e">
+    <diagram name="Flow-6-2-Overdue-Handling" id="flow-6-2-overdue-handling">
+        <mxGraphModel dx="1155" dy="1118" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1950" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title_header" value="&lt;b style=&quot;font-size: 16px;&quot;&gt;FLOW 6: Sub-flow 6.2 — Overdue Handling (Xử lý hợp đồng quá hạn &amp;amp; Tài sản tồn đọng)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size: 12px; color: #555555;&quot;&gt;Tác vụ tự động quét D+1 · Ân hạn D+1..D+3 (hoàn cọc nếu dọn xong) · Tính phí 10% cọc/ngày D+4..D+10 · D+10 khóa kho, chấm dứt &amp;amp; niêm phong đồ về kho tổng&lt;/span&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;rounded=0;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="20" width="1100" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="lane_system" value="&lt;b style=&quot;font-size: 14px;&quot;&gt;System (Hệ thống)&lt;/b&gt;" style="swimlane;whiteSpace=wrap;html=1;startSize=30;fillColor=#f8f9fa;strokeColor=#495057;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="80" width="440" height="1820" as="geometry"/>
+                </mxCell>
+                <mxCell id="start_node" value="" style="ellipse;fillColor=#212529;strokeColor=#212529;html=1;" parent="lane_system" vertex="1">
+                    <mxGeometry x="205" y="45" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="sys_pre_condition" value="Hợp đồng không gia hạn trước mốc 1 tháng (T - 30 ngày);&#10;Hệ thống đã kích hoạt tiến trình Chuẩn bị trả kho (Return);&#10;Đến ngày kết thúc T: Khách chưa dọn đồ &amp;amp; chưa nghiệm thu" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f5ff;strokeColor=#1971c2;" parent="lane_system" vertex="1">
+                    <mxGeometry x="80" y="105" width="280" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_start_to_pre" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_system" source="start_node" target="sys_pre_condition" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="sys_job_d1" value="Tác vụ quét định kỳ lúc 00:00 ngày D+1 (UC-F6-05):&#10;- Phát hiện hợp đồng hết hạn chưa hoàn tất trả kho&#10;- Chuyển trạng thái Contract sang Overdue (BR-OVD-01)&#10;- Bắt đầu giai đoạn ân hạn overdue.grace_days = 3 ngày" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f5ff;strokeColor=#1971c2;" parent="lane_system" vertex="1">
+                    <mxGeometry x="75" y="210" width="290" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_pre_to_d1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_system" source="sys_pre_condition" target="sys_job_d1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="sys_notice_grace" value="Tác vụ tự động giai đoạn Ân hạn D+1 đến D+3:&#10;- Gửi thông báo nhắc dọn đồ hằng ngày qua app &amp;amp; email (UC-F6-08)&#10;- Chưa tính phí quá hạn (phí phạt = 0 đ) (BR-OVD-02)&#10;- Quyền truy cập Access Code (PIN/QR) vẫn mở bình thường" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f5ff;strokeColor=#1971c2;" parent="lane_system" vertex="1">
+                    <mxGeometry x="70" y="325" width="300" height="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_d1_to_grace" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_system" source="sys_job_d1" target="sys_notice_grace" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="sys_refund_100_deposit" value="Nghiệm thu ô kho đạt yêu cầu (Khớp Flow 3: Return);&#10;Tất toán hợp đồng không tính phí quá hạn (BR-OVD-02);&#10;Hoàn trả 100% tiền cọc Deposit về phương thức gốc;&#10;Chuyển Contract sang Closed, Storage Unit sang Available" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d3f9d8;strokeColor=#2b8a3e;" parent="lane_system" vertex="1">
+                    <mxGeometry x="70" y="660" width="300" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="end_grace_success" value="" style="ellipse;html=1;shape=endState;fillColor=#212529;strokeColor=#212529;" parent="lane_system" vertex="1">
+                    <mxGeometry x="205" y="775" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_refund_to_end" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_system" source="sys_refund_100_deposit" target="end_grace_success" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="sys_calc_penalty" value="Tác vụ tự động hằng ngày từ D+4 đến D+10 (UC-F6-06):&#10;- Tính phí quá hạn = 10% tiền cọc / ngày (BR-OVD-03)&#10;- Cộng dồn phí phạt nợ vào hợp đồng thuê&#10;- Gửi thông báo nhắc dọn đồ &amp;amp; cảnh báo nợ mỗi ngày (UC-F6-08)&#10;- Cảnh báo hạn chót D+10 sẽ bị chấm dứt hợp đồng" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3bf;strokeColor=#f59f00;" parent="lane_system" vertex="1">
+                    <mxGeometry x="65" y="870" width="310" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="sys_restore_contract" value="Ghi nhận thanh toán thành công (BR-OVD-08, BR-REN-06);&#10;Khấu trừ toàn bộ phí quá hạn đã tích lũy;&#10;Mở lại hợp đồng Active &amp;amp; quyền truy cập Access Code;&#10;Hoặc hoàn tất thủ tục trả kho theo thỏa thuận (BR-RET-11)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d3f9d8;strokeColor=#2b8a3e;" parent="lane_system" vertex="1">
+                    <mxGeometry x="70" y="1160" width="300" height="75" as="geometry"/>
+                </mxCell>
+                <mxCell id="end_restored" value="" style="ellipse;html=1;shape=endState;fillColor=#212529;strokeColor=#212529;" parent="lane_system" vertex="1">
+                    <mxGeometry x="205" y="1265" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_restore_to_end" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_system" source="sys_restore_contract" target="end_restored" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="sys_terminate_d10" value="Chạm mốc D+10 (00:00 ngày D+11) (UC-F6-07, UC-F6-11):&#10;- Tự động khóa Access Code sang Suspended (BR-OVD-05)&#10;- Chốt trần phí phạt quá hạn = 70% tiền cọc (7 ngày x 10%) (BR-OVD-04)&#10;- Cấn trừ toàn bộ phí nợ phạt vào tiền cọc Deposit&#10;- Chuyển trạng thái hợp đồng sang TERMINATED_OVERDUE (BR-OVD-07)&#10;- Chuyển trạng thái Storage Unit sang Cleaning / Maintaining&#10;- Tự động sinh nhiệm vụ dọn kho cho cơ sở (UC-F6-09)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe3e3;strokeColor=#e03131;" parent="lane_system" vertex="1">
+                    <mxGeometry x="55" y="1350" width="330" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="lane_customer" value="&lt;b style=&quot;font-size: 14px;&quot;&gt;Storage Customer (Khách hàng)&lt;/b&gt;" style="swimlane;whiteSpace=wrap;html=1;startSize=30;fillColor=#f8f9fa;strokeColor=#495057;" parent="1" vertex="1">
+                    <mxGeometry x="480" y="80" width="360" height="1820" as="geometry"/>
+                </mxCell>
+                <mxCell id="cust_receive_grace" value="Nhận thông báo nhắc dọn đồ trong 3 ngày ân hạn;&#10;Xem trạng thái hợp đồng và hạn chót không tính phí;&#10;Mã PIN/QR vẫn mở cửa kho bình thường (US-SC-05.5)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f5ff;strokeColor=#1971c2;" parent="lane_customer" vertex="1">
+                    <mxGeometry x="55" y="335" width="250" height="65" as="geometry"/>
+                </mxCell>
+                <mxCell id="dec_cust_grace" value="Khách dọn đồ &amp;amp;&#10;hoàn tất trả kho&#10;trong D+1..D+3?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff3bf;strokeColor=#f59f00;" parent="lane_customer" vertex="1">
+                    <mxGeometry x="90" y="450" width="180" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_cust_rec_to_dec_grace" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_customer" source="cust_receive_grace" target="dec_cust_grace" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="cust_moveout_grace" value="Dọn sạch đồ đạc trong ô kho;&#10;Bàn giao chìa khóa (nếu có) &amp;amp;&#10;yêu cầu nhân viên nghiệm thu trả kho" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d3f9d8;strokeColor=#2b8a3e;" parent="lane_customer" vertex="1">
+                    <mxGeometry x="65" y="640" width="230" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_dec_grace_yes" value="Có (Dọn xong trong D+1..D+3)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_customer" source="dec_cust_grace" target="cust_moveout_grace" edge="1">
+                    <mxGeometry x="-0.1" y="10" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="cust_receive_penalty" value="Nhận thông báo nợ phạt quá hạn hằng ngày;&#10;Theo dõi số ngày quá hạn và phí phát sinh (10%/ngày);&#10;Nhận cảnh báo nguy cơ bị khóa ô kho tại D+10" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3bf;strokeColor=#f59f00;" parent="lane_customer" vertex="1">
+                    <mxGeometry x="55" y="880" width="250" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="dec_cust_action" value="Khách xử lý nợ&#10;trước mốc D+10?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff3bf;strokeColor=#f59f00;" parent="lane_customer" vertex="1">
+                    <mxGeometry x="95" y="1010" width="170" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_pen_to_dec_act" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_customer" source="cust_receive_penalty" target="dec_cust_action" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="cust_settle_debt" value="Thanh toán toàn bộ nợ phạt kèm phí kỳ mới (BR-OVD-08);&#10;Hoặc yêu cầu trả kho sớm trước D+10 để giảm phạt;&#10;Nợ quá hạn được cấn trừ cùng Deposit (BR-RET-11)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d3f9d8;strokeColor=#2b8a3e;" parent="lane_customer" vertex="1">
+                    <mxGeometry x="50" y="1160" width="260" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_dec_act_yes" value="Có (Xử lý trước D+10)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_customer" source="dec_cust_action" target="cust_settle_debt" edge="1">
+                    <mxGeometry x="-0.1" y="10" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="cust_terminated_notif" value="Nhận thông báo chấm dứt hợp đồng do quá hạn 10 ngày;&#10;Access Code bị vô hiệu hóa, không thể mở kho;&#10;Được thông báo đồ đạc đã bị niêm phong đưa về kho tổng" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe3e3;strokeColor=#e03131;" parent="lane_customer" vertex="1">
+                    <mxGeometry x="50" y="1375" width="260" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="lane_fm" value="&lt;b style=&quot;font-size: 14px;&quot;&gt;Facility Manager (Quản lý cơ sở)&lt;/b&gt;" style="swimlane;whiteSpace=wrap;html=1;startSize=30;fillColor=#f8f9fa;strokeColor=#495057;" parent="1" vertex="1">
+                    <mxGeometry x="840" y="80" width="340" height="1820" as="geometry"/>
+                </mxCell>
+                <mxCell id="fm_monitor_overdue" value="Theo dõi danh sách hợp đồng quá hạn tại cơ sở;&#10;Kiểm tra các mốc cảnh báo nợ trên Dashboard (UC-F6-10)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f1f3f5;strokeColor=#495057;" parent="lane_fm" vertex="1">
+                    <mxGeometry x="45" y="885" width="250" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="fm_assign_staff" value="Tiếp nhận thông báo Contract bị chấm dứt tại D+10;&#10;Xem danh mục nhiệm vụ dọn kho hệ thống tự tạo;&#10;Phân bổ nhân viên Facility Staff thực hiện&#10;dọn dẹp ô kho và niêm phong đồ đạc (US-FM-04.3)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe3e3;strokeColor=#e03131;" parent="lane_fm" vertex="1">
+                    <mxGeometry x="40" y="1365" width="260" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="fm_offline_custody" value="Tiếp nhận tài sản tồn đọng và biên bản niêm phong;&#10;Quản lý lưu giữ đồ đạc tại kho lưu trữ tổng cơ sở;&#10;Tự liên hệ khách và xử lý thủ công ngoại tuyến (offline)&#10;(Phần mềm không hỗ trợ quy trình thanh lý phức tạp — BR-OVD-11)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f1f3f5;strokeColor=#495057;" parent="lane_fm" vertex="1">
+                    <mxGeometry x="35" y="1660" width="270" height="95" as="geometry"/>
+                </mxCell>
+                <mxCell id="lane_staff" value="&lt;b style=&quot;font-size: 14px;&quot;&gt;Facility Staff (Nhân viên cơ sở)&lt;/b&gt;" style="swimlane;whiteSpace=wrap;html=1;startSize=30;fillColor=#f8f9fa;strokeColor=#495057;" parent="1" vertex="1">
+                    <mxGeometry x="1180" y="80" width="380" height="1820" as="geometry"/>
+                </mxCell>
+                <mxCell id="staff_inspect_grace" value="Tiến hành kiểm tra thực tế ô kho tại chỗ (FS-04);&#10;Xác nhận ô kho trống, sạch, không hư hại kết cấu (BR-RET-03);&#10;Lập biên bản bàn giao trả kho thành công" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d3f9d8;strokeColor=#2b8a3e;" parent="lane_staff" vertex="1">
+                    <mxGeometry x="60" y="585" width="260" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="staff_clean_and_seal" value="Thực hiện nhiệm vụ dọn dẹp ô kho quá hạn (UC-F6-09):&#10;- Kiểm kê toàn bộ đồ đạc còn sót lại trong ô kho&#10;- Chụp ảnh hiện trạng đồ đạc &amp;amp; lập biên bản kiểm kê&#10;- Đóng thùng, dán niêm phong và vận chuyển về kho lưu trữ tổng&#10;- Bàn giao biên bản niêm phong cho Facility Manager (BR-OVD-11)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe3e3;strokeColor=#e03131;" parent="lane_staff" vertex="1">
+                    <mxGeometry x="45" y="1500" width="290" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="staff_complete_unit" value="Vệ sinh sạch sẽ ô kho sau khi dọn sạch đồ;&#10;Xác nhận hoàn tất dọn dẹp ô kho trên hệ thống;&#10;Trạng thái ô kho chuyển:&#10;- Available (nếu không có lịch đặt trước)&#10;- Reserved (nếu đã có đơn đặt trước chờ check-in)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d3f9d8;strokeColor=#2b8a3e;" parent="lane_staff" vertex="1">
+                    <mxGeometry x="55" y="1660" width="270" height="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="end_terminated_flow" value="" style="ellipse;html=1;shape=endState;fillColor=#212529;strokeColor=#212529;" parent="lane_staff" vertex="1">
+                    <mxGeometry x="175" y="1765" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_staff_comp_to_end" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_staff" source="staff_complete_unit" target="end_terminated_flow" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_staff_seal_to_complete" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_staff" source="staff_clean_and_seal" target="staff_complete_unit" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_sys_notice_to_cust" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="sys_notice_grace" target="cust_receive_grace" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_cust_moveout_to_staff" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="cust_moveout_grace" target="staff_inspect_grace" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_staff_inspect_to_sys" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="staff_inspect_grace" target="sys_refund_100_deposit" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1370" y="680"/>
+                            <mxPoint x="430" y="680"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="edge_dec_grace_no" value="Không (Hết D+3 chưa trả kho)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="dec_cust_grace" target="sys_calc_penalty" edge="1">
+                    <mxGeometry x="-0.1" y="-10" relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="450" y="575"/>
+                            <mxPoint x="450" y="970"/>
+                        </Array>
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="edge_sys_calc_to_cust" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="sys_calc_penalty" target="cust_receive_penalty" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="450" y="995"/>
+                            <mxPoint x="450" y="995"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="edge_sys_calc_to_fm" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="sys_calc_penalty" target="fm_monitor_overdue" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="255" y="1070"/>
+                            <mxPoint x="1010" y="1070"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="edge_cust_settle_to_sys" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="cust_settle_debt" target="sys_restore_contract" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_dec_act_no" value="Không (Chạm mốc D+10)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="dec_cust_action" target="sys_terminate_d10" edge="1">
+                    <mxGeometry x="-0.1" y="-10" relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="430" y="1135"/>
+                            <mxPoint x="430" y="1460"/>
+                        </Array>
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="edge_sys_term_to_cust" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="sys_terminate_d10" target="cust_terminated_notif" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_sys_term_to_fm" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="sys_terminate_d10" target="fm_assign_staff" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="255" y="1570"/>
+                            <mxPoint x="1010" y="1570"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="edge_fm_assign_to_staff" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="fm_assign_staff" target="staff_clean_and_seal" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_staff_seal_to_fm" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="staff_clean_and_seal" target="fm_offline_custody" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1370" y="1710"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

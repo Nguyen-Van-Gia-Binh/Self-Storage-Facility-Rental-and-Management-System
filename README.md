@@ -181,7 +181,7 @@ Danh sách nhiệm vụ đầy đủ kèm người phụ trách và hạn: [docs
 - [docs/diagrams/activity-diagram-flow-1-storage-reservation.drawio](docs/diagrams/activity-diagram-flow-1-storage-reservation.drawio) — Activity Diagram Flow 1 (Reservation).
 - [docs/diagrams/activity-diagram-flow-2-checkin-handover.drawio](docs/diagrams/activity-diagram-flow-2-checkin-handover.drawio) — Activity Diagram Flow 2 (Check-in / Handover).
 - [docs/diagrams/activity-diagram-flow-3-1-contract-renewal.drawio](docs/diagrams/activity-diagram-flow-3-1-contract-renewal.drawio) — Activity Diagram Flow 6.1 (Storage Renewal).
-- [docs/diagrams/activity-diagram-flow-3-2-overdue-handling.drawio](docs/diagrams/activity-diagram-flow-3-2-overdue-handling.drawio) — Activity Diagram Flow 6.2 (Overdue Handling).
+- [docs/diagrams/activity-diagram-flow-6-2-overdue-handling.drawio](docs/diagrams/activity-diagram-flow-6-2-overdue-handling.drawio) — Activity Diagram Flow 6.2 (Overdue Handling).
 - [docs/diagrams/activity-diagram-flow-4-business-operations.drawio](docs/diagrams/activity-diagram-flow-4-business-operations.drawio) — Activity Diagram Flow 4 (Business Rules, Fee Management, Revenue Monitoring).
 - [docs/diagrams/activity-diagram-flow-5-facility-staff-management.drawio](docs/diagrams/activity-diagram-flow-5-facility-staff-management.drawio) — Activity Diagram Flow 5 (Facility Storage and Staff Management).
 - [docs/diagrams/activity-diagram-flow-7-support-incident-handling.drawio](docs/diagrams/activity-diagram-flow-7-support-incident-handling.drawio) — Activity Diagram Flow 7 (Support Request and Issue Handling).

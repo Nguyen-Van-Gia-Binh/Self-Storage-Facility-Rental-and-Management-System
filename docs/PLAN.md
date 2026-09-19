@@ -74,7 +74,7 @@ xong khung dự án trống chạy được.
 | T1.6 | Vẽ Use Case Diagram tổng cho 5 actor | Bình | 14/09 |
 | T1.7 | Vẽ Activity Diagram Flow 1 và Flow 2 — [activity-diagram-flow-1-storage-reservation.drawio](diagrams/activity-diagram-flow-1-storage-reservation.drawio), [activity-diagram-flow-2-checkin-handover.drawio](diagrams/activity-diagram-flow-2-checkin-handover.drawio) (lưu trữ cũ: [activity-flow-1-booking.puml](diagrams/_archive/activity-flow-1-booking.puml), [activity-flow2-checkin-handover.puml](diagrams/_archive/activity-flow2-checkin-handover.puml)) | Tùng | 14/09 |
 | T1.7b | Vẽ Activity Diagram Main Flow End-to-End và Ánh xạ UI Demo ([UI-FLOW-MAPPING.md](UI-FLOW-MAPPING.md)) | Tùng | 14/09 |
-| T1.8 | Vẽ Activity Diagram Flow 6 (Renew & Overdue) — [activity-diagram-flow-3-1-contract-renewal.drawio](diagrams/activity-diagram-flow-3-1-contract-renewal.drawio), [activity-diagram-flow-3-2-overdue-handling.drawio](diagrams/activity-diagram-flow-3-2-overdue-handling.drawio) (lưu trữ cũ: [activity-flow-3.puml](diagrams/_archive/activity-flow-3.puml), [activity-flow-6.puml](diagrams/_archive/activity-flow-6.puml)) | Nhật | 14/09 |
+| T1.8 | Vẽ Activity Diagram Flow 6 (Renew & Overdue) — [activity-diagram-flow-3-1-contract-renewal.drawio](diagrams/activity-diagram-flow-3-1-contract-renewal.drawio), [activity-diagram-flow-6-2-overdue-handling.drawio](diagrams/activity-diagram-flow-6-2-overdue-handling.drawio) (lưu trữ cũ: [activity-flow-3.puml](diagrams/_archive/activity-flow-3.puml), [activity-flow-6.puml](diagrams/_archive/activity-flow-6.puml)) | Nhật | 14/09 |
 | T1.9 | Vẽ Activity Diagram Flow 4, Flow 5 và Flow 7 — [activity-diagram-flow-4-business-operations.drawio](diagrams/activity-diagram-flow-4-business-operations.drawio), [activity-diagram-flow-5-facility-staff-management.drawio](diagrams/activity-diagram-flow-5-facility-staff-management.drawio), [activity-diagram-flow-7-support-incident-handling.drawio](diagrams/activity-diagram-flow-7-support-incident-handling.drawio) (lưu trữ cũ: [activity-flow-4.puml](diagrams/_archive/activity-flow-4.puml), [activity-flow-5.puml](diagrams/_archive/activity-flow-5.puml), [activity-flow-7.puml](diagrams/_archive/activity-flow-7.puml)) | Bình | 21/09 |
 | T1.10 | Thiết kế ERD cho toàn hệ thống | Tùng | 14/09 |
 | T1.11 | Viết data dictionary cho ERD | Nhật | 21/09 |
@@ -89,12 +89,11 @@ xong khung dự án trống chạy được.
 
 **Baseline đầu vào cho T1.3 (`FS-*`, `FM-*`):**
 
-- Flow 3 phải phủ `UC-F3-06`→`UC-F3-12`; Flow 6 phải phủ `UC-F6-04`→`UC-F6-12`.
+- Flow 3 phải phủ `UC-F3-06`→`UC-F3-12`; Flow 6 phải phủ `UC-F6-04`→`UC-F6-11`.
 - Renewal tự ghi nhận sau Payment (`BR-REN-04`), không tạo bước Facility Manager duyệt thủ công;
   Facility Manager theo dõi và xử lý ngoại lệ.
-- D+1..D+3 ân hạn, D+4..D+10 tính phí; D+10 job `UC-F6-11` chấm dứt Contract, khóa Access Code,
-  Facility Manager phân công nhân viên thu dọn đồ về kho chung (`UC-F6-09`) và đề xuất miễn/giảm
-  phí theo vụ (`BR-OVD-10`, `UC-F6-12`).
+- D+1..D+3 ân hạn (hoàn cọc nếu dọn xong), D+4..D+10 tính phí 10% cọc/ngày; D+10 job `UC-F6-11` chấm dứt Contract, khóa Access Code,
+  Facility Manager phân công nhân viên thu dọn đồ niêm phong về kho chung (`UC-F6-09`).
 - Return phải có nhánh báo muộn, Contract *Overdue* và hủy yêu cầu (`BR-RET-10`→`BR-RET-12`).
 
 **Đầu ra báo cáo #1:** SRS v1 (use case + user story + business rules), ERD và data dictionary, bộ
