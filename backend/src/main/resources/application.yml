@@ -1,0 +1,42 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api/v1
+
+spring:
+  application:
+    name: self-storage-backend
+
+  datasource:
+    url: jdbc:sqlserver://localhost:1433;databaseName=SelfStorageDB;encrypt=true;trustServerCertificate=true
+    username: sa
+    password: YourPassword123
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate # Sử dụng Flyway để quản lý schema, không cho hibernate tự drop/create
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.SQLServerDialect
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+# Cấu hình JWT theo CONVENTIONS.md & API-SPEC.md
+jwt:
+  # Secret key tối thiểu 256-bit (32 bytes) cho HS256
+  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+  access-token-expiration-ms: 900000     # 15 phút (15 * 60 * 1000)
+  refresh-token-expiration-ms: 604800000 # 7 ngày (7 * 24 * 60 * 60 * 1000)
+
+# Swagger UI / OpenAPI docs
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
