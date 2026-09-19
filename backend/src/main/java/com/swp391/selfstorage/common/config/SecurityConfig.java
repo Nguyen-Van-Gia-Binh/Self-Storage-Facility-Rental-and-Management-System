@@ -2,7 +2,7 @@ package com.swp391.selfstorage.common.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -13,7 +13,6 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
 public class SecurityConfig {
 
     @Bean
@@ -22,23 +21,27 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            // Cấu hình Stateless Session cho JWT
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                // Cho phép truy cập công khai Swagger UI & OpenAPI Docs
-                .requestMatchers(
-                    "/v3/api-docs/**",
-                    "/swagger-ui/**",
-                    "/swagger-ui.html"
-                ).permitAll()
-                // Cho phép các endpoint auth
-                .requestMatchers("/auth/**").permitAll()
-                // Tạm thời các endpoint khác cần permitAll hoặc authenticated (sẽ gắn JwtFilter ở Phase 2 Task T2.3)
-                .anyRequest().permitAll()
-            );
+                .cors(Customizer.withDefaults())
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        // Whitelist swagger & documentation
+                        .requestMatchers(
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/v3/api-docs.yaml"
+                        ).permitAll()
+                        // Whitelist auth and public catalog
+                        .requestMatchers(
+                                "/api/v1/auth/**",
+                                "/api/v1/public/**"
+                        ).permitAll()
+                        // Tạm thời mở cho phép các request nội bộ chạy qua trong giai đoạn setup ban đầu
+                        .anyRequest().permitAll()
+                );
 
         return http.build();
     }

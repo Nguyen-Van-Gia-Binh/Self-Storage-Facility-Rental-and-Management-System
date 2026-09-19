@@ -4,13 +4,15 @@ server:
     context-path: /api/v1
 
 spring:
+  config:
+    import: optional:classpath:application-local.yml
   application:
     name: self-storage-backend
 
   datasource:
-    url: jdbc:sqlserver://localhost:1433;databaseName=SelfStorageDB;encrypt=true;trustServerCertificate=true
-    username: sa
-    password: YourPassword123
+    url: ${DB_URL:jdbc:sqlserver://localhost:1433;databaseName=SelfStorageDB;encrypt=true;trustServerCertificate=true}
+    username: ${DB_USERNAME:sa}
+    password: ${DB_PASSWORD:YourPassword123}
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
 
   jpa:
