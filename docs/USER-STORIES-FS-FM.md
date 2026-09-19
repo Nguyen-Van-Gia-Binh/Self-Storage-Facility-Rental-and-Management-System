@@ -109,7 +109,7 @@ Tổng cộng **23 user story**, **94 acceptance criteria**, **111 story point**
 
 ### `US-FS-02.2` — Cấp phương tiện truy cập ô kho
 
-> **Là** Facility Staff, **tôi muốn** cấp chìa khóa vật lý, thẻ từ hoặc kích hoạt mã Access Code cho khách, **để** khách có phương tiện ra vào ô kho thuận tiện và an toàn.
+> **Là** Facility Staff, **tôi muốn** cấp chìa khóa vật lý hoặc kích hoạt mã Access Code cho khách, **để** khách có phương tiện ra vào ô kho thuận tiện và an toàn.
 
 | Use case | Ưu tiên | Story point | Giai đoạn |
 |----------|---------|:-----------:|:---------:|
@@ -118,8 +118,8 @@ Tổng cộng **23 user story**, **94 acceptance criteria**, **111 story point**
 **Acceptance Criteria**
 
 - **AC-1** — *Given* ô kho sử dụng khóa điện tử, *when* tôi bấm "Kích hoạt Access Code", *then* hệ thống sinh mã PIN cá nhân 6 số duy nhất theo `BR-ACC-01` hoặc kích hoạt mã QR mở khóa và hiển thị trên ứng dụng của khách theo `UC-F2-04`.
-- **AC-2** — *Given* ô kho sử dụng khóa cơ hoặc thẻ từ RFID, *when* tôi phát thẻ/chìa, *then* tôi nhập mã số thẻ vật lý vào hệ thống để liên kết với hợp đồng thuê của khách.
-- **AC-3** — *Given* mã số thẻ từ đã bị trùng với một ô kho khác đang sử dụng, *when* tôi lưu thông tin, *then* hệ thống báo lỗi trùng mã thẻ và yêu cầu đổi thẻ khác.
+- **AC-2** — *Given* ô kho sử dụng khóa cơ vật lý, *when* tôi bàn giao chìa khóa cho khách, *then* tôi ghi nhận mã định danh chìa khóa vật lý vào biên bản bàn giao của hợp đồng thuê.
+- **AC-3** — *Given* hệ thống loại bỏ hoàn toàn thẻ từ RFID, *when* cấp phát phương tiện truy cập, *then* giao diện chỉ cho phép kích hoạt mã PIN/QR điện tử hoặc ghi nhận chìa khóa cơ, không có tùy chọn nhập thẻ từ.
 - **AC-4** — *Given* hệ thống cấp mã truy cập thành công, *when* kiểm tra quyền truy cập, *then* mã chỉ có hiệu lực mở đúng ô kho đã phân bổ và cửa cổng chung của đúng cơ sở đó trong thời hạn hợp đồng theo `BR-ACC-02`.
 
 ---
@@ -300,9 +300,9 @@ Tổng cộng **23 user story**, **94 acceptance criteria**, **111 story point**
 
 *Phân bổ ô kho phù hợp cho khách hàng dựa trên loại ô kho, thời hạn thuê và tình trạng còn trống.*
 
-### `US-FM-02.1` — Giám sát phân bổ Storage Unit cho Reservation
+### `US-FM-02.1` — Giám sát đơn đặt chỗ và ô kho khách chọn cho Reservation
 
-> **Là** Facility Manager, **tôi muốn** giám sát kết quả phân bổ Storage Unit tự động sau Payment, **để** xử lý ngoại lệ mà không tạo Contract thiếu unit.
+> **Là** Facility Manager, **tôi muốn** giám sát các đơn đặt chỗ và ô kho khách đã tự chọn sau Payment, **để** xử lý ngoại lệ mà không tạo Contract thiếu unit.
 
 | Use case | Ưu tiên | Story point | Giai đoạn |
 |----------|---------|:-----------:|:---------:|
@@ -310,10 +310,10 @@ Tổng cộng **23 user story**, **94 acceptance criteria**, **111 story point**
 
 **Acceptance Criteria**
 
-- **AC-1** — *Given* Payment gồm toàn bộ phí thuê N tháng và Deposit thành công (`UC-F1-07`), *when* giao dịch được xác nhận, *then* hệ thống nguyên tử gắn `unit_id` đúng Facility và Unit Type theo `BR-AVL-04`; Reservation chuyển *Confirmed*.
-- **AC-2** — *Given* unit đang *Available*, *when* phân bổ thành công, *then* unit chuyển *Reserved*. *Given* unit đang *Occupied* và kỳ Occupied kết thúc trước ngày bắt đầu kỳ mới, *when* phân bổ thành công, *then* unit **vẫn** *Occupied* (future claim) và màn hình giám sát nêu rõ claim; tôi không phải duyệt thủ công.
-- **AC-3** — *Given* phân bổ thất bại do capacity thay đổi ngoài dự kiến, *when* tôi xem hàng đợi ngoại lệ, *then* không có Contract thiếu unit, Reservation không được xác nhận và khoản vừa thu được hoàn theo `BR-AVL-05`.
-- **AC-4** — *Given* phân bổ thành công, *when* hệ thống lưu dữ liệu, *then* thông báo kèm mã Storage Unit tự động gửi cho khách; nhiệm vụ Handover chỉ xuất hiện khi ngày bắt đầu đã tới và unit đã *Reserved*.
+- **AC-1** — *Given* Payment gồm toàn bộ phí thuê N tháng và Deposit thành công (`UC-F1-07`), *when* giao dịch được xác nhận, *then* hệ thống nguyên tử khóa Storage Unit khách đã chọn theo `BR-AVL-04`; Reservation chuyển *Confirmed*.
+- **AC-2** — *Given* unit khách chọn đang *Available*, *when* thanh toán thành công, *then* unit chuyển *Reserved*. *Given* unit đang *Occupied* và kỳ Occupied kết thúc trước ngày bắt đầu kỳ mới, *when* thanh toán thành công, *then* unit **vẫn** *Occupied* (future claim) và màn hình giám sát nêu rõ claim; tôi không phải duyệt thủ công.
+- **AC-3** — *Given* khóa ô kho thất bại do sự cố ngoài dự kiến, *when* tôi xem hàng đợi ngoại lệ, *then* không có Contract thiếu unit, Reservation không được xác nhận và khoản vừa thu được hoàn theo `BR-AVL-05`.
+- **AC-4** — *Given* đặt chỗ thành công, *when* hệ thống lưu dữ liệu, *then* thông báo kèm mã Storage Unit tự động gửi cho khách; nhiệm vụ Handover chỉ xuất hiện khi ngày bắt đầu đã tới và unit đã *Reserved*.
 
 ---
 
@@ -410,7 +410,7 @@ Tổng cộng **23 user story**, **94 acceptance criteria**, **111 story point**
 
 ### `US-FM-04.3` — Xử lý hợp đồng quá hạn, khóa quyền truy cập và xử lý tài sản tồn đọng
 
-> **Là** Facility Manager, **tôi muốn** giám sát quy trình tự động xử lý hợp đồng quá hạn, vô hiệu hóa quyền truy cập và lập biên bản xử lý tài sản, **để** thu hồi công nợ và giải phóng ô kho theo đúng luật.
+> **Là** Facility Manager, **tôi muốn** giám sát quy trình tự động xử lý hợp đồng quá hạn từ D+4 đến D+10 và phân công dọn dẹp kho sau D+10, **để** thu hồi công nợ và giải phóng ô kho nhanh chóng.
 
 | Use case | Ưu tiên | Story point | Giai đoạn |
 |----------|---------|:-----------:|:---------:|
@@ -419,12 +419,12 @@ Tổng cộng **23 user story**, **94 acceptance criteria**, **111 story point**
 **Acceptance Criteria**
 
 - **AC-1** — *Given* ngày kết thúc đã qua, chưa Renewal và chưa hoàn tất Return, *when* scheduled job D+1 chạy (`UC-F6-05`), *then* Contract chuyển *Overdue* theo `BR-OVD-01`.
-- **AC-2** — *Given* Contract chạm D+10 mà khách chưa hoàn tất phương án xử lý, *when* scheduled job chạy (`UC-F6-07`), *then* Access chuyển *Suspended*, Storage Unit vẫn *Occupied* và nhiệm vụ khóa vật lý được tạo cho Facility Staff theo `BR-OVD-05`.
-- **AC-3** — *Given* Contract chạm D+30, *when* scheduled job chạy (`UC-F6-08`), *then* hệ thống tự gửi thông báo nêu hạn D+60 và hệ quả, đồng thời cung cấp bản PDF để tôi theo dõi theo `BR-OVD-06`.
-- **AC-4** — *Given* Contract chạm D+60, *when* scheduled job `UC-F6-11` chạy, *then* Contract tự chuyển *Terminated*, Access chuyển *Revoked*, nợ được chốt và Deposit bị cấn trừ theo `BR-OVD-07`.
-- **AC-5** — *Given* `UC-F6-11` đã tạo nhiệm vụ tài sản, *when* tôi thực hiện `UC-F6-09`, *then* tôi lập biên bản kèm ảnh, niêm phong và chuyển tài sản sang khu lưu giữ trước khi unit sang *Cleaning* theo `BR-OVD-11`.
-- **AC-6** — *Given* khách thanh toán trước D+60, *when* giao dịch thành công, *then* hệ thống chỉ mở lại Access nếu khách chọn Renewal; nếu chọn Return thì Access chỉ mở trong lịch hẹn, không hỗ trợ chỉ trả nợ theo `BR-OVD-08`.
-- **AC-7** — *Given* Contract *Overdue* đã *Pending Return* nhưng chưa nghiệm thu, *when* tới D+60, *then* đồng hồ không dừng: Contract *Terminated*, lịch Return bị hủy và tôi tiếp tục `BR-OVD-11`.
+- **AC-2** — *Given* Contract trong khoảng D+4 đến D+10, *when* hệ thống chạy tính phí hàng ngày, *then* phí phạt 5%/ngày được cộng dồn và thông báo nhắc dọn đồ được gửi tự động mỗi ngày theo `BR-OVD-03` và `BR-OVD-06`.
+- **AC-3** — *Given* Contract chạm mốc D+10 mà khách chưa xử lý xong, *when* scheduled job chạy (`UC-F6-07`, `UC-F6-11`), *then* mã Access Code tự động chuyển *Suspended*, Contract chuyển *Terminated* và chốt công nợ cấn trừ tiền cọc theo `BR-OVD-04`, `BR-OVD-05`.
+- **AC-4** — *Given* Contract bị chấm dứt tại D+10, *when* giao dịch lưu thành công, *then* ô kho chuyển sang trạng thái *Cleaning* hoặc *Maintaining* và tự động tạo nhiệm vụ dọn dẹp cho Facility Staff theo `BR-OVD-07`.
+- **AC-5** — *Given* nhiệm vụ dọn dẹp được tạo tại D+10, *when* nhân viên thực hiện (`UC-F6-09`), *then* đồ đạc tồn đọng của khách được kiểm kê, niêm phong và chuyển về kho tổng để tôi tự xử lý ngoại tuyến (offline) theo `BR-OVD-11`.
+- **AC-6** — *Given* khách thanh toán nợ trước D+10, *when* giao dịch thành công, *then* hợp đồng và quyền truy cập được kích hoạt lại; khi đã quá D+10, hợp đồng đã bị chấm dứt vĩnh viễn và khách muốn thuê phải tạo hợp đồng mới theo `BR-OVD-08`.
+- **AC-7** — *Given* khách hàng đang có hợp đồng quá hạn, *when* khách cố gắng tạo đơn đặt chỗ mới trên hệ thống, *then* hệ thống từ chối và cảnh báo yêu cầu tất toán hợp đồng quá hạn theo `BR-OVD-09`.
 
 ---
 
@@ -505,7 +505,7 @@ Tổng cộng **23 user story**, **94 acceptance criteria**, **111 story point**
 | `US-FS-06.1` | Theo dõi danh sách công việc bàn giao, trả kho và sự cố trong ngày | `FS-06` | Must | 3 | P4 | 4 |
 | `US-FM-01.1` | Quản lý danh mục loại ô kho tại cơ sở | `FM-01` | Must | 5 | P2 | 4 |
 | `US-FM-01.2` | Quản lý danh sách ô kho vật lý, vị trí và trạng thái | `FM-01` | Must | 5 | P2 | 4 |
-| `US-FM-02.1` | Giám sát phân bổ Storage Unit cho Reservation | `FM-02` | Must | 5 | P3 | 4 |
+| `US-FM-02.1` | Giám sát đơn đặt chỗ và ô kho khách chọn cho Reservation | `FM-02` | Must | 5 | P3 | 4 |
 | `US-FM-02.2` | Giám sát kích hoạt hợp đồng thuê sau bàn giao | `FM-02` | Must | 5 | P3 | 3 |
 | `US-FM-03.1` | Giám sát danh sách khách hàng và hợp đồng thuê đang hiệu lực | `FM-03` | Must | 5 | P4 | 4 |
 | `US-FM-03.2` | Theo dõi tình trạng thanh toán và công nợ của từng hợp đồng | `FM-03` | Must | 5 | P4 | 4 |

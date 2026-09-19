@@ -72,10 +72,10 @@ xong khung dự án trống chạy được.
 | T1.4 | Viết user story cho Business Operations Manager và System Administrator (`BM-*`, `SA-*`) — [USER-STORIES-BM-SA.md](USER-STORIES-BM-SA.md) | Nhật | 21/09 |
 | T1.5 | Chốt business rules: Reservation, Availability, Pricing, Payment, Deposit, Cancellation, Renewal, Overdue, Return | Bình | 21/09 |
 | T1.6 | Vẽ Use Case Diagram tổng cho 5 actor | Bình | 14/09 |
-| T1.7 | Vẽ Activity Diagram Flow 1 và Flow 2 | Tùng | 14/09 |
+| T1.7 | Vẽ Activity Diagram Flow 1 và Flow 2 — [activity-diagram-flow-1-storage-reservation.drawio](diagrams/activity-diagram-flow-1-storage-reservation.drawio), [activity-diagram-flow-2-checkin-handover.drawio](diagrams/activity-diagram-flow-2-checkin-handover.drawio) (lưu trữ cũ: [activity-flow-1-booking.puml](diagrams/_archive/activity-flow-1-booking.puml), [activity-flow2-checkin-handover.puml](diagrams/_archive/activity-flow2-checkin-handover.puml)) | Tùng | 14/09 |
 | T1.7b | Vẽ Activity Diagram Main Flow End-to-End và Ánh xạ UI Demo ([UI-FLOW-MAPPING.md](UI-FLOW-MAPPING.md)) | Tùng | 14/09 |
-| T1.8 | Vẽ Activity Diagram Flow 3 và Flow 6 — [activity-flow-3.puml](diagrams/activity-flow-3.puml), [activity-flow-6.puml](diagrams/activity-flow-6.puml) | Nhật | 14/09 |
-| T1.9 | Vẽ Activity Diagram Flow 4, Flow 5 và Flow 7 — [activity-flow-4.puml](diagrams/activity-flow-4.puml), [activity-flow-5.puml](diagrams/activity-flow-5.puml), [activity-flow-7.puml](diagrams/activity-flow-7.puml) | Bình | 21/09 |
+| T1.8 | Vẽ Activity Diagram Flow 3 (Renew & Overdue) — [activity-diagram-flow-3-1-contract-renewal.drawio](diagrams/activity-diagram-flow-3-1-contract-renewal.drawio), [activity-diagram-flow-3-2-overdue-handling.drawio](diagrams/activity-diagram-flow-3-2-overdue-handling.drawio) (lưu trữ cũ: [activity-flow-3.puml](diagrams/_archive/activity-flow-3.puml), [activity-flow-6.puml](diagrams/_archive/activity-flow-6.puml)) | Nhật | 14/09 |
+| T1.9 | Vẽ Activity Diagram Flow 4, Flow 5 và Flow 7 — [activity-diagram-flow-4-business-operations.drawio](diagrams/activity-diagram-flow-4-business-operations.drawio), [activity-diagram-flow-5-facility-staff-management.drawio](diagrams/activity-diagram-flow-5-facility-staff-management.drawio), [activity-diagram-flow-7-support-incident-handling.drawio](diagrams/activity-diagram-flow-7-support-incident-handling.drawio) (lưu trữ cũ: [activity-flow-4.puml](diagrams/_archive/activity-flow-4.puml), [activity-flow-5.puml](diagrams/_archive/activity-flow-5.puml), [activity-flow-7.puml](diagrams/_archive/activity-flow-7.puml)) | Bình | 21/09 |
 | T1.10 | Thiết kế ERD cho toàn hệ thống | Tùng | 14/09 |
 | T1.11 | Viết data dictionary cho ERD | Nhật | 21/09 |
 | T1.12 | Thiết kế sơ đồ phân quyền theo vai trò và theo cơ sở (`SA-02`, `SA-03`) | Nhật | 21/09 |
@@ -92,8 +92,9 @@ xong khung dự án trống chạy được.
 - Flow 3 phải phủ `UC-F3-06`→`UC-F3-12`; Flow 6 phải phủ `UC-F6-04`→`UC-F6-12`.
 - Renewal tự ghi nhận sau Payment (`BR-REN-04`), không tạo bước Facility Manager duyệt thủ công;
   Facility Manager theo dõi và xử lý ngoại lệ.
-- D+1, D+10, D+30 do scheduled job; D+60 job `UC-F6-11` chấm dứt Contract, Facility Manager xử lý
-  tài sản (`UC-F6-09`) và đề xuất miễn/giảm phí theo vụ (`BR-OVD-10`, `UC-F6-12`).
+- D+1..D+3 ân hạn, D+4..D+10 tính phí; D+10 job `UC-F6-11` chấm dứt Contract, khóa Access Code,
+  Facility Manager phân công nhân viên thu dọn đồ về kho chung (`UC-F6-09`) và đề xuất miễn/giảm
+  phí theo vụ (`BR-OVD-10`, `UC-F6-12`).
 - Return phải có nhánh báo muộn, Contract *Overdue* và hủy yêu cầu (`BR-RET-10`→`BR-RET-12`).
 
 **Đầu ra báo cáo #1:** SRS v1 (use case + user story + business rules), ERD và data dictionary, bộ
@@ -139,28 +140,28 @@ CSDL đã có schema và dữ liệu mẫu.
 
 **Phạm vi yêu cầu:** `SC-02`, `SC-03`, `SC-04`, `FS-01`, `FS-02`, `FS-03`, `FM-02`
 
-**Mục tiêu:** chạy được trọn vẹn chuỗi đặt chỗ → giữ capacity → trả trước phí thuê N tháng cùng
-Deposit → phân bổ Storage Unit cụ thể → đến cơ sở → nhận bàn giao. Đây là trục xương sống của hệ thống.
+**Mục tiêu:** chạy được trọn vẹn chuỗi đặt chỗ → giữ ô kho → trả trước phí thuê N tháng cùng
+Deposit → chọn Storage Unit cụ thể → đến cơ sở → nhận bàn giao. Đây là trục xương sống của hệ thống.
 
 | Mã | Nhiệm vụ | Người phụ trách | Hạn |
 |----|----------|-----------------|-----|
 | T3.1 | API tạo Reservation (`SC-02`) | Tùng | 12/10 |
-| T3.2 | Thuật toán giữ capacity nguyên tử và phân bổ Storage Unit sau thanh toán (`FM-02`) | Tùng | 12/10 |
+| T3.2 | Cơ chế tạm giữ ô kho nguyên tử và khóa Reserved Storage Unit sau thanh toán (`FM-02`) | Tùng | 12/10 |
 | T3.3 | API thanh toán toàn bộ phí thuê N tháng cùng Deposit (`SC-03`) | Nhật | 12/10 |
 | T3.4 | Sinh Contract *Pending Check-in* và lịch hẹn Check-in sau thanh toán | Tùng | 19/10 |
 | T3.5 | API kiểm tra đặt chỗ khi khách đến (`FS-01`) | Nhật | 19/10 |
 | T3.6 | API bàn giao ô kho và cấp Access Code / Access Card (`FS-02`) | Nhật | 19/10 |
 | T3.7 | API cập nhật trạng thái ô kho theo vòng đời (`FS-03`) | Tùng | 19/10 |
 | T3.8 | API check-in xác nhận khách đã nhận kho (`SC-04`) | Tùng | 19/10 |
-| T3.9 | Frontend: luồng đặt chỗ nhiều bước | Nhi | 12/10 |
+| T3.9 | Frontend: luồng đặt chỗ và sơ đồ chọn ô kho trực quan | Nhi | 12/10 |
 | T3.10 | Frontend: màn hình thanh toán và hóa đơn | Nhi | 19/10 |
 | T3.11 | Frontend: màn hình Staff kiểm tra đặt chỗ và bàn giao | Bình | 19/10 |
-| T3.12 | Frontend: màn hình Facility Manager phân bổ ô kho | Nhi | 19/10 |
+| T3.12 | Frontend: màn hình Facility Manager giám sát hợp đồng và xử lý ngoại lệ đổi ô kho | Nhi | 19/10 |
 | T3.13 | Test tích hợp Flow 1 → Flow 2 | Nhật | 19/10 |
 | T3.14 | Viết test case thủ công và chuẩn bị Báo cáo #3 | Bình | 19/10 |
 
-**Đầu ra báo cáo #3:** demo end-to-end một khách giữ capacity, trả phí N tháng cùng Deposit, được
-phân bổ Storage Unit, đến nhận kho và được cấp mã truy cập; Reservation thành *Fulfilled*, Contract
+**Đầu ra báo cáo #3:** demo end-to-end một khách giữ capacity, trả phí N tháng cùng Deposit, đã
+chọn Storage Unit, đến nhận kho và được cấp mã truy cập; Reservation thành *Fulfilled*, Contract
 thành *Active* và Storage Unit thành *Occupied*.
 
 ### Giai đoạn 4 — Flow 3, 6 và 7: Vòng đời thuê, Gia hạn, Hỗ trợ
@@ -179,7 +180,7 @@ sự cố.
 | T4.3 | Quy trình Return từ *Active* / *Overdue*: inspection, quyết toán và hoàn Deposit (`FS-04`, `FM-04`) | Tùng | 02/11 |
 | T4.4 | API cấu hình chính sách thuê (`BM-02`) | Nhật | 26/10 |
 | T4.5 | API Renewal tự động sau Payment, kiểm tra capacity commitment và tính phí | Nhật | 02/11 |
-| T4.6 | Scheduled job nhắc hạn và xử lý Overdue tại D+1 / D+4 / D+10 / D+30 / D+60 (`UC-F6-11`) | Nhật | 02/11 |
+| T4.6 | Scheduled job nhắc hạn và xử lý Overdue tại D+1..D+10 (`UC-F6-11`) | Nhật | 02/11 |
 | T4.7 | API gửi và theo dõi Support Request (`SC-06`) | Nhật | 02/11 |
 | T4.8 | API phân công nhân viên và xử lý sự cố (`FM-05`, `FS-05`) | Tùng | 02/11 |
 | T4.9 | API công việc hằng ngày của Facility Staff (`FS-06`) | Tùng | 02/11 |

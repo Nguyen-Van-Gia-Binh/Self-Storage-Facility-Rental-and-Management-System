@@ -3,8 +3,8 @@
 **Chuẩn kỹ thuật**: Crow's Foot Notation (Information Engineering - IE Standard)  
 **Tài liệu nguồn ánh xạ**: `database/Storage_Self.sql`, `docs/BUSINESS-RULES.md`, `docs/CONVENTIONS.md` Sec 5  
 **File sơ đồ PlantUML**:
-- Sơ đồ ERD toàn hệ thống: [erd-database-model.puml](diagrams/erd-database-model.puml)
-- Sơ đồ ERD phân hệ nghiệp vụ cốt lõi (Core Domain): [erd-core-domain.puml](diagrams/erd-core-domain.puml)
+- Sơ đồ ERD toàn hệ thống: [erd-database-model.puml](diagrams/_archive/erd-database-model.puml)
+- Sơ đồ ERD phân hệ nghiệp vụ cốt lõi (Core Domain): [erd-core-domain.puml](diagrams/_archive/erd-core-domain.puml)
 
 ---
 
@@ -50,8 +50,8 @@ Dưới đây là các câu trả lời kỹ thuật cho câu hỏi giảng viê
 ### Q2: Quan hệ giữa Reservation và Storage Unit như thế nào?
 - **Quan hệ**: `storage_unit (0..1) |o--o{ reservation (0..*)`
 - **Quy tắc**:
-  - Khi khách tạo đơn ở trạng thái `PENDING_PAYMENT`, `storage_unit_id` là **NULL** (hệ thống chỉ giữ capacity mức pool của loại kho `unit_type` tại cơ sở `facility`).
-  - Sau khi khách thanh toán đủ cọc + tiền thuê (`UC-F1-08`, `BR-AVL-04`), Facility Manager mới chọn và gán thủ công một ô kho vật lý cụ thể `storage_unit_id`.
+  - Khi khách chọn ô kho trên sơ đồ trực quan (Visual Storage Matrix) theo `UC-F1-08` và `BR-AVL-04`, đơn `reservation` liên kết trực tiếp với ô kho cụ thể `storage_unit_id` và khóa tạm thời (chuyển ô sang `RESERVED`).
+  - Trường hợp ngoại lệ đơn tạo giữ chỗ loại kho mức pool chưa chọn ô (nếu có) thì `storage_unit_id` có thể tạm thời NULL trước khi khách chọn.
   - Một ô kho vật lý (`storage_unit`) qua các khoảng thời gian khác nhau có thể phục vụ nhiều đơn Reservation khác nhau.
 
 ### Q3: Quan hệ giữa Reservation và Contract?

@@ -1,0 +1,49 @@
+<mxfile host="65bd71144e">
+    <diagram name="Trang-1" id="FaApz0RUSyBrDcZGKcqD">
+        <mxGraphModel dx="1772" dy="1884" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="ScL9fyu5NzHSP1len7kF-1" value="Storage Customer&amp;nbsp;" style="swimlane;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="60" width="410" height="860" as="geometry"/>
+                </mxCell>
+                <mxCell id="ScL9fyu5NzHSP1len7kF-4" value="Gửi yêu cầu hỗ trợ sự cố" style="rounded=0;whiteSpace=wrap;html=1;" parent="ScL9fyu5NzHSP1len7kF-1" vertex="1">
+                    <mxGeometry x="90" y="130" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ScL9fyu5NzHSP1len7kF-5" value="" style="ellipse;fillColor=strokeColor;html=1;" parent="ScL9fyu5NzHSP1len7kF-1" vertex="1">
+                    <mxGeometry x="180" y="50" width="25" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="4" value="Thông báo cho người dùng" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="ScL9fyu5NzHSP1len7kF-1">
+                    <mxGeometry x="130" y="270" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ScL9fyu5NzHSP1len7kF-2" value="Facility Staff" style="swimlane;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="450" y="60" width="710" height="860" as="geometry"/>
+                </mxCell>
+                <mxCell id="2" value="Staff xử lý" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="ScL9fyu5NzHSP1len7kF-2">
+                    <mxGeometry x="320" y="270" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ScL9fyu5NzHSP1len7kF-3" value="Facility Manager" style="swimlane;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="1160" y="60" width="410" height="860" as="geometry"/>
+                </mxCell>
+                <mxCell id="ScL9fyu5NzHSP1len7kF-10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="ScL9fyu5NzHSP1len7kF-3" source="ScL9fyu5NzHSP1len7kF-8" target="ScL9fyu5NzHSP1len7kF-7" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ScL9fyu5NzHSP1len7kF-8" value="Tiếp nhận và phân loại yêu cầu hỗ trợ" style="rounded=0;whiteSpace=wrap;html=1;" parent="ScL9fyu5NzHSP1len7kF-3" vertex="1">
+                    <mxGeometry x="60" y="130" width="220" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ScL9fyu5NzHSP1len7kF-7" value="Phân công công việc cho Facility Staff" style="rounded=0;whiteSpace=wrap;html=1;" parent="ScL9fyu5NzHSP1len7kF-3" vertex="1">
+                    <mxGeometry x="60" y="270" width="220" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ScL9fyu5NzHSP1len7kF-9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="ScL9fyu5NzHSP1len7kF-4" target="ScL9fyu5NzHSP1len7kF-8" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" style="edgeStyle=none;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="ScL9fyu5NzHSP1len7kF-7" target="2">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="5" style="edgeStyle=none;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="2" target="4">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

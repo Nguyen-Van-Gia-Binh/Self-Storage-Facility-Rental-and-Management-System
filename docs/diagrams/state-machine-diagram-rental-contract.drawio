@@ -89,7 +89,7 @@
                 <mxCell id="UZ1-ILXb2L6iRXgW38Fd-68" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="biyY4KBqVobEeqKnfnKY-6" target="UZ1-ILXb2L6iRXgW38Fd-1" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="UZ1-ILXb2L6iRXgW38Fd-73" value="Overdue at D+60&lt;div&gt;[Contract Terminated]&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="UZ1-ILXb2L6iRXgW38Fd-68" connectable="0" vertex="1">
+                <mxCell id="UZ1-ILXb2L6iRXgW38Fd-73" value="Overdue at D+10&lt;div&gt;[Contract Terminated]&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="UZ1-ILXb2L6iRXgW38Fd-68" connectable="0" vertex="1">
                     <mxGeometry x="-0.1403" y="1" relative="1" as="geometry">
                         <mxPoint as="offset"/>
                     </mxGeometry>
@@ -114,7 +114,7 @@
                 <mxCell id="UZ1-ILXb2L6iRXgW38Fd-65" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" parent="1" source="biyY4KBqVobEeqKnfnKY-8" target="UZ1-ILXb2L6iRXgW38Fd-1" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="UZ1-ILXb2L6iRXgW38Fd-66" value="Inspection incomplete&lt;div&gt;at D+60 threshold&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="UZ1-ILXb2L6iRXgW38Fd-65" connectable="0" vertex="1">
+                <mxCell id="UZ1-ILXb2L6iRXgW38Fd-66" value="Inspection incomplete&lt;div&gt;at D+10 threshold&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="UZ1-ILXb2L6iRXgW38Fd-65" connectable="0" vertex="1">
                     <mxGeometry x="0.0736" relative="1" as="geometry">
                         <mxPoint x="1" as="offset"/>
                     </mxGeometry>

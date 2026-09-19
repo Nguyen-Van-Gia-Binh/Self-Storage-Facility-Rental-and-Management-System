@@ -58,7 +58,7 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 | Mã   | Chức năng                          | Mô tả                                                                                                        |
 | ----- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
 | FS-01 | Kiểm tra đặt chỗ                 | Kiểm tra thông tin đặt chỗ của khách khi khách đến nhận ô kho                                      |
-| FS-02 | Hỗ trợ check-in & bàn giao        | Bàn giao ô kho kèm khóa, thẻ truy cập hoặc mã truy cập                                                |
+| FS-02 | Hỗ trợ check-in & bàn giao        | Bàn giao ô kho kèm khóa vật lý (nếu có) hoặc mã PIN / Access Code cho khách (không dùng thẻ RFID) |
 | FS-03 | Cập nhật trạng thái ô kho       | Cập nhật sau bàn giao, trong quá trình sử dụng, sau khi trả kho, hoặc khi cần kiểm tra / bảo trì  |
 | FS-04 | Xác nhận tình trạng khi trả kho | Kiểm tra và xác nhận hiện trạng ô kho lúc khách trả                                                  |
 | FS-05 | Xử lý sự cố tại chỗ            | Tiếp nhận và xử lý mất chìa khóa, lỗi mã truy cập, ô kho hư hỏng, yêu cầu hỗ trợ của khách |
@@ -108,9 +108,7 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 - **Tác nhân chính:** Storage Customer
 - **Tác nhân liên quan:** Facility Manager
 - **Phạm vi liên quan:** `SC-01`, `SC-02`, `SC-03`, `FM-02`
-- **Nội dung dự kiến:** Khách xem Facility / Unit Type / giá thuê → chọn ngày bắt đầu và thời hạn
-  thuê → hệ thống giữ một capacity slot trong lúc chờ thanh toán → khách trả trước toàn bộ phí thuê
-  N tháng cùng Deposit → hệ thống phân bổ Storage Unit cụ thể và gửi lịch hẹn Check-in.
+- **Nội dung dự kiến:** Khách xem cơ sở, sơ đồ và tự chọn ô kho, ngày bắt đầu và thời hạn thuê → xem bảng ước tính chi phí và tiền cọc Deposit → hệ thống giữ ô kho trong 48h → khách thanh toán trực tuyến qua cổng VietQR/thẻ → hệ thống khóa Reserved ô kho và gửi lịch hẹn Check-in.
 
 ### Flow 2 — Storage Check-in and Handover Flow
 
@@ -119,19 +117,16 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 - **Tác nhân chính:** Facility Staff
 - **Tác nhân liên quan:** Storage Customer, Facility Manager
 - **Phạm vi liên quan:** `SC-04`, `FS-01`, `FS-02`, `FS-03`, `FM-02`, `FM-05`
-- **Nội dung dự kiến:** Khách đến theo lịch hẹn → nhân viên kiểm tra đặt chỗ → bàn giao ô kho kèm
-  khóa / thẻ / mã truy cập → Reservation hoàn tất, Contract chuyển *Active* và Storage Unit chuyển
-  *Occupied*.
+- **Nội dung dự kiến:** Khách đến theo lịch hẹn → nhân viên tra cứu đặt chỗ → hai bên kiểm tra thực tế ô kho. Nếu ô kho không đạt chuẩn: nhân viên báo sự cố, quản lý đổi kho khác hoặc nếu khách từ chối nhận thì Facility Manager xử lý hoàn tiền trong 3 ngày. Nếu đạt chuẩn: hai bên ký biên bản bàn giao điện tử, nhân viên bàn giao chìa khóa (nếu có) và mã PIN / Access Code (hoàn toàn không dùng thẻ RFID) → Hợp đồng chuyển *Active*, ô kho chuyển *Occupied*.
 
 ### Flow 3 — Rented Storage Unit Management Flow
 
-*Luồng quản lý ô kho đang thuê*
+*Luồng quản lý ô kho đang thuê và trả kho tự động*
 
 - **Tác nhân chính:** Storage Customer
 - **Tác nhân liên quan:** Facility Manager, Facility Staff
 - **Phạm vi liên quan:** `SC-05`, `FS-03`, `FS-04`, `FM-03`, `FM-04`
-- **Nội dung dự kiến:** Khách theo dõi các ô kho đang thuê, thời hạn và tình trạng thanh toán;
-  quản lý cơ sở giám sát hợp đồng; quy trình trả kho có kiểm tra và xác nhận hiện trạng ô kho.
+- **Nội dung dự kiến:** Khách theo dõi các ô kho đang thuê, thời hạn và tình trạng thanh toán. **Quy trình trả kho tự động**: Trước ngày hết hạn hợp đồng 1 tháng, nếu khách không thực hiện gia hạn thì hệ thống mặc định coi như không thuê tiếp và tự động chuyển sang tiến trình trả kho khi đến hạn. Hết hạn hợp đồng, nếu muốn tiếp tục thuê khách phải tạo hợp đồng mới. Khách hoàn tất dọn đồ, nhân viên nghiệm thu hiện trạng và quản lý cơ sở quyết toán hoàn Deposit.
 
 ### Flow 4 — Business Rules, Fee Management, and Revenue Monitoring Flow
 
@@ -140,10 +135,7 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 - **Tác nhân chính:** Business Operations Manager
 - **Tác nhân liên quan:** Facility Manager
 - **Phạm vi liên quan:** `BM-01`, `BM-02`, `BM-03`, `BM-04`, `BM-05`
-- **Nội dung dự kiến:** Thiết lập chính sách đặt cọc / gia hạn / hủy / trả kho / quá hạn, khung giá và
-  phụ phí → áp dụng cho toàn hệ thống → giám sát doanh thu, tỷ lệ sử dụng → xem và xuất báo cáo.
-  Facility Manager tham gia gián tiếp: nhận danh mục Facility để vận hành (sang Flow 5) và đề xuất
-  miễn / giảm phí quá hạn theo vụ để Business Operations Manager duyệt (`UC-F4-13` ↔ `UC-F6-12`).
+- **Nội dung dự kiến:** BOM đăng nhập thiết lập chính sách cọc (Deposit), chính sách gia hạn (Renewal & lịch nhắc hẹn), chính sách hủy & hoàn tiền (Cancellation & Refund), quản lý khung giá, phụ phí và theo dõi doanh thu, tỷ lệ sử dụng (Usage Rate) toàn hệ thống.
 
 ### Flow 5 — Facility Storage and Staff Management Flow
 
@@ -152,8 +144,7 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 - **Tác nhân chính:** Facility Manager
 - **Tác nhân liên quan:** Facility Staff, System Administrator
 - **Phạm vi liên quan:** `FM-01`, `FM-05`, `FM-06`, `FS-06`, `SA-02`, `SA-03`
-- **Nội dung dự kiến:** Quản lý danh mục ô kho (loại, kích thước, vị trí, giá, trạng thái) →
-  phân công nhân viên theo công việc trong ngày → theo dõi báo cáo của cơ sở.
+- **Nội dung dự kiến:** FM đăng nhập quản lý danh mục Unit Type và kích thước ô kho → quản lý Storage Unit (mã, vị trí, giá thuê, trạng thái) → phân công Facility Staff theo công việc trong ngày → xem báo cáo cơ sở (trạng thái ô kho, doanh thu, Usage Rate, hợp đồng).
 
 ---
 
@@ -166,9 +157,9 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 - **Tác nhân chính:** Storage Customer, Facility Manager
 - **Tác nhân liên quan:** Business Operations Manager
 - **Phạm vi liên quan:** `SC-03`, `SC-05`, `FM-03`, `FM-04`, `FM-06`, `BM-02`, `BM-03`
-- **Nội dung dự kiến:** Nhắc hạn → kiểm tra capacity commitment → thanh toán và tự động ghi nhận
-  Renewal; nếu Overdue thì scheduled job tính phí từ D+4, khóa Access tại D+10, gửi thông báo tại
-  D+30, chấm dứt Contract tại D+60 (`UC-F6-11`) và giao Facility Manager xử lý tài sản tồn.
+- **Nội dung dự kiến:** 
+  - **Sub-flow 6.1 (Gia hạn):** Khách gửi yêu cầu gia hạn (Renew) khi hợp đồng còn hạn → hệ thống kiểm tra tính hợp lệ: nếu hợp lệ thì xác nhận gia hạn và thanh toán; nếu không hợp lệ thì thông báo từ chối gia hạn.
+  - **Sub-flow 6.2 (Xử lý quá hạn):** Hợp đồng hết hạn, hệ thống gửi thông báo nhắc dọn đồ mỗi ngày trong 10 ngày. Từ ngày thứ 4 đến ngày thứ 10 (D+4 → D+10), hệ thống tự động tính phí quá hạn mỗi ngày. Quá 10 ngày (D+10): chấm dứt hợp đồng, khóa quyền truy cập, ô kho chuyển sang Cleaning/Maintaining; FM phân công Staff dọn dẹp, đồ đạc của khách được niêm phong đưa về kho tổng để FM xử lý ngoại tuyến (offline).
 
 ### Flow 7 — Support Request and Issue Handling Flow
 
@@ -177,8 +168,7 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 - **Tác nhân chính:** Storage Customer, Facility Staff
 - **Tác nhân liên quan:** Facility Manager
 - **Phạm vi liên quan:** `SC-06`, `FS-03`, `FS-05`, `FM-05`
-- **Nội dung dự kiến:** Khách gửi yêu cầu hỗ trợ (ô kho, khóa, mã truy cập, thanh toán, tài sản) →
-  phân công nhân viên xử lý → xử lý tại chỗ → cập nhật trạng thái ô kho và đóng yêu cầu.
+- **Nội dung dự kiến:** Khách gửi yêu cầu hỗ trợ sự cố → Facility Manager tiếp nhận và phân loại yêu cầu → FM phân công công việc cho Facility Staff → Staff xử lý hiện trường → hệ thống thông báo kết quả cho khách và đóng yêu cầu.
 
 ---
 
@@ -205,11 +195,11 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 | **Unit Type / Unit Size**     | Loại và kích thước ô kho, quyết định khung giá thuê                            |
 | **Reservation**               | Đặt chỗ theo Facility, Unit Type và khoảng thuê; giữ capacity khi chờ thanh toán, sau thanh toán mới gắn Storage Unit cụ thể và lịch hẹn Check-in |
 | **Deposit**                   | Tiền cọc khách trả khi đặt chỗ                                                     |
-| **Check-in / Handover**       | Thủ tục khách đến nhận và được bàn giao ô kho kèm phương tiện truy cập   |
-| **Access Code / Access Card** | Mã hoặc thẻ truy cập cấp cho khách để vào khu vực kho                           |
+| **Check-in / Handover**       | Thủ tục khách đến nhận và bàn giao ô kho kèm mã PIN / Access Code hoặc chìa khóa vật lý (không dùng thẻ RFID) |
+| **Access Code**               | Mã số truy cập / PIN cấp cho khách để mở khóa hoặc vào khu vực kho (không dùng thẻ từ) |
 | **Renewal**                   | Gia hạn thời hạn thuê, kèm phí gia hạn                                             |
-| **Overdue**                   | Quá hạn thuê hoặc quá hạn thanh toán, áp dụng phí và quy trình xử lý riêng |
-| **Return**                    | Trả kho — khách kết thúc thuê, nhân viên kiểm tra hiện trạng ô kho            |
+| **Overdue**                   | Quá hạn thuê: tính phí D+4..D+10, quá D+10 chấm dứt hợp đồng và dọn dẹp kho        |
+| **Return**                    | Trả kho tự động nếu không gia hạn trước 1 tháng; nhân viên nghiệm thu hiện trạng   |
 | **Usage Rate**                | Tỷ lệ sử dụng / lấp đầy kho của một cơ sở                                      |
 
 ---

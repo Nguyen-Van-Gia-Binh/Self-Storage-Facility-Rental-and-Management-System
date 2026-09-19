@@ -17,20 +17,18 @@ Hệ thống giao diện được thiết kế bám sát chặt chẽ theo nguy�
 
 ## 2. Kịch Bản Trình Chiếu Demo Main Flow Cốt Lõi (Core End-to-End Demo Script)
 
-> **Mục tiêu thuyết trình:** Trình bày liền mạch trong **3 đến 5 phút** trước Giảng viên hướng dẫn, đi trọn vẹn vòng đời cốt lõi từ lúc Khách tìm kiếm, giữ chỗ, thanh toán $\rightarrow$ Quản lý cơ sở phân bổ kho $\rightarrow$ Nhân viên trực đón tiếp, nghiệm thu $\rightarrow$ Hệ thống tự động kích hoạt Hợp đồng và cấp mã mở cửa thông minh (PIN/QR Code).
+> **Mục tiêu thuyết trình:** Trình bày liền mạch trong **3 đến 5 phút** trước Giảng viên hướng dẫn, đi trọn vẹn vòng đời cốt lõi từ lúc Khách tìm kiếm, tự chọn ô kho trên sơ đồ, giữ chỗ, thanh toán trực tuyến $\rightarrow$ Nhận thẻ Check-in điện tử $\rightarrow$ Nhân viên trực đón tiếp, nghiệm thu $\rightarrow$ Hệ thống tự động kích hoạt Hợp đồng và cấp mã mở cửa thông minh (PIN/QR Code).
 > 
-> *Sơ đồ hoạt động chuẩn:* [activity-main-flow-end-to-end.puml](diagrams/activity-main-flow-end-to-end.puml)
+> *Sơ đồ hoạt động chuẩn:* [activity-diagram-flow-1-storage-reservation.drawio](diagrams/activity-diagram-flow-1-storage-reservation.drawio)
 
 ### 2.1. Sơ đồ hành trình chuỗi 7 màn hình xuyên suốt
 
 ```mermaid
 graph LR
     subgraph Storage Customer
-        S1["Ảnh 1: SCR-SC-01<br>Tìm kiếm cơ sở"] --> S2["Ảnh 2: SCR-SC-02<br>Chọn kho & Thời hạn"]
-        S2 --> S3["Ảnh 3: SCR-SC-03<br>Giữ slot 48h & VietQR"]
-    end
-    subgraph Facility Manager
-        S3 -->|"Thanh toán Confirmed"| S4["Ảnh 4: SCR-FM-02.2<br>Modal gán ô kho Q7-M12"]
+        S1["Ảnh 1: SCR-SC-01<br>Tìm kiếm cơ sở"] --> S2["Ảnh 2: SCR-SC-02<br>Xem sơ đồ & Tự chọn ô kho Q7-M12"]
+        S2 --> S3["Ảnh 3: SCR-SC-03<br>Giữ ô kho 48h & VietQR"]
+        S3 -->|"Thanh toán thành công"| S4["Ảnh 4: SCR-SC-03.1<br>Thẻ Check-in & Hợp đồng Pending"]
     end
     subgraph Facility Staff
         S4 -->|"Đến ngày hẹn Check-in"| S5["Ảnh 5: SCR-FS-01<br>Đón khách & Tra cứu CCCD"]
@@ -49,9 +47,9 @@ graph LR
 | Thứ tự | Màn hình Stitch & Mã định danh | Thao tác trên UI (Action) | Lời thoại thuyết trình mẫu (Presenter Speech) | Quy tắc nghiệp vụ liên quan |
 | :---: | :--- | :--- | :--- | :--- |
 | **Ảnh 1** | **SCR-SC-01**<br>Storage Facility Directory & Search | Trỏ chuột vào thanh lọc khu vực (Quận 7), bấm chọn cơ sở **District 7 Flagship**, xem danh sách tiện ích (Máy lạnh 24/7, PCCC tự động, bảo vệ AI) và mức giá khởi điểm. | *"Thưa cô, luồng chính của hệ thống bắt đầu từ góc nhìn Khách hàng trên màn hình `SCR-SC-01`. Khách hàng tìm kiếm cơ sở theo khu vực mong muốn, xem đầy đủ tiện ích thực tế và mức giá niêm yết minh bạch trước khi bấm 'View Units' để chọn kho."* | `UC-F1-01`<br>`UC-F1-02` |
-| **Ảnh 2** | **SCR-SC-02**<br>Storage Unit Reservation & Duration Selection | Chọn loại kho **Medium (6.0 m²)**, chọn ngày bắt đầu thuê (12/03/2026), chọn thời hạn thuê **3 tháng**. Hệ thống kiểm tra số lượng kho trống khả dụng. | *"Tại màn hình `SCR-SC-02`, khách hàng cấu hình nhu cầu: chọn kích thước ô kho, ngày bắt đầu và thời hạn thuê 3 tháng. Hệ thống tự động kiểm tra năng lực chứa trống (Capacity) theo thời gian thực để đảm bảo không bị trùng lặp."* | `UC-F1-04`<br>`BR-GEN-03`<br>`BR-AVL-01` |
-| **Ảnh 3** | **SCR-SC-02.1** & **SCR-SC-03**<br>Booking Checkout & VietQR Gateway | Trỏ vào **Đồng hồ đếm ngược 48h**, bảng kê tài chính: Phí thuê 3 tháng (2.4M) + Tiền cọc Deposit 1 tháng (800k) = 3.2M VND. Hiển thị mã VietQR động để quét thanh toán. | *"Sau khi điền thông tin cá nhân, hệ thống chuyển sang cổng thanh toán `SCR-SC-03`. Theo Business Rule `BR-DEP-03`, hệ thống giữ một slot kho trong đúng 48 giờ. Khách hàng thanh toán toàn bộ tiền thuê N tháng cùng tiền cọc Deposit trong 1 giao dịch qua mã VietQR động."* | `UC-F1-06`<br>`UC-F1-07`<br>`BR-DEP-03`<br>`BR-PAY-01` |
-| **Ảnh 4** | **SCR-FM-02.2**<br>Assign Physical Storage Unit Modal *(Active Overlay on SCR-FM-02.1)* | **[Chuyển Portal: Khách hàng $\rightarrow$ Quản lý cơ sở]**<br>Manager vào Hub `SCR-FM-02.1`, chọn Tab **Reservations & Unit Allocation (12)**, bấm **[ Assign Unit ]** trên đơn của Nguyễn Hoàng Xuân (`RSV-2026-001042`).<br>Modal **`SCR-FM-02.2`** hiển thị: Manager tích chọn ô kho **Locker Q7-M12 (Ground Floor — Aisle B)** đang sạch sẽ sẵn sàng (`Recommended • Swept & Sanitized ✓`), rồi bấm **[ Confirm Unit Allocation & Issue Appointment → ]**. | *"Ngay khi thanh toán thành công, hệ thống chuyển dữ liệu sang Portal của Quản lý cơ sở. Manager mở tab 'Reservations & Unit Allocation' và bấm 'Assign Unit'. Màn hình Modal `SCR-FM-02.2` hiện lên trực quan: Manager tích chọn ô kho vật lý trống đạt chuẩn Locker Q7-M12 tại tầng trệt, rồi bấm xác nhận phân bổ. Hệ thống tự động kích hoạt rule BR-RES-02: liên kết kho với hợp đồng, gửi SMS thông báo lịch hẹn kèm mã vào cổng cho khách, và đưa khách vào hàng đợi đón tiếp hôm nay của nhân viên."* | `UC-F1-08`<br>`BR-AVL-04`<br>`BR-RES-02` |
+| **Ảnh 2** | **SCR-SC-02**<br>Storage Unit Reservation & Duration Selection | Mở sơ đồ mặt bằng kho, trỏ chuột chọn trực tiếp ô kho **Locker Q7-M12 (Tầng trệt — Dãy B, 6.0 m²)**, chọn ngày bắt đầu thuê (12/03/2026), chọn thời hạn thuê **3 tháng**. Hệ thống kiểm tra ô kho khả dụng. | *"Tại màn hình `SCR-SC-02`, khách hàng xem trực quan sơ đồ mặt bằng các ô kho của cơ sở và tự mình chọn đúng vị trí ô kho mong muốn — ở đây khách chọn ngay ô Locker Q7-M12 tại tầng trệt, dãy B. Sau đó khách chọn thời hạn thuê 3 tháng. Hệ thống tự động kiểm tra tính khả dụng của ô kho theo thời gian thực."* | `UC-F1-04`<br>`BR-GEN-03`<br>`BR-AVL-01`<br>`BR-AVL-04` |
+| **Ảnh 3** | **SCR-SC-02.1** & **SCR-SC-03**<br>Booking Checkout & VietQR Gateway | Trỏ vào **Đồng hồ đếm ngược 48h**, bảng kê tài chính: Phí thuê 3 tháng (2.4M) + Tiền cọc Deposit 1 tháng (800k) = 3.2M VND. Hiển thị mã VietQR động để quét thanh toán. | *"Sau khi điền thông tin cá nhân, hệ thống chuyển sang cổng thanh toán `SCR-SC-03`. Theo Business Rule `BR-DEP-03`, hệ thống giữ chính ô kho Q7-M12 trong đúng 48 giờ. Khách hàng thanh toán toàn bộ tiền thuê N tháng cùng tiền cọc Deposit trong 1 giao dịch qua mã VietQR động."* | `UC-F1-06`<br>`UC-F1-07`<br>`BR-DEP-03`<br>`BR-PAY-01` |
+| **Ảnh 4** | **SCR-SC-03.1**<br>Digital Move-in Pass & Confirmation | Hiển thị màn hình xác nhận thanh toán thành công: Hợp đồng chuyển sang **Pending Check-in**, mã ô kho đã chọn **Locker Q7-M12**, mã QR check-in tiếp đón tại quầy và Lịch hẹn Check-in. | *"Ngay khi thanh toán thành công, hệ thống tự động xác nhận đơn và cấp ngay Thẻ nhận kho điện tử trên màn hình `SCR-SC-03.1`. Khách hàng nhìn thấy rõ ràng mã ô kho mình đã tự chọn là Locker Q7-M12, kèm mã QR tiếp đón và lịch hẹn Check-in. Toàn bộ quy trình diễn ra tự động 100%, không cần chờ quản lý cơ sở phê duyệt hay gán kho thủ công."* | `UC-F1-08`<br>`UC-F1-09`<br>`BR-AVL-04`<br>`BR-PAY-02`<br>`BR-CHK-01` |
 | **Ảnh 5** | **SCR-FS-01**<br>Staff Daily Operations Desk | **[Chuyển Portal: Đến ngày hẹn $\rightarrow$ Nhân viên trực bàn giao]**<br>Khách tới quầy. Nhân viên mở màn hình ca trực `SCR-FS-01`, tra cứu tên Nguyễn Hoàng Xuân / CCCD `079098001234`, thẻ trạng thái hiện xanh *Customer Arrived*, xác nhận đã thu đủ 100% tiền cọc và tiền thuê. | *"Đến ngày hẹn, khách hàng đến cơ sở thực tế. Nhân viên trực mở màn hình tác nghiệp `SCR-FS-01`. Hệ thống hiển thị danh sách ca trực hôm nay, nhân viên quét CCCD xác thực danh tính khách hàng và xác nhận tình trạng thanh toán đã hoàn tất."* | `UC-F2-01`<br>`UC-F2-02`<br>`BR-CHK-01` |
 | **Ảnh 6** | **SCR-FS-02**<br>Facility Units & Floor Status Board | Nhân viên mở sơ đồ mặt bằng `SCR-FS-02`, dẫn khách đến vị trí kho thực tế **Q7-M12 (Tầng trệt, Dãy B)**. Khách và nhân viên kiểm tra 4 tiêu chí: phòng trống sạch, cửa cuốn không kẹt, tường sàn không ẩm mốc, độ ẩm 54% RH. | *"Nhân viên dẫn khách đến vị trí ô kho thực tế trên sơ đồ mặt bằng `SCR-FS-02`. Tại đây, hai bên cùng đối soát hiện trạng ô kho: kiểm tra khóa số, cửa cuốn trơn tru và môi trường kho đạt chuẩn sạch sẽ trước khi bàn giao."* | `BR-CHK-02` |
 | **Ảnh 7** | **SCR-FS-01** *(Modal Ký số)* $\rightarrow$ **SCR-SC-04** *(App Khách)* | • Trên `SCR-FS-01`: Nhân viên chụp ảnh hiện trạng phòng, hai bên ký chữ ký điện tử trên tablet.<br>• **Hệ thống tự động kích hoạt tức thì**: Chuyển sang màn hình `SCR-SC-04` của khách: Hợp đồng chuyển **Active**, hiển thị **Mã PIN & Mã QR Code mở cổng bảo mật** màu xanh, tự động gửi email kèm file PDF biên bản. | *"Tại bước cuối cùng, nhân viên chụp ảnh hiện trạng và hai bên ký số biên bản bàn giao điện tử trên `SCR-FS-01`. Ngay khi bấm hoàn tất, HỆ THỐNG TỰ ĐỘNG 100%: kích hoạt hợp đồng sang Active, chuyển kho sang Occupied, và trên ứng dụng của khách `SCR-SC-04`, mã PIN và mã QR mở cửa bảo mật lập tức sáng xanh để khách bắt đầu cất đồ."* | `UC-F2-03`<br>`UC-F2-06`<br>`UC-F2-07`<br>`BR-ACC-01`<br>`BR-ACC-02` |
@@ -74,23 +72,22 @@ Khi bạn trình bày xong 7 ảnh Main Flow, giảng viên thường sẽ đặ
 ## 3. Chi Tiết Nghiệp Vụ Từng Flow Riêng Biệt (Detailed Sub-flows)
 
 ### 3.1. Kịch Bản Demo Flow 1 — Đặt Chỗ Ô Kho (Storage Unit Reservation)
-
-*Sơ đồ hoạt động chi tiết:* [activity-flow-1-booking.puml](diagrams/activity-flow-1-booking.puml)
-
+ 
+*Sơ đồ hoạt động chi tiết:* [activity-diagram-flow-1-storage-reservation.drawio](diagrams/activity-diagram-flow-1-storage-reservation.drawio) (lưu trữ cũ: [activity-flow-1-booking.puml](diagrams/_archive/activity-flow-1-booking.puml))
+ 
 | Bước trên Activity Diagram Flow 1 | Màn hình Stitch | Mã màn hình & Link xem | Hành vi người dùng & Trực quan hóa |
 | :--- | :--- | :--- | :--- |
 | **Bước 1**: Khách hàng tìm kiếm cơ sở, xem Unit Type và giá thuê (`UC-F1-01`, `UC-F1-02`) | **Storage Facility Directory & Interactive Search** | `SCR-SC-01`<br>[Mở màn hình Stitch](https://stitch.withgoogle.com/projects/10748997868964560026) | Khách lọc theo thành phố, quận, xem danh sách cơ sở kèm ảnh thực tế, tiện ích và giá khởi điểm. Bấm "View Units" tại cơ sở mong muốn. |
-| **Bước 2**: Chọn Unit Type, ngày bắt đầu và thời hạn thuê N tháng (`UC-F1-04`, `BR-GEN-03`) | **Storage Unit Reservation & Duration Selection** | `SCR-SC-02`<br>[Mở màn hình Stitch](https://stitch.withgoogle.com/projects/10748997868964560026) | Khách chọn kích thước kho (Small, Medium, Large), chọn ngày bắt đầu thuê và số tháng thuê. Hệ thống kiểm tra capacity trống (`BR-AVL-01`). |
-| **Bước 3**: Xem ước tính chi phí, giữ chỗ 48h và thanh toán (`UC-F1-05`, `UC-F1-06`, `UC-F1-07`, `BR-DEP-03`, `BR-PAY-01`) | **Booking Checkout & Upfront Payment Gateway** | `SCR-SC-02.1`<br>`SCR-SC-03` | • Hiển thị đồng hồ đếm ngược giữ chỗ **48 giờ** (`reservation.hold_hours`).<br>• Bảng kê chi phí: Phí thuê N tháng + Tiền cọc Deposit (`BR-PAY-01`).<br>• Cổng quét mã VietQR động / Thẻ ngân hàng. |
-| **Bước 4**: Quản lý phân bổ ô kho vật lý cụ thể (`UC-F1-08`, `BR-AVL-04`) | **Facility Contracts, Allocations & Overdue Hub** | `SCR-FM-02.1` *(Khuyên dùng)*<br>`SCR-FM-02` | Chuyển sang góc nhìn **Facility Manager**: Xem danh sách đơn tại Tab **"Reservations & Unit Allocation"** (đang có 12 đơn chờ), bấm chọn gán ô kho vật lý trống phù hợp tiêu chí (ví dụ: A-104). |
-| **Bước 5**: Nhận xác nhận đặt chỗ thành công & Lịch hẹn Check-in (`UC-F1-09`) | **Customer Storage & Contracts Hub (My Rentals)** | `SCR-SC-04` | Khách mở ứng dụng: Đơn chuyển sang hợp đồng trạng thái *Pending Check-in*, hiển thị mã ô kho được gán, mã QR truy cập và Lịch hẹn Check-in. |
-
+| **Bước 2**: Xem sơ đồ mặt bằng, tự chọn ô kho cụ thể, ngày bắt đầu và thời hạn thuê (`UC-F1-04`, `BR-GEN-03`, `BR-AVL-04`) | **Storage Unit Reservation & Duration Selection** | `SCR-SC-02`<br>[Mở màn hình Stitch](https://stitch.withgoogle.com/projects/10748997868964560026) | Khách xem sơ đồ mặt bằng các ô kho, trực tiếp click chọn ô kho mong muốn (ví dụ: Q7-M12), chọn ngày bắt đầu thuê và số tháng thuê. Hệ thống kiểm tra ô kho khả dụng (`BR-AVL-01`). |
+| **Bước 3**: Xem ước tính chi phí, giữ ô kho 48h và thanh toán (`UC-F1-05`, `UC-F1-06`, `UC-F1-07`, `BR-DEP-03`, `BR-PAY-01`) | **Booking Checkout & Upfront Payment Gateway** | `SCR-SC-02.1`<br>`SCR-SC-03` | • Hiển thị đồng hồ đếm ngược giữ chỗ **48 giờ** (`reservation.hold_hours`).<br>• Bảng kê chi phí: Phí thuê N tháng + Tiền cọc Deposit (`BR-PAY-01`).<br>• Cổng quét mã VietQR động / Thẻ ngân hàng. |
+| **Bước 4**: Tự động xác nhận, khóa ô kho Reserved & Nhận Thẻ Check-in (`UC-F1-08`, `UC-F1-09`, `BR-AVL-04`) | **Digital Move-in Pass & Customer Hub** | `SCR-SC-03.1`<br>`SCR-SC-04` | Thanh toán thành công: Hệ thống tự động chuyển đơn sang *Confirmed*, ô kho sang *Reserved*, sinh hợp đồng *Pending Check-in* và cấp Thẻ nhận kho điện tử kèm mã QR đón tiếp tại quầy. |
+ 
 ---
-
+ 
 ### 3.2. Kịch Bản Demo Flow 2 — Check-in & Bàn Giao Ô Kho (Check-in & Handover)
-
-*Sơ đồ hoạt động chi tiết:* [activity-flow2-checkin-handover.puml](diagrams/activity-flow2-checkin-handover.puml)
-
+ 
+*Sơ đồ hoạt động chi tiết:* [activity-diagram-flow-2-checkin-handover.drawio](diagrams/activity-diagram-flow-2-checkin-handover.drawio) (lưu trữ cũ: [activity-flow2-checkin-handover.puml](diagrams/_archive/activity-flow2-checkin-handover.puml))
+ 
 ```mermaid
 graph TD
     A[SCR-FS-01: Tra cứu Check-in hôm nay] --> B[SCR-FS-02: Dẫn khách kiểm tra thực tế ô kho]
@@ -100,9 +97,9 @@ graph TD
     E --> B
     C --> F[SCR-SC-04: System tự động kích hoạt Contract & Access Code]
 ```
-
+ 
 ### Chi tiết từng bước demo Flow 2:
-
+ 
 | Bước trên Activity Diagram Flow 2 | Màn hình Stitch | Mã màn hình & Link xem | Hành vi người dùng & Trực quan hóa |
 | :--- | :--- | :--- | :--- |
 | **Bước 1**: Staff tra cứu đơn đặt chỗ khi khách đến cơ sở (`UC-F2-01`, `UC-F2-02`, `BR-CHK-01`) | **Staff Daily Operations Desk** | `SCR-FS-01` | Nhân viên mở danh sách ca trực bàn giao trong ngày, tra cứu mã đơn/CCCD khách hàng, kiểm tra cọc và thanh toán đã xanh *Confirmed*. |
@@ -110,12 +107,12 @@ graph TD
 | **Bước 3 (Nhánh Ngoại Lệ Đắt Giá)**: Ô kho bị hư hại kết cấu, không đạt yêu cầu (`US-FS-02.1 AC-3`) | **Storage Unit Defect Reporting & Maintenance Lock** | `SCR-FS-02.1` *(Modal Active)* | Staff bật Modal báo cáo sự cố ngay tại chỗ $\rightarrow$ Hệ thống tự động chuyển ô kho sang **Maintenance** $\rightarrow$ Quản lý trên màn hình `SCR-FM-02` chỉ định ngay ô kho thay thế cùng loại. |
 | **Bước 4**: Lập biên bản bàn giao kèm ảnh hiện trạng & Ký số (`UC-F2-03`, `BR-CHK-03`, `UC-F2-05`) | **Staff Daily Operations Desk** | `SCR-FS-01` | Nhân viên chụp ảnh hiện trạng ô kho tải lên hệ thống, khách hàng ký số điện tử trên tablet/ứng dụng để xác nhận nhận bàn giao. |
 | **Bước 5**: Hệ thống tự động kích hoạt song song (`UC-F2-06`, `UC-F2-07`, `BR-ACC-02`) | **Customer Storage & Contracts Hub (My Rentals)** | `SCR-SC-04` | Sau khi ký biên bản, **Hệ thống tự động**: (1) Ô kho chuyển *Occupied*; (2) Hợp đồng chuyển *Active*; (3) Mã Access Code / QR mở cổng hiện xanh *Active*; (4) Tự gửi email kèm file PDF biên bản cho khách. |
-
+ 
 ---
-
+ 
 ### 3.3. Kịch Bản Demo Flow 3 — Quản Lý Ô Kho Đang Thuê & Trả Kho (Rented Unit & Return)
-
-*Sơ đồ hoạt động:* [activity-flow-3.puml](diagrams/activity-flow-3.puml)
+ 
+*Sơ đồ hoạt động:* [activity-diagram-flow-3-1-contract-renewal.drawio](diagrams/activity-diagram-flow-3-1-contract-renewal.drawio) (lưu trữ cũ: [activity-flow-3.puml](diagrams/_archive/activity-flow-3.puml))
 
 ```mermaid
 graph LR
@@ -140,7 +137,7 @@ graph LR
 
 | Luồng | Bước nghiệp vụ | Màn hình Stitch | Mã màn hình | Hành vi trực quan hóa |
 | :--- | :--- | :--- | :--- | :--- |
-| **Flow 4** (BM) | Cấu hình tham số nghiệp vụ toàn hệ thống (`UC-F4-02` -> `UC-F4-06`) | **Business Rules & Policy Parameter Engine** | `SCR-BM-02` | Business Ops Manager cấu hình: Tỷ lệ cọc Deposit, 48h giữ chỗ, 3 ngày grace check-in, các mốc Overdue D+1/D+10/D+30/D+60. |
+| **Flow 4** (BM) | Cấu hình tham số nghiệp vụ toàn hệ thống (`UC-F4-02` -> `UC-F4-06`) | **Business Rules & Policy Parameter Engine** | `SCR-BM-02` | Business Ops Manager cấu hình: Tỷ lệ cọc Deposit, 48h giữ chỗ, 3 ngày grace check-in, các mốc Overdue D+1/D+4/D+10. |
 | **Flow 4** (BM) | Thiết lập bảng giá & duyệt miễn giảm (`UC-F4-07`, `UC-F4-13`) | **Pricing Matrix, Surcharges & Fee Waiver** | `SCR-BM-03` | Quản lý khung giá thuê theo từng cơ sở và duyệt các đề xuất miễn giảm phí quá hạn theo vụ việc. |
 | **Flow 4** (BM) | Giám sát doanh thu & xuất báo cáo BI (`UC-F4-10`, `UC-F4-12`) | **Enterprise BI & Cross-Facility Report** | `SCR-BM-04` | Xem biểu đồ doanh thu toàn quốc, tỷ lệ lấp đầy giữa các cơ sở và xuất file báo cáo Excel/PDF. |
 | **Flow 5** (FM) | Quản lý danh mục ô kho & sơ đồ mặt bằng (`UC-F5-01`, `UC-F5-02`) | **Facility Storage Units & Layout Management** | `SCR-FM-01` | Facility Manager quản lý từng ô kho, kích thước, tầng, vị trí và trạng thái bảo trì/sẵn sàng. |
@@ -164,9 +161,9 @@ graph LR
 | 9 | | `SCR-FS-02.1`| Storage Unit Defect Reporting & Maintenance Lock (Modal) | Modal báo cáo ô kho hư hỏng và khóa bảo trì |
 | 10 | **Manager** | `SCR-FM-01` | Facility Storage Units & Layout Management | Thiết lập danh mục ô kho và sơ đồ cơ sở |
 | 11 | | `SCR-FM-01.1`| Facility Storage Units & Layout Management (Default View) | Chế độ xem mặc định danh sách ô kho cơ sở |
-| 12 | | `SCR-FM-02` | Facility Contracts, Allocations & Overdue Hub | Quản lý hợp đồng & phân bổ (Đang mở Modal D+60 Sealing Protocol) |
+| 12 | | `SCR-FM-02` | Facility Contracts, Allocations & Overdue Hub | Quản lý hợp đồng & phân bổ (Đang mở Modal D+10 Sealing Protocol) |
 | 13 | | `SCR-FM-02.1`| Facility Contracts, Allocations & Overdue Hub (Default View) | Giao diện chuẩn 4 Tab: Active Contracts, Reservations Allocation, Return, Overdue |
-| 14 | | `SCR-FM-02.2`| Assign Physical Storage Unit Modal (Active Overlay on SCR-FM-02.1) | Modal gán ô kho vật lý cụ thể (Locker Q7-M12) cho đơn đặt chỗ |
+| 14 | | `SCR-FM-02.2`| Reassign Storage Unit Modal (Active Overlay on SCR-FM-02.1) | Modal hỗ trợ đổi ô kho ngoại lệ khi bảo trì hoặc phát sinh sự cố |
 | 15 | | `SCR-FM-03` | Staff Shift Scheduling & Task Dispatch Board | Phân công ca trực và nhiệm vụ bàn giao trong ngày |
 | 16 | | `SCR-FM-04` | Facility Performance & Occupancy Analytics | Thống kê hiệu suất và tỷ lệ lấp đầy Usage Rate |
 | 17 | | `SCR-FM-04.1`| Facility Performance & Occupancy Analytics (Default View) | Chế độ xem mặc định biểu đồ tỷ lệ lấp đầy cơ sở |

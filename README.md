@@ -31,8 +31,8 @@ Chi tiết chức năng của từng tác nhân: [docs/TOPIC.md § 3](docs/TOPIC
 | # | Luồng | Mô tả ngắn |
 |---|-------|-----------|
 | 1 | **Storage Unit Reservation** | Chọn Facility, Unit Type và khoảng thuê; giữ capacity, trả trước phí thuê N tháng cùng Deposit rồi phân bổ Storage Unit |
-| 2 | **Storage Check-in and Handover** | Check-in theo lịch hẹn và bàn giao ô kho kèm khóa / thẻ / mã truy cập |
-| 3 | **Rented Storage Unit Management** | Quản lý các ô kho đang thuê, theo dõi hợp đồng và quy trình trả kho |
+| 2 | **Storage Check-in and Handover** | Check-in theo lịch hẹn, nghiệm thu và bàn giao ô kho kèm khóa / mã PIN (không dùng thẻ RFID) |
+| 3 | **Rented Storage Unit Management** | Quản lý các ô kho đang thuê, tự động trả kho khi hết hạn nếu không gia hạn trước 1 tháng |
 | 4 | **Business Rules, Fee Management & Revenue Monitoring** | Chính sách thuê, khung giá, phụ phí và giám sát doanh thu toàn hệ thống |
 | 5 | **Facility Storage and Staff Management** | Quản lý danh mục ô kho và phân công nhân viên tại cơ sở |
 
@@ -40,7 +40,7 @@ Chi tiết chức năng của từng tác nhân: [docs/TOPIC.md § 3](docs/TOPIC
 
 | # | Luồng | Mô tả ngắn |
 |---|-------|-----------|
-| 6 | **Storage Renewal and Overdue Handling** | Renewal tự động sau Payment; scheduled job Overdue tại D+1, D+4, D+10, D+30 và D+60 (`UC-F6-11`); FM xử lý tài sản |
+| 6 | **Storage Renewal and Overdue Handling** | Gia hạn (Renew) khi còn hạn; xử lý quá hạn: tính phí D+4..D+10, quá D+10 chấm dứt hợp đồng và dọn dẹp kho |
 | 7 | **Support Request and Issue Handling** | Tiếp nhận yêu cầu hỗ trợ và xử lý sự cố (khóa, mã truy cập, hư hỏng, thanh toán) |
 
 Chi tiết từng luồng: [docs/TOPIC.md § 4–5](docs/TOPIC.md#4-các-luồng-nghiệp-vụ-chính-flow-15)
@@ -64,15 +64,14 @@ Chi tiết từng luồng: [docs/TOPIC.md § 4–5](docs/TOPIC.md#4-các-luồng
     ├── OPEN-ISSUES.md     # Sổ vấn đề mở đang chờ quyết
     ├── check-docs.sh      # Script kiểm tính nhất quán giữa các tài liệu
     └── diagrams/
-        ├── use-case-diagram.puml              # Use Case Diagram tổng (PlantUML)
-        ├── activity-flow-1-booking.puml       # Activity Diagram Flow 1 — Reservation (T1.7)
-        ├── activity-flow2-checkin-handover.puml # Activity Diagram Flow 2 — Check-in / Handover (T1.7)
-        ├── activity-main-flow-end-to-end.puml # Activity Diagram Main Flow end-to-end (T1.7b)
-        ├── activity-flow-3.puml               # Activity Diagram Flow 3 — Return (T1.8)
-        ├── activity-flow-4.puml               # Activity Diagram Flow 4 — Business Rules / Fee / Revenue (T1.9)
-        ├── activity-flow-5.puml               # Activity Diagram Flow 5 — Facility Storage / Staff (T1.9)
-        ├── activity-flow-6.puml               # Activity Diagram Flow 6 — Renewal / Overdue (T1.8)
-        └── activity-flow-7.puml               # Activity Diagram Flow 7 — Support Request (T1.9)
+        ├── activity-diagram-flow-1-storage-reservation.drawio      # Activity Diagram Flow 1 — Reservation
+        ├── activity-diagram-flow-2-checkin-handover.drawio         # Activity Diagram Flow 2 — Check-in / Handover
+        ├── activity-diagram-flow-3-1-contract-renewal.drawio       # Activity Diagram Flow 6.1 — Renewal
+        ├── activity-diagram-flow-3-2-overdue-handling.drawio       # Activity Diagram Flow 6.2 — Overdue
+        ├── activity-diagram-flow-4-business-operations.drawio      # Activity Diagram Flow 4 — Business Rules / Fee / Revenue
+        ├── activity-diagram-flow-5-facility-staff-management.drawio # Activity Diagram Flow 5 — Facility Storage / Staff
+        ├── activity-diagram-flow-7-support-incident-handling.drawio # Activity Diagram Flow 7 — Support Request
+        └── _archive/                          # Sơ đồ PlantUML (.puml) cũ đã lưu trữ
 ```
 
 Cấu trúc mã nguồn (`backend/`, `frontend/`) sẽ được bổ sung ở nhiệm vụ T1.16 và T1.17.
@@ -114,13 +113,13 @@ Chi tiết nhiệm vụ từng giai đoạn: [docs/PLAN.md](docs/PLAN.md) · B�
 | Kế hoạch triển khai | ✅ Hoàn thành — [docs/PLAN.md](docs/PLAN.md) |
 | Công nghệ sử dụng | ✅ Đã chốt — Spring Boot · React · SQL Server |
 | Phân rã use case | ✅ Hoàn thành — [docs/USE-CASES.md](docs/USE-CASES.md) |
-| Use Case Diagram tổng | ✅ Hoàn thành — [docs/diagrams/](docs/diagrams/use-case-diagram.puml) |
+| Use Case Diagram tổng | ✅ Hoàn thành — [docs/diagrams/](docs/diagrams/_archive/use-case-diagram.puml) |
 | Business rules | ✅ Hoàn thành — [docs/BUSINESS-RULES.md](docs/BUSINESS-RULES.md) |
 | Coding convention & Git workflow | ✅ Hoàn thành — [docs/CONVENTIONS.md](docs/CONVENTIONS.md) · [CONTRIBUTING.md](CONTRIBUTING.md) |
 | User story — Storage Customer | ✅ Hoàn thành — [docs/USER-STORIES-SC.md](docs/USER-STORIES-SC.md) |
 | User story — Facility Staff và Facility Manager | ✅ Hoàn thành — [docs/USER-STORIES-FS-FM.md](docs/USER-STORIES-FS-FM.md) |
 | User story — Business Operations Manager và System Administrator | ✅ Hoàn thành — [docs/USER-STORIES-BM-SA.md](docs/USER-STORIES-BM-SA.md) |
-| Activity Diagram 7 flow | ✅ Hoàn thành — [docs/diagrams/](docs/diagrams/activity-flow-4.puml) (T1.7, T1.7b, T1.8, T1.9) |
+| Activity Diagram 7 flow | ✅ Hoàn thành — [docs/diagrams/](docs/diagrams/activity-diagram-flow-1-storage-reservation.drawio) (Draw.io) |
 | Thiết kế cơ sở dữ liệu (ERD) | 🔄 Đang thực hiện — nhiệm vụ T1.10, T1.11 |
 | Thiết kế giao diện (wireframe / UI) | 🔄 Đang thực hiện — nhiệm vụ T1.13, T1.14, T1.15 |
 | Khung dự án Backend + Frontend | ⬜ Chưa bắt đầu — nhiệm vụ T1.16, T1.17 |
@@ -179,15 +178,14 @@ Danh sách nhiệm vụ đầy đủ kèm người phụ trách và hạn: [docs
 - [docs/USE-CASES.md](docs/USE-CASES.md) — Phân rã Flow 1–7 thành 73 use case, kèm bản đồ phủ 27 mã yêu cầu.
 - [docs/USER-STORIES-SC.md](docs/USER-STORIES-SC.md) — 22 user story và 111 acceptance criteria cho Storage Customer.
 - [docs/BUSINESS-RULES.md](docs/BUSINESS-RULES.md) — Baseline Reservation, Availability, Pricing, Payment, Deposit, Cancellation, Renewal, Overdue và Return.
-- [docs/diagrams/use-case-diagram.puml](docs/diagrams/use-case-diagram.puml) — Use Case Diagram tổng (PlantUML).
-- [docs/diagrams/activity-flow-1-booking.puml](docs/diagrams/activity-flow-1-booking.puml) — Activity Diagram Flow 1 (Reservation).
-- [docs/diagrams/activity-flow2-checkin-handover.puml](docs/diagrams/activity-flow2-checkin-handover.puml) — Activity Diagram Flow 2 (Check-in / Handover).
-- [docs/diagrams/activity-main-flow-end-to-end.puml](docs/diagrams/activity-main-flow-end-to-end.puml) — Activity Diagram Main Flow end-to-end (demo).
-- [docs/diagrams/activity-flow-3.puml](docs/diagrams/activity-flow-3.puml) — Activity Diagram Flow 3 (Return).
-- [docs/diagrams/activity-flow-4.puml](docs/diagrams/activity-flow-4.puml) — Activity Diagram Flow 4 (Business Rules, Fee Management, Revenue Monitoring).
-- [docs/diagrams/activity-flow-5.puml](docs/diagrams/activity-flow-5.puml) — Activity Diagram Flow 5 (Facility Storage and Staff Management).
-- [docs/diagrams/activity-flow-6.puml](docs/diagrams/activity-flow-6.puml) — Activity Diagram Flow 6 (Renewal / Overdue).
-- [docs/diagrams/activity-flow-7.puml](docs/diagrams/activity-flow-7.puml) — Activity Diagram Flow 7 (Support Request and Issue Handling).
+- [docs/diagrams/activity-diagram-flow-1-storage-reservation.drawio](docs/diagrams/activity-diagram-flow-1-storage-reservation.drawio) — Activity Diagram Flow 1 (Reservation).
+- [docs/diagrams/activity-diagram-flow-2-checkin-handover.drawio](docs/diagrams/activity-diagram-flow-2-checkin-handover.drawio) — Activity Diagram Flow 2 (Check-in / Handover).
+- [docs/diagrams/activity-diagram-flow-3-1-contract-renewal.drawio](docs/diagrams/activity-diagram-flow-3-1-contract-renewal.drawio) — Activity Diagram Flow 6.1 (Storage Renewal).
+- [docs/diagrams/activity-diagram-flow-3-2-overdue-handling.drawio](docs/diagrams/activity-diagram-flow-3-2-overdue-handling.drawio) — Activity Diagram Flow 6.2 (Overdue Handling).
+- [docs/diagrams/activity-diagram-flow-4-business-operations.drawio](docs/diagrams/activity-diagram-flow-4-business-operations.drawio) — Activity Diagram Flow 4 (Business Rules, Fee Management, Revenue Monitoring).
+- [docs/diagrams/activity-diagram-flow-5-facility-staff-management.drawio](docs/diagrams/activity-diagram-flow-5-facility-staff-management.drawio) — Activity Diagram Flow 5 (Facility Storage and Staff Management).
+- [docs/diagrams/activity-diagram-flow-7-support-incident-handling.drawio](docs/diagrams/activity-diagram-flow-7-support-incident-handling.drawio) — Activity Diagram Flow 7 (Support Request and Issue Handling).
+- [docs/diagrams/_archive/](docs/diagrams/_archive/use-case-diagram.puml) — Thư mục lưu trữ các sơ đồ PlantUML (.puml) cũ.
 
 **Quy ước kỹ thuật**
 

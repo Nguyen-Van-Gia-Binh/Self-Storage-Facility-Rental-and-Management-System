@@ -122,7 +122,7 @@ một mã UC.
 
 ## 4. T1.6 — Use Case Diagram
 
-**Tài liệu:** [diagrams/use-case-diagram.puml](diagrams/use-case-diagram.puml) · **Hạn:** 14/09
+**Tài liệu:** [diagrams/_archive/use-case-diagram.puml](diagrams/_archive/use-case-diagram.puml) · **Hạn:** 14/09
 
 > ⚠️ File `.puml` này **chưa từng được render**. Lỗi cú pháp là hoàn toàn có thể. Phép kiểm đầu tiên
 > vì thế là phép kiểm quan trọng nhất.
@@ -148,7 +148,7 @@ Rà 27 quan hệ `include` / `extend` ở cuối file. Quy tắc chiều mũi t�
 **gọi** sang use case **bị gọi**; `extend` đi từ use case **mở rộng** sang use case **gốc**.
 
 - [X] Đã bỏ `UCF109 ..> UCF107`: xem / nhận lại lịch hẹn không gọi thanh toán lần nữa (`ISS-05`)
-- [X] Giữ `UCF107 ..> UCF108`: thanh toán thành công gọi phân bổ Storage Unit theo `BR-AVL-04`
+- [X] Giữ `UCF107 ..> UCF108`: thanh toán thành công gọi khóa Storage Unit theo `BR-AVL-04`
 - [ ] Không có oval nào mồ côi — mọi use case đều nối với ít nhất một actor, hoặc với một use case
   khác qua include/extend
 
@@ -188,7 +188,7 @@ Cách duy nhất hiệu quả. **Tự tính trước, rồi mới mở tài li�
   **800.000 đ**
 - [X] **KB9** — Hai khách đồng thời tranh capacity slot cuối → đúng một Reservation *Pending Payment*;
   yêu cầu còn lại bị từ chối, không thu tiền và không overbook
-- [X] **KB10** — Payment **3.200.000 đ** thành công nhưng phân bổ unit thất bại → hoàn đủ
+- [X] **KB10** — Payment **3.200.000 đ** thành công nhưng khóa unit thất bại → hoàn đủ
   **3.200.000 đ**, Reservation không *Confirmed* và không tạo Contract
 - [X] **KB11** — Giá/policy đổi trong 48 giờ giữ capacity → Reservation cũ dùng snapshot lúc tạo;
   với dữ liệu mẫu vẫn thu **3.200.000 đ**
@@ -202,9 +202,7 @@ Cách duy nhất hiệu quả. **Tự tính trước, rồi mới mở tài li�
   chối và thu **0 đ**
 - [X] **KB16** — Yêu cầu Return trước hạn 3 ngày → hẹn sớm nhất sau 7 ngày, tức D+4; tại lịch hẹn
   Contract *Overdue*, Access còn dùng được và phí là **40.000 đ**
-- [X] **KB17** — Contract tới D+60, không có chi phí khác → phí **400.000 đ**, còn **400.000 đ**
-  Deposit sau cấn trừ; Contract *Terminated*, Access *Revoked*, unit còn *Occupied* tới khi Facility
-  Manager lập biên bản, chuyển tài sản an toàn rồi đưa unit sang *Cleaning*
+- [X] **KB17** — Contract tới D+10, không có chi phí khác → phí tính theo `BR-OVD-02` (7 ngày × 5% = 35% tiền cọc, chạm trần 35%); Contract *Terminated*, Access *Revoked*, ô kho chuyển *Cleaning*/*Maintaining*; Facility Manager phân công nhân viên thu dọn đồ về kho chung
 - [X] **KB18** — Facility Manager đề xuất giảm **100.000 đ** từ phí 400.000 đ → Business Operations
   Manager duyệt còn **300.000 đ**; ledger có *Adjusted* và audit log lưu người đề xuất, người duyệt, lý do
 - [X] **KB19** — Thanh toán Reservation bắt đầu sau khi Contract Occupied hiện tại kết thúc →
@@ -216,12 +214,12 @@ Cách duy nhất hiệu quả. **Tự tính trước, rồi mới mở tài li�
 
 ### Lớp 3 — kiểm mâu thuẫn
 
-- [ ] Vẽ một trục thời gian, đặt hết mọi mốc lên đó: 48h giữ chỗ · 3 ngày check-in · 7 ngày báo trả ·
-  D+3 · D+10 · D+13 · D+30 · D+60. Kiểm không có mốc nào chồng chéo hoặc sai thứ tự
+- [X] Vẽ một trục thời gian, đặt hết mọi mốc lên đó: 48h giữ chỗ · 3 ngày check-in · 3 ngày báo trả ·
+  D+1..D+3 ân hạn · D+4 tính phí · D+10 chấm dứt. Kiểm không có mốc nào chồng chéo hoặc sai thứ tự
 
 ### Lớp 3 — kiểm khả thi dữ liệu
 
-- [ ] Với mỗi nhóm `BR-*`, trả lời: *"để tính được cái này, hệ thống phải lưu trường dữ liệu gì?"*
+- [X] Với mỗi nhóm `BR-*`, trả lời: *"để tính được cái này, hệ thống phải lưu trường dữ liệu gì?"*
   Danh sách trả lời chính là đầu vào cho **T1.10** (ERD) — làm luôn ở đây thì Tùng đỡ phải đoán
 
 ### Điều kiện phụ thuộc người khác
