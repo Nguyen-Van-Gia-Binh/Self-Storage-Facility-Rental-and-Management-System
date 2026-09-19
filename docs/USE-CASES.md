@@ -88,7 +88,7 @@ Activity Diagram: [activity-diagram-flow-2-checkin-handover.drawio](diagrams/act
 
 *Luồng quản lý ô kho đang thuê.* Tác nhân chính: **Storage Customer** · Liên quan: **Facility Manager**, **Facility Staff**
 
-Activity Diagram: [activity-diagram-flow-3-1-contract-renewal.drawio](diagrams/activity-diagram-flow-3-1-contract-renewal.drawio) (lưu trữ cũ: [diagrams/_archive/activity-flow-3.puml](diagrams/_archive/activity-flow-3.puml)) — giám sát (`UC-F3-01`–`04`, `UC-F3-10`–`12`) và quy trình Return (`UC-F3-05`–`09`, `UC-F3-13`).
+Activity Diagram: (lưu trữ: [diagrams/_archive/activity-flow-3.puml](diagrams/_archive/activity-flow-3.puml)) — giám sát (`UC-F3-01`–`04`, `UC-F3-10`–`12`) và quy trình Return (`UC-F3-05`–`09`, `UC-F3-13`).
 
 | Mã UC       | Use case                                                                    | Actor chính     | Actor liên quan | Mã yêu cầu        |
 | ------------ | --------------------------------------------------------------------------- | ---------------- | ---------------- | -------------------- |
@@ -159,10 +159,10 @@ Activity Diagram: [activity-diagram-flow-3-1-contract-renewal.drawio](diagrams/a
 
 | Mã UC       | Use case                                                       | Actor chính     | Actor liên quan | Mã yêu cầu        |
 | ------------ | -------------------------------------------------------------- | ---------------- | ---------------- | -------------------- |
-| `UC-F6-01` | Nhận thông báo nhắc hạn (trước 1 tháng, 7, 3, 1 ngày) | Storage Customer | System           | `SC-05`, `BM-02` |
-| `UC-F6-02` | Yêu cầu gia hạn hợp đồng thuê khi còn hạn               | Storage Customer | Facility Manager | `SC-05`            |
-| `UC-F6-03` | Thanh toán phí gia hạn                                      | Storage Customer | —               | `SC-03`            |
-| `UC-F6-04` | Tự động ghi nhận gia hạn sau Payment thành công        | System           | Facility Manager  | `FM-04`            |
+| `UC-F6-01` | Nhận thông báo nhắc gia hạn (từ trước 2 tháng, và 7, 3, 1 ngày trước mốc khóa gia hạn) | Storage Customer | System           | `SC-05`, `BM-02` |
+| `UC-F6-02` | Yêu cầu gia hạn hợp đồng thuê trước mốc 1 tháng (kiểm tra không bị đặt trước) | Storage Customer | Facility Manager | `SC-05`            |
+| `UC-F6-03` | Thanh toán phí gia hạn N tháng qua cổng thanh toán trực tuyến | Storage Customer | —               | `SC-03`            |
+| `UC-F6-04` | Tự động dời ngày kết thúc Contract sau Payment thành công (giữ nguyên ô kho) | System           | Facility Manager  | `FM-04`            |
 | `UC-F6-05` | Phát hiện hợp đồng quá hạn theo lịch chạy tự động  | System           | Facility Manager | `FM-04`            |
 | `UC-F6-06` | Tính và áp phí quá hạn theo ngày từ D+4 đến D+10       | System           | Facility Manager | `FM-04`, `BM-03` |
 | `UC-F6-07` | Tự động khóa Access Credential tại D+10              | System           | Facility Manager  | `FM-04`            |
@@ -259,8 +259,8 @@ Bản chuẩn UML lưu trữ: **[diagrams/_archive/use-case-diagram.puml](diagra
 
 Activity Diagram đủ 7 flow: Flow 1 [activity-diagram-flow-1-storage-reservation.drawio](diagrams/activity-diagram-flow-1-storage-reservation.drawio) (lưu trữ cũ: [activity-flow-1-booking.puml](diagrams/_archive/activity-flow-1-booking.puml)) ·
 Flow 2 [activity-diagram-flow-2-checkin-handover.drawio](diagrams/activity-diagram-flow-2-checkin-handover.drawio) (lưu trữ cũ: [activity-flow2-checkin-handover.puml](diagrams/_archive/activity-flow2-checkin-handover.puml)) ·
-Flow 3 [activity-diagram-flow-3-1-contract-renewal.drawio](diagrams/activity-diagram-flow-3-1-contract-renewal.drawio) (lưu trữ cũ: [activity-flow-3.puml](diagrams/_archive/activity-flow-3.puml)) ·
-Flow 6 [activity-diagram-flow-3-1-contract-renewal.drawio](diagrams/activity-diagram-flow-3-1-contract-renewal.drawio), [activity-diagram-flow-3-2-overdue-handling.drawio](diagrams/activity-diagram-flow-3-2-overdue-handling.drawio) (lưu trữ cũ: [activity-flow-6.puml](diagrams/_archive/activity-flow-6.puml)) ·
+Flow 3 (lưu trữ: [activity-flow-3.puml](diagrams/_archive/activity-flow-3.puml)) ·
+Flow 6 [activity-diagram-flow-3-1-contract-renewal.drawio](diagrams/activity-diagram-flow-3-1-contract-renewal.drawio) (Sub-flow 6.1 Renewal), [activity-diagram-flow-3-2-overdue-handling.drawio](diagrams/activity-diagram-flow-3-2-overdue-handling.drawio) (Sub-flow 6.2 Overdue, lưu trữ cũ: [activity-flow-6.puml](diagrams/_archive/activity-flow-6.puml)) ·
 Flow 4 [activity-diagram-flow-4-business-operations.drawio](diagrams/activity-diagram-flow-4-business-operations.drawio) (lưu trữ cũ: [activity-flow-4.puml](diagrams/_archive/activity-flow-4.puml)) ·
 Flow 5 [activity-diagram-flow-5-facility-staff-management.drawio](diagrams/activity-diagram-flow-5-facility-staff-management.drawio) (lưu trữ cũ: [activity-flow-5.puml](diagrams/_archive/activity-flow-5.puml)) ·
 Flow 7 [activity-diagram-flow-7-support-incident-handling.drawio](diagrams/activity-diagram-flow-7-support-incident-handling.drawio) (lưu trữ cũ: [activity-flow-7.puml](diagrams/_archive/activity-flow-7.puml)).

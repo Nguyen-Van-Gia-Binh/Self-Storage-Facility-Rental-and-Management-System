@@ -158,7 +158,7 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 - **Tác nhân liên quan:** Business Operations Manager
 - **Phạm vi liên quan:** `SC-03`, `SC-05`, `FM-03`, `FM-04`, `FM-06`, `BM-02`, `BM-03`
 - **Nội dung dự kiến:** 
-  - **Sub-flow 6.1 (Gia hạn):** Khách gửi yêu cầu gia hạn (Renew) khi hợp đồng còn hạn → hệ thống kiểm tra tính hợp lệ: nếu hợp lệ thì xác nhận gia hạn và thanh toán; nếu không hợp lệ thì thông báo từ chối gia hạn.
+  - **Sub-flow 6.1 (Gia hạn):** Hệ thống tự động gửi nhắc gia hạn từ trước 2 tháng (và đếm ngược 7, 3, 1 ngày trước mốc khóa gia hạn trước 1 tháng). Khách gửi yêu cầu gia hạn trước ngày hết hạn ít nhất 1 tháng → hệ thống kiểm tra tính hợp lệ (ô kho không có ai đặt trước trong tương lai): nếu hợp lệ thì chọn sẵn ô kho, khách chọn số tháng và thanh toán phí gia hạn qua cổng trực tuyến; nếu không hợp lệ hoặc quá mốc 1 tháng thì hệ thống từ chối gia hạn và tự động chuyển sang tiến trình trả kho khi đến hạn.
   - **Sub-flow 6.2 (Xử lý quá hạn):** Hợp đồng hết hạn, hệ thống gửi thông báo nhắc dọn đồ mỗi ngày trong 10 ngày. Từ ngày thứ 4 đến ngày thứ 10 (D+4 → D+10), hệ thống tự động tính phí quá hạn mỗi ngày. Quá 10 ngày (D+10): chấm dứt hợp đồng, khóa quyền truy cập, ô kho chuyển sang Cleaning/Maintaining; FM phân công Staff dọn dẹp, đồ đạc của khách được niêm phong đưa về kho tổng để FM xử lý ngoại tuyến (offline).
 
 ### Flow 7 — Support Request and Issue Handling Flow

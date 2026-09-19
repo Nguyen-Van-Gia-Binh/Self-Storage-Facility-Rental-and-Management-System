@@ -480,8 +480,8 @@ Tổng cộng **22 user story**, **111 acceptance criteria**, **95 story point**
 
 **Acceptance Criteria**
 
-- **AC-1** — *Given* hợp đồng của tôi còn 30 ngày (1 tháng), 7, 3 hoặc 1 ngày là hết hạn, *when* tác vụ nhắc hạn chạy,
-  *then* tôi nhận thông báo nhắc hạn theo `BR-REN-01`; nếu trước 1 tháng tôi không gia hạn, hệ thống tự động ghi nhận chuẩn bị trả kho khi đến hạn.
+- **AC-1** — *Given* hợp đồng của tôi còn 60 ngày (2 tháng) hoặc 7, 3, 1 ngày trước mốc khóa gia hạn (trước 1 tháng), *when* tác vụ nhắc gia hạn chạy,
+  *then* tôi nhận thông báo nhắc gia hạn theo `BR-REN-01`; nếu trước 1 tháng tôi không gia hạn, hệ thống tự động khóa tính năng gia hạn và kích hoạt tiến trình chuẩn bị trả kho khi đến hạn.
 - **AC-2** — *Given* tôi bấm gia hạn, *when* màn hình mở ra, *then* tôi chọn được số tháng gia hạn
   từ 1 tới 12 tháng theo `BR-REN-03` và `BR-REN-07`, và thấy ngay số tiền tương ứng.
 - **AC-3** — *Given* tôi gia hạn thành công, *when* hệ thống xử lý xong, *then* ô kho của tôi
@@ -490,9 +490,9 @@ Tổng cộng **22 user story**, **111 acceptance criteria**, **95 story point**
   khoản nợ được gộp vào tổng phải trả theo `BR-REN-06`, hiển thị thành dòng riêng.
 - **AC-5** — *Given* hợp đồng của tôi đã *Terminated*, *when* tôi cố gia hạn, *then* hệ thống từ chối
   theo `BR-REN-02` và hướng dẫn tôi đặt hợp đồng mới.
-- **AC-6** — *Given* capacity cho khoảng gia hạn đã được Reservation khác cam kết trước, *when* tôi
-  xác nhận Renewal, *then* hệ thống từ chối trước khi thu tiền, không hủy commitment cũ và hướng dẫn
-  tôi Return hoặc tạo Reservation mới theo `BR-REN-09`.
+- **AC-6** — *Given* ô kho trong khoảng gia hạn đã có người khác đặt trước trong tương lai (xung đột capacity commitment), *when* tôi
+  yêu cầu Renewal, *then* hệ thống từ chối trước khi thu tiền, không hủy commitment cũ và hướng dẫn
+  tôi chuẩn bị trả kho hoặc tạo Reservation mới theo `BR-REN-09`.
 
 ---
 
