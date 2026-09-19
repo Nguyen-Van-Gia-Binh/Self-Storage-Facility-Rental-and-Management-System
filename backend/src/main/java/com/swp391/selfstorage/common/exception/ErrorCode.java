@@ -1,9 +1,7 @@
 package com.swp391.selfstorage.common.exception;
 
-import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
-@Getter
 public enum ErrorCode {
     // 400 Bad Request
     VALIDATION_FAILED(HttpStatus.BAD_REQUEST, "Dữ liệu yêu cầu không hợp lệ"),
@@ -39,5 +37,13 @@ public enum ErrorCode {
     ErrorCode(HttpStatus httpStatus, String defaultMessage) {
         this.httpStatus = httpStatus;
         this.defaultMessage = defaultMessage;
+    }
+
+    public HttpStatus getHttpStatus() {
+        return httpStatus;
+    }
+
+    public String getDefaultMessage() {
+        return defaultMessage;
     }
 }

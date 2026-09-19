@@ -14,11 +14,11 @@ public class CorsConfig {
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
-        // Cho phép Frontend React chạy ở localhost:3000 / localhost:5173
-        config.setAllowedOriginPatterns(List.of("http://localhost:3000", "http://localhost:5173"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        config.setAllowCredentials(true);
+        config.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000"));
         config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true); // Để gửi HttpOnly Cookie (RefreshToken)
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
