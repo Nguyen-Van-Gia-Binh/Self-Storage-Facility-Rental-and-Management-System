@@ -58,19 +58,19 @@ bảng chính sách của hệ thống (`BM-02`, `BM-03`).
 | `cancel.full_refund_hours` | Hủy trước ngày bắt đầu bao nhiêu giờ thì hoàn 100% | `48 giờ` | `BR-CAN-01` |
 | `cancel.late_refund_rate` | Tỷ lệ hoàn Deposit khi hủy muộn | `50%` | `BR-CAN-02` |
 | `cancel.no_show_refund_rate` | Tỷ lệ hoàn Deposit khi no-show | `0%` | `BR-CAN-04` |
-| `renewal.reminder_days` | Các mốc nhắc hạn trước ngày hết hạn | `7, 3, 1` | `BR-REN-01` |
+| `renewal.reminder_days` | Các mốc nhắc hạn trước ngày hết hạn | `30, 7, 3, 1` | `BR-REN-01` |
 | `renewal.min_months` | Thời hạn gia hạn tối thiểu | `1 tháng` | `BR-REN-03` |
 | `renewal.max_months` | Thời hạn gia hạn tối đa trong một lần | `12 tháng` | `BR-REN-07` |
-| `overdue.grace_days` | Ân hạn sau ngày hết hạn, chưa tính phí | `3 ngày` | `BR-OVD-02` |
-| `overdue.daily_rate` | Phí quá hạn mỗi ngày, tính trên tiền thuê một tháng | `5%` | `BR-OVD-03` |
-| `overdue.cap_rate` | Trần tổng phí quá hạn của một kỳ | `50%` | `BR-OVD-04` |
-| `overdue.lock_access_days` | Số ngày quá hạn thì khóa Access Code | `10 ngày` | `BR-OVD-05`, `BR-ACC-02` |
-| `overdue.notice_days` | Số ngày quá hạn thì gửi thông báo chấm dứt | `30 ngày` | `BR-OVD-06` |
-| `overdue.termination_days` | Số ngày quá hạn thì chấm dứt hợp đồng | `60 ngày` | `BR-OVD-07` |
-| `return.notice_days` | Số ngày báo trước khi trả kho | `7 ngày` | `BR-RET-01` |
-| `return.refund_working_days` | Số ngày làm việc để hoàn Deposit | `7 ngày` | `BR-RET-05` |
+| `overdue.grace_days` | Ân hạn sau ngày hết hạn, gửi thông báo dọn đồ, chưa tính phí | `3 ngày` | `BR-OVD-02` |
+| `overdue.daily_rate` | Phí quá hạn mỗi ngày, tính trên tiền thuê một tháng (D+4..D+10) | `5%` | `BR-OVD-03` |
+| `overdue.cap_rate` | Trần tổng phí quá hạn (tối đa 7 ngày tính phí = 35%) | `35%` | `BR-OVD-04` |
+| `overdue.lock_access_days` | Số ngày quá hạn thì khóa mã truy cập và chấm dứt hợp đồng | `10 ngày` | `BR-OVD-04`, `BR-OVD-05`, `BR-ACC-02` |
+| `overdue.termination_days` | Số ngày quá hạn thì chấm dứt hợp đồng và chuyển kho sang dọn dẹp | `10 ngày` | `BR-OVD-04`, `BR-OVD-07` |
+| `checkin.refund_working_days` | Số ngày làm việc để FM xử lý hoàn tiền khi từ chối nhận kho | `3 ngày` | `BR-CHK-06` |
+| `return.notice_days` | Mốc tự động đánh dấu trả kho nếu không gia hạn trước ngày hết hạn | `30 ngày` | `BR-REN-01`, `BR-RET-01` |
+| `return.refund_working_days` | Số ngày làm việc để hoàn Deposit sau khi nghiệm thu | `7 ngày` | `BR-RET-05` |
 | `return.early_refund_rate` | Tỷ lệ hoàn tiền thuê phần chưa dùng khi trả sớm | `0%` | `BR-RET-06` |
-| `access.pin_length` | Độ dài chữ số của mã PIN truy cập | `6 số` | `BR-ACC-01` |
+| `access.pin_length` | Độ dài chữ số của mã PIN truy cập (không dùng thẻ RFID) | `6 số` | `BR-ACC-01` |
 | `support.urgent_sla_hours` | Thời hạn cam kết xử lý sự cố truy cập khẩn cấp tại cơ sở | `2 giờ` | `BR-SUP-01` |
 | `support.auto_close_working_days` | Số ngày làm việc chờ khách phản hồi trước khi tự đóng Support Request | `7 ngày` | `BR-SUP-03` |
 
@@ -83,7 +83,7 @@ bảng chính sách của hệ thống (`BM-02`, `BM-03`).
 | Mã | Quy tắc |
 |----|---------|
 | `BR-RES-01` | Reservation chỉ được tạo khi Facility và Unit Type đang hoạt động, ngày bắt đầu không ở quá khứ và thời hạn thuê là số tháng nguyên dương. Khoảng thuê dùng dạng **[ngày bắt đầu, ngày kết thúc loại trừ)**; ngày kết thúc loại trừ = ngày bắt đầu cộng N tháng |
-| `BR-RES-02` | Khi tạo thành công, Reservation ở trạng thái *Pending Payment*, giữ một capacity slot theo **Facility × Unit Type × khoảng thuê**, chưa gắn Storage Unit cụ thể |
+| `BR-RES-02` | Khi tạo thành công, Reservation ở trạng thái *Pending Payment*, gắn trực tiếp và tạm giữ chính Storage Unit mà khách hàng đã chọn trên sơ đồ/danh sách trong `reservation.hold_hours` (48 giờ), ngăn không cho khách hàng khác chọn trùng ô kho này |
 | `BR-RES-03` | Một Storage Customer có thể có nhiều Reservation *Pending Payment*; mỗi Reservation giữ capacity và hết hạn độc lập. Khách có Contract *Overdue* bị chặn theo `BR-OVD-09` |
 | `BR-RES-04` | Reservation *Pending Payment* có thể được khách hủy; vì chưa thu tiền nên không phát sinh hoàn tiền và capacity được giải phóng ngay |
 | `BR-RES-05` | Reservation chỉ hoàn tất ở trạng thái *Fulfilled* sau Check-in / Handover thành công. Từ thời điểm đó, việc kết thúc thuê đi theo Return (§ 9), không đi theo Cancellation (§ 6) |
@@ -95,7 +95,7 @@ bảng chính sách của hệ thống (`BM-02`, `BM-03`).
 | `BR-AVL-01` | Availability của một Unit Type tại Facility cho một khoảng thuê bằng số Storage Unit có thể khai thác trừ một slot cho mỗi nghĩa vụ phục vụ có khoảng thời gian giao nhau. Nghĩa vụ gồm Reservation *Pending Payment* hoặc Reservation đã sinh Contract; một Reservation và Contract kế thừa của nó chỉ tính **một lần**. Storage Unit *Maintenance* hoặc *Out of service* không được tính vào capacity có thể khai thác |
 | `BR-AVL-02` | Hai khoảng thuê dạng `[start, endExclusive)` giao nhau khi `startA < endExclusiveB` và `startB < endExclusiveA`. Hai kỳ liền kề tại cùng một mốc không giao nhau |
 | `BR-AVL-03` | Việc kiểm tra và giữ capacity khi tạo Reservation phải là một thao tác nguyên tử: khi capacity cuối cùng đã được giữ, yêu cầu đồng thời còn lại phải bị từ chối; hệ thống không được overbook |
-| `BR-AVL-04` | Sau khi thanh toán đủ thành công, Facility Manager xem danh sách và chọn thủ công một Storage Unit để gán cho Reservation (`UC-F1-08`). Hệ thống chỉ hiển thị các unit hợp lệ đúng Facility × Unit Type có khoảng Occupied/Reserved **không giao** với kỳ thuê mới (loại trừ unit *Maintenance* hoặc *Out of service*). Khi Facility Manager xác nhận chọn, hệ thống thực hiện thao tác nguyên tử gắn `unit_id` và chuyển Reservation sang *Confirmed* để chống overbook đồng thời. Nếu unit đang *Available* → *Reserved*. Nếu đang *Occupied* và kỳ Occupied kết thúc trước ngày bắt đầu kỳ mới → **không đổi** trạng thái unit; đây là future claim |
+| `BR-AVL-04` | Khách hàng trực tiếp chọn ô kho vật lý cụ thể trên sơ đồ mặt bằng / danh sách ô kho khả dụng ngay tại bước đặt chỗ (`UC-F1-04`). Khi tạo đơn, hệ thống tạm giữ chính ô kho đó trong 48h (`BR-RES-02`, `BR-DEP-03`). Sau khi thanh toán thành công (`UC-F1-07`), hệ thống tự động khóa chính thức ô kho khách đã chọn: chuyển Reservation sang *Confirmed* và Storage Unit sang *Reserved* (`UC-F1-08`, `BR-PAY-02`). Nếu unit đang *Occupied* và kỳ Occupied kết thúc trước ngày bắt đầu kỳ mới → **không đổi** trạng thái unit; đây là future claim. Không cần bước phân bổ ô kho sau thanh toán |
 | `BR-AVL-05` | Nếu không thể phân bổ unit do capacity thay đổi ngoài dự kiến, Reservation không được xác nhận; khoản vừa thu phải được hoàn toàn bộ về phương thức gốc. Không được tạo Contract không có Storage Unit |
 
 ---
@@ -115,7 +115,7 @@ bảng chính sách của hệ thống (`BM-02`, `BM-03`).
 | Mã | Quy tắc |
 |----|---------|
 | `BR-PAY-01` | Khoản thanh toán ban đầu phải gồm **toàn bộ phí thuê N tháng + Deposit + phụ phí trả trước**, thực hiện trong một giao dịch; không chấp nhận thanh toán một phần |
-| `BR-PAY-02` | Reservation chỉ chuyển *Confirmed* sau khi giao dịch được xác nhận thành công và một Storage Unit cụ thể được phân bổ theo `BR-AVL-04` |
+| `BR-PAY-02` | Reservation chỉ chuyển *Confirmed* sau khi giao dịch thanh toán được xác nhận thành công và Storage Unit khách đã chọn được khóa chính thức sang *Reserved* theo `BR-AVL-04` |
 | `BR-PAY-03` | Thanh toán thất bại không làm đổi trạng thái Reservation; khách được thử lại khi Reservation còn *Pending Payment* và chưa hết thời hạn giữ capacity |
 | `BR-PAY-04` | Mỗi Reservation chỉ được ghi nhận một giao dịch thanh toán ban đầu thành công. Giao dịch đến sau khi Reservation đã *Expired*, *Cancelled* hoặc *Confirmed* không được làm thay đổi số dư hay trạng thái |
 | `BR-PAY-05` | Hoàn tiền là giao dịch tài chính tách khỏi việc hủy Reservation / đóng Contract. Hoàn tiền thất bại không khôi phục trạng thái nghiệp vụ; khoản hoàn chuyển *Refund Failed* để retry hoặc xử lý thủ công và phải giữ đầy đủ lịch sử |
@@ -158,16 +158,16 @@ kho sớm, xử lý theo § 9.
 
 | Mã | Quy tắc |
 |----|---------|
-| `BR-REN-01` | Hệ thống gửi nhắc hạn tự động vào các mốc `renewal.reminder_days` — **7, 3 và 1 ngày** trước ngày hết hạn hợp đồng (`UC-F6-01`) |
-| `BR-REN-02` | Gia hạn chỉ hợp lệ khi Contract đang *Active* hoặc *Overdue*. Nếu còn nợ quá hạn, khách không được chỉ thanh toán phí kỳ mới mà phải tất toán nợ, có thể trong cùng giao dịch theo `BR-REN-06` |
+| `BR-REN-01` | Hệ thống gửi nhắc hạn tự động vào các mốc `renewal.reminder_days` — **30 ngày (1 tháng), 7, 3 và 1 ngày** trước ngày hết hạn hợp đồng (`UC-F6-01`). Trước ngày hết hạn 1 tháng, nếu khách không gửi yêu cầu gia hạn thì hệ thống mặc định coi như khách không tiếp tục thuê và tự động chuyển sang trạng thái chuẩn bị trả kho khi đến hạn |
+| `BR-REN-02` | Gia hạn chỉ hợp lệ khi Contract đang *Active* hoặc trong giai đoạn *Overdue* trước D+10. Khi hợp đồng đã hết hạn hoặc quá D+10, khách không thể gia hạn mà phải tạo hợp đồng mới |
 | `BR-REN-03` | Thời hạn gia hạn tối thiểu là `renewal.min_months` (1 tháng), tính theo bội số tháng nguyên |
 | `BR-REN-04` | Gia hạn được hệ thống **tự động ghi nhận khi thanh toán thành công**, không cần Facility Manager duyệt thủ công. Ngày bắt đầu kỳ mới là ngày liền sau ngày kết thúc kỳ cũ, không phụ thuộc ngày thanh toán |
 | `BR-REN-05` | Giá gia hạn áp theo **bảng giá tại thời điểm gia hạn**, không phải giá của kỳ đầu. Nếu giá tăng, hệ thống phải hiển thị rõ mức chênh lệch trước khi khách xác nhận |
-| `BR-REN-06` | Gia hạn khi hợp đồng đang *Overdue*: khách phải thanh toán **phí quá hạn phát sinh + phí thuê kỳ mới** trong cùng một giao dịch. Thanh toán xong, hợp đồng trở lại *Active* và Access Code được mở lại nếu đang bị khóa |
+| `BR-REN-06` | Gia hạn khi hợp đồng đang *Overdue* (trước D+10): khách phải thanh toán **phí quá hạn phát sinh + phí thuê kỳ mới** trong cùng một giao dịch. Thanh toán xong, hợp đồng trở lại *Active* |
 | `BR-REN-07` | Gia hạn không được vượt quá `renewal.max_months` (**12 tháng**) trong một lần thao tác, để tránh khóa giá quá dài |
 | `BR-REN-08` | Sau khi gia hạn thành công, ô kho giữ nguyên — hệ thống **không** đổi ô kho cho khách. Muốn đổi ô kho thì phải trả kho rồi đặt hợp đồng mới |
-| `BR-REN-09` | Trước khi nhận thanh toán Renewal, hệ thống phải kiểm tra Availability cho khoảng gia hạn theo `BR-AVL-01`. Capacity commitment đã được tạo trước — kể cả Reservation *Pending Payment* — được ưu tiên; Renewal không được hủy hoặc đẩy lùi commitment đó. Nếu không còn capacity, yêu cầu gia hạn bị từ chối và khách được hướng dẫn Return hoặc tạo Reservation mới |
-| `BR-REN-10` | Yêu cầu Renewal chưa thanh toán chỉ là báo giá, không kéo dài Contract và không giữ capacity. Nếu Contract hết hạn trước khi thanh toán thành công thì chuyển *Overdue* theo `BR-OVD-01`; khách tiếp tục theo `BR-REN-06` |
+| `BR-REN-09` | Trước khi nhận thanh toán Renewal, hệ thống phải kiểm tra Availability cho khoảng gia hạn theo `BR-AVL-01`. Nếu không còn capacity, yêu cầu gia hạn bị từ chối và khách được thông báo kết thúc hợp đồng khi đến hạn |
+| `BR-REN-10` | Yêu cầu Renewal chưa thanh toán chỉ là báo giá tạm thời, không kéo dài Contract và không giữ capacity. Khi đến hạn mà chưa thanh toán thành công thì chuyển *Overdue* theo `BR-OVD-01` |
 
 ---
 
@@ -178,27 +178,24 @@ Ngày quá hạn ký hiệu **D+n**, đếm từ ngày liền sau ngày kết th
 | Mã | Quy tắc |
 |----|---------|
 | `BR-OVD-01` | Hợp đồng chuyển sang *Overdue* vào **D+1** nếu chưa gia hạn và chưa hoàn tất trả kho (`UC-F6-05`) |
-| `BR-OVD-02` | **D+1 → D+3** là giai đoạn ân hạn `overdue.grace_days`: **chưa** tính phí quá hạn, khách **vẫn** truy cập ô kho bình thường |
-| `BR-OVD-03` | Từ **D+4**, phí quá hạn = `overdue.daily_rate` (5%) × tiền thuê **một tháng** × số ngày tính phí. Phí được cộng dồn theo ngày |
-| `BR-OVD-04` | Tổng phí quá hạn của một kỳ không vượt quá `overdue.cap_rate` (50%) tiền thuê một tháng. Với mức 5%/ngày, trần đạt được sau **10 ngày tính phí**, tức **D+13**; từ D+14 phí ngừng tăng |
-| `BR-OVD-05` | Tại **D+10**, scheduled job tự động chuyển Access Code / Access Card sang *Suspended*. Storage Unit vẫn *Occupied* vì tài sản và Contract chưa được giải phóng; khách không vào được ô kho cho tới khi chọn và hoàn tất một phương án ở `BR-OVD-08` (`UC-F6-07`) |
-| `BR-OVD-06` | Tại **D+30**, scheduled job tự động gửi **thông báo chấm dứt hợp đồng** qua email và trong ứng dụng, nêu rõ hạn chót và hệ quả (`UC-F6-08`) |
-| `BR-OVD-07` | Tại **D+60**, scheduled job (`UC-F6-11`) tự động chuyển Contract sang *Terminated*, Access Credential sang *Revoked*, chốt nợ và cấn trừ Deposit, rồi tạo nhiệm vụ xử lý tài sản. Không tự động thanh lý hoặc tiêu hủy tài sản |
-| `BR-OVD-08` | Trước D+60, khách phải chọn một trong hai phương án: (a) thanh toán toàn bộ nợ **kèm Renewal** → Contract trở lại *Active* và Access được mở trong 1 giờ; (b) chọn Return → Contract chuyển *Pending Return*, nợ được quyết toán theo `BR-RET-04` và Access chỉ mở theo lịch trả kho. Không hỗ trợ thanh toán nợ riêng mà không chọn Renewal hoặc Return |
+| `BR-OVD-02` | **D+1 → D+3** là giai đoạn ân hạn `overdue.grace_days`: hệ thống gửi thông báo nhắc dọn đồ mỗi ngày, **chưa** tính phí quá hạn, khách **vẫn** truy cập ô kho bình thường |
+| `BR-OVD-03` | Từ **D+4 đến D+10**, phí quá hạn = `overdue.daily_rate` (5%) × tiền thuê **một tháng** × số ngày tính phí. Phí được cộng dồn theo ngày và hệ thống tiếp tục gửi thông báo nhắc dọn đồ hàng ngày |
+| `BR-OVD-04` | Tổng phí quá hạn của một kỳ không vượt quá trần quy định. Với mức 5%/ngày tính từ D+4 đến D+10 (tổng cộng 7 ngày tính phí = 35% tiền thuê một tháng), phí chốt lại tại D+10 và không tăng thêm |
+| `BR-OVD-05` | Tại **D+10**, scheduled job tự động chuyển Access Code sang *Suspended*. Quyền ra vào ô kho của khách bị khóa hoàn toàn (`UC-F6-07`) |
+| `BR-OVD-06` | Hệ thống gửi **thông báo dọn đồ** tự động mỗi ngày một lần trong suốt 10 ngày quá hạn (`UC-F6-08`) qua email và ứng dụng |
+| `BR-OVD-07` | Tại **D+10**, hợp đồng chính thức chấm dứt do quá hạn (`TERMINATED_OVERDUE`, `UC-F6-11`), Storage Unit chuyển sang trạng thái *Cleaning* hoặc *Maintaining*. Hệ thống tự động tạo nhiệm vụ dọn dẹp cho Facility Staff |
+| `BR-OVD-08` | Trong thời gian từ D+1 đến trước D+10, khách có thể nộp phạt và phí gia hạn để kích hoạt lại hợp đồng. Khi đã qua D+10, hợp đồng đã bị chấm dứt và không thể gia hạn, khách muốn thuê tiếp phải lập hợp đồng mới |
 | `BR-OVD-09` | Khách đang có hợp đồng *Overdue* **không được** tạo Reservation mới tại bất kỳ cơ sở nào trong hệ thống |
-| `BR-OVD-10` | Miễn hoặc giảm phí quá hạn theo vụ phải do Facility Manager đề xuất kèm lý do và chứng cứ; Business Operations Manager duyệt hoặc từ chối, không được tự đề xuất rồi tự duyệt. Quyết định chỉ áp cho khoản chưa tất toán và phải sinh ledger entry cùng audit log; thay đổi chính sách chung ở `BM-03` không thay thế quy trình này |
-| `BR-OVD-11` | Sau khi `UC-F6-11` chấm dứt Contract, Facility Manager thực hiện `UC-F6-09`: lập biên bản tài sản kèm ảnh, niêm phong và chuyển tài sản sang khu vực lưu giữ an toàn trước khi unit được chuyển *Cleaning*. Mọi bước phải ghi audit log; xử lý pháp lý tiếp theo cần quyết định thủ công của Business Operations Manager, không có scheduled job tự bán hoặc tiêu hủy |
+| `BR-OVD-10` | Miễn hoặc giảm phí quá hạn theo vụ phải do Facility Manager đề xuất kèm lý do và chứng cứ; Business Operations Manager duyệt hoặc từ chối, không được tự đề xuất rồi tự duyệt |
+| `BR-OVD-11` | **Xử lý tài sản tồn sau D+10:** Facility Staff theo phân công của Facility Manager tiến hành dọn dẹp ô kho, kiểm kê và niêm phong toàn bộ đồ đạc của khách chuyển về kho tổng để Facility Manager tự xử lý thủ công ngoại tuyến (offline). Phần mềm không xây dựng quy trình thanh lý phức tạp (`UC-F6-09`) |
 
 **Tóm tắt mốc thời gian:**
 
-| Mốc | Phí quá hạn | Truy cập ô kho | Trạng thái hợp đồng |
-|-----|-------------|----------------|---------------------|
-| D+1 → D+3 | Không | Bình thường | Overdue (ân hạn) |
-| D+4 → D+9 | 5%/ngày, cộng dồn | Bình thường | Overdue |
-| D+10 → D+13 | 5%/ngày tới khi chạm trần 50% | **Bị khóa** | Overdue |
-| D+14 → D+29 | Giữ nguyên ở trần 50% | Bị khóa | Overdue |
-| D+30 → D+59 | Giữ nguyên ở trần 50% | Bị khóa | Overdue, đã gửi thông báo chấm dứt |
-| D+60 | Chốt sổ, cấn trừ Deposit | **Revoked** | **Terminated**, tạo nhiệm vụ xử lý tài sản |
+| Mốc | Phí quá hạn | Thông báo | Truy cập ô kho | Trạng thái hợp đồng | Trạng thái ô kho |
+|-----|-------------|-----------|----------------|---------------------|-------------------|
+| D+1 → D+3 | Không (ân hạn) | Nhắc dọn đồ (hàng ngày) | Bình thường | Overdue (ân hạn) | Occupied |
+| D+4 → D+9 | 5%/ngày, cộng dồn | Nhắc dọn đồ (hàng ngày) | Bình thường | Overdue | Occupied |
+| D+10 | Chốt phí, cấn trừ cọc | Thông báo chấm dứt | **Khóa Access Code** | **Terminated** | **Cleaning / Maintaining** (niêm phong đồ về kho tổng) |
 
 ---
 
@@ -206,18 +203,18 @@ Ngày quá hạn ký hiệu **D+n**, đếm từ ngày liền sau ngày kết th
 
 | Mã | Quy tắc |
 |----|---------|
-| `BR-RET-01` | Khách phải đăng ký trả kho trước ít nhất `return.notice_days` (7 ngày) so với ngày muốn trả, kèm chọn khung giờ hẹn để Facility Staff kiểm tra (`UC-F3-05`) |
-| `BR-RET-02` | Trả kho chỉ hoàn tất khi Facility Staff đã kiểm tra và xác nhận hiện trạng ô kho tại chỗ (`FS-04`, `UC-F3-06`). Khách dọn hết đồ nhưng chưa có xác nhận thì hợp đồng **vẫn** hiệu lực và vẫn tính phí |
+| `BR-RET-01` | **Quy trình trả kho tự động:** Trước ngày hết hạn hợp đồng 1 tháng, nếu khách không gửi yêu cầu gia hạn (Renew), hệ thống tự động coi như khách không tiếp tục thuê và tự động chuyển sang tiến trình trả kho khi đến hạn. Hết hạn hợp đồng, khách muốn thuê tiếp phải tạo hợp đồng mới (`UC-F3-05`) |
+| `BR-RET-02` | Trả kho chỉ hoàn tất khi Facility Staff đã kiểm tra và xác nhận hiện trạng ô kho tại chỗ (`FS-04`, `UC-F3-06`). Khách dọn hết đồ nhưng chưa có xác nhận thì hợp đồng **vẫn** hiệu lực |
 | `BR-RET-03` | Ô kho được coi là **nguyên trạng** khi: trống hoàn toàn, không hư hỏng kết cấu, cửa và khóa còn nguyên, sạch ở mức sử dụng bình thường |
 | `BR-RET-04` | Quyết toán khi trả kho: **Số tiền hoàn = Deposit − chi phí khắc phục hư hỏng − phí quá hạn còn nợ − phụ phí chưa thanh toán**. Nếu kết quả **âm**, khách phải nộp bổ sung phần thiếu trước khi hợp đồng đóng (`UC-F3-13`) |
 | `BR-RET-05` | Tiền hoàn được chuyển về phương thức thanh toán gốc trong `return.refund_working_days` (7 ngày làm việc) kể từ ngày Facility Staff xác nhận |
 | `BR-RET-06` | **Trả sớm không được hoàn** tiền thuê của phần thời hạn chưa dùng (`return.early_refund_rate` = 0%). Quy tắc này phải hiển thị rõ trước khi khách xác nhận đặt chỗ |
-| `BR-RET-07` | Khách không trả kho đúng ngày kết thúc hợp đồng thì chuyển sang xử lý quá hạn theo § 8, kể cả khi đã đăng ký trả kho trước đó |
-| `BR-RET-08` | Chi phí khắc phục hư hỏng phải có biên bản kiểm tra kèm ảnh chụp do Facility Staff lập, khách ký xác nhận. Khách không đồng ý thì mở Support Request theo Flow 7 và Facility Manager phân xử |
-| `BR-RET-09` | Sau khi xác nhận trả (`BR-RET-02`), Facility Staff thu hồi Access Card, vô hiệu Access Code (`UC-F3-07`), ô kho chuyển *Cleaning*. Khi dọn xong (`UC-F3-09`): nếu unit còn Reservation *Confirmed* chưa Check-in (future claim) → *Reserved*; không thì *Available* |
-| `BR-RET-10` | Nếu khách yêu cầu Return khi còn ít hơn `return.notice_days` trước ngày kết thúc, ngày hẹn sớm nhất vẫn là ngày yêu cầu + `return.notice_days`. Contract chuyển *Overdue* từ D+1 nếu chưa hoàn tất Return trước ngày kết thúc và áp dụng phí theo § 8 |
-| `BR-RET-11` | Contract *Overdue* được phép yêu cầu Return trước D+60. Contract chuyển *Pending Return*; nợ quá hạn, hư hỏng và phụ phí được quyết toán cùng Deposit theo `BR-RET-04`. Nếu Access đã *Suspended*, chỉ mở trong khung giờ Return đã xác nhận. *Pending Return* **không dừng** đồng hồ D+60. Chưa nghiệm thu xong trước D+60 → *Terminated*, hủy lịch Return, tiếp `BR-OVD-11` |
-| `BR-RET-12` | Khách chỉ được hủy yêu cầu Return trước khi Facility Staff bắt đầu inspection và khi Contract chưa hết hạn. Khi hủy hợp lệ, Contract trở lại *Active*; nếu đã hết hạn thì không được quay lại *Active* mà phải tiếp tục Renewal hoặc Return theo `BR-OVD-08` |
+| `BR-RET-07` | Khách không dọn đồ và không hoàn tất trả kho đúng ngày kết thúc hợp đồng thì chuyển sang xử lý quá hạn theo § 8 |
+| `BR-RET-08` | Chi phí khắc phục hư hỏng phải có biên bản kiểm tra kèm ảnh chụp do Facility Staff lập, khách ký xác nhận |
+| `BR-RET-09` | Sau khi xác nhận trả kho (`BR-RET-02`), Facility Staff thu hồi chìa khóa cơ (nếu có), vô hiệu hóa Access Code (`UC-F3-07`) (không sử dụng thẻ từ RFID), ô kho chuyển *Cleaning*. Khi dọn xong (`UC-F3-09`): nếu unit còn Reservation *Confirmed* chưa Check-in → *Reserved*; không thì *Available* |
+| `BR-RET-10` | Nếu khách có nhu cầu trả kho chủ động trước hạn, khách gửi yêu cầu hẹn trả kho trên ứng dụng để Staff bố trí ca kiểm tra thực tế |
+| `BR-RET-11` | Contract *Overdue* được phép yêu cầu trả kho trước D+10 để giảm phí phạt. Nợ quá hạn, hư hỏng và phụ phí được cấn trừ cùng Deposit theo `BR-RET-04` |
+| `BR-RET-12` | Khách chỉ được hủy yêu cầu Return trước khi Facility Staff bắt đầu inspection và khi Contract chưa hết hạn |
 
 ---
 
@@ -227,23 +224,24 @@ Ngày quá hạn ký hiệu **D+n**, đếm từ ngày liền sau ngày kết th
 
 | Mã | Quy tắc |
 |----|---------|
-| `BR-CHK-01` | **Xác minh danh tính khi nhận kho:** Khách hàng hoặc người đại diện phải xuất trình bản gốc CCCD/Hộ chiếu trùng khớp với thông tin đã đăng ký trên đơn Reservation hoặc giấy ủy quyền hợp lệ được hệ thống ghi nhận (`UC-F2-02`) |
+| `BR-CHK-01` | **Xác minh danh tính khi nhận kho:** Khách hàng xuất trình CCCD/Hộ chiếu trùng khớp với thông tin đã đăng ký trên đơn Reservation hoặc giấy ủy quyền hợp lệ được hệ thống ghi nhận (`UC-F2-02`) |
 | `BR-CHK-02` | **Điều kiện tiên quyết để Handover:** Reservation phải *Confirmed*, đã thanh toán đủ toàn bộ phí thuê N tháng và Deposit (`BR-PAY-01`), đồng thời đã phân bổ Storage Unit; unit thực tế phải trống, sạch và không hư hại kết cấu (`UC-F2-03`) |
-| `BR-CHK-03` | **Biên bản bàn giao tại chỗ:** Quá trình bàn giao bắt buộc phải lập biên bản nghiệm thu hiện trạng có chữ ký số/xác nhận điện tử của cả Facility Staff và khách hàng, kèm hình ảnh chụp hiện trạng ô kho trước khi giao chìa/mã (`UC-F2-03`) |
+| `BR-CHK-03` | **Biên bản bàn giao tại chỗ:** Quá trình bàn giao bắt buộc phải lập biên bản nghiệm thu hiện trạng có chữ ký số/xác nhận điện tử của cả Facility Staff và khách hàng, kèm hình ảnh chụp hiện trạng ô kho trước khi giao mã PIN / chìa khóa (`UC-F2-03`) |
 | `BR-CHK-04` | **Kích hoạt Contract và chuyển trạng thái unit:** Sau khi ký biên bản Handover, Storage Unit chuyển *Reserved* → *Occupied* (`UC-F2-06`), Contract chuyển *Pending Check-in* → *Active* (`UC-F2-07`). Khoảng thuê vẫn theo ngày bắt đầu và kết thúc đã chốt trong Reservation; Check-in trễ không dời ngày kết thúc |
 | `BR-CHK-05` | **Xử lý No-show khi check-in trễ:** Khách được phép đến nhận kho trễ tối đa `checkin.grace_days` (3 ngày) tính từ ngày bắt đầu thuê. Quá thời hạn này mà khách không đến nhận và không báo hoãn, đơn bị đánh dấu *No-show* và xử lý theo `BR-CAN-04` (`UC-F2-08`) |
+| `BR-CHK-06` | **Xử lý từ chối nhận kho hoặc ô kho hư hỏng tại chỗ:** Nếu ô kho thực tế bị hư hại không đạt yêu cầu mà cơ sở không có ô kho thay thế tương đương, hoặc khách hàng từ chối nhận kho hợp lệ, Facility Manager lập lệnh hủy check-in và thực hiện hoàn tiền 100% (Deposit + phí thuê) cho khách trong vòng 3 ngày làm việc (`checkin.refund_working_days`) |
 
 ---
 
 ## 11. Access & Security — Phương tiện truy cập
 
-Quy tắc quản lý mã Access Code, thẻ từ RFID hoặc chìa khóa cơ tại cơ sở (`FS-02`, `FS-05`).
+Quy tắc quản lý mã Access Code và chìa khóa vật lý tại cơ sở (`FS-02`, `FS-05`). Hệ thống **loại bỏ hoàn toàn thẻ từ RFID**.
 
 | Mã | Quy tắc |
 |----|---------|
-| `BR-ACC-01` | **Định dạng và cấp phát mã Access Code:** Hệ thống tự động sinh mã PIN cá nhân ngẫu nhiên gồm `access.pin_length` (6 chữ số), không chứa chuỗi lặp hoặc tiến liên tiếp (vd: không dùng 111111, 123456); hoặc sinh mã QR động bảo mật hiển thị trên ứng dụng của khách (`UC-F2-04`) |
-| `BR-ACC-02` | **Phạm vi và hiệu lực truy cập:** Access Credential chỉ mở cổng chung của đúng Facility và Storage Unit được phân bổ. Credential dùng được khi Contract *Active*, trong giai đoạn *Overdue* trước D+10, hoặc trong lịch Return đã xác nhận; tại D+10 tự chuyển *Suspended* theo `BR-OVD-05` |
-| `BR-ACC-03` | **Cấp lại và thu hồi phương tiện truy cập:** Chỉ chủ hợp đồng hoặc người được ủy quyền hợp pháp mới được yêu cầu cấp lại mã/thay khóa cơ khi báo mất/hỏng (`UC-F7-05`); khi hoàn tất thủ tục trả kho hoặc hợp đồng bị chấm dứt, mọi phương tiện truy cập phải bị vô hiệu hóa ngay lập tức trên hệ thống (`UC-F3-07`, `BR-RET-09`) |
+| `BR-ACC-01` | **Định dạng và cấp phát mã Access Code:** Hệ thống tự động sinh mã PIN ngẫu nhiên gồm `access.pin_length` (6 chữ số); hoặc sinh mã QR động bảo mật hiển thị trên ứng dụng của khách (`UC-F2-04`). Đối với ô kho dùng khóa cơ, nhân viên bàn giao chìa khóa vật lý kèm theo |
+| `BR-ACC-02` | **Phạm vi và hiệu lực truy cập:** Access Credential (PIN / QR) chỉ mở cổng chung của đúng Facility và Storage Unit được phân bổ. Credential dùng được khi Contract *Active*, trong giai đoạn *Overdue* trước D+10; tại D+10 tự động chuyển *Suspended* theo `BR-OVD-05` |
+| `BR-ACC-03` | **Cấp lại và thu hồi phương tiện truy cập:** Chỉ chủ hợp đồng hoặc người được ủy quyền hợp pháp mới được yêu cầu cấp lại mã PIN hoặc cấp lại chìa khóa vật lý khi báo mất/hỏng (`UC-F7-05`); khi hoàn tất thủ tục trả kho hoặc hợp đồng bị chấm dứt tại D+10, mọi mã truy cập bị vô hiệu hóa ngay lập tức trên hệ thống (`UC-F3-07`, `BR-RET-09`) |
 
 ---
 

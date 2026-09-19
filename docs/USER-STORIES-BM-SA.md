@@ -150,7 +150,7 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 **Acceptance Criteria**
 
 - **AC-1** — *Given* tôi mở chính sách Renewal, *when* trang tải xong, *then* tôi thấy
-  `renewal.reminder_days` (mặc định `7, 3, 1`), `renewal.min_months` (mặc định `1`) và
+  `renewal.reminder_days` (mặc định `30, 7, 3, 1`), `renewal.min_months` (mặc định `1`) và
   `renewal.max_months` (mặc định `12`) theo `BR-REN-01`, `BR-REN-03`, `BR-REN-07`.
 - **AC-2** — *Given* tôi ban hành phiên bản mới, *when* scheduled job chạy, *then* chỉ hợp đồng chưa
   hết hạn nhận nhắc theo danh sách ngày mới; hợp đồng đã gửi nhắc theo phiên bản cũ không bị gửi trùng
@@ -228,15 +228,16 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 **Acceptance Criteria**
 
 - **AC-1** — *Given* tôi mở chính sách Overdue, *when* trang tải xong, *then* tôi thấy
-  `overdue.grace_days`, `overdue.daily_rate`, `overdue.cap_rate`, `overdue.lock_access_days`,
-  `overdue.notice_days` và `overdue.termination_days` đang hiệu lực.
-- **AC-2** — *Given* các mốc thỏa `grace_days` < `lock_access_days` < `notice_days` <
-  `termination_days`, *when* tôi ban hành, *then* scheduled job của `UC-F6-05` đến `UC-F6-08` và
-  `UC-F6-11` dùng đúng snapshot cho Reservation được tạo **sau** thời điểm ban hành. `UC-F6-09`
-  là thao tác Facility Manager sau khi job chấm dứt, không thuộc chuỗi job.
-- **AC-3** — *Given* tôi nhập mốc lệch thứ tự (ví dụ khóa ngày 30 trong khi thông báo ngày 10),
-  *when* tôi lưu, *then* hệ thống từ chối và nêu "Các mốc quá hạn phải tăng dần:
-  ân hạn → khóa truy cập → thông báo chấm dứt → chấm dứt".
+  `overdue.grace_days` (3), `overdue.daily_rate` (5%), `overdue.cap_rate` (35%),
+  `overdue.notice_days` (4), `overdue.lock_access_days` (10) và `overdue.termination_days` (10)
+  đang hiệu lực theo `BR-OVD-01..05`.
+- **AC-2** — *Given* các mốc thỏa `grace_days` (D+3) < `notice_days` (D+4) <= `termination_days` (D+10),
+  *when* tôi ban hành, *then* scheduled job của `UC-F6-05` đến `UC-F6-08` và `UC-F6-11` dùng đúng
+  snapshot cho Reservation được tạo **sau** thời điểm ban hành. `UC-F6-09` là thao tác Facility
+  Manager sau khi job chấm dứt, không thuộc chuỗi job.
+- **AC-3** — *Given* tôi nhập mốc lệch thứ tự (ví dụ ân hạn lớn hơn mốc chấm dứt), *when* tôi lưu,
+  *then* hệ thống từ chối và nêu "Các mốc quá hạn phải theo thứ tự: ân hạn (D+3) → bắt đầu tính phí
+  (D+4) → khóa truy cập và chấm dứt (D+10)".
 - **AC-4** — *Given* tôi nhập `overdue.daily_rate` hoặc `overdue.cap_rate` nhỏ hơn hoặc bằng 0% hoặc
   lớn hơn 100%, *when* tôi lưu, *then* hệ thống từ chối.
 - **AC-5** — *Given* hợp đồng đã *Overdue* trước khi ban hành, *when* phiên bản mới có hiệu lực,

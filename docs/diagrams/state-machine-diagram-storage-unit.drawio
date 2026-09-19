@@ -193,7 +193,7 @@
                 <mxCell id="YxNqXPD6kqQ-uwrsxj1i-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="F6USJD0CjXZdL-BVfRwX-3" target="YxNqXPD6kqQ-uwrsxj1i-1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="OQdMz1n67ak_2RpXVCIn-1" value="key presented [valid RFID code] /verify access" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="YxNqXPD6kqQ-uwrsxj1i-3">
+                <mxCell id="OQdMz1n67ak_2RpXVCIn-1" value="credential presented [valid Access Code] /verify access" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="YxNqXPD6kqQ-uwrsxj1i-3">
                     <mxGeometry x="-0.9" y="1" relative="1" as="geometry">
                         <mxPoint x="112" y="-8" as="offset"/>
                     </mxGeometry>
@@ -279,7 +279,7 @@
                         <mxGeometry x="70" y="125" width="30" height="30" as="geometry"/>
                     </mxCell>
                 </UserObject>
-                <mxCell id="vi0d4vRS0HggPI3whx-H-4" value="connection established &lt;br&gt;/send RFID code" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="vi0d4vRS0HggPI3whx-H-1" target="vi0d4vRS0HggPI3whx-H-3">
+                <mxCell id="vi0d4vRS0HggPI3whx-H-4" value="connection established &lt;br&gt;/send Access Code" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="vi0d4vRS0HggPI3whx-H-1" target="vi0d4vRS0HggPI3whx-H-3">
                     <mxGeometry x="-0.2593" y="20" relative="1" as="geometry">
                         <mxPoint as="offset"/>
                     </mxGeometry>
@@ -292,7 +292,7 @@
                         </Array>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="PzxShNgPtXf2Yx0DU02M-6" value="connection failed [RFID code]" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="ZW06rnSiX9Yk8SDodGn0-7">
+                <mxCell id="PzxShNgPtXf2Yx0DU02M-6" value="connection failed [Access Code]" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="ZW06rnSiX9Yk8SDodGn0-7">
                     <mxGeometry x="-0.45" relative="1" as="geometry">
                         <mxPoint y="-49" as="offset"/>
                     </mxGeometry>
@@ -308,7 +308,7 @@
                         </Array>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="vi0d4vRS0HggPI3whx-H-9" value="smart key presented &lt;br&gt;[valid RFID code]" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="vi0d4vRS0HggPI3whx-H-2">
+                <mxCell id="vi0d4vRS0HggPI3whx-H-9" value="credential presented &lt;br&gt;[valid Access Code]" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="vi0d4vRS0HggPI3whx-H-2">
                     <mxGeometry x="-0.68" y="1" relative="1" as="geometry">
                         <mxPoint x="29" y="-14" as="offset"/>
                     </mxGeometry>
@@ -460,7 +460,7 @@
                 <mxCell id="_ona8Ecr7LBRRXpukymA-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="_ona8Ecr7LBRRXpukymA-9" target="_ona8Ecr7LBRRXpukymA-11">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="C12eUxMGgNv5EMjZ2_0J-1" value="key presented [valid RFID code] /verify access" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="_ona8Ecr7LBRRXpukymA-12">
+                <mxCell id="C12eUxMGgNv5EMjZ2_0J-1" value="credential presented [valid Access Code] /verify access" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="_ona8Ecr7LBRRXpukymA-12">
                     <mxGeometry x="-0.6889" y="-1" relative="1" as="geometry">
                         <mxPoint x="76" y="-11" as="offset"/>
                     </mxGeometry>

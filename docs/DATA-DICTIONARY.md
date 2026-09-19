@@ -1,7 +1,7 @@
 # TỪ ĐIỂN DỮ LIỆU (DATA DICTIONARY)
 **Hệ thống**: Self-Storage Facility Rental and Management System  
 **Nhiệm vụ trong Kế hoạch**: `T1.11` · Giai đoạn 1 · [docs/PLAN.md](PLAN.md)  
-**Tài liệu tham chiếu**: [Storage_Self.sql](../database/Storage_Self.sql), [erd-conceptual.puml](diagrams/erd-conceptual.puml) (ERD mức khái niệm), [erd-database-model.puml](diagrams/erd-database-model.puml) (Physical Data Model), [BUSINESS-RULES.md](BUSINESS-RULES.md)  
+**Tài liệu tham chiếu**: [Storage_Self.sql](../database/Storage_Self.sql), [erd-conceptual.puml](diagrams/_archive/erd-conceptual.puml) (ERD mức khái niệm), [erd-database-model.puml](diagrams/_archive/erd-database-model.puml) (Physical Data Model), [BUSINESS-RULES.md](BUSINESS-RULES.md)  
 **Quy ước CSDL**: [CONVENTIONS.md § 5](CONVENTIONS.md#5-cơ-sở-dữ-liệu--sql-server-và-flyway) (`snake_case`, đơn vị tiền `BIGINT`, mốc thời gian `DATETIMEOFFSET`, ngày `DATE`, chuẩn hoá 3NF/BCNF).
 
 ---
@@ -152,18 +152,18 @@ Chính sách vận hành có phiên bản đầy đủ tại từng thời đi�
 | `cancel_full_refund_hours` | `INT` | Có | | Số giờ hủy trước check-in được hoàn 100% (`48` giờ - `BR-CAN-01`) |
 | `cancel_late_refund_rate` | `DECIMAL(5,2)` | Có | | Tỷ lệ hoàn tiền khi hủy muộn (`0.50` = 50% - `BR-CAN-02`) |
 | `cancel_no_show_refund_rate` | `DECIMAL(5,2)` | Có | | Tỷ lệ hoàn tiền khi khách No-show (`0.00` = 0% - `BR-CAN-04`) |
-| `renewal_reminder_days` | `NVARCHAR(50)` | Có | | Chuỗi CSV các ngày nhắc hạn trước khi hết hạn (`"7,3,1"`) |
+| `renewal_reminder_days` | `NVARCHAR(50)` | Có | | Chuỗi CSV các ngày nhắc hạn trước khi hết hạn (`"30,7,3,1"`) |
 | `renewal_min_months` | `INT` | Có | | Số tháng gia hạn tối thiểu (`1` tháng) |
 | `renewal_max_months` | `INT` | Có | | Số tháng gia hạn tối đa (`12` tháng) |
-| `overdue_grace_days` | `INT` | Có | | Số ngày ân hạn quá hạn trước khi tính phạt (`3` ngày - `BR-OVD-01`) |
-| `overdue_daily_rate` | `DECIMAL(5,2)` | Có | | Tỷ lệ phạt quá hạn mỗi ngày (`0.02` = 2%/ngày - `BR-OVD-03`) |
-| `overdue_cap_rate` | `DECIMAL(5,2)` | Có | | Trần phạt quá hạn tối đa (`1.00` = 100% tiền cọc - `BR-OVD-04`) |
-| `overdue_lock_access_days` | `INT` | Có | | Mốc ngày khóa quyền truy cập (`D+4` - `BR-OVD-05`) |
-| `overdue_notice_days` | `INT` | Có | | Mốc ngày gửi thông báo thanh lý (`D+30` - `BR-OVD-07`) |
-| `overdue_termination_days` | `INT` | Có | | Mốc ngày đơn phương chấm dứt hợp đồng (`D+60` - `BR-OVD-08`) |
+| `overdue_grace_days` | `INT` | Có | | Số ngày ân hạn quá hạn trước khi tính phí (`3` ngày - `BR-OVD-01`) |
+| `overdue_daily_rate` | `DECIMAL(5,2)` | Có | | Tỷ lệ phí quá hạn mỗi ngày (`0.05` = 5%/ngày - `BR-OVD-02`) |
+| `overdue_cap_rate` | `DECIMAL(5,2)` | Có | | Trần phí quá hạn tối đa (`0.35` = 35% tiền cọc - `BR-OVD-03`) |
+| `overdue_lock_access_days` | `INT` | Có | | Mốc ngày khóa quyền truy cập (`D+10` - `BR-OVD-05`) |
+| `overdue_notice_days` | `INT` | Có | | Mốc ngày gửi thông báo tính phí (`D+4` - `BR-OVD-04`) |
+| `overdue_termination_days` | `INT` | Có | | Mốc ngày đơn phương chấm dứt hợp đồng (`D+10` - `BR-OVD-05`) |
 | `return_notice_days` | `INT` | Có | | Số ngày báo trước khi trả kho (`3` ngày - `BR-RET-01`) |
-| `return_refund_working_days` | `INT` | Có | | Số ngày làm việc hoàn tiền cọc (`3` ngày - `BR-RET-06`) |
-| `return_early_refund_rate` | `DECIMAL(5,2)` | Có | | Tỷ lệ hoàn tiền khi trả kho trước hạn (`0.80` = 80% - `BR-RET-05`) |
+| `return_refund_working_days` | `INT` | Có | | Số ngày làm việc hoàn tiền cọc (`3` ngày - `BR-RET-05`) |
+| `return_early_refund_rate` | `DECIMAL(5,2)` | Có | | Tỷ lệ hoàn tiền khi trả kho trước hạn (`0.00` = 0% - `BR-RET-06`) |
 | `access_pin_length` | `INT` | Có | `DEFAULT 6` | Độ dài mã PIN bảo mật (`BR-ACC-01`) |
 | `support_urgent_sla_hours` | `INT` | Có | | Cam kết SLA xử lý sự cố khẩn (`4` giờ - `BR-SUP-01`) |
 | `support_auto_close_working_days` | `INT` | Có | | Ngày tự động đóng yêu cầu hỗ trợ (`3` ngày - `BR-SUP-03`) |
@@ -225,7 +225,7 @@ Chương trình khuyến mãi giảm giá thuê (`US-BM-03.3`).
 | `deposit_amount` | `BIGINT` | Có | | Số tiền cọc cần đóng |
 | `total_rental_fee`| `BIGINT` | Có | | Tổng tiền thuê các tháng sau giảm giá |
 | `total_payable` | `BIGINT` | Có | | Tổng tiền phải thanh toán ban đầu (= tiền thuê + cọc) |
-| `storage_unit_id`| `BIGINT` | Không | `FK` $\rightarrow$ `storage_unit(id)` | Ô kho vật lý gán sau khi trả tiền (`BR-AVL-04`) |
+| `storage_unit_id`| `BIGINT` | Không | `FK` $\rightarrow$ `storage_unit(id)` | Ô kho vật lý khách chọn, khóa Reserved sau khi trả tiền (`BR-AVL-04`) |
 | `status` | `VARCHAR(20)` | Có | `DEFAULT 'PENDING_PAYMENT'`, `CHECK IN ('PENDING_PAYMENT', 'CONFIRMED', 'FULFILLED', 'EXPIRED', 'CANCELLED', 'NO_SHOW')` | Trạng thái vòng đời đơn giữ chỗ |
 | `hold_expires_at`| `DATETIMEOFFSET` | Có | | Hạn chót thanh toán giữ chỗ (48h) |
 | `confirmed_at` | `DATETIMEOFFSET` | Không | | Mốc thanh toán thành công và gán kho |

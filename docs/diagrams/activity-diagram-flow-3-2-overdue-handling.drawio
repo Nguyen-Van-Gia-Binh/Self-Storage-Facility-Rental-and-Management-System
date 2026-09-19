@@ -1,0 +1,67 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Trang-1" id="s9ifxwX_ehd24MEZpEQd">
+    <mxGraphModel dx="2063" dy="776" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="zvIb8ERN5h1WoXBN4Gcx-1" parent="1" style="swimlane;whiteSpace=wrap;html=1;" value="Storage Customer" vertex="1">
+          <mxGeometry height="990" width="300" x="-230" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="zvIb8ERN5h1WoXBN4Gcx-6" parent="zvIb8ERN5h1WoXBN4Gcx-1" style="rounded=0;whiteSpace=wrap;html=1;" value="Nhận thông báo dọn đồ" vertex="1">
+          <mxGeometry height="60" width="180" x="50" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="zvIb8ERN5h1WoXBN4Gcx-3" parent="1" style="swimlane;whiteSpace=wrap;html=1;" value="System" vertex="1">
+          <mxGeometry height="990" width="400" x="70" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="zvIb8ERN5h1WoXBN4Gcx-12" edge="1" parent="zvIb8ERN5h1WoXBN4Gcx-3" source="zvIb8ERN5h1WoXBN4Gcx-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="zvIb8ERN5h1WoXBN4Gcx-8" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="zvIb8ERN5h1WoXBN4Gcx-5" parent="zvIb8ERN5h1WoXBN4Gcx-3" style="rounded=0;whiteSpace=wrap;html=1;" value="Ghi nhận Contract hết hạn" vertex="1">
+          <mxGeometry height="60" width="180" x="130" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="zvIb8ERN5h1WoXBN4Gcx-14" edge="1" parent="zvIb8ERN5h1WoXBN4Gcx-3" source="zvIb8ERN5h1WoXBN4Gcx-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="zvIb8ERN5h1WoXBN4Gcx-9" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="zvIb8ERN5h1WoXBN4Gcx-19" connectable="0" parent="zvIb8ERN5h1WoXBN4Gcx-14" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="từ 4 - 10 ngày" vertex="1">
+          <mxGeometry relative="1" x="-0.0649" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="zvIb8ERN5h1WoXBN4Gcx-16" edge="1" parent="zvIb8ERN5h1WoXBN4Gcx-3" source="zvIb8ERN5h1WoXBN4Gcx-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;libavoidRouting=1;entryX=0.991;entryY=0.665;entryDx=0;entryDy=0;entryPerimeter=0;" target="zvIb8ERN5h1WoXBN4Gcx-13">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="326.03" y="353" />
+              <mxPoint x="326.03" y="649.9" />
+            </Array>
+            <mxPoint x="320" y="650" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="zvIb8ERN5h1WoXBN4Gcx-17" connectable="0" parent="zvIb8ERN5h1WoXBN4Gcx-16" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="quá 10 ngày" vertex="1">
+          <mxGeometry relative="1" x="-0.7868" y="-2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="zvIb8ERN5h1WoXBN4Gcx-8" parent="zvIb8ERN5h1WoXBN4Gcx-3" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;" value="Gửi thông báo&amp;nbsp;" vertex="1">
+          <mxGeometry height="140" width="110" x="165" y="283" as="geometry" />
+        </mxCell>
+        <mxCell id="zvIb8ERN5h1WoXBN4Gcx-9" parent="zvIb8ERN5h1WoXBN4Gcx-3" style="rounded=0;whiteSpace=wrap;html=1;" value="Tính phí quá hạn kể từ ngày thứ 4" vertex="1">
+          <mxGeometry height="60" width="180" x="130" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="zvIb8ERN5h1WoXBN4Gcx-13" parent="zvIb8ERN5h1WoXBN4Gcx-3" style="rounded=0;whiteSpace=wrap;html=1;" value="Cleaning/Maintaning" vertex="1">
+          <mxGeometry height="60" width="180" x="130" y="610" as="geometry" />
+        </mxCell>
+        <mxCell id="zvIb8ERN5h1WoXBN4Gcx-7" parent="zvIb8ERN5h1WoXBN4Gcx-3" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="mỗi ngày gửi 1 lần trong 10 ngày" vertex="1">
+          <mxGeometry height="30" width="60" x="105" y="338" as="geometry" />
+        </mxCell>
+        <mxCell id="zvIb8ERN5h1WoXBN4Gcx-4" parent="1" style="swimlane;whiteSpace=wrap;html=1;startSize=23;" value="Facility Manager" vertex="1">
+          <mxGeometry height="990" width="400" x="470" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="zvIb8ERN5h1WoXBN4Gcx-20" edge="1" parent="1" source="zvIb8ERN5h1WoXBN4Gcx-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.25;entryDx=0;entryDy=0;" target="zvIb8ERN5h1WoXBN4Gcx-6">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="70" y="260" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -48,16 +48,12 @@ content rather than defining it, and they are joined by stable codes:
   than repeating numbers. § 14 works those numbers into concrete money examples — changing a
   parameter means recomputing that table too.
 
-`docs/diagrams/use-case-diagram.puml` and the Mermaid diagram in `USE-CASES.md § 11` are two views of
-the use case list; both must be updated when a use case is added. Activity Diagrams live beside them,
-one `.puml` per flow: `activity-flow-1-booking.puml` + `activity-flow2-checkin-handover.puml` (T1.7)
-and `activity-main-flow-end-to-end.puml` (T1.7b) for Flow 1–2; `activity-flow-3.puml` (Return) and
-`activity-flow-6.puml` (Renewal / Overdue) (T1.8); `activity-flow-4.puml`, `activity-flow-5.puml` and
-`activity-flow-7.puml` (T1.9) for the config / staff / support flows. A change to a flow's use cases,
-or to the `BR-*` groups it cites (each diagram's legend names them), must be reflected in that flow's
-`.puml`. Every `UC-F*` / `UC-SYS-*` / `BR-*` token in `docs/diagrams/*.puml` is checked by
-`check-docs.sh` (checks 2–3), so keep the codes real. The `.puml` files are not rendered in the repo
-— export PNG/SVG from VS Code when a report needs the image.
+`docs/diagrams/` contains the official activity and state machine diagrams in Draw.io format (`.drawio`),
+including `activity-diagram-flow-1-storage-reservation.drawio`, `activity-diagram-flow-2-checkin-handover.drawio`,
+`activity-diagram-flow-3-1-contract-renewal.drawio`, `activity-diagram-flow-3-2-overdue-handling.drawio`,
+`activity-diagram-flow-4-business-operations.drawio`, `activity-diagram-flow-5-facility-staff-management.drawio`,
+and `activity-diagram-flow-7-support-incident-handling.drawio`.
+Legacy PlantUML diagrams (`.puml`) have been moved to `docs/diagrams/_archive/` for historical reference.
 
 `docs/CONVENTIONS.md` (coding and REST API conventions) and `CONTRIBUTING.md` (Git workflow) describe
 code that does not exist yet. Keep them aligned with `PLAN.md § 6`, which already fixed the branch

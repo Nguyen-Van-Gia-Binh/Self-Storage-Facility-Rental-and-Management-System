@@ -16,7 +16,7 @@
 
 # --- Chot chan: thieu file ma van chay tiep se cho ket qua "sach" gia --------
 MISSING=0
-FILES="README.md CONTRIBUTING.md docs/TOPIC.md docs/PLAN.md docs/USE-CASES.md docs/USER-STORIES-SC.md docs/USER-STORIES-FS-FM.md docs/USER-STORIES-BM-SA.md docs/BUSINESS-RULES.md docs/CONVENTIONS.md docs/diagrams/use-case-diagram.puml docs/diagrams/activity-flow-3.puml docs/diagrams/activity-flow-4.puml docs/diagrams/activity-flow-5.puml docs/diagrams/activity-flow-6.puml docs/diagrams/activity-flow-7.puml"
+FILES="README.md CONTRIBUTING.md docs/TOPIC.md docs/PLAN.md docs/USE-CASES.md docs/USER-STORIES-SC.md docs/USER-STORIES-FS-FM.md docs/USER-STORIES-BM-SA.md docs/BUSINESS-RULES.md docs/CONVENTIONS.md"
 for f in $FILES; do
   [ -f "$f" ] || { echo "THIEU FILE: $f"; MISSING=1; }
 done
@@ -30,7 +30,7 @@ echo "== 1. Link tuong doi =="
 : > "$T/l"
 for f in README.md CONTRIBUTING.md docs/*.md; do
   d=$(dirname "$f")
-  grep -o '](\([^)#]*\.\(md\|puml\|sh\)\)[^)]*)' "$f" 2>/dev/null | sed 's/](//; s/[#)].*//' | sort -u |
+  grep -o '](\([^)#]*\.\(md\|puml\|drawio\|sh\)\)[^)]*)' "$f" 2>/dev/null | sed 's/](//; s/[#)].*//' | sort -u |
   while read -r l; do [ -e "$d/$l" ] || echo "$f -> $l"; done >> "$T/l"
 done
 report "$T/l" "moi link tro toi file co that"
@@ -38,13 +38,13 @@ report "$T/l" "moi link tro toi file co that"
 echo "== 2. Ma UC duoc tham chieu nhung khong ton tai =="
 grep -o '^| `UC-[A-Z0-9-]*`' docs/USE-CASES.md | tr -d '|` ' | sort -u > "$T/uc_def"
 grep -oh 'UC-\(F[0-9]-[0-9][0-9]\|SYS-[0-9][0-9]\)' docs/USER-STORIES-SC.md docs/USER-STORIES-FS-FM.md \
-  docs/USER-STORIES-BM-SA.md docs/BUSINESS-RULES.md docs/diagrams/*.puml README.md 2>/dev/null | sort -u > "$T/uc_ref"
+  docs/USER-STORIES-BM-SA.md docs/BUSINESS-RULES.md README.md 2>/dev/null | sort -u > "$T/uc_ref"
 comm -13 "$T/uc_def" "$T/uc_ref" > "$T/uc_bad"
 report "$T/uc_bad" "moi ma UC duoc tham chieu deu co dinh nghia"
 
 echo "== 3. Ma BR duoc tham chieu nhung khong ton tai =="
 grep -o '^| `BR-[A-Z]*-[0-9][0-9]`' docs/BUSINESS-RULES.md | tr -d '|` ' | sort -u > "$T/br_def"
-grep -oh 'BR-[A-Z]\{3\}-[0-9][0-9]' docs/*.md README.md CONTRIBUTING.md docs/diagrams/*.puml | sort -u > "$T/br_ref"
+grep -oh 'BR-[A-Z]\{3\}-[0-9][0-9]' docs/*.md README.md CONTRIBUTING.md | sort -u > "$T/br_ref"
 comm -13 "$T/br_def" "$T/br_ref" > "$T/br_bad"
 report "$T/br_bad" "moi ma BR duoc tham chieu deu co dinh nghia"
 
@@ -61,7 +61,9 @@ report "$T/rq_unc" "ca 27 ma yeu cau deu co mat trong ban do phu"
 
 echo "== 6. So luong khop giua cac bang =="
 UC_TBL=$(grep -c '^| `UC-' docs/USE-CASES.md)
-UC_PUML=$(grep -c '^    usecase "UC-' docs/diagrams/use-case-diagram.puml)
+UC_SYS=$(grep -c '^| `UC-SYS-' docs/USE-CASES.md)
+UC_FLOW=$(grep -c '^| `UC-F' docs/USE-CASES.md)
+UC_SUM=$(( UC_FLOW + UC_SYS ))
 ST=$(grep -c '^### `US-SC-' docs/USER-STORIES-SC.md)
 ST_TBL=$(grep -c '^| `US-SC-' docs/USER-STORIES-SC.md)
 AC=$(grep -c '^- \*\*AC-' docs/USER-STORIES-SC.md)
@@ -72,7 +74,7 @@ ST2=$(grep -c '^### `US-' docs/USER-STORIES-BM-SA.md)
 ST2_TBL=$(grep -c '^| `US-' docs/USER-STORIES-BM-SA.md)
 AC2=$(grep -c '^- \*\*AC-' docs/USER-STORIES-BM-SA.md)
 : > "$T/n"
-[ "$UC_TBL" = "$UC_PUML" ] || echo "use case: bang=$UC_TBL puml=$UC_PUML" >> "$T/n"
+[ "$UC_TBL" = "$UC_SUM" ] || echo "use case: tong=$UC_TBL thanh phan=$UC_SUM" >> "$T/n"
 [ "$ST" = "$ST_TBL" ] || echo "user story SC: so muc=$ST so dong bang tong hop=$ST_TBL" >> "$T/n"
 [ "$STF" = "$STF_TBL" ] || echo "user story FS/FM: so muc=$STF so dong bang tong hop=$STF_TBL" >> "$T/n"
 [ "$ST2" = "$ST2_TBL" ] || echo "user story BM/SA: so muc=$ST2 so dong bang tong hop=$ST2_TBL" >> "$T/n"
@@ -89,8 +91,6 @@ echo "== 8. Con so neu trong van ban vs thuc te =="
 : > "$T/c"
 UC_SAY=$(grep -o '\*\*[0-9]\+ use case nghiệp vụ\*\*' docs/USE-CASES.md | grep -o '[0-9]\+' | head -1)
 SYS_SAY=$(grep -o '\*\*[0-9]\+ use case nền tảng\*\*' docs/USE-CASES.md | grep -o '[0-9]\+' | head -1)
-UC_SYS=$(grep -c '^| `UC-SYS-' docs/USE-CASES.md)
-UC_FLOW=$(grep -c '^| `UC-F' docs/USE-CASES.md)
 [ "$UC_SAY" = "$UC_FLOW" ] || echo "USE-CASES § 1 noi $UC_SAY use case nghiep vu, dem duoc $UC_FLOW" >> "$T/c"
 [ "$SYS_SAY" = "$UC_SYS" ] || echo "USE-CASES § 1 noi $SYS_SAY use case nen tang, dem duoc $UC_SYS" >> "$T/c"
 for n in $(grep -o '\*\*[0-9]\+ user story\*\*' docs/USER-STORIES-SC.md | grep -o '[0-9]\+'); do

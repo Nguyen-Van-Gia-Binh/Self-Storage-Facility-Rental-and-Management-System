@@ -1,0 +1,106 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Trang-1" id="un8l2o8K4V5IJv2yXigZ">
+    <mxGraphModel dx="2323" dy="943" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="3Z2xPAnTabFH4DZuYdJl-1" parent="1" style="swimlane;whiteSpace=wrap;html=1;" value="Facility Manager" vertex="1">
+          <mxGeometry height="740" width="750" x="-470" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="3Z2xPAnTabFH4DZuYdJl-21" edge="1" parent="3Z2xPAnTabFH4DZuYdJl-1" source="3Z2xPAnTabFH4DZuYdJl-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="3Z2xPAnTabFH4DZuYdJl-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="3Z2xPAnTabFH4DZuYdJl-22" edge="1" parent="3Z2xPAnTabFH4DZuYdJl-1" source="3Z2xPAnTabFH4DZuYdJl-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="3Z2xPAnTabFH4DZuYdJl-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="3Z2xPAnTabFH4DZuYdJl-23" edge="1" parent="3Z2xPAnTabFH4DZuYdJl-1" source="3Z2xPAnTabFH4DZuYdJl-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="3Z2xPAnTabFH4DZuYdJl-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="3Z2xPAnTabFH4DZuYdJl-4" parent="3Z2xPAnTabFH4DZuYdJl-1" style="rounded=0;whiteSpace=wrap;html=1;" value="Đăng nhập" vertex="1">
+          <mxGeometry height="60" width="120" x="240" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="3Z2xPAnTabFH4DZuYdJl-20" edge="1" parent="3Z2xPAnTabFH4DZuYdJl-1" source="3Z2xPAnTabFH4DZuYdJl-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="3Z2xPAnTabFH4DZuYdJl-6" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="3Z2xPAnTabFH4DZuYdJl-5" parent="3Z2xPAnTabFH4DZuYdJl-1" style="rounded=0;whiteSpace=wrap;html=1;" value="Quản lý danh mục Unit Type và kích thước ô kho" vertex="1">
+          <mxGeometry height="60" width="150" x="60" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="3Z2xPAnTabFH4DZuYdJl-6" parent="3Z2xPAnTabFH4DZuYdJl-1" style="rounded=0;whiteSpace=wrap;html=1;" value="Quản lý Storage Unit - mã, vị trí, trạng thái" vertex="1">
+          <mxGeometry height="60" width="150" x="60" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="3Z2xPAnTabFH4DZuYdJl-7" parent="3Z2xPAnTabFH4DZuYdJl-1" style="rounded=0;whiteSpace=wrap;html=1;" value="Phân công Facility Staff theo công việc hàng ngày" vertex="1">
+          <mxGeometry height="60" width="150" x="340" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="3Z2xPAnTabFH4DZuYdJl-9" parent="3Z2xPAnTabFH4DZuYdJl-1" style="rounded=0;whiteSpace=wrap;html=1;" value="Xem báo cáo cơ sở - trạng thái ô kho, doanh thu, Usage Rate, hợp đồng" vertex="1">
+          <mxGeometry height="60" width="150" x="590" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="3Z2xPAnTabFH4DZuYdJl-27" edge="1" parent="3Z2xPAnTabFH4DZuYdJl-1" source="3Z2xPAnTabFH4DZuYdJl-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="3Z2xPAnTabFH4DZuYdJl-4" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="290" y="70" />
+              <mxPoint x="290" y="70" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="3Z2xPAnTabFH4DZuYdJl-12" parent="3Z2xPAnTabFH4DZuYdJl-1" style="ellipse;fillColor=strokeColor;html=1;" value="" vertex="1">
+          <mxGeometry height="20" width="20" x="280" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="3Z2xPAnTabFH4DZuYdJl-15" parent="3Z2xPAnTabFH4DZuYdJl-1" style="rounded=0;whiteSpace=wrap;html=1;" value="Cập nhật trạng thái ô kho" vertex="1">
+          <mxGeometry height="60" width="150" x="60" y="440" as="geometry" />
+        </mxCell>
+        <mxCell id="3Z2xPAnTabFH4DZuYdJl-2" parent="1" style="swimlane;whiteSpace=wrap;html=1;startSize=23;" value="Facility Staff" vertex="1">
+          <mxGeometry height="740" width="480" x="280" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="3Z2xPAnTabFH4DZuYdJl-8" parent="3Z2xPAnTabFH4DZuYdJl-2" style="rounded=0;whiteSpace=wrap;html=1;" value="Xem danh sách công việc được giao hàng ngày" vertex="1">
+          <mxGeometry height="60" width="150" x="220" y="220" as="geometry" />
+        </mxCell>
+        <mxCell id="3Z2xPAnTabFH4DZuYdJl-14" parent="3Z2xPAnTabFH4DZuYdJl-2" style="rounded=0;whiteSpace=wrap;html=1;" value="Ghi nhận trạng thái thay đổi ô kho tại chỗ (optional)" vertex="1">
+          <mxGeometry height="60" width="150" x="100" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="3Z2xPAnTabFH4DZuYdJl-18" edge="1" parent="3Z2xPAnTabFH4DZuYdJl-2" source="3Z2xPAnTabFH4DZuYdJl-16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="3Z2xPAnTabFH4DZuYdJl-14" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="3Z2xPAnTabFH4DZuYdJl-16" parent="3Z2xPAnTabFH4DZuYdJl-2" style="ellipse;fillColor=strokeColor;html=1;" value="" vertex="1">
+          <mxGeometry height="20" width="20" x="165" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="3Z2xPAnTabFH4DZuYdJl-3" parent="1" style="swimlane;whiteSpace=wrap;html=1;startSize=23;" value="System Administrator" vertex="1">
+          <mxGeometry height="740" width="530" x="760" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="3Z2xPAnTabFH4DZuYdJl-31" edge="1" parent="3Z2xPAnTabFH4DZuYdJl-3" source="3Z2xPAnTabFH4DZuYdJl-28" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="3Z2xPAnTabFH4DZuYdJl-29" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="3Z2xPAnTabFH4DZuYdJl-28" parent="3Z2xPAnTabFH4DZuYdJl-3" style="rounded=0;whiteSpace=wrap;html=1;" value="Gán vai trò cho người dùng trong hệ thống" vertex="1">
+          <mxGeometry height="60" width="150" x="190" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="3Z2xPAnTabFH4DZuYdJl-32" edge="1" parent="3Z2xPAnTabFH4DZuYdJl-3" source="3Z2xPAnTabFH4DZuYdJl-29" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="3Z2xPAnTabFH4DZuYdJl-30" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="3Z2xPAnTabFH4DZuYdJl-29" parent="3Z2xPAnTabFH4DZuYdJl-3" style="rounded=0;whiteSpace=wrap;html=1;" value="Cấu hình quyền truy cập dữ liệu theo vai trò và cơ sở" vertex="1">
+          <mxGeometry height="60" width="150" x="190" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="3Z2xPAnTabFH4DZuYdJl-30" parent="3Z2xPAnTabFH4DZuYdJl-3" style="ellipse;html=1;shape=endState;fillColor=strokeColor;" value="" vertex="1">
+          <mxGeometry height="30" width="30" x="250" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="3Z2xPAnTabFH4DZuYdJl-34" edge="1" parent="3Z2xPAnTabFH4DZuYdJl-3" source="3Z2xPAnTabFH4DZuYdJl-33" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="3Z2xPAnTabFH4DZuYdJl-28" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="3Z2xPAnTabFH4DZuYdJl-33" parent="3Z2xPAnTabFH4DZuYdJl-3" style="ellipse;fillColor=strokeColor;html=1;" value="" vertex="1">
+          <mxGeometry height="20" width="20" x="255" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="3Z2xPAnTabFH4DZuYdJl-19" edge="1" parent="1" source="3Z2xPAnTabFH4DZuYdJl-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="3Z2xPAnTabFH4DZuYdJl-15">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="3Z2xPAnTabFH4DZuYdJl-11" edge="1" parent="1" source="3Z2xPAnTabFH4DZuYdJl-7" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0;exitDx=0;exitDy=0;edgeStyle=orthogonalEdgeStyle;entryX=0.624;entryY=-0.056;entryDx=0;entryDy=0;entryPerimeter=0;" target="3Z2xPAnTabFH4DZuYdJl-8">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="20" y="190" />
+              <mxPoint x="593.6700000000001" y="190" />
+            </Array>
+            <mxPoint x="10" y="240" as="sourcePoint" />
+            <mxPoint x="642.39990234375" y="260" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

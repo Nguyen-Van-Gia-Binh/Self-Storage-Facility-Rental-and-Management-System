@@ -126,8 +126,8 @@ Tổng cộng **22 user story**, **111 acceptance criteria**, **95 story point**
 
 ### `US-SC-02.1` — Tạo đặt chỗ ô kho
 
-> **Là** Storage Customer, **tôi muốn** tạo Reservation bằng cách chọn cơ sở, loại ô kho, ngày bắt
-> đầu và thời hạn thuê, **để** giữ được capacity phù hợp cho kỳ thuê của mình.
+> **Là** Storage Customer, **tôi muốn** tạo Reservation bằng cách xem sơ đồ cơ sở, chọn ô kho cụ thể, ngày bắt
+> đầu và thời hạn thuê, **để** giữ được đúng ô kho phù hợp cho kỳ thuê của mình.
 
 | Use case | Ưu tiên | Story point | Giai đoạn |
 |----------|---------|:-----------:|:---------:|
@@ -135,9 +135,9 @@ Tổng cộng **22 user story**, **111 acceptance criteria**, **95 story point**
 
 **Acceptance Criteria**
 
-- **AC-1** — *Given* tôi đã đăng nhập và chọn đủ Facility, Unit Type, ngày bắt đầu, số tháng thuê,
-  *when* tôi xác nhận, *then* hệ thống tạo Reservation *Pending Payment* và giữ một capacity slot
-  cho đúng khoảng thuê, chưa gắn Storage Unit cụ thể theo `BR-RES-02`.
+- **AC-1** — *Given* tôi đã đăng nhập và chọn đủ Facility, ô kho cụ thể trên sơ đồ/danh sách, ngày bắt đầu, số tháng thuê,
+  *when* tôi xác nhận, *then* hệ thống tạo Reservation *Pending Payment* và tạm giữ chính Storage Unit đó
+  cho đúng khoảng thuê theo `BR-RES-02`.
 - **AC-2** — *Given* Reservation vừa tạo, *when* hệ thống giữ capacity, *then* slot được giữ đúng
   `reservation.hold_hours` (48 giờ) theo `BR-DEP-03`, và thời hạn còn lại được hiển thị dạng đếm
   ngược trên màn hình thanh toán.
@@ -311,7 +311,7 @@ Tổng cộng **22 user story**, **111 acceptance criteria**, **95 story point**
 **Acceptance Criteria**
 
 - **AC-1** — *Given* có khoản phụ thu được ghi nhận cho hợp đồng của tôi (chi phí khắc phục hư hỏng,
-  cấp lại Access Card), *when* tôi mở hợp đồng, *then* khoản đó hiện trong mục "Cần thanh toán" kèm
+  cấp lại chìa khóa vật lý), *when* tôi mở hợp đồng, *then* khoản đó hiện trong mục "Cần thanh toán" kèm
   lý do và ngày phát sinh.
 - **AC-2** — *Given* quyết toán trả kho cho kết quả âm theo `BR-RET-04`, *when* hợp đồng chuyển sang
   chờ tất toán, *then* hệ thống hiển thị đúng số tiền tôi phải nộp thêm và không cho đóng hợp đồng
@@ -480,8 +480,8 @@ Tổng cộng **22 user story**, **111 acceptance criteria**, **95 story point**
 
 **Acceptance Criteria**
 
-- **AC-1** — *Given* hợp đồng của tôi còn 7, 3 hoặc 1 ngày là hết hạn, *when* tác vụ nhắc hạn chạy,
-  *then* tôi nhận thông báo trong ứng dụng và qua email theo `BR-REN-01`.
+- **AC-1** — *Given* hợp đồng của tôi còn 30 ngày (1 tháng), 7, 3 hoặc 1 ngày là hết hạn, *when* tác vụ nhắc hạn chạy,
+  *then* tôi nhận thông báo nhắc hạn theo `BR-REN-01`; nếu trước 1 tháng tôi không gia hạn, hệ thống tự động ghi nhận chuẩn bị trả kho khi đến hạn.
 - **AC-2** — *Given* tôi bấm gia hạn, *when* màn hình mở ra, *then* tôi chọn được số tháng gia hạn
   từ 1 tới 12 tháng theo `BR-REN-03` và `BR-REN-07`, và thấy ngay số tiền tương ứng.
 - **AC-3** — *Given* tôi gia hạn thành công, *when* hệ thống xử lý xong, *then* ô kho của tôi
@@ -524,7 +524,7 @@ Tổng cộng **22 user story**, **111 acceptance criteria**, **95 story point**
   hợp còn lại bị từ chối theo `BR-RET-12`.
 - **AC-6** — *Given* tôi không có mặt vào ngày hẹn kiểm tra và hợp đồng đã qua ngày kết thúc, *when*
   tác vụ quá hạn chạy, *then* hợp đồng chuyển sang *Overdue* theo `BR-RET-07`.
-- **AC-7** — *Given* Contract đang *Overdue* nhưng chưa tới D+60, *when* tôi chọn Return, *then*
+- **AC-7** — *Given* Contract đang *Overdue* nhưng chưa tới D+10, *when* tôi chọn Return, *then*
   Contract chuyển *Pending Return*, khoản nợ được đưa vào quyết toán và Access chỉ mở trong lịch
   Return đã xác nhận theo `BR-RET-11`.
 
@@ -543,18 +543,18 @@ Tổng cộng **22 user story**, **111 acceptance criteria**, **95 story point**
 
 - **AC-1** — *Given* hợp đồng của tôi vào *Overdue*, *when* tôi mở hợp đồng, *then* tôi thấy số ngày
   quá hạn, phí quá hạn đã phát sinh và tổng số tiền cần thanh toán.
-- **AC-2** — *Given* tôi đang trong 3 ngày ân hạn, *when* tôi xem, *then* hệ thống nêu rõ chưa phát
-  sinh phí và ngày bắt đầu tính phí theo `BR-OVD-02`.
-- **AC-3** — *Given* phí quá hạn của tôi đã chạm trần 50%, *when* tôi xem, *then* hệ thống nêu rõ
-  phí đã đạt mức tối đa và không tăng thêm, theo `BR-OVD-04`.
-- **AC-4** — *Given* tôi quá hạn từ 10 ngày trở lên, *when* tôi thử dùng Access Code, *then* mã
-  không hoạt động và ứng dụng giải thích lý do bị khóa theo `BR-OVD-05`.
-- **AC-5** — *Given* tôi quá hạn 30 ngày, *when* hệ thống gửi thông báo chấm dứt, *then* tôi nhận
-  được thông báo nêu rõ tại D+60 Contract tự chuyển *Terminated*, Access bị *Revoked* và Facility
-  Manager lập biên bản tài sản theo `BR-OVD-06`, `BR-OVD-07`, `BR-OVD-11`.
-- **AC-6** — *Given* tôi thanh toán đủ khoản nợ trước D+60, *when* giao dịch thành công, *then* hệ
-  thống yêu cầu tôi chọn Renewal hoặc Return: Renewal đưa Contract về *Active* và mở Access trong
-  1 giờ; Return đưa Contract sang *Pending Return* theo `BR-OVD-08`.
+- **AC-2** — *Given* tôi đang trong 3 ngày ân hạn (D+1..D+3), *when* tôi xem, *then* hệ thống nêu rõ
+  chưa phát sinh phí và ngày bắt đầu tính phí theo `BR-OVD-02`.
+- **AC-3** — *Given* phí quá hạn của tôi đã chạm trần 35%, *when* tôi xem, *then* hệ thống nêu rõ
+  phí đã đạt mức tối đa và không tăng thêm, theo `BR-OVD-03`.
+- **AC-4** — *Given* tôi quá hạn trong khoảng D+4 đến D+9, *when* hệ thống gửi thông báo nhắc nợ hằng
+  ngày, *then* tôi nhận được thông báo nêu rõ số phí phát sinh và hạn chót D+10 sẽ bị chấm dứt hợp
+  đồng theo `BR-OVD-04`, `BR-OVD-06`.
+- **AC-5** — *Given* hợp đồng của tôi chạm mốc D+10, *when* hệ thống xử lý, *then* hợp đồng chuyển
+  *Terminated*, mã truy cập bị thu hồi và Facility Manager lập danh sách thu dọn ô kho theo
+  `BR-OVD-05`, `BR-OVD-07`, `BR-OVD-11`.
+- **AC-6** — *Given* tôi thanh toán đủ khoản nợ trước D+10, *when* giao dịch thành công, *then* hệ
+  thống cho phép tôi hoàn tất thủ tục trả kho hoặc tạo hợp đồng thuê mới theo `BR-OVD-08`.
 
 ---
 

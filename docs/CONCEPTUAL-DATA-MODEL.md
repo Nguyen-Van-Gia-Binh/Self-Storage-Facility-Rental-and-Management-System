@@ -3,7 +3,7 @@
 **Quy mô**: **Đầy đủ 24 Thực thể** khớp 100% với CSDL [database/Storage_Self.sql](../database/Storage_Self.sql) và [docs/DATA-DICTIONARY.md](DATA-DICTIONARY.md)  
 **Chuẩn thiết kế theo yêu cầu Giảng viên**: **Entity-Only CDM (Zero Attributes)** — Chỉ thể hiện Thực thể và Bản số Quan hệ, ẩn toàn bộ thuộc tính chi tiết để tập trung vào kiến trúc tổng thể.  
 **File sơ đồ PlantUML**: [docs/diagrams/erd-conceptual-model.puml](diagrams/erd-conceptual-model.puml)  
-**Sơ đồ đối ứng mức Vật lý/CSDL (Đầy đủ thuộc tính)**: [docs/diagrams/erd-database-model.puml](diagrams/erd-database-model.puml)
+**Sơ đồ đối ứng mức Vật lý/CSDL (Đầy đủ thuộc tính)**: [docs/diagrams/_archive/erd-database-model.puml](diagrams/_archive/erd-database-model.puml)
 
 ---
 

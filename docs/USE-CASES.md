@@ -45,18 +45,18 @@ Tài liệu có **75 use case nghiệp vụ** (Flow 1–7) và **3 use case nề
 
 ## 2. Flow 1 — Storage Unit Reservation
 
-*Luồng đặt chỗ ô kho.* Tác nhân chính: **Storage Customer** · Liên quan: **Facility Manager**
+*Luồng đặt chỗ ô kho.* Tác nhân chính: **Storage Customer**, **System** · Liên quan: **Facility Manager** (giám sát)
 
 | Mã UC       | Use case                                                                          | Actor chính     | Actor liên quan | Mã yêu cầu        |
 | ------------ | --------------------------------------------------------------------------------- | ---------------- | ---------------- | -------------------- |
 | `UC-F1-01` | Tìm kiếm và xem danh sách Facility                                            | Storage Customer | —               | `SC-01`            |
-| `UC-F1-02` | Xem chi tiết Unit Type, kích thước và giá thuê                             | Storage Customer | —               | `SC-01`            |
+| `UC-F1-02` | Xem chi tiết Unit Type, danh sách ô kho và sơ đồ vị trí                     | Storage Customer | —               | `SC-01`            |
 | `UC-F1-03` | Kiểm tra capacity còn trống theo Unit Type và khoảng thuê             | Storage Customer | —               | `SC-01`            |
-| `UC-F1-04` | Tạo Reservation — chọn Facility, Unit Type, ngày bắt đầu, thời hạn thuê | Storage Customer | Facility Manager | `SC-02`            |
+| `UC-F1-04` | Tạo Reservation — chọn Facility, ô kho cụ thể trên sơ đồ, ngày bắt đầu, thời hạn thuê | Storage Customer | — | `SC-02`            |
 | `UC-F1-05` | Ước tính chi phí thuê và tiền Deposit phải trả                           | Storage Customer | —               | `SC-02`, `BM-03` |
-| `UC-F1-06` | Giữ capacity theo Facility × Unit Type × khoảng thuê khi chờ thanh toán | System           | Facility Manager | `FM-02`            |
+| `UC-F1-06` | Giữ ô kho cụ thể đã chọn trong 48h khi chờ thanh toán                 | System           | —               | `FM-02`            |
 | `UC-F1-07` | Thanh toán Deposit và toàn bộ phí thuê N tháng                              | Storage Customer | —               | `SC-03`            |
-| `UC-F1-08` | Phân bổ Storage Unit cụ thể sau khi thanh toán thành công                  | Facility Manager | Storage Customer | `FM-02`            |
+| `UC-F1-08` | Khóa chính thức Storage Unit khách đã chọn sau khi thanh toán thành công | System           | Storage Customer, Facility Manager | `FM-02`            |
 | `UC-F1-09` | Nhận lịch hẹn Check-in và xác nhận đặt chỗ thành công                  | Storage Customer | —               | `SC-02`            |
 | `UC-F1-10` | Hủy Reservation trước ngày bắt đầu thuê                                   | Storage Customer | Facility Manager | `SC-02`, `BM-02` |
 | `UC-F1-11` | Tự động cho Reservation hết hạn và giải phóng capacity                 | System           | —               | `FM-02`            |
@@ -72,8 +72,8 @@ Tài liệu có **75 use case nghiệp vụ** (Flow 1–7) và **3 use case nề
 | ------------ | ------------------------------------------------------------ | ---------------- | ---------------- | -------------------- |
 | `UC-F2-01` | Tra cứu Reservation của khách khi khách đến cơ sở    | Facility Staff   | Storage Customer | `FS-01`            |
 | `UC-F2-02` | Xác minh danh tính khách và tình trạng thanh toán     | Facility Staff   | Storage Customer | `FS-01`            |
-| `UC-F2-03` | Bàn giao ô kho và lập biên bản bàn giao               | Facility Staff   | Storage Customer | `FS-02`            |
-| `UC-F2-04` | Cấp Access Code hoặc Access Card cho khách                | Facility Staff   | Storage Customer | `FS-02`            |
+| `UC-F2-03` | Bàn giao ô kho và lập biên bản bàn giao điện tử               | Facility Staff   | Storage Customer | `FS-02`            |
+| `UC-F2-04` | Cấp mã Access Code / PIN và chìa khóa vật lý (nếu có)        | Facility Staff   | Storage Customer | `FS-02`            |
 | `UC-F2-05` | Khách xác nhận Check-in, nhận ô kho và hoàn tất Reservation | Storage Customer | Facility Staff   | `SC-04`            |
 | `UC-F2-06` | Cập nhật trạng thái Storage Unit sang *Occupied*          | Facility Staff   | —               | `FS-03`            |
 | `UC-F2-07` | Kích hoạt Contract từ *Pending Check-in* sau bàn giao     | Facility Manager | Facility Staff   | `FM-02`            |
@@ -86,7 +86,7 @@ Tài liệu có **75 use case nghiệp vụ** (Flow 1–7) và **3 use case nề
 
 *Luồng quản lý ô kho đang thuê.* Tác nhân chính: **Storage Customer** · Liên quan: **Facility Manager**, **Facility Staff**
 
-Activity Diagram: [diagrams/activity-flow-3.puml](diagrams/activity-flow-3.puml) — trang 1 giám sát (`UC-F3-01`–`04`, `UC-F3-10`–`12`); trang 2 quy trình Return (`UC-F3-05`–`09`, `UC-F3-13`).
+Activity Diagram: [activity-diagram-flow-3-1-contract-renewal.drawio](diagrams/activity-diagram-flow-3-1-contract-renewal.drawio) (lưu trữ cũ: [diagrams/_archive/activity-flow-3.puml](diagrams/_archive/activity-flow-3.puml)) — giám sát (`UC-F3-01`–`04`, `UC-F3-10`–`12`) và quy trình Return (`UC-F3-05`–`09`, `UC-F3-13`).
 
 | Mã UC       | Use case                                                                    | Actor chính     | Actor liên quan | Mã yêu cầu        |
 | ------------ | --------------------------------------------------------------------------- | ---------------- | ---------------- | -------------------- |
@@ -94,9 +94,9 @@ Activity Diagram: [diagrams/activity-flow-3.puml](diagrams/activity-flow-3.puml)
 | `UC-F3-02` | Xem chi tiết hợp đồng, thời hạn và lịch sử thanh toán             | Storage Customer | —               | `SC-05`            |
 | `UC-F3-03` | Cập nhật thông tin liên hệ và người được ủy quyền truy cập    | Storage Customer | —               | `SC-05`            |
 | `UC-F3-04` | Xem lịch sử ra vào và trạng thái Access Code                          | Storage Customer | —               | `SC-05`            |
-| `UC-F3-05` | Đăng ký trả kho — Return                                               | Storage Customer | Facility Manager | `SC-05`, `FM-04` |
+| `UC-F3-05` | Tự động ghi nhận trả kho hoặc khách đăng ký trả kho  | Storage Customer | Facility Manager | `SC-05`, `FM-04` |
 | `UC-F3-06` | Kiểm tra và xác nhận hiện trạng ô kho khi khách trả                | Facility Staff   | Storage Customer | `FS-04`            |
-| `UC-F3-07` | Thu hồi Access Card và vô hiệu hóa Access Code                         | Facility Staff   | —               | `FS-03`            |
+| `UC-F3-07` | Thu hồi chìa khóa cơ (nếu có) và vô hiệu hóa Access Code       | Facility Staff   | —               | `FS-03`            |
 | `UC-F3-08` | Quyết toán hợp đồng và hoàn Deposit                                  | Facility Manager | Storage Customer | `FM-04`            |
 | `UC-F3-09` | Cập nhật trạng thái ô kho sau khi trả — dọn dẹp rồi mở bán lại | Facility Staff   | —               | `FS-03`            |
 | `UC-F3-10` | Theo dõi danh sách khách và hợp đồng đang hiệu lực                | Facility Manager | —               | `FM-03`            |
@@ -110,7 +110,7 @@ Activity Diagram: [diagrams/activity-flow-3.puml](diagrams/activity-flow-3.puml)
 
 *Luồng quy định nghiệp vụ, quản lý phí và giám sát doanh thu.* Tác nhân chính: **Business Operations Manager**
 
-Activity Diagram: [diagrams/activity-flow-4.puml](diagrams/activity-flow-4.puml) — các nhánh cấu hình độc lập: chính sách nghiệp vụ (`UC-F4-02`–`06`), khung giá và phụ phí (`UC-F4-07`–`09`), danh mục Facility (`UC-F4-01`), giám sát và báo cáo (`UC-F4-10`–`12`), duyệt miễn/giảm phí quá hạn theo vụ (`UC-F4-13` ↔ `UC-F6-12`).
+Activity Diagram: [activity-diagram-flow-4-business-operations.drawio](diagrams/activity-diagram-flow-4-business-operations.drawio) (lưu trữ cũ: [diagrams/_archive/activity-flow-4.puml](diagrams/_archive/activity-flow-4.puml)) — các nhánh cấu hình độc lập: chính sách nghiệp vụ (`UC-F4-02`–`06`), khung giá và phụ phí (`UC-F4-07`–`09`), danh mục Facility (`UC-F4-01`), giám sát và báo cáo (`UC-F4-10`–`12`), duyệt miễn/giảm phí quá hạn theo vụ (`UC-F4-13` ↔ `UC-F6-12`).
 
 | Mã UC       | Use case                                                                    | Actor chính                | Actor liên quan | Mã yêu cầu |
 | ------------ | --------------------------------------------------------------------------- | --------------------------- | ---------------- | ------------- |
@@ -134,7 +134,7 @@ Activity Diagram: [diagrams/activity-flow-4.puml](diagrams/activity-flow-4.puml)
 
 *Luồng quản lý kho và nhân sự tại cơ sở.* Tác nhân chính: **Facility Manager** · Liên quan: **Facility Staff**, **System Administrator**
 
-Activity Diagram: [diagrams/activity-flow-5.puml](diagrams/activity-flow-5.puml) — các nhánh độc lập: danh mục ô kho và vòng đời trạng thái (`UC-F5-01`–`03`), phân công nhân sự (`UC-F5-04`–`05`), báo cáo cơ sở (`UC-F5-06`), phân quyền theo vai trò và cơ sở (`UC-F5-07`–`08`).
+Activity Diagram: [activity-diagram-flow-5-facility-staff-management.drawio](diagrams/activity-diagram-flow-5-facility-staff-management.drawio) (lưu trữ cũ: [diagrams/_archive/activity-flow-5.puml](diagrams/_archive/activity-flow-5.puml)) — các nhánh độc lập: danh mục ô kho và vòng đời trạng thái (`UC-F5-01`–`03`), phân công nhân sự (`UC-F5-04`–`05`), báo cáo cơ sở (`UC-F5-06`), phân quyền theo vai trò và cơ sở (`UC-F5-07`–`08`).
 
 | Mã UC       | Use case                                                                             | Actor chính         | Actor liên quan | Mã yêu cầu |
 | ------------ | ------------------------------------------------------------------------------------ | -------------------- | ---------------- | ------------- |
@@ -153,21 +153,21 @@ Activity Diagram: [diagrams/activity-flow-5.puml](diagrams/activity-flow-5.puml)
 
 *Luồng gia hạn thuê và xử lý quá hạn.* Tác nhân chính: **Storage Customer**, **Facility Manager**
 
-Activity Diagram: [diagrams/activity-flow-6.puml](diagrams/activity-flow-6.puml) — trang 1 nhắc hạn và Renewal (`UC-F6-01`–`04`); trang 2 Overdue D+1 đến D+60 (`UC-F6-05`–`12`).
+Activity Diagram: [activity-diagram-flow-3-1-contract-renewal.drawio](diagrams/activity-diagram-flow-3-1-contract-renewal.drawio) và [activity-diagram-flow-3-2-overdue-handling.drawio](diagrams/activity-diagram-flow-3-2-overdue-handling.drawio) (lưu trữ cũ: [diagrams/_archive/activity-flow-6.puml](diagrams/_archive/activity-flow-6.puml)) — Sub-flow 6.1 nhắc hạn và Renewal (`UC-F6-01`–`04`); Sub-flow 6.2 Overdue D+4 đến D+10 (`UC-F6-05`–`12`).
 
 | Mã UC       | Use case                                                       | Actor chính     | Actor liên quan | Mã yêu cầu        |
 | ------------ | -------------------------------------------------------------- | ---------------- | ---------------- | -------------------- |
-| `UC-F6-01` | Nhận thông báo nhắc hạn hợp đồng sắp hết hạn        | Storage Customer | System           | `SC-05`, `BM-02` |
-| `UC-F6-02` | Yêu cầu gia hạn hợp đồng thuê                           | Storage Customer | Facility Manager | `SC-05`            |
+| `UC-F6-01` | Nhận thông báo nhắc hạn (trước 1 tháng, 7, 3, 1 ngày) | Storage Customer | System           | `SC-05`, `BM-02` |
+| `UC-F6-02` | Yêu cầu gia hạn hợp đồng thuê khi còn hạn               | Storage Customer | Facility Manager | `SC-05`            |
 | `UC-F6-03` | Thanh toán phí gia hạn                                      | Storage Customer | —               | `SC-03`            |
 | `UC-F6-04` | Tự động ghi nhận gia hạn sau Payment thành công        | System           | Facility Manager  | `FM-04`            |
 | `UC-F6-05` | Phát hiện hợp đồng quá hạn theo lịch chạy tự động  | System           | Facility Manager | `FM-04`            |
-| `UC-F6-06` | Tính và áp phí quá hạn theo chính sách                 | System           | Facility Manager | `FM-04`, `BM-03` |
+| `UC-F6-06` | Tính và áp phí quá hạn theo ngày từ D+4 đến D+10       | System           | Facility Manager | `FM-04`, `BM-03` |
 | `UC-F6-07` | Tự động khóa Access Credential tại D+10              | System           | Facility Manager  | `FM-04`            |
-| `UC-F6-08` | Tự động gửi thông báo chấm dứt tại D+30              | System           | Facility Manager  | `FM-04`            |
-| `UC-F6-09` | Xử lý tài sản sau khi hệ thống chấm dứt tại D+60 | Facility Manager | System            | `FM-04`, `BM-02` |
+| `UC-F6-08` | Gửi thông báo nhắc dọn đồ hàng ngày trong 10 ngày quá hạn | System       | Storage Customer  | `FM-04`            |
+| `UC-F6-09` | Staff dọn kho, niêm phong đồ tồn về kho tổng offline sau D+10 | Facility Staff | Facility Manager | `FM-04`, `BM-02` |
 | `UC-F6-10` | Theo dõi danh sách hợp đồng quá hạn tại cơ sở        | Facility Manager | —               | `FM-06`            |
-| `UC-F6-11` | Tự động chấm dứt Contract tại D+60                   | System           | Facility Manager  | `FM-04`            |
+| `UC-F6-11` | Tự động chấm dứt Contract và chuyển kho Cleaning tại D+10 | System     | Facility Manager  | `FM-04`            |
 | `UC-F6-12` | Đề xuất miễn hoặc giảm phí quá hạn theo vụ           | Facility Manager | Business Operations Manager | `FM-04` |
 
 ---
@@ -176,13 +176,13 @@ Activity Diagram: [diagrams/activity-flow-6.puml](diagrams/activity-flow-6.puml)
 
 *Luồng yêu cầu hỗ trợ và xử lý sự cố.* Tác nhân chính: **Storage Customer**, **Facility Staff** · Liên quan: **Facility Manager**
 
-Activity Diagram: [diagrams/activity-flow-7.puml](diagrams/activity-flow-7.puml) — gửi và phân loại (`UC-F7-01`, `UC-F7-03`), phân công theo SLA (`UC-F7-04`), nhánh xử lý theo loại sự cố (`UC-F7-05`, `UC-F7-06`), cập nhật ô kho và nghiệm thu / tự đóng (`UC-F7-07`, `UC-F7-08`); khách theo dõi song song (`UC-F7-02`).
+Activity Diagram: [activity-diagram-flow-7-support-incident-handling.drawio](diagrams/activity-diagram-flow-7-support-incident-handling.drawio) (lưu trữ cũ: [diagrams/_archive/activity-flow-7.puml](diagrams/_archive/activity-flow-7.puml)) — gửi và phân loại (`UC-F7-01`, `UC-F7-03`), phân công theo SLA (`UC-F7-04`), nhánh xử lý theo loại sự cố (`UC-F7-05`, `UC-F7-06`), cập nhật ô kho và nghiệm thu / tự đóng (`UC-F7-07`, `UC-F7-08`); khách theo dõi song song (`UC-F7-02`).
 
 | Mã UC       | Use case                                                                            | Actor chính     | Actor liên quan | Mã yêu cầu |
 | ------------ | ----------------------------------------------------------------------------------- | ---------------- | ---------------- | ------------- |
 | `UC-F7-01` | Gửi yêu cầu hỗ trợ về ô kho, khóa, Access Code, thanh toán hoặc tài sản | Storage Customer | —               | `SC-06`     |
 | `UC-F7-02` | Theo dõi trạng thái và phản hồi của yêu cầu hỗ trợ                       | Storage Customer | —               | `SC-06`     |
-| `UC-F7-03` | Tiếp nhận và phân loại yêu cầu hỗ trợ                                      | Facility Staff   | Facility Manager | `FS-05`     |
+| `UC-F7-03` | Tiếp nhận và phân loại yêu cầu hỗ trợ sự cố       | Facility Manager | Facility Staff   | `FM-05`     |
 | `UC-F7-04` | Phân công Facility Staff xử lý sự cố                                          | Facility Manager | Facility Staff   | `FM-05`     |
 | `UC-F7-05` | Xử lý sự cố mất chìa khóa hoặc lỗi Access Code                             | Facility Staff   | Storage Customer | `FS-05`     |
 | `UC-F7-06` | Xử lý ô kho hư hỏng và yêu cầu bảo trì                                    | Facility Staff   | Facility Manager | `FS-05`     |
@@ -252,17 +252,16 @@ một use case tương ứng.
 
 ## 11. Use Case Diagram tổng
 
-Bản chuẩn UML đầy đủ 78 use case: **[diagrams/use-case-diagram.puml](diagrams/use-case-diagram.puml)**
-— mở bằng extension *PlantUML* trong VS Code (`Alt+D` để xem trước; `Ctrl+Shift+P` → *PlantUML: Export
-Current Diagram* để xuất PNG/SVG nộp báo cáo).
+Bản chuẩn UML lưu trữ: **[diagrams/_archive/use-case-diagram.puml](diagrams/_archive/use-case-diagram.puml)**
+— sơ đồ chính thức hiện được biểu diễn và theo dõi qua các sơ đồ hoạt động Draw.io (`.drawio`) trong `docs/diagrams/`.
 
-Activity Diagram đủ 7 flow: Flow 1 [activity-flow-1-booking.puml](diagrams/activity-flow-1-booking.puml) ·
-Flow 2 [activity-flow2-checkin-handover.puml](diagrams/activity-flow2-checkin-handover.puml) (T1.7) ·
-Flow 3 [activity-flow-3.puml](diagrams/activity-flow-3.puml) ·
-Flow 6 [activity-flow-6.puml](diagrams/activity-flow-6.puml) (T1.8) ·
-Flow 4 [activity-flow-4.puml](diagrams/activity-flow-4.puml) ·
-Flow 5 [activity-flow-5.puml](diagrams/activity-flow-5.puml) ·
-Flow 7 [activity-flow-7.puml](diagrams/activity-flow-7.puml) (T1.9).
+Activity Diagram đủ 7 flow: Flow 1 [activity-diagram-flow-1-storage-reservation.drawio](diagrams/activity-diagram-flow-1-storage-reservation.drawio) (lưu trữ cũ: [activity-flow-1-booking.puml](diagrams/_archive/activity-flow-1-booking.puml)) ·
+Flow 2 [activity-diagram-flow-2-checkin-handover.drawio](diagrams/activity-diagram-flow-2-checkin-handover.drawio) (lưu trữ cũ: [activity-flow2-checkin-handover.puml](diagrams/_archive/activity-flow2-checkin-handover.puml)) ·
+Flow 3 [activity-diagram-flow-3-1-contract-renewal.drawio](diagrams/activity-diagram-flow-3-1-contract-renewal.drawio) (lưu trữ cũ: [activity-flow-3.puml](diagrams/_archive/activity-flow-3.puml)) ·
+Flow 6 [activity-diagram-flow-3-1-contract-renewal.drawio](diagrams/activity-diagram-flow-3-1-contract-renewal.drawio), [activity-diagram-flow-3-2-overdue-handling.drawio](diagrams/activity-diagram-flow-3-2-overdue-handling.drawio) (lưu trữ cũ: [activity-flow-6.puml](diagrams/_archive/activity-flow-6.puml)) ·
+Flow 4 [activity-diagram-flow-4-business-operations.drawio](diagrams/activity-diagram-flow-4-business-operations.drawio) (lưu trữ cũ: [activity-flow-4.puml](diagrams/_archive/activity-flow-4.puml)) ·
+Flow 5 [activity-diagram-flow-5-facility-staff-management.drawio](diagrams/activity-diagram-flow-5-facility-staff-management.drawio) (lưu trữ cũ: [activity-flow-5.puml](diagrams/_archive/activity-flow-5.puml)) ·
+Flow 7 [activity-diagram-flow-7-support-incident-handling.drawio](diagrams/activity-diagram-flow-7-support-incident-handling.drawio) (lưu trữ cũ: [activity-flow-7.puml](diagrams/_archive/activity-flow-7.puml)).
 
 Bản rút gọn dưới đây gom use case theo nhóm chức năng để nắm nhanh quan hệ actor × luồng:
 
@@ -281,7 +280,7 @@ flowchart LR
             U1["Tra cứu Facility<br/>và capacity theo kỳ thuê"]
             U2["Tạo Reservation"]
             U3["Trả phí N tháng<br/>và Deposit"]
-            U4["Phân bổ Storage Unit<br/>sau thanh toán"]
+            U4["Khóa chính thức Storage Unit<br/>sau thanh toán"]
             U4b["Hủy Reservation<br/>phía cơ sở"]
         end
         subgraph G2["Flow 2 · Check-in and Handover"]
@@ -311,8 +310,8 @@ flowchart LR
         end
         subgraph G6["Flow 6 · Renewal and Overdue"]
             U21["Gia hạn hợp đồng"]
-            U22["Job Overdue<br/>D+1 đến D+60"]
-            U23["Xử lý tài sản D+60"]
+            U22["Job Overdue<br/>D+1 đến D+10"]
+            U23["Thu dọn kho sau D+10"]
             U23b["Đề xuất miễn giảm phí"]
         end
         subgraph G7["Flow 7 · Support and Issues"]
@@ -342,7 +341,6 @@ flowchart LR
     FS --- U18
     FS --- U25
 
-    FM --- U4
     FM --- U4b
     FM --- U11
     FM --- U16
@@ -351,6 +349,7 @@ flowchart LR
     FM --- U23
     FM --- U23b
 
+    Job --- U4
     Job --- U22
 
     BM --- U12
