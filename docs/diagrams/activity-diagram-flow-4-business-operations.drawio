@@ -1,124 +1,213 @@
-<mxfile host="Electron">
-  <diagram name="Page-1" id="9NspiOrTYaf8yocizau9">
-    <mxGraphModel dx="2732" dy="749" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
-      <root>
-        <mxCell id="0" />
-        <mxCell id="1" parent="0" />
-        <mxCell id="6O7jH3Fa9OwtsbxHMX0L-1" parent="1" style="swimlane;whiteSpace=wrap;html=1;startSize=23;" value="Business Operations Manager" vertex="1">
-          <mxGeometry height="1220" width="1530" x="-890" y="40" as="geometry" />
-        </mxCell>
-        <mxCell id="D5mF3p2L5hpRwlFy8Q41-3" edge="1" parent="6O7jH3Fa9OwtsbxHMX0L-1" source="6O7jH3Fa9OwtsbxHMX0L-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="6O7jH3Fa9OwtsbxHMX0L-16" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="6O7jH3Fa9OwtsbxHMX0L-4" parent="6O7jH3Fa9OwtsbxHMX0L-1" style="rounded=0;whiteSpace=wrap;html=1;" value="Đăng nhập&amp;nbsp;" vertex="1">
-          <mxGeometry height="60" width="250" x="450" y="120" as="geometry" />
-        </mxCell>
-        <mxCell id="D5mF3p2L5hpRwlFy8Q41-11" edge="1" parent="6O7jH3Fa9OwtsbxHMX0L-1" source="6O7jH3Fa9OwtsbxHMX0L-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="6O7jH3Fa9OwtsbxHMX0L-6" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="6O7jH3Fa9OwtsbxHMX0L-5" parent="6O7jH3Fa9OwtsbxHMX0L-1" style="rounded=0;whiteSpace=wrap;html=1;" value="Thiết lập chính sách Deposit" vertex="1">
-          <mxGeometry height="60" width="250" x="40" y="180" as="geometry" />
-        </mxCell>
-        <mxCell id="D5mF3p2L5hpRwlFy8Q41-12" edge="1" parent="6O7jH3Fa9OwtsbxHMX0L-1" source="6O7jH3Fa9OwtsbxHMX0L-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="6O7jH3Fa9OwtsbxHMX0L-11" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="6O7jH3Fa9OwtsbxHMX0L-6" parent="6O7jH3Fa9OwtsbxHMX0L-1" style="rounded=0;whiteSpace=wrap;html=1;" value="Thiết lập chính sách Renewal &amp;amp; lịch nhắc hẹn" vertex="1">
-          <mxGeometry height="60" width="250" x="40" y="300" as="geometry" />
-        </mxCell>
-        <mxCell id="D5mF3p2L5hpRwlFy8Q41-13" edge="1" parent="6O7jH3Fa9OwtsbxHMX0L-1" source="6O7jH3Fa9OwtsbxHMX0L-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="6O7jH3Fa9OwtsbxHMX0L-12" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="6O7jH3Fa9OwtsbxHMX0L-11" parent="6O7jH3Fa9OwtsbxHMX0L-1" style="rounded=0;whiteSpace=wrap;html=1;" value="Thiết lập chính sách Cancellation &amp;amp; hoàn tiền" vertex="1">
-          <mxGeometry height="60" width="250" x="40" y="420" as="geometry" />
-        </mxCell>
-        <mxCell id="D5mF3p2L5hpRwlFy8Q41-14" edge="1" parent="6O7jH3Fa9OwtsbxHMX0L-1" source="6O7jH3Fa9OwtsbxHMX0L-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="6O7jH3Fa9OwtsbxHMX0L-13" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="6O7jH3Fa9OwtsbxHMX0L-12" parent="6O7jH3Fa9OwtsbxHMX0L-1" style="rounded=0;whiteSpace=wrap;html=1;" value="Thiết lập chính sách Cancellation &amp;amp; hoàn tiền" vertex="1">
-          <mxGeometry height="60" width="250" x="40" y="530" as="geometry" />
-        </mxCell>
-        <mxCell id="D5mF3p2L5hpRwlFy8Q41-15" edge="1" parent="6O7jH3Fa9OwtsbxHMX0L-1" source="6O7jH3Fa9OwtsbxHMX0L-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="6O7jH3Fa9OwtsbxHMX0L-14" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="6O7jH3Fa9OwtsbxHMX0L-13" parent="6O7jH3Fa9OwtsbxHMX0L-1" style="rounded=0;whiteSpace=wrap;html=1;" value="Thiết lập chính sách Return và quyết toán&amp;nbsp;" vertex="1">
-          <mxGeometry height="60" width="250" x="40" y="650" as="geometry" />
-        </mxCell>
-        <mxCell id="D5mF3p2L5hpRwlFy8Q41-16" edge="1" parent="6O7jH3Fa9OwtsbxHMX0L-1" source="6O7jH3Fa9OwtsbxHMX0L-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="6O7jH3Fa9OwtsbxHMX0L-15" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="6O7jH3Fa9OwtsbxHMX0L-14" parent="6O7jH3Fa9OwtsbxHMX0L-1" style="rounded=0;whiteSpace=wrap;html=1;" value="Thiết lập chính sách Overdue và các mốc D+1/D+4/D+10/D+30/D+60" vertex="1">
-          <mxGeometry height="60" width="250" x="40" y="770" as="geometry" />
-        </mxCell>
-        <mxCell id="D5mF3p2L5hpRwlFy8Q41-18" edge="1" parent="6O7jH3Fa9OwtsbxHMX0L-1" source="6O7jH3Fa9OwtsbxHMX0L-15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="D5mF3p2L5hpRwlFy8Q41-17" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="6O7jH3Fa9OwtsbxHMX0L-15" parent="6O7jH3Fa9OwtsbxHMX0L-1" style="rounded=0;whiteSpace=wrap;html=1;" value="Ghi vào bảng tham số cấu hình - có phiên bản, ko hồi tố" vertex="1">
-          <mxGeometry height="60" width="250" x="40" y="900" as="geometry" />
-        </mxCell>
-        <mxCell id="D5mF3p2L5hpRwlFy8Q41-4" edge="1" parent="6O7jH3Fa9OwtsbxHMX0L-1" source="6O7jH3Fa9OwtsbxHMX0L-16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="6O7jH3Fa9OwtsbxHMX0L-17" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="6O7jH3Fa9OwtsbxHMX0L-16" parent="6O7jH3Fa9OwtsbxHMX0L-1" style="rounded=0;whiteSpace=wrap;html=1;" value="Quản lý khung giá thuê theo Unit Type và Facility" vertex="1">
-          <mxGeometry height="60" width="250" x="450" y="240" as="geometry" />
-        </mxCell>
-        <mxCell id="D5mF3p2L5hpRwlFy8Q41-5" edge="1" parent="6O7jH3Fa9OwtsbxHMX0L-1" source="6O7jH3Fa9OwtsbxHMX0L-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="6O7jH3Fa9OwtsbxHMX0L-18" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="6O7jH3Fa9OwtsbxHMX0L-17" parent="6O7jH3Fa9OwtsbxHMX0L-1" style="rounded=0;whiteSpace=wrap;html=1;" value="Quản lý phụ phí và phí quá hạn" vertex="1">
-          <mxGeometry height="60" width="250" x="450" y="360" as="geometry" />
-        </mxCell>
-        <mxCell id="D5mF3p2L5hpRwlFy8Q41-6" edge="1" parent="6O7jH3Fa9OwtsbxHMX0L-1" source="6O7jH3Fa9OwtsbxHMX0L-18" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="6O7jH3Fa9OwtsbxHMX0L-19" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="6O7jH3Fa9OwtsbxHMX0L-18" parent="6O7jH3Fa9OwtsbxHMX0L-1" style="rounded=0;whiteSpace=wrap;html=1;" value="Quản lý chính sách giảm giá và miễn phí" vertex="1">
-          <mxGeometry height="60" width="250" x="450" y="470" as="geometry" />
-        </mxCell>
-        <mxCell id="D5mF3p2L5hpRwlFy8Q41-8" edge="1" parent="6O7jH3Fa9OwtsbxHMX0L-1" source="6O7jH3Fa9OwtsbxHMX0L-19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="D5mF3p2L5hpRwlFy8Q41-7" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="6O7jH3Fa9OwtsbxHMX0L-19" parent="6O7jH3Fa9OwtsbxHMX0L-1" style="rounded=0;whiteSpace=wrap;html=1;" value="Đơn giá lưu Snapshot theo Unit Type x Facility" vertex="1">
-          <mxGeometry height="60" width="250" x="440" y="570" as="geometry" />
-        </mxCell>
-        <mxCell id="D5mF3p2L5hpRwlFy8Q41-19" edge="1" parent="6O7jH3Fa9OwtsbxHMX0L-1" source="6O7jH3Fa9OwtsbxHMX0L-21" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="6O7jH3Fa9OwtsbxHMX0L-22" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="6O7jH3Fa9OwtsbxHMX0L-21" parent="6O7jH3Fa9OwtsbxHMX0L-1" style="rounded=0;whiteSpace=wrap;html=1;" value="Giám sát doanh thu theo từng cơ sở và toàn hệ thống" vertex="1">
-          <mxGeometry height="60" width="250" x="860" y="180" as="geometry" />
-        </mxCell>
-        <mxCell id="D5mF3p2L5hpRwlFy8Q41-20" edge="1" parent="6O7jH3Fa9OwtsbxHMX0L-1" source="6O7jH3Fa9OwtsbxHMX0L-22" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="6O7jH3Fa9OwtsbxHMX0L-23" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="6O7jH3Fa9OwtsbxHMX0L-22" parent="6O7jH3Fa9OwtsbxHMX0L-1" style="rounded=0;whiteSpace=wrap;html=1;" value="Giám sát UsageRate và hiệu quả vận hành theo từng cơ sở" vertex="1">
-          <mxGeometry height="60" width="250" x="860" y="300" as="geometry" />
-        </mxCell>
-        <mxCell id="D5mF3p2L5hpRwlFy8Q41-22" edge="1" parent="6O7jH3Fa9OwtsbxHMX0L-1" source="6O7jH3Fa9OwtsbxHMX0L-23" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="D5mF3p2L5hpRwlFy8Q41-21" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="6O7jH3Fa9OwtsbxHMX0L-23" parent="6O7jH3Fa9OwtsbxHMX0L-1" style="rounded=0;whiteSpace=wrap;html=1;" value="Xem và xuất báo cáo toàn hệ thống theo cơ sở, Unit Type, doanh thu" vertex="1">
-          <mxGeometry height="60" width="250" x="850" y="420" as="geometry" />
-        </mxCell>
-        <mxCell id="D5mF3p2L5hpRwlFy8Q41-2" edge="1" parent="6O7jH3Fa9OwtsbxHMX0L-1" source="D5mF3p2L5hpRwlFy8Q41-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="6O7jH3Fa9OwtsbxHMX0L-4" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="D5mF3p2L5hpRwlFy8Q41-1" parent="6O7jH3Fa9OwtsbxHMX0L-1" style="ellipse;fillColor=strokeColor;html=1;" value="" vertex="1">
-          <mxGeometry height="30" width="30" x="550" y="30" as="geometry" />
-        </mxCell>
-        <mxCell id="D5mF3p2L5hpRwlFy8Q41-7" parent="6O7jH3Fa9OwtsbxHMX0L-1" style="ellipse;html=1;shape=endState;fillColor=strokeColor;" value="" vertex="1">
-          <mxGeometry height="30" width="30" x="550" y="680" as="geometry" />
-        </mxCell>
-        <mxCell id="D5mF3p2L5hpRwlFy8Q41-9" edge="1" parent="6O7jH3Fa9OwtsbxHMX0L-1" source="6O7jH3Fa9OwtsbxHMX0L-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.44;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" target="6O7jH3Fa9OwtsbxHMX0L-5">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="D5mF3p2L5hpRwlFy8Q41-10" edge="1" parent="6O7jH3Fa9OwtsbxHMX0L-1" source="6O7jH3Fa9OwtsbxHMX0L-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.56;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" target="6O7jH3Fa9OwtsbxHMX0L-21">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="D5mF3p2L5hpRwlFy8Q41-17" parent="6O7jH3Fa9OwtsbxHMX0L-1" style="ellipse;html=1;shape=endState;fillColor=strokeColor;" value="" vertex="1">
-          <mxGeometry height="30" width="30" x="150" y="1000" as="geometry" />
-        </mxCell>
-        <mxCell id="D5mF3p2L5hpRwlFy8Q41-21" parent="6O7jH3Fa9OwtsbxHMX0L-1" style="ellipse;html=1;shape=endState;fillColor=strokeColor;" value="" vertex="1">
-          <mxGeometry height="30" width="30" x="960" y="520" as="geometry" />
-        </mxCell>
-      </root>
-    </mxGraphModel>
-  </diagram>
+<mxfile host="65bd71144e">
+    <diagram name="Flow-4-Business-Operations" id="flow-4-business-operations">
+        <mxGraphModel dx="1037" dy="1583" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1750" pageHeight="1750" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title_header" value="&lt;b style=&quot;font-size: 16px;&quot;&gt;FLOW 4: Business Rules, Fee Management and Revenue Monitoring Flow (Vận hành kinh doanh, Chính sách &amp;amp; Doanh thu)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size: 12px; color: #555555;&quot;&gt;Cấu hình tham số nghiệp vụ toàn hệ thống · Quản lý cơ sở · Khung giá &amp;amp; Phụ phí · Giám sát doanh thu &amp;amp; Báo cáo BI toàn diện&lt;/span&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;rounded=0;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="20" width="1200" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="lane_bom" value="&lt;b style=&quot;font-size: 14px;&quot;&gt;Business Operations Manager (Quản lý vận hành kinh doanh)&lt;/b&gt;" style="swimlane;whiteSpace=wrap;html=1;startSize=30;fillColor=#f8f9fa;strokeColor=#495057;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="80" width="600" height="1620" as="geometry"/>
+                </mxCell>
+                <mxCell id="start_node" value="" style="ellipse;fillColor=#212529;strokeColor=#212529;html=1;" parent="lane_bom" vertex="1">
+                    <mxGeometry x="285" y="45" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="bom_login" value="Đăng nhập tài khoản BOM (SCR-SYS-01)&#10;Nhập thông tin xác thực quản trị viên" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f5ff;strokeColor=#1971c2;" parent="lane_bom" vertex="1">
+                    <mxGeometry x="175" y="100" width="250" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_start_to_login" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_bom" source="start_node" target="bom_login" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="bom_hub" value="BOM Operations Hub (Menu quản trị):&#10;Truy cập cổng điều hành kinh doanh tập trung" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f5ff;strokeColor=#1971c2;" parent="lane_bom" vertex="1">
+                    <mxGeometry x="175" y="180" width="250" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="fork_menu" value="" style="shape=line;strokeWidth=6;strokeColor=#212529;html=1;" parent="lane_bom" vertex="1">
+                    <mxGeometry x="30" y="260" width="540" height="10" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_hub_to_fork" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_bom" source="bom_hub" target="fork_menu" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="sec1_label" value="&lt;b style=&quot;color: #1c7ed6;&quot;&gt;PHÂN HỆ 1: QUẢN LÝ MẠNG LƯỚI CƠ SỞ TOÀN HỆ THỐNG (BM-01)&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;rounded=0;" parent="lane_bom" vertex="1">
+                    <mxGeometry x="40" y="285" width="450" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="bom_f4_01" value="UC-F4-01 (BM-01 · SCR-BM-01):&#10;Quản lý danh sách cơ sở toàn quốc:&#10;• Thêm mới Facility (Mã, Tên, Địa chỉ)&#10;• Chỉnh sửa thông tin cơ sở Active&#10;• Ngừng khai thác cơ sở (Inactive)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f5ff;strokeColor=#1971c2;align=left;spacingLeft=8;" parent="lane_bom" vertex="1">
+                    <mxGeometry x="40" y="310" width="270" height="95" as="geometry"/>
+                </mxCell>
+                <mxCell id="sec2_label" value="&lt;b style=&quot;color: #1c7ed6;&quot;&gt;PHÂN HỆ 2: THIẾT LẬP CHÍNH SÁCH THUÊ &amp;amp; THAM SỐ NGHIỆP VỤ (BM-02)&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;rounded=0;" parent="lane_bom" vertex="1">
+                    <mxGeometry x="40" y="585" width="480" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="bom_f4_02_05" value="Cấu hình chính sách thuê cơ bản (BM-02 · SCR-BM-02):&#10;• UC-F4-02 (Deposit): deposit.multiplier (1.0), reservation.hold_hours (48h) (BR-DEP-01, 03)&#10;• UC-F4-03 (Renewal): renewal.reminder_days (nhắc trước 2 tháng &amp;amp; 7, 3, 1 ngày trước mốc khóa 1 tháng), min 1 tháng, max 12 tháng (BR-REN-01, 03, 07)&#10;• UC-F4-04 (Cancellation): cancel.full_refund_hours (48h hoàn 100%), late 50%, no-show 0%, checkin.grace_days (10 ngày) (BR-CAN-01..05)&#10;• UC-F4-05 (Return): return.notice_days (30 ngày), return.refund_working_days (7 ngày), early_refund 0% (BR-RET-01..06)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f5ff;strokeColor=#1971c2;align=left;spacingLeft=8;" parent="lane_bom" vertex="1">
+                    <mxGeometry x="40" y="610" width="520" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="bom_f4_06" value="UC-F4-06 (BM-02 · SCR-BM-02):&#10;Thiết lập chính sách Overdue &amp;amp; Các mốc xử lý quá hạn (BR-OVD-01..05):&#10;• Ân hạn D+1..D+3: overdue.grace_days = 3 ngày (nhắc mỗi ngày, miễn phí phạt, hoàn 100% cọc nếu dọn xong)&#10;• Phí phạt D+4..D+10: overdue.daily_rate = 10% cọc/ngày (tối đa 7 ngày tính phí)&#10;• Trần phí quá hạn: overdue.cap_rate = 70% tiền cọc Deposit&#10;• Chấm dứt &amp;amp; Khóa kho: overdue.lock_access_days = 10, overdue.termination_days = 10&#10;  → Chạm mốc D+10: chấm dứt hợp đồng, khóa mã PIN, cấn trừ cọc, niêm phong đồ về kho tổng" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3bf;strokeColor=#f59f00;align=left;spacingLeft=8;" parent="lane_bom" vertex="1">
+                    <mxGeometry x="40" y="750" width="520" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="sec3_label" value="&lt;b style=&quot;color: #1c7ed6;&quot;&gt;PHÂN HỆ 3: QUẢN LÝ KHUNG GIÁ, PHỤ PHÍ &amp;amp; ƯU ĐÃI (BM-03)&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;rounded=0;" parent="lane_bom" vertex="1">
+                    <mxGeometry x="40" y="975" width="480" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="bom_f4_07_09" value="Quản lý bảng giá thuê, phụ phí &amp;amp; ưu đãi (BM-03 · SCR-BM-03):&#10;• UC-F4-07: Đặt đơn giá thuê tháng theo từng cặp Unit Type × Facility (VND/tháng)&#10;• UC-F4-08: Quản lý biểu phí phạt quá hạn (10%/ngày) &amp;amp; danh mục phụ phí dịch vụ (cấp lại thẻ, PIN...)&#10;• UC-F4-09: Ban hành chương trình giảm giá / khuyến mãi theo thời gian hiệu lực và phạm vi cơ sở&#10;  (Lưu ý BR-OVD-10: Hệ thống không hỗ trợ tính năng đề xuất duyệt miễn giảm phí quá hạn theo vụ)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f5ff;strokeColor=#1971c2;align=left;spacingLeft=8;" parent="lane_bom" vertex="1">
+                    <mxGeometry x="40" y="1000" width="520" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="sec4_label" value="&lt;b style=&quot;color: #1c7ed6;&quot;&gt;PHÂN HỆ 4: GIÁM SÁT HIỆU QUẢ VẬN HÀNH &amp;amp; XUẤT BÁO CÁO BI (BM-04, BM-05)&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;rounded=0;" parent="lane_bom" vertex="1">
+                    <mxGeometry x="40" y="1275" width="520" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="bom_f4_10_11" value="Truy cập Dashboard BI &amp;amp; Lọc số liệu (BM-04 · SCR-BM-04):&#10;• Chọn khoảng thời gian (kỳ báo cáo theo ngày/tháng/quý)&#10;• Chọn phạm vi cơ sở: Toàn hệ thống hoặc một Facility&#10;• Chọn phân loại Unit Type / Loại doanh thu" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f5ff;strokeColor=#1971c2;align=left;spacingLeft=8;" parent="lane_bom" vertex="1">
+                    <mxGeometry x="40" y="1300" width="280" height="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="bom_f4_12" value="UC-F4-12 (BM-05 · SCR-BM-04):&#10;Xem Dashboard trực quan &amp;amp;&#10;Yêu cầu kết xuất file báo cáo (CSV/PDF)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f5ff;strokeColor=#1971c2;" parent="lane_bom" vertex="1">
+                    <mxGeometry x="340" y="1300" width="220" height="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_fork_to_f4_01" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_bom" source="fork_menu" target="bom_f4_01" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="175" y="290"/>
+                            <mxPoint x="175" y="310"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="edge_fork_to_f4_02" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_bom" source="fork_menu" target="bom_f4_02_05" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="290" y="270"/>
+                            <mxPoint x="290" y="610"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="edge_fork_to_f4_07" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_bom" source="fork_menu" target="bom_f4_07_09" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="430" y="270"/>
+                            <mxPoint x="430" y="1000"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="edge_fork_to_f4_10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_bom" source="fork_menu" target="bom_f4_10_11" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="550" y="270"/>
+                            <mxPoint x="550" y="1300"/>
+                            <mxPoint x="180" y="1300"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="lane_system" value="&lt;b style=&quot;font-size: 14px;&quot;&gt;System (Hệ thống)&lt;/b&gt;" style="swimlane;whiteSpace=wrap;html=1;startSize=30;fillColor=#f8f9fa;strokeColor=#495057;" parent="1" vertex="1">
+                    <mxGeometry x="640" y="80" width="620" height="1620" as="geometry"/>
+                </mxCell>
+                <mxCell id="sys_auth" value="Xác thực danh tính &amp;amp; Kiểm tra quyền RBAC:&#10;Cấp quyền quản trị toàn hệ thống theo vai trò BOM (US-SA-02.1)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d3f9d8;strokeColor=#2b8a3e;" parent="lane_system" vertex="1">
+                    <mxGeometry x="150" y="100" width="320" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="sys_val_f4_01" value="Kiểm tra hợp lệ &amp;amp; Ràng buộc cơ sở (US-BM-01.1, 01.2):&#10;• Kiểm tra trùng mã cơ sở, trường bắt buộc Tên, Địa chỉ&#10;• Nếu Inactive: Kiểm tra không còn hợp đồng Active/Overdue&#10;  và không còn Reservation Confirmed giữ capacity" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3bf;strokeColor=#f59f00;align=left;spacingLeft=8;" parent="lane_system" vertex="1">
+                    <mxGeometry x="40" y="310" width="340" height="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="sys_save_f4_01" value="Lưu bản ghi &amp;amp; Cập nhật trạng thái Facility:&#10;• Active: Cơ sở hiển thị công khai tìm kiếm (UC-F1-01)&#10;• Inactive: Ẩn khỏi hệ thống, chặn đặt chỗ mới&#10;• Gửi thông báo đến Facility Manager quản lý cơ sở" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d3f9d8;strokeColor=#2b8a3e;align=left;spacingLeft=8;" parent="lane_system" vertex="1">
+                    <mxGeometry x="40" y="420" width="340" height="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_sys_val_to_save_f4_01" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_system" source="sys_val_f4_01" target="sys_save_f4_01" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="end_f4_01" value="" style="ellipse;html=1;shape=endState;fillColor=#212529;strokeColor=#212529;" parent="lane_system" vertex="1">
+                    <mxGeometry x="195" y="530" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_save_to_end_f4_01" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_system" source="sys_save_f4_01" target="end_f4_01" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="sys_val_f4_02_06" value="Kiểm tra hợp lệ tham số nghiệp vụ (US-BM-02.1..02.5):&#10;• Các tỷ lệ hoàn tiền &amp;amp; phí phạt trong đoạn [0%..100%]&#10;• Thứ tự bắt buộc các mốc quá hạn (US-BM-02.5 AC-3):&#10;  Ân hạn (D+3) &lt; Bắt đầu phạt (D+4) &lt;= Khóa &amp;amp; Chấm dứt (D+10)&#10;• Số nguyên dương: hold_hours, grace_days, min_months..." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3bf;strokeColor=#f59f00;align=left;spacingLeft=8;" parent="lane_system" vertex="1">
+                    <mxGeometry x="40" y="680" width="340" height="95" as="geometry"/>
+                </mxCell>
+                <mxCell id="sys_save_f4_02_06" value="Ban hành phiên bản chính sách mới (Policy Versioning):&#10;• Ghi nhận phiên bản có hiệu lực vào bảng cấu hình (BR § 2)&#10;• Quy tắc KHÔNG HỒI TỐ (BR-GEN-01, BR-GEN-02): Hợp đồng &amp;amp;&#10;  Reservation đã ký giữ nguyên snapshot phiên bản tại thời điểm tạo&#10;• Cung cấp tham số cho Flow 1, 2, 3 và Scheduled Jobs Flow 6" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d3f9d8;strokeColor=#2b8a3e;align=left;spacingLeft=8;" parent="lane_system" vertex="1">
+                    <mxGeometry x="40" y="800" width="340" height="95" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_sys_val_to_save_f4_02" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_system" source="sys_val_f4_02_06" target="sys_save_f4_02_06" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="end_f4_02_06" value="" style="ellipse;html=1;shape=endState;fillColor=#212529;strokeColor=#212529;" parent="lane_system" vertex="1">
+                    <mxGeometry x="195" y="915" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_save_to_end_f4_02" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_system" source="sys_save_f4_02_06" target="end_f4_02_06" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="sys_val_f4_07_09" value="Kiểm tra tính hợp lệ bảng giá &amp;amp; phụ phí (US-BM-03.1..03.3):&#10;• Đơn giá thuê &gt; 0, làm tròn đến 1.000 đ (BR-GEN-04)&#10;• Không xóa phụ phí đang gán cho hợp đồng chưa quyết toán&#10;• Tỷ lệ giảm giá &lt;= 100%, thời gian kết thúc &gt;= bắt đầu" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3bf;strokeColor=#f59f00;align=left;spacingLeft=8;" parent="lane_system" vertex="1">
+                    <mxGeometry x="40" y="1000" width="340" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="sys_save_f4_07_09" value="Lưu Snapshot đơn giá theo Unit Type × Facility (BR-GEN-05):&#10;• Cập nhật bảng giá niêm yết theo từng cơ sở&#10;• Áp dụng cho các Reservation và gia hạn Renewal tạo sau thời điểm lưu&#10;• Hợp đồng đang thuê giữ nguyên đơn giá snapshot ban đầu" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d3f9d8;strokeColor=#2b8a3e;align=left;spacingLeft=8;" parent="lane_system" vertex="1">
+                    <mxGeometry x="40" y="1105" width="340" height="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_sys_val_to_save_f4_07" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_system" source="sys_val_f4_07_09" target="sys_save_f4_07_09" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="end_f4_07_09" value="" style="ellipse;html=1;shape=endState;fillColor=#212529;strokeColor=#212529;" parent="lane_system" vertex="1">
+                    <mxGeometry x="195" y="1215" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_save_to_end_f4_07" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_system" source="sys_save_f4_07_09" target="end_f4_07_09" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="sys_calc_f4_10_11" value="Tự động tổng hợp số liệu phân tích BI (US-BM-04.1, 04.2):&#10;• UC-F4-10: Tổng hợp doanh thu thực tế, bóc tách dòng tiền:&#10;  Cọc Deposit, Tiền thuê, Phí gia hạn, Phí quá hạn, Phụ phí&#10;• UC-F4-11: Tính tỷ lệ lấp đầy cơ sở:&#10;  Usage Rate = Số ô Occupied / (Tổng ô - Out of service)&#10;• Thống kê trạng thái hợp đồng: Active, Overdue, Terminated" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d3f9d8;strokeColor=#2b8a3e;align=left;spacingLeft=8;" parent="lane_system" vertex="1">
+                    <mxGeometry x="40" y="1295" width="350" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="sys_export_f4_12" value="Kết xuất file báo cáo BI chuẩn hóa (US-BM-05.1):&#10;• Tạo file CSV / PDF chứa đúng số liệu đa chiều đang hiển thị&#10;• Metadata: Kỳ báo cáo, người xuất (BOM), timestamp (Asia/Ho_Chi_Minh)&#10;• Ghi nhật ký trích xuất báo cáo độc lập vào Audit Trail" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d3f9d8;strokeColor=#2b8a3e;align=left;spacingLeft=8;" parent="lane_system" vertex="1">
+                    <mxGeometry x="40" y="1425" width="350" height="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="end_f4_10_12" value="" style="ellipse;html=1;shape=endState;fillColor=#212529;strokeColor=#212529;" parent="lane_system" vertex="1">
+                    <mxGeometry x="200" y="1535" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_export_to_end_f4_12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_system" source="sys_export_f4_12" target="end_f4_10_12" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="lane_fm" value="&lt;b style=&quot;font-size: 14px;&quot;&gt;Facility Manager (Quản lý cơ sở - Tác nhân liên quan)&lt;/b&gt;" style="swimlane;whiteSpace=wrap;html=1;startSize=30;fillColor=#f8f9fa;strokeColor=#495057;" parent="1" vertex="1">
+                    <mxGeometry x="1260" y="80" width="450" height="1620" as="geometry"/>
+                </mxCell>
+                <mxCell id="fm_receive_f4_01" value="Tiếp nhận thông tin cơ sở mới / cập nhật:&#10;→ Chuyển tiếp sang FLOW 5 (UC-F5-01, UC-F5-02):&#10;Khởi tạo sơ đồ mặt bằng, danh mục loại kho Unit Type,&#10;danh sách ô kho Storage Unit và phân công nhân sự ca trực" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f5ff;strokeColor=#1971c2;align=left;spacingLeft=8;" parent="lane_fm" vertex="1">
+                    <mxGeometry x="35" y="420" width="380" height="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend_box" value="&lt;b style=&quot;font-size: 13px;&quot;&gt;CHÚ GIẢI &amp;amp; BẢN ĐỒ TÍCH HỢP HỆ THỐNG FLOW 4&lt;/b&gt;&lt;br&gt;&lt;hr&gt;&#10;&lt;b&gt;Tác nhân chính:&lt;/b&gt; Business Operations Manager (BOM) · &lt;b&gt;Liên quan:&lt;/b&gt; Facility Manager (FM)&lt;br&gt;&#10;&lt;b&gt;Phạm vi yêu cầu:&lt;/b&gt; BM-01 đến BM-05 (12 Use Cases: UC-F4-01 đến UC-F4-12)&lt;br&gt;&lt;br&gt;&#10;&lt;b style=&quot;color: #1c7ed6;&quot;&gt;Đầu ra của Flow 4 cung cấp cho các luồng nghiệp vụ khác:&lt;/b&gt;&lt;br&gt;&#10;• &lt;b&gt;UC-F4-01 (Cơ sở):&lt;/b&gt; Cung cấp dữ liệu Facility cho Flow 5 (Vận hành kho) và Flow 1 (Tìm kiếm kho)&lt;br&gt;&#10;• &lt;b&gt;UC-F4-02..05 (Chính sách):&lt;/b&gt; Flow 1 đọc Deposit &amp;amp; Hold 48h; Flow 2 đọc Checkin Grace 10 ngày;&#10;  Flow 3 đọc Return Notice 30 ngày &amp;amp; Quyết toán; Flow 6 đọc lịch nhắc Renewal&lt;br&gt;&#10;• &lt;b&gt;UC-F4-06 (Overdue):&lt;/b&gt; Cung cấp bộ tham số D+1..D+3 (ân hạn), D+4..D+10 (phạt 10%/ngày),&#10;  D+10 (chấm dứt &amp;amp; niêm phong kho) cho Scheduled Job Flow 6.2&lt;br&gt;&#10;• &lt;b&gt;UC-F4-07..09 (Giá &amp;amp; Phí):&lt;/b&gt; Flow 1 đọc Snapshot giá; Flow 2, 3 đọc danh mục phụ phí&lt;br&gt;&#10;• &lt;b&gt;UC-F4-10..12 (BI &amp;amp; Báo cáo):&lt;/b&gt; Thu nhận dữ liệu giao dịch thời gian thực từ Flow 1, 2, 3, 6" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f1f3f5;strokeColor=#ced4da;align=left;spacingLeft=10;spacingTop=8;verticalAlign=top;" parent="lane_fm" vertex="1">
+                    <mxGeometry x="35" y="700" width="380" height="470" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_login_to_sys_auth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="bom_login" target="sys_auth" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_sys_auth_to_bom_hub" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="sys_auth" target="bom_hub" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="950" y="205"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="edge_bom_to_sys_val_f4_01" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="bom_f4_01" target="sys_val_f4_01" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_sys_save_to_fm_f4_01" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="sys_save_f4_01" target="fm_receive_f4_01" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_bom_to_sys_val_f4_02" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="bom_f4_06" target="sys_val_f4_02_06" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_bom_f4_02_to_06" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="bom_f4_02_05" target="bom_f4_06" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_bom_to_sys_val_f4_07" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="bom_f4_07_09" target="sys_val_f4_07_09" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_bom_to_sys_calc_f4_10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="bom_f4_10_11" target="sys_calc_f4_10_11" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_sys_calc_to_bom_view" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="sys_calc_f4_10_11" target="bom_f4_12" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="855" y="1410"/>
+                            <mxPoint x="490" y="1410"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="edge_bom_export_to_sys_export" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="bom_f4_12" target="sys_export_f4_12" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="490" y="1455"/>
+                            <mxPoint x="680" y="1455"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
 </mxfile>

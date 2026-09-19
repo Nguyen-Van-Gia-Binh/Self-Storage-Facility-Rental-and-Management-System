@@ -1,106 +1,201 @@
-<mxfile host="app.diagrams.net">
-  <diagram name="Trang-1" id="un8l2o8K4V5IJv2yXigZ">
-    <mxGraphModel dx="2323" dy="943" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
-      <root>
-        <mxCell id="0" />
-        <mxCell id="1" parent="0" />
-        <mxCell id="3Z2xPAnTabFH4DZuYdJl-1" parent="1" style="swimlane;whiteSpace=wrap;html=1;" value="Facility Manager" vertex="1">
-          <mxGeometry height="740" width="750" x="-470" y="40" as="geometry" />
-        </mxCell>
-        <mxCell id="3Z2xPAnTabFH4DZuYdJl-21" edge="1" parent="3Z2xPAnTabFH4DZuYdJl-1" source="3Z2xPAnTabFH4DZuYdJl-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="3Z2xPAnTabFH4DZuYdJl-5">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="3Z2xPAnTabFH4DZuYdJl-22" edge="1" parent="3Z2xPAnTabFH4DZuYdJl-1" source="3Z2xPAnTabFH4DZuYdJl-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="3Z2xPAnTabFH4DZuYdJl-7">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="3Z2xPAnTabFH4DZuYdJl-23" edge="1" parent="3Z2xPAnTabFH4DZuYdJl-1" source="3Z2xPAnTabFH4DZuYdJl-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="3Z2xPAnTabFH4DZuYdJl-9">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="3Z2xPAnTabFH4DZuYdJl-4" parent="3Z2xPAnTabFH4DZuYdJl-1" style="rounded=0;whiteSpace=wrap;html=1;" value="Đăng nhập" vertex="1">
-          <mxGeometry height="60" width="120" x="240" y="70" as="geometry" />
-        </mxCell>
-        <mxCell id="3Z2xPAnTabFH4DZuYdJl-20" edge="1" parent="3Z2xPAnTabFH4DZuYdJl-1" source="3Z2xPAnTabFH4DZuYdJl-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="3Z2xPAnTabFH4DZuYdJl-6" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="3Z2xPAnTabFH4DZuYdJl-5" parent="3Z2xPAnTabFH4DZuYdJl-1" style="rounded=0;whiteSpace=wrap;html=1;" value="Quản lý danh mục Unit Type và kích thước ô kho" vertex="1">
-          <mxGeometry height="60" width="150" x="60" y="170" as="geometry" />
-        </mxCell>
-        <mxCell id="3Z2xPAnTabFH4DZuYdJl-6" parent="3Z2xPAnTabFH4DZuYdJl-1" style="rounded=0;whiteSpace=wrap;html=1;" value="Quản lý Storage Unit - mã, vị trí, trạng thái" vertex="1">
-          <mxGeometry height="60" width="150" x="60" y="300" as="geometry" />
-        </mxCell>
-        <mxCell id="3Z2xPAnTabFH4DZuYdJl-7" parent="3Z2xPAnTabFH4DZuYdJl-1" style="rounded=0;whiteSpace=wrap;html=1;" value="Phân công Facility Staff theo công việc hàng ngày" vertex="1">
-          <mxGeometry height="60" width="150" x="340" y="170" as="geometry" />
-        </mxCell>
-        <mxCell id="3Z2xPAnTabFH4DZuYdJl-9" parent="3Z2xPAnTabFH4DZuYdJl-1" style="rounded=0;whiteSpace=wrap;html=1;" value="Xem báo cáo cơ sở - trạng thái ô kho, doanh thu, Usage Rate, hợp đồng" vertex="1">
-          <mxGeometry height="60" width="150" x="590" y="170" as="geometry" />
-        </mxCell>
-        <mxCell id="3Z2xPAnTabFH4DZuYdJl-27" edge="1" parent="3Z2xPAnTabFH4DZuYdJl-1" source="3Z2xPAnTabFH4DZuYdJl-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="3Z2xPAnTabFH4DZuYdJl-4" value="">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="290" y="70" />
-              <mxPoint x="290" y="70" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="3Z2xPAnTabFH4DZuYdJl-12" parent="3Z2xPAnTabFH4DZuYdJl-1" style="ellipse;fillColor=strokeColor;html=1;" value="" vertex="1">
-          <mxGeometry height="20" width="20" x="280" y="30" as="geometry" />
-        </mxCell>
-        <mxCell id="3Z2xPAnTabFH4DZuYdJl-15" parent="3Z2xPAnTabFH4DZuYdJl-1" style="rounded=0;whiteSpace=wrap;html=1;" value="Cập nhật trạng thái ô kho" vertex="1">
-          <mxGeometry height="60" width="150" x="60" y="440" as="geometry" />
-        </mxCell>
-        <mxCell id="3Z2xPAnTabFH4DZuYdJl-2" parent="1" style="swimlane;whiteSpace=wrap;html=1;startSize=23;" value="Facility Staff" vertex="1">
-          <mxGeometry height="740" width="480" x="280" y="40" as="geometry" />
-        </mxCell>
-        <mxCell id="3Z2xPAnTabFH4DZuYdJl-8" parent="3Z2xPAnTabFH4DZuYdJl-2" style="rounded=0;whiteSpace=wrap;html=1;" value="Xem danh sách công việc được giao hàng ngày" vertex="1">
-          <mxGeometry height="60" width="150" x="220" y="220" as="geometry" />
-        </mxCell>
-        <mxCell id="3Z2xPAnTabFH4DZuYdJl-14" parent="3Z2xPAnTabFH4DZuYdJl-2" style="rounded=0;whiteSpace=wrap;html=1;" value="Ghi nhận trạng thái thay đổi ô kho tại chỗ (optional)" vertex="1">
-          <mxGeometry height="60" width="150" x="100" y="330" as="geometry" />
-        </mxCell>
-        <mxCell id="3Z2xPAnTabFH4DZuYdJl-18" edge="1" parent="3Z2xPAnTabFH4DZuYdJl-2" source="3Z2xPAnTabFH4DZuYdJl-16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="3Z2xPAnTabFH4DZuYdJl-14" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="3Z2xPAnTabFH4DZuYdJl-16" parent="3Z2xPAnTabFH4DZuYdJl-2" style="ellipse;fillColor=strokeColor;html=1;" value="" vertex="1">
-          <mxGeometry height="20" width="20" x="165" y="270" as="geometry" />
-        </mxCell>
-        <mxCell id="3Z2xPAnTabFH4DZuYdJl-3" parent="1" style="swimlane;whiteSpace=wrap;html=1;startSize=23;" value="System Administrator" vertex="1">
-          <mxGeometry height="740" width="530" x="760" y="40" as="geometry" />
-        </mxCell>
-        <mxCell id="3Z2xPAnTabFH4DZuYdJl-31" edge="1" parent="3Z2xPAnTabFH4DZuYdJl-3" source="3Z2xPAnTabFH4DZuYdJl-28" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="3Z2xPAnTabFH4DZuYdJl-29" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="3Z2xPAnTabFH4DZuYdJl-28" parent="3Z2xPAnTabFH4DZuYdJl-3" style="rounded=0;whiteSpace=wrap;html=1;" value="Gán vai trò cho người dùng trong hệ thống" vertex="1">
-          <mxGeometry height="60" width="150" x="190" y="70" as="geometry" />
-        </mxCell>
-        <mxCell id="3Z2xPAnTabFH4DZuYdJl-32" edge="1" parent="3Z2xPAnTabFH4DZuYdJl-3" source="3Z2xPAnTabFH4DZuYdJl-29" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="3Z2xPAnTabFH4DZuYdJl-30" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="3Z2xPAnTabFH4DZuYdJl-29" parent="3Z2xPAnTabFH4DZuYdJl-3" style="rounded=0;whiteSpace=wrap;html=1;" value="Cấu hình quyền truy cập dữ liệu theo vai trò và cơ sở" vertex="1">
-          <mxGeometry height="60" width="150" x="190" y="180" as="geometry" />
-        </mxCell>
-        <mxCell id="3Z2xPAnTabFH4DZuYdJl-30" parent="3Z2xPAnTabFH4DZuYdJl-3" style="ellipse;html=1;shape=endState;fillColor=strokeColor;" value="" vertex="1">
-          <mxGeometry height="30" width="30" x="250" y="300" as="geometry" />
-        </mxCell>
-        <mxCell id="3Z2xPAnTabFH4DZuYdJl-34" edge="1" parent="3Z2xPAnTabFH4DZuYdJl-3" source="3Z2xPAnTabFH4DZuYdJl-33" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="3Z2xPAnTabFH4DZuYdJl-28" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="3Z2xPAnTabFH4DZuYdJl-33" parent="3Z2xPAnTabFH4DZuYdJl-3" style="ellipse;fillColor=strokeColor;html=1;" value="" vertex="1">
-          <mxGeometry height="20" width="20" x="255" y="30" as="geometry" />
-        </mxCell>
-        <mxCell id="3Z2xPAnTabFH4DZuYdJl-19" edge="1" parent="1" source="3Z2xPAnTabFH4DZuYdJl-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="3Z2xPAnTabFH4DZuYdJl-15">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="3Z2xPAnTabFH4DZuYdJl-11" edge="1" parent="1" source="3Z2xPAnTabFH4DZuYdJl-7" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0;exitDx=0;exitDy=0;edgeStyle=orthogonalEdgeStyle;entryX=0.624;entryY=-0.056;entryDx=0;entryDy=0;entryPerimeter=0;" target="3Z2xPAnTabFH4DZuYdJl-8">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="20" y="190" />
-              <mxPoint x="593.6700000000001" y="190" />
-            </Array>
-            <mxPoint x="10" y="240" as="sourcePoint" />
-            <mxPoint x="642.39990234375" y="260" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-      </root>
-    </mxGraphModel>
-  </diagram>
+<mxfile host="65bd71144e">
+    <diagram name="Flow-5-Facility-Storage-Staff-Management" id="flow-5-facility-staff-management">
+        <mxGraphModel dx="1381" dy="1118" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1850" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title_header" value="&lt;b style=&quot;font-size: 16px;&quot;&gt;FLOW 5: Facility Storage and Staff Management Flow (Quản lý danh mục ô kho và nhân sự tại cơ sở)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size: 12px; color: #555555;&quot;&gt;Quản lý danh mục ô kho &amp;amp; vòng đời (FM-01) · Phân công nhân sự 3 nhóm việc (FM-05, FS-06) · Báo cáo cơ sở thời gian thực (FM-06) · Quản trị phân quyền cơ sở (SA-02, SA-03)&lt;/span&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;rounded=0;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="20" width="1680" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="lane_sa" value="&lt;b style=&quot;font-size: 14px;&quot;&gt;System Administrator (Quản trị hệ thống)&lt;/b&gt;" style="swimlane;whiteSpace=wrap;html=1;startSize=30;fillColor=#f8f9fa;strokeColor=#495057;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="80" width="480" height="1720" as="geometry"/>
+                </mxCell>
+                <mxCell id="start_sa" value="" style="ellipse;fillColor=#212529;strokeColor=#212529;html=1;" parent="lane_sa" vertex="1">
+                    <mxGeometry x="225" y="45" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="sec0_label" value="&lt;b style=&quot;color: #495057;&quot;&gt;PHÂN HỆ NỀN TẢNG: PHÂN QUYỀN HỆ THỐNG &amp;amp; CƠ SỞ (SA-02, SA-03)&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;rounded=0;" parent="lane_sa" vertex="1">
+                    <mxGeometry x="30" y="85" width="420" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="sa_uc_f5_07" value="UC-F5-07 (SA-02 · SCR-SA-02):&#10;Gán vai trò cho người dùng trong hệ thống:&#10;• Chọn tài khoản người dùng chưa phân quyền (US-SA-02.1)&#10;• Gán 1 trong các vai trò: Storage Customer, Facility Staff,&#10;  Facility Manager, Business Operations Manager&#10;• Thu hồi phiên cũ ngay khi đổi vai trò; không tự phong SA" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f5ff;strokeColor=#1971c2;align=left;spacingLeft=8;" parent="lane_sa" vertex="1">
+                    <mxGeometry x="30" y="110" width="420" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_start_sa_to_07" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_sa" source="start_sa" target="sa_uc_f5_07" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="sa_uc_f5_08" value="UC-F5-08 (SA-03 · SCR-SA-03):&#10;Cấu hình quyền truy cập dữ liệu theo vai trò &amp;amp; cơ sở:&#10;• Gán một hoặc nhiều cơ sở (Active Facility) cho FM và FS&#10;• Thiết lập chính sách phạm vi dữ liệu (Data Scope Policy):&#10;  FM và FS CHỈ xem và sửa dữ liệu của cơ sở được gán (US-SA-03.1)&#10;• BOM/SA xem toàn hệ thống; FM chưa gán cơ sở thì portal rỗng" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f5ff;strokeColor=#1971c2;align=left;spacingLeft=8;" parent="lane_sa" vertex="1">
+                    <mxGeometry x="30" y="225" width="420" height="95" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_sa_07_to_08" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_sa" source="sa_uc_f5_07" target="sa_uc_f5_08" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="sa_activate_scope" value="Kích hoạt chính sách phân quyền dữ liệu (Policy Activation):&#10;• Lưu chính sách phân quyền cơ sở vào cơ sở dữ liệu hệ thống&#10;• Áp bộ lọc phạm vi cơ sở tức thì lên các phiên đăng nhập FM &amp;amp; FS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d3f9d8;strokeColor=#2b8a3e;align=left;spacingLeft=8;" parent="lane_sa" vertex="1">
+                    <mxGeometry x="30" y="345" width="420" height="65" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_sa_08_to_act" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_sa" source="sa_uc_f5_08" target="sa_activate_scope" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="end_sa" value="" style="ellipse;html=1;shape=endState;fillColor=#212529;strokeColor=#212529;" parent="lane_sa" vertex="1">
+                    <mxGeometry x="225" y="435" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_sa_act_to_end" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_sa" source="sa_activate_scope" target="end_sa" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="sa_note_box" value="&lt;b style=&quot;color: #343a40; font-size: 12px;&quot;&gt;ĐẶC TẢ PHÂN QUYỀN QUẢN TRỊ (SA-02, SA-03):&lt;/b&gt;&lt;br&gt;• &lt;b&gt;Vai trò (US-SA-02.1):&lt;/b&gt; Gán đúng 1 vai trò trong 4 nhóm: Storage Customer, Facility Staff, Facility Manager, BOM.&lt;br&gt;• &lt;b&gt;Quyền dữ liệu (US-SA-03.1):&lt;/b&gt;&lt;br&gt;  - Facility Manager: Gán 1 hoặc nhiều Facility Active. Chỉ truy cập các unit, hợp đồng, đơn đặt chỗ của cơ sở được gán.&lt;br&gt;  - Facility Staff: Gán Facility Active. Danh sách ca trực chỉ gồm khách và ô kho của đúng cơ sở đó.&lt;br&gt;  - SA &amp;amp; BOM: Toàn quyền xem và cấu hình trên toàn hệ thống.&lt;br&gt;• &lt;b&gt;Chặn truy cập rác:&lt;/b&gt; FM chưa gán cơ sở thì portal rỗng, thao tác ghi bị chặn (US-SA-03.1 AC-4)." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f1f3f5;strokeColor=#868e96;align=left;spacingLeft=8;verticalAlign=top;" parent="lane_sa" vertex="1">
+                    <mxGeometry x="30" y="500" width="420" height="230" as="geometry"/>
+                </mxCell>
+                <mxCell id="lane_fm" value="&lt;b style=&quot;font-size: 14px;&quot;&gt;Facility Manager (Quản lý cơ sở — Actor chính)&lt;/b&gt;" style="swimlane;whiteSpace=wrap;html=1;startSize=30;fillColor=#f8f9fa;strokeColor=#1971c2;" parent="1" vertex="1">
+                    <mxGeometry x="540" y="80" width="680" height="1720" as="geometry"/>
+                </mxCell>
+                <mxCell id="start_fm" value="" style="ellipse;fillColor=#212529;strokeColor=#212529;html=1;" parent="lane_fm" vertex="1">
+                    <mxGeometry x="325" y="45" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="fm_login" value="Đăng nhập cổng cơ sở (UC-SYS-01 · SCR-SYS-01):&#10;• Nhập thông tin tài khoản Facility Manager&#10;• Hệ thống xác thực và tự động áp bộ lọc cơ sở được gán&#10;  theo cấu hình SA-03 (Chỉ thấy ô kho, hợp đồng cơ sở phụ trách)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f5ff;strokeColor=#1971c2;align=left;spacingLeft=8;" parent="lane_fm" vertex="1">
+                    <mxGeometry x="160" y="95" width="360" height="65" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_start_to_login" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_fm" source="start_fm" target="fm_login" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="fm_hub" value="Facility Operations Hub (Menu điều hành cơ sở · SCR-FM-00):&#10;Truy cập bảng điều khiển vận hành tập trung của cơ sở phụ trách" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f5ff;strokeColor=#1971c2;" parent="lane_fm" vertex="1">
+                    <mxGeometry x="160" y="185" width="360" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_login_to_hub" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_fm" source="fm_login" target="fm_hub" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="fork_fm" value="" style="shape=line;strokeWidth=6;strokeColor=#212529;html=1;" parent="lane_fm" vertex="1">
+                    <mxGeometry x="30" y="260" width="620" height="10" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_hub_to_fork" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_fm" source="fm_hub" target="fork_fm" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="sec1_label" value="&lt;b style=&quot;color: #1c7ed6;&quot;&gt;PHÂN HỆ 1: QUẢN LÝ DANH MỤC UNIT TYPE &amp;amp; VÒNG ĐỜI Ô KHO (FM-01)&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;rounded=0;" parent="lane_fm" vertex="1">
+                    <mxGeometry x="30" y="290" width="520" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="fm_uc_f5_01" value="UC-F5-01 (FM-01 · SCR-FM-01):&#10;Quản lý danh mục Unit Type tại cơ sở:&#10;• Kế thừa danh mục Facility đã kích hoạt từ Flow 4 (UC-F4-01)&#10;• Thiết lập loại ô kho (S, M, L, XL...) kèm kích thước tiêu chuẩn:&#10;  dài × rộng × cao (m), diện tích (m²), thể tích (m³), tiện ích (máy lạnh, điện)&#10;• Ràng buộc (US-FM-01.1 AC-3): Chặn xóa Unit Type đang có ô kho được gán" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f5ff;strokeColor=#1971c2;align=left;spacingLeft=8;" parent="lane_fm" vertex="1">
+                    <mxGeometry x="30" y="320" width="450" height="95" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_fork_to_b1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_fm" source="fork_fm" target="fm_uc_f5_01" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="120" y="270"/>
+                            <mxPoint x="120" y="320"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="fm_uc_f5_02" value="UC-F5-02 (FM-01 · SCR-FM-01):&#10;Quản lý danh sách Storage Unit vật lý tại cơ sở:&#10;• Tạo mới đơn lẻ hoặc sinh hàng loạt theo dãy / tầng (vd: B-201..B-220)&#10;• Gán mã định danh duy nhất (chặn trùng mã), vị trí (tầng, dãy), Unit Type&#10;• Cấu hình giá niêm yết ban đầu; Trạng thái khởi tạo mặc định: Available&#10;• Ràng buộc: Chặn sửa mã hoặc xóa ô kho khi đang ở trạng thái Occupied" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f5ff;strokeColor=#1971c2;align=left;spacingLeft=8;" parent="lane_fm" vertex="1">
+                    <mxGeometry x="30" y="440" width="450" height="95" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_b1_01_to_02" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_fm" source="fm_uc_f5_01" target="fm_uc_f5_02" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="fm_uc_f5_03" value="UC-F5-03 (FM-01 · SCR-FM-01):&#10;Cập nhật trạng thái ô kho theo vòng đời tại cơ sở (BR § 13.3):&#10;• Tiếp nhận báo cáo hiện trường từ Staff hoặc cập nhật trực tiếp tại quầy&#10;• Luồng vòng đời chuẩn: Available ➔ Reserved ➔ Occupied ➔ Cleaning ➔ Available&#10;• Nhánh bảo trì: Chuyển Maintenance khi ô kho hư hỏng kỹ thuật / kết cấu&#10;• Nhánh ngừng khai thác: Chuyển Out of service khi sửa chữa lớn hoặc đóng dãy" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3bf;strokeColor=#f59f00;align=left;spacingLeft=8;" parent="lane_fm" vertex="1">
+                    <mxGeometry x="30" y="570" width="580" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_b1_02_to_03" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_fm" source="fm_uc_f5_02" target="fm_uc_f5_03" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="end_branch_1" value="" style="ellipse;html=1;shape=endState;fillColor=#212529;strokeColor=#212529;" parent="lane_fm" vertex="1">
+                    <mxGeometry x="305" y="705" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_b1_03_to_end" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_fm" source="fm_uc_f5_03" target="end_branch_1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="sec2_label" value="&lt;b style=&quot;color: #1c7ed6;&quot;&gt;PHÂN HỆ 2: PHÂN CÔNG NHÂN SỰ VẬN HÀNH TRONG NGÀY (FM-05)&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;rounded=0;" parent="lane_fm" vertex="1">
+                    <mxGeometry x="30" y="760" width="520" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="fm_uc_f5_04" value="UC-F5-04 (FM-05 · SCR-FM-05):&#10;Phân công Facility Staff theo công việc trong ngày:&#10;• Mở danh sách ca trực và danh sách nhân viên của cơ sở phụ trách&#10;• Xem số lượng task đang gán của từng Staff để phân bổ đồng đều (US-FM-05.1 AC-3)&#10;• Gán cụ thể nhân viên phụ trách cho từng nhiệm vụ:&#10;  1. Ca trực bàn giao &amp;amp; nghiệm thu Check-in (Flow 2 · UC-F2-09)&#10;  2. Ca kiểm tra &amp;amp; nghiệm thu trả kho Return (Flow 3 · UC-F3-06)&#10;  3. Xử lý sự cố kỹ thuật khẩn cấp theo SLA (Flow 7 · UC-F7-04)&#10;  4. Gắn / tháo khóa ngoài Overlock hợp đồng quá hạn D+4..D+10 (Flow 6)&#10;• Hệ thống gửi thông báo phân công tức thì đến ứng dụng di động của Staff" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f5ff;strokeColor=#1971c2;align=left;spacingLeft=8;" parent="lane_fm" vertex="1">
+                    <mxGeometry x="30" y="790" width="550" height="135" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_fork_to_b2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_fm" source="fork_fm" target="fm_uc_f5_04" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="340" y="270"/>
+                            <mxPoint x="340" y="790"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="sec3_label" value="&lt;b style=&quot;color: #1c7ed6;&quot;&gt;PHÂN HỆ 3: GIÁM SÁT HIỆU QUẢ VẬN HÀNH &amp;amp; BÁO CÁO CƠ SỞ (FM-06)&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;rounded=0;" parent="lane_fm" vertex="1">
+                    <mxGeometry x="30" y="1180" width="520" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="fm_uc_f5_06" value="UC-F5-06 (FM-06 · SCR-FM-06):&#10;Truy cập Dashboard báo cáo cơ sở thời gian thực:&#10;• Ràng buộc SA-03: Chỉ xem và thống kê dữ liệu của cơ sở FM phụ trách&#10;• 4 Thẻ chỉ số chính: Tổng ô kho, Đang thuê (Occupied), Trống (Available), Bảo trì (Maintenance)&#10;• Tính toán tỷ lệ lấp đầy: Usage Rate = Số unit Occupied / (Tổng unit - Out of service)&#10;• Báo cáo tài chính cơ sở: Doanh thu phí thuê, tiền cọc Deposit, phụ phí thu tại cơ sở&#10;• Báo cáo nợ quá hạn (đồng bộ UC-F6-10): Danh sách hợp đồng quá hạn theo độ tuổi nợ&#10;  (D+1..D+3 ân hạn 0%, D+4..D+10 phạt 10%/ngày trần 70%, D+10 khóa PIN chấm dứt)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f5ff;strokeColor=#1971c2;align=left;spacingLeft=8;" parent="lane_fm" vertex="1">
+                    <mxGeometry x="30" y="1210" width="620" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_fork_to_b3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_fm" source="fork_fm" target="fm_uc_f5_06" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="580" y="270"/>
+                            <mxPoint x="580" y="1210"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="fm_export_rep" value="Đánh giá hiệu quả mặt bằng &amp;amp; Kết xuất báo cáo cơ sở:&#10;• Lọc dữ liệu theo kỳ báo cáo (tháng này, quý này) hoặc theo Unit Type&#10;• Phát hiện ô kho tồn trống lâu ngày hoặc nợ đọng để có kế hoạch xử lý&#10;• Xuất file báo cáo cơ sở (Excel/PDF) gửi lên Business Operations Manager" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d3f9d8;strokeColor=#2b8a3e;align=left;spacingLeft=8;" parent="lane_fm" vertex="1">
+                    <mxGeometry x="30" y="1375" width="500" height="75" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_b3_06_to_export" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_fm" source="fm_uc_f5_06" target="fm_export_rep" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="end_branch_3" value="" style="ellipse;html=1;shape=endState;fillColor=#212529;strokeColor=#212529;" parent="lane_fm" vertex="1">
+                    <mxGeometry x="265" y="1475" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_b3_export_to_end" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_fm" source="fm_export_rep" target="end_branch_3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend_box" value="&lt;b style=&quot;color: #d9480f; font-size: 13px;&quot;&gt;QUY TẮC NGHIỆP VỤ &amp;amp; LIÊN KẾT LIÊN FLOW (BUSINESS RULES &amp;amp; TRACEABILITY)&lt;/b&gt;&lt;br&gt;• &lt;b&gt;Vòng đời Storage Unit (BR § 13.3):&lt;/b&gt; Available ➔ Reserved ➔ Occupied ➔ Cleaning ➔ Available. Nhánh sự cố: Maintenance; Ngừng khai thác: Out of service.&lt;br&gt;• &lt;b&gt;Phân quyền dữ liệu (SA-03 &amp;amp; BR-GEN-01):&lt;/b&gt; Facility Manager và Facility Staff tuyệt đối không xem được doanh thu hay ô kho của cơ sở khác.&lt;br&gt;• &lt;b&gt;Kế thừa danh mục Facility:&lt;/b&gt; Nhận từ Flow 4 (UC-F4-01 - Business Operations Manager).&lt;br&gt;• &lt;b&gt;Phân công dùng lại:&lt;/b&gt; Flow 2 (UC-F2-09 trực Check-in), Flow 3 (UC-F3-06 nghiệm thu trả kho), Flow 7 (UC-F7-04 xử lý sự cố).&lt;br&gt;• &lt;b&gt;Dữ liệu nợ quá hạn đồng bộ:&lt;/b&gt; Dùng chung nguồn với Flow 6 (UC-F6-10)." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff9db;strokeColor=#f59f00;align=left;spacingLeft=10;verticalAlign=top;" parent="lane_fm" vertex="1">
+                    <mxGeometry x="30" y="1530" width="620" height="165" as="geometry"/>
+                </mxCell>
+                <mxCell id="lane_fs" value="&lt;b style=&quot;font-size: 14px;&quot;&gt;Facility Staff (Nhân viên cơ sở — Hiện trường)&lt;/b&gt;" style="swimlane;whiteSpace=wrap;html=1;startSize=30;fillColor=#f8f9fa;strokeColor=#2b8a3e;" parent="1" vertex="1">
+                    <mxGeometry x="1240" y="80" width="480" height="1720" as="geometry"/>
+                </mxCell>
+                <mxCell id="sec1_fs_label" value="&lt;b style=&quot;color: #2b8a3e;&quot;&gt;TÁC NGHIỆP THỰC ĐỊA: KIỂM TRA &amp;amp; GHI NHẬN Ô KHO (FS-03)&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;rounded=0;" parent="lane_fs" vertex="1">
+                    <mxGeometry x="30" y="415" width="420" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="fs_audit_unit" value="Ghi nhận hiện trạng thay đổi ô kho tại chỗ (FS-03 · SCR-FS-02):&#10;• Nhân viên đi tuần tra định kỳ hoặc kiểm tra sau khi dọn dẹp&#10;• Phát hiện ô kho bị ẩm mốc, kẹt cửa cuốn, hỏng đèn hoặc đã dọn sạch xong&#10;• Nhập phiếu ghi nhận hiện trạng tại chỗ trên tablet kèm ảnh chụp thực tế" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f5ff;strokeColor=#1971c2;align=left;spacingLeft=8;" parent="lane_fs" vertex="1">
+                    <mxGeometry x="30" y="440" width="420" height="95" as="geometry"/>
+                </mxCell>
+                <mxCell id="sec2_fs_label" value="&lt;b style=&quot;color: #2b8a3e;&quot;&gt;TÁC NGHIỆP THỰC ĐỊA: THEO DÕI &amp;amp; THỰC HIỆN CA TRỰC (FS-06)&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;rounded=0;" parent="lane_fs" vertex="1">
+                    <mxGeometry x="30" y="760" width="420" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="fs_uc_f5_05" value="UC-F5-05 (FS-06 · SCR-FS-06):&#10;Mở Dashboard ca trực hằng ngày &amp;amp; Tiếp nhận nhiệm vụ:&#10;• Tab 1 (Lịch nhận kho): Giờ hẹn, tên khách, CCCD, mã ô kho, trạng thái thanh toán&#10;• Tab 2 (Lịch trả kho): Lịch hẹn kiểm tra hiện trạng trả kho, checklist vệ sinh, trừ cọc&#10;• Tab 3 (Sự cố &amp;amp; Vận hành): Ticket sự cố khẩn cấp (mất chìa, lỗi PIN), nhiệm vụ gắn/tháo khóa ngoài Overlock D+4..D+10 (US-FM-04.3)&#10;• Tự động làm mới danh sách khi có khách đặt lịch hẹn mới trong ngày (AC-3)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f5ff;strokeColor=#1971c2;align=left;spacingLeft=8;" parent="lane_fs" vertex="1">
+                    <mxGeometry x="30" y="790" width="420" height="135" as="geometry"/>
+                </mxCell>
+                <mxCell id="fs_execute_tasks" value="Thực thi công việc tại hiện trường &amp;amp; Cập nhật tiến độ:&#10;• Đón khách, dẫn kiểm tra 4 tiêu chí ô kho &amp;amp; ký biên bản bàn giao điện tử (Flow 2)&#10;• Kiểm tra kho trả theo checklist, chụp ảnh hiện trường nếu hư hại/bẩn (Flow 3)&#10;• Xử lý sự cố tại chỗ trong 2h SLA (Flow 7); Gắn khóa ngoài kho nợ quá hạn (Flow 6)&#10;• Cập nhật trạng thái 'Hoàn thành' / 'Đã xử lý' để khép lại nhiệm vụ ca trực" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d3f9d8;strokeColor=#2b8a3e;align=left;spacingLeft=8;" parent="lane_fs" vertex="1">
+                    <mxGeometry x="30" y="950" width="420" height="95" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_fs_05_to_exec" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_fs" source="fs_uc_f5_05" target="fs_execute_tasks" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="end_branch_2" value="" style="ellipse;html=1;shape=endState;fillColor=#212529;strokeColor=#212529;" parent="lane_fs" vertex="1">
+                    <mxGeometry x="225" y="1065" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_fs_exec_to_end" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_fs" source="fs_execute_tasks" target="end_branch_2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="fs_note_box" value="&lt;b style=&quot;color: #087f5b; font-size: 12px;&quot;&gt;CƠ CHẾ PHỐI HỢP HIỆN TRƯỜNG CỦA NHÂN VIÊN (FS-03, FS-06):&lt;/b&gt;&lt;br&gt;• &lt;b&gt;Bàn giao Check-in (Flow 2):&lt;/b&gt; Dẫn khách đối soát 4 tiêu chí kho đạt chuẩn, ký biên bản điện tử trên tablet để kích hoạt hợp đồng Active.&lt;br&gt;• &lt;b&gt;Nghiệm thu trả kho (Flow 3):&lt;/b&gt; Kiểm tra kho theo checklist (tài sản dọn sạch, tường sàn nguyên vẹn, ổ khóa bình thường). Chụp ảnh và chọn loại phụ phí nếu bẩn/hỏng.&lt;br&gt;• &lt;b&gt;Xử lý sự cố SLA (Flow 7):&lt;/b&gt; Bắt đầu xử lý trong 2 giờ với sự cố khẩn cấp (BR-SUP-01), chụp ảnh sau khắc phục để khách nghiệm thu.&lt;br&gt;• &lt;b&gt;Khóa ngoài Overlock (Flow 6):&lt;/b&gt; Nhận task tự động từ hệ thống tại mốc D+4 để gắn khóa ngoài niêm phong ô kho nợ quá hạn.&lt;br&gt;• &lt;b&gt;Báo cáo ô kho (FS-03):&lt;/b&gt; Ghi nhận trực tiếp hiện trạng sau vệ sinh hoặc khi phát hiện hỏng hóc để FM đổi trạng thái sang Cleaning hoặc Maintenance." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e6fcf5;strokeColor=#0ca678;align=left;spacingLeft=8;verticalAlign=top;" parent="lane_fs" vertex="1">
+                    <mxGeometry x="30" y="1180" width="420" height="250" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_scope_influence" value="Chính sách dữ liệu cơ sở (SA-03)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;strokeColor=#495057;dashPattern=4 4;" parent="1" source="sa_activate_scope" target="fm_login" edge="1">
+                    <mxGeometry x="0.2505" y="8" relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="490" y="455"/>
+                            <mxPoint x="490" y="208"/>
+                        </Array>
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="edge_fm_to_fs_audit" value="Kiểm tra thực địa" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2b8a3e;" parent="1" source="fm_uc_f5_02" target="fs_audit_unit" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_fs_to_fm_update" value="Ghi nhận hiện trạng" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2b8a3e;" parent="1" source="fs_audit_unit" target="fm_uc_f5_03" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1260" y="670"/>
+                            <mxPoint x="1150" y="670"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="edge_fm_to_fs_tasks" value="Phân công nhiệm vụ ca trực" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1971c2;" parent="1" source="fm_uc_f5_04" target="fs_uc_f5_05" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
 </mxfile>

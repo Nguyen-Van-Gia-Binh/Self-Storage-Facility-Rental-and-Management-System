@@ -66,8 +66,8 @@ Chi tiết từng luồng: [docs/TOPIC.md § 4–5](docs/TOPIC.md#4-các-luồng
     └── diagrams/
         ├── activity-diagram-flow-1-storage-reservation.drawio      # Activity Diagram Flow 1 — Reservation
         ├── activity-diagram-flow-2-checkin-handover.drawio         # Activity Diagram Flow 2 — Check-in / Handover
-        ├── activity-diagram-flow-6-1-storage-renewal.drawio       # Activity Diagram Flow 6.1 — Renewal
-        ├── activity-diagram-flow-3-2-overdue-handling.drawio       # Activity Diagram Flow 6.2 — Overdue
+        ├── activity-diagram-flow-6-1-storage-renewal.drawio        # Activity Diagram Flow 6.1 — Renewal
+        ├── activity-diagram-flow-6-2-overdue-handling.drawio       # Activity Diagram Flow 6.2 — Overdue
         ├── activity-diagram-flow-4-business-operations.drawio      # Activity Diagram Flow 4 — Business Rules / Fee / Revenue
         ├── activity-diagram-flow-5-facility-staff-management.drawio # Activity Diagram Flow 5 — Facility Storage / Staff
         ├── activity-diagram-flow-7-support-incident-handling.drawio # Activity Diagram Flow 7 — Support Request

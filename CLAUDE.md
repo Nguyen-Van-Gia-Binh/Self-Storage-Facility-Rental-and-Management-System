@@ -50,7 +50,7 @@ content rather than defining it, and they are joined by stable codes:
 
 `docs/diagrams/` contains the official activity and state machine diagrams in Draw.io format (`.drawio`),
 including `activity-diagram-flow-1-storage-reservation.drawio`, `activity-diagram-flow-2-checkin-handover.drawio`,
-`activity-diagram-flow-6-1-storage-renewal.drawio`, `activity-diagram-flow-3-2-overdue-handling.drawio`,
+`activity-diagram-flow-6-1-storage-renewal.drawio`, `activity-diagram-flow-6-2-overdue-handling.drawio`,
 `activity-diagram-flow-4-business-operations.drawio`, `activity-diagram-flow-5-facility-staff-management.drawio`,
 and `activity-diagram-flow-7-support-incident-handling.drawio`.
 Legacy PlantUML diagrams (`.puml`) have been moved to `docs/diagrams/_archive/` for historical reference.

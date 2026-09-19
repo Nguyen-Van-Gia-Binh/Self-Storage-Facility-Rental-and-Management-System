@@ -136,6 +136,7 @@ graph LR
 
 | Luồng | Bước nghiệp vụ | Màn hình Stitch | Mã màn hình | Hành vi trực quan hóa |
 | :--- | :--- | :--- | :--- | :--- |
+| **Flow 4** (BM) | Quản lý mạng lưới cơ sở toàn quốc (`UC-F4-01`) | **Multi-Facility Network Management** | `SCR-BM-01` | Business Ops Manager thêm mới, chỉnh sửa thông tin hoặc chuyển trạng thái Inactive cơ sở lưu trữ. |
 | **Flow 4** (BM) | Cấu hình tham số nghiệp vụ toàn hệ thống (`UC-F4-02` -> `UC-F4-06`) | **Business Rules & Policy Parameter Engine** | `SCR-BM-02` | Business Ops Manager cấu hình: Tỷ lệ cọc Deposit, 48h giữ chỗ, 10 ngày grace check-in, các mốc Overdue D+1/D+4/D+10. |
 | **Flow 4** (BM) | Thiết lập bảng giá & phụ phí (`UC-F4-07`, `UC-F4-08`) | **Pricing Matrix & Surcharges** | `SCR-BM-03` | Quản lý khung giá thuê theo từng cơ sở và cấu hình các khoản phụ phí. |
 | **Flow 4** (BM) | Giám sát doanh thu & xuất báo cáo BI (`UC-F4-10`, `UC-F4-12`) | **Enterprise BI & Cross-Facility Report** | `SCR-BM-04` | Xem biểu đồ doanh thu toàn quốc, tỷ lệ lấp đầy giữa các cơ sở và xuất file báo cáo Excel/PDF. |
