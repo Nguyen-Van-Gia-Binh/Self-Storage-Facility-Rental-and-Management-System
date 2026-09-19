@@ -367,7 +367,7 @@ Tổng cộng **22 user story**, **111 acceptance criteria**, **95 story point**
   nhận được thông báo nhắc trước 1 ngày.
 - **AC-3** — *Given* tôi mở chi tiết Reservation, *when* trang hiển thị, *then* có mã đặt chỗ dạng
   QR hoặc mã ngắn để Facility Staff tra cứu nhanh ở `UC-F2-01`.
-- **AC-4** — *Given* tôi đã quá `checkin.grace_days` (3 ngày) mà chưa đến, *when* tôi mở Reservation,
+- **AC-4** — *Given* tôi đã quá `checkin.grace_days` (10 ngày) mà chưa đến, *when* tôi mở Reservation,
   *then* hệ thống hiển thị cảnh báo nguy cơ bị đánh No-show và mất Deposit theo `BR-CAN-04`.
 
 ---

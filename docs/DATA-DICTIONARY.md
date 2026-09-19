@@ -148,7 +148,7 @@ Chính sách vận hành có phiên bản đầy đủ tại từng thời đi�
 | `effective_from` | `DATETIMEOFFSET` | Có | | Mốc thời gian chính thức có hiệu lực |
 | `deposit_multiplier` | `DECIMAL(5,2)` | Có | | Hệ số tiền cọc (vd: `1.00` = 1 tháng tiền thuê - `BR-DEP-01`) |
 | `reservation_hold_hours` | `INT` | Có | | Số giờ giữ chỗ chờ thanh toán (`48` giờ - `BR-RES-02`) |
-| `checkin_grace_days` | `INT` | Có | | Số ngày ân hạn check-in sau ngày bắt đầu (`7` ngày - `BR-CHK-01`) |
+| `checkin_grace_days` | `INT` | Có | | Số ngày ân hạn check-in sau ngày bắt đầu (`10` ngày - `BR-CHK-05`) |
 | `cancel_full_refund_hours` | `INT` | Có | | Số giờ hủy trước check-in được hoàn 100% (`48` giờ - `BR-CAN-01`) |
 | `cancel_late_refund_rate` | `DECIMAL(5,2)` | Có | | Tỷ lệ hoàn tiền khi hủy muộn (`0.50` = 50% - `BR-CAN-02`) |
 | `cancel_no_show_refund_rate` | `DECIMAL(5,2)` | Có | | Tỷ lệ hoàn tiền khi khách No-show (`0.00` = 0% - `BR-CAN-04`) |

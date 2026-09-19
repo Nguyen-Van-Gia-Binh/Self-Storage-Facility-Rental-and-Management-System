@@ -90,11 +90,10 @@ Khi bạn trình bày xong 7 ảnh Main Flow, giảng viên thường sẽ đặ
  
 ```mermaid
 graph TD
-    A[SCR-FS-01: Tra cứu Check-in hôm nay] --> B[SCR-FS-02: Dẫn khách kiểm tra thực tế ô kho]
-    B -->|Phòng đạt| C[SCR-FS-01: Ký biên bản bàn giao điện tử]
-    B -->|Phòng hư hỏng| D[SCR-FS-02.1: Báo sự cố & Khóa bảo trì]
-    D --> E[SCR-FM-02: Manager đổi ô kho thay thế]
-    E --> B
+    A[SCR-FS-01: Tra cứu Check-in & Xác minh CCCD, thanh toán] --> B[SCR-FS-02: Dẫn khách kiểm tra thực tế ô kho]
+    B -->|Phòng đạt| C[SCR-FS-01: Khách đồng ý & Ký biên bản bàn giao điện tử]
+    B -->|Phòng hư hỏng| D[SCR-FS-02.1: Báo sự cố & Khóa bảo trì Maintenance]
+    D --> E[SCR-FM-02: Facility Manager xử lý hoàn tiền 100% trong 3 ngày]
     C --> F[SCR-SC-04: System tự động kích hoạt Contract & Access Code]
 ```
  
@@ -102,10 +101,10 @@ graph TD
  
 | Bước trên Activity Diagram Flow 2 | Màn hình Stitch | Mã màn hình & Link xem | Hành vi người dùng & Trực quan hóa |
 | :--- | :--- | :--- | :--- |
-| **Bước 1**: Staff tra cứu đơn đặt chỗ khi khách đến cơ sở (`UC-F2-01`, `UC-F2-02`, `BR-CHK-01`) | **Staff Daily Operations Desk** | `SCR-FS-01` | Nhân viên mở danh sách ca trực bàn giao trong ngày, tra cứu mã đơn/CCCD khách hàng, kiểm tra cọc và thanh toán đã xanh *Confirmed*. |
+| **Bước 1**: Staff tra cứu đơn đặt chỗ & xác minh CCCD, thanh toán khi khách đến cơ sở (`UC-F2-01`, `UC-F2-02`, `BR-CHK-01`) | **Staff Daily Operations Desk** | `SCR-FS-01` | Nhân viên mở danh sách ca trực bàn giao trong ngày, tra cứu mã đơn/CCCD khách hàng, kiểm tra cọc và thanh toán đã xanh *Confirmed*. Nếu đơn đã quá ân hạn 10 ngày, hệ thống đã tự động No-show, nhân viên giải thích và hướng dẫn khách đặt mới. |
 | **Bước 2**: Dẫn khách kiểm tra hiện trạng thực tế ô kho (`BR-CHK-02`) | **Facility Storage Units & Floor Status Board** | `SCR-FS-02` | Nhân viên dẫn khách đến vị trí ô kho trên sơ đồ mặt bằng thực tế để kiểm tra cửa cuốn, khóa, thiết bị và độ sạch sẽ. |
-| **Bước 3 (Nhánh Ngoại Lệ Đắt Giá)**: Ô kho bị hư hại kết cấu, không đạt yêu cầu (`US-FS-02.1 AC-3`) | **Storage Unit Defect Reporting & Maintenance Lock** | `SCR-FS-02.1` *(Modal Active)* | Staff bật Modal báo cáo sự cố ngay tại chỗ $\rightarrow$ Hệ thống tự động chuyển ô kho sang **Maintenance** $\rightarrow$ Quản lý trên màn hình `SCR-FM-02` chỉ định ngay ô kho thay thế cùng loại. |
-| **Bước 4**: Lập biên bản bàn giao kèm ảnh hiện trạng & Ký số (`UC-F2-03`, `BR-CHK-03`, `UC-F2-05`) | **Staff Daily Operations Desk** | `SCR-FS-01` | Nhân viên chụp ảnh hiện trạng ô kho tải lên hệ thống, khách hàng ký số điện tử trên tablet/ứng dụng để xác nhận nhận bàn giao. |
+| **Bước 3 (Nhánh Ngoại Lệ)**: Ô kho bị hư hại kết cấu hoặc khách từ chối nhận (`US-FS-02.1 AC-3`, `BR-CHK-06`) | **Storage Unit Defect Reporting & Maintenance Lock** | `SCR-FS-02.1` *(Modal Active)* | Staff bật Modal báo cáo sự cố ngay tại chỗ $\rightarrow$ Hệ thống tự động chuyển ô kho sang **Maintenance** và hủy lượt Handover $\rightarrow$ Quản lý cơ sở tiếp nhận trên màn hình `SCR-FM-02` và xử lý lệnh hoàn tiền 100% cho khách trong 3 ngày làm việc. |
+| **Bước 4**: Khách đồng ý nhận kho & Ký số biên bản bàn giao (`UC-F2-03`, `BR-CHK-03`, `UC-F2-05`) | **Staff Daily Operations Desk** | `SCR-FS-01` | Nhân viên chụp ảnh hiện trạng ô kho tải lên hệ thống, khách hàng kiểm tra và đồng ý ký số điện tử trên tablet/ứng dụng để xác nhận nhận bàn giao. |
 | **Bước 5**: Hệ thống tự động kích hoạt song song (`UC-F2-06`, `UC-F2-07`, `BR-ACC-02`) | **Customer Storage & Contracts Hub (My Rentals)** | `SCR-SC-04` | Sau khi ký biên bản, **Hệ thống tự động**: (1) Ô kho chuyển *Occupied*; (2) Hợp đồng chuyển *Active*; (3) Mã Access Code / QR mở cổng hiện xanh *Active*; (4) Tự gửi email kèm file PDF biên bản cho khách. |
  
 ---
@@ -137,7 +136,7 @@ graph LR
 
 | Luồng | Bước nghiệp vụ | Màn hình Stitch | Mã màn hình | Hành vi trực quan hóa |
 | :--- | :--- | :--- | :--- | :--- |
-| **Flow 4** (BM) | Cấu hình tham số nghiệp vụ toàn hệ thống (`UC-F4-02` -> `UC-F4-06`) | **Business Rules & Policy Parameter Engine** | `SCR-BM-02` | Business Ops Manager cấu hình: Tỷ lệ cọc Deposit, 48h giữ chỗ, 3 ngày grace check-in, các mốc Overdue D+1/D+4/D+10. |
+| **Flow 4** (BM) | Cấu hình tham số nghiệp vụ toàn hệ thống (`UC-F4-02` -> `UC-F4-06`) | **Business Rules & Policy Parameter Engine** | `SCR-BM-02` | Business Ops Manager cấu hình: Tỷ lệ cọc Deposit, 48h giữ chỗ, 10 ngày grace check-in, các mốc Overdue D+1/D+4/D+10. |
 | **Flow 4** (BM) | Thiết lập bảng giá & duyệt miễn giảm (`UC-F4-07`, `UC-F4-13`) | **Pricing Matrix, Surcharges & Fee Waiver** | `SCR-BM-03` | Quản lý khung giá thuê theo từng cơ sở và duyệt các đề xuất miễn giảm phí quá hạn theo vụ việc. |
 | **Flow 4** (BM) | Giám sát doanh thu & xuất báo cáo BI (`UC-F4-10`, `UC-F4-12`) | **Enterprise BI & Cross-Facility Report** | `SCR-BM-04` | Xem biểu đồ doanh thu toàn quốc, tỷ lệ lấp đầy giữa các cơ sở và xuất file báo cáo Excel/PDF. |
 | **Flow 5** (FM) | Quản lý danh mục ô kho & sơ đồ mặt bằng (`UC-F5-01`, `UC-F5-02`) | **Facility Storage Units & Layout Management** | `SCR-FM-01` | Facility Manager quản lý từng ô kho, kích thước, tầng, vị trí và trạng thái bảo trì/sẵn sàng. |

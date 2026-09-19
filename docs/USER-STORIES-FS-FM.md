@@ -80,9 +80,9 @@ Tổng cộng **23 user story**, **94 acceptance criteria**, **111 story point**
 **Acceptance Criteria**
 
 - **AC-1** — *Given* khách đến sau khung giờ hẹn trong ngày nhưng trước giờ đóng cửa cơ sở, *when* tôi mở đơn đặt chỗ, *then* hệ thống cho phép tiếp tục quy trình bàn giao bình thường và ghi nhận mốc thời gian thực tế.
-- **AC-2** — *Given* hết ngày hẹn mà khách chưa đến, *when* tôi rà soát danh sách, *then* hệ thống hiển thị số ngày còn lại trong `checkin.grace_days`; Facility Staff không tự chuyển Reservation thành *No-show*.
-- **AC-3** — *Given* hết `checkin.grace_days` mà khách chưa hoàn tất Check-in, *when* scheduled job chạy, *then* Reservation chuyển *No-show*, Storage Unit đã phân bổ trở lại *Available* và tiền được quyết toán theo `BR-CAN-04`, `BR-CHK-05`.
-- **AC-4** — *Given* khách đến khi đơn đặt chỗ đã bị hủy tự động do quá hạn, *when* tôi tra cứu, *then* hệ thống hiển thị lý do hủy và hướng dẫn khách thực hiện đặt chỗ mới.
+- **AC-2** — *Given* hết ngày hẹn mà khách chưa đến, *when* tôi rà soát danh sách, *then* hệ thống hiển thị số ngày còn lại trong `checkin.grace_days` (tối đa 10 ngày); Facility Staff không tự chuyển Reservation thành *No-show*.
+- **AC-3** — *Given* hết `checkin.grace_days` (10 ngày) mà khách chưa hoàn tất Check-in, *when* scheduled job chạy lúc 00:00 ngày tiếp theo, *then* hệ thống tự động chuyển Reservation sang *No-show*, Storage Unit đã phân bổ trở lại *Available* và tiền được quyết toán theo `BR-CAN-04`, `BR-CHK-05`.
+- **AC-4** — *Given* khách đến khi đơn đặt chỗ đã quá hạn 10 ngày và bị hệ thống tự động đánh dấu No-show, *when* tôi tra cứu, *then* hệ thống hiển thị lý do No-show tự động và tôi hướng dẫn khách thực hiện đặt chỗ mới.
 
 ---
 
@@ -102,8 +102,8 @@ Tổng cộng **23 user story**, **94 acceptance criteria**, **111 story point**
 
 - **AC-1** — *Given* đơn đặt chỗ đã hợp lệ và khách đã đến tận nơi, *when* tôi dẫn khách kiểm tra ô kho, *then* tôi và khách kiểm tra hiện trạng cửa, khóa, sàn kho và thiết bị đi kèm.
 - **AC-2** — *Given* ô kho sạch sẽ và nguyên vẹn theo `BR-CHK-02` và `UC-F2-03`, *when* tôi tạo biên bản bàn giao, *then* hệ thống ghi nhận mã biên bản, mã ô kho, thời gian bàn giao, tên nhân viên thực hiện và họ tên khách theo `BR-CHK-03`.
-- **AC-3** — *Given* Storage Unit phát sinh lỗi vật lý (ví dụ: kẹt cửa, ẩm mốc), *when* tôi báo cáo tại màn hình Handover, *then* hệ thống hủy lượt Handover này, chuyển unit sang *Maintenance* và gửi thông báo cho Facility Manager xử lý ngoại lệ phân bổ.
-- **AC-4** — *Given* biên bản bàn giao đã hoàn tất, *when* khách xác nhận (ký điện tử hoặc nhập mã xác nhận), *then* biên bản được lưu trữ vĩnh viễn và gửi bản sao PDF về email của khách.
+- **AC-3** — *Given* Storage Unit phát sinh lỗi vật lý hoặc khách không đồng ý nhận kho, *when* tôi báo cáo tại màn hình Handover, *then* hệ thống hủy lượt Handover này, chuyển unit sang *Maintenance* và chuyển lệnh cho Facility Manager xử lý hoàn tiền 100% trong 3 ngày làm việc theo `BR-CHK-06`.
+- **AC-4** — *Given* ô kho đạt yêu cầu và khách đồng ý nhận kho, *when* khách xác nhận ký số biên bản bàn giao điện tử, *then* biên bản được lưu trữ vĩnh viễn và gửi bản sao PDF về email của khách.
 
 ---
 

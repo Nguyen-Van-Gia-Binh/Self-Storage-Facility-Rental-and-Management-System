@@ -54,7 +54,7 @@ bảng chính sách của hệ thống (`BM-02`, `BM-03`).
 | `deposit.multiplier` | Hệ số Deposit trên tiền thuê một tháng | `1.0` | `BR-DEP-01` |
 | `reservation.hold_hours` | Thời gian giữ chỗ chờ thanh toán | `48 giờ` | `BR-DEP-03` |
 | `rental.daily_divisor` | Số ngày quy ước của một tháng khi tính phần tiền thuê theo ngày | `30 ngày` | `BR-PRI-03` |
-| `checkin.grace_days` | Số ngày được phép check-in trễ kể từ ngày bắt đầu thuê | `3 ngày` | `BR-CAN-04`, `BR-CHK-05` |
+| `checkin.grace_days` | Số ngày được phép check-in trễ kể từ ngày bắt đầu thuê | `10 ngày` | `BR-CAN-04`, `BR-CHK-05` |
 | `cancel.full_refund_hours` | Hủy trước ngày bắt đầu bao nhiêu giờ thì hoàn 100% | `48 giờ` | `BR-CAN-01` |
 | `cancel.late_refund_rate` | Tỷ lệ hoàn Deposit khi hủy muộn | `50%` | `BR-CAN-02` |
 | `cancel.no_show_refund_rate` | Tỷ lệ hoàn Deposit khi no-show | `0%` | `BR-CAN-04` |
@@ -146,7 +146,7 @@ kho sớm, xử lý theo § 9.
 | `BR-CAN-01` | Nếu chênh lệch từ timestamp yêu cầu hủy đến 00:00 ngày bắt đầu thuê từ `cancel.full_refund_hours` trở lên → hoàn **100%** Deposit và **100%** phí thuê đã đóng |
 | `BR-CAN-02` | Nếu chênh lệch trên nhỏ hơn `cancel.full_refund_hours` nhưng yêu cầu vẫn được gửi trước 00:00 ngày bắt đầu thuê → hoàn `cancel.late_refund_rate` (50%) Deposit và **100%** phí thuê |
 | `BR-CAN-03` | Reservation *Expired* do quá hạn thanh toán (`BR-DEP-03`) không phát sinh hoàn tiền vì chưa thu tiền |
-| `BR-CAN-04` | Nếu hết `checkin.grace_days` ngày lịch kể từ ngày bắt đầu thuê mà khách chưa Check-in, tại 00:00 ngày kế tiếp Reservation chuyển *No-show*: hoàn `cancel.no_show_refund_rate` (0%) Deposit, hoàn phí thuê sau khi trừ số ngày từ ngày bắt đầu đến hết ân hạn theo `BR-PRI-03`; unit được giải phóng |
+| `BR-CAN-04` | Nếu hết `checkin.grace_days` (10 ngày lịch) kể từ ngày bắt đầu thuê mà khách chưa Check-in, tại 00:00 ngày kế tiếp hệ thống tự động chuyển Reservation sang *No-show*: hoàn `cancel.no_show_refund_rate` (0%) Deposit, hoàn phí thuê sau khi trừ số ngày từ ngày bắt đầu đến hết ân hạn theo `BR-PRI-03`; unit được giải phóng |
 | `BR-CAN-05` | Cơ sở hủy vì lý do từ phía nhà cung cấp (ô kho hư hỏng, cơ sở đóng cửa) → hoàn **100%** mọi khoản, kèm ưu tiên bố trí ô kho tương đương. Không áp dụng tỷ lệ phạt nào (`UC-F1-12`) |
 | `BR-CAN-06` | Tiền hoàn được chuyển về phương thức thanh toán gốc trong `return.refund_working_days` ngày làm việc kể từ khi hủy được ghi nhận |
 | `BR-CAN-07` | Mỗi Reservation chỉ hủy được **một lần**; đã hủy thì không khôi phục, khách phải đặt lại từ đầu |
@@ -228,8 +228,8 @@ Ngày quá hạn ký hiệu **D+n**, đếm từ ngày liền sau ngày kết th
 | `BR-CHK-02` | **Điều kiện tiên quyết để Handover:** Reservation phải *Confirmed*, đã thanh toán đủ toàn bộ phí thuê N tháng và Deposit (`BR-PAY-01`), đồng thời đã phân bổ Storage Unit; unit thực tế phải trống, sạch và không hư hại kết cấu (`UC-F2-03`) |
 | `BR-CHK-03` | **Biên bản bàn giao tại chỗ:** Quá trình bàn giao bắt buộc phải lập biên bản nghiệm thu hiện trạng có chữ ký số/xác nhận điện tử của cả Facility Staff và khách hàng, kèm hình ảnh chụp hiện trạng ô kho trước khi giao mã PIN / chìa khóa (`UC-F2-03`) |
 | `BR-CHK-04` | **Kích hoạt Contract và chuyển trạng thái unit:** Sau khi ký biên bản Handover, Storage Unit chuyển *Reserved* → *Occupied* (`UC-F2-06`), Contract chuyển *Pending Check-in* → *Active* (`UC-F2-07`). Khoảng thuê vẫn theo ngày bắt đầu và kết thúc đã chốt trong Reservation; Check-in trễ không dời ngày kết thúc |
-| `BR-CHK-05` | **Xử lý No-show khi check-in trễ:** Khách được phép đến nhận kho trễ tối đa `checkin.grace_days` (3 ngày) tính từ ngày bắt đầu thuê. Quá thời hạn này mà khách không đến nhận và không báo hoãn, đơn bị đánh dấu *No-show* và xử lý theo `BR-CAN-04` (`UC-F2-08`) |
-| `BR-CHK-06` | **Xử lý từ chối nhận kho hoặc ô kho hư hỏng tại chỗ:** Nếu ô kho thực tế bị hư hại không đạt yêu cầu mà cơ sở không có ô kho thay thế tương đương, hoặc khách hàng từ chối nhận kho hợp lệ, Facility Manager lập lệnh hủy check-in và thực hiện hoàn tiền 100% (Deposit + phí thuê) cho khách trong vòng 3 ngày làm việc (`checkin.refund_working_days`) |
+| `BR-CHK-05` | **Xử lý No-show khi check-in trễ:** Khách được phép đến nhận kho trễ tối đa `checkin.grace_days` (10 ngày) tính từ ngày bắt đầu thuê. Quá thời hạn này mà khách chưa hoàn tất Check-in, hệ thống tự động đánh dấu Reservation sang *No-show* lúc 00:00 ngày tiếp theo, hủy Contract và giải phóng Storage Unit về *Available* theo `BR-CAN-04` (`UC-F2-08`) |
+| `BR-CHK-06` | **Xử lý ô kho hư hỏng tại chỗ hoặc từ chối ký:** Khi kiểm tra thực tế, nếu ô kho bị hư hại/sự cố kỹ thuật không đạt yêu cầu hoặc khách từ chối ký biên bản bàn giao, nhân viên báo cáo sự cố lên hệ thống; hệ thống tự động chuyển Storage Unit sang *Maintenance*. Lượt Handover bị hủy và Facility Manager thực hiện hoàn tiền 100% (Deposit + phí thuê) cho khách trong vòng 3 ngày làm việc (`checkin.refund_working_days`) theo `BR-CAN-05` |
 
 ---
 
@@ -310,7 +310,7 @@ bắt đầu 01/10/2026, kết thúc 31/12/2026.
 | **Thanh toán khi đặt chỗ** | Phí thuê `800.000 × 3` + Deposit `800.000 × 1.0` | **3.200.000 đ** |
 | **Hủy ngày 27/09** (trước 48h) | Hoàn 100% phí thuê + 100% Deposit | Hoàn **3.200.000 đ** |
 | **Hủy ngày 30/09** (trong 48h) | Hoàn 100% phí thuê `2.400.000` + 50% Deposit `400.000` | Hoàn **2.800.000 đ** |
-| **No-show đến hết 03/10** | Hoàn 0% Deposit; hoàn phí thuê trừ 3 ngày giữ ô kho `2.400.000 − 800.000 × 3/30` | Hoàn **2.320.000 đ** |
+| **No-show đến hết 10/10** (10 ngày ân hạn) | Hoàn 0% Deposit; hoàn phí thuê trừ 10 ngày giữ ô kho `2.400.000 − 800.000 × 10/30` | Hoàn **2.133.000 đ** |
 | **Quá hạn 7 ngày** (tới 07/01/2027) | Ân hạn D+1→D+3 miễn phí; tính phí 4 ngày `800.000 × 5% × 4` | Nợ **160.000 đ** |
 | **Quá hạn 20 ngày** | Đã chạm trần từ D+13: `800.000 × 50%` | Nợ **400.000 đ** (không tăng thêm) |
 | **Gia hạn 2 tháng khi đang quá hạn 7 ngày**, giá mới 850.000 đ/tháng | Phí quá hạn `160.000` + phí thuê `850.000 × 2` | Phải trả **1.860.000 đ** |
