@@ -1,47 +1,218 @@
 <mxfile host="65bd71144e">
-    <diagram name="Trang-1" id="FaApz0RUSyBrDcZGKcqD">
-        <mxGraphModel dx="1772" dy="1884" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <diagram name="Flow-7-Support-Incident-Handling" id="flow-7-support-incident-handling">
+        <mxGraphModel dx="1381" dy="1118" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1920" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
-                <mxCell id="ScL9fyu5NzHSP1len7kF-1" value="Storage Customer&amp;nbsp;" style="swimlane;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="40" y="60" width="410" height="860" as="geometry"/>
+                <mxCell id="title_header" value="&lt;b style=&quot;font-size: 16px;&quot;&gt;FLOW 7: Support Request and Issue Handling Flow (Luồng yêu cầu hỗ trợ và xử lý sự cố)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size: 12px; color: #555555;&quot;&gt;Tiếp nhận &amp;amp; phân loại (UC-F7-01, 03) · Phân công theo SLA khẩn cấp 2h (UC-F7-04, BR-SUP-01) · Xử lý mất khóa/PIN &amp;amp; bảo trì ô kho (UC-F7-05, 06, BR-ACC-03, BR-SUP-02) · Nghiệm thu &amp;amp; Tự đóng 7 ngày (UC-F7-07, 08, BR-SUP-03)&lt;/span&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;rounded=0;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="20" width="1680" height="45" as="geometry"/>
                 </mxCell>
-                <mxCell id="ScL9fyu5NzHSP1len7kF-4" value="Gửi yêu cầu hỗ trợ sự cố" style="rounded=0;whiteSpace=wrap;html=1;" parent="ScL9fyu5NzHSP1len7kF-1" vertex="1">
-                    <mxGeometry x="90" y="130" width="200" height="60" as="geometry"/>
+                <mxCell id="lane_cust" value="&lt;b style=&quot;font-size: 14px;&quot;&gt;Storage Customer (Khách thuê kho)&lt;/b&gt;" style="swimlane;whiteSpace=wrap;html=1;startSize=30;fillColor=#f8f9fa;strokeColor=#2b8a3e;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="80" width="480" height="1820" as="geometry"/>
                 </mxCell>
-                <mxCell id="ScL9fyu5NzHSP1len7kF-5" value="" style="ellipse;fillColor=strokeColor;html=1;" parent="ScL9fyu5NzHSP1len7kF-1" vertex="1">
-                    <mxGeometry x="180" y="50" width="25" height="30" as="geometry"/>
+                <mxCell id="start_cust" value="" style="ellipse;fillColor=#212529;strokeColor=#212529;html=1;" parent="lane_cust" vertex="1">
+                    <mxGeometry x="225" y="45" width="30" height="30" as="geometry"/>
                 </mxCell>
-                <mxCell id="4" value="Thông báo cho người dùng" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="ScL9fyu5NzHSP1len7kF-1">
-                    <mxGeometry x="130" y="270" width="120" height="60" as="geometry"/>
+                <mxCell id="cust_trigger" value="Phát sinh sự cố hoặc nhu cầu hỗ trợ:&#10;• Về ô kho, khóa cơ, Access Code, thanh toán, tài sản&#10;• Hoặc kích hoạt từ Flow 2 (bàn giao lỗi · BR-CHK-06)&#10;• Hoặc kích hoạt từ Flow 3 (trả kho hư hại · BR-RET-08)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f5ff;strokeColor=#1971c2;align=left;spacingLeft=8;" parent="lane_cust" vertex="1">
+                    <mxGeometry x="30" y="105" width="420" height="65" as="geometry"/>
                 </mxCell>
-                <mxCell id="ScL9fyu5NzHSP1len7kF-2" value="Facility Staff" style="swimlane;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="450" y="60" width="710" height="860" as="geometry"/>
-                </mxCell>
-                <mxCell id="2" value="Staff xử lý" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="ScL9fyu5NzHSP1len7kF-2">
-                    <mxGeometry x="320" y="270" width="120" height="60" as="geometry"/>
-                </mxCell>
-                <mxCell id="ScL9fyu5NzHSP1len7kF-3" value="Facility Manager" style="swimlane;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="1160" y="60" width="410" height="860" as="geometry"/>
-                </mxCell>
-                <mxCell id="ScL9fyu5NzHSP1len7kF-10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="ScL9fyu5NzHSP1len7kF-3" source="ScL9fyu5NzHSP1len7kF-8" target="ScL9fyu5NzHSP1len7kF-7" edge="1">
+                <mxCell id="edge_start_to_trigger" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_cust" source="start_cust" target="cust_trigger" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="ScL9fyu5NzHSP1len7kF-8" value="Tiếp nhận và phân loại yêu cầu hỗ trợ" style="rounded=0;whiteSpace=wrap;html=1;" parent="ScL9fyu5NzHSP1len7kF-3" vertex="1">
-                    <mxGeometry x="60" y="130" width="220" height="60" as="geometry"/>
+                <mxCell id="cust_uc_f7_01" value="UC-F7-01 (SC-06 · SCR-SC-06):&#10;Gửi yêu cầu hỗ trợ sự cố:&#10;• Chọn loại sự cố: Mã PIN/QR, Khóa cơ, Hư hỏng ô kho, Thanh toán, Khác&#10;• Nhập tiêu đề &amp;amp; mô tả chi tiết hiện trạng gặp phải (US-SC-06.1)&#10;• Đính kèm tối đa 5 hình ảnh minh chứng hiện trường (≤ 5MB/ảnh)&#10;• Gắn đúng Storage Unit và cơ sở đang thuê (Tạo ticket trạng thái Mới)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f5ff;strokeColor=#1971c2;align=left;spacingLeft=8;" parent="lane_cust" vertex="1">
+                    <mxGeometry x="30" y="195" width="420" height="95" as="geometry"/>
                 </mxCell>
-                <mxCell id="ScL9fyu5NzHSP1len7kF-7" value="Phân công công việc cho Facility Staff" style="rounded=0;whiteSpace=wrap;html=1;" parent="ScL9fyu5NzHSP1len7kF-3" vertex="1">
-                    <mxGeometry x="60" y="270" width="220" height="60" as="geometry"/>
-                </mxCell>
-                <mxCell id="ScL9fyu5NzHSP1len7kF-9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="ScL9fyu5NzHSP1len7kF-4" target="ScL9fyu5NzHSP1len7kF-8" edge="1">
+                <mxCell id="edge_trigger_to_f7_01" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_cust" source="cust_trigger" target="cust_uc_f7_01" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="3" style="edgeStyle=none;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="ScL9fyu5NzHSP1len7kF-7" target="2">
+                <mxCell id="fork_cust_req" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#212529;strokeColor=#212529;" parent="lane_cust" vertex="1">
+                    <mxGeometry x="90" y="315" width="300" height="8" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_f7_01_to_fork" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_cust" source="cust_uc_f7_01" target="fork_cust_req" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="5" style="edgeStyle=none;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="2" target="4">
+                <mxCell id="cust_uc_f7_02" value="UC-F7-02 (SC-06 · SCR-SC-06):&#10;Theo dõi trạng thái &amp;amp; trao đổi bổ sung (Luồng song song):&#10;• Theo dõi tiến độ xử lý qua dòng thời gian Status Timeline (US-SC-06.2)&#10;• Gửi thêm bình luận hoặc hình ảnh bổ sung trong khi xử lý&#10;• Nhận thông báo đẩy mỗi khi có cập nhật từ nhân viên cơ sở" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0ebff;strokeColor=#1864ab;align=left;spacingLeft=8;" parent="lane_cust" vertex="1">
+                    <mxGeometry x="40" y="360" width="420" height="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_fork_to_f7_02" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_cust" source="fork_cust_req" target="cust_uc_f7_02" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="end_f7_02" value="" style="ellipse;html=1;shape=endState;fillColor=#212529;strokeColor=#212529;" parent="lane_cust" vertex="1">
+                    <mxGeometry x="225" y="465" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_f7_02_to_end" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_cust" source="cust_uc_f7_02" target="end_f7_02" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="cust_review" value="Kiểm tra kết quả khắc phục sự cố (US-SC-06.3):&#10;• Xem biên bản kết quả và hình ảnh chụp sau xử lý của Staff&#10;• Đánh giá chất lượng thực tế tại ô kho hoặc trên hệ thống" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f5ff;strokeColor=#1971c2;align=left;spacingLeft=8;" parent="lane_cust" vertex="1">
+                    <mxGeometry x="30" y="1370" width="420" height="75" as="geometry"/>
+                </mxCell>
+                <mxCell id="cust_dec_satisfaction" value="Khách hàng&#10;xác nhận nghiệm thu?&#10;(US-SC-06.3)" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff3bf;strokeColor=#f59f00;" parent="lane_cust" vertex="1">
+                    <mxGeometry x="140" y="1475" width="200" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_cust_rev_to_dec" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_cust" source="cust_review" target="cust_dec_satisfaction" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="cust_reject_reason" value="Báo chưa đạt / chưa giải quyết được:&#10;• Khách nhập rõ lý do chưa hài lòng (AC-3)&#10;• Trạng thái ticket chuyển ngược về In Progress&#10;• Đẩy cảnh báo lên Facility Manager phân công lại" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe3e3;strokeColor=#e03131;align=left;spacingLeft=8;" parent="lane_cust" vertex="1">
+                    <mxGeometry x="20" y="1605" width="200" height="75" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_dec_to_reject" value="Chưa đạt" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_cust" source="cust_dec_satisfaction" target="cust_reject_reason" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="cust_accept_close" value="Xác nhận hài lòng &amp;amp; đóng ticket:&#10;• Ghi nhận đánh giá mức độ hài lòng&#10;• Ticket chuyển sang trạng thái Đã đóng (Closed)&#10;• Khóa chỉnh sửa và lưu trữ vĩnh viễn vào lịch sử" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d3f9d8;strokeColor=#2b8a3e;align=left;spacingLeft=8;" parent="lane_cust" vertex="1">
+                    <mxGeometry x="260" y="1605" width="200" height="75" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_dec_to_accept" value="Đồng ý / Hài lòng" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_cust" source="cust_dec_satisfaction" target="cust_accept_close" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="end_cust_accept" value="" style="ellipse;html=1;shape=endState;fillColor=#212529;strokeColor=#212529;" parent="lane_cust" vertex="1">
+                    <mxGeometry x="345" y="1715" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_accept_to_end" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_cust" source="cust_accept_close" target="end_cust_accept" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="lane_staff" value="&lt;b style=&quot;font-size: 14px;&quot;&gt;Facility Staff (Nhân viên cơ sở)&lt;/b&gt;" style="swimlane;whiteSpace=wrap;html=1;startSize=30;fillColor=#f8f9fa;strokeColor=#1971c2;" parent="1" vertex="1">
+                    <mxGeometry x="550" y="80" width="590" height="1820" as="geometry"/>
+                </mxCell>
+                <mxCell id="staff_receive_task" value="Tiếp nhận nhiệm vụ xử lý trong ca trực (FS-06 · US-FS-06.1):&#10;• Xem thông tin chi tiết sự cố trong danh mục công việc cần làm&#10;• Bấm tiếp nhận: Chuyển trạng thái ticket sang In Progress (US-FS-05.2)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f5ff;strokeColor=#1971c2;align=left;spacingLeft=8;" parent="lane_staff" vertex="1">
+                    <mxGeometry x="85" y="660" width="420" height="65" as="geometry"/>
+                </mxCell>
+                <mxCell id="staff_dec_incident_type" value="Phân loại nhóm sự cố&#10;cần xử lý?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff3bf;strokeColor=#f59f00;" parent="lane_staff" vertex="1">
+                    <mxGeometry x="195" y="755" width="200" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_staff_rcv_to_dec" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_staff" source="staff_receive_task" target="staff_dec_incident_type" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="staff_uc_f7_05_verify" value="UC-F7-05 (FS-05 · SCR-FS-05):&#10;Xác minh quyền truy cập (BR-ACC-03):&#10;• Đối chiếu CCCD/Hộ chiếu chính chủ hợp đồng&#10;• Hoặc người được ủy quyền hợp lệ (UC-F3-03)&#10;• Tuyệt đối từ chối nếu không đúng thẩm quyền" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f5ff;strokeColor=#1971c2;align=left;spacingLeft=8;" parent="lane_staff" vertex="1">
+                    <mxGeometry x="20" y="885" width="255" height="75" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_dec_to_key_branch" value="Mất chìa / Lỗi PIN, QR" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_staff" source="staff_dec_incident_type" target="staff_uc_f7_05_verify" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="staff_uc_f7_05_exec" value="Cấp lại phương tiện truy cập:&#10;• Mã số PIN / QR: Thu hồi mã cũ, hệ thống tự sinh&#10;  mã PIN 6 số mới hoặc tạo mã QR động mới (BR-ACC-01)&#10;• Chìa khóa cơ: Khảo sát tại chỗ, hỗ trợ cắt khóa cũ,&#10;  cấp ổ khóa mới và thu phụ phí thay chìa theo BM-03&#10;• Ghi nhận hình thức xử lý vào nhật ký lịch sử ô kho" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d3f9d8;strokeColor=#2b8a3e;align=left;spacingLeft=8;" parent="lane_staff" vertex="1">
+                    <mxGeometry x="20" y="990" width="255" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_verify_to_exec" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_staff" source="staff_uc_f7_05_verify" target="staff_uc_f7_05_exec" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="staff_uc_f7_06_inspect" value="UC-F7-06 (FS-05 · SCR-FS-05):&#10;Khảo sát hiện trường &amp;amp; đánh giá hư hại:&#10;• Đến hiện trường kiểm tra cửa cuốn, trần, vách, đèn&#10;• Chuyển trạng thái Storage Unit sang Maintenance" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f5ff;strokeColor=#1971c2;align=left;spacingLeft=8;" parent="lane_staff" vertex="1">
+                    <mxGeometry x="305" y="885" width="265" height="75" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_dec_to_damage_branch" value="Hư hỏng ô kho / Bảo trì" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_staff" source="staff_dec_incident_type" target="staff_uc_f7_06_inspect" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="staff_dec_fault" value="Nguyên nhân&#10;hư hại? (BR-SUP-02)" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff3bf;strokeColor=#f59f00;" parent="lane_staff" vertex="1">
+                    <mxGeometry x="345" y="990" width="185" height="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_inspect_to_dec_fault" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_staff" source="staff_uc_f7_06_inspect" target="staff_dec_fault" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="staff_fault_facility" value="Lỗi hạ tầng cơ sở (thấm dột, chập điện):&#10;• Cơ sở chịu 100% chi phí sửa chữa&#10;• Nếu dột nặng: FM kích hoạt phương án&#10;  di dời tài sản sang ô kho dự phòng (BR-SUP-02)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d3f9d8;strokeColor=#2b8a3e;align=left;spacingLeft=8;" parent="lane_staff" vertex="1">
+                    <mxGeometry x="290" y="1105" width="145" height="95" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_dec_fault_to_fac" value="Lỗi cơ sở" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_staff" source="staff_dec_fault" target="staff_fault_facility" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="staff_fault_customer" value="Lỗi chủ quan của khách:&#10;• Lập biên bản hiện trạng&#10;• Tính chi phí khắc phục&#10;  theo phụ phí BM-03" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe3e3;strokeColor=#e03131;align=left;spacingLeft=8;" parent="lane_staff" vertex="1">
+                    <mxGeometry x="445" y="1105" width="135" height="95" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_dec_fault_to_cust" value="Lỗi khách" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_staff" source="staff_dec_fault" target="staff_fault_customer" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="staff_uc_f7_07" value="UC-F7-07 (FS-03 · SCR-FS-03):&#10;Cập nhật trạng thái ô kho sau khi xử lý:&#10;• Hoàn tất sửa chữa, chụp ảnh hiện trạng sau bảo trì&#10;• Cập nhật trạng thái Storage Unit: Maintenance -&gt; Occupied (nếu đang thuê)&#10;  hoặc chuyển sang Available (nếu là ô kho trống phát hiện lỗi)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e7f5ff;strokeColor=#1971c2;align=left;spacingLeft=8;" parent="lane_staff" vertex="1">
+                    <mxGeometry x="290" y="1225" width="290" height="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_fac_to_f7_07" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_staff" source="staff_fault_facility" target="staff_uc_f7_07" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_cust_to_f7_07" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_staff" source="staff_fault_customer" target="staff_uc_f7_07" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="staff_submit_report" value="Ghi nhận kết quả xử lý sự cố &amp;amp; gửi thông báo (UC-F7-08):&#10;• Tải lên ảnh chụp nghiệm thu sau khắc phục (US-FS-05.2 AC-2)&#10;• Nhập tóm tắt kết quả thực hiện, bấm &quot;Đã xử lý&quot;&#10;• Hệ thống gửi thông báo yêu cầu khách hàng nghiệm thu (US-SC-06.3)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0ebff;strokeColor=#1864ab;align=left;spacingLeft=8;" parent="lane_staff" vertex="1">
+                    <mxGeometry x="85" y="1370" width="420" height="75" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_exec_to_report" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_staff" source="staff_uc_f7_05_exec" target="staff_submit_report" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_f7_07_to_report" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_staff" source="staff_uc_f7_07" target="staff_submit_report" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="sys_auto_close" value="Tác vụ nền hệ thống: Tự động đóng yêu cầu (BR-SUP-03):&#10;• Khách hàng không phản hồi quá support.auto_close_working_days (7 ngày làm việc)&#10;• Hệ thống tự động chuyển trạng thái Ticket sang Closed (Tự động đóng)&#10;• Ghi rõ lý do đóng tự động vào nhật ký &amp;amp; gửi thông báo xác nhận cho khách" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe3e3;strokeColor=#e03131;align=left;spacingLeft=8;" parent="lane_staff" vertex="1">
+                    <mxGeometry x="85" y="1520" width="420" height="75" as="geometry"/>
+                </mxCell>
+                <mxCell id="end_sys_autoclose" value="" style="ellipse;html=1;shape=endState;fillColor=#212529;strokeColor=#212529;" parent="lane_staff" vertex="1">
+                    <mxGeometry x="280" y="1630" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_autoclose_to_end" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_staff" source="sys_auto_close" target="end_sys_autoclose" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="lane_mgr" value="&lt;b style=&quot;font-size: 14px;&quot;&gt;Facility Manager (Quản lý cơ sở)&lt;/b&gt;" style="swimlane;whiteSpace=wrap;html=1;startSize=30;fillColor=#f8f9fa;strokeColor=#d9480f;" parent="1" vertex="1">
+                    <mxGeometry x="1170" y="80" width="540" height="1820" as="geometry"/>
+                </mxCell>
+                <mxCell id="mgr_uc_f7_03" value="UC-F7-03 (FM-05 · SCR-FM-05):&#10;Tiếp nhận &amp;amp; phân loại yêu cầu hỗ trợ sự cố:&#10;• Ticket mới xuất hiện trên bảng điều phối sự cố của cơ sở&#10;• Thẩm định nội dung, hình ảnh mô tả và tính cấp bách của sự cố&#10;• Xác định phạm vi ảnh hưởng (ô kho đơn lẻ hay cụm hạ tầng chung)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff4e6;strokeColor=#d9480f;align=left;spacingLeft=8;" parent="lane_mgr" vertex="1">
+                    <mxGeometry x="60" y="315" width="420" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="mgr_uc_f7_04" value="UC-F7-04 (FM-05 · SCR-FM-05):&#10;Phân công Facility Staff xử lý sự cố (US-FM-05.1):&#10;• Chọn nhân viên trực ca từ danh sách Staff của cơ sở&#10;• Cân bằng tải công việc theo số lượng task đang gán (AC-3)&#10;• Điều chuyển nhân viên khác nếu người được gán vắng mặt (AC-4)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff4e6;strokeColor=#d9480f;align=left;spacingLeft=8;" parent="lane_mgr" vertex="1">
+                    <mxGeometry x="60" y="425" width="420" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_mgr_03_to_04" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_mgr" source="mgr_uc_f7_03" target="mgr_uc_f7_04" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="mgr_dec_urgent" value="Sự cố khẩn cấp truy cập?&#10;(Quên PIN, kẹt khóa, mất chìa)" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff3bf;strokeColor=#f59f00;" parent="lane_mgr" vertex="1">
+                    <mxGeometry x="160" y="535" width="220" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_mgr_04_to_dec" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_mgr" source="mgr_uc_f7_04" target="mgr_dec_urgent" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="mgr_sla_urgent" value="Áp đặt mức độ ưu tiên &amp;amp; cam kết SLA (BR-SUP-01):&#10;• Đánh dấu cờ khẩn cấp &quot;High Priority&quot; trên ticket (US-FM-05.1 AC-2)&#10;• Kích hoạt SLA support.urgent_sla_hours = 2 giờ&#10;• Bắt buộc nhân viên cơ sở tiếp nhận và bắt đầu xử lý trong 2 giờ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe3e3;strokeColor=#e03131;align=left;spacingLeft=8;" parent="lane_mgr" vertex="1">
+                    <mxGeometry x="60" y="660" width="420" height="75" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_dec_to_sla" value="Khẩn cấp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="lane_mgr" source="mgr_dec_urgent" target="mgr_sla_urgent" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="mgr_legend_box" value="&lt;b style=&quot;font-size: 13px; color: #343a40;&quot;&gt;ĐẶC TẢ NGHIỆP VỤ &amp;amp; QUY TẮC RÀNG BUỘC (BUSINESS RULES):&lt;/b&gt;&lt;br&gt;&lt;br&gt;• &lt;b&gt;Nguồn kích hoạt Flow 7:&lt;/b&gt;&lt;br&gt;  - Khách hàng báo sự cố trên ứng dụng/portal (SC-06).&lt;br&gt;  - Kích hoạt từ Flow 2 (Handover): Phát hiện ô kho lỗi kết cấu/vệ sinh lúc nhận, khách từ chối ký biên bản (BR-CHK-06).&lt;br&gt;  - Kích hoạt từ Flow 3 (Return): Tranh chấp biên bản kiểm tra hư hỏng khi khách trả kho (BR-RET-08).&lt;br&gt;&lt;br&gt;• &lt;b&gt;BR-SUP-01 (SLA khẩn cấp tại chỗ):&lt;/b&gt; Mất chìa, quên PIN, kẹt khóa bắt buộc xử lý trong &lt;b&gt;support.urgent_sla_hours = 2 giờ&lt;/b&gt;.&lt;br&gt;• &lt;b&gt;BR-SUP-02 (Trách nhiệm &amp;amp; chi phí hư hại):&lt;/b&gt;&lt;br&gt;  - Do hạ tầng cơ sở (dột, chập điện): Cơ sở chịu 100% chi phí; dột lớn ưu tiên di dời đồ sang ô kho dự phòng.&lt;br&gt;  - Do khách chủ quan: Tính chi phí sửa chữa theo bảng phụ phí BM-03.&lt;br&gt;• &lt;b&gt;BR-SUP-03 (Nghiệm thu &amp;amp; Đóng ticket):&lt;/b&gt; Staff bắt buộc tải ảnh sau sửa; nếu khách không phản hồi trong &lt;b&gt;support.auto_close_working_days = 7 ngày làm việc&lt;/b&gt;, hệ thống tự đóng ticket.&lt;br&gt;• &lt;b&gt;BR-ACC-03 (Thẩm quyền truy cập):&lt;/b&gt; Chỉ chủ hợp đồng hoặc người ủy quyền hợp lệ mới được cấp lại PIN/QR/khóa cơ." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f1f3f5;strokeColor=#868e96;align=left;spacingLeft=8;verticalAlign=top;" parent="lane_mgr" vertex="1">
+                    <mxGeometry x="40" y="1240" width="460" height="440" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_fork_to_mgr_03" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="fork_cust_req" target="mgr_uc_f7_03" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="340" y="405"/>
+                            <mxPoint x="340" y="325"/>
+                            <mxPoint x="1230" y="325"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="edge_mgr_normal_to_staff" value="Bình thường" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="mgr_dec_urgent" target="staff_receive_task" edge="1">
+                    <mxGeometry x="-0.2" y="-10" relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1240" y="625"/>
+                            <mxPoint x="1055" y="625"/>
+                            <mxPoint x="1055" y="773"/>
+                        </Array>
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="edge_mgr_urgent_to_staff" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="mgr_sla_urgent" target="staff_receive_task" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_staff_report_to_cust_rev" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="staff_submit_report" target="cust_review" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge_reject_to_mgr_reassign" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="cust_reject_reason" target="mgr_uc_f7_04" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="160" y="1790"/>
+                            <mxPoint x="1740" y="1790"/>
+                            <mxPoint x="1740" y="545"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="edge_timeout_to_sys_close" value="Quá 7 ngày làm việc&#10;không phản hồi (BR-SUP-03)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="cust_dec_satisfaction" target="sys_auto_close" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="380" y="1600"/>
+                            <mxPoint x="635" y="1600"/>
+                        </Array>
+                    </mxGeometry>
                 </mxCell>
             </root>
         </mxGraphModel>
