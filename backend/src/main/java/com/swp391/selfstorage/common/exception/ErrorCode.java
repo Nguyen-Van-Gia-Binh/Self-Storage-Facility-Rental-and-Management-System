@@ -16,6 +16,7 @@ public enum ErrorCode {
     // 403 Forbidden
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "Không có quyền thực hiện hành động này"),
     FACILITY_ACCESS_DENIED(HttpStatus.FORBIDDEN, "Không có quyền truy cập cơ sở này"),
+    CONTRACT_ACCESS_DENIED(HttpStatus.FORBIDDEN, "Hợp đồng này không thuộc cơ sở bạn phụ trách"),
 
     // 404 Not Found
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy người dùng"),
@@ -35,6 +36,10 @@ public enum ErrorCode {
     UNIT_TYPE_HAS_ACTIVE_UNITS(HttpStatus.CONFLICT, "Không thể vô hiệu hóa loại kho đang có ô kho được thuê hoặc đặt chỗ"),
     STORAGE_UNIT_CODE_ALREADY_EXISTS(HttpStatus.CONFLICT, "Mã ô kho đã tồn tại trong cơ sở"),
     STORAGE_UNIT_OCCUPIED(HttpStatus.CONFLICT, "Không thể thao tác trên ô kho đang có người thuê"),
+    UNIT_ASSIGNMENT_FAILED(HttpStatus.CONFLICT, "Ô kho đã bị chiếm bởi giao dịch đồng thời, vui lòng thử lại"),
+    RESERVATION_EXPIRED(HttpStatus.CONFLICT, "Đơn đặt chỗ đã hết thời gian giữ chỗ 48h"),
+    RESERVATION_ALREADY_FULFILLED(HttpStatus.CONFLICT, "Đơn đặt chỗ đã được check-in thành công"),
+    CONTRACT_NOT_PENDING_CHECKIN(HttpStatus.CONFLICT, "Hợp đồng không ở trạng thái chờ nhận kho"),
 
     // 500 Internal Server Error
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Đã xảy ra lỗi hệ thống");

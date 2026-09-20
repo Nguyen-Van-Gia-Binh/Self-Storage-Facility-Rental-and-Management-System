@@ -18,4 +18,11 @@ public interface ReservationService {
     void cancelReservation(String code);
 
     List<ReservationResponse> getCustomerReservations(Long customerId);
+
+    /**
+     * Xac nhan Reservation sau thanh toan thanh cong — BR-AVL-04, BR-PAY-02.
+     * Dung Pessimistic Lock de tranh race condition.
+     * Idempotent: neu da CONFIRMED thi return ngay.
+     */
+    void confirmAfterPayment(Long reservationId);
 }

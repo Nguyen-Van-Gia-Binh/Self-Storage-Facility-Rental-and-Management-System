@@ -2,9 +2,11 @@ package com.swp391.selfstorage.unit.repository;
 
 import com.swp391.selfstorage.unit.entity.StorageUnit;
 import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -71,4 +73,12 @@ public interface StorageUnitRepository extends JpaRepository<StorageUnit, Long> 
             @Param("startDate") java.time.LocalDate startDate,
             @Param("endDateExclusive") java.time.LocalDate endDateExclusive
     );
+
+    /**
+     * Pessimistic Write Lock ngan race condition khi confirm payment — BR-AVL-04.
+     * SQL Server dich sang WITH (UPDLOCK, ROWLOCK).
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT u FROM StorageUnit u WHERE u.id = :id")
+    Optional<StorageUnit> findByIdForUpdate(@Param("id") Long id);
 }
