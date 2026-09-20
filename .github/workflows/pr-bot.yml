@@ -125,8 +125,8 @@ jobs:
           PR_TITLE="${{ github.event.pull_request.title }}"
           PR_URL="${{ github.event.pull_request.html_url }}"
 
-          # Xóa tiền tố [T...] khỏi tiêu đề commit theo CONTRIBUTING.md § 6.1
-          CLEAN_TITLE=$(echo "$PR_TITLE" | sed -E 's/^\[(T[0-9]+\.[0-9]+|Tx)\][[:space:]]*//')
+          # Xóa tiền tố [T...] khỏi tiêu đề commit và thêm (# số PR) theo chuẩn GitHub
+          CLEAN_TITLE="$(echo "$PR_TITLE" | sed -E 's/^\[(T[0-9]+\.[0-9]+|Tx)\][[:space:]]*//') (#${{ github.event.pull_request.number }})"
           echo "Tiêu đề commit squash: $CLEAN_TITLE"
 
           echo "Đang thực hiện Squash and Merge cho PR: $PR_URL"
