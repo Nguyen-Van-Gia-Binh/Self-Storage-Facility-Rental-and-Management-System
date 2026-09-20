@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { StaffDashboardPage } from './pages/StaffDashboardPage';
 import { StaffCheckInPage } from './pages/StaffCheckInPage';
+import { StaffReturnInspectionPage } from './pages/StaffReturnInspectionPage';
 
 const navItems = [
   { label: 'Tổng quan công việc', href: '/staff' },
@@ -17,7 +18,10 @@ export const StaffRoutes: React.FC = () => {
       <Routes>
         <Route index element={<StaffDashboardPage />} />
         <Route path="checkin" element={<StaffCheckInPage />} />
+        <Route path="return" element={<StaffReturnInspectionPage />} />
+        <Route path="return/:contractId" element={<StaffReturnInspectionPage />} />
       </Routes>
     </DashboardLayout>
   );
 };
+
