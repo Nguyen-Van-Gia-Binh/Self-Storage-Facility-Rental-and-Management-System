@@ -30,25 +30,44 @@ Dự án vận hành theo **4 Trục công việc độc lập (Vertical Bounded
 
 ---
 
-## 2. Quy trình làm việc chuẩn (Plan-First & TDD Workflow)
+## 2. Quy trình làm việc chuẩn (Task Workflow theo CONTRIBUTING.md)
 
-Mọi task phát triển chức năng mới đều phải tuân thủ nghiêm ngặt quy trình 5 bước sau:
+Mọi task khi được giao bắt buộc tuân thủ quy trình 5 bước nghiêm ngặt sau:
 
-### Bước 1: Lập kế hoạch trước khi code (Writing Plans)
+### Bước 1: Nhận task & Tạo nhánh Git riêng biệt (Branch Creation)
+- **CẤM code thẳng trên `main`**. Trước khi bắt tay vào làm, đồng bộ `main` và tạo nhánh mới theo chuẩn [CONTRIBUTING.md § 2](CONTRIBUTING.md#2-đặt-tên-nhánh):
+  - Định dạng: `<loại>/<mã-task>-<mô-tả-ngắn>` (ví dụ: `feature/T2.8-manage-unit-type-api`, `fix/T2.7-facility-status-check`).
+  - Lệnh:
+    ```powershell
+    git checkout main; git pull origin main; git checkout -b feature/<mã-task>-<mô-tả-ngắn>
+    ```
+
+### Bước 2: Lập kế hoạch trước khi code (Writing Plans)
 - Phân tích yêu cầu từ [docs/PLAN.md](docs/PLAN.md), [docs/API-SPEC.md](docs/API-SPEC.md), [docs/USER-STORIES-*.md](docs/USER-STORIES-BM-SA.md).
 - Soạn thảo kế hoạch triển khai chi tiết lưu vào file `docs/superpowers/plans/YYYY-MM-DD-<tên-tính-năng>.md`.
 - Chia nhỏ thành các **Bite-sized tasks** (mỗi task gồm đầy đủ: Files cần tạo/sửa, Interface, Test code, Implementation code).
 - Trình người dùng duyệt kế hoạch trước khi thực thi mã nguồn.
 
-### Bước 2: Chu trình TDD (Test-Driven Development) cho từng task nhỏ
+### Bước 3: Chu trình TDD & Commit từng bước nhỏ (TDD & Atomic Commits)
 1. **Viết test trước:** Tạo test case (Unit test / DataJpaTest / WebMvcTest).
 2. **Xác nhận test lỗi (Red):** Chạy test để đảm bảo test thất bại do chưa có code hoặc thiếu chức năng.
 3. **Viết code tối thiểu (Green):** Cài đặt logic vừa đủ để pass test.
 4. **Xác nhận test thành công:** Chạy lại test suite để thấy `BUILD SUCCESS`.
 5. **Cập nhật checkbox:** Đánh dấu `- [x]` ngay trong file plan sau khi hoàn thành task.
+6. **Commit thường xuyên:** Commit ngay khi test pass theo chuẩn Conventional Commits tiếng Việt (`feat(scope): mô tả`).
 
-### Bước 3: Commit thường xuyên
-- Commit từng task nhỏ ngay khi test pass, không gom nhiều tính năng vào một commit lớn.
+### Bước 4: Kiểm thử toàn diện & Hỏi ý kiến người dùng nghiệm thu
+- Chạy toàn bộ test suite dự án (`mvn clean test`) đảm bảo 100% xanh, không gây lỗi hồi quy.
+- **Dừng lại và hỏi người dùng**: Báo cáo kết quả và hỏi rõ người dùng: *"Tôi đã hoàn thành task và kiểm thử toàn bộ đều xanh. Bạn xem qua kết quả có OK không để tôi đẩy nhánh lên origin và tạo nội dung Pull Request?"*
+
+### Bước 5: Push nhánh lên remote & Soạn sẵn nội dung Pull Request
+- Khi người dùng phản hồi **"OK"** hoặc đồng ý:
+  1. Tự động đẩy nhánh lên remote repository:
+     ```powershell
+     git push -u origin <tên-nhánh>
+     ```
+  2. Soạn sẵn toàn bộ nội dung Pull Request theo mẫu chuẩn tại [CONTRIBUTING.md § 4](CONTRIBUTING.md#4-pull-request) (gồm: Tiêu đề `[<mã-task>] <loại>(<phạm-vi>): <mô-tả>`, Nhiệm vụ, Nội dung thay đổi, Phạm vi nghiệp vụ, Cách kiểm thử, Checklist).
+  3. Cung cấp đường link tạo PR trên GitHub để người dùng bấm tạo PR cho bạn bè / nhóm review và duyệt merge (Squash and merge) vào `main`.
 
 ---
 
