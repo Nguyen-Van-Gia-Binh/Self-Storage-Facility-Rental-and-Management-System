@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Calendar, Download, Building2, AlertCircle } from 'lucide-react';
 import type { ReportFilterParams } from '@/types';
 import { Button } from '@/components/ui/Button';
@@ -18,14 +18,9 @@ export const BomFilterBar: React.FC<BomFilterBarProps> = ({
   facilities,
   isLoading = false,
 }) => {
-  const [localFrom, setLocalFrom] = useState(filters.from);
-  const [localTo, setLocalTo] = useState(filters.to);
+  const [customFrom, setCustomFrom] = useState(filters.from);
+  const [customTo, setCustomTo] = useState(filters.to);
   const [dateError, setDateError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setLocalFrom(filters.from);
-    setLocalTo(filters.to);
-  }, [filters.from, filters.to]);
 
   const handlePeriodChange = (type: ReportFilterParams['periodType']) => {
     const today = new Date();
@@ -47,10 +42,10 @@ export const BomFilterBar: React.FC<BomFilterBarProps> = ({
       newTo = new Date(year, (currentQuarter + 1) * 3, 0).toISOString().split('T')[0];
     }
 
+    setDateError(null);
     if (type !== 'CUSTOM') {
-      setDateError(null);
-      setLocalFrom(newFrom);
-      setLocalTo(newTo);
+      setCustomFrom(newFrom);
+      setCustomTo(newTo);
       onChange({
         ...filters,
         periodType: type,
@@ -67,7 +62,7 @@ export const BomFilterBar: React.FC<BomFilterBarProps> = ({
 
   const handleApplyCustomDates = () => {
     // US-BM-04.1 AC-4: Từ chối nếu ngày kết thúc trước ngày bắt đầu
-    if (localFrom && localTo && localTo < localFrom) {
+    if (customFrom && customTo && customTo < customFrom) {
       setDateError('Ngày kết thúc không được nhỏ hơn ngày bắt đầu');
       return;
     }
@@ -75,10 +70,13 @@ export const BomFilterBar: React.FC<BomFilterBarProps> = ({
     onChange({
       ...filters,
       periodType: 'CUSTOM',
-      from: localFrom,
-      to: localTo,
+      from: customFrom,
+      to: customTo,
     });
   };
+
+  const currentFrom = filters.periodType === 'CUSTOM' ? customFrom : filters.from;
+  const currentTo = filters.periodType === 'CUSTOM' ? customTo : filters.to;
 
   return (
     <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-4 sm:p-5 space-y-4">
@@ -137,9 +135,9 @@ export const BomFilterBar: React.FC<BomFilterBarProps> = ({
             <span className="text-xs text-slate-500">Từ:</span>
             <input
               type="date"
-              value={localFrom}
+              value={currentFrom}
               onChange={(e) => {
-                setLocalFrom(e.target.value);
+                setCustomFrom(e.target.value);
                 setDateError(null);
               }}
               className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 font-mono focus:outline-none focus:ring-1 focus:ring-brand-500 focus:bg-white"
@@ -150,9 +148,9 @@ export const BomFilterBar: React.FC<BomFilterBarProps> = ({
             <span className="text-xs text-slate-500">Đến:</span>
             <input
               type="date"
-              value={localTo}
+              value={currentTo}
               onChange={(e) => {
-                setLocalTo(e.target.value);
+                setCustomTo(e.target.value);
                 setDateError(null);
               }}
               className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 font-mono focus:outline-none focus:ring-1 focus:ring-brand-500 focus:bg-white"
@@ -160,7 +158,7 @@ export const BomFilterBar: React.FC<BomFilterBarProps> = ({
           </div>
 
           {/* Nút áp dụng ngày nếu thay đổi */}
-          {(localFrom !== filters.from || localTo !== filters.to) && (
+          {filters.periodType === 'CUSTOM' && (customFrom !== filters.from || customTo !== filters.to) && (
             <Button
               variant="outline"
               size="sm"
