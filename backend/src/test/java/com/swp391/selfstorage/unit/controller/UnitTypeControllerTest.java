@@ -30,6 +30,7 @@ class UnitTypeControllerTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
     @MockBean private UnitTypeService unitTypeService;
+    @MockBean private com.swp391.selfstorage.unit.service.AvailabilityService availabilityService;
 
     @Test
     @DisplayName("GET /api/v1/facilities/{facilityId}/unit-types trả về 200 kèm PageResponse")

@@ -13,14 +13,31 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.swp391.selfstorage.unit.dto.AvailabilityResponse;
+import com.swp391.selfstorage.unit.service.AvailabilityService;
+import org.springframework.format.annotation.DateTimeFormat;
+import java.time.LocalDate;
+
 @RestController
 @RequestMapping("/api/v1/facilities/{facilityId}/unit-types")
 public class UnitTypeController {
 
     private final UnitTypeService unitTypeService;
+    private final AvailabilityService availabilityService;
 
-    public UnitTypeController(UnitTypeService unitTypeService) {
+    public UnitTypeController(UnitTypeService unitTypeService, AvailabilityService availabilityService) {
         this.unitTypeService = unitTypeService;
+        this.availabilityService = availabilityService;
+    }
+
+    @GetMapping("/{unitTypeId}/availability")
+    public ResponseEntity<AvailabilityResponse> checkAvailability(
+            @PathVariable Long facilityId,
+            @PathVariable Long unitTypeId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam Integer rentalMonths) {
+        AvailabilityResponse response = availabilityService.checkAvailability(facilityId, unitTypeId, startDate, rentalMonths);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping

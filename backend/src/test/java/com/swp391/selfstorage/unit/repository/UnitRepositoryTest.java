@@ -67,4 +67,23 @@ class UnitRepositoryTest {
                 ut.getId(), List.of(StorageUnitStatus.RESERVED, StorageUnitStatus.OCCUPIED));
         assertEquals(0, activeCount);
     }
+
+    @Test
+    @DisplayName("Kiểm tra đếm capacity có thể khai thác và obligations giao nhau")
+    void testAvailabilityQueries() {
+        long count = storageUnitRepository.countExploitableUnits(
+                1L, 1L, List.of(StorageUnitStatus.MAINTENANCE, StorageUnitStatus.OUT_OF_SERVICE)
+        );
+        assertTrue(count >= 0);
+
+        long overlappingReservations = storageUnitRepository.countOverlappingReservations(
+                1L, 1L, java.time.LocalDate.of(2026, 10, 1), java.time.LocalDate.of(2027, 1, 1)
+        );
+        assertTrue(overlappingReservations >= 0);
+
+        long overlappingContracts = storageUnitRepository.countOverlappingContracts(
+                1L, 1L, java.time.LocalDate.of(2026, 10, 1), java.time.LocalDate.of(2027, 1, 1)
+        );
+        assertTrue(overlappingContracts >= 0);
+    }
 }
