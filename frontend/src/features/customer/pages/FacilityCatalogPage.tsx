@@ -31,12 +31,29 @@ export const FacilityCatalogPage: React.FC = () => {
   }, [keyword]);
 
   useEffect(() => {
+    let ignore = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
-    setError('');
     fetchFacilities(debounced || undefined)
-      .then(setFacilities)
-      .catch((e: { message?: string }) => setError(e?.message ?? 'Không thể tải danh sách cơ sở.'))
-      .finally(() => setLoading(false));
+      .then((data) => {
+        if (!ignore) {
+          setFacilities(data);
+          setError('');
+        }
+      })
+      .catch((e: { message?: string }) => {
+        if (!ignore) {
+          setError(e?.message ?? 'Không thể tải danh sách cơ sở.');
+        }
+      })
+      .finally(() => {
+        if (!ignore) {
+          setLoading(false);
+        }
+      });
+    return () => {
+      ignore = true;
+    };
   }, [debounced]);
 
   const districts = useMemo(() => extractDistricts(facilities), [facilities]);

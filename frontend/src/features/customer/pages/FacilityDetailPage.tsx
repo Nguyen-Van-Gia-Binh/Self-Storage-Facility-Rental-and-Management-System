@@ -16,6 +16,7 @@ export const FacilityDetailPage: React.FC = () => {
 
   useEffect(() => {
     if (!id || isNaN(id)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setError('ID cơ sở không hợp lệ.');
       setLoading(false);
       return;
