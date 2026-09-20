@@ -1,0 +1,226 @@
+import type { Facility, UnitType, StorageUnit, RentedContract } from './types';
+
+/**
+ * Danh sách cơ sở lưu trữ tại TP.HCM (Khớp SCR-SC-01)
+ */
+export const mockFacilities: Facility[] = [
+  {
+    id: 'FAC-D7-01',
+    code: 'D7-FLAGSHIP',
+    name: 'SmartStorage Quận 7 Flagship',
+    address: '52 Nguyễn Hữu Thọ, Phường Tân Phong, Quận 7',
+    district: 'Quận 7',
+    city: 'TP. Hồ Chí Minh',
+    distance: '1.8 km',
+    startingPrice: 650000,
+    image: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80',
+    phone: '1900 8888',
+  },
+  {
+    id: 'FAC-D7-02',
+    code: 'D7-PMH',
+    name: 'SmartStorage Phú Mỹ Hưng',
+    address: '45 Nguyễn Văn Linh, Phường Tân Phong, Quận 7',
+    district: 'Quận 7',
+    city: 'TP. Hồ Chí Minh',
+    distance: '2.6 km',
+    startingPrice: 750000,
+    image: 'https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=800&q=80',
+    phone: '1900 8888',
+  },
+  {
+    id: 'FAC-D7-03',
+    code: 'D7-HIMLAM',
+    name: 'SmartStorage Him Lam Center',
+    address: '88 Đường Số 1, KDC Him Lam, Phường Tân Hưng, Quận 7',
+    district: 'Quận 7',
+    city: 'TP. Hồ Chí Minh',
+    distance: '1.2 km',
+    startingPrice: 650000,
+    image: 'https://images.unsplash.com/photo-1587293852726-70cdb56c2866?auto=format&fit=crop&w=800&q=80',
+    phone: '1900 8888',
+  },
+];
+
+/**
+ * Danh mục 4 loại kích thước kho (Khớp chính xác SCR-SC-01B)
+ */
+export const mockUnitTypes: UnitType[] = [
+  {
+    id: 'UT-S-STD',
+    code: 'TYPE-S',
+    name: 'Kho Cỡ S – Tủ Đồ Cá Nhân',
+    sizeCategory: 'S',
+    storageType: 'STANDARD',
+    areaM2: 1.5,
+    volumeM3: 3.0,
+    dimensions: '1.0m x 1.5m x 2.0m',
+    capacityDescription: 'Chứa vừa 6–10 thùng carton hoặc vali + đồ dùng cá nhân',
+    baseMonthlyPrice: 1200000,
+    badge: 'COMPACT',
+  },
+  {
+    id: 'UT-M-STD',
+    code: 'TYPE-M',
+    name: 'Kho Cỡ M – Tiêu Chuẩn Gia Đình',
+    sizeCategory: 'M',
+    storageType: 'STANDARD',
+    areaM2: 3.0,
+    volumeM3: 7.5,
+    dimensions: '1.5m x 2.0m x 2.5m',
+    capacityDescription: 'Chứa vừa 15–20 thùng carton hoặc 1 xe máy + đồ đạc gia đình',
+    baseMonthlyPrice: 2400000,
+    badge: 'POPULAR',
+  },
+  {
+    id: 'UT-L-STD',
+    code: 'TYPE-L',
+    name: 'Kho Cỡ L – Không Gian Rộng',
+    sizeCategory: 'L',
+    storageType: 'STANDARD',
+    areaM2: 6.0,
+    volumeM3: 15.0,
+    dimensions: '2.0m x 3.0m x 2.5m',
+    capacityDescription: 'Chứa vừa 30+ thùng carton hoặc toàn bộ nội thất căn hộ 2 phòng ngủ',
+    baseMonthlyPrice: 4500000,
+    badge: 'SPACIOUS',
+  },
+  {
+    id: 'UT-XL-STD',
+    code: 'TYPE-XL',
+    name: 'Kho Cỡ XL – Doanh Nghiệp',
+    sizeCategory: 'XL',
+    storageType: 'STANDARD',
+    areaM2: 12.0,
+    volumeM3: 30.0,
+    dimensions: '3.0m x 4.0m x 2.5m',
+    capacityDescription: 'Chứa vừa 50+ thùng carton hoặc pallet hàng hóa kinh doanh lớn',
+    baseMonthlyPrice: 8000000,
+    badge: 'COMMERCIAL',
+  },
+  // Chế độ máy lạnh (Climate-Controlled Storage - 22°C-25°C)
+  {
+    id: 'UT-S-AC',
+    code: 'TYPE-S-AC',
+    name: 'Kho Cỡ S – Tủ Đồ Cá Nhân (Máy Lạnh)',
+    sizeCategory: 'S',
+    storageType: 'CLIMATE_CONTROLLED',
+    areaM2: 1.5,
+    volumeM3: 3.0,
+    dimensions: '1.0m x 1.5m x 2.0m',
+    capacityDescription: 'Kiểm soát nhiệt độ 22°C–25°C, chống ẩm mốc cho tài liệu & quần áo cao cấp',
+    baseMonthlyPrice: 1500000,
+    badge: 'COMPACT',
+  },
+  {
+    id: 'UT-M-AC',
+    code: 'TYPE-M-AC',
+    name: 'Kho Cỡ M – Tiêu Chuẩn Gia Đình (Máy Lạnh)',
+    sizeCategory: 'M',
+    storageType: 'CLIMATE_CONTROLLED',
+    areaM2: 3.0,
+    volumeM3: 7.5,
+    dimensions: '1.5m x 2.0m x 2.5m',
+    capacityDescription: 'Kho mát 24/7, lý tưởng cho đồ gỗ mỹ nghệ, thiết bị điện tử gia dụng',
+    baseMonthlyPrice: 2800000,
+    badge: 'POPULAR',
+  },
+  {
+    id: 'UT-L-AC',
+    code: 'TYPE-L-AC',
+    name: 'Kho Cỡ L – Không Gian Rộng (Máy Lạnh)',
+    sizeCategory: 'L',
+    storageType: 'CLIMATE_CONTROLLED',
+    areaM2: 6.0,
+    volumeM3: 15.0,
+    dimensions: '2.0m x 3.0m x 2.5m',
+    capacityDescription: 'Nhiệt độ ổn định, phù hợp lưu trữ hàng hóa cao cấp hoặc thiết bị studio',
+    baseMonthlyPrice: 5200000,
+    badge: 'SPACIOUS',
+  },
+  {
+    id: 'UT-XL-AC',
+    code: 'TYPE-XL-AC',
+    name: 'Kho Cỡ XL – Doanh Nghiệp (Máy Lạnh)',
+    sizeCategory: 'XL',
+    storageType: 'CLIMATE_CONTROLLED',
+    areaM2: 12.0,
+    volumeM3: 30.0,
+    dimensions: '3.0m x 4.0m x 2.5m',
+    capacityDescription: 'Kho mát diện tích lớn phục vụ lưu trữ kho vận, thương mại điện tử chuyên nghiệp',
+    baseMonthlyPrice: 9200000,
+    badge: 'COMMERCIAL',
+  },
+];
+
+/**
+ * 20 ô kho mẫu trên sơ đồ mặt bằng Tầng 1 (Cơ sở Phú Mỹ Hưng)
+ * Đủ 6 trạng thái để kiểm thử sơ đồ Interactive Unit Picker
+ */
+export const mockStorageUnits: StorageUnit[] = [
+  // Dãy Zone A (Loại S & M)
+  { id: 'U-A101', unitNumber: 'A101', facilityId: 'FAC-D7-02', unitTypeId: 'UT-S-STD', floor: 1, zone: 'Zone A', status: 'AVAILABLE' },
+  { id: 'U-A102', unitNumber: 'A102', facilityId: 'FAC-D7-02', unitTypeId: 'UT-S-STD', floor: 1, zone: 'Zone A', status: 'AVAILABLE' },
+  { id: 'U-A103', unitNumber: 'A103', facilityId: 'FAC-D7-02', unitTypeId: 'UT-S-STD', floor: 1, zone: 'Zone A', status: 'OCCUPIED' },
+  { id: 'U-A104', unitNumber: 'A104', facilityId: 'FAC-D7-02', unitTypeId: 'UT-S-STD', floor: 1, zone: 'Zone A', status: 'RESERVED' },
+  { id: 'U-A105', unitNumber: 'A105', facilityId: 'FAC-D7-02', unitTypeId: 'UT-S-AC', floor: 1, zone: 'Zone A', status: 'AVAILABLE' },
+  { id: 'U-A106', unitNumber: 'A106', facilityId: 'FAC-D7-02', unitTypeId: 'UT-S-AC', floor: 1, zone: 'Zone A', status: 'MAINTENANCE' },
+
+  { id: 'U-A107', unitNumber: 'A107', facilityId: 'FAC-D7-02', unitTypeId: 'UT-M-STD', floor: 1, zone: 'Zone A', status: 'AVAILABLE' },
+  { id: 'U-A108', unitNumber: 'A108', facilityId: 'FAC-D7-02', unitTypeId: 'UT-M-STD', floor: 1, zone: 'Zone A', status: 'OCCUPIED' },
+  { id: 'U-A109', unitNumber: 'A109', facilityId: 'FAC-D7-02', unitTypeId: 'UT-M-STD', floor: 1, zone: 'Zone A', status: 'AVAILABLE' },
+  { id: 'U-A110', unitNumber: 'A110', facilityId: 'FAC-D7-02', unitTypeId: 'UT-M-AC', floor: 1, zone: 'Zone A', status: 'AVAILABLE' },
+
+  // Dãy Zone B (Loại L & XL)
+  { id: 'U-B201', unitNumber: 'B201', facilityId: 'FAC-D7-02', unitTypeId: 'UT-L-STD', floor: 1, zone: 'Zone B', status: 'AVAILABLE' },
+  { id: 'U-B202', unitNumber: 'B202', facilityId: 'FAC-D7-02', unitTypeId: 'UT-L-STD', floor: 1, zone: 'Zone B', status: 'OCCUPIED' },
+  { id: 'U-B203', unitNumber: 'B203', facilityId: 'FAC-D7-02', unitTypeId: 'UT-L-STD', floor: 1, zone: 'Zone B', status: 'RESERVED' },
+  { id: 'U-B204', unitNumber: 'B204', facilityId: 'FAC-D7-02', unitTypeId: 'UT-L-STD', floor: 1, zone: 'Zone B', status: 'AVAILABLE' },
+
+  { id: 'U-B205', unitNumber: 'B205', facilityId: 'FAC-D7-02', unitTypeId: 'UT-XL-STD', floor: 1, zone: 'Zone B', status: 'AVAILABLE' },
+  { id: 'U-B206', unitNumber: 'B206', facilityId: 'FAC-D7-02', unitTypeId: 'UT-XL-STD', floor: 1, zone: 'Zone B', status: 'OCCUPIED' },
+  { id: 'U-B207', unitNumber: 'B207', facilityId: 'FAC-D7-02', unitTypeId: 'UT-XL-STD', floor: 1, zone: 'Zone B', status: 'AVAILABLE' },
+  { id: 'U-B208', unitNumber: 'B208', facilityId: 'FAC-D7-02', unitTypeId: 'UT-XL-STD', floor: 1, zone: 'Zone B', status: 'OVERDUE' },
+  { id: 'U-B209', unitNumber: 'B209', facilityId: 'FAC-D7-02', unitTypeId: 'UT-XL-STD', floor: 1, zone: 'Zone B', status: 'LOCKED' },
+  { id: 'U-B210', unitNumber: 'B210', facilityId: 'FAC-D7-02', unitTypeId: 'UT-XL-STD', floor: 1, zone: 'Zone B', status: 'AVAILABLE' },
+];
+
+/**
+ * 2 Hợp đồng mẫu cho khách hàng Xuân Nhi (Khớp SCR-SC-04 My Rentals)
+ */
+export const mockRentedContracts: RentedContract[] = [
+  {
+    id: 'CTR-2026-089',
+    contractNumber: 'HD-SS-2026089',
+    facilityId: 'FAC-D7-02',
+    facilityName: 'SmartStorage Phú Mỹ Hưng',
+    unitId: 'U-A108',
+    unitNumber: 'A108',
+    unitTypeName: 'Kho Cỡ M – Tiêu Chuẩn Gia Đình',
+    sizeCategory: 'M',
+    storageType: 'STANDARD',
+    startDate: '2026-08-01',
+    endDate: '2026-11-01',
+    monthlyRent: 2400000,
+    depositHeld: 2400000,
+    accessPin: '8392', // Đã nghiệm thu quầy -> Cấp mã PIN (BR-ACC-01)
+    status: 'ACTIVE',
+  },
+  {
+    id: 'CTR-2026-104',
+    contractNumber: 'HD-SS-2026104',
+    facilityId: 'FAC-D7-01',
+    facilityName: 'SmartStorage Quận 7 Flagship',
+    unitId: 'U-A104',
+    unitNumber: 'A104',
+    unitTypeName: 'Kho Cỡ S – Tủ Đồ Cá Nhân',
+    sizeCategory: 'S',
+    storageType: 'STANDARD',
+    startDate: '2026-09-25',
+    endDate: '2026-12-25',
+    monthlyRent: 1200000,
+    depositHeld: 1200000,
+    accessPin: undefined, // Pending Check-in: Chưa cấp mã PIN trước khi đối chiếu CCCD tại quầy (BR-ACC-01, BR-CHK-01)
+    status: 'PENDING_CHECKIN',
+  },
+];

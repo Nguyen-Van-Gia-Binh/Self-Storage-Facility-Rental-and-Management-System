@@ -4,7 +4,57 @@
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-900 antialiased selection:bg-brand-500 selection:text-white;
+    @apply bg-[#f2f9f7] text-[#0a1614] antialiased selection:bg-brand-500 selection:text-white;
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 }
+
+/* Modal Open & Close Transitions */
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes modalPopIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.93) translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes modalPopOut {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.93) translateY(8px);
+  }
+}
+
+.modal-backdrop-enter {
+  animation: modalFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.modal-backdrop-exit {
+  animation: modalFadeOut 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.modal-panel-enter {
+  animation: modalPopIn 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.modal-panel-exit {
+  animation: modalPopOut 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+

@@ -1,51 +1,89 @@
 import React from 'react';
-import { Box, Phone, Shield, User, HelpCircle, FileText } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { Link, useLocation } from 'react-router-dom';
+import { Box, Phone, Mail, ChevronDown } from 'lucide-react';
 
 export interface CustomerLayoutProps {
   children: React.ReactNode;
 }
 
 export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
+  const location = useLocation();
+
+  const isExploreActive = location.pathname === '/customer' || location.pathname === '/customer/units';
+  const isRentalsActive = location.pathname === '/customer/my-units' || location.pathname.startsWith('/customer/renew');
+
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
+    <div className="min-h-screen flex flex-col bg-[#f2f9f7]">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm backdrop-blur-md bg-white/95">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <header className="sticky top-0 z-50 bg-white border-b border-slate-200/90 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
-              <Box className="w-6 h-6" />
+          <Link to="/customer" className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-lg bg-brand-500 flex items-center justify-center text-white shadow-sm">
+              <Box className="w-5 h-5" />
             </div>
-            <div>
-              <span className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-1.5">
-                SmartStorage <span className="text-xs px-2 py-0.5 rounded bg-brand-50 text-brand-700 font-semibold border border-brand-200">Customer</span>
+            <div className="leading-tight">
+              <span className="text-xl font-extrabold text-slate-900 tracking-tight block">
+                SmartStorage
               </span>
-              <p className="text-[11px] text-slate-500 hidden sm:block">Hệ thống Thuê kho tự quản thông minh</p>
+              <span className="text-[10px] font-bold text-brand-600 tracking-widest uppercase block -mt-0.5">
+                FACILITY & RENTAL
+              </span>
             </div>
-          </div>
+          </Link>
 
           {/* Navigation links */}
-          <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
-            <a href="#facilities" className="hover:text-brand-600 transition-colors flex items-center gap-1.5">
-              <Box className="w-4 h-4 text-slate-400" /> Tìm cơ sở
-            </a>
-            <a href="#rentals" className="hover:text-brand-600 transition-colors flex items-center gap-1.5">
-              <FileText className="w-4 h-4 text-slate-400" /> Hợp đồng của tôi
-            </a>
-            <a href="#support" className="hover:text-brand-600 transition-colors flex items-center gap-1.5">
-              <HelpCircle className="w-4 h-4 text-slate-400" /> Hỗ trợ & Sự cố
+          <nav className="hidden md:flex items-center gap-8 text-sm font-semibold">
+            <Link 
+              to="/customer" 
+              className={`py-6 transition-colors border-b-2 ${
+                isExploreActive 
+                  ? 'border-brand-500 text-slate-900 font-bold' 
+                  : 'border-transparent text-slate-600 hover:text-brand-600'
+              }`}
+            >
+              Khám phá Cơ sở
+            </Link>
+            <Link 
+              to="/customer/my-units" 
+              className={`py-6 transition-colors border-b-2 ${
+                isRentalsActive 
+                  ? 'border-brand-500 text-slate-900 font-bold' 
+                  : 'border-transparent text-slate-600 hover:text-brand-600'
+              }`}
+            >
+              Kho của tôi
+            </Link>
+            <a 
+              href="#support" 
+              className="py-6 border-b-2 border-transparent text-slate-600 hover:text-brand-600 transition-colors"
+            >
+              Hỗ trợ 24/7
             </a>
           </nav>
 
           {/* User actions */}
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" className="hidden sm:inline-flex items-center gap-2">
-              <User className="w-4 h-4 text-slate-500" /> Đăng nhập
-            </Button>
-            <Button variant="primary" size="sm">
-              Thuê kho ngay
-            </Button>
+          <div className="flex items-center gap-4">
+            {/* Hotline */}
+            <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700">
+              <Phone className="w-3.5 h-3.5 text-brand-500" />
+              <span>Hotline: 1900 8888</span>
+            </div>
+
+            {/* Language toggle: Active VI */}
+            <div className="hidden sm:flex items-center text-xs font-bold rounded-lg border border-slate-200 overflow-hidden bg-slate-50 p-0.5">
+              <span className="px-2 py-1 bg-white text-brand-700 rounded shadow-xs">VI</span>
+              <span className="px-2 py-1 text-slate-400 hover:text-slate-700 cursor-pointer">EN</span>
+            </div>
+
+            {/* Avatar / User pill */}
+            <div className="flex items-center gap-2 pl-2">
+              <div className="w-8 h-8 rounded-full bg-brand-50 text-brand-700 font-bold text-xs flex items-center justify-center border border-brand-200">
+                XN
+              </div>
+              <span className="text-xs font-bold text-slate-800 hidden sm:inline">Xuân Nhi</span>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+            </div>
           </div>
         </div>
       </header>
@@ -56,58 +94,33 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-slate-900 text-slate-400 text-sm border-t border-slate-800 mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-white font-bold text-base">
-                <Box className="w-5 h-5 text-brand-400" /> SmartStorage Platform
-              </div>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Giải pháp lưu trữ và quản lý kho cá nhân, kho doanh nghiệp an toàn, bảo mật 24/7 với công nghệ kiểm soát ra vào thông minh.
-              </p>
+      <footer className="bg-white border-t border-slate-200 text-slate-600 text-xs mt-24 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded bg-brand-500 flex items-center justify-center text-white">
+              <Box className="w-3.5 h-3.5" />
             </div>
-
-            <div>
-              <h4 className="text-xs font-semibold text-slate-200 uppercase tracking-wider mb-3">Dịch vụ</h4>
-              <ul className="space-y-2 text-xs">
-                <li><a href="#" className="hover:text-white transition-colors">Kho Mini Standard</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Kho máy lạnh Climate-Controlled</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Kho lưu trữ tài liệu doanh nghiệp</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="text-xs font-semibold text-slate-200 uppercase tracking-wider mb-3">Chính sách & Hướng dẫn</h4>
-              <ul className="space-y-2 text-xs">
-                <li><a href="#" className="hover:text-white transition-colors">Quy trình bàn giao & Nhận kho</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Chính sách giữ chỗ linh hoạt 48 giờ</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Chính sách hoàn tiền và trả phòng kho</a></li>
-              </ul>
-            </div>
-
-            <div className="space-y-2">
-              <h4 className="text-xs font-semibold text-slate-200 uppercase tracking-wider mb-3">Hỗ trợ khách hàng</h4>
-              <div className="flex items-center gap-2 text-white font-semibold text-sm">
-                <Phone className="w-4 h-4 text-emerald-400" /> 1900 6868 (24/7)
-              </div>
-              <div className="flex items-center gap-2 text-xs text-slate-400">
-                <Shield className="w-4 h-4 text-brand-400" /> Bảo hiểm hàng hóa & Giám sát 24/7
-              </div>
-            </div>
+            <span className="font-bold text-slate-900">SmartStorage</span>
+            <span className="text-slate-400">• © 2026 SmartStorage. Toàn bộ bản quyền được bảo lưu.</span>
           </div>
 
-          <div className="border-t border-slate-800 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
-            <p>© 2026 SmartStorage Platform. All rights reserved.</p>
-            <div className="flex items-center gap-4 text-xs">
-              <a href="#" className="hover:text-slate-400 transition-colors">Điều khoản dịch vụ</a>
-              <span>·</span>
-              <a href="#" className="hover:text-slate-400 transition-colors">Chính sách bảo mật</a>
-            </div>
+          <div className="flex items-center gap-6 text-slate-500 font-medium">
+            <a href="#" className="hover:text-slate-900">Về chúng tôi</a>
+            <Link to="/customer" className="hover:text-slate-900">Hệ thống cơ sở</Link>
+            <a href="#" className="hover:text-slate-900">Trung tâm trợ giúp</a>
+          </div>
+
+          <div className="flex items-center gap-5 text-slate-600 font-semibold">
+            <span className="flex items-center gap-1.5">
+              <Phone className="w-3.5 h-3.5 text-brand-500" /> Hotline: <strong className="text-slate-900">1900 8888</strong>
+            </span>
+            <span className="text-slate-300">•</span>
+            <span className="flex items-center gap-1.5">
+              <Mail className="w-3.5 h-3.5 text-brand-500" /> support@smartstorage.vn
+            </span>
           </div>
         </div>
       </footer>
-
     </div>
   );
 };

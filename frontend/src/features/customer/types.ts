@@ -1,0 +1,102 @@
+/**
+ * WS1: Customer & Reservation Domain Types
+ * Định nghĩa các kiểu dữ liệu cho luồng Khách hàng & Đặt chỗ
+ * Bám sát Storage_Self.sql, BUSINESS-RULES.md và UI-DESIGN-SYSTEM.md
+ */
+
+// 6 trạng thái vòng đời ô kho theo UI-DESIGN-SYSTEM.md § 2.2
+export type UnitStatus = 
+  | 'AVAILABLE' 
+  | 'RESERVED' 
+  | 'OCCUPIED' 
+  | 'MAINTENANCE' 
+  | 'OVERDUE' 
+  | 'LOCKED';
+
+// Phân nhóm kích thước kho theo wireframe SCR-SC-01B
+export type UnitSizeCategory = 'S' | 'M' | 'L' | 'XL';
+
+// Chế độ kho: Tiêu chuẩn hoặc Máy lạnh
+export type StorageType = 'STANDARD' | 'CLIMATE_CONTROLLED';
+
+// Cơ sở lưu trữ (Facility - BM-01)
+export interface Facility {
+  id: string;
+  code: string;
+  name: string;
+  address: string;
+  district: string;
+  city: string;
+  distance: string;
+  startingPrice: number;
+  image: string;
+  phone: string;
+}
+
+// Loại ô kho (Unit Type - FM-01)
+export interface UnitType {
+  id: string;
+  code: string;
+  name: string;
+  sizeCategory: UnitSizeCategory;
+  storageType: StorageType;
+  areaM2: number;
+  volumeM3: number;
+  dimensions: string;
+  capacityDescription: string;
+  baseMonthlyPrice: number;
+  badge?: 'POPULAR' | 'SPACIOUS' | 'COMMERCIAL' | 'COMPACT';
+}
+
+// Ngăn ô kho thực tế trên mặt bằng (Storage Unit - FM-01, SC-01)
+export interface StorageUnit {
+  id: string;
+  unitNumber: string; // Vd: A101, B205
+  facilityId: string;
+  unitTypeId: string;
+  floor: number;
+  zone: string; // Vd: Zone A, Zone B
+  status: UnitStatus;
+}
+
+// Dữ liệu tạo đơn đặt chỗ (Booking Draft - SC-02, BR-DEP-01, BR-DEP-03)
+export interface BookingDraft {
+  facilityId: string;
+  facilityName: string;
+  unitId: string;
+  unitNumber: string;
+  unitTypeId: string;
+  unitTypeName: string;
+  storageType: StorageType;
+  areaM2: number;
+  monthlyRent: number;
+  durationMonths: number; // 1, 3, 6, 12
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
+  depositAmount: number; // Cọc 1 tháng (BR-DEP-01)
+  totalUpfront: number; // Tiền thuê N tháng + Cọc (BR-GEN-03, BR-GEN-04)
+  customerName: string;
+  customerPhone: string;
+  customerEmail: string;
+  customerIdentityNumber: string; // CCCD phục vụ bàn giao (BR-CHK-01)
+  holdExpiresAt?: string; // Giữ chỗ trong 48h (BR-DEP-03)
+}
+
+// Hợp đồng thuê kho đang chạy của khách (My Rentals - SC-05, SCR-SC-04)
+export interface RentedContract {
+  id: string;
+  contractNumber: string;
+  facilityId: string;
+  facilityName: string;
+  unitId: string;
+  unitNumber: string;
+  unitTypeName: string;
+  sizeCategory: UnitSizeCategory;
+  storageType: StorageType;
+  startDate: string;
+  endDate: string;
+  monthlyRent: number;
+  depositHeld: number;
+  accessPin?: string; // Mã PIN mở cửa (chỉ cấp khi ACTIVE theo BR-ACC-01)
+  status: 'ACTIVE' | 'PENDING_CHECKIN' | 'EXPIRING_SOON' | 'OVERDUE';
+}
