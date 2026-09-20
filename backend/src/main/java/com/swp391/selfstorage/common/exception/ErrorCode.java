@@ -27,6 +27,8 @@ public enum ErrorCode {
     EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "Email đã được sử dụng"),
     USERNAME_ALREADY_EXISTS(HttpStatus.CONFLICT, "Tên đăng nhập đã được sử dụng"),
     UNIT_NOT_AVAILABLE(HttpStatus.CONFLICT, "Ô kho không còn khả dụng"),
+    FACILITY_CODE_ALREADY_EXISTS(HttpStatus.CONFLICT, "Mã cơ sở đã được sử dụng"),
+    FACILITY_HAS_ACTIVE_CONTRACTS(HttpStatus.CONFLICT, "Không thể vô hiệu hóa cơ sở khi còn hợp đồng đang hoạt động"),
 
     // 500 Internal Server Error
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Đã xảy ra lỗi hệ thống");
