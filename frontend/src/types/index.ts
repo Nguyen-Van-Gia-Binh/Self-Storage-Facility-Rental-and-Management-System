@@ -256,3 +256,5 @@ export interface StaffDailyTaskReport {
   openSupportRequests: DailyIncidentTask[];
 }
 
+export * from './report';
+
