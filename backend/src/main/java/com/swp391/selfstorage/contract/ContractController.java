@@ -116,4 +116,28 @@ public class ContractController {
         ReturnInspectionResponse response = contractService.submitReturnInspection(id, request, staffId, facilities);
         return ResponseEntity.ok(ApiResponse.success(response, "Nghiem thu tra kho thanh cong"));
     }
+
+    /** T4.3: Xem truoc bang quyet toan thanh ly va hoan coc (FM-04) */
+    @GetMapping("/{id}/settlement-preview")
+    @Operation(summary = "Xem trước quyết toán thanh lý hợp đồng")
+    public ResponseEntity<ApiResponse<SettlementPreviewResponse>> getSettlementPreview(
+            @PathVariable Long id,
+            @RequestParam(required = false) List<Long> facilityIds) {
+        List<Long> facilities = (facilityIds != null) ? facilityIds : List.of();
+        SettlementPreviewResponse response = contractService.getSettlementPreview(id, facilities);
+        return ResponseEntity.ok(ApiResponse.success(response, "Lay bang tinh quyet toan thanh cong"));
+    }
+
+    /** T4.3: FM phe duyet quyet toan, dong hop dong va kich hoat hoan coc (FM-04) */
+    @PostMapping("/{id}/settlement-approval")
+    @Operation(summary = "Phê duyệt quyết toán hợp đồng và hoàn cọc")
+    public ResponseEntity<ApiResponse<SettlementApprovalResponse>> approveSettlement(
+            @PathVariable Long id,
+            @RequestBody(required = false) SettlementApprovalRequest request,
+            @RequestHeader(value = "X-Manager-Id", required = false, defaultValue = "1") Long managerId,
+            @RequestParam(required = false) List<Long> facilityIds) {
+        List<Long> facilities = (facilityIds != null) ? facilityIds : List.of();
+        SettlementApprovalResponse response = contractService.approveSettlement(id, request, managerId, facilities);
+        return ResponseEntity.ok(ApiResponse.success(response, "Phe duyet quyet toan thanh cong"));
+    }
 }
