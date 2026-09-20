@@ -67,8 +67,19 @@ public class RentalContract {
     @Column(name = "return_date")
     private LocalDate returnDate;
 
+    @Column(name = "policy_version_id", nullable = false)
+    @Builder.Default
+    private Long policyVersionId = 1L;
+
     @Column(name = "policy_snapshot", columnDefinition = "NVARCHAR(MAX)")
     private String policySnapshot;
+
+    @Column(name = "overdue_fee_accrued", nullable = false)
+    @Builder.Default
+    private long overdueFeeAccrued = 0;
+
+    @Column(name = "closed_at")
+    private OffsetDateTime closedAt;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
