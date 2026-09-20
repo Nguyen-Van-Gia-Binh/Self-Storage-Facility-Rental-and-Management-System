@@ -15,6 +15,15 @@ jobs:
     name: 🔍 Verify PR Compliance & Tests
     runs-on: ubuntu-latest
 
+    services:
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_SA_PASSWORD: "YourPassword123"
+        ports:
+          - 1433:1433
+
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
@@ -56,6 +65,26 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           cache: maven
+
+      - name: 🛢️ Wait for SQL Server and Initialize Database
+        run: |
+          echo "Đang chờ SQL Server sẵn sàng kết nối..."
+          CONTAINER_ID=$(docker ps --filter "ancestor=mcr.microsoft.com/mssql/server:2022-latest" -q | head -n 1)
+          SQLCMD="/opt/mssql-tools18/bin/sqlcmd"
+          if ! docker exec "$CONTAINER_ID" test -f "$SQLCMD" 2>/dev/null; then
+            SQLCMD="/opt/mssql-tools/bin/sqlcmd"
+          fi
+          for i in {1..30}; do
+            if docker exec "$CONTAINER_ID" $SQLCMD -S localhost -U sa -P 'YourPassword123' -C -Q "SELECT 1" > /dev/null 2>&1; then
+              echo "SQL Server đã sẵn sàng!"
+              break
+            fi
+            echo "Đang chờ SQL Server... ($i/30)"
+            sleep 2
+          done
+          echo "Tạo database SelfStorageDB nếu chưa có..."
+          docker exec "$CONTAINER_ID" $SQLCMD -S localhost -U sa -P 'YourPassword123' -C -Q "IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'SelfStorageDB') CREATE DATABASE SelfStorageDB;"
+          echo "Khởi tạo database hoàn tất!"
 
       - name: 🧪 Run Backend Tests (Spring Boot 3)
         working-directory: backend
