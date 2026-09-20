@@ -90,4 +90,30 @@ public class ContractController {
         ContractFinancialSummaryResponse response = contractService.getContractFinancialSummary(id, facilities);
         return ResponseEntity.ok(ApiResponse.success(response, "Lay chi tiet tai chinh thanh cong"));
     }
+
+    /** T4.3: Khach hoac Staff dang ky thong bao tra kho (FS-04) */
+    @PostMapping("/{id}/return-notices")
+    @Operation(summary = "Đăng ký thông báo trả kho")
+    public ResponseEntity<ApiResponse<ReturnNoticeResponse>> submitReturnNotice(
+            @PathVariable Long id,
+            @Valid @RequestBody ReturnNoticeRequest request,
+            @RequestParam(required = false) List<Long> facilityIds) {
+        List<Long> facilities = (facilityIds != null) ? facilityIds : List.of();
+        ReturnNoticeResponse response = contractService.submitReturnNotice(id, request, facilities);
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED)
+                .body(ApiResponse.success(response, "Gui thong bao tra kho thanh cong"));
+    }
+
+    /** T4.3: Staff xac nhan nghiem thu hien trang khi tra kho (FS-04) */
+    @PostMapping("/{id}/return-inspections")
+    @Operation(summary = "Xác nhận kiểm tra hiện trạng trả kho (Inspection)")
+    public ResponseEntity<ApiResponse<ReturnInspectionResponse>> submitReturnInspection(
+            @PathVariable Long id,
+            @Valid @RequestBody ReturnInspectionRequest request,
+            @RequestHeader(value = "X-Staff-Id", required = false, defaultValue = "1") Long staffId,
+            @RequestParam(required = false) List<Long> facilityIds) {
+        List<Long> facilities = (facilityIds != null) ? facilityIds : List.of();
+        ReturnInspectionResponse response = contractService.submitReturnInspection(id, request, staffId, facilities);
+        return ResponseEntity.ok(ApiResponse.success(response, "Nghiem thu tra kho thanh cong"));
+    }
 }
