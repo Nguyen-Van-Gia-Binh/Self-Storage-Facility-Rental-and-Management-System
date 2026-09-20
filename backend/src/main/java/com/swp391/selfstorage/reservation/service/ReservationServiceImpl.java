@@ -191,6 +191,23 @@ public class ReservationServiceImpl implements ReservationService {
         reservationRepository.save(rsv);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public ReservationResponse lookupForCheckIn(String query, Long facilityId) {
+        if (query != null && query.toUpperCase().startsWith("RSV-")) {
+            return reservationRepository.findByCodeAndFacilityId(query, facilityId)
+                    .map(r -> mapToResponse(r, null, null))
+                    .orElseThrow(() -> new CustomException(ErrorCode.RESERVATION_NOT_FOUND,
+                            "Khong tim thay dat cho voi ma: " + query));
+        }
+        var results = reservationRepository.findByCustomerContactAndFacility(query, facilityId);
+        if (results.isEmpty()) {
+            throw new CustomException(ErrorCode.RESERVATION_NOT_FOUND,
+                    "Khong tim thay thong tin dat cho hop le");
+        }
+        return mapToResponse(results.get(0), null, null);
+    }
+
     private ReservationResponse mapToResponse(Reservation r, String phone, String idCard) {
         ReservationResponse res = new ReservationResponse();
         res.setId(r.getId());
