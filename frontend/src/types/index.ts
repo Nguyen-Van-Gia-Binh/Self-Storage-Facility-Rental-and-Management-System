@@ -28,3 +28,61 @@ export interface Facility {
   phone: string;
   imageUrl?: string;
 }
+
+// --- Public Catalog Types (T2.16 SC-01) ---
+
+export interface FacilityListItem {
+  id: number;
+  name: string;
+  address: string;
+  phone: string;
+  description: string;
+  openingHours: string;
+  isActive: boolean;
+  createdAt: string;
+  lowestMonthlyPrice?: number;
+  activeUnitTypeCount?: number;
+}
+
+export interface FacilityDetail {
+  id: number;
+  name: string;
+  address: string;
+  phone: string;
+  description: string;
+  openingHours: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UnitTypeCatalog {
+  id: number;
+  facilityId: number;
+  name: string;
+  description: string;
+  widthM: number;
+  depthM: number;
+  heightM: number;
+  areaM2: number;
+  monthlyPrice: number;
+  totalUnits: number;
+  isActive: boolean;
+}
+
+export interface AvailabilityResult {
+  facilityId: number;
+  unitTypeId: number;
+  startDate: string;
+  endDateExclusive: string;
+  rentalMonths: number;
+  availableSlots: number;
+  monthlyPrice: number;
+  totalRentalFee: number;
+  depositAmount: number;
+}
+
+export interface AvailabilityQuery {
+  startDate: string;    // yyyy-MM-dd
+  rentalMonths: number; // >= 1
+}
