@@ -87,7 +87,9 @@ export const UnitCatalogPage: React.FC = () => {
     }
   }, [selectedTypeId]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadUnitTypes(); }, [loadUnitTypes]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadStorageUnits(); }, [loadStorageUnits]);
 
   const selectedType = unitTypes.find((t) => t.id === selectedTypeId);

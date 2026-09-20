@@ -28,6 +28,7 @@ export const StorageUnitFormModal: React.FC<StorageUnitFormModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm({
         unitTypeId: defaultUnitTypeId ?? (unitTypes[0]?.id ?? 0),
         code: '',

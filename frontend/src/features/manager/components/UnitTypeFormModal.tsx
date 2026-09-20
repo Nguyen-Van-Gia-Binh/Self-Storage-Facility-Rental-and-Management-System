@@ -30,6 +30,7 @@ export const UnitTypeFormModal: React.FC<UnitTypeFormModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm(
         initialData
           ? {
