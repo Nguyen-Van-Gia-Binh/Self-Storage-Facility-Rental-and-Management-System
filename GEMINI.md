@@ -2,7 +2,7 @@
 
 > **Dự án:** Self-Storage Facility Rental and Management System (SWP391)  
 > **Thời lượng:** 10 tuần · 5 giai đoạn · 4 thành viên (4 Workstreams độc lập)  
-> **Ngăn xếp công nghệ:** Spring Boot 3 (Java 17/26) · React 18 (TypeScript + Vite) · SQL Server 2022 · Flyway · JWT
+> **Ngăn xếp công nghệ:** Spring Boot 3 (Java 17 LTS) · React 18 (TypeScript + Vite) · SQL Server 2022 · Flyway · JWT
 
 Tài liệu này là chỉ dẫn cốt lõi dành riêng cho các tác nhân AI khi làm việc trong repository này, nhằm đảm bảo tối đa tính nhất quán, triệt tiêu xung đột mã nguồn và tuân thủ tuyệt đối quy trình kỹ thuật của nhóm.
 
@@ -64,8 +64,9 @@ Mọi task phát triển chức năng mới đều phải tuân thủ nghiêm ng
     ```
   * **CẤM** dùng lệnh `cd`. Luôn chỉ định working directory rõ ràng qua tham số công cụ hoặc chạy lệnh có đường dẫn cụ thể.
 * **Môi trường Java & Maven:**
-  * Máy tính sử dụng **Java 26** và **Maven 3.9**.
-  * Khi chạy kiểm thử Mockito / ByteBuddy trên JDK 26, bắt buộc duy trì cấu hình `-Dnet.bytebuddy.experimental=true` trong `maven-surefire-plugin` của `pom.xml`.
+  * Chuẩn của dự án là **Java 17 LTS** (khớp chính xác với `pom.xml` và `java --version` trên máy: `17.0.12`). Cài đặt tại `C:\Program Files\Java\jdk-17`.
+  * Khi chạy các lệnh Maven trên terminal, đảm bảo trỏ đúng JDK 17 bằng cách dùng `$env:JAVA_HOME = 'C:\Program Files\Java\jdk-17'` nếu biến môi trường hệ thống đang trỏ tới JDK khác.
+  * Đồng thời duy trì cấu hình `-Dnet.bytebuddy.experimental=true` trong `pom.xml` để đảm bảo tương thích đa phiên bản.
 * **Cơ sở dữ liệu:** SQL Server 2022 qua cổng mặc định `1433`.
 
 ---
