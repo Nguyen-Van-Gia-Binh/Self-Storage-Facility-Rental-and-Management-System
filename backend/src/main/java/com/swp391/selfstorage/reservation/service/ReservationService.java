@@ -25,4 +25,10 @@ public interface ReservationService {
      * Idempotent: neu da CONFIRMED thi return ngay.
      */
     void confirmAfterPayment(Long reservationId);
+
+    /**
+     * T3.5: Tra cuu dat cho khi khach den check-in — US-FS-01.1.
+     * query: ma Reservation (RSV-...), so dien thoai, hoac CCCD.
+     */
+    ReservationResponse lookupForCheckIn(String query, Long facilityId);
 }
