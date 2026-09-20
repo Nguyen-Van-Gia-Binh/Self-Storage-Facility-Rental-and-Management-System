@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Box, Phone, Mail, ChevronDown } from 'lucide-react';
 
+
 export interface CustomerLayoutProps {
   children: React.ReactNode;
 }
@@ -43,6 +44,12 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
               }`}
             >
               Khám phá Cơ sở
+            </Link>
+            <Link 
+              to="/customer/facilities" 
+              className="py-6 border-b-2 border-transparent text-slate-600 hover:text-brand-600 transition-colors"
+            >
+              Danh mục Cơ sở
             </Link>
             <Link 
               to="/customer/my-units" 

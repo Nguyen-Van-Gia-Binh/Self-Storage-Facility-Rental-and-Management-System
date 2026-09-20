@@ -85,6 +85,9 @@ Danh mục cơ sở kho tự quản trong chuỗi (`BM-01`).
 | `code` | `NVARCHAR(20)` | Có | `UNIQUE` | Mã cơ sở kho (vd: `FAC-Q7`, `FAC-THD`) |
 | `name` | `NVARCHAR(150)` | Có | | Tên cơ sở kho |
 | `address` | `NVARCHAR(255)` | Có | | Địa chỉ thực tế của cơ sở |
+| `phone` | `NVARCHAR(20)` | Không | | Số điện thoại liên hệ cơ sở kho |
+| `description` | `NVARCHAR(2000)` | Không | | Giới thiệu, mô tả tiện ích cơ sở |
+| `opening_hours` | `NVARCHAR(50)` | Không | | Thời gian mở cửa hoạt động (vd: `06:00–22:00`) |
 | `status` | `VARCHAR(20)` | Có | `DEFAULT 'ACTIVE'`, `CHECK IN ('ACTIVE','INACTIVE')` | Tình trạng khai thác cơ sở (`BM-01`) |
 | `created_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Ngày khởi tạo |
 | `updated_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Ngày cập nhật |
@@ -101,6 +104,7 @@ Danh mục kích thước quy chuẩn ô kho toàn hệ thống (`FM-01`, `UC-F5
 | `length_m` | `DECIMAL(5,2)` | Có | | Chiều dài ô kho (mét) |
 | `height_m` | `DECIMAL(5,2)` | Có | | Chiều cao ô kho (mét) |
 | `description` | `NVARCHAR(500)` | Không | | Mô tả công năng lưu trữ phù hợp |
+| `is_active` | `BIT` | Có | `DEFAULT 1` | Cờ trạng thái hoạt động (Soft Delete) |
 | `created_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Ngày tạo |
 | `updated_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Ngày cập nhật |
 
@@ -127,6 +131,8 @@ Từng ô kho vật lý cụ thể tại cơ sở (`UC-F5-02`, vòng đời 6 tr
 | `facility_id` | `BIGINT` | Có | `FK` $\rightarrow$ `facility(id)` | Thuộc cơ sở nào |
 | `unit_type_id` | `BIGINT` | Có | `FK` $\rightarrow$ `unit_type(id)` | Loại kích thước |
 | `code` | `NVARCHAR(30)` | Có | | Mã vị trí ô kho vật lý (vd: `A-101`, `B-205`) |
+| `floor` | `INT` | Không | | Tầng đặt ô kho (vd: 1, 2, 3) |
+| `position` | `NVARCHAR(50)` | Không | | Vị trí / dãy ô kho (vd: Dãy A, Khu B) |
 | `location_note` | `NVARCHAR(255)` | Không | | Vị trí chi tiết (Tầng 1, Dãy A, gần cửa cuốn) |
 | `status` | `VARCHAR(20)` | Có | `DEFAULT 'AVAILABLE'`, `CHECK IN ('AVAILABLE', 'RESERVED', 'OCCUPIED', 'CLEANING', 'MAINTENANCE', 'OUT_OF_SERVICE')` | Trạng thái vòng đời của ô kho |
 | `created_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Ngày khởi tạo |
