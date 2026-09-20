@@ -1,0 +1,107 @@
+name: PR Verification and Auto-Merge Bot
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  verify:
+    name: 🔍 Verify PR Compliance & Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🏷️ Check Branch Naming Convention (CONTRIBUTING.md § 2)
+        run: |
+          BRANCH_NAME="${{ github.head_ref }}"
+          echo "Kiểm tra tên nhánh: $BRANCH_NAME"
+          PATTERN="^(feature|fix|docs|chore|refactor)/(T[0-9]+\.[0-9]+|Tx)-[a-z0-9-]+$"
+          if [[ ! "$BRANCH_NAME" =~ $PATTERN ]]; then
+            echo "::error::❌ Tên nhánh '$BRANCH_NAME' không đúng quy ước CONTRIBUTING.md § 2!"
+            echo "::error::Mẫu chuẩn: <loại>/<mã-task>-<mô-tả> (Ví dụ: feature/T3.1-create-reservation-api, fix/Tx-login-loop)"
+            exit 1
+          fi
+          echo "✅ Tên nhánh hợp lệ!"
+
+      - name: 📝 Check PR Title Convention (CONTRIBUTING.md § 4.2)
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          echo "Kiểm tra tiêu đề PR: $PR_TITLE"
+          PATTERN="^\[(T[0-9]+\.[0-9]+|Tx)\] (feat|fix|docs|refactor|test|style|chore|build|ci)(\([a-z0-9-]+\))?: .+$"
+          if [[ ! "$PR_TITLE" =~ $PATTERN ]]; then
+            echo "::error::❌ Tiêu đề PR '$PR_TITLE' không đúng quy ước CONTRIBUTING.md § 4.2!"
+            echo "::error::Mẫu chuẩn: [<mã-task>] <loại>(<phạm-vi>): <mô tả ngắn> (Ví dụ: [T3.1] feat(reservation): API tạo Reservation)"
+            exit 1
+          fi
+          echo "✅ Tiêu đề PR hợp lệ!"
+
+      - name: 📚 Run Documentation Consistency Check (docs/check-docs.sh)
+        run: |
+          echo "Chạy script kiểm tra tài liệu..."
+          bash docs/check-docs.sh
+
+      - name: ☕ Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: 🧪 Run Backend Tests (Spring Boot 3)
+        working-directory: backend
+        run: mvn clean test
+
+      - name: ⚡ Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 🎨 Run Frontend Build & Type Check (React Vite)
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+  auto-approve-and-merge:
+    name: 🚀 Auto-Approve and Squash-Merge
+    needs: [verify]
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ✅ Auto Approve PR
+        run: |
+          echo "Tiến hành tự động approve PR #${{ github.event.pull_request.number }}..."
+          gh pr review "${{ github.event.pull_request.html_url }}" --approve --body "🤖 **Bot Auto-Verify**: Đã kiểm tra tự động thành công (Tên nhánh, Tiêu đề PR, Tài liệu docs, Backend test, Frontend build). Tiến hành tự động duyệt và merge vào \`main\`!"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🔀 Auto Squash and Merge (CONTRIBUTING.md § 6.1)
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          PR_URL="${{ github.event.pull_request.html_url }}"
+
+          # Xóa tiền tố [T...] khỏi tiêu đề commit theo CONTRIBUTING.md § 6.1
+          CLEAN_TITLE=$(echo "$PR_TITLE" | sed -E 's/^\[(T[0-9]+\.[0-9]+|Tx)\][[:space:]]*//')
+          echo "Tiêu đề commit squash: $CLEAN_TITLE"
+
+          echo "Đang thực hiện Squash and Merge cho PR: $PR_URL"
+          gh pr merge "$PR_URL" --squash --subject "$CLEAN_TITLE" --delete-branch || \
+          gh pr merge "$PR_URL" --squash --subject "$CLEAN_TITLE" --auto --delete-branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
