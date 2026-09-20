@@ -56,4 +56,38 @@ public class ContractController {
         HandoverRejectionResponse response = contractService.rejectHandover(id, request, staffId, facilities);
         return ResponseEntity.ok(ApiResponse.success(response, "Da ghi nhan tu choi nhan kho"));
     }
+
+    /** T4.2: Danh sach hop dong phan trang, tim kiem va loc sap het han (FM-03) */
+    @GetMapping
+    @Operation(summary = "Danh sách hợp đồng phân trang")
+    public ResponseEntity<ApiResponse<com.swp391.selfstorage.common.dto.PageResponse<ContractSummaryResponse>>> getContracts(
+            @ModelAttribute ContractFilterRequest filter,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id,desc") String sort,
+            @RequestParam(required = false) List<Long> facilityIds) {
+        List<Long> facilities = (facilityIds != null) ? facilityIds : List.of();
+        String[] sortParts = sort.split(",");
+        org.springframework.data.domain.Sort sortObj = org.springframework.data.domain.Sort.by(
+                sortParts.length > 1 && "asc".equalsIgnoreCase(sortParts[1]) 
+                        ? org.springframework.data.domain.Sort.Direction.ASC 
+                        : org.springframework.data.domain.Sort.Direction.DESC, 
+                sortParts[0]);
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sortObj);
+
+        com.swp391.selfstorage.common.dto.PageResponse<ContractSummaryResponse> response = 
+                contractService.getContractsPage(filter, pageable, facilities);
+        return ResponseEntity.ok(ApiResponse.success(response, "Lay danh sach hop dong thanh cong"));
+    }
+
+    /** T4.2: Chi tiet tai chinh va cong no hop dong */
+    @GetMapping("/{id}/financial-summary")
+    @Operation(summary = "Chi tiết công nợ và tài chính hợp đồng")
+    public ResponseEntity<ApiResponse<ContractFinancialSummaryResponse>> getFinancialSummary(
+            @PathVariable Long id,
+            @RequestParam(required = false) List<Long> facilityIds) {
+        List<Long> facilities = (facilityIds != null) ? facilityIds : List.of();
+        ContractFinancialSummaryResponse response = contractService.getContractFinancialSummary(id, facilities);
+        return ResponseEntity.ok(ApiResponse.success(response, "Lay chi tiet tai chinh thanh cong"));
+    }
 }
