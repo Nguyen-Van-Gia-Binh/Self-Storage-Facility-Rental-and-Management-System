@@ -1,6 +1,6 @@
 // frontend/src/api/unit.ts
 import { apiClient } from '@/api/client';
-import {
+import type {
   UnitTypeResponse,
   StorageUnitResponse,
   UnitTypeFormData,

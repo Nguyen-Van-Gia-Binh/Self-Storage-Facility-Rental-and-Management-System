@@ -4,7 +4,7 @@ import { UnitTypeCard } from '../components/UnitTypeCard';
 import { UnitTypeFormModal } from '../components/UnitTypeFormModal';
 import { StorageUnitFormModal } from '../components/StorageUnitFormModal';
 import { StatusBadge } from '../components/StatusBadge';
-import {
+import type {
   UnitTypeResponse,
   StorageUnitResponse,
   UnitTypeFormData,

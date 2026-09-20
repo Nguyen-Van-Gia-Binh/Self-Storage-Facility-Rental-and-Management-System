@@ -1,6 +1,6 @@
 // frontend/src/features/manager/components/UnitTypeFormModal.tsx
 import React, { useState, useEffect } from 'react';
-import { UnitTypeFormData, UnitTypeResponse } from '@/types/unit';
+import type { UnitTypeFormData, UnitTypeResponse } from '@/types/unit';
 
 interface UnitTypeFormModalProps {
   isOpen: boolean;

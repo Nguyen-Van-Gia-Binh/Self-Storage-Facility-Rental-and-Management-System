@@ -1,6 +1,6 @@
 // frontend/src/features/manager/components/UnitTypeCard.tsx
 import React from 'react';
-import { UnitTypeResponse } from '@/types/unit';
+import type { UnitTypeResponse } from '@/types/unit';
 
 interface UnitTypeCardProps {
   type: UnitTypeResponse;

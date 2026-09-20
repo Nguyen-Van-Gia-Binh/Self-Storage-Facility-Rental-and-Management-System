@@ -1,6 +1,6 @@
 // frontend/src/features/manager/components/StatusBadge.tsx
 import React from 'react';
-import { UnitStatus } from '@/types/unit';
+import type { UnitStatus } from '@/types/unit';
 
 const STATUS_CONFIG: Record<UnitStatus, { label: string; className: string }> = {
   AVAILABLE:      { label: 'Trong',         className: 'bg-green-900/50 text-green-400 border border-green-700' },

@@ -1,6 +1,6 @@
 // frontend/src/features/manager/components/StorageUnitFormModal.tsx
 import React, { useState, useEffect } from 'react';
-import { StorageUnitFormData, UnitTypeResponse } from '@/types/unit';
+import type { StorageUnitFormData, UnitTypeResponse } from '@/types/unit';
 
 interface StorageUnitFormModalProps {
   isOpen: boolean;

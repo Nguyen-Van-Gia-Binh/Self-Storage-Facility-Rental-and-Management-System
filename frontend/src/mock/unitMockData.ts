@@ -1,5 +1,5 @@
-﻿// frontend/src/mock/unitMockData.ts
-import { UnitTypeResponse, StorageUnitResponse } from '@/types/unit';
+// frontend/src/mock/unitMockData.ts
+import type { UnitTypeResponse, StorageUnitResponse } from '@/types/unit';
 
 export const MOCK_FACILITY_ID = 1;
 
