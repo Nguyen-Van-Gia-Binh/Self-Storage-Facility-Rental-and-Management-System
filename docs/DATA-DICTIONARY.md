@@ -312,12 +312,31 @@ Yêu cầu trả kho và biên bản nghiệm thu hoàn kho (`Flow 3`, `BR-RET-*
 | `is_intact` | `BIT` | Không | | 1: Nguyên vẹn, 0: Có hư hại ô kho |
 | `condition_note`| `NVARCHAR(1000)`| Không | | Ghi chép hư hỏng hoặc đồ bỏ lại |
 | `damage_cost` | `BIGINT` | Có | `DEFAULT 0`, `CHECK (damage_cost >= 0)` | Chi phí đền bù thiệt hại (nếu có) |
+| `evidence_image_urls`| `NVARCHAR(MAX)`| Không | | Danh sách URL ảnh/video bằng chứng hư hại khi nghiệm thu (`FS-04`) |
 | `deposit_refund_amount`| `BIGINT` | Không | | Số tiền cọc thực tế hoàn lại cho khách |
+| `settled_by` | `BIGINT` | Không | `FK` $\rightarrow$ `app_user(id)` | Quản lý cơ sở phê duyệt quyết toán hoàn cọc (`FM-04`) |
+| `settled_at` | `DATETIMEOFFSET` | Không | | Thời điểm phê duyệt quyết toán (`FM-04`) |
+| `rejection_reason`| `NVARCHAR(500)`| Không | | Lý do từ chối biên bản hoặc khiếu nại |
 | `cancelled_at` | `DATETIMEOFFSET` | Không | | Mốc khách hủy yêu cầu trả kho |
 | `created_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Ngày tạo |
 | `updated_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Ngày cập nhật |
 
-### 4.6. Bảng `access_credential`
+### 4.6. Bảng `contract_extra_charge`
+Ghi nhận phụ phí hoặc phí bồi thường hư hại gắn liền với hợp đồng thuê (`FS-04`, `FM-03`).
+
+| Tên cột | Kiểu dữ liệu | Bắt buộc | Ràng buộc / Mặc định | Ý nghĩa & Mô tả nghiệp vụ |
+| :--- | :--- | :---: | :--- | :--- |
+| `id` | `BIGINT` | Có | `PK`, `IDENTITY(1,1)` | Khóa chính |
+| `contract_id` | `BIGINT` | Có | `FK` $\rightarrow$ `rental_contract(id)` | Hợp đồng chịu phụ phí |
+| `extra_fee_type_id`| `BIGINT` | Không | `FK` $\rightarrow$ `extra_fee_type(id)` | Loại phụ phí danh mục (nếu có) |
+| `amount` | `BIGINT` | Có | `CHECK (amount >= 0)` | Số tiền phụ phí phát sinh |
+| `reason` | `NVARCHAR(500)` | Không | | Diễn giải lý do thu phụ phí hoặc đền bù thiệt hại |
+| `recorded_by` | `BIGINT` | Không | `FK` $\rightarrow$ `app_user(id)` | Nhân viên ghi nhận phụ phí |
+| `status` | `VARCHAR(20)` | Có | `DEFAULT 'UNPAID'`, `CHECK IN ('UNPAID', 'PAID')` | Tình trạng thanh toán |
+| `created_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Thời điểm ghi nhận |
+| `updated_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Thời điểm cập nhật |
+
+### 4.7. Bảng `access_credential`
 Thông tin quyền truy cập mở ô kho (`Flow 2`, `BR-ACC-*`).
 
 | Tên cột | Kiểu dữ liệu | Bắt buộc | Ràng buộc / Mặc định | Ý nghĩa & Mô tả nghiệp vụ |

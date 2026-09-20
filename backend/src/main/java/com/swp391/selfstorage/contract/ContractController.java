@@ -56,4 +56,88 @@ public class ContractController {
         HandoverRejectionResponse response = contractService.rejectHandover(id, request, staffId, facilities);
         return ResponseEntity.ok(ApiResponse.success(response, "Da ghi nhan tu choi nhan kho"));
     }
+
+    /** T4.2: Danh sach hop dong phan trang, tim kiem va loc sap het han (FM-03) */
+    @GetMapping
+    @Operation(summary = "Danh sách hợp đồng phân trang")
+    public ResponseEntity<ApiResponse<com.swp391.selfstorage.common.dto.PageResponse<ContractSummaryResponse>>> getContracts(
+            @ModelAttribute ContractFilterRequest filter,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id,desc") String sort,
+            @RequestParam(required = false) List<Long> facilityIds) {
+        List<Long> facilities = (facilityIds != null) ? facilityIds : List.of();
+        String[] sortParts = sort.split(",");
+        org.springframework.data.domain.Sort sortObj = org.springframework.data.domain.Sort.by(
+                sortParts.length > 1 && "asc".equalsIgnoreCase(sortParts[1]) 
+                        ? org.springframework.data.domain.Sort.Direction.ASC 
+                        : org.springframework.data.domain.Sort.Direction.DESC, 
+                sortParts[0]);
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sortObj);
+
+        com.swp391.selfstorage.common.dto.PageResponse<ContractSummaryResponse> response = 
+                contractService.getContractsPage(filter, pageable, facilities);
+        return ResponseEntity.ok(ApiResponse.success(response, "Lay danh sach hop dong thanh cong"));
+    }
+
+    /** T4.2: Chi tiet tai chinh va cong no hop dong */
+    @GetMapping("/{id}/financial-summary")
+    @Operation(summary = "Chi tiết công nợ và tài chính hợp đồng")
+    public ResponseEntity<ApiResponse<ContractFinancialSummaryResponse>> getFinancialSummary(
+            @PathVariable Long id,
+            @RequestParam(required = false) List<Long> facilityIds) {
+        List<Long> facilities = (facilityIds != null) ? facilityIds : List.of();
+        ContractFinancialSummaryResponse response = contractService.getContractFinancialSummary(id, facilities);
+        return ResponseEntity.ok(ApiResponse.success(response, "Lay chi tiet tai chinh thanh cong"));
+    }
+
+    /** T4.3: Khach hoac Staff dang ky thong bao tra kho (FS-04) */
+    @PostMapping("/{id}/return-notices")
+    @Operation(summary = "Đăng ký thông báo trả kho")
+    public ResponseEntity<ApiResponse<ReturnNoticeResponse>> submitReturnNotice(
+            @PathVariable Long id,
+            @Valid @RequestBody ReturnNoticeRequest request,
+            @RequestParam(required = false) List<Long> facilityIds) {
+        List<Long> facilities = (facilityIds != null) ? facilityIds : List.of();
+        ReturnNoticeResponse response = contractService.submitReturnNotice(id, request, facilities);
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED)
+                .body(ApiResponse.success(response, "Gui thong bao tra kho thanh cong"));
+    }
+
+    /** T4.3: Staff xac nhan nghiem thu hien trang khi tra kho (FS-04) */
+    @PostMapping("/{id}/return-inspections")
+    @Operation(summary = "Xác nhận kiểm tra hiện trạng trả kho (Inspection)")
+    public ResponseEntity<ApiResponse<ReturnInspectionResponse>> submitReturnInspection(
+            @PathVariable Long id,
+            @Valid @RequestBody ReturnInspectionRequest request,
+            @RequestHeader(value = "X-Staff-Id", required = false, defaultValue = "1") Long staffId,
+            @RequestParam(required = false) List<Long> facilityIds) {
+        List<Long> facilities = (facilityIds != null) ? facilityIds : List.of();
+        ReturnInspectionResponse response = contractService.submitReturnInspection(id, request, staffId, facilities);
+        return ResponseEntity.ok(ApiResponse.success(response, "Nghiem thu tra kho thanh cong"));
+    }
+
+    /** T4.3: Xem truoc bang quyet toan thanh ly va hoan coc (FM-04) */
+    @GetMapping("/{id}/settlement-preview")
+    @Operation(summary = "Xem trước quyết toán thanh lý hợp đồng")
+    public ResponseEntity<ApiResponse<SettlementPreviewResponse>> getSettlementPreview(
+            @PathVariable Long id,
+            @RequestParam(required = false) List<Long> facilityIds) {
+        List<Long> facilities = (facilityIds != null) ? facilityIds : List.of();
+        SettlementPreviewResponse response = contractService.getSettlementPreview(id, facilities);
+        return ResponseEntity.ok(ApiResponse.success(response, "Lay bang tinh quyet toan thanh cong"));
+    }
+
+    /** T4.3: FM phe duyet quyet toan, dong hop dong va kich hoat hoan coc (FM-04) */
+    @PostMapping("/{id}/settlement-approval")
+    @Operation(summary = "Phê duyệt quyết toán hợp đồng và hoàn cọc")
+    public ResponseEntity<ApiResponse<SettlementApprovalResponse>> approveSettlement(
+            @PathVariable Long id,
+            @RequestBody(required = false) SettlementApprovalRequest request,
+            @RequestHeader(value = "X-Manager-Id", required = false, defaultValue = "1") Long managerId,
+            @RequestParam(required = false) List<Long> facilityIds) {
+        List<Long> facilities = (facilityIds != null) ? facilityIds : List.of();
+        SettlementApprovalResponse response = contractService.approveSettlement(id, request, managerId, facilities);
+        return ResponseEntity.ok(ApiResponse.success(response, "Phe duyet quyet toan thanh cong"));
+    }
 }

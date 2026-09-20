@@ -6,5 +6,6 @@ public enum ContractStatus {
     OVERDUE,
     PENDING_RETURN,
     RETURNED,
-    TERMINATED        // Cham dut hoac tu choi nhan kho — BR-CHK-06
+    CLOSED,           // Da quyet toan va tra kho hoan tat — BR-RET-04
+    TERMINATED        // Cham dut do qua han D+10 hoac tu choi nhan kho — BR-CHK-06, BR-OVD-07
 }

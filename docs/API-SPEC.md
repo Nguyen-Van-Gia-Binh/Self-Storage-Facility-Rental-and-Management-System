@@ -914,16 +914,79 @@ Facility Manager gán Storage Unit sau khi khách thanh toán — `FM-02`, `BR-A
 
 ### `GET /api/v1/contracts`
 
-Danh sách hợp đồng.
+Danh sách hợp đồng (hỗ trợ phân trang, tìm kiếm theo code, lọc sắp hết hạn).
 
 **Auth:**
 - `CUSTOMER` → chỉ thấy hợp đồng của mình
 - `FACILITY_STAFF`, `FACILITY_MANAGER` → hợp đồng thuộc Facility được gán
 - `BUSINESS_MANAGER`, `ADMIN` → toàn bộ
 
-**Query params:** `page`, `size`, `sort`, `status`, `facilityId`, `customerId`, `keyword` (tìm theo code)
+**Query params:** `page`, `size`, `sort`, `status`, `facilityId`, `customerId`, `keyword` (tìm theo mã hợp đồng), `expiringSoon` (boolean: true để lọc hợp đồng ACTIVE còn hiệu lực ≤ 7 ngày)
 
-**Response `200`:** Danh sách phân trang `ContractSummaryResponse`.
+**Response `200`:** Danh sách phân trang `PageResponse<ContractSummaryResponse>`.
+```json
+{
+  "status": 200,
+  "message": "Lay danh sach hop dong thanh cong",
+  "data": {
+    "content": [
+      {
+        "id": 100,
+        "code": "CTR-202610-001",
+        "customerId": 15,
+        "facilityId": 1,
+        "storageUnitId": 42,
+        "unitTypeId": 7,
+        "startDate": "2026-10-01",
+        "endDateExclusive": "2027-01-01",
+        "rentalMonths": 3,
+        "monthlyPrice": 800000,
+        "depositAmount": 800000,
+        "depositBalance": 800000,
+        "status": "ACTIVE",
+        "nearExpiration": true
+      }
+    ],
+    "page": 0,
+    "size": 10,
+    "totalElements": 1,
+    "totalPages": 1
+  }
+}
+```
+
+---
+
+### `GET /api/v1/contracts/{id}/financial-summary`
+
+Chi tiết công nợ và tình hình tài chính hợp đồng (FM-03).
+
+**Auth:** `FACILITY_MANAGER`, `BUSINESS_MANAGER`, `ADMIN`
+
+**Response `200`:**
+```json
+{
+  "status": 200,
+  "message": "Lay chi tiet tai chinh thanh cong",
+  "data": {
+    "contractId": 100,
+    "depositAmount": 1000000,
+    "depositBalance": 1000000,
+    "totalRentalFee": 3000000,
+    "overdueFeeAccrued": 200000,
+    "totalUnpaidExtraCharges": 50000,
+    "totalOutstandingDebt": 250000,
+    "extraCharges": [
+      {
+        "id": 1,
+        "amount": 50000,
+        "reason": "Phí đổi khóa",
+        "status": "UNPAID"
+      }
+    ]
+  }
+}
+```
 
 ---
 
@@ -1013,7 +1076,7 @@ Gửi thông báo trả kho — `SC-05`, `BR-RET-01`.
   "id": 300,
   "contractId": 500,
   "intendedReturnDate": "2027-01-01",
-  "status": "PENDING_INSPECTION",
+  "status": "PENDING",
   "createdAt": "2026-12-20T09:00:00+07:00"
 }
 ```
@@ -1022,7 +1085,9 @@ Gửi thông báo trả kho — `SC-05`, `BR-RET-01`.
 
 | Status | errorCode | Điều kiện |
 |--------|-----------|-----------|
-| `422` | `RETURN_NOTICE_TOO_SHORT` | Ngày trả cách ngày nộp ít hơn `return.notice_days` — `BR-RET-01` |
+| `404` | `CONTRACT_NOT_FOUND` | Hợp đồng không tồn tại |
+| `409` | `CONTRACT_NOT_ACTIVE_OR_OVERDUE` | Hợp đồng không ở trạng thái ACTIVE hoặc OVERDUE |
+| `422` | `RETURN_NOTICE_TOO_SHORT` | Ngày trả dự kiến nhỏ hơn ngày hiện tại — `BR-RET-01` |
 
 ---
 
@@ -1035,9 +1100,10 @@ Xác nhận kiểm tra hiện trạng khi trả kho — `FS-04`, `FM-04`.
 ```json
 {
   "returnDate": "2027-01-01",
-  "condition": "GOOD",
-  "damageNotes": null,
-  "extraCharge": 0
+  "condition": "MINOR_DAMAGE",
+  "damageNotes": "Bản lề bị cong vênh",
+  "damageCost": 200000,
+  "evidenceImageUrls": "https://storage.example.com/img1.jpg"
 }
 ```
 
@@ -1049,11 +1115,76 @@ Xác nhận kiểm tra hiện trạng khi trả kho — `FS-04`, `FM-04`.
   "id": 500,
   "status": "PENDING_RETURN",
   "returnDate": "2027-01-01",
-  "depositRefundAmount": 800000,
+  "estimatedDepositRefund": 800000,
   "overdueFee": 0,
-  "extraCharge": 0
+  "damageCost": 200000
 }
 ```
+
+---
+
+### `GET /api/v1/contracts/{id}/settlement-preview`
+
+Xem trước bảng quyết toán hoàn cọc / nộp bù cho FM trước khi duyệt — `FM-04`.
+
+**Auth:** `FACILITY_MANAGER`, `BUSINESS_MANAGER`, `ADMIN`
+
+**Response `200`:**
+```json
+{
+  "status": 200,
+  "message": "Lay bang tinh quyet toan thanh cong",
+  "data": {
+    "contractId": 500,
+    "depositAmount": 1000000,
+    "damageCost": 200000,
+    "overdueFee": 50000,
+    "unpaidExtraCharges": 0,
+    "depositRefundAmount": 750000,
+    "payableAmount": 0
+  }
+}
+```
+
+---
+
+### `POST /api/v1/contracts/{id}/settlement-approval`
+
+FM phê duyệt quyết toán, hoàn cọc, thu hồi mã truy cập, đưa kho sang `CLEANING` và đóng hợp đồng `CLOSED` — `FM-04`.
+
+**Auth:** `FACILITY_MANAGER` (được gán Facility), `BUSINESS_MANAGER`, `ADMIN`  
+**Request Header:** `X-Manager-Id: {id}` (hoặc lấy từ JWT)  
+**Request body (tùy chọn):**
+```json
+{
+  "adjustedDamageCost": 200000,
+  "approvedNotes": "Đã đối soát biên bản nghiệm thu và ảnh chứng cứ"
+}
+```
+
+**Response `200`:**
+```json
+{
+  "status": 200,
+  "message": "Phe duyet quyet toan thanh cong",
+  "data": {
+    "contractId": 500,
+    "status": "CLOSED",
+    "depositRefundAmount": 750000,
+    "payableAmount": 0,
+    "settledAt": "2027-01-01T15:30:00+07:00",
+    "message": "Phê duyệt quyết toán và hoàn cọc thành công"
+  }
+}
+```
+
+**Lỗi:**
+
+| Status | errorCode | Điều kiện |
+|--------|-----------|-----------|
+| `404` | `CONTRACT_NOT_FOUND` | Hợp đồng không tồn tại |
+| `404` | `RETURN_REQUEST_NOT_FOUND` | Chưa có biên bản nghiệm thu trả kho |
+| `409` | `CONTRACT_NOT_PENDING_RETURN` | Hợp đồng không ở trạng thái PENDING_RETURN hoặc OVERDUE |
 
 ---
 
