@@ -15,7 +15,7 @@ class PageResponseTest {
     @Test
     @DisplayName("Chuyển đổi Spring Page sang PageResponse đúng cấu trúc spec")
     void testFromSpringPage() {
-        List<String> items = List.of("Facility 1", "Facility 2");
+        List<String> items = List.of("Item 1", "Item 2");
         Page<String> springPage = new PageImpl<>(items, PageRequest.of(0, 10), 2);
 
         PageResponse<String> pageResponse = PageResponse.from(springPage);
