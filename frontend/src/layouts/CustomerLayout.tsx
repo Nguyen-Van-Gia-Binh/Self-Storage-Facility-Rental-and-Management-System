@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Box, Phone, Shield, User, HelpCircle, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
@@ -27,9 +28,9 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
 
           {/* Navigation links */}
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
-            <a href="#facilities" className="hover:text-brand-600 transition-colors flex items-center gap-1.5">
+            <Link to="/facilities" className="hover:text-teal-600 transition-colors flex items-center gap-1.5">
               <Box className="w-4 h-4 text-slate-400" /> Tìm cơ sở
-            </a>
+            </Link>
             <a href="#rentals" className="hover:text-brand-600 transition-colors flex items-center gap-1.5">
               <FileText className="w-4 h-4 text-slate-400" /> Hợp đồng của tôi
             </a>
