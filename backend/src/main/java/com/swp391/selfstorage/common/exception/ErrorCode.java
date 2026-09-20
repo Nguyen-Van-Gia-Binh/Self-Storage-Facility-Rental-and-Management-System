@@ -25,6 +25,7 @@ public enum ErrorCode {
     STORAGE_UNIT_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy ô kho"),
     RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy đơn giữ chỗ"),
     CONTRACT_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy hợp đồng"),
+    RETURN_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy yêu cầu trả kho"),
 
     // 409 Conflict
     EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "Email đã được sử dụng"),
@@ -40,6 +41,11 @@ public enum ErrorCode {
     RESERVATION_EXPIRED(HttpStatus.CONFLICT, "Đơn đặt chỗ đã hết thời gian giữ chỗ 48h"),
     RESERVATION_ALREADY_FULFILLED(HttpStatus.CONFLICT, "Đơn đặt chỗ đã được check-in thành công"),
     CONTRACT_NOT_PENDING_CHECKIN(HttpStatus.CONFLICT, "Hợp đồng không ở trạng thái chờ nhận kho"),
+    CONTRACT_NOT_ACTIVE_OR_OVERDUE(HttpStatus.CONFLICT, "Hợp đồng phải ở trạng thái đang hoạt động hoặc quá hạn để trả kho"),
+    CONTRACT_NOT_PENDING_RETURN(HttpStatus.CONFLICT, "Hợp đồng chưa ở trạng thái chờ duyệt trả kho"),
+
+    // 422 Unprocessable Entity
+    RETURN_NOTICE_TOO_SHORT(HttpStatus.UNPROCESSABLE_ENTITY, "Thời gian hẹn trả kho không hợp lệ theo quy định báo trước"),
 
     // 500 Internal Server Error
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Đã xảy ra lỗi hệ thống");
