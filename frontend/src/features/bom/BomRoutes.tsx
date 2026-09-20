@@ -15,6 +15,7 @@ export const BomRoutes: React.FC = () => {
     <DashboardLayout portalTitle="BOM Portal" navItems={navItems}>
       <Routes>
         <Route index element={<BomDashboardPage />} />
+        <Route path="reports" element={<BomDashboardPage initialOpenExport={true} />} />
       </Routes>
     </DashboardLayout>
   );
