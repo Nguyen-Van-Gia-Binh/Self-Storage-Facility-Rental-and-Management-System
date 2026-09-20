@@ -153,3 +153,106 @@ export interface HandoverRejectResponse {
   storageUnitStatus: 'MAINTENANCE';
   message: string;
 }
+
+// --- Staff Return Inspection & Daily Tasks Types (T4.13 WS2) ---
+
+export type InspectionCondition = 'GOOD' | 'MINOR_DAMAGE' | 'MAJOR_DAMAGE';
+
+export interface ReturnInspectionRequest {
+  returnDate: string;
+  condition: InspectionCondition;
+  damageNotes?: string;
+  damageCost?: number;
+  evidenceImageUrls?: string;
+  customerConfirmed: boolean;
+  signatureDataUrl?: string;
+}
+
+export interface ReturnInspectionResponse {
+  id: number;
+  status: string; // PENDING_RETURN
+  returnDate: string;
+  estimatedDepositRefund: number;
+  overdueFee: number;
+  damageCost: number;
+}
+
+export interface SettlementPreviewData {
+  contractId: number;
+  depositAmount: number;
+  damageCost: number;
+  overdueFee: number;
+  unpaidExtraCharges: number;
+  depositRefundAmount: number;
+  payableAmount: number;
+}
+
+export interface ReturnContractDetail {
+  id: number;
+  code: string;
+  customerId: number;
+  customerName: string;
+  customerPhone: string;
+  customerIdentityNumber: string;
+  facilityId: number;
+  facilityName: string;
+  storageUnitId: number;
+  storageUnitCode: string;
+  unitTypeName: string;
+  startDate: string;
+  endDateExclusive: string;
+  rentalMonths: number;
+  monthlyPrice: number;
+  depositAmount: number;
+  status: string; // ACTIVE, PENDING_RETURN, OVERDUE
+  returnNoticeDate?: string;
+  requestedReturnDate?: string;
+}
+
+export interface DailyCheckInTask {
+  reservationId: number;
+  contractId?: number;
+  customerName: string;
+  customerPhone: string;
+  unitCode: string;
+  startDate: string;
+  appointmentTime: string;
+  isFullyPaid: boolean;
+  status: 'WAITING' | 'ARRIVED' | 'COMPLETED';
+}
+
+export interface DailyReturnTask {
+  contractId: number;
+  contractCode: string;
+  customerName: string;
+  customerPhone: string;
+  unitCode: string;
+  returnDate: string;
+  appointmentTime: string;
+  depositAmount: number;
+  status: 'PENDING_INSPECTION' | 'INSPECTED' | 'WAITING_MANAGER';
+}
+
+export interface DailyIncidentTask {
+  ticketId: number;
+  title: string;
+  category: 'ACCESS_CODE' | 'LOST_KEY' | 'DAMAGED_UNIT' | 'OVERLOCK_D4' | 'CLEANING';
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  unitCode: string;
+  customerName?: string;
+  slaDeadline: string;
+  status: 'PENDING' | 'IN_PROGRESS' | 'RESOLVED';
+  isOverlockTask?: boolean;
+}
+
+export interface StaffDailyTaskReport {
+  date: string;
+  facilityId: number;
+  facilityName: string;
+  staffId: number;
+  staffName: string;
+  pendingCheckIns: DailyCheckInTask[];
+  pendingReturns: DailyReturnTask[];
+  openSupportRequests: DailyIncidentTask[];
+}
+
