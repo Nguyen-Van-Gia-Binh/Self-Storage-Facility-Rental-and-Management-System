@@ -26,6 +26,7 @@ public enum ErrorCode {
     RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy đơn giữ chỗ"),
     CONTRACT_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy hợp đồng"),
     RETURN_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy yêu cầu trả kho"),
+    SURCHARGE_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy phụ phí"),
 
     // 409 Conflict
     EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "Email đã được sử dụng"),
@@ -34,18 +35,22 @@ public enum ErrorCode {
     FACILITY_CODE_ALREADY_EXISTS(HttpStatus.CONFLICT, "Mã cơ sở đã được sử dụng"),
     FACILITY_HAS_ACTIVE_CONTRACTS(HttpStatus.CONFLICT, "Không thể vô hiệu hóa cơ sở khi còn hợp đồng đang hoạt động"),
     UNIT_TYPE_CODE_ALREADY_EXISTS(HttpStatus.CONFLICT, "Mã loại ô kho đã tồn tại"),
-    UNIT_TYPE_HAS_ACTIVE_UNITS(HttpStatus.CONFLICT, "Không thể vô hiệu hóa loại kho đang có ô kho được thuê hoặc đặt chỗ"),
+    UNIT_TYPE_HAS_ACTIVE_UNITS(HttpStatus.CONFLICT,
+            "Không thể vô hiệu hóa loại kho đang có ô kho được thuê hoặc đặt chỗ"),
     STORAGE_UNIT_CODE_ALREADY_EXISTS(HttpStatus.CONFLICT, "Mã ô kho đã tồn tại trong cơ sở"),
     STORAGE_UNIT_OCCUPIED(HttpStatus.CONFLICT, "Không thể thao tác trên ô kho đang có người thuê"),
     UNIT_ASSIGNMENT_FAILED(HttpStatus.CONFLICT, "Ô kho đã bị chiếm bởi giao dịch đồng thời, vui lòng thử lại"),
     RESERVATION_EXPIRED(HttpStatus.CONFLICT, "Đơn đặt chỗ đã hết thời gian giữ chỗ 48h"),
     RESERVATION_ALREADY_FULFILLED(HttpStatus.CONFLICT, "Đơn đặt chỗ đã được check-in thành công"),
     CONTRACT_NOT_PENDING_CHECKIN(HttpStatus.CONFLICT, "Hợp đồng không ở trạng thái chờ nhận kho"),
-    CONTRACT_NOT_ACTIVE_OR_OVERDUE(HttpStatus.CONFLICT, "Hợp đồng phải ở trạng thái đang hoạt động hoặc quá hạn để trả kho"),
+    CONTRACT_NOT_ACTIVE_OR_OVERDUE(HttpStatus.CONFLICT,
+            "Hợp đồng phải ở trạng thái đang hoạt động hoặc quá hạn để trả kho"),
     CONTRACT_NOT_PENDING_RETURN(HttpStatus.CONFLICT, "Hợp đồng chưa ở trạng thái chờ duyệt trả kho"),
+    SURCHARGE_CODE_ALREADY_EXISTS(HttpStatus.CONFLICT, "Mã phụ phí đã tồn tại"),
 
     // 422 Unprocessable Entity
-    RETURN_NOTICE_TOO_SHORT(HttpStatus.UNPROCESSABLE_ENTITY, "Thời gian hẹn trả kho không hợp lệ theo quy định báo trước"),
+    RETURN_NOTICE_TOO_SHORT(HttpStatus.UNPROCESSABLE_ENTITY,
+            "Thời gian hẹn trả kho không hợp lệ theo quy định báo trước"),
 
     // 500 Internal Server Error
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Đã xảy ra lỗi hệ thống");
