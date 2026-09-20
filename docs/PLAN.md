@@ -138,7 +138,7 @@ Khách hàng & Đặt chỗ        Cơ sở, Kho & Vận hành      Tài chính 
 | T2.14 |  WS2  | Frontend: Màn hình quản lý danh mục ô kho của Facility Manager                  |        Bình        | 05/10 |
 | T2.15 |  WS4  | Frontend: Màn hình Admin quản lý tài khoản và phân quyền dữ liệu            |        Tùng        | 05/10 |
 | T2.16 |  WS1  | Frontend: Trang công khai xem danh sách Facility, Unit Type & tình trạng trống    |        Bình        | 05/10 |
-| T2.17 |  WS2  | Unit test tầng service cho module danh mục & quản trị                              |        Bình        | 05/10 |
+| T2.17 |  WS2  | Unit test tầng service cho module danh mục & quản trị (44 tests)              |        Bình        | 05/10 |
 | T2.18 |  WS4  | Rà soát API contract và chuẩn bị Báo cáo#2                                      |        Bình        | 05/10 |
 
 ---
