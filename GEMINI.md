@@ -35,11 +35,13 @@ Dự án vận hành theo **4 Trục công việc độc lập (Vertical Bounded
 Mọi task khi được giao bắt buộc tuân thủ quy trình 5 bước nghiêm ngặt sau:
 
 ### Bước 1: Nhận task & Tạo nhánh Git riêng biệt (Branch Creation)
-- **CẤM code thẳng trên `main`**. Trước khi bắt tay vào làm, đồng bộ `main` và tạo nhánh mới theo chuẩn [CONTRIBUTING.md § 2](CONTRIBUTING.md#2-đặt-tên-nhánh):
+- **CẤM code thẳng trên `main` và CẤM tái sử dụng nhánh cũ đã merge/đang có PR**.
+  - Dự án sử dụng cơ chế **Squash and merge** trên GitHub. Khi một PR được merge, GitHub sẽ nén toàn bộ commit thành một commit duy nhất trên `main`. Nếu tái sử dụng nhánh cũ hoặc rẽ nhánh từ commit cũ, Git sẽ báo **CONFLIC / xung đột hàng loạt** do lệch lịch sử commit.
+- **Quy tắc bắt buộc:** Mỗi task BẮT BUỘC phải là một nhánh mới tinh, rẽ trực tiếp từ `main` mới nhất trên remote:
   - Định dạng: `<loại>/<mã-task>-<mô-tả-ngắn>` (ví dụ: `feature/T2.8-manage-unit-type-api`, `fix/T2.7-facility-status-check`).
-  - Lệnh:
+  - Lệnh tạo nhánh chuẩn:
     ```powershell
-    git checkout main; git pull origin main; git checkout -b feature/<mã-task>-<mô-tả-ngắn>
+    git checkout main; git fetch origin main; git pull origin main; git checkout -b feature/<mã-task>-<mô-tả-ngắn>
     ```
 
 ### Bước 2: Lập kế hoạch trước khi code (Writing Plans)
@@ -62,12 +64,17 @@ Mọi task khi được giao bắt buộc tuân thủ quy trình 5 bước nghi�
 
 ### Bước 5: Push nhánh lên remote & Soạn sẵn nội dung Pull Request
 - Khi người dùng phản hồi **"OK"** hoặc đồng ý:
-  1. Tự động đẩy nhánh lên remote repository:
+  1. **Đồng bộ chống xung đột (Pre-push Rebase):** Luôn fetch `origin main` và rebase để đảm bảo nhánh luôn nằm trên đỉnh `main` mới nhất (tránh conflict khi mở PR):
+     ```powershell
+     git fetch origin main; git rebase origin/main
+     ```
+  2. **Đẩy nhánh lên remote repository:**
      ```powershell
      git push -u origin <tên-nhánh>
      ```
-  2. Soạn sẵn toàn bộ nội dung Pull Request theo mẫu chuẩn tại [CONTRIBUTING.md § 4](CONTRIBUTING.md#4-pull-request) (gồm: Tiêu đề `[<mã-task>] <loại>(<phạm-vi>): <mô-tả>`, Nhiệm vụ, Nội dung thay đổi, Phạm vi nghiệp vụ, Cách kiểm thử, Checklist).
-  3. Cung cấp đường link tạo PR trên GitHub để người dùng bấm tạo PR cho bạn bè / nhóm review và duyệt merge (Squash and merge) vào `main`.
+  3. **Soạn sẵn toàn bộ nội dung Pull Request** theo mẫu chuẩn tại [CONTRIBUTING.md § 4](CONTRIBUTING.md#4-pull-request) (gồm: Tiêu đề `[<mã-task>] <loại>(<phạm-vi>): <mô-tả>`, Nhiệm vụ, Nội dung thay đổi, Phạm vi nghiệp vụ, Cách kiểm thử, Checklist).
+  4. Cung cấp đường link tạo PR trên GitHub để người dùng bấm tạo PR cho bạn bè / nhóm review và duyệt merge (Squash and merge) vào `main`.
+  5. **Sau khi PR được merge vào `main`:** Xóa nhánh tính năng cả trên remote lẫn local để tránh nhầm lẫn cho các task sau.
 
 ---
 
