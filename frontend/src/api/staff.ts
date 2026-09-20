@@ -51,15 +51,21 @@ export function updateTaskStatusInSession(
 ) {
   if (type === 'return') {
     localDailyTasks.pendingReturns = localDailyTasks.pendingReturns.map((r) =>
-      r.contractId === id ? { ...r, status: newStatus as any } : r
+      r.contractId === id
+        ? { ...r, status: newStatus as StaffDailyTaskReport['pendingReturns'][number]['status'] }
+        : r
     );
   } else if (type === 'checkIn') {
     localDailyTasks.pendingCheckIns = localDailyTasks.pendingCheckIns.map((c) =>
-      c.reservationId === id ? { ...c, status: newStatus as any } : c
+      c.reservationId === id
+        ? { ...c, status: newStatus as StaffDailyTaskReport['pendingCheckIns'][number]['status'] }
+        : c
     );
   } else if (type === 'incident') {
     localDailyTasks.openSupportRequests = localDailyTasks.openSupportRequests.map((i) =>
-      i.ticketId === id ? { ...i, status: newStatus as any } : i
+      i.ticketId === id
+        ? { ...i, status: newStatus as StaffDailyTaskReport['openSupportRequests'][number]['status'] }
+        : i
     );
   }
 }

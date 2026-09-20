@@ -11,21 +11,38 @@ export const StaffDashboardPage: React.FC = () => {
   );
   const [loading, setLoading] = useState(true);
 
-  const loadDailyTasks = async (date?: string) => {
+  useEffect(() => {
+    let ignore = false;
+    getStaffDailyTasks(8, selectedDate)
+      .then((data) => {
+        if (!ignore) {
+          setTasks(data);
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.error('Lỗi khi nạp danh sách công việc:', err);
+        if (!ignore) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [selectedDate]);
+
+  const handleRefresh = async () => {
     setLoading(true);
     try {
-      const data = await getStaffDailyTasks(8, date || selectedDate);
+      const data = await getStaffDailyTasks(8, selectedDate);
       setTasks(data);
     } catch (err) {
-      console.error('Lỗi khi nạp danh sách công việc:', err);
+      console.error('Lỗi khi làm mới danh sách công việc:', err);
     } finally {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    loadDailyTasks(selectedDate);
-  }, [selectedDate]);
 
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
@@ -70,7 +87,7 @@ export const StaffDashboardPage: React.FC = () => {
           Đang nạp danh mục công việc trong ca trực...
         </div>
       ) : tasks ? (
-        <DailyTasksOverview tasks={tasks} onRefresh={() => loadDailyTasks(selectedDate)} />
+        <DailyTasksOverview tasks={tasks} onRefresh={handleRefresh} />
       ) : (
         <div className="p-8 text-center text-rose-500">
           Không thể tải dữ liệu ca trực. Vui lòng thử lại.

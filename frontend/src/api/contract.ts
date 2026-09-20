@@ -70,7 +70,7 @@ export async function getContractById(id: number): Promise<CheckInContract> {
     console.warn(`Lỗi kết nối Backend API /contracts/${id}, fallback mock:`, error);
     const item = localMockContracts.find((c) => c.id === id);
     if (!item) {
-      throw new Error(`Không tìm thấy hợp đồng #${id}`);
+      throw new Error(`Không tìm thấy hợp đồng #${id}`, { cause: error });
     }
     return item;
   }
@@ -213,7 +213,7 @@ export async function getReturnContractById(id: number): Promise<ReturnContractD
   } catch (error) {
     console.warn(`Lỗi lấy hợp đồng #${id}, fallback mock:`, error);
     if (item) return item;
-    throw new Error(`Không tìm thấy hợp đồng #${id}`);
+    throw new Error(`Không tìm thấy hợp đồng #${id}`, { cause: error });
   }
 }
 

@@ -139,7 +139,7 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({ tasks, o
               <Filter className="w-3.5 h-3.5" />
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as any)}
+                onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'PENDING')}
                 className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 focus:outline-none focus:ring-1 focus:ring-teal-500"
               >
                 <option value="ALL">Tất cả việc</option>
