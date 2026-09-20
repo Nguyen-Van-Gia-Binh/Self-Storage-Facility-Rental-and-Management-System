@@ -53,17 +53,17 @@ Khách hàng & Đặt chỗ        Cơ sở, Kho & Vận hành      Tài chính 
 • Flow 1 (Reservation)      • Flow 2 (Check-in)        • Flow 4 (Policy/Fee)  • Flow 5 (Staff Mgmt)
 • Flow 6.1 (Renewal UI)     • Flow 3 (Return/Contract) • Flow 6.2 (Overdue)   • Flow 7 (Support)
 • Customer Portal           • Staff Portal             • Payment & BOM Portal • Manager & Admin Portal
-(Xuân Nhi)                  (Thanh Tùng)               (Nhật Huỳnh)           (Gia Bình)
+(Xuân Nhi)                  (Gia Bình)                 (Nhật Huỳnh)           (Thanh Tùng)
 ```
 
 ### Ma trận phân định ranh giới 4 Trục công việc:
 
 | Trục công việc                            | Người phụ trách               | Luồng nghiệp vụ                                                                                                | Phạm vi Backend (`com.swp391.selfstorage.*`) | Phạm vi Frontend (`src/features/*`)                                             | Bảng CSDL làm chủ                                              |
 | -------------------------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| **WS1: Khách hàng & Đặt chỗ**     | **Nguyễn Phạm Xuân Nhi** | **Flow 1** (Đặt chỗ kho)**Flow 6.1** (Gia hạn trực tuyến)Public Catalog                         | `reservation(query unit/facility)`            | `customer`(Interactive Unit Picker,Catalog, Booking, My Units)                   | `reservationreservation_item`                                   |
-| **WS2: Cơ sở & Vận hành**          | Nguyễn Văn Gia Bình            | **Flow 2** (Check-in & Bàn giao)**Flow 3** (Quản lý kho & Trả kho)Vòng đời Hợp đồng         | `facilityunit``contract`                      | `staff`(Check-in Desk, Handover e-Form,Return Inspection, Unit Status)           | `facilityunit_type``storage_unitrental_contract``inspection`    |
-| **WS3: Tài chính & Tự động hóa** | **Huỳnh Nhật**            | **Flow 4** (Chính sách & Bảng giá BOM)**Flow 6.2** (Xử lý quá hạn & Cronjob)Cổng thanh toán | `paymentpolicy``scheduler` (cron jobs)        | `bompayment` (QR Popup Modal,Pricing config, System Revenue)                     | `payment_transactionpricing_rule``overdue_log`                  |
-| **WS4: Quản trị & Điều phối**     | Lê Thanh Tùng                   | **Flow 5** (Điều phối nhân sự FM)**Flow 7** (Xử lý sự cố & Ticket)Identity & Access          | `authuser``supportreport`                     | `manageradmin``auth` (Login, RBAC, Assign Staff,Incident Board, Facility Report) | `app_useruser_facility_assignment``support_requestactivity_log` |
+| **WS1: Khách hàng & Đặt chỗ**     | **Nguyễn Phạm Xuân Nhi** | **Flow 1** (Đặt chỗ kho)<br>**Flow 6.1** (Gia hạn trực tuyến)<br>Public Catalog                         | `reservation` (query unit/facility)            | `customer` (Interactive Unit Picker, Catalog, Booking, My Units)                   | `reservation`, `reservation_item`                                   |
+| **WS2: Cơ sở & Vận hành**          | **Nguyễn Văn Gia Bình**            | **Flow 2** (Check-in & Bàn giao)<br>**Flow 3** (Quản lý kho & Trả kho)<br>Vòng đời Hợp đồng         | `facility`, `unit`, `contract`                      | `staff` (Check-in Desk, Handover e-Form, Return Inspection, Unit Status)           | `facility`, `unit_type`, `storage_unit`, `rental_contract`, `inspection`    |
+| **WS3: Tài chính & Tự động hóa** | **Huỳnh Nhật**            | **Flow 4** (Chính sách & Bảng giá BOM)<br>**Flow 6.2** (Xử lý quá hạn & Cronjob)<br>Cổng thanh toán | `payment`, `policy`, `scheduler` (cron jobs)        | `bom`, `payment` (QR Popup Modal, Pricing config, System Revenue)                     | `payment_transaction`, `pricing_rule`, `overdue_log`                  |
+| **WS4: Quản trị & Điều phối**     | **Lê Thanh Tùng**                   | **Flow 5** (Điều phối nhân sự FM)<br>**Flow 7** (Xử lý sự cố & Ticket)<br>Identity & Access          | `auth`, `user`, `support`, `report`                     | `manager`, `admin`, `auth` (Login, RBAC, Assign Staff, Incident Board, Facility Report) | `app_user`, `user_facility_assignment`, `support_request`, `activity_log` |
 
 ---
 
@@ -122,23 +122,23 @@ Khách hàng & Đặt chỗ        Cơ sở, Kho & Vận hành      Tài chính 
 
 | Mã   | Trục | Nhiệm vụ                                                                             | Người phụ trách | Hạn |
 | ----- | :---: | -------------------------------------------------------------------------------------- | :-----------------: | :---: |
-| T2.1  |  WS2  | Tạo schema CSDL và Flyway migration V1 (từ`database/Storage_Self.sql`)            |        Tùng        | 28/09 |
+| T2.1  |  WS2  | Tạo schema CSDL và Flyway migration V1 (từ `database/Storage_Self.sql`)            |        Bình        | 28/09 |
 | T2.2  |  WS3  | Tạo seed data mẫu chuẩn hóa (đầy đủ 5 roles, 2 cơ sở, 20 ô kho)             |        Nhật        | 05/10 |
 | T2.3  |  WS4  | Auth: Đăng ký, đăng nhập JWT, Spring Security & Password Encoder                 |        Nhật        | 28/09 |
-| T2.4  |  WS4  | API quản lý tài khoản người dùng (`SA-01`)                                    |        Nhật        | 05/10 |
-| T2.5  |  WS4  | API gán vai trò cho người dùng (`SA-02`)                                        |        Nhật        | 05/10 |
-| T2.6  |  WS4  | Phân quyền truy cập dữ liệu theo vai trò và cơ sở (`SA-03`)                 |        Nhật        | 05/10 |
-| T2.7  |  WS2  | API quản lý cơ sở Facility (`BM-01`)                                             |        Tùng        | 28/09 |
-| T2.8  |  WS2  | API quản lý Unit Type và Storage Unit (`FM-01`)                                   |        Tùng        | 05/10 |
+| T2.4  |  WS4  | API quản lý tài khoản người dùng (`SA-01`)                                    |        Tùng        | 05/10 |
+| T2.5  |  WS4  | API gán vai trò cho người dùng (`SA-02`)                                        |        Tùng        | 05/10 |
+| T2.6  |  WS4  | Phân quyền truy cập dữ liệu theo vai trò và cơ sở (`SA-03`)                 |        Tùng        | 05/10 |
+| T2.7  |  WS2  | API quản lý cơ sở Facility (`BM-01`)                                             |        Bình        | 28/09 |
+| T2.8  |  WS2  | API quản lý Unit Type và Storage Unit (`FM-01`)                                   |        Bình        | 05/10 |
 | T2.9  |  WS3  | API khung giá thuê, phụ phí và phí quá hạn (`BM-03`)                         |        Nhật        | 05/10 |
-| T2.10 |  WS1  | API tra cứu Facility, Unit Type, giá và Availability theo khoảng thuê (`SC-01`) |        Tùng        | 05/10 |
+| T2.10 |  WS2  | API tra cứu Facility, Unit Type, giá và Availability theo khoảng thuê (`SC-01`) |        Bình        | 05/10 |
 | T2.11 |  WS1  | Frontend: Layout chung, Sidebar theo vai trò, Route Guard & Token Storage             |         Nhi         | 28/09 |
 | T2.12 |  WS4  | Frontend: Màn hình đăng nhập, đăng ký và phục hồi mật khẩu                |         Nhi         | 28/09 |
 | T2.13 |  WS3  | Frontend: Màn hình quản lý cơ sở và bảng giá của BOM                         |         Nhi         | 05/10 |
-| T2.14 |  WS2  | Frontend: Màn hình quản lý danh mục ô kho của Facility Manager                  |         Nhi         | 05/10 |
-| T2.15 |  WS4  | Frontend: Màn hình Admin quản lý tài khoản và phân quyền dữ liệu            |        Bình        | 05/10 |
+| T2.14 |  WS2  | Frontend: Màn hình quản lý danh mục ô kho của Facility Manager                  |        Bình        | 05/10 |
+| T2.15 |  WS4  | Frontend: Màn hình Admin quản lý tài khoản và phân quyền dữ liệu            |        Tùng        | 05/10 |
 | T2.16 |  WS1  | Frontend: Trang công khai xem danh sách Facility, Unit Type & tình trạng trống    |        Bình        | 05/10 |
-| T2.17 |  WS2  | Unit test tầng service cho module danh mục & quản trị                              |        Tùng        | 05/10 |
+| T2.17 |  WS2  | Unit test tầng service cho module danh mục & quản trị                              |        Bình        | 05/10 |
 | T2.18 |  WS4  | Rà soát API contract và chuẩn bị Báo cáo#2                                      |        Bình        | 05/10 |
 
 ---
@@ -152,17 +152,17 @@ Khách hàng & Đặt chỗ        Cơ sở, Kho & Vận hành      Tài chính 
 | Mã   | Trục | Nhiệm vụ                                                                                          | Người phụ trách | Hạn |
 | ----- | :---: | --------------------------------------------------------------------------------------------------- | :-----------------: | :---: |
 | T3.1  |  WS1  | API tạo Reservation giữ capacity trong 48h (`SC-02`)                                            |        Tùng        | 12/10 |
-| T3.2  | WS1/2 | Cơ chế tạm giữ ô kho nguyên tử và khóa Reserved Storage Unit sau thanh toán (`FM-02`)   |        Tùng        | 12/10 |
+| T3.2  |  WS2  | Cơ chế tạm giữ ô kho nguyên tử và khóa Reserved Storage Unit sau thanh toán (`FM-02`)   |        Bình        | 12/10 |
 | T3.3  |  WS3  | API thanh toán toàn bộ phí thuê N tháng cùng Deposit qua cổng VietQR/PayOS (`SC-03`)      |        Nhật        | 12/10 |
-| T3.4  |  WS2  | Sinh Hợp đồng`PENDING_CHECKIN` và lịch hẹn Check-in sau khi thanh toán thành công        |        Tùng        | 19/10 |
-| T3.5  |  WS2  | API kiểm tra thông tin đặt chỗ khi khách đến cơ sở (`FS-01`)                            |        Nhật        | 19/10 |
-| T3.6  |  WS2  | API bàn giao ô kho, ký biên bản điện tử và cấp Access Code/mã PIN (`FS-02`)            |        Nhật        | 19/10 |
-| T3.7  |  WS2  | API cập nhật trạng thái ô kho sang`OCCUPIED` và Hợp đồng sang `ACTIVE` (`FS-03`)     |        Tùng        | 19/10 |
+| T3.4  |  WS2  | Sinh Hợp đồng `PENDING_CHECKIN` và lịch hẹn Check-in sau khi thanh toán thành công        |        Bình        | 19/10 |
+| T3.5  |  WS2  | API kiểm tra thông tin đặt chỗ khi khách đến cơ sở (`FS-01`)                            |        Bình        | 19/10 |
+| T3.6  |  WS2  | API bàn giao ô kho, ký biên bản điện tử và cấp Access Code/mã PIN (`FS-02`)            |        Bình        | 19/10 |
+| T3.7  |  WS2  | API cập nhật trạng thái ô kho sang `OCCUPIED` và Hợp đồng sang `ACTIVE` (`FS-03`)     |        Bình        | 19/10 |
 | T3.8  |  WS1  | API check-in xác nhận khách đã nhận kho (`SC-04`)                                           |        Tùng        | 19/10 |
-| T3.9  |  WS1  | Frontend: Luồng đặt chỗ và**Sơ đồ chọn ô kho trực quan** (Interactive Unit Picker) |         Nhi         | 12/10 |
+| T3.9  |  WS1  | Frontend: Luồng đặt chỗ và **Sơ đồ chọn ô kho trực quan** (Interactive Unit Picker) |         Nhi         | 12/10 |
 | T3.10 |  WS3  | Frontend: Màn hình thanh toán trực tuyến (Popup quét VietQR và xác nhận)                   |         Nhi         | 19/10 |
 | T3.11 |  WS2  | Frontend: Màn hình Staff tra cứu đặt chỗ, biên bản bàn giao và cấp mã PIN               |        Bình        | 19/10 |
-| T3.12 |  WS2  | Frontend: Màn hình Facility Manager giám sát hợp đồng và xử lý đổi ô kho               |         Nhi         | 19/10 |
+| T3.12 |  WS4  | Frontend: Màn hình Facility Manager giám sát hợp đồng và xử lý đổi ô kho               |        Tùng        | 19/10 |
 | T3.13 |  WS4  | Test tích hợp luồng E2E Flow 1$\rightarrow$ Flow 2                                             |        Nhật        | 19/10 |
 | T3.14 |  WS4  | Viết kịch bản test case thủ công và chuẩn bị Báo cáo#3                                    |        Bình        | 19/10 |
 
@@ -177,19 +177,19 @@ Khách hàng & Đặt chỗ        Cơ sở, Kho & Vận hành      Tài chính 
 | Mã   | Trục | Nhiệm vụ                                                                                                                            | Người phụ trách | Hạn |
 | ----- | :---: | ------------------------------------------------------------------------------------------------------------------------------------- | :-----------------: | :---: |
 | T4.1  |  WS1  | API danh sách ô kho đang thuê của khách (`SC-05`)                                                                             |        Tùng        | 26/10 |
-| T4.2  |  WS2  | API theo dõi khách và hợp đồng thuê cho Facility Manager (`FM-03`)                                                           |        Tùng        | 26/10 |
-| T4.3  |  WS2  | Quy trình Return: Biên bản nghiệm thu inspection, quyết toán và hoàn cọc Deposit (`FS-04`, `FM-04`)                      |        Tùng        | 02/11 |
+| T4.2  |  WS2  | API theo dõi khách và hợp đồng thuê cho Facility Manager (`FM-03`)                                                           |        Bình        | 26/10 |
+| T4.3  |  WS2  | Quy trình Return: Biên bản nghiệm thu inspection, quyết toán và hoàn cọc Deposit (`FS-04`, `FM-04`)                      |        Bình        | 02/11 |
 | T4.4  |  WS3  | API cấu hình chính sách cọc, hoàn tiền và gia hạn (`BM-02`)                                                                |        Nhật        | 26/10 |
 | T4.5  |  WS3  | API Renewal tự động sau Payment, kiểm tra capacity và gia hạn hợp đồng                                                       |        Nhật        | 02/11 |
 | T4.6  |  WS3  | **Scheduled Cronjob** xử lý Overdue hằng đêm: ân hạn D+1..D+3, phạt 10%/ngày D+4..D+10, chấm dứt D+10 (`UC-F6-11`) |        Nhật        | 02/11 |
-| T4.7  |  WS4  | API gửi và theo dõi yêu cầu hỗ trợ / sự cố (`SC-06`)                                                                       |        Nhật        | 02/11 |
+| T4.7  |  WS4  | API gửi và theo dõi yêu cầu hỗ trợ / sự cố (`SC-06`)                                                                       |        Tùng        | 02/11 |
 | T4.8  |  WS4  | API phân công nhân viên và cập nhật tiến độ xử lý sự cố (`FM-05`, `FS-05`)                                          |        Tùng        | 02/11 |
 | T4.9  |  WS4  | API bảng công việc hằng ngày của Staff (`FS-06`)                                                                              |        Tùng        | 02/11 |
 | T4.10 |  WS1  | Frontend: Dashboard quản lý danh sách ô kho đang thuê của khách                                                               |         Nhi         | 26/10 |
 | T4.11 |  WS3  | Frontend: Màn hình gia hạn trực tuyến và cảnh báo hạn hợp đồng                                                            |         Nhi         | 02/11 |
-| T4.12 |  WS4  | Frontend: Màn hình gửi và theo dõi ticket hỗ trợ sự cố của khách                                                           |        Bình        | 02/11 |
-| T4.13 |  WS2  | Frontend: Màn hình Staff — Nghiệm thu trả kho, danh mục việc trong ngày                                                       |         Nhi         | 02/11 |
-| T4.14 |  WS4  | Frontend: Màn hình FM — Giám sát hợp đồng, phân công nhân viên xử lý sự cố                                            |        Bình        | 02/11 |
+| T4.12 |  WS4  | Frontend: Màn hình gửi và theo dõi ticket hỗ trợ sự cố của khách                                                           |        Tùng        | 02/11 |
+| T4.13 |  WS2  | Frontend: Màn hình Staff — Nghiệm thu trả kho, danh mục việc trong ngày                                                       |        Bình        | 02/11 |
+| T4.14 |  WS4  | Frontend: Màn hình FM — Giám sát hợp đồng, phân công nhân viên xử lý sự cố                                            |        Tùng        | 02/11 |
 | T4.15 |  WS3  | Test tích hợp tự động cho Scheduled Cronjob và luồng hoàn cọc                                                                |        Nhật        | 02/11 |
 | T4.16 |  WS4  | Đối chiếu business rules và chuẩn bị Báo cáo#4                                                                                |        Bình        | 02/11 |
 
@@ -206,14 +206,14 @@ Khách hàng & Đặt chỗ        Cơ sở, Kho & Vận hành      Tài chính 
 | T5.1  |    WS4    | API báo cáo tỷ lệ sử dụng kho và doanh thu cấp cơ sở (`FM-06`)           |        Tùng        | 09/11 |
 | T5.2  |    WS3    | API giám sát doanh thu và tỷ lệ lấp đầy toàn hệ thống (`BM-04`)         |        Nhật        | 09/11 |
 | T5.3  |    WS3    | API báo cáo tổng hợp và xuất dữ liệu Excel/CSV (`BM-05`)                   |        Nhật        | 09/11 |
-| T5.4  |    WS4    | Ghi nhận và API xem nhật ký hoạt động / lịch sử đăng nhập (`SA-04`)    |        Nhật        | 09/11 |
-| T5.5  |    WS4    | Frontend: Dashboard báo cáo trực quan cho Facility Manager                        |         Nhi         | 09/11 |
+| T5.4  |    WS4    | Ghi nhận và API xem nhật ký hoạt động / lịch sử đăng nhập (`SA-04`)    |        Tùng        | 09/11 |
+| T5.5  |    WS4    | Frontend: Dashboard báo cáo trực quan cho Facility Manager                        |        Tùng        | 09/11 |
 | T5.6  |    WS3    | Frontend: Dashboard tài chính & xuất báo cáo toàn hệ thống cho BOM           |        Bình        | 09/11 |
-| T5.7  |    WS4    | Frontend: Màn hình Admin kiểm tra nhật ký hoạt động hệ thống               |        Bình        | 09/11 |
+| T5.7  |    WS4    | Frontend: Màn hình Admin kiểm tra nhật ký hoạt động hệ thống               |        Tùng        | 09/11 |
 | T5.8  | Toàn bộ | Viết và thực thi bộ test case tự động & thủ công cho cả 7 flow             |      Cả nhóm      | 09/11 |
 | T5.9  | Toàn bộ | Rà soát lỗi tồn đọng, tối ưu UI/UX và responsive trên thiết bị di động |      Cả nhóm      | 16/11 |
 | T5.10 |    WS3    | Chuẩn bị dữ liệu demo sống (kịch bản chạy demo mượt mà từ Flow 1 tới 7) |        Nhật        | 16/11 |
-| T5.11 |    WS2    | Đóng gói Docker, triển khai hệ thống lên Cloud/VPS môi trường thử nghiệm |        Tùng        | 16/11 |
+| T5.11 |    WS2    | Đóng gói Docker, triển khai hệ thống lên Cloud/VPS môi trường thử nghiệm |        Bình        | 16/11 |
 | T5.12 |    WS4    | Hoàn thiện toàn bộ tập tài liệu đồ án (SRS, SDD, User Guide, Test Report)  |        Bình        | 16/11 |
 | T5.13 | Toàn bộ | Thiết kế slide thuyết trình và luyện tập kịch bản bảo vệ đồ án         |      Cả nhóm      | 16/11 |
 

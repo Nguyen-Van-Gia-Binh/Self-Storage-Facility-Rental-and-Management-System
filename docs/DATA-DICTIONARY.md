@@ -85,6 +85,9 @@ Danh mục cơ sở kho tự quản trong chuỗi (`BM-01`).
 | `code` | `NVARCHAR(20)` | Có | `UNIQUE` | Mã cơ sở kho (vd: `FAC-Q7`, `FAC-THD`) |
 | `name` | `NVARCHAR(150)` | Có | | Tên cơ sở kho |
 | `address` | `NVARCHAR(255)` | Có | | Địa chỉ thực tế của cơ sở |
+| `phone` | `NVARCHAR(20)` | Không | | Số điện thoại liên hệ cơ sở kho |
+| `description` | `NVARCHAR(2000)` | Không | | Giới thiệu, mô tả tiện ích cơ sở |
+| `opening_hours` | `NVARCHAR(50)` | Không | | Thời gian mở cửa hoạt động (vd: `06:00–22:00`) |
 | `status` | `VARCHAR(20)` | Có | `DEFAULT 'ACTIVE'`, `CHECK IN ('ACTIVE','INACTIVE')` | Tình trạng khai thác cơ sở (`BM-01`) |
 | `created_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Ngày khởi tạo |
 | `updated_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Ngày cập nhật |
