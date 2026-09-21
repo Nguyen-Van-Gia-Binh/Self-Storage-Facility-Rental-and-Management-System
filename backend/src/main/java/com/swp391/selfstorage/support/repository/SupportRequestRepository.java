@@ -35,6 +35,8 @@ public interface SupportRequestRepository extends JpaRepository<SupportRequest, 
 
     Page<SupportRequest> findByAssignedStaffId(Long assignedStaffId, Pageable pageable);
 
+    java.util.List<SupportRequest> findAllByAssignedStaffId(Long assignedStaffId);
+
     @org.springframework.data.jpa.repository.Query(
             "SELECT sr FROM SupportRequest sr " +
             "LEFT JOIN com.swp391.selfstorage.contract.entity.RentalContract rc ON sr.contractId = rc.id " +
