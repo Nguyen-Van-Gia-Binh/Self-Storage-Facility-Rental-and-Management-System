@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Layers, FileText, Users, ArrowRight } from 'lucide-react';
+import { Layers, FileText, Users, ArrowRight, Wrench } from 'lucide-react';
 
 export const ManagerDashboardPage: React.FC = () => {
   return (
@@ -14,7 +14,7 @@ export const ManagerDashboardPage: React.FC = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Card 1: Hợp đồng & Khách thuê (T3.12) */}
         <Link
           to="/manager/contracts"
@@ -59,23 +59,49 @@ export const ManagerDashboardPage: React.FC = () => {
           </div>
         </Link>
 
-        {/* Card 3: Phân công nhân viên */}
-        <div className="p-5 rounded-2xl border border-slate-200 bg-slate-50/70 flex flex-col justify-between opacity-80">
+        {/* Card 3: Phân công nhân viên (T4.14 / SCR-FM-03) */}
+        <Link
+          to="/manager/staff-assignment"
+          className="p-5 rounded-2xl border border-slate-200 bg-white hover:border-purple-400 hover:shadow-lg transition-all duration-200 group flex flex-col justify-between"
+        >
           <div>
-            <div className="w-10 h-10 rounded-xl bg-slate-200 text-slate-600 flex items-center justify-center mb-3">
+            <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-3 group-hover:bg-purple-600 group-hover:text-white transition-colors">
               <Users className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-slate-800 text-sm mb-1">
-              Phân công nhân viên (SCR-FM-03)
+            <h3 className="font-bold text-slate-900 text-sm mb-1 group-hover:text-purple-600 transition-colors">
+              Phân công Nhân sự (SCR-FM-03)
             </h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Điều phối lịch trực ca hàng ngày và giao nhiệm vụ kiểm tra ô kho cho nhân viên cơ sở.
+              Cân bằng tải nhân viên ca trực, điều phối bàn giao Check-in, Trả kho, Khóa ngoài Overlock.
             </p>
           </div>
-          <span className="mt-4 pt-3 border-t border-slate-200 text-[11px] text-slate-400 font-medium">
-            (Module Giai đoạn 4 - Flow 5)
-          </span>
-        </div>
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-purple-600 font-semibold">
+            <span>Mở Bàn phân công</span>
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </div>
+        </Link>
+
+        {/* Card 4: Xử lý sự cố kỹ thuật (T4.14 / SCR-FM-05) */}
+        <Link
+          to="/manager/incidents"
+          className="p-5 rounded-2xl border border-slate-200 bg-white hover:border-amber-400 hover:shadow-lg transition-all duration-200 group flex flex-col justify-between"
+        >
+          <div>
+            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-3 group-hover:bg-amber-600 group-hover:text-white transition-colors">
+              <Wrench className="w-5 h-5" />
+            </div>
+            <h3 className="font-bold text-slate-900 text-sm mb-1 group-hover:text-amber-600 transition-colors">
+              Xử lý Sự cố & Ticket (SCR-FM-05)
+            </h3>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Tiếp nhận khiếu nại, giám sát thời hạn cam kết SLA 2 giờ và giao việc xử lý kẹt khóa, thấm dột.
+            </p>
+          </div>
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-amber-600 font-semibold">
+            <span>Mở Bàn điều phối</span>
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </div>
+        </Link>
       </div>
     </div>
   );

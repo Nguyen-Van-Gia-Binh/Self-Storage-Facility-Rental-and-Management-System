@@ -4,6 +4,8 @@ import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { ManagerDashboardPage } from './pages/ManagerDashboardPage';
 import { UnitCatalogPage } from './pages/UnitCatalogPage';
 import { ContractsHubPage } from './pages/ContractsHubPage';
+import { StaffAssignmentPage } from './pages/StaffAssignmentPage';
+import { IncidentManagementPage } from './pages/IncidentManagementPage';
 
 const navItems = [
   { label: 'Tong quan co so', href: '/manager' },
@@ -21,6 +23,8 @@ export const ManagerRoutes: React.FC = () => {
         <Route index element={<ManagerDashboardPage />} />
         <Route path="units" element={<UnitCatalogPage />} />
         <Route path="contracts" element={<ContractsHubPage />} />
+        <Route path="staff-assignment" element={<StaffAssignmentPage />} />
+        <Route path="incidents" element={<IncidentManagementPage />} />
       </Routes>
     </DashboardLayout>
   );
