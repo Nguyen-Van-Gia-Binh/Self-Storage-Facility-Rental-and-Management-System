@@ -315,3 +315,47 @@ export interface ActivePolicyInfo {
 
 export * from './report';
 
+// --- Online Payment & Digital Move-in Pass Types (T3.10 SC-03) ---
+
+export type PaymentMethod = 'BANK_TRANSFER' | 'CREDIT_CARD' | 'CASH';
+export type PaymentStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'EXPIRED';
+
+export interface CreatePaymentRequest {
+  referenceType: 'RESERVATION' | 'RENEWAL' | 'OVERDUE_FEE' | 'EXTRA_CHARGE';
+  referenceId: string | number;
+  amount: number;
+  method: PaymentMethod;
+  transactionRef?: string;
+}
+
+export interface PaymentTransaction {
+  id: string | number;
+  referenceType: string;
+  referenceId: string | number;
+  amount: number;
+  rentalFee: number;
+  depositAmount: number;
+  method: PaymentMethod;
+  status: PaymentStatus;
+  transactionRef: string;
+  paidAt?: string;
+  unitNumber: string;
+  facilityName: string;
+}
+
+export interface MoveInPassData {
+  passCode: string;
+  reservationId: string | number;
+  unitNumber: string;
+  facilityId: string | number;
+  facilityName: string;
+  facilityAddress: string;
+  facilityPhone: string;
+  customerName: string;
+  customerPhone: string;
+  customerIdentity: string;
+  startDate: string;
+  checkInWindow: string;
+  status: 'PENDING_CHECKIN';
+  totalPaid: number;
+}
