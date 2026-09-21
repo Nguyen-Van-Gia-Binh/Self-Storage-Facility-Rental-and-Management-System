@@ -28,9 +28,20 @@ Thumbs.db
 *.mdf
 *.ldf
 
-# Superpowers local plans
+# Superpowers & Agent configurations
 docs/superpowers/
 .superpowers/
+.agents/
+.agent/
 
-# Sổ tay cá nhân WS1 (chỉ giữ ở máy tính cá nhân)
-docs/WS1-EXPLANATION-NOTES.md
+# Sổ tay ghi chú cá nhân, học tập & làm việc (chỉ giữ ở máy cá nhân)
+docs/*-NOTES.md
+docs/*-EXPLANATION-NOTES.md
+docs/WS*-EXPLANATION-NOTES.md
+docs/personal/
+docs/study/
+*LEARNING_NOTES*
+*EXPLANATION-NOTES*
+*.personal.md
+scratch/
+
