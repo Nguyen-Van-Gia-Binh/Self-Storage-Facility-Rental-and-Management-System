@@ -265,6 +265,38 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("Gán vai trò về Customer thành công và xóa phân công cơ sở cũ")
+    void updateUserRole_ToCustomer_ClearsAssignments() {
+        sampleUser.setRole(UserRole.FACILITY_STAFF);
+        UpdateUserRoleRequest request = new UpdateUserRoleRequest(UserRole.STORAGE_CUSTOMER, List.of());
+
+        when(userRepository.findById(10L)).thenReturn(Optional.of(sampleUser));
+        when(userRepository.save(any(AppUser.class))).thenReturn(sampleUser);
+        when(assignmentRepository.findFacilityIdsByUserId(10L)).thenReturn(List.of());
+
+        UserResponse response = userService.updateUserRole(10L, request);
+
+        assertThat(response).isNotNull();
+        assertThat(sampleUser.getRole()).isEqualTo(UserRole.STORAGE_CUSTOMER);
+        verify(assignmentRepository).deleteByUserId(10L);
+    }
+
+    @Test
+    @DisplayName("Gán vai trò BOM thành công không cần cơ sở")
+    void updateUserRole_ToBusinessOperationsManager_Success() {
+        UpdateUserRoleRequest request = new UpdateUserRoleRequest(UserRole.BUSINESS_OPERATIONS_MANAGER, List.of());
+
+        when(userRepository.findById(10L)).thenReturn(Optional.of(sampleUser));
+        when(userRepository.save(any(AppUser.class))).thenReturn(sampleUser);
+        when(assignmentRepository.findFacilityIdsByUserId(10L)).thenReturn(List.of());
+
+        UserResponse response = userService.updateUserRole(10L, request);
+
+        assertThat(response).isNotNull();
+        assertThat(sampleUser.getRole()).isEqualTo(UserRole.BUSINESS_OPERATIONS_MANAGER);
+    }
+
+    @Test
     @DisplayName("Cập nhật trạng thái người dùng thành công (SA-01)")
     void updateUserStatus_Success() {
         UpdateUserStatusRequest request = new UpdateUserStatusRequest(false);
