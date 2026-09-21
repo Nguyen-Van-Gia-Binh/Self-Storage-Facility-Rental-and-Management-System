@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { RentedContract } from '../types';
+import { calculateDaysRemaining } from '../utils/renewalPricing';
 
 interface RenewalExpiryBannerProps {
   contract: RentedContract;
@@ -20,20 +21,6 @@ interface RenewalExpiryBannerProps {
 export const RenewalExpiryBanner: React.FC<RenewalExpiryBannerProps> = ({
   contract,
 }) => {
-  // Tính số ngày còn lại đến ngày kết thúc hợp đồng
-  const calculateDaysRemaining = (endDateStr: string): number => {
-    try {
-      const end = new Date(endDateStr);
-      const now = new Date();
-      end.setHours(0, 0, 0, 0);
-      now.setHours(0, 0, 0, 0);
-      const diffTime = end.getTime() - now.getTime();
-      return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    } catch {
-      return 0;
-    }
-  };
-
   const daysRemaining = calculateDaysRemaining(contract.endDate);
   const isOverdue = contract.status === 'OVERDUE' || daysRemaining < 0;
   const isTerminated = contract.status === 'TERMINATED' || contract.status === 'CLOSED';

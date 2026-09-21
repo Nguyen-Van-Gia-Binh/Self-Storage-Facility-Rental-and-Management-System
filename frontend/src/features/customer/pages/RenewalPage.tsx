@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { getCustomerContracts, renewContract } from '@/api/customerRentals';
 import { formatVND } from '../utils/pricing';
+import { calculateRenewalPricing, calculateExtendedEndDate } from '../utils/renewalPricing';
 import type { RentedContract, RenewContractResponse } from '../types';
 import { RenewalExpiryBanner } from '../components/RenewalExpiryBanner';
 import { RenewalReceiptModal } from '../components/RenewalReceiptModal';
@@ -81,9 +82,7 @@ export const RenewalPage: React.FC = () => {
   // Tính toán ngày kết thúc mới chính xác
   const newEndDate = useMemo(() => {
     if (!contract) return '';
-    const currentEnd = new Date(contract.endDate);
-    currentEnd.setMonth(currentEnd.getMonth() + renewalMonths);
-    return currentEnd.toISOString().split('T')[0];
+    return calculateExtendedEndDate(contract.endDate, renewalMonths);
   }, [contract, renewalMonths]);
 
   // Tính toán chi phí tài chính minh bạch theo BR-REN-03, BR-REN-06, BR-REN-07 & BR-DEP-01
@@ -98,40 +97,17 @@ export const RenewalPage: React.FC = () => {
         overdueFee: 0,
         extraDeposit: 0,
         finalTotal: 0,
+        renewalMonths: 0,
       };
     }
 
-    const monthlyRent = contract.monthlyRent;
-    const rawRent = monthlyRent * renewalMonths;
-
-    // Chính sách ưu đãi chiết khấu (BR-REN-07)
-    let discountRate = 0;
-    if (renewalMonths >= 12) discountRate = 0.10; // 12 tháng giảm 10%
-    else if (renewalMonths >= 6) discountRate = 0.05; // 6-11 tháng giảm 5%
-
-    const discountAmount = Math.round((rawRent * discountRate) / 1000) * 1000;
-    const netRent = rawRent - discountAmount;
-
-    // Khoản nợ quá hạn & Phí phạt chậm trả nếu contract OVERDUE (BR-REN-06)
-    let overdueFee = 0;
-    if (contract.status === 'OVERDUE') {
-      overdueFee = contract.overdueFee ?? (contract.overdueDays ? contract.overdueDays * 50000 : 100000);
-    }
-
-    // Tiền cọc phát sinh: 0đ theo BR-DEP-01
-    const extraDeposit = 0;
-    const finalTotal = netRent + overdueFee + extraDeposit;
-
-    return {
-      monthlyRent,
-      rawRent,
-      discountRate,
-      discountAmount,
-      netRent,
-      overdueFee,
-      extraDeposit,
-      finalTotal,
-    };
+    return calculateRenewalPricing({
+      monthlyRent: contract.monthlyRent,
+      renewalMonths,
+      isOverdue: contract.status === 'OVERDUE',
+      overdueDays: contract.overdueDays,
+      overdueFee: contract.overdueFee,
+    });
   }, [contract, renewalMonths]);
 
   const transferContent = useMemo(() => {
