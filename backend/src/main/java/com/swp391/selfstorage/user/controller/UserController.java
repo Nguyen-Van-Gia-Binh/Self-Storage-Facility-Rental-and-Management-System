@@ -28,6 +28,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/users")
 @Tag(name = "User", description = "Quản lý tài khoản người dùng và phân quyền (SA-01, SA-02, SA-03)")
@@ -90,5 +92,12 @@ public class UserController {
             @PathVariable Long id,
             @Valid @RequestBody UpdateUserStatusRequest request) {
         return ResponseEntity.ok(userService.updateUserStatus(id, request));
+    }
+
+    @GetMapping("/{id}/facilities")
+    @PreAuthorize("hasRole('SYSTEM_ADMINISTRATOR') or hasRole('BUSINESS_OPERATIONS_MANAGER') or #id == authentication.principal.id")
+    @Operation(summary = "Lấy danh sách ID cơ sở mà người dùng được phân công (SA-03)")
+    public ResponseEntity<List<Long>> getUserFacilities(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.getUserById(id).getFacilityIds());
     }
 }

@@ -177,4 +177,20 @@ class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.active").value(false));
     }
+
+    @Test
+    @DisplayName("GET /users/{id}/facilities trả về danh sách cơ sở được phân công 200 OK (SA-03)")
+    void testGetUserFacilities() throws Exception {
+        UserResponse response = UserResponse.builder()
+                .id(1L)
+                .facilityIds(List.of(1L, 2L))
+                .build();
+
+        when(userService.getUserById(1L)).thenReturn(response);
+
+        mockMvc.perform(get("/users/1/facilities"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0]").value(1))
+                .andExpect(jsonPath("$[1]").value(2));
+    }
 }
