@@ -17,9 +17,9 @@ import java.util.List;
 @RequiredArgsConstructor
 @Tag(name = "Contract", description = "Hop dong thue kho (T3.4–T3.7)")
 public class ContractController {
-
+    
     private final ContractService contractService;
-
+    
     /** T3.5: Chi tiet contract — Staff xac minh khi khach check-in */
     @GetMapping("/{id}")
     @Operation(summary = "Chi tiết hợp đồng")
