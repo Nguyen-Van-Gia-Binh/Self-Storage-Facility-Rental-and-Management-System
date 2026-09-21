@@ -62,4 +62,35 @@ public class StorageUnit {
     public boolean isActive() {
         return status != StorageUnitStatus.OUT_OF_SERVICE;
     }
+
+    // Explicit Getters and Setters (đảm bảo IDE nhận diện symbol mà không phụ thuộc vào cấu hình Lombok của IDE)
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public Long getFacilityId() { return facilityId; }
+    public void setFacilityId(Long facilityId) { this.facilityId = facilityId; }
+
+    public Long getUnitTypeId() { return unitTypeId; }
+    public void setUnitTypeId(Long unitTypeId) { this.unitTypeId = unitTypeId; }
+
+    public String getCode() { return code; }
+    public void setCode(String code) { this.code = code; }
+
+    public Integer getFloor() { return floor; }
+    public void setFloor(Integer floor) { this.floor = floor; }
+
+    public String getPosition() { return position; }
+    public void setPosition(String position) { this.position = position; }
+
+    public String getLocationNote() { return locationNote; }
+    public void setLocationNote(String locationNote) { this.locationNote = locationNote; }
+
+    public StorageUnitStatus getStatus() { return status; }
+    public void setStatus(StorageUnitStatus status) { this.status = status; }
+
+    public OffsetDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(OffsetDateTime createdAt) { this.createdAt = createdAt; }
+
+    public OffsetDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(OffsetDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

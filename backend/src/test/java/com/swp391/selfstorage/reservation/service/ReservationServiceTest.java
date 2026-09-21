@@ -1,0 +1,282 @@
+package com.swp391.selfstorage.reservation.service;
+
+import com.swp391.selfstorage.auth.service.UserPrincipal;
+import com.swp391.selfstorage.common.dto.PageResponse;
+import com.swp391.selfstorage.common.exception.CustomException;
+import com.swp391.selfstorage.common.exception.ErrorCode;
+import com.swp391.selfstorage.contract.entity.ContractStatus;
+import com.swp391.selfstorage.contract.repository.RentalContractRepository;
+import com.swp391.selfstorage.facility.entity.Facility;
+import com.swp391.selfstorage.facility.entity.FacilityStatus;
+import com.swp391.selfstorage.facility.repository.FacilityRepository;
+import com.swp391.selfstorage.reservation.dto.*;
+import com.swp391.selfstorage.reservation.entity.Reservation;
+import com.swp391.selfstorage.reservation.entity.ReservationStatus;
+import com.swp391.selfstorage.reservation.repository.ReservationRepository;
+import com.swp391.selfstorage.unit.entity.FacilityUnitTypePrice;
+import com.swp391.selfstorage.unit.entity.StorageUnit;
+import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
+import com.swp391.selfstorage.unit.entity.UnitType;
+import com.swp391.selfstorage.unit.repository.FacilityUnitTypePriceRepository;
+import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
+import com.swp391.selfstorage.unit.repository.UnitTypeRepository;
+import com.swp391.selfstorage.user.entity.UserRole;
+import com.swp391.selfstorage.user.entity.UserStatus;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class ReservationServiceTest {
+
+    @Mock private ReservationRepository reservationRepository;
+    @Mock private StorageUnitRepository storageUnitRepository;
+    @Mock private FacilityRepository facilityRepository;
+    @Mock private UnitTypeRepository unitTypeRepository;
+    @Mock private FacilityUnitTypePriceRepository facilityUnitTypePriceRepository;
+    @Mock private RentalContractRepository rentalContractRepository;
+
+    @InjectMocks
+    private ReservationServiceImpl reservationService;
+
+    private UserPrincipal customerUser;
+    private Facility activeFacility;
+    private UnitType activeUnitType;
+    private StorageUnit availableStorageUnit;
+
+    @BeforeEach
+    void setUp() {
+        customerUser = new UserPrincipal(
+                15L, "customer@example.com", "password", "Nguyen Van Khach",
+                UserRole.STORAGE_CUSTOMER, UserStatus.ACTIVE, Collections.emptyList(), Collections.emptyList()
+        );
+
+        activeFacility = new Facility();
+        activeFacility.setId(1L);
+        activeFacility.setName("Kho Thu Duc");
+        activeFacility.setStatus(FacilityStatus.ACTIVE);
+
+        activeUnitType = new UnitType();
+        activeUnitType.setId(7L);
+        activeUnitType.setName("Kho Size M");
+        activeUnitType.setActive(true);
+
+        availableStorageUnit = new StorageUnit();
+        availableStorageUnit.setId(42L);
+        availableStorageUnit.setFacilityId(1L);
+        availableStorageUnit.setUnitTypeId(7L);
+        availableStorageUnit.setCode("M-101");
+        availableStorageUnit.setStatus(StorageUnitStatus.AVAILABLE);
+    }
+
+    @Test
+    @DisplayName("BR-PRI-01 & BR-GEN-04: Tính giá đúng chiết khấu và tiền cọc 1 tháng làm tròn 1.000đ")
+    void calculatePrice_ShouldCalculateCorrectly() {
+        // 1 tháng, giá 1.200.000 đ
+        CalculatePriceResponse res1 = reservationService.calculatePrice(new CalculatePriceRequest(1200000L, 1));
+        assertEquals(1200000L, res1.getRawRentTotal());
+        assertEquals(0, res1.getDiscountAmount());
+        assertEquals(1200000L, res1.getDepositAmount());
+        assertEquals(2400000L, res1.getTotalDueToday());
+
+        // 6 tháng -> chiết khấu 5%
+        CalculatePriceResponse res6 = reservationService.calculatePrice(new CalculatePriceRequest(1200000L, 6));
+        assertEquals(7200000L, res6.getRawRentTotal());
+        assertEquals(360000L, res6.getDiscountAmount());
+        assertEquals(6840000L, res6.getFinalRentTotal());
+        assertEquals(1200000L, res6.getDepositAmount());
+        assertEquals(8040000L, res6.getTotalDueToday());
+
+        // 12 tháng -> chiết khấu 10%
+        CalculatePriceResponse res12 = reservationService.calculatePrice(new CalculatePriceRequest(1200000L, 12));
+        assertEquals(14400000L, res12.getRawRentTotal());
+        assertEquals(1440000L, res12.getDiscountAmount());
+        assertEquals(12960000L, res12.getFinalRentTotal());
+        assertEquals(1200000L, res12.getDepositAmount());
+        assertEquals(14160000L, res12.getTotalDueToday());
+    }
+
+    @Test
+    @DisplayName("BR-OVD-09: Khách hàng có hợp đồng OVERDUE thì bị chặn đặt chỗ")
+    void createReservation_CustomerHasOverdueContract_ShouldThrow() {
+        when(rentalContractRepository.existsByCustomerIdAndStatus(15L, ContractStatus.OVERDUE)).thenReturn(true);
+
+        CreateReservationRequest req = new CreateReservationRequest();
+        req.setFacilityId(1L);
+        req.setUnitTypeId(7L);
+        req.setStartDate(LocalDate.now().plusDays(2));
+        req.setRentalMonths(3);
+
+        CustomException ex = assertThrows(CustomException.class, () ->
+                reservationService.createReservation(req, customerUser)
+        );
+        assertEquals(ErrorCode.CONTRACT_OVERDUE, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("BR-RES-01: Ngày bắt đầu ở quá khứ phải bị từ chối")
+    void createReservation_PastStartDate_ShouldThrow() {
+        when(rentalContractRepository.existsByCustomerIdAndStatus(15L, ContractStatus.OVERDUE)).thenReturn(false);
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(activeFacility));
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(activeUnitType));
+
+        CreateReservationRequest req = new CreateReservationRequest();
+        req.setFacilityId(1L);
+        req.setUnitTypeId(7L);
+        req.setStartDate(LocalDate.now().minusDays(1));
+        req.setRentalMonths(3);
+
+        CustomException ex = assertThrows(CustomException.class, () ->
+                reservationService.createReservation(req, customerUser)
+        );
+        assertEquals(ErrorCode.INVALID_START_DATE, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("BR-RES-02 & BR-AVL-04: Ô kho đã có người giữ chỗ trùng lịch phải bị từ chối")
+    void createReservation_SpecificUnit_OverlappingSlot_ShouldThrow() {
+        when(rentalContractRepository.existsByCustomerIdAndStatus(15L, ContractStatus.OVERDUE)).thenReturn(false);
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(activeFacility));
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(activeUnitType));
+        when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(availableStorageUnit));
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any()))
+                .thenReturn(true);
+
+        CreateReservationRequest req = new CreateReservationRequest();
+        req.setFacilityId(1L);
+        req.setUnitTypeId(7L);
+        req.setStorageUnitId(42L);
+        req.setStartDate(LocalDate.now().plusDays(1));
+        req.setRentalMonths(3);
+
+        CustomException ex = assertThrows(CustomException.class, () ->
+                reservationService.createReservation(req, customerUser)
+        );
+        assertEquals(ErrorCode.UNIT_NOT_AVAILABLE, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("SC-02 & BR-DEP-03: Tạo đơn đặt chỗ thành công và giữ chỗ 48 giờ")
+    void createReservation_Success_ShouldHold48Hours() {
+        when(rentalContractRepository.existsByCustomerIdAndStatus(15L, ContractStatus.OVERDUE)).thenReturn(false);
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(activeFacility));
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(activeUnitType));
+        when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(availableStorageUnit));
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any()))
+                .thenReturn(false);
+
+        FacilityUnitTypePrice price = new FacilityUnitTypePrice();
+        price.setFacilityId(1L);
+        price.setUnitTypeId(7L);
+        price.setMonthlyPrice(1500000L);
+        when(facilityUnitTypePriceRepository.findByFacilityIdAndUnitTypeId(1L, 7L)).thenReturn(Optional.of(price));
+
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> {
+            Reservation r = inv.getArgument(0);
+            r.setId(1042L);
+            return r;
+        });
+
+        CreateReservationRequest req = new CreateReservationRequest();
+        req.setFacilityId(1L);
+        req.setUnitTypeId(7L);
+        req.setStorageUnitId(42L);
+        req.setStartDate(LocalDate.now().plusDays(2));
+        req.setRentalMonths(3);
+
+        ReservationResponse response = reservationService.createReservation(req, customerUser);
+
+        assertNotNull(response);
+        assertEquals(1042L, response.getId());
+        assertEquals("PENDING_PAYMENT", response.getStatus());
+        assertEquals(1500000L, response.getMonthlyPrice());
+        assertEquals(1500000L, response.getDepositAmount());
+        assertEquals(4500000L, response.getTotalRentalFee());
+        assertEquals(6000000L, response.getTotalPayable());
+        assertTrue(response.getHoldExpiresAt().isAfter(OffsetDateTime.now().plusHours(47)));
+        assertTrue(response.getCode().startsWith("RSV-"));
+    }
+
+    @Test
+    @DisplayName("BR-RES-04: Hủy đơn đặt chỗ khi còn PENDING_PAYMENT thành công")
+    void cancelReservation_Success_WhenPendingPayment() {
+        Reservation r = new Reservation();
+        r.setId(1042L);
+        r.setCustomerId(15L);
+        r.setFacilityId(1L);
+        r.setUnitTypeId(7L);
+        r.setStatus(ReservationStatus.PENDING_PAYMENT);
+
+        when(reservationRepository.findById(1042L)).thenReturn(Optional.of(r));
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        CancelReservationRequest cancelReq = new CancelReservationRequest("Đổi sang kho khác");
+        ReservationResponse result = reservationService.cancelReservation(1042L, cancelReq, customerUser);
+
+        assertEquals("CANCELLED", result.getStatus());
+        assertEquals("Đổi sang kho khác", result.getCancelReason());
+        assertNotNull(result.getCancelledAt());
+    }
+
+    @Test
+    @DisplayName("BR-RES-04: Không thể hủy đơn khi đã CONFIRMED")
+    void cancelReservation_WhenNotPending_ShouldThrow() {
+        Reservation r = new Reservation();
+        r.setId(1042L);
+        r.setCustomerId(15L);
+        r.setFacilityId(1L);
+        r.setStatus(ReservationStatus.CONFIRMED);
+
+        when(reservationRepository.findById(1042L)).thenReturn(Optional.of(r));
+
+        CancelReservationRequest cancelReq = new CancelReservationRequest("Không muốn thuê nữa");
+        CustomException ex = assertThrows(CustomException.class, () ->
+                reservationService.cancelReservation(1042L, cancelReq, customerUser)
+        );
+        assertEquals(ErrorCode.INVALID_STATUS_TRANSITION, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("SA-03: Khách hàng chỉ xem được danh sách đơn đặt chỗ của chính mình")
+    void getReservations_CustomerRole_ShouldFilterByOwnId() {
+        Reservation r = new Reservation();
+        r.setId(1042L);
+        r.setCustomerId(15L);
+        r.setFacilityId(1L);
+        r.setUnitTypeId(7L);
+        r.setStatus(ReservationStatus.PENDING_PAYMENT);
+
+        Page<Reservation> page = new PageImpl<>(List.of(r));
+        when(reservationRepository.findWithFilters(eq(15L), any(), any(), any(), any(), any(Pageable.class)))
+                .thenReturn(page);
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(activeFacility));
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(activeUnitType));
+
+        ReservationFilterParams params = new ReservationFilterParams();
+        params.setPage(0);
+        params.setSize(10);
+
+        PageResponse<ReservationResponse> response = reservationService.getReservations(params, customerUser);
+
+        assertNotNull(response);
+        assertEquals(1, response.getContent().size());
+        assertEquals(15L, response.getContent().get(0).getCustomerId());
+    }
+}

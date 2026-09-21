@@ -66,4 +66,35 @@ public class UnitType {
         if (widthM == null || lengthM == null || heightM == null) return BigDecimal.ZERO;
         return widthM.multiply(lengthM).multiply(heightM).setScale(3, java.math.RoundingMode.HALF_UP);
     }
+
+    // Explicit Getters and Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getCode() { return code; }
+    public void setCode(String code) { this.code = code; }
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    public BigDecimal getWidthM() { return widthM; }
+    public void setWidthM(BigDecimal widthM) { this.widthM = widthM; }
+
+    public BigDecimal getLengthM() { return lengthM; }
+    public void setLengthM(BigDecimal lengthM) { this.lengthM = lengthM; }
+
+    public BigDecimal getHeightM() { return heightM; }
+    public void setHeightM(BigDecimal heightM) { this.heightM = heightM; }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+
+    public boolean isActive() { return isActive; }
+    public void setActive(boolean active) { isActive = active; }
+
+    public OffsetDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(OffsetDateTime createdAt) { this.createdAt = createdAt; }
+
+    public OffsetDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(OffsetDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

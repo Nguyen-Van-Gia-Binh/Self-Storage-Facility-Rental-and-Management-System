@@ -1,5 +1,6 @@
 package com.swp391.selfstorage.reservation.dto;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
@@ -28,7 +29,13 @@ public class ReservationResponse {
     private long totalPayable;
 
     private String status;
+    private Long customerId;
     private OffsetDateTime holdExpiresAt;
+    private Instant createdAt;
+    private OffsetDateTime confirmedAt;
+    private OffsetDateTime fulfilledAt;
+    private OffsetDateTime cancelledAt;
+    private String cancelReason;
     private String vietQrPayload;
     private String bankAccountNumber;
     private String bankName;
@@ -102,4 +109,22 @@ public class ReservationResponse {
 
     public String getTransferContent() { return transferContent; }
     public void setTransferContent(String transferContent) { this.transferContent = transferContent; }
+
+    public Long getCustomerId() { return customerId; }
+    public void setCustomerId(Long customerId) { this.customerId = customerId; }
+
+    public Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
+    public OffsetDateTime getConfirmedAt() { return confirmedAt; }
+    public void setConfirmedAt(OffsetDateTime confirmedAt) { this.confirmedAt = confirmedAt; }
+
+    public OffsetDateTime getFulfilledAt() { return fulfilledAt; }
+    public void setFulfilledAt(OffsetDateTime fulfilledAt) { this.fulfilledAt = fulfilledAt; }
+
+    public OffsetDateTime getCancelledAt() { return cancelledAt; }
+    public void setCancelledAt(OffsetDateTime cancelledAt) { this.cancelledAt = cancelledAt; }
+
+    public String getCancelReason() { return cancelReason; }
+    public void setCancelReason(String cancelReason) { this.cancelReason = cancelReason; }
 }
