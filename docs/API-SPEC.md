@@ -1003,6 +1003,82 @@ Khách hàng dời lịch hẹn Check-in trong thời hạn 10 ngày ân hạn �
 
 ---
 
+### `GET /api/v1/customers/me/rentals`
+
+Danh sách ô kho đang thuê của khách hàng (My Rentals Dashboard) — `SC-05`, `US-SC-05.1`, `Task T4.1`.
+
+**Auth:** `CUSTOMER` (`STORAGE_CUSTOMER`)  
+**Query params:**
+- `status`: Lọc theo trạng thái (`ACTIVE`, `OVERDUE`, `HISTORY`, `ALL` - mặc định `ALL`)
+- `page`: Số trang (0-indexed, mặc định 0)
+- `size`: Số phần tử/trang (mặc định 10)
+- `sort`: Tiêu chí sắp xếp (mặc định `id,desc`)
+
+**Response `200`:** Danh sách phân trang `PageResponse<CustomerRentalSummaryResponse>`.
+```json
+{
+  "status": 200,
+  "message": "Lấy danh sách ô kho đang thuê thành công",
+  "data": {
+    "content": [
+      {
+        "contractId": 501,
+        "contractCode": "CTR-202610-001",
+        "reservationId": 1042,
+        "reservationCode": "RSV-2026-001042",
+        "facilityId": 1,
+        "facilityName": "Kho Tự Quản Tân Thuận",
+        "facilityAddress": "123 Nguyễn Thị Thập, Quận 7",
+        "facilityPhone": "0281234567",
+        "storageUnitId": 42,
+        "storageUnitCode": "S-101",
+        "floor": 1,
+        "position": "Dãy A",
+        "unitTypeId": 7,
+        "unitTypeName": "Loại S — 3m²",
+        "unitDimensions": "1.5m x 2.0m x 2.5m",
+        "startDate": "2026-08-01",
+        "endDateExclusive": "2026-11-01",
+        "rentalMonths": 3,
+        "monthlyPrice": 800000,
+        "depositAmount": 800000,
+        "depositBalance": 800000,
+        "status": "ACTIVE",
+        "nearExpiration": false,
+        "daysRemaining": 41,
+        "accessCode": "482019",
+        "accessCodeLocked": false,
+        "overdueDays": 0,
+        "overdueFeeAccrued": 0,
+        "totalOutstandingDebt": 0
+      }
+    ],
+    "page": 0,
+    "size": 10,
+    "totalElements": 1,
+    "totalPages": 1
+  }
+}
+```
+
+---
+
+### `GET /api/v1/customers/me/rentals/{id}`
+
+Chi tiết một hợp đồng ô kho cụ thể của khách hàng — `SC-05`, `US-SC-05.2`, `Task T4.1`.
+
+**Auth:** `CUSTOMER` (chính chủ hợp đồng, kiểm tra `customerId == currentUser.getId()`)  
+**Response `200`:** `CustomerRentalDetailResponse`.
+
+**Errors:**
+| Status | errorCode | Điều kiện |
+|--------|-----------|-----------|
+| `401` | `UNAUTHORIZED` | Chưa xác thực |
+| `403` | `ACCESS_DENIED` | Hợp đồng không thuộc về khách hàng hiện tại |
+| `404` | `CONTRACT_NOT_FOUND` | Hợp đồng không tồn tại |
+
+---
+
 ## 8. Module Contract — Hợp đồng thuê
 
 **Package:** `com.swp391.selfstorage.contract`  

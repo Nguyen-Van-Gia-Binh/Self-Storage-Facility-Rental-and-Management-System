@@ -2,6 +2,8 @@ package com.swp391.selfstorage.contract.repository;
 
 import com.swp391.selfstorage.contract.entity.ContractStatus;
 import com.swp391.selfstorage.contract.entity.RentalContract;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
@@ -16,4 +18,9 @@ public interface RentalContractRepository extends JpaRepository<RentalContract, 
     List<RentalContract> findByFacilityId(Long facilityId);
     boolean existsByAccessCode(String accessCode);
     boolean existsByCustomerIdAndStatus(Long customerId, ContractStatus status);
+
+    Page<RentalContract> findByCustomerId(Long customerId, Pageable pageable);
+    Page<RentalContract> findByCustomerIdAndStatus(Long customerId, ContractStatus status, Pageable pageable);
+    Page<RentalContract> findByCustomerIdAndStatusIn(Long customerId, List<ContractStatus> statuses, Pageable pageable);
+    Optional<RentalContract> findByIdAndCustomerId(Long id, Long customerId);
 }
