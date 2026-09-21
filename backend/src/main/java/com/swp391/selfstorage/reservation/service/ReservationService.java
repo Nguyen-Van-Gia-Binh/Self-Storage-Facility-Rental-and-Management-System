@@ -24,6 +24,11 @@ public interface ReservationService {
     ReservationResponse createReservation(CreateReservationRequest request, UserPrincipal currentUser);
 
     /**
+     * Tạo đơn đặt chỗ mới với người dùng mặc định (không qua JWT).
+     */
+    ReservationResponse createReservation(CreateReservationRequest request);
+
+    /**
      * Lấy danh sách đặt chỗ phân trang có lọc theo vai trò và cơ sở (SA-03).
      */
     PageResponse<ReservationResponse> getReservations(ReservationFilterParams params, UserPrincipal currentUser);

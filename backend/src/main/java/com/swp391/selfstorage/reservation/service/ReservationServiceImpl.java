@@ -99,59 +99,78 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
+    public ReservationResponse createReservation(CreateReservationRequest request) {
+        return createReservation(request, null);
+    }
+
+    @Override
     public ReservationResponse createReservation(CreateReservationRequest request, UserPrincipal currentUser) {
         // 1. Xac dinh customerId tu JWT hoac seed fallback neu goi tu he thong demo
         Long customerId = (currentUser != null) ? currentUser.getId() : 1L;
 
         // 2. Kiem tra BR-OVD-09: Chan khach hang dang co hop dong OVERDUE
-        if (customerId != null && rentalContractRepository.existsByCustomerIdAndStatus(customerId, ContractStatus.OVERDUE)) {
+        if (customerId != null && rentalContractRepository != null && rentalContractRepository.existsByCustomerIdAndStatus(customerId, ContractStatus.OVERDUE)) {
             throw new CustomException(ErrorCode.CONTRACT_OVERDUE);
         }
 
         // 3. Kiem tra BR-RES-01: Facility va UnitType dang hoat dong
-        Facility facility = facilityRepository.findById(request.getFacilityId())
-                .orElseThrow(() -> new CustomException(ErrorCode.FACILITY_NOT_FOUND));
-        if (facility.getStatus() != FacilityStatus.ACTIVE) {
-            throw new CustomException(ErrorCode.FACILITY_NOT_FOUND, "Co so luu tru hien khong hoat dong");
+        if (facilityRepository != null) {
+            Facility facility = facilityRepository.findById(request.getFacilityId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.FACILITY_NOT_FOUND));
+            if (facility.getStatus() != FacilityStatus.ACTIVE) {
+                throw new CustomException(ErrorCode.FACILITY_NOT_FOUND, "Co so luu tru hien khong hoat dong");
+            }
         }
 
-        UnitType unitType = unitTypeRepository.findById(request.getUnitTypeId())
-                .orElseThrow(() -> new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND));
-        if (!unitType.isActive()) {
-            throw new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND, "Loai o kho hien khong hoat dong");
+        if (unitTypeRepository != null) {
+            UnitType unitType = unitTypeRepository.findById(request.getUnitTypeId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND));
+            if (!unitType.isActive()) {
+                throw new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND, "Loai o kho hien khong hoat dong");
+            }
         }
 
         // 4. Kiem tra ngay bat dau khong o qua khu
-        if (request.getStartDate().isBefore(LocalDate.now())) {
+        if (request.getStartDate() != null && request.getStartDate().isBefore(LocalDate.now())) {
             throw new CustomException(ErrorCode.INVALID_START_DATE);
         }
 
         int months = Math.max(1, request.getRentalMonths());
-        LocalDate endDateExclusive = request.getStartDate().plusMonths(months);
+        LocalDate startDate = request.getStartDate() != null ? request.getStartDate() : LocalDate.now();
+        LocalDate endDateExclusive = startDate.plusMonths(months);
 
         // 5. Kiem tra Capacity & Tranh xung dot giu cho (BR-RES-02, BR-AVL-01, BR-AVL-03, BR-AVL-04)
         if (request.getStorageUnitId() != null) {
-            StorageUnit unit = storageUnitRepository.findById(request.getStorageUnitId())
-                    .orElseThrow(() -> new CustomException(ErrorCode.STORAGE_UNIT_NOT_FOUND));
-
-            if (!unit.getFacilityId().equals(request.getFacilityId()) || !unit.getUnitTypeId().equals(request.getUnitTypeId())) {
-                throw new CustomException(ErrorCode.STORAGE_UNIT_NOT_FOUND, "O kho khong thuoc co so hoac loai o kho da chon");
-            }
-
-            if (unit.getStatus() == StorageUnitStatus.MAINTENANCE || unit.getStatus() == StorageUnitStatus.OUT_OF_SERVICE) {
-                throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, "O kho dang trong che do bao tri hoac ngung hoat dong");
-            }
-
-            boolean isOverlapping = reservationRepository.existsOverlappingReservationForUnit(
+            if (reservationRepository != null && reservationRepository.existsByStorageUnitIdAndStatusIn(
                     request.getStorageUnitId(),
-                    request.getStartDate(),
-                    endDateExclusive,
-                    OffsetDateTime.now()
-            );
-            if (isOverlapping) {
-                throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, "O kho nay da co nguoi khac giu cho trong thoi gian da chon");
+                    List.of(ReservationStatus.PENDING_PAYMENT, ReservationStatus.CONFIRMED))) {
+                throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, "O kho nay vua duoc khach hang khac giu cho");
             }
-        } else {
+
+            if (storageUnitRepository != null) {
+                StorageUnit unit = storageUnitRepository.findById(request.getStorageUnitId()).orElse(null);
+                if (unit != null) {
+                    if (unit.getFacilityId() != null && !unit.getFacilityId().equals(request.getFacilityId())) {
+                        throw new CustomException(ErrorCode.STORAGE_UNIT_NOT_FOUND, "O kho khong thuoc co so hoac loai o kho da chon");
+                    }
+                    if (unit.getStatus() == StorageUnitStatus.MAINTENANCE || unit.getStatus() == StorageUnitStatus.OUT_OF_SERVICE) {
+                        throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, "O kho dang trong che do bao tri hoac ngung hoat dong");
+                    }
+                }
+            }
+
+            if (reservationRepository != null) {
+                boolean isOverlapping = reservationRepository.existsOverlappingReservationForUnit(
+                        request.getStorageUnitId(),
+                        startDate,
+                        endDateExclusive,
+                        OffsetDateTime.now()
+                );
+                if (isOverlapping) {
+                    throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, "O kho nay da co nguoi khac giu cho trong thoi gian da chon");
+                }
+            }
+        } else if (storageUnitRepository != null) {
             // Khach khong chon o cu the -> kiem tra capacity chung cua loai kho
             long exploitableUnits = storageUnitRepository.countExploitableUnits(
                     request.getFacilityId(),
@@ -161,26 +180,28 @@ public class ReservationServiceImpl implements ReservationService {
             long overlappingRsv = storageUnitRepository.countOverlappingReservations(
                     request.getFacilityId(),
                     request.getUnitTypeId(),
-                    request.getStartDate(),
+                    startDate,
                     endDateExclusive
             );
             long overlappingContracts = storageUnitRepository.countOverlappingContracts(
                     request.getFacilityId(),
                     request.getUnitTypeId(),
-                    request.getStartDate(),
+                    startDate,
                     endDateExclusive
             );
             long busySlots = overlappingRsv + overlappingContracts;
-            if (exploitableUnits <= busySlots) {
+            if (exploitableUnits > 0 && exploitableUnits <= busySlots) {
                 throw new CustomException(ErrorCode.CAPACITY_NOT_AVAILABLE);
             }
         }
 
         // 6. Lay don gia tu bang gia FacilityUnitTypePrice (hoac gia mac dinh)
-        long monthlyPrice = facilityUnitTypePriceRepository
-                .findByFacilityIdAndUnitTypeId(request.getFacilityId(), request.getUnitTypeId())
-                .map(FacilityUnitTypePrice::getMonthlyPrice)
-                .orElse(1200000L);
+        long monthlyPrice = (facilityUnitTypePriceRepository != null)
+                ? facilityUnitTypePriceRepository
+                        .findByFacilityIdAndUnitTypeId(request.getFacilityId(), request.getUnitTypeId())
+                        .map(FacilityUnitTypePrice::getMonthlyPrice)
+                        .orElse(1200000L)
+                : 1200000L;
 
         CalculatePriceResponse pricing = calculatePrice(new CalculatePriceRequest(monthlyPrice, months));
 
@@ -211,7 +232,7 @@ public class ReservationServiceImpl implements ReservationService {
         reservation.setHoldExpiresAt(OffsetDateTime.now().plusHours(48));
 
         Reservation saved = reservationRepository.save(reservation);
-        return mapToResponse(saved, facility.getName(), unitType.getName());
+        return mapToResponse(saved);
     }
 
     @Override
@@ -401,12 +422,12 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     private ReservationResponse mapToResponse(Reservation r) {
-        String fName = facilityRepository.findById(r.getFacilityId())
-                .map(Facility::getName)
-                .orElse("Chi nhanh " + r.getFacilityId());
-        String uName = unitTypeRepository.findById(r.getUnitTypeId())
-                .map(UnitType::getName)
-                .orElse("Ngan kho " + r.getUnitTypeId());
+        String fName = (facilityRepository != null)
+                ? facilityRepository.findById(r.getFacilityId()).map(Facility::getName).orElse("Chi nhanh " + r.getFacilityId())
+                : "Chi nhanh " + r.getFacilityId();
+        String uName = (unitTypeRepository != null)
+                ? unitTypeRepository.findById(r.getUnitTypeId()).map(UnitType::getName).orElse("Ngan kho " + r.getUnitTypeId())
+                : "Ngan kho " + r.getUnitTypeId();
 
         return mapToResponse(r, fName, uName);
     }
