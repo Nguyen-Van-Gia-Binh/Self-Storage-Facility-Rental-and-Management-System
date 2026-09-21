@@ -1,0 +1,431 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { Button } from '@/components/ui/Button';
+import {
+  QrCode,
+  CreditCard,
+  Clock,
+  Copy,
+  Check,
+  Building2,
+  ShieldCheck,
+  ExternalLink,
+  RefreshCw,
+  X,
+  Sparkles,
+} from 'lucide-react';
+import { formatVND } from '../utils/pricing';
+import { verifyPayment, generateMoveInPass } from '@/api/payment';
+import type { MoveInPassData } from '@/types';
+
+export interface VietQRPaymentModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onPaymentSuccess: (passData: MoveInPassData) => void;
+  unitNumber: string;
+  facilityName: string;
+  facilityAddress: string;
+  facilityPhone: string;
+  rentalMonths: number;
+  monthlyPrice: number;
+  rentalFee: number;
+  depositAmount: number;
+  totalAmount: number;
+  customerName: string;
+  customerPhone: string;
+  customerIdCard: string;
+  startDate: string;
+}
+
+export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
+  isOpen,
+  onClose,
+  onPaymentSuccess,
+  unitNumber,
+  facilityName,
+  facilityAddress,
+  facilityPhone,
+  rentalMonths,
+  monthlyPrice,
+  rentalFee,
+  depositAmount,
+  totalAmount,
+  customerName,
+  customerPhone,
+  customerIdCard,
+  startDate,
+}) => {
+  const [selectedMethod, setSelectedMethod] = useState<'VIETQR' | 'CARD'>('VIETQR');
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+
+  // 48 giờ tính bằng giây: 48 * 3600 = 172800s (BR-DEP-03)
+  const [secondsRemaining, setSecondsRemaining] = useState(172800);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const interval = setInterval(() => {
+      setSecondsRemaining((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isOpen]);
+
+  const formatCountdown = (totalSecs: number) => {
+    const hrs = Math.floor(totalSecs / 3600);
+    const mins = Math.floor((totalSecs % 3600) / 60);
+    const secs = totalSecs % 60;
+    return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
+
+  // 4 số cuối CCCD để làm cú pháp memo đối chiếu
+  const idLast4 = useMemo(() => {
+    const clean = customerIdCard ? customerIdCard.replace(/\D/g, '') : '8888';
+    return clean.slice(-4) || '8888';
+  }, [customerIdCard]);
+
+  // Cú pháp nội dung chuyển khoản bắt buộc
+  const transferMemo = `SMARTSTORAGE ${unitNumber} ${idLast4}`;
+  const bankAccount = '999988887777';
+  const bankName = 'MB Bank (Ngân hàng Quân Đội)';
+  const accountHolder = 'CONG TY CP SMARTSTORAGE VIETNAM';
+
+  // URL sinh VietQR Napas247 chuẩn
+  const vietQrUrl = `https://api.vietqr.io/image/970422-${bankAccount}-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent(
+    transferMemo
+  )}&accountName=${encodeURIComponent(accountHolder)}`;
+
+  const handleCopy = (text: string, fieldName: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(fieldName);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+      setIsClosing(false);
+    }, 180);
+  };
+
+  const handleConfirmPaid = async () => {
+    setIsVerifying(true);
+    try {
+      // Giả lập đối soát Napas247
+      await verifyPayment(`PAY-${unitNumber}-${Date.now()}`);
+
+      // Sinh thẻ nhận kho điện tử Move-in Pass
+      const pass = generateMoveInPass({
+        reservationId: `RES-${Date.now()}`,
+        unitNumber,
+        facilityId: 'FAC-D7-01',
+        facilityName,
+        facilityAddress,
+        facilityPhone,
+        customerName: customerName || 'Quý khách hàng',
+        customerPhone: customerPhone || '0901234567',
+        customerIdentity: customerIdCard || '079199001234',
+        startDate: startDate || new Date().toISOString().split('T')[0],
+        checkInWindow: 'Trong vòng 48 giờ kể từ lúc cọc',
+        totalPaid: totalAmount,
+      });
+
+      setIsVerifying(false);
+      handleClose();
+      onPaymentSuccess(pass);
+    } catch (err) {
+      console.error('Lỗi đối soát thanh toán:', err);
+      setIsVerifying(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto ${
+        isClosing ? 'modal-backdrop-exit' : 'modal-backdrop-enter'
+      }`}
+      onClick={handleClose}
+    >
+      <div
+        className={`bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden relative my-auto ${
+          isClosing ? 'modal-panel-exit' : 'modal-panel-enter'
+        }`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header Modal */}
+        <div className="bg-gradient-to-r from-[#0d6050] to-[#14937a] p-5 text-white relative">
+          <button
+            type="button"
+            onClick={handleClose}
+            className="absolute top-4 right-4 text-white/80 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+            title="Đóng"
+          >
+            <X className="w-5 h-5" />
+          </button>
+
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-white/20 backdrop-blur-xs px-2.5 py-0.5 rounded-full uppercase tracking-wider text-emerald-100">
+              <Sparkles className="w-3 h-3 text-amber-300" />
+              Cổng Thanh Toán Trực Tuyến 24/7
+            </span>
+            <span className="text-[11px] text-white/80">• SC-03</span>
+          </div>
+
+          <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
+            Thanh Toán Giữ Chỗ Ô Kho {unitNumber}
+          </h2>
+          <p className="text-xs text-emerald-100/90 mt-0.5">{facilityName}</p>
+        </div>
+
+        <div className="p-5 sm:p-6 space-y-5 max-h-[82vh] overflow-y-auto">
+          {/* 48-Hour Reservation Hold Countdown (BR-DEP-03) */}
+          <div className="bg-amber-50 border border-amber-200/80 rounded-xl p-3.5 flex items-center justify-between gap-3 text-amber-900">
+            <div className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-amber-600 flex-shrink-0 animate-pulse" />
+              <div>
+                <span className="text-xs font-bold block">Thời gian giữ chỗ nguyên tử (BR-DEP-03)</span>
+                <span className="text-[11px] text-amber-700">Ô kho được khoá ưu tiên cho bạn trong 48 giờ</span>
+              </div>
+            </div>
+            <div className="text-right">
+              <span className="font-mono text-base font-extrabold text-amber-800 tracking-wider">
+                {formatCountdown(secondsRemaining)}
+              </span>
+              <span className="text-[10px] text-amber-600 block">Đang đếm ngược</span>
+            </div>
+          </div>
+
+          {/* Payment Method Selector */}
+          <div>
+            <label className="text-xs font-bold text-slate-700 block mb-2 uppercase tracking-wider">
+              Chọn phương thức thanh toán
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setSelectedMethod('VIETQR')}
+                className={`p-3 rounded-xl border-2 flex items-center gap-2.5 transition-all text-left cursor-pointer ${
+                  selectedMethod === 'VIETQR'
+                    ? 'border-brand-600 bg-brand-50/50 text-brand-900 shadow-xs'
+                    : 'border-slate-200 hover:border-slate-300 text-slate-600'
+                }`}
+              >
+                <div className="w-9 h-9 rounded-lg bg-emerald-600 text-white flex items-center justify-center flex-shrink-0">
+                  <QrCode className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-xs font-extrabold flex items-center gap-1">
+                    VietQR Napas247
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1 rounded">0đ phí</span>
+                  </div>
+                  <div className="text-[11px] text-slate-500">Quét mã ngân hàng</div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedMethod('CARD')}
+                className={`p-3 rounded-xl border-2 flex items-center gap-2.5 transition-all text-left cursor-pointer ${
+                  selectedMethod === 'CARD'
+                    ? 'border-brand-600 bg-brand-50/50 text-brand-900 shadow-xs'
+                    : 'border-slate-200 hover:border-slate-300 text-slate-600'
+                }`}
+              >
+                <div className="w-9 h-9 rounded-lg bg-slate-700 text-white flex items-center justify-center flex-shrink-0">
+                  <CreditCard className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-xs font-extrabold">Thẻ ATM / Quốc tế</div>
+                  <div className="text-[11px] text-slate-500">Visa, Mastercard, JCB</div>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* VietQR View */}
+          {selectedMethod === 'VIETQR' ? (
+            <div className="space-y-4">
+              {/* QR Image + Bank Transfer Info Box */}
+              <div className="bg-slate-50/90 border border-slate-200/90 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center gap-5">
+                {/* QR Code Container */}
+                <div className="flex flex-col items-center flex-shrink-0">
+                  <div className="p-2 bg-white rounded-xl border border-slate-200 shadow-xs relative group">
+                    <img
+                      src={vietQrUrl}
+                      alt="VietQR Napas247"
+                      className="w-44 h-44 object-contain rounded-lg"
+                    />
+                    <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 rounded-lg transition-opacity flex items-center justify-center pointer-events-none">
+                      <span className="text-[10px] font-bold bg-white text-slate-700 px-2 py-0.5 rounded shadow">
+                        Napas247
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-[11px] text-slate-500 font-medium mt-2 flex items-center gap-1">
+                    <QrCode className="w-3.5 h-3.5 text-brand-600" />
+                    Quét bằng app ngân hàng
+                  </span>
+                </div>
+
+                {/* Transfer Info Details */}
+                <div className="w-full space-y-2.5 text-xs">
+                  <div>
+                    <span className="text-[11px] text-slate-400 block uppercase font-medium">Ngân hàng thụ hưởng</span>
+                    <span className="font-bold text-slate-800 flex items-center gap-1">
+                      <Building2 className="w-3.5 h-3.5 text-brand-600" />
+                      {bankName}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-200">
+                    <div>
+                      <span className="text-[10px] text-slate-400 block">Số tài khoản</span>
+                      <span className="font-mono text-sm font-black text-slate-900 tracking-wider">
+                        {bankAccount}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(bankAccount, 'account')}
+                      className="inline-flex items-center gap-1 text-[11px] text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 px-2 py-1 rounded font-semibold transition-colors cursor-pointer"
+                    >
+                      {copiedField === 'account' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                      <span>{copiedField === 'account' ? 'Đã chép' : 'Chép'}</span>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-200">
+                    <div>
+                      <span className="text-[10px] text-slate-400 block">Chủ tài khoản</span>
+                      <span className="text-xs font-bold text-slate-800 uppercase">{accountHolder}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-200">
+                    <div>
+                      <span className="text-[10px] text-slate-400 block">Số tiền thanh toán</span>
+                      <span className="font-mono text-sm font-black text-emerald-700">
+                        {formatVND(totalAmount)}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(String(totalAmount), 'amount')}
+                      className="inline-flex items-center gap-1 text-[11px] text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 px-2 py-1 rounded font-semibold transition-colors cursor-pointer"
+                    >
+                      {copiedField === 'amount' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                      <span>{copiedField === 'amount' ? 'Đã chép' : 'Chép'}</span>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between bg-emerald-50/70 p-2 rounded-lg border border-emerald-200">
+                    <div>
+                      <span className="text-[10px] text-emerald-800 block font-semibold">Nội dung chuyển khoản (bắt buộc)</span>
+                      <span className="font-mono text-xs font-black text-emerald-900 tracking-wider">
+                        {transferMemo}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(transferMemo, 'memo')}
+                      className="inline-flex items-center gap-1 text-[11px] text-emerald-800 bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 px-2 py-1 rounded font-bold transition-colors cursor-pointer"
+                    >
+                      {copiedField === 'memo' ? <Check className="w-3 h-3 text-emerald-700" /> : <Copy className="w-3 h-3" />}
+                      <span>{copiedField === 'memo' ? 'Đã chép' : 'Chép'}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center space-y-3">
+              <CreditCard className="w-10 h-10 text-slate-400 mx-auto" />
+              <div className="space-y-1">
+                <h4 className="text-sm font-bold text-slate-800">Cổng thanh toán thẻ VNPay / OnePay</h4>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  Bạn sẽ được chuyển hướng sang cổng thanh toán liên kết ngân hàng để nhập thông tin thẻ nội địa NAPAS hoặc thẻ quốc tế.
+                </p>
+              </div>
+              <Button variant="outline" size="sm" className="cursor-pointer text-xs font-semibold">
+                <span>Chuyển tới cổng thanh toán thẻ</span>
+                <ExternalLink className="w-3.5 h-3.5 ml-1.5" />
+              </Button>
+            </div>
+          )}
+
+          {/* Financial Breakdown Table: BR-DEP-02 & BR-PAY-01 */}
+          <div className="bg-white border border-slate-200/90 rounded-xl p-4 space-y-2.5 text-xs">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 font-bold text-slate-800">
+              <span>Bảng kê chi tiết nộp cọc (BR-PAY-01)</span>
+              <span className="text-[11px] text-brand-600 font-normal">Tách bạch theo quy định</span>
+            </div>
+
+            <div className="flex justify-between text-slate-600">
+              <span>Tiền thuê kho ({rentalMonths} tháng x {formatVND(monthlyPrice)}):</span>
+              <span className="font-semibold text-slate-800">{formatVND(rentalFee)}</span>
+            </div>
+
+            <div className="flex justify-between text-slate-600">
+              <div>
+                <span className="block">Tiền cọc bảo đảm (1 tháng - BR-DEP-01):</span>
+                <span className="text-[10px] text-slate-400 italic">
+                  Được hoàn lại 100% khi thanh lý hợp đồng đúng hạn
+                </span>
+              </div>
+              <span className="font-semibold text-slate-800">{formatVND(depositAmount)}</span>
+            </div>
+
+            <div className="pt-2 border-t border-slate-200 flex justify-between items-center text-sm">
+              <span className="font-bold text-[#0a1614]">Tổng thanh toán ban đầu:</span>
+              <span className="font-extrabold text-base text-brand-600">{formatVND(totalAmount)}</span>
+            </div>
+          </div>
+
+          {/* Security Notice: BR-ACC-01 */}
+          <div className="flex items-start gap-2 text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+            <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+            <span>
+              Hệ thống sẽ đối soát tự động trong 10-30 giây và cấp ngay <strong>Thẻ nhận kho điện tử (Move-in Pass)</strong>.
+              Mã PIN mở khóa sẽ được kích hoạt tại quầy lễ tân (BR-ACC-01).
+            </span>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
+            <Button
+              variant="outline"
+              size="md"
+              onClick={handleClose}
+              disabled={isVerifying}
+              className="w-full sm:w-1/3 py-2.5 text-xs font-semibold cursor-pointer"
+            >
+              Đóng
+            </Button>
+
+            <Button
+              variant="primary"
+              size="md"
+              onClick={handleConfirmPaid}
+              disabled={isVerifying}
+              className="w-full sm:w-2/3 py-2.5 text-xs font-bold flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+            >
+              {isVerifying ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>Đang đối soát giao dịch...</span>
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4" />
+                  <span>Tôi đã chuyển khoản thành công</span>
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
