@@ -124,7 +124,7 @@ Khách hàng & Đặt chỗ        Cơ sở, Kho & Vận hành      Tài chính 
 | ----- | :---: | -------------------------------------------------------------------------------------- | :-----------------: | :---: |
 | T2.1  |  WS2  | Tạo schema CSDL và Flyway migration V1 (từ `database/Storage_Self.sql`)            |        Bình        | 28/09 |
 | T2.2  |  WS3  | Tạo seed data mẫu chuẩn hóa (đầy đủ 5 roles, 2 cơ sở, 20 ô kho)             |        Nhật        | 05/10 |
-| T2.3  |  WS4  | Auth: Đăng ký, đăng nhập JWT, Spring Security & Password Encoder                 |        Nhật        | 28/09 |
+| T2.3  |  WS4  | Auth: Đăng ký, đăng nhập JWT, Spring Security & Password Encoder                 |        Tùng        | 28/09 |
 | T2.4  |  WS4  | API quản lý tài khoản người dùng (`SA-01`)                                    |        Tùng        | 05/10 |
 | T2.5  |  WS4  | API gán vai trò cho người dùng (`SA-02`)                                        |        Tùng        | 05/10 |
 | T2.6  |  WS4  | Phân quyền truy cập dữ liệu theo vai trò và cơ sở (`SA-03`)                 |        Tùng        | 05/10 |
