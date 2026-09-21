@@ -127,10 +127,8 @@ export const FacilityDetailPage: React.FC = () => {
                   unitType={ut}
                   facilityId={id}
                   onBook={(unitTypeId) => {
-                    // Phase 2: scroll + toggle AvailabilityChecker (booking thật là WS1 Phase 3)
-                    const btn = document.getElementById(`btn-toggle-checker-${unitTypeId}`);
-                    btn?.click();
-                    btn?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    const facParam = id === 1 ? 'FAC-D7-01' : id === 2 ? 'FAC-D7-02' : id === 3 ? 'FAC-D7-03' : String(id);
+                    navigate(`/customer/units?facility=${facParam}&type=${unitTypeId}`);
                   }}
                 />
               ))}

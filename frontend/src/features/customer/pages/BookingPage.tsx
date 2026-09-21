@@ -13,27 +13,51 @@ import {
   Clock, 
   Copy, 
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  AlertCircle,
+  MapPin,
+  FileText
 } from 'lucide-react';
-import { mockFacilities, mockUnitTypes } from '../mockData';
+import { mockFacilities, mockUnitTypes, mockStorageUnits } from '../mockData';
 import { calculateBookingTotal, formatVND } from '../utils/pricing';
 import { BookingPriceSummary } from '../components/BookingPriceSummary';
+import type { BookingDraft } from '../types';
 
 export const BookingPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const facilityId = searchParams.get('facility') || 'FAC-D7-01';
-  const typeId = searchParams.get('type') || 'UT-S-STD';
-  const unitNumber = searchParams.get('unitNumber') || 'A102';
+  const facilityId = searchParams.get('facility') || 'FAC-D7-02';
+  const typeId = searchParams.get('type') || 'UT-M-STD';
+  const unitNumberParam = searchParams.get('unitNumber') || 'A102';
+  const unitIdParam = searchParams.get('unitId');
 
   const facility = useMemo(() => {
-    return mockFacilities.find(f => f.id === facilityId) || mockFacilities[0];
+    return mockFacilities.find((f) => f.id === facilityId) || mockFacilities[0];
   }, [facilityId]);
 
   const unitType = useMemo(() => {
-    return mockUnitTypes.find(t => t.id === typeId) || mockUnitTypes[0];
+    return mockUnitTypes.find((t) => t.id === typeId) || mockUnitTypes[0];
   }, [typeId]);
+
+  // Tra cứu chi tiết ô kho từ sơ đồ mặt bằng
+  const targetUnit = useMemo(() => {
+    if (unitIdParam) {
+      const found = mockStorageUnits.find((u) => u.id === unitIdParam);
+      if (found) return found;
+    }
+    const foundByNum = mockStorageUnits.find(
+      (u) => u.unitNumber === unitNumberParam && u.facilityId === facility.id
+    );
+    if (foundByNum) return foundByNum;
+
+    return (
+      mockStorageUnits.find((u) => u.facilityId === facility.id && u.status === 'AVAILABLE') || null
+    );
+  }, [unitIdParam, unitNumberParam, facility.id]);
+
+  const finalUnitNumber = targetUnit ? targetUnit.unitNumber : unitNumberParam;
+  const finalUnitId = targetUnit ? targetUnit.id : 'U-A102';
 
   // Form State
   const [durationMonths, setDurationMonths] = useState<number>(3);
@@ -45,6 +69,15 @@ export const BookingPage: React.FC = () => {
   const [customerEmail, setCustomerEmail] = useState('an.nguyen@example.com');
   const [customerIdCard, setCustomerIdCard] = useState('079098012345');
   const [agreeTerms, setAgreeTerms] = useState(true);
+
+  // Validation Errors
+  const [formErrors, setFormErrors] = useState<{
+    customerName?: string;
+    customerPhone?: string;
+    customerEmail?: string;
+    customerIdCard?: string;
+    agreeTerms?: string;
+  }>({});
 
   // Stepper & Success State
   const [currentStep, setCurrentStep] = useState<2 | 3>(2);
@@ -82,51 +115,119 @@ export const BookingPage: React.FC = () => {
     return calculateBookingTotal(unitType.baseMonthlyPrice, durationMonths);
   }, [unitType, durationMonths]);
 
+  const validateForm = (): boolean => {
+    const errors: {
+      customerName?: string;
+      customerPhone?: string;
+      customerEmail?: string;
+      customerIdCard?: string;
+      agreeTerms?: string;
+    } = {};
+
+    if (!customerName.trim()) {
+      errors.customerName = 'Vui lòng nhập họ và tên đầy đủ.';
+    }
+
+    const cleanPhone = customerPhone.replace(/\s+/g, '');
+    const phoneRegex = /^(03|05|07|08|09)\d{8}$/;
+    if (!phoneRegex.test(cleanPhone)) {
+      errors.customerPhone = 'Số điện thoại không hợp lệ (cần 10 số đầu 03, 05, 07, 08, 09).';
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(customerEmail.trim())) {
+      errors.customerEmail = 'Định dạng email không hợp lệ.';
+    }
+
+    const cleanId = customerIdCard.replace(/\s+/g, '');
+    if (cleanId.length < 9 || cleanId.length > 12 || !/^\d+$/.test(cleanId)) {
+      errors.customerIdCard = 'Số CCCD / Hộ chiếu phải gồm 9 đến 12 chữ số theo quy định BR-CHK-01.';
+    }
+
+    if (!agreeTerms) {
+      errors.agreeTerms = 'Bạn cần đồng ý với nội quy lưu trữ và điều khoản cọc để tiếp tục.';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleProceedToPayment = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customerName || !customerPhone || !customerIdCard) {
-      alert('Vui lòng điền đầy đủ Họ tên, Số điện thoại và CCCD');
+    if (!validateForm()) {
       return;
     }
-    if (customerIdCard.length < 9) {
-      alert('Số CCCD / Hộ chiếu phải có ít nhất 9-12 ký tự hợp lệ.');
-      return;
+
+    // Lưu thông tin đơn đặt chỗ tạm thời (Booking Draft) vào localStorage
+    const draft: BookingDraft = {
+      facilityId: facility.id,
+      facilityName: facility.name,
+      unitId: finalUnitId,
+      unitNumber: finalUnitNumber,
+      unitTypeId: unitType.id,
+      unitTypeName: unitType.name,
+      storageType: unitType.storageType,
+      areaM2: unitType.areaM2,
+      monthlyRent: unitType.baseMonthlyPrice,
+      durationMonths,
+      startDate,
+      endDate,
+      depositAmount: calculation.depositAmount,
+      totalUpfront: calculation.totalDueToday,
+      customerName,
+      customerPhone,
+      customerEmail,
+      customerIdentityNumber: customerIdCard,
+      holdExpiresAt: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
+    };
+
+    try {
+      localStorage.setItem('smartstorage_pending_booking', JSON.stringify(draft));
+    } catch {
+      // Bỏ qua nếu môi trường không cho phép truy cập localStorage
     }
+
     setCurrentStep(3);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const transferContent = `SMARTSTORAGE ${unitNumber} ${customerIdCard.slice(-4)}`;
+  const transferContent = `SMARTSTORAGE ${finalUnitNumber} ${customerIdCard.slice(-4)}`;
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedBankInfo(true);
-    setTimeout(() => setCopiedBankInfo(false), 2000);
+    setTimeout(() => setCopiedBankInfo(false), 2500);
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-5 space-y-6">
       {/* Top Stepper Breadcrumb */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-4">
         <div>
           <Link
-            to={`/customer/units?facility=${facility.id}`}
+            to={`/customer/units?facility=${facility.id}&type=${unitType.id}`}
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-brand-600 transition-colors mb-1.5"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            Quay lại chọn ngăn kho khác
+            Quay lại sơ đồ mặt bằng chọn ô khác
           </Link>
           <h1 className="text-xl sm:text-2xl font-extrabold text-[#0a1614] tracking-tight">
-            {currentStep === 2 ? 'Xác Nhận Đặt Chỗ & Thông Tin Thuê' : 'Thanh Toán Giữ Chỗ VietQR (48 Giờ)'}
+            {currentStep === 2 ? 'Xác Nhận Thời Hạn & Hồ Sơ Đặt Chỗ' : 'Thanh Toán Giữ Chỗ VietQR (48 Giờ)'}
           </h1>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Cơ sở: <MapPin className="w-3 h-3 text-brand-600 inline" /> {facility.name} — Ô kho số <strong>{finalUnitNumber}</strong>
+          </p>
         </div>
 
         {/* Stepper pills */}
         <div className="flex items-center gap-1.5 text-xs font-semibold shrink-0">
-          <div className="flex items-center gap-1.5 text-brand-600 bg-brand-50 px-2.5 py-1 rounded-full border border-brand-200">
+          <Link 
+            to={`/customer/units?facility=${facility.id}&type=${unitType.id}`}
+            className="flex items-center gap-1.5 text-brand-600 bg-brand-50 px-2.5 py-1 rounded-full border border-brand-200 hover:bg-brand-100"
+          >
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>1. Chọn loại kho</span>
-          </div>
+            <span>1. Chọn loại & Sơ đồ</span>
+          </Link>
           <span className="text-slate-300">/</span>
           <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-colors ${
             currentStep === 2 
@@ -151,21 +252,23 @@ export const BookingPage: React.FC = () => {
       </div>
 
       {currentStep === 2 ? (
-        /* STEP 2: DURATION & CUSTOMER FORM */
+        /* STEP 2: DURATION & CUSTOMER FORM (SCR-SC-02 & SCR-SC-02B) */
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           {/* Form Column (2/3) */}
           <form onSubmit={handleProceedToPayment} className="lg:col-span-2 space-y-5">
-            {/* Unit Selected Overview */}
-            <Card className="p-4 sm:p-5 bg-white border border-slate-200/90 rounded-xl">
+            {/* Unit Selected Overview from Floorplan */}
+            <Card className="p-4 sm:p-5 bg-white border border-slate-200/90 rounded-xl space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold text-[#7c94c3] uppercase tracking-wider bg-[#7c94c3]/12 px-2 py-0.5 rounded-full">
-                      Ngăn kho số {unitNumber}
+                    <span className="text-xs font-bold text-brand-700 uppercase tracking-wider bg-brand-50 px-2 py-0.5 rounded-full border border-brand-200 font-mono">
+                      Ngăn kho {finalUnitNumber}
                     </span>
-                    <Badge variant="available" className="text-[10px] px-1.5 py-0.5">Sẵn sàng nhận kho</Badge>
+                    <Badge variant="available" className="text-[10px] px-1.5 py-0.5">
+                      {targetUnit ? `Tầng ${targetUnit.floor} · ${targetUnit.zone}` : 'Sẵn sàng nhận kho'}
+                    </Badge>
                   </div>
-                  <h2 className="text-base sm:text-lg font-bold text-[#0a1614] mt-1">
+                  <h2 className="text-base sm:text-lg font-bold text-[#0a1614] mt-1.5">
                     {unitType.name}
                   </h2>
                   <p className="text-xs text-slate-500">
@@ -181,10 +284,21 @@ export const BookingPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Duration Options */}
-              <div className="pt-5 space-y-3">
+              {/* Quick switch button to Floorplan */}
+              <div className="flex items-center justify-between text-xs bg-slate-50 p-2.5 rounded-lg border border-slate-200/80">
+                <span className="text-slate-600">Bạn muốn đổi vị trí ô khác trên mặt bằng?</span>
+                <Link
+                  to={`/customer/units?facility=${facility.id}&type=${unitType.id}`}
+                  className="font-bold text-brand-600 hover:text-brand-700 hover:underline flex items-center gap-1"
+                >
+                  Mở sơ đồ mặt bằng <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+
+              {/* Duration Options (BR-GEN-03) */}
+              <div className="pt-2 space-y-2.5">
                 <label className="block text-sm font-semibold text-[#0a1614]">
-                  Chọn gói thời hạn thuê:
+                  Chọn gói thời hạn thuê (BR-GEN-03):
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
@@ -199,14 +313,14 @@ export const BookingPage: React.FC = () => {
                         key={pkg.months}
                         type="button"
                         onClick={() => setDurationMonths(pkg.months)}
-                        className={`p-3.5 rounded-xl border text-center relative transition-all ${
+                        className={`p-3 rounded-xl border text-center relative transition-all cursor-pointer ${
                           isSelected
                             ? 'border-brand-500 bg-brand-50/50 shadow-sm ring-2 ring-brand-500/20'
                             : 'border-slate-200 bg-white hover:border-slate-300'
                         }`}
                       >
                         {pkg.discountTag && (
-                          <span className={`absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${
+                          <span className={`absolute -top-2 left-1/2 -translate-x-1/2 text-[9px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap ${
                             pkg.months >= 6 
                               ? 'bg-[#7c94c3] text-white' 
                               : 'bg-brand-500 text-white'
@@ -233,7 +347,7 @@ export const BookingPage: React.FC = () => {
               </div>
 
               {/* Start Date Selection */}
-              <div className="pt-5 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="pt-3 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-brand-600" />
@@ -244,10 +358,11 @@ export const BookingPage: React.FC = () => {
                     min={todayStr}
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 text-slate-800"
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 text-slate-800 bg-white"
                     required
                   />
                 </div>
+
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     Ngày kết thúc dự kiến:
@@ -262,78 +377,137 @@ export const BookingPage: React.FC = () => {
               </div>
             </Card>
 
-            {/* Customer Identification (BR-CHK-01) */}
-            <Card className="p-4 sm:p-5 bg-white border border-slate-200/90 rounded-xl space-y-3.5">
+            {/* Customer Identification (SCR-SC-02B & BR-CHK-01) */}
+            <Card className="p-4 sm:p-5 bg-white border border-slate-200/90 rounded-xl space-y-4">
               <div className="border-b border-slate-100 pb-2.5">
                 <h3 className="text-sm sm:text-base font-bold text-[#0a1614] flex items-center gap-2">
                   <User className="w-4 h-4 text-brand-600" />
                   Thông tin khách hàng & Định danh nhận kho (BR-CHK-01)
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Thông tin CCCD dùng để đối chiếu khi nhân viên bàn giao chìa khóa thông minh tại cơ sở.
+                  Số CCCD/Hộ chiếu dùng để nhân viên đối chiếu và bàn giao chìa khóa thông minh tại cơ sở.
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <Input
-                  label="Họ và tên đầy đủ"
-                  placeholder="Ví dụ: Nguyễn Văn An"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  required
-                />
-                <Input
-                  label="Số điện thoại di động"
-                  placeholder="Ví dụ: 0912 345 678"
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                  required
-                />
+                <div>
+                  <Input
+                    label="Họ và tên đầy đủ"
+                    placeholder="Ví dụ: Nguyễn Văn An"
+                    value={customerName}
+                    onChange={(e) => {
+                      setCustomerName(e.target.value);
+                      if (formErrors.customerName) setFormErrors({ ...formErrors, customerName: undefined });
+                    }}
+                    required
+                  />
+                  {formErrors.customerName && (
+                    <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" /> {formErrors.customerName}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <Input
+                    label="Số điện thoại di động"
+                    placeholder="Ví dụ: 0912 345 678"
+                    value={customerPhone}
+                    onChange={(e) => {
+                      setCustomerPhone(e.target.value);
+                      if (formErrors.customerPhone) setFormErrors({ ...formErrors, customerPhone: undefined });
+                    }}
+                    required
+                  />
+                  {formErrors.customerPhone && (
+                    <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" /> {formErrors.customerPhone}
+                    </p>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <Input
-                  label="Địa chỉ Email"
-                  type="email"
-                  placeholder="an.nguyen@example.com"
-                  helperText="Dùng để nhận hợp đồng điện tử và biên nhận thanh toán"
-                  value={customerEmail}
-                  onChange={(e) => setCustomerEmail(e.target.value)}
-                  required
-                />
-                <Input
-                  label="Số Căn cước công dân / Hộ chiếu (12 số)"
-                  placeholder="079098012345"
-                  helperText="Bắt buộc theo BR-CHK-01 để cấp quyền ra vào"
-                  value={customerIdCard}
-                  onChange={(e) => setCustomerIdCard(e.target.value)}
-                  required
-                />
+                <div>
+                  <Input
+                    label="Địa chỉ Email"
+                    type="email"
+                    placeholder="an.nguyen@example.com"
+                    helperText="Dùng để nhận hợp đồng điện tử và biên nhận thanh toán"
+                    value={customerEmail}
+                    onChange={(e) => {
+                      setCustomerEmail(e.target.value);
+                      if (formErrors.customerEmail) setFormErrors({ ...formErrors, customerEmail: undefined });
+                    }}
+                    required
+                  />
+                  {formErrors.customerEmail && (
+                    <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" /> {formErrors.customerEmail}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <Input
+                    label="Số Căn cước công dân / Hộ chiếu (9-12 số)"
+                    placeholder="079098012345"
+                    helperText="Bắt buộc theo BR-CHK-01 để cấp quyền mở cửa"
+                    value={customerIdCard}
+                    onChange={(e) => {
+                      setCustomerIdCard(e.target.value);
+                      if (formErrors.customerIdCard) setFormErrors({ ...formErrors, customerIdCard: undefined });
+                    }}
+                    required
+                  />
+                  {formErrors.customerIdCard && (
+                    <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" /> {formErrors.customerIdCard}
+                    </p>
+                  )}
+                </div>
               </div>
 
-              <div className="pt-1">
-                <label className="flex items-start gap-2.5 cursor-pointer text-xs text-slate-600 select-none">
+              {/* Điều khoản & Quy tắc hủy/hoàn cọc */}
+              <div className="pt-2 border-t border-slate-100 space-y-2">
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200/80 text-[11px] text-slate-600 space-y-1">
+                  <p className="font-bold text-slate-800 flex items-center gap-1">
+                    <FileText className="w-3.5 h-3.5 text-brand-600" /> Quy định đặt chỗ & hoàn cọc:
+                  </p>
+                  <p>• <strong>BR-CAN-01</strong>: Khách được hủy đặt chỗ và hoàn cọc 100% nếu thông báo trước 24 giờ kể từ ngày bắt đầu thuê.</p>
+                  <p>• <strong>BR-RET-06</strong>: Khách trả kho trước hạn hợp đồng không được hoàn lại tiền thuê các tháng còn lại.</p>
+                </div>
+
+                <label className="flex items-start gap-2.5 cursor-pointer text-xs text-slate-700 select-none pt-1">
                   <input
                     type="checkbox"
                     checked={agreeTerms}
-                    onChange={(e) => setAgreeTerms(e.target.checked)}
-                    className="mt-0.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                    onChange={(e) => {
+                      setAgreeTerms(e.target.checked);
+                      if (formErrors.agreeTerms) setFormErrors({ ...formErrors, agreeTerms: undefined });
+                    }}
+                    className="mt-0.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500 w-3.5 h-3.5"
                     required
                   />
                   <span>
-                    Tôi đồng ý với <a href="#terms" className="text-brand-600 font-semibold underline">Nội quy lưu trữ kho SmartStorage</a> và cam kết không lưu trữ chất dễ cháy nổ, vũ khí hoặc hàng quốc cấm.
+                    Tôi cam kết thông tin CCCD là chính xác, đồng ý với các quy định lưu trữ an toàn PCCC và các điều khoản hoàn tiền nêu trên.
                   </span>
                 </label>
+                {formErrors.agreeTerms && (
+                  <p className="text-xs text-red-600 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" /> {formErrors.agreeTerms}
+                  </p>
+                )}
               </div>
             </Card>
 
-            {/* Submit Button */}
+            {/* Action Buttons */}
             <div className="flex items-center justify-end gap-3 pt-1">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => navigate(`/customer/units?facility=${facility.id}`)}
+                onClick={() => navigate(`/customer/units?facility=${facility.id}&type=${unitType.id}`)}
               >
                 Hủy bỏ
               </Button>
@@ -341,7 +515,7 @@ export const BookingPage: React.FC = () => {
                 type="submit"
                 variant="primary"
                 size="md"
-                className="px-5 py-2.5 flex items-center gap-2 text-xs sm:text-sm font-bold shadow-xs"
+                className="px-6 py-2.5 flex items-center gap-2 text-xs sm:text-sm font-bold shadow-xs"
               >
                 <span>Tiếp tục: Thanh toán VietQR & Giữ chỗ 48h</span>
                 <ArrowRight className="w-4 h-4" />
@@ -361,27 +535,27 @@ export const BookingPage: React.FC = () => {
           </div>
         </div>
       ) : (
-        /* STEP 3: VIETQR PAYMENT & 48H HOLD CONFIRMATION */
+        /* STEP 3: VIETQR PAYMENT & 48H HOLD CONFIRMATION (SCR-SC-03) */
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           <div className="lg:col-span-2 space-y-5">
             <Card className="p-4 sm:p-5 bg-white border border-slate-200/90 rounded-xl space-y-5">
               {/* Payment Header */}
-              <div className="flex items-start justify-between gap-4 pb-3 border-b border-slate-100">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-3 border-b border-slate-100">
                 <div>
-                  <div className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-xs font-semibold px-2.5 py-1 rounded-full mb-2">
+                  <div className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-xs font-semibold px-2.5 py-1 rounded-full mb-1.5">
                     <Sparkles className="w-3.5 h-3.5" />
-                    Đơn đặt chỗ đã được tạo thành công
+                    Đơn đặt chỗ ngăn kho {finalUnitNumber} đã tạo thành công
                   </div>
                   <h2 className="text-xl font-bold text-[#0a1614]">
                     Quét Mã VietQR Chuyển Khoản Nhanh 24/7
                   </h2>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Chuyển khoản chính xác số tiền và nội dung bên dưới. Hệ thống sẽ tự động đối soát và kích hoạt mã PIN trong 1–3 phút.
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Chuyển khoản chính xác số tiền và nội dung bên dưới. Hệ thống sẽ tự động đối soát và kích hoạt mã PIN nhận kho.
                   </p>
                 </div>
-                <div className="text-right">
-                  <span className="text-xs text-slate-400 block">Thời gian giữ chỗ còn lại:</span>
-                  <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[#7c94c3] bg-[#7c94c3]/10 px-2.5 py-1 rounded-lg mt-1 font-mono tabular-nums">
+                <div className="sm:text-right">
+                  <span className="text-[11px] text-slate-400 block">Thời gian giữ chỗ còn lại:</span>
+                  <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[#7c94c3] bg-[#7c94c3]/10 px-2.5 py-1 rounded-lg mt-0.5 font-mono tabular-nums">
                     <Clock className="w-4 h-4 text-brand-600 animate-pulse" />
                     {formattedCountdown}
                   </span>
@@ -391,31 +565,31 @@ export const BookingPage: React.FC = () => {
               {/* QR Code & Banking details */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
                 {/* QR Display */}
-                <div className="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-xl border border-slate-200/80">
+                <div className="flex flex-col items-center justify-center p-5 bg-slate-50 rounded-xl border border-slate-200/80">
                   <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col items-center">
                     <img
                       src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=vietqr://${calculation.totalDueToday}/${transferContent}`}
                       alt="VietQR Code"
-                      className="w-44 h-44 object-contain"
+                      className="w-40 h-40 object-contain"
                     />
                     <span className="text-[11px] font-bold text-slate-500 mt-2 flex items-center gap-1">
                       <QrCode className="w-3.5 h-3.5 text-brand-600" />
                       VietQR · Napas247
                     </span>
                   </div>
-                  <span className="text-xs text-slate-500 mt-3 text-center">
+                  <span className="text-xs text-slate-500 mt-2.5 text-center">
                     Mở ứng dụng ngân hàng bất kỳ để quét mã
                   </span>
                 </div>
 
                 {/* Account Details */}
-                <div className="space-y-3.5 text-xs">
-                  <div className="bg-[#f2f9f7] p-3.5 rounded-lg border border-emerald-100">
+                <div className="space-y-3 text-xs">
+                  <div className="bg-[#f2f9f7] p-3 rounded-lg border border-emerald-100">
                     <span className="text-slate-500 block">Ngân hàng thụ hưởng:</span>
                     <strong className="text-sm text-[#0a1614] font-bold">MB Bank (Ngân hàng Quân Đội)</strong>
                   </div>
 
-                  <div className="bg-[#f2f9f7] p-3.5 rounded-lg border border-emerald-100 flex items-center justify-between">
+                  <div className="bg-[#f2f9f7] p-3 rounded-lg border border-emerald-100 flex items-center justify-between">
                     <div>
                       <span className="text-slate-500 block">Số tài khoản:</span>
                       <strong className="text-sm text-[#0a1614] font-bold tracking-wider">0888 567 999</strong>
@@ -423,19 +597,19 @@ export const BookingPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleCopy('0888567999')}
-                      className="p-1.5 text-slate-400 hover:text-brand-600 rounded"
+                      className="p-1.5 text-slate-400 hover:text-brand-600 rounded cursor-pointer"
                       title="Sao chép số tài khoản"
                     >
                       <Copy className="w-4 h-4" />
                     </button>
                   </div>
 
-                  <div className="bg-[#f2f9f7] p-3.5 rounded-lg border border-emerald-100">
+                  <div className="bg-[#f2f9f7] p-3 rounded-lg border border-emerald-100">
                     <span className="text-slate-500 block">Chủ tài khoản:</span>
                     <strong className="text-sm text-[#0a1614] font-bold uppercase">CONG TY CP SMARTSTORAGE VIET NAM</strong>
                   </div>
 
-                  <div className="bg-amber-50/70 p-3.5 rounded-lg border border-amber-200/80 flex items-center justify-between">
+                  <div className="bg-amber-50/70 p-3 rounded-lg border border-amber-200/80 flex items-center justify-between">
                     <div>
                       <span className="text-amber-800 font-semibold block">Nội dung chuyển khoản (Bắt buộc):</span>
                       <strong className="text-sm text-amber-950 font-bold tracking-wider">{transferContent}</strong>
@@ -443,7 +617,7 @@ export const BookingPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleCopy(transferContent)}
-                      className="p-1.5 text-amber-700 hover:text-amber-900 rounded"
+                      className="p-1.5 text-amber-700 hover:text-amber-900 rounded cursor-pointer"
                       title="Sao chép nội dung"
                     >
                       <Copy className="w-4 h-4" />
@@ -451,7 +625,7 @@ export const BookingPage: React.FC = () => {
                   </div>
 
                   {copiedBankInfo && (
-                    <div className="text-center text-emerald-600 font-semibold text-xs animate-fade-in">
+                    <div className="text-center text-emerald-600 font-semibold text-xs py-1">
                       ✓ Đã sao chép vào bộ nhớ tạm!
                     </div>
                   )}
@@ -462,6 +636,7 @@ export const BookingPage: React.FC = () => {
               <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <Button
                   variant="outline"
+                  size="sm"
                   onClick={() => setCurrentStep(2)}
                   className="w-full sm:w-auto"
                 >
@@ -472,11 +647,12 @@ export const BookingPage: React.FC = () => {
                 <div className="flex items-center gap-3 w-full sm:w-auto">
                   <Button
                     variant="primary"
+                    size="md"
                     onClick={() => navigate('/customer/my-units')}
-                    className="w-full sm:w-auto px-6 py-2.5"
+                    className="w-full sm:w-auto px-6 py-2.5 flex items-center justify-center gap-2"
                   >
                     <span>Tôi đã chuyển khoản / Xem kho của tôi</span>
-                    <ArrowRight className="w-4 h-4 ml-1.5" />
+                    <ArrowRight className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
