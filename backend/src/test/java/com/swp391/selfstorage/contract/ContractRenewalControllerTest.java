@@ -31,113 +31,113 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc(addFilters = false)
 class ContractRenewalControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+        @Autowired
+        private ObjectMapper objectMapper;
 
-    @MockBean
-    private RenewalService renewalService;
+        @MockBean
+        private RenewalService renewalService;
 
-    @Test
-    @DisplayName("POST /contracts/{id}/renewals/quote - Xem trước báo giá gia hạn thành công (200 OK)")
-    void testRenewalQuote_Success() throws Exception {
-        RenewalRequest request = RenewalRequest.builder()
-                .renewalMonths(6)
-                .build();
+        @Test
+        @DisplayName("POST /contracts/{id}/renewals/quote - Xem trước báo giá gia hạn thành công (200 OK)")
+        void testRenewalQuote_Success() throws Exception {
+                RenewalRequest request = RenewalRequest.builder()
+                                .renewalMonths(6)
+                                .build();
 
-        RenewalQuoteResponse quoteResponse = RenewalQuoteResponse.builder()
-                .contractId(1L)
-                .contractCode("CTR-202610-001")
-                .renewalMonths(6)
-                .previousEndDate(LocalDate.of(2026, 12, 31))
-                .newEndDate(LocalDate.of(2027, 6, 30))
-                .monthlyPriceSnapshot(2_000_000L)
-                .rentalFeeAmount(12_000_000L)
-                .overdueFeeSettled(0L)
-                .totalAmount(12_000_000L)
-                .policyVersionId(1L)
-                .build();
+                RenewalQuoteResponse quoteResponse = RenewalQuoteResponse.builder()
+                                .contractId(1L)
+                                .contractCode("CTR-202610-001")
+                                .renewalMonths(6)
+                                .previousEndDate(LocalDate.of(2026, 12, 31))
+                                .newEndDate(LocalDate.of(2027, 6, 30))
+                                .monthlyPriceSnapshot(2_000_000L)
+                                .rentalFeeAmount(12_000_000L)
+                                .overdueFeeSettled(0L)
+                                .totalAmount(12_000_000L)
+                                .policyVersionId(1L)
+                                .build();
 
-        when(renewalService.getRenewalQuote(eq(1L), any(RenewalRequest.class)))
-                .thenReturn(quoteResponse);
+                when(renewalService.getRenewalQuote(eq(1L), any(RenewalRequest.class)))
+                                .thenReturn(quoteResponse);
 
-        mockMvc.perform(post("/contracts/1/renewals/quote")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.data.contractCode").value("CTR-202610-001"))
-                .andExpect(jsonPath("$.data.renewalMonths").value(6))
-                .andExpect(jsonPath("$.data.totalAmount").value(12_000_000L));
-    }
+                mockMvc.perform(post("/contracts/1/renewals/quote")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.status").value(200))
+                                .andExpect(jsonPath("$.data.contractCode").value("CTR-202610-001"))
+                                .andExpect(jsonPath("$.data.renewalMonths").value(6))
+                                .andExpect(jsonPath("$.data.totalAmount").value(12_000_000L));
+        }
 
-    @Test
-    @DisplayName("POST /contracts/{id}/renewals - Kích hoạt gia hạn hợp đồng thành công (201 CREATED)")
-    void testProcessRenewal_Success() throws Exception {
-        RenewalRequest request = RenewalRequest.builder()
-                .renewalMonths(6)
-                .build();
+        @Test
+        @DisplayName("POST /contracts/{id}/renewals - Kích hoạt gia hạn hợp đồng thành công (201 CREATED)")
+        void testProcessRenewal_Success() throws Exception {
+                RenewalRequest request = RenewalRequest.builder()
+                                .renewalMonths(6)
+                                .build();
 
-        RenewalResponse response = RenewalResponse.builder()
-                .id(10L)
-                .contractId(1L)
-                .previousEndDate(LocalDate.of(2026, 12, 31))
-                .newEndDate(LocalDate.of(2027, 6, 30))
-                .renewalMonths(6)
-                .monthlyPriceSnapshot(2_000_000L)
-                .policyVersionId(1L)
-                .overdueFeeSettled(0L)
-                .rentalFeeAmount(12_000_000L)
-                .totalPaid(12_000_000L)
-                .createdAt(OffsetDateTime.now())
-                .build();
+                RenewalResponse response = RenewalResponse.builder()
+                                .id(10L)
+                                .contractId(1L)
+                                .previousEndDate(LocalDate.of(2026, 12, 31))
+                                .newEndDate(LocalDate.of(2027, 6, 30))
+                                .renewalMonths(6)
+                                .monthlyPriceSnapshot(2_000_000L)
+                                .policyVersionId(1L)
+                                .overdueFeeSettled(0L)
+                                .rentalFeeAmount(12_000_000L)
+                                .totalPaid(12_000_000L)
+                                .createdAt(OffsetDateTime.now())
+                                .build();
 
-        when(renewalService.processRenewal(eq(1L), any(RenewalRequest.class), eq(99L)))
-                .thenReturn(response);
+                when(renewalService.processRenewal(eq(1L), any(RenewalRequest.class), eq(99L)))
+                                .thenReturn(response);
 
-        mockMvc.perform(post("/contracts/1/renewals")
-                .param("paymentId", "99")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.data.id").value(10L))
-                .andExpect(jsonPath("$.data.renewalMonths").value(6))
-                .andExpect(jsonPath("$.data.newEndDate").value("2027-06-30"));
-    }
+                mockMvc.perform(post("/contracts/1/renewals")
+                                .param("paymentId", "99")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isCreated())
+                                .andExpect(jsonPath("$.status").value(200))
+                                .andExpect(jsonPath("$.data.id").value(10L))
+                                .andExpect(jsonPath("$.data.renewalMonths").value(6))
+                                .andExpect(jsonPath("$.data.newEndDate").value("2027-06-30"));
+        }
 
-    @Test
-    @DisplayName("POST /contracts/{id}/renewals - Báo lỗi 400 Bad Request khi số tháng gia hạn < 1")
-    void testProcessRenewal_Validation_InvalidMonths() throws Exception {
-        RenewalRequest invalidRequest = RenewalRequest.builder()
-                .renewalMonths(0) // Vi phạm @Min(1)
-                .build();
+        @Test
+        @DisplayName("POST /contracts/{id}/renewals - Báo lỗi 400 Bad Request khi số tháng gia hạn < 1")
+        void testProcessRenewal_Validation_InvalidMonths() throws Exception {
+                RenewalRequest invalidRequest = RenewalRequest.builder()
+                                .renewalMonths(0) // Vi phạm @Min(1)
+                                .build();
 
-        mockMvc.perform(post("/contracts/1/renewals")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(invalidRequest)))
-                .andExpect(status().isBadRequest());
-    }
+                mockMvc.perform(post("/contracts/1/renewals")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(invalidRequest)))
+                                .andExpect(status().isBadRequest());
+        }
 
-    @Test
-    @DisplayName("GET /contracts/{id}/renewals - Lấy lịch sử gia hạn thành công (200 OK)")
-    void testGetRenewalHistory_Success() throws Exception {
-        RenewalResponse item = RenewalResponse.builder()
-                .id(10L)
-                .contractId(1L)
-                .renewalMonths(3)
-                .totalPaid(6_000_000L)
-                .build();
+        @Test
+        @DisplayName("GET /contracts/{id}/renewals - Lấy lịch sử gia hạn thành công (200 OK)")
+        void testGetRenewalHistory_Success() throws Exception {
+                RenewalResponse item = RenewalResponse.builder()
+                                .id(10L)
+                                .contractId(1L)
+                                .renewalMonths(3)
+                                .totalPaid(6_000_000L)
+                                .build();
 
-        when(renewalService.getRenewalHistory(1L))
-                .thenReturn(List.of(item));
+                when(renewalService.getRenewalHistory(1L))
+                                .thenReturn(List.of(item));
 
-        mockMvc.perform(get("/contracts/1/renewals"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.data[0].id").value(10L))
-                .andExpect(jsonPath("$.data[0].renewalMonths").value(3));
-    }
+                mockMvc.perform(get("/contracts/1/renewals"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.status").value(200))
+                                .andExpect(jsonPath("$.data[0].id").value(10L))
+                                .andExpect(jsonPath("$.data[0].renewalMonths").value(3));
+        }
 }
