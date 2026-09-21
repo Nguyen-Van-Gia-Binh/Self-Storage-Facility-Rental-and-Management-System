@@ -36,6 +36,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -127,7 +128,7 @@ public class FacilityReportServiceImpl implements FacilityReportService {
                 if (pList != null) {
                     for (PaymentTransaction p : pList) {
                         if ("SUCCESS".equalsIgnoreCase(p.getStatus()) && p.getCreatedAt() != null) {
-                            if (YearMonth.from(p.getCreatedAt()).equals(targetMonth)) {
+                            if (YearMonth.from(p.getCreatedAt().atZone(ZoneId.systemDefault())).equals(targetMonth)) {
                                 monthlyPayments.add(p);
                             }
                         }
