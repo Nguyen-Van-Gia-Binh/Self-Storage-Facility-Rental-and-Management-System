@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { ManagerDashboardPage } from './pages/ManagerDashboardPage';
 import { UnitCatalogPage } from './pages/UnitCatalogPage';
+import { ContractsHubPage } from './pages/ContractsHubPage';
 
 const navItems = [
   { label: 'Tong quan co so', href: '/manager' },
@@ -19,6 +20,7 @@ export const ManagerRoutes: React.FC = () => {
       <Routes>
         <Route index element={<ManagerDashboardPage />} />
         <Route path="units" element={<UnitCatalogPage />} />
+        <Route path="contracts" element={<ContractsHubPage />} />
       </Routes>
     </DashboardLayout>
   );

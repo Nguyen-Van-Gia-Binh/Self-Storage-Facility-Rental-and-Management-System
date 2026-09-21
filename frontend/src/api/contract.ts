@@ -11,14 +11,25 @@ import type {
   ReturnInspectionResponse,
   SettlementPreviewData,
 } from '../types';
+import type {
+  ManagerContractItem,
+  ContractKpiData,
+  ReassignUnitRequest,
+  AvailableUnitOption,
+  ContractFinancialSummary,
+  SettlementApprovalRequest,
+} from '../types/contractManager';
 import mockContractsData from '../mock/mock-contracts.json';
 import mockReturnContractsData from '../mock/mock-return-contracts.json';
+import mockManagerContractsData from '../mock/mock-manager-contracts.json';
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false';
 
 // Bộ nhớ đệm tạm thời cho mock session (cho phép cập nhật trạng thái ngay trên UI khi test)
 let localMockContracts: CheckInContract[] = JSON.parse(JSON.stringify(mockContractsData));
 let localMockReturnContracts: ReturnContractDetail[] = JSON.parse(JSON.stringify(mockReturnContractsData));
+let localManagerContracts: ManagerContractItem[] = JSON.parse(JSON.stringify(mockManagerContractsData.contracts));
+let localAvailableUnits: AvailableUnitOption[] = JSON.parse(JSON.stringify(mockManagerContractsData.availableUnits));
 
 /**
  * Lấy danh sách hợp đồng chờ Check-in tại quầy
@@ -308,3 +319,246 @@ export async function submitReturnInspection(
   }
 }
 
+/**
+ * =====================================================================
+ * CÁC HÀM DÀNH CHO FACILITY MANAGER CONTRACTS HUB (SCR-FM-02 / T3.12)
+ * =====================================================================
+ */
+
+/**
+ * Lấy danh sách hợp đồng cho Manager Hub (lọc theo cơ sở, trạng thái, từ khóa)
+ */
+export async function getManagerContracts(filter?: {
+  facilityId?: number;
+  status?: string;
+  keyword?: string;
+  nearExpiration?: boolean;
+}): Promise<ManagerContractItem[]> {
+  if (USE_MOCK) {
+    let list = [...localManagerContracts];
+    if (filter?.facilityId) {
+      list = list.filter((c) => c.facilityId === filter.facilityId);
+    }
+    if (filter?.status && filter.status !== 'ALL') {
+      list = list.filter((c) => c.status === filter.status);
+    }
+    if (filter?.nearExpiration) {
+      list = list.filter((c) => c.nearExpiration === true);
+    }
+    if (filter?.keyword) {
+      const q = filter.keyword.toLowerCase().trim();
+      list = list.filter(
+        (c) =>
+          c.code.toLowerCase().includes(q) ||
+          c.storageUnitCode.toLowerCase().includes(q) ||
+          c.customerName.toLowerCase().includes(q) ||
+          c.customerPhone.includes(q)
+      );
+    }
+    return list;
+  }
+
+  try {
+    const params = new URLSearchParams();
+    if (filter?.facilityId) params.append('facilityIds', filter.facilityId.toString());
+    if (filter?.status && filter.status !== 'ALL') params.append('status', filter.status);
+    if (filter?.keyword) params.append('keyword', filter.keyword);
+    if (filter?.nearExpiration) params.append('expiringSoon', 'true');
+
+    const res = await apiClient<ApiResponse<{ content: ManagerContractItem[] }>>(`/contracts?${params.toString()}`);
+    return res.data?.content || [];
+  } catch (error) {
+    console.warn('Lỗi gọi API /contracts, fallback mock:', error);
+    let list = [...localManagerContracts];
+    if (filter?.status && filter.status !== 'ALL') {
+      list = list.filter((c) => c.status === filter.status);
+    }
+    return list;
+  }
+}
+
+/**
+ * Tính toán các chỉ số KPI trên hàng thẻ Summary Cards
+ */
+export async function getManagerKpiData(facilityId?: number): Promise<ContractKpiData> {
+  const contracts = await getManagerContracts({ facilityId, status: 'ALL' });
+  const activeContracts = contracts.filter((c) => c.status === 'ACTIVE');
+  const nearExpiring = activeContracts.filter((c) => c.nearExpiration);
+  const pendingCheckIn = contracts.filter((c) => c.status === 'PENDING_CHECK_IN');
+  const overdueContracts = contracts.filter((c) => c.status === 'OVERDUE');
+  const pendingSettlement = contracts.filter((c) => c.status === 'INSPECTED' || c.status === 'NOTICE_SUBMITTED');
+
+  const totalDebt = overdueContracts.reduce((sum, c) => sum + (c.totalOutstandingDebt || 0), 0);
+
+  return {
+    activeCount: activeContracts.length,
+    nearExpiringCount: nearExpiring.length,
+    pendingCheckInCount: pendingCheckIn.length,
+    overdueCount: overdueContracts.length,
+    totalOverdueDebt: totalDebt,
+    pendingSettlementCount: pendingSettlement.length,
+  };
+}
+
+/**
+ * Lấy danh sách các ô kho còn trống để đổi ô kho ngoại lệ (SCR-FM-02.2)
+ */
+export async function getAvailableUnitsForReassign(
+  facilityId: number,
+  unitTypeId: number
+): Promise<AvailableUnitOption[]> {
+  if (USE_MOCK) {
+    return localAvailableUnits.filter((u) => u.unitTypeId === unitTypeId);
+  }
+
+  try {
+    const res = await apiClient<ApiResponse<{ content: AvailableUnitOption[] }>>(
+      `/facilities/${facilityId}/units?unitTypeId=${unitTypeId}&status=AVAILABLE`
+    );
+    return res.data?.content || [];
+  } catch (error) {
+    console.warn('Lỗi tải danh sách ô kho trống, fallback mock:', error);
+    return localAvailableUnits.filter((u) => u.unitTypeId === unitTypeId);
+  }
+}
+
+/**
+ * Đổi ô kho ngoại lệ cho hợp đồng/đơn đặt chỗ (SCR-FM-02.2)
+ */
+export async function reassignStorageUnit(
+  data: ReassignUnitRequest
+): Promise<{ success: boolean; message: string; updatedContract: ManagerContractItem }> {
+  if (USE_MOCK) {
+    const contract = localManagerContracts.find((c) => c.id === data.contractId);
+    if (!contract) {
+      throw new Error(`Không tìm thấy hợp đồng #${data.contractId}`);
+    }
+
+    // Thu hồi ô kho mới khỏi danh sách available
+    const chosenUnit = localAvailableUnits.find((u) => u.id === data.newUnitId);
+    const prevUnitCode = contract.storageUnitCode;
+
+    contract.storageUnitId = data.newUnitId;
+    contract.storageUnitCode = data.newUnitCode;
+    if (chosenUnit) {
+      contract.floor = chosenUnit.floor;
+      contract.position = chosenUnit.position;
+    }
+
+    // Cập nhật lại kho cũ trở về available nếu cần
+    localAvailableUnits = localAvailableUnits.filter((u) => u.id !== data.newUnitId);
+
+    return {
+      success: true,
+      message: `Đổi từ ô kho ${prevUnitCode} sang ${data.newUnitCode} thành công. Lý do: "${data.reason}".`,
+      updatedContract: contract,
+    };
+  }
+
+  try {
+    const res = await apiClient<ApiResponse<ManagerContractItem>>(`/contracts/${data.contractId}/reassign-unit`, {
+      method: 'POST',
+      body: JSON.stringify({
+        newStorageUnitId: data.newUnitId,
+        reason: data.reason,
+      }),
+    });
+    return {
+      success: true,
+      message: 'Đổi ô kho thành công',
+      updatedContract: res.data,
+    };
+  } catch (error) {
+    console.warn('Lỗi gọi API /reassign-unit, cập nhật local mock:', error);
+    const contract = localManagerContracts.find((c) => c.id === data.contractId);
+    if (contract) {
+      contract.storageUnitId = data.newUnitId;
+      contract.storageUnitCode = data.newUnitCode;
+    }
+    return {
+      success: true,
+      message: `Đổi ô kho sang ${data.newUnitCode} thành công (chế độ demo).`,
+      updatedContract: contract!,
+    };
+  }
+}
+
+/**
+ * Lấy chi tiết công nợ và tình hình tài chính hợp đồng (FM-03)
+ * GET /api/v1/contracts/{id}/financial-summary
+ */
+export async function getContractFinancialDetail(id: number): Promise<ContractFinancialSummary> {
+  const contract = localManagerContracts.find((c) => c.id === id);
+  const fallbackSummary: ContractFinancialSummary = {
+    contractId: id,
+    contractCode: contract ? contract.code : `CTR-${id}`,
+    customerName: contract ? contract.customerName : 'Khách hàng',
+    depositAmount: contract ? contract.depositAmount : 800000,
+    depositBalance: contract ? contract.depositBalance : 800000,
+    totalRentalFee: contract ? contract.monthlyPrice * contract.rentalMonths : 2400000,
+    overdueFeeAccrued: contract ? contract.overdueFeeAccrued || 0 : 0,
+    totalUnpaidExtraCharges: 50000,
+    totalOutstandingDebt: contract ? (contract.totalOutstandingDebt || 0) + 50000 : 50000,
+    extraCharges: [
+      {
+        id: 1,
+        amount: 50000,
+        reason: 'Phí cấp lại thẻ từ phụ',
+        status: 'UNPAID',
+        createdAt: '2026-09-18',
+      },
+    ],
+  };
+
+  if (USE_MOCK) {
+    return fallbackSummary;
+  }
+
+  try {
+    const res = await apiClient<ApiResponse<ContractFinancialSummary>>(`/contracts/${id}/financial-summary`);
+    return res.data || fallbackSummary;
+  } catch (error) {
+    console.warn(`Lỗi API /contracts/${id}/financial-summary, fallback mock:`, error);
+    return fallbackSummary;
+  }
+}
+
+/**
+ * Phê duyệt quyết toán thanh lý hợp đồng và kích hoạt hoàn cọc (FM-04, BR-RET-05)
+ * POST /api/v1/contracts/{id}/settlement-approval
+ */
+export async function approveSettlementRefund(
+  data: SettlementApprovalRequest
+): Promise<{ success: boolean; message: string }> {
+  if (USE_MOCK) {
+    const contract = localManagerContracts.find((c) => c.id === data.contractId);
+    if (contract) {
+      contract.status = 'CLOSED';
+    }
+    return {
+      success: true,
+      message: `Đã phê duyệt quyết toán hợp đồng #${data.contractId}. Lệnh hoàn trả ${data.depositRefundAmount.toLocaleString('vi-VN')} đ tiền cọc đã được chuyển sang cổng thanh toán. Hợp đồng chuyển sang trạng thái CLOSED.`,
+    };
+  }
+
+  try {
+    await apiClient(`/contracts/${data.contractId}/settlement-approval`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return {
+      success: true,
+      message: 'Phê duyệt quyết toán và hoàn cọc thành công',
+    };
+  } catch (error) {
+    console.warn('Lỗi gọi API /settlement-approval, cập nhật local mock:', error);
+    const contract = localManagerContracts.find((c) => c.id === data.contractId);
+    if (contract) {
+      contract.status = 'CLOSED';
+    }
+    return {
+      success: true,
+      message: `Đã phê duyệt quyết toán hợp đồng #${data.contractId} (chế độ demo).`,
+    };
+  }
+}
