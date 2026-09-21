@@ -5,6 +5,7 @@ import com.swp391.selfstorage.common.exception.ErrorCode;
 import com.swp391.selfstorage.contract.dto.*;
 import com.swp391.selfstorage.contract.entity.*;
 import com.swp391.selfstorage.contract.repository.*;
+import com.swp391.selfstorage.contract.service.impl.ContractServiceImpl;
 import com.swp391.selfstorage.reservation.entity.Reservation;
 import com.swp391.selfstorage.reservation.entity.ReservationStatus;
 import com.swp391.selfstorage.reservation.repository.ReservationRepository;
@@ -28,11 +29,16 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class ContractServiceTest {
 
-    @Mock private RentalContractRepository contractRepository;
-    @Mock private HandoverRecordRepository handoverRecordRepository;
-    @Mock private ReservationRepository reservationRepository;
-    @Mock private StorageUnitRepository storageUnitRepository;
-    @InjectMocks private ContractServiceImpl contractService;
+    @Mock
+    private RentalContractRepository contractRepository;
+    @Mock
+    private HandoverRecordRepository handoverRecordRepository;
+    @Mock
+    private ReservationRepository reservationRepository;
+    @Mock
+    private StorageUnitRepository storageUnitRepository;
+    @InjectMocks
+    private ContractServiceImpl contractService;
 
     private Reservation confirmedReservation;
 

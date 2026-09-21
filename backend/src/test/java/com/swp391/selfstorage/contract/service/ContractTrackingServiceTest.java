@@ -6,6 +6,8 @@ import com.swp391.selfstorage.contract.dto.ContractFinancialSummaryResponse;
 import com.swp391.selfstorage.contract.dto.ContractSummaryResponse;
 import com.swp391.selfstorage.contract.entity.*;
 import com.swp391.selfstorage.contract.repository.*;
+import com.swp391.selfstorage.contract.service.impl.ContractServiceImpl;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,9 +27,12 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class ContractTrackingServiceTest {
 
-    @Mock private RentalContractRepository contractRepository;
-    @Mock private ContractExtraChargeRepository extraChargeRepository;
-    @InjectMocks private ContractServiceImpl contractService;
+    @Mock
+    private RentalContractRepository contractRepository;
+    @Mock
+    private ContractExtraChargeRepository extraChargeRepository;
+    @InjectMocks
+    private ContractServiceImpl contractService;
 
     @Test
     @DisplayName("T4.2: getContractsPage trả về danh sách phân trang và gắn đúng cờ nearExpiration")
@@ -48,7 +53,8 @@ class ContractTrackingServiceTest {
         when(contractRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
 
         ContractFilterRequest filter = ContractFilterRequest.builder().facilityId(1L).build();
-        PageResponse<ContractSummaryResponse> result = contractService.getContractsPage(filter, PageRequest.of(0, 10), List.of(1L));
+        PageResponse<ContractSummaryResponse> result = contractService.getContractsPage(filter, PageRequest.of(0, 10),
+                List.of(1L));
 
         assertNotNull(result);
         assertEquals(1, result.getContent().size());

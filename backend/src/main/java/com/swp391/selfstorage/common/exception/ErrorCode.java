@@ -8,7 +8,9 @@ public enum ErrorCode {
     INVALID_START_DATE(HttpStatus.BAD_REQUEST, "Ngày bắt đầu thuê không được ở trong quá khứ"),
     INVALID_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "Chuyển trạng thái không hợp lệ"),
     RENEWAL_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "Hợp đồng không đủ điều kiện gia hạn"),
-    ROLE_REQUIRES_FACILITY(HttpStatus.BAD_REQUEST, "Vai trò Nhân viên hoặc Quản lý yêu cầu phải gán ít nhất một cơ sở làm việc"),
+    ROLE_REQUIRES_FACILITY(HttpStatus.BAD_REQUEST,
+            "Vai trò Nhân viên hoặc Quản lý yêu cầu phải gán ít nhất một cơ sở làm việc"),
+    RENEWAL_MONTHS_INVALID(HttpStatus.BAD_REQUEST, "Số tháng gia hạn không nằm trong giới hạn chính sách"),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "Chưa xác thực hoặc token không hợp lệ"),
@@ -55,6 +57,7 @@ public enum ErrorCode {
     SURCHARGE_CODE_ALREADY_EXISTS(HttpStatus.CONFLICT, "Mã phụ phí đã tồn tại"),
     PAYMENT_FAILED(HttpStatus.CONFLICT, "Thanh toán thất bại ở cổng thanh toán"),
     POLICY_VERSION_ALREADY_EXISTS(HttpStatus.CONFLICT, "Số phiên bản chính sách đã tồn tại"),
+    CAPACITY_NOT_AVAILABLE(HttpStatus.CONFLICT, "Ô kho không còn khả dụng cho khoảng thời gian gia hạn"),
 
     // 422 Unprocessable Entity
     RETURN_NOTICE_TOO_SHORT(HttpStatus.UNPROCESSABLE_ENTITY,

@@ -1,6 +1,7 @@
 package com.swp391.selfstorage.contract;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.swp391.selfstorage.contract.controller.ContractController;
 import com.swp391.selfstorage.contract.dto.*;
 import com.swp391.selfstorage.contract.entity.ContractStatus;
 import com.swp391.selfstorage.contract.entity.ReturnRequestStatus;
@@ -28,69 +29,71 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc(addFilters = false)
 class ContractReturnControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+        @Autowired
+        private ObjectMapper objectMapper;
 
-    @MockBean
-    private ContractService contractService;
+        @MockBean
+        private ContractService contractService;
 
-    @Test
-    @DisplayName("POST /contracts/{id}/return-notices trả về 201 Created")
-    void testSubmitReturnNotice() throws Exception {
-        ReturnNoticeRequest req = ReturnNoticeRequest.builder()
-                .intendedReturnDate(LocalDate.now().plusDays(3))
-                .notes("Báo trả kho đúng hạn")
-                .build();
+        @Test
+        @DisplayName("POST /contracts/{id}/return-notices trả về 201 Created")
+        void testSubmitReturnNotice() throws Exception {
+                ReturnNoticeRequest req = ReturnNoticeRequest.builder()
+                                .intendedReturnDate(LocalDate.now().plusDays(3))
+                                .notes("Báo trả kho đúng hạn")
+                                .build();
 
-        ReturnNoticeResponse res = ReturnNoticeResponse.builder()
-                .id(10L)
-                .contractId(500L)
-                .intendedReturnDate(req.getIntendedReturnDate())
-                .status(ReturnRequestStatus.PENDING)
-                .createdAt(OffsetDateTime.now())
-                .build();
+                ReturnNoticeResponse res = ReturnNoticeResponse.builder()
+                                .id(10L)
+                                .contractId(500L)
+                                .intendedReturnDate(req.getIntendedReturnDate())
+                                .status(ReturnRequestStatus.PENDING)
+                                .createdAt(OffsetDateTime.now())
+                                .build();
 
-        when(contractService.submitReturnNotice(eq(500L), any(ReturnNoticeRequest.class), any())).thenReturn(res);
+                when(contractService.submitReturnNotice(eq(500L), any(ReturnNoticeRequest.class), any()))
+                                .thenReturn(res);
 
-        mockMvc.perform(post("/contracts/500/return-notices")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(req)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.data.id").value(10))
-                .andExpect(jsonPath("$.data.contractId").value(500));
-    }
+                mockMvc.perform(post("/contracts/500/return-notices")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(req)))
+                                .andExpect(status().isCreated())
+                                .andExpect(jsonPath("$.status").value(200))
+                                .andExpect(jsonPath("$.data.id").value(10))
+                                .andExpect(jsonPath("$.data.contractId").value(500));
+        }
 
-    @Test
-    @DisplayName("POST /contracts/{id}/return-inspections trả về 200 OK")
-    void testSubmitReturnInspection() throws Exception {
-        ReturnInspectionRequest req = ReturnInspectionRequest.builder()
-                .returnDate(LocalDate.now())
-                .condition("GOOD")
-                .damageCost(0L)
-                .build();
+        @Test
+        @DisplayName("POST /contracts/{id}/return-inspections trả về 200 OK")
+        void testSubmitReturnInspection() throws Exception {
+                ReturnInspectionRequest req = ReturnInspectionRequest.builder()
+                                .returnDate(LocalDate.now())
+                                .condition("GOOD")
+                                .damageCost(0L)
+                                .build();
 
-        ReturnInspectionResponse res = ReturnInspectionResponse.builder()
-                .id(500L)
-                .status(ContractStatus.PENDING_RETURN)
-                .returnDate(req.getReturnDate())
-                .estimatedDepositRefund(1_000_000L)
-                .damageCost(0L)
-                .build();
+                ReturnInspectionResponse res = ReturnInspectionResponse.builder()
+                                .id(500L)
+                                .status(ContractStatus.PENDING_RETURN)
+                                .returnDate(req.getReturnDate())
+                                .estimatedDepositRefund(1_000_000L)
+                                .damageCost(0L)
+                                .build();
 
-        when(contractService.submitReturnInspection(eq(500L), any(ReturnInspectionRequest.class), any(), any())).thenReturn(res);
+                when(contractService.submitReturnInspection(eq(500L), any(ReturnInspectionRequest.class), any(), any()))
+                                .thenReturn(res);
 
-        mockMvc.perform(post("/contracts/500/return-inspections")
-                        .header("X-Staff-Id", "99")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(req)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.data.id").value(500))
-                .andExpect(jsonPath("$.data.status").value("PENDING_RETURN"))
-                .andExpect(jsonPath("$.data.estimatedDepositRefund").value(1_000_000));
-    }
+                mockMvc.perform(post("/contracts/500/return-inspections")
+                                .header("X-Staff-Id", "99")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(req)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.status").value(200))
+                                .andExpect(jsonPath("$.data.id").value(500))
+                                .andExpect(jsonPath("$.data.status").value("PENDING_RETURN"))
+                                .andExpect(jsonPath("$.data.estimatedDepositRefund").value(1_000_000));
+        }
 }

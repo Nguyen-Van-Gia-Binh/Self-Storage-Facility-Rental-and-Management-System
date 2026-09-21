@@ -1,4 +1,4 @@
-package com.swp391.selfstorage.contract;
+package com.swp391.selfstorage.contract.controller;
 
 import com.swp391.selfstorage.common.dto.ApiResponse;
 import com.swp391.selfstorage.contract.dto.*;
@@ -17,9 +17,9 @@ import java.util.List;
 @RequiredArgsConstructor
 @Tag(name = "Contract", description = "Hop dong thue kho (T3.4–T3.7)")
 public class ContractController {
-    
+
     private final ContractService contractService;
-    
+
     /** T3.5: Chi tiet contract — Staff xac minh khi khach check-in */
     @GetMapping("/{id}")
     @Operation(summary = "Chi tiết hợp đồng")
@@ -69,14 +69,15 @@ public class ContractController {
         List<Long> facilities = (facilityIds != null) ? facilityIds : List.of();
         String[] sortParts = sort.split(",");
         org.springframework.data.domain.Sort sortObj = org.springframework.data.domain.Sort.by(
-                sortParts.length > 1 && "asc".equalsIgnoreCase(sortParts[1]) 
-                        ? org.springframework.data.domain.Sort.Direction.ASC 
-                        : org.springframework.data.domain.Sort.Direction.DESC, 
+                sortParts.length > 1 && "asc".equalsIgnoreCase(sortParts[1])
+                        ? org.springframework.data.domain.Sort.Direction.ASC
+                        : org.springframework.data.domain.Sort.Direction.DESC,
                 sortParts[0]);
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sortObj);
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size,
+                sortObj);
 
-        com.swp391.selfstorage.common.dto.PageResponse<ContractSummaryResponse> response = 
-                contractService.getContractsPage(filter, pageable, facilities);
+        com.swp391.selfstorage.common.dto.PageResponse<ContractSummaryResponse> response = contractService
+                .getContractsPage(filter, pageable, facilities);
         return ResponseEntity.ok(ApiResponse.success(response, "Lay danh sach hop dong thanh cong"));
     }
 
@@ -128,7 +129,9 @@ public class ContractController {
         return ResponseEntity.ok(ApiResponse.success(response, "Lay bang tinh quyet toan thanh cong"));
     }
 
-    /** T4.3: FM phe duyet quyet toan, dong hop dong va kich hoat hoan coc (FM-04) */
+    /**
+     * T4.3: FM phe duyet quyet toan, dong hop dong va kich hoat hoan coc (FM-04)
+     */
     @PostMapping("/{id}/settlement-approval")
     @Operation(summary = "Phê duyệt quyết toán hợp đồng và hoàn cọc")
     public ResponseEntity<ApiResponse<SettlementApprovalResponse>> approveSettlement(
