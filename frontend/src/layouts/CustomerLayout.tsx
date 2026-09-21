@@ -12,6 +12,7 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
 
   const isExploreActive = location.pathname === '/customer' || location.pathname === '/customer/units';
   const isRentalsActive = location.pathname === '/customer/my-units' || location.pathname.startsWith('/customer/renew');
+  const isSupportActive = location.pathname.startsWith('/customer/support');
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f2f9f7]">
@@ -27,8 +28,8 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
               <span className="text-xl font-extrabold text-slate-900 tracking-tight block">
                 SmartStorage
               </span>
-              <span className="text-[10px] font-bold text-brand-600 tracking-widest uppercase block -mt-0.5">
-                FACILITY & RENTAL
+              <span className="text-[10px] font-bold text-brand-600 tracking-wider uppercase block">
+                Self-Storage Solutions
               </span>
             </div>
           </Link>
@@ -43,7 +44,7 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
                   : 'border-transparent text-slate-600 hover:text-brand-600'
               }`}
             >
-              Khám phá Cơ sở
+              Tìm kiếm ô kho
             </Link>
             <Link 
               to="/customer/facilities" 
@@ -61,12 +62,16 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
             >
               Kho của tôi
             </Link>
-            <a 
-              href="#support" 
-              className="py-6 border-b-2 border-transparent text-slate-600 hover:text-brand-600 transition-colors"
+            <Link 
+              to="/customer/support" 
+              className={`py-6 transition-colors border-b-2 ${
+                isSupportActive 
+                  ? 'border-brand-500 text-slate-900 font-bold' 
+                  : 'border-transparent text-slate-600 hover:text-brand-600'
+              }`}
             >
               Hỗ trợ 24/7
-            </a>
+            </Link>
           </nav>
 
           {/* User actions */}

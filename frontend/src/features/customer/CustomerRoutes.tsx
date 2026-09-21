@@ -9,6 +9,7 @@ import { BookingPage } from './pages/BookingPage';
 import { PaymentPage } from './pages/PaymentPage';
 import { MyUnitsPage } from './pages/MyUnitsPage';
 import { RenewalPage } from './pages/RenewalPage';
+import { SupportPage } from './pages/SupportPage';
 
 export const CustomerRoutes: React.FC = () => {
   return (
@@ -24,6 +25,8 @@ export const CustomerRoutes: React.FC = () => {
         <Route path="payment" element={<PaymentPage />} />
         <Route path="my-units" element={<MyUnitsPage />} />
         <Route path="renew/:contractId" element={<RenewalPage />} />
+        {/* T4.12 — Support Tickets Hub (SC-06) */}
+        <Route path="support" element={<SupportPage />} />
       </Routes>
     </CustomerLayout>
   );

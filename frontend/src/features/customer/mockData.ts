@@ -1,4 +1,4 @@
-import type { Facility, UnitType, StorageUnit, RentedContract } from './types';
+import type { Facility, UnitType, StorageUnit, RentedContract, SupportTicket } from './types';
 
 /**
  * Danh sách cơ sở lưu trữ tại TP.HCM (Khớp SCR-SC-01)
@@ -595,5 +595,168 @@ export const mockRentedContracts: RentedContract[] = [
     depositHeld: 1200000,
     accessPin: undefined, // Pending Check-in: Chưa cấp mã PIN trước khi đối chiếu CCCD tại quầy (BR-ACC-01, BR-CHK-01)
     status: 'PENDING_CHECKIN',
+  },
+];
+
+/**
+ * Danh sách vé yêu cầu hỗ trợ mẫu (SC-06, SCR-SC-06, BR-SUP-01..03)
+ */
+export const mockSupportTickets: SupportTicket[] = [
+  {
+    id: 1,
+    ticketCode: 'TKT-20260920-0012',
+    customerId: 1,
+    customerName: 'Xuân Nhi',
+    customerPhone: '0988 776 655',
+    contractId: 89,
+    contractNumber: 'HD-SS-2026089',
+    facilityId: 2,
+    facilityName: 'SmartStorage Phú Mỹ Hưng',
+    storageUnitId: 8,
+    unitNumber: 'A108',
+    category: 'LOCK_ACCESS',
+    isUrgent: true,
+    slaHours: 2, // BR-SUP-01: SLA khẩn cấp kẹt khóa 2 giờ
+    description: 'Ổ khóa điện tử báo đèn đỏ liên tục không mở được dù nhập đúng mã PIN 8392. Tôi đang cần lấy giấy tờ gấp để đi công tác.',
+    status: 'RESOLVED',
+    assignedStaffId: 2,
+    assignedStaffName: 'Trần Văn Hoàng (Staff Desk)',
+    assignedStaffPhone: '0908 123 456',
+    resolutionNote: 'Đã thay bộ pin phụ cho ổ khóa điện tử và vệ sinh chốt cơ. Đã kiểm tra mở thử nghiệm thành công 3 lần với mã PIN của khách hàng.',
+    resolvedAt: '2026-09-20T16:30:00Z',
+    autoCloseDeadline: '2026-09-27T16:30:00Z', // BR-SUP-03: Tự đóng sau 7 ngày làm việc
+    createdAt: '2026-09-20T14:45:00Z',
+    updatedAt: '2026-09-20T16:30:00Z',
+    attachments: [
+      {
+        id: 101,
+        fileUrl: 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=600&q=80',
+        fileType: 'image/jpeg',
+        uploadedAt: '2026-09-20T14:45:00Z',
+      },
+    ],
+    resolutionAttachments: [
+      {
+        id: 102,
+        fileUrl: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80',
+        fileType: 'image/jpeg',
+        uploadedAt: '2026-09-20T16:25:00Z',
+      },
+    ],
+  },
+  {
+    id: 2,
+    ticketCode: 'TKT-20260921-0034',
+    customerId: 1,
+    customerName: 'Xuân Nhi',
+    customerPhone: '0988 776 655',
+    contractId: 89,
+    contractNumber: 'HD-SS-2026089',
+    facilityId: 2,
+    facilityName: 'SmartStorage Phú Mỹ Hưng',
+    storageUnitId: 8,
+    unitNumber: 'A108',
+    category: 'UNIT_DAMAGE',
+    isUrgent: false,
+    slaHours: 24,
+    description: 'Bóng đèn trần hành lang trước cửa kho A108 bị chập chờn, thỉnh thoảng tắt tối om gây bất tiện khi bốc dỡ hàng buổi tối.',
+    status: 'IN_PROGRESS',
+    assignedStaffId: 3,
+    assignedStaffName: 'Lê Văn Hùng (Kỹ thuật viên cơ sở)',
+    assignedStaffPhone: '0912 345 678',
+    createdAt: '2026-09-21T09:15:00Z',
+    updatedAt: '2026-09-21T10:00:00Z',
+    attachments: [
+      {
+        id: 103,
+        fileUrl: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=600&q=80',
+        fileType: 'image/jpeg',
+        uploadedAt: '2026-09-21T09:15:00Z',
+      },
+    ],
+    resolutionAttachments: [],
+  },
+  {
+    id: 3,
+    ticketCode: 'TKT-20260921-0045',
+    customerId: 1,
+    customerName: 'Xuân Nhi',
+    customerPhone: '0988 776 655',
+    contractId: 104,
+    contractNumber: 'HD-SS-2026104',
+    facilityId: 1,
+    facilityName: 'SmartStorage Quận 7 Flagship',
+    category: 'PAYMENT',
+    isUrgent: false,
+    slaHours: 48,
+    description: 'Tôi đã thực hiện quét mã VietQR thanh toán tiền cọc cho hợp đồng HD-SS-2026104 lúc 10h15 sáng nay nhưng hệ thống chưa tự động cập nhật biên lai điện tử.',
+    status: 'NEW',
+    createdAt: '2026-09-21T11:00:00Z',
+    updatedAt: '2026-09-21T11:00:00Z',
+    attachments: [],
+    resolutionAttachments: [],
+  },
+  {
+    id: 4,
+    ticketCode: 'TKT-20260910-0008',
+    customerId: 1,
+    customerName: 'Xuân Nhi',
+    customerPhone: '0988 776 655',
+    contractId: 89,
+    contractNumber: 'HD-SS-2026089',
+    facilityId: 2,
+    facilityName: 'SmartStorage Phú Mỹ Hưng',
+    storageUnitId: 8,
+    unitNumber: 'A108',
+    category: 'BELONGINGS',
+    isUrgent: false,
+    slaHours: 24,
+    description: 'Cần đăng ký mượn xe nâng tay và xe đẩy tải trọng 300kg tại sảnh bốc dỡ vào sáng Thứ Bảy tuần tới.',
+    status: 'CLOSED',
+    assignedStaffId: 2,
+    assignedStaffName: 'Trần Văn Hoàng (Staff Desk)',
+    resolutionNote: 'Đã bố trí sẵn xe đẩy số 03 tại quầy lễ tân tầng trệt và hướng dẫn khách nhận thiết bị thuận lợi.',
+    resolvedAt: '2026-09-10T14:00:00Z',
+    createdAt: '2026-09-10T08:30:00Z',
+    updatedAt: '2026-09-10T14:30:00Z',
+    attachments: [],
+    resolutionAttachments: [],
+  },
+];
+
+/**
+ * Câu hỏi thường gặp dành cho khách hàng (Khớp Wireframe SCR-SC-06 & Business Rules)
+ */
+export interface SupportFaq {
+  id: number;
+  question: string;
+  answer: string;
+  category: string;
+}
+
+export const mockSupportFaqs: SupportFaq[] = [
+  {
+    id: 1,
+    question: 'Khi nào tôi được hoàn tiền đặt cọc sau khi trả kho?',
+    answer: 'Theo quy định BR-RET-05, tiền cọc sẽ được hoàn trả tự động vào tài khoản ngân hàng của bạn trong vòng tối đa 07 ngày làm việc sau khi hai bên ký biên bản nghiệm thu trả kho không phát sinh hư hại.',
+    category: 'Hoàn tiền & Đặt cọc',
+  },
+  {
+    id: 2,
+    question: 'Nếu tôi bị kẹt khóa hoặc quên mã PIN thì xử lý mất bao lâu?',
+    answer: 'Theo tiêu chuẩn dịch vụ khẩn cấp BR-SUP-01, các sự cố về kẹt khóa cơ, hỏng khóa số, quên mã PIN hoặc mất thẻ từ sẽ được nhân viên trực quầy xử lý tận nơi trong vòng tối đa 02 giờ.',
+    category: 'Khóa & Truy cập',
+  },
+  {
+    id: 3,
+    question: 'Chi phí sửa chữa hư hại trong ô kho được tính như thế nào?',
+    answer: 'Theo quy định BR-SUP-02, sự cố do hạ tầng cơ sở (thấm dột, hệ thống điện) cơ sở chịu 100% chi phí. Nếu sự cố do tác động chủ quan từ khách hàng, chi phí sửa chữa sẽ căn cứ theo biểu phụ phí quy định bởi Business Operations Manager.',
+    category: 'Chi phí & Bồi thường',
+  },
+  {
+    id: 4,
+    question: 'Quy trình nghiệm thu sau khi nhân viên xử lý xong sự cố?',
+    answer: 'Theo BR-SUP-03, nhân viên bắt buộc cập nhật ghi chú và ảnh hiện trường sau khi xử lý. Bạn có thể bấm "Xác nhận hài lòng" để đóng ticket. Nếu sau 07 ngày làm việc bạn không phản hồi, hệ thống sẽ tự động đóng ticket.',
+    category: 'Nghiệm thu & Đóng vé',
   },
 ];
