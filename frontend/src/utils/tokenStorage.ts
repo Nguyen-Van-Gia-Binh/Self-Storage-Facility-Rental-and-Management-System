@@ -61,7 +61,7 @@ export const DEMO_USERS: Record<UserRole, UserSession> = {
 export const tokenStorage = {
   getAccessToken(): string | null {
     try {
-      return localStorage.getItem(ACCESS_TOKEN_KEY);
+      return localStorage.getItem(ACCESS_TOKEN_KEY) || localStorage.getItem('access_token');
     } catch {
       return null;
     }
@@ -70,6 +70,7 @@ export const tokenStorage = {
   setAccessToken(token: string): void {
     try {
       localStorage.setItem(ACCESS_TOKEN_KEY, token);
+      localStorage.setItem('access_token', token);
     } catch {
       // Bỏ qua nếu localStorage bị đầy hoặc bị vô hiệu hóa
     }
@@ -77,7 +78,7 @@ export const tokenStorage = {
 
   getRefreshToken(): string | null {
     try {
-      return localStorage.getItem(REFRESH_TOKEN_KEY);
+      return localStorage.getItem(REFRESH_TOKEN_KEY) || localStorage.getItem('refresh_token');
     } catch {
       return null;
     }
@@ -86,6 +87,7 @@ export const tokenStorage = {
   setRefreshToken(token: string): void {
     try {
       localStorage.setItem(REFRESH_TOKEN_KEY, token);
+      localStorage.setItem('refresh_token', token);
     } catch {
       // Bỏ qua nếu localStorage bị đầy hoặc bị vô hiệu hóa
     }
@@ -93,7 +95,7 @@ export const tokenStorage = {
 
   getUser(): UserSession | null {
     try {
-      const raw = localStorage.getItem(USER_KEY);
+      const raw = localStorage.getItem(USER_KEY) || localStorage.getItem('current_user');
       if (!raw) return null;
       return JSON.parse(raw) as UserSession;
     } catch {
@@ -104,6 +106,8 @@ export const tokenStorage = {
   setUser(user: UserSession): void {
     try {
       localStorage.setItem(USER_KEY, JSON.stringify(user));
+      localStorage.setItem('current_user', JSON.stringify(user));
+      localStorage.setItem('user_role', user.role);
     } catch {
       // Bỏ qua nếu localStorage bị đầy hoặc bị vô hiệu hóa
     }
@@ -112,8 +116,12 @@ export const tokenStorage = {
   clearSession(): void {
     try {
       localStorage.removeItem(ACCESS_TOKEN_KEY);
+      localStorage.removeItem('access_token');
       localStorage.removeItem(REFRESH_TOKEN_KEY);
+      localStorage.removeItem('refresh_token');
       localStorage.removeItem(USER_KEY);
+      localStorage.removeItem('current_user');
+      localStorage.removeItem('user_role');
     } catch {
       // Bỏ qua nếu lỗi xóa
     }
@@ -128,17 +136,45 @@ export const tokenStorage = {
   hasRole(requiredRoles: UserRole | UserRole[]): boolean {
     const user = this.getUser();
     if (!user) return false;
-    const roles = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
-    return roles.includes(user.role);
+    const roles = (Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles]).map((r) =>
+      normalizeRole(r)
+    );
+    return roles.includes(normalizeRole(user.role));
   },
 
   /**
    * Chuyển đổi nhanh vai trò để chạy demo hoặc kiểm thử các portal khác nhau.
    */
   setDemoRole(role: UserRole): UserSession {
-    const demoUser = DEMO_USERS[role];
+    const normalized = normalizeRole(role);
+    const demoUser = DEMO_USERS[normalized] || DEMO_USERS.CUSTOMER;
     this.setUser(demoUser);
-    this.setAccessToken(`mock-jwt-token-for-${role.toLowerCase()}`);
+    this.setAccessToken(`mock-jwt-token-for-${normalized.toLowerCase()}`);
     return demoUser;
   },
 };
+
+/**
+ * Chuẩn hóa tên vai trò giữa chuẩn ngắn (CUSTOMER, STAFF...) và chuẩn Backend (STORAGE_CUSTOMER...)
+ */
+export function normalizeRole(role: string): UserRole {
+  switch (role) {
+    case 'STORAGE_CUSTOMER':
+    case 'CUSTOMER':
+      return 'CUSTOMER';
+    case 'FACILITY_STAFF':
+    case 'STAFF':
+      return 'STAFF';
+    case 'FACILITY_MANAGER':
+    case 'MANAGER':
+      return 'MANAGER';
+    case 'BUSINESS_OPERATIONS_MANAGER':
+    case 'BOM':
+      return 'BOM';
+    case 'SYSTEM_ADMINISTRATOR':
+    case 'ADMIN':
+      return 'ADMIN';
+    default:
+      return 'CUSTOMER';
+  }
+}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
   Shield,
   Lock,
@@ -65,6 +65,8 @@ const DEMO_ACCOUNTS: {
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectParam = searchParams.get('redirect');
 
   const [email, setEmail] = useState('admin@smartstorage.vn');
   const [password, setPassword] = useState('Password123@');
@@ -97,8 +99,8 @@ export const LoginPage: React.FC = () => {
 
       // Chuyển hướng sau 600ms để hiệu ứng thành công hiển thị mượt mà
       setTimeout(() => {
-        const redirectUrl = getPortalUrlByRole(res.user.role);
-        navigate(redirectUrl);
+        const target = redirectParam || getPortalUrlByRole(res.user.role);
+        navigate(target);
       }, 600);
     } catch (err: unknown) {
       const error = err as { message?: string };
@@ -258,16 +260,12 @@ export const LoginPage: React.FC = () => {
                 <label className="block text-xs font-semibold text-slate-300">
                   Mật khẩu
                 </label>
-                <a
-                  href="#forgot"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    alert('Chức năng cấp lại mật khẩu: Vui lòng liên hệ Quản trị viên (Admin) để đặt lại mật khẩu.');
-                  }}
+                <Link
+                  to="/auth/forgot-password"
                   className="text-xs text-amber-400 hover:text-amber-300 hover:underline"
                 >
                   Quên mật khẩu?
-                </a>
+                </Link>
               </div>
               <div className="relative">
                 <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
@@ -306,7 +304,7 @@ export const LoginPage: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               {loading ? (
                 <>
@@ -321,6 +319,19 @@ export const LoginPage: React.FC = () => {
               )}
             </button>
           </form>
+
+          {/* Link to Register */}
+          <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/70 text-center">
+            <p className="text-xs text-slate-300">
+              Chưa có tài khoản thuê kho?{' '}
+              <Link
+                to="/auth/register"
+                className="font-bold text-amber-400 hover:text-amber-300 hover:underline inline-flex items-center gap-1 ml-1"
+              >
+                Đăng ký tài khoản mới <ArrowRight className="w-3 h-3" />
+              </Link>
+            </p>
+          </div>
 
           {/* Quick Demo Switcher */}
           <div className="pt-2 border-t border-slate-800 space-y-3">
@@ -337,7 +348,7 @@ export const LoginPage: React.FC = () => {
                   key={acc.email}
                   type="button"
                   onClick={() => handleSelectDemo(acc)}
-                  className={`p-2 rounded-xl border text-left text-xs transition-all flex flex-col justify-between ${acc.color}`}
+                  className={`p-2 rounded-xl border text-left text-xs transition-all flex flex-col justify-between cursor-pointer ${acc.color}`}
                 >
                   <span className="font-bold">{acc.label}</span>
                   <span className="text-[10px] opacity-80 mt-1 truncate">{acc.email.split('@')[0]}</span>
@@ -352,10 +363,10 @@ export const LoginPage: React.FC = () => {
           {/* Footer Back Link */}
           <div className="text-center pt-2">
             <Link
-              to="/customer"
+              to="/"
               className="text-xs text-slate-400 hover:text-amber-400 transition-colors inline-flex items-center gap-1.5"
             >
-              <span>← Quay lại Trang Chủ Khách Hàng</span>
+              <span>← Quay lại Trang Chủ</span>
             </Link>
           </div>
         </div>
