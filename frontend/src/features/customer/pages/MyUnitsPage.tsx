@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -12,11 +12,43 @@ import {
 } from 'lucide-react';
 import { mockRentedContracts } from '../mockData';
 import { RentedUnitCard } from '../components/RentedUnitCard';
+import { getStoredMoveInPasses } from '@/api/payment';
+import type { RentedContract } from '../types';
 
 export const MyUnitsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'ALL' | 'ACTIVE' | 'PENDING'>('ALL');
 
-  const filteredContracts = mockRentedContracts.filter(c => {
+  // Đọc danh sách hợp đồng bao gồm các đơn vừa thanh toán lưu trong localStorage
+  const contracts: RentedContract[] = useMemo(() => {
+    const storedPasses = getStoredMoveInPasses();
+    const dynamicContracts: RentedContract[] = storedPasses.map((pass, idx) => ({
+      id: String(pass.reservationId || `PASS-${idx}`),
+      contractNumber: pass.passCode,
+      facilityId: String(pass.facilityId),
+      facilityName: pass.facilityName,
+      unitId: `U-${pass.unitNumber}`,
+      unitNumber: pass.unitNumber,
+      unitTypeName: 'Kho Tiêu Chuẩn Thông Minh',
+      sizeCategory: 'M',
+      storageType: 'STANDARD',
+      startDate: pass.startDate,
+      endDate: new Date(new Date(pass.startDate).getTime() + 90 * 24 * 3600 * 1000)
+        .toISOString()
+        .split('T')[0],
+      monthlyRent: Math.round(pass.totalPaid / 2),
+      depositHeld: Math.round(pass.totalPaid / 2),
+      accessPin: undefined,
+      status: 'PENDING_CHECKIN',
+    }));
+
+    // Gộp và loại trừ trùng lặp mã hợp đồng
+    const existingCodes = new Set(mockRentedContracts.map((c) => c.contractNumber));
+    const newItems = dynamicContracts.filter((c) => !existingCodes.has(c.contractNumber));
+
+    return [...newItems, ...mockRentedContracts];
+  }, []);
+
+  const filteredContracts = contracts.filter((c) => {
     if (activeTab === 'ACTIVE') return c.status === 'ACTIVE';
     if (activeTab === 'PENDING') return c.status === 'PENDING_CHECKIN';
     return true;
@@ -50,9 +82,9 @@ export const MyUnitsPage: React.FC = () => {
       {/* Tabs Filter */}
       <div className="flex items-center gap-2 border-b border-slate-200 text-sm font-semibold">
         {[
-          { key: 'ALL', label: `Tất cả hợp đồng (${mockRentedContracts.length})` },
-          { key: 'ACTIVE', label: `Đang sử dụng (${mockRentedContracts.filter(c => c.status === 'ACTIVE').length})` },
-          { key: 'PENDING', label: `Chờ nhận kho (${mockRentedContracts.filter(c => c.status === 'PENDING_CHECKIN').length})` },
+          { key: 'ALL', label: `Tất cả hợp đồng (${contracts.length})` },
+          { key: 'ACTIVE', label: `Đang sử dụng (${contracts.filter(c => c.status === 'ACTIVE').length})` },
+          { key: 'PENDING', label: `Chờ nhận kho (${contracts.filter(c => c.status === 'PENDING_CHECKIN').length})` },
         ].map((tab) => {
           const isSelected = activeTab === tab.key;
           return (

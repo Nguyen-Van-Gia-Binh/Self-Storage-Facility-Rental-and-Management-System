@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
 import type { RentedContract } from '../types';
+import { DigitalMoveInPassModal } from './DigitalMoveInPassModal';
 
 export interface RentedUnitCardProps {
   contract: RentedContract;
@@ -28,9 +29,14 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({ contract }) => {
   const [showPin, setShowPin] = useState(false);
   const [copiedPin, setCopiedPin] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
+  const [showPassModal, setShowPassModal] = useState(false);
   const [isClosingModal, setIsClosingModal] = useState(false);
 
   const handleOpenModal = () => {
+    if (contract.status === 'PENDING_CHECKIN') {
+      setShowPassModal(true);
+      return;
+    }
     setIsClosingModal(false);
     setShowQrModal(true);
   };
@@ -287,6 +293,28 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({ contract }) => {
           </div>
         </div>
       )}
+
+      {/* Digital Move-in Pass Modal cho hợp đồng PENDING_CHECKIN (SCR-SC-03.1) */}
+      <DigitalMoveInPassModal
+        isOpen={showPassModal}
+        onClose={() => setShowPassModal(false)}
+        passData={{
+          passCode: contract.contractNumber,
+          reservationId: contract.id,
+          unitNumber: contract.unitNumber,
+          facilityId: contract.facilityId,
+          facilityName: contract.facilityName,
+          facilityAddress: '52 Nguyễn Hữu Thọ, Phường Tân Phong, Quận 7, TP.HCM',
+          facilityPhone: '1900 8888',
+          customerName: 'Nguyễn Phạm Xuân Nhi',
+          customerPhone: '0908 123 456',
+          customerIdentity: '079199001234',
+          startDate: contract.startDate,
+          checkInWindow: 'Trong vòng 48 giờ kể từ lúc cọc',
+          status: 'PENDING_CHECKIN',
+          totalPaid: contract.monthlyRent + contract.depositHeld,
+        }}
+      />
     </>
   );
 };
