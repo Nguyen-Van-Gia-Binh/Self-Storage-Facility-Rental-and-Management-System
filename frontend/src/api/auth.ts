@@ -29,8 +29,6 @@ export interface LoginPayload {
   password: string;
 }
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false';
-
 /**
  * Đăng nhập người dùng: Ưu tiên gọi trực tiếp Backend Spring Boot (/api/v1/auth/login)
  * Nếu backend trả về lỗi xác thực (400, 401, 403) thì hiển thị đúng thông báo từ backend.
