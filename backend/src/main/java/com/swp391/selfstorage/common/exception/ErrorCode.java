@@ -32,6 +32,7 @@ public enum ErrorCode {
     RETURN_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy yêu cầu trả kho"),
     SURCHARGE_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy phụ phí"),
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy thanh toán"),
+    POLICY_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy phiên bản chính sách"),
 
     // 409 Conflict
     EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "Email đã được sử dụng"),
@@ -53,6 +54,7 @@ public enum ErrorCode {
     CONTRACT_NOT_PENDING_RETURN(HttpStatus.CONFLICT, "Hợp đồng chưa ở trạng thái chờ duyệt trả kho"),
     SURCHARGE_CODE_ALREADY_EXISTS(HttpStatus.CONFLICT, "Mã phụ phí đã tồn tại"),
     PAYMENT_FAILED(HttpStatus.CONFLICT, "Thanh toán thất bại ở cổng thanh toán"),
+    POLICY_VERSION_ALREADY_EXISTS(HttpStatus.CONFLICT, "Số phiên bản chính sách đã tồn tại"),
 
     // 422 Unprocessable Entity
     RETURN_NOTICE_TOO_SHORT(HttpStatus.UNPROCESSABLE_ENTITY,
