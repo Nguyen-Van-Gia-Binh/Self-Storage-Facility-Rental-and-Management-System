@@ -29,6 +29,7 @@ public class SupportRequestDetailResponse {
     private Boolean isUrgent;
     private Long assignedStaffId;
     private String assignedStaffName;
+    private String assignedStaffPhone;
 
     private OffsetDateTime slaDueAt;
     private OffsetDateTime resolvedAt;
@@ -39,6 +40,7 @@ public class SupportRequestDetailResponse {
     private OffsetDateTime updatedAt;
 
     private List<String> attachmentUrls;
+    private List<String> resolutionAttachmentUrls;
 
     private boolean canCancel;
     private boolean canConfirm;
@@ -68,6 +70,7 @@ public class SupportRequestDetailResponse {
         public Builder isUrgent(Boolean isUrgent) { r.isUrgent = isUrgent; return this; }
         public Builder assignedStaffId(Long assignedStaffId) { r.assignedStaffId = assignedStaffId; return this; }
         public Builder assignedStaffName(String assignedStaffName) { r.assignedStaffName = assignedStaffName; return this; }
+        public Builder assignedStaffPhone(String assignedStaffPhone) { r.assignedStaffPhone = assignedStaffPhone; return this; }
         public Builder slaDueAt(OffsetDateTime slaDueAt) { r.slaDueAt = slaDueAt; return this; }
         public Builder resolvedAt(OffsetDateTime resolvedAt) { r.resolvedAt = resolvedAt; return this; }
         public Builder resolutionNote(String resolutionNote) { r.resolutionNote = resolutionNote; return this; }
@@ -76,6 +79,7 @@ public class SupportRequestDetailResponse {
         public Builder createdAt(OffsetDateTime createdAt) { r.createdAt = createdAt; return this; }
         public Builder updatedAt(OffsetDateTime updatedAt) { r.updatedAt = updatedAt; return this; }
         public Builder attachmentUrls(List<String> attachmentUrls) { r.attachmentUrls = attachmentUrls; return this; }
+        public Builder resolutionAttachmentUrls(List<String> resolutionAttachmentUrls) { r.resolutionAttachmentUrls = resolutionAttachmentUrls; return this; }
         public Builder canCancel(boolean canCancel) { r.canCancel = canCancel; return this; }
         public Builder canConfirm(boolean canConfirm) { r.canConfirm = canConfirm; return this; }
 
@@ -132,6 +136,9 @@ public class SupportRequestDetailResponse {
     public String getAssignedStaffName() { return assignedStaffName; }
     public void setAssignedStaffName(String assignedStaffName) { this.assignedStaffName = assignedStaffName; }
 
+    public String getAssignedStaffPhone() { return assignedStaffPhone; }
+    public void setAssignedStaffPhone(String assignedStaffPhone) { this.assignedStaffPhone = assignedStaffPhone; }
+
     public OffsetDateTime getSlaDueAt() { return slaDueAt; }
     public void setSlaDueAt(OffsetDateTime slaDueAt) { this.slaDueAt = slaDueAt; }
 
@@ -155,6 +162,9 @@ public class SupportRequestDetailResponse {
 
     public List<String> getAttachmentUrls() { return attachmentUrls; }
     public void setAttachmentUrls(List<String> attachmentUrls) { this.attachmentUrls = attachmentUrls; }
+
+    public List<String> getResolutionAttachmentUrls() { return resolutionAttachmentUrls; }
+    public void setResolutionAttachmentUrls(List<String> resolutionAttachmentUrls) { this.resolutionAttachmentUrls = resolutionAttachmentUrls; }
 
     public boolean isCanCancel() { return canCancel; }
     public void setCanCancel(boolean canCancel) { this.canCancel = canCancel; }
