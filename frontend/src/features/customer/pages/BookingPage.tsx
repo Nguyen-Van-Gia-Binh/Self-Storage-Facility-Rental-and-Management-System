@@ -21,7 +21,10 @@ import {
 import { mockFacilities, mockUnitTypes, mockStorageUnits } from '../mockData';
 import { calculateBookingTotal, formatVND } from '../utils/pricing';
 import { BookingPriceSummary } from '../components/BookingPriceSummary';
+import { DigitalMoveInPassModal } from '../components/DigitalMoveInPassModal';
+import { generateMoveInPass } from '@/api/payment';
 import type { BookingDraft } from '../types';
+import type { MoveInPassData } from '@/types';
 
 export const BookingPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -82,6 +85,8 @@ export const BookingPage: React.FC = () => {
   // Stepper & Success State
   const [currentStep, setCurrentStep] = useState<2 | 3>(2);
   const [copiedBankInfo, setCopiedBankInfo] = useState(false);
+  const [showPassModal, setShowPassModal] = useState(false);
+  const [createdPass, setCreatedPass] = useState<MoveInPassData | null>(null);
 
   // Đồng hồ đếm ngược giữ chỗ 48 giờ thực tế (BR-DEP-03)
   const [secondsLeft, setSecondsLeft] = useState<number>(48 * 3600 - 15); // 47h 59m 45s
@@ -197,6 +202,25 @@ export const BookingPage: React.FC = () => {
     navigator.clipboard.writeText(text);
     setCopiedBankInfo(true);
     setTimeout(() => setCopiedBankInfo(false), 2500);
+  };
+
+  const handleConfirmBookingPayment = () => {
+    const pass = generateMoveInPass({
+      reservationId: `RES-${finalUnitNumber}`,
+      unitNumber: finalUnitNumber,
+      facilityId: facility.id,
+      facilityName: facility.name,
+      facilityAddress: facility.address,
+      facilityPhone: facility.phone,
+      customerName,
+      customerPhone,
+      customerIdentity: customerIdCard,
+      startDate,
+      checkInWindow: 'Trong vòng 48 giờ kể từ lúc cọc',
+      totalPaid: calculation.totalDueToday,
+    });
+    setCreatedPass(pass);
+    setShowPassModal(true);
   };
 
   return (
@@ -648,10 +672,10 @@ export const BookingPage: React.FC = () => {
                   <Button
                     variant="primary"
                     size="md"
-                    onClick={() => navigate('/customer/my-units')}
-                    className="w-full sm:w-auto px-6 py-2.5 flex items-center justify-center gap-2"
+                    onClick={handleConfirmBookingPayment}
+                    className="w-full sm:w-auto px-6 py-2.5 flex items-center justify-center gap-2 cursor-pointer shadow-sm"
                   >
-                    <span>Tôi đã chuyển khoản / Xem kho của tôi</span>
+                    <span>Tôi đã chuyển khoản / Lấy vé nhận kho</span>
                     <ArrowRight className="w-4 h-4" />
                   </Button>
                 </div>
@@ -671,6 +695,16 @@ export const BookingPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Digital Move-in Pass Modal (SCR-SC-03.1) */}
+      <DigitalMoveInPassModal
+        isOpen={showPassModal}
+        onClose={() => {
+          setShowPassModal(false);
+          navigate('/customer/my-units');
+        }}
+        passData={createdPass}
+      />
     </div>
   );
 };
