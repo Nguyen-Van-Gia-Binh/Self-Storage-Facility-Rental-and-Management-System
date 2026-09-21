@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Search,
   FileCheck,
@@ -12,6 +13,7 @@ import {
   Lock,
   Unlock,
   CheckCircle2,
+  Users,
 } from 'lucide-react';
 import type { ManagerContractItem, ContractKpiData } from '@/types/contractManager';
 import { getManagerContracts, getManagerKpiData } from '@/api/contract';
@@ -56,34 +58,45 @@ export const ContractsHubPage: React.FC = () => {
   const [settlementModalOpen, setSettlementModalOpen] = useState<boolean>(false);
   const [selectedForSettlement, setSelectedForSettlement] = useState<ManagerContractItem | null>(null);
 
+  const [reloadKey, setReloadKey] = useState<number>(0);
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 5000);
   };
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [contractsRes, kpiRes] = await Promise.all([
-        getManagerContracts({
-          facilityId: selectedFacilityId,
-          keyword: searchKeyword,
-          nearExpiration: filterExpiringOnly,
-        }),
-        getManagerKpiData(selectedFacilityId),
-      ]);
-      setContracts(contractsRes);
-      setKpiData(kpiRes);
-    } catch (err) {
-      console.error('Lỗi tải dữ liệu hợp đồng:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedFacilityId, searchKeyword, filterExpiringOnly]);
-
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    let isMounted = true;
+
+    const fetchData = async () => {
+      try {
+        const [contractsRes, kpiRes] = await Promise.all([
+          getManagerContracts({
+            facilityId: selectedFacilityId,
+            keyword: searchKeyword,
+            nearExpiration: filterExpiringOnly,
+          }),
+          getManagerKpiData(selectedFacilityId),
+        ]);
+        if (isMounted) {
+          setContracts(contractsRes);
+          setKpiData(kpiRes);
+        }
+      } catch (err) {
+        console.error('Lỗi tải dữ liệu hợp đồng:', err);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedFacilityId, searchKeyword, filterExpiringOnly, reloadKey]);
 
   // Phân nhóm hợp đồng theo Tab
   const tabContracts = useMemo(() => {
@@ -108,12 +121,12 @@ export const ContractsHubPage: React.FC = () => {
     setContracts((prev) =>
       prev.map((c) => (c.id === updatedContract.id ? updatedContract : c))
     );
-    loadData();
+    setReloadKey((k) => k + 1);
   };
 
   const handleSettlementSuccess = (_contractId: number, message: string) => {
     showToast(message);
-    loadData();
+    setReloadKey((k) => k + 1);
   };
 
   return (
@@ -195,8 +208,21 @@ export const ContractsHubPage: React.FC = () => {
               </label>
             )}
 
+            <Link
+              to="/manager/staff-assignment"
+              className="py-1.5 px-3 rounded-lg border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold text-xs flex items-center gap-1.5 transition-colors shadow-sm"
+              title="Mở Bàn phân công nhân sự (SCR-FM-03)"
+            >
+              <Users className="w-3.5 h-3.5 text-purple-600" />
+              <span>Điều phối nhân sự</span>
+            </Link>
+
             <button
-              onClick={loadData}
+              type="button"
+              onClick={() => {
+                setLoading(true);
+                setReloadKey((k) => k + 1);
+              }}
               disabled={loading}
               className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-600 transition-colors"
               title="Tải lại danh sách"

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Building2,
   Calendar,
@@ -53,42 +53,53 @@ export const StaffAssignmentPage: React.FC = () => {
   const [selectedStaffForSchedule, setSelectedStaffForSchedule] =
     useState<StaffWorkloadItem | null>(null);
 
+  const [reloadKey, setReloadKey] = useState<number>(0);
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [workloadRes, tasksRes] = await Promise.all([
-        getStaffWorkload(selectedFacilityId),
-        getDailyDispatchTasks(selectedFacilityId, selectedDate),
-      ]);
-      setStaffList(workloadRes);
-      setTasks(tasksRes);
-    } catch (err) {
-      console.error('Lỗi tải dữ liệu phân công nhân sự:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedFacilityId, selectedDate]);
-
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    let isMounted = true;
+
+    const fetchData = async () => {
+      try {
+        const [workloadRes, tasksRes] = await Promise.all([
+          getStaffWorkload(selectedFacilityId),
+          getDailyDispatchTasks(selectedFacilityId, selectedDate),
+        ]);
+        if (isMounted) {
+          setStaffList(workloadRes);
+          setTasks(tasksRes);
+        }
+      } catch (err) {
+        console.error('Lỗi tải dữ liệu phân công nhân sự:', err);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedFacilityId, selectedDate, reloadKey]);
 
   // Xử lý phân công / điều chuyển nhân viên
   const handleAssignTask = async (payload: AssignTaskPayload) => {
     const res = await assignStaffToTask(payload);
     showToast(res.message);
 
-    // Cập nhật lại danh sách tasks và staffList cục bộ
+    // Cập nhật lại danh sách tasks cục bộ
     setTasks((prev) =>
       prev.map((t) => (t.id === res.updatedTask.id ? res.updatedTask : t))
     );
-    // Tải lại dữ liệu mới nhất để đồng bộ các chỉ số
-    loadData();
+    // Kích hoạt nạp lại để đồng bộ tải công việc
+    setReloadKey((k) => k + 1);
   };
 
   // Mở modal phân công
@@ -181,7 +192,10 @@ export const StaffAssignmentPage: React.FC = () => {
 
           <button
             type="button"
-            onClick={loadData}
+            onClick={() => {
+              setLoading(true);
+              setReloadKey((k) => k + 1);
+            }}
             disabled={loading}
             className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors shadow-sm"
             title="Tải lại dữ liệu"
