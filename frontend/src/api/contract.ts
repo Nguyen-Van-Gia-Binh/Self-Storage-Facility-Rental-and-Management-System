@@ -28,7 +28,7 @@ const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false';
 // Bộ nhớ đệm tạm thời cho mock session (cho phép cập nhật trạng thái ngay trên UI khi test)
 let localMockContracts: CheckInContract[] = JSON.parse(JSON.stringify(mockContractsData));
 let localMockReturnContracts: ReturnContractDetail[] = JSON.parse(JSON.stringify(mockReturnContractsData));
-let localManagerContracts: ManagerContractItem[] = JSON.parse(JSON.stringify(mockManagerContractsData.contracts));
+const localManagerContracts: ManagerContractItem[] = JSON.parse(JSON.stringify(mockManagerContractsData.contracts));
 let localAvailableUnits: AvailableUnitOption[] = JSON.parse(JSON.stringify(mockManagerContractsData.availableUnits));
 
 /**

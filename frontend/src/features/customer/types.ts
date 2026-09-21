@@ -209,3 +209,21 @@ export interface CreateSupportTicketPayload {
   description: string;
   attachmentUrls?: string[];
 }
+
+// Yêu cầu gia hạn hợp đồng trực tuyến (US-SC-05.3, BR-REN-01..08)
+export interface RenewContractRequest {
+  contractId: string;
+  months: number;
+  newEndDate: string;
+  totalAmount: number;
+  paymentMethod?: 'VIETQR' | 'BANK_TRANSFER' | 'CARD';
+  transactionReference?: string;
+}
+
+export interface RenewContractResponse {
+  success: boolean;
+  contract: RentedContract;
+  receiptNumber: string;
+  renewedAt: string;
+  message: string;
+}

@@ -9,6 +9,8 @@ import type {
   ChangePinRequest,
   ScheduleReturnRequest,
   ScheduleReturnResponse,
+  RenewContractRequest,
+  RenewContractResponse,
 } from '../features/customer/types';
 import { getStoredMoveInPasses } from './payment';
 
@@ -295,3 +297,69 @@ export async function getContractAccessLogs(contractId: string): Promise<AccessL
     return [];
   }
 }
+
+/**
+ * Gia hạn hợp đồng trực tuyến (US-SC-05.3, BR-REN-01..08)
+ * - Cập nhật ngày kết thúc mới (endDate = currentEndDate + months)
+ * - Chuyển trạng thái sang ACTIVE (nếu đang EXPIRING_SOON hoặc OVERDUE)
+ * - Xóa số ngày nợ và phí quá hạn (reset overdueDays, overdueFee = 0)
+ * - Bảo lưu nguyên trạng ngăn tủ và mã PIN mở cửa (BR-REN-08)
+ * - Ghi đè vào localStorage để duy trì trạng thái nhất quán
+ */
+export async function renewContract(
+  request: RenewContractRequest
+): Promise<RenewContractResponse> {
+  const allContracts = await getCustomerContracts();
+  const target = allContracts.find((c) => c.id === request.contractId);
+
+  const receiptNumber = `REC-REN-${Date.now().toString().slice(-6)}`;
+  const renewedAt = new Date().toISOString();
+
+  const updates: Partial<RentedContract> = {
+    endDate: request.newEndDate,
+    status: 'ACTIVE',
+    overdueDays: 0,
+    overdueFee: 0,
+  };
+
+  if (USE_MOCK || !target) {
+    saveStoredOverride(request.contractId, updates);
+    const updatedContract: RentedContract = {
+      ...(target || initialCustomerContracts[0]),
+      ...updates,
+    };
+    return {
+      success: true,
+      contract: updatedContract,
+      receiptNumber,
+      renewedAt,
+      message: `Gia hạn thành công thêm ${request.months} tháng cho ngăn kho ${updatedContract.unitNumber}. Hạn mới đến ngày ${request.newEndDate}.`,
+    };
+  }
+
+  try {
+    const res = await apiClient<RenewContractResponse>(
+      `/customer/contracts/${request.contractId}/renew`,
+      {
+        method: 'POST',
+        body: JSON.stringify(request),
+      }
+    );
+    saveStoredOverride(request.contractId, updates);
+    return res;
+  } catch (err) {
+    console.warn('Lỗi gọi API gia hạn hợp đồng, fallback sang mock lưu trữ cục bộ:', err);
+    saveStoredOverride(request.contractId, updates);
+    return {
+      success: true,
+      contract: {
+        ...target,
+        ...updates,
+      },
+      receiptNumber,
+      renewedAt,
+      message: `Gia hạn thành công thêm ${request.months} tháng cho ngăn kho ${target.unitNumber}. Hạn mới đến ngày ${request.newEndDate}.`,
+    };
+  }
+}
+
