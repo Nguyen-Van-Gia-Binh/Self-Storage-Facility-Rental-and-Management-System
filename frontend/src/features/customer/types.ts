@@ -102,5 +102,42 @@ export interface RentedContract {
   monthlyRent: number;
   depositHeld: number;
   accessPin?: string; // Mã PIN mở cửa (chỉ cấp khi ACTIVE theo BR-ACC-01)
-  status: 'ACTIVE' | 'PENDING_CHECKIN' | 'EXPIRING_SOON' | 'OVERDUE';
+  status: 'ACTIVE' | 'PENDING_CHECKIN' | 'EXPIRING_SOON' | 'OVERDUE' | 'PENDING_RETURN' | 'CLOSED' | 'TERMINATED';
+  overdueDays?: number;
+  overdueFee?: number;
+  scheduledReturnDate?: string;
+}
+
+// Nhật ký truy cập ra vào kho (US-SC-05.2, BR-ACC-02)
+export interface AccessLogEntry {
+  id: string;
+  contractId: string;
+  unitNumber: string;
+  timestamp: string;
+  method: 'PIN_CODE' | 'QR_PASS' | 'STAFF_OVERRIDE';
+  accessorName: string;
+  status: 'SUCCESS' | 'FAILED';
+  deviceInfo?: string;
+}
+
+// Yêu cầu đổi mã PIN khóa điện tử (BR-ACC-01)
+export interface ChangePinRequest {
+  contractId: string;
+  oldPin?: string;
+  newPin: string;
+}
+
+// Đăng ký lịch hẹn trả kho (US-SC-05.4, BR-RET-06, BR-RET-10)
+export interface ScheduleReturnRequest {
+  contractId: string;
+  returnDate: string;
+  notes?: string;
+}
+
+export interface ScheduleReturnResponse {
+  contractId: string;
+  scheduledReturnDate: string;
+  status: 'PENDING_RETURN';
+  estimatedDepositRefund: number;
+  message: string;
 }
