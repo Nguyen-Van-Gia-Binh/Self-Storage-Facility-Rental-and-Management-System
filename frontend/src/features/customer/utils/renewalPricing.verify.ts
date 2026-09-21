@@ -103,8 +103,9 @@ function runRenewalPricingVerification() {
   console.log(`========================================\n`);
 
   if (passed !== total) {
-    process.exit(1);
+    throw new Error(`Kiểm thử thất bại: chỉ có ${passed}/${total} test cases passed.`);
   }
 }
 
 runRenewalPricingVerification();
+
