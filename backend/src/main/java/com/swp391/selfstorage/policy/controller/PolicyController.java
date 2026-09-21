@@ -3,6 +3,7 @@ package com.swp391.selfstorage.policy.controller;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -14,24 +15,32 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.swp391.selfstorage.common.dto.ApiResponse;
 import com.swp391.selfstorage.common.dto.PageResponse;
 import com.swp391.selfstorage.policy.dto.CreatePolicyRequest;
+import com.swp391.selfstorage.policy.dto.OverdueProcessingResult;
 import com.swp391.selfstorage.policy.dto.PolicyResponse;
+import com.swp391.selfstorage.policy.service.OverdueProcessingService;
 import com.swp391.selfstorage.policy.service.PolicyService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
+
 @RestController
 @RequestMapping("/policies")
-@Tag(name = "Policy Configuration", description = "Cấu hình chính sách cọc, hoàn tiền và gia hạn (BM-02)")
+@Tag(name = "Policy Configuration", description = "Cấu hình chính sách cọc, hoàn tiền và gia hạn (BM-02, T4.6)")
 public class PolicyController {
 
     private final PolicyService policyService;
+    private final OverdueProcessingService overdueProcessingService;
 
-    public PolicyController(PolicyService policyService) {
+    public PolicyController(PolicyService policyService, OverdueProcessingService overdueProcessingService) {
         this.policyService = policyService;
+        this.overdueProcessingService = overdueProcessingService;
     }
 
     /**
@@ -76,5 +85,18 @@ public class PolicyController {
             @RequestParam(required = false, defaultValue = "4") Long publishedBy) {
         PolicyResponse response = policyService.createPolicy(request, publishedBy);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * 5. Kích hoạt thủ công tác vụ quét và xử lý hợp đồng quá hạn (T4.6 -
+     * Test/Admin).
+     */
+    @PostMapping("/cron/process-overdue")
+    @Operation(summary = "Kích hoạt thủ công tác vụ quét hợp đồng quá hạn (T4.6)")
+    public ResponseEntity<ApiResponse<OverdueProcessingResult>> triggerOverdueProcessing(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        LocalDate targetDate = (date != null) ? date : LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+        OverdueProcessingResult result = overdueProcessingService.processOverdueContracts(targetDate);
+        return ResponseEntity.ok(ApiResponse.success(result, "Xử lý quét hợp đồng quá hạn thành công"));
     }
 }
