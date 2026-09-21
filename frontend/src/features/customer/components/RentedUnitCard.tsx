@@ -267,21 +267,36 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                 <span>Xem Thẻ nhận kho (Move-in Pass)</span>
               </Button>
             ) : contract.status === 'OVERDUE' ? (
-              <Link
-                to={`/customer/payment?unitNumber=${contract.unitNumber}&facilityName=${encodeURIComponent(
-                  contract.facilityName
-                )}&amount=${contract.monthlyRent}`}
-                className="w-full sm:w-auto"
-              >
-                <Button
-                  variant="primary"
-                  size="sm"
-                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 bg-rose-600 hover:bg-rose-700 shadow-xs"
+              <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+                <Link
+                  to={`/customer/renew/${contract.id}`}
+                  className="w-full sm:w-auto"
                 >
-                  <CreditCard className="w-3.5 h-3.5" />
-                  <span>Thanh toán phí quá hạn</span>
-                </Button>
-              </Link>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 bg-rose-600 hover:bg-rose-700 shadow-xs"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Gia hạn & Xóa nợ quá hạn</span>
+                  </Button>
+                </Link>
+                <Link
+                  to={`/customer/payment?unitNumber=${contract.unitNumber}&facilityName=${encodeURIComponent(
+                    contract.facilityName
+                  )}&amount=${contract.monthlyRent}`}
+                  className="w-full sm:w-auto"
+                >
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3 text-rose-700 border-rose-300 hover:bg-rose-50 shadow-xs"
+                  >
+                    <CreditCard className="w-3.5 h-3.5" />
+                    <span>Đóng phạt riêng</span>
+                  </Button>
+                </Link>
+              </div>
             ) : (
               <Link
                 to={`/customer/renew/${contract.id}`}
