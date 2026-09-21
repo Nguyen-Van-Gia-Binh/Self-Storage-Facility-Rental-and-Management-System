@@ -6,6 +6,7 @@ import { FacilityCatalogPage } from './pages/FacilityCatalogPage';
 import { FacilityDetailPage } from './pages/FacilityDetailPage';
 import { UnitPickerPage } from './pages/UnitPickerPage';
 import { BookingPage } from './pages/BookingPage';
+import { PaymentPage } from './pages/PaymentPage';
 import { MyUnitsPage } from './pages/MyUnitsPage';
 import { RenewalPage } from './pages/RenewalPage';
 
@@ -20,6 +21,7 @@ export const CustomerRoutes: React.FC = () => {
         {/* WS1 — Customer Booking & Rentals Hub */}
         <Route path="units" element={<UnitPickerPage />} />
         <Route path="booking" element={<BookingPage />} />
+        <Route path="payment" element={<PaymentPage />} />
         <Route path="my-units" element={<MyUnitsPage />} />
         <Route path="renew/:contractId" element={<RenewalPage />} />
       </Routes>
