@@ -141,3 +141,71 @@ export interface ScheduleReturnResponse {
   estimatedDepositRefund: number;
   message: string;
 }
+
+// 5 Danh mục sự cố theo SupportCategory.java và TOPIC.md § 5 (Flow 7)
+export type SupportCategory = 
+  | 'LOCK_ACCESS' 
+  | 'UNIT_DAMAGE' 
+  | 'PAYMENT' 
+  | 'BELONGINGS' 
+  | 'OTHER';
+
+// 6 Trạng thái vé hỗ trợ theo SupportStatus.java và BR-SUP-01..03
+export type SupportStatus = 
+  | 'NEW' 
+  | 'ASSIGNED' 
+  | 'IN_PROGRESS' 
+  | 'RESOLVED' 
+  | 'CLOSED' 
+  | 'AUTO_CLOSED';
+
+// Tệp đính kèm ảnh sự cố / biên bản kiểm tra
+export interface SupportAttachment {
+  id: number;
+  fileUrl: string;
+  fileType?: string;
+  uploadedAt?: string;
+}
+
+// Thông tin vé hỗ trợ chi tiết (SC-06, SCR-SC-06, UC-F7-01, UC-F7-02, UC-F7-08)
+export interface SupportTicket {
+  id: number;
+  ticketCode: string;
+  customerId: number;
+  customerName?: string;
+  customerPhone?: string;
+  contractId?: number;
+  contractNumber?: string;
+  facilityId: number;
+  facilityName: string;
+  storageUnitId?: number;
+  unitNumber?: string;
+  category: SupportCategory;
+  title?: string;
+  isUrgent: boolean;
+  slaHours: number;
+  description: string;
+  status: SupportStatus;
+  assignedStaffId?: number;
+  assignedStaffName?: string;
+  assignedStaffPhone?: string;
+  resolutionNote?: string;
+  resolvedAt?: string;
+  autoCloseDeadline?: string;
+  createdAt: string;
+  updatedAt?: string;
+  attachments: SupportAttachment[];
+  resolutionAttachments?: SupportAttachment[];
+}
+
+// Payload tạo yêu cầu hỗ trợ mới (US-SC-06.1)
+export interface CreateSupportTicketPayload {
+  contractId?: number;
+  facilityId: number;
+  storageUnitId?: number;
+  title?: string;
+  category: SupportCategory;
+  isUrgent: boolean;
+  description: string;
+  attachmentUrls?: string[];
+}
