@@ -406,7 +406,13 @@ public class ContractServiceImpl implements ContractService {
 
                 List<ContractExtraCharge> unpaidCharges = extraChargeRepository.findByContractIdAndStatus(contractId,
                                 ExtraChargeStatus.UNPAID);
-                long totalUnpaid = unpaidCharges.stream().mapToLong(ContractExtraCharge::getAmount).sum();
+                // Loại trừ phụ phí hư hại ô kho đã được tính độc lập ở biến damage để tránh
+                // khấu trừ kép (ISS-14, BR-RET-04)
+                long totalUnpaid = unpaidCharges.stream()
+                                .filter(charge -> charge.getReason() == null
+                                                || !charge.getReason().startsWith("Bồi thường hư hại ô kho"))
+                                .mapToLong(ContractExtraCharge::getAmount)
+                                .sum();
 
                 long deposit = contract.getDepositAmount();
                 long damage = returnReq.getDamageCost();
@@ -453,7 +459,13 @@ public class ContractServiceImpl implements ContractService {
 
                 List<ContractExtraCharge> unpaidCharges = extraChargeRepository.findByContractIdAndStatus(contractId,
                                 ExtraChargeStatus.UNPAID);
-                long totalUnpaid = unpaidCharges.stream().mapToLong(ContractExtraCharge::getAmount).sum();
+                // Loại trừ phụ phí hư hại ô kho đã được tính độc lập ở biến damage để tránh
+                // khấu trừ kép (ISS-14, BR-RET-04)
+                long totalUnpaid = unpaidCharges.stream()
+                                .filter(charge -> charge.getReason() == null
+                                                || !charge.getReason().startsWith("Bồi thường hư hại ô kho"))
+                                .mapToLong(ContractExtraCharge::getAmount)
+                                .sum();
 
                 long deposit = contract.getDepositAmount();
                 long damage = returnReq.getDamageCost();
