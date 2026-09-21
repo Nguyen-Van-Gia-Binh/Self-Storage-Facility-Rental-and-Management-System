@@ -28,4 +28,44 @@ public interface SupportRequestRepository extends JpaRepository<SupportRequest, 
     Optional<SupportRequest> findByCode(String code);
 
     long countByCodeStartingWith(String prefix);
+
+    long countByAssignedStaffIdAndStatusIn(Long assignedStaffId, java.util.Collection<SupportStatus> statuses);
+
+    long countByAssignedStaffIdAndStatus(Long assignedStaffId, SupportStatus status);
+
+    Page<SupportRequest> findByAssignedStaffId(Long assignedStaffId, Pageable pageable);
+
+    @org.springframework.data.jpa.repository.Query(
+            "SELECT sr FROM SupportRequest sr " +
+            "LEFT JOIN com.swp391.selfstorage.contract.entity.RentalContract rc ON sr.contractId = rc.id " +
+            "LEFT JOIN com.swp391.selfstorage.unit.entity.StorageUnit su ON sr.storageUnitId = su.id " +
+            "WHERE (rc.facilityId IN :facilityIds OR su.facilityId IN :facilityIds) " +
+            "AND (:status IS NULL OR sr.status = :status) " +
+            "AND (:category IS NULL OR sr.category = :category) " +
+            "AND (:assignedStaffId IS NULL OR sr.assignedStaffId = :assignedStaffId)"
+    )
+    Page<SupportRequest> findByFacilityIdsAndFilters(
+            @org.springframework.data.repository.query.Param("facilityIds") java.util.Collection<Long> facilityIds,
+            @org.springframework.data.repository.query.Param("status") SupportStatus status,
+            @org.springframework.data.repository.query.Param("category") SupportCategory category,
+            @org.springframework.data.repository.query.Param("assignedStaffId") Long assignedStaffId,
+            Pageable pageable
+    );
+
+    @org.springframework.data.jpa.repository.Query(
+            "SELECT sr FROM SupportRequest sr " +
+            "LEFT JOIN com.swp391.selfstorage.contract.entity.RentalContract rc ON sr.contractId = rc.id " +
+            "LEFT JOIN com.swp391.selfstorage.unit.entity.StorageUnit su ON sr.storageUnitId = su.id " +
+            "WHERE (:facilityId IS NULL OR rc.facilityId = :facilityId OR su.facilityId = :facilityId) " +
+            "AND (:status IS NULL OR sr.status = :status) " +
+            "AND (:category IS NULL OR sr.category = :category) " +
+            "AND (:assignedStaffId IS NULL OR sr.assignedStaffId = :assignedStaffId)"
+    )
+    Page<SupportRequest> findAllManagementRequests(
+            @org.springframework.data.repository.query.Param("facilityId") Long facilityId,
+            @org.springframework.data.repository.query.Param("status") SupportStatus status,
+            @org.springframework.data.repository.query.Param("category") SupportCategory category,
+            @org.springframework.data.repository.query.Param("assignedStaffId") Long assignedStaffId,
+            Pageable pageable
+    );
 }

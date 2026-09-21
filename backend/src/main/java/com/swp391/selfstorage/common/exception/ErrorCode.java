@@ -11,6 +11,9 @@ public enum ErrorCode {
     ROLE_REQUIRES_FACILITY(HttpStatus.BAD_REQUEST,
             "Vai trò Nhân viên hoặc Quản lý yêu cầu phải gán ít nhất một cơ sở làm việc"),
     RENEWAL_MONTHS_INVALID(HttpStatus.BAD_REQUEST, "Số tháng gia hạn không nằm trong giới hạn chính sách"),
+    STAFF_NOT_IN_FACILITY(HttpStatus.BAD_REQUEST, "Nhân viên không thuộc cơ sở này"),
+    STAFF_NOT_ACTIVE(HttpStatus.BAD_REQUEST, "Tài khoản nhân viên đang không hoạt động"),
+    SUPPORT_REQUEST_CANNOT_BE_RESOLVED(HttpStatus.BAD_REQUEST, "Yêu cầu hỗ trợ chưa được phân công hoặc đã hoàn thành"),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "Chưa xác thực hoặc token không hợp lệ"),
@@ -23,9 +26,12 @@ public enum ErrorCode {
     ACCOUNT_DISABLED(HttpStatus.FORBIDDEN, "Tài khoản của bạn đã bị vô hiệu hóa"),
     FACILITY_ACCESS_DENIED(HttpStatus.FORBIDDEN, "Không có quyền truy cập cơ sở này"),
     CONTRACT_ACCESS_DENIED(HttpStatus.FORBIDDEN, "Hợp đồng này không thuộc cơ sở bạn phụ trách"),
+    SUPPORT_REQUEST_NOT_ASSIGNED_TO_STAFF(HttpStatus.FORBIDDEN, "Bạn không được phân công xử lý yêu cầu hỗ trợ này"),
 
     // 404 Not Found
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy người dùng"),
+    STAFF_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy nhân viên cơ sở"),
+    STAFF_DAILY_ASSIGNMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy bảng phân công nhân viên"),
     FACILITY_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy cơ sở lưu trữ"),
     UNIT_TYPE_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy loại ô kho"),
     STORAGE_UNIT_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy ô kho"),
