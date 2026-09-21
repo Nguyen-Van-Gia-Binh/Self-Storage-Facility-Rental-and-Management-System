@@ -79,6 +79,9 @@ public class Reservation extends BaseEntity {
     @Column(name = "cancelled_at")
     private OffsetDateTime cancelledAt;
 
+    @Column(name = "cancel_reason", length = 500)
+    private String cancelReason;
+
     public Reservation() {}
 
     // Getters and Setters
@@ -141,4 +144,7 @@ public class Reservation extends BaseEntity {
 
     public OffsetDateTime getCancelledAt() { return cancelledAt; }
     public void setCancelledAt(OffsetDateTime cancelledAt) { this.cancelledAt = cancelledAt; }
+
+    public String getCancelReason() { return cancelReason; }
+    public void setCancelReason(String cancelReason) { this.cancelReason = cancelReason; }
 }

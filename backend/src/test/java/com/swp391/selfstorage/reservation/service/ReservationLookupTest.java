@@ -2,11 +2,15 @@ package com.swp391.selfstorage.reservation.service;
 
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
+import com.swp391.selfstorage.contract.repository.RentalContractRepository;
+import com.swp391.selfstorage.facility.repository.FacilityRepository;
 import com.swp391.selfstorage.reservation.dto.ReservationResponse;
 import com.swp391.selfstorage.reservation.entity.Reservation;
 import com.swp391.selfstorage.reservation.entity.ReservationStatus;
 import com.swp391.selfstorage.reservation.repository.ReservationRepository;
+import com.swp391.selfstorage.unit.repository.FacilityUnitTypePriceRepository;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
+import com.swp391.selfstorage.unit.repository.UnitTypeRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,6 +33,10 @@ class ReservationLookupTest {
 
     @Mock private ReservationRepository reservationRepository;
     @Mock private StorageUnitRepository storageUnitRepository;
+    @Mock private FacilityRepository facilityRepository;
+    @Mock private UnitTypeRepository unitTypeRepository;
+    @Mock private FacilityUnitTypePriceRepository facilityUnitTypePriceRepository;
+    @Mock private RentalContractRepository rentalContractRepository;
     @InjectMocks private ReservationServiceImpl service;
 
     private Reservation rsv;

@@ -44,4 +44,23 @@ public class FacilityUnitTypePrice {
     protected void onUpdate() {
         updatedAt = OffsetDateTime.now();
     }
+
+    // Explicit Getters and Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public Long getFacilityId() { return facilityId; }
+    public void setFacilityId(Long facilityId) { this.facilityId = facilityId; }
+
+    public Long getUnitTypeId() { return unitTypeId; }
+    public void setUnitTypeId(Long unitTypeId) { this.unitTypeId = unitTypeId; }
+
+    public Long getMonthlyPrice() { return monthlyPrice; }
+    public void setMonthlyPrice(Long monthlyPrice) { this.monthlyPrice = monthlyPrice; }
+
+    public OffsetDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(OffsetDateTime createdAt) { this.createdAt = createdAt; }
+
+    public OffsetDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(OffsetDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

@@ -1,26 +1,28 @@
 package com.swp391.selfstorage.reservation;
 
+import com.swp391.selfstorage.auth.service.UserPrincipal;
 import com.swp391.selfstorage.common.dto.ApiResponse;
-import com.swp391.selfstorage.reservation.dto.CalculatePriceRequest;
-import com.swp391.selfstorage.reservation.dto.CalculatePriceResponse;
-import com.swp391.selfstorage.reservation.dto.CreateReservationRequest;
-import com.swp391.selfstorage.reservation.dto.ReservationResponse;
+import com.swp391.selfstorage.common.dto.PageResponse;
+import com.swp391.selfstorage.reservation.dto.*;
 import com.swp391.selfstorage.reservation.service.ReservationService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.List;
 
 /**
- * REST Controller cho Workstream 1 & 2 (Customer & Reservation Portal).
- * Base URL: /api/v1/reservations (context-path /api/v1 da cau hinh o application.yml).
+ * REST Controller cho Module Reservation (SC-02, FM-02).
+ * Base URL: /api/v1/reservations.
  */
 @RestController
 @RequestMapping("/reservations")
+@Tag(name = "Reservation Module", description = "APIs quản lý đặt chỗ kho, tạm giữ capacity 48h và tính giá")
 public class ReservationController {
 
     private final ReservationService reservationService;
@@ -30,7 +32,7 @@ public class ReservationController {
     }
 
     /**
-     * API tinh truoc tien thue, tien coc 1 thang (BR-DEP-01) va chiet khau lam tron (BR-GEN-04).
+     * API tính trước tiền thuê, tiền cọc 1 tháng (BR-DEP-01) và chiết khấu làm tròn (BR-GEN-04).
      */
     @PostMapping("/calculate-price")
     @Operation(summary = "Tính giá dự tính cho đơn giữ chỗ")
@@ -38,67 +40,104 @@ public class ReservationController {
             @Valid @RequestBody CalculatePriceRequest request
     ) {
         CalculatePriceResponse response = reservationService.calculatePrice(request);
-        return ResponseEntity.ok(ApiResponse.success(response, "Tinh gia thanh cong"));
+        return ResponseEntity.ok(ApiResponse.success(response, "Tính giá thành công"));
     }
 
     /**
-     * API tao don dat cho moi & giu capacity 48 gio (BR-RES-02, BR-DEP-03).
+     * API tạo đơn đặt chỗ mới & giữ capacity trong 48 giờ (SC-02, BR-RES-02, BR-DEP-03).
      */
     @PostMapping
-    @Operation(summary = "Tạo mới đơn giữ chỗ")
+    @Operation(summary = "Tạo mới đơn giữ chỗ (Customer)")
     public ResponseEntity<ApiResponse<ReservationResponse>> createReservation(
-            @Valid @RequestBody CreateReservationRequest request
+            @Valid @RequestBody CreateReservationRequest request,
+            @AuthenticationPrincipal UserPrincipal currentUser
     ) {
-        ReservationResponse response = reservationService.createReservation(request);
-        URI location = URI.create("/api/v1/reservations/" + response.getCode());
+        ReservationResponse response = reservationService.createReservation(request, currentUser);
+        URI location = URI.create("/api/v1/reservations/" + response.getId());
         return ResponseEntity.created(location)
-                .body(new ApiResponse<>(HttpStatus.CREATED.value(), "Dat cho thanh cong", response));
+                .body(new ApiResponse<>(HttpStatus.CREATED.value(), "Đặt chỗ thành công", response));
     }
 
     /**
-     * Tra cuu chi tiet don dat cho va ma VietQR.
+     * Lấy danh sách đặt chỗ phân trang có lọc theo vai trò và cơ sở (API-SPEC § 7.2, SA-03).
      */
-    @GetMapping("/{code}")
-    @Operation(summary = "Tra cứu thông tin đơn đặt chỗ theo mã code")
-    public ResponseEntity<ApiResponse<ReservationResponse>> getReservation(
-            @PathVariable String code
+    @GetMapping
+    @Operation(summary = "Lấy danh sách đặt chỗ phân trang có lọc")
+    public ResponseEntity<ApiResponse<PageResponse<ReservationResponse>>> getReservations(
+            @ModelAttribute ReservationFilterParams params,
+            @AuthenticationPrincipal UserPrincipal currentUser
     ) {
-        ReservationResponse response = reservationService.getReservationByCode(code);
-        return ResponseEntity.ok(ApiResponse.success(response, "Lay thong tin don dat cho thanh cong"));
+        PageResponse<ReservationResponse> response = reservationService.getReservations(params, currentUser);
+        return ResponseEntity.ok(ApiResponse.success(response, "Lấy danh sách đặt chỗ thành công"));
     }
 
     /**
-     * Huy don dat cho khi con PENDING_PAYMENT (BR-RES-04).
+     * Tra cứu thông tin chi tiết đơn đặt chỗ theo ID hoặc Mã Code.
+     */
+    @GetMapping("/{identifier}")
+    @Operation(summary = "Tra cứu thông tin đơn đặt chỗ theo ID hoặc Mã Code")
+    public ResponseEntity<ApiResponse<ReservationResponse>> getReservation(
+            @PathVariable String identifier,
+            @AuthenticationPrincipal UserPrincipal currentUser
+    ) {
+        ReservationResponse response;
+        if (identifier.matches("\\d+")) {
+            response = reservationService.getReservationById(Long.parseLong(identifier), currentUser);
+        } else {
+            response = reservationService.getReservationByCode(identifier);
+        }
+        return ResponseEntity.ok(ApiResponse.success(response, "Lấy thông tin đơn đặt chỗ thành công"));
+    }
+
+    /**
+     * Hủy đơn đặt chỗ theo chuẩn REST API (API-SPEC § 7.4, BR-RES-04).
+     */
+    @PostMapping("/{id}/cancellation")
+    @Operation(summary = "Hủy đơn đặt chỗ kèm lý do")
+    public ResponseEntity<ApiResponse<ReservationResponse>> cancelReservationPost(
+            @PathVariable Long id,
+            @Valid @RequestBody(required = false) CancelReservationRequest request,
+            @AuthenticationPrincipal UserPrincipal currentUser
+    ) {
+        ReservationResponse response = reservationService.cancelReservation(id, request, currentUser);
+        return ResponseEntity.ok(ApiResponse.success(response, "Đã hủy đơn đặt chỗ thành công"));
+    }
+
+    /**
+     * Hủy đơn đặt chỗ theo mã code (DELETE) — backward compatibility.
      */
     @DeleteMapping("/{code}")
-    @Operation(summary = "Hủy đơn đặt chỗ")
+    @Operation(summary = "Hủy đơn đặt chỗ theo mã code")
     public ResponseEntity<ApiResponse<Void>> cancelReservation(
             @PathVariable String code
     ) {
         reservationService.cancelReservation(code);
-        return ResponseEntity.ok(ApiResponse.success(null, "Da huy don dat cho thanh cong"));
+        return ResponseEntity.ok(ApiResponse.success(null, "Đã hủy đơn đặt chỗ thành công"));
     }
 
     /**
-     * Tra cuu danh sach don dat cho / hop dong cua khach hang (SCR-SC-04 My Rentals).
+     * Tra cứu danh sách đơn đặt chỗ / hợp đồng của khách hàng (My Rentals).
      */
     @GetMapping("/my-rentals")
     @Operation(summary = "Lấy danh sách thuê kho của tôi")
-    public ResponseEntity<ApiResponse<List<ReservationResponse>>> getMyRentals() {
-        // Tam lay customerId = 1L (khach demo theo seed V2)
-        List<ReservationResponse> list = reservationService.getCustomerReservations(1L);
-        return ResponseEntity.ok(ApiResponse.success(list, "Lay danh sach thue kho thanh cong"));
+    public ResponseEntity<ApiResponse<List<ReservationResponse>>> getMyRentals(
+            @AuthenticationPrincipal UserPrincipal currentUser
+    ) {
+        Long customerId = (currentUser != null) ? currentUser.getId() : 1L;
+        List<ReservationResponse> list = reservationService.getCustomerReservations(customerId);
+        return ResponseEntity.ok(ApiResponse.success(list, "Lấy danh sách thuê kho thành công"));
     }
 
     /**
-     * T3.5: Tra cuu dat cho khi khach den check-in — US-FS-01.1
+     * T3.5: Tra cứu đặt chỗ khi khách đến check-in — US-FS-01.1
      */
     @GetMapping("/lookup")
     @Operation(summary = "Tra cứu đặt chỗ khi khách check-in tại cơ sở")
     public ResponseEntity<ApiResponse<ReservationResponse>> lookupForCheckIn(
             @RequestParam String query,
-            @RequestParam Long facilityId) {
+            @RequestParam Long facilityId
+    ) {
         ReservationResponse response = reservationService.lookupForCheckIn(query, facilityId);
-        return ResponseEntity.ok(ApiResponse.success(response, "Tra cuu dat cho thanh cong"));
+        return ResponseEntity.ok(ApiResponse.success(response, "Tra cứu đặt chỗ thành công"));
     }
 }

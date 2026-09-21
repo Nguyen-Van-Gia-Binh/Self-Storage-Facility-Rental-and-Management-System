@@ -2,15 +2,22 @@ package com.swp391.selfstorage.reservation.service;
 
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
+import com.swp391.selfstorage.contract.repository.RentalContractRepository;
+import com.swp391.selfstorage.facility.repository.FacilityRepository;
 import com.swp391.selfstorage.reservation.entity.Reservation;
 import com.swp391.selfstorage.reservation.entity.ReservationStatus;
 import com.swp391.selfstorage.reservation.repository.ReservationRepository;
 import com.swp391.selfstorage.unit.entity.StorageUnit;
 import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
+import com.swp391.selfstorage.unit.repository.FacilityUnitTypePriceRepository;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
-import org.junit.jupiter.api.*;
+import com.swp391.selfstorage.unit.repository.UnitTypeRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.*;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
@@ -26,6 +33,10 @@ class ReservationConfirmTest {
 
     @Mock private ReservationRepository reservationRepository;
     @Mock private StorageUnitRepository storageUnitRepository;
+    @Mock private FacilityRepository facilityRepository;
+    @Mock private UnitTypeRepository unitTypeRepository;
+    @Mock private FacilityUnitTypePriceRepository facilityUnitTypePriceRepository;
+    @Mock private RentalContractRepository rentalContractRepository;
     @InjectMocks private ReservationServiceImpl service;
 
     private Reservation pendingReservation;
@@ -40,9 +51,10 @@ class ReservationConfirmTest {
         pendingReservation.setHoldExpiresAt(OffsetDateTime.now().plusHours(10));
         pendingReservation.setStartDate(LocalDate.now().plusDays(1));
 
-        availableUnit = StorageUnit.builder()
-                .id(42L).facilityId(1L)
-                .status(StorageUnitStatus.AVAILABLE).build();
+        availableUnit = new StorageUnit();
+        availableUnit.setId(42L);
+        availableUnit.setFacilityId(1L);
+        availableUnit.setStatus(StorageUnitStatus.AVAILABLE);
     }
 
     @Test
@@ -50,8 +62,8 @@ class ReservationConfirmTest {
     void shouldConfirmAndReserveUnit_whenUnitIsAvailable() {
         when(reservationRepository.findByIdWithLock(1042L)).thenReturn(Optional.of(pendingReservation));
         when(storageUnitRepository.findByIdForUpdate(42L)).thenReturn(Optional.of(availableUnit));
-        when(reservationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-        when(storageUnitRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(storageUnitRepository.save(any(StorageUnit.class))).thenAnswer(inv -> inv.getArgument(0));
 
         service.confirmAfterPayment(1042L);
 
@@ -91,7 +103,7 @@ class ReservationConfirmTest {
         availableUnit.setStatus(StorageUnitStatus.OCCUPIED);
         when(reservationRepository.findByIdWithLock(1042L)).thenReturn(Optional.of(pendingReservation));
         when(storageUnitRepository.findByIdForUpdate(42L)).thenReturn(Optional.of(availableUnit));
-        when(reservationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> inv.getArgument(0));
 
         service.confirmAfterPayment(1042L);
 

@@ -57,7 +57,9 @@ public enum ErrorCode {
     SURCHARGE_CODE_ALREADY_EXISTS(HttpStatus.CONFLICT, "Mã phụ phí đã tồn tại"),
     PAYMENT_FAILED(HttpStatus.CONFLICT, "Thanh toán thất bại ở cổng thanh toán"),
     POLICY_VERSION_ALREADY_EXISTS(HttpStatus.CONFLICT, "Số phiên bản chính sách đã tồn tại"),
-    CAPACITY_NOT_AVAILABLE(HttpStatus.CONFLICT, "Ô kho không còn khả dụng cho khoảng thời gian gia hạn"),
+    CAPACITY_NOT_AVAILABLE(HttpStatus.CONFLICT, "Không còn sức chứa khả dụng cho loại ô kho này trong khoảng thời gian đã chọn"),
+    CONTRACT_OVERDUE(HttpStatus.CONFLICT, "Bạn có hợp đồng đang quá hạn, vui lòng giải quyết trước khi tạo đơn đặt chỗ mới"),
+    RESERVATION_ALREADY_CANCELLED(HttpStatus.CONFLICT, "Đơn đặt chỗ đã được hủy trước đó"),
 
     // 422 Unprocessable Entity
     RETURN_NOTICE_TOO_SHORT(HttpStatus.UNPROCESSABLE_ENTITY,

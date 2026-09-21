@@ -31,6 +31,49 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     Optional<Reservation> findByCodeAndFacilityId(String code, Long facilityId);
 
+    @Query("SELECT COUNT(r) > 0 FROM Reservation r " +
+           "WHERE r.storageUnitId = :storageUnitId " +
+           "  AND ( " +
+           "       (r.status = 'PENDING_PAYMENT' AND r.holdExpiresAt > :now) " +
+           "       OR (r.status IN ('CONFIRMED', 'FULFILLED')) " +
+           "  ) " +
+           "  AND r.startDate < :endDateExclusive " +
+           "  AND r.endDateExclusive > :startDate")
+    boolean existsOverlappingReservationForUnit(
+            @Param("storageUnitId") Long storageUnitId,
+            @Param("startDate") java.time.LocalDate startDate,
+            @Param("endDateExclusive") java.time.LocalDate endDateExclusive,
+            @Param("now") OffsetDateTime now
+    );
+
+    @Query("SELECT r FROM Reservation r WHERE " +
+           "(:customerId IS NULL OR r.customerId = :customerId) AND " +
+           "(:facilityId IS NULL OR r.facilityId = :facilityId) AND " +
+           "(:status IS NULL OR r.status = :status) AND " +
+           "(:startDateFrom IS NULL OR r.startDate >= :startDateFrom) AND " +
+           "(:startDateTo IS NULL OR r.startDate <= :startDateTo)")
+    org.springframework.data.domain.Page<Reservation> findWithFilters(
+            @Param("customerId") Long customerId,
+            @Param("facilityId") Long facilityId,
+            @Param("status") ReservationStatus status,
+            @Param("startDateFrom") java.time.LocalDate startDateFrom,
+            @Param("startDateTo") java.time.LocalDate startDateTo,
+            org.springframework.data.domain.Pageable pageable
+    );
+
+    @Query("SELECT r FROM Reservation r WHERE " +
+           "r.facilityId IN :facilityIds AND " +
+           "(:status IS NULL OR r.status = :status) AND " +
+           "(:startDateFrom IS NULL OR r.startDate >= :startDateFrom) AND " +
+           "(:startDateTo IS NULL OR r.startDate <= :startDateTo)")
+    org.springframework.data.domain.Page<Reservation> findByFacilityIdsWithFilters(
+            @Param("facilityIds") Collection<Long> facilityIds,
+            @Param("status") ReservationStatus status,
+            @Param("startDateFrom") java.time.LocalDate startDateFrom,
+            @Param("startDateTo") java.time.LocalDate startDateTo,
+            org.springframework.data.domain.Pageable pageable
+    );
+
     @Query(value = "SELECT r.* FROM reservation r " +
             "JOIN app_user u ON u.id = r.customer_id " +
             "WHERE (u.phone = :query OR u.identity_number = :query) " +
