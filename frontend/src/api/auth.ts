@@ -5,6 +5,7 @@
 import { apiClient } from './client';
 import type { ApiResponse } from './client';
 import type { UserRoleType } from './user';
+import { tokenStorage, normalizeRole } from '@/utils/tokenStorage';
 import mockUsers from '@/mock/mock-users.json';
 
 export interface UserInfo {
@@ -26,6 +27,13 @@ export interface AuthData {
 
 export interface LoginPayload {
   email: string;
+  password: string;
+}
+
+export interface RegisterPayload {
+  fullName: string;
+  email: string;
+  phone?: string;
   password: string;
 }
 
@@ -103,44 +111,120 @@ export async function loginUser(payload: LoginPayload): Promise<AuthData> {
   }
 }
 
-
 /**
- * Lưu token và thông tin user vào localStorage
+ * Đăng ký tài khoản khách hàng mới: Kết nối /api/v1/auth/register (T2.12)
  */
-export function saveSession(authData: AuthData): void {
-  localStorage.setItem('access_token', authData.accessToken);
-  if (authData.refreshToken) {
-    localStorage.setItem('refresh_token', authData.refreshToken);
+export async function registerUser(payload: RegisterPayload): Promise<AuthData> {
+  try {
+    const res = await apiClient<ApiResponse<AuthData> | AuthData>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+
+    const authData = ('data' in res && res.data) ? res.data : (res as AuthData);
+    saveSession(authData);
+    return authData;
+  } catch (err: unknown) {
+    const error = err as { status?: number; message?: string };
+
+    if (error && error.status && [400, 401, 403, 404, 409].includes(error.status)) {
+      throw error;
+    }
+
+    console.warn('Backend chưa sẵn sàng hoặc lỗi mạng, tự động mô phỏng đăng ký:', err);
+
+    // Mô phỏng tạo tài khoản khách hàng mới khi backend offline
+    const newCustomerAuth: AuthData = {
+      accessToken: `mock-jwt-token-new-${Date.now()}`,
+      refreshToken: `mock-refresh-token-${Date.now()}`,
+      tokenType: 'Bearer',
+      expiresIn: 900000,
+      user: {
+        id: Date.now(),
+        email: payload.email,
+        fullName: payload.fullName,
+        phone: payload.phone || '',
+        role: 'STORAGE_CUSTOMER',
+        facilityIds: [],
+      },
+    };
+    saveSession(newCustomerAuth);
+    return newCustomerAuth;
   }
-  localStorage.setItem('user_role', authData.user.role);
-  localStorage.setItem('current_user', JSON.stringify(authData.user));
 }
 
 /**
- * Đăng xuất
+ * Yêu cầu phục hồi mật khẩu (Gửi email đặt lại mật khẩu)
+ */
+export async function forgotPassword(email: string): Promise<{ message: string }> {
+  try {
+    const res = await apiClient<ApiResponse<{ message: string }> | { message: string }>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+
+    return ('data' in res && res.data) ? res.data : (res as { message: string });
+  } catch {
+    // Trả về thông báo mô phỏng thành công để bảo mật (không tiết lộ email có tồn tại hay không)
+    return {
+      message: `Hệ thống đã ghi nhận yêu cầu. Hướng dẫn đặt lại mật khẩu đã được gửi đến hòm thư ${email}.`,
+    };
+  }
+}
+
+/**
+ * Lưu token và thông tin user vào localStorage đồng bộ cùng tokenStorage
+ */
+export function saveSession(authData: AuthData): void {
+  const shortRole = normalizeRole(authData.user.role);
+
+  tokenStorage.setAccessToken(authData.accessToken);
+  if (authData.refreshToken) {
+    tokenStorage.setRefreshToken(authData.refreshToken);
+  }
+
+  tokenStorage.setUser({
+    id: authData.user.id,
+    username: authData.user.email.split('@')[0],
+    email: authData.user.email,
+    fullName: authData.user.fullName,
+    role: shortRole,
+    facilityId: authData.user.facilityIds?.[0],
+  });
+}
+
+/**
+ * Đăng xuất người dùng và xóa toàn bộ phiên
  */
 export function logoutUser(): void {
-  localStorage.removeItem('access_token');
-  localStorage.removeItem('refresh_token');
-  localStorage.removeItem('user_role');
-  localStorage.removeItem('current_user');
+  tokenStorage.clearSession();
 }
 
 /**
  * Lấy đường dẫn portal phù hợp với role của user
  */
-export function getPortalUrlByRole(role: UserRoleType): string {
-  switch (role) {
-    case 'SYSTEM_ADMINISTRATOR':
+export function getPortalUrlByRole(role: string): string {
+  const normalized = normalizeRole(role);
+  switch (normalized) {
+    case 'ADMIN':
       return '/admin';
-    case 'BUSINESS_OPERATIONS_MANAGER':
+    case 'BOM':
       return '/bom';
-    case 'FACILITY_MANAGER':
+    case 'MANAGER':
       return '/manager';
-    case 'FACILITY_STAFF':
+    case 'STAFF':
       return '/staff';
-    case 'STORAGE_CUSTOMER':
+    case 'CUSTOMER':
     default:
-      return '/customer';
+      return '/';
   }
 }
+
+export const authApi = {
+  login: loginUser,
+  register: registerUser,
+  forgotPassword,
+  logout: logoutUser,
+  getPortalUrlByRole,
+  saveSession,
+};
