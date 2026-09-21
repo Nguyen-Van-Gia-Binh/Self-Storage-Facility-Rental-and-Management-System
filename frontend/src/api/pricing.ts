@@ -55,7 +55,7 @@ const initialSurcharges: SurchargeItem[] = [
   },
 ];
 
-let inMemorySurcharges: SurchargeItem[] = [...initialSurcharges];
+const inMemorySurcharges: SurchargeItem[] = [...initialSurcharges];
 
 // Mock Active Policy
 const mockActivePolicy: ActivePolicyInfo = {
