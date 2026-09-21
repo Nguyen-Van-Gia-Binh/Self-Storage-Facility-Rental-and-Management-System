@@ -27,6 +27,7 @@ public enum ErrorCode {
     CONTRACT_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy hợp đồng"),
     RETURN_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy yêu cầu trả kho"),
     SURCHARGE_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy phụ phí"),
+    PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy thanh toán"),
 
     // 409 Conflict
     EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "Email đã được sử dụng"),
@@ -47,10 +48,12 @@ public enum ErrorCode {
             "Hợp đồng phải ở trạng thái đang hoạt động hoặc quá hạn để trả kho"),
     CONTRACT_NOT_PENDING_RETURN(HttpStatus.CONFLICT, "Hợp đồng chưa ở trạng thái chờ duyệt trả kho"),
     SURCHARGE_CODE_ALREADY_EXISTS(HttpStatus.CONFLICT, "Mã phụ phí đã tồn tại"),
+    PAYMENT_FAILED(HttpStatus.CONFLICT, "Thanh toán thất bại ở cổng thanh toán"),
 
     // 422 Unprocessable Entity
     RETURN_NOTICE_TOO_SHORT(HttpStatus.UNPROCESSABLE_ENTITY,
             "Thời gian hẹn trả kho không hợp lệ theo quy định báo trước"),
+    AMOUNT_MISMATCH(HttpStatus.UNPROCESSABLE_ENTITY, "Số tiền không khớp với tổng phải trả"),
 
     // 500 Internal Server Error
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Đã xảy ra lỗi hệ thống");
