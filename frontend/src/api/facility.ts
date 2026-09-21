@@ -1,34 +1,51 @@
 /**
- * Public Catalog API — SC-01 (T2.16)
- * All endpoints PUBLIC — no JWT required.
+ * Facility API — SC-01 (T2.16) & BM-01 (T2.13)
  * API-SPEC.md § 5 (Facility) & § 6 (Unit Types + Availability)
  */
 import { apiClient } from './client';
-import type { FacilityListItem, FacilityDetail, UnitTypeCatalog, AvailabilityResult, AvailabilityQuery } from '@/types';
+import type {
+  FacilityListItem,
+  FacilityDetail,
+  UnitTypeCatalog,
+  AvailabilityResult,
+  AvailabilityQuery,
+  CreateFacilityRequest,
+  UpdateFacilityRequest,
+} from '@/types';
 import mockFacilities from '@/mock/mock-facilities.json';
 import mockUnitTypesData from '@/mock/mock-unit-types.json';
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false';
 
-export async function fetchFacilities(keyword?: string): Promise<FacilityListItem[]> {
+// Bộ nhớ in-memory cho các thao tác mock để phản hồi tức thì
+const inMemoryFacilities: FacilityListItem[] = [...(mockFacilities as FacilityListItem[])];
+
+export async function fetchFacilities(keyword?: string, includeInactive = false): Promise<FacilityListItem[]> {
   if (USE_MOCK) {
-    const all = mockFacilities as FacilityListItem[];
-    if (!keyword) return all.filter((f) => f.isActive);
+    let list = inMemoryFacilities;
+    if (!includeInactive) {
+      list = list.filter((f) => f.isActive);
+    }
+    if (!keyword) return list;
     const q = keyword.toLowerCase();
-    return all.filter((f) => f.isActive && (f.name.toLowerCase().includes(q) || f.address.toLowerCase().includes(q)));
+    return list.filter((f) => f.name.toLowerCase().includes(q) || f.address.toLowerCase().includes(q));
   }
 
   try {
-    const qs = new URLSearchParams({ size: '50', isActive: 'true' });
+    const qs = new URLSearchParams({ size: '50' });
+    if (!includeInactive) qs.set('isActive', 'true');
     if (keyword) qs.set('keyword', keyword);
     const res = await apiClient<{ content: FacilityListItem[] }>(`/facilities?${qs}`);
     return res.content;
   } catch (err) {
     console.warn('Lỗi gọi API /facilities, fallback sang mock data:', err);
-    const all = mockFacilities as FacilityListItem[];
-    if (!keyword) return all.filter((f) => f.isActive);
+    let list = inMemoryFacilities;
+    if (!includeInactive) {
+      list = list.filter((f) => f.isActive);
+    }
+    if (!keyword) return list;
     const q = keyword.toLowerCase();
-    return all.filter((f) => f.isActive && (f.name.toLowerCase().includes(q) || f.address.toLowerCase().includes(q)));
+    return list.filter((f) => f.name.toLowerCase().includes(q) || f.address.toLowerCase().includes(q));
   }
 }
 
@@ -107,4 +124,90 @@ export async function checkAvailability(facilityId: number, unitTypeId: number, 
       depositAmount: ut.monthlyPrice,
     };
   }
+}
+
+// --- BOM Facility Management APIs (BM-01) ---
+
+export async function createFacility(data: CreateFacilityRequest): Promise<FacilityDetail> {
+  if (USE_MOCK) {
+    const nextId = Math.max(...inMemoryFacilities.map((f) => f.id), 0) + 1;
+    const now = new Date().toISOString();
+    const createdDetail: FacilityDetail = {
+      id: nextId,
+      name: data.name,
+      address: data.address,
+      phone: data.phone || '028-1234-5678',
+      description: data.description || '',
+      openingHours: data.openingHours || '06:00–22:00',
+      isActive: true,
+      createdAt: now,
+      updatedAt: now,
+    };
+    inMemoryFacilities.unshift({
+      ...createdDetail,
+      lowestMonthlyPrice: 800000,
+      activeUnitTypeCount: 0,
+    });
+    return createdDetail;
+  }
+
+  return await apiClient<FacilityDetail>('/facilities', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateFacility(id: number, data: UpdateFacilityRequest): Promise<FacilityDetail> {
+  if (USE_MOCK) {
+    const idx = inMemoryFacilities.findIndex((f) => f.id === id);
+    if (idx === -1) {
+      throw { status: 404, message: 'Không tìm thấy cơ sở', timestamp: new Date().toISOString() };
+    }
+    const current = inMemoryFacilities[idx];
+    const now = new Date().toISOString();
+    const updatedDetail: FacilityDetail = {
+      ...current,
+      name: data.name,
+      address: data.address,
+      phone: data.phone || current.phone,
+      description: data.description !== undefined ? data.description : current.description,
+      openingHours: data.openingHours || current.openingHours,
+      updatedAt: now,
+    };
+    inMemoryFacilities[idx] = {
+      ...inMemoryFacilities[idx],
+      ...updatedDetail,
+    };
+    return updatedDetail;
+  }
+
+  return await apiClient<FacilityDetail>(`/facilities/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function toggleFacilityStatus(id: number, isActive: boolean): Promise<FacilityDetail> {
+  if (USE_MOCK) {
+    const idx = inMemoryFacilities.findIndex((f) => f.id === id);
+    if (idx === -1) {
+      throw { status: 404, message: 'Không tìm thấy cơ sở', timestamp: new Date().toISOString() };
+    }
+    // Giả lập AC-2: Không tắt cơ sở nếu có id = 1 (mô phỏng cơ sở đang có hợp đồng active)
+    if (!isActive && id === 999) {
+      throw {
+        status: 409,
+        errorCode: 'FACILITY_HAS_ACTIVE_CONTRACTS',
+        message: 'Không thể ngừng khai thác: Cơ sở đang còn hợp đồng thuê còn hiệu lực.',
+        timestamp: new Date().toISOString(),
+      };
+    }
+    inMemoryFacilities[idx].isActive = isActive;
+    return inMemoryFacilities[idx] as unknown as FacilityDetail;
+  }
+
+  return await apiClient<FacilityDetail>(`/facilities/${id}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ isActive }),
+  });
 }

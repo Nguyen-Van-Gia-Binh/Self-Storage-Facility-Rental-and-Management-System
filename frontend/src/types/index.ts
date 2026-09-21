@@ -256,5 +256,62 @@ export interface StaffDailyTaskReport {
   openSupportRequests: DailyIncidentTask[];
 }
 
+// --- BOM Management Types (T2.13 BM-01 & BM-03) ---
+
+export interface CreateFacilityRequest {
+  name: string;
+  address: string;
+  phone?: string;
+  description?: string;
+  openingHours?: string;
+}
+
+export interface UpdateFacilityRequest {
+  name: string;
+  address: string;
+  phone?: string;
+  description?: string;
+  openingHours?: string;
+}
+
+export interface SurchargeItem {
+  id: number;
+  name: string;
+  facilityId?: number | null;
+  facilityName?: string;
+  unitTypeId?: number | null;
+  amount: number;
+  type: 'FIXED' | 'PERCENTAGE';
+  effectiveDate: string;
+  isActive: boolean;
+}
+
+export interface CreateSurchargeRequest {
+  name: string;
+  facilityId?: number | null;
+  unitTypeId?: number | null;
+  amount: number;
+  type: 'FIXED' | 'PERCENTAGE';
+  effectiveDate: string;
+}
+
+export interface ActivePolicyInfo {
+  id: number;
+  version: string;
+  effectiveDate: string;
+  depositMultiplier: number;
+  reservationHoldHours: number;
+  rentalDailyDivisor: number;
+  checkinGraceDays: number;
+  cancelFullRefundHours: number;
+  cancelLateRefundRate: number;
+  renewalMinMonths: number;
+  renewalMaxMonths: number;
+  overdueGraceDays: number;
+  overdueDailyRate: number;
+  overdueCapRate: number;
+  returnNoticeDays: number;
+}
+
 export * from './report';
 
