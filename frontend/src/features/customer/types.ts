@@ -57,6 +57,10 @@ export interface StorageUnit {
   floor: number;
   zone: string; // Vd: Zone A, Zone B
   status: UnitStatus;
+  sizeCategory?: UnitSizeCategory;
+  storageType?: StorageType;
+  areaM2?: number;
+  monthlyPrice?: number;
 }
 
 // Dữ liệu tạo đơn đặt chỗ (Booking Draft - SC-02, BR-DEP-01, BR-DEP-03)
