@@ -69,4 +69,27 @@ public interface ReservationService {
      * query: mã Reservation (RSV-...), số điện thoại, hoặc CCCD.
      */
     ReservationResponse lookupForCheckIn(String query, Long facilityId);
+
+    /**
+     * T3.8: Tra cứu thông tin lịch hẹn và hướng dẫn Check-in nhận kho cho khách (US-SC-04.1).
+     */
+    com.swp391.selfstorage.reservation.dto.CheckInInfoResponse getCheckInInfo(Long reservationId, UserPrincipal currentUser);
+
+    /**
+     * T3.8: Khách hàng xác nhận đã nhận bàn giao ô kho và nhận Access Code PIN (US-SC-04.2).
+     */
+    com.swp391.selfstorage.reservation.dto.CustomerCheckInResponse confirmCustomerCheckIn(
+            Long reservationId,
+            com.swp391.selfstorage.reservation.dto.CustomerCheckInConfirmRequest request,
+            UserPrincipal currentUser
+    );
+
+    /**
+     * T3.8: Khách hàng dời lịch hẹn Check-in nhận kho trong thời hạn 10 ngày (US-SC-04.3, BR-CAN-04).
+     */
+    com.swp391.selfstorage.reservation.dto.CheckInInfoResponse rescheduleAppointment(
+            Long reservationId,
+            com.swp391.selfstorage.reservation.dto.RescheduleAppointmentRequest request,
+            UserPrincipal currentUser
+    );
 }

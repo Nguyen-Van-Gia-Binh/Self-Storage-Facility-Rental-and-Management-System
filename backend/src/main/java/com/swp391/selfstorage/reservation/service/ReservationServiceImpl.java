@@ -5,6 +5,7 @@ import com.swp391.selfstorage.common.dto.PageResponse;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
 import com.swp391.selfstorage.contract.entity.ContractStatus;
+import com.swp391.selfstorage.contract.entity.RentalContract;
 import com.swp391.selfstorage.contract.repository.RentalContractRepository;
 import com.swp391.selfstorage.facility.entity.Facility;
 import com.swp391.selfstorage.facility.entity.FacilityStatus;
@@ -33,6 +34,7 @@ import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
@@ -470,5 +472,181 @@ public class ReservationServiceImpl implements ReservationService {
         res.setVietQrPayload("vietqr://" + r.getTotalPayable() + "/" + transferContent);
 
         return res;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CheckInInfoResponse getCheckInInfo(Long reservationId, UserPrincipal currentUser) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESERVATION_NOT_FOUND));
+
+        if (currentUser != null && currentUser.getRole() == UserRole.STORAGE_CUSTOMER) {
+            if (!reservation.getCustomerId().equals(currentUser.getId())) {
+                throw new CustomException(ErrorCode.ACCESS_DENIED);
+            }
+        }
+
+        CheckInInfoResponse response = new CheckInInfoResponse();
+        response.setReservationId(reservation.getId());
+        response.setReservationCode(reservation.getCode());
+        response.setStatus(reservation.getStatus().name());
+        response.setStartDate(reservation.getStartDate());
+
+        LocalDate gracePeriodEnd = reservation.getStartDate().plusDays(10);
+        response.setGracePeriodEnd(gracePeriodEnd);
+        long daysRemaining = java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), gracePeriodEnd);
+        response.setDaysRemaining(Math.max(0, daysRemaining));
+
+        response.setFacilityId(reservation.getFacilityId());
+        if (facilityRepository != null) {
+            facilityRepository.findById(reservation.getFacilityId()).ifPresent(f -> {
+                response.setFacilityName(f.getName());
+                response.setFacilityAddress(f.getAddress());
+                response.setFacilityPhone(f.getPhone());
+                response.setOpeningHours("07:00 - 21:00 hàng ngày");
+            });
+        }
+
+        response.setStorageUnitId(reservation.getStorageUnitId());
+        if (reservation.getStorageUnitId() != null && storageUnitRepository != null) {
+            storageUnitRepository.findById(reservation.getStorageUnitId()).ifPresent(u -> {
+                response.setStorageUnitCode(u.getCode());
+                response.setFloor(u.getFloor());
+                response.setPosition(u.getPosition());
+            });
+        }
+
+        if (unitTypeRepository != null) {
+            unitTypeRepository.findById(reservation.getUnitTypeId()).ifPresent(ut -> {
+                response.setUnitTypeName(ut.getName());
+                response.setUnitDimensions(String.format("%.1fm x %.1fm x %.1fm",
+                        ut.getWidthM() != null ? ut.getWidthM().doubleValue() : 0.0,
+                        ut.getLengthM() != null ? ut.getLengthM().doubleValue() : 0.0,
+                        ut.getHeightM() != null ? ut.getHeightM().doubleValue() : 0.0));
+            });
+        }
+
+        if (rentalContractRepository != null) {
+            rentalContractRepository.findByReservationId(reservationId).ifPresent(c -> {
+                response.setContractId(c.getId());
+                response.setContractCode(c.getCode());
+            });
+        }
+
+        response.setCheckinToken("CHK-" + reservation.getCode().replace("-", "") + "-" +
+                (response.getContractId() != null ? response.getContractId() : reservation.getId()));
+        response.setRequiredDocuments(List.of(
+                "CCCD hoặc Hộ chiếu bản gốc khớp thông tin đăng ký tài khoản",
+                "Mã đặt chỗ (" + reservation.getCode() + ") hoặc mã QR Check-in trên ứng dụng",
+                "Khóa phụ cá nhân (nếu quý khách có nhu cầu sử dụng thêm khóa cơ riêng)"
+        ));
+        response.setNotes("Quý khách vui lòng đến nhận kho trong vòng 10 ngày kể từ ngày bắt đầu thuê để hoàn tất thủ tục bàn giao và tránh bị hủy do No-show theo điều khoản BR-CAN-04.");
+
+        return response;
+    }
+
+    @Override
+    @Transactional
+    public CustomerCheckInResponse confirmCustomerCheckIn(
+            Long reservationId,
+            CustomerCheckInConfirmRequest request,
+            UserPrincipal currentUser
+    ) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESERVATION_NOT_FOUND));
+
+        if (currentUser != null && currentUser.getRole() == UserRole.STORAGE_CUSTOMER) {
+            if (!reservation.getCustomerId().equals(currentUser.getId())) {
+                throw new CustomException(ErrorCode.ACCESS_DENIED);
+            }
+        }
+
+        if (reservation.getStatus() == ReservationStatus.FULFILLED) {
+            throw new CustomException(ErrorCode.RESERVATION_ALREADY_FULFILLED);
+        }
+
+        if (reservation.getStatus() != ReservationStatus.CONFIRMED) {
+            throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION);
+        }
+
+        if (request != null && !request.isConfirmed()) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED);
+        }
+
+        reservation.setStatus(ReservationStatus.FULFILLED);
+        reservation.setFulfilledAt(OffsetDateTime.now());
+        reservationRepository.save(reservation);
+
+        CustomerCheckInResponse response = new CustomerCheckInResponse();
+        response.setReservationId(reservation.getId());
+        response.setReservationCode(reservation.getCode());
+        response.setReservationStatus(ReservationStatus.FULFILLED.name());
+        response.setConfirmedAt(reservation.getFulfilledAt());
+        response.setMessage("Xác nhận nhận bàn giao ô kho thành công. Chúc mừng bạn đã bắt đầu sử dụng dịch vụ lưu trữ!");
+
+        String unitCode = null;
+        if (reservation.getStorageUnitId() != null && storageUnitRepository != null) {
+            unitCode = storageUnitRepository.findById(reservation.getStorageUnitId())
+                    .map(StorageUnit::getCode)
+                    .orElse(null);
+        }
+        response.setStorageUnitCode(unitCode != null ? unitCode : "S-" + reservation.getStorageUnitId());
+
+        if (rentalContractRepository != null) {
+            rentalContractRepository.findByReservationId(reservationId).ifPresent(contract -> {
+                response.setContractId(contract.getId());
+                response.setContractCode(contract.getCode());
+                response.setContractStatus(contract.getStatus().name());
+
+                String accessCode = contract.getAccessCode();
+                if (accessCode == null || accessCode.isBlank()) {
+                    accessCode = String.format("%06d", ThreadLocalRandom.current().nextInt(100000, 1000000));
+                    contract.setAccessCode(accessCode);
+                    rentalContractRepository.save(contract);
+                }
+                response.setAccessCode(accessCode);
+            });
+        }
+
+        if (response.getAccessCode() == null) {
+            response.setAccessCode(String.format("%06d", ThreadLocalRandom.current().nextInt(100000, 1000000)));
+        }
+
+        return response;
+    }
+
+    @Override
+    @Transactional
+    public CheckInInfoResponse rescheduleAppointment(
+            Long reservationId,
+            RescheduleAppointmentRequest request,
+            UserPrincipal currentUser
+    ) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESERVATION_NOT_FOUND));
+
+        if (currentUser != null && currentUser.getRole() == UserRole.STORAGE_CUSTOMER) {
+            if (!reservation.getCustomerId().equals(currentUser.getId())) {
+                throw new CustomException(ErrorCode.ACCESS_DENIED);
+            }
+        }
+
+        if (reservation.getStatus() != ReservationStatus.CONFIRMED && reservation.getStatus() != ReservationStatus.PENDING_PAYMENT) {
+            throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION);
+        }
+
+        LocalDate newDate = request.getNewAppointmentDate();
+        LocalDate minDate = reservation.getStartDate();
+        LocalDate maxDate = reservation.getStartDate().plusDays(10);
+
+        if (newDate.isBefore(minDate) || newDate.isAfter(maxDate)) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED);
+        }
+
+        reservation.setStartDate(newDate);
+        reservation.setEndDateExclusive(newDate.plusMonths(reservation.getRentalMonths()));
+        reservationRepository.save(reservation);
+
+        return getCheckInInfo(reservationId, currentUser);
     }
 }

@@ -140,4 +140,45 @@ public class ReservationController {
         ReservationResponse response = reservationService.lookupForCheckIn(query, facilityId);
         return ResponseEntity.ok(ApiResponse.success(response, "Tra cứu đặt chỗ thành công"));
     }
+
+    /**
+     * T3.8: Tra cứu thông tin lịch hẹn và hướng dẫn Check-in nhận kho cho khách (US-SC-04.1).
+     */
+    @GetMapping("/{id}/checkin-info")
+    @Operation(summary = "Tra cứu thông tin lịch hẹn và hướng dẫn check-in (US-SC-04.1)")
+    public ResponseEntity<ApiResponse<CheckInInfoResponse>> getCheckInInfo(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserPrincipal currentUser
+    ) {
+        CheckInInfoResponse response = reservationService.getCheckInInfo(id, currentUser);
+        return ResponseEntity.ok(ApiResponse.success(response, "Lấy thông tin lịch hẹn check-in thành công"));
+    }
+
+    /**
+     * T3.8: Khách hàng xác nhận đã nhận bàn giao ô kho và nhận Access Code PIN (US-SC-04.2).
+     */
+    @PostMapping("/{id}/checkin-confirm")
+    @Operation(summary = "Khách hàng xác nhận nhận bàn giao ô kho (US-SC-04.2)")
+    public ResponseEntity<ApiResponse<CustomerCheckInResponse>> confirmCustomerCheckIn(
+            @PathVariable Long id,
+            @Valid @RequestBody(required = false) CustomerCheckInConfirmRequest request,
+            @AuthenticationPrincipal UserPrincipal currentUser
+    ) {
+        CustomerCheckInResponse response = reservationService.confirmCustomerCheckIn(id, request, currentUser);
+        return ResponseEntity.ok(ApiResponse.success(response, "Xác nhận nhận kho thành công"));
+    }
+
+    /**
+     * T3.8: Khách hàng dời lịch hẹn Check-in nhận kho trong thời hạn 10 ngày (US-SC-04.3).
+     */
+    @PatchMapping("/{id}/appointment")
+    @Operation(summary = "Khách hàng dời lịch hẹn check-in (US-SC-04.3)")
+    public ResponseEntity<ApiResponse<CheckInInfoResponse>> rescheduleAppointment(
+            @PathVariable Long id,
+            @Valid @RequestBody RescheduleAppointmentRequest request,
+            @AuthenticationPrincipal UserPrincipal currentUser
+    ) {
+        CheckInInfoResponse response = reservationService.rescheduleAppointment(id, request, currentUser);
+        return ResponseEntity.ok(ApiResponse.success(response, "Dời lịch hẹn check-in thành công"));
+    }
 }

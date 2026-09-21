@@ -905,6 +905,104 @@ Facility Manager gán Storage Unit sau khi khách thanh toán — `FM-02`, `BR-A
 
 ---
 
+### `GET /api/v1/reservations/{id}/checkin-info`
+
+Tra cứu thông tin lịch hẹn và hướng dẫn Check-in nhận kho — `SC-04`, `US-SC-04.1`.
+
+**Auth:** `CUSTOMER` (chính chủ đơn), `FACILITY_STAFF`, `FACILITY_MANAGER`  
+
+**Response `200`:**
+```json
+{
+  "reservationId": 1042,
+  "reservationCode": "RSV-2026-001042",
+  "contractId": 500,
+  "contractCode": "CTR-202610-001",
+  "status": "CONFIRMED",
+  "startDate": "2026-10-01",
+  "gracePeriodEnd": "2026-10-11",
+  "daysRemaining": 5,
+  "facilityId": 1,
+  "facilityName": "Kho Tự Quản Tân Thuận",
+  "facilityAddress": "123 Nguyễn Thị Thập, Quận 7",
+  "facilityPhone": "0281234567",
+  "openingHours": "07:00 - 21:00 hàng ngày",
+  "storageUnitId": 42,
+  "storageUnitCode": "S-101",
+  "unitTypeName": "Loại S — 3m²",
+  "unitDimensions": "1.5m x 2.0m x 2.5m",
+  "floor": 1,
+  "position": "Dãy A",
+  "checkinToken": "CHK-RSV2026001042-500",
+  "requiredDocuments": [
+    "CCCD hoặc Hộ chiếu bản gốc khớp thông tin đăng ký tài khoản",
+    "Mã đặt chỗ (RSV-2026-001042) hoặc mã QR Check-in trên ứng dụng",
+    "Khóa phụ cá nhân (nếu quý khách có nhu cầu sử dụng thêm khóa cơ riêng)"
+  ],
+  "notes": "Quý khách vui lòng đến nhận kho trong vòng 10 ngày kể từ ngày bắt đầu thuê..."
+}
+```
+
+---
+
+### `POST /api/v1/reservations/{id}/checkin-confirm`
+
+Khách hàng xác nhận đã nhận bàn giao ô kho trên ứng dụng và nhận mã PIN Access Code — `SC-04`, `US-SC-04.2`.
+
+**Auth:** `CUSTOMER` (chính chủ đơn)  
+**Request body:**
+```json
+{
+  "confirmed": true,
+  "conditionAccepted": true,
+  "customerNotes": "Kho sạch sẽ, cửa hoạt động tốt"
+}
+```
+
+**Response `200`:**
+```json
+{
+  "reservationId": 1042,
+  "reservationCode": "RSV-2026-001042",
+  "contractId": 500,
+  "contractCode": "CTR-202610-001",
+  "reservationStatus": "FULFILLED",
+  "contractStatus": "ACTIVE",
+  "storageUnitCode": "S-101",
+  "accessCode": "482019",
+  "confirmedAt": "2026-10-01T10:15:30+07:00",
+  "message": "Xác nhận nhận bàn giao ô kho thành công. Chúc mừng bạn đã bắt đầu sử dụng dịch vụ lưu trữ!"
+}
+```
+
+**Lỗi:**
+
+| Status | errorCode | Điều kiện |
+|--------|-----------|-----------|
+| `403` | `ACCESS_DENIED` | Không phải chủ đơn đặt chỗ |
+| `404` | `RESERVATION_NOT_FOUND` | reservationId không tồn tại |
+| `409` | `RESERVATION_ALREADY_FULFILLED` | Đơn đã hoàn tất nhận kho trước đó |
+| `409` | `INVALID_STATUS_TRANSITION` | Đơn chưa ở trạng thái `CONFIRMED` |
+
+---
+
+### `PATCH /api/v1/reservations/{id}/appointment`
+
+Khách hàng dời lịch hẹn Check-in trong thời hạn 10 ngày ân hạn — `SC-04`, `US-SC-04.3`, `BR-CAN-04`.
+
+**Auth:** `CUSTOMER` (chính chủ đơn)  
+**Request body:**
+```json
+{
+  "newAppointmentDate": "2026-10-05",
+  "reason": "Bận chuyến công tác đột xuất"
+}
+```
+
+**Response `200`:** Trả về `CheckInInfoResponse` đã cập nhật.
+
+---
+
 ## 8. Module Contract — Hợp đồng thuê
 
 **Package:** `com.swp391.selfstorage.contract`  
