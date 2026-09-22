@@ -1,9 +1,7 @@
 package com.swp391.selfstorage.report.controller;
 
-import com.swp391.selfstorage.report.dto.FacilityOccupancyDetailDto;
-import com.swp391.selfstorage.report.dto.FacilityRevenueShareDto;
-import com.swp391.selfstorage.report.dto.SystemOccupancyReportResponse;
-import com.swp391.selfstorage.report.dto.SystemRevenueReportResponse;
+import com.swp391.selfstorage.common.dto.PageResponse;
+import com.swp391.selfstorage.report.dto.*;
 import com.swp391.selfstorage.report.service.SystemReportService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -100,4 +98,50 @@ class SystemReportControllerTest {
                 .andExpect(jsonPath("$.data.facilities[0].facilityId").value(2))
                 .andExpect(jsonPath("$.data.facilities[0].occupancyRate").value(0.75));
     }
+
+        @Test
+    @DisplayName("GET /api/v1/reports/system/overdue - Lấy danh sách hợp đồng quá hạn trả về 200 OK")
+    void testGetSystemOverdueContracts_Success() throws Exception {
+        PageResponse<OverdueContractDetailDto> mockPage = PageResponse.from(
+                new org.springframework.data.domain.PageImpl<>(
+                        List.of(OverdueContractDetailDto.builder()
+                                .contractId(1L)
+                                .contractCode("CTR-001")
+                                .customerName("Nguyễn Văn A")
+                                .overdueDays(5)
+                                .accruedOverdueFee(500_000L)
+                                .build())
+                )
+        );
+
+        when(systemReportService.getSystemOverdueContracts(any(), any(), any())).thenReturn(mockPage);
+
+        mockMvc.perform(get("/api/v1/reports/system/overdue")
+                        .param("page", "0")
+                        .param("size", "10")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.content.length()").value(1))
+                .andExpect(jsonPath("$.data.content[0].contractCode").value("CTR-001"))
+                .andExpect(jsonPath("$.data.content[0].overdueDays").value(5));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/reports/system/export - Xuất file CSV trả về 200 OK với đúng Headers")
+    void testExportSystemReport_Success() throws Exception {
+        byte[] mockBytes = "mock csv content".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+
+        when(systemReportService.exportSystemReport(any(), any(), any(), any(), any())).thenReturn(mockBytes);
+
+        mockMvc.perform(get("/api/v1/reports/system/export")
+                        .param("type", "REVENUE")
+                        .param("format", "CSV"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, org.hamcrest.Matchers.containsString("attachment; filename=\"report_revenue_")))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string(org.springframework.http.HttpHeaders.CONTENT_TYPE, org.hamcrest.Matchers.startsWith("text/csv")));
+    }
+
 }
