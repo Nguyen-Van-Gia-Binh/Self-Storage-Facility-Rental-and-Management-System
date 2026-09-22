@@ -33,28 +33,64 @@ public class Facility extends BaseEntity {
     @Column(name = "status", nullable = false, length = 20)
     private FacilityStatus status = FacilityStatus.ACTIVE;
 
-    public Facility() {}
+    public Facility() {
+    }
 
-    public String getCode() { return code; }
-    public void setCode(String code) { this.code = code; }
+    public String getCode() {
+        return code;
+    }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public void setCode(String code) {
+        this.code = code;
+    }
 
-    public String getAddress() { return address; }
-    public void setAddress(String address) { this.address = address; }
+    public String getName() {
+        return name;
+    }
 
-    public String getPhone() { return phone; }
-    public void setPhone(String phone) { this.phone = phone; }
+    public void setName(String name) {
+        this.name = name;
+    }
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public String getAddress() {
+        return address;
+    }
 
-    public String getOpeningHours() { return openingHours; }
-    public void setOpeningHours(String openingHours) { this.openingHours = openingHours; }
+    public void setAddress(String address) {
+        this.address = address;
+    }
 
-    public FacilityStatus getStatus() { return status; }
-    public void setStatus(FacilityStatus status) { this.status = status; }
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getOpeningHours() {
+        return openingHours;
+    }
+
+    public void setOpeningHours(String openingHours) {
+        this.openingHours = openingHours;
+    }
+
+    public FacilityStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(FacilityStatus status) {
+        this.status = status;
+    }
 
     public boolean isActive() {
         return this.status == FacilityStatus.ACTIVE;
