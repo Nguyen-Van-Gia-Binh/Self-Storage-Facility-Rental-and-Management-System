@@ -6,6 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
+import lombok.Builder;
 
 @Entity
 @Table(name = "app_user")
@@ -34,9 +35,11 @@ public class AppUser extends BaseEntity {
     @Column(name = "status", nullable = false, length = 20)
     private UserStatus status = UserStatus.ACTIVE;
 
-    public AppUser() {}
+    public AppUser() {
+    }
 
-    public AppUser(String email, String passwordHash, String fullName, String phone, String identityNumber, UserRole role, UserStatus status) {
+    public AppUser(String email, String passwordHash, String fullName, String phone, String identityNumber,
+            UserRole role, UserStatus status) {
         this.email = email;
         this.passwordHash = passwordHash;
         this.fullName = fullName;

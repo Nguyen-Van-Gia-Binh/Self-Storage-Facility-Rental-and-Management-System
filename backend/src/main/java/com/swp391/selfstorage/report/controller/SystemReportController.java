@@ -1,6 +1,10 @@
 package com.swp391.selfstorage.report.controller;
 
+import com.swp391.selfstorage.auth.service.UserPrincipal;
 import com.swp391.selfstorage.common.dto.ApiResponse;
+import com.swp391.selfstorage.common.dto.PageResponse;
+import com.swp391.selfstorage.report.dto.OverdueContractDetailDto;
+import com.swp391.selfstorage.report.dto.ReportExportType;
 import com.swp391.selfstorage.report.dto.SystemOccupancyReportResponse;
 import com.swp391.selfstorage.report.dto.SystemRevenueReportResponse;
 import com.swp391.selfstorage.report.service.SystemReportService;
@@ -8,9 +12,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -52,4 +59,46 @@ public class SystemReportController {
         SystemOccupancyReportResponse response = systemReportService.getSystemOccupancyReport(facilityId);
         return ResponseEntity.ok(ApiResponse.success(response, "Lấy báo cáo tỷ lệ lấp đầy toàn hệ thống thành công"));
     }
+
+        @GetMapping("/overdue")
+    @PreAuthorize("hasAnyRole('BUSINESS_OPERATIONS_MANAGER', 'SYSTEM_ADMINISTRATOR')")
+    @Operation(summary = "Xem danh sách hợp đồng nợ quá hạn toàn hệ thống hoặc theo cơ sở (BM-05)")
+    public ResponseEntity<ApiResponse<PageResponse<OverdueContractDetailDto>>> getSystemOverdueContracts(
+            @RequestParam(required = false) Long facilityId,
+            @RequestParam(required = false) Integer minOverdueDays,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        log.info("REST request to get system overdue contracts: facilityId={}, minOverdueDays={}, page={}, size={}",
+                facilityId, minOverdueDays, page, size);
+
+        PageResponse<OverdueContractDetailDto> response = systemReportService.getSystemOverdueContracts(
+                facilityId, minOverdueDays, PageRequest.of(page, size));
+        return ResponseEntity.ok(ApiResponse.success(response, "Lấy danh sách hợp đồng quá hạn thành công"));
+    }
+
+    @GetMapping("/export")
+    @PreAuthorize("hasAnyRole('BUSINESS_OPERATIONS_MANAGER', 'SYSTEM_ADMINISTRATOR')")
+    @Operation(summary = "Xuất dữ liệu báo cáo hệ thống ra file CSV/Excel (BM-05, US-BM-05.1)")
+    public ResponseEntity<byte[]> exportSystemReport(
+            @RequestParam(required = false, defaultValue = "REVENUE") ReportExportType type,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) Long facilityId,
+            @RequestParam(required = false, defaultValue = "CSV") String format,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+
+        log.info("REST request to export system report: type={}, from={}, to={}, facilityId={}, user={}",
+                type, from, to, facilityId, currentUser != null ? currentUser.getUsername() : "anonymous");
+
+        byte[] csvData = systemReportService.exportSystemReport(type, from, to, facilityId, currentUser);
+
+        String filename = String.format("report_%s_%s.csv", type.name().toLowerCase(), LocalDate.now());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .header(HttpHeaders.CONTENT_TYPE, "text/csv; charset=UTF-8")
+                .body(csvData);
+    }
+
 }
