@@ -20,6 +20,7 @@ export const AdminRoutes: React.FC = () => {
         <Route path="roles" element={<AdminUsersPage key="roles" defaultRoleFilter="FACILITY_MANAGER" />} />
         <Route path="facility-assignments" element={<AdminUsersPage key="facility" defaultRoleFilter="FACILITY_STAFF" />} />
         <Route path="activity-logs" element={<AdminAuditLogsPage />} />
+        <Route path="logs" element={<Navigate to="/admin/activity-logs" replace />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
 

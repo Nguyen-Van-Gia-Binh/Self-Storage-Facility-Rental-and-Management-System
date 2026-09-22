@@ -66,7 +66,7 @@ export const ROLE_NAVIGATIONS: Record<UserRole, RoleNavigation> = {
     navItems: [
       { label: 'Quản lý tài khoản', href: '/admin/users' },
       { label: 'Phân quyền dữ liệu', href: '/admin/roles' },
-      { label: 'Nhật ký hệ thống', href: '/admin/logs' },
+      { label: 'Nhật ký hệ thống', href: '/admin/activity-logs' },
     ],
   },
 };
