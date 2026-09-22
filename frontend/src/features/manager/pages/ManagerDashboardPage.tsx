@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Layers, FileText, Users, ArrowRight, Wrench } from 'lucide-react';
+import { Layers, FileText, Users, ArrowRight, Wrench, BarChart3 } from 'lucide-react';
 
 export const ManagerDashboardPage: React.FC = () => {
   return (
@@ -14,7 +14,7 @@ export const ManagerDashboardPage: React.FC = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {/* Card 1: Hợp đồng & Khách thuê (T3.12) */}
         <Link
           to="/manager/contracts"
@@ -99,6 +99,28 @@ export const ManagerDashboardPage: React.FC = () => {
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-amber-600 font-semibold">
             <span>Mở Bàn điều phối</span>
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </div>
+        </Link>
+
+        {/* Card 5: Báo cáo cơ sở & Hiệu suất (T5.5 / SCR-FM-04) */}
+        <Link
+          to="/manager/reports"
+          className="p-5 rounded-2xl border border-slate-200 bg-white hover:border-indigo-400 hover:shadow-lg transition-all duration-200 group flex flex-col justify-between"
+        >
+          <div>
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+              <BarChart3 className="w-5 h-5" />
+            </div>
+            <h3 className="font-bold text-slate-900 text-sm mb-1 group-hover:text-indigo-600 transition-colors">
+              Báo cáo Cơ sở & Hiệu suất (SCR-FM-04)
+            </h3>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Giám sát tỷ lệ lấp đầy Usage Rate, phân tích doanh thu tháng và rủi ro nợ quá hạn theo 3 độ tuổi.
+            </p>
+          </div>
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-indigo-600 font-semibold">
+            <span>Mở Dashboard Báo cáo</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </div>
         </Link>
