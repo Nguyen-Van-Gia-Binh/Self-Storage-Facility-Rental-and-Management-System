@@ -106,8 +106,9 @@ export async function exportAuditLogsCsv(params: AuditLogFilterParams = {}): Pro
       if (to) searchParams.set('to', to);
       if (userId) searchParams.set('userId', String(userId));
 
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api/v1';
       const token = tokenStorage.getAccessToken();
-      const response = await fetch(`/api/v1/audit/activities/export?${searchParams.toString()}`, {
+      const response = await fetch(`${baseUrl}/audit/activities/export?${searchParams.toString()}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
