@@ -26,7 +26,7 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
 }) => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('Password123@');
+  const [password, setPassword] = useState('password123');
   const [showPassword, setShowPassword] = useState(false);
   const [phone, setPhone] = useState('');
   const [identityNumber, setIdentityNumber] = useState('');
@@ -65,7 +65,7 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
   const handleClose = () => {
     setFullName('');
     setEmail('');
-    setPassword('Password123@');
+    setPassword('password123');
     setPhone('');
     setIdentityNumber('');
     setRole('FACILITY_STAFF');

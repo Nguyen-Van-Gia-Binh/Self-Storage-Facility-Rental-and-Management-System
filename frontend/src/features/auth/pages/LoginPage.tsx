@@ -69,7 +69,7 @@ export const LoginPage: React.FC = () => {
   const redirectParam = searchParams.get('redirect');
 
   const [email, setEmail] = useState('admin@smartstorage.vn');
-  const [password, setPassword] = useState('Password123@');
+  const [password, setPassword] = useState('password123');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
@@ -79,7 +79,7 @@ export const LoginPage: React.FC = () => {
 
   const handleSelectDemo = (account: (typeof DEMO_ACCOUNTS)[0]) => {
     setEmail(account.email);
-    setPassword('Password123@');
+    setPassword('password123');
     setErrorMsg(null);
   };
 
