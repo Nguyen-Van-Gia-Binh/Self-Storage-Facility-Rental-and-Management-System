@@ -28,6 +28,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.swp391.selfstorage.auth.service.UserPrincipal;
+import com.swp391.selfstorage.user.dto.AuditLogFilterRequest;
+import com.swp391.selfstorage.user.dto.AuditLogResponse;
+import com.swp391.selfstorage.user.service.AuditLogService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.ModelAttribute;
+
 import java.util.List;
 
 @RestController
@@ -36,9 +44,16 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+    private final AuditLogService auditLogService;
 
     public UserController(UserService userService) {
+        this(userService, null);
+    }
+
+    @Autowired
+    public UserController(UserService userService, AuditLogService auditLogService) {
         this.userService = userService;
+        this.auditLogService = auditLogService;
     }
 
     @GetMapping
@@ -99,5 +114,16 @@ public class UserController {
     @Operation(summary = "Lấy danh sách ID cơ sở mà người dùng được phân công (SA-03)")
     public ResponseEntity<List<Long>> getUserFacilities(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getUserById(id).getFacilityIds());
+    }
+
+    @GetMapping("/{id}/activity-logs")
+    @PreAuthorize("hasRole('SYSTEM_ADMINISTRATOR') or #id == authentication.principal.id")
+    @Operation(summary = "Lấy nhật ký hoạt động của người dùng (Admin hoặc chính chủ)")
+    public ResponseEntity<PageResponse<AuditLogResponse>> getUserActivityLogs(
+            @PathVariable Long id,
+            @ModelAttribute AuditLogFilterRequest filter,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        return ResponseEntity.ok(auditLogService.getUserActivityLogs(id, filter, pageable, currentUser));
     }
 }

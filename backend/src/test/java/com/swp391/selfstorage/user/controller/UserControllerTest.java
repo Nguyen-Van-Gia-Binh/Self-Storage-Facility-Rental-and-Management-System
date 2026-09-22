@@ -41,6 +41,9 @@ class UserControllerTest {
     @MockBean
     private UserService userService;
 
+    @MockBean
+    private com.swp391.selfstorage.user.service.AuditLogService auditLogService;
+
     @Test
     @DisplayName("GET /users trả về danh sách phân trang 200 OK")
     void testGetUsers() throws Exception {
@@ -192,5 +195,22 @@ class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0]").value(1))
                 .andExpect(jsonPath("$[1]").value(2));
+    }
+
+    @Test
+    @DisplayName("GET /users/{id}/activity-logs trả về danh sách hoạt động 200 OK")
+    void testGetUserActivityLogs() throws Exception {
+        com.swp391.selfstorage.user.dto.AuditLogResponse item = com.swp391.selfstorage.user.dto.AuditLogResponse.builder()
+                .id(10L)
+                .userId(1L)
+                .action("UPDATE_PROFILE")
+                .build();
+        PageResponse<com.swp391.selfstorage.user.dto.AuditLogResponse> page = new PageResponse<>(List.of(item), 0, 20, 1, 1);
+        when(auditLogService.getUserActivityLogs(eq(1L), any(), any(Pageable.class), any())).thenReturn(page);
+
+        mockMvc.perform(get("/users/1/activity-logs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].id").value(10))
+                .andExpect(jsonPath("$.content[0].action").value("UPDATE_PROFILE"));
     }
 }
