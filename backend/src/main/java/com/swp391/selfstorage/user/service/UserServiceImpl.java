@@ -16,8 +16,12 @@ import com.swp391.selfstorage.user.entity.UserStatus;
 import com.swp391.selfstorage.user.mapper.UserMapper;
 import com.swp391.selfstorage.user.repository.UserFacilityAssignmentRepository;
 import com.swp391.selfstorage.user.repository.UserRepository;
+import com.swp391.selfstorage.auth.service.UserPrincipal;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,17 +37,29 @@ public class UserServiceImpl implements UserService {
     private final FacilityRepository facilityRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
+    private final AuditLogService auditLogService;
 
     public UserServiceImpl(UserRepository userRepository,
                            UserFacilityAssignmentRepository assignmentRepository,
                            FacilityRepository facilityRepository,
                            PasswordEncoder passwordEncoder,
                            UserMapper userMapper) {
+        this(userRepository, assignmentRepository, facilityRepository, passwordEncoder, userMapper, null);
+    }
+
+    @Autowired
+    public UserServiceImpl(UserRepository userRepository,
+                           UserFacilityAssignmentRepository assignmentRepository,
+                           FacilityRepository facilityRepository,
+                           PasswordEncoder passwordEncoder,
+                           UserMapper userMapper,
+                           AuditLogService auditLogService) {
         this.userRepository = userRepository;
         this.assignmentRepository = assignmentRepository;
         this.facilityRepository = facilityRepository;
         this.passwordEncoder = passwordEncoder;
         this.userMapper = userMapper;
+        this.auditLogService = auditLogService;
     }
 
     @Override
@@ -97,6 +113,11 @@ public class UserServiceImpl implements UserService {
             }
         }
 
+        if (auditLogService != null) {
+            auditLogService.logAction(getCurrentUserId(), "CREATE_USER", "AppUser", savedUser.getId(),
+                    null, "email: " + savedUser.getEmail() + ", role: " + savedUser.getRole());
+        }
+
         List<Long> assignedFacilityIds = assignmentRepository.findFacilityIdsByUserId(savedUser.getId());
         return userMapper.toResponse(savedUser, assignedFacilityIds);
     }
@@ -115,8 +136,14 @@ public class UserServiceImpl implements UserService {
         AppUser user = findUserById(id);
         validateRoleAndFacilities(request.getRole(), request.getFacilityIds());
 
+        UserRole oldRole = user.getRole();
         user.setRole(request.getRole());
         AppUser updated = userRepository.save(user);
+
+        if (auditLogService != null) {
+            auditLogService.logAction(getCurrentUserId(), "UPDATE_USER_ROLE", "AppUser", id,
+                    "role: " + oldRole, "role: " + request.getRole());
+        }
 
         assignmentRepository.deleteByUserId(id);
         if (isFacilityScopedRole(request.getRole()) && request.getFacilityIds() != null) {
@@ -132,10 +159,17 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse updateUserStatus(Long id, UpdateUserStatusRequest request) {
         AppUser user = findUserById(id);
+        UserStatus oldStatus = user.getStatus();
         if (request.getStatus() != null) {
             user.setStatus(request.getStatus());
         }
         AppUser updated = userRepository.save(user);
+
+        if (auditLogService != null) {
+            auditLogService.logAction(getCurrentUserId(), "UPDATE_USER_STATUS", "AppUser", id,
+                    "status: " + oldStatus, "status: " + request.getStatus());
+        }
+
         List<Long> facilityIds = assignmentRepository.findFacilityIdsByUserId(id);
         return userMapper.toResponse(updated, facilityIds);
     }
@@ -144,6 +178,17 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public List<Long> getAssignedFacilityIds(Long userId) {
         return assignmentRepository.findFacilityIdsByUserId(userId);
+    }
+
+    private Long getCurrentUserId() {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getPrincipal() instanceof UserPrincipal principal) {
+                return principal.getId();
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
     }
 
     private AppUser findUserById(Long id) {

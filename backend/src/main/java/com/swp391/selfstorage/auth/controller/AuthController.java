@@ -41,9 +41,22 @@ public class AuthController {
 
     @PostMapping("/login")
     @Operation(summary = "Đăng nhập và nhận cặp Access Token / Refresh Token (Công khai)")
-    public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
-        AuthResponse response = authService.login(request);
+    public ResponseEntity<ApiResponse<AuthResponse>> login(
+            @Valid @RequestBody LoginRequest request,
+            jakarta.servlet.http.HttpServletRequest servletRequest) {
+        String ipAddress = extractClientIp(servletRequest);
+        String userAgent = servletRequest != null ? servletRequest.getHeader("User-Agent") : null;
+        AuthResponse response = authService.login(request, ipAddress, userAgent);
         return ResponseEntity.ok(ApiResponse.success(response, "Đăng nhập thành công"));
+    }
+
+    private String extractClientIp(jakarta.servlet.http.HttpServletRequest request) {
+        if (request == null) return null;
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
+            return xForwardedFor.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 
     @PostMapping("/refresh")

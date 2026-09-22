@@ -13,6 +13,8 @@ import com.swp391.selfstorage.user.entity.UserRole;
 import com.swp391.selfstorage.user.entity.UserStatus;
 import com.swp391.selfstorage.user.repository.UserFacilityAssignmentRepository;
 import com.swp391.selfstorage.user.repository.UserRepository;
+import com.swp391.selfstorage.user.service.AuditLogService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,15 +29,26 @@ public class AuthServiceImpl implements AuthService {
     private final UserFacilityAssignmentRepository userFacilityAssignmentRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final AuditLogService auditLogService;
 
     public AuthServiceImpl(UserRepository userRepository,
                            UserFacilityAssignmentRepository userFacilityAssignmentRepository,
                            PasswordEncoder passwordEncoder,
                            JwtTokenProvider jwtTokenProvider) {
+        this(userRepository, userFacilityAssignmentRepository, passwordEncoder, jwtTokenProvider, null);
+    }
+
+    @Autowired
+    public AuthServiceImpl(UserRepository userRepository,
+                           UserFacilityAssignmentRepository userFacilityAssignmentRepository,
+                           PasswordEncoder passwordEncoder,
+                           JwtTokenProvider jwtTokenProvider,
+                           AuditLogService auditLogService) {
         this.userRepository = userRepository;
         this.userFacilityAssignmentRepository = userFacilityAssignmentRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.auditLogService = auditLogService;
     }
 
     @Override
@@ -75,17 +88,39 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthResponse login(LoginRequest request) {
-        AppUser user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_CREDENTIALS));
+        return login(request, null, null);
+    }
+
+    @Override
+    @Transactional
+    public AuthResponse login(LoginRequest request, String ipAddress, String userAgent) {
+        AppUser user = userRepository.findByEmail(request.getEmail()).orElse(null);
+
+        if (user == null) {
+            if (auditLogService != null) {
+                auditLogService.recordLogin(null, request.getEmail(), ipAddress, userAgent, false, "Email không tồn tại");
+            }
+            throw new CustomException(ErrorCode.INVALID_CREDENTIALS);
+        }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            if (auditLogService != null) {
+                auditLogService.recordLogin(user.getId(), user.getEmail(), ipAddress, userAgent, false, "Mật khẩu không đúng");
+            }
             throw new CustomException(ErrorCode.INVALID_CREDENTIALS);
         }
 
         if (!user.isActive()) {
+            if (auditLogService != null) {
+                auditLogService.recordLogin(user.getId(), user.getEmail(), ipAddress, userAgent, false, "Tài khoản bị vô hiệu hóa");
+            }
             throw new CustomException(ErrorCode.ACCOUNT_DISABLED);
+        }
+
+        if (auditLogService != null) {
+            auditLogService.recordLogin(user.getId(), user.getEmail(), ipAddress, userAgent, true, null);
         }
 
         List<Long> facilityIds = userFacilityAssignmentRepository.findFacilityIdsByUserId(user.getId());

@@ -12,6 +12,8 @@ public interface AuthService {
 
     AuthResponse login(LoginRequest request);
 
+    AuthResponse login(LoginRequest request, String ipAddress, String userAgent);
+
     AuthResponse refreshToken(RefreshTokenRequest request);
 
     void changePassword(Long userId, ChangePasswordRequest request);
