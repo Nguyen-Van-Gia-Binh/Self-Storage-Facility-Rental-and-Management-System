@@ -6,14 +6,15 @@ import { UnitCatalogPage } from './pages/UnitCatalogPage';
 import { ContractsHubPage } from './pages/ContractsHubPage';
 import { StaffAssignmentPage } from './pages/StaffAssignmentPage';
 import { IncidentManagementPage } from './pages/IncidentManagementPage';
+import { FacilityReportsPage } from './pages/FacilityReportsPage';
 
 const navItems = [
-  { label: 'Tong quan co so', href: '/manager' },
-  { label: 'Quan ly o kho', href: '/manager/units' },
-  { label: 'Hop dong & Khach thue', href: '/manager/contracts' },
-  { label: 'Phan cong nhan vien', href: '/manager/staff-assignment' },
-  { label: 'Xu ly su co (Ticket)', href: '/manager/incidents' },
-  { label: 'Bao cao co so', href: '/manager/reports' },
+  { label: 'Tổng quan cơ sở', href: '/manager' },
+  { label: 'Quản lý ô kho', href: '/manager/units' },
+  { label: 'Hợp đồng & Khách thuê', href: '/manager/contracts' },
+  { label: 'Phân công nhân viên', href: '/manager/staff-assignment' },
+  { label: 'Xử lý sự cố (Ticket)', href: '/manager/incidents' },
+  { label: 'Báo cáo cơ sở (FM-06)', href: '/manager/reports' },
 ];
 
 export const ManagerRoutes: React.FC = () => {
@@ -25,6 +26,7 @@ export const ManagerRoutes: React.FC = () => {
         <Route path="contracts" element={<ContractsHubPage />} />
         <Route path="staff-assignment" element={<StaffAssignmentPage />} />
         <Route path="incidents" element={<IncidentManagementPage />} />
+        <Route path="reports" element={<FacilityReportsPage />} />
       </Routes>
     </DashboardLayout>
   );
