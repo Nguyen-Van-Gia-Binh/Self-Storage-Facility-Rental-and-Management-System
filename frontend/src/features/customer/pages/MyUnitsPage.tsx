@@ -4,14 +4,12 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import {
-  KeyRound,
   Plus,
   HelpCircle,
   PhoneCall,
   Shield,
   Layers,
   Search,
-  RefreshCw,
   X,
 } from 'lucide-react';
 import { RentedUnitCard } from '../components/RentedUnitCard';
@@ -46,23 +44,8 @@ export const MyUnitsPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    let isMounted = true;
-    getCustomerContracts()
-      .then((data) => {
-        if (isMounted) {
-          setContracts(data);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        console.error('Lỗi tải danh sách hợp đồng:', err);
-        if (isMounted) setLoading(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+    loadContracts();
+  }, [loadContracts]);
 
   // Handler khi đổi mã PIN thành công
   const handlePinChanged = (contractId: string, newPin: string) => {
@@ -117,30 +100,12 @@ export const MyUnitsPage: React.FC = () => {
       {/* Top Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-4">
         <div>
-          <div className="flex items-center gap-1.5 text-brand-600 font-bold text-xs tracking-wider uppercase mb-1">
-            <KeyRound className="w-3.5 h-3.5" />
-            <span>Cổng Quản Lý Kho Khách Hàng (SmartStorage) • SC-05</span>
-          </div>
           <h1 className="text-2xl sm:text-3xl font-black text-[#0a1614] tracking-tight">
-            Kho Của Tôi & Thẻ Mở Khóa Số
+            Kho Của Tôi
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-            Quản lý các ngăn tủ đang thuê, xem và đổi mã PIN 24/7, hẹn lịch trả kho và gia hạn trực tuyến.
-          </p>
         </div>
 
         <div className="flex items-center gap-2.5">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={loadContracts}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold cursor-pointer"
-            title="Làm mới danh sách"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            <span>Tải lại</span>
-          </Button>
-
           <Link to="/customer/units">
             <Button
               variant="primary"
