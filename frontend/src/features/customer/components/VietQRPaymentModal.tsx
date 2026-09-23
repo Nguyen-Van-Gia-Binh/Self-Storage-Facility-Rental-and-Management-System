@@ -85,14 +85,12 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
 
   // Cú pháp nội dung chuyển khoản bắt buộc
   const transferMemo = `SMARTSTORAGE ${unitNumber} ${idLast4}`;
-  const bankAccount = '999988887777';
+  const bankAccount = '0888567999';
   const bankName = 'MB Bank (Ngân hàng Quân Đội)';
   const accountHolder = 'CONG TY CP SMARTSTORAGE VIETNAM';
 
   // URL sinh VietQR Napas247 chuẩn
-  const vietQrUrl = `https://api.vietqr.io/image/970422-${bankAccount}-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent(
-    transferMemo
-  )}&accountName=${encodeURIComponent(accountHolder)}`;
+  const vietQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=vietqr://${totalAmount}/${transferMemo}`;
 
   const handleCopy = (text: string, fieldName: string) => {
     navigator.clipboard.writeText(text);
@@ -170,7 +168,6 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
               <Sparkles className="w-3 h-3 text-amber-300" />
               Cổng Thanh Toán Trực Tuyến 24/7
             </span>
-            <span className="text-[11px] text-white/80">• SC-03</span>
           </div>
 
           <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
@@ -185,7 +182,7 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
             <div className="flex items-center gap-2">
               <Clock className="w-5 h-5 text-amber-600 flex-shrink-0 animate-pulse" />
               <div>
-                <span className="text-xs font-bold block">Thời gian giữ chỗ nguyên tử (BR-DEP-03)</span>
+                <span className="text-xs font-bold block">Thời gian giữ chỗ nguyên tử</span>
                 <span className="text-[11px] text-amber-700">Ô kho được khoá ưu tiên cho bạn trong 48 giờ</span>
               </div>
             </div>
@@ -283,7 +280,7 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
                     <div>
                       <span className="text-[10px] text-slate-400 block">Số tài khoản</span>
                       <span className="font-mono text-sm font-black text-slate-900 tracking-wider">
-                        {bankAccount}
+                        0888 567 999
                       </span>
                     </div>
                     <button
