@@ -74,8 +74,18 @@ export const StaffReturnInspectionPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="p-8 text-center text-slate-500">
-        Đang tải dữ liệu hồ sơ trả kho...
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="skeleton h-9 w-9 rounded-xl" />
+          <div className="space-y-1.5">
+            <div className="skeleton h-7 w-72 rounded" />
+            <div className="skeleton h-4 w-96 rounded" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="skeleton h-96 rounded-2xl" />
+          <div className="lg:col-span-2 skeleton h-96 rounded-2xl" />
+        </div>
       </div>
     );
   }

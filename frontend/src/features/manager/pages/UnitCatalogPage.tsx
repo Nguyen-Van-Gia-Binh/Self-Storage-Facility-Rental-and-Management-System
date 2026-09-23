@@ -170,8 +170,15 @@ export const UnitCatalogPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-[#8890A4] text-sm">Dang tai du lieu...</p>
+      <div className="h-full flex flex-col bg-[#0F1117] text-[#E8EAF0] min-h-screen -m-6 p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="skeleton h-8 w-48 rounded-xl" />
+          <div className="skeleton h-9 w-36 rounded-lg" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 flex-1">
+          <div className="skeleton h-96 rounded-2xl" />
+          <div className="md:col-span-3 skeleton h-96 rounded-2xl" />
+        </div>
       </div>
     );
   }

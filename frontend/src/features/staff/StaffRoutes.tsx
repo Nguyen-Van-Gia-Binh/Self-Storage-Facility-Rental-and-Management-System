@@ -5,19 +5,14 @@ import { StaffDashboardPage } from './pages/StaffDashboardPage';
 import { StaffCheckInPage } from './pages/StaffCheckInPage';
 import { StaffReturnInspectionPage } from './pages/StaffReturnInspectionPage';
 
-const navItems = [
-  { label: 'Tổng quan công việc', href: '/staff' },
-  { label: 'Bàn giao kho (Check-in)', href: '/staff/checkin' },
-  { label: 'Nghiệm thu trả kho', href: '/staff/return' },
-  { label: 'Sự cố hiện trường', href: '/staff/incidents' },
-];
-
 export const StaffRoutes: React.FC = () => {
   return (
-    <DashboardLayout portalTitle="Staff Portal" navItems={navItems}>
+    <DashboardLayout>
       <Routes>
         <Route index element={<StaffDashboardPage />} />
+        <Route path="tasks" element={<StaffDashboardPage />} />
         <Route path="checkin" element={<StaffCheckInPage />} />
+        <Route path="check-in" element={<StaffCheckInPage />} />
         <Route path="return" element={<StaffReturnInspectionPage />} />
         <Route path="return/:contractId" element={<StaffReturnInspectionPage />} />
       </Routes>
