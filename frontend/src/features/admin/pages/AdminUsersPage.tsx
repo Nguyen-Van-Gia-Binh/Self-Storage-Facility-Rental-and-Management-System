@@ -388,14 +388,26 @@ export const AdminUsersPage: React.FC<AdminUsersPageProps> = ({ defaultRoleFilte
             </thead>
             <tbody className="divide-y divide-slate-100 text-sm">
               {loading ? (
-                <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
-                      <span className="text-xs">Đang nạp dữ liệu người dùng...</span>
-                    </div>
-                  </td>
-                </tr>
+                <>
+                  {[...Array(6)].map((_, i) => (
+                    <tr key={i} className="border-b border-slate-50">
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="skeleton w-9 h-9 rounded-full" />
+                          <div className="space-y-1.5">
+                            <div className="skeleton h-3 w-28 rounded" />
+                            <div className="skeleton h-2.5 w-36 rounded" />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4"><div className="skeleton h-3 w-24 rounded" /></td>
+                      <td className="py-3.5 px-4"><div className="skeleton h-5 w-20 rounded-full" /></td>
+                      <td className="py-3.5 px-4"><div className="skeleton h-3 w-28 rounded" /></td>
+                      <td className="py-3.5 px-4"><div className="skeleton h-5 w-16 rounded-full" /></td>
+                      <td className="py-3.5 px-4 text-right"><div className="skeleton h-7 w-20 rounded-lg ml-auto" /></td>
+                    </tr>
+                  ))}
+                </>
               ) : users.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-slate-500">

@@ -148,39 +148,49 @@ export const AdminAuditLogsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Page Header */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full w-fit mb-2">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Mã yêu cầu SA-04 · An ninh & Kiểm toán</span>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-            Nhật ký kiểm toán & Lịch sử đăng nhập
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Giám sát phiên truy cập, nỗ lực đăng nhập thất bại và truy vết chi tiết mọi thay đổi vai trò, trạng thái, chính sách
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3 self-start md:self-auto">
-          {lastRefreshed && (
-            <div className="hidden sm:flex items-center gap-1.5 text-xs text-gray-400">
-              <Clock className="w-3.5 h-3.5" />
-              <span>Cập nhật: {lastRefreshed}</span>
+      {/* Page Header — Dark gradient premium style */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 p-6 text-white shadow-xl">
+        <div className="absolute inset-0 opacity-10" style={{
+          backgroundImage: 'radial-gradient(circle at 80% 30%, #3b82f6 0%, transparent 50%), radial-gradient(circle at 20% 80%, #6366f1 0%, transparent 40%)',
+        }} />
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-400/30 flex items-center justify-center">
+                <ShieldCheck className="w-4 h-4 text-blue-300" />
+              </div>
+              <span className="text-xs font-semibold text-blue-300 bg-blue-500/10 border border-blue-400/20 px-2.5 py-1 rounded-full">
+                Mã yêu cầu SA-04 · An ninh & Kiểm toán
+              </span>
             </div>
-          )}
+            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+              Nhật ký kiểm toán & Lịch sử đăng nhập
+            </h1>
+            <p className="text-sm text-blue-200/80 mt-1 max-w-xl">
+              Giám sát phiên truy cập, nỗ lực đăng nhập thất bại và truy vết chi tiết mọi thay đổi vai trò, trạng thái, chính sách
+            </p>
+          </div>
 
-          <button
-            onClick={handleRefreshAll}
-            disabled={activityLoading || loginLoading}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-semibold rounded-lg shadow-sm transition-colors"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${(activityLoading || loginLoading) ? 'animate-spin' : ''}`} />
-            <span>Làm mới</span>
-          </button>
+          <div className="flex items-center gap-3 self-start md:self-auto">
+            {lastRefreshed && (
+              <div className="hidden sm:flex items-center gap-1.5 text-xs text-blue-300/70">
+                <Clock className="w-3.5 h-3.5" />
+                <span>Cập nhật: {lastRefreshed}</span>
+              </div>
+            )}
+
+            <button
+              onClick={handleRefreshAll}
+              disabled={activityLoading || loginLoading}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${(activityLoading || loginLoading) ? 'animate-spin' : ''}`} />
+              <span>Làm mới</span>
+            </button>
+          </div>
         </div>
       </div>
+
 
       {/* Top 4 Stats Cards */}
       <AuditLogStatsCards stats={stats} loading={statsLoading} />

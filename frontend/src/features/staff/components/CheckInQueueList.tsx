@@ -138,9 +138,20 @@ export const CheckInQueueList: React.FC<CheckInQueueListProps> = ({
       {/* Contract Queue Cards */}
       <div className="flex-1 overflow-y-auto divide-y divide-slate-100 p-2 space-y-1.5">
         {isLoading ? (
-          <div className="p-8 text-center text-slate-400 text-sm">
-            <div className="animate-spin w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full mx-auto mb-2" />
-            Đang tải danh sách hẹn tiếp đón...
+          <div className="p-2 space-y-2.5">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="p-3.5 rounded-xl border border-slate-200 bg-white space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="skeleton h-4 w-32 rounded" />
+                  <div className="skeleton h-5 w-14 rounded-lg" />
+                </div>
+                <div className="skeleton h-3 w-28 rounded" />
+                <div className="flex items-center justify-between pt-1">
+                  <div className="skeleton h-3 w-20 rounded" />
+                  <div className="skeleton h-4 w-16 rounded-full" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : filteredContracts.length === 0 ? (
           <div className="p-8 text-center text-slate-500 space-y-2">
@@ -173,8 +184,8 @@ export const CheckInQueueList: React.FC<CheckInQueueListProps> = ({
                 onClick={() => onSelectContract(contract)}
                 className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
                   isSelected
-                    ? 'border-brand-500 bg-brand-50/40 shadow-xs ring-1 ring-brand-500'
-                    : 'border-slate-200/80 bg-white hover:border-brand-200 hover:bg-slate-50/60'
+                    ? 'border-amber-500 bg-amber-50/50 shadow-md ring-2 ring-amber-400/80 ring-offset-2'
+                    : 'border-slate-200/80 bg-white hover:border-slate-300 hover:bg-slate-50/80'
                 }`}
               >
                 <div className="flex items-start justify-between gap-2 mb-1.5">
