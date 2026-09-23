@@ -335,3 +335,17 @@ Nếu người đọc phải nhắn hỏi bạn một trong ba câu này, bổ s
    mơ hồ tới mức không code được. *"Câu này viết hay hơn được"* không thuộc 4 loại đó.
 4. **Phép thử cuối cùng:** mở tài liệu, đọc 5 phút bất kỳ, không thêm được mục nào vào danh sách sửa
    → xong. Đọc thêm 30 phút nữa cũng vậy.
+
+---
+
+## 9. Nghiệm thu Bộ tài liệu kiểm thử hệ thống (Master Test Plan & Test Suites)
+
+Áp dụng cho: `docs/testing/` · Tiêu chuẩn IEEE 829.
+
+- [x] **Lớp 1 (Nhất quán):** Chạy `bash docs/testing/verify-test-suite.sh` trả về mã 0 (All Checks Passed).
+- [x] **Lớp 2 (Đầy đủ):** Toàn bộ 27 mã yêu cầu (`SC-*`, `FS-*`, `FM-*`, `BM-*`, `SA-*`) và 76 Use Cases đều có mã Test Case kiểm chứng.
+- [x] **Lớp 3 (Đúng nghiệp vụ):**
+  - Không có test case sử dụng thẻ từ RFID (chỉ dùng PIN 6 số hoặc chìa khóa cơ).
+  - Kiểm thử đúng quy tắc làm tròn 1.000 VND và hệ số cọc 1.0 tháng (`BR-GEN-04`, `BR-DEP-01`).
+  - Kiểm thử đúng logic Overdue: D+1..D+3 ân hạn, D+4..D+10 phạt 10%/ngày (trần 70%), D+10 khóa PIN và niêm phong kho offline (`BR-OVD-02`..`07`).
+
