@@ -70,20 +70,6 @@ const CATEGORIES: {
   },
 ];
 
-const SAMPLE_IMAGE_PRESETS = [
-  {
-    name: 'Kẹt ổ khóa',
-    url: 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=600&q=80',
-  },
-  {
-    name: 'Đèn hỏng',
-    url: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=600&q=80',
-  },
-  {
-    name: 'Cửa ô kho',
-    url: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=600&q=80',
-  },
-];
 
 export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> = ({
   isOpen,
@@ -141,14 +127,6 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
     });
   };
 
-  const handleAddPreset = (url: string) => {
-    if (attachments.length >= 5) {
-      setErrorMsg('Chỉ được đính kèm tối đa 5 hình ảnh.');
-      return;
-    }
-    setAttachments(prev => [...prev, url]);
-    setErrorMsg(null);
-  };
 
   const handleRemoveAttachment = (index: number) => {
     setAttachments(prev => prev.filter((_, i) => i !== index));
@@ -214,7 +192,7 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
         <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
           <div>
             <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
-              <span>Báo Sự Cố & Gửi Yêu Cầu Hỗ Trợ (SC-06)</span>
+              <span>Báo Sự Cố & Gửi Yêu Cầu Hỗ Trợ</span>
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
               Đội ngũ kỹ thuật và nhân viên trực cơ sở sẽ hỗ trợ bạn kịp thời
@@ -346,7 +324,7 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
                   Sự cố khẩn cấp (Cam kết SLA xử lý tại chỗ trong vòng 2 giờ)
                 </span>
                 <span className="text-[11px] text-amber-800/80 leading-relaxed block mt-0.5">
-                  Áp dụng theo quy định <strong>BR-SUP-01</strong> cho các tình huống kẹt khóa, mất quyền truy cập, khẩn cấp lấy tài sản hoặc rò rỉ điện nước nguy hiểm.
+                  Áp dụng cho các tình huống kẹt khóa, mất quyền truy cập, khẩn cấp lấy tài sản hoặc rò rỉ điện nước nguy hiểm.
                 </span>
               </div>
             </label>
@@ -393,20 +371,6 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
               )}
             </div>
 
-            {/* Demo Presets for quick test */}
-            <div className="mt-2.5 flex items-center gap-2 text-[11px] text-slate-500">
-              <span className="font-semibold text-slate-600">Thêm nhanh ảnh mẫu:</span>
-              {SAMPLE_IMAGE_PRESETS.map((preset, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => handleAddPreset(preset.url)}
-                  className="px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors font-medium text-[10px]"
-                >
-                  + {preset.name}
-                </button>
-              ))}
-            </div>
           </div>
 
           {/* Footer Submit */}

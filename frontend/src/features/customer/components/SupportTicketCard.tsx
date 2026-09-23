@@ -103,7 +103,7 @@ export const getStatusMeta = (status: SupportStatus) => {
       return {
         label: 'Tự động đóng',
         variant: 'default' as const,
-        description: 'Hết hạn phản hồi 7 ngày làm việc (BR-SUP-03)',
+        description: 'Tự động đóng sau 7 ngày làm việc không có phản hồi',
       };
     default:
       return {
@@ -143,13 +143,13 @@ export const SupportTicketCard: React.FC<SupportTicketCardProps> = ({
       }`}
     >
       {/* Header Row */}
-      <div className="flex flex-wrap items-center justify-between gap-2 pb-3.5 border-b border-slate-100">
-        <div className="flex items-center gap-2">
-          <div className={`p-2 rounded-xl border ${catMeta.color}`}>
+      <div className="flex items-start justify-between gap-3 pb-3.5 border-b border-slate-100">
+        <div className="flex items-start gap-2.5 min-w-0">
+          <div className={`p-2 rounded-xl border shrink-0 ${catMeta.color}`}>
             <CategoryIcon className="w-4 h-4" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
               <span className="font-mono text-xs font-bold text-slate-800 tracking-wide">
                 {ticket.ticketCode}
               </span>
@@ -157,13 +157,13 @@ export const SupportTicketCard: React.FC<SupportTicketCardProps> = ({
                 {statusMeta.label}
               </Badge>
               {ticket.isUrgent && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-700 border border-rose-200 animate-pulse">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-700 border border-rose-200">
                   <AlertTriangle className="w-3 h-3" />
-                  KHẨN CẤP (SLA {ticket.slaHours}H)
+                  Khẩn cấp
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1">
+            <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
               <Clock className="w-3 h-3" />
               Gửi lúc: {formattedDate}
             </p>
@@ -171,11 +171,11 @@ export const SupportTicketCard: React.FC<SupportTicketCardProps> = ({
         </div>
 
         {/* Location / Unit tag */}
-        <div className="text-right">
+        <div className="text-right shrink-0">
           <span className="text-xs font-bold text-slate-800 block">
             {ticket.unitNumber ? `Kho ${ticket.unitNumber}` : 'Chung cơ sở'}
           </span>
-          <span className="text-[11px] text-slate-500 block max-w-[200px] truncate">
+          <span className="text-[11px] text-slate-500 block max-w-[140px] sm:max-w-[180px] truncate" title={ticket.facilityName}>
             {ticket.facilityName}
           </span>
         </div>
