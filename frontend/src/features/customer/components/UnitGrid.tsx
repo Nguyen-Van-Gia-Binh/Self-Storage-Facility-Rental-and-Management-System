@@ -247,12 +247,6 @@ export const UnitGrid: React.FC<UnitGridProps> = ({
           </div>
         </div>
 
-        {/* Lối đi chính (Central Corridor Simulation) */}
-        <div className="mb-3 px-3 py-1.5 bg-slate-200/60 rounded-md text-[11px] font-mono text-slate-500 flex items-center justify-between border border-dashed border-slate-300">
-          <span>⬅ Hướng thang máy chuyển hàng (Cargo Lift)</span>
-          <span className="font-bold uppercase tracking-wider text-[10px]">Hành lang vận chuyển 2.5m</span>
-          <span>Lối thoát hiểm PCCC ➡</span>
-        </div>
 
         {/* Lưới các ô kho theo mặt bằng */}
         {filteredUnits.length === 0 ? (
