@@ -10,7 +10,8 @@ export interface CustomerLayoutProps {
 export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
   const location = useLocation();
 
-  const isExploreActive = location.pathname === '/customer' || location.pathname === '/customer/units';
+  const isHomeActive = location.pathname === '/customer';
+  const isUnitsActive = location.pathname.startsWith('/customer/units') || location.pathname.startsWith('/customer/book');
   const isRentalsActive = location.pathname === '/customer/my-units' || location.pathname.startsWith('/customer/renew');
   const isSupportActive = location.pathname.startsWith('/customer/support');
 
@@ -39,18 +40,22 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
             <Link 
               to="/customer" 
               className={`py-6 transition-colors border-b-2 ${
-                isExploreActive 
+                isHomeActive 
                   ? 'border-brand-500 text-slate-900 font-bold' 
                   : 'border-transparent text-slate-600 hover:text-brand-600'
               }`}
             >
-              Tìm kiếm ô kho
+              Trang chủ
             </Link>
             <Link 
-              to="/customer/facilities" 
-              className="py-6 border-b-2 border-transparent text-slate-600 hover:text-brand-600 transition-colors"
+              to="/customer/units" 
+              className={`py-6 transition-colors border-b-2 ${
+                isUnitsActive 
+                  ? 'border-brand-500 text-slate-900 font-bold' 
+                  : 'border-transparent text-slate-600 hover:text-brand-600'
+              }`}
             >
-              Danh mục Cơ sở
+              Sơ đồ ô kho
             </Link>
             <Link 
               to="/customer/my-units" 
