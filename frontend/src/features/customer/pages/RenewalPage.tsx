@@ -4,7 +4,6 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { 
-  RefreshCw, 
   ArrowLeft, 
   Sparkles, 
   Copy, 
@@ -188,16 +187,9 @@ export const RenewalPage: React.FC = () => {
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Quay lại danh sách kho của tôi</span>
         </Link>
-        <div className="flex items-center gap-2 text-brand-600 font-bold text-xs tracking-wider uppercase mb-1">
-          <RefreshCw className="w-3.5 h-3.5" />
-          <span>Gia Hạn Hợp Đồng Trực Tuyến (SmartStorage Self-Service)</span>
-        </div>
         <h1 className="text-xl sm:text-2xl font-black text-[#0a1614] tracking-tight">
-          Gia Hạn Ngăn Kho {contract.unitNumber} · Cơ Sở {contract.facilityName}
+          Gia Hạn Hợp Đồng Thuê Kho
         </h1>
-        <p className="text-xs sm:text-sm text-slate-500 mt-1">
-          Gia hạn trực tuyến an toàn theo chuẩn UC-F6-01. Miễn thu thêm cọc (BR-DEP-01), bảo lưu nguyên trạng ngăn tủ và mã PIN liên tục (BR-REN-08).
-        </p>
       </div>
 
       {/* 3-Step Indicator Bar */}
@@ -289,7 +281,7 @@ export const RenewalPage: React.FC = () => {
                   </div>
                   <h2 className="text-base font-bold text-[#0a1614] flex items-center gap-2">
                     <Box className="w-4 h-4 text-brand-600" />
-                    Ngăn kho {contract.unitNumber} · {contract.unitTypeName}
+                    Ngăn kho {contract.unitNumber} · {contract.unitTypeName.split('–')[0].trim()}
                   </h2>
                   <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
                     <Building2 className="w-3.5 h-3.5" />
@@ -333,15 +325,15 @@ export const RenewalPage: React.FC = () => {
                   <label className="block text-sm font-bold text-[#0a1614]">
                     Chọn kỳ hạn muốn gia hạn thêm:
                   </label>
-                  <span className="text-xs text-slate-500">Quy định từ 1 đến 12 tháng (BR-REN-03)</span>
+                  <span className="text-xs text-slate-500">Kỳ hạn từ 1 đến 12 tháng</span>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
-                    { months: 1, label: '1 Tháng', discountTag: null, subtitle: 'Gia hạn linh hoạt' },
-                    { months: 3, label: '3 Tháng', discountTag: 'Phổ biến', subtitle: 'Kỳ hạn thông dụng' },
-                    { months: 6, label: '6 Tháng', discountTag: 'Giảm 5%', subtitle: 'Ưu đãi nửa năm' },
-                    { months: 12, label: '12 Tháng', discountTag: 'Giảm 10%', subtitle: 'Tiết kiệm tối đa' },
+                    { months: 1, label: '1 Tháng', discountTag: null },
+                    { months: 3, label: '3 Tháng', discountTag: 'Phổ biến' },
+                    { months: 6, label: '6 Tháng', discountTag: 'Giảm 5%' },
+                    { months: 12, label: '12 Tháng', discountTag: 'Giảm 10%' },
                   ].map((pkg) => {
                     const isSelected = renewalMonths === pkg.months;
                     return (
@@ -370,28 +362,25 @@ export const RenewalPage: React.FC = () => {
                         <span className={`block font-black text-sm ${isSelected ? 'text-brand-700' : 'text-[#0a1614]'}`}>
                           {pkg.label}
                         </span>
-                        <span className="text-[11px] text-slate-500 mt-0.5 block">
-                          {pkg.subtitle}
-                        </span>
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Preservation guarantees (BR-DEP-01 & BR-REN-08) */}
+              {/* Preservation guarantees */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                 <div className="p-3 rounded-lg bg-emerald-50/60 border border-emerald-200 flex items-start gap-2.5 text-xs text-slate-700">
                   <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
                   <p className="leading-relaxed">
-                    <strong className="text-emerald-950">Miễn cọc thêm (BR-DEP-01):</strong> Cọc ban đầu <strong>{formatVND(contract.depositHeld)}</strong> tiếp tục được bảo lưu 100%.
+                    <strong className="text-emerald-950">Miễn cọc thêm:</strong> Cọc ban đầu <strong>{formatVND(contract.depositHeld)}</strong> tiếp tục được bảo lưu 100%.
                   </p>
                 </div>
 
                 <div className="p-3 rounded-lg bg-sky-50/60 border border-sky-200 flex items-start gap-2.5 text-xs text-slate-700">
                   <Sparkles className="w-4 h-4 text-sky-600 flex-shrink-0 mt-0.5" />
                   <p className="leading-relaxed">
-                    <strong className="text-sky-950">Bảo lưu ngăn kho (BR-REN-08):</strong> Giữ nguyên vị trí ngăn {contract.unitNumber} và mã PIN mở tủ không thay đổi.
+                    <strong className="text-sky-950">Bảo lưu ngăn kho:</strong> Giữ nguyên vị trí ngăn {contract.unitNumber} và mã PIN mở tủ không thay đổi.
                   </p>
                 </div>
               </div>
@@ -455,14 +444,14 @@ export const RenewalPage: React.FC = () => {
 
                 {pricing.overdueFee > 0 && (
                   <div className="flex justify-between items-center text-rose-700 bg-rose-50 px-2.5 py-1.5 rounded-lg text-xs font-bold">
-                    <span>Phí quá hạn gộp (BR-REN-06):</span>
+                    <span>Phí quá hạn gộp:</span>
                     <span>+{formatVND(pricing.overdueFee)}</span>
                   </div>
                 )}
 
                 <div className="flex justify-between text-slate-600 pt-1">
                   <span>Cọc phát sinh:</span>
-                  <span className="font-bold text-emerald-600">0 ₫ (BR-DEP-01)</span>
+                  <span className="font-bold text-emerald-600">0 ₫</span>
                 </div>
 
                 <div className="pt-3 border-t-2 border-slate-100 flex justify-between items-baseline">
@@ -527,7 +516,7 @@ export const RenewalPage: React.FC = () => {
                     <div className="col-span-6 sm:col-span-7">
                       <strong className="text-amber-900 block flex items-center gap-1">
                         <Tag className="w-3.5 h-3.5 text-amber-600" />
-                        Chính sách ưu đãi gia hạn dài hạn (BR-REN-07)
+                        Chính sách ưu đãi gia hạn dài hạn
                       </strong>
                       <span className="text-xs text-amber-800">
                         Chiết khấu {pricing.discountRate * 100}% cho hợp đồng từ {renewalMonths >= 12 ? '12' : '6'} tháng
@@ -540,13 +529,13 @@ export const RenewalPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Dòng 3: Khoản nợ quá hạn gộp vào (BR-REN-06) */}
+                {/* Dòng 3: Khoản nợ quá hạn gộp vào */}
                 {pricing.overdueFee > 0 && (
                   <div className="px-4 py-3.5 grid grid-cols-12 gap-2 items-center bg-rose-50/40">
                     <div className="col-span-6 sm:col-span-7">
                       <strong className="text-rose-900 block flex items-center gap-1">
                         <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
-                        Khoản nợ quá hạn & Phí phạt chậm trả gộp (BR-REN-06)
+                        Khoản nợ quá hạn & Phí phạt chậm trả gộp
                       </strong>
                       <span className="text-xs text-rose-800">
                         Tự động gộp để giải tỏa trạng thái khóa ngăn kho và kích hoạt lại mã PIN
@@ -564,10 +553,10 @@ export const RenewalPage: React.FC = () => {
                   <div className="col-span-6 sm:col-span-7">
                     <strong className="text-emerald-950 block flex items-center gap-1">
                       <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                      Tiền cọc bảo đảm phát sinh (BR-DEP-01)
+                      Tiền cọc bảo đảm phát sinh
                     </strong>
                     <span className="text-xs text-emerald-800">
-                      Bảo lưu 100% tiền cọc cũ ({formatVND(contract.depositHeld)}) — Không thu thêm
+                      Bảo lưu 100% tiền cọc cũ ({formatVND(contract.depositHeld)})
                     </span>
                   </div>
                   <span className="col-span-2 text-center text-emerald-800 font-semibold">Miễn thu</span>
