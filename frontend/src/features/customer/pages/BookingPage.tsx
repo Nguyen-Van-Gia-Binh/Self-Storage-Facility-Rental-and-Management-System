@@ -285,7 +285,9 @@ export const BookingPage: React.FC = () => {
                       Ngăn kho {finalUnitNumber}
                     </span>
                     <Badge variant="available" className="text-[10px] px-1.5 py-0.5">
-                      {targetUnit ? `Tầng ${targetUnit.floor} · ${targetUnit.zone}` : 'Sẵn sàng nhận kho'}
+                      {targetUnit 
+                        ? `Tầng ${targetUnit.floor} · ${targetUnit.zone}${targetUnit.locationNote ? ` · 📍 ${targetUnit.locationNote}` : ''}` 
+                        : 'Sẵn sàng nhận kho'}
                     </Badge>
                   </div>
                   <h2 className="text-base sm:text-lg font-bold text-[#0a1614] mt-1.5">
