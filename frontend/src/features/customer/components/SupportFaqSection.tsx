@@ -24,7 +24,7 @@ export const SupportFaqSection: React.FC = () => {
         <div>
           <div className="flex items-center gap-1.5 text-brand-600 font-bold text-xs uppercase tracking-wider mb-1">
             <HelpCircle className="w-4 h-4" />
-            <span>Chính sách & Quy định hỗ trợ (SCR-SC-06)</span>
+            <span>Chính sách & Quy định hỗ trợ</span>
           </div>
           <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
             Câu Hỏi Thường Gặp & Cam Kết Dịch Vụ
@@ -55,7 +55,7 @@ export const SupportFaqSection: React.FC = () => {
             <h4 className="text-xs font-bold uppercase tracking-wide">SLA Khẩn cấp 2 giờ</h4>
           </div>
           <p className="text-xs text-slate-600 leading-relaxed">
-            Quy định <strong>BR-SUP-01</strong>: Sự cố kẹt khóa cơ, lỗi mã PIN mở cửa được nhân viên trực tiếp khắc phục tận nơi trong tối đa 2h.
+            Sự cố kẹt khóa cơ, lỗi mã PIN mở cửa được nhân viên trực tiếp khắc phục tận nơi trong tối đa 2 giờ.
           </p>
         </Card>
 
@@ -65,7 +65,7 @@ export const SupportFaqSection: React.FC = () => {
             <h4 className="text-xs font-bold uppercase tracking-wide">Hoàn cọc 7 ngày</h4>
           </div>
           <p className="text-xs text-slate-600 leading-relaxed">
-            Quy định <strong>BR-RET-05</strong>: Tiền đặt cọc được hoàn trả về tài khoản ngân hàng của bạn trong vòng tối đa 7 ngày làm việc sau khi nghiệm thu trả kho.
+            Tiền đặt cọc được hoàn trả về tài khoản ngân hàng của bạn trong vòng tối đa 7 ngày làm việc sau khi nghiệm thu trả kho.
           </p>
         </Card>
 
@@ -75,7 +75,7 @@ export const SupportFaqSection: React.FC = () => {
             <h4 className="text-xs font-bold uppercase tracking-wide">Hạ tầng bảo đảm 100%</h4>
           </div>
           <p className="text-xs text-slate-600 leading-relaxed">
-            Quy định <strong>BR-SUP-02</strong>: Sự cố do trần dột, lỗi hệ thống điện cơ sở chịu 100% chi phí và hỗ trợ chuyển kho dự phòng.
+            Sự cố do trần dột hoặc lỗi kỹ thuật hạ tầng, cơ sở chịu 100% chi phí và hỗ trợ chuyển ô kho dự phòng nếu cần.
           </p>
         </Card>
       </div>

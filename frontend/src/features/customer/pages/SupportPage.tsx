@@ -9,7 +9,8 @@ import {
   CheckCircle2, 
   AlertTriangle, 
   RotateCw,
-  Sparkles
+  Sparkles,
+  Clock
 } from 'lucide-react';
 import type { 
   SupportTicket, 
@@ -160,6 +161,57 @@ export const SupportPage: React.FC = () => {
   const countInProgress = tickets.filter(t => ['NEW', 'ASSIGNED', 'IN_PROGRESS'].includes(t.status)).length;
   const countClosed = tickets.filter(t => ['CLOSED', 'AUTO_CLOSED'].includes(t.status)).length;
 
+  const kpis = [
+    {
+      tab: 'ACTIVE' as SupportTabKey,
+      title: 'Đang xử lý',
+      count: countInProgress,
+      subtext: 'Nhân viên đang phối hợp xử lý',
+      icon: Clock,
+      bgGradient: 'from-amber-500/10 to-yellow-500/5',
+      borderColor: 'border-amber-200/80',
+      activeBorder: 'border-amber-600 ring-2 ring-amber-500/20',
+      textColor: 'text-amber-950',
+      iconColor: 'text-amber-600',
+    },
+    {
+      tab: 'RESOLVED' as SupportTabKey,
+      title: 'Chờ nghiệm thu',
+      count: countWaitingConfirm,
+      subtext: 'Đã hoàn thành, cần bạn xác nhận',
+      icon: Sparkles,
+      bgGradient: 'from-emerald-500/10 to-teal-500/5',
+      borderColor: 'border-emerald-200/80',
+      activeBorder: 'border-emerald-600 ring-2 ring-emerald-500/20',
+      textColor: 'text-emerald-950',
+      iconColor: 'text-emerald-600',
+    },
+    {
+      tab: 'CLOSED' as SupportTabKey,
+      title: 'Đã hoàn tất',
+      count: countClosed,
+      subtext: 'Yêu cầu hỗ trợ đã đóng',
+      icon: CheckCircle2,
+      bgGradient: 'from-slate-500/10 to-slate-500/5',
+      borderColor: 'border-slate-200/80',
+      activeBorder: 'border-slate-600 ring-2 ring-slate-500/20',
+      textColor: 'text-slate-900',
+      iconColor: 'text-slate-600',
+    },
+    {
+      tab: 'ALL' as SupportTabKey,
+      title: 'Tổng yêu cầu',
+      count: tickets.length,
+      subtext: 'Tổng số vé hỗ trợ đã tạo',
+      icon: LifeBuoy,
+      bgGradient: 'from-brand-500/10 to-blue-500/5',
+      borderColor: 'border-brand-200/80',
+      activeBorder: 'border-brand-600 ring-2 ring-brand-500/20',
+      textColor: 'text-brand-900',
+      iconColor: 'text-brand-600',
+    },
+  ];
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
       {/* Toast Notification */}
@@ -198,7 +250,7 @@ export const SupportPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-1.5 text-brand-600 font-semibold text-xs tracking-wider uppercase mb-1">
             <LifeBuoy className="w-3.5 h-3.5" />
-            <span>Trung Tâm Chăm Sóc & Hỗ Trợ Kỹ Thuật (SC-06)</span>
+            <span>Trung Tâm Chăm Sóc & Hỗ Trợ Kỹ Thuật</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
             Yêu Cầu Hỗ Trợ & Xử Lý Sự Cố
@@ -210,16 +262,6 @@ export const SupportPage: React.FC = () => {
 
         {/* CTA Buttons */}
         <div className="flex items-center gap-2.5 shrink-0">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={loadData}
-            disabled={loading}
-            className="text-xs"
-          >
-            <RotateCw className={`w-3.5 h-3.5 mr-1 ${loading ? 'animate-spin' : ''}`} />
-            Làm mới
-          </Button>
           <Button
             variant="primary"
             size="sm"
@@ -233,51 +275,41 @@ export const SupportPage: React.FC = () => {
       </div>
 
       {/* Quick Metrics Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Card className="p-3.5 rounded-xl border border-slate-200 bg-white">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">
-            Đang xử lý
-          </span>
-          <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-2xl font-black text-amber-600">{countInProgress}</span>
-            <span className="text-[11px] text-slate-400">vé đang mở</span>
-          </div>
-        </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+        {kpis.map((kpi) => {
+          const Icon = kpi.icon;
+          const isSelected = activeTab === kpi.tab;
 
-        <Card className={`p-3.5 rounded-xl border transition-all ${
-          countWaitingConfirm > 0 
-            ? 'border-emerald-300 bg-emerald-50/40 ring-1 ring-emerald-200' 
-            : 'border-slate-200 bg-white'
-        }`}>
-          <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wide flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-emerald-600" />
-            Chờ nghiệm thu
-          </span>
-          <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-2xl font-black text-emerald-600">{countWaitingConfirm}</span>
-            <span className="text-[11px] text-emerald-700 font-medium">cần bạn xác nhận</span>
-          </div>
-        </Card>
+          return (
+            <div
+              key={kpi.title}
+              onClick={() => setActiveTab(kpi.tab)}
+              className={`p-4 rounded-2xl bg-gradient-to-br ${kpi.bgGradient} bg-white border transition-all duration-200 cursor-pointer shadow-xs hover:shadow-md relative overflow-hidden group ${
+                isSelected ? kpi.activeBorder : kpi.borderColor
+              }`}
+            >
+              <div className="flex items-start justify-between">
+                <span className="text-xs font-bold text-slate-600 group-hover:text-slate-900 transition-colors uppercase tracking-wider">
+                  {kpi.title}
+                </span>
+                <div className={`p-2 rounded-xl bg-white shadow-xs ${kpi.iconColor}`}>
+                  <Icon className="w-4 h-4" />
+                </div>
+              </div>
 
-        <Card className="p-3.5 rounded-xl border border-slate-200 bg-white">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">
-            Đã hoàn tất
-          </span>
-          <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-2xl font-black text-slate-700">{countClosed}</span>
-            <span className="text-[11px] text-slate-400">vé đã đóng</span>
-          </div>
-        </Card>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className={`text-2xl sm:text-3xl font-black tracking-tight ${kpi.textColor}`}>
+                  {kpi.count}
+                </span>
+                <span className="text-xs font-semibold text-slate-400">vé</span>
+              </div>
 
-        <Card className="p-3.5 rounded-xl border border-slate-200 bg-white">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">
-            Tổng ticket
-          </span>
-          <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-2xl font-black text-slate-900">{tickets.length}</span>
-            <span className="text-[11px] text-slate-400">tổng cộng</span>
-          </div>
-        </Card>
+              <p className="text-[11px] text-slate-500 mt-1 line-clamp-1">
+                {kpi.subtext}
+              </p>
+            </div>
+          );
+        })}
       </div>
 
       {/* Action banner if any ticket is waiting for customer confirmation (US-SC-06.3) */}
@@ -374,7 +406,7 @@ export const SupportPage: React.FC = () => {
           <p className="text-xs text-slate-500">Đang tải danh sách vé hỗ trợ...</p>
         </div>
       ) : filteredTickets.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
           {filteredTickets.map((ticket) => (
             <SupportTicketCard
               key={ticket.id}
