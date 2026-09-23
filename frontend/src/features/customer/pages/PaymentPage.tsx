@@ -81,13 +81,11 @@ export const PaymentPage: React.FC = () => {
 
   // Thông tin ngân hàng & QR
   const transferMemo = `SMARTSTORAGE ${unitNumber} ${idLast4}`;
-  const bankAccount = '999988887777';
+  const bankAccount = '0888567999';
   const bankName = 'MB Bank (Ngân hàng Quân Đội)';
   const accountHolder = 'CONG TY CP SMARTSTORAGE VIETNAM';
 
-  const vietQrUrl = `https://api.vietqr.io/image/970422-${bankAccount}-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent(
-    transferMemo
-  )}&accountName=${encodeURIComponent(accountHolder)}`;
+  const vietQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=vietqr://${totalAmount}/${transferMemo}`;
 
   const handleCopy = (text: string, fieldName: string) => {
     navigator.clipboard.writeText(text);
@@ -145,7 +143,7 @@ export const PaymentPage: React.FC = () => {
           <div className="flex items-center gap-2 mb-1">
             <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-brand-50 text-brand-700 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
               <Sparkles className="w-3 h-3 text-amber-500" />
-              Cổng Thanh Toán Napas247 • SC-03
+              Cổng Thanh Toán Napas247
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-[#0a1614] tracking-tight">
@@ -176,7 +174,7 @@ export const PaymentPage: React.FC = () => {
               </div>
               <div>
                 <h4 className="text-xs sm:text-sm font-bold text-amber-950">
-                  Thời hạn bảo lưu giữ chỗ 48 giờ (BR-DEP-03)
+                  Thời hạn bảo lưu giữ chỗ 48 giờ
                 </h4>
                 <p className="text-[11px] sm:text-xs text-amber-800">
                   Ô kho {unitNumber} đang được bảo lưu nguyên tử cho bạn. Vui lòng hoàn tất nộp cọc trước khi hết hạn.
@@ -281,7 +279,7 @@ export const PaymentPage: React.FC = () => {
                       <div>
                         <span className="text-[10px] text-slate-400 block font-medium">Số tài khoản</span>
                         <span className="font-mono text-base font-black text-slate-900 tracking-wider">
-                          {bankAccount}
+                          0888 567 999
                         </span>
                       </div>
                       <button
@@ -455,7 +453,7 @@ export const PaymentPage: React.FC = () => {
                 <div>
                   <span className="block">Tiền cọc bảo đảm (1 tháng):</span>
                   <span className="text-[10px] text-slate-400 italic">
-                    Quyết toán hoàn lại khi hết hạn (BR-DEP-01)
+                    Quyết toán hoàn lại khi hết hạn
                   </span>
                 </div>
                 <span className="font-semibold text-slate-800">{formatVND(depositAmount)}</span>
@@ -471,7 +469,7 @@ export const PaymentPage: React.FC = () => {
             <div className="flex items-start gap-2 text-[11px] text-slate-500 bg-emerald-50/50 p-2.5 rounded-lg border border-emerald-100">
               <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
               <span>
-                Thanh toán an toàn qua cổng VietQR Napas247. Hỗ trợ hủy đơn hoàn cọc 100% trước 24 giờ nhận kho (BR-CAN-01).
+                Thanh toán an toàn qua cổng VietQR Napas247. Hỗ trợ hủy đơn hoàn cọc 100% trước 24 giờ nhận kho.
               </span>
             </div>
           </Card>

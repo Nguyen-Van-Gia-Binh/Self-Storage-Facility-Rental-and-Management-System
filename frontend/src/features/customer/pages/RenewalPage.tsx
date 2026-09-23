@@ -15,7 +15,6 @@ import {
   Building2,
   Box,
   Calendar,
-  CreditCard,
   CheckCircle2,
   Clock,
   AlertTriangle,
@@ -605,127 +604,131 @@ export const RenewalPage: React.FC = () => {
 
       {/* STEP 3: THANH TOÁN VIETQR NAPAS247 ĐỘNG & TỰ ĐỘNG GIA HẠN */}
       {currentStep === 3 && (
-        <div className="max-w-2xl mx-auto space-y-6">
-          <Card className="p-6 bg-white border border-slate-200/90 rounded-2xl shadow-xs space-y-6 text-center">
-            {/* Countdown Clock Banner */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold mx-auto">
-              <Clock className="w-4 h-4 text-amber-600" />
-              <span>Giao dịch an toàn hết hạn sau:</span>
-              <span className="font-mono text-sm text-amber-700">{formatCountdown(countdownSeconds)}</span>
+        <div className="max-w-4xl mx-auto space-y-6">
+          <Card className="p-6 bg-white border border-slate-200/90 rounded-2xl shadow-xs space-y-5">
+            {/* Header payment */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+              <div>
+                <h2 className="text-xl font-bold text-[#0a1614]">
+                  Quét Mã VietQR Hoàn Tất Gia Hạn
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Gia hạn hợp đồng #{contract.contractNumber} thêm {renewalMonths} tháng
+                </p>
+              </div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold shrink-0">
+                <Clock className="w-3.5 h-3.5 text-amber-600" />
+                <span>Hết hạn sau:</span>
+                <span className="font-mono text-xs text-amber-700 font-bold">{formatCountdown(countdownSeconds)}</span>
+              </div>
             </div>
 
-            <div>
-              <h2 className="text-2xl font-extrabold text-[#0a1614]">
-                Quét Mã VietQR Hoàn Tất Gia Hạn
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-md mx-auto">
-                Mở ứng dụng Mobile Banking của bất kỳ ngân hàng nào để quét mã QR Napas247 bên dưới. Ngay khi chuyển khoản thành công, hợp đồng sẽ được tự động kích hoạt thêm {renewalMonths} tháng.
-              </p>
-            </div>
-
-            {/* Dynamic VietQR Display */}
-            <div className="flex flex-col items-center justify-center p-6 bg-slate-50/80 rounded-2xl border border-slate-200 max-w-sm mx-auto shadow-xs">
-              <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col items-center">
-                <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=vietqr://${pricing.finalTotal}/${transferContent}`}
-                  alt="VietQR Code"
-                  className="w-48 h-48 object-contain"
-                />
-                <span className="text-xs font-bold text-slate-700 mt-2.5 flex items-center gap-1.5">
-                  <QrCode className="w-4 h-4 text-brand-600" />
-                  VietQR · Napas247 Chuẩn Quốc Gia
+            {/* 2 Cột QR & Chi tiết tài khoản */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
+              {/* QR Display */}
+              <div className="flex flex-col items-center justify-center p-5 bg-slate-50 rounded-xl border border-slate-200/80">
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col items-center">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=vietqr://${pricing.finalTotal}/${transferContent}`}
+                    alt="VietQR Code"
+                    className="w-40 h-40 object-contain"
+                  />
+                  <span className="text-[11px] font-bold text-slate-500 mt-2 flex items-center gap-1">
+                    <QrCode className="w-3.5 h-3.5 text-brand-600" />
+                    VietQR · Napas247
+                  </span>
+                </div>
+                <span className="text-xs text-slate-500 mt-2.5 text-center">
+                  Mở ứng dụng ngân hàng bất kỳ để quét mã
                 </span>
               </div>
-              <span className="text-xs text-slate-500 mt-3">
-                Số tiền thanh toán: <strong className="text-brand-600 text-base font-black">{formatVND(pricing.finalTotal)}</strong>
-              </span>
-            </div>
 
-            {/* Banking Details with One-Touch Copy */}
-            <div className="space-y-2.5 text-xs text-left max-w-md mx-auto">
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
-                <div>
-                  <span className="text-slate-400 block font-medium">Ngân hàng thụ hưởng:</span>
+              {/* Account Details */}
+              <div className="space-y-3 text-xs">
+                <div className="bg-[#f2f9f7] p-3 rounded-lg border border-emerald-100">
+                  <span className="text-slate-500 block">Ngân hàng thụ hưởng:</span>
                   <strong className="text-sm text-[#0a1614] font-bold">MB Bank (Ngân hàng Quân Đội)</strong>
                 </div>
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800">
-                  24/7 Miễn phí
-                </span>
-              </div>
 
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
-                <div>
-                  <span className="text-slate-400 block font-medium">Số tài khoản:</span>
-                  <strong className="text-base text-[#0a1614] font-mono font-black">0888 567 999</strong>
+                <div className="bg-[#f2f9f7] p-3 rounded-lg border border-emerald-100 flex items-center justify-between">
+                  <div>
+                    <span className="text-slate-500 block">Số tài khoản:</span>
+                    <strong className="text-sm text-[#0a1614] font-bold tracking-wider">0888 567 999</strong>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCopy('0888567999', 'ACCOUNT')}
+                    className="p-1.5 text-slate-400 hover:text-brand-600 rounded cursor-pointer"
+                    title="Sao chép số tài khoản"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleCopy('0888567999', 'ACCOUNT')}
-                  className="p-2 text-slate-500 hover:text-brand-600 hover:bg-white rounded-lg border border-slate-200 transition-all cursor-pointer"
-                  title="Sao chép số tài khoản"
-                >
-                  <Copy className="w-4 h-4" />
-                </button>
-              </div>
 
-              <div className="bg-amber-50/70 p-3 rounded-xl border border-amber-200 flex justify-between items-center">
-                <div>
-                  <span className="text-amber-800 font-medium block">Nội dung chuyển khoản chuẩn:</span>
-                  <strong className="text-sm text-amber-950 font-mono font-black">{transferContent}</strong>
+                <div className="bg-[#f2f9f7] p-3 rounded-lg border border-emerald-100">
+                  <span className="text-slate-500 block">Chủ tài khoản:</span>
+                  <strong className="text-sm text-[#0a1614] font-bold uppercase">CONG TY CP SMARTSTORAGE VIET NAM</strong>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleCopy(transferContent, 'CONTENT')}
-                  className="p-2 text-amber-700 hover:text-amber-900 hover:bg-white/80 rounded-lg border border-amber-300 transition-all cursor-pointer"
-                  title="Sao chép nội dung chuyển khoản"
-                >
-                  <Copy className="w-4 h-4" />
-                </button>
-              </div>
 
-              {copiedBankInfo && (
-                <div className="text-center text-emerald-600 font-bold text-xs py-1 animate-in fade-in">
-                  ✓ Đã sao chép vào bộ nhớ tạm thành công!
+                <div className="bg-[#f2f9f7] p-3 rounded-lg border border-emerald-100">
+                  <span className="text-slate-500 block">Số tiền thanh toán:</span>
+                  <strong className="text-base text-brand-600 font-extrabold">{formatVND(pricing.finalTotal)}</strong>
                 </div>
-              )}
+
+                <div className="bg-amber-50/70 p-3 rounded-lg border border-amber-200/80 flex items-center justify-between">
+                  <div>
+                    <span className="text-amber-800 font-semibold block">Nội dung chuyển khoản (Bắt buộc):</span>
+                    <strong className="text-sm text-amber-950 font-bold tracking-wider">{transferContent}</strong>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(transferContent, 'CONTENT')}
+                    className="p-1.5 text-amber-700 hover:text-amber-900 rounded cursor-pointer"
+                    title="Sao chép nội dung"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {copiedBankInfo && (
+                  <div className="text-center text-emerald-600 font-semibold text-xs py-1">
+                    ✓ Đã sao chép vào bộ nhớ tạm!
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Action Confirm Button */}
-            <div className="pt-4 border-t border-slate-100 space-y-3">
+            {/* Action buttons */}
+            <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentStep(2)}
+                className="w-full sm:w-auto"
+              >
+                <ArrowLeft className="w-4 h-4 mr-1.5" />
+                Quay lại xem bảng kê
+              </Button>
+
               <Button
                 variant="primary"
-                size="lg"
+                size="md"
                 disabled={isProcessing}
                 onClick={handleConfirmPayment}
-                className="w-full py-3.5 text-base font-extrabold flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 shadow-md cursor-pointer"
+                className="w-full sm:w-auto px-6 py-2.5 flex items-center justify-center gap-2 cursor-pointer shadow-sm"
               >
                 {isProcessing ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Đang đối soát giao dịch ngân hàng...</span>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Đang đối soát...</span>
                   </>
                 ) : (
                   <>
-                    <CheckCircle2 className="w-5 h-5" />
-                    <span>Tôi đã hoàn tất chuyển khoản thành công</span>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Tôi đã hoàn tất chuyển khoản</span>
                   </>
                 )}
               </Button>
-
-              <div className="flex items-center justify-center gap-4 text-xs text-slate-500">
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep(2)}
-                  className="hover:text-slate-800 underline"
-                >
-                  Quay lại xem bảng kê
-                </button>
-                <span>·</span>
-                <span className="flex items-center gap-1">
-                  <CreditCard className="w-3.5 h-3.5 text-slate-400" />
-                  Xác nhận tự động trong 30 giây
-                </span>
-              </div>
             </div>
           </Card>
         </div>
