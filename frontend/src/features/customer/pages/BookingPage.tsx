@@ -15,7 +15,6 @@ import {
   Sparkles,
   ArrowRight,
   AlertCircle,
-  MapPin,
   FileText
 } from 'lucide-react';
 import { mockFacilities, mockUnitTypes, mockStorageUnits } from '../mockData';
@@ -146,7 +145,7 @@ export const BookingPage: React.FC = () => {
 
     const cleanId = customerIdCard.replace(/\s+/g, '');
     if (cleanId.length < 9 || cleanId.length > 12 || !/^\d+$/.test(cleanId)) {
-      errors.customerIdCard = 'Số CCCD / Hộ chiếu phải gồm 9 đến 12 chữ số theo quy định BR-CHK-01.';
+      errors.customerIdCard = 'Số CCCD / Hộ chiếu phải gồm 9 đến 12 chữ số.';
     }
 
     if (!agreeTerms) {
@@ -238,9 +237,6 @@ export const BookingPage: React.FC = () => {
           <h1 className="text-xl sm:text-2xl font-extrabold text-[#0a1614] tracking-tight">
             {currentStep === 2 ? 'Xác Nhận Thời Hạn & Hồ Sơ Đặt Chỗ' : 'Thanh Toán Giữ Chỗ VietQR (48 Giờ)'}
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Cơ sở: <MapPin className="w-3 h-3 text-brand-600 inline" /> {facility.name} — Ô kho số <strong>{finalUnitNumber}</strong>
-          </p>
         </div>
 
         {/* Stepper pills */}
@@ -308,21 +304,10 @@ export const BookingPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Quick switch button to Floorplan */}
-              <div className="flex items-center justify-between text-xs bg-slate-50 p-2.5 rounded-lg border border-slate-200/80">
-                <span className="text-slate-600">Bạn muốn đổi vị trí ô khác trên mặt bằng?</span>
-                <Link
-                  to={`/customer/units?facility=${facility.id}&type=${unitType.id}`}
-                  className="font-bold text-brand-600 hover:text-brand-700 hover:underline flex items-center gap-1"
-                >
-                  Mở sơ đồ mặt bằng <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-
-              {/* Duration Options (BR-GEN-03) */}
+              {/* Duration Options */}
               <div className="pt-2 space-y-2.5">
                 <label className="block text-sm font-semibold text-[#0a1614]">
-                  Chọn gói thời hạn thuê (BR-GEN-03):
+                  Chọn gói thời hạn thuê:
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
@@ -498,8 +483,8 @@ export const BookingPage: React.FC = () => {
                   <p className="font-bold text-slate-800 flex items-center gap-1">
                     <FileText className="w-3.5 h-3.5 text-brand-600" /> Quy định đặt chỗ & hoàn cọc:
                   </p>
-                  <p>• <strong>BR-CAN-01</strong>: Khách được hủy đặt chỗ và hoàn cọc 100% nếu thông báo trước 24 giờ kể từ ngày bắt đầu thuê.</p>
-                  <p>• <strong>BR-RET-06</strong>: Khách trả kho trước hạn hợp đồng không được hoàn lại tiền thuê các tháng còn lại.</p>
+                  <p>• Khách được hủy đặt chỗ và hoàn cọc 100% nếu thông báo trước 24 giờ kể từ ngày bắt đầu thuê.</p>
+                  <p>• Khách trả kho trước hạn hợp đồng không được hoàn lại tiền thuê các tháng còn lại.</p>
                 </div>
 
                 <label className="flex items-start gap-2.5 cursor-pointer text-xs text-slate-700 select-none pt-1">
@@ -573,9 +558,6 @@ export const BookingPage: React.FC = () => {
                   <h2 className="text-xl font-bold text-[#0a1614]">
                     Quét Mã VietQR Chuyển Khoản Nhanh 24/7
                   </h2>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Chuyển khoản chính xác số tiền và nội dung bên dưới. Hệ thống sẽ tự động đối soát và kích hoạt mã PIN nhận kho.
-                  </p>
                 </div>
                 <div className="sm:text-right">
                   <span className="text-[11px] text-slate-400 block">Thời gian giữ chỗ còn lại:</span>
