@@ -1,9 +1,7 @@
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { CustomerLayout } from '@/layouts/CustomerLayout';
 import { HomePage } from './pages/HomePage';
-import { FacilityCatalogPage } from './pages/FacilityCatalogPage';
-import { FacilityDetailPage } from './pages/FacilityDetailPage';
 import { UnitPickerPage } from './pages/UnitPickerPage';
 import { BookingPage } from './pages/BookingPage';
 import { PaymentPage } from './pages/PaymentPage';
@@ -16,9 +14,9 @@ export const CustomerRoutes: React.FC = () => {
     <CustomerLayout>
       <Routes>
         <Route index element={<HomePage />} />
-        {/* T2.16 — Public Catalog (SC-01) - Phân hệ Cơ sở WS2 */}
-        <Route path="facilities" element={<FacilityCatalogPage />} />
-        <Route path="facilities/:facilityId" element={<FacilityDetailPage />} />
+        {/* Chuyển hướng các đường dẫn facilities cũ về Trang chủ */}
+        <Route path="facilities" element={<Navigate to="/customer" replace />} />
+        <Route path="facilities/*" element={<Navigate to="/customer" replace />} />
         {/* WS1 — Customer Booking & Rentals Hub */}
         <Route path="units" element={<UnitPickerPage />} />
         <Route path="booking" element={<BookingPage />} />

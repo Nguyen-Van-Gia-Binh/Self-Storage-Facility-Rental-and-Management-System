@@ -29,9 +29,8 @@ export const ROLE_NAVIGATIONS: Record<UserRole, RoleNavigation> = {
     role: 'CUSTOMER',
     badgeColor: 'bg-emerald-500',
     navItems: [
-      { label: 'Trang chủ',            href: '/',                  icon: Home },
-      { label: 'Tra cứu cơ sở & ô kho', href: '/facilities',        icon: PackageSearch },
-      { label: 'Đặt chỗ ô kho',        href: '/booking',           icon: Building2 },
+      { label: 'Trang chủ',            href: '/customer',          icon: Home },
+      { label: 'Sơ đồ ô kho',          href: '/customer/units',    icon: PackageSearch },
       { label: 'Kho của tôi',           href: '/customer/my-units', icon: Archive },
     ],
   },
