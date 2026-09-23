@@ -111,7 +111,7 @@ export const UnitPickerPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
         <div>
           <Link
-            to="/facilities"
+            to="/customer"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-brand-600 transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
