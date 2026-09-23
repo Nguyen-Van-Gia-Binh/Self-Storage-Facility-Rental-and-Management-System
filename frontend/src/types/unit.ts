@@ -23,6 +23,7 @@ export interface StorageUnitResponse {
   code: string;
   floor: number;
   position: string;
+  locationNote?: string;
   status: UnitStatus;
   isActive: boolean;
 }
@@ -41,6 +42,7 @@ export interface StorageUnitFormData {
   code: string;
   floor: number;
   position: string;
+  locationNote?: string;
 }
 
 export interface PageResponse<T> {

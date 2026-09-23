@@ -104,23 +104,30 @@ export const UnitGrid: React.FC<UnitGridProps> = ({
     return units.filter((u) => u.floor === currentFloor);
   }, [units, currentFloor]);
 
-  const availableZones = useMemo(() => {
-    return Array.from(new Set(floorUnits.map((u) => u.zone))).sort();
-  }, [floorUnits]);
-
-  const filteredUnits = useMemo(() => {
+  // Các ô kho trên tầng khớp với Chế độ và Kích cỡ đang chọn
+  const categoryUnits = useMemo(() => {
     return floorUnits.filter((u) => {
-      if (selectedZone !== 'ALL' && u.zone !== selectedZone) return false;
-      if (onlyAvailable && u.status !== 'AVAILABLE') return false;
       if (filterType !== 'ALL' && u.storageType && u.storageType !== filterType) return false;
       if (filterSize !== 'ALL' && u.sizeCategory && u.sizeCategory !== filterSize) return false;
       return true;
     });
-  }, [floorUnits, selectedZone, onlyAvailable, filterType, filterSize]);
+  }, [floorUnits, filterType, filterSize]);
 
-  // Thống kê nhanh theo tầng
-  const totalFloorCount = floorUnits.length;
-  const availableFloorCount = floorUnits.filter((u) => u.status === 'AVAILABLE').length;
+  const availableZones = useMemo(() => {
+    return Array.from(new Set(categoryUnits.map((u) => u.zone))).sort();
+  }, [categoryUnits]);
+
+  const filteredUnits = useMemo(() => {
+    return categoryUnits.filter((u) => {
+      if (selectedZone !== 'ALL' && u.zone !== selectedZone) return false;
+      if (onlyAvailable && u.status !== 'AVAILABLE') return false;
+      return true;
+    });
+  }, [categoryUnits, selectedZone, onlyAvailable]);
+
+  // Thống kê nhanh theo kích cỡ đang chọn
+  const totalCategoryCount = categoryUnits.length;
+  const availableCategoryCount = categoryUnits.filter((u) => u.status === 'AVAILABLE').length;
 
   // Ô kho đang được chọn
   const activeSelectedUnit = useMemo(() => {
@@ -198,7 +205,7 @@ export const UnitGrid: React.FC<UnitGridProps> = ({
             </label>
 
             <div className="text-xs bg-emerald-50 text-emerald-800 font-bold px-2.5 py-1 rounded-full border border-emerald-200">
-              Còn trống: {availableFloorCount}/{totalFloorCount} ô
+              Còn trống: {availableCategoryCount}/{totalCategoryCount} ô
             </div>
           </div>
         </div>
@@ -278,16 +285,22 @@ export const UnitGrid: React.FC<UnitGridProps> = ({
                 >
                   {/* Top: Unit Code & Status Icon */}
                   <div className="flex items-start justify-between gap-1">
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <span className="font-mono font-extrabold text-sm tracking-wide text-[#0a1614] block">
                         {unit.unitNumber}
                       </span>
-                      <span className="text-[10px] text-slate-400 block font-medium">
+                      <span 
+                        className="text-[10px] text-slate-400 block font-medium truncate" 
+                        title={`${unit.zone}${unit.locationNote ? ` · ${unit.locationNote}` : ''}`}
+                      >
                         {unit.zone}
+                        {unit.locationNote && (
+                          <span className="text-slate-500 font-normal"> · {unit.locationNote}</span>
+                        )}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 shrink-0">
                       {isAC && (
                         <span title="Kho máy lạnh 22-25°C" className="text-sky-600 bg-sky-100 p-0.5 rounded">
                           <ThermometerSnowflake className="w-3 h-3" />
@@ -346,7 +359,10 @@ export const UnitGrid: React.FC<UnitGridProps> = ({
                 <span className="text-base font-extrabold text-[#0a1614] font-mono">
                   Ngăn kho {activeSelectedUnit.unitNumber}
                 </span>
-                <Badge variant="available" className="text-[10px]">Tầng {activeSelectedUnit.floor} · {activeSelectedUnit.zone}</Badge>
+                <Badge variant="available" className="text-[10px]">
+                  Tầng {activeSelectedUnit.floor} · {activeSelectedUnit.zone}
+                  {activeSelectedUnit.locationNote ? ` · 📍 ${activeSelectedUnit.locationNote}` : ''}
+                </Badge>
               </div>
               <p className="text-xs text-slate-600 mt-0.5">
                 {activeSelectedUnit.storageType === 'CLIMATE_CONTROLLED' ? (

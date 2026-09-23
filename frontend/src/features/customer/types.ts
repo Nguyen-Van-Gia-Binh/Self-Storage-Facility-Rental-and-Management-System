@@ -61,6 +61,7 @@ export interface StorageUnit {
   storageType?: StorageType;
   areaM2?: number;
   monthlyPrice?: number;
+  locationNote?: string; // Vị trí thực tế chi tiết (vd: Cạnh thang máy, Gần cửa chính)
 }
 
 // Dữ liệu tạo đơn đặt chỗ (Booking Draft - SC-02, BR-DEP-01, BR-DEP-03)
