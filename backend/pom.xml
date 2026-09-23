@@ -93,6 +93,12 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- Spring Mail for OTP and notifications -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
         <!-- OpenAPI / Swagger UI for API Spec Testing -->
         <dependency>
             <groupId>org.springdoc</groupId>

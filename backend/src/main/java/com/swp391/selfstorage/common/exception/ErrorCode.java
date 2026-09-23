@@ -14,12 +14,15 @@ public enum ErrorCode {
     STAFF_NOT_IN_FACILITY(HttpStatus.BAD_REQUEST, "Nhân viên không thuộc cơ sở này"),
     STAFF_NOT_ACTIVE(HttpStatus.BAD_REQUEST, "Tài khoản nhân viên đang không hoạt động"),
     SUPPORT_REQUEST_CANNOT_BE_RESOLVED(HttpStatus.BAD_REQUEST, "Yêu cầu hỗ trợ chưa được phân công hoặc đã hoàn thành"),
+    INVALID_OTP(HttpStatus.BAD_REQUEST, "Mã xác thực OTP không chính xác"),
+    OTP_EXPIRED(HttpStatus.BAD_REQUEST, "Mã xác thực OTP đã hết hạn, vui lòng yêu cầu mã mới"),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "Chưa xác thực hoặc token không hợp lệ"),
     TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "Phiên đăng nhập đã hết hạn"),
     INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "Email hoặc mật khẩu không chính xác"),
     REFRESH_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "Refresh token đã hết hạn hoặc không hợp lệ"),
+    INVALID_GOOGLE_TOKEN(HttpStatus.UNAUTHORIZED, "Mã xác thực Google không hợp lệ hoặc đã hết hạn"),
 
     // 403 Forbidden
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "Không có quyền thực hiện hành động này"),

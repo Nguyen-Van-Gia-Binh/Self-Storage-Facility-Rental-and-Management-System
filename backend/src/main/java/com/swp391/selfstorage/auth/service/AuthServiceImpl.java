@@ -2,40 +2,62 @@ package com.swp391.selfstorage.auth.service;
 
 import com.swp391.selfstorage.auth.dto.AuthResponse;
 import com.swp391.selfstorage.auth.dto.ChangePasswordRequest;
+import com.swp391.selfstorage.auth.dto.ForgotPasswordRequest;
+import com.swp391.selfstorage.auth.dto.GoogleLoginRequest;
 import com.swp391.selfstorage.auth.dto.LoginRequest;
 import com.swp391.selfstorage.auth.dto.RefreshTokenRequest;
 import com.swp391.selfstorage.auth.dto.RegisterRequest;
+import com.swp391.selfstorage.auth.dto.ResetPasswordRequest;
+import com.swp391.selfstorage.auth.entity.PasswordResetOtp;
 import com.swp391.selfstorage.auth.jwt.JwtTokenProvider;
+import com.swp391.selfstorage.auth.repository.PasswordResetOtpRepository;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
+import com.swp391.selfstorage.common.service.EmailService;
 import com.swp391.selfstorage.user.entity.AppUser;
 import com.swp391.selfstorage.user.entity.UserRole;
 import com.swp391.selfstorage.user.entity.UserStatus;
 import com.swp391.selfstorage.user.repository.UserFacilityAssignmentRepository;
 import com.swp391.selfstorage.user.repository.UserRepository;
 import com.swp391.selfstorage.user.service.AuditLogService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class AuthServiceImpl implements AuthService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
 
     private final UserRepository userRepository;
     private final UserFacilityAssignmentRepository userFacilityAssignmentRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final AuditLogService auditLogService;
+    private final PasswordResetOtpRepository passwordResetOtpRepository;
+    private final EmailService emailService;
+    private final RestTemplate restTemplate;
+
+    @Value("${google.client-id:}")
+    private String googleClientId;
 
     public AuthServiceImpl(UserRepository userRepository,
                            UserFacilityAssignmentRepository userFacilityAssignmentRepository,
                            PasswordEncoder passwordEncoder,
                            JwtTokenProvider jwtTokenProvider) {
-        this(userRepository, userFacilityAssignmentRepository, passwordEncoder, jwtTokenProvider, null);
+        this(userRepository, userFacilityAssignmentRepository, passwordEncoder, jwtTokenProvider, null, null, null, null);
     }
 
     @Autowired
@@ -43,12 +65,22 @@ public class AuthServiceImpl implements AuthService {
                            UserFacilityAssignmentRepository userFacilityAssignmentRepository,
                            PasswordEncoder passwordEncoder,
                            JwtTokenProvider jwtTokenProvider,
-                           AuditLogService auditLogService) {
+                           @Autowired(required = false) AuditLogService auditLogService,
+                           @Autowired(required = false) PasswordResetOtpRepository passwordResetOtpRepository,
+                           @Autowired(required = false) EmailService emailService,
+                           @Autowired(required = false) RestTemplate restTemplate) {
         this.userRepository = userRepository;
         this.userFacilityAssignmentRepository = userFacilityAssignmentRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
         this.auditLogService = auditLogService;
+        this.passwordResetOtpRepository = passwordResetOtpRepository;
+        this.emailService = emailService;
+        this.restTemplate = restTemplate;
+    }
+
+    public void setGoogleClientId(String googleClientId) {
+        this.googleClientId = googleClientId;
     }
 
     @Override
@@ -137,6 +169,125 @@ public class AuthServiceImpl implements AuthService {
         );
 
         return AuthResponse.of(accessToken, refreshToken, jwtTokenProvider.getAccessTokenExpirationSeconds(), userInfo);
+    }
+
+    @Override
+    @Transactional
+    @SuppressWarnings("unchecked")
+    public AuthResponse loginWithGoogle(GoogleLoginRequest request) {
+        if (restTemplate == null) {
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR, "Dịch vụ RestTemplate chưa được khởi tạo");
+        }
+
+        String url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + request.getIdToken();
+        Map<String, Object> tokenInfo;
+        try {
+            tokenInfo = restTemplate.getForObject(url, Map.class);
+        } catch (Exception e) {
+            log.error("Google token verification failed: {}", e.getMessage());
+            throw new CustomException(ErrorCode.INVALID_GOOGLE_TOKEN);
+        }
+
+        if (tokenInfo == null) {
+            throw new CustomException(ErrorCode.INVALID_GOOGLE_TOKEN);
+        }
+
+        String aud = (String) tokenInfo.get("aud");
+        if (googleClientId != null && !googleClientId.isBlank() && !googleClientId.equals(aud)) {
+            log.error("Google token aud mismatch: expected {}, got {}", googleClientId, aud);
+            throw new CustomException(ErrorCode.INVALID_GOOGLE_TOKEN);
+        }
+
+        String email = (String) tokenInfo.get("email");
+        if (email == null || email.isBlank()) {
+            throw new CustomException(ErrorCode.INVALID_GOOGLE_TOKEN);
+        }
+
+        String name = (String) tokenInfo.get("name");
+        if (name == null || name.isBlank()) {
+            name = email.split("@")[0];
+        }
+
+        AppUser user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            String randomPassword = UUID.randomUUID().toString();
+            user = new AppUser(
+                    email,
+                    passwordEncoder.encode(randomPassword),
+                    name,
+                    null,
+                    null,
+                    UserRole.STORAGE_CUSTOMER,
+                    UserStatus.ACTIVE
+            );
+            user = userRepository.save(user);
+            log.info("Tạo tài khoản mới từ Google OAuth cho email: {}", email);
+        } else if (!user.isActive()) {
+            throw new CustomException(ErrorCode.ACCOUNT_DISABLED);
+        }
+
+        List<Long> facilityIds = userFacilityAssignmentRepository.findFacilityIdsByUserId(user.getId());
+        String accessToken = jwtTokenProvider.generateAccessToken(user, facilityIds);
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user);
+
+        AuthResponse.UserInfo userInfo = new AuthResponse.UserInfo(
+                user.getId(),
+                user.getFullName(),
+                user.getEmail(),
+                user.getRole(),
+                facilityIds
+        );
+
+        return AuthResponse.of(accessToken, refreshToken, jwtTokenProvider.getAccessTokenExpirationSeconds(), userInfo);
+    }
+
+    @Override
+    @Transactional
+    public void forgotPassword(ForgotPasswordRequest request) {
+        AppUser user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "Không tìm thấy tài khoản với email này"));
+
+        if (!user.isActive()) {
+            throw new CustomException(ErrorCode.ACCOUNT_DISABLED);
+        }
+
+        String otpCode = String.format("%06d", new SecureRandom().nextInt(1000000));
+        LocalDateTime expiredAt = LocalDateTime.now().plusSeconds(60);
+
+        if (passwordResetOtpRepository != null) {
+            PasswordResetOtp otpEntity = new PasswordResetOtp(request.getEmail(), otpCode, expiredAt);
+            passwordResetOtpRepository.save(otpEntity);
+        }
+
+        if (emailService != null) {
+            emailService.sendOtpEmail(request.getEmail(), otpCode, 60);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        if (passwordResetOtpRepository == null) {
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR, "Dịch vụ xác thực OTP chưa sẵn sàng");
+        }
+
+        PasswordResetOtp otpEntity = passwordResetOtpRepository
+                .findTopByEmailAndOtpCodeAndIsUsedFalseOrderByCreatedAtDesc(request.getEmail(), request.getOtp())
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_OTP));
+
+        if (otpEntity.isExpired()) {
+            throw new CustomException(ErrorCode.OTP_EXPIRED);
+        }
+
+        otpEntity.setUsed(true);
+        passwordResetOtpRepository.save(otpEntity);
+
+        AppUser user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+        log.info("Đặt lại mật khẩu thành công cho email: {}", request.getEmail());
     }
 
     @Override

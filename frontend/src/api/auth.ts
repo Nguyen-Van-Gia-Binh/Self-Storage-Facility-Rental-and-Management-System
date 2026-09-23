@@ -154,22 +154,58 @@ export async function registerUser(payload: RegisterPayload): Promise<AuthData> 
 }
 
 /**
- * Yêu cầu phục hồi mật khẩu (Gửi email đặt lại mật khẩu)
+ * Đăng nhập bằng Google ID Token (Google Identity Services)
+ */
+export async function loginWithGoogle(idToken: string): Promise<AuthData> {
+  const res = await apiClient<ApiResponse<AuthData> | AuthData>('/auth/google', {
+    method: 'POST',
+    body: JSON.stringify({ idToken }),
+  });
+
+  const authData = ('data' in res && res.data) ? res.data : (res as AuthData);
+  saveSession(authData);
+  return authData;
+}
+
+/**
+ * Yêu cầu mã xác thực OTP 60s qua email để đặt lại mật khẩu
  */
 export async function forgotPassword(email: string): Promise<{ message: string }> {
   try {
-    const res = await apiClient<ApiResponse<{ message: string }> | { message: string }>('/auth/forgot-password', {
+    const res = await apiClient<ApiResponse<void> | void>('/auth/forgot-password', {
       method: 'POST',
       body: JSON.stringify({ email }),
     });
 
-    return ('data' in res && res.data) ? res.data : (res as { message: string });
-  } catch {
-    // Trả về thông báo mô phỏng thành công để bảo mật (không tiết lộ email có tồn tại hay không)
+    const msg = (res && typeof res === 'object' && 'message' in res)
+      ? String((res as { message: unknown }).message)
+      : 'Mã xác thực OTP đã được gửi đến email của bạn';
+    return { message: msg };
+  } catch (err: unknown) {
+    const error = err as { status?: number; message?: string };
+    if (error && error.status && [400, 401, 403, 404, 409].includes(error.status)) {
+      throw error;
+    }
+    // Fallback nếu backend offline
     return {
-      message: `Hệ thống đã ghi nhận yêu cầu. Hướng dẫn đặt lại mật khẩu đã được gửi đến hòm thư ${email}.`,
+      message: `Hệ thống đã gửi mã OTP xác thực tới email ${email} (hiệu lực 60s).`,
     };
   }
+}
+
+/**
+ * Đặt lại mật khẩu bằng mã OTP 60s
+ */
+export async function resetPassword(payload: { email: string; otp: string; newPassword: string }): Promise<{ message: string }> {
+  const res = await apiClient<ApiResponse<void> | void>('/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+
+  const msg = (res && typeof res === 'object' && 'message' in res)
+    ? String((res as { message: unknown }).message)
+    : 'Đặt lại mật khẩu thành công. Vui lòng đăng nhập với mật khẩu mới';
+  return { message: msg };
 }
 
 /**
@@ -222,8 +258,10 @@ export function getPortalUrlByRole(role: string): string {
 
 export const authApi = {
   login: loginUser,
+  loginWithGoogle,
   register: registerUser,
   forgotPassword,
+  resetPassword,
   logout: logoutUser,
   getPortalUrlByRole,
   saveSession,

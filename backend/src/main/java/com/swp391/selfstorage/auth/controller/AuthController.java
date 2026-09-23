@@ -2,9 +2,12 @@ package com.swp391.selfstorage.auth.controller;
 
 import com.swp391.selfstorage.auth.dto.AuthResponse;
 import com.swp391.selfstorage.auth.dto.ChangePasswordRequest;
+import com.swp391.selfstorage.auth.dto.ForgotPasswordRequest;
+import com.swp391.selfstorage.auth.dto.GoogleLoginRequest;
 import com.swp391.selfstorage.auth.dto.LoginRequest;
 import com.swp391.selfstorage.auth.dto.RefreshTokenRequest;
 import com.swp391.selfstorage.auth.dto.RegisterRequest;
+import com.swp391.selfstorage.auth.dto.ResetPasswordRequest;
 import com.swp391.selfstorage.auth.service.AuthService;
 import com.swp391.selfstorage.auth.service.UserPrincipal;
 import com.swp391.selfstorage.common.dto.ApiResponse;
@@ -48,6 +51,27 @@ public class AuthController {
         String userAgent = servletRequest != null ? servletRequest.getHeader("User-Agent") : null;
         AuthResponse response = authService.login(request, ipAddress, userAgent);
         return ResponseEntity.ok(ApiResponse.success(response, "Đăng nhập thành công"));
+    }
+
+    @PostMapping("/google")
+    @Operation(summary = "Đăng nhập bằng Google ID Token (Công khai)")
+    public ResponseEntity<ApiResponse<AuthResponse>> loginWithGoogle(@Valid @RequestBody GoogleLoginRequest request) {
+        AuthResponse response = authService.loginWithGoogle(request);
+        return ResponseEntity.ok(ApiResponse.success(response, "Đăng nhập bằng Google thành công"));
+    }
+
+    @PostMapping("/forgot-password")
+    @Operation(summary = "Yêu cầu gửi mã OTP 60s qua email để đặt lại mật khẩu (Công khai)")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request);
+        return ResponseEntity.ok(ApiResponse.success(null, "Mã xác thực OTP đã được gửi đến email của bạn"));
+    }
+
+    @PostMapping("/reset-password")
+    @Operation(summary = "Đặt lại mật khẩu mới bằng mã OTP (Công khai)")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok(ApiResponse.success(null, "Đặt lại mật khẩu thành công. Vui lòng đăng nhập với mật khẩu mới"));
     }
 
     private String extractClientIp(jakarta.servlet.http.HttpServletRequest request) {

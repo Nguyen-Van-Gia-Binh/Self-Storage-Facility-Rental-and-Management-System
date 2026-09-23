@@ -6,16 +6,9 @@ import { BomFacilityManagementPage } from './pages/BomFacilityManagementPage';
 import { BomPricingManagementPage } from './pages/BomPricingManagementPage';
 import { BomDashboardPage } from './pages/BomDashboardPage';
 
-const navItems = [
-  { label: 'Danh mục cơ sở', href: '/bom/facilities' },
-  { label: 'Bảng giá & Phụ phí', href: '/bom/pricing' },
-  { label: 'Doanh thu toàn hệ thống', href: '/bom/revenue' },
-  { label: 'Báo cáo tổng hợp', href: '/bom/reports' },
-];
-
 export const BomRoutes: React.FC = () => {
   return (
-    <DashboardLayout portalTitle="BOM Operations" navItems={navItems}>
+    <DashboardLayout>
       <Routes>
         <Route index element={<Navigate to="/bom/facilities" replace />} />
         <Route path="facilities" element={<BomFacilityManagementPage />} />

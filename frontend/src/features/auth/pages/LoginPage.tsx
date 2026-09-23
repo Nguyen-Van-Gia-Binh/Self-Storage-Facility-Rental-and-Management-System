@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
   Shield,
@@ -16,8 +16,22 @@ import {
   Sparkles,
   Building2,
 } from 'lucide-react';
-import { loginUser, getPortalUrlByRole } from '@/api/auth';
+import { loginUser, loginWithGoogle, getPortalUrlByRole } from '@/api/auth';
 import type { UserRoleType } from '@/api/user';
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: { client_id: string; callback: (res: { credential?: string }) => void }) => void;
+          renderButton: (parent: HTMLElement, options: Record<string, unknown>) => void;
+          prompt: () => void;
+        };
+      };
+    };
+  }
+}
 
 const DEMO_ACCOUNTS: {
   label: string;
@@ -82,6 +96,63 @@ export const LoginPage: React.FC = () => {
     setPassword('password123');
     setErrorMsg(null);
   };
+
+  useEffect(() => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+    if (!clientId) return;
+
+    const handleGoogleCredentialResponse = async (response: { credential?: string }) => {
+      if (!response.credential) return;
+      setLoading(true);
+      setErrorMsg(null);
+      try {
+        const res = await loginWithGoogle(response.credential);
+        setSuccessRole(res.user.role);
+        setTimeout(() => {
+          const target = redirectParam || getPortalUrlByRole(res.user.role);
+          navigate(target);
+        }, 600);
+      } catch (err: unknown) {
+        const error = err as { message?: string };
+        setErrorMsg(error.message || 'Đăng nhập bằng tài khoản Google thất bại. Vui lòng thử lại!');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const initGoogleGis = () => {
+      if (window.google?.accounts?.id) {
+        window.google.accounts.id.initialize({
+          client_id: clientId,
+          callback: handleGoogleCredentialResponse,
+        });
+
+        const btnEl = document.getElementById('googleSignInBtn');
+        if (btnEl) {
+          btnEl.innerHTML = '';
+          window.google.accounts.id.renderButton(btnEl, {
+            theme: 'filled_black',
+            size: 'large',
+            shape: 'rectangular',
+            text: 'continue_with',
+            width: 350,
+            logo_alignment: 'left',
+          });
+        }
+        return true;
+      }
+      return false;
+    };
+
+    if (!initGoogleGis()) {
+      const interval = setInterval(() => {
+        if (initGoogleGis()) {
+          clearInterval(interval);
+        }
+      }, 300);
+      return () => clearInterval(interval);
+    }
+  }, [navigate, redirectParam]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -318,6 +389,21 @@ export const LoginPage: React.FC = () => {
                 </>
               )}
             </button>
+
+            {/* Divider */}
+            <div className="relative my-3">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-700/60" />
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="bg-slate-900 px-3 text-slate-400 font-medium">hoặc đăng nhập bằng</span>
+              </div>
+            </div>
+
+            {/* Google Sign-In Button Container */}
+            <div className="flex flex-col items-center justify-center min-h-[44px]">
+              <div id="googleSignInBtn" className="w-full flex justify-center" />
+            </div>
           </form>
 
           {/* Link to Register */}
