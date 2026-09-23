@@ -71,7 +71,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
       case 'ACTIVE':
         return <Badge variant="available">Đang hoạt động 24/7</Badge>;
       case 'PENDING_CHECKIN':
-        return <Badge variant="reserved">Chờ đối chiếu CCCD tại quầy</Badge>;
+        return <Badge variant="reserved">Chờ nhận kho</Badge>;
       case 'EXPIRING_SOON':
         return <Badge variant="warning">Sắp hết hạn</Badge>;
       case 'OVERDUE':
@@ -119,7 +119,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
               {formatVND(contract.monthlyRent)}
             </span>
             <span className="text-xs text-slate-500 block mt-0.5">
-              Tiền cọc bảo lưu: {formatVND(contract.depositHeld)}
+              Tiền cọc: {formatVND(contract.depositHeld)}
             </span>
           </div>
         </div>
@@ -207,7 +207,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
             ) : (
               <div className="text-[11px] text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-200/80 flex items-start gap-1.5 mt-1">
                 <AlertCircle className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
-                <span>Mã PIN & QR mở khóa tự động kích hoạt sau khi đối chiếu CCCD tại quầy (BR-ACC-01).</span>
+                <span>Mã PIN & QR mở khóa tự động kích hoạt sau khi đối chiếu CCCD tại quầy.</span>
               </div>
             )}
           </div>
@@ -362,7 +362,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
             </div>
 
             <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-1 leading-relaxed">
-              <p className="font-semibold text-slate-800">Cách mở cửa kho (BR-ACC-01):</p>
+              <p className="font-semibold text-slate-800">Cách mở cửa kho:</p>
               <p>Đưa mã QR này lại gần mắt đọc cảm ứng trên khóa điện tử ô kho, hoặc nhập mã PIN trực tiếp trên bàn phím số.</p>
             </div>
 
