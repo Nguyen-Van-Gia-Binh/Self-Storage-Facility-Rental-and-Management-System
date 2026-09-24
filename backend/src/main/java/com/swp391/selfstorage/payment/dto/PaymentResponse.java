@@ -24,7 +24,9 @@ public class PaymentResponse {
     private Instant paidAt;
     private Instant createdAt;
 
-    // Tiện ích chuyển khoản VietQR Napas247
+    // Tiện ích chuyển khoản VietQR Napas247 / PayOS
+    private Long orderCode;
+    private String checkoutUrl;
     private String transferContent;
     private String bankName;
     private String bankAccountNumber;

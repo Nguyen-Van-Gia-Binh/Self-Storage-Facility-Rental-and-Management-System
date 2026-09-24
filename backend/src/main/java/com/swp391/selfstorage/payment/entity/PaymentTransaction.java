@@ -48,4 +48,7 @@ public class PaymentTransaction extends BaseEntity {
     @Column(name = "provider_reference", length = 100)
     private String providerReference;
 
+    @Column(name = "order_code", unique = true)
+    private Long orderCode;
+
 }
