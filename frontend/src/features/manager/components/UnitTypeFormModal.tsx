@@ -1,6 +1,7 @@
 // frontend/src/features/manager/components/UnitTypeFormModal.tsx
 import React, { useState, useEffect } from 'react';
 import type { UnitTypeFormData, UnitTypeResponse } from '@/types/unit';
+import { X, Layers } from 'lucide-react';
 
 interface UnitTypeFormModalProps {
   isOpen: boolean;
@@ -30,7 +31,6 @@ export const UnitTypeFormModal: React.FC<UnitTypeFormModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm(
         initialData
           ? {
@@ -54,84 +54,87 @@ export const UnitTypeFormModal: React.FC<UnitTypeFormModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim()) { setError('Ten loai o kho khong duoc de trong.'); return; }
-    if (form.widthM <= 0 || form.depthM <= 0) { setError('Chieu rong va chieu sau phai lon hon 0.'); return; }
-    if (form.monthlyPrice <= 0) { setError('Don gia phai lon hon 0.'); return; }
+    if (!form.name.trim()) { setError('Tên loại ô kho không được để trống.'); return; }
+    if (form.widthM <= 0 || form.depthM <= 0) { setError('Chiều rộng và chiều sâu phải lớn hơn 0.'); return; }
+    if (form.monthlyPrice <= 0) { setError('Đơn giá niêm yết phải lớn hơn 0.'); return; }
     try {
       setSubmitting(true);
       setError(null);
       await onSubmit(form);
       onClose();
     } catch {
-      setError('Luu that bai. Vui long thu lai.');
+      setError('Lưu thông tin thất bại. Vui lòng kiểm tra kết nối và thử lại.');
     } finally {
       setSubmitting(false);
     }
   };
 
   const inputCls =
-    'w-full bg-[#0F1117] border border-[#2E3652] rounded-lg px-3 py-2 text-sm text-[#E8EAF0] placeholder-[#8890A4] focus:outline-none focus:border-[#4F7FFA] transition-colors';
-  const labelCls = 'block text-xs text-[#8890A4] mb-1';
+    'w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20 transition-all';
+  const labelCls = 'block text-xs font-semibold text-slate-700 mb-1.5';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="bg-[#1A1F2E] border border-[#2E3652] rounded-xl w-full max-w-lg shadow-2xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#2E3652]">
-          <h2 className="text-base font-semibold text-[#E8EAF0]">
-            {initialData ? 'Sua loai o kho' : 'Them loai o kho moi'}
-          </h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+      <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-lg shadow-xl overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-brand-50 text-brand-700 border border-brand-200/80 flex items-center justify-center">
+              <Layers className="w-4 h-4" />
+            </div>
+            <h2 className="text-base font-bold text-slate-900">
+              {initialData ? 'Chỉnh sửa loại ô kho' : 'Thêm loại ô kho mới'}
+            </h2>
+          </div>
           <button
             onClick={onClose}
-            className="text-[#8890A4] hover:text-[#E8EAF0] text-xl leading-none"
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
           >
-            &times;
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
           {error && (
-            <div className="text-sm text-red-400 bg-red-900/30 border border-red-700 rounded px-3 py-2">
+            <div className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-xl px-3.5 py-2.5">
               {error}
             </div>
           )}
 
           <div>
             <label className={labelCls}>
-              Ten loai o kho <span className="text-red-400">*</span>
+              Tên loại ô kho <span className="text-rose-500">*</span>
             </label>
             <input
               id="ut-name"
               type="text"
               value={form.name}
               onChange={(e) => set('name', e.target.value)}
-              placeholder="VD: Loai S - 3m2"
+              placeholder="VD: Loại S — 3m²"
               className={inputCls}
             />
           </div>
 
           <div>
-            <label className={labelCls}>Mo ta</label>
+            <label className={labelCls}>Mô tả công năng</label>
             <textarea
               id="ut-desc"
               value={form.description}
               onChange={(e) => set('description', e.target.value)}
               rows={2}
-              placeholder="Mo ta ngan ve cong dung cua loai o kho nay"
+              placeholder="Mô tả gợi ý đồ đạc phù hợp để lưu trữ trong loại kho này..."
               className={`${inputCls} resize-none`}
             />
           </div>
 
           <div className="grid grid-cols-3 gap-3">
-            {(
-              [
-                { field: 'widthM' as const, label: 'Rong (m)', required: true },
-                { field: 'depthM' as const, label: 'Sau (m)', required: true },
-                { field: 'heightM' as const, label: 'Cao (m)', required: false },
-              ]
-            ).map(({ field, label, required }) => (
+            {[
+              { field: 'widthM' as const, label: 'Rộng (m)', required: true },
+              { field: 'depthM' as const, label: 'Sâu (m)', required: true },
+              { field: 'heightM' as const, label: 'Cao (m)', required: false },
+            ].map(({ field, label, required }) => (
               <div key={field}>
                 <label className={labelCls}>
-                  {label} {required && <span className="text-red-400">*</span>}
+                  {label} {required && <span className="text-rose-500">*</span>}
                 </label>
                 <input
                   id={`ut-${field}`}
@@ -148,7 +151,7 @@ export const UnitTypeFormModal: React.FC<UnitTypeFormModalProps> = ({
 
           <div>
             <label className={labelCls}>
-              Don gia (VND/thang) <span className="text-red-400">*</span>
+              Đơn giá niêm yết (VND/tháng) <span className="text-rose-500">*</span>
             </label>
             <input
               id="ut-price"
@@ -161,21 +164,21 @@ export const UnitTypeFormModal: React.FC<UnitTypeFormModalProps> = ({
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-2 border-t border-[#2E3652]">
+          <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm text-[#8890A4] hover:text-[#E8EAF0] rounded-lg hover:bg-[#2E3652] transition-colors"
+              className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
             >
-              Huy
+              Hủy
             </button>
             <button
               id="ut-submit"
               type="submit"
               disabled={submitting}
-              className="px-5 py-2 text-sm font-medium bg-[#4F7FFA] text-white rounded-lg hover:bg-[#3D6AE8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-5 py-2 text-sm font-bold bg-brand-500 text-white rounded-xl hover:bg-brand-600 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
             >
-              {submitting ? 'Dang luu...' : initialData ? 'Cap nhat' : 'Them moi'}
+              {submitting ? 'Đang lưu...' : initialData ? 'Cập nhật' : 'Thêm mới'}
             </button>
           </div>
         </form>

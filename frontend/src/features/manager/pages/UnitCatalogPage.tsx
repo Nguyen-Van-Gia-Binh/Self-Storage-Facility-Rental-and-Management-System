@@ -4,6 +4,7 @@ import { UnitTypeCard } from '../components/UnitTypeCard';
 import { UnitTypeFormModal } from '../components/UnitTypeFormModal';
 import { StorageUnitFormModal } from '../components/StorageUnitFormModal';
 import { StatusBadge } from '../components/StatusBadge';
+import { Plus, Building2, Layers, Box, Wrench, CheckCircle2, AlertCircle } from 'lucide-react';
 import type {
   UnitTypeResponse,
   StorageUnitResponse,
@@ -214,44 +215,52 @@ export const UnitCatalogPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="h-full flex flex-col bg-[#0F1117] text-[#E8EAF0] min-h-screen -m-6 p-6 space-y-4">
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <div className="skeleton h-8 w-48 rounded-xl" />
-          <div className="skeleton h-9 w-36 rounded-lg" />
+          <div className="h-8 w-64 bg-slate-200 rounded-xl animate-pulse" />
+          <div className="h-9 w-40 bg-slate-200 rounded-xl animate-pulse" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 flex-1">
-          <div className="skeleton h-96 rounded-2xl" />
-          <div className="md:col-span-3 skeleton h-96 rounded-2xl" />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-4 h-96 bg-white border border-slate-200 rounded-2xl animate-pulse" />
+          <div className="lg:col-span-8 h-96 bg-white border border-slate-200 rounded-2xl animate-pulse" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-full flex flex-col bg-[#0F1117] text-[#E8EAF0] min-h-screen -m-6">
-      {/* Page header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 border-b border-[#2E3652] gap-3">
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
-          <h1 className="text-lg font-semibold">Quản lý ô kho & Loại kho (FM-01)</h1>
-          <p className="text-xs text-[#8890A4] mt-0.5">
-            Danh mục loại ô kho và ô kho vật lý trong từng cơ sở
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+              Quản lý ô kho & Loại kho
+            </h1>
+            <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+              FM-01
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Danh mục cấu hình loại ô kho và giám sát hiện trạng ô kho vật lý theo từng cơ sở
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {/* Bộ chọn cơ sở cho Quản lý */}
           {facilities.length > 0 && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-[#8890A4]">Cơ sở:</span>
+            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-2xs">
+              <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
+              <span className="text-xs font-semibold text-slate-500">Cơ sở:</span>
               <select
                 id="select-facility"
                 value={facilityId}
                 onChange={(e) => setFacilityId(Number(e.target.value))}
-                className="bg-[#1A1F2E] border border-[#2E3652] rounded-lg px-3 py-1.5 text-xs text-[#E8EAF0] focus:outline-none focus:border-[#4F7FFA] cursor-pointer"
+                className="bg-transparent text-xs font-bold text-slate-800 outline-none cursor-pointer"
               >
                 {facilities.map((fac) => (
                   <option key={fac.id} value={fac.id}>
-                    {fac.code} - {fac.name}
+                    {fac.code} — {fac.name}
                   </option>
                 ))}
               </select>
@@ -264,45 +273,54 @@ export const UnitCatalogPage: React.FC = () => {
               setEditingType(null);
               setUtModalOpen(true);
             }}
-            className="flex items-center gap-1.5 px-4 py-2 bg-[#4F7FFA] text-white text-sm font-medium rounded-lg hover:bg-[#3D6AE8] transition-colors shrink-0"
+            className="flex items-center gap-1.5 px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold rounded-xl transition-all shadow-xs shrink-0 cursor-pointer"
           >
-            <span>+</span> Thêm loại ô kho
+            <Plus className="w-4 h-4" />
+            Thêm loại ô kho
           </button>
         </div>
       </div>
 
       {error && (
-        <div className="mx-6 mt-3 text-sm text-red-400 bg-red-900/30 border border-red-700 rounded px-3 py-2 flex items-center justify-between">
-          <span>{error}</span>
-          <button onClick={() => setError(null)} className="ml-2 underline text-xs">
+        <div className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-2xl p-4 flex items-center justify-between shadow-2xs">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+            <span>{error}</span>
+          </div>
+          <button onClick={() => setError(null)} className="ml-2 font-bold hover:underline cursor-pointer">
             Đóng
           </button>
         </div>
       )}
 
-      {/* Two-panel layout */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left panel — Unit Type list */}
-        <aside className="w-72 shrink-0 border-r border-[#2E3652] flex flex-col overflow-hidden">
-          <div className="px-4 py-3 border-b border-[#2E3652] flex items-center justify-between">
-            <span className="text-xs font-medium text-[#8890A4] uppercase tracking-wide">
-              Loại ô kho
-            </span>
-            <label className="flex items-center gap-1.5 text-xs text-[#8890A4] cursor-pointer select-none">
+      {/* Two-panel Grid Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Panel — Unit Type list (4 cols) */}
+        <aside className="lg:col-span-4 bg-white rounded-2xl border border-slate-200/90 shadow-xs flex flex-col overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div className="flex items-center gap-2">
+              <Layers className="w-4 h-4 text-brand-600" />
+              <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                Loại ô kho ({visibleTypes.length})
+              </span>
+            </div>
+            <label className="flex items-center gap-2 text-xs font-medium text-slate-500 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={showInactive}
                 onChange={(e) => setShowInactive(e.target.checked)}
-                className="accent-[#4F7FFA]"
+                className="w-3.5 h-3.5 accent-brand-500 rounded cursor-pointer"
               />
-              Hiện vô hiệu
+              Hiện loại vô hiệu
             </label>
           </div>
-          <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          <div className="p-4 space-y-3 max-h-[680px] overflow-y-auto">
             {visibleTypes.length === 0 ? (
-              <p className="text-xs text-[#8890A4] text-center py-8">
-                Chưa có loại ô kho nào cho cơ sở này.
-              </p>
+              <div className="text-center py-12 px-4">
+                <Box className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+                <p className="text-xs font-semibold text-slate-600">Chưa có loại ô kho nào</p>
+                <p className="text-[11px] text-slate-400 mt-1">Bấm "+ Thêm loại ô kho" để bắt đầu cấu hình</p>
+              </div>
             ) : (
               visibleTypes.map((type) => (
                 <UnitTypeCard
@@ -324,122 +342,140 @@ export const UnitCatalogPage: React.FC = () => {
           </div>
         </aside>
 
-        {/* Right panel — Storage Unit table */}
-        <main className="flex-1 flex flex-col overflow-hidden">
+        {/* Right Panel — Storage Unit table (8 cols) */}
+        <main className="lg:col-span-8 bg-white rounded-2xl border border-slate-200/90 shadow-xs flex flex-col overflow-hidden">
           {!selectedType ? (
-            <div className="flex items-center justify-center h-full text-[#8890A4] text-sm">
-              Chọn một loại ô kho ở bên trái để xem danh sách ô kho vật lý.
+            <div className="flex flex-col items-center justify-center p-16 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center mb-3">
+                <Layers className="w-7 h-7" />
+              </div>
+              <p className="text-sm font-bold text-slate-800">Chọn một loại ô kho ở bên trái</p>
+              <p className="text-xs text-slate-400 mt-1 max-w-sm">
+                Danh sách các ô kho vật lý thực tế tương ứng sẽ hiển thị chi tiết tại đây.
+              </p>
             </div>
           ) : (
             <>
-              {/* Right panel header */}
-              <div className="flex items-center justify-between px-5 py-3 border-b border-[#2E3652]">
+              {/* Right Panel Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between px-5 py-4 border-b border-slate-100 gap-3 bg-slate-50/50">
                 <div>
-                  <span className="text-sm font-semibold">{selectedType.name}</span>
-                  <span className="ml-2 text-xs text-[#8890A4]">
-                    {selectedType.widthM}m &times; {selectedType.depthM}m &times;{' '}
-                    {selectedType.heightM}m &nbsp;&middot;&nbsp;
-                    <span className="font-mono text-emerald-400 font-semibold">
-                      {new Intl.NumberFormat('vi-VN').format(selectedType.monthlyPrice)}{' '}
-                      VND/tháng
+                  <div className="flex items-center gap-2">
+                    <span className="text-base font-bold text-slate-900">{selectedType.name}</span>
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-brand-50 text-brand-700 border border-brand-200/60 font-mono">
+                      {selectedType.areaM2} m²
                     </span>
-                  </span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-slate-500 mt-1 font-medium">
+                    <span>
+                      Kích thước: {selectedType.widthM}m &times; {selectedType.depthM}m &times; {selectedType.heightM}m
+                    </span>
+                    <span>&bull;</span>
+                    <span>
+                      Đơn giá: <strong className="font-mono text-brand-600">{new Intl.NumberFormat('vi-VN').format(selectedType.monthlyPrice)} đ/tháng</strong>
+                    </span>
+                  </div>
                 </div>
+
                 <button
                   id="btn-add-storage-unit"
                   onClick={() => setSuModalOpen(true)}
                   disabled={!selectedType.isActive}
-                  title={
-                    !selectedType.isActive
-                      ? 'Loại ô kho đang vô hiệu - không thể thêm ô kho mới'
-                      : undefined
-                  }
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#222840] border border-[#2E3652] text-sm rounded-lg hover:border-[#4F7FFA] hover:bg-[#1A2A4A] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  title={!selectedType.isActive ? 'Loại ô kho đang vô hiệu — không thể thêm ô kho mới' : undefined}
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 text-xs font-bold rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs shrink-0 cursor-pointer"
                 >
-                  <span>+</span> Thêm ô kho
+                  <Plus className="w-3.5 h-3.5" />
+                  Thêm ô kho vật lý
                 </button>
               </div>
 
-              {/* Status filter chips */}
-              <div className="flex items-center gap-2 px-5 py-2.5 border-b border-[#2E3652] overflow-x-auto">
-                {STATUS_FILTERS.map((f) => (
-                  <button
-                    key={f.value}
-                    onClick={() => setStatusFilter(f.value)}
-                    className={`shrink-0 text-xs px-3 py-1 rounded-full border transition-colors ${
-                      statusFilter === f.value
-                        ? 'bg-[#4F7FFA] border-[#4F7FFA] text-white'
-                        : 'border-[#2E3652] text-[#8890A4] hover:border-[#4F7FFA]/50 hover:text-[#E8EAF0]'
-                    }`}
-                  >
-                    {f.label}
-                    {f.value !== 'ALL' && (
-                      <span className="ml-1 font-mono">
-                        ({storageUnits.filter((u) => u.status === f.value).length})
+              {/* Status Filter Tabs */}
+              <div className="flex items-center gap-2 px-5 py-3 border-b border-slate-100 overflow-x-auto bg-white">
+                {STATUS_FILTERS.map((f) => {
+                  const count = f.value === 'ALL'
+                    ? storageUnits.length
+                    : storageUnits.filter((u) => u.status === f.value).length;
+                  const isSelected = statusFilter === f.value;
+                  return (
+                    <button
+                      key={f.value}
+                      onClick={() => setStatusFilter(f.value)}
+                      className={`shrink-0 text-xs font-bold px-3.5 py-1.5 rounded-full border transition-all cursor-pointer flex items-center gap-1.5 ${
+                        isSelected
+                          ? 'bg-brand-500 border-brand-500 text-white shadow-2xs'
+                          : 'border-slate-200 bg-white text-slate-600 hover:border-brand-300 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span>{f.label}</span>
+                      <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+                        isSelected ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                      }`}>
+                        {count}
                       </span>
-                    )}
-                  </button>
-                ))}
+                    </button>
+                  );
+                })}
               </div>
 
-              {/* Storage Unit table */}
-              <div className="flex-1 overflow-y-auto">
+              {/* Storage Units Table */}
+              <div className="overflow-x-auto min-h-[300px]">
                 {filteredUnits.length === 0 ? (
-                  <div className="flex items-center justify-center h-48 text-[#8890A4] text-sm">
-                    Không có ô kho nào khớp bộ lọc.
+                  <div className="flex flex-col items-center justify-center p-12 text-center">
+                    <Box className="w-10 h-10 text-slate-300 mb-2" />
+                    <p className="text-xs font-semibold text-slate-600">Không có ô kho nào khớp với bộ lọc</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Chọn bộ lọc khác hoặc thêm ô kho mới</p>
                   </div>
                 ) : (
-                  <table className="w-full text-sm border-collapse">
-                    <thead className="sticky top-0 bg-[#0F1117] z-10">
-                      <tr className="border-b border-[#2E3652]">
-                        {['Mã ô kho', 'Tầng', 'Khu vực / Vị trí', 'Trạng thái', 'Thao tác'].map((h) => (
-                          <th
-                            key={h}
-                            className="text-left px-5 py-2.5 text-xs text-[#8890A4] font-medium"
-                          >
-                            {h}
-                          </th>
-                        ))}
+                  <table className="w-full text-sm text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-100 bg-slate-50/70 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <th className="px-5 py-3">Mã ô kho</th>
+                        <th className="px-5 py-3">Tầng</th>
+                        <th className="px-5 py-3">Khu vực / Dãy</th>
+                        <th className="px-5 py-3">Trạng thái</th>
+                        <th className="px-5 py-3 text-right">Thao tác</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-slate-100">
                       {filteredUnits.map((unit) => (
                         <tr
                           key={unit.id}
-                          className="border-b border-[#2E3652] hover:bg-[#1A1F2E] transition-colors"
+                          className="hover:bg-slate-50/80 transition-colors"
                         >
-                          <td className="px-5 py-3 font-mono text-sm text-[#E8EAF0]">
+                          <td className="px-5 py-3.5 font-mono font-bold text-slate-900 text-sm">
                             {unit.code}
                           </td>
-                          <td className="px-5 py-3 text-[#8890A4] text-sm">
+                          <td className="px-5 py-3.5 text-xs text-slate-600 font-medium">
                             Tầng {unit.floor}
                           </td>
-                          <td className="px-5 py-3 font-mono text-[#8890A4] text-sm">
+                          <td className="px-5 py-3.5 font-mono text-xs text-slate-600 font-semibold">
                             {unit.position}
                           </td>
-                          <td className="px-5 py-3">
+                          <td className="px-5 py-3.5">
                             <StatusBadge status={unit.status} />
                           </td>
-                          <td className="px-5 py-3">
+                          <td className="px-5 py-3.5 text-right">
                             {unit.status === 'AVAILABLE' && (
                               <button
-                                onClick={() =>
-                                  handleChangeUnitStatus(unit, 'MAINTENANCE')
-                                }
-                                className="text-xs text-orange-400 hover:text-orange-300 hover:underline cursor-pointer"
+                                onClick={() => handleChangeUnitStatus(unit, 'MAINTENANCE')}
+                                className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                                title="Chuyển ô kho sang diện bảo trì"
                               >
+                                <Wrench className="w-3 h-3" />
                                 Chuyển bảo trì
                               </button>
                             )}
                             {unit.status === 'MAINTENANCE' && (
                               <button
-                                onClick={() =>
-                                  handleChangeUnitStatus(unit, 'AVAILABLE')
-                                }
-                                className="text-xs text-green-400 hover:text-green-300 hover:underline cursor-pointer"
+                                onClick={() => handleChangeUnitStatus(unit, 'AVAILABLE')}
+                                className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                                title="Đã sửa xong, đưa ô kho trở lại sử dụng"
                               >
+                                <CheckCircle2 className="w-3 h-3" />
                                 Hoàn thành bảo trì
                               </button>
+                            )}
+                            {unit.status !== 'AVAILABLE' && unit.status !== 'MAINTENANCE' && (
+                              <span className="text-xs text-slate-400 italic">Đang hoạt động</span>
                             )}
                           </td>
                         </tr>
@@ -449,9 +485,14 @@ export const UnitCatalogPage: React.FC = () => {
                 )}
               </div>
 
-              {/* Table footer */}
-              <div className="px-5 py-2.5 border-t border-[#2E3652] text-xs text-[#8890A4]">
-                {filteredUnits.length} / {storageUnits.length} ô kho
+              {/* Table Footer */}
+              <div className="px-5 py-3 border-t border-slate-100 text-xs font-semibold text-slate-500 bg-slate-50/50 flex items-center justify-between">
+                <span>
+                  Hiển thị <strong className="text-slate-800 font-bold">{filteredUnits.length}</strong> / {storageUnits.length} ô kho vật lý
+                </span>
+                <span className="text-[11px] text-slate-400">
+                  Cơ sở ID: {facilityId}
+                </span>
               </div>
             </>
           )}

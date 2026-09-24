@@ -11,10 +11,10 @@ const NAV_CARDS = [
     hoverBorder: 'hover:border-blue-400',
     hoverShadow: 'hover:shadow-blue-100',
     textColor: 'text-blue-600',
-    label: 'Há»£p Ä‘á»“ng & KhÃ¡ch thuÃª',
+    label: 'Hợp đồng & Khách thuê',
     subtitle: 'SCR-FM-02',
-    desc: 'Theo dÃµi há»£p Ä‘á»“ng Ä‘ang thuÃª, danh sÃ¡ch chá» bÃ n giao, Ä‘á»•i Ã´ kho ngoáº¡i lá»‡ vÃ  quyáº¿t toÃ¡n hoÃ n cá»c.',
-    cta: 'Má»Ÿ Contracts Hub',
+    desc: 'Theo dõi hợp đồng đang thuê, danh sách chờ bàn giao, đổi ô kho ngoại lệ và quyết toán hoàn cọc.',
+    cta: 'Mở Contracts Hub',
   },
   {
     to: '/manager/units',
@@ -24,10 +24,10 @@ const NAV_CARDS = [
     hoverBorder: 'hover:border-emerald-400',
     hoverShadow: 'hover:shadow-emerald-100',
     textColor: 'text-emerald-600',
-    label: 'Danh má»¥c Ã” kho & Layout',
+    label: 'Danh mục Ô kho & Layout',
     subtitle: 'SCR-FM-01',
-    desc: 'Quáº£n lÃ½ danh sÃ¡ch Ã´ kho váº­t lÃ½, phÃ¢n loáº¡i Type S/M/L/XL vÃ  kiá»ƒm soÃ¡t tráº¡ng thÃ¡i sáºµn sÃ ng.',
-    cta: 'Má»Ÿ Quáº£n lÃ½ Ã´ kho',
+    desc: 'Quản lý danh sách ô kho vật lý, phân loại Type S/M/L/XL và kiểm soát trạng thái sẵn sàng.',
+    cta: 'Mở Quản lý ô kho',
   },
   {
     to: '/manager/staff-assignment',
@@ -37,10 +37,10 @@ const NAV_CARDS = [
     hoverBorder: 'hover:border-purple-400',
     hoverShadow: 'hover:shadow-purple-100',
     textColor: 'text-purple-600',
-    label: 'PhÃ¢n cÃ´ng NhÃ¢n sá»±',
+    label: 'Phân công Nhân sự',
     subtitle: 'SCR-FM-03',
-    desc: 'CÃ¢n báº±ng táº£i nhÃ¢n viÃªn ca trá»±c, Ä‘iá»u phá»‘i bÃ n giao Check-in, Tráº£ kho, KhÃ³a ngoÃ i Overlock.',
-    cta: 'Má»Ÿ BÃ n phÃ¢n cÃ´ng',
+    desc: 'Cân bằng tải nhân viên ca trực, điều phối bàn giao Check-in, Trả kho, Khóa ngoài Overlock.',
+    cta: 'Mở Bàn phân công',
   },
   {
     to: '/manager/incidents',
@@ -50,10 +50,10 @@ const NAV_CARDS = [
     hoverBorder: 'hover:border-amber-400',
     hoverShadow: 'hover:shadow-amber-100',
     textColor: 'text-amber-600',
-    label: 'Xá»­ lÃ½ Sá»± cá»‘ & Ticket',
+    label: 'Xử lý Sự cố & Ticket',
     subtitle: 'SCR-FM-05',
-    desc: 'Tiáº¿p nháº­n khiáº¿u náº¡i, giÃ¡m sÃ¡t thá»i háº¡n cam káº¿t SLA 2 giá» vÃ  giao viá»‡c xá»­ lÃ½ káº¹t khÃ³a, tháº¥m dá»™t.',
-    cta: 'Má»Ÿ BÃ n Ä‘iá»u phá»‘i',
+    desc: 'Tiếp nhận khiếu nại, giám sát thời hạn cam kết SLA 2 giờ và giao việc xử lý kẹt khóa, thấm dột.',
+    cta: 'Mở Bàn điều phối',
   },
   {
     to: '/manager/reports',
@@ -63,10 +63,10 @@ const NAV_CARDS = [
     hoverBorder: 'hover:border-indigo-400',
     hoverShadow: 'hover:shadow-indigo-100',
     textColor: 'text-indigo-600',
-    label: 'BÃ¡o cÃ¡o CÆ¡ sá»Ÿ & Hiá»‡u suáº¥t',
+    label: 'Báo cáo Cơ sở & Hiệu suất',
     subtitle: 'SCR-FM-04',
-    desc: 'GiÃ¡m sÃ¡t tá»· lá»‡ láº¥p Ä‘áº§y Usage Rate, phÃ¢n tÃ­ch doanh thu thÃ¡ng vÃ  rá»§i ro ná»£ quÃ¡ háº¡n theo 3 Ä‘á»™ tuá»•i.',
-    cta: 'Má»Ÿ Dashboard BÃ¡o cÃ¡o',
+    desc: 'Giám sát tỷ lệ lấp đầy Usage Rate, phân tích doanh thu tháng và rủi ro nợ quá hạn theo 3 độ tuổi.',
+    cta: 'Mở Dashboard Báo cáo',
   },
 ];
 
@@ -75,7 +75,7 @@ const STAGGER = ['stagger-1', 'stagger-2', 'stagger-3', 'stagger-4', 'stagger-5'
 export const ManagerDashboardPage: React.FC = () => {
   const now = new Date();
   const hour = now.getHours();
-  const greeting = hour < 12 ? 'ChÃ o buá»•i sÃ¡ng' : hour < 18 ? 'ChÃ o buá»•i chiá»u' : 'ChÃ o buá»•i tá»‘i';
+  const greeting = hour < 12 ? 'Chào buổi sáng' : hour < 18 ? 'Chào buổi chiều' : 'Chào buổi tối';
 
   return (
     <div className="space-y-6">
@@ -97,14 +97,14 @@ export const ManagerDashboardPage: React.FC = () => {
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
-            {greeting}! ðŸ‘‹
+            {greeting}! 👋
           </h1>
           <p className="text-blue-200 text-sm mt-1.5 max-w-lg">
-            Tá»•ng quan Ä‘iá»u phá»‘i cÆ¡ sá»Ÿ kho. Chá»n phÃ¢n há»‡ bÃªn dÆ°á»›i Ä‘á»ƒ báº¯t Ä‘áº§u quáº£n lÃ½ váº­n hÃ nh hÃ´m nay.
+            Tổng quan điều phối cơ sở kho. Chọn phân hệ bên dưới để bắt đầu quản lý vận hành hôm nay.
           </p>
           <div className="flex items-center gap-1.5 mt-4 text-xs text-blue-300">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Há»‡ thá»‘ng Ä‘ang hoáº¡t Ä‘á»™ng bÃ¬nh thÆ°á»ng Â· {now.toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+            <span>Hệ thống đang hoạt động bình thường · {now.toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
           </div>
         </div>
       </div>

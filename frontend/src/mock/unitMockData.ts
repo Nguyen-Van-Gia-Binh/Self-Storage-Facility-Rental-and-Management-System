@@ -5,26 +5,26 @@ export const MOCK_FACILITY_ID = 1;
 
 export const mockUnitTypes: UnitTypeResponse[] = [
   {
-    id: 1, facilityId: 1, name: 'Loai S - 3m2',
-    description: 'Phu hop do ca nhan, hanh ly du lich',
+    id: 1, facilityId: 1, name: 'Loại S — 3m²',
+    description: 'Phù hợp đồ cá nhân, vali, hành lý du lịch',
     widthM: 1.5, depthM: 2.0, heightM: 2.5, areaM2: 3.0,
     monthlyPrice: 800000, totalUnits: 10, isActive: true,
   },
   {
-    id: 2, facilityId: 1, name: 'Loai M - 6m2',
-    description: 'Phu hop do noi that nho, thiet bi van phong',
+    id: 2, facilityId: 1, name: 'Loại M — 6m²',
+    description: 'Phù hợp đồ nội thất nhỏ, thiết bị văn phòng',
     widthM: 2.0, depthM: 3.0, heightM: 2.5, areaM2: 6.0,
     monthlyPrice: 1500000, totalUnits: 8, isActive: true,
   },
   {
-    id: 3, facilityId: 1, name: 'Loai L - 12m2',
-    description: 'Phu hop noi that phong khach, xe may',
+    id: 3, facilityId: 1, name: 'Loại L — 12m²',
+    description: 'Phù hợp nội thất phòng khách, xe máy, hàng hóa',
     widthM: 3.0, depthM: 4.0, heightM: 2.5, areaM2: 12.0,
     monthlyPrice: 2800000, totalUnits: 5, isActive: true,
   },
   {
-    id: 4, facilityId: 1, name: 'Loai XL - 20m2',
-    description: 'Kho lon cho doanh nghiep, hang hoa',
+    id: 4, facilityId: 1, name: 'Loại XL — 20m²',
+    description: 'Kho lớn cho doanh nghiệp, chuyển nhà trọn gói',
     widthM: 4.0, depthM: 5.0, heightM: 3.0, areaM2: 20.0,
     monthlyPrice: 4500000, totalUnits: 3, isActive: false,
   },

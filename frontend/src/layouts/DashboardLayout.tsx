@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Menu, X, LogOut, Layers, Box } from 'lucide-react';
 import {
   tokenStorage,
+  DEMO_USERS,
   type UserRole,
   type UserSession,
 } from '@/utils/tokenStorage';
@@ -93,7 +94,15 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const displayTitle  = customTitle    || roleNav.portalTitle;
   const navItems      = customNavItems || roleNav.navItems;
   const currentLabel  = BREADCRUMB_MAP[location.pathname];
-  const initials      = getInitials(user?.fullName);
+  const displayFullName = React.useMemo(() => {
+    if (!user?.fullName) return 'Người dùng';
+    if (user.fullName.includes('Ã') || user.fullName.includes('á»') || user.fullName.includes('VÄƒn') || user.fullName.includes('BÃ')) {
+      return DEMO_USERS[currentRole]?.fullName || 'Nguyễn Văn Gia Bình';
+    }
+    return user.fullName;
+  }, [user?.fullName, currentRole]);
+
+  const initials      = getInitials(displayFullName);
   const portalLabel   = ROLE_PORTAL_LABEL[currentRole];
 
   // Tự động đồng bộ JWT token thật từ backend khi tải portal demo
@@ -144,44 +153,52 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         `}
       >
         {/* Sidebar Header */}
-        <div className="h-16 hidden md:flex items-center justify-between px-3.5 border-b border-slate-100">
-          <div className={`overflow-hidden transition-all duration-300 ${sidebarOpen ? 'w-48 opacity-100' : 'w-0 opacity-0'}`}>
-            <Link to="/customer" className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center text-white shadow-xs shrink-0">
-                <Box className="w-4 h-4" />
-              </div>
-              <div className="leading-tight truncate">
-                <span className="text-sm font-extrabold text-slate-900 tracking-tight block">
-                  SmartStorage
-                </span>
-                <span className="text-[10px] font-bold text-brand-600 tracking-wider uppercase block truncate">
-                  {portalLabel}
-                </span>
-              </div>
-            </Link>
-          </div>
-          {!sidebarOpen && (
-            <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center text-white shadow-xs mx-auto">
-              <Box className="w-4 h-4" />
+        {sidebarOpen ? (
+          <div className="h-16 hidden md:flex items-center justify-between px-3.5 border-b border-slate-100">
+            <div className="overflow-hidden transition-all duration-300 w-48 opacity-100">
+              <Link to="/customer" className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center text-white shadow-xs shrink-0">
+                  <Box className="w-4 h-4" />
+                </div>
+                <div className="leading-tight truncate">
+                  <span className="text-sm font-extrabold text-slate-900 tracking-tight block">
+                    SmartStorage
+                  </span>
+                  <span className="text-[10px] font-bold text-brand-600 tracking-wider uppercase block truncate">
+                    {portalLabel}
+                  </span>
+                </div>
+              </Link>
             </div>
-          )}
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 border border-slate-200/60 transition-colors flex-shrink-0 cursor-pointer ml-1"
-            title="Thu nhỏ / Mở rộng"
-          >
-            {sidebarOpen
-              ? <ChevronLeft className="w-4 h-4" />
-              : <ChevronRight className="w-4 h-4" />
-            }
-          </button>
-        </div>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 border border-slate-200/60 transition-colors shrink-0 cursor-pointer"
+              title="Thu nhỏ menu"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <div className="h-16 hidden md:flex items-center justify-center border-b border-slate-100 px-2">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="group relative w-10 h-10 rounded-xl bg-brand-500 hover:bg-brand-600 text-white flex items-center justify-center transition-all shadow-xs shrink-0 cursor-pointer"
+              title="Mở rộng menu"
+            >
+              <Box className="w-5 h-5 transition-transform duration-200 group-hover:scale-0 group-hover:opacity-0 absolute" />
+              <ChevronRight className="w-5 h-5 transition-transform duration-200 scale-0 opacity-0 group-hover:scale-110 group-hover:opacity-100 absolute" />
+            </button>
+          </div>
+        )}
 
         {/* Navigation */}
         <nav className="flex-1 py-4 px-2.5 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
-            const isActive = location.pathname === item.href
-              || (item.href !== '/' && location.pathname.startsWith(item.href));
+            const isExact = location.pathname === item.href || location.pathname === `${item.href}/`;
+            const isChildActive = navItems.some(
+              (other) => other.href !== item.href && other.href.startsWith(item.href) && location.pathname.startsWith(other.href)
+            );
+            const isActive = isExact || (location.pathname.startsWith(`${item.href}/`) && !isChildActive);
             const Icon = item.icon || Layers;
             return (
               <Link
@@ -267,7 +284,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               {/* Name + Role */}
               <div className="text-right hidden sm:block">
                 <p className="text-xs font-bold text-slate-900 leading-none">
-                  {user?.fullName || 'Người dùng'}
+                  {displayFullName}
                 </p>
                 <span className="inline-block text-[10px] text-brand-700 bg-brand-50 border border-brand-200/60 px-2 py-0.5 rounded-full mt-1 font-bold">
                   {currentRole}
