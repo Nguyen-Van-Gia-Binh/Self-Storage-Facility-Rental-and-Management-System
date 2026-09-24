@@ -5,7 +5,7 @@
 import { apiClient } from './client';
 import type { ApiResponse } from './client';
 import type { UserRoleType } from './user';
-import { tokenStorage, normalizeRole } from '@/utils/tokenStorage';
+import { tokenStorage, normalizeRole, DEMO_USERS, type UserSession, type UserRole } from '@/utils/tokenStorage';
 import mockUsers from '@/mock/mock-users.json';
 
 export interface UserInfo {
@@ -216,7 +216,7 @@ export async function verifyOtp(payload: { email: string; otp: string }): Promis
     if (payload.otp.length === 6) {
       return { message: 'Mã xác thực OTP hợp lệ (Demo Mode)' };
     }
-    throw new Error('Mã xác thực OTP không hợp lệ hoặc đã hết hạn.');
+    throw new Error('Mã xác thực OTP không hợp lệ hoặc đã hết hạn.', { cause: err });
   }
 }
 
@@ -270,16 +270,47 @@ export function getPortalUrlByRole(role: string): string {
   const normalized = normalizeRole(role);
   switch (normalized) {
     case 'ADMIN':
-      return '/admin';
+      return '/admin/users';
     case 'BOM':
-      return '/bom';
+      return '/bom/facilities';
     case 'MANAGER':
-      return '/manager';
+      return '/manager/units';
     case 'STAFF':
-      return '/staff';
+      return '/staff/check-in';
     case 'CUSTOMER':
     default:
-      return '/';
+      return '/customer';
+  }
+}
+
+/**
+ * Đăng nhập nhanh vào tài khoản demo của một vai trò:
+ * Tự động gọi API backend /auth/login để nhận access_token và refresh_token thật,
+ * lưu vào localStorage và cập nhật phiên làm việc.
+ */
+export async function loginAsDemoRole(role: UserRole | string): Promise<UserSession> {
+  const normalized = normalizeRole(role);
+  const demoUser = DEMO_USERS[normalized] || DEMO_USERS.CUSTOMER;
+
+  try {
+    const authData = await loginUser({
+      email: demoUser.email,
+      password: 'password123',
+    });
+    const session: UserSession = {
+      id: authData.user.id,
+      username: authData.user.email,
+      email: authData.user.email,
+      fullName: authData.user.fullName,
+      role: normalized,
+      facilityId: authData.user.facilityIds?.[0],
+    };
+    tokenStorage.setUser(session);
+    return session;
+  } catch (err) {
+    console.warn(`Đăng nhập demo backend (${demoUser.email}) không thành công, duy trì phiên demo:`, err);
+    tokenStorage.setDemoRole(normalized);
+    return demoUser;
   }
 }
 
@@ -293,4 +324,5 @@ export const authApi = {
   logout: logoutUser,
   getPortalUrlByRole,
   saveSession,
+  loginAsDemoRole,
 };

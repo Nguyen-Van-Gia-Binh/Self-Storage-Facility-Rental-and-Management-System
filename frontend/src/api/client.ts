@@ -11,6 +11,7 @@ export interface ApiResponse<T> {
 
 export interface ApiError {
   status: number;
+  errorCode?: string;
   message: string;
   timestamp: string;
   errors?: Record<string, string>;
@@ -30,10 +31,51 @@ export async function apiClient<T>(
     ...options.headers,
   };
 
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
+  let response = await fetch(`${BASE_URL}${endpoint}`, {
     ...options,
     headers,
   });
+
+  // Tự động làm mới Access Token bằng Refresh Token nếu token hết hạn (401/403)
+  if ((response.status === 401 || response.status === 403 || response.status === 500) && !endpoint.includes('/auth/')) {
+    const refreshToken =
+      localStorage.getItem('refresh_token') ||
+      localStorage.getItem('selfstorage_refresh_token');
+
+    if (refreshToken) {
+      try {
+        const refreshRes = await fetch(`${BASE_URL}/auth/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken }),
+        });
+
+        if (refreshRes.ok) {
+          const resJson = await refreshRes.json();
+          const newAccessToken =
+            resJson?.data?.accessToken || resJson?.accessToken;
+
+          if (newAccessToken) {
+            localStorage.setItem('access_token', newAccessToken);
+            localStorage.setItem('selfstorage_access_token', newAccessToken);
+
+            // Thử lại request với token mới
+            const retryHeaders: HeadersInit = {
+              ...headers,
+              Authorization: `Bearer ${newAccessToken}`,
+            };
+
+            response = await fetch(`${BASE_URL}${endpoint}`, {
+              ...options,
+              headers: retryHeaders,
+            });
+          }
+        }
+      } catch (refreshErr) {
+        console.warn('Làm mới JWT token thất bại:', refreshErr);
+      }
+    }
+  }
 
   if (!response.ok) {
     const errorData: ApiError = await response.json().catch(() => ({
