@@ -28,7 +28,7 @@ export const StaffWorkloadCard: React.FC<StaffWorkloadCardProps> = ({
   const getWorkloadBadge = () => {
     if (staff.status === 'OVERLOADED' || staff.activeTaskCount >= 5) {
       return {
-        label: 'Quá tải (≥5 việc)',
+        label: 'Quá tải (≥5)',
         className: 'bg-rose-50 text-rose-700 border-rose-200',
         dotClass: 'bg-rose-500 animate-pulse',
         barColor: 'bg-rose-500',
@@ -37,7 +37,7 @@ export const StaffWorkloadCard: React.FC<StaffWorkloadCardProps> = ({
     }
     if (staff.status === 'AVAILABLE' || staff.activeTaskCount <= 2) {
       return {
-        label: 'Rảnh / Sẵn sàng nhận việc',
+        label: 'Sẵn sàng',
         className: 'bg-emerald-50 text-emerald-700 border-emerald-200',
         dotClass: 'bg-emerald-500',
         barColor: 'bg-emerald-500',
@@ -45,7 +45,7 @@ export const StaffWorkloadCard: React.FC<StaffWorkloadCardProps> = ({
       };
     }
     return {
-      label: 'Bình thường (3-4 việc)',
+      label: 'Bình thường',
       className: 'bg-blue-50 text-blue-700 border-blue-200',
       dotClass: 'bg-blue-500',
       barColor: 'bg-blue-500',
@@ -66,44 +66,44 @@ export const StaffWorkloadCard: React.FC<StaffWorkloadCardProps> = ({
     >
       <div>
         {/* Top bar: Avatar & Tình trạng tải */}
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex items-center gap-3">
-            <div className="relative">
+        <div className="flex items-center justify-between gap-2.5 mb-3">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <div className="relative w-11 h-11 shrink-0">
               {staff.avatarUrl ? (
                 <img
                   src={staff.avatarUrl}
                   alt={staff.staffName}
-                  className="w-11 h-11 rounded-xl object-cover border border-slate-200"
+                  className="w-11 h-11 shrink-0 rounded-xl object-cover border border-slate-200 shadow-2xs"
                 />
               ) : (
-                <div className="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center font-bold text-slate-700">
+                <div className="w-11 h-11 shrink-0 rounded-xl bg-slate-100 flex items-center justify-center font-bold text-slate-700 border border-slate-200 shadow-2xs">
                   {staff.staffName.charAt(0)}
                 </div>
               )}
               <span
-                className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white ${badge.dotClass}`}
+                className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white ${badge.dotClass}`}
                 title={badge.label}
               />
             </div>
 
-            <div>
-              <h4 className="font-bold text-slate-900 text-sm tracking-tight leading-snug">
+            <div className="min-w-0 flex-1">
+              <h4 className="font-bold text-slate-900 text-sm tracking-tight leading-snug truncate" title={staff.staffName}>
                 {staff.staffName}
               </h4>
-              <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
-                <Clock className="w-3 h-3 text-slate-400" />
-                <span>{staff.shift || 'Ca làm việc chính'}</span>
+              <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5 truncate">
+                <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                <span className="truncate">{staff.shift || 'Ca làm việc chính'}</span>
               </p>
             </div>
           </div>
 
           <span
-            className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold border flex items-center gap-1.5 shrink-0 ${badge.className}`}
+            className={`px-2 py-0.5 rounded-lg text-[10px] font-bold border flex items-center gap-1 shrink-0 whitespace-nowrap ${badge.className}`}
           >
             {staff.status === 'OVERLOADED' ? (
-              <AlertCircle className="w-3 h-3 text-rose-500" />
+              <AlertCircle className="w-3 h-3 text-rose-500 shrink-0" />
             ) : (
-              <UserCheck className="w-3 h-3 text-emerald-500" />
+              <UserCheck className="w-3 h-3 text-emerald-500 shrink-0" />
             )}
             {badge.label}
           </span>

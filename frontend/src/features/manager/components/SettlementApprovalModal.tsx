@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, CheckCircle, AlertCircle, RotateCcw } from 'lucide-react';
 import type { ManagerContractItem } from '@/types/contractManager';
 import { approveSettlementRefund } from '@/api/contract';
@@ -58,11 +59,11 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-150 border border-slate-200">
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] border border-slate-200">
         {/* Header */}
-        <div className="px-6 py-4 bg-gradient-to-r from-purple-700 to-indigo-700 text-white flex items-center justify-between">
+        <div className="px-6 py-4 bg-gradient-to-r from-purple-700 to-indigo-700 text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <RotateCcw className="w-5 h-5 text-purple-200" />
             <div>
@@ -167,7 +168,7 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
         </div>
 
         {/* Footer actions */}
-        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3">
+        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3 shrink-0">
           <button
             type="button"
             onClick={onClose}
@@ -193,6 +194,7 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

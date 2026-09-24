@@ -54,3 +54,6 @@ docs/KE-HOACH-XUAN-NHI.md
 # Local runner wrappers
 powershell.bat
 powershell.cmd
+
+#local docs
+docs-local

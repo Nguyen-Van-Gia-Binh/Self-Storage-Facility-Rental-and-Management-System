@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, RefreshCw, AlertCircle, CheckCircle, ArrowRight } from 'lucide-react';
 import type { ManagerContractItem, AvailableUnitOption } from '@/types/contractManager';
 import { getAvailableUnitsForReassign, reassignStorageUnit } from '@/api/contract';
@@ -91,11 +92,11 @@ export const ReassignUnitModal: React.FC<ReassignUnitModalProps> = ({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden animate-in fade-in zoom-in duration-150 border border-slate-200">
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="px-6 py-4 bg-gradient-to-r from-amber-500 to-orange-600 text-white flex items-center justify-between">
+        <div className="px-6 py-4 bg-gradient-to-r from-amber-500 to-orange-600 text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <RefreshCw className="w-5 h-5 text-white/90" />
             <div>
@@ -113,7 +114,7 @@ export const ReassignUnitModal: React.FC<ReassignUnitModalProps> = ({
           </button>
         </div>
 
-        <div className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
+        <div className="p-6 space-y-5 flex-1 overflow-y-auto">
           {/* Thông tin đơn hiện tại */}
           <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs space-y-2">
             <div className="flex justify-between items-center text-slate-700">
@@ -240,7 +241,7 @@ export const ReassignUnitModal: React.FC<ReassignUnitModalProps> = ({
         </div>
 
         {/* Footer actions */}
-        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3">
+        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3 shrink-0">
           <button
             type="button"
             onClick={onClose}
@@ -269,6 +270,7 @@ export const ReassignUnitModal: React.FC<ReassignUnitModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
