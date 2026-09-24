@@ -122,9 +122,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-[#f2f9f7] flex flex-col md:flex-row">
+    <div className="h-screen bg-[#f2f9f7] flex flex-col md:flex-row overflow-hidden">
       {/* Mobile Header */}
-      <div className="md:hidden bg-white text-slate-900 border-b border-slate-200/90 px-4 py-3 flex items-center justify-between shadow-xs">
+      <div className="md:hidden bg-white text-slate-900 border-b border-slate-200/90 px-4 py-3 flex items-center justify-between shadow-xs sticky top-0 z-30 shrink-0">
         <Link to="/customer" className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center text-white shadow-xs">
             <Box className="w-4 h-4" />
@@ -149,7 +149,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           ${sidebarOpen ? 'w-64' : 'w-[72px]'}
           ${mobileMenuOpen ? 'flex' : 'hidden'}
           md:flex flex-col bg-white text-slate-800 border-r border-slate-200/90
-          transition-all duration-300 ease-in-out z-20 flex-shrink-0 shadow-xs
+          transition-all duration-300 ease-in-out z-20 shrink-0 shadow-xs
+          h-screen md:h-full overflow-hidden
         `}
       >
         {/* Sidebar Header */}
@@ -254,9 +255,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {/* Top Header */}
-        <header className="h-16 bg-white border-b border-slate-200/90 flex items-center justify-between px-4 sm:px-6 shadow-xs flex-shrink-0">
+        <header className="h-16 bg-white border-b border-slate-200/90 flex items-center justify-between px-4 sm:px-6 shadow-xs shrink-0 sticky top-0 z-10">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-sm">
             <span className="text-slate-600 font-bold hidden sm:inline">{displayTitle}</span>
