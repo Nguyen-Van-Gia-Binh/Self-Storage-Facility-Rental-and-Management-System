@@ -137,8 +137,19 @@ Chi tiết nhiệm vụ từng giai đoạn: [docs/PLAN.md](docs/PLAN.md) · B�
 | Migration | Flyway |
 | Xác thực | JWT + Spring Security |
 
-Hướng dẫn cài đặt và chạy dự án sẽ được bổ sung vào README này khi khung dự án hoàn tất (nhiệm vụ
-T1.16 và T1.17 của Giai đoạn 1).
+## Hướng dẫn Cài đặt & Deploy
+
+Xem bộ tài liệu hướng dẫn triển khai đầy đủ tại **[docs/deploy/README.md](docs/deploy/README.md)**.
+
+| Tài liệu | Nội dung |
+|----------|----------|
+| [01-prerequisites.md](docs/deploy/01-prerequisites.md) | Yêu cầu phần mềm: JDK 17, Node 20+, SQL Server 2022 |
+| [02-database-setup.md](docs/deploy/02-database-setup.md) | Tạo database SelfStorageDB và chạy Flyway migrations |
+| [03-backend-local.md](docs/deploy/03-backend-local.md) | Build và chạy Backend Spring Boot cục bộ |
+| [04-frontend-local.md](docs/deploy/04-frontend-local.md) | Cấu hình .env và chạy Frontend React Vite |
+| [05-environment-variables.md](docs/deploy/05-environment-variables.md) | Bảng tra cứu toàn bộ biến môi trường Backend & Frontend |
+| [06-health-check.md](docs/deploy/06-health-check.md) | Checklist kiểm tra sức khỏe hệ thống sau deploy |
+| [07-production-deploy.md](docs/deploy/07-production-deploy.md) | Hướng dẫn deploy production (JAR, Nginx, IIS) & Checklist an ninh |
 
 ---
 
