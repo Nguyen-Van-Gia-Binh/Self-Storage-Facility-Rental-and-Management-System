@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import type { UnitTypeFormData, UnitTypeResponse } from '@/types/unit';
-import { X, Layers } from 'lucide-react';
+import { X, Layers, Snowflake, Package } from 'lucide-react';
 
 interface UnitTypeFormModalProps {
   isOpen: boolean;
@@ -29,6 +29,12 @@ export const UnitTypeFormModal: React.FC<UnitTypeFormModalProps> = ({
   const [form, setForm] = useState<UnitTypeFormData>(empty);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isClimate =
+    form.name.toLowerCase().includes('lạnh') ||
+    form.name.toLowerCase().includes('máy lạnh') ||
+    form.name.toLowerCase().includes('điều hòa') ||
+    (form.code || '').toUpperCase().includes('CLIMATE');
 
   useEffect(() => {
     if (isOpen) {
@@ -101,6 +107,57 @@ export const UnitTypeFormModal: React.FC<UnitTypeFormModalProps> = ({
             </div>
           )}
 
+          {/* Chọn loại môi trường bảo quản */}
+          <div>
+            <label className={labelCls}>Môi trường nhiệt độ & bảo quản</label>
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  if (form.name.includes('Máy Lạnh') || form.name.includes('Kho Lạnh')) {
+                    set('name', form.name.replace(/Kho Máy Lạnh|Kho Lạnh|Máy Lạnh/gi, 'Kho Tiêu Chuẩn').trim());
+                  }
+                }}
+                className={`p-2.5 rounded-xl border text-left flex items-start gap-2 transition-all cursor-pointer ${
+                  !isClimate
+                    ? 'border-brand-500 bg-brand-50/50 ring-2 ring-brand-500/20'
+                    : 'border-slate-200 bg-white hover:bg-slate-50'
+                }`}
+              >
+                <Package className={`w-4 h-4 mt-0.5 shrink-0 ${!isClimate ? 'text-brand-600' : 'text-slate-400'}`} />
+                <div>
+                  <span className="text-xs font-bold text-slate-800 block">Kho Tiêu Chuẩn</span>
+                  <span className="text-[11px] text-slate-400 block mt-0.5">Nhiệt độ phòng tự nhiên</span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (!form.name || form.name.includes('Loại S') || form.name.includes('Tiêu Chuẩn')) {
+                    set('name', 'Kho Máy Lạnh (Climate Unit)');
+                  } else if (!form.name.includes('Máy Lạnh') && !form.name.includes('Lạnh')) {
+                    set('name', `Kho Máy Lạnh — ${form.name}`);
+                  }
+                  if (!form.description) {
+                    set('description', 'Điều hòa nhiệt độ 22°C - 25°C & kiểm soát độ ẩm 24/7, phù hợp đồ da, rượu vang, thiết bị điện tử.');
+                  }
+                }}
+                className={`p-2.5 rounded-xl border text-left flex items-start gap-2 transition-all cursor-pointer ${
+                  isClimate
+                    ? 'border-cyan-500 bg-cyan-50/60 ring-2 ring-cyan-500/20'
+                    : 'border-slate-200 bg-white hover:bg-slate-50'
+                }`}
+              >
+                <Snowflake className={`w-4 h-4 mt-0.5 shrink-0 ${isClimate ? 'text-cyan-600' : 'text-slate-400'}`} />
+                <div>
+                  <span className="text-xs font-bold text-slate-800 block">Kho Máy Lạnh ❄️</span>
+                  <span className="text-[11px] text-slate-400 block mt-0.5">22°C - 25°C & độ ẩm 24/7</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
           <div>
             <label className={labelCls}>
               Tên loại ô kho <span className="text-rose-500">*</span>
@@ -110,7 +167,7 @@ export const UnitTypeFormModal: React.FC<UnitTypeFormModalProps> = ({
               type="text"
               value={form.name}
               onChange={(e) => set('name', e.target.value)}
-              placeholder="VD: Loại S — 3m²"
+              placeholder="VD: Loại S — 3m² hoặc Kho Máy Lạnh — 5m²"
               className={inputCls}
             />
           </div>

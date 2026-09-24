@@ -1,7 +1,6 @@
-// frontend/src/features/manager/components/UnitTypeCard.tsx
 import React from 'react';
 import type { UnitTypeResponse } from '@/types/unit';
-import { Edit2, Power } from 'lucide-react';
+import { Edit2, Power, Snowflake, Package } from 'lucide-react';
 
 interface UnitTypeCardProps {
   type: UnitTypeResponse;
@@ -13,34 +12,58 @@ interface UnitTypeCardProps {
 
 const fmt = (p: number) => new Intl.NumberFormat('vi-VN').format(p) + ' đ/tháng';
 
+export const isClimateType = (t: { code?: string; name: string }) => {
+  const code = (t.code || '').toUpperCase();
+  const name = t.name.toLowerCase();
+  return code.includes('CLIMATE') || name.includes('lạnh') || name.includes('máy lạnh') || name.includes('điều hòa');
+};
+
 export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({
   type,
   isSelected,
   onClick,
   onEdit,
   onToggle,
-}) => (
-  <div
-    onClick={onClick}
-    className={`cursor-pointer rounded-2xl border transition-all duration-200 p-3.5 select-none ${
-      isSelected
-        ? 'border-brand-500 bg-brand-50/60 shadow-sm ring-2 ring-brand-500/20'
-        : 'border-slate-200/90 bg-white hover:border-brand-300 hover:shadow-xs hover:bg-slate-50/50'
-    }`}
-  >
-    <div className="flex items-start justify-between gap-2">
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-bold text-slate-900 tracking-tight truncate">{type.name}</span>
-          {!type.isActive && (
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200 shrink-0">
-              Vô hiệu
-            </span>
-          )}
+}) => {
+  const isClimate = isClimateType(type);
+
+  return (
+    <div
+      onClick={onClick}
+      className={`cursor-pointer rounded-2xl border transition-all duration-200 p-3.5 select-none ${
+        isSelected
+          ? 'border-brand-500 bg-brand-50/60 shadow-sm ring-2 ring-brand-500/20'
+          : 'border-slate-200/90 bg-white hover:border-brand-300 hover:shadow-xs hover:bg-slate-50/50'
+      }`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold text-slate-900 tracking-tight truncate">{type.name}</span>
+          </div>
+
+          <div className="flex items-center flex-wrap gap-1.5 mt-1">
+            {isClimate ? (
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-cyan-50 text-cyan-700 border border-cyan-200">
+                <Snowflake className="w-2.5 h-2.5 text-cyan-600" />
+                Kho Máy Lạnh (22°C - 25°C)
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
+                <Package className="w-2.5 h-2.5 text-slate-400" />
+                Kho Tiêu Chuẩn (Thường)
+              </span>
+            )}
+            {!type.isActive && (
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-50 text-rose-600 border border-rose-200">
+                Vô hiệu
+              </span>
+            )}
+          </div>
+
+          <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">{type.description}</p>
         </div>
-        <p className="text-xs text-slate-500 mt-0.5 line-clamp-2 leading-relaxed">{type.description}</p>
       </div>
-    </div>
 
     <div className="mt-2.5 grid grid-cols-2 gap-2 text-xs bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
       <div>
@@ -82,4 +105,5 @@ export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({
       </button>
     </div>
   </div>
-);
+  );
+};

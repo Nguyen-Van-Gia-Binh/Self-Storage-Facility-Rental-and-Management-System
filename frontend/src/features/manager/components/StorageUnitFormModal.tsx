@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import type { StorageUnitFormData, UnitTypeResponse } from '@/types/unit';
-import { X, Box } from 'lucide-react';
+import { X, Box, Snowflake, Package } from 'lucide-react';
 
 interface StorageUnitFormModalProps {
   isOpen: boolean;
@@ -97,16 +97,47 @@ export const StorageUnitFormModal: React.FC<StorageUnitFormModalProps> = ({
               onChange={(e) =>
                 setForm((p) => ({ ...p, unitTypeId: parseInt(e.target.value, 10) }))
               }
-              className={`${inputCls} cursor-pointer`}
+              className={`${inputCls} cursor-pointer font-medium`}
             >
               {unitTypes
                 .filter((t) => t.isActive)
-                .map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name} ({t.areaM2}m²)
-                  </option>
-                ))}
+                .map((t) => {
+                  const isClimate = (t.code || '').toUpperCase().includes('CLIMATE') ||
+                                    t.name.toLowerCase().includes('lạnh') ||
+                                    t.name.toLowerCase().includes('máy lạnh') ||
+                                    t.name.toLowerCase().includes('điều hòa');
+                  return (
+                    <option key={t.id} value={t.id}>
+                      {isClimate ? '❄️ [Kho máy lạnh] ' : '📦 [Kho thường] '}
+                      {t.name} ({t.areaM2}m²)
+                    </option>
+                  );
+                })}
             </select>
+
+            {(() => {
+              const currentSelected = unitTypes.find((t) => t.id === form.unitTypeId);
+              if (!currentSelected) return null;
+              const isClimate = (currentSelected.code || '').toUpperCase().includes('CLIMATE') ||
+                                currentSelected.name.toLowerCase().includes('lạnh') ||
+                                currentSelected.name.toLowerCase().includes('máy lạnh') ||
+                                currentSelected.name.toLowerCase().includes('điều hòa');
+              return isClimate ? (
+                <div className="mt-2 p-2.5 rounded-xl bg-cyan-50/80 border border-cyan-200 text-cyan-800 text-xs flex items-center gap-2">
+                  <Snowflake className="w-4 h-4 shrink-0 text-cyan-600" />
+                  <span>
+                    Ô kho này thuộc phân khúc <strong>Kho Máy Lạnh (Climate-Controlled 22°C - 25°C)</strong>, nhiệt độ và độ ẩm luôn được duy trì ổn định.
+                  </span>
+                </div>
+              ) : (
+                <div className="mt-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-xs flex items-center gap-2">
+                  <Package className="w-4 h-4 shrink-0 text-slate-500" />
+                  <span>
+                    Ô kho này thuộc phân khúc <strong>Kho Tiêu Chuẩn (Standard)</strong> nhiệt độ phòng tự nhiên.
+                  </span>
+                </div>
+              );
+            })()}
           </div>
 
           <div>

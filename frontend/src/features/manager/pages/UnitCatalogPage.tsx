@@ -4,7 +4,7 @@ import { UnitTypeCard } from '../components/UnitTypeCard';
 import { UnitTypeFormModal } from '../components/UnitTypeFormModal';
 import { StorageUnitFormModal } from '../components/StorageUnitFormModal';
 import { StatusBadge } from '../components/StatusBadge';
-import { Plus, Building2, Layers, Box, Wrench, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Plus, Building2, Layers, Box, Wrench, CheckCircle2, AlertCircle, Snowflake, Package } from 'lucide-react';
 import type {
   UnitTypeResponse,
   StorageUnitResponse,
@@ -359,11 +359,25 @@ export const UnitCatalogPage: React.FC = () => {
               {/* Right Panel Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between px-5 py-4 border-b border-slate-100 gap-3 bg-slate-50/50">
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center flex-wrap gap-2">
                     <span className="text-base font-bold text-slate-900">{selectedType.name}</span>
                     <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-brand-50 text-brand-700 border border-brand-200/60 font-mono">
                       {selectedType.areaM2} m²
                     </span>
+                    {(selectedType.code?.toUpperCase().includes('CLIMATE') ||
+                      selectedType.name.toLowerCase().includes('lạnh') ||
+                      selectedType.name.toLowerCase().includes('máy lạnh') ||
+                      selectedType.name.toLowerCase().includes('điều hòa')) ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-cyan-50 text-cyan-700 border border-cyan-200">
+                        <Snowflake className="w-3 h-3 text-cyan-600" />
+                        Kho Máy Lạnh (22°C - 25°C)
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                        <Package className="w-3 h-3 text-slate-400" />
+                        Kho Tiêu Chuẩn (Standard)
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-3 text-xs text-slate-500 mt-1 font-medium">
                     <span>
@@ -442,7 +456,18 @@ export const UnitCatalogPage: React.FC = () => {
                           className="hover:bg-slate-50/80 transition-colors"
                         >
                           <td className="px-5 py-3.5 font-mono font-bold text-slate-900 text-sm">
-                            {unit.code}
+                            <div className="flex items-center gap-2">
+                              <span>{unit.code}</span>
+                              {(selectedType.code?.toUpperCase().includes('CLIMATE') ||
+                                selectedType.name.toLowerCase().includes('lạnh') ||
+                                selectedType.name.toLowerCase().includes('máy lạnh') ||
+                                selectedType.name.toLowerCase().includes('điều hòa')) && (
+                                <span title="Kho máy lạnh điều hòa nhiệt độ ổn định" className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-sans font-bold text-cyan-700 bg-cyan-50 rounded border border-cyan-200/80">
+                                  <Snowflake className="w-2.5 h-2.5 text-cyan-600" />
+                                  Máy lạnh
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="px-5 py-3.5 text-xs text-slate-600 font-medium">
                             Tầng {unit.floor}
