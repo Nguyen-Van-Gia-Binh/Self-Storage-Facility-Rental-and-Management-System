@@ -58,7 +58,7 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
 
-  const isHomeActive = location.pathname === '/customer';
+  const isHomeActive = location.pathname === '/' || location.pathname === '/customer';
   const isUnitsActive = location.pathname.startsWith('/customer/units') || location.pathname.startsWith('/customer/book');
   const isRentalsActive = location.pathname === '/customer/my-units' || location.pathname.startsWith('/customer/renew');
   const isSupportActive = location.pathname.startsWith('/customer/support');
