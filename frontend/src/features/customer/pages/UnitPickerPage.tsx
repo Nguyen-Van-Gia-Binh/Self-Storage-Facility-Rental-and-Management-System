@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -7,35 +7,153 @@ import {
   Wind, 
   ThermometerSnowflake, 
   MapPin, 
-  Layers
+  Layers,
+  Loader2
 } from 'lucide-react';
 import { mockFacilities, mockUnitTypes, mockStorageUnits } from '../mockData';
-import type { StorageType, UnitSizeCategory, StorageUnit } from '../types';
+import type { StorageType, UnitSizeCategory, StorageUnit, UnitType, UnitStatus } from '../types';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { formatVND } from '../utils/pricing';
 import { UnitGrid } from '../components/UnitGrid';
+import { fetchFacilities } from '@/api/facility';
+import { fetchUnitTypes as fetchUnitTypesApi, fetchStorageUnits as fetchStorageUnitsApi } from '@/api/unit';
+import type { FacilityListItem } from '@/types';
 
 export const UnitPickerPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const facilityId = searchParams.get('facility') || 'FAC-D7-02';
+  const facilityParam = searchParams.get('facility') || '8';
   const initialTypeId = searchParams.get('type');
 
-  const facility = useMemo(() => {
-    return mockFacilities.find((f) => f.id === facilityId) || mockFacilities[0];
-  }, [facilityId]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [currentFacility, setCurrentFacility] = useState<{ id: string; name: string; address?: string }>({
+    id: facilityParam,
+    name: 'Cơ sở lưu trữ',
+  });
+  const [unitTypes, setUnitTypes] = useState<UnitType[]>(mockUnitTypes);
+  const [facilityUnits, setFacilityUnits] = useState<StorageUnit[]>([]);
 
-  // Bộ lọc ô kho theo cơ sở
-  const facilityUnits = useMemo(() => {
-    const list = mockStorageUnits.filter((u) => u.facilityId === facility.id);
-    return list.length > 0 ? list : mockStorageUnits;
-  }, [facility.id]);
+  // Tải dữ liệu thực tế từ backend khi facilityParam thay đổi
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadFacilityAndUnits() {
+      setLoading(true);
+      try {
+        // 1. Lấy danh sách cơ sở thực tế
+        const facList = await fetchFacilities();
+        if (!isMounted) return;
+
+        // Tìm cơ sở tương ứng theo ID hoặc Code (ví dụ: '8' hoặc 'FAC-HC')
+        const matchedFac = facList.find(
+          (f: FacilityListItem) => String(f.id) === facilityParam || f.code === facilityParam
+        ) || facList.find((f: FacilityListItem) => f.id === 8) || facList[0];
+
+        if (matchedFac) {
+          setCurrentFacility({
+            id: String(matchedFac.id),
+            name: matchedFac.name,
+            address: matchedFac.address,
+          });
+
+          const numericId = typeof matchedFac.id === 'number' ? matchedFac.id : Number(matchedFac.id);
+
+          // 2. Gọi API lấy bảng giá Loại ô kho thực tế của cơ sở này (T2.8)
+          const utPage = await fetchUnitTypesApi(numericId, { size: 50 });
+
+          // 3. Gọi API lấy danh sách Ô kho vật lý thực tế của cơ sở này (T2.10)
+          const suPage = await fetchStorageUnitsApi(numericId, { size: 100 });
+
+          if (!isMounted) return;
+
+          // Chuyển đổi dữ liệu backend UnitTypeResponse sang domain UnitType
+          let mappedUTs: UnitType[] = mockUnitTypes;
+          if (utPage?.content && utPage.content.length > 0) {
+            mappedUTs = utPage.content.map((ut) => {
+              const codeUpper = (ut.code || ut.name).toUpperCase();
+              let sizeCat: UnitSizeCategory = 'M';
+              if (codeUpper.includes('SMALL') || ut.name.toLowerCase().includes('nhỏ') || (ut.areaM2 && ut.areaM2 <= 1.5)) {
+                sizeCat = 'S';
+              } else if (codeUpper.includes('LARGE') || ut.name.toLowerCase().includes('lớn') || (ut.areaM2 && ut.areaM2 >= 9)) {
+                sizeCat = 'L';
+              } else if (codeUpper.includes('XL') || (ut.areaM2 && ut.areaM2 >= 15)) {
+                sizeCat = 'XL';
+              } else {
+                sizeCat = 'M';
+              }
+
+              const isClimate = codeUpper.includes('CLIMATE') || ut.name.toLowerCase().includes('lạnh');
+              const storageType: StorageType = isClimate ? 'CLIMATE_CONTROLLED' : 'STANDARD';
+
+              const width = ut.widthM || 2;
+              const depth = ut.depthM || 2;
+              const height = ut.heightM || 2.5;
+              const area = ut.areaM2 || Number((width * depth).toFixed(1));
+              const vol = ut.volumeM3 || Number((width * depth * height).toFixed(1));
+
+              return {
+                id: String(ut.id),
+                code: ut.code || `UT-${ut.id}`,
+                name: ut.name,
+                sizeCategory: sizeCat,
+                storageType,
+                areaM2: area,
+                volumeM3: vol,
+                dimensions: `${width}m x ${depth}m x ${height}m`,
+                capacityDescription: ut.description || `${ut.name} - Hệ thống an ninh và PCCC chuẩn quốc tế`,
+                baseMonthlyPrice: ut.monthlyPrice || 500000,
+                badge: sizeCat === 'M' ? 'POPULAR' : sizeCat === 'L' ? 'SPACIOUS' : undefined,
+              };
+            });
+            setUnitTypes(mappedUTs);
+          }
+
+          // Chuyển đổi dữ liệu backend StorageUnitResponse sang domain StorageUnit
+          if (suPage?.content && suPage.content.length > 0) {
+            const mappedSUs: StorageUnit[] = suPage.content.map((su) => {
+              const parentType = mappedUTs.find((t) => t.id === String(su.unitTypeId));
+              return {
+                id: String(su.id),
+                unitNumber: su.code,
+                facilityId: String(su.facilityId),
+                unitTypeId: String(su.unitTypeId),
+                floor: su.floor || 1,
+                zone: su.position || 'Khu A',
+                locationNote: su.locationNote || '',
+                status: (su.status as UnitStatus) || 'AVAILABLE',
+                sizeCategory: parentType ? parentType.sizeCategory : 'M',
+                storageType: parentType ? parentType.storageType : 'STANDARD',
+                basePrice: su.monthlyPrice || (parentType ? parentType.baseMonthlyPrice : 500000),
+              };
+            });
+            setFacilityUnits(mappedSUs);
+          } else {
+            // Dự phòng dữ liệu mock nếu cơ sở mới tạo chưa kịp có storage units
+            const fallback = mockStorageUnits.filter((u) => u.facilityId === matchedFac.code || u.facilityId === String(matchedFac.id));
+            setFacilityUnits(fallback.length > 0 ? fallback : mockStorageUnits);
+          }
+        }
+      } catch (err) {
+        console.error('Lỗi khi tải dữ liệu cơ sở & ô kho từ API backend:', err);
+        // Fallback an toàn sang mock data
+        const localFac = mockFacilities.find((f) => f.id === facilityParam) || mockFacilities[0];
+        setCurrentFacility({ id: localFac.id, name: localFac.name, address: localFac.address });
+        setUnitTypes(mockUnitTypes);
+        setFacilityUnits(mockStorageUnits);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+
+    loadFacilityAndUnits();
+    return () => { isMounted = false; };
+  }, [facilityParam]);
 
   const [storageType, setStorageType] = useState<StorageType>(() => {
     if (initialTypeId) {
-      const match = mockUnitTypes.find((t) => t.id === initialTypeId);
+      const match = mockUnitTypes.find((t) => t.id === initialTypeId || t.code === initialTypeId);
       if (match) return match.storageType;
     }
     return 'STANDARD';
@@ -43,7 +161,7 @@ export const UnitPickerPage: React.FC = () => {
 
   const [selectedSize, setSelectedSize] = useState<UnitSizeCategory>(() => {
     if (initialTypeId) {
-      const match = mockUnitTypes.find((t) => t.id === initialTypeId);
+      const match = mockUnitTypes.find((t) => t.id === initialTypeId || t.code === initialTypeId);
       if (match) return match.sizeCategory;
     }
     return 'M';
@@ -53,8 +171,9 @@ export const UnitPickerPage: React.FC = () => {
 
   // Lọc các loại kho theo chế độ Standard / Climate
   const availableTypes = useMemo(() => {
-    return mockUnitTypes.filter((t) => t.storageType === storageType);
-  }, [storageType]);
+    const list = unitTypes.filter((t) => t.storageType === storageType);
+    return list.length > 0 ? list : unitTypes;
+  }, [unitTypes, storageType]);
 
   const currentUnitType = useMemo(() => {
     return availableTypes.find((t) => t.sizeCategory === selectedSize) || availableTypes[0];
@@ -98,12 +217,21 @@ export const UnitPickerPage: React.FC = () => {
     const targetUnit = unitToBook || selectedUnit;
     const targetUnitNumber = targetUnit ? targetUnit.unitNumber : 'A102';
     const targetUnitId = targetUnit ? targetUnit.id : 'U-A102';
+    const typeIdToPass = currentUnitType ? currentUnitType.id : 'UT-M-STD';
 
     navigate(
-      `/customer/booking?facility=${facility.id}&type=${currentUnitType.id}&unitId=${targetUnitId}&unitNumber=${targetUnitNumber}`
+      `/customer/booking?facility=${currentFacility.id}&type=${typeIdToPass}&unitId=${targetUnitId}&unitNumber=${targetUnitNumber}`
     );
   };
 
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 flex flex-col items-center justify-center space-y-4">
+        <Loader2 className="w-8 h-8 text-brand-600 animate-spin" />
+        <p className="text-sm font-medium text-slate-500">Đang tải sơ đồ mặt bằng và biểu giá ô kho thực tế...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 space-y-6">
@@ -115,7 +243,7 @@ export const UnitPickerPage: React.FC = () => {
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-brand-600 transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            Đổi cơ sở khác (<MapPin className="w-3 h-3 text-brand-600 inline" /> {facility.name})
+            Đổi cơ sở khác (<MapPin className="w-3 h-3 text-brand-600 inline" /> {currentFacility.name})
           </Link>
         </div>
 
@@ -177,11 +305,11 @@ export const UnitPickerPage: React.FC = () => {
         </button>
       </div>
 
-      {/* 3. Danh mục 4 thẻ kích cỡ kho S, M, L, XL */}
+      {/* 3. Danh mục các thẻ kích cỡ kho S, M, L, XL */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-            <Box className="w-4 h-4 text-brand-600" /> Phân Nhóm Kích Thước Kho
+            <Box className="w-4 h-4 text-brand-600" /> Bảng Giá Loại Kho Thực Tế
           </h2>
           <span className="text-xs text-slate-400">Chọn cỡ kho để tự động định vị trên sơ đồ bên dưới</span>
         </div>
@@ -267,11 +395,11 @@ export const UnitPickerPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
           <div>
             <h2 className="text-base font-extrabold text-[#0a1614] flex items-center gap-2">
-              <Layers className="w-4 h-4 text-brand-600" /> Sơ Đồ Mặt Bằng Ô Kho
+              <Layers className="w-4 h-4 text-brand-600" /> Sơ Đồ Mặt Bằng Ô Kho Vật Lý
             </h2>
           </div>
           <span className="text-xs font-semibold text-brand-700 bg-brand-50 px-2.5 py-1 rounded-full border border-brand-200 shrink-0">
-            Cơ sở: {facility.name}
+            Cơ sở: {currentFacility.name}
           </span>
         </div>
 
@@ -282,7 +410,7 @@ export const UnitPickerPage: React.FC = () => {
           filterType={storageType}
           filterSize={selectedSize}
           onConfirmSelection={handleProceedToBooking}
-          facilityName={facility.name}
+          facilityName={currentFacility.name}
         />
       </div>
     </div>

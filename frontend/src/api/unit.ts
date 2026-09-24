@@ -20,6 +20,8 @@ export interface StorageUnitListParams {
   size?: number;
   unitTypeId?: number;
   status?: UnitStatus;
+  floor?: number;
+  position?: string;
 }
 
 function buildQuery(params: Record<string, string | number | boolean | undefined>): string {

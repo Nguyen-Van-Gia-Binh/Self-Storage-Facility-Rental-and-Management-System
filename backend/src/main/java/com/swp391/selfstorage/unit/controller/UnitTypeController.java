@@ -82,4 +82,14 @@ public class UnitTypeController {
         unitTypeService.deactivateUnitType(facilityId, unitTypeId);
         return ResponseEntity.ok(ApiResponse.success(null, "Vô hiệu hóa loại ô kho thành công"));
     }
+
+    @PatchMapping("/{unitTypeId}/status")
+    public ResponseEntity<ApiResponse<UnitTypeResponse>> toggleUnitTypeStatus(
+            @PathVariable Long facilityId,
+            @PathVariable Long unitTypeId,
+            @RequestBody java.util.Map<String, Boolean> body) {
+        boolean active = Boolean.TRUE.equals(body.get("isActive"));
+        UnitTypeResponse response = unitTypeService.updateUnitTypeStatus(facilityId, unitTypeId, active);
+        return ResponseEntity.ok(ApiResponse.success(response, "Cập nhật trạng thái loại ô kho thành công"));
+    }
 }

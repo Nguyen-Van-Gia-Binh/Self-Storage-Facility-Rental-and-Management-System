@@ -42,6 +42,22 @@ public interface StorageUnitRepository extends JpaRepository<StorageUnit, Long> 
                         @Param("status") StorageUnitStatus status,
                         Pageable pageable);
 
+        @Query("""
+                            SELECT su FROM StorageUnit su
+                            WHERE su.facilityId = :facilityId
+                              AND (:unitTypeId IS NULL OR su.unitTypeId = :unitTypeId)
+                              AND (:status IS NULL OR su.status = :status)
+                              AND (:floor IS NULL OR su.floor = :floor)
+                              AND (:position IS NULL OR su.position = :position)
+                        """)
+        Page<StorageUnit> findByFacilityIdAndAdvancedFilters(
+                        @Param("facilityId") Long facilityId,
+                        @Param("unitTypeId") Long unitTypeId,
+                        @Param("status") StorageUnitStatus status,
+                        @Param("floor") Integer floor,
+                        @Param("position") String position,
+                        Pageable pageable);
+
         @Query("SELECT COUNT(u) FROM StorageUnit u WHERE u.facilityId = :facilityId AND u.unitTypeId = :unitTypeId AND u.status NOT IN :excludedStatuses")
         long countExploitableUnits(
                         @Param("facilityId") Long facilityId,

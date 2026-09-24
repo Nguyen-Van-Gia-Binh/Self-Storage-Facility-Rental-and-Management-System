@@ -5,12 +5,14 @@ export type UnitStatus = 'AVAILABLE' | 'RESERVED' | 'OCCUPIED' | 'MAINTENANCE' |
 export interface UnitTypeResponse {
   id: number;
   facilityId: number;
+  code?: string;
   name: string;
   description: string;
   widthM: number;
   depthM: number;
   heightM: number;
   areaM2: number;
+  volumeM3?: number;
   monthlyPrice: number;
   totalUnits: number;
   isActive: boolean;
@@ -20,6 +22,9 @@ export interface StorageUnitResponse {
   id: number;
   facilityId: number;
   unitTypeId: number;
+  unitTypeName?: string;
+  unitTypeCode?: string;
+  monthlyPrice?: number;
   code: string;
   floor: number;
   position: string;
@@ -29,6 +34,7 @@ export interface StorageUnitResponse {
 }
 
 export interface UnitTypeFormData {
+  code?: string;
   name: string;
   description: string;
   widthM: number;

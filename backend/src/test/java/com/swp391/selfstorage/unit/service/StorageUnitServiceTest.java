@@ -81,6 +81,25 @@ class StorageUnitServiceTest {
     }
 
     @Test
+    @DisplayName("US-FM-01.2: Lấy danh sách ô kho lọc nâng cao theo Tầng (floor) và Khu vực (position)")
+    void shouldReturnPagedStorageUnits_whenFilteredByFloorAndPosition() {
+        Pageable pageable = PageRequest.of(0, 10);
+        when(storageUnitRepository.findByFacilityIdAndAdvancedFilters(eq(1L), eq(7L), eq(StorageUnitStatus.AVAILABLE), eq(1), eq("Khu A"), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(storageUnit), pageable, 1));
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(unitType));
+
+        PageResponse<StorageUnitResponse> response = storageUnitService.getStorageUnitsByFacility(1L, 7L, StorageUnitStatus.AVAILABLE, 1, "Khu A", pageable);
+
+        assertNotNull(response);
+        assertEquals(1, response.getContent().size());
+        StorageUnitResponse item = response.getContent().get(0);
+        assertEquals(42L, item.getId());
+        assertEquals("S-101", item.getCode());
+        assertEquals(1, item.getFloor());
+        assertEquals("A1", item.getPosition());
+    }
+
+    @Test
     @DisplayName("US-FM-01.2: Lấy chi tiết ô kho theo ID và Facility ID thành công")
     void shouldReturnStorageUnit_whenFoundByIdAndFacility() {
         when(storageUnitRepository.findByIdAndFacilityId(42L, 1L)).thenReturn(Optional.of(storageUnit));

@@ -32,8 +32,12 @@ public class StorageUnitController {
             @PathVariable Long facilityId,
             @RequestParam(required = false) Long unitTypeId,
             @RequestParam(required = false) StorageUnitStatus status,
-            @PageableDefault(size = 20) Pageable pageable) {
-        PageResponse<StorageUnitResponse> response = storageUnitService.getStorageUnitsByFacility(facilityId, unitTypeId, status, pageable);
+            @RequestParam(required = false) Integer floor,
+            @RequestParam(required = false) String position,
+            @PageableDefault(size = 50) Pageable pageable) {
+        PageResponse<StorageUnitResponse> response = (floor != null || position != null)
+                ? storageUnitService.getStorageUnitsByFacility(facilityId, unitTypeId, status, floor, position, pageable)
+                : storageUnitService.getStorageUnitsByFacility(facilityId, unitTypeId, status, pageable);
         return ResponseEntity.ok(response);
     }
 

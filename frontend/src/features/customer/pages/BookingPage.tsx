@@ -35,11 +35,11 @@ export const BookingPage: React.FC = () => {
   const unitIdParam = searchParams.get('unitId');
 
   const facility = useMemo(() => {
-    return mockFacilities.find((f) => f.id === facilityId) || mockFacilities[0];
+    return mockFacilities.find((f) => f.id === facilityId || f.code === facilityId || String(f.id) === facilityId) || mockFacilities[0];
   }, [facilityId]);
 
   const unitType = useMemo(() => {
-    return mockUnitTypes.find((t) => t.id === typeId) || mockUnitTypes[0];
+    return mockUnitTypes.find((t) => t.id === typeId || t.code === typeId || String(t.id) === typeId) || mockUnitTypes[0];
   }, [typeId]);
 
   // Tra cứu chi tiết ô kho từ sơ đồ mặt bằng
