@@ -1,4 +1,4 @@
--- V16__add_order_code_to_payment_transaction.sql
+-- V17__add_order_code_to_payment_transaction.sql
 -- Bổ sung trường order_code lưu mã đơn hàng cổng thanh toán PayOS (số nguyên duy nhất)
 
 IF NOT EXISTS (
