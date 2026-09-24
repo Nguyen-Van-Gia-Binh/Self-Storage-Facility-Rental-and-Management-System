@@ -43,4 +43,22 @@ public class UnitMapper {
                 .isActive(su.isActive())
                 .build();
     }
+
+    public StorageUnitResponse toStorageUnitResponse(StorageUnit su, UnitType unitType, Long monthlyPrice) {
+        if (su == null) return null;
+        return StorageUnitResponse.builder()
+                .id(su.getId())
+                .facilityId(su.getFacilityId())
+                .unitTypeId(su.getUnitTypeId())
+                .unitTypeName(unitType != null ? unitType.getName() : null)
+                .unitTypeCode(unitType != null ? unitType.getCode() : null)
+                .monthlyPrice(monthlyPrice)
+                .code(su.getCode())
+                .floor(su.getFloor())
+                .position(su.getPosition())
+                .locationNote(su.getLocationNote())
+                .status(su.getStatus())
+                .isActive(su.isActive())
+                .build();
+    }
 }

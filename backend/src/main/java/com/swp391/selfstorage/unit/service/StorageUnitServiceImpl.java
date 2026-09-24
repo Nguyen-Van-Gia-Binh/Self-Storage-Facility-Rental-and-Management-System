@@ -7,10 +7,12 @@ import com.swp391.selfstorage.unit.dto.BatchCreateStorageUnitsRequest;
 import com.swp391.selfstorage.unit.dto.CreateStorageUnitRequest;
 import com.swp391.selfstorage.unit.dto.StorageUnitResponse;
 import com.swp391.selfstorage.unit.dto.UpdateStorageUnitStatusRequest;
+import com.swp391.selfstorage.unit.entity.FacilityUnitTypePrice;
 import com.swp391.selfstorage.unit.entity.StorageUnit;
 import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
 import com.swp391.selfstorage.unit.entity.UnitType;
 import com.swp391.selfstorage.unit.mapper.UnitMapper;
+import com.swp391.selfstorage.unit.repository.FacilityUnitTypePriceRepository;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
 import com.swp391.selfstorage.unit.repository.UnitTypeRepository;
 import org.springframework.data.domain.Page;
@@ -27,24 +29,49 @@ public class StorageUnitServiceImpl implements StorageUnitService {
 
     private final StorageUnitRepository storageUnitRepository;
     private final UnitTypeRepository unitTypeRepository;
+    private final FacilityUnitTypePriceRepository priceRepository;
     private final UnitMapper mapper;
 
     public StorageUnitServiceImpl(StorageUnitRepository storageUnitRepository,
                                   UnitTypeRepository unitTypeRepository,
                                   UnitMapper mapper) {
+        this(storageUnitRepository, unitTypeRepository, null, mapper);
+    }
+
+    public StorageUnitServiceImpl(StorageUnitRepository storageUnitRepository,
+                                  UnitTypeRepository unitTypeRepository,
+                                  FacilityUnitTypePriceRepository priceRepository,
+                                  UnitMapper mapper) {
         this.storageUnitRepository = storageUnitRepository;
         this.unitTypeRepository = unitTypeRepository;
+        this.priceRepository = priceRepository;
         this.mapper = mapper;
     }
 
     @Override
     @Transactional(readOnly = true)
     public PageResponse<StorageUnitResponse> getStorageUnitsByFacility(Long facilityId, Long unitTypeId, StorageUnitStatus status, Pageable pageable) {
-        Page<StorageUnit> page = storageUnitRepository.findByFacilityIdAndFilters(facilityId, unitTypeId, status, pageable);
+        return getStorageUnitsByFacility(facilityId, unitTypeId, status, null, null, pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<StorageUnitResponse> getStorageUnitsByFacility(
+            Long facilityId, Long unitTypeId, StorageUnitStatus status, Integer floor, String position, Pageable pageable) {
+        Page<StorageUnit> page;
+        if (floor != null || position != null) {
+            page = storageUnitRepository.findByFacilityIdAndAdvancedFilters(facilityId, unitTypeId, status, floor, position, pageable);
+        } else {
+            page = storageUnitRepository.findByFacilityIdAndFilters(facilityId, unitTypeId, status, pageable);
+        }
+
         List<StorageUnitResponse> content = page.getContent().stream().map(su -> {
-            String typeName = unitTypeRepository.findById(su.getUnitTypeId())
-                    .map(UnitType::getName).orElse("");
-            return mapper.toStorageUnitResponse(su, typeName);
+            UnitType ut = unitTypeRepository.findById(su.getUnitTypeId()).orElse(null);
+            Long price = (priceRepository != null)
+                    ? priceRepository.findByFacilityIdAndUnitTypeId(facilityId, su.getUnitTypeId())
+                            .map(FacilityUnitTypePrice::getMonthlyPrice).orElse(0L)
+                    : 0L;
+            return mapper.toStorageUnitResponse(su, ut, price);
         }).toList();
 
         return new PageResponse<>(content, page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages());
@@ -56,10 +83,13 @@ public class StorageUnitServiceImpl implements StorageUnitService {
         StorageUnit su = storageUnitRepository.findByIdAndFacilityId(unitId, facilityId)
                 .orElseThrow(() -> new CustomException(ErrorCode.STORAGE_UNIT_NOT_FOUND));
 
-        String typeName = unitTypeRepository.findById(su.getUnitTypeId())
-                .map(UnitType::getName).orElse("");
+        UnitType ut = unitTypeRepository.findById(su.getUnitTypeId()).orElse(null);
+        Long price = (priceRepository != null)
+                ? priceRepository.findByFacilityIdAndUnitTypeId(facilityId, su.getUnitTypeId())
+                        .map(FacilityUnitTypePrice::getMonthlyPrice).orElse(0L)
+                : 0L;
 
-        return mapper.toStorageUnitResponse(su, typeName);
+        return mapper.toStorageUnitResponse(su, ut, price);
     }
 
     @Override
