@@ -190,6 +190,31 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional
+    public PaymentResponse simulatePaymentSuccess(Long orderCode) {
+        log.info("Simulating payment success for orderCode={}", orderCode);
+        PaymentTransaction payment = paymentTransactionRepository.findByOrderCode(orderCode)
+                .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND,
+                        "Không tìm thấy giao dịch với orderCode=" + orderCode));
+
+        if ("SUCCESS".equalsIgnoreCase(payment.getStatus())) {
+            log.info("Giao dịch orderCode={} đã ở trạng thái SUCCESS từ trước", orderCode);
+            return paymentMapper.toResponse(payment);
+        }
+
+        payment.setStatus("SUCCESS");
+        payment.setProviderReference("SIMULATED-" + System.currentTimeMillis());
+        payment = paymentTransactionRepository.save(payment);
+
+        if (payment.getReservationId() != null) {
+            reservationService.confirmAfterPayment(payment.getReservationId());
+            eventPublisher.publishEvent(new PaymentCompletedEvent(payment.getReservationId(), payment.getId()));
+        }
+
+        return paymentMapper.toResponse(payment);
+    }
+
+    @Override
+    @Transactional
     public PaymentResponse processPayment(CreatePaymentRequest request) {
         log.info("Processing payment for referenceType={}, referenceId={}, amount={}",
                 request.getReferenceType(), request.getReferenceId(), request.getAmount());
