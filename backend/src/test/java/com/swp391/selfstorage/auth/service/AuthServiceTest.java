@@ -284,4 +284,47 @@ class AuthServiceTest {
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.OTP_EXPIRED);
     }
+
+    @Test
+    @DisplayName("Xác thực OTP thành công khi mã đúng và còn hạn")
+    void verifyOtp_Success() {
+        com.swp391.selfstorage.auth.dto.VerifyOtpRequest request =
+                new com.swp391.selfstorage.auth.dto.VerifyOtpRequest("tung@example.com", "123456");
+        PasswordResetOtp validOtp = new PasswordResetOtp("tung@example.com", "123456", LocalDateTime.now().plusSeconds(50));
+
+        when(passwordResetOtpRepository.findTopByEmailAndOtpCodeAndIsUsedFalseOrderByCreatedAtDesc("tung@example.com", "123456"))
+                .thenReturn(Optional.of(validOtp));
+
+        authService.verifyOtp(request);
+        // Khong throw exception la pass
+    }
+
+    @Test
+    @DisplayName("Xác thực OTP thất bại khi mã không đúng")
+    void verifyOtp_InvalidOtp() {
+        com.swp391.selfstorage.auth.dto.VerifyOtpRequest request =
+                new com.swp391.selfstorage.auth.dto.VerifyOtpRequest("tung@example.com", "999999");
+
+        when(passwordResetOtpRepository.findTopByEmailAndOtpCodeAndIsUsedFalseOrderByCreatedAtDesc("tung@example.com", "999999"))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> authService.verifyOtp(request))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_OTP);
+    }
+
+    @Test
+    @DisplayName("Xác thực OTP thất bại khi mã đã hết hạn")
+    void verifyOtp_ExpiredOtp() {
+        com.swp391.selfstorage.auth.dto.VerifyOtpRequest request =
+                new com.swp391.selfstorage.auth.dto.VerifyOtpRequest("tung@example.com", "123456");
+        PasswordResetOtp expiredOtp = new PasswordResetOtp("tung@example.com", "123456", LocalDateTime.now().minusSeconds(10));
+
+        when(passwordResetOtpRepository.findTopByEmailAndOtpCodeAndIsUsedFalseOrderByCreatedAtDesc("tung@example.com", "123456"))
+                .thenReturn(Optional.of(expiredOtp));
+
+        assertThatThrownBy(() -> authService.verifyOtp(request))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.OTP_EXPIRED);
+    }
 }

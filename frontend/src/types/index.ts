@@ -33,6 +33,7 @@ export interface Facility {
 
 export interface FacilityListItem {
   id: number;
+  code: string;
   name: string;
   address: string;
   phone: string;
@@ -46,6 +47,7 @@ export interface FacilityListItem {
 
 export interface FacilityDetail {
   id: number;
+  code: string;
   name: string;
   address: string;
   phone: string;
@@ -54,6 +56,8 @@ export interface FacilityDetail {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  lowestMonthlyPrice?: number;
+  activeUnitTypeCount?: number;
 }
 
 export interface UnitTypeCatalog {
@@ -259,6 +263,7 @@ export interface StaffDailyTaskReport {
 // --- BOM Management Types (T2.13 BM-01 & BM-03) ---
 
 export interface CreateFacilityRequest {
+  code: string;
   name: string;
   address: string;
   phone?: string;

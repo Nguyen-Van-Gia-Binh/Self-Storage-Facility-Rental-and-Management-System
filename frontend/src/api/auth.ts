@@ -5,7 +5,7 @@
 import { apiClient } from './client';
 import type { ApiResponse } from './client';
 import type { UserRoleType } from './user';
-import { tokenStorage, normalizeRole } from '@/utils/tokenStorage';
+import { tokenStorage, normalizeRole, DEMO_USERS, type UserSession, type UserRole } from '@/utils/tokenStorage';
 import mockUsers from '@/mock/mock-users.json';
 
 export interface UserInfo {
@@ -194,6 +194,33 @@ export async function forgotPassword(email: string): Promise<{ message: string }
 }
 
 /**
+ * Kiểm tra mã xác thực OTP hợp lệ trước khi cho phép đặt mật khẩu mới
+ */
+export async function verifyOtp(payload: { email: string; otp: string }): Promise<{ message: string }> {
+  try {
+    const res = await apiClient<ApiResponse<void> | void>('/auth/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+
+    const msg = (res && typeof res === 'object' && 'message' in res)
+      ? String((res as { message: unknown }).message)
+      : 'Mã xác thực OTP hợp lệ';
+    return { message: msg };
+  } catch (err: unknown) {
+    const error = err as { status?: number; message?: string };
+    if (error && error.status && [400, 401, 403, 404, 409].includes(error.status)) {
+      throw error;
+    }
+    // Fallback nếu backend offline
+    if (payload.otp.length === 6) {
+      return { message: 'Mã xác thực OTP hợp lệ (Demo Mode)' };
+    }
+    throw new Error('Mã xác thực OTP không hợp lệ hoặc đã hết hạn.', { cause: err });
+  }
+}
+
+/**
  * Đặt lại mật khẩu bằng mã OTP 60s
  */
 export async function resetPassword(payload: { email: string; otp: string; newPassword: string }): Promise<{ message: string }> {
@@ -243,16 +270,47 @@ export function getPortalUrlByRole(role: string): string {
   const normalized = normalizeRole(role);
   switch (normalized) {
     case 'ADMIN':
-      return '/admin';
+      return '/admin/users';
     case 'BOM':
-      return '/bom';
+      return '/bom/facilities';
     case 'MANAGER':
-      return '/manager';
+      return '/manager/units';
     case 'STAFF':
-      return '/staff';
+      return '/staff/check-in';
     case 'CUSTOMER':
     default:
-      return '/';
+      return '/customer';
+  }
+}
+
+/**
+ * Đăng nhập nhanh vào tài khoản demo của một vai trò:
+ * Tự động gọi API backend /auth/login để nhận access_token và refresh_token thật,
+ * lưu vào localStorage và cập nhật phiên làm việc.
+ */
+export async function loginAsDemoRole(role: UserRole | string): Promise<UserSession> {
+  const normalized = normalizeRole(role);
+  const demoUser = DEMO_USERS[normalized] || DEMO_USERS.CUSTOMER;
+
+  try {
+    const authData = await loginUser({
+      email: demoUser.email,
+      password: 'password123',
+    });
+    const session: UserSession = {
+      id: authData.user.id,
+      username: authData.user.email,
+      email: authData.user.email,
+      fullName: authData.user.fullName,
+      role: normalized,
+      facilityId: authData.user.facilityIds?.[0],
+    };
+    tokenStorage.setUser(session);
+    return session;
+  } catch (err) {
+    console.warn(`Đăng nhập demo backend (${demoUser.email}) không thành công, duy trì phiên demo:`, err);
+    tokenStorage.setDemoRole(normalized);
+    return demoUser;
   }
 }
 
@@ -261,8 +319,10 @@ export const authApi = {
   loginWithGoogle,
   register: registerUser,
   forgotPassword,
+  verifyOtp,
   resetPassword,
   logout: logoutUser,
   getPortalUrlByRole,
   saveSession,
+  loginAsDemoRole,
 };

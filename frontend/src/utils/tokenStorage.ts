@@ -17,43 +17,44 @@ const USER_KEY = 'selfstorage_user_session';
 
 /**
  * Mẫu tài khoản mặc định cho từng vai trò để phục vụ demo / development testing.
+ * Khớp chính xác với seed tài khoản V12/V13 trong SQL Server.
  */
 export const DEMO_USERS: Record<UserRole, UserSession> = {
   CUSTOMER: {
-    id: 1,
-    username: 'customer_demo',
-    email: 'customer@selfstorage.vn',
-    fullName: 'Nguyễn Văn Khách',
+    id: 6,
+    username: 'nhi.customer@gmail.com',
+    email: 'nhi.customer@gmail.com',
+    fullName: 'Trần Yến Nhi',
     role: 'CUSTOMER',
   },
   STAFF: {
-    id: 2,
-    username: 'staff_demo',
-    email: 'staff@selfstorage.vn',
-    fullName: 'Trần Thị Nhân Viên',
+    id: 4,
+    username: 'staff.q1@smartstorage.vn',
+    email: 'staff.q1@smartstorage.vn',
+    fullName: 'Trần Văn Hùng',
     role: 'STAFF',
     facilityId: 1,
   },
   MANAGER: {
     id: 3,
-    username: 'manager_demo',
-    email: 'manager@selfstorage.vn',
-    fullName: 'Lê Văn Quản Lý',
+    username: 'fm.q1@smartstorage.vn',
+    email: 'fm.q1@smartstorage.vn',
+    fullName: 'Nguyễn Văn Gia Bình',
     role: 'MANAGER',
     facilityId: 1,
   },
   BOM: {
-    id: 4,
-    username: 'bom_demo',
-    email: 'bom@selfstorage.vn',
-    fullName: 'Hoàng Thị Giám Đốc',
+    id: 2,
+    username: 'bom@smartstorage.vn',
+    email: 'bom@smartstorage.vn',
+    fullName: 'Huỳnh Nhật',
     role: 'BOM',
   },
   ADMIN: {
-    id: 5,
-    username: 'admin_demo',
-    email: 'admin@selfstorage.vn',
-    fullName: 'Quản Trị Viên Hệ Thống',
+    id: 1,
+    username: 'admin@smartstorage.vn',
+    email: 'admin@smartstorage.vn',
+    fullName: 'Lê Thanh Tùng',
     role: 'ADMIN',
   },
 };

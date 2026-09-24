@@ -46,6 +46,19 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(response);
     }
 
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(
+            org.springframework.security.access.AccessDeniedException ex, HttpServletRequest request) {
+        ApiResponse<Void> response = ApiResponse.error(
+                403,
+                ErrorCode.ACCESS_DENIED.name(),
+                ErrorCode.ACCESS_DENIED.getDefaultMessage(),
+                request.getRequestURI(),
+                null
+        );
+        return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).body(response);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex, HttpServletRequest request) {
         log.error("Unhandled exception occurred on path: {}", request.getRequestURI(), ex);

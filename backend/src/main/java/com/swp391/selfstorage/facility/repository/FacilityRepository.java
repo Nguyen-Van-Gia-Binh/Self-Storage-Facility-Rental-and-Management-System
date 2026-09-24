@@ -38,4 +38,16 @@ public interface FacilityRepository extends JpaRepository<Facility, Long> {
           AND rc.status IN ('ACTIVE', 'OVERDUE')
     """, nativeQuery = true)
     long countActiveContractsByFacilityId(@Param("facilityId") Long facilityId);
+
+    @Query(value = """
+        SELECT MIN(monthly_price) FROM facility_unit_type_price
+        WHERE facility_id = :facilityId
+    """, nativeQuery = true)
+    java.math.BigDecimal findLowestMonthlyPriceByFacilityId(@Param("facilityId") Long facilityId);
+
+    @Query(value = """
+        SELECT COUNT(DISTINCT unit_type_id) FROM facility_unit_type_price
+        WHERE facility_id = :facilityId
+    """, nativeQuery = true)
+    int countActiveUnitTypesByFacilityId(@Param("facilityId") Long facilityId);
 }

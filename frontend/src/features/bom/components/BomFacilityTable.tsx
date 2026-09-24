@@ -64,9 +64,12 @@ export const BomFacilityTable: React.FC<BomFacilityTableProps> = ({
                 key={fac.id}
                 className="hover:bg-amber-50/30 transition-colors group"
               >
-                {/* ID */}
-                <td className="py-4 px-4 font-mono font-medium text-slate-500 text-xs">
-                  #{fac.id}
+                {/* Mã cơ sở / ID */}
+                <td className="py-4 px-4 font-mono text-xs">
+                  <span className="font-semibold text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                    {fac.code || `#${fac.id}`}
+                  </span>
+                  <div className="text-[10px] text-slate-400 mt-1 font-sans">ID: {fac.id}</div>
                 </td>
 
                 {/* Tên cơ sở */}

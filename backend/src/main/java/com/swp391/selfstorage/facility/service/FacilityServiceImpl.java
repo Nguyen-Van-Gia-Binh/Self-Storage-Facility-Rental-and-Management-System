@@ -36,7 +36,11 @@ public class FacilityServiceImpl implements FacilityService {
             status = isActive ? FacilityStatus.ACTIVE : FacilityStatus.INACTIVE;
         }
         Page<Facility> page = facilityRepository.findByFilter(keyword, status, pageable);
-        return PageResponse.from(page.map(facilityMapper::toResponse));
+        return PageResponse.from(page.map(facility -> {
+            FacilityResponse resp = facilityMapper.toResponse(facility);
+            enrichFacilityMetrics(resp);
+            return resp;
+        }));
     }
 
     @Override
@@ -44,7 +48,15 @@ public class FacilityServiceImpl implements FacilityService {
     public FacilityResponse getFacilityById(Long id) {
         Facility facility = facilityRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.FACILITY_NOT_FOUND));
-        return facilityMapper.toResponse(facility);
+        FacilityResponse resp = facilityMapper.toResponse(facility);
+        enrichFacilityMetrics(resp);
+        return resp;
+    }
+
+    private void enrichFacilityMetrics(FacilityResponse resp) {
+        if (resp == null || resp.getId() == null) return;
+        resp.setLowestMonthlyPrice(facilityRepository.findLowestMonthlyPriceByFacilityId(resp.getId()));
+        resp.setActiveUnitTypeCount(facilityRepository.countActiveUnitTypesByFacilityId(resp.getId()));
     }
 
     @Override

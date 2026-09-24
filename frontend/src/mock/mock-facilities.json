@@ -1,6 +1,7 @@
 [
   {
     "id": 1,
+    "code": "FAC-Q1",
     "name": "Kho SmartStorage Quận 1",
     "address": "123 Lê Lợi, Phường Bến Nghé, Quận 1, TP.HCM",
     "phone": "028-1234-5678",
@@ -14,6 +15,7 @@
   },
   {
     "id": 2,
+    "code": "FAC-Q7",
     "name": "Kho SmartStorage Quận 7",
     "address": "456 Nguyễn Thị Thập, Phường Tân Phú, Quận 7, TP.HCM",
     "phone": "028-8765-4321",
@@ -27,6 +29,7 @@
   },
   {
     "id": 3,
+    "code": "FAC-BT",
     "name": "Kho SmartStorage Bình Thạnh",
     "address": "789 Điện Biên Phủ, Phường 25, Quận Bình Thạnh, TP.HCM",
     "phone": "028-5555-9999",

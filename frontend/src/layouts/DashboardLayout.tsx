@@ -1,5 +1,4 @@
-// frontend/src/layouts/DashboardLayout.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Menu, X, LogOut, Layers, Box } from 'lucide-react';
 import {
@@ -7,10 +6,12 @@ import {
   type UserRole,
   type UserSession,
 } from '@/utils/tokenStorage';
+import { loginAsDemoRole } from '@/api/auth';
 import {
   getNavigationForRole,
   type NavItemConfig,
 } from './navigationConfig';
+import { DemoRoleSwitcher } from '@/components/common/DemoRoleSwitcher';
 
 export type NavItem = NavItemConfig;
 
@@ -95,17 +96,15 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const initials      = getInitials(user?.fullName);
   const portalLabel   = ROLE_PORTAL_LABEL[currentRole];
 
-  const handleRoleChange = (newRole: UserRole) => {
-    const updated = tokenStorage.setDemoRole(newRole);
-    setUser(updated);
-    switch (newRole) {
-      case 'STAFF':    navigate('/staff/check-in');  break;
-      case 'MANAGER':  navigate('/manager/units');   break;
-      case 'BOM':      navigate('/bom/facilities');  break;
-      case 'ADMIN':    navigate('/admin/users');     break;
-      default:         navigate('/');
+  // Tự động đồng bộ JWT token thật từ backend khi tải portal demo
+  useEffect(() => {
+    const currentToken = tokenStorage.getAccessToken();
+    if (!currentToken || currentToken.startsWith('mock-')) {
+      loginAsDemoRole(currentRole)
+        .then((updated) => setUser(updated))
+        .catch((err) => console.warn('Auto-login demo backend account failed:', err));
     }
-  };
+  }, [currentRole]);
 
   const handleLogout = () => {
     tokenStorage.clearSession();
@@ -254,20 +253,10 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
           <div className="flex items-center space-x-3 ml-auto">
             {/* Demo Role Switcher */}
-            <div className="flex items-center space-x-1.5 bg-slate-50 px-2.5 py-1.5 rounded-xl text-xs border border-slate-200/90 shadow-xs">
-              <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px] hidden md:inline">Demo:</span>
-              <select
-                value={currentRole}
-                onChange={(e) => handleRoleChange(e.target.value as UserRole)}
-                className="bg-transparent font-bold text-slate-800 cursor-pointer focus:outline-none text-xs"
-              >
-                <option value="CUSTOMER">Customer</option>
-                <option value="STAFF">Staff</option>
-                <option value="MANAGER">Manager</option>
-                <option value="BOM">BOM</option>
-                <option value="ADMIN">Admin</option>
-              </select>
-            </div>
+            <DemoRoleSwitcher
+              currentRole={currentRole}
+              onRoleChanged={() => setUser(tokenStorage.getUser())}
+            />
 
             {/* User Profile */}
             <div className="flex items-center space-x-2.5 border-l border-slate-200 pl-3">

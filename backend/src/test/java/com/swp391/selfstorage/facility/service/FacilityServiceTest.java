@@ -71,6 +71,8 @@ class FacilityServiceTest {
     @DisplayName("US-BM-01.1: Lấy chi tiết cơ sở thành công khi ID tồn tại")
     void shouldReturnFacility_whenFoundById() {
         when(facilityRepository.findById(1L)).thenReturn(Optional.of(facility));
+        when(facilityRepository.findLowestMonthlyPriceByFacilityId(1L)).thenReturn(new java.math.BigDecimal("500000"));
+        when(facilityRepository.countActiveUnitTypesByFacilityId(1L)).thenReturn(4);
 
         FacilityResponse response = facilityService.getFacilityById(1L);
 
@@ -78,6 +80,8 @@ class FacilityServiceTest {
         assertEquals(1L, response.getId());
         assertEquals("FAC-CG", response.getCode());
         assertEquals("Kho Cầu Giấy", response.getName());
+        assertEquals(new java.math.BigDecimal("500000"), response.getLowestMonthlyPrice());
+        assertEquals(4, response.getActiveUnitTypeCount());
     }
 
     @Test

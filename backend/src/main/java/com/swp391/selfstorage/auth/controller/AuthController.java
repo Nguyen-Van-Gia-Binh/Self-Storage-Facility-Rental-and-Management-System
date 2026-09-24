@@ -67,6 +67,13 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(null, "Mã xác thực OTP đã được gửi đến email của bạn"));
     }
 
+    @PostMapping("/verify-otp")
+    @Operation(summary = "Kiểm tra mã xác thực OTP hợp lệ trước khi cho phép đặt mật khẩu mới (Công khai)")
+    public ResponseEntity<ApiResponse<Void>> verifyOtp(@Valid @RequestBody com.swp391.selfstorage.auth.dto.VerifyOtpRequest request) {
+        authService.verifyOtp(request);
+        return ResponseEntity.ok(ApiResponse.success(null, "Mã xác thực OTP hợp lệ"));
+    }
+
     @PostMapping("/reset-password")
     @Operation(summary = "Đặt lại mật khẩu mới bằng mã OTP (Công khai)")
     public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
