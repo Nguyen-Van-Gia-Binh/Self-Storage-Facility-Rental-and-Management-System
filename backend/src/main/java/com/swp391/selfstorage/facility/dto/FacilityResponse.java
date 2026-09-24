@@ -1,5 +1,7 @@
 package com.swp391.selfstorage.facility.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.math.BigDecimal;
 import java.time.Instant;
 
 public class FacilityResponse {
@@ -11,7 +13,13 @@ public class FacilityResponse {
     private String phone;
     private String description;
     private String openingHours;
+
+    @JsonProperty("isActive")
     private boolean isActive;
+
+    private BigDecimal lowestMonthlyPrice;
+    private Integer activeUnitTypeCount;
+
     private Instant createdAt;
     private Instant updatedAt;
 
@@ -38,8 +46,15 @@ public class FacilityResponse {
     public String getOpeningHours() { return openingHours; }
     public void setOpeningHours(String openingHours) { this.openingHours = openingHours; }
 
+    @JsonProperty("isActive")
     public boolean isActive() { return isActive; }
     public void setActive(boolean active) { isActive = active; }
+
+    public BigDecimal getLowestMonthlyPrice() { return lowestMonthlyPrice; }
+    public void setLowestMonthlyPrice(BigDecimal lowestMonthlyPrice) { this.lowestMonthlyPrice = lowestMonthlyPrice; }
+
+    public Integer getActiveUnitTypeCount() { return activeUnitTypeCount; }
+    public void setActiveUnitTypeCount(Integer activeUnitTypeCount) { this.activeUnitTypeCount = activeUnitTypeCount; }
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
