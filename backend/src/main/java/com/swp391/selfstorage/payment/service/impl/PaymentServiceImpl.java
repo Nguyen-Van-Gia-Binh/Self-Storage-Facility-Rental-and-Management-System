@@ -4,6 +4,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.swp391.selfstorage.common.dto.PageResponse;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
+import com.swp391.selfstorage.payment.dto.CheckoutRequest;
+import com.swp391.selfstorage.payment.dto.CheckoutResponse;
 import com.swp391.selfstorage.payment.dto.CreatePaymentRequest;
 import com.swp391.selfstorage.payment.dto.PaymentFilterRequest;
 import com.swp391.selfstorage.payment.dto.PaymentResponse;
@@ -30,6 +33,10 @@ import com.swp391.selfstorage.reservation.service.ReservationService;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import vn.payos.PayOS;
+import vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest;
+import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
+import vn.payos.model.webhooks.WebhookData;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +49,144 @@ public class PaymentServiceImpl implements PaymentService {
     private final ReservationService reservationService;
     private final ApplicationEventPublisher eventPublisher;
     private final PaymentMapper paymentMapper;
+    private final PayOS payOS;
+
+    @Value("${payos.return-url:http://localhost:5173/payment/success}")
+    private String returnUrl = "http://localhost:5173/payment/success";
+
+    @Value("${payos.cancel-url:http://localhost:5173/payment/cancel}")
+    private String cancelUrl = "http://localhost:5173/payment/cancel";
+
+    @Override
+    @Transactional
+    public CheckoutResponse createCheckoutLink(CheckoutRequest request) {
+        log.info("Creating PayOS checkout link for referenceType={}, referenceId={}",
+                request.getReferenceType(), request.getReferenceId());
+
+        if (!"RESERVATION".equalsIgnoreCase(request.getReferenceType())) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                    "Hiện tại hệ thống chỉ hỗ trợ thanh toán cho đơn đặt chỗ (RESERVATION)");
+        }
+
+        // 1. Kiểm tra đơn đặt chỗ có tồn tại không
+        Reservation reservation = reservationRepository.findById(request.getReferenceId())
+                .orElseThrow(() -> new CustomException(ErrorCode.RESERVATION_NOT_FOUND));
+
+        // 2. Kiểm tra trạng thái đơn
+        if (reservation.getStatus() == ReservationStatus.FULFILLED) {
+            throw new CustomException(ErrorCode.RESERVATION_ALREADY_FULFILLED);
+        }
+        if (reservation.getStatus() != ReservationStatus.PENDING_PAYMENT
+                && reservation.getStatus() != ReservationStatus.CONFIRMED) {
+            throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION,
+                    "Đơn đặt chỗ không ở trạng thái chờ thanh toán");
+        }
+
+        // 3. Kiểm tra thời gian giữ chỗ 48h theo BR-DEP-03
+        if (reservation.getHoldExpiresAt() != null
+                && reservation.getHoldExpiresAt().isBefore(OffsetDateTime.now())) {
+            throw new CustomException(ErrorCode.RESERVATION_EXPIRED);
+        }
+
+        Long amount = reservation.getTotalPayable();
+        // Sinh orderCode ngẫu nhiên duy nhất dựa trên thời gian
+        Long orderCode = Long.parseLong(String.valueOf(System.currentTimeMillis()).substring(2)
+                + String.format("%02d", (int) (Math.random() * 100)));
+
+        String description = request.getDescription() != null && !request.getDescription().isBlank()
+                ? request.getDescription()
+                : "DH" + reservation.getId();
+        if (description.length() > 25) {
+            description = description.substring(0, 25);
+        }
+
+        CreatePaymentLinkRequest paymentLinkRequest = CreatePaymentLinkRequest.builder()
+                .orderCode(orderCode)
+                .amount(amount)
+                .description(description)
+                .returnUrl(returnUrl)
+                .cancelUrl(cancelUrl)
+                .build();
+
+        CreatePaymentLinkResponse paymentLinkResponse;
+        try {
+            paymentLinkResponse = payOS.paymentRequests().create(paymentLinkRequest);
+        } catch (Exception e) {
+            log.error("Lỗi khi gọi API PayOS tạo payment link: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.PAYMENT_FAILED,
+                    "Không thể kết nối cổng thanh toán PayOS: " + e.getMessage());
+        }
+
+        PaymentTransaction payment = PaymentTransaction.builder()
+                .reservationId(reservation.getId())
+                .transactionType("INITIAL_PAYMENT")
+                .amount(amount)
+                .status("PENDING")
+                .paymentMethod("VIETQR_PAYOS")
+                .orderCode(orderCode)
+                .providerReference(paymentLinkResponse.getPaymentLinkId())
+                .build();
+
+        paymentTransactionRepository.save(payment);
+
+        return CheckoutResponse.builder()
+                .orderCode(orderCode)
+                .checkoutUrl(paymentLinkResponse.getCheckoutUrl())
+                .qrCode(paymentLinkResponse.getQrCode())
+                .amount(paymentLinkResponse.getAmount())
+                .description(paymentLinkResponse.getDescription())
+                .accountName(paymentLinkResponse.getAccountName())
+                .accountNumber(paymentLinkResponse.getAccountNumber())
+                .bin(paymentLinkResponse.getBin())
+                .status("PENDING")
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public PaymentResponse processPayOSWebhook(Object webhookBody) {
+        log.info("Processing PayOS Webhook...");
+        WebhookData webhookData;
+        try {
+            webhookData = payOS.webhooks().verify(webhookBody);
+        } catch (Exception e) {
+            log.error("Xác thực chữ ký Webhook PayOS thất bại: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                    "Chữ ký webhook PayOS không hợp lệ: " + e.getMessage());
+        }
+
+        Long orderCode = webhookData.getOrderCode();
+        PaymentTransaction payment = paymentTransactionRepository.findByOrderCode(orderCode)
+                .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND,
+                        "Không tìm thấy giao dịch tương ứng với orderCode=" + orderCode));
+
+        // Idempotency check: nếu đã SUCCESS thì bỏ qua, không xử lý lặp
+        if ("SUCCESS".equalsIgnoreCase(payment.getStatus())) {
+            log.info("Giao dịch orderCode={} đã ở trạng thái SUCCESS, bỏ qua xử lý lặp", orderCode);
+            return paymentMapper.toResponse(payment);
+        }
+
+        payment.setStatus("SUCCESS");
+        if (webhookData.getReference() != null) {
+            payment.setProviderReference(webhookData.getReference());
+        }
+        payment = paymentTransactionRepository.save(payment);
+
+        if (payment.getReservationId() != null) {
+            reservationService.confirmAfterPayment(payment.getReservationId());
+            eventPublisher.publishEvent(new PaymentCompletedEvent(payment.getReservationId(), payment.getId()));
+        }
+
+        return paymentMapper.toResponse(payment);
+    }
+
+    @Override
+    public PaymentResponse getPaymentByOrderCode(Long orderCode) {
+        PaymentTransaction payment = paymentTransactionRepository.findByOrderCode(orderCode)
+                .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND,
+                        "Không tìm thấy giao dịch với orderCode=" + orderCode));
+        return paymentMapper.toResponse(payment);
+    }
 
     @Override
     @Transactional
