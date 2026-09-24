@@ -37,6 +37,7 @@ export interface ReservationResult {
 export interface CheckoutRequest {
   referenceType: string;
   referenceId: number;
+  renewalMonths?: number;
   description?: string;
 }
 
