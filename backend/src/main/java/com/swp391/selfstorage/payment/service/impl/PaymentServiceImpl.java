@@ -47,6 +47,8 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final ReservationRepository reservationRepository;
     private final ReservationService reservationService;
+    private final com.swp391.selfstorage.contract.repository.RentalContractRepository rentalContractRepository;
+    private final com.swp391.selfstorage.contract.service.RenewalService renewalService;
     private final ApplicationEventPublisher eventPublisher;
     private final PaymentMapper paymentMapper;
     private final PayOS payOS;
@@ -63,39 +65,62 @@ public class PaymentServiceImpl implements PaymentService {
         log.info("Creating PayOS checkout link for referenceType={}, referenceId={}",
                 request.getReferenceType(), request.getReferenceId());
 
-        if (!"RESERVATION".equalsIgnoreCase(request.getReferenceType())) {
+        Long amount;
+        String defaultDesc;
+        Long reservationId = null;
+        Long contractId = null;
+        String txnType;
+
+        if ("RESERVATION".equalsIgnoreCase(request.getReferenceType())) {
+            Reservation reservation = reservationRepository.findById(request.getReferenceId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.RESERVATION_NOT_FOUND));
+
+            if (reservation.getStatus() == ReservationStatus.FULFILLED) {
+                throw new CustomException(ErrorCode.RESERVATION_ALREADY_FULFILLED);
+            }
+            if (reservation.getStatus() != ReservationStatus.PENDING_PAYMENT
+                    && reservation.getStatus() != ReservationStatus.CONFIRMED) {
+                throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION,
+                        "Đơn đặt chỗ không ở trạng thái chờ thanh toán");
+            }
+            if (reservation.getHoldExpiresAt() != null
+                    && reservation.getHoldExpiresAt().isBefore(OffsetDateTime.now())) {
+                throw new CustomException(ErrorCode.RESERVATION_EXPIRED);
+            }
+
+            amount = reservation.getTotalPayable() > 0 ? reservation.getTotalPayable() : 2000L;
+            defaultDesc = "DH" + reservation.getId();
+            reservationId = reservation.getId();
+            txnType = "INITIAL_PAYMENT";
+        } else if ("CONTRACT_RENEWAL".equalsIgnoreCase(request.getReferenceType())
+                || "CONTRACT_EXTENSION".equalsIgnoreCase(request.getReferenceType())) {
+            com.swp391.selfstorage.contract.entity.RentalContract contract = rentalContractRepository.findById(request.getReferenceId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND,
+                            "Không tìm thấy hợp đồng với ID=" + request.getReferenceId()));
+
+            int months = (request.getRenewalMonths() != null && request.getRenewalMonths() > 0)
+                    ? request.getRenewalMonths()
+                    : 1;
+
+            com.swp391.selfstorage.contract.dto.RenewalQuoteResponse quote = renewalService.getRenewalQuote(
+                    contract.getId(), new com.swp391.selfstorage.contract.dto.RenewalRequest(months));
+
+            amount = quote.getTotalAmount();
+            defaultDesc = "GH" + contract.getId() + "T" + months;
+            contractId = contract.getId();
+            txnType = "CONTRACT_RENEWAL";
+        } else {
             throw new CustomException(ErrorCode.VALIDATION_FAILED,
-                    "Hiện tại hệ thống chỉ hỗ trợ thanh toán cho đơn đặt chỗ (RESERVATION)");
+                    "Loại thanh toán không được hỗ trợ: " + request.getReferenceType());
         }
 
-        // 1. Kiểm tra đơn đặt chỗ có tồn tại không
-        Reservation reservation = reservationRepository.findById(request.getReferenceId())
-                .orElseThrow(() -> new CustomException(ErrorCode.RESERVATION_NOT_FOUND));
-
-        // 2. Kiểm tra trạng thái đơn
-        if (reservation.getStatus() == ReservationStatus.FULFILLED) {
-            throw new CustomException(ErrorCode.RESERVATION_ALREADY_FULFILLED);
-        }
-        if (reservation.getStatus() != ReservationStatus.PENDING_PAYMENT
-                && reservation.getStatus() != ReservationStatus.CONFIRMED) {
-            throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION,
-                    "Đơn đặt chỗ không ở trạng thái chờ thanh toán");
-        }
-
-        // 3. Kiểm tra thời gian giữ chỗ 48h theo BR-DEP-03
-        if (reservation.getHoldExpiresAt() != null
-                && reservation.getHoldExpiresAt().isBefore(OffsetDateTime.now())) {
-            throw new CustomException(ErrorCode.RESERVATION_EXPIRED);
-        }
-
-        Long amount = reservation.getTotalPayable();
         // Sinh orderCode ngẫu nhiên duy nhất dựa trên thời gian
         Long orderCode = Long.parseLong(String.valueOf(System.currentTimeMillis()).substring(2)
                 + String.format("%02d", (int) (Math.random() * 100)));
 
         String description = request.getDescription() != null && !request.getDescription().isBlank()
                 ? request.getDescription()
-                : "DH" + reservation.getId();
+                : defaultDesc;
         if (description.length() > 25) {
             description = description.substring(0, 25);
         }
@@ -118,8 +143,9 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         PaymentTransaction payment = PaymentTransaction.builder()
-                .reservationId(reservation.getId())
-                .transactionType("INITIAL_PAYMENT")
+                .reservationId(reservationId)
+                .contractId(contractId)
+                .transactionType(txnType)
                 .amount(amount)
                 .status("PENDING")
                 .paymentMethod("VIETQR_PAYOS")
@@ -196,6 +222,19 @@ public class PaymentServiceImpl implements PaymentService {
         if (payment.getReservationId() != null) {
             reservationService.confirmAfterPayment(payment.getReservationId());
             eventPublisher.publishEvent(new PaymentCompletedEvent(payment.getReservationId(), payment.getId()));
+        } else if (payment.getContractId() != null
+                && "CONTRACT_RENEWAL".equalsIgnoreCase(payment.getTransactionType())) {
+            int months = 1;
+            if (webhookData.getDescription() != null && webhookData.getDescription().contains("T")) {
+                try {
+                    String part = webhookData.getDescription().substring(webhookData.getDescription().indexOf("T") + 1);
+                    months = Integer.parseInt(part.replaceAll("\\D", ""));
+                } catch (Exception ignored) {
+                    months = 1;
+                }
+            }
+            eventPublisher.publishEvent(new com.swp391.selfstorage.payment.event.ContractRenewalPaymentCompletedEvent(
+                    payment.getContractId(), payment.getId(), months, payment.getAmount()));
         }
 
         return paymentMapper.toResponse(payment);

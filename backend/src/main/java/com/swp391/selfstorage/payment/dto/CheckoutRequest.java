@@ -24,4 +24,6 @@ public class CheckoutRequest {
     private Long referenceId;
 
     private String description;
+
+    private Integer renewalMonths;
 }

@@ -21,6 +21,8 @@ import org.springframework.context.ApplicationEventPublisher;
 
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
+import com.swp391.selfstorage.payment.dto.CheckoutRequest;
+import com.swp391.selfstorage.payment.dto.CheckoutResponse;
 import com.swp391.selfstorage.payment.dto.CreatePaymentRequest;
 import com.swp391.selfstorage.payment.dto.PaymentResponse;
 import com.swp391.selfstorage.payment.entity.PaymentTransaction;
@@ -44,6 +46,12 @@ class PaymentServiceTest {
 
     @Mock
     private ReservationService reservationService;
+
+    @Mock
+    private com.swp391.selfstorage.contract.repository.RentalContractRepository rentalContractRepository;
+
+    @Mock
+    private com.swp391.selfstorage.contract.service.RenewalService renewalService;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -396,5 +404,103 @@ class PaymentServiceTest {
         assertNotNull(resp);
         assertEquals(50L, resp.getId());
         assertEquals(123456789L, resp.getOrderCode());
+    }
+
+    @Test
+    @DisplayName("createCheckoutLink: Tạo link thanh toán gia hạn hợp đồng thành công (SC-04)")
+    void createCheckoutLink_ContractRenewal_Success() {
+        when(payOS.paymentRequests()).thenReturn(paymentRequestsService);
+
+        CheckoutRequest req = CheckoutRequest.builder()
+                .referenceType("CONTRACT_RENEWAL")
+                .referenceId(200L)
+                .renewalMonths(3)
+                .description("GH200T3")
+                .build();
+
+        com.swp391.selfstorage.contract.entity.RentalContract contract = com.swp391.selfstorage.contract.entity.RentalContract.builder()
+                .id(200L)
+                .code("CTR-2026-0001")
+                .build();
+
+        when(rentalContractRepository.findById(200L)).thenReturn(Optional.of(contract));
+
+        com.swp391.selfstorage.contract.dto.RenewalQuoteResponse quote = com.swp391.selfstorage.contract.dto.RenewalQuoteResponse.builder()
+                .contractId(200L)
+                .renewalMonths(3)
+                .totalAmount(3_600_000L)
+                .build();
+
+        when(renewalService.getRenewalQuote(eq(200L), any())).thenReturn(quote);
+
+        vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse payosResp = vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse.builder()
+                .paymentLinkId("PL_RENEW_123")
+                .orderCode(888888L)
+                .checkoutUrl("https://pay.payos.vn/web/PL_RENEW_123")
+                .qrCode("mock_qr_renew")
+                .amount(3_600_000L)
+                .currency("VND")
+                .status(vn.payos.model.v2.paymentRequests.PaymentLinkStatus.PENDING)
+                .description("GH200T3")
+                .accountName("SMART STORAGE")
+                .accountNumber("0888567999")
+                .bin("970422")
+                .build();
+
+        when(paymentRequestsService.create(any())).thenReturn(payosResp);
+
+        CheckoutResponse resp = paymentService.createCheckoutLink(req);
+
+        assertNotNull(resp);
+        assertEquals(3_600_000L, resp.getAmount());
+        assertEquals("GH200T3", resp.getDescription());
+        verify(paymentTransactionRepository).save(argThat(txn -> 
+                txn.getContractId().equals(200L) && "CONTRACT_RENEWAL".equals(txn.getTransactionType())));
+    }
+
+    @Test
+    @DisplayName("processPayOSWebhook: Nhận webhook gia hạn hợp đồng thành công -> Bắn ContractRenewalPaymentCompletedEvent")
+    void processPayOSWebhook_ContractRenewal_Success() {
+        when(payOS.webhooks()).thenReturn(webhooksService);
+
+        vn.payos.model.webhooks.WebhookData webhookData = vn.payos.model.webhooks.WebhookData.builder()
+                .orderCode(888999L)
+                .amount(3_600_000L)
+                .description("GH200T3")
+                .accountNumber("0888567999")
+                .reference("FT_RENEW_001")
+                .transactionDateTime("2026-09-24 22:00:00")
+                .currency("VND")
+                .paymentLinkId("PL_RENEW_123")
+                .code("00")
+                .desc("success")
+                .build();
+
+        when(webhooksService.verify(any())).thenReturn(webhookData);
+
+        PaymentTransaction pendingTxn = PaymentTransaction.builder()
+                .id(99L)
+                .contractId(200L)
+                .transactionType("CONTRACT_RENEWAL")
+                .orderCode(888999L)
+                .amount(3_600_000L)
+                .status("PENDING")
+                .paymentMethod("VIETQR_PAYOS")
+                .build();
+
+        when(paymentTransactionRepository.findByOrderCode(888999L)).thenReturn(Optional.of(pendingTxn));
+        when(paymentTransactionRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        PaymentResponse resp = paymentService.processPayOSWebhook("dummyBody");
+
+        assertNotNull(resp);
+        assertEquals("SUCCESS", resp.getStatus());
+
+        ArgumentCaptor<com.swp391.selfstorage.payment.event.ContractRenewalPaymentCompletedEvent> captor =
+                ArgumentCaptor.forClass(com.swp391.selfstorage.payment.event.ContractRenewalPaymentCompletedEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        assertEquals(200L, captor.getValue().contractId());
+        assertEquals(99L, captor.getValue().paymentId());
+        assertEquals(3, captor.getValue().renewalMonths());
     }
 }
