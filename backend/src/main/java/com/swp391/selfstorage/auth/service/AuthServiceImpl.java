@@ -265,6 +265,22 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public void verifyOtp(com.swp391.selfstorage.auth.dto.VerifyOtpRequest request) {
+        if (passwordResetOtpRepository == null) {
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR, "Dịch vụ xác thực OTP chưa sẵn sàng");
+        }
+
+        PasswordResetOtp otpEntity = passwordResetOtpRepository
+                .findTopByEmailAndOtpCodeAndIsUsedFalseOrderByCreatedAtDesc(request.getEmail(), request.getOtp())
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_OTP));
+
+        if (otpEntity.isExpired()) {
+            throw new CustomException(ErrorCode.OTP_EXPIRED);
+        }
+    }
+
+    @Override
     @Transactional
     public void resetPassword(ResetPasswordRequest request) {
         if (passwordResetOtpRepository == null) {

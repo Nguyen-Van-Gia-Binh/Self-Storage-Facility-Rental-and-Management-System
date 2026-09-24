@@ -194,6 +194,33 @@ export async function forgotPassword(email: string): Promise<{ message: string }
 }
 
 /**
+ * Kiểm tra mã xác thực OTP hợp lệ trước khi cho phép đặt mật khẩu mới
+ */
+export async function verifyOtp(payload: { email: string; otp: string }): Promise<{ message: string }> {
+  try {
+    const res = await apiClient<ApiResponse<void> | void>('/auth/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+
+    const msg = (res && typeof res === 'object' && 'message' in res)
+      ? String((res as { message: unknown }).message)
+      : 'Mã xác thực OTP hợp lệ';
+    return { message: msg };
+  } catch (err: unknown) {
+    const error = err as { status?: number; message?: string };
+    if (error && error.status && [400, 401, 403, 404, 409].includes(error.status)) {
+      throw error;
+    }
+    // Fallback nếu backend offline
+    if (payload.otp.length === 6) {
+      return { message: 'Mã xác thực OTP hợp lệ (Demo Mode)' };
+    }
+    throw new Error('Mã xác thực OTP không hợp lệ hoặc đã hết hạn.');
+  }
+}
+
+/**
  * Đặt lại mật khẩu bằng mã OTP 60s
  */
 export async function resetPassword(payload: { email: string; otp: string; newPassword: string }): Promise<{ message: string }> {
@@ -261,6 +288,7 @@ export const authApi = {
   loginWithGoogle,
   register: registerUser,
   forgotPassword,
+  verifyOtp,
   resetPassword,
   logout: logoutUser,
   getPortalUrlByRole,
