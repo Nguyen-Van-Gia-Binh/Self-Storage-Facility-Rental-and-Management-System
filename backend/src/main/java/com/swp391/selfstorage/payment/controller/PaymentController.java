@@ -35,10 +35,30 @@ public class PaymentController {
     }
 
     @PostMapping
-    @Operation(summary = "Tạo và xử lý giao dịch thanh toán (SC-03)")
+    @Operation(summary = "Tạo và xử lý giao dịch thanh toán thủ công (SC-03)")
     public ResponseEntity<PaymentResponse> processPayment(@Valid @RequestBody CreatePaymentRequest request) {
         PaymentResponse response = paymentService.processPayment(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping("/checkout")
+    @Operation(summary = "Khởi tạo link thanh toán PayOS VietQR tự động (SC-03)")
+    public ResponseEntity<com.swp391.selfstorage.payment.dto.CheckoutResponse> createCheckout(
+            @Valid @RequestBody com.swp391.selfstorage.payment.dto.CheckoutRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(paymentService.createCheckoutLink(request));
+    }
+
+    @PostMapping("/webhook/payos")
+    @Operation(summary = "Webhook tiếp nhận thông báo thanh toán tự động từ cổng PayOS")
+    public ResponseEntity<java.util.Map<String, Object>> handlePayOSWebhook(@RequestBody Object webhookBody) {
+        paymentService.processPayOSWebhook(webhookBody);
+        return ResponseEntity.ok(java.util.Map.of("error", 0, "message", "Success"));
+    }
+
+    @GetMapping("/order/{orderCode}/status")
+    @Operation(summary = "Kiểm tra trạng thái thanh toán theo mã đơn hàng PayOS (cho Frontend Polling)")
+    public ResponseEntity<PaymentResponse> getPaymentByOrderCode(@PathVariable Long orderCode) {
+        return ResponseEntity.ok(paymentService.getPaymentByOrderCode(orderCode));
     }
 
     @GetMapping("/{id}")

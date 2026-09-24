@@ -64,7 +64,9 @@ public class SecurityConfig {
                                 "/public/**",
                                 "/api/v1/public/**",
                                 "/facilities/**",
-                                "/api/v1/facilities/**"
+                                "/api/v1/facilities/**",
+                                "/payments/webhook/**",
+                                "/api/v1/payments/webhook/**"
                         ).permitAll()
                         // Các request khác cho phép trong giai đoạn phát triển, bảo vệ qua @PreAuthorize
                         .anyRequest().permitAll()
