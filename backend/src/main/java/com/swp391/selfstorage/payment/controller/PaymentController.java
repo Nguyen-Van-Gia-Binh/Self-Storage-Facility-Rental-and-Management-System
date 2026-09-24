@@ -61,12 +61,6 @@ public class PaymentController {
         return ResponseEntity.ok(paymentService.getPaymentByOrderCode(orderCode));
     }
 
-    @PostMapping("/order/{orderCode}/simulate-success")
-    @Operation(summary = "Giả lập thanh toán PayOS thành công cho orderCode (Dành cho kiểm thử Local khi chưa deploy Webhook)")
-    public ResponseEntity<PaymentResponse> simulatePaymentSuccess(@PathVariable Long orderCode) {
-        return ResponseEntity.ok(paymentService.simulatePaymentSuccess(orderCode));
-    }
-
     @GetMapping("/{id}")
     @Operation(summary = "Xem chi tiết giao dịch thanh toán theo ID")
     public ResponseEntity<PaymentResponse> getPaymentById(@PathVariable Long id) {

@@ -127,27 +127,4 @@ class PaymentControllerTest {
                 .andExpect(jsonPath("$.orderCode").value(123456789L))
                 .andExpect(jsonPath("$.status").value("SUCCESS"));
     }
-
-    @Test
-    @DisplayName("POST /payments/order/{orderCode}/simulate-success - Giả lập thanh toán thành công (200 OK)")
-    void testSimulatePaymentSuccess() throws Exception {
-        PaymentResponse response = PaymentResponse.builder()
-                .id(10L)
-                .orderCode(123456789L)
-                .amount(3_200_000L)
-                .status("SUCCESS")
-                .transactionRef("SIMULATED-12345")
-                .build();
-
-        when(paymentService.simulatePaymentSuccess(eq(123456789L))).thenReturn(response);
-
-        mockMvc.perform(post("/payments/order/123456789/simulate-success"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(10L))
-                .andExpect(jsonPath("$.orderCode").value(123456789L))
-                .andExpect(jsonPath("$.status").value("SUCCESS"))
-                .andExpect(jsonPath("$.transactionRef").value("SIMULATED-12345"));
-
-        verify(paymentService).simulatePaymentSuccess(123456789L);
-    }
 }

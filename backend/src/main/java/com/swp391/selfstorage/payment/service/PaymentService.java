@@ -25,11 +25,6 @@ public interface PaymentService {
     PaymentResponse getPaymentByOrderCode(Long orderCode);
 
     /**
-     * Giả lập thanh toán PayOS thành công theo orderCode phục vụ kiểm thử Local/Dev khi chưa deploy Webhook.
-     */
-    PaymentResponse simulatePaymentSuccess(Long orderCode);
-
-    /**
      * Xử lý thanh toán cho đơn đặt chỗ hoặc hợp đồng (SC-03, BR-DEP-01, BR-DEP-02).
      */
     PaymentResponse processPayment(CreatePaymentRequest request);
