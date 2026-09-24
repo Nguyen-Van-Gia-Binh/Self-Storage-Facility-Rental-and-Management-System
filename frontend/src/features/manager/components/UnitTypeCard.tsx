@@ -22,7 +22,7 @@ export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({
 }) => (
   <div
     onClick={onClick}
-    className={`cursor-pointer rounded-2xl border transition-all duration-200 p-4 select-none ${
+    className={`cursor-pointer rounded-2xl border transition-all duration-200 p-3.5 select-none ${
       isSelected
         ? 'border-brand-500 bg-brand-50/60 shadow-sm ring-2 ring-brand-500/20'
         : 'border-slate-200/90 bg-white hover:border-brand-300 hover:shadow-xs hover:bg-slate-50/50'
@@ -38,11 +38,11 @@ export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({
             </span>
           )}
         </div>
-        <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">{type.description}</p>
+        <p className="text-xs text-slate-500 mt-0.5 line-clamp-2 leading-relaxed">{type.description}</p>
       </div>
     </div>
 
-    <div className="mt-3.5 grid grid-cols-2 gap-2 text-xs bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
+    <div className="mt-2.5 grid grid-cols-2 gap-2 text-xs bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
       <div>
         <span className="text-slate-400 font-medium text-[11px] block">Diện tích</span>
         <p className="font-mono font-bold text-slate-800 mt-0.5">{type.areaM2} m²</p>
@@ -57,7 +57,7 @@ export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({
       </div>
     </div>
 
-    <div className="mt-3 flex items-center justify-end gap-2 pt-2.5 border-t border-slate-100">
+    <div className="mt-2.5 flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); onEdit(); }}

@@ -314,7 +314,7 @@ export const UnitCatalogPage: React.FC = () => {
               Hiện loại vô hiệu
             </label>
           </div>
-          <div className="p-4 space-y-3 max-h-[680px] overflow-y-auto">
+          <div className="p-4 space-y-3">
             {visibleTypes.length === 0 ? (
               <div className="text-center py-12 px-4">
                 <Box className="w-10 h-10 text-slate-300 mx-auto mb-2" />
