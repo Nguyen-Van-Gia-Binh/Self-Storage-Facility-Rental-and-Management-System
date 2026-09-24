@@ -305,6 +305,79 @@ class PaymentServiceTest {
     }
 
     @Test
+    @DisplayName("processPayOSWebhook: Giao dịch thất bại (code != 00) -> Cập nhật FAILED và không tạo hợp đồng")
+    void processPayOSWebhook_Failure_WhenCodeNot00() {
+        when(payOS.webhooks()).thenReturn(webhooksService);
+
+        vn.payos.model.webhooks.WebhookData webhookData = vn.payos.model.webhooks.WebhookData.builder()
+                .orderCode(123456789L)
+                .amount(3_200_000L)
+                .description("DH100")
+                .accountNumber("0888567999")
+                .reference("FAILED_REF_123")
+                .transactionDateTime("2026-09-24 21:00:00")
+                .currency("VND")
+                .paymentLinkId("PL123")
+                .code("01")
+                .desc("Khách hàng hủy giao dịch")
+                .build();
+
+        when(webhooksService.verify(any())).thenReturn(webhookData);
+
+        PaymentTransaction pendingTxn = PaymentTransaction.builder()
+                .id(50L)
+                .reservationId(100L)
+                .orderCode(123456789L)
+                .amount(3_200_000L)
+                .status("PENDING")
+                .paymentMethod("VIETQR_PAYOS")
+                .build();
+
+        when(paymentTransactionRepository.findByOrderCode(123456789L)).thenReturn(Optional.of(pendingTxn));
+        when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(i -> i.getArgument(0));
+
+        PaymentResponse resp = paymentService.processPayOSWebhook("dummyWebhookBody");
+
+        assertNotNull(resp);
+        assertEquals("FAILED", resp.getStatus());
+        assertEquals("FAILED_REF_123", resp.getTransactionRef());
+
+        // Không confirm reservation và không bắn event tạo hợp đồng
+        verify(reservationService, never()).confirmAfterPayment(any());
+        verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    @Test
+    @DisplayName("processPayOSWebhook: Webhook test ping từ PayOS Dashboard -> Trả về 200 OK không ném lỗi")
+    void processPayOSWebhook_TestPing_WhenOrderNotFound() {
+        when(payOS.webhooks()).thenReturn(webhooksService);
+
+        vn.payos.model.webhooks.WebhookData webhookData = vn.payos.model.webhooks.WebhookData.builder()
+                .orderCode(999999L)
+                .amount(1000L)
+                .description("Webhook test ping")
+                .accountNumber("0888567999")
+                .reference("PING_123")
+                .transactionDateTime("2026-09-24 21:00:00")
+                .currency("VND")
+                .paymentLinkId("PL123")
+                .code("00")
+                .desc("Webhook test ping")
+                .build();
+
+        when(webhooksService.verify(any())).thenReturn(webhookData);
+        when(paymentTransactionRepository.findByOrderCode(999999L)).thenReturn(Optional.empty());
+
+        PaymentResponse resp = paymentService.processPayOSWebhook("dummyWebhookBody");
+
+        assertNotNull(resp);
+        assertEquals(999999L, resp.getOrderCode());
+        assertEquals("SUCCESS", resp.getStatus());
+        verify(paymentTransactionRepository, never()).save(any());
+        verify(reservationService, never()).confirmAfterPayment(any());
+    }
+
+    @Test
     @DisplayName("getPaymentByOrderCode: Tra cứu thành công giao dịch theo orderCode")
     void getPaymentByOrderCode_Success() {
         PaymentTransaction txn = PaymentTransaction.builder()

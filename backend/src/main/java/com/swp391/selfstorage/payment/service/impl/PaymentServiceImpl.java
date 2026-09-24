@@ -157,15 +157,36 @@ public class PaymentServiceImpl implements PaymentService {
 
         Long orderCode = webhookData.getOrderCode();
         PaymentTransaction payment = paymentTransactionRepository.findByOrderCode(orderCode)
-                .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND,
-                        "Không tìm thấy giao dịch tương ứng với orderCode=" + orderCode));
+                .orElse(null);
 
-        // Idempotency check: nếu đã SUCCESS thì bỏ qua, không xử lý lặp
+        // Trường hợp 1: Nhận webhook ping test từ PayOS Dashboard (hoặc orderCode không có trong DB)
+        if (payment == null) {
+            log.info("Nhận webhook ping test hoặc orderCode={} không tồn tại trong hệ thống. Trả lời HTTP 200 OK cho PayOS.", orderCode);
+            return PaymentResponse.builder()
+                    .orderCode(orderCode)
+                    .status("SUCCESS")
+                    .build();
+        }
+
+        // Trường hợp 2: Giao dịch thất bại hoặc bị khách hàng hủy từ PayOS
+        if (webhookData.getCode() != null && !"00".equals(webhookData.getCode())) {
+            log.warn("Thanh toán PayOS không thành công cho orderCode={}: code={}, desc={}",
+                    orderCode, webhookData.getCode(), webhookData.getDesc());
+            payment.setStatus("FAILED");
+            if (webhookData.getReference() != null) {
+                payment.setProviderReference(webhookData.getReference());
+            }
+            payment = paymentTransactionRepository.save(payment);
+            return paymentMapper.toResponse(payment);
+        }
+
+        // Trường hợp 3: Idempotency check: nếu đã SUCCESS thì bỏ qua, không xử lý lặp
         if ("SUCCESS".equalsIgnoreCase(payment.getStatus())) {
             log.info("Giao dịch orderCode={} đã ở trạng thái SUCCESS, bỏ qua xử lý lặp", orderCode);
             return paymentMapper.toResponse(payment);
         }
 
+        // Trường hợp 4: Thanh toán thành công (code == "00")
         payment.setStatus("SUCCESS");
         if (webhookData.getReference() != null) {
             payment.setProviderReference(webhookData.getReference());
