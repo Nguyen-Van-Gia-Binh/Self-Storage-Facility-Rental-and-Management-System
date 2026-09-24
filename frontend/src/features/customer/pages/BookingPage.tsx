@@ -15,13 +15,18 @@ import {
   Sparkles,
   ArrowRight,
   AlertCircle,
-  FileText
+  FileText,
+  Loader2,
+  ExternalLink
 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { mockFacilities, mockUnitTypes, mockStorageUnits } from '../mockData';
 import { calculateBookingTotal, formatVND } from '../utils/pricing';
 import { BookingPriceSummary } from '../components/BookingPriceSummary';
 import { DigitalMoveInPassModal } from '../components/DigitalMoveInPassModal';
 import { generateMoveInPass } from '@/api/payment';
+import { customerApi } from '../api/customerApi';
+import type { CheckoutResponse } from '../api/customerApi';
 import type { BookingDraft } from '../types';
 import type { MoveInPassData } from '@/types';
 
@@ -87,6 +92,13 @@ export const BookingPage: React.FC = () => {
   const [showPassModal, setShowPassModal] = useState(false);
   const [createdPass, setCreatedPass] = useState<MoveInPassData | null>(null);
 
+  // PayOS Payment States (SC-03)
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [checkoutData, setCheckoutData] = useState<CheckoutResponse | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<'PENDING' | 'SUCCESS' | 'FAILED'>('PENDING');
+  const [createdReservationId, setCreatedReservationId] = useState<number | null>(null);
+  const [createdReservationCode, setCreatedReservationCode] = useState<string>('');
+
   // Đồng hồ đếm ngược giữ chỗ 48 giờ thực tế (BR-DEP-03)
   const [secondsLeft, setSecondsLeft] = useState<number>(48 * 3600 - 15); // 47h 59m 45s
 
@@ -97,6 +109,30 @@ export const BookingPage: React.FC = () => {
     }, 1000);
     return () => clearInterval(interval);
   }, [currentStep]);
+
+  // Polling trạng thái thanh toán từ PayOS qua Backend (SC-03)
+  useEffect(() => {
+    if (currentStep !== 3 || !checkoutData?.orderCode || paymentStatus === 'SUCCESS') return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await customerApi.getPaymentStatus(checkoutData.orderCode);
+        if (res && res.status === 'SUCCESS') {
+          setPaymentStatus('SUCCESS');
+          clearInterval(pollInterval);
+          // Tự động mở thẻ nhận kho và hoàn tất đặt chỗ
+          handleConfirmBookingPayment();
+        } else if (res && res.status === 'FAILED') {
+          setPaymentStatus('FAILED');
+          clearInterval(pollInterval);
+        }
+      } catch (err) {
+        // Polling retry quietly
+      }
+    }, 2500);
+
+    return () => clearInterval(pollInterval);
+  }, [currentStep, checkoutData?.orderCode, paymentStatus]);
 
   const formattedCountdown = useMemo(() => {
     const hours = Math.floor(secondsLeft / 3600);
@@ -156,46 +192,108 @@ export const BookingPage: React.FC = () => {
     return Object.keys(errors).length === 0;
   };
 
-  const handleProceedToPayment = (e: React.FormEvent) => {
+  const handleProceedToPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) {
       return;
     }
 
-    // Lưu thông tin đơn đặt chỗ tạm thời (Booking Draft) vào localStorage
-    const draft: BookingDraft = {
-      facilityId: facility.id,
-      facilityName: facility.name,
-      unitId: finalUnitId,
-      unitNumber: finalUnitNumber,
-      unitTypeId: unitType.id,
-      unitTypeName: unitType.name,
-      storageType: unitType.storageType,
-      areaM2: unitType.areaM2,
-      monthlyRent: unitType.baseMonthlyPrice,
-      durationMonths,
-      startDate,
-      endDate,
-      depositAmount: calculation.depositAmount,
-      totalUpfront: calculation.totalDueToday,
-      customerName,
-      customerPhone,
-      customerEmail,
-      customerIdentityNumber: customerIdCard,
-      holdExpiresAt: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
-    };
-
+    setIsSubmitting(true);
     try {
-      localStorage.setItem('smartstorage_pending_booking', JSON.stringify(draft));
-    } catch {
-      // Bỏ qua nếu môi trường không cho phép truy cập localStorage
-    }
+      // 1. Chuyển đổi mã cơ sở và loại ô sang ID số nếu cần
+      let numericFacilityId = 1;
+      if (typeof facility.id === 'number') {
+        numericFacilityId = facility.id;
+      } else if (typeof facility.id === 'string') {
+        const match = facility.id.match(/\d+/);
+        numericFacilityId = match ? parseInt(match[0], 10) : 1;
+      }
 
-    setCurrentStep(3);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+      let numericUnitTypeId = 1;
+      if (typeof unitType.id === 'number') {
+        numericUnitTypeId = unitType.id;
+      } else if (typeof unitType.id === 'string') {
+        const match = unitType.id.match(/\d+/);
+        numericUnitTypeId = match ? parseInt(match[0], 10) : 1;
+      }
+
+      let numericUnitId: number | undefined = undefined;
+      if (targetUnit && targetUnit.id) {
+        if (typeof targetUnit.id === 'number') {
+          numericUnitId = targetUnit.id;
+        } else if (typeof targetUnit.id === 'string') {
+          const match = targetUnit.id.match(/\d+/);
+          if (match) numericUnitId = parseInt(match[0], 10);
+        }
+      }
+
+      // 2. Tạo Reservation trong backend
+      const rsv = await customerApi.createReservation({
+        facilityId: numericFacilityId,
+        unitTypeId: numericUnitTypeId,
+        storageUnitId: numericUnitId,
+        startDate,
+        rentalMonths: durationMonths,
+        customerName,
+        customerPhone: customerPhone.replace(/\s+/g, ''),
+        customerEmail: customerEmail.trim(),
+        identityNumber: customerIdCard.replace(/\s+/g, ''),
+      });
+
+      const rsvId = rsv.id || 1;
+      setCreatedReservationId(rsvId);
+      setCreatedReservationCode(rsv.code || `RSV-${finalUnitNumber}`);
+
+      // 3. Khởi tạo PayOS VietQR payment link thật
+      const checkout = await customerApi.createPaymentCheckout({
+        referenceType: 'RESERVATION',
+        referenceId: rsvId,
+        description: `DH${rsvId}`,
+      });
+
+      setCheckoutData(checkout);
+      setPaymentStatus('PENDING');
+
+      // 4. Lưu draft vào localStorage
+      const draft: BookingDraft = {
+        facilityId: facility.id,
+        facilityName: facility.name,
+        unitId: finalUnitId,
+        unitNumber: finalUnitNumber,
+        unitTypeId: unitType.id,
+        unitTypeName: unitType.name,
+        storageType: unitType.storageType,
+        areaM2: unitType.areaM2,
+        monthlyRent: unitType.baseMonthlyPrice,
+        durationMonths,
+        startDate,
+        endDate,
+        depositAmount: calculation.depositAmount,
+        totalUpfront: checkout.amount || calculation.totalDueToday,
+        customerName,
+        customerPhone,
+        customerEmail,
+        customerIdentityNumber: customerIdCard,
+        holdExpiresAt: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
+      };
+
+      try {
+        localStorage.setItem('smartstorage_pending_booking', JSON.stringify(draft));
+      } catch {
+        // Bỏ qua
+      }
+
+      setCurrentStep(3);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err: any) {
+      console.error('Lỗi khi khởi tạo đơn đặt chỗ hoặc PayOS:', err);
+      alert(err.message || 'Không thể tạo mã thanh toán PayOS. Vui lòng kiểm tra lại kết nối!');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const transferContent = `SMARTSTORAGE ${finalUnitNumber} ${customerIdCard.slice(-4)}`;
+  const transferContent = checkoutData?.description || `SMARTSTORAGE ${finalUnitNumber} ${customerIdCard.slice(-4)}`;
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -205,7 +303,7 @@ export const BookingPage: React.FC = () => {
 
   const handleConfirmBookingPayment = () => {
     const pass = generateMoveInPass({
-      reservationId: `RES-${finalUnitNumber}`,
+      reservationId: createdReservationCode || (createdReservationId ? `RSV-${createdReservationId}` : `RES-${finalUnitNumber}`),
       unitNumber: finalUnitNumber,
       facilityId: facility.id,
       facilityName: facility.name,
@@ -216,7 +314,7 @@ export const BookingPage: React.FC = () => {
       customerIdentity: customerIdCard,
       startDate,
       checkInWindow: 'Trong vòng 48 giờ kể từ lúc cọc',
-      totalPaid: calculation.totalDueToday,
+      totalPaid: checkoutData?.amount || calculation.totalDueToday,
     });
     setCreatedPass(pass);
     setShowPassModal(true);
@@ -526,10 +624,20 @@ export const BookingPage: React.FC = () => {
                 type="submit"
                 variant="primary"
                 size="md"
-                className="px-6 py-2.5 flex items-center gap-2 text-xs sm:text-sm font-bold shadow-xs"
+                disabled={isSubmitting}
+                className="px-6 py-2.5 flex items-center gap-2 text-xs sm:text-sm font-bold shadow-xs cursor-pointer"
               >
-                <span>Tiếp tục: Thanh toán VietQR & Giữ chỗ 48h</span>
-                <ArrowRight className="w-4 h-4" />
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Đang khởi tạo mã PayOS...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Tiếp tục: Thanh toán VietQR & Giữ chỗ 48h</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </Button>
             </div>
           </form>
@@ -570,19 +678,63 @@ export const BookingPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Live Polling Status Alert */}
+              {paymentStatus === 'PENDING' && (
+                <div className="bg-sky-50 border border-sky-200/90 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs text-sky-900 shadow-2xs">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 text-sky-600 animate-spin shrink-0" />
+                    <span>Hệ thống đang tự động lắng nghe Webhook... (Tự động mở thẻ nhận kho ngay khi bạn chuyển tiền thành công)</span>
+                  </div>
+                  {checkoutData?.checkoutUrl && (
+                    <a
+                      href={checkoutData.checkoutUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 font-bold text-sky-700 hover:text-sky-900 underline shrink-0 cursor-pointer"
+                    >
+                      <span>Mở cổng PayOS</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                </div>
+              )}
+
+              {paymentStatus === 'SUCCESS' && (
+                <div className="bg-emerald-50 border border-emerald-300 rounded-xl p-3.5 flex items-center gap-2.5 text-xs text-emerald-900 font-bold shadow-2xs">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <span>✓ Đã nhận thanh toán thành công! Hệ thống đang kích hoạt hợp đồng và mở thẻ nhận kho...</span>
+                </div>
+              )}
+
+              {paymentStatus === 'FAILED' && (
+                <div className="bg-rose-50 border border-rose-300 rounded-xl p-3.5 flex items-center gap-2.5 text-xs text-rose-900 font-bold shadow-2xs">
+                  <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
+                  <span>Giao dịch thanh toán đã bị hủy hoặc thất bại từ phía ngân hàng. Bạn có thể thử lại.</span>
+                </div>
+              )}
+
               {/* QR Code & Banking details */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
                 {/* QR Display */}
                 <div className="flex flex-col items-center justify-center p-5 bg-slate-50 rounded-xl border border-slate-200/80">
                   <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col items-center">
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=vietqr://${calculation.totalDueToday}/${transferContent}`}
-                      alt="VietQR Code"
-                      className="w-40 h-40 object-contain"
-                    />
+                    {checkoutData?.qrCode ? (
+                      <QRCodeSVG
+                        value={checkoutData.qrCode}
+                        size={175}
+                        level="M"
+                        includeMargin={true}
+                      />
+                    ) : (
+                      <img
+                        src={`https://img.vietqr.io/image/970415-${checkoutData?.accountNumber || '0888567999'}-compact2.png?amount=${checkoutData?.amount || calculation.totalDueToday}&addInfo=${encodeURIComponent(checkoutData?.description || transferContent)}&accountName=${encodeURIComponent(checkoutData?.accountName || 'SMARTSTORAGE')}`}
+                        alt="VietQR Code"
+                        className="w-40 h-40 object-contain"
+                      />
+                    )}
                     <span className="text-[11px] font-bold text-slate-500 mt-2 flex items-center gap-1">
                       <QrCode className="w-3.5 h-3.5 text-brand-600" />
-                      VietQR · Napas247
+                      VietQR · Napas247 PayOS
                     </span>
                   </div>
                   <span className="text-xs text-slate-500 mt-2.5 text-center">
@@ -594,17 +746,21 @@ export const BookingPage: React.FC = () => {
                 <div className="space-y-3 text-xs">
                   <div className="bg-[#f2f9f7] p-3 rounded-lg border border-emerald-100">
                     <span className="text-slate-500 block">Ngân hàng thụ hưởng:</span>
-                    <strong className="text-sm text-[#0a1614] font-bold">MB Bank (Ngân hàng Quân Đội)</strong>
+                    <strong className="text-sm text-[#0a1614] font-bold">
+                      {checkoutData?.bin === '970415' ? 'VietinBank (Napas247 · PayOS)' : 'VietinBank / Napas247'}
+                    </strong>
                   </div>
 
                   <div className="bg-[#f2f9f7] p-3 rounded-lg border border-emerald-100 flex items-center justify-between">
                     <div>
-                      <span className="text-slate-500 block">Số tài khoản:</span>
-                      <strong className="text-sm text-[#0a1614] font-bold tracking-wider">0888 567 999</strong>
+                      <span className="text-slate-500 block">Số tài khoản định danh:</span>
+                      <strong className="text-sm text-[#0a1614] font-bold tracking-wider font-mono">
+                        {checkoutData?.accountNumber || '0888 567 999'}
+                      </strong>
                     </div>
                     <button
                       type="button"
-                      onClick={() => handleCopy('0888567999')}
+                      onClick={() => handleCopy(checkoutData?.accountNumber || '0888567999')}
                       className="p-1.5 text-slate-400 hover:text-brand-600 rounded cursor-pointer"
                       title="Sao chép số tài khoản"
                     >
@@ -614,17 +770,30 @@ export const BookingPage: React.FC = () => {
 
                   <div className="bg-[#f2f9f7] p-3 rounded-lg border border-emerald-100">
                     <span className="text-slate-500 block">Chủ tài khoản:</span>
-                    <strong className="text-sm text-[#0a1614] font-bold uppercase">CONG TY CP SMARTSTORAGE VIET NAM</strong>
+                    <strong className="text-sm text-[#0a1614] font-bold uppercase">
+                      {checkoutData?.accountName || 'CONG TY CP SMARTSTORAGE VIET NAM'}
+                    </strong>
+                  </div>
+
+                  <div className="bg-emerald-50/80 p-3 rounded-lg border border-emerald-200/80 flex items-center justify-between">
+                    <div>
+                      <span className="text-emerald-800 font-semibold block">Số tiền cần thanh toán:</span>
+                      <strong className="text-base text-emerald-950 font-extrabold tracking-tight">
+                        {formatVND(checkoutData?.amount || calculation.totalDueToday)}
+                      </strong>
+                    </div>
                   </div>
 
                   <div className="bg-amber-50/70 p-3 rounded-lg border border-amber-200/80 flex items-center justify-between">
                     <div>
                       <span className="text-amber-800 font-semibold block">Nội dung chuyển khoản (Bắt buộc):</span>
-                      <strong className="text-sm text-amber-950 font-bold tracking-wider">{transferContent}</strong>
+                      <strong className="text-sm text-amber-950 font-bold tracking-wider font-mono">
+                        {checkoutData?.description || transferContent}
+                      </strong>
                     </div>
                     <button
                       type="button"
-                      onClick={() => handleCopy(transferContent)}
+                      onClick={() => handleCopy(checkoutData?.description || transferContent)}
                       className="p-1.5 text-amber-700 hover:text-amber-900 rounded cursor-pointer"
                       title="Sao chép nội dung"
                     >
