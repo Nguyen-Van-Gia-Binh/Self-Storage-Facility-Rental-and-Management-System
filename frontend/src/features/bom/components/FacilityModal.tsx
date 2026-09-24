@@ -21,6 +21,7 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
   const isEdit = Boolean(initialData);
 
   const [formData, setFormData] = useState(() => ({
+    code: initialData?.code || '',
     name: initialData?.name || '',
     address: initialData?.address || '',
     phone: initialData?.phone || '',
@@ -34,6 +35,18 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
+
+    if (!isEdit) {
+      const trimmedCode = formData.code.trim().toUpperCase();
+      if (!trimmedCode) {
+        newErrors.code = 'Mã cơ sở không được để trống';
+      } else if (trimmedCode.length < 2 || trimmedCode.length > 20) {
+        newErrors.code = 'Mã cơ sở phải từ 2 đến 20 ký tự';
+      } else if (!/^[A-Za-z0-9_-]+$/.test(trimmedCode)) {
+        newErrors.code = 'Mã chỉ chứa chữ cái, số, gạch nối hoặc gạch dưới';
+      }
+    }
+
     if (!formData.name.trim()) {
       newErrors.name = 'Tên cơ sở không được để trống';
     } else if (formData.name.trim().length < 2 || formData.name.trim().length > 200) {
@@ -58,13 +71,24 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
     e.preventDefault();
     if (!validate()) return;
 
-    await onSubmit({
-      name: formData.name.trim(),
-      address: formData.address.trim(),
-      phone: formData.phone.trim() || undefined,
-      openingHours: formData.openingHours.trim() || undefined,
-      description: formData.description.trim() || undefined,
-    });
+    if (isEdit) {
+      await onSubmit({
+        name: formData.name.trim(),
+        address: formData.address.trim(),
+        phone: formData.phone.trim() || undefined,
+        openingHours: formData.openingHours.trim() || undefined,
+        description: formData.description.trim() || undefined,
+      });
+    } else {
+      await onSubmit({
+        code: formData.code.trim().toUpperCase(),
+        name: formData.name.trim(),
+        address: formData.address.trim(),
+        phone: formData.phone.trim() || undefined,
+        openingHours: formData.openingHours.trim() || undefined,
+        description: formData.description.trim() || undefined,
+      });
+    }
   };
 
   return (
@@ -89,6 +113,37 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
 
         {/* Modal Body / Form */}
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4 flex-1">
+          {/* Mã cơ sở */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              Mã cơ sở (Code) <span className="text-rose-500">*</span>
+            </label>
+            {isEdit ? (
+              <div className="text-sm font-mono font-bold text-slate-700 bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5">
+                {formData.code} <span className="text-xs font-normal text-slate-400 ml-2">(Mã cố định không thể sửa)</span>
+              </div>
+            ) : (
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="VD: FAC-HN01, FAC-SG02"
+                  value={formData.code}
+                  onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+                  className={`w-full text-sm font-mono border rounded-xl px-3.5 py-2.5 outline-none transition-all ${
+                    errors.code
+                      ? 'border-rose-300 focus:ring-2 focus:ring-rose-200'
+                      : 'border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-100'
+                  }`}
+                />
+              </div>
+            )}
+            {errors.code && (
+              <p className="mt-1 text-xs text-rose-500 flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5" /> {errors.code}
+              </p>
+            )}
+          </div>
+
           {/* Tên cơ sở */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">

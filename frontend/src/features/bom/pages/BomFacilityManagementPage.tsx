@@ -105,11 +105,11 @@ export const BomFacilityManagementPage: React.FC = () => {
     try {
       if (selectedFacility) {
         // Chỉnh sửa
-        await updateFacility(selectedFacility.id, data);
+        await updateFacility(selectedFacility.id, data as UpdateFacilityRequest);
         showToast(`Đã cập nhật thông tin cơ sở "${data.name}" thành công!`);
       } else {
         // Tạo mới
-        await createFacility(data);
+        await createFacility(data as CreateFacilityRequest);
         showToast(`Đã thêm mới cơ sở "${data.name}" thành công!`);
       }
       setModalOpen(false);

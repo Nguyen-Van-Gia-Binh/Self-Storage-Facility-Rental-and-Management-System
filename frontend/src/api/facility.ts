@@ -15,7 +15,7 @@ import type {
 import mockFacilities from '@/mock/mock-facilities.json';
 import mockUnitTypesData from '@/mock/mock-unit-types.json';
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false';
+const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 
 // Bộ nhớ in-memory cho các thao tác mock để phản hồi tức thì
 const inMemoryFacilities: FacilityListItem[] = [...(mockFacilities as FacilityListItem[])];
@@ -31,22 +31,11 @@ export async function fetchFacilities(keyword?: string, includeInactive = false)
     return list.filter((f) => f.name.toLowerCase().includes(q) || f.address.toLowerCase().includes(q));
   }
 
-  try {
-    const qs = new URLSearchParams({ size: '50' });
-    if (!includeInactive) qs.set('isActive', 'true');
-    if (keyword) qs.set('keyword', keyword);
-    const res = await apiClient<{ content: FacilityListItem[] }>(`/facilities?${qs}`);
-    return res.content;
-  } catch (err) {
-    console.warn('Lỗi gọi API /facilities, fallback sang mock data:', err);
-    let list = inMemoryFacilities;
-    if (!includeInactive) {
-      list = list.filter((f) => f.isActive);
-    }
-    if (!keyword) return list;
-    const q = keyword.toLowerCase();
-    return list.filter((f) => f.name.toLowerCase().includes(q) || f.address.toLowerCase().includes(q));
-  }
+  const qs = new URLSearchParams({ size: '50' });
+  if (!includeInactive) qs.set('isActive', 'true');
+  if (keyword) qs.set('keyword', keyword);
+  const res = await apiClient<{ content: FacilityListItem[] }>(`/facilities?${qs}`);
+  return res.content;
 }
 
 export async function fetchFacilityById(id: number): Promise<FacilityDetail> {
@@ -56,14 +45,7 @@ export async function fetchFacilityById(id: number): Promise<FacilityDetail> {
     return found as unknown as FacilityDetail;
   }
 
-  try {
-    return await apiClient<FacilityDetail>(`/facilities/${id}`);
-  } catch (err) {
-    console.warn(`Lỗi gọi API /facilities/${id}, fallback sang mock data:`, err);
-    const found = (mockFacilities as FacilityListItem[]).find((f) => f.id === id);
-    if (!found) throw { status: 404, message: 'Không tìm thấy cơ sở', timestamp: new Date().toISOString() };
-    return found as unknown as FacilityDetail;
-  }
+  return await apiClient<FacilityDetail>(`/facilities/${id}`);
 }
 
 export async function fetchUnitTypes(facilityId: number): Promise<UnitTypeCatalog[]> {
@@ -134,6 +116,7 @@ export async function createFacility(data: CreateFacilityRequest): Promise<Facil
     const now = new Date().toISOString();
     const createdDetail: FacilityDetail = {
       id: nextId,
+      code: data.code,
       name: data.name,
       address: data.address,
       phone: data.phone || '028-1234-5678',
