@@ -10,6 +10,21 @@ import com.swp391.selfstorage.payment.dto.PaymentResponse;
 public interface PaymentService {
 
     /**
+     * Sinh link thanh toán PayOS VietQR động cho đơn đặt chỗ hoặc gia hạn.
+     */
+    com.swp391.selfstorage.payment.dto.CheckoutResponse createCheckoutLink(com.swp391.selfstorage.payment.dto.CheckoutRequest request);
+
+    /**
+     * Xác thực chữ ký và xử lý Webhook IPN gửi về từ cổng thanh toán PayOS.
+     */
+    PaymentResponse processPayOSWebhook(Object webhookBody);
+
+    /**
+     * Tra cứu giao dịch theo mã đơn hàng PayOS (orderCode) phục vụ Polling.
+     */
+    PaymentResponse getPaymentByOrderCode(Long orderCode);
+
+    /**
      * Xử lý thanh toán cho đơn đặt chỗ hoặc hợp đồng (SC-03, BR-DEP-01, BR-DEP-02).
      */
     PaymentResponse processPayment(CreatePaymentRequest request);

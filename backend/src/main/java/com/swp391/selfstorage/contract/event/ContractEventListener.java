@@ -16,6 +16,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 public class ContractEventListener {
 
     private final ContractService contractService;
+    private final com.swp391.selfstorage.contract.service.RenewalService renewalService;
 
     /**
      * Tao Contract PENDING_CHECK_IN sau khi Payment da commit — T3.4.
@@ -32,6 +33,22 @@ public class ContractEventListener {
             log.error("Contract creation failed for reservationId={}: {}",
                     event.reservationId(), e.getMessage(), e);
             // Khong re-throw: Payment da commit, FM xu ly thu cong neu can
+        }
+    }
+
+    /**
+     * Tự động gia hạn hợp đồng sau khi thanh toán gia hạn qua PayOS VietQR thành công — SC-04.
+     */
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void onContractRenewalPaymentCompleted(com.swp391.selfstorage.payment.event.ContractRenewalPaymentCompletedEvent event) {
+        log.info("Processing renewal for contractId={}, months={}", event.contractId(), event.renewalMonths());
+        try {
+            int months = event.renewalMonths() != null && event.renewalMonths() > 0 ? event.renewalMonths() : 1;
+            renewalService.processRenewal(event.contractId(), new com.swp391.selfstorage.contract.dto.RenewalRequest(months), event.paymentId());
+            log.info("Contract renewal successfully processed for contractId={}", event.contractId());
+        } catch (Exception e) {
+            log.error("Contract renewal failed for contractId={}: {}", event.contractId(), e.getMessage(), e);
         }
     }
 }

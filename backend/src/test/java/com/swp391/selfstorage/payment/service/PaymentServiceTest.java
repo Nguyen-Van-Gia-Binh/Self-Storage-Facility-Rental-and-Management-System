@@ -21,6 +21,8 @@ import org.springframework.context.ApplicationEventPublisher;
 
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
+import com.swp391.selfstorage.payment.dto.CheckoutRequest;
+import com.swp391.selfstorage.payment.dto.CheckoutResponse;
 import com.swp391.selfstorage.payment.dto.CreatePaymentRequest;
 import com.swp391.selfstorage.payment.dto.PaymentResponse;
 import com.swp391.selfstorage.payment.entity.PaymentTransaction;
@@ -46,7 +48,22 @@ class PaymentServiceTest {
     private ReservationService reservationService;
 
     @Mock
+    private com.swp391.selfstorage.contract.repository.RentalContractRepository rentalContractRepository;
+
+    @Mock
+    private com.swp391.selfstorage.contract.service.RenewalService renewalService;
+
+    @Mock
     private ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private vn.payos.PayOS payOS;
+
+    @Mock
+    private vn.payos.service.blocking.v2.paymentRequests.PaymentRequestsService paymentRequestsService;
+
+    @Mock
+    private vn.payos.service.blocking.webhooks.WebhooksService webhooksService;
 
     @Spy
     private PaymentMapper paymentMapper = new PaymentMapper();
@@ -140,5 +157,404 @@ class PaymentServiceTest {
                 () -> paymentService.processPayment(validRequest));
 
         assertEquals(ErrorCode.RESERVATION_NOT_FOUND, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("createCheckoutLink: Thành công sinh link PayOS và lưu PaymentTransaction PENDING")
+    void createCheckoutLink_Success() {
+        when(reservationRepository.findById(100L)).thenReturn(Optional.of(mockReservation));
+        when(payOS.paymentRequests()).thenReturn(paymentRequestsService);
+
+        when(paymentRequestsService.create(any(vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest.class)))
+                .thenAnswer(invocation -> {
+                    vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest r = invocation.getArgument(0);
+                    return vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse.builder()
+                            .bin("970422")
+                            .accountNumber("0888567999")
+                            .accountName("SMART STORAGE")
+                            .amount(r.getAmount())
+                            .description(r.getDescription())
+                            .orderCode(r.getOrderCode())
+                            .currency("VND")
+                            .paymentLinkId("PL123")
+                            .status(vn.payos.model.v2.paymentRequests.PaymentLinkStatus.PENDING)
+                            .checkoutUrl("https://pay.payos.vn/web/" + r.getOrderCode())
+                            .qrCode("00020101021238540010A00000072701260006970422...")
+                            .build();
+                });
+
+        when(paymentTransactionRepository.save(any(PaymentTransaction.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        com.swp391.selfstorage.payment.dto.CheckoutRequest req = com.swp391.selfstorage.payment.dto.CheckoutRequest.builder()
+                .referenceType("RESERVATION")
+                .referenceId(100L)
+                .build();
+
+        com.swp391.selfstorage.payment.dto.CheckoutResponse resp = paymentService.createCheckoutLink(req);
+
+        assertNotNull(resp);
+        assertNotNull(resp.getOrderCode());
+        assertEquals("https://pay.payos.vn/web/" + resp.getOrderCode(), resp.getCheckoutUrl());
+        assertEquals("00020101021238540010A00000072701260006970422...", resp.getQrCode());
+        assertEquals(3_200_000L, resp.getAmount());
+        assertEquals("PENDING", resp.getStatus());
+
+        ArgumentCaptor<PaymentTransaction> txnCaptor = ArgumentCaptor.forClass(PaymentTransaction.class);
+        verify(paymentTransactionRepository).save(txnCaptor.capture());
+        PaymentTransaction savedTxn = txnCaptor.getValue();
+        assertEquals(100L, savedTxn.getReservationId());
+        assertEquals("PENDING", savedTxn.getStatus());
+        assertEquals("VIETQR_PAYOS", savedTxn.getPaymentMethod());
+        assertEquals(resp.getOrderCode(), savedTxn.getOrderCode());
+    }
+
+    @Test
+    @DisplayName("createCheckoutLink: Ném RESERVATION_EXPIRED khi đơn đã quá 48 giờ")
+    void createCheckoutLink_ReservationExpired() {
+        mockReservation.setHoldExpiresAt(OffsetDateTime.now().minusHours(2));
+        when(reservationRepository.findById(100L)).thenReturn(Optional.of(mockReservation));
+
+        com.swp391.selfstorage.payment.dto.CheckoutRequest req = com.swp391.selfstorage.payment.dto.CheckoutRequest.builder()
+                .referenceType("RESERVATION")
+                .referenceId(100L)
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class, () -> paymentService.createCheckoutLink(req));
+        assertEquals(ErrorCode.RESERVATION_EXPIRED, ex.getErrorCode());
+        verify(paymentTransactionRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("processPayOSWebhook: Xử lý webhook lần đầu -> Cập nhật SUCCESS, confirm Reservation và bắn Event")
+    void processPayOSWebhook_Success_FirstTime() {
+        when(payOS.webhooks()).thenReturn(webhooksService);
+
+        vn.payos.model.webhooks.WebhookData webhookData = vn.payos.model.webhooks.WebhookData.builder()
+                .orderCode(123456789L)
+                .amount(3_200_000L)
+                .description("DH100")
+                .accountNumber("0888567999")
+                .reference("FT242500001")
+                .transactionDateTime("2026-09-24 21:00:00")
+                .currency("VND")
+                .paymentLinkId("PL123")
+                .code("00")
+                .desc("success")
+                .build();
+
+        when(webhooksService.verify(any())).thenReturn(webhookData);
+
+        PaymentTransaction pendingTxn = PaymentTransaction.builder()
+                .id(50L)
+                .reservationId(100L)
+                .orderCode(123456789L)
+                .amount(3_200_000L)
+                .status("PENDING")
+                .paymentMethod("VIETQR_PAYOS")
+                .build();
+
+        when(paymentTransactionRepository.findByOrderCode(123456789L)).thenReturn(Optional.of(pendingTxn));
+        when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(i -> i.getArgument(0));
+
+        PaymentResponse resp = paymentService.processPayOSWebhook("dummyWebhookBody");
+
+        assertNotNull(resp);
+        assertEquals("SUCCESS", resp.getStatus());
+        assertEquals("FT242500001", resp.getTransactionRef());
+
+        verify(reservationService).confirmAfterPayment(100L);
+        ArgumentCaptor<PaymentCompletedEvent> eventCaptor = ArgumentCaptor.forClass(PaymentCompletedEvent.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        assertEquals(100L, eventCaptor.getValue().reservationId());
+        assertEquals(50L, eventCaptor.getValue().paymentId());
+    }
+
+    @Test
+    @DisplayName("processPayOSWebhook: Idempotent - Nếu đã SUCCESS từ trước thì không confirm hay bắn Event lại")
+    void processPayOSWebhook_Idempotent_AlreadySuccess() {
+        when(payOS.webhooks()).thenReturn(webhooksService);
+
+        vn.payos.model.webhooks.WebhookData webhookData = vn.payos.model.webhooks.WebhookData.builder()
+                .orderCode(123456789L)
+                .amount(3_200_000L)
+                .description("DH100")
+                .accountNumber("0888567999")
+                .reference("FT242500001")
+                .transactionDateTime("2026-09-24 21:00:00")
+                .currency("VND")
+                .paymentLinkId("PL123")
+                .code("00")
+                .desc("success")
+                .build();
+
+        when(webhooksService.verify(any())).thenReturn(webhookData);
+
+        PaymentTransaction alreadySuccessTxn = PaymentTransaction.builder()
+                .id(50L)
+                .reservationId(100L)
+                .orderCode(123456789L)
+                .amount(3_200_000L)
+                .status("SUCCESS")
+                .paymentMethod("VIETQR_PAYOS")
+                .providerReference("FT242500001")
+                .build();
+
+        when(paymentTransactionRepository.findByOrderCode(123456789L)).thenReturn(Optional.of(alreadySuccessTxn));
+
+        PaymentResponse resp = paymentService.processPayOSWebhook("dummyWebhookBody");
+
+        assertNotNull(resp);
+        assertEquals("SUCCESS", resp.getStatus());
+
+        // Tuyệt đối không gọi confirm hoặc bắn event lần thứ 2
+        verify(reservationService, never()).confirmAfterPayment(any());
+        verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    @Test
+    @DisplayName("processPayOSWebhook: Giao dịch thất bại (code != 00) -> Cập nhật FAILED và không tạo hợp đồng")
+    void processPayOSWebhook_Failure_WhenCodeNot00() {
+        when(payOS.webhooks()).thenReturn(webhooksService);
+
+        vn.payos.model.webhooks.WebhookData webhookData = vn.payos.model.webhooks.WebhookData.builder()
+                .orderCode(123456789L)
+                .amount(3_200_000L)
+                .description("DH100")
+                .accountNumber("0888567999")
+                .reference("FAILED_REF_123")
+                .transactionDateTime("2026-09-24 21:00:00")
+                .currency("VND")
+                .paymentLinkId("PL123")
+                .code("01")
+                .desc("Khách hàng hủy giao dịch")
+                .build();
+
+        when(webhooksService.verify(any())).thenReturn(webhookData);
+
+        PaymentTransaction pendingTxn = PaymentTransaction.builder()
+                .id(50L)
+                .reservationId(100L)
+                .orderCode(123456789L)
+                .amount(3_200_000L)
+                .status("PENDING")
+                .paymentMethod("VIETQR_PAYOS")
+                .build();
+
+        when(paymentTransactionRepository.findByOrderCode(123456789L)).thenReturn(Optional.of(pendingTxn));
+        when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(i -> i.getArgument(0));
+
+        PaymentResponse resp = paymentService.processPayOSWebhook("dummyWebhookBody");
+
+        assertNotNull(resp);
+        assertEquals("FAILED", resp.getStatus());
+        assertEquals("FAILED_REF_123", resp.getTransactionRef());
+
+        // Không confirm reservation và không bắn event tạo hợp đồng
+        verify(reservationService, never()).confirmAfterPayment(any());
+        verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    @Test
+    @DisplayName("processPayOSWebhook: Webhook test ping từ PayOS Dashboard -> Trả về 200 OK không ném lỗi")
+    void processPayOSWebhook_TestPing_WhenOrderNotFound() {
+        when(payOS.webhooks()).thenReturn(webhooksService);
+
+        vn.payos.model.webhooks.WebhookData webhookData = vn.payos.model.webhooks.WebhookData.builder()
+                .orderCode(999999L)
+                .amount(1000L)
+                .description("Webhook test ping")
+                .accountNumber("0888567999")
+                .reference("PING_123")
+                .transactionDateTime("2026-09-24 21:00:00")
+                .currency("VND")
+                .paymentLinkId("PL123")
+                .code("00")
+                .desc("Webhook test ping")
+                .build();
+
+        when(webhooksService.verify(any())).thenReturn(webhookData);
+        when(paymentTransactionRepository.findByOrderCode(999999L)).thenReturn(Optional.empty());
+
+        PaymentResponse resp = paymentService.processPayOSWebhook("dummyWebhookBody");
+
+        assertNotNull(resp);
+        assertEquals(999999L, resp.getOrderCode());
+        assertEquals("SUCCESS", resp.getStatus());
+        verify(paymentTransactionRepository, never()).save(any());
+        verify(reservationService, never()).confirmAfterPayment(any());
+    }
+
+    @Test
+    @DisplayName("getPaymentByOrderCode: Tra cứu thành công giao dịch theo orderCode")
+    void getPaymentByOrderCode_Success() {
+        PaymentTransaction txn = PaymentTransaction.builder()
+                .id(50L)
+                .reservationId(100L)
+                .orderCode(123456789L)
+                .amount(3_200_000L)
+                .status("SUCCESS")
+                .paymentMethod("VIETQR_PAYOS")
+                .build();
+
+        when(paymentTransactionRepository.findByOrderCode(123456789L)).thenReturn(Optional.of(txn));
+
+        PaymentResponse resp = paymentService.getPaymentByOrderCode(123456789L);
+
+        assertNotNull(resp);
+        assertEquals(50L, resp.getId());
+        assertEquals(123456789L, resp.getOrderCode());
+    }
+
+    @Test
+    @DisplayName("createCheckoutLink: Tạo link thanh toán gia hạn hợp đồng thành công (SC-04)")
+    void createCheckoutLink_ContractRenewal_Success() {
+        when(payOS.paymentRequests()).thenReturn(paymentRequestsService);
+
+        CheckoutRequest req = CheckoutRequest.builder()
+                .referenceType("CONTRACT_RENEWAL")
+                .referenceId(200L)
+                .renewalMonths(3)
+                .description("GH200T3")
+                .build();
+
+        com.swp391.selfstorage.contract.entity.RentalContract contract = com.swp391.selfstorage.contract.entity.RentalContract.builder()
+                .id(200L)
+                .code("CTR-2026-0001")
+                .build();
+
+        when(rentalContractRepository.findById(200L)).thenReturn(Optional.of(contract));
+
+        com.swp391.selfstorage.contract.dto.RenewalQuoteResponse quote = com.swp391.selfstorage.contract.dto.RenewalQuoteResponse.builder()
+                .contractId(200L)
+                .renewalMonths(3)
+                .totalAmount(3_600_000L)
+                .build();
+
+        when(renewalService.getRenewalQuote(eq(200L), any())).thenReturn(quote);
+
+        vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse payosResp = vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse.builder()
+                .paymentLinkId("PL_RENEW_123")
+                .orderCode(888888L)
+                .checkoutUrl("https://pay.payos.vn/web/PL_RENEW_123")
+                .qrCode("mock_qr_renew")
+                .amount(3_600_000L)
+                .currency("VND")
+                .status(vn.payos.model.v2.paymentRequests.PaymentLinkStatus.PENDING)
+                .description("GH200T3")
+                .accountName("SMART STORAGE")
+                .accountNumber("0888567999")
+                .bin("970422")
+                .build();
+
+        when(paymentRequestsService.create(any())).thenReturn(payosResp);
+
+        CheckoutResponse resp = paymentService.createCheckoutLink(req);
+
+        assertNotNull(resp);
+        assertEquals(3_600_000L, resp.getAmount());
+        assertEquals("GH200T3", resp.getDescription());
+        verify(paymentTransactionRepository).save(argThat(txn -> 
+                txn.getContractId().equals(200L) && "CONTRACT_RENEWAL".equals(txn.getTransactionType())));
+    }
+
+    @Test
+    @DisplayName("processPayOSWebhook: Nhận webhook gia hạn hợp đồng thành công -> Bắn ContractRenewalPaymentCompletedEvent")
+    void processPayOSWebhook_ContractRenewal_Success() {
+        when(payOS.webhooks()).thenReturn(webhooksService);
+
+        vn.payos.model.webhooks.WebhookData webhookData = vn.payos.model.webhooks.WebhookData.builder()
+                .orderCode(888999L)
+                .amount(3_600_000L)
+                .description("GH200T3")
+                .accountNumber("0888567999")
+                .reference("FT_RENEW_001")
+                .transactionDateTime("2026-09-24 22:00:00")
+                .currency("VND")
+                .paymentLinkId("PL_RENEW_123")
+                .code("00")
+                .desc("success")
+                .build();
+
+        when(webhooksService.verify(any())).thenReturn(webhookData);
+
+        PaymentTransaction pendingTxn = PaymentTransaction.builder()
+                .id(99L)
+                .contractId(200L)
+                .transactionType("CONTRACT_RENEWAL")
+                .orderCode(888999L)
+                .amount(3_600_000L)
+                .status("PENDING")
+                .paymentMethod("VIETQR_PAYOS")
+                .build();
+
+        when(paymentTransactionRepository.findByOrderCode(888999L)).thenReturn(Optional.of(pendingTxn));
+        when(paymentTransactionRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        PaymentResponse resp = paymentService.processPayOSWebhook("dummyBody");
+
+        assertNotNull(resp);
+        assertEquals("SUCCESS", resp.getStatus());
+
+        ArgumentCaptor<com.swp391.selfstorage.payment.event.ContractRenewalPaymentCompletedEvent> captor =
+                ArgumentCaptor.forClass(com.swp391.selfstorage.payment.event.ContractRenewalPaymentCompletedEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        assertEquals(200L, captor.getValue().contractId());
+        assertEquals(99L, captor.getValue().paymentId());
+        assertEquals(3, captor.getValue().renewalMonths());
+    }
+
+    @Test
+    @DisplayName("createCheckoutLink: Tạo link thanh toán quyết toán công nợ thành công (FM-04, FS-04)")
+    void createCheckoutLink_Settlement_Success() {
+        when(payOS.paymentRequests()).thenReturn(paymentRequestsService);
+
+        CheckoutRequest req = CheckoutRequest.builder()
+                .referenceType("SETTLEMENT")
+                .referenceId(200L)
+                .description("QT200")
+                .build();
+
+        com.swp391.selfstorage.contract.entity.RentalContract contract = com.swp391.selfstorage.contract.entity.RentalContract.builder()
+                .id(200L)
+                .code("CTR-2026-0001")
+                .build();
+
+        when(rentalContractRepository.findById(200L)).thenReturn(Optional.of(contract));
+
+        PaymentTransaction pendingSettlement = PaymentTransaction.builder()
+                .id(101L)
+                .contractId(200L)
+                .transactionType("SETTLEMENT")
+                .status("PENDING")
+                .amount(850_000L)
+                .build();
+
+        when(paymentTransactionRepository.findTopByContractIdAndTransactionTypeOrderByCreatedAtDesc(200L, "SETTLEMENT"))
+                .thenReturn(Optional.of(pendingSettlement));
+
+        vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse payosResp = vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse.builder()
+                .paymentLinkId("PL_SETTLE_123")
+                .orderCode(777999L)
+                .checkoutUrl("https://pay.payos.vn/web/PL_SETTLE_123")
+                .qrCode("mock_qr_settle")
+                .amount(850_000L)
+                .currency("VND")
+                .status(vn.payos.model.v2.paymentRequests.PaymentLinkStatus.PENDING)
+                .description("QT200")
+                .accountName("SMART STORAGE")
+                .accountNumber("0888567999")
+                .bin("970422")
+                .build();
+
+        when(paymentRequestsService.create(any())).thenReturn(payosResp);
+
+        CheckoutResponse resp = paymentService.createCheckoutLink(req);
+
+        assertNotNull(resp);
+        assertEquals(850_000L, resp.getAmount());
+        assertEquals("QT200", resp.getDescription());
+        verify(paymentTransactionRepository).save(argThat(txn ->
+                txn.getContractId().equals(200L) && "SETTLEMENT".equals(txn.getTransactionType())));
     }
 }

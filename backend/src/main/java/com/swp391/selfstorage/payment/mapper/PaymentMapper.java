@@ -40,6 +40,7 @@ public class PaymentMapper {
                 .amount(entity.getAmount())
                 .method(entity.getPaymentMethod())
                 .status(entity.getStatus())
+                .orderCode(entity.getOrderCode())
                 .transactionRef(entity.getProviderReference())
                 .paidAt(entity.getUpdatedAt())
                 .createdAt(entity.getCreatedAt())

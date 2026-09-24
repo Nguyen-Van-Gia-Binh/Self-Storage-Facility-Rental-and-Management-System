@@ -3,7 +3,9 @@ package com.swp391.selfstorage.payment.service.impl;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.swp391.selfstorage.common.dto.PageResponse;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
+import com.swp391.selfstorage.payment.dto.CheckoutRequest;
+import com.swp391.selfstorage.payment.dto.CheckoutResponse;
 import com.swp391.selfstorage.payment.dto.CreatePaymentRequest;
 import com.swp391.selfstorage.payment.dto.PaymentFilterRequest;
 import com.swp391.selfstorage.payment.dto.PaymentResponse;
@@ -30,6 +34,10 @@ import com.swp391.selfstorage.reservation.service.ReservationService;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import vn.payos.PayOS;
+import vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest;
+import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
+import vn.payos.model.webhooks.WebhookData;
 
 @Service
 @RequiredArgsConstructor
@@ -40,8 +48,225 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final ReservationRepository reservationRepository;
     private final ReservationService reservationService;
+    private final com.swp391.selfstorage.contract.repository.RentalContractRepository rentalContractRepository;
+    private final com.swp391.selfstorage.contract.service.RenewalService renewalService;
     private final ApplicationEventPublisher eventPublisher;
     private final PaymentMapper paymentMapper;
+    private final PayOS payOS;
+
+    @Value("${payos.return-url:http://localhost:5173/payment/success}")
+    private String returnUrl = "http://localhost:5173/payment/success";
+
+    @Value("${payos.cancel-url:http://localhost:5173/payment/cancel}")
+    private String cancelUrl = "http://localhost:5173/payment/cancel";
+
+    @Override
+    @Transactional
+    public CheckoutResponse createCheckoutLink(CheckoutRequest request) {
+        log.info("Creating PayOS checkout link for referenceType={}, referenceId={}",
+                request.getReferenceType(), request.getReferenceId());
+
+        Long amount;
+        String defaultDesc;
+        Long reservationId = null;
+        Long contractId = null;
+        String txnType;
+
+        if ("RESERVATION".equalsIgnoreCase(request.getReferenceType())) {
+            Reservation reservation = reservationRepository.findById(request.getReferenceId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.RESERVATION_NOT_FOUND));
+
+            if (reservation.getStatus() == ReservationStatus.FULFILLED) {
+                throw new CustomException(ErrorCode.RESERVATION_ALREADY_FULFILLED);
+            }
+            if (reservation.getStatus() != ReservationStatus.PENDING_PAYMENT
+                    && reservation.getStatus() != ReservationStatus.CONFIRMED) {
+                throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION,
+                        "Đơn đặt chỗ không ở trạng thái chờ thanh toán");
+            }
+            if (reservation.getHoldExpiresAt() != null
+                    && reservation.getHoldExpiresAt().isBefore(OffsetDateTime.now())) {
+                throw new CustomException(ErrorCode.RESERVATION_EXPIRED);
+            }
+
+            amount = reservation.getTotalPayable() > 0 ? reservation.getTotalPayable() : 2000L;
+            defaultDesc = "DH" + reservation.getId();
+            reservationId = reservation.getId();
+            txnType = "INITIAL_PAYMENT";
+        } else if ("CONTRACT_RENEWAL".equalsIgnoreCase(request.getReferenceType())
+                || "CONTRACT_EXTENSION".equalsIgnoreCase(request.getReferenceType())) {
+            com.swp391.selfstorage.contract.entity.RentalContract contract = rentalContractRepository.findById(request.getReferenceId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND,
+                            "Không tìm thấy hợp đồng với ID=" + request.getReferenceId()));
+
+            int months = (request.getRenewalMonths() != null && request.getRenewalMonths() > 0)
+                    ? request.getRenewalMonths()
+                    : 1;
+
+            com.swp391.selfstorage.contract.dto.RenewalQuoteResponse quote = renewalService.getRenewalQuote(
+                    contract.getId(), new com.swp391.selfstorage.contract.dto.RenewalRequest(months));
+
+            amount = quote.getTotalAmount();
+            defaultDesc = "GH" + contract.getId() + "T" + months;
+            contractId = contract.getId();
+            txnType = "CONTRACT_RENEWAL";
+        } else if ("SETTLEMENT".equalsIgnoreCase(request.getReferenceType())) {
+            com.swp391.selfstorage.contract.entity.RentalContract contract = rentalContractRepository.findById(request.getReferenceId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND,
+                            "Không tìm thấy hợp đồng với ID=" + request.getReferenceId()));
+
+            Optional<PaymentTransaction> pendingTxn = paymentTransactionRepository
+                    .findTopByContractIdAndTransactionTypeOrderByCreatedAtDesc(contract.getId(), "SETTLEMENT");
+
+            if (pendingTxn.isEmpty() || !"PENDING".equals(pendingTxn.get().getStatus())) {
+                throw new CustomException(ErrorCode.VALIDATION_FAILED, "Hợp đồng không có khoản nợ quyết toán cần thanh toán");
+            }
+
+            amount = pendingTxn.get().getAmount();
+            defaultDesc = "QT" + contract.getId();
+            contractId = contract.getId();
+            txnType = "SETTLEMENT";
+        } else {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                    "Loại thanh toán không được hỗ trợ: " + request.getReferenceType());
+        }
+
+        // Sinh orderCode ngẫu nhiên duy nhất dựa trên thời gian
+        Long orderCode = Long.parseLong(String.valueOf(System.currentTimeMillis()).substring(2)
+                + String.format("%02d", (int) (Math.random() * 100)));
+
+        String description = request.getDescription() != null && !request.getDescription().isBlank()
+                ? request.getDescription()
+                : defaultDesc;
+        if (description.length() > 25) {
+            description = description.substring(0, 25);
+        }
+
+        CreatePaymentLinkRequest paymentLinkRequest = CreatePaymentLinkRequest.builder()
+                .orderCode(orderCode)
+                .amount(amount)
+                .description(description)
+                .returnUrl(returnUrl)
+                .cancelUrl(cancelUrl)
+                .build();
+
+        CreatePaymentLinkResponse paymentLinkResponse;
+        try {
+            paymentLinkResponse = payOS.paymentRequests().create(paymentLinkRequest);
+        } catch (Exception e) {
+            log.error("Lỗi khi gọi API PayOS tạo payment link: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.PAYMENT_FAILED,
+                    "Không thể kết nối cổng thanh toán PayOS: " + e.getMessage());
+        }
+
+        PaymentTransaction payment = PaymentTransaction.builder()
+                .reservationId(reservationId)
+                .contractId(contractId)
+                .transactionType(txnType)
+                .amount(amount)
+                .status("PENDING")
+                .paymentMethod("VIETQR_PAYOS")
+                .orderCode(orderCode)
+                .providerReference(paymentLinkResponse.getPaymentLinkId())
+                .build();
+
+        paymentTransactionRepository.save(payment);
+
+        return CheckoutResponse.builder()
+                .orderCode(orderCode)
+                .checkoutUrl(paymentLinkResponse.getCheckoutUrl())
+                .qrCode(paymentLinkResponse.getQrCode())
+                .amount(paymentLinkResponse.getAmount())
+                .description(paymentLinkResponse.getDescription())
+                .accountName(paymentLinkResponse.getAccountName())
+                .accountNumber(paymentLinkResponse.getAccountNumber())
+                .bin(paymentLinkResponse.getBin())
+                .status("PENDING")
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public PaymentResponse processPayOSWebhook(Object webhookBody) {
+        log.info("Processing PayOS Webhook...");
+        WebhookData webhookData;
+        try {
+            webhookData = payOS.webhooks().verify(webhookBody);
+        } catch (Exception e) {
+            log.error("Xác thực chữ ký Webhook PayOS thất bại: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                    "Chữ ký webhook PayOS không hợp lệ: " + e.getMessage());
+        }
+
+        Long orderCode = webhookData.getOrderCode();
+        PaymentTransaction payment = paymentTransactionRepository.findByOrderCode(orderCode)
+                .orElse(null);
+
+        // Trường hợp 1: Nhận webhook ping test từ PayOS Dashboard (hoặc orderCode không có trong DB)
+        if (payment == null) {
+            log.info("Nhận webhook ping test hoặc orderCode={} không tồn tại trong hệ thống. Trả lời HTTP 200 OK cho PayOS.", orderCode);
+            return PaymentResponse.builder()
+                    .orderCode(orderCode)
+                    .status("SUCCESS")
+                    .build();
+        }
+
+        // Trường hợp 2: Giao dịch thất bại hoặc bị khách hàng hủy từ PayOS
+        if (webhookData.getCode() != null && !"00".equals(webhookData.getCode())) {
+            log.warn("Thanh toán PayOS không thành công cho orderCode={}: code={}, desc={}",
+                    orderCode, webhookData.getCode(), webhookData.getDesc());
+            payment.setStatus("FAILED");
+            if (webhookData.getReference() != null) {
+                payment.setProviderReference(webhookData.getReference());
+            }
+            payment = paymentTransactionRepository.save(payment);
+            return paymentMapper.toResponse(payment);
+        }
+
+        // Trường hợp 3: Idempotency check: nếu đã SUCCESS thì bỏ qua, không xử lý lặp
+        if ("SUCCESS".equalsIgnoreCase(payment.getStatus())) {
+            log.info("Giao dịch orderCode={} đã ở trạng thái SUCCESS, bỏ qua xử lý lặp", orderCode);
+            return paymentMapper.toResponse(payment);
+        }
+
+        // Trường hợp 4: Thanh toán thành công (code == "00")
+        payment.setStatus("SUCCESS");
+        if (webhookData.getReference() != null) {
+            payment.setProviderReference(webhookData.getReference());
+        }
+        payment = paymentTransactionRepository.save(payment);
+
+        if (payment.getReservationId() != null) {
+            reservationService.confirmAfterPayment(payment.getReservationId());
+            eventPublisher.publishEvent(new PaymentCompletedEvent(payment.getReservationId(), payment.getId()));
+        } else if (payment.getContractId() != null
+                && "CONTRACT_RENEWAL".equalsIgnoreCase(payment.getTransactionType())) {
+            int months = 1;
+            if (webhookData.getDescription() != null && webhookData.getDescription().contains("T")) {
+                try {
+                    String part = webhookData.getDescription().substring(webhookData.getDescription().indexOf("T") + 1);
+                    months = Integer.parseInt(part.replaceAll("\\D", ""));
+                } catch (Exception ignored) {
+                    months = 1;
+                }
+            }
+            eventPublisher.publishEvent(new com.swp391.selfstorage.payment.event.ContractRenewalPaymentCompletedEvent(
+                    payment.getContractId(), payment.getId(), months, payment.getAmount()));
+        } else if ("SETTLEMENT".equalsIgnoreCase(payment.getTransactionType())) {
+            log.info("Thanh toán quyết toán thu nợ PayOS thành công cho contractId={}, transactionId={}",
+                    payment.getContractId(), payment.getId());
+        }
+
+        return paymentMapper.toResponse(payment);
+    }
+
+    @Override
+    public PaymentResponse getPaymentByOrderCode(Long orderCode) {
+        PaymentTransaction payment = paymentTransactionRepository.findByOrderCode(orderCode)
+                .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND,
+                        "Không tìm thấy giao dịch với orderCode=" + orderCode));
+        return paymentMapper.toResponse(payment);
+    }
 
     @Override
     @Transactional

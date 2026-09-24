@@ -20,6 +20,7 @@ export interface CreateReservationPayload {
 }
 
 export interface ReservationResult {
+  id?: number;
   code: string;
   facilityName: string;
   unitTypeName: string;
@@ -27,10 +28,44 @@ export interface ReservationResult {
   depositAmount: number;
   status: string;
   holdExpiresAt: string;
-  vietQrPayload: string;
-  bankAccountNumber: string;
-  bankName: string;
-  transferContent: string;
+  vietQrPayload?: string;
+  bankAccountNumber?: string;
+  bankName?: string;
+  transferContent?: string;
+}
+
+export interface CheckoutRequest {
+  referenceType: string;
+  referenceId: number;
+  renewalMonths?: number;
+  description?: string;
+}
+
+export interface CheckoutResponse {
+  orderCode: number;
+  checkoutUrl: string;
+  qrCode: string;
+  amount: number;
+  description: string;
+  accountName: string;
+  accountNumber: string;
+  bin: string;
+  status: string;
+}
+
+export interface PaymentStatusResponse {
+  id: number;
+  referenceType: string;
+  referenceId: number;
+  amount: number;
+  method: string;
+  status: string;
+  transactionRef?: string;
+  orderCode: number;
+  checkoutUrl?: string;
+  transferContent?: string;
+  bankName?: string;
+  bankAccountNumber?: string;
 }
 
 /**
@@ -162,6 +197,35 @@ export const customerApi = {
       bankName: 'MB Bank (Ngân hàng Quân Đội)',
       transferContent,
     };
+  },
+
+  /**
+   * Tạo link thanh toán PayOS VietQR tự động (SC-03)
+   */
+  async createPaymentCheckout(payload: CheckoutRequest): Promise<CheckoutResponse> {
+    const res = await fetch(`${API_BASE_URL}/payments/checkout`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => null);
+      throw new Error(errJson?.message || 'Không thể tạo link thanh toán PayOS');
+    }
+    return res.json();
+  },
+
+  /**
+   * Tra cứu trạng thái giao dịch thanh toán theo orderCode phục vụ Polling tự động
+   */
+  async getPaymentStatus(orderCode: number): Promise<PaymentStatusResponse> {
+    const res = await fetch(`${API_BASE_URL}/payments/order/${orderCode}/status`, {
+      method: 'GET',
+    });
+    if (!res.ok) {
+      throw new Error('Không thể tra cứu trạng thái thanh toán');
+    }
+    return res.json();
   },
 
   /**

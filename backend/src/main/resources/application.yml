@@ -57,3 +57,12 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+# Cổng thanh toán trực tuyến PayOS (VietQR) - SC-03
+payos:
+  client-id: ${PAYOS_CLIENT_ID:mock-client-id}
+  api-key: ${PAYOS_API_KEY:mock-api-key}
+  checksum-key: ${PAYOS_CHECKSUM_KEY:mock-checksum-key}
+  return-url: ${PAYOS_RETURN_URL:http://localhost:5173/payment/success}
+  cancel-url: ${PAYOS_CANCEL_URL:http://localhost:5173/payment/cancel}
+

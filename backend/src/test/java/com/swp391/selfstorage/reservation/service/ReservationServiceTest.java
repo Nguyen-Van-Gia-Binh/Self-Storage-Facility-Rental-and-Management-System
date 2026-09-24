@@ -52,6 +52,7 @@ class ReservationServiceTest {
     @Mock private UnitTypeRepository unitTypeRepository;
     @Mock private FacilityUnitTypePriceRepository facilityUnitTypePriceRepository;
     @Mock private RentalContractRepository rentalContractRepository;
+    @Mock private com.swp391.selfstorage.payment.repository.PaymentTransactionRepository paymentTransactionRepository;
 
     @InjectMocks
     private ReservationServiceImpl reservationService;
@@ -236,13 +237,13 @@ class ReservationServiceTest {
     }
 
     @Test
-    @DisplayName("BR-RES-04: Không thể hủy đơn khi đã CONFIRMED")
-    void cancelReservation_WhenNotPending_ShouldThrow() {
+    @DisplayName("BR-RES-04 / AC-6: Không thể hủy đơn khi đã nhận kho (FULFILLED)")
+    void cancelReservation_WhenFulfilled_ShouldThrow() {
         Reservation r = new Reservation();
         r.setId(1042L);
         r.setCustomerId(15L);
         r.setFacilityId(1L);
-        r.setStatus(ReservationStatus.CONFIRMED);
+        r.setStatus(ReservationStatus.FULFILLED);
 
         when(reservationRepository.findById(1042L)).thenReturn(Optional.of(r));
 
@@ -250,7 +251,69 @@ class ReservationServiceTest {
         CustomException ex = assertThrows(CustomException.class, () ->
                 reservationService.cancelReservation(1042L, cancelReq, customerUser)
         );
-        assertEquals(ErrorCode.INVALID_STATUS_TRANSITION, ex.getErrorCode());
+        assertEquals(ErrorCode.RESERVATION_ALREADY_FULFILLED, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("BR-CAN-01: Hủy đơn CONFIRMED trước >= 48h -> Hoàn 100% tiền thuê + 100% cọc")
+    void cancelReservation_Success_WhenConfirmed_Early_FullRefund() {
+        Reservation r = new Reservation();
+        r.setId(1042L);
+        r.setCustomerId(15L);
+        r.setFacilityId(1L);
+        r.setStatus(ReservationStatus.CONFIRMED);
+        r.setStartDate(LocalDate.now().plusDays(5)); // >= 48h
+        r.setDepositAmount(1_000_000L);
+        r.setTotalPayable(4_000_000L);
+        r.setStorageUnitId(88L);
+
+        StorageUnit unit = new StorageUnit();
+        unit.setId(88L);
+        unit.setStatus(StorageUnitStatus.RESERVED);
+
+        when(reservationRepository.findById(1042L)).thenReturn(Optional.of(r));
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(storageUnitRepository.findById(88L)).thenReturn(Optional.of(unit));
+        when(rentalContractRepository.findByReservationId(1042L)).thenReturn(Optional.empty());
+
+        CancelReservationRequest cancelReq = new CancelReservationRequest("Đổi kế hoạch sớm");
+        ReservationResponse result = reservationService.cancelReservation(1042L, cancelReq, customerUser);
+
+        assertEquals("CANCELLED", result.getStatus());
+        assertEquals(StorageUnitStatus.AVAILABLE, unit.getStatus());
+        verify(paymentTransactionRepository).save(argThat(txn ->
+                txn.getReservationId().equals(1042L)
+                        && "REFUND".equals(txn.getTransactionType())
+                        && "PENDING_REFUND".equals(txn.getStatus())
+                        && txn.getAmount() == 4_000_000L
+        ));
+    }
+
+    @Test
+    @DisplayName("BR-CAN-02: Hủy đơn CONFIRMED trong vòng < 48h -> Hoàn 100% tiền thuê + 50% cọc")
+    void cancelReservation_Success_WhenConfirmed_Late_PartialRefund() {
+        Reservation r = new Reservation();
+        r.setId(1042L);
+        r.setCustomerId(15L);
+        r.setFacilityId(1L);
+        r.setStatus(ReservationStatus.CONFIRMED);
+        r.setStartDate(LocalDate.now().plusDays(1)); // < 48h nhưng trước ngày bắt đầu
+        r.setDepositAmount(1_000_000L);
+        r.setTotalPayable(4_000_000L); // tiền thuê = 3M, cọc = 1M -> hoàn 3M + 500k = 3.5M
+
+        when(reservationRepository.findById(1042L)).thenReturn(Optional.of(r));
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(rentalContractRepository.findByReservationId(1042L)).thenReturn(Optional.empty());
+
+        CancelReservationRequest cancelReq = new CancelReservationRequest("Hủy sát ngày");
+        ReservationResponse result = reservationService.cancelReservation(1042L, cancelReq, customerUser);
+
+        assertEquals("CANCELLED", result.getStatus());
+        verify(paymentTransactionRepository).save(argThat(txn ->
+                txn.getReservationId().equals(1042L)
+                        && "REFUND".equals(txn.getTransactionType())
+                        && txn.getAmount() == 3_500_000L
+        ));
     }
 
     @Test

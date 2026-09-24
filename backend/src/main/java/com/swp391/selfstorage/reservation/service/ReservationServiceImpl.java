@@ -21,6 +21,8 @@ import com.swp391.selfstorage.unit.entity.UnitType;
 import com.swp391.selfstorage.unit.repository.FacilityUnitTypePriceRepository;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
 import com.swp391.selfstorage.unit.repository.UnitTypeRepository;
+import com.swp391.selfstorage.payment.entity.PaymentTransaction;
+import com.swp391.selfstorage.payment.repository.PaymentTransactionRepository;
 import com.swp391.selfstorage.user.entity.UserRole;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -29,6 +31,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
@@ -48,19 +51,22 @@ public class ReservationServiceImpl implements ReservationService {
     private final UnitTypeRepository unitTypeRepository;
     private final FacilityUnitTypePriceRepository facilityUnitTypePriceRepository;
     private final RentalContractRepository rentalContractRepository;
+    private final PaymentTransactionRepository paymentTransactionRepository;
 
     public ReservationServiceImpl(ReservationRepository reservationRepository,
                                   StorageUnitRepository storageUnitRepository,
                                   FacilityRepository facilityRepository,
                                   UnitTypeRepository unitTypeRepository,
                                   FacilityUnitTypePriceRepository facilityUnitTypePriceRepository,
-                                  RentalContractRepository rentalContractRepository) {
+                                  RentalContractRepository rentalContractRepository,
+                                  PaymentTransactionRepository paymentTransactionRepository) {
         this.reservationRepository = reservationRepository;
         this.storageUnitRepository = storageUnitRepository;
         this.facilityRepository = facilityRepository;
         this.unitTypeRepository = unitTypeRepository;
         this.facilityUnitTypePriceRepository = facilityUnitTypePriceRepository;
         this.rentalContractRepository = rentalContractRepository;
+        this.paymentTransactionRepository = paymentTransactionRepository;
     }
 
     @Override
@@ -312,13 +318,69 @@ public class ReservationServiceImpl implements ReservationService {
             throw new CustomException(ErrorCode.RESERVATION_ALREADY_CANCELLED);
         }
 
-        if (reservation.getStatus() != ReservationStatus.PENDING_PAYMENT) {
-            throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION, "Chi co the huy don dat cho khi o trang thai cho thanh toan");
+        if (reservation.getStatus() == ReservationStatus.FULFILLED) {
+            throw new CustomException(ErrorCode.RESERVATION_ALREADY_FULFILLED, "Đơn đặt chỗ đã nhận kho, không thể hủy");
+        }
+
+        if (reservation.getStatus() != ReservationStatus.PENDING_PAYMENT && reservation.getStatus() != ReservationStatus.CONFIRMED) {
+            throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION, "Chi co the huy don dat cho khi o trang thai cho thanh toan hoac da xac nhan chua nhan kho");
+        }
+
+        OffsetDateTime now = OffsetDateTime.now();
+        String reason = (request != null && request.getReason() != null && !request.getReason().isBlank())
+                ? request.getReason()
+                : "Khach hang chu dong huy don";
+
+        // Xử lý hoàn tiền khi đơn đã thanh toán (CONFIRMED) theo BR-CAN-01 & BR-CAN-02
+        if (reservation.getStatus() == ReservationStatus.CONFIRMED) {
+            OffsetDateTime startDateTime = reservation.getStartDate().atStartOfDay().atOffset(now.getOffset());
+            long hoursUntilStart = Duration.between(now, startDateTime).toHours();
+            long refundAmount = 0L;
+
+            if (hoursUntilStart >= 48) {
+                // BR-CAN-01: Hủy trước >= 48 giờ -> Hoàn 100% tiền thuê + 100% tiền cọc
+                refundAmount = reservation.getTotalPayable();
+            } else if (now.isBefore(startDateTime)) {
+                // BR-CAN-02: Hủy trong vòng < 48 giờ trước ngày bắt đầu -> Hoàn 100% tiền thuê + 50% tiền cọc
+                long deposit = reservation.getDepositAmount();
+                long rentalFee = Math.max(0, reservation.getTotalPayable() - deposit);
+                refundAmount = rentalFee + (deposit / 2);
+            } else {
+                // Quá 00:00 ngày bắt đầu thuê
+                refundAmount = 0L;
+            }
+
+            if (refundAmount > 0) {
+                PaymentTransaction refundTxn = PaymentTransaction.builder()
+                        .reservationId(reservation.getId())
+                        .amount(refundAmount)
+                        .transactionType("REFUND")
+                        .paymentMethod("BANK_TRANSFER")
+                        .status("PENDING_REFUND")
+                        .providerReference("REFUND: " + reason)
+                        .orderCode(System.currentTimeMillis())
+                        .build();
+                paymentTransactionRepository.save(refundTxn);
+            }
+
+            // Hủy hợp đồng ở trạng thái PENDING_CHECK_IN nếu có
+            rentalContractRepository.findByReservationId(reservation.getId()).ifPresent(contract -> {
+                contract.setStatus(ContractStatus.TERMINATED);
+                rentalContractRepository.save(contract);
+            });
+        }
+
+        // Giải phóng StorageUnit nếu đã được gán
+        if (reservation.getStorageUnitId() != null) {
+            storageUnitRepository.findById(reservation.getStorageUnitId()).ifPresent(unit -> {
+                unit.setStatus(StorageUnitStatus.AVAILABLE);
+                storageUnitRepository.save(unit);
+            });
         }
 
         reservation.setStatus(ReservationStatus.CANCELLED);
-        reservation.setCancelledAt(OffsetDateTime.now());
-        reservation.setCancelReason(request != null ? request.getReason() : "Khach hang chu dong huy don");
+        reservation.setCancelledAt(now);
+        reservation.setCancelReason(reason);
 
         Reservation saved = reservationRepository.save(reservation);
         return mapToResponse(saved);
