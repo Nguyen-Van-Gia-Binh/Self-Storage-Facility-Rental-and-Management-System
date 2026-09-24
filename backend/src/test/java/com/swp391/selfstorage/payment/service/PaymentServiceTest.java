@@ -503,4 +503,58 @@ class PaymentServiceTest {
         assertEquals(99L, captor.getValue().paymentId());
         assertEquals(3, captor.getValue().renewalMonths());
     }
+
+    @Test
+    @DisplayName("createCheckoutLink: Tạo link thanh toán quyết toán công nợ thành công (FM-04, FS-04)")
+    void createCheckoutLink_Settlement_Success() {
+        when(payOS.paymentRequests()).thenReturn(paymentRequestsService);
+
+        CheckoutRequest req = CheckoutRequest.builder()
+                .referenceType("SETTLEMENT")
+                .referenceId(200L)
+                .description("QT200")
+                .build();
+
+        com.swp391.selfstorage.contract.entity.RentalContract contract = com.swp391.selfstorage.contract.entity.RentalContract.builder()
+                .id(200L)
+                .code("CTR-2026-0001")
+                .build();
+
+        when(rentalContractRepository.findById(200L)).thenReturn(Optional.of(contract));
+
+        PaymentTransaction pendingSettlement = PaymentTransaction.builder()
+                .id(101L)
+                .contractId(200L)
+                .transactionType("SETTLEMENT")
+                .status("PENDING")
+                .amount(850_000L)
+                .build();
+
+        when(paymentTransactionRepository.findTopByContractIdAndTransactionTypeOrderByCreatedAtDesc(200L, "SETTLEMENT"))
+                .thenReturn(Optional.of(pendingSettlement));
+
+        vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse payosResp = vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse.builder()
+                .paymentLinkId("PL_SETTLE_123")
+                .orderCode(777999L)
+                .checkoutUrl("https://pay.payos.vn/web/PL_SETTLE_123")
+                .qrCode("mock_qr_settle")
+                .amount(850_000L)
+                .currency("VND")
+                .status(vn.payos.model.v2.paymentRequests.PaymentLinkStatus.PENDING)
+                .description("QT200")
+                .accountName("SMART STORAGE")
+                .accountNumber("0888567999")
+                .bin("970422")
+                .build();
+
+        when(paymentRequestsService.create(any())).thenReturn(payosResp);
+
+        CheckoutResponse resp = paymentService.createCheckoutLink(req);
+
+        assertNotNull(resp);
+        assertEquals(850_000L, resp.getAmount());
+        assertEquals("QT200", resp.getDescription());
+        verify(paymentTransactionRepository).save(argThat(txn ->
+                txn.getContractId().equals(200L) && "SETTLEMENT".equals(txn.getTransactionType())));
+    }
 }

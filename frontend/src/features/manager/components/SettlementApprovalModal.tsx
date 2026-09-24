@@ -33,7 +33,9 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
 
   const originalDeposit = contract.depositAmount || 800000;
   const overdueFee = contract.overdueFeeAccrued || 0;
-  const netRefund = Math.max(0, originalDeposit - damageCost - overdueFee);
+  const totalDeduction = damageCost + overdueFee;
+  const netRefund = Math.max(0, originalDeposit - totalDeduction);
+  const payableAmount = Math.max(0, totalDeduction - originalDeposit);
 
   const handleApprove = async () => {
     setLoading(true);
@@ -122,7 +124,6 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
                 <input
                   type="number"
                   min={0}
-                  max={originalDeposit}
                   value={damageCost}
                   onChange={(e) => setDamageCost(Number(e.target.value) || 0)}
                   className="w-28 px-2 py-1 text-right font-mono font-semibold text-xs border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
@@ -141,9 +142,11 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
             )}
 
             <div className="pt-2 border-t border-purple-200 flex justify-between items-center text-sm font-bold">
-              <span className="text-purple-950">Thực hoàn trả khách hàng:</span>
-              <span className="text-emerald-600 font-mono text-base">
-                {netRefund.toLocaleString('vi-VN')} đ
+              <span className="text-purple-950">
+                {payableAmount > 0 ? 'Khách phải nộp thêm (Thu nợ PayOS):' : 'Thực hoàn trả khách hàng:'}
+              </span>
+              <span className={`font-mono text-base ${payableAmount > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                {payableAmount > 0 ? `+${payableAmount.toLocaleString('vi-VN')} đ` : `${netRefund.toLocaleString('vi-VN')} đ`}
               </span>
             </div>
           </div>

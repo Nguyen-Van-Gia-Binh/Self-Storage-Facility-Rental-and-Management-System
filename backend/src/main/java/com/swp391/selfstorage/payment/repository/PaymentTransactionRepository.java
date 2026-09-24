@@ -18,4 +18,6 @@ public interface PaymentTransactionRepository
     List<PaymentTransaction> findByContractId(Long contractId);
 
     Optional<PaymentTransaction> findByOrderCode(Long orderCode);
+
+    Optional<PaymentTransaction> findTopByContractIdAndTransactionTypeOrderByCreatedAtDesc(Long contractId, String transactionType);
 }

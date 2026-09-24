@@ -3,6 +3,7 @@ package com.swp391.selfstorage.payment.service.impl;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
@@ -109,6 +110,22 @@ public class PaymentServiceImpl implements PaymentService {
             defaultDesc = "GH" + contract.getId() + "T" + months;
             contractId = contract.getId();
             txnType = "CONTRACT_RENEWAL";
+        } else if ("SETTLEMENT".equalsIgnoreCase(request.getReferenceType())) {
+            com.swp391.selfstorage.contract.entity.RentalContract contract = rentalContractRepository.findById(request.getReferenceId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND,
+                            "Không tìm thấy hợp đồng với ID=" + request.getReferenceId()));
+
+            Optional<PaymentTransaction> pendingTxn = paymentTransactionRepository
+                    .findTopByContractIdAndTransactionTypeOrderByCreatedAtDesc(contract.getId(), "SETTLEMENT");
+
+            if (pendingTxn.isEmpty() || !"PENDING".equals(pendingTxn.get().getStatus())) {
+                throw new CustomException(ErrorCode.VALIDATION_FAILED, "Hợp đồng không có khoản nợ quyết toán cần thanh toán");
+            }
+
+            amount = pendingTxn.get().getAmount();
+            defaultDesc = "QT" + contract.getId();
+            contractId = contract.getId();
+            txnType = "SETTLEMENT";
         } else {
             throw new CustomException(ErrorCode.VALIDATION_FAILED,
                     "Loại thanh toán không được hỗ trợ: " + request.getReferenceType());
@@ -235,6 +252,9 @@ public class PaymentServiceImpl implements PaymentService {
             }
             eventPublisher.publishEvent(new com.swp391.selfstorage.payment.event.ContractRenewalPaymentCompletedEvent(
                     payment.getContractId(), payment.getId(), months, payment.getAmount()));
+        } else if ("SETTLEMENT".equalsIgnoreCase(payment.getTransactionType())) {
+            log.info("Thanh toán quyết toán thu nợ PayOS thành công cho contractId={}, transactionId={}",
+                    payment.getContractId(), payment.getId());
         }
 
         return paymentMapper.toResponse(payment);
