@@ -38,6 +38,7 @@ public class StorageUnitServiceImpl implements StorageUnitService {
         this(storageUnitRepository, unitTypeRepository, null, mapper);
     }
 
+    @org.springframework.beans.factory.annotation.Autowired
     public StorageUnitServiceImpl(StorageUnitRepository storageUnitRepository,
                                   UnitTypeRepository unitTypeRepository,
                                   FacilityUnitTypePriceRepository priceRepository,

@@ -146,4 +146,17 @@ public class UnitTypeServiceImpl implements UnitTypeService {
         ut.setActive(false);
         unitTypeRepository.save(ut);
     }
+
+    @Override
+    public UnitTypeResponse updateUnitTypeStatus(Long facilityId, Long unitTypeId, boolean isActive) {
+        if (!isActive) {
+            deactivateUnitType(facilityId, unitTypeId);
+        } else {
+            UnitType ut = unitTypeRepository.findById(unitTypeId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND));
+            ut.setActive(true);
+            unitTypeRepository.save(ut);
+        }
+        return getUnitTypeById(facilityId, unitTypeId);
+    }
 }

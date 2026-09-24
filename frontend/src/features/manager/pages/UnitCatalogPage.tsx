@@ -20,25 +20,24 @@ import {
   createStorageUnit,
   updateStorageUnitStatus,
 } from '@/api/unit';
+import { fetchFacilities } from '@/api/facility';
+import type { FacilityListItem } from '@/types';
 import {
   mockUnitTypes,
   mockStorageUnits,
-  MOCK_FACILITY_ID,
 } from '@/mock/unitMockData';
 
-// Dat USE_MOCK = false khi backend T2.8 san sang
-const USE_MOCK = true;
-const FACILITY_ID = MOCK_FACILITY_ID;
-
 const STATUS_FILTERS: { label: string; value: UnitStatus | 'ALL' }[] = [
-  { label: 'Tat ca', value: 'ALL' },
-  { label: 'Trong', value: 'AVAILABLE' },
-  { label: 'Dang thue', value: 'OCCUPIED' },
-  { label: 'Da dat', value: 'RESERVED' },
-  { label: 'Bao tri', value: 'MAINTENANCE' },
+  { label: 'Tất cả', value: 'ALL' },
+  { label: 'Trống', value: 'AVAILABLE' },
+  { label: 'Đang thuê', value: 'OCCUPIED' },
+  { label: 'Đã đặt', value: 'RESERVED' },
+  { label: 'Bảo trì', value: 'MAINTENANCE' },
 ];
 
 export const UnitCatalogPage: React.FC = () => {
+  const [facilities, setFacilities] = useState<FacilityListItem[]>([]);
+  const [facilityId, setFacilityId] = useState<number>(1);
   const [unitTypes, setUnitTypes] = useState<UnitTypeResponse[]>([]);
   const [storageUnits, setStorageUnits] = useState<StorageUnitResponse[]>([]);
   const [selectedTypeId, setSelectedTypeId] = useState<number | null>(null);
@@ -50,47 +49,114 @@ export const UnitCatalogPage: React.FC = () => {
   const [editingType, setEditingType] = useState<UnitTypeResponse | null>(null);
   const [suModalOpen, setSuModalOpen] = useState(false);
 
-  const loadUnitTypes = useCallback(async () => {
-    try {
-      setLoading(true);
-      if (USE_MOCK) {
-        setUnitTypes(mockUnitTypes);
-        setSelectedTypeId((prev) => prev ?? mockUnitTypes[0]?.id ?? null);
-      } else {
-        const res = await fetchUnitTypes(FACILITY_ID, { size: 50 });
-        setUnitTypes(res.content);
-        setSelectedTypeId((prev) => prev ?? res.content[0]?.id ?? null);
-      }
-    } catch {
-      setError('Khong the tai danh sach loai o kho.');
-    } finally {
-      setLoading(false);
-    }
+  // Tải danh sách cơ sở
+  useEffect(() => {
+    fetchFacilities()
+      .then((list) => {
+        setFacilities(list);
+        if (list.length > 0 && !list.some((f) => f.id === facilityId)) {
+          setFacilityId(list[0].id);
+        }
+      })
+      .catch((err) => {
+        console.error('Không thể tải danh sách cơ sở:', err);
+      });
   }, []);
 
-  const loadStorageUnits = useCallback(async () => {
-    if (!selectedTypeId) { setStorageUnits([]); return; }
+  const refreshUnitTypes = useCallback(async () => {
     try {
-      if (USE_MOCK) {
-        setStorageUnits(
-          mockStorageUnits.filter((u) => u.unitTypeId === selectedTypeId)
-        );
+      const res = await fetchUnitTypes(facilityId, { size: 50 });
+      if (res?.content && res.content.length > 0) {
+        setUnitTypes(res.content);
+        setSelectedTypeId((prev) => (res.content.some((t) => t.id === prev) ? prev : res.content[0].id));
       } else {
-        const res = await fetchStorageUnits(FACILITY_ID, {
+        setUnitTypes([]);
+        setSelectedTypeId(null);
+      }
+    } catch {
+      console.warn('Lỗi khi tải danh sách loại ô kho, sử dụng mock dự phòng');
+      setUnitTypes(mockUnitTypes);
+      setSelectedTypeId((prev) => prev ?? mockUnitTypes[0]?.id ?? null);
+    }
+  }, [facilityId]);
+
+  const refreshStorageUnits = useCallback(async () => {
+    if (!selectedTypeId) {
+      setStorageUnits([]);
+      return;
+    }
+    try {
+      const res = await fetchStorageUnits(facilityId, {
+        unitTypeId: selectedTypeId,
+        size: 100,
+      });
+      if (res?.content) {
+        setStorageUnits(res.content);
+      } else {
+        setStorageUnits([]);
+      }
+    } catch {
+      console.warn('Lỗi khi tải danh sách ô kho, sử dụng mock dự phòng');
+      setStorageUnits(
+        mockStorageUnits.filter((u) => u.unitTypeId === selectedTypeId)
+      );
+    }
+  }, [facilityId, selectedTypeId]);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await fetchUnitTypes(facilityId, { size: 50 });
+        if (!active) return;
+        if (res?.content && res.content.length > 0) {
+          setUnitTypes(res.content);
+          setSelectedTypeId((prev) => (res.content.some((t) => t.id === prev) ? prev : res.content[0].id));
+        } else {
+          setUnitTypes([]);
+          setSelectedTypeId(null);
+        }
+      } catch {
+        if (!active) return;
+        console.warn('Lỗi khi tải danh sách loại ô kho, sử dụng mock dự phòng');
+        setUnitTypes(mockUnitTypes);
+        setSelectedTypeId((prev) => prev ?? mockUnitTypes[0]?.id ?? null);
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [facilityId]);
+
+  useEffect(() => {
+    if (!selectedTypeId) {
+      return;
+    }
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetchStorageUnits(facilityId, {
           unitTypeId: selectedTypeId,
           size: 100,
         });
-        setStorageUnits(res.content);
+        if (!active) return;
+        if (res?.content) {
+          setStorageUnits(res.content);
+        } else {
+          setStorageUnits([]);
+        }
+      } catch {
+        if (!active) return;
+        console.warn('Lỗi khi tải danh sách ô kho, sử dụng mock dự phòng');
+        setStorageUnits(
+          mockStorageUnits.filter((u) => u.unitTypeId === selectedTypeId)
+        );
       }
-    } catch {
-      setError('Khong the tai danh sach o kho.');
-    }
-  }, [selectedTypeId]);
-
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { loadUnitTypes(); }, [loadUnitTypes]);
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { loadStorageUnits(); }, [loadStorageUnits]);
+    })();
+    return () => { active = false; };
+  }, [facilityId, selectedTypeId]);
 
   const selectedType = unitTypes.find((t) => t.id === selectedTypeId);
   const visibleTypes = showInactive ? unitTypes : unitTypes.filter((t) => t.isActive);
@@ -100,71 +166,49 @@ export const UnitCatalogPage: React.FC = () => {
       : storageUnits.filter((u) => u.status === statusFilter);
 
   const handleSubmitType = async (data: UnitTypeFormData) => {
-    if (USE_MOCK) {
-      if (editingType) {
-        setUnitTypes((p) =>
-          p.map((t) =>
-            t.id === editingType.id
-              ? { ...t, ...data, areaM2: +(data.widthM * data.depthM).toFixed(1) }
-              : t
-          )
-        );
-      } else {
-        const newType: UnitTypeResponse = {
-          id: Date.now(),
-          facilityId: FACILITY_ID,
-          ...data,
-          areaM2: +(data.widthM * data.depthM).toFixed(1),
-          totalUnits: 0,
-          isActive: true,
-        };
-        setUnitTypes((p) => [...p, newType]);
+    try {
+      if (!data.code) {
+        data.code = 'UT-' + Date.now().toString().slice(-6);
       }
-    } else {
       if (editingType) {
-        await updateUnitType(FACILITY_ID, editingType.id, data);
+        await updateUnitType(facilityId, editingType.id, data);
       } else {
-        await createUnitType(FACILITY_ID, data);
+        await createUnitType(facilityId, data);
       }
-      await loadUnitTypes();
+      await refreshUnitTypes();
+    } catch (err: unknown) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'Lưu loại ô kho thất bại. Vui lòng kiểm tra lại.');
     }
   };
 
   const handleToggleType = async (type: UnitTypeResponse) => {
-    if (USE_MOCK) {
-      setUnitTypes((p) =>
-        p.map((t) => (t.id === type.id ? { ...t, isActive: !t.isActive } : t))
-      );
-    } else {
-      await toggleUnitTypeStatus(FACILITY_ID, type.id, !type.isActive);
-      await loadUnitTypes();
+    try {
+      await toggleUnitTypeStatus(facilityId, type.id, !type.isActive);
+      await refreshUnitTypes();
+    } catch (err: unknown) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'Không thể thay đổi trạng thái loại ô kho.');
     }
   };
 
   const handleSubmitUnit = async (data: StorageUnitFormData) => {
-    if (USE_MOCK) {
-      const newUnit: StorageUnitResponse = {
-        id: Date.now(),
-        facilityId: FACILITY_ID,
-        ...data,
-        status: 'AVAILABLE',
-        isActive: true,
-      };
-      setStorageUnits((p) => [...p, newUnit]);
-    } else {
-      await createStorageUnit(FACILITY_ID, data);
-      await loadStorageUnits();
+    try {
+      await createStorageUnit(facilityId, data);
+      await refreshStorageUnits();
+    } catch (err: unknown) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'Tạo ô kho mới thất bại.');
     }
   };
 
   const handleChangeUnitStatus = async (unit: StorageUnitResponse, status: UnitStatus) => {
-    if (USE_MOCK) {
-      setStorageUnits((p) =>
-        p.map((u) => (u.id === unit.id ? { ...u, status } : u))
-      );
-    } else {
-      await updateStorageUnitStatus(FACILITY_ID, unit.id, status);
-      await loadStorageUnits();
+    try {
+      await updateStorageUnitStatus(facilityId, unit.id, status);
+      await refreshStorageUnits();
+    } catch (err: unknown) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'Cập nhật trạng thái ô kho thất bại.');
     }
   };
 
@@ -186,30 +230,52 @@ export const UnitCatalogPage: React.FC = () => {
   return (
     <div className="h-full flex flex-col bg-[#0F1117] text-[#E8EAF0] min-h-screen -m-6">
       {/* Page header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-[#2E3652]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 border-b border-[#2E3652] gap-3">
         <div>
-          <h1 className="text-lg font-semibold">Quan ly o kho</h1>
+          <h1 className="text-lg font-semibold">Quản lý ô kho & Loại kho (FM-01)</h1>
           <p className="text-xs text-[#8890A4] mt-0.5">
-            Danh muc loai o kho va o kho vat ly trong co so
+            Danh mục loại ô kho và ô kho vật lý trong từng cơ sở
           </p>
         </div>
-        <button
-          id="btn-add-unit-type"
-          onClick={() => {
-            setEditingType(null);
-            setUtModalOpen(true);
-          }}
-          className="flex items-center gap-1.5 px-4 py-2 bg-[#4F7FFA] text-white text-sm font-medium rounded-lg hover:bg-[#3D6AE8] transition-colors"
-        >
-          <span>+</span> Them loai o kho
-        </button>
+
+        <div className="flex items-center gap-3">
+          {/* Bộ chọn cơ sở cho Quản lý */}
+          {facilities.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-[#8890A4]">Cơ sở:</span>
+              <select
+                id="select-facility"
+                value={facilityId}
+                onChange={(e) => setFacilityId(Number(e.target.value))}
+                className="bg-[#1A1F2E] border border-[#2E3652] rounded-lg px-3 py-1.5 text-xs text-[#E8EAF0] focus:outline-none focus:border-[#4F7FFA] cursor-pointer"
+              >
+                {facilities.map((fac) => (
+                  <option key={fac.id} value={fac.id}>
+                    {fac.code} - {fac.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <button
+            id="btn-add-unit-type"
+            onClick={() => {
+              setEditingType(null);
+              setUtModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-4 py-2 bg-[#4F7FFA] text-white text-sm font-medium rounded-lg hover:bg-[#3D6AE8] transition-colors shrink-0"
+          >
+            <span>+</span> Thêm loại ô kho
+          </button>
+        </div>
       </div>
 
       {error && (
-        <div className="mx-6 mt-3 text-sm text-red-400 bg-red-900/30 border border-red-700 rounded px-3 py-2">
-          {error}{' '}
-          <button onClick={() => setError(null)} className="ml-2 underline">
-            Dong
+        <div className="mx-6 mt-3 text-sm text-red-400 bg-red-900/30 border border-red-700 rounded px-3 py-2 flex items-center justify-between">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="ml-2 underline text-xs">
+            Đóng
           </button>
         </div>
       )}
@@ -220,7 +286,7 @@ export const UnitCatalogPage: React.FC = () => {
         <aside className="w-72 shrink-0 border-r border-[#2E3652] flex flex-col overflow-hidden">
           <div className="px-4 py-3 border-b border-[#2E3652] flex items-center justify-between">
             <span className="text-xs font-medium text-[#8890A4] uppercase tracking-wide">
-              Loai o kho
+              Loại ô kho
             </span>
             <label className="flex items-center gap-1.5 text-xs text-[#8890A4] cursor-pointer select-none">
               <input
@@ -229,13 +295,13 @@ export const UnitCatalogPage: React.FC = () => {
                 onChange={(e) => setShowInactive(e.target.checked)}
                 className="accent-[#4F7FFA]"
               />
-              Hien vo hieu
+              Hiện vô hiệu
             </label>
           </div>
           <div className="flex-1 overflow-y-auto p-3 space-y-2">
             {visibleTypes.length === 0 ? (
               <p className="text-xs text-[#8890A4] text-center py-8">
-                Chua co loai o kho nao.
+                Chưa có loại ô kho nào cho cơ sở này.
               </p>
             ) : (
               visibleTypes.map((type) => (
@@ -262,7 +328,7 @@ export const UnitCatalogPage: React.FC = () => {
         <main className="flex-1 flex flex-col overflow-hidden">
           {!selectedType ? (
             <div className="flex items-center justify-center h-full text-[#8890A4] text-sm">
-              Chon mot loai o kho o ben trai de xem danh sach o kho vat ly.
+              Chọn một loại ô kho ở bên trái để xem danh sách ô kho vật lý.
             </div>
           ) : (
             <>
@@ -273,9 +339,9 @@ export const UnitCatalogPage: React.FC = () => {
                   <span className="ml-2 text-xs text-[#8890A4]">
                     {selectedType.widthM}m &times; {selectedType.depthM}m &times;{' '}
                     {selectedType.heightM}m &nbsp;&middot;&nbsp;
-                    <span className="font-mono">
+                    <span className="font-mono text-emerald-400 font-semibold">
                       {new Intl.NumberFormat('vi-VN').format(selectedType.monthlyPrice)}{' '}
-                      VND/thang
+                      VND/tháng
                     </span>
                   </span>
                 </div>
@@ -285,12 +351,12 @@ export const UnitCatalogPage: React.FC = () => {
                   disabled={!selectedType.isActive}
                   title={
                     !selectedType.isActive
-                      ? 'Loai o kho dang vo hieu - khong the them o kho moi'
+                      ? 'Loại ô kho đang vô hiệu - không thể thêm ô kho mới'
                       : undefined
                   }
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-[#222840] border border-[#2E3652] text-sm rounded-lg hover:border-[#4F7FFA] hover:bg-[#1A2A4A] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
-                  <span>+</span> Them o kho
+                  <span>+</span> Thêm ô kho
                 </button>
               </div>
 
@@ -320,13 +386,13 @@ export const UnitCatalogPage: React.FC = () => {
               <div className="flex-1 overflow-y-auto">
                 {filteredUnits.length === 0 ? (
                   <div className="flex items-center justify-center h-48 text-[#8890A4] text-sm">
-                    Khong co o kho nao khop bo loc.
+                    Không có ô kho nào khớp bộ lọc.
                   </div>
                 ) : (
                   <table className="w-full text-sm border-collapse">
                     <thead className="sticky top-0 bg-[#0F1117] z-10">
                       <tr className="border-b border-[#2E3652]">
-                        {['Ma o', 'Tang', 'Vi tri', 'Trang thai', 'Thao tac'].map((h) => (
+                        {['Mã ô kho', 'Tầng', 'Khu vực / Vị trí', 'Trạng thái', 'Thao tác'].map((h) => (
                           <th
                             key={h}
                             className="text-left px-5 py-2.5 text-xs text-[#8890A4] font-medium"
@@ -346,7 +412,7 @@ export const UnitCatalogPage: React.FC = () => {
                             {unit.code}
                           </td>
                           <td className="px-5 py-3 text-[#8890A4] text-sm">
-                            Tang {unit.floor}
+                            Tầng {unit.floor}
                           </td>
                           <td className="px-5 py-3 font-mono text-[#8890A4] text-sm">
                             {unit.position}
@@ -360,9 +426,9 @@ export const UnitCatalogPage: React.FC = () => {
                                 onClick={() =>
                                   handleChangeUnitStatus(unit, 'MAINTENANCE')
                                 }
-                                className="text-xs text-orange-400 hover:text-orange-300 hover:underline"
+                                className="text-xs text-orange-400 hover:text-orange-300 hover:underline cursor-pointer"
                               >
-                                Chuyen bao tri
+                                Chuyển bảo trì
                               </button>
                             )}
                             {unit.status === 'MAINTENANCE' && (
@@ -370,9 +436,9 @@ export const UnitCatalogPage: React.FC = () => {
                                 onClick={() =>
                                   handleChangeUnitStatus(unit, 'AVAILABLE')
                                 }
-                                className="text-xs text-green-400 hover:text-green-300 hover:underline"
+                                className="text-xs text-green-400 hover:text-green-300 hover:underline cursor-pointer"
                               >
-                                Hoan thanh bao tri
+                                Hoàn thành bảo trì
                               </button>
                             )}
                           </td>
@@ -385,7 +451,7 @@ export const UnitCatalogPage: React.FC = () => {
 
               {/* Table footer */}
               <div className="px-5 py-2.5 border-t border-[#2E3652] text-xs text-[#8890A4]">
-                {filteredUnits.length} / {storageUnits.length} o kho
+                {filteredUnits.length} / {storageUnits.length} ô kho
               </div>
             </>
           )}

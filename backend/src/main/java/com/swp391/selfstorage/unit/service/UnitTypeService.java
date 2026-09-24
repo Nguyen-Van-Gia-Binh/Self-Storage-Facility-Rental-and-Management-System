@@ -12,4 +12,5 @@ public interface UnitTypeService {
     UnitTypeResponse createUnitType(Long facilityId, CreateUnitTypeRequest request);
     UnitTypeResponse updateUnitType(Long facilityId, Long unitTypeId, UpdateUnitTypeRequest request);
     void deactivateUnitType(Long facilityId, Long unitTypeId);
+    UnitTypeResponse updateUnitTypeStatus(Long facilityId, Long unitTypeId, boolean isActive);
 }
