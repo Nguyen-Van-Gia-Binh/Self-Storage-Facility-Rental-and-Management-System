@@ -1,12 +1,10 @@
 import type { Facility, UnitType, StorageUnit, RentedContract, SupportTicket, CreateSupportTicketPayload } from '../types';
-import { mockFacilities, mockUnitTypes, mockStorageUnits, mockRentedContracts, mockSupportTickets } from '../mockData';
+import { mockFacilities, mockUnitTypes, mockStorageUnits, mockRentedContracts } from '../mockData';
 import { calculateBookingTotal } from '../utils/pricing';
 import type { PricingCalculationResult } from '../utils/pricing';
 import { apiClient, type ApiResponse, type PageResponse, isMockEnabled } from '@/api/client';
 import { calculateBookingPrice, createReservation as apiCreateReservation } from '@/api/reservation';
 import { getCustomerContracts } from '@/api/customerRentals';
-
-let cachedTickets: SupportTicket[] = [...mockSupportTickets];
 
 export interface CreateReservationPayload {
   facilityId: number;
