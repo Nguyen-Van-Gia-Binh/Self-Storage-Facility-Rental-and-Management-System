@@ -39,6 +39,8 @@ export interface VietQRPaymentModalProps {
   customerPhone: string;
   customerIdCard: string;
   startDate: string;
+  reservationId?: number;
+  contractId?: number;
 }
 
 export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
@@ -58,6 +60,8 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
   customerPhone,
   customerIdCard,
   startDate,
+  reservationId,
+  contractId,
 }) => {
   const [selectedMethod, setSelectedMethod] = useState<'VIETQR' | 'CARD'>('VIETQR');
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -107,7 +111,12 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
     }
 
     let isSubscribed = true;
+    const refType = contractId ? 'CONTRACT_RENEWAL' : 'RESERVATION';
+    const refId = contractId || reservationId || 1;
+
     createCheckout({
+      referenceType: refType,
+      referenceId: refId,
       amount: totalAmount,
       description: transferMemo,
     })

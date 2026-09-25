@@ -1,4 +1,4 @@
-import { apiClient, isMockEnabled } from './client';
+import { apiClient } from './client';
 import type {
   CreatePaymentRequest,
   PaymentTransaction,
@@ -10,10 +10,13 @@ const STORAGE_PAYMENTS_KEY = 'smartstorage_payments';
 const STORAGE_USER_PASSES_KEY = 'smartstorage_move_in_passes';
 
 export interface CheckoutPayload {
+  referenceType?: 'RESERVATION' | 'CONTRACT_RENEWAL' | 'SETTLEMENT';
+  referenceId?: number;
   reservationId?: number;
   contractRenewalId?: number;
-  amount: number;
-  description: string;
+  renewalMonths?: number;
+  amount?: number;
+  description?: string;
   cancelUrl?: string;
   returnUrl?: string;
 }
@@ -92,63 +95,40 @@ export function storeMoveInPass(pass: MoveInPassData): void {
   }
 }
 
-function mockCreateCheckout(payload: CheckoutPayload): CheckoutResult {
-  const orderCode = Number(String(Date.now()).slice(-6));
-  const qrData = `vietqr://${payload.amount}/SMARTSTORAGE-${orderCode}`;
-  return {
-    checkoutUrl: `https://pay.payos.vn/web/${orderCode}`,
-    qrCode: `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrData)}`,
-    orderCode,
-    paymentId: orderCode,
-    amount: payload.amount,
-    description: payload.description,
-    accountName: 'CONG TY CP SMARTSTORAGE VIETNAM',
-    accountNumber: '0888567999',
-    bin: '970422',
-    status: 'PENDING',
-  };
-}
-
-function mockPollPaymentStatus(orderCode: number): PaymentStatusResult {
-  return {
-    id: orderCode,
-    orderCode,
-    amount: 1200000,
-    status: 'PAID',
-    paidAt: new Date().toISOString(),
-    referenceType: 'RESERVATION',
-    referenceId: orderCode,
-    transactionRef: `REF-${orderCode}`,
-  };
-}
-
 /**
  * Khởi tạo đơn thanh toán PayOS VietQR tự động (POST /payments/checkout) (SC-03)
+ * Sử dụng 100% kết nối thật tới cổng PayOS qua Backend API
  */
 export async function createCheckout(payload: CheckoutPayload): Promise<CheckoutResult> {
-  if (isMockEnabled('WS3')) {
-    return mockCreateCheckout(payload);
-  }
+  const referenceType =
+    payload.referenceType ||
+    (payload.contractRenewalId ? 'CONTRACT_RENEWAL' : 'RESERVATION');
+  const referenceId =
+    payload.referenceId ||
+    payload.contractRenewalId ||
+    payload.reservationId ||
+    1;
 
-  try {
-    return await apiClient<CheckoutResult>('/payments/checkout', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
-  } catch (err) {
-    console.warn('Lỗi gọi API /payments/checkout, fallback sang mock:', err);
-    return mockCreateCheckout(payload);
-  }
+  const requestBody = {
+    referenceType,
+    referenceId,
+    renewalMonths: payload.renewalMonths,
+    description: payload.description,
+    cancelUrl: payload.cancelUrl,
+    returnUrl: payload.returnUrl,
+  };
+
+  return await apiClient<CheckoutResult>('/payments/checkout', {
+    method: 'POST',
+    body: JSON.stringify(requestBody),
+  });
 }
 
 /**
  * Kiểm tra trạng thái giao dịch theo orderCode phục vụ Polling tự động (GET /payments/order/{orderCode}/status) (SC-03)
+ * Truy vấn trạng thái thực tế từ Backend và PayOS Webhook
  */
 export async function pollPaymentStatus(orderCode: number): Promise<PaymentStatusResult> {
-  if (isMockEnabled('WS3')) {
-    return mockPollPaymentStatus(orderCode);
-  }
-
   return await apiClient<PaymentStatusResult>(`/payments/order/${orderCode}/status`);
 }
 
@@ -156,48 +136,10 @@ export async function pollPaymentStatus(orderCode: number): Promise<PaymentStatu
  * Tạo yêu cầu thanh toán thủ công (POST /api/v1/payments) (SC-03)
  */
 export async function createPayment(request: CreatePaymentRequest): Promise<PaymentTransaction> {
-  if (isMockEnabled('WS3')) {
-    const transactionId = `TXN-${Date.now()}`;
-    const txn: PaymentTransaction = {
-      id: transactionId,
-      referenceType: request.referenceType,
-      referenceId: request.referenceId,
-      amount: request.amount,
-      rentalFee: Math.max(0, request.amount - (request.amount > 2000000 ? request.amount / 2 : 1200000)),
-      depositAmount: request.amount > 2000000 ? request.amount / 2 : 1200000,
-      method: request.method,
-      status: 'PENDING',
-      transactionRef: request.transactionRef || `REF${Math.floor(100000 + Math.random() * 900000)}`,
-      unitNumber: typeof request.referenceId === 'string' ? request.referenceId : `U-${request.referenceId}`,
-      facilityName: 'SmartStorage Cơ sở mẫu',
-    };
-    storePayment(txn);
-    return txn;
-  }
-
-  try {
-    return await apiClient<PaymentTransaction>('/payments', {
-      method: 'POST',
-      body: JSON.stringify(request),
-    });
-  } catch (err) {
-    console.warn('Lỗi gọi API /payments, chuyển sang mock fallback:', err);
-    const txn: PaymentTransaction = {
-      id: `TXN-${Date.now()}`,
-      referenceType: request.referenceType,
-      referenceId: request.referenceId,
-      amount: request.amount,
-      rentalFee: Math.round(request.amount * 0.75),
-      depositAmount: Math.round(request.amount * 0.25),
-      method: request.method,
-      status: 'PENDING',
-      transactionRef: request.transactionRef || `REF${Date.now()}`,
-      unitNumber: String(request.referenceId),
-      facilityName: 'SmartStorage Cơ sở mẫu',
-    };
-    storePayment(txn);
-    return txn;
-  }
+  return await apiClient<PaymentTransaction>('/payments', {
+    method: 'POST',
+    body: JSON.stringify(request),
+  });
 }
 
 /**

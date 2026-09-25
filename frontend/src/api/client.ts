@@ -52,7 +52,9 @@ export async function apiClient<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const token = localStorage.getItem('access_token');
+  const token =
+    localStorage.getItem('selfstorage_access_token') ||
+    localStorage.getItem('access_token');
 
   const headers: HeadersInit = {
     'Content-Type': 'application/json',

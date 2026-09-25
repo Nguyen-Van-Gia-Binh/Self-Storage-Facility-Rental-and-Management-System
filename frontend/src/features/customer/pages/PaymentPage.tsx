@@ -45,6 +45,8 @@ export const PaymentPage: React.FC = () => {
   const customerPhone = searchParams.get('customerPhone') || '0908 123 456';
   const customerIdCard = searchParams.get('cccd') || '079199001234';
   const startDate = searchParams.get('startDate') || new Date().toISOString().split('T')[0];
+  const contractIdParam = searchParams.get('contractId');
+  const reservationIdParam = searchParams.get('reservationId');
 
   // Tính toán phí
   const rentalFee = rentalMonths * monthlyPrice;
@@ -95,7 +97,16 @@ export const PaymentPage: React.FC = () => {
   // Khởi tạo link PayOS checkout
   useEffect(() => {
     let isSubscribed = true;
+    const refType = contractIdParam ? 'CONTRACT_RENEWAL' : 'RESERVATION';
+    const refId = contractIdParam
+      ? Number(contractIdParam)
+      : reservationIdParam
+      ? Number(reservationIdParam)
+      : 1;
+
     createCheckout({
+      referenceType: refType,
+      referenceId: refId,
       amount: totalAmount,
       description: transferMemo,
     })
@@ -112,7 +123,7 @@ export const PaymentPage: React.FC = () => {
     return () => {
       isSubscribed = false;
     };
-  }, [totalAmount, transferMemo]);
+  }, [totalAmount, transferMemo, contractIdParam, reservationIdParam]);
 
   // Auto-polling trạng thái giao dịch mỗi 3s (SC-03)
   useEffect(() => {
