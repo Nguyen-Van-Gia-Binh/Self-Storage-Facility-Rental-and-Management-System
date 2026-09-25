@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/facilities/{facilityId}/storage-units")
+@RequestMapping("/facilities/{facilityId}/storage-units")
 public class StorageUnitController {
 
     private final StorageUnitService storageUnitService;

@@ -49,7 +49,7 @@ class UnitTypeAvailabilityControllerTest {
         when(availabilityService.checkAvailability(eq(1L), eq(7L), eq(LocalDate.of(2026, 10, 1)), eq(3)))
                 .thenReturn(response);
 
-        mockMvc.perform(get("/api/v1/facilities/1/unit-types/7/availability")
+        mockMvc.perform(get("/facilities/1/unit-types/7/availability")
                         .param("startDate", "2026-10-01")
                         .param("rentalMonths", "3"))
                 .andExpect(status().isOk())

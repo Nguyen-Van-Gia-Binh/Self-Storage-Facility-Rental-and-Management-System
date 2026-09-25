@@ -19,7 +19,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import java.time.LocalDate;
 
 @RestController
-@RequestMapping("/api/v1/facilities/{facilityId}/unit-types")
+@RequestMapping("/facilities/{facilityId}/unit-types")
 public class UnitTypeController {
 
     private final UnitTypeService unitTypeService;

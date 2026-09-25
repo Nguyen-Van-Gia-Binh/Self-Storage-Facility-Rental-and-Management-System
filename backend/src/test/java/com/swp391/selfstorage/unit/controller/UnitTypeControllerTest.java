@@ -46,14 +46,14 @@ class UnitTypeControllerTest {
         when(unitTypeService.getUnitTypesByFacility(eq(1L), any(), any()))
                 .thenReturn(new PageResponse<>(List.of(item), 0, 20, 1, 1));
 
-        mockMvc.perform(get("/api/v1/facilities/1/unit-types"))
+        mockMvc.perform(get("/facilities/1/unit-types"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].name").value("Loại S — 3m²"))
                 .andExpect(jsonPath("$.totalElements").value(1));
     }
 
     @Test
-    @DisplayName("POST /api/v1/facilities/{facilityId}/unit-types tạo mới trả về 201")
+    @DisplayName("POST /facilities/{facilityId}/unit-types tạo mới trả về 201")
     void testCreateUnitType() throws Exception {
         CreateUnitTypeRequest req = CreateUnitTypeRequest.builder()
                 .code("UT-M")
@@ -72,7 +72,7 @@ class UnitTypeControllerTest {
 
         when(unitTypeService.createUnitType(eq(1L), any(CreateUnitTypeRequest.class))).thenReturn(res);
 
-        mockMvc.perform(post("/api/v1/facilities/1/unit-types")
+        mockMvc.perform(post("/facilities/1/unit-types")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isCreated())

@@ -23,10 +23,6 @@ import {
 } from '@/api/unit';
 import { fetchFacilities } from '@/api/facility';
 import type { FacilityListItem } from '@/types';
-import {
-  mockUnitTypes,
-  mockStorageUnits,
-} from '@/mock/unitMockData';
 
 const STATUS_FILTERS: { label: string; value: UnitStatus | 'ALL' }[] = [
   { label: 'Tất cả', value: 'ALL' },
@@ -74,10 +70,11 @@ export const UnitCatalogPage: React.FC = () => {
         setUnitTypes([]);
         setSelectedTypeId(null);
       }
-    } catch {
-      console.warn('Lỗi khi tải danh sách loại ô kho, sử dụng mock dự phòng');
-      setUnitTypes(mockUnitTypes);
-      setSelectedTypeId((prev) => prev ?? mockUnitTypes[0]?.id ?? null);
+    } catch (err) {
+      console.error('Lỗi khi tải danh sách loại ô kho:', err);
+      setUnitTypes([]);
+      setSelectedTypeId(null);
+      setError('Không thể tải danh sách loại ô kho từ máy chủ.');
     }
   }, [facilityId]);
 
@@ -96,11 +93,9 @@ export const UnitCatalogPage: React.FC = () => {
       } else {
         setStorageUnits([]);
       }
-    } catch {
-      console.warn('Lỗi khi tải danh sách ô kho, sử dụng mock dự phòng');
-      setStorageUnits(
-        mockStorageUnits.filter((u) => u.unitTypeId === selectedTypeId)
-      );
+    } catch (err) {
+      console.error('Lỗi khi tải danh sách ô kho:', err);
+      setStorageUnits([]);
     }
   }, [facilityId, selectedTypeId]);
 
@@ -119,11 +114,12 @@ export const UnitCatalogPage: React.FC = () => {
           setUnitTypes([]);
           setSelectedTypeId(null);
         }
-      } catch {
+      } catch (err) {
         if (!active) return;
-        console.warn('Lỗi khi tải danh sách loại ô kho, sử dụng mock dự phòng');
-        setUnitTypes(mockUnitTypes);
-        setSelectedTypeId((prev) => prev ?? mockUnitTypes[0]?.id ?? null);
+        console.error('Lỗi khi tải danh sách loại ô kho:', err);
+        setUnitTypes([]);
+        setSelectedTypeId(null);
+        setError('Không thể tải danh sách loại ô kho từ máy chủ.');
       } finally {
         if (active) setLoading(false);
       }
@@ -148,12 +144,10 @@ export const UnitCatalogPage: React.FC = () => {
         } else {
           setStorageUnits([]);
         }
-      } catch {
+      } catch (err) {
         if (!active) return;
-        console.warn('Lỗi khi tải danh sách ô kho, sử dụng mock dự phòng');
-        setStorageUnits(
-          mockStorageUnits.filter((u) => u.unitTypeId === selectedTypeId)
-        );
+        console.error('Lỗi khi tải danh sách ô kho:', err);
+        setStorageUnits([]);
       }
     })();
     return () => { active = false; };
