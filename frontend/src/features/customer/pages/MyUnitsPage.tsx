@@ -11,6 +11,7 @@ import {
   Layers,
   Search,
   X,
+  RotateCcw,
 } from 'lucide-react';
 import { RentedUnitCard } from '../components/RentedUnitCard';
 import { CustomerRentalsKpiSummary } from '../components/CustomerRentalsKpiSummary';
@@ -63,6 +64,7 @@ export const MyUnitsPage: React.FC = () => {
           : c
       )
     );
+    loadContracts();
   };
 
   // Lọc theo Tab và Search Query
@@ -106,6 +108,16 @@ export const MyUnitsPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2.5">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadContracts}
+            disabled={loading}
+            className="flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold cursor-pointer"
+          >
+            <RotateCcw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <span>Làm mới</span>
+          </Button>
           <Link to="/customer/units">
             <Button
               variant="primary"
