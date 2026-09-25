@@ -22,7 +22,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { getCustomerContracts, renewContract } from '@/api/customerRentals';
+import { getCustomerContracts, renewContract, getRenewalQuote, type RenewalQuote } from '@/api/customerRentals';
 import { customerApi, type CheckoutResponse } from '../api/customerApi';
 import { formatVND } from '../utils/pricing';
 import { calculateRenewalPricing, calculateExtendedEndDate } from '../utils/renewalPricing';
@@ -47,6 +47,38 @@ export const RenewalPage: React.FC = () => {
   const [isLoadingCheckout, setIsLoadingCheckout] = useState<boolean>(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [isPaidSuccess, setIsPaidSuccess] = useState<boolean>(false);
+  const [renewalQuote, setRenewalQuote] = useState<RenewalQuote | null>(null);
+  const [loadingQuote, setLoadingQuote] = useState<boolean>(false);
+
+  // Tải báo giá gia hạn chính thức từ Backend Policy Service (POST /contracts/{id}/renewals/quote)
+  useEffect(() => {
+    if (!contract) return;
+    let isMounted = true;
+    const fetchQuote = async () => {
+      setLoadingQuote(true);
+      try {
+        const numId = parseInt(contract.id, 10);
+        const rawId = contract.id.replace(/\D/g, '');
+        const refId = !isNaN(numId) && numId > 0 ? numId : (rawId ? parseInt(rawId, 10) : 1);
+        const quote = await getRenewalQuote(refId, renewalMonths);
+        if (isMounted) {
+          setRenewalQuote(quote);
+        }
+      } catch (err) {
+        console.warn('Lỗi lấy báo giá gia hạn từ backend:', err);
+      } finally {
+        if (isMounted) {
+          setLoadingQuote(false);
+        }
+      }
+    };
+
+    fetchQuote();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [contract, renewalMonths]);
 
   // Khởi tạo link thanh toán PayOS VietQR khi chuyển sang Bước 3
   useEffect(() => {
@@ -90,9 +122,10 @@ export const RenewalPage: React.FC = () => {
 
   // Tính toán ngày kết thúc mới chính xác
   const newEndDate = useMemo(() => {
+    if (renewalQuote?.newEndDateExclusive) return renewalQuote.newEndDateExclusive;
     if (!contract) return '';
     return calculateExtendedEndDate(contract.endDate, renewalMonths);
-  }, [contract, renewalMonths]);
+  }, [contract, renewalMonths, renewalQuote]);
 
   // Tính toán chi phí tài chính minh bạch theo BR-REN-03, BR-REN-06, BR-REN-07 & BR-DEP-01
   const pricing = useMemo(() => {
@@ -110,6 +143,25 @@ export const RenewalPage: React.FC = () => {
       };
     }
 
+    if (renewalQuote) {
+      const rawRent = renewalQuote.monthlyPrice * renewalQuote.renewalMonths;
+      const netRent = renewalQuote.totalRenewalFee;
+      const overdueFee = renewalQuote.overdueFeeSettled || 0;
+      const discountAmount = Math.max(0, rawRent - netRent);
+      const discountRate = rawRent > 0 ? Math.round((discountAmount / rawRent) * 100) : 0;
+      return {
+        monthlyRent: renewalQuote.monthlyPrice,
+        rawRent,
+        discountRate,
+        discountAmount,
+        netRent,
+        overdueFee,
+        extraDeposit: 0, // BR-DEP-01: Cọc được bảo lưu từ hợp đồng gốc
+        finalTotal: netRent + overdueFee,
+        renewalMonths: renewalQuote.renewalMonths,
+      };
+    }
+
     return calculateRenewalPricing({
       monthlyRent: contract.monthlyRent,
       renewalMonths,
@@ -117,7 +169,7 @@ export const RenewalPage: React.FC = () => {
       overdueDays: contract.overdueDays,
       overdueFee: contract.overdueFee,
     });
-  }, [contract, renewalMonths]);
+  }, [contract, renewalMonths, renewalQuote]);
 
   // Xác nhận chuyển khoản thành công và kích hoạt gia hạn (SC-03)
   const handleConfirmPayment = useCallback(async () => {
@@ -475,13 +527,20 @@ export const RenewalPage: React.FC = () => {
           {/* Quick Summary Card Right (1/3) */}
           <div className="lg:col-span-1">
             <Card className="p-5 bg-white border border-slate-200/90 rounded-xl space-y-4 sticky top-24">
-              <div className="border-b border-slate-100 pb-3">
-                <h3 className="text-base font-bold text-[#0a1614]">
-                  Tóm Tắt Gia Hạn
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Kỳ hạn {renewalMonths} tháng cho ngăn {contract.unitNumber}
-                </p>
+              <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-bold text-[#0a1614]">
+                    Tóm Tắt Gia Hạn
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Kỳ hạn {renewalMonths} tháng cho ngăn {contract.unitNumber}
+                  </p>
+                </div>
+                {loadingQuote && (
+                  <span className="text-[11px] text-brand-600 font-medium animate-pulse">
+                    Đang tính giá...
+                  </span>
+                )}
               </div>
 
               <div className="space-y-2.5 text-xs sm:text-sm">
