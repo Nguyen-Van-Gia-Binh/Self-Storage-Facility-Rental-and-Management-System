@@ -3,6 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Building2, User, Phone, ShieldCheck, CheckCircle } from 'lucide-react';
 import type { ReturnContractDetail, ReturnInspectionRequest } from '@/types';
 import { getReturnContracts, getReturnContractById, submitReturnInspection } from '@/api/contract';
+import { useCurrentUser } from '@/utils/useCurrentUser';
 import { ReturnInspectionForm } from '../components/ReturnInspectionForm';
 import { ReturnSuccessModal } from '../components/ReturnSuccessModal';
 
@@ -10,6 +11,8 @@ export const StaffReturnInspectionPage: React.FC = () => {
   const { contractId } = useParams<{ contractId?: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const user = useCurrentUser();
+  const staffId = user?.id as number | undefined;
 
   const [contracts, setContracts] = useState<ReturnContractDetail[]>([]);
   const [selectedContract, setSelectedContract] = useState<ReturnContractDetail | null>(null);
@@ -56,7 +59,7 @@ export const StaffReturnInspectionPage: React.FC = () => {
     if (!selectedContract) return;
     setSubmitting(true);
     try {
-      const res = await submitReturnInspection(selectedContract.id, data);
+      const res = await submitReturnInspection(selectedContract.id, data, staffId);
       setSuccessData({
         isOpen: true,
         contractCode: selectedContract.code,

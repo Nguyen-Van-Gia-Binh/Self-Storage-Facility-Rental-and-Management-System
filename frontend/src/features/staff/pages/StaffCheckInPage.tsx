@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import type { CheckInContract, CheckInSubmitRequest, HandoverRejectRequest } from '../../../types';
 import { getPendingContracts, checkInContract, rejectHandoverContract } from '../../../api/contract';
+import { useCurrentUser } from '@/utils/useCurrentUser';
 import { CheckInQueueList } from '../components/CheckInQueueList';
 import { CustomerVerificationCard } from '../components/CustomerVerificationCard';
 import { HandoverInspectionForm } from '../components/HandoverInspectionForm';
@@ -16,6 +17,9 @@ import { AccessCodePinModal } from '../components/AccessCodePinModal';
 import { HandoverRejectionModal } from '../components/HandoverRejectionModal';
 
 export const StaffCheckInPage: React.FC = () => {
+  const user = useCurrentUser();
+  const staffId = user?.id as number | undefined;
+
   const [contracts, setContracts] = useState<CheckInContract[]>([]);
   const [selectedContract, setSelectedContract] = useState<CheckInContract | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -67,7 +71,7 @@ export const StaffCheckInPage: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      const res = await checkInContract(selectedContract.id, request);
+      const res = await checkInContract(selectedContract.id, request, staffId);
       setCurrentPin(res.accessCode);
       setIsPinModalOpen(true);
       showToast('success', `Bàn giao thành công ô kho ${selectedContract.storageUnitCode}. Hợp đồng đã kích hoạt ACTIVE.`);
@@ -107,7 +111,7 @@ export const StaffCheckInPage: React.FC = () => {
         rejectionReason: reason,
         reportedDefects,
       };
-      await rejectHandoverContract(selectedContract.id, req);
+      await rejectHandoverContract(selectedContract.id, req, staffId);
       setIsRejectionModalOpen(false);
       showToast('error', `Đã khóa ô kho ${selectedContract.storageUnitCode} sang MAINTENANCE và hủy lượt bàn giao.`);
 

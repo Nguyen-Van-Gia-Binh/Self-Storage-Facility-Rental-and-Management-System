@@ -1,9 +1,7 @@
-import { apiClient } from './client';
+import { apiClient, isMockEnabled } from './client';
 import type { ApiResponse } from './client';
 import type { StaffDailyTaskReport } from '../types';
 import mockDailyTasksData from '../mock/mock-daily-tasks.json';
-
-const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false';
 
 const localDailyTasks: StaffDailyTaskReport = JSON.parse(JSON.stringify(mockDailyTasksData));
 
@@ -12,33 +10,20 @@ const localDailyTasks: StaffDailyTaskReport = JSON.parse(JSON.stringify(mockDail
  * Endpoint: GET /api/v1/reports/staff/{staffId}/daily-tasks?date={date}
  */
 export async function getStaffDailyTasks(
-  staffId: number = 8,
+  staffId: number,
   date?: string
 ): Promise<StaffDailyTaskReport> {
   const queryDate = date || new Date().toISOString().split('T')[0];
 
-  if (USE_MOCK) {
-    return {
-      ...localDailyTasks,
-      date: queryDate,
-    };
+  if (isMockEnabled('WS2')) {
+    return { ...localDailyTasks, date: queryDate };
   }
 
-  try {
-    const res = await apiClient<ApiResponse<StaffDailyTaskReport> | StaffDailyTaskReport>(
-      `/reports/staff/${staffId}/daily-tasks?date=${queryDate}`
-    );
-    if ('data' in res && res.data) {
-      return res.data;
-    }
-    return res as StaffDailyTaskReport;
-  } catch (error) {
-    console.warn('Lỗi gọi API /reports/staff/.../daily-tasks, fallback mock:', error);
-    return {
-      ...localDailyTasks,
-      date: queryDate,
-    };
-  }
+  // Không fallback về mock — để lỗi propagate để UI xử lý
+  const res = await apiClient<ApiResponse<StaffDailyTaskReport>>(
+    `/reports/staff/${staffId}/daily-tasks?date=${queryDate}`
+  );
+  return res.data;
 }
 
 /**
