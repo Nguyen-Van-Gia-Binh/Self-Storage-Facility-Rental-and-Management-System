@@ -29,7 +29,7 @@ Kích hoạt toàn bộ luồng xử lý ticket sự cố khách hàng, phân c�
 git checkout main
 git fetch origin main
 git pull origin main
-git checkout -b feature/ws4-connect-admin-support-api
+git checkout -b feature/Tx-ws4-admin-support-api
 
 # 2. Bật cờ kết nối Backend thật cho WS4 trong frontend/.env:
 # VITE_USE_MOCK=false
@@ -180,7 +180,7 @@ YÊU CẦU:
    - Tắt cờ mock trong auditApi.ts và user.ts: Đảm bảo các trang Quản trị Admin tải dữ liệu thật từ GET /audit/activities, GET /audit/logins và GET /users.
 3. Ranh giới tuyệt đối: CHỈ chỉnh sửa các file thuộc WS4 (SupportPage.tsx, staffAssignmentApi.ts, facilityReportApi.ts, auditApi.ts, user.ts, các trang admin/manager tương ứng và backend com.swp391.selfstorage.auth/user/support/report). Tuyệt đối KHÔNG sửa code của WS1, WS2, WS3 hoặc client.ts.
 4. Bật cờ VITE_MOCK_WS4=false trong frontend/.env để kiểm thử thực tế.
-5. Tạo nhánh Git chuẩn: feature/ws4-connect-admin-support-api rẽ từ main mới nhất.
+5. Tạo nhánh Git chuẩn: feature/Tx-ws4-admin-support-api rẽ từ main mới nhất.
 6. Tuân thủ TDD & kiểm thử: mvn clean test pass 100%, npm run build không lỗi.
 
 Hãy trình bày Plan chi tiết với các checkbox [ ] để tôi duyệt trước khi bắt đầu code!
@@ -190,7 +190,7 @@ Hãy trình bày Plan chi tiết với các checkbox [ ] để tôi duyệt trư
 
 ## 6. Tiêu Chí Nghiệm Thu (Definition of Done - DoD)
 
-- [ ] Nhánh Git `feature/ws4-connect-admin-support-api` rẽ sạch sẽ từ `main` mới nhất.
+- [ ] Nhánh Git `feature/Tx-ws4-admin-support-api` rẽ sạch sẽ từ `main` mới nhất.
 - [ ] Bật `VITE_USE_MOCK=false` và `VITE_MOCK_WS4=false` trong `frontend/.env`.
 - [ ] Vào trang Hỗ trợ (Customer): Gửi thử một ticket sự cố mới -> lưu thành công vào database và hiển thị trong danh sách ticket.
 - [ ] Đăng nhập tài khoản FM: Mở trang Phân công nhân viên, hiển thị danh sách Staff kèm số lượng ticket đang gán (Workload) tải từ API Backend.

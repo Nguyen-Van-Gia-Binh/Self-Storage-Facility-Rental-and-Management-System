@@ -178,7 +178,7 @@ export function isMockEnabled(ws?: WorkstreamKey): boolean {
 
 ### 4.1. Workstream 1: Khách hàng & Đặt chỗ (Nguyễn Phạm Xuân Nhi)
 
-* **Nhánh làm việc:** `feature/ws1-connect-customer-booking-api`
+* **Nhánh làm việc:** `feature/Tx-ws1-customer-booking-api`
 * **Mục tiêu:** Nối toàn bộ hành trình khách hàng từ tra cứu cơ sở, đặt chỗ, thanh toán, đến quản lý ô kho và gia hạn.
 
 #### Danh mục công việc chi tiết:
@@ -204,7 +204,7 @@ export function isMockEnabled(ws?: WorkstreamKey): boolean {
 
 ### 4.2. Workstream 2: Cơ sở, Kho & Vận hành (Nguyễn Văn Gia Bình)
 
-* **Nhánh làm việc:** `feature/ws2-connect-staff-handover-api`
+* **Nhánh làm việc:** `feature/Tx-ws2-staff-handover-api`
 * **Mục tiêu:** Nối hoàn chỉnh Staff Desk cho nhân viên cơ sở thực hiện đón khách check-in, nghiệm thu trả kho, và xem danh sách công việc.
 
 #### Danh mục công việc chi tiết:
@@ -234,7 +234,7 @@ export function isMockEnabled(ws?: WorkstreamKey): boolean {
 
 ### 4.3. Workstream 3: Tài chính & Tự động hóa (Huỳnh Nhật)
 
-* **Nhánh làm việc:** `feature/ws3-connect-pricing-payment-api`
+* **Nhánh làm việc:** `feature/Tx-ws3-pricing-payment-api`
 * **Mục tiêu:** Hoàn thiện luồng thanh toán VietQR / PayOS thật và chức năng cấu hình biểu giá cho BOM.
 
 #### Danh mục công việc chi tiết:
@@ -258,7 +258,7 @@ export function isMockEnabled(ws?: WorkstreamKey): boolean {
 
 ### 4.4. Workstream 4: Quản trị, Hỗ trợ & Điều phối (Lê Thanh Tùng)
 
-* **Nhánh làm việc:** `feature/ws4-connect-admin-support-api`
+* **Nhánh làm việc:** `feature/Tx-ws4-admin-support-api`
 * **Mục tiêu:** Kích hoạt hệ thống gửi/xử lý ticket sự cố, phân công nhân viên và dashboard quản trị cơ sở.
 
 #### Danh mục công việc chi tiết:

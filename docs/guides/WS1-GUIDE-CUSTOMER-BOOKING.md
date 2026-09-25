@@ -23,7 +23,7 @@ Tuân thủ quy trình 5 bước tại `CONTRIBUTING.md`. Tuyệt đối không 
 git checkout main
 git fetch origin main
 git pull origin main
-git checkout -b feature/ws1-connect-customer-booking-api
+git checkout -b feature/Tx-ws1-customer-booking-api
 
 # 2. Bật cờ kết nối Backend thật cho WS1 trong frontend/.env:
 # VITE_USE_MOCK=false
@@ -235,7 +235,7 @@ YÊU CẦU:
    - Báo trước trả kho: POST /contracts/{id}/return-notices.
 3. Ranh giới tuyệt đối: CHỈ chỉnh sửa các file thuộc WS1 (frontend/src/api/customerRentals.ts, reservation.ts, BookingPage.tsx, MyRentalsPage.tsx, v.v.). Tuyệt đối KHÔNG sửa chéo mã nguồn của WS2, WS3, WS4 hoặc client.ts.
 4. Áp dụng quy chuẩn bóc tách dữ liệu: Tất cả API Backend trả về ApiResponse<T> ({ status, message, data }), đối với phân trang thì mảng nằm trong data.content.
-5. Tạo nhánh Git chuẩn: feature/ws1-connect-customer-booking-api rẽ từ main mới nhất.
+5. Tạo nhánh Git chuẩn: feature/Tx-ws1-customer-booking-api rẽ từ main mới nhất.
 6. Tuân thủ TDD & kiểm thử: Chạy npm run build không có lỗi TypeScript lint nào.
 
 Hãy trình bày Plan chi tiết với các checkbox [ ] để tôi duyệt trước khi bạn bắt đầu viết code!
@@ -245,7 +245,7 @@ Hãy trình bày Plan chi tiết với các checkbox [ ] để tôi duyệt trư
 
 ## 6. Tiêu Chí Nghiệm Thu (Definition of Done - DoD)
 
-- [ ] Nhánh Git `feature/ws1-connect-customer-booking-api` được rẽ trực tiếp từ `main` mới nhất.
+- [ ] Nhánh Git `feature/Tx-ws1-customer-booking-api` được rẽ trực tiếp từ `main` mới nhất.
 - [ ] Bật `VITE_USE_MOCK=false` và `VITE_MOCK_WS1=false` trong `frontend/.env`.
 - [ ] Vào trang Tìm kho: Chọn cơ sở, chọn loại kho, hiển thị đúng giá tiền và sức chứa còn trống từ Backend.
 - [ ] Đặt chỗ: Bấm đặt chỗ gửi đúng `POST /reservations`, nhận về mã đơn đặt chỗ thật.

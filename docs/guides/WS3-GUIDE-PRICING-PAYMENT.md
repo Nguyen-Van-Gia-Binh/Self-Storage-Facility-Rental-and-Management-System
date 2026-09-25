@@ -23,7 +23,7 @@ Kích hoạt toàn bộ hạ tầng thanh toán tự động VietQR (PayOS) và 
 git checkout main
 git fetch origin main
 git pull origin main
-git checkout -b feature/ws3-connect-pricing-payment-api
+git checkout -b feature/Tx-ws3-pricing-payment-api
 
 # 2. Bật cờ kết nối Backend thật cho WS3 trong frontend/.env:
 # VITE_USE_MOCK=false
@@ -201,7 +201,7 @@ YÊU CẦU:
    - Sửa BomDashboardPage.tsx: Xóa mảng cơ sở hardcode tại dòng 31, gọi GET /facilities nạp danh sách động.
 3. Ranh giới tuyệt đối: CHỈ chỉnh sửa các file thuộc WS3 (frontend/src/api/payment.ts, pricing.ts, VietQRPaymentModal.tsx, BomDashboardPage.tsx, BomPricingManagementPage.tsx, backend com.swp391.selfstorage.payment/policy). Tuyệt đối KHÔNG sửa code của WS1, WS2, WS4 hoặc client.ts.
 4. Bật cờ VITE_MOCK_WS3=false trong frontend/.env để kiểm thử thực tế.
-5. Tạo nhánh Git chuẩn: feature/ws3-connect-pricing-payment-api rẽ từ main mới nhất.
+5. Tạo nhánh Git chuẩn: feature/Tx-ws3-pricing-payment-api rẽ từ main mới nhất.
 6. Tuân thủ TDD & kiểm thử: mvn clean test pass 100%, npm run build không lỗi.
 
 Hãy trình bày Plan chi tiết với các checkbox [ ] để tôi duyệt trước khi bắt đầu code!
@@ -211,7 +211,7 @@ Hãy trình bày Plan chi tiết với các checkbox [ ] để tôi duyệt trư
 
 ## 6. Tiêu Chí Nghiệm Thu (Definition of Done - DoD)
 
-- [ ] Nhánh Git `feature/ws3-connect-pricing-payment-api` rẽ trực tiếp từ `main` mới nhất.
+- [ ] Nhánh Git `feature/Tx-ws3-pricing-payment-api` rẽ trực tiếp từ `main` mới nhất.
 - [ ] Bật `VITE_USE_MOCK=false` và `VITE_MOCK_WS3=false` trong `frontend/.env`.
 - [ ] Vào trang Quản lý giá BOM: Đổi giá tháng của một loại ô kho, bấm lưu -> gửi đúng `PUT /facilities/{facilityId}/prices/{unitTypeId}`, cập nhật thành công trong CSDL.
 - [ ] Mở modal thanh toán VietQR: Nhận được mã QR và `orderCode` thật từ PayOS.

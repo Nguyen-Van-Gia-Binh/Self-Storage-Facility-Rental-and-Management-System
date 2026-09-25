@@ -23,7 +23,7 @@ Kích hoạt 100% tầng vận hành thực tế tại quầy lễ tân (Staff D
 git checkout main
 git fetch origin main
 git pull origin main
-git checkout -b feature/ws2-connect-staff-handover-api
+git checkout -b feature/Tx-ws2-staff-handover-api
 
 # 2. Bật cờ kết nối Backend thật cho WS2 trong frontend/.env:
 # VITE_USE_MOCK=false
@@ -227,7 +227,7 @@ YÊU CẦU:
    - Bỏ toàn bộ hardcode staffId = 8 trong StaffDashboardPage.tsx, lấy ID từ useAuthStore.
 3. Ranh giới tuyệt đối: CHỈ chỉnh sửa các file thuộc WS2 (frontend/src/api/contract.ts, facility.ts, storageUnit.ts, frontend/src/features/staff/*, và backend com.swp391.selfstorage.contract/facility/unit). Tuyệt đối KHÔNG sửa code của WS1, WS3, WS4 hoặc client.ts.
 4. Bật cờ VITE_MOCK_WS2=false trong frontend/.env để kiểm thử thực tế.
-5. Tạo nhánh Git chuẩn: feature/ws2-connect-staff-handover-api rẽ từ main mới nhất.
+5. Tạo nhánh Git chuẩn: feature/Tx-ws2-staff-handover-api rẽ từ main mới nhất.
 6. Tuân thủ TDD & kiểm thử: mvn clean test xanh 100%, npm run build không lỗi.
 
 Hãy trình bày Plan chi tiết với các checkbox [ ] để tôi duyệt trước khi bắt đầu code!
@@ -237,7 +237,7 @@ Hãy trình bày Plan chi tiết với các checkbox [ ] để tôi duyệt trư
 
 ## 6. Tiêu Chí Nghiệm Thu (Definition of Done - DoD)
 
-- [ ] Nhánh Git `feature/ws2-connect-staff-handover-api` rẽ sạch sẽ từ `main` mới nhất.
+- [ ] Nhánh Git `feature/Tx-ws2-staff-handover-api` rẽ sạch sẽ từ `main` mới nhất.
 - [ ] Bật `VITE_USE_MOCK=false` và `VITE_MOCK_WS2=false` trong `frontend/.env`.
 - [ ] Mở Staff Desk: Tải danh sách hợp đồng `PENDING_CHECKIN` từ CSDL SQL Server hiển thị đầy đủ trên bảng, không bị crash hoặc trắng trang.
 - [ ] Thực hiện Check-in bàn giao kho: Bấm xác nhận, nhận thông báo cấp mã PIN 6 số thành công, trạng thái hợp đồng đổi sang `ACTIVE`.
