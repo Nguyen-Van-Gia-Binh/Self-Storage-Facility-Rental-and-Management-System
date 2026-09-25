@@ -1,6 +1,6 @@
 // frontend/src/features/manager/api/facilityReportApi.ts
 
-import { apiClient } from '@/api/client';
+import { apiClient, isMockEnabled } from '@/api/client';
 import type { ApiResponse } from '@/api/client';
 import type {
   FacilityOverviewReport,
@@ -16,7 +16,6 @@ import {
   mockFacilityContractsFAC1,
 } from '../mock/mockFacilityReportData';
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false';
 
 /**
  * 1. Lấy báo cáo tổng quan vận hành cơ sở (FM-06, US-FM-06.1 AC-1, AC-2, AC-3)
@@ -26,7 +25,7 @@ export async function getFacilityOverviewReport(
   facilityId: number,
   month?: string
 ): Promise<FacilityOverviewReport> {
-  if (USE_MOCK) {
+  if (isMockEnabled('WS4')) {
     const baseMock = facilityId === 2 ? mockOverviewReportFAC2 : mockOverviewReportFAC1;
     return {
       ...baseMock,
@@ -60,7 +59,7 @@ export async function getFacilityOverviewReport(
 export async function getFacilityOverdueDebtReport(
   facilityId: number
 ): Promise<OverdueDebtReport> {
-  if (USE_MOCK) {
+  if (isMockEnabled('WS4')) {
     return {
       ...mockOverdueReportFAC1,
       facilityId,
@@ -94,7 +93,7 @@ export async function getFacilityContractsReport(
     size?: number;
   }
 ): Promise<{ content: FacilityContractSummary[]; totalElements: number; totalPages: number }> {
-  if (USE_MOCK) {
+  if (isMockEnabled('WS4')) {
     let filtered = [...mockFacilityContractsFAC1];
     if (params?.status && params.status !== 'ALL') {
       filtered = filtered.filter((c) => c.status === params.status);
@@ -143,7 +142,7 @@ export async function getFacilityContractsReport(
  * 4. Lấy danh sách cơ sở khả dụng cho quản lý (SA-03, US-FM-06.1 AC-5)
  */
 export async function getAssignedFacilities(): Promise<FacilityInfo[]> {
-  if (USE_MOCK) {
+  if (isMockEnabled('WS4')) {
     return mockFacilities;
   }
 
