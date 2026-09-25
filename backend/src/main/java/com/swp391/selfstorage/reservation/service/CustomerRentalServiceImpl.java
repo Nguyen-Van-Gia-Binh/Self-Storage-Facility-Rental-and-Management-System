@@ -289,16 +289,16 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
         }
 
         RentalContract contract = rentalContractRepository.findById(contractId)
-                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "Không tìm thấy hợp đồng #" + contractId));
+                .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
 
         // BR-ACC-03: Kiểm tra chính chủ hoặc quyền quản trị
-        if (!currentUser.getId().equals(contract.getCustomerId()) && !currentUser.hasRole("SYSTEM_ADMINISTRATOR")) {
-            throw new CustomException(ErrorCode.FORBIDDEN, "Bạn không có quyền thay đổi mã PIN của hợp đồng này");
+        if (!currentUser.getId().equals(contract.getCustomerId()) && currentUser.getRole() != UserRole.SYSTEM_ADMINISTRATOR) {
+            throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 
         // BR-ACC-02: Kiểm tra trạng thái hợp đồng (Chỉ ACTIVE hoặc OVERDUE mới được đổi PIN)
         if (contract.getStatus() != ContractStatus.ACTIVE && contract.getStatus() != ContractStatus.OVERDUE) {
-            throw new CustomException(ErrorCode.INVALID_REQUEST, "Chỉ có thể đổi mã PIN khi hợp đồng đang kích hoạt hoặc trong hạn cho phép");
+            throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION, "Chỉ có thể đổi mã PIN khi hợp đồng đang kích hoạt hoặc trong hạn cho phép");
         }
 
         contract.setAccessCode(request.getNewPin());
@@ -323,10 +323,10 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
         }
 
         RentalContract contract = rentalContractRepository.findById(contractId)
-                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "Không tìm thấy hợp đồng #" + contractId));
+                .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
 
-        if (!currentUser.getId().equals(contract.getCustomerId()) && !currentUser.hasRole("SYSTEM_ADMINISTRATOR")) {
-            throw new CustomException(ErrorCode.FORBIDDEN, "Bạn không có quyền xem nhật ký của hợp đồng này");
+        if (!currentUser.getId().equals(contract.getCustomerId()) && currentUser.getRole() != UserRole.SYSTEM_ADMINISTRATOR) {
+            throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 
         StorageUnit unit = contract.getStorageUnitId() != null
@@ -349,4 +349,5 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
                 .collect(Collectors.toList());
     }
 }
+
 
