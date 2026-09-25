@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 
 @RestController
-@RequestMapping("/api/v1/reports/system")
+@RequestMapping("/reports/system")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "System Reports", description = "API báo cáo doanh thu và tỷ lệ lấp đầy toàn hệ thống dành cho BOM và Admin (BM-04)")
