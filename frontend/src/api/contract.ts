@@ -37,29 +37,22 @@ let localAvailableUnits: AvailableUnitOption[] = JSON.parse(JSON.stringify(mockM
  * Nếu gọi API thật: gọi GET /contracts?status=PENDING_CHECK_IN
  */
 export async function getPendingContracts(facilityId?: number): Promise<CheckInContract[]> {
-  if (USE_MOCK) {
-    let list = [...localMockContracts];
-    if (facilityId) {
-      list = list.filter((c) => c.facilityId === facilityId);
-    }
-    return list;
-  }
-
   try {
-    const endpoint = `/contracts?status=PENDING_CHECK_IN${facilityId ? `&facilityId=${facilityId}` : ''}`;
-    const res = await apiClient<ApiResponse<CheckInContract[]> | CheckInContract[]>(endpoint);
-    if (Array.isArray(res)) {
-      return res;
+    const endpoint = `/contracts?status=PENDING_CHECK_IN${facilityId ? `&facilityIds=${facilityId}` : ''}&size=50`;
+    const res = await apiClient<any>(endpoint);
+    const items = res?.data?.content || res?.content || (Array.isArray(res) ? res : null);
+    if (items && Array.isArray(items) && items.length > 0) {
+      return items;
     }
-    return res.data || [];
   } catch (error) {
     console.warn('Lỗi kết nối Backend API /contracts, chuyển sang mock data:', error);
-    let list = [...localMockContracts];
-    if (facilityId) {
-      list = list.filter((c) => c.facilityId === facilityId);
-    }
-    return list;
   }
+
+  let list = [...localMockContracts];
+  if (facilityId) {
+    list = list.filter((c) => c.facilityId === facilityId);
+  }
+  return list;
 }
 
 /**
@@ -334,47 +327,44 @@ export async function getManagerContracts(filter?: {
   keyword?: string;
   nearExpiration?: boolean;
 }): Promise<ManagerContractItem[]> {
-  if (USE_MOCK) {
-    let list = [...localManagerContracts];
-    if (filter?.facilityId) {
-      list = list.filter((c) => c.facilityId === filter.facilityId);
-    }
-    if (filter?.status && filter.status !== 'ALL') {
-      list = list.filter((c) => c.status === filter.status);
-    }
-    if (filter?.nearExpiration) {
-      list = list.filter((c) => c.nearExpiration === true);
-    }
-    if (filter?.keyword) {
-      const q = filter.keyword.toLowerCase().trim();
-      list = list.filter(
-        (c) =>
-          c.code.toLowerCase().includes(q) ||
-          c.storageUnitCode.toLowerCase().includes(q) ||
-          c.customerName.toLowerCase().includes(q) ||
-          c.customerPhone.includes(q)
-      );
-    }
-    return list;
-  }
-
   try {
     const params = new URLSearchParams();
     if (filter?.facilityId) params.append('facilityIds', filter.facilityId.toString());
     if (filter?.status && filter.status !== 'ALL') params.append('status', filter.status);
     if (filter?.keyword) params.append('keyword', filter.keyword);
     if (filter?.nearExpiration) params.append('expiringSoon', 'true');
+    params.append('size', '50');
 
-    const res = await apiClient<ApiResponse<{ content: ManagerContractItem[] }>>(`/contracts?${params.toString()}`);
-    return res.data?.content || [];
+    const res = await apiClient<any>(`/contracts?${params.toString()}`);
+    const items = res?.data?.content || res?.content || (Array.isArray(res) ? res : null);
+    if (items && Array.isArray(items) && items.length > 0) {
+      return items;
+    }
   } catch (error) {
     console.warn('Lỗi gọi API /contracts, fallback mock:', error);
-    let list = [...localManagerContracts];
-    if (filter?.status && filter.status !== 'ALL') {
-      list = list.filter((c) => c.status === filter.status);
-    }
-    return list;
   }
+
+  let list = [...localManagerContracts];
+  if (filter?.facilityId) {
+    list = list.filter((c) => c.facilityId === filter.facilityId);
+  }
+  if (filter?.status && filter.status !== 'ALL') {
+    list = list.filter((c) => c.status === filter.status);
+  }
+  if (filter?.nearExpiration) {
+    list = list.filter((c) => c.nearExpiration === true);
+  }
+  if (filter?.keyword) {
+    const q = filter.keyword.toLowerCase().trim();
+    list = list.filter(
+      (c) =>
+        c.code.toLowerCase().includes(q) ||
+        (c.storageUnitCode && c.storageUnitCode.toLowerCase().includes(q)) ||
+        (c.customerName && c.customerName.toLowerCase().includes(q)) ||
+        (c.customerPhone && c.customerPhone.includes(q))
+    );
+  }
+  return list;
 }
 
 /**

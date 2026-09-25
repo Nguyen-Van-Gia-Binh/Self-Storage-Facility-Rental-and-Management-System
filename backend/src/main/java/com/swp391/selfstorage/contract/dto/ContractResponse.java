@@ -10,9 +10,15 @@ public class ContractResponse {
     private String code;
     private Long reservationId;
     private Long customerId;
+    private String customerName;
+    private String customerPhone;
+    private String customerEmail;
     private Long facilityId;
+    private String facilityName;
     private Long storageUnitId;
+    private String storageUnitCode;
     private Long unitTypeId;
+    private String unitTypeName;
     private LocalDate startDate;
     private LocalDate endDateExclusive;
     private int rentalMonths;

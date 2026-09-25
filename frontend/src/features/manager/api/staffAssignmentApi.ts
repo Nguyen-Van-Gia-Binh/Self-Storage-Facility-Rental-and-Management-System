@@ -16,6 +16,7 @@ import {
   mockManagementSupportTickets,
 } from '../mock/mockStaffAssignmentData';
 import { getStaffDailyTasks } from '@/api/staff';
+import { getPendingContracts } from '@/api/contract';
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false';
 
@@ -57,6 +58,40 @@ export async function getDailyDispatchTasks(
   facilityId: number,
   _date?: string
 ): Promise<DailyDispatchTaskItem[]> {
+  try {
+    // Tự động kéo các hợp đồng PENDING_CHECK_IN từ backend để sinh task tiếp đón
+    const pendingContracts = await getPendingContracts(facilityId);
+    if (pendingContracts && Array.isArray(pendingContracts)) {
+      pendingContracts.forEach((contract: any) => {
+        const exists = memoryDispatchTasks.some(
+          (t) => t.referenceId === contract.id && t.taskType === 'CHECK_IN'
+        );
+        if (!exists) {
+          memoryDispatchTasks.unshift({
+            id: 9000 + contract.id,
+            taskType: 'CHECK_IN',
+            title: `Tiếp đón bàn giao kho cho hợp đồng ${contract.code}`,
+            facilityId: contract.facilityId || facilityId,
+            facilityName: contract.facilityName || 'Kho SmartStorage',
+            unitCode: contract.storageUnitCode || `U-${contract.storageUnitId || contract.id}`,
+            customerName: contract.customerName || 'Khách hàng',
+            customerPhone: contract.customerPhone || '0901234567',
+            scheduledDate: contract.startDate || new Date().toISOString().split('T')[0],
+            scheduledTime: '09:00 - 11:30',
+            priority: 'NORMAL',
+            isUrgent: false,
+            status: 'UNASSIGNED',
+            referenceId: contract.id,
+            referenceCode: contract.code,
+            notes: 'Khách hàng đã đặt cọc VietQR thành công, sẵn sàng nhận kho 48h.',
+          });
+        }
+      });
+    }
+  } catch (err) {
+    console.warn('Lỗi đồng bộ hợp đồng chờ check-in vào nhiệm vụ thực địa:', err);
+  }
+
   // Lọc theo cơ sở
   return memoryDispatchTasks.filter((t) => t.facilityId === facilityId);
 }
