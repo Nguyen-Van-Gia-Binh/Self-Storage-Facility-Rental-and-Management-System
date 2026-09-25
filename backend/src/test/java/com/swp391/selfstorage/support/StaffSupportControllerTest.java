@@ -46,7 +46,7 @@ class StaffSupportControllerTest {
     private StaffSupportService staffSupportService;
 
     @Test
-    @DisplayName("PATCH /api/v1/support-requests/{id}/assign trả về 200 OK khi phân công hợp lệ")
+    @DisplayName("PATCH /support-requests/{id}/assign trả về 200 OK khi phân công hợp lệ")
     void testAssignStaff_success() throws Exception {
         AssignStaffRequest request = AssignStaffRequest.builder()
                 .staffId(8L)
@@ -64,7 +64,7 @@ class StaffSupportControllerTest {
         when(staffSupportService.assignStaff(eq(801L), any(AssignStaffRequest.class), any()))
                 .thenReturn(response);
 
-        mockMvc.perform(patch("/api/v1/support-requests/801/assign")
+        mockMvc.perform(patch("/support-requests/801/assign")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -76,18 +76,18 @@ class StaffSupportControllerTest {
     }
 
     @Test
-    @DisplayName("PATCH /api/v1/support-requests/{id}/assign trả về 400 Bad Request khi thiếu staffId")
+    @DisplayName("PATCH /support-requests/{id}/assign trả về 400 Bad Request khi thiếu staffId")
     void testAssignStaff_validationError() throws Exception {
         AssignStaffRequest request = new AssignStaffRequest(null, "Note");
 
-        mockMvc.perform(patch("/api/v1/support-requests/801/assign")
+        mockMvc.perform(patch("/support-requests/801/assign")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    @DisplayName("PATCH /api/v1/support-requests/{id}/in-progress trả về 200 OK")
+    @DisplayName("PATCH /support-requests/{id}/in-progress trả về 200 OK")
     void testStartInProgress_success() throws Exception {
         SupportRequestDetailResponse response = SupportRequestDetailResponse.builder()
                 .id(801L)
@@ -98,14 +98,14 @@ class StaffSupportControllerTest {
         when(staffSupportService.startInProgress(eq(801L), any()))
                 .thenReturn(response);
 
-        mockMvc.perform(patch("/api/v1/support-requests/801/in-progress"))
+        mockMvc.perform(patch("/support-requests/801/in-progress"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.data.status").value("IN_PROGRESS"));
     }
 
     @Test
-    @DisplayName("PATCH /api/v1/support-requests/{id}/resolve trả về 200 OK khi giải quyết sự cố")
+    @DisplayName("PATCH /support-requests/{id}/resolve trả về 200 OK khi giải quyết sự cố")
     void testResolveSupportRequest_success() throws Exception {
         ResolveSupportRequest request = ResolveSupportRequest.builder()
                 .resolutionNote("Đã cấp lại mã PIN thành công")
@@ -123,7 +123,7 @@ class StaffSupportControllerTest {
         when(staffSupportService.resolveSupportRequest(eq(801L), any(ResolveSupportRequest.class), any()))
                 .thenReturn(response);
 
-        mockMvc.perform(patch("/api/v1/support-requests/801/resolve")
+        mockMvc.perform(patch("/support-requests/801/resolve")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -133,7 +133,7 @@ class StaffSupportControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/support-requests/staff-workload trả về danh sách tải công việc")
+    @DisplayName("GET /support-requests/staff-workload trả về danh sách tải công việc")
     void testGetStaffWorkload_success() throws Exception {
         StaffWorkloadResponse workload = StaffWorkloadResponse.builder()
                 .staffId(8L)
@@ -146,7 +146,7 @@ class StaffSupportControllerTest {
         when(staffSupportService.getStaffWorkload(eq(1L), any()))
                 .thenReturn(List.of(workload));
 
-        mockMvc.perform(get("/api/v1/support-requests/staff-workload")
+        mockMvc.perform(get("/support-requests/staff-workload")
                         .param("facilityId", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
@@ -155,7 +155,7 @@ class StaffSupportControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/management/support-requests trả về danh sách phân trang")
+    @DisplayName("GET /management/support-requests trả về danh sách phân trang")
     void testGetManagementSupportRequests_success() throws Exception {
         SupportRequestSummaryResponse item = SupportRequestSummaryResponse.builder()
                 .id(801L)
@@ -171,7 +171,7 @@ class StaffSupportControllerTest {
         when(staffSupportService.getManagementSupportRequests(any(), any(), any(), any(), any(), any()))
                 .thenReturn(pageResponse);
 
-        mockMvc.perform(get("/api/v1/management/support-requests")
+        mockMvc.perform(get("/management/support-requests")
                         .param("page", "0")
                         .param("size", "10"))
                 .andExpect(status().isOk())

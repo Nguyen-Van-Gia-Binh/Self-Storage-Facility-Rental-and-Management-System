@@ -126,12 +126,12 @@ class StaffDailyTaskControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/staff/daily-tasks trả về 200 OK kèm dữ liệu 3 nhóm task và thống kê")
+    @DisplayName("GET /staff/daily-tasks trả về 200 OK kèm dữ liệu 3 nhóm task và thống kê")
     void testGetMyDailyTasks_success() throws Exception {
         when(staffDailyTaskService.getDailyTasks(eq(8L), any(), any(), any()))
                 .thenReturn(sampleResponse);
 
-        mockMvc.perform(get("/api/v1/staff/daily-tasks")
+        mockMvc.perform(get("/staff/daily-tasks")
                         .principal(new UsernamePasswordAuthenticationToken(staffPrincipal, null)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
@@ -151,12 +151,12 @@ class StaffDailyTaskControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/staff/{staffId}/daily-tasks trả về 200 OK khi truyền staffId")
+    @DisplayName("GET /staff/{staffId}/daily-tasks trả về 200 OK khi truyền staffId")
     void testGetStaffDailyTasks_success() throws Exception {
         when(staffDailyTaskService.getDailyTasks(eq(8L), any(), any(), any()))
                 .thenReturn(sampleResponse);
 
-        mockMvc.perform(get("/api/v1/staff/8/daily-tasks")
+        mockMvc.perform(get("/staff/8/daily-tasks")
                         .principal(new UsernamePasswordAuthenticationToken(staffPrincipal, null)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
@@ -164,12 +164,12 @@ class StaffDailyTaskControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/reports/staff/{staffId}/daily-tasks khớp đúng API-SPEC § 12")
+    @DisplayName("GET /reports/staff/{staffId}/daily-tasks khớp đúng API-SPEC § 12")
     void testGetStaffDailyTasksReport_success() throws Exception {
         when(staffDailyTaskService.getDailyTasks(eq(8L), any(), any(), any()))
                 .thenReturn(sampleResponse);
 
-        mockMvc.perform(get("/api/v1/reports/staff/8/daily-tasks")
+        mockMvc.perform(get("/reports/staff/8/daily-tasks")
                         .principal(new UsernamePasswordAuthenticationToken(staffPrincipal, null)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
@@ -187,7 +187,7 @@ class StaffDailyTaskControllerTest {
         when(staffDailyTaskService.getDailyTasks(eq(8L), eq(customDate), eq(true), any()))
                 .thenReturn(sampleResponse);
 
-        mockMvc.perform(get("/api/v1/staff/daily-tasks")
+        mockMvc.perform(get("/staff/daily-tasks")
                         .param("date", "2026-11-15")
                         .param("pendingOnly", "true")
                         .principal(new UsernamePasswordAuthenticationToken(staffPrincipal, null)))
