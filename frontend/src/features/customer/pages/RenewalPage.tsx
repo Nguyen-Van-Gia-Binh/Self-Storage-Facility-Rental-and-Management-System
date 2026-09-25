@@ -142,7 +142,7 @@ export const RenewalPage: React.FC = () => {
       setIsProcessing(false);
       alert('Có lỗi xảy ra trong quá trình xử lý gia hạn. Vui lòng thử lại hoặc liên hệ lễ tân.');
     }
-  }, [contract, renewalMonths, newEndDate, pricing.finalTotal, payosCheckout?.orderCode]);
+  }, [contract, renewalMonths, newEndDate, pricing.finalTotal, payosCheckout]);
 
   // Polling tự động kiểm tra trạng thái thanh toán PayOS mỗi 2.5 giây khi ở Bước 3
   useEffect(() => {
