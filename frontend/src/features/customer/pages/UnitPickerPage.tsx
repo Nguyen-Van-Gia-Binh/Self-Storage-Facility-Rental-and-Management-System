@@ -363,12 +363,12 @@ export const UnitPickerPage: React.FC = () => {
         <div className="flex items-center gap-2 text-xs font-semibold shrink-0">
           <div className="flex items-center gap-1.5 bg-brand-500 text-white px-3 py-1 rounded-full border border-brand-500 shadow-xs">
             <span className="w-4 h-4 rounded-full bg-white text-brand-700 text-[10px] flex items-center justify-center font-bold">1</span>
-            <span>1. Thời gian & Sơ đồ</span>
+            <span>1. Chọn loại & Sơ đồ</span>
           </div>
           <span className="text-slate-300">/</span>
           <div className="flex items-center gap-1.5 text-slate-400 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-200">
             <span className="w-4 h-4 rounded-full bg-slate-200 text-slate-500 text-[10px] flex items-center justify-center font-bold">2</span>
-            <span>2. Hồ sơ & Đặt chỗ</span>
+            <span>2. Hồ sơ đặt chỗ</span>
           </div>
           <span className="text-slate-300">/</span>
           <div className="flex items-center gap-1.5 text-slate-400 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-200">
@@ -378,13 +378,163 @@ export const UnitPickerPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. CHỌN THỜI GIAN THUÊ KHO TRƯỚC (Rental Period Selector - SC-01, SC-02) */}
+      {/* 1. CHỌN LOẠI KHO TRƯỚC (Bộ chuyển đổi Standard/Climate & 3 thẻ cỡ kho căn giữa cân đối) */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-100 pb-2.5">
+          <div>
+            <h2 className="text-base font-extrabold text-[#0a1614] flex items-center gap-2">
+              <Box className="w-4 h-4 text-brand-600" />
+              1. Chọn Loại Kho & Kích Thước
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Chọn môi trường lưu trữ và kích thước kho phù hợp với nhu cầu của bạn
+            </p>
+          </div>
+          <span className="text-xs font-semibold text-brand-700 bg-brand-50 px-2.5 py-1 rounded-full border border-brand-200 shrink-0 self-start sm:self-auto">
+            Cơ sở: {currentFacility.name}
+          </span>
+        </div>
+
+        {/* Bộ chuyển đổi chế độ kho (Standard vs Climate-Controlled) */}
+        <div className="max-w-md mx-auto grid grid-cols-2 gap-2 p-1 bg-white rounded-xl border border-slate-200/90 shadow-2xs">
+          <button
+            type="button"
+            onClick={() => setStorageType('STANDARD')}
+            className={`flex items-center gap-2.5 p-2.5 rounded-lg transition-all text-left cursor-pointer ${
+              storageType === 'STANDARD'
+                ? 'bg-brand-50 border-2 border-brand-500 shadow-2xs text-brand-900'
+                : 'border-2 border-transparent hover:bg-slate-50 text-slate-600'
+            }`}
+          >
+            <div className="w-7 h-7 rounded-lg bg-brand-100 text-brand-700 flex items-center justify-center shrink-0">
+              <Wind className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-xs sm:text-sm font-bold text-[#0a1614] block">Kho Tiêu Chuẩn</span>
+              <span className="text-[11px] text-slate-500 block">Khô thoáng, đồ gia dụng</span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setStorageType('CLIMATE_CONTROLLED')}
+            className={`flex items-center gap-2.5 p-2.5 rounded-lg transition-all text-left cursor-pointer ${
+              storageType === 'CLIMATE_CONTROLLED'
+                ? 'bg-sky-50 border-2 border-[#96b3cf] shadow-2xs text-sky-900'
+                : 'border-2 border-transparent hover:bg-slate-50 text-slate-600'
+            }`}
+          >
+            <div className="w-7 h-7 rounded-lg bg-sky-100 text-sky-800 flex items-center justify-center shrink-0">
+              <ThermometerSnowflake className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-xs sm:text-sm font-bold text-[#0a1614] block">Kho Máy Lạnh 24/7</span>
+              <span className="text-[11px] text-slate-500 block">22°C–25°C, hút ẩm</span>
+            </div>
+          </button>
+        </div>
+
+        {/* Danh mục các thẻ kích cỡ kho: CĂN GIỮA CHO CÂN ĐỐI */}
+        <div className="flex flex-wrap justify-center gap-4 max-w-4xl mx-auto">
+          {availableTypes.map((type) => {
+            const isSelected = selectedSize === type.sizeCategory;
+            const availInfo = availabilityMap[type.id];
+
+            return (
+              <div
+                key={type.id}
+                onClick={() => setSelectedSize(type.sizeCategory)}
+                className={`w-full sm:w-[calc(50%-0.6rem)] md:w-[calc(33.333%-0.75rem)] max-w-[290px] rounded-xl p-3.5 border-2 transition-all flex flex-col justify-between cursor-pointer bg-white ${
+                  isSelected
+                    ? 'border-brand-500 ring-2 ring-brand-500/20 shadow-sm scale-[1.01]'
+                    : 'border-slate-200/90 hover:border-slate-300 hover:shadow-2xs'
+                }`}
+              >
+                <div className="space-y-2.5">
+                  {/* Header & Badge */}
+                  <div className="flex items-start justify-between gap-1">
+                    <h3 className="text-sm font-extrabold text-[#0a1614]">
+                      {type.name.split('–')[0]}
+                    </h3>
+                    {type.badge === 'POPULAR' && (
+                      <Badge 
+                        variant="primary"
+                        className="text-[10px] px-1.5 py-0.5"
+                      >
+                        Phổ biến nhất
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* 3D Cube Icon Visual */}
+                  <div className="h-12 w-full rounded-lg bg-brand-50/40 border border-brand-100/60 flex items-center justify-center">
+                    <Box className={`w-6 h-6 transition-transform ${isSelected ? 'text-brand-500 scale-110' : 'text-slate-400'}`} />
+                  </div>
+
+                  {/* Size & Dimensions */}
+                  <div className="space-y-1 text-xs">
+                    <div className="flex items-baseline justify-between font-bold text-slate-800">
+                      <span>Diện tích sàn:</span>
+                      <span className="text-xs text-brand-700 font-extrabold">{type.areaM2} m² ({type.volumeM3} m³)</span>
+                    </div>
+                    <div className="text-slate-500 text-[11px] flex justify-between">
+                      <span>Kích thước:</span>
+                      <span>{type.dimensions}</span>
+                    </div>
+
+                    {/* Sức chứa ô kho trống thời gian thực */}
+                    {availInfo && (
+                      <div className="pt-1">
+                        {availInfo.availableSlots > 0 ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                            <Check className="w-3 h-3 text-emerald-600" />
+                            Còn {availInfo.availableSlots} ô trống
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                            Hết chỗ trong kỳ hạn
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Price & Selection Button */}
+                <div className="mt-3 pt-2.5 border-t border-slate-100 space-y-2">
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-[11px] text-slate-400">Đơn giá:</span>
+                    <span className="text-sm font-extrabold text-[#0a1614]">
+                      {formatVND(type.baseMonthlyPrice)} <span className="text-[10px] font-normal text-slate-400">/tháng</span>
+                    </span>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant={isSelected ? 'primary' : 'outline'}
+                    size="sm"
+                    className="w-full gap-1 text-xs py-1.5 font-semibold"
+                  >
+                    {isSelected ? (
+                      <>Đang chọn Cỡ {type.sizeCategory} <Check className="w-3.5 h-3.5" /></>
+                    ) : (
+                      `Chọn Cỡ ${type.sizeCategory}`
+                    )}
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 2. CHỌN THỜI GIAN THUÊ KHO DỰ KIẾN (Sau khi chọn loại kho) */}
       <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
           <div>
             <h2 className="text-base font-extrabold text-[#0a1614] flex items-center gap-2">
               <Calendar className="w-4 h-4 text-brand-600" />
-              1. Chọn Thời Gian Thuê Kho Dự Kiến
+              2. Chọn Thời Gian Thuê Kho Dự Kiến
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
               Chọn ngày bắt đầu và thời hạn thuê để sơ đồ tự động lọc và hiển thị chính xác các ô kho trống khả dụng
@@ -478,158 +628,22 @@ export const UnitPickerPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. Bộ chuyển đổi chế độ kho (Standard vs Climate-Controlled) */}
-      <div className="max-w-md mx-auto grid grid-cols-2 gap-2 p-1 bg-white rounded-xl border border-slate-200/90 shadow-2xs">
-        <button
-          type="button"
-          onClick={() => setStorageType('STANDARD')}
-          className={`flex items-center gap-2.5 p-2.5 rounded-lg transition-all text-left cursor-pointer ${
-            storageType === 'STANDARD'
-              ? 'bg-brand-50 border-2 border-brand-500 shadow-2xs text-brand-900'
-              : 'border-2 border-transparent hover:bg-slate-50 text-slate-600'
-          }`}
-        >
-          <div className="w-7 h-7 rounded-lg bg-brand-100 text-brand-700 flex items-center justify-center shrink-0">
-            <Wind className="w-4 h-4" />
-          </div>
-          <div>
-            <span className="text-xs sm:text-sm font-bold text-[#0a1614] block">Kho Tiêu Chuẩn</span>
-            <span className="text-[11px] text-slate-500 block">Khô thoáng, đồ gia dụng</span>
-          </div>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setStorageType('CLIMATE_CONTROLLED')}
-          className={`flex items-center gap-2.5 p-2.5 rounded-lg transition-all text-left cursor-pointer ${
-            storageType === 'CLIMATE_CONTROLLED'
-              ? 'bg-sky-50 border-2 border-[#96b3cf] shadow-2xs text-sky-900'
-              : 'border-2 border-transparent hover:bg-slate-50 text-slate-600'
-          }`}
-        >
-          <div className="w-7 h-7 rounded-lg bg-sky-100 text-sky-800 flex items-center justify-center shrink-0">
-            <ThermometerSnowflake className="w-4 h-4" />
-          </div>
-          <div>
-            <span className="text-xs sm:text-sm font-bold text-[#0a1614] block">Kho Máy Lạnh 24/7</span>
-            <span className="text-[11px] text-slate-500 block">22°C–25°C, hút ẩm</span>
-          </div>
-        </button>
-      </div>
-
-      {/* 4. Danh mục các thẻ kích cỡ kho S, M, L, XL */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-            <Box className="w-4 h-4 text-brand-600" /> Bảng Giá Loại Kho Thực Tế
-          </h2>
-          <span className="text-xs text-slate-400">Chọn cỡ kho để tự động định vị trên sơ đồ bên dưới</span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-          {availableTypes.map((type) => {
-            const isSelected = selectedSize === type.sizeCategory;
-            const availInfo = availabilityMap[type.id];
-
-            return (
-              <div
-                key={type.id}
-                onClick={() => setSelectedSize(type.sizeCategory)}
-                className={`rounded-xl p-3.5 border-2 transition-all flex flex-col justify-between cursor-pointer bg-white ${
-                  isSelected
-                    ? 'border-brand-500 ring-2 ring-brand-500/20 shadow-sm scale-[1.01]'
-                    : 'border-slate-200/90 hover:border-slate-300 hover:shadow-2xs'
-                }`}
-              >
-                <div className="space-y-2.5">
-                  {/* Header & Badge */}
-                  <div className="flex items-start justify-between gap-1">
-                    <h3 className="text-sm font-extrabold text-[#0a1614]">
-                      {type.name.split('–')[0]}
-                    </h3>
-                    {type.badge === 'POPULAR' && (
-                      <Badge 
-                        variant="primary"
-                        className="text-[10px] px-1.5 py-0.5"
-                      >
-                        Phổ biến nhất
-                      </Badge>
-                    )}
-                  </div>
-
-                  {/* 3D Cube Icon Visual */}
-                  <div className="h-12 w-full rounded-lg bg-brand-50/40 border border-brand-100/60 flex items-center justify-center">
-                    <Box className={`w-6 h-6 transition-transform ${isSelected ? 'text-brand-500 scale-110' : 'text-slate-400'}`} />
-                  </div>
-
-                  {/* Size & Dimensions */}
-                  <div className="space-y-1 text-xs">
-                    <div className="flex items-baseline justify-between font-bold text-slate-800">
-                      <span>Diện tích sàn:</span>
-                      <span className="text-xs text-brand-700 font-extrabold">{type.areaM2} m² ({type.volumeM3} m³)</span>
-                    </div>
-                    <div className="text-slate-500 text-[11px] flex justify-between">
-                      <span>Kích thước:</span>
-                      <span>{type.dimensions}</span>
-                    </div>
-
-                    {/* Sức chứa ô kho trống thời gian thực */}
-                    {availInfo && (
-                      <div className="pt-1">
-                        {availInfo.availableSlots > 0 ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                            <Check className="w-3 h-3 text-emerald-600" />
-                            Còn {availInfo.availableSlots} ô trống
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
-                            Hết chỗ trong kỳ hạn
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Price & Selection Button */}
-                <div className="mt-3 pt-2.5 border-t border-slate-100 space-y-2">
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-[11px] text-slate-400">Đơn giá:</span>
-                    <span className="text-sm font-extrabold text-[#0a1614]">
-                      {formatVND(type.baseMonthlyPrice)} <span className="text-[10px] font-normal text-slate-400">/tháng</span>
-                    </span>
-                  </div>
-
-                  <Button
-                    type="button"
-                    variant={isSelected ? 'primary' : 'outline'}
-                    size="sm"
-                    className="w-full gap-1 text-xs py-1.5 font-semibold"
-                  >
-                    {isSelected ? (
-                      <>Đang chọn Cỡ {type.sizeCategory} <Check className="w-3.5 h-3.5" /></>
-                    ) : (
-                      `Chọn Cỡ ${type.sizeCategory}`
-                    )}
-                  </Button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 5. SƠ ĐỒ MẶT BẰNG KHO TRỰC QUAN (INTERACTIVE UNIT PICKER - SC-02) */}
+      {/* 3. SƠ ĐỒ MẶT BẰNG Ô KHO VẬT LÝ (Hiển thị sau khi chọn loại kho và thời gian) */}
       <div className="space-y-3 pt-2">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-100 pb-2.5">
           <div>
             <h2 className="text-base font-extrabold text-[#0a1614] flex items-center gap-2">
-              <Layers className="w-4 h-4 text-brand-600" /> Sơ Đồ Mặt Bằng Ô Kho Vật Lý
+              <Layers className="w-4 h-4 text-brand-600" /> 3. Sơ Đồ Mặt Bằng Ô Kho Vật Lý
             </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Bấm chọn ô kho màu xanh trên sơ đồ tương ứng với loại kho và thời gian bạn đã chọn
+            </p>
           </div>
-          <span className="text-xs font-semibold text-brand-700 bg-brand-50 px-2.5 py-1 rounded-full border border-brand-200 shrink-0">
-            Cơ sở: {currentFacility.name}
-          </span>
+          <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+            <span className="text-xs font-semibold text-brand-700 bg-brand-50 px-2.5 py-1 rounded-full border border-brand-200">
+              Đang lọc Cỡ {selectedSize} • {durationMonths} tháng
+            </span>
+          </div>
         </div>
 
         <UnitGrid

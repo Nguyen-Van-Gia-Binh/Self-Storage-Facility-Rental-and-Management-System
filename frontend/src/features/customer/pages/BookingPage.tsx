@@ -55,6 +55,15 @@ function resolveSizeCategory(codeOrName: string, areaM2?: number): UnitSizeCateg
   return 'M';
 }
 
+function formatDateVN(dateStr: string): string {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  return dateStr;
+}
+
 export const BookingPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -164,11 +173,11 @@ export const BookingPage: React.FC = () => {
   const monthsParam = parseInt(searchParams.get('months') || '', 10);
   const startDateParam = searchParams.get('startDate');
 
-  const [durationMonths, setDurationMonths] = useState<number>(
+  const [durationMonths] = useState<number>(
     !isNaN(monthsParam) && monthsParam > 0 ? monthsParam : 3
   );
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
-  const [startDate, setStartDate] = useState<string>(startDateParam || todayStr);
+  const [startDate] = useState<string>(startDateParam || todayStr);
 
   const [customerName, setCustomerName] = useState('Nguyễn Văn An');
   const [customerPhone, setCustomerPhone] = useState('0912 345 678');
@@ -519,7 +528,7 @@ export const BookingPage: React.FC = () => {
             Quay lại sơ đồ mặt bằng chọn ô khác
           </Link>
           <h1 className="text-xl sm:text-2xl font-extrabold text-[#0a1614] tracking-tight">
-            {currentStep === 2 ? 'Xác Nhận Thời Hạn & Hồ Sơ Đặt Chỗ' : 'Thanh Toán Giữ Chỗ VietQR (48 Giờ)'}
+            {currentStep === 2 ? 'Xác Nhận Hồ Sơ Đặt Chỗ' : 'Thanh Toán Giữ Chỗ VietQR (48 Giờ)'}
           </h1>
         </div>
 
@@ -539,7 +548,7 @@ export const BookingPage: React.FC = () => {
               : 'text-brand-600 bg-brand-50 border-brand-200'
           }`}>
             <span className="w-4 h-4 rounded-full bg-white text-brand-700 text-[10px] flex items-center justify-center font-bold">2</span>
-            <span>2. Thời hạn & Hồ sơ</span>
+            <span>2. Hồ sơ đặt chỗ</span>
           </div>
           <span className="text-slate-300">/</span>
           <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-colors ${
@@ -556,7 +565,7 @@ export const BookingPage: React.FC = () => {
       </div>
 
       {currentStep === 2 ? (
-        /* STEP 2: DURATION & CUSTOMER FORM (SCR-SC-02 & SCR-SC-02B) */
+        /* STEP 2: CUSTOMER PROFILE & RESERVATION (SCR-SC-02 & SCR-SC-02B) */
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           {/* Form Column (2/3) */}
           <form onSubmit={handleProceedToPayment} className="lg:col-span-2 space-y-5">
@@ -611,85 +620,20 @@ export const BookingPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Duration Options */}
-              <div className="pt-2 space-y-2.5">
-                <label className="block text-sm font-semibold text-[#0a1614]">
-                  Chọn gói thời hạn thuê:
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {[
-                    { months: 1, label: '1 Tháng', discountTag: null },
-                    { months: 3, label: '3 Tháng', discountTag: 'Phổ biến' },
-                    { months: 6, label: '6 Tháng', discountTag: 'Tiết kiệm 5%' },
-                    { months: 12, label: '12 Tháng', discountTag: 'Tiết kiệm 10%' },
-                  ].map((pkg) => {
-                    const isSelected = durationMonths === pkg.months;
-                    return (
-                      <button
-                        key={pkg.months}
-                        type="button"
-                        onClick={() => setDurationMonths(pkg.months)}
-                        className={`p-3 rounded-xl border text-center relative transition-all cursor-pointer ${
-                          isSelected
-                            ? 'border-brand-500 bg-brand-50/50 shadow-sm ring-2 ring-brand-500/20'
-                            : 'border-slate-200 bg-white hover:border-slate-300'
-                        }`}
-                      >
-                        {pkg.discountTag && (
-                          <span className={`absolute -top-2 left-1/2 -translate-x-1/2 text-[9px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap ${
-                            pkg.months >= 6 
-                              ? 'bg-[#7c94c3] text-white' 
-                              : 'bg-brand-500 text-white'
-                          }`}>
-                            {pkg.discountTag}
-                          </span>
-                        )}
-                        <span className={`block font-bold text-sm ${isSelected ? 'text-brand-700' : 'text-[#0a1614]'}`}>
-                          {pkg.label}
-                        </span>
-                        <span className="text-[11px] text-slate-500 mt-0.5 block">
-                          {formatVND(
-                            pkg.months >= 12
-                              ? unitType.baseMonthlyPrice * 0.9
-                              : pkg.months >= 6
-                              ? unitType.baseMonthlyPrice * 0.95
-                              : unitType.baseMonthlyPrice
-                          )}/tháng
-                        </span>
-                      </button>
-                    );
-                  })}
+              {/* Tóm tắt thời hạn thuê đã chọn từ sơ đồ (Read-only) */}
+              <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs bg-slate-50/80 p-3 rounded-xl border border-slate-200/80">
+                <div className="flex items-center gap-2 text-slate-700">
+                  <Calendar className="w-4 h-4 text-brand-600 shrink-0" />
+                  <span>
+                    Thời hạn thuê đã chọn: <strong className="text-slate-900 font-extrabold">{durationMonths} tháng</strong> (từ <strong className="text-slate-900">{formatDateVN(startDate)}</strong> đến <strong className="text-slate-900">{formatDateVN(endDate)}</strong>)
+                  </span>
                 </div>
-              </div>
-
-              {/* Start Date Selection */}
-              <div className="pt-3 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-brand-600" />
-                    Ngày bắt đầu thuê kho:
-                  </label>
-                  <input
-                    type="date"
-                    min={todayStr}
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 text-slate-800 bg-white"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Ngày kết thúc dự kiến:
-                  </label>
-                  <input
-                    type="date"
-                    value={endDate}
-                    readOnly
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-500 cursor-not-allowed"
-                  />
-                </div>
+                <Link
+                  to={`/customer/units?facility=${facility.id}&type=${unitType.id}&startDate=${startDate}&months=${durationMonths}`}
+                  className="text-brand-600 hover:text-brand-700 font-semibold underline text-xs shrink-0 self-start sm:self-auto"
+                >
+                  Thay đổi thời gian
+                </Link>
               </div>
             </Card>
 
