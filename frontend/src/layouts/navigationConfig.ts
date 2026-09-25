@@ -1,7 +1,7 @@
 // frontend/src/layouts/navigationConfig.ts
 import type { LucideIcon } from 'lucide-react';
 import {
-  Home, Building2, PackageSearch, Archive,
+  Home, Building2, Archive,
   KeyRound, ClipboardCheck, ListTodo,
   Layers, FileText, BarChart3, Wrench, Users,
   Map, DollarSign, TrendingUp, PieChart,
@@ -30,7 +30,6 @@ export const ROLE_NAVIGATIONS: Record<UserRole, RoleNavigation> = {
     badgeColor: 'bg-emerald-500',
     navItems: [
       { label: 'Trang chủ',            href: '/customer',          icon: Home },
-      { label: 'Sơ đồ ô kho',          href: '/customer/units',    icon: PackageSearch },
       { label: 'Kho của tôi',           href: '/customer/my-units', icon: Archive },
     ],
   },

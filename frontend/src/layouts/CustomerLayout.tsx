@@ -60,7 +60,6 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
   };
 
   const isHomeActive = location.pathname === '/' || location.pathname === '/customer';
-  const isUnitsActive = location.pathname.startsWith('/customer/units') || location.pathname.startsWith('/customer/book');
   const isRentalsActive = location.pathname === '/customer/my-units' || location.pathname.startsWith('/customer/renew');
   const isSupportActive = location.pathname.startsWith('/customer/support');
 
@@ -95,16 +94,6 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
               }`}
             >
               Trang chủ
-            </Link>
-            <Link 
-              to="/customer/units" 
-              className={`py-6 transition-colors border-b-2 ${
-                isUnitsActive 
-                  ? 'border-brand-500 text-slate-900 font-bold' 
-                  : 'border-transparent text-slate-600 hover:text-brand-600'
-              }`}
-            >
-              Sơ đồ ô kho
             </Link>
             <Link 
               to="/customer/my-units" 
