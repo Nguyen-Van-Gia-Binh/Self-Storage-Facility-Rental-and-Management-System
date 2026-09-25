@@ -1,6 +1,7 @@
 package com.swp391.selfstorage.contract.service.impl;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -64,19 +65,25 @@ public class RenewalServiceImpl implements RenewalService {
             throw new CustomException(ErrorCode.RENEWAL_MONTHS_INVALID);
         }
 
-        // 2. Kiểm tra Capacity ô kho (BR-REN-09)
-        boolean hasUpcomingReservation = reservationRepository.existsByStorageUnitIdAndStatusIn(
-                contract.getStorageUnitId(),
-                List.of(ReservationStatus.PENDING_PAYMENT, ReservationStatus.CONFIRMED));
-        if (hasUpcomingReservation) {
-            throw new CustomException(ErrorCode.CAPACITY_NOT_AVAILABLE);
+        // 2. Tính toán ngày kết thúc mới
+        LocalDate newEndDate = contract.getEndDateExclusive().plusMonths(months);
+
+        // 3. Kiểm tra Capacity ô kho cho kỳ gia hạn mới (BR-REN-09, BR-AVL-01)
+        if (contract.getStorageUnitId() != null) {
+            boolean hasUpcomingReservation = reservationRepository.existsOverlappingReservationForUnit(
+                    contract.getStorageUnitId(),
+                    contract.getEndDateExclusive(),
+                    newEndDate,
+                    OffsetDateTime.now());
+            if (hasUpcomingReservation) {
+                throw new CustomException(ErrorCode.CAPACITY_NOT_AVAILABLE);
+            }
         }
 
-        // 3. Lấy đơn giá thuê tháng hiện tại (Snapshot giá theo BR-REN-05)
+        // 4. Lấy đơn giá thuê tháng hiện tại (Snapshot giá theo BR-REN-05)
         long monthlyPrice = getLatestMonthlyPrice(contract);
 
-        // 4. Tính toán tài chính
-        LocalDate newEndDate = contract.getEndDateExclusive().plusMonths(months);
+        // 5. Tính toán tài chính
         long rentalFeeAmount = monthlyPrice * months;
         long overdueFee = (contract.getStatus() == ContractStatus.OVERDUE) ? contract.getOverdueFeeAccrued() : 0L;
         long totalAmount = rentalFeeAmount + overdueFee;

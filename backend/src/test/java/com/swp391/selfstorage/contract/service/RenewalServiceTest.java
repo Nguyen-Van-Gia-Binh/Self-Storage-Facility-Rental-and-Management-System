@@ -103,7 +103,7 @@ class RenewalServiceTest {
         RentalContract contract = buildContract(ContractStatus.ACTIVE);
         when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
         when(policyService.getActivePolicy()).thenReturn(buildActivePolicy());
-        when(reservationRepository.existsByStorageUnitIdAndStatusIn(eq(42L), any())).thenReturn(false);
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any())).thenReturn(false);
 
         FacilityUnitTypePrice price = FacilityUnitTypePrice.builder().monthlyPrice(850000L).build();
         when(facilityPriceRepository.findByFacilityIdAndUnitTypeId(1L, 7L)).thenReturn(Optional.of(price));
@@ -126,7 +126,7 @@ class RenewalServiceTest {
         RentalContract contract = buildContract(ContractStatus.OVERDUE);
         when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
         when(policyService.getActivePolicy()).thenReturn(buildActivePolicy());
-        when(reservationRepository.existsByStorageUnitIdAndStatusIn(eq(42L), any())).thenReturn(false);
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any())).thenReturn(false);
 
         FacilityUnitTypePrice price = FacilityUnitTypePrice.builder().monthlyPrice(800000L).build();
         when(facilityPriceRepository.findByFacilityIdAndUnitTypeId(1L, 7L)).thenReturn(Optional.of(price));
@@ -181,7 +181,7 @@ class RenewalServiceTest {
         RentalContract contract = buildContract(ContractStatus.ACTIVE);
         when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
         when(policyService.getActivePolicy()).thenReturn(buildActivePolicy());
-        when(reservationRepository.existsByStorageUnitIdAndStatusIn(eq(42L), any())).thenReturn(true);
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any())).thenReturn(true);
 
         CustomException ex = assertThrows(CustomException.class,
                 () -> renewalService.getRenewalQuote(100L, new RenewalRequest(3)));
@@ -195,7 +195,7 @@ class RenewalServiceTest {
         RentalContract contract = buildContract(ContractStatus.OVERDUE);
         when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
         when(policyService.getActivePolicy()).thenReturn(buildActivePolicy());
-        when(reservationRepository.existsByStorageUnitIdAndStatusIn(eq(42L), any())).thenReturn(false);
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any())).thenReturn(false);
 
         FacilityUnitTypePrice price = FacilityUnitTypePrice.builder().monthlyPrice(800000L).build();
         when(facilityPriceRepository.findByFacilityIdAndUnitTypeId(1L, 7L)).thenReturn(Optional.of(price));
