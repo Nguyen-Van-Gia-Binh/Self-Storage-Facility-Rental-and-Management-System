@@ -54,25 +54,38 @@
 
 ### 1.3. Cấu trúc response
 
-**Thành công — đơn lẻ:**
+Mọi endpoint chính thức trong hệ thống đều tuân thủ chuẩn bọc `ApiResponse<T>`:
+
+**Thành công — đơn lẻ (`ApiResponse<T>`):**
 ```json
 {
-  "id": 1042,
-  "code": "RSV-2026-001042",
-  "status": "PENDING_PAYMENT"
+  "status": 200,
+  "message": "Thành công",
+  "data": {
+    "id": 1042,
+    "code": "RSV-2026-001042",
+    "status": "PENDING_PAYMENT"
+  }
 }
 ```
 
-**Thành công — danh sách (phân trang):**
+**Thành công — danh sách phân trang (`ApiResponse<PageResponse<T>>` hoặc `PageResponse<T>`):**
 ```json
 {
-  "content": [],
-  "page": 0,
-  "size": 20,
-  "totalElements": 137,
-  "totalPages": 7
+  "status": 200,
+  "message": "Lấy danh sách thành công",
+  "data": {
+    "content": [
+      { "id": 1, "name": "Item 1" }
+    ],
+    "page": 0,
+    "size": 20,
+    "totalElements": 137,
+    "totalPages": 7
+  }
 }
 ```
+*(Lưu ý: Đối với một số Controller danh mục công khai như `FacilityController` hoặc quản trị `UserController`, dữ liệu có thể trả về trực tiếp `PageResponse<T>` không bọc `data`).*
 
 **Lỗi — mọi trường hợp:**
 ```json
@@ -666,22 +679,57 @@ Cập nhật loại ô kho.
 
 ---
 
-### `PATCH /api/v1/facilities/{facilityId}/unit-types/{unitTypeId}/price`
+### `GET /api/v1/facilities/{facilityId}/prices`
 
-Cập nhật đơn giá tháng — `BM-03`.
+Lấy bảng giá của tất cả loại ô kho tại một cơ sở — `BM-03`.
 
-**Auth:** `BUSINESS_MANAGER`  
+**Auth:** Công khai / `BUSINESS_OPERATIONS_MANAGER`  
+
+**Response `200`:**
+```json
+[
+  {
+    "id": 1,
+    "facilityId": 1,
+    "unitTypeId": 7,
+    "unitTypeName": "Loại S — 3m²",
+    "monthlyPrice": 800000,
+    "effectiveDate": "2026-10-01"
+  }
+]
+```
+
+---
+
+### `PUT /api/v1/facilities/{facilityId}/prices/{unitTypeId}`
+
+Cập nhật đơn giá tháng cho loại ô kho tại cơ sở — `BM-03`.
+
+**Auth:** `BUSINESS_OPERATIONS_MANAGER`  
 **Request body:**
 ```json
 {
+  "monthlyPrice": 1700000
+}
+```
+
+| Trường | Kiểu | Bắt buộc | Ràng buộc |
+|---|---|:---:|---|
+| `monthlyPrice` | `long` | ✓ | $\ge 0$ |
+
+> Giá mới chỉ áp dụng cho Reservation tạo từ thời điểm cập nhật trở đi — `BR-GEN-05`.
+
+**Response `200`:** Trả về `FacilityPriceResponse`.
+```json
+{
+  "id": 1,
+  "facilityId": 1,
+  "unitTypeId": 7,
+  "unitTypeName": "Loại S — 3m²",
   "monthlyPrice": 1700000,
   "effectiveDate": "2026-11-01"
 }
 ```
-
-> Giá mới chỉ áp dụng cho Reservation tạo từ `effectiveDate` trở đi — `BR-GEN-05`.
-
-**Response `200`:** Trả về `UnitTypeResponse`.
 
 ---
 
@@ -759,6 +807,43 @@ Cập nhật trạng thái ô kho — `FS-03`.
 
 **Package:** `com.swp391.selfstorage.reservation`  
 **Yêu cầu:** `SC-02`, `FM-02` · **Tasks:** `T3.1`, `T3.2`
+
+---
+
+### `POST /api/v1/reservations/calculate-price`
+
+Tính trước tiền thuê, tiền cọc 1 tháng (`BR-DEP-01`) và chiết khấu làm tròn (`BR-GEN-04`) trước khi đặt chỗ.
+
+**Auth:** Công khai / `CUSTOMER`  
+**Request body:**
+```json
+{
+  "facilityId": 1,
+  "unitTypeId": 7,
+  "startDate": "2026-10-01",
+  "rentalMonths": 3
+}
+```
+
+**Response `200`:**
+```json
+{
+  "status": 200,
+  "message": "Tính giá thành công",
+  "data": {
+    "facilityId": 1,
+    "unitTypeId": 7,
+    "startDate": "2026-10-01",
+    "endDateExclusive": "2027-01-01",
+    "rentalMonths": 3,
+    "monthlyPrice": 800000,
+    "totalRentalFee": 2400000,
+    "depositAmount": 800000,
+    "discountAmount": 0,
+    "finalAmount": 3200000
+  }
+}
+```
 
 ---
 
@@ -1231,6 +1316,42 @@ Nhân viên xác nhận bàn giao kho — `SC-04`, `FS-02`.
 
 ---
 
+### `POST /api/v1/contracts/{id}/handover-rejection`
+
+Nhân viên ghi nhận khách hàng từ chối nhận bàn giao ô kho do sự cố/chất lượng không đạt — `FS-02`.
+
+**Auth:** `FACILITY_STAFF` (được gán Facility)  
+**Request Header:** `X-Staff-Id: {id}`  
+**Request body:**
+```json
+{
+  "rejectionReason": "FACILITY_DEFECT",
+  "notes": "Cửa kho bị kẹt ray trượt nặng, khách yêu cầu hủy/đổi ô kho khác"
+}
+```
+
+| Trường | Kiểu | Bắt buộc | Mô tả |
+|---|---|:---:|---|
+| `rejectionReason` | `string` | ✓ | `FACILITY_DEFECT`, `CUSTOMER_CHANGE_MIND`, `OTHER` |
+| `notes` | `string` | ✗ | Ghi chú lý do cụ thể |
+
+**Response `200`:**
+```json
+{
+  "status": 200,
+  "message": "Da ghi nhan tu choi nhan kho",
+  "data": {
+    "contractId": 500,
+    "status": "TERMINATED",
+    "storageUnitId": 42,
+    "unitStatus": "MAINTENANCE",
+    "rejectionReason": "FACILITY_DEFECT"
+  }
+}
+```
+
+---
+
 ### `POST /api/v1/contracts/{id}/return-notices`
 
 Gửi thông báo trả kho — `SC-05`, `BR-RET-01`.
@@ -1362,6 +1483,36 @@ FM phê duyệt quyết toán, hoàn cọc, thu hồi mã truy cập, đưa kho 
 
 ---
 
+### `POST /api/v1/contracts/{id}/renewals/quote`
+
+Tính toán báo giá xem trước cho khách hàng trước khi thanh toán gia hạn (Quote Preview) — `SC-05`, `Task T4.5`.
+
+**Auth:** `CUSTOMER` (chính mình), `FACILITY_STAFF`, `FACILITY_MANAGER`  
+**Request body:**
+```json
+{
+  "renewalMonths": 3
+}
+```
+
+**Response `200`:**
+```json
+{
+  "status": 200,
+  "message": "Tính toán phí gia hạn thành công",
+  "data": {
+    "contractId": 500,
+    "currentEndDate": "2027-01-01",
+    "newEndDateExclusive": "2027-04-01",
+    "renewalMonths": 3,
+    "monthlyPrice": 800000,
+    "totalRenewalFee": 2400000
+  }
+}
+```
+
+---
+
 ### `POST /api/v1/contracts/{id}/renewals`
 
 Gia hạn hợp đồng — `SC-05`, `BR-REN-*`.
@@ -1454,6 +1605,76 @@ Tạo giao dịch thanh toán.
 | `409` | `PAYMENT_FAILED` | Thanh toán thất bại ở cổng thanh toán |
 | `409` | `RESERVATION_EXPIRED` | Reservation đã hết hạn giữ chỗ |
 | `422` | `AMOUNT_MISMATCH` | Số tiền không khớp với tổng phải trả |
+
+---
+
+### `POST /api/v1/payments/checkout`
+
+Khởi tạo link thanh toán và mã QR PayOS VietQR tự động — `SC-03`.
+
+**Auth:** `CUSTOMER`  
+**Request body:**
+```json
+{
+  "reservationId": 1042,
+  "contractRenewalId": null,
+  "amount": 3200000,
+  "description": "Thanh toan giu cho RSV-2026-001042",
+  "cancelUrl": "http://localhost:5173/customer/booking/cancel",
+  "returnUrl": "http://localhost:5173/customer/booking/success"
+}
+```
+
+**Response `201`:**
+```json
+{
+  "checkoutUrl": "https://pay.payos.vn/web/...",
+  "qrCode": "00020101021238540010A000000727...",
+  "orderCode": 1727239182391,
+  "paymentId": 9002,
+  "amount": 3200000,
+  "description": "Thanh toan giu cho RSV-2026-001042"
+}
+```
+
+---
+
+### `GET /api/v1/payments/order/{orderCode}/status`
+
+Kiểm tra trạng thái thanh toán theo mã đơn hàng PayOS (phục vụ cơ chế Frontend Polling) — `SC-03`.
+
+**Auth:** `CUSTOMER`, `FACILITY_STAFF`, `FACILITY_MANAGER`, `ADMIN`  
+**Path param:** `orderCode`
+
+**Response `200`:** Trả về `PaymentResponse`.
+```json
+{
+  "id": 9002,
+  "orderCode": 1727239182391,
+  "referenceType": "RESERVATION",
+  "referenceId": 1042,
+  "amount": 3200000,
+  "status": "PAID",
+  "paidAt": "2026-09-25T09:15:30+07:00",
+  "transactionRef": "PAYOS1727239182391"
+}
+```
+*(Trạng thái: `PENDING`, `PAID`, `CANCELLED`, `EXPIRED`).*
+
+---
+
+### `POST /api/v1/payments/webhook/payos`
+
+Webhook tiếp nhận thông báo xác nhận thanh toán tự động từ máy chủ PayOS.
+
+**Auth:** Công khai (đã mở trong `SecurityConfig`)  
+**Response `200`:**
+```json
+{
+  "error": 0,
+  "message": "Success"
+}
+```
 
 ---
 
@@ -1686,6 +1907,42 @@ Chi tiết yêu cầu hỗ trợ.
 
 ---
 
+### `GET /api/v1/support-requests/staff-workload`
+
+Xem khối lượng công việc của nhân viên cơ sở để phân bổ nhiệm vụ xử lý sự cố — `FM-05`, `Task T4.8`.
+
+**Auth:** `FACILITY_MANAGER`, `ADMIN`, `BUSINESS_MANAGER`  
+**Query params:** `facilityId` (bắt buộc)
+
+**Response `200`:**
+```json
+{
+  "status": 200,
+  "message": "Lấy danh sách tải công việc nhân viên thành công",
+  "data": [
+    {
+      "staffId": 8,
+      "fullName": "Trần Thị B (Staff Tân Thuận)",
+      "activeTicketCount": 2,
+      "pendingTaskCount": 1
+    }
+  ]
+}
+```
+
+---
+
+### `GET /api/v1/management/support-requests`
+
+Xem danh sách yêu cầu hỗ trợ dành riêng cho nhân viên và ban quản lý cơ sở — `FM-05`, `FS-05`.
+
+**Auth:** `FACILITY_STAFF`, `FACILITY_MANAGER`, `ADMIN`, `BUSINESS_MANAGER`  
+**Query params:** `facilityId`, `status`, `category`, `assignedStaffId`, `page`, `size`, `sort`
+
+**Response `200`:** `ApiResponse<PageResponse<SupportRequestSummaryResponse>>`.
+
+---
+
 ### `PATCH /api/v1/support-requests/{id}/assign`
 
 Phân công nhân viên xử lý — `FM-05`.
@@ -1817,6 +2074,40 @@ Danh sách hợp đồng theo trạng thái — `FM-06`.
 **Query params:** `page`, `size`, `status`, `expiringSoonDays`
 
 **Response `200`:** Danh sách phân trang `ContractSummaryResponse`.
+
+---
+
+### `GET /api/v1/reports/facility/{facilityId}/overdue-debt`
+
+Báo cáo nợ quá hạn và chi tiết các hợp đồng quá hạn cấp cơ sở — `FM-06`.
+
+**Auth:** `FACILITY_MANAGER` (được gán), `BUSINESS_MANAGER`, `ADMIN`  
+**Path param:** `facilityId`
+
+**Response `200`:** `ApiResponse<OverdueDebtReportResponse>`.
+```json
+{
+  "status": 200,
+  "message": "Lấy báo cáo công nợ quá hạn thành công",
+  "data": {
+    "facilityId": 1,
+    "facilityName": "Kho Tân Thuận",
+    "totalOverdueContracts": 2,
+    "totalOverdueDebtAmount": 5500000,
+    "overdueContracts": [
+      {
+        "contractId": 105,
+        "contractCode": "CTR-202609-005",
+        "customerName": "Trần Văn C",
+        "customerPhone": "0987654321",
+        "overdueDays": 8,
+        "overdueFeeAccrued": 800000,
+        "totalOutstandingDebt": 2800000
+      }
+    ]
+  }
+}
+```
 
 ---
 
