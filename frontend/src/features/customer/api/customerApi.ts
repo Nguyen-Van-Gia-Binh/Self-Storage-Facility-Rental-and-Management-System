@@ -2,8 +2,9 @@ import type { Facility, UnitType, StorageUnit, RentedContract, SupportTicket, Cr
 import { mockFacilities, mockUnitTypes, mockStorageUnits, mockRentedContracts, mockSupportTickets } from '../mockData';
 import { calculateBookingTotal } from '../utils/pricing';
 import type { PricingCalculationResult } from '../utils/pricing';
-
-const API_BASE_URL = 'http://localhost:8080/api/v1';
+import { apiClient, type ApiResponse, isMockEnabled } from '@/api/client';
+import { calculateBookingPrice, createReservation as apiCreateReservation } from '@/api/reservation';
+import { getCustomerContracts } from '@/api/customerRentals';
 
 let cachedTickets: SupportTicket[] = [...mockSupportTickets];
 
@@ -58,32 +59,24 @@ export interface PaymentStatusResponse {
   referenceType: string;
   referenceId: number;
   amount: number;
-  method: string;
   status: string;
-  transactionRef?: string;
   orderCode: number;
-  checkoutUrl?: string;
-  transferContent?: string;
-  bankName?: string;
-  bankAccountNumber?: string;
+  transactionRef?: string;
 }
 
-/**
- * Customer API Service for Workstream 1
- * Hỗ trợ gọi API Backend Spring Boot và tự động Fallback sang Mock Data nếu server chưa khởi động.
- */
 export const customerApi = {
   /**
-   * Lấy danh sách cơ sở lưu trữ
+   * Lấy danh sách chi nhánh cơ sở kho đang hoạt động
    */
   async getFacilities(): Promise<Facility[]> {
+    if (isMockEnabled('WS1')) return mockFacilities;
     try {
-      const res = await fetch(`${API_BASE_URL}/public/facilities`, { method: 'GET' });
-      if (res.ok) {
-        const json = await res.json();
-        if (json.data && Array.isArray(json.data) && json.data.length > 0) {
-          return json.data;
-        }
+      const res = await apiClient<ApiResponse<any>>('/facilities');
+      if (res?.data?.content && Array.isArray(res.data.content)) {
+        return res.data.content;
+      }
+      if (Array.isArray(res?.data)) {
+        return res.data;
       }
     } catch {
       // Backend offline -> Fallback mock
@@ -95,13 +88,14 @@ export const customerApi = {
    * Lấy danh mục 4 loại kích thước kho
    */
   async getUnitTypes(): Promise<UnitType[]> {
+    if (isMockEnabled('WS1')) return mockUnitTypes;
     try {
-      const res = await fetch(`${API_BASE_URL}/public/unit-types`, { method: 'GET' });
-      if (res.ok) {
-        const json = await res.json();
-        if (json.data && Array.isArray(json.data) && json.data.length > 0) {
-          return json.data;
-        }
+      const res = await apiClient<ApiResponse<any>>('/facilities/1/unit-types');
+      if (res?.data?.content && Array.isArray(res.data.content)) {
+        return res.data.content;
+      }
+      if (Array.isArray(res?.data)) {
+        return res.data;
       }
     } catch {
       // Fallback
@@ -113,13 +107,11 @@ export const customerApi = {
    * Lấy danh sách ô kho và sơ đồ mặt bằng
    */
   async getStorageUnits(_facilityId: string): Promise<StorageUnit[]> {
+    if (isMockEnabled('WS1')) return mockStorageUnits;
     try {
-      const res = await fetch(`${API_BASE_URL}/public/facilities/${_facilityId}/units`, { method: 'GET' });
-      if (res.ok) {
-        const json = await res.json();
-        if (json.data && Array.isArray(json.data) && json.data.length > 0) {
-          return json.data;
-        }
+      const res = await apiClient<ApiResponse<any>>(`/public/facilities/${_facilityId}/units`);
+      if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+        return res.data;
       }
     } catch {
       // Fallback
@@ -132,105 +124,105 @@ export const customerApi = {
    */
   async calculatePrice(monthlyPrice: number, months: number): Promise<PricingCalculationResult> {
     try {
-      const res = await fetch(`${API_BASE_URL}/reservations/calculate-price`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ monthlyPrice, months }),
-      });
-      if (res.ok) {
-        const json = await res.json();
-        if (json.data) {
-          return {
-            monthlyRate: json.data.monthlyPrice,
-            months: json.data.rentalMonths,
-            rawRentTotal: json.data.rawRentTotal,
-            discountPercentage: json.data.discountPercentage,
-            discountAmount: json.data.discountAmount,
-            finalRentTotal: json.data.finalRentTotal,
-            depositAmount: json.data.depositAmount,
-            totalDueToday: json.data.totalDueToday,
-          };
-        }
-      }
+      const data = await calculateBookingPrice({ monthlyPrice, months });
+      return {
+        monthlyRate: data.monthlyPrice,
+        months: data.rentalMonths,
+        rawRentTotal: data.rawRentTotal,
+        discountPercentage: data.discountPercentage,
+        discountAmount: data.discountAmount,
+        finalRentTotal: data.finalRentTotal,
+        depositAmount: data.depositAmount,
+        totalDueToday: data.totalDueToday,
+      };
     } catch {
-      // Fallback logic
+      return calculateBookingTotal(monthlyPrice, months);
     }
-    return calculateBookingTotal(monthlyPrice, months);
   },
 
   /**
-   * Tạo đơn đặt chỗ mới & giữ chỗ 48h
+   * Tạo đơn đặt chỗ mới & giữ chỗ 48h (SC-02)
    */
   async createReservation(payload: CreateReservationPayload): Promise<ReservationResult> {
     try {
-      const res = await fetch(`${API_BASE_URL}/reservations`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+      const res = await apiCreateReservation({
+        facilityId: payload.facilityId,
+        unitTypeId: payload.unitTypeId,
+        storageUnitId: payload.storageUnitId,
+        startDate: payload.startDate,
+        rentalMonths: payload.rentalMonths,
+        customerName: payload.customerName,
+        customerPhone: payload.customerPhone,
+        customerEmail: payload.customerEmail,
+        identityNumber: payload.identityNumber,
       });
-      if (res.ok) {
-        const json = await res.json();
-        if (json.data) {
-          return json.data;
-        }
-      }
+
+      return {
+        id: res.id,
+        code: res.code,
+        facilityName: res.facilityName || 'SmartStorage Cơ sở chính',
+        unitTypeName: res.unitTypeName || 'Storage Locker',
+        totalPayable: res.totalPayable || res.depositAmount,
+        depositAmount: res.depositAmount,
+        status: res.status,
+        holdExpiresAt: res.holdExpiresAt,
+        bankAccountNumber: res.bankAccountNumber,
+        bankName: res.bankName,
+        transferContent: res.transferContent,
+        vietQrPayload: res.vietQrPayload,
+      };
     } catch {
-      // Fallback logic
+      // Giả lập kết quả trả về nếu backend offline
+      const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+      const mockCode = `RSV-20260920-${randomSuffix}`;
+      const pricing = calculateBookingTotal(1200000, payload.rentalMonths);
+      const transferContent = `SMARTSTORAGE ${mockCode}`;
+
+      return {
+        code: mockCode,
+        facilityName: 'SmartStorage District 7 Flagship',
+        unitTypeName: 'Type S – Small Locker',
+        totalPayable: pricing.totalDueToday,
+        depositAmount: pricing.depositAmount,
+        status: 'PENDING_PAYMENT',
+        holdExpiresAt: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
+        vietQrPayload: `vietqr://${pricing.totalDueToday}/${transferContent}`,
+        bankAccountNumber: '0888 567 999',
+        bankName: 'MB Bank (Ngân hàng Quân Đội)',
+        transferContent,
+      };
     }
-
-    // Giả lập kết quả trả về nếu backend offline
-    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-    const mockCode = `RSV-20260920-${randomSuffix}`;
-    const pricing = calculateBookingTotal(1200000, payload.rentalMonths);
-    const transferContent = `SMARTSTORAGE ${mockCode}`;
-
-    return {
-      code: mockCode,
-      facilityName: 'SmartStorage District 7 Flagship',
-      unitTypeName: 'Type S – Small Locker',
-      totalPayable: pricing.totalDueToday,
-      depositAmount: pricing.depositAmount,
-      status: 'PENDING_PAYMENT',
-      holdExpiresAt: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
-      vietQrPayload: `vietqr://${pricing.totalDueToday}/${transferContent}`,
-      bankAccountNumber: '0888 567 999',
-      bankName: 'MB Bank (Ngân hàng Quân Đội)',
-      transferContent,
-    };
   },
 
   /**
    * Tạo link thanh toán PayOS VietQR tự động (SC-03)
    */
   async createPaymentCheckout(payload: CheckoutRequest): Promise<CheckoutResponse> {
-    const res = await fetch(`${API_BASE_URL}/payments/checkout`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) {
-      const errJson = await res.json().catch(() => null);
-      throw new Error(errJson?.message || 'Không thể tạo link thanh toán PayOS');
+    try {
+      const res = await apiClient<ApiResponse<CheckoutResponse> | CheckoutResponse>('/payments/checkout', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      return (res as any)?.data || res;
+    } catch (err: any) {
+      throw new Error(err?.message || 'Không thể tạo link thanh toán PayOS');
     }
-    return res.json();
   },
 
   /**
    * Tra cứu trạng thái giao dịch thanh toán theo orderCode phục vụ Polling tự động
    */
   async getPaymentStatus(orderCode: number): Promise<PaymentStatusResponse> {
-    const res = await fetch(`${API_BASE_URL}/payments/order/${orderCode}/status`, {
-      method: 'GET',
-    });
-    if (!res.ok) {
+    try {
+      const res = await apiClient<ApiResponse<PaymentStatusResponse> | PaymentStatusResponse>(`/payments/order/${orderCode}/status`);
+      return (res as any)?.data || res;
+    } catch {
       throw new Error('Không thể tra cứu trạng thái thanh toán');
     }
-    return res.json();
   },
 
   /**
    * Xác nhận thanh toán giữ chỗ trực tiếp (SC-03) -> Bắn Event tạo RentalContract
-   * POST /api/v1/payments
    */
   async createManualPayment(payload: {
     referenceType: string;
@@ -239,29 +231,25 @@ export const customerApi = {
     method: string;
     transactionRef?: string;
   }): Promise<any> {
-    const res = await fetch(`${API_BASE_URL}/payments`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) {
-      const errJson = await res.json().catch(() => null);
-      throw new Error(errJson?.message || 'Không thể xác nhận giao dịch thanh toán');
+    try {
+      const res = await apiClient<ApiResponse<any> | any>('/payments', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      return (res as any)?.data || res;
+    } catch (err: any) {
+      throw new Error(err?.message || 'Không thể xác nhận giao dịch thanh toán');
     }
-    return res.json();
   },
 
   /**
-   * Lấy danh sách hợp đồng kho đang thuê của khách hàng
+   * Lấy danh sách hợp đồng kho đang thuê của khách hàng (SC-05)
    */
   async getMyRentals(): Promise<RentedContract[]> {
     try {
-      const res = await fetch(`${API_BASE_URL}/reservations/my-rentals`, { method: 'GET' });
-      if (res.ok) {
-        const json = await res.json();
-        if (json.data && Array.isArray(json.data)) {
-          return json.data;
-        }
+      const contracts = await getCustomerContracts();
+      if (contracts && contracts.length > 0) {
+        return contracts;
       }
     } catch {
       // Fallback
@@ -278,23 +266,14 @@ export const customerApi = {
       if (status && status !== 'ALL') params.append('status', status);
       if (category && category !== 'ALL') params.append('category', category);
       
-      const token = localStorage.getItem('access_token');
-      const res = await fetch(`${API_BASE_URL}/support-requests?${params.toString()}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      });
+      const queryStr = params.toString() ? `?${params.toString()}` : '';
+      const res = await apiClient<ApiResponse<any>>(`/support-requests${queryStr}`);
 
-      if (res.ok) {
-        const json = await res.json();
-        if (json.data && Array.isArray(json.data.content)) {
-          return json.data.content;
-        }
-        if (json.data && Array.isArray(json.data)) {
-          return json.data;
-        }
+      if (res?.data?.content && Array.isArray(res.data.content)) {
+        return res.data.content;
+      }
+      if (Array.isArray(res?.data)) {
+        return res.data;
       }
     } catch {
       // Fallback to cached mock data
@@ -315,19 +294,8 @@ export const customerApi = {
    */
   async getSupportRequestDetail(id: number): Promise<SupportTicket> {
     try {
-      const token = localStorage.getItem('access_token');
-      const res = await fetch(`${API_BASE_URL}/support-requests/${id}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      });
-
-      if (res.ok) {
-        const json = await res.json();
-        if (json.data) return json.data;
-      }
+      const res = await apiClient<ApiResponse<SupportTicket>>(`/support-requests/${id}`);
+      if (res?.data) return res.data;
     } catch {
       // Fallback
     }
@@ -342,22 +310,14 @@ export const customerApi = {
    */
   async createSupportRequest(payload: CreateSupportTicketPayload): Promise<SupportTicket> {
     try {
-      const token = localStorage.getItem('access_token');
-      const res = await fetch(`${API_BASE_URL}/support-requests`, {
+      const res = await apiClient<ApiResponse<SupportTicket>>('/support-requests', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
         body: JSON.stringify(payload),
       });
 
-      if (res.ok) {
-        const json = await res.json();
-        if (json.data) {
-          cachedTickets.unshift(json.data);
-          return json.data;
-        }
+      if (res?.data) {
+        cachedTickets.unshift(res.data);
+        return res.data;
       }
     } catch {
       // Fallback
@@ -408,23 +368,15 @@ export const customerApi = {
    */
   async confirmResolution(id: number, satisfied: boolean, feedbackNotes?: string): Promise<SupportTicket> {
     try {
-      const token = localStorage.getItem('access_token');
-      const res = await fetch(`${API_BASE_URL}/support-requests/${id}/confirm`, {
+      const res = await apiClient<ApiResponse<SupportTicket>>(`/support-requests/${id}/confirm`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
         body: JSON.stringify({ satisfied, feedbackNotes }),
       });
 
-      if (res.ok) {
-        const json = await res.json();
-        if (json.data) {
-          const idx = cachedTickets.findIndex(t => t.id === id);
-          if (idx !== -1) cachedTickets[idx] = json.data;
-          return json.data;
-        }
+      if (res?.data) {
+        const idx = cachedTickets.findIndex(t => t.id === id);
+        if (idx !== -1) cachedTickets[idx] = res.data;
+        return res.data;
       }
     } catch {
       // Fallback
@@ -450,17 +402,11 @@ export const customerApi = {
    */
   async cancelSupportRequest(id: number): Promise<boolean> {
     try {
-      const token = localStorage.getItem('access_token');
-      const res = await fetch(`${API_BASE_URL}/support-requests/${id}`, {
+      await apiClient(`/support-requests/${id}`, {
         method: 'DELETE',
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
       });
-      if (res.ok) {
-        cachedTickets = cachedTickets.filter(t => t.id !== id);
-        return true;
-      }
+      cachedTickets = cachedTickets.filter(t => t.id !== id);
+      return true;
     } catch {
       // Fallback
     }
