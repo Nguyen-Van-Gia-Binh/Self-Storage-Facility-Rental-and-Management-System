@@ -44,13 +44,13 @@ class StorageUnitControllerTest {
         when(storageUnitService.getStorageUnitsByFacility(eq(1L), any(), any(), any()))
                 .thenReturn(new PageResponse<>(List.of(unit), 0, 20, 1, 1));
 
-        mockMvc.perform(get("/api/v1/facilities/1/storage-units"))
+        mockMvc.perform(get("/facilities/1/storage-units"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].code").value("S-101"));
     }
 
     @Test
-    @DisplayName("PATCH /api/v1/facilities/{facilityId}/storage-units/{unitId}/status đổi trạng thái ô kho trả về 200")
+    @DisplayName("PATCH /facilities/{facilityId}/storage-units/{unitId}/status đổi trạng thái ô kho trả về 200")
     void testPatchStatus() throws Exception {
         UpdateStorageUnitStatusRequest req = UpdateStorageUnitStatusRequest.builder()
                 .status(StorageUnitStatus.MAINTENANCE)
@@ -65,7 +65,7 @@ class StorageUnitControllerTest {
         when(storageUnitService.updateStorageUnitStatus(eq(1L), eq(42L), any(UpdateStorageUnitStatusRequest.class)))
                 .thenReturn(res);
 
-        mockMvc.perform(patch("/api/v1/facilities/1/storage-units/42/status")
+        mockMvc.perform(patch("/facilities/1/storage-units/42/status")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk())
