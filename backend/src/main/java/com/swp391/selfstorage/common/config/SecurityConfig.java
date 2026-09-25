@@ -60,13 +60,9 @@ public class SecurityConfig {
                         // Whitelist auth và public endpoints
                         .requestMatchers(
                                 "/auth/**",
-                                "/api/v1/auth/**",
                                 "/public/**",
-                                "/api/v1/public/**",
                                 "/facilities/**",
-                                "/api/v1/facilities/**",
-                                "/payments/webhook/**",
-                                "/api/v1/payments/webhook/**"
+                                "/payments/webhook/**"
                         ).permitAll()
                         // Các request khác cho phép trong giai đoạn phát triển, bảo vệ qua @PreAuthorize
                         .anyRequest().permitAll()
