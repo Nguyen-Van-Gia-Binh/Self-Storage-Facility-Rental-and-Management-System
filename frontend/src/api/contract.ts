@@ -31,6 +31,84 @@ let localMockReturnContracts: ReturnContractDetail[] = JSON.parse(JSON.stringify
 const localManagerContracts: ManagerContractItem[] = JSON.parse(JSON.stringify(mockManagerContractsData.contracts));
 let localAvailableUnits: AvailableUnitOption[] = JSON.parse(JSON.stringify(mockManagerContractsData.availableUnits));
 
+export interface ContractSummary {
+  id: number;
+  code: string;
+  customerId: number;
+  customerName?: string;
+  customerPhone?: string;
+  facilityId: number;
+  facilityName?: string;
+  storageUnitId: number;
+  storageUnitCode?: string;
+  unitTypeId: number;
+  unitTypeName?: string;
+  startDate: string;
+  endDateExclusive: string;
+  rentalMonths: number;
+  monthlyPrice: number;
+  depositAmount: number;
+  depositBalance: number;
+  status: string; // PENDING_CHECK_IN, ACTIVE, PENDING_RETURN, OVERDUE, CLOSED, etc.
+  nearExpiration: boolean;
+}
+
+function getMockContracts(params?: {
+  status?: string;
+  keyword?: string;
+  facilityId?: number;
+  page?: number;
+  size?: number;
+}): PageResponse<ContractSummary> {
+  let list = (localMockContracts as unknown as ContractSummary[]);
+  if (params?.facilityId) list = list.filter((c) => c.facilityId === params.facilityId);
+  if (params?.status && params.status !== 'ALL') list = list.filter((c) => c.status === params.status);
+  if (params?.keyword) {
+    const kw = params.keyword.toLowerCase();
+    list = list.filter(
+      (c) =>
+        (c.code && c.code.toLowerCase().includes(kw)) ||
+        (c.customerName && c.customerName.toLowerCase().includes(kw))
+    );
+  }
+  const page = params?.page ?? 0;
+  const size = params?.size ?? 10;
+  const start = page * size;
+  const content = list.slice(start, start + size);
+  return {
+    content,
+    page,
+    size,
+    totalElements: list.length,
+    totalPages: Math.ceil(list.length / size) || 1,
+  };
+}
+
+/**
+ * Lấy danh sách hợp đồng phân trang theo chuẩn PageResponse (FM-03, WS2-GUIDE § 4.1)
+ * GET /api/v1/contracts
+ */
+export async function getContracts(params?: {
+  status?: string;
+  keyword?: string;
+  facilityId?: number;
+  page?: number;
+  size?: number;
+}): Promise<PageResponse<ContractSummary>> {
+  if (isMockEnabled('WS2')) {
+    return getMockContracts(params);
+  }
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== 'ALL') query.set('status', params.status);
+  if (params?.keyword) query.set('keyword', params.keyword);
+  if (params?.facilityId) query.set('facilityIds', String(params.facilityId));
+  query.set('page', String(params?.page ?? 0));
+  query.set('size', String(params?.size ?? 10));
+
+  const res = await apiClient<ApiResponse<PageResponse<ContractSummary>>>(`/contracts?${query.toString()}`);
+  return res.data;
+}
+
 /**
  * Lấy danh sách hợp đồng chờ Check-in tại quầy
  * Nếu mock mode = true: trả về dữ liệu mẫu trong mock-contracts.json
@@ -468,5 +546,29 @@ export async function approveSettlementRefund(
     headers,
     body: JSON.stringify(data),
   });
-  return { success: true, message: 'Ph\u00ea duy\u1ec7t quy\u1ebft to\u00e1n v\u00e0 ho\u00e0n c\u1ecd th\u00e0nh c\u00f4ng' };
+  return { success: true, message: 'Phê duyệt quyết toán và hoàn cọc thành công' };
 }
+
+/**
+ * Phê duyệt quyết toán hợp đồng (FM - Hướng dẫn kỹ thuật Phase 2 § 4.1)
+ * POST /api/v1/contracts/{id}/settlement-approval
+ */
+export async function approveSettlement(
+  contractId: number,
+  payload?: { adjustedDamageCost?: number; approvedNotes?: string },
+  managerId?: number
+): Promise<any> {
+  if (isMockEnabled('WS2')) {
+    return { success: true, message: 'Phê duyệt quyết toán thành công' };
+  }
+  const headers: Record<string, string> = {};
+  if (managerId) headers['X-Manager-Id'] = String(managerId);
+
+  const res = await apiClient<ApiResponse<any>>(`/contracts/${contractId}/settlement-approval`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload ?? {}),
+  });
+  return res.data;
+}
+
