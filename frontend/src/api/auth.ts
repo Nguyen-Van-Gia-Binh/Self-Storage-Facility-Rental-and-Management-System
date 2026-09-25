@@ -6,7 +6,6 @@ import { apiClient } from './client';
 import type { ApiResponse } from './client';
 import type { UserRoleType } from './user';
 import { tokenStorage, normalizeRole, DEMO_USERS, type UserSession, type UserRole } from '@/utils/tokenStorage';
-import mockUsers from '@/mock/mock-users.json';
 
 export interface UserInfo {
   id: number;
@@ -63,7 +62,12 @@ export async function loginUser(payload: LoginPayload): Promise<AuthData> {
     console.warn('Backend chưa sẵn sàng hoặc lỗi mạng, tự động kích hoạt Mock Demo:', err);
 
     // Fallback Mock nếu backend offline
-    const found = mockUsers.find((u) => u.email.toLowerCase() === payload.email.toLowerCase());
+    const demoUserList = Object.values(DEMO_USERS);
+    const found = demoUserList.find(
+      (u) =>
+        u.email.toLowerCase() === payload.email.toLowerCase() ||
+        u.username.toLowerCase() === payload.email.toLowerCase()
+    );
     if (found) {
       const authData: AuthData = {
         accessToken: `mock-jwt-token-${found.id}-${Date.now()}`,
@@ -71,12 +75,12 @@ export async function loginUser(payload: LoginPayload): Promise<AuthData> {
         tokenType: 'Bearer',
         expiresIn: 900000,
         user: {
-          id: found.id,
+          id: Number(found.id),
           email: found.email,
           fullName: found.fullName,
-          phone: found.phone,
-          role: found.role as UserRoleType,
-          facilityIds: found.facilityIds,
+          phone: '',
+          role: normalizeRole(found.role) as UserRoleType,
+          facilityIds: found.facilityId ? [found.facilityId] : [],
         },
       };
       saveSession(authData);
