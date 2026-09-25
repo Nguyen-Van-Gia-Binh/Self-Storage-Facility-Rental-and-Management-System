@@ -23,7 +23,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/support-requests")
+@RequestMapping("/support-requests")
 @Tag(name = "Customer Support", description = "Gửi và theo dõi yêu cầu hỗ trợ sự cố của khách hàng (SC-06 / Task T4.7)")
 public class CustomerSupportController {
 

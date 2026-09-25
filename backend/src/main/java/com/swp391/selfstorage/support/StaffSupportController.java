@@ -35,7 +35,7 @@ public class StaffSupportController {
         this.staffSupportService = staffSupportService;
     }
 
-    @PatchMapping("/api/v1/support-requests/{id}/assign")
+    @PatchMapping("/support-requests/{id}/assign")
     @PreAuthorize("hasRole('FACILITY_MANAGER') or hasRole('ADMIN') or hasRole('BUSINESS_MANAGER')")
     @Operation(summary = "Phân công nhân viên xử lý sự cố (FM-05, US-FM-05.1, UC-F7-04)")
     public ResponseEntity<ApiResponse<SupportRequestDetailResponse>> assignStaff(
@@ -47,7 +47,7 @@ public class StaffSupportController {
         return ResponseEntity.ok(ApiResponse.success(response, "Phân công nhân viên thành công"));
     }
 
-    @PatchMapping("/api/v1/support-requests/{id}/in-progress")
+    @PatchMapping("/support-requests/{id}/in-progress")
     @PreAuthorize("hasRole('FACILITY_STAFF') or hasRole('FACILITY_MANAGER') or hasRole('ADMIN')")
     @Operation(summary = "Tiếp nhận và bắt đầu kiểm tra hiện trường (FS-05, US-FS-05.2 AC-1)")
     public ResponseEntity<ApiResponse<SupportRequestDetailResponse>> startInProgress(
@@ -58,7 +58,7 @@ public class StaffSupportController {
         return ResponseEntity.ok(ApiResponse.success(response, "Chuyển trạng thái yêu cầu sang đang xử lý"));
     }
 
-    @PatchMapping("/api/v1/support-requests/{id}/resolve")
+    @PatchMapping("/support-requests/{id}/resolve")
     @PreAuthorize("hasRole('FACILITY_STAFF') or hasRole('FACILITY_MANAGER') or hasRole('ADMIN')")
     @Operation(summary = "Hoàn thành xử lý sự cố kèm ảnh hiện trạng và ghi chú (FS-05, US-FS-05.2 AC-2, AC-4)")
     public ResponseEntity<ApiResponse<SupportRequestDetailResponse>> resolveSupportRequest(
@@ -70,7 +70,7 @@ public class StaffSupportController {
         return ResponseEntity.ok(ApiResponse.success(response, "Cập nhật giải quyết sự cố thành công"));
     }
 
-    @GetMapping("/api/v1/support-requests/staff-workload")
+    @GetMapping("/support-requests/staff-workload")
     @PreAuthorize("hasRole('FACILITY_MANAGER') or hasRole('ADMIN') or hasRole('BUSINESS_MANAGER')")
     @Operation(summary = "Xem khối lượng công việc nhân viên cơ sở để phân bổ nhiệm vụ (FM-05, US-FM-05.1 AC-3)")
     public ResponseEntity<ApiResponse<List<StaffWorkloadResponse>>> getStaffWorkload(
@@ -81,7 +81,7 @@ public class StaffSupportController {
         return ResponseEntity.ok(ApiResponse.success(response, "Lấy danh sách tải công việc nhân viên thành công"));
     }
 
-    @GetMapping("/api/v1/management/support-requests")
+    @GetMapping("/management/support-requests")
     @PreAuthorize("hasRole('FACILITY_STAFF') or hasRole('FACILITY_MANAGER') or hasRole('ADMIN') or hasRole('BUSINESS_MANAGER')")
     @Operation(summary = "Xem danh sách yêu cầu hỗ trợ dành cho nhân viên và quản lý cơ sở")
     public ResponseEntity<ApiResponse<PageResponse<SupportRequestSummaryResponse>>> getManagementSupportRequests(
@@ -109,7 +109,7 @@ public class StaffSupportController {
         return ResponseEntity.ok(ApiResponse.success(response, "Lấy danh sách yêu cầu quản lý thành công"));
     }
 
-    @GetMapping("/api/v1/management/support-requests/{id}")
+    @GetMapping("/management/support-requests/{id}")
     @PreAuthorize("hasRole('FACILITY_STAFF') or hasRole('FACILITY_MANAGER') or hasRole('ADMIN') or hasRole('BUSINESS_MANAGER')")
     @Operation(summary = "Xem chi tiết yêu cầu hỗ trợ dành cho nhân viên và quản lý cơ sở")
     public ResponseEntity<ApiResponse<SupportRequestDetailResponse>> getManagementSupportRequestDetail(
