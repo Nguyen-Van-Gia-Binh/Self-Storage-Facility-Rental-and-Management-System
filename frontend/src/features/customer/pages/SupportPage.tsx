@@ -163,6 +163,18 @@ export const SupportPage: React.FC = () => {
 
   const kpis = [
     {
+      tab: 'ALL' as SupportTabKey,
+      title: 'Tổng yêu cầu',
+      count: tickets.length,
+      subtext: 'Tổng số vé hỗ trợ đã tạo',
+      icon: LifeBuoy,
+      bgGradient: 'from-blue-500/10 to-indigo-500/5',
+      borderColor: 'border-blue-200/80',
+      activeBorder: 'border-blue-600 ring-2 ring-blue-500/20',
+      textColor: 'text-blue-950',
+      iconColor: 'text-blue-600',
+    },
+    {
       tab: 'ACTIVE' as SupportTabKey,
       title: 'Đang xử lý',
       count: countInProgress,
@@ -197,18 +209,6 @@ export const SupportPage: React.FC = () => {
       activeBorder: 'border-slate-600 ring-2 ring-slate-500/20',
       textColor: 'text-slate-900',
       iconColor: 'text-slate-600',
-    },
-    {
-      tab: 'ALL' as SupportTabKey,
-      title: 'Tổng yêu cầu',
-      count: tickets.length,
-      subtext: 'Tổng số vé hỗ trợ đã tạo',
-      icon: LifeBuoy,
-      bgGradient: 'from-brand-500/10 to-blue-500/5',
-      borderColor: 'border-brand-200/80',
-      activeBorder: 'border-brand-600 ring-2 ring-brand-500/20',
-      textColor: 'text-brand-900',
-      iconColor: 'text-brand-600',
     },
   ];
 
