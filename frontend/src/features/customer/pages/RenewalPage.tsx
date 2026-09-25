@@ -820,7 +820,7 @@ export const RenewalPage: React.FC = () => {
                     <div className="bg-[#f2f9f7] p-3 rounded-lg border border-emerald-100">
                       <span className="text-slate-500 block">Ngân hàng thụ hưởng:</span>
                       <strong className="text-sm text-[#0a1614] font-bold">
-                        {payosCheckout?.accountName ? 'VietinBank / Napas247 (PayOS)' : 'MB Bank (Ngân hàng Quân Đội)'}
+                        MB Bank (Ngân hàng Quân Đội · Napas247)
                       </strong>
                     </div>
 
