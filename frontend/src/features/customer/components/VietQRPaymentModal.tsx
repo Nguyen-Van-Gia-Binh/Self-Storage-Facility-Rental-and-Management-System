@@ -14,7 +14,12 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
-import { verifyPayment, generateMoveInPass } from '@/api/payment';
+import {
+  createCheckout,
+  pollPaymentStatus,
+  generateMoveInPass,
+  type CheckoutResult,
+} from '@/api/payment';
 import type { MoveInPassData } from '@/types';
 
 export interface VietQRPaymentModalProps {
@@ -58,6 +63,9 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const [orderCode, setOrderCode] = useState<number | null>(null);
+  const [checkoutData, setCheckoutData] = useState<CheckoutResult | null>(null);
+  const [isPaid, setIsPaid] = useState(false);
 
   // 48 giờ tính bằng giây: 48 * 3600 = 172800s (BR-DEP-03)
   const [secondsRemaining, setSecondsRemaining] = useState(172800);
@@ -85,18 +93,38 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
 
   // Cú pháp nội dung chuyển khoản bắt buộc
   const transferMemo = `SMARTSTORAGE ${unitNumber} ${idLast4}`;
-  const bankAccount = '0888567999';
+  const bankAccount = checkoutData?.accountNumber || '0888567999';
   const bankName = 'MB Bank (Ngân hàng Quân Đội)';
-  const accountHolder = 'CONG TY CP SMARTSTORAGE VIETNAM';
+  const accountHolder = checkoutData?.accountName || 'CONG TY CP SMARTSTORAGE VIETNAM';
 
-  // URL sinh VietQR Napas247 chuẩn
-  const vietQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=vietqr://${totalAmount}/${transferMemo}`;
+  // Khởi tạo PayOS checkout link khi modal mở
+  useEffect(() => {
+    if (!isOpen) {
+      setOrderCode(null);
+      setCheckoutData(null);
+      setIsPaid(false);
+      return;
+    }
 
-  const handleCopy = (text: string, fieldName: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedField(fieldName);
-    setTimeout(() => setCopiedField(null), 2000);
-  };
+    let isSubscribed = true;
+    createCheckout({
+      amount: totalAmount,
+      description: transferMemo,
+    })
+      .then((res) => {
+        if (isSubscribed) {
+          setCheckoutData(res);
+          setOrderCode(res.orderCode);
+        }
+      })
+      .catch((err) => {
+        console.warn('Lỗi khởi tạo checkout PayOS, fallback mã mặc định:', err);
+      });
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [isOpen, totalAmount, transferMemo]);
 
   const handleClose = () => {
     setIsClosing(true);
@@ -106,33 +134,101 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
     }, 180);
   };
 
-  const handleConfirmPaid = async () => {
+  // Cơ chế Auto-Polling kiểm tra trạng thái mỗi 3 giây (WS3 - SC-03)
+  useEffect(() => {
+    if (!orderCode || isPaid || !isOpen) return;
+
+    const intervalId = setInterval(async () => {
+      try {
+        const res = await pollPaymentStatus(orderCode);
+        if (res.status === 'PAID' || res.status === 'SUCCESS') {
+          setIsPaid(true);
+          clearInterval(intervalId);
+
+          const pass = generateMoveInPass({
+            reservationId: `RES-${orderCode}`,
+            unitNumber,
+            facilityId: 'FAC-D7-01',
+            facilityName,
+            facilityAddress,
+            facilityPhone,
+            customerName: customerName || 'Quý khách hàng',
+            customerPhone: customerPhone || '0901234567',
+            customerIdentity: customerIdCard || '079199001234',
+            startDate: startDate || new Date().toISOString().split('T')[0],
+            checkInWindow: 'Trong vòng 48 giờ kể từ lúc cọc',
+            totalPaid: totalAmount,
+          });
+
+          setTimeout(() => {
+            handleClose();
+            onPaymentSuccess(pass);
+          }, 1000);
+        }
+      } catch (err) {
+        console.error('Lỗi auto-polling payment status:', err);
+      }
+    }, 3000);
+
+    return () => clearInterval(intervalId);
+  }, [
+    orderCode,
+    isPaid,
+    isOpen,
+    unitNumber,
+    facilityName,
+    facilityAddress,
+    facilityPhone,
+    customerName,
+    customerPhone,
+    customerIdCard,
+    startDate,
+    totalAmount,
+    onPaymentSuccess,
+  ]);
+
+  // URL sinh VietQR Napas247 chuẩn
+  const vietQrUrl =
+    checkoutData?.qrCode ||
+    `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=vietqr://${totalAmount}/${transferMemo}`;
+
+  const handleCopy = (text: string, fieldName: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(fieldName);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  // Nút kiểm tra thủ công ngay lập tức
+  const handleCheckNow = async () => {
+    if (!orderCode) return;
     setIsVerifying(true);
     try {
-      // Giả lập đối soát Napas247
-      await verifyPayment(`PAY-${unitNumber}-${Date.now()}`);
+      const res = await pollPaymentStatus(orderCode);
+      if (res.status === 'PAID' || res.status === 'SUCCESS') {
+        setIsPaid(true);
+        const pass = generateMoveInPass({
+          reservationId: `RES-${orderCode}`,
+          unitNumber,
+          facilityId: 'FAC-D7-01',
+          facilityName,
+          facilityAddress,
+          facilityPhone,
+          customerName: customerName || 'Quý khách hàng',
+          customerPhone: customerPhone || '0901234567',
+          customerIdentity: customerIdCard || '079199001234',
+          startDate: startDate || new Date().toISOString().split('T')[0],
+          checkInWindow: 'Trong vòng 48 giờ kể từ lúc cọc',
+          totalPaid: totalAmount,
+        });
 
-      // Sinh thẻ nhận kho điện tử Move-in Pass
-      const pass = generateMoveInPass({
-        reservationId: `RES-${Date.now()}`,
-        unitNumber,
-        facilityId: 'FAC-D7-01',
-        facilityName,
-        facilityAddress,
-        facilityPhone,
-        customerName: customerName || 'Quý khách hàng',
-        customerPhone: customerPhone || '0901234567',
-        customerIdentity: customerIdCard || '079199001234',
-        startDate: startDate || new Date().toISOString().split('T')[0],
-        checkInWindow: 'Trong vòng 48 giờ kể từ lúc cọc',
-        totalPaid: totalAmount,
-      });
-
-      setIsVerifying(false);
-      handleClose();
-      onPaymentSuccess(pass);
+        setIsVerifying(false);
+        handleClose();
+        onPaymentSuccess(pass);
+      } else {
+        setIsVerifying(false);
+      }
     } catch (err) {
-      console.error('Lỗi đối soát thanh toán:', err);
+      console.error('Lỗi kiểm tra đối soát thanh toán:', err);
       setIsVerifying(false);
     }
   };
@@ -389,8 +485,25 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
             </span>
           </div>
 
+          {/* Auto-Polling Status Badge (SC-03) */}
+          <div className="flex items-center justify-between gap-3 p-3 bg-emerald-50/80 border border-emerald-200 rounded-xl text-xs text-emerald-900">
+            <div className="flex items-center gap-2">
+              <RefreshCw className={`w-4 h-4 text-emerald-600 ${isPaid ? '' : 'animate-spin'}`} />
+              <span className="font-medium">
+                {isPaid
+                  ? 'Giao dịch thành công! Đang cấp thẻ nhận kho...'
+                  : 'Hệ thống đang tự động quét đối soát qua cổng VietQR PayOS (mỗi 3 giây)...'}
+              </span>
+            </div>
+            {orderCode && (
+              <span className="font-mono text-[11px] text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded font-bold">
+                Mã: #{orderCode}
+              </span>
+            )}
+          </div>
+
           {/* Action Buttons */}
-          <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
+          <div className="pt-1 flex flex-col sm:flex-row items-center gap-3">
             <Button
               variant="outline"
               size="md"
@@ -404,19 +517,24 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
             <Button
               variant="primary"
               size="md"
-              onClick={handleConfirmPaid}
-              disabled={isVerifying}
+              onClick={handleCheckNow}
+              disabled={isVerifying || isPaid}
               className="w-full sm:w-2/3 py-2.5 text-xs font-bold flex items-center justify-center gap-2 shadow-sm cursor-pointer"
             >
               {isVerifying ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Đang đối soát giao dịch...</span>
+                  <span>Đang kiểm tra đối soát...</span>
+                </>
+              ) : isPaid ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  <span>Đã thanh toán thành công!</span>
                 </>
               ) : (
                 <>
-                  <Check className="w-4 h-4" />
-                  <span>Tôi đã chuyển khoản thành công</span>
+                  <RefreshCw className="w-4 h-4" />
+                  <span>Kiểm tra trạng thái ngay</span>
                 </>
               )}
             </Button>

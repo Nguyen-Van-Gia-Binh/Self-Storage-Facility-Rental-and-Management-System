@@ -1,20 +1,46 @@
-/**
- * Payment API — SC-03 (T3.10)
- * API-SPEC.md § 9 (Payment) & BUSINESS-RULES.md (BR-PAY-01, BR-DEP-01, BR-DEP-02, BR-DEP-03)
- */
-import { apiClient } from './client';
+import { apiClient, isMockEnabled } from './client';
 import type {
   CreatePaymentRequest,
   PaymentTransaction,
   MoveInPassData,
-  PaymentStatus,
 } from '@/types';
-
-const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false';
 
 // Key lưu trữ localStorage cho thanh toán và hợp đồng mới
 const STORAGE_PAYMENTS_KEY = 'smartstorage_payments';
 const STORAGE_USER_PASSES_KEY = 'smartstorage_move_in_passes';
+
+export interface CheckoutPayload {
+  reservationId?: number;
+  contractRenewalId?: number;
+  amount: number;
+  description: string;
+  cancelUrl?: string;
+  returnUrl?: string;
+}
+
+export interface CheckoutResult {
+  checkoutUrl: string;
+  qrCode: string;
+  orderCode: number;
+  paymentId?: number;
+  amount: number;
+  description: string;
+  accountName?: string;
+  accountNumber?: string;
+  bin?: string;
+  status?: string;
+}
+
+export interface PaymentStatusResult {
+  id: number;
+  orderCode?: number;
+  amount: number;
+  status: 'PENDING' | 'PAID' | 'SUCCESS' | 'CANCELLED' | 'EXPIRED' | 'FAILED';
+  paidAt?: string;
+  referenceType: string;
+  referenceId: number;
+  transactionRef?: string;
+}
 
 /**
  * Lấy danh sách giao dịch từ localStorage (hoặc mảng rỗng)
@@ -66,11 +92,71 @@ export function storeMoveInPass(pass: MoveInPassData): void {
   }
 }
 
+function mockCreateCheckout(payload: CheckoutPayload): CheckoutResult {
+  const orderCode = Number(String(Date.now()).slice(-6));
+  const qrData = `vietqr://${payload.amount}/SMARTSTORAGE-${orderCode}`;
+  return {
+    checkoutUrl: `https://pay.payos.vn/web/${orderCode}`,
+    qrCode: `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrData)}`,
+    orderCode,
+    paymentId: orderCode,
+    amount: payload.amount,
+    description: payload.description,
+    accountName: 'CONG TY CP SMARTSTORAGE VIETNAM',
+    accountNumber: '0888567999',
+    bin: '970422',
+    status: 'PENDING',
+  };
+}
+
+function mockPollPaymentStatus(orderCode: number): PaymentStatusResult {
+  return {
+    id: orderCode,
+    orderCode,
+    amount: 1200000,
+    status: 'PAID',
+    paidAt: new Date().toISOString(),
+    referenceType: 'RESERVATION',
+    referenceId: orderCode,
+    transactionRef: `REF-${orderCode}`,
+  };
+}
+
 /**
- * Tạo yêu cầu thanh toán (POST /api/v1/payments)
+ * Khởi tạo đơn thanh toán PayOS VietQR tự động (POST /payments/checkout) (SC-03)
+ */
+export async function createCheckout(payload: CheckoutPayload): Promise<CheckoutResult> {
+  if (isMockEnabled('WS3')) {
+    return mockCreateCheckout(payload);
+  }
+
+  try {
+    return await apiClient<CheckoutResult>('/payments/checkout', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    console.warn('Lỗi gọi API /payments/checkout, fallback sang mock:', err);
+    return mockCreateCheckout(payload);
+  }
+}
+
+/**
+ * Kiểm tra trạng thái giao dịch theo orderCode phục vụ Polling tự động (GET /payments/order/{orderCode}/status) (SC-03)
+ */
+export async function pollPaymentStatus(orderCode: number): Promise<PaymentStatusResult> {
+  if (isMockEnabled('WS3')) {
+    return mockPollPaymentStatus(orderCode);
+  }
+
+  return await apiClient<PaymentStatusResult>(`/payments/order/${orderCode}/status`);
+}
+
+/**
+ * Tạo yêu cầu thanh toán thủ công (POST /api/v1/payments) (SC-03)
  */
 export async function createPayment(request: CreatePaymentRequest): Promise<PaymentTransaction> {
-  if (USE_MOCK) {
+  if (isMockEnabled('WS3')) {
     const transactionId = `TXN-${Date.now()}`;
     const txn: PaymentTransaction = {
       id: transactionId,
@@ -111,44 +197,6 @@ export async function createPayment(request: CreatePaymentRequest): Promise<Paym
     };
     storePayment(txn);
     return txn;
-  }
-}
-
-/**
- * Đối soát giao dịch thanh toán (Polling / Verifying)
- */
-export async function verifyPayment(
-  paymentId: string | number
-): Promise<{ success: boolean; status: PaymentStatus; message: string }> {
-  if (USE_MOCK) {
-    // Giả lập đối soát Napas247 phản hồi thành công sau 1-2s
-    const payments = getStoredPayments();
-    const target = payments.find((p) => String(p.id) === String(paymentId));
-    if (target) {
-      target.status = 'COMPLETED';
-      target.paidAt = new Date().toISOString();
-      localStorage.setItem(STORAGE_PAYMENTS_KEY, JSON.stringify(payments));
-    }
-    return {
-      success: true,
-      status: 'COMPLETED',
-      message: 'Giao dịch chuyển khoản Napas247 đã được ghi nhận thành công.',
-    };
-  }
-
-  try {
-    const res = await apiClient<{ success: boolean; status: PaymentStatus; message: string }>(
-      `/payments/${paymentId}/verify`,
-      { method: 'POST' }
-    );
-    return res;
-  } catch (err) {
-    console.warn('Lỗi gọi API verify payment, fallback mock thành công:', err);
-    return {
-      success: true,
-      status: 'COMPLETED',
-      message: 'Giao dịch chuyển khoản đã được hệ thống ghi nhận thành công.',
-    };
   }
 }
 
