@@ -98,7 +98,9 @@ export const LoginPage: React.FC = () => {
   };
 
   useEffect(() => {
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+    const clientId =
+      import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+      '109364799143-s4gsllthdljfshrivptd03aog9jf3bvr.apps.googleusercontent.com';
     if (!clientId) return;
 
     const handleGoogleCredentialResponse = async (response: { credential?: string }) => {
