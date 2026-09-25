@@ -10,8 +10,6 @@ import {
   Layers,
   Loader2
 } from 'lucide-react';
-import { mockFacilities, mockUnitTypes, mockStorageUnits } from '../mockData';
-import type { StorageType, UnitSizeCategory, StorageUnit, UnitType, UnitStatus } from '../types';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { formatVND } from '../utils/pricing';
@@ -19,6 +17,7 @@ import { UnitGrid } from '../components/UnitGrid';
 import { fetchFacilities } from '@/api/facility';
 import { fetchUnitTypes as fetchUnitTypesApi, fetchStorageUnits as fetchStorageUnitsApi } from '@/api/unit';
 import type { FacilityListItem } from '@/types';
+import type { StorageType, UnitSizeCategory, StorageUnit, UnitType, UnitStatus } from '../types';
 
 // Hàm xác định nhóm kích thước chuẩn từ mã/tên loại kho và diện tích
 function resolveSizeCategory(codeOrName: string, areaM2?: number): UnitSizeCategory {
@@ -48,8 +47,12 @@ export const UnitPickerPage: React.FC = () => {
     id: facilityParam,
     name: 'Cơ sở lưu trữ',
   });
-  const [unitTypes, setUnitTypes] = useState<UnitType[]>(mockUnitTypes);
+  const [unitTypes, setUnitTypes] = useState<UnitType[]>([]);
   const [facilityUnits, setFacilityUnits] = useState<StorageUnit[]>([]);
+
+  const [storageType, setStorageType] = useState<StorageType>('STANDARD');
+  const [selectedSize, setSelectedSize] = useState<UnitSizeCategory>('S');
+  const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
 
   // Tải dữ liệu thực tế từ backend khi facilityParam thay đổi
   useEffect(() => {
@@ -85,14 +88,14 @@ export const UnitPickerPage: React.FC = () => {
           if (!isMounted) return;
 
           // Chuyển đổi dữ liệu backend UnitTypeResponse sang domain UnitType
-          let mappedUTs: UnitType[] = mockUnitTypes;
+          let mappedUTs: UnitType[] = [];
           if (utPage?.content && utPage.content.length > 0) {
             mappedUTs = utPage.content.map((ut) => {
               const codeUpper = (ut.code || ut.name).toUpperCase();
               const sizeCat: UnitSizeCategory = resolveSizeCategory(ut.code || ut.name, ut.areaM2);
 
               const isClimate = codeUpper.includes('CLIMATE') || ut.name.toLowerCase().includes('lạnh');
-              const storageType: StorageType = isClimate ? 'CLIMATE_CONTROLLED' : 'STANDARD';
+              const sType: StorageType = isClimate ? 'CLIMATE_CONTROLLED' : 'STANDARD';
 
               const width = ut.widthM || 2;
               const depth = ut.depthM || 2;
@@ -105,7 +108,7 @@ export const UnitPickerPage: React.FC = () => {
                 code: ut.code || `UT-${ut.id}`,
                 name: ut.name,
                 sizeCategory: sizeCat,
-                storageType,
+                storageType: sType,
                 areaM2: area,
                 volumeM3: vol,
                 dimensions: `${width}m x ${depth}m x ${height}m`,
@@ -115,6 +118,18 @@ export const UnitPickerPage: React.FC = () => {
               };
             });
             setUnitTypes(mappedUTs);
+
+            // Tự động đồng bộ type được chọn từ param nếu có
+            if (initialTypeId) {
+              const match = mappedUTs.find((t) => t.id === initialTypeId || t.code === initialTypeId);
+              if (match) {
+                setStorageType(match.storageType);
+                setSelectedSize(match.sizeCategory);
+              }
+            } else if (mappedUTs.length > 0) {
+              setStorageType(mappedUTs[0].storageType);
+              setSelectedSize(mappedUTs[0].sizeCategory);
+            }
           }
 
           // Chuyển đổi dữ liệu backend StorageUnitResponse sang domain StorageUnit
@@ -137,18 +152,13 @@ export const UnitPickerPage: React.FC = () => {
             });
             setFacilityUnits(mappedSUs);
           } else {
-            // Dự phòng dữ liệu mock nếu cơ sở mới tạo chưa kịp có storage units
-            const fallback = mockStorageUnits.filter((u) => u.facilityId === matchedFac.code || u.facilityId === String(matchedFac.id));
-            setFacilityUnits(fallback.length > 0 ? fallback : mockStorageUnits);
+            setFacilityUnits([]);
           }
         }
       } catch (err) {
         console.error('Lỗi khi tải dữ liệu cơ sở & ô kho từ API backend:', err);
-        // Fallback an toàn sang mock data
-        const localFac = mockFacilities.find((f) => f.id === facilityParam) || mockFacilities[0];
-        setCurrentFacility({ id: localFac.id, name: localFac.name, address: localFac.address });
-        setUnitTypes(mockUnitTypes);
-        setFacilityUnits(mockStorageUnits);
+        setUnitTypes([]);
+        setFacilityUnits([]);
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -156,25 +166,7 @@ export const UnitPickerPage: React.FC = () => {
 
     loadFacilityAndUnits();
     return () => { isMounted = false; };
-  }, [facilityParam]);
-
-  const [storageType, setStorageType] = useState<StorageType>(() => {
-    if (initialTypeId) {
-      const match = mockUnitTypes.find((t) => t.id === initialTypeId || t.code === initialTypeId);
-      if (match) return match.storageType;
-    }
-    return 'STANDARD';
-  });
-
-  const [selectedSize, setSelectedSize] = useState<UnitSizeCategory>(() => {
-    if (initialTypeId) {
-      const match = mockUnitTypes.find((t) => t.id === initialTypeId || t.code === initialTypeId);
-      if (match) return match.sizeCategory;
-    }
-    return 'M';
-  });
-
-  const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
+  }, [facilityParam, initialTypeId]);
 
   // Lọc các loại kho theo chế độ Standard / Climate
   const availableTypes = useMemo(() => {
@@ -222,9 +214,9 @@ export const UnitPickerPage: React.FC = () => {
 
   const handleProceedToBooking = (unitToBook?: StorageUnit) => {
     const targetUnit = unitToBook || selectedUnit;
-    const targetUnitNumber = targetUnit ? targetUnit.unitNumber : 'A102';
-    const targetUnitId = targetUnit ? targetUnit.id : 'U-A102';
-    const typeIdToPass = currentUnitType ? currentUnitType.id : 'UT-M-STD';
+    const targetUnitNumber = targetUnit ? targetUnit.unitNumber : 'S-101';
+    const targetUnitId = targetUnit ? targetUnit.id : '1';
+    const typeIdToPass = currentUnitType ? currentUnitType.id : (unitTypes[0]?.id || '1');
 
     navigate(
       `/customer/booking?facility=${currentFacility.id}&type=${typeIdToPass}&unitId=${targetUnitId}&unitNumber=${targetUnitNumber}`

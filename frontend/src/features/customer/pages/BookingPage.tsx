@@ -20,7 +20,6 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { mockFacilities, mockUnitTypes, mockStorageUnits } from '../mockData';
 import { calculateBookingTotal, formatVND } from '../utils/pricing';
 import { BookingPriceSummary } from '../components/BookingPriceSummary';
 import { DigitalMoveInPassModal } from '../components/DigitalMoveInPassModal';
@@ -29,42 +28,130 @@ import { customerApi } from '../api/customerApi';
 import type { CheckoutResponse } from '../api/customerApi';
 import type { BookingDraft } from '../types';
 import type { MoveInPassData } from '@/types';
+import { fetchFacilities } from '@/api/facility';
+import { fetchUnitTypes as fetchUnitTypesApi } from '@/api/unit';
+import type { FacilityListItem } from '@/types';
+import type { Facility, UnitType, StorageType, UnitSizeCategory } from '../types';
+
+function resolveSizeCategory(codeOrName: string, areaM2?: number): UnitSizeCategory {
+  const upper = codeOrName.toUpperCase();
+  const lower = codeOrName.toLowerCase();
+  if (upper.includes('SMALL') || lower.includes('nhỏ') || (areaM2 != null && areaM2 <= 1.5)) {
+    return 'S';
+  }
+  if (upper.includes('LARGE') || lower.includes('lớn') || (areaM2 != null && areaM2 >= 9)) {
+    return 'L';
+  }
+  if (upper.includes('XL') || (areaM2 != null && areaM2 >= 15)) {
+    return 'XL';
+  }
+  return 'M';
+}
 
 export const BookingPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const facilityId = searchParams.get('facility') || 'FAC-D7-02';
-  const typeId = searchParams.get('type') || 'UT-M-STD';
-  const unitNumberParam = searchParams.get('unitNumber') || 'A102';
+  const facilityId = searchParams.get('facility') || '8';
+  const typeId = searchParams.get('type') || '1';
+  const unitNumberParam = searchParams.get('unitNumber') || 'S-101';
   const unitIdParam = searchParams.get('unitId');
 
-  const facility = useMemo(() => {
-    return mockFacilities.find((f) => f.id === facilityId || f.code === facilityId || String(f.id) === facilityId) || mockFacilities[0];
-  }, [facilityId]);
+  const [facility, setFacility] = useState<Facility>({
+    id: facilityId,
+    code: `FAC-${facilityId}`,
+    name: 'Cơ sở lưu trữ',
+    address: 'Số 88 Nguyễn Văn Linh, Phường Nam Dương, Quận Hải Châu, Đà Nẵng',
+    district: 'Hải Châu',
+    city: 'Đà Nẵng',
+    distance: '1.2 km',
+    startingPrice: 45000,
+    image: 'https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=800&q=80',
+    phone: '0236-365-7788',
+  });
 
-  const unitType = useMemo(() => {
-    return mockUnitTypes.find((t) => t.id === typeId || t.code === typeId || String(t.id) === typeId) || mockUnitTypes[0];
-  }, [typeId]);
+  const [unitType, setUnitType] = useState<UnitType>({
+    id: typeId,
+    code: `UT-${typeId}`,
+    name: 'Loại ô kho',
+    sizeCategory: 'S',
+    storageType: 'STANDARD',
+    areaM2: 3,
+    volumeM3: 7.5,
+    dimensions: '1.5m x 2.0m x 2.5m',
+    capacityDescription: 'Hệ thống an ninh và PCCC chuẩn quốc tế',
+    baseMonthlyPrice: 450000,
+  });
 
-  // Tra cứu chi tiết ô kho từ sơ đồ mặt bằng
-  const targetUnit = useMemo(() => {
-    if (unitIdParam) {
-      const found = mockStorageUnits.find((u) => u.id === unitIdParam);
-      if (found) return found;
+  useEffect(() => {
+    let isMounted = true;
+    async function loadData() {
+      try {
+        const facList = await fetchFacilities();
+        if (!isMounted) return;
+        const matched = facList.find(
+          (f: FacilityListItem) => String(f.id) === facilityId || f.code === facilityId
+        ) || facList.find((f: FacilityListItem) => f.id === 8) || facList[0];
+
+        if (matched) {
+          setFacility({
+            id: String(matched.id),
+            code: matched.code || `FAC-${matched.id}`,
+            name: matched.name,
+            address: matched.address || 'Đà Nẵng',
+            district: 'Hải Châu',
+            city: 'Đà Nẵng',
+            distance: '1.2 km',
+            startingPrice: 45000,
+            image: 'https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=800&q=80',
+            phone: '0236-365-7788',
+          });
+
+          const numericId = typeof matched.id === 'number' ? matched.id : Number(matched.id);
+          const utPage = await fetchUnitTypesApi(numericId, { size: 50 });
+          if (!isMounted) return;
+
+          if (utPage?.content && utPage.content.length > 0) {
+            const foundUT = utPage.content.find(
+              (ut) => String(ut.id) === typeId || ut.code === typeId
+            ) || utPage.content[0];
+
+            if (foundUT) {
+              const codeUpper = (foundUT.code || foundUT.name).toUpperCase();
+              const sizeCat = resolveSizeCategory(foundUT.code || foundUT.name, foundUT.areaM2);
+              const isClimate = codeUpper.includes('CLIMATE') || foundUT.name.toLowerCase().includes('lạnh');
+              const sType: StorageType = isClimate ? 'CLIMATE_CONTROLLED' : 'STANDARD';
+              const width = foundUT.widthM || 2;
+              const depth = foundUT.depthM || 2;
+              const height = foundUT.heightM || 2.5;
+              const area = foundUT.areaM2 || Number((width * depth).toFixed(1));
+              const vol = foundUT.volumeM3 || Number((width * depth * height).toFixed(1));
+
+              setUnitType({
+                id: String(foundUT.id),
+                code: foundUT.code || `UT-${foundUT.id}`,
+                name: foundUT.name,
+                sizeCategory: sizeCat,
+                storageType: sType,
+                areaM2: area,
+                volumeM3: vol,
+                dimensions: `${width}m x ${depth}m x ${height}m`,
+                capacityDescription: foundUT.description || `${foundUT.name} - An ninh và PCCC chuẩn quốc tế`,
+                baseMonthlyPrice: foundUT.monthlyPrice || 450000,
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Lỗi khi tải thông tin cơ sở & loại kho cho trang Booking:', err);
+      }
     }
-    const foundByNum = mockStorageUnits.find(
-      (u) => u.unitNumber === unitNumberParam && u.facilityId === facility.id
-    );
-    if (foundByNum) return foundByNum;
+    loadData();
+    return () => { isMounted = false; };
+  }, [facilityId, typeId]);
 
-    return (
-      mockStorageUnits.find((u) => u.facilityId === facility.id && u.status === 'AVAILABLE') || null
-    );
-  }, [unitIdParam, unitNumberParam, facility.id]);
-
-  const finalUnitNumber = targetUnit ? targetUnit.unitNumber : unitNumberParam;
-  const finalUnitId = targetUnit ? targetUnit.id : 'U-A102';
+  const finalUnitNumber = unitNumberParam || 'S-101';
+  const finalUnitId = unitIdParam || '1';
 
   // Form State
   const [durationMonths, setDurationMonths] = useState<number>(3);
@@ -252,13 +339,9 @@ export const BookingPage: React.FC = () => {
       }
 
       let numericUnitId: number | undefined = undefined;
-      if (targetUnit && targetUnit.id) {
-        if (typeof targetUnit.id === 'number') {
-          numericUnitId = targetUnit.id;
-        } else if (typeof targetUnit.id === 'string') {
-          const match = targetUnit.id.match(/\d+/);
-          if (match) numericUnitId = parseInt(match[0], 10);
-        }
+      if (finalUnitId) {
+        const match = String(finalUnitId).match(/\d+/);
+        if (match) numericUnitId = parseInt(match[0], 10);
       }
 
       // 2. Tạo Reservation trong backend
@@ -399,9 +482,7 @@ export const BookingPage: React.FC = () => {
                       Ngăn kho {finalUnitNumber}
                     </span>
                     <Badge variant="available" className="text-[10px] px-1.5 py-0.5">
-                      {targetUnit 
-                        ? `Tầng ${targetUnit.floor} · ${targetUnit.zone}${targetUnit.locationNote ? ` · 📍 ${targetUnit.locationNote}` : ''}` 
-                        : 'Sẵn sàng nhận kho'}
+                      Sẵn sàng nhận kho
                     </Badge>
                   </div>
                   <h2 className="text-base sm:text-lg font-bold text-[#0a1614] mt-1.5">
