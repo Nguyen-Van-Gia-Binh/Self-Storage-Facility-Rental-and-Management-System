@@ -11,6 +11,10 @@ import com.swp391.selfstorage.facility.entity.Facility;
 import com.swp391.selfstorage.facility.repository.FacilityRepository;
 import com.swp391.selfstorage.reservation.dto.CustomerRentalDetailResponse;
 import com.swp391.selfstorage.reservation.dto.CustomerRentalSummaryResponse;
+import com.swp391.selfstorage.reservation.dto.AccessLogResponse;
+import com.swp391.selfstorage.reservation.dto.ChangePinRequest;
+import com.swp391.selfstorage.reservation.entity.AccessLog;
+import com.swp391.selfstorage.reservation.repository.AccessLogRepository;
 import com.swp391.selfstorage.reservation.entity.Reservation;
 import com.swp391.selfstorage.reservation.repository.ReservationRepository;
 import com.swp391.selfstorage.unit.entity.StorageUnit;
@@ -40,20 +44,24 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
     private final StorageUnitRepository storageUnitRepository;
     private final FacilityRepository facilityRepository;
     private final UnitTypeRepository unitTypeRepository;
+    private final AccessLogRepository accessLogRepository;
 
     public CustomerRentalServiceImpl(
             RentalContractRepository rentalContractRepository,
             ReservationRepository reservationRepository,
             StorageUnitRepository storageUnitRepository,
             FacilityRepository facilityRepository,
-            UnitTypeRepository unitTypeRepository
+            UnitTypeRepository unitTypeRepository,
+            AccessLogRepository accessLogRepository
     ) {
         this.rentalContractRepository = rentalContractRepository;
         this.reservationRepository = reservationRepository;
         this.storageUnitRepository = storageUnitRepository;
         this.facilityRepository = facilityRepository;
         this.unitTypeRepository = unitTypeRepository;
+        this.accessLogRepository = accessLogRepository;
     }
+
 
     @Override
     public PageResponse<CustomerRentalSummaryResponse> getMyRentals(
@@ -272,4 +280,73 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
             res.setTotalOutstandingDebt(0);
         }
     }
+
+    @Transactional
+    @Override
+    public void changeContractPin(Long contractId, ChangePinRequest request, UserPrincipal currentUser) {
+        if (currentUser == null) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED);
+        }
+
+        RentalContract contract = rentalContractRepository.findById(contractId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "Không tìm thấy hợp đồng #" + contractId));
+
+        // BR-ACC-03: Kiểm tra chính chủ hoặc quyền quản trị
+        if (!currentUser.getId().equals(contract.getCustomerId()) && !currentUser.hasRole("SYSTEM_ADMINISTRATOR")) {
+            throw new CustomException(ErrorCode.FORBIDDEN, "Bạn không có quyền thay đổi mã PIN của hợp đồng này");
+        }
+
+        // BR-ACC-02: Kiểm tra trạng thái hợp đồng (Chỉ ACTIVE hoặc OVERDUE mới được đổi PIN)
+        if (contract.getStatus() != ContractStatus.ACTIVE && contract.getStatus() != ContractStatus.OVERDUE) {
+            throw new CustomException(ErrorCode.INVALID_REQUEST, "Chỉ có thể đổi mã PIN khi hợp đồng đang kích hoạt hoặc trong hạn cho phép");
+        }
+
+        contract.setAccessCode(request.getNewPin());
+        rentalContractRepository.save(contract);
+
+        // Ghi nhật ký thao tác
+        AccessLog log = new AccessLog(
+                contractId,
+                contract.getStorageUnitId(),
+                "PIN_CODE",
+                currentUser.getFullName() != null ? currentUser.getFullName() : "Chủ hợp đồng",
+                "SUCCESS",
+                "Đổi mã PIN khóa điện tử thành công"
+        );
+        accessLogRepository.save(log);
+    }
+
+    @Override
+    public List<AccessLogResponse> getContractAccessLogs(Long contractId, UserPrincipal currentUser) {
+        if (currentUser == null) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED);
+        }
+
+        RentalContract contract = rentalContractRepository.findById(contractId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "Không tìm thấy hợp đồng #" + contractId));
+
+        if (!currentUser.getId().equals(contract.getCustomerId()) && !currentUser.hasRole("SYSTEM_ADMINISTRATOR")) {
+            throw new CustomException(ErrorCode.FORBIDDEN, "Bạn không có quyền xem nhật ký của hợp đồng này");
+        }
+
+        StorageUnit unit = contract.getStorageUnitId() != null
+                ? storageUnitRepository.findById(contract.getStorageUnitId()).orElse(null)
+                : null;
+        String unitCode = unit != null ? unit.getCode() : "U-" + contractId;
+
+        return accessLogRepository.findByContractIdOrderByAccessedAtDesc(contractId)
+                .stream()
+                .map(l -> new AccessLogResponse(
+                        l.getId(),
+                        l.getContractId(),
+                        unitCode,
+                        l.getAccessedAt(),
+                        l.getMethod(),
+                        l.getAccessorName(),
+                        l.getStatus(),
+                        l.getDeviceInfo()
+                ))
+                .collect(Collectors.toList());
+    }
 }
+

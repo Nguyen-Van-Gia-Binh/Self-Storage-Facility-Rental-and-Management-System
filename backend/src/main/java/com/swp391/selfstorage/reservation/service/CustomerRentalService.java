@@ -27,4 +27,22 @@ public interface CustomerRentalService {
             Long contractId,
             UserPrincipal currentUser
     );
+
+    /**
+     * Đổi mã PIN khóa điện tử cho ô kho (US-SC-05.2, BR-ACC-01)
+     */
+    void changeContractPin(
+            Long contractId,
+            com.swp391.selfstorage.reservation.dto.ChangePinRequest request,
+            UserPrincipal currentUser
+    );
+
+    /**
+     * Lấy danh sách lịch sử ra vào ô kho của hợp đồng (US-SC-05.2, BR-ACC-02)
+     */
+    java.util.List<com.swp391.selfstorage.reservation.dto.AccessLogResponse> getContractAccessLogs(
+            Long contractId,
+            UserPrincipal currentUser
+    );
 }
+

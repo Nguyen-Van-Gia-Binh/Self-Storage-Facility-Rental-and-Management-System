@@ -59,4 +59,27 @@ public class CustomerRentalController {
         CustomerRentalDetailResponse response = customerRentalService.getMyRentalDetail(id, currentUser);
         return ResponseEntity.ok(ApiResponse.success(response, "Lấy chi tiết hợp đồng thành công"));
     }
+
+    @PutMapping("/{id}/pin")
+    @Operation(summary = "Đổi mã PIN khóa điện tử cho ô kho (US-SC-05.2, BR-ACC-01)")
+    public ResponseEntity<ApiResponse<Void>> changeContractPin(
+            @PathVariable Long id,
+            @jakarta.validation.Valid @RequestBody com.swp391.selfstorage.reservation.dto.ChangePinRequest request,
+            @AuthenticationPrincipal UserPrincipal currentUser
+    ) {
+        customerRentalService.changeContractPin(id, request, currentUser);
+        return ResponseEntity.ok(ApiResponse.success(null, "Đổi mã PIN khóa điện tử thành công"));
+    }
+
+    @GetMapping("/{id}/access-logs")
+    @Operation(summary = "Lấy lịch sử ra vào ô kho của hợp đồng (US-SC-05.2, BR-ACC-02)")
+    public ResponseEntity<ApiResponse<java.util.List<com.swp391.selfstorage.reservation.dto.AccessLogResponse>>> getContractAccessLogs(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserPrincipal currentUser
+    ) {
+        java.util.List<com.swp391.selfstorage.reservation.dto.AccessLogResponse> logs =
+                customerRentalService.getContractAccessLogs(id, currentUser);
+        return ResponseEntity.ok(ApiResponse.success(logs, "Lấy danh sách nhật ký ra vào thành công"));
+    }
 }
+
