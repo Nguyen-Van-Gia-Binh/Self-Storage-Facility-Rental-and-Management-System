@@ -4,8 +4,12 @@ import { Link } from 'react-router-dom';
 import type { StaffDailyTaskReport } from '@/types';
 import { getStaffDailyTasks } from '@/api/staff';
 import { DailyTasksOverview } from '../components/DailyTasksOverview';
+import { useCurrentUser } from '@/utils/useCurrentUser';
 
 export const StaffDashboardPage: React.FC = () => {
+  const user = useCurrentUser();
+  const staffId = user?.id as number | undefined;
+
   const [tasks, setTasks] = useState<StaffDailyTaskReport | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split('T')[0]
@@ -13,8 +17,9 @@ export const StaffDashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!staffId) return;
     let ignore = false;
-    getStaffDailyTasks(8, selectedDate)
+    getStaffDailyTasks(staffId, selectedDate)
       .then((data) => {
         if (!ignore) {
           setTasks(data);
@@ -31,12 +36,13 @@ export const StaffDashboardPage: React.FC = () => {
     return () => {
       ignore = true;
     };
-  }, [selectedDate]);
+  }, [selectedDate, staffId]);
 
   const handleRefresh = async () => {
+    if (!staffId) return;
     setLoading(true);
     try {
-      const data = await getStaffDailyTasks(8, selectedDate);
+      const data = await getStaffDailyTasks(staffId, selectedDate);
       setTasks(data);
     } catch (err) {
       console.error('Lỗi khi làm mới danh sách công việc:', err);
