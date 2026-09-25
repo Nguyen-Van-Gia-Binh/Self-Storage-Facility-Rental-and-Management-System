@@ -14,87 +14,151 @@ import type {
 } from '../features/customer/types';
 import { getStoredMoveInPasses } from './payment';
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false';
+const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 const STORAGE_CONTRACTS_OVERRIDE_KEY = 'smartstorage_customer_contracts_override';
 
-// Danh sách hợp đồng mẫu phong phú đại diện cho các trạng thái nghiệp vụ
+// DTO phản hồi tóm tắt hợp đồng từ Backend Spring Boot
+export interface BackendRentalSummary {
+  contractId: number;
+  contractCode: string;
+  reservationId?: number;
+  reservationCode?: string;
+  facilityId?: number;
+  facilityName?: string;
+  facilityAddress?: string;
+  facilityPhone?: string;
+  storageUnitId?: number;
+  storageUnitCode?: string;
+  floor?: number;
+  position?: string;
+  unitTypeId?: number;
+  unitTypeName?: string;
+  unitDimensions?: string;
+  startDate?: string;
+  endDateExclusive?: string;
+  rentalMonths?: number;
+  monthlyPrice?: number;
+  depositAmount?: number;
+  depositBalance?: number;
+  status: string;
+  nearExpiration?: boolean;
+  daysRemaining?: number;
+  accessCode?: string;
+  accessCodeLocked?: boolean;
+  overdueDays?: number;
+  overdueFeeAccrued?: number;
+  totalOutstandingDebt?: number;
+}
+
+/**
+ * Chuyển đổi dữ liệu BackendRentalSummary sang RentedContract cho UI Frontend
+ */
+export function mapBackendRentalToContract(item: BackendRentalSummary): RentedContract {
+  const typeName = item.unitTypeName || 'Kho Tiêu Chuẩn';
+  let sizeCategory: 'S' | 'M' | 'L' | 'XL' = 'S';
+  if (typeName.includes('XL')) sizeCategory = 'XL';
+  else if (typeName.includes('L')) sizeCategory = 'L';
+  else if (typeName.includes('M')) sizeCategory = 'M';
+
+  return {
+    id: String(item.contractId),
+    contractNumber: item.contractCode || `CTR-${item.contractId}`,
+    facilityId: item.facilityId ? String(item.facilityId) : '1',
+    facilityName: item.facilityName || 'SmartStorage Facility',
+    unitId: item.storageUnitId ? String(item.storageUnitId) : (item.storageUnitCode || 'U-101'),
+    unitNumber: item.storageUnitCode || 'U-101',
+    unitTypeName: typeName,
+    sizeCategory,
+    storageType: 'STANDARD',
+    startDate: item.startDate || '',
+    endDate: item.endDateExclusive || '',
+    monthlyRent: item.monthlyPrice || 0,
+    depositHeld: item.depositBalance ?? item.depositAmount ?? 0,
+    accessPin: item.accessCode || undefined,
+    status: (item.status as any) || 'ACTIVE',
+    overdueDays: item.overdueDays || 0,
+    overdueFee: item.overdueFeeAccrued || 0,
+  };
+}
+
+// Danh sách hợp đồng mẫu phong phú với ID số thực tế khớp Database Seed (1, 2, 3...)
 export const initialCustomerContracts: RentedContract[] = [
   {
-    id: 'CTR-2026-089',
-    contractNumber: 'HD-SS-2026089',
-    facilityId: 'FAC-D7-02',
-    facilityName: 'SmartStorage Phú Mỹ Hưng',
-    unitId: 'U-A108',
-    unitNumber: 'A108',
-    unitTypeName: 'Kho Cỡ M – Tiêu Chuẩn Gia Đình',
-    sizeCategory: 'M',
+    id: '1',
+    contractNumber: 'CTR-202610-0001',
+    facilityId: '1',
+    facilityName: 'SmartStorage Tân Bình Flagship',
+    unitId: '1',
+    unitNumber: 'U-101',
+    unitTypeName: 'Kho Cỡ S – Tủ Đồ Cá Nhân',
+    sizeCategory: 'S',
     storageType: 'STANDARD',
-    startDate: '2026-08-01',
+    startDate: '2026-10-01',
     endDate: '2026-11-01',
-    monthlyRent: 2400000,
-    depositHeld: 2400000,
-    accessPin: '8392', // Đã nghiệm thu quầy -> Cấp mã PIN (BR-ACC-01)
+    monthlyRent: 500000,
+    depositHeld: 500000,
+    accessPin: '1234',
     status: 'ACTIVE',
   },
   {
-    id: 'CTR-2026-104',
-    contractNumber: 'HD-SS-2026104',
-    facilityId: 'FAC-D7-01',
-    facilityName: 'SmartStorage Quận 7 Flagship',
-    unitId: 'U-A104',
-    unitNumber: 'A104',
-    unitTypeName: 'Kho Cỡ S – Tủ Đồ Cá Nhân',
-    sizeCategory: 'S',
+    id: '2',
+    contractNumber: 'CTR-202610-0002',
+    facilityId: '1',
+    facilityName: 'SmartStorage Tân Bình Flagship',
+    unitId: '2',
+    unitNumber: 'U-102',
+    unitTypeName: 'Kho Cỡ M – Tiêu Chuẩn Gia Đình',
+    sizeCategory: 'M',
     storageType: 'STANDARD',
     startDate: '2026-09-25',
     endDate: '2026-12-25',
     monthlyRent: 1200000,
     depositHeld: 1200000,
-    accessPin: undefined, // Pending Check-in: Chưa cấp mã PIN trước khi đối chiếu CCCD tại quầy (BR-ACC-01)
+    accessPin: undefined,
     status: 'PENDING_CHECKIN',
   },
   {
-    id: 'CTR-2026-052',
-    contractNumber: 'HD-SS-2026052',
-    facilityId: 'FAC-D7-03',
+    id: '3',
+    contractNumber: 'CTR-202610-0003',
+    facilityId: '2',
     facilityName: 'SmartStorage Him Lam Center',
-    unitId: 'U-B201',
-    unitNumber: 'B201',
+    unitId: '3',
+    unitNumber: 'U-B201',
     unitTypeName: 'Kho Cỡ L – Doanh Nghiệp',
     sizeCategory: 'L',
     storageType: 'CLIMATE_CONTROLLED',
     startDate: '2026-06-01',
-    endDate: '2026-09-30', // Còn dưới 10 ngày -> Sắp hết hạn (BR-REN-01)
+    endDate: '2026-09-30',
     monthlyRent: 4800000,
     depositHeld: 4800000,
     accessPin: '5190',
     status: 'EXPIRING_SOON',
   },
   {
-    id: 'CTR-2026-015',
-    contractNumber: 'HD-SS-2026015',
-    facilityId: 'FAC-D7-01',
-    facilityName: 'SmartStorage Quận 7 Flagship',
-    unitId: 'U-A110',
-    unitNumber: 'A110',
+    id: '4',
+    contractNumber: 'CTR-202610-0004',
+    facilityId: '1',
+    facilityName: 'SmartStorage Tân Bình Flagship',
+    unitId: '4',
+    unitNumber: 'U-A110',
     unitTypeName: 'Kho Cỡ S – Tủ Đồ Cá Nhân',
     sizeCategory: 'S',
     storageType: 'STANDARD',
     startDate: '2026-05-15',
-    endDate: '2026-09-19', // Quá hạn 2 ngày -> Trong ân hạn D+1..D+3 (BR-OVD-02)
+    endDate: '2026-09-19',
     monthlyRent: 1200000,
     depositHeld: 1200000,
     accessPin: '4092',
     status: 'OVERDUE',
     overdueDays: 2,
-    overdueFee: 0, // Trong 3 ngày ân hạn chưa phạt tiền (BR-OVD-02)
+    overdueFee: 0,
   },
 ];
 
 /**
  * Lấy danh sách hợp đồng đã ghi đè từ localStorage
  */
-function getStoredOverrides(): Record<string, Partial<RentedContract>> {
+export function getStoredOverrides(): Record<string, Partial<RentedContract>> {
   try {
     const raw = localStorage.getItem(STORAGE_CONTRACTS_OVERRIDE_KEY);
     return raw ? JSON.parse(raw) : {};
@@ -107,7 +171,7 @@ function getStoredOverrides(): Record<string, Partial<RentedContract>> {
 /**
  * Lưu ghi đè hợp đồng vào localStorage
  */
-function saveStoredOverride(contractId: string, updates: Partial<RentedContract>): void {
+export function saveStoredOverride(contractId: string, updates: Partial<RentedContract>): void {
   try {
     const current = getStoredOverrides();
     current[contractId] = { ...(current[contractId] || {}), ...updates };
@@ -118,50 +182,62 @@ function saveStoredOverride(contractId: string, updates: Partial<RentedContract>
 }
 
 /**
- * Lấy danh sách tất cả hợp đồng của khách hàng (hợp nhất Mock + Đơn mới thanh toán + Overrides)
+ * Lấy danh sách tất cả hợp đồng của khách hàng
+ * Ưu tiên gọi Real Backend API: GET /customers/me/rentals
+ * Fallback sang localStorage overrides + Mock nếu offline hoặc chưa login
  */
 export async function getCustomerContracts(): Promise<RentedContract[]> {
-  if (USE_MOCK) {
-    const overrides = getStoredOverrides();
+  const overrides = getStoredOverrides();
 
-    // 1. Chuyển đổi các Move-in Pass từ Task T3.10 thành RentedContract
-    const storedPasses = getStoredMoveInPasses();
-    const dynamicFromPasses: RentedContract[] = storedPasses.map((pass, idx) => ({
-      id: String(pass.reservationId || `PASS-${idx}`),
-      contractNumber: pass.passCode,
-      facilityId: String(pass.facilityId),
-      facilityName: pass.facilityName,
-      unitId: `U-${pass.unitNumber}`,
-      unitNumber: pass.unitNumber,
-      unitTypeName: 'Kho Tiêu Chuẩn Thông Minh',
-      sizeCategory: 'M',
-      storageType: 'STANDARD',
-      startDate: pass.startDate,
-      endDate: new Date(new Date(pass.startDate).getTime() + 90 * 24 * 3600 * 1000)
-        .toISOString()
-        .split('T')[0],
-      monthlyRent: Math.round(pass.totalPaid / 2),
-      depositHeld: Math.round(pass.totalPaid / 2),
-      accessPin: undefined,
-      status: 'PENDING_CHECKIN',
-    }));
+  if (!USE_MOCK) {
+    try {
+      const response = await apiClient<any>('/customers/me/rentals?page=0&size=50');
+      // Trích xuất content từ cấu trúc PageResponse trong ApiResponse
+      const rawList: BackendRentalSummary[] =
+        response?.data?.content ||
+        response?.content ||
+        (Array.isArray(response?.data) ? response.data : []);
 
-    // 2. Gộp danh sách cơ sở + Pass mới
-    const baseList = [...dynamicFromPasses, ...initialCustomerContracts];
-
-    // 3. Áp dụng override (như đổi PIN, đổi trạng thái sang PENDING_RETURN)
-    return baseList.map((c) => {
-      const override = overrides[c.id];
-      return override ? { ...c, ...override } : c;
-    });
+      if (rawList && rawList.length > 0) {
+        return rawList.map((item) => {
+          const contract = mapBackendRentalToContract(item);
+          const override = overrides[contract.id];
+          return override ? { ...contract, ...override } : contract;
+        });
+      }
+    } catch (err) {
+      console.warn('Lỗi gọi API /customers/me/rentals, fallback sang mock data:', err);
+    }
   }
 
-  try {
-    return await apiClient<RentedContract[]>('/customer/contracts');
-  } catch (err) {
-    console.warn('Lỗi gọi API /customer/contracts, fallback sang mock data:', err);
-    return initialCustomerContracts;
-  }
+  // Fallback sang Mock + Move-in Passes cục bộ
+  const storedPasses = getStoredMoveInPasses();
+  const dynamicFromPasses: RentedContract[] = storedPasses.map((pass, idx) => ({
+    id: String(pass.reservationId || `PASS-${idx}`),
+    contractNumber: pass.passCode,
+    facilityId: String(pass.facilityId),
+    facilityName: pass.facilityName,
+    unitId: `U-${pass.unitNumber}`,
+    unitNumber: pass.unitNumber,
+    unitTypeName: 'Kho Tiêu Chuẩn Thông Minh',
+    sizeCategory: 'M',
+    storageType: 'STANDARD',
+    startDate: pass.startDate,
+    endDate: new Date(new Date(pass.startDate).getTime() + 90 * 24 * 3600 * 1000)
+      .toISOString()
+      .split('T')[0],
+    monthlyRent: Math.round(pass.totalPaid / 2),
+    depositHeld: Math.round(pass.totalPaid / 2),
+    accessPin: undefined,
+    status: 'PENDING_CHECKIN',
+  }));
+
+  const baseList = [...dynamicFromPasses, ...initialCustomerContracts];
+
+  return baseList.map((c) => {
+    const override = overrides[c.id];
+    return override ? { ...c, ...override } : c;
+  });
 }
 
 /**

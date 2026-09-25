@@ -16,7 +16,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/customers/me/rentals")
+@RequestMapping("/customers/me/rentals")
 @Tag(name = "Customer Rentals", description = "Quản lý ô kho đang thuê của khách hàng (SC-05 / Task T4.1)")
 public class CustomerRentalController {
 
