@@ -103,8 +103,8 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
       return;
     }
 
-    if (password.length < 6) {
-      setErrorMsg('Mật khẩu khởi tạo phải có ít nhất 6 ký tự.');
+    if (password.length < 8) {
+      setErrorMsg('Mật khẩu khởi tạo phải có ít nhất 8 ký tự.');
       return;
     }
 
