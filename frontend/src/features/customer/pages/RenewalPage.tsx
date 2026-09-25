@@ -57,8 +57,9 @@ export const RenewalPage: React.FC = () => {
       setIsLoadingCheckout(true);
       setCheckoutError(null);
       try {
+        const numId = parseInt(contract.id, 10);
         const rawId = contract.id.replace(/\D/g, '');
-        const refId = rawId ? parseInt(rawId, 10) : 1;
+        const refId = !isNaN(numId) && numId > 0 ? numId : (rawId ? parseInt(rawId, 10) : 1);
         const checkout = await customerApi.createPaymentCheckout({
           referenceType: 'CONTRACT_RENEWAL',
           referenceId: refId,
@@ -130,7 +131,7 @@ export const RenewalPage: React.FC = () => {
         newEndDate,
         totalAmount: pricing.finalTotal,
         paymentMethod: 'VIETQR',
-        transactionReference: `MB-${Date.now().toString().slice(-8)}`,
+        transactionReference: payosCheckout?.orderCode ? `PAYOS-${payosCheckout.orderCode}` : `MB-${Date.now().toString().slice(-8)}`,
       });
 
       setRenewalResult(res);
@@ -141,7 +142,7 @@ export const RenewalPage: React.FC = () => {
       setIsProcessing(false);
       alert('Có lỗi xảy ra trong quá trình xử lý gia hạn. Vui lòng thử lại hoặc liên hệ lễ tân.');
     }
-  }, [contract, renewalMonths, newEndDate, pricing.finalTotal]);
+  }, [contract, renewalMonths, newEndDate, pricing.finalTotal, payosCheckout?.orderCode]);
 
   // Polling tự động kiểm tra trạng thái thanh toán PayOS mỗi 2.5 giây khi ở Bước 3
   useEffect(() => {
