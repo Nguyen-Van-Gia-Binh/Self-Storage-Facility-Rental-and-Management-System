@@ -284,7 +284,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                 <Link
                   to={`/customer/payment?unitNumber=${contract.unitNumber}&facilityName=${encodeURIComponent(
                     contract.facilityName
-                  )}&amount=${contract.monthlyRent}`}
+                  )}&amount=${contract.monthlyRent}&contractId=${contract.id}`}
                   className="w-full sm:w-auto"
                 >
                   <Button

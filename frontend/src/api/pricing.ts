@@ -2,7 +2,7 @@
  * Pricing, Surcharge & Policy API — BM-02 & BM-03 (T2.13)
  * API-SPEC.md § 6 (Unit Types Price) & § 10 (Policies & Surcharges)
  */
-import { apiClient } from './client';
+import { apiClient, isMockEnabled } from './client';
 import type {
   UnitTypeCatalog,
   SurchargeItem,
@@ -11,7 +11,20 @@ import type {
 } from '@/types';
 import mockUnitTypesData from '@/mock/mock-unit-types.json';
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false';
+export interface FacilityPriceItem {
+  id: number;
+  facilityId: number;
+  unitTypeId: number;
+  unitTypeCode?: string;
+  unitTypeName: string;
+  monthlyPrice: number;
+  effectiveDate?: string;
+  updatedAt?: string;
+}
+
+export interface UpdatePricePayload {
+  monthlyPrice: number;
+}
 
 // Mock in-memory state for Unit Type prices
 const inMemoryUnitTypes: Record<string, UnitTypeCatalog[]> = JSON.parse(
@@ -77,31 +90,83 @@ const mockActivePolicy: ActivePolicyInfo = {
 };
 
 /**
- * Cập nhật đơn giá thuê tháng cho Unit Type tại một Facility (BM-03)
+ * Lấy bảng giá của tất cả loại ô kho tại một cơ sở (BM-03)
  */
-export async function updateUnitTypePrice(
+export async function getFacilityPrices(facilityId: number): Promise<FacilityPriceItem[]> {
+  if (isMockEnabled('WS3')) {
+    const list = inMemoryUnitTypes[String(facilityId)] || [];
+    return list.map((u) => ({
+      id: u.id,
+      facilityId,
+      unitTypeId: u.id,
+      unitTypeName: u.name,
+      monthlyPrice: u.monthlyPrice,
+      effectiveDate: new Date().toISOString().split('T')[0],
+      updatedAt: new Date().toISOString(),
+    }));
+  }
+  return await apiClient<FacilityPriceItem[]>(`/facilities/${facilityId}/prices`);
+}
+
+/**
+ * Cập nhật đơn giá tháng cho loại ô kho tại cơ sở qua PUT chuẩn (BM-03)
+ */
+export async function updateUnitPrice(
   facilityId: number,
   unitTypeId: number,
-  monthlyPrice: number,
-  effectiveDate?: string
-): Promise<UnitTypeCatalog> {
-  if (USE_MOCK) {
+  payload: UpdatePricePayload
+): Promise<FacilityPriceItem> {
+  if (isMockEnabled('WS3')) {
     const list = inMemoryUnitTypes[String(facilityId)] || [];
     const item = list.find((u) => u.id === unitTypeId);
     if (!item) {
       throw { status: 404, message: 'Không tìm thấy loại ô kho', timestamp: new Date().toISOString() };
     }
-    item.monthlyPrice = monthlyPrice;
-    return { ...item };
+    item.monthlyPrice = payload.monthlyPrice;
+    return {
+      id: item.id,
+      facilityId,
+      unitTypeId: item.id,
+      unitTypeName: item.name,
+      monthlyPrice: item.monthlyPrice,
+      updatedAt: new Date().toISOString(),
+    };
   }
 
-  return await apiClient<UnitTypeCatalog>(
-    `/facilities/${facilityId}/unit-types/${unitTypeId}/price`,
-    {
-      method: 'PATCH',
-      body: JSON.stringify({ monthlyPrice, effectiveDate: effectiveDate || new Date().toISOString().split('T')[0] }),
-    }
-  );
+  return await apiClient<FacilityPriceItem>(`/facilities/${facilityId}/prices/${unitTypeId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}
+
+/**
+ * Cập nhật đơn giá thuê tháng cho Unit Type tại một Facility (Tương thích ngược) (BM-03)
+ */
+export async function updateUnitTypePrice(
+  facilityId: number,
+  unitTypeId: number,
+  monthlyPrice: number,
+  _effectiveDate?: string
+): Promise<UnitTypeCatalog> {
+  const res = await updateUnitPrice(facilityId, unitTypeId, { monthlyPrice });
+  const list = inMemoryUnitTypes[String(facilityId)] || [];
+  const found = list.find((u) => u.id === unitTypeId);
+  if (found) {
+    found.monthlyPrice = monthlyPrice;
+  }
+  return {
+    id: res.unitTypeId || res.id,
+    facilityId,
+    name: res.unitTypeName || found?.name || `Loại ô kho #${unitTypeId}`,
+    monthlyPrice: res.monthlyPrice,
+    description: found?.description || '',
+    widthM: found?.widthM || 0,
+    depthM: found?.depthM || 0,
+    heightM: found?.heightM || 0,
+    areaM2: found?.areaM2 || 0,
+    totalUnits: found?.totalUnits || 0,
+    isActive: found?.isActive ?? true,
+  };
 }
 
 /**
@@ -111,7 +176,7 @@ export async function fetchSurcharges(params?: {
   facilityId?: number;
   isActive?: boolean;
 }): Promise<SurchargeItem[]> {
-  if (USE_MOCK) {
+  if (isMockEnabled('WS3')) {
     let result = [...inMemorySurcharges];
     if (params?.facilityId !== undefined) {
       result = result.filter((s) => s.facilityId === null || s.facilityId === params.facilityId);
@@ -134,7 +199,7 @@ export async function fetchSurcharges(params?: {
  * Tạo phụ phí mới (BM-03)
  */
 export async function createSurcharge(data: CreateSurchargeRequest): Promise<SurchargeItem> {
-  if (USE_MOCK) {
+  if (isMockEnabled('WS3')) {
     const nextId = Math.max(...inMemorySurcharges.map((s) => s.id), 0) + 1;
     const newItem: SurchargeItem = {
       id: nextId,
@@ -161,7 +226,7 @@ export async function createSurcharge(data: CreateSurchargeRequest): Promise<Sur
  * Lấy chính sách cọc & quá hạn đang hiệu lực (BM-02 / BM-03)
  */
 export async function fetchActivePolicy(): Promise<ActivePolicyInfo> {
-  if (USE_MOCK) {
+  if (isMockEnabled('WS3')) {
     return { ...mockActivePolicy };
   }
 

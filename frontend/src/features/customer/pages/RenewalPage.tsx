@@ -89,22 +89,33 @@ export const RenewalPage: React.FC = () => {
       setIsLoadingCheckout(true);
       setCheckoutError(null);
       try {
+        if (contract.status !== 'ACTIVE' && contract.status !== 'OVERDUE') {
+          throw new Error(
+            `Hợp đồng đang ở trạng thái "${contract.status}". Chỉ hợp đồng đang hoạt động (ACTIVE) hoặc quá hạn (OVERDUE) mới được phép gia hạn trực tuyến.`
+          );
+        }
+
         const numId = parseInt(contract.id, 10);
-        const rawId = contract.id.replace(/\D/g, '');
-        const refId = !isNaN(numId) && numId > 0 ? numId : (rawId ? parseInt(rawId, 10) : 1);
+        const refId = !isNaN(numId) && numId > 0 ? numId : 1;
+
         const checkout = await customerApi.createPaymentCheckout({
           referenceType: 'CONTRACT_RENEWAL',
           referenceId: refId,
           renewalMonths: renewalMonths,
           description: `GH${refId}T${renewalMonths}`.slice(0, 25),
         });
+
         if (isMounted) {
           setPayosCheckout(checkout);
         }
       } catch (err: unknown) {
-        console.warn('Không thể tạo checkout PayOS động:', err);
+        console.warn('Lỗi khởi tạo PayOS cho hợp đồng:', err);
+        const msg =
+          err instanceof Error
+            ? err.message
+            : 'Không thể kết nối cổng thanh toán PayOS. Vui lòng kiểm tra lại kết nối!';
         if (isMounted) {
-          setCheckoutError('Không thể tạo mã VietQR động qua PayOS. Quý khách vui lòng chuyển khoản theo thông tin dự phòng.');
+          setCheckoutError(msg);
         }
       } finally {
         if (isMounted) {
@@ -809,7 +820,7 @@ export const RenewalPage: React.FC = () => {
                     <div className="bg-[#f2f9f7] p-3 rounded-lg border border-emerald-100">
                       <span className="text-slate-500 block">Ngân hàng thụ hưởng:</span>
                       <strong className="text-sm text-[#0a1614] font-bold">
-                        {payosCheckout?.accountName ? 'VietinBank / Napas247 (PayOS)' : 'MB Bank (Ngân hàng Quân Đội)'}
+                        MB Bank (Ngân hàng Quân Đội · Napas247)
                       </strong>
                     </div>
 

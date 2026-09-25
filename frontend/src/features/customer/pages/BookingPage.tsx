@@ -68,9 +68,9 @@ export const BookingPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const facilityId = searchParams.get('facility') || '8';
-  const typeId = searchParams.get('type') || '1';
-  const unitNumberParam = searchParams.get('unitNumber') || 'S-101';
+  const facilityId = searchParams.get('facility') || searchParams.get('facilityId') || '8';
+  const typeId = searchParams.get('type') || searchParams.get('typeId') || '1';
+  const unitNumberParam = searchParams.get('unitNumber');
   const unitIdParam = searchParams.get('unitId');
 
   const [facility, setFacility] = useState<Facility>({
@@ -166,8 +166,8 @@ export const BookingPage: React.FC = () => {
     return () => { isMounted = false; };
   }, [facilityId, typeId]);
 
-  const finalUnitNumber = unitNumberParam || 'S-101';
-  const finalUnitId = unitIdParam || '1';
+  const finalUnitNumber = unitNumberParam || (unitType.name ? `${unitType.name} (Tự động phân bổ)` : 'Tự động phân bổ');
+  const finalUnitId = unitIdParam || undefined;
 
   // Form State
   const monthsParam = parseInt(searchParams.get('months') || '', 10);
@@ -437,7 +437,12 @@ export const BookingPage: React.FC = () => {
       let numericUnitId: number | undefined = undefined;
       if (finalUnitId) {
         const match = String(finalUnitId).match(/\d+/);
-        if (match) numericUnitId = parseInt(match[0], 10);
+        if (match) {
+          const parsed = parseInt(match[0], 10);
+          if (!isNaN(parsed) && parsed > 0) {
+            numericUnitId = parsed;
+          }
+        }
       }
 
       // 2. Tạo Reservation trong backend qua module reservation chuẩn (SC-02)
@@ -455,7 +460,7 @@ export const BookingPage: React.FC = () => {
 
       const rsvId = rsv.id || 1;
       setCreatedReservationId(rsvId);
-      setCreatedReservationCode(rsv.code || `RSV-${finalUnitNumber}`);
+      setCreatedReservationCode(rsv.code || (rsv.id ? `RSV-${rsv.id}` : `RSV-${finalUnitNumber}`));
 
       // 3. Khởi tạo PayOS VietQR payment link thật
       const checkout = await customerApi.createPaymentCheckout({
@@ -471,8 +476,8 @@ export const BookingPage: React.FC = () => {
       const draft: BookingDraft = {
         facilityId: facility.id,
         facilityName: facility.name,
-        unitId: finalUnitId,
-        unitNumber: finalUnitNumber,
+        unitId: finalUnitId || 'AUTO',
+        unitNumber: rsv.storageUnitCode || finalUnitNumber,
         unitTypeId: unitType.id,
         unitTypeName: unitType.name,
         storageType: unitType.storageType,
@@ -500,14 +505,14 @@ export const BookingPage: React.FC = () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: unknown) {
       console.error('Lỗi khi khởi tạo đơn đặt chỗ hoặc PayOS:', err);
-      const msg = err instanceof Error ? err.message : 'Không thể tạo mã thanh toán PayOS. Vui lòng kiểm tra lại kết nối!';
+      const msg = (err as any)?.message || (err instanceof Error ? err.message : 'Không thể tạo mã thanh toán PayOS. Vui lòng kiểm tra lại kết nối!');
       alert(msg);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const transferContent = checkoutData?.description || `SMARTSTORAGE ${finalUnitNumber} ${customerIdCard.slice(-4)}`;
+  const transferContent = checkoutData?.description || (createdReservationCode ? `SMARTSTORAGE ${createdReservationCode}` : `SMARTSTORAGE ${customerIdCard.slice(-4)}`);
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -898,7 +903,7 @@ export const BookingPage: React.FC = () => {
                   <div className="bg-[#f2f9f7] p-3 rounded-lg border border-emerald-100">
                     <span className="text-slate-500 block">Ngân hàng thụ hưởng:</span>
                     <strong className="text-sm text-[#0a1614] font-bold">
-                      {checkoutData?.bin === '970415' ? 'VietinBank (Napas247 · PayOS)' : 'VietinBank / Napas247'}
+                      MB Bank (Ngân hàng Quân Đội · Napas247)
                     </strong>
                   </div>
 

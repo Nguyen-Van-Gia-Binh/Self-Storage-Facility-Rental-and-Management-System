@@ -327,13 +327,23 @@ export const UnitPickerPage: React.FC = () => {
 
   const handleProceedToBooking = (unitToBook?: StorageUnit) => {
     const targetUnit = unitToBook || selectedUnit;
-    const targetUnitNumber = targetUnit ? targetUnit.unitNumber : 'S-101';
-    const targetUnitId = targetUnit ? targetUnit.id : '1';
     const typeIdToPass = currentUnitType ? currentUnitType.id : (unitTypes[0]?.id || '1');
 
-    navigate(
-      `/customer/booking?facility=${currentFacility.id}&type=${typeIdToPass}&unitId=${targetUnitId}&unitNumber=${targetUnitNumber}&startDate=${startDate}&months=${durationMonths}`
-    );
+    const params = new URLSearchParams({
+      facility: String(currentFacility.id),
+      type: String(typeIdToPass),
+      startDate,
+      months: String(durationMonths),
+    });
+
+    if (targetUnit?.id) {
+      params.set('unitId', String(targetUnit.id));
+    }
+    if (targetUnit?.unitNumber) {
+      params.set('unitNumber', targetUnit.unitNumber);
+    }
+
+    navigate(`/customer/booking?${params.toString()}`);
   };
 
   if (loading) {

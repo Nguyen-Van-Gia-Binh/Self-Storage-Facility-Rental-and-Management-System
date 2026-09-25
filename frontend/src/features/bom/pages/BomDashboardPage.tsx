@@ -12,12 +12,14 @@ import type {
   SystemRevenueReport,
   SystemOccupancyReport,
   OverdueReportResponse,
+  FacilityListItem,
 } from '@/types';
 import {
   getSystemRevenueReport,
   getSystemOccupancyReport,
   getSystemOverdueReport,
 } from '@/api/report';
+import { fetchFacilities } from '@/api/facility';
 import { formatDate } from '@/utils/format';
 import { Button } from '@/components/ui/Button';
 import { BomFilterBar } from '../components/BomFilterBar';
@@ -28,12 +30,6 @@ import { FacilityPerformanceTable } from '../components/FacilityPerformanceTable
 import { OverdueContractsTable } from '../components/OverdueContractsTable';
 import { ReportExportModal } from '../components/ReportExportModal';
 
-const FACILITIES = [
-  { id: 1, name: 'Kho Flagship Quận 7 - Nam Sài Gòn' },
-  { id: 2, name: 'Kho Bình Thạnh - Riverside Central' },
-  { id: 3, name: 'Kho Cầu Giấy - Hà Nội Innovation Hub' },
-];
-
 export interface BomDashboardPageProps {
   initialOpenExport?: boolean;
 }
@@ -41,6 +37,7 @@ export interface BomDashboardPageProps {
 export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
   initialOpenExport = false,
 }) => {
+  const [facilities, setFacilities] = useState<FacilityListItem[]>([]);
   const [filters, setFilters] = useState<ReportFilterParams>({
     periodType: 'THIS_MONTH',
     from: '2026-10-01',
@@ -55,6 +52,24 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(initialOpenExport);
   const [lastRefreshed, setLastRefreshed] = useState<string>('');
+
+  // Nạp danh sách cơ sở động từ API (BM-04, BM-05)
+  useEffect(() => {
+    let ignore = false;
+    fetchFacilities(undefined, true)
+      .then((data) => {
+        if (!ignore) {
+          setFacilities(data);
+        }
+      })
+      .catch((err) => {
+        console.warn('Lỗi khi tải danh sách cơ sở trên BOM Dashboard:', err);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   useEffect(() => {
     let ignore = false;
@@ -108,7 +123,7 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
   };
 
   const selectedFacilityName = filters.facilityId
-    ? FACILITIES.find((f) => f.id === filters.facilityId)?.name || 'Cơ sở đã chọn'
+    ? facilities.find((f) => f.id === filters.facilityId)?.name || 'Cơ sở đã chọn'
     : 'Toàn bộ hệ thống (Toàn quốc)';
 
   return (
@@ -175,7 +190,7 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
           filters={filters}
           onChange={setFilters}
           onOpenExport={() => setIsExportModalOpen(true)}
-          facilities={FACILITIES}
+          facilities={facilities}
           isLoading={isLoading}
         />
       </div>
@@ -292,7 +307,7 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
         currentFilters={filters}
-        facilities={FACILITIES}
+        facilities={facilities}
       />
     </div>
   );

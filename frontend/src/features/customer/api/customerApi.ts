@@ -142,54 +142,32 @@ export const customerApi = {
    * Tạo đơn đặt chỗ mới & giữ chỗ 48h (SC-02)
    */
   async createReservation(payload: CreateReservationPayload): Promise<ReservationResult> {
-    try {
-      const res = await apiCreateReservation({
-        facilityId: payload.facilityId,
-        unitTypeId: payload.unitTypeId,
-        storageUnitId: payload.storageUnitId,
-        startDate: payload.startDate,
-        rentalMonths: payload.rentalMonths,
-        customerName: payload.customerName,
-        customerPhone: payload.customerPhone,
-        customerEmail: payload.customerEmail,
-        identityNumber: payload.identityNumber,
-      });
+    const res = await apiCreateReservation({
+      facilityId: payload.facilityId,
+      unitTypeId: payload.unitTypeId,
+      storageUnitId: payload.storageUnitId,
+      startDate: payload.startDate,
+      rentalMonths: payload.rentalMonths,
+      customerName: payload.customerName,
+      customerPhone: payload.customerPhone,
+      customerEmail: payload.customerEmail,
+      identityNumber: payload.identityNumber,
+    });
 
-      return {
-        id: res.id,
-        code: res.code,
-        facilityName: res.facilityName || 'SmartStorage Cơ sở chính',
-        unitTypeName: res.unitTypeName || 'Storage Locker',
-        totalPayable: res.totalPayable || res.depositAmount,
-        depositAmount: res.depositAmount,
-        status: res.status,
-        holdExpiresAt: res.holdExpiresAt,
-        bankAccountNumber: res.bankAccountNumber,
-        bankName: res.bankName,
-        transferContent: res.transferContent,
-        vietQrPayload: res.vietQrPayload,
-      };
-    } catch {
-      // Giả lập kết quả trả về nếu backend offline
-      const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-      const mockCode = `RSV-20260920-${randomSuffix}`;
-      const pricing = calculateBookingTotal(1200000, payload.rentalMonths);
-      const transferContent = `SMARTSTORAGE ${mockCode}`;
-
-      return {
-        code: mockCode,
-        facilityName: 'SmartStorage District 7 Flagship',
-        unitTypeName: 'Type S – Small Locker',
-        totalPayable: pricing.totalDueToday,
-        depositAmount: pricing.depositAmount,
-        status: 'PENDING_PAYMENT',
-        holdExpiresAt: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
-        vietQrPayload: `vietqr://${pricing.totalDueToday}/${transferContent}`,
-        bankAccountNumber: '0888 567 999',
-        bankName: 'MB Bank (Ngân hàng Quân Đội)',
-        transferContent,
-      };
-    }
+    return {
+      id: res.id,
+      code: res.code,
+      facilityName: res.facilityName || 'SmartStorage Cơ sở chính',
+      unitTypeName: res.unitTypeName || 'Storage Locker',
+      totalPayable: res.totalPayable || res.depositAmount,
+      depositAmount: res.depositAmount,
+      status: res.status,
+      holdExpiresAt: res.holdExpiresAt,
+      bankAccountNumber: res.bankAccountNumber,
+      bankName: res.bankName,
+      transferContent: res.transferContent,
+      vietQrPayload: res.vietQrPayload,
+    };
   },
 
   /**

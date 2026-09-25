@@ -46,13 +46,31 @@ export interface ApiError {
   errors?: Record<string, string>;
 }
 
+export class ApiException extends Error implements ApiError {
+  status: number;
+  errorCode?: string;
+  timestamp: string;
+  errors?: Record<string, string>;
+
+  constructor(errorData: ApiError) {
+    super(errorData.message || 'Đã xảy ra lỗi không xác định từ máy chủ');
+    this.name = 'ApiException';
+    this.status = errorData.status;
+    this.errorCode = errorData.errorCode;
+    this.timestamp = errorData.timestamp;
+    this.errors = errorData.errors;
+  }
+}
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 export async function apiClient<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const token = localStorage.getItem('access_token');
+  const token =
+    localStorage.getItem('selfstorage_access_token') ||
+    localStorage.getItem('access_token');
 
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
@@ -112,7 +130,7 @@ export async function apiClient<T>(
       message: 'Đã xảy ra lỗi không xác định từ máy chủ',
       timestamp: new Date().toISOString(),
     }));
-    throw errorData;
+    throw new ApiException(errorData);
   }
 
   return response.json();

@@ -1,20 +1,49 @@
-/**
- * Payment API — SC-03 (T3.10)
- * API-SPEC.md § 9 (Payment) & BUSINESS-RULES.md (BR-PAY-01, BR-DEP-01, BR-DEP-02, BR-DEP-03)
- */
 import { apiClient } from './client';
 import type {
   CreatePaymentRequest,
   PaymentTransaction,
   MoveInPassData,
-  PaymentStatus,
 } from '@/types';
-
-const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false';
 
 // Key lưu trữ localStorage cho thanh toán và hợp đồng mới
 const STORAGE_PAYMENTS_KEY = 'smartstorage_payments';
 const STORAGE_USER_PASSES_KEY = 'smartstorage_move_in_passes';
+
+export interface CheckoutPayload {
+  referenceType?: 'RESERVATION' | 'CONTRACT_RENEWAL' | 'SETTLEMENT';
+  referenceId?: number;
+  reservationId?: number;
+  contractRenewalId?: number;
+  renewalMonths?: number;
+  amount?: number;
+  description?: string;
+  cancelUrl?: string;
+  returnUrl?: string;
+}
+
+export interface CheckoutResult {
+  checkoutUrl: string;
+  qrCode: string;
+  orderCode: number;
+  paymentId?: number;
+  amount: number;
+  description: string;
+  accountName?: string;
+  accountNumber?: string;
+  bin?: string;
+  status?: string;
+}
+
+export interface PaymentStatusResult {
+  id: number;
+  orderCode?: number;
+  amount: number;
+  status: 'PENDING' | 'PAID' | 'SUCCESS' | 'CANCELLED' | 'EXPIRED' | 'FAILED';
+  paidAt?: string;
+  referenceType: string;
+  referenceId: number;
+  transactionRef?: string;
+}
 
 /**
  * Lấy danh sách giao dịch từ localStorage (hoặc mảng rỗng)
@@ -67,89 +96,50 @@ export function storeMoveInPass(pass: MoveInPassData): void {
 }
 
 /**
- * Tạo yêu cầu thanh toán (POST /api/v1/payments)
+ * Khởi tạo đơn thanh toán PayOS VietQR tự động (POST /payments/checkout) (SC-03)
+ * Sử dụng 100% kết nối thật tới cổng PayOS qua Backend API
  */
-export async function createPayment(request: CreatePaymentRequest): Promise<PaymentTransaction> {
-  if (USE_MOCK) {
-    const transactionId = `TXN-${Date.now()}`;
-    const txn: PaymentTransaction = {
-      id: transactionId,
-      referenceType: request.referenceType,
-      referenceId: request.referenceId,
-      amount: request.amount,
-      rentalFee: Math.max(0, request.amount - (request.amount > 2000000 ? request.amount / 2 : 1200000)),
-      depositAmount: request.amount > 2000000 ? request.amount / 2 : 1200000,
-      method: request.method,
-      status: 'PENDING',
-      transactionRef: request.transactionRef || `REF${Math.floor(100000 + Math.random() * 900000)}`,
-      unitNumber: typeof request.referenceId === 'string' ? request.referenceId : `U-${request.referenceId}`,
-      facilityName: 'SmartStorage Cơ sở mẫu',
-    };
-    storePayment(txn);
-    return txn;
-  }
+export async function createCheckout(payload: CheckoutPayload): Promise<CheckoutResult> {
+  const referenceType =
+    payload.referenceType ||
+    (payload.contractRenewalId ? 'CONTRACT_RENEWAL' : 'RESERVATION');
+  const referenceId =
+    payload.referenceId ||
+    payload.contractRenewalId ||
+    payload.reservationId ||
+    1;
 
-  try {
-    return await apiClient<PaymentTransaction>('/payments', {
-      method: 'POST',
-      body: JSON.stringify(request),
-    });
-  } catch (err) {
-    console.warn('Lỗi gọi API /payments, chuyển sang mock fallback:', err);
-    const txn: PaymentTransaction = {
-      id: `TXN-${Date.now()}`,
-      referenceType: request.referenceType,
-      referenceId: request.referenceId,
-      amount: request.amount,
-      rentalFee: Math.round(request.amount * 0.75),
-      depositAmount: Math.round(request.amount * 0.25),
-      method: request.method,
-      status: 'PENDING',
-      transactionRef: request.transactionRef || `REF${Date.now()}`,
-      unitNumber: String(request.referenceId),
-      facilityName: 'SmartStorage Cơ sở mẫu',
-    };
-    storePayment(txn);
-    return txn;
-  }
+  const requestBody = {
+    referenceType,
+    referenceId,
+    renewalMonths: payload.renewalMonths,
+    description: payload.description,
+    cancelUrl: payload.cancelUrl,
+    returnUrl: payload.returnUrl,
+  };
+
+  return await apiClient<CheckoutResult>('/payments/checkout', {
+    method: 'POST',
+    body: JSON.stringify(requestBody),
+  });
 }
 
 /**
- * Đối soát giao dịch thanh toán (Polling / Verifying)
+ * Kiểm tra trạng thái giao dịch theo orderCode phục vụ Polling tự động (GET /payments/order/{orderCode}/status) (SC-03)
+ * Truy vấn trạng thái thực tế từ Backend và PayOS Webhook
  */
-export async function verifyPayment(
-  paymentId: string | number
-): Promise<{ success: boolean; status: PaymentStatus; message: string }> {
-  if (USE_MOCK) {
-    // Giả lập đối soát Napas247 phản hồi thành công sau 1-2s
-    const payments = getStoredPayments();
-    const target = payments.find((p) => String(p.id) === String(paymentId));
-    if (target) {
-      target.status = 'COMPLETED';
-      target.paidAt = new Date().toISOString();
-      localStorage.setItem(STORAGE_PAYMENTS_KEY, JSON.stringify(payments));
-    }
-    return {
-      success: true,
-      status: 'COMPLETED',
-      message: 'Giao dịch chuyển khoản Napas247 đã được ghi nhận thành công.',
-    };
-  }
+export async function pollPaymentStatus(orderCode: number): Promise<PaymentStatusResult> {
+  return await apiClient<PaymentStatusResult>(`/payments/order/${orderCode}/status`);
+}
 
-  try {
-    const res = await apiClient<{ success: boolean; status: PaymentStatus; message: string }>(
-      `/payments/${paymentId}/verify`,
-      { method: 'POST' }
-    );
-    return res;
-  } catch (err) {
-    console.warn('Lỗi gọi API verify payment, fallback mock thành công:', err);
-    return {
-      success: true,
-      status: 'COMPLETED',
-      message: 'Giao dịch chuyển khoản đã được hệ thống ghi nhận thành công.',
-    };
-  }
+/**
+ * Tạo yêu cầu thanh toán thủ công (POST /api/v1/payments) (SC-03)
+ */
+export async function createPayment(request: CreatePaymentRequest): Promise<PaymentTransaction> {
+  return await apiClient<PaymentTransaction>('/payments', {
+    method: 'POST',
+    body: JSON.stringify(request),
+  });
 }
 
 /**
