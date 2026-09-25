@@ -16,7 +16,6 @@ import {
   MapPin,
   Calendar,
   User,
-  CheckCircle2,
   ChevronRight,
   ArrowLeft,
 } from 'lucide-react';

@@ -156,13 +156,16 @@ export async function updateUnitTypePrice(
   }
   return {
     id: res.unitTypeId || res.id,
+    facilityId,
     name: res.unitTypeName || found?.name || `Loại ô kho #${unitTypeId}`,
     monthlyPrice: res.monthlyPrice,
     description: found?.description || '',
-    dimensions: found?.dimensions || '',
-    volume: found?.volume || 0,
-    features: found?.features || [],
-    badge: found?.badge,
+    widthM: found?.widthM || 0,
+    depthM: found?.depthM || 0,
+    heightM: found?.heightM || 0,
+    areaM2: found?.areaM2 || 0,
+    totalUnits: found?.totalUnits || 0,
+    isActive: found?.isActive ?? true,
   };
 }
 
