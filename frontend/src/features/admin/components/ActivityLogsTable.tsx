@@ -27,7 +27,9 @@ interface ActivityLogsTableProps {
 
 const ACTION_BADGES: Record<string, { label: string; bg: string; text: string; border: string }> = {
   UPDATE_ROLE: { label: 'Đổi vai trò', bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
+  UPDATE_USER_ROLE: { label: 'Đổi vai trò', bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
   UPDATE_STATUS: { label: 'Đổi trạng thái', bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200' },
+  UPDATE_USER_STATUS: { label: 'Đổi trạng thái', bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200' },
   ASSIGN_FACILITIES: { label: 'Gán cơ sở', bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
   UPDATE_POLICY: { label: 'Sửa chính sách', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
   UPDATE_PRICE: { label: 'Chỉnh biểu giá', bg: 'bg-cyan-50', text: 'text-cyan-700', border: 'border-cyan-200' },
