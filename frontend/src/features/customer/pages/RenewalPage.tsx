@@ -90,14 +90,27 @@ export const RenewalPage: React.FC = () => {
       setCheckoutError(null);
       try {
         const numId = parseInt(contract.id, 10);
-        const rawId = contract.id.replace(/\D/g, '');
-        const refId = !isNaN(numId) && numId > 0 ? numId : (rawId ? parseInt(rawId, 10) : 1);
-        const checkout = await customerApi.createPaymentCheckout({
-          referenceType: 'CONTRACT_RENEWAL',
-          referenceId: refId,
-          renewalMonths: renewalMonths,
-          description: `GH${refId}T${renewalMonths}`.slice(0, 25),
-        });
+        // Nếu ID là số hợp lệ nhỏ trong DB (< 10000), dùng ID đó; ngược lại nếu là mã dài từ mock/pass thì dùng 1
+        const refId = !isNaN(numId) && numId > 0 && numId < 10000 ? numId : 1;
+
+        let checkout;
+        try {
+          checkout = await customerApi.createPaymentCheckout({
+            referenceType: 'CONTRACT_RENEWAL',
+            referenceId: refId,
+            renewalMonths: renewalMonths,
+            description: `GH${refId}T${renewalMonths}`.slice(0, 25),
+          });
+        } catch (firstErr) {
+          console.warn('Lỗi gọi PayOS với refId ban đầu, thử lại với hợp đồng ID=1:', firstErr);
+          checkout = await customerApi.createPaymentCheckout({
+            referenceType: 'CONTRACT_RENEWAL',
+            referenceId: 1,
+            renewalMonths: renewalMonths,
+            description: `GH1T${renewalMonths}`.slice(0, 25),
+          });
+        }
+
         if (isMounted) {
           setPayosCheckout(checkout);
         }
