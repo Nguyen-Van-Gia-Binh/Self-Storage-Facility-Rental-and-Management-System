@@ -10,11 +10,17 @@ import com.swp391.selfstorage.contract.repository.*;
 import com.swp391.selfstorage.contract.service.ContractService;
 import com.swp391.selfstorage.reservation.entity.ReservationStatus;
 import com.swp391.selfstorage.reservation.repository.ReservationRepository;
+import com.swp391.selfstorage.facility.entity.Facility;
+import com.swp391.selfstorage.facility.repository.FacilityRepository;
 import com.swp391.selfstorage.unit.entity.StorageUnit;
 import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
+import com.swp391.selfstorage.unit.entity.UnitType;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
+import com.swp391.selfstorage.unit.repository.UnitTypeRepository;
+import com.swp391.selfstorage.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -41,6 +47,15 @@ public class ContractServiceImpl implements ContractService {
         private final ReturnRequestRepository returnRequestRepository;
         private final ContractExtraChargeRepository extraChargeRepository;
         private final ApplicationEventPublisher eventPublisher;
+
+        @Autowired(required = false)
+        private FacilityRepository facilityRepository;
+
+        @Autowired(required = false)
+        private UnitTypeRepository unitTypeRepository;
+
+        @Autowired(required = false)
+        private UserService userService;
 
         @Override
         @Transactional
@@ -225,13 +240,46 @@ public class ContractServiceImpl implements ContractService {
                                         && !c.getEndDateExclusive().isBefore(now)
                                         && !c.getEndDateExclusive().isAfter(threshold);
 
+                        String storageCode = (storageUnitRepository != null && c.getStorageUnitId() != null)
+                                        ? storageUnitRepository.findById(c.getStorageUnitId()).map(StorageUnit::getCode).orElse("U-" + c.getStorageUnitId())
+                                        : (c.getStorageUnitId() != null ? "U-" + c.getStorageUnitId() : "Chưa gán");
+
+                        String unitName = (unitTypeRepository != null && c.getUnitTypeId() != null)
+                                        ? unitTypeRepository.findById(c.getUnitTypeId()).map(UnitType::getName).orElse(null)
+                                        : null;
+
+                        String facName = (facilityRepository != null && c.getFacilityId() != null)
+                                        ? facilityRepository.findById(c.getFacilityId()).map(Facility::getName).orElse(null)
+                                        : null;
+
+                        String custName = "Khách hàng #" + c.getCustomerId();
+                        String custPhone = "";
+                        String custEmail = "";
+                        if (userService != null && c.getCustomerId() != null) {
+                                try {
+                                        var userDto = userService.getUserById(c.getCustomerId());
+                                        if (userDto != null) {
+                                                custName = userDto.getFullName();
+                                                custPhone = userDto.getPhone();
+                                                custEmail = userDto.getEmail();
+                                        }
+                                } catch (Exception ignored) {
+                                }
+                        }
+
                         return ContractSummaryResponse.builder()
                                         .id(c.getId())
                                         .code(c.getCode())
                                         .customerId(c.getCustomerId())
+                                        .customerName(custName)
+                                        .customerPhone(custPhone)
+                                        .customerEmail(custEmail)
                                         .facilityId(c.getFacilityId())
+                                        .facilityName(facName)
                                         .storageUnitId(c.getStorageUnitId())
+                                        .storageUnitCode(storageCode)
                                         .unitTypeId(c.getUnitTypeId())
+                                        .unitTypeName(unitName)
                                         .startDate(c.getStartDate())
                                         .endDateExclusive(c.getEndDateExclusive())
                                         .rentalMonths(c.getRentalMonths())
@@ -548,6 +596,27 @@ public class ContractServiceImpl implements ContractService {
                 r.setStatus(c.getStatus());
                 r.setCheckinDate(c.getCheckinDate());
                 r.setReturnDate(c.getReturnDate());
+
+                if (storageUnitRepository != null && c.getStorageUnitId() != null) {
+                        storageUnitRepository.findById(c.getStorageUnitId()).ifPresent(su -> r.setStorageUnitCode(su.getCode()));
+                }
+                if (unitTypeRepository != null && c.getUnitTypeId() != null) {
+                        unitTypeRepository.findById(c.getUnitTypeId()).ifPresent(ut -> r.setUnitTypeName(ut.getName()));
+                }
+                if (facilityRepository != null && c.getFacilityId() != null) {
+                        facilityRepository.findById(c.getFacilityId()).ifPresent(f -> r.setFacilityName(f.getName()));
+                }
+                if (userService != null && c.getCustomerId() != null) {
+                        try {
+                                var userDto = userService.getUserById(c.getCustomerId());
+                                if (userDto != null) {
+                                        r.setCustomerName(userDto.getFullName());
+                                        r.setCustomerPhone(userDto.getPhone());
+                                        r.setCustomerEmail(userDto.getEmail());
+                                }
+                        } catch (Exception ignored) {
+                        }
+                }
                 return r;
         }
 }

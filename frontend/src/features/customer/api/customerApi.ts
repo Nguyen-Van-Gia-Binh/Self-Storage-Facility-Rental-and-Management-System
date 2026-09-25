@@ -229,6 +229,29 @@ export const customerApi = {
   },
 
   /**
+   * Xác nhận thanh toán giữ chỗ trực tiếp (SC-03) -> Bắn Event tạo RentalContract
+   * POST /api/v1/payments
+   */
+  async createManualPayment(payload: {
+    referenceType: string;
+    referenceId: number;
+    amount: number;
+    method: string;
+    transactionRef?: string;
+  }): Promise<any> {
+    const res = await fetch(`${API_BASE_URL}/payments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => null);
+      throw new Error(errJson?.message || 'Không thể xác nhận giao dịch thanh toán');
+    }
+    return res.json();
+  },
+
+  /**
    * Lấy danh sách hợp đồng kho đang thuê của khách hàng
    */
   async getMyRentals(): Promise<RentedContract[]> {

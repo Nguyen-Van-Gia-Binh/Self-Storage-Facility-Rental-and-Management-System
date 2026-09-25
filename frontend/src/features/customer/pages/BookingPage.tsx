@@ -200,7 +200,23 @@ export const BookingPage: React.FC = () => {
   }, [unitType, durationMonths]);
 
   // Xử lý xác nhận thanh toán đặt chỗ & tạo MoveInPass (SC-03)
-  const handleConfirmBookingPayment = useCallback(() => {
+  const handleConfirmBookingPayment = useCallback(async () => {
+    // Nếu chưa ở trạng thái SUCCESS (ví dụ bấm nút demo thủ công), gọi backend API để ghi nhận và kích hoạt tạo hợp đồng
+    if (createdReservationId && paymentStatus !== 'SUCCESS') {
+      try {
+        await customerApi.createManualPayment({
+          referenceType: 'RESERVATION',
+          referenceId: createdReservationId,
+          amount: checkoutData?.amount || calculation.totalDueToday,
+          method: 'BANK_TRANSFER',
+          transactionRef: checkoutData?.orderCode ? `PAYOS-${checkoutData.orderCode}` : `TXN-${Date.now()}`,
+        });
+        setPaymentStatus('SUCCESS');
+      } catch (err) {
+        console.warn('Lỗi ghi nhận thanh toán backend (vẫn tiếp tục tạo vé nhận kho):', err);
+      }
+    }
+
     const pass = generateMoveInPass({
       reservationId: createdReservationCode || (createdReservationId ? `RSV-${createdReservationId}` : `RES-${finalUnitNumber}`),
       unitNumber: finalUnitNumber,
@@ -218,8 +234,12 @@ export const BookingPage: React.FC = () => {
     setCreatedPass(pass);
     setShowPassModal(true);
   }, [
-    createdReservationCode,
     createdReservationId,
+    createdReservationCode,
+    paymentStatus,
+    checkoutData?.amount,
+    checkoutData?.orderCode,
+    calculation.totalDueToday,
     finalUnitNumber,
     facility.id,
     facility.name,
@@ -229,8 +249,6 @@ export const BookingPage: React.FC = () => {
     customerPhone,
     customerIdCard,
     startDate,
-    checkoutData?.amount,
-    calculation.totalDueToday,
   ]);
 
   // Đồng hồ đếm ngược giữ chỗ 48 giờ thực tế (BR-DEP-03)
@@ -903,6 +921,16 @@ export const BookingPage: React.FC = () => {
                       ✓ Đã sao chép vào bộ nhớ tạm!
                     </div>
                   )}
+                </div>
+              </div>
+
+              {/* Demo Notice for Defense Presentation */}
+              <div className="bg-amber-50/70 p-3 rounded-xl border border-amber-200 text-xs text-amber-900 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>
+                    <strong>Chế độ Demo / Thuyết trình:</strong> Bạn có thể quét mã VietQR thật ở trên qua App ngân hàng HOẶC bấm nút hoàn tất bên dưới để hệ thống lập tức kích hoạt thanh toán và tự động tạo Hợp đồng sang Portal Quản lý!
+                  </span>
                 </div>
               </div>
 
