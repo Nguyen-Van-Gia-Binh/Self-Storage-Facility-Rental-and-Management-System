@@ -26,6 +26,13 @@ import { DigitalMoveInPassModal } from '../components/DigitalMoveInPassModal';
 import { generateMoveInPass } from '@/api/payment';
 import { customerApi } from '../api/customerApi';
 import type { CheckoutResponse } from '../api/customerApi';
+import {
+  calculateBookingPrice,
+  createReservation,
+  checkUnitAvailability,
+  type AvailabilityResponse,
+  type CalculatePriceResponse,
+} from '@/api/reservation';
 import type { BookingDraft } from '../types';
 import type { MoveInPassData } from '@/types';
 import { fetchFacilities } from '@/api/facility';
@@ -194,10 +201,67 @@ export const BookingPage: React.FC = () => {
     return d.toISOString().split('T')[0];
   }, [startDate, durationMonths]);
 
+  // Backend Availability & Real Pricing States (SC-01, SC-02)
+  const [availability, setAvailability] = useState<AvailabilityResponse | null>(null);
+  const [backendPricing, setBackendPricing] = useState<CalculatePriceResponse | null>(null);
+
+  // Tải sức chứa ô kho thực tế từ backend (SC-01)
+  useEffect(() => {
+    let isMounted = true;
+    async function loadAvailability() {
+      const fId = parseInt(facilityId, 10) || 1;
+      const uId = parseInt(typeId, 10) || 1;
+      try {
+        const res = await checkUnitAvailability(fId, uId, startDate, durationMonths);
+        if (isMounted) {
+          setAvailability(res);
+        }
+      } catch (err) {
+        console.warn('Lỗi kiểm tra availability từ backend:', err);
+      }
+    }
+    loadAvailability();
+    return () => { isMounted = false; };
+  }, [facilityId, typeId, startDate, durationMonths]);
+
+  // Tải tính giá tự động từ backend (SC-02, BR-DEP-01, BR-GEN-04)
+  useEffect(() => {
+    let isMounted = true;
+    async function loadPrice() {
+      if (unitType.baseMonthlyPrice > 0 && durationMonths > 0) {
+        try {
+          const res = await calculateBookingPrice({
+            monthlyPrice: unitType.baseMonthlyPrice,
+            months: durationMonths,
+          });
+          if (isMounted) {
+            setBackendPricing(res);
+          }
+        } catch (err) {
+          console.warn('Lỗi gọi API tính giá backend:', err);
+        }
+      }
+    }
+    loadPrice();
+    return () => { isMounted = false; };
+  }, [unitType.baseMonthlyPrice, durationMonths]);
+
   // Price Calculation
   const calculation = useMemo(() => {
+    if (backendPricing) {
+      return {
+        monthlyRate: backendPricing.monthlyPrice,
+        months: backendPricing.rentalMonths,
+        rawRentTotal: backendPricing.rawRentTotal,
+        discountPercentage: backendPricing.discountPercentage,
+        discountAmount: backendPricing.discountAmount,
+        finalRentTotal: backendPricing.finalRentTotal,
+        depositAmount: backendPricing.depositAmount,
+        totalDueToday: backendPricing.totalDueToday,
+      };
+    }
     return calculateBookingTotal(unitType.baseMonthlyPrice, durationMonths);
-  }, [unitType, durationMonths]);
+  }, [backendPricing, unitType.baseMonthlyPrice, durationMonths]);
 
   // Xử lý xác nhận thanh toán đặt chỗ & tạo MoveInPass (SC-03)
   const handleConfirmBookingPayment = useCallback(async () => {
@@ -362,8 +426,8 @@ export const BookingPage: React.FC = () => {
         if (match) numericUnitId = parseInt(match[0], 10);
       }
 
-      // 2. Tạo Reservation trong backend
-      const rsv = await customerApi.createReservation({
+      // 2. Tạo Reservation trong backend qua module reservation chuẩn (SC-02)
+      const rsv = await createReservation({
         facilityId: numericFacilityId,
         unitTypeId: numericUnitTypeId,
         storageUnitId: numericUnitId,
@@ -518,6 +582,29 @@ export const BookingPage: React.FC = () => {
                   <span className="text-xs text-slate-500">/tháng</span>
                 </div>
               </div>
+
+              {/* Sức chứa ô kho trống từ Backend (SC-01) */}
+              {availability && (
+                <div className={`p-3 rounded-xl flex items-center justify-between text-xs border ${
+                  availability.availableSlots > 0 
+                    ? 'bg-emerald-50/70 border-emerald-200 text-emerald-800' 
+                    : 'bg-rose-50/70 border-rose-200 text-rose-800'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className={`w-4 h-4 ${availability.availableSlots > 0 ? 'text-emerald-600' : 'text-rose-600'}`} />
+                    <span className="font-semibold">
+                      {availability.availableSlots > 0
+                        ? `Còn ${availability.availableSlots} ô kho trống sẵn sàng trong kỳ hạn này`
+                        : 'Loại ô kho này đã hết chỗ trong kỳ hạn đã chọn. Vui lòng đổi ngày hoặc loại kho khác!'}
+                    </span>
+                  </div>
+                  {availability.availableSlots > 0 && (
+                    <Badge variant="available" className="text-[10px]">
+                      Trống {availability.availableSlots} ô
+                    </Badge>
+                  )}
+                </div>
+              )}
 
               {/* Duration Options */}
               <div className="pt-2 space-y-2.5">
