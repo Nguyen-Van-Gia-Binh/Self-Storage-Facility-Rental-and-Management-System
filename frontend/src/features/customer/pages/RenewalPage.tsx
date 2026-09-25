@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -68,7 +68,7 @@ export const RenewalPage: React.FC = () => {
         if (isMounted) {
           setPayosCheckout(checkout);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.warn('Không thể tạo checkout PayOS động:', err);
         if (isMounted) {
           setCheckoutError('Không thể tạo mã VietQR động qua PayOS. Quý khách vui lòng chuyển khoản theo thông tin dự phòng.');
@@ -86,6 +86,62 @@ export const RenewalPage: React.FC = () => {
       isMounted = false;
     };
   }, [currentStep, contract, renewalMonths]);
+
+  // Tính toán ngày kết thúc mới chính xác
+  const newEndDate = useMemo(() => {
+    if (!contract) return '';
+    return calculateExtendedEndDate(contract.endDate, renewalMonths);
+  }, [contract, renewalMonths]);
+
+  // Tính toán chi phí tài chính minh bạch theo BR-REN-03, BR-REN-06, BR-REN-07 & BR-DEP-01
+  const pricing = useMemo(() => {
+    if (!contract) {
+      return {
+        monthlyRent: 0,
+        rawRent: 0,
+        discountRate: 0,
+        discountAmount: 0,
+        netRent: 0,
+        overdueFee: 0,
+        extraDeposit: 0,
+        finalTotal: 0,
+        renewalMonths: 0,
+      };
+    }
+
+    return calculateRenewalPricing({
+      monthlyRent: contract.monthlyRent,
+      renewalMonths,
+      isOverdue: contract.status === 'OVERDUE',
+      overdueDays: contract.overdueDays,
+      overdueFee: contract.overdueFee,
+    });
+  }, [contract, renewalMonths]);
+
+  // Xác nhận chuyển khoản thành công và kích hoạt gia hạn (SC-03)
+  const handleConfirmPayment = useCallback(async () => {
+    if (!contract) return;
+    setIsProcessing(true);
+
+    try {
+      const res = await renewContract({
+        contractId: contract.id,
+        months: renewalMonths,
+        newEndDate,
+        totalAmount: pricing.finalTotal,
+        paymentMethod: 'VIETQR',
+        transactionReference: `MB-${Date.now().toString().slice(-8)}`,
+      });
+
+      setRenewalResult(res);
+      setIsProcessing(false);
+      setShowReceiptModal(true);
+    } catch (err) {
+      console.error('Lỗi khi kích hoạt gia hạn:', err);
+      setIsProcessing(false);
+      alert('Có lỗi xảy ra trong quá trình xử lý gia hạn. Vui lòng thử lại hoặc liên hệ lễ tân.');
+    }
+  }, [contract, renewalMonths, newEndDate, pricing.finalTotal]);
 
   // Polling tự động kiểm tra trạng thái thanh toán PayOS mỗi 2.5 giây khi ở Bước 3
   useEffect(() => {
@@ -105,7 +161,7 @@ export const RenewalPage: React.FC = () => {
     }, 2500);
 
     return () => clearInterval(interval);
-  }, [currentStep, payosCheckout?.orderCode, isPaidSuccess]);
+  }, [currentStep, payosCheckout?.orderCode, isPaidSuccess, handleConfirmPayment]);
 
   // Tải thông tin hợp đồng thực tế từ customerRentals API (gồm cả localStorage overrides)
   useEffect(() => {
@@ -143,37 +199,6 @@ export const RenewalPage: React.FC = () => {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Tính toán ngày kết thúc mới chính xác
-  const newEndDate = useMemo(() => {
-    if (!contract) return '';
-    return calculateExtendedEndDate(contract.endDate, renewalMonths);
-  }, [contract, renewalMonths]);
-
-  // Tính toán chi phí tài chính minh bạch theo BR-REN-03, BR-REN-06, BR-REN-07 & BR-DEP-01
-  const pricing = useMemo(() => {
-    if (!contract) {
-      return {
-        monthlyRent: 0,
-        rawRent: 0,
-        discountRate: 0,
-        discountAmount: 0,
-        netRent: 0,
-        overdueFee: 0,
-        extraDeposit: 0,
-        finalTotal: 0,
-        renewalMonths: 0,
-      };
-    }
-
-    return calculateRenewalPricing({
-      monthlyRent: contract.monthlyRent,
-      renewalMonths,
-      isOverdue: contract.status === 'OVERDUE',
-      overdueDays: contract.overdueDays,
-      overdueFee: contract.overdueFee,
-    });
-  }, [contract, renewalMonths]);
-
   const transferContent = useMemo(() => {
     if (!contract) return 'GIAHAN KHO';
     const contractCode = contract.contractNumber.replace(/\D/g, '').slice(-6) || contract.id.slice(-6);
@@ -184,31 +209,6 @@ export const RenewalPage: React.FC = () => {
     navigator.clipboard.writeText(text);
     setCopiedBankInfo(type);
     setTimeout(() => setCopiedBankInfo(null), 2000);
-  };
-
-  // Xác nhận chuyển khoản thành công và kích hoạt gia hạn
-  const handleConfirmPayment = async () => {
-    if (!contract) return;
-    setIsProcessing(true);
-
-    try {
-      const res = await renewContract({
-        contractId: contract.id,
-        months: renewalMonths,
-        newEndDate,
-        totalAmount: pricing.finalTotal,
-        paymentMethod: 'VIETQR',
-        transactionReference: `MB-${Date.now().toString().slice(-8)}`,
-      });
-
-      setRenewalResult(res);
-      setIsProcessing(false);
-      setShowReceiptModal(true);
-    } catch (err) {
-      console.error('Lỗi khi kích hoạt gia hạn:', err);
-      setIsProcessing(false);
-      alert('Có lỗi xảy ra trong quá trình xử lý gia hạn. Vui lòng thử lại hoặc liên hệ lễ tân.');
-    }
   };
 
   if (loading) {

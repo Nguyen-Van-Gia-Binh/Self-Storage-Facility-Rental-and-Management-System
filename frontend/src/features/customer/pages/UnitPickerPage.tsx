@@ -20,6 +20,22 @@ import { fetchFacilities } from '@/api/facility';
 import { fetchUnitTypes as fetchUnitTypesApi, fetchStorageUnits as fetchStorageUnitsApi } from '@/api/unit';
 import type { FacilityListItem } from '@/types';
 
+// Hàm xác định nhóm kích thước chuẩn từ mã/tên loại kho và diện tích
+function resolveSizeCategory(codeOrName: string, areaM2?: number): UnitSizeCategory {
+  const upper = codeOrName.toUpperCase();
+  const lower = codeOrName.toLowerCase();
+  if (upper.includes('SMALL') || lower.includes('nhỏ') || (areaM2 != null && areaM2 <= 1.5)) {
+    return 'S';
+  }
+  if (upper.includes('LARGE') || lower.includes('lớn') || (areaM2 != null && areaM2 >= 9)) {
+    return 'L';
+  }
+  if (upper.includes('XL') || (areaM2 != null && areaM2 >= 15)) {
+    return 'XL';
+  }
+  return 'M';
+}
+
 export const UnitPickerPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -73,16 +89,7 @@ export const UnitPickerPage: React.FC = () => {
           if (utPage?.content && utPage.content.length > 0) {
             mappedUTs = utPage.content.map((ut) => {
               const codeUpper = (ut.code || ut.name).toUpperCase();
-              let sizeCat: UnitSizeCategory = 'M';
-              if (codeUpper.includes('SMALL') || ut.name.toLowerCase().includes('nhỏ') || (ut.areaM2 && ut.areaM2 <= 1.5)) {
-                sizeCat = 'S';
-              } else if (codeUpper.includes('LARGE') || ut.name.toLowerCase().includes('lớn') || (ut.areaM2 && ut.areaM2 >= 9)) {
-                sizeCat = 'L';
-              } else if (codeUpper.includes('XL') || (ut.areaM2 && ut.areaM2 >= 15)) {
-                sizeCat = 'XL';
-              } else {
-                sizeCat = 'M';
-              }
+              const sizeCat: UnitSizeCategory = resolveSizeCategory(ut.code || ut.name, ut.areaM2);
 
               const isClimate = codeUpper.includes('CLIMATE') || ut.name.toLowerCase().includes('lạnh');
               const storageType: StorageType = isClimate ? 'CLIMATE_CONTROLLED' : 'STANDARD';
@@ -125,7 +132,7 @@ export const UnitPickerPage: React.FC = () => {
                 status: (su.status as UnitStatus) || 'AVAILABLE',
                 sizeCategory: parentType ? parentType.sizeCategory : 'M',
                 storageType: parentType ? parentType.storageType : 'STANDARD',
-                basePrice: su.monthlyPrice || (parentType ? parentType.baseMonthlyPrice : 500000),
+                monthlyPrice: su.monthlyPrice || (parentType ? parentType.baseMonthlyPrice : 500000),
               };
             });
             setFacilityUnits(mappedSUs);

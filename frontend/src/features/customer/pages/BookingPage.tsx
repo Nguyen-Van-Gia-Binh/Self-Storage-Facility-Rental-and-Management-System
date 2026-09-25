@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -99,6 +99,53 @@ export const BookingPage: React.FC = () => {
   const [createdReservationId, setCreatedReservationId] = useState<number | null>(null);
   const [createdReservationCode, setCreatedReservationCode] = useState<string>('');
 
+  // Calculate End Date
+  const endDate = useMemo(() => {
+    if (!startDate) return '';
+    const d = new Date(startDate);
+    d.setMonth(d.getMonth() + durationMonths);
+    return d.toISOString().split('T')[0];
+  }, [startDate, durationMonths]);
+
+  // Price Calculation
+  const calculation = useMemo(() => {
+    return calculateBookingTotal(unitType.baseMonthlyPrice, durationMonths);
+  }, [unitType, durationMonths]);
+
+  // Xử lý xác nhận thanh toán đặt chỗ & tạo MoveInPass (SC-03)
+  const handleConfirmBookingPayment = useCallback(() => {
+    const pass = generateMoveInPass({
+      reservationId: createdReservationCode || (createdReservationId ? `RSV-${createdReservationId}` : `RES-${finalUnitNumber}`),
+      unitNumber: finalUnitNumber,
+      facilityId: facility.id,
+      facilityName: facility.name,
+      facilityAddress: facility.address,
+      facilityPhone: facility.phone,
+      customerName,
+      customerPhone,
+      customerIdentity: customerIdCard,
+      startDate,
+      checkInWindow: 'Trong vòng 48 giờ kể từ lúc cọc',
+      totalPaid: checkoutData?.amount || calculation.totalDueToday,
+    });
+    setCreatedPass(pass);
+    setShowPassModal(true);
+  }, [
+    createdReservationCode,
+    createdReservationId,
+    finalUnitNumber,
+    facility.id,
+    facility.name,
+    facility.address,
+    facility.phone,
+    customerName,
+    customerPhone,
+    customerIdCard,
+    startDate,
+    checkoutData?.amount,
+    calculation.totalDueToday,
+  ]);
+
   // Đồng hồ đếm ngược giữ chỗ 48 giờ thực tế (BR-DEP-03)
   const [secondsLeft, setSecondsLeft] = useState<number>(48 * 3600 - 15); // 47h 59m 45s
 
@@ -132,7 +179,7 @@ export const BookingPage: React.FC = () => {
     }, 2500);
 
     return () => clearInterval(pollInterval);
-  }, [currentStep, checkoutData?.orderCode, paymentStatus]);
+  }, [currentStep, checkoutData?.orderCode, paymentStatus, handleConfirmBookingPayment]);
 
   const formattedCountdown = useMemo(() => {
     const hours = Math.floor(secondsLeft / 3600);
@@ -141,19 +188,6 @@ export const BookingPage: React.FC = () => {
     const pad = (n: number) => n.toString().padStart(2, '0');
     return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
   }, [secondsLeft]);
-
-  // Calculate End Date
-  const endDate = useMemo(() => {
-    if (!startDate) return '';
-    const d = new Date(startDate);
-    d.setMonth(d.getMonth() + durationMonths);
-    return d.toISOString().split('T')[0];
-  }, [startDate, durationMonths]);
-
-  // Price Calculation
-  const calculation = useMemo(() => {
-    return calculateBookingTotal(unitType.baseMonthlyPrice, durationMonths);
-  }, [unitType, durationMonths]);
 
   const validateForm = (): boolean => {
     const errors: {
@@ -285,9 +319,10 @@ export const BookingPage: React.FC = () => {
 
       setCurrentStep(3);
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Lỗi khi khởi tạo đơn đặt chỗ hoặc PayOS:', err);
-      alert(err.message || 'Không thể tạo mã thanh toán PayOS. Vui lòng kiểm tra lại kết nối!');
+      const msg = err instanceof Error ? err.message : 'Không thể tạo mã thanh toán PayOS. Vui lòng kiểm tra lại kết nối!';
+      alert(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -299,25 +334,6 @@ export const BookingPage: React.FC = () => {
     navigator.clipboard.writeText(text);
     setCopiedBankInfo(true);
     setTimeout(() => setCopiedBankInfo(false), 2500);
-  };
-
-  const handleConfirmBookingPayment = () => {
-    const pass = generateMoveInPass({
-      reservationId: createdReservationCode || (createdReservationId ? `RSV-${createdReservationId}` : `RES-${finalUnitNumber}`),
-      unitNumber: finalUnitNumber,
-      facilityId: facility.id,
-      facilityName: facility.name,
-      facilityAddress: facility.address,
-      facilityPhone: facility.phone,
-      customerName,
-      customerPhone,
-      customerIdentity: customerIdCard,
-      startDate,
-      checkInWindow: 'Trong vòng 48 giờ kể từ lúc cọc',
-      totalPaid: checkoutData?.amount || calculation.totalDueToday,
-    });
-    setCreatedPass(pass);
-    setShowPassModal(true);
   };
 
   return (
