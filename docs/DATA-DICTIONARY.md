@@ -365,11 +365,12 @@ Giao dịch thanh toán cổng điện tử (`Flow 1, 3, 6`, `BR-PAY-*`).
 | `id` | `BIGINT` | Có | `PK`, `IDENTITY(1,1)` | Khóa chính |
 | `reservation_id` | `BIGINT` | Không | `FK` $\rightarrow$ `reservation(id)` | Giao dịch cho đơn Reservation ban đầu |
 | `contract_id` | `BIGINT` | Không | `FK` $\rightarrow$ `rental_contract(id)` | Giao dịch cho hợp đồng (gia hạn, phụ phí, hoàn cọc) |
-| `transaction_type`| `VARCHAR(30)` | Có | `CHECK IN ('INITIAL_PAYMENT', 'RENEWAL_PAYMENT', 'EXTRA_FEE_PAYMENT', 'REFUND')` | Mục đích thanh toán |
+| `transaction_type`| `VARCHAR(30)` | Có | `CHECK IN ('INITIAL_PAYMENT', 'RENEWAL_PAYMENT', 'CONTRACT_RENEWAL', 'EXTRA_FEE_PAYMENT', 'SETTLEMENT', 'REFUND')` | Mục đích thanh toán |
 | `amount` | `BIGINT` | Có | | Số tiền giao dịch (VND) |
+| `order_code` | `BIGINT` | Không | `UNIQUE` | Mã đơn hàng số nguyên duy nhất từ cổng thanh toán PayOS (V17) |
 | `status` | `VARCHAR(20)` | Có | `DEFAULT 'PENDING'`, `CHECK IN ('PENDING', 'SUCCESS', 'FAILED', 'REFUND_FAILED')` | Trạng thái cổng thanh toán |
-| `payment_method` | `NVARCHAR(50)` | Không | | Phương thức (VNPay, Momo, Chuyển khoản) |
-| `provider_reference`| `NVARCHAR(100)`| Không | | Mã giao dịch phía đối tác cung cấp (Mã VNPay) |
+| `payment_method` | `NVARCHAR(50)` | Không | | Phương thức (VietQR PayOS, MB Bank, VNPay, Momo) |
+| `provider_reference`| `NVARCHAR(100)`| Không | | Mã giao dịch phía đối tác cung cấp (Payment Link ID PayOS) |
 | `created_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Mốc khởi tạo giao dịch |
 | `updated_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Mốc cập nhật trạng thái |
 
