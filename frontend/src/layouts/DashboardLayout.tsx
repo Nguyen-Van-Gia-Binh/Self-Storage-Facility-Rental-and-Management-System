@@ -55,6 +55,15 @@ const ROLE_PORTAL_LABEL: Record<UserRole, string> = {
   CUSTOMER: 'Customer Portal',
 };
 
+// Default home path by role
+const ROLE_HOME_PATH: Record<UserRole, string> = {
+  ADMIN:    '/admin/users',
+  MANAGER:  '/manager',
+  STAFF:    '/staff',
+  BOM:      '/bom/facilities',
+  CUSTOMER: '/customer',
+};
+
 function getInitials(fullName?: string): string {
   if (!fullName) return '?';
   const parts = fullName.trim().split(' ');
@@ -105,6 +114,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const initials      = getInitials(displayFullName);
   const portalLabel   = ROLE_PORTAL_LABEL[currentRole];
 
+  // Đường dẫn trang chủ cho Logo dựa trên portal hiện tại hoặc vai trò
+  const detectedRole = detectRoleFromUrl();
+  const effectiveRole = detectedRole !== 'CUSTOMER' ? detectedRole : currentRole;
+  const logoHomePath = ROLE_HOME_PATH[effectiveRole] || navItems[0]?.href || '/';
+
   // Tự động đồng bộ JWT token thật từ backend khi tải portal demo
   useEffect(() => {
     const currentToken = tokenStorage.getAccessToken();
@@ -125,7 +139,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     <div className="h-screen bg-[#f2f9f7] flex flex-col md:flex-row overflow-hidden">
       {/* Mobile Header */}
       <div className="md:hidden bg-white text-slate-900 border-b border-slate-200/90 px-4 py-3 flex items-center justify-between shadow-xs sticky top-0 z-30 shrink-0">
-        <Link to="/customer" className="flex items-center gap-2">
+        <Link 
+          to={logoHomePath} 
+          onClick={() => setMobileMenuOpen(false)} 
+          className="flex items-center gap-2"
+        >
           <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center text-white shadow-xs">
             <Box className="w-4 h-4" />
           </div>
@@ -157,7 +175,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         {sidebarOpen ? (
           <div className="h-16 hidden md:flex items-center justify-between px-3.5 border-b border-slate-100">
             <div className="overflow-hidden transition-all duration-300 w-48 opacity-100">
-              <Link to="/customer" className="flex items-center gap-2.5">
+              <Link to={logoHomePath} className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center text-white shadow-xs shrink-0">
                   <Box className="w-4 h-4" />
                 </div>
