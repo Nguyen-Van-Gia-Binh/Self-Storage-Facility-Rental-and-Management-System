@@ -38,7 +38,13 @@ Mọi task khi được giao bắt buộc tuân thủ quy trình 5 bước nghi�
 - **CẤM code thẳng trên `main` và CẤM tái sử dụng nhánh cũ đã merge/đang có PR**.
   - Dự án sử dụng cơ chế **Squash and merge** trên GitHub. Khi một PR được merge, GitHub sẽ nén toàn bộ commit thành một commit duy nhất trên `main`. Nếu tái sử dụng nhánh cũ hoặc rẽ nhánh từ commit cũ, Git sẽ báo **CONFLIC / xung đột hàng loạt** do lệch lịch sử commit.
 - **Quy tắc bắt buộc:** Mỗi task BẮT BUỘC phải là một nhánh mới tinh, rẽ trực tiếp từ `main` mới nhất trên remote:
-  - Định dạng: `<loại>/<mã-task>-<mô-tả-ngắn>` (ví dụ: `feature/T2.8-manage-unit-type-api`, `fix/T2.7-facility-status-check`).
+  - **Quy chuẩn tên nhánh được kiểm tra tự động bởi CI (`pr-bot.yml`):**
+    - Regex CI: `^(feature|fix|docs|chore|refactor)/(T[0-9]+\.[0-9]+|Tx)-[a-z0-9-]+$`
+    - `<loại>`: Chỉ một trong 5 từ: `feature`, `fix`, `docs`, `chore`, `refactor`.
+    - `<mã-task>`: BẮT BUỘC có dạng `T<số>.<số>` (ví dụ: `T2.12`, `T3.1`, `T2.8`) hoặc `Tx` (task hotfix).
+    - ⚠️ **TUYỆT ĐỐI CẤM:** Không được dùng dấu chấm x (`T2.x`), không được ghép khoảng mã task (`T2.12-T2.13`), không dùng `_` hay chữ hoa trong tên nhánh. CI sẽ lập tức báo lỗi và đánh rớt build!
+    - Ví dụ ĐÚNG: `feature/T2.12-staff-handover-api`, `fix/Tx-login-loop`, `chore/T1.1-setup-db`.
+    - Ví dụ SAI: `feature/T2.x-staff-api` (sai vì `T2.x`), `feature/T2.12-T2.13-staff` (sai vì ghép mã).
   - Lệnh tạo nhánh chuẩn:
     ```powershell
     git checkout main; git fetch origin main; git pull origin main; git checkout -b feature/<mã-task>-<mô-tả-ngắn>
@@ -72,7 +78,13 @@ Mọi task khi được giao bắt buộc tuân thủ quy trình 5 bước nghi�
      ```powershell
      git push -u origin <tên-nhánh>
      ```
-  3. **Soạn sẵn toàn bộ nội dung Pull Request** theo mẫu chuẩn tại [CONTRIBUTING.md § 4](CONTRIBUTING.md#4-pull-request) (gồm: Tiêu đề `[<mã-task>] <loại>(<phạm-vi>): <mô-tả>`, Nhiệm vụ, Nội dung thay đổi, Phạm vi nghiệp vụ, Cách kiểm thử, Checklist).
+  3. **Soạn sẵn toàn bộ nội dung Pull Request** theo mẫu chuẩn tại [CONTRIBUTING.md § 4](CONTRIBUTING.md#4-pull-request) (gồm: Tiêu đề, Nhiệm vụ, Nội dung thay đổi, Phạm vi nghiệp vụ, Cách kiểm thử, Checklist).
+     - **Quy chuẩn tiêu đề PR được kiểm tra tự động bởi CI (`pr-bot.yml`):**
+       - Regex CI: `^\[(T[0-9]+\.[0-9]+|Tx)\] (feat|fix|docs|refactor|test|style|chore|build|ci)(\([a-z0-9-]+\))?: .+$`
+       - BẮT BUỘC bắt đầu bằng `[T<số>.<số>]` hoặc `[Tx]`.
+       - ⚠️ **TUYỆT ĐỐI CẤM:** Không dùng `[T2.x]`, không dùng `[T2.12-T2.13]`. Nếu phạm vi bao gồm nhiều sub-task, chọn mã task đại diện chính (ví dụ: `[T2.12]`).
+       - Ví dụ ĐÚNG: `[T2.12] feat(staff): kết nối Real API cho Staff Desk`
+       - Ví dụ SAI: `[T2.12-T2.13] feat(staff): ...` (sai regex), `[T2.x] feat(staff): ...` (sai regex).
   4. Cung cấp đường link tạo PR trên GitHub để người dùng bấm tạo PR cho bạn bè / nhóm review và duyệt merge (Squash and merge) vào `main`.
   5. **Sau khi PR được merge vào `main`:** Xóa nhánh tính năng cả trên remote lẫn local để tránh nhầm lẫn cho các task sau.
 
