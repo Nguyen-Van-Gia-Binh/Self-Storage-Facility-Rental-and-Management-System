@@ -25,7 +25,7 @@ public class StaffDailyTaskController {
         this.staffDailyTaskService = staffDailyTaskService;
     }
 
-    @GetMapping("/api/v1/staff/daily-tasks")
+    @GetMapping("/staff/daily-tasks")
     @PreAuthorize("hasRole('FACILITY_STAFF')")
     @Operation(summary = "Xem bảng công việc ca trực hằng ngày của nhân viên đang đăng nhập (FS-06, US-FS-06.1, UC-F5-05)")
     public ResponseEntity<ApiResponse<StaffDailyTasksResponse>> getMyDailyTasks(
@@ -37,7 +37,7 @@ public class StaffDailyTaskController {
         return ResponseEntity.ok(ApiResponse.success(response, "Lấy bảng công việc ca trực thành công"));
     }
 
-    @GetMapping("/api/v1/staff/{staffId}/daily-tasks")
+    @GetMapping("/staff/{staffId}/daily-tasks")
     @PreAuthorize("hasRole('FACILITY_STAFF') or hasRole('FACILITY_MANAGER') or hasRole('SYSTEM_ADMINISTRATOR') or hasRole('BUSINESS_OPERATIONS_MANAGER')")
     @Operation(summary = "Xem bảng công việc ca trực của nhân viên theo ID (FM-05, FS-06)")
     public ResponseEntity<ApiResponse<StaffDailyTasksResponse>> getStaffDailyTasks(
@@ -50,7 +50,7 @@ public class StaffDailyTaskController {
         return ResponseEntity.ok(ApiResponse.success(response, "Lấy bảng công việc ca trực thành công"));
     }
 
-    @GetMapping("/api/v1/reports/staff/{staffId}/daily-tasks")
+    @GetMapping("/reports/staff/{staffId}/daily-tasks")
     @PreAuthorize("hasRole('FACILITY_STAFF') or hasRole('FACILITY_MANAGER') or hasRole('SYSTEM_ADMINISTRATOR') or hasRole('BUSINESS_OPERATIONS_MANAGER')")
     @Operation(summary = "Báo cáo bảng công việc hằng ngày của nhân viên theo API-SPEC § 12 (FS-06)")
     public ResponseEntity<ApiResponse<StaffDailyTasksResponse>> getStaffDailyTasksReport(

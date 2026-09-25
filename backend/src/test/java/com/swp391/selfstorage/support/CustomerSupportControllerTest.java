@@ -42,7 +42,7 @@ class CustomerSupportControllerTest {
     private CustomerSupportService customerSupportService;
 
     @Test
-    @DisplayName("POST /api/v1/support-requests trả về 201 Created khi tạo yêu cầu hợp lệ")
+    @DisplayName("POST /support-requests trả về 201 Created khi tạo yêu cầu hợp lệ")
     void testCreateSupportRequest() throws Exception {
         CreateSupportRequest request = CreateSupportRequest.builder()
                 .category(SupportCategory.LOCK_ACCESS)
@@ -63,7 +63,7 @@ class CustomerSupportControllerTest {
 
         when(customerSupportService.createSupportRequest(any(), any())).thenReturn(response);
 
-        mockMvc.perform(post("/api/v1/support-requests")
+        mockMvc.perform(post("/support-requests")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -73,7 +73,7 @@ class CustomerSupportControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/support-requests trả về 200 OK kèm danh sách phân trang")
+    @DisplayName("GET /support-requests trả về 200 OK kèm danh sách phân trang")
     void testGetMySupportRequests() throws Exception {
         SupportRequestSummaryResponse summary = SupportRequestSummaryResponse.builder()
                 .id(801L)
@@ -84,14 +84,14 @@ class CustomerSupportControllerTest {
         PageResponse<SupportRequestSummaryResponse> page = new PageResponse<>(List.of(summary), 0, 10, 1, 1);
         when(customerSupportService.getMySupportRequests(any(), any(), any(), any())).thenReturn(page);
 
-        mockMvc.perform(get("/api/v1/support-requests"))
+        mockMvc.perform(get("/support-requests"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.data.content[0].code").value("SUP-202610-0001"));
     }
 
     @Test
-    @DisplayName("GET /api/v1/support-requests/{id} trả về 200 OK kèm chi tiết")
+    @DisplayName("GET /support-requests/{id} trả về 200 OK kèm chi tiết")
     void testGetSupportRequestDetail() throws Exception {
         SupportRequestDetailResponse response = SupportRequestDetailResponse.builder()
                 .id(801L)
@@ -101,14 +101,14 @@ class CustomerSupportControllerTest {
 
         when(customerSupportService.getSupportRequestDetail(eq(801L), any())).thenReturn(response);
 
-        mockMvc.perform(get("/api/v1/support-requests/801"))
+        mockMvc.perform(get("/support-requests/801"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.data.code").value("SUP-202610-0001"));
     }
 
     @Test
-    @DisplayName("PATCH /api/v1/support-requests/{id}/confirm trả về 200 OK")
+    @DisplayName("PATCH /support-requests/{id}/confirm trả về 200 OK")
     void testConfirmResolution() throws Exception {
         ConfirmResolutionRequest request = ConfirmResolutionRequest.builder()
                 .satisfied(true)
@@ -123,7 +123,7 @@ class CustomerSupportControllerTest {
 
         when(customerSupportService.confirmResolution(eq(801L), any(), any())).thenReturn(response);
 
-        mockMvc.perform(patch("/api/v1/support-requests/801/confirm")
+        mockMvc.perform(patch("/support-requests/801/confirm")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -132,11 +132,11 @@ class CustomerSupportControllerTest {
     }
 
     @Test
-    @DisplayName("DELETE /api/v1/support-requests/{id} trả về 204 No Content")
+    @DisplayName("DELETE /support-requests/{id} trả về 204 No Content")
     void testCancelSupportRequest() throws Exception {
         doNothing().when(customerSupportService).cancelSupportRequest(eq(801L), any());
 
-        mockMvc.perform(delete("/api/v1/support-requests/801"))
+        mockMvc.perform(delete("/support-requests/801"))
                 .andExpect(status().isNoContent());
     }
 }

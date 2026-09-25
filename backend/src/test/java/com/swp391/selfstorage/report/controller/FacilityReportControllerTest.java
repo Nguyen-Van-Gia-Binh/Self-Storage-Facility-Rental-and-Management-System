@@ -38,7 +38,7 @@ class FacilityReportControllerTest {
     private FacilityReportService facilityReportService;
 
     @Test
-    @DisplayName("GET /api/v1/reports/facility/{id}/overview - Lấy báo cáo tổng quan trả về 200 OK")
+    @DisplayName("GET /reports/facility/{id}/overview - Lấy báo cáo tổng quan trả về 200 OK")
     void testGetFacilityOverview_Success() throws Exception {
         FacilityOverviewReportResponse mockResponse = FacilityOverviewReportResponse.builder()
                 .facilityId(1L)
@@ -62,7 +62,7 @@ class FacilityReportControllerTest {
         when(facilityReportService.getFacilityOverview(eq(1L), eq("2026-10"), any()))
                 .thenReturn(mockResponse);
 
-        mockMvc.perform(get("/api/v1/reports/facility/1/overview")
+        mockMvc.perform(get("/reports/facility/1/overview")
                         .param("month", "2026-10")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -80,7 +80,7 @@ class FacilityReportControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/reports/facility/{id}/contracts - Lấy danh sách hợp đồng phân trang trả về 200 OK")
+    @DisplayName("GET /reports/facility/{id}/contracts - Lấy danh sách hợp đồng phân trang trả về 200 OK")
     void testGetFacilityContracts_Success() throws Exception {
         ContractSummaryResponse c = ContractSummaryResponse.builder()
                 .id(101L)
@@ -97,7 +97,7 @@ class FacilityReportControllerTest {
         when(facilityReportService.getFacilityContracts(eq(1L), any(), any(), any(), any()))
                 .thenReturn(mockPage);
 
-        mockMvc.perform(get("/api/v1/reports/facility/1/contracts")
+        mockMvc.perform(get("/reports/facility/1/contracts")
                         .param("page", "0")
                         .param("size", "10")
                         .contentType(MediaType.APPLICATION_JSON))
@@ -109,7 +109,7 @@ class FacilityReportControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/reports/facility/{id}/overdue-debt - Lấy báo cáo rủi ro nợ quá hạn trả về 200 OK")
+    @DisplayName("GET /reports/facility/{id}/overdue-debt - Lấy báo cáo rủi ro nợ quá hạn trả về 200 OK")
     void testGetFacilityOverdueDebt_Success() throws Exception {
         OverdueDebtReportResponse mockResponse = OverdueDebtReportResponse.builder()
                 .facilityId(1L)
@@ -125,7 +125,7 @@ class FacilityReportControllerTest {
         when(facilityReportService.getFacilityOverdueDebt(eq(1L), any()))
                 .thenReturn(mockResponse);
 
-        mockMvc.perform(get("/api/v1/reports/facility/1/overdue-debt")
+        mockMvc.perform(get("/reports/facility/1/overdue-debt")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))

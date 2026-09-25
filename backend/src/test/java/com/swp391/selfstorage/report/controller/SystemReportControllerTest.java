@@ -33,7 +33,7 @@ class SystemReportControllerTest {
     private SystemReportService systemReportService;
 
     @Test
-    @DisplayName("GET /api/v1/reports/system/revenue - Lấy báo cáo doanh thu trả về 200 OK")
+    @DisplayName("GET /reports/system/revenue - Lấy báo cáo doanh thu trả về 200 OK")
     void testGetSystemRevenueReport_Success() throws Exception {
         SystemRevenueReportResponse mockResponse = SystemRevenueReportResponse.builder()
                 .from("2026-10-01")
@@ -51,7 +51,7 @@ class SystemReportControllerTest {
 
         when(systemReportService.getSystemRevenueReport(any(), any(), any())).thenReturn(mockResponse);
 
-        mockMvc.perform(get("/api/v1/reports/system/revenue")
+        mockMvc.perform(get("/reports/system/revenue")
                 .param("from", "2026-10-01")
                 .param("to", "2026-10-31")
                 .contentType(MediaType.APPLICATION_JSON))
@@ -67,7 +67,7 @@ class SystemReportControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/reports/system/occupancy - Lấy báo cáo tỷ lệ lấp đầy trả về 200 OK")
+    @DisplayName("GET /reports/system/occupancy - Lấy báo cáo tỷ lệ lấp đầy trả về 200 OK")
     void testGetSystemOccupancyReport_Success() throws Exception {
         SystemOccupancyReportResponse mockResponse = SystemOccupancyReportResponse.builder()
                 .overallOccupancyRate(0.625)
@@ -87,7 +87,7 @@ class SystemReportControllerTest {
 
         when(systemReportService.getSystemOccupancyReport(any())).thenReturn(mockResponse);
 
-        mockMvc.perform(get("/api/v1/reports/system/occupancy")
+        mockMvc.perform(get("/reports/system/occupancy")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
@@ -100,7 +100,7 @@ class SystemReportControllerTest {
     }
 
         @Test
-    @DisplayName("GET /api/v1/reports/system/overdue - Lấy danh sách hợp đồng quá hạn trả về 200 OK")
+    @DisplayName("GET /reports/system/overdue - Lấy danh sách hợp đồng quá hạn trả về 200 OK")
     void testGetSystemOverdueContracts_Success() throws Exception {
         PageResponse<OverdueContractDetailDto> mockPage = PageResponse.from(
                 new org.springframework.data.domain.PageImpl<>(
@@ -116,7 +116,7 @@ class SystemReportControllerTest {
 
         when(systemReportService.getSystemOverdueContracts(any(), any(), any())).thenReturn(mockPage);
 
-        mockMvc.perform(get("/api/v1/reports/system/overdue")
+        mockMvc.perform(get("/reports/system/overdue")
                         .param("page", "0")
                         .param("size", "10")
                         .contentType(MediaType.APPLICATION_JSON))
@@ -128,13 +128,13 @@ class SystemReportControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/reports/system/export - Xuất file CSV trả về 200 OK với đúng Headers")
+    @DisplayName("GET /reports/system/export - Xuất file CSV trả về 200 OK với đúng Headers")
     void testExportSystemReport_Success() throws Exception {
         byte[] mockBytes = "mock csv content".getBytes(java.nio.charset.StandardCharsets.UTF_8);
 
         when(systemReportService.exportSystemReport(any(), any(), any(), any(), any())).thenReturn(mockBytes);
 
-        mockMvc.perform(get("/api/v1/reports/system/export")
+        mockMvc.perform(get("/reports/system/export")
                         .param("type", "REVENUE")
                         .param("format", "CSV"))
                 .andExpect(status().isOk())

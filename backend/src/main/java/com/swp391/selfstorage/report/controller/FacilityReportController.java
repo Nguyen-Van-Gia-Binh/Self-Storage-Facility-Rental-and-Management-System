@@ -21,7 +21,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/reports/facility/{facilityId}")
+@RequestMapping("/reports/facility/{facilityId}")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Facility Reports", description = "API báo cáo thống kê, tỷ lệ lấp đầy và nợ quá hạn cấp cơ sở (FM-06)")
