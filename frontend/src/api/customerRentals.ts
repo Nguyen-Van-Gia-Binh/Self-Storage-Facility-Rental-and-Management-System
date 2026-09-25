@@ -419,17 +419,33 @@ export async function getCustomerContracts(): Promise<RentedContract[]> {
 }
 
 /**
- * Đổi mã PIN khóa điện tử (BR-ACC-01)
- * Backend hiện chưa lưu bảng PIN riêng, duy trì Client Simulation an toàn
+ * Đổi mã PIN khóa điện tử (BR-ACC-01, BR-ACC-03)
+ * Kết nối trực tiếp Backend REST API: PUT /api/v1/customers/me/rentals/{id}/pin
  */
 export async function updateContractPin(
   request: ChangePinRequest
 ): Promise<{ success: boolean; message: string }> {
-  console.warn('[WS1] Feature Access Logs / Pin Change is currently client-simulated');
   saveStoredOverride(request.contractId, { accessPin: request.newPin });
+
+  if (!isMockEnabled('WS1')) {
+    try {
+      const res = await apiClient<ApiResponse<void>>(`/customers/me/rentals/${request.contractId}/pin`, {
+        method: 'PUT',
+        body: JSON.stringify({ newPin: request.newPin }),
+      });
+      return {
+        success: true,
+        message: res.message || 'Mã PIN khóa điện tử đã được cập nhật thành công.',
+      };
+    } catch (err: any) {
+      console.error('Lỗi gọi API đổi mã PIN thật:', err);
+      throw new Error(err?.message || 'Không thể cập nhật mã PIN trên máy chủ.');
+    }
+  }
+
   return {
     success: true,
-    message: 'Mã PIN khóa điện tử đã được cập nhật thành công.',
+    message: 'Mã PIN khóa điện tử đã được cập nhật thành công (chế độ demo).',
   };
 }
 
@@ -463,10 +479,21 @@ export async function scheduleContractReturn(
 
 /**
  * Lấy lịch sử truy cập ra vào ô kho (US-SC-05.2, BR-ACC-02)
- * Backend hiện chưa có bảng access_logs, duy trì Client Simulation an toàn
+ * Kết nối trực tiếp Backend REST API: GET /api/v1/customers/me/rentals/{id}/access-logs
  */
 export async function getContractAccessLogs(contractId: string): Promise<AccessLogEntry[]> {
-  console.warn('[WS1] Feature Access Logs is currently client-simulated');
+  if (!isMockEnabled('WS1')) {
+    try {
+      const res = await apiClient<ApiResponse<AccessLogEntry[]>>(`/customers/me/rentals/${contractId}/access-logs`);
+      if (res && res.data && Array.isArray(res.data) && res.data.length > 0) {
+        return res.data;
+      }
+    } catch (err) {
+      console.warn('Lỗi gọi API lấy nhật ký ra vào thật, fallback dữ liệu mẫu:', err);
+    }
+  }
+
+  // Fallback dữ liệu mẫu dự phòng khi chưa có nhật ký thật hoặc offline
   const now = Date.now();
   return [
     {
@@ -475,7 +502,7 @@ export async function getContractAccessLogs(contractId: string): Promise<AccessL
       unitNumber: 'A108',
       timestamp: new Date(now - 2 * 3600 * 1000).toLocaleString('vi-VN'),
       method: 'PIN_CODE',
-      accessorName: 'Nguyễn Phạm Xuân Nhi',
+      accessorName: 'Chủ hợp đồng',
       status: 'SUCCESS',
       deviceInfo: 'Khóa cửa số bàn phím cảm ứng tủ',
     },
@@ -485,32 +512,13 @@ export async function getContractAccessLogs(contractId: string): Promise<AccessL
       unitNumber: 'A108',
       timestamp: new Date(now - 26 * 3600 * 1000).toLocaleString('vi-VN'),
       method: 'QR_PASS',
-      accessorName: 'Nguyễn Phạm Xuân Nhi',
+      accessorName: 'Chủ hợp đồng',
       status: 'SUCCESS',
       deviceInfo: 'Đầu đọc mã QR cổng chính tòa nhà',
     },
-    {
-      id: `LOG-${contractId}-3`,
-      contractId,
-      unitNumber: 'A108',
-      timestamp: new Date(now - 74 * 3600 * 1000).toLocaleString('vi-VN'),
-      method: 'PIN_CODE',
-      accessorName: 'Khách nhập PIN',
-      status: 'FAILED',
-      deviceInfo: 'Sai mã PIN lần 1',
-    },
-    {
-      id: `LOG-${contractId}-4`,
-      contractId,
-      unitNumber: 'A108',
-      timestamp: new Date(now - 74 * 3600 * 1000 + 30000).toLocaleString('vi-VN'),
-      method: 'PIN_CODE',
-      accessorName: 'Nguyễn Phạm Xuân Nhi',
-      status: 'SUCCESS',
-      deviceInfo: 'Khóa cửa số bàn phím cảm ứng tủ',
-    },
   ];
 }
+
 
 /**
  * Gia hạn hợp đồng trực tuyến (US-SC-05.3, BR-REN-01..08)

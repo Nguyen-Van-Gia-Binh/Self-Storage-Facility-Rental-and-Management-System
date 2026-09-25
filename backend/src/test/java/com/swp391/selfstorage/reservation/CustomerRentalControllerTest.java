@@ -66,4 +66,33 @@ class CustomerRentalControllerTest {
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.data.contractId").value(1));
     }
+
+    @Test
+    @DisplayName("PUT /customers/me/rentals/{id}/pin - Đổi mã PIN thành công")
+    void testChangeContractPin_Success() throws Exception {
+        org.mockito.Mockito.doNothing().when(customerRentalService).changeContractPin(eq(1L), any(), any());
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/customers/me/rentals/1/pin")
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .content("{\"newPin\":\"654321\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value("Đổi mã PIN khóa điện tử thành công"));
+    }
+
+    @Test
+    @DisplayName("GET /customers/me/rentals/{id}/access-logs - Lấy danh sách lịch sử ra vào thành công")
+    void testGetContractAccessLogs_Success() throws Exception {
+        com.swp391.selfstorage.reservation.dto.AccessLogResponse logResp =
+                new com.swp391.selfstorage.reservation.dto.AccessLogResponse(
+                        1L, 1L, "U-101", java.time.LocalDateTime.now(), "PIN_CODE", "Khách hàng", "SUCCESS", "Khóa tủ");
+        when(customerRentalService.getContractAccessLogs(eq(1L), any())).thenReturn(List.of(logResp));
+
+        mockMvc.perform(get("/customers/me/rentals/1/access-logs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data[0].method").value("PIN_CODE"))
+                .andExpect(jsonPath("$.data[0].status").value("SUCCESS"));
+    }
 }
+

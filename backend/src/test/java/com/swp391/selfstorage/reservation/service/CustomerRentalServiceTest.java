@@ -36,6 +36,10 @@ import org.springframework.data.domain.Pageable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import com.swp391.selfstorage.reservation.dto.AccessLogResponse;
+import com.swp391.selfstorage.reservation.dto.ChangePinRequest;
+import com.swp391.selfstorage.reservation.entity.AccessLog;
+import com.swp391.selfstorage.reservation.repository.AccessLogRepository;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -53,6 +57,7 @@ class CustomerRentalServiceTest {
     @Mock private StorageUnitRepository storageUnitRepository;
     @Mock private FacilityRepository facilityRepository;
     @Mock private UnitTypeRepository unitTypeRepository;
+    @Mock private AccessLogRepository accessLogRepository;
 
     @InjectMocks
     private CustomerRentalServiceImpl customerRentalService;
@@ -244,4 +249,75 @@ class CustomerRentalServiceTest {
                 customerRentalService.getMyRentalDetail(501L, otherCustomer));
         assertEquals(ErrorCode.ACCESS_DENIED, ex.getErrorCode());
     }
+
+    @Test
+    @DisplayName("US-SC-05: Đổi mã PIN thành công khi khách hàng sở hữu hợp đồng")
+    void shouldChangeContractPin_successfully_whenCustomerOwnsContract() {
+        when(rentalContractRepository.findById(501L)).thenReturn(Optional.of(activeContract));
+
+        ChangePinRequest req = new ChangePinRequest("654321");
+        customerRentalService.changeContractPin(501L, req, customerUser);
+
+        assertEquals("654321", activeContract.getAccessCode());
+        verify(rentalContractRepository, times(1)).save(activeContract);
+        verify(accessLogRepository, times(1)).save(any(AccessLog.class));
+    }
+
+    @Test
+    @DisplayName("US-SC-05 & BR-ACC-03: Chặn đổi mã PIN nếu không phải chủ sở hữu hợp đồng")
+    void shouldThrowAccessDenied_whenOtherCustomerAttemptsToChangePin() {
+        UserPrincipal otherCustomer = new UserPrincipal(
+                999L, "other@test.com", "pass", "Other",
+                UserRole.STORAGE_CUSTOMER, UserStatus.ACTIVE, Collections.emptyList(), Collections.emptyList()
+        );
+
+        when(rentalContractRepository.findById(501L)).thenReturn(Optional.of(activeContract));
+
+        ChangePinRequest req = new ChangePinRequest("654321");
+        CustomException ex = assertThrows(CustomException.class, () ->
+                customerRentalService.changeContractPin(501L, req, otherCustomer));
+
+        assertEquals(ErrorCode.ACCESS_DENIED, ex.getErrorCode());
+        verify(rentalContractRepository, never()).save(any());
+        verify(accessLogRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("US-SC-05 & BR-ACC-02: Báo lỗi khi đổi PIN trên hợp đồng đã kết thúc (CLOSED)")
+    void shouldThrowInvalidStatus_whenContractIsClosed() {
+        RentalContract closedContract = new RentalContract();
+        closedContract.setId(502L);
+        closedContract.setCustomerId(customerUser.getId());
+        closedContract.setStatus(ContractStatus.CLOSED);
+
+        when(rentalContractRepository.findById(502L)).thenReturn(Optional.of(closedContract));
+
+        ChangePinRequest req = new ChangePinRequest("654321");
+        CustomException ex = assertThrows(CustomException.class, () ->
+                customerRentalService.changeContractPin(502L, req, customerUser));
+
+        assertEquals(ErrorCode.INVALID_STATUS_TRANSITION, ex.getErrorCode());
+        verify(rentalContractRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("US-SC-05: Lấy danh sách lịch sử ra vào ô kho thành công")
+    void shouldReturnAccessLogs_successfully() {
+        when(rentalContractRepository.findById(501L)).thenReturn(Optional.of(activeContract));
+        when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(storageUnit));
+
+        AccessLog logItem = new AccessLog(501L, 42L, "PIN_CODE", "Nguyễn Văn Khách", "SUCCESS", "Đổi mã PIN");
+        logItem.setId(10L);
+        logItem.setAccessedAt(java.time.LocalDateTime.now());
+
+        when(accessLogRepository.findByContractIdOrderByAccessedAtDesc(501L)).thenReturn(List.of(logItem));
+
+        List<AccessLogResponse> logs = customerRentalService.getContractAccessLogs(501L, customerUser);
+
+        assertNotNull(logs);
+        assertEquals(1, logs.size());
+        assertEquals("S-101", logs.get(0).getUnitNumber());
+        assertEquals("SUCCESS", logs.get(0).getStatus());
+    }
 }
+
