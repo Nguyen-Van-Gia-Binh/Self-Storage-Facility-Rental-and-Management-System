@@ -1,4 +1,4 @@
-import { apiClient } from '@/api/client';
+import { apiClient, isMockEnabled } from '@/api/client';
 import type { ApiResponse } from '@/api/client';
 import type {
   StaffWorkloadItem,
@@ -18,7 +18,6 @@ import {
 import { getStaffDailyTasks } from '@/api/staff';
 import { getPendingContracts } from '@/api/contract';
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false';
 
 // Trạng thái bộ nhớ tạm trong phiên làm việc cho Mock mode
 let memoryStaffWorkload: StaffWorkloadItem[] = JSON.parse(JSON.stringify(mockStaffWorkload));
@@ -30,7 +29,7 @@ let memorySupportTickets: ManagementSupportTicket[] = JSON.parse(JSON.stringify(
  * Endpoint Backend: GET /api/v1/support-requests/staff-workload?facilityId={facilityId}
  */
 export async function getStaffWorkload(facilityId: number): Promise<StaffWorkloadItem[]> {
-  if (USE_MOCK) {
+  if (isMockEnabled('WS4')) {
     return memoryStaffWorkload.filter((s) => s.facilityId === facilityId);
   }
 
@@ -163,7 +162,7 @@ export async function assignStaffToTask(
       };
     }
 
-    if (!USE_MOCK) {
+    if (!isMockEnabled('WS4')) {
       try {
         await apiClient(`/support-requests/${prevTask.referenceId}/assign`, {
           method: 'PATCH',
@@ -201,7 +200,7 @@ export async function getManagementSupportRequests(params?: {
   isUrgent?: boolean;
   keyword?: string;
 }): Promise<ManagementSupportTicket[]> {
-  if (USE_MOCK) {
+  if (isMockEnabled('WS4')) {
     let result = [...memorySupportTickets];
     if (params?.facilityId) {
       result = result.filter((t) => t.facilityId === params.facilityId);
@@ -294,7 +293,7 @@ export async function assignSupportStaffDirect(
     if (staff.activeTaskCount >= 5) staff.status = 'OVERLOADED';
   }
 
-  if (!USE_MOCK) {
+  if (!isMockEnabled('WS4')) {
     try {
       await apiClient(`/support-requests/${ticketId}/assign`, {
         method: 'PATCH',
@@ -339,7 +338,7 @@ export async function resolveSupportTicket(
     };
   }
 
-  if (!USE_MOCK) {
+  if (!isMockEnabled('WS4')) {
     try {
       await apiClient(`/support-requests/${ticketId}/resolve`, {
         method: 'PATCH',
