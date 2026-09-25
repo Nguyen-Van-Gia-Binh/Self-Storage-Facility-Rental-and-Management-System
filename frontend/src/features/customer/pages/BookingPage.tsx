@@ -161,9 +161,14 @@ export const BookingPage: React.FC = () => {
   const finalUnitId = unitIdParam || '1';
 
   // Form State
-  const [durationMonths, setDurationMonths] = useState<number>(3);
+  const monthsParam = parseInt(searchParams.get('months') || '', 10);
+  const startDateParam = searchParams.get('startDate');
+
+  const [durationMonths, setDurationMonths] = useState<number>(
+    !isNaN(monthsParam) && monthsParam > 0 ? monthsParam : 3
+  );
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
-  const [startDate, setStartDate] = useState<string>(todayStr);
+  const [startDate, setStartDate] = useState<string>(startDateParam || todayStr);
 
   const [customerName, setCustomerName] = useState('Nguyễn Văn An');
   const [customerPhone, setCustomerPhone] = useState('0912 345 678');
