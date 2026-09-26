@@ -17,7 +17,8 @@ import {
   AlertCircle,
   FileText,
   Loader2,
-  ExternalLink
+  ExternalLink,
+  ShieldCheck
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { calculateBookingTotal, formatVND } from '../utils/pricing';
@@ -200,8 +201,10 @@ export const BookingPage: React.FC = () => {
   const [showPassModal, setShowPassModal] = useState(false);
   const [createdPass, setCreatedPass] = useState<MoveInPassData | null>(null);
 
-  // PayOS Payment States (SC-03)
+  // Payment States (SC-03)
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isVerifying, setIsVerifying] = useState<boolean>(false);
+  const [paymentNotice, setPaymentNotice] = useState<string | null>(null);
   const [checkoutData, setCheckoutData] = useState<CheckoutResponse | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<'PENDING' | 'SUCCESS' | 'FAILED'>('PENDING');
   const [createdReservationId, setCreatedReservationId] = useState<number | null>(null);
@@ -277,24 +280,8 @@ export const BookingPage: React.FC = () => {
     return calculateBookingTotal(unitType.baseMonthlyPrice, durationMonths);
   }, [backendPricing, unitType.baseMonthlyPrice, durationMonths]);
 
-  // Xử lý xác nhận thanh toán đặt chỗ & tạo MoveInPass (SC-03)
-  const handleConfirmBookingPayment = useCallback(async () => {
-    // Nếu chưa ở trạng thái SUCCESS (ví dụ bấm nút demo thủ công), gọi backend API để ghi nhận và kích hoạt tạo hợp đồng
-    if (createdReservationId && paymentStatus !== 'SUCCESS') {
-      try {
-        await customerApi.createManualPayment({
-          referenceType: 'RESERVATION',
-          referenceId: createdReservationId,
-          amount: checkoutData?.amount || calculation.totalDueToday,
-          method: 'BANK_TRANSFER',
-          transactionRef: checkoutData?.orderCode ? `PAYOS-${checkoutData.orderCode}` : `TXN-${Date.now()}`,
-        });
-        setPaymentStatus('SUCCESS');
-      } catch (err) {
-        console.warn('Lỗi ghi nhận thanh toán backend (vẫn tiếp tục tạo vé nhận kho):', err);
-      }
-    }
-
+  // Xử lý tạo MoveInPass khi đã thanh toán thành công (SC-03, BR-ACC-01)
+  const handleConfirmBookingPayment = useCallback(() => {
     const pass = generateMoveInPass({
       reservationId: createdReservationCode || (createdReservationId ? `RSV-${createdReservationId}` : `RES-${finalUnitNumber}`),
       unitNumber: finalUnitNumber,
@@ -314,9 +301,7 @@ export const BookingPage: React.FC = () => {
   }, [
     createdReservationId,
     createdReservationCode,
-    paymentStatus,
     checkoutData?.amount,
-    checkoutData?.orderCode,
     calculation.totalDueToday,
     finalUnitNumber,
     facility.id,
@@ -329,6 +314,28 @@ export const BookingPage: React.FC = () => {
     startDate,
   ]);
 
+  // Kiểm tra trạng thái thanh toán chủ động (Nút Kiểm tra / Nhận vé)
+  const handleCheckPaymentStatus = async () => {
+    if (!checkoutData?.orderCode) return;
+    setIsVerifying(true);
+    setPaymentNotice(null);
+    try {
+      const res = await customerApi.getPaymentStatus(checkoutData.orderCode);
+      if (res && res.status === 'SUCCESS') {
+        setPaymentStatus('SUCCESS');
+        handleConfirmBookingPayment();
+      } else {
+        // Chưa thanh toán thành công (BR-ACC-01): Tuyệt đối không sinh pass
+        setPaymentNotice('Hệ thống chưa ghi nhận thanh toán. Vui lòng quét mã hoặc bấm nút xác nhận chuyển khoản trước khi nhận vé!');
+      }
+    } catch (err) {
+      console.error('Lỗi kiểm tra đối soát thanh toán:', err);
+      setPaymentNotice('Lỗi kiểm tra trạng thái thanh toán. Vui lòng thử lại sau.');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
   // Đồng hồ đếm ngược giữ chỗ 48 giờ thực tế (BR-DEP-03)
   const [secondsLeft, setSecondsLeft] = useState<number>(48 * 3600 - 15); // 47h 59m 45s
 
@@ -340,7 +347,43 @@ export const BookingPage: React.FC = () => {
     return () => clearInterval(interval);
   }, [currentStep]);
 
-  // Polling trạng thái thanh toán từ PayOS qua Backend (SC-03)
+  const [isSimulating, setIsSimulating] = useState<boolean>(false);
+  const [redirectCountdown, setRedirectCountdown] = useState<number>(3);
+
+  // Xử lý mô phỏng chuyển tiền Sandbox trực tiếp
+  const handleSimulateTransfer = async () => {
+    if (!checkoutData?.orderCode) return;
+    setIsSimulating(true);
+    setPaymentNotice(null);
+    try {
+      await customerApi.processSandboxTransfer(checkoutData.orderCode, 'TRANSFER_SUCCESS');
+      setPaymentStatus('SUCCESS');
+      handleConfirmBookingPayment();
+    } catch (err: any) {
+      console.error('Lỗi khi mô phỏng chuyển tiền:', err);
+      setPaymentNotice(err?.message || 'Không thể xác nhận chuyển tiền Sandbox. Vui lòng thử lại!');
+    } finally {
+      setIsSimulating(false);
+    }
+  };
+
+  // Tự động đếm ngược và chuyển tới trang My Units sau khi thanh toán thành công
+  useEffect(() => {
+    if (paymentStatus !== 'SUCCESS') return;
+    const timer = setInterval(() => {
+      setRedirectCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          navigate('/customer/my-units');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [paymentStatus, navigate]);
+
+  // Polling trạng thái thanh toán từ Backend (SC-03)
   useEffect(() => {
     if (currentStep !== 3 || !checkoutData?.orderCode || paymentStatus === 'SUCCESS') return;
 
@@ -359,7 +402,7 @@ export const BookingPage: React.FC = () => {
       } catch (err) {
         // Polling retry quietly
       }
-    }, 2500);
+    }, 2000);
 
     return () => clearInterval(pollInterval);
   }, [currentStep, checkoutData?.orderCode, paymentStatus, handleConfirmBookingPayment]);
@@ -822,7 +865,7 @@ export const BookingPage: React.FC = () => {
                     Đơn đặt chỗ ngăn kho {finalUnitNumber} đã tạo thành công
                   </div>
                   <h2 className="text-xl font-bold text-[#0a1614]">
-                    Quét Mã VietQR Chuyển Khoản Nhanh 24/7
+                    Quét Mã VietQR Chuyển Khoản Nhanh 24/7 (Sandbox)
                   </h2>
                 </div>
                 <div className="sm:text-right">
@@ -834,38 +877,58 @@ export const BookingPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Success Banner with Pass Code & PIN */}
+              {paymentStatus === 'SUCCESS' && (
+                <div className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-xl p-4 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 className="w-8 h-8 text-amber-300 flex-shrink-0 animate-bounce" />
+                    <div>
+                      <h3 className="font-extrabold text-base text-white">Thanh Toán Hoàn Tất Thành Công!</h3>
+                      <p className="text-xs text-emerald-100">
+                        Mã nhận kho: <span className="font-mono font-bold text-amber-300 text-sm">{createdPass?.reservationId || createdReservationCode}</span>
+                        {createdPass?.passCode && <span> · Mã thẻ mở kho: <span className="font-mono font-bold text-amber-300 text-sm">{createdPass.passCode}</span></span>}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-emerald-100 font-medium">Chuyển tới Kho trong {redirectCountdown}s...</span>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => navigate('/customer/my-units')}
+                      className="bg-white text-emerald-800 font-bold hover:bg-emerald-50 text-xs shrink-0 cursor-pointer"
+                    >
+                      Vào kho ngay
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* Live Polling Status Alert */}
               {paymentStatus === 'PENDING' && (
                 <div className="bg-sky-50 border border-sky-200/90 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs text-sky-900 shadow-2xs">
                   <div className="flex items-center gap-2">
                     <Loader2 className="w-4 h-4 text-sky-600 animate-spin shrink-0" />
-                    <span>Hệ thống đang tự động lắng nghe Webhook... (Tự động mở thẻ nhận kho ngay khi bạn chuyển tiền thành công)</span>
+                    <span>Hệ thống đang tự động lắng nghe Webhook... (Tự động hiển thị mã mở kho ngay khi chuyển tiền xong)</span>
                   </div>
                   {checkoutData?.checkoutUrl && (
                     <a
                       href={checkoutData.checkoutUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 font-bold text-sky-700 hover:text-sky-900 underline shrink-0 cursor-pointer"
+                      className="inline-flex items-center gap-1 font-bold text-blue-700 hover:text-blue-900 underline shrink-0 cursor-pointer"
                     >
-                      <span>Mở cổng PayOS</span>
+                      <span>Mở trang thanh toán tab mới</span>
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>
                   )}
                 </div>
               )}
 
-              {paymentStatus === 'SUCCESS' && (
-                <div className="bg-emerald-50 border border-emerald-300 rounded-xl p-3.5 flex items-center gap-2.5 text-xs text-emerald-900 font-bold shadow-2xs">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                  <span>✓ Đã nhận thanh toán thành công! Hệ thống đang kích hoạt hợp đồng và mở thẻ nhận kho...</span>
-                </div>
-              )}
-
               {paymentStatus === 'FAILED' && (
                 <div className="bg-rose-50 border border-rose-300 rounded-xl p-3.5 flex items-center gap-2.5 text-xs text-rose-900 font-bold shadow-2xs">
                   <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
-                  <span>Giao dịch thanh toán đã bị hủy hoặc thất bại từ phía ngân hàng. Bạn có thể thử lại.</span>
+                  <span>Giao dịch thanh toán đã bị hủy. Bạn có thể bấm xác nhận lại bên dưới.</span>
                 </div>
               )}
 
@@ -883,18 +946,18 @@ export const BookingPage: React.FC = () => {
                       />
                     ) : (
                       <img
-                        src={`https://img.vietqr.io/image/970415-${checkoutData?.accountNumber || '0888567999'}-compact2.png?amount=${checkoutData?.amount || calculation.totalDueToday}&addInfo=${encodeURIComponent(checkoutData?.description || transferContent)}&accountName=${encodeURIComponent(checkoutData?.accountName || 'SMARTSTORAGE')}`}
+                        src={`https://img.vietqr.io/image/970422-0888567999-compact2.png?amount=${checkoutData?.amount || calculation.totalDueToday}&addInfo=${encodeURIComponent(checkoutData?.description || transferContent)}&accountName=${encodeURIComponent(checkoutData?.accountName || 'SMARTSTORAGE')}`}
                         alt="VietQR Code"
                         className="w-40 h-40 object-contain"
                       />
                     )}
-                    <span className="text-[11px] font-bold text-slate-500 mt-2 flex items-center gap-1">
-                      <QrCode className="w-3.5 h-3.5 text-brand-600" />
-                      VietQR · Napas247 PayOS
+                    <span className="text-[11px] font-bold text-slate-600 mt-2 flex items-center gap-1">
+                      <QrCode className="w-3.5 h-3.5 text-blue-600" />
+                      VietQR · MB Bank (Sandbox)
                     </span>
                   </div>
                   <span className="text-xs text-slate-500 mt-2.5 text-center">
-                    Mở ứng dụng ngân hàng bất kỳ để quét mã
+                    Quét mã bằng Camera/Zalo/Điện thoại để chuyển tiền
                   </span>
                 </div>
 
@@ -911,7 +974,7 @@ export const BookingPage: React.FC = () => {
                     <div>
                       <span className="text-slate-500 block">Số tài khoản định danh:</span>
                       <strong className="text-sm text-[#0a1614] font-bold tracking-wider font-mono">
-                        {checkoutData?.accountNumber || '0888 567 999'}
+                        {checkoutData?.accountNumber || '0888567999'}
                       </strong>
                     </div>
                     <button
@@ -957,6 +1020,35 @@ export const BookingPage: React.FC = () => {
                     </button>
                   </div>
 
+                  {/* Nút mô phỏng chuyển tiền Sandbox trực tiếp */}
+                  <div className="pt-1">
+                    <Button
+                      type="button"
+                      variant="primary"
+                      size="lg"
+                      className="w-full py-3 text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                      onClick={handleSimulateTransfer}
+                      disabled={isSimulating || paymentStatus === 'SUCCESS'}
+                    >
+                      {isSimulating ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Đang xử lý chuyển tiền Sandbox...</span>
+                        </>
+                      ) : paymentStatus === 'SUCCESS' ? (
+                        <>
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>Đã Chuyển Tiền Thành Công</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>Xác Nhận Đã Chuyển Tiền (Mô Phỏng Sandbox)</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
                   {copiedBankInfo && (
                     <div className="text-center text-emerald-600 font-semibold text-xs py-1">
                       ✓ Đã sao chép vào bộ nhớ tạm!
@@ -965,12 +1057,29 @@ export const BookingPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Demo Notice for Defense Presentation */}
-              <div className="bg-amber-50/70 p-3 rounded-xl border border-amber-200 text-xs text-amber-900 flex items-center justify-between gap-3">
+              {/* Payment Notice / Alert */}
+              {paymentNotice && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex items-center justify-between gap-3 text-xs text-amber-900 shadow-2xs">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>{paymentNotice}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentNotice(null)}
+                    className="text-amber-700 hover:text-amber-900 font-bold px-1.5 py-0.5 rounded cursor-pointer"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+
+              {/* Security & Access Code Notice: BR-ACC-01 */}
+              <div className="bg-emerald-50/60 p-3 rounded-xl border border-emerald-100 text-xs text-emerald-900 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span>
-                    <strong>Chế độ Demo / Thuyết trình:</strong> Bạn có thể quét mã VietQR thật ở trên qua App ngân hàng HOẶC bấm nút hoàn tất bên dưới để hệ thống lập tức kích hoạt thanh toán và tự động tạo Hợp đồng sang Portal Quản lý!
+                    <strong>Bảo mật truy cập (BR-ACC-01):</strong> Thẻ nhận kho và mã PIN mở ngăn tủ chỉ được cấp ngay sau khi hệ thống ghi nhận thanh toán cọc thành công.
                   </span>
                 </div>
               </div>
@@ -991,11 +1100,26 @@ export const BookingPage: React.FC = () => {
                   <Button
                     variant="primary"
                     size="md"
-                    onClick={handleConfirmBookingPayment}
-                    className="w-full sm:w-auto px-6 py-2.5 flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                    onClick={handleCheckPaymentStatus}
+                    disabled={isVerifying || paymentStatus === 'SUCCESS'}
+                    className="w-full sm:w-auto px-6 py-2.5 flex items-center justify-center gap-2 cursor-pointer shadow-sm text-xs font-bold whitespace-nowrap"
                   >
-                    <span>Tôi đã chuyển khoản / Lấy vé nhận kho</span>
-                    <ArrowRight className="w-4 h-4" />
+                    {isVerifying ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Đang kiểm tra đối soát...</span>
+                      </>
+                    ) : paymentStatus === 'SUCCESS' ? (
+                      <>
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Đã thanh toán thành công</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Tôi đã chuyển khoản / Lấy vé nhận kho</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>

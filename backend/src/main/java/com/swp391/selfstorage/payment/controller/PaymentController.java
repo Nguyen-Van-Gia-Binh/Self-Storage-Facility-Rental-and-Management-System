@@ -48,8 +48,16 @@ public class PaymentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(paymentService.createCheckoutLink(request));
     }
 
+    @PostMapping("/sandbox/process-transfer")
+    @Operation(summary = "Xử lý chuyển tiền thanh toán qua Cổng Sandbox nội bộ (SC-03)")
+    public ResponseEntity<PaymentResponse> processSandboxTransfer(
+            @Valid @RequestBody com.swp391.selfstorage.payment.dto.SandboxTransferRequest request) {
+        return ResponseEntity.ok(paymentService.processSandboxTransfer(request.getOrderCode(), request.getAction()));
+    }
+
+
     @PostMapping("/webhook/payos")
-    @Operation(summary = "Webhook tiếp nhận thông báo thanh toán tự động từ cổng PayOS")
+    @Operation(summary = "Webhook tiếp nhận thông báo thanh toán tự động từ cổng PayOS / Sandbox")
     public ResponseEntity<java.util.Map<String, Object>> handlePayOSWebhook(@RequestBody Object webhookBody) {
         paymentService.processPayOSWebhook(webhookBody);
         return ResponseEntity.ok(java.util.Map.of("error", 0, "message", "Success"));

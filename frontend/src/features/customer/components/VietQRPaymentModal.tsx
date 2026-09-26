@@ -66,6 +66,7 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
   const [selectedMethod, setSelectedMethod] = useState<'VIETQR' | 'CARD'>('VIETQR');
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [paymentNotice, setPaymentNotice] = useState<string | null>(null);
   const [isClosing, setIsClosing] = useState(false);
   const [orderCode, setOrderCode] = useState<number | null>(null);
   const [checkoutData, setCheckoutData] = useState<CheckoutResult | null>(null);
@@ -211,6 +212,7 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
   const handleCheckNow = async () => {
     if (!orderCode) return;
     setIsVerifying(true);
+    setPaymentNotice(null);
     try {
       const res = await pollPaymentStatus(orderCode);
       if (res.status === 'PAID' || res.status === 'SUCCESS') {
@@ -235,10 +237,12 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
         onPaymentSuccess(pass);
       } else {
         setIsVerifying(false);
+        setPaymentNotice('Hệ thống chưa ghi nhận thanh toán. Vui lòng hoàn tất chuyển khoản trước khi nhận Thẻ kho!');
       }
     } catch (err) {
       console.error('Lỗi kiểm tra đối soát thanh toán:', err);
       setIsVerifying(false);
+      setPaymentNotice('Lỗi kiểm tra trạng thái thanh toán. Vui lòng thử lại sau.');
     }
   };
 
@@ -501,7 +505,7 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
               <span className="font-medium">
                 {isPaid
                   ? 'Giao dịch thành công! Đang cấp thẻ nhận kho...'
-                  : 'Hệ thống đang tự động quét đối soát qua cổng VietQR PayOS (mỗi 3 giây)...'}
+                  : 'Hệ thống đang tự động quét đối soát chuyển khoản VietQR (mỗi 3 giây)...'}
               </span>
             </div>
             {orderCode && (
@@ -511,24 +515,44 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
             )}
           </div>
 
+          {/* Cảnh báo khi kiểm tra mà chưa nhận được tiền */}
+          {paymentNotice && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-amber-600 flex-shrink-0" />
+              <span>{paymentNotice}</span>
+            </div>
+          )}
+
           {/* Action Buttons */}
-          <div className="pt-1 flex flex-col sm:flex-row items-center gap-3">
+          <div className="pt-1 flex flex-col sm:flex-row items-center gap-2">
             <Button
               variant="outline"
               size="md"
               onClick={handleClose}
               disabled={isVerifying}
-              className="w-full sm:w-1/3 py-2.5 text-xs font-semibold cursor-pointer"
+              className="w-full sm:w-1/4 py-2.5 text-xs font-semibold cursor-pointer"
             >
               Đóng
             </Button>
+
+            {checkoutData?.checkoutUrl && !isPaid && (
+              <a
+                href={checkoutData.checkoutUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <span>Mở cổng VietQR Sandbox</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            )}
 
             <Button
               variant="primary"
               size="md"
               onClick={handleCheckNow}
               disabled={isVerifying || isPaid}
-              className="w-full sm:w-2/3 py-2.5 text-xs font-bold flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+              className="w-full sm:flex-1 py-2.5 text-xs font-bold flex items-center justify-center gap-2 shadow-sm cursor-pointer"
             >
               {isVerifying ? (
                 <>

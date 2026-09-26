@@ -10,10 +10,15 @@ import { AuthRoutes } from '@/features/auth/AuthRoutes';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { UnauthorizedPage } from '@/components/auth/UnauthorizedPage';
 
+import { SandboxCheckoutPage } from '@/features/customer/pages/SandboxCheckoutPage';
+
 export const AppRoutes: React.FC = () => {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Cổng giả lập thanh toán VietQR Sandbox (Mobile-friendly checkout) */}
+        <Route path="/payment/checkout" element={<SandboxCheckoutPage />} />
+
         {/* Trang chủ và Portal Khách hàng (WS1) - Công khai */}
         <Route path="/*" element={<CustomerRoutes />} />
         <Route path="/customer/*" element={<CustomerRoutes />} />

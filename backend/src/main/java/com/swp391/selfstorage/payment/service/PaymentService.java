@@ -15,14 +15,19 @@ public interface PaymentService {
     com.swp391.selfstorage.payment.dto.CheckoutResponse createCheckoutLink(com.swp391.selfstorage.payment.dto.CheckoutRequest request);
 
     /**
-     * Xác thực chữ ký và xử lý Webhook IPN gửi về từ cổng thanh toán PayOS.
+     * Xác thực chữ ký và xử lý Webhook gửi về từ cổng thanh toán.
      */
     PaymentResponse processPayOSWebhook(Object webhookBody);
 
     /**
-     * Tra cứu giao dịch theo mã đơn hàng PayOS (orderCode) phục vụ Polling.
+     * Tra cứu giao dịch theo mã đơn hàng (orderCode) phục vụ Polling.
      */
     PaymentResponse getPaymentByOrderCode(Long orderCode);
+
+    /**
+     * Xử lý xác nhận chuyển tiền hoặc hủy thanh toán qua Cổng Sandbox nội bộ (SC-03).
+     */
+    PaymentResponse processSandboxTransfer(Long orderCode, String action);
 
     /**
      * Xử lý thanh toán cho đơn đặt chỗ hoặc hợp đồng (SC-03, BR-DEP-01, BR-DEP-02).

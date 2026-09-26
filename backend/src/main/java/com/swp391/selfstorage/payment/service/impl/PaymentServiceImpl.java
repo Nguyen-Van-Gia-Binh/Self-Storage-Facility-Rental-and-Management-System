@@ -32,12 +32,14 @@ import com.swp391.selfstorage.reservation.repository.ReservationRepository;
 import com.swp391.selfstorage.reservation.service.ReservationService;
 
 import jakarta.persistence.criteria.Predicate;
+import java.util.Map;
+import com.swp391.selfstorage.payment.gateway.PaymentGateway;
+import com.swp391.selfstorage.payment.gateway.dto.PaymentCheckoutCommand;
+import com.swp391.selfstorage.payment.gateway.dto.PaymentCheckoutResult;
+
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import vn.payos.PayOS;
-import vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest;
-import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
-import vn.payos.model.webhooks.WebhookData;
 
 @Service
 @RequiredArgsConstructor
@@ -52,13 +54,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final com.swp391.selfstorage.contract.service.RenewalService renewalService;
     private final ApplicationEventPublisher eventPublisher;
     private final PaymentMapper paymentMapper;
-    private final PayOS payOS;
-
-    @Value("${payos.return-url:http://localhost:5173/payment/success}")
-    private String returnUrl = "http://localhost:5173/payment/success";
-
-    @Value("${payos.cancel-url:http://localhost:5173/payment/cancel}")
-    private String cancelUrl = "http://localhost:5173/payment/cancel";
+    private final PaymentGateway paymentGateway;
 
     @Override
     @Transactional
@@ -89,7 +85,11 @@ public class PaymentServiceImpl implements PaymentService {
                 throw new CustomException(ErrorCode.RESERVATION_EXPIRED);
             }
 
-            amount = reservation.getTotalPayable() > 0 ? reservation.getTotalPayable() : 2000L;
+            if (reservation.getTotalPayable() <= 0) {
+                throw new CustomException(ErrorCode.VALIDATION_FAILED, "Tổng số tiền phải trả không hợp lệ");
+            }
+
+            amount = reservation.getTotalPayable();
             defaultDesc = "DH" + reservation.getId();
             reservationId = reservation.getId();
             txnType = "INITIAL_PAYMENT";
@@ -142,22 +142,12 @@ public class PaymentServiceImpl implements PaymentService {
             description = description.substring(0, 25);
         }
 
-        CreatePaymentLinkRequest paymentLinkRequest = CreatePaymentLinkRequest.builder()
-                .orderCode(orderCode)
-                .amount(amount)
-                .description(description)
-                .returnUrl(returnUrl)
-                .cancelUrl(cancelUrl)
-                .build();
-
-        CreatePaymentLinkResponse paymentLinkResponse;
-        try {
-            paymentLinkResponse = payOS.paymentRequests().create(paymentLinkRequest);
-        } catch (Exception e) {
-            log.error("Lỗi khi gọi API PayOS tạo payment link: {}", e.getMessage(), e);
-            throw new CustomException(ErrorCode.PAYMENT_FAILED,
-                    "Không thể kết nối cổng thanh toán PayOS: " + e.getMessage());
-        }
+        PaymentCheckoutResult checkoutResult = paymentGateway.createPayment(
+                PaymentCheckoutCommand.builder()
+                        .orderCode(orderCode)
+                        .amount(amount)
+                        .description(description)
+                        .build());
 
         PaymentTransaction payment = PaymentTransaction.builder()
                 .reservationId(reservationId)
@@ -165,75 +155,48 @@ public class PaymentServiceImpl implements PaymentService {
                 .transactionType(txnType)
                 .amount(amount)
                 .status("PENDING")
-                .paymentMethod("VIETQR_PAYOS")
+                .paymentMethod("SANDBOX_VIETQR")
                 .orderCode(orderCode)
-                .providerReference(paymentLinkResponse.getPaymentLinkId())
+                .providerReference("SBX-" + orderCode)
                 .build();
 
         paymentTransactionRepository.save(payment);
 
         return CheckoutResponse.builder()
                 .orderCode(orderCode)
-                .checkoutUrl(paymentLinkResponse.getCheckoutUrl())
-                .qrCode(paymentLinkResponse.getQrCode())
-                .amount(paymentLinkResponse.getAmount())
-                .description(paymentLinkResponse.getDescription())
-                .accountName(paymentLinkResponse.getAccountName())
-                .accountNumber(paymentLinkResponse.getAccountNumber())
-                .bin(paymentLinkResponse.getBin())
+                .checkoutUrl(checkoutResult.getCheckoutUrl())
+                .qrCode(checkoutResult.getQrCode())
+                .amount(checkoutResult.getAmount())
+                .description(checkoutResult.getDescription())
+                .accountName(checkoutResult.getAccountName())
+                .accountNumber(checkoutResult.getAccountNumber())
+                .bin(checkoutResult.getBin())
                 .status("PENDING")
                 .build();
     }
 
+
     @Override
     @Transactional
-    public PaymentResponse processPayOSWebhook(Object webhookBody) {
-        log.info("Processing PayOS Webhook...");
-        WebhookData webhookData;
-        try {
-            webhookData = payOS.webhooks().verify(webhookBody);
-        } catch (Exception e) {
-            log.error("Xác thực chữ ký Webhook PayOS thất bại: {}", e.getMessage(), e);
-            throw new CustomException(ErrorCode.VALIDATION_FAILED,
-                    "Chữ ký webhook PayOS không hợp lệ: " + e.getMessage());
-        }
-
-        Long orderCode = webhookData.getOrderCode();
+    public PaymentResponse processSandboxTransfer(Long orderCode, String action) {
+        log.info("Processing Sandbox transfer for orderCode={}, action={}", orderCode, action);
         PaymentTransaction payment = paymentTransactionRepository.findByOrderCode(orderCode)
-                .orElse(null);
+                .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND,
+                        "Không tìm thấy giao dịch với orderCode=" + orderCode));
 
-        // Trường hợp 1: Nhận webhook ping test từ PayOS Dashboard (hoặc orderCode không có trong DB)
-        if (payment == null) {
-            log.info("Nhận webhook ping test hoặc orderCode={} không tồn tại trong hệ thống. Trả lời HTTP 200 OK cho PayOS.", orderCode);
-            return PaymentResponse.builder()
-                    .orderCode(orderCode)
-                    .status("SUCCESS")
-                    .build();
-        }
-
-        // Trường hợp 2: Giao dịch thất bại hoặc bị khách hàng hủy từ PayOS
-        if (webhookData.getCode() != null && !"00".equals(webhookData.getCode())) {
-            log.warn("Thanh toán PayOS không thành công cho orderCode={}: code={}, desc={}",
-                    orderCode, webhookData.getCode(), webhookData.getDesc());
-            payment.setStatus("FAILED");
-            if (webhookData.getReference() != null) {
-                payment.setProviderReference(webhookData.getReference());
-            }
-            payment = paymentTransactionRepository.save(payment);
-            return paymentMapper.toResponse(payment);
-        }
-
-        // Trường hợp 3: Idempotency check: nếu đã SUCCESS thì bỏ qua, không xử lý lặp
         if ("SUCCESS".equalsIgnoreCase(payment.getStatus())) {
             log.info("Giao dịch orderCode={} đã ở trạng thái SUCCESS, bỏ qua xử lý lặp", orderCode);
             return paymentMapper.toResponse(payment);
         }
 
-        // Trường hợp 4: Thanh toán thành công (code == "00")
-        payment.setStatus("SUCCESS");
-        if (webhookData.getReference() != null) {
-            payment.setProviderReference(webhookData.getReference());
+        if ("CANCEL".equalsIgnoreCase(action)) {
+            payment.setStatus("FAILED");
+            payment = paymentTransactionRepository.save(payment);
+            return paymentMapper.toResponse(payment);
         }
+
+        payment.setStatus("SUCCESS");
+        payment.setProviderReference("SANDBOX-" + System.currentTimeMillis());
         payment = paymentTransactionRepository.save(payment);
 
         if (payment.getReservationId() != null) {
@@ -242,9 +205,95 @@ public class PaymentServiceImpl implements PaymentService {
         } else if (payment.getContractId() != null
                 && "CONTRACT_RENEWAL".equalsIgnoreCase(payment.getTransactionType())) {
             int months = 1;
-            if (webhookData.getDescription() != null && webhookData.getDescription().contains("T")) {
+            eventPublisher.publishEvent(new com.swp391.selfstorage.payment.event.ContractRenewalPaymentCompletedEvent(
+                    payment.getContractId(), payment.getId(), months, payment.getAmount()));
+        } else if ("SETTLEMENT".equalsIgnoreCase(payment.getTransactionType())) {
+            log.info("Thanh toán quyết toán thu nợ Sandbox thành công cho contractId={}, transactionId={}",
+                    payment.getContractId(), payment.getId());
+        }
+
+        return paymentMapper.toResponse(payment);
+    }
+
+    @Override
+    @Transactional
+    @SuppressWarnings("unchecked")
+    public PaymentResponse processPayOSWebhook(Object webhookBody) {
+        log.info("Processing Payment Webhook...");
+        Long orderCode = null;
+        String code = "00";
+        String reference = null;
+        String description = null;
+
+        if (webhookBody instanceof Map<?, ?> map) {
+            Object codeObj = map.get("code");
+            code = codeObj != null ? String.valueOf(codeObj) : "00";
+            Object dataObj = map.get("data");
+            if (dataObj instanceof Map<?, ?> dataMap) {
+                Object oc = dataMap.get("orderCode");
+                if (oc instanceof Number num) {
+                    orderCode = num.longValue();
+                } else if (oc != null) {
+                    orderCode = Long.parseLong(oc.toString());
+                }
+                Object ref = dataMap.get("reference");
+                if (ref != null) reference = ref.toString();
+                Object desc = dataMap.get("description");
+                if (desc != null) description = desc.toString();
+            } else {
+                Object oc = map.get("orderCode");
+                if (oc instanceof Number num) {
+                    orderCode = num.longValue();
+                } else if (oc != null) {
+                    orderCode = Long.parseLong(oc.toString());
+                }
+            }
+        }
+
+        if (orderCode == null) {
+            log.info("Nhận webhook ping test hoặc payload không có orderCode. Trả lời HTTP 200 OK.");
+            return PaymentResponse.builder()
+                    .status("SUCCESS")
+                    .build();
+        }
+
+        PaymentTransaction payment = paymentTransactionRepository.findByOrderCode(orderCode)
+                .orElse(null);
+
+        if (payment == null) {
+            log.info("orderCode={} không tồn tại trong hệ thống. Trả lời HTTP 200 OK.", orderCode);
+            return PaymentResponse.builder()
+                    .orderCode(orderCode)
+                    .status("SUCCESS")
+                    .build();
+        }
+
+        if (!"00".equals(code)) {
+            log.warn("Thanh toán không thành công cho orderCode={}: code={}", orderCode, code);
+            payment.setStatus("FAILED");
+            if (reference != null) payment.setProviderReference(reference);
+            payment = paymentTransactionRepository.save(payment);
+            return paymentMapper.toResponse(payment);
+        }
+
+        if ("SUCCESS".equalsIgnoreCase(payment.getStatus())) {
+            log.info("Giao dịch orderCode={} đã ở trạng thái SUCCESS, bỏ qua xử lý lặp", orderCode);
+            return paymentMapper.toResponse(payment);
+        }
+
+        payment.setStatus("SUCCESS");
+        payment.setProviderReference(reference != null ? reference : "SANDBOX-" + System.currentTimeMillis());
+        payment = paymentTransactionRepository.save(payment);
+
+        if (payment.getReservationId() != null) {
+            reservationService.confirmAfterPayment(payment.getReservationId());
+            eventPublisher.publishEvent(new PaymentCompletedEvent(payment.getReservationId(), payment.getId()));
+        } else if (payment.getContractId() != null
+                && "CONTRACT_RENEWAL".equalsIgnoreCase(payment.getTransactionType())) {
+            int months = 1;
+            if (description != null && description.contains("T")) {
                 try {
-                    String part = webhookData.getDescription().substring(webhookData.getDescription().indexOf("T") + 1);
+                    String part = description.substring(description.indexOf("T") + 1);
                     months = Integer.parseInt(part.replaceAll("\\D", ""));
                 } catch (Exception ignored) {
                     months = 1;

@@ -47,6 +47,8 @@ export const RenewalPage: React.FC = () => {
   const [isLoadingCheckout, setIsLoadingCheckout] = useState<boolean>(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [isPaidSuccess, setIsPaidSuccess] = useState<boolean>(false);
+  const [isVerifying, setIsVerifying] = useState<boolean>(false);
+  const [paymentNotice, setPaymentNotice] = useState<string | null>(null);
   const [renewalQuote, setRenewalQuote] = useState<RenewalQuote | null>(null);
   const [loadingQuote, setLoadingQuote] = useState<boolean>(false);
 
@@ -182,8 +184,8 @@ export const RenewalPage: React.FC = () => {
     });
   }, [contract, renewalMonths, renewalQuote]);
 
-  // Xác nhận chuyển khoản thành công và kích hoạt gia hạn (SC-03)
-  const handleConfirmPayment = useCallback(async () => {
+  // Kích hoạt gia hạn hợp đồng sau khi đã thanh toán thành công (SC-03)
+  const executeRenewalActivation = useCallback(async () => {
     if (!contract) return;
     setIsProcessing(true);
 
@@ -194,7 +196,7 @@ export const RenewalPage: React.FC = () => {
         newEndDate,
         totalAmount: pricing.finalTotal,
         paymentMethod: 'VIETQR',
-        transactionReference: payosCheckout?.orderCode ? `PAYOS-${payosCheckout.orderCode}` : `MB-${Date.now().toString().slice(-8)}`,
+        transactionReference: payosCheckout?.orderCode ? `NAPAS-${payosCheckout.orderCode}` : `MB-${Date.now().toString().slice(-8)}`,
       });
 
       setRenewalResult(res);
@@ -203,11 +205,32 @@ export const RenewalPage: React.FC = () => {
     } catch (err) {
       console.error('Lỗi khi kích hoạt gia hạn:', err);
       setIsProcessing(false);
-      alert('Có lỗi xảy ra trong quá trình xử lý gia hạn. Vui lòng thử lại hoặc liên hệ lễ tân.');
+      setPaymentNotice('Có lỗi xảy ra trong quá trình xử lý gia hạn. Vui lòng liên hệ lễ tân.');
     }
   }, [contract, renewalMonths, newEndDate, pricing.finalTotal, payosCheckout]);
 
-  // Polling tự động kiểm tra trạng thái thanh toán PayOS mỗi 2.5 giây khi ở Bước 3
+  // Kiểm tra thanh toán chủ động (Nút "Tôi đã hoàn tất chuyển khoản")
+  const handleCheckPaymentAndRenew = async () => {
+    if (!payosCheckout?.orderCode) return;
+    setIsVerifying(true);
+    setPaymentNotice(null);
+    try {
+      const statusRes = await customerApi.getPaymentStatus(payosCheckout.orderCode);
+      if (statusRes.status === 'SUCCESS') {
+        setIsPaidSuccess(true);
+        await executeRenewalActivation();
+      } else {
+        setPaymentNotice('Hệ thống chưa ghi nhận thanh toán. Vui lòng hoàn tất chuyển khoản trước khi xác nhận!');
+      }
+    } catch (err) {
+      console.error('Lỗi kiểm tra đối soát thanh toán gia hạn:', err);
+      setPaymentNotice('Không thể kiểm tra đối soát thanh toán lúc này. Vui lòng thử lại sau.');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  // Polling tự động kiểm tra trạng thái thanh toán mỗi 2.5 giây khi ở Bước 3
   useEffect(() => {
     if (currentStep !== 3 || !payosCheckout?.orderCode || isPaidSuccess) return;
 
@@ -217,7 +240,7 @@ export const RenewalPage: React.FC = () => {
         if (statusRes.status === 'SUCCESS') {
           clearInterval(interval);
           setIsPaidSuccess(true);
-          handleConfirmPayment();
+          executeRenewalActivation();
         }
       } catch {
         // Tiếp tục polling
@@ -225,7 +248,7 @@ export const RenewalPage: React.FC = () => {
     }, 2500);
 
     return () => clearInterval(interval);
-  }, [currentStep, payosCheckout?.orderCode, isPaidSuccess, handleConfirmPayment]);
+  }, [currentStep, payosCheckout?.orderCode, isPaidSuccess, executeRenewalActivation]);
 
   // Tải thông tin hợp đồng thực tế từ customerRentals API (gồm cả localStorage overrides)
   useEffect(() => {
@@ -750,7 +773,7 @@ export const RenewalPage: React.FC = () => {
                   Quét Mã VietQR Hoàn Tất Gia Hạn
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Gia hạn hợp đồng #{contract.contractNumber} thêm {renewalMonths} tháng qua cổng PayOS
+                  Gia hạn hợp đồng #{contract.contractNumber} thêm {renewalMonths} tháng qua cổng VietQR Napas247
                 </p>
               </div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold shrink-0">
@@ -764,15 +787,15 @@ export const RenewalPage: React.FC = () => {
             {isPaidSuccess && (
               <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3 text-emerald-800 text-sm font-medium animate-pulse">
                 <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                <span>Thanh toán thành công qua PayOS! Hệ thống đang tự động kích hoạt hợp đồng gia hạn...</span>
+                <span>Thanh toán thành công qua VietQR Napas247! Hệ thống đang tự động kích hoạt hợp đồng gia hạn...</span>
               </div>
             )}
 
-            {/* Trạng thái tải checkout PayOS */}
+            {/* Trạng thái tải checkout */}
             {isLoadingCheckout ? (
               <div className="py-12 flex flex-col items-center justify-center space-y-3">
                 <Loader2 className="w-8 h-8 text-brand-600 animate-spin" />
-                <p className="text-sm text-slate-600 font-medium">Đang khởi tạo mã VietQR Napas247 từ PayOS...</p>
+                <p className="text-sm text-slate-600 font-medium">Đang khởi tạo mã VietQR Napas247...</p>
               </div>
             ) : (
               <>
@@ -807,9 +830,9 @@ export const RenewalPage: React.FC = () => {
                         href={payosCheckout.checkoutUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700 underline"
+                        className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 underline"
                       >
-                        <span>Mở trang thanh toán PayOS</span>
+                        <span>Mở cổng thanh toán VietQR Sandbox</span>
                         <ExternalLink className="w-3.5 h-3.5" />
                       </a>
                     )}
@@ -880,6 +903,23 @@ export const RenewalPage: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Thông báo đối soát / chưa thanh toán */}
+                {paymentNotice && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center justify-between gap-2 shadow-xs">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span>{paymentNotice}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentNotice(null)}
+                      className="text-amber-700 hover:text-amber-900 font-bold px-1.5 py-0.5 rounded cursor-pointer"
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
+
                 {/* Action buttons */}
                 <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
                   <Button
@@ -892,25 +932,32 @@ export const RenewalPage: React.FC = () => {
                     Quay lại xem bảng kê
                   </Button>
 
-                  <Button
-                    variant="primary"
-                    size="md"
-                    disabled={isProcessing || isPaidSuccess}
-                    onClick={handleConfirmPayment}
-                    className="w-full sm:w-auto px-6 py-2.5 flex items-center justify-center gap-2 cursor-pointer shadow-sm"
-                  >
-                    {isProcessing ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Đang đối soát...</span>
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>Tôi đã hoàn tất chuyển khoản</span>
-                      </>
-                    )}
-                  </Button>
+                  <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <Button
+                      variant="primary"
+                      size="md"
+                      disabled={isProcessing || isVerifying || isPaidSuccess}
+                      onClick={handleCheckPaymentAndRenew}
+                      className="w-full sm:w-auto px-6 py-2.5 flex items-center justify-center gap-2 cursor-pointer shadow-sm text-xs font-bold whitespace-nowrap"
+                    >
+                      {isProcessing || isVerifying ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Đang đối soát...</span>
+                        </>
+                      ) : isPaidSuccess ? (
+                        <>
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>Đã thanh toán thành công</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>Tôi đã hoàn tất chuyển khoản</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </>
             )}
