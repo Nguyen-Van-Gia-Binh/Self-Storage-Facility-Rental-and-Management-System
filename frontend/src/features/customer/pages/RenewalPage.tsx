@@ -220,7 +220,7 @@ export const RenewalPage: React.FC = () => {
         setIsPaidSuccess(true);
         await executeRenewalActivation();
       } else {
-        setPaymentNotice('Hệ thống chưa ghi nhận thanh toán từ MoMo. Vui lòng hoàn tất thanh toán trước khi xác nhận!');
+        setPaymentNotice('Hệ thống chưa ghi nhận thanh toán. Vui lòng hoàn tất chuyển khoản trước khi xác nhận!');
       }
     } catch (err) {
       console.error('Lỗi kiểm tra đối soát thanh toán gia hạn:', err);
@@ -830,9 +830,9 @@ export const RenewalPage: React.FC = () => {
                         href={payosCheckout.checkoutUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-pink-600 hover:text-pink-700 underline"
+                        className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 underline"
                       >
-                        <span>Mở cổng thanh toán MoMo</span>
+                        <span>Mở cổng thanh toán VietQR Sandbox</span>
                         <ExternalLink className="w-3.5 h-3.5" />
                       </a>
                     )}

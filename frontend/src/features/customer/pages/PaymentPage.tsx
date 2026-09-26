@@ -214,7 +214,7 @@ export const PaymentPage: React.FC = () => {
       } else {
         // Chưa thanh toán thành công (BR-ACC-01): Tuyệt đối không sinh pass hoặc mở modal
         setIsVerifying(false);
-        setPaymentNotice('Hệ thống chưa ghi nhận thanh toán từ MoMo. Vui lòng hoàn tất thanh toán trước khi kiểm tra!');
+        setPaymentNotice('Hệ thống chưa ghi nhận thanh toán. Vui lòng hoàn tất chuyển khoản trước khi kiểm tra!');
       }
     } catch (err) {
       console.error('Lỗi kiểm tra đối soát thanh toán:', err);
@@ -472,9 +472,9 @@ export const PaymentPage: React.FC = () => {
                         href={checkoutData.checkoutUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-xs font-bold text-pink-700 bg-pink-50 hover:bg-pink-100 border border-pink-200 px-3.5 py-2.5 rounded-lg transition-colors"
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3.5 py-2.5 rounded-lg transition-colors"
                       >
-                        <span>Mở cổng thanh toán MoMo</span>
+                        <span>Mở cổng thanh toán VietQR Sandbox</span>
                         <ExternalLink className="w-3.5 h-3.5" />
                       </a>
                     )}

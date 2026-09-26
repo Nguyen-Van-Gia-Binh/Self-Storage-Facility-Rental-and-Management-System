@@ -15,17 +15,12 @@ public interface PaymentService {
     com.swp391.selfstorage.payment.dto.CheckoutResponse createCheckoutLink(com.swp391.selfstorage.payment.dto.CheckoutRequest request);
 
     /**
-     * Xác thực chữ ký và xử lý Webhook IPN gửi về từ cổng thanh toán PayOS / MoMo.
+     * Xác thực chữ ký và xử lý Webhook gửi về từ cổng thanh toán.
      */
     PaymentResponse processPayOSWebhook(Object webhookBody);
 
     /**
-     * Xác thực chữ ký và xử lý Webhook IPN gửi về từ cổng thanh toán MoMo Sandbox (SC-03).
-     */
-    PaymentResponse processMomoIpn(com.swp391.selfstorage.payment.dto.MomoIpnRequest ipnRequest);
-
-    /**
-     * Tra cứu giao dịch theo mã đơn hàng PayOS / MoMo (orderCode) phục vụ Polling.
+     * Tra cứu giao dịch theo mã đơn hàng (orderCode) phục vụ Polling.
      */
     PaymentResponse getPaymentByOrderCode(Long orderCode);
 

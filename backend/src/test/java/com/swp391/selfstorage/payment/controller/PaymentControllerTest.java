@@ -151,28 +151,4 @@ class PaymentControllerTest {
                 .andExpect(jsonPath("$.orderCode").value(123456789L))
                 .andExpect(jsonPath("$.status").value("SUCCESS"));
     }
-
-    @Test
-    @DisplayName("POST /payments/webhook/momo - Nhận webhook MoMo IPN thành công trả về 204 No Content")
-    void testHandleMomoWebhook_Success() throws Exception {
-        com.swp391.selfstorage.payment.dto.MomoIpnRequest ipn = com.swp391.selfstorage.payment.dto.MomoIpnRequest.builder()
-                .partnerCode("MOMO")
-                .orderId("DH123456789")
-                .requestId("REQ123456789")
-                .amount(3_200_000L)
-                .orderInfo("Thanh toan don dat cho")
-                .transId(9876543210L)
-                .resultCode(0)
-                .message("Successful.")
-                .responseTime(System.currentTimeMillis())
-                .build();
-
-        mockMvc.perform(post("/payments/webhook/momo")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(ipn)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.resultCode").value(0));
-
-        verify(paymentService).processMomoIpn(any());
-    }
 }

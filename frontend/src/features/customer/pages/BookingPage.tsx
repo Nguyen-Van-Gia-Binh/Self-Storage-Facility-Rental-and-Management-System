@@ -326,7 +326,7 @@ export const BookingPage: React.FC = () => {
         handleConfirmBookingPayment();
       } else {
         // Chưa thanh toán thành công (BR-ACC-01): Tuyệt đối không sinh pass
-        setPaymentNotice('Hệ thống chưa ghi nhận thanh toán từ MoMo. Vui lòng hoàn tất thanh toán trên MoMo trước khi nhận vé!');
+        setPaymentNotice('Hệ thống chưa ghi nhận thanh toán. Vui lòng quét mã hoặc bấm nút xác nhận chuyển khoản trước khi nhận vé!');
       }
     } catch (err) {
       console.error('Lỗi kiểm tra đối soát thanh toán:', err);

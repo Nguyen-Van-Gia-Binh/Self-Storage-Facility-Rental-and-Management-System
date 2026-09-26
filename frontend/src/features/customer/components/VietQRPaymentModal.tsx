@@ -237,7 +237,7 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
         onPaymentSuccess(pass);
       } else {
         setIsVerifying(false);
-        setPaymentNotice('Hệ thống chưa ghi nhận thanh toán từ MoMo. Vui lòng hoàn tất thanh toán trước khi nhận Thẻ kho!');
+        setPaymentNotice('Hệ thống chưa ghi nhận thanh toán. Vui lòng hoàn tất chuyển khoản trước khi nhận Thẻ kho!');
       }
     } catch (err) {
       console.error('Lỗi kiểm tra đối soát thanh toán:', err);
@@ -540,9 +540,9 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
                 href={checkoutData.checkoutUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold text-pink-700 bg-pink-50 hover:bg-pink-100 border border-pink-200 rounded-lg flex items-center justify-center gap-1.5 transition-colors"
+                className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg flex items-center justify-center gap-1.5 transition-colors"
               >
-                <span>Mở cổng MoMo</span>
+                <span>Mở cổng VietQR Sandbox</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
             )}
