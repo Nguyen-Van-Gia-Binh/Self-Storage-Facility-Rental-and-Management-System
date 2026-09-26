@@ -127,4 +127,28 @@ class PaymentControllerTest {
                 .andExpect(jsonPath("$.orderCode").value(123456789L))
                 .andExpect(jsonPath("$.status").value("SUCCESS"));
     }
+
+    @Test
+    @DisplayName("POST /payments/sandbox/process-transfer - Xử lý chuyển tiền Sandbox thành công (200 OK)")
+    void testProcessSandboxTransfer_Success() throws Exception {
+        com.swp391.selfstorage.payment.dto.SandboxTransferRequest request =
+                new com.swp391.selfstorage.payment.dto.SandboxTransferRequest(123456789L, "TRANSFER_SUCCESS");
+
+        PaymentResponse response = PaymentResponse.builder()
+                .id(10L)
+                .orderCode(123456789L)
+                .status("SUCCESS")
+                .amount(3_200_000L)
+                .build();
+
+        when(paymentService.processSandboxTransfer(eq(123456789L), eq("TRANSFER_SUCCESS"))).thenReturn(response);
+
+        mockMvc.perform(post("/payments/sandbox/process-transfer")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(10L))
+                .andExpect(jsonPath("$.orderCode").value(123456789L))
+                .andExpect(jsonPath("$.status").value("SUCCESS"));
+    }
 }

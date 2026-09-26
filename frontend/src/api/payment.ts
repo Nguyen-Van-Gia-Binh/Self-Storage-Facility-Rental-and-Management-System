@@ -133,6 +133,19 @@ export async function pollPaymentStatus(orderCode: number): Promise<PaymentStatu
 }
 
 /**
+ * Xử lý chuyển tiền hoặc hủy giao dịch qua Cổng Sandbox nội bộ (SC-03)
+ */
+export async function processSandboxTransfer(
+  orderCode: number,
+  action: 'TRANSFER_SUCCESS' | 'CANCEL' = 'TRANSFER_SUCCESS'
+): Promise<PaymentStatusResult> {
+  return await apiClient<PaymentStatusResult>('/payments/sandbox/process-transfer', {
+    method: 'POST',
+    body: JSON.stringify({ orderCode, action }),
+  });
+}
+
+/**
  * Tạo yêu cầu thanh toán thủ công (POST /api/v1/payments) (SC-03)
  */
 export async function createPayment(request: CreatePaymentRequest): Promise<PaymentTransaction> {

@@ -58,11 +58,14 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
-# Cổng thanh toán trực tuyến PayOS (VietQR) - SC-03
-payos:
-  client-id: ${PAYOS_CLIENT_ID:mock-client-id}
-  api-key: ${PAYOS_API_KEY:mock-api-key}
-  checksum-key: ${PAYOS_CHECKSUM_KEY:mock-checksum-key}
-  return-url: ${PAYOS_RETURN_URL:http://localhost:5173/payment/success}
-  cancel-url: ${PAYOS_CANCEL_URL:http://localhost:5173/payment/cancel}
+# Cổng thanh toán Sandbox nội bộ (SmartStorage Integrated Payment Gateway) - SC-03
+payment:
+  sandbox:
+    account-name: CONG TY CP SMARTSTORAGE VIETNAM
+    account-number: "0888567999"
+    bank-bin: "970422"
+    bank-name: MB Bank (Ngân hàng Quân Đội)
+    checkout-url: ${PAYMENT_CHECKOUT_URL:http://localhost:5173/payment/checkout}
+    return-url: ${PAYMENT_RETURN_URL:http://localhost:5173/payment/success}
+    cancel-url: ${PAYMENT_CANCEL_URL:http://localhost:5173/payment/cancel}
 

@@ -198,6 +198,21 @@ export const customerApi = {
   },
 
   /**
+   * Chuyển tiền mô phỏng qua Cổng Sandbox nội bộ
+   */
+  async processSandboxTransfer(orderCode: number, action: 'TRANSFER_SUCCESS' | 'TRANSFER_FAILED' = 'TRANSFER_SUCCESS'): Promise<any> {
+    try {
+      const res = await apiClient<ApiResponse<any> | any>('/payments/sandbox/process-transfer', {
+        method: 'POST',
+        body: JSON.stringify({ orderCode, action }),
+      });
+      return (res as any)?.data || res;
+    } catch (err: any) {
+      throw new Error(err?.message || 'Không thể kết nối cổng thanh toán Sandbox');
+    }
+  },
+
+  /**
    * Xác nhận thanh toán giữ chỗ trực tiếp (SC-03) -> Bắn Event tạo RentalContract
    */
   async createManualPayment(payload: {

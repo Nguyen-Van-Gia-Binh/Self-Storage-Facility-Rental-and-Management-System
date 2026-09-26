@@ -25,6 +25,11 @@ public interface PaymentService {
     PaymentResponse getPaymentByOrderCode(Long orderCode);
 
     /**
+     * Xử lý xác nhận chuyển tiền hoặc hủy thanh toán qua Cổng Sandbox nội bộ (SC-03).
+     */
+    PaymentResponse processSandboxTransfer(Long orderCode, String action);
+
+    /**
      * Xử lý thanh toán cho đơn đặt chỗ hoặc hợp đồng (SC-03, BR-DEP-01, BR-DEP-02).
      */
     PaymentResponse processPayment(CreatePaymentRequest request);

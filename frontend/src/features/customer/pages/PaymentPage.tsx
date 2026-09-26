@@ -24,6 +24,7 @@ import {
   createCheckout,
   pollPaymentStatus,
   generateMoveInPass,
+  processSandboxTransfer,
   type CheckoutResult,
 } from '@/api/payment';
 import { DigitalMoveInPassModal } from '../components/DigitalMoveInPassModal';
@@ -57,6 +58,8 @@ export const PaymentPage: React.FC = () => {
   const [selectedMethod, setSelectedMethod] = useState<'VIETQR' | 'CARD'>('VIETQR');
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [paymentNotice, setPaymentNotice] = useState<string | null>(null);
   const [orderCode, setOrderCode] = useState<number | null>(null);
   const [checkoutData, setCheckoutData] = useState<CheckoutResult | null>(null);
   const [isPaid, setIsPaid] = useState(false);
@@ -187,6 +190,7 @@ export const PaymentPage: React.FC = () => {
   const handleCheckNow = async () => {
     if (!orderCode) return;
     setIsVerifying(true);
+    setPaymentNotice(null);
     try {
       const res = await pollPaymentStatus(orderCode);
       if (res.status === 'PAID' || res.status === 'SUCCESS') {
@@ -210,11 +214,50 @@ export const PaymentPage: React.FC = () => {
         setIsVerifying(false);
         setShowPassModal(true);
       } else {
+        // Chưa thanh toán thành công (BR-ACC-01): Tuyệt đối không sinh pass hoặc mở modal
         setIsVerifying(false);
+        setPaymentNotice('Hệ thống chưa ghi nhận tiền chuyển khoản. Vui lòng hoàn tất chuyển khoản trước khi kiểm tra!');
       }
     } catch (err) {
       console.error('Lỗi kiểm tra đối soát thanh toán:', err);
       setIsVerifying(false);
+      setPaymentNotice('Lỗi kiểm tra trạng thái thanh toán. Vui lòng thử lại sau.');
+    }
+  };
+
+  const handleSandboxTransfer = async () => {
+    if (!orderCode || isPaid || isSimulating) return;
+    setIsSimulating(true);
+    setPaymentNotice(null);
+    try {
+      await processSandboxTransfer(orderCode, 'TRANSFER_SUCCESS');
+      const res = await pollPaymentStatus(orderCode);
+      if (res.status === 'PAID' || res.status === 'SUCCESS') {
+        setIsPaid(true);
+        const pass = generateMoveInPass({
+          reservationId: `RES-${orderCode}`,
+          unitNumber,
+          facilityId: 'FAC-D7-01',
+          facilityName,
+          facilityAddress,
+          facilityPhone,
+          customerName,
+          customerPhone,
+          customerIdentity: customerIdCard,
+          startDate,
+          checkInWindow: 'Trong vòng 48 giờ kể từ lúc cọc',
+          totalPaid: totalAmount,
+        });
+
+        setCreatedPass(pass);
+        setShowPassModal(true);
+      }
+    } catch (err: unknown) {
+      console.error('Lỗi chuyển tiền qua Cổng Sandbox:', err);
+      const msg = err instanceof Error ? err.message : 'Lỗi kết nối';
+      setPaymentNotice('Lỗi thực hiện chuyển tiền qua Cổng Sandbox: ' + msg);
+    } finally {
+      setIsSimulating(false);
     }
   };
 
@@ -452,7 +495,7 @@ export const PaymentPage: React.FC = () => {
                     <span>
                       {isPaid
                         ? 'Thanh toán thành công! Đang kích hoạt thẻ nhận kho...'
-                        : 'Hệ thống tự động quét nhận diện giao dịch VietQR PayOS (mỗi 3 giây).'}
+                        : 'Hệ thống tự động quét nhận diện giao dịch VietQR Napas247 (mỗi 3 giây).'}
                     </span>
                     {orderCode && (
                       <span className="font-mono text-[11px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold ml-1">
@@ -461,31 +504,64 @@ export const PaymentPage: React.FC = () => {
                     )}
                   </div>
 
-                  <Button
-                    variant="primary"
-                    size="md"
-                    onClick={handleCheckNow}
-                    disabled={isVerifying || isPaid}
-                    className="w-full sm:w-auto px-6 py-2.5 text-xs font-bold flex items-center justify-center gap-2 shadow-sm cursor-pointer whitespace-nowrap"
-                  >
-                    {isVerifying ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Đang kiểm tra đối soát...</span>
-                      </>
-                    ) : isPaid ? (
-                      <>
-                        <Check className="w-4 h-4" />
-                        <span>Đã thanh toán thành công</span>
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="w-4 h-4" />
-                        <span>Kiểm tra trạng thái ngay</span>
-                      </>
+                  <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+                    {!isPaid && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="md"
+                        onClick={handleSandboxTransfer}
+                        disabled={isSimulating || isPaid || !orderCode}
+                        className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold text-emerald-700 bg-emerald-100/70 hover:bg-emerald-200/80 border-emerald-300 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>{isSimulating ? 'Đang chuyển tiền...' : 'Chuyển tiền (Cổng Sandbox)'}</span>
+                      </Button>
                     )}
-                  </Button>
+
+                    <Button
+                      variant="primary"
+                      size="md"
+                      onClick={handleCheckNow}
+                      disabled={isVerifying || isPaid}
+                      className="w-full sm:w-auto px-6 py-2.5 text-xs font-bold flex items-center justify-center gap-2 shadow-sm cursor-pointer whitespace-nowrap"
+                    >
+                      {isVerifying ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span>Đang kiểm tra đối soát...</span>
+                        </>
+                      ) : isPaid ? (
+                        <>
+                          <Check className="w-4 h-4" />
+                          <span>Đã thanh toán thành công</span>
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="w-4 h-4" />
+                          <span>Kiểm tra trạng thái ngay</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
+
+                {/* Thông báo đối soát / chưa thanh toán */}
+                {paymentNotice && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center justify-between gap-2 shadow-xs">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                      <span>{paymentNotice}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentNotice(null)}
+                      className="text-amber-700 hover:text-amber-900 font-bold px-1.5 py-0.5 rounded cursor-pointer"
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="bg-slate-50 border border-slate-200 rounded-2xl p-8 text-center space-y-3">
