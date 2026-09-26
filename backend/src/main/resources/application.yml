@@ -63,7 +63,7 @@ payment:
   momo:
     partner-code: ${MOMO_PARTNER_CODE:MOMO}
     access-key: ${MOMO_ACCESS_KEY:F8BBA842ECF85}
-    secret-key: ${MOMO_SECRET_KEY:K951B6PE1waDMi640xX0huBt3CJyH8V}
+    secret-key: ${MOMO_SECRET_KEY:K951B6PE1waDMi640xX08PD3vg6EkVlz}
     endpoint: ${MOMO_ENDPOINT:https://test-payment.momo.vn/v2/gateway/api/create}
     ipn-url: ${MOMO_IPN_URL:https://excess-marathon-goal.ngrok-free.dev/api/v1/payments/webhook/momo}
     redirect-url: ${MOMO_REDIRECT_URL:http://localhost:5173/customer/my-units}

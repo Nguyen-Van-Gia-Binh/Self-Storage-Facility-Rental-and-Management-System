@@ -829,7 +829,7 @@ export const BookingPage: React.FC = () => {
                     Đơn đặt chỗ ngăn kho {finalUnitNumber} đã tạo thành công
                   </div>
                   <h2 className="text-xl font-bold text-[#0a1614]">
-                    Quét Mã VietQR Chuyển Khoản Nhanh 24/7
+                    {checkoutData?.bin === 'MOMO' ? 'Thanh Toán Qua Cổng MoMo (Sandbox)' : 'Quét Mã VietQR Chuyển Khoản Nhanh 24/7'}
                   </h2>
                 </div>
                 <div className="sm:text-right">
@@ -846,14 +846,14 @@ export const BookingPage: React.FC = () => {
                 <div className="bg-sky-50 border border-sky-200/90 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs text-sky-900 shadow-2xs">
                   <div className="flex items-center gap-2">
                     <Loader2 className="w-4 h-4 text-sky-600 animate-spin shrink-0" />
-                    <span>Hệ thống đang tự động lắng nghe Webhook... (Tự động mở thẻ nhận kho ngay khi bạn chuyển tiền thành công)</span>
+                    <span>Hệ thống đang tự động lắng nghe Webhook... (Tự động mở thẻ nhận kho ngay khi bạn hoàn tất trên MoMo)</span>
                   </div>
                   {checkoutData?.checkoutUrl && (
                     <a
                       href={checkoutData.checkoutUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 font-bold text-sky-700 hover:text-sky-900 underline shrink-0 cursor-pointer"
+                      className="inline-flex items-center gap-1 font-bold text-[#d82d8b] hover:text-[#a01662] underline shrink-0 cursor-pointer"
                     >
                       <span>Mở cổng thanh toán MoMo</span>
                       <ExternalLink className="w-3.5 h-3.5" />
@@ -872,7 +872,7 @@ export const BookingPage: React.FC = () => {
               {paymentStatus === 'FAILED' && (
                 <div className="bg-rose-50 border border-rose-300 rounded-xl p-3.5 flex items-center gap-2.5 text-xs text-rose-900 font-bold shadow-2xs">
                   <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
-                  <span>Giao dịch thanh toán đã bị hủy hoặc thất bại từ phía ngân hàng. Bạn có thể thử lại.</span>
+                  <span>Giao dịch thanh toán đã bị hủy hoặc thất bại từ phía MoMo. Bạn có thể thử lại.</span>
                 </div>
               )}
 
@@ -901,42 +901,59 @@ export const BookingPage: React.FC = () => {
                     </span>
                   </div>
                   <span className="text-xs text-slate-500 mt-2.5 text-center">
-                    Mở ứng dụng ngân hàng bất kỳ để quét mã
+                    {checkoutData?.bin === 'MOMO'
+                      ? 'Quét mã bằng Camera/MoMo hoặc bấm nút mở cổng bên phải'
+                      : 'Mở ứng dụng ngân hàng bất kỳ để quét mã'}
                   </span>
                 </div>
 
                 {/* Account Details */}
                 <div className="space-y-3 text-xs">
                   <div className="bg-[#f2f9f7] p-3 rounded-lg border border-emerald-100">
-                    <span className="text-slate-500 block">Ngân hàng thụ hưởng:</span>
+                    <span className="text-slate-500 block">Kênh thanh toán:</span>
                     <strong className="text-sm text-[#0a1614] font-bold">
-                      MB Bank (Ngân hàng Quân Đội · Napas247)
+                      {checkoutData?.bin === 'MOMO'
+                        ? 'Cổng thanh toán & Ví điện tử MoMo (Sandbox)'
+                        : 'MB Bank (Ngân hàng Quân Đội · Napas247)'}
                     </strong>
                   </div>
 
-                  <div className="bg-[#f2f9f7] p-3 rounded-lg border border-emerald-100 flex items-center justify-between">
-                    <div>
-                      <span className="text-slate-500 block">Số tài khoản định danh:</span>
-                      <strong className="text-sm text-[#0a1614] font-bold tracking-wider font-mono">
-                        {checkoutData?.accountNumber || '0888 567 999'}
+                  {checkoutData?.bin === 'MOMO' ? (
+                    <div className="bg-[#fdf2f8] p-3 rounded-lg border border-pink-100 flex items-center justify-between">
+                      <div>
+                        <span className="text-pink-600 block font-semibold">Tài khoản nhận:</span>
+                        <strong className="text-sm text-pink-950 font-bold tracking-wider font-mono">
+                          {checkoutData?.accountName || 'SMARTSTORAGE (MOMO SANDBOX)'}
+                        </strong>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-[#f2f9f7] p-3 rounded-lg border border-emerald-100 flex items-center justify-between">
+                      <div>
+                        <span className="text-slate-500 block">Số tài khoản định danh:</span>
+                        <strong className="text-sm text-[#0a1614] font-bold tracking-wider font-mono">
+                          {checkoutData?.accountNumber || '0888 567 999'}
+                        </strong>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(checkoutData?.accountNumber || '0888567999')}
+                        className="p-1.5 text-slate-400 hover:text-brand-600 rounded cursor-pointer"
+                        title="Sao chép số tài khoản"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+
+                  {checkoutData?.bin !== 'MOMO' && (
+                    <div className="bg-[#f2f9f7] p-3 rounded-lg border border-emerald-100">
+                      <span className="text-slate-500 block">Chủ tài khoản:</span>
+                      <strong className="text-sm text-[#0a1614] font-bold uppercase">
+                        {checkoutData?.accountName || 'CONG TY CP SMARTSTORAGE VIET NAM'}
                       </strong>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleCopy(checkoutData?.accountNumber || '0888567999')}
-                      className="p-1.5 text-slate-400 hover:text-brand-600 rounded cursor-pointer"
-                      title="Sao chép số tài khoản"
-                    >
-                      <Copy className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <div className="bg-[#f2f9f7] p-3 rounded-lg border border-emerald-100">
-                    <span className="text-slate-500 block">Chủ tài khoản:</span>
-                    <strong className="text-sm text-[#0a1614] font-bold uppercase">
-                      {checkoutData?.accountName || 'CONG TY CP SMARTSTORAGE VIET NAM'}
-                    </strong>
-                  </div>
+                  )}
 
                   <div className="bg-emerald-50/80 p-3 rounded-lg border border-emerald-200/80 flex items-center justify-between">
                     <div>
@@ -946,6 +963,18 @@ export const BookingPage: React.FC = () => {
                       </strong>
                     </div>
                   </div>
+
+                  {checkoutData?.checkoutUrl && (
+                    <a
+                      href={checkoutData.checkoutUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full inline-flex items-center justify-center gap-2 bg-[#d82d8b] hover:bg-[#b01e6e] text-white font-bold py-2.5 px-4 rounded-xl shadow-sm transition-colors text-sm cursor-pointer"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      <span>Mở Cổng Thanh Toán MoMo (Sandbox)</span>
+                    </a>
+                  )}
 
                   <div className="bg-amber-50/70 p-3 rounded-lg border border-amber-200/80 flex items-center justify-between">
                     <div>

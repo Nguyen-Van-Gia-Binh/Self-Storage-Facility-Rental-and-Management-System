@@ -36,7 +36,7 @@ public class MomoPaymentGatewayImpl implements PaymentGateway {
     public MomoPaymentGatewayImpl(
             @Value("${payment.momo.partner-code:MOMO}") String partnerCode,
             @Value("${payment.momo.access-key:F8BBA842ECF85}") String accessKey,
-            @Value("${payment.momo.secret-key:K951B6PE1waDMi640xX0huBt3CJyH8V}") String secretKey,
+            @Value("${payment.momo.secret-key:K951B6PE1waDMi640xX08PD3vg6EkVlz}") String secretKey,
             @Value("${payment.momo.endpoint:https://test-payment.momo.vn/v2/gateway/api/create}") String endpoint,
             @Value("${payment.momo.ipn-url:https://excess-marathon-goal.ngrok-free.dev/api/v1/payments/webhook/momo}") String ipnUrl,
             @Value("${payment.momo.redirect-url:http://localhost:5173/customer/my-units}") String redirectUrl,
@@ -105,9 +105,9 @@ public class MomoPaymentGatewayImpl implements PaymentGateway {
                 log.info("MoMo payment created successfully: payUrl={}, qrCodeUrl={}",
                         body.getPayUrl(), body.getQrCodeUrl());
 
-                String qrCode = (body.getQrCodeUrl() != null && !body.getQrCodeUrl().isBlank())
-                        ? body.getQrCodeUrl()
-                        : body.getPayUrl();
+                String qrCode = (body.getPayUrl() != null && !body.getPayUrl().isBlank())
+                        ? body.getPayUrl()
+                        : body.getQrCodeUrl();
 
                 return PaymentCheckoutResult.builder()
                         .orderCode(command.getOrderCode())
