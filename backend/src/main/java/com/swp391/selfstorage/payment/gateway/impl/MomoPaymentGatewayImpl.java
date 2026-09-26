@@ -20,7 +20,6 @@ import com.swp391.selfstorage.payment.gateway.dto.PaymentCheckoutResult;
 import com.swp391.selfstorage.payment.gateway.util.MomoSecurityUtil;
 
 @Component
-@Primary
 public class MomoPaymentGatewayImpl implements PaymentGateway {
 
     private static final Logger log = LoggerFactory.getLogger(MomoPaymentGatewayImpl.class);

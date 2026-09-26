@@ -42,7 +42,6 @@ class SandboxPaymentGatewayTest {
         assertEquals("0888567999", result.getAccountNumber());
         assertEquals("CONG TY CP SMARTSTORAGE VIETNAM", result.getAccountName());
         assertEquals("http://localhost:5173/payment/checkout?orderCode=123456789", result.getCheckoutUrl());
-        assertTrue(result.getQrCode().startsWith("https://img.vietqr.io/image/970422-0888567999-compact2.png"));
-        assertTrue(result.getQrCode().contains("amount=3200000"));
+        assertEquals("http://localhost:5173/payment/checkout?orderCode=123456789", result.getQrCode());
     }
 }

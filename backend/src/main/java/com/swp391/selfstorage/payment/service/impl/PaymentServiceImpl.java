@@ -155,9 +155,9 @@ public class PaymentServiceImpl implements PaymentService {
                 .transactionType(txnType)
                 .amount(amount)
                 .status("PENDING")
-                .paymentMethod("MOMO")
+                .paymentMethod("SANDBOX_VIETQR")
                 .orderCode(orderCode)
-                .providerReference("MOMO-" + orderCode)
+                .providerReference("SBX-" + orderCode)
                 .build();
 
         paymentTransactionRepository.save(payment);

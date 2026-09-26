@@ -347,7 +347,43 @@ export const BookingPage: React.FC = () => {
     return () => clearInterval(interval);
   }, [currentStep]);
 
-  // Polling trạng thái thanh toán từ PayOS qua Backend (SC-03)
+  const [isSimulating, setIsSimulating] = useState<boolean>(false);
+  const [redirectCountdown, setRedirectCountdown] = useState<number>(3);
+
+  // Xử lý mô phỏng chuyển tiền Sandbox trực tiếp
+  const handleSimulateTransfer = async () => {
+    if (!checkoutData?.orderCode) return;
+    setIsSimulating(true);
+    setPaymentNotice(null);
+    try {
+      await customerApi.processSandboxTransfer(checkoutData.orderCode, 'TRANSFER_SUCCESS');
+      setPaymentStatus('SUCCESS');
+      handleConfirmBookingPayment();
+    } catch (err: any) {
+      console.error('Lỗi khi mô phỏng chuyển tiền:', err);
+      setPaymentNotice(err?.message || 'Không thể xác nhận chuyển tiền Sandbox. Vui lòng thử lại!');
+    } finally {
+      setIsSimulating(false);
+    }
+  };
+
+  // Tự động đếm ngược và chuyển tới trang My Units sau khi thanh toán thành công
+  useEffect(() => {
+    if (paymentStatus !== 'SUCCESS') return;
+    const timer = setInterval(() => {
+      setRedirectCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          navigate('/customer/my-units');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [paymentStatus, navigate]);
+
+  // Polling trạng thái thanh toán từ Backend (SC-03)
   useEffect(() => {
     if (currentStep !== 3 || !checkoutData?.orderCode || paymentStatus === 'SUCCESS') return;
 
@@ -366,7 +402,7 @@ export const BookingPage: React.FC = () => {
       } catch (err) {
         // Polling retry quietly
       }
-    }, 2500);
+    }, 2000);
 
     return () => clearInterval(pollInterval);
   }, [currentStep, checkoutData?.orderCode, paymentStatus, handleConfirmBookingPayment]);
@@ -829,7 +865,7 @@ export const BookingPage: React.FC = () => {
                     Đơn đặt chỗ ngăn kho {finalUnitNumber} đã tạo thành công
                   </div>
                   <h2 className="text-xl font-bold text-[#0a1614]">
-                    {checkoutData?.bin === 'MOMO' ? 'Thanh Toán Qua Cổng MoMo (Sandbox)' : 'Quét Mã VietQR Chuyển Khoản Nhanh 24/7'}
+                    Quét Mã VietQR Chuyển Khoản Nhanh 24/7 (Sandbox)
                   </h2>
                 </div>
                 <div className="sm:text-right">
@@ -841,38 +877,58 @@ export const BookingPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Success Banner with Pass Code & PIN */}
+              {paymentStatus === 'SUCCESS' && (
+                <div className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-xl p-4 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 className="w-8 h-8 text-amber-300 flex-shrink-0 animate-bounce" />
+                    <div>
+                      <h3 className="font-extrabold text-base text-white">Thanh Toán Hoàn Tất Thành Công!</h3>
+                      <p className="text-xs text-emerald-100">
+                        Mã nhận kho: <span className="font-mono font-bold text-amber-300 text-sm">{createdPass?.reservationId || createdReservationCode}</span>
+                        {createdPass?.passCode && <span> · Mã thẻ mở kho: <span className="font-mono font-bold text-amber-300 text-sm">{createdPass.passCode}</span></span>}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-emerald-100 font-medium">Chuyển tới Kho trong {redirectCountdown}s...</span>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => navigate('/customer/my-units')}
+                      className="bg-white text-emerald-800 font-bold hover:bg-emerald-50 text-xs shrink-0 cursor-pointer"
+                    >
+                      Vào kho ngay
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* Live Polling Status Alert */}
               {paymentStatus === 'PENDING' && (
                 <div className="bg-sky-50 border border-sky-200/90 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs text-sky-900 shadow-2xs">
                   <div className="flex items-center gap-2">
                     <Loader2 className="w-4 h-4 text-sky-600 animate-spin shrink-0" />
-                    <span>Hệ thống đang tự động lắng nghe Webhook... (Tự động mở thẻ nhận kho ngay khi bạn hoàn tất trên MoMo)</span>
+                    <span>Hệ thống đang tự động lắng nghe Webhook... (Tự động hiển thị mã mở kho ngay khi chuyển tiền xong)</span>
                   </div>
                   {checkoutData?.checkoutUrl && (
                     <a
                       href={checkoutData.checkoutUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 font-bold text-[#d82d8b] hover:text-[#a01662] underline shrink-0 cursor-pointer"
+                      className="inline-flex items-center gap-1 font-bold text-blue-700 hover:text-blue-900 underline shrink-0 cursor-pointer"
                     >
-                      <span>Mở cổng thanh toán MoMo</span>
+                      <span>Mở trang thanh toán tab mới</span>
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>
                   )}
                 </div>
               )}
 
-              {paymentStatus === 'SUCCESS' && (
-                <div className="bg-emerald-50 border border-emerald-300 rounded-xl p-3.5 flex items-center gap-2.5 text-xs text-emerald-900 font-bold shadow-2xs">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                  <span>✓ Đã nhận thanh toán thành công! Hệ thống đang kích hoạt hợp đồng và mở thẻ nhận kho...</span>
-                </div>
-              )}
-
               {paymentStatus === 'FAILED' && (
                 <div className="bg-rose-50 border border-rose-300 rounded-xl p-3.5 flex items-center gap-2.5 text-xs text-rose-900 font-bold shadow-2xs">
                   <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
-                  <span>Giao dịch thanh toán đã bị hủy hoặc thất bại từ phía MoMo. Bạn có thể thử lại.</span>
+                  <span>Giao dịch thanh toán đã bị hủy. Bạn có thể bấm xác nhận lại bên dưới.</span>
                 </div>
               )}
 
@@ -890,70 +946,53 @@ export const BookingPage: React.FC = () => {
                       />
                     ) : (
                       <img
-                        src={`https://img.vietqr.io/image/970415-${checkoutData?.accountNumber || '0888567999'}-compact2.png?amount=${checkoutData?.amount || calculation.totalDueToday}&addInfo=${encodeURIComponent(checkoutData?.description || transferContent)}&accountName=${encodeURIComponent(checkoutData?.accountName || 'SMARTSTORAGE')}`}
+                        src={`https://img.vietqr.io/image/970422-0888567999-compact2.png?amount=${checkoutData?.amount || calculation.totalDueToday}&addInfo=${encodeURIComponent(checkoutData?.description || transferContent)}&accountName=${encodeURIComponent(checkoutData?.accountName || 'SMARTSTORAGE')}`}
                         alt="VietQR Code"
                         className="w-40 h-40 object-contain"
                       />
                     )}
-                    <span className="text-[11px] font-bold text-slate-500 mt-2 flex items-center gap-1">
-                      <QrCode className="w-3.5 h-3.5 text-pink-600" />
-                      MoMo · Cổng thanh toán MoMo
+                    <span className="text-[11px] font-bold text-slate-600 mt-2 flex items-center gap-1">
+                      <QrCode className="w-3.5 h-3.5 text-blue-600" />
+                      VietQR · MB Bank (Sandbox)
                     </span>
                   </div>
                   <span className="text-xs text-slate-500 mt-2.5 text-center">
-                    {checkoutData?.bin === 'MOMO'
-                      ? 'Quét mã bằng Camera/MoMo hoặc bấm nút mở cổng bên phải'
-                      : 'Mở ứng dụng ngân hàng bất kỳ để quét mã'}
+                    Quét mã bằng Camera/Zalo/Điện thoại để chuyển tiền
                   </span>
                 </div>
 
                 {/* Account Details */}
                 <div className="space-y-3 text-xs">
                   <div className="bg-[#f2f9f7] p-3 rounded-lg border border-emerald-100">
-                    <span className="text-slate-500 block">Kênh thanh toán:</span>
+                    <span className="text-slate-500 block">Ngân hàng thụ hưởng:</span>
                     <strong className="text-sm text-[#0a1614] font-bold">
-                      {checkoutData?.bin === 'MOMO'
-                        ? 'Cổng thanh toán & Ví điện tử MoMo (Sandbox)'
-                        : 'MB Bank (Ngân hàng Quân Đội · Napas247)'}
+                      MB Bank (Ngân hàng Quân Đội · Napas247)
                     </strong>
                   </div>
 
-                  {checkoutData?.bin === 'MOMO' ? (
-                    <div className="bg-[#fdf2f8] p-3 rounded-lg border border-pink-100 flex items-center justify-between">
-                      <div>
-                        <span className="text-pink-600 block font-semibold">Tài khoản nhận:</span>
-                        <strong className="text-sm text-pink-950 font-bold tracking-wider font-mono">
-                          {checkoutData?.accountName || 'SMARTSTORAGE (MOMO SANDBOX)'}
-                        </strong>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="bg-[#f2f9f7] p-3 rounded-lg border border-emerald-100 flex items-center justify-between">
-                      <div>
-                        <span className="text-slate-500 block">Số tài khoản định danh:</span>
-                        <strong className="text-sm text-[#0a1614] font-bold tracking-wider font-mono">
-                          {checkoutData?.accountNumber || '0888 567 999'}
-                        </strong>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleCopy(checkoutData?.accountNumber || '0888567999')}
-                        className="p-1.5 text-slate-400 hover:text-brand-600 rounded cursor-pointer"
-                        title="Sao chép số tài khoản"
-                      >
-                        <Copy className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
-
-                  {checkoutData?.bin !== 'MOMO' && (
-                    <div className="bg-[#f2f9f7] p-3 rounded-lg border border-emerald-100">
-                      <span className="text-slate-500 block">Chủ tài khoản:</span>
-                      <strong className="text-sm text-[#0a1614] font-bold uppercase">
-                        {checkoutData?.accountName || 'CONG TY CP SMARTSTORAGE VIET NAM'}
+                  <div className="bg-[#f2f9f7] p-3 rounded-lg border border-emerald-100 flex items-center justify-between">
+                    <div>
+                      <span className="text-slate-500 block">Số tài khoản định danh:</span>
+                      <strong className="text-sm text-[#0a1614] font-bold tracking-wider font-mono">
+                        {checkoutData?.accountNumber || '0888567999'}
                       </strong>
                     </div>
-                  )}
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(checkoutData?.accountNumber || '0888567999')}
+                      className="p-1.5 text-slate-400 hover:text-brand-600 rounded cursor-pointer"
+                      title="Sao chép số tài khoản"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="bg-[#f2f9f7] p-3 rounded-lg border border-emerald-100">
+                    <span className="text-slate-500 block">Chủ tài khoản:</span>
+                    <strong className="text-sm text-[#0a1614] font-bold uppercase">
+                      {checkoutData?.accountName || 'CONG TY CP SMARTSTORAGE VIET NAM'}
+                    </strong>
+                  </div>
 
                   <div className="bg-emerald-50/80 p-3 rounded-lg border border-emerald-200/80 flex items-center justify-between">
                     <div>
@@ -963,18 +1002,6 @@ export const BookingPage: React.FC = () => {
                       </strong>
                     </div>
                   </div>
-
-                  {checkoutData?.checkoutUrl && (
-                    <a
-                      href={checkoutData.checkoutUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full inline-flex items-center justify-center gap-2 bg-[#d82d8b] hover:bg-[#b01e6e] text-white font-bold py-2.5 px-4 rounded-xl shadow-sm transition-colors text-sm cursor-pointer"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                      <span>Mở Cổng Thanh Toán MoMo (Sandbox)</span>
-                    </a>
-                  )}
 
                   <div className="bg-amber-50/70 p-3 rounded-lg border border-amber-200/80 flex items-center justify-between">
                     <div>
@@ -991,6 +1018,35 @@ export const BookingPage: React.FC = () => {
                     >
                       <Copy className="w-4 h-4" />
                     </button>
+                  </div>
+
+                  {/* Nút mô phỏng chuyển tiền Sandbox trực tiếp */}
+                  <div className="pt-1">
+                    <Button
+                      type="button"
+                      variant="primary"
+                      size="lg"
+                      className="w-full py-3 text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                      onClick={handleSimulateTransfer}
+                      disabled={isSimulating || paymentStatus === 'SUCCESS'}
+                    >
+                      {isSimulating ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Đang xử lý chuyển tiền Sandbox...</span>
+                        </>
+                      ) : paymentStatus === 'SUCCESS' ? (
+                        <>
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>Đã Chuyển Tiền Thành Công</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>Xác Nhận Đã Chuyển Tiền (Mô Phỏng Sandbox)</span>
+                        </>
+                      )}
+                    </Button>
                   </div>
 
                   {copiedBankInfo && (

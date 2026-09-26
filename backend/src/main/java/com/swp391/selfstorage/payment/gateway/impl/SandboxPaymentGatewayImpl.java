@@ -3,6 +3,7 @@ package com.swp391.selfstorage.payment.gateway.impl;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
+import org.springframework.context.annotation.Primary;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -11,6 +12,7 @@ import com.swp391.selfstorage.payment.gateway.dto.PaymentCheckoutCommand;
 import com.swp391.selfstorage.payment.gateway.dto.PaymentCheckoutResult;
 
 @Component
+@Primary
 public class SandboxPaymentGatewayImpl implements PaymentGateway {
 
     private final String accountName;
@@ -34,18 +36,12 @@ public class SandboxPaymentGatewayImpl implements PaymentGateway {
 
     @Override
     public PaymentCheckoutResult createPayment(PaymentCheckoutCommand command) {
-        String encodedDesc = URLEncoder.encode(command.getDescription(), StandardCharsets.UTF_8);
-        String encodedName = URLEncoder.encode(accountName, StandardCharsets.UTF_8);
-
-        // Sinh mã VietQR Napas247 Quicklink chuẩn liên ngân hàng
-        String qrCode = String.format(
-                "https://img.vietqr.io/image/%s-%s-compact2.png?amount=%d&addInfo=%s&accountName=%s",
-                bin, accountNumber, command.getAmount(), encodedDesc, encodedName);
+        String checkoutLink = checkoutUrl + "?orderCode=" + command.getOrderCode();
 
         return PaymentCheckoutResult.builder()
                 .orderCode(command.getOrderCode())
-                .checkoutUrl(checkoutUrl + "?orderCode=" + command.getOrderCode())
-                .qrCode(qrCode)
+                .checkoutUrl(checkoutLink)
+                .qrCode(checkoutLink)
                 .amount(command.getAmount())
                 .description(command.getDescription())
                 .accountName(accountName)

@@ -191,7 +191,7 @@ class PaymentServiceTest {
         PaymentTransaction savedTxn = txnCaptor.getValue();
         assertEquals(100L, savedTxn.getReservationId());
         assertEquals("PENDING", savedTxn.getStatus());
-        assertEquals("MOMO", savedTxn.getPaymentMethod());
+        assertEquals("SANDBOX_VIETQR", savedTxn.getPaymentMethod());
         assertEquals(resp.getOrderCode(), savedTxn.getOrderCode());
     }
 
