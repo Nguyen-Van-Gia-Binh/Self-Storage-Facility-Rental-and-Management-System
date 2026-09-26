@@ -155,9 +155,9 @@ public class PaymentServiceImpl implements PaymentService {
                 .transactionType(txnType)
                 .amount(amount)
                 .status("PENDING")
-                .paymentMethod("SANDBOX_VIETQR")
+                .paymentMethod("MOMO")
                 .orderCode(orderCode)
-                .providerReference("SBX-" + orderCode)
+                .providerReference("MOMO-" + orderCode)
                 .build();
 
         paymentTransactionRepository.save(payment);
@@ -173,6 +173,61 @@ public class PaymentServiceImpl implements PaymentService {
                 .bin(checkoutResult.getBin())
                 .status("PENDING")
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public PaymentResponse processMomoIpn(com.swp391.selfstorage.payment.dto.MomoIpnRequest ipn) {
+        log.info("Processing MoMo IPN: orderId={}, amount={}, resultCode={}, transId={}",
+                ipn.getOrderId(), ipn.getAmount(), ipn.getResultCode(), ipn.getTransId());
+
+        if (ipn.getOrderId() == null) {
+            log.warn("MoMo IPN không có orderId. Bỏ qua.");
+            return PaymentResponse.builder().status("FAILED").build();
+        }
+
+        // Tách số từ orderId (ví dụ "DH60021" -> 60021L)
+        String rawNum = ipn.getOrderId().replaceAll("\\D", "");
+        Long orderCode = rawNum.isEmpty() ? null : Long.parseLong(rawNum);
+
+        PaymentTransaction payment = null;
+        if (orderCode != null) {
+            payment = paymentTransactionRepository.findByOrderCode(orderCode).orElse(null);
+        }
+
+        if (payment == null) {
+            log.warn("Không tìm thấy giao dịch với orderId={} (orderCode={})", ipn.getOrderId(), orderCode);
+            return PaymentResponse.builder().status("FAILED").build();
+        }
+
+        if ("SUCCESS".equalsIgnoreCase(payment.getStatus())) {
+            log.info("Giao dịch orderCode={} đã ở trạng thái SUCCESS, bỏ qua xử lý lặp", orderCode);
+            return paymentMapper.toResponse(payment);
+        }
+
+        if (ipn.getResultCode() != null && ipn.getResultCode() == 0) {
+            payment.setStatus("SUCCESS");
+            payment.setProviderReference("MOMO-" + ipn.getTransId());
+            payment = paymentTransactionRepository.save(payment);
+
+            if (payment.getReservationId() != null) {
+                reservationService.confirmAfterPayment(payment.getReservationId());
+                eventPublisher.publishEvent(new PaymentCompletedEvent(payment.getReservationId(), payment.getId()));
+            } else if (payment.getContractId() != null
+                    && "CONTRACT_RENEWAL".equalsIgnoreCase(payment.getTransactionType())) {
+                int months = 1;
+                eventPublisher.publishEvent(new com.swp391.selfstorage.payment.event.ContractRenewalPaymentCompletedEvent(
+                        payment.getContractId(), payment.getId(), months, payment.getAmount()));
+            } else if ("SETTLEMENT".equalsIgnoreCase(payment.getTransactionType())) {
+                log.info("Thanh toán quyết toán thu nợ MoMo thành công cho contractId={}, transactionId={}",
+                        payment.getContractId(), payment.getId());
+            }
+        } else {
+            payment.setStatus("FAILED");
+            payment = paymentTransactionRepository.save(payment);
+        }
+
+        return paymentMapper.toResponse(payment);
     }
 
     @Override

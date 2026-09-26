@@ -48,7 +48,6 @@ export const RenewalPage: React.FC = () => {
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [isPaidSuccess, setIsPaidSuccess] = useState<boolean>(false);
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
-  const [isSimulating, setIsSimulating] = useState<boolean>(false);
   const [paymentNotice, setPaymentNotice] = useState<string | null>(null);
   const [renewalQuote, setRenewalQuote] = useState<RenewalQuote | null>(null);
   const [loadingQuote, setLoadingQuote] = useState<boolean>(false);
@@ -221,34 +220,13 @@ export const RenewalPage: React.FC = () => {
         setIsPaidSuccess(true);
         await executeRenewalActivation();
       } else {
-        setPaymentNotice('Hệ thống chưa ghi nhận tiền chuyển khoản. Vui lòng hoàn tất chuyển tiền trước khi xác nhận!');
+        setPaymentNotice('Hệ thống chưa ghi nhận thanh toán từ MoMo. Vui lòng hoàn tất thanh toán trước khi xác nhận!');
       }
     } catch (err) {
       console.error('Lỗi kiểm tra đối soát thanh toán gia hạn:', err);
       setPaymentNotice('Không thể kiểm tra đối soát thanh toán lúc này. Vui lòng thử lại sau.');
     } finally {
       setIsVerifying(false);
-    }
-  };
-
-  // Chuyển tiền qua Cổng Sandbox nội bộ
-  const handleSandboxTransfer = async () => {
-    if (!payosCheckout?.orderCode || isPaidSuccess || isSimulating) return;
-    setIsSimulating(true);
-    setPaymentNotice(null);
-    try {
-      await customerApi.processSandboxTransfer(payosCheckout.orderCode, 'TRANSFER_SUCCESS');
-      const statusRes = await customerApi.getPaymentStatus(payosCheckout.orderCode);
-      if (statusRes.status === 'SUCCESS') {
-        setIsPaidSuccess(true);
-        await executeRenewalActivation();
-      }
-    } catch (err: unknown) {
-      console.error('Lỗi chuyển tiền qua Cổng Sandbox:', err);
-      const msg = err instanceof Error ? err.message : 'Lỗi kết nối';
-      setPaymentNotice('Lỗi chuyển tiền qua Cổng Sandbox: ' + msg);
-    } finally {
-      setIsSimulating(false);
     }
   };
 
@@ -852,9 +830,9 @@ export const RenewalPage: React.FC = () => {
                         href={payosCheckout.checkoutUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700 underline"
+                        className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-pink-600 hover:text-pink-700 underline"
                       >
-                        <span>Mở trang thanh toán VietQR</span>
+                        <span>Mở cổng thanh toán MoMo</span>
                         <ExternalLink className="w-3.5 h-3.5" />
                       </a>
                     )}
@@ -954,25 +932,11 @@ export const RenewalPage: React.FC = () => {
                     Quay lại xem bảng kê
                   </Button>
 
-                  <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full sm:w-auto">
-                    {!isPaidSuccess && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="md"
-                        onClick={handleSandboxTransfer}
-                        disabled={isSimulating || isVerifying || isProcessing || !payosCheckout?.orderCode}
-                        className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100/80 border-emerald-300 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
-                      >
-                        <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>{isSimulating ? 'Đang gửi chuyển tiền...' : 'Chuyển tiền (Cổng Sandbox)'}</span>
-                      </Button>
-                    )}
-
+                  <div className="flex items-center gap-3 w-full sm:w-auto">
                     <Button
                       variant="primary"
                       size="md"
-                      disabled={isProcessing || isVerifying || isSimulating || isPaidSuccess}
+                      disabled={isProcessing || isVerifying || isPaidSuccess}
                       onClick={handleCheckPaymentAndRenew}
                       className="w-full sm:w-auto px-6 py-2.5 flex items-center justify-center gap-2 cursor-pointer shadow-sm text-xs font-bold whitespace-nowrap"
                     >

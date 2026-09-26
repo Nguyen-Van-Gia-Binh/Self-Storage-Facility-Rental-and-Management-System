@@ -204,7 +204,6 @@ export const BookingPage: React.FC = () => {
   // Payment States (SC-03)
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
-  const [isSimulating, setIsSimulating] = useState<boolean>(false);
   const [paymentNotice, setPaymentNotice] = useState<string | null>(null);
   const [checkoutData, setCheckoutData] = useState<CheckoutResponse | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<'PENDING' | 'SUCCESS' | 'FAILED'>('PENDING');
@@ -327,34 +326,13 @@ export const BookingPage: React.FC = () => {
         handleConfirmBookingPayment();
       } else {
         // Chưa thanh toán thành công (BR-ACC-01): Tuyệt đối không sinh pass
-        setPaymentNotice('Hệ thống chưa ghi nhận tiền chuyển khoản. Vui lòng hoàn tất chuyển khoản trước khi nhận thẻ kho!');
+        setPaymentNotice('Hệ thống chưa ghi nhận thanh toán từ MoMo. Vui lòng hoàn tất thanh toán trên MoMo trước khi nhận vé!');
       }
     } catch (err) {
       console.error('Lỗi kiểm tra đối soát thanh toán:', err);
       setPaymentNotice('Lỗi kiểm tra trạng thái thanh toán. Vui lòng thử lại sau.');
     } finally {
       setIsVerifying(false);
-    }
-  };
-
-  // Chuyển tiền qua Cổng Sandbox nội bộ
-  const handleSandboxTransfer = async () => {
-    if (!checkoutData?.orderCode || paymentStatus === 'SUCCESS' || isSimulating) return;
-    setIsSimulating(true);
-    setPaymentNotice(null);
-    try {
-      await customerApi.processSandboxTransfer(checkoutData.orderCode, 'TRANSFER_SUCCESS');
-      const res = await customerApi.getPaymentStatus(checkoutData.orderCode);
-      if (res && res.status === 'SUCCESS') {
-        setPaymentStatus('SUCCESS');
-        handleConfirmBookingPayment();
-      }
-    } catch (err: unknown) {
-      console.error('Lỗi chuyển tiền qua Cổng Sandbox:', err);
-      const msg = err instanceof Error ? err.message : 'Lỗi kết nối';
-      setPaymentNotice('Lỗi chuyển tiền qua Cổng Sandbox: ' + msg);
-    } finally {
-      setIsSimulating(false);
     }
   };
 
@@ -877,7 +855,7 @@ export const BookingPage: React.FC = () => {
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 font-bold text-sky-700 hover:text-sky-900 underline shrink-0 cursor-pointer"
                     >
-                      <span>Mở cổng PayOS</span>
+                      <span>Mở cổng thanh toán MoMo</span>
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>
                   )}
@@ -918,8 +896,8 @@ export const BookingPage: React.FC = () => {
                       />
                     )}
                     <span className="text-[11px] font-bold text-slate-500 mt-2 flex items-center gap-1">
-                      <QrCode className="w-3.5 h-3.5 text-brand-600" />
-                      VietQR · Napas247 PayOS
+                      <QrCode className="w-3.5 h-3.5 text-pink-600" />
+                      MoMo · Cổng thanh toán MoMo
                     </span>
                   </div>
                   <span className="text-xs text-slate-500 mt-2.5 text-center">
@@ -1033,26 +1011,12 @@ export const BookingPage: React.FC = () => {
                   Sửa lại thông tin
                 </Button>
 
-                <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full sm:w-auto">
-                  {paymentStatus !== 'SUCCESS' && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="md"
-                      onClick={handleSandboxTransfer}
-                      disabled={isSimulating || isVerifying || !checkoutData?.orderCode}
-                      className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100/80 border-emerald-300 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>{isSimulating ? 'Đang gửi chuyển tiền...' : 'Chuyển tiền (Cổng Sandbox)'}</span>
-                    </Button>
-                  )}
-
+                <div className="flex items-center gap-3 w-full sm:w-auto">
                   <Button
                     variant="primary"
                     size="md"
                     onClick={handleCheckPaymentStatus}
-                    disabled={isVerifying || isSimulating || paymentStatus === 'SUCCESS'}
+                    disabled={isVerifying || paymentStatus === 'SUCCESS'}
                     className="w-full sm:w-auto px-6 py-2.5 flex items-center justify-center gap-2 cursor-pointer shadow-sm text-xs font-bold whitespace-nowrap"
                   >
                     {isVerifying ? (

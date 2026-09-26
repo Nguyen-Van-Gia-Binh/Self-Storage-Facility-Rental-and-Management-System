@@ -48,7 +48,7 @@ google:
 jwt:
   # Secret key tối thiểu 256-bit (32 bytes) cho HS256
   secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-  access-token-expiration-ms: 900000     # 15 phút (15 * 60 * 1000)
+  access-token-expiration-ms: 900000 # 15 phút (15 * 60 * 1000)
   refresh-token-expiration-ms: 604800000 # 7 ngày (7 * 24 * 60 * 60 * 1000)
 
 # Swagger UI / OpenAPI docs
@@ -58,14 +58,12 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
-# Cổng thanh toán Sandbox nội bộ (SmartStorage Integrated Payment Gateway) - SC-03
+# Cổng thanh toán MoMo Sandbox (SC-03)
 payment:
-  sandbox:
-    account-name: CONG TY CP SMARTSTORAGE VIETNAM
-    account-number: "0888567999"
-    bank-bin: "970422"
-    bank-name: MB Bank (Ngân hàng Quân Đội)
-    checkout-url: ${PAYMENT_CHECKOUT_URL:http://localhost:5173/payment/checkout}
-    return-url: ${PAYMENT_RETURN_URL:http://localhost:5173/payment/success}
-    cancel-url: ${PAYMENT_CANCEL_URL:http://localhost:5173/payment/cancel}
-
+  momo:
+    partner-code: ${MOMO_PARTNER_CODE:MOMO}
+    access-key: ${MOMO_ACCESS_KEY:F8BBA842ECF85}
+    secret-key: ${MOMO_SECRET_KEY:K951B6PE1waDMi640xX0huBt3CJyH8V}
+    endpoint: ${MOMO_ENDPOINT:https://test-payment.momo.vn/v2/gateway/api/create}
+    ipn-url: ${MOMO_IPN_URL:https://excess-marathon-goal.ngrok-free.dev/api/v1/payments/webhook/momo}
+    redirect-url: ${MOMO_REDIRECT_URL:http://localhost:5173/customer/my-units}

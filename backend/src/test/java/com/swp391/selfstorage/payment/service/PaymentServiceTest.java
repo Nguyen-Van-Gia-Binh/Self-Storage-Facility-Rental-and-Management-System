@@ -191,7 +191,7 @@ class PaymentServiceTest {
         PaymentTransaction savedTxn = txnCaptor.getValue();
         assertEquals(100L, savedTxn.getReservationId());
         assertEquals("PENDING", savedTxn.getStatus());
-        assertEquals("SANDBOX_VIETQR", savedTxn.getPaymentMethod());
+        assertEquals("MOMO", savedTxn.getPaymentMethod());
         assertEquals(resp.getOrderCode(), savedTxn.getOrderCode());
     }
 
@@ -342,6 +342,41 @@ class PaymentServiceTest {
         assertNotNull(response);
         assertEquals("SUCCESS", response.getStatus());
         verify(reservationService).confirmAfterPayment(100L);
+        verify(eventPublisher).publishEvent(any(PaymentCompletedEvent.class));
+    }
+
+    @Test
+    @DisplayName("processMomoIpn: Xử lý IPN từ MoMo thành công (resultCode=0)")
+    void processMomoIpn_Success() {
+        PaymentTransaction pendingTxn = PaymentTransaction.builder()
+                .id(51L)
+                .reservationId(101L)
+                .orderCode(987654321L)
+                .amount(3_200_000L)
+                .status("PENDING")
+                .transactionType("INITIAL_PAYMENT")
+                .build();
+
+        when(paymentTransactionRepository.findByOrderCode(987654321L)).thenReturn(Optional.of(pendingTxn));
+        when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(i -> i.getArgument(0));
+
+        com.swp391.selfstorage.payment.dto.MomoIpnRequest ipn = com.swp391.selfstorage.payment.dto.MomoIpnRequest.builder()
+                .partnerCode("MOMO")
+                .orderId("DH987654321")
+                .requestId("REQ987654321")
+                .amount(3_200_000L)
+                .orderInfo("Thanh toan don dat cho")
+                .transId(1234567890L)
+                .resultCode(0)
+                .message("Successful.")
+                .responseTime(System.currentTimeMillis())
+                .build();
+
+        PaymentResponse response = paymentService.processMomoIpn(ipn);
+
+        assertNotNull(response);
+        assertEquals("SUCCESS", response.getStatus());
+        verify(reservationService).confirmAfterPayment(101L);
         verify(eventPublisher).publishEvent(any(PaymentCompletedEvent.class));
     }
 }

@@ -55,8 +55,16 @@ public class PaymentController {
         return ResponseEntity.ok(paymentService.processSandboxTransfer(request.getOrderCode(), request.getAction()));
     }
 
+    @PostMapping("/webhook/momo")
+    @Operation(summary = "IPN Webhook tiếp nhận thông báo thanh toán tự động từ MoMo Sandbox")
+    public ResponseEntity<java.util.Map<String, Object>> handleMomoIpn(
+            @RequestBody com.swp391.selfstorage.payment.dto.MomoIpnRequest ipnRequest) {
+        paymentService.processMomoIpn(ipnRequest);
+        return ResponseEntity.ok(java.util.Map.of("resultCode", 0, "message", "Acknowledge"));
+    }
+
     @PostMapping("/webhook/payos")
-    @Operation(summary = "Webhook tiếp nhận thông báo thanh toán tự động từ cổng PayOS")
+    @Operation(summary = "Webhook tiếp nhận thông báo thanh toán tự động từ cổng PayOS / Sandbox")
     public ResponseEntity<java.util.Map<String, Object>> handlePayOSWebhook(@RequestBody Object webhookBody) {
         paymentService.processPayOSWebhook(webhookBody);
         return ResponseEntity.ok(java.util.Map.of("error", 0, "message", "Success"));

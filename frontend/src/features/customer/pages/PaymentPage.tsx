@@ -24,7 +24,6 @@ import {
   createCheckout,
   pollPaymentStatus,
   generateMoveInPass,
-  processSandboxTransfer,
   type CheckoutResult,
 } from '@/api/payment';
 import { DigitalMoveInPassModal } from '../components/DigitalMoveInPassModal';
@@ -58,7 +57,6 @@ export const PaymentPage: React.FC = () => {
   const [selectedMethod, setSelectedMethod] = useState<'VIETQR' | 'CARD'>('VIETQR');
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
-  const [isSimulating, setIsSimulating] = useState(false);
   const [paymentNotice, setPaymentNotice] = useState<string | null>(null);
   const [orderCode, setOrderCode] = useState<number | null>(null);
   const [checkoutData, setCheckoutData] = useState<CheckoutResult | null>(null);
@@ -216,48 +214,12 @@ export const PaymentPage: React.FC = () => {
       } else {
         // Chưa thanh toán thành công (BR-ACC-01): Tuyệt đối không sinh pass hoặc mở modal
         setIsVerifying(false);
-        setPaymentNotice('Hệ thống chưa ghi nhận tiền chuyển khoản. Vui lòng hoàn tất chuyển khoản trước khi kiểm tra!');
+        setPaymentNotice('Hệ thống chưa ghi nhận thanh toán từ MoMo. Vui lòng hoàn tất thanh toán trước khi kiểm tra!');
       }
     } catch (err) {
       console.error('Lỗi kiểm tra đối soát thanh toán:', err);
       setIsVerifying(false);
       setPaymentNotice('Lỗi kiểm tra trạng thái thanh toán. Vui lòng thử lại sau.');
-    }
-  };
-
-  const handleSandboxTransfer = async () => {
-    if (!orderCode || isPaid || isSimulating) return;
-    setIsSimulating(true);
-    setPaymentNotice(null);
-    try {
-      await processSandboxTransfer(orderCode, 'TRANSFER_SUCCESS');
-      const res = await pollPaymentStatus(orderCode);
-      if (res.status === 'PAID' || res.status === 'SUCCESS') {
-        setIsPaid(true);
-        const pass = generateMoveInPass({
-          reservationId: `RES-${orderCode}`,
-          unitNumber,
-          facilityId: 'FAC-D7-01',
-          facilityName,
-          facilityAddress,
-          facilityPhone,
-          customerName,
-          customerPhone,
-          customerIdentity: customerIdCard,
-          startDate,
-          checkInWindow: 'Trong vòng 48 giờ kể từ lúc cọc',
-          totalPaid: totalAmount,
-        });
-
-        setCreatedPass(pass);
-        setShowPassModal(true);
-      }
-    } catch (err: unknown) {
-      console.error('Lỗi chuyển tiền qua Cổng Sandbox:', err);
-      const msg = err instanceof Error ? err.message : 'Lỗi kết nối';
-      setPaymentNotice('Lỗi thực hiện chuyển tiền qua Cổng Sandbox: ' + msg);
-    } finally {
-      setIsSimulating(false);
     }
   };
 
@@ -504,19 +466,17 @@ export const PaymentPage: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
-                    {!isPaid && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="md"
-                        onClick={handleSandboxTransfer}
-                        disabled={isSimulating || isPaid || !orderCode}
-                        className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold text-emerald-700 bg-emerald-100/70 hover:bg-emerald-200/80 border-emerald-300 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    {checkoutData?.checkoutUrl && !isPaid && (
+                      <a
+                        href={checkoutData.checkoutUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-pink-700 bg-pink-50 hover:bg-pink-100 border border-pink-200 px-3.5 py-2.5 rounded-lg transition-colors"
                       >
-                        <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>{isSimulating ? 'Đang chuyển tiền...' : 'Chuyển tiền (Cổng Sandbox)'}</span>
-                      </Button>
+                        <span>Mở cổng thanh toán MoMo</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
                     )}
 
                     <Button

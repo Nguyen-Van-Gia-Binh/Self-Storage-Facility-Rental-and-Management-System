@@ -18,7 +18,6 @@ import {
   createCheckout,
   pollPaymentStatus,
   generateMoveInPass,
-  processSandboxTransfer,
   type CheckoutResult,
 } from '@/api/payment';
 import type { MoveInPassData } from '@/types';
@@ -67,7 +66,6 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
   const [selectedMethod, setSelectedMethod] = useState<'VIETQR' | 'CARD'>('VIETQR');
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
-  const [isSimulating, setIsSimulating] = useState(false);
   const [paymentNotice, setPaymentNotice] = useState<string | null>(null);
   const [isClosing, setIsClosing] = useState(false);
   const [orderCode, setOrderCode] = useState<number | null>(null);
@@ -239,50 +237,12 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
         onPaymentSuccess(pass);
       } else {
         setIsVerifying(false);
-        setPaymentNotice('Hệ thống chưa ghi nhận tiền chuyển khoản cho đơn hàng này. Vui lòng hoàn tất chuyển tiền trước khi nhận Thẻ kho!');
+        setPaymentNotice('Hệ thống chưa ghi nhận thanh toán từ MoMo. Vui lòng hoàn tất thanh toán trước khi nhận Thẻ kho!');
       }
     } catch (err) {
       console.error('Lỗi kiểm tra đối soát thanh toán:', err);
       setIsVerifying(false);
       setPaymentNotice('Lỗi kiểm tra trạng thái thanh toán. Vui lòng thử lại sau.');
-    }
-  };
-
-  // Xác nhận chuyển tiền qua Cổng Sandbox nội bộ
-  const handleSandboxTransfer = async () => {
-    if (!orderCode) return;
-    setIsSimulating(true);
-    setPaymentNotice(null);
-    try {
-      await processSandboxTransfer(orderCode, 'TRANSFER_SUCCESS');
-      const res = await pollPaymentStatus(orderCode);
-      if (res.status === 'PAID' || res.status === 'SUCCESS') {
-        setIsPaid(true);
-        const pass = generateMoveInPass({
-          reservationId: `RES-${orderCode}`,
-          unitNumber,
-          facilityId: 'FAC-D7-01',
-          facilityName,
-          facilityAddress,
-          facilityPhone,
-          customerName: customerName || 'Quý khách hàng',
-          customerPhone: customerPhone || '0901234567',
-          customerIdentity: customerIdCard || '079199001234',
-          startDate: startDate || new Date().toISOString().split('T')[0],
-          checkInWindow: 'Trong vòng 48 giờ kể từ lúc cọc',
-          totalPaid: totalAmount,
-        });
-
-        setTimeout(() => {
-          handleClose();
-          onPaymentSuccess(pass);
-        }, 800);
-      }
-    } catch (err) {
-      console.error('Lỗi thực hiện chuyển tiền qua Cổng Sandbox:', err);
-      setPaymentNotice('Lỗi thực hiện chuyển tiền: ' + (err as Error).message);
-    } finally {
-      setIsSimulating(false);
     }
   };
 
@@ -569,31 +529,30 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
               variant="outline"
               size="md"
               onClick={handleClose}
-              disabled={isVerifying || isSimulating}
+              disabled={isVerifying}
               className="w-full sm:w-1/4 py-2.5 text-xs font-semibold cursor-pointer"
             >
               Đóng
             </Button>
 
-            {!isPaid && (
-              <Button
-                variant="outline"
-                size="md"
-                onClick={handleSandboxTransfer}
-                disabled={isVerifying || isSimulating || !orderCode}
-                className="w-full sm:w-1/2 py-2.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-emerald-300 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+            {checkoutData?.checkoutUrl && !isPaid && (
+              <a
+                href={checkoutData.checkoutUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold text-pink-700 bg-pink-50 hover:bg-pink-100 border border-pink-200 rounded-lg flex items-center justify-center gap-1.5 transition-colors"
               >
-                <Sparkles className="w-4 h-4 text-emerald-600" />
-                <span>{isSimulating ? 'Đang gửi chuyển tiền...' : 'Chuyển tiền (Cổng Sandbox)'}</span>
-              </Button>
+                <span>Mở cổng MoMo</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
             )}
 
             <Button
               variant="primary"
               size="md"
               onClick={handleCheckNow}
-              disabled={isVerifying || isSimulating || isPaid}
-              className={`w-full ${!isPaid ? 'sm:w-1/2' : 'sm:w-3/4'} py-2.5 text-xs font-bold flex items-center justify-center gap-2 shadow-sm cursor-pointer`}
+              disabled={isVerifying || isPaid}
+              className="w-full sm:flex-1 py-2.5 text-xs font-bold flex items-center justify-center gap-2 shadow-sm cursor-pointer"
             >
               {isVerifying ? (
                 <>
