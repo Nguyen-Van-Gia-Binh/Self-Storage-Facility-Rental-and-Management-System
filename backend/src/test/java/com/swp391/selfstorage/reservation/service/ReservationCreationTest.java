@@ -52,7 +52,7 @@ class ReservationCreationTest {
     @Test
     @DisplayName("Tạo đơn đặt chỗ thành công khi ô kho trống (AVAILABLE)")
     void shouldCreateReservationSuccessfully_whenUnitIsAvailable() {
-        when(reservationRepository.existsByStorageUnitIdAndStatusIn(eq(10L), anyList())).thenReturn(false);
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(10L), any(), any(), any())).thenReturn(false);
         when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> {
             Reservation r = inv.getArgument(0);
             r.setId(500L);
@@ -87,17 +87,16 @@ class ReservationCreationTest {
     }
 
     @Test
-    @DisplayName("BR-RES-02 & BR-AVL-04: Ném ngoại lệ UNIT_NOT_AVAILABLE khi ô kho đã được người khác giữ chỗ (PENDING_PAYMENT / CONFIRMED)")
+    @DisplayName("BR-RES-02 & BR-AVL-04: Ném ngoại lệ UNIT_NOT_AVAILABLE khi ô kho đã được người khác giữ chỗ trùng lịch (PENDING_PAYMENT / CONFIRMED)")
     void shouldThrowUnitNotAvailable_whenUnitIsAlreadyTaken() {
-        when(reservationRepository.existsByStorageUnitIdAndStatusIn(
-                eq(10L),
-                eq(List.of(ReservationStatus.PENDING_PAYMENT, ReservationStatus.CONFIRMED))
+        when(reservationRepository.existsOverlappingReservationForUnit(
+                eq(10L), any(), any(), any()
         )).thenReturn(true);
 
         CustomException exception = assertThrows(CustomException.class, () -> service.createReservation(request));
 
         assertEquals(ErrorCode.UNIT_NOT_AVAILABLE, exception.getErrorCode());
-        assertEquals("O kho nay vua duoc khach hang khac giu cho", exception.getMessage());
+        assertEquals("O kho nay da co nguoi khac giu cho trong thoi gian da chon", exception.getMessage());
         verify(reservationRepository, never()).save(any());
     }
 
@@ -118,14 +117,14 @@ class ReservationCreationTest {
         assertNull(response.getStorageUnitId());
         assertEquals("Chua chon o", response.getStorageUnitCode());
         // Không kiểm tra ô kho trùng nếu storageUnitId == null
-        verify(reservationRepository, never()).existsByStorageUnitIdAndStatusIn(any(), any());
+        verify(reservationRepository, never()).existsOverlappingReservationForUnit(any(), any(), any(), any());
         verify(reservationRepository).save(any(Reservation.class));
     }
 
     @Test
     @DisplayName("Tạo thông tin chuyển khoản VietQR Napas247 chính xác theo mã đơn đặt chỗ")
     void shouldGenerateCorrectTransferContentAndVietQrPayload() {
-        when(reservationRepository.existsByStorageUnitIdAndStatusIn(eq(10L), anyList())).thenReturn(false);
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(10L), any(), any(), any())).thenReturn(false);
         when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> {
             Reservation r = inv.getArgument(0);
             r.setId(502L);
@@ -148,7 +147,7 @@ class ReservationCreationTest {
         request.setStartDate(LocalDate.of(2026, 11, 1));
         request.setRentalMonths(6);
 
-        when(reservationRepository.existsByStorageUnitIdAndStatusIn(eq(10L), anyList())).thenReturn(false);
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(10L), any(), any(), any())).thenReturn(false);
         when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> inv.getArgument(0));
 
         ReservationResponse response = service.createReservation(request);

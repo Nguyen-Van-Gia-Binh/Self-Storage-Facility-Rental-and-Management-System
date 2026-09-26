@@ -149,12 +149,6 @@ public class ReservationServiceImpl implements ReservationService {
 
         // 5. Kiem tra Capacity & Tranh xung dot giu cho (BR-RES-02, BR-AVL-01, BR-AVL-03, BR-AVL-04)
         if (request.getStorageUnitId() != null) {
-            if (reservationRepository != null && reservationRepository.existsByStorageUnitIdAndStatusIn(
-                    request.getStorageUnitId(),
-                    List.of(ReservationStatus.PENDING_PAYMENT, ReservationStatus.CONFIRMED))) {
-                throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, "O kho nay vua duoc khach hang khac giu cho");
-            }
-
             if (storageUnitRepository != null) {
                 StorageUnit unit = storageUnitRepository.findById(request.getStorageUnitId()).orElse(null);
                 if (unit != null) {
