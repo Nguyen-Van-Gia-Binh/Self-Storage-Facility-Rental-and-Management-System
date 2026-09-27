@@ -77,7 +77,12 @@ export const MyUnitsPage: React.FC = () => {
     return contracts.filter((contract) => {
       // 1. Lọc theo Tab
       if (activeTab === 'ACTIVE' && contract.status !== 'ACTIVE') return false;
-      if (activeTab === 'PENDING_CHECKIN' && contract.status !== 'PENDING_CHECKIN') return false;
+      if (
+        activeTab === 'PENDING_CHECKIN' &&
+        contract.status !== 'PENDING_CHECKIN' &&
+        (contract.status as string) !== 'PENDING_CHECK_IN'
+      )
+        return false;
       if (activeTab === 'ATTENTION') {
         const isAttention =
           contract.status === 'EXPIRING_SOON' ||
@@ -242,7 +247,11 @@ export const MyUnitsPage: React.FC = () => {
             { id: 'ACTIVE', label: `Đang hoạt động (${contracts.filter((c) => c.status === 'ACTIVE').length})` },
             {
               id: 'PENDING_CHECKIN',
-              label: `Chờ nhận kho (${contracts.filter((c) => c.status === 'PENDING_CHECKIN').length})`,
+              label: `Chờ nhận kho (${
+                contracts.filter(
+                  (c) => c.status === 'PENDING_CHECKIN' || (c.status as string) === 'PENDING_CHECK_IN'
+                ).length
+              })`,
             },
             {
               id: 'ATTENTION',

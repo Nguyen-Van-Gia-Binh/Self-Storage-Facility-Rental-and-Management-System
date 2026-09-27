@@ -22,7 +22,9 @@ export const CustomerRentalsKpiSummary: React.FC<CustomerRentalsKpiSummaryProps>
   // Tính toán các chỉ số thống kê
   const totalCount = contracts.length;
   const activeCount = contracts.filter((c) => c.status === 'ACTIVE').length;
-  const pendingCheckinCount = contracts.filter((c) => c.status === 'PENDING_CHECKIN').length;
+  const pendingCheckinCount = contracts.filter(
+    (c) => c.status === 'PENDING_CHECKIN' || (c.status as string) === 'PENDING_CHECK_IN'
+  ).length;
   const attentionCount = contracts.filter(
     (c) => c.status === 'EXPIRING_SOON' || c.status === 'OVERDUE' || c.status === 'PENDING_RETURN'
   ).length;

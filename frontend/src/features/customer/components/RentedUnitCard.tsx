@@ -69,7 +69,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
       : 0;
 
   const handleOpenModal = () => {
-    if (contract.status === 'PENDING_CHECKIN') {
+    if (contract.status === 'PENDING_CHECKIN' || (contract.status as string) === 'PENDING_CHECK_IN') {
       setShowPassModal(true);
       return;
     }
@@ -96,6 +96,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
       case 'ACTIVE':
         return <Badge variant="available">Đang hoạt động 24/7</Badge>;
       case 'PENDING_CHECKIN':
+      case 'PENDING_CHECK_IN' as any:
         return <Badge variant="reserved">Chờ nhận kho</Badge>;
       case 'EXPIRING_SOON':
         return <Badge variant="warning">Sắp hết hạn</Badge>;
@@ -289,7 +290,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
               </Button>
             </Link>
 
-            {contract.status === 'PENDING_CHECKIN' ? (
+            {contract.status === 'PENDING_CHECKIN' || (contract.status as string) === 'PENDING_CHECK_IN' ? (
               <Button
                 variant="primary"
                 size="sm"
@@ -309,29 +310,21 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                     Ân hạn D+{overdueDays}: Chưa tính phí
                   </span>
                 ) : (
-                  <>
-                    <span
-                      className="text-[11px] font-bold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-300"
-                      title="Từ D+4, phát sinh phí phạt quá hạn 10% tiền cọc mỗi ngày."
+                  <Link
+                    to={`/customer/payment?unitNumber=${contract.unitNumber}&facilityName=${encodeURIComponent(
+                      contract.facilityName
+                    )}&amount=${penaltyFee}&contractId=${contract.id}&paymentType=OVERDUE_PENALTY`}
+                    className="w-full sm:w-auto"
+                  >
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3 text-rose-700 border-rose-300 hover:bg-rose-50 shadow-xs text-xs font-bold"
                     >
-                      Quá hạn D+{overdueDays}: Phạt {formatVND(penaltyFee)}
-                    </span>
-                    <Link
-                      to={`/customer/payment?unitNumber=${contract.unitNumber}&facilityName=${encodeURIComponent(
-                        contract.facilityName
-                      )}&amount=${penaltyFee}&contractId=${contract.id}&paymentType=OVERDUE_PENALTY`}
-                      className="w-full sm:w-auto"
-                    >
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3 text-rose-700 border-rose-300 hover:bg-rose-50 shadow-xs text-xs font-bold"
-                      >
-                        <CreditCard className="w-3.5 h-3.5" />
-                        <span>Đóng nợ phạt ({formatVND(penaltyFee)})</span>
-                      </Button>
-                    </Link>
-                  </>
+                      <CreditCard className="w-3.5 h-3.5" />
+                      <span>Đóng nợ phạt ({formatVND(penaltyFee)})</span>
+                    </Button>
+                  </Link>
                 )}
               </div>
             ) : isCutoffLocked ? (

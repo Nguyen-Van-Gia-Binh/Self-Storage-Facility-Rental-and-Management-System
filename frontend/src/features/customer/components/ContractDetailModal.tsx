@@ -83,6 +83,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
       case 'ACTIVE':
         return <Badge variant="available">Đang hoạt động 24/7</Badge>;
       case 'PENDING_CHECKIN':
+      case 'PENDING_CHECK_IN' as any:
         return <Badge variant="reserved">Chờ đối chiếu CCCD tại quầy</Badge>;
       case 'EXPIRING_SOON':
         return <Badge variant="warning">Sắp hết hạn</Badge>;

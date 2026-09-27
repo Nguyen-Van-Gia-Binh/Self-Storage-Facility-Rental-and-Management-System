@@ -92,26 +92,31 @@ export function mapBackendRentalToContract(item: BackendRentalSummary): RentedCo
   else if (typeName.includes('L')) sizeCategory = 'L';
   else if (typeName.includes('M')) sizeCategory = 'M';
 
-  return {
-    id: String(item.contractId),
-    contractNumber: item.contractCode || `CTR-${item.contractId}`,
-    facilityId: item.facilityId ? String(item.facilityId) : '1',
-    facilityName: item.facilityName || 'SmartStorage Facility',
-    unitId: item.storageUnitId ? String(item.storageUnitId) : (item.storageUnitCode || 'U-101'),
-    unitNumber: item.storageUnitCode || 'U-101',
-    unitTypeName: typeName,
-    sizeCategory,
-    storageType: 'STANDARD',
-    startDate: item.startDate || '',
-    endDate: item.endDateExclusive || '',
-    monthlyRent: item.monthlyPrice || 0,
-    depositHeld: item.depositBalance ?? item.depositAmount ?? 0,
-    accessPin: item.accessCode || undefined,
-    status: (item.status as any) || 'ACTIVE',
-    overdueDays: item.overdueDays || 0,
-    overdueFee: item.overdueFeeAccrued || 0,
-  };
-}
+    let mappedStatus = (item.status as any) || 'ACTIVE';
+    if (mappedStatus === 'PENDING_CHECK_IN') {
+      mappedStatus = 'PENDING_CHECKIN';
+    }
+
+    return {
+      id: String(item.contractId),
+      contractNumber: item.contractCode || `CTR-${item.contractId}`,
+      facilityId: item.facilityId ? String(item.facilityId) : '1',
+      facilityName: item.facilityName || 'SmartStorage Facility',
+      unitId: item.storageUnitId ? String(item.storageUnitId) : (item.storageUnitCode || 'U-101'),
+      unitNumber: item.storageUnitCode || 'U-101',
+      unitTypeName: typeName,
+      sizeCategory,
+      storageType: 'STANDARD',
+      startDate: item.startDate || '',
+      endDate: item.endDateExclusive || '',
+      monthlyRent: item.monthlyPrice || 0,
+      depositHeld: item.depositBalance ?? item.depositAmount ?? 0,
+      accessPin: item.accessCode || undefined,
+      status: mappedStatus,
+      overdueDays: item.overdueDays || 0,
+      overdueFee: item.overdueFeeAccrued || 0,
+    };
+  }
 
 // Danh sách hợp đồng mẫu phong phú với ID số thực tế khớp Database Seed (1, 2, 3...)
 export const initialCustomerContracts: RentedContract[] = [
