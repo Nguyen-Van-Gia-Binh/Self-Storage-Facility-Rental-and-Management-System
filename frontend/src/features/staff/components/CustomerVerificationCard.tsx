@@ -46,11 +46,11 @@ export const CustomerVerificationCard: React.FC<CustomerVerificationCardProps> =
 
       {/* Thông tin đối soát 3 cột */}
       <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4 border-b border-slate-100 bg-slate-50/50 text-xs">
-        {/* Cột 1: Giấy tờ tùy thân & Liên hệ (BR-CHK-01) */}
+        {/* Cột 1: Giấy tờ tùy thân & Liên hệ */}
         <div className="space-y-2 bg-white p-3 rounded-xl border border-slate-200/80">
           <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
             <ShieldCheck className="w-3.5 h-3.5 text-brand-600" />
-            Đối soát danh tính (BR-CHK-01)
+            Đối soát danh tính & CCCD
           </div>
           <div>
             <div className="text-slate-500 text-[11px]">Số CCCD / Hộ chiếu:</div>

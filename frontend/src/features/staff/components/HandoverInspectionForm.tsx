@@ -85,7 +85,7 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
           </div>
           <div>
             <h3 className="font-bold text-base text-slate-900">Biên Bản Nghiệm Thu & Bàn Giao Điện Tử</h3>
-            <p className="text-xs text-slate-500">Quy chuẩn bàn giao cơ sở theo BR-CHK-02 và BR-CHK-03</p>
+            <p className="text-xs text-slate-500">Tiêu chuẩn kiểm định và bàn giao cơ sở lưu trữ</p>
           </div>
         </div>
 
@@ -242,7 +242,7 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
       {/* Khung ký số điện tử (BR-CHK-03) */}
       <div className="space-y-2 pt-2 border-t border-slate-100">
         <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-          3. Chữ ký số xác nhận của khách hàng (BR-CHK-03)
+          3. Chữ ký số xác nhận của khách hàng
         </label>
 
         <SignaturePad onSignatureChange={setSignatureDataUrl} />

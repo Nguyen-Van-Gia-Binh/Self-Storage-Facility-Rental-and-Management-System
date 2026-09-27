@@ -245,7 +245,7 @@ export const CheckInQueueList: React.FC<CheckInQueueListProps> = ({
       {/* Footer hint */}
       <div className="p-3 bg-slate-50 border-t border-slate-200 text-[11px] text-slate-500 flex items-center justify-between">
         <span>* Tra cứu tự động lọc khi gõ</span>
-        <span className="font-semibold text-slate-700">Quy tắc BR-CHK-01</span>
+        <span className="font-semibold text-slate-700">Đối chiếu CCCD gốc</span>
       </div>
     </div>
   );

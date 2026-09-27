@@ -29,6 +29,74 @@ let localMockContracts: CheckInContract[] = JSON.parse(JSON.stringify(mockContra
 let localMockReturnContracts: ReturnContractDetail[] = JSON.parse(JSON.stringify(mockReturnContractsData));
 
 /**
+ * Ánh xạ dữ liệu ContractSummaryResponse từ Backend sang CheckInContract cho UI Staff
+ */
+export function mapBackendSummaryToCheckInContract(item: any): CheckInContract {
+  if (!item) return item;
+
+  // Trích xuất tầng và khu vực từ mã ô kho (ví dụ: Q1-A104 -> Khu A, Tầng 1)
+  const unitCode = item.storageUnitCode || 'U-101';
+  let floor = item.floor || 1;
+  let zone = 'Khu A';
+  const parts = unitCode.split('-');
+  const suffix = parts.length > 1 ? parts[1] : parts[0];
+  if (suffix && suffix.length > 1) {
+    zone = `Khu ${suffix.charAt(0)}`;
+    const floorDigit = parseInt(suffix.charAt(1), 10);
+    if (!isNaN(floorDigit) && floorDigit > 0) {
+      floor = floorDigit;
+    }
+  }
+
+  // Tính toán thời gian hẹn và ngày ân hạn
+  const todayStr = new Date().toISOString().split('T')[0];
+  const startDateStr = item.startDate || todayStr;
+  let appointmentTime = 'Hôm nay (09:00 - 18:00)';
+  if (startDateStr > todayStr) {
+    appointmentTime = `Ngày bắt đầu: ${startDateStr}`;
+  } else if (startDateStr < todayStr) {
+    appointmentTime = `Đang ân hạn nhận kho (từ ${startDateStr})`;
+  }
+
+  // 10 ngày ân hạn theo quy chuẩn
+  const startDayTime = new Date(startDateStr).getTime();
+  const nowDayTime = new Date(todayStr).getTime();
+  const diffDays = Math.floor((nowDayTime - startDayTime) / (1000 * 3600 * 24));
+  const graceDaysRemaining = Math.max(0, 10 - diffDays);
+
+  return {
+    id: item.id,
+    code: item.code || `CTR-${item.id}`,
+    reservationId: item.reservationId || item.id,
+    reservationCode: item.reservationCode || item.code?.replace('CTR', 'RSV') || `RSV-${item.id}`,
+    customerId: item.customerId || 1,
+    customerName: item.customerName || 'Khách hàng',
+    customerPhone: item.customerPhone || '0901234567',
+    customerIdentityNumber: item.customerIdentityNumber || item.identityNumber || '079099007890',
+    facilityId: item.facilityId || 1,
+    facilityName: item.facilityName || 'Cơ sở SmartStorage',
+    storageUnitId: item.storageUnitId || 1,
+    storageUnitCode: unitCode,
+    floor: floor,
+    position: item.position || `${zone} • Tầng ${floor}`,
+    unitTypeId: item.unitTypeId || 1,
+    unitTypeName: item.unitTypeName || 'Kho Tiêu Chuẩn',
+    unitTypeDimensions: item.unitTypeDimensions || '2.0m x 2.0m x 2.5m',
+    startDate: item.startDate || todayStr,
+    endDateExclusive: item.endDateExclusive || '',
+    rentalMonths: item.rentalMonths || 1,
+    monthlyPrice: item.monthlyPrice || 0,
+    totalRentalFee: (item.monthlyPrice || 0) * (item.rentalMonths || 1),
+    depositAmount: item.depositAmount || item.monthlyPrice || 0,
+    totalPayable: item.totalPayable || ((item.monthlyPrice || 0) * (item.rentalMonths || 1) + (item.depositAmount || item.monthlyPrice || 0)),
+    isFullyPaid: true, // Hợp đồng PENDING_CHECK_IN đều đã hoàn tất thanh toán cọc ở Flow 1
+    status: item.status || 'PENDING_CHECK_IN',
+    appointmentTime: appointmentTime,
+    graceDaysRemaining: graceDaysRemaining,
+  };
+}
+
+/**
  * Lấy danh sách hợp đồng chờ Check-in tại quầy
  * Nếu mock mode = true: trả về dữ liệu mẫu trong mock-contracts.json
  * Nếu gọi API thật: gọi GET /contracts?status=PENDING_CHECK_IN
@@ -43,10 +111,11 @@ export async function getPendingContracts(facilityId?: number): Promise<CheckInC
   const query = new URLSearchParams({ status: 'PENDING_CHECK_IN', page: '0', size: '50' });
   if (facilityId) query.set('facilityIds', String(facilityId));
 
-  const res = await apiClient<ApiResponse<PageResponse<CheckInContract>>>(
+  const res = await apiClient<ApiResponse<PageResponse<any>>>(
     `/contracts?${query.toString()}`
   );
-  return res.data?.content ?? [];
+  const rawList = res.data?.content ?? [];
+  return rawList.map(mapBackendSummaryToCheckInContract);
 }
 
 /**
@@ -62,8 +131,8 @@ export async function getContractById(id: number): Promise<CheckInContract> {
   }
 
   try {
-    const res = await apiClient<ApiResponse<CheckInContract>>(`/contracts/${id}`);
-    return res.data;
+    const res = await apiClient<ApiResponse<any>>(`/contracts/${id}`);
+    return mapBackendSummaryToCheckInContract(res.data);
   } catch (error) {
     console.warn(`Lỗi kết nối Backend API /contracts/${id}, fallback mock:`, error);
     const item = localMockContracts.find((c) => c.id === id);
