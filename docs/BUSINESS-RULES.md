@@ -212,7 +212,7 @@ Ngày quá hạn ký hiệu **D+n**, đếm từ ngày liền sau ngày kết th
 | `BR-RET-07` | Khách không dọn đồ và không hoàn tất trả kho đúng ngày kết thúc hợp đồng thì chuyển sang xử lý quá hạn theo § 8 |
 | `BR-RET-08` | Chi phí khắc phục hư hỏng phải có biên bản kiểm tra kèm ảnh chụp do Facility Staff lập, khách ký xác nhận |
 | `BR-RET-09` | Sau khi xác nhận trả kho (`BR-RET-02`), Facility Staff thu hồi chìa khóa cơ (nếu có), vô hiệu hóa Access Code (`UC-F3-07`) (không sử dụng thẻ từ RFID), ô kho chuyển *Cleaning*. Khi dọn xong (`UC-F3-09`): nếu unit còn Reservation *Confirmed* chưa Check-in → *Reserved*; không thì *Available* |
-| `BR-RET-10` | Nếu khách có nhu cầu trả kho chủ động trước hạn, khách gửi yêu cầu hẹn trả kho trên ứng dụng để Staff bố trí ca kiểm tra thực tế |
+| `BR-RET-10` | Khách hàng sau khi dọn sạch đồ đạc và tài sản trong ngăn tủ sẽ thực hiện "Báo trả kho" trên ứng dụng kèm cam kết hiện trạng. Hệ thống chuyển hợp đồng sang *Pending Return* và gửi thông báo đến Facility Manager để điều phối Facility Staff xuống nghiệm thu thực tế tại chỗ (`FS-04`, `FM-04`) |
 | `BR-RET-11` | Contract *Overdue* được phép yêu cầu trả kho trước D+10 để giảm phí phạt. Nợ quá hạn, hư hỏng và phụ phí được cấn trừ cùng Deposit theo `BR-RET-04` |
 | `BR-RET-12` | Khách chỉ được hủy yêu cầu Return trước khi Facility Staff bắt đầu inspection và khi Contract chưa hết hạn |
 
