@@ -65,7 +65,7 @@ export const AccessCodePinModal: React.FC<AccessCodePinModalProps> = ({
           <div className="text-center space-y-2">
             <div className="flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-600">
               <KeyRound className="w-4 h-4 text-brand-600" />
-              Mã PIN Mở Cửa Bảo Mật 24/7 (BR-ACC-01)
+              Mã PIN Mở Cửa Bảo Mật 24/7
             </div>
 
             <div className="relative flex items-center justify-center bg-brand-50/70 border-2 border-brand-300 rounded-2xl p-4 shadow-inner">
@@ -102,7 +102,7 @@ export const AccessCodePinModal: React.FC<AccessCodePinModalProps> = ({
           <div className="space-y-2 p-3 bg-emerald-50/70 rounded-2xl border border-emerald-200 text-xs text-emerald-900">
             <div className="flex items-center gap-2 font-semibold text-emerald-800">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              Hệ thống kích hoạt tự động theo BR-CHK-04 & BR-ACC-02:
+              Hệ thống tự động kích hoạt:
             </div>
             <ul className="list-disc list-inside space-y-1 text-[11px] text-emerald-800 pl-1">
               <li>Ô kho <strong className="font-mono">{contract.storageUnitCode}</strong> đã chuyển từ <em>Reserved</em> sang <em>Occupied</em>.</li>

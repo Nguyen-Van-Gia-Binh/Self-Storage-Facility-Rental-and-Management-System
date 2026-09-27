@@ -16,10 +16,20 @@ import { HandoverInspectionForm } from '../components/HandoverInspectionForm';
 import { AccessCodePinModal } from '../components/AccessCodePinModal';
 import { HandoverRejectionModal } from '../components/HandoverRejectionModal';
 
+const FACILITIES = [
+  { id: 0, name: 'Tất cả cơ sở' },
+  { id: 1, name: 'Cơ sở Quận 1' },
+  { id: 2, name: 'Cơ sở Cầu Giấy' },
+  { id: 3, name: 'Cơ sở Hải Châu' },
+  { id: 4, name: 'Cơ sở Bình Thạnh' },
+  { id: 5, name: 'Cơ sở Hai Bà Trưng' },
+];
+
 export const StaffCheckInPage: React.FC = () => {
   const user = useCurrentUser();
   const staffId = user?.id as number | undefined;
 
+  const [selectedFacilityId, setSelectedFacilityId] = useState<number>(0);
   const [contracts, setContracts] = useState<CheckInContract[]>([]);
   const [selectedContract, setSelectedContract] = useState<CheckInContract | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -38,19 +48,21 @@ export const StaffCheckInPage: React.FC = () => {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  // Tải danh sách hợp đồng chờ check-in
-  const loadContracts = useCallback(async () => {
+  // Tải danh sách hợp đồng chờ check-in theo cơ sở được chọn
+  const loadContracts = useCallback(async (facilityId?: number) => {
     setIsLoading(true);
     try {
-      const data = await getPendingContracts(1); // Mặc định Facility 1: District 7 Flagship
+      const targetFacilityId = facilityId !== undefined ? facilityId : selectedFacilityId;
+      const data = await getPendingContracts(targetFacilityId === 0 ? undefined : targetFacilityId);
       setContracts(data);
       if (data.length > 0) {
-        // Mặc định chọn hợp đồng đầu tiên nếu chưa chọn hoặc id cũ không còn
         setSelectedContract((prev) => {
           if (!prev) return data[0];
           const exists = data.find((c) => c.id === prev.id);
           return exists || data[0];
         });
+      } else {
+        setSelectedContract(null);
       }
     } catch (error) {
       console.error('Lỗi khi tải danh sách check-in:', error);
@@ -58,7 +70,12 @@ export const StaffCheckInPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [selectedFacilityId]);
+
+  const handleFacilityChange = (newFacilityId: number) => {
+    setSelectedFacilityId(newFacilityId);
+    loadContracts(newFacilityId);
+  };
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -165,7 +182,7 @@ export const StaffCheckInPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-brand-700 bg-brand-50 px-2.5 py-0.5 rounded-full border border-brand-200">
-              SCR-FS-01 • Quy Trình Flow 2
+              Check-in & Tiếp Đón
             </span>
             <span className="text-xs text-slate-400">•</span>
             <span className="text-xs text-slate-500 font-medium">Bàn giao & Ký số điện tử</span>
@@ -181,15 +198,25 @@ export const StaffCheckInPage: React.FC = () => {
 
         {/* Thanh công cụ cơ sở & làm mới */}
         <div className="flex items-center gap-2.5">
-          <div className="flex items-center gap-1.5 px-3 py-2 bg-slate-100/80 rounded-xl border border-slate-200 text-xs text-slate-700">
-            <Building2 className="w-4 h-4 text-slate-500" />
-            <span className="text-slate-500">Cơ sở:</span>
-            <span className="font-bold text-slate-900">District 7 Flagship</span>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100/80 rounded-xl border border-slate-200 text-xs text-slate-700">
+            <Building2 className="w-4 h-4 text-slate-500 shrink-0" />
+            <span className="text-slate-500 shrink-0">Cơ sở:</span>
+            <select
+              value={selectedFacilityId}
+              onChange={(e) => handleFacilityChange(Number(e.target.value))}
+              className="bg-transparent font-bold text-slate-900 focus:outline-none cursor-pointer pr-1"
+            >
+              {FACILITIES.map((f) => (
+                <option key={f.id} value={f.id} className="text-slate-900 bg-white">
+                  {f.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <button
             type="button"
-            onClick={loadContracts}
+            onClick={() => loadContracts()}
             disabled={isLoading}
             className="p-2 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl text-slate-600 transition-colors cursor-pointer shadow-xs disabled:opacity-50"
             title="Làm mới danh sách"
@@ -248,7 +275,7 @@ export const StaffCheckInPage: React.FC = () => {
                     LƯỢT BÀN GIAO ĐÃ BỊ HỦY BỎ DO PHÁT SINH SỰ CỐ
                   </h3>
                   <p className="text-xs text-red-800 max-w-md mx-auto leading-relaxed">
-                    Ô kho <strong className="font-mono text-red-950">{selectedContract.storageUnitCode}</strong> đã được chuyển sang trạng thái <strong>MAINTENANCE</strong> (Bảo trì). Lệnh hoàn tiền 100% đã được gửi sang Quản lý cơ sở (FM) để hoàn tất trong 3 ngày làm việc theo quy định <code>BR-CHK-06</code>.
+                    Ô kho <strong className="font-mono text-red-950">{selectedContract.storageUnitCode}</strong> đã được chuyển sang trạng thái <strong>MAINTENANCE</strong> (Bảo trì). Lệnh hoàn tiền 100% đã được gửi sang Quản lý cơ sở (FM) để hoàn tất trong 3 ngày làm việc theo quy định bồi hoàn của cơ sở.
                   </p>
                 </div>
               ) : (

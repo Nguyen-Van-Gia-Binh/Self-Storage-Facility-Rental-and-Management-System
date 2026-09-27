@@ -47,7 +47,7 @@ export const HandoverRejectionModal: React.FC<HandoverRejectionModalProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-base text-white">Báo Cáo Sự Cố & Khóa Bảo Trì</h3>
-              <p className="text-xs text-red-100 font-mono">Modal ngoại lệ SCR-FS-02.1 • Quy tắc BR-CHK-06</p>
+              <p className="text-xs text-red-100 font-medium">Ghi nhận sự cố & Đề xuất hoàn tiền</p>
             </div>
           </div>
 
@@ -123,7 +123,7 @@ export const HandoverRejectionModal: React.FC<HandoverRejectionModalProps> = ({
           <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 space-y-1.5 text-[11px]">
             <div className="font-bold flex items-center gap-1.5 text-amber-800">
               <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0" />
-              Quy trình xử lý tự động theo quy định BR-CHK-06:
+              Quy trình xử lý sự cố cơ sở:
             </div>
             <ul className="space-y-1 pl-4 list-disc text-amber-800/90 leading-relaxed">
               <li>Ô kho <strong className="font-mono">{contract.storageUnitCode}</strong> lập tức chuyển sang trạng thái <strong>MAINTENANCE</strong> (Bảo trì) và bị khóa trên sơ đồ.</li>
