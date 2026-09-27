@@ -12,13 +12,16 @@ import {
   Search,
   X,
   RotateCcw,
+  Clock,
 } from 'lucide-react';
 import { RentedUnitCard } from '../components/RentedUnitCard';
 import { CustomerRentalsKpiSummary } from '../components/CustomerRentalsKpiSummary';
 import { ChangePinModal } from '../components/ChangePinModal';
 import { ScheduleReturnModal } from '../components/ScheduleReturnModal';
 import { ContractDetailModal } from '../components/ContractDetailModal';
+import { EarlyRenewalReminderModal } from '../components/EarlyRenewalReminderModal';
 import { getCustomerContracts } from '@/api/customerRentals';
+import { calculateDaysRemaining } from '../utils/renewalPricing';
 import type { RentedContract } from '../types';
 
 export const MyUnitsPage: React.FC = () => {
@@ -31,6 +34,8 @@ export const MyUnitsPage: React.FC = () => {
   const [selectedPinContract, setSelectedPinContract] = useState<RentedContract | null>(null);
   const [selectedReturnContract, setSelectedReturnContract] = useState<RentedContract | null>(null);
   const [selectedDetailContract, setSelectedDetailContract] = useState<RentedContract | null>(null);
+  const [earlyRenewalContract, setEarlyRenewalContract] = useState<RentedContract | null>(null);
+  const [showEarlyRenewalModal, setShowEarlyRenewalModal] = useState(false);
 
   const loadContracts = useCallback(async () => {
     setLoading(true);
@@ -97,6 +102,34 @@ export const MyUnitsPage: React.FC = () => {
     });
   }, [contracts, activeTab, searchQuery]);
 
+  // Kiểm tra xem có hợp đồng nào đang ở giai đoạn cảnh báo gia hạn sớm (30..37 ngày)
+  const earlyRenewalCandidate = useMemo(() => {
+    return (
+      contracts.find((c) => {
+        if (c.status !== 'ACTIVE') return false;
+        const days = calculateDaysRemaining(c.endDate);
+        return days >= 30 && days <= 37;
+      }) || null
+    );
+  }, [contracts]);
+
+  // Tự động bung Pop-up nếu chưa bị bỏ qua (dismissed) trong phiên duyệt hiện tại
+  useEffect(() => {
+    if (!earlyRenewalCandidate) return;
+    const isDismissed = sessionStorage.getItem(`early_renewal_dismissed_${earlyRenewalCandidate.id}`) === 'true';
+    if (!isDismissed) {
+      setEarlyRenewalContract(earlyRenewalCandidate);
+      setShowEarlyRenewalModal(true);
+    }
+  }, [earlyRenewalCandidate]);
+
+  const handleCloseEarlyRenewalModal = () => {
+    if (earlyRenewalContract) {
+      sessionStorage.setItem(`early_renewal_dismissed_${earlyRenewalContract.id}`, 'true');
+    }
+    setShowEarlyRenewalModal(false);
+  };
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
       {/* Top Banner */}
@@ -137,6 +170,52 @@ export const MyUnitsPage: React.FC = () => {
         activeTab={activeTab}
         onSelectTab={(tab) => setActiveTab(tab)}
       />
+
+      {/* Cảnh báo đề xuất gia hạn sớm trước mốc khóa 30 ngày (BR-REN-01 & BR-REN-02) */}
+      {earlyRenewalCandidate && (
+        <div className="rounded-2xl border border-amber-300 bg-amber-50/90 p-4 sm:p-4.5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3.5">
+            <div className="p-2.5 rounded-xl bg-amber-100 text-amber-700 shrink-0 mt-0.5 sm:mt-0">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 uppercase tracking-wide">
+                  Đề xuất gia hạn giữ chỗ (BR-REN-01)
+                </span>
+                <span className="text-xs font-bold text-amber-950">
+                  Ô kho {earlyRenewalCandidate.unitNumber} · {earlyRenewalCandidate.facilityName}
+                </span>
+              </div>
+              <p className="text-xs text-amber-800 leading-relaxed">
+                Chỉ còn <strong>{calculateDaysRemaining(earlyRenewalCandidate.endDate) - 30} ngày nữa</strong> sẽ chạm mốc khóa gia hạn tự động (trước ngày hết hạn 30 ngày). Gia hạn ngay để đảm bảo giữ nguyên vị trí ô kho và mã PIN mở tủ!
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setEarlyRenewalContract(earlyRenewalCandidate);
+                setShowEarlyRenewalModal(true);
+              }}
+              className="w-full sm:w-auto text-xs font-semibold text-amber-900 border-amber-300 hover:bg-amber-100/60 cursor-pointer"
+            >
+              Chi tiết đề xuất
+            </Button>
+            <Link to={`/customer/renew/${earlyRenewalCandidate.id}`} className="w-full sm:w-auto">
+              <Button
+                variant="primary"
+                size="sm"
+                className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-bold text-xs shadow-xs cursor-pointer"
+              >
+                Gia hạn ngay
+              </Button>
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Filter and Search Bar */}
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 border-b border-slate-200 pb-3">
@@ -307,6 +386,12 @@ export const MyUnitsPage: React.FC = () => {
         isOpen={Boolean(selectedDetailContract)}
         onClose={() => setSelectedDetailContract(null)}
         contract={selectedDetailContract}
+      />
+
+      <EarlyRenewalReminderModal
+        isOpen={showEarlyRenewalModal}
+        onClose={handleCloseEarlyRenewalModal}
+        contract={earlyRenewalContract}
       />
     </div>
   );
