@@ -587,7 +587,7 @@ export const BookingPage: React.FC = () => {
             className="flex items-center gap-1.5 text-brand-600 bg-brand-50 px-2.5 py-1 rounded-full border border-brand-200 hover:bg-brand-100"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>1. Chọn loại & Sơ đồ</span>
+            <span>Chọn loại & Sơ đồ</span>
           </Link>
           <span className="text-slate-300">/</span>
           <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-colors ${
@@ -596,7 +596,7 @@ export const BookingPage: React.FC = () => {
               : 'text-brand-600 bg-brand-50 border-brand-200'
           }`}>
             <span className="w-4 h-4 rounded-full bg-white text-brand-700 text-[10px] flex items-center justify-center font-bold">2</span>
-            <span>2. Hồ sơ đặt chỗ</span>
+            <span>Hồ sơ đặt chỗ</span>
           </div>
           <span className="text-slate-300">/</span>
           <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-colors ${
@@ -607,7 +607,7 @@ export const BookingPage: React.FC = () => {
             <span className={`w-4 h-4 rounded-full text-[10px] flex items-center justify-center font-bold ${
               currentStep === 3 ? 'bg-white text-brand-700' : 'bg-slate-200 text-slate-500'
             }`}>3</span>
-            <span>3. Thanh toán VietQR</span>
+            <span>Thanh toán VietQR</span>
           </div>
         </div>
       </div>

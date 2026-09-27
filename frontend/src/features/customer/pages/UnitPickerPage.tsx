@@ -373,17 +373,17 @@ export const UnitPickerPage: React.FC = () => {
         <div className="flex items-center gap-2 text-xs font-semibold shrink-0">
           <div className="flex items-center gap-1.5 bg-brand-500 text-white px-3 py-1 rounded-full border border-brand-500 shadow-xs">
             <span className="w-4 h-4 rounded-full bg-white text-brand-700 text-[10px] flex items-center justify-center font-bold">1</span>
-            <span>1. Chọn loại & Sơ đồ</span>
+            <span>Chọn loại & Sơ đồ</span>
           </div>
           <span className="text-slate-300">/</span>
           <div className="flex items-center gap-1.5 text-slate-400 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-200">
             <span className="w-4 h-4 rounded-full bg-slate-200 text-slate-500 text-[10px] flex items-center justify-center font-bold">2</span>
-            <span>2. Hồ sơ đặt chỗ</span>
+            <span>Hồ sơ đặt chỗ</span>
           </div>
           <span className="text-slate-300">/</span>
           <div className="flex items-center gap-1.5 text-slate-400 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-200">
             <span className="w-4 h-4 rounded-full bg-slate-200 text-slate-500 text-[10px] flex items-center justify-center font-bold">3</span>
-            <span>3. Thanh toán VietQR</span>
+            <span>Thanh toán VietQR</span>
           </div>
         </div>
       </div>
@@ -469,7 +469,7 @@ export const UnitPickerPage: React.FC = () => {
                     {type.badge === 'POPULAR' && (
                       <Badge 
                         variant="primary"
-                        className="text-[10px] px-1.5 py-0.5"
+                        className="text-[10px] px-2 py-0.5 whitespace-nowrap shrink-0"
                       >
                         Phổ biến nhất
                       </Badge>
