@@ -40,9 +40,6 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({ facility, onViewUnit
               {facility.lowestMonthlyPrice ? formatPrice(facility.lowestMonthlyPrice) : 'Liên hệ'}
             </p>
           </div>
-          {facility.activeUnitTypeCount !== undefined && (
-            <span className="text-xs text-slate-500">{facility.activeUnitTypeCount} loại kho</span>
-          )}
         </div>
       </div>
 
