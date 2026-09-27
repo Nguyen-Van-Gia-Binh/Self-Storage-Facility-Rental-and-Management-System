@@ -178,24 +178,24 @@ Ngày quá hạn ký hiệu **D+n**, đếm từ ngày liền sau ngày kết th
 | Mã | Quy tắc |
 |----|---------|
 | `BR-OVD-01` | Hợp đồng chuyển sang *Overdue* vào **D+1** nếu chưa gia hạn và chưa hoàn tất trả kho (`UC-F6-05`) |
-| `BR-OVD-02` | **D+1 → D+3** là giai đoạn ân hạn `overdue.grace_days`: hệ thống gửi thông báo nhắc dọn đồ mỗi ngày, **chưa** tính phí quá hạn, khách **vẫn** truy cập ô kho bình thường. Nếu khách hoàn tất dọn đồ và nghiệm thu trả kho trong 3 ngày này thì được hoàn trả 100% tiền cọc Deposit theo quy trình Flow 3 |
-| `BR-OVD-03` | Từ **D+4 đến D+10**, phí quá hạn = `overdue.daily_rate` (10%) × tiền cọc **Deposit** × số ngày tính phí. Phí được cộng dồn theo ngày và hệ thống tiếp tục gửi thông báo nhắc dọn đồ hàng ngày |
+| `BR-OVD-02` | **D+1 → D+3** là giai đoạn ân hạn `overdue.grace_days`: hệ thống gửi thông báo nhắc dọn đồ mỗi ngày, **chưa** tính phí quá hạn (phí phạt = 0 VND), khách **vẫn** truy cập ô kho bình thường. Nếu khách hoàn tất dọn đồ và nghiệm thu trả kho trong 3 ngày này thì được hoàn trả 100% tiền cọc Deposit theo quy trình Flow 3. Trên giao diện người dùng, nút **"Báo trả kho"** vẫn được mở để khách hẹn nhân viên nghiệm thu; **không hiển thị nút đóng nợ phạt** do chưa phát sinh nợ |
+| `BR-OVD-03` | Từ **D+4 đến D+10**, phí quá hạn = `overdue.daily_rate` (10%) × tiền cọc **Deposit** × số ngày tính phí. Phí được cộng dồn theo ngày và hệ thống tiếp tục gửi thông báo nhắc dọn đồ hàng ngày. Trên giao diện người dùng, nút **"Báo trả kho" bị khóa/ẩn**, hiển thị nút **"Đóng nợ phạt quá hạn"**; khách bắt buộc phải thanh toán hết nợ phạt quá hạn trước khi được hoàn tất thủ tục trả kho |
 | `BR-OVD-04` | Tổng phí quá hạn của một kỳ không vượt quá trần quy định. Với mức 10%/ngày tính từ D+4 đến D+10 (tổng cộng 7 ngày tính phí = 70% tiền cọc), phí chốt lại tại D+10 và cấn trừ vào Deposit, không tăng thêm |
 | `BR-OVD-05` | Tại **D+10**, scheduled job tự động chuyển Access Code sang *Suspended*. Quyền ra vào ô kho của khách bị khóa hoàn toàn (`UC-F6-07`) |
 | `BR-OVD-06` | Hệ thống gửi **thông báo dọn đồ** tự động mỗi ngày một lần trong suốt 10 ngày quá hạn (`UC-F6-08`) qua email và ứng dụng |
 | `BR-OVD-07` | Tại **D+10**, hợp đồng chính thức chấm dứt do quá hạn (`TERMINATED_OVERDUE`, `UC-F6-11`), Storage Unit chuyển sang trạng thái *Cleaning* hoặc *Maintaining*. Hệ thống tự động tạo nhiệm vụ dọn dẹp cho Facility Staff |
 | `BR-OVD-08` | Trong thời gian từ D+1 đến trước D+10, khách có thể nộp phạt và phí gia hạn để kích hoạt lại hợp đồng. Khi đã qua D+10, hợp đồng đã bị chấm dứt và không thể gia hạn, khách muốn thuê tiếp phải lập hợp đồng mới |
-| `BR-OVD-09` | Khách đang có hợp đồng *Overdue* **không được** tạo Reservation mới tại bất kỳ cơ sở nào trong hệ thống |
+| `BR-OVD-09` | Khách đang có hợp đồng *Overdue* **không được** tạo Reservation mới tại bất kỳ cơ sở nào trong hệ thống. Giao diện người dùng **tuyệt đối không hiển thị** nút thuê ô kho mới trên bất kỳ thẻ hợp đồng quá hạn nào |
 | `BR-OVD-10` | Hệ thống **không hỗ trợ** tính năng đề xuất hoặc phê duyệt miễn/giảm phí quá hạn theo vụ trên phần mềm. Mọi trường hợp ngoại lệ (nếu có) do quản lý cơ sở và ban vận hành tự xử lý ngoại tuyến (offline) |
 | `BR-OVD-11` | **Xử lý tài sản tồn sau D+10:** Facility Staff theo phân công của Facility Manager tiến hành dọn dẹp ô kho, kiểm kê và niêm phong toàn bộ đồ đạc của khách chuyển về kho tổng để Facility Manager tự xử lý thủ công ngoại tuyến (offline). Phần mềm không xây dựng quy trình thanh lý phức tạp (`UC-F6-09`) |
 
 **Tóm tắt mốc thời gian:**
 
-| Mốc | Phí quá hạn | Thông báo | Truy cập ô kho | Trạng thái hợp đồng | Trạng thái ô kho |
-|-----|-------------|-----------|----------------|---------------------|-------------------|
-| D+1 → D+3 | Không (ân hạn, hoàn cọc nếu dọn xong) | Nhắc dọn đồ (hàng ngày) | Bình thường | Overdue (ân hạn) | Occupied |
-| D+4 → D+9 | 10% cọc/ngày, cộng dồn | Nhắc dọn đồ & cảnh báo nợ (hàng ngày) | Bình thường | Overdue | Occupied |
-| D+10 | Chốt phí trần 70% cọc, cấn trừ cọc | Thông báo chấm dứt vĩnh viễn | **Khóa Access Code** | **Terminated** | **Cleaning / Maintaining** (niêm phong đồ về kho tổng) |
+| Mốc | Phí quá hạn | Thông báo | Truy cập ô kho | Trạng thái hợp đồng | Trạng thái ô kho | Hành vi giao diện (Nút thao tác) |
+|-----|-------------|-----------|----------------|---------------------|-------------------|-----------------------------------|
+| D+1 → D+3 | Không (ân hạn, hoàn 100% cọc) | Nhắc dọn đồ (hàng ngày) | Bình thường | Overdue (ân hạn) | Occupied | **Hiện nút "Báo trả kho"**; Ẩn nút đóng phạt; Không hiện nút thuê mới |
+| D+4 → D+9 | 10% cọc/ngày, cộng dồn | Nhắc dọn đồ & cảnh báo nợ (hàng ngày) | Bình thường | Overdue | Occupied | **Khóa nút "Báo trả kho"**; **Hiện nút "Đóng nợ phạt quá hạn"**; Không hiện nút thuê mới |
+| D+10 | Chốt phí trần 70% cọc, cấn trừ cọc | Thông báo chấm dứt vĩnh viễn | **Khóa Access Code** | **Terminated** | **Cleaning / Maintaining** (niêm phong đồ về kho tổng) | Khóa toàn bộ thao tác khách; Quản lý/Nhân viên kích hoạt Sealing |
 
 ---
 
@@ -204,7 +204,7 @@ Ngày quá hạn ký hiệu **D+n**, đếm từ ngày liền sau ngày kết th
 | Mã | Quy tắc |
 |----|---------|
 | `BR-RET-01` | **Quy trình trả kho tự động:** Trước ngày hết hạn hợp đồng 1 tháng, nếu khách không gửi yêu cầu gia hạn (Renew), hệ thống tự động coi như khách không tiếp tục thuê và tự động chuyển sang tiến trình trả kho khi đến hạn. Hết hạn hợp đồng, khách muốn thuê tiếp phải tạo hợp đồng mới (`UC-F3-05`) |
-| `BR-RET-02` | Trả kho chỉ hoàn tất khi Facility Staff đã kiểm tra và xác nhận hiện trạng ô kho tại chỗ (`FS-04`, `UC-F3-06`). Khách dọn hết đồ nhưng chưa có xác nhận thì hợp đồng **vẫn** hiệu lực |
+| `BR-RET-02` | Trả kho chỉ hoàn tất khi Facility Staff đã kiểm tra và xác nhận hiện trạng ô kho tại chỗ (`FS-04`, `UC-F3-06`). Khi khách bấm "Báo trả kho", hợp đồng chuyển sang `PENDING_RETURN`; thông tin được gửi về Facility Manager để phân công Facility Staff xuống trực tiếp kiểm tra hiện trạng. Khách dọn hết đồ nhưng chưa có biên bản nghiệm thu từ nhân viên thì hợp đồng **vẫn** chưa thể đóng |
 | `BR-RET-03` | Ô kho được coi là **nguyên trạng** khi: trống hoàn toàn, không hư hỏng kết cấu, cửa và khóa còn nguyên, sạch ở mức sử dụng bình thường |
 | `BR-RET-04` | Quyết toán khi trả kho: **Số tiền hoàn = Deposit − chi phí khắc phục hư hỏng − phí quá hạn còn nợ − phụ phí chưa thanh toán**. Nếu kết quả **âm**, khách phải nộp bổ sung phần thiếu trước khi hợp đồng đóng (`UC-F3-13`) |
 | `BR-RET-05` | Tiền hoàn được chuyển về phương thức thanh toán gốc trong `return.refund_working_days` (7 ngày làm việc) kể từ ngày Facility Staff xác nhận |

@@ -510,9 +510,7 @@ Tổng cộng **22 user story**, **111 acceptance criteria**, **95 story point**
 - **AC-1** — *Given* Contract của tôi đang *Active*, *when* tôi đăng ký Return, *then* hệ thống yêu
   cầu ngày hẹn cách hiện tại ít nhất `return.notice_days` (7 ngày); nếu ngày đó sau hạn Contract,
   hệ thống cảnh báo Contract sẽ vào *Overdue* theo `BR-RET-10`.
-- **AC-2** — *Given* tôi chọn ngày trả hợp lệ, *when* tôi xác nhận, *then* hợp đồng chuyển *Pending
-  Return* và một lịch hẹn kiểm tra được tạo. Nếu ngày hẹn sau ngày kết thúc, Contract vẫn chuyển
-  *Overdue* từ D+1 theo `BR-RET-10` dù đang *Pending Return*.
+- **AC-2** — *Given* tôi chọn ngày trả hợp lệ hoặc bấm "Báo trả kho" sau khi dọn xong đồ, *when* tôi xác nhận, *then* hợp đồng chuyển *Pending Return* và yêu cầu được gửi đến Facility Manager để điều phối Facility Staff xuống trực tiếp nghiệm thu ô kho theo `FS-04`. Nếu ngày hẹn sau ngày kết thúc, Contract vẫn chuyển *Overdue* từ D+1 theo `BR-RET-10` dù đang *Pending Return*.
 - **AC-3** — *Given* tôi đăng ký trả kho **sớm** hơn ngày kết thúc hợp đồng, *when* màn hình xác nhận
   hiển thị, *then* hệ thống nêu rõ phần phí thuê chưa dùng **không được hoàn** theo `BR-RET-06`, và
   tôi phải xác nhận đã đọc.
@@ -524,9 +522,7 @@ Tổng cộng **22 user story**, **111 acceptance criteria**, **95 story point**
   hợp còn lại bị từ chối theo `BR-RET-12`.
 - **AC-6** — *Given* tôi không có mặt vào ngày hẹn kiểm tra và hợp đồng đã qua ngày kết thúc, *when*
   tác vụ quá hạn chạy, *then* hợp đồng chuyển sang *Overdue* theo `BR-RET-07`.
-- **AC-7** — *Given* Contract đang *Overdue* nhưng chưa tới D+10, *when* tôi chọn Return, *then*
-  Contract chuyển *Pending Return*, khoản nợ được đưa vào quyết toán và Access chỉ mở trong lịch
-  Return đã xác nhận theo `BR-RET-11`.
+- **AC-7** — *Given* Contract đang *Overdue* trong 3 ngày ân hạn (D+1..D+3), *when* tôi xem thẻ hợp đồng, *then* nút "Báo trả kho" vẫn hiển thị để tôi hẹn nghiệm thu dọn đồ lấy lại 100% cọc (`BR-OVD-02`); *given* Contract bước sang D+4..D+10, *when* tôi xem, *then* nút "Báo trả kho" bị khóa/ẩn và tôi phải bấm "Đóng nợ phạt quá hạn" để thanh toán hết nợ trước khi trả kho theo `BR-RET-11`.
 
 ---
 
@@ -542,15 +538,15 @@ Tổng cộng **22 user story**, **111 acceptance criteria**, **95 story point**
 **Acceptance Criteria**
 
 - **AC-1** — *Given* hợp đồng của tôi vào *Overdue*, *when* tôi mở hợp đồng, *then* tôi thấy số ngày
-  quá hạn, phí quá hạn đã phát sinh và tổng số tiền cần thanh toán.
-- **AC-2** — *Given* tôi đang trong 3 ngày ân hạn (D+1..D+3), *when* tôi xem, *then* hệ thống nêu rõ chưa phát sinh phí và nếu hoàn tất dọn đồ trả kho trong giai đoạn này thì tôi được hoàn 100% tiền cọc Deposit theo `BR-OVD-02`.
+  quá hạn cụ thể (D+n), phí quá hạn đã phát sinh và tổng số tiền cần thanh toán. Hệ thống tuyệt đối không hiển thị nút thuê ô kho mới theo `BR-OVD-09`.
+- **AC-2** — *Given* tôi đang trong 3 ngày ân hạn (D+1..D+3), *when* tôi xem, *then* hệ thống nêu rõ chưa phát sinh phí (0 VND), ẩn nút đóng nợ phạt và hiển thị nút "Báo trả kho" để tôi hoàn tất dọn đồ trả kho nhận 100% tiền cọc Deposit theo `BR-OVD-02`.
 - **AC-3** — *Given* phí quá hạn của tôi đã chạm trần 70% tiền cọc, *when* tôi xem, *then* hệ thống nêu rõ phí đã đạt mức tối đa và không tăng thêm, theo `BR-OVD-04`.
-- **AC-4** — *Given* tôi quá hạn trong khoảng D+4 đến D+9, *when* hệ thống gửi thông báo nhắc nợ hằng ngày, *then* tôi nhận được thông báo nêu rõ số phí phát sinh (10% tiền cọc mỗi ngày) và hạn chót D+10 sẽ bị chấm dứt hợp đồng theo `BR-OVD-03`, `BR-OVD-06`.
+- **AC-4** — *Given* tôi quá hạn trong khoảng D+4 đến D+9, *when* hệ thống gửi thông báo nhắc nợ hằng ngày, *then* tôi nhận được thông báo nêu rõ số phí phát sinh (10% tiền cọc mỗi ngày), nút "Báo trả kho" bị ẩn và nút "Đóng nợ phạt quá hạn" hiển thị rõ ràng, kèm hạn chót D+10 sẽ bị chấm dứt hợp đồng theo `BR-OVD-03`, `BR-OVD-06`.
 - **AC-5** — *Given* hợp đồng của tôi chạm mốc D+10, *when* hệ thống xử lý, *then* hợp đồng chuyển
   *Terminated*, mã truy cập bị thu hồi và Facility Manager lập danh sách thu dọn ô kho theo
   `BR-OVD-05`, `BR-OVD-07`, `BR-OVD-11`.
 - **AC-6** — *Given* tôi thanh toán đủ khoản nợ trước D+10, *when* giao dịch thành công, *then* hệ
-  thống cho phép tôi hoàn tất thủ tục trả kho hoặc tạo hợp đồng thuê mới theo `BR-OVD-08`.
+  thống cho phép tôi hoàn tất thủ tục trả kho hoặc kích hoạt lại hợp đồng theo `BR-OVD-08`.
 
 ---
 
