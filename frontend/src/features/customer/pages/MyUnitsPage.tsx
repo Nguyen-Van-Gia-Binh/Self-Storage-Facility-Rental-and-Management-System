@@ -99,6 +99,22 @@ export const MyUnitsPage: React.FC = () => {
       }
 
       return true;
+    })
+    .sort((a, b) => {
+      // Luôn hiển thị các kho mới nhất lên trên cùng:
+      // 1. So sánh ngày bắt đầu thuê (startDate DESC - ngày mới hơn lên trước)
+      const timeA = a.startDate ? new Date(a.startDate).getTime() : 0;
+      const timeB = b.startDate ? new Date(b.startDate).getTime() : 0;
+      if (timeB !== timeA) {
+        return timeB - timeA;
+      }
+      // 2. Nếu cùng ngày thì theo ID hoặc số hợp đồng giảm dần
+      const idA = parseInt(a.id, 10);
+      const idB = parseInt(b.id, 10);
+      if (!isNaN(idA) && !isNaN(idB)) {
+        return idB - idA;
+      }
+      return (b.contractNumber || '').localeCompare(a.contractNumber || '');
     });
   }, [contracts, activeTab, searchQuery]);
 

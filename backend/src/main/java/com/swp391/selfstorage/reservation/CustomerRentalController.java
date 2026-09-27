@@ -32,7 +32,7 @@ public class CustomerRentalController {
             @RequestParam(required = false, defaultValue = "ALL") String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id,desc") String sort,
+            @RequestParam(defaultValue = "startDate,desc") String sort,
             @AuthenticationPrincipal UserPrincipal currentUser
     ) {
         String[] sortParts = sort.split(",");

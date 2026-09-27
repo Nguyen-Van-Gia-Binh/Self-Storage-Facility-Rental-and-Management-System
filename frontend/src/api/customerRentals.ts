@@ -369,7 +369,7 @@ export async function getCustomerContracts(): Promise<RentedContract[]> {
 
   if (!isMockEnabled('WS1')) {
     try {
-      const response = await apiClient<any>('/customers/me/rentals?page=0&size=50');
+      const response = await apiClient<any>('/customers/me/rentals?page=0&size=50&sort=startDate,desc');
       // Trích xuất content từ cấu trúc PageResponse trong ApiResponse
       const rawList: BackendRentalSummary[] =
         response?.data?.content ||
