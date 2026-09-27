@@ -738,6 +738,23 @@ public class ContractServiceImpl implements ContractService {
                         } catch (Exception ignored) {
                         }
                 }
+
+                if (c.getStatus() == ContractStatus.OVERDUE || 
+                    (c.getEndDateExclusive() != null && LocalDate.now().isAfter(c.getEndDateExclusive()) 
+                     && c.getStatus() != ContractStatus.CLOSED && c.getStatus() != ContractStatus.TERMINATED)) {
+                        long days = java.time.temporal.ChronoUnit.DAYS.between(c.getEndDateExclusive(), LocalDate.now());
+                        if (days > 0) {
+                                r.setOverdueDays((int) days);
+                                long deposit = c.getDepositAmount();
+                                long accrued = 0L;
+                                if (days > 3 && days <= 10) {
+                                        accrued = (long) Math.round((days - 3) * (0.10 * deposit));
+                                } else if (days > 10) {
+                                        accrued = (long) Math.round(0.70 * deposit);
+                                }
+                                r.setAccruedOverdueFee(accrued);
+                        }
+                }
                 return r;
         }
 }

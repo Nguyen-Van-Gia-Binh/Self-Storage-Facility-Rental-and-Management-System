@@ -258,4 +258,43 @@ class ContractServiceTest {
                 () -> contractService.reassignUnit(500L, req, 1L, List.of(1L)));
         assertEquals(ErrorCode.UNIT_NOT_AVAILABLE, ex.getErrorCode());
     }
+
+    @Test
+    @DisplayName("BR-OVD-02: getContractById khi qua han D+2 -> overdueDays=2, accruedOverdueFee=0 (An han)")
+    void shouldReturnZeroFee_whenOverdueWithinGracePeriod() {
+        RentalContract contract = RentalContract.builder()
+                .id(600L).code("CTR-600").facilityId(1L).storageUnitId(42L).unitTypeId(7L)
+                .depositAmount(1_000_000L)
+                .endDateExclusive(LocalDate.now().minusDays(2))
+                .status(ContractStatus.OVERDUE)
+                .build();
+
+        when(contractRepository.findByIdAndFacilityIdIn(600L, List.of(1L))).thenReturn(Optional.of(contract));
+
+        ContractResponse res = contractService.getContractById(600L, List.of(1L));
+
+        assertNotNull(res);
+        assertEquals(2, res.getOverdueDays());
+        assertEquals(0L, res.getAccruedOverdueFee());
+    }
+
+    @Test
+    @DisplayName("BR-OVD-03: getContractById khi qua han D+5 -> overdueDays=5, accruedOverdueFee = 2 ngay phat * 10% = 200.000d")
+    void shouldReturnCorrectPenalty_whenOverduePastGracePeriod() {
+        RentalContract contract = RentalContract.builder()
+                .id(601L).code("CTR-601").facilityId(1L).storageUnitId(42L).unitTypeId(7L)
+                .depositAmount(1_000_000L)
+                .endDateExclusive(LocalDate.now().minusDays(5))
+                .status(ContractStatus.OVERDUE)
+                .build();
+
+        when(contractRepository.findByIdAndFacilityIdIn(601L, List.of(1L))).thenReturn(Optional.of(contract));
+
+        ContractResponse res = contractService.getContractById(601L, List.of(1L));
+
+        assertNotNull(res);
+        assertEquals(5, res.getOverdueDays());
+        // 5 - 3 = 2 ngày phạt * 10% * 1.000.000đ = 200.000đ
+        assertEquals(200_000L, res.getAccruedOverdueFee());
+    }
 }
