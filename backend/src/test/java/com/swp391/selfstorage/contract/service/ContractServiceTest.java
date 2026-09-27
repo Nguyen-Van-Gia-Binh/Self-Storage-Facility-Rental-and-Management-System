@@ -169,4 +169,93 @@ class ContractServiceTest {
         assertEquals(ContractStatus.TERMINATED, contract.getStatus());
         assertEquals(StorageUnitStatus.MAINTENANCE, unit.getStatus());
     }
+
+    @Test
+    @DisplayName("SCR-FM-02.2: reassignUnit khi PENDING_CHECK_IN -> Kho cu AVAILABLE, kho moi RESERVED, contract update")
+    void shouldReassignUnitSuccessfully_whenContractPendingCheckIn() {
+        RentalContract contract = RentalContract.builder()
+                .id(500L).code("CTR-500").facilityId(1L).storageUnitId(42L).unitTypeId(7L)
+                .status(ContractStatus.PENDING_CHECK_IN)
+                .startDate(LocalDate.of(2026, 10, 1))
+                .endDateExclusive(LocalDate.of(2027, 1, 1))
+                .rentalMonths(3).monthlyPrice(800_000L).depositAmount(800_000L).depositBalance(800_000L)
+                .build();
+        StorageUnit oldUnit = StorageUnit.builder().id(42L).facilityId(1L).code("U-42").status(StorageUnitStatus.RESERVED).build();
+        StorageUnit newUnit = StorageUnit.builder().id(43L).facilityId(1L).code("U-43").status(StorageUnitStatus.AVAILABLE).build();
+
+        when(contractRepository.findByIdAndFacilityIdIn(500L, List.of(1L))).thenReturn(Optional.of(contract));
+        when(storageUnitRepository.findById(43L)).thenReturn(Optional.of(newUnit));
+        when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(oldUnit));
+        when(storageUnitRepository.save(any(StorageUnit.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(contractRepository.save(any(RentalContract.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ReassignUnitRequest req = ReassignUnitRequest.builder()
+                .newStorageUnitId(43L)
+                .reason("Cửa ô kho cũ bị kẹt ray")
+                .build();
+
+        ContractSummaryResponse response = contractService.reassignUnit(500L, req, 1L, List.of(1L));
+
+        assertNotNull(response);
+        assertEquals(43L, response.getStorageUnitId());
+        assertEquals("U-43", response.getStorageUnitCode());
+        assertEquals(StorageUnitStatus.AVAILABLE, oldUnit.getStatus());
+        assertEquals(StorageUnitStatus.RESERVED, newUnit.getStatus());
+        assertEquals(43L, contract.getStorageUnitId());
+    }
+
+    @Test
+    @DisplayName("SCR-FM-02.2: reassignUnit khi ACTIVE -> Kho cu AVAILABLE, kho moi OCCUPIED, contract update")
+    void shouldReassignUnitSuccessfully_whenContractActive() {
+        RentalContract contract = RentalContract.builder()
+                .id(500L).code("CTR-500").facilityId(1L).storageUnitId(42L).unitTypeId(7L)
+                .status(ContractStatus.ACTIVE)
+                .startDate(LocalDate.of(2026, 10, 1))
+                .endDateExclusive(LocalDate.of(2027, 1, 1))
+                .rentalMonths(3).monthlyPrice(800_000L).depositAmount(800_000L).depositBalance(800_000L)
+                .build();
+        StorageUnit oldUnit = StorageUnit.builder().id(42L).facilityId(1L).code("U-42").status(StorageUnitStatus.OCCUPIED).build();
+        StorageUnit newUnit = StorageUnit.builder().id(43L).facilityId(1L).code("U-43").status(StorageUnitStatus.AVAILABLE).build();
+
+        when(contractRepository.findByIdAndFacilityIdIn(500L, List.of(1L))).thenReturn(Optional.of(contract));
+        when(storageUnitRepository.findById(43L)).thenReturn(Optional.of(newUnit));
+        when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(oldUnit));
+        when(storageUnitRepository.save(any(StorageUnit.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(contractRepository.save(any(RentalContract.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ReassignUnitRequest req = ReassignUnitRequest.builder()
+                .newStorageUnitId(43L)
+                .reason("Khách yêu cầu chuyển ô gần thang máy")
+                .build();
+
+        ContractSummaryResponse response = contractService.reassignUnit(500L, req, 1L, List.of(1L));
+
+        assertNotNull(response);
+        assertEquals(43L, response.getStorageUnitId());
+        assertEquals("U-43", response.getStorageUnitCode());
+        assertEquals(StorageUnitStatus.AVAILABLE, oldUnit.getStatus());
+        assertEquals(StorageUnitStatus.OCCUPIED, newUnit.getStatus());
+        assertEquals(43L, contract.getStorageUnitId());
+    }
+
+    @Test
+    @DisplayName("SCR-FM-02.2: reassignUnit khi o kho moi khong AVAILABLE -> nem UNIT_NOT_AVAILABLE")
+    void shouldThrow_whenNewUnitNotAvailable() {
+        RentalContract contract = RentalContract.builder()
+                .id(500L).code("CTR-500").facilityId(1L).storageUnitId(42L).unitTypeId(7L)
+                .status(ContractStatus.ACTIVE).build();
+        StorageUnit newUnit = StorageUnit.builder().id(43L).facilityId(1L).code("U-43").status(StorageUnitStatus.OCCUPIED).build();
+
+        when(contractRepository.findByIdAndFacilityIdIn(500L, List.of(1L))).thenReturn(Optional.of(contract));
+        when(storageUnitRepository.findById(43L)).thenReturn(Optional.of(newUnit));
+
+        ReassignUnitRequest req = ReassignUnitRequest.builder()
+                .newStorageUnitId(43L)
+                .reason("Doi o")
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> contractService.reassignUnit(500L, req, 1L, List.of(1L)));
+        assertEquals(ErrorCode.UNIT_NOT_AVAILABLE, ex.getErrorCode());
+    }
 }

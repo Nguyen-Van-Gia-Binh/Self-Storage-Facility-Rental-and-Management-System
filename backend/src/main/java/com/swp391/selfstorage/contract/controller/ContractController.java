@@ -95,6 +95,19 @@ public class ContractController {
         return ResponseEntity.ok(ApiResponse.success(response, "Lay chi tiet tai chinh thanh cong"));
     }
 
+    /** T4.2 / SCR-FM-02.2: Doi o kho ngoai le cho hop dong */
+    @PostMapping("/{id}/reassign-unit")
+    @Operation(summary = "Đổi ô kho ngoại lệ cho hợp đồng")
+    public ResponseEntity<ApiResponse<ContractSummaryResponse>> reassignUnit(
+            @PathVariable Long id,
+            @Valid @RequestBody ReassignUnitRequest request,
+            @RequestHeader(value = "X-Manager-Id", required = false, defaultValue = "1") Long managerId,
+            @RequestParam(required = false) List<Long> facilityIds) {
+        List<Long> facilities = (facilityIds != null) ? facilityIds : List.of();
+        ContractSummaryResponse response = contractService.reassignUnit(id, request, managerId, facilities);
+        return ResponseEntity.ok(ApiResponse.success(response, "Doi o kho thanh cong"));
+    }
+
     /** T4.3: Khach hoac Staff dang ky thong bao tra kho (FS-04) */
     @PostMapping("/{id}/return-notices")
     @Operation(summary = "Đăng ký thông báo trả kho")

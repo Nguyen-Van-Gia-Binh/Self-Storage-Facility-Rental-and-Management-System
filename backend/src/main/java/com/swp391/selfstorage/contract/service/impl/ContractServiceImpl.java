@@ -324,8 +324,24 @@ public class ContractServiceImpl implements ContractService {
                                                 .build())
                                 .toList();
 
+                String custName = "Khách hàng #" + contract.getCustomerId();
+                String custPhone = "";
+                if (userService != null && contract.getCustomerId() != null) {
+                        try {
+                                var userDto = userService.getUserById(contract.getCustomerId());
+                                if (userDto != null) {
+                                        custName = userDto.getFullName();
+                                        custPhone = userDto.getPhone();
+                                }
+                        } catch (Exception ignored) {
+                        }
+                }
+
                 return ContractFinancialSummaryResponse.builder()
                                 .contractId(contract.getId())
+                                .contractCode(contract.getCode())
+                                .customerName(custName)
+                                .customerPhone(custPhone)
                                 .depositAmount(contract.getDepositAmount())
                                 .depositBalance(contract.getDepositBalance())
                                 .totalRentalFee(contract.getTotalRentalFee())
@@ -333,6 +349,111 @@ public class ContractServiceImpl implements ContractService {
                                 .totalUnpaidExtraCharges(unpaidCharges)
                                 .totalOutstandingDebt(contract.getOverdueFeeAccrued() + unpaidCharges)
                                 .extraCharges(chargeDtos)
+                                .build();
+        }
+
+        @Override
+        @Transactional
+        public ContractSummaryResponse reassignUnit(Long contractId, ReassignUnitRequest request, Long managerId,
+                        List<Long> facilityIds) {
+                Optional<RentalContract> contractOpt = (facilityIds == null || facilityIds.isEmpty())
+                                ? contractRepository.findById(contractId)
+                                : contractRepository.findByIdAndFacilityIdIn(contractId, facilityIds);
+
+                RentalContract contract = contractOpt
+                                .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
+
+                if (contract.getStatus() != ContractStatus.PENDING_CHECK_IN && contract.getStatus() != ContractStatus.ACTIVE) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                                        "Chỉ có thể đổi ô kho cho hợp đồng đang chờ nhận kho hoặc đang hoạt động.");
+                }
+
+                if (contract.getStorageUnitId().equals(request.getNewStorageUnitId())) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Ô kho mới trùng với ô kho hiện tại.");
+                }
+
+                StorageUnit newUnit = storageUnitRepository.findById(request.getNewStorageUnitId())
+                                .orElseThrow(() -> new CustomException(ErrorCode.STORAGE_UNIT_NOT_FOUND, "Không tìm thấy ô kho mới."));
+
+                if (!newUnit.getFacilityId().equals(contract.getFacilityId())) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Ô kho mới phải thuộc cùng cơ sở với hợp đồng.");
+                }
+
+                if (newUnit.getStatus() != StorageUnitStatus.AVAILABLE) {
+                        throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, "Ô kho mới hiện không có sẵn (trạng thái: " + newUnit.getStatus() + ").");
+                }
+
+                // Giải phóng ô kho cũ về AVAILABLE
+                storageUnitRepository.findById(contract.getStorageUnitId()).ifPresent(oldUnit -> {
+                        oldUnit.setStatus(StorageUnitStatus.AVAILABLE);
+                        storageUnitRepository.save(oldUnit);
+                });
+
+                // Cập nhật trạng thái ô kho mới tương ứng trạng thái hợp đồng
+                if (contract.getStatus() == ContractStatus.PENDING_CHECK_IN) {
+                        newUnit.setStatus(StorageUnitStatus.RESERVED);
+                } else {
+                        newUnit.setStatus(StorageUnitStatus.OCCUPIED);
+                }
+                storageUnitRepository.save(newUnit);
+
+                // Cập nhật hợp đồng
+                contract.setStorageUnitId(newUnit.getId());
+                contractRepository.save(contract);
+
+                log.info("Manager {} đã đổi ô kho cho hợp đồng {} sang ô kho {}. Lý do: {}",
+                                managerId, contract.getCode(), newUnit.getCode(), request.getReason());
+
+                String storageCode = newUnit.getCode();
+                String unitName = (unitTypeRepository != null && contract.getUnitTypeId() != null)
+                                ? unitTypeRepository.findById(contract.getUnitTypeId()).map(UnitType::getName).orElse(null)
+                                : null;
+                String facName = (facilityRepository != null && contract.getFacilityId() != null)
+                                ? facilityRepository.findById(contract.getFacilityId()).map(Facility::getName).orElse(null)
+                                : null;
+
+                String custName = "Khách hàng #" + contract.getCustomerId();
+                String custPhone = "";
+                String custEmail = "";
+                if (userService != null && contract.getCustomerId() != null) {
+                        try {
+                                var userDto = userService.getUserById(contract.getCustomerId());
+                                if (userDto != null) {
+                                        custName = userDto.getFullName();
+                                        custPhone = userDto.getPhone();
+                                        custEmail = userDto.getEmail();
+                                }
+                        } catch (Exception ignored) {
+                        }
+                }
+
+                LocalDate now = LocalDate.now();
+                LocalDate threshold = now.plusDays(7);
+                boolean nearExp = contract.getStatus() == ContractStatus.ACTIVE
+                                && !contract.getEndDateExclusive().isBefore(now)
+                                && !contract.getEndDateExclusive().isAfter(threshold);
+
+                return ContractSummaryResponse.builder()
+                                .id(contract.getId())
+                                .code(contract.getCode())
+                                .customerId(contract.getCustomerId())
+                                .customerName(custName)
+                                .customerPhone(custPhone)
+                                .customerEmail(custEmail)
+                                .facilityId(contract.getFacilityId())
+                                .facilityName(facName)
+                                .storageUnitId(newUnit.getId())
+                                .storageUnitCode(storageCode)
+                                .unitTypeId(contract.getUnitTypeId())
+                                .unitTypeName(unitName)
+                                .startDate(contract.getStartDate())
+                                .endDateExclusive(contract.getEndDateExclusive())
+                                .rentalMonths(contract.getRentalMonths())
+                                .monthlyPrice(contract.getMonthlyPrice())
+                                .depositAmount(contract.getDepositAmount())
+                                .depositBalance(contract.getDepositBalance())
+                                .status(contract.getStatus())
+                                .nearExpiration(nearExp)
                                 .build();
         }
 
