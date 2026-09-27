@@ -43,7 +43,7 @@
 | **Giai đoạn** | Bám sát [PLAN.md § 5](PLAN.md#5-bản-đồ-phủ-yêu-cầu): P2 (Nền tảng danh mục), P3 (Flow 1 & 2), P4 (Flow 3, 6, 7), P5 (Báo cáo cơ sở) |
 | **Tham chiếu** | Mọi story đều trỏ về use case tại [USE-CASES.md](USE-CASES.md) và ràng buộc tại [BUSINESS-RULES.md](BUSINESS-RULES.md) |
 
-Tổng cộng **22 user story**, **90 acceptance criteria**, **106 story point**.
+Tổng cộng **22 user story**, **91 acceptance criteria**, **106 story point**.
 
 ---
 
@@ -495,11 +495,11 @@ Tổng cộng **22 user story**, **90 acceptance criteria**, **106 story point**
 | `US-FM-03.2` | Theo dõi tình trạng thanh toán và công nợ của từng hợp đồng | `FM-03` | Must | 5 | P4 | 4 |
 | `US-FM-04.1` | Phê duyệt quyết toán hợp đồng và hoàn trả tiền cọc khi trả kho | `FM-04` | Must | 5 | P4 | 4 |
 | `US-FM-04.2` | Giám sát gia hạn Contract tự động | `FM-04` | Must | 5 | P4 | 3 |
-| `US-FM-04.3` | Xử lý hợp đồng quá hạn, khóa quyền truy cập và xử lý tài sản tồn đọng | `FM-04` | Must | 8 | P4 | 7 |
+| `US-FM-04.3` | Xử lý hợp đồng quá hạn, khóa quyền truy cập và xử lý tài sản tồn đọng | `FM-04` | Must | 8 | P4 | 8 |
 | `US-FM-05.1` | Phân công công việc bàn giao, nghiệm thu và sự cố cho nhân viên cơ sở | `FM-05` | Must | 5 | P3 | 4 |
 | `US-FM-06.1` | Xem báo cáo thống kê hoạt động cơ sở, tỷ lệ lấp đầy, doanh thu và nợ quá hạn | `FM-06` | Must | 8 | P5 | 5 |
 
 **Theo giai đoạn:** P2 — 2 story / 10 point · P3 — 7 story / 31 point · P4 — 11 story / 53 point · P5 — 2 story / 12 point.
 **Theo ưu tiên:** Must — 20 story / 100 point · Should — 2 story / 6 point · Could — 0 story.
 **Theo actor:** Facility Staff — 11 story / 45 point · Facility Manager — 11 story / 61 point.
-**Tổng:** 22 story · 106 story point · 90 acceptance criteria.
+**Tổng:** 22 story · 106 story point · 91 acceptance criteria.
