@@ -255,9 +255,6 @@ export const SupportPage: React.FC = () => {
           <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
             Yêu Cầu Hỗ Trợ & Xử Lý Sự Cố
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-2xl">
-            Gửi phản ánh về ổ khóa, mã PIN, hư hỏng kho hoặc thanh toán. Nhân viên cơ sở sẽ tiếp nhận và xử lý tại chỗ kịp thời.
-          </p>
         </div>
 
         {/* CTA Buttons */}
