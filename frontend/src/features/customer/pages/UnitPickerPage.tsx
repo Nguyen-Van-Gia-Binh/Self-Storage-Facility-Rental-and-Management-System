@@ -74,8 +74,20 @@ export const UnitPickerPage: React.FC = () => {
   const [facilityUnits, setFacilityUnits] = useState<StorageUnit[]>([]);
 
   // 1. Quản lý thời gian thuê dự kiến (Ngày bắt đầu & Số tháng thuê)
-  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
-  const [startDate, setStartDate] = useState<string>(initialStartDateParam || todayStr);
+  const todayStr = useMemo(() => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
+  const [startDate, setStartDate] = useState<string>(() => {
+    if (initialStartDateParam && initialStartDateParam >= todayStr) {
+      return initialStartDateParam;
+    }
+    return todayStr;
+  });
   const [durationMonths, setDurationMonths] = useState<number>(
     !isNaN(initialMonthsParam) && initialMonthsParam > 0 ? initialMonthsParam : 3
   );
@@ -83,9 +95,12 @@ export const UnitPickerPage: React.FC = () => {
   // Tính ngày kết thúc dự kiến
   const calculatedEndDate = useMemo(() => {
     if (!startDate) return '';
-    const d = new Date(startDate);
-    d.setMonth(d.getMonth() + durationMonths);
-    return d.toISOString().split('T')[0];
+    const [y, m, d] = startDate.split('-').map(Number);
+    const date = new Date(y, m - 1 + durationMonths, d);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }, [startDate, durationMonths]);
 
   // Sức chứa ô kho theo loại kho trong khoảng thời gian đã chọn
@@ -396,9 +411,6 @@ export const UnitPickerPage: React.FC = () => {
               <Box className="w-4 h-4 text-brand-600" />
               1. Chọn Loại Kho & Kích Thước
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Chọn môi trường lưu trữ và kích thước kho phù hợp với nhu cầu của bạn
-            </p>
           </div>
           <span className="text-xs font-semibold text-brand-700 bg-brand-50 px-2.5 py-1 rounded-full border border-brand-200 shrink-0 self-start sm:self-auto">
             Cơ sở: {currentFacility.name}
@@ -546,9 +558,6 @@ export const UnitPickerPage: React.FC = () => {
               <Calendar className="w-4 h-4 text-brand-600" />
               2. Chọn Thời Gian Thuê Kho Dự Kiến
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Chọn ngày bắt đầu và thời hạn thuê để sơ đồ tự động lọc và hiển thị chính xác các ô kho trống khả dụng
-            </p>
           </div>
           {loadingAvailability ? (
             <span className="text-xs font-semibold text-brand-600 flex items-center gap-1.5 animate-pulse">
@@ -645,9 +654,6 @@ export const UnitPickerPage: React.FC = () => {
             <h2 className="text-base font-extrabold text-[#0a1614] flex items-center gap-2">
               <Layers className="w-4 h-4 text-brand-600" /> 3. Sơ Đồ Mặt Bằng Ô Kho Vật Lý
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Bấm chọn ô kho màu xanh trên sơ đồ tương ứng với loại kho và thời gian bạn đã chọn
-            </p>
           </div>
           <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
             <span className="text-xs font-semibold text-brand-700 bg-brand-50 px-2.5 py-1 rounded-full border border-brand-200">

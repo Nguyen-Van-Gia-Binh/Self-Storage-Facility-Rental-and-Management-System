@@ -177,8 +177,20 @@ export const BookingPage: React.FC = () => {
   const [durationMonths] = useState<number>(
     !isNaN(monthsParam) && monthsParam > 0 ? monthsParam : 3
   );
-  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
-  const [startDate] = useState<string>(startDateParam || todayStr);
+  const todayStr = useMemo(() => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
+  const [startDate] = useState<string>(() => {
+    if (startDateParam && startDateParam >= todayStr) {
+      return startDateParam;
+    }
+    return todayStr;
+  });
 
   const [customerName, setCustomerName] = useState('Nguyễn Văn An');
   const [customerPhone, setCustomerPhone] = useState('0912 345 678');
@@ -213,9 +225,12 @@ export const BookingPage: React.FC = () => {
   // Calculate End Date
   const endDate = useMemo(() => {
     if (!startDate) return '';
-    const d = new Date(startDate);
-    d.setMonth(d.getMonth() + durationMonths);
-    return d.toISOString().split('T')[0];
+    const [y, m, d] = startDate.split('-').map(Number);
+    const date = new Date(y, m - 1 + durationMonths, d);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }, [startDate, durationMonths]);
 
   // Backend Availability & Real Pricing States (SC-01, SC-02)
