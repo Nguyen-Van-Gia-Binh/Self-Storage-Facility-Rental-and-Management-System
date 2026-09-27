@@ -26,4 +26,6 @@ public class ContractSummaryResponse {
     private long depositBalance;
     private ContractStatus status;
     private boolean nearExpiration; // true neu endDateExclusive - now <= 7 ngay va status == ACTIVE
+    private Integer overdueDays;
+    private Long accruedOverdueFee;
 }
