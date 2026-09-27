@@ -60,14 +60,14 @@ export const UnitPickerPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const facilityParam = searchParams.get('facility') || '8';
+  const facilityParam = searchParams.get('facility');
   const initialTypeId = searchParams.get('type');
   const initialMonthsParam = parseInt(searchParams.get('months') || '', 10);
   const initialStartDateParam = searchParams.get('startDate');
 
   const [loading, setLoading] = useState<boolean>(true);
   const [currentFacility, setCurrentFacility] = useState<{ id: string; name: string; address?: string }>({
-    id: facilityParam,
+    id: facilityParam || '',
     name: 'Cơ sở lưu trữ',
   });
   const [unitTypes, setUnitTypes] = useState<UnitType[]>([]);
@@ -113,6 +113,12 @@ export const UnitPickerPage: React.FC = () => {
 
   // Tải dữ liệu thực tế từ backend khi facilityParam thay đổi
   useEffect(() => {
+    // Nếu URL không có tham số cơ sở, tự động chuyển hướng về Trang chủ để khách chọn cơ sở
+    if (!facilityParam) {
+      navigate('/customer', { replace: true });
+      return;
+    }
+
     let isMounted = true;
 
     async function loadFacilityAndUnits() {
@@ -122,10 +128,10 @@ export const UnitPickerPage: React.FC = () => {
         const facList = await fetchFacilities();
         if (!isMounted) return;
 
-        // Tìm cơ sở tương ứng theo ID hoặc Code (ví dụ: '8' hoặc 'FAC-HC')
+        // Tìm cơ sở tương ứng theo ID hoặc Code (ví dụ: '1' hoặc 'FAC-HC')
         const matchedFac = facList.find(
           (f: FacilityListItem) => String(f.id) === facilityParam || f.code === facilityParam
-        ) || facList.find((f: FacilityListItem) => f.id === 8) || facList[0];
+        ) || facList[0];
 
         if (matchedFac) {
           setCurrentFacility({
@@ -235,7 +241,7 @@ export const UnitPickerPage: React.FC = () => {
 
     loadFacilityAndUnits();
     return () => { isMounted = false; };
-  }, [facilityParam, initialTypeId]);
+  }, [facilityParam, initialTypeId, navigate]);
 
   // Tải sức chứa ô kho thực tế theo khoảng thời gian khách chọn (SC-01)
   useEffect(() => {

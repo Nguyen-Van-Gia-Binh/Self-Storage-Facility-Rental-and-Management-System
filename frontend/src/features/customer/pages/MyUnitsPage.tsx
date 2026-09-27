@@ -151,7 +151,7 @@ export const MyUnitsPage: React.FC = () => {
             <RotateCcw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             <span>Làm mới</span>
           </Button>
-          <Link to="/customer/units">
+          <Link to="/customer">
             <Button
               variant="primary"
               size="sm"
@@ -325,7 +325,7 @@ export const MyUnitsPage: React.FC = () => {
               Xóa bộ lọc tìm kiếm
             </Button>
           ) : (
-            <Link to="/customer/units">
+            <Link to="/customer">
               <Button variant="primary" size="sm" className="mt-2 text-xs font-bold cursor-pointer">
                 Khám phá và thuê ngăn kho mới
               </Button>
