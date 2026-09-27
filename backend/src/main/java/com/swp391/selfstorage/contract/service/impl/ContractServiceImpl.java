@@ -497,18 +497,22 @@ public class ContractServiceImpl implements ContractService {
                         throw new CustomException(ErrorCode.CONTRACT_NOT_ACTIVE_OR_OVERDUE);
                 }
 
-                if (request.getIntendedReturnDate().isBefore(LocalDate.now())) {
-                        throw new CustomException(ErrorCode.RETURN_NOTICE_TOO_SHORT);
-                }
+                LocalDate returnDate = request.getIntendedReturnDate() != null
+                                ? request.getIntendedReturnDate()
+                                : LocalDate.now();
 
                 ReturnRequest returnRequest = ReturnRequest.builder()
                                 .contractId(contract.getId())
-                                .requestedReturnDate(request.getIntendedReturnDate())
+                                .requestedReturnDate(returnDate)
                                 .conditionNote(request.getNotes())
                                 .status(ReturnRequestStatus.PENDING)
                                 .build();
 
                 ReturnRequest saved = returnRequestRepository.save(returnRequest);
+
+                contract.setStatus(ContractStatus.PENDING_RETURN);
+                contract.setReturnDate(returnDate);
+                contractRepository.save(contract);
 
                 return ReturnNoticeResponse.builder()
                                 .id(saved.getId())
@@ -530,7 +534,9 @@ public class ContractServiceImpl implements ContractService {
                 RentalContract contract = contractOpt
                                 .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
 
-                if (contract.getStatus() != ContractStatus.ACTIVE && contract.getStatus() != ContractStatus.OVERDUE) {
+                if (contract.getStatus() != ContractStatus.ACTIVE 
+                                && contract.getStatus() != ContractStatus.OVERDUE
+                                && contract.getStatus() != ContractStatus.PENDING_RETURN) {
                         throw new CustomException(ErrorCode.CONTRACT_NOT_ACTIVE_OR_OVERDUE);
                 }
 
