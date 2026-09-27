@@ -1,10 +1,7 @@
 import React from 'react';
 import { 
-  AlertTriangle, 
-  Clock, 
   AlertCircle, 
   ShieldCheck, 
-  Info, 
   PhoneCall, 
   PlusCircle,
   Ban
@@ -22,8 +19,9 @@ export const RenewalExpiryBanner: React.FC<RenewalExpiryBannerProps> = ({
   contract,
 }) => {
   const daysRemaining = calculateDaysRemaining(contract.endDate);
-  const isOverdue = contract.status === 'OVERDUE' || daysRemaining < 0;
   const isTerminated = contract.status === 'TERMINATED' || contract.status === 'CLOSED';
+  const isOverdue = contract.status === 'OVERDUE' || daysRemaining < 0;
+  const isCutoffLocked = contract.status === 'ACTIVE' && daysRemaining < 30;
 
   // 1. Trường hợp từ chối gia hạn theo BR-REN-02 (Đã thanh lý hoặc chấm dứt)
   if (isTerminated) {
@@ -67,40 +65,103 @@ export const RenewalExpiryBanner: React.FC<RenewalExpiryBannerProps> = ({
     );
   }
 
-  // 2. Trường hợp quá hạn theo BR-REN-06 (OVERDUE)
+  // 2. Trường hợp quá hạn theo BR-REN-02: Không thể gia hạn trực tuyến
   if (isOverdue) {
     const overdueCount = contract.overdueDays || Math.abs(daysRemaining) || 1;
     return (
-      <div className="rounded-xl border border-rose-300 bg-rose-50/80 p-4 sm:p-5 shadow-xs">
+      <div className="rounded-xl border border-rose-300 bg-rose-50/90 p-4 sm:p-5 shadow-xs">
         <div className="flex items-start gap-3.5">
           <div className="p-2 bg-rose-100 rounded-lg text-rose-700 flex-shrink-0 mt-0.5">
-            <AlertTriangle className="w-5 h-5" />
+            <Ban className="w-5 h-5" />
           </div>
-          <div className="space-y-1.5 flex-1">
+          <div className="space-y-2 flex-1">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-200 text-rose-900 uppercase tracking-wider">
-                Quá hạn {overdueCount} ngày (BR-OVD-02)
+                Quá hạn {overdueCount} ngày — Không thể gia hạn (BR-REN-02)
               </span>
               <span className="text-xs font-semibold text-rose-700">
                 Hết hạn từ ngày {contract.endDate}
               </span>
             </div>
             <h3 className="text-base font-bold text-rose-950">
-              Hợp đồng đang quá hạn — Gia hạn ngay để mở khóa mã PIN
+              Hợp đồng đã quá hạn và bị khóa tính năng gia hạn
             </h3>
             <p className="text-xs sm:text-sm text-rose-800 leading-relaxed">
-              Ngăn kho của quý khách đã quá ngày đến hạn. Theo quy định <strong>BR-REN-06</strong>, quý khách hoàn toàn có thể gia hạn ngay bây giờ: các khoản nợ cũ và phí phạt chậm trả (nếu có) sẽ được hệ thống <strong>tự động gộp thành một dòng riêng</strong> vào hóa đơn gia hạn kỳ mới.
+              Theo quy định <strong>BR-REN-02</strong>, hợp đồng ở trạng thái quá hạn không thể tiếp tục gia hạn trực tuyến. Quý khách vui lòng thanh toán phí quá hạn, hoàn tất trả kho hoặc đăng ký hợp đồng thuê mới nếu có nhu cầu tiếp tục sử dụng ngăn kho (tùy thuộc vào tình trạng còn trống của ngăn kho).
             </p>
+            <div className="flex flex-wrap items-center gap-2.5 pt-2">
+              <Link
+                to={`/customer/payment?unitNumber=${contract.unitNumber}&facilityName=${encodeURIComponent(
+                  contract.facilityName
+                )}&amount=${contract.monthlyRent}&contractId=${contract.id}`}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold transition-colors shadow-xs"
+              >
+                <span>Thanh toán phí phạt quá hạn</span>
+              </Link>
+              <Link
+                to="/booking/picker"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white border border-rose-300 hover:bg-rose-100/60 text-rose-900 text-xs font-bold transition-colors shadow-xs"
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                <span>Thuê ngăn kho mới</span>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
-  // 3. Trường hợp khẩn cấp: Còn <= 1 ngày
-  if (daysRemaining <= 1) {
+  // 3. Trường hợp dưới 30 ngày (BR-REN-01 & BR-REN-02): Khóa quyền tự gia hạn
+  if (isCutoffLocked) {
     return (
-      <div className="rounded-xl border border-amber-400 bg-amber-50/90 p-4 sm:p-5 shadow-xs animate-pulse">
+      <div className="rounded-xl border border-rose-300 bg-rose-50/90 p-4 sm:p-5 shadow-xs">
+        <div className="flex items-start gap-3.5">
+          <div className="p-2 bg-rose-100 rounded-lg text-rose-700 flex-shrink-0 mt-0.5">
+            <Ban className="w-5 h-5" />
+          </div>
+          <div className="space-y-2 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-200 text-rose-900 uppercase tracking-wider">
+                Đã khóa quyền gia hạn (BR-REN-01 & BR-REN-02)
+              </span>
+              <span className="text-xs font-semibold text-rose-700">
+                Còn {daysRemaining} ngày (Hết hạn {contract.endDate})
+              </span>
+            </div>
+            <h3 className="text-base font-bold text-rose-950">
+              Đã quá hạn chót gia hạn trực tuyến (Ít nhất 30 ngày trước ngày hết hạn)
+            </h3>
+            <p className="text-xs sm:text-sm text-rose-800 leading-relaxed">
+              Theo quy định <strong>BR-REN-01 và BR-REN-02</strong>, khách hàng bắt buộc phải hoàn tất gia hạn trước ngày kết thúc hợp đồng ít nhất <strong>30 ngày</strong>. Hợp đồng của quý khách hiện chỉ còn <strong>{daysRemaining} ngày</strong> (đã dưới mốc 30 ngày) nên hệ thống đã khóa quyền gia hạn trực tuyến để chuẩn bị kế hoạch hoàn trả hoặc mở chỗ cho khách hàng tiếp theo. Nếu quý khách có nhu cầu tiếp tục sử dụng, vui lòng đăng ký một hợp đồng thuê mới hoặc liên hệ ban quản lý.
+            </p>
+            <div className="flex flex-wrap items-center gap-2.5 pt-2">
+              <a
+                href="tel:1900888999"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold transition-colors shadow-xs"
+              >
+                <PhoneCall className="w-3.5 h-3.5" />
+                <span>Hotline hỗ trợ: 1900 888 999</span>
+              </a>
+              <Link
+                to="/booking/picker"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white border border-rose-300 hover:bg-rose-100/60 text-rose-900 text-xs font-bold transition-colors shadow-xs"
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                <span>Thuê ngăn kho mới</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 4. Trường hợp trong vùng cảnh báo sớm (30..37 ngày): 7 ngày trước mốc khóa 30 ngày
+  if (daysRemaining <= 37) {
+    const daysUntilCutoff = daysRemaining - 30;
+    return (
+      <div className="rounded-xl border border-amber-400 bg-amber-50/90 p-4 sm:p-5 shadow-xs">
         <div className="flex items-start gap-3.5">
           <div className="p-2 bg-amber-100 rounded-lg text-amber-700 flex-shrink-0 mt-0.5">
             <AlertCircle className="w-5 h-5" />
@@ -108,14 +169,17 @@ export const RenewalExpiryBanner: React.FC<RenewalExpiryBannerProps> = ({
           <div className="space-y-1 flex-1">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-900 uppercase tracking-wider">
-                Báo động khẩn cấp (BR-REN-01)
+                Sắp đến hạn chót gia hạn (Còn {daysUntilCutoff} ngày nữa để gia hạn)
+              </span>
+              <span className="text-xs font-semibold text-amber-800">
+                Hết hạn hợp đồng: {contract.endDate}
               </span>
             </div>
             <h3 className="text-base font-bold text-amber-950">
-              Hợp đồng sẽ hết hạn trong vòng {daysRemaining === 0 ? 'hôm nay' : '24 giờ'}!
+              Gia hạn ngay để không bị khóa và mất vị trí ngăn kho ({daysUntilCutoff === 0 ? 'Hôm nay là ngày cuối cùng gia hạn' : `Còn ${daysUntilCutoff} ngày`})!
             </h3>
             <p className="text-xs sm:text-sm text-amber-800 leading-relaxed">
-              Vui lòng hoàn tất gia hạn trực tuyến trước <strong>23:59 ngày {contract.endDate}</strong> để tránh bị tạm khóa mã PIN mở cửa và không phát sinh phí phạt quá hạn.
+              Theo quy định <strong>BR-REN-01</strong>, quý khách cần gia hạn trước mốc 30 ngày. Khi chỉ còn dưới 30 ngày, tính năng gia hạn sẽ tự động bị khóa và ngăn kho có thể được phân bổ cho khách hàng khác sau ngày {contract.endDate}.
             </p>
           </div>
         </div>
@@ -123,85 +187,7 @@ export const RenewalExpiryBanner: React.FC<RenewalExpiryBannerProps> = ({
     );
   }
 
-  // 4. Trường hợp nghiêm trọng: Còn <= 3 ngày
-  if (daysRemaining <= 3) {
-    return (
-      <div className="rounded-xl border border-orange-300 bg-orange-50/90 p-4 sm:p-5 shadow-xs">
-        <div className="flex items-start gap-3.5">
-          <div className="p-2 bg-orange-100 rounded-lg text-orange-700 flex-shrink-0 mt-0.5">
-            <Clock className="w-5 h-5" />
-          </div>
-          <div className="space-y-1 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-orange-200 text-orange-900 uppercase tracking-wider">
-                Sắp đến hạn (Còn {daysRemaining} ngày)
-              </span>
-            </div>
-            <h3 className="text-base font-bold text-orange-950">
-              Thời hạn thuê sắp kết thúc vào ngày {contract.endDate}
-            </h3>
-            <p className="text-xs sm:text-sm text-orange-800 leading-relaxed">
-              Gia hạn ngay để giữ nguyên quyền sử dụng liên tục, không cần cọc lại (BR-DEP-01) và bảo lưu mã PIN mở khóa an toàn (BR-REN-08).
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // 5. Trường hợp cảnh báo chú ý: Còn <= 7 ngày
-  if (daysRemaining <= 7) {
-    return (
-      <div className="rounded-xl border border-amber-300 bg-amber-50/70 p-4 sm:p-5 shadow-xs">
-        <div className="flex items-start gap-3.5">
-          <div className="p-2 bg-amber-100 rounded-lg text-amber-700 flex-shrink-0 mt-0.5">
-            <Clock className="w-5 h-5" />
-          </div>
-          <div className="space-y-1 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-900 uppercase tracking-wider">
-                Nhắc nhở gia hạn (Còn {daysRemaining} ngày)
-              </span>
-            </div>
-            <h3 className="text-base font-bold text-amber-950">
-              Hợp đồng của bạn sẽ hết hạn vào ngày {contract.endDate}
-            </h3>
-            <p className="text-xs sm:text-sm text-amber-800 leading-relaxed">
-              Lựa chọn kỳ hạn từ 6 tháng trở lên để nhận ngay <strong>chiết khấu 5% - 10%</strong> theo chính sách ưu đãi gia hạn dài hạn (BR-REN-07).
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // 6. Trường hợp khuyến nghị: Còn <= 30 ngày
-  if (daysRemaining <= 30) {
-    return (
-      <div className="rounded-xl border border-sky-200 bg-sky-50/70 p-4 sm:p-5 shadow-xs">
-        <div className="flex items-start gap-3.5">
-          <div className="p-2 bg-sky-100 rounded-lg text-sky-700 flex-shrink-0 mt-0.5">
-            <Info className="w-5 h-5" />
-          </div>
-          <div className="space-y-1 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-sky-200 text-sky-900 uppercase tracking-wider">
-                Gợi ý gia hạn sớm (Còn {daysRemaining} ngày)
-              </span>
-            </div>
-            <h3 className="text-base font-bold text-sky-950">
-              Chủ động kéo dài hợp đồng đến sau ngày {contract.endDate}
-            </h3>
-            <p className="text-xs sm:text-sm text-sky-800 leading-relaxed">
-              Khách hàng có thể gia hạn bất kỳ lúc nào khi hợp đồng đang có hiệu lực. Toàn bộ tiền cọc ban đầu được bảo lưu 100%, không phát sinh phụ phí (BR-DEP-01).
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // 7. Còn dài (> 30 ngày)
+  // 5. Còn dài (> 37 ngày)
   return (
     <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 sm:p-5 shadow-xs">
       <div className="flex items-start gap-3.5">
@@ -218,7 +204,7 @@ export const RenewalExpiryBanner: React.FC<RenewalExpiryBannerProps> = ({
             Hợp đồng đang có hiệu lực tốt đến ngày {contract.endDate}
           </h3>
           <p className="text-xs sm:text-sm text-emerald-800 leading-relaxed">
-            Bạn có thể đăng ký gia hạn thêm thời gian sử dụng bất kỳ lúc nào. Kỳ hạn mới sẽ tự động cộng nối tiếp vào sau ngày hết hạn hiện tại.
+            Bạn có thể đăng ký gia hạn thêm thời gian sử dụng bất kỳ lúc nào trước mốc 30 ngày. Kỳ hạn mới sẽ tự động cộng nối tiếp vào sau ngày hết hạn hiện tại.
           </p>
         </div>
       </div>

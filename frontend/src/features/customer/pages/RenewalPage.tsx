@@ -25,7 +25,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { getCustomerContracts, renewContract, getRenewalQuote, type RenewalQuote } from '@/api/customerRentals';
 import { customerApi, type CheckoutResponse } from '../api/customerApi';
 import { formatVND } from '../utils/pricing';
-import { calculateRenewalPricing, calculateExtendedEndDate } from '../utils/renewalPricing';
+import { calculateRenewalPricing, calculateExtendedEndDate, calculateDaysRemaining } from '../utils/renewalPricing';
 import type { RentedContract, RenewContractResponse } from '../types';
 import { RenewalExpiryBanner } from '../components/RenewalExpiryBanner';
 import { RenewalReceiptModal } from '../components/RenewalReceiptModal';
@@ -91,10 +91,15 @@ export const RenewalPage: React.FC = () => {
       setIsLoadingCheckout(true);
       setCheckoutError(null);
       try {
-        if (contract.status !== 'ACTIVE' && contract.status !== 'OVERDUE') {
-          throw new Error(
-            `Hợp đồng đang ở trạng thái "${contract.status}". Chỉ hợp đồng đang hoạt động (ACTIVE) hoặc quá hạn (OVERDUE) mới được phép gia hạn trực tuyến.`
-          );
+        const remDays = calculateDaysRemaining(contract.endDate);
+        if (contract.status === 'OVERDUE' || remDays < 0) {
+          throw new Error('Hợp đồng đã quá hạn và không thể gia hạn tiếp trực tuyến theo quy định BR-REN-02.');
+        }
+        if (contract.status !== 'ACTIVE') {
+          throw new Error(`Hợp đồng đang ở trạng thái "${contract.status}". Chỉ hợp đồng ACTIVE mới được phép gia hạn.`);
+        }
+        if (remDays < 30) {
+          throw new Error('Đã quá thời hạn gia hạn. Khách hàng phải gia hạn trước ngày hết hạn ít nhất 30 ngày theo quy định BR-REN-02.');
         }
 
         const numId = parseInt(contract.id, 10);
@@ -326,7 +331,11 @@ export const RenewalPage: React.FC = () => {
     );
   }
 
-  const isTerminated = contract.status === 'TERMINATED' || contract.status === 'CLOSED';
+  const daysRemaining = contract ? calculateDaysRemaining(contract.endDate) : 0;
+  const isTerminated = contract ? (contract.status === 'TERMINATED' || contract.status === 'CLOSED') : false;
+  const isOverdue = contract ? (contract.status === 'OVERDUE' || daysRemaining < 0) : false;
+  const isCutoffLocked = contract ? (contract.status === 'ACTIVE' && daysRemaining < 30) : false;
+  const isRenewalBlocked = isTerminated || isOverdue || isCutoffLocked;
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
@@ -347,8 +356,10 @@ export const RenewalPage: React.FC = () => {
       {/* 3-Step Indicator Bar */}
       <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-xs flex items-center justify-between text-xs sm:text-sm">
         <div 
-          onClick={() => !isTerminated && setCurrentStep(1)}
-          className={`flex items-center gap-2 cursor-pointer transition-all ${
+          onClick={() => !isRenewalBlocked && setCurrentStep(1)}
+          className={`flex items-center gap-2 transition-all ${
+            !isRenewalBlocked ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'
+          } ${
             currentStep === 1 
               ? 'font-bold text-brand-600' 
               : currentStep > 1 
@@ -371,8 +382,10 @@ export const RenewalPage: React.FC = () => {
         <div className="h-px bg-slate-200 flex-1 mx-3 hidden sm:block" />
 
         <div 
-          onClick={() => !isTerminated && setCurrentStep(2)}
-          className={`flex items-center gap-2 cursor-pointer transition-all ${
+          onClick={() => !isRenewalBlocked && setCurrentStep(2)}
+          className={`flex items-center gap-2 transition-all ${
+            !isRenewalBlocked ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'
+          } ${
             currentStep === 2 
               ? 'font-bold text-brand-600' 
               : currentStep > 2 
@@ -492,13 +505,15 @@ export const RenewalPage: React.FC = () => {
                       <button
                         key={pkg.months}
                         type="button"
-                        disabled={isTerminated}
+                        disabled={isRenewalBlocked}
                         onClick={() => setRenewalMonths(pkg.months)}
-                        className={`p-3.5 rounded-xl border text-center relative transition-all cursor-pointer ${
+                        className={`p-3.5 rounded-xl border text-center relative transition-all ${
+                          isRenewalBlocked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
+                        } ${
                           isSelected
                             ? 'border-brand-600 bg-brand-50/60 shadow-sm ring-2 ring-brand-500/20'
                             : 'border-slate-200 bg-white hover:border-slate-300'
-                        } ${isTerminated ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        }`}
                       >
                         {pkg.discountTag && (
                           <span className={`absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] font-extrabold px-2 py-0.5 rounded-full whitespace-nowrap shadow-xs ${
@@ -548,11 +563,13 @@ export const RenewalPage: React.FC = () => {
               </Button>
               <Button
                 variant="primary"
-                disabled={isTerminated}
-                onClick={() => setCurrentStep(2)}
-                className="px-6 py-2.5 flex items-center gap-2 shadow-xs"
+                disabled={isRenewalBlocked}
+                onClick={() => !isRenewalBlocked && setCurrentStep(2)}
+                className={`px-6 py-2.5 flex items-center gap-2 shadow-xs ${
+                  isRenewalBlocked ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               >
-                <span>Xem Bảng Kê Chi Phí & Tiếp Tục</span>
+                <span>{isRenewalBlocked ? 'Đã khóa gia hạn' : 'Xem Bảng Kê Chi Phí & Tiếp Tục'}</span>
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </div>
@@ -751,10 +768,13 @@ export const RenewalPage: React.FC = () => {
               </Button>
               <Button
                 variant="primary"
-                onClick={() => setCurrentStep(3)}
-                className="px-6 py-2.5 flex items-center gap-2 shadow-xs"
+                disabled={isRenewalBlocked}
+                onClick={() => !isRenewalBlocked && setCurrentStep(3)}
+                className={`px-6 py-2.5 flex items-center gap-2 shadow-xs ${
+                  isRenewalBlocked ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               >
-                <span>Tiến Hành Thanh Toán VietQR (Napas247)</span>
+                <span>{isRenewalBlocked ? 'Gia hạn bị khóa' : 'Tiến Hành Thanh Toán VietQR (Napas247)'}</span>
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </div>

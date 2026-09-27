@@ -19,8 +19,10 @@ import {
   FileText,
   RotateCcw,
   CreditCard,
+  Lock,
 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
+import { calculateDaysRemaining } from '../utils/renewalPricing';
 import type { RentedContract } from '../types';
 import { DigitalMoveInPassModal } from './DigitalMoveInPassModal';
 
@@ -42,6 +44,9 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
   const [showQrModal, setShowQrModal] = useState(false);
   const [showPassModal, setShowPassModal] = useState(false);
   const [isClosingModal, setIsClosingModal] = useState(false);
+
+  const daysRemaining = calculateDaysRemaining(contract.endDate);
+  const isCutoffLocked = contract.status === 'ACTIVE' && daysRemaining < 30;
 
   const handleOpenModal = () => {
     if (contract.status === 'PENDING_CHECKIN') {
@@ -267,20 +272,10 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                 <span>Xem Thẻ nhận kho (Move-in Pass)</span>
               </Button>
             ) : contract.status === 'OVERDUE' ? (
-              <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
-                <Link
-                  to={`/customer/renew/${contract.id}`}
-                  className="w-full sm:w-auto"
-                >
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 bg-rose-600 hover:bg-rose-700 shadow-xs"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Gia hạn & Xóa nợ quá hạn</span>
-                  </Button>
-                </Link>
+              <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full sm:w-auto">
+                <span className="text-[11px] font-semibold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200" title="Theo quy định, hợp đồng quá hạn không được phép gia hạn tiếp.">
+                  Quá hạn: Không thể gia hạn (BR-REN-02)
+                </span>
                 <Link
                   to={`/customer/payment?unitNumber=${contract.unitNumber}&facilityName=${encodeURIComponent(
                     contract.facilityName
@@ -290,12 +285,40 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3 text-rose-700 border-rose-300 hover:bg-rose-50 shadow-xs"
+                    className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3 text-rose-700 border-rose-300 hover:bg-rose-50 shadow-xs text-xs"
                   >
                     <CreditCard className="w-3.5 h-3.5" />
-                    <span>Đóng phạt riêng</span>
+                    <span>Đóng nợ phạt quá hạn</span>
                   </Button>
                 </Link>
+                <Link
+                  to="/booking/picker"
+                  className="w-full sm:w-auto"
+                >
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3 bg-slate-800 hover:bg-slate-900 shadow-xs text-xs"
+                  >
+                    <span>Thuê ô kho mới</span>
+                  </Button>
+                </Link>
+              </div>
+            ) : isCutoffLocked ? (
+              <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full sm:w-auto">
+                <span className="text-[11px] font-semibold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200" title="Theo quy định BR-REN-02, phải gia hạn trước ngày hết hạn ít nhất 30 ngày">
+                  Đã khóa gia hạn (&lt; 30 ngày)
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled
+                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3.5 opacity-50 cursor-not-allowed bg-slate-100 text-slate-400 border-slate-200 text-xs"
+                  title="Theo quy định BR-REN-02, hợp đồng chỉ được gia hạn trước mốc 30 ngày"
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Gia hạn hợp đồng (Đã khóa)</span>
+                </Button>
               </div>
             ) : (
               <Link
