@@ -286,6 +286,14 @@ public class ContractServiceImpl implements ContractService {
                                 }
                         }
 
+                        ContractStatus displayStatus = c.getStatus();
+                        if (returnRequestRepository != null && c.getStatus() != ContractStatus.CLOSED && c.getStatus() != ContractStatus.TERMINATED) {
+                                var reqOpt = returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(c.getId());
+                                if (reqOpt.isPresent() && reqOpt.get().getStatus() == ReturnRequestStatus.PENDING) {
+                                        displayStatus = ContractStatus.PENDING_RETURN;
+                                }
+                        }
+
                         return ContractSummaryResponse.builder()
                                         .id(c.getId())
                                         .code(c.getCode())
@@ -305,7 +313,7 @@ public class ContractServiceImpl implements ContractService {
                                         .monthlyPrice(c.getMonthlyPrice())
                                         .depositAmount(c.getDepositAmount())
                                         .depositBalance(c.getDepositBalance())
-                                        .status(c.getStatus())
+                                        .status(displayStatus)
                                         .nearExpiration(nearExp)
                                         .overdueDays(overdueDays)
                                         .accruedOverdueFee(accruedOverdueFee)
