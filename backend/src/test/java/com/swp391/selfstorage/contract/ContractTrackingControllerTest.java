@@ -25,6 +25,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -75,6 +76,8 @@ class ContractTrackingControllerTest {
         void testGetFinancialSummary() throws Exception {
                 ContractFinancialSummaryResponse summary = ContractFinancialSummaryResponse.builder()
                                 .contractId(100L)
+                                .contractCode("CTR-100")
+                                .customerName("Lê Văn A")
                                 .depositAmount(1_000_000L)
                                 .depositBalance(1_000_000L)
                                 .totalRentalFee(3_000_000L)
@@ -90,6 +93,36 @@ class ContractTrackingControllerTest {
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.status").value(200))
                                 .andExpect(jsonPath("$.data.contractId").value(100))
+                                .andExpect(jsonPath("$.data.contractCode").value("CTR-100"))
+                                .andExpect(jsonPath("$.data.customerName").value("Lê Văn A"))
                                 .andExpect(jsonPath("$.data.totalOutstandingDebt").value(250_000));
+        }
+
+        @Test
+        @DisplayName("POST /contracts/{id}/reassign-unit trả về 200 OK khi đổi ô kho")
+        void testReassignUnit() throws Exception {
+                com.swp391.selfstorage.contract.dto.ReassignUnitRequest req =
+                        com.swp391.selfstorage.contract.dto.ReassignUnitRequest.builder()
+                                .newStorageUnitId(43L)
+                                .reason("Bảo trì khóa")
+                                .build();
+
+                ContractSummaryResponse summary = ContractSummaryResponse.builder()
+                                .id(100L)
+                                .code("CTR-100")
+                                .storageUnitId(43L)
+                                .storageUnitCode("U-43")
+                                .status(ContractStatus.ACTIVE)
+                                .build();
+
+                when(contractService.reassignUnit(eq(100L), any(), any(), any())).thenReturn(summary);
+
+                mockMvc.perform(post("/contracts/100/reassign-unit")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(req)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.status").value(200))
+                                .andExpect(jsonPath("$.data.storageUnitId").value(43))
+                                .andExpect(jsonPath("$.data.storageUnitCode").value("U-43"));
         }
 }

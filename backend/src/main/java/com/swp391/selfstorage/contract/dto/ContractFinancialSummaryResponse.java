@@ -6,6 +6,9 @@ import java.util.List;
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class ContractFinancialSummaryResponse {
     private Long contractId;
+    private String contractCode;
+    private String customerName;
+    private String customerPhone;
     private long depositAmount;
     private long depositBalance;
     private long totalRentalFee;
@@ -20,5 +23,6 @@ public class ContractFinancialSummaryResponse {
         private long amount;
         private String reason;
         private String status;
+        private String createdAt;
     }
 }

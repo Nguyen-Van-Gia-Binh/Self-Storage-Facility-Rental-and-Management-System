@@ -21,15 +21,12 @@ import type {
 } from '../types/contractManager';
 import mockContractsData from '../mock/mock-contracts.json';
 import mockReturnContractsData from '../mock/mock-return-contracts.json';
-import mockManagerContractsData from '../mock/mock-manager-contracts.json';
 
 // USE_MOCK cục bộ đã được thay bằng isMockEnabled('WS2') từ @/api/client
 
 // Bộ nhớ đệm tạm thời cho mock session (cho phép cập nhật trạng thái ngay trên UI khi test)
 let localMockContracts: CheckInContract[] = JSON.parse(JSON.stringify(mockContractsData));
 let localMockReturnContracts: ReturnContractDetail[] = JSON.parse(JSON.stringify(mockReturnContractsData));
-const localManagerContracts: ManagerContractItem[] = JSON.parse(JSON.stringify(mockManagerContractsData.contracts));
-let localAvailableUnits: AvailableUnitOption[] = JSON.parse(JSON.stringify(mockManagerContractsData.availableUnits));
 
 /**
  * Lấy danh sách hợp đồng chờ Check-in tại quầy
@@ -250,7 +247,7 @@ export async function submitReturnInspection(
 
 /**
  * =====================================================================
- * CÁC HÀM DÀNH CHO FACILITY MANAGER CONTRACTS HUB (SCR-FM-02 / T3.12)
+ * CÁC HÀM DÀNH CHO FACILITY MANAGER CONTRACTS HUB (SCR-FM-02 / T3.12 / T4.2)
  * =====================================================================
  */
 
@@ -263,44 +260,50 @@ export async function getManagerContracts(filter?: {
   keyword?: string;
   nearExpiration?: boolean;
 }): Promise<ManagerContractItem[]> {
-  try {
-    const params = new URLSearchParams();
-    if (filter?.facilityId) params.append('facilityIds', filter.facilityId.toString());
-    if (filter?.status && filter.status !== 'ALL') params.append('status', filter.status);
-    if (filter?.keyword) params.append('keyword', filter.keyword);
-    if (filter?.nearExpiration) params.append('expiringSoon', 'true');
-    params.append('size', '50');
-
-    const res = await apiClient<any>(`/contracts?${params.toString()}`);
-    const items = res?.data?.content || res?.content || (Array.isArray(res) ? res : null);
-    if (items && Array.isArray(items) && items.length > 0) {
-      return items;
-    }
-  } catch (error) {
-    console.warn('Lỗi gọi API /contracts, fallback mock:', error);
-  }
-
-  let list = [...localManagerContracts];
-  if (filter?.facilityId) {
-    list = list.filter((c) => c.facilityId === filter.facilityId);
+  const params = new URLSearchParams();
+  if (filter?.facilityId && filter.facilityId > 0) {
+    params.append('facilityIds', filter.facilityId.toString());
   }
   if (filter?.status && filter.status !== 'ALL') {
-    list = list.filter((c) => c.status === filter.status);
-  }
-  if (filter?.nearExpiration) {
-    list = list.filter((c) => c.nearExpiration === true);
+    params.append('status', filter.status);
   }
   if (filter?.keyword) {
-    const q = filter.keyword.toLowerCase().trim();
-    list = list.filter(
-      (c) =>
-        c.code.toLowerCase().includes(q) ||
-        (c.storageUnitCode && c.storageUnitCode.toLowerCase().includes(q)) ||
-        (c.customerName && c.customerName.toLowerCase().includes(q)) ||
-        (c.customerPhone && c.customerPhone.includes(q))
-    );
+    params.append('keyword', filter.keyword.trim());
   }
-  return list;
+  if (filter?.nearExpiration) {
+    params.append('expiringSoon', 'true');
+  }
+  params.append('size', '50');
+
+  try {
+    const res = await apiClient<ApiResponse<PageResponse<ManagerContractItem>>>(
+      `/contracts?${params.toString()}`
+    );
+    const items = res?.data?.content || [];
+    return items.map((c: any) => {
+      const daysRemaining = c.endDateExclusive
+        ? Math.ceil(
+            (new Date(c.endDateExclusive).getTime() - new Date().setHours(0, 0, 0, 0)) /
+              (1000 * 60 * 60 * 24)
+          )
+        : undefined;
+
+      const nearExpiration =
+        c.status === 'ACTIVE' &&
+        daysRemaining !== undefined &&
+        daysRemaining >= 0 &&
+        daysRemaining <= 7;
+
+      return {
+        ...c,
+        daysRemaining,
+        nearExpiration: c.nearExpiration ?? nearExpiration,
+      };
+    });
+  } catch (error) {
+    console.error('Lỗi gọi API /contracts:', error);
+    return [];
+  }
 }
 
 /**
@@ -309,12 +312,24 @@ export async function getManagerContracts(filter?: {
 export async function getManagerKpiData(facilityId?: number): Promise<ContractKpiData> {
   const contracts = await getManagerContracts({ facilityId, status: 'ALL' });
   const activeContracts = contracts.filter((c) => c.status === 'ACTIVE');
-  const nearExpiring = activeContracts.filter((c) => c.nearExpiration);
+  const nearExpiring = activeContracts.filter(
+    (c) =>
+      c.nearExpiration ||
+      (c.daysRemaining !== undefined && c.daysRemaining <= 7 && c.daysRemaining >= 0)
+  );
   const pendingCheckIn = contracts.filter((c) => c.status === 'PENDING_CHECK_IN');
   const overdueContracts = contracts.filter((c) => c.status === 'OVERDUE');
-  const pendingSettlement = contracts.filter((c) => c.status === 'INSPECTED' || c.status === 'NOTICE_SUBMITTED');
+  const pendingSettlement = contracts.filter(
+    (c) =>
+      c.status === 'INSPECTED' ||
+      c.status === 'NOTICE_SUBMITTED' ||
+      (c.status as string) === 'PENDING_RETURN'
+  );
 
-  const totalDebt = overdueContracts.reduce((sum, c) => sum + (c.totalOutstandingDebt || 0), 0);
+  const totalDebt = overdueContracts.reduce(
+    (sum, c) => sum + (c.totalOutstandingDebt || c.overdueFeeAccrued || 0),
+    0
+  );
 
   return {
     activeCount: activeContracts.length,
@@ -333,18 +348,23 @@ export async function getAvailableUnitsForReassign(
   facilityId: number,
   unitTypeId: number
 ): Promise<AvailableUnitOption[]> {
-  if (isMockEnabled('WS2')) {
-    return localAvailableUnits.filter((u) => u.unitTypeId === unitTypeId);
-  }
-
   try {
-    const res = await apiClient<ApiResponse<{ content: AvailableUnitOption[] }>>(
-      `/facilities/${facilityId}/units?unitTypeId=${unitTypeId}&status=AVAILABLE`
+    const res = await apiClient<PageResponse<any>>(
+      `/facilities/${facilityId}/storage-units?unitTypeId=${unitTypeId}&status=AVAILABLE&size=50`
     );
-    return res.data?.content || [];
+    const items = res?.content || (res as any)?.data?.content || [];
+    return items.map((u: any) => ({
+      id: u.id,
+      code: u.code,
+      unitTypeId: u.unitTypeId,
+      unitTypeName: u.unitTypeName,
+      floor: u.floor,
+      position: u.position,
+      status: u.status,
+    }));
   } catch (error) {
-    console.warn('L\u1ed7i t\u1ea3i danh s\u00e1ch \u00f4 kho tr\u1ed1ng, fallback mock:', error);
-    return localAvailableUnits.filter((u) => u.unitTypeId === unitTypeId);
+    console.error('Lỗi tải danh sách ô kho trống thay thế:', error);
+    return [];
   }
 }
 
@@ -354,53 +374,21 @@ export async function getAvailableUnitsForReassign(
 export async function reassignStorageUnit(
   data: ReassignUnitRequest
 ): Promise<{ success: boolean; message: string; updatedContract: ManagerContractItem }> {
-  if (isMockEnabled('WS2')) {
-    const contract = localManagerContracts.find((c) => c.id === data.contractId);
-    if (!contract) {
-      throw new Error(`Kh\u00f4ng t\u00ecm th\u1ea5y h\u1ee3p \u0111\u1ed3ng #${data.contractId}`);
-    }
-    const chosenUnit = localAvailableUnits.find((u) => u.id === data.newUnitId);
-    const prevUnitCode = contract.storageUnitCode;
-    contract.storageUnitId = data.newUnitId;
-    contract.storageUnitCode = data.newUnitCode;
-    if (chosenUnit) {
-      contract.floor = chosenUnit.floor;
-      contract.position = chosenUnit.position;
-    }
-    localAvailableUnits = localAvailableUnits.filter((u) => u.id !== data.newUnitId);
-    return {
-      success: true,
-      message: `\u0110\u1ed5i t\u1eeb \u00f4 kho ${prevUnitCode} sang ${data.newUnitCode} th\u00e0nh c\u00f4ng. L\u00fd do: "${data.reason}".`,
-      updatedContract: contract,
-    };
-  }
-
-  try {
-    const res = await apiClient<ApiResponse<ManagerContractItem>>(`/contracts/${data.contractId}/reassign-unit`, {
+  const res = await apiClient<ApiResponse<ManagerContractItem>>(
+    `/contracts/${data.contractId}/reassign-unit`,
+    {
       method: 'POST',
       body: JSON.stringify({
         newStorageUnitId: data.newUnitId,
         reason: data.reason,
       }),
-    });
-    return {
-      success: true,
-      message: 'Đổi ô kho thành công',
-      updatedContract: res.data,
-    };
-  } catch (error) {
-    console.warn('Lỗi gọi API /reassign-unit, cập nhật local mock:', error);
-    const contract = localManagerContracts.find((c) => c.id === data.contractId);
-    if (contract) {
-      contract.storageUnitId = data.newUnitId;
-      contract.storageUnitCode = data.newUnitCode;
     }
-    return {
-      success: true,
-      message: `Đổi ô kho sang ${data.newUnitCode} thành công (chế độ demo).`,
-      updatedContract: contract!,
-    };
-  }
+  );
+  return {
+    success: true,
+    message: res.message || `Đổi ô kho sang ${data.newUnitCode} thành công`,
+    updatedContract: res.data,
+  };
 }
 
 /**
@@ -408,39 +396,10 @@ export async function reassignStorageUnit(
  * GET /api/v1/contracts/{id}/financial-summary
  */
 export async function getContractFinancialDetail(id: number): Promise<ContractFinancialSummary> {
-  const contract = localManagerContracts.find((c) => c.id === id);
-  const fallbackSummary: ContractFinancialSummary = {
-    contractId: id,
-    contractCode: contract ? contract.code : `CTR-${id}`,
-    customerName: contract ? contract.customerName : 'Khách hàng',
-    depositAmount: contract ? contract.depositAmount : 800000,
-    depositBalance: contract ? contract.depositBalance : 800000,
-    totalRentalFee: contract ? contract.monthlyPrice * contract.rentalMonths : 2400000,
-    overdueFeeAccrued: contract ? contract.overdueFeeAccrued || 0 : 0,
-    totalUnpaidExtraCharges: 50000,
-    totalOutstandingDebt: contract ? (contract.totalOutstandingDebt || 0) + 50000 : 50000,
-    extraCharges: [
-      {
-        id: 1,
-        amount: 50000,
-        reason: 'Phí cấp lại thẻ từ phụ',
-        status: 'UNPAID',
-        createdAt: '2026-09-18',
-      },
-    ],
-  };
-
-  if (isMockEnabled('WS2')) {
-    return fallbackSummary;
-  }
-
-  try {
-    const res = await apiClient<ApiResponse<ContractFinancialSummary>>(`/contracts/${id}/financial-summary`);
-    return res.data || fallbackSummary;
-  } catch (error) {
-    console.warn(`Lỗi API /contracts/${id}/financial-summary, fallback mock:`, error);
-    return fallbackSummary;
-  }
+  const res = await apiClient<ApiResponse<ContractFinancialSummary>>(
+    `/contracts/${id}/financial-summary`
+  );
+  return res.data;
 }
 
 /**
@@ -451,22 +410,16 @@ export async function approveSettlementRefund(
   data: SettlementApprovalRequest,
   managerId?: number
 ): Promise<{ success: boolean; message: string }> {
-  if (isMockEnabled('WS2')) {
-    const contract = localManagerContracts.find((c) => c.id === data.contractId);
-    if (contract) contract.status = 'CLOSED';
-    return {
-      success: true,
-      message: `\u0110\u00e3 ph\u00ea duy\u1ec7t quy\u1ebft to\u00e1n h\u1ee3p \u0111\u1ed3ng #${data.contractId}. L\u1ec7nh ho\u00e0n tr\u1ea3 ${data.depositRefundAmount.toLocaleString('vi-VN')} \u0111 ti\u1ec1n c\u1ecd. H\u1ee3p \u0111\u1ed3ng chuy\u1ec3n sang CLOSED.`,
-    };
-  }
-
   const headers: Record<string, string> = {};
   if (managerId) headers['X-Manager-Id'] = String(managerId);
 
-  await apiClient(`/contracts/${data.contractId}/settlement-approval`, {
+  const res = await apiClient<ApiResponse<any>>(`/contracts/${data.contractId}/settlement-approval`, {
     method: 'POST',
     headers,
     body: JSON.stringify(data),
   });
-  return { success: true, message: 'Ph\u00ea duy\u1ec7t quy\u1ebft to\u00e1n v\u00e0 ho\u00e0n c\u1ecd th\u00e0nh c\u00f4ng' };
+  return {
+    success: true,
+    message: res.message || 'Phê duyệt quyết toán và hoàn cọc thành công',
+  };
 }

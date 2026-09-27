@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import type { ManagerContractItem, ContractKpiData } from '@/types/contractManager';
 import { getManagerContracts, getManagerKpiData } from '@/api/contract';
+import { fetchFacilities } from '@/api/facility';
 import { ContractKpiCards } from '../components/ContractKpiCards';
 import { ReassignUnitModal } from '../components/ReassignUnitModal';
 import { ContractFinancialModal } from '../components/ContractFinancialModal';
@@ -24,14 +25,12 @@ import { SettlementApprovalModal } from '../components/SettlementApprovalModal';
 
 type TabKey = 'ACTIVE' | 'PENDING_CHECK_IN' | 'RETURN' | 'OVERDUE';
 
-const FACILITIES = [
-  { id: 1, name: 'Kho Tự Quản Tân Thuận (Quận 7, TP.HCM)' },
-  { id: 2, name: 'Kho Tự Quản Thủ Đức (TP. Thủ Đức)' },
-];
-
 export const ContractsHubPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('ACTIVE');
-  const [selectedFacilityId, setSelectedFacilityId] = useState<number>(1);
+  const [facilities, setFacilities] = useState<Array<{ id: number; name: string }>>([
+    { id: 0, name: 'Tất cả cơ sở' },
+  ]);
+  const [selectedFacilityId, setSelectedFacilityId] = useState<number>(0);
   const [searchKeyword, setSearchKeyword] = useState<string>('');
   const [filterExpiringOnly, setFilterExpiringOnly] = useState<boolean>(false);
 
@@ -65,18 +64,34 @@ export const ContractsHubPage: React.FC = () => {
     setTimeout(() => setToastMessage(null), 5000);
   };
 
+  // Nạp danh mục cơ sở thực tế từ API backend
+  useEffect(() => {
+    fetchFacilities(undefined, true)
+      .then((list) => {
+        const mapped = list.map((f) => ({
+          id: f.id,
+          name: f.name,
+        }));
+        setFacilities([{ id: 0, name: 'Tất cả cơ sở' }, ...mapped]);
+      })
+      .catch((err) => {
+        console.error('Không thể tải danh sách cơ sở:', err);
+      });
+  }, []);
+
   useEffect(() => {
     let isMounted = true;
 
     const fetchData = async () => {
       try {
+        const facParam = selectedFacilityId === 0 ? undefined : selectedFacilityId;
         const [contractsRes, kpiRes] = await Promise.all([
           getManagerContracts({
-            facilityId: selectedFacilityId,
+            facilityId: facParam,
             keyword: searchKeyword,
             nearExpiration: filterExpiringOnly,
           }),
-          getManagerKpiData(selectedFacilityId),
+          getManagerKpiData(facParam),
         ]);
         if (isMounted) {
           setContracts(contractsRes);
@@ -107,7 +122,10 @@ export const ContractsHubPage: React.FC = () => {
         return contracts.filter((c) => c.status === 'PENDING_CHECK_IN');
       case 'RETURN':
         return contracts.filter(
-          (c) => c.status === 'NOTICE_SUBMITTED' || c.status === 'INSPECTED'
+          (c) =>
+            c.status === 'NOTICE_SUBMITTED' ||
+            c.status === 'INSPECTED' ||
+            (c.status as string) === 'PENDING_RETURN'
         );
       case 'OVERDUE':
         return contracts.filter((c) => c.status === 'OVERDUE');
@@ -163,7 +181,7 @@ export const ContractsHubPage: React.FC = () => {
             onChange={(e) => setSelectedFacilityId(Number(e.target.value))}
             className="text-xs font-semibold bg-white border border-slate-300 rounded-xl px-3 py-2 text-slate-700 shadow-sm focus:ring-2 focus:ring-blue-500 outline-none"
           >
-            {FACILITIES.map((f) => (
+            {facilities.map((f) => (
               <option key={f.id} value={f.id}>
                 {f.name}
               </option>
@@ -359,6 +377,11 @@ export const ContractsHubPage: React.FC = () => {
                             {contract.unitTypeName}
                           </span>
                         </div>
+                        {contract.facilityName && (
+                          <span className="text-[10px] text-blue-600 font-medium block mt-0.5">
+                            {contract.facilityName}
+                          </span>
+                        )}
                         {contract.floor && (
                           <span className="text-[10px] text-slate-400 block mt-0.5">
                             Tầng {contract.floor} • {contract.position}
@@ -460,8 +483,34 @@ export const ContractsHubPage: React.FC = () => {
 
                       {/* Thao tác */}
                       <td className="py-3 px-4 text-right space-x-2 whitespace-nowrap">
-                        {/* Nút Đổi ô kho (chỉ hiển thị ở PENDING_CHECK_IN) */}
+                        {/* Nút Bàn giao kho & Đổi ô kho (PENDING_CHECK_IN) */}
                         {activeTab === 'PENDING_CHECK_IN' && (
+                          <>
+                            <Link
+                              to={`/staff/handover?contractId=${contract.id}`}
+                              className="px-2.5 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors inline-flex items-center gap-1"
+                              title="Mở Bàn giao kho tại quầy (Check-in)"
+                            >
+                              <FileCheck className="w-3 h-3" />
+                              Bàn giao
+                            </Link>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedForReassign(contract);
+                                setReassignModalOpen(true);
+                              }}
+                              className="px-2.5 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors inline-flex items-center gap-1"
+                            >
+                              <RefreshCw className="w-3 h-3" />
+                              Đổi ô kho
+                            </button>
+                          </>
+                        )}
+
+                        {/* Nút Đổi ô kho khi ACTIVE nếu cần xử lý ngoại lệ */}
+                        {activeTab === 'ACTIVE' && (
                           <button
                             type="button"
                             onClick={() => {
@@ -469,9 +518,10 @@ export const ContractsHubPage: React.FC = () => {
                               setReassignModalOpen(true);
                             }}
                             className="px-2.5 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors inline-flex items-center gap-1"
+                            title="Đổi ô kho ngoại lệ khi bảo trì hoặc phát sinh sự cố"
                           >
                             <RefreshCw className="w-3 h-3" />
-                            Đổi ô kho
+                            Đổi ô
                           </button>
                         )}
 

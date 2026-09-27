@@ -16,6 +16,7 @@ public interface ContractService {
     // T4.2: Facility Manager Tracking
     PageResponse<ContractSummaryResponse> getContractsPage(ContractFilterRequest filter, Pageable pageable, List<Long> facilityIds);
     ContractFinancialSummaryResponse getContractFinancialSummary(Long contractId, List<Long> facilityIds);
+    ContractSummaryResponse reassignUnit(Long contractId, ReassignUnitRequest request, Long managerId, List<Long> facilityIds);
 
     // T4.3: Return & Settlement Workflow
     ReturnNoticeResponse submitReturnNotice(Long contractId, ReturnNoticeRequest request, List<Long> facilityIds);
