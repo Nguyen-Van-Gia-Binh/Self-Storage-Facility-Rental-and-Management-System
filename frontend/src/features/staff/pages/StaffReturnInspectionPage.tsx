@@ -1,11 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Building2, User, Phone, ShieldCheck, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Building2, User, Phone, ShieldCheck, CheckCircle, RefreshCw } from 'lucide-react';
 import type { ReturnContractDetail, ReturnInspectionRequest } from '@/types';
 import { getReturnContracts, getReturnContractById, submitReturnInspection } from '@/api/contract';
 import { useCurrentUser } from '@/utils/useCurrentUser';
 import { ReturnInspectionForm } from '../components/ReturnInspectionForm';
 import { ReturnSuccessModal } from '../components/ReturnSuccessModal';
+
+const FACILITIES = [
+  { id: 0, name: 'Tất cả cơ sở' },
+  { id: 1, name: 'Cơ sở Quận 1' },
+  { id: 2, name: 'Cơ sở Cầu Giấy' },
+  { id: 3, name: 'Cơ sở Hải Châu' },
+  { id: 4, name: 'Cơ sở Bình Thạnh' },
+  { id: 5, name: 'Cơ sở Hai Bà Trưng' },
+];
 
 export const StaffReturnInspectionPage: React.FC = () => {
   const { contractId } = useParams<{ contractId?: string }>();
@@ -14,6 +23,7 @@ export const StaffReturnInspectionPage: React.FC = () => {
   const user = useCurrentUser();
   const staffId = user?.id as number | undefined;
 
+  const [selectedFacilityId, setSelectedFacilityId] = useState<number>(0);
   const [contracts, setContracts] = useState<ReturnContractDetail[]>([]);
   const [selectedContract, setSelectedContract] = useState<ReturnContractDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,28 +42,41 @@ export const StaffReturnInspectionPage: React.FC = () => {
     refundAmount: 0,
   });
 
-  useEffect(() => {
-    async function loadData() {
-      setLoading(true);
-      try {
-        const list = await getReturnContracts();
-        setContracts(list);
+  const loadData = React.useCallback(async (facilityId?: number) => {
+    setLoading(true);
+    try {
+      const targetFacilityId = facilityId !== undefined ? facilityId : selectedFacilityId;
+      const list = await getReturnContracts(targetFacilityId === 0 ? undefined : targetFacilityId);
+      setContracts(list);
 
-        const targetId = contractId ? parseInt(contractId, 10) : parseInt(searchParams.get('id') || '', 10);
-        if (targetId) {
-          const item = list.find((c) => c.id === targetId) || (await getReturnContractById(targetId));
-          setSelectedContract(item);
-        } else if (list.length > 0) {
-          setSelectedContract(list[0]);
-        }
-      } catch (err) {
-        console.error('Lỗi nạp hợp đồng trả kho:', err);
-      } finally {
-        setLoading(false);
+      const targetId = contractId ? parseInt(contractId, 10) : parseInt(searchParams.get('id') || '', 10);
+      if (targetId) {
+        const item = list.find((c) => c.id === targetId) || (await getReturnContractById(targetId));
+        setSelectedContract(item);
+      } else if (list.length > 0) {
+        setSelectedContract((prev) => {
+          if (!prev) return list[0];
+          const exists = list.find((c) => c.id === prev.id);
+          return exists || list[0];
+        });
+      } else {
+        setSelectedContract(null);
       }
+    } catch (err) {
+      console.error('Lỗi nạp hợp đồng trả kho:', err);
+    } finally {
+      setLoading(false);
     }
+  }, [contractId, searchParams, selectedFacilityId]);
+
+  const handleFacilityChange = (newFacilityId: number) => {
+    setSelectedFacilityId(newFacilityId);
+    loadData(newFacilityId);
+  };
+
+  useEffect(() => {
     loadData();
-  }, [contractId, searchParams]);
+  }, [loadData]);
 
   const handleSubmitInspection = async (data: ReturnInspectionRequest) => {
     if (!selectedContract) return;
@@ -96,7 +119,7 @@ export const StaffReturnInspectionPage: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
       {/* Top Header */}
-      <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+      <div className="flex flex-wrap items-center justify-between pb-4 border-b border-slate-200 gap-4">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/staff')}
@@ -107,20 +130,42 @@ export const StaffReturnInspectionPage: React.FC = () => {
           </button>
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
-              Nghiệm Thu Trả Kho & Biên Bản Bàn Giao (Flow 3)
+              Nghiệm Thu Trả Kho & Biên Bản Bàn Giao
             </h1>
             <p className="text-xs sm:text-sm text-slate-500">
-              Kiểm tra tình trạng ô kho vật lý, lập biên bản đối soát và xác định cọc hoàn trả theo BR-RET-04.
+              Kiểm tra tình trạng ô kho vật lý, lập biên bản đối soát và xác định tiền cọc hoàn trả.
             </p>
           </div>
         </div>
 
-        {selectedContract && (
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-teal-50 text-teal-700 text-xs font-semibold">
-            <Building2 className="w-4 h-4" />
-            {selectedContract.facilityName}
+        {/* Thanh công cụ cơ sở & Làm mới */}
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100/80 rounded-xl border border-slate-200 text-xs text-slate-700">
+            <Building2 className="w-4 h-4 text-slate-500 shrink-0" />
+            <span className="text-slate-500 shrink-0">Cơ sở:</span>
+            <select
+              value={selectedFacilityId}
+              onChange={(e) => handleFacilityChange(Number(e.target.value))}
+              className="bg-transparent font-bold text-slate-900 focus:outline-none cursor-pointer pr-1"
+            >
+              {FACILITIES.map((f) => (
+                <option key={f.id} value={f.id} className="text-slate-900 bg-white">
+                  {f.name}
+                </option>
+              ))}
+            </select>
           </div>
-        )}
+
+          <button
+            type="button"
+            onClick={() => loadData()}
+            disabled={loading}
+            className="p-2 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl text-slate-600 transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+            title="Làm mới danh sách"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-teal-600' : ''}`} />
+          </button>
+        </div>
       </div>
 
       {contracts.length === 0 && !selectedContract ? (
@@ -254,7 +299,10 @@ export const StaffReturnInspectionPage: React.FC = () => {
         unitCode={successData.unitCode}
         customerName={successData.customerName}
         refundAmount={successData.refundAmount}
-        onClose={() => setSuccessData({ ...successData, isOpen: false })}
+        onClose={() => {
+          setSuccessData((prev) => ({ ...prev, isOpen: false }));
+          loadData();
+        }}
       />
     </div>
   );

@@ -276,7 +276,7 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
           {/* Quy trình điều phối tiếp theo */}
           <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
             <div className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
-              <span>Quy trình xử lý tiếp theo (FS-04 · FM-04):</span>
+              <span>Quy trình xử lý tiếp theo:</span>
             </div>
             <div className="grid grid-cols-3 gap-2 text-center text-[11px] pt-1">
               <div className="p-2 bg-white rounded-lg border border-slate-200/80 shadow-2xs">
