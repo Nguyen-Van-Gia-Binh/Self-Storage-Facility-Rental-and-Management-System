@@ -148,9 +148,26 @@ public class RenewalServiceImpl implements RenewalService {
         RentalContract contract = rentalContractRepository.findById(contractId)
                 .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
 
-        // Hợp đồng chỉ được gia hạn khi ACTIVE hoặc OVERDUE (BR-REN-02, BR-REN-06)
-        if (contract.getStatus() != ContractStatus.ACTIVE && contract.getStatus() != ContractStatus.OVERDUE) {
-            throw new CustomException(ErrorCode.RENEWAL_NOT_ALLOWED);
+        // Hợp đồng quá hạn không được phép gia hạn theo yêu cầu nghiệp vụ
+        if (contract.getStatus() == ContractStatus.OVERDUE) {
+            throw new CustomException(ErrorCode.RENEWAL_NOT_ALLOWED,
+                    "Hợp đồng đã quá hạn và không thể gia hạn thêm theo quy định. Vui lòng thanh toán phí quá hạn và tạo hợp đồng mới nếu muốn tiếp tục thuê.");
+        }
+
+        // Chỉ hợp đồng đang ACTIVE mới được gia hạn
+        if (contract.getStatus() != ContractStatus.ACTIVE) {
+            throw new CustomException(ErrorCode.RENEWAL_NOT_ALLOWED,
+                    "Chỉ hợp đồng đang hoạt động (ACTIVE) mới được phép gia hạn.");
+        }
+
+        // Quy tắc BR-REN-02: Phải gia hạn trước ngày hết hạn ít nhất 30 ngày (còn >= 30 ngày)
+        LocalDate now = LocalDate.now();
+        if (contract.getEndDateExclusive() != null) {
+            long daysRemaining = java.time.temporal.ChronoUnit.DAYS.between(now, contract.getEndDateExclusive());
+            if (daysRemaining < 30) {
+                throw new CustomException(ErrorCode.RENEWAL_NOT_ALLOWED,
+                        "Đã quá thời hạn gia hạn. Khách hàng phải gia hạn trước ngày hết hạn ít nhất 30 ngày theo quy định BR-REN-02.");
+            }
         }
 
         return contract;
