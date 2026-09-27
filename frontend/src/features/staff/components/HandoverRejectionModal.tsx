@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { AlertOctagon, X, ShieldAlert, ArrowRight } from 'lucide-react';
 import type { CheckInContract } from '../../../types';
 import { Button } from '../../../components/ui/Button';
@@ -29,6 +30,16 @@ export const HandoverRejectionModal: React.FC<HandoverRejectionModalProps> = ({
   const [selectedReason, setSelectedReason] = useState(REJECTION_REASONS[0]);
   const [reportedDefects, setReportedDefects] = useState('');
 
+  useEffect(() => {
+    if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -36,8 +47,8 @@ export const HandoverRejectionModal: React.FC<HandoverRejectionModalProps> = ({
     await onConfirmRejection(selectedReason, reportedDefects);
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="bg-white rounded-3xl border border-red-200 shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Header cảnh báo */}
         <div className="bg-gradient-to-r from-red-600 to-rose-700 p-5 text-white flex items-center justify-between">
@@ -156,6 +167,7 @@ export const HandoverRejectionModal: React.FC<HandoverRejectionModalProps> = ({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

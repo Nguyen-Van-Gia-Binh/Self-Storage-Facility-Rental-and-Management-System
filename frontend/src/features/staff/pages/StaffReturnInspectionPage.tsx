@@ -299,7 +299,10 @@ export const StaffReturnInspectionPage: React.FC = () => {
         unitCode={successData.unitCode}
         customerName={successData.customerName}
         refundAmount={successData.refundAmount}
-        onClose={() => setSuccessData({ ...successData, isOpen: false })}
+        onClose={() => {
+          setSuccessData((prev) => ({ ...prev, isOpen: false }));
+          loadData();
+        }}
       />
     </div>
   );

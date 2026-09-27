@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { KeyRound, Copy, Check, Printer, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
 import type { CheckInContract } from '../../../types';
 import { Button } from '../../../components/ui/Button';
@@ -18,6 +19,16 @@ export const AccessCodePinModal: React.FC<AccessCodePinModalProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
 
+  useEffect(() => {
+    if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleCopy = () => {
@@ -30,8 +41,8 @@ export const AccessCodePinModal: React.FC<AccessCodePinModalProps> = ({
     window.print();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Banner Header chúc mừng */}
         <div className="bg-gradient-to-r from-emerald-600 via-brand-600 to-teal-700 p-6 text-white text-center relative overflow-hidden">
@@ -135,6 +146,7 @@ export const AccessCodePinModal: React.FC<AccessCodePinModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

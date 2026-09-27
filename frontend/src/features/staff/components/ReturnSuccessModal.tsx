@@ -1,5 +1,6 @@
-import React from 'react';
-import { CheckCircle2, FileText, Home } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { CheckCircle2, FileText, Home, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface ReturnSuccessModalProps {
@@ -21,11 +22,38 @@ export const ReturnSuccessModal: React.FC<ReturnSuccessModalProps> = ({
 }) => {
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-100 animate-in fade-in zoom-in duration-200">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in duration-200 relative">
+        {/* Nút đóng X ở góc trên bên phải */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+          title="Đóng popup"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
         <div className="text-center space-y-3">
           <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
             <CheckCircle2 className="w-8 h-8" />
@@ -68,19 +96,27 @@ export const ReturnSuccessModal: React.FC<ReturnSuccessModalProps> = ({
           </ul>
         </div>
 
-        <div className="mt-6 flex gap-3">
+        <div className="mt-6 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 py-2.5 px-4 rounded-xl font-medium border border-slate-300 text-slate-700 hover:bg-slate-100 transition flex items-center justify-center cursor-pointer shadow-xs"
+          >
+            Đóng
+          </button>
           <button
             type="button"
             onClick={() => {
               onClose();
               navigate('/staff');
             }}
-            className="flex-1 py-2.5 px-4 rounded-xl font-medium bg-teal-600 text-white hover:bg-teal-700 transition flex items-center justify-center gap-1.5 shadow-sm"
+            className="flex-1 py-2.5 px-4 rounded-xl font-medium bg-teal-600 text-white hover:bg-teal-700 transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
           >
-            <Home className="w-4 h-4" /> Về tổng quan ca trực
+            <Home className="w-4 h-4" /> Về ca trực
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
