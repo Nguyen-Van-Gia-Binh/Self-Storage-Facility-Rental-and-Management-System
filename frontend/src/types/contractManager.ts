@@ -43,6 +43,7 @@ export interface ManagerContractItem {
   // Thuộc tính phục vụ Tab Overdue & Sealing
   overdueDays?: number;
   overdueFeeAccrued?: number;
+  accruedOverdueFee?: number;
   totalOutstandingDebt?: number;
   isPinLocked?: boolean;
   isSealed?: boolean;

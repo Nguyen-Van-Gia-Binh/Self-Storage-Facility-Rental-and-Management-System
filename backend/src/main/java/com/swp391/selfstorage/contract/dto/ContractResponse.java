@@ -30,4 +30,6 @@ public class ContractResponse {
     private ContractStatus status;
     private LocalDate checkinDate;
     private LocalDate returnDate;
+    private Integer overdueDays;
+    private Long accruedOverdueFee;
 }

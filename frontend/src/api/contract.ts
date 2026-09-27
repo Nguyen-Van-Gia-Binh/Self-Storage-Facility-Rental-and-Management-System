@@ -281,12 +281,20 @@ export async function getManagerContracts(filter?: {
     );
     const items = res?.data?.content || [];
     return items.map((c: any) => {
-      const daysRemaining = c.endDateExclusive
-        ? Math.ceil(
-            (new Date(c.endDateExclusive).getTime() - new Date().setHours(0, 0, 0, 0)) /
-              (1000 * 60 * 60 * 24)
-          )
-        : undefined;
+      let daysRemaining: number | undefined;
+      if (c.endDateExclusive) {
+        try {
+          const parts = String(c.endDateExclusive).split('-');
+          if (parts.length === 3) {
+            const end = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+            daysRemaining = Math.round((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          }
+        } catch {
+          daysRemaining = undefined;
+        }
+      }
 
       const nearExpiration =
         c.status === 'ACTIVE' &&
@@ -294,8 +302,31 @@ export async function getManagerContracts(filter?: {
         daysRemaining >= 0 &&
         daysRemaining <= 7;
 
+      let overdueDays = c.overdueDays;
+      if (overdueDays === undefined || overdueDays === null) {
+        if (daysRemaining !== undefined && daysRemaining < 0) {
+          overdueDays = Math.abs(daysRemaining);
+        } else if (c.status === 'OVERDUE') {
+          overdueDays = 1;
+        }
+      }
+
+      let accruedOverdueFee = c.accruedOverdueFee;
+      if (accruedOverdueFee === undefined && overdueDays !== undefined && overdueDays > 0) {
+        const deposit = c.depositAmount || 0;
+        if (overdueDays <= 3) {
+          accruedOverdueFee = 0;
+        } else if (overdueDays <= 10) {
+          accruedOverdueFee = Math.round((overdueDays - 3) * 0.10 * deposit);
+        } else {
+          accruedOverdueFee = Math.round(0.70 * deposit);
+        }
+      }
+
       return {
         ...c,
+        overdueDays,
+        accruedOverdueFee,
         daysRemaining,
         nearExpiration: c.nearExpiration ?? nearExpiration,
       };
