@@ -1,13 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import {
   AlertTriangle,
   ShieldCheck,
   CheckCircle2,
   X,
-  Clock,
   RotateCcw,
+  Sparkles,
+  Clock,
+  ArrowRight,
 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
 import { scheduleContractReturn } from '@/api/customerRentals';
@@ -26,16 +27,17 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
   contract,
   onReturnScheduled,
 }) => {
-  // Tính ngày tối thiểu: ít nhất 7 ngày kể từ hôm nay (US-SC-05.4, return.notice_days)
-  const minNoticeDate = useMemo(() => {
+  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const todayDisplay = useMemo(() => {
     const d = new Date();
-    d.setDate(d.getDate() + 7);
-    return d.toISOString().split('T')[0];
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
   }, []);
 
-  const [returnDate, setReturnDate] = useState<string>(minNoticeDate);
+  const [returnDate] = useState<string>(todayStr);
   const [notes, setNotes] = useState('');
-  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [isCleaned, setIsCleaned] = useState(false);
+  const [isConditionOk, setIsConditionOk] = useState(false);
+  const [agreeEarlyTerms, setAgreeEarlyTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -47,11 +49,11 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
     return new Date(returnDate) < new Date(contract.endDate);
   }, [contract, returnDate]);
 
-  // Kiểm tra xem ngày trả có sau hạn hợp đồng không (BR-RET-10)
-  const isPastEndDate = useMemo(() => {
-    if (!contract || !returnDate) return false;
-    return new Date(returnDate) > new Date(contract.endDate);
-  }, [contract, returnDate]);
+  // Kiểm tra xem hợp đồng có đang trong 3 ngày ân hạn không (BR-OVD-02)
+  const isGracePeriod = useMemo(() => {
+    if (!contract) return false;
+    return contract.status === 'OVERDUE' && (contract.overdueDays ?? 0) <= 3;
+  }, [contract]);
 
   if (!isOpen || !contract) return null;
 
@@ -61,24 +63,26 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
       onClose();
       setIsClosing(false);
       setError(null);
-      setAgreeTerms(false);
+      setIsCleaned(false);
+      setIsConditionOk(false);
+      setAgreeEarlyTerms(false);
       setIsSuccess(false);
     }, 180);
   };
 
   const validate = (): boolean => {
-    if (!returnDate) {
-      setError('Vui lòng chọn ngày hẹn trả kho.');
+    if (!isCleaned) {
+      setError('Vui lòng xác nhận bạn đã dọn sạch toàn bộ đồ đạc và rác thải trong ngăn tủ.');
       return false;
     }
 
-    if (new Date(returnDate) < new Date(minNoticeDate)) {
-      setError('Quy định hệ thống yêu cầu thông báo trả kho trước ít nhất 7 ngày (return.notice_days).');
+    if (!isConditionOk) {
+      setError('Vui lòng xác nhận ngăn tủ nguyên vẹn trước khi gửi yêu cầu nghiệm thu.');
       return false;
     }
 
-    if (isEarlyReturn && !agreeTerms) {
-      setError('Bạn phải xác nhận đã hiểu và đồng ý quy định không hoàn tiền thuê các tháng chưa sử dụng (BR-RET-06).');
+    if (isEarlyReturn && !agreeEarlyTerms) {
+      setError('Bạn phải xác nhận đã hiểu quy định không hoàn cước thuê các tháng chưa sử dụng (BR-RET-06).');
       return false;
     }
 
@@ -92,22 +96,23 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
 
     setIsSubmitting(true);
     try {
+      const combinedNotes = `[ĐÃ DỌN ĐỒ XONG] ${notes}`.trim();
       await scheduleContractReturn({
         contractId: contract.id,
         returnDate,
-        notes,
+        notes: combinedNotes,
       });
 
       setIsSuccess(true);
       setIsSubmitting(false);
-      onReturnScheduled(contract.id, returnDate, notes);
+      onReturnScheduled(contract.id, returnDate, combinedNotes);
 
       setTimeout(() => {
         handleClose();
-      }, 1300);
+      }, 1500);
     } catch (err) {
-      console.error('Lỗi đăng ký trả kho:', err);
-      setError('Không thể đăng ký lịch trả kho. Vui lòng thử lại.');
+      console.error('Lỗi báo trả kho:', err);
+      setError('Không thể gửi yêu cầu trả kho. Vui lòng thử lại hoặc liên hệ quản lý cơ sở.');
       setIsSubmitting(false);
     }
   };
@@ -137,11 +142,13 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
 
           <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-100 uppercase tracking-wider mb-1">
             <RotateCcw className="w-4 h-4" />
-            <span>Quy Trình Trả Kho & Quyết Toán Cọc (US-SC-05.4)</span>
+            <span>Quy Trình Nghiệm Thu & Hoàn Cọc (FS-04 · FM-04)</span>
           </div>
 
-          <h3 className="text-xl font-black text-white">Đăng Ký Lịch Trả Kho Ngăn {contract.unitNumber}</h3>
-          <p className="text-xs text-emerald-100/90 mt-0.5">{contract.facilityName}</p>
+          <h3 className="text-xl font-black text-white">Xác Nhận Đã Dọn Đồ & Báo Trả Kho</h3>
+          <p className="text-xs text-emerald-100/90 mt-0.5">
+            Ngăn tủ <span className="font-bold text-white">{contract.unitNumber}</span> — Cơ sở {contract.facilityName}
+          </p>
         </div>
 
         {/* Body */}
@@ -162,84 +169,129 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
             </div>
           </div>
 
-          {/* Date Picker (Notice >= 7 days) */}
-          <div className="space-y-1">
-            <Input
-              label="Ngày hẹn trả kho & nghiệm thu bàn giao (Ít nhất 7 ngày)"
-              type="date"
-              min={minNoticeDate}
-              value={returnDate}
-              onChange={(e) => {
-                setReturnDate(e.target.value);
-                if (error) setError(null);
-              }}
-              required
-            />
-            <div className="flex items-center gap-1 text-[11px] text-slate-500">
-              <Clock className="w-3.5 h-3.5 text-brand-600" />
-              <span>Thời hạn thông báo trước tối thiểu 7 ngày theo quy định hệ thống.</span>
+          {/* Checklist cam kết: Đã dọn sạch đồ đạc */}
+          <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-3">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-900">
+              <Sparkles className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+              <span>Cam kết hiện trạng sau khi dọn (Bắt buộc xác nhận):</span>
             </div>
+
+            <label className="flex items-start gap-2.5 text-xs text-slate-800 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={isCleaned}
+                onChange={(e) => {
+                  setIsCleaned(e.target.checked);
+                  if (error) setError(null);
+                }}
+                className="mt-0.5 rounded border-emerald-400 text-emerald-600 focus:ring-emerald-500 h-4 w-4 shrink-0"
+                required
+              />
+              <span className="leading-snug">
+                <strong>Đã dọn sạch 100% đồ đạc:</strong> Tôi xác nhận đã lấy hết toàn bộ tài sản cá nhân ra khỏi ngăn tủ và không để lại rác thải.
+              </span>
+            </label>
+
+            <label className="flex items-start gap-2.5 text-xs text-slate-800 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={isConditionOk}
+                onChange={(e) => {
+                  setIsConditionOk(e.target.checked);
+                  if (error) setError(null);
+                }}
+                className="mt-0.5 rounded border-emerald-400 text-emerald-600 focus:ring-emerald-500 h-4 w-4 shrink-0"
+                required
+              />
+              <span className="leading-snug">
+                <strong>Ngăn tủ nguyên vẹn:</strong> Cửa tủ, sàn, vách ngăn và ổ khóa không bị hư hại, biến dạng hay vẽ bậy.
+              </span>
+            </label>
           </div>
 
-          {/* Note Input */}
+          {/* Thời điểm báo trả kho */}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2 text-slate-600">
+              <Clock className="w-4 h-4 text-emerald-600" />
+              <span>Thời điểm hoàn tất dọn đồ & báo trả:</span>
+            </div>
+            <span className="font-bold text-slate-800 bg-white px-2.5 py-1 rounded-md border border-slate-200 shadow-2xs">
+              Hôm nay ({todayDisplay})
+            </span>
+          </div>
+
+          {/* Ghi chú */}
           <div>
             <label className="text-xs font-semibold text-slate-700 block mb-1">
-              Ghi chú cho nhân viên quầy (Tùy chọn)
+              Ghi chú thêm cho nhân viên cơ sở (Tùy chọn)
             </label>
             <textarea
               rows={2}
-              placeholder="Ví dụ: Tôi sẽ dọn đồ vào buổi sáng từ 9h-11h..."
+              placeholder="Ví dụ: Tôi đã dọn xong và đang ở sảnh / Khóa số đã được reset về 0000..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
             />
           </div>
 
+          {/* Ưu đãi ân hạn: BR-OVD-02 */}
+          {isGracePeriod && (
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-2.5 text-xs text-emerald-900">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+              <span className="leading-snug">
+                <strong>Chính sách ân hạn (BR-OVD-02):</strong> Hợp đồng đã quá hạn {contract.overdueDays} ngày (trong hạn 3 ngày ân hạn). Nhờ bạn hoàn tất dọn đồ và báo trả hôm nay, bạn vẫn được <strong>hoàn trả 100% tiền cọc ({formatVND(contract.depositHeld)})</strong> và được <strong>miễn toàn bộ phí phạt quá hạn</strong>.
+              </span>
+            </div>
+          )}
+
           {/* Early Return Warning: BR-RET-06 */}
           {isEarlyReturn && (
             <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl space-y-2 text-xs text-amber-900">
               <div className="flex items-start gap-2 font-bold text-amber-950">
                 <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                <span>Quy định trả kho trước hạn hợp đồng (BR-RET-06):</span>
+                <span>Quy định trả kho trước thời hạn hợp đồng (BR-RET-06):</span>
               </div>
               <p className="text-amber-800 leading-relaxed text-[11px]">
-                Ngày hẹn trả kho của bạn sớm hơn ngày kết thúc hợp đồng ({contract.endDate}).
-                Theo điều khoản, <strong>khoản tiền thuê các tháng còn lại sẽ không được hoàn trả</strong>.
-                Khoản tiền cọc <strong>{formatVND(contract.depositHeld)}</strong> vẫn sẽ được hoàn trả 100% nếu ô kho không hư hại theo biên bản nghiệm thu (BR-RET-04).
+                Ngày trả kho của bạn sớm hơn ngày kết thúc hợp đồng (<strong>{contract.endDate}</strong>).
+                Khoản tiền cọc <strong>{formatVND(contract.depositHeld)}</strong> vẫn sẽ được hoàn trả 100% sau khi nghiệm thu đạt chuẩn.
+                Lưu ý: <strong>Cước phí thuê các ngày/tháng chưa sử dụng sẽ không được hoàn trả</strong> theo quy định hợp đồng.
               </p>
 
               <label className="flex items-start gap-2 pt-1 cursor-pointer select-none text-xs font-semibold text-amber-950">
                 <input
                   type="checkbox"
-                  checked={agreeTerms}
+                  checked={agreeEarlyTerms}
                   onChange={(e) => {
-                    setAgreeTerms(e.target.checked);
+                    setAgreeEarlyTerms(e.target.checked);
                     if (error) setError(null);
                   }}
-                  className="mt-0.5 rounded border-amber-400 text-amber-600 focus:ring-amber-500"
+                  className="mt-0.5 rounded border-amber-400 text-amber-600 focus:ring-amber-500 h-4 w-4 shrink-0"
                   required
                 />
-                <span>Tôi xác nhận đã hiểu và chấp nhận điều khoản không hoàn tiền thuê còn lại.</span>
+                <span>Tôi xác nhận đã hiểu và đồng ý điều khoản không hoàn tiền cước thuê còn lại.</span>
               </label>
             </div>
           )}
 
-          {/* Past End Date Warning: BR-RET-10 */}
-          {isPastEndDate && (
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2 text-xs text-rose-900">
-              <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
-              <span>
-                <strong>Cảnh báo (BR-RET-10):</strong> Ngày hẹn trả kho sau ngày hết hạn ({contract.endDate}). Hợp đồng sẽ chuyển sang trạng thái quá hạn từ ngày D+1 cho đến khi bạn hoàn tất bàn giao.
-              </span>
+          {/* Quy trình điều phối tiếp theo */}
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
+            <div className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+              <span>Quy trình xử lý tiếp theo (FS-04 · FM-04):</span>
             </div>
-          )}
-
-          {/* Standard Deposit Refund Policy */}
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-2 text-[11px] text-slate-500">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-            <span>
-              Quy trình trả kho (BR-RET-04): Bạn vui lòng dọn dẹp sạch sẽ tài sản trong ngăn tủ. Nhân viên sẽ cùng bạn nghiệm thu hiện trạng và hoàn trả 100% tiền cọc trong vòng 24-48 giờ làm việc.
-            </span>
+            <div className="grid grid-cols-3 gap-2 text-center text-[11px] pt-1">
+              <div className="p-2 bg-white rounded-lg border border-slate-200/80 shadow-2xs">
+                <div className="font-bold text-emerald-700">1. Gửi báo trả</div>
+                <div className="text-slate-500 text-[10px] mt-0.5">Khách đã dọn đồ</div>
+              </div>
+              <div className="p-2 bg-white rounded-lg border border-slate-200/80 shadow-2xs">
+                <div className="font-bold text-blue-700">2. Nghiệm thu</div>
+                <div className="text-slate-500 text-[10px] mt-0.5">Staff kiểm tra kho</div>
+              </div>
+              <div className="p-2 bg-white rounded-lg border border-slate-200/80 shadow-2xs">
+                <div className="font-bold text-purple-700">3. Quyết toán</div>
+                <div className="text-slate-500 text-[10px] mt-0.5">Hoàn cọc 24-48h</div>
+              </div>
+            </div>
           </div>
 
           {/* Validation Error */}
@@ -254,7 +306,7 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
           {isSuccess && (
             <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-xs text-emerald-800">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-              <span className="font-bold">Đăng ký trả kho thành công! Hợp đồng đã chuyển sang Chờ trả kho.</span>
+              <span className="font-bold">Đã gửi yêu cầu trả kho thành công! Quản lý cơ sở đang cử nhân viên xuống kiểm tra.</span>
             </div>
           )}
 
@@ -274,10 +326,17 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
               type="submit"
               variant="primary"
               size="sm"
-              disabled={isSubmitting || isSuccess || (isEarlyReturn && !agreeTerms)}
-              className="px-5 font-bold cursor-pointer shadow-xs"
+              disabled={isSubmitting || isSuccess || !isCleaned || !isConditionOk || (isEarlyReturn && !agreeEarlyTerms)}
+              className="px-5 font-bold cursor-pointer shadow-xs bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5"
             >
-              {isSubmitting ? 'Đang gửi...' : 'Xác nhận đăng ký trả kho'}
+              {isSubmitting ? (
+                'Đang gửi yêu cầu...'
+              ) : (
+                <>
+                  <span>Tôi đã dọn xong — Báo trả kho</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </Button>
           </div>
         </form>
@@ -285,3 +344,4 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
     </div>
   );
 };
+
