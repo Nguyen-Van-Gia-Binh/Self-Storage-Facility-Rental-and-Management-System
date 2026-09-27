@@ -78,7 +78,7 @@ export const RevenueStreamBar: React.FC<RevenueStreamBarProps> = ({ revenue, isL
       color: 'bg-rose-500',
       textColor: 'text-rose-700',
       dotColor: 'bg-rose-500',
-      desc: 'Phạt trễ hạn theo BR-OVD',
+      desc: 'Phạt trễ hạn hợp đồng',
     },
   ];
 
@@ -98,7 +98,7 @@ export const RevenueStreamBar: React.FC<RevenueStreamBarProps> = ({ revenue, isL
           <span className="text-slate-300">•</span>
           <div className="flex items-center gap-1">
             <Info className="w-3.5 h-3.5 text-slate-400" />
-            <span>Làm tròn VND (BR-GEN-04)</span>
+            <span>Làm tròn đến 1.000 đ</span>
           </div>
         </div>
       </div>

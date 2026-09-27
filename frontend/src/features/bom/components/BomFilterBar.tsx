@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Calendar, Download, Building2, AlertCircle } from 'lucide-react';
+import { Calendar, Building2, AlertCircle } from 'lucide-react';
 import type { ReportFilterParams } from '@/types';
 import { Button } from '@/components/ui/Button';
 
 export interface BomFilterBarProps {
   filters: ReportFilterParams;
   onChange: (filters: ReportFilterParams) => void;
-  onOpenExport: () => void;
+  onOpenExport?: () => void;
   facilities: { id: number; name: string }[];
   isLoading?: boolean;
 }
@@ -14,7 +14,6 @@ export interface BomFilterBarProps {
 export const BomFilterBar: React.FC<BomFilterBarProps> = ({
   filters,
   onChange,
-  onOpenExport,
   facilities,
   isLoading = false,
 }) => {
@@ -111,19 +110,6 @@ export const BomFilterBar: React.FC<BomFilterBarProps> = ({
               </button>
             );
           })}
-        </div>
-
-        {/* Nút Xuất báo cáo */}
-        <div className="flex items-center gap-2.5">
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={onOpenExport}
-            className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-medium text-xs py-2 px-3.5 rounded-lg shadow-sm"
-          >
-            <Download className="w-4 h-4" />
-            Trích xuất báo cáo đối soát
-          </Button>
         </div>
       </div>
 

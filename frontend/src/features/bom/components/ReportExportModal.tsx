@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Download, FileSpreadsheet, Printer, ShieldCheck, CheckCircle2, Calendar, Building2 } from 'lucide-react';
 import type { ReportFilterParams, ReportExportParams } from '@/types';
 import { exportSystemReport } from '@/api/report';
@@ -24,10 +25,20 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
   const [isExporting, setIsExporting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Sinh mã phiên xuất ngẫu nhiên để phục vụ Audit Trail (US-BM-05.1 AC-5)
+  // Sinh mã phiên xuất ngẫu nhiên để phục vụ Audit Trail
   const [sessionId] = useState(() => `EXP-${Math.random().toString(36).substring(2, 9).toUpperCase()}`);
   const now = new Date();
   const exportTimestamp = `${now.toLocaleDateString('vi-VN')} ${now.toLocaleTimeString('vi-VN')}`;
+
+  useEffect(() => {
+    if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -71,9 +82,16 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs modal-backdrop-enter">
-      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xl max-w-lg w-full overflow-hidden modal-panel-enter">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs modal-backdrop-enter animate-in fade-in duration-200"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isExporting) {
+          onClose();
+        }
+      }}
+    >
+      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xl max-w-lg w-full overflow-hidden modal-panel-enter animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
           <div className="flex items-center gap-2.5">
@@ -85,7 +103,7 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
                 Trích Xuất Báo Cáo Đối Soát & BI
               </h3>
               <p className="text-xs text-slate-500">
-                Chuẩn hóa dữ liệu toàn hệ thống theo US-BM-05.1
+                Chuẩn hóa dữ liệu toàn hệ thống theo thời gian thực
               </p>
             </div>
           </div>
@@ -110,17 +128,17 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
                 {
                   id: 'REVENUE',
                   title: 'Báo cáo Doanh thu & Cơ cấu Dòng tiền',
-                  desc: 'Bóc tách tiền thuê, cọc, phí gia hạn, phụ phí, hoàn tiền (BM-04)',
+                  desc: 'Bóc tách tiền thuê, cọc, phí gia hạn, phụ phí, hoàn tiền',
                 },
                 {
                   id: 'OCCUPANCY',
                   title: 'Báo cáo Tỷ lệ Lấp đầy & Tải Kho',
-                  desc: 'Usage Rate từng cơ sở và chi tiết số lượng ô kho theo 6 trạng thái',
+                  desc: 'Tỷ lệ sử dụng ô kho từng cơ sở và chi tiết số lượng ô kho theo các trạng thái',
                 },
                 {
                   id: 'OVERDUE',
                   title: 'Báo cáo Danh sách Hợp đồng Quá hạn',
-                  desc: 'Số ngày trễ hạn, tiền phạt lũy kế và tiến trình chế tài BR-OVD',
+                  desc: 'Số ngày trễ hạn, tiền phạt lũy kế và tiến trình xử lý quá hạn',
                 },
               ].map((item) => (
                 <label
@@ -269,6 +287,7 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

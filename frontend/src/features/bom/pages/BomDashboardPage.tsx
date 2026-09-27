@@ -145,13 +145,13 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold text-brand-600 uppercase tracking-wider mb-1">
             <Building2 className="w-3.5 h-3.5" />
-            <span>Phân Hệ Vận Hành Doanh Nghiệp (Flow 4)</span>
+            <span>Phân Hệ Vận Hành Doanh Nghiệp</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
             Giám Sát Doanh Thu & Hiệu Quả Vận Hành
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Theo dõi doanh thu thực thu, phân tích tỷ lệ lấp đầy ô kho và cảnh báo rủi ro quá hạn (SCR-BM-04).
+            Theo dõi doanh thu thực thu, phân tích tỷ lệ lấp đầy ô kho và cảnh báo rủi ro quá hạn.
           </p>
         </div>
 

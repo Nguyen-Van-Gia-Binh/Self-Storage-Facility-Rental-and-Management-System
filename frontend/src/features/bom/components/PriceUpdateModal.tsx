@@ -1,5 +1,6 @@
 // frontend/src/features/bom/components/PriceUpdateModal.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, DollarSign, Calendar, AlertCircle, Loader2, Info } from 'lucide-react';
 import type { UnitTypeCatalog } from '@/types';
 
@@ -28,6 +29,16 @@ export const PriceUpdateModal: React.FC<PriceUpdateModalProps> = ({
   const [effectiveDate, setEffectiveDate] = useState<string>(todayStr);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isOpen]);
+
   if (!isOpen || !unitType) return null;
 
   const validateAndSubmit = async (e: React.FormEvent) => {
@@ -39,7 +50,6 @@ export const PriceUpdateModal: React.FC<PriceUpdateModalProps> = ({
       return;
     }
 
-    // BR-GEN-04: Đơn giá phải làm tròn đến nghìn đồng
     if (priceNum % 1000 !== 0) {
       setError('Đơn giá thuê phải làm tròn đến hàng nghìn đồng (VD: 800,000 VND)');
       return;
@@ -59,9 +69,16 @@ export const PriceUpdateModal: React.FC<PriceUpdateModalProps> = ({
     return isNaN(num) ? '0' : num.toLocaleString('vi-VN');
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fade-in">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden flex flex-col">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isLoading) {
+          onClose();
+        }
+      }}
+    >
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -146,13 +163,11 @@ export const PriceUpdateModal: React.FC<PriceUpdateModalProps> = ({
             </div>
           </div>
 
-          {/* Lưu ý nghiệp vụ BR-GEN-05 */}
+          {/* Lưu ý áp dụng giá */}
           <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-xl flex items-start space-x-2 text-[11px] text-amber-800 leading-relaxed">
             <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
             <p>
-              <strong>Quy tắc BR-GEN-05:</strong> Đơn giá mới chỉ áp dụng cho các Reservation và
-              Hợp đồng được tạo từ ngày hiệu lực trở đi. Các đơn đặt chỗ và hợp đồng đã ký trước
-              đó giữ nguyên đơn giá theo snapshot.
+              <strong>Lưu ý áp dụng giá:</strong> Đơn giá mới chỉ áp dụng cho các lượt đặt chỗ và hợp đồng được tạo từ ngày hiệu lực trở đi. Các hợp đồng đã ký trước đó vẫn giữ nguyên đơn giá cam kết ban đầu.
             </p>
           </div>
 
@@ -162,14 +177,14 @@ export const PriceUpdateModal: React.FC<PriceUpdateModalProps> = ({
               type="button"
               onClick={onClose}
               disabled={isLoading}
-              className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
+              className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-5 py-2 text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 active:bg-amber-700 rounded-xl shadow-md transition-all flex items-center space-x-1.5 disabled:opacity-50"
+              className="px-5 py-2 text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 active:bg-amber-700 rounded-xl shadow-md transition-all flex items-center space-x-1.5 disabled:opacity-50 cursor-pointer"
             >
               {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
               <span>Lưu đơn giá mới</span>
@@ -177,6 +192,7 @@ export const PriceUpdateModal: React.FC<PriceUpdateModalProps> = ({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

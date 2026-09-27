@@ -42,8 +42,8 @@ const BREADCRUMB_MAP: Record<string, string> = {
   '/admin/activity-logs':      'Nhật ký hệ thống',
   '/bom/facilities':           'Danh mục cơ sở',
   '/bom/pricing':              'Bảng giá & Phụ phí',
-  '/bom/revenue':              'Doanh thu toàn hệ thống',
-  '/bom/reports':              'Báo cáo tổng hợp',
+  '/bom/revenue':              'Doanh thu & Báo cáo',
+  '/bom/reports':              'Doanh thu & Báo cáo',
 };
 
 // Portal label by role

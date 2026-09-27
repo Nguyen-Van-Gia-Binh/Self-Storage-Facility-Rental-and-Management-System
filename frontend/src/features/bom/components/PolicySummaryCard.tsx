@@ -62,7 +62,7 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
             {policy.depositMultiplier} × tháng tiền thuê
           </p>
           <p className="text-xs text-slate-500">
-            Áp dụng mã <strong>BR-DEP-01</strong>: Khách hàng đặt cọc đúng bằng 01 tháng tiền thuê khi đặt chỗ và check-in.
+            Khách hàng đặt cọc đúng bằng 01 tháng tiền thuê khi đặt chỗ và nhận kho bàn giao.
           </p>
         </div>
 
@@ -81,7 +81,7 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
             </span>
           </div>
           <p className="text-xs text-slate-500">
-            Theo <strong>BR-RES-02</strong> & <strong>BR-CHK-02</strong>: Tạm giữ capacity 48h để thanh toán, ân hạn 3 ngày trước khi chuyển No-Show.
+            Tạm giữ chỗ ô kho 48h để hoàn tất thanh toán, ân hạn 3 ngày tiếp đón trước khi chuyển No-Show.
           </p>
         </div>
 
@@ -100,7 +100,7 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
             </span>
           </div>
           <p className="text-xs text-slate-500">
-            Theo <strong>BR-OVD-01..05</strong>: Ân hạn {policy.overdueGraceDays} ngày. Từ D+4 tính 10%/ngày. Trần tối đa 70% tiền cọc.
+            Ân hạn {policy.overdueGraceDays} ngày. Từ ngày thứ 4 quá hạn tính phạt 10%/ngày, trần tối đa 70% tiền cọc.
           </p>
         </div>
 
@@ -114,7 +114,7 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
             Hoàn 100% / 50%
           </p>
           <p className="text-xs text-slate-500">
-            Theo <strong>BR-CAN-01..02</strong>: Trước {policy.cancelFullRefundHours}h hoàn 100%. Sau {policy.cancelFullRefundHours}h hoàn {Math.round(policy.cancelLateRefundRate * 100)}% tổng số tiền đã nộp.
+            Hủy trước {policy.cancelFullRefundHours}h hoàn tiền 100%. Hủy sau {policy.cancelFullRefundHours}h hoàn {Math.round(policy.cancelLateRefundRate * 100)}% tổng số tiền đã nộp.
           </p>
         </div>
 
@@ -128,7 +128,7 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
             Báo trước {policy.returnNoticeDays} ngày
           </p>
           <p className="text-xs text-slate-500">
-            Theo <strong>BR-RET-01</strong>: Khách đăng ký trả kho trước ít nhất {policy.returnNoticeDays} ngày làm việc để đối soát hoàn cọc.
+            Khách hàng đăng ký trả kho trước ít nhất {policy.returnNoticeDays} ngày làm việc để đối soát hoàn cọc.
           </p>
         </div>
 
@@ -142,7 +142,7 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
             {policy.renewalMinMonths} — {policy.renewalMaxMonths} tháng
           </p>
           <p className="text-xs text-slate-500">
-            Theo <strong>BR-REN-01</strong>: Cho phép gia hạn tối thiểu {policy.renewalMinMonths} tháng và tối đa {policy.renewalMaxMonths} tháng mỗi lần.
+            Cho phép gia hạn tối thiểu {policy.renewalMinMonths} tháng và tối đa {policy.renewalMaxMonths} tháng cho mỗi lần gia hạn.
           </p>
         </div>
       </div>
@@ -152,8 +152,7 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
         <Info className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
         <p>
           Các tham số chính sách được đọc trực tiếp từ bảng CSDL hệ thống và tự động gắn vào snapshot khi
-          hợp đồng hoặc reservation được khởi tạo (<strong>BR-GEN-02</strong>). Khi ban hành chính sách mới, hợp
-          đồng cũ vẫn giữ nguyên các mốc thời gian và cách tính theo snapshot ban đầu.
+          hợp đồng hoặc đơn đặt chỗ được khởi tạo. Khi ban hành chính sách mới, hợp đồng cũ vẫn giữ nguyên các mốc thời gian và cách tính theo snapshot ban đầu.
         </p>
       </div>
     </div>

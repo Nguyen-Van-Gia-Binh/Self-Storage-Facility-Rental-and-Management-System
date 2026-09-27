@@ -177,7 +177,7 @@ export const BomFacilityManagementPage: React.FC = () => {
                 Quản lý danh sách cơ sở
               </h1>
               <p className="text-xs text-slate-500 mt-0.5">
-                Quản lý thông tin, địa chỉ và trạng thái khai thác cơ sở toàn hệ thống (BM-01)
+                Quản lý thông tin, địa chỉ và trạng thái khai thác mạng lưới cơ sở lưu trữ
               </p>
             </div>
           </div>

@@ -1,5 +1,6 @@
 // frontend/src/features/bom/components/BomFacilityTable.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Building2,
   MapPin,
@@ -31,6 +32,16 @@ export const BomFacilityTable: React.FC<BomFacilityTableProps> = ({
     newStatus: boolean;
   } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    if (confirmTarget) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [confirmTarget]);
 
   const handleConfirmToggle = async () => {
     if (!confirmTarget) return;
@@ -167,65 +178,74 @@ export const BomFacilityTable: React.FC<BomFacilityTableProps> = ({
       </div>
 
       {/* Confirmation Modal for Toggle Status */}
-      {confirmTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md p-6 space-y-4">
-            <div className="flex items-start space-x-3">
-              <div
-                className={`p-2.5 rounded-xl ${
-                  confirmTarget.newStatus
-                    ? 'bg-emerald-100 text-emerald-600'
-                    : 'bg-rose-100 text-rose-600'
-                }`}
-              >
-                {confirmTarget.newStatus ? (
-                  <CheckCircle2 className="w-6 h-6" />
-                ) : (
-                  <AlertTriangle className="w-6 h-6" />
-                )}
+      {confirmTarget &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+            onClick={(e) => {
+              if (e.target === e.currentTarget && !isProcessing) {
+                setConfirmTarget(null);
+              }
+            }}
+          >
+            <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md p-6 space-y-4 animate-in zoom-in-95 duration-200">
+              <div className="flex items-start space-x-3">
+                <div
+                  className={`p-2.5 rounded-xl ${
+                    confirmTarget.newStatus
+                      ? 'bg-emerald-100 text-emerald-600'
+                      : 'bg-rose-100 text-rose-600'
+                  }`}
+                >
+                  {confirmTarget.newStatus ? (
+                    <CheckCircle2 className="w-6 h-6" />
+                  ) : (
+                    <AlertTriangle className="w-6 h-6" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-bold text-slate-900 text-base">
+                    {confirmTarget.newStatus
+                      ? 'Mở lại hoạt động cơ sở?'
+                      : 'Ngừng khai thác cơ sở?'}
+                  </h4>
+                  <p className="text-sm text-slate-600 mt-1">
+                    {confirmTarget.newStatus
+                      ? `Cơ sở "${confirmTarget.facility.name}" sẽ hiển thị trở lại trên danh mục công khai và cho phép đặt chỗ.`
+                      : `Cơ sở "${confirmTarget.facility.name}" sẽ ẩn khỏi trang đặt chỗ. Lưu ý: Chỉ được ngừng khai thác khi không còn hợp đồng thuê active hoặc overdue.`}
+                  </p>
+                </div>
               </div>
-              <div className="flex-1">
-                <h4 className="font-bold text-slate-900 text-base">
-                  {confirmTarget.newStatus
-                    ? 'Mở lại hoạt động cơ sở?'
-                    : 'Ngừng khai thác cơ sở?'}
-                </h4>
-                <p className="text-sm text-slate-600 mt-1">
-                  {confirmTarget.newStatus
-                    ? `Cơ sở "${confirmTarget.facility.name}" sẽ hiển thị trở lại trên danh mục công khai và cho phép đặt chỗ.`
-                    : `Cơ sở "${confirmTarget.facility.name}" sẽ ẩn khỏi trang đặt chỗ. Lưu ý: Chỉ được ngừng khai thác khi không còn hợp đồng thuê active hoặc overdue.`}
-                </p>
-              </div>
-            </div>
 
-            <div className="flex items-center justify-end space-x-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setConfirmTarget(null)}
-                disabled={isProcessing}
-                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmToggle}
-                disabled={isProcessing}
-                className={`px-4 py-2 text-sm font-semibold text-white rounded-xl shadow-md transition-all flex items-center space-x-1.5 ${
-                  confirmTarget.newStatus
-                    ? 'bg-emerald-600 hover:bg-emerald-700'
-                    : 'bg-rose-600 hover:bg-rose-700'
-                }`}
-              >
-                {isProcessing && <Loader2 className="w-4 h-4 animate-spin" />}
-                <span>
-                  {confirmTarget.newStatus ? 'Kích hoạt lại' : 'Xác nhận ngừng'}
-                </span>
-              </button>
+              <div className="flex items-center justify-end space-x-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setConfirmTarget(null)}
+                  disabled={isProcessing}
+                  className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmToggle}
+                  disabled={isProcessing}
+                  className={`px-4 py-2 text-sm font-semibold text-white rounded-xl shadow-md transition-all flex items-center space-x-1.5 cursor-pointer ${
+                    confirmTarget.newStatus
+                      ? 'bg-emerald-600 hover:bg-emerald-700'
+                      : 'bg-rose-600 hover:bg-rose-700'
+                  }`}
+                >
+                  {isProcessing && <Loader2 className="w-4 h-4 animate-spin" />}
+                  <span>
+                    {confirmTarget.newStatus ? 'Kích hoạt lại' : 'Xác nhận ngừng'}
+                  </span>
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 };
