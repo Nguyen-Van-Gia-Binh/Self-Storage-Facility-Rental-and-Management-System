@@ -4,7 +4,7 @@ import {
   Home, Building2, Archive,
   KeyRound, ClipboardCheck, ListTodo,
   Layers, FileText, BarChart3, Wrench, Users,
-  Map, DollarSign, TrendingUp, PieChart,
+  Map, DollarSign, TrendingUp,
   UserCog, ShieldCheck, Activity,
 } from 'lucide-react';
 import type { UserRole } from '@/utils/tokenStorage';
@@ -62,10 +62,9 @@ export const ROLE_NAVIGATIONS: Record<UserRole, RoleNavigation> = {
     role: 'BOM',
     badgeColor: 'bg-amber-500',
     navItems: [
-      { label: 'Danh mục cơ sở',       href: '/bom/facilities', icon: Map },
-      { label: 'Bảng giá & Phụ phí',   href: '/bom/pricing',    icon: DollarSign },
-      { label: 'Doanh thu toàn hệ thống', href: '/bom/revenue',  icon: TrendingUp },
-      { label: 'Báo cáo tổng hợp',     href: '/bom/reports',    icon: PieChart },
+      { label: 'Danh mục cơ sở',      href: '/bom/facilities', icon: Map },
+      { label: 'Bảng giá & Phụ phí',  href: '/bom/pricing',    icon: DollarSign },
+      { label: 'Doanh thu & Báo cáo', href: '/bom/revenue',    icon: TrendingUp },
     ],
   },
   ADMIN: {

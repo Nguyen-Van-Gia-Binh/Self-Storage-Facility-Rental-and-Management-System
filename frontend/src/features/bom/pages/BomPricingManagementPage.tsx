@@ -221,7 +221,7 @@ export const BomPricingManagementPage: React.FC = () => {
               Quản lý Bảng giá & Phụ phí
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Thiết lập khung giá thuê ô kho, biểu phí phát sinh và chính sách tài chính (BM-03)
+              Thiết lập khung giá thuê ô kho, biểu phí dịch vụ phát sinh và chính sách tài chính
             </p>
           </div>
         </div>

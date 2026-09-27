@@ -57,7 +57,7 @@ export const OverdueContractsTable: React.FC<OverdueContractsTableProps> = ({
               Danh Sách Hợp Đồng Quá Hạn & Rủi Ro Nợ Đọng Toàn Hệ Thống
             </h3>
             <p className="text-xs text-slate-500">
-              Giám sát thi hành chính sách quá hạn theo BR-OVD-01..11 (API-SPEC § 12)
+              Giám sát thi hành chính sách và chế tài quá hạn hợp đồng
             </p>
           </div>
         </div>
@@ -91,7 +91,7 @@ export const OverdueContractsTable: React.FC<OverdueContractsTableProps> = ({
                 <th className="py-3 px-3 text-center">Hết Hạn Thuê</th>
                 <th className="py-3 px-3 text-center">Số Ngày Trễ</th>
                 <th className="py-3 px-3 text-right">Phạt Tích Lũy</th>
-                <th className="py-3 px-4">Chính Sách Chế Tài (BR-OVD)</th>
+                <th className="py-3 px-4">Biện Pháp Chế Tài</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
