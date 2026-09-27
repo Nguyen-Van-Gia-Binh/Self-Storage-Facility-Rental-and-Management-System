@@ -26,11 +26,7 @@ import {
 } from '../api/staffAssignmentApi';
 import { IncidentDetailModal } from '../components/IncidentDetailModal';
 import { AssignStaffModal } from '../components/AssignStaffModal';
-
-const FACILITIES = [
-  { id: 1, name: 'Kho Tự Quản Tân Thuận (Quận 7, TP.HCM)' },
-  { id: 2, name: 'Kho Tự Quản Thủ Đức (TP. Thủ Đức)' },
-];
+import { fetchFacilities } from '@/api/facility';
 
 const CATEGORIES: { key: SupportCategory | 'ALL'; label: string }[] = [
   { key: 'ALL', label: 'Tất cả danh mục' },
@@ -43,6 +39,10 @@ const CATEGORIES: { key: SupportCategory | 'ALL'; label: string }[] = [
 ];
 
 export const IncidentManagementPage: React.FC = () => {
+  const [facilities, setFacilities] = useState<{ id: number; name: string }[]>([
+    { id: 1, name: 'Kho Tự Quản Tân Thuận (Quận 7, TP.HCM)' },
+    { id: 2, name: 'Kho Tự Quản Thủ Đức (TP. Thủ Đức)' },
+  ]);
   const [selectedFacilityId, setSelectedFacilityId] = useState<number>(1);
   const [keyword, setKeyword] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<SupportCategory | 'ALL'>('ALL');
@@ -68,6 +68,16 @@ export const IncidentManagementPage: React.FC = () => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 4000);
   };
+
+  useEffect(() => {
+    fetchFacilities(undefined, true)
+      .then((list) => {
+        if (list && list.length > 0) {
+          setFacilities(list.map((f) => ({ id: f.id, name: f.name })));
+        }
+      })
+      .catch((err) => console.warn('Lỗi tải danh mục cơ sở:', err));
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -237,7 +247,7 @@ export const IncidentManagementPage: React.FC = () => {
               onChange={(e) => setSelectedFacilityId(Number(e.target.value))}
               className="text-xs font-semibold text-slate-700 bg-transparent outline-none cursor-pointer"
             >
-              {FACILITIES.map((f) => (
+              {facilities.map((f) => (
                 <option key={f.id} value={f.id}>
                   {f.name}
                 </option>

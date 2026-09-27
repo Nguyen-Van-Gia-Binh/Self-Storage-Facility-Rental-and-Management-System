@@ -1,5 +1,5 @@
-import { apiClient, isMockEnabled } from '@/api/client';
-import type { ApiResponse } from '@/api/client';
+import { apiClient } from '@/api/client';
+import type { ApiResponse, PageResponse } from '@/api/client';
 import type {
   StaffWorkloadItem,
   DailyDispatchTaskItem,
@@ -10,187 +10,47 @@ import type {
   ResolveSupportRequestDto,
 } from '../types/staffAssignment';
 import type { StaffDailyTaskReport } from '@/types';
-import {
-  mockStaffWorkload,
-  mockDailyDispatchTasks,
-  mockManagementSupportTickets,
-} from '../mock/mockStaffAssignmentData';
 import { getStaffDailyTasks } from '@/api/staff';
-import { getPendingContracts } from '@/api/contract';
-
-
-// Trạng thái bộ nhớ tạm trong phiên làm việc cho Mock mode
-let memoryStaffWorkload: StaffWorkloadItem[] = JSON.parse(JSON.stringify(mockStaffWorkload));
-let memoryDispatchTasks: DailyDispatchTaskItem[] = JSON.parse(JSON.stringify(mockDailyDispatchTasks));
-let memorySupportTickets: ManagementSupportTicket[] = JSON.parse(JSON.stringify(mockManagementSupportTickets));
+import { getPendingContracts, getManagerContracts } from '@/api/contract';
 
 /**
  * 1. Lấy danh sách tải công việc của nhân viên cơ sở (FM-05, US-FM-05.1 AC-3)
  * Endpoint Backend: GET /api/v1/support-requests/staff-workload?facilityId={facilityId}
  */
 export async function getStaffWorkload(facilityId: number): Promise<StaffWorkloadItem[]> {
-  if (isMockEnabled('WS4')) {
-    return memoryStaffWorkload.filter((s) => s.facilityId === facilityId);
-  }
-
   try {
-    const res = await apiClient<ApiResponse<StaffWorkloadItem[]> | StaffWorkloadItem[]>(
-      `/support-requests/staff-workload?facilityId=${facilityId}`
-    );
-    if ('data' in res && Array.isArray(res.data)) {
-      return res.data;
-    }
-    if (Array.isArray(res)) {
-      return res;
-    }
-    return memoryStaffWorkload.filter((s) => s.facilityId === facilityId);
-  } catch (error) {
-    console.warn('Lỗi gọi API /support-requests/staff-workload, fallback mock:', error);
-    return memoryStaffWorkload.filter((s) => s.facilityId === facilityId);
-  }
-}
-
-/**
- * 2. Lấy danh sách nhiệm vụ thực địa cần điều phối trong ngày (SCR-FM-03)
- */
-export async function getDailyDispatchTasks(
-  facilityId: number,
-  _date?: string
-): Promise<DailyDispatchTaskItem[]> {
-  try {
-    // Tự động kéo các hợp đồng PENDING_CHECK_IN từ backend để sinh task tiếp đón
-    const pendingContracts = await getPendingContracts(facilityId);
-    if (pendingContracts && Array.isArray(pendingContracts)) {
-      pendingContracts.forEach((contract: any) => {
-        const exists = memoryDispatchTasks.some(
-          (t) => t.referenceId === contract.id && t.taskType === 'CHECK_IN'
-        );
-        if (!exists) {
-          memoryDispatchTasks.unshift({
-            id: 9000 + contract.id,
-            taskType: 'CHECK_IN',
-            title: `Tiếp đón bàn giao kho cho hợp đồng ${contract.code}`,
-            facilityId: contract.facilityId || facilityId,
-            facilityName: contract.facilityName || 'Kho SmartStorage',
-            unitCode: contract.storageUnitCode || `U-${contract.storageUnitId || contract.id}`,
-            customerName: contract.customerName || 'Khách hàng',
-            customerPhone: contract.customerPhone || '0901234567',
-            scheduledDate: contract.startDate || new Date().toISOString().split('T')[0],
-            scheduledTime: '09:00 - 11:30',
-            priority: 'NORMAL',
-            isUrgent: false,
-            status: 'UNASSIGNED',
-            referenceId: contract.id,
-            referenceCode: contract.code,
-            notes: 'Khách hàng đã đặt cọc VietQR thành công, sẵn sàng nhận kho 48h.',
-          });
-        }
-      });
-    }
-  } catch (err) {
-    console.warn('Lỗi đồng bộ hợp đồng chờ check-in vào nhiệm vụ thực địa:', err);
-  }
-
-  // Lọc theo cơ sở
-  return memoryDispatchTasks.filter((t) => t.facilityId === facilityId);
-}
-
-/**
- * 3. Phân công hoặc điều chuyển nhân viên cho một nhiệm vụ thực địa (US-FM-05.1 AC-1, AC-2, AC-4)
- * Nếu là Incident task -> gọi thêm PATCH /api/v1/support-requests/{id}/assign
- */
-export async function assignStaffToTask(
-  payload: AssignTaskPayload
-): Promise<{ success: boolean; message: string; updatedTask: DailyDispatchTaskItem }> {
-  const staff = memoryStaffWorkload.find((s) => s.staffId === payload.staffId);
-  if (!staff) {
-    throw new Error('Không tìm thấy thông tin nhân viên được chọn');
-  }
-
-  const taskIndex = memoryDispatchTasks.findIndex((t) => t.id === payload.taskId);
-  if (taskIndex === -1) {
-    throw new Error('Không tìm thấy nhiệm vụ cần phân công');
-  }
-
-  const prevTask = memoryDispatchTasks[taskIndex];
-  const prevStaffId = prevTask.assignedStaffId;
-
-  // Cập nhật tải công việc của nhân viên cũ (nếu điều chuyển AC-4)
-  if (prevStaffId && prevStaffId !== payload.staffId) {
-    const prevStaff = memoryStaffWorkload.find((s) => s.staffId === prevStaffId);
-    if (prevStaff && prevStaff.activeTaskCount > 0) {
-      prevStaff.activeTaskCount -= 1;
-      if (prevStaff.activeTaskCount <= 2) prevStaff.status = 'AVAILABLE';
-      else if (prevStaff.activeTaskCount <= 4) prevStaff.status = 'NORMAL';
-    }
-  }
-
-  // Cập nhật tải công việc của nhân viên mới
-  if (prevStaffId !== payload.staffId) {
-    staff.activeTaskCount += 1;
-    if (staff.activeTaskCount >= 5) {
-      staff.status = 'OVERLOADED';
-    } else if (staff.activeTaskCount >= 3) {
-      staff.status = 'NORMAL';
-    }
-  }
-
-  // Cập nhật nhiệm vụ
-  const updatedTask: DailyDispatchTaskItem = {
-    ...prevTask,
-    assignedStaffId: staff.staffId,
-    assignedStaffName: staff.staffName,
-    priority: payload.priority,
-    isUrgent: payload.priority === 'URGENT',
-    status: 'ASSIGNED',
-    notes: payload.notes || prevTask.notes,
-  };
-
-  memoryDispatchTasks[taskIndex] = updatedTask;
-
-  // Nếu nhiệm vụ là INCIDENT, đồng bộ sang danh sách Support Tickets và gọi Backend
-  if (prevTask.taskType === 'INCIDENT' && prevTask.referenceId) {
-    const ticketIndex = memorySupportTickets.findIndex((t) => t.id === prevTask.referenceId);
-    if (ticketIndex !== -1) {
-      memorySupportTickets[ticketIndex] = {
-        ...memorySupportTickets[ticketIndex],
-        assignedStaffId: staff.staffId,
-        assignedStaffName: staff.staffName,
-        status: 'ASSIGNED',
-        isUrgent: payload.priority === 'URGENT',
-        assignmentNotes: payload.notes,
-      };
-    }
-
-    if (!isMockEnabled('WS4')) {
-      try {
-        await apiClient(`/support-requests/${prevTask.referenceId}/assign`, {
-          method: 'PATCH',
-          body: JSON.stringify({
-            staffId: payload.staffId,
-            note: payload.notes || 'Phân công từ bàn điều phối cơ sở',
-          }),
-        });
-      } catch (err) {
-        console.warn('Lỗi gọi API PATCH /support-requests/{id}/assign:', err);
+    const res = await apiClient<ApiResponse<any[]>>(`/support-requests/staff-workload?facilityId=${facilityId}`);
+    const rawList = res?.data || [];
+    return rawList.map((item: any) => {
+      const active = Number(item.activeTaskCount || 0);
+      let status: 'AVAILABLE' | 'NORMAL' | 'OVERLOADED' = 'AVAILABLE';
+      if (active >= 5) {
+        status = 'OVERLOADED';
+      } else if (active >= 3) {
+        status = 'NORMAL';
       }
-    }
+
+      return {
+        staffId: item.staffId,
+        staffName: item.staffName || `Nhân viên #${item.staffId}`,
+        staffEmail: item.staffEmail || `staff${item.staffId}@smartstorage.vn`,
+        staffPhone: item.staffPhone || 'Chưa cập nhật',
+        facilityId: item.facilityId || facilityId,
+        facilityName: item.facilityName || 'Kho SmartStorage',
+        activeTaskCount: active,
+        completedTaskCount: Number(item.completedTaskCount || 0),
+        shift: 'Ca sáng (07:00 - 15:30)',
+        status,
+      };
+    });
+  } catch (error) {
+    console.warn('Lỗi gọi API /support-requests/staff-workload:', error);
+    return [];
   }
-
-  const isReassign = Boolean(prevStaffId && prevStaffId !== payload.staffId);
-  const actionMsg = isReassign
-    ? `Đã điều chuyển nhiệm vụ sang nhân viên ${staff.staffName}`
-    : `Đã phân công nhiệm vụ cho nhân viên ${staff.staffName}`;
-
-  return {
-    success: true,
-    message: actionMsg,
-    updatedTask,
-  };
 }
 
 /**
- * 4. Lấy danh sách phiếu yêu cầu hỗ trợ sự cố dành cho Quản lý (SCR-FM-05 / Flow 7)
+ * 2. Lấy danh sách phiếu yêu cầu hỗ trợ sự cố dành cho Quản lý (SCR-FM-05 / Flow 7)
  * Endpoint Backend: GET /api/v1/management/support-requests
  */
 export async function getManagementSupportRequests(params?: {
@@ -200,51 +60,50 @@ export async function getManagementSupportRequests(params?: {
   isUrgent?: boolean;
   keyword?: string;
 }): Promise<ManagementSupportTicket[]> {
-  if (isMockEnabled('WS4')) {
-    let result = [...memorySupportTickets];
-    if (params?.facilityId) {
-      result = result.filter((t) => t.facilityId === params.facilityId);
-    }
-    if (params?.status) {
-      result = result.filter((t) => t.status === params.status);
-    }
-    if (params?.category) {
-      result = result.filter((t) => t.category === params.category);
-    }
-    if (params?.isUrgent !== undefined) {
-      result = result.filter((t) => t.isUrgent === params.isUrgent);
-    }
-    if (params?.keyword?.trim()) {
-      const q = params.keyword.trim().toLowerCase();
-      result = result.filter(
-        (t) =>
-          t.code.toLowerCase().includes(q) ||
-          t.storageUnitCode.toLowerCase().includes(q) ||
-          t.customerName.toLowerCase().includes(q) ||
-          t.description.toLowerCase().includes(q)
-      );
-    }
-    return result;
-  }
-
   try {
     const query = new URLSearchParams();
-    if (params?.facilityId) query.set('facilityId', String(params.facilityId));
+    if (params?.facilityId && params.facilityId > 0) query.set('facilityId', String(params.facilityId));
     if (params?.status) query.set('status', params.status);
     if (params?.category) query.set('category', params.category);
     query.set('size', '50');
 
-    const res = await apiClient<ApiResponse<{ content: ManagementSupportTicket[] }> | { content: ManagementSupportTicket[] }>(
+    const res = await apiClient<ApiResponse<PageResponse<any>>>(
       `/management/support-requests?${query.toString()}`
     );
 
-    let list: ManagementSupportTicket[] = [];
-    if ('data' in res && res.data && Array.isArray(res.data.content)) {
-      list = res.data.content;
-    } else if ('content' in res && Array.isArray(res.content)) {
-      list = res.content;
-    } else {
-      list = memorySupportTickets;
+    const rawList: any[] = res?.data?.content || [];
+    let list: ManagementSupportTicket[] = rawList.map((item: any) => ({
+      id: item.id,
+      code: item.code || `SUP-${item.id}`,
+      customerId: item.customerId || 0,
+      customerName: item.customerName || `Khách hàng #${item.customerId}`,
+      customerPhone: item.customerPhone || 'Chưa cập nhật',
+      contractId: item.contractId,
+      contractCode: item.contractCode || (item.contractId ? `CTR-${item.contractId}` : undefined),
+      storageUnitId: item.storageUnitId,
+      storageUnitCode: item.storageUnitCode || `U-${item.storageUnitId || item.id}`,
+      facilityId: item.facilityId || params?.facilityId || 1,
+      facilityName: item.facilityName || 'Kho SmartStorage',
+      category: item.category as SupportCategory,
+      categoryDisplayName: item.categoryDisplayName || item.category || 'Sự cố chung',
+      description: item.description || '',
+      status: item.status as SupportStatus,
+      statusDisplayName: item.statusDisplayName || item.status || 'Chờ tiếp nhận',
+      isUrgent: Boolean(item.isUrgent),
+      assignedStaffId: item.assignedStaffId,
+      assignedStaffName: item.assignedStaffName,
+      slaDueAt: item.slaDueAt,
+      resolvedAt: item.resolvedAt,
+      createdAt: item.createdAt || new Date().toISOString(),
+      updatedAt: item.updatedAt,
+      assignmentNotes: item.assignmentNotes,
+      resolutionNotes: item.resolutionNotes,
+      attachments: item.attachments || [],
+      resolutionAttachments: item.resolutionAttachments || [],
+    }));
+
+    if (params?.isUrgent !== undefined) {
+      list = list.filter((t) => t.isUrgent === params.isUrgent);
     }
 
     if (params?.keyword?.trim()) {
@@ -253,65 +112,263 @@ export async function getManagementSupportRequests(params?: {
         (t) =>
           t.code.toLowerCase().includes(q) ||
           t.storageUnitCode.toLowerCase().includes(q) ||
-          t.customerName.toLowerCase().includes(q)
+          t.customerName.toLowerCase().includes(q) ||
+          t.description.toLowerCase().includes(q)
       );
     }
     return list;
   } catch (err) {
-    console.warn('Lỗi gọi API /management/support-requests, fallback mock:', err);
-    return memorySupportTickets;
+    console.warn('Lỗi gọi API /management/support-requests:', err);
+    return [];
   }
 }
 
 /**
- * 5. Phân công trực tiếp từ màn hình Incidents Hub (PATCH /api/v1/support-requests/{id}/assign)
+ * 3. Lấy chi tiết một phiếu yêu cầu hỗ trợ (GET /api/v1/management/support-requests/{id})
+ */
+export async function getSupportRequestDetail(id: number): Promise<ManagementSupportTicket> {
+  const res = await apiClient<ApiResponse<any>>(`/management/support-requests/${id}`);
+  const item = res.data;
+  return {
+    id: item.id,
+    code: item.code || `SUP-${item.id}`,
+    customerId: item.customerId || 0,
+    customerName: item.customerName || `Khách hàng #${item.customerId}`,
+    customerPhone: item.customerPhone || 'Chưa cập nhật',
+    contractId: item.contractId,
+    contractCode: item.contractCode || (item.contractId ? `CTR-${item.contractId}` : undefined),
+    storageUnitId: item.storageUnitId,
+    storageUnitCode: item.storageUnitCode || `U-${item.storageUnitId || item.id}`,
+    facilityId: item.facilityId || 1,
+    facilityName: item.facilityName || 'Kho SmartStorage',
+    category: item.category as SupportCategory,
+    categoryDisplayName: item.categoryDisplayName || item.category || 'Sự cố chung',
+    description: item.description || '',
+    status: item.status as SupportStatus,
+    statusDisplayName: item.statusDisplayName || item.status || 'Chờ tiếp nhận',
+    isUrgent: Boolean(item.isUrgent),
+    assignedStaffId: item.assignedStaffId,
+    assignedStaffName: item.assignedStaffName,
+    slaDueAt: item.slaDueAt,
+    resolvedAt: item.resolvedAt,
+    createdAt: item.createdAt || new Date().toISOString(),
+    updatedAt: item.updatedAt,
+    assignmentNotes: item.assignmentNotes,
+    resolutionNotes: item.resolutionNotes,
+    attachments: item.attachments || [],
+    resolutionAttachments: item.resolutionAttachments || [],
+  };
+}
+
+/**
+ * 4. Lấy danh sách nhiệm vụ thực địa cần điều phối trong ngày (SCR-FM-03)
+ * Hợp nhất từ 3 nguồn Real API backend:
+ * - INCIDENT: Phiếu sự cố kỹ thuật từ support_request
+ * - CHECK_IN: Hợp đồng đang chờ bàn giao nhận kho PENDING_CHECK_IN
+ * - RETURN: Hợp đồng đang chờ kiểm tra trả kho PENDING_RETURN / INSPECTED
+ */
+export async function getDailyDispatchTasks(
+  facilityId: number,
+  _date?: string
+): Promise<DailyDispatchTaskItem[]> {
+  const tasks: DailyDispatchTaskItem[] = [];
+
+  try {
+    const [incidents, pendingCheckIns, returnContracts] = await Promise.all([
+      getManagementSupportRequests({ facilityId }),
+      getPendingContracts(facilityId).catch(() => []),
+      getManagerContracts({ facilityId, status: 'RETURN' }).catch(() => []),
+    ]);
+
+    // 1. Map các sự cố kỹ thuật (INCIDENT)
+    incidents.forEach((ticket) => {
+      let dispatchStatus: DailyDispatchTaskItem['status'] = 'UNASSIGNED';
+      if (ticket.status === 'ASSIGNED') dispatchStatus = 'ASSIGNED';
+      else if (ticket.status === 'IN_PROGRESS') dispatchStatus = 'IN_PROGRESS';
+      else if (ticket.status === 'RESOLVED') dispatchStatus = 'RESOLVED';
+      else if (ticket.status === 'CLOSED') dispatchStatus = 'COMPLETED';
+
+      tasks.push({
+        id: ticket.id,
+        taskType: 'INCIDENT',
+        title: `[Sự cố] ${ticket.categoryDisplayName} - Ngăn ${ticket.storageUnitCode}`,
+        facilityId: ticket.facilityId,
+        facilityName: ticket.facilityName,
+        unitCode: ticket.storageUnitCode,
+        customerName: ticket.customerName,
+        customerPhone: ticket.customerPhone,
+        scheduledDate: ticket.createdAt ? ticket.createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
+        scheduledTime: ticket.createdAt ? ticket.createdAt.substring(11, 16) : 'Hôm nay',
+        slaDeadline: ticket.slaDueAt,
+        priority: ticket.isUrgent ? 'URGENT' : 'NORMAL',
+        isUrgent: ticket.isUrgent,
+        assignedStaffId: ticket.assignedStaffId,
+        assignedStaffName: ticket.assignedStaffName,
+        status: dispatchStatus,
+        notes: ticket.description,
+        referenceId: ticket.id,
+        referenceCode: ticket.code,
+      });
+    });
+
+    // 2. Map các hợp đồng chờ tiếp đón nhận kho (CHECK_IN)
+    if (Array.isArray(pendingCheckIns)) {
+      pendingCheckIns.forEach((contract: any) => {
+        tasks.push({
+          id: 100000 + contract.id,
+          taskType: 'CHECK_IN',
+          title: `Tiếp đón bàn giao kho cho hợp đồng ${contract.code}`,
+          facilityId: contract.facilityId || facilityId,
+          facilityName: contract.facilityName || 'Kho SmartStorage',
+          unitCode: contract.storageUnitCode || `U-${contract.storageUnitId || contract.id}`,
+          customerName: contract.customerName || 'Khách hàng',
+          customerPhone: contract.customerPhone || 'Chưa cập nhật',
+          scheduledDate: contract.startDate || new Date().toISOString().split('T')[0],
+          scheduledTime: '09:00 - 11:30',
+          priority: 'NORMAL',
+          isUrgent: false,
+          status: 'UNASSIGNED',
+          referenceId: contract.id,
+          referenceCode: contract.code,
+          notes: 'Khách hàng đã đặt cọc VietQR thành công, sẵn sàng nhận kho.',
+        });
+      });
+    }
+
+    // 3. Map các hợp đồng chờ kiểm tra trả kho (RETURN)
+    if (Array.isArray(returnContracts)) {
+      returnContracts.forEach((contract: any) => {
+        tasks.push({
+          id: 200000 + contract.id,
+          taskType: 'RETURN',
+          title: `Nghiệm thu trả kho & hoàn cọc hợp đồng ${contract.code}`,
+          facilityId: contract.facilityId || facilityId,
+          facilityName: contract.facilityName || 'Kho SmartStorage',
+          unitCode: contract.storageUnitCode || `U-${contract.storageUnitId || contract.id}`,
+          customerName: contract.customerName || 'Khách hàng',
+          customerPhone: contract.customerPhone || 'Chưa cập nhật',
+          scheduledDate: contract.endDateExclusive || new Date().toISOString().split('T')[0],
+          scheduledTime: '14:00 - 16:30',
+          priority: 'HIGH',
+          isUrgent: false,
+          status: contract.status === 'INSPECTED' ? 'COMPLETED' : 'UNASSIGNED',
+          referenceId: contract.id,
+          referenceCode: contract.code,
+          notes: 'Khách hàng đã dọn sạch ngăn kho và gửi yêu cầu nghiệm thu.',
+        });
+      });
+    }
+  } catch (err) {
+    console.warn('Lỗi tổng hợp bảng điều phối nhiệm vụ thực địa:', err);
+  }
+
+  return tasks;
+}
+
+/**
+ * 5. Phân công hoặc điều chuyển nhân viên cho một nhiệm vụ thực địa (US-FM-05.1 AC-1, AC-2, AC-4)
+ * Nếu là Incident task -> gọi Real API: PATCH /api/v1/support-requests/{id}/assign
+ */
+export async function assignStaffToTask(
+  payload: AssignTaskPayload
+): Promise<{ success: boolean; message: string; updatedTask: DailyDispatchTaskItem }> {
+  if (payload.taskType === 'INCIDENT') {
+    await apiClient(`/support-requests/${payload.taskId}/assign`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        staffId: payload.staffId,
+        note: payload.notes || 'Phân công từ bàn điều phối cơ sở',
+      }),
+    });
+  }
+
+  const updatedTask: DailyDispatchTaskItem = {
+    id: payload.taskId,
+    taskType: payload.taskType,
+    title: 'Nhiệm vụ đã được phân công',
+    facilityId: 0,
+    facilityName: '',
+    unitCode: '',
+    customerName: '',
+    customerPhone: '',
+    scheduledDate: new Date().toISOString().split('T')[0],
+    scheduledTime: '',
+    priority: payload.priority,
+    isUrgent: payload.priority === 'URGENT',
+    assignedStaffId: payload.staffId,
+    status: 'ASSIGNED',
+    notes: payload.notes,
+  };
+
+  return {
+    success: true,
+    message: 'Phân công nhân viên thực hiện nhiệm vụ thành công',
+    updatedTask,
+  };
+}
+
+/**
+ * 6. Phân công trực tiếp từ màn hình Incidents Hub (PATCH /api/v1/support-requests/{id}/assign)
  */
 export async function assignSupportStaffDirect(
   ticketId: number,
   staffId: number,
   notes?: string
 ): Promise<{ success: boolean; message: string }> {
-  const staff = memoryStaffWorkload.find((s) => s.staffId === staffId);
-  const staffName = staff ? staff.staffName : `Nhân viên #${staffId}`;
-
-  // Cập nhật ticket trong memory
-  const idx = memorySupportTickets.findIndex((t) => t.id === ticketId);
-  if (idx !== -1) {
-    memorySupportTickets[idx] = {
-      ...memorySupportTickets[idx],
-      assignedStaffId: staffId,
-      assignedStaffName: staffName,
-      status: 'ASSIGNED',
-      assignmentNotes: notes,
-      updatedAt: new Date().toISOString(),
-    };
-  }
-
-  // Tăng workload của nhân viên
-  if (staff) {
-    staff.activeTaskCount += 1;
-    if (staff.activeTaskCount >= 5) staff.status = 'OVERLOADED';
-  }
-
-  if (!isMockEnabled('WS4')) {
-    try {
-      await apiClient(`/support-requests/${ticketId}/assign`, {
-        method: 'PATCH',
-        body: JSON.stringify({ staffId, note: notes || '' }),
-      });
-    } catch (err) {
-      console.warn('Lỗi gọi API assign support direct, fallback mock:', err);
-    }
-  }
+  await apiClient(`/support-requests/${ticketId}/assign`, {
+    method: 'PATCH',
+    body: JSON.stringify({
+      staffId,
+      note: notes || 'Phân công từ màn hình Xử lý sự cố',
+    }),
+  });
 
   return {
     success: true,
-    message: `Đã phân công xử lý ticket cho ${staffName}`,
+    message: 'Đã phân công nhân viên xử lý sự cố thành công',
   };
 }
 
 /**
- * 6. Xem toàn bộ ca trực và danh mục việc trong ngày của 1 nhân viên (FS-06 / FM-05)
+ * 7. Bắt đầu xử lý sự cố tại hiện trường (PATCH /api/v1/support-requests/{id}/in-progress)
+ */
+export async function startIncidentInProgress(
+  ticketId: number
+): Promise<{ success: boolean; message: string }> {
+  await apiClient(`/support-requests/${ticketId}/in-progress`, {
+    method: 'PATCH',
+  });
+
+  return {
+    success: true,
+    message: 'Đã cập nhật trạng thái: Đang xử lý tại hiện trường',
+  };
+}
+
+/**
+ * 8. Hoàn thành xử lý sự cố kỹ thuật (PATCH /api/v1/support-requests/{id}/resolve)
+ */
+export async function resolveSupportTicket(
+  ticketId: number,
+  payload: ResolveSupportRequestDto
+): Promise<{ success: boolean; message: string }> {
+  await apiClient(`/support-requests/${ticketId}/resolve`, {
+    method: 'PATCH',
+    body: JSON.stringify({
+      resolutionNotes: payload.resolutionNotes,
+      actualDamageCost: 0,
+      evidenceUrls: payload.resolutionImageUrls || [],
+    }),
+  });
+
+  return {
+    success: true,
+    message: 'Đã hoàn thành và giải quyết sự cố kỹ thuật',
+  };
+}
+
+/**
+ * 9. Xem toàn bộ ca trực và danh mục việc trong ngày của 1 nhân viên (FS-06 / FM-05)
  * Endpoint: GET /api/v1/reports/staff/{staffId}/daily-tasks
  */
 export async function getStaffDailySchedule(
@@ -319,38 +376,4 @@ export async function getStaffDailySchedule(
   date?: string
 ): Promise<StaffDailyTaskReport> {
   return getStaffDailyTasks(staffId, date);
-}
-
-/**
- * 7. Hoàn thành xử lý sự cố kỹ thuật (FS-05, FM-05)
- */
-export async function resolveSupportTicket(
-  ticketId: number,
-  payload: ResolveSupportRequestDto
-): Promise<{ success: boolean; message: string }> {
-  const idx = memorySupportTickets.findIndex((t) => t.id === ticketId);
-  if (idx !== -1) {
-    memorySupportTickets[idx] = {
-      ...memorySupportTickets[idx],
-      status: 'RESOLVED',
-      resolvedAt: new Date().toISOString(),
-      resolutionNotes: payload.resolutionNotes,
-    };
-  }
-
-  if (!isMockEnabled('WS4')) {
-    try {
-      await apiClient(`/support-requests/${ticketId}/resolve`, {
-        method: 'PATCH',
-        body: JSON.stringify(payload),
-      });
-    } catch (err) {
-      console.warn('Lỗi gọi API resolve support ticket:', err);
-    }
-  }
-
-  return {
-    success: true,
-    message: 'Đã hoàn thành và giải quyết sự cố kỹ thuật',
-  };
 }

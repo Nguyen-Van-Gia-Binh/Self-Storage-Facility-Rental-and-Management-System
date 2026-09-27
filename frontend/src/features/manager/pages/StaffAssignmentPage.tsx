@@ -24,13 +24,13 @@ import { StaffWorkloadCard } from '../components/StaffWorkloadCard';
 import { DailyTasksDispatchBoard } from '../components/DailyTasksDispatchBoard';
 import { AssignStaffModal } from '../components/AssignStaffModal';
 import { StaffDailyScheduleModal } from '../components/StaffDailyScheduleModal';
-
-const FACILITIES = [
-  { id: 1, name: 'Kho Tự Quản Tân Thuận (Quận 7, TP.HCM)' },
-  { id: 2, name: 'Kho Tự Quản Thủ Đức (TP. Thủ Đức)' },
-];
+import { fetchFacilities } from '@/api/facility';
 
 export const StaffAssignmentPage: React.FC = () => {
+  const [facilities, setFacilities] = useState<{ id: number; name: string }[]>([
+    { id: 1, name: 'Kho Tự Quản Tân Thuận (Quận 7, TP.HCM)' },
+    { id: 2, name: 'Kho Tự Quản Thủ Đức (TP. Thủ Đức)' },
+  ]);
   const [selectedFacilityId, setSelectedFacilityId] = useState<number>(1);
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split('T')[0]
@@ -59,6 +59,16 @@ export const StaffAssignmentPage: React.FC = () => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 4000);
   };
+
+  useEffect(() => {
+    fetchFacilities(undefined, true)
+      .then((list) => {
+        if (list && list.length > 0) {
+          setFacilities(list.map((f) => ({ id: f.id, name: f.name })));
+        }
+      })
+      .catch((err) => console.warn('Lỗi tải danh mục cơ sở:', err));
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -172,7 +182,7 @@ export const StaffAssignmentPage: React.FC = () => {
               onChange={(e) => setSelectedFacilityId(Number(e.target.value))}
               className="text-xs font-semibold text-slate-700 bg-transparent outline-none cursor-pointer"
             >
-              {FACILITIES.map((f) => (
+              {facilities.map((f) => (
                 <option key={f.id} value={f.id}>
                   {f.name}
                 </option>
