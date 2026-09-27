@@ -48,6 +48,26 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
   const daysRemaining = calculateDaysRemaining(contract.endDate);
   const isCutoffLocked = contract.status === 'ACTIVE' && daysRemaining < 30;
 
+  const overdueDays =
+    contract.overdueDays !== undefined && contract.overdueDays > 0
+      ? contract.overdueDays
+      : daysRemaining < 0
+      ? Math.abs(daysRemaining)
+      : contract.status === 'OVERDUE'
+      ? 1
+      : 0;
+
+  const isGracePeriod = contract.status === 'OVERDUE' && overdueDays <= 3;
+
+  const penaltyFee =
+    contract.overdueFee && contract.overdueFee > 0
+      ? contract.overdueFee
+      : overdueDays > 3
+      ? overdueDays <= 10
+        ? Math.round((overdueDays - 3) * 0.10 * contract.depositHeld)
+        : Math.round(0.70 * contract.depositHeld)
+      : 0;
+
   const handleOpenModal = () => {
     if (contract.status === 'PENDING_CHECKIN') {
       setShowPassModal(true);
@@ -81,8 +101,8 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
         return <Badge variant="warning">Sắp hết hạn</Badge>;
       case 'OVERDUE':
         return (
-          <Badge variant="overdue">
-            Quá hạn {contract.overdueDays ? `D+${contract.overdueDays}` : ''}
+          <Badge variant={isGracePeriod ? 'warning' : 'overdue'}>
+            {isGracePeriod ? `Ân hạn D+${overdueDays}` : `Quá hạn D+${overdueDays}`}
           </Badge>
         );
       case 'PENDING_RETURN':
@@ -233,12 +253,13 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
               </Button>
             )}
 
-            {onScheduleReturn && (contract.status === 'ACTIVE' || contract.status === 'EXPIRING_SOON') && (
+            {onScheduleReturn && (contract.status === 'ACTIVE' || contract.status === 'EXPIRING_SOON' || isGracePeriod) && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => onScheduleReturn(contract)}
                 className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-rose-700 cursor-pointer"
+                title={isGracePeriod ? 'Dọn đồ trả kho trong 3 ngày ân hạn để được hoàn 100% tiền cọc (BR-OVD-02)' : undefined}
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Báo trả kho</span>
@@ -273,36 +294,38 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
               </Button>
             ) : contract.status === 'OVERDUE' ? (
               <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full sm:w-auto">
-                <span className="text-[11px] font-semibold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200" title="Theo quy định, hợp đồng quá hạn không được phép gia hạn tiếp.">
-                  Quá hạn: Không thể gia hạn (BR-REN-02)
-                </span>
-                <Link
-                  to={`/customer/payment?unitNumber=${contract.unitNumber}&facilityName=${encodeURIComponent(
-                    contract.facilityName
-                  )}&amount=${contract.monthlyRent}&contractId=${contract.id}`}
-                  className="w-full sm:w-auto"
-                >
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3 text-rose-700 border-rose-300 hover:bg-rose-50 shadow-xs text-xs"
+                {isGracePeriod ? (
+                  <span
+                    className="text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-300"
+                    title="Trong 3 ngày ân hạn (D+1..D+3), chưa phát sinh phí phạt. Hoàn tất trả kho để nhận lại 100% cọc (BR-OVD-02)."
                   >
-                    <CreditCard className="w-3.5 h-3.5" />
-                    <span>Đóng nợ phạt quá hạn</span>
-                  </Button>
-                </Link>
-                <Link
-                  to="/booking/picker"
-                  className="w-full sm:w-auto"
-                >
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3 bg-slate-800 hover:bg-slate-900 shadow-xs text-xs"
-                  >
-                    <span>Thuê ô kho mới</span>
-                  </Button>
-                </Link>
+                    Ân hạn D+{overdueDays}: Chưa tính phí (BR-OVD-02)
+                  </span>
+                ) : (
+                  <>
+                    <span
+                      className="text-[11px] font-bold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-300"
+                      title="Từ D+4, phát sinh phí phạt quá hạn 10% tiền cọc mỗi ngày (BR-OVD-03)."
+                    >
+                      Quá hạn D+{overdueDays}: Phạt {formatVND(penaltyFee)}
+                    </span>
+                    <Link
+                      to={`/customer/payment?unitNumber=${contract.unitNumber}&facilityName=${encodeURIComponent(
+                        contract.facilityName
+                      )}&amount=${penaltyFee}&contractId=${contract.id}&paymentType=OVERDUE_PENALTY`}
+                      className="w-full sm:w-auto"
+                    >
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3 text-rose-700 border-rose-300 hover:bg-rose-50 shadow-xs text-xs font-bold"
+                      >
+                        <CreditCard className="w-3.5 h-3.5" />
+                        <span>Đóng nợ phạt ({formatVND(penaltyFee)})</span>
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </div>
             ) : isCutoffLocked ? (
               <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full sm:w-auto">

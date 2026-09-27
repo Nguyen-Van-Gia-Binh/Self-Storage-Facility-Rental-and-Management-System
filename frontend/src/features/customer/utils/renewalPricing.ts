@@ -46,10 +46,21 @@ export function calculateRenewalPricing(input: RenewalPricingInput): RenewalPric
   const discountAmount = Math.round((rawRent * discountRate) / 1000) * 1000;
   const netRent = rawRent - discountAmount;
 
-  // BR-REN-06: Gộp nợ & phí phạt quá hạn nếu có
+  // BR-REN-06: Gộp nợ & phí phạt quá hạn nếu có (BR-OVD-02..04)
   let calculatedOverdueFee = 0;
   if (isOverdue) {
-    calculatedOverdueFee = overdueFee > 0 ? overdueFee : (overdueDays > 0 ? overdueDays * 50000 : 100000);
+    if (overdueFee > 0) {
+      calculatedOverdueFee = overdueFee;
+    } else if (overdueDays > 3) {
+      const deposit = monthlyRent; // BR-DEP-01: Deposit mặc định = 1 tháng tiền thuê
+      if (overdueDays <= 10) {
+        calculatedOverdueFee = Math.round((overdueDays - 3) * 0.10 * deposit);
+      } else {
+        calculatedOverdueFee = Math.round(0.70 * deposit);
+      }
+    } else {
+      calculatedOverdueFee = 0; // D+1..D+3: Ân hạn chưa tính phí phạt (BR-OVD-02)
+    }
   }
 
   // BR-DEP-01: Không thu thêm tiền cọc bảo đảm
