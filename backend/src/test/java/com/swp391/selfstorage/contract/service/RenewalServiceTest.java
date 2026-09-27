@@ -121,22 +121,28 @@ class RenewalServiceTest {
     }
 
     @Test
-    @DisplayName("Báo giá gia hạn cho hợp đồng OVERDUE phải cộng thêm phí quá hạn")
-    void testGetRenewalQuote_overdue_includesOverdueFee() {
+    @DisplayName("Ném RENEWAL_NOT_ALLOWED khi hợp đồng còn dưới 30 ngày theo BR-REN-02")
+    void testGetRenewalQuote_lessThan30Days_throwsRenewalNotAllowed() {
+        RentalContract contract = buildContract(ContractStatus.ACTIVE);
+        contract.setEndDateExclusive(LocalDate.now().plusDays(29)); // Còn 29 ngày (< 30 ngày)
+        when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> renewalService.getRenewalQuote(100L, new RenewalRequest(3)));
+
+        assertEquals(ErrorCode.RENEWAL_NOT_ALLOWED, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("Ném RENEWAL_NOT_ALLOWED khi hợp đồng ở trạng thái OVERDUE")
+    void testGetRenewalQuote_overdue_throwsRenewalNotAllowed() {
         RentalContract contract = buildContract(ContractStatus.OVERDUE);
         when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
-        when(policyService.getActivePolicy()).thenReturn(buildActivePolicy());
-        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any())).thenReturn(false);
 
-        FacilityUnitTypePrice price = FacilityUnitTypePrice.builder().monthlyPrice(800000L).build();
-        when(facilityPriceRepository.findByFacilityIdAndUnitTypeId(1L, 7L)).thenReturn(Optional.of(price));
+        CustomException ex = assertThrows(CustomException.class,
+                () -> renewalService.getRenewalQuote(100L, new RenewalRequest(2)));
 
-        RenewalQuoteResponse quote = renewalService.getRenewalQuote(100L, new RenewalRequest(2));
-
-        assertNotNull(quote);
-        assertEquals(160000L, quote.getOverdueFeeSettled()); // Phí phạt quá hạn
-        assertEquals(1600000L, quote.getRentalFeeAmount()); // 800,000 * 2
-        assertEquals(1760000L, quote.getTotalAmount()); // 1,600,000 + 160,000
+        assertEquals(ErrorCode.RENEWAL_NOT_ALLOWED, ex.getErrorCode());
     }
 
     @Test
@@ -190,9 +196,9 @@ class RenewalServiceTest {
     }
 
     @Test
-    @DisplayName("Gia hạn thành công, cập nhật ngày kết thúc mới và chuyển OVERDUE về ACTIVE")
+    @DisplayName("Gia hạn thành công, cập nhật ngày kết thúc mới cho hợp đồng ACTIVE")
     void testProcessRenewal_success() {
-        RentalContract contract = buildContract(ContractStatus.OVERDUE);
+        RentalContract contract = buildContract(ContractStatus.ACTIVE);
         when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
         when(policyService.getActivePolicy()).thenReturn(buildActivePolicy());
         when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any())).thenReturn(false);
@@ -210,8 +216,8 @@ class RenewalServiceTest {
 
         assertNotNull(response);
         assertEquals(LocalDate.of(2027, 4, 1), response.getNewEndDate());
-        assertEquals(ContractStatus.ACTIVE, contract.getStatus()); // Đã khôi phục ACTIVE
-        assertEquals(0L, contract.getOverdueFeeAccrued()); // Đã xóa nợ phạt
+        assertEquals(ContractStatus.ACTIVE, contract.getStatus());
+        assertEquals(0L, contract.getOverdueFeeAccrued());
         assertEquals(LocalDate.of(2027, 4, 1), contract.getEndDateExclusive());
         verify(rentalContractRepository).save(contract);
     }
