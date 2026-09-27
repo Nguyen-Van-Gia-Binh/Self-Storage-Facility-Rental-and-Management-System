@@ -34,14 +34,14 @@ export const RenewalExpiryBanner: React.FC<RenewalExpiryBannerProps> = ({
           <div className="space-y-2 flex-1">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-200 text-rose-900 uppercase tracking-wider">
-                Từ chối gia hạn (BR-REN-02)
+                Từ chối gia hạn
               </span>
             </div>
             <h3 className="text-base font-bold text-rose-950">
               Hợp đồng này đã chấm dứt hiệu lực hoặc hoàn tất thanh lý
             </h3>
             <p className="text-xs sm:text-sm text-rose-800 leading-relaxed">
-              Theo quy định <strong>BR-REN-02</strong>, các hợp đồng ở trạng thái <em>Đã thanh lý (TERMINATED)</em> hoặc <em>Đã đóng (CLOSED)</em> không được phép gia hạn trực tuyến. Quý khách vui lòng liên hệ nhân viên quản lý cơ sở để được hỗ trợ hoặc tạo đơn đặt thuê ô kho mới.
+              Theo quy định, các hợp đồng ở trạng thái <em>Đã thanh lý (TERMINATED)</em> hoặc <em>Đã đóng (CLOSED)</em> không được phép gia hạn trực tuyến. Quý khách vui lòng liên hệ nhân viên quản lý cơ sở để được hỗ trợ hoặc tạo đơn đặt thuê ô kho mới.
             </p>
             <div className="flex flex-wrap items-center gap-2.5 pt-2">
               <a
@@ -77,7 +77,7 @@ export const RenewalExpiryBanner: React.FC<RenewalExpiryBannerProps> = ({
           <div className="space-y-2 flex-1">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-200 text-rose-900 uppercase tracking-wider">
-                Quá hạn {overdueCount} ngày — Không thể gia hạn (BR-REN-02)
+                Quá hạn {overdueCount} ngày — Không thể gia hạn
               </span>
               <span className="text-xs font-semibold text-rose-700">
                 Hết hạn từ ngày {contract.endDate}
@@ -87,7 +87,7 @@ export const RenewalExpiryBanner: React.FC<RenewalExpiryBannerProps> = ({
               Hợp đồng đã quá hạn và bị khóa tính năng gia hạn
             </h3>
             <p className="text-xs sm:text-sm text-rose-800 leading-relaxed">
-              Theo quy định <strong>BR-REN-02</strong>, hợp đồng ở trạng thái quá hạn không thể tiếp tục gia hạn trực tuyến. Quý khách vui lòng thanh toán phí quá hạn, hoàn tất trả kho hoặc đăng ký hợp đồng thuê mới nếu có nhu cầu tiếp tục sử dụng ngăn kho (tùy thuộc vào tình trạng còn trống của ngăn kho).
+              Theo quy định, hợp đồng ở trạng thái quá hạn không thể tiếp tục gia hạn trực tuyến. Quý khách vui lòng thanh toán phí quá hạn, hoàn tất trả kho hoặc đăng ký hợp đồng thuê mới nếu có nhu cầu tiếp tục sử dụng ngăn kho (tùy thuộc vào tình trạng còn trống của ngăn kho).
             </p>
             <div className="flex flex-wrap items-center gap-2.5 pt-2">
               <Link
@@ -123,7 +123,7 @@ export const RenewalExpiryBanner: React.FC<RenewalExpiryBannerProps> = ({
           <div className="space-y-2 flex-1">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-200 text-rose-900 uppercase tracking-wider">
-                Đã khóa quyền gia hạn (BR-REN-01 & BR-REN-02)
+                Đã khóa quyền gia hạn (&lt; 30 ngày)
               </span>
               <span className="text-xs font-semibold text-rose-700">
                 Còn {daysRemaining} ngày (Hết hạn {contract.endDate})
@@ -133,7 +133,7 @@ export const RenewalExpiryBanner: React.FC<RenewalExpiryBannerProps> = ({
               Đã quá hạn chót gia hạn trực tuyến (Ít nhất 30 ngày trước ngày hết hạn)
             </h3>
             <p className="text-xs sm:text-sm text-rose-800 leading-relaxed">
-              Theo quy định <strong>BR-REN-01 và BR-REN-02</strong>, khách hàng bắt buộc phải hoàn tất gia hạn trước ngày kết thúc hợp đồng ít nhất <strong>30 ngày</strong>. Hợp đồng của quý khách hiện chỉ còn <strong>{daysRemaining} ngày</strong> (đã dưới mốc 30 ngày) nên hệ thống đã khóa quyền gia hạn trực tuyến để chuẩn bị kế hoạch hoàn trả hoặc mở chỗ cho khách hàng tiếp theo. Nếu quý khách có nhu cầu tiếp tục sử dụng, vui lòng đăng ký một hợp đồng thuê mới hoặc liên hệ ban quản lý.
+              Theo quy định, khách hàng bắt buộc phải hoàn tất gia hạn trước ngày kết thúc hợp đồng ít nhất <strong>30 ngày</strong>. Hợp đồng của quý khách hiện chỉ còn <strong>{daysRemaining} ngày</strong> (đã dưới mốc 30 ngày) nên hệ thống đã khóa quyền gia hạn trực tuyến để chuẩn bị kế hoạch hoàn trả hoặc mở chỗ cho khách hàng tiếp theo. Nếu quý khách có nhu cầu tiếp tục sử dụng, vui lòng đăng ký một hợp đồng thuê mới hoặc liên hệ ban quản lý.
             </p>
             <div className="flex flex-wrap items-center gap-2.5 pt-2">
               <a
@@ -179,7 +179,7 @@ export const RenewalExpiryBanner: React.FC<RenewalExpiryBannerProps> = ({
               Gia hạn ngay để không bị khóa và mất vị trí ngăn kho ({daysUntilCutoff === 0 ? 'Hôm nay là ngày cuối cùng gia hạn' : `Còn ${daysUntilCutoff} ngày`})!
             </h3>
             <p className="text-xs sm:text-sm text-amber-800 leading-relaxed">
-              Theo quy định <strong>BR-REN-01</strong>, quý khách cần gia hạn trước mốc 30 ngày. Khi chỉ còn dưới 30 ngày, tính năng gia hạn sẽ tự động bị khóa và ngăn kho có thể được phân bổ cho khách hàng khác sau ngày {contract.endDate}.
+              Theo quy định, quý khách cần gia hạn trước mốc 30 ngày. Khi chỉ còn dưới 30 ngày, tính năng gia hạn sẽ tự động bị khóa và ngăn kho có thể được phân bổ cho khách hàng khác sau ngày {contract.endDate}.
             </p>
           </div>
         </div>

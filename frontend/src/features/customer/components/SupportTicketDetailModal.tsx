@@ -122,7 +122,7 @@ export const SupportTicketDetailModal: React.FC<SupportTicketDetailModalProps> =
                 {ticket.isUrgent && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-700 border border-rose-200">
                     <AlertTriangle className="w-3 h-3" />
-                    SLA 2 GIỜ (BR-SUP-01)
+                    SLA Xử lý 2 Giờ
                   </span>
                 )}
               </div>
@@ -336,7 +336,7 @@ export const SupportTicketDetailModal: React.FC<SupportTicketDetailModalProps> =
               {ticket.autoCloseDeadline && ticket.status === 'RESOLVED' && (
                 <p className="text-[11px] text-emerald-700 italic flex items-center gap-1">
                   <Clock className="w-3 h-3" />
-                  Theo quy định BR-SUP-03, nếu không có phản hồi, vé sẽ tự động hoàn tất trước ngày:{' '}
+                  Nếu không có phản hồi thêm, vé sẽ tự động hoàn tất trước ngày:{' '}
                   <strong>{new Date(ticket.autoCloseDeadline).toLocaleDateString('vi-VN')}</strong>.
                 </p>
               )}

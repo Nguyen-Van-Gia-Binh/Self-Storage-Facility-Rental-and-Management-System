@@ -77,7 +77,12 @@ export const MyUnitsPage: React.FC = () => {
     return contracts.filter((contract) => {
       // 1. Lọc theo Tab
       if (activeTab === 'ACTIVE' && contract.status !== 'ACTIVE') return false;
-      if (activeTab === 'PENDING_CHECKIN' && contract.status !== 'PENDING_CHECKIN') return false;
+      if (
+        activeTab === 'PENDING_CHECKIN' &&
+        contract.status !== 'PENDING_CHECKIN' &&
+        (contract.status as string) !== 'PENDING_CHECK_IN'
+      )
+        return false;
       if (activeTab === 'ATTENTION') {
         const isAttention =
           contract.status === 'EXPIRING_SOON' ||
@@ -99,6 +104,22 @@ export const MyUnitsPage: React.FC = () => {
       }
 
       return true;
+    })
+    .sort((a, b) => {
+      // Luôn hiển thị các kho mới nhất lên trên cùng:
+      // 1. So sánh ngày bắt đầu thuê (startDate DESC - ngày mới hơn lên trước)
+      const timeA = a.startDate ? new Date(a.startDate).getTime() : 0;
+      const timeB = b.startDate ? new Date(b.startDate).getTime() : 0;
+      if (timeB !== timeA) {
+        return timeB - timeA;
+      }
+      // 2. Nếu cùng ngày thì theo ID hoặc số hợp đồng giảm dần
+      const idA = parseInt(a.id, 10);
+      const idB = parseInt(b.id, 10);
+      if (!isNaN(idA) && !isNaN(idB)) {
+        return idB - idA;
+      }
+      return (b.contractNumber || '').localeCompare(a.contractNumber || '');
     });
   }, [contracts, activeTab, searchQuery]);
 
@@ -151,7 +172,7 @@ export const MyUnitsPage: React.FC = () => {
             <RotateCcw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             <span>Làm mới</span>
           </Button>
-          <Link to="/customer/units">
+          <Link to="/customer">
             <Button
               variant="primary"
               size="sm"
@@ -181,7 +202,7 @@ export const MyUnitsPage: React.FC = () => {
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 uppercase tracking-wide">
-                  Đề xuất gia hạn giữ chỗ (BR-REN-01)
+                  Đề xuất gia hạn giữ chỗ
                 </span>
                 <span className="text-xs font-bold text-amber-950">
                   Ô kho {earlyRenewalCandidate.unitNumber} · {earlyRenewalCandidate.facilityName}
@@ -226,7 +247,11 @@ export const MyUnitsPage: React.FC = () => {
             { id: 'ACTIVE', label: `Đang hoạt động (${contracts.filter((c) => c.status === 'ACTIVE').length})` },
             {
               id: 'PENDING_CHECKIN',
-              label: `Chờ nhận kho (${contracts.filter((c) => c.status === 'PENDING_CHECKIN').length})`,
+              label: `Chờ nhận kho (${
+                contracts.filter(
+                  (c) => c.status === 'PENDING_CHECKIN' || (c.status as string) === 'PENDING_CHECK_IN'
+                ).length
+              })`,
             },
             {
               id: 'ATTENTION',
@@ -325,7 +350,7 @@ export const MyUnitsPage: React.FC = () => {
               Xóa bộ lọc tìm kiếm
             </Button>
           ) : (
-            <Link to="/customer/units">
+            <Link to="/customer">
               <Button variant="primary" size="sm" className="mt-2 text-xs font-bold cursor-pointer">
                 Khám phá và thuê ngăn kho mới
               </Button>
@@ -340,9 +365,9 @@ export const MyUnitsPage: React.FC = () => {
           <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center text-brand-600">
             <Shield className="w-5 h-5" />
           </div>
-          <h4 className="font-extrabold text-sm text-[#0a1614]">Quy định hoàn cọc (BR-DEP-01)</h4>
+          <h4 className="font-extrabold text-sm text-[#0a1614]">Quy định hoàn cọc</h4>
           <p className="text-xs text-slate-500 leading-relaxed">
-            Tiền cọc Deposit 1 tháng được bảo lưu an toàn tại ngân hàng và tự động hoàn trả 100% trong 24-48 giờ sau khi hoàn tất biên bản nghiệm thu trả kho không hư hại (BR-RET-04).
+            Tiền cọc Deposit 1 tháng được bảo lưu an toàn tại ngân hàng và tự động hoàn trả 100% trong 24-48 giờ sau khi hoàn tất biên bản nghiệm thu trả kho không hư hại.
           </p>
         </Card>
 
@@ -350,7 +375,7 @@ export const MyUnitsPage: React.FC = () => {
           <div className="w-9 h-9 rounded-xl bg-[#96b3cf]/15 flex items-center justify-center text-[#96b3cf]">
             <HelpCircle className="w-5 h-5" />
           </div>
-          <h4 className="font-extrabold text-sm text-[#0a1614]">Khóa số thông minh (BR-ACC-01)</h4>
+          <h4 className="font-extrabold text-sm text-[#0a1614]">Khóa số thông minh</h4>
           <p className="text-xs text-slate-500 leading-relaxed">
             Nhập mã PIN 4-6 số trên bàn phím cảm ứng hoặc quét mã QR Pass để mở cửa ô kho 24/7. Bạn có thể chủ động đổi mã PIN mới bất cứ lúc nào ngay trên Dashboard.
           </p>

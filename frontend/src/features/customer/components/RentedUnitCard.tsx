@@ -69,7 +69,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
       : 0;
 
   const handleOpenModal = () => {
-    if (contract.status === 'PENDING_CHECKIN') {
+    if (contract.status === 'PENDING_CHECKIN' || (contract.status as string) === 'PENDING_CHECK_IN') {
       setShowPassModal(true);
       return;
     }
@@ -96,6 +96,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
       case 'ACTIVE':
         return <Badge variant="available">Đang hoạt động 24/7</Badge>;
       case 'PENDING_CHECKIN':
+      case 'PENDING_CHECK_IN' as any:
         return <Badge variant="reserved">Chờ nhận kho</Badge>;
       case 'EXPIRING_SOON':
         return <Badge variant="warning">Sắp hết hạn</Badge>;
@@ -203,7 +204,14 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
               )}
             </div>
 
-            {contract.accessPin ? (
+            {contract.status === 'OVERDUE' ? (
+              <div className="text-[11px] text-rose-700 bg-rose-50 p-2.5 rounded-lg border border-rose-200/80 flex items-start gap-1.5 mt-1">
+                <AlertCircle className="w-3.5 h-3.5 text-rose-600 flex-shrink-0 mt-0.5" />
+                <span>
+                  Mã PIN & QR mở khóa đã tạm khóa an ninh do hợp đồng quá hạn. Vui lòng thanh toán tiền thuê và phí quá hạn để mở khóa và tiếp tục sử dụng kho.
+                </span>
+              </div>
+            ) : contract.accessPin ? (
               <div className="flex items-center justify-between pt-1">
                 <span className="font-mono text-base font-black tracking-widest text-[#0a1614]">
                   {showPin ? contract.accessPin : '••••'}
@@ -259,7 +267,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                 size="sm"
                 onClick={() => onScheduleReturn(contract)}
                 className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-rose-700 cursor-pointer"
-                title={isGracePeriod ? 'Dọn đồ trả kho trong 3 ngày ân hạn để được hoàn 100% tiền cọc (BR-OVD-02)' : undefined}
+                title={isGracePeriod ? 'Dọn đồ trả kho trong 3 ngày ân hạn để được hoàn 100% tiền cọc' : undefined}
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Báo trả kho</span>
@@ -282,7 +290,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
               </Button>
             </Link>
 
-            {contract.status === 'PENDING_CHECKIN' ? (
+            {contract.status === 'PENDING_CHECKIN' || (contract.status as string) === 'PENDING_CHECK_IN' ? (
               <Button
                 variant="primary"
                 size="sm"
@@ -297,39 +305,31 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                 {isGracePeriod ? (
                   <span
                     className="text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-300"
-                    title="Trong 3 ngày ân hạn (D+1..D+3), chưa phát sinh phí phạt. Hoàn tất trả kho để nhận lại 100% cọc (BR-OVD-02)."
+                    title="Trong 3 ngày ân hạn (D+1..D+3), chưa phát sinh phí phạt. Hoàn tất trả kho để nhận lại 100% cọc."
                   >
-                    Ân hạn D+{overdueDays}: Chưa tính phí (BR-OVD-02)
+                    Ân hạn D+{overdueDays}: Chưa tính phí
                   </span>
                 ) : (
-                  <>
-                    <span
-                      className="text-[11px] font-bold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-300"
-                      title="Từ D+4, phát sinh phí phạt quá hạn 10% tiền cọc mỗi ngày (BR-OVD-03)."
+                  <Link
+                    to={`/customer/payment?unitNumber=${contract.unitNumber}&facilityName=${encodeURIComponent(
+                      contract.facilityName
+                    )}&amount=${penaltyFee}&contractId=${contract.id}&paymentType=OVERDUE_PENALTY`}
+                    className="w-full sm:w-auto"
+                  >
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3 text-rose-700 border-rose-300 hover:bg-rose-50 shadow-xs text-xs font-bold"
                     >
-                      Quá hạn D+{overdueDays}: Phạt {formatVND(penaltyFee)}
-                    </span>
-                    <Link
-                      to={`/customer/payment?unitNumber=${contract.unitNumber}&facilityName=${encodeURIComponent(
-                        contract.facilityName
-                      )}&amount=${penaltyFee}&contractId=${contract.id}&paymentType=OVERDUE_PENALTY`}
-                      className="w-full sm:w-auto"
-                    >
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3 text-rose-700 border-rose-300 hover:bg-rose-50 shadow-xs text-xs font-bold"
-                      >
-                        <CreditCard className="w-3.5 h-3.5" />
-                        <span>Đóng nợ phạt ({formatVND(penaltyFee)})</span>
-                      </Button>
-                    </Link>
-                  </>
+                      <CreditCard className="w-3.5 h-3.5" />
+                      <span>Đóng nợ phạt ({formatVND(penaltyFee)})</span>
+                    </Button>
+                  </Link>
                 )}
               </div>
             ) : isCutoffLocked ? (
               <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full sm:w-auto">
-                <span className="text-[11px] font-semibold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200" title="Theo quy định BR-REN-02, phải gia hạn trước ngày hết hạn ít nhất 30 ngày">
+                <span className="text-[11px] font-semibold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200" title="Theo quy định, phải gia hạn trước ngày hết hạn ít nhất 30 ngày">
                   Đã khóa gia hạn (&lt; 30 ngày)
                 </span>
                 <Button
@@ -337,7 +337,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                   size="sm"
                   disabled
                   className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3.5 opacity-50 cursor-not-allowed bg-slate-100 text-slate-400 border-slate-200 text-xs"
-                  title="Theo quy định BR-REN-02, hợp đồng chỉ được gia hạn trước mốc 30 ngày"
+                  title="Theo quy định, hợp đồng chỉ được gia hạn trước mốc 30 ngày"
                 >
                   <Lock className="w-3.5 h-3.5" />
                   <span>Gia hạn hợp đồng (Đã khóa)</span>

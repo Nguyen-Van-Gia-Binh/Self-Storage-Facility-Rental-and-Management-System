@@ -43,6 +43,7 @@ export interface ApiError {
   errorCode?: string;
   message: string;
   timestamp: string;
+  details?: string[];
   errors?: Record<string, string>;
 }
 
@@ -50,14 +51,19 @@ export class ApiException extends Error implements ApiError {
   status: number;
   errorCode?: string;
   timestamp: string;
+  details?: string[];
   errors?: Record<string, string>;
 
   constructor(errorData: ApiError) {
-    super(errorData.message || 'Đã xảy ra lỗi không xác định từ máy chủ');
+    const detailMsg = errorData.details && Array.isArray(errorData.details) && errorData.details.length > 0
+      ? `${errorData.message}: ${errorData.details.join(', ')}`
+      : errorData.message;
+    super(detailMsg || 'Đã xảy ra lỗi không xác định từ máy chủ');
     this.name = 'ApiException';
     this.status = errorData.status;
     this.errorCode = errorData.errorCode;
     this.timestamp = errorData.timestamp;
+    this.details = errorData.details;
     this.errors = errorData.errors;
   }
 }

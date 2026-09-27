@@ -83,6 +83,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
       case 'ACTIVE':
         return <Badge variant="available">Đang hoạt động 24/7</Badge>;
       case 'PENDING_CHECKIN':
+      case 'PENDING_CHECK_IN' as any:
         return <Badge variant="reserved">Chờ đối chiếu CCCD tại quầy</Badge>;
       case 'EXPIRING_SOON':
         return <Badge variant="warning">Sắp hết hạn</Badge>;
@@ -250,7 +251,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
 
                   <div className="flex justify-between">
                     <div>
-                      <span className="text-slate-600 block">Tiền cọc bảo đảm (Deposit - BR-DEP-01):</span>
+                      <span className="text-slate-600 block">Tiền cọc bảo đảm (Deposit):</span>
                       <span className="text-[10px] text-slate-400 italic">
                         Đang bảo lưu tại ngân hàng, quyết toán khi trả kho
                       </span>
@@ -353,7 +354,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-start gap-2 text-[11px] text-slate-500 mt-2">
                 <ShieldCheck className="w-4 h-4 text-brand-600 flex-shrink-0 mt-0.5" />
                 <span>
-                  Hệ thống giám sát cửa khóa IoT tự động lưu trữ nhật ký mở cửa trong 90 ngày để phục vụ bảo đảm an ninh tài sản theo tiêu chuẩn BR-ACC-02.
+                  Hệ thống giám sát cửa khóa IoT tự động lưu trữ nhật ký mở cửa trong 90 ngày để phục vụ bảo đảm an ninh tài sản theo tiêu chuẩn an ninh thông minh.
                 </span>
               </div>
             </div>

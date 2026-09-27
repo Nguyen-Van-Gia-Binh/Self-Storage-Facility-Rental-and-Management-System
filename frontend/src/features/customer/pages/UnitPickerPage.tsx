@@ -60,22 +60,34 @@ export const UnitPickerPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const facilityParam = searchParams.get('facility') || '8';
+  const facilityParam = searchParams.get('facility');
   const initialTypeId = searchParams.get('type');
   const initialMonthsParam = parseInt(searchParams.get('months') || '', 10);
   const initialStartDateParam = searchParams.get('startDate');
 
   const [loading, setLoading] = useState<boolean>(true);
   const [currentFacility, setCurrentFacility] = useState<{ id: string; name: string; address?: string }>({
-    id: facilityParam,
+    id: facilityParam || '',
     name: 'Cơ sở lưu trữ',
   });
   const [unitTypes, setUnitTypes] = useState<UnitType[]>([]);
   const [facilityUnits, setFacilityUnits] = useState<StorageUnit[]>([]);
 
   // 1. Quản lý thời gian thuê dự kiến (Ngày bắt đầu & Số tháng thuê)
-  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
-  const [startDate, setStartDate] = useState<string>(initialStartDateParam || todayStr);
+  const todayStr = useMemo(() => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
+  const [startDate, setStartDate] = useState<string>(() => {
+    if (initialStartDateParam && initialStartDateParam >= todayStr) {
+      return initialStartDateParam;
+    }
+    return todayStr;
+  });
   const [durationMonths, setDurationMonths] = useState<number>(
     !isNaN(initialMonthsParam) && initialMonthsParam > 0 ? initialMonthsParam : 3
   );
@@ -83,9 +95,12 @@ export const UnitPickerPage: React.FC = () => {
   // Tính ngày kết thúc dự kiến
   const calculatedEndDate = useMemo(() => {
     if (!startDate) return '';
-    const d = new Date(startDate);
-    d.setMonth(d.getMonth() + durationMonths);
-    return d.toISOString().split('T')[0];
+    const [y, m, d] = startDate.split('-').map(Number);
+    const date = new Date(y, m - 1 + durationMonths, d);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }, [startDate, durationMonths]);
 
   // Sức chứa ô kho theo loại kho trong khoảng thời gian đã chọn
@@ -98,6 +113,12 @@ export const UnitPickerPage: React.FC = () => {
 
   // Tải dữ liệu thực tế từ backend khi facilityParam thay đổi
   useEffect(() => {
+    // Nếu URL không có tham số cơ sở, tự động chuyển hướng về Trang chủ để khách chọn cơ sở
+    if (!facilityParam) {
+      navigate('/customer', { replace: true });
+      return;
+    }
+
     let isMounted = true;
 
     async function loadFacilityAndUnits() {
@@ -107,10 +128,10 @@ export const UnitPickerPage: React.FC = () => {
         const facList = await fetchFacilities();
         if (!isMounted) return;
 
-        // Tìm cơ sở tương ứng theo ID hoặc Code (ví dụ: '8' hoặc 'FAC-HC')
+        // Tìm cơ sở tương ứng theo ID hoặc Code (ví dụ: '1' hoặc 'FAC-HC')
         const matchedFac = facList.find(
           (f: FacilityListItem) => String(f.id) === facilityParam || f.code === facilityParam
-        ) || facList.find((f: FacilityListItem) => f.id === 8) || facList[0];
+        ) || facList[0];
 
         if (matchedFac) {
           setCurrentFacility({
@@ -220,7 +241,7 @@ export const UnitPickerPage: React.FC = () => {
 
     loadFacilityAndUnits();
     return () => { isMounted = false; };
-  }, [facilityParam, initialTypeId]);
+  }, [facilityParam, initialTypeId, navigate]);
 
   // Tải sức chứa ô kho thực tế theo khoảng thời gian khách chọn (SC-01)
   useEffect(() => {
@@ -373,17 +394,17 @@ export const UnitPickerPage: React.FC = () => {
         <div className="flex items-center gap-2 text-xs font-semibold shrink-0">
           <div className="flex items-center gap-1.5 bg-brand-500 text-white px-3 py-1 rounded-full border border-brand-500 shadow-xs">
             <span className="w-4 h-4 rounded-full bg-white text-brand-700 text-[10px] flex items-center justify-center font-bold">1</span>
-            <span>1. Chọn loại & Sơ đồ</span>
+            <span>Chọn loại & Sơ đồ</span>
           </div>
           <span className="text-slate-300">/</span>
           <div className="flex items-center gap-1.5 text-slate-400 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-200">
             <span className="w-4 h-4 rounded-full bg-slate-200 text-slate-500 text-[10px] flex items-center justify-center font-bold">2</span>
-            <span>2. Hồ sơ đặt chỗ</span>
+            <span>Hồ sơ đặt chỗ</span>
           </div>
           <span className="text-slate-300">/</span>
           <div className="flex items-center gap-1.5 text-slate-400 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-200">
             <span className="w-4 h-4 rounded-full bg-slate-200 text-slate-500 text-[10px] flex items-center justify-center font-bold">3</span>
-            <span>3. Thanh toán VietQR</span>
+            <span>Thanh toán VietQR</span>
           </div>
         </div>
       </div>
@@ -396,9 +417,6 @@ export const UnitPickerPage: React.FC = () => {
               <Box className="w-4 h-4 text-brand-600" />
               1. Chọn Loại Kho & Kích Thước
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Chọn môi trường lưu trữ và kích thước kho phù hợp với nhu cầu của bạn
-            </p>
           </div>
           <span className="text-xs font-semibold text-brand-700 bg-brand-50 px-2.5 py-1 rounded-full border border-brand-200 shrink-0 self-start sm:self-auto">
             Cơ sở: {currentFacility.name}
@@ -469,7 +487,7 @@ export const UnitPickerPage: React.FC = () => {
                     {type.badge === 'POPULAR' && (
                       <Badge 
                         variant="primary"
-                        className="text-[10px] px-1.5 py-0.5"
+                        className="text-[10px] px-2 py-0.5 whitespace-nowrap shrink-0"
                       >
                         Phổ biến nhất
                       </Badge>
@@ -546,9 +564,6 @@ export const UnitPickerPage: React.FC = () => {
               <Calendar className="w-4 h-4 text-brand-600" />
               2. Chọn Thời Gian Thuê Kho Dự Kiến
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Chọn ngày bắt đầu và thời hạn thuê để sơ đồ tự động lọc và hiển thị chính xác các ô kho trống khả dụng
-            </p>
           </div>
           {loadingAvailability ? (
             <span className="text-xs font-semibold text-brand-600 flex items-center gap-1.5 animate-pulse">
@@ -645,9 +660,6 @@ export const UnitPickerPage: React.FC = () => {
             <h2 className="text-base font-extrabold text-[#0a1614] flex items-center gap-2">
               <Layers className="w-4 h-4 text-brand-600" /> 3. Sơ Đồ Mặt Bằng Ô Kho Vật Lý
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Bấm chọn ô kho màu xanh trên sơ đồ tương ứng với loại kho và thời gian bạn đã chọn
-            </p>
           </div>
           <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
             <span className="text-xs font-semibold text-brand-700 bg-brand-50 px-2.5 py-1 rounded-full border border-brand-200">

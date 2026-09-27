@@ -126,7 +126,7 @@ export const ChangePinModal: React.FC<ChangePinModalProps> = ({
 
           <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-100 uppercase tracking-wider mb-1">
             <KeyRound className="w-4 h-4" />
-            <span>Bảo Mật Khóa Điện Tử (BR-ACC-01)</span>
+            <span>Bảo Mật Khóa Điện Tử</span>
           </div>
 
           <h3 className="text-xl font-black text-white">Đổi Mã PIN Mở Cửa Ngăn {contract.unitNumber}</h3>

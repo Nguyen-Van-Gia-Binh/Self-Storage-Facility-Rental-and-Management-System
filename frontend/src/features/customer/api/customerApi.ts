@@ -62,6 +62,55 @@ export interface PaymentStatusResponse {
   transactionRef?: string;
 }
 
+/**
+ * Ánh xạ dữ liệu SupportRequest từ Backend sang SupportTicket cho UI Frontend
+ */
+export function mapBackendSupportRequest(item: any): SupportTicket {
+  if (!item) return item;
+
+  let attachments: any[] = [];
+  if (Array.isArray(item.attachments)) {
+    attachments = item.attachments;
+  } else if (Array.isArray(item.attachmentUrls)) {
+    attachments = item.attachmentUrls.map((url: string, idx: number) => ({
+      id: idx + 1,
+      fileUrl: url,
+      fileType: url.endsWith('.png') ? 'image/png' : 'image/jpeg',
+      uploadedAt: item.createdAt,
+    }));
+  }
+
+  return {
+    id: item.id,
+    ticketCode: item.code || item.ticketCode || `SUP-${item.id}`,
+    customerId: item.customerId,
+    customerName: item.customerName || 'Nguyễn Phạm Xuân Nhi',
+    customerPhone: item.customerPhone || '0967890123',
+    contractId: item.contractId,
+    contractNumber: item.contractCode || item.contractNumber,
+    facilityId: item.facilityId || 1,
+    facilityName: item.facilityName || 'Cơ sở SmartStorage',
+    storageUnitId: item.storageUnitId,
+    unitNumber: item.storageUnitCode || item.unitNumber,
+    category: item.category,
+    title: item.title || item.categoryDisplayName,
+    isUrgent: Boolean(item.isUrgent),
+    slaHours: item.slaHours ?? (item.isUrgent ? 2 : 24),
+    description: item.description || '',
+    status: item.status,
+    assignedStaffId: item.assignedStaffId,
+    assignedStaffName: item.assignedStaffName,
+    assignedStaffPhone: item.assignedStaffPhone,
+    resolutionNote: item.resolutionNote,
+    resolvedAt: item.resolvedAt,
+    autoCloseDeadline: item.autoClosedAt || item.slaDueAt,
+    createdAt: item.createdAt || new Date().toISOString(),
+    updatedAt: item.updatedAt || item.createdAt,
+    attachments: attachments,
+    resolutionAttachments: item.resolutionAttachments || [],
+  };
+}
+
 export const customerApi = {
   /**
    * Lấy danh sách chi nhánh cơ sở kho đang hoạt động
@@ -247,7 +296,6 @@ export const customerApi = {
     }
     return mockRentedContracts;
   },
-
   /**
    * Lấy danh sách yêu cầu hỗ trợ sự cố của khách (SC-06, US-SC-06.2)
    */
@@ -257,12 +305,12 @@ export const customerApi = {
     if (category && category !== 'ALL') params.append('category', category);
 
     const queryStr = params.toString() ? `?${params.toString()}` : '';
-    const res = await apiClient<ApiResponse<PageResponse<SupportTicket>> | ApiResponse<SupportTicket[]>>(`/support-requests${queryStr}`);
+    const res = await apiClient<ApiResponse<PageResponse<any>> | ApiResponse<any[]>>(`/support-requests${queryStr}`);
     if ((res.data as any)?.content && Array.isArray((res.data as any).content)) {
-      return (res.data as any).content;
+      return (res.data as any).content.map(mapBackendSupportRequest);
     }
     if (Array.isArray(res.data)) {
-      return res.data;
+      return res.data.map(mapBackendSupportRequest);
     }
     return [];
   },
@@ -271,30 +319,30 @@ export const customerApi = {
    * Xem chi tiết yêu cầu hỗ trợ (US-SC-06.2)
    */
   async getSupportRequestDetail(id: number): Promise<SupportTicket> {
-    const res = await apiClient<ApiResponse<SupportTicket>>(`/support-requests/${id}`);
-    return res.data;
+    const res = await apiClient<ApiResponse<any>>(`/support-requests/${id}`);
+    return mapBackendSupportRequest(res.data);
   },
 
   /**
    * Gửi yêu cầu hỗ trợ mới (US-SC-06.1, UC-F7-01)
    */
   async createSupportRequest(payload: CreateSupportTicketPayload): Promise<SupportTicket> {
-    const res = await apiClient<ApiResponse<SupportTicket>>('/support-requests', {
+    const res = await apiClient<ApiResponse<any>>('/support-requests', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
-    return res.data;
+    return mapBackendSupportRequest(res.data);
   },
 
   /**
    * Nghiệm thu đóng yêu cầu hoặc báo chưa hài lòng (US-SC-06.3, UC-F7-08)
    */
   async confirmResolution(id: number, satisfied: boolean, feedbackNotes?: string): Promise<SupportTicket> {
-    const res = await apiClient<ApiResponse<SupportTicket>>(`/support-requests/${id}/confirm`, {
+    const res = await apiClient<ApiResponse<any>>(`/support-requests/${id}/confirm`, {
       method: 'PATCH',
       body: JSON.stringify({ satisfied, feedbackNotes }),
     });
-    return res.data;
+    return mapBackendSupportRequest(res.data);
   },
 
   /**

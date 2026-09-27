@@ -177,8 +177,20 @@ export const BookingPage: React.FC = () => {
   const [durationMonths] = useState<number>(
     !isNaN(monthsParam) && monthsParam > 0 ? monthsParam : 3
   );
-  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
-  const [startDate] = useState<string>(startDateParam || todayStr);
+  const todayStr = useMemo(() => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
+  const [startDate] = useState<string>(() => {
+    if (startDateParam && startDateParam >= todayStr) {
+      return startDateParam;
+    }
+    return todayStr;
+  });
 
   const [customerName, setCustomerName] = useState('Nguyễn Văn An');
   const [customerPhone, setCustomerPhone] = useState('0912 345 678');
@@ -213,9 +225,12 @@ export const BookingPage: React.FC = () => {
   // Calculate End Date
   const endDate = useMemo(() => {
     if (!startDate) return '';
-    const d = new Date(startDate);
-    d.setMonth(d.getMonth() + durationMonths);
-    return d.toISOString().split('T')[0];
+    const [y, m, d] = startDate.split('-').map(Number);
+    const date = new Date(y, m - 1 + durationMonths, d);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }, [startDate, durationMonths]);
 
   // Backend Availability & Real Pricing States (SC-01, SC-02)
@@ -587,7 +602,7 @@ export const BookingPage: React.FC = () => {
             className="flex items-center gap-1.5 text-brand-600 bg-brand-50 px-2.5 py-1 rounded-full border border-brand-200 hover:bg-brand-100"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>1. Chọn loại & Sơ đồ</span>
+            <span>Chọn loại & Sơ đồ</span>
           </Link>
           <span className="text-slate-300">/</span>
           <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-colors ${
@@ -596,7 +611,7 @@ export const BookingPage: React.FC = () => {
               : 'text-brand-600 bg-brand-50 border-brand-200'
           }`}>
             <span className="w-4 h-4 rounded-full bg-white text-brand-700 text-[10px] flex items-center justify-center font-bold">2</span>
-            <span>2. Hồ sơ đặt chỗ</span>
+            <span>Hồ sơ đặt chỗ</span>
           </div>
           <span className="text-slate-300">/</span>
           <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-colors ${
@@ -607,7 +622,7 @@ export const BookingPage: React.FC = () => {
             <span className={`w-4 h-4 rounded-full text-[10px] flex items-center justify-center font-bold ${
               currentStep === 3 ? 'bg-white text-brand-700' : 'bg-slate-200 text-slate-500'
             }`}>3</span>
-            <span>3. Thanh toán VietQR</span>
+            <span>Thanh toán VietQR</span>
           </div>
         </div>
       </div>
@@ -690,7 +705,7 @@ export const BookingPage: React.FC = () => {
               <div className="border-b border-slate-100 pb-2.5">
                 <h3 className="text-sm sm:text-base font-bold text-[#0a1614] flex items-center gap-2">
                   <User className="w-4 h-4 text-brand-600" />
-                  Thông tin khách hàng & Định danh nhận kho (BR-CHK-01)
+                  Thông tin khách hàng & Định danh nhận kho
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Số CCCD/Hộ chiếu dùng để nhân viên đối chiếu và bàn giao chìa khóa thông minh tại cơ sở.
@@ -760,7 +775,7 @@ export const BookingPage: React.FC = () => {
                   <Input
                     label="Số Căn cước công dân / Hộ chiếu (9-12 số)"
                     placeholder="079098012345"
-                    helperText="Bắt buộc theo BR-CHK-01 để cấp quyền mở cửa"
+                    helperText="Bắt buộc để cấp quyền mở cửa bảo mật tại cơ sở"
                     value={customerIdCard}
                     onChange={(e) => {
                       setCustomerIdCard(e.target.value);
@@ -1079,7 +1094,7 @@ export const BookingPage: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span>
-                    <strong>Bảo mật truy cập (BR-ACC-01):</strong> Thẻ nhận kho và mã PIN mở ngăn tủ chỉ được cấp ngay sau khi hệ thống ghi nhận thanh toán cọc thành công.
+                    <strong>Bảo mật truy cập:</strong> Thẻ nhận kho và mã PIN mở ngăn tủ chỉ được cấp ngay sau khi hệ thống ghi nhận thanh toán cọc thành công.
                   </span>
                 </div>
               </div>

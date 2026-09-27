@@ -5,7 +5,6 @@ import {
   Lock, 
   AlertTriangle, 
   Clock, 
-  DoorOpen, 
   ShieldAlert, 
   Layers, 
   Filter, 
@@ -48,7 +47,7 @@ const statusConfigMap: Record<UnitStatus, {
     badgeVariant: 'reserved',
     cardClass: 'bg-sky-50/60 border-sky-200 text-sky-900 cursor-not-allowed opacity-80',
     isSelectable: false,
-    hint: 'Ô kho đang được giữ chỗ trực tuyến (BR-DEP-03)',
+    hint: 'Ô kho đang được giữ chỗ trực tuyến (tối đa 48 giờ)',
   },
   OCCUPIED: {
     label: 'Đang thuê',
@@ -234,22 +233,12 @@ export const UnitGrid: React.FC<UnitGridProps> = ({
 
       {/* 2. KHUNG SƠ ĐỒ MẶT BẰNG KHO TRỰC QUAN (Architectural Floorplan Container) */}
       <div className="bg-slate-50/70 p-4 sm:p-6 rounded-2xl border-2 border-slate-200/90 relative overflow-hidden">
-        {/* Floorplan Title & Landmarks Header */}
+        {/* Floorplan Title */}
         <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-4 text-xs font-semibold text-slate-500">
           <div className="flex items-center gap-2 text-slate-700">
             <span className="w-2 h-2 rounded-full bg-brand-500"></span>
             <span className="font-bold text-sm text-[#0a1614]">
               Mặt bằng Tầng {currentFloor} — {facilityName || 'Kho Phú Mỹ Hưng'}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-4 text-[11px] text-slate-500">
-            <span className="flex items-center gap-1">
-              <DoorOpen className="w-3.5 h-3.5 text-slate-600" /> Cửa vào chính (Phía Nam)
-            </span>
-            <span className="hidden sm:inline-block text-slate-300">|</span>
-            <span className="hidden sm:flex items-center gap-1 text-sky-700">
-              <ThermometerSnowflake className="w-3.5 h-3.5" /> Dãy máy lạnh 24/7
             </span>
           </div>
         </div>

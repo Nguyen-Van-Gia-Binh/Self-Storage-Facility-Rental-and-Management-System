@@ -461,10 +461,10 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
             </div>
           )}
 
-          {/* Financial Breakdown Table: BR-DEP-02 & BR-PAY-01 */}
+          {/* Financial Breakdown Table */}
           <div className="bg-white border border-slate-200/90 rounded-xl p-4 space-y-2.5 text-xs">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 font-bold text-slate-800">
-              <span>Bảng kê chi tiết nộp cọc (BR-PAY-01)</span>
+              <span>Bảng kê chi tiết nộp cọc</span>
               <span className="text-[11px] text-brand-600 font-normal">Tách bạch theo quy định</span>
             </div>
 
@@ -475,7 +475,7 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
 
             <div className="flex justify-between text-slate-600">
               <div>
-                <span className="block">Tiền cọc bảo đảm (1 tháng - BR-DEP-01):</span>
+                <span className="block">Tiền cọc bảo đảm (1 tháng):</span>
                 <span className="text-[10px] text-slate-400 italic">
                   Được hoàn lại 100% khi thanh lý hợp đồng đúng hạn
                 </span>
@@ -489,12 +489,12 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
             </div>
           </div>
 
-          {/* Security Notice: BR-ACC-01 */}
+          {/* Security Notice */}
           <div className="flex items-start gap-2 text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
             <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
             <span>
               Hệ thống sẽ đối soát tự động trong 10-30 giây và cấp ngay <strong>Thẻ nhận kho điện tử (Move-in Pass)</strong>.
-              Mã PIN mở khóa sẽ được kích hoạt tại quầy lễ tân (BR-ACC-01).
+              Mã PIN mở khóa sẽ được kích hoạt tại quầy lễ tân.
             </span>
           </div>
 

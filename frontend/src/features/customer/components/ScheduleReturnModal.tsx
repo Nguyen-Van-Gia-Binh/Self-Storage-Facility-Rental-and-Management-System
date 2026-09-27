@@ -82,7 +82,7 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
     }
 
     if (isEarlyReturn && !agreeEarlyTerms) {
-      setError('Bạn phải xác nhận đã hiểu quy định không hoàn cước thuê các tháng chưa sử dụng (BR-RET-06).');
+      setError('Bạn phải xác nhận đã hiểu quy định không hoàn cước thuê các tháng chưa sử dụng.');
       return false;
     }
 
@@ -239,17 +239,17 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
             <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-2.5 text-xs text-emerald-900">
               <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
               <span className="leading-snug">
-                <strong>Chính sách ân hạn (BR-OVD-02):</strong> Hợp đồng đã quá hạn {contract.overdueDays} ngày (trong hạn 3 ngày ân hạn). Nhờ bạn hoàn tất dọn đồ và báo trả hôm nay, bạn vẫn được <strong>hoàn trả 100% tiền cọc ({formatVND(contract.depositHeld)})</strong> và được <strong>miễn toàn bộ phí phạt quá hạn</strong>.
+                <strong>Chính sách ân hạn:</strong> Hợp đồng đã quá hạn {contract.overdueDays} ngày (trong hạn 3 ngày ân hạn). Nhờ bạn hoàn tất dọn đồ và báo trả hôm nay, bạn vẫn được <strong>hoàn trả 100% tiền cọc ({formatVND(contract.depositHeld)})</strong> và được <strong>miễn toàn bộ phí phạt quá hạn</strong>.
               </span>
             </div>
           )}
 
-          {/* Early Return Warning: BR-RET-06 */}
+          {/* Early Return Warning */}
           {isEarlyReturn && (
             <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl space-y-2 text-xs text-amber-900">
               <div className="flex items-start gap-2 font-bold text-amber-950">
                 <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                <span>Quy định trả kho trước thời hạn hợp đồng (BR-RET-06):</span>
+                <span>Quy định trả kho trước thời hạn hợp đồng:</span>
               </div>
               <p className="text-amber-800 leading-relaxed text-[11px]">
                 Ngày trả kho của bạn sớm hơn ngày kết thúc hợp đồng (<strong>{contract.endDate}</strong>).
