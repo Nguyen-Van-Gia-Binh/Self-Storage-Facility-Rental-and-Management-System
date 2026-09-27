@@ -153,7 +153,7 @@ export const RenewalReceiptModal: React.FC<RenewalReceiptModalProps> = ({
             <div className="space-y-0.5 flex-1">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-sky-950">
-                  Bảo lưu mã PIN mở tủ (BR-REN-08)
+                  Bảo lưu mã PIN mở tủ
                 </span>
                 {contract.accessPin && (
                   <span className="font-mono font-black text-sm px-2 py-0.5 bg-white border border-sky-300 rounded text-sky-900">
@@ -177,7 +177,7 @@ export const RenewalReceiptModal: React.FC<RenewalReceiptModalProps> = ({
               <span className="font-semibold text-slate-800">VietQR · Napas247</span>
             </div>
             <div className="flex items-center justify-between text-slate-600 text-xs">
-              <span>Tiền cọc bảo lưu (BR-DEP-01):</span>
+              <span>Tiền cọc bảo lưu:</span>
               <span className="font-semibold text-emerald-600">{formatVND(contract.depositHeld)} (Giữ nguyên)</span>
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-slate-200 text-sm">

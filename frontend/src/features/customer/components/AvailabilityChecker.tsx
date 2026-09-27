@@ -34,7 +34,7 @@ export const AvailabilityChecker: React.FC<AvailabilityCheckerProps> = ({
       ok = false;
     }
     if (!Number.isInteger(query.rentalMonths) || query.rentalMonths < 1) {
-      setMonthsErr('Thời hạn thuê phải là số tháng nguyên ≥ 1 (BR-GEN-03)');
+      setMonthsErr('Thời hạn thuê phải là số tháng nguyên ≥ 1');
       ok = false;
     }
     return ok;
@@ -154,7 +154,7 @@ export const AvailabilityChecker: React.FC<AvailabilityCheckerProps> = ({
                 <span className="font-bold text-slate-800">{fmt(result.totalRentalFee)}</span>
               </p>
               <p>
-                Tiền cọc (BR-DEP-01):{' '}
+                Tiền cọc:{' '}
                 <span className="font-bold text-slate-800">{fmt(result.depositAmount)}</span>
               </p>
               <p className="pt-1 font-bold text-slate-800 border-t border-slate-200">

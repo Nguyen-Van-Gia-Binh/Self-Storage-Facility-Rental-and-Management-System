@@ -93,13 +93,13 @@ export const RenewalPage: React.FC = () => {
       try {
         const remDays = calculateDaysRemaining(contract.endDate);
         if (contract.status === 'OVERDUE' || remDays < 0) {
-          throw new Error('Hợp đồng đã quá hạn và không thể gia hạn tiếp trực tuyến theo quy định BR-REN-02.');
+          throw new Error('Hợp đồng đã quá hạn và không thể gia hạn tiếp trực tuyến theo quy định.');
         }
         if (contract.status !== 'ACTIVE') {
           throw new Error(`Hợp đồng đang ở trạng thái "${contract.status}". Chỉ hợp đồng ACTIVE mới được phép gia hạn.`);
         }
         if (remDays < 30) {
-          throw new Error('Đã quá thời hạn gia hạn. Khách hàng phải gia hạn trước ngày hết hạn ít nhất 30 ngày theo quy định BR-REN-02.');
+          throw new Error('Đã quá thời hạn gia hạn. Khách hàng phải gia hạn trước ngày hết hạn ít nhất 30 ngày theo quy định.');
         }
 
         const numId = parseInt(contract.id, 10);

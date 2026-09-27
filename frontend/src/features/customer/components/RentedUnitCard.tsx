@@ -259,7 +259,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                 size="sm"
                 onClick={() => onScheduleReturn(contract)}
                 className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-rose-700 cursor-pointer"
-                title={isGracePeriod ? 'Dọn đồ trả kho trong 3 ngày ân hạn để được hoàn 100% tiền cọc (BR-OVD-02)' : undefined}
+                title={isGracePeriod ? 'Dọn đồ trả kho trong 3 ngày ân hạn để được hoàn 100% tiền cọc' : undefined}
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Báo trả kho</span>
@@ -297,15 +297,15 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                 {isGracePeriod ? (
                   <span
                     className="text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-300"
-                    title="Trong 3 ngày ân hạn (D+1..D+3), chưa phát sinh phí phạt. Hoàn tất trả kho để nhận lại 100% cọc (BR-OVD-02)."
+                    title="Trong 3 ngày ân hạn (D+1..D+3), chưa phát sinh phí phạt. Hoàn tất trả kho để nhận lại 100% cọc."
                   >
-                    Ân hạn D+{overdueDays}: Chưa tính phí (BR-OVD-02)
+                    Ân hạn D+{overdueDays}: Chưa tính phí
                   </span>
                 ) : (
                   <>
                     <span
                       className="text-[11px] font-bold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-300"
-                      title="Từ D+4, phát sinh phí phạt quá hạn 10% tiền cọc mỗi ngày (BR-OVD-03)."
+                      title="Từ D+4, phát sinh phí phạt quá hạn 10% tiền cọc mỗi ngày."
                     >
                       Quá hạn D+{overdueDays}: Phạt {formatVND(penaltyFee)}
                     </span>
@@ -329,7 +329,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
               </div>
             ) : isCutoffLocked ? (
               <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full sm:w-auto">
-                <span className="text-[11px] font-semibold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200" title="Theo quy định BR-REN-02, phải gia hạn trước ngày hết hạn ít nhất 30 ngày">
+                <span className="text-[11px] font-semibold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200" title="Theo quy định, phải gia hạn trước ngày hết hạn ít nhất 30 ngày">
                   Đã khóa gia hạn (&lt; 30 ngày)
                 </span>
                 <Button
@@ -337,7 +337,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                   size="sm"
                   disabled
                   className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3.5 opacity-50 cursor-not-allowed bg-slate-100 text-slate-400 border-slate-200 text-xs"
-                  title="Theo quy định BR-REN-02, hợp đồng chỉ được gia hạn trước mốc 30 ngày"
+                  title="Theo quy định, hợp đồng chỉ được gia hạn trước mốc 30 ngày"
                 >
                   <Lock className="w-3.5 h-3.5" />
                   <span>Gia hạn hợp đồng (Đã khóa)</span>

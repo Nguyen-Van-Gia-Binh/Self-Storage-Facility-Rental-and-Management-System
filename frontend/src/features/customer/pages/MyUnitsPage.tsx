@@ -181,7 +181,7 @@ export const MyUnitsPage: React.FC = () => {
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 uppercase tracking-wide">
-                  Đề xuất gia hạn giữ chỗ (BR-REN-01)
+                  Đề xuất gia hạn giữ chỗ
                 </span>
                 <span className="text-xs font-bold text-amber-950">
                   Ô kho {earlyRenewalCandidate.unitNumber} · {earlyRenewalCandidate.facilityName}
@@ -340,9 +340,9 @@ export const MyUnitsPage: React.FC = () => {
           <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center text-brand-600">
             <Shield className="w-5 h-5" />
           </div>
-          <h4 className="font-extrabold text-sm text-[#0a1614]">Quy định hoàn cọc (BR-DEP-01)</h4>
+          <h4 className="font-extrabold text-sm text-[#0a1614]">Quy định hoàn cọc</h4>
           <p className="text-xs text-slate-500 leading-relaxed">
-            Tiền cọc Deposit 1 tháng được bảo lưu an toàn tại ngân hàng và tự động hoàn trả 100% trong 24-48 giờ sau khi hoàn tất biên bản nghiệm thu trả kho không hư hại (BR-RET-04).
+            Tiền cọc Deposit 1 tháng được bảo lưu an toàn tại ngân hàng và tự động hoàn trả 100% trong 24-48 giờ sau khi hoàn tất biên bản nghiệm thu trả kho không hư hại.
           </p>
         </Card>
 
@@ -350,7 +350,7 @@ export const MyUnitsPage: React.FC = () => {
           <div className="w-9 h-9 rounded-xl bg-[#96b3cf]/15 flex items-center justify-center text-[#96b3cf]">
             <HelpCircle className="w-5 h-5" />
           </div>
-          <h4 className="font-extrabold text-sm text-[#0a1614]">Khóa số thông minh (BR-ACC-01)</h4>
+          <h4 className="font-extrabold text-sm text-[#0a1614]">Khóa số thông minh</h4>
           <p className="text-xs text-slate-500 leading-relaxed">
             Nhập mã PIN 4-6 số trên bàn phím cảm ứng hoặc quét mã QR Pass để mở cửa ô kho 24/7. Bạn có thể chủ động đổi mã PIN mới bất cứ lúc nào ngay trên Dashboard.
           </p>

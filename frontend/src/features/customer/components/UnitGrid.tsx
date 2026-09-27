@@ -47,7 +47,7 @@ const statusConfigMap: Record<UnitStatus, {
     badgeVariant: 'reserved',
     cardClass: 'bg-sky-50/60 border-sky-200 text-sky-900 cursor-not-allowed opacity-80',
     isSelectable: false,
-    hint: 'Ô kho đang được giữ chỗ trực tuyến (BR-DEP-03)',
+    hint: 'Ô kho đang được giữ chỗ trực tuyến (tối đa 48 giờ)',
   },
   OCCUPIED: {
     label: 'Đang thuê',

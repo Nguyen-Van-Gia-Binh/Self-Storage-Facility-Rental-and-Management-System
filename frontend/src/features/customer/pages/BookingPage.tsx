@@ -705,7 +705,7 @@ export const BookingPage: React.FC = () => {
               <div className="border-b border-slate-100 pb-2.5">
                 <h3 className="text-sm sm:text-base font-bold text-[#0a1614] flex items-center gap-2">
                   <User className="w-4 h-4 text-brand-600" />
-                  Thông tin khách hàng & Định danh nhận kho (BR-CHK-01)
+                  Thông tin khách hàng & Định danh nhận kho
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Số CCCD/Hộ chiếu dùng để nhân viên đối chiếu và bàn giao chìa khóa thông minh tại cơ sở.
@@ -775,7 +775,7 @@ export const BookingPage: React.FC = () => {
                   <Input
                     label="Số Căn cước công dân / Hộ chiếu (9-12 số)"
                     placeholder="079098012345"
-                    helperText="Bắt buộc theo BR-CHK-01 để cấp quyền mở cửa"
+                    helperText="Bắt buộc để cấp quyền mở cửa bảo mật tại cơ sở"
                     value={customerIdCard}
                     onChange={(e) => {
                       setCustomerIdCard(e.target.value);
@@ -1094,7 +1094,7 @@ export const BookingPage: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span>
-                    <strong>Bảo mật truy cập (BR-ACC-01):</strong> Thẻ nhận kho và mã PIN mở ngăn tủ chỉ được cấp ngay sau khi hệ thống ghi nhận thanh toán cọc thành công.
+                    <strong>Bảo mật truy cập:</strong> Thẻ nhận kho và mã PIN mở ngăn tủ chỉ được cấp ngay sau khi hệ thống ghi nhận thanh toán cọc thành công.
                   </span>
                 </div>
               </div>

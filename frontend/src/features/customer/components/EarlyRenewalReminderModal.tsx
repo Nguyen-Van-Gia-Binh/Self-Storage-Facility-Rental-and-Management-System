@@ -75,9 +75,6 @@ export const EarlyRenewalReminderModal: React.FC<EarlyRenewalReminderModalProps>
               <Clock className="w-3.5 h-3.5" />
               Đề xuất gia hạn giữ ô kho
             </span>
-            <span className="px-2 py-0.5 rounded-full bg-white/25 text-[10px] font-bold">
-              BR-REN-01 & BR-REN-02
-            </span>
           </div>
 
           <h2 className="text-xl sm:text-2xl font-black tracking-tight leading-snug">
@@ -119,7 +116,7 @@ export const EarlyRenewalReminderModal: React.FC<EarlyRenewalReminderModalProps>
           <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-start gap-2.5">
             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
             <p className="text-xs text-slate-600 leading-relaxed">
-              Theo quy định <strong>BR-REN-01 & BR-REN-02</strong>, khách hàng bắt buộc phải gia hạn trước ngày hết hạn <strong>ít nhất 30 ngày</strong>. Nếu không gia hạn trước mốc này, nút gia hạn sẽ bị <strong>khóa hoàn toàn</strong> và ô kho sẽ được mở cho khách hàng khác đặt trước, quý khách sẽ phải hoàn tất thủ tục trả kho khi hết hạn.
+              Theo quy định gia hạn hợp đồng, khách hàng bắt buộc phải hoàn tất gia hạn trước ngày hết hạn <strong>ít nhất 30 ngày</strong>. Nếu không gia hạn trước mốc này, nút gia hạn sẽ bị <strong>khóa hoàn toàn</strong> và ô kho sẽ được mở cho khách hàng khác đặt trước, quý khách sẽ phải hoàn tất thủ tục trả kho khi hết hạn.
             </p>
           </div>
 
