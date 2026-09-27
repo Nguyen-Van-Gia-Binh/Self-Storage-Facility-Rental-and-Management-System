@@ -40,6 +40,9 @@ export const MyUnitsPage: React.FC = () => {
   const loadContracts = useCallback(async () => {
     setLoading(true);
     try {
+      try {
+        localStorage.removeItem('smartstorage_customer_contracts_override');
+      } catch (_) {}
       const data = await getCustomerContracts();
       setContracts(data);
     } catch (err) {
