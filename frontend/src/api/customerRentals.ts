@@ -378,9 +378,7 @@ export async function getCustomerContracts(): Promise<RentedContract[]> {
 
       if (rawList && rawList.length > 0) {
         return rawList.map((item) => {
-          const contract = mapBackendRentalToContract(item);
-          const override = overrides[contract.id];
-          return override ? { ...contract, ...override } : contract;
+          return mapBackendRentalToContract(item);
         });
       }
     } catch (err) {

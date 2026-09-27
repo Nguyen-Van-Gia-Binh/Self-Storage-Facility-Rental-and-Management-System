@@ -358,7 +358,7 @@ export async function getManagerKpiData(facilityId?: number): Promise<ContractKp
   );
 
   const totalDebt = overdueContracts.reduce(
-    (sum, c) => sum + (c.totalOutstandingDebt || c.overdueFeeAccrued || 0),
+    (sum, c) => sum + (c.accruedOverdueFee || c.totalOutstandingDebt || c.overdueFeeAccrued || 0),
     0
   );
 
