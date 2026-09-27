@@ -220,6 +220,35 @@ export async function rejectHandoverContract(
   return res.data;
 }
 
+export function mapBackendSummaryToReturnContract(item: any): ReturnContractDetail {
+  const rentalMonths = item.rentalMonths || 1;
+  const totalFee = item.totalRentalFee || 0;
+  const monthlyPrice = item.monthlyPrice || Math.round(totalFee / rentalMonths);
+  const deposit = item.depositAmount || 0;
+
+  return {
+    id: item.id,
+    code: item.code,
+    customerId: item.customerId || 10,
+    customerName: item.customerName || 'Khách hàng',
+    customerPhone: item.customerPhone || '0967890123',
+    customerIdentityNumber: item.customerIdentityNumber || '079099007890',
+    facilityId: item.facilityId || 1,
+    facilityName: item.facilityName || 'Cơ sở Quận 1 - TP.HCM',
+    storageUnitId: item.storageUnitId || 1,
+    storageUnitCode: item.storageUnitCode || 'Q1-A101',
+    unitTypeName: item.unitTypeName || 'Kho Tiêu Chuẩn',
+    startDate: item.startDate || new Date().toISOString().split('T')[0],
+    endDateExclusive: item.endDate || item.endDateExclusive || new Date().toISOString().split('T')[0],
+    rentalMonths: rentalMonths,
+    monthlyPrice: monthlyPrice,
+    depositAmount: deposit,
+    status: item.status || 'PENDING_RETURN',
+    returnNoticeDate: item.updatedAt ? item.updatedAt.split('T')[0] : new Date().toISOString().split('T')[0],
+    requestedReturnDate: item.returnDate || item.endDate || new Date().toISOString().split('T')[0],
+  };
+}
+
 /**
  * Lấy danh sách hợp đồng chờ trả kho (Flow 3)
  */
@@ -231,12 +260,13 @@ export async function getReturnContracts(facilityId?: number): Promise<ReturnCon
   }
 
   const query = new URLSearchParams({ status: 'PENDING_RETURN', page: '0', size: '50' });
-  if (facilityId) query.set('facilityId', String(facilityId));
+  if (facilityId && facilityId > 0) query.set('facilityIds', String(facilityId));
 
-  const res = await apiClient<ApiResponse<PageResponse<ReturnContractDetail>>>(
+  const res = await apiClient<ApiResponse<PageResponse<any>>>(
     `/contracts?${query.toString()}`
   );
-  return res.data?.content ?? [];
+  const rawList = res.data?.content ?? [];
+  return rawList.map(mapBackendSummaryToReturnContract);
 }
 
 /**
@@ -244,11 +274,11 @@ export async function getReturnContracts(facilityId?: number): Promise<ReturnCon
  */
 export async function getReturnContractById(id: number): Promise<ReturnContractDetail> {
   const item = localMockReturnContracts.find((c) => c.id === id);
-  if (item) return item;
+  if (item && isMockEnabled('WS2')) return item;
 
   try {
-    const res = await apiClient<ApiResponse<ReturnContractDetail>>(`/contracts/${id}`);
-    return res.data;
+    const res = await apiClient<ApiResponse<any>>(`/contracts/${id}`);
+    return mapBackendSummaryToReturnContract(res.data);
   } catch (error) {
     console.warn(`Lỗi lấy hợp đồng #${id}, fallback mock:`, error);
     if (item) return item;

@@ -62,9 +62,9 @@ export const ReturnSuccessModal: React.FC<ReturnSuccessModalProps> = ({
             <FileText className="w-3.5 h-3.5" /> Lưu ý quy trình sau nghiệm thu:
           </p>
           <ul className="list-disc list-inside space-y-0.5 text-teal-700 pl-1">
-            <li>Mã mở cửa của khách đã được vô hiệu hóa tức thì (BR-RET-09).</li>
+            <li>Mã mở cửa của khách đã được vô hiệu hóa tức thì.</li>
             <li>Ô kho chuyển sang trạng thái <b>CLEANING</b> chờ dọn dẹp.</li>
-            <li>Tiền cọc sẽ được chuyển khoản về tài khoản gốc trong <b>7 ngày làm việc</b> (BR-RET-05).</li>
+            <li>Tiền cọc sẽ được chuyển khoản về tài khoản gốc trong <b>7 ngày làm việc</b>.</li>
           </ul>
         </div>
 

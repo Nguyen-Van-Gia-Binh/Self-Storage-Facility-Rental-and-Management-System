@@ -31,7 +31,7 @@ export const SettlementPreviewCard: React.FC<SettlementPreviewCardProps> = ({
           </div>
           <div>
             <h3 className="font-semibold text-slate-900 text-sm">Dự toán quyết toán hoàn cọc</h3>
-            <p className="text-xs text-slate-500">Quy tắc thanh lý hợp đồng & cọc theo BR-RET-04</p>
+            <p className="text-xs text-slate-500">Tiêu chuẩn thanh lý hợp đồng & quyết toán cọc</p>
           </div>
         </div>
         <span
@@ -96,7 +96,7 @@ export const SettlementPreviewCard: React.FC<SettlementPreviewCardProps> = ({
             <p className="text-[11px] text-slate-400">
               {payableAmount > 0
                 ? 'Hư hại vượt quá tiền cọc giữ chỗ ban đầu'
-                : 'FM sẽ duyệt chuyển khoản hoàn cọc trong 7 ngày làm việc (BR-RET-05)'}
+                : 'FM sẽ duyệt chuyển khoản hoàn cọc trong 7 ngày làm việc'}
             </p>
           </div>
           <span
