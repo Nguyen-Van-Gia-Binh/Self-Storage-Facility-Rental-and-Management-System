@@ -294,8 +294,31 @@ export async function getManagerContracts(filter?: {
         daysRemaining >= 0 &&
         daysRemaining <= 7;
 
+      let overdueDays = c.overdueDays;
+      if (overdueDays === undefined || overdueDays === null) {
+        if (daysRemaining !== undefined && daysRemaining < 0) {
+          overdueDays = Math.abs(daysRemaining);
+        } else if (c.status === 'OVERDUE') {
+          overdueDays = 1;
+        }
+      }
+
+      let accruedOverdueFee = c.accruedOverdueFee;
+      if (accruedOverdueFee === undefined && overdueDays !== undefined && overdueDays > 0) {
+        const deposit = c.depositAmount || 0;
+        if (overdueDays <= 3) {
+          accruedOverdueFee = 0;
+        } else if (overdueDays <= 10) {
+          accruedOverdueFee = Math.round((overdueDays - 3) * 0.10 * deposit);
+        } else {
+          accruedOverdueFee = Math.round(0.70 * deposit);
+        }
+      }
+
       return {
         ...c,
+        overdueDays,
+        accruedOverdueFee,
         daysRemaining,
         nearExpiration: c.nearExpiration ?? nearExpiration,
       };

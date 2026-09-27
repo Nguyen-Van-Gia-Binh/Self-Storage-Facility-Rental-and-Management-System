@@ -10,7 +10,6 @@ import {
   RefreshCw,
   AlertTriangle,
   Receipt,
-  Lock,
   Unlock,
   CheckCircle2,
   Users,
@@ -458,23 +457,44 @@ export const ContractsHubPage: React.FC = () => {
                         )}
 
                         {activeTab === 'OVERDUE' && (
-                          <div>
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
-                              Quá hạn {contract.overdueDays} ngày
-                            </span>
-
-                            {contract.overdueDays && contract.overdueDays <= 3 ? (
-                              <span className="block text-[10px] text-amber-800 mt-0.5 flex items-center gap-1 font-medium">
-                                <Unlock className="w-3 h-3" /> Trong 3 ngày ân hạn (PIN mở bình thường)
+                          <div className="space-y-1">
+                            {/* Số ngày quá hạn D+ */}
+                            {contract.overdueDays !== undefined && contract.overdueDays <= 3 ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                                Quá hạn D+{contract.overdueDays} ngày (Ân hạn)
                               </span>
-                            ) : contract.overdueDays && contract.overdueDays <= 10 ? (
-                              <span className="block text-[10px] text-rose-800 mt-0.5 flex items-center gap-1 font-bold">
-                                <Lock className="w-3 h-3" /> Đã khóa mã PIN • Phạt 10%/ngày
+                            ) : contract.overdueDays !== undefined && contract.overdueDays <= 9 ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
+                                Quá hạn D+{contract.overdueDays} ngày (Phạt 10%/ngày)
                               </span>
                             ) : (
-                              <span className="block text-[10px] text-rose-900 font-bold mt-0.5 flex items-center gap-1">
-                                <ShieldAlert className="w-3 h-3 text-rose-600" />
-                                Kích hoạt niêm phong Sealing (D+10)
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-rose-200 text-rose-900 border border-rose-400">
+                                Quá hạn D+{contract.overdueDays ?? 10} ngày (Vi phạm D+10)
+                              </span>
+                            )}
+
+                            {/* Cảnh báo chi tiết theo mốc */}
+                            {contract.overdueDays !== undefined && contract.overdueDays <= 3 ? (
+                              <span className="block text-[10px] text-amber-800 font-medium flex items-center gap-1">
+                                <Unlock className="w-3 h-3 text-amber-600" />
+                                Trong 3 ngày ân hạn (chưa tính phí phạt · PIN mở bình thường)
+                              </span>
+                            ) : contract.overdueDays !== undefined && contract.overdueDays <= 9 ? (
+                              <div className="space-y-0.5">
+                                <span className="block text-[10px] text-rose-700 font-bold flex items-center gap-1">
+                                  <AlertTriangle className="w-3 h-3 text-rose-600" />
+                                  Đang tính phí phạt cộng dồn • Nhắc dọn đồ hàng ngày
+                                </span>
+                                {contract.accruedOverdueFee && contract.accruedOverdueFee > 0 ? (
+                                  <span className="block text-[10px] text-rose-800 font-semibold">
+                                    Nợ phạt tạm tính: {contract.accruedOverdueFee.toLocaleString('vi-VN')} đ
+                                  </span>
+                                ) : null}
+                              </div>
+                            ) : (
+                              <span className="block text-[10px] text-rose-900 font-bold flex items-center gap-1">
+                                <ShieldAlert className="w-3 h-3 text-rose-700" />
+                                Đã khóa PIN • Kích hoạt niêm phong Sealing (D+10)
                               </span>
                             )}
                           </div>
