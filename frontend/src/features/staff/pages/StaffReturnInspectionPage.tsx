@@ -1,11 +1,11 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  ArrowLeft, Building2, User, Phone, ShieldCheck, CheckCircle, RefreshCw,
-  AlertTriangle, UserCheck, UserPlus, FileText
+  ArrowLeft, Building2, User, Phone, ShieldCheck, RefreshCw,
+  AlertTriangle, UserCheck, ClipboardList,
 } from 'lucide-react';
 import type { ReturnContractDetail, ReturnInspectionRequest } from '@/types';
-import { getReturnContracts, getReturnContractById, submitReturnInspection, assignReturnStaff } from '@/api/contract';
+import { getReturnContracts, getReturnContractById, submitReturnInspection } from '@/api/contract';
 import { useCurrentUser } from '@/utils/useCurrentUser';
 import { ReturnInspectionForm } from '../components/ReturnInspectionForm';
 import { ReturnSuccessModal } from '../components/ReturnSuccessModal';
@@ -31,8 +31,6 @@ export const StaffReturnInspectionPage: React.FC = () => {
   const [selectedContract, setSelectedContract] = useState<ReturnContractDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [assigning, setAssigning] = useState(false);
-  const [filterTab, setFilterTab] = useState<'MY_TASKS' | 'ALL'>('MY_TASKS');
 
   const [successData, setSuccessData] = useState<{
     isOpen: boolean;
@@ -59,21 +57,17 @@ export const StaffReturnInspectionPage: React.FC = () => {
       if (targetId) {
         const item = list.find((c) => c.id === targetId) || (await getReturnContractById(targetId));
         setSelectedContract(item);
-      } else if (list.length > 0) {
-        setSelectedContract((prev) => {
-          if (!prev) return list[0];
-          const exists = list.find((c) => c.id === prev.id);
-          return exists || list[0];
-        });
       } else {
-        setSelectedContract(null);
+        // Tự động chọn đơn đầu tiên được phân công cho nhân viên này
+        const myTask = staffId ? list.find((c) => c.assignedStaffId === staffId) : null;
+        setSelectedContract(myTask ?? null);
       }
     } catch (err) {
       console.error('Lỗi nạp hợp đồng trả kho:', err);
     } finally {
       setLoading(false);
     }
-  }, [contractId, searchParams, selectedFacilityId]);
+  }, [contractId, searchParams, selectedFacilityId, staffId]);
 
   const handleFacilityChange = (newFacilityId: number) => {
     setSelectedFacilityId(newFacilityId);
@@ -84,33 +78,13 @@ export const StaffReturnInspectionPage: React.FC = () => {
     loadData();
   }, [loadData]);
 
-  // Lọc danh sách theo Tab: Nhiệm vụ của tôi vs Tất cả
-  const displayedContracts = useMemo(() => {
-    if (filterTab === 'MY_TASKS' && staffId) {
-      return contracts.filter((c) => c.assignedStaffId === staffId);
-    }
-    return contracts;
-  }, [contracts, filterTab, staffId]);
+  // Chỉ hiển thị đơn được Quản lý phân công đích danh cho nhân viên hiện tại
+  const myAssignedContracts = staffId
+    ? contracts.filter((c) => c.assignedStaffId === staffId)
+    : [];
 
-  const myTasksCount = useMemo(() => {
-    if (!staffId) return 0;
-    return contracts.filter((c) => c.assignedStaffId === staffId).length;
-  }, [contracts, staffId]);
-
-  // Tiếp nhận ca trực nghiệm thu (gán cho chính staff hiện tại)
-  const handleSelfAssign = async (cId: number) => {
-    if (!staffId) return;
-    setAssigning(true);
-    try {
-      await assignReturnStaff(cId, staffId, 'Nhân viên trực tiếp nhận ca nghiệm thu');
-      await loadData();
-    } catch (err) {
-      console.error('Lỗi tiếp nhận ca nghiệm thu:', err);
-      alert('Không thể tiếp nhận ca trực. Vui lòng thử lại.');
-    } finally {
-      setAssigning(false);
-    }
-  };
+  // Đếm số đơn đang chờ phân công (để hiển thị thông tin)
+  const unassignedCount = contracts.filter((c) => !c.assignedStaffId).length;
 
   const handleSubmitInspection = async (data: ReturnInspectionRequest) => {
     if (!selectedContract) return;
@@ -202,60 +176,34 @@ export const StaffReturnInspectionPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Tabs chuyển đổi: Nhiệm vụ của tôi vs Tất cả */}
-      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setFilterTab('MY_TASKS')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
-              filterTab === 'MY_TASKS'
-                ? 'bg-teal-600 text-white shadow-xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            <UserCheck className="w-3.5 h-3.5" />
-            Nhiệm vụ của tôi
-            <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-              filterTab === 'MY_TASKS' ? 'bg-teal-700 text-white' : 'bg-slate-200 text-slate-700'
-            }`}>
-              {myTasksCount}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setFilterTab('ALL')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
-              filterTab === 'ALL'
-                ? 'bg-teal-600 text-white shadow-xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            <FileText className="w-3.5 h-3.5" />
-            Tất cả đơn trả kho
-            <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-              filterTab === 'ALL' ? 'bg-teal-700 text-white' : 'bg-slate-200 text-slate-700'
-            }`}>
-              {contracts.length}
-            </span>
-          </button>
+      {/* Thông tin trạng thái tổng quan */}
+      <div className="flex items-center gap-4 text-xs">
+        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 border border-teal-200 rounded-lg text-teal-800 font-semibold">
+          <ClipboardList className="w-3.5 h-3.5" />
+          <span>Nhiệm vụ của tôi: <strong>{myAssignedContracts.length}</strong></span>
         </div>
-
-        {filterTab === 'MY_TASKS' && myTasksCount === 0 && contracts.length > 0 && (
-          <span className="text-xs text-amber-600 italic">
-            Bạn chưa được phân công đơn nào. Hãy chuyển sang tab "Tất cả đơn trả kho" để tiếp nhận.
-          </span>
+        {unassignedCount > 0 && (
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 font-semibold">
+            <AlertTriangle className="w-3.5 h-3.5" />
+            <span>Chờ Quản lý phân công: <strong>{unassignedCount}</strong></span>
+          </div>
         )}
       </div>
 
-      {contracts.length === 0 && !selectedContract ? (
-        <div className="p-12 text-center bg-white rounded-2xl border border-slate-200 space-y-3">
-          <CheckCircle className="w-12 h-12 text-teal-500 mx-auto" />
-          <h3 className="font-semibold text-slate-800 text-lg">Không có yêu cầu trả kho nào cần xử lý</h3>
+      {myAssignedContracts.length === 0 ? (
+        <div className="p-12 text-center bg-white rounded-2xl border border-slate-200 space-y-4">
+          <div className="w-16 h-16 bg-teal-50 rounded-2xl flex items-center justify-center mx-auto">
+            <ClipboardList className="w-8 h-8 text-teal-500" />
+          </div>
+          <h3 className="font-semibold text-slate-800 text-lg">Chưa có nhiệm vụ nghiệm thu được phân công</h3>
           <p className="text-sm text-slate-500 max-w-md mx-auto">
-            Hiện tại tất cả các lượt hẹn trả kho trong ngày đã hoàn tất nghiệm thu hoặc chưa phát sinh yêu cầu mới.
+            Quản lý cơ sở sẽ phân công nhiệm vụ nghiệm thu trả kho cho bạn khi có khách hàng gửi yêu cầu. Vui lòng chờ thông báo từ Quản lý.
           </p>
+          {unassignedCount > 0 && (
+            <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 inline-block">
+              Hiện có <strong>{unassignedCount}</strong> đơn trả kho đang chờ Quản lý phân công nhân viên.
+            </p>
+          )}
           <button
             onClick={() => navigate('/staff')}
             className="mt-2 px-4 py-2 bg-teal-600 text-white rounded-xl text-sm font-medium hover:bg-teal-700"
@@ -265,21 +213,16 @@ export const StaffReturnInspectionPage: React.FC = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Cột trái (4/12): Danh sách chọn hợp đồng & Thẻ thông tin khách */}
+          {/* Cột trái (4/12): Danh sách hợp đồng được phân công cho tôi */}
           <div className="lg:col-span-4 space-y-4">
-            {/* Bộ chọn nhanh danh sách hợp đồng */}
             <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-2">
-              <label className="text-xs font-semibold text-slate-600">
-                {filterTab === 'MY_TASKS' ? 'Hợp đồng phân công cho bạn:' : 'Toàn bộ hợp đồng chờ nghiệm thu:'}
+              <label className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
+                <UserCheck className="w-3.5 h-3.5 text-teal-600" />
+                Hợp đồng được phân công cho bạn:
               </label>
 
-              {displayedContracts.length === 0 ? (
-                <div className="p-4 text-center text-xs text-slate-400 bg-slate-50 rounded-lg">
-                  Không có hợp đồng nào phù hợp với bộ lọc hiện tại.
-                </div>
-              ) : (
-                <div className="space-y-1.5 max-h-[380px] overflow-y-auto pr-1">
-                  {displayedContracts.map((c) => (
+              <div className="space-y-1.5 max-h-[380px] overflow-y-auto pr-1">
+                  {myAssignedContracts.map((c) => (
                     <button
                       key={c.id}
                       onClick={() => setSelectedContract(c)}
@@ -295,24 +238,13 @@ export const StaffReturnInspectionPage: React.FC = () => {
                       </div>
                       <div className="flex items-center justify-between mt-1 text-[11px]">
                         <span className="text-slate-500 truncate max-w-[140px]">{c.customerName}</span>
-                        {c.assignedStaffId === staffId ? (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-700">
-                            Được giao
-                          </span>
-                        ) : !c.assignedStaffId ? (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-700 animate-pulse">
-                            Chờ giao
-                          </span>
-                        ) : (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600">
-                            {c.assignedStaffName || `Staff #${c.assignedStaffId}`}
-                          </span>
-                        )}
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-700">
+                          Được giao
+                        </span>
                       </div>
                     </button>
                   ))}
                 </div>
-              )}
             </div>
 
             {/* Thông tin chi tiết hợp đồng được chọn */}
@@ -382,58 +314,14 @@ export const StaffReturnInspectionPage: React.FC = () => {
           <div className="lg:col-span-8 space-y-4">
             {selectedContract ? (
               <>
-                {/* Trạng thái phân công điều phối của hợp đồng */}
-                {!selectedContract.assignedStaffId ? (
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-between gap-4">
-                    <div className="flex items-start gap-3">
-                      <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                      <div>
-                        <h4 className="text-sm font-bold text-amber-900">Chờ Quản lý cơ sở phân công</h4>
-                        <p className="text-xs text-amber-700 mt-0.5">
-                          Đơn trả kho này hiện chưa được Quản lý phân công nhân viên nghiệm thu cụ thể.
-                        </p>
-                      </div>
-                    </div>
-                    {staffId && (
-                      <button
-                        type="button"
-                        onClick={() => handleSelfAssign(selectedContract.id)}
-                        disabled={assigning}
-                        className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-lg shrink-0 flex items-center gap-1.5 transition shadow-xs disabled:opacity-50"
-                      >
-                        <UserPlus className="w-3.5 h-3.5" />
-                        {assigning ? 'Đang nhận...' : 'Tiếp nhận ca trực'}
-                      </button>
-                    )}
-                  </div>
-                ) : selectedContract.assignedStaffId === staffId ? (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 flex items-center gap-2.5 text-xs text-emerald-800 font-medium">
-                    <UserCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>
-                      Đơn trả kho này đã được Quản lý phân công đích danh cho bạn (<strong>{user?.fullName || 'Bạn'}</strong>).
-                    </span>
-                  </div>
-                ) : (
-                  <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 flex items-center justify-between text-xs text-blue-800">
-                    <div className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-blue-600 shrink-0" />
-                      <span>
-                        Đơn đang được phân công cho:{' '}
-                        <strong>{selectedContract.assignedStaffName || `Nhân viên #${selectedContract.assignedStaffId}`}</strong>
-                      </span>
-                    </div>
-                    {staffId && (
-                      <button
-                        type="button"
-                        onClick={() => handleSelfAssign(selectedContract.id)}
-                        disabled={assigning}
-                        className="px-2.5 py-1 bg-white border border-blue-300 hover:bg-blue-100 text-blue-700 font-semibold rounded-md transition text-[11px] disabled:opacity-50"
-                      >
-                        {assigning ? 'Đang chuyển...' : 'Đổi sang tôi phụ trách'}
-                      </button>
-                    )}
-                  </div>
-                )}
+                {/* Banner xác nhận: đơn được phân công cho nhân viên đang đăng nhập */}
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 flex items-center gap-2.5 text-xs text-emerald-800 font-medium">
+                  <UserCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>
+                    Đơn trả kho này đã được Quản lý cơ sở phân công đích danh cho bạn ({
+                    <strong>{user?.fullName || 'Nhân viên'}</strong>}). Vui lòng tiến hành nghiệm thu hiện trường.
+                  </span>
+                </div>
 
                 {/* Form nghiệm thu trả kho */}
                 <ReturnInspectionForm
