@@ -12,13 +12,13 @@ vận hành phía sau như quản lý ô kho, phân công nhân viên, thu phí,
 
 ## Tác nhân (Actors)
 
-| Tác nhân | Vai trò |
-|----------|---------|
-| **Storage Customer** | Xem dịch vụ, đặt chỗ, thanh toán, check-in, quản lý ô kho đang thuê, gửi yêu cầu hỗ trợ |
-| **Facility Staff** | Kiểm tra đặt chỗ, bàn giao / thu hồi ô kho, cập nhật trạng thái, xử lý sự cố tại chỗ |
-| **Facility Manager** | Quản lý ô kho, phân bổ ô kho, theo dõi hợp đồng, phân công nhân viên, xem báo cáo cơ sở |
-| **Business Operations Manager** | Quản lý danh sách cơ sở, chính sách thuê, giá và phí, báo cáo toàn hệ thống |
-| **System Administrator** | Quản lý tài khoản, phân quyền vai trò và dữ liệu, theo dõi nhật ký hoạt động |
+| Tác nhân                            | Vai trò                                                                                                  |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| **Storage Customer**            | Xem dịch vụ, đặt chỗ, thanh toán, check-in, quản lý ô kho đang thuê, gửi yêu cầu hỗ trợ   |
+| **Facility Staff**              | Kiểm tra đặt chỗ, bàn giao / thu hồi ô kho, cập nhật trạng thái, xử lý sự cố tại chỗ     |
+| **Facility Manager**            | Quản lý ô kho, phân bổ ô kho, theo dõi hợp đồng, phân công nhân viên, xem báo cáo cơ sở |
+| **Business Operations Manager** | Quản lý danh sách cơ sở, chính sách thuê, giá và phí, báo cáo toàn hệ thống               |
+| **System Administrator**        | Quản lý tài khoản, phân quyền vai trò và dữ liệu, theo dõi nhật ký hoạt động              |
 
 Chi tiết chức năng của từng tác nhân: [docs/TOPIC.md § 3](docs/TOPIC.md#3-yêu-cầu-chức-năng-theo-tác-nhân)
 
@@ -28,20 +28,20 @@ Chi tiết chức năng của từng tác nhân: [docs/TOPIC.md § 3](docs/TOPIC
 
 ### Luồng chính
 
-| # | Luồng | Mô tả ngắn |
-|---|-------|-----------|
-| 1 | **Storage Unit Reservation** | Chọn Facility, Unit Type và khoảng thuê; giữ capacity, trả trước phí thuê N tháng cùng Deposit rồi phân bổ Storage Unit |
-| 2 | **Storage Check-in and Handover** | Check-in theo lịch hẹn, nghiệm thu và bàn giao ô kho kèm khóa / mã PIN (không dùng thẻ RFID) |
-| 3 | **Rented Storage Unit Management** | Quản lý các ô kho đang thuê, tự động trả kho khi hết hạn nếu không gia hạn trước 1 tháng |
-| 4 | **Business Rules, Fee Management & Revenue Monitoring** | Chính sách thuê, khung giá, phụ phí và giám sát doanh thu toàn hệ thống |
-| 5 | **Facility Storage and Staff Management** | Quản lý danh mục ô kho và phân công nhân viên tại cơ sở |
+| # | Luồng                                                        | Mô tả ngắn                                                                                                                          |
+| - | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 | **Storage Unit Reservation**                            | Chọn Facility, Unit Type và khoảng thuê; giữ capacity, trả trước phí thuê N tháng cùng Deposit rồi phân bổ Storage Unit |
+| 2 | **Storage Check-in and Handover**                       | Check-in theo lịch hẹn, nghiệm thu và bàn giao ô kho kèm khóa / mã PIN (không dùng thẻ RFID)                               |
+| 3 | **Rented Storage Unit Management**                      | Quản lý các ô kho đang thuê, tự động trả kho khi hết hạn nếu không gia hạn trước 1 tháng                             |
+| 4 | **Business Rules, Fee Management & Revenue Monitoring** | Chính sách thuê, khung giá, phụ phí và giám sát doanh thu toàn hệ thống                                                    |
+| 5 | **Facility Storage and Staff Management**               | Quản lý danh mục ô kho và phân công nhân viên tại cơ sở                                                                    |
 
 ### Luồng bổ sung
 
-| # | Luồng | Mô tả ngắn |
-|---|-------|-----------|
+| # | Luồng                                         | Mô tả ngắn                                                                                                               |
+| - | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | 6 | **Storage Renewal and Overdue Handling** | Gia hạn (Renew) khi còn hạn; xử lý quá hạn: tính phí D+4..D+10, quá D+10 chấm dứt hợp đồng và dọn dẹp kho |
-| 7 | **Support Request and Issue Handling** | Tiếp nhận yêu cầu hỗ trợ và xử lý sự cố (khóa, mã truy cập, hư hỏng, thanh toán) |
+| 7 | **Support Request and Issue Handling**   | Tiếp nhận yêu cầu hỗ trợ và xử lý sự cố (khóa, mã truy cập, hư hỏng, thanh toán)                           |
 
 Chi tiết từng luồng: [docs/TOPIC.md § 4–5](docs/TOPIC.md#4-các-luồng-nghiệp-vụ-chính-flow-15)
 
@@ -54,24 +54,17 @@ Chi tiết từng luồng: [docs/TOPIC.md § 4–5](docs/TOPIC.md#4-các-luồng
 ├── README.md              # Tài liệu tổng quan (file này)
 ├── CONTRIBUTING.md        # Quy trình Git: nhánh, commit, Pull Request, review
 └── docs/
+    ├── DASHBOARD.md       # Bảng điều hành trung tâm: Sprint, Issue/Bug tinh gọn, tiến độ 4 Workstream
+    ├── USER-STORIES-AND-USE-CASES.md # Tài liệu hợp nhất: Quy tắc, User Stories (5 actor) & Phân rã Use Cases
     ├── TOPIC.md           # Đặc tả đề tài: actors, chức năng, luồng nghiệp vụ, glossary
-    ├── PLAN.md            # Kế hoạch triển khai: giai đoạn, nhiệm vụ, phân công, rủi ro
-    ├── USE-CASES.md       # Phân rã Flow 1–7 thành 73 use case
-    ├── USER-STORIES-SC.md # User story và acceptance criteria cho Storage Customer
     ├── BUSINESS-RULES.md  # Reservation, Availability, Pricing, Payment và vòng đời thuê
+    ├── API-SPEC.md        # Hợp đồng REST API chi tiết toàn hệ thống
+    ├── DATA-DICTIONARY.md # Từ điển dữ liệu CSDL (đồng bộ Flyway migration)
+    ├── UI-DESIGN-SYSTEM.md # Quy chuẩn hệ thống thiết kế giao diện
     ├── CONVENTIONS.md     # Coding convention và quy ước REST API
-    ├── REVIEW-CHECKLIST.md # Quy trình tự review tài liệu, kèm điều kiện dừng
-    ├── OPEN-ISSUES.md     # Sổ vấn đề mở đang chờ quyết
-    ├── check-docs.sh      # Script kiểm tính nhất quán giữa các tài liệu
-    └── diagrams/
-        ├── activity-diagram-flow-1-storage-reservation.drawio      # Activity Diagram Flow 1 — Reservation
-        ├── activity-diagram-flow-2-checkin-handover.drawio         # Activity Diagram Flow 2 — Check-in / Handover
-        ├── activity-diagram-flow-6-1-storage-renewal.drawio        # Activity Diagram Flow 6.1 — Renewal
-        ├── activity-diagram-flow-6-2-overdue-handling.drawio       # Activity Diagram Flow 6.2 — Overdue
-        ├── activity-diagram-flow-4-business-operations.drawio      # Activity Diagram Flow 4 — Business Rules / Fee / Revenue
-        ├── activity-diagram-flow-5-facility-staff-management.drawio # Activity Diagram Flow 5 — Facility Storage / Staff
-        ├── activity-diagram-flow-7-support-incident-handling.drawio # Activity Diagram Flow 7 — Support Request
-        └── _archive/                          # Sơ đồ PlantUML (.puml) cũ đã lưu trữ
+    ├── PLAN.md            # Khung kế hoạch tổng thể & tra cứu mã nhiệm vụ
+    ├── diagrams/          # Sơ đồ Activity Diagram (.drawio)
+    └── _archive/          # Tài liệu và sơ đồ cũ đã lưu trữ
 ```
 
 Cấu trúc mã nguồn (`backend/`, `frontend/`) sẽ được bổ sung ở nhiệm vụ T1.16 và T1.17.
@@ -83,128 +76,80 @@ Cấu trúc mã nguồn (`backend/`, `frontend/`) sẽ được bổ sung ở nh
 Dự án chạy trong **10 tuần (08/09/2026 – 16/11/2026)**, chia thành **5 giai đoạn × 2 tuần**, mỗi giai
 đoạn kết thúc bằng một buổi báo cáo với giảng viên.
 
-| GĐ | Tuần | Thời gian | Trọng tâm | Báo cáo |
-|----|------|-----------|-----------|---------|
-| **P1** | 1–2 | 08/09 – 21/09 | Phân tích yêu cầu, business rules, ERD, activity diagram, wireframe, khởi tạo dự án | #1 — 21/09 |
-| **P2** | 3–4 | 22/09 – 05/10 | Nền tảng: schema, Auth và phân quyền, quản lý Facility / Unit Type / Storage Unit, khung giá | #2 — 05/10 |
-| **P3** | 5–6 | 06/10 – 19/10 | Flow 1 + Flow 2: giữ capacity, trả phí N tháng + Deposit, phân bổ unit, Check-in / Handover | #3 — 19/10 |
-| **P4** | 7–8 | 20/10 – 02/11 | Flow 3 + Flow 6 + Flow 7: quản lý ô kho đang thuê, Return, Renewal, Overdue, Support Request | #4 — 02/11 |
-| **P5** | 9–10 | 03/11 – 16/11 | Flow 4: báo cáo và doanh thu, kiểm thử, deploy, tài liệu và bảo vệ | #5 — 16/11 |
+| GĐ          | Tuần | Thời gian     | Trọng tâm                                                                                          | Báo cáo   |
+| ------------ | ----- | -------------- | ---------------------------------------------------------------------------------------------------- | ----------- |
+| **P1** | 1–2  | 08/09 – 21/09 | Phân tích yêu cầu, business rules, ERD, activity diagram, wireframe, khởi tạo dự án          | #1 — 21/09 |
+| **P2** | 3–4  | 22/09 – 05/10 | Nền tảng: schema, Auth và phân quyền, quản lý Facility / Unit Type / Storage Unit, khung giá | #2 — 05/10 |
+| **P3** | 5–6  | 06/10 – 19/10 | Flow 1 + Flow 2: giữ capacity, trả phí N tháng + Deposit, phân bổ unit, Check-in / Handover    | #3 — 19/10 |
+| **P4** | 7–8  | 20/10 – 02/11 | Flow 3 + Flow 6 + Flow 7: quản lý ô kho đang thuê, Return, Renewal, Overdue, Support Request    | #4 — 02/11 |
+| **P5** | 9–10 | 03/11 – 16/11 | Flow 4: báo cáo và doanh thu, kiểm thử, deploy, tài liệu và bảo vệ                         | #5 — 16/11 |
 
 Nhóm 4 người, chia theo vai trò kỹ thuật:
 
-| Thành viên | Vai trò |
-|------------|---------|
-| **Nguyễn Văn Gia Bình** | Team Leader / BA — hỗ trợ cả Backend và Frontend |
-| **Lê Thanh Tùng** | Backend A — Core Domain (Facility, Unit, Reservation, Contract, Handover, Return) |
-| **Huỳnh Nhật** | Backend B — Money & Platform (Auth, Payment, Policy, Renewal, Overdue, Support, Report) |
-| **Nguyễn Phạm Xuân Nhi** | Frontend |
+| Thành viên                      | Vai trò                                                                                 |
+| --------------------------------- | ---------------------------------------------------------------------------------------- |
+| **Nguyễn Văn Gia Bình**  | Team Leader / BA — hỗ trợ cả Backend và Frontend                                    |
+| **Lê Thanh Tùng**         | Backend A — Core Domain (Facility, Unit, Reservation, Contract, Handover, Return)       |
+| **Huỳnh Nhật**            | Backend B — Money & Platform (Auth, Payment, Policy, Renewal, Overdue, Support, Report) |
+| **Nguyễn Phạm Xuân Nhi** | Frontend                                                                                 |
 
 Chi tiết nhiệm vụ từng giai đoạn: [docs/PLAN.md](docs/PLAN.md) · Bảng theo dõi tiến độ:
 [SWP391 trên Notion](https://app.notion.com/p/3d5561bd42cd808e8161c482b37386c6)
 
 ---
 
-## Trạng thái dự án
-
-| Hạng mục | Trạng thái |
-|----------|-----------|
-| Đặc tả đề tài | ✅ Hoàn thành — [docs/TOPIC.md](docs/TOPIC.md) |
-| Kế hoạch triển khai | ✅ Hoàn thành — [docs/PLAN.md](docs/PLAN.md) |
-| Công nghệ sử dụng | ✅ Đã chốt — Spring Boot · React · SQL Server |
-| Phân rã use case | ✅ Hoàn thành — [docs/USE-CASES.md](docs/USE-CASES.md) |
-| Use Case Diagram tổng | ✅ Hoàn thành — [docs/diagrams/](docs/diagrams/_archive/use-case-diagram.puml) |
-| Business rules | ✅ Hoàn thành — [docs/BUSINESS-RULES.md](docs/BUSINESS-RULES.md) |
-| Coding convention & Git workflow | ✅ Hoàn thành — [docs/CONVENTIONS.md](docs/CONVENTIONS.md) · [CONTRIBUTING.md](CONTRIBUTING.md) |
-| User story — Storage Customer | ✅ Hoàn thành — [docs/USER-STORIES-SC.md](docs/USER-STORIES-SC.md) |
-| User story — Facility Staff và Facility Manager | ✅ Hoàn thành — [docs/USER-STORIES-FS-FM.md](docs/USER-STORIES-FS-FM.md) |
-| User story — Business Operations Manager và System Administrator | ✅ Hoàn thành — [docs/USER-STORIES-BM-SA.md](docs/USER-STORIES-BM-SA.md) |
-| Activity Diagram 7 flow | ✅ Hoàn thành — [docs/diagrams/](docs/diagrams/activity-diagram-flow-1-storage-reservation.drawio) (Draw.io) |
-| Thiết kế cơ sở dữ liệu (ERD) | 🔄 Đang thực hiện — nhiệm vụ T1.10, T1.11 |
-| Thiết kế giao diện (wireframe / UI) | 🔄 Đang thực hiện — nhiệm vụ T1.13, T1.14, T1.15 |
-| Khung dự án Backend + Frontend | ⬜ Chưa bắt đầu — nhiệm vụ T1.16, T1.17 |
-| Triển khai mã nguồn | ⬜ Bắt đầu từ Giai đoạn 2 (22/09) |
-
----
-
 ## Công nghệ
 
-| Thành phần | Lựa chọn |
-|------------|----------|
-| Backend | Spring Boot (Java) |
-| Frontend | React |
-| Cơ sở dữ liệu | SQL Server |
-| Migration | Flyway |
-| Xác thực | JWT + Spring Security |
+| Thành phần      | Lựa chọn            |
+| ----------------- | --------------------- |
+| Backend           | Spring Boot (Java)    |
+| Frontend          | React                 |
+| Cơ sở dữ liệu | SQL Server            |
+| Migration         | Flyway                |
+| Xác thực        | JWT + Spring Security |
 
 ## Hướng dẫn Cài đặt & Deploy
 
 Xem bộ tài liệu hướng dẫn triển khai đầy đủ tại **[docs/deploy/README.md](docs/deploy/README.md)**.
 
-| Tài liệu | Nội dung |
-|----------|----------|
-| [01-prerequisites.md](docs/deploy/01-prerequisites.md) | Yêu cầu phần mềm: JDK 17, Node 20+, SQL Server 2022 |
-| [02-database-setup.md](docs/deploy/02-database-setup.md) | Tạo database SelfStorageDB và chạy Flyway migrations |
-| [03-backend-local.md](docs/deploy/03-backend-local.md) | Build và chạy Backend Spring Boot cục bộ |
-| [04-frontend-local.md](docs/deploy/04-frontend-local.md) | Cấu hình .env và chạy Frontend React Vite |
-| [05-environment-variables.md](docs/deploy/05-environment-variables.md) | Bảng tra cứu toàn bộ biến môi trường Backend & Frontend |
-| [06-health-check.md](docs/deploy/06-health-check.md) | Checklist kiểm tra sức khỏe hệ thống sau deploy |
-| [07-production-deploy.md](docs/deploy/07-production-deploy.md) | Hướng dẫn deploy production (JAR, Nginx, IIS) & Checklist an ninh |
+| Tài liệu                                                            | Nội dung                                                            |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| [01-prerequisites.md](docs/deploy/01-prerequisites.md)                 | Yêu cầu phần mềm: JDK 17, Node 20+, SQL Server 2022              |
+| [02-database-setup.md](docs/deploy/02-database-setup.md)               | Tạo database SelfStorageDB và chạy Flyway migrations              |
+| [03-backend-local.md](docs/deploy/03-backend-local.md)                 | Build và chạy Backend Spring Boot cục bộ                         |
+| [04-frontend-local.md](docs/deploy/04-frontend-local.md)               | Cấu hình .env và chạy Frontend React Vite                        |
+| [05-environment-variables.md](docs/deploy/05-environment-variables.md) | Bảng tra cứu toàn bộ biến môi trường Backend & Frontend      |
+| [06-health-check.md](docs/deploy/06-health-check.md)                   | Checklist kiểm tra sức khỏe hệ thống sau deploy                 |
+| [07-production-deploy.md](docs/deploy/07-production-deploy.md)         | Hướng dẫn deploy production (JAR, Nginx, IIS) & Checklist an ninh |
 
 ---
 
-## Việc tiếp theo
-
-Đang ở **Giai đoạn 1 (08/09 – 21/09)**. Đã xong: phân rã use case (T1.1), Use Case Diagram tổng
-(T1.6), business rules (T1.5), coding convention và Git workflow (T1.18), user story cho Storage
-Customer (T1.2).
-
-Còn lại trước Báo cáo #1:
-
-1. Viết user story và acceptance criteria cho các actor còn lại — `FS-*`, `FM-*` (T1.3) và `BM-*`,
-   `SA-*` (T1.4), theo đúng khuôn mẫu ở [docs/USER-STORIES-SC.md § 1](docs/USER-STORIES-SC.md#1-quy-ước-viết-user-story).
-2. Vẽ Activity Diagram cho cả 7 flow (T1.7, T1.8, T1.9).
-3. Thiết kế ERD và data dictionary: Facility, Storage Unit, Unit Type, Reservation, Contract, Payment,
-   Support Request, User & Role (T1.10, T1.11) — bám theo vòng đời trạng thái đã chốt ở
-   [docs/BUSINESS-RULES.md § 13](docs/BUSINESS-RULES.md#13-vòng-đời-trạng-thái).
-4. Thiết kế sơ đồ phân quyền theo vai trò và theo cơ sở (T1.12).
-5. Wireframe / mockup cho 5 portal giao diện (T1.13, T1.14, T1.15).
-6. Khởi tạo khung Spring Boot + SQL Server + Flyway (T1.16) và React (T1.17) theo cấu trúc thư mục ở
-   [docs/CONVENTIONS.md § 2](docs/CONVENTIONS.md#2-cấu-trúc-repository).
-7. Chuẩn bị slide và demo Báo cáo #1 (T1.19).
-
-Danh sách nhiệm vụ đầy đủ kèm người phụ trách và hạn: [docs/PLAN.md § 4](docs/PLAN.md#4-chi-tiết-từng-giai-đoạn)
-
----
 
 ## Tài liệu
 
-**Đặc tả và kế hoạch**
+ **Điều hành & Yêu cầu cốt lõi**
 
-- [docs/TOPIC.md](docs/TOPIC.md) — Đặc tả đề tài đầy đủ, kèm nguyên văn đề bài ở phần phụ lục.
-- [docs/PLAN.md](docs/PLAN.md) — Kế hoạch triển khai 10 tuần: giai đoạn, nhiệm vụ, phân công, rủi ro.
+- [docs/DASHBOARD.md](docs/DASHBOARD.md) — **Bảng điều hành trung tâm:** Sprint hiện tại, tiến độ 4 Workstream, sổ theo dõi Issue & Bug tinh gọn.
+- [docs/USER-STORIES-AND-USE-CASES.md](docs/USER-STORIES-AND-USE-CASES.md) — **Tài liệu hợp nhất:** Quy tắc viết, toàn bộ User Stories (5 actor) và Phân rã 7 luồng Use Cases.
+- [docs/TOPIC.md](docs/TOPIC.md) — Đặc tả đề tài gốc: 5 actor, 27 mã yêu cầu chức năng, 7 luồng nghiệp vụ.
+- [docs/BUSINESS-RULES.md](docs/BUSINESS-RULES.md) — Toàn bộ quy tắc nghiệp vụ (`BR-*`) và bảng thông số cấu hình.
+- [docs/PLAN.md](docs/PLAN.md) — Khung kế hoạch tổng thể & ma trận nhiệm vụ (`T1.1` → `T5.x`).
 
-**Phân tích yêu cầu**
+ **Kiến trúc & Kỹ thuật**
 
-- [docs/USE-CASES.md](docs/USE-CASES.md) — Phân rã Flow 1–7 thành 73 use case, kèm bản đồ phủ 27 mã yêu cầu.
-- [docs/USER-STORIES-SC.md](docs/USER-STORIES-SC.md) — 22 user story và 111 acceptance criteria cho Storage Customer.
-- [docs/BUSINESS-RULES.md](docs/BUSINESS-RULES.md) — Baseline Reservation, Availability, Pricing, Payment, Deposit, Cancellation, Renewal, Overdue và Return.
-- [docs/diagrams/activity-diagram-flow-1-storage-reservation.drawio](docs/diagrams/activity-diagram-flow-1-storage-reservation.drawio) — Activity Diagram Flow 1 (Reservation).
-- [docs/diagrams/activity-diagram-flow-2-checkin-handover.drawio](docs/diagrams/activity-diagram-flow-2-checkin-handover.drawio) — Activity Diagram Flow 2 (Check-in / Handover).
-- [docs/diagrams/activity-diagram-flow-6-1-storage-renewal.drawio](docs/diagrams/activity-diagram-flow-6-1-storage-renewal.drawio) — Activity Diagram Flow 6.1 (Storage Renewal).
-- [docs/diagrams/activity-diagram-flow-6-2-overdue-handling.drawio](docs/diagrams/activity-diagram-flow-6-2-overdue-handling.drawio) — Activity Diagram Flow 6.2 (Overdue Handling).
-- [docs/diagrams/activity-diagram-flow-4-business-operations.drawio](docs/diagrams/activity-diagram-flow-4-business-operations.drawio) — Activity Diagram Flow 4 (Business Rules, Fee Management, Revenue Monitoring).
-- [docs/diagrams/activity-diagram-flow-5-facility-staff-management.drawio](docs/diagrams/activity-diagram-flow-5-facility-staff-management.drawio) — Activity Diagram Flow 5 (Facility Storage and Staff Management).
-- [docs/diagrams/activity-diagram-flow-7-support-incident-handling.drawio](docs/diagrams/activity-diagram-flow-7-support-incident-handling.drawio) — Activity Diagram Flow 7 (Support Request and Issue Handling).
-- [docs/diagrams/_archive/](docs/diagrams/_archive/use-case-diagram.puml) — Thư mục lưu trữ các sơ đồ PlantUML (.puml) cũ.
-
-**Quy ước kỹ thuật**
-
+- [docs/API-SPEC.md](docs/API-SPEC.md) — Hợp đồng REST API đầy đủ cho toàn bộ các endpoint Backend.
+- [docs/DATA-DICTIONARY.md](docs/DATA-DICTIONARY.md) — Từ điển dữ liệu CSDL (đồng bộ với Flyway migration).
+- [docs/UI-DESIGN-SYSTEM.md](docs/UI-DESIGN-SYSTEM.md) — Hệ thống Design tokens & Component chuẩn hóa.
 - [docs/CONVENTIONS.md](docs/CONVENTIONS.md) — Coding convention Java / React / SQL và quy ước REST API.
 - [CONTRIBUTING.md](CONTRIBUTING.md) — Quy trình Git: nhánh, commit, Pull Request, review, Definition of Done.
 
-**Chất lượng tài liệu**
+ **Sơ đồ hoạt động (Activity Diagrams)**
 
-- [docs/REVIEW-CHECKLIST.md](docs/REVIEW-CHECKLIST.md) — Quy trình tự review 3 lớp kèm điều kiện dừng cho từng nhiệm vụ.
-- [docs/OPEN-ISSUES.md](docs/OPEN-ISSUES.md) — Sổ vấn đề mở đang chờ nhóm quyết.
-- [docs/check-docs.sh](docs/check-docs.sh) — Kiểm tính nhất quán tự động: `bash docs/check-docs.sh`
+- [docs/diagrams/activity-diagram-flow-1-storage-reservation.drawio](docs/diagrams/activity-diagram-flow-1-storage-reservation.drawio) — Flow 1 (Reservation).
+- [docs/diagrams/activity-diagram-flow-2-checkin-handover.drawio](docs/diagrams/activity-diagram-flow-2-checkin-handover.drawio) — Flow 2 (Check-in / Handover).
+- [docs/diagrams/activity-diagram-flow-6-1-storage-renewal.drawio](docs/diagrams/activity-diagram-flow-6-1-storage-renewal.drawio) — Flow 6.1 (Storage Renewal).
+- [docs/diagrams/activity-diagram-flow-6-2-overdue-handling.drawio](docs/diagrams/activity-diagram-flow-6-2-overdue-handling.drawio) — Flow 6.2 (Overdue Handling).
+- [docs/diagrams/activity-diagram-flow-4-business-operations.drawio](docs/diagrams/activity-diagram-flow-4-business-operations.drawio) — Flow 4 (Business Rules, Fee Management, Revenue Monitoring).
+- [docs/diagrams/activity-diagram-flow-5-facility-staff-management.drawio](docs/diagrams/activity-diagram-flow-5-facility-staff-management.drawio) — Flow 5 (Facility Storage and Staff Management).
+- [docs/diagrams/activity-diagram-flow-7-support-incident-handling.drawio](docs/diagrams/activity-diagram-flow-7-support-incident-handling.drawio) — Flow 7 (Support Request and Issue Handling).
+- [docs/_archive/](docs/_archive/) — Thư mục lưu trữ các tài liệu và sơ đồ cũ.

@@ -1,5 +1,9 @@
 # Kế hoạch triển khai dự án
 
+> [!IMPORTANT]
+> **BẢNG ĐIỀU HÀNH THỰC TẾ:** Toàn bộ tiến độ phát triển, phân công sprint hiện tại và sổ theo dõi Issue/Bug đã được chuyển sang **[docs/DASHBOARD.md](DASHBOARD.md)**.  
+> Tài liệu này được lưu giữ như bản đặc tả khung giai đoạn và tra cứu mã nhiệm vụ (`T1.1` → `T5.x`).
+
 > **Self-Storage Facility Rental and Management System** — 10 tuần, 5 giai đoạn, 4 thành viên.
 >
 > Kế hoạch này bám theo [TOPIC.md](TOPIC.md): 5 actor, 27 mã yêu cầu chức năng (§ 3) và 7 luồng

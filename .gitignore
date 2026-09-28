@@ -55,5 +55,9 @@ docs/KE-HOACH-XUAN-NHI.md
 powershell.bat
 powershell.cmd
 
+# Local test reports
+**/playwright-report/
+**/test-results/
+
 #local docs
 docs-local

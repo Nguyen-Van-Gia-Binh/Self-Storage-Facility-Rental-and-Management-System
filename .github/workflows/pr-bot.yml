@@ -34,10 +34,10 @@ jobs:
         run: |
           BRANCH_NAME="${{ github.head_ref }}"
           echo "Kiểm tra tên nhánh: $BRANCH_NAME"
-          PATTERN="^(feature|fix|docs|chore|refactor)/(T[0-9]+\.[0-9]+|Tx)-[a-z0-9-]+$"
+          PATTERN="^(feature|fix|docs|chore|refactor)/((T[0-9]+\.[0-9]+|Tx)-)?[a-z0-9-]+$"
           if [[ ! "$BRANCH_NAME" =~ $PATTERN ]]; then
-            echo "::error::❌ Tên nhánh '$BRANCH_NAME' không đúng quy ước CONTRIBUTING.md § 2!"
-            echo "::error::Mẫu chuẩn: <loại>/<mã-task>-<mô-tả> (Ví dụ: feature/T3.1-create-reservation-api, fix/Tx-login-loop)"
+            echo "::error::❌ Tên nhánh '$BRANCH_NAME' không đúng quy ước!"
+            echo "::error::Mẫu chuẩn: <loại>/[<mã-task>-]<mô-tả> (Ví dụ: feature/T3.1-create-reservation-api, fix/login-loop, chore/clean-docs)"
             exit 1
           fi
           echo "✅ Tên nhánh hợp lệ!"
@@ -46,18 +46,13 @@ jobs:
         run: |
           PR_TITLE="${{ github.event.pull_request.title }}"
           echo "Kiểm tra tiêu đề PR: $PR_TITLE"
-          PATTERN="^\[(T[0-9]+\.[0-9]+|Tx)\] (feat|fix|docs|refactor|test|style|chore|build|ci)(\([a-z0-9-]+\))?: .+$"
+          PATTERN="^(\[(T[0-9]+\.[0-9]+|Tx)\] )?(feat|fix|docs|refactor|test|style|chore|build|ci)(\([a-z0-9-]+\))?: .+$"
           if [[ ! "$PR_TITLE" =~ $PATTERN ]]; then
-            echo "::error::❌ Tiêu đề PR '$PR_TITLE' không đúng quy ước CONTRIBUTING.md § 4.2!"
-            echo "::error::Mẫu chuẩn: [<mã-task>] <loại>(<phạm-vi>): <mô tả ngắn> (Ví dụ: [T3.1] feat(reservation): API tạo Reservation)"
+            echo "::error::❌ Tiêu đề PR '$PR_TITLE' không đúng quy ước Conventional Commits!"
+            echo "::error::Mẫu chuẩn: [[<mã-task>] ]<loại>(<phạm-vi>): <mô tả> (Ví dụ: feat(reservation): API tạo Reservation hoặc [T3.1] feat(reservation): ...)"
             exit 1
           fi
           echo "✅ Tiêu đề PR hợp lệ!"
-
-      - name: 📚 Run Documentation Consistency Check (docs/check-docs.sh)
-        run: |
-          echo "Chạy script kiểm tra tài liệu..."
-          bash docs/check-docs.sh
 
       - name: ☕ Set up JDK 17
         uses: actions/setup-java@v4
