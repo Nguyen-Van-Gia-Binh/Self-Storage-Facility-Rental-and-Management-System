@@ -196,6 +196,7 @@ Tổng cộng **22 user story**, **91 acceptance criteria**, **106 story point**
 - **AC-2** — *Given* ô kho nguyên vẹn và sạch sẽ theo `BR-RET-02`, *when* tôi tích chọn đạt tất cả tiêu chí và lưu, *then* hệ thống ghi nhận kết quả "Đạt tiêu chuẩn trả kho - Đề xuất hoàn 100% Deposit".
 - **AC-3** — *Given* ô kho bị hư hại hoặc còn rác bẩn chưa dọn, *when* tôi ghi nhận, *then* hệ thống bắt buộc tôi nhập mô tả hư hại, tải lên ít nhất 1 ảnh chụp hiện trường và chọn loại phụ phí khấu trừ theo `BR-RET-04` và `BR-RET-08`.
 - **AC-4** — *Given* biên bản kiểm tra được tạo xong, *when* tôi và khách xác nhận, *then* biên bản nghiệm thu được gửi lên Facility Manager để thực hiện quyết toán hợp đồng theo `UC-F3-08`.
+- **AC-5** — *Given* khách gửi yêu cầu trả kho sau khi đã dọn sạch ô kho, *when* Facility Manager điều phối nhân viên hoặc nhân viên ca trực chủ động tiếp nhận, *then* nhiệm vụ nghiệm thu xuất hiện trên tab "Nhiệm vụ của tôi" tại trang Nghiệm thu trả kho (`SCR-FS-04`) để nhân viên tiến hành đối soát ngay.
 
 ---
 
@@ -443,7 +444,7 @@ Tổng cộng **22 user story**, **91 acceptance criteria**, **106 story point**
 
 **Acceptance Criteria**
 
-- **AC-1** — *Given* danh sách các lượt hẹn check-in và trả kho trong ngày, *when* tôi chọn nhiệm vụ và chọn nhân viên trực từ danh sách Staff của cơ sở, *then* nhiệm vụ được gán cho nhân viên đó và xuất hiện ngay trên màn hình ca trực của họ (`US-FS-06.1`).
+- **AC-1** — *Given* danh sách các lượt hẹn check-in và yêu cầu trả kho (`PENDING_RETURN`) trong ngày, *when* tôi chọn nhiệm vụ và chọn nhân viên trực từ danh sách Staff của cơ sở, *then* hệ thống cập nhật nhân viên phụ trách qua API `PATCH /contracts/{id}/assign-return` và nhiệm vụ xuất hiện ngay trên màn hình ca trực của nhân viên được gán (`US-FS-06.1`, `US-FS-04.1`).
 - **AC-2** — *Given* có một sự cố hỏng hóc khẩn cấp do khách báo về (`US-SC-06.1`), *when* tôi tiếp nhận, *then* tôi có thể gán nhân viên phụ trách kèm mức độ ưu tiên "Khẩn cấp (High)" và hạn xử lý theo SLA `BR-SUP-01` và `UC-F7-04`.
 - **AC-3** — *Given* một nhân viên đang có quá nhiều nhiệm vụ tồn đọng hoặc báo nghỉ phép, *when* tôi mở danh sách phân công, *then* hệ thống hiển thị số lượng task đang gán của từng nhân viên để tôi phân bổ đồng đều.
 - **AC-4** — *Given* tôi muốn điều chuyển nhiệm vụ từ nhân viên A sang nhân viên B, *when* tôi cập nhật người phụ trách, *then* hệ thống gửi thông báo thay đổi phân công đến cả hai nhân viên.
@@ -483,7 +484,7 @@ Tổng cộng **22 user story**, **91 acceptance criteria**, **106 story point**
 | `US-FS-03.1` | Cập nhật trạng thái ô kho sau bàn giao | `FS-03` | Must | 3 | P3 | 3 |
 | `US-FS-03.2` | Cập nhật trạng thái sau khi thu hồi kho | `FS-03` | Must | 3 | P4 | 4 |
 | `US-FS-03.3` | Đánh dấu ô kho cần bảo trì hoặc hoàn tất sửa chữa | `FS-03` | Should | 3 | P4 | 4 |
-| `US-FS-04.1` | Kiểm tra hiện trạng ô kho và lập biên bản nghiệm thu trả kho | `FS-04` | Must | 5 | P4 | 4 |
+| `US-FS-04.1` | Kiểm tra hiện trạng ô kho và lập biên bản nghiệm thu trả kho | `FS-04` | Must | 5 | P4 | 5 |
 | `US-FS-05.1` | Xử lý sự cố mất chìa khóa hoặc lỗi mã truy cập | `FS-05` | Must | 5 | P4 | 4 |
 | `US-FS-05.2` | Khắc phục hư hỏng vật lý của ô kho và đóng yêu cầu hỗ trợ | `FS-05` | Must | 5 | P4 | 4 |
 | `US-FS-06.1` | Theo dõi danh sách công việc bàn giao, trả kho và sự cố trong ngày | `FS-06` | Must | 3 | P4 | 4 |
