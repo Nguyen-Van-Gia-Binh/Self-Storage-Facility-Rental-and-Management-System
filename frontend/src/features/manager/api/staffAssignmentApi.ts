@@ -177,7 +177,7 @@ export async function getDailyDispatchTasks(
     const [incidents, pendingCheckIns, returnContracts] = await Promise.all([
       getManagementSupportRequests({ facilityId }),
       getPendingContracts(facilityId).catch(() => []),
-      getManagerContracts({ facilityId, status: 'RETURN' }).catch(() => []),
+      getManagerContracts({ facilityId, status: 'PENDING_RETURN' }).catch(() => []),
     ]);
 
     // 1. Map các sự cố kỹ thuật (INCIDENT)
