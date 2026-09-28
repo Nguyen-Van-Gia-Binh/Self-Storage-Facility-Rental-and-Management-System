@@ -243,29 +243,77 @@ export const UnitPickerPage: React.FC = () => {
     return () => { isMounted = false; };
   }, [facilityParam, initialTypeId, navigate]);
 
-  // Tải sức chứa ô kho thực tế theo khoảng thời gian khách chọn (SC-01)
+  // Tải sức chứa ô kho thực tế và danh sách ô kho động theo khoảng thời gian khách chọn (SC-01)
   useEffect(() => {
     const fId = parseInt(currentFacility.id, 10);
     if (isNaN(fId) || unitTypes.length === 0) return;
 
     let isMounted = true;
-    async function loadAvailabilities() {
+    async function loadAvailabilitiesAndUnits() {
       setLoadingAvailability(true);
       const map: Record<string, AvailabilityResponse> = {};
       try {
-        await Promise.all(
-          unitTypes.map(async (ut) => {
-            const uId = parseInt(ut.id, 10);
-            if (!isNaN(uId)) {
-              try {
-                const res = await checkUnitAvailability(fId, uId, startDate, durationMonths);
-                map[ut.id] = res;
-              } catch {
-                // Bỏ qua lỗi từng loại kho
+        await Promise.all([
+          Promise.all(
+            unitTypes.map(async (ut) => {
+              const uId = parseInt(ut.id, 10);
+              if (!isNaN(uId)) {
+                try {
+                  const res = await checkUnitAvailability(fId, uId, startDate, durationMonths);
+                  map[ut.id] = res;
+                } catch {
+                  // Bỏ qua lỗi từng loại kho
+                }
               }
+            })
+          ),
+          (async () => {
+            try {
+              const suPage = await fetchStorageUnitsApi(fId, {
+                startDate,
+                rentalMonths: durationMonths,
+                size: 100,
+              });
+              if (!isMounted) return;
+              if (suPage?.content && suPage.content.length > 0) {
+                const mappedSUs: StorageUnit[] = suPage.content.map((su) => {
+                  const parentType = unitTypes.find((ut) => String(ut.id) === String(su.unitTypeId));
+                  const sizeCat = parentType ? parentType.sizeCategory : 'S';
+                  const sType = parentType ? parentType.storageType : 'STANDARD';
+
+                  const statusRaw = (su.status || 'AVAILABLE').toUpperCase();
+                  let unitStatus: UnitStatus = 'AVAILABLE';
+                  if (statusRaw === 'OCCUPIED') unitStatus = 'OCCUPIED';
+                  else if (statusRaw === 'RESERVED') unitStatus = 'RESERVED';
+                  else if (statusRaw === 'MAINTENANCE') unitStatus = 'MAINTENANCE';
+                  else if (statusRaw === 'OVERDUE') unitStatus = 'OVERDUE';
+                  else if (statusRaw === 'LOCKED') unitStatus = 'LOCKED';
+
+                  return {
+                    id: String(su.id),
+                    unitNumber: su.code || `S-${su.id}`,
+                    facilityId: String(su.facilityId || currentFacility.id),
+                    unitTypeId: String(su.unitTypeId || (parentType ? parentType.id : '1')),
+                    floor: su.floor || 1,
+                    zone: su.position || 'Khu A',
+                    sizeCategory: sizeCat,
+                    storageType: sType,
+                    status: unitStatus,
+                    dimensions: parentType ? parentType.dimensions : '2m x 2m x 2.5m',
+                    areaM2: parentType ? parentType.areaM2 : 4,
+                    volumeM3: parentType ? parentType.volumeM3 : 10,
+                    locationDescription: `Tầng ${su.floor || 1} - ${su.position || 'Khu A'} - Cạnh cửa chính`,
+                    monthlyPrice: su.monthlyPrice || (parentType ? parentType.baseMonthlyPrice : 500000),
+                  };
+                });
+                setFacilityUnits(mappedSUs);
+              }
+            } catch (err) {
+              console.error('Lỗi khi tải ô kho theo kỳ hạn:', err);
             }
-          })
-        );
+          })(),
+        ]);
+
         if (isMounted) {
           setAvailabilityMap(map);
         }
@@ -276,7 +324,7 @@ export const UnitPickerPage: React.FC = () => {
       }
     }
 
-    loadAvailabilities();
+    loadAvailabilitiesAndUnits();
     return () => {
       isMounted = false;
     };
