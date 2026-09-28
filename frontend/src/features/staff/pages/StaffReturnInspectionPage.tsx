@@ -1,8 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Building2, User, Phone, ShieldCheck, CheckCircle, RefreshCw } from 'lucide-react';
+import {
+  ArrowLeft, Building2, User, Phone, ShieldCheck, CheckCircle, RefreshCw,
+  AlertTriangle, UserCheck, UserPlus, FileText
+} from 'lucide-react';
 import type { ReturnContractDetail, ReturnInspectionRequest } from '@/types';
-import { getReturnContracts, getReturnContractById, submitReturnInspection } from '@/api/contract';
+import { getReturnContracts, getReturnContractById, submitReturnInspection, assignReturnStaff } from '@/api/contract';
 import { useCurrentUser } from '@/utils/useCurrentUser';
 import { ReturnInspectionForm } from '../components/ReturnInspectionForm';
 import { ReturnSuccessModal } from '../components/ReturnSuccessModal';
@@ -28,6 +31,9 @@ export const StaffReturnInspectionPage: React.FC = () => {
   const [selectedContract, setSelectedContract] = useState<ReturnContractDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [assigning, setAssigning] = useState(false);
+  const [filterTab, setFilterTab] = useState<'MY_TASKS' | 'ALL'>('MY_TASKS');
+
   const [successData, setSuccessData] = useState<{
     isOpen: boolean;
     contractCode: string;
@@ -77,6 +83,34 @@ export const StaffReturnInspectionPage: React.FC = () => {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Lọc danh sách theo Tab: Nhiệm vụ của tôi vs Tất cả
+  const displayedContracts = useMemo(() => {
+    if (filterTab === 'MY_TASKS' && staffId) {
+      return contracts.filter((c) => c.assignedStaffId === staffId);
+    }
+    return contracts;
+  }, [contracts, filterTab, staffId]);
+
+  const myTasksCount = useMemo(() => {
+    if (!staffId) return 0;
+    return contracts.filter((c) => c.assignedStaffId === staffId).length;
+  }, [contracts, staffId]);
+
+  // Tiếp nhận ca trực nghiệm thu (gán cho chính staff hiện tại)
+  const handleSelfAssign = async (cId: number) => {
+    if (!staffId) return;
+    setAssigning(true);
+    try {
+      await assignReturnStaff(cId, staffId, 'Nhân viên trực tiếp nhận ca nghiệm thu');
+      await loadData();
+    } catch (err) {
+      console.error('Lỗi tiếp nhận ca nghiệm thu:', err);
+      alert('Không thể tiếp nhận ca trực. Vui lòng thử lại.');
+    } finally {
+      setAssigning(false);
+    }
+  };
 
   const handleSubmitInspection = async (data: ReturnInspectionRequest) => {
     if (!selectedContract) return;
@@ -168,6 +202,53 @@ export const StaffReturnInspectionPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Tabs chuyển đổi: Nhiệm vụ của tôi vs Tất cả */}
+      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setFilterTab('MY_TASKS')}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+              filterTab === 'MY_TASKS'
+                ? 'bg-teal-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            <UserCheck className="w-3.5 h-3.5" />
+            Nhiệm vụ của tôi
+            <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+              filterTab === 'MY_TASKS' ? 'bg-teal-700 text-white' : 'bg-slate-200 text-slate-700'
+            }`}>
+              {myTasksCount}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilterTab('ALL')}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+              filterTab === 'ALL'
+                ? 'bg-teal-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            <FileText className="w-3.5 h-3.5" />
+            Tất cả đơn trả kho
+            <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+              filterTab === 'ALL' ? 'bg-teal-700 text-white' : 'bg-slate-200 text-slate-700'
+            }`}>
+              {contracts.length}
+            </span>
+          </button>
+        </div>
+
+        {filterTab === 'MY_TASKS' && myTasksCount === 0 && contracts.length > 0 && (
+          <span className="text-xs text-amber-600 italic">
+            Bạn chưa được phân công đơn nào. Hãy chuyển sang tab "Tất cả đơn trả kho" để tiếp nhận.
+          </span>
+        )}
+      </div>
+
       {contracts.length === 0 && !selectedContract ? (
         <div className="p-12 text-center bg-white rounded-2xl border border-slate-200 space-y-3">
           <CheckCircle className="w-12 h-12 text-teal-500 mx-auto" />
@@ -186,31 +267,53 @@ export const StaffReturnInspectionPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Cột trái (4/12): Danh sách chọn hợp đồng & Thẻ thông tin khách */}
           <div className="lg:col-span-4 space-y-4">
-            {/* Bộ chọn nhanh nếu có nhiều hợp đồng trả kho */}
-            {contracts.length > 1 && (
-              <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-2">
-                <label className="text-xs font-semibold text-slate-600">Chọn hợp đồng trả kho:</label>
-                <div className="space-y-1.5">
-                  {contracts.map((c) => (
+            {/* Bộ chọn nhanh danh sách hợp đồng */}
+            <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-2">
+              <label className="text-xs font-semibold text-slate-600">
+                {filterTab === 'MY_TASKS' ? 'Hợp đồng phân công cho bạn:' : 'Toàn bộ hợp đồng chờ nghiệm thu:'}
+              </label>
+
+              {displayedContracts.length === 0 ? (
+                <div className="p-4 text-center text-xs text-slate-400 bg-slate-50 rounded-lg">
+                  Không có hợp đồng nào phù hợp với bộ lọc hiện tại.
+                </div>
+              ) : (
+                <div className="space-y-1.5 max-h-[380px] overflow-y-auto pr-1">
+                  {displayedContracts.map((c) => (
                     <button
                       key={c.id}
                       onClick={() => setSelectedContract(c)}
                       className={`w-full text-left p-2.5 rounded-lg border text-xs transition ${
                         selectedContract?.id === c.id
-                          ? 'border-teal-500 bg-teal-50/50 font-medium text-teal-900'
+                          ? 'border-teal-500 bg-teal-50/50 font-medium text-teal-900 shadow-xs'
                           : 'border-slate-100 hover:bg-slate-50 text-slate-700'
                       }`}
                     >
-                      <div className="flex justify-between font-semibold">
+                      <div className="flex justify-between items-center font-semibold">
                         <span>{c.code}</span>
                         <span className="text-teal-700 font-mono">{c.storageUnitCode}</span>
                       </div>
-                      <div className="text-slate-500 text-[11px] mt-0.5">{c.customerName}</div>
+                      <div className="flex items-center justify-between mt-1 text-[11px]">
+                        <span className="text-slate-500 truncate max-w-[140px]">{c.customerName}</span>
+                        {c.assignedStaffId === staffId ? (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-700">
+                            Được giao
+                          </span>
+                        ) : !c.assignedStaffId ? (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-700 animate-pulse">
+                            Chờ giao
+                          </span>
+                        ) : (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600">
+                            {c.assignedStaffName || `Staff #${c.assignedStaffId}`}
+                          </span>
+                        )}
+                      </div>
                     </button>
                   ))}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             {/* Thông tin chi tiết hợp đồng được chọn */}
             {selectedContract && (
@@ -275,14 +378,70 @@ export const StaffReturnInspectionPage: React.FC = () => {
             )}
           </div>
 
-          {/* Cột phải (8/12): Form Nghiệm thu trả kho */}
-          <div className="lg:col-span-8">
+          {/* Cột phải (8/12): Form Nghiệm thu trả kho kèm Banner phân công */}
+          <div className="lg:col-span-8 space-y-4">
             {selectedContract ? (
-              <ReturnInspectionForm
-                contract={selectedContract}
-                onSubmit={handleSubmitInspection}
-                isSubmitting={submitting}
-              />
+              <>
+                {/* Trạng thái phân công điều phối của hợp đồng */}
+                {!selectedContract.assignedStaffId ? (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="text-sm font-bold text-amber-900">Chờ Quản lý cơ sở phân công</h4>
+                        <p className="text-xs text-amber-700 mt-0.5">
+                          Đơn trả kho này hiện chưa được Quản lý phân công nhân viên nghiệm thu cụ thể.
+                        </p>
+                      </div>
+                    </div>
+                    {staffId && (
+                      <button
+                        type="button"
+                        onClick={() => handleSelfAssign(selectedContract.id)}
+                        disabled={assigning}
+                        className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-lg shrink-0 flex items-center gap-1.5 transition shadow-xs disabled:opacity-50"
+                      >
+                        <UserPlus className="w-3.5 h-3.5" />
+                        {assigning ? 'Đang nhận...' : 'Tiếp nhận ca trực'}
+                      </button>
+                    )}
+                  </div>
+                ) : selectedContract.assignedStaffId === staffId ? (
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 flex items-center gap-2.5 text-xs text-emerald-800 font-medium">
+                    <UserCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>
+                      Đơn trả kho này đã được Quản lý phân công đích danh cho bạn (<strong>{user?.fullName || 'Bạn'}</strong>).
+                    </span>
+                  </div>
+                ) : (
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 flex items-center justify-between text-xs text-blue-800">
+                    <div className="flex items-center gap-2">
+                      <User className="w-4 h-4 text-blue-600 shrink-0" />
+                      <span>
+                        Đơn đang được phân công cho:{' '}
+                        <strong>{selectedContract.assignedStaffName || `Nhân viên #${selectedContract.assignedStaffId}`}</strong>
+                      </span>
+                    </div>
+                    {staffId && (
+                      <button
+                        type="button"
+                        onClick={() => handleSelfAssign(selectedContract.id)}
+                        disabled={assigning}
+                        className="px-2.5 py-1 bg-white border border-blue-300 hover:bg-blue-100 text-blue-700 font-semibold rounded-md transition text-[11px] disabled:opacity-50"
+                      >
+                        {assigning ? 'Đang chuyển...' : 'Đổi sang tôi phụ trách'}
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Form nghiệm thu trả kho */}
+                <ReturnInspectionForm
+                  contract={selectedContract}
+                  onSubmit={handleSubmitInspection}
+                  isSubmitting={submitting}
+                />
+              </>
             ) : (
               <div className="p-8 text-center text-slate-400 bg-white rounded-xl border border-slate-200">
                 Vui lòng chọn một hợp đồng từ danh sách để bắt đầu nghiệm thu.

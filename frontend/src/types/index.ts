@@ -211,6 +211,9 @@ export interface ReturnContractDetail {
   status: string; // ACTIVE, PENDING_RETURN, OVERDUE
   returnNoticeDate?: string;
   requestedReturnDate?: string;
+  assignedStaffId?: number;
+  assignedStaffName?: string;
+  assignmentStatus?: 'UNASSIGNED' | 'ASSIGNED';
 }
 
 export interface DailyCheckInTask {
