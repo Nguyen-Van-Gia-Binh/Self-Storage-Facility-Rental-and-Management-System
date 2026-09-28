@@ -395,4 +395,31 @@ class PaymentServiceTest {
         assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
         assertTrue(ex.getMessage().contains("nợ phạt quá hạn"));
     }
+
+    @Test
+    @DisplayName("Sandbox transfer OVERDUE_PENALTY thành công: Xóa nợ phạt về 0 cho hợp đồng")
+    void processSandboxTransfer_OverduePenalty_ClearsDebt() {
+        PaymentTransaction txn = PaymentTransaction.builder()
+                .id(999L)
+                .orderCode(88889999L)
+                .amount(250_000L)
+                .status("PENDING")
+                .transactionType("OVERDUE_PENALTY")
+                .contractId(80017L)
+                .build();
+
+        com.swp391.selfstorage.contract.entity.RentalContract mockContract = new com.swp391.selfstorage.contract.entity.RentalContract();
+        mockContract.setId(80017L);
+        mockContract.setOverdueFeeAccrued(250_000L);
+
+        when(paymentTransactionRepository.findByOrderCode(88889999L)).thenReturn(Optional.of(txn));
+        when(rentalContractRepository.findById(80017L)).thenReturn(Optional.of(mockContract));
+        when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        PaymentResponse res = paymentService.processSandboxTransfer(88889999L, "TRANSFER_SUCCESS");
+
+        assertEquals("SUCCESS", res.getStatus());
+        assertEquals(0L, mockContract.getOverdueFeeAccrued());
+        verify(rentalContractRepository).save(mockContract);
+    }
 }
