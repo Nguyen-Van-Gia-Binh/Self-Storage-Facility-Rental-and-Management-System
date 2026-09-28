@@ -148,6 +148,8 @@ Mọi task khi được giao bắt buộc tuân thủ quy trình 5 bước nghi�
 
 | Tài liệu | Vai trò / Phạm vi |
 | :--- | :--- |
+| [docs/DASHBOARD.md](docs/DASHBOARD.md) | **Bảng điều hành trung tâm & Bộ nhớ làm việc duy nhất** — Trọng tâm sprint hiện tại, tiến độ 4 Workstream, sổ Issue/Bug 3 dòng. |
+| [docs/USER-STORIES-AND-USE-CASES.md](docs/USER-STORIES-AND-USE-CASES.md) | **Tài liệu Yêu cầu hợp nhất** — Quy tắc viết, toàn bộ User Stories (5 actor) & Phân rã 7 luồng Use Cases. |
 | [docs/TOPIC.md](docs/TOPIC.md) | **Chân lý nghiệp vụ cao nhất** — 5 Actor, 27 mã yêu cầu (`SC-*`, `FS-*`, `FM-*`, `BM-*`, `SA-*`), 7 luồng nghiệp vụ. |
 | [docs/PLAN.md](docs/PLAN.md) | **Kế hoạch 5 giai đoạn & 4 Trục** — Phân công chi tiết từng task, deadline, quy tắc Zero-Conflict. |
 | [docs/API-SPEC.md](docs/API-SPEC.md) | **Hợp đồng giao tiếp API** — Chi tiết endpoint, HTTP status, request/response body, mã lỗi. |

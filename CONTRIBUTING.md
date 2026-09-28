@@ -242,23 +242,13 @@ Một nhiệm vụ chỉ được coi là xong khi đủ **tất cả**:
 - [ ] Có unit test cho tầng service, test chạy xanh
 - [ ] Đã có ít nhất 1 người review và duyệt
 - [ ] Đã merge vào `main`
-- [ ] Tài liệu liên quan trong `docs/` đã cập nhật
-- [ ] `bash docs/check-docs.sh` chạy xanh — bắt buộc nếu có đụng tài liệu trong `docs/`
-- [ ] Task tương ứng trên [Notion Task Tracker](https://app.notion.com/p/3d5561bd42cd808e8161c482b37386c6) đã chuyển sang *Done*
+- [ ] Tài liệu liên quan trong `docs/` đã cập nhật (đặc biệt là [docs/DASHBOARD.md](docs/DASHBOARD.md) và [docs/DATA-DICTIONARY.md](docs/DATA-DICTIONARY.md) nếu có thay đổi CSDL)
+- [ ] Backend test (`mvn clean test`) và Frontend build (`npm run build`) chạy xanh 100%
+- [ ] Task tương ứng trên [Notion Task Tracker](https://app.notion.com/p/3d5561bd42cd808e8161c482b37386c6) hoặc `docs/DASHBOARD.md` đã chuyển sang *Done* / *RESOLVED*
 
-### Kiểm tra tài liệu tự động
+### Đồng bộ tài liệu và quản lý vấn đề
 
-[`docs/check-docs.sh`](docs/check-docs.sh) rà 8 phép kiểm tính nhất quán giữa các tài liệu phân tích:
-link chết, mã `UC-*` / `BR-*` / `SC-*` được tham chiếu nhưng không tồn tại, mã yêu cầu chưa được use
-case nào phủ, số lượng lệch giữa các bảng, và **con số nêu trong văn bản lệch với số đếm được**.
-
-```bash
-bash docs/check-docs.sh    # chạy từ thư mục gốc repo
-```
-
-Chạy lại mỗi khi thêm use case, user story hoặc business rule — đây là loại lỗi mắt người đọc lướt
-qua rất dễ bỏ sót. Script chỉ lo phần máy kiểm được; phần nội dung đúng hay sai vẫn phải review bằng
-tay theo [docs/REVIEW-CHECKLIST.md](docs/REVIEW-CHECKLIST.md).
+Mọi trạng thái nhiệm vụ, tiến độ và vấn đề phát sinh được theo dõi tập trung tại **[docs/DASHBOARD.md](docs/DASHBOARD.md)** theo Quy tắc 3 Dòng. Toàn bộ User Stories và Use Cases được duy trì tập trung tại **[docs/USER-STORIES-AND-USE-CASES.md](docs/USER-STORIES-AND-USE-CASES.md)**. Các tài liệu phân tích giai đoạn cũ đã được lưu trữ trong `docs/_archive/` để tham khảo khi cần.
 
 ---
 

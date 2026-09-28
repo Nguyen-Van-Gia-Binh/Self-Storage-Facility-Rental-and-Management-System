@@ -54,24 +54,18 @@ Chi tiết từng luồng: [docs/TOPIC.md § 4–5](docs/TOPIC.md#4-các-luồng
 ├── README.md              # Tài liệu tổng quan (file này)
 ├── CONTRIBUTING.md        # Quy trình Git: nhánh, commit, Pull Request, review
 └── docs/
+    ├── DASHBOARD.md       # Bảng điều hành trung tâm: Sprint, Issue/Bug tinh gọn, tiến độ 4 Workstream
+    ├── USER-STORIES-AND-USE-CASES.md # Tài liệu hợp nhất: Quy tắc, User Stories (5 actor) & Phân rã Use Cases
     ├── TOPIC.md           # Đặc tả đề tài: actors, chức năng, luồng nghiệp vụ, glossary
-    ├── PLAN.md            # Kế hoạch triển khai: giai đoạn, nhiệm vụ, phân công, rủi ro
-    ├── USE-CASES.md       # Phân rã Flow 1–7 thành 73 use case
-    ├── USER-STORIES-SC.md # User story và acceptance criteria cho Storage Customer
     ├── BUSINESS-RULES.md  # Reservation, Availability, Pricing, Payment và vòng đời thuê
+    ├── API-SPEC.md        # Hợp đồng REST API chi tiết toàn hệ thống
+    ├── DATA-DICTIONARY.md # Từ điển dữ liệu CSDL (đồng bộ Flyway migration)
+    ├── ERD-DATA-DICTIONARY.md # Sơ đồ thực thể quan hệ CSDL
+    ├── UI-DESIGN-SYSTEM.md # Quy chuẩn hệ thống thiết kế giao diện
     ├── CONVENTIONS.md     # Coding convention và quy ước REST API
-    ├── REVIEW-CHECKLIST.md # Quy trình tự review tài liệu, kèm điều kiện dừng
-    ├── OPEN-ISSUES.md     # Sổ vấn đề mở đang chờ quyết
-    ├── check-docs.sh      # Script kiểm tính nhất quán giữa các tài liệu
-    └── diagrams/
-        ├── activity-diagram-flow-1-storage-reservation.drawio      # Activity Diagram Flow 1 — Reservation
-        ├── activity-diagram-flow-2-checkin-handover.drawio         # Activity Diagram Flow 2 — Check-in / Handover
-        ├── activity-diagram-flow-6-1-storage-renewal.drawio        # Activity Diagram Flow 6.1 — Renewal
-        ├── activity-diagram-flow-6-2-overdue-handling.drawio       # Activity Diagram Flow 6.2 — Overdue
-        ├── activity-diagram-flow-4-business-operations.drawio      # Activity Diagram Flow 4 — Business Rules / Fee / Revenue
-        ├── activity-diagram-flow-5-facility-staff-management.drawio # Activity Diagram Flow 5 — Facility Storage / Staff
-        ├── activity-diagram-flow-7-support-incident-handling.drawio # Activity Diagram Flow 7 — Support Request
-        └── _archive/                          # Sơ đồ PlantUML (.puml) cũ đã lưu trữ
+    ├── PLAN.md            # Khung kế hoạch tổng thể & tra cứu mã nhiệm vụ
+    ├── diagrams/          # Sơ đồ Activity Diagram (.drawio)
+    └── _archive/          # Tài liệu và sơ đồ cũ đã lưu trữ
 ```
 
 Cấu trúc mã nguồn (`backend/`, `frontend/`) sẽ được bổ sung ở nhiệm vụ T1.16 và T1.17.
@@ -178,33 +172,32 @@ Danh sách nhiệm vụ đầy đủ kèm người phụ trách và hạn: [docs
 ---
 
 ## Tài liệu
+ 
+ **Điều hành & Yêu cầu cốt lõi**
+ 
+ - [docs/DASHBOARD.md](docs/DASHBOARD.md) — **Bảng điều hành trung tâm:** Sprint hiện tại, tiến độ 4 Workstream, sổ theo dõi Issue & Bug tinh gọn.
+ - [docs/USER-STORIES-AND-USE-CASES.md](docs/USER-STORIES-AND-USE-CASES.md) — **Tài liệu hợp nhất:** Quy tắc viết, toàn bộ User Stories (5 actor) và Phân rã 7 luồng Use Cases.
+ - [docs/TOPIC.md](docs/TOPIC.md) — Đặc tả đề tài gốc: 5 actor, 27 mã yêu cầu chức năng, 7 luồng nghiệp vụ.
+ - [docs/BUSINESS-RULES.md](docs/BUSINESS-RULES.md) — Toàn bộ quy tắc nghiệp vụ (`BR-*`) và bảng thông số cấu hình.
+ - [docs/PLAN.md](docs/PLAN.md) — Khung kế hoạch tổng thể & ma trận nhiệm vụ (`T1.1` → `T5.x`).
 
-**Đặc tả và kế hoạch**
+ **Kiến trúc & Kỹ thuật**
 
-- [docs/TOPIC.md](docs/TOPIC.md) — Đặc tả đề tài đầy đủ, kèm nguyên văn đề bài ở phần phụ lục.
-- [docs/PLAN.md](docs/PLAN.md) — Kế hoạch triển khai 10 tuần: giai đoạn, nhiệm vụ, phân công, rủi ro.
+ - [docs/API-SPEC.md](docs/API-SPEC.md) — Hợp đồng REST API đầy đủ cho toàn bộ các endpoint Backend.
+ - [docs/DATA-DICTIONARY.md](docs/DATA-DICTIONARY.md) — Từ điển dữ liệu CSDL (đồng bộ với Flyway migration).
+ - [docs/ERD-DATA-DICTIONARY.md](docs/ERD-DATA-DICTIONARY.md) — Sơ đồ thực thể quan hệ CSDL.
+ - [docs/UI-DESIGN-SYSTEM.md](docs/UI-DESIGN-SYSTEM.md) — Hệ thống Design tokens & Component chuẩn hóa.
+ - [docs/CONVENTIONS.md](docs/CONVENTIONS.md) — Coding convention Java / React / SQL và quy ước REST API.
+ - [CONTRIBUTING.md](CONTRIBUTING.md) — Quy trình Git: nhánh, commit, Pull Request, review, Definition of Done.
 
-**Phân tích yêu cầu**
+ **Sơ đồ hoạt động (Activity Diagrams)**
 
-- [docs/USE-CASES.md](docs/USE-CASES.md) — Phân rã Flow 1–7 thành 73 use case, kèm bản đồ phủ 27 mã yêu cầu.
-- [docs/USER-STORIES-SC.md](docs/USER-STORIES-SC.md) — 22 user story và 111 acceptance criteria cho Storage Customer.
-- [docs/BUSINESS-RULES.md](docs/BUSINESS-RULES.md) — Baseline Reservation, Availability, Pricing, Payment, Deposit, Cancellation, Renewal, Overdue và Return.
-- [docs/diagrams/activity-diagram-flow-1-storage-reservation.drawio](docs/diagrams/activity-diagram-flow-1-storage-reservation.drawio) — Activity Diagram Flow 1 (Reservation).
-- [docs/diagrams/activity-diagram-flow-2-checkin-handover.drawio](docs/diagrams/activity-diagram-flow-2-checkin-handover.drawio) — Activity Diagram Flow 2 (Check-in / Handover).
-- [docs/diagrams/activity-diagram-flow-6-1-storage-renewal.drawio](docs/diagrams/activity-diagram-flow-6-1-storage-renewal.drawio) — Activity Diagram Flow 6.1 (Storage Renewal).
-- [docs/diagrams/activity-diagram-flow-6-2-overdue-handling.drawio](docs/diagrams/activity-diagram-flow-6-2-overdue-handling.drawio) — Activity Diagram Flow 6.2 (Overdue Handling).
-- [docs/diagrams/activity-diagram-flow-4-business-operations.drawio](docs/diagrams/activity-diagram-flow-4-business-operations.drawio) — Activity Diagram Flow 4 (Business Rules, Fee Management, Revenue Monitoring).
-- [docs/diagrams/activity-diagram-flow-5-facility-staff-management.drawio](docs/diagrams/activity-diagram-flow-5-facility-staff-management.drawio) — Activity Diagram Flow 5 (Facility Storage and Staff Management).
-- [docs/diagrams/activity-diagram-flow-7-support-incident-handling.drawio](docs/diagrams/activity-diagram-flow-7-support-incident-handling.drawio) — Activity Diagram Flow 7 (Support Request and Issue Handling).
-- [docs/diagrams/_archive/](docs/diagrams/_archive/use-case-diagram.puml) — Thư mục lưu trữ các sơ đồ PlantUML (.puml) cũ.
+ - [docs/diagrams/activity-diagram-flow-1-storage-reservation.drawio](docs/diagrams/activity-diagram-flow-1-storage-reservation.drawio) — Flow 1 (Reservation).
+ - [docs/diagrams/activity-diagram-flow-2-checkin-handover.drawio](docs/diagrams/activity-diagram-flow-2-checkin-handover.drawio) — Flow 2 (Check-in / Handover).
+ - [docs/diagrams/activity-diagram-flow-6-1-storage-renewal.drawio](docs/diagrams/activity-diagram-flow-6-1-storage-renewal.drawio) — Flow 6.1 (Storage Renewal).
+ - [docs/diagrams/activity-diagram-flow-6-2-overdue-handling.drawio](docs/diagrams/activity-diagram-flow-6-2-overdue-handling.drawio) — Flow 6.2 (Overdue Handling).
+ - [docs/diagrams/activity-diagram-flow-4-business-operations.drawio](docs/diagrams/activity-diagram-flow-4-business-operations.drawio) — Flow 4 (Business Rules, Fee Management, Revenue Monitoring).
+ - [docs/diagrams/activity-diagram-flow-5-facility-staff-management.drawio](docs/diagrams/activity-diagram-flow-5-facility-staff-management.drawio) — Flow 5 (Facility Storage and Staff Management).
+ - [docs/diagrams/activity-diagram-flow-7-support-incident-handling.drawio](docs/diagrams/activity-diagram-flow-7-support-incident-handling.drawio) — Flow 7 (Support Request and Issue Handling).
+ - [docs/_archive/](docs/_archive/) — Thư mục lưu trữ các tài liệu và sơ đồ cũ.
 
-**Quy ước kỹ thuật**
-
-- [docs/CONVENTIONS.md](docs/CONVENTIONS.md) — Coding convention Java / React / SQL và quy ước REST API.
-- [CONTRIBUTING.md](CONTRIBUTING.md) — Quy trình Git: nhánh, commit, Pull Request, review, Definition of Done.
-
-**Chất lượng tài liệu**
-
-- [docs/REVIEW-CHECKLIST.md](docs/REVIEW-CHECKLIST.md) — Quy trình tự review 3 lớp kèm điều kiện dừng cho từng nhiệm vụ.
-- [docs/OPEN-ISSUES.md](docs/OPEN-ISSUES.md) — Sổ vấn đề mở đang chờ nhóm quyết.
-- [docs/check-docs.sh](docs/check-docs.sh) — Kiểm tính nhất quán tự động: `bash docs/check-docs.sh`
