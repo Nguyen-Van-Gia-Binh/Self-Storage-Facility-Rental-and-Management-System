@@ -66,10 +66,10 @@ Mọi task khi được giao bắt buộc tuân thủ quy trình 5 bước nghi�
 
 ### Bước 4: Kiểm thử toàn diện & Hỏi ý kiến người dùng nghiệm thu
 
-- Chạy toàn bộ test suite dự án (`mvn clean test`) đảm bảo 100% xanh, không gây lỗi hồi quy.
-- **Dừng lại và hỏi người dùng**: Báo cáo kết quả và hỏi rõ người dùng: *"Tôi đã hoàn thành task và kiểm thử toàn bộ đều xanh. Bạn xem qua kết quả có OK không để tôi đẩy nhánh lên origin và tạo nội dung Pull Request?"*
+- Chạy toàn bộ test suite dự án (`mvn clean test` và `npm run build`) đảm bảo 100% xanh, không gây lỗi hồi quy.
+- **Dừng lại và hỏi người dùng**: Báo cáo kết quả và hỏi rõ người dùng: *"Tôi đã hoàn thành task và kiểm thử toàn bộ đều xanh. Bạn xem qua kết quả có OK không để tôi đẩy nhánh lên origin và tự động tạo Pull Request bằng GitHub CLI (`gh pr create`)?"*
 
-### Bước 5: Push nhánh lên remote & Soạn sẵn nội dung Pull Request
+### Bước 5: Push nhánh & Tự động tạo Pull Request bằng GitHub CLI (`gh`)
 
 - Khi người dùng phản hồi **"OK"** hoặc đồng ý:
   1. **Đồng bộ chống xung đột (Pre-push Rebase):** Luôn fetch `origin main` và rebase để đảm bảo nhánh luôn nằm trên đỉnh `main` mới nhất (tránh conflict khi mở PR):
@@ -80,14 +80,16 @@ Mọi task khi được giao bắt buộc tuân thủ quy trình 5 bước nghi�
      ```powershell
      git push -u origin <tên-nhánh>
      ```
-  3. **Soạn sẵn toàn bộ nội dung Pull Request** theo mẫu chuẩn tại [CONTRIBUTING.md § 4](CONTRIBUTING.md#4-pull-request) (gồm: Tiêu đề, Nhiệm vụ, Nội dung thay đổi, Phạm vi nghiệp vụ, Cách kiểm thử, Checklist).
-     - **Quy chuẩn tiêu đề PR được kiểm tra tự động bởi CI (`pr-bot.yml`):**
-       - Regex CI: `^\[(T[0-9]+\.[0-9]+|Tx)\] (feat|fix|docs|refactor|test|style|chore|build|ci)(\([a-z0-9-]+\))?: .+$`
-       - BẮT BUỘC bắt đầu bằng `[T<số>.<số>]` hoặc `[Tx]`.
-       - ⚠️ **TUYỆT ĐỐI CẤM:** Không dùng `[T2.x]`, không dùng `[T2.12-T2.13]`. Nếu phạm vi bao gồm nhiều sub-task, chọn mã task đại diện chính (ví dụ: `[T2.12]`).
-       - Ví dụ ĐÚNG: `[T2.12] feat(staff): kết nối Real API cho Staff Desk`
-       - Ví dụ SAI: `[T2.12-T2.13] feat(staff): ...` (sai regex), `[T2.x] feat(staff): ...` (sai regex).
-  4. Cung cấp đường link tạo PR trên GitHub để người dùng bấm tạo PR cho bạn bè / nhóm review và duyệt merge (Squash and merge) vào `main`.
+  3. **Tự động tạo Pull Request bằng GitHub CLI (`gh`):**
+     - Máy tính đã cài đặt và đăng nhập sẵn GitHub CLI (`gh`).
+     - Tác nhân AI tự động gọi lệnh `gh pr create` với:
+       - `--title`: Chuẩn Conventional Commits (ví dụ: `feat(staff): kết nối Real API` hoặc `[T2.12] feat(...)`).
+       - `--body`: Soạn sẵn đầy đủ nội dung theo mẫu chuẩn [CONTRIBUTING.md § 4](CONTRIBUTING.md#4-pull-request) (Mục tiêu, Chi tiết thay đổi, Hướng dẫn kiểm thử, Checklist DoD).
+     - Lệnh mẫu:
+       ```powershell
+       gh pr create --title "<tiêu-đề-PR>" --body "<nội-dung-markdown>"
+       ```
+  4. Cung cấp đường link PR vừa tạo trên GitHub để người dùng tiện theo dõi bot CI (`pr-bot.yml`) tự động verify và squash-merge vào `main`.
   5. **Sau khi PR được merge vào `main`:** Xóa nhánh tính năng cả trên remote lẫn local để tránh nhầm lẫn cho các task sau.
 
 ---
