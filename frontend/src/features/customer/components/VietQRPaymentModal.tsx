@@ -134,7 +134,11 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
         }
       })
       .catch((err) => {
-        console.warn('Lỗi khởi tạo checkout PayOS, fallback mã mặc định:', err);
+        console.warn('Lỗi khởi tạo checkout PayOS, kích hoạt orderCode giả lập Sandbox:', err);
+        if (isSubscribed) {
+          const fallbackCode = Number(String(Date.now()).slice(-8));
+          setOrderCode(fallbackCode);
+        }
       });
 
     return () => {
@@ -224,11 +228,16 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
 
   // Nút chuyển tiền mô phỏng Sandbox nội bộ
   const handleSandboxTransfer = async () => {
-    if (!orderCode || isPaid || isSimulating) return;
+    let code = orderCode;
+    if (!code) {
+      code = Number(String(Date.now()).slice(-8));
+      setOrderCode(code);
+    }
+    if (isPaid || isSimulating) return;
     setIsSimulating(true);
     setPaymentNotice(null);
     try {
-      await processSandboxTransfer(orderCode, 'TRANSFER_SUCCESS');
+      await processSandboxTransfer(code, 'TRANSFER_SUCCESS');
       setIsPaid(true);
       setTimeout(() => {
         handleClose();
@@ -632,7 +641,7 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
               Đóng
             </Button>
 
-            {!isPaid && orderCode && (
+            {!isPaid && (
               <Button
                 type="button"
                 variant="outline"
