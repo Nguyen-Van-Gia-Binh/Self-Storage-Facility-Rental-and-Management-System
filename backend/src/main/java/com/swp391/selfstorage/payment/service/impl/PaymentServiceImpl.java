@@ -223,7 +223,8 @@ public class PaymentServiceImpl implements PaymentService {
         } else if ("SETTLEMENT".equalsIgnoreCase(payment.getTransactionType())) {
             log.info("Thanh toán quyết toán thu nợ Sandbox thành công cho contractId={}, transactionId={}",
                     payment.getContractId(), payment.getId());
-        } else if ("OVERDUE_PENALTY".equalsIgnoreCase(payment.getTransactionType())) {
+        } else if ("OVERDUE_PENALTY".equalsIgnoreCase(payment.getTransactionType())
+                || "EXTRA_FEE_PAYMENT".equalsIgnoreCase(payment.getTransactionType())) {
             if (payment.getContractId() != null) {
                 rentalContractRepository.findById(payment.getContractId()).ifPresent(c -> {
                     c.setOverdueFeeAccrued(0L);
@@ -325,7 +326,8 @@ public class PaymentServiceImpl implements PaymentService {
         } else if ("SETTLEMENT".equalsIgnoreCase(payment.getTransactionType())) {
             log.info("Thanh toán quyết toán thu nợ PayOS thành công cho contractId={}, transactionId={}",
                     payment.getContractId(), payment.getId());
-        } else if ("OVERDUE_PENALTY".equalsIgnoreCase(payment.getTransactionType())) {
+        } else if ("OVERDUE_PENALTY".equalsIgnoreCase(payment.getTransactionType())
+                || "EXTRA_FEE_PAYMENT".equalsIgnoreCase(payment.getTransactionType())) {
             if (payment.getContractId() != null) {
                 rentalContractRepository.findById(payment.getContractId()).ifPresent(c -> {
                     c.setOverdueFeeAccrued(0L);

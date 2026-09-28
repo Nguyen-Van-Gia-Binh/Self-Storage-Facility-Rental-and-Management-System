@@ -75,6 +75,7 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
   const [checkoutData, setCheckoutData] = useState<CheckoutResult | null>(null);
   const [isPaid, setIsPaid] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
 
   // 48 giờ tính bằng giây: 48 * 3600 = 172800s (BR-DEP-03)
   const [secondsRemaining, setSecondsRemaining] = useState(172800);
@@ -114,10 +115,12 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
       setOrderCode(null);
       setCheckoutData(null);
       setIsPaid(false);
+      setIsInitializing(false);
       return;
     }
 
     let isSubscribed = true;
+    setIsInitializing(true);
     const refType = paymentType || (contractId ? 'CONTRACT_RENEWAL' : 'RESERVATION');
     const refId = contractId || reservationId || 1;
 
@@ -131,13 +134,14 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
         if (isSubscribed) {
           setCheckoutData(res);
           setOrderCode(res.orderCode);
+          setIsInitializing(false);
         }
       })
       .catch((err) => {
-        console.warn('Lỗi khởi tạo checkout PayOS, kích hoạt orderCode giả lập Sandbox:', err);
+        console.warn('Lỗi khởi tạo checkout PayOS:', err);
         if (isSubscribed) {
-          const fallbackCode = Number(String(Date.now()).slice(-8));
-          setOrderCode(fallbackCode);
+          setIsInitializing(false);
+          setPaymentNotice('Không thể tạo mã đơn hàng PayOS. Vui lòng đóng và thử lại sau giây lát!');
         }
       });
 
@@ -228,16 +232,15 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
 
   // Nút chuyển tiền mô phỏng Sandbox nội bộ
   const handleSandboxTransfer = async () => {
-    let code = orderCode;
-    if (!code) {
-      code = Number(String(Date.now()).slice(-8));
-      setOrderCode(code);
+    if (!orderCode) {
+      setPaymentNotice('Đang khởi tạo mã đơn hàng, vui lòng chờ trong giây lát...');
+      return;
     }
     if (isPaid || isSimulating) return;
     setIsSimulating(true);
     setPaymentNotice(null);
     try {
-      await processSandboxTransfer(code, 'TRANSFER_SUCCESS');
+      await processSandboxTransfer(orderCode, 'TRANSFER_SUCCESS');
       setIsPaid(true);
       setTimeout(() => {
         handleClose();
@@ -611,11 +614,13 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
               <span className="font-medium">
                 {isPaid
                   ? (paymentType === 'OVERDUE_PENALTY' ? 'Thanh toán nợ phạt thành công!' : 'Giao dịch thành công! Đang cấp thẻ nhận kho...')
+                  : isInitializing
+                  ? 'Đang khởi tạo mã đơn hàng thanh toán PayOS VietQR...'
                   : 'Hệ thống đang tự động quét đối soát chuyển khoản VietQR (mỗi 3 giây)...'}
               </span>
             </div>
             {orderCode && (
-              <span className="font-mono text-[11px] text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded font-bold">
+              <span className="font-mono text-[11px] text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded font-bold flex-shrink-0">
                 Mã: #{orderCode}
               </span>
             )}
@@ -623,74 +628,89 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
 
           {/* Cảnh báo khi kiểm tra mà chưa nhận được tiền */}
           {paymentNotice && (
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-amber-600 flex-shrink-0" />
-              <span>{paymentNotice}</span>
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center justify-between gap-2 shadow-2xs">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                <span>{paymentNotice}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPaymentNotice(null)}
+                className="text-amber-700 hover:text-amber-900 font-bold px-1.5 py-0.5 rounded cursor-pointer"
+              >
+                ×
+              </button>
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="pt-1 flex flex-col sm:flex-row items-center gap-2">
-            <Button
-              variant="outline"
-              size="md"
-              onClick={handleClose}
-              disabled={isVerifying}
-              className="w-full sm:w-1/4 py-2.5 text-xs font-semibold cursor-pointer"
-            >
-              Đóng
-            </Button>
-
+          {/* Action Buttons - Layout 2 tầng thoáng đãng, chuyên nghiệp */}
+          <div className="space-y-2.5 pt-2">
             {!isPaid && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="md"
+                  onClick={handleSandboxTransfer}
+                  disabled={isSimulating || isPaid || isInitializing || !orderCode}
+                  className="w-full py-2.5 px-3 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-400 border border-emerald-300 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs transition-all whitespace-nowrap"
+                >
+                  <Sparkles className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  <span>{isSimulating ? 'Đang chuyển tiền...' : isInitializing ? 'Đang tạo đơn...' : 'Xác nhận Sandbox tại chỗ'}</span>
+                </Button>
+
+                <a
+                  href={checkoutData?.checkoutUrl || (orderCode ? `/payment/checkout?orderCode=${orderCode}` : '#')}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`w-full py-2.5 px-3 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-2xs text-center border whitespace-nowrap ${
+                    !orderCode || isInitializing
+                      ? 'pointer-events-none opacity-50 bg-slate-100 text-slate-400 border-slate-200'
+                      : 'text-blue-700 bg-blue-50 hover:bg-blue-100 hover:border-blue-300 border-blue-200'
+                  }`}
+                >
+                  <ExternalLink className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                  <span>Mở Cổng VietQR Sandbox</span>
+                </a>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2">
               <Button
-                type="button"
                 variant="outline"
                 size="md"
-                onClick={handleSandboxTransfer}
-                disabled={isSimulating || isPaid}
-                className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-emerald-300 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
+                onClick={handleClose}
+                disabled={isVerifying}
+                className="w-1/3 py-2.5 text-xs font-semibold cursor-pointer rounded-xl"
               >
-                <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                <span>{isSimulating ? 'Đang chuyển tiền...' : 'Xác Nhận Đã Chuyển Tiền (Sandbox)'}</span>
+                Đóng
               </Button>
-            )}
 
-            {checkoutData?.checkoutUrl && !isPaid && (
-              <a
-                href={checkoutData.checkoutUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg flex items-center justify-center gap-1.5 transition-colors"
+              <Button
+                variant="primary"
+                size="md"
+                onClick={handleCheckNow}
+                disabled={isVerifying || isPaid || isInitializing || !orderCode}
+                className="w-2/3 py-2.5 text-xs font-bold flex items-center justify-center gap-2 shadow-sm cursor-pointer rounded-xl whitespace-nowrap"
               >
-                <span>Mở cổng VietQR Sandbox</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            )}
-
-            <Button
-              variant="primary"
-              size="md"
-              onClick={handleCheckNow}
-              disabled={isVerifying || isPaid}
-              className="w-full sm:flex-1 py-2.5 text-xs font-bold flex items-center justify-center gap-2 shadow-sm cursor-pointer"
-            >
-              {isVerifying ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Đang kiểm tra đối soát...</span>
-                </>
-              ) : isPaid ? (
-                <>
-                  <Check className="w-4 h-4" />
-                  <span>Đã thanh toán thành công!</span>
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-4 h-4" />
-                  <span>Kiểm tra trạng thái ngay</span>
-                </>
-              )}
-            </Button>
+                {isVerifying ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Đang kiểm tra đối soát...</span>
+                  </>
+                ) : isPaid ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Đã thanh toán thành công!</span>
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-4 h-4" />
+                    <span>Kiểm tra trạng thái ngay</span>
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
