@@ -169,70 +169,80 @@ export const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
             </div>
 
             <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-              {staffList.map((staff) => {
-                const isCurrentAssigned = staff.staffId === task.assignedStaffId;
-                const isSelected = staff.staffId === selectedStaffId;
-                const isOverloaded = staff.activeTaskCount >= 5;
+              {staffList.length === 0 ? (
+                <div className="text-center py-6 px-4 border border-dashed border-slate-200 rounded-xl bg-slate-50/60">
+                  <AlertTriangle className="w-6 h-6 text-amber-500 mx-auto mb-2 opacity-80" />
+                  <p className="text-xs font-semibold text-slate-700">Chưa có nhân viên trực thuộc cơ sở này</p>
+                  <p className="text-[11px] text-slate-400 mt-1 max-w-sm mx-auto">
+                    Cơ sở hiện chưa được phân công nhân viên, hoặc bạn chưa có quyền quản lý cơ sở được chọn.
+                  </p>
+                </div>
+              ) : (
+                staffList.map((staff) => {
+                  const isCurrentAssigned = staff.staffId === task.assignedStaffId;
+                  const isSelected = staff.staffId === selectedStaffId;
+                  const isOverloaded = staff.activeTaskCount >= 5;
 
-                return (
-                  <label
-                    key={staff.staffId}
-                    className={`block p-3 rounded-xl border cursor-pointer transition-all ${
-                      isSelected
-                        ? 'border-blue-600 bg-blue-50/40 ring-1 ring-blue-500'
-                        : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="radio"
-                          name="assignedStaff"
-                          value={staff.staffId}
-                          checked={isSelected}
-                          onChange={() => setSelectedStaffId(staff.staffId)}
-                          className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                        />
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-xs text-slate-900">
-                              {staff.staffName}
-                            </span>
-                            {isCurrentAssigned && (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 font-semibold">
-                                Đang phụ trách
+                  return (
+                    <label
+                      key={staff.staffId}
+                      className={`block p-3 rounded-xl border cursor-pointer transition-all ${
+                        isSelected
+                          ? 'border-blue-600 bg-blue-50/40 ring-1 ring-blue-500'
+                          : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="radio"
+                            name="assignedStaff"
+                            value={staff.staffId}
+                            checked={isSelected}
+                            onChange={() => setSelectedStaffId(staff.staffId)}
+                            className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                          />
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-xs text-slate-900">
+                                {staff.staffName}
                               </span>
-                            )}
+                              {isCurrentAssigned && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 font-semibold">
+                                  Đang phụ trách
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-slate-400 mt-0.5">
+                              {staff.shift || 'Ca trực'} · {staff.staffPhone}
+                            </p>
                           </div>
-                          <p className="text-[11px] text-slate-400 mt-0.5">
-                            {staff.shift || 'Ca trực'} · {staff.staffPhone}
-                          </p>
+                        </div>
+
+                        {/* Workload badge */}
+                        <div className="text-right">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold ${
+                              isOverloaded
+                                ? 'bg-rose-100 text-rose-700'
+                                : staff.activeTaskCount <= 2
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : 'bg-blue-100 text-blue-700'
+                            }`}
+                          >
+                            {staff.activeTaskCount} việc đang làm
+                          </span>
+                          {isOverloaded && (
+                            <p className="text-[10px] text-rose-600 font-medium mt-0.5">
+                              Quá tải tải việc!
+                            </p>
+                          )}
                         </div>
                       </div>
-
-                      {/* Workload badge */}
-                      <div className="text-right">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold ${
-                            isOverloaded
-                              ? 'bg-rose-100 text-rose-700'
-                              : staff.activeTaskCount <= 2
-                              ? 'bg-emerald-100 text-emerald-700'
-                              : 'bg-blue-100 text-blue-700'
-                          }`}
-                        >
-                          {staff.activeTaskCount} việc đang làm
-                        </span>
-                        {isOverloaded && (
-                          <p className="text-[10px] text-rose-600 font-medium mt-0.5">
-                            Quá tải tải việc!
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </label>
-                );
-              })}
+                    </label>
+                  );
+                })
+              )}
             </div>
 
             {/* Warning if selecting overloaded staff (AC-3) */}
@@ -333,8 +343,8 @@ export const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
           <button
             form="assign-staff-form"
             type="submit"
-            disabled={isSubmitting}
-            className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-md flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
+            disabled={isSubmitting || staffList.length === 0}
+            className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-md flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
               <>
