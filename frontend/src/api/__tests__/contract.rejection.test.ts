@@ -29,10 +29,11 @@ describe('rejectHandoverContract (real API mode)', () => {
       '/contracts/3/handover-rejection',
       expect.objectContaining({
         method: 'POST',
-        headers: expect.objectContaining({ 'X-Staff-Id': '12' }),
         body: expect.stringContaining('Kho bị ẩm'),
       })
     );
+    const callArgs = spy.mock.calls[0][1];
+    expect(callArgs?.headers?.['X-Staff-Id']).toBeUndefined();
     expect(result.status).toBe('TERMINATED');
     expect(result.storageUnitStatus).toBe('MAINTENANCE');
   });

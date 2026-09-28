@@ -27,10 +27,11 @@ describe('submitReturnInspection (real API mode)', () => {
       '/contracts/7/return-inspections',
       expect.objectContaining({
         method: 'POST',
-        headers: expect.objectContaining({ 'X-Staff-Id': '15' }),
         body: expect.stringContaining('MINOR_DAMAGE'),
       })
     );
+    const callArgs = spy.mock.calls[0][1];
+    expect(callArgs?.headers?.['X-Staff-Id']).toBeUndefined();
     expect(result.estimatedDepositRefund).toBe(800000);
   });
 });
@@ -61,7 +62,7 @@ describe('approveSettlementRefund (real API mode)', () => {
     vi.spyOn(clientModule, 'isMockEnabled').mockReturnValue(false);
   });
 
-  it('gắn X-Manager-Id header khi có managerId', async () => {
+  it('không gắn X-Manager-Id header mà sử dụng JWT bearer từ apiClient', async () => {
     const fakeResponse = {
       success: true,
       data: { contractId: 4, status: 'CLOSED', message: 'Đã phê duyệt' }
@@ -76,8 +77,10 @@ describe('approveSettlementRefund (real API mode)', () => {
     expect(spy).toHaveBeenCalledWith(
       '/contracts/4/settlement-approval',
       expect.objectContaining({
-        headers: expect.objectContaining({ 'X-Manager-Id': '99' }),
+        method: 'POST',
       })
     );
+    const callArgs = spy.mock.calls[0][1];
+    expect(callArgs?.headers?.['X-Manager-Id']).toBeUndefined();
   });
 });
