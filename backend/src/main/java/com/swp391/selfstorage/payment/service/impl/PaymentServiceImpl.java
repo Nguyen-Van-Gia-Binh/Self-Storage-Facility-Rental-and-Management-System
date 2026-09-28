@@ -228,8 +228,15 @@ public class PaymentServiceImpl implements PaymentService {
             if (payment.getContractId() != null) {
                 rentalContractRepository.findById(payment.getContractId()).ifPresent(c -> {
                     c.setOverdueFeeAccrued(0L);
+                    // Theo BR-OVD-08 & AC-7 (US-FS-FM): Thanh toán nợ phạt thành công trước D+10 thì hợp đồng và quyền truy cập được kích hoạt lại
+                    if (c.getStatus() == com.swp391.selfstorage.contract.entity.ContractStatus.OVERDUE) {
+                        c.setStatus(com.swp391.selfstorage.contract.entity.ContractStatus.ACTIVE);
+                        if (c.getEndDateExclusive() != null && java.time.LocalDate.now().isAfter(c.getEndDateExclusive())) {
+                            c.setEndDateExclusive(java.time.LocalDate.now());
+                        }
+                    }
                     rentalContractRepository.save(c);
-                    log.info("Thanh toán nợ phạt Sandbox thành công: Đã xóa nợ phạt về 0 cho contractId={}", c.getId());
+                    log.info("Thanh toán nợ phạt Sandbox thành công: Kích hoạt lại hợp đồng ACTIVE và xóa nợ phạt về 0 cho contractId={}", c.getId());
                 });
             }
         }
@@ -331,8 +338,15 @@ public class PaymentServiceImpl implements PaymentService {
             if (payment.getContractId() != null) {
                 rentalContractRepository.findById(payment.getContractId()).ifPresent(c -> {
                     c.setOverdueFeeAccrued(0L);
+                    // Theo BR-OVD-08 & AC-7 (US-FS-FM): Thanh toán nợ phạt thành công trước D+10 thì hợp đồng và quyền truy cập được kích hoạt lại
+                    if (c.getStatus() == com.swp391.selfstorage.contract.entity.ContractStatus.OVERDUE) {
+                        c.setStatus(com.swp391.selfstorage.contract.entity.ContractStatus.ACTIVE);
+                        if (c.getEndDateExclusive() != null && java.time.LocalDate.now().isAfter(c.getEndDateExclusive())) {
+                            c.setEndDateExclusive(java.time.LocalDate.now());
+                        }
+                    }
                     rentalContractRepository.save(c);
-                    log.info("PayOS Webhook: Đã xóa nợ phạt quá hạn về 0 cho contractId={}", c.getId());
+                    log.info("PayOS Webhook: Kích hoạt lại hợp đồng ACTIVE và xóa nợ phạt về 0 cho contractId={}", c.getId());
                 });
             }
         }

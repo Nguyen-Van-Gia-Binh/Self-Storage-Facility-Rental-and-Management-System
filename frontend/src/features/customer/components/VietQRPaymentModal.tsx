@@ -120,6 +120,12 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
     }
 
     let isSubscribed = true;
+    if (paymentType === 'OVERDUE_PENALTY' && totalAmount <= 0) {
+      setIsInitializing(false);
+      setPaymentNotice('Hợp đồng này hiện không có nợ phạt quá hạn cần thanh toán.');
+      return;
+    }
+
     setIsInitializing(true);
     const refType = paymentType || (contractId ? 'CONTRACT_RENEWAL' : 'RESERVATION');
     const refId = contractId || reservationId || 1;
@@ -137,11 +143,12 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
           setIsInitializing(false);
         }
       })
-      .catch((err) => {
+      .catch((err: any) => {
         console.warn('Lỗi khởi tạo checkout PayOS:', err);
         if (isSubscribed) {
           setIsInitializing(false);
-          setPaymentNotice('Không thể tạo mã đơn hàng PayOS. Vui lòng đóng và thử lại sau giây lát!');
+          const serverMsg = err?.response?.data?.message || err?.message;
+          setPaymentNotice(serverMsg || 'Không thể tạo mã đơn hàng PayOS. Vui lòng đóng và thử lại sau giây lát!');
         }
       });
 
