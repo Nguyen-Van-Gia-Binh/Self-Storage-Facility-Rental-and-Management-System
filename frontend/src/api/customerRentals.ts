@@ -124,7 +124,7 @@ export const initialCustomerContracts: RentedContract[] = [
     id: '1',
     contractNumber: 'CTR-202610-0001',
     facilityId: '1',
-    facilityName: 'SmartStorage Tân Bình Flagship',
+    facilityName: 'Cơ sở Cầu Giấy - Hà Nội',
     unitId: '1',
     unitNumber: 'U-101',
     unitTypeName: 'Kho Cỡ S – Tủ Đồ Cá Nhân',
@@ -141,7 +141,7 @@ export const initialCustomerContracts: RentedContract[] = [
     id: '2',
     contractNumber: 'CTR-202610-0002',
     facilityId: '1',
-    facilityName: 'SmartStorage Tân Bình Flagship',
+    facilityName: 'Cơ sở Cầu Giấy - Hà Nội',
     unitId: '2',
     unitNumber: 'U-102',
     unitTypeName: 'Kho Cỡ M – Tiêu Chuẩn Gia Đình',
@@ -157,8 +157,8 @@ export const initialCustomerContracts: RentedContract[] = [
   {
     id: '3',
     contractNumber: 'CTR-202610-0003',
-    facilityId: '2',
-    facilityName: 'SmartStorage Him Lam Center',
+    facilityId: '5',
+    facilityName: 'Cơ sở Quận 1 - TP.HCM',
     unitId: '3',
     unitNumber: 'U-B201',
     unitTypeName: 'Kho Cỡ L – Doanh Nghiệp',
@@ -174,8 +174,8 @@ export const initialCustomerContracts: RentedContract[] = [
   {
     id: '4',
     contractNumber: 'CTR-202610-0004',
-    facilityId: '1',
-    facilityName: 'SmartStorage Tân Bình Flagship',
+    facilityId: '2',
+    facilityName: 'Cơ sở Quận 7 - TP.HCM',
     unitId: '4',
     unitNumber: 'U-A110',
     unitTypeName: 'Kho Cỡ S – Tủ Đồ Cá Nhân',
@@ -386,8 +386,10 @@ export async function getCustomerContracts(): Promise<RentedContract[]> {
           return mapBackendRentalToContract(item);
         });
       }
+      return [];
     } catch (err) {
-      console.warn('Lỗi gọi API /customers/me/rentals, fallback sang mock data:', err);
+      console.warn('Lỗi gọi API /customers/me/rentals:', err);
+      return [];
     }
   }
 

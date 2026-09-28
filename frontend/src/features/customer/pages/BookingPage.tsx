@@ -38,6 +38,7 @@ import type { BookingDraft } from '../types';
 import type { MoveInPassData } from '@/types';
 import { fetchFacilities } from '@/api/facility';
 import { fetchUnitTypes as fetchUnitTypesApi } from '@/api/unit';
+import { tokenStorage } from '@/utils/tokenStorage';
 import type { FacilityListItem } from '@/types';
 import type { Facility, UnitType, StorageType, UnitSizeCategory } from '../types';
 
@@ -192,10 +193,19 @@ export const BookingPage: React.FC = () => {
     return todayStr;
   });
 
-  const [customerName, setCustomerName] = useState('Nguyễn Văn An');
-  const [customerPhone, setCustomerPhone] = useState('0912 345 678');
-  const [customerEmail, setCustomerEmail] = useState('an.nguyen@example.com');
-  const [customerIdCard, setCustomerIdCard] = useState('079098012345');
+  // Auth Guard theo US-SC-02.1 AC-3: Nếu chưa đăng nhập, chuyển hướng sang login và giữ nguyên tham số booking
+  useEffect(() => {
+    if (!tokenStorage.getAccessToken()) {
+      const currentUrl = `/customer/booking${window.location.search}`;
+      navigate(`/auth/login?redirect=${encodeURIComponent(currentUrl)}`, { replace: true });
+    }
+  }, [navigate]);
+
+  const currentUser = tokenStorage.getUser();
+  const [customerName, setCustomerName] = useState(() => currentUser?.fullName || 'Nguyễn Phạm Xuân Nhi');
+  const [customerPhone, setCustomerPhone] = useState('0967890123');
+  const [customerEmail, setCustomerEmail] = useState(() => currentUser?.email || 'nhi.customer@gmail.com');
+  const [customerIdCard, setCustomerIdCard] = useState('079099007890');
   const [agreeTerms, setAgreeTerms] = useState(true);
 
   // Validation Errors
@@ -469,6 +479,12 @@ export const BookingPage: React.FC = () => {
 
   const handleProceedToPayment = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!tokenStorage.getAccessToken()) {
+      const currentUrl = `/customer/booking${window.location.search}`;
+      navigate(`/auth/login?redirect=${encodeURIComponent(currentUrl)}`);
+      return;
+    }
+
     if (!validateForm()) {
       return;
     }

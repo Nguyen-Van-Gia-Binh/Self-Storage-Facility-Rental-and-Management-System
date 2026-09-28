@@ -19,6 +19,7 @@ import { UnitGrid } from '../components/UnitGrid';
 import { fetchFacilities } from '@/api/facility';
 import { fetchUnitTypes as fetchUnitTypesApi, fetchStorageUnits as fetchStorageUnitsApi } from '@/api/unit';
 import { checkUnitAvailability, type AvailabilityResponse } from '@/api/reservation';
+import { tokenStorage } from '@/utils/tokenStorage';
 import type { FacilityListItem } from '@/types';
 import type { StorageType, UnitSizeCategory, StorageUnit, UnitType, UnitStatus } from '../types';
 
@@ -412,7 +413,13 @@ export const UnitPickerPage: React.FC = () => {
       params.set('unitNumber', targetUnit.unitNumber);
     }
 
-    navigate(`/customer/booking?${params.toString()}`);
+    const bookingUrl = `/customer/booking?${params.toString()}`;
+    if (!tokenStorage.getAccessToken()) {
+      navigate(`/auth/login?redirect=${encodeURIComponent(bookingUrl)}`);
+      return;
+    }
+
+    navigate(bookingUrl);
   };
 
   if (loading) {

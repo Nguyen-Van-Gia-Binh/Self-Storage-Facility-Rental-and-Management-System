@@ -13,7 +13,11 @@ import {
   X,
   RotateCcw,
   Clock,
+  Lock,
+  LogIn,
+  UserPlus,
 } from 'lucide-react';
+import { tokenStorage } from '@/utils/tokenStorage';
 import { RentedUnitCard } from '../components/RentedUnitCard';
 import { CustomerRentalsKpiSummary } from '../components/CustomerRentalsKpiSummary';
 import { ChangePinModal } from '../components/ChangePinModal';
@@ -26,6 +30,8 @@ import { calculateDaysRemaining } from '../utils/renewalPricing';
 import type { RentedContract } from '../types';
 
 export const MyUnitsPage: React.FC = () => {
+  const isAuthenticated = Boolean(tokenStorage.getAccessToken());
+
   const [contracts, setContracts] = useState<RentedContract[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string>('ALL');
@@ -40,6 +46,11 @@ export const MyUnitsPage: React.FC = () => {
   const [showEarlyRenewalModal, setShowEarlyRenewalModal] = useState(false);
 
   const loadContracts = useCallback(async () => {
+    if (!isAuthenticated) {
+      setContracts([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const data = await getCustomerContracts();
@@ -49,7 +60,7 @@ export const MyUnitsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     loadContracts();
@@ -187,12 +198,49 @@ export const MyUnitsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* KPI Summary Banner */}
-      <CustomerRentalsKpiSummary
-        contracts={contracts}
-        activeTab={activeTab}
-        onSelectTab={(tab) => setActiveTab(tab)}
-      />
+      {!isAuthenticated ? (
+        /* Card Yêu cầu đăng nhập cho khách vãng lai */
+        <Card className="p-8 sm:p-12 text-center bg-gradient-to-b from-white to-slate-50 border border-slate-200/90 rounded-2xl shadow-xs space-y-4 max-w-2xl mx-auto my-6">
+          <div className="w-16 h-16 rounded-3xl bg-brand-50 border border-brand-100 flex items-center justify-center mx-auto text-brand-600 shadow-xs">
+            <Lock className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+              Vui lòng đăng nhập để xem kho của tôi
+            </h2>
+            <p className="text-xs text-slate-500 leading-relaxed max-w-md mx-auto">
+              Bạn cần đăng nhập tài khoản khách hàng để tra cứu danh sách các ô kho đang thuê, xem mã PIN mở cửa, gia hạn hợp đồng hoặc đăng ký trả kho.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <Link to="/auth/login?redirect=/customer/my-units" className="w-full sm:w-auto">
+              <Button variant="primary" size="md" className="w-full font-bold text-xs flex items-center justify-center gap-2">
+                <LogIn className="w-4 h-4" />
+                Đăng nhập ngay
+              </Button>
+            </Link>
+            <Link to="/auth/register" className="w-full sm:w-auto">
+              <Button variant="outline" size="md" className="w-full font-bold text-xs flex items-center justify-center gap-2">
+                <UserPlus className="w-4 h-4" />
+                Đăng ký tài khoản
+              </Button>
+            </Link>
+            <Link to="/customer/unit-picker" className="w-full sm:w-auto">
+              <Button variant="outline" size="md" className="w-full font-bold text-xs flex items-center justify-center gap-2 text-brand-600 border-brand-200 hover:bg-brand-50">
+                <Plus className="w-4 h-4" />
+                Tìm ô kho mới
+              </Button>
+            </Link>
+          </div>
+        </Card>
+      ) : (
+        <>
+          {/* KPI Summary Banner */}
+          <CustomerRentalsKpiSummary
+            contracts={contracts}
+            activeTab={activeTab}
+            onSelectTab={(tab) => setActiveTab(tab)}
+          />
 
       {/* Cảnh báo đề xuất gia hạn sớm trước mốc khóa 30 ngày (BR-REN-01 & BR-REN-02) */}
       {earlyRenewalCandidate && (
@@ -360,6 +408,8 @@ export const MyUnitsPage: React.FC = () => {
             </Link>
           )}
         </Card>
+      )}
+        </>
       )}
 
       {/* Quick Help & Guidelines */}
