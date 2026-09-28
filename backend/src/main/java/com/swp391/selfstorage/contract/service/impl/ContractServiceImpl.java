@@ -725,6 +725,38 @@ public class ContractServiceImpl implements ContractService {
                                 .build();
         }
 
+        @Override
+        @Transactional
+        public ContractResponse assignReturnStaff(Long contractId, AssignReturnStaffRequest request,
+                        Long managerId, List<Long> facilityIds) {
+                Optional<RentalContract> contractOpt = (facilityIds == null || facilityIds.isEmpty())
+                                ? contractRepository.findById(contractId)
+                                : contractRepository.findByIdAndFacilityIdIn(contractId, facilityIds);
+
+                RentalContract contract = contractOpt
+                                .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
+
+                if (contract.getStatus() != ContractStatus.PENDING_RETURN) {
+                        throw new CustomException(ErrorCode.CONTRACT_NOT_PENDING_RETURN);
+                }
+
+                ReturnRequest returnRequest = returnRequestRepository
+                                .findTopByContractIdOrderByCreatedAtDesc(contractId)
+                                .orElseGet(() -> ReturnRequest.builder()
+                                                .contractId(contract.getId())
+                                                .requestedReturnDate(LocalDate.now())
+                                                .build());
+
+                returnRequest.setInspectedBy(request.getStaffId());
+                if (request.getNotes() != null && !request.getNotes().isBlank()) {
+                        String currentNote = returnRequest.getConditionNote() != null ? returnRequest.getConditionNote() : "";
+                        returnRequest.setConditionNote((currentNote + " [Phân công]: " + request.getNotes()).trim());
+                }
+                returnRequestRepository.save(returnRequest);
+
+                return toResponse(contract);
+        }
+
         /** BR-ACC-01: PIN 6 chu so unique toan he thong */
         private String generateUniquePin() {
                 for (int i = 0; i < 10; i++) {
@@ -776,6 +808,23 @@ public class ContractServiceImpl implements ContractService {
                                 }
                         } catch (Exception ignored) {
                         }
+                }
+
+                if (c.getStatus() == ContractStatus.PENDING_RETURN && returnRequestRepository != null) {
+                        returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(c.getId()).ifPresent(req -> {
+                                if (req.getInspectedBy() != null) {
+                                        r.setAssignedStaffId(req.getInspectedBy());
+                                        if (userService != null) {
+                                                try {
+                                                        var staffUser = userService.getUserById(req.getInspectedBy());
+                                                        if (staffUser != null) {
+                                                                r.setAssignedStaffName(staffUser.getFullName());
+                                                        }
+                                                } catch (Exception ignored) {
+                                                }
+                                        }
+                                }
+                        });
                 }
 
                 if (c.getStatus() == ContractStatus.OVERDUE || 

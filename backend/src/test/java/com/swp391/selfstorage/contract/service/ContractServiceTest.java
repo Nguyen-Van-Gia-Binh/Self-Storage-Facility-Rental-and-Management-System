@@ -37,6 +37,8 @@ class ContractServiceTest {
     private ReservationRepository reservationRepository;
     @Mock
     private StorageUnitRepository storageUnitRepository;
+    @Mock
+    private ReturnRequestRepository returnRequestRepository;
     @InjectMocks
     private ContractServiceImpl contractService;
 
@@ -296,5 +298,53 @@ class ContractServiceTest {
         assertEquals(5, res.getOverdueDays());
         // 5 - 3 = 2 ngày phạt * 10% * 1.000.000đ = 200.000đ
         assertEquals(200_000L, res.getAccruedOverdueFee());
+    }
+
+    @Test
+    @DisplayName("T4.15: FM-05: assignReturnStaff thanh cong khi hop dong PENDING_RETURN")
+    void shouldAssignReturnStaff_successfully() {
+        RentalContract contract = RentalContract.builder()
+                .id(700L).code("CTR-700").facilityId(1L).storageUnitId(42L).unitTypeId(7L)
+                .status(ContractStatus.PENDING_RETURN)
+                .build();
+
+        ReturnRequest returnRequest = ReturnRequest.builder()
+                .id(99L).contractId(700L)
+                .status(ReturnRequestStatus.PENDING)
+                .build();
+
+        when(contractRepository.findByIdAndFacilityIdIn(700L, List.of(1L))).thenReturn(Optional.of(contract));
+        when(returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(700L)).thenReturn(Optional.of(returnRequest));
+
+        AssignReturnStaffRequest req = AssignReturnStaffRequest.builder()
+                .staffId(10L)
+                .notes("Nghiem thu o kho")
+                .build();
+
+        ContractResponse res = contractService.assignReturnStaff(700L, req, 1L, List.of(1L));
+
+        assertNotNull(res);
+        assertEquals(10L, returnRequest.getInspectedBy());
+        verify(returnRequestRepository, times(1)).save(returnRequest);
+    }
+
+    @Test
+    @DisplayName("T4.15: FM-05: assignReturnStaff nem exception khi hop dong khong o trang thai PENDING_RETURN")
+    void shouldThrowException_whenContractNotPendingReturn_onAssignReturnStaff() {
+        RentalContract contract = RentalContract.builder()
+                .id(701L).code("CTR-701").facilityId(1L).storageUnitId(42L).unitTypeId(7L)
+                .status(ContractStatus.ACTIVE)
+                .build();
+
+        when(contractRepository.findByIdAndFacilityIdIn(701L, List.of(1L))).thenReturn(Optional.of(contract));
+
+        AssignReturnStaffRequest req = AssignReturnStaffRequest.builder()
+                .staffId(10L)
+                .notes("Nghiem thu")
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> contractService.assignReturnStaff(701L, req, 1L, List.of(1L)));
+        assertEquals(ErrorCode.CONTRACT_NOT_PENDING_RETURN, ex.getErrorCode());
     }
 }

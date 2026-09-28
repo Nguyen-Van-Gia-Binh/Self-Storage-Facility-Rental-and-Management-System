@@ -23,4 +23,5 @@ public interface ContractService {
     ReturnInspectionResponse submitReturnInspection(Long contractId, ReturnInspectionRequest request, Long staffId, List<Long> facilityIds);
     SettlementPreviewResponse getSettlementPreview(Long contractId, List<Long> facilityIds);
     SettlementApprovalResponse approveSettlement(Long contractId, SettlementApprovalRequest request, Long managerId, List<Long> facilityIds);
+    ContractResponse assignReturnStaff(Long contractId, AssignReturnStaffRequest request, Long managerId, List<Long> facilityIds);
 }
