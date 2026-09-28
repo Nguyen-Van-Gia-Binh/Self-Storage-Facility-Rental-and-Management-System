@@ -1,17 +1,17 @@
 # Đặc tả Yêu cầu: User Stories & Phân rã Use Cases
 
-> **Self-Storage Facility Rental and Management System**  
+> **Self-Storage Facility Rental and Management System**
 > Tài liệu duy nhất tổng hợp toàn bộ **Quy chuẩn, User Stories & Acceptance Criteria** cho 5 nhóm tác nhân và **Phân rã Use Cases** cho 7 luồng nghiệp vụ cốt lõi kèm luồng nền tảng.
 
 ---
 
 ## Mục lục
 
-1. [PHẦN 0: QUY TẮC VIẾT & CẬP NHẬT (QUY CHUẨN DÀNH CHO AI & NHÓM)](#phần-0-quy-tắc-viết--cập-nhật-quy-chuẩn-dành-cho-ai--nhóm)
-2. [PHẦN 1: USER STORIES & ACCEPTANCE CRITERIA](#phần-1-user-stories--acceptance-criteria)
+1. [PHẦN 0: QUY TẮC VIẾT &amp; CẬP NHẬT (QUY CHUẨN DÀNH CHO AI &amp; NHÓM)](#phần-0-quy-tắc-viết--cập-nhật-quy-chuẩn-dành-cho-ai--nhóm)
+2. [PHẦN 1: USER STORIES &amp; ACCEPTANCE CRITERIA](#phần-1-user-stories--acceptance-criteria)
    - [1. Storage Customer (SC-01 → SC-06)](#1-storage-customer-sc-01--sc-06)
-   - [2. Facility Staff & Facility Manager (FS-* & FM-*)](#2-facility-staff--facility-manager-fs---fm-)
-   - [3. Business Operations Manager & System Administrator (BM-* & SA-*)](#3-business-operations-manager--system-administrator-bm---sa-)
+   - [2. Facility Staff &amp; Facility Manager (FS-* &amp; FM-*)](#2-facility-staff--facility-manager-fs---fm-)
+   - [3. Business Operations Manager &amp; System Administrator (BM-* &amp; SA-*)](#3-business-operations-manager--system-administrator-bm---sa-)
    - [4. Bảng tổng hợp User Stories toàn hệ thống](#4-bảng-tổng-hợp-user-stories-toàn-hệ-thống)
 3. [PHẦN 2: PHÂN RÃ USE CASES THEO LUỒNG NGHIỆP VỤ](#phần-2-phân-rã-use-cases-theo-luồng-nghiệp-vụ)
    - [Flow 1 — Storage Unit Reservation](#flow-1--storage-unit-reservation)
@@ -32,6 +32,7 @@
 Để đảm bảo tính nhất quán tuyệt đối giữa mã nguồn, kiểm thử tự động và tài liệu nghiệp vụ, mọi thành viên và tác nhân AI bắt buộc tuân thủ 4 nguyên tắc sau khi đọc hoặc bổ sung yêu cầu:
 
 ### 1. Quy ước đặt mã định danh
+
 * **Mã User Story:** `US-<mã yêu cầu>.<số thứ tự>`
   * Ví dụ: `US-SC-01.1` (story đầu tiên của chức năng SC-01), `US-FS-02.3` (story thứ 3 của FS-02).
   * **Quy tắc bất biến:** Không bao giờ đánh số lại các story cũ khi có yêu cầu mới. Story mới luôn được nối tiếp số thứ tự vào cuối nhóm chức năng tương ứng.
@@ -40,23 +41,28 @@
   * **Quy tắc định nghĩa một lần:** Mỗi use case chỉ được đặc tả chi tiết tại luồng nó sinh ra. Các luồng khác nếu tái sử dụng chỉ cần trích dẫn mã định danh.
 
 ### 2. Định dạng chuẩn của User Story
+
 Mỗi User Story bắt buộc tuân theo mẫu 3 phần:
+
 > **Là** `<Actor>`, **tôi muốn** `<hành động / mục tiêu nghiệp vụ>`, **để** `<giá trị nhận được>`.
 
 Bảng thuộc tính đi kèm mỗi story:
-| Thuộc tính | Quy chuẩn |
-| :--- | :--- |
-| **Use case liên quan** | Trỏ đúng mã `UC-F*-*` tương ứng ở Phần 2 |
-| **Độ ưu tiên** | Phân loại theo MoSCoW (`Must`, `Should`, `Could`) |
-| **Story point** | Ước lượng theo chuỗi Fibonacci (`1`, `2`, `3`, `5`, `8`) đo độ phức tạp logic |
-| **Tham chiếu quy tắc** | Trỏ tới mã quy tắc `BR-*` trong `docs/BUSINESS-RULES.md` nếu có dính líu đến tiền, cọc, phí phạt hoặc hạn mức |
+
+| Thuộc tính                   | Quy chuẩn                                                                                                                        |
+| :----------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
+| **Use case liên quan**  | Trỏ đúng mã`UC-F*-*` tương ứng ở Phần 2                                                                                |
+| **Độ ưu tiên**       | Phân loại theo MoSCoW (`Must`, `Should`, `Could`)                                                                         |
+| **Story point**          | Ước lượng theo chuỗi Fibonacci (`1`, `2`, `3`, `5`, `8`) đo độ phức tạp logic                                 |
+| **Tham chiếu quy tắc** | Trỏ tới mã quy tắc`BR-*` trong `docs/BUSINESS-RULES.md` nếu có dính líu đến tiền, cọc, phí phạt hoặc hạn mức |
 
 ### 3. Tiêu chuẩn viết Acceptance Criteria (AC)
+
 * Viết theo cấu trúc BDD: **Given** [tiền điều kiện] – **When** [hành động người dùng/hệ thống] – **Then** [kết quả mong đợi].
 * **Ràng buộc bắt buộc (Negative Branch Rule):** Mỗi User Story bắt buộc phải có ít nhất một AC mô tả **nhánh thất bại / ngoại lệ** (ví dụ: dữ liệu không hợp lệ, kho hết chỗ, thanh toán thất bại, không có quyền truy cập, token hết hạn...).
 * Acceptance Criteria chính là bản thiết kế để AI và lập trình viên viết Unit Test / Integration Test trước khi code (TDD).
 
 ### 4. Quy trình cập nhật khi có thay đổi nghiệp vụ
+
 1. **Thảo luận & Thống nhất:** Khi phát sinh luồng nghiệp vụ mới hoặc thay đổi hành vi hiện tại, ghi nhận vào `docs/DASHBOARD.md` trước.
 2. **Cập nhật tài liệu:** Bổ sung story mới vào cuối nhóm chức năng trong tài liệu này (hoặc bổ sung AC vào story hiện hữu nếu chỉ là nhánh rẽ).
 3. **Cập nhật Test Code:** Viết test case tương ứng với AC mới, đảm bảo test chạy xanh trước khi merge.
@@ -76,9 +82,9 @@ Bảng thuộc tính đi kèm mỗi story:
 > **Là** Storage Customer, **tôi muốn** tìm và lọc danh sách Facility theo khu vực, **để** chọn được
 > cơ sở gần chỗ tôi ở nhất.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F1-01` | Must | 3 | P2 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F1-01` | Must      |      3      |     P2     |
 
 **Acceptance Criteria**
 
@@ -101,9 +107,9 @@ Bảng thuộc tính đi kèm mỗi story:
 > **Là** Storage Customer, **tôi muốn** xem các Unit Type của một Facility kèm kích thước và giá,
 > **để** chọn được kích thước vừa với lượng đồ cần gửi.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F1-02` | Must | 3 | P2 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F1-02` | Must      |      3      |     P2     |
 
 **Acceptance Criteria**
 
@@ -127,9 +133,9 @@ Bảng thuộc tính đi kèm mỗi story:
 > **Là** Storage Customer, **tôi muốn** kiểm tra ô kho còn trống theo ngày bắt đầu và thời hạn thuê
 > dự kiến, **để** biết chắc có chỗ trước khi đặt.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F1-03` | Must | 5 | P2 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F1-03` | Must      |      5      |     P2     |
 
 **Acceptance Criteria**
 
@@ -156,9 +162,9 @@ Bảng thuộc tính đi kèm mỗi story:
 > **Là** Storage Customer, **tôi muốn** tạo Reservation bằng cách xem sơ đồ cơ sở, chọn ô kho cụ thể, ngày bắt
 > đầu và thời hạn thuê, **để** giữ được đúng ô kho phù hợp cho kỳ thuê của mình.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F1-04`, `UC-F1-06` | Must | 8 | P3 |
+| Use case                   | Ưu tiên | Story point | Giai đoạn |
+| -------------------------- | --------- | :---------: | :---------: |
+| `UC-F1-04`, `UC-F1-06` | Must      |      8      |     P3     |
 
 **Acceptance Criteria**
 
@@ -186,9 +192,9 @@ Bảng thuộc tính đi kèm mỗi story:
 > **Là** Storage Customer, **tôi muốn** thấy bảng chi tiết các khoản phải trả trước khi xác nhận,
 > **để** không bị bất ngờ về số tiền.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F1-05` | Must | 3 | P3 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F1-05` | Must      |      3      |     P3     |
 
 **Acceptance Criteria**
 
@@ -215,9 +221,9 @@ Bảng thuộc tính đi kèm mỗi story:
 > **Là** Storage Customer, **tôi muốn** nhận xác nhận đặt chỗ kèm lịch hẹn check-in, **để** biết khi
 > nào và đến đâu để nhận ô kho.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F1-09` | Must | 3 | P3 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F1-09` | Must      |      3      |     P3     |
 
 **Acceptance Criteria**
 
@@ -238,9 +244,9 @@ Bảng thuộc tính đi kèm mỗi story:
 > **Là** Storage Customer, **tôi muốn** hủy Reservation và biết trước số tiền được hoàn, **để** chủ
 > động khi kế hoạch thay đổi.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F1-10` | Must | 5 | P3 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F1-10` | Must      |      5      |     P3     |
 
 **Acceptance Criteria**
 
@@ -270,9 +276,9 @@ Bảng thuộc tính đi kèm mỗi story:
 > **Là** Storage Customer, **tôi muốn** thanh toán Deposit và toàn bộ phí thuê N tháng trong một
 > lần, **để** hoàn tất đặt chỗ.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F1-07` | Must | 8 | P3 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F1-07` | Must      |      8      |     P3     |
 
 **Acceptance Criteria**
 
@@ -303,9 +309,9 @@ Bảng thuộc tính đi kèm mỗi story:
 > **Là** Storage Customer, **tôi muốn** thanh toán phí gia hạn, **để** tiếp tục sử dụng ô kho mà
 > không bị gián đoạn.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F6-03` | Must | 5 | P4 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F6-03` | Must      |      5      |     P4     |
 
 **Acceptance Criteria**
 
@@ -331,9 +337,9 @@ Bảng thuộc tính đi kèm mỗi story:
 > **Là** Storage Customer, **tôi muốn** thanh toán các khoản phụ thu phát sinh, **để** tất toán hợp
 > đồng dứt điểm.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F3-13` | Should | 3 | P4 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F3-13` | Should    |      3      |     P4     |
 
 **Acceptance Criteria**
 
@@ -355,9 +361,9 @@ Bảng thuộc tính đi kèm mỗi story:
 > **Là** Storage Customer, **tôi muốn** xem lại toàn bộ giao dịch và tải hóa đơn, **để** đối chiếu
 > chi tiêu và làm chứng từ.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F3-02` | Should | 3 | P4 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F3-02` | Should    |      3      |     P4     |
 
 **Acceptance Criteria**
 
@@ -382,9 +388,9 @@ Bảng thuộc tính đi kèm mỗi story:
 > **Là** Storage Customer, **tôi muốn** xem lịch hẹn check-in và những thứ cần mang theo, **để** đến
 > nhận kho đúng hẹn và không thiếu giấy tờ.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F1-09`, `UC-F2-05` | Must | 2 | P3 |
+| Use case                   | Ưu tiên | Story point | Giai đoạn |
+| -------------------------- | --------- | :---------: | :---------: |
+| `UC-F1-09`, `UC-F2-05` | Must      |      2      |     P3     |
 
 **Acceptance Criteria**
 
@@ -404,9 +410,9 @@ Bảng thuộc tính đi kèm mỗi story:
 > **Là** Storage Customer, **tôi muốn** xác nhận đã nhận ô kho và nhận Access Code, **để** bắt đầu sử
 > dụng và có bằng chứng bàn giao.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F2-05` | Must | 5 | P3 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F2-05` | Must      |      5      |     P3     |
 
 **Acceptance Criteria**
 
@@ -429,9 +435,9 @@ Bảng thuộc tính đi kèm mỗi story:
 > **Là** Storage Customer, **tôi muốn** đổi ngày giờ hẹn check-in, **để** không mất chỗ khi bận đột
 > xuất.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F1-09`, `UC-F2-08` | Could | 3 | P3 |
+| Use case                   | Ưu tiên | Story point | Giai đoạn |
+| -------------------------- | --------- | :---------: | :---------: |
+| `UC-F1-09`, `UC-F2-08` | Could     |      3      |     P3     |
 
 **Acceptance Criteria**
 
@@ -455,9 +461,9 @@ Bảng thuộc tính đi kèm mỗi story:
 > **Là** Storage Customer thuê nhiều ô kho, **tôi muốn** xem tất cả ô kho của mình trong một màn
 > hình, **để** nắm nhanh cái nào sắp hết hạn và cái nào cần xử lý.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F3-01` | Must | 5 | P4 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F3-01` | Must      |      5      |     P4     |
 
 **Acceptance Criteria**
 
@@ -479,9 +485,9 @@ Bảng thuộc tính đi kèm mỗi story:
 > **Là** Storage Customer, **tôi muốn** xem chi tiết một hợp đồng và lịch sử ra vào ô kho, **để**
 > kiểm soát được ai đã truy cập và khi nào.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F3-02`, `UC-F3-04` | Should | 5 | P4 |
+| Use case                   | Ưu tiên | Story point | Giai đoạn |
+| -------------------------- | --------- | :---------: | :---------: |
+| `UC-F3-02`, `UC-F3-04` | Should    |      5      |     P4     |
 
 **Acceptance Criteria**
 
@@ -501,9 +507,9 @@ Bảng thuộc tính đi kèm mỗi story:
 > **Là** Storage Customer, **tôi muốn** được nhắc trước khi hợp đồng hết hạn và gia hạn ngay trong
 > ứng dụng, **để** không bị khóa kho vì quên hạn.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F6-01`, `UC-F6-02` | Must | 5 | P4 |
+| Use case                   | Ưu tiên | Story point | Giai đoạn |
+| -------------------------- | --------- | :---------: | :---------: |
+| `UC-F6-01`, `UC-F6-02` | Must      |      5      |     P4     |
 
 **Acceptance Criteria**
 
@@ -528,9 +534,9 @@ Bảng thuộc tính đi kèm mỗi story:
 > **Là** Storage Customer, **tôi muốn** đăng ký trả kho và đặt lịch hẹn kiểm tra, **để** kết thúc hợp
 > đồng và lấy lại tiền cọc.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F3-05` | Must | 5 | P4 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F3-05` | Must      |      5      |     P4     |
 
 **Acceptance Criteria**
 
@@ -558,9 +564,9 @@ Bảng thuộc tính đi kèm mỗi story:
 > **Là** Storage Customer đang quá hạn, **tôi muốn** biết chính xác mình nợ bao nhiêu và điều gì sắp
 > xảy ra, **để** kịp xử lý trước khi bị khóa kho hoặc mất tài sản.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F6-01`, `UC-F3-02` | Must | 5 | P4 |
+| Use case                   | Ưu tiên | Story point | Giai đoạn |
+| -------------------------- | --------- | :---------: | :---------: |
+| `UC-F6-01`, `UC-F3-02` | Must      |      5      |     P4     |
 
 **Acceptance Criteria**
 
@@ -586,9 +592,9 @@ Bảng thuộc tính đi kèm mỗi story:
 > **Là** Storage Customer, **tôi muốn** gửi yêu cầu hỗ trợ kèm mô tả và ảnh, **để** sự cố của tôi
 > được xử lý đúng người và đủ thông tin.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F7-01` | Must | 5 | P4 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F7-01` | Must      |      5      |     P4     |
 
 **Acceptance Criteria**
 
@@ -610,9 +616,9 @@ Bảng thuộc tính đi kèm mỗi story:
 > **Là** Storage Customer, **tôi muốn** theo dõi tiến độ và trao đổi thêm với nhân viên, **để** biết
 > sự cố của mình đang được xử lý tới đâu.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F7-02` | Must | 3 | P4 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F7-02` | Must      |      3      |     P4     |
 
 **Acceptance Criteria**
 
@@ -632,9 +638,9 @@ Bảng thuộc tính đi kèm mỗi story:
 > **Là** Storage Customer, **tôi muốn** xác nhận sự cố đã được xử lý xong, **để** yêu cầu chỉ đóng
 > khi vấn đề thực sự được giải quyết.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F7-08` | Should | 3 | P4 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F7-08` | Should    |      3      |     P4     |
 
 **Acceptance Criteria**
 
@@ -661,9 +667,9 @@ Bảng thuộc tính đi kèm mỗi story:
 
 > **Là** Facility Staff, **tôi muốn** tra cứu đơn đặt chỗ bằng mã Reservation, số điện thoại hoặc CCCD của khách, **để** xác minh khách hàng đến đúng lịch hẹn và đủ điều kiện nhận kho.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F2-01`, `UC-F2-02` | Must | 5 | P3 |
+| Use case                   | Ưu tiên | Story point | Giai đoạn |
+| -------------------------- | --------- | :---------: | :---------: |
+| `UC-F2-01`, `UC-F2-02` | Must      |      5      |     P3     |
 
 **Acceptance Criteria**
 
@@ -679,9 +685,9 @@ Bảng thuộc tính đi kèm mỗi story:
 
 > **Là** Facility Staff, **tôi muốn** theo dõi khách đến trễ hoặc lỡ hẹn Check-in, **để** hỗ trợ khách trong thời gian grace period và biết kết quả No-show do hệ thống xử lý.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F2-08` | Should | 3 | P3 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F2-08` | Should    |      3      |     P3     |
 
 **Acceptance Criteria**
 
@@ -700,9 +706,9 @@ Bảng thuộc tính đi kèm mỗi story:
 
 > **Là** Facility Staff, **tôi muốn** cùng khách kiểm tra ô kho thực tế và xác nhận biên bản bàn giao trên hệ thống, **để** chính thức giao quyền sử dụng ô kho cho khách hàng.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F2-03` | Must | 5 | P3 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F2-03` | Must      |      5      |     P3     |
 
 **Acceptance Criteria**
 
@@ -717,9 +723,9 @@ Bảng thuộc tính đi kèm mỗi story:
 
 > **Là** Facility Staff, **tôi muốn** cấp chìa khóa vật lý hoặc kích hoạt mã Access Code cho khách, **để** khách có phương tiện ra vào ô kho thuận tiện và an toàn.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F2-04` | Must | 5 | P3 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F2-04` | Must      |      5      |     P3     |
 
 **Acceptance Criteria**
 
@@ -738,9 +744,9 @@ Bảng thuộc tính đi kèm mỗi story:
 
 > **Là** Facility Staff, **tôi muốn** trạng thái ô kho tự động chuyển sang "Đang sử dụng" ngay sau khi hoàn tất bàn giao, **để** sơ đồ kho cập nhật chính xác và tránh bàn giao nhầm cho người khác.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F2-06` | Must | 3 | P3 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F2-06` | Must      |      3      |     P3     |
 
 **Acceptance Criteria**
 
@@ -754,9 +760,9 @@ Bảng thuộc tính đi kèm mỗi story:
 
 > **Là** Facility Staff, **tôi muốn** vô hiệu hóa mã truy cập và chuyển trạng thái ô kho sang chờ vệ sinh sau khi khách trả kho, **để** ngăn chặn việc ra vào trái phép và chuẩn bị ô kho cho lượt thuê mới.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F3-07`, `UC-F3-09` | Must | 3 | P4 |
+| Use case                   | Ưu tiên | Story point | Giai đoạn |
+| -------------------------- | --------- | :---------: | :---------: |
+| `UC-F3-07`, `UC-F3-09` | Must      |      3      |     P4     |
 
 **Acceptance Criteria**
 
@@ -771,9 +777,9 @@ Bảng thuộc tính đi kèm mỗi story:
 
 > **Là** Facility Staff, **tôi muốn** chuyển trạng thái ô kho sang bảo trì khi phát hiện hư hại hoặc chuyển lại trạng thái trống sau khi sửa chữa xong, **để** phản ánh đúng tình trạng khai thác của cơ sở.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F3-12`, `UC-F7-07` | Should | 3 | P4 |
+| Use case                   | Ưu tiên | Story point | Giai đoạn |
+| -------------------------- | --------- | :---------: | :---------: |
+| `UC-F3-12`, `UC-F7-07` | Should    |      3      |     P4     |
 
 **Acceptance Criteria**
 
@@ -792,9 +798,9 @@ Bảng thuộc tính đi kèm mỗi story:
 
 > **Là** Facility Staff, **tôi muốn** cùng khách kiểm tra thực tế ô kho lúc trả kho và nhập kết quả nghiệm thu vào hệ thống, **để** làm căn cứ hoàn trả tiền cọc hoặc tính phí bồi thường hư hại.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F3-06` | Must | 5 | P4 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F3-06` | Must      |      5      |     P4     |
 
 **Acceptance Criteria**
 
@@ -814,9 +820,9 @@ Bảng thuộc tính đi kèm mỗi story:
 
 > **Là** Facility Staff, **tôi muốn** xác minh danh tính khách tại quầy và cấp lại mã truy cập hoặc hỗ trợ cắt khóa/thay khóa cơ, **để** khách hàng lấy lại quyền vào ô kho kịp thời khi gặp sự cố.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F7-03`, `UC-F7-05` | Must | 5 | P4 |
+| Use case                   | Ưu tiên | Story point | Giai đoạn |
+| -------------------------- | --------- | :---------: | :---------: |
+| `UC-F7-03`, `UC-F7-05` | Must      |      5      |     P4     |
 
 **Acceptance Criteria**
 
@@ -831,9 +837,9 @@ Bảng thuộc tính đi kèm mỗi story:
 
 > **Là** Facility Staff, **tôi muốn** xử lý các sự cố cơ sở vật chất (kẹt cửa cuốn, ẩm mốc, đèn hỏng) và ghi nhận kết quả, **để** đảm bảo an toàn cho tài sản của khách hàng.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F7-06`, `UC-F7-08` | Must | 5 | P4 |
+| Use case                   | Ưu tiên | Story point | Giai đoạn |
+| -------------------------- | --------- | :---------: | :---------: |
+| `UC-F7-06`, `UC-F7-08` | Must      |      5      |     P4     |
 
 **Acceptance Criteria**
 
@@ -852,9 +858,9 @@ Bảng thuộc tính đi kèm mỗi story:
 
 > **Là** Facility Staff, **tôi muốn** xem danh sách tổng hợp các lượt khách hẹn check-in, hẹn trả kho và các sự cố cần xử lý trong ca trực của mình, **để** chủ động sắp xếp thời gian tiếp đón và không bỏ sót công việc.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F5-05` | Must | 3 | P4 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F5-05` | Must      |      3      |     P4     |
 
 **Acceptance Criteria**
 
@@ -873,9 +879,9 @@ Bảng thuộc tính đi kèm mỗi story:
 
 > **Là** Facility Manager, **tôi muốn** cấu hình danh mục Unit Type và kích thước tiêu chuẩn cho cơ sở của mình, **để** chuẩn hóa không gian cho thuê theo đúng thiết kế mặt bằng.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F5-01` | Must | 5 | P2 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F5-01` | Must      |      5      |     P2     |
 
 **Acceptance Criteria**
 
@@ -890,9 +896,9 @@ Bảng thuộc tính đi kèm mỗi story:
 
 > **Là** Facility Manager, **tôi muốn** tạo mới, chỉnh sửa thông tin mã số, tầng, dãy và cập nhật trạng thái ô kho, **để** sơ đồ kho của cơ sở luôn phản ánh chính xác thực tế khai thác.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F5-02`, `UC-F5-03` | Must | 5 | P2 |
+| Use case                   | Ưu tiên | Story point | Giai đoạn |
+| -------------------------- | --------- | :---------: | :---------: |
+| `UC-F5-02`, `UC-F5-03` | Must      |      5      |     P2     |
 
 **Acceptance Criteria**
 
@@ -911,9 +917,9 @@ Bảng thuộc tính đi kèm mỗi story:
 
 > **Là** Facility Manager, **tôi muốn** giám sát các đơn đặt chỗ và ô kho khách đã tự chọn sau Payment, **để** xử lý ngoại lệ mà không tạo Contract thiếu unit.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F1-08` | Must | 5 | P3 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F1-08` | Must      |      5      |     P3     |
 
 **Acceptance Criteria**
 
@@ -928,9 +934,9 @@ Bảng thuộc tính đi kèm mỗi story:
 
 > **Là** Facility Manager, **tôi muốn** theo dõi việc kích hoạt hợp đồng thuê ngay sau khi nhân viên bàn giao xong, **để** ghi nhận chính xác thời điểm bắt đầu tính tiền thuê và trách nhiệm pháp lý.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F1-11`, `UC-F2-07` | Must | 5 | P3 |
+| Use case                   | Ưu tiên | Story point | Giai đoạn |
+| -------------------------- | --------- | :---------: | :---------: |
+| `UC-F1-11`, `UC-F2-07` | Must      |      5      |     P3     |
 
 **Acceptance Criteria**
 
@@ -948,9 +954,9 @@ Bảng thuộc tính đi kèm mỗi story:
 
 > **Là** Facility Manager, **tôi muốn** theo dõi toàn bộ danh sách hợp đồng thuê đang hoạt động tại cơ sở, **để** nắm rõ ai đang sử dụng ô kho nào và ngày hết hạn của từng người.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F3-10` | Must | 5 | P4 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F3-10` | Must      |      5      |     P4     |
 
 **Acceptance Criteria**
 
@@ -965,9 +971,9 @@ Bảng thuộc tính đi kèm mỗi story:
 
 > **Là** Facility Manager, **tôi muốn** theo dõi lịch sử thanh toán, kỳ đóng tiền tiếp theo và các khoản nợ của từng khách hàng, **để** kiểm soát dòng tiền và phát hiện sớm các trường hợp chậm thanh toán.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F3-11` | Must | 5 | P4 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F3-11` | Must      |      5      |     P4     |
 
 **Acceptance Criteria**
 
@@ -986,9 +992,9 @@ Bảng thuộc tính đi kèm mỗi story:
 
 > **Là** Facility Manager, **tôi muốn** xem xét biên bản nghiệm thu của nhân viên để phê duyệt quyết toán và hoàn trả tiền cọc cho khách, **để** kết thúc hợp đồng thuê minh bạch và đúng quy định.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F3-05`, `UC-F3-08` | Must | 5 | P4 |
+| Use case                   | Ưu tiên | Story point | Giai đoạn |
+| -------------------------- | --------- | :---------: | :---------: |
+| `UC-F3-05`, `UC-F3-08` | Must      |      5      |     P4     |
 
 **Acceptance Criteria**
 
@@ -1003,9 +1009,9 @@ Bảng thuộc tính đi kèm mỗi story:
 
 > **Là** Facility Manager, **tôi muốn** giám sát Renewal được hệ thống ghi nhận sau Payment, **để** xử lý ngoại lệ mà không làm chậm quyền sử dụng của khách.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F6-04` | Must | 5 | P4 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F6-04` | Must      |      5      |     P4     |
 
 **Acceptance Criteria**
 
@@ -1019,9 +1025,9 @@ Bảng thuộc tính đi kèm mỗi story:
 
 > **Là** Facility Manager, **tôi muốn** giám sát quy trình tự động xử lý hợp đồng quá hạn từ D+4 đến D+10 và phân công dọn dẹp kho sau D+10, **để** thu hồi công nợ và giải phóng ô kho nhanh chóng.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F6-05`, `UC-F6-06`, `UC-F6-07`, `UC-F6-08`, `UC-F6-09`, `UC-F6-11` | Must | 8 | P4 |
+| Use case                                                                           | Ưu tiên | Story point | Giai đoạn |
+| ---------------------------------------------------------------------------------- | --------- | :---------: | :---------: |
+| `UC-F6-05`, `UC-F6-06`, `UC-F6-07`, `UC-F6-08`, `UC-F6-09`, `UC-F6-11` | Must      |      8      |     P4     |
 
 **Acceptance Criteria**
 
@@ -1044,9 +1050,9 @@ Bảng thuộc tính đi kèm mỗi story:
 
 > **Là** Facility Manager, **tôi muốn** phân công cụ thể từng ca trực hoặc từng nhiệm vụ (bàn giao, trả kho, sửa chữa) cho nhân viên dưới quyền, **để** công việc tại cơ sở được vận hành trơn tru và rõ ràng trách nhiệm.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F2-09`, `UC-F5-04`, `UC-F7-04` | Must | 5 | P3 |
+| Use case                                 | Ưu tiên | Story point | Giai đoạn |
+| ---------------------------------------- | --------- | :---------: | :---------: |
+| `UC-F2-09`, `UC-F5-04`, `UC-F7-04` | Must      |      5      |     P3     |
 
 **Acceptance Criteria**
 
@@ -1065,9 +1071,9 @@ Bảng thuộc tính đi kèm mỗi story:
 
 > **Là** Facility Manager, **tôi muốn** xem báo cáo tổng hợp tình hình vận hành cơ sở theo thời gian thực, **để** đánh giá hiệu quả khai thác mặt bằng và báo cáo lên cấp quản lý.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F5-06`, `UC-F6-10` | Must | 8 | P5 |
+| Use case                   | Ưu tiên | Story point | Giai đoạn |
+| -------------------------- | --------- | :---------: | :---------: |
+| `UC-F5-06`, `UC-F6-10` | Must      |      8      |     P5     |
 
 **Acceptance Criteria**
 
@@ -1092,9 +1098,9 @@ Bảng thuộc tính đi kèm mỗi story:
 > **Là** Business Operations Manager, **tôi muốn** tạo mới và sửa thông tin Facility, **để** hệ thống
 > có đúng danh sách cơ sở đang kinh doanh.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F4-01` | Must | 5 | P2 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F4-01` | Must      |      5      |     P2     |
 
 **Acceptance Criteria**
 
@@ -1119,9 +1125,9 @@ Bảng thuộc tính đi kèm mỗi story:
 > **Là** Business Operations Manager, **tôi muốn** ngừng khai thác một Facility, **để** không nhận
 > đặt chỗ mới khi cơ sở đóng hoặc không còn vận hành.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F4-01` | Must | 5 | P2 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F4-01` | Must      |      5      |     P2     |
 
 **Acceptance Criteria**
 
@@ -1154,9 +1160,9 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 > **Là** Business Operations Manager, **tôi muốn** sửa hệ số Deposit và thời gian giữ chỗ, **để**
 > thu cọc và giữ capacity đúng chính sách đang áp dụng.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F4-02` | Must | 5 | P4 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F4-02` | Must      |      5      |     P4     |
 
 **Acceptance Criteria**
 
@@ -1181,9 +1187,9 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 > **Là** Business Operations Manager, **tôi muốn** cấu hình mốc nhắc hạn và thời hạn gia hạn tối
 > thiểu, **để** khách được nhắc và gia hạn đúng quy tắc.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F4-03` | Must | 5 | P4 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F4-03` | Must      |      5      |     P4     |
 
 **Acceptance Criteria**
 
@@ -1207,9 +1213,9 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 > **Là** Business Operations Manager, **tôi muốn** đặt mốc hoàn 100% và tỷ lệ hoàn khi hủy muộn hoặc
 > no-show, **để** hoàn tiền thống nhất trên toàn hệ thống.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F4-04` | Must | 5 | P4 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F4-04` | Must      |      5      |     P4     |
 
 **Acceptance Criteria**
 
@@ -1233,9 +1239,9 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 > **Là** Business Operations Manager, **tôi muốn** đặt số ngày báo trả, thời hạn hoàn Deposit và tỷ
 > lệ hoàn khi trả sớm, **để** quyết toán trả kho thống nhất.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F4-05` | Must | 5 | P4 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F4-05` | Must      |      5      |     P4     |
 
 **Acceptance Criteria**
 
@@ -1259,9 +1265,9 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 > **Là** Business Operations Manager, **tôi muốn** đặt ân hạn, phí ngày, trần phí và các mốc khóa /
 > thông báo / chấm dứt, **để** xử lý quá hạn đúng một bộ mốc trên toàn hệ thống.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F4-06` | Must | 5 | P4 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F4-06` | Must      |      5      |     P4     |
 
 **Acceptance Criteria**
 
@@ -1294,9 +1300,9 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 > **Là** Business Operations Manager, **tôi muốn** đặt giá thuê tháng cho từng cặp Unit Type ×
 > Facility, **để** khách thấy đúng giá của cơ sở họ chọn.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F4-07` | Must | 5 | P2 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F4-07` | Must      |      5      |     P2     |
 
 **Acceptance Criteria**
 
@@ -1319,9 +1325,9 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 > **Là** Business Operations Manager, **tôi muốn** cấu hình phí quá hạn và các khoản phụ phí, **để**
 > hệ thống tính đúng khi khách trả chậm hoặc phát sinh dịch vụ.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F4-08` | Must | 5 | P2 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F4-08` | Must      |      5      |     P2     |
 
 **Acceptance Criteria**
 
@@ -1346,9 +1352,9 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 > **Là** Business Operations Manager, **tôi muốn** ban hành chương trình giảm giá hoặc khung miễn
 > phí, **để** áp dụng thống nhất khi ước tính chi phí và thu tiền.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F4-09` | Should | 3 | P2 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F4-09` | Should    |      3      |     P2     |
 
 **Acceptance Criteria**
 
@@ -1372,9 +1378,9 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 > **Là** Business Operations Manager, **tôi muốn** xem doanh thu đã ghi nhận theo cơ sở và theo kỳ,
 > **để** biết cơ sở nào đang mang tiền về.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F4-10` | Must | 5 | P5 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F4-10` | Must      |      5      |     P5     |
 
 **Acceptance Criteria**
 
@@ -1397,9 +1403,9 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 > **Là** Business Operations Manager, **tôi muốn** xem Usage Rate từng Facility, **để** so hiệu quả
 > lấp đầy giữa các cơ sở.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F4-11` | Must | 5 | P5 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F4-11` | Must      |      5      |     P5     |
 
 **Acceptance Criteria**
 
@@ -1427,9 +1433,9 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 > **Là** Business Operations Manager, **tôi muốn** xem và xuất báo cáo hệ thống, **để** nộp số liệu
 > theo kỳ mà không phải chép tay.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F4-12` | Must | 8 | P5 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F4-12` | Must      |      8      |     P5     |
 
 **Acceptance Criteria**
 
@@ -1456,9 +1462,9 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 > **Là** System Administrator, **tôi muốn** tạo tài khoản nhân sự và sửa thông tin liên hệ, **để**
 > Facility Staff, Facility Manager và Business Operations Manager đăng nhập được.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-SYS-02` | Must | 5 | P2 |
+| Use case      | Ưu tiên | Story point | Giai đoạn |
+| ------------- | --------- | :---------: | :---------: |
+| `UC-SYS-02` | Must      |      5      |     P2     |
 
 **Acceptance Criteria**
 
@@ -1481,9 +1487,9 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 > **Là** System Administrator, **tôi muốn** khóa hoặc vô hiệu hóa tài khoản, **để** người không còn
 > được phép không đăng nhập được.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-SYS-02` | Must | 3 | P2 |
+| Use case      | Ưu tiên | Story point | Giai đoạn |
+| ------------- | --------- | :---------: | :---------: |
+| `UC-SYS-02` | Must      |      3      |     P2     |
 
 **Acceptance Criteria**
 
@@ -1510,9 +1516,9 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 > **Là** System Administrator, **tôi muốn** gán đúng một vai trò cho từng tài khoản, **để** người
 > dùng chỉ thấy đúng portal của họ.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F5-07` | Must | 5 | P2 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F5-07` | Must      |      5      |     P2     |
 
 **Acceptance Criteria**
 
@@ -1542,9 +1548,9 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 > **Là** System Administrator, **tôi muốn** gán Facility cho Facility Staff và Facility Manager,
 > **để** họ chỉ xem và sửa dữ liệu của cơ sở mình phụ trách.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-F5-08` | Must | 8 | P2 |
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F5-08` | Must      |      8      |     P2     |
 
 **Acceptance Criteria**
 
@@ -1574,9 +1580,9 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 > **Là** System Administrator, **tôi muốn** xem lịch sử đăng nhập, **để** biết tài khoản nào vào hệ
 > thống lúc nào.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-SYS-03` | Must | 3 | P5 |
+| Use case      | Ưu tiên | Story point | Giai đoạn |
+| ------------- | --------- | :---------: | :---------: |
+| `UC-SYS-03` | Must      |      3      |     P5     |
 
 **Acceptance Criteria**
 
@@ -1596,9 +1602,9 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 > **Là** System Administrator, **tôi muốn** xem nhật ký thao tác nghiệp vụ, **để** lần được ai đã
 > đổi chính sách, giá, vai trò hoặc trạng thái tài khoản.
 
-| Use case | Ưu tiên | Story point | Giai đoạn |
-|----------|---------|:-----------:|:---------:|
-| `UC-SYS-03` | Must | 5 | P5 |
+| Use case      | Ưu tiên | Story point | Giai đoạn |
+| ------------- | --------- | :---------: | :---------: |
+| `UC-SYS-03` | Must      |      5      |     P5     |
 
 **Acceptance Criteria**
 
@@ -1621,64 +1627,66 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 ### 4. Bảng tổng hợp User Stories toàn hệ thống
 
 #### 4.1. Bảng tổng hợp Storage Customer
+
 ## 8. Bảng tổng hợp
 
-| Mã story | Tên | Mã yêu cầu | Ưu tiên | Point | Giai đoạn | Số AC |
-|----------|-----|------------|---------|:-----:|:---------:|:-----:|
-| `US-SC-01.1` | Tìm cơ sở lưu trữ phù hợp | `SC-01` | Must | 3 | P2 | 5 |
-| `US-SC-01.2` | Xem chi tiết loại ô kho và giá thuê | `SC-01` | Must | 3 | P2 | 5 |
-| `US-SC-01.3` | Kiểm tra ô kho còn trống theo thời gian | `SC-01` | Must | 5 | P2 | 5 |
-| `US-SC-02.1` | Tạo đặt chỗ ô kho | `SC-02` | Must | 8 | P3 | 6 |
-| `US-SC-02.2` | Xem ước tính chi phí trước khi xác nhận | `SC-02` | Must | 3 | P3 | 6 |
-| `US-SC-02.3` | Nhận xác nhận đặt chỗ và lịch hẹn check-in | `SC-02` | Must | 3 | P3 | 4 |
-| `US-SC-02.4` | Hủy đặt chỗ trước khi nhận kho | `SC-02` | Must | 5 | P3 | 6 |
-| `US-SC-03.1` | Thanh toán Deposit và phí thuê N tháng | `SC-03` | Must | 8 | P3 | 7 |
-| `US-SC-03.2` | Thanh toán phí gia hạn | `SC-03` | Must | 5 | P4 | 5 |
-| `US-SC-03.3` | Thanh toán phụ phí và khoản nộp bổ sung | `SC-03` | Should | 3 | P4 | 4 |
-| `US-SC-03.4` | Xem lịch sử giao dịch và hóa đơn | `SC-03` | Should | 3 | P4 | 4 |
-| `US-SC-04.1` | Xem lịch hẹn check-in | `SC-04` | Must | 2 | P3 | 4 |
-| `US-SC-04.2` | Xác nhận đã nhận ô kho | `SC-04` | Must | 5 | P3 | 5 |
-| `US-SC-04.3` | Đổi lịch hẹn check-in | `SC-04` | Could | 3 | P3 | 4 |
-| `US-SC-05.1` | Xem danh sách ô kho đang thuê | `SC-05` | Must | 5 | P4 | 5 |
-| `US-SC-05.2` | Xem chi tiết hợp đồng và lịch sử truy cập | `SC-05` | Should | 5 | P4 | 4 |
-| `US-SC-05.3` | Nhận nhắc hạn và gia hạn hợp đồng | `SC-05` | Must | 5 | P4 | 6 |
-| `US-SC-05.4` | Đăng ký trả kho | `SC-05` | Must | 5 | P4 | 7 |
-| `US-SC-05.5` | Theo dõi tình trạng quá hạn và khoản nợ | `SC-05` | Must | 5 | P4 | 6 |
-| `US-SC-06.1` | Gửi yêu cầu hỗ trợ | `SC-06` | Must | 5 | P4 | 5 |
-| `US-SC-06.2` | Theo dõi và trao đổi về yêu cầu hỗ trợ | `SC-06` | Must | 3 | P4 | 4 |
-| `US-SC-06.3` | Xác nhận kết quả xử lý | `SC-06` | Should | 3 | P4 | 4 |
+| Mã story      | Tên                                                | Mã yêu cầu | Ưu tiên | Point | Giai đoạn | Số AC |
+| -------------- | --------------------------------------------------- | ------------- | --------- | :---: | :---------: | :----: |
+| `US-SC-01.1` | Tìm cơ sở lưu trữ phù hợp                    | `SC-01`     | Must      |   3   |     P2     |   5   |
+| `US-SC-01.2` | Xem chi tiết loại ô kho và giá thuê           | `SC-01`     | Must      |   3   |     P2     |   5   |
+| `US-SC-01.3` | Kiểm tra ô kho còn trống theo thời gian        | `SC-01`     | Must      |   5   |     P2     |   5   |
+| `US-SC-02.1` | Tạo đặt chỗ ô kho                              | `SC-02`     | Must      |   8   |     P3     |   6   |
+| `US-SC-02.2` | Xem ước tính chi phí trước khi xác nhận     | `SC-02`     | Must      |   3   |     P3     |   6   |
+| `US-SC-02.3` | Nhận xác nhận đặt chỗ và lịch hẹn check-in | `SC-02`     | Must      |   3   |     P3     |   4   |
+| `US-SC-02.4` | Hủy đặt chỗ trước khi nhận kho               | `SC-02`     | Must      |   5   |     P3     |   6   |
+| `US-SC-03.1` | Thanh toán Deposit và phí thuê N tháng         | `SC-03`     | Must      |   8   |     P3     |   7   |
+| `US-SC-03.2` | Thanh toán phí gia hạn                           | `SC-03`     | Must      |   5   |     P4     |   5   |
+| `US-SC-03.3` | Thanh toán phụ phí và khoản nộp bổ sung      | `SC-03`     | Should    |   3   |     P4     |   4   |
+| `US-SC-03.4` | Xem lịch sử giao dịch và hóa đơn             | `SC-03`     | Should    |   3   |     P4     |   4   |
+| `US-SC-04.1` | Xem lịch hẹn check-in                             | `SC-04`     | Must      |   2   |     P3     |   4   |
+| `US-SC-04.2` | Xác nhận đã nhận ô kho                        | `SC-04`     | Must      |   5   |     P3     |   5   |
+| `US-SC-04.3` | Đổi lịch hẹn check-in                           | `SC-04`     | Could     |   3   |     P3     |   4   |
+| `US-SC-05.1` | Xem danh sách ô kho đang thuê                   | `SC-05`     | Must      |   5   |     P4     |   5   |
+| `US-SC-05.2` | Xem chi tiết hợp đồng và lịch sử truy cập   | `SC-05`     | Should    |   5   |     P4     |   4   |
+| `US-SC-05.3` | Nhận nhắc hạn và gia hạn hợp đồng           | `SC-05`     | Must      |   5   |     P4     |   6   |
+| `US-SC-05.4` | Đăng ký trả kho                                 | `SC-05`     | Must      |   5   |     P4     |   7   |
+| `US-SC-05.5` | Theo dõi tình trạng quá hạn và khoản nợ     | `SC-05`     | Must      |   5   |     P4     |   6   |
+| `US-SC-06.1` | Gửi yêu cầu hỗ trợ                             | `SC-06`     | Must      |   5   |     P4     |   5   |
+| `US-SC-06.2` | Theo dõi và trao đổi về yêu cầu hỗ trợ     | `SC-06`     | Must      |   3   |     P4     |   4   |
+| `US-SC-06.3` | Xác nhận kết quả xử lý                        | `SC-06`     | Should    |   3   |     P4     |   4   |
 
 **Theo giai đoạn:** P2 — 3 story / 11 point · P3 — 8 story / 37 point · P4 — 11 story / 47 point.
 **Theo ưu tiên:** Must — 17 story / 78 point · Should — 4 story / 14 point · Could — 1 story / 3 point.
 **Tổng:** 22 story · 95 story point · 111 acceptance criteria.
 
 #### 4.2. Bảng tổng hợp Facility Staff & Facility Manager
+
 ## 14. Bảng tổng hợp
 
-| Mã story | Tên | Mã yêu cầu | Ưu tiên | Point | Giai đoạn | Số AC |
-|----------|-----|------------|---------|:-----:|:---------:|:-----:|
-| `US-FS-01.1` | Tra cứu và xác minh thông tin đặt chỗ của khách | `FS-01` | Must | 5 | P3 | 5 |
-| `US-FS-01.2` | Xử lý khách đến trễ hoặc lỡ hẹn check-in | `FS-01` | Should | 3 | P3 | 4 |
-| `US-FS-02.1` | Bàn giao ô kho và lập biên bản bàn giao tại chỗ | `FS-02` | Must | 5 | P3 | 4 |
-| `US-FS-02.2` | Cấp phương tiện truy cập ô kho | `FS-02` | Must | 5 | P3 | 4 |
-| `US-FS-03.1` | Cập nhật trạng thái ô kho sau bàn giao | `FS-03` | Must | 3 | P3 | 3 |
-| `US-FS-03.2` | Cập nhật trạng thái sau khi thu hồi kho | `FS-03` | Must | 3 | P4 | 4 |
-| `US-FS-03.3` | Đánh dấu ô kho cần bảo trì hoặc hoàn tất sửa chữa | `FS-03` | Should | 3 | P4 | 4 |
-| `US-FS-04.1` | Kiểm tra hiện trạng ô kho và lập biên bản nghiệm thu trả kho | `FS-04` | Must | 5 | P4 | 5 |
-| `US-FS-05.1` | Xử lý sự cố mất chìa khóa hoặc lỗi mã truy cập | `FS-05` | Must | 5 | P4 | 4 |
-| `US-FS-05.2` | Khắc phục hư hỏng vật lý của ô kho và đóng yêu cầu hỗ trợ | `FS-05` | Must | 5 | P4 | 4 |
-| `US-FS-06.1` | Theo dõi danh sách công việc bàn giao, trả kho và sự cố trong ngày | `FS-06` | Must | 3 | P4 | 4 |
-| `US-FM-01.1` | Quản lý danh mục loại ô kho tại cơ sở | `FM-01` | Must | 5 | P2 | 4 |
-| `US-FM-01.2` | Quản lý danh sách ô kho vật lý, vị trí và trạng thái | `FM-01` | Must | 5 | P2 | 4 |
-| `US-FM-02.1` | Giám sát đơn đặt chỗ và ô kho khách chọn cho Reservation | `FM-02` | Must | 5 | P3 | 4 |
-| `US-FM-02.2` | Giám sát kích hoạt hợp đồng thuê sau bàn giao | `FM-02` | Must | 5 | P3 | 3 |
-| `US-FM-03.1` | Giám sát danh sách khách hàng và hợp đồng thuê đang hiệu lực | `FM-03` | Must | 5 | P4 | 4 |
-| `US-FM-03.2` | Theo dõi tình trạng thanh toán và công nợ của từng hợp đồng | `FM-03` | Must | 5 | P4 | 4 |
-| `US-FM-04.1` | Phê duyệt quyết toán hợp đồng và hoàn trả tiền cọc khi trả kho | `FM-04` | Must | 5 | P4 | 4 |
-| `US-FM-04.2` | Giám sát gia hạn Contract tự động | `FM-04` | Must | 5 | P4 | 3 |
-| `US-FM-04.3` | Xử lý hợp đồng quá hạn, khóa quyền truy cập và xử lý tài sản tồn đọng | `FM-04` | Must | 8 | P4 | 8 |
-| `US-FM-05.1` | Phân công công việc bàn giao, nghiệm thu và sự cố cho nhân viên cơ sở | `FM-05` | Must | 5 | P3 | 4 |
-| `US-FM-06.1` | Xem báo cáo thống kê hoạt động cơ sở, tỷ lệ lấp đầy, doanh thu và nợ quá hạn | `FM-06` | Must | 8 | P5 | 5 |
+| Mã story      | Tên                                                                                           | Mã yêu cầu | Ưu tiên | Point | Giai đoạn | Số AC |
+| -------------- | ---------------------------------------------------------------------------------------------- | ------------- | --------- | :---: | :---------: | :----: |
+| `US-FS-01.1` | Tra cứu và xác minh thông tin đặt chỗ của khách                                       | `FS-01`     | Must      |   5   |     P3     |   5   |
+| `US-FS-01.2` | Xử lý khách đến trễ hoặc lỡ hẹn check-in                                              | `FS-01`     | Should    |   3   |     P3     |   4   |
+| `US-FS-02.1` | Bàn giao ô kho và lập biên bản bàn giao tại chỗ                                       | `FS-02`     | Must      |   5   |     P3     |   4   |
+| `US-FS-02.2` | Cấp phương tiện truy cập ô kho                                                           | `FS-02`     | Must      |   5   |     P3     |   4   |
+| `US-FS-03.1` | Cập nhật trạng thái ô kho sau bàn giao                                                   | `FS-03`     | Must      |   3   |     P3     |   3   |
+| `US-FS-03.2` | Cập nhật trạng thái sau khi thu hồi kho                                                   | `FS-03`     | Must      |   3   |     P4     |   4   |
+| `US-FS-03.3` | Đánh dấu ô kho cần bảo trì hoặc hoàn tất sửa chữa                                  | `FS-03`     | Should    |   3   |     P4     |   4   |
+| `US-FS-04.1` | Kiểm tra hiện trạng ô kho và lập biên bản nghiệm thu trả kho                         | `FS-04`     | Must      |   5   |     P4     |   5   |
+| `US-FS-05.1` | Xử lý sự cố mất chìa khóa hoặc lỗi mã truy cập                                      | `FS-05`     | Must      |   5   |     P4     |   4   |
+| `US-FS-05.2` | Khắc phục hư hỏng vật lý của ô kho và đóng yêu cầu hỗ trợ                       | `FS-05`     | Must      |   5   |     P4     |   4   |
+| `US-FS-06.1` | Theo dõi danh sách công việc bàn giao, trả kho và sự cố trong ngày                   | `FS-06`     | Must      |   3   |     P4     |   4   |
+| `US-FM-01.1` | Quản lý danh mục loại ô kho tại cơ sở                                                  | `FM-01`     | Must      |   5   |     P2     |   4   |
+| `US-FM-01.2` | Quản lý danh sách ô kho vật lý, vị trí và trạng thái                                | `FM-01`     | Must      |   5   |     P2     |   4   |
+| `US-FM-02.1` | Giám sát đơn đặt chỗ và ô kho khách chọn cho Reservation                            | `FM-02`     | Must      |   5   |     P3     |   4   |
+| `US-FM-02.2` | Giám sát kích hoạt hợp đồng thuê sau bàn giao                                         | `FM-02`     | Must      |   5   |     P3     |   3   |
+| `US-FM-03.1` | Giám sát danh sách khách hàng và hợp đồng thuê đang hiệu lực                      | `FM-03`     | Must      |   5   |     P4     |   4   |
+| `US-FM-03.2` | Theo dõi tình trạng thanh toán và công nợ của từng hợp đồng                        | `FM-03`     | Must      |   5   |     P4     |   4   |
+| `US-FM-04.1` | Phê duyệt quyết toán hợp đồng và hoàn trả tiền cọc khi trả kho                    | `FM-04`     | Must      |   5   |     P4     |   4   |
+| `US-FM-04.2` | Giám sát gia hạn Contract tự động                                                        | `FM-04`     | Must      |   5   |     P4     |   3   |
+| `US-FM-04.3` | Xử lý hợp đồng quá hạn, khóa quyền truy cập và xử lý tài sản tồn đọng        | `FM-04`     | Must      |   8   |     P4     |   8   |
+| `US-FM-05.1` | Phân công công việc bàn giao, nghiệm thu và sự cố cho nhân viên cơ sở             | `FM-05`     | Must      |   5   |     P3     |   4   |
+| `US-FM-06.1` | Xem báo cáo thống kê hoạt động cơ sở, tỷ lệ lấp đầy, doanh thu và nợ quá hạn | `FM-06`     | Must      |   8   |     P5     |   5   |
 
 **Theo giai đoạn:** P2 — 2 story / 10 point · P3 — 7 story / 31 point · P4 — 11 story / 53 point · P5 — 2 story / 12 point.
 **Theo ưu tiên:** Must — 20 story / 100 point · Should — 2 story / 6 point · Could — 0 story.
@@ -1686,29 +1694,30 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 **Tổng:** 22 story · 106 story point · 92 acceptance criteria.
 
 #### 4.3. Bảng tổng hợp BOM & System Administrator
+
 ## 11. Bảng tổng hợp
 
-| Mã story | Tên | Mã yêu cầu | Ưu tiên | Point | Giai đoạn | Số AC |
-|----------|-----|------------|---------|:-----:|:---------:|:-----:|
-| `US-BM-01.1` | Thêm và chỉnh sửa Facility | `BM-01` | Must | 5 | P2 | 5 |
-| `US-BM-01.2` | Ngừng khai thác Facility | `BM-01` | Must | 5 | P2 | 5 |
-| `US-BM-02.1` | Thiết lập chính sách Deposit | `BM-02` | Must | 5 | P4 | 5 |
-| `US-BM-02.2` | Thiết lập chính sách Renewal | `BM-02` | Must | 5 | P4 | 5 |
-| `US-BM-02.3` | Thiết lập chính sách Cancellation | `BM-02` | Must | 5 | P4 | 5 |
-| `US-BM-02.4` | Thiết lập chính sách Return | `BM-02` | Must | 5 | P4 | 5 |
-| `US-BM-02.5` | Thiết lập chính sách Overdue | `BM-02` | Must | 5 | P4 | 6 |
-| `US-BM-03.1` | Quản lý khung giá thuê theo Unit Type và Facility | `BM-03` | Must | 5 | P2 | 5 |
-| `US-BM-03.2` | Quản lý phụ phí và phí quá hạn | `BM-03` | Must | 5 | P2 | 5 |
-| `US-BM-03.3` | Quản lý chính sách giảm giá và miễn phí | `BM-03` | Should | 3 | P2 | 4 |
-| `US-BM-04.1` | Giám sát doanh thu theo cơ sở và toàn hệ thống | `BM-04` | Must | 5 | P5 | 5 |
-| `US-BM-04.2` | Giám sát Usage Rate và hiệu quả vận hành | `BM-04` | Must | 5 | P5 | 5 |
-| `US-BM-05.1` | Xem và xuất báo cáo theo cơ sở, Unit Type, doanh thu và tình trạng thuê | `BM-05` | Must | 8 | P5 | 5 |
-| `US-SA-01.1` | Tạo và cập nhật tài khoản | `SA-01` | Must | 5 | P2 | 5 |
-| `US-SA-01.2` | Khóa, mở khóa và vô hiệu hóa tài khoản | `SA-01` | Must | 3 | P2 | 5 |
-| `US-SA-02.1` | Gán vai trò cho người dùng | `SA-02` | Must | 5 | P2 | 5 |
-| `US-SA-03.1` | Gán quyền dữ liệu theo vai trò và theo Facility | `SA-03` | Must | 8 | P2 | 6 |
-| `US-SA-04.1` | Xem lịch sử đăng nhập | `SA-04` | Must | 3 | P5 | 4 |
-| `US-SA-04.2` | Xem nhật ký hoạt động người dùng | `SA-04` | Must | 5 | P5 | 5 |
+| Mã story      | Tên                                                                              | Mã yêu cầu | Ưu tiên | Point | Giai đoạn | Số AC |
+| -------------- | --------------------------------------------------------------------------------- | ------------- | --------- | :---: | :---------: | :----: |
+| `US-BM-01.1` | Thêm và chỉnh sửa Facility                                                    | `BM-01`     | Must      |   5   |     P2     |   5   |
+| `US-BM-01.2` | Ngừng khai thác Facility                                                        | `BM-01`     | Must      |   5   |     P2     |   5   |
+| `US-BM-02.1` | Thiết lập chính sách Deposit                                                  | `BM-02`     | Must      |   5   |     P4     |   5   |
+| `US-BM-02.2` | Thiết lập chính sách Renewal                                                  | `BM-02`     | Must      |   5   |     P4     |   5   |
+| `US-BM-02.3` | Thiết lập chính sách Cancellation                                             | `BM-02`     | Must      |   5   |     P4     |   5   |
+| `US-BM-02.4` | Thiết lập chính sách Return                                                   | `BM-02`     | Must      |   5   |     P4     |   5   |
+| `US-BM-02.5` | Thiết lập chính sách Overdue                                                  | `BM-02`     | Must      |   5   |     P4     |   6   |
+| `US-BM-03.1` | Quản lý khung giá thuê theo Unit Type và Facility                            | `BM-03`     | Must      |   5   |     P2     |   5   |
+| `US-BM-03.2` | Quản lý phụ phí và phí quá hạn                                            | `BM-03`     | Must      |   5   |     P2     |   5   |
+| `US-BM-03.3` | Quản lý chính sách giảm giá và miễn phí                                  | `BM-03`     | Should    |   3   |     P2     |   4   |
+| `US-BM-04.1` | Giám sát doanh thu theo cơ sở và toàn hệ thống                            | `BM-04`     | Must      |   5   |     P5     |   5   |
+| `US-BM-04.2` | Giám sát Usage Rate và hiệu quả vận hành                                   | `BM-04`     | Must      |   5   |     P5     |   5   |
+| `US-BM-05.1` | Xem và xuất báo cáo theo cơ sở, Unit Type, doanh thu và tình trạng thuê | `BM-05`     | Must      |   8   |     P5     |   5   |
+| `US-SA-01.1` | Tạo và cập nhật tài khoản                                                   | `SA-01`     | Must      |   5   |     P2     |   5   |
+| `US-SA-01.2` | Khóa, mở khóa và vô hiệu hóa tài khoản                                   | `SA-01`     | Must      |   3   |     P2     |   5   |
+| `US-SA-02.1` | Gán vai trò cho người dùng                                                   | `SA-02`     | Must      |   5   |     P2     |   5   |
+| `US-SA-03.1` | Gán quyền dữ liệu theo vai trò và theo Facility                             | `SA-03`     | Must      |   8   |     P2     |   6   |
+| `US-SA-04.1` | Xem lịch sử đăng nhập                                                        | `SA-04`     | Must      |   3   |     P5     |   4   |
+| `US-SA-04.2` | Xem nhật ký hoạt động người dùng                                          | `SA-04`     | Must      |   5   |     P5     |   5   |
 
 **Theo giai đoạn:** P2 — 9 story / 44 point · P4 — 5 story / 25 point · P5 — 5 story / 26 point.
 **Theo ưu tiên:** Must — 18 story / 92 point · Should — 1 story / 3 point · Could — 0 story.
@@ -1723,20 +1732,20 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 
 *Luồng đặt chỗ ô kho.* Tác nhân chính: **Storage Customer**, **System** · Liên quan: **Facility Manager** (giám sát)
 
-| Mã UC       | Use case                                                                          | Actor chính     | Actor liên quan | Mã yêu cầu        |
-| ------------ | --------------------------------------------------------------------------------- | ---------------- | ---------------- | -------------------- |
-| `UC-F1-01` | Tìm kiếm và xem danh sách Facility                                            | Storage Customer | —               | `SC-01`            |
-| `UC-F1-02` | Xem chi tiết Unit Type, danh sách ô kho và sơ đồ vị trí                     | Storage Customer | —               | `SC-01`            |
-| `UC-F1-03` | Kiểm tra capacity còn trống theo Unit Type và khoảng thuê             | Storage Customer | —               | `SC-01`            |
-| `UC-F1-04` | Tạo Reservation — chọn Facility, ô kho cụ thể trên sơ đồ, ngày bắt đầu, thời hạn thuê | Storage Customer | — | `SC-02`            |
-| `UC-F1-05` | Ước tính chi phí thuê và tiền Deposit phải trả                           | Storage Customer | —               | `SC-02`, `BM-03` |
-| `UC-F1-06` | Giữ ô kho cụ thể đã chọn trong 48h khi chờ thanh toán                 | System           | —               | `FM-02`            |
-| `UC-F1-07` | Thanh toán Deposit và toàn bộ phí thuê N tháng                              | Storage Customer | —               | `SC-03`            |
-| `UC-F1-08` | Khóa chính thức Storage Unit khách đã chọn sau khi thanh toán thành công | System           | Storage Customer, Facility Manager | `FM-02`            |
-| `UC-F1-09` | Nhận lịch hẹn Check-in và xác nhận đặt chỗ thành công                  | Storage Customer | —               | `SC-02`            |
-| `UC-F1-10` | Hủy Reservation trước ngày bắt đầu thuê                                   | Storage Customer | Facility Manager | `SC-02`, `BM-02` |
-| `UC-F1-11` | Tự động cho Reservation hết hạn và giải phóng capacity                 | System           | —               | `FM-02`            |
-| `UC-F1-12` | Hủy Reservation phía cơ sở — ô kho hư hỏng hoặc Facility đóng cửa   | Facility Manager | Storage Customer | `SC-02`, `FM-02`, `BM-02` |
+| Mã UC       | Use case                                                                                               | Actor chính     | Actor liên quan                   | Mã yêu cầu                   |
+| ------------ | ------------------------------------------------------------------------------------------------------ | ---------------- | ---------------------------------- | ------------------------------- |
+| `UC-F1-01` | Tìm kiếm và xem danh sách Facility                                                                 | Storage Customer | —                                 | `SC-01`                       |
+| `UC-F1-02` | Xem chi tiết Unit Type, danh sách ô kho và sơ đồ vị trí                                       | Storage Customer | —                                 | `SC-01`                       |
+| `UC-F1-03` | Kiểm tra capacity còn trống theo Unit Type và khoảng thuê                                        | Storage Customer | —                                 | `SC-01`                       |
+| `UC-F1-04` | Tạo Reservation — chọn Facility, ô kho cụ thể trên sơ đồ, ngày bắt đầu, thời hạn thuê | Storage Customer | —                                 | `SC-02`                       |
+| `UC-F1-05` | Ước tính chi phí thuê và tiền Deposit phải trả                                                | Storage Customer | —                                 | `SC-02`, `BM-03`            |
+| `UC-F1-06` | Giữ ô kho cụ thể đã chọn trong 48h khi chờ thanh toán                                         | System           | —                                 | `FM-02`                       |
+| `UC-F1-07` | Thanh toán Deposit và toàn bộ phí thuê N tháng                                                  | Storage Customer | —                                 | `SC-03`                       |
+| `UC-F1-08` | Khóa chính thức Storage Unit khách đã chọn sau khi thanh toán thành công                     | System           | Storage Customer, Facility Manager | `FM-02`                       |
+| `UC-F1-09` | Nhận lịch hẹn Check-in và xác nhận đặt chỗ thành công                                       | Storage Customer | —                                 | `SC-02`                       |
+| `UC-F1-10` | Hủy Reservation trước ngày bắt đầu thuê                                                        | Storage Customer | Facility Manager                   | `SC-02`, `BM-02`            |
+| `UC-F1-11` | Tự động cho Reservation hết hạn và giải phóng capacity                                         | System           | —                                 | `FM-02`                       |
+| `UC-F1-12` | Hủy Reservation phía cơ sở — ô kho hư hỏng hoặc Facility đóng cửa                          | Facility Manager | Storage Customer                   | `SC-02`, `FM-02`, `BM-02` |
 
 ---
 
@@ -1746,17 +1755,17 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 
 Activity Diagram: [activity-diagram-flow-2-checkin-handover.drawio](diagrams/activity-diagram-flow-2-checkin-handover.drawio) (lưu trữ cũ: [diagrams/_archive/activity-flow2-checkin-handover.puml](diagrams/_archive/activity-flow2-checkin-handover.puml)) — quy trình đón tiếp (`UC-F2-01`–`02`), kiểm tra ô kho & ký số biên bản (`UC-F2-03`, `UC-F2-05`), kích hoạt tự động (`UC-F2-04`, `UC-F2-06`–`07`), xử lý No-show tự động quá 10 ngày hoặc ô kho hư hỏng hoàn tiền (`UC-F2-08`), phân công ca trực (`UC-F2-09`).
 
-| Mã UC       | Use case                                                     | Actor chính     | Actor liên quan | Mã yêu cầu        |
-| ------------ | ------------------------------------------------------------ | ---------------- | ---------------- | -------------------- |
-| `UC-F2-01` | Tra cứu Reservation của khách khi khách đến cơ sở    | Facility Staff   | Storage Customer | `FS-01`            |
-| `UC-F2-02` | Xác minh danh tính khách và tình trạng thanh toán     | Facility Staff   | Storage Customer | `FS-01`            |
-| `UC-F2-03` | Bàn giao ô kho và lập biên bản bàn giao điện tử               | Facility Staff   | Storage Customer | `FS-02`            |
-| `UC-F2-04` | Cấp mã Access Code / PIN và chìa khóa vật lý (nếu có)        | Facility Staff   | Storage Customer | `FS-02`            |
+| Mã UC       | Use case                                                            | Actor chính     | Actor liên quan | Mã yêu cầu        |
+| ------------ | ------------------------------------------------------------------- | ---------------- | ---------------- | -------------------- |
+| `UC-F2-01` | Tra cứu Reservation của khách khi khách đến cơ sở           | Facility Staff   | Storage Customer | `FS-01`            |
+| `UC-F2-02` | Xác minh danh tính khách và tình trạng thanh toán            | Facility Staff   | Storage Customer | `FS-01`            |
+| `UC-F2-03` | Bàn giao ô kho và lập biên bản bàn giao điện tử           | Facility Staff   | Storage Customer | `FS-02`            |
+| `UC-F2-04` | Cấp mã Access Code / PIN và chìa khóa vật lý (nếu có)      | Facility Staff   | Storage Customer | `FS-02`            |
 | `UC-F2-05` | Khách xác nhận Check-in, nhận ô kho và hoàn tất Reservation | Storage Customer | Facility Staff   | `SC-04`            |
-| `UC-F2-06` | Cập nhật trạng thái Storage Unit sang *Occupied*          | Facility Staff   | —               | `FS-03`            |
-| `UC-F2-07` | Kích hoạt Contract từ *Pending Check-in* sau bàn giao     | Facility Manager | Facility Staff   | `FM-02`            |
-| `UC-F2-08` | Xử lý khách đến trễ hoặc không đến theo lịch hẹn | Facility Staff   | Facility Manager | `FS-01`, `FM-02` |
-| `UC-F2-09` | Phân công Facility Staff trực bàn giao trong ngày       | Facility Manager | Facility Staff   | `FM-05`            |
+| `UC-F2-06` | Cập nhật trạng thái Storage Unit sang*Occupied*               | Facility Staff   | —               | `FS-03`            |
+| `UC-F2-07` | Kích hoạt Contract từ*Pending Check-in* sau bàn giao          | Facility Manager | Facility Staff   | `FM-02`            |
+| `UC-F2-08` | Xử lý khách đến trễ hoặc không đến theo lịch hẹn        | Facility Staff   | Facility Manager | `FS-01`, `FM-02` |
+| `UC-F2-09` | Phân công Facility Staff trực bàn giao trong ngày              | Facility Manager | Facility Staff   | `FM-05`            |
 
 ---
 
@@ -1772,15 +1781,15 @@ Activity Diagram: (lưu trữ: [diagrams/_archive/activity-flow-3.puml](diagrams
 | `UC-F3-02` | Xem chi tiết hợp đồng, thời hạn và lịch sử thanh toán             | Storage Customer | —               | `SC-05`            |
 | `UC-F3-03` | Cập nhật thông tin liên hệ và người được ủy quyền truy cập    | Storage Customer | —               | `SC-05`            |
 | `UC-F3-04` | Xem lịch sử ra vào và trạng thái Access Code                          | Storage Customer | —               | `SC-05`            |
-| `UC-F3-05` | Tự động ghi nhận trả kho hoặc khách đăng ký trả kho  | Storage Customer | Facility Manager | `SC-05`, `FM-04` |
+| `UC-F3-05` | Tự động ghi nhận trả kho hoặc khách đăng ký trả kho              | Storage Customer | Facility Manager | `SC-05`, `FM-04` |
 | `UC-F3-06` | Kiểm tra và xác nhận hiện trạng ô kho khi khách trả                | Facility Staff   | Storage Customer | `FS-04`            |
-| `UC-F3-07` | Thu hồi chìa khóa cơ (nếu có) và vô hiệu hóa Access Code       | Facility Staff   | —               | `FS-03`            |
+| `UC-F3-07` | Thu hồi chìa khóa cơ (nếu có) và vô hiệu hóa Access Code          | Facility Staff   | —               | `FS-03`            |
 | `UC-F3-08` | Quyết toán hợp đồng và hoàn Deposit                                  | Facility Manager | Storage Customer | `FM-04`            |
 | `UC-F3-09` | Cập nhật trạng thái ô kho sau khi trả — dọn dẹp rồi mở bán lại | Facility Staff   | —               | `FS-03`            |
 | `UC-F3-10` | Theo dõi danh sách khách và hợp đồng đang hiệu lực                | Facility Manager | —               | `FM-03`            |
 | `UC-F3-11` | Theo dõi tình trạng thanh toán của từng hợp đồng                   | Facility Manager | —               | `FM-03`            |
 | `UC-F3-12` | Đánh dấu ô kho cần kiểm tra hoặc bảo trì                           | Facility Staff   | Facility Manager | `FS-03`            |
-| `UC-F3-13` | Thanh toán phụ phí và khoản nộp bổ sung                            | Storage Customer | Facility Manager | `SC-03`            |
+| `UC-F3-13` | Thanh toán phụ phí và khoản nộp bổ sung                              | Storage Customer | Facility Manager | `SC-03`            |
 
 ---
 
@@ -1832,19 +1841,19 @@ Activity Diagram: [activity-diagram-flow-5-facility-staff-management.drawio](dia
 
 Activity Diagram: [activity-diagram-flow-6-1-storage-renewal.drawio](diagrams/activity-diagram-flow-6-1-storage-renewal.drawio) và [activity-diagram-flow-6-2-overdue-handling.drawio](diagrams/activity-diagram-flow-6-2-overdue-handling.drawio) (lưu trữ cũ: [diagrams/_archive/activity-flow-6.puml](diagrams/_archive/activity-flow-6.puml)) — Sub-flow 6.1 nhắc hạn và Renewal (`UC-F6-01`–`04`); Sub-flow 6.2 Overdue D+4 đến D+10 (`UC-F6-05`–`11`).
 
-| Mã UC       | Use case                                                       | Actor chính     | Actor liên quan | Mã yêu cầu        |
-| ------------ | -------------------------------------------------------------- | ---------------- | ---------------- | -------------------- |
+| Mã UC       | Use case                                                                                               | Actor chính     | Actor liên quan | Mã yêu cầu        |
+| ------------ | ------------------------------------------------------------------------------------------------------ | ---------------- | ---------------- | -------------------- |
 | `UC-F6-01` | Nhận thông báo nhắc gia hạn (từ trước 2 tháng, và 7, 3, 1 ngày trước mốc khóa gia hạn) | Storage Customer | System           | `SC-05`, `BM-02` |
-| `UC-F6-02` | Yêu cầu gia hạn hợp đồng thuê trước mốc 1 tháng (kiểm tra không bị đặt trước) | Storage Customer | Facility Manager | `SC-05`            |
-| `UC-F6-03` | Thanh toán phí gia hạn N tháng qua cổng thanh toán trực tuyến | Storage Customer | —               | `SC-03`            |
-| `UC-F6-04` | Tự động dời ngày kết thúc Contract sau Payment thành công (giữ nguyên ô kho) | System           | Facility Manager  | `FM-04`            |
-| `UC-F6-05` | Phát hiện hợp đồng quá hạn theo lịch chạy tự động  | System           | Facility Manager | `FM-04`            |
-| `UC-F6-06` | Tính và áp phí quá hạn theo ngày từ D+4 đến D+10       | System           | Facility Manager | `FM-04`, `BM-03` |
-| `UC-F6-07` | Tự động khóa Access Credential tại D+10              | System           | Facility Manager  | `FM-04`            |
-| `UC-F6-08` | Gửi thông báo nhắc dọn đồ hàng ngày trong 10 ngày quá hạn | System       | Storage Customer  | `FM-04`            |
-| `UC-F6-09` | Staff dọn kho, niêm phong đồ tồn về kho tổng offline sau D+10 | Facility Staff | Facility Manager | `FM-04`, `BM-02` |
-| `UC-F6-10` | Theo dõi danh sách hợp đồng quá hạn tại cơ sở        | Facility Manager | —               | `FM-06`            |
-| `UC-F6-11` | Tự động chấm dứt Contract và chuyển kho Cleaning tại D+10 | System     | Facility Manager  | `FM-04`            |
+| `UC-F6-02` | Yêu cầu gia hạn hợp đồng thuê trước mốc 1 tháng (kiểm tra không bị đặt trước)        | Storage Customer | Facility Manager | `SC-05`            |
+| `UC-F6-03` | Thanh toán phí gia hạn N tháng qua cổng thanh toán trực tuyến                                  | Storage Customer | —               | `SC-03`            |
+| `UC-F6-04` | Tự động dời ngày kết thúc Contract sau Payment thành công (giữ nguyên ô kho)               | System           | Facility Manager | `FM-04`            |
+| `UC-F6-05` | Phát hiện hợp đồng quá hạn theo lịch chạy tự động                                          | System           | Facility Manager | `FM-04`            |
+| `UC-F6-06` | Tính và áp phí quá hạn theo ngày từ D+4 đến D+10                                             | System           | Facility Manager | `FM-04`, `BM-03` |
+| `UC-F6-07` | Tự động khóa Access Credential tại D+10                                                           | System           | Facility Manager | `FM-04`            |
+| `UC-F6-08` | Gửi thông báo nhắc dọn đồ hàng ngày trong 10 ngày quá hạn                                  | System           | Storage Customer | `FM-04`            |
+| `UC-F6-09` | Staff dọn kho, niêm phong đồ tồn về kho tổng offline sau D+10                                   | Facility Staff   | Facility Manager | `FM-04`, `BM-02` |
+| `UC-F6-10` | Theo dõi danh sách hợp đồng quá hạn tại cơ sở                                                | Facility Manager | —               | `FM-06`            |
+| `UC-F6-11` | Tự động chấm dứt Contract và chuyển kho Cleaning tại D+10                                      | System           | Facility Manager | `FM-04`            |
 
 ---
 
@@ -1858,7 +1867,7 @@ Activity Diagram: [activity-diagram-flow-7-support-incident-handling.drawio](dia
 | ------------ | ----------------------------------------------------------------------------------- | ---------------- | ---------------- | ------------- |
 | `UC-F7-01` | Gửi yêu cầu hỗ trợ về ô kho, khóa, Access Code, thanh toán hoặc tài sản | Storage Customer | —               | `SC-06`     |
 | `UC-F7-02` | Theo dõi trạng thái và phản hồi của yêu cầu hỗ trợ                       | Storage Customer | —               | `SC-06`     |
-| `UC-F7-03` | Tiếp nhận và phân loại yêu cầu hỗ trợ sự cố       | Facility Manager | Facility Staff   | `FM-05`     |
+| `UC-F7-03` | Tiếp nhận và phân loại yêu cầu hỗ trợ sự cố                              | Facility Manager | Facility Staff   | `FM-05`     |
 | `UC-F7-04` | Phân công Facility Staff xử lý sự cố                                          | Facility Manager | Facility Staff   | `FM-05`     |
 | `UC-F7-05` | Xử lý sự cố mất chìa khóa hoặc lỗi Access Code                             | Facility Staff   | Storage Customer | `FS-05`     |
 | `UC-F7-06` | Xử lý ô kho hư hỏng và yêu cầu bảo trì                                    | Facility Staff   | Facility Manager | `FS-05`     |
@@ -1894,35 +1903,35 @@ kiện cần của mọi use case còn lại, tương ứng task T2.3.
 Toàn bộ **27 mã yêu cầu** ở [TOPIC.md § 3](TOPIC.md#3-yêu-cầu-chức-năng-theo-tác-nhân) đều có ít nhất
 một use case tương ứng.
 
-| Mã yêu cầu | Use case tương ứng                                                                                   | Số UC |
-| ------------- | ------------------------------------------------------------------------------------------------------- | :----: |
-| `SC-01`     | `UC-F1-01` `UC-F1-02` `UC-F1-03`                                                                  |   3   |
-| `SC-02`     | `UC-F1-04` `UC-F1-05` `UC-F1-09` `UC-F1-10` `UC-F1-12`                                     |   5   |
-| `SC-03`     | `UC-F1-07` `UC-F6-03` `UC-F3-13`                                                               |   3   |
-| `SC-04`     | `UC-F2-05`                                                                                            |   1   |
-| `SC-05`     | `UC-F3-01` `UC-F3-02` `UC-F3-03` `UC-F3-04` `UC-F3-05` `UC-F6-01` `UC-F6-02`              |   7   |
-| `SC-06`     | `UC-F7-01` `UC-F7-02`                                                                               |   2   |
-| `FS-01`     | `UC-F2-01` `UC-F2-02` `UC-F2-08`                                                                  |   3   |
-| `FS-02`     | `UC-F2-03` `UC-F2-04`                                                                               |   2   |
-| `FS-03`     | `UC-F2-06` `UC-F3-07` `UC-F3-09` `UC-F3-12` `UC-F7-07`                                        |   5   |
-| `FS-04`     | `UC-F3-06`                                                                                            |   1   |
-| `FS-05`     | `UC-F7-03` `UC-F7-05` `UC-F7-06` `UC-F7-08`                                                     |   4   |
-| `FS-06`     | `UC-F5-05`                                                                                            |   1   |
-| `FM-01`     | `UC-F5-01` `UC-F5-02` `UC-F5-03`                                                                  |   3   |
-| `FM-02`     | `UC-F1-06` `UC-F1-08` `UC-F1-11` `UC-F1-12` `UC-F2-07` `UC-F2-08`                      |   6   |
-| `FM-03`     | `UC-F3-10` `UC-F3-11`                                                                               |   2   |
+| Mã yêu cầu | Use case tương ứng                                                                                                | Số UC |
+| ------------- | -------------------------------------------------------------------------------------------------------------------- | :----: |
+| `SC-01`     | `UC-F1-01` `UC-F1-02` `UC-F1-03`                                                                               |   3   |
+| `SC-02`     | `UC-F1-04` `UC-F1-05` `UC-F1-09` `UC-F1-10` `UC-F1-12`                                                     |   5   |
+| `SC-03`     | `UC-F1-07` `UC-F6-03` `UC-F3-13`                                                                               |   3   |
+| `SC-04`     | `UC-F2-05`                                                                                                         |   1   |
+| `SC-05`     | `UC-F3-01` `UC-F3-02` `UC-F3-03` `UC-F3-04` `UC-F3-05` `UC-F6-01` `UC-F6-02`                           |   7   |
+| `SC-06`     | `UC-F7-01` `UC-F7-02`                                                                                            |   2   |
+| `FS-01`     | `UC-F2-01` `UC-F2-02` `UC-F2-08`                                                                               |   3   |
+| `FS-02`     | `UC-F2-03` `UC-F2-04`                                                                                            |   2   |
+| `FS-03`     | `UC-F2-06` `UC-F3-07` `UC-F3-09` `UC-F3-12` `UC-F7-07`                                                     |   5   |
+| `FS-04`     | `UC-F3-06`                                                                                                         |   1   |
+| `FS-05`     | `UC-F7-03` `UC-F7-05` `UC-F7-06` `UC-F7-08`                                                                  |   4   |
+| `FS-06`     | `UC-F5-05`                                                                                                         |   1   |
+| `FM-01`     | `UC-F5-01` `UC-F5-02` `UC-F5-03`                                                                               |   3   |
+| `FM-02`     | `UC-F1-06` `UC-F1-08` `UC-F1-11` `UC-F1-12` `UC-F2-07` `UC-F2-08`                                        |   6   |
+| `FM-03`     | `UC-F3-10` `UC-F3-11`                                                                                            |   2   |
 | `FM-04`     | `UC-F3-05` `UC-F3-08` `UC-F6-04` `UC-F6-05` `UC-F6-06` `UC-F6-07` `UC-F6-08` `UC-F6-09` `UC-F6-11` |   9   |
-| `FM-05`     | `UC-F2-09` `UC-F5-04` `UC-F7-04`                                                                  |   3   |
-| `FM-06`     | `UC-F5-06` `UC-F6-10`                                                                               |   2   |
-| `BM-01`     | `UC-F4-01`                                                                                            |   1   |
+| `FM-05`     | `UC-F2-09` `UC-F5-04` `UC-F7-04`                                                                               |   3   |
+| `FM-06`     | `UC-F5-06` `UC-F6-10`                                                                                            |   2   |
+| `BM-01`     | `UC-F4-01`                                                                                                         |   1   |
 | `BM-02`     | `UC-F1-10` `UC-F1-12` `UC-F4-02` `UC-F4-03` `UC-F4-04` `UC-F4-05` `UC-F4-06` `UC-F6-01` `UC-F6-09` |   9   |
-| `BM-03`     | `UC-F1-05` `UC-F4-07` `UC-F4-08` `UC-F4-09` `UC-F6-06`                                           |   5   |
-| `BM-04`     | `UC-F4-10` `UC-F4-11`                                                                               |   2   |
-| `BM-05`     | `UC-F4-12`                                                                                            |   1   |
-| `SA-01`     | `UC-SYS-02`                                                                                           |   1   |
-| `SA-02`     | `UC-F5-07`                                                                                            |   1   |
-| `SA-03`     | `UC-F5-08`                                                                                            |   1   |
-| `SA-04`     | `UC-SYS-03`                                                                                           |   1   |
+| `BM-03`     | `UC-F1-05` `UC-F4-07` `UC-F4-08` `UC-F4-09` `UC-F6-06`                                                     |   5   |
+| `BM-04`     | `UC-F4-10` `UC-F4-11`                                                                                            |   2   |
+| `BM-05`     | `UC-F4-12`                                                                                                         |   1   |
+| `SA-01`     | `UC-SYS-02`                                                                                                        |   1   |
+| `SA-02`     | `UC-F5-07`                                                                                                         |   1   |
+| `SA-03`     | `UC-F5-08`                                                                                                         |   1   |
+| `SA-04`     | `UC-SYS-03`                                                                                                        |   1   |
 
 ---
 
