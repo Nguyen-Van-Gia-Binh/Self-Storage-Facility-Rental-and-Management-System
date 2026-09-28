@@ -43,7 +43,7 @@
 | **Giai đoạn** | Bám sát [PLAN.md § 5](PLAN.md#5-bản-đồ-phủ-yêu-cầu): P2 (Nền tảng danh mục), P3 (Flow 1 & 2), P4 (Flow 3, 6, 7), P5 (Báo cáo cơ sở) |
 | **Tham chiếu** | Mọi story đều trỏ về use case tại [USE-CASES.md](USE-CASES.md) và ràng buộc tại [BUSINESS-RULES.md](BUSINESS-RULES.md) |
 
-Tổng cộng **22 user story**, **91 acceptance criteria**, **106 story point**.
+Tổng cộng **22 user story**, **92 acceptance criteria**, **106 story point**.
 
 ---
 
@@ -503,4 +503,4 @@ Tổng cộng **22 user story**, **91 acceptance criteria**, **106 story point**
 **Theo giai đoạn:** P2 — 2 story / 10 point · P3 — 7 story / 31 point · P4 — 11 story / 53 point · P5 — 2 story / 12 point.
 **Theo ưu tiên:** Must — 20 story / 100 point · Should — 2 story / 6 point · Could — 0 story.
 **Theo actor:** Facility Staff — 11 story / 45 point · Facility Manager — 11 story / 61 point.
-**Tổng:** 22 story · 106 story point · 91 acceptance criteria.
+**Tổng:** 22 story · 106 story point · 92 acceptance criteria.
