@@ -52,19 +52,36 @@ public class StorageUnitServiceImpl implements StorageUnitService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<StorageUnitResponse> getStorageUnitsByFacility(Long facilityId, Long unitTypeId, StorageUnitStatus status, Pageable pageable) {
-        return getStorageUnitsByFacility(facilityId, unitTypeId, status, null, null, pageable);
+        return getStorageUnitsByFacility(facilityId, unitTypeId, status, null, null, null, null, pageable);
     }
 
     @Override
     @Transactional(readOnly = true)
     public PageResponse<StorageUnitResponse> getStorageUnitsByFacility(
             Long facilityId, Long unitTypeId, StorageUnitStatus status, Integer floor, String position, Pageable pageable) {
+        return getStorageUnitsByFacility(facilityId, unitTypeId, status, floor, position, null, null, pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<StorageUnitResponse> getStorageUnitsByFacility(
+            Long facilityId, Long unitTypeId, StorageUnitStatus status, Integer floor, String position,
+            java.time.LocalDate startDate, Integer rentalMonths, Pageable pageable) {
+        StorageUnitStatus queryStatus = (startDate != null && rentalMonths != null && rentalMonths > 0) ? null : status;
         Page<StorageUnit> page;
         if (floor != null || position != null) {
-            page = storageUnitRepository.findByFacilityIdAndAdvancedFilters(facilityId, unitTypeId, status, floor, position, pageable);
+            page = storageUnitRepository.findByFacilityIdAndAdvancedFilters(facilityId, unitTypeId, queryStatus, floor, position, pageable);
         } else {
-            page = storageUnitRepository.findByFacilityIdAndFilters(facilityId, unitTypeId, status, pageable);
+            page = storageUnitRepository.findByFacilityIdAndFilters(facilityId, unitTypeId, queryStatus, pageable);
         }
+
+        List<Long> occupiedUnitIds = (startDate != null && rentalMonths != null && rentalMonths > 0)
+                ? storageUnitRepository.findOccupiedUnitIdsByDateRange(facilityId, startDate, startDate.plusMonths(rentalMonths))
+                : List.of();
+
+        List<Long> reservedUnitIds = (startDate != null && rentalMonths != null && rentalMonths > 0)
+                ? storageUnitRepository.findReservedUnitIdsByDateRange(facilityId, startDate, startDate.plusMonths(rentalMonths))
+                : List.of();
 
         List<StorageUnitResponse> content = page.getContent().stream().map(su -> {
             UnitType ut = unitTypeRepository.findById(su.getUnitTypeId()).orElse(null);
@@ -72,8 +89,20 @@ public class StorageUnitServiceImpl implements StorageUnitService {
                     ? priceRepository.findByFacilityIdAndUnitTypeId(facilityId, su.getUnitTypeId())
                             .map(FacilityUnitTypePrice::getMonthlyPrice).orElse(0L)
                     : 0L;
-            return mapper.toStorageUnitResponse(su, ut, price);
-        }).toList();
+            StorageUnitResponse res = mapper.toStorageUnitResponse(su, ut, price);
+            if (startDate != null && rentalMonths != null && rentalMonths > 0) {
+                if (su.getStatus() == StorageUnitStatus.MAINTENANCE || su.getStatus() == StorageUnitStatus.OUT_OF_SERVICE) {
+                    res.setStatus(su.getStatus());
+                } else if (occupiedUnitIds.contains(su.getId())) {
+                    res.setStatus(StorageUnitStatus.OCCUPIED);
+                } else if (reservedUnitIds.contains(su.getId())) {
+                    res.setStatus(StorageUnitStatus.RESERVED);
+                } else {
+                    res.setStatus(StorageUnitStatus.AVAILABLE);
+                }
+            }
+            return res;
+        }).filter(res -> status == null || res.getStatus() == status).toList();
 
         return new PageResponse<>(content, page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages());
     }

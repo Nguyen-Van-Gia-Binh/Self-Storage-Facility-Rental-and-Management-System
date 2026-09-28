@@ -41,12 +41,33 @@ class StorageUnitControllerTest {
                 .status(StorageUnitStatus.AVAILABLE)
                 .build();
 
-        when(storageUnitService.getStorageUnitsByFacility(eq(1L), any(), any(), any()))
+        when(storageUnitService.getStorageUnitsByFacility(eq(1L), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(new PageResponse<>(List.of(unit), 0, 20, 1, 1));
 
         mockMvc.perform(get("/facilities/1/storage-units"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].code").value("S-101"));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/facilities/{facilityId}/storage-units với startDate và rentalMonths")
+    void testGetStorageUnitsWithDateRange() throws Exception {
+        StorageUnitResponse unit = StorageUnitResponse.builder()
+                .id(42L)
+                .code("S-101")
+                .status(StorageUnitStatus.AVAILABLE)
+                .build();
+
+        when(storageUnitService.getStorageUnitsByFacility(
+                eq(1L), any(), any(), any(), any(), eq(java.time.LocalDate.of(2027, 1, 1)), eq(6), any()))
+                .thenReturn(new PageResponse<>(List.of(unit), 0, 20, 1, 1));
+
+        mockMvc.perform(get("/facilities/1/storage-units")
+                        .param("startDate", "2027-01-01")
+                        .param("rentalMonths", "6"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].code").value("S-101"))
+                .andExpect(jsonPath("$.content[0].status").value("AVAILABLE"));
     }
 
     @Test

@@ -296,4 +296,89 @@ class StorageUnitServiceTest {
         CustomException ex = assertThrows(CustomException.class, () -> storageUnitService.updateStorageUnitStatus(1L, 42L, req));
         assertEquals(ErrorCode.INVALID_STATUS_TRANSITION, ex.getErrorCode());
     }
+
+    @Test
+    @DisplayName("Kiểm tra trạng thái động: Ô kho chuyển sang OCCUPIED khi bị trùng hợp đồng trong kỳ hạn")
+    void shouldReturnOccupiedUnit_whenCollidesWithActiveContractInDateRange() {
+        Pageable pageable = PageRequest.of(0, 10);
+        java.time.LocalDate startDate = java.time.LocalDate.of(2026, 10, 1);
+        int rentalMonths = 3;
+
+        when(storageUnitRepository.findByFacilityIdAndFilters(eq(1L), isNull(), isNull(), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(storageUnit), pageable, 1));
+        when(storageUnitRepository.findOccupiedUnitIdsByDateRange(eq(1L), eq(startDate), eq(startDate.plusMonths(rentalMonths))))
+                .thenReturn(List.of(42L));
+        when(storageUnitRepository.findReservedUnitIdsByDateRange(eq(1L), eq(startDate), eq(startDate.plusMonths(rentalMonths))))
+                .thenReturn(List.of());
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(unitType));
+
+        PageResponse<StorageUnitResponse> response = storageUnitService.getStorageUnitsByFacility(
+                1L, null, null, null, null, startDate, rentalMonths, pageable);
+
+        assertNotNull(response);
+        assertEquals(1, response.getContent().size());
+        assertEquals(StorageUnitStatus.OCCUPIED, response.getContent().get(0).getStatus());
+    }
+
+    @Test
+    @DisplayName("Kiểm tra trạng thái động: Ô kho đang OCCUPIED trong DB nhưng không trùng hợp đồng tương lai sẽ thành AVAILABLE")
+    void shouldReturnAvailableUnit_whenOldOccupiedUnitContractEndedBeforeStartDate() {
+        Pageable pageable = PageRequest.of(0, 10);
+        java.time.LocalDate startDate = java.time.LocalDate.of(2027, 1, 1);
+        int rentalMonths = 6;
+
+        StorageUnit occupiedUnitInDb = StorageUnit.builder()
+                .id(42L)
+                .facilityId(1L)
+                .unitTypeId(7L)
+                .code("S-101")
+                .status(StorageUnitStatus.OCCUPIED)
+                .build();
+
+        when(storageUnitRepository.findByFacilityIdAndFilters(eq(1L), isNull(), isNull(), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(occupiedUnitInDb), pageable, 1));
+        when(storageUnitRepository.findOccupiedUnitIdsByDateRange(eq(1L), eq(startDate), eq(startDate.plusMonths(rentalMonths))))
+                .thenReturn(List.of());
+        when(storageUnitRepository.findReservedUnitIdsByDateRange(eq(1L), eq(startDate), eq(startDate.plusMonths(rentalMonths))))
+                .thenReturn(List.of());
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(unitType));
+
+        PageResponse<StorageUnitResponse> response = storageUnitService.getStorageUnitsByFacility(
+                1L, null, null, null, null, startDate, rentalMonths, pageable);
+
+        assertNotNull(response);
+        assertEquals(1, response.getContent().size());
+        assertEquals(StorageUnitStatus.AVAILABLE, response.getContent().get(0).getStatus());
+    }
+
+    @Test
+    @DisplayName("Kiểm tra trạng thái động: Ô kho MAINTENANCE vẫn giữ nguyên trạng thái sửa chữa dù không vướng hợp đồng")
+    void shouldKeepMaintenanceUnit_evenIfNoContractInDateRange() {
+        Pageable pageable = PageRequest.of(0, 10);
+        java.time.LocalDate startDate = java.time.LocalDate.of(2027, 1, 1);
+        int rentalMonths = 6;
+
+        StorageUnit maintenanceUnit = StorageUnit.builder()
+                .id(42L)
+                .facilityId(1L)
+                .unitTypeId(7L)
+                .code("S-101")
+                .status(StorageUnitStatus.MAINTENANCE)
+                .build();
+
+        when(storageUnitRepository.findByFacilityIdAndFilters(eq(1L), isNull(), isNull(), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(maintenanceUnit), pageable, 1));
+        when(storageUnitRepository.findOccupiedUnitIdsByDateRange(eq(1L), eq(startDate), eq(startDate.plusMonths(rentalMonths))))
+                .thenReturn(List.of());
+        when(storageUnitRepository.findReservedUnitIdsByDateRange(eq(1L), eq(startDate), eq(startDate.plusMonths(rentalMonths))))
+                .thenReturn(List.of());
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(unitType));
+
+        PageResponse<StorageUnitResponse> response = storageUnitService.getStorageUnitsByFacility(
+                1L, null, null, null, null, startDate, rentalMonths, pageable);
+
+        assertNotNull(response);
+        assertEquals(1, response.getContent().size());
+        assertEquals(StorageUnitStatus.MAINTENANCE, response.getContent().get(0).getStatus());
+    }
 }
