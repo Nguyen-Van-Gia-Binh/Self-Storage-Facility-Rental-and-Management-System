@@ -59,7 +59,7 @@ export const StaffReturnInspectionPage: React.FC = () => {
         setSelectedContract(item);
       } else {
         // Tự động chọn đơn đầu tiên được phân công cho nhân viên này
-        const myTask = staffId ? list.find((c) => c.assignedStaffId === staffId) : null;
+        const myTask = staffId ? list.find((c) => Number(c.assignedStaffId) === Number(staffId)) : null;
         setSelectedContract(myTask ?? null);
       }
     } catch (err) {
@@ -80,7 +80,7 @@ export const StaffReturnInspectionPage: React.FC = () => {
 
   // Chỉ hiển thị đơn được Quản lý phân công đích danh cho nhân viên hiện tại
   const myAssignedContracts = staffId
-    ? contracts.filter((c) => c.assignedStaffId === staffId)
+    ? contracts.filter((c) => Number(c.assignedStaffId) === Number(staffId))
     : [];
 
   // Đếm số đơn đang chờ phân công (để hiển thị thông tin)
