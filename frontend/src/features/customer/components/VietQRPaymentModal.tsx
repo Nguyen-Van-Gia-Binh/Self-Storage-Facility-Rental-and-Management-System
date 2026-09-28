@@ -18,6 +18,7 @@ import {
   createCheckout,
   pollPaymentStatus,
   generateMoveInPass,
+  processSandboxTransfer,
   type CheckoutResult,
 } from '@/api/payment';
 import type { MoveInPassData } from '@/types';
@@ -25,22 +26,23 @@ import type { MoveInPassData } from '@/types';
 export interface VietQRPaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onPaymentSuccess: (passData: MoveInPassData) => void;
+  onPaymentSuccess: (passData?: MoveInPassData) => void;
   unitNumber: string;
   facilityName: string;
-  facilityAddress: string;
-  facilityPhone: string;
-  rentalMonths: number;
-  monthlyPrice: number;
-  rentalFee: number;
-  depositAmount: number;
+  facilityAddress?: string;
+  facilityPhone?: string;
+  rentalMonths?: number;
+  monthlyPrice?: number;
+  rentalFee?: number;
+  depositAmount?: number;
   totalAmount: number;
-  customerName: string;
-  customerPhone: string;
-  customerIdCard: string;
-  startDate: string;
+  customerName?: string;
+  customerPhone?: string;
+  customerIdCard?: string;
+  startDate?: string;
   reservationId?: number;
   contractId?: number;
+  paymentType?: 'RESERVATION' | 'CONTRACT_RENEWAL' | 'OVERDUE_PENALTY' | 'SETTLEMENT';
 }
 
 export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
@@ -51,10 +53,10 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
   facilityName,
   facilityAddress,
   facilityPhone,
-  rentalMonths,
-  monthlyPrice,
-  rentalFee,
-  depositAmount,
+  rentalMonths = 1,
+  monthlyPrice = 0,
+  rentalFee = 0,
+  depositAmount = 0,
   totalAmount,
   customerName,
   customerPhone,
@@ -62,6 +64,7 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
   startDate,
   reservationId,
   contractId,
+  paymentType = 'RESERVATION',
 }) => {
   const [selectedMethod, setSelectedMethod] = useState<'VIETQR' | 'CARD'>('VIETQR');
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -71,6 +74,8 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
   const [orderCode, setOrderCode] = useState<number | null>(null);
   const [checkoutData, setCheckoutData] = useState<CheckoutResult | null>(null);
   const [isPaid, setIsPaid] = useState(false);
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
 
   // 48 giờ tính bằng giây: 48 * 3600 = 172800s (BR-DEP-03)
   const [secondsRemaining, setSecondsRemaining] = useState(172800);
@@ -97,7 +102,9 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
   }, [customerIdCard]);
 
   // Cú pháp nội dung chuyển khoản bắt buộc
-  const transferMemo = `SMARTSTORAGE ${unitNumber} ${idLast4}`;
+  const transferMemo = paymentType === 'OVERDUE_PENALTY'
+    ? `PHAT${contractId || ''} ${unitNumber}`
+    : `SMARTSTORAGE ${unitNumber} ${idLast4}`;
   const bankAccount = checkoutData?.accountNumber || '0888567999';
   const bankName = 'MB Bank (Ngân hàng Quân Đội)';
   const accountHolder = checkoutData?.accountName || 'CONG TY CP SMARTSTORAGE VIETNAM';
@@ -108,11 +115,19 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
       setOrderCode(null);
       setCheckoutData(null);
       setIsPaid(false);
+      setIsInitializing(false);
       return;
     }
 
     let isSubscribed = true;
-    const refType = contractId ? 'CONTRACT_RENEWAL' : 'RESERVATION';
+    if (paymentType === 'OVERDUE_PENALTY' && totalAmount <= 0) {
+      setIsInitializing(false);
+      setPaymentNotice('Hợp đồng này hiện không có nợ phạt quá hạn cần thanh toán.');
+      return;
+    }
+
+    setIsInitializing(true);
+    const refType = paymentType || (contractId ? 'CONTRACT_RENEWAL' : 'RESERVATION');
     const refId = contractId || reservationId || 1;
 
     createCheckout({
@@ -125,16 +140,22 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
         if (isSubscribed) {
           setCheckoutData(res);
           setOrderCode(res.orderCode);
+          setIsInitializing(false);
         }
       })
-      .catch((err) => {
-        console.warn('Lỗi khởi tạo checkout PayOS, fallback mã mặc định:', err);
+      .catch((err: any) => {
+        console.warn('Lỗi khởi tạo checkout PayOS:', err);
+        if (isSubscribed) {
+          setIsInitializing(false);
+          const serverMsg = err?.response?.data?.message || err?.message;
+          setPaymentNotice(serverMsg || 'Không thể tạo mã đơn hàng PayOS. Vui lòng đóng và thử lại sau giây lát!');
+        }
       });
 
     return () => {
       isSubscribed = false;
     };
-  }, [isOpen, totalAmount, transferMemo]);
+  }, [isOpen, totalAmount, transferMemo, paymentType, contractId, reservationId]);
 
   const handleClose = () => {
     setIsClosing(true);
@@ -155,25 +176,32 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
           setIsPaid(true);
           clearInterval(intervalId);
 
-          const pass = generateMoveInPass({
-            reservationId: `RES-${orderCode}`,
-            unitNumber,
-            facilityId: 'FAC-D7-01',
-            facilityName,
-            facilityAddress,
-            facilityPhone,
-            customerName: customerName || 'Quý khách hàng',
-            customerPhone: customerPhone || '0901234567',
-            customerIdentity: customerIdCard || '079199001234',
-            startDate: startDate || new Date().toISOString().split('T')[0],
-            checkInWindow: 'Trong vòng 48 giờ kể từ lúc cọc',
-            totalPaid: totalAmount,
-          });
+          if (paymentType === 'OVERDUE_PENALTY') {
+            setTimeout(() => {
+              handleClose();
+              onPaymentSuccess();
+            }, 1000);
+          } else {
+            const pass = generateMoveInPass({
+              reservationId: `RES-${orderCode}`,
+              unitNumber,
+              facilityId: 'FAC-D7-01',
+              facilityName,
+              facilityAddress: facilityAddress || 'SmartStorage',
+              facilityPhone: facilityPhone || '1900 8888',
+              customerName: customerName || 'Quý khách hàng',
+              customerPhone: customerPhone || '0901234567',
+              customerIdentity: customerIdCard || '079199001234',
+              startDate: startDate || new Date().toISOString().split('T')[0],
+              checkInWindow: 'Trong vòng 48 giờ kể từ lúc cọc',
+              totalPaid: totalAmount,
+            });
 
-          setTimeout(() => {
-            handleClose();
-            onPaymentSuccess(pass);
-          }, 1000);
+            setTimeout(() => {
+              handleClose();
+              onPaymentSuccess(pass);
+            }, 1000);
+          }
         }
       } catch (err) {
         console.error('Lỗi auto-polling payment status:', err);
@@ -195,6 +223,7 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
     startDate,
     totalAmount,
     onPaymentSuccess,
+    paymentType,
   ]);
 
   // URL sinh VietQR Napas247 chuẩn
@@ -208,6 +237,48 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
     setTimeout(() => setCopiedField(null), 2000);
   };
 
+  // Nút chuyển tiền mô phỏng Sandbox nội bộ
+  const handleSandboxTransfer = async () => {
+    if (!orderCode) {
+      setPaymentNotice('Đang khởi tạo mã đơn hàng, vui lòng chờ trong giây lát...');
+      return;
+    }
+    if (isPaid || isSimulating) return;
+    setIsSimulating(true);
+    setPaymentNotice(null);
+    try {
+      await processSandboxTransfer(orderCode, 'TRANSFER_SUCCESS');
+      setIsPaid(true);
+      setTimeout(() => {
+        handleClose();
+        if (paymentType === 'OVERDUE_PENALTY') {
+          onPaymentSuccess();
+        } else {
+          const pass = generateMoveInPass({
+            reservationId: `RES-${orderCode}`,
+            unitNumber,
+            facilityId: 'FAC-D7-01',
+            facilityName,
+            facilityAddress: facilityAddress || 'SmartStorage',
+            facilityPhone: facilityPhone || '1900 8888',
+            customerName: customerName || 'Quý khách hàng',
+            customerPhone: customerPhone || '0901234567',
+            customerIdentity: customerIdCard || '079199001234',
+            startDate: startDate || new Date().toISOString().split('T')[0],
+            checkInWindow: 'Trong vòng 48 giờ kể từ lúc cọc',
+            totalPaid: totalAmount,
+          });
+          onPaymentSuccess(pass);
+        }
+      }, 1000);
+    } catch (err: unknown) {
+      console.error('Lỗi chuyển tiền Sandbox:', err);
+      setPaymentNotice('Không thể xác nhận chuyển tiền Sandbox. Vui lòng thử lại!');
+    } finally {
+      setIsSimulating(false);
+    }
+  };
+
   // Nút kiểm tra thủ công ngay lập tức
   const handleCheckNow = async () => {
     if (!orderCode) return;
@@ -217,27 +288,33 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
       const res = await pollPaymentStatus(orderCode);
       if (res.status === 'PAID' || res.status === 'SUCCESS') {
         setIsPaid(true);
-        const pass = generateMoveInPass({
-          reservationId: `RES-${orderCode}`,
-          unitNumber,
-          facilityId: 'FAC-D7-01',
-          facilityName,
-          facilityAddress,
-          facilityPhone,
-          customerName: customerName || 'Quý khách hàng',
-          customerPhone: customerPhone || '0901234567',
-          customerIdentity: customerIdCard || '079199001234',
-          startDate: startDate || new Date().toISOString().split('T')[0],
-          checkInWindow: 'Trong vòng 48 giờ kể từ lúc cọc',
-          totalPaid: totalAmount,
-        });
+        if (paymentType === 'OVERDUE_PENALTY') {
+          setIsVerifying(false);
+          handleClose();
+          onPaymentSuccess();
+        } else {
+          const pass = generateMoveInPass({
+            reservationId: `RES-${orderCode}`,
+            unitNumber,
+            facilityId: 'FAC-D7-01',
+            facilityName,
+            facilityAddress: facilityAddress || 'SmartStorage',
+            facilityPhone: facilityPhone || '1900 8888',
+            customerName: customerName || 'Quý khách hàng',
+            customerPhone: customerPhone || '0901234567',
+            customerIdentity: customerIdCard || '079199001234',
+            startDate: startDate || new Date().toISOString().split('T')[0],
+            checkInWindow: 'Trong vòng 48 giờ kể từ lúc cọc',
+            totalPaid: totalAmount,
+          });
 
-        setIsVerifying(false);
-        handleClose();
-        onPaymentSuccess(pass);
+          setIsVerifying(false);
+          handleClose();
+          onPaymentSuccess(pass);
+        }
       } else {
         setIsVerifying(false);
-        setPaymentNotice('Hệ thống chưa ghi nhận thanh toán. Vui lòng hoàn tất chuyển khoản trước khi nhận Thẻ kho!');
+        setPaymentNotice('Hệ thống chưa ghi nhận thanh toán. Vui lòng hoàn tất chuyển khoản trước khi tiếp tục!');
       }
     } catch (err) {
       console.error('Lỗi kiểm tra đối soát thanh toán:', err);
@@ -275,33 +352,54 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
           <div className="flex items-center gap-2 mb-1.5">
             <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-white/20 backdrop-blur-xs px-2.5 py-0.5 rounded-full uppercase tracking-wider text-emerald-100">
               <Sparkles className="w-3 h-3 text-amber-300" />
-              Cổng Thanh Toán Trực Tuyến 24/7
+              {paymentType === 'OVERDUE_PENALTY' ? 'Tất Toán Nợ Phạt Quá Hạn (D+n)' : 'Cổng Thanh Toán Trực Tuyến 24/7'}
             </span>
           </div>
 
           <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
-            Thanh Toán Giữ Chỗ Ô Kho {unitNumber}
+            {paymentType === 'OVERDUE_PENALTY'
+              ? `Đóng Nợ Phạt Ngăn Tủ ${unitNumber}`
+              : `Thanh Toán Giữ Chỗ Ô Kho ${unitNumber}`}
           </h2>
-          <p className="text-xs text-emerald-100/90 mt-0.5">{facilityName}</p>
+          <p className="text-xs text-emerald-100/90 mt-0.5">
+            {facilityName} {contractId ? `· Hợp đồng #${contractId}` : ''}
+          </p>
         </div>
 
         <div className="p-5 sm:p-6 space-y-5 max-h-[82vh] overflow-y-auto">
-          {/* 48-Hour Reservation Hold Countdown (BR-DEP-03) */}
-          <div className="bg-amber-50 border border-amber-200/80 rounded-xl p-3.5 flex items-center justify-between gap-3 text-amber-900">
-            <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-amber-600 flex-shrink-0 animate-pulse" />
-              <div>
-                <span className="text-xs font-bold block">Thời gian giữ chỗ nguyên tử</span>
-                <span className="text-[11px] text-amber-700">Ô kho được khoá ưu tiên cho bạn trong 48 giờ</span>
+          {paymentType === 'OVERDUE_PENALTY' ? (
+            <div className="bg-rose-50 border border-rose-200/90 rounded-xl p-3.5 flex items-center justify-between gap-3 text-rose-900">
+              <div className="flex items-center gap-2">
+                <Clock className="w-5 h-5 text-rose-600 flex-shrink-0" />
+                <div>
+                  <span className="text-xs font-bold block">Xử lý quá hạn theo quy định BR-OVD-03</span>
+                  <span className="text-[11px] text-rose-700">Phí phạt 10% tiền cọc/ngày. Tất toán nợ để khôi phục quyền Báo trả kho.</span>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="font-mono text-base font-extrabold text-rose-700 tracking-wider">
+                  {formatVND(totalAmount)}
+                </span>
+                <span className="text-[10px] text-rose-600 block">Nợ phạt phát sinh</span>
               </div>
             </div>
-            <div className="text-right">
-              <span className="font-mono text-base font-extrabold text-amber-800 tracking-wider">
-                {formatCountdown(secondsRemaining)}
-              </span>
-              <span className="text-[10px] text-amber-600 block">Đang đếm ngược</span>
+          ) : (
+            <div className="bg-amber-50 border border-amber-200/80 rounded-xl p-3.5 flex items-center justify-between gap-3 text-amber-900">
+              <div className="flex items-center gap-2">
+                <Clock className="w-5 h-5 text-amber-600 flex-shrink-0 animate-pulse" />
+                <div>
+                  <span className="text-xs font-bold block">Thời gian giữ chỗ nguyên tử</span>
+                  <span className="text-[11px] text-amber-700">Ô kho được khoá ưu tiên cho bạn trong 48 giờ</span>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="font-mono text-base font-extrabold text-amber-800 tracking-wider">
+                  {formatCountdown(secondsRemaining)}
+                </span>
+                <span className="text-[10px] text-amber-600 block">Đang đếm ngược</span>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Payment Method Selector */}
           <div>
@@ -462,39 +560,57 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
           )}
 
           {/* Financial Breakdown Table */}
-          <div className="bg-white border border-slate-200/90 rounded-xl p-4 space-y-2.5 text-xs">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 font-bold text-slate-800">
-              <span>Bảng kê chi tiết nộp cọc</span>
-              <span className="text-[11px] text-brand-600 font-normal">Tách bạch theo quy định</span>
-            </div>
-
-            <div className="flex justify-between text-slate-600">
-              <span>Tiền thuê kho ({rentalMonths} tháng x {formatVND(monthlyPrice)}):</span>
-              <span className="font-semibold text-slate-800">{formatVND(rentalFee)}</span>
-            </div>
-
-            <div className="flex justify-between text-slate-600">
-              <div>
-                <span className="block">Tiền cọc bảo đảm (1 tháng):</span>
-                <span className="text-[10px] text-slate-400 italic">
-                  Được hoàn lại 100% khi thanh lý hợp đồng đúng hạn
-                </span>
+          {paymentType === 'OVERDUE_PENALTY' ? (
+            <div className="bg-white border border-slate-200/90 rounded-xl p-4 space-y-2.5 text-xs">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100 font-bold text-slate-800">
+                <span>Chi tiết khoản phí cần thanh toán</span>
+                <span className="text-[11px] text-rose-600 font-semibold">Tất toán nợ phạt</span>
               </div>
-              <span className="font-semibold text-slate-800">{formatVND(depositAmount)}</span>
+              <div className="flex justify-between text-slate-600">
+                <span>Phí phạt quá hạn tích lũy (BR-OVD-03):</span>
+                <span className="font-bold text-rose-600">{formatVND(totalAmount)}</span>
+              </div>
+              <div className="pt-2 border-t border-slate-200 flex justify-between items-center text-sm">
+                <span className="font-bold text-[#0a1614]">Tổng tiền cần thanh toán:</span>
+                <span className="font-extrabold text-base text-rose-600">{formatVND(totalAmount)}</span>
+              </div>
             </div>
+          ) : (
+            <div className="bg-white border border-slate-200/90 rounded-xl p-4 space-y-2.5 text-xs">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100 font-bold text-slate-800">
+                <span>Bảng kê chi tiết nộp cọc</span>
+                <span className="text-[11px] text-brand-600 font-normal">Tách bạch theo quy định</span>
+              </div>
 
-            <div className="pt-2 border-t border-slate-200 flex justify-between items-center text-sm">
-              <span className="font-bold text-[#0a1614]">Tổng thanh toán ban đầu:</span>
-              <span className="font-extrabold text-base text-brand-600">{formatVND(totalAmount)}</span>
+              <div className="flex justify-between text-slate-600">
+                <span>Tiền thuê kho ({rentalMonths} tháng x {formatVND(monthlyPrice)}):</span>
+                <span className="font-semibold text-slate-800">{formatVND(rentalFee)}</span>
+              </div>
+
+              <div className="flex justify-between text-slate-600">
+                <div>
+                  <span className="block">Tiền cọc bảo đảm (1 tháng):</span>
+                  <span className="text-[10px] text-slate-400 italic">
+                    Được hoàn lại 100% khi thanh lý hợp đồng đúng hạn
+                  </span>
+                </div>
+                <span className="font-semibold text-slate-800">{formatVND(depositAmount)}</span>
+              </div>
+
+              <div className="pt-2 border-t border-slate-200 flex justify-between items-center text-sm">
+                <span className="font-bold text-[#0a1614]">Tổng thanh toán ban đầu:</span>
+                <span className="font-extrabold text-base text-brand-600">{formatVND(totalAmount)}</span>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Security Notice */}
           <div className="flex items-start gap-2 text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
             <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
             <span>
-              Hệ thống sẽ đối soát tự động trong 10-30 giây và cấp ngay <strong>Thẻ nhận kho điện tử (Move-in Pass)</strong>.
-              Mã PIN mở khóa sẽ được kích hoạt tại quầy lễ tân.
+              {paymentType === 'OVERDUE_PENALTY'
+                ? 'Hệ thống sẽ đối soát tự động trong 10-30 giây. Sau khi thanh toán thành công, nợ phạt sẽ được xóa và quyền Báo trả kho sẽ được mở lại ngay lập tức.'
+                : 'Hệ thống sẽ đối soát tự động trong 10-30 giây và cấp ngay Thẻ nhận kho điện tử (Move-in Pass). Mã PIN mở khóa sẽ được kích hoạt tại quầy lễ tân.'}
             </span>
           </div>
 
@@ -504,12 +620,14 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
               <RefreshCw className={`w-4 h-4 text-emerald-600 ${isPaid ? '' : 'animate-spin'}`} />
               <span className="font-medium">
                 {isPaid
-                  ? 'Giao dịch thành công! Đang cấp thẻ nhận kho...'
+                  ? (paymentType === 'OVERDUE_PENALTY' ? 'Thanh toán nợ phạt thành công!' : 'Giao dịch thành công! Đang cấp thẻ nhận kho...')
+                  : isInitializing
+                  ? 'Đang khởi tạo mã đơn hàng thanh toán PayOS VietQR...'
                   : 'Hệ thống đang tự động quét đối soát chuyển khoản VietQR (mỗi 3 giây)...'}
               </span>
             </div>
             {orderCode && (
-              <span className="font-mono text-[11px] text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded font-bold">
+              <span className="font-mono text-[11px] text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded font-bold flex-shrink-0">
                 Mã: #{orderCode}
               </span>
             )}
@@ -517,60 +635,89 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
 
           {/* Cảnh báo khi kiểm tra mà chưa nhận được tiền */}
           {paymentNotice && (
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-amber-600 flex-shrink-0" />
-              <span>{paymentNotice}</span>
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center justify-between gap-2 shadow-2xs">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                <span>{paymentNotice}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPaymentNotice(null)}
+                className="text-amber-700 hover:text-amber-900 font-bold px-1.5 py-0.5 rounded cursor-pointer"
+              >
+                ×
+              </button>
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="pt-1 flex flex-col sm:flex-row items-center gap-2">
-            <Button
-              variant="outline"
-              size="md"
-              onClick={handleClose}
-              disabled={isVerifying}
-              className="w-full sm:w-1/4 py-2.5 text-xs font-semibold cursor-pointer"
-            >
-              Đóng
-            </Button>
+          {/* Action Buttons - Layout 2 tầng thoáng đãng, chuyên nghiệp */}
+          <div className="space-y-2.5 pt-2">
+            {!isPaid && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="md"
+                  onClick={handleSandboxTransfer}
+                  disabled={isSimulating || isPaid || isInitializing || !orderCode}
+                  className="w-full py-2.5 px-3 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-400 border border-emerald-300 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs transition-all whitespace-nowrap"
+                >
+                  <Sparkles className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  <span>{isSimulating ? 'Đang chuyển tiền...' : isInitializing ? 'Đang tạo đơn...' : 'Xác nhận Sandbox tại chỗ'}</span>
+                </Button>
 
-            {checkoutData?.checkoutUrl && !isPaid && (
-              <a
-                href={checkoutData.checkoutUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg flex items-center justify-center gap-1.5 transition-colors"
-              >
-                <span>Mở cổng VietQR Sandbox</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
+                <a
+                  href={checkoutData?.checkoutUrl || (orderCode ? `/payment/checkout?orderCode=${orderCode}` : '#')}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`w-full py-2.5 px-3 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-2xs text-center border whitespace-nowrap ${
+                    !orderCode || isInitializing
+                      ? 'pointer-events-none opacity-50 bg-slate-100 text-slate-400 border-slate-200'
+                      : 'text-blue-700 bg-blue-50 hover:bg-blue-100 hover:border-blue-300 border-blue-200'
+                  }`}
+                >
+                  <ExternalLink className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                  <span>Mở Cổng VietQR Sandbox</span>
+                </a>
+              </div>
             )}
 
-            <Button
-              variant="primary"
-              size="md"
-              onClick={handleCheckNow}
-              disabled={isVerifying || isPaid}
-              className="w-full sm:flex-1 py-2.5 text-xs font-bold flex items-center justify-center gap-2 shadow-sm cursor-pointer"
-            >
-              {isVerifying ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Đang kiểm tra đối soát...</span>
-                </>
-              ) : isPaid ? (
-                <>
-                  <Check className="w-4 h-4" />
-                  <span>Đã thanh toán thành công!</span>
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-4 h-4" />
-                  <span>Kiểm tra trạng thái ngay</span>
-                </>
-              )}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="md"
+                onClick={handleClose}
+                disabled={isVerifying}
+                className="w-1/3 py-2.5 text-xs font-semibold cursor-pointer rounded-xl"
+              >
+                Đóng
+              </Button>
+
+              <Button
+                variant="primary"
+                size="md"
+                onClick={handleCheckNow}
+                disabled={isVerifying || isPaid || isInitializing || !orderCode}
+                className="w-2/3 py-2.5 text-xs font-bold flex items-center justify-center gap-2 shadow-sm cursor-pointer rounded-xl whitespace-nowrap"
+              >
+                {isVerifying ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Đang kiểm tra đối soát...</span>
+                  </>
+                ) : isPaid ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Đã thanh toán thành công!</span>
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-4 h-4" />
+                    <span>Kiểm tra trạng thái ngay</span>
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </div>

@@ -126,6 +126,19 @@ public class PaymentServiceImpl implements PaymentService {
             defaultDesc = "QT" + contract.getId();
             contractId = contract.getId();
             txnType = "SETTLEMENT";
+        } else if ("OVERDUE_PENALTY".equalsIgnoreCase(request.getReferenceType())) {
+            com.swp391.selfstorage.contract.entity.RentalContract contract = rentalContractRepository.findById(request.getReferenceId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND,
+                            "Không tìm thấy hợp đồng với ID=" + request.getReferenceId()));
+
+            if (contract.getOverdueFeeAccrued() <= 0) {
+                throw new CustomException(ErrorCode.VALIDATION_FAILED, "Hợp đồng không có nợ phạt quá hạn cần thanh toán");
+            }
+
+            amount = contract.getOverdueFeeAccrued();
+            defaultDesc = "PHAT" + contract.getId();
+            contractId = contract.getId();
+            txnType = "OVERDUE_PENALTY";
         } else {
             throw new CustomException(ErrorCode.VALIDATION_FAILED,
                     "Loại thanh toán không được hỗ trợ: " + request.getReferenceType());
@@ -210,6 +223,22 @@ public class PaymentServiceImpl implements PaymentService {
         } else if ("SETTLEMENT".equalsIgnoreCase(payment.getTransactionType())) {
             log.info("Thanh toán quyết toán thu nợ Sandbox thành công cho contractId={}, transactionId={}",
                     payment.getContractId(), payment.getId());
+        } else if ("OVERDUE_PENALTY".equalsIgnoreCase(payment.getTransactionType())
+                || "EXTRA_FEE_PAYMENT".equalsIgnoreCase(payment.getTransactionType())) {
+            if (payment.getContractId() != null) {
+                rentalContractRepository.findById(payment.getContractId()).ifPresent(c -> {
+                    c.setOverdueFeeAccrued(0L);
+                    // Theo BR-OVD-08 & AC-7 (US-FS-FM): Thanh toán nợ phạt thành công trước D+10 thì hợp đồng và quyền truy cập được kích hoạt lại
+                    if (c.getStatus() == com.swp391.selfstorage.contract.entity.ContractStatus.OVERDUE) {
+                        c.setStatus(com.swp391.selfstorage.contract.entity.ContractStatus.ACTIVE);
+                        if (c.getEndDateExclusive() != null && java.time.LocalDate.now().isAfter(c.getEndDateExclusive())) {
+                            c.setEndDateExclusive(java.time.LocalDate.now());
+                        }
+                    }
+                    rentalContractRepository.save(c);
+                    log.info("Thanh toán nợ phạt Sandbox thành công: Kích hoạt lại hợp đồng ACTIVE và xóa nợ phạt về 0 cho contractId={}", c.getId());
+                });
+            }
         }
 
         return paymentMapper.toResponse(payment);
@@ -304,6 +333,22 @@ public class PaymentServiceImpl implements PaymentService {
         } else if ("SETTLEMENT".equalsIgnoreCase(payment.getTransactionType())) {
             log.info("Thanh toán quyết toán thu nợ PayOS thành công cho contractId={}, transactionId={}",
                     payment.getContractId(), payment.getId());
+        } else if ("OVERDUE_PENALTY".equalsIgnoreCase(payment.getTransactionType())
+                || "EXTRA_FEE_PAYMENT".equalsIgnoreCase(payment.getTransactionType())) {
+            if (payment.getContractId() != null) {
+                rentalContractRepository.findById(payment.getContractId()).ifPresent(c -> {
+                    c.setOverdueFeeAccrued(0L);
+                    // Theo BR-OVD-08 & AC-7 (US-FS-FM): Thanh toán nợ phạt thành công trước D+10 thì hợp đồng và quyền truy cập được kích hoạt lại
+                    if (c.getStatus() == com.swp391.selfstorage.contract.entity.ContractStatus.OVERDUE) {
+                        c.setStatus(com.swp391.selfstorage.contract.entity.ContractStatus.ACTIVE);
+                        if (c.getEndDateExclusive() != null && java.time.LocalDate.now().isAfter(c.getEndDateExclusive())) {
+                            c.setEndDateExclusive(java.time.LocalDate.now());
+                        }
+                    }
+                    rentalContractRepository.save(c);
+                    log.info("PayOS Webhook: Kích hoạt lại hợp đồng ACTIVE và xóa nợ phạt về 0 cho contractId={}", c.getId());
+                });
+            }
         }
 
         return paymentMapper.toResponse(payment);

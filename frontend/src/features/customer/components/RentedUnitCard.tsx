@@ -31,6 +31,7 @@ export interface RentedUnitCardProps {
   onChangePin?: (contract: RentedContract) => void;
   onScheduleReturn?: (contract: RentedContract) => void;
   onViewDetail?: (contract: RentedContract) => void;
+  onOpenOverduePayment?: (contract: RentedContract) => void;
 }
 
 export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
@@ -38,6 +39,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
   onChangePin,
   onScheduleReturn,
   onViewDetail,
+  onOpenOverduePayment,
 }) => {
   const [showPin, setShowPin] = useState(false);
   const [copiedPin, setCopiedPin] = useState(false);
@@ -60,7 +62,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
   const isGracePeriod = contract.status === 'OVERDUE' && overdueDays <= 3;
 
   const penaltyFee =
-    contract.overdueFee && contract.overdueFee > 0
+    typeof contract.overdueFee === 'number'
       ? contract.overdueFee
       : overdueDays > 3
       ? overdueDays <= 10
@@ -101,6 +103,13 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
       case 'EXPIRING_SOON':
         return <Badge variant="warning">Sắp hết hạn</Badge>;
       case 'OVERDUE':
+        if (penaltyFee === 0 && !isGracePeriod) {
+          return (
+            <Badge variant="available" className="bg-emerald-50 text-emerald-700 border-emerald-300">
+              Đã nộp phạt (Chờ trả kho)
+            </Badge>
+          );
+        }
         return (
           <Badge variant={isGracePeriod ? 'warning' : 'overdue'}>
             {isGracePeriod ? `Ân hạn D+${overdueDays}` : `Quá hạn D+${overdueDays}`}
@@ -204,7 +213,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
               )}
             </div>
 
-            {contract.status === 'OVERDUE' ? (
+            {contract.status === 'OVERDUE' && penaltyFee > 0 ? (
               <div className="text-[11px] text-rose-700 bg-rose-50 p-2.5 rounded-lg border border-rose-200/80 flex items-start gap-1.5 mt-1">
                 <AlertCircle className="w-3.5 h-3.5 text-rose-600 flex-shrink-0 mt-0.5" />
                 <span>
@@ -261,7 +270,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
               </Button>
             )}
 
-            {onScheduleReturn && (contract.status === 'ACTIVE' || contract.status === 'EXPIRING_SOON' || isGracePeriod) && (
+            {onScheduleReturn && (contract.status === 'ACTIVE' || contract.status === 'EXPIRING_SOON' || isGracePeriod || (contract.status === 'OVERDUE' && penaltyFee === 0)) && (
               <Button
                 variant="outline"
                 size="sm"
@@ -302,7 +311,17 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
               </Button>
             ) : contract.status === 'OVERDUE' ? (
               <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full sm:w-auto">
-                {isGracePeriod ? (
+                {penaltyFee === 0 ? (
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-300 flex items-center gap-1"
+                      title="Đã tất toán toàn bộ nợ phạt quá hạn. Bạn có thể tiến hành Báo trả kho để hoàn tất nghiệm thu hoàn cọc."
+                    >
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      Đã tất toán nợ phạt
+                    </span>
+                  </div>
+                ) : isGracePeriod ? (
                   <span
                     className="text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-300"
                     title="Trong 3 ngày ân hạn (D+1..D+3), chưa phát sinh phí phạt. Hoàn tất trả kho để nhận lại 100% cọc."
@@ -310,21 +329,16 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                     Ân hạn D+{overdueDays}: Chưa tính phí
                   </span>
                 ) : (
-                  <Link
-                    to={`/customer/payment?unitNumber=${contract.unitNumber}&facilityName=${encodeURIComponent(
-                      contract.facilityName
-                    )}&amount=${penaltyFee}&contractId=${contract.id}&paymentType=OVERDUE_PENALTY`}
-                    className="w-full sm:w-auto"
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onOpenOverduePayment?.(contract)}
+                    className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3 text-rose-700 border-rose-300 hover:bg-rose-50 shadow-xs text-xs font-bold cursor-pointer"
                   >
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3 text-rose-700 border-rose-300 hover:bg-rose-50 shadow-xs text-xs font-bold"
-                    >
-                      <CreditCard className="w-3.5 h-3.5" />
-                      <span>Đóng nợ phạt ({formatVND(penaltyFee)})</span>
-                    </Button>
-                  </Link>
+                    <CreditCard className="w-3.5 h-3.5" />
+                    <span>Đóng nợ phạt ({formatVND(penaltyFee)})</span>
+                  </Button>
                 )}
               </div>
             ) : isCutoffLocked ? (

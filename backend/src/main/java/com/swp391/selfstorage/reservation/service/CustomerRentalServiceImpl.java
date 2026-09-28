@@ -253,17 +253,18 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
                 res.setOverdueFeeAccrued(0);
                 res.setTotalOutstandingDebt(0);
             } else {
-                // BR-OVD-02: Từ ngày thứ 4 trở đi, khóa mã PIN
-                res.setAccessCode(null);
-                res.setAccessCodeLocked(true);
-
-                // BR-OVD-03: Phạt 10%/ngày từ ngày thứ 4
                 long fee = contract.getOverdueFeeAccrued();
-                if (fee == 0) {
-                    fee = (long) (contract.getMonthlyPrice() * 0.10 * (overdueDays - 3));
-                }
                 res.setOverdueFeeAccrued(fee);
                 res.setTotalOutstandingDebt(fee);
+
+                // BR-OVD-02 & BR-OVD-08: Nếu còn nợ phí phạt (> 0), khóa mã PIN. Nếu đã tất toán (fee == 0), mở lại mã PIN để dọn kho.
+                if (fee > 0) {
+                    res.setAccessCode(null);
+                    res.setAccessCodeLocked(true);
+                } else {
+                    res.setAccessCode(contract.getAccessCode());
+                    res.setAccessCodeLocked(false);
+                }
             }
         } else if (contract.getStatus() == ContractStatus.ACTIVE) {
             res.setAccessCode(contract.getAccessCode());

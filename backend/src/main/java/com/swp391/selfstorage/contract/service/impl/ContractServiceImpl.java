@@ -268,7 +268,7 @@ public class ContractServiceImpl implements ContractService {
                         }
 
                         Integer overdueDays = null;
-                        Long accruedOverdueFee = null;
+                        Long accruedOverdueFee = c.getOverdueFeeAccrued();
                         if (c.getStatus() == ContractStatus.OVERDUE || 
                             (c.getEndDateExclusive() != null && LocalDate.now().isAfter(c.getEndDateExclusive()) 
                              && c.getStatus() != ContractStatus.CLOSED && c.getStatus() != ContractStatus.TERMINATED)) {
@@ -282,7 +282,11 @@ public class ContractServiceImpl implements ContractService {
                                         } else if (days > 10) {
                                                 accrued = (long) Math.round(0.70 * deposit);
                                         }
-                                        accruedOverdueFee = accrued;
+                                        if (c.getStatus() == ContractStatus.OVERDUE && c.getOverdueFeeAccrued() > 0) {
+                                                accruedOverdueFee = c.getOverdueFeeAccrued();
+                                        } else if (accruedOverdueFee == null || accruedOverdueFee == 0) {
+                                                accruedOverdueFee = accrued;
+                                        }
                                 }
                         }
 
@@ -787,8 +791,10 @@ public class ContractServiceImpl implements ContractService {
                                 } else if (days > 10) {
                                         accrued = (long) Math.round(0.70 * deposit);
                                 }
-                                r.setAccruedOverdueFee(accrued);
+                                r.setAccruedOverdueFee(c.getOverdueFeeAccrued() > 0 ? c.getOverdueFeeAccrued() : accrued);
                         }
+                } else {
+                        r.setAccruedOverdueFee(c.getOverdueFeeAccrued());
                 }
                 return r;
         }

@@ -102,18 +102,28 @@ export const SandboxCheckoutPage: React.FC = () => {
   }
 
   const amount = paymentData?.amount || 2600000;
-  const description = paymentData?.description || `DH${orderCode}`;
+  const description = paymentData?.description || paymentData?.transferContent || `DH${orderCode}`;
+  const bankAccount = paymentData?.bankAccountNumber || '0888567999';
+  const bankName = paymentData?.bankName || 'MB Bank (Quân Đội · Napas247)';
+  const accountHolder = paymentData?.accountName || 'CONG TY CP SMARTSTORAGE VIETNAM';
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-100 to-slate-200 flex flex-col items-center justify-center p-4 sm:p-6">
       <div className="max-w-md w-full space-y-4">
         {/* Brand Banner */}
-        <div className="text-center space-y-1">
+        <div className="text-center space-y-1.5">
           <div className="inline-flex items-center gap-1.5 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-xs">
             <ShieldCheck className="w-3.5 h-3.5" />
             Cổng Giả Lập Ngân Hàng VietQR (Sandbox)
           </div>
           <h1 className="text-xl font-black text-slate-900 tracking-tight">SmartStorage Payment Gateway</h1>
+          {paymentData?.referenceType === 'OVERDUE_PENALTY' && (
+            <div>
+              <span className="inline-block text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 px-3 py-1 rounded-full shadow-2xs">
+                Thanh toán phí phạt nợ quá hạn (Hợp đồng #{paymentData.referenceId})
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Main Transfer Simulation Card */}
@@ -125,7 +135,7 @@ export const SandboxCheckoutPage: React.FC = () => {
                 <Building2 className="w-6 h-6 text-amber-300" />
                 <div>
                   <span className="text-xs uppercase tracking-wider text-blue-200 block font-semibold">Ngân hàng thụ hưởng</span>
-                  <strong className="text-base font-bold text-white">MB Bank (Quân Đội · Napas247)</strong>
+                  <strong className="text-base font-bold text-white">{bankName}</strong>
                 </div>
               </div>
               <div className="bg-white/20 backdrop-blur-xs px-2.5 py-1 rounded-lg text-xs font-bold font-mono">
@@ -147,10 +157,10 @@ export const SandboxCheckoutPage: React.FC = () => {
               <div className="flex items-center justify-between pb-2 border-b border-slate-200">
                 <span className="text-slate-500">Số tài khoản:</span>
                 <div className="flex items-center gap-2">
-                  <strong className="text-sm font-mono font-bold text-slate-900 tracking-wider">0888567999</strong>
+                  <strong className="text-sm font-mono font-bold text-slate-900 tracking-wider">{bankAccount}</strong>
                   <button
                     type="button"
-                    onClick={() => handleCopy('0888567999')}
+                    onClick={() => handleCopy(bankAccount)}
                     className="p-1 text-slate-400 hover:text-blue-600 rounded cursor-pointer"
                     title="Sao chép"
                   >
@@ -161,7 +171,7 @@ export const SandboxCheckoutPage: React.FC = () => {
 
               <div className="flex items-center justify-between pb-2 border-b border-slate-200">
                 <span className="text-slate-500">Tên người nhận:</span>
-                <strong className="text-slate-900 font-bold uppercase text-right">CONG TY CP SMARTSTORAGE VIETNAM</strong>
+                <strong className="text-slate-900 font-bold uppercase text-right">{accountHolder}</strong>
               </div>
 
               <div className="flex items-center justify-between">
