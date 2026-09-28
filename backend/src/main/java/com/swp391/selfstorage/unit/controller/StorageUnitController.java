@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -51,6 +52,7 @@ public class StorageUnitController {
     }
 
     @PostMapping
+    @PreAuthorize("@facilitySecurity.canAccessFacility(#facilityId)")
     public ResponseEntity<ApiResponse<StorageUnitResponse>> createStorageUnit(
             @PathVariable Long facilityId,
             @Valid @RequestBody CreateStorageUnitRequest request) {
@@ -60,6 +62,7 @@ public class StorageUnitController {
     }
 
     @PostMapping("/batch")
+    @PreAuthorize("@facilitySecurity.canAccessFacility(#facilityId)")
     public ResponseEntity<ApiResponse<List<StorageUnitResponse>>> batchCreateStorageUnits(
             @PathVariable Long facilityId,
             @Valid @RequestBody BatchCreateStorageUnitsRequest request) {
@@ -69,6 +72,7 @@ public class StorageUnitController {
     }
 
     @PatchMapping("/{unitId}/status")
+    @PreAuthorize("@facilitySecurity.canAccessFacility(#facilityId)")
     public ResponseEntity<ApiResponse<StorageUnitResponse>> updateStorageUnitStatus(
             @PathVariable Long facilityId,
             @PathVariable Long unitId,
