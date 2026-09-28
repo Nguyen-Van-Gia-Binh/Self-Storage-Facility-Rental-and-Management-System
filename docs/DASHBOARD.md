@@ -46,6 +46,7 @@
 | `ISS-36` | Màn hình Staff Return Inspection hiển thị lẫn lộn nhiệm vụ khác cơ sở. | Đã bổ sung bộ chọn cơ sở và ràng buộc chỉ xem nhiệm vụ được Manager phân công. | Bình / Tùng | `RESOLVED` (#160) |
 | `ISS-37` | Sơ đồ mặt bằng và số ô trống chưa phản ánh động theo kỳ hạn thuê. | Đã hỗ trợ tham số startDate/rentalMonths tại API storage-units và đồng bộ UI. | Bình / Nhi | `RESOLVED` |
 | `ISS-38` | Khách chưa đăng nhập bị lỗi 403 đỏ ở Hỗ trợ, thấy ô ảo ở Kho của tôi và đặt kho sai ID. | Bổ sung Auth Guard đồng bộ, prompt đăng nhập trang nhã và bảo vệ Booking flow. | Nhi | `RESOLVED` |
+| `ISS-39` | Thiếu role canonical trong `@PreAuthorize` StaffSupportController và alias authorities. | Đã bổ sung canonical role + alias vào UserPrincipal và controller. | Bình | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 

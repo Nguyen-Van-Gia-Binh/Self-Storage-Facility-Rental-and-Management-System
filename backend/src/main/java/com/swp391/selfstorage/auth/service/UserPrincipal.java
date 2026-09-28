@@ -36,9 +36,21 @@ public class UserPrincipal implements UserDetails {
     }
 
     public static UserPrincipal create(AppUser user, List<Long> facilityIds) {
-        List<GrantedAuthority> authorities = Collections.singletonList(
-                new SimpleGrantedAuthority("ROLE_" + user.getRole().name())
-        );
+        List<GrantedAuthority> authorities = new java.util.ArrayList<>();
+        authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
+
+        if (user.getRole() != null) {
+            switch (user.getRole()) {
+                case SYSTEM_ADMINISTRATOR -> authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+                case BUSINESS_OPERATIONS_MANAGER -> {
+                    authorities.add(new SimpleGrantedAuthority("ROLE_BOM"));
+                    authorities.add(new SimpleGrantedAuthority("ROLE_BUSINESS_MANAGER"));
+                }
+                case FACILITY_MANAGER -> authorities.add(new SimpleGrantedAuthority("ROLE_MANAGER"));
+                case FACILITY_STAFF -> authorities.add(new SimpleGrantedAuthority("ROLE_STAFF"));
+                case STORAGE_CUSTOMER -> authorities.add(new SimpleGrantedAuthority("ROLE_CUSTOMER"));
+            }
+        }
 
         return new UserPrincipal(
                 user.getId(),
@@ -48,7 +60,7 @@ public class UserPrincipal implements UserDetails {
                 user.getRole(),
                 user.getStatus(),
                 facilityIds,
-                authorities
+                Collections.unmodifiableList(authorities)
         );
     }
 
