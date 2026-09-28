@@ -31,6 +31,10 @@ class ContractTrackingServiceTest {
     private RentalContractRepository contractRepository;
     @Mock
     private ContractExtraChargeRepository extraChargeRepository;
+    @Mock
+    private ReturnRequestRepository returnRequestRepository;
+    @Mock
+    private com.swp391.selfstorage.user.service.UserService userService;
     @InjectMocks
     private ContractServiceImpl contractService;
 
@@ -59,6 +63,51 @@ class ContractTrackingServiceTest {
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
         assertTrue(result.getContent().get(0).isNearExpiration());
+    }
+
+    @Test
+    @DisplayName("T4.15: getContractsPage nạp assignedStaffId và assignedStaffName từ ReturnRequest cho hợp đồng PENDING_RETURN")
+    void testGetContractsPage_PendingReturnWithAssignedStaff() {
+        RentalContract contract = RentalContract.builder()
+                .id(200L)
+                .code("CTR-202610-002")
+                .customerId(15L)
+                .facilityId(1L)
+                .storageUnitId(42L)
+                .startDate(LocalDate.now().minusMonths(2))
+                .endDateExclusive(LocalDate.now().minusDays(1))
+                .status(ContractStatus.PENDING_RETURN)
+                .depositAmount(1_200_000L)
+                .build();
+
+        ReturnRequest returnReq = ReturnRequest.builder()
+                .id(10L)
+                .contractId(200L)
+                .inspectedBy(5L)
+                .status(ReturnRequestStatus.PENDING)
+                .build();
+
+        com.swp391.selfstorage.user.dto.UserResponse staffUser = new com.swp391.selfstorage.user.dto.UserResponse();
+        staffUser.setId(5L);
+        staffUser.setFullName("Nguyễn Văn Staff");
+
+        org.springframework.test.util.ReflectionTestUtils.setField(contractService, "userService", userService);
+
+        Page<RentalContract> page = new PageImpl<>(List.of(contract), PageRequest.of(0, 10), 1);
+        when(contractRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
+        when(returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(200L)).thenReturn(Optional.of(returnReq));
+        when(userService.getUserById(5L)).thenReturn(staffUser);
+
+        ContractFilterRequest filter = ContractFilterRequest.builder().status(ContractStatus.PENDING_RETURN).build();
+        PageResponse<ContractSummaryResponse> result = contractService.getContractsPage(filter, PageRequest.of(0, 10), List.of(1L));
+
+        assertNotNull(result);
+        assertEquals(1, result.getContent().size());
+        ContractSummaryResponse item = result.getContent().get(0);
+        assertEquals(200L, item.getId());
+        assertEquals(ContractStatus.PENDING_RETURN, item.getStatus());
+        assertEquals(5L, item.getAssignedStaffId());
+        assertEquals("Nguyễn Văn Staff", item.getAssignedStaffName());
     }
 
     @Test

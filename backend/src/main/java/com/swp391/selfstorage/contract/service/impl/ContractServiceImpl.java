@@ -291,10 +291,26 @@ public class ContractServiceImpl implements ContractService {
                         }
 
                         ContractStatus displayStatus = c.getStatus();
+                        Long assignedStaffId = null;
+                        String assignedStaffName = null;
                         if (returnRequestRepository != null && c.getStatus() != ContractStatus.CLOSED && c.getStatus() != ContractStatus.TERMINATED) {
                                 var reqOpt = returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(c.getId());
-                                if (reqOpt.isPresent() && reqOpt.get().getStatus() == ReturnRequestStatus.PENDING) {
-                                        displayStatus = ContractStatus.PENDING_RETURN;
+                                if (reqOpt.isPresent()) {
+                                        if (reqOpt.get().getStatus() == ReturnRequestStatus.PENDING) {
+                                                displayStatus = ContractStatus.PENDING_RETURN;
+                                        }
+                                        if (reqOpt.get().getInspectedBy() != null) {
+                                                assignedStaffId = reqOpt.get().getInspectedBy();
+                                                if (userService != null) {
+                                                        try {
+                                                                var staffUser = userService.getUserById(assignedStaffId);
+                                                                if (staffUser != null) {
+                                                                        assignedStaffName = staffUser.getFullName();
+                                                                }
+                                                        } catch (Exception ignored) {
+                                                        }
+                                                }
+                                        }
                                 }
                         }
 
@@ -321,6 +337,8 @@ public class ContractServiceImpl implements ContractService {
                                         .nearExpiration(nearExp)
                                         .overdueDays(overdueDays)
                                         .accruedOverdueFee(accruedOverdueFee)
+                                        .assignedStaffId(assignedStaffId)
+                                        .assignedStaffName(assignedStaffName)
                                         .build();
                 }).toList();
 

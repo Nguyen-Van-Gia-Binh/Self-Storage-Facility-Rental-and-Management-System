@@ -28,4 +28,6 @@ public class ContractSummaryResponse {
     private boolean nearExpiration; // true neu endDateExclusive - now <= 7 ngay va status == ACTIVE
     private Integer overdueDays;
     private Long accruedOverdueFee;
+    private Long assignedStaffId;
+    private String assignedStaffName;
 }
