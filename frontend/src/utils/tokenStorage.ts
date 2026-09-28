@@ -123,6 +123,19 @@ export const tokenStorage = {
       localStorage.removeItem(USER_KEY);
       localStorage.removeItem('current_user');
       localStorage.removeItem('user_role');
+
+      // Quét và xóa toàn bộ các keys bộ nhớ đệm / override của phiên làm việc cũ
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith('smartstorage_') || key.startsWith('selfstorage_'))) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
+
+      // Xóa sạch cả sessionStorage
+      sessionStorage.clear();
     } catch {
       // Bỏ qua nếu lỗi xóa
     }
