@@ -90,6 +90,28 @@ public interface StorageUnitRepository extends JpaRepository<StorageUnit, Long> 
                         @Param("startDate") java.time.LocalDate startDate,
                         @Param("endDateExclusive") java.time.LocalDate endDateExclusive);
 
+        @Query(value = "SELECT DISTINCT c.storage_unit_id FROM rental_contract c " +
+                        "WHERE c.facility_id = :facilityId " +
+                        "  AND c.storage_unit_id IS NOT NULL " +
+                        "  AND c.status IN ('PENDING_CHECK_IN', 'ACTIVE', 'PENDING_RETURN', 'OVERDUE') " +
+                        "  AND c.start_date < :endDateExclusive " +
+                        "  AND c.end_date > :startDate", nativeQuery = true)
+        List<Long> findOccupiedUnitIdsByDateRange(
+                        @Param("facilityId") Long facilityId,
+                        @Param("startDate") java.time.LocalDate startDate,
+                        @Param("endDateExclusive") java.time.LocalDate endDateExclusive);
+
+        @Query(value = "SELECT DISTINCT r.storage_unit_id FROM reservation r " +
+                        "WHERE r.facility_id = :facilityId " +
+                        "  AND r.storage_unit_id IS NOT NULL " +
+                        "  AND (r.status = 'CONFIRMED' OR (r.status = 'PENDING_PAYMENT' AND r.hold_expires_at > SYSDATETIMEOFFSET())) " +
+                        "  AND r.start_date < :endDateExclusive " +
+                        "  AND r.end_date_exclusive > :startDate", nativeQuery = true)
+        List<Long> findReservedUnitIdsByDateRange(
+                        @Param("facilityId") Long facilityId,
+                        @Param("startDate") java.time.LocalDate startDate,
+                        @Param("endDateExclusive") java.time.LocalDate endDateExclusive);
+
         /**
          * Pessimistic Write Lock ngan race condition khi confirm payment — BR-AVL-04.
          * SQL Server dich sang WITH (UPDLOCK, ROWLOCK).
