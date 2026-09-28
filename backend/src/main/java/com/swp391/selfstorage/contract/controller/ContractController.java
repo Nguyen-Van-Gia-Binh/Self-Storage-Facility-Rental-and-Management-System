@@ -121,6 +121,19 @@ public class ContractController {
                 .body(ApiResponse.success(response, "Gui thong bao tra kho thanh cong"));
     }
 
+    /** T4.15: Manager phan cong Staff nghiem thu tra kho (FM-05, FS-04) */
+    @PatchMapping("/{id}/assign-return")
+    @Operation(summary = "Manager phân công nhân viên nghiệm thu trả kho")
+    public ResponseEntity<ApiResponse<ContractResponse>> assignReturnStaff(
+            @PathVariable Long id,
+            @Valid @RequestBody AssignReturnStaffRequest request,
+            @RequestHeader(value = "X-Manager-Id", required = false, defaultValue = "1") Long managerId,
+            @RequestParam(required = false) List<Long> facilityIds) {
+        List<Long> facilities = (facilityIds != null) ? facilityIds : List.of();
+        ContractResponse response = contractService.assignReturnStaff(id, request, managerId, facilities);
+        return ResponseEntity.ok(ApiResponse.success(response, "Phân công nhân viên nghiệm thu thành công"));
+    }
+
     /** T4.3: Staff xac nhan nghiem thu hien trang khi tra kho (FS-04) */
     @PostMapping("/{id}/return-inspections")
     @Operation(summary = "Xác nhận kiểm tra hiện trạng trả kho (Inspection)")

@@ -27,6 +27,7 @@ import {
 import { IncidentDetailModal } from '../components/IncidentDetailModal';
 import { AssignStaffModal } from '../components/AssignStaffModal';
 import { fetchFacilities } from '@/api/facility';
+import { tokenStorage } from '@/utils/tokenStorage';
 
 const CATEGORIES: { key: SupportCategory | 'ALL'; label: string }[] = [
   { key: 'ALL', label: 'Tất cả danh mục' },
@@ -39,11 +40,11 @@ const CATEGORIES: { key: SupportCategory | 'ALL'; label: string }[] = [
 ];
 
 export const IncidentManagementPage: React.FC = () => {
-  const [facilities, setFacilities] = useState<{ id: number; name: string }[]>([
-    { id: 1, name: 'Kho Tự Quản Tân Thuận (Quận 7, TP.HCM)' },
-    { id: 2, name: 'Kho Tự Quản Thủ Đức (TP. Thủ Đức)' },
-  ]);
-  const [selectedFacilityId, setSelectedFacilityId] = useState<number>(1);
+  const [facilities, setFacilities] = useState<{ id: number; name: string }[]>([]);
+  const [selectedFacilityId, setSelectedFacilityId] = useState<number>(() => {
+    const user = tokenStorage.getUser();
+    return user?.facilityId ? Number(user.facilityId) : 1;
+  });
   const [keyword, setKeyword] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<SupportCategory | 'ALL'>('ALL');
   const [activeStatusTab, setActiveStatusTab] = useState<SupportStatus | 'ALL'>('ALL');
@@ -73,7 +74,12 @@ export const IncidentManagementPage: React.FC = () => {
     fetchFacilities(undefined, true)
       .then((list) => {
         if (list && list.length > 0) {
-          setFacilities(list.map((f) => ({ id: f.id, name: f.name })));
+          const mapped = list.map((f) => ({ id: f.id, name: f.name }));
+          setFacilities(mapped);
+          setSelectedFacilityId((current) => {
+            if (mapped.some((f) => f.id === current)) return current;
+            return mapped[0].id;
+          });
         }
       })
       .catch((err) => console.warn('Lỗi tải danh mục cơ sở:', err));

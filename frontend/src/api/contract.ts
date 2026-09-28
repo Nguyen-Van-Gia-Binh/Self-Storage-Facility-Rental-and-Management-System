@@ -246,7 +246,27 @@ export function mapBackendSummaryToReturnContract(item: any): ReturnContractDeta
     status: item.status || 'PENDING_RETURN',
     returnNoticeDate: item.updatedAt ? item.updatedAt.split('T')[0] : new Date().toISOString().split('T')[0],
     requestedReturnDate: item.returnDate || item.endDate || new Date().toISOString().split('T')[0],
+    assignedStaffId: item.assignedStaffId,
+    assignedStaffName: item.assignedStaffName,
+    assignmentStatus: item.assignedStaffId ? 'ASSIGNED' : 'UNASSIGNED',
   };
+}
+
+/**
+ * Manager phân công nhân viên nghiệm thu trả kho (FM-05, FS-04)
+ * PATCH /api/v1/contracts/{id}/assign-return
+ */
+export async function assignReturnStaff(
+  contractId: number,
+  staffId: number,
+  notes?: string
+): Promise<any> {
+  const res = await apiClient<ApiResponse<any>>(`/contracts/${contractId}/assign-return`, {
+    method: 'PATCH',
+    headers: { 'X-Manager-Id': '1' },
+    body: JSON.stringify({ staffId, notes }),
+  });
+  return res.data;
 }
 
 /**

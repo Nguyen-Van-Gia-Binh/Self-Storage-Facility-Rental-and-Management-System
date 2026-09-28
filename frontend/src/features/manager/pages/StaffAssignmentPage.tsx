@@ -25,13 +25,14 @@ import { DailyTasksDispatchBoard } from '../components/DailyTasksDispatchBoard';
 import { AssignStaffModal } from '../components/AssignStaffModal';
 import { StaffDailyScheduleModal } from '../components/StaffDailyScheduleModal';
 import { fetchFacilities } from '@/api/facility';
+import { tokenStorage } from '@/utils/tokenStorage';
 
 export const StaffAssignmentPage: React.FC = () => {
-  const [facilities, setFacilities] = useState<{ id: number; name: string }[]>([
-    { id: 1, name: 'Kho Tự Quản Tân Thuận (Quận 7, TP.HCM)' },
-    { id: 2, name: 'Kho Tự Quản Thủ Đức (TP. Thủ Đức)' },
-  ]);
-  const [selectedFacilityId, setSelectedFacilityId] = useState<number>(1);
+  const [facilities, setFacilities] = useState<{ id: number; name: string }[]>([]);
+  const [selectedFacilityId, setSelectedFacilityId] = useState<number>(() => {
+    const user = tokenStorage.getUser();
+    return user?.facilityId ? Number(user.facilityId) : 1;
+  });
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
@@ -64,7 +65,12 @@ export const StaffAssignmentPage: React.FC = () => {
     fetchFacilities(undefined, true)
       .then((list) => {
         if (list && list.length > 0) {
-          setFacilities(list.map((f) => ({ id: f.id, name: f.name })));
+          const mapped = list.map((f) => ({ id: f.id, name: f.name }));
+          setFacilities(mapped);
+          setSelectedFacilityId((current) => {
+            if (mapped.some((f) => f.id === current)) return current;
+            return mapped[0].id;
+          });
         }
       })
       .catch((err) => console.warn('Lỗi tải danh mục cơ sở:', err));

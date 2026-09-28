@@ -1386,6 +1386,37 @@ Gửi thông báo trả kho — `SC-05`, `BR-RET-01`.
 
 ---
 
+### `PATCH /api/v1/contracts/{id}/assign-return`
+
+Manager phân công hoặc điều chuyển nhân viên nghiệm thu trả kho — `FM-05`, `FS-04`, `Task T4.15`.
+
+**Auth:** `FACILITY_MANAGER`, `ADMIN`  
+**Headers:** `X-Manager-Id`  
+**Request body:**
+```json
+{
+  "staffId": 10,
+  "notes": "Nghiệm thu ô kho và kiểm tra hiện trạng bàn giao"
+}
+```
+
+| Trường | Kiểu | Bắt buộc | Mô tả |
+|--------|------|:--------:|-------|
+| `staffId` | `Long` | ✓ | ID của nhân viên tiếp nhận nhiệm vụ |
+| `notes` | `String` | ✗ | Ghi chú điều phối từ quản lý cơ sở |
+
+**Response `200`:** `ApiResponse<ContractResponse>` chứa thông tin hợp đồng kèm `assignedStaffId`, `assignedStaffName`, `assignmentStatus = "ASSIGNED"`.
+
+**Lỗi:**
+
+| Status | errorCode | Điều kiện |
+|--------|-----------|-----------|
+| `400` | `INVALID_REQUEST` | Thiếu `staffId` |
+| `404` | `CONTRACT_NOT_FOUND` | Hợp đồng không tồn tại |
+| `409` | `CONTRACT_NOT_PENDING_RETURN` | Hợp đồng không ở trạng thái PENDING_RETURN |
+
+---
+
 ### `POST /api/v1/contracts/{id}/return-inspections`
 
 Xác nhận kiểm tra hiện trạng khi trả kho — `FS-04`, `FM-04`.

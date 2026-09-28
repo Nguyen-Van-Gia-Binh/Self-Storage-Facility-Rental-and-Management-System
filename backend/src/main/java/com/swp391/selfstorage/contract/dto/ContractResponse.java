@@ -32,4 +32,6 @@ public class ContractResponse {
     private LocalDate returnDate;
     private Integer overdueDays;
     private Long accruedOverdueFee;
+    private Long assignedStaffId;
+    private String assignedStaffName;
 }

@@ -11,7 +11,7 @@ import type {
 } from '../types/staffAssignment';
 import type { StaffDailyTaskReport } from '@/types';
 import { getStaffDailyTasks } from '@/api/staff';
-import { getPendingContracts, getManagerContracts } from '@/api/contract';
+import { getPendingContracts, getManagerContracts, assignReturnStaff } from '@/api/contract';
 
 /**
  * 1. Lấy danh sách tải công việc của nhân viên cơ sở (FM-05, US-FM-05.1 AC-3)
@@ -177,7 +177,7 @@ export async function getDailyDispatchTasks(
     const [incidents, pendingCheckIns, returnContracts] = await Promise.all([
       getManagementSupportRequests({ facilityId }),
       getPendingContracts(facilityId).catch(() => []),
-      getManagerContracts({ facilityId, status: 'RETURN' }).catch(() => []),
+      getManagerContracts({ facilityId, status: 'PENDING_RETURN' }).catch(() => []),
     ]);
 
     // 1. Map các sự cố kỹ thuật (INCIDENT)
@@ -238,6 +238,13 @@ export async function getDailyDispatchTasks(
     // 3. Map các hợp đồng chờ kiểm tra trả kho (RETURN)
     if (Array.isArray(returnContracts)) {
       returnContracts.forEach((contract: any) => {
+        let dispatchStatus: DailyDispatchTaskItem['status'] = 'UNASSIGNED';
+        if (contract.status === 'INSPECTED') {
+          dispatchStatus = 'COMPLETED';
+        } else if (contract.assignedStaffId) {
+          dispatchStatus = 'ASSIGNED';
+        }
+
         tasks.push({
           id: 200000 + contract.id,
           taskType: 'RETURN',
@@ -251,7 +258,9 @@ export async function getDailyDispatchTasks(
           scheduledTime: '14:00 - 16:30',
           priority: 'HIGH',
           isUrgent: false,
-          status: contract.status === 'INSPECTED' ? 'COMPLETED' : 'UNASSIGNED',
+          status: dispatchStatus,
+          assignedStaffId: contract.assignedStaffId,
+          assignedStaffName: contract.assignedStaffName,
           referenceId: contract.id,
           referenceCode: contract.code,
           notes: 'Khách hàng đã dọn sạch ngăn kho và gửi yêu cầu nghiệm thu.',
@@ -267,7 +276,8 @@ export async function getDailyDispatchTasks(
 
 /**
  * 5. Phân công hoặc điều chuyển nhân viên cho một nhiệm vụ thực địa (US-FM-05.1 AC-1, AC-2, AC-4)
- * Nếu là Incident task -> gọi Real API: PATCH /api/v1/support-requests/{id}/assign
+ * - Nếu là Incident task -> gọi Real API: PATCH /api/v1/support-requests/{id}/assign
+ * - Nếu là Return task -> gọi Real API: PATCH /api/v1/contracts/{id}/assign-return
  */
 export async function assignStaffToTask(
   payload: AssignTaskPayload
@@ -280,6 +290,13 @@ export async function assignStaffToTask(
         note: payload.notes || 'Phân công từ bàn điều phối cơ sở',
       }),
     });
+  } else if (payload.taskType === 'RETURN') {
+    const contractId = payload.taskId > 200000 ? payload.taskId - 200000 : payload.taskId;
+    try {
+      await assignReturnStaff(contractId, payload.staffId, payload.notes);
+    } catch (err) {
+      console.warn(`Lỗi gọi API phân công trả kho contract #${contractId}:`, err);
+    }
   }
 
   const updatedTask: DailyDispatchTaskItem = {
