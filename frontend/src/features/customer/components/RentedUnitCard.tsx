@@ -31,6 +31,7 @@ export interface RentedUnitCardProps {
   onChangePin?: (contract: RentedContract) => void;
   onScheduleReturn?: (contract: RentedContract) => void;
   onViewDetail?: (contract: RentedContract) => void;
+  onOpenOverduePayment?: (contract: RentedContract) => void;
 }
 
 export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
@@ -38,6 +39,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
   onChangePin,
   onScheduleReturn,
   onViewDetail,
+  onOpenOverduePayment,
 }) => {
   const [showPin, setShowPin] = useState(false);
   const [copiedPin, setCopiedPin] = useState(false);
@@ -310,21 +312,16 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                     Ân hạn D+{overdueDays}: Chưa tính phí
                   </span>
                 ) : (
-                  <Link
-                    to={`/customer/payment?unitNumber=${contract.unitNumber}&facilityName=${encodeURIComponent(
-                      contract.facilityName
-                    )}&amount=${penaltyFee}&contractId=${contract.id}&paymentType=OVERDUE_PENALTY`}
-                    className="w-full sm:w-auto"
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onOpenOverduePayment?.(contract)}
+                    className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3 text-rose-700 border-rose-300 hover:bg-rose-50 shadow-xs text-xs font-bold cursor-pointer"
                   >
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3 text-rose-700 border-rose-300 hover:bg-rose-50 shadow-xs text-xs font-bold"
-                    >
-                      <CreditCard className="w-3.5 h-3.5" />
-                      <span>Đóng nợ phạt ({formatVND(penaltyFee)})</span>
-                    </Button>
-                  </Link>
+                    <CreditCard className="w-3.5 h-3.5" />
+                    <span>Đóng nợ phạt ({formatVND(penaltyFee)})</span>
+                  </Button>
                 )}
               </div>
             ) : isCutoffLocked ? (

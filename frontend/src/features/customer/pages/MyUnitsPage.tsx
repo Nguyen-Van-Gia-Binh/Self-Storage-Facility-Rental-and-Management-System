@@ -20,6 +20,7 @@ import { ChangePinModal } from '../components/ChangePinModal';
 import { ScheduleReturnModal } from '../components/ScheduleReturnModal';
 import { ContractDetailModal } from '../components/ContractDetailModal';
 import { EarlyRenewalReminderModal } from '../components/EarlyRenewalReminderModal';
+import { VietQRPaymentModal } from '../components/VietQRPaymentModal';
 import { getCustomerContracts } from '@/api/customerRentals';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
 import type { RentedContract } from '../types';
@@ -34,6 +35,7 @@ export const MyUnitsPage: React.FC = () => {
   const [selectedPinContract, setSelectedPinContract] = useState<RentedContract | null>(null);
   const [selectedReturnContract, setSelectedReturnContract] = useState<RentedContract | null>(null);
   const [selectedDetailContract, setSelectedDetailContract] = useState<RentedContract | null>(null);
+  const [selectedOverdueContract, setSelectedOverdueContract] = useState<RentedContract | null>(null);
   const [earlyRenewalContract, setEarlyRenewalContract] = useState<RentedContract | null>(null);
   const [showEarlyRenewalModal, setShowEarlyRenewalModal] = useState(false);
 
@@ -322,6 +324,7 @@ export const MyUnitsPage: React.FC = () => {
               onChangePin={(c) => setSelectedPinContract(c)}
               onScheduleReturn={(c) => setSelectedReturnContract(c)}
               onViewDetail={(c) => setSelectedDetailContract(c)}
+              onOpenOverduePayment={(c) => setSelectedOverdueContract(c)}
             />
           ))}
         </div>
@@ -418,6 +421,22 @@ export const MyUnitsPage: React.FC = () => {
         onClose={handleCloseEarlyRenewalModal}
         contract={earlyRenewalContract}
       />
+
+      {selectedOverdueContract && (
+        <VietQRPaymentModal
+          isOpen={Boolean(selectedOverdueContract)}
+          onClose={() => setSelectedOverdueContract(null)}
+          onPaymentSuccess={() => {
+            setSelectedOverdueContract(null);
+            loadContracts();
+          }}
+          unitNumber={selectedOverdueContract.unitNumber}
+          facilityName={selectedOverdueContract.facilityName}
+          totalAmount={selectedOverdueContract.overdueFee || 0}
+          contractId={Number(selectedOverdueContract.id)}
+          paymentType="OVERDUE_PENALTY"
+        />
+      )}
     </div>
   );
 };
