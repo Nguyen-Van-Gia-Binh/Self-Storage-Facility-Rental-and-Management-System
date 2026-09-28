@@ -13,6 +13,7 @@ import {
   Unlock,
   CheckCircle2,
   Users,
+  UserPlus,
 } from 'lucide-react';
 import type { ManagerContractItem, ContractKpiData } from '@/types/contractManager';
 import { getManagerContracts, getManagerKpiData } from '@/api/contract';
@@ -438,7 +439,7 @@ export const ContractsHubPage: React.FC = () => {
                         )}
 
                         {activeTab === 'RETURN' && (
-                          <div>
+                          <div className="space-y-1">
                             {contract.status === 'INSPECTED' ? (
                               <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold bg-purple-100 text-purple-800 border border-purple-200">
                                 Đã nghiệm thu • Chờ hoàn cọc
@@ -448,6 +449,16 @@ export const ContractsHubPage: React.FC = () => {
                                 Đã báo trả • Chờ Staff kiểm tra
                               </span>
                             )}
+                            {contract.assignedStaffName ? (
+                              <span className="block text-[10px] text-blue-700 font-semibold flex items-center gap-1">
+                                <UserPlus className="w-3 h-3 text-blue-600" />
+                                Phụ trách: {contract.assignedStaffName}
+                              </span>
+                            ) : contract.status !== 'INSPECTED' ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                                Chưa phân công Staff
+                              </span>
+                            ) : null}
                             {contract.damageCost && contract.damageCost > 0 ? (
                               <span className="block text-[10px] text-rose-600 mt-0.5 font-medium">
                                 Phí bồi thường: {contract.damageCost.toLocaleString('vi-VN')} đ
@@ -543,6 +554,18 @@ export const ContractsHubPage: React.FC = () => {
                             <RefreshCw className="w-3 h-3" />
                             Đổi ô
                           </button>
+                        )}
+
+                        {/* Nút Phân công Staff khi đơn đang chờ kiểm tra trả kho */}
+                        {activeTab === 'RETURN' && contract.status !== 'INSPECTED' && (
+                          <Link
+                            to={`/manager/staff-assignment?contractId=${contract.id}`}
+                            className="px-2.5 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors inline-flex items-center gap-1"
+                            title="Chuyển sang Bàn phân công nhân sự để điều phối"
+                          >
+                            <UserPlus className="w-3 h-3" />
+                            {contract.assignedStaffId ? 'Điều chuyển' : 'Phân công'}
+                          </Link>
                         )}
 
                         {/* Nút Quyết toán hoàn cọc (chỉ ở Tab Return) */}
