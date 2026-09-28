@@ -343,4 +343,56 @@ class PaymentServiceTest {
         assertEquals("SUCCESS", response.getStatus());
         verify(reservationService).confirmAfterPayment(100L);
     }
+
+    @Test
+    @DisplayName("Tạo link thanh toán nợ phạt OVERDUE_PENALTY: Thành công lấy số tiền nợ từ hợp đồng")
+    void createCheckoutLink_OverduePenalty_Success() {
+        com.swp391.selfstorage.contract.entity.RentalContract mockContract = new com.swp391.selfstorage.contract.entity.RentalContract();
+        mockContract.setId(80017L);
+        mockContract.setStatus(com.swp391.selfstorage.contract.entity.ContractStatus.OVERDUE);
+        mockContract.setOverdueFeeAccrued(250_000L);
+
+        when(rentalContractRepository.findById(80017L)).thenReturn(Optional.of(mockContract));
+        when(paymentGateway.createPayment(any(PaymentCheckoutCommand.class)))
+                .thenReturn(PaymentCheckoutResult.builder()
+                        .orderCode(12345678L)
+                        .checkoutUrl("https://payos.vn/checkout/12345678")
+                        .qrCode("vietqr://250000/PHAT80017")
+                        .amount(250_000L)
+                        .build());
+        when(paymentTransactionRepository.save(any(PaymentTransaction.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        CheckoutRequest request = CheckoutRequest.builder()
+                .referenceType("OVERDUE_PENALTY")
+                .referenceId(80017L)
+                .build();
+
+        CheckoutResponse response = paymentService.createCheckoutLink(request);
+
+        assertNotNull(response);
+        assertEquals(250_000L, response.getAmount());
+        assertNotNull(response.getOrderCode());
+        verify(rentalContractRepository).findById(80017L);
+    }
+
+    @Test
+    @DisplayName("Tạo link thanh toán nợ phạt OVERDUE_PENALTY: Thất bại nếu hợp đồng không có nợ (overdueFeeAccrued <= 0)")
+    void createCheckoutLink_OverduePenalty_NoDebt_ThrowsException() {
+        com.swp391.selfstorage.contract.entity.RentalContract mockContract = new com.swp391.selfstorage.contract.entity.RentalContract();
+        mockContract.setId(80017L);
+        mockContract.setStatus(com.swp391.selfstorage.contract.entity.ContractStatus.OVERDUE);
+        mockContract.setOverdueFeeAccrued(0L);
+
+        when(rentalContractRepository.findById(80017L)).thenReturn(Optional.of(mockContract));
+
+        CheckoutRequest request = CheckoutRequest.builder()
+                .referenceType("OVERDUE_PENALTY")
+                .referenceId(80017L)
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class, () -> paymentService.createCheckoutLink(request));
+        assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("nợ phạt quá hạn"));
+    }
 }

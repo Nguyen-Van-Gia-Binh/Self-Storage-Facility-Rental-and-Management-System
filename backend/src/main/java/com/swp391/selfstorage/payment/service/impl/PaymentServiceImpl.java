@@ -126,6 +126,19 @@ public class PaymentServiceImpl implements PaymentService {
             defaultDesc = "QT" + contract.getId();
             contractId = contract.getId();
             txnType = "SETTLEMENT";
+        } else if ("OVERDUE_PENALTY".equalsIgnoreCase(request.getReferenceType())) {
+            com.swp391.selfstorage.contract.entity.RentalContract contract = rentalContractRepository.findById(request.getReferenceId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND,
+                            "Không tìm thấy hợp đồng với ID=" + request.getReferenceId()));
+
+            if (contract.getOverdueFeeAccrued() <= 0) {
+                throw new CustomException(ErrorCode.VALIDATION_FAILED, "Hợp đồng không có nợ phạt quá hạn cần thanh toán");
+            }
+
+            amount = contract.getOverdueFeeAccrued();
+            defaultDesc = "PHAT" + contract.getId();
+            contractId = contract.getId();
+            txnType = "OVERDUE_PENALTY";
         } else {
             throw new CustomException(ErrorCode.VALIDATION_FAILED,
                     "Loại thanh toán không được hỗ trợ: " + request.getReferenceType());
