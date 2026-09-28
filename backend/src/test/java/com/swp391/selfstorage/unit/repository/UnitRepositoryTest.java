@@ -85,5 +85,15 @@ class UnitRepositoryTest {
                 1L, 1L, java.time.LocalDate.of(2026, 10, 1), java.time.LocalDate.of(2027, 1, 1)
         );
         assertTrue(overlappingContracts >= 0);
+
+        List<Long> occupiedIds = storageUnitRepository.findOccupiedUnitIdsByDateRange(
+                1L, java.time.LocalDate.of(2026, 10, 1), java.time.LocalDate.of(2027, 1, 1)
+        );
+        assertNotNull(occupiedIds);
+
+        List<Long> reservedIds = storageUnitRepository.findReservedUnitIdsByDateRange(
+                1L, java.time.LocalDate.of(2026, 10, 1), java.time.LocalDate.of(2027, 1, 1)
+        );
+        assertNotNull(reservedIds);
     }
 }

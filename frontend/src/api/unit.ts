@@ -22,6 +22,8 @@ export interface StorageUnitListParams {
   status?: UnitStatus;
   floor?: number;
   position?: string;
+  startDate?: string;
+  rentalMonths?: number;
 }
 
 function buildQuery(params: Record<string, string | number | boolean | undefined>): string {

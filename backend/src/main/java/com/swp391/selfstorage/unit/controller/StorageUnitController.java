@@ -34,10 +34,11 @@ public class StorageUnitController {
             @RequestParam(required = false) StorageUnitStatus status,
             @RequestParam(required = false) Integer floor,
             @RequestParam(required = false) String position,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate startDate,
+            @RequestParam(required = false) Integer rentalMonths,
             @PageableDefault(size = 50) Pageable pageable) {
-        PageResponse<StorageUnitResponse> response = (floor != null || position != null)
-                ? storageUnitService.getStorageUnitsByFacility(facilityId, unitTypeId, status, floor, position, pageable)
-                : storageUnitService.getStorageUnitsByFacility(facilityId, unitTypeId, status, pageable);
+        PageResponse<StorageUnitResponse> response = storageUnitService.getStorageUnitsByFacility(
+                facilityId, unitTypeId, status, floor, position, startDate, rentalMonths, pageable);
         return ResponseEntity.ok(response);
     }
 
