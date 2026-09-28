@@ -1,8 +1,8 @@
 # API Specification — Self-Storage Facility Rental and Management System
 
-> **Stack:** Spring Boot (Java 17) · SQL Server · JWT · springdoc-openapi  
-> **Base URL:** `http://localhost:8080/api/v1` (dev) · `https://<domain>/api/v1` (prod)  
-> **Swagger UI:** `/swagger-ui.html`  
+> **Stack:** Spring Boot (Java 17) · SQL Server · JWT · springdoc-openapi
+> **Base URL:** `http://localhost:8080/api/v1` (dev) · `https://<domain>/api/v1` (prod)
+> **Swagger UI:** `/swagger-ui.html`
 > **Tài liệu liên quan:** [CONVENTIONS.md](CONVENTIONS.md) · [BUSINESS-RULES.md](BUSINESS-RULES.md) · [PLAN.md](PLAN.md)
 
 ---
@@ -11,16 +11,16 @@
 
 1. [Quy ước chung](#1-quy-ước-chung)
 2. [Xác thực và phân quyền](#2-xác-thực-và-phân-quyền)
-3. [Module Auth — Đăng nhập & JWT](#3-module-auth--đăng-nhập--jwt)
+3. [Module Auth — Đăng nhập &amp; JWT](#3-module-auth--đăng-nhập--jwt)
 4. [Module User — Quản lý tài khoản](#4-module-user--quản-lý-tài-khoản)
 5. [Module Facility — Quản lý cơ sở](#5-module-facility--quản-lý-cơ-sở)
-6. [Module Unit — Loại ô kho & Ô kho](#6-module-unit--loại-ô-kho--ô-kho)
+6. [Module Unit — Loại ô kho &amp; Ô kho](#6-module-unit--loại-ô-kho--ô-kho)
 7. [Module Reservation — Đặt chỗ](#7-module-reservation--đặt-chỗ)
 8. [Module Contract — Hợp đồng thuê](#8-module-contract--hợp-đồng-thuê)
-9. [Module Payment — Thanh toán & Hóa đơn](#9-module-payment--thanh-toán--hóa-đơn)
-10. [Module Policy — Chính sách & Giá](#10-module-policy--chính-sách--giá)
+9. [Module Payment — Thanh toán &amp; Hóa đơn](#9-module-payment--thanh-toán--hóa-đơn)
+10. [Module Policy — Chính sách &amp; Giá](#10-module-policy--chính-sách--giá)
 11. [Module Support — Yêu cầu hỗ trợ](#11-module-support--yêu-cầu-hỗ-trợ)
-12. [Module Report — Báo cáo & Giám sát](#12-module-report--báo-cáo--giám-sát)
+12. [Module Report — Báo cáo &amp; Giám sát](#12-module-report--báo-cáo--giám-sát)
 13. [Enum reference](#13-enum-reference)
 14. [Error code reference](#14-error-code-reference)
 
@@ -30,33 +30,34 @@
 
 ### 1.1. Cấu trúc URL
 
-| Quy tắc | Ví dụ |
-|---------|-------|
-| Tiền tố `/api/v1` | `/api/v1/facilities` |
-| Tài nguyên là danh từ số nhiều, `kebab-case` | `/api/v1/storage-units` |
-| Lồng tối đa hai cấp | `/api/v1/facilities/{facilityId}/storage-units` |
-| Hành động không CRUD → tài nguyên con | `POST /api/v1/reservations/{id}/cancellation` |
+| Quy tắc                                            | Ví dụ                                           |
+| --------------------------------------------------- | ------------------------------------------------- |
+| Tiền tố`/api/v1`                                | `/api/v1/facilities`                            |
+| Tài nguyên là danh từ số nhiều,`kebab-case` | `/api/v1/storage-units`                         |
+| Lồng tối đa hai cấp                             | `/api/v1/facilities/{facilityId}/storage-units` |
+| Hành động không CRUD → tài nguyên con        | `POST /api/v1/reservations/{id}/cancellation`   |
 
 ### 1.2. Mã trạng thái HTTP
 
-| Mã | Ý nghĩa |
-|----|---------|
-| `200 OK` | Đọc hoặc cập nhật thành công |
-| `201 Created` | Tạo mới thành công — kèm header `Location: /api/v1/<resource>/{id}` |
-| `204 No Content` | Xóa / vô hiệu hóa thành công, không có body |
-| `400 Bad Request` | Sai định dạng hoặc thiếu trường bắt buộc |
-| `401 Unauthorized` | Chưa đăng nhập hoặc token hết hạn |
-| `403 Forbidden` | Đã đăng nhập nhưng không đủ quyền |
-| `404 Not Found` | Tài nguyên không tồn tại |
-| `409 Conflict` | Vi phạm quy tắc trạng thái nghiệp vụ |
-| `422 Unprocessable Entity` | Dữ liệu hợp lệ về định dạng nhưng sai nghiệp vụ |
-| `500 Internal Server Error` | Lỗi không lường trước |
+| Mã                           | Ý nghĩa                                                                  |
+| ----------------------------- | -------------------------------------------------------------------------- |
+| `200 OK`                    | Đọc hoặc cập nhật thành công                                        |
+| `201 Created`               | Tạo mới thành công — kèm header`Location: /api/v1/<resource>/{id}` |
+| `204 No Content`            | Xóa / vô hiệu hóa thành công, không có body                        |
+| `400 Bad Request`           | Sai định dạng hoặc thiếu trường bắt buộc                          |
+| `401 Unauthorized`          | Chưa đăng nhập hoặc token hết hạn                                   |
+| `403 Forbidden`             | Đã đăng nhập nhưng không đủ quyền                                |
+| `404 Not Found`             | Tài nguyên không tồn tại                                              |
+| `409 Conflict`              | Vi phạm quy tắc trạng thái nghiệp vụ                                 |
+| `422 Unprocessable Entity`  | Dữ liệu hợp lệ về định dạng nhưng sai nghiệp vụ                 |
+| `500 Internal Server Error` | Lỗi không lường trước                                                |
 
 ### 1.3. Cấu trúc response
 
 Mọi endpoint chính thức trong hệ thống đều tuân thủ chuẩn bọc `ApiResponse<T>`:
 
 **Thành công — đơn lẻ (`ApiResponse<T>`):**
+
 ```json
 {
   "status": 200,
@@ -70,6 +71,7 @@ Mọi endpoint chính thức trong hệ thống đều tuân thủ chuẩn bọc
 ```
 
 **Thành công — danh sách phân trang (`ApiResponse<PageResponse<T>>` hoặc `PageResponse<T>`):**
+
 ```json
 {
   "status": 200,
@@ -85,9 +87,11 @@ Mọi endpoint chính thức trong hệ thống đều tuân thủ chuẩn bọc
   }
 }
 ```
+
 *(Lưu ý: Đối với một số Controller danh mục công khai như `FacilityController` hoặc quản trị `UserController`, dữ liệu có thể trả về trực tiếp `PageResponse<T>` không bọc `data`).*
 
 **Lỗi — mọi trường hợp:**
+
 ```json
 {
   "timestamp": "2026-09-08T10:15:30+07:00",
@@ -103,23 +107,23 @@ Mọi endpoint chính thức trong hệ thống đều tuân thủ chuẩn bọc
 
 ### 1.4. Tham số phân trang & lọc
 
-| Tham số | Mô tả | Mặc định |
-|---------|-------|:--------:|
-| `page` | Số trang, đếm từ 0 | `0` |
-| `size` | Số phần tử mỗi trang (tối đa 100) | `20` |
-| `sort` | `<trường>,<asc\|desc>` — có thể lặp | tùy endpoint |
-| `keyword` | Tìm kiếm chuỗi (full-text trên trường chính của resource) | — |
+| Tham số    | Mô tả                                                           |  Mặc định  |
+| ----------- | ----------------------------------------------------------------- | :-----------: |
+| `page`    | Số trang, đếm từ 0                                            |     `0`     |
+| `size`    | Số phần tử mỗi trang (tối đa 100)                           |    `20`    |
+| `sort`    | `<trường>,<asc\|desc>` — có thể lặp                        | tùy endpoint |
+| `keyword` | Tìm kiếm chuỗi (full-text trên trường chính của resource) |      —      |
 
 ### 1.5. Định dạng dữ liệu
 
-| Kiểu | Định dạng |
-|------|-----------|
-| Tên trường JSON | `camelCase` |
-| Ngày | `yyyy-MM-dd` |
-| Mốc thời gian | ISO-8601 kèm offset: `2026-10-01T09:00:00+07:00` |
-| Tiền | Số nguyên VND: `800000` |
-| Enum | `UPPER_SNAKE_CASE` — đúng tên hằng Java |
-| Giá trị rỗng | `null` — không dùng chuỗi rỗng hay `0` |
+| Kiểu              | Định dạng                                       |
+| ------------------ | -------------------------------------------------- |
+| Tên trường JSON | `camelCase`                                      |
+| Ngày              | `yyyy-MM-dd`                                     |
+| Mốc thời gian    | ISO-8601 kèm offset:`2026-10-01T09:00:00+07:00` |
+| Tiền              | Số nguyên VND:`800000`                         |
+| Enum               | `UPPER_SNAKE_CASE` — đúng tên hằng Java     |
+| Giá trị rỗng    | `null` — không dùng chuỗi rỗng hay `0`    |
 
 ---
 
@@ -137,13 +141,13 @@ Access token là JWT được ký bởi server, có thời hạn 30 phút. Khi h
 
 ### 2.2. Vai trò
 
-| Giá trị trong JWT | Tên vai trò | Mô tả |
-|-------------------|-------------|-------|
-| `CUSTOMER` | Storage Customer | Khách thuê kho |
-| `FACILITY_STAFF` | Facility Staff | Nhân viên cơ sở |
-| `FACILITY_MANAGER` | Facility Manager | Quản lý cơ sở |
+| Giá trị trong JWT  | Tên vai trò               | Mô tả                         |
+| -------------------- | --------------------------- | ------------------------------- |
+| `CUSTOMER`         | Storage Customer            | Khách thuê kho                |
+| `FACILITY_STAFF`   | Facility Staff              | Nhân viên cơ sở             |
+| `FACILITY_MANAGER` | Facility Manager            | Quản lý cơ sở               |
 | `BUSINESS_MANAGER` | Business Operations Manager | Quản lý vận hành kinh doanh |
-| `ADMIN` | System Administrator | Quản trị hệ thống |
+| `ADMIN`            | System Administrator        | Quản trị hệ thống           |
 
 ### 2.3. Phân quyền dữ liệu theo cơ sở
 
@@ -164,7 +168,7 @@ GET  /api/v1/facilities/{facilityId}/unit-types/{unitTypeId}/availability
 
 ## 3. Module Auth — Đăng nhập & JWT
 
-**Package:** `com.swp391.selfstorage.auth`  
+**Package:** `com.swp391.selfstorage.auth`
 **Yêu cầu:** `SA-01` (một phần), `T2.3`
 
 ---
@@ -173,8 +177,9 @@ GET  /api/v1/facilities/{facilityId}/unit-types/{unitTypeId}/availability
 
 Đăng ký tài khoản Storage Customer mới.
 
-**Auth:** Công khai  
+**Auth:** Công khai
 **Request body:**
+
 ```json
 {
   "fullName": "Nguyễn Văn A",
@@ -184,14 +189,15 @@ GET  /api/v1/facilities/{facilityId}/unit-types/{unitTypeId}/availability
 }
 ```
 
-| Trường | Kiểu | Bắt buộc | Ràng buộc |
-|--------|------|:--------:|-----------|
-| `fullName` | `string` | ✓ | 2–100 ký tự |
-| `email` | `string` | ✓ | Format email hợp lệ, duy nhất |
-| `phone` | `string` | ✗ | 10–11 chữ số |
-| `password` | `string` | ✓ | Tối thiểu 8 ký tự |
+| Trường     | Kiểu      | Bắt buộc | Ràng buộc                      |
+| ------------ | ---------- | :--------: | -------------------------------- |
+| `fullName` | `string` |     ✓     | 2–100 ký tự                   |
+| `email`    | `string` |     ✓     | Format email hợp lệ, duy nhất |
+| `phone`    | `string` |     ✗     | 10–11 chữ số                  |
+| `password` | `string` |     ✓     | Tối thiểu 8 ký tự            |
 
 **Response `201`:**
+
 ```json
 {
   "id": 15,
@@ -204,10 +210,10 @@ GET  /api/v1/facilities/{facilityId}/unit-types/{unitTypeId}/availability
 
 **Lỗi:**
 
-| Status | errorCode | Điều kiện |
-|--------|-----------|-----------|
-| `400` | `VALIDATION_ERROR` | Thiếu trường hoặc sai định dạng |
-| `409` | `EMAIL_ALREADY_EXISTS` | Email đã tồn tại trong hệ thống |
+| Status  | errorCode                | Điều kiện                           |
+| ------- | ------------------------ | -------------------------------------- |
+| `400` | `VALIDATION_ERROR`     | Thiếu trường hoặc sai định dạng |
+| `409` | `EMAIL_ALREADY_EXISTS` | Email đã tồn tại trong hệ thống  |
 
 ---
 
@@ -215,8 +221,9 @@ GET  /api/v1/facilities/{facilityId}/unit-types/{unitTypeId}/availability
 
 Đăng nhập và lấy JWT.
 
-**Auth:** Công khai  
+**Auth:** Công khai
 **Request body:**
+
 ```json
 {
   "email": "nva@example.com",
@@ -225,6 +232,7 @@ GET  /api/v1/facilities/{facilityId}/unit-types/{unitTypeId}/availability
 ```
 
 **Response `200`:**
+
 ```json
 {
   "accessToken": "eyJhbGciOiJIUzI1NiJ9...",
@@ -243,11 +251,11 @@ GET  /api/v1/facilities/{facilityId}/unit-types/{unitTypeId}/availability
 
 **Lỗi:**
 
-| Status | errorCode | Điều kiện |
-|--------|-----------|-----------|
-| `400` | `VALIDATION_ERROR` | Thiếu email hoặc password |
-| `401` | `INVALID_CREDENTIALS` | Sai email hoặc mật khẩu |
-| `403` | `ACCOUNT_DISABLED` | Tài khoản bị vô hiệu hóa |
+| Status  | errorCode               | Điều kiện                   |
+| ------- | ----------------------- | ------------------------------ |
+| `400` | `VALIDATION_ERROR`    | Thiếu email hoặc password    |
+| `401` | `INVALID_CREDENTIALS` | Sai email hoặc mật khẩu     |
+| `403` | `ACCOUNT_DISABLED`    | Tài khoản bị vô hiệu hóa |
 
 ---
 
@@ -255,8 +263,9 @@ GET  /api/v1/facilities/{facilityId}/unit-types/{unitTypeId}/availability
 
 Làm mới access token bằng refresh token.
 
-**Auth:** Công khai  
+**Auth:** Công khai
 **Request body:**
+
 ```json
 {
   "refreshToken": "eyJhbGciOiJIUzI1NiJ9..."
@@ -267,8 +276,8 @@ Làm mới access token bằng refresh token.
 
 **Lỗi:**
 
-| Status | errorCode | Điều kiện |
-|--------|-----------|-----------|
+| Status  | errorCode                 | Điều kiện                                  |
+| ------- | ------------------------- | --------------------------------------------- |
 | `401` | `REFRESH_TOKEN_EXPIRED` | Refresh token hết hạn hoặc không hợp lệ |
 
 ---
@@ -277,8 +286,9 @@ Làm mới access token bằng refresh token.
 
 Vô hiệu hóa refresh token hiện tại.
 
-**Auth:** Bất kỳ vai trò đã đăng nhập  
+**Auth:** Bất kỳ vai trò đã đăng nhập
 **Request body:**
+
 ```json
 {
   "refreshToken": "eyJhbGciOiJIUzI1NiJ9..."
@@ -293,8 +303,9 @@ Vô hiệu hóa refresh token hiện tại.
 
 Đổi mật khẩu (người dùng tự thực hiện).
 
-**Auth:** Bất kỳ vai trò đã đăng nhập  
+**Auth:** Bất kỳ vai trò đã đăng nhập
 **Request body:**
+
 ```json
 {
   "currentPassword": "P@ssw0rd123",
@@ -308,7 +319,7 @@ Vô hiệu hóa refresh token hiện tại.
 
 ## 4. Module User — Quản lý tài khoản
 
-**Package:** `com.swp391.selfstorage.user`  
+**Package:** `com.swp391.selfstorage.user`
 **Yêu cầu:** `SA-01`, `SA-02`, `SA-04` · **Tasks:** `T2.4`, `T2.5`
 
 ---
@@ -317,10 +328,11 @@ Vô hiệu hóa refresh token hiện tại.
 
 Lấy danh sách người dùng có phân trang.
 
-**Auth:** `ADMIN`  
+**Auth:** `ADMIN`
 **Query params:** `page`, `size`, `sort`, `keyword` (tìm theo tên/email), `role`, `isActive`
 
 **Response `200`:**
+
 ```json
 {
   "content": [
@@ -347,10 +359,11 @@ Lấy danh sách người dùng có phân trang.
 
 Lấy thông tin chi tiết một người dùng.
 
-**Auth:** `ADMIN` — hoặc chính người dùng đó (bất kỳ vai trò)  
+**Auth:** `ADMIN` — hoặc chính người dùng đó (bất kỳ vai trò)
 **Path param:** `id` — ID người dùng
 
 **Response `200`:**
+
 ```json
 {
   "id": 15,
@@ -371,8 +384,9 @@ Lấy thông tin chi tiết một người dùng.
 
 Cập nhật thông tin cá nhân.
 
-**Auth:** `ADMIN` hoặc chính người dùng  
+**Auth:** `ADMIN` hoặc chính người dùng
 **Request body:**
+
 ```json
 {
   "fullName": "Nguyễn Văn A",
@@ -388,8 +402,9 @@ Cập nhật thông tin cá nhân.
 
 Gán vai trò cho người dùng — `SA-02`.
 
-**Auth:** `ADMIN`  
+**Auth:** `ADMIN`
 **Request body:**
+
 ```json
 {
   "role": "FACILITY_STAFF",
@@ -403,10 +418,10 @@ Gán vai trò cho người dùng — `SA-02`.
 
 **Lỗi:**
 
-| Status | errorCode | Điều kiện |
-|--------|-----------|-----------|
-| `400` | `VALIDATION_ERROR` | Role yêu cầu facilityIds nhưng không được cung cấp |
-| `404` | `FACILITY_NOT_FOUND` | Một trong các facilityIds không tồn tại |
+| Status  | errorCode              | Điều kiện                                               |
+| ------- | ---------------------- | ---------------------------------------------------------- |
+| `400` | `VALIDATION_ERROR`   | Role yêu cầu facilityIds nhưng không được cung cấp |
+| `404` | `FACILITY_NOT_FOUND` | Một trong các facilityIds không tồn tại               |
 
 ---
 
@@ -414,8 +429,9 @@ Gán vai trò cho người dùng — `SA-02`.
 
 Kích hoạt / vô hiệu hóa tài khoản — `SA-01`.
 
-**Auth:** `ADMIN`  
+**Auth:** `ADMIN`
 **Request body:**
+
 ```json
 {
   "isActive": false
@@ -430,10 +446,11 @@ Kích hoạt / vô hiệu hóa tài khoản — `SA-01`.
 
 Lịch sử đăng nhập và nhật ký hoạt động — `SA-04`.
 
-**Auth:** `ADMIN`  
+**Auth:** `ADMIN`
 **Query params:** `page`, `size`, `sort=createdAt,desc`, `from` (yyyy-MM-dd), `to` (yyyy-MM-dd)
 
 **Response `200`:**
+
 ```json
 {
   "content": [
@@ -457,7 +474,7 @@ Lịch sử đăng nhập và nhật ký hoạt động — `SA-04`.
 
 ## 5. Module Facility — Quản lý cơ sở
 
-**Package:** `com.swp391.selfstorage.facility`  
+**Package:** `com.swp391.selfstorage.facility`
 **Yêu cầu:** `BM-01`, `SC-01` · **Tasks:** `T2.7`, `T2.10`
 
 ---
@@ -466,10 +483,11 @@ Lịch sử đăng nhập và nhật ký hoạt động — `SA-04`.
 
 Danh sách cơ sở lưu trữ (công khai).
 
-**Auth:** Công khai  
+**Auth:** Công khai
 **Query params:** `page`, `size`, `keyword` (tìm theo tên/địa chỉ), `isActive`
 
 **Response `200`:**
+
 ```json
 {
   "content": [
@@ -496,8 +514,9 @@ Danh sách cơ sở lưu trữ (công khai).
 
 Chi tiết một cơ sở (công khai).
 
-**Auth:** Công khai  
+**Auth:** Công khai
 **Response `200`:**
+
 ```json
 {
   "id": 1,
@@ -518,8 +537,9 @@ Chi tiết một cơ sở (công khai).
 
 Tạo cơ sở mới — `BM-01`.
 
-**Auth:** `BUSINESS_MANAGER`  
+**Auth:** `BUSINESS_MANAGER`
 **Request body:**
+
 ```json
 {
   "name": "Kho Quận 3",
@@ -530,13 +550,13 @@ Tạo cơ sở mới — `BM-01`.
 }
 ```
 
-| Trường | Kiểu | Bắt buộc | Ràng buộc |
-|--------|------|:--------:|-----------|
-| `name` | `string` | ✓ | 2–200 ký tự, duy nhất |
-| `address` | `string` | ✓ | 10–500 ký tự |
-| `phone` | `string` | ✗ | Định dạng số điện thoại |
-| `description` | `string` | ✗ | Tối đa 2000 ký tự |
-| `openingHours` | `string` | ✗ | Ví dụ: `06:00–22:00` |
+| Trường         | Kiểu      | Bắt buộc | Ràng buộc                    |
+| ---------------- | ---------- | :--------: | ------------------------------ |
+| `name`         | `string` |     ✓     | 2–200 ký tự, duy nhất      |
+| `address`      | `string` |     ✓     | 10–500 ký tự                |
+| `phone`        | `string` |     ✗     | Định dạng số điện thoại |
+| `description`  | `string` |     ✗     | Tối đa 2000 ký tự          |
+| `openingHours` | `string` |     ✗     | Ví dụ:`06:00–22:00`       |
 
 **Response `201`:** Trả về `FacilityResponse` đầy đủ.
 
@@ -546,7 +566,7 @@ Tạo cơ sở mới — `BM-01`.
 
 Cập nhật thông tin cơ sở.
 
-**Auth:** `BUSINESS_MANAGER`  
+**Auth:** `BUSINESS_MANAGER`
 **Request body:** Giống `POST /api/v1/facilities` — phải cung cấp đầy đủ các trường.
 
 **Response `200`:** Trả về `FacilityResponse` đã cập nhật.
@@ -557,8 +577,9 @@ Cập nhật thông tin cơ sở.
 
 Kích hoạt / vô hiệu hóa cơ sở.
 
-**Auth:** `BUSINESS_MANAGER`  
+**Auth:** `BUSINESS_MANAGER`
 **Request body:**
+
 ```json
 {
   "isActive": false
@@ -569,15 +590,15 @@ Kích hoạt / vô hiệu hóa cơ sở.
 
 **Lỗi:**
 
-| Status | errorCode | Điều kiện |
-|--------|-----------|-----------|
-| `409` | `FACILITY_HAS_ACTIVE_CONTRACTS` | Không thể vô hiệu hóa khi còn hợp đồng đang `ACTIVE` |
+| Status  | errorCode                         | Điều kiện                                                    |
+| ------- | --------------------------------- | --------------------------------------------------------------- |
+| `409` | `FACILITY_HAS_ACTIVE_CONTRACTS` | Không thể vô hiệu hóa khi còn hợp đồng đang`ACTIVE` |
 
 ---
 
 ## 6. Module Unit — Loại ô kho & Ô kho
 
-**Package:** `com.swp391.selfstorage.unit`  
+**Package:** `com.swp391.selfstorage.unit`
 **Yêu cầu:** `FM-01`, `SC-01` · **Tasks:** `T2.8`, `T2.10`
 
 ---
@@ -586,10 +607,11 @@ Kích hoạt / vô hiệu hóa cơ sở.
 
 Danh sách loại ô kho tại một cơ sở (công khai).
 
-**Auth:** Công khai  
+**Auth:** Công khai
 **Query params:** `page`, `size`, `isActive`
 
 **Response `200`:**
+
 ```json
 {
   "content": [
@@ -620,15 +642,16 @@ Danh sách loại ô kho tại một cơ sở (công khai).
 
 Kiểm tra availability cho một khoảng thuê (công khai) — `SC-01`, `BR-AVL-01`.
 
-**Auth:** Công khai  
+**Auth:** Công khai
 **Query params:**
 
-| Tham số | Kiểu | Bắt buộc | Mô tả |
-|---------|------|:--------:|-------|
-| `startDate` | `yyyy-MM-dd` | ✓ | Ngày bắt đầu thuê |
-| `rentalMonths` | `integer` | ✓ | Số tháng thuê (≥ 1) |
+| Tham số         | Kiểu          | Bắt buộc | Mô tả                 |
+| ---------------- | -------------- | :--------: | ----------------------- |
+| `startDate`    | `yyyy-MM-dd` |     ✓     | Ngày bắt đầu thuê  |
+| `rentalMonths` | `integer`    |     ✓     | Số tháng thuê (≥ 1) |
 
 **Response `200`:**
+
 ```json
 {
   "facilityId": 1,
@@ -651,8 +674,9 @@ Kiểm tra availability cho một khoảng thuê (công khai) — `SC-01`, `BR-A
 
 Tạo loại ô kho mới — `FM-01`.
 
-**Auth:** `FACILITY_MANAGER` (được gán facilityId), `BUSINESS_MANAGER`  
+**Auth:** `FACILITY_MANAGER` (được gán facilityId), `BUSINESS_MANAGER`
 **Request body:**
+
 ```json
 {
   "name": "Loại M — 6m²",
@@ -672,7 +696,7 @@ Tạo loại ô kho mới — `FM-01`.
 
 Cập nhật loại ô kho.
 
-**Auth:** `FACILITY_MANAGER` (được gán), `BUSINESS_MANAGER`  
+**Auth:** `FACILITY_MANAGER` (được gán), `BUSINESS_MANAGER`
 **Request body:** Giống POST.
 
 **Response `200`:** Trả về `UnitTypeResponse` đã cập nhật.
@@ -683,9 +707,10 @@ Cập nhật loại ô kho.
 
 Lấy bảng giá của tất cả loại ô kho tại một cơ sở — `BM-03`.
 
-**Auth:** Công khai / `BUSINESS_OPERATIONS_MANAGER`  
+**Auth:** Công khai / `BUSINESS_OPERATIONS_MANAGER`
 
 **Response `200`:**
+
 ```json
 [
   {
@@ -705,21 +730,23 @@ Lấy bảng giá của tất cả loại ô kho tại một cơ sở — `BM-03
 
 Cập nhật đơn giá tháng cho loại ô kho tại cơ sở — `BM-03`.
 
-**Auth:** `BUSINESS_OPERATIONS_MANAGER`  
+**Auth:** `BUSINESS_OPERATIONS_MANAGER`
 **Request body:**
+
 ```json
 {
   "monthlyPrice": 1700000
 }
 ```
 
-| Trường | Kiểu | Bắt buộc | Ràng buộc |
-|---|---|:---:|---|
-| `monthlyPrice` | `long` | ✓ | $\ge 0$ |
+| Trường         | Kiểu    | Bắt buộc | Ràng buộc |
+| ---------------- | -------- | :--------: | ----------- |
+| `monthlyPrice` | `long` |     ✓     | $\ge 0$   |
 
 > Giá mới chỉ áp dụng cho Reservation tạo từ thời điểm cập nhật trở đi — `BR-GEN-05`.
 
 **Response `200`:** Trả về `FacilityPriceResponse`.
+
 ```json
 {
   "id": 1,
@@ -737,10 +764,11 @@ Cập nhật đơn giá tháng cho loại ô kho tại cơ sở — `BM-03`.
 
 Danh sách ô kho vật lý tại cơ sở.
 
-**Auth:** `FACILITY_MANAGER` (được gán), `FACILITY_STAFF` (được gán), `BUSINESS_MANAGER`  
+**Auth:** `FACILITY_MANAGER` (được gán), `FACILITY_STAFF` (được gán), `BUSINESS_MANAGER`
 **Query params:** `page`, `size`, `unitTypeId`, `status`
 
 **Response `200`:**
+
 ```json
 {
   "content": [
@@ -768,8 +796,9 @@ Danh sách ô kho vật lý tại cơ sở.
 
 Thêm ô kho vật lý mới — `FM-01`.
 
-**Auth:** `FACILITY_MANAGER` (được gán), `BUSINESS_MANAGER`  
+**Auth:** `FACILITY_MANAGER` (được gán), `BUSINESS_MANAGER`
 **Request body:**
+
 ```json
 {
   "unitTypeId": 7,
@@ -787,8 +816,9 @@ Thêm ô kho vật lý mới — `FM-01`.
 
 Cập nhật trạng thái ô kho — `FS-03`.
 
-**Auth:** `FACILITY_STAFF` (được gán), `FACILITY_MANAGER` (được gán)  
+**Auth:** `FACILITY_STAFF` (được gán), `FACILITY_MANAGER` (được gán)
 **Request body:**
+
 ```json
 {
   "status": "MAINTENANCE",
@@ -796,7 +826,7 @@ Cập nhật trạng thái ô kho — `FS-03`.
 }
 ```
 
-> Giá trị `status` hợp lệ: `AVAILABLE`, `RESERVED`, `OCCUPIED`, `MAINTENANCE`, `OUT_OF_SERVICE`.  
+> Giá trị `status` hợp lệ: `AVAILABLE`, `RESERVED`, `OCCUPIED`, `MAINTENANCE`, `OUT_OF_SERVICE`.
 > Xem quy tắc chuyển trạng thái: [BUSINESS-RULES.md § 13](BUSINESS-RULES.md#13-vòng-đời-trạng-thái).
 
 **Response `200`:** Trả về `StorageUnitResponse`.
@@ -805,7 +835,7 @@ Cập nhật trạng thái ô kho — `FS-03`.
 
 ## 7. Module Reservation — Đặt chỗ
 
-**Package:** `com.swp391.selfstorage.reservation`  
+**Package:** `com.swp391.selfstorage.reservation`
 **Yêu cầu:** `SC-02`, `FM-02` · **Tasks:** `T3.1`, `T3.2`
 
 ---
@@ -814,8 +844,9 @@ Cập nhật trạng thái ô kho — `FS-03`.
 
 Tính trước tiền thuê, tiền cọc 1 tháng (`BR-DEP-01`) và chiết khấu làm tròn (`BR-GEN-04`) trước khi đặt chỗ.
 
-**Auth:** Công khai / `CUSTOMER`  
+**Auth:** Công khai / `CUSTOMER`
 **Request body:**
+
 ```json
 {
   "facilityId": 1,
@@ -826,6 +857,7 @@ Tính trước tiền thuê, tiền cọc 1 tháng (`BR-DEP-01`) và chiết kh�
 ```
 
 **Response `200`:**
+
 ```json
 {
   "status": 200,
@@ -851,8 +883,9 @@ Tính trước tiền thuê, tiền cọc 1 tháng (`BR-DEP-01`) và chiết kh�
 
 Tạo đặt chỗ mới — `SC-02`, `BR-RES-01`, `BR-RES-02`, `BR-AVL-03`.
 
-**Auth:** `CUSTOMER`  
+**Auth:** `CUSTOMER`
 **Request body:**
+
 ```json
 {
   "facilityId": 1,
@@ -862,14 +895,15 @@ Tạo đặt chỗ mới — `SC-02`, `BR-RES-01`, `BR-RES-02`, `BR-AVL-03`.
 }
 ```
 
-| Trường | Kiểu | Bắt buộc | Ràng buộc |
-|--------|------|:--------:|-----------|
-| `facilityId` | `long` | ✓ | Cơ sở đang hoạt động |
-| `unitTypeId` | `long` | ✓ | Loại ô kho đang hoạt động tại facilityId |
-| `startDate` | `yyyy-MM-dd` | ✓ | Không ở quá khứ |
-| `rentalMonths` | `integer` | ✓ | ≥ 1 |
+| Trường         | Kiểu          | Bắt buộc | Ràng buộc                                     |
+| ---------------- | -------------- | :--------: | ----------------------------------------------- |
+| `facilityId`   | `long`       |     ✓     | Cơ sở đang hoạt động                      |
+| `unitTypeId`   | `long`       |     ✓     | Loại ô kho đang hoạt động tại facilityId |
+| `startDate`    | `yyyy-MM-dd` |     ✓     | Không ở quá khứ                             |
+| `rentalMonths` | `integer`    |     ✓     | ≥ 1                                            |
 
 **Response `201`:**
+
 ```json
 {
   "id": 1042,
@@ -892,13 +926,13 @@ Tạo đặt chỗ mới — `SC-02`, `BR-RES-01`, `BR-RES-02`, `BR-AVL-03`.
 
 **Lỗi:**
 
-| Status | errorCode | Điều kiện |
-|--------|-----------|-----------|
-| `404` | `FACILITY_NOT_FOUND` | facilityId không tồn tại |
-| `404` | `UNIT_TYPE_NOT_FOUND` | unitTypeId không tồn tại tại facility |
-| `409` | `CAPACITY_NOT_AVAILABLE` | Không còn capacity — `BR-AVL-03` |
-| `409` | `CONTRACT_OVERDUE` | Khách có hợp đồng đang `OVERDUE` — `BR-OVD-09` |
-| `422` | `INVALID_START_DATE` | startDate trong quá khứ |
+| Status  | errorCode                  | Điều kiện                                             |
+| ------- | -------------------------- | -------------------------------------------------------- |
+| `404` | `FACILITY_NOT_FOUND`     | facilityId không tồn tại                              |
+| `404` | `UNIT_TYPE_NOT_FOUND`    | unitTypeId không tồn tại tại facility                |
+| `409` | `CAPACITY_NOT_AVAILABLE` | Không còn capacity —`BR-AVL-03`                     |
+| `409` | `CONTRACT_OVERDUE`       | Khách có hợp đồng đang`OVERDUE` — `BR-OVD-09` |
+| `422` | `INVALID_START_DATE`     | startDate trong quá khứ                                |
 
 ---
 
@@ -907,6 +941,7 @@ Tạo đặt chỗ mới — `SC-02`, `BR-RES-01`, `BR-RES-02`, `BR-AVL-03`.
 Danh sách đặt chỗ.
 
 **Auth:**
+
 - `CUSTOMER` → chỉ thấy Reservation của chính mình
 - `FACILITY_MANAGER` → Reservation thuộc Facility được gán
 - `BUSINESS_MANAGER`, `ADMIN` → toàn bộ
@@ -931,8 +966,9 @@ Chi tiết một đặt chỗ.
 
 Hủy đặt chỗ — `BR-RES-04`.
 
-**Auth:** `CUSTOMER` (chủ Reservation), `FACILITY_MANAGER` (của Facility)  
+**Auth:** `CUSTOMER` (chủ Reservation), `FACILITY_MANAGER` (của Facility)
 **Request body:**
+
 ```json
 {
   "reason": "Thay đổi kế hoạch"
@@ -940,6 +976,7 @@ Hủy đặt chỗ — `BR-RES-04`.
 ```
 
 **Response `200`:**
+
 ```json
 {
   "id": 1042,
@@ -951,11 +988,11 @@ Hủy đặt chỗ — `BR-RES-04`.
 
 **Lỗi:**
 
-| Status | errorCode | Điều kiện |
-|--------|-----------|-----------|
-| `409` | `RESERVATION_ALREADY_CANCELLED` | Reservation đã hủy trước đó |
-| `409` | `RESERVATION_EXPIRED` | Hết thời gian giữ chỗ |
-| `422` | `CANNOT_CANCEL_FULFILLED` | Reservation đã `FULFILLED` — hủy theo quy trình Return |
+| Status  | errorCode                         | Điều kiện                                                 |
+| ------- | --------------------------------- | ------------------------------------------------------------ |
+| `409` | `RESERVATION_ALREADY_CANCELLED` | Reservation đã hủy trước đó                           |
+| `409` | `RESERVATION_EXPIRED`           | Hết thời gian giữ chỗ                                    |
+| `422` | `CANNOT_CANCEL_FULFILLED`       | Reservation đã`FULFILLED` — hủy theo quy trình Return |
 
 ---
 
@@ -963,8 +1000,9 @@ Hủy đặt chỗ — `BR-RES-04`.
 
 Facility Manager gán Storage Unit sau khi khách thanh toán — `FM-02`, `BR-AVL-04`.
 
-**Auth:** `FACILITY_MANAGER` (của Facility)  
+**Auth:** `FACILITY_MANAGER` (của Facility)
 **Request body:**
+
 ```json
 {
   "storageUnitId": 42
@@ -972,6 +1010,7 @@ Facility Manager gán Storage Unit sau khi khách thanh toán — `FM-02`, `BR-A
 ```
 
 **Response `200`:**
+
 ```json
 {
   "id": 1042,
@@ -983,10 +1022,10 @@ Facility Manager gán Storage Unit sau khi khách thanh toán — `FM-02`, `BR-A
 
 **Lỗi:**
 
-| Status | errorCode | Điều kiện |
-|--------|-----------|-----------|
-| `409` | `UNIT_ASSIGNMENT_FAILED` | Unit không hợp lệ hoặc đã bị chiếm đồng thời — `BR-AVL-04` |
-| `409` | `RESERVATION_NOT_PAID` | Reservation chưa thanh toán đủ |
+| Status  | errorCode                  | Điều kiện                                                            |
+| ------- | -------------------------- | ----------------------------------------------------------------------- |
+| `409` | `UNIT_ASSIGNMENT_FAILED` | Unit không hợp lệ hoặc đã bị chiếm đồng thời —`BR-AVL-04` |
+| `409` | `RESERVATION_NOT_PAID`   | Reservation chưa thanh toán đủ                                      |
 
 ---
 
@@ -994,9 +1033,10 @@ Facility Manager gán Storage Unit sau khi khách thanh toán — `FM-02`, `BR-A
 
 Tra cứu thông tin lịch hẹn và hướng dẫn Check-in nhận kho — `SC-04`, `US-SC-04.1`.
 
-**Auth:** `CUSTOMER` (chính chủ đơn), `FACILITY_STAFF`, `FACILITY_MANAGER`  
+**Auth:** `CUSTOMER` (chính chủ đơn), `FACILITY_STAFF`, `FACILITY_MANAGER`
 
 **Response `200`:**
+
 ```json
 {
   "reservationId": 1042,
@@ -1034,8 +1074,9 @@ Tra cứu thông tin lịch hẹn và hướng dẫn Check-in nhận kho — `SC
 
 Khách hàng xác nhận đã nhận bàn giao ô kho trên ứng dụng và nhận mã PIN Access Code — `SC-04`, `US-SC-04.2`.
 
-**Auth:** `CUSTOMER` (chính chủ đơn)  
+**Auth:** `CUSTOMER` (chính chủ đơn)
 **Request body:**
+
 ```json
 {
   "confirmed": true,
@@ -1045,6 +1086,7 @@ Khách hàng xác nhận đã nhận bàn giao ô kho trên ứng dụng và nh�
 ```
 
 **Response `200`:**
+
 ```json
 {
   "reservationId": 1042,
@@ -1062,12 +1104,12 @@ Khách hàng xác nhận đã nhận bàn giao ô kho trên ứng dụng và nh�
 
 **Lỗi:**
 
-| Status | errorCode | Điều kiện |
-|--------|-----------|-----------|
-| `403` | `ACCESS_DENIED` | Không phải chủ đơn đặt chỗ |
-| `404` | `RESERVATION_NOT_FOUND` | reservationId không tồn tại |
+| Status  | errorCode                         | Điều kiện                                 |
+| ------- | --------------------------------- | -------------------------------------------- |
+| `403` | `ACCESS_DENIED`                 | Không phải chủ đơn đặt chỗ           |
+| `404` | `RESERVATION_NOT_FOUND`         | reservationId không tồn tại               |
 | `409` | `RESERVATION_ALREADY_FULFILLED` | Đơn đã hoàn tất nhận kho trước đó |
-| `409` | `INVALID_STATUS_TRANSITION` | Đơn chưa ở trạng thái `CONFIRMED` |
+| `409` | `INVALID_STATUS_TRANSITION`     | Đơn chưa ở trạng thái`CONFIRMED`     |
 
 ---
 
@@ -1075,8 +1117,9 @@ Khách hàng xác nhận đã nhận bàn giao ô kho trên ứng dụng và nh�
 
 Khách hàng dời lịch hẹn Check-in trong thời hạn 10 ngày ân hạn — `SC-04`, `US-SC-04.3`, `BR-CAN-04`.
 
-**Auth:** `CUSTOMER` (chính chủ đơn)  
+**Auth:** `CUSTOMER` (chính chủ đơn)
 **Request body:**
+
 ```json
 {
   "newAppointmentDate": "2026-10-05",
@@ -1092,14 +1135,15 @@ Khách hàng dời lịch hẹn Check-in trong thời hạn 10 ngày ân hạn �
 
 Danh sách ô kho đang thuê của khách hàng (My Rentals Dashboard) — `SC-05`, `US-SC-05.1`, `Task T4.1`.
 
-**Auth:** `CUSTOMER` (`STORAGE_CUSTOMER`)  
-**Query params:**
+**Auth:** `CUSTOMER` (`STORAGE_CUSTOMER`)**Query params:**
+
 - `status`: Lọc theo trạng thái (`ACTIVE`, `OVERDUE`, `HISTORY`, `ALL` - mặc định `ALL`)
 - `page`: Số trang (0-indexed, mặc định 0)
 - `size`: Số phần tử/trang (mặc định 10)
 - `sort`: Tiêu chí sắp xếp (mặc định `id,desc`)
 
 **Response `200`:** Danh sách phân trang `PageResponse<CustomerRentalSummaryResponse>`.
+
 ```json
 {
   "status": 200,
@@ -1152,21 +1196,22 @@ Danh sách ô kho đang thuê của khách hàng (My Rentals Dashboard) — `SC-
 
 Chi tiết một hợp đồng ô kho cụ thể của khách hàng — `SC-05`, `US-SC-05.2`, `Task T4.1`.
 
-**Auth:** `CUSTOMER` (chính chủ hợp đồng, kiểm tra `customerId == currentUser.getId()`)  
+**Auth:** `CUSTOMER` (chính chủ hợp đồng, kiểm tra `customerId == currentUser.getId()`)
 **Response `200`:** `CustomerRentalDetailResponse`.
 
 **Errors:**
-| Status | errorCode | Điều kiện |
-|--------|-----------|-----------|
-| `401` | `UNAUTHORIZED` | Chưa xác thực |
-| `403` | `ACCESS_DENIED` | Hợp đồng không thuộc về khách hàng hiện tại |
-| `404` | `CONTRACT_NOT_FOUND` | Hợp đồng không tồn tại |
+
+| Status  | errorCode              | Điều kiện                                          |
+| ------- | ---------------------- | ----------------------------------------------------- |
+| `401` | `UNAUTHORIZED`       | Chưa xác thực                                      |
+| `403` | `ACCESS_DENIED`      | Hợp đồng không thuộc về khách hàng hiện tại |
+| `404` | `CONTRACT_NOT_FOUND` | Hợp đồng không tồn tại                          |
 
 ---
 
 ## 8. Module Contract — Hợp đồng thuê
 
-**Package:** `com.swp391.selfstorage.contract`  
+**Package:** `com.swp391.selfstorage.contract`
 **Yêu cầu:** `SC-04`, `SC-05`, `FS-01`, `FS-02`, `FS-04`, `FM-03`, `FM-04` · **Tasks:** `T3.4`–`T3.8`, `T4.1`–`T4.3`, `T4.5`
 
 ---
@@ -1176,6 +1221,7 @@ Chi tiết một hợp đồng ô kho cụ thể của khách hàng — `SC-05`,
 Danh sách hợp đồng (hỗ trợ phân trang, tìm kiếm theo code, lọc sắp hết hạn).
 
 **Auth:**
+
 - `CUSTOMER` → chỉ thấy hợp đồng của mình
 - `FACILITY_STAFF`, `FACILITY_MANAGER` → hợp đồng thuộc Facility được gán
 - `BUSINESS_MANAGER`, `ADMIN` → toàn bộ
@@ -1183,6 +1229,7 @@ Danh sách hợp đồng (hỗ trợ phân trang, tìm kiếm theo code, lọc s
 **Query params:** `page`, `size`, `sort`, `status`, `facilityId`, `customerId`, `keyword` (tìm theo mã hợp đồng), `expiringSoon` (boolean: true để lọc hợp đồng ACTIVE còn hiệu lực ≤ 7 ngày)
 
 **Response `200`:** Danh sách phân trang `PageResponse<ContractSummaryResponse>`.
+
 ```json
 {
   "status": 200,
@@ -1223,6 +1270,7 @@ Chi tiết công nợ và tình hình tài chính hợp đồng (FM-03).
 **Auth:** `FACILITY_MANAGER`, `BUSINESS_MANAGER`, `ADMIN`
 
 **Response `200`:**
+
 ```json
 {
   "status": 200,
@@ -1256,6 +1304,7 @@ Chi tiết hợp đồng.
 **Auth:** `CUSTOMER` (chính mình), `FACILITY_STAFF`, `FACILITY_MANAGER`, `BUSINESS_MANAGER`, `ADMIN`
 
 **Response `200`:**
+
 ```json
 {
   "id": 500,
@@ -1287,8 +1336,9 @@ Chi tiết hợp đồng.
 
 Nhân viên xác nhận bàn giao kho — `SC-04`, `FS-02`.
 
-**Auth:** `FACILITY_STAFF` (được gán Facility)  
+**Auth:** `FACILITY_STAFF` (được gán Facility)
 **Request body:**
+
 ```json
 {
   "checkinDate": "2026-10-01",
@@ -1298,6 +1348,7 @@ Nhân viên xác nhận bàn giao kho — `SC-04`, `FS-02`.
 ```
 
 **Response `200`:**
+
 ```json
 {
   "id": 500,
@@ -1309,10 +1360,10 @@ Nhân viên xác nhận bàn giao kho — `SC-04`, `FS-02`.
 
 **Lỗi:**
 
-| Status | errorCode | Điều kiện |
-|--------|-----------|-----------|
-| `404` | `CONTRACT_NOT_FOUND` | contractId không tồn tại |
-| `409` | `CONTRACT_NOT_PENDING_CHECKIN` | Hợp đồng không ở trạng thái `PENDING_CHECK_IN` |
+| Status  | errorCode                        | Điều kiện                                           |
+| ------- | -------------------------------- | ------------------------------------------------------ |
+| `404` | `CONTRACT_NOT_FOUND`           | contractId không tồn tại                            |
+| `409` | `CONTRACT_NOT_PENDING_CHECKIN` | Hợp đồng không ở trạng thái`PENDING_CHECK_IN` |
 
 ---
 
@@ -1320,9 +1371,10 @@ Nhân viên xác nhận bàn giao kho — `SC-04`, `FS-02`.
 
 Nhân viên ghi nhận khách hàng từ chối nhận bàn giao ô kho do sự cố/chất lượng không đạt — `FS-02`.
 
-**Auth:** `FACILITY_STAFF` (được gán Facility)  
-**Request Header:** `X-Staff-Id: {id}`  
+**Auth:** `FACILITY_STAFF` (được gán Facility)
+**Request Header:** `X-Staff-Id: {id}`
 **Request body:**
+
 ```json
 {
   "rejectionReason": "FACILITY_DEFECT",
@@ -1330,12 +1382,13 @@ Nhân viên ghi nhận khách hàng từ chối nhận bàn giao ô kho do sự 
 }
 ```
 
-| Trường | Kiểu | Bắt buộc | Mô tả |
-|---|---|:---:|---|
-| `rejectionReason` | `string` | ✓ | `FACILITY_DEFECT`, `CUSTOMER_CHANGE_MIND`, `OTHER` |
-| `notes` | `string` | ✗ | Ghi chú lý do cụ thể |
+| Trường            | Kiểu      | Bắt buộc | Mô tả                                                  |
+| ------------------- | ---------- | :--------: | -------------------------------------------------------- |
+| `rejectionReason` | `string` |     ✓     | `FACILITY_DEFECT`, `CUSTOMER_CHANGE_MIND`, `OTHER` |
+| `notes`           | `string` |     ✗     | Ghi chú lý do cụ thể                                 |
 
 **Response `200`:**
+
 ```json
 {
   "status": 200,
@@ -1356,8 +1409,9 @@ Nhân viên ghi nhận khách hàng từ chối nhận bàn giao ô kho do sự 
 
 Gửi thông báo trả kho — `SC-05`, `BR-RET-01`.
 
-**Auth:** `CUSTOMER` (chính mình), `FACILITY_STAFF`, `FACILITY_MANAGER`  
+**Auth:** `CUSTOMER` (chính mình), `FACILITY_STAFF`, `FACILITY_MANAGER`
 **Request body:**
+
 ```json
 {
   "intendedReturnDate": "2027-01-01",
@@ -1366,6 +1420,7 @@ Gửi thông báo trả kho — `SC-05`, `BR-RET-01`.
 ```
 
 **Response `201`:**
+
 ```json
 {
   "id": 300,
@@ -1378,11 +1433,11 @@ Gửi thông báo trả kho — `SC-05`, `BR-RET-01`.
 
 **Lỗi:**
 
-| Status | errorCode | Điều kiện |
-|--------|-----------|-----------|
-| `404` | `CONTRACT_NOT_FOUND` | Hợp đồng không tồn tại |
-| `409` | `CONTRACT_NOT_ACTIVE_OR_OVERDUE` | Hợp đồng không ở trạng thái ACTIVE hoặc OVERDUE |
-| `422` | `RETURN_NOTICE_TOO_SHORT` | Ngày trả dự kiến nhỏ hơn ngày hiện tại — `BR-RET-01` |
+| Status  | errorCode                          | Điều kiện                                                    |
+| ------- | ---------------------------------- | --------------------------------------------------------------- |
+| `404` | `CONTRACT_NOT_FOUND`             | Hợp đồng không tồn tại                                    |
+| `409` | `CONTRACT_NOT_ACTIVE_OR_OVERDUE` | Hợp đồng không ở trạng thái ACTIVE hoặc OVERDUE         |
+| `422` | `RETURN_NOTICE_TOO_SHORT`        | Ngày trả dự kiến nhỏ hơn ngày hiện tại —`BR-RET-01` |
 
 ---
 
@@ -1390,9 +1445,10 @@ Gửi thông báo trả kho — `SC-05`, `BR-RET-01`.
 
 Manager phân công hoặc điều chuyển nhân viên nghiệm thu trả kho — `FM-05`, `FS-04`, `Task T4.15`.
 
-**Auth:** `FACILITY_MANAGER`, `ADMIN`  
-**Headers:** `X-Manager-Id`  
+**Auth:** `FACILITY_MANAGER`, `ADMIN`
+**Headers:** `X-Manager-Id`
 **Request body:**
+
 ```json
 {
   "staffId": 10,
@@ -1400,19 +1456,19 @@ Manager phân công hoặc điều chuyển nhân viên nghiệm thu trả kho �
 }
 ```
 
-| Trường | Kiểu | Bắt buộc | Mô tả |
-|--------|------|:--------:|-------|
-| `staffId` | `Long` | ✓ | ID của nhân viên tiếp nhận nhiệm vụ |
-| `notes` | `String` | ✗ | Ghi chú điều phối từ quản lý cơ sở |
+| Trường    | Kiểu      | Bắt buộc | Mô tả                                     |
+| ----------- | ---------- | :--------: | ------------------------------------------- |
+| `staffId` | `Long`   |     ✓     | ID của nhân viên tiếp nhận nhiệm vụ  |
+| `notes`   | `String` |     ✗     | Ghi chú điều phối từ quản lý cơ sở |
 
 **Response `200`:** `ApiResponse<ContractResponse>` chứa thông tin hợp đồng kèm `assignedStaffId`, `assignedStaffName`, `assignmentStatus = "ASSIGNED"`.
 
 **Lỗi:**
 
-| Status | errorCode | Điều kiện |
-|--------|-----------|-----------|
-| `400` | `INVALID_REQUEST` | Thiếu `staffId` |
-| `404` | `CONTRACT_NOT_FOUND` | Hợp đồng không tồn tại |
+| Status  | errorCode                       | Điều kiện                                      |
+| ------- | ------------------------------- | ------------------------------------------------- |
+| `400` | `INVALID_REQUEST`             | Thiếu`staffId`                                 |
+| `404` | `CONTRACT_NOT_FOUND`          | Hợp đồng không tồn tại                      |
 | `409` | `CONTRACT_NOT_PENDING_RETURN` | Hợp đồng không ở trạng thái PENDING_RETURN |
 
 ---
@@ -1421,8 +1477,9 @@ Manager phân công hoặc điều chuyển nhân viên nghiệm thu trả kho �
 
 Xác nhận kiểm tra hiện trạng khi trả kho — `FS-04`, `FM-04`.
 
-**Auth:** `FACILITY_STAFF` (được gán)  
+**Auth:** `FACILITY_STAFF` (được gán)
 **Request body:**
+
 ```json
 {
   "returnDate": "2027-01-01",
@@ -1436,6 +1493,7 @@ Xác nhận kiểm tra hiện trạng khi trả kho — `FS-04`, `FM-04`.
 > `condition`: `GOOD`, `MINOR_DAMAGE`, `MAJOR_DAMAGE`.
 
 **Response `200`:**
+
 ```json
 {
   "id": 500,
@@ -1456,6 +1514,7 @@ Xem trước bảng quyết toán hoàn cọc / nộp bù cho FM trước khi du
 **Auth:** `FACILITY_MANAGER`, `BUSINESS_MANAGER`, `ADMIN`
 
 **Response `200`:**
+
 ```json
 {
   "status": 200,
@@ -1478,9 +1537,10 @@ Xem trước bảng quyết toán hoàn cọc / nộp bù cho FM trước khi du
 
 FM phê duyệt quyết toán, hoàn cọc, thu hồi mã truy cập, đưa kho sang `CLEANING` và đóng hợp đồng `CLOSED` — `FM-04`.
 
-**Auth:** `FACILITY_MANAGER` (được gán Facility), `BUSINESS_MANAGER`, `ADMIN`  
-**Request Header:** `X-Manager-Id: {id}` (hoặc lấy từ JWT)  
+**Auth:** `FACILITY_MANAGER` (được gán Facility), `BUSINESS_MANAGER`, `ADMIN`
+**Request Header:** `X-Manager-Id: {id}` (hoặc lấy từ JWT)
 **Request body (tùy chọn):**
+
 ```json
 {
   "adjustedDamageCost": 200000,
@@ -1489,6 +1549,7 @@ FM phê duyệt quyết toán, hoàn cọc, thu hồi mã truy cập, đưa kho 
 ```
 
 **Response `200`:**
+
 ```json
 {
   "status": 200,
@@ -1506,10 +1567,10 @@ FM phê duyệt quyết toán, hoàn cọc, thu hồi mã truy cập, đưa kho 
 
 **Lỗi:**
 
-| Status | errorCode | Điều kiện |
-|--------|-----------|-----------|
-| `404` | `CONTRACT_NOT_FOUND` | Hợp đồng không tồn tại |
-| `404` | `RETURN_REQUEST_NOT_FOUND` | Chưa có biên bản nghiệm thu trả kho |
+| Status  | errorCode                       | Điều kiện                                                    |
+| ------- | ------------------------------- | --------------------------------------------------------------- |
+| `404` | `CONTRACT_NOT_FOUND`          | Hợp đồng không tồn tại                                    |
+| `404` | `RETURN_REQUEST_NOT_FOUND`    | Chưa có biên bản nghiệm thu trả kho                       |
 | `409` | `CONTRACT_NOT_PENDING_RETURN` | Hợp đồng không ở trạng thái PENDING_RETURN hoặc OVERDUE |
 
 ---
@@ -1518,8 +1579,9 @@ FM phê duyệt quyết toán, hoàn cọc, thu hồi mã truy cập, đưa kho 
 
 Tính toán báo giá xem trước cho khách hàng trước khi thanh toán gia hạn (Quote Preview) — `SC-05`, `Task T4.5`.
 
-**Auth:** `CUSTOMER` (chính mình), `FACILITY_STAFF`, `FACILITY_MANAGER`  
+**Auth:** `CUSTOMER` (chính mình), `FACILITY_STAFF`, `FACILITY_MANAGER`
 **Request body:**
+
 ```json
 {
   "renewalMonths": 3
@@ -1527,6 +1589,7 @@ Tính toán báo giá xem trước cho khách hàng trước khi thanh toán gia
 ```
 
 **Response `200`:**
+
 ```json
 {
   "status": 200,
@@ -1548,19 +1611,21 @@ Tính toán báo giá xem trước cho khách hàng trước khi thanh toán gia
 
 Gia hạn hợp đồng — `SC-05`, `BR-REN-*`.
 
-**Auth:** `CUSTOMER` (chính mình)  
+**Auth:** `CUSTOMER` (chính mình)
 **Request body:**
+
 ```json
 {
   "renewalMonths": 3
 }
 ```
 
-| Trường | Ràng buộc |
-|--------|-----------|
-| `renewalMonths` | ≥ `renewal.min_months`, ≤ `renewal.max_months` |
+| Trường          | Ràng buộc                                         |
+| ----------------- | --------------------------------------------------- |
+| `renewalMonths` | ≥`renewal.min_months`, ≤ `renewal.max_months` |
 
 **Response `201`:**
+
 ```json
 {
   "id": 600,
@@ -1576,17 +1641,17 @@ Gia hạn hợp đồng — `SC-05`, `BR-REN-*`.
 
 **Lỗi:**
 
-| Status | errorCode | Điều kiện |
-|--------|-----------|-----------|
-| `409` | `RENEWAL_NOT_ALLOWED` | Hợp đồng không ở trạng thái `ACTIVE` — `BR-REN-*` |
-| `409` | `CONTRACT_OVERDUE` | Phải xử lý phí quá hạn trước |
-| `409` | `CAPACITY_NOT_AVAILABLE` | Không còn capacity cho kỳ mới — `BR-REN-05` |
+| Status  | errorCode                  | Điều kiện                                                 |
+| ------- | -------------------------- | ------------------------------------------------------------ |
+| `409` | `RENEWAL_NOT_ALLOWED`    | Hợp đồng không ở trạng thái`ACTIVE` — `BR-REN-*` |
+| `409` | `CONTRACT_OVERDUE`       | Phải xử lý phí quá hạn trước                         |
+| `409` | `CAPACITY_NOT_AVAILABLE` | Không còn capacity cho kỳ mới —`BR-REN-05`            |
 
 ---
 
 ## 9. Module Payment — Thanh toán & Hóa đơn
 
-**Package:** `com.swp391.selfstorage.payment`  
+**Package:** `com.swp391.selfstorage.payment`
 **Yêu cầu:** `SC-03` · **Tasks:** `T3.3`
 
 ---
@@ -1595,8 +1660,9 @@ Gia hạn hợp đồng — `SC-05`, `BR-REN-*`.
 
 Tạo giao dịch thanh toán.
 
-**Auth:** `CUSTOMER`  
+**Auth:** `CUSTOMER`
 **Request body:**
+
 ```json
 {
   "referenceType": "RESERVATION",
@@ -1607,15 +1673,16 @@ Tạo giao dịch thanh toán.
 }
 ```
 
-| Trường | Kiểu | Bắt buộc | Mô tả |
-|--------|------|:--------:|-------|
-| `referenceType` | `string` | ✓ | `RESERVATION`, `RENEWAL`, `OVERDUE_FEE`, `EXTRA_CHARGE` |
-| `referenceId` | `long` | ✓ | ID của đối tượng liên quan |
-| `amount` | `long` | ✓ | Số tiền VND |
-| `method` | `string` | ✓ | `BANK_TRANSFER`, `CREDIT_CARD`, `CASH` |
-| `transactionRef` | `string` | ✗ | Mã giao dịch từ cổng thanh toán |
+| Trường           | Kiểu      | Bắt buộc | Mô tả                                                         |
+| ------------------ | ---------- | :--------: | --------------------------------------------------------------- |
+| `referenceType`  | `string` |     ✓     | `RESERVATION`, `RENEWAL`, `OVERDUE_FEE`, `EXTRA_CHARGE` |
+| `referenceId`    | `long`   |     ✓     | ID của đối tượng liên quan                                |
+| `amount`         | `long`   |     ✓     | Số tiền VND                                                   |
+| `method`         | `string` |     ✓     | `BANK_TRANSFER`, `CREDIT_CARD`, `CASH`                    |
+| `transactionRef` | `string` |     ✗     | Mã giao dịch từ cổng thanh toán                            |
 
 **Response `201`:**
+
 ```json
 {
   "id": 9001,
@@ -1631,11 +1698,11 @@ Tạo giao dịch thanh toán.
 
 **Lỗi:**
 
-| Status | errorCode | Điều kiện |
-|--------|-----------|-----------|
-| `409` | `PAYMENT_FAILED` | Thanh toán thất bại ở cổng thanh toán |
-| `409` | `RESERVATION_EXPIRED` | Reservation đã hết hạn giữ chỗ |
-| `422` | `AMOUNT_MISMATCH` | Số tiền không khớp với tổng phải trả |
+| Status  | errorCode               | Điều kiện                                 |
+| ------- | ----------------------- | -------------------------------------------- |
+| `409` | `PAYMENT_FAILED`      | Thanh toán thất bại ở cổng thanh toán  |
+| `409` | `RESERVATION_EXPIRED` | Reservation đã hết hạn giữ chỗ         |
+| `422` | `AMOUNT_MISMATCH`     | Số tiền không khớp với tổng phải trả |
 
 ---
 
@@ -1643,8 +1710,9 @@ Tạo giao dịch thanh toán.
 
 Khởi tạo link thanh toán và mã QR PayOS VietQR tự động — `SC-03`.
 
-**Auth:** `CUSTOMER`  
+**Auth:** `CUSTOMER`
 **Request body:**
+
 ```json
 {
   "reservationId": 1042,
@@ -1657,6 +1725,7 @@ Khởi tạo link thanh toán và mã QR PayOS VietQR tự động — `SC-03`.
 ```
 
 **Response `201`:**
+
 ```json
 {
   "checkoutUrl": "https://pay.payos.vn/web/...",
@@ -1674,10 +1743,11 @@ Khởi tạo link thanh toán và mã QR PayOS VietQR tự động — `SC-03`.
 
 Kiểm tra trạng thái thanh toán theo mã đơn hàng PayOS (phục vụ cơ chế Frontend Polling) — `SC-03`.
 
-**Auth:** `CUSTOMER`, `FACILITY_STAFF`, `FACILITY_MANAGER`, `ADMIN`  
+**Auth:** `CUSTOMER`, `FACILITY_STAFF`, `FACILITY_MANAGER`, `ADMIN`
 **Path param:** `orderCode`
 
 **Response `200`:** Trả về `PaymentResponse`.
+
 ```json
 {
   "id": 9002,
@@ -1690,6 +1760,7 @@ Kiểm tra trạng thái thanh toán theo mã đơn hàng PayOS (phục vụ cơ
   "transactionRef": "PAYOS1727239182391"
 }
 ```
+
 *(Trạng thái: `PENDING`, `PAID`, `CANCELLED`, `EXPIRED`).*
 
 ---
@@ -1698,8 +1769,9 @@ Kiểm tra trạng thái thanh toán theo mã đơn hàng PayOS (phục vụ cơ
 
 Webhook tiếp nhận thông báo xác nhận thanh toán tự động từ máy chủ PayOS.
 
-**Auth:** Công khai (đã mở trong `SecurityConfig`)  
+**Auth:** Công khai (đã mở trong `SecurityConfig`)
 **Response `200`:**
+
 ```json
 {
   "error": 0,
@@ -1714,6 +1786,7 @@ Webhook tiếp nhận thông báo xác nhận thanh toán tự động từ máy
 Danh sách giao dịch thanh toán.
 
 **Auth:**
+
 - `CUSTOMER` → chỉ thấy giao dịch của mình
 - `FACILITY_MANAGER`, `BUSINESS_MANAGER`, `ADMIN` → theo phạm vi phân quyền
 
@@ -1740,6 +1813,7 @@ Danh sách hóa đơn của hợp đồng.
 **Auth:** `CUSTOMER` (của mình), `FACILITY_STAFF`, `FACILITY_MANAGER`, `BUSINESS_MANAGER`, `ADMIN`
 
 **Response `200`:**
+
 ```json
 {
   "content": [
@@ -1764,7 +1838,7 @@ Danh sách hóa đơn của hợp đồng.
 
 ## 10. Module Policy — Chính sách & Giá
 
-**Package:** `com.swp391.selfstorage.policy`  
+**Package:** `com.swp391.selfstorage.policy`
 **Yêu cầu:** `BM-02`, `BM-03` · **Tasks:** `T2.9`, `T4.4`
 
 ---
@@ -1773,10 +1847,11 @@ Danh sách hóa đơn của hợp đồng.
 
 Danh sách phiên bản chính sách.
 
-**Auth:** `BUSINESS_MANAGER`, `ADMIN`, `FACILITY_MANAGER`  
+**Auth:** `BUSINESS_MANAGER`, `ADMIN`, `FACILITY_MANAGER`
 **Query params:** `page`, `size`, `sort=effectiveDate,desc`, `isActive`
 
 **Response `200`:**
+
 ```json
 {
   "content": [
@@ -1813,7 +1888,7 @@ Danh sách phiên bản chính sách.
 
 Tạo phiên bản chính sách mới — `BM-02`.
 
-**Auth:** `BUSINESS_MANAGER`  
+**Auth:** `BUSINESS_MANAGER`
 **Request body:** Cùng cấu trúc với policy object trong GET, bao gồm đầy đủ tham số cấu hình.
 
 **Response `201`:** Trả về `PolicyResponse` đầy đủ.
@@ -1824,7 +1899,7 @@ Tạo phiên bản chính sách mới — `BM-02`.
 
 Lấy phiên bản chính sách đang hiệu lực.
 
-**Auth:** Bất kỳ vai trò đã đăng nhập  
+**Auth:** Bất kỳ vai trò đã đăng nhập
 **Response `200`:** Trả về `PolicyResponse` của phiên bản đang hoạt động.
 
 ---
@@ -1833,7 +1908,7 @@ Lấy phiên bản chính sách đang hiệu lực.
 
 Danh sách phụ phí — `BM-03`.
 
-**Auth:** `BUSINESS_MANAGER`, `FACILITY_MANAGER`  
+**Auth:** `BUSINESS_MANAGER`, `FACILITY_MANAGER`
 **Query params:** `facilityId`, `unitTypeId`, `isActive`
 
 **Response `200`:** Danh sách phân trang `SurchargeResponse`.
@@ -1844,8 +1919,9 @@ Danh sách phụ phí — `BM-03`.
 
 Tạo phụ phí mới.
 
-**Auth:** `BUSINESS_MANAGER`  
+**Auth:** `BUSINESS_MANAGER`
 **Request body:**
+
 ```json
 {
   "name": "Phụ phí tầng 3",
@@ -1865,7 +1941,7 @@ Tạo phụ phí mới.
 
 ## 11. Module Support — Yêu cầu hỗ trợ
 
-**Package:** `com.swp391.selfstorage.support`  
+**Package:** `com.swp391.selfstorage.support`
 **Yêu cầu:** `SC-06`, `FS-05`, `FM-05` · **Tasks:** `T4.7`, `T4.8`
 
 ---
@@ -1874,8 +1950,9 @@ Tạo phụ phí mới.
 
 Gửi yêu cầu hỗ trợ — `SC-06`.
 
-**Auth:** `CUSTOMER`  
+**Auth:** `CUSTOMER`
 **Request body:**
+
 ```json
 {
   "contractId": 500,
@@ -1886,15 +1963,16 @@ Gửi yêu cầu hỗ trợ — `SC-06`.
 }
 ```
 
-| Trường | Kiểu | Bắt buộc | Mô tả |
-|--------|------|:--------:|-------|
-| `contractId` | `long` | ✓ | Hợp đồng liên quan |
-| `type` | `string` | ✓ | `ACCESS_ISSUE`, `LOCK_ISSUE`, `DAMAGE`, `BILLING`, `OTHER` |
-| `title` | `string` | ✓ | 5–200 ký tự |
-| `description` | `string` | ✓ | 10–2000 ký tự |
-| `isUrgent` | `boolean` | ✗ | Mặc định `false` — Urgent SLA 2 giờ — `BR-SUP-01` |
+| Trường        | Kiểu       | Bắt buộc | Mô tả                                                              |
+| --------------- | ----------- | :--------: | -------------------------------------------------------------------- |
+| `contractId`  | `long`    |     ✓     | Hợp đồng liên quan                                               |
+| `type`        | `string`  |     ✓     | `ACCESS_ISSUE`, `LOCK_ISSUE`, `DAMAGE`, `BILLING`, `OTHER` |
+| `title`       | `string`  |     ✓     | 5–200 ký tự                                                       |
+| `description` | `string`  |     ✓     | 10–2000 ký tự                                                     |
+| `isUrgent`    | `boolean` |     ✗     | Mặc định`false` — Urgent SLA 2 giờ — `BR-SUP-01`           |
 
 **Response `201`:**
+
 ```json
 {
   "id": 800,
@@ -1918,6 +1996,7 @@ Gửi yêu cầu hỗ trợ — `SC-06`.
 Danh sách yêu cầu hỗ trợ.
 
 **Auth:**
+
 - `CUSTOMER` → chỉ của mình
 - `FACILITY_STAFF`, `FACILITY_MANAGER` → thuộc Facility được gán
 - `BUSINESS_MANAGER`, `ADMIN` → toàn bộ
@@ -1942,10 +2021,11 @@ Chi tiết yêu cầu hỗ trợ.
 
 Xem khối lượng công việc của nhân viên cơ sở để phân bổ nhiệm vụ xử lý sự cố — `FM-05`, `Task T4.8`.
 
-**Auth:** `FACILITY_MANAGER`, `ADMIN`, `BUSINESS_MANAGER`  
+**Auth:** `FACILITY_MANAGER`, `ADMIN`, `BUSINESS_MANAGER`
 **Query params:** `facilityId` (bắt buộc)
 
 **Response `200`:**
+
 ```json
 {
   "status": 200,
@@ -1967,7 +2047,7 @@ Xem khối lượng công việc của nhân viên cơ sở để phân bổ nhi
 
 Xem danh sách yêu cầu hỗ trợ dành riêng cho nhân viên và ban quản lý cơ sở — `FM-05`, `FS-05`.
 
-**Auth:** `FACILITY_STAFF`, `FACILITY_MANAGER`, `ADMIN`, `BUSINESS_MANAGER`  
+**Auth:** `FACILITY_STAFF`, `FACILITY_MANAGER`, `ADMIN`, `BUSINESS_MANAGER`
 **Query params:** `facilityId`, `status`, `category`, `assignedStaffId`, `page`, `size`, `sort`
 
 **Response `200`:** `ApiResponse<PageResponse<SupportRequestSummaryResponse>>`.
@@ -1978,8 +2058,9 @@ Xem danh sách yêu cầu hỗ trợ dành riêng cho nhân viên và ban quản
 
 Phân công nhân viên xử lý — `FM-05`.
 
-**Auth:** `FACILITY_MANAGER` (được gán)  
+**Auth:** `FACILITY_MANAGER` (được gán)
 **Request body:**
+
 ```json
 {
   "staffId": 8
@@ -1987,6 +2068,7 @@ Phân công nhân viên xử lý — `FM-05`.
 ```
 
 **Response `200`:**
+
 ```json
 {
   "id": 800,
@@ -2001,8 +2083,9 @@ Phân công nhân viên xử lý — `FM-05`.
 
 Nhân viên cập nhật kết quả xử lý — `FS-05`.
 
-**Auth:** `FACILITY_STAFF` (được phân công)  
+**Auth:** `FACILITY_STAFF` (được phân công)
 **Request body:**
+
 ```json
 {
   "resolution": "Đã reset mã PIN và bàn giao mã mới cho khách",
@@ -2011,6 +2094,7 @@ Nhân viên cập nhật kết quả xử lý — `FS-05`.
 ```
 
 **Response `200`:**
+
 ```json
 {
   "id": 800,
@@ -2026,8 +2110,9 @@ Nhân viên cập nhật kết quả xử lý — `FS-05`.
 
 Đóng yêu cầu hỗ trợ.
 
-**Auth:** `CUSTOMER` (của mình), `FACILITY_MANAGER`, `ADMIN`  
+**Auth:** `CUSTOMER` (của mình), `FACILITY_MANAGER`, `ADMIN`
 **Request body:**
+
 ```json
 {
   "customerFeedback": "Đã xử lý tốt, cảm ơn"
@@ -2035,6 +2120,7 @@ Nhân viên cập nhật kết quả xử lý — `FS-05`.
 ```
 
 **Response `200`:**
+
 ```json
 {
   "id": 800,
@@ -2049,20 +2135,20 @@ Nhân viên cập nhật kết quả xử lý — `FS-05`.
 
 Hủy yêu cầu hỗ trợ chưa được tiếp nhận.
 
-**Auth:** `CUSTOMER` (của mình)  
+**Auth:** `CUSTOMER` (của mình)
 **Response `204`:** Không có body.
 
 **Lỗi:**
 
-| Status | errorCode | Điều kiện |
-|--------|-----------|-----------|
+| Status  | errorCode                       | Điều kiện                                      |
+| ------- | ------------------------------- | ------------------------------------------------- |
 | `409` | `SUPPORT_ALREADY_IN_PROGRESS` | Yêu cầu đang được xử lý, không thể hủy |
 
 ---
 
 ## 12. Module Report — Báo cáo & Giám sát
 
-**Package:** `com.swp391.selfstorage.report`  
+**Package:** `com.swp391.selfstorage.report`
 **Yêu cầu:** `FM-06`, `BM-04`, `BM-05`, `FS-06` · **Tasks:** `T5.1`, `T5.2`, `T5.3`
 
 ---
@@ -2071,10 +2157,11 @@ Hủy yêu cầu hỗ trợ chưa được tiếp nhận.
 
 Tổng quan cơ sở — `FM-06`.
 
-**Auth:** `FACILITY_MANAGER` (được gán), `BUSINESS_MANAGER`, `ADMIN`  
+**Auth:** `FACILITY_MANAGER` (được gán), `BUSINESS_MANAGER`, `ADMIN`
 **Query params:** `month` (yyyy-MM)
 
 **Response `200`:**
+
 ```json
 {
   "facilityId": 1,
@@ -2101,7 +2188,7 @@ Tổng quan cơ sở — `FM-06`.
 
 Danh sách hợp đồng theo trạng thái — `FM-06`.
 
-**Auth:** `FACILITY_MANAGER` (được gán), `BUSINESS_MANAGER`, `ADMIN`  
+**Auth:** `FACILITY_MANAGER` (được gán), `BUSINESS_MANAGER`, `ADMIN`
 **Query params:** `page`, `size`, `status`, `expiringSoonDays`
 
 **Response `200`:** Danh sách phân trang `ContractSummaryResponse`.
@@ -2112,10 +2199,11 @@ Danh sách hợp đồng theo trạng thái — `FM-06`.
 
 Báo cáo nợ quá hạn và chi tiết các hợp đồng quá hạn cấp cơ sở — `FM-06`.
 
-**Auth:** `FACILITY_MANAGER` (được gán), `BUSINESS_MANAGER`, `ADMIN`  
+**Auth:** `FACILITY_MANAGER` (được gán), `BUSINESS_MANAGER`, `ADMIN`
 **Path param:** `facilityId`
 
 **Response `200`:** `ApiResponse<OverdueDebtReportResponse>`.
+
 ```json
 {
   "status": 200,
@@ -2146,10 +2234,11 @@ Báo cáo nợ quá hạn và chi tiết các hợp đồng quá hạn cấp cơ
 
 Báo cáo doanh thu toàn hệ thống — `BM-04`.
 
-**Auth:** `BUSINESS_MANAGER`, `ADMIN`  
+**Auth:** `BUSINESS_MANAGER`, `ADMIN`
 **Query params:** `from` (yyyy-MM-dd), `to` (yyyy-MM-dd), `facilityId`
 
 **Response `200`:**
+
 ```json
 {
   "from": "2026-10-01",
@@ -2174,10 +2263,11 @@ Báo cáo doanh thu toàn hệ thống — `BM-04`.
 
 Báo cáo tỷ lệ lấp đầy theo thời gian — `BM-04`.
 
-**Auth:** `BUSINESS_MANAGER`, `ADMIN`  
+**Auth:** `BUSINESS_MANAGER`, `ADMIN`
 **Query params:** `from` (yyyy-MM), `to` (yyyy-MM), `facilityId`
 
 **Response `200`:**
+
 ```json
 {
   "data": [
@@ -2199,7 +2289,7 @@ Báo cáo tỷ lệ lấp đầy theo thời gian — `BM-04`.
 
 Báo cáo danh sách hợp đồng quá hạn — `BM-05`.
 
-**Auth:** `BUSINESS_MANAGER`, `ADMIN`  
+**Auth:** `BUSINESS_MANAGER`, `ADMIN`
 **Query params:** `page`, `size`, `facilityId`, `minOverdueDays`
 
 **Response `200`:** Danh sách phân trang `ContractSummaryResponse` kèm `overdueDays` và `accruedOverdueFee`.
@@ -2210,7 +2300,7 @@ Báo cáo danh sách hợp đồng quá hạn — `BM-05`.
 
 Xuất báo cáo file — `BM-05`.
 
-**Auth:** `BUSINESS_MANAGER`, `ADMIN`  
+**Auth:** `BUSINESS_MANAGER`, `ADMIN`
 **Query params:** `type` (`REVENUE` | `OCCUPANCY` | `OVERDUE`), `from`, `to`, `facilityId`, `format` (`CSV` | `XLSX`)
 
 **Response `200`:** File download với header `Content-Disposition: attachment; filename=report_<type>_<from>_<to>.<format>`.
@@ -2221,10 +2311,11 @@ Xuất báo cáo file — `BM-05`.
 
 Danh sách công việc hằng ngày của nhân viên — `FS-06`.
 
-**Auth:** `FACILITY_STAFF` (chính mình), `FACILITY_MANAGER` (của Facility)  
+**Auth:** `FACILITY_STAFF` (chính mình), `FACILITY_MANAGER` (của Facility)
 **Query params:** `date` (yyyy-MM-dd, mặc định hôm nay)
 
 **Response `200`:**
+
 ```json
 {
   "date": "2026-10-01",
@@ -2248,53 +2339,53 @@ Danh sách công việc hằng ngày của nhân viên — `FS-06`.
 
 ### `ReservationStatus`
 
-| Giá trị | Mô tả |
-|---------|-------|
-| `PENDING_PAYMENT` | Đang chờ thanh toán — đang giữ capacity |
-| `CONFIRMED` | Đã thanh toán, đã gán Storage Unit |
-| `FULFILLED` | Check-in thành công — sinh Contract `ACTIVE` |
-| `CANCELLED` | Đã hủy — capacity được giải phóng |
-| `EXPIRED` | Hết `holdExpiresAt` mà chưa thanh toán |
+| Giá trị           | Mô tả                                          |
+| ------------------- | ------------------------------------------------ |
+| `PENDING_PAYMENT` | Đang chờ thanh toán — đang giữ capacity    |
+| `CONFIRMED`       | Đã thanh toán, đã gán Storage Unit         |
+| `FULFILLED`       | Check-in thành công — sinh Contract`ACTIVE` |
+| `CANCELLED`       | Đã hủy — capacity được giải phóng       |
+| `EXPIRED`         | Hết`holdExpiresAt` mà chưa thanh toán      |
 
 ### `ContractStatus`
 
-| Giá trị | Mô tả |
-|---------|-------|
+| Giá trị            | Mô tả                                            |
+| -------------------- | -------------------------------------------------- |
 | `PENDING_CHECK_IN` | Đã sinh sau thanh toán, chờ khách đến nhận |
-| `ACTIVE` | Đang thuê bình thường |
-| `OVERDUE` | Quá ngày hết hạn, chưa gia hạn / chưa trả |
-| `PENDING_RETURN` | Đã nộp thông báo trả, chờ kiểm tra |
-| `RETURNED` | Đã trả kho hoàn tất |
-| `TERMINATED` | Hợp đồng chấm dứt cưỡng chế (D+60) |
+| `ACTIVE`           | Đang thuê bình thường                         |
+| `OVERDUE`          | Quá ngày hết hạn, chưa gia hạn / chưa trả  |
+| `PENDING_RETURN`   | Đã nộp thông báo trả, chờ kiểm tra         |
+| `RETURNED`         | Đã trả kho hoàn tất                           |
+| `TERMINATED`       | Hợp đồng chấm dứt cưỡng chế (D+60)         |
 
 ### `StorageUnitStatus`
 
-| Giá trị | Mô tả |
-|---------|-------|
-| `AVAILABLE` | Trống, sẵn sàng cho thuê |
-| `RESERVED` | Được giữ cho Reservation đã xác nhận |
-| `OCCUPIED` | Đang có khách sử dụng |
-| `MAINTENANCE` | Đang bảo trì — không cho thuê |
-| `OUT_OF_SERVICE` | Ngừng hoạt động |
+| Giá trị          | Mô tả                                      |
+| ------------------ | -------------------------------------------- |
+| `AVAILABLE`      | Trống, sẵn sàng cho thuê                 |
+| `RESERVED`       | Được giữ cho Reservation đã xác nhận |
+| `OCCUPIED`       | Đang có khách sử dụng                   |
+| `MAINTENANCE`    | Đang bảo trì — không cho thuê          |
+| `OUT_OF_SERVICE` | Ngừng hoạt động                          |
 
 ### `SupportRequestStatus`
 
-| Giá trị | Mô tả |
-|---------|-------|
-| `OPEN` | Mới gửi, chưa phân công |
-| `IN_PROGRESS` | Đang xử lý |
-| `RESOLVED` | Đã xử lý, chờ khách xác nhận |
-| `CLOSED` | Đã đóng |
-| `CANCELLED` | Khách hủy |
+| Giá trị       | Mô tả                              |
+| --------------- | ------------------------------------ |
+| `OPEN`        | Mới gửi, chưa phân công         |
+| `IN_PROGRESS` | Đang xử lý                        |
+| `RESOLVED`    | Đã xử lý, chờ khách xác nhận |
+| `CLOSED`      | Đã đóng                          |
+| `CANCELLED`   | Khách hủy                          |
 
 ### `PaymentStatus`
 
-| Giá trị | Mô tả |
-|---------|-------|
-| `PENDING` | Đang xử lý |
-| `COMPLETED` | Thành công |
-| `FAILED` | Thất bại |
-| `REFUNDED` | Đã hoàn tiền |
+| Giá trị     | Mô tả          |
+| ------------- | ---------------- |
+| `PENDING`   | Đang xử lý    |
+| `COMPLETED` | Thành công     |
+| `FAILED`    | Thất bại       |
+| `REFUNDED`  | Đã hoàn tiền |
 
 ---
 
@@ -2302,45 +2393,45 @@ Danh sách công việc hằng ngày của nhân viên — `FS-06`.
 
 Toàn bộ `errorCode` do `GlobalExceptionHandler` sinh, **ổn định** để Frontend so khớp.
 
-| errorCode | HTTP | Mô tả |
-|-----------|:----:|-------|
-| `VALIDATION_ERROR` | 400 | Lỗi validation Bean / `@Valid` |
-| `INVALID_CREDENTIALS` | 401 | Sai email hoặc mật khẩu |
-| `REFRESH_TOKEN_EXPIRED` | 401 | Refresh token hết hạn |
-| `ACCOUNT_DISABLED` | 403 | Tài khoản bị vô hiệu hóa |
-| `ACCESS_DENIED` | 403 | Không đủ quyền theo vai trò |
-| `FACILITY_ACCESS_DENIED` | 403 | Cơ sở không thuộc phạm vi được gán |
-| `USER_NOT_FOUND` | 404 | Người dùng không tồn tại |
-| `FACILITY_NOT_FOUND` | 404 | Cơ sở không tồn tại |
-| `UNIT_TYPE_NOT_FOUND` | 404 | Loại ô kho không tồn tại |
-| `STORAGE_UNIT_NOT_FOUND` | 404 | Ô kho không tồn tại |
-| `RESERVATION_NOT_FOUND` | 404 | Đặt chỗ không tồn tại |
-| `CONTRACT_NOT_FOUND` | 404 | Hợp đồng không tồn tại |
-| `PAYMENT_NOT_FOUND` | 404 | Giao dịch không tồn tại |
-| `SUPPORT_REQUEST_NOT_FOUND` | 404 | Yêu cầu hỗ trợ không tồn tại |
-| `EMAIL_ALREADY_EXISTS` | 409 | Email đã tồn tại |
-| `CAPACITY_NOT_AVAILABLE` | 409 | Hết capacity cho kỳ thuê — `BR-AVL-03` |
-| `UNIT_ASSIGNMENT_FAILED` | 409 | Gán Storage Unit thất bại đồng thời — `BR-AVL-04` |
-| `RESERVATION_EXPIRED` | 409 | Hết thời gian giữ chỗ |
-| `RESERVATION_ALREADY_CANCELLED` | 409 | Reservation đã hủy |
-| `RESERVATION_NOT_PAID` | 409 | Reservation chưa thanh toán, không thể gán unit |
-| `PAYMENT_FAILED` | 409 | Cổng thanh toán từ chối |
-| `AMOUNT_MISMATCH` | 422 | Số tiền không khớp tổng phải trả |
-| `CONTRACT_OVERDUE` | 409 | Hợp đồng đang quá hạn |
-| `CONTRACT_TERMINATED` | 409 | Hợp đồng đã chấm dứt |
-| `CONTRACT_NOT_PENDING_CHECKIN` | 409 | Hợp đồng không ở trạng thái chờ check-in |
-| `RENEWAL_NOT_ALLOWED` | 409 | Không đủ điều kiện gia hạn — `BR-REN-*` |
-| `RETURN_NOTICE_TOO_SHORT` | 422 | Báo trả quá gần ngày trả — `BR-RET-01` |
-| `INSUFFICIENT_DEPOSIT_BALANCE` | 409 | Số dư cọc không đủ để khấu trừ |
-| `CANNOT_CANCEL_FULFILLED` | 422 | Reservation đã hoàn tất — phải đi qua Return |
-| `INVALID_START_DATE` | 422 | Ngày bắt đầu trong quá khứ |
-| `FACILITY_HAS_ACTIVE_CONTRACTS` | 409 | Không thể vô hiệu hóa cơ sở còn hợp đồng |
-| `SUPPORT_ALREADY_IN_PROGRESS` | 409 | Không thể hủy khi đang xử lý |
-| `INTERNAL_SERVER_ERROR` | 500 | Lỗi không lường trước |
+| errorCode                         | HTTP | Mô tả                                                   |
+| --------------------------------- | :--: | --------------------------------------------------------- |
+| `VALIDATION_ERROR`              | 400 | Lỗi validation Bean /`@Valid`                          |
+| `INVALID_CREDENTIALS`           | 401 | Sai email hoặc mật khẩu                                |
+| `REFRESH_TOKEN_EXPIRED`         | 401 | Refresh token hết hạn                                   |
+| `ACCOUNT_DISABLED`              | 403 | Tài khoản bị vô hiệu hóa                            |
+| `ACCESS_DENIED`                 | 403 | Không đủ quyền theo vai trò                          |
+| `FACILITY_ACCESS_DENIED`        | 403 | Cơ sở không thuộc phạm vi được gán               |
+| `USER_NOT_FOUND`                | 404 | Người dùng không tồn tại                            |
+| `FACILITY_NOT_FOUND`            | 404 | Cơ sở không tồn tại                                  |
+| `UNIT_TYPE_NOT_FOUND`           | 404 | Loại ô kho không tồn tại                             |
+| `STORAGE_UNIT_NOT_FOUND`        | 404 | Ô kho không tồn tại                                   |
+| `RESERVATION_NOT_FOUND`         | 404 | Đặt chỗ không tồn tại                               |
+| `CONTRACT_NOT_FOUND`            | 404 | Hợp đồng không tồn tại                              |
+| `PAYMENT_NOT_FOUND`             | 404 | Giao dịch không tồn tại                               |
+| `SUPPORT_REQUEST_NOT_FOUND`     | 404 | Yêu cầu hỗ trợ không tồn tại                       |
+| `EMAIL_ALREADY_EXISTS`          | 409 | Email đã tồn tại                                      |
+| `CAPACITY_NOT_AVAILABLE`        | 409 | Hết capacity cho kỳ thuê —`BR-AVL-03`               |
+| `UNIT_ASSIGNMENT_FAILED`        | 409 | Gán Storage Unit thất bại đồng thời —`BR-AVL-04` |
+| `RESERVATION_EXPIRED`           | 409 | Hết thời gian giữ chỗ                                 |
+| `RESERVATION_ALREADY_CANCELLED` | 409 | Reservation đã hủy                                     |
+| `RESERVATION_NOT_PAID`          | 409 | Reservation chưa thanh toán, không thể gán unit      |
+| `PAYMENT_FAILED`                | 409 | Cổng thanh toán từ chối                               |
+| `AMOUNT_MISMATCH`               | 422 | Số tiền không khớp tổng phải trả                   |
+| `CONTRACT_OVERDUE`              | 409 | Hợp đồng đang quá hạn                               |
+| `CONTRACT_TERMINATED`           | 409 | Hợp đồng đã chấm dứt                               |
+| `CONTRACT_NOT_PENDING_CHECKIN`  | 409 | Hợp đồng không ở trạng thái chờ check-in          |
+| `RENEWAL_NOT_ALLOWED`           | 409 | Không đủ điều kiện gia hạn —`BR-REN-*`          |
+| `RETURN_NOTICE_TOO_SHORT`       | 422 | Báo trả quá gần ngày trả —`BR-RET-01`            |
+| `INSUFFICIENT_DEPOSIT_BALANCE`  | 409 | Số dư cọc không đủ để khấu trừ                  |
+| `CANNOT_CANCEL_FULFILLED`       | 422 | Reservation đã hoàn tất — phải đi qua Return       |
+| `INVALID_START_DATE`            | 422 | Ngày bắt đầu trong quá khứ                          |
+| `FACILITY_HAS_ACTIVE_CONTRACTS` | 409 | Không thể vô hiệu hóa cơ sở còn hợp đồng       |
+| `SUPPORT_ALREADY_IN_PROGRESS`   | 409 | Không thể hủy khi đang xử lý                        |
+| `INTERNAL_SERVER_ERROR`         | 500 | Lỗi không lường trước                               |
 
 ---
 
-> **Hướng dẫn mở rộng cho thành viên:**  
+> **Hướng dẫn mở rộng cho thành viên:**
 > Khi implement endpoint mới, thêm vào đúng section của module liên quan theo mẫu:
-> `Method + URL` → Mô tả ngắn → **Auth** (vai trò) → **Request body** + bảng trường → **Response** schema mẫu → **Lỗi** bảng.  
+> `Method + URL` → Mô tả ngắn → **Auth** (vai trò) → **Request body** + bảng trường → **Response** schema mẫu → **Lỗi** bảng.
 > Mọi thay đổi API contract sau khi đã công bố **phải** thông báo nhóm và cập nhật file này **cùng Pull Request** với code — theo quy ước `T2.18` và [CONVENTIONS.md § 6.8](CONVENTIONS.md#68-quy-trình-chốt-api-contract).
