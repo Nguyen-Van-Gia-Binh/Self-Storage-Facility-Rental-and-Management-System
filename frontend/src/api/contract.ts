@@ -448,6 +448,8 @@ export async function getManagerContracts(filter?: {
         accruedOverdueFee,
         daysRemaining,
         nearExpiration: c.nearExpiration ?? nearExpiration,
+        assignedStaffId: c.assignedStaffId,
+        assignedStaffName: c.assignedStaffName,
       };
     });
   } catch (error) {

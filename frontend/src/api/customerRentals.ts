@@ -458,18 +458,19 @@ export async function updateContractPin(
 export async function scheduleContractReturn(
   request: ScheduleReturnRequest
 ): Promise<ScheduleReturnResponse> {
-  saveStoredOverride(request.contractId, {
-    status: 'PENDING_RETURN',
-    scheduledReturnDate: request.returnDate,
-  });
-
   if (!isMockEnabled('WS1')) {
     try {
       await submitReturnNotice(Number(request.contractId), request.returnDate, request.notes);
     } catch (err) {
-      console.warn('Lỗi gọi API đăng ký trả kho thật, lưu tạm cục bộ:', err);
+      console.error('Lỗi gọi API đăng ký trả kho thật:', err);
+      throw err;
     }
   }
+
+  saveStoredOverride(request.contractId, {
+    status: 'PENDING_RETURN',
+    scheduledReturnDate: request.returnDate,
+  });
 
   return {
     contractId: request.contractId,

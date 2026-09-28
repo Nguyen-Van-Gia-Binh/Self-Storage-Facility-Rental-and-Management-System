@@ -50,6 +50,8 @@ export interface ManagerContractItem {
 
   // Thuộc tính phục vụ Tab Return & Settlement
   returnNoticeDate?: string;
+  assignedStaffId?: number;
+  assignedStaffName?: string;
   inspectionCondition?: 'GOOD' | 'MINOR_DAMAGE' | 'HEAVY_DAMAGE';
   damageCost?: number;
   damageNotes?: string;
