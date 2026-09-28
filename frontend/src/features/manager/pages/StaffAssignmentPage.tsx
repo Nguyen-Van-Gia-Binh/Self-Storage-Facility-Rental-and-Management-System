@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Building2,
   Calendar,
@@ -28,6 +29,9 @@ import { fetchFacilities } from '@/api/facility';
 import { tokenStorage } from '@/utils/tokenStorage';
 
 export const StaffAssignmentPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const urlContractId = searchParams.get('contractId');
+
   const [facilities, setFacilities] = useState<{ id: number; name: string }[]>([]);
   const [selectedFacilityId, setSelectedFacilityId] = useState<number>(() => {
     const user = tokenStorage.getUser();
@@ -88,6 +92,16 @@ export const StaffAssignmentPage: React.FC = () => {
         if (isMounted) {
           setStaffList(workloadRes);
           setTasks(tasksRes);
+
+          if (urlContractId) {
+            const target = tasksRes.find(
+              (t) => t.taskType === 'RETURN' && t.referenceId === Number(urlContractId)
+            );
+            if (target) {
+              setSelectedTaskForAssign(target);
+              setAssignModalOpen(true);
+            }
+          }
         }
       } catch (err) {
         console.error('Lỗi tải dữ liệu phân công nhân sự:', err);
