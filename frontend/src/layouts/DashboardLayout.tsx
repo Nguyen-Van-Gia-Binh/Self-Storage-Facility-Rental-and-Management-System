@@ -3,16 +3,13 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Menu, X, LogOut, Layers, Box } from 'lucide-react';
 import {
   tokenStorage,
-  DEMO_USERS,
   type UserRole,
   type UserSession,
 } from '@/utils/tokenStorage';
-import { loginAsDemoRole } from '@/api/auth';
 import {
   getNavigationForRole,
   type NavItemConfig,
 } from './navigationConfig';
-import { DemoRoleSwitcher } from '@/components/common/DemoRoleSwitcher';
 
 export type NavItem = NavItemConfig;
 
@@ -91,11 +88,14 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     return 'CUSTOMER';
   };
 
-  const [user, setUser] = useState<UserSession | null>(() => {
-    const existing = tokenStorage.getUser();
-    if (existing) return existing;
-    return tokenStorage.setDemoRole(detectRoleFromUrl());
-  });
+  const [user, setUser] = useState<UserSession | null>(() => tokenStorage.getUser());
+
+  // Nếu chưa đăng nhập, chuyển hướng người dùng về trang Đăng nhập chuẩn
+  useEffect(() => {
+    if (!tokenStorage.isAuthenticated()) {
+      navigate(`/auth/login?redirect=${encodeURIComponent(location.pathname)}`, { replace: true });
+    }
+  }, [location.pathname, navigate]);
 
   const currentRole: UserRole = user?.role || detectRoleFromUrl();
   const roleNav = getNavigationForRole(currentRole);
@@ -105,11 +105,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const currentLabel  = BREADCRUMB_MAP[location.pathname];
   const displayFullName = React.useMemo(() => {
     if (!user?.fullName) return 'Người dùng';
-    if (user.fullName.includes('Ã') || user.fullName.includes('á»') || user.fullName.includes('VÄƒn') || user.fullName.includes('BÃ')) {
-      return DEMO_USERS[currentRole]?.fullName || 'Nguyễn Văn Gia Bình';
-    }
     return user.fullName;
-  }, [user?.fullName, currentRole]);
+  }, [user?.fullName]);
 
   const initials      = getInitials(displayFullName);
   const portalLabel   = ROLE_PORTAL_LABEL[currentRole];
@@ -118,16 +115,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const detectedRole = detectRoleFromUrl();
   const effectiveRole = detectedRole !== 'CUSTOMER' ? detectedRole : currentRole;
   const logoHomePath = ROLE_HOME_PATH[effectiveRole] || navItems[0]?.href || '/';
-
-  // Tự động đồng bộ JWT token thật từ backend khi tải portal demo
-  useEffect(() => {
-    const currentToken = tokenStorage.getAccessToken();
-    if (!currentToken || currentToken.startsWith('mock-')) {
-      loginAsDemoRole(currentRole)
-        .then((updated) => setUser(updated))
-        .catch((err) => console.warn('Auto-login demo backend account failed:', err));
-    }
-  }, [currentRole]);
 
   const handleLogout = () => {
     tokenStorage.clearSession();
@@ -288,14 +275,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           </div>
 
           <div className="flex items-center space-x-3 ml-auto">
-            {/* Demo Role Switcher */}
-            <DemoRoleSwitcher
-              currentRole={currentRole}
-              onRoleChanged={() => setUser(tokenStorage.getUser())}
-            />
-
             {/* User Profile */}
-            <div className="flex items-center space-x-2.5 border-l border-slate-200 pl-3">
+            <div className="flex items-center space-x-2.5">
               {/* Avatar */}
               <div className="w-8 h-8 rounded-full bg-brand-50 text-brand-700 border border-brand-200 flex items-center justify-center font-bold text-xs flex-shrink-0 shadow-xs">
                 {initials}
