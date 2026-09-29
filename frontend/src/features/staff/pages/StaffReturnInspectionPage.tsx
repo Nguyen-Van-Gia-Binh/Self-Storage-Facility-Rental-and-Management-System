@@ -12,11 +12,18 @@ import { useCurrentUser } from '@/utils/useCurrentUser';
 import { ReturnInspectionForm } from '../components/ReturnInspectionForm';
 import { ReturnSuccessModal } from '../components/ReturnSuccessModal';
 import { Button } from '@/components/ui/Button';
+import { fetchFacilities } from '@/api/facility';
 
 const DEFAULT_FACILITIES = [
   { id: 0, name: 'Tất cả cơ sở' },
   { id: 1, name: 'Cơ sở Cầu Giấy - Hà Nội' },
   { id: 2, name: 'Cơ sở Quận 7 - TP.HCM' },
+  { id: 3, name: 'Cơ sở Hai Bà Trưng - Hà Nội' },
+  { id: 4, name: 'Cơ sở Thanh Xuân - Hà Nội' },
+  { id: 5, name: 'Cơ sở Quận 1 - TP.HCM' },
+  { id: 6, name: 'Cơ sở Bình Thạnh - TP.HCM' },
+  { id: 7, name: 'Cơ sở TP. Thủ Đức - TP.HCM' },
+  { id: 8, name: 'Cơ sở Hải Châu - Đà Nẵng' },
 ];
 
 export const StaffReturnInspectionPage: React.FC = () => {
@@ -34,6 +41,24 @@ export const StaffReturnInspectionPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [claimingId, setClaimingId] = useState<number | null>(null);
+
+  // Tải danh sách cơ sở thực tế từ API Backend
+  useEffect(() => {
+    let active = true;
+    fetchFacilities()
+      .then((res) => {
+        if (active && res && res.length > 0) {
+          setFacilities([
+            { id: 0, name: 'Tất cả cơ sở' },
+            ...res.map((f) => ({ id: f.id, name: f.name })),
+          ]);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const [successData, setSuccessData] = useState<{
     isOpen: boolean;
