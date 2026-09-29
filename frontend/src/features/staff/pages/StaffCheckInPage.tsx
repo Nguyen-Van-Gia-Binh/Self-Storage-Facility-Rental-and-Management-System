@@ -18,13 +18,19 @@ import { HandoverInspectionForm } from '../components/HandoverInspectionForm';
 import { AccessCodePinModal } from '../components/AccessCodePinModal';
 import { HandoverRejectionModal } from '../components/HandoverRejectionModal';
 
+const DEFAULT_FACILITIES = [
+  { id: 0, name: 'Tất cả cơ sở' },
+  { id: 1, name: 'Cơ sở Cầu Giấy - Hà Nội' },
+  { id: 2, name: 'Cơ sở Quận 7 - TP.HCM' },
+];
+
 export const StaffCheckInPage: React.FC = () => {
   const user = useCurrentUser();
-  const staffId = user?.id as number | undefined;
-  const [facilities, setFacilities] = useState<FacilityListItem[]>([]);
-  const [staffFacilityId, setStaffFacilityId] = useState<number | null>(null);
-  const staffFacilityName = facilities.find((facility) => facility.id === staffFacilityId)?.name || 'Chưa được gán cơ sở';
+  const staffId = user?.id ? Number(user.id) : undefined;
+  const userFacilityId = user?.facilityId ? Number(user.facilityId) : 0;
+  const [facilities, setFacilities] = useState<Array<{ id: number; name: string }>>(DEFAULT_FACILITIES);
 
+  const [selectedFacilityId, setSelectedFacilityId] = useState<number>(userFacilityId);
   const [contracts, setContracts] = useState<CheckInContract[]>([]);
   const [selectedContract, setSelectedContract] = useState<CheckInContract | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -46,32 +52,35 @@ export const StaffCheckInPage: React.FC = () => {
   useEffect(() => {
     fetchMyAssignedFacilities()
       .then((list) => {
-        setFacilities(list);
-        setStaffFacilityId((current) =>
-          current && list.some((facility) => facility.id === current) ? current : (list[0]?.id ?? null)
-        );
+        if (list && list.length > 0) {
+          const opts = [{ id: 0, name: 'Tất cả cơ sở' }, ...list.map((f) => ({ id: f.id, name: f.name }))];
+          setFacilities(opts);
+          if (userFacilityId && list.some((f) => f.id === userFacilityId)) {
+            setSelectedFacilityId(userFacilityId);
+          } else {
+            setSelectedFacilityId(list[0].id);
+          }
+        }
       })
       .catch((error) => {
         console.error('Không tải được cơ sở được phân công:', error);
-        setFacilities([]);
-        setStaffFacilityId(null);
       });
-  }, []);
+  }, [userFacilityId]);
 
-  const loadContracts = useCallback(async () => {
-    if (!staffFacilityId) {
-      setContracts([]);
-      setSelectedContract(null);
-      setIsLoading(false);
-      return;
-    }
+  // Tải danh sách hợp đồng chờ check-in theo cơ sở được chọn
+  const loadContracts = useCallback(async (facilityId?: number) => {
     setIsLoading(true);
     try {
-      const data = await getPendingContracts(staffFacilityId);
+      const targetFacilityId = facilityId !== undefined ? facilityId : selectedFacilityId;
+      const data = await getPendingContracts(targetFacilityId === 0 ? undefined : targetFacilityId);
       setContracts(data);
       if (data.length > 0) {
         setSelectedContract((prev) => {
-          if (!prev) return data[0];
+          if (!prev) {
+            // Ưu tiên chọn đơn được phân công cho nhân viên này trước
+            const myTask = staffId ? data.find((c) => Number(c.assignedStaffId) === staffId) : null;
+            return myTask || data[0];
+          }
           const exists = data.find((c) => c.id === prev.id);
           return exists || data[0];
         });
@@ -84,7 +93,12 @@ export const StaffCheckInPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [staffFacilityId]);
+  }, [selectedFacilityId, staffId]);
+
+  const handleFacilityChange = (newFacilityId: number) => {
+    setSelectedFacilityId(newFacilityId);
+    loadContracts(newFacilityId);
+  };
 
   useEffect(() => {
     loadContracts();
@@ -204,26 +218,22 @@ export const StaffCheckInPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Thanh công cụ cơ sở ca trực & làm mới (FS-01, FS-02) */}
+        {/* Thanh công cụ cơ sở & làm mới (FS-01, FS-02) */}
         <div className="flex items-center gap-2.5">
-          <div className="flex items-center gap-2 px-3.5 py-2 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl text-xs font-bold shadow-xs">
-            <Building2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            {facilities.length > 1 ? (
-              <select
-                value={staffFacilityId ?? ''}
-                onChange={(event) => setStaffFacilityId(Number(event.target.value))}
-                className="bg-transparent font-bold text-emerald-900 focus:outline-none"
-                aria-label="Cơ sở ca trực"
-              >
-                {facilities.map((facility) => (
-                  <option key={facility.id} value={facility.id}>
-                    {facility.code} — {facility.name}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <span>Ca trực: {staffFacilityName}</span>
-            )}
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100/80 rounded-xl border border-slate-200 text-xs text-slate-700">
+            <Building2 className="w-4 h-4 text-slate-500 shrink-0" />
+            <span className="text-slate-500 shrink-0">Cơ sở:</span>
+            <select
+              value={selectedFacilityId}
+              onChange={(e) => handleFacilityChange(Number(e.target.value))}
+              className="bg-transparent font-bold text-slate-900 focus:outline-none cursor-pointer pr-1"
+            >
+              {facilities.map((f) => (
+                <option key={f.id} value={f.id} className="text-slate-900 bg-white">
+                  {f.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <button
@@ -247,6 +257,7 @@ export const StaffCheckInPage: React.FC = () => {
             selectedContractId={selectedContract?.id || null}
             onSelectContract={(contract) => setSelectedContract(contract)}
             isLoading={isLoading}
+            currentStaffId={staffId}
           />
         </div>
 
@@ -254,6 +265,23 @@ export const StaffCheckInPage: React.FC = () => {
         <div className="lg:col-span-7 space-y-4">
           {selectedContract ? (
             <>
+              {/* Banner phân công nhiệm vụ Check-in */}
+              {Number(selectedContract.assignedStaffId) === staffId ? (
+                <div className="bg-emerald-50 border border-emerald-300 rounded-xl px-4 py-3 flex items-center gap-2.5 text-xs text-emerald-900 font-medium shadow-xs">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>
+                    Đơn check-in này đã được Quản lý phân công đích danh cho bạn ({<strong>{user?.fullName || 'Nhân viên'}</strong>}). Vui lòng tiến hành tiếp đón khách hàng và thực hiện thủ tục bàn giao.
+                  </span>
+                </div>
+              ) : selectedContract.assignedStaffName ? (
+                <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 flex items-center gap-2.5 text-xs text-blue-900 font-medium">
+                  <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
+                  <span>
+                    Đơn tiếp đón này đang được phân công cho nhân viên: <strong>{selectedContract.assignedStaffName}</strong>.
+                  </span>
+                </div>
+              ) : null}
+
               {/* Thẻ xác minh thông tin khách & Ô kho */}
               <CustomerVerificationCard contract={selectedContract} />
 

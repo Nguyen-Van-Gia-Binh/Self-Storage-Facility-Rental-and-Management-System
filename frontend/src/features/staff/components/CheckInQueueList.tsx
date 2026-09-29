@@ -8,9 +8,10 @@ export interface CheckInQueueListProps {
   selectedContractId: number | null;
   onSelectContract: (contract: CheckInContract) => void;
   isLoading?: boolean;
+  currentStaffId?: number;
 }
 
-type FilterTab = 'ALL' | 'TODAY' | 'LATE';
+type FilterTab = 'ALL' | 'MY_TASKS' | 'TODAY' | 'LATE';
 
 function localToday(): string {
   const now = new Date();
@@ -34,6 +35,7 @@ export const CheckInQueueList: React.FC<CheckInQueueListProps> = ({
   selectedContractId,
   onSelectContract,
   isLoading = false,
+  currentStaffId,
 }) => {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [activeTab, setActiveTab] = useState<FilterTab>('ALL');
@@ -42,7 +44,11 @@ export const CheckInQueueList: React.FC<CheckInQueueListProps> = ({
   const filteredContracts = useMemo(() => {
     return contracts.filter((contract) => {
       // 1. Lọc theo tab
-      if (activeTab === 'TODAY') {
+      if (activeTab === 'MY_TASKS') {
+        if (!currentStaffId || Number(contract.assignedStaffId) !== currentStaffId) {
+          return false;
+        }
+      } else if (activeTab === 'TODAY') {
         if (!isTodayAppointment(contract)) {
           return false;
         }
@@ -65,18 +71,22 @@ export const CheckInQueueList: React.FC<CheckInQueueListProps> = ({
         contract.storageUnitCode.toLowerCase().includes(q)
       );
     });
-  }, [contracts, searchKeyword, activeTab]);
+  }, [contracts, searchKeyword, activeTab, currentStaffId]);
 
   // Thống kê nhanh số lượng
   const stats = useMemo(() => {
+    const myTasksCount = contracts.filter(
+      (c) => currentStaffId && Number(c.assignedStaffId) === currentStaffId
+    ).length;
     const todayCount = contracts.filter(isTodayAppointment).length;
     const lateCount = contracts.filter(isLateAppointment).length;
     return {
       all: contracts.length,
+      myTasks: myTasksCount,
       today: todayCount,
       late: lateCount,
     };
-  }, [contracts]);
+  }, [contracts, currentStaffId]);
 
   return (
     <div className="flex flex-col h-full bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -111,11 +121,11 @@ export const CheckInQueueList: React.FC<CheckInQueueListProps> = ({
         </div>
 
         {/* Filter tabs */}
-        <div className="flex items-center gap-1.5 bg-slate-200/60 p-1 rounded-xl text-xs font-medium text-slate-600">
+        <div className="grid grid-cols-4 gap-1 bg-slate-200/60 p-1 rounded-xl text-[11px] font-medium text-slate-600">
           <button
             type="button"
             onClick={() => setActiveTab('ALL')}
-            className={`flex-1 py-1 px-2 rounded-lg transition-all text-center cursor-pointer ${
+            className={`py-1 px-1 rounded-lg transition-all text-center cursor-pointer truncate ${
               activeTab === 'ALL'
                 ? 'bg-white text-slate-900 font-semibold shadow-xs'
                 : 'hover:text-slate-900'
@@ -125,8 +135,19 @@ export const CheckInQueueList: React.FC<CheckInQueueListProps> = ({
           </button>
           <button
             type="button"
+            onClick={() => setActiveTab('MY_TASKS')}
+            className={`py-1 px-1 rounded-lg transition-all text-center cursor-pointer truncate ${
+              activeTab === 'MY_TASKS'
+                ? 'bg-emerald-600 text-white font-bold shadow-xs'
+                : 'hover:text-emerald-800 text-emerald-700'
+            }`}
+          >
+            Của tôi ({stats.myTasks})
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveTab('TODAY')}
-            className={`flex-1 py-1 px-2 rounded-lg transition-all text-center cursor-pointer ${
+            className={`py-1 px-1 rounded-lg transition-all text-center cursor-pointer truncate ${
               activeTab === 'TODAY'
                 ? 'bg-white text-brand-700 font-semibold shadow-xs'
                 : 'hover:text-slate-900'
@@ -137,13 +158,13 @@ export const CheckInQueueList: React.FC<CheckInQueueListProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('LATE')}
-            className={`flex-1 py-1 px-2 rounded-lg transition-all text-center cursor-pointer ${
+            className={`py-1 px-1 rounded-lg transition-all text-center cursor-pointer truncate ${
               activeTab === 'LATE'
                 ? 'bg-white text-amber-700 font-semibold shadow-xs'
                 : 'hover:text-slate-900'
             }`}
           >
-            Trễ hẹn ({stats.late})
+            Trễ ({stats.late})
           </button>
         </div>
       </div>
@@ -190,6 +211,7 @@ export const CheckInQueueList: React.FC<CheckInQueueListProps> = ({
             const isLate = isLateAppointment(contract);
             const isFinished = contract.status === 'ACTIVE';
             const isTerminated = contract.status === 'TERMINATED';
+            const isAssignedToMe = currentStaffId && Number(contract.assignedStaffId) === currentStaffId;
 
             return (
               <div
@@ -198,6 +220,8 @@ export const CheckInQueueList: React.FC<CheckInQueueListProps> = ({
                 className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
                   isSelected
                     ? 'border-amber-500 bg-amber-50/50 shadow-md ring-2 ring-amber-400/80 ring-offset-2'
+                    : isAssignedToMe
+                    ? 'border-emerald-300 bg-emerald-50/30 hover:border-emerald-400 hover:bg-emerald-50/50'
                     : 'border-slate-200/80 bg-white hover:border-slate-300 hover:bg-slate-50/80'
                 }`}
               >
@@ -230,8 +254,18 @@ export const CheckInQueueList: React.FC<CheckInQueueListProps> = ({
                   </span>
                 </div>
 
-                {/* Badges nghiệp vụ */}
+                {/* Badges nghiệp vụ & Phân công */}
                 <div className="flex items-center flex-wrap gap-1.5 pt-1 border-t border-slate-100">
+                  {isAssignedToMe ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-white bg-emerald-600 px-2 py-0.5 rounded-full shadow-xs">
+                      ✓ Phân công cho bạn
+                    </span>
+                  ) : contract.assignedStaffName ? (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
+                      Phụ trách: {contract.assignedStaffName}
+                    </span>
+                  ) : null}
+
                   {isFinished ? (
                     <Badge variant="available">Đã nhận kho (ACTIVE)</Badge>
                   ) : isTerminated ? (

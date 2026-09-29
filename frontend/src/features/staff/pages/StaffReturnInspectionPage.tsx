@@ -13,16 +13,21 @@ import { ReturnInspectionForm } from '../components/ReturnInspectionForm';
 import { ReturnSuccessModal } from '../components/ReturnSuccessModal';
 import { Button } from '@/components/ui/Button';
 
+const DEFAULT_FACILITIES = [
+  { id: 0, name: 'Tất cả cơ sở' },
+  { id: 1, name: 'Cơ sở Cầu Giấy - Hà Nội' },
+  { id: 2, name: 'Cơ sở Quận 7 - TP.HCM' },
+];
+
 export const StaffReturnInspectionPage: React.FC = () => {
   const { contractId } = useParams<{ contractId?: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const user = useCurrentUser();
   const staffId = user?.id ? Number(user.id) : undefined;
-  const [facilities, setFacilities] = useState<FacilityListItem[]>([]);
-  const [staffFacilityId, setStaffFacilityId] = useState<number | null>(null);
-  const staffFacilityName = facilities.find((facility) => facility.id === staffFacilityId)?.name || 'Chưa được gán cơ sở';
-
+  const userFacilityId = user?.facilityId ? Number(user.facilityId) : 0;
+  const [facilities, setFacilities] = useState<Array<{ id: number; name: string }>>(DEFAULT_FACILITIES);
+  const [selectedFacilityId, setSelectedFacilityId] = useState<number>(userFacilityId);
   const [contracts, setContracts] = useState<ReturnContractDetail[]>([]);
   const [selectedContract, setSelectedContract] = useState<ReturnContractDetail | null>(null);
   const [activeTab, setActiveTab] = useState<'MY_TASKS' | 'UNASSIGNED'>('MY_TASKS');
@@ -47,28 +52,26 @@ export const StaffReturnInspectionPage: React.FC = () => {
   useEffect(() => {
     fetchMyAssignedFacilities()
       .then((list) => {
-        setFacilities(list);
-        setStaffFacilityId((current) =>
-          current && list.some((facility) => facility.id === current) ? current : (list[0]?.id ?? null)
-        );
+        if (list && list.length > 0) {
+          const opts = [{ id: 0, name: 'Tất cả cơ sở' }, ...list.map((f) => ({ id: f.id, name: f.name }))];
+          setFacilities(opts);
+          if (userFacilityId && list.some((f) => f.id === userFacilityId)) {
+            setSelectedFacilityId(userFacilityId);
+          } else {
+            setSelectedFacilityId(list[0].id);
+          }
+        }
       })
       .catch((error) => {
         console.error('Không tải được cơ sở được phân công:', error);
-        setFacilities([]);
-        setStaffFacilityId(null);
       });
-  }, []);
+  }, [userFacilityId]);
 
-  const loadData = React.useCallback(async () => {
-    if (!staffFacilityId) {
-      setContracts([]);
-      setSelectedContract(null);
-      setLoading(false);
-      return;
-    }
+  const loadData = React.useCallback(async (facilityId?: number) => {
     setLoading(true);
     try {
-      const rawList = await getReturnContracts(staffFacilityId);
+      const targetFacilityId = facilityId !== undefined ? facilityId : selectedFacilityId;
+      const rawList = await getReturnContracts(targetFacilityId === 0 ? undefined : targetFacilityId);
       // Chỉ hiển thị các hợp đồng chưa được nghiệm thu trong danh mục ca trực của Staff
       const list = rawList.filter((c) => !c.isInspected && c.status !== 'INSPECTED');
       setContracts(list);
@@ -102,7 +105,12 @@ export const StaffReturnInspectionPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [contractId, searchParams, staffFacilityId, staffId]);
+  }, [contractId, searchParams, selectedFacilityId, staffId]);
+
+  const handleFacilityChange = (newFacilityId: number) => {
+    setSelectedFacilityId(newFacilityId);
+    loadData(newFacilityId);
+  };
 
   useEffect(() => {
     loadData();
@@ -204,26 +212,22 @@ export const StaffReturnInspectionPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Khóa cứng cơ sở ca trực (FS-01, Mục 30) & Làm mới */}
+        {/* Thanh công cụ cơ sở & làm mới (FS-01, FS-02) */}
         <div className="flex items-center gap-2.5">
-          <div className="flex items-center gap-2 px-3.5 py-2 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl text-xs font-bold shadow-xs">
-            <Building2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            {facilities.length > 1 ? (
-              <select
-                value={staffFacilityId ?? ''}
-                onChange={(event) => setStaffFacilityId(Number(event.target.value))}
-                className="bg-transparent font-bold text-emerald-900 focus:outline-none"
-                aria-label="Cơ sở ca trực"
-              >
-                {facilities.map((facility) => (
-                  <option key={facility.id} value={facility.id}>
-                    {facility.code} — {facility.name}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <span>Ca trực: {staffFacilityName}</span>
-            )}
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100/80 rounded-xl border border-slate-200 text-xs text-slate-700">
+            <Building2 className="w-4 h-4 text-slate-500 shrink-0" />
+            <span className="text-slate-500 shrink-0">Cơ sở:</span>
+            <select
+              value={selectedFacilityId}
+              onChange={(e) => handleFacilityChange(Number(e.target.value))}
+              className="bg-transparent font-bold text-slate-900 focus:outline-none cursor-pointer pr-1"
+            >
+              {facilities.map((f) => (
+                <option key={f.id} value={f.id} className="text-slate-900 bg-white">
+                  {f.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <button
@@ -281,7 +285,7 @@ export const StaffReturnInspectionPage: React.FC = () => {
           </div>
           <h3 className="font-semibold text-slate-800 text-lg">Không có yêu cầu trả kho nào cần xử lý</h3>
           <p className="text-sm text-slate-500 max-w-md mx-auto">
-            Hiện tại tại {staffFacilityName} chưa có khách hàng nào gửi yêu cầu trả kho.
+            Hiện tại trong phạm vi cơ sở đã chọn chưa có khách hàng nào gửi yêu cầu trả kho.
           </p>
           <button
             onClick={() => navigate('/staff')}

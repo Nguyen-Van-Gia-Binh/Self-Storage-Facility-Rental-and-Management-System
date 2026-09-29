@@ -322,6 +322,23 @@ export async function assignStaffToTask(
     if (res?.message) {
       backendMsg = res.message;
     }
+
+    // Luôn đồng bộ vào Contract Service chuyên trách
+    if (contractId) {
+      if (payload.taskType === 'CHECK_IN') {
+        try {
+          await assignCheckInStaff(contractId, payload.staffId, payload.notes);
+        } catch (subErr) {
+          console.warn(`Lỗi đồng bộ assignCheckInStaff #${contractId}:`, subErr);
+        }
+      } else if (payload.taskType === 'RETURN') {
+        try {
+          await assignReturnStaff(contractId, payload.staffId, payload.notes);
+        } catch (subErr) {
+          console.warn(`Lỗi đồng bộ assignReturnStaff #${contractId}:`, subErr);
+        }
+      }
+    }
   } catch (err) {
     console.warn('Lỗi gọi /staff-assignments, fallback endpoint tương thích:', err);
     if (payload.taskType === 'INCIDENT') {
