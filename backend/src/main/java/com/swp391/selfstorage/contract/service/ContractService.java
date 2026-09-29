@@ -1,5 +1,6 @@
 package com.swp391.selfstorage.contract.service;
 
+import com.swp391.selfstorage.auth.service.UserPrincipal;
 import com.swp391.selfstorage.common.dto.PageResponse;
 import com.swp391.selfstorage.contract.dto.*;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +21,7 @@ public interface ContractService {
 
     // T4.3: Return & Settlement Workflow
     ReturnNoticeResponse submitReturnNotice(Long contractId, ReturnNoticeRequest request, List<Long> facilityIds);
+    ReturnNoticeResponse cancelReturnNotice(Long contractId, UserPrincipal currentUser);
     ReturnInspectionResponse submitReturnInspection(Long contractId, ReturnInspectionRequest request, Long staffId, List<Long> facilityIds);
     SettlementPreviewResponse getSettlementPreview(Long contractId, List<Long> facilityIds);
     SettlementApprovalResponse approveSettlement(Long contractId, SettlementApprovalRequest request, Long managerId, List<Long> facilityIds);

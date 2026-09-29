@@ -79,8 +79,8 @@
   {
     "id": "phase-03-cancel-return-request-flow",
     "title": "Ẩn nút Gia hạn khi Chờ nghiệm thu & Bổ sung API/UI Hủy yêu cầu trả kho",
-    "status": "not_started",
-    "evidence": "",
+    "status": "completed",
+    "evidence": "ContractReturnServiceTest (14/14 tests) và CancelReturnFlow.test.tsx (3/3 tests) pass; API POST /api/contracts/{id}/cancel-return hoạt động chuẩn BR-RET-12; ẩn nút gia hạn khi PENDING_RETURN; hiển thị nút Hủy trả kho.",
     "user_visible_behavior": "Ẩn nút Gia hạn khi PENDING_RETURN; hiển thị nút Hủy yêu cầu trả kho, khi hủy thành công hợp đồng quay về ACTIVE và nút Gia hạn mở lại.",
     "verification_command": "mvn test -Dtest=ContractReturnServiceTest ; npm test CancelReturnFlow",
     "notes": "Covers Notion Audit Issue 9 (BR-RET-12)",

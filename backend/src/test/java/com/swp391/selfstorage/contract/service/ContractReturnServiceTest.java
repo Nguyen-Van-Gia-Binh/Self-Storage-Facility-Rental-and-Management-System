@@ -12,6 +12,10 @@ import com.swp391.selfstorage.unit.entity.StorageUnit;
 import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
 
+import com.swp391.selfstorage.auth.service.UserPrincipal;
+import com.swp391.selfstorage.common.exception.ErrorCode;
+import com.swp391.selfstorage.user.entity.UserRole;
+import com.swp391.selfstorage.user.entity.UserStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,6 +24,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -292,5 +298,153 @@ class ContractReturnServiceTest {
                 verify(eventPublisher).publishEvent(captor.capture());
                 assertEquals(800_000L, captor.getValue().getDepositRefundAmount());
                 assertEquals(0L, captor.getValue().getPayableAmount());
+        }
+
+        @Test
+        @DisplayName("BR-RET-12: Hủy yêu cầu trả kho thành công khôi phục hợp đồng về ACTIVE")
+        void cancelReturnNotice_Success_RestoresActiveStatus() {
+                UserPrincipal customer = new UserPrincipal(
+                                15L, "cust@test.com", "pass", "Khách hàng",
+                                UserRole.STORAGE_CUSTOMER, UserStatus.ACTIVE, Collections.emptyList(), Collections.emptyList());
+
+                RentalContract contract = RentalContract.builder()
+                                .id(500L)
+                                .customerId(15L)
+                                .facilityId(1L)
+                                .status(ContractStatus.PENDING_RETURN)
+                                .returnDate(LocalDate.now().plusDays(2))
+                                .endDateExclusive(LocalDate.now().plusDays(20))
+                                .build();
+
+                ReturnRequest returnRequest = ReturnRequest.builder()
+                                .id(10L)
+                                .contractId(500L)
+                                .status(ReturnRequestStatus.PENDING)
+                                .requestedReturnDate(LocalDate.now().plusDays(2))
+                                .build();
+
+                when(contractRepository.findById(500L)).thenReturn(Optional.of(contract));
+                when(returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(500L)).thenReturn(Optional.of(returnRequest));
+                when(returnRequestRepository.save(any(ReturnRequest.class))).thenAnswer(i -> i.getArgument(0));
+                when(contractRepository.save(any(RentalContract.class))).thenAnswer(i -> i.getArgument(0));
+
+                ReturnNoticeResponse res = contractService.cancelReturnNotice(500L, customer);
+
+                assertNotNull(res);
+                assertEquals(ReturnRequestStatus.CANCELLED, res.getStatus());
+                assertEquals(ContractStatus.ACTIVE, contract.getStatus());
+                assertNull(contract.getReturnDate());
+                assertEquals(ReturnRequestStatus.CANCELLED, returnRequest.getStatus());
+                assertNotNull(returnRequest.getCancelledAt());
+                verify(contractRepository).save(contract);
+                verify(returnRequestRepository).save(returnRequest);
+        }
+
+        @Test
+        @DisplayName("BR-RET-12: Hủy yêu cầu trả kho khi đã qua ngày hết hạn thì khôi phục về OVERDUE")
+        void cancelReturnNotice_Success_RestoresOverdueStatus_WhenPastEndDate() {
+                UserPrincipal customer = new UserPrincipal(
+                                15L, "cust@test.com", "pass", "Khách hàng",
+                                UserRole.STORAGE_CUSTOMER, UserStatus.ACTIVE, Collections.emptyList(), Collections.emptyList());
+
+                RentalContract contract = RentalContract.builder()
+                                .id(500L)
+                                .customerId(15L)
+                                .facilityId(1L)
+                                .status(ContractStatus.PENDING_RETURN)
+                                .returnDate(LocalDate.now().minusDays(1))
+                                .endDateExclusive(LocalDate.now().minusDays(3))
+                                .build();
+
+                ReturnRequest returnRequest = ReturnRequest.builder()
+                                .id(10L)
+                                .contractId(500L)
+                                .status(ReturnRequestStatus.PENDING)
+                                .requestedReturnDate(LocalDate.now().minusDays(1))
+                                .build();
+
+                when(contractRepository.findById(500L)).thenReturn(Optional.of(contract));
+                when(returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(500L)).thenReturn(Optional.of(returnRequest));
+                when(returnRequestRepository.save(any(ReturnRequest.class))).thenAnswer(i -> i.getArgument(0));
+                when(contractRepository.save(any(RentalContract.class))).thenAnswer(i -> i.getArgument(0));
+
+                ReturnNoticeResponse res = contractService.cancelReturnNotice(500L, customer);
+
+                assertNotNull(res);
+                assertEquals(ReturnRequestStatus.CANCELLED, res.getStatus());
+                assertEquals(ContractStatus.OVERDUE, contract.getStatus());
+                assertNull(contract.getReturnDate());
+        }
+
+        @Test
+        @DisplayName("BR-RET-12: Ném RETURN_INSPECTION_ALREADY_STARTED nếu nhân viên đã nghiệm thu")
+        void cancelReturnNotice_Fails_WhenInspectionAlreadyDone() {
+                UserPrincipal customer = new UserPrincipal(
+                                15L, "cust@test.com", "pass", "Khách hàng",
+                                UserRole.STORAGE_CUSTOMER, UserStatus.ACTIVE, Collections.emptyList(), Collections.emptyList());
+
+                RentalContract contract = RentalContract.builder()
+                                .id(500L)
+                                .customerId(15L)
+                                .facilityId(1L)
+                                .status(ContractStatus.PENDING_RETURN)
+                                .build();
+
+                ReturnRequest returnRequest = ReturnRequest.builder()
+                                .id(10L)
+                                .contractId(500L)
+                                .status(ReturnRequestStatus.PENDING)
+                                .inspectedAt(OffsetDateTime.now())
+                                .build();
+
+                when(contractRepository.findById(500L)).thenReturn(Optional.of(contract));
+                when(returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(500L)).thenReturn(Optional.of(returnRequest));
+
+                CustomException ex = assertThrows(CustomException.class,
+                                () -> contractService.cancelReturnNotice(500L, customer));
+                assertEquals(ErrorCode.RETURN_INSPECTION_ALREADY_STARTED, ex.getErrorCode());
+                verify(returnRequestRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("BR-RET-12: Ném CONTRACT_NOT_PENDING_RETURN nếu hợp đồng không phải PENDING_RETURN")
+        void cancelReturnNotice_Fails_WhenContractNotPendingReturn() {
+                UserPrincipal customer = new UserPrincipal(
+                                15L, "cust@test.com", "pass", "Khách hàng",
+                                UserRole.STORAGE_CUSTOMER, UserStatus.ACTIVE, Collections.emptyList(), Collections.emptyList());
+
+                RentalContract contract = RentalContract.builder()
+                                .id(500L)
+                                .customerId(15L)
+                                .facilityId(1L)
+                                .status(ContractStatus.ACTIVE)
+                                .build();
+
+                when(contractRepository.findById(500L)).thenReturn(Optional.of(contract));
+
+                CustomException ex = assertThrows(CustomException.class,
+                                () -> contractService.cancelReturnNotice(500L, customer));
+                assertEquals(ErrorCode.CONTRACT_NOT_PENDING_RETURN, ex.getErrorCode());
+        }
+
+        @Test
+        @DisplayName("BR-RET-12: Ném ACCESS_DENIED nếu khách hàng không phải chủ hợp đồng")
+        void cancelReturnNotice_Fails_WhenNotOwner() {
+                UserPrincipal otherCustomer = new UserPrincipal(
+                                99L, "other@test.com", "pass", "Người khác",
+                                UserRole.STORAGE_CUSTOMER, UserStatus.ACTIVE, Collections.emptyList(), Collections.emptyList());
+
+                RentalContract contract = RentalContract.builder()
+                                .id(500L)
+                                .customerId(15L)
+                                .facilityId(1L)
+                                .status(ContractStatus.PENDING_RETURN)
+                                .build();
+
+                when(contractRepository.findById(500L)).thenReturn(Optional.of(contract));
+
+                CustomException ex = assertThrows(CustomException.class,
+                                () -> contractService.cancelReturnNotice(500L, otherCustomer));
+                assertEquals(ErrorCode.ACCESS_DENIED, ex.getErrorCode());
         }
 }

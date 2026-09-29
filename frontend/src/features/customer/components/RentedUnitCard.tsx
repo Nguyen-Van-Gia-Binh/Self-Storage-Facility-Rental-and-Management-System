@@ -28,6 +28,7 @@ import { calculateDaysRemaining } from '../utils/renewalPricing';
 import type { RentedContract } from '../types';
 import { DigitalMoveInPassModal } from './DigitalMoveInPassModal';
 import { tokenStorage } from '@/utils/tokenStorage';
+import { cancelContractReturn } from '@/api/customerRentals';
 
 export interface RentedUnitCardProps {
   contract: RentedContract;
@@ -35,6 +36,7 @@ export interface RentedUnitCardProps {
   onScheduleReturn?: (contract: RentedContract) => void;
   onViewDetail?: (contract: RentedContract) => void;
   onOpenOverduePayment?: (contract: RentedContract) => void;
+  onCancelReturn?: (contract: RentedContract) => void;
 }
 
 export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
@@ -43,12 +45,35 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
   onScheduleReturn,
   onViewDetail,
   onOpenOverduePayment,
+  onCancelReturn,
 }) => {
   const [showPin, setShowPin] = useState(false);
   const [copiedPin, setCopiedPin] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
   const [showPassModal, setShowPassModal] = useState(false);
   const [isClosingModal, setIsClosingModal] = useState(false);
+  const [isCancellingReturn, setIsCancellingReturn] = useState(false);
+
+  const handleCancelReturn = async () => {
+    const confirmed = window.confirm(
+      'Bạn có chắc chắn muốn hủy yêu cầu trả kho để tiếp tục giữ lại ô kho này không?'
+    );
+    if (!confirmed) return;
+
+    try {
+      setIsCancellingReturn(true);
+      await cancelContractReturn(contract.id);
+      if (onCancelReturn) {
+        onCancelReturn(contract);
+      } else {
+        window.location.reload();
+      }
+    } catch (err: any) {
+      alert(err.message || 'Không thể hủy yêu cầu trả kho. Vui lòng thử lại.');
+    } finally {
+      setIsCancellingReturn(false);
+    }
+  };
 
   const daysRemaining = calculateDaysRemaining(contract.endDate);
   const isCutoffLocked = contract.status === 'ACTIVE' && daysRemaining < 30;
@@ -386,9 +411,22 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                   <span>Biên bản nghiệm thu đã lập • Đang chờ Quản lý duyệt quyết toán</span>
                 </div>
               ) : (
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
-                  <Clock className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span>Đang chờ nhân viên nghiệm thu trả kho</span>
+                <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full sm:w-auto">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
+                    <Clock className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span>Đang chờ nhân viên nghiệm thu trả kho</span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCancelReturn}
+                    disabled={isCancellingReturn}
+                    className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3 border-amber-300 text-amber-900 hover:bg-amber-50 text-xs font-semibold cursor-pointer"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-amber-700" />
+                    <span>{isCancellingReturn ? 'Đang hủy...' : 'Hủy yêu cầu trả kho'}</span>
+                  </Button>
                 </div>
               )
             ) : contract.status === 'CLOSED' || contract.status === 'TERMINATED' ? (

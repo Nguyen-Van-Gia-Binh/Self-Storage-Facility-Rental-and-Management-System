@@ -23,6 +23,40 @@ export const RenewalExpiryBanner: React.FC<RenewalExpiryBannerProps> = ({
   const isOverdue = contract.status === 'OVERDUE' || daysRemaining < 0;
   const isCutoffLocked = contract.status === 'ACTIVE' && daysRemaining < 30;
 
+  // Trường hợp đang chờ trả kho: Không được gia hạn trực tuyến (BR-RET-12)
+  if (contract.status === 'PENDING_RETURN') {
+    return (
+      <div className="rounded-xl border border-amber-300 bg-amber-50/90 p-4 sm:p-5 shadow-xs">
+        <div className="flex items-start gap-3.5">
+          <div className="p-2 bg-amber-100 rounded-lg text-amber-700 flex-shrink-0 mt-0.5">
+            <AlertCircle className="w-5 h-5" />
+          </div>
+          <div className="space-y-2 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-900 uppercase tracking-wider">
+                Chờ trả kho — Không thể gia hạn
+              </span>
+            </div>
+            <h3 className="text-base font-bold text-amber-950">
+              Hợp đồng đang chờ nhân viên nghiệm thu trả kho
+            </h3>
+            <p className="text-xs sm:text-sm text-amber-800 leading-relaxed">
+              Quý khách đã gửi yêu cầu trả kho cho ô kho này. Nếu đổi ý muốn tiếp tục gia hạn thuê kho, quý khách vui lòng quay lại trang <strong>Quản lý kho của tôi</strong> và nhấn nút <strong>"Hủy yêu cầu trả kho"</strong> trước khi nhân viên cơ sở nghiệm thu.
+            </p>
+            <div className="flex flex-wrap items-center gap-2.5 pt-2">
+              <Link
+                to="/customer/my-units"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold transition-colors shadow-xs"
+              >
+                <span>Quay lại Quản lý kho</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // 1. Trường hợp từ chối gia hạn theo BR-REN-02 (Đã thanh lý hoặc chấm dứt)
   if (isTerminated) {
     return (

@@ -118,6 +118,9 @@ export const RenewalPage: React.FC = () => {
       setIsLoadingCheckout(true);
       setCheckoutError(null);
       try {
+        if (contract.status === 'PENDING_RETURN') {
+          throw new Error('Hợp đồng đang ở trạng thái chờ nghiệm thu trả kho. Vui lòng hủy yêu cầu trả kho trước nếu muốn gia hạn.');
+        }
         const remDays = calculateDaysRemaining(contract.endDate);
         if (contract.status === 'OVERDUE' || remDays < 0) {
           throw new Error('Hợp đồng đã quá hạn và không thể gia hạn tiếp trực tuyến theo quy định.');
@@ -441,7 +444,8 @@ export const RenewalPage: React.FC = () => {
   const isTerminated = contract ? (contract.status === 'TERMINATED' || contract.status === 'CLOSED') : false;
   const isOverdue = contract ? (contract.status === 'OVERDUE' || daysRemaining < 0) : false;
   const isCutoffLocked = contract ? (contract.status === 'ACTIVE' && daysRemaining < 30) : false;
-  const isRenewalBlocked = isTerminated || isOverdue || isCutoffLocked;
+  const isPendingReturn = contract ? contract.status === 'PENDING_RETURN' : false;
+  const isRenewalBlocked = isTerminated || isOverdue || isCutoffLocked || isPendingReturn;
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">

@@ -352,4 +352,15 @@ export const customerApi = {
     });
     return true;
   },
+
+  /**
+   * Hủy yêu cầu trả kho khi nhân viên chưa nghiệm thu (BR-RET-12)
+   */
+  async cancelContractReturn(contractId: number | string): Promise<any> {
+    return apiClient(`/contracts/${contractId}/cancel-return`, { method: 'POST' });
+  },
 };
+
+export async function cancelContractReturn(contractId: number | string): Promise<any> {
+  return apiClient(`/contracts/${contractId}/cancel-return`, { method: 'POST' });
+}
