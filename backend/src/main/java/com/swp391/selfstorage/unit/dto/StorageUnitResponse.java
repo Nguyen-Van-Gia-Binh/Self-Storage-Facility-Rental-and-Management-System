@@ -1,5 +1,6 @@
 package com.swp391.selfstorage.unit.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
 import lombok.*;
 
@@ -20,5 +21,12 @@ public class StorageUnitResponse {
     private String position;
     private String locationNote;
     private StorageUnitStatus status;
+
+    @JsonProperty("isActive")
     private boolean isActive;
+
+    @JsonProperty("isActive")
+    public boolean isActive() {
+        return isActive;
+    }
 }
