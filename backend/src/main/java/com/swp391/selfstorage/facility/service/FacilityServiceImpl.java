@@ -11,6 +11,7 @@ import com.swp391.selfstorage.facility.entity.Facility;
 import com.swp391.selfstorage.facility.entity.FacilityStatus;
 import com.swp391.selfstorage.facility.mapper.FacilityMapper;
 import com.swp391.selfstorage.facility.repository.FacilityRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ public class FacilityServiceImpl implements FacilityService {
         this(facilityRepository, facilityMapper, null);
     }
 
+    @Autowired
     public FacilityServiceImpl(FacilityRepository facilityRepository, FacilityMapper facilityMapper, UserFacilityAssignmentRepository userFacilityAssignmentRepository) {
         this.facilityRepository = facilityRepository;
         this.facilityMapper = facilityMapper;
