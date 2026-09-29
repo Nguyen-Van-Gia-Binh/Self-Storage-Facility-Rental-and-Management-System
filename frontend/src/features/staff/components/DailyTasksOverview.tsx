@@ -337,7 +337,7 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({ tasks, o
                             ? 'Đã khắc phục'
                             : item.status === 'IN_PROGRESS'
                             ? 'Đang xử lý'
-                            : 'Chờ tiếp nhận'}
+                            : 'Mới được giao'}
                         </span>
                       </div>
                     </div>
@@ -361,7 +361,7 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({ tasks, o
                       ) : item.status === 'RESOLVED' || item.status === 'CLOSED' ? (
                         <span>Xem biên bản kết quả</span>
                       ) : (
-                        <span>Tiếp nhận xử lý</span>
+                        <span>Xử lý sự cố</span>
                       )}
                     </button>
                   </div>

@@ -137,15 +137,15 @@ export const StaffIncidentPage: React.FC = () => {
     return { total, pendingCount, inProgressCount, resolvedCount, urgentCount };
   }, [incidents]);
 
-  // Tiếp nhận nhanh
-  const handleQuickAccept = async (ticket: DailyIncidentTask) => {
+  // Bắt đầu xử lý nhanh tại hiện trường
+  const handleQuickStart = async (ticket: DailyIncidentTask) => {
     setActionLoadingId(ticket.ticketId);
     try {
       await startStaffIncident(ticket.ticketId);
-      showToast(`Đã tiếp nhận sự cố ${ticket.code || '#' + ticket.ticketId} thành công.`);
+      showToast(`Đã bắt đầu xử lý sự cố ${ticket.code || '#' + ticket.ticketId} tại hiện trường.`);
       setReloadKey((k) => k + 1);
     } catch (err: any) {
-      alert(err?.message || 'Không thể tiếp nhận sự cố.');
+      alert(err?.message || 'Không thể cập nhật trạng thái sự cố.');
     } finally {
       setActionLoadingId(null);
     }
@@ -223,11 +223,11 @@ export const StaffIncidentPage: React.FC = () => {
         </div>
 
         <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs">
-          <span className="text-xs font-medium text-slate-500">Cần tiếp nhận</span>
+          <span className="text-xs font-medium text-slate-500">Mới được giao</span>
           <div className="mt-1 flex items-baseline justify-between">
             <span className="text-2xl font-bold text-blue-600 font-mono">{stats.pendingCount}</span>
             <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-700">
-              Chờ Staff
+              Chờ xử lý
             </span>
           </div>
         </div>
@@ -276,7 +276,7 @@ export const StaffIncidentPage: React.FC = () => {
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
-              Chờ tiếp nhận ({stats.pendingCount})
+              Mới được giao ({stats.pendingCount})
             </button>
             <button
               onClick={() => setActiveTab('IN_PROGRESS')}
@@ -373,7 +373,7 @@ export const StaffIncidentPage: React.FC = () => {
 
                     {isItemPending && (
                       <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                        Chờ tiếp nhận
+                        Mới được giao
                       </span>
                     )}
                     {isItemInProgress && (
@@ -452,7 +452,7 @@ export const StaffIncidentPage: React.FC = () => {
                     {isItemPending && (
                       <button
                         type="button"
-                        onClick={() => handleQuickAccept(item)}
+                        onClick={() => handleQuickStart(item)}
                         disabled={actionLoadingId === item.ticketId}
                         className="px-3.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold transition flex items-center gap-1 shadow-xs disabled:opacity-50"
                       >
@@ -461,7 +461,7 @@ export const StaffIncidentPage: React.FC = () => {
                         ) : (
                           <ShieldCheck className="w-3.5 h-3.5" />
                         )}
-                        <span>Tiếp nhận xử lý</span>
+                        <span>Bắt đầu xử lý</span>
                       </button>
                     )}
 

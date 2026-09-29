@@ -117,7 +117,7 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
     if (isPending) {
       return (
         <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700">
-          Chờ tiếp nhận
+          Mới được giao (Chờ xử lý)
         </span>
       );
     }
@@ -268,42 +268,43 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
             </div>
           )}
 
-          {/* TRẠNG THÁI 1: CHỜ TIẾP NHẬN */}
+          {/* TRẠNG THÁI 1: MỚI ĐƯỢC GIAO */}
           {isPending && (
             <div className="p-4 rounded-xl bg-sky-50 border border-sky-200 space-y-3">
               <div className="flex items-start gap-2.5">
                 <ShieldCheck className="w-5 h-5 text-sky-600 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-xs font-bold text-sky-900">Sự cố đang chờ bạn tiếp nhận</h4>
+                  <h4 className="text-xs font-bold text-sky-900">Nhiệm vụ mới được phân công cho ca trực của bạn</h4>
                   <p className="text-xs text-sky-700 mt-0.5">
-                    Nhiệm vụ này đã được Bàn điều phối cơ sở phân công cho ca trực của bạn. Bấm tiếp
-                    nhận để xác nhận bạn đang di chuyển đến hiện trường kiểm tra.
+                    Bàn điều phối cơ sở đã giao sự cố này cho bạn. Bấm <strong>"Bắt đầu xử lý"</strong> khi bạn di chuyển tới hiện trường, hoặc bạn có thể điền ngay biên bản xử lý bên dưới nếu đã khắc phục xong.
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={handleStartInProgress}
-                disabled={submitting}
-                className="w-full py-2.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition disabled:opacity-50"
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Đang cập nhật...</span>
-                  </>
-                ) : (
-                  <>
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>Tiếp nhận xử lý tại hiện trường (In Progress)</span>
-                  </>
-                )}
-              </button>
+              <div className="flex flex-col sm:flex-row items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleStartInProgress}
+                  disabled={submitting}
+                  className="w-full py-2.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition disabled:opacity-50"
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Đang cập nhật...</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck className="w-4 h-4" />
+                      <span>Bắt đầu xử lý tại hiện trường (In Progress)</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           )}
 
-          {/* TRẠNG THÁI 2: ĐANG XỬ LÝ -> FORM NGHIỆM THU & GIẢI QUYẾT */}
-          {isInProgress && (
+          {/* FORM NGHIỆM THU & GIẢI QUYẾT: Cho phép khi Đang xử lý hoặc Mới được giao */}
+          {(isInProgress || isPending) && (
             <form onSubmit={handleResolveSubmit} className="space-y-4 pt-2 border-t border-slate-200">
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-800 flex items-center justify-between">
