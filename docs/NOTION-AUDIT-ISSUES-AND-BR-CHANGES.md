@@ -533,7 +533,7 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
     - Frontend: `CheckInContractsTab.tsx`, `ContractActionButtons.tsx` (ẩn nút Bàn giao ở role FM, sửa công thức countdown ân hạn 10 ngày).  
     - Backend: `ContractDto.java`, `CheckInService.java`.
 
-#### 25. Lỗ hổng phân quyền dữ liệu (Multi-tenancy / Data Leak): Facility Manager truy cập và điều phối toàn bộ cơ sở toàn quốc thay vì chỉ 2 cơ sở được phân công (`SA-03`, `FM-01`)
+#### 25. [ĐÃ FIX — commit `1d5bfff`, PR #175] Lỗ hổng phân quyền dữ liệu (Multi-tenancy / Data Leak): Facility Manager truy cập và điều phối toàn bộ cơ sở toàn quốc thay vì chỉ 2 cơ sở được phân công (`SA-03`, `FM-01`)
 - **Hình ảnh minh chứng:**  
   ![FM truy cập full cơ sở](./images/notion-audit/image-25.png)
 - **Ghi chú gốc từ Lead Dev:**  
@@ -554,7 +554,7 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
     - Frontend: `FacilityContext.tsx`, `FacilitySelector.tsx`, `StaffAssignmentPage.tsx`.  
     - Backend: `FacilityService.java`, `FacilityRepository.java`, `SecurityUtils.java`.
 
-#### 26. Lỗi State Form điều chuyển nhân sự: Chọn "Khẩn cấp (SLA 2h)" tự động nhảy ngược về "Bình thường" và thiếu đồng hồ đếm ngược vi phạm cam kết SLA (`FM-05`, `BR-SUP-01`)
+#### 26. [ĐÃ FIX — commit `1d5bfff`, PR #175] Lỗi State Form điều chuyển nhân sự: Chọn "Khẩn cấp (SLA 2h)" tự động nhảy ngược về "Bình thường" và thiếu đồng hồ đếm ngược vi phạm cam kết SLA (`FM-05`, `BR-SUP-01`)
 - **Hình ảnh minh chứng:**  
   ![Lỗi khẩn cấp tự nhảy về bình thường](./images/notion-audit/image-26.png)
 - **Ghi chú gốc từ Lead Dev:**  
@@ -578,7 +578,7 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
     - Frontend: `ReassignStaffModal.tsx`, `SlaCountdownBadge.tsx`, `StaffAssignmentPage.tsx`.  
     - Backend: `SupportTicketDto.java` (trả về `slaDeadline`, `isEmergency`).
 
-#### 27. Thao tác "Phân công Nhân sự Cơ sở" bị lỗi API, không lưu được người phụ trách nhiệm vụ thực địa (`FM-05`, `US-FM-05.1 AC-1`)
+#### 27. [ĐÃ FIX — commit `1d5bfff`, PR #175] Thao tác "Phân công Nhân sự Cơ sở" bị lỗi API, không lưu được người phụ trách nhiệm vụ thực địa (`FM-05`, `US-FM-05.1 AC-1`)
 - **Hình ảnh minh chứng:**  
   ![Phân công nhân viên lỗi](./images/notion-audit/image-27.png)
 - **Ghi chú gốc từ Lead Dev:**  
@@ -601,7 +601,7 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
     - Frontend: `AssignStaffModal.tsx`, `StaffAssignmentPage.tsx`.  
     - Backend: `StaffAssignmentController.java`, `StaffAssignmentService.java`, `TaskAssignmentRequest.java`.
 
-#### 28. Sai lệch nghiêm trọng quy định xử lý nợ quá hạn: Phân loại tuổi nợ quá hạn "D+11 đến D+30" và "Trên D+30" hoàn toàn trái ngược với Business Rules (`BR-OVD-01`, `BR-OVD-02`, `BR-OVD-03`)
+#### 28. [ĐÃ FIX — commit `1d5bfff`, PR #175] Sai lệch nghiêm trọng quy định xử lý nợ quá hạn: Phân loại tuổi nợ quá hạn "D+11 đến D+30" và "Trên D+30" hoàn toàn trái ngược với Business Rules (`BR-OVD-01`, `BR-OVD-02`, `BR-OVD-03`)
 - **Hình ảnh minh chứng:**  
   ![Quá hạn trên 30 ngày](./images/notion-audit/image-28.png)
 - **Ghi chú gốc từ Lead Dev:**  
@@ -633,7 +633,7 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
 
 ### 2.5. Giao diện Nhân viên Vận hành (Staff)
 
-#### 29. Vỡ giao diện thẻ nhiệm vụ sự cố vận hành (thông tin hiển thị trống `---`) và sử dụng thuật ngữ phản cảm "Chờ khám" tại màn hình Tổng quan ca trực của Staff (`FS-01`, `FS-06`)
+#### 29. [ĐÃ FIX — commit `1d5bfff`, PR #175] Vỡ giao diện thẻ nhiệm vụ sự cố vận hành (thông tin hiển thị trống `---`) và sử dụng thuật ngữ phản cảm "Chờ khám" tại màn hình Tổng quan ca trực của Staff (`FS-01`, `FS-06`)
 - **Hình ảnh minh chứng:**  
   ![Lỗi lịch hẹn trả kho](./images/notion-audit/image-29.png)
 - **Ghi chú gốc từ Lead Dev:**  
@@ -652,7 +652,7 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
     - Frontend: `StaffShiftOverviewPage.tsx`, `StaffTaskCard.tsx`, `StaffTaskTabs.tsx`.  
     - Backend: `StaffTaskDto.java`, `StaffDashboardService.java`.
 
-#### 30. Lỗ hổng phân quyền phạm vi cơ sở của Nhân viên trực quầy (Staff Scope Leak): Nhân viên xem và check-in được cho hàng đợi của toàn bộ cơ sở toàn quốc (`FS-01`, `FS-02`)
+#### 30. [ĐÃ FIX — commit `6993425`, PR #179] Lỗ hổng phân quyền phạm vi cơ sở của Nhân viên trực quầy (Staff Scope Leak): Nhân viên xem và check-in được cho hàng đợi của toàn bộ cơ sở toàn quốc (`FS-01`, `FS-02`)
 - **Hình ảnh minh chứng:**  
   ![Nhân viên truy cập toàn bộ cơ sở](./images/notion-audit/image-30.png)
 - **Ghi chú gốc từ Lead Dev:**  
@@ -674,7 +674,7 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
     - Frontend: `StaffCheckInPage.tsx`, `StaffQueueList.tsx`, `useStaffShift.ts`.  
     - Backend: `CheckInController.java`, `CheckInService.java`, `SecurityUtils.java`.
 
-#### 31. Màn hình Nghiệm thu trả kho của Staff bị tắc luồng: Màn hình trống rỗng (Empty State) và không cho phép nhân viên tự nhận việc khi khách đến quầy (`FS-03`, `FS-04`)
+#### 31. [ĐÃ FIX — commit `1d5bfff`, PR #175] Màn hình Nghiệm thu trả kho của Staff bị tắc luồng: Màn hình trống rỗng (Empty State) và không cho phép nhân viên tự nhận việc khi khách đến quầy (`FS-03`, `FS-04`)
 - **Hình ảnh minh chứng:**  
   ![Không hiện danh sách trả kho](./images/notion-audit/image-31.png)
 - **Ghi chú gốc từ Lead Dev:**  
@@ -695,7 +695,7 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
     - Frontend: `StaffReturnPage.tsx`, `PendingReturnQueue.tsx`.  
     - Backend: `ReturnInspectionService.java`, `ReturnInspectionController.java`.
 
-#### 32. Sai lệch dữ liệu thông số kỹ thuật ô kho trên biểu mẫu tiếp đón Check-in và thiếu thanh thao tác cố định (Sticky Action Bar) hoàn tất bàn giao (`FS-01`, `FS-02`)
+#### 32. [ĐÃ FIX — commit `1d5bfff`, PR #175] Sai lệch dữ liệu thông số kỹ thuật ô kho trên biểu mẫu tiếp đón Check-in và thiếu thanh thao tác cố định (Sticky Action Bar) hoàn tất bàn giao (`FS-01`, `FS-02`)
 - **Hình ảnh minh chứng:**  
   ![Lỗi hiển thị sai giao diện](./images/notion-audit/image-32.png)
 - **Ghi chú gốc từ Lead Dev:**  
