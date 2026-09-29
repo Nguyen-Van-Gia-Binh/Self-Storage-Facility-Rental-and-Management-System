@@ -194,6 +194,39 @@ class CustomerRentalServiceTest {
     }
 
     @Test
+    @DisplayName("US-SC-05.1 & BR-RET-09: Hợp đồng PENDING_RETURN vẫn giữ nguyên mã PIN và không bị khóa")
+    void shouldKeepPinActive_whenContractIsPendingReturn() {
+        Pageable pageable = PageRequest.of(0, 10);
+        RentalContract pendingReturnContract = new RentalContract();
+        pendingReturnContract.setId(503L);
+        pendingReturnContract.setCode("CTR-202610-003");
+        pendingReturnContract.setCustomerId(15L);
+        pendingReturnContract.setFacilityId(1L);
+        pendingReturnContract.setStorageUnitId(42L);
+        pendingReturnContract.setUnitTypeId(7L);
+        pendingReturnContract.setStatus(ContractStatus.PENDING_RETURN);
+        pendingReturnContract.setAccessCode("654321");
+        pendingReturnContract.setStartDate(LocalDate.now().minusMonths(2));
+        pendingReturnContract.setEndDateExclusive(LocalDate.now().plusDays(10));
+
+        when(rentalContractRepository.findByCustomerIdAndStatus(eq(15L), eq(ContractStatus.PENDING_RETURN), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(pendingReturnContract), pageable, 1));
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(facility));
+        when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(storageUnit));
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(unitType));
+
+        PageResponse<CustomerRentalSummaryResponse> response = customerRentalService.getMyRentals(
+                customerUser, "PENDING_RETURN", pageable
+        );
+
+        assertNotNull(response);
+        assertEquals(1, response.getContent().size());
+        CustomerRentalSummaryResponse item = response.getContent().get(0);
+        assertEquals("654321", item.getAccessCode());
+        assertFalse(item.isAccessCodeLocked());
+    }
+
+    @Test
     @DisplayName("US-SC-05.1: Lọc tab lịch sử (CLOSED, TERMINATED)")
     void shouldReturnHistoryRentals_whenStatusFilterIsHistory() {
         Pageable pageable = PageRequest.of(0, 10);
