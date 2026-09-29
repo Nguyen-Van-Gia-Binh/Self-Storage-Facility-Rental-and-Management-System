@@ -85,6 +85,8 @@ export function mapBackendSummaryToCheckInContract(item: any): CheckInContract {
     status: item.status || 'PENDING_CHECK_IN',
     appointmentTime: appointmentTime,
     graceDaysRemaining: graceDaysRemaining,
+    assignedStaffId: item.assignedStaffId,
+    assignedStaffName: item.assignedStaffName,
   };
 }
 
@@ -194,6 +196,22 @@ export async function assignReturnStaff(
   notes?: string
 ): Promise<any> {
   const res = await apiClient<ApiResponse<any>>(`/contracts/${contractId}/assign-return`, {
+    method: 'PATCH',
+    body: JSON.stringify({ staffId, notes }),
+  });
+  return res.data;
+}
+
+/**
+ * Manager phân công nhân viên tiếp đón nhận kho Check-in (FM-05, FS-01)
+ * PATCH /api/v1/contracts/{id}/assign-checkin
+ */
+export async function assignCheckInStaff(
+  contractId: number,
+  staffId: number,
+  notes?: string
+): Promise<any> {
+  const res = await apiClient<ApiResponse<any>>(`/contracts/${contractId}/assign-checkin`, {
     method: 'PATCH',
     body: JSON.stringify({ staffId, notes }),
   });

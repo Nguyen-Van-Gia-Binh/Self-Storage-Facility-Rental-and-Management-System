@@ -196,6 +196,20 @@ public class ContractController {
         return ResponseEntity.ok(ApiResponse.success(response, "Phân công nhân viên nghiệm thu thành công"));
     }
 
+    /** Manager phân công Staff tiếp đón bàn giao Check-in (FM-05, FS-01) */
+    @PatchMapping("/{id}/assign-checkin")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+    @Operation(summary = "Manager phân công nhân viên tiếp đón bàn giao nhận kho")
+    public ResponseEntity<ApiResponse<ContractResponse>> assignCheckInStaff(
+            @PathVariable Long id,
+            @Valid @RequestBody AssignReturnStaffRequest request,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        Long managerId = requireUserId(currentUser);
+        List<Long> facilities = resolveFacilityScope(currentUser, null);
+        ContractResponse response = contractService.assignCheckInStaff(id, request, managerId, facilities);
+        return ResponseEntity.ok(ApiResponse.success(response, "Phân công nhân viên tiếp đón nhận kho thành công"));
+    }
+
     /** T4.3: Staff xác nhận nghiệm thu hiện trạng khi trả kho (FS-04) */
     @PostMapping("/{id}/return-inspections")
     @PreAuthorize("hasAnyRole('STAFF', 'MANAGER', 'ADMIN')")

@@ -17,6 +17,9 @@ import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
 import com.swp391.selfstorage.unit.entity.UnitType;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
 import com.swp391.selfstorage.unit.repository.UnitTypeRepository;
+import com.swp391.selfstorage.support.entity.AssignmentTaskType;
+import com.swp391.selfstorage.support.entity.StaffDailyAssignment;
+import com.swp391.selfstorage.support.repository.StaffDailyAssignmentRepository;
 import com.swp391.selfstorage.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,6 +59,9 @@ public class ContractServiceImpl implements ContractService {
 
         @Autowired(required = false)
         private UserService userService;
+
+        @Autowired(required = false)
+        private StaffDailyAssignmentRepository staffDailyAssignmentRepository;
 
         @Override
         @Transactional
@@ -309,6 +315,22 @@ public class ContractServiceImpl implements ContractService {
                                                                 }
                                                         } catch (Exception ignored) {
                                                         }
+                                                }
+                                        }
+                                }
+                        }
+
+                        if (c.getStatus() == ContractStatus.PENDING_CHECK_IN && staffDailyAssignmentRepository != null) {
+                                var assignOpt = staffDailyAssignmentRepository.findByReferenceTypeAndReferenceId("CONTRACT", c.getId());
+                                if (assignOpt.isPresent() && assignOpt.get().getStaffId() != null) {
+                                        assignedStaffId = assignOpt.get().getStaffId();
+                                        if (userService != null) {
+                                                try {
+                                                        var staffUser = userService.getUserById(assignedStaffId);
+                                                        if (staffUser != null) {
+                                                                assignedStaffName = staffUser.getFullName();
+                                                        }
+                                                } catch (Exception ignored) {
                                                 }
                                         }
                                 }
@@ -775,6 +797,42 @@ public class ContractServiceImpl implements ContractService {
                 return toResponse(contract);
         }
 
+        @Override
+        @Transactional
+        public ContractResponse assignCheckInStaff(Long contractId, AssignReturnStaffRequest request,
+                        Long managerId, List<Long> facilityIds) {
+                Optional<RentalContract> contractOpt = (facilityIds == null || facilityIds.isEmpty())
+                                ? contractRepository.findById(contractId)
+                                : contractRepository.findByIdAndFacilityIdIn(contractId, facilityIds);
+
+                RentalContract contract = contractOpt
+                                .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
+
+                if (contract.getStatus() != ContractStatus.PENDING_CHECK_IN) {
+                        throw new CustomException(ErrorCode.CONTRACT_NOT_PENDING_CHECKIN, "Hợp đồng không ở trạng thái chờ nhận kho");
+                }
+
+                if (staffDailyAssignmentRepository != null) {
+                        StaffDailyAssignment assignment = staffDailyAssignmentRepository
+                                        .findByReferenceTypeAndReferenceId("CONTRACT", contractId)
+                                        .orElseGet(() -> StaffDailyAssignment.builder()
+                                                        .facilityId(contract.getFacilityId())
+                                                        .workDate(contract.getStartDate() != null ? contract.getStartDate() : LocalDate.now())
+                                                        .taskType(AssignmentTaskType.HANDOVER)
+                                                        .referenceType("CONTRACT")
+                                                        .referenceId(contract.getId())
+                                                        .build());
+
+                        assignment.setStaffId(request.getStaffId());
+                        assignment.setAssignedBy(managerId);
+                        assignment.setFacilityId(contract.getFacilityId());
+                        assignment.setWorkDate(contract.getStartDate() != null ? contract.getStartDate() : LocalDate.now());
+                        staffDailyAssignmentRepository.save(assignment);
+                }
+
+                return toResponse(contract);
+        }
+
         /** BR-ACC-01: PIN 6 chu so unique toan he thong */
         private String generateUniquePin() {
                 for (int i = 0; i < 10; i++) {
@@ -835,6 +893,23 @@ public class ContractServiceImpl implements ContractService {
                                         if (userService != null) {
                                                 try {
                                                         var staffUser = userService.getUserById(req.getInspectedBy());
+                                                        if (staffUser != null) {
+                                                                r.setAssignedStaffName(staffUser.getFullName());
+                                                        }
+                                                } catch (Exception ignored) {
+                                                }
+                                        }
+                                }
+                        });
+                }
+
+                if (c.getStatus() == ContractStatus.PENDING_CHECK_IN && staffDailyAssignmentRepository != null) {
+                        staffDailyAssignmentRepository.findByReferenceTypeAndReferenceId("CONTRACT", c.getId()).ifPresent(a -> {
+                                if (a.getStaffId() != null) {
+                                        r.setAssignedStaffId(a.getStaffId());
+                                        if (userService != null) {
+                                                try {
+                                                        var staffUser = userService.getUserById(a.getStaffId());
                                                         if (staffUser != null) {
                                                                 r.setAssignedStaffName(staffUser.getFullName());
                                                         }
