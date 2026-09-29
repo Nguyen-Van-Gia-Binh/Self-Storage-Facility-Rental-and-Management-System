@@ -1,16 +1,15 @@
 /**
  * Pricing, Surcharge & Policy API — BM-02 & BM-03 (T2.13)
  * API-SPEC.md § 6 (Unit Types Price) & § 10 (Policies & Surcharges)
- * Gọi trực tiếp dữ liệu từ Backend CSDL (Không mock, không hardcode)
  */
-import { apiClient } from './client';
-import type { PageResponse } from './client';
+import { apiClient, isMockEnabled } from './client';
 import type {
   UnitTypeCatalog,
   SurchargeItem,
   CreateSurchargeRequest,
   ActivePolicyInfo,
 } from '@/types';
+import mockUnitTypesData from '@/mock/mock-unit-types.json';
 
 export interface FacilityPriceItem {
   id: number;
@@ -27,23 +26,113 @@ export interface UpdatePricePayload {
   monthlyPrice: number;
 }
 
+// Mock in-memory state for Unit Type prices
+const inMemoryUnitTypes: Record<string, UnitTypeCatalog[]> = JSON.parse(
+  JSON.stringify(mockUnitTypesData)
+);
+
+// Mock initial Surcharges list
+const initialSurcharges: SurchargeItem[] = [
+  {
+    id: 1,
+    name: 'Cấp lại Access Card / Thẻ từ',
+    facilityId: null, // Áp dụng toàn hệ thống
+    facilityName: 'Toàn hệ thống',
+    unitTypeId: null,
+    amount: 150000,
+    type: 'FIXED',
+    effectiveDate: '2026-09-01',
+    isActive: true,
+  },
+  {
+    id: 2,
+    name: 'Phụ phí quản lý tầng 3 (Có thang máy)',
+    facilityId: 1,
+    facilityName: 'Kho Quận 1 — 123 Lê Lợi',
+    unitTypeId: null,
+    amount: 100000,
+    type: 'FIXED',
+    effectiveDate: '2026-10-01',
+    isActive: true,
+  },
+  {
+    id: 3,
+    name: 'Phụ phí bảo quản lạnh đặc biệt',
+    facilityId: 2,
+    facilityName: 'Cơ sở Quận 7 — Số 10 Mai Văn Vĩnh',
+    unitTypeId: null,
+    amount: 5, // 5% trên đơn giá thuê tháng
+    type: 'PERCENTAGE',
+    effectiveDate: '2026-10-01',
+    isActive: true,
+  },
+];
+
+const inMemorySurcharges: SurchargeItem[] = [...initialSurcharges];
+
+// Mock Active Policy
+const mockActivePolicy: ActivePolicyInfo = {
+  id: 1,
+  version: '2026-Q4',
+  effectiveDate: '2026-10-01',
+  depositMultiplier: 1.0, // 1 tháng tiền cọc BR-DEP-01
+  reservationHoldHours: 48, // Giữ chỗ 48h BR-RES-02
+  rentalDailyDivisor: 30, // Quy đổi ngày BR-PRC-02
+  checkinGraceDays: 10, // Ân hạn check-in 10 ngày BR-CHK-05, BR-CAN-04
+  cancelFullRefundHours: 48, // Hủy trước 48h hoàn 100% BR-CAN-01
+  cancelLateRefundRate: 0.0, // Hủy muộn phạt 100% cọc (hoàn 0%) BR-CAN-02
+  renewalMinMonths: 1,
+  renewalMaxMonths: 12,
+  overdueGraceDays: 3, // Ân hạn quá hạn 3 ngày BR-OVD-01
+  overdueDailyRate: 0.1, // 10% / ngày sau ân hạn BR-OVD-03
+  overdueCapRate: 0.7, // Trần phí quá hạn 70% BR-OVD-04
+  returnNoticeDays: 30, // Báo trả trước 30 ngày BR-RET-01
+};
+
 /**
  * Lấy bảng giá của tất cả loại ô kho tại một cơ sở (BM-03)
- * Gọi endpoint: GET /api/v1/facilities/{facilityId}/prices
  */
 export async function getFacilityPrices(facilityId: number): Promise<FacilityPriceItem[]> {
+  if (isMockEnabled('WS3')) {
+    const list = inMemoryUnitTypes[String(facilityId)] || [];
+    return list.map((u) => ({
+      id: u.id,
+      facilityId,
+      unitTypeId: u.id,
+      unitTypeName: u.name,
+      monthlyPrice: u.monthlyPrice,
+      effectiveDate: new Date().toISOString().split('T')[0],
+      updatedAt: new Date().toISOString(),
+    }));
+  }
   return await apiClient<FacilityPriceItem[]>(`/facilities/${facilityId}/prices`);
 }
 
 /**
  * Cập nhật đơn giá tháng cho loại ô kho tại cơ sở qua PUT chuẩn (BM-03)
- * Gọi endpoint: PUT /api/v1/facilities/{facilityId}/prices/{unitTypeId}
  */
 export async function updateUnitPrice(
   facilityId: number,
   unitTypeId: number,
   payload: UpdatePricePayload
 ): Promise<FacilityPriceItem> {
+  if (isMockEnabled('WS3')) {
+    const list = inMemoryUnitTypes[String(facilityId)] || [];
+    const item = list.find((u) => u.id === unitTypeId);
+    if (!item) {
+      throw { status: 404, message: 'Không tìm thấy loại ô kho', timestamp: new Date().toISOString() };
+    }
+    item.monthlyPrice = payload.monthlyPrice;
+    return {
+      id: item.id,
+      facilityId,
+      unitTypeId: item.id,
+      unitTypeName: item.name,
+      monthlyPrice: item.monthlyPrice,
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
   return await apiClient<FacilityPriceItem>(`/facilities/${facilityId}/prices/${unitTypeId}`, {
     method: 'PUT',
     body: JSON.stringify(payload),
@@ -60,41 +149,73 @@ export async function updateUnitTypePrice(
   _effectiveDate?: string
 ): Promise<UnitTypeCatalog> {
   const res = await updateUnitPrice(facilityId, unitTypeId, { monthlyPrice });
+  const list = inMemoryUnitTypes[String(facilityId)] || [];
+  const found = list.find((u) => u.id === unitTypeId);
+  if (found) {
+    found.monthlyPrice = monthlyPrice;
+  }
   return {
     id: res.unitTypeId || res.id,
     facilityId,
-    name: res.unitTypeName || `Loại ô kho #${unitTypeId}`,
+    name: res.unitTypeName || found?.name || `Loại ô kho #${unitTypeId}`,
     monthlyPrice: res.monthlyPrice,
-    description: '',
-    widthM: 0,
-    depthM: 0,
-    heightM: 0,
-    areaM2: 0,
-    totalUnits: 0,
-    isActive: true,
+    description: found?.description || '',
+    widthM: found?.widthM || 0,
+    depthM: found?.depthM || 0,
+    heightM: found?.heightM || 0,
+    areaM2: found?.areaM2 || 0,
+    totalUnits: found?.totalUnits || 0,
+    isActive: found?.isActive ?? true,
   };
 }
 
 /**
  * Danh sách phụ phí (BM-03)
- * Gọi endpoint: GET /api/v1/surcharges
  */
 export async function fetchSurcharges(params?: {
   facilityId?: number;
   isActive?: boolean;
 }): Promise<SurchargeItem[]> {
-  const qs = new URLSearchParams({ size: '100' });
+  if (isMockEnabled('WS3')) {
+    let result = [...inMemorySurcharges];
+    if (params?.facilityId !== undefined) {
+      result = result.filter((s) => s.facilityId === null || s.facilityId === params.facilityId);
+    }
+    if (params?.isActive !== undefined) {
+      result = result.filter((s) => s.isActive === params.isActive);
+    }
+    return result;
+  }
+
+  const qs = new URLSearchParams();
   if (params?.facilityId !== undefined) qs.set('facilityId', String(params.facilityId));
   if (params?.isActive !== undefined) qs.set('isActive', String(params.isActive));
-  const res = await apiClient<PageResponse<SurchargeItem>>(`/surcharges?${qs}`);
-  return res.content ?? [];
+  const url = qs.toString() ? `/surcharges?${qs}` : '/surcharges';
+  const res = await apiClient<{ content: SurchargeItem[] }>(url);
+  return res.content;
 }
 
 /**
  * Tạo phụ phí mới (BM-03)
- * Gọi endpoint: POST /api/v1/surcharges
  */
 export async function createSurcharge(data: CreateSurchargeRequest): Promise<SurchargeItem> {
+  if (isMockEnabled('WS3')) {
+    const nextId = Math.max(...inMemorySurcharges.map((s) => s.id), 0) + 1;
+    const newItem: SurchargeItem = {
+      id: nextId,
+      name: data.name,
+      facilityId: data.facilityId ?? null,
+      facilityName: data.facilityId ? `Cơ sở #${data.facilityId}` : 'Toàn hệ thống',
+      unitTypeId: data.unitTypeId ?? null,
+      amount: data.amount,
+      type: data.type,
+      effectiveDate: data.effectiveDate,
+      isActive: true,
+    };
+    inMemorySurcharges.unshift(newItem);
+    return newItem;
+  }
+
   return await apiClient<SurchargeItem>('/surcharges', {
     method: 'POST',
     body: JSON.stringify(data),
@@ -102,29 +223,14 @@ export async function createSurcharge(data: CreateSurchargeRequest): Promise<Sur
 }
 
 /**
- * Lấy chính sách cọc & quá hạn đang hiệu lực trực tiếp từ CSDL (BM-02 / BM-03)
- * Gọi endpoint: GET /api/v1/policies/active
+ * Lấy chính sách cọc & quá hạn đang hiệu lực (BM-02 / BM-03)
  */
 export async function fetchActivePolicy(): Promise<ActivePolicyInfo> {
-  const res = await apiClient<any>('/policies/active');
-  return {
-    id: res.id,
-    version: res.version || (res.versionNo ? `v${res.versionNo}` : '2026-Q4'),
-    effectiveDate: (res.effectiveDate || res.effectiveFrom || '').split('T')[0],
-    depositMultiplier: Number(res.depositMultiplier ?? 1.0),
-    reservationHoldHours: Number(res.reservationHoldHours ?? 48),
-    rentalDailyDivisor: Number(res.rentalDailyDivisor ?? 30),
-    checkinGraceDays: Number(res.checkinGraceDays ?? 10),
-    cancelFullRefundHours: Number(res.cancelFullRefundHours ?? 48),
-    cancelLateRefundRate: Number(res.cancelLateRefundRate ?? 0.0),
-    renewalMinMonths: Number(res.renewalMinMonths ?? 1),
-    renewalMaxMonths: Number(res.renewalMaxMonths ?? 12),
-    overdueGraceDays: Number(res.overdueGraceDays ?? 3),
-    overdueDailyRate: Number(res.overdueDailyRate ?? 0.1),
-    overdueCapRate: Number(res.overdueCapRate ?? 0.7),
-    returnNoticeDays: Number(res.returnNoticeDays ?? 30),
-    returnRefundWorkingDays: Number(res.returnRefundWorkingDays ?? 7),
-  };
+  if (isMockEnabled('WS3')) {
+    return { ...mockActivePolicy };
+  }
+
+  return await apiClient<ActivePolicyInfo>('/policies/active');
 }
 
 export interface PolicyPublishPayload {
