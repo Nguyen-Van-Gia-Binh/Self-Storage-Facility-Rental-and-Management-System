@@ -342,16 +342,13 @@ export const RenewalPage: React.FC = () => {
     return () => clearInterval(timer);
   }, [currentStep, paymentExpiresAt]);
 
-  // Format đếm ngược
+  // Format đếm ngược dạng đồng hồ giờ:phút:giây (hh:mm:ss) thay cho chữ
   const formatCountdown = (secs: number) => {
-    if (secs > 3600) {
-      const hours = Math.floor(secs / 3600);
-      const mins = Math.floor((secs % 3600) / 60);
-      return `Còn ${hours} giờ ${mins} phút`;
-    }
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    const s = Math.max(0, secs);
+    const hours = Math.floor(s / 3600);
+    const mins = Math.floor((s % 3600) / 60);
+    const remainingSecs = s % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${remainingSecs.toString().padStart(2, '0')}`;
   };
 
   const handleSimulateSuccess = async () => {
@@ -465,9 +462,17 @@ export const RenewalPage: React.FC = () => {
       {/* 3-Step Indicator Bar */}
       <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-xs flex items-center justify-between text-xs sm:text-sm">
         <div 
-          onClick={() => !isRenewalBlocked && setCurrentStep(1)}
+          onClick={() => {
+            if (currentStep === 3) return;
+            if (!isRenewalBlocked) setCurrentStep(1);
+          }}
+          title={currentStep === 3 ? "Không thể chuyển bước khi đang chờ thanh toán VietQR. Vui lòng chọn 'Hủy lệnh thanh toán' nếu muốn đổi thông tin." : undefined}
           className={`flex items-center gap-2 transition-all ${
-            !isRenewalBlocked ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'
+            currentStep === 3
+              ? 'cursor-not-allowed select-none'
+              : !isRenewalBlocked 
+                ? 'cursor-pointer' 
+                : 'cursor-not-allowed opacity-60'
           } ${
             currentStep === 1 
               ? 'font-bold text-brand-600' 
@@ -491,9 +496,17 @@ export const RenewalPage: React.FC = () => {
         <div className="h-px bg-slate-200 flex-1 mx-3 hidden sm:block" />
 
         <div 
-          onClick={() => !isRenewalBlocked && setCurrentStep(2)}
+          onClick={() => {
+            if (currentStep === 3) return;
+            if (!isRenewalBlocked) setCurrentStep(2);
+          }}
+          title={currentStep === 3 ? "Không thể chuyển bước khi đang chờ thanh toán VietQR. Vui lòng chọn 'Hủy lệnh thanh toán' nếu muốn đổi thông tin." : undefined}
           className={`flex items-center gap-2 transition-all ${
-            !isRenewalBlocked ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'
+            currentStep === 3
+              ? 'cursor-not-allowed select-none'
+              : !isRenewalBlocked 
+                ? 'cursor-pointer' 
+                : 'cursor-not-allowed opacity-60'
           } ${
             currentStep === 2 
               ? 'font-bold text-brand-600' 
@@ -906,9 +919,11 @@ export const RenewalPage: React.FC = () => {
                 </p>
               </div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold shrink-0">
-                <Clock className="w-3.5 h-3.5 text-amber-600" />
+                <Clock className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
                 <span>Hết hạn sau:</span>
-                <span className="font-mono text-xs text-amber-700 font-bold">{formatCountdown(countdownSeconds)}</span>
+                <span className="font-mono text-xs text-amber-900 font-extrabold tracking-wider bg-amber-100/80 px-2 py-0.5 rounded border border-amber-300/60 shadow-2xs">
+                  {formatCountdown(countdownSeconds)}
+                </span>
               </div>
             </div>
 
