@@ -477,11 +477,15 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
     - Frontend: `UnitManagementPage.tsx`, `UnitTypeList.tsx`, `AddStorageUnitModal.tsx`.  
     - Backend: `UnitTypeController.java`, `StorageUnitService.java`.
 
-#### 22. Vi phạm nghiêm trọng phân quyền vai trò (RBAC) & Quy tắc nghiệp vụ `BR-GEN-01`: Màn hình Quản lý cơ sở của FM lại mở ô nhập "Đơn giá niêm yết" khi tạo loại ô kho mới
+#### 22. [ĐÃ FIX] Vi phạm nghiêm trọng phân quyền vai trò (RBAC) & Quy tắc nghiệp vụ `BR-GEN-01`: Màn hình Quản lý cơ sở của FM lại mở ô nhập "Đơn giá niêm yết" khi tạo loại ô kho mới
 - **Hình ảnh minh chứng:**  
   ![FM có quyền sửa giá](./images/notion-audit/image-22.png)
 - **Ghi chú gốc từ Lead Dev:**  
-  > *"FM không có quyền niêm yết giá trong này, sai logic BR"*
+  > *"FM không có quyền niêm yết giá trong này, sai logic BR"* — `[ĐÃ FIX]`
+- **Kết quả đã xử lý (PR branch `fix/T3.22-fm--rbac-unit-type`):**
+  1. *Ẩn trường giá cho MANAGER:* Trong `UnitTypeFormModal.tsx`, kiểm tra `userRole === 'MANAGER'` và ẩn input giá, hiển thị text "Chỉ BOM mới được nhập giá niêm yết".
+  2. *Loại bỏ validation giá cho FM:* Khi submit, MANAGER không bị validate giá.
+  3. *Import tokenStorage:* Để lấy thông tin user role từ session.
 - **Mô tả kỹ thuật chuẩn hóa:**  
   * **Tên vấn đề:** Vi phạm ranh giới phân quyền vai trò (RBAC) giữa FM và BOM: Modal *"Thêm loại ô kho mới"* trên phân hệ của Facility Manager (`/manager/units`) xuất hiện trường nhập liệu `Đơn giá niêm yết (VND/tháng) *`, cho phép FM tự ý định giá kho trái thẩm quyền.
   * **Hiện trạng ghi nhận trên UI (`image-22.png`):**  
