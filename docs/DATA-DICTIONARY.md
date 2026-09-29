@@ -161,6 +161,8 @@ Chính sách vận hành có phiên bản đầy đủ tại từng thời đi�
 | `renewal_reminder_days` | `NVARCHAR(50)` | Có | | Chuỗi CSV các ngày nhắc hạn trước khi hết hạn (`"30,7,3,1"`) |
 | `renewal_min_months` | `INT` | Có | | Số tháng gia hạn tối thiểu (`1` tháng) |
 | `renewal_max_months` | `INT` | Có | | Số tháng gia hạn tối đa (`12` tháng) |
+| `rental_buffer_days` | `INT` | Có | `DEFAULT 15` | Số ngày đệm giữa hai kỳ thuê trên cùng ô kho (`BR-AVL-02`) |
+| `rental_daily_divisor` | `INT` | Có | `DEFAULT 30` | Mẫu số quy đổi giá tháng sang giá ngày (`BR-PRI-03`) |
 | `overdue_grace_days` | `INT` | Có | | Số ngày ân hạn quá hạn trước khi tính phí (`3` ngày - `BR-OVD-01`) |
 | `overdue_daily_rate` | `DECIMAL(5,2)` | Có | | Tỷ lệ phí quá hạn mỗi ngày (`0.05` = 5%/ngày - `BR-OVD-02`) |
 | `overdue_cap_rate` | `DECIMAL(5,2)` | Có | | Trần phí quá hạn tối đa (`0.35` = 35% tiền cọc - `BR-OVD-03`) |
@@ -280,6 +282,7 @@ Lịch sử các lần gia hạn hợp đồng thuê kho (`BR-REN-*`).
 | `overdue_fee_settled`| `BIGINT` | Có | `DEFAULT 0` | Tiền nợ quá hạn đã trả kèm (nếu gia hạn lúc Overdue) |
 | `rental_fee_amount`| `BIGINT` | Có | | Tiền thuê của kỳ mới |
 | `total_paid` | `BIGINT` | Có | | Tổng tiền đã trả đợt gia hạn (= tiền thuê + nợ phạt) |
+| `payment_transaction_id` | `BIGINT` | Không | `FK` $\rightarrow$ `payment_transaction(id)`, unique khi có giá trị | Giao dịch đã kích hoạt lần Renewal này, để không cộng hạn lần thứ hai |
 | `created_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Thời điểm gia hạn |
 
 ### 4.4. Bảng `handover_record`
@@ -367,6 +370,7 @@ Giao dịch thanh toán cổng điện tử (`Flow 1, 3, 6`, `BR-PAY-*`).
 | `contract_id` | `BIGINT` | Không | `FK` $\rightarrow$ `rental_contract(id)` | Giao dịch cho hợp đồng (gia hạn, phụ phí, hoàn cọc) |
 | `transaction_type`| `VARCHAR(30)` | Có | `CHECK IN ('INITIAL_PAYMENT', 'RENEWAL_PAYMENT', 'CONTRACT_RENEWAL', 'EXTRA_FEE_PAYMENT', 'SETTLEMENT', 'REFUND')` | Mục đích thanh toán |
 | `amount` | `BIGINT` | Có | | Số tiền giao dịch (VND) |
+| `renewal_months` | `INT` | Không | `CHECK (renewal_months IS NULL OR renewal_months > 0)` | Số tháng Renewal đã chốt lúc tạo link thanh toán |
 | `order_code` | `BIGINT` | Không | `UNIQUE` | Mã đơn hàng số nguyên duy nhất từ cổng thanh toán PayOS (V17) |
 | `status` | `VARCHAR(20)` | Có | `DEFAULT 'PENDING'`, `CHECK IN ('PENDING', 'SUCCESS', 'FAILED', 'REFUND_FAILED')` | Trạng thái cổng thanh toán |
 | `payment_method` | `NVARCHAR(50)` | Không | | Phương thức (VietQR PayOS, MB Bank, VNPay, Momo) |

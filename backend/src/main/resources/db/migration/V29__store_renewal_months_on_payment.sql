@@ -1,4 +1,4 @@
--- V28__store_renewal_months_on_payment.sql
+-- V29__store_renewal_months_on_payment.sql
 -- Lưu số tháng gia hạn đã chốt lúc tạo thanh toán, và gắn mỗi lần gia hạn với đúng một giao dịch
 -- để không cộng end_date_exclusive lần thứ hai.
 
