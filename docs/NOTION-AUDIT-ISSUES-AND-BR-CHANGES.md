@@ -220,6 +220,7 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
   * **Hướng xử lý & File liên quan:**  
     - Frontend: `AuthContext.tsx`, `useAuthStore.ts`, `MyRentalsPage.tsx`.  
     - Backend: `ContractRepository.java`, `ContractService.java`.
+  * **Trạng thái:** `[ĐÃ FIX]` — PR `#180` branch `fix/Tx-session-bleed-fix` đã xóa toàn bộ mock data và localStorage override
 
 #### 12. Luồng đăng ký tài khoản bị tắc do không nhận được email OTP thực tế (Cần bổ sung mã OTP giả lập trên môi trường Dev/Test)
 - **Hình ảnh minh chứng:**  
