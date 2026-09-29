@@ -153,8 +153,9 @@ export const UnitCatalogPage: React.FC = () => {
     return () => { active = false; };
   }, [facilityId, selectedTypeId]);
 
+  const isTypeActive = (t?: UnitTypeResponse | null) => (t ? (t.isActive ?? t.active ?? true) : false);
   const selectedType = unitTypes.find((t) => t.id === selectedTypeId);
-  const visibleTypes = showInactive ? unitTypes : unitTypes.filter((t) => t.isActive);
+  const visibleTypes = showInactive ? unitTypes : unitTypes.filter(isTypeActive);
   const filteredUnits =
     statusFilter === 'ALL'
       ? storageUnits
@@ -179,7 +180,7 @@ export const UnitCatalogPage: React.FC = () => {
 
   const handleToggleType = async (type: UnitTypeResponse) => {
     try {
-      await toggleUnitTypeStatus(facilityId, type.id, !type.isActive);
+      await toggleUnitTypeStatus(facilityId, type.id, !isTypeActive(type));
       await refreshUnitTypes();
     } catch (err: unknown) {
       console.error(err);
@@ -387,8 +388,8 @@ export const UnitCatalogPage: React.FC = () => {
                 <button
                   id="btn-add-storage-unit"
                   onClick={() => setSuModalOpen(true)}
-                  disabled={!selectedType.isActive}
-                  title={!selectedType.isActive ? 'Loại ô kho đang vô hiệu — không thể thêm ô kho mới' : undefined}
+                  disabled={!isTypeActive(selectedType)}
+                  title={!isTypeActive(selectedType) ? 'Loại ô kho đang vô hiệu — không thể thêm ô kho mới' : undefined}
                   className="flex items-center gap-1.5 px-3.5 py-2 bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 text-xs font-bold rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs shrink-0 cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />

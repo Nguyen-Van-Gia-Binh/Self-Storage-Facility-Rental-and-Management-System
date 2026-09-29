@@ -26,6 +26,7 @@ export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({
   onToggle,
 }) => {
   const isClimate = isClimateType(type);
+  const isTypeActive = type.isActive ?? type.active ?? true;
 
   return (
     <div
@@ -54,7 +55,7 @@ export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({
                 Kho Tiêu Chuẩn (Thường)
               </span>
             )}
-            {!type.isActive && (
+            {!isTypeActive && (
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-50 text-rose-600 border border-rose-200">
                 Vô hiệu
               </span>
@@ -94,14 +95,14 @@ export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({
         type="button"
         onClick={(e) => { e.stopPropagation(); onToggle(); }}
         className={`text-xs font-semibold px-2.5 py-1 rounded-lg border transition-colors flex items-center gap-1 cursor-pointer ${
-          type.isActive
+          isTypeActive
             ? 'text-rose-600 hover:bg-rose-50 border-rose-200 hover:border-rose-300'
             : 'text-emerald-700 hover:bg-emerald-50 border-emerald-200 hover:border-emerald-300'
         }`}
-        title={type.isActive ? 'Vô hiệu hóa loại ô kho' : 'Kích hoạt loại ô kho'}
+        title={isTypeActive ? 'Vô hiệu hóa loại ô kho' : 'Kích hoạt loại ô kho'}
       >
         <Power className="w-3 h-3" />
-        {type.isActive ? 'Vô hiệu hóa' : 'Kích hoạt'}
+        {isTypeActive ? 'Vô hiệu hóa' : 'Kích hoạt'}
       </button>
     </div>
   </div>
