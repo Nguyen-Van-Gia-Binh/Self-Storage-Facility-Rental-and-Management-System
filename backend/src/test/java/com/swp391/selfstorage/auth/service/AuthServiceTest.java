@@ -296,7 +296,27 @@ class AuthServiceTest {
                 .thenReturn(Optional.of(validOtp));
 
         authService.verifyOtp(request);
-        // Khong throw exception la pass
+
+        assertThat(validOtp.getExpiredAt()).isAfter(LocalDateTime.now().plusMinutes(14));
+        verify(passwordResetOtpRepository).save(validOtp);
+    }
+
+    @Test
+    @DisplayName("Đặt lại mật khẩu thành công sau khi OTP đã được xác thực và gia hạn thời gian")
+    void resetPassword_SuccessAfterOtpVerification() {
+        PasswordResetOtp verifiedOtp = new PasswordResetOtp("tung@example.com", "123456", LocalDateTime.now().plusMinutes(10));
+        ResetPasswordRequest request = new ResetPasswordRequest("tung@example.com", "123456", "NewSecretPass123");
+
+        when(passwordResetOtpRepository.findTopByEmailAndOtpCodeAndIsUsedFalseOrderByCreatedAtDesc("tung@example.com", "123456"))
+                .thenReturn(Optional.of(verifiedOtp));
+        when(userRepository.findByEmail("tung@example.com")).thenReturn(Optional.of(sampleUser));
+        when(passwordEncoder.encode("NewSecretPass123")).thenReturn("new-hashed-password");
+
+        authService.resetPassword(request);
+
+        assertThat(verifiedOtp.isUsed()).isTrue();
+        verify(passwordResetOtpRepository).save(verifiedOtp);
+        verify(userRepository).save(sampleUser);
     }
 
     @Test

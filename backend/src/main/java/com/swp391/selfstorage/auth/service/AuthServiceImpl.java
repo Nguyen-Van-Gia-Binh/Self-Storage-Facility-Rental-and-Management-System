@@ -265,7 +265,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public void verifyOtp(com.swp391.selfstorage.auth.dto.VerifyOtpRequest request) {
         if (passwordResetOtpRepository == null) {
             throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR, "Dịch vụ xác thực OTP chưa sẵn sàng");
@@ -278,6 +278,11 @@ public class AuthServiceImpl implements AuthService {
         if (otpEntity.isExpired()) {
             throw new CustomException(ErrorCode.OTP_EXPIRED);
         }
+
+        // Sau khi nhập OTP đúng trong vòng 60s, gia hạn expiredAt thêm 15 phút
+        // để người dùng có đủ thời gian nhập mật khẩu mới và xác nhận mật khẩu
+        otpEntity.setExpiredAt(LocalDateTime.now().plusMinutes(15));
+        passwordResetOtpRepository.save(otpEntity);
     }
 
     @Override

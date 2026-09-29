@@ -119,6 +119,8 @@ export const ForgotPasswordPage: React.FC = () => {
         otp: otp.trim(),
       });
       // Mã đúng -> Chuyển sang bước 3 nhập mật khẩu mới
+      setCountdown(0);
+      setErrorMsg(null);
       setStep('NEW_PASSWORD_INPUT');
     } catch (err: unknown) {
       const error = err as { message?: string };
@@ -392,7 +394,7 @@ export const ForgotPasswordPage: React.FC = () => {
                   />
                   <button
                     type="button"
-                    onClick={() => setShowConfirmPassword(!showPassword)}
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 cursor-pointer"
                   >
                     {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
