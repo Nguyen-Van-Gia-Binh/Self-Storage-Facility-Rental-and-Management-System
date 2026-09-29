@@ -348,6 +348,23 @@ export async function getManagerContracts(filter?: {
         }
       }
 
+      let checkInGraceDaysRemaining: number | undefined;
+      if (c.startDate) {
+        try {
+          const parts = String(c.startDate).split('-');
+          if (parts.length === 3) {
+            const start = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+            // BR-CAN-04 / BR-CHK-05: Ân hạn nhận kho 10 ngày kể từ ngày bắt đầu hợp đồng (startDate)
+            const deadline = new Date(start.getTime() + 10 * 24 * 60 * 60 * 1000);
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+            checkInGraceDaysRemaining = Math.round((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          }
+        } catch {
+          checkInGraceDaysRemaining = undefined;
+        }
+      }
+
       const nearExpiration =
         c.status === 'ACTIVE' &&
         daysRemaining !== undefined &&
@@ -391,6 +408,7 @@ export async function getManagerContracts(filter?: {
         overdueDays,
         accruedOverdueFee,
         daysRemaining,
+        checkInGraceDaysRemaining,
         nearExpiration: c.nearExpiration ?? nearExpiration,
         assignedStaffId: c.assignedStaffId,
         assignedStaffName: c.assignedStaffName,

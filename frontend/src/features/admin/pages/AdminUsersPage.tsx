@@ -98,9 +98,9 @@ export const AdminUsersPage: React.FC<AdminUsersPageProps> = ({ defaultRoleFilte
     return map;
   }, [facilities]);
 
-  // Load facilities once
+  // Load facilities once (include inactive to resolve all facility names properly)
   useEffect(() => {
-    fetchFacilities()
+    fetchFacilities(undefined, true)
       .then((data) => setFacilities(data))
       .catch((err) => console.error('Lỗi nạp cơ sở:', err));
   }, []);
@@ -466,15 +466,28 @@ export const AdminUsersPage: React.FC<AdminUsersPageProps> = ({ defaultRoleFilte
                         {isStaffOrManager ? (
                           user.facilityIds && user.facilityIds.length > 0 ? (
                             <div className="flex flex-wrap gap-1 max-w-xs">
-                              {user.facilityIds.map((fId) => (
-                                <span
-                                  key={fId}
-                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200"
-                                >
-                                  <Building2 className="w-3 h-3 text-blue-500" />
-                                  <span>{facilityMap.get(fId) || `Cơ sở #${fId}`}</span>
-                                </span>
-                              ))}
+                              {user.facilityIds
+                                .filter((fId) => facilityMap.has(fId))
+                                .map((fId) => {
+                                  const facility = facilities.find((f) => f.id === fId);
+                                  const isInactive = facility && !facility.isActive;
+                                  return (
+                                    <span
+                                      key={fId}
+                                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium border ${
+                                        isInactive
+                                          ? 'bg-slate-50 text-slate-500 border-slate-200'
+                                          : 'bg-blue-50 text-blue-700 border-blue-200'
+                                      }`}
+                                    >
+                                      <Building2 className={`w-3 h-3 ${isInactive ? 'text-slate-400' : 'text-blue-500'}`} />
+                                      <span>
+                                        {facilityMap.get(fId)}
+                                        {isInactive ? ' (Tạm dừng)' : ''}
+                                      </span>
+                                    </span>
+                                  );
+                                })}
                             </div>
                           ) : (
                             <span className="text-xs text-rose-500 italic flex items-center gap-1">

@@ -43,7 +43,9 @@ export const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
   useEffect(() => {
     if (isOpen && task) {
       setSelectedStaffId(task.assignedStaffId || '');
-      setPriority(task.priority || (task.isUrgent ? 'URGENT' : 'NORMAL'));
+      const initialPriority: DispatchTaskPriority =
+        task.priority === 'URGENT' || task.isUrgent ? 'URGENT' : 'NORMAL';
+      setPriority(initialPriority);
       setNotes(task.notes || '');
       setErrorMessage(null);
     }
