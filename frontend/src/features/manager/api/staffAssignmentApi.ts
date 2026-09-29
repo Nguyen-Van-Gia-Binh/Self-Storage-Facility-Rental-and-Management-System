@@ -339,13 +339,13 @@ export async function assignStaffToTask(
       } catch (subErr) {
         console.warn(`Lỗi gọi API phân công trả kho contract #${contractId}:`, subErr);
       }
-    }
-  } else if (payload.taskType === 'CHECK_IN') {
-    const contractId = payload.taskId > 100000 ? payload.taskId - 100000 : payload.taskId;
-    try {
-      await assignCheckInStaff(contractId, payload.staffId, payload.notes);
-    } catch (err) {
-      console.warn(`Lỗi gọi API phân công check-in contract #${contractId}:`, err);
+    } else if (payload.taskType === 'CHECK_IN') {
+      const contractId = payload.taskId > 100000 ? payload.taskId - 100000 : payload.taskId;
+      try {
+        await assignCheckInStaff(contractId, payload.staffId, payload.notes);
+      } catch (checkInErr) {
+        console.warn(`Lỗi gọi API phân công check-in contract #${contractId}:`, checkInErr);
+      }
     }
   }
 

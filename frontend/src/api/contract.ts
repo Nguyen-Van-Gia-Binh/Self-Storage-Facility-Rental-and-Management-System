@@ -212,21 +212,6 @@ export async function assignReturnStaff(
   staffId: number,
   notes?: string
 ): Promise<any> {
-  if (isMockEnabled('WS2')) {
-    localMockReturnContracts = localMockReturnContracts.map((c) => {
-      if (c.id === contractId) {
-        return {
-          ...c,
-          assignedStaffId: staffId,
-          assignedStaffName: 'Nhân viên trực ca',
-          assignmentStatus: 'ASSIGNED',
-        };
-      }
-      return c;
-    });
-    return { contractId, assignedStaffId: staffId };
-  }
-
   const res = await apiClient<ApiResponse<any>>(`/contracts/${contractId}/assign-return`, {
     method: 'PATCH',
     body: JSON.stringify({ staffId, notes }),
