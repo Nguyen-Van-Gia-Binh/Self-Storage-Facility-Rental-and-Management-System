@@ -10,7 +10,6 @@ import {
   LogOut 
 } from 'lucide-react';
 import { tokenStorage, type UserSession } from '@/utils/tokenStorage';
-import { DemoRoleSwitcher } from '@/components/common/DemoRoleSwitcher';
 
 
 export interface CustomerLayoutProps {
@@ -119,12 +118,6 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
 
           {/* User actions */}
           <div className="flex items-center gap-2.5">
-            {/* Demo Role Switcher */}
-            <DemoRoleSwitcher
-              currentRole={user?.role || 'CUSTOMER'}
-              onRoleChanged={() => setUser(tokenStorage.getUser())}
-            />
-
             {/* Hotline */}
             <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700">
               <Phone className="w-3.5 h-3.5 text-brand-500" />
