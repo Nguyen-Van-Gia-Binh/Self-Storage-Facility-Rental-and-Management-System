@@ -255,9 +255,19 @@ public class StaffSupportServiceImpl implements StaffSupportService {
             );
         } else if (currentUser.getRole() == UserRole.FACILITY_STAFF) {
             List<Long> staffFacilityIds = currentUser.getFacilityIds();
-            page = supportRequestRepository.findByFacilityIdsAndFilters(
-                    staffFacilityIds, status, category, assignedStaffId != null ? assignedStaffId : currentUser.getId(), pageable
-            );
+            if (staffFacilityIds == null || staffFacilityIds.isEmpty()) {
+                staffFacilityIds = userFacilityAssignmentRepository.findFacilityIdsByUserId(currentUser.getId());
+            }
+            Long targetStaffId = assignedStaffId != null ? assignedStaffId : currentUser.getId();
+            if (staffFacilityIds != null && !staffFacilityIds.isEmpty()) {
+                page = supportRequestRepository.findByFacilityIdsAndFilters(
+                        staffFacilityIds, status, category, targetStaffId, pageable
+                );
+            } else {
+                page = supportRequestRepository.findAllManagementRequests(
+                        facilityId, status, category, targetStaffId, pageable
+                );
+            }
         } else {
             // ADMIN / BUSINESS_MANAGER xem toàn bộ
             page = supportRequestRepository.findAllManagementRequests(
