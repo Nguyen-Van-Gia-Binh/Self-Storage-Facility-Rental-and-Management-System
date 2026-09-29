@@ -59,7 +59,7 @@ const initialSurcharges: SurchargeItem[] = [
     id: 3,
     name: 'Phụ phí bảo quản lạnh đặc biệt',
     facilityId: 2,
-    facilityName: 'Kho Tân Bình — 456 Hoàng Văn Thụ',
+    facilityName: 'Cơ sở Quận 7 — Số 10 Mai Văn Vĩnh',
     unitTypeId: null,
     amount: 5, // 5% trên đơn giá thuê tháng
     type: 'PERCENTAGE',
@@ -78,15 +78,15 @@ const mockActivePolicy: ActivePolicyInfo = {
   depositMultiplier: 1.0, // 1 tháng tiền cọc BR-DEP-01
   reservationHoldHours: 48, // Giữ chỗ 48h BR-RES-02
   rentalDailyDivisor: 30, // Quy đổi ngày BR-PRC-02
-  checkinGraceDays: 3, // Ân hạn check-in 3 ngày BR-CHK-02
+  checkinGraceDays: 10, // Ân hạn check-in 10 ngày BR-CHK-05, BR-CAN-04
   cancelFullRefundHours: 48, // Hủy trước 48h hoàn 100% BR-CAN-01
-  cancelLateRefundRate: 0.5, // Hủy muộn hoàn 50% BR-CAN-02
+  cancelLateRefundRate: 0.0, // Hủy muộn phạt 100% cọc (hoàn 0%) BR-CAN-02
   renewalMinMonths: 1,
   renewalMaxMonths: 12,
   overdueGraceDays: 3, // Ân hạn quá hạn 3 ngày BR-OVD-01
   overdueDailyRate: 0.1, // 10% / ngày sau ân hạn BR-OVD-03
   overdueCapRate: 0.7, // Trần phí quá hạn 70% BR-OVD-04
-  returnNoticeDays: 7, // Báo trả trước 7 ngày BR-RET-01
+  returnNoticeDays: 30, // Báo trả trước 30 ngày BR-RET-01
 };
 
 /**
