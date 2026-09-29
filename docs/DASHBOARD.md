@@ -58,6 +58,11 @@
 | `ISS-48` | Thiếu đệm an toàn 15 ngày gối đầu và lỗi tự động chọn sẵn ô kho mặc định. | Cập nhật SQL buffer 15 ngày (DATEADD) và bỏ auto-select trên UnitPickerPage. | Bình / Nhi | `RESOLVED` |
 | `ISS-49` | PaymentController và các trang thanh toán thiếu Auth Guard. | Thêm @PreAuthorize("isAuthenticated()") và Auth Guard redirect login. | Bình | `RESOLVED` |
 | `ISS-50` | Staff nộp biên bản nghiệm thu không xóa task; Customer hiển thị chờ nghiệm thu; Manager không hiện nút duyệt quyết toán. | Bổ sung cờ `isInspected` & `inspectionDone`, xóa task sau khi nộp và mở nút Duyệt quyết toán cho FM. | Bình | `RESOLVED` |
+| `ISS-51` | Nhân viên check-in sai kích thước ô kho, trả kho thiếu tự nhận việc, đổi cơ sở tự do (Lỗi 29-32). | Khóa cơ sở theo ca, tính chuẩn kích thước S/M/L, thêm nút tự nhận việc và thẻ sự cố SUP. | Bình | `RESOLVED` |
+| `ISS-52` | Báo cáo rủi ro nợ quá hạn chia sai giai đoạn D+11..D+30 và quá 30 ngày (sai BR-OVD-01..03). | Tái cấu trúc 4 bucket: Ân hạn (D+1..3), Phạt (D+4..6), Khóa PIN (D+7..10), Thanh lý (D+10+). | Bình | `RESOLVED` |
+| `ISS-53` | Phân công nhân sự cơ sở lỗi API DTO mismatch và thiếu validation (Lỗi 27). | Tạo API POST /staff-assignments, validate bắt buộc chọn nhân viên, bảo toàn thẻ việc. | Bình | `RESOLVED` |
+| `ISS-54` | Radio "Khẩn cấp 2h" tự nhảy về bình thường và thiếu đồng hồ đếm ngược SLA (Lỗi 26). | Sửa dependency form, tạo component SlaCountdownBadge đếm ngược thời gian thực. | Bình | `RESOLVED` |
+| `ISS-55` | FM truy cập toàn bộ 9 cơ sở toàn quốc và thấy cơ sở rác sadas (Lỗi 25, SA-03). | Migration V28 dọn sadas, bổ sung GET /facilities/my-assigned-facilities, cô lập đa cơ sở. | Bình | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 
