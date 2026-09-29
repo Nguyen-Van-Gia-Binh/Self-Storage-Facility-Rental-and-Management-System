@@ -382,10 +382,10 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                 ) : penaltyFee === 0 ? (
                   <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full sm:w-auto">
                     <span
-                      className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-300 flex items-center gap-1"
+                      className="text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-300 flex items-center gap-1"
                       title="Đã tất toán toàn bộ nợ phạt quá hạn. Bạn có thể gia hạn hoặc báo trả kho."
                     >
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <Check className="w-3.5 h-3.5 text-amber-600" />
                       Đã tất toán nợ phạt
                     </span>
                     <Link
