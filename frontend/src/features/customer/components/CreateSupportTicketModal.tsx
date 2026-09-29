@@ -40,9 +40,8 @@ const CATEGORIES: {
   {
     key: 'LOCK_ACCESS',
     label: 'Khóa & Mã PIN',
-    desc: 'Kẹt khóa cơ, hỏng bàn phím, quên mã số mở cửa (SLA 2h)',
+    desc: 'Kẹt chốt cơ, hỏng bàn phím điện tử, cửa không nhận tín hiệu',
     icon: KeyRound,
-    urgentDefault: true,
   },
   {
     key: 'UNIT_DAMAGE',
@@ -91,19 +90,14 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
 
   const [selectedContractId, setSelectedContractId] = useState<string>(getInitialContractId);
   const [selectedCategory, setSelectedCategory] = useState<SupportCategory>('LOCK_ACCESS');
-  const [isUrgent, setIsUrgent] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [attachments, setAttachments] = useState<string[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // When changing category, auto toggle urgent if lock access
   const handleSelectCategory = (cat: SupportCategory) => {
     setSelectedCategory(cat);
-    if (cat === 'LOCK_ACCESS') {
-      setIsUrgent(true);
-    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -159,7 +153,7 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
         storageUnitId,
         title: title.trim() || undefined,
         category: selectedCategory,
-        isUrgent,
+        isUrgent: false,
         description: description.trim(),
         attachmentUrls: attachments,
       });
@@ -168,7 +162,6 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
       setDescription('');
       setTitle('');
       setAttachments([]);
-      setIsUrgent(false);
       onClose();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Có lỗi xảy ra khi gửi yêu cầu hỗ trợ.';
@@ -308,24 +301,28 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
             />
           </div>
 
-          {/* 5. Cờ khẩn cấp (SLA 2 giờ) */}
-          <div className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200">
-            <label className="flex items-start gap-2.5 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={isUrgent}
-                onChange={(e) => setIsUrgent(e.target.checked)}
-                className="mt-1 w-4 h-4 rounded text-brand-600 focus:ring-brand-500 border-slate-300"
-              />
+          {/* 5. Thông tin xử lý */}
+          {selectedCategory === 'LOCK_ACCESS' && (
+            <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200 flex items-start gap-3">
+              <Info className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
               <div>
-                <span className="text-xs font-bold text-amber-900 block">
-                  Sự cố khẩn cấp (Cam kết SLA xử lý tại chỗ trong vòng 2 giờ)
+                <span className="text-xs font-bold text-blue-900 block">
+                  Smart PIN Hint
                 </span>
-                <span className="text-[11px] text-amber-800/80 leading-relaxed block mt-0.5">
-                  Áp dụng cho các tình huống kẹt khóa, mất quyền truy cập, khẩn cấp lấy tài sản hoặc rò rỉ điện nước nguy hiểm.
+                <span className="text-[11px] text-blue-800/80 leading-relaxed block mt-0.5">
+                  Kiểm tra lại mã PIN của bạn trong phần "Kho của tôi" hoặc yêu cầu cấp lại mã mới nếu quên.
                 </span>
               </div>
-            </label>
+            </div>
+          )}
+
+          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+            <span className="text-xs font-bold text-slate-800 block mb-1">
+              Thời gian tiếp nhận & xử lý
+            </span>
+            <span className="text-[11px] text-slate-600 leading-relaxed block">
+              Quản lý cơ sở (FM) sẽ tiếp nhận và đánh giá mức độ khẩn cấp của sự cố để điều phối nhân viên kỹ thuật có mặt hỗ trợ trong thời gian sớm nhất.
+            </span>
           </div>
 
           {/* 6. Đính kèm ảnh */}

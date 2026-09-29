@@ -105,7 +105,7 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
     - Backend & Docs: Khớp chuẩn xác với `docs/BUSINESS-RULES.md` (`BR-RET-07` / `BR-RET-05` / `BR-CAN-06`).
   * **Kết quả kiểm thử:** Đã bổ sung bộ test `DepositSlaAudit.test.tsx` đảm bảo 100% không còn xuất hiện mốc 24-48 giờ trên các giao diện hoàn cọc.
 
-#### 5. Cơ chế phân loại SLA xử lý sự cố chưa thực tế (Khách hàng tự tích khẩn cấp 2h cho mọi loại sự cố)
+#### 5. [ĐÃ XONG] Cơ chế phân loại SLA xử lý sự cố chưa thực tế (Khách hàng tự tích khẩn cấp 2h cho mọi loại sự cố)
 - **Hình ảnh minh chứng:**  
   ![SLA xử lý sự cố](./images/notion-audit/image-05.png)
 - **Ghi chú gốc từ Lead Dev:**  
@@ -121,6 +121,7 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
   * **Hướng xử lý & File liên quan:**  
     - Frontend: `SupportTicketModal.tsx`, `MyRentalsPage.tsx` (thêm luồng Self-service Reset PIN, bỏ checkbox tự gán 2h).  
     - Backend: `SupportTicketService.java`, `AccessCodeService.java` (tách riêng API reset PIN tự động và API quản lý Ticket của FM/Staff).
+  * **Trạng thái:** `[ĐÃ XONG]` - Đã loại bỏ checkbox tự tick SLA 2h, thay thế bằng Smart PIN Hint banner và Notice thông báo thời gian xử lý. Đã cập nhật payload `CreateSupportTicketModal.tsx`.
 
 #### 6. Luồng thanh toán trên Màn hình Thanh toán Gia hạn Hợp đồng (VietQR): Thiếu Sandbox giả lập, sai thời hạn giữ chỗ (15 phút vs 48 giờ) và thiếu cơ chế lưu vết đơn chờ thanh toán
 - **Hình ảnh minh chứng:**  

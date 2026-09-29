@@ -1,0 +1,57 @@
+[
+  {
+    "id": "phase-01-ticket-sla-and-pin-hint",
+    "title": "Chuẩn hóa Form Báo sự cố & Loại bỏ Checkbox SLA 2 giờ",
+    "status": "not_started",
+    "evidence": "",
+    "user_visible_behavior": "Form gửi hỗ trợ không còn checkbox cam kết 2h; có banner hướng dẫn xem/đổi mã PIN trực tiếp trên thẻ ô kho khi chọn mục Khóa & Mã PIN.",
+    "verification_command": "npm test TicketSlaAudit",
+    "notes": "Covers Notion Audit Issue 5",
+    "priority": "P1",
+    "blocked_by": []
+  },
+  {
+    "id": "phase-02-backend-pending-renewal-tracking",
+    "title": "Backend Lưu vết Đơn Chờ Thanh toán Gia hạn 48h & Tối ưu Checkout",
+    "status": "not_started",
+    "evidence": "",
+    "user_visible_behavior": "API trả về thông tin đơn gia hạn chờ thanh toán (orderCode, số tiền, hạn 48h) và tự động chuyển FAILED khi quá 48h.",
+    "verification_command": "mvn test -Dtest=CustomerRentalServiceTest,PaymentServiceTest",
+    "notes": "Covers Notion Audit Issue 6 (Backend)",
+    "priority": "P1",
+    "blocked_by": []
+  },
+  {
+    "id": "phase-03-frontend-rented-unit-pending-badge",
+    "title": "Frontend Lưu vết Đơn Chờ Thanh toán trên Thẻ Ô Kho",
+    "status": "not_started",
+    "evidence": "",
+    "user_visible_behavior": "Thẻ ô kho hiển thị badge Đang chờ thanh toán gia hạn và nút chuyển thành Tiếp tục thanh toán dẫn đến Bước 3.",
+    "verification_command": "npm test RenewalPendingTracking",
+    "notes": "Covers Notion Audit Issue 6 (Frontend Card)",
+    "priority": "P1",
+    "blocked_by": []
+  },
+  {
+    "id": "phase-04-frontend-renewal-sandbox-and-cancel",
+    "title": "Frontend Nâng cấp Bước 3 Thanh toán Gia hạn (Sandbox Bar, Countdown 48h, Nút Hủy)",
+    "status": "not_started",
+    "evidence": "",
+    "user_visible_behavior": "Bước 3 thanh toán có Sandbox Dev Bar giả lập, đếm lùi 48h BR-REN-10, và nút Hủy lệnh thanh toán giải phóng ô kho.",
+    "verification_command": "npm test",
+    "notes": "Covers Notion Audit Issue 6 (Frontend Step 3 & BR-REN-10)",
+    "priority": "P1",
+    "blocked_by": []
+  },
+  {
+    "id": "phase-05-e2e-regression-and-docs",
+    "title": "Kiểm thử Hồi quy Toàn diện & Đồng bộ Dashboard",
+    "status": "not_started",
+    "evidence": "",
+    "user_visible_behavior": "Toàn bộ hệ thống Backend và Frontend xanh 100%, DASHBOARD.md cập nhật tiến độ.",
+    "verification_command": "mvn clean test ; npm run build",
+    "notes": "Full system verification",
+    "priority": "P1",
+    "blocked_by": []
+  }
+]
