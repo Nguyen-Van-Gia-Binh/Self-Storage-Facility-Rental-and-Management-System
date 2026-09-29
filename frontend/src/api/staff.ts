@@ -53,9 +53,31 @@ export async function getStaffDailyTasks(
   );
   const data = res.data;
   const rawList = data?.supportTasks || data?.openSupportRequests || [];
+  const rawCheckIns = data?.checkInTasks || data?.pendingCheckIns || [];
+  const rawReturns = data?.returnTasks || data?.pendingReturns || [];
+
   return {
     ...data,
-    openSupportRequests: rawList.map(mapRawSupportTask)
+    pendingCheckIns: rawCheckIns.map((ci: any) => ({
+      ...ci,
+      reservationId: ci.reservationId ?? ci.contractId ?? Math.floor(Math.random() * 100000),
+      contractCode: ci.contractCode,
+      unitCode: ci.storageUnitCode || ci.unitCode || '---',
+      appointmentTime: ci.appointmentTime || (ci.scheduledDate ? `Ngày ${ci.scheduledDate}` : 'Trong ngày'),
+      status: (ci.completed || ci.status === 'COMPLETED' || ci.status === 'ACTIVE') ? 'COMPLETED' : (ci.status || 'PENDING'),
+      completed: Boolean(ci.completed || ci.status === 'COMPLETED' || ci.status === 'ACTIVE'),
+    })),
+    pendingReturns: rawReturns.map((rt: any) => ({
+      ...rt,
+      contractId: rt.contractId,
+      contractCode: rt.contractCode,
+      unitCode: rt.storageUnitCode || rt.unitCode || '---',
+      appointmentTime: rt.appointmentTime || (rt.scheduledDate ? `Ngày ${rt.scheduledDate}` : 'Trong ngày'),
+      depositAmount: rt.depositAmount ?? 0,
+      status: (rt.completed || rt.status === 'COMPLETED' || rt.status === 'INSPECTED' || rt.status === 'RETURNED') ? 'COMPLETED' : (rt.status || 'PENDING_INSPECTION'),
+      completed: Boolean(rt.completed || rt.status === 'COMPLETED' || rt.status === 'INSPECTED' || rt.status === 'RETURNED'),
+    })),
+    openSupportRequests: rawList.map(mapRawSupportTask),
   };
 }
 
