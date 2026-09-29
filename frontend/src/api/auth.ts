@@ -37,124 +37,32 @@ export interface RegisterPayload {
 }
 
 /**
- * Đăng nhập người dùng: Ưu tiên gọi trực tiếp Backend Spring Boot (/api/v1/auth/login)
- * Nếu backend trả về lỗi xác thực (400, 401, 403) thì hiển thị đúng thông báo từ backend.
- * Nếu không kết nối được backend (offline) thì fallback sang chế độ demo.
+ * Đăng nhập người dùng qua Backend Spring Boot (/api/v1/auth/login).
+ * Lỗi xác thực hoặc mất kết nối đều được ném ra, không tạo phiên giả.
  */
 export async function loginUser(payload: LoginPayload): Promise<AuthData> {
-  try {
-    const res = await apiClient<ApiResponse<AuthData> | AuthData>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
+  const res = await apiClient<ApiResponse<AuthData> | AuthData>('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 
-    const authData = ('data' in res && res.data) ? res.data : (res as AuthData);
-    saveSession(authData);
-    return authData;
-  } catch (err: unknown) {
-    const error = err as { status?: number; message?: string };
-
-    // Nếu là lỗi từ Backend (400, 401, 403, 404, 409), ném lỗi để UI hiển thị thông báo thật từ server
-    if (error && error.status && [400, 401, 403, 404, 409].includes(error.status)) {
-      throw error;
-    }
-
-    console.warn('Backend chưa sẵn sàng hoặc lỗi mạng, tự động kích hoạt Mock Demo:', err);
-
-    // Fallback Mock nếu backend offline
-    const demoUserList = Object.values(DEMO_USERS);
-    const found = demoUserList.find(
-      (u) =>
-        u.email.toLowerCase() === payload.email.toLowerCase() ||
-        u.username.toLowerCase() === payload.email.toLowerCase()
-    );
-    if (found) {
-      const authData: AuthData = {
-        accessToken: `mock-jwt-token-${found.id}-${Date.now()}`,
-        refreshToken: `mock-refresh-token-${found.id}`,
-        tokenType: 'Bearer',
-        expiresIn: 900000,
-        user: {
-          id: Number(found.id),
-          email: found.email,
-          fullName: found.fullName,
-          phone: '',
-          role: normalizeRole(found.role) as UserRoleType,
-          facilityIds: found.facilityId ? [found.facilityId] : [],
-        },
-      };
-      saveSession(authData);
-      return authData;
-    }
-
-    const fallbackRole: UserRoleType = payload.email.includes('admin')
-      ? 'SYSTEM_ADMINISTRATOR'
-      : payload.email.includes('staff')
-      ? 'FACILITY_STAFF'
-      : payload.email.includes('manager') || payload.email.includes('fm')
-      ? 'FACILITY_MANAGER'
-      : payload.email.includes('bom')
-      ? 'BUSINESS_OPERATIONS_MANAGER'
-      : 'STORAGE_CUSTOMER';
-
-    const fallbackAuth: AuthData = {
-      accessToken: `mock-jwt-token-custom-${Date.now()}`,
-      tokenType: 'Bearer',
-      expiresIn: 900000,
-      user: {
-        id: 999,
-        email: payload.email,
-        fullName: payload.email.split('@')[0],
-        phone: '0909999999',
-        role: fallbackRole,
-        facilityIds: [1],
-      },
-    };
-    saveSession(fallbackAuth);
-    return fallbackAuth;
-  }
+  const authData = ('data' in res && res.data) ? res.data : (res as AuthData);
+  saveSession(authData);
+  return authData;
 }
 
 /**
  * Đăng ký tài khoản khách hàng mới: Kết nối /api/v1/auth/register (T2.12)
  */
 export async function registerUser(payload: RegisterPayload): Promise<AuthData> {
-  try {
-    const res = await apiClient<ApiResponse<AuthData> | AuthData>('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
+  const res = await apiClient<ApiResponse<AuthData> | AuthData>('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 
-    const authData = ('data' in res && res.data) ? res.data : (res as AuthData);
-    saveSession(authData);
-    return authData;
-  } catch (err: unknown) {
-    const error = err as { status?: number; message?: string };
-
-    if (error && error.status && [400, 401, 403, 404, 409].includes(error.status)) {
-      throw error;
-    }
-
-    console.warn('Backend chưa sẵn sàng hoặc lỗi mạng, tự động mô phỏng đăng ký:', err);
-
-    // Mô phỏng tạo tài khoản khách hàng mới khi backend offline
-    const newCustomerAuth: AuthData = {
-      accessToken: `mock-jwt-token-new-${Date.now()}`,
-      refreshToken: `mock-refresh-token-${Date.now()}`,
-      tokenType: 'Bearer',
-      expiresIn: 900000,
-      user: {
-        id: Date.now(),
-        email: payload.email,
-        fullName: payload.fullName,
-        phone: payload.phone || '',
-        role: 'STORAGE_CUSTOMER',
-        facilityIds: [],
-      },
-    };
-    saveSession(newCustomerAuth);
-    return newCustomerAuth;
-  }
+  const authData = ('data' in res && res.data) ? res.data : (res as AuthData);
+  saveSession(authData);
+  return authData;
 }
 
 /**
@@ -186,14 +94,7 @@ export async function forgotPassword(email: string): Promise<{ message: string }
       : 'Mã xác thực OTP đã được gửi đến email của bạn';
     return { message: msg };
   } catch (err: unknown) {
-    const error = err as { status?: number; message?: string };
-    if (error && error.status && [400, 401, 403, 404, 409].includes(error.status)) {
-      throw error;
-    }
-    // Fallback nếu backend offline
-    return {
-      message: `Hệ thống đã gửi mã OTP xác thực tới email ${email} (hiệu lực 60s).`,
-    };
+    throw err;
   }
 }
 
@@ -212,15 +113,7 @@ export async function verifyOtp(payload: { email: string; otp: string }): Promis
       : 'Mã xác thực OTP hợp lệ';
     return { message: msg };
   } catch (err: unknown) {
-    const error = err as { status?: number; message?: string };
-    if (error && error.status && [400, 401, 403, 404, 409].includes(error.status)) {
-      throw error;
-    }
-    // Fallback nếu backend offline
-    if (payload.otp.length === 6) {
-      return { message: 'Mã xác thực OTP hợp lệ (Demo Mode)' };
-    }
-    throw new Error('Mã xác thực OTP không hợp lệ hoặc đã hết hạn.', { cause: err });
+    throw err;
   }
 }
 
@@ -312,9 +205,7 @@ export async function loginAsDemoRole(role: UserRole | string): Promise<UserSess
     tokenStorage.setUser(session);
     return session;
   } catch (err) {
-    console.warn(`Đăng nhập demo backend (${demoUser.email}) không thành công, duy trì phiên demo:`, err);
-    tokenStorage.setDemoRole(normalized);
-    return demoUser;
+    throw err;
   }
 }
 

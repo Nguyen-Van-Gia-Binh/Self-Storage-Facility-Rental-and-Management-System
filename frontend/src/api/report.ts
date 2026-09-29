@@ -10,7 +10,7 @@ import type {
 import mockData from '../mock/mock-system-reports.json';
 import { generateCsvFromData } from '../utils/format';
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false';
+const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 
 /**
  * Lấy báo cáo doanh thu toàn hệ thống — BM-04, US-BM-04.1
@@ -42,23 +42,18 @@ export async function getSystemRevenueReport(params: ReportFilterParams): Promis
     return raw;
   }
 
-  try {
-    const query = new URLSearchParams();
-    if (params.from) query.append('from', params.from);
-    if (params.to) query.append('to', params.to);
-    if (params.facilityId) query.append('facilityId', String(params.facilityId));
+  const query = new URLSearchParams();
+  if (params.from) query.append('from', params.from);
+  if (params.to) query.append('to', params.to);
+  if (params.facilityId) query.append('facilityId', String(params.facilityId));
 
-    const res = await apiClient<ApiResponse<SystemRevenueReport> | SystemRevenueReport>(
-      `/reports/system/revenue?${query.toString()}`
-    );
-    if ('success' in res && res.data) {
-      return res.data;
-    }
-    return res as SystemRevenueReport;
-  } catch (error) {
-    console.warn('Lỗi gọi API /reports/system/revenue, fallback sang mock data:', error);
-    return JSON.parse(JSON.stringify(mockData.revenue));
+  const res = await apiClient<ApiResponse<SystemRevenueReport> | SystemRevenueReport>(
+    `/reports/system/revenue?${query.toString()}`
+  );
+  if ('success' in res && res.data) {
+    return res.data;
   }
+  return res as SystemRevenueReport;
 }
 
 /**
@@ -84,22 +79,17 @@ export async function getSystemOccupancyReport(
     return raw;
   }
 
-  try {
-    const query = new URLSearchParams();
-    if (month) query.append('month', month);
-    if (facilityId) query.append('facilityId', String(facilityId));
+  const query = new URLSearchParams();
+  if (month) query.append('month', month);
+  if (facilityId) query.append('facilityId', String(facilityId));
 
-    const res = await apiClient<ApiResponse<SystemOccupancyReport> | SystemOccupancyReport>(
-      `/reports/system/occupancy?${query.toString()}`
-    );
-    if ('success' in res && res.data) {
-      return res.data;
-    }
-    return res as SystemOccupancyReport;
-  } catch (error) {
-    console.warn('Lỗi gọi API /reports/system/occupancy, fallback sang mock data:', error);
-    return JSON.parse(JSON.stringify(mockData.occupancy));
+  const res = await apiClient<ApiResponse<SystemOccupancyReport> | SystemOccupancyReport>(
+    `/reports/system/occupancy?${query.toString()}`
+  );
+  if ('success' in res && res.data) {
+    return res.data;
   }
+  return res as SystemOccupancyReport;
 }
 
 /**
@@ -117,21 +107,16 @@ export async function getSystemOverdueReport(facilityId?: number): Promise<Overd
     return raw;
   }
 
-  try {
-    const query = new URLSearchParams();
-    if (facilityId) query.append('facilityId', String(facilityId));
+  const query = new URLSearchParams();
+  if (facilityId) query.append('facilityId', String(facilityId));
 
-    const res = await apiClient<ApiResponse<OverdueReportResponse> | OverdueReportResponse>(
-      `/reports/system/overdue?${query.toString()}`
-    );
-    if ('success' in res && res.data) {
-      return res.data;
-    }
-    return res as OverdueReportResponse;
-  } catch (error) {
-    console.warn('Lỗi gọi API /reports/system/overdue, fallback sang mock data:', error);
-    return JSON.parse(JSON.stringify(mockData.overdue));
+  const res = await apiClient<ApiResponse<OverdueReportResponse> | OverdueReportResponse>(
+    `/reports/system/overdue?${query.toString()}`
+  );
+  if ('success' in res && res.data) {
+    return res.data;
   }
+  return res as OverdueReportResponse;
 }
 
 /**
@@ -184,28 +169,21 @@ export async function exportSystemReport(params: ReportExportParams): Promise<Bl
     return generateCsvFromData(headers, rows);
   }
 
-  try {
-    const query = new URLSearchParams({
-      type: params.type,
-      from: params.from,
-      to: params.to,
-      format: params.format,
-    });
-    if (params.facilityId) query.append('facilityId', String(params.facilityId));
+  const query = new URLSearchParams({
+    type: params.type,
+    from: params.from,
+    to: params.to,
+    format: params.format,
+  });
+  if (params.facilityId) query.append('facilityId', String(params.facilityId));
 
-    const response = await fetch(`/api/v1/reports/system/export?${query.toString()}`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('access_token') || ''}`,
-      },
-    });
-    if (!response.ok) {
-      throw new Error(`Export API error: ${response.status}`);
-    }
-    return await response.blob();
-  } catch (error) {
-    console.warn('Lỗi gọi API export, fallback sang client generation:', error);
-    const headers = ['Loại Báo Cáo', 'Kỳ', 'Định Dạng'];
-    const rows = [[params.type, `${params.from} đến ${params.to}`, params.format]];
-    return generateCsvFromData(headers, rows);
+  const response = await fetch(`/api/v1/reports/system/export?${query.toString()}`, {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem('access_token') || ''}`,
+    },
+  });
+  if (!response.ok) {
+    throw new Error(`Export API error: ${response.status}`);
   }
+  return await response.blob();
 }
