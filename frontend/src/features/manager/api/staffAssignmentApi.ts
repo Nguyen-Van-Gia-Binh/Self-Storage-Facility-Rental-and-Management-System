@@ -222,7 +222,7 @@ export async function getDailyDispatchTasks(
         tasks.push({
           id: 100000 + contract.id,
           taskType: 'CHECK_IN',
-          title: `Tiếp đón bàn giao kho cho hợp đồng ${contract.code}`,
+          title: `Tiếp đón nhận kho cho hợp đồng ${contract.code}`,
           facilityId: contract.facilityId || facilityId,
           facilityName: contract.facilityName || 'Kho SmartStorage',
           unitCode: contract.storageUnitCode || `U-${contract.storageUnitId || contract.id}`,

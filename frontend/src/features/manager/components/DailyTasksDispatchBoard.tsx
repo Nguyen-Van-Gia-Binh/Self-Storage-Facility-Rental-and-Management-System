@@ -86,7 +86,7 @@ export const DailyTasksDispatchBoard: React.FC<DailyTasksDispatchBoardProps> = (
       case 'CHECK_IN':
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-            <FileCheck className="w-3 h-3 text-blue-600" /> Bàn giao Check-in
+            <FileCheck className="w-3 h-3 text-blue-600" /> Tiếp đón Check-in
           </span>
         );
       case 'RETURN':
