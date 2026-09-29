@@ -41,6 +41,7 @@ class StorageUnitControllerTest {
                 .id(42L)
                 .code("S-101")
                 .status(StorageUnitStatus.AVAILABLE)
+                .isActive(true)
                 .build();
 
         when(storageUnitService.getStorageUnitsByFacility(eq(1L), any(), any(), any(), any(), any(), any(), any()))
@@ -48,7 +49,8 @@ class StorageUnitControllerTest {
 
         mockMvc.perform(get("/facilities/1/storage-units"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].code").value("S-101"));
+                .andExpect(jsonPath("$.content[0].code").value("S-101"))
+                .andExpect(jsonPath("$.content[0].isActive").value(true));
     }
 
     @Test

@@ -15,7 +15,8 @@ export interface UnitTypeResponse {
   volumeM3?: number;
   monthlyPrice: number;
   totalUnits: number;
-  isActive: boolean;
+  isActive?: boolean;
+  active?: boolean;
 }
 
 export interface StorageUnitResponse {
@@ -30,7 +31,8 @@ export interface StorageUnitResponse {
   position: string;
   locationNote?: string;
   status: UnitStatus;
-  isActive: boolean;
+  isActive?: boolean;
+  active?: boolean;
 }
 
 export interface UnitTypeFormData {

@@ -1,5 +1,6 @@
 package com.swp391.selfstorage.unit.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 import java.math.BigDecimal;
 
@@ -21,5 +22,12 @@ public class UnitTypeResponse {
     private BigDecimal volumeM3;
     private Long monthlyPrice;
     private Long totalUnits;
+
+    @JsonProperty("isActive")
     private boolean isActive;
+
+    @JsonProperty("isActive")
+    public boolean isActive() {
+        return isActive;
+    }
 }

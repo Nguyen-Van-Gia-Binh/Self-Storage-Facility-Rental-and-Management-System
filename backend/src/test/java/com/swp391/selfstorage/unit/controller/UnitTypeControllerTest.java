@@ -41,6 +41,7 @@ class UnitTypeControllerTest {
                 .code("UT-S")
                 .name("Loại S — 3m²")
                 .monthlyPrice(800000L)
+                .isActive(true)
                 .build();
 
         when(unitTypeService.getUnitTypesByFacility(eq(1L), any(), any()))
@@ -49,6 +50,7 @@ class UnitTypeControllerTest {
         mockMvc.perform(get("/facilities/1/unit-types"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].name").value("Loại S — 3m²"))
+                .andExpect(jsonPath("$.content[0].isActive").value(true))
                 .andExpect(jsonPath("$.totalElements").value(1));
     }
 
