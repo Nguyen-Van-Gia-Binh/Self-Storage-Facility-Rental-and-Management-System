@@ -7,14 +7,22 @@ import {
   ChevronDown, 
   LogIn, 
   UserPlus, 
-  LogOut 
+  LogOut,
+  LayoutDashboard
 } from 'lucide-react';
-import { tokenStorage, type UserSession } from '@/utils/tokenStorage';
+import { tokenStorage, normalizeRole, type UserSession } from '@/utils/tokenStorage';
 
 
 export interface CustomerLayoutProps {
   children: React.ReactNode;
 }
+
+const ROLE_PORTAL_MAP: Record<string, string> = {
+  ADMIN: '/admin/users',
+  BOM: '/bom/facilities',
+  MANAGER: '/manager',
+  STAFF: '/staff',
+};
 
 export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
   const location = useLocation();
@@ -23,6 +31,10 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
   const [user, setUser] = useState<UserSession | null>(() => tokenStorage.getUser());
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const normalizedRole = user?.role ? normalizeRole(user.role) : null;
+  const isInternalUser = normalizedRole && normalizedRole !== 'CUSTOMER';
+  const rolePortalUrl = normalizedRole ? ROLE_PORTAL_MAP[normalizedRole] : null;
 
   // Đồng bộ phiên đăng nhập khi có thay đổi trong localStorage
   useEffect(() => {
@@ -153,6 +165,19 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
                         {user.email || 'Khách hàng SmartStorage'}
                       </p>
                     </div>
+
+                    {isInternalUser && rolePortalUrl && (
+                      <div className="p-1 border-b border-slate-100">
+                        <Link
+                          to={rolePortalUrl}
+                          onClick={() => setIsDropdownOpen(false)}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100/80 rounded-xl transition-colors text-left"
+                        >
+                          <LayoutDashboard className="w-4 h-4 text-brand-600 shrink-0" />
+                          <span>Vào trang Quản lý ({normalizedRole})</span>
+                        </Link>
+                      </div>
+                    )}
 
                     <div className="pt-1">
                       <button

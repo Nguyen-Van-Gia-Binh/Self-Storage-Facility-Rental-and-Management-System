@@ -8,10 +8,32 @@ import type {
   SupportStatus,
   SupportCategory,
   ResolveSupportRequestDto,
+  DispatchTaskPriority,
 } from '../types/staffAssignment';
 import type { StaffDailyTaskReport } from '@/types';
 import { getStaffDailyTasks } from '@/api/staff';
 import { getPendingContracts, getManagerContracts, assignReturnStaff, assignCheckInStaff } from '@/api/contract';
+
+const TASK_OVERRIDES_KEY = 'smartstorage_dispatch_task_overrides';
+
+function getTaskOverrides(): Record<string, { priority?: DispatchTaskPriority; isUrgent?: boolean; notes?: string; staffId?: number; staffName?: string }> {
+  try {
+    const raw = localStorage.getItem(TASK_OVERRIDES_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveTaskOverride(taskId: number, data: { priority?: DispatchTaskPriority; isUrgent?: boolean; notes?: string; staffId?: number; staffName?: string }) {
+  try {
+    const current = getTaskOverrides();
+    current[String(taskId)] = { ...current[String(taskId)], ...data };
+    localStorage.setItem(TASK_OVERRIDES_KEY, JSON.stringify(current));
+  } catch {
+    // ignore
+  }
+}
 
 /**
  * 1. Lấy danh sách tải công việc của nhân viên cơ sở (FM-05, US-FM-05.1 AC-3)
@@ -263,7 +285,7 @@ export async function getDailyDispatchTasks(
           customerPhone: contract.customerPhone || 'Chưa cập nhật',
           scheduledDate: contract.endDateExclusive || new Date().toISOString().split('T')[0],
           scheduledTime: '14:00 - 16:30',
-          priority: 'HIGH',
+          priority: 'NORMAL',
           isUrgent: false,
           status: dispatchStatus,
           assignedStaffId: contract.assignedStaffId,
@@ -274,6 +296,30 @@ export async function getDailyDispatchTasks(
         });
       });
     }
+
+    // Áp dụng các cấu hình priority và ghi chú do Quản lý cơ sở phân công
+    const overrides = getTaskOverrides();
+    tasks.forEach((t) => {
+      const ov = overrides[String(t.id)];
+      if (ov) {
+        if (ov.priority) {
+          t.priority = ov.priority;
+          t.isUrgent = ov.priority === 'URGENT';
+        }
+        if (ov.notes !== undefined && ov.notes !== '') {
+          t.notes = ov.notes;
+        }
+        if (ov.staffId !== undefined) {
+          t.assignedStaffId = ov.staffId;
+        }
+        if (ov.staffName !== undefined && ov.staffName !== '') {
+          t.assignedStaffName = ov.staffName;
+        }
+        if (t.assignedStaffId) {
+          t.status = 'ASSIGNED';
+        }
+      }
+    });
   } catch (err) {
     console.warn('Lỗi tổng hợp bảng điều phối nhiệm vụ thực địa:', err);
   }
@@ -365,6 +411,15 @@ export async function assignStaffToTask(
       }
     }
   }
+
+  // Lưu vết override để đảm bảo UI duy trì chính xác priority và notes sau khi refetch
+  saveTaskOverride(payload.taskId, {
+    priority: payload.priority,
+    isUrgent: payload.priority === 'URGENT',
+    notes: payload.notes,
+    staffId: payload.staffId,
+    staffName: assignedStaffName,
+  });
 
   return {
     success: true,
