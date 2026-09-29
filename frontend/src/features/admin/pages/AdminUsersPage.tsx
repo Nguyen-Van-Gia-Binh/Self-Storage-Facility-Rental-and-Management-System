@@ -15,7 +15,6 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
-  Loader2,
 } from 'lucide-react';
 import type { AppUser, UserRoleType, UserStatusType } from '@/api/user';
 import { getUsers, updateUserStatus } from '@/api/user';
@@ -23,6 +22,7 @@ import { fetchFacilities } from '@/api/facility';
 import type { FacilityListItem } from '@/types';
 import { UserRoleModal } from '../components/UserRoleModal';
 import { CreateUserModal } from '../components/CreateUserModal';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 const ROLE_BADGES: Record<UserRoleType, { label: string; bg: string; text: string; border: string }> = {
   SYSTEM_ADMINISTRATOR: {
@@ -606,69 +606,19 @@ export const AdminUsersPage: React.FC<AdminUsersPageProps> = ({ defaultRoleFilte
       )}
 
 
-      {/* Confirmation Modal for Lock / Unlock */}
+      {/* Confirmation Dialog for Lock / Unlock */}
       {statusConfirmUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4 border border-slate-100">
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                  statusConfirmUser.status === 'ACTIVE'
-                    ? 'bg-rose-50 text-rose-600'
-                    : 'bg-emerald-50 text-emerald-600'
-                }`}
-              >
-                {statusConfirmUser.status === 'ACTIVE' ? (
-                  <Lock className="w-5 h-5" />
-                ) : (
-                  <Unlock className="w-5 h-5" />
-                )}
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-slate-900">
-                  {statusConfirmUser.status === 'ACTIVE' ? 'Khóa tài khoản?' : 'Kích hoạt tài khoản?'}
-                </h3>
-                <p className="text-xs text-slate-500 font-mono">{statusConfirmUser.email}</p>
-              </div>
-            </div>
-
-            <p className="text-sm text-slate-600">
-              {statusConfirmUser.status === 'ACTIVE'
-                ? `Bạn có chắc chắn muốn vô hiệu hóa tài khoản của "${statusConfirmUser.fullName}"? Người dùng này sẽ không thể đăng nhập vào hệ thống.`
-                : `Bạn có chắc chắn muốn mở khóa tài khoản cho "${statusConfirmUser.fullName}"? Người dùng sẽ có thể đăng nhập bình thường.`}
-            </p>
-
-            <div className="flex items-center justify-end gap-2.5 pt-2">
-              <button
-                type="button"
-                onClick={() => setStatusConfirmUser(null)}
-                disabled={updatingStatus}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
-              >
-                Hủy bỏ
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmStatusToggle}
-                disabled={updatingStatus}
-                className={`px-4 py-2 text-xs font-semibold text-white rounded-xl shadow-md transition-all flex items-center gap-2 ${
-                  statusConfirmUser.status === 'ACTIVE'
-                    ? 'bg-rose-600 hover:bg-rose-700'
-                    : 'bg-emerald-600 hover:bg-emerald-700'
-                }`}
-              >
-                {updatingStatus ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Đang xử lý...</span>
-                  </>
-                ) : (
-                  <span>{statusConfirmUser.status === 'ACTIVE' ? 'Xác nhận Khóa' : 'Kích hoạt'}</span>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          isOpen={!!statusConfirmUser}
+          title={statusConfirmUser.status === 'ACTIVE' ? 'Khóa tài khoản?' : 'Kích hoạt tài khoản?'}
+          description={statusConfirmUser.email}
+          confirmLabel={statusConfirmUser.status === 'ACTIVE' ? 'Xác nhận Khóa' : 'Kích hoạt'}
+          variant={statusConfirmUser.status === 'ACTIVE' ? 'danger' : 'success'}
+          icon={statusConfirmUser.status === 'ACTIVE' ? 'lock' : 'unlock'}
+          isLoading={updatingStatus}
+          onConfirm={handleConfirmStatusToggle}
+          onCancel={() => setStatusConfirmUser(null)}
+        />
       )}
     </div>
   );
