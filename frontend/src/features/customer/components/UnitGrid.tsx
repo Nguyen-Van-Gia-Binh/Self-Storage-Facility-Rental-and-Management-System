@@ -90,16 +90,46 @@ export const UnitGrid: React.FC<UnitGridProps> = ({
 }) => {
   // 1. Tầng hiện tại (Floor Selector)
   const availableFloors = useMemo(() => {
-    const floors = Array.from(new Set(units.map((u) => u.floor))).sort((a, b) => a - b);
+    const floors = Array.from(new Set(units.map((u) => u.floor)))
+      .filter((f): f is number => typeof f === 'number' && !isNaN(f))
+      .sort((a, b) => a - b);
     return floors.length > 0 ? floors : [1];
   }, [units]);
 
-  const [currentFloor, setCurrentFloor] = useState<number>(availableFloors[0] || 1);
+  const isSingleFloor = availableFloors.length <= 1;
+
+  const [currentFloor, setCurrentFloor] = useState<number | 'ALL'>(() => {
+    return availableFloors.length >= 2 ? 'ALL' : (availableFloors[0] || 1);
+  });
   const [selectedZone, setSelectedZone] = useState<string>('ALL');
   const [onlyAvailable, setOnlyAvailable] = useState<boolean>(false);
 
+  // Tự động đưa về 'ALL' khi người dùng chuyển phân loại kho hoặc kích cỡ
+  React.useEffect(() => {
+    if (!isSingleFloor) {
+      setCurrentFloor('ALL');
+    }
+    setSelectedZone('ALL');
+  }, [filterType, filterSize, isSingleFloor]);
+
+  // Đồng bộ lại currentFloor nếu danh sách tầng thay đổi
+  React.useEffect(() => {
+    if (isSingleFloor) {
+      if (currentFloor !== (availableFloors[0] || 1)) {
+        setCurrentFloor(availableFloors[0] || 1);
+      }
+    } else {
+      if (currentFloor !== 'ALL' && !availableFloors.includes(currentFloor)) {
+        setCurrentFloor('ALL');
+      }
+    }
+  }, [availableFloors, isSingleFloor, currentFloor]);
+
   // 2. Lọc danh sách ô kho theo Tầng, Khu vực, Chế độ và Kích cỡ
   const floorUnits = useMemo(() => {
+    if (currentFloor === 'ALL') {
+      return units;
+    }
     return units.filter((u) => u.floor === currentFloor);
   }, [units, currentFloor]);
 
@@ -116,88 +146,120 @@ export const UnitGrid: React.FC<UnitGridProps> = ({
     return Array.from(new Set(categoryUnits.map((u) => u.zone))).sort();
   }, [categoryUnits]);
 
+  const effectiveZone = availableZones.includes(selectedZone) ? selectedZone : 'ALL';
+
   const filteredUnits = useMemo(() => {
     return categoryUnits.filter((u) => {
-      if (selectedZone !== 'ALL' && u.zone !== selectedZone) return false;
+      if (effectiveZone !== 'ALL' && u.zone !== effectiveZone) return false;
       if (onlyAvailable && u.status !== 'AVAILABLE') return false;
       return true;
     });
-  }, [categoryUnits, selectedZone, onlyAvailable]);
+  }, [categoryUnits, effectiveZone, onlyAvailable]);
 
   // Thống kê nhanh theo kích cỡ đang chọn
   const totalCategoryCount = categoryUnits.length;
   const availableCategoryCount = categoryUnits.filter((u) => u.status === 'AVAILABLE').length;
 
-  // Ô kho đang được chọn
+  // Ô kho đang được chọn - phải khớp với filterType & filterSize và floor hiện tại nếu có
   const activeSelectedUnit = useMemo(() => {
-    return units.find((u) => u.id === selectedUnitId) || null;
-  }, [units, selectedUnitId]);
+    const found = units.find((u) => u.id === selectedUnitId);
+    if (!found) return null;
+    if (filterType !== 'ALL' && found.storageType && found.storageType !== filterType) return null;
+    if (filterSize !== 'ALL' && found.sizeCategory && found.sizeCategory !== filterSize) return null;
+    if (currentFloor !== 'ALL' && found.floor !== currentFloor) return null;
+    return found;
+  }, [units, selectedUnitId, filterType, filterSize, currentFloor]);
 
   return (
     <div className="space-y-4">
-      {/* 1. THANH ĐIỀU KHIỂN & BỘ LỌC MẶT BẰNG (Floor & Zone Controls) */}
-      <div className="bg-white p-3 sm:p-4 rounded-xl border border-slate-200/90 shadow-2xs space-y-3">
+      {/* 1. THANH ĐIỀU KHIỂN & BỘ LỌC MẶT BẰNG (Clean One-line Bar) */}
+      <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/90 shadow-2xs space-y-2.5">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          {/* Floor Tabs */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-              <Layers className="w-3.5 h-3.5 text-brand-600" /> Tầng:
-            </span>
-            <div className="inline-flex p-1 bg-slate-100 rounded-lg border border-slate-200/70">
-              {availableFloors.map((floor) => (
-                <button
-                  key={floor}
-                  type="button"
-                  onClick={() => setCurrentFloor(floor)}
-                  className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
-                    currentFloor === floor
-                      ? 'bg-white text-brand-700 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Tầng {floor} {floor === 1 ? '(Trệt)' : ''}
-                </button>
-              ))}
-            </div>
+          {/* Cụm Bên Trái: Tầng (nếu đa tầng) + Khu vực */}
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+            {!isSingleFloor && (
+              <>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1 shrink-0">
+                    <Layers className="w-3.5 h-3.5 text-brand-600" /> Tầng:
+                  </span>
+                  <div className="inline-flex p-0.5 sm:p-1 bg-slate-100 rounded-lg border border-slate-200/70">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentFloor('ALL')}
+                      className={`px-2 sm:px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                        currentFloor === 'ALL'
+                          ? 'bg-white text-brand-700 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Tất cả tầng
+                    </button>
+                    {availableFloors.map((floor) => (
+                      <button
+                        key={floor}
+                        type="button"
+                        onClick={() => setCurrentFloor(floor)}
+                        className={`px-2 sm:px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                          currentFloor === floor
+                            ? 'bg-white text-brand-700 shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        {floor === 1 ? 'Tầng 1 (Trệt)' : `Tầng ${floor}`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-            {/* Zone Filter */}
-            <div className="inline-flex p-1 bg-slate-100 rounded-lg border border-slate-200/70">
-              <button
-                type="button"
-                onClick={() => setSelectedZone('ALL')}
-                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-                  selectedZone === 'ALL'
-                    ? 'bg-white text-brand-700 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Tất cả khu
-              </button>
-              {availableZones.map((zone) => (
+                {/* Vạch phân cách nhẹ nhàng giữa Tầng và Khu vực */}
+                <div className="hidden sm:block h-4 sm:h-5 w-px bg-slate-200 shrink-0" />
+              </>
+            )}
+
+            {/* Cụm chọn Khu vực (đưa lên đầu khi cơ sở 1 tầng) */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1 shrink-0">
+                <Filter className="w-3.5 h-3.5 text-brand-600" /> Khu:
+              </span>
+              <div className="inline-flex p-0.5 sm:p-1 bg-slate-100 rounded-lg border border-slate-200/70">
                 <button
-                  key={zone}
                   type="button"
-                  onClick={() => setSelectedZone(zone)}
-                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-                    selectedZone === zone
+                  onClick={() => setSelectedZone('ALL')}
+                  className={`px-2 sm:px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                    effectiveZone === 'ALL'
                       ? 'bg-white text-brand-700 shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  {zone}
+                  Tất cả khu
                 </button>
-              ))}
+                {availableZones.map((zone) => (
+                  <button
+                    key={zone}
+                    type="button"
+                    onClick={() => setSelectedZone(zone)}
+                    className={`px-2 sm:px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                      effectiveZone === zone
+                        ? 'bg-white text-brand-700 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    {zone}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Quick Filters & Stats */}
-          <div className="flex items-center gap-3 justify-between sm:justify-end">
+          {/* Cụm Bên Phải: Checkbox Chỉ ô còn trống & Badge Còn trống: X/Y ô */}
+          <div className="flex items-center gap-3 justify-between sm:justify-end shrink-0 pt-1 md:pt-0 border-t md:border-t-0 border-slate-100">
             <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700 select-none">
               <input
                 type="checkbox"
                 checked={onlyAvailable}
                 onChange={(e) => setOnlyAvailable(e.target.checked)}
-                className="rounded border-slate-300 text-brand-600 focus:ring-brand-500 w-3.5 h-3.5"
+                className="rounded border-slate-300 text-brand-600 focus:ring-brand-500 w-3.5 h-3.5 cursor-pointer"
               />
               <Filter className="w-3 h-3 text-slate-400" />
               Chỉ ô còn trống
@@ -238,17 +300,61 @@ export const UnitGrid: React.FC<UnitGridProps> = ({
           <div className="flex items-center gap-2 text-slate-700">
             <span className="w-2 h-2 rounded-full bg-brand-500"></span>
             <span className="font-bold text-sm text-[#0a1614]">
-              Mặt bằng Tầng {currentFloor} — {facilityName || 'Kho Phú Mỹ Hưng'}
+              {isSingleFloor
+                ? `Sơ đồ mặt bằng — ${facilityName || 'Kho Phú Mỹ Hưng'}`
+                : currentFloor === 'ALL'
+                ? `Toàn mặt bằng — ${facilityName || 'Kho Phú Mỹ Hưng'}`
+                : `Mặt bằng Tầng ${currentFloor} — ${facilityName || 'Kho Phú Mỹ Hưng'}`}
             </span>
           </div>
         </div>
 
-
         {/* Lưới các ô kho theo mặt bằng */}
         {filteredUnits.length === 0 ? (
-          <div className="py-12 text-center text-slate-400 bg-white rounded-xl border border-dashed border-slate-200">
-            <p className="text-sm font-semibold">Không tìm thấy ô kho nào phù hợp với bộ lọc hiện tại.</p>
-            <p className="text-xs text-slate-400 mt-1">Vui lòng thử chuyển tầng hoặc chọn "Tất cả các khu".</p>
+          <div className="py-12 px-4 text-center text-slate-400 bg-white rounded-xl border border-dashed border-slate-200 space-y-3">
+            <p className="text-sm font-semibold text-slate-600">Không tìm thấy ô kho nào phù hợp với bộ lọc hiện tại.</p>
+            <p className="text-xs text-slate-400 max-w-md mx-auto">
+              {isSingleFloor
+                ? 'Vui lòng thử chọn "Tất cả khu" hoặc đổi sang kích cỡ/loại kho khác.'
+                : 'Vui lòng thử chuyển tầng, chọn "Tất cả tầng" hoặc chọn "Tất cả khu".'}
+            </p>
+            {((!isSingleFloor && currentFloor !== 'ALL') || effectiveZone !== 'ALL' || onlyAvailable) && (
+              <div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
+                {!isSingleFloor && currentFloor !== 'ALL' && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentFloor('ALL')}
+                    className="text-xs py-1"
+                  >
+                    Xem tất cả tầng
+                  </Button>
+                )}
+                {effectiveZone !== 'ALL' && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedZone('ALL')}
+                    className="text-xs py-1"
+                  >
+                    Xem tất cả khu
+                  </Button>
+                )}
+                {onlyAvailable && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setOnlyAvailable(false)}
+                    className="text-xs py-1"
+                  >
+                    Bỏ lọc "Chỉ ô còn trống"
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -280,9 +386,9 @@ export const UnitGrid: React.FC<UnitGridProps> = ({
                       </span>
                       <span 
                         className="text-[10px] text-slate-400 block font-medium truncate" 
-                        title={`${unit.zone}${unit.locationNote ? ` · ${unit.locationNote}` : ''}`}
+                        title={`${!isSingleFloor ? `Tầng ${unit.floor} · ` : ''}${unit.zone}${unit.locationNote ? ` · ${unit.locationNote}` : ''}`}
                       >
-                        {unit.zone}
+                        {!isSingleFloor ? `Tầng ${unit.floor} · ` : ''}{unit.zone}
                         {unit.locationNote && (
                           <span className="text-slate-500 font-normal"> · {unit.locationNote}</span>
                         )}
@@ -346,10 +452,10 @@ export const UnitGrid: React.FC<UnitGridProps> = ({
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-semibold text-slate-500">Đã chọn:</span>
                 <span className="text-base font-extrabold text-[#0a1614] font-mono">
-                  Ngăn kho {activeSelectedUnit.unitNumber}
+                  Ô kho {activeSelectedUnit.unitNumber}
                 </span>
                 <Badge variant="available" className="text-[10px]">
-                  Tầng {activeSelectedUnit.floor} · {activeSelectedUnit.zone}
+                  {!isSingleFloor ? `Tầng ${activeSelectedUnit.floor} · ` : ''}{activeSelectedUnit.zone}
                   {activeSelectedUnit.locationNote ? ` · 📍 ${activeSelectedUnit.locationNote}` : ''}
                 </Badge>
               </div>

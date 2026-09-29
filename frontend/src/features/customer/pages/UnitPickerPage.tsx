@@ -364,10 +364,34 @@ export const UnitPickerPage: React.FC = () => {
   // Ô kho đang được chọn — chỉ set khi khách chủ động nhấp, không auto-select
   const selectedUnit = useMemo(() => {
     if (selectedUnitId) {
-      return displayFacilityUnits.find((u) => u.id === selectedUnitId) || null;
+      const found = displayFacilityUnits.find((u) => u.id === selectedUnitId);
+      if (!found) return null;
+      if (selectedSize && found.sizeCategory !== selectedSize) return null;
+      if (storageType && found.storageType !== storageType) return null;
+      return found;
     }
     return null; // Không fallback về ô kho mặc định — tránh chọn trước khi khách click
-  }, [displayFacilityUnits, selectedUnitId]);
+  }, [displayFacilityUnits, selectedUnitId, selectedSize, storageType]);
+
+  const handleSelectSize = (sizeCat: UnitSizeCategory) => {
+    setSelectedSize(sizeCat);
+    if (selectedUnitId) {
+      const current = displayFacilityUnits.find((u) => u.id === selectedUnitId);
+      if (!current || current.sizeCategory !== sizeCat) {
+        setSelectedUnitId(null);
+      }
+    }
+  };
+
+  const handleSelectStorageType = (sType: StorageType) => {
+    setStorageType(sType);
+    if (selectedUnitId) {
+      const current = displayFacilityUnits.find((u) => u.id === selectedUnitId);
+      if (!current || current.storageType !== sType) {
+        setSelectedUnitId(null);
+      }
+    }
+  };
 
   const handleSelectUnitOnGrid = (unit: StorageUnit) => {
     setSelectedUnitId(unit.id);
@@ -381,7 +405,10 @@ export const UnitPickerPage: React.FC = () => {
 
   const handleProceedToBooking = (unitToBook?: StorageUnit) => {
     const targetUnit = unitToBook || selectedUnit;
-    const typeIdToPass = currentUnitType ? currentUnitType.id : (unitTypes[0]?.id || '1');
+    if (!targetUnit) {
+      return;
+    }
+    const typeIdToPass = targetUnit.unitTypeId || (currentUnitType ? currentUnitType.id : (unitTypes[0]?.id || '1'));
 
     const params = new URLSearchParams({
       facility: String(currentFacility.id),
@@ -466,7 +493,7 @@ export const UnitPickerPage: React.FC = () => {
         <div className="max-w-md mx-auto grid grid-cols-2 gap-2 p-1 bg-white rounded-xl border border-slate-200/90 shadow-2xs">
           <button
             type="button"
-            onClick={() => setStorageType('STANDARD')}
+            onClick={() => handleSelectStorageType('STANDARD')}
             className={`flex items-center gap-2.5 p-2.5 rounded-lg transition-all text-left cursor-pointer ${
               storageType === 'STANDARD'
                 ? 'bg-brand-50 border-2 border-brand-500 shadow-2xs text-brand-900'
@@ -484,7 +511,7 @@ export const UnitPickerPage: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => setStorageType('CLIMATE_CONTROLLED')}
+            onClick={() => handleSelectStorageType('CLIMATE_CONTROLLED')}
             className={`flex items-center gap-2.5 p-2.5 rounded-lg transition-all text-left cursor-pointer ${
               storageType === 'CLIMATE_CONTROLLED'
                 ? 'bg-sky-50 border-2 border-[#96b3cf] shadow-2xs text-sky-900'
@@ -510,7 +537,7 @@ export const UnitPickerPage: React.FC = () => {
             return (
               <div
                 key={type.id}
-                onClick={() => setSelectedSize(type.sizeCategory)}
+                onClick={() => handleSelectSize(type.sizeCategory)}
                 className={`w-full sm:w-[calc(50%-0.6rem)] md:w-[calc(33.333%-0.75rem)] max-w-[290px] rounded-xl p-3.5 border-2 transition-all flex flex-col justify-between cursor-pointer bg-white ${
                   isSelected
                     ? 'border-brand-500 ring-2 ring-brand-500/20 shadow-sm scale-[1.01]'
@@ -580,6 +607,10 @@ export const UnitPickerPage: React.FC = () => {
                     type="button"
                     variant={isSelected ? 'primary' : 'outline'}
                     size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSelectSize(type.sizeCategory);
+                    }}
                     className="w-full gap-1 text-xs py-1.5 font-semibold"
                   >
                     {isSelected ? (

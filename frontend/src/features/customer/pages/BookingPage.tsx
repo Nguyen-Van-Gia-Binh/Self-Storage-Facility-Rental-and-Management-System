@@ -175,7 +175,7 @@ export const BookingPage: React.FC = () => {
   const monthsParam = parseInt(searchParams.get('months') || '', 10);
   const startDateParam = searchParams.get('startDate');
 
-  const [durationMonths] = useState<number>(
+  const [durationMonths, setDurationMonths] = useState<number>(
     !isNaN(monthsParam) && monthsParam > 0 ? monthsParam : 3
   );
   const todayStr = useMemo(() => {
@@ -186,12 +186,26 @@ export const BookingPage: React.FC = () => {
     return `${year}-${month}-${day}`;
   }, []);
 
-  const [startDate] = useState<string>(() => {
+  const [startDate, setStartDate] = useState<string>(() => {
     if (startDateParam && startDateParam >= todayStr) {
       return startDateParam;
     }
     return todayStr;
   });
+
+  const [isEditingSchedule, setIsEditingSchedule] = useState<boolean>(false);
+
+  // Tự động đồng bộ với searchParams nếu URL thay đổi (hỗ trợ điều hướng và nút Thay đổi thời gian)
+  useEffect(() => {
+    const m = parseInt(searchParams.get('months') || '', 10);
+    if (!isNaN(m) && m > 0 && m !== durationMonths) {
+      setDurationMonths(m);
+    }
+    const s = searchParams.get('startDate');
+    if (s && s >= todayStr && s !== startDate) {
+      setStartDate(s);
+    }
+  }, [searchParams, todayStr, durationMonths, startDate]);
 
   // Auth Guard theo US-SC-02.1 AC-3: Nếu chưa đăng nhập, chuyển hướng sang login và giữ nguyên tham số booking
   useEffect(() => {
@@ -245,6 +259,7 @@ export const BookingPage: React.FC = () => {
 
   // Backend Availability & Real Pricing States (SC-01, SC-02)
   const [availability, setAvailability] = useState<AvailabilityResponse | null>(null);
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState<boolean>(false);
   const [backendPricing, setBackendPricing] = useState<CalculatePriceResponse | null>(null);
 
   // Tải sức chứa ô kho thực tế từ backend (SC-01)
@@ -253,6 +268,7 @@ export const BookingPage: React.FC = () => {
     async function loadAvailability() {
       const fId = parseInt(facilityId, 10) || 1;
       const uId = parseInt(typeId, 10) || 1;
+      setIsCheckingAvailability(true);
       try {
         const res = await checkUnitAvailability(fId, uId, startDate, durationMonths);
         if (isMounted) {
@@ -260,6 +276,10 @@ export const BookingPage: React.FC = () => {
         }
       } catch (err) {
         console.warn('Lỗi kiểm tra availability từ backend:', err);
+      } finally {
+        if (isMounted) {
+          setIsCheckingAvailability(false);
+        }
       }
     }
     loadAvailability();
@@ -489,6 +509,11 @@ export const BookingPage: React.FC = () => {
       return;
     }
 
+    if (availability && availability.availableSlots <= 0) {
+      alert('Loại ô kho này đã hết chỗ trong kỳ hạn đã chọn. Vui lòng thay đổi thời gian hoặc chọn ô kho khác.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       // 1. Chuyển đổi mã cơ sở và loại ô sang ID số nếu cần
@@ -654,7 +679,7 @@ export const BookingPage: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-brand-700 uppercase tracking-wider bg-brand-50 px-2 py-0.5 rounded-full border border-brand-200 font-mono">
-                      Ngăn kho {finalUnitNumber}
+                      Ô kho {finalUnitNumber}
                     </span>
                     <Badge variant="available" className="text-[10px] px-1.5 py-0.5">
                       Sẵn sàng nhận kho
@@ -677,7 +702,14 @@ export const BookingPage: React.FC = () => {
               </div>
 
               {/* Sức chứa ô kho trống từ Backend (SC-01) */}
-              {availability && (
+              {isCheckingAvailability ? (
+                <div className="p-3 rounded-xl flex items-center justify-between text-xs border bg-slate-50 border-slate-200 text-slate-600 animate-pulse">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-brand-600" />
+                    <span className="font-semibold">Đang kiểm tra tính khả dụng ô kho theo kỳ hạn...</span>
+                  </div>
+                </div>
+              ) : availability && (
                 <div className={`p-3 rounded-xl flex items-center justify-between text-xs border ${
                   availability.availableSlots > 0 
                     ? 'bg-emerald-50/70 border-emerald-200 text-emerald-800' 
@@ -691,28 +723,103 @@ export const BookingPage: React.FC = () => {
                         : 'Loại ô kho này đã hết chỗ trong kỳ hạn đã chọn. Vui lòng đổi ngày hoặc loại kho khác!'}
                     </span>
                   </div>
-                  {availability.availableSlots > 0 && (
+                  {availability.availableSlots > 0 ? (
                     <Badge variant="available" className="text-[10px]">
                       Trống {availability.availableSlots} ô
+                    </Badge>
+                  ) : (
+                    <Badge variant="overdue" className="text-[10px]">
+                      Hết chỗ
                     </Badge>
                   )}
                 </div>
               )}
 
-              {/* Tóm tắt thời hạn thuê đã chọn từ sơ đồ (Read-only) */}
-              <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs bg-slate-50/80 p-3 rounded-xl border border-slate-200/80">
-                <div className="flex items-center gap-2 text-slate-700">
-                  <Calendar className="w-4 h-4 text-brand-600 shrink-0" />
-                  <span>
-                    Thời hạn thuê đã chọn: <strong className="text-slate-900 font-extrabold">{durationMonths} tháng</strong> (từ <strong className="text-slate-900">{formatDateVN(startDate)}</strong> đến <strong className="text-slate-900">{formatDateVN(endDate)}</strong>)
-                  </span>
+              {/* Tóm tắt thời hạn thuê đã chọn từ sơ đồ kèm bộ chỉnh thời gian linh hoạt */}
+              <div className="pt-2 border-t border-slate-100 space-y-3 bg-slate-50/80 p-3 sm:p-4 rounded-xl border border-slate-200/80">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+                  <div className="flex items-center gap-2 text-slate-700">
+                    <Calendar className="w-4 h-4 text-brand-600 shrink-0" />
+                    <span>
+                      Thời hạn thuê đã chọn: <strong className="text-slate-900 font-extrabold">{durationMonths} tháng</strong> (từ <strong className="text-slate-900">{formatDateVN(startDate)}</strong> đến <strong className="text-slate-900">{formatDateVN(endDate)}</strong>)
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingSchedule((prev) => !prev)}
+                    className="text-brand-600 hover:text-brand-700 font-semibold underline text-xs shrink-0 self-start sm:self-auto cursor-pointer flex items-center gap-1"
+                  >
+                    {isEditingSchedule ? 'Đóng điều chỉnh' : 'Thay đổi thời gian'}
+                  </button>
                 </div>
-                <Link
-                  to={`/customer/units?facility=${facility.id}&type=${unitType.id}&startDate=${startDate}&months=${durationMonths}`}
-                  className="text-brand-600 hover:text-brand-700 font-semibold underline text-xs shrink-0 self-start sm:self-auto"
-                >
-                  Thay đổi thời gian
-                </Link>
+
+                {/* Inline Schedule Editor - Tức thì kích hoạt re-fetch availability và re-calculate price */}
+                {isEditingSchedule && (
+                  <div className="pt-3 border-t border-slate-200/70 space-y-3 animate-in fade-in duration-200">
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                      <div className="sm:col-span-7 space-y-1.5">
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                          Chọn số tháng thuê:
+                        </label>
+                        <div className="grid grid-cols-4 gap-1.5">
+                          {[1, 3, 6, 12].map((m) => (
+                            <button
+                              key={m}
+                              type="button"
+                              onClick={() => {
+                                setDurationMonths(m);
+                                const newParams = new URLSearchParams(searchParams);
+                                newParams.set('months', String(m));
+                                navigate({ search: newParams.toString() }, { replace: true });
+                              }}
+                              className={`py-1.5 px-2 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                                durationMonths === m
+                                  ? 'bg-brand-500 text-white border-brand-500 shadow-xs'
+                                  : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
+                              }`}
+                            >
+                              {m} Tháng
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="sm:col-span-5 space-y-1.5">
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                          Ngày bắt đầu:
+                        </label>
+                        <input
+                          type="date"
+                          min={todayStr}
+                          value={startDate}
+                          onChange={(e) => {
+                            const newDate = e.target.value;
+                            if (newDate) {
+                              if (newDate < todayStr) return; // Không cho phép chọn ngày lùi về quá khứ
+                              setStartDate(newDate);
+                              const newParams = new URLSearchParams(searchParams);
+                              newParams.set('startDate', newDate);
+                              navigate({ search: newParams.toString() }, { replace: true });
+                            }
+                          }}
+                          className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+                      <span>
+                        Hạn kết thúc mới: <strong className="text-slate-800 font-bold">{formatDateVN(endDate)}</strong>
+                      </span>
+                      <Link
+                        to={`/customer/units?facility=${facility.id}&type=${unitType.id}&startDate=${startDate}&months=${durationMonths}`}
+                        className="text-brand-600 hover:text-brand-700 underline font-medium"
+                      >
+                        Quay lại chọn ô kho trên sơ đồ
+                      </Link>
+                    </div>
+                  </div>
+                )}
               </div>
             </Card>
 
@@ -854,8 +961,9 @@ export const BookingPage: React.FC = () => {
                 type="submit"
                 variant="primary"
                 size="md"
-                disabled={isSubmitting}
-                className="px-6 py-2.5 flex items-center gap-2 text-xs sm:text-sm font-bold shadow-xs cursor-pointer"
+                disabled={isSubmitting || isCheckingAvailability || (availability !== null && availability.availableSlots <= 0)}
+                className="px-6 py-2.5 flex items-center gap-2 text-xs sm:text-sm font-bold shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                title={availability && availability.availableSlots <= 0 ? 'Loại ô kho này đã hết chỗ trong kỳ hạn đã chọn' : undefined}
               >
                 {isSubmitting ? (
                   <>
@@ -870,6 +978,11 @@ export const BookingPage: React.FC = () => {
                 )}
               </Button>
             </div>
+            {availability && availability.availableSlots <= 0 && (
+              <p className="text-right text-xs text-rose-600 font-bold mt-1">
+                ⚠️ Loại ô kho này đã hết chỗ trong khoảng thời gian đã chọn. Vui lòng bấm "Thay đổi thời gian" hoặc quay lại sơ đồ để chọn ô kho khác.
+              </p>
+            )}
           </form>
 
           {/* Pricing Column (1/3) */}
@@ -893,7 +1006,7 @@ export const BookingPage: React.FC = () => {
                 <div>
                   <div className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-xs font-semibold px-2.5 py-1 rounded-full mb-1.5">
                     <Sparkles className="w-3.5 h-3.5" />
-                    Đơn đặt chỗ ngăn kho {finalUnitNumber} đã tạo thành công
+                    Đơn đặt chỗ ô kho {finalUnitNumber} đã tạo thành công
                   </div>
                   <h2 className="text-xl font-bold text-[#0a1614]">
                     Quét Mã VietQR Chuyển Khoản Nhanh 24/7 (Sandbox)
