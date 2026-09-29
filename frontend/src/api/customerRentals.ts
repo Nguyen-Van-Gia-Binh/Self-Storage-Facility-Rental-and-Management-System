@@ -46,6 +46,11 @@ export interface BackendRentalSummary {
   overdueDays?: number;
   overdueFeeAccrued?: number;
   totalOutstandingDebt?: number;
+  hasPendingRenewal?: boolean;
+  pendingRenewalOrderCode?: number;
+  pendingRenewalMonths?: number;
+  pendingRenewalAmount?: number;
+  pendingRenewalExpiresAt?: string;
 }
 
 export interface CustomerRentalSummary {
@@ -125,6 +130,11 @@ export function mapBackendRentalToContract(item: BackendRentalSummary): RentedCo
     overdueDays: item.overdueDays || 0,
     overdueFee: item.overdueFeeAccrued || 0,
     inspectionDone: Boolean(item.inspectionDone),
+    hasPendingRenewal: Boolean(item.hasPendingRenewal),
+    pendingRenewalOrderCode: item.pendingRenewalOrderCode,
+    pendingRenewalMonths: item.pendingRenewalMonths,
+    pendingRenewalAmount: item.pendingRenewalAmount,
+    pendingRenewalExpiresAt: item.pendingRenewalExpiresAt,
   };
 }
 

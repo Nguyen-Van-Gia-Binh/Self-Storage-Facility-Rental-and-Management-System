@@ -145,6 +145,12 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                 {contract.contractNumber}
               </span>
               {getStatusBadge()}
+              {contract.hasPendingRenewal && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-300 px-2 py-0.5 rounded-full">
+                  <Clock className="w-3 h-3 text-amber-600 animate-pulse" />
+                  Chờ thanh toán gia hạn
+                </span>
+              )}
             </div>
             <h3 className="text-xl font-black text-[#0a1614] flex items-center gap-2">
               Ô kho {contract.unitNumber}
@@ -373,6 +379,20 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                 <Check className="w-3.5 h-3.5 flex-shrink-0 text-slate-500" />
                 <span>Hợp đồng đã kết thúc</span>
               </div>
+            ) : contract.hasPendingRenewal && contract.pendingRenewalOrderCode ? (
+              <Link
+                to={`/customer/renew/${contract.id}?orderCode=${contract.pendingRenewalOrderCode}&step=3`}
+                className="w-full sm:w-auto"
+              >
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 shadow-xs"
+                >
+                  <CreditCard className="w-3.5 h-3.5" />
+                  <span>Tiếp tục thanh toán</span>
+                </Button>
+              </Link>
             ) : isCutoffLocked ? (
               <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full sm:w-auto">
                 <span className="text-[11px] font-semibold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200" title="Theo quy định, phải gia hạn trước ngày hết hạn ít nhất 30 ngày">
