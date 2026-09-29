@@ -346,6 +346,7 @@ export interface ActivePolicyInfo {
   overdueDailyRate: number;
   overdueCapRate: number;
   returnNoticeDays: number;
+  returnRefundWorkingDays?: number;
 }
 
 export * from './report';

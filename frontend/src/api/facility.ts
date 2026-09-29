@@ -1,6 +1,7 @@
 /**
  * Facility API — SC-01 (T2.16) & BM-01 (T2.13)
  * API-SPEC.md § 5 (Facility) & § 6 (Unit Types + Availability)
+ * Gọi trực tiếp dữ liệu từ Backend CSDL (Không mock, không hardcode)
  */
 import { apiClient } from './client';
 import type { ApiResponse } from './client';
@@ -13,25 +14,8 @@ import type {
   CreateFacilityRequest,
   UpdateFacilityRequest,
 } from '@/types';
-import mockFacilities from '@/mock/mock-facilities.json';
-import mockUnitTypesData from '@/mock/mock-unit-types.json';
-
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
-
-// Bộ nhớ in-memory cho các thao tác mock để phản hồi tức thì
-const inMemoryFacilities: FacilityListItem[] = [...(mockFacilities as FacilityListItem[])];
 
 export async function fetchFacilities(keyword?: string, includeInactive = false): Promise<FacilityListItem[]> {
-  if (USE_MOCK) {
-    let list = inMemoryFacilities;
-    if (!includeInactive) {
-      list = list.filter((f) => f.isActive);
-    }
-    if (!keyword) return list;
-    const q = keyword.toLowerCase();
-    return list.filter((f) => f.name.toLowerCase().includes(q) || f.address.toLowerCase().includes(q));
-  }
-
   const qs = new URLSearchParams({ size: '50' });
   if (!includeInactive) qs.set('isActive', 'true');
   if (keyword) qs.set('keyword', keyword);
@@ -47,10 +31,6 @@ function isListedFacility(facility: { name?: string; code?: string }): boolean {
 
 /** Tải hết cơ sở đang hoạt động, không dừng ở một trang. */
 export async function fetchAllActiveFacilities(): Promise<FacilityListItem[]> {
-  if (USE_MOCK) {
-    return inMemoryFacilities.filter((facility) => facility.isActive !== false && isListedFacility(facility));
-  }
-
   const all: FacilityListItem[] = [];
   let page = 0;
   let totalPages = 1;
@@ -75,31 +55,16 @@ export async function fetchAllActiveFacilities(): Promise<FacilityListItem[]> {
  * Admin và BOM nhận mọi cơ sở đang hoạt động. Manager và Staff nhận đúng các cơ sở đã gán.
  */
 export async function fetchMyAssignedFacilities(): Promise<FacilityListItem[]> {
-  if (USE_MOCK) {
-    return inMemoryFacilities.filter((facility) => facility.isActive !== false && isListedFacility(facility));
-  }
-
   const res = await apiClient<ApiResponse<FacilityListItem[]>>('/facilities/my-assigned-facilities');
   const list = Array.isArray(res?.data) ? res.data : [];
   return list.filter(isListedFacility);
 }
 
 export async function fetchFacilityById(id: number): Promise<FacilityDetail> {
-  if (USE_MOCK) {
-    const found = (mockFacilities as FacilityListItem[]).find((f) => f.id === id);
-    if (!found) throw { status: 404, message: 'Không tìm thấy cơ sở', timestamp: new Date().toISOString() };
-    return found as unknown as FacilityDetail;
-  }
-
   return await apiClient<FacilityDetail>(`/facilities/${id}`);
 }
 
 export async function fetchUnitTypes(facilityId: number): Promise<UnitTypeCatalog[]> {
-  if (USE_MOCK) {
-    const map = mockUnitTypesData as Record<string, UnitTypeCatalog[]>;
-    return map[String(facilityId)] ?? [];
-  }
-
   const res = await apiClient<{ content: UnitTypeCatalog[] }>(`/facilities/${facilityId}/unit-types?isActive=true&size=50`);
   return res.content ?? [];
 }
@@ -112,29 +77,6 @@ export async function checkAvailability(facilityId: number, unitTypeId: number, 
 // --- BOM Facility Management APIs (BM-01) ---
 
 export async function createFacility(data: CreateFacilityRequest): Promise<FacilityDetail> {
-  if (USE_MOCK) {
-    const nextId = Math.max(...inMemoryFacilities.map((f) => f.id), 0) + 1;
-    const now = new Date().toISOString();
-    const createdDetail: FacilityDetail = {
-      id: nextId,
-      code: data.code,
-      name: data.name,
-      address: data.address,
-      phone: data.phone || '028-1234-5678',
-      description: data.description || '',
-      openingHours: data.openingHours || '06:00–22:00',
-      isActive: true,
-      createdAt: now,
-      updatedAt: now,
-    };
-    inMemoryFacilities.unshift({
-      ...createdDetail,
-      lowestMonthlyPrice: 800000,
-      activeUnitTypeCount: 0,
-    });
-    return createdDetail;
-  }
-
   return await apiClient<FacilityDetail>('/facilities', {
     method: 'POST',
     body: JSON.stringify(data),
@@ -142,29 +84,6 @@ export async function createFacility(data: CreateFacilityRequest): Promise<Facil
 }
 
 export async function updateFacility(id: number, data: UpdateFacilityRequest): Promise<FacilityDetail> {
-  if (USE_MOCK) {
-    const idx = inMemoryFacilities.findIndex((f) => f.id === id);
-    if (idx === -1) {
-      throw { status: 404, message: 'Không tìm thấy cơ sở', timestamp: new Date().toISOString() };
-    }
-    const current = inMemoryFacilities[idx];
-    const now = new Date().toISOString();
-    const updatedDetail: FacilityDetail = {
-      ...current,
-      name: data.name,
-      address: data.address,
-      phone: data.phone || current.phone,
-      description: data.description !== undefined ? data.description : current.description,
-      openingHours: data.openingHours || current.openingHours,
-      updatedAt: now,
-    };
-    inMemoryFacilities[idx] = {
-      ...inMemoryFacilities[idx],
-      ...updatedDetail,
-    };
-    return updatedDetail;
-  }
-
   return await apiClient<FacilityDetail>(`/facilities/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -172,24 +91,6 @@ export async function updateFacility(id: number, data: UpdateFacilityRequest): P
 }
 
 export async function toggleFacilityStatus(id: number, isActive: boolean): Promise<FacilityDetail> {
-  if (USE_MOCK) {
-    const idx = inMemoryFacilities.findIndex((f) => f.id === id);
-    if (idx === -1) {
-      throw { status: 404, message: 'Không tìm thấy cơ sở', timestamp: new Date().toISOString() };
-    }
-    // Giả lập AC-2: Không tắt cơ sở nếu có id = 1 (mô phỏng cơ sở đang có hợp đồng active)
-    if (!isActive && id === 999) {
-      throw {
-        status: 409,
-        errorCode: 'FACILITY_HAS_ACTIVE_CONTRACTS',
-        message: 'Không thể ngừng khai thác: Cơ sở đang còn hợp đồng thuê còn hiệu lực.',
-        timestamp: new Date().toISOString(),
-      };
-    }
-    inMemoryFacilities[idx].isActive = isActive;
-    return inMemoryFacilities[idx] as unknown as FacilityDetail;
-  }
-
   return await apiClient<FacilityDetail>(`/facilities/${id}/status`, {
     method: 'PATCH',
     body: JSON.stringify({ isActive }),
