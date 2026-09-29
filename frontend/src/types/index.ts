@@ -229,6 +229,8 @@ export interface DailyCheckInTask {
   customerPhone: string;
   unitCode: string;
   storageUnitCode?: string;
+  facilityId?: number;
+  facilityName?: string;
   startDate: string;
   appointmentTime: string;
   isFullyPaid: boolean;
@@ -243,6 +245,8 @@ export interface DailyReturnTask {
   customerPhone: string;
   unitCode: string;
   storageUnitCode?: string;
+  facilityId?: number;
+  facilityName?: string;
   returnDate: string;
   appointmentTime: string;
   depositAmount: number;

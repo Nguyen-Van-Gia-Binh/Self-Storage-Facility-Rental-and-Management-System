@@ -279,6 +279,11 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({ tasks, o
                           <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-teal-50 text-teal-700 border border-teal-100">
                             {item.unitCode}
                           </span>
+                          {item.facilityName && (
+                            <span className="text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-medium">
+                              {item.facilityName}
+                            </span>
+                          )}
                           {item.contractCode && (
                             <span className="font-mono text-xs text-slate-400">
                               {item.contractCode}
@@ -366,6 +371,11 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({ tasks, o
                           <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-100">
                             {item.unitCode}
                           </span>
+                          {item.facilityName && (
+                            <span className="text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-medium">
+                              {item.facilityName}
+                            </span>
+                          )}
                           <span className="text-xs text-slate-400 font-mono">{item.contractCode}</span>
                           {isDone ? (
                             <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
@@ -471,6 +481,11 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({ tasks, o
                         <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700">
                           {item.unitCode || '---'}
                         </span>
+                        {item.facilityName && (
+                          <span className="text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-medium">
+                            {item.facilityName}
+                          </span>
+                        )}
                       </div>
                       <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500">
                         {item.customerName && (
