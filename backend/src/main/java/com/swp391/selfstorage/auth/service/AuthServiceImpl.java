@@ -86,6 +86,12 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public AuthResponse register(RegisterRequest request) {
+        return register(request, null, null);
+    }
+
+    @Override
+    @Transactional
+    public AuthResponse register(RegisterRequest request, String ipAddress, String userAgent) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new CustomException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
@@ -104,7 +110,7 @@ public class AuthServiceImpl implements AuthService {
 
         AppUser savedUser = userRepository.save(user);
 
-        // Ghi nhận đăng ký thành công
+        // Ghi nhận đăng ký thành công (T3.15 - Issue #15: Audit Log thời gian thực)
         if (auditLogService != null) {
             auditLogService.recordLogin(savedUser.getId(), savedUser.getEmail(), ipAddress, userAgent, true, "Đăng ký tài khoản mới");
         }

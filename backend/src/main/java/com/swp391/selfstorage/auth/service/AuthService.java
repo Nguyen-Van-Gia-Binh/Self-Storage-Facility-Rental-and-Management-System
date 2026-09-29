@@ -14,6 +14,8 @@ public interface AuthService {
 
     AuthResponse register(RegisterRequest request);
 
+    AuthResponse register(RegisterRequest request, String ipAddress, String userAgent);
+
     AuthResponse login(LoginRequest request);
 
     AuthResponse login(LoginRequest request, String ipAddress, String userAgent);
