@@ -263,11 +263,17 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
     - Backend / DB: `V...__seed_users.sql` (thêm tiền tố `N`, encode UTF-8).  
     - Frontend: `AdminSidebar.tsx`, `adminRoutes.tsx`, `AdminUserManagementPage.tsx`.
 
-#### 14. Lỗi vỡ bố cục lớp phủ Modal (Modal Backdrop Clipping / UI Overlap) khi thực hiện thao tác Khóa tài khoản
+#### 14. [ĐÃ FIX] Lỗi vỡ bố cục lớp phủ Modal (Modal Backdrop Clipping / UI Overlap) khi thực hiện thao tác Khóa tài khoản
 - **Hình ảnh minh chứng:**  
   ![Lỗi vỡ layout overlap](./images/notion-audit/image-14.png)
 - **Ghi chú gốc từ Lead Dev:**  
-  > *"UI/UX bị lỗi overlap"*
+  > *"UI/UX bị lỗi overlap"* — `[ĐÃ FIX]`
+- **Kết quả đã xử lý (PR branch `fix/modal-backdrop-clipping`):**
+  1. *Tạo shared Modal component với React Portal:* `frontend/src/components/ui/Modal.tsx` sử dụng `createPortal` để render trực tiếp vào `document.body`, đảm bảo backdrop che phủ 100% viewport.
+  2. *Tạo reusable ConfirmDialog component:* `frontend/src/components/ui/ConfirmDialog.tsx` cho các thao tác confirm với variant (danger/success/info).
+  3. *Lock body scroll khi modal mở:* Sử dụng `useEffect` để khóa `document.body.style.overflow = 'hidden'` khi modal active.
+  4. *Hỗ trợ Escape key đóng modal:* Thêm event listener cho phím Escape.
+  5. *Update các modal:* `AdminUsersPage.tsx`, `UserRoleModal.tsx`, `CreateUserModal.tsx` sử dụng portal-based modals.
 - **Mô tả kỹ thuật chuẩn hóa:**  
   * **Tên vấn đề:** Lớp phủ mờ (Backdrop / Overlay) của Modal xác nhận *"Khóa tài khoản?"* bị giới hạn chiều cao (clipping) và không che phủ toàn màn hình, để lộ Header, Sidebar và 2 hàng cuối của Table vẫn sáng rõ và tương tác được.
   * **Hiện trạng ghi nhận trên UI (`image-14.png`):**  
