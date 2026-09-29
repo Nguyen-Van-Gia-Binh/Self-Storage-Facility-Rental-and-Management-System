@@ -26,48 +26,43 @@ import type {
 export function mapBackendSummaryToCheckInContract(item: any): CheckInContract {
   if (!item) return item;
 
-  // Trích xuất tầng và khu vực từ mã ô kho (ví dụ: Q1-A104 -> Khu A, Tầng 1)
-  const unitCode = item.storageUnitCode || 'U-101';
-  let floor = item.floor || 1;
-  let zone = 'Khu A';
-  const parts = unitCode.split('-');
-  const suffix = parts.length > 1 ? parts[1] : parts[0];
-  if (suffix && suffix.length > 1) {
-    zone = `Khu ${suffix.charAt(0)}`;
-    const floorDigit = parseInt(suffix.charAt(1), 10);
-    if (!isNaN(floorDigit) && floorDigit > 0) {
-      floor = floorDigit;
+  const unitCode = item.storageUnitCode || '';
+  const floor = Number(item.floor ?? 0);
+  const zone = item.position || '';
+
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const startDateStr = item.startDate || '';
+  let appointmentTime = item.appointmentTime || '';
+  if (!appointmentTime && startDateStr) {
+    if (startDateStr > todayStr) {
+      appointmentTime = `Bắt đầu ${startDateStr}`;
+    } else if (startDateStr < todayStr) {
+      appointmentTime = `Ân hạn nhận kho từ ${startDateStr}`;
+    } else {
+      appointmentTime = `Bắt đầu ${startDateStr}`;
     }
   }
 
-  // Tính toán thời gian hẹn và ngày ân hạn
-  const todayStr = new Date().toISOString().split('T')[0];
-  const startDateStr = item.startDate || todayStr;
-  let appointmentTime = 'Hôm nay (09:00 - 18:00)';
-  if (startDateStr > todayStr) {
-    appointmentTime = `Ngày bắt đầu: ${startDateStr}`;
-  } else if (startDateStr < todayStr) {
-    appointmentTime = `Đang ân hạn nhận kho (từ ${startDateStr})`;
-  }
-
-  // 10 ngày ân hạn theo quy chuẩn
-  const startDayTime = new Date(startDateStr).getTime();
+  const startDayTime = startDateStr ? new Date(startDateStr).getTime() : NaN;
   const nowDayTime = new Date(todayStr).getTime();
-  const diffDays = Math.floor((nowDayTime - startDayTime) / (1000 * 3600 * 24));
-  const graceDaysRemaining = Math.max(0, 10 - diffDays);
+  const diffDays = Number.isFinite(startDayTime)
+    ? Math.floor((nowDayTime - startDayTime) / (1000 * 3600 * 24))
+    : 0;
+  const graceDaysRemaining = startDateStr ? Math.max(0, 10 - diffDays) : 0;
 
   return {
     id: item.id,
-    code: item.code || `CTR-${item.id}`,
-    reservationId: item.reservationId || item.id,
-    reservationCode: item.reservationCode || item.code?.replace('CTR', 'RSV') || `RSV-${item.id}`,
-    customerId: item.customerId || 1,
-    customerName: item.customerName || 'Khách hàng',
-    customerPhone: item.customerPhone || '0901234567',
-    customerIdentityNumber: item.customerIdentityNumber || item.identityNumber || '079099007890',
-    facilityId: item.facilityId || 1,
-    facilityName: item.facilityName || 'Cơ sở SmartStorage',
-    storageUnitId: item.storageUnitId || 1,
+    code: item.code || '',
+    reservationId: item.reservationId,
+    reservationCode: item.reservationCode || '',
+    customerId: item.customerId,
+    customerName: item.customerName || '',
+    customerPhone: item.customerPhone || '',
+    customerIdentityNumber: item.customerIdentityNumber || item.identityNumber || '',
+    facilityId: item.facilityId,
+    facilityName: item.facilityName || '',
+    storageUnitId: item.storageUnitId,
     storageUnitCode: unitCode,
     floor: floor,
     position: item.position || `${zone} • Tầng ${floor}`,
@@ -90,12 +85,12 @@ export function mapBackendSummaryToCheckInContract(item: any): CheckInContract {
     })(),
     startDate: item.startDate || todayStr,
     endDateExclusive: item.endDateExclusive || '',
-    rentalMonths: item.rentalMonths || 1,
+    rentalMonths: item.rentalMonths || 0,
     monthlyPrice: item.monthlyPrice || 0,
-    totalRentalFee: (item.monthlyPrice || 0) * (item.rentalMonths || 1),
-    depositAmount: item.depositAmount || item.monthlyPrice || 0,
-    totalPayable: item.totalPayable || ((item.monthlyPrice || 0) * (item.rentalMonths || 1) + (item.depositAmount || item.monthlyPrice || 0)),
-    isFullyPaid: true, // Hợp đồng PENDING_CHECK_IN đều đã hoàn tất thanh toán cọc ở Flow 1
+    totalRentalFee: item.totalRentalFee || 0,
+    depositAmount: item.depositAmount || 0,
+    totalPayable: item.totalPayable || 0,
+    isFullyPaid: item.isFullyPaid === true || item.status === 'PENDING_CHECK_IN',
     status: item.status || 'PENDING_CHECK_IN',
     appointmentTime: appointmentTime,
     graceDaysRemaining: graceDaysRemaining,
@@ -177,14 +172,14 @@ export function mapBackendSummaryToReturnContract(item: any): ReturnContractDeta
   return {
     id: item.id,
     code: item.code,
-    customerId: item.customerId || 10,
-    customerName: item.customerName || 'Khách hàng',
-    customerPhone: item.customerPhone || '0967890123',
-    customerIdentityNumber: item.customerIdentityNumber || '079099007890',
-    facilityId: item.facilityId || 1,
-    facilityName: item.facilityName || 'Cơ sở Quận 1 - TP.HCM',
-    storageUnitId: item.storageUnitId || 1,
-    storageUnitCode: item.storageUnitCode || 'Q1-A101',
+    customerId: item.customerId,
+    customerName: item.customerName || '',
+    customerPhone: item.customerPhone || '',
+    customerIdentityNumber: item.customerIdentityNumber || item.identityNumber || '',
+    facilityId: item.facilityId,
+    facilityName: item.facilityName || '',
+    storageUnitId: item.storageUnitId,
+    storageUnitCode: item.storageUnitCode || '',
     unitTypeName: item.unitTypeName || 'Kho Tiêu Chuẩn',
     startDate: item.startDate || new Date().toISOString().split('T')[0],
     endDateExclusive: item.endDate || item.endDateExclusive || new Date().toISOString().split('T')[0],
@@ -286,9 +281,19 @@ export async function submitReturnInspection(
       damageNotes: data.damageNotes,
       damageCost: data.damageCost,
       evidenceImageUrls: data.evidenceImageUrls,
+      customerConfirmed: data.customerConfirmed,
+      signatureDataUrl: data.signatureDataUrl,
     }),
   });
   return res.data;
+}
+
+/**
+ * Hoàn tất dọn ô kho sau nghiệm thu: CLEANING → RESERVED hoặc AVAILABLE (BR-RET-09).
+ * POST /api/v1/contracts/{id}/cleaning-complete
+ */
+export async function completeUnitCleaning(id: number): Promise<void> {
+  await apiClient(`/contracts/${id}/cleaning-complete`, { method: 'POST' });
 }
 
 /**

@@ -316,6 +316,9 @@ Yêu cầu trả kho và biên bản nghiệm thu hoàn kho (`Flow 3`, `BR-RET-*
 | `condition_note`| `NVARCHAR(1000)`| Không | | Ghi chép hư hỏng hoặc đồ bỏ lại |
 | `damage_cost` | `BIGINT` | Có | `DEFAULT 0`, `CHECK (damage_cost >= 0)` | Chi phí đền bù thiệt hại (nếu có) |
 | `evidence_image_urls`| `NVARCHAR(MAX)`| Không | | Danh sách URL ảnh/video bằng chứng hư hại khi nghiệm thu (`FS-04`) |
+| `customer_confirmed` | `BIT` | Có | `DEFAULT 0` | Khách đã xác nhận biên bản nghiệm thu (`BR-RET-08`) |
+| `customer_confirmed_at` | `DATETIMEOFFSET` | Không | | Thời điểm khách xác nhận biên bản |
+| `signature_data` | `NVARCHAR(MAX)` | Không | | Ảnh chữ ký của khách trên biên bản |
 | `deposit_refund_amount`| `BIGINT` | Không | | Số tiền cọc thực tế hoàn lại cho khách |
 | `settled_by` | `BIGINT` | Không | `FK` $\rightarrow$ `app_user(id)` | Quản lý cơ sở phê duyệt quyết toán hoàn cọc (`FM-04`) |
 | `settled_at` | `DATETIMEOFFSET` | Không | | Thời điểm phê duyệt quyết toán (`FM-04`) |
@@ -372,7 +375,7 @@ Giao dịch thanh toán cổng điện tử (`Flow 1, 3, 6`, `BR-PAY-*`).
 | `amount` | `BIGINT` | Có | | Số tiền giao dịch (VND) |
 | `renewal_months` | `INT` | Không | `CHECK (renewal_months IS NULL OR renewal_months > 0)` | Số tháng Renewal đã chốt lúc tạo link thanh toán |
 | `order_code` | `BIGINT` | Không | `UNIQUE` | Mã đơn hàng số nguyên duy nhất từ cổng thanh toán PayOS (V17) |
-| `status` | `VARCHAR(20)` | Có | `DEFAULT 'PENDING'`, `CHECK IN ('PENDING', 'SUCCESS', 'FAILED', 'REFUND_FAILED')` | Trạng thái cổng thanh toán |
+| `status` | `VARCHAR(20)` | Có | `DEFAULT 'PENDING'`, `CHECK IN ('PENDING', 'SUCCESS', 'FAILED', 'REFUND_FAILED', 'PENDING_REFUND')` | Trạng thái cổng thanh toán. `PENDING_REFUND` là lệnh hoàn cọc đang chờ chuyển khoản (`BR-RET-05`) |
 | `payment_method` | `NVARCHAR(50)` | Không | | Phương thức (VietQR PayOS, MB Bank, VNPay, Momo) |
 | `provider_reference`| `NVARCHAR(100)`| Không | | Mã giao dịch phía đối tác cung cấp (Payment Link ID PayOS) |
 | `created_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Mốc khởi tạo giao dịch |

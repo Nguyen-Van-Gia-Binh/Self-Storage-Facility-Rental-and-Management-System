@@ -51,6 +51,16 @@ public class ReturnRequest {
     @Column(name = "evidence_image_urls", columnDefinition = "NVARCHAR(MAX)")
     private String evidenceImageUrls;
 
+    @Column(name = "customer_confirmed", nullable = false)
+    @Builder.Default
+    private Boolean customerConfirmed = false;
+
+    @Column(name = "customer_confirmed_at")
+    private OffsetDateTime customerConfirmedAt;
+
+    @Column(name = "signature_data", columnDefinition = "NVARCHAR(MAX)")
+    private String signatureData;
+
     @Column(name = "deposit_refund_amount")
     private Long depositRefundAmount;
 

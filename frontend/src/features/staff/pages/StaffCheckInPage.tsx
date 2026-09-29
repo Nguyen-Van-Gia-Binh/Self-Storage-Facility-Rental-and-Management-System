@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import type { CheckInContract, CheckInSubmitRequest, HandoverRejectRequest } from '../../../types';
 import { getPendingContracts, checkInContract, rejectHandoverContract } from '../../../api/contract';
+import { fetchMyAssignedFacilities } from '@/api/facility';
+import type { FacilityListItem } from '@/types';
 import { useCurrentUser } from '@/utils/useCurrentUser';
 import { CheckInQueueList } from '../components/CheckInQueueList';
 import { CustomerVerificationCard } from '../components/CustomerVerificationCard';
@@ -16,23 +18,12 @@ import { HandoverInspectionForm } from '../components/HandoverInspectionForm';
 import { AccessCodePinModal } from '../components/AccessCodePinModal';
 import { HandoverRejectionModal } from '../components/HandoverRejectionModal';
 
-const FACILITY_NAMES: Record<number, string> = {
-  1: 'Cơ sở Quận 7 - TP.HCM',
-  2: 'Cơ sở Cầu Giấy - Hà Nội',
-  3: 'Cơ sở Hải Châu - Đà Nẵng',
-  4: 'Cơ sở Bình Thạnh - TP.HCM',
-  5: 'Cơ sở Hai Bà Trưng - Hà Nội',
-  6: 'Cơ sở Thanh Xuân - Hà Nội',
-  7: 'Cơ sở Quận 1 - TP.HCM',
-  8: 'Cơ sở Thủ Đức - TP.HCM',
-};
-
 export const StaffCheckInPage: React.FC = () => {
   const user = useCurrentUser();
   const staffId = user?.id as number | undefined;
-  // Khóa cứng cơ sở ca trực của nhân viên theo FS-01 / FS-02 (Mục 30)
-  const staffFacilityId = user?.facilityId ? Number(user.facilityId) : 2;
-  const staffFacilityName = FACILITY_NAMES[staffFacilityId] || 'Cơ sở Cầu Giấy - Hà Nội';
+  const [facilities, setFacilities] = useState<FacilityListItem[]>([]);
+  const [staffFacilityId, setStaffFacilityId] = useState<number | null>(null);
+  const staffFacilityName = facilities.find((facility) => facility.id === staffFacilityId)?.name || 'Chưa được gán cơ sở';
 
   const [contracts, setContracts] = useState<CheckInContract[]>([]);
   const [selectedContract, setSelectedContract] = useState<CheckInContract | null>(null);
@@ -52,8 +43,28 @@ export const StaffCheckInPage: React.FC = () => {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  // Tải danh sách hợp đồng chờ check-in khóa cứng theo cơ sở ca trực
+  useEffect(() => {
+    fetchMyAssignedFacilities()
+      .then((list) => {
+        setFacilities(list);
+        setStaffFacilityId((current) =>
+          current && list.some((facility) => facility.id === current) ? current : (list[0]?.id ?? null)
+        );
+      })
+      .catch((error) => {
+        console.error('Không tải được cơ sở được phân công:', error);
+        setFacilities([]);
+        setStaffFacilityId(null);
+      });
+  }, []);
+
   const loadContracts = useCallback(async () => {
+    if (!staffFacilityId) {
+      setContracts([]);
+      setSelectedContract(null);
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     try {
       const data = await getPendingContracts(staffFacilityId);
@@ -197,7 +208,22 @@ export const StaffCheckInPage: React.FC = () => {
         <div className="flex items-center gap-2.5">
           <div className="flex items-center gap-2 px-3.5 py-2 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl text-xs font-bold shadow-xs">
             <Building2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>📍 Ca trực: {staffFacilityName}</span>
+            {facilities.length > 1 ? (
+              <select
+                value={staffFacilityId ?? ''}
+                onChange={(event) => setStaffFacilityId(Number(event.target.value))}
+                className="bg-transparent font-bold text-emerald-900 focus:outline-none"
+                aria-label="Cơ sở ca trực"
+              >
+                {facilities.map((facility) => (
+                  <option key={facility.id} value={facility.id}>
+                    {facility.code} — {facility.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span>Ca trực: {staffFacilityName}</span>
+            )}
           </div>
 
           <button

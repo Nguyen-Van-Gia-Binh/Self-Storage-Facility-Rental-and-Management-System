@@ -39,6 +39,7 @@ const BREADCRUMB_MAP: Record<string, string> = {
   '/admin/activity-logs':      'Nhật ký hệ thống',
   '/bom/facilities':           'Danh mục cơ sở',
   '/bom/pricing':              'Bảng giá & Phụ phí',
+  '/bom/policies':             'Chính sách thuê',
   '/bom/revenue':              'Doanh thu & Báo cáo',
   '/bom/reports':              'Doanh thu & Báo cáo',
 };
@@ -123,7 +124,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   };
 
   return (
-    <div className="h-screen bg-[#f2f9f7] flex flex-col md:flex-row overflow-hidden">
+    <div className="app-shell h-screen bg-[#f2f9f7] flex flex-col md:flex-row overflow-hidden">
       {/* Mobile Header */}
       <div className="md:hidden bg-white text-slate-900 border-b border-slate-200/90 px-4 py-3 flex items-center justify-between shadow-xs sticky top-0 z-30 shrink-0">
         <Link 
@@ -260,7 +261,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+      <div className="app-shell-main flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {/* Top Header */}
         <header className="h-16 bg-white border-b border-slate-200/90 flex items-center justify-between px-4 sm:px-6 shadow-xs shrink-0 sticky top-0 z-10">
           {/* Breadcrumb */}

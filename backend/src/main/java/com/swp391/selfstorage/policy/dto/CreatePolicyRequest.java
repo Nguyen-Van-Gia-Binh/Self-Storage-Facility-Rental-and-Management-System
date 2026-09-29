@@ -27,7 +27,7 @@ public class CreatePolicyRequest {
     private OffsetDateTime effectiveFrom;
 
     @NotNull(message = "Hệ số cọc không được để trống")
-    @DecimalMin(value = "0.0", message = "Hệ số cọc không được âm")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Hệ số cọc phải lớn hơn 0")
     private BigDecimal depositMultiplier;
 
     @NotNull(message = "Số giờ giữ chỗ không được để trống")

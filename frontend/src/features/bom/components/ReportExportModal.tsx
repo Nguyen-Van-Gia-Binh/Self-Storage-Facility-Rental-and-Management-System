@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 export interface ReportExportModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onPrint: (facilityId?: number) => void;
   currentFilters: ReportFilterParams;
   facilities: { id: number; name: string }[];
 }
@@ -16,6 +17,7 @@ export interface ReportExportModalProps {
 export const ReportExportModal: React.FC<ReportExportModalProps> = ({
   isOpen,
   onClose,
+  onPrint,
   currentFilters,
   facilities,
 }) => {
@@ -48,11 +50,8 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
 
     try {
       if (format === 'PDF') {
-        // Kích hoạt chế độ In ấn trực tiếp từ trình duyệt theo CSS @media print
-        setTimeout(() => {
-          onClose();
-          window.print();
-        }, 300);
+        setIsExporting(false);
+        onPrint(facilityId);
         return;
       }
 
@@ -84,7 +83,7 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs modal-backdrop-enter animate-in fade-in duration-200"
+      className="no-print fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs modal-backdrop-enter animate-in fade-in duration-200"
       onClick={(e) => {
         if (e.target === e.currentTarget && !isExporting) {
           onClose();

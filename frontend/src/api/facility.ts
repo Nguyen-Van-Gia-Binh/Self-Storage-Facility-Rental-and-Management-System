@@ -4,7 +4,6 @@
  */
 import { apiClient } from './client';
 import type { ApiResponse } from './client';
-import { tokenStorage } from '@/utils/tokenStorage';
 import type {
   FacilityListItem,
   FacilityDetail,
@@ -37,37 +36,52 @@ export async function fetchFacilities(keyword?: string, includeInactive = false)
   if (!includeInactive) qs.set('isActive', 'true');
   if (keyword) qs.set('keyword', keyword);
   const res = await apiClient<{ content: FacilityListItem[] }>(`/facilities?${qs}`);
-  return res.content.filter((f) => !f.name.toLowerCase().includes('sadas') && !f.code.toLowerCase().includes('sadas'));
+  return (res.content ?? []).filter(isListedFacility);
+}
+
+function isListedFacility(facility: { name?: string; code?: string }): boolean {
+  const name = (facility.name || '').toLowerCase();
+  const code = (facility.code || '').toLowerCase();
+  return !name.includes('sadas') && !code.includes('sadas');
+}
+
+/** Tải hết cơ sở đang hoạt động, không dừng ở một trang. */
+export async function fetchAllActiveFacilities(): Promise<FacilityListItem[]> {
+  if (USE_MOCK) {
+    return inMemoryFacilities.filter((facility) => facility.isActive !== false && isListedFacility(facility));
+  }
+
+  const all: FacilityListItem[] = [];
+  let page = 0;
+  let totalPages = 1;
+  while (page < totalPages) {
+    const qs = new URLSearchParams({
+      size: '50',
+      page: String(page),
+      isActive: 'true',
+    });
+    const res = await apiClient<{ content: FacilityListItem[]; totalPages?: number }>(`/facilities?${qs}`);
+    const batch = (res.content ?? []).filter(isListedFacility);
+    all.push(...batch);
+    totalPages = res.totalPages && res.totalPages > 0 ? res.totalPages : 1;
+    if (batch.length === 0) break;
+    page += 1;
+  }
+  return all;
 }
 
 /**
- * Lấy danh sách cơ sở được phân công cho nhân sự / quản lý hiện tại (Multi-tenancy SA-03, FM-01)
- * Chỉ hiển thị đúng các cơ sở user được giao quyền và loại bỏ cơ sở rác sadas
+ * Cơ sở được phân công cho người đang đăng nhập (SA-03).
+ * Admin và BOM nhận mọi cơ sở đang hoạt động. Manager và Staff nhận đúng các cơ sở đã gán.
  */
 export async function fetchMyAssignedFacilities(): Promise<FacilityListItem[]> {
   if (USE_MOCK) {
-    // Tài khoản FM mẫu (Nguyễn Văn Gia Bình / fm.q1): Gán đúng 2 cơ sở (Cầu Giấy id=1, Quận 7 id=2)
-    return inMemoryFacilities.filter((f) => f.id === 1 || f.id === 2);
+    return inMemoryFacilities.filter((facility) => facility.isActive !== false && isListedFacility(facility));
   }
 
-  try {
-    const res = await apiClient<ApiResponse<FacilityListItem[]>>('/facilities/my-assigned-facilities');
-    if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
-      return res.data.filter((f) => !f.name.toLowerCase().includes('sadas') && !f.code.toLowerCase().includes('sadas'));
-    }
-  } catch (err) {
-    console.warn('Lỗi gọi /facilities/my-assigned-facilities, fallback lọc user assignments:', err);
-  }
-
-  const user = tokenStorage.getUser();
-  const all = await fetchFacilities(undefined, false);
-  const cleanAll = all.filter((f) => !f.name.toLowerCase().includes('sadas') && !f.code.toLowerCase().includes('sadas'));
-
-  if (user && (user.role === 'MANAGER' || (user.role as string) === 'FACILITY_MANAGER')) {
-    const userFacId = user.facilityId ? Number(user.facilityId) : null;
-    return cleanAll.filter((f) => f.id === 1 || f.id === 2 || (userFacId !== null && f.id === userFacId));
-  }
-  return cleanAll;
+  const res = await apiClient<ApiResponse<FacilityListItem[]>>('/facilities/my-assigned-facilities');
+  const list = Array.isArray(res?.data) ? res.data : [];
+  return list.filter(isListedFacility);
 }
 
 export async function fetchFacilityById(id: number): Promise<FacilityDetail> {

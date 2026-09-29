@@ -81,7 +81,8 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
         Page<RentalContract> contractPage;
 
         if (statusFilter == null || statusFilter.isBlank() || statusFilter.equalsIgnoreCase("ALL")) {
-            contractPage = rentalContractRepository.findByCustomerId(customerId, pageable);
+            contractPage = rentalContractRepository.findByCustomerIdAndStatusNot(
+                    customerId, ContractStatus.CANCELLED, pageable);
         } else if (statusFilter.equalsIgnoreCase("ACTIVE")) {
             contractPage = rentalContractRepository.findByCustomerIdAndStatus(customerId, ContractStatus.ACTIVE, pageable);
         } else if (statusFilter.equalsIgnoreCase("OVERDUE")) {

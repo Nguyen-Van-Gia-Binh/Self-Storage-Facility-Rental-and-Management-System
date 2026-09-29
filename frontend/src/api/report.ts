@@ -12,6 +12,79 @@ import { generateCsvFromData } from '../utils/format';
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 
+function asMoney(value: unknown): number {
+  const amount = Number(value);
+  return Number.isFinite(amount) ? amount : 0;
+}
+
+function normalizeRevenueReport(raw: {
+  from?: string;
+  to?: string;
+  totalRevenue?: unknown;
+  rentalRevenue?: unknown;
+  surchargeRevenue?: unknown;
+  overdueFeeRevenue?: unknown;
+  renewalRevenue?: unknown;
+  depositBalance?: unknown;
+  totalRefundAmount?: unknown;
+  byFacility?: Array<Record<string, unknown>>;
+}): SystemRevenueReport {
+  const facilities = Array.isArray(raw?.byFacility) ? raw.byFacility : [];
+  return {
+    from: raw?.from || '',
+    to: raw?.to || '',
+    totalRevenue: asMoney(raw?.totalRevenue),
+    rentalRevenue: asMoney(raw?.rentalRevenue),
+    surchargeRevenue: asMoney(raw?.surchargeRevenue),
+    overdueFeeRevenue: asMoney(raw?.overdueFeeRevenue),
+    renewalRevenue: asMoney(raw?.renewalRevenue),
+    depositBalance: asMoney(raw?.depositBalance),
+    totalRefundAmount: asMoney(raw?.totalRefundAmount),
+    byFacility: facilities.map((facility) => {
+      const rentalRevenue = asMoney(facility.rentalRevenue);
+      const surchargeRevenue = asMoney(facility.surchargeRevenue);
+      const overdueFeeRevenue = asMoney(facility.overdueFeeRevenue);
+      const renewalRevenue = asMoney(facility.renewalRevenue);
+      const totalRevenue = asMoney(facility.totalRevenue ?? facility.revenue)
+        || rentalRevenue + surchargeRevenue + overdueFeeRevenue + renewalRevenue;
+      return {
+        facilityId: Number(facility.facilityId),
+        facilityName: String(facility.facilityName || ''),
+        totalRevenue,
+        rentalRevenue,
+        surchargeRevenue,
+        overdueFeeRevenue,
+        renewalRevenue,
+        depositBalance: asMoney(facility.depositBalance),
+        refundAmount: asMoney(facility.refundAmount),
+      };
+    }),
+  };
+}
+
+function normalizeOccupancyReport(raw: SystemOccupancyReport & { facilities?: SystemOccupancyReport['data']; overallOccupancyRate?: number; totalUnits?: number; totalOccupiedUnits?: number; totalAvailableUnits?: number }, month?: string): SystemOccupancyReport {
+  const rows = raw?.data ?? raw?.facilities ?? [];
+  return {
+    month: raw?.month || month || '',
+    averageOccupancyRate: asMoney(raw?.averageOccupancyRate ?? raw?.overallOccupancyRate),
+    totalUnitsSystem: asMoney(raw?.totalUnitsSystem ?? raw?.totalUnits),
+    occupiedUnitsSystem: asMoney(raw?.occupiedUnitsSystem ?? raw?.totalOccupiedUnits),
+    availableUnitsSystem: asMoney(raw?.availableUnitsSystem ?? raw?.totalAvailableUnits),
+    data: rows.map((item) => ({
+      ...item,
+      occupancyRate: asMoney(item.occupancyRate),
+      availableUnits: asMoney(item.availableUnits),
+      reservedUnits: asMoney(item.reservedUnits),
+      occupiedUnits: asMoney(item.occupiedUnits),
+      cleaningUnits: asMoney(item.cleaningUnits),
+      maintenanceUnits: asMoney(item.maintenanceUnits),
+      outOfServiceUnits: asMoney(item.outOfServiceUnits),
+      totalUnits: asMoney(item.totalUnits),
+      overdueContractsCount: asMoney(item.overdueContractsCount),
+    })),
+  };
+}
+
 /**
  * Lấy báo cáo doanh thu toàn hệ thống — BM-04, US-BM-04.1
  * GET /api/v1/reports/system/revenue
@@ -50,10 +123,8 @@ export async function getSystemRevenueReport(params: ReportFilterParams): Promis
   const res = await apiClient<ApiResponse<SystemRevenueReport> | SystemRevenueReport>(
     `/reports/system/revenue?${query.toString()}`
   );
-  if ('success' in res && res.data) {
-    return res.data;
-  }
-  return res as SystemRevenueReport;
+  const payload = ('success' in res && res.data ? res.data : res) as Parameters<typeof normalizeRevenueReport>[0];
+  return normalizeRevenueReport(payload);
 }
 
 /**
@@ -86,10 +157,8 @@ export async function getSystemOccupancyReport(
   const res = await apiClient<ApiResponse<SystemOccupancyReport> | SystemOccupancyReport>(
     `/reports/system/occupancy?${query.toString()}`
   );
-  if ('success' in res && res.data) {
-    return res.data;
-  }
-  return res as SystemOccupancyReport;
+  const payload = 'success' in res && res.data ? res.data : (res as SystemOccupancyReport);
+  return normalizeOccupancyReport(payload, month);
 }
 
 /**
@@ -107,16 +176,19 @@ export async function getSystemOverdueReport(facilityId?: number): Promise<Overd
     return raw;
   }
 
-  const query = new URLSearchParams();
+  const query = new URLSearchParams({ page: '0', size: '200' });
   if (facilityId) query.append('facilityId', String(facilityId));
 
-  const res = await apiClient<ApiResponse<OverdueReportResponse> | OverdueReportResponse>(
+  const res = await apiClient<ApiResponse<OverdueReportResponse & { totalElements?: number }> | (OverdueReportResponse & { totalElements?: number })>(
     `/reports/system/overdue?${query.toString()}`
   );
-  if ('success' in res && res.data) {
-    return res.data;
-  }
-  return res as OverdueReportResponse;
+  const page = 'success' in res && res.data ? res.data : (res as OverdueReportResponse & { totalElements?: number });
+  const content = page.content ?? [];
+  return {
+    totalOverdueContracts: page.totalOverdueContracts ?? page.totalElements ?? content.length,
+    totalAccruedFee: page.totalAccruedFee ?? content.reduce((sum, item) => sum + (item.accruedOverdueFee || 0), 0),
+    content,
+  };
 }
 
 /**

@@ -149,14 +149,53 @@ class SystemReportServiceTest {
         SystemRevenueReportResponse report = systemReportService.getSystemRevenueReport(from, to, null);
 
         assertNotNull(report);
-        assertEquals(13_700_000L, report.getTotalRevenue());
+        assertEquals(13_200_000L, report.getTotalRevenue());
         assertEquals(13_000_000L, report.getRentalRevenue());
         assertEquals(200_000L, report.getSurchargeRevenue());
-        assertEquals(500_000L, report.getOverdueFeeRevenue());
+        assertEquals(0L, report.getOverdueFeeRevenue());
         assertEquals(2, report.getByFacility().size());
 
         long sumByFacility = report.getByFacility().stream().mapToLong(f -> f.getRevenue()).sum();
         assertEquals(report.getTotalRevenue(), sumByFacility);
+    }
+
+    @Test
+    @DisplayName("US-BM-04.1: tách cọc, gia hạn, phạt và hoàn tiền khỏi doanh thu thuê")
+    void testSystemRevenueReport_SplitsDepositRenewalOverdueAndRefund() {
+        LocalDate from = LocalDate.of(2026, 10, 1);
+        LocalDate to = LocalDate.of(2026, 10, 31);
+        when(facilityRepository.findAll()).thenReturn(List.of(facility1));
+
+        RentalContract contract = RentalContract.builder()
+                .id(201L)
+                .facilityId(1L)
+                .totalRentalFee(3_000_000L)
+                .depositAmount(1_000_000L)
+                .build();
+        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(List.of(contract));
+
+        PaymentTransaction initial = PaymentTransaction.builder()
+                .contractId(201L).amount(4_000_000L).transactionType("INITIAL_PAYMENT").status("SUCCESS").build();
+        initial.setCreatedAt(java.time.Instant.parse("2026-10-02T03:00:00Z"));
+        PaymentTransaction renewal = PaymentTransaction.builder()
+                .contractId(201L).amount(3_000_000L).transactionType("CONTRACT_RENEWAL").status("SUCCESS").build();
+        renewal.setCreatedAt(java.time.Instant.parse("2026-10-03T03:00:00Z"));
+        PaymentTransaction penalty = PaymentTransaction.builder()
+                .contractId(201L).amount(100_000L).transactionType("OVERDUE_PENALTY").status("SUCCESS").build();
+        penalty.setCreatedAt(java.time.Instant.parse("2026-10-04T03:00:00Z"));
+        PaymentTransaction refund = PaymentTransaction.builder()
+                .contractId(201L).amount(200_000L).transactionType("REFUND").status("PENDING_REFUND").build();
+        refund.setCreatedAt(java.time.Instant.parse("2026-10-05T03:00:00Z"));
+        when(paymentTransactionRepository.findByContractId(201L)).thenReturn(List.of(initial, renewal, penalty, refund));
+
+        SystemRevenueReportResponse report = systemReportService.getSystemRevenueReport(from, to, null);
+
+        assertEquals(3_000_000L, report.getRentalRevenue());
+        assertEquals(1_000_000L, report.getDepositBalance());
+        assertEquals(3_000_000L, report.getRenewalRevenue());
+        assertEquals(100_000L, report.getOverdueFeeRevenue());
+        assertEquals(200_000L, report.getTotalRefundAmount());
+        assertEquals(6_100_000L, report.getTotalRevenue());
     }
 
     @Test

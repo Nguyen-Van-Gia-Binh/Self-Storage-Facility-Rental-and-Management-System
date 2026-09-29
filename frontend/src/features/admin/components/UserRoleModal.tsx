@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Shield, Building2, AlertTriangle, Check, X, Loader2 } from 'lucide-react';
 import type { AppUser, UserRoleType } from '@/api/user';
 import { updateUserRole } from '@/api/user';
-import { fetchFacilities } from '@/api/facility';
+import { fetchAllActiveFacilities } from '@/api/facility';
 import type { FacilityListItem } from '@/types';
 
 interface UserRoleModalProps {
@@ -64,7 +64,7 @@ export const UserRoleModal: React.FC<UserRoleModalProps> = ({
 
   useEffect(() => {
     let isMounted = true;
-    fetchFacilities()
+    fetchAllActiveFacilities()
 
       .then((data) => {
         if (isMounted) {
@@ -202,9 +202,21 @@ export const UserRoleModal: React.FC<UserRoleModalProps> = ({
                   <span>2. Chỉ định cơ sở làm việc (SA-03)</span>
                   <span className="text-red-500">*</span>
                 </label>
-                <span className="text-xs text-slate-500">
-                  Đã chọn {selectedFacilityIds.length} cơ sở
-                </span>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedFacilityIds(facilities.map((facility) => facility.id));
+                      setErrorMsg(null);
+                    }}
+                    className="text-xs font-semibold text-blue-700 hover:text-blue-900"
+                  >
+                    Chọn tất cả
+                  </button>
+                  <span className="text-xs text-slate-500">
+                    Đã chọn {selectedFacilityIds.length} cơ sở
+                  </span>
+                </div>
               </div>
 
               {loadingFacilities ? (

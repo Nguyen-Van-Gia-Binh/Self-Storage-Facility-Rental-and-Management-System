@@ -49,6 +49,8 @@ public interface RentalContractRepository
 
     Page<RentalContract> findByCustomerId(Long customerId, Pageable pageable);
 
+    Page<RentalContract> findByCustomerIdAndStatusNot(Long customerId, ContractStatus status, Pageable pageable);
+
     Page<RentalContract> findByCustomerIdAndStatus(Long customerId, ContractStatus status, Pageable pageable);
 
     Page<RentalContract> findByCustomerIdAndStatusIn(Long customerId, List<ContractStatus> statuses, Pageable pageable);

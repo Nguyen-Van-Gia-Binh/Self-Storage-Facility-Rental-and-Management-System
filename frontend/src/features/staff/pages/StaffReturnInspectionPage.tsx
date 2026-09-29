@@ -5,33 +5,23 @@ import {
   AlertTriangle, UserCheck, ClipboardList, Handshake, CheckCircle2,
 } from 'lucide-react';
 import type { ReturnContractDetail, ReturnInspectionRequest } from '@/types';
-import { getReturnContracts, getReturnContractById, submitReturnInspection, assignReturnStaff } from '@/api/contract';
+import { getReturnContracts, getReturnContractById, submitReturnInspection, assignReturnStaff, completeUnitCleaning } from '@/api/contract';
+import { fetchMyAssignedFacilities } from '@/api/facility';
+import type { FacilityListItem } from '@/types';
 import { useCurrentUser } from '@/utils/useCurrentUser';
 import { ReturnInspectionForm } from '../components/ReturnInspectionForm';
 import { ReturnSuccessModal } from '../components/ReturnSuccessModal';
 import { Button } from '@/components/ui/Button';
-
-const FACILITY_NAMES: Record<number, string> = {
-  1: 'Cơ sở Quận 7 - TP.HCM',
-  2: 'Cơ sở Cầu Giấy - Hà Nội',
-  3: 'Cơ sở Hải Châu - Đà Nẵng',
-  4: 'Cơ sở Bình Thạnh - TP.HCM',
-  5: 'Cơ sở Hai Bà Trưng - Hà Nội',
-  6: 'Cơ sở Thanh Xuân - Hà Nội',
-  7: 'Cơ sở Quận 1 - TP.HCM',
-  8: 'Cơ sở Thủ Đức - TP.HCM',
-};
 
 export const StaffReturnInspectionPage: React.FC = () => {
   const { contractId } = useParams<{ contractId?: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const user = useCurrentUser();
-  const staffId = user?.id ? Number(user.id) : 4;
-
-  // Khóa cứng theo cơ sở ca trực của nhân viên (FS-01, FS-02, Mục 30)
-  const staffFacilityId = user?.facilityId ? Number(user.facilityId) : 2;
-  const staffFacilityName = FACILITY_NAMES[staffFacilityId] || 'Cơ sở Cầu Giấy - Hà Nội';
+  const staffId = user?.id ? Number(user.id) : undefined;
+  const [facilities, setFacilities] = useState<FacilityListItem[]>([]);
+  const [staffFacilityId, setStaffFacilityId] = useState<number | null>(null);
+  const staffFacilityName = facilities.find((facility) => facility.id === staffFacilityId)?.name || 'Chưa được gán cơ sở';
 
   const [contracts, setContracts] = useState<ReturnContractDetail[]>([]);
   const [selectedContract, setSelectedContract] = useState<ReturnContractDetail | null>(null);
@@ -54,7 +44,28 @@ export const StaffReturnInspectionPage: React.FC = () => {
     refundAmount: 0,
   });
 
+  useEffect(() => {
+    fetchMyAssignedFacilities()
+      .then((list) => {
+        setFacilities(list);
+        setStaffFacilityId((current) =>
+          current && list.some((facility) => facility.id === current) ? current : (list[0]?.id ?? null)
+        );
+      })
+      .catch((error) => {
+        console.error('Không tải được cơ sở được phân công:', error);
+        setFacilities([]);
+        setStaffFacilityId(null);
+      });
+  }, []);
+
   const loadData = React.useCallback(async () => {
+    if (!staffFacilityId) {
+      setContracts([]);
+      setSelectedContract(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const rawList = await getReturnContracts(staffFacilityId);
@@ -107,6 +118,7 @@ export const StaffReturnInspectionPage: React.FC = () => {
 
   // Nhân viên chủ động tự nhận nhiệm vụ trả kho khi khách đến quầy (FS-03, FS-04 - Mục 31)
   const handleSelfClaim = async (contract: ReturnContractDetail) => {
+    if (!staffId) return;
     setClaimingId(contract.id);
     try {
       await assignReturnStaff(contract.id, staffId);
@@ -196,7 +208,22 @@ export const StaffReturnInspectionPage: React.FC = () => {
         <div className="flex items-center gap-2.5">
           <div className="flex items-center gap-2 px-3.5 py-2 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl text-xs font-bold shadow-xs">
             <Building2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>📍 Ca trực: {staffFacilityName}</span>
+            {facilities.length > 1 ? (
+              <select
+                value={staffFacilityId ?? ''}
+                onChange={(event) => setStaffFacilityId(Number(event.target.value))}
+                className="bg-transparent font-bold text-emerald-900 focus:outline-none"
+                aria-label="Cơ sở ca trực"
+              >
+                {facilities.map((facility) => (
+                  <option key={facility.id} value={facility.id}>
+                    {facility.code} — {facility.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span>Ca trực: {staffFacilityName}</span>
+            )}
           </div>
 
           <button
@@ -508,6 +535,13 @@ export const StaffReturnInspectionPage: React.FC = () => {
           setSuccessData((prev) => ({ ...prev, isOpen: false }));
           loadData();
         }}
+        onMarkCleaned={
+          selectedContract
+            ? async () => {
+                await completeUnitCleaning(selectedContract.id);
+              }
+            : undefined
+        }
       />
     </div>
   );

@@ -11,6 +11,7 @@ public class ContractSummaryResponse {
     private Long customerId;
     private String customerName;
     private String customerPhone;
+    private String customerIdentityNumber;
     private String customerEmail;
     private Long facilityId;
     private String facilityName;

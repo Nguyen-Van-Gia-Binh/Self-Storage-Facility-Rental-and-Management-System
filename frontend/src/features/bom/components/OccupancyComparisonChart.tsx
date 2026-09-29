@@ -61,7 +61,7 @@ export const OccupancyComparisonChart: React.FC<OccupancyComparisonChartProps> =
         <button
           type="button"
           onClick={() => setSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer transition-all self-start sm:self-auto"
+          className="no-print flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer transition-all self-start sm:self-auto"
         >
           <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
           <span>Sắp xếp: {sortOrder === 'desc' ? 'Giảm dần' : 'Tăng dần'}</span>

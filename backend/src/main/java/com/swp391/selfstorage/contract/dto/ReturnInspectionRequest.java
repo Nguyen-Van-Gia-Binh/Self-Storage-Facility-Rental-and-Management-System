@@ -13,4 +13,10 @@ public class ReturnInspectionRequest {
     private String damageNotes;
     private long damageCost;
     private String evidenceImageUrls;
+
+    /** Khách ký xác nhận biên bản (BR-RET-08). */
+    private Boolean customerConfirmed;
+
+    /** Ảnh chữ ký dạng data URL. */
+    private String signatureDataUrl;
 }

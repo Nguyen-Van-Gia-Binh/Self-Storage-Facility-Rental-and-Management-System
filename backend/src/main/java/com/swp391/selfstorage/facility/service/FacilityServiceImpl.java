@@ -66,6 +66,15 @@ public class FacilityServiceImpl implements FacilityService {
         return resp;
     }
 
+    private boolean isAssignableFacility(Facility facility) {
+        if (facility == null || facility.getStatus() != FacilityStatus.ACTIVE) {
+            return false;
+        }
+        String name = facility.getName() == null ? "" : facility.getName().toLowerCase();
+        String code = facility.getCode() == null ? "" : facility.getCode().toLowerCase();
+        return !name.contains("sadas") && !code.contains("sadas");
+    }
+
     private void enrichFacilityMetrics(FacilityResponse resp) {
         if (resp == null || resp.getId() == null) return;
         resp.setLowestMonthlyPrice(facilityRepository.findLowestMonthlyPriceByFacilityId(resp.getId()));
@@ -129,20 +138,22 @@ public class FacilityServiceImpl implements FacilityService {
         List<Facility> facilities;
         if (isFullAccess) {
             facilities = facilityRepository.findAll().stream()
-                    .filter(f -> f.getStatus() == FacilityStatus.ACTIVE)
-                    .filter(f -> !f.getName().toLowerCase().contains("sadas") && !f.getCode().toLowerCase().contains("sadas"))
+                    .filter(this::isAssignableFacility)
                     .toList();
         } else {
             if (userFacilityAssignmentRepository == null) {
                 return Collections.emptyList();
             }
-            List<Long> assignedIds = userFacilityAssignmentRepository.findFacilityIdsByUserId(currentUser.getId());
+            List<Long> assignedIds = userFacilityAssignmentRepository.findFacilityIdsByUserId(currentUser.getId())
+                    .stream()
+                    .map(id -> id == null ? null : id.longValue())
+                    .filter(id -> id != null)
+                    .toList();
             if (assignedIds.isEmpty()) {
                 return Collections.emptyList();
             }
             facilities = facilityRepository.findAllById(assignedIds).stream()
-                    .filter(f -> f.getStatus() == FacilityStatus.ACTIVE)
-                    .filter(f -> !f.getName().toLowerCase().contains("sadas") && !f.getCode().toLowerCase().contains("sadas"))
+                    .filter(this::isAssignableFacility)
                     .toList();
         }
 

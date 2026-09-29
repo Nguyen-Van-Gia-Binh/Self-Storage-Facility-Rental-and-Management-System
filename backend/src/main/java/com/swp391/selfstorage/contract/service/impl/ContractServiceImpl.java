@@ -260,13 +260,15 @@ public class ContractServiceImpl implements ContractService {
 
                         String custName = "Khách hàng #" + c.getCustomerId();
                         String custPhone = "";
+                        String custIdentity = "";
                         String custEmail = "";
                         if (userService != null && c.getCustomerId() != null) {
                                 try {
                                         var userDto = userService.getUserById(c.getCustomerId());
                                         if (userDto != null) {
                                                 custName = userDto.getFullName();
-                                                custPhone = userDto.getPhone();
+                                                custPhone = userDto.getPhone() != null ? userDto.getPhone() : "";
+                                                custIdentity = userDto.getIdentityNumber() != null ? userDto.getIdentityNumber() : "";
                                                 custEmail = userDto.getEmail();
                                         }
                                 } catch (Exception ignored) {
@@ -351,6 +353,7 @@ public class ContractServiceImpl implements ContractService {
                                         .customerId(c.getCustomerId())
                                         .customerName(custName)
                                         .customerPhone(custPhone)
+                                        .customerIdentityNumber(custIdentity)
                                         .customerEmail(custEmail)
                                         .facilityId(c.getFacilityId())
                                         .facilityName(facName)
@@ -499,13 +502,15 @@ public class ContractServiceImpl implements ContractService {
 
                 String custName = "Khách hàng #" + contract.getCustomerId();
                 String custPhone = "";
+                String custIdentity = "";
                 String custEmail = "";
                 if (userService != null && contract.getCustomerId() != null) {
                         try {
                                 var userDto = userService.getUserById(contract.getCustomerId());
                                 if (userDto != null) {
                                         custName = userDto.getFullName();
-                                        custPhone = userDto.getPhone();
+                                        custPhone = userDto.getPhone() != null ? userDto.getPhone() : "";
+                                        custIdentity = userDto.getIdentityNumber() != null ? userDto.getIdentityNumber() : "";
                                         custEmail = userDto.getEmail();
                                 }
                         } catch (Exception ignored) {
@@ -524,6 +529,7 @@ public class ContractServiceImpl implements ContractService {
                                 .customerId(contract.getCustomerId())
                                 .customerName(custName)
                                 .customerPhone(custPhone)
+                                .customerIdentityNumber(custIdentity)
                                 .customerEmail(custEmail)
                                 .facilityId(contract.getFacilityId())
                                 .facilityName(facName)
@@ -611,6 +617,20 @@ public class ContractServiceImpl implements ContractService {
                                                 .requestedReturnDate(request.getReturnDate())
                                                 .build());
 
+                if (!Boolean.TRUE.equals(request.getCustomerConfirmed())
+                                || request.getSignatureDataUrl() == null
+                                || request.getSignatureDataUrl().isBlank()) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                                        "Khách hàng phải ký và xác nhận biên bản nghiệm thu");
+                }
+                if (request.getDamageCost() > 0
+                                && (request.getDamageNotes() == null || request.getDamageNotes().isBlank()
+                                                || request.getEvidenceImageUrls() == null
+                                                || request.getEvidenceImageUrls().isBlank())) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                                        "Nghiệm thu có hư hại phải có ghi chú và ảnh bằng chứng");
+                }
+
                 boolean isIntact = "GOOD".equalsIgnoreCase(request.getCondition()) && request.getDamageCost() == 0;
                 returnRequest.setInspectedBy(staffId);
                 returnRequest.setInspectedAt(OffsetDateTime.now());
@@ -618,6 +638,9 @@ public class ContractServiceImpl implements ContractService {
                 returnRequest.setConditionNote(request.getDamageNotes());
                 returnRequest.setDamageCost(request.getDamageCost());
                 returnRequest.setEvidenceImageUrls(request.getEvidenceImageUrls());
+                returnRequest.setCustomerConfirmed(true);
+                returnRequest.setCustomerConfirmedAt(OffsetDateTime.now());
+                returnRequest.setSignatureData(request.getSignatureDataUrl());
                 returnRequest.setStatus(ReturnRequestStatus.PENDING);
                 returnRequestRepository.save(returnRequest);
 
@@ -636,7 +659,18 @@ public class ContractServiceImpl implements ContractService {
 
                 contract.setStatus(ContractStatus.PENDING_RETURN);
                 contract.setReturnDate(request.getReturnDate());
+                contract.setAccessCode(null);
                 contractRepository.save(contract);
+
+                if (contract.getStorageUnitId() != null) {
+                        storageUnitRepository.findById(contract.getStorageUnitId()).ifPresent(unit -> {
+                                if (unit.getStatus() == StorageUnitStatus.OCCUPIED
+                                                || unit.getStatus() == StorageUnitStatus.CLEANING) {
+                                        unit.setStatus(StorageUnitStatus.CLEANING);
+                                        storageUnitRepository.save(unit);
+                                }
+                        });
+                }
 
                 long estimatedRefund = Math.max(0, contract.getDepositBalance() - request.getDamageCost()
                                 - contract.getOverdueFeeAccrued());
@@ -735,37 +769,115 @@ public class ContractServiceImpl implements ContractService {
                 long refundAmount = Math.max(0, deposit - totalDeduction);
                 long payableAmount = Math.max(0, totalDeduction - deposit);
 
-                // Cap nhat ReturnRequest
+                // BR-RET-04: còn phần thiếu thì giữ hợp đồng mở và chờ thanh toán SETTLEMENT.
+                if (payableAmount > 0) {
+                        returnReq.setDepositRefundAmount(0L);
+                        returnRequestRepository.save(returnReq);
+                        contract.setAccessCode(null);
+                        contractRepository.save(contract);
+
+                        eventPublisher.publishEvent(ContractSettledEvent.builder()
+                                        .contractId(contract.getId())
+                                        .customerId(contract.getCustomerId())
+                                        .facilityId(contract.getFacilityId())
+                                        .depositRefundAmount(0L)
+                                        .payableAmount(payableAmount)
+                                        .settledAt(OffsetDateTime.now())
+                                        .build());
+
+                        return SettlementApprovalResponse.builder()
+                                        .contractId(contract.getId())
+                                        .status(contract.getStatus())
+                                        .depositRefundAmount(0L)
+                                        .payableAmount(payableAmount)
+                                        .message("Khách còn phải nộp phần thiếu. Hợp đồng đóng sau khi thanh toán thành công")
+                                        .build();
+                }
+
+                return closeSettledContract(contract, returnReq, managerId, refundAmount, 0L);
+        }
+
+        @Override
+        @Transactional
+        public void closeContractAfterSettlementPayment(Long contractId) {
+                RentalContract contract = contractRepository.findById(contractId)
+                                .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
+                if (contract.getStatus() == ContractStatus.CLOSED) {
+                        return;
+                }
+                if (contract.getStatus() != ContractStatus.PENDING_RETURN
+                                && contract.getStatus() != ContractStatus.OVERDUE) {
+                        throw new CustomException(ErrorCode.CONTRACT_NOT_PENDING_RETURN);
+                }
+                ReturnRequest returnReq = returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(contractId)
+                                .orElseThrow(() -> new CustomException(ErrorCode.RETURN_REQUEST_NOT_FOUND));
+                closeSettledContract(contract, returnReq, returnReq.getSettledBy(), 0L, 0L);
+        }
+
+        @Override
+        @Transactional
+        public ContractResponse completeCleaning(Long contractId, List<Long> facilityIds) {
+                Optional<RentalContract> contractOpt = (facilityIds == null || facilityIds.isEmpty())
+                                ? contractRepository.findById(contractId)
+                                : contractRepository.findByIdAndFacilityIdIn(contractId, facilityIds);
+                RentalContract contract = contractOpt
+                                .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
+                if (contract.getStorageUnitId() == null) {
+                        throw new CustomException(ErrorCode.STORAGE_UNIT_NOT_FOUND);
+                }
+                StorageUnit unit = storageUnitRepository.findById(contract.getStorageUnitId())
+                                .orElseThrow(() -> new CustomException(ErrorCode.STORAGE_UNIT_NOT_FOUND));
+                if (unit.getStatus() != StorageUnitStatus.CLEANING) {
+                        throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION,
+                                        "Chỉ hoàn tất dọn khi ô kho đang ở trạng thái CLEANING");
+                }
+                boolean awaitingCheckIn = reservationRepository.existsByStorageUnitIdAndStatusIn(
+                                unit.getId(), List.of(ReservationStatus.CONFIRMED));
+                unit.setStatus(awaitingCheckIn ? StorageUnitStatus.RESERVED : StorageUnitStatus.AVAILABLE);
+                storageUnitRepository.save(unit);
+                return toResponse(contract);
+        }
+
+        private SettlementApprovalResponse closeSettledContract(RentalContract contract, ReturnRequest returnReq,
+                        Long managerId, long refundAmount, long payableAmount) {
                 returnReq.setStatus(ReturnRequestStatus.COMPLETED);
                 returnReq.setDepositRefundAmount(refundAmount);
                 returnReq.setSettledBy(managerId);
                 returnReq.setSettledAt(OffsetDateTime.now());
                 returnRequestRepository.save(returnReq);
 
-                // Cap nhat Contract sang CLOSED, thu hoi ma access
+                extraChargeRepository.findByContractIdAndStatus(contract.getId(), ExtraChargeStatus.UNPAID)
+                                .forEach(charge -> {
+                                        charge.setStatus(ExtraChargeStatus.PAID);
+                                        extraChargeRepository.save(charge);
+                                });
+
                 contract.setDepositBalance(0);
+                contract.setOverdueFeeAccrued(0);
                 contract.setStatus(ContractStatus.CLOSED);
                 contract.setClosedAt(OffsetDateTime.now());
                 contract.setAccessCode(null);
                 contractRepository.save(contract);
 
-                // Chuyen trang thai o kho sang CLEANING theo BR-RET-09
                 if (contract.getStorageUnitId() != null) {
                         storageUnitRepository.findById(contract.getStorageUnitId()).ifPresent(unit -> {
-                                unit.setStatus(StorageUnitStatus.CLEANING);
-                                storageUnitRepository.save(unit);
+                                if (unit.getStatus() == StorageUnitStatus.OCCUPIED) {
+                                        unit.setStatus(StorageUnitStatus.CLEANING);
+                                        storageUnitRepository.save(unit);
+                                }
                         });
                 }
 
-                // Ban Event cho WS3 (Payment/Ledger) ghi nhan giao dich hoan coc
-                eventPublisher.publishEvent(ContractSettledEvent.builder()
-                                .contractId(contract.getId())
-                                .customerId(contract.getCustomerId())
-                                .facilityId(contract.getFacilityId())
-                                .depositRefundAmount(refundAmount)
-                                .payableAmount(payableAmount)
-                                .settledAt(returnReq.getSettledAt())
-                                .build());
+                if (refundAmount > 0) {
+                        eventPublisher.publishEvent(ContractSettledEvent.builder()
+                                        .contractId(contract.getId())
+                                        .customerId(contract.getCustomerId())
+                                        .facilityId(contract.getFacilityId())
+                                        .depositRefundAmount(refundAmount)
+                                        .payableAmount(payableAmount)
+                                        .settledAt(returnReq.getSettledAt())
+                                        .build());
+                }
 
                 return SettlementApprovalResponse.builder()
                                 .contractId(contract.getId())
@@ -773,7 +885,9 @@ public class ContractServiceImpl implements ContractService {
                                 .depositRefundAmount(refundAmount)
                                 .payableAmount(payableAmount)
                                 .settledAt(returnReq.getSettledAt())
-                                .message("Phê duyệt quyết toán và hoàn cọc thành công")
+                                .message(refundAmount > 0
+                                                ? "Phê duyệt quyết toán và hoàn cọc thành công"
+                                                : "Đã đóng hợp đồng sau khi khách nộp đủ phần thiếu")
                                 .build();
         }
 

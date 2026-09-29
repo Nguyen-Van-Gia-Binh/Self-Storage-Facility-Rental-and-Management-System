@@ -1,5 +1,6 @@
 // frontend/src/features/bom/components/PolicySummaryCard.tsx
 import React from 'react';
+import { Link } from 'react-router-dom';
 import {
   ShieldCheck,
   Clock,
@@ -48,6 +49,9 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
             </p>
           </div>
         </div>
+        <Link to="/bom/policies" className="text-sm font-medium text-indigo-700 hover:text-indigo-900">
+          Ban hành phiên bản mới
+        </Link>
       </div>
 
       {/* Grid of Policy Parameters */}
