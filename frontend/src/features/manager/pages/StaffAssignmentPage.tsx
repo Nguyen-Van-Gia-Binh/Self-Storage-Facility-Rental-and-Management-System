@@ -124,9 +124,22 @@ export const StaffAssignmentPage: React.FC = () => {
     const res = await assignStaffToTask(payload);
     showToast(res.message);
 
-    // Cập nhật lại danh sách tasks cục bộ
+    // Cập nhật lại danh sách tasks cục bộ ngay lập tức
+    const assignedStaff = staffList.find((s) => s.staffId === payload.staffId);
     setTasks((prev) =>
-      prev.map((t) => (t.id === res.updatedTask.id ? res.updatedTask : t))
+      prev.map((t) =>
+        t.id === payload.taskId
+          ? {
+              ...t,
+              assignedStaffId: payload.staffId,
+              assignedStaffName: assignedStaff?.staffName || t.assignedStaffName,
+              status: 'ASSIGNED',
+              priority: payload.priority,
+              isUrgent: payload.priority === 'URGENT',
+              notes: payload.notes,
+            }
+          : t
+      )
     );
     // Kích hoạt nạp lại để đồng bộ tải công việc
     setReloadKey((k) => k + 1);

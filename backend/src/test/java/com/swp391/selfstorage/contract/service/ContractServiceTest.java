@@ -39,6 +39,8 @@ class ContractServiceTest {
     private StorageUnitRepository storageUnitRepository;
     @Mock
     private ReturnRequestRepository returnRequestRepository;
+    @Mock
+    private com.swp391.selfstorage.support.repository.StaffDailyAssignmentRepository staffDailyAssignmentRepository;
     @InjectMocks
     private ContractServiceImpl contractService;
 
@@ -61,6 +63,8 @@ class ContractServiceTest {
         confirmedReservation.setPolicyVersionId(1L);
         confirmedReservation.setStatus(ReservationStatus.CONFIRMED);
         confirmedReservation.setHoldExpiresAt(OffsetDateTime.now().plusHours(48));
+
+        org.springframework.test.util.ReflectionTestUtils.setField(contractService, "staffDailyAssignmentRepository", staffDailyAssignmentRepository);
     }
 
     @Test
@@ -346,5 +350,49 @@ class ContractServiceTest {
         CustomException ex = assertThrows(CustomException.class,
                 () -> contractService.assignReturnStaff(701L, req, 1L, List.of(1L)));
         assertEquals(ErrorCode.CONTRACT_NOT_PENDING_RETURN, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("FM-05: assignCheckInStaff thanh cong khi hop dong PENDING_CHECK_IN")
+    void shouldAssignCheckInStaff_successfully() {
+        RentalContract contract = RentalContract.builder()
+                .id(800L).code("CTR-800").facilityId(1L).storageUnitId(42L).unitTypeId(7L)
+                .status(ContractStatus.PENDING_CHECK_IN)
+                .startDate(LocalDate.now())
+                .build();
+
+        when(contractRepository.findByIdAndFacilityIdIn(800L, List.of(1L))).thenReturn(Optional.of(contract));
+        when(staffDailyAssignmentRepository.findByReferenceTypeAndReferenceId("CONTRACT", 800L))
+                .thenReturn(Optional.empty());
+
+        AssignReturnStaffRequest req = AssignReturnStaffRequest.builder()
+                .staffId(10L)
+                .notes("Tiep don khach hang nhan kho")
+                .build();
+
+        ContractResponse res = contractService.assignCheckInStaff(800L, req, 1L, List.of(1L));
+
+        assertNotNull(res);
+        verify(staffDailyAssignmentRepository, times(1)).save(any(com.swp391.selfstorage.support.entity.StaffDailyAssignment.class));
+    }
+
+    @Test
+    @DisplayName("FM-05: assignCheckInStaff nem exception khi hop dong khong o trang thai PENDING_CHECK_IN")
+    void shouldThrowException_whenContractNotPendingCheckIn_onAssignCheckInStaff() {
+        RentalContract contract = RentalContract.builder()
+                .id(801L).code("CTR-801").facilityId(1L).storageUnitId(42L).unitTypeId(7L)
+                .status(ContractStatus.ACTIVE)
+                .build();
+
+        when(contractRepository.findByIdAndFacilityIdIn(801L, List.of(1L))).thenReturn(Optional.of(contract));
+
+        AssignReturnStaffRequest req = AssignReturnStaffRequest.builder()
+                .staffId(10L)
+                .notes("Phan cong check-in")
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> contractService.assignCheckInStaff(801L, req, 1L, List.of(1L)));
+        assertEquals(ErrorCode.CONTRACT_NOT_PENDING_CHECKIN, ex.getErrorCode());
     }
 }

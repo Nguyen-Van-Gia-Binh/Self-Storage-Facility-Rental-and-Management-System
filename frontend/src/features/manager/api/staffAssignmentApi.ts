@@ -11,7 +11,7 @@ import type {
 } from '../types/staffAssignment';
 import type { StaffDailyTaskReport } from '@/types';
 import { getStaffDailyTasks } from '@/api/staff';
-import { getPendingContracts, getManagerContracts, assignReturnStaff } from '@/api/contract';
+import { getPendingContracts, getManagerContracts, assignReturnStaff, assignCheckInStaff } from '@/api/contract';
 
 /**
  * 1. Lấy danh sách tải công việc của nhân viên cơ sở (FM-05, US-FM-05.1 AC-3)
@@ -214,6 +214,11 @@ export async function getDailyDispatchTasks(
     // 2. Map các hợp đồng chờ tiếp đón nhận kho (CHECK_IN)
     if (Array.isArray(pendingCheckIns)) {
       pendingCheckIns.forEach((contract: any) => {
+        let dispatchStatus: DailyDispatchTaskItem['status'] = 'UNASSIGNED';
+        if (contract.assignedStaffId) {
+          dispatchStatus = 'ASSIGNED';
+        }
+
         tasks.push({
           id: 100000 + contract.id,
           taskType: 'CHECK_IN',
@@ -227,7 +232,9 @@ export async function getDailyDispatchTasks(
           scheduledTime: '09:00 - 11:30',
           priority: 'NORMAL',
           isUrgent: false,
-          status: 'UNASSIGNED',
+          status: dispatchStatus,
+          assignedStaffId: contract.assignedStaffId,
+          assignedStaffName: contract.assignedStaffName,
           referenceId: contract.id,
           referenceCode: contract.code,
           notes: 'Khách hàng đã đặt cọc VietQR thành công, sẵn sàng nhận kho.',
@@ -296,6 +303,13 @@ export async function assignStaffToTask(
       await assignReturnStaff(contractId, payload.staffId, payload.notes);
     } catch (err) {
       console.warn(`Lỗi gọi API phân công trả kho contract #${contractId}:`, err);
+    }
+  } else if (payload.taskType === 'CHECK_IN') {
+    const contractId = payload.taskId > 100000 ? payload.taskId - 100000 : payload.taskId;
+    try {
+      await assignCheckInStaff(contractId, payload.staffId, payload.notes);
+    } catch (err) {
+      console.warn(`Lỗi gọi API phân công check-in contract #${contractId}:`, err);
     }
   }
 

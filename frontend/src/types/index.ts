@@ -122,6 +122,8 @@ export interface CheckInContract {
   status: 'PENDING_CHECK_IN' | 'PENDING_CHECKIN' | 'ACTIVE' | 'TERMINATED' | 'OVERDUE';
   appointmentTime: string;
   graceDaysRemaining: number;
+  assignedStaffId?: number;
+  assignedStaffName?: string;
 }
 
 export interface CheckInSubmitRequest {
