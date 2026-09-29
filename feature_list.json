@@ -90,8 +90,8 @@
   {
     "id": "phase-04-revamped-renewal-mechanism",
     "title": "Đổi mới cơ chế Gia hạn: Bỏ khóa 30 ngày, Cho gia hạn sau nộp phạt, Xử lý xung đột đặt trước",
-    "status": "not_started",
-    "evidence": "",
+    "status": "completed",
+    "evidence": "RenewalServiceTest (16/16 tests pass) & RenewalRevampFlow.test.tsx (3/3 tests pass). Bỏ khóa cứng 30 ngày, cho phép hợp đồng OVERDUE gia hạn sau khi tất toán nợ phạt, hiển thị Conflict Notice View khi ô kho bị khách khác đặt trước.",
     "user_visible_behavior": "Còn dưới 30 ngày vẫn gia hạn bình thường; quá hạn nộp phạt xong được gia hạn; nếu ô kho bị trùng lịch người khác đặt trước thì hiển thị hướng dẫn đặt ô kho mới.",
     "verification_command": "mvn test -Dtest=RenewalServiceTest ; npm test RenewalRevampFlow",
     "notes": "Covers Notion Audit Issue 10 (BR-REN-01, 02, 06)",

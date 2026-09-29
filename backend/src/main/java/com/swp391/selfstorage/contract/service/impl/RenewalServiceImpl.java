@@ -92,7 +92,8 @@ public class RenewalServiceImpl implements RenewalService {
                     bufferDays,
                     contract.getId());
             if (hasUpcomingReservation || hasOtherContract) {
-                throw new CustomException(ErrorCode.CAPACITY_NOT_AVAILABLE);
+                throw new CustomException(ErrorCode.CAPACITY_NOT_AVAILABLE,
+                        "Ô kho này đã có khách hàng khác đặt trước cho chu kỳ tiếp theo. Quý khách vui lòng chọn thuê ô kho mới hoặc lên lịch trả kho.");
             }
         }
 
@@ -172,26 +173,16 @@ public class RenewalServiceImpl implements RenewalService {
         RentalContract contract = rentalContractRepository.findById(contractId)
                 .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
 
-        // Hợp đồng quá hạn không được phép gia hạn theo yêu cầu nghiệp vụ
+        // Hợp đồng OVERDUE chỉ được gia hạn sau khi đã tất toán toàn bộ nợ phạt (BR-REN-06)
         if (contract.getStatus() == ContractStatus.OVERDUE) {
-            throw new CustomException(ErrorCode.RENEWAL_NOT_ALLOWED,
-                    "Hợp đồng đã quá hạn và không thể gia hạn thêm theo quy định. Vui lòng thanh toán phí quá hạn và tạo hợp đồng mới nếu muốn tiếp tục thuê.");
-        }
-
-        // Chỉ hợp đồng đang ACTIVE mới được gia hạn
-        if (contract.getStatus() != ContractStatus.ACTIVE) {
-            throw new CustomException(ErrorCode.RENEWAL_NOT_ALLOWED,
-                    "Chỉ hợp đồng đang hoạt động (ACTIVE) mới được phép gia hạn.");
-        }
-
-        // Quy tắc BR-REN-02: Phải gia hạn trước ngày hết hạn ít nhất 30 ngày (còn >= 30 ngày)
-        LocalDate now = LocalDate.now();
-        if (contract.getEndDateExclusive() != null) {
-            long daysRemaining = java.time.temporal.ChronoUnit.DAYS.between(now, contract.getEndDateExclusive());
-            if (daysRemaining < 30) {
+            if (contract.getOverdueFeeAccrued() > 0) {
                 throw new CustomException(ErrorCode.RENEWAL_NOT_ALLOWED,
-                        "Đã quá thời hạn gia hạn. Khách hàng phải gia hạn trước ngày hết hạn ít nhất 30 ngày theo quy định BR-REN-02.");
+                        "Hợp đồng đang có nợ phạt quá hạn. Vui lòng thanh toán nợ phạt trước khi gia hạn.");
             }
+            // Nếu overdueFeeAccrued == 0, cho phép tiếp tục gia hạn
+        } else if (contract.getStatus() != ContractStatus.ACTIVE) {
+            throw new CustomException(ErrorCode.RENEWAL_NOT_ALLOWED,
+                    "Chỉ hợp đồng đang hoạt động (ACTIVE) hoặc đã tất toán nợ phạt quá hạn (OVERDUE) mới được phép gia hạn.");
         }
 
         return contract;

@@ -19,7 +19,6 @@ import {
   FileText,
   RotateCcw,
   CreditCard,
-  Lock,
   Clock,
   CheckCircle2,
 } from 'lucide-react';
@@ -76,7 +75,6 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
   };
 
   const daysRemaining = calculateDaysRemaining(contract.endDate);
-  const isCutoffLocked = contract.status === 'ACTIVE' && daysRemaining < 30;
 
   const overdueDays =
     contract.overdueDays !== undefined && contract.overdueDays > 0
@@ -382,14 +380,27 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                     Ân hạn D+{overdueDays}: Chưa tính phí phạt
                   </span>
                 ) : penaltyFee === 0 ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full sm:w-auto">
                     <span
                       className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-300 flex items-center gap-1"
-                      title="Đã tất toán toàn bộ nợ phạt quá hạn. Bạn có thể tiến hành Báo trả kho để hoàn tất nghiệm thu hoàn cọc."
+                      title="Đã tất toán toàn bộ nợ phạt quá hạn. Bạn có thể gia hạn hoặc báo trả kho."
                     >
                       <Check className="w-3.5 h-3.5 text-emerald-600" />
                       Đã tất toán nợ phạt
                     </span>
+                    <Link
+                      to={`/customer/renew/${contract.id}`}
+                      className="w-full sm:w-auto"
+                    >
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3.5 shadow-xs text-xs font-bold"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>Gia hạn hợp đồng trực tuyến</span>
+                      </Button>
+                    </Link>
                   </div>
                 ) : (
                   <Button
@@ -448,36 +459,30 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                   <span>Tiếp tục thanh toán</span>
                 </Button>
               </Link>
-            ) : isCutoffLocked ? (
-              <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full sm:w-auto">
-                <span className="text-[11px] font-semibold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200" title="Theo quy định, phải gia hạn trước ngày hết hạn ít nhất 30 ngày">
-                  Đã khóa gia hạn (&lt; 30 ngày)
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled
-                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3.5 opacity-50 cursor-not-allowed bg-slate-100 text-slate-400 border-slate-200 text-xs"
-                  title="Theo quy định, hợp đồng chỉ được gia hạn trước mốc 30 ngày"
-                >
-                  <Lock className="w-3.5 h-3.5" />
-                  <span>Gia hạn hợp đồng (Đã khóa)</span>
-                </Button>
-              </div>
             ) : (
-              <Link
-                to={`/customer/renew/${contract.id}`}
-                className="w-full sm:w-auto"
-              >
-                <Button
-                  variant="primary"
-                  size="sm"
-                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 shadow-xs"
+              <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full sm:w-auto">
+                {contract.status === 'ACTIVE' && daysRemaining < 30 && daysRemaining >= 0 && (
+                  <span
+                    className="text-[11px] font-medium text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200"
+                    title="Mốc 30 ngày là thời điểm nhắc nhở. Hãy gia hạn sớm trước khi khách khác đặt giữ chỗ ô kho này."
+                  >
+                    ⏳ Còn {daysRemaining} ngày — Hãy gia hạn sớm
+                  </span>
+                )}
+                <Link
+                  to={`/customer/renew/${contract.id}`}
+                  className="w-full sm:w-auto"
                 >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Gia hạn hợp đồng trực tuyến</span>
-                </Button>
-              </Link>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 shadow-xs"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Gia hạn hợp đồng trực tuyến</span>
+                  </Button>
+                </Link>
+              </div>
             )}
           </div>
         </div>
