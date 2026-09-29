@@ -32,6 +32,9 @@ public class ContractRenewal {
     @Column(name = "contract_id", nullable = false)
     private Long contractId;
 
+    @Column(name = "payment_transaction_id")
+    private Long paymentTransactionId;
+
     @Column(name = "previous_end_date", nullable = false)
     private LocalDate previousEndDate;
 

@@ -11,10 +11,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.api.extension.ExtendWith;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -93,6 +98,7 @@ class RenewalServiceTest {
                 .versionNo(1)
                 .renewalMinMonths(1)
                 .renewalMaxMonths(12)
+                .rentalBufferDays(15)
                 .depositMultiplier(BigDecimal.valueOf(1.0))
                 .build();
     }
@@ -103,7 +109,7 @@ class RenewalServiceTest {
         RentalContract contract = buildContract(ContractStatus.ACTIVE);
         when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
         when(policyService.getActivePolicy()).thenReturn(buildActivePolicy());
-        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any())).thenReturn(false);
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any(), anyInt())).thenReturn(false);
 
         FacilityUnitTypePrice price = FacilityUnitTypePrice.builder().monthlyPrice(850000L).build();
         when(facilityPriceRepository.findByFacilityIdAndUnitTypeId(1L, 7L)).thenReturn(Optional.of(price));
@@ -187,7 +193,22 @@ class RenewalServiceTest {
         RentalContract contract = buildContract(ContractStatus.ACTIVE);
         when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
         when(policyService.getActivePolicy()).thenReturn(buildActivePolicy());
-        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any())).thenReturn(true);
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any(), anyInt())).thenReturn(true);
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> renewalService.getRenewalQuote(100L, new RenewalRequest(3)));
+
+        assertEquals(ErrorCode.CAPACITY_NOT_AVAILABLE, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("BR-AVL-02: Từ chối gia hạn khi hợp đồng khác trên cùng ô giao khoảng đệm")
+    void testGetRenewalQuote_otherContractWithinBuffer_throwsException() {
+        RentalContract contract = buildContract(ContractStatus.ACTIVE);
+        when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
+        when(policyService.getActivePolicy()).thenReturn(buildActivePolicy());
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any(), eq(15))).thenReturn(false);
+        when(rentalContractRepository.existsOverlappingContractForUnit(eq(42L), any(), any(), eq(15), eq(100L))).thenReturn(true);
 
         CustomException ex = assertThrows(CustomException.class,
                 () -> renewalService.getRenewalQuote(100L, new RenewalRequest(3)));
@@ -201,7 +222,7 @@ class RenewalServiceTest {
         RentalContract contract = buildContract(ContractStatus.ACTIVE);
         when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
         when(policyService.getActivePolicy()).thenReturn(buildActivePolicy());
-        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any())).thenReturn(false);
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any(), anyInt())).thenReturn(false);
 
         FacilityUnitTypePrice price = FacilityUnitTypePrice.builder().monthlyPrice(800000L).build();
         when(facilityPriceRepository.findByFacilityIdAndUnitTypeId(1L, 7L)).thenReturn(Optional.of(price));
@@ -220,5 +241,59 @@ class RenewalServiceTest {
         assertEquals(0L, contract.getOverdueFeeAccrued());
         assertEquals(LocalDate.of(2027, 4, 1), contract.getEndDateExclusive());
         verify(rentalContractRepository).save(contract);
+
+        ArgumentCaptor<ContractRenewal> saved = ArgumentCaptor.forClass(ContractRenewal.class);
+        verify(contractRenewalRepository).save(saved.capture());
+        assertEquals(555L, saved.getValue().getPaymentTransactionId());
+        assertEquals(LocalDate.of(2027, 4, 1), saved.getValue().getNewEndDate());
+    }
+
+    @ParameterizedTest(name = "Gia hạn {0} tháng thì hạn mới = hạn cũ cộng đúng {0} tháng")
+    @ValueSource(ints = {1, 3, 6, 12})
+    void testProcessRenewal_extendsExactMonths(int months) {
+        RentalContract contract = buildContract(ContractStatus.ACTIVE);
+        when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
+        when(policyService.getActivePolicy()).thenReturn(buildActivePolicy());
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any(), anyInt())).thenReturn(false);
+        when(facilityPriceRepository.findByFacilityIdAndUnitTypeId(1L, 7L))
+                .thenReturn(Optional.of(FacilityUnitTypePrice.builder().monthlyPrice(800000L).build()));
+        when(contractRenewalRepository.save(any(ContractRenewal.class))).thenAnswer(inv -> {
+            ContractRenewal cr = inv.getArgument(0);
+            cr.setId(1L);
+            return cr;
+        });
+
+        RenewalResponse response = renewalService.processRenewal(100L, new RenewalRequest(months), 800L + months);
+
+        LocalDate expected = LocalDate.of(2027, 1, 1).plusMonths(months);
+        assertEquals(expected, response.getNewEndDate());
+        assertEquals(expected, contract.getEndDateExclusive());
+        assertEquals(3 + months, contract.getRentalMonths());
+    }
+
+    @Test
+    @DisplayName("Giao dịch đã gia hạn thì không cộng thêm ngày")
+    void testProcessRenewal_samePayment_doesNotExtendAgain() {
+        ContractRenewal existing = ContractRenewal.builder()
+                .id(9L)
+                .contractId(100L)
+                .paymentTransactionId(555L)
+                .previousEndDate(LocalDate.of(2027, 1, 1))
+                .newEndDate(LocalDate.of(2027, 4, 1))
+                .rentalMonths(3)
+                .monthlyPriceSnapshot(800000L)
+                .policyVersionId(1L)
+                .overdueFeeSettled(0L)
+                .rentalFeeAmount(2400000L)
+                .totalPaid(2400000L)
+                .build();
+        when(contractRenewalRepository.findByPaymentTransactionId(555L)).thenReturn(Optional.of(existing));
+
+        RenewalResponse response = renewalService.processRenewal(100L, new RenewalRequest(3), 555L);
+
+        assertEquals(LocalDate.of(2027, 4, 1), response.getNewEndDate());
+        assertEquals(3, response.getRenewalMonths());
+        verify(rentalContractRepository, never()).save(any());
+        verify(contractRenewalRepository, never()).save(any());
     }
 }

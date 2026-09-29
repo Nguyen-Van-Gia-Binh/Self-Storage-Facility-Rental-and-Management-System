@@ -3,6 +3,8 @@ package com.swp391.selfstorage.unit.service;
 import com.swp391.selfstorage.common.dto.PageResponse;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
+import com.swp391.selfstorage.policy.entity.PolicyVersion;
+import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
 import com.swp391.selfstorage.unit.dto.BatchCreateStorageUnitsRequest;
 import com.swp391.selfstorage.unit.dto.CreateStorageUnitRequest;
 import com.swp391.selfstorage.unit.dto.StorageUnitResponse;
@@ -20,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,22 +34,25 @@ public class StorageUnitServiceImpl implements StorageUnitService {
     private final UnitTypeRepository unitTypeRepository;
     private final FacilityUnitTypePriceRepository priceRepository;
     private final UnitMapper mapper;
+    private final PolicyVersionRepository policyVersionRepository;
 
     public StorageUnitServiceImpl(StorageUnitRepository storageUnitRepository,
                                   UnitTypeRepository unitTypeRepository,
                                   UnitMapper mapper) {
-        this(storageUnitRepository, unitTypeRepository, null, mapper);
+        this(storageUnitRepository, unitTypeRepository, null, mapper, null);
     }
 
     @org.springframework.beans.factory.annotation.Autowired
     public StorageUnitServiceImpl(StorageUnitRepository storageUnitRepository,
                                   UnitTypeRepository unitTypeRepository,
                                   FacilityUnitTypePriceRepository priceRepository,
-                                  UnitMapper mapper) {
+                                  UnitMapper mapper,
+                                  PolicyVersionRepository policyVersionRepository) {
         this.storageUnitRepository = storageUnitRepository;
         this.unitTypeRepository = unitTypeRepository;
         this.priceRepository = priceRepository;
         this.mapper = mapper;
+        this.policyVersionRepository = policyVersionRepository;
     }
 
     @Override
@@ -75,12 +81,18 @@ public class StorageUnitServiceImpl implements StorageUnitService {
             page = storageUnitRepository.findByFacilityIdAndFilters(facilityId, unitTypeId, queryStatus, pageable);
         }
 
-        List<Long> occupiedUnitIds = (startDate != null && rentalMonths != null && rentalMonths > 0)
-                ? storageUnitRepository.findOccupiedUnitIdsByDateRange(facilityId, startDate, startDate.plusMonths(rentalMonths))
+        int bufferDays = 0;
+        boolean ranged = startDate != null && rentalMonths != null && rentalMonths > 0;
+        if (ranged) {
+            bufferDays = bufferDays();
+        }
+
+        List<Long> occupiedUnitIds = ranged
+                ? storageUnitRepository.findOccupiedUnitIdsByDateRange(facilityId, startDate, startDate.plusMonths(rentalMonths), bufferDays)
                 : List.of();
 
-        List<Long> reservedUnitIds = (startDate != null && rentalMonths != null && rentalMonths > 0)
-                ? storageUnitRepository.findReservedUnitIdsByDateRange(facilityId, startDate, startDate.plusMonths(rentalMonths))
+        List<Long> reservedUnitIds = ranged
+                ? storageUnitRepository.findReservedUnitIdsByDateRange(facilityId, startDate, startDate.plusMonths(rentalMonths), bufferDays)
                 : List.of();
 
         List<StorageUnitResponse> content = page.getContent().stream().map(su -> {
@@ -105,6 +117,19 @@ public class StorageUnitServiceImpl implements StorageUnitService {
         }).filter(res -> status == null || res.getStatus() == status).toList();
 
         return new PageResponse<>(content, page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages());
+    }
+
+    private int bufferDays() {
+        if (policyVersionRepository == null) {
+            throw new CustomException(ErrorCode.POLICY_NOT_FOUND);
+        }
+        PolicyVersion policy = policyVersionRepository
+                .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(OffsetDateTime.now())
+                .orElseThrow(() -> new CustomException(ErrorCode.POLICY_NOT_FOUND));
+        if (policy.getRentalBufferDays() == null) {
+            throw new CustomException(ErrorCode.POLICY_NOT_FOUND, "Chinh sach hieu luc thieu rental_buffer_days");
+        }
+        return policy.getRentalBufferDays();
     }
 
     @Override

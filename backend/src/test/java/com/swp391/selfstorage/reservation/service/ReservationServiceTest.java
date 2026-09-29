@@ -9,6 +9,8 @@ import com.swp391.selfstorage.contract.repository.RentalContractRepository;
 import com.swp391.selfstorage.facility.entity.Facility;
 import com.swp391.selfstorage.facility.entity.FacilityStatus;
 import com.swp391.selfstorage.facility.repository.FacilityRepository;
+import com.swp391.selfstorage.policy.entity.PolicyVersion;
+import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
 import com.swp391.selfstorage.reservation.dto.*;
 import com.swp391.selfstorage.reservation.entity.Reservation;
 import com.swp391.selfstorage.reservation.entity.ReservationStatus;
@@ -41,6 +43,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,6 +56,7 @@ class ReservationServiceTest {
     @Mock private FacilityUnitTypePriceRepository facilityUnitTypePriceRepository;
     @Mock private RentalContractRepository rentalContractRepository;
     @Mock private com.swp391.selfstorage.payment.repository.PaymentTransactionRepository paymentTransactionRepository;
+    @Mock private PolicyVersionRepository policyVersionRepository;
 
     @InjectMocks
     private ReservationServiceImpl reservationService;
@@ -85,6 +89,18 @@ class ReservationServiceTest {
         availableStorageUnit.setUnitTypeId(7L);
         availableStorageUnit.setCode("M-101");
         availableStorageUnit.setStatus(StorageUnitStatus.AVAILABLE);
+
+        PolicyVersion policy = PolicyVersion.builder()
+                .id(3L)
+                .reservationHoldHours(48)
+                .rentalBufferDays(15)
+                .rentalDailyDivisor(30)
+                .build();
+        lenient().when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(any()))
+                .thenReturn(Optional.of(policy));
+        lenient().when(storageUnitRepository.findByIdForUpdate(42L)).thenReturn(Optional.of(availableStorageUnit));
+        lenient().when(rentalContractRepository.existsOverlappingContractForUnit(eq(42L), any(), any(), anyInt(), eq(0L)))
+                .thenReturn(false);
     }
 
     @Test
@@ -172,8 +188,8 @@ class ReservationServiceTest {
         when(rentalContractRepository.existsByCustomerIdAndStatus(15L, ContractStatus.OVERDUE)).thenReturn(false);
         when(facilityRepository.findById(1L)).thenReturn(Optional.of(activeFacility));
         when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(activeUnitType));
-        when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(availableStorageUnit));
-        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any()))
+        when(storageUnitRepository.findByIdForUpdate(42L)).thenReturn(Optional.of(availableStorageUnit));
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any(), eq(15)))
                 .thenReturn(true);
 
         CreateReservationRequest req = new CreateReservationRequest();
@@ -195,8 +211,8 @@ class ReservationServiceTest {
         when(rentalContractRepository.existsByCustomerIdAndStatus(15L, ContractStatus.OVERDUE)).thenReturn(false);
         when(facilityRepository.findById(1L)).thenReturn(Optional.of(activeFacility));
         when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(activeUnitType));
-        when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(availableStorageUnit));
-        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any()))
+        when(storageUnitRepository.findByIdForUpdate(42L)).thenReturn(Optional.of(availableStorageUnit));
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any(), eq(15)))
                 .thenReturn(false);
 
         FacilityUnitTypePrice price = new FacilityUnitTypePrice();

@@ -3,6 +3,8 @@ package com.swp391.selfstorage.unit.service;
 import com.swp391.selfstorage.common.dto.PageResponse;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
+import com.swp391.selfstorage.policy.entity.PolicyVersion;
+import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
 import com.swp391.selfstorage.unit.dto.BatchCreateStorageUnitsRequest;
 import com.swp391.selfstorage.unit.dto.CreateStorageUnitRequest;
 import com.swp391.selfstorage.unit.dto.StorageUnitResponse;
@@ -35,6 +37,7 @@ class StorageUnitServiceTest {
 
     @Mock private StorageUnitRepository storageUnitRepository;
     @Mock private UnitTypeRepository unitTypeRepository;
+    @Mock private PolicyVersionRepository policyVersionRepository;
     private final UnitMapper mapper = new UnitMapper();
 
     private StorageUnitService storageUnitService;
@@ -43,7 +46,11 @@ class StorageUnitServiceTest {
 
     @BeforeEach
     void setUp() {
-        storageUnitService = new StorageUnitServiceImpl(storageUnitRepository, unitTypeRepository, mapper);
+        PolicyVersion policy = PolicyVersion.builder().id(1L).rentalBufferDays(15).reservationHoldHours(48).build();
+        lenient().when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(any()))
+                .thenReturn(Optional.of(policy));
+        storageUnitService = new StorageUnitServiceImpl(
+                storageUnitRepository, unitTypeRepository, null, mapper, policyVersionRepository);
 
         unitType = UnitType.builder()
                 .id(7L)
@@ -306,9 +313,9 @@ class StorageUnitServiceTest {
 
         when(storageUnitRepository.findByFacilityIdAndFilters(eq(1L), isNull(), isNull(), eq(pageable)))
                 .thenReturn(new PageImpl<>(List.of(storageUnit), pageable, 1));
-        when(storageUnitRepository.findOccupiedUnitIdsByDateRange(eq(1L), eq(startDate), eq(startDate.plusMonths(rentalMonths))))
+        when(storageUnitRepository.findOccupiedUnitIdsByDateRange(eq(1L), eq(startDate), eq(startDate.plusMonths(rentalMonths)), eq(15)))
                 .thenReturn(List.of(42L));
-        when(storageUnitRepository.findReservedUnitIdsByDateRange(eq(1L), eq(startDate), eq(startDate.plusMonths(rentalMonths))))
+        when(storageUnitRepository.findReservedUnitIdsByDateRange(eq(1L), eq(startDate), eq(startDate.plusMonths(rentalMonths)), eq(15)))
                 .thenReturn(List.of());
         when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(unitType));
 
@@ -337,9 +344,9 @@ class StorageUnitServiceTest {
 
         when(storageUnitRepository.findByFacilityIdAndFilters(eq(1L), isNull(), isNull(), eq(pageable)))
                 .thenReturn(new PageImpl<>(List.of(occupiedUnitInDb), pageable, 1));
-        when(storageUnitRepository.findOccupiedUnitIdsByDateRange(eq(1L), eq(startDate), eq(startDate.plusMonths(rentalMonths))))
+        when(storageUnitRepository.findOccupiedUnitIdsByDateRange(eq(1L), eq(startDate), eq(startDate.plusMonths(rentalMonths)), eq(15)))
                 .thenReturn(List.of());
-        when(storageUnitRepository.findReservedUnitIdsByDateRange(eq(1L), eq(startDate), eq(startDate.plusMonths(rentalMonths))))
+        when(storageUnitRepository.findReservedUnitIdsByDateRange(eq(1L), eq(startDate), eq(startDate.plusMonths(rentalMonths)), eq(15)))
                 .thenReturn(List.of());
         when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(unitType));
 
@@ -368,9 +375,9 @@ class StorageUnitServiceTest {
 
         when(storageUnitRepository.findByFacilityIdAndFilters(eq(1L), isNull(), isNull(), eq(pageable)))
                 .thenReturn(new PageImpl<>(List.of(maintenanceUnit), pageable, 1));
-        when(storageUnitRepository.findOccupiedUnitIdsByDateRange(eq(1L), eq(startDate), eq(startDate.plusMonths(rentalMonths))))
+        when(storageUnitRepository.findOccupiedUnitIdsByDateRange(eq(1L), eq(startDate), eq(startDate.plusMonths(rentalMonths)), eq(15)))
                 .thenReturn(List.of());
-        when(storageUnitRepository.findReservedUnitIdsByDateRange(eq(1L), eq(startDate), eq(startDate.plusMonths(rentalMonths))))
+        when(storageUnitRepository.findReservedUnitIdsByDateRange(eq(1L), eq(startDate), eq(startDate.plusMonths(rentalMonths)), eq(15)))
                 .thenReturn(List.of());
         when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(unitType));
 

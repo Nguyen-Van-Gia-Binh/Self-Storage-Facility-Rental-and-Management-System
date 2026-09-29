@@ -40,6 +40,16 @@ public class PolicyVersion {
     @Column(name = "reservation_hold_hours", nullable = false)
     private Integer reservationHoldHours;
 
+    /** BR-AVL-02: khoảng đệm sau ngày kết thúc loại trừ trước khi ô kho nhận lượt thuê kế tiếp. */
+    @Column(name = "rental_buffer_days", nullable = false)
+    @Builder.Default
+    private Integer rentalBufferDays = 15;
+
+    /** BR-PRI-03: số ngày quy ước của một tháng khi quy đổi tiền thuê theo ngày. */
+    @Column(name = "rental_daily_divisor", nullable = false)
+    @Builder.Default
+    private Integer rentalDailyDivisor = 30;
+
     @Column(name = "checkin_grace_days", nullable = false)
     private Integer checkinGraceDays;
 

@@ -44,8 +44,13 @@ public class ContractEventListener {
     public void onContractRenewalPaymentCompleted(com.swp391.selfstorage.payment.event.ContractRenewalPaymentCompletedEvent event) {
         log.info("Processing renewal for contractId={}, months={}", event.contractId(), event.renewalMonths());
         try {
-            int months = event.renewalMonths() != null && event.renewalMonths() > 0 ? event.renewalMonths() : 1;
-            renewalService.processRenewal(event.contractId(), new com.swp391.selfstorage.contract.dto.RenewalRequest(months), event.paymentId());
+            if (event.renewalMonths() == null || event.renewalMonths() <= 0) {
+                log.error("Bỏ qua gia hạn contractId={}: thiếu số tháng đã chốt, không mặc định 1 tháng",
+                        event.contractId());
+                return;
+            }
+            renewalService.processRenewal(event.contractId(),
+                    new com.swp391.selfstorage.contract.dto.RenewalRequest(event.renewalMonths()), event.paymentId());
             log.info("Contract renewal successfully processed for contractId={}", event.contractId());
         } catch (Exception e) {
             log.error("Contract renewal failed for contractId={}: {}", event.contractId(), e.getMessage(), e);

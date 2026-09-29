@@ -5,6 +5,8 @@ import com.swp391.selfstorage.common.exception.ErrorCode;
 import com.swp391.selfstorage.facility.entity.Facility;
 import com.swp391.selfstorage.facility.entity.FacilityStatus;
 import com.swp391.selfstorage.facility.repository.FacilityRepository;
+import com.swp391.selfstorage.policy.entity.PolicyVersion;
+import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
 import com.swp391.selfstorage.unit.dto.AvailabilityResponse;
 import com.swp391.selfstorage.unit.entity.FacilityUnitTypePrice;
 import com.swp391.selfstorage.unit.entity.UnitType;
@@ -24,6 +26,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -40,6 +43,9 @@ class AvailabilityServiceTest {
 
     @Mock
     private StorageUnitRepository storageUnitRepository;
+
+    @Mock
+    private PolicyVersionRepository policyVersionRepository;
 
     @InjectMocks
     private AvailabilityServiceImpl availabilityService;
@@ -69,6 +75,15 @@ class AvailabilityServiceTest {
                 .unitTypeId(7L)
                 .monthlyPrice(800000L)
                 .build();
+
+        PolicyVersion policy = PolicyVersion.builder()
+                .id(1L)
+                .rentalBufferDays(15)
+                .rentalDailyDivisor(30)
+                .reservationHoldHours(48)
+                .build();
+        lenient().when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(any()))
+                .thenReturn(Optional.of(policy));
     }
 
     @Test
@@ -160,8 +175,7 @@ class AvailabilityServiceTest {
         when(priceRepository.findByFacilityIdAndUnitTypeId(1L, 7L)).thenReturn(Optional.of(unitPrice));
 
         when(storageUnitRepository.countExploitableUnits(eq(1L), eq(7L), anyCollection())).thenReturn(10L);
-        when(storageUnitRepository.countOverlappingReservations(eq(1L), eq(7L), any(), any())).thenReturn(2L);
-        when(storageUnitRepository.countOverlappingContracts(eq(1L), eq(7L), any(), any())).thenReturn(5L);
+        when(storageUnitRepository.countBusyUnits(eq(1L), eq(7L), any(), any(), eq(15))).thenReturn(7L);
 
         AvailabilityResponse response = availabilityService.checkAvailability(1L, 7L, startDate, rentalMonths);
 
@@ -171,7 +185,7 @@ class AvailabilityServiceTest {
         assertEquals(startDate, response.getStartDate());
         assertEquals(LocalDate.of(2027, 1, 1), response.getEndDateExclusive());
         assertEquals(3, response.getRentalMonths());
-        assertEquals(3L, response.getAvailableSlots()); // 10 - 2 - 5 = 3 (BR-AVL-01)
+        assertEquals(3L, response.getAvailableSlots()); // 10 - 7 ô bận (mỗi ô một lần)
         assertEquals(800000L, response.getMonthlyPrice());
         assertEquals(2400000L, response.getTotalRentalFee()); // 800000 * 3 (BR-PRI-01)
         assertEquals(800000L, response.getDepositAmount());   // 1 tháng cọc (BR-DEP-01)
@@ -187,10 +201,8 @@ class AvailabilityServiceTest {
         when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(activeUnitType));
         when(priceRepository.findByFacilityIdAndUnitTypeId(1L, 7L)).thenReturn(Optional.of(unitPrice));
 
-        // 5 ô kho khai thác được, nhưng có 4 reservations và 3 contracts đang giao nhau (tổng 7 > 5)
         when(storageUnitRepository.countExploitableUnits(eq(1L), eq(7L), anyCollection())).thenReturn(5L);
-        when(storageUnitRepository.countOverlappingReservations(eq(1L), eq(7L), any(), any())).thenReturn(4L);
-        when(storageUnitRepository.countOverlappingContracts(eq(1L), eq(7L), any(), any())).thenReturn(3L);
+        when(storageUnitRepository.countBusyUnits(eq(1L), eq(7L), any(), any(), eq(15))).thenReturn(7L);
 
         AvailabilityResponse response = availabilityService.checkAvailability(1L, 7L, startDate, rentalMonths);
 

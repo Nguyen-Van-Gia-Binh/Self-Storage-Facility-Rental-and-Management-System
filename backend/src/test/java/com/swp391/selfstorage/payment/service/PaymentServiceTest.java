@@ -11,6 +11,8 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -21,6 +23,7 @@ import org.springframework.context.ApplicationEventPublisher;
 
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
+import com.swp391.selfstorage.contract.dto.RenewalQuoteResponse;
 import com.swp391.selfstorage.payment.dto.CheckoutRequest;
 import com.swp391.selfstorage.payment.dto.CheckoutResponse;
 import com.swp391.selfstorage.payment.dto.CreatePaymentRequest;
@@ -477,5 +480,152 @@ class PaymentServiceTest {
                 "Hợp đồng PHẢI giữ nguyên OVERDUE qua PayOS Webhook — KHÔNG được chuyển ACTIVE (BR-OVD-08)");
         assertEquals(0L, contract.getOverdueFeeAccrued(),
                 "Nợ phạt phải được xóa về 0 sau thanh toán PayOS thành công");
+    }
+
+    @Test
+    @DisplayName("Checkout gia hạn lưu đúng số tháng đã chốt, không suy ra từ nội dung chuyển khoản")
+    void createCheckoutLink_ContractRenewal_PersistsMonths() {
+        com.swp391.selfstorage.contract.entity.RentalContract contract =
+                new com.swp391.selfstorage.contract.entity.RentalContract();
+        contract.setId(100L);
+
+        when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
+        when(renewalService.getRenewalQuote(eq(100L), any()))
+                .thenReturn(RenewalQuoteResponse.builder().totalAmount(2_400_000L).build());
+        when(paymentGateway.createPayment(any(PaymentCheckoutCommand.class)))
+                .thenReturn(PaymentCheckoutResult.builder()
+                        .orderCode(1L)
+                        .amount(2_400_000L)
+                        .checkoutUrl("http://localhost/payment/checkout")
+                        .build());
+        when(paymentTransactionRepository.save(any(PaymentTransaction.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        CheckoutRequest request = CheckoutRequest.builder()
+                .referenceType("CONTRACT_RENEWAL")
+                .referenceId(100L)
+                .renewalMonths(3)
+                .description("GH100T12")
+                .build();
+
+        paymentService.createCheckoutLink(request);
+
+        ArgumentCaptor<PaymentTransaction> saved = ArgumentCaptor.forClass(PaymentTransaction.class);
+        verify(paymentTransactionRepository).save(saved.capture());
+        assertEquals(3, saved.getValue().getRenewalMonths());
+        assertEquals("CONTRACT_RENEWAL", saved.getValue().getTransactionType());
+    }
+
+    @Test
+    @DisplayName("Sandbox gia hạn bắn event đúng số tháng đã lưu, không hard-code 1 tháng")
+    void processSandboxTransfer_ContractRenewal_UsesStoredMonths() {
+        PaymentTransaction txn = PaymentTransaction.builder()
+                .id(77L)
+                .contractId(100L)
+                .orderCode(555L)
+                .amount(2_400_000L)
+                .status("PENDING")
+                .transactionType("CONTRACT_RENEWAL")
+                .renewalMonths(3)
+                .build();
+
+        when(paymentTransactionRepository.findByOrderCode(555L)).thenReturn(Optional.of(txn));
+        when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(i -> i.getArgument(0));
+
+        paymentService.processSandboxTransfer(555L, "TRANSFER_SUCCESS");
+
+        ArgumentCaptor<ContractRenewalPaymentCompletedEvent> event =
+                ArgumentCaptor.forClass(ContractRenewalPaymentCompletedEvent.class);
+        verify(eventPublisher).publishEvent(event.capture());
+        assertEquals(100L, event.getValue().contractId());
+        assertEquals(77L, event.getValue().paymentId());
+        assertEquals(3, event.getValue().renewalMonths());
+    }
+
+    @Test
+    @DisplayName("Webhook gia hạn dùng số tháng đã lưu, bỏ qua chuỗi mô tả PayOS")
+    void processPayOSWebhook_ContractRenewal_IgnoresDescription() {
+        PaymentTransaction txn = PaymentTransaction.builder()
+                .id(88L)
+                .contractId(100L)
+                .orderCode(666L)
+                .amount(2_400_000L)
+                .status("PENDING")
+                .transactionType("CONTRACT_RENEWAL")
+                .renewalMonths(3)
+                .build();
+
+        when(paymentTransactionRepository.findByOrderCode(666L)).thenReturn(Optional.of(txn));
+        when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(i -> i.getArgument(0));
+
+        Map<String, Object> payload = Map.of(
+                "code", "00",
+                "data", Map.of(
+                        "orderCode", 666L,
+                        "description", "THANH TOAN GH100T12",
+                        "reference", "FT1"
+                )
+        );
+
+        paymentService.processPayOSWebhook(payload);
+
+        ArgumentCaptor<ContractRenewalPaymentCompletedEvent> event =
+                ArgumentCaptor.forClass(ContractRenewalPaymentCompletedEvent.class);
+        verify(eventPublisher).publishEvent(event.capture());
+        assertEquals(3, event.getValue().renewalMonths());
+        assertEquals(88L, event.getValue().paymentId());
+    }
+
+    @ParameterizedTest(name = "Sandbox gia hạn {0} tháng bắn đúng {0} tháng, không rút về 1")
+    @ValueSource(ints = {1, 3, 6, 12})
+    void processSandboxTransfer_ContractRenewal_KeepsSelectedMonths(int months) {
+        PaymentTransaction txn = PaymentTransaction.builder()
+                .id(70L + months)
+                .contractId(100L)
+                .orderCode(700L + months)
+                .amount(3_000_000L * months)
+                .status("PENDING")
+                .transactionType("CONTRACT_RENEWAL")
+                .renewalMonths(months)
+                .build();
+
+        when(paymentTransactionRepository.findByOrderCode(700L + months)).thenReturn(Optional.of(txn));
+        when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(i -> i.getArgument(0));
+
+        paymentService.processSandboxTransfer(700L + months, "TRANSFER_SUCCESS");
+
+        ArgumentCaptor<ContractRenewalPaymentCompletedEvent> event =
+                ArgumentCaptor.forClass(ContractRenewalPaymentCompletedEvent.class);
+        verify(eventPublisher).publishEvent(event.capture());
+        assertEquals(months, event.getValue().renewalMonths());
+    }
+
+    @Test
+    @DisplayName("Thiếu renewal_months thì suy ra từ số tiền, không mặc định 1 tháng")
+    void processSandboxTransfer_NullMonths_DerivesFromAmount() {
+        PaymentTransaction txn = PaymentTransaction.builder()
+                .id(91L)
+                .contractId(100L)
+                .orderCode(910L)
+                .amount(18_000_000L)
+                .status("PENDING")
+                .transactionType("CONTRACT_RENEWAL")
+                .build();
+
+        com.swp391.selfstorage.contract.entity.RentalContract contract =
+                new com.swp391.selfstorage.contract.entity.RentalContract();
+        contract.setId(100L);
+        contract.setMonthlyPrice(3_000_000L);
+
+        when(paymentTransactionRepository.findByOrderCode(910L)).thenReturn(Optional.of(txn));
+        when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(i -> i.getArgument(0));
+        when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
+
+        paymentService.processSandboxTransfer(910L, "TRANSFER_SUCCESS");
+
+        ArgumentCaptor<ContractRenewalPaymentCompletedEvent> event =
+                ArgumentCaptor.forClass(ContractRenewalPaymentCompletedEvent.class);
+        verify(eventPublisher).publishEvent(event.capture());
+        assertEquals(6, event.getValue().renewalMonths());
     }
 }

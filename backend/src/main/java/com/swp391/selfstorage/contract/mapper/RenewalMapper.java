@@ -33,9 +33,10 @@ public class RenewalMapper {
 
     public ContractRenewal toEntity(Long contractId, LocalDate previousEndDate, LocalDate newEndDate,
             int renewalMonths, long monthlyPriceSnapshot, Long policyVersionId,
-            long overdueFeeSettled, long rentalFeeAmount, long totalPaid) {
+            long overdueFeeSettled, long rentalFeeAmount, long totalPaid, Long paymentTransactionId) {
         return ContractRenewal.builder()
                 .contractId(contractId)
+                .paymentTransactionId(paymentTransactionId)
                 .previousEndDate(previousEndDate)
                 .newEndDate(newEndDate)
                 .rentalMonths(renewalMonths)

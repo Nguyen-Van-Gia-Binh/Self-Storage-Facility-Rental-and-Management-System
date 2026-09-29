@@ -34,6 +34,12 @@ public class CreatePolicyRequest {
     @Min(value = 1, message = "Số giờ giữ chỗ tối thiểu là 1")
     private Integer reservationHoldHours;
 
+    @Min(value = 0, message = "Số ngày đệm sau kỳ thuê không được âm")
+    private Integer rentalBufferDays;
+
+    @Min(value = 1, message = "Số ngày quy ước của một tháng tối thiểu là 1")
+    private Integer rentalDailyDivisor;
+
     @NotNull(message = "Số ngày ân hạn nhận kho không được để trống")
     @Min(value = 0, message = "Số ngày ân hạn nhận kho không được âm")
     private Integer checkinGraceDays;

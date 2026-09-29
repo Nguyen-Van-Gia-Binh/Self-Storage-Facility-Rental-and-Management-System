@@ -19,6 +19,8 @@ public class PolicyResponse {
     private OffsetDateTime effectiveFrom;
     private BigDecimal depositMultiplier;
     private Integer reservationHoldHours;
+    private Integer rentalBufferDays;
+    private Integer rentalDailyDivisor;
     private Integer checkinGraceDays;
     private Integer cancelFullRefundHours;
     private BigDecimal cancelLateRefundRate;

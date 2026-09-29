@@ -77,22 +77,22 @@ class UnitRepositoryTest {
         assertTrue(count >= 0);
 
         long overlappingReservations = storageUnitRepository.countOverlappingReservations(
-                1L, 1L, java.time.LocalDate.of(2026, 10, 1), java.time.LocalDate.of(2027, 1, 1)
+                1L, 1L, java.time.LocalDate.of(2026, 10, 1), java.time.LocalDate.of(2027, 1, 1), 15
         );
         assertTrue(overlappingReservations >= 0);
 
         long overlappingContracts = storageUnitRepository.countOverlappingContracts(
-                1L, 1L, java.time.LocalDate.of(2026, 10, 1), java.time.LocalDate.of(2027, 1, 1)
+                1L, 1L, java.time.LocalDate.of(2026, 10, 1), java.time.LocalDate.of(2027, 1, 1), 15
         );
         assertTrue(overlappingContracts >= 0);
 
         List<Long> occupiedIds = storageUnitRepository.findOccupiedUnitIdsByDateRange(
-                1L, java.time.LocalDate.of(2026, 10, 1), java.time.LocalDate.of(2027, 1, 1)
+                1L, java.time.LocalDate.of(2026, 10, 1), java.time.LocalDate.of(2027, 1, 1), 15
         );
         assertNotNull(occupiedIds);
 
         List<Long> reservedIds = storageUnitRepository.findReservedUnitIdsByDateRange(
-                1L, java.time.LocalDate.of(2026, 10, 1), java.time.LocalDate.of(2027, 1, 1)
+                1L, java.time.LocalDate.of(2026, 10, 1), java.time.LocalDate.of(2027, 1, 1), 15
         );
         assertNotNull(reservedIds);
     }
