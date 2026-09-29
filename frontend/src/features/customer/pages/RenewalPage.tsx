@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -19,7 +19,8 @@ import {
   Clock,
   AlertTriangle,
   Loader2,
-  ExternalLink
+  ExternalLink,
+  XCircle
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { getCustomerContracts, getRenewalQuote, waitForAppliedRenewal, type RenewalQuote } from '@/api/customerRentals';
@@ -34,6 +35,9 @@ import { tokenStorage } from '@/utils/tokenStorage';
 export const RenewalPage: React.FC = () => {
   const { contractId } = useParams<{ contractId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const urlStep = searchParams.get('step');
+  const urlOrderCode = searchParams.get('orderCode');
 
   // Auth Guard: Mục 2 — Yêu cầu đăng nhập trước khi gia hạn hợp đồng
   useEffect(() => {
@@ -45,7 +49,9 @@ export const RenewalPage: React.FC = () => {
 
   const [contract, setContract] = useState<RentedContract | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(() => {
+    return urlStep === '3' ? 3 : 1;
+  });
   const [renewalMonths, setRenewalMonths] = useState<number>(3);
   const [copiedBankInfo, setCopiedBankInfo] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
@@ -56,8 +62,11 @@ export const RenewalPage: React.FC = () => {
     totalPaid: number;
   } | null>(null);
   const [showReceiptModal, setShowReceiptModal] = useState<boolean>(false);
-  const [countdownSeconds, setCountdownSeconds] = useState<number>(900); // 15 phút đếm ngược
-  const [payosCheckout, setPayosCheckout] = useState<CheckoutResponse | null>(null);
+  const [countdownSeconds, setCountdownSeconds] = useState<number>(0);
+  const [paymentExpiresAt, setPaymentExpiresAt] = useState<Date | null>(null);
+  const [payosCheckout, setPayosCheckout] = useState<CheckoutResponse | null>(() => {
+    return urlOrderCode ? ({ orderCode: Number(urlOrderCode) } as CheckoutResponse) : null;
+  });
   const [isLoadingCheckout, setIsLoadingCheckout] = useState<boolean>(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [isPaidSuccess, setIsPaidSuccess] = useState<boolean>(false);
@@ -65,6 +74,10 @@ export const RenewalPage: React.FC = () => {
   const [paymentNotice, setPaymentNotice] = useState<string | null>(null);
   const [renewalQuote, setRenewalQuote] = useState<RenewalQuote | null>(null);
   const [loadingQuote, setLoadingQuote] = useState<boolean>(false);
+
+  const [isSandboxing, setIsSandboxing] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   // Tải báo giá gia hạn chính thức từ Backend Policy Service (POST /contracts/{id}/renewals/quote)
   useEffect(() => {
@@ -98,7 +111,7 @@ export const RenewalPage: React.FC = () => {
 
   // Khởi tạo link thanh toán PayOS VietQR khi chuyển sang Bước 3
   useEffect(() => {
-    if (currentStep !== 3 || !contract) return;
+    if (currentStep !== 3 || !contract || payosCheckout?.orderCode) return;
 
     let isMounted = true;
     const initPayos = async () => {
@@ -304,20 +317,87 @@ export const RenewalPage: React.FC = () => {
     };
   }, [contractId]);
 
-  // Bộ đếm ngược thời gian thanh toán VietQR (15 phút)
+  // Cập nhật paymentExpiresAt khi payosCheckout được khởi tạo
   useEffect(() => {
-    if (currentStep !== 3) return;
+    if (currentStep === 3 && payosCheckout?.orderCode && !paymentExpiresAt) {
+      if (contract?.pendingRenewalExpiresAt) {
+        setPaymentExpiresAt(new Date(contract.pendingRenewalExpiresAt));
+      } else {
+        setPaymentExpiresAt(new Date(Date.now() + 48 * 60 * 60 * 1000));
+      }
+    }
+  }, [currentStep, payosCheckout, contract, paymentExpiresAt]);
+
+  // Bộ đếm ngược thời gian thanh toán VietQR (48 giờ)
+  useEffect(() => {
+    if (currentStep !== 3 || !paymentExpiresAt) return;
+    
+    // Khởi tạo ngay lập tức
+    const calcRemaining = () => Math.max(0, Math.floor((paymentExpiresAt.getTime() - Date.now()) / 1000));
+    setCountdownSeconds(calcRemaining());
+
     const timer = setInterval(() => {
-      setCountdownSeconds((prev) => (prev > 0 ? prev - 1 : 0));
+      setCountdownSeconds(calcRemaining());
     }, 1000);
     return () => clearInterval(timer);
-  }, [currentStep]);
+  }, [currentStep, paymentExpiresAt]);
 
-  // Format phút:giây đếm ngược
+  // Format đếm ngược
   const formatCountdown = (secs: number) => {
+    if (secs > 3600) {
+      const hours = Math.floor(secs / 3600);
+      const mins = Math.floor((secs % 3600) / 60);
+      return `Còn ${hours} giờ ${mins} phút`;
+    }
     const m = Math.floor(secs / 60);
     const s = secs % 60;
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const handleSimulateSuccess = async () => {
+    if (!payosCheckout?.orderCode) return;
+    setIsSandboxing(true);
+    try {
+      await customerApi.processSandboxTransfer(payosCheckout.orderCode, 'TRANSFER_SUCCESS');
+      setIsPaidSuccess(true);
+      await executeRenewalActivation();
+    } catch (err) {
+      console.error('Sandbox simulate error:', err);
+    } finally {
+      setIsSandboxing(false);
+    }
+  };
+
+  const handleSimulateCancel = async () => {
+    if (!payosCheckout?.orderCode) return;
+    setIsSandboxing(true);
+    try {
+      await customerApi.processSandboxTransfer(payosCheckout.orderCode, 'CANCEL');
+      navigate('/customer/my-units');
+    } catch (err) {
+      console.error('Sandbox cancel error:', err);
+    } finally {
+      setIsSandboxing(false);
+    }
+  };
+
+  const handleCancelPayment = async () => {
+    if (!payosCheckout?.orderCode) {
+      setCurrentStep(1);
+      return;
+    }
+    setIsCancelling(true);
+    try {
+      await customerApi.processSandboxTransfer(payosCheckout.orderCode, 'CANCEL');
+    } catch (err) {
+      console.error('Cancel payment error:', err);
+    } finally {
+      setIsCancelling(false);
+      setShowCancelDialog(false);
+      setCurrentStep(1);
+      setPayosCheckout(null);
+      setPaymentExpiresAt(null);
+    }
   };
 
   const transferContent = useMemo(() => {
@@ -832,6 +912,36 @@ export const RenewalPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Sandbox Dev Bar */}
+            {import.meta.env.DEV && (
+              <div className="p-4 rounded-xl bg-slate-50 border-2 border-dashed border-slate-300 space-y-3">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                  <span>🧪 Môi trường Thử nghiệm (Sandbox Payment)</span>
+                </div>
+                <div className="flex flex-wrap gap-2.5">
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={isSandboxing || isPaidSuccess}
+                    onClick={handleSimulateSuccess}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs"
+                  >
+                    {isSandboxing ? 'Đang xử lý...' : '⚡ Giả lập Chuyển khoản Thành công'}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={isSandboxing || isPaidSuccess}
+                    onClick={handleSimulateCancel}
+                    className="border-rose-300 text-rose-600 hover:bg-rose-50 font-semibold text-xs"
+                  >
+                    ❌ Giả lập Hủy / Chứng khoản Thất bại
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {/* Trạng thái thành công tự động khi webhook bắn về */}
             {isPaidSuccess && (
               <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3 text-emerald-800 text-sm font-medium animate-pulse">
@@ -971,15 +1081,29 @@ export const RenewalPage: React.FC = () => {
 
                 {/* Action buttons */}
                 <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentStep(2)}
-                    className="w-full sm:w-auto"
-                  >
-                    <ArrowLeft className="w-4 h-4 mr-1.5" />
-                    Quay lại xem bảng kê
-                  </Button>
+                  {/* Nút Hủy lệnh thanh toán */}
+                  {!showCancelDialog ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowCancelDialog(true)}
+                      className="w-full sm:w-auto text-rose-600 border-rose-200 hover:bg-rose-50"
+                    >
+                      <XCircle className="w-4 h-4 mr-1.5" />
+                      Hủy lệnh thanh toán
+                    </Button>
+                  ) : (
+                    <div className="flex items-center gap-2 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800">
+                      <span>Bạn có chắc muốn hủy lệnh thanh toán gia hạn này?</span>
+                      <Button size="sm" variant="outline" onClick={() => setShowCancelDialog(false)} className="text-xs py-1 px-2">
+                        Không
+                      </Button>
+                      <Button size="sm" onClick={handleCancelPayment} disabled={isCancelling}
+                        className="text-xs py-1 px-2 bg-rose-600 hover:bg-rose-700 text-white">
+                        {isCancelling ? 'Đang hủy...' : 'Xác nhận hủy'}
+                      </Button>
+                    </div>
+                  )}
 
                   <div className="flex items-center gap-3 w-full sm:w-auto">
                     <Button

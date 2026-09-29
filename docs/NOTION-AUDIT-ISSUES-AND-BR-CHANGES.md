@@ -123,7 +123,7 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
     - Backend: `SupportTicketService.java`, `AccessCodeService.java` (tách riêng API reset PIN tự động và API quản lý Ticket của FM/Staff).
   * **Trạng thái:** `[ĐÃ XONG]` - Đã loại bỏ checkbox tự tick SLA 2h, thay thế bằng Smart PIN Hint banner và Notice thông báo thời gian xử lý. Đã cập nhật payload `CreateSupportTicketModal.tsx`.
 
-#### 6. Luồng thanh toán trên Màn hình Thanh toán Gia hạn Hợp đồng (VietQR): Thiếu Sandbox giả lập, sai thời hạn giữ chỗ (15 phút vs 48 giờ) và thiếu cơ chế lưu vết đơn chờ thanh toán
+#### 6. [ĐÃ XONG] Luồng thanh toán trên Màn hình Thanh toán Gia hạn Hợp đồng (VietQR): Thiếu Sandbox giả lập, sai thời hạn giữ chỗ (15 phút vs 48 giờ) và thiếu cơ chế lưu vết đơn chờ thanh toán
 - **Hình ảnh minh chứng:**  
   ![Màn hình thanh toán chuyển khoản](./images/notion-audit/image-06.png)
 - **Ghi chú gốc từ Lead Dev:**  
@@ -146,6 +146,7 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
     - Frontend: `VietQRPaymentStep.tsx` (thêm Mock Dev Sandbox, sửa countdown 48h, đổi nút Hủy thanh toán), `MyRentalsPage.tsx` (đổi nhãn nút thành "Thanh toán" nếu đang pending payment).  
     - Backend: `PaymentService.java`, `RenewalService.java`, `VietQRWebhookController.java`.  
     - Tài liệu: Cập nhật điều chỉnh `BR-REN-10` trong `docs/BUSINESS-RULES.md`.
+  * **Trạng thái:** `[ĐÃ XONG]` - Đã tích hợp Sandbox Dev Bar, đếm ngược 48h, nút Hủy lệnh thanh toán và cơ chế lưu vết PENDING_RENEWAL.
 
 #### 7. Chuẩn hóa thời điểm tự động khóa mã mở cửa chính xác tại mốc D+7 theo Business Rules mới
 - **Hình ảnh minh chứng:**  

@@ -259,7 +259,7 @@ export const customerApi = {
   /**
    * Chuyển tiền mô phỏng qua Cổng Sandbox nội bộ
    */
-  async processSandboxTransfer(orderCode: number, action: 'TRANSFER_SUCCESS' | 'TRANSFER_FAILED' = 'TRANSFER_SUCCESS'): Promise<any> {
+  async processSandboxTransfer(orderCode: number, action: 'TRANSFER_SUCCESS' | 'TRANSFER_FAILED' | 'CANCEL' = 'TRANSFER_SUCCESS'): Promise<any> {
     try {
       const res = await apiClient<ApiResponse<any> | any>('/payments/sandbox/process-transfer', {
         method: 'POST',
