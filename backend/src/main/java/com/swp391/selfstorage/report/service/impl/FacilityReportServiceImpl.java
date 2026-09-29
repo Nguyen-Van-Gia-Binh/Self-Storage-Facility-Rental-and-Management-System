@@ -319,20 +319,69 @@ public class FacilityReportServiceImpl implements FacilityReportService {
         // Sắp xếp theo số ngày quá hạn giảm dần
         dtoList.sort(Comparator.comparingLong(OverdueContractDebtDto::getOverdueDays).reversed());
 
-        // Phân bổ 3 bracket (AC-4)
+        // Phân bổ 3 giai đoạn theo BR chuẩn (BR-OVD-01, 02, 03) + Mốc D+10+
+        List<OverdueContractDebtDto> listD1ToD3 = new ArrayList<>();
+        List<OverdueContractDebtDto> listD4ToD6 = new ArrayList<>();
+        List<OverdueContractDebtDto> listD7ToD10 = new ArrayList<>();
+        List<OverdueContractDebtDto> listD10Plus = new ArrayList<>();
+
+        // Giữ tương thích ngược
         List<OverdueContractDebtDto> listD1ToD10 = new ArrayList<>();
         List<OverdueContractDebtDto> listD11ToD30 = new ArrayList<>();
         List<OverdueContractDebtDto> listOverD30 = new ArrayList<>();
 
         for (OverdueContractDebtDto dto : dtoList) {
-            if (dto.getOverdueDays() >= 1 && dto.getOverdueDays() <= 10) {
+            long days = dto.getOverdueDays();
+            if (days >= 1 && days <= 3) {
+                listD1ToD3.add(dto);
+            } else if (days >= 4 && days <= 6) {
+                listD4ToD6.add(dto);
+            } else if (days >= 7 && days <= 10) {
+                listD7ToD10.add(dto);
+            } else if (days > 10) {
+                listD10Plus.add(dto);
+            }
+
+            if (days >= 1 && days <= 10) {
                 listD1ToD10.add(dto);
-            } else if (dto.getOverdueDays() >= 11 && dto.getOverdueDays() <= 30) {
+            } else if (days >= 11 && days <= 30) {
                 listD11ToD30.add(dto);
-            } else {
+            } else if (days > 30) {
                 listOverD30.add(dto);
             }
         }
+
+        DebtAgeBracket bracketD1ToD3 = DebtAgeBracket.builder()
+                .bracketCode("D1_TO_D3")
+                .bracketName("Giai đoạn D+1 đến D+3 (Ân hạn nhắc nợ)")
+                .contractCount(listD1ToD3.size())
+                .totalDebt(listD1ToD3.stream().mapToLong(OverdueContractDebtDto::getTotalDebt).sum())
+                .contracts(listD1ToD3)
+                .build();
+
+        DebtAgeBracket bracketD4ToD6 = DebtAgeBracket.builder()
+                .bracketCode("D4_TO_D6")
+                .bracketName("Giai đoạn D+4 đến D+6 (Tính phạt 10%/ngày)")
+                .contractCount(listD4ToD6.size())
+                .totalDebt(listD4ToD6.stream().mapToLong(OverdueContractDebtDto::getTotalDebt).sum())
+                .contracts(listD4ToD6)
+                .build();
+
+        DebtAgeBracket bracketD7ToD10 = DebtAgeBracket.builder()
+                .bracketCode("D7_TO_D10")
+                .bracketName("Giai đoạn D+7 đến D+10 (Khóa mã PIN & Cảnh báo cưỡng chế)")
+                .contractCount(listD7ToD10.size())
+                .totalDebt(listD7ToD10.stream().mapToLong(OverdueContractDebtDto::getTotalDebt).sum())
+                .contracts(listD7ToD10)
+                .build();
+
+        DebtAgeBracket bracketTerminatedD10Plus = DebtAgeBracket.builder()
+                .bracketCode("D10_PLUS_TERMINATED")
+                .bracketName("Mốc D+10+ (Đã chấm dứt & Niêm phong thanh lý)")
+                .contractCount(listD10Plus.size())
+                .totalDebt(listD10Plus.stream().mapToLong(OverdueContractDebtDto::getTotalDebt).sum())
+                .contracts(listD10Plus)
+                .build();
 
         DebtAgeBracket bracketD1ToD10 = DebtAgeBracket.builder()
                 .bracketCode("D1_TO_D10")
@@ -365,6 +414,10 @@ public class FacilityReportServiceImpl implements FacilityReportService {
                 .facilityName(facility.getName())
                 .totalOverdueContracts(dtoList.size())
                 .totalOverdueDebt(totalOverdueDebt)
+                .bracketD1ToD3(bracketD1ToD3)
+                .bracketD4ToD6(bracketD4ToD6)
+                .bracketD7ToD10(bracketD7ToD10)
+                .bracketTerminatedD10Plus(bracketTerminatedD10Plus)
                 .bracketD1ToD10(bracketD1ToD10)
                 .bracketD11ToD30(bracketD11ToD30)
                 .bracketOverD30(bracketOverD30)

@@ -11,10 +11,16 @@ import com.swp391.selfstorage.facility.entity.Facility;
 import com.swp391.selfstorage.facility.entity.FacilityStatus;
 import com.swp391.selfstorage.facility.mapper.FacilityMapper;
 import com.swp391.selfstorage.facility.repository.FacilityRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.swp391.selfstorage.auth.service.UserPrincipal;
+import com.swp391.selfstorage.user.repository.UserFacilityAssignmentRepository;
+import java.util.Collections;
+import java.util.List;
 
 @Service
 @Transactional
@@ -22,10 +28,17 @@ public class FacilityServiceImpl implements FacilityService {
 
     private final FacilityRepository facilityRepository;
     private final FacilityMapper facilityMapper;
+    private final UserFacilityAssignmentRepository userFacilityAssignmentRepository;
 
     public FacilityServiceImpl(FacilityRepository facilityRepository, FacilityMapper facilityMapper) {
+        this(facilityRepository, facilityMapper, null);
+    }
+
+    @Autowired
+    public FacilityServiceImpl(FacilityRepository facilityRepository, FacilityMapper facilityMapper, UserFacilityAssignmentRepository userFacilityAssignmentRepository) {
         this.facilityRepository = facilityRepository;
         this.facilityMapper = facilityMapper;
+        this.userFacilityAssignmentRepository = userFacilityAssignmentRepository;
     }
 
     @Override
@@ -99,5 +112,44 @@ public class FacilityServiceImpl implements FacilityService {
         facility.setStatus(targetActive ? FacilityStatus.ACTIVE : FacilityStatus.INACTIVE);
         Facility saved = facilityRepository.save(facility);
         return facilityMapper.toResponse(saved);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<FacilityResponse> getMyAssignedFacilities(UserPrincipal currentUser) {
+        if (currentUser == null) {
+            return Collections.emptyList();
+        }
+
+        boolean isFullAccess = currentUser.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")
+                            || a.getAuthority().equals("ROLE_SYSTEM_ADMINISTRATOR")
+                            || a.getAuthority().equals("ROLE_BUSINESS_OPERATIONS_MANAGER"));
+
+        List<Facility> facilities;
+        if (isFullAccess) {
+            facilities = facilityRepository.findAll().stream()
+                    .filter(f -> f.getStatus() == FacilityStatus.ACTIVE)
+                    .filter(f -> !f.getName().toLowerCase().contains("sadas") && !f.getCode().toLowerCase().contains("sadas"))
+                    .toList();
+        } else {
+            if (userFacilityAssignmentRepository == null) {
+                return Collections.emptyList();
+            }
+            List<Long> assignedIds = userFacilityAssignmentRepository.findFacilityIdsByUserId(currentUser.getId());
+            if (assignedIds.isEmpty()) {
+                return Collections.emptyList();
+            }
+            facilities = facilityRepository.findAllById(assignedIds).stream()
+                    .filter(f -> f.getStatus() == FacilityStatus.ACTIVE)
+                    .filter(f -> !f.getName().toLowerCase().contains("sadas") && !f.getCode().toLowerCase().contains("sadas"))
+                    .toList();
+        }
+
+        return facilities.stream().map(facility -> {
+            FacilityResponse resp = facilityMapper.toResponse(facility);
+            enrichFacilityMetrics(resp);
+            return resp;
+        }).toList();
     }
 }

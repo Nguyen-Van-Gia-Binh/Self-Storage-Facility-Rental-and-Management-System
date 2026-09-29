@@ -25,7 +25,7 @@ import { StaffWorkloadCard } from '../components/StaffWorkloadCard';
 import { DailyTasksDispatchBoard } from '../components/DailyTasksDispatchBoard';
 import { AssignStaffModal } from '../components/AssignStaffModal';
 import { StaffDailyScheduleModal } from '../components/StaffDailyScheduleModal';
-import { fetchFacilities } from '@/api/facility';
+import { fetchMyAssignedFacilities } from '@/api/facility';
 import { tokenStorage } from '@/utils/tokenStorage';
 
 export const StaffAssignmentPage: React.FC = () => {
@@ -66,7 +66,7 @@ export const StaffAssignmentPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchFacilities(undefined, true)
+    fetchMyAssignedFacilities()
       .then((list) => {
         if (list && list.length > 0) {
           const mapped = list.map((f) => ({ id: f.id, name: f.name }));
@@ -124,15 +124,19 @@ export const StaffAssignmentPage: React.FC = () => {
     const res = await assignStaffToTask(payload);
     showToast(res.message);
 
-    // Cập nhật lại danh sách tasks cục bộ ngay lập tức
-    const assignedStaff = staffList.find((s) => s.staffId === payload.staffId);
+    // Tìm tên nhân viên nếu chưa có từ response
+    const staffObj = staffList.find((s) => s.staffId === payload.staffId);
+    const resolvedStaffName = res.updatedTask.assignedStaffName || staffObj?.staffName;
+
+    // Cập nhật lại danh sách tasks cục bộ mà KHÔNG làm mất thông tin cũ
     setTasks((prev) =>
       prev.map((t) =>
         t.id === payload.taskId
           ? {
               ...t,
+              ...res.updatedTask,
               assignedStaffId: payload.staffId,
-              assignedStaffName: assignedStaff?.staffName || t.assignedStaffName,
+              assignedStaffName: resolvedStaffName || t.assignedStaffName,
               status: 'ASSIGNED',
               priority: payload.priority,
               isUrgent: payload.priority === 'URGENT',

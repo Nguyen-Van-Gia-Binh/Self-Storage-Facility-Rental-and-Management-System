@@ -1,9 +1,24 @@
 import { apiClient, isMockEnabled } from './client';
 import type { ApiResponse } from './client';
-import type { StaffDailyTaskReport } from '../types';
+import type { StaffDailyTaskReport, DailyIncidentTask } from '../types';
 import mockDailyTasksData from '../mock/mock-daily-tasks.json';
 
 const localDailyTasks: StaffDailyTaskReport = JSON.parse(JSON.stringify(mockDailyTasksData));
+
+function mapRawSupportTask(item: any): DailyIncidentTask {
+  return {
+    ticketId: item.ticketId ?? item.supportRequestId ?? Math.floor(Math.random() * 10000),
+    code: item.code ?? (item.supportRequestId ? `SUP-${item.supportRequestId}` : undefined),
+    title: item.title ?? item.description ?? 'Sự cố vận hành',
+    category: item.category ?? 'DAMAGED_UNIT',
+    priority: item.priority ?? (item.isUrgent ? 'URGENT' : 'MEDIUM'),
+    unitCode: item.unitCode ?? item.storageUnitCode ?? '---',
+    customerName: item.customerName ?? item.reporterName ?? undefined,
+    slaDeadline: item.slaDeadline ?? (item.slaDueAt ? new Date(item.slaDueAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : 'SLA 2h'),
+    status: item.status === 'RESOLVED' ? 'RESOLVED' : item.status === 'IN_PROGRESS' ? 'IN_PROGRESS' : 'PENDING',
+    isOverlockTask: item.isOverlockTask ?? (item.category === 'OVERLOCK_D4' || item.category === 'OVERLOCK')
+  };
+}
 
 /**
  * Lấy danh sách công việc hằng ngày trong ca trực của Staff (FS-06, T4.9)
@@ -20,10 +35,14 @@ export async function getStaffDailyTasks(
   }
 
   // Không fallback về mock — để lỗi propagate để UI xử lý
-  const res = await apiClient<ApiResponse<StaffDailyTaskReport>>(
+  const res = await apiClient<ApiResponse<any>>(
     `/reports/staff/${staffId}/daily-tasks?date=${queryDate}`
   );
-  return res.data;
+  const data = res.data;
+  return {
+    ...data,
+    openSupportRequests: (data.openSupportRequests || []).map(mapRawSupportTask)
+  };
 }
 
 /**

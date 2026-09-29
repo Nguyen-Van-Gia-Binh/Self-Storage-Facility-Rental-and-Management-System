@@ -247,13 +247,14 @@ export interface DailyReturnTask {
 
 export interface DailyIncidentTask {
   ticketId: number;
+  code?: string;
   title: string;
-  category: 'ACCESS_CODE' | 'LOST_KEY' | 'DAMAGED_UNIT' | 'OVERLOCK_D4' | 'CLEANING';
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  category: 'ACCESS_CODE' | 'LOST_KEY' | 'DAMAGED_UNIT' | 'OVERLOCK_D4' | 'CLEANING' | string;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT' | string;
   unitCode: string;
   customerName?: string;
   slaDeadline: string;
-  status: 'PENDING' | 'IN_PROGRESS' | 'RESOLVED';
+  status: 'PENDING' | 'IN_PROGRESS' | 'RESOLVED' | string;
   isOverlockTask?: boolean;
 }
 

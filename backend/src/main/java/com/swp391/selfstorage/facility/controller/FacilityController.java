@@ -1,6 +1,8 @@
 package com.swp391.selfstorage.facility.controller;
 
+import com.swp391.selfstorage.common.dto.ApiResponse;
 import com.swp391.selfstorage.common.dto.PageResponse;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import com.swp391.selfstorage.facility.dto.CreateFacilityRequest;
 import com.swp391.selfstorage.facility.dto.FacilityResponse;
 import com.swp391.selfstorage.facility.dto.UpdateFacilityRequest;
@@ -43,6 +45,15 @@ public class FacilityController {
             @RequestParam(required = false) Boolean isActive,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(facilityService.getFacilities(keyword, isActive, pageable));
+    }
+
+    @GetMapping("/my-assigned-facilities")
+    @PreAuthorize("hasAnyRole('MANAGER', 'FACILITY_MANAGER', 'STAFF', 'FACILITY_STAFF', 'ADMIN', 'SYSTEM_ADMINISTRATOR', 'BUSINESS_OPERATIONS_MANAGER')")
+    @Operation(summary = "Lấy danh sách các cơ sở được phân công cho nhân sự / quản lý hiện tại (Multi-tenancy SA-03, FM-01)")
+    public ResponseEntity<ApiResponse<java.util.List<FacilityResponse>>> getMyAssignedFacilities(
+            @AuthenticationPrincipal com.swp391.selfstorage.auth.service.UserPrincipal currentUser) {
+        java.util.List<FacilityResponse> facilities = facilityService.getMyAssignedFacilities(currentUser);
+        return ResponseEntity.ok(ApiResponse.success(facilities, "Lấy danh sách cơ sở được phân công thành công"));
     }
 
     @GetMapping("/{id}")

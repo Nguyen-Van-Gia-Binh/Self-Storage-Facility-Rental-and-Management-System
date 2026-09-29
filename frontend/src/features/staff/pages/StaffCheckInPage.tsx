@@ -16,20 +16,24 @@ import { HandoverInspectionForm } from '../components/HandoverInspectionForm';
 import { AccessCodePinModal } from '../components/AccessCodePinModal';
 import { HandoverRejectionModal } from '../components/HandoverRejectionModal';
 
-const FACILITIES = [
-  { id: 0, name: 'Tất cả cơ sở' },
-  { id: 1, name: 'Cơ sở Quận 1' },
-  { id: 2, name: 'Cơ sở Cầu Giấy' },
-  { id: 3, name: 'Cơ sở Hải Châu' },
-  { id: 4, name: 'Cơ sở Bình Thạnh' },
-  { id: 5, name: 'Cơ sở Hai Bà Trưng' },
-];
+const FACILITY_NAMES: Record<number, string> = {
+  1: 'Cơ sở Quận 7 - TP.HCM',
+  2: 'Cơ sở Cầu Giấy - Hà Nội',
+  3: 'Cơ sở Hải Châu - Đà Nẵng',
+  4: 'Cơ sở Bình Thạnh - TP.HCM',
+  5: 'Cơ sở Hai Bà Trưng - Hà Nội',
+  6: 'Cơ sở Thanh Xuân - Hà Nội',
+  7: 'Cơ sở Quận 1 - TP.HCM',
+  8: 'Cơ sở Thủ Đức - TP.HCM',
+};
 
 export const StaffCheckInPage: React.FC = () => {
   const user = useCurrentUser();
   const staffId = user?.id as number | undefined;
+  // Khóa cứng cơ sở ca trực của nhân viên theo FS-01 / FS-02 (Mục 30)
+  const staffFacilityId = user?.facilityId ? Number(user.facilityId) : 2;
+  const staffFacilityName = FACILITY_NAMES[staffFacilityId] || 'Cơ sở Cầu Giấy - Hà Nội';
 
-  const [selectedFacilityId, setSelectedFacilityId] = useState<number>(0);
   const [contracts, setContracts] = useState<CheckInContract[]>([]);
   const [selectedContract, setSelectedContract] = useState<CheckInContract | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -48,12 +52,11 @@ export const StaffCheckInPage: React.FC = () => {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  // Tải danh sách hợp đồng chờ check-in theo cơ sở được chọn
-  const loadContracts = useCallback(async (facilityId?: number) => {
+  // Tải danh sách hợp đồng chờ check-in khóa cứng theo cơ sở ca trực
+  const loadContracts = useCallback(async () => {
     setIsLoading(true);
     try {
-      const targetFacilityId = facilityId !== undefined ? facilityId : selectedFacilityId;
-      const data = await getPendingContracts(targetFacilityId === 0 ? undefined : targetFacilityId);
+      const data = await getPendingContracts(staffFacilityId);
       setContracts(data);
       if (data.length > 0) {
         setSelectedContract((prev) => {
@@ -70,15 +73,9 @@ export const StaffCheckInPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedFacilityId]);
-
-  const handleFacilityChange = (newFacilityId: number) => {
-    setSelectedFacilityId(newFacilityId);
-    loadContracts(newFacilityId);
-  };
+  }, [staffFacilityId]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadContracts();
   }, [loadContracts]);
 
@@ -196,22 +193,11 @@ export const StaffCheckInPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Thanh công cụ cơ sở & làm mới */}
+        {/* Thanh công cụ cơ sở ca trực & làm mới (FS-01, FS-02) */}
         <div className="flex items-center gap-2.5">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100/80 rounded-xl border border-slate-200 text-xs text-slate-700">
-            <Building2 className="w-4 h-4 text-slate-500 shrink-0" />
-            <span className="text-slate-500 shrink-0">Cơ sở:</span>
-            <select
-              value={selectedFacilityId}
-              onChange={(e) => handleFacilityChange(Number(e.target.value))}
-              className="bg-transparent font-bold text-slate-900 focus:outline-none cursor-pointer pr-1"
-            >
-              {FACILITIES.map((f) => (
-                <option key={f.id} value={f.id} className="text-slate-900 bg-white">
-                  {f.name}
-                </option>
-              ))}
-            </select>
+          <div className="flex items-center gap-2 px-3.5 py-2 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl text-xs font-bold shadow-xs">
+            <Building2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>📍 Ca trực: {staffFacilityName}</span>
           </div>
 
           <button

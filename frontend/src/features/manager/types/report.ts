@@ -48,9 +48,15 @@ export interface OverdueDebtReport {
   facilityName: string;
   totalOverdueContracts: number;
   totalOverdueDebt: number;
-  bracketD1ToD10: DebtAgeBracket;
-  bracketD11ToD30: DebtAgeBracket;
-  bracketOverD30: DebtAgeBracket;
+  // BR Chuẩn: 3 giai đoạn xử lý nợ + Mốc D+10+ thanh lý
+  bracketD1ToD3?: DebtAgeBracket;
+  bracketD4ToD6?: DebtAgeBracket;
+  bracketD7ToD10?: DebtAgeBracket;
+  bracketTerminatedD10Plus?: DebtAgeBracket;
+  // Giữ lại để tương thích ngược
+  bracketD1ToD10?: DebtAgeBracket;
+  bracketD11ToD30?: DebtAgeBracket;
+  bracketOverD30?: DebtAgeBracket;
   contracts: OverdueContractDebt[];
 }
 

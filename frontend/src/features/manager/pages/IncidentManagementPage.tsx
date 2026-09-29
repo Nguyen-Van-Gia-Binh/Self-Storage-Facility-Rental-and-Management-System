@@ -26,7 +26,8 @@ import {
 } from '../api/staffAssignmentApi';
 import { IncidentDetailModal } from '../components/IncidentDetailModal';
 import { AssignStaffModal } from '../components/AssignStaffModal';
-import { fetchFacilities } from '@/api/facility';
+import { SlaCountdownBadge } from '../components/SlaCountdownBadge';
+import { fetchMyAssignedFacilities } from '@/api/facility';
 import { tokenStorage } from '@/utils/tokenStorage';
 
 const CATEGORIES: { key: SupportCategory | 'ALL'; label: string }[] = [
@@ -71,7 +72,7 @@ export const IncidentManagementPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchFacilities(undefined, true)
+    fetchMyAssignedFacilities()
       .then((list) => {
         if (list && list.length > 0) {
           const mapped = list.map((f) => ({ id: f.id, name: f.name }));
@@ -426,10 +427,13 @@ export const IncidentManagementPage: React.FC = () => {
                         ({new Date(ticket.createdAt).toLocaleDateString('vi-VN')})
                       </p>
                       {ticket.isUrgent && (
-                        <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-                          SLA 2h
-                        </span>
+                        <div className="mt-1">
+                          <SlaCountdownBadge
+                            slaDeadline={ticket.slaDueAt}
+                            createdAt={ticket.createdAt}
+                            isCompleted={ticket.status === 'RESOLVED' || ticket.status === 'CLOSED'}
+                          />
+                        </div>
                       )}
                     </td>
 

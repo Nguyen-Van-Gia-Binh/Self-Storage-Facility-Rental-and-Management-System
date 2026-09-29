@@ -288,53 +288,79 @@ export async function getDailyDispatchTasks(
  */
 export async function assignStaffToTask(
   payload: AssignTaskPayload
-): Promise<{ success: boolean; message: string; updatedTask: DailyDispatchTaskItem }> {
-  if (payload.taskType === 'INCIDENT') {
-    await apiClient(`/support-requests/${payload.taskId}/assign`, {
-      method: 'PATCH',
+): Promise<{ success: boolean; message: string; updatedTask: Partial<DailyDispatchTaskItem> }> {
+  let backendMsg = 'Phân công nhân viên thực hiện nhiệm vụ thành công';
+  let assignedStaffName = '';
+
+  try {
+    const contractId =
+      payload.taskType === 'CHECK_IN'
+        ? payload.taskId > 100000
+          ? payload.taskId - 100000
+          : payload.taskId
+        : payload.taskType === 'RETURN'
+        ? payload.taskId > 200000
+          ? payload.taskId - 200000
+          : payload.taskId
+        : undefined;
+
+    const res = await apiClient<ApiResponse<any>>('/staff-assignments', {
+      method: 'POST',
       body: JSON.stringify({
+        taskId: payload.taskId,
+        contractId,
         staffId: payload.staffId,
-        note: payload.notes || 'Phân công từ bàn điều phối cơ sở',
+        taskType: payload.taskType,
+        priority: payload.priority,
+        notes: payload.notes,
       }),
     });
-  } else if (payload.taskType === 'RETURN') {
-    const contractId = payload.taskId > 200000 ? payload.taskId - 200000 : payload.taskId;
-    try {
-      await assignReturnStaff(contractId, payload.staffId, payload.notes);
-    } catch (err) {
-      console.warn(`Lỗi gọi API phân công trả kho contract #${contractId}:`, err);
+
+    if (res?.data?.staffName) {
+      assignedStaffName = res.data.staffName;
     }
-  } else if (payload.taskType === 'CHECK_IN') {
-    const contractId = payload.taskId > 100000 ? payload.taskId - 100000 : payload.taskId;
-    try {
-      await assignCheckInStaff(contractId, payload.staffId, payload.notes);
-    } catch (err) {
-      console.warn(`Lỗi gọi API phân công check-in contract #${contractId}:`, err);
+    if (res?.message) {
+      backendMsg = res.message;
+    }
+  } catch (err) {
+    console.warn('Lỗi gọi /staff-assignments, fallback endpoint tương thích:', err);
+    if (payload.taskType === 'INCIDENT') {
+      await apiClient(`/support-requests/${payload.taskId}/assign`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          staffId: payload.staffId,
+          note: payload.notes || 'Phân công từ bàn điều phối cơ sở',
+        }),
+      });
+    } else if (payload.taskType === 'RETURN') {
+      const contractId = payload.taskId > 200000 ? payload.taskId - 200000 : payload.taskId;
+      try {
+        await assignReturnStaff(contractId, payload.staffId, payload.notes);
+      } catch (subErr) {
+        console.warn(`Lỗi gọi API phân công trả kho contract #${contractId}:`, subErr);
+      }
+    } else if (payload.taskType === 'CHECK_IN') {
+      const contractId = payload.taskId > 100000 ? payload.taskId - 100000 : payload.taskId;
+      try {
+        await assignCheckInStaff(contractId, payload.staffId, payload.notes);
+      } catch (checkInErr) {
+        console.warn(`Lỗi gọi API phân công check-in contract #${contractId}:`, checkInErr);
+      }
     }
   }
 
-  const updatedTask: DailyDispatchTaskItem = {
-    id: payload.taskId,
-    taskType: payload.taskType,
-    title: 'Nhiệm vụ đã được phân công',
-    facilityId: 0,
-    facilityName: '',
-    unitCode: '',
-    customerName: '',
-    customerPhone: '',
-    scheduledDate: new Date().toISOString().split('T')[0],
-    scheduledTime: '',
-    priority: payload.priority,
-    isUrgent: payload.priority === 'URGENT',
-    assignedStaffId: payload.staffId,
-    status: 'ASSIGNED',
-    notes: payload.notes,
-  };
-
   return {
     success: true,
-    message: 'Phân công nhân viên thực hiện nhiệm vụ thành công',
-    updatedTask,
+    message: backendMsg,
+    updatedTask: {
+      id: payload.taskId,
+      assignedStaffId: payload.staffId,
+      assignedStaffName: assignedStaffName || undefined,
+      priority: payload.priority,
+      isUrgent: payload.priority === 'URGENT',
+      status: 'ASSIGNED',
+      notes: payload.notes,
+    },
   };
 }
 

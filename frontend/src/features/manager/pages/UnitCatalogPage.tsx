@@ -21,7 +21,7 @@ import {
   createStorageUnit,
   updateStorageUnitStatus,
 } from '@/api/unit';
-import { fetchFacilities } from '@/api/facility';
+import { fetchMyAssignedFacilities } from '@/api/facility';
 import type { FacilityListItem } from '@/types';
 
 const STATUS_FILTERS: { label: string; value: UnitStatus | 'ALL' }[] = [
@@ -46,9 +46,9 @@ export const UnitCatalogPage: React.FC = () => {
   const [editingType, setEditingType] = useState<UnitTypeResponse | null>(null);
   const [suModalOpen, setSuModalOpen] = useState(false);
 
-  // Tải danh sách cơ sở
+  // Tải danh sách cơ sở phân công cho FM
   useEffect(() => {
-    fetchFacilities()
+    fetchMyAssignedFacilities()
       .then((list) => {
         setFacilities(list);
         if (list.length > 0 && !list.some((f) => f.id === facilityId)) {

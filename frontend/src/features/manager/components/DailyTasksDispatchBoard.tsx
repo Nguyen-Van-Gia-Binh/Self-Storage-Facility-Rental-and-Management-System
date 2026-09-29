@@ -16,6 +16,7 @@ import type {
   DailyDispatchTaskItem,
   DispatchTaskType,
 } from '../types/staffAssignment';
+import { SlaCountdownBadge } from './SlaCountdownBadge';
 
 interface DailyTasksDispatchBoardProps {
   tasks: DailyDispatchTaskItem[];
@@ -295,12 +296,15 @@ export const DailyTasksDispatchBoard: React.FC<DailyTasksDispatchBoardProps> = (
                       <Clock className="w-3.5 h-3.5 text-slate-400" />
                       <span>{task.scheduledTime}</span>
                     </div>
-                    {task.isUrgent && (
-                      <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-                        SLA 2h
-                      </span>
-                    )}
+                    {task.isUrgent || task.priority === 'URGENT' ? (
+                      <div className="mt-1">
+                        <SlaCountdownBadge
+                          slaDeadline={task.slaDeadline}
+                          createdAt={task.scheduledDate}
+                          isCompleted={task.status === 'COMPLETED' || task.status === 'RESOLVED'}
+                        />
+                      </div>
+                    ) : null}
                   </td>
 
                   {/* Phân loại & Nhiệm vụ */}
