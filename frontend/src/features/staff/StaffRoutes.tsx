@@ -4,6 +4,7 @@ import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { StaffDashboardPage } from './pages/StaffDashboardPage';
 import { StaffCheckInPage } from './pages/StaffCheckInPage';
 import { StaffReturnInspectionPage } from './pages/StaffReturnInspectionPage';
+import { StaffIncidentPage } from './pages/StaffIncidentPage';
 
 export const StaffRoutes: React.FC = () => {
   return (
@@ -15,6 +16,7 @@ export const StaffRoutes: React.FC = () => {
         <Route path="check-in" element={<StaffCheckInPage />} />
         <Route path="return" element={<StaffReturnInspectionPage />} />
         <Route path="return/:contractId" element={<StaffReturnInspectionPage />} />
+        <Route path="incidents" element={<StaffIncidentPage />} />
       </Routes>
     </DashboardLayout>
   );

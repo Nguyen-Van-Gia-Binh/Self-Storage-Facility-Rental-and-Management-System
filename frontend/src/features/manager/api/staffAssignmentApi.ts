@@ -322,6 +322,23 @@ export async function assignStaffToTask(
     if (res?.message) {
       backendMsg = res.message;
     }
+
+    // Luôn đồng bộ vào Contract Service chuyên trách
+    if (contractId) {
+      if (payload.taskType === 'CHECK_IN') {
+        try {
+          await assignCheckInStaff(contractId, payload.staffId, payload.notes);
+        } catch (subErr) {
+          console.warn(`Lỗi đồng bộ assignCheckInStaff #${contractId}:`, subErr);
+        }
+      } else if (payload.taskType === 'RETURN') {
+        try {
+          await assignReturnStaff(contractId, payload.staffId, payload.notes);
+        } catch (subErr) {
+          console.warn(`Lỗi đồng bộ assignReturnStaff #${contractId}:`, subErr);
+        }
+      }
+    }
   } catch (err) {
     console.warn('Lỗi gọi /staff-assignments, fallback endpoint tương thích:', err);
     if (payload.taskType === 'INCIDENT') {
@@ -407,14 +424,22 @@ export async function startIncidentInProgress(
  */
 export async function resolveSupportTicket(
   ticketId: number,
-  payload: ResolveSupportRequestDto
+  payload: ResolveSupportRequestDto | { resolutionNote: string; resolutionAttachmentUrls?: string[] }
 ): Promise<{ success: boolean; message: string }> {
+  const note =
+    (payload as any).resolutionNote ||
+    (payload as ResolveSupportRequestDto).resolutionNotes ||
+    'Đã xử lý xong sự cố';
+  const urls =
+    (payload as any).resolutionAttachmentUrls ||
+    (payload as ResolveSupportRequestDto).resolutionImageUrls ||
+    [];
+
   await apiClient(`/support-requests/${ticketId}/resolve`, {
     method: 'PATCH',
     body: JSON.stringify({
-      resolutionNotes: payload.resolutionNotes,
-      actualDamageCost: 0,
-      evidenceUrls: payload.resolutionImageUrls || [],
+      resolutionNote: note,
+      resolutionAttachmentUrls: urls,
     }),
   });
 

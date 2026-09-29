@@ -367,10 +367,14 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
         }
 
         String facilityName = null;
-        if (facilityId != null) {
-            facilityName = facilityRepository.findById(facilityId)
-                    .map(Facility::getName)
-                    .orElse(null);
+        String customerName = null;
+        String customerPhone = null;
+        if (sr.getCustomerId() != null) {
+            Optional<AppUser> userOpt = userRepository.findById(sr.getCustomerId());
+            if (userOpt.isPresent()) {
+                customerName = userOpt.get().getFullName();
+                customerPhone = userOpt.get().getPhone();
+            }
         }
 
         return DailySupportTaskDto.builder()
@@ -383,6 +387,9 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                 .storageUnitCode(unitCode)
                 .facilityId(facilityId)
                 .facilityName(facilityName)
+                .customerId(sr.getCustomerId())
+                .customerName(customerName)
+                .customerPhone(customerPhone)
                 .isUrgent(sr.getIsUrgent())
                 .slaDueAt(sr.getSlaDueAt())
                 .status(sr.getStatus())

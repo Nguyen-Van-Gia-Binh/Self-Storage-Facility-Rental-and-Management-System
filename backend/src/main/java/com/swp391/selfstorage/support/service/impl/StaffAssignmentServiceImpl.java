@@ -32,6 +32,7 @@ public class StaffAssignmentServiceImpl implements StaffAssignmentService {
     private final RentalContractRepository rentalContractRepository;
     private final StaffDailyAssignmentRepository staffDailyAssignmentRepository;
     private final StaffSupportService staffSupportService;
+    private final com.swp391.selfstorage.contract.repository.ReturnRequestRepository returnRequestRepository;
 
     @Override
     @Transactional
@@ -76,6 +77,19 @@ public class StaffAssignmentServiceImpl implements StaffAssignmentService {
                 if (contract != null) {
                     targetFacilityId = contract.getFacilityId();
                 }
+                if (returnRequestRepository != null) {
+                    var reqOpt = returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(contractId);
+                    if (reqOpt.isPresent()) {
+                        var retReq = reqOpt.get();
+                        retReq.setInspectedBy(staffId);
+                        if (request.getNotes() != null && !request.getNotes().isBlank()) {
+                            String curNote = retReq.getConditionNote() != null ? retReq.getConditionNote() : "";
+                            retReq.setConditionNote((curNote + " [Phân công]: " + request.getNotes()).trim());
+                        }
+                        returnRequestRepository.save(retReq);
+                        log.info("Đã gán inspectedBy={} cho return request của hợp đồng #{}", staffId, contractId);
+                    }
+                }
             }
         } else if ("INCIDENT".equals(taskTypeStr) || "SUPPORT".equals(taskTypeStr)) {
             assignmentType = AssignmentTaskType.SUPPORT;
@@ -92,20 +106,32 @@ public class StaffAssignmentServiceImpl implements StaffAssignmentService {
             }
         }
 
-        // Lưu bản ghi vào bảng staff_daily_assignment
-        StaffDailyAssignment assignment = StaffDailyAssignment.builder()
-                .staffId(staffId)
-                .facilityId(targetFacilityId)
-                .workDate(LocalDate.now())
-                .taskType(assignmentType)
-                .referenceType(contractId != null ? "CONTRACT" : "SUPPORT_REQUEST")
-                .referenceId(contractId != null ? contractId : (rawTaskId != null ? rawTaskId : 0L))
-                .assignedBy(assignedBy)
-                .createdAt(OffsetDateTime.now())
-                .build();
+        // Lưu hoặc cập nhật bản ghi vào bảng staff_daily_assignment
+        String refType = contractId != null ? "CONTRACT" : "SUPPORT_REQUEST";
+        Long refId = contractId != null ? contractId : (rawTaskId != null ? rawTaskId : 0L);
+        final Long finalFacilityId = targetFacilityId;
+        final AssignmentTaskType finalAssignmentType = assignmentType;
+
+        StaffDailyAssignment assignment = staffDailyAssignmentRepository
+                .findByReferenceTypeAndReferenceId(refType, refId)
+                .orElseGet(() -> StaffDailyAssignment.builder()
+                        .facilityId(finalFacilityId)
+                        .workDate(LocalDate.now())
+                        .taskType(finalAssignmentType)
+                        .referenceType(refType)
+                        .referenceId(refId)
+                        .createdAt(OffsetDateTime.now())
+                        .build());
+
+        assignment.setStaffId(staffId);
+        assignment.setFacilityId(targetFacilityId);
+        assignment.setAssignedBy(assignedBy);
+        assignment.setTaskType(assignmentType);
+        assignment.setWorkDate(LocalDate.now());
 
         staffDailyAssignmentRepository.save(assignment);
-        log.info("Phân công nhân viên {} (ID: {}) cho nhiệm vụ {} thành công", staff.getFullName(), staffId, taskTypeStr);
+        log.info("Phân công nhân viên {} (ID: {}) cho nhiệm vụ {} (ref: {} #{}) thành công",
+                staff.getFullName(), staffId, taskTypeStr, refType, refId);
 
         return TaskAssignmentResponse.builder()
                 .success(true)

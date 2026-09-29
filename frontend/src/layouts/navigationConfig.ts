@@ -41,6 +41,7 @@ export const ROLE_NAVIGATIONS: Record<UserRole, RoleNavigation> = {
       { label: 'Tổng quan ca trực',   href: '/staff',          icon: Home },
       { label: 'Tiếp đón Check-in',   href: '/staff/check-in', icon: KeyRound },
       { label: 'Nghiệm thu trả kho',  href: '/staff/return',   icon: ClipboardCheck },
+      { label: 'Xử lý sự cố',         href: '/staff/incidents', icon: Wrench },
       { label: 'Việc trong ngày',     href: '/staff/tasks',    icon: ListTodo },
     ],
   },

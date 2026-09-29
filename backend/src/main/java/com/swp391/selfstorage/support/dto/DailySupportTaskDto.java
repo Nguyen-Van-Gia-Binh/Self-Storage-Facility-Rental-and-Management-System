@@ -42,6 +42,15 @@ public class DailySupportTaskDto {
     @Schema(description = "Hạn chót cam kết dịch vụ (SLA)")
     private OffsetDateTime slaDueAt;
 
+    @Schema(description = "ID khách hàng")
+    private Long customerId;
+
+    @Schema(description = "Họ tên khách hàng")
+    private String customerName;
+
+    @Schema(description = "Số điện thoại khách hàng")
+    private String customerPhone;
+
     @Schema(description = "Trạng thái sự cố")
     private SupportStatus status;
 
@@ -61,6 +70,20 @@ public class DailySupportTaskDto {
                                Boolean isUrgent, OffsetDateTime slaDueAt,
                                SupportStatus status, String statusDisplayName,
                                boolean completed) {
+        this(supportRequestId, code, category, categoryDisplayName, description,
+                storageUnitId, storageUnitCode, facilityId, facilityName,
+                null, null, null,
+                isUrgent, slaDueAt, status, statusDisplayName, completed);
+    }
+
+    public DailySupportTaskDto(Long supportRequestId, String code, SupportCategory category,
+                               String categoryDisplayName, String description,
+                               Long storageUnitId, String storageUnitCode,
+                               Long facilityId, String facilityName,
+                               Long customerId, String customerName, String customerPhone,
+                               Boolean isUrgent, OffsetDateTime slaDueAt,
+                               SupportStatus status, String statusDisplayName,
+                               boolean completed) {
         this.supportRequestId = supportRequestId;
         this.code = code;
         this.category = category;
@@ -70,6 +93,9 @@ public class DailySupportTaskDto {
         this.storageUnitCode = storageUnitCode;
         this.facilityId = facilityId;
         this.facilityName = facilityName;
+        this.customerId = customerId;
+        this.customerName = customerName;
+        this.customerPhone = customerPhone;
         this.isUrgent = isUrgent;
         this.slaDueAt = slaDueAt;
         this.status = status;
@@ -193,6 +219,30 @@ public class DailySupportTaskDto {
         this.completed = completed;
     }
 
+    public Long getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(Long customerId) {
+        this.customerId = customerId;
+    }
+
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
+    }
+
+    public String getCustomerPhone() {
+        return customerPhone;
+    }
+
+    public void setCustomerPhone(String customerPhone) {
+        this.customerPhone = customerPhone;
+    }
+
     public static class Builder {
         private Long supportRequestId;
         private String code;
@@ -203,6 +253,9 @@ public class DailySupportTaskDto {
         private String storageUnitCode;
         private Long facilityId;
         private String facilityName;
+        private Long customerId;
+        private String customerName;
+        private String customerPhone;
         private Boolean isUrgent;
         private OffsetDateTime slaDueAt;
         private SupportStatus status;
@@ -254,6 +307,21 @@ public class DailySupportTaskDto {
             return this;
         }
 
+        public Builder customerId(Long customerId) {
+            this.customerId = customerId;
+            return this;
+        }
+
+        public Builder customerName(String customerName) {
+            this.customerName = customerName;
+            return this;
+        }
+
+        public Builder customerPhone(String customerPhone) {
+            this.customerPhone = customerPhone;
+            return this;
+        }
+
         public Builder isUrgent(Boolean isUrgent) {
             this.isUrgent = isUrgent;
             return this;
@@ -281,8 +349,9 @@ public class DailySupportTaskDto {
 
         public DailySupportTaskDto build() {
             return new DailySupportTaskDto(supportRequestId, code, category, categoryDisplayName, description,
-                    storageUnitId, storageUnitCode, facilityId, facilityName, isUrgent, slaDueAt,
-                    status, statusDisplayName, completed);
+                    storageUnitId, storageUnitCode, facilityId, facilityName,
+                    customerId, customerName, customerPhone,
+                    isUrgent, slaDueAt, status, statusDisplayName, completed);
         }
     }
 }
