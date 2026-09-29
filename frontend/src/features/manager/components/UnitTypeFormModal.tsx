@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import type { UnitTypeFormData, UnitTypeResponse } from '@/types/unit';
 import { X, Layers, Snowflake, Package } from 'lucide-react';
+import { tokenStorage } from '@/utils/tokenStorage';
 
 interface UnitTypeFormModalProps {
   isOpen: boolean;
@@ -29,6 +30,11 @@ export const UnitTypeFormModal: React.FC<UnitTypeFormModalProps> = ({
   const [form, setForm] = useState<UnitTypeFormData>(empty);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // FM (MANAGER) không được phép nhập giá - chỉ BOM mới được định giá (BR-GEN-01)
+  const userRole = tokenStorage.getUser()?.role;
+  const isManager = userRole === 'MANAGER';
+  const canSetPrice = !isManager; // BOM, ADMIN mới được nhập giá
 
   const isClimate =
     form.name.toLowerCase().includes('lạnh') ||
@@ -63,11 +69,17 @@ export const UnitTypeFormModal: React.FC<UnitTypeFormModalProps> = ({
     e.preventDefault();
     if (!form.name.trim()) { setError('Tên loại ô kho không được để trống.'); return; }
     if (form.widthM <= 0 || form.depthM <= 0) { setError('Chiều rộng và chiều sâu phải lớn hơn 0.'); return; }
-    if (form.monthlyPrice <= 0) { setError('Đơn giá niêm yết phải lớn hơn 0.'); return; }
+    if (canSetPrice && form.monthlyPrice <= 0) {
+      setError('Đơn giá niêm yết phải lớn hơn 0.'); return;
+    }
+    // FM chỉ gửi thông số kỹ thuật, không gửi giá (BR-GEN-01)
+    const submitData: UnitTypeFormData = canSetPrice
+      ? form
+      : { ...form, monthlyPrice: 0 };
     try {
       setSubmitting(true);
       setError(null);
-      await onSubmit(form);
+      await onSubmit(submitData);
       onClose();
     } catch {
       setError('Lưu thông tin thất bại. Vui lòng kiểm tra kết nối và thử lại.');
@@ -211,15 +223,21 @@ export const UnitTypeFormModal: React.FC<UnitTypeFormModalProps> = ({
             <label className={labelCls}>
               Đơn giá niêm yết (VND/tháng) <span className="text-rose-500">*</span>
             </label>
-            <input
-              id="ut-price"
-              type="number"
-              min="0"
-              step="50000"
-              value={form.monthlyPrice}
-              onChange={(e) => set('monthlyPrice', parseInt(e.target.value, 10))}
-              className={`${inputCls} font-mono`}
-            />
+            {isManager ? (
+              <div className="px-3.5 py-2 text-sm text-slate-400 italic bg-slate-100 border border-slate-200 rounded-xl">
+                Chỉ BOM mới được nhập giá niêm yết
+              </div>
+            ) : (
+              <input
+                id="ut-price"
+                type="number"
+                min="0"
+                step="50000"
+                value={form.monthlyPrice}
+                onChange={(e) => set('monthlyPrice', parseInt(e.target.value, 10))}
+                className={`${inputCls} font-mono`}
+              />
+            )}
           </div>
         </form>
 
