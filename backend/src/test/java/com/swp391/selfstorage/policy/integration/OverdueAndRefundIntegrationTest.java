@@ -133,6 +133,8 @@ class OverdueAndRefundIntegrationTest {
                 .condition("GOOD")
                 .damageCost(0L)
                 .damageNotes("Kho sạch sẽ, nguyên trạng")
+                .customerConfirmed(true)
+                .signatureDataUrl("data:image/png;base64,abc")
                 .build();
 
         ReturnInspectionResponse inspectionRes = contractService.submitReturnInspection(
@@ -170,6 +172,9 @@ class OverdueAndRefundIntegrationTest {
                 .condition("DAMAGED")
                 .damageCost(100_000L)
                 .damageNotes("Trầy xước cửa cuốn")
+                .evidenceImageUrls("https://example.com/damage.jpg")
+                .customerConfirmed(true)
+                .signatureDataUrl("data:image/png;base64,abc")
                 .build();
 
         contractService.submitReturnInspection(updatedContract.getId(), inspectionReq, 1L, List.of(1L));
@@ -222,6 +227,9 @@ class OverdueAndRefundIntegrationTest {
                 .condition("HEAVILY_DAMAGED")
                 .damageCost(1_500_000L)
                 .damageNotes("Hư hỏng kết cấu vách ngăn")
+                .evidenceImageUrls("https://example.com/damage.jpg")
+                .customerConfirmed(true)
+                .signatureDataUrl("data:image/png;base64,abc")
                 .build();
 
         contractService.submitReturnInspection(contract.getId(), inspectionReq, 1L, List.of(1L));
