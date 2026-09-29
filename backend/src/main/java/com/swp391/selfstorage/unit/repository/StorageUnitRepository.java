@@ -83,7 +83,7 @@ public interface StorageUnitRepository extends JpaRepository<StorageUnit, Long> 
                         "  AND u.unit_type_id = :unitTypeId " +
                         "  AND c.status IN ('PENDING_CHECK_IN', 'ACTIVE', 'PENDING_RETURN', 'OVERDUE') " +
                         "  AND c.start_date < :endDateExclusive " +
-                        "  AND c.end_date > :startDate", nativeQuery = true)
+                        "  AND DATEADD(day, 15, c.end_date) > :startDate", nativeQuery = true)
         long countOverlappingContracts(
                         @Param("facilityId") Long facilityId,
                         @Param("unitTypeId") Long unitTypeId,
@@ -95,7 +95,7 @@ public interface StorageUnitRepository extends JpaRepository<StorageUnit, Long> 
                         "  AND c.storage_unit_id IS NOT NULL " +
                         "  AND c.status IN ('PENDING_CHECK_IN', 'ACTIVE', 'PENDING_RETURN', 'OVERDUE') " +
                         "  AND c.start_date < :endDateExclusive " +
-                        "  AND c.end_date > :startDate", nativeQuery = true)
+                        "  AND DATEADD(day, 15, c.end_date) > :startDate", nativeQuery = true)
         List<Long> findOccupiedUnitIdsByDateRange(
                         @Param("facilityId") Long facilityId,
                         @Param("startDate") java.time.LocalDate startDate,

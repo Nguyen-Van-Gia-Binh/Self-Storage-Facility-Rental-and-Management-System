@@ -58,8 +58,8 @@ class OverdueProcessingServiceTest {
                 .overdueGraceDays(3)
                 .overdueDailyRate(BigDecimal.valueOf(0.10))
                 .overdueCapRate(BigDecimal.valueOf(0.70))
-                .overdueLockAccessDays(10)
-                .overdueTerminationDays(10)
+                .overdueLockAccessDays(7)   // BR-OVD-05: Khóa mã truy cập tại D+7
+                .overdueTerminationDays(10) // BR-OVD-07: Cưỡng chế chấm dứt tại D+10
                 .build();
 
         baseEndDate = LocalDate.of(2026, 10, 1);
@@ -205,6 +205,53 @@ class OverdueProcessingServiceTest {
         // Số tiền phạt vẫn phải là 400.000đ, tuyệt đối không bị cộng thêm thành
         // 800.000đ
         assertEquals(400_000L, contract.getOverdueFeeAccrued());
+        assertEquals(ContractStatus.OVERDUE, contract.getStatus());
+    }
+
+    @Test
+    @DisplayName("BR-OVD-05: Kịch bản 5 — Mốc D+7 — Khóa mã truy cập (accessCode = null)")
+    void testAccessCodeLock_D7_ShouldSuspendAccessCode() {
+        LocalDate runDate = baseEndDate.plusDays(7); // D+7
+
+        RentalContract contract = RentalContract.builder()
+                .id(104L).code("CTR-005").status(ContractStatus.OVERDUE)
+                .endDateExclusive(baseEndDate).depositAmount(2_000_000L)
+                .depositBalance(2_000_000L).overdueFeeAccrued(400_000L)
+                .accessCode("AC-777999").build();
+
+        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(any()))
+                .thenReturn(Optional.of(mockPolicy));
+        when(rentalContractRepository.findByStatusInAndEndDateExclusiveLessThanEqual(anyList(), eq(runDate)))
+                .thenReturn(List.of(contract));
+
+        overdueProcessingService.processOverdueContracts(runDate);
+
+        assertNull(contract.getAccessCode(),
+                "D+7: accessCode phải bị khóa (null) theo BR-OVD-05");
+        assertEquals(ContractStatus.OVERDUE, contract.getStatus(),
+                "D+7: hợp đồng vẫn OVERDUE, chưa TERMINATED");
+    }
+
+    @Test
+    @DisplayName("BR-OVD-05: Kịch bản 6 — Mốc D+5 — Chưa đến D+7, accessCode vẫn còn để khách dọn đồ")
+    void testAccessCodeLock_D5_ShouldKeepAccessCode() {
+        LocalDate runDate = baseEndDate.plusDays(5); // D+5
+
+        RentalContract contract = RentalContract.builder()
+                .id(105L).code("CTR-006").status(ContractStatus.OVERDUE)
+                .endDateExclusive(baseEndDate).depositAmount(2_000_000L)
+                .depositBalance(2_000_000L).overdueFeeAccrued(0L)
+                .accessCode("AC-555111").build();
+
+        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(any()))
+                .thenReturn(Optional.of(mockPolicy));
+        when(rentalContractRepository.findByStatusInAndEndDateExclusiveLessThanEqual(anyList(), eq(runDate)))
+                .thenReturn(List.of(contract));
+
+        overdueProcessingService.processOverdueContracts(runDate);
+
+        assertEquals("AC-555111", contract.getAccessCode(),
+                "D+5: accessCode CHƯA bị khóa — khách vẫn vào được để dọn đồ (BR-OVD-05)");
         assertEquals(ContractStatus.OVERDUE, contract.getStatus());
     }
 }

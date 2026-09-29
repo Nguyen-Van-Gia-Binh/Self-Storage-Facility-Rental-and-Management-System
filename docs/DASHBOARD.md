@@ -53,6 +53,10 @@
 | `ISS-43` | Rò rỉ phiên làm việc do `clearSession()` không xóa sạch mock override và sessionStorage. | Dọn sạch toàn bộ key `smartstorage_*`, `selfstorage_*` và `sessionStorage`. | Bình | `RESOLVED` |
 | `ISS-44` | Đặt chỗ hiển thị mock Tân Bình Flagship và gọi sai endpoint catalog ô kho. | Nối Real API `/facilities`, `/storage-units` và ánh xạ động tên cơ sở theo ID. | Bình / Nhi | `RESOLVED` |
 | `ISS-45` | Hợp đồng PENDING_RETURN bị mất mã PIN trên API và hiển thị nút Gia hạn trên UI. | Giữ accessCode cho PENDING_RETURN, ẩn nút Gia hạn theo BR-REN-02, thêm migration V26. | Bình | `RESOLVED` (#167) |
+| `ISS-46` | Nộp phạt quá hạn OVERDUE_PENALTY tự chuyển hợp đồng về ACTIVE (sai BR-OVD-08). | Giữ nguyên OVERDUE, xóa nợ phạt về 0 để mở quyền báo trả kho (PENDING_RETURN). | Bình / Nhật | `RESOLVED` |
+| `ISS-47` | Thiếu khóa mã PIN tại mốc D+7 (BR-OVD-05) ở backend, còn frontend khóa sớm ở D+4. | Cronjob khóa accessCode tại D+7; Frontend chỉ khóa hiển thị mã PIN khi D+7. | Bình | `RESOLVED` |
+| `ISS-48` | Thiếu đệm an toàn 15 ngày gối đầu và lỗi tự động chọn sẵn ô kho mặc định. | Cập nhật SQL buffer 15 ngày (DATEADD) và bỏ auto-select trên UnitPickerPage. | Bình / Nhi | `RESOLVED` |
+| `ISS-49` | PaymentController và các trang thanh toán thiếu Auth Guard. | Thêm @PreAuthorize("isAuthenticated()") và Auth Guard redirect login. | Bình | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 

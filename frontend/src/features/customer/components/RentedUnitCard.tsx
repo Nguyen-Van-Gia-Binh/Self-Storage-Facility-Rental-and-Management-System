@@ -214,11 +214,11 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
               )}
             </div>
 
-            {contract.status === 'OVERDUE' && penaltyFee > 0 ? (
+            {contract.status === 'OVERDUE' && overdueDays >= 7 && !contract.accessPin ? (
               <div className="text-[11px] text-rose-700 bg-rose-50 p-2.5 rounded-lg border border-rose-200/80 flex items-start gap-1.5 mt-1">
                 <AlertCircle className="w-3.5 h-3.5 text-rose-600 flex-shrink-0 mt-0.5" />
                 <span>
-                  Mã PIN & QR mở khóa đã tạm khóa an ninh do hợp đồng quá hạn. Vui lòng thanh toán tiền thuê và phí quá hạn để mở khóa và tiếp tục sử dụng kho.
+                  Mã PIN & QR mở khóa đã tạm khóa an ninh từ D+7 do hợp đồng quá hạn. Vui lòng thanh toán tiền phạt và liên hệ nhân viên để hoàn tất trả kho.
                 </span>
               </div>
             ) : contract.accessPin ? (

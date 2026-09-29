@@ -5,6 +5,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,6 +36,7 @@ public class PaymentController {
     }
 
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Tạo và xử lý giao dịch thanh toán thủ công (SC-03)")
     public ResponseEntity<PaymentResponse> processPayment(@Valid @RequestBody CreatePaymentRequest request) {
         PaymentResponse response = paymentService.processPayment(request);
@@ -42,6 +44,7 @@ public class PaymentController {
     }
 
     @PostMapping("/checkout")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Khởi tạo link thanh toán PayOS VietQR tự động (SC-03)")
     public ResponseEntity<com.swp391.selfstorage.payment.dto.CheckoutResponse> createCheckout(
             @Valid @RequestBody com.swp391.selfstorage.payment.dto.CheckoutRequest request) {
@@ -49,6 +52,7 @@ public class PaymentController {
     }
 
     @PostMapping("/sandbox/process-transfer")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Xử lý chuyển tiền thanh toán qua Cổng Sandbox nội bộ (SC-03)")
     public ResponseEntity<PaymentResponse> processSandboxTransfer(
             @Valid @RequestBody com.swp391.selfstorage.payment.dto.SandboxTransferRequest request) {

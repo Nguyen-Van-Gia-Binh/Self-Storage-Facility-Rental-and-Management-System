@@ -98,6 +98,15 @@ public class OverdueProcessingServiceImpl implements OverdueProcessingService {
                 penalizedCount++;
                 log.info("Hợp đồng [{}] D+{}: Phạt {} ngày = {} đ.", contract.getCode(), overdueDays, daysToCharge,
                         calculatedFee);
+
+                // BR-OVD-05: Khóa mã truy cập tại D+7 (D+4..D+6 khách vẫn vào dọn đồ được)
+                int lockAccessDays = (policy != null && policy.getOverdueLockAccessDays() != null)
+                        ? policy.getOverdueLockAccessDays() : 7;
+                if (overdueDays >= lockAccessDays && contract.getAccessCode() != null) {
+                    contract.setAccessCode(null);
+                    log.info("Hợp đồng [{}] D+{}: Khóa mã truy cập theo BR-OVD-05 (lockAccessDays={}).",
+                            contract.getCode(), overdueDays, lockAccessDays);
+                }
             } else {
                 // Mốc D+10+: Cưỡng chế chấm dứt (BR-OVD-05, BR-OVD-07)
                 contract.setOverdueFeeAccrued(maxCapFee);

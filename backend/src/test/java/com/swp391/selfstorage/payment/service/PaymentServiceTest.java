@@ -397,7 +397,7 @@ class PaymentServiceTest {
     }
 
     @Test
-    @DisplayName("Sandbox transfer OVERDUE_PENALTY thành công: Xóa nợ phạt về 0 cho hợp đồng")
+    @DisplayName("Sandbox OVERDUE_PENALTY thành công: Xóa nợ phạt về 0 cho hợp đồng")
     void processSandboxTransfer_OverduePenalty_ClearsDebt() {
         PaymentTransaction txn = PaymentTransaction.builder()
                 .id(999L)
@@ -421,5 +421,61 @@ class PaymentServiceTest {
         assertEquals("SUCCESS", res.getStatus());
         assertEquals(0L, mockContract.getOverdueFeeAccrued());
         verify(rentalContractRepository).save(mockContract);
+    }
+
+    @Test
+    @DisplayName("OverduePenaltyPaymentService: Hợp đồng OVERDUE KHÔNG chuyển về ACTIVE sau thanh toán phạt Sandbox (BR-OVD-08)")
+    void processSandboxTransfer_OverduePenalty_ContractStaysOverdue() {
+        PaymentTransaction txn = PaymentTransaction.builder()
+                .id(1001L).orderCode(99991111L).amount(300_000L)
+                .status("PENDING").transactionType("OVERDUE_PENALTY").contractId(80020L)
+                .build();
+
+        com.swp391.selfstorage.contract.entity.RentalContract contract =
+                new com.swp391.selfstorage.contract.entity.RentalContract();
+        contract.setId(80020L);
+        contract.setStatus(com.swp391.selfstorage.contract.entity.ContractStatus.OVERDUE);
+        contract.setOverdueFeeAccrued(300_000L);
+
+        when(paymentTransactionRepository.findByOrderCode(99991111L)).thenReturn(Optional.of(txn));
+        when(rentalContractRepository.findById(80020L)).thenReturn(Optional.of(contract));
+        when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        paymentService.processSandboxTransfer(99991111L, "TRANSFER_SUCCESS");
+
+        assertEquals(com.swp391.selfstorage.contract.entity.ContractStatus.OVERDUE, contract.getStatus(),
+                "Hợp đồng PHẢI giữ nguyên OVERDUE sau khi nộp phạt — KHÔNG được chuyển ACTIVE (BR-OVD-08)");
+        assertEquals(0L, contract.getOverdueFeeAccrued(),
+                "Nợ phạt phải được xóa về 0 sau khi thanh toán thành công");
+    }
+
+    @Test
+    @DisplayName("OverduePenaltyPaymentService: Hợp đồng OVERDUE KHÔNG chuyển về ACTIVE sau PayOS Webhook (BR-OVD-08)")
+    void processPayOSWebhook_OverduePenalty_ContractStaysOverdue() {
+        PaymentTransaction txn = PaymentTransaction.builder()
+                .id(1002L).orderCode(77778888L).amount(350_000L)
+                .status("PENDING").transactionType("OVERDUE_PENALTY").contractId(90002L)
+                .build();
+
+        com.swp391.selfstorage.contract.entity.RentalContract contract =
+                new com.swp391.selfstorage.contract.entity.RentalContract();
+        contract.setId(90002L);
+        contract.setStatus(com.swp391.selfstorage.contract.entity.ContractStatus.OVERDUE);
+        contract.setOverdueFeeAccrued(350_000L);
+
+        when(paymentTransactionRepository.findByOrderCode(77778888L)).thenReturn(Optional.of(txn));
+        when(rentalContractRepository.findById(90002L)).thenReturn(Optional.of(contract));
+        when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Map<String, Object> payload = Map.of(
+                "code", "00",
+                "data", Map.of("orderCode", 77778888L, "reference", "FT99001")
+        );
+        paymentService.processPayOSWebhook(payload);
+
+        assertEquals(com.swp391.selfstorage.contract.entity.ContractStatus.OVERDUE, contract.getStatus(),
+                "Hợp đồng PHẢI giữ nguyên OVERDUE qua PayOS Webhook — KHÔNG được chuyển ACTIVE (BR-OVD-08)");
+        assertEquals(0L, contract.getOverdueFeeAccrued(),
+                "Nợ phạt phải được xóa về 0 sau thanh toán PayOS thành công");
     }
 }

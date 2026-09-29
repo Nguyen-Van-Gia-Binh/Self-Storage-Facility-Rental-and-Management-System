@@ -14,12 +14,21 @@ import {
 } from 'lucide-react';
 import { customerApi } from '../api/customerApi';
 import { formatVND } from '../utils/pricing';
+import { tokenStorage } from '@/utils/tokenStorage';
 
 export const SandboxCheckoutPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const orderCodeParam = searchParams.get('orderCode');
   const orderCode = orderCodeParam ? parseInt(orderCodeParam, 10) : null;
+
+  // Auth Guard: Mục 2 — Yêu cầu đăng nhập trước khi truy cập trang thanh toán Sandbox
+  useEffect(() => {
+    if (!tokenStorage.getAccessToken()) {
+      const currentUrl = window.location.pathname + window.location.search;
+      navigate(`/auth/login?redirect=${encodeURIComponent(currentUrl)}`, { replace: true });
+    }
+  }, [navigate]);
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
