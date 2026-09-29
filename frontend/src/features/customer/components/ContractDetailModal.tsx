@@ -131,7 +131,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mt-1">
             <h3 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
-              Ngăn Tủ {contract.unitNumber}
+              Ô kho {contract.unitNumber}
               <span className="text-sm font-medium text-emerald-100">
                 ({contract.unitTypeName})
               </span>
@@ -347,7 +347,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                 </div>
               ) : (
                 <div className="py-8 text-center text-xs text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                  Chưa ghi nhận lượt ra vào nào cho ngăn kho này.
+                  Chưa ghi nhận lượt ra vào nào cho ô kho này.
                 </div>
               )}
 

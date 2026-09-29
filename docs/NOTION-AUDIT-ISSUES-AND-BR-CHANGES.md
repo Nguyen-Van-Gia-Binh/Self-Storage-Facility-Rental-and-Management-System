@@ -69,7 +69,7 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
     3. *Bảo mật Backend Spring Security:* Các API nghiệp vụ (`/customers/me/rentals`, `/reservations`, `/payments/**`) bắt buộc Bearer JWT token, trích xuất danh tính từ token ngăn chặn triệt để tạo hợp đồng vô chủ hoặc rò rỉ dữ liệu phiên giữa các tài khoản.
   * **File liên quan đã hoàn thành:** `frontend/src/layouts/CustomerLayout.tsx`, `frontend/src/features/auth/pages/LoginPage.tsx`, `frontend/src/features/customer/pages/BookingPage.tsx`, `frontend/src/features/customer/pages/MyUnitsPage.tsx`.
 
-#### 3. Dữ liệu mẫu (Seed Data) sai cơ sở thực tế & Sai lệch thuật ngữ nghiệp vụ: Dùng từ "Ngăn tủ / Tủ đồ" thay vì "Ô kho thực tế"
+#### 3. [ĐÃ XONG] Dữ liệu mẫu (Seed Data) sai cơ sở thực tế & Sai lệch thuật ngữ nghiệp vụ: Dùng từ "Ngăn tủ / Tủ đồ" thay vì "Ô kho thực tế"
 - **Hình ảnh minh chứng:** *(Cùng màn hình thanh toán trên - `image-03.png`)*
 - **Ghi chú gốc từ Lead Dev:**  
   > *"Cũng trên màn hình này chữ hiển thị không đúng: Kho bãi, phòng chứ không phải ngăn tủ ? Thông tin hiển thị vị trí sai hết làm gì có tồn tại kho Tân Bình Flagship ???? ⇒ Nghi vấn sai dữ liệu seed phía dưới database"* — `[NHI ĐÃ FIX]`
@@ -85,11 +85,12 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
       + `Unit Type` $\rightarrow$ **Loại ô kho** (ví dụ: *Ô kho Cỡ S*, *Ô kho Cỡ M*, *Ô kho Cỡ L* — không gọi là "Tủ đồ cá nhân").  
       + `Facility` $\rightarrow$ **Cơ sở lưu trữ** / **Cơ sở kho**.  
     - *Làm sạch Dữ liệu Mẫu (Seed Data Cleanup):* Xóa bỏ triệt để cơ sở ảo "Tân Bình Flagship", chuẩn hóa danh mục cơ sở và ô kho theo đúng danh sách chính thức đã được ban hành trong tài liệu đặc tả.
-  * **Hướng xử lý & File liên quan:**  
-    - Database & Backend: Migration `V...__cleanup_seed_data.sql` (loại bỏ Tân Bình Flagship, cập nhật tên loại kho và ô kho chuẩn).  
-    - Frontend: Quét và thay thế toàn bộ từ khóa `ngăn tủ`, `ngăn kho`, `tủ đồ`, `kho bãi` trong toàn bộ mã nguồn frontend (`MyRentalsPage.tsx`, `RentalBookingPage.tsx`, `UnitCard.tsx`, các file locales/vi.json).
+  * **Hướng xử lý & File liên quan đã hoàn thành:**  
+    - Database & Backend: Migration `V34__normalize_unit_type_names_and_seed_terms.sql` (chuẩn hóa tên loại kho UT-SMALL bỏ Locker, cập nhật text seed).  
+    - Frontend: Chuẩn hóa toàn bộ từ khóa `ngăn tủ`, `ngăn kho`, `tủ đồ` thành `ô kho` trong `ContractDetailModal.tsx`, `RentedUnitCard.tsx`, `BookingPage.tsx`, `EarlyRenewalReminderModal.tsx`, `RenewalReceiptModal.tsx`, `HomePage.tsx`, `MyUnitsPage.tsx`, `staffAssignmentApi.ts`. Dọn dẹp mock `pricing.ts`, `customerApi.ts`, `mock-facilities.json`.
+  * **Kết quả kiểm thử:** Đã bổ sung bộ test `TerminologyAudit.test.tsx`, `mockDataCleanup.test.ts` đảm bảo 100% không còn vi phạm.
 
-#### 4. Hiển thị sai thời hạn hoàn trả tiền cọc (Cam kết 24-48 giờ vs Thực tế 7 ngày làm việc)
+#### 4. [ĐÃ XONG] Hiển thị sai thời hạn hoàn trả tiền cọc (Cam kết 24-48 giờ vs Thực tế 7 ngày làm việc)
 - **Hình ảnh minh chứng:**  
   ![Sai thông tin hoàn cọc](./images/notion-audit/image-04.png)
 - **Ghi chú gốc từ Lead Dev:**  
@@ -99,9 +100,10 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
   * **Hiện trạng ghi nhận trên UI (`image-04.png`):** Tại thẻ *Quy định hoàn cọc*, hệ thống hiển thị cam kết: *"Tiền cọc Deposit 1 tháng được bảo lưu an toàn tại ngân hàng và **tự động hoàn trả 100% trong 24-48 giờ** sau khi hoàn tất biên bản nghiệm thu trả kho không hư hại."* Thông tin này mâu thuẫn hoàn toàn với quy định nghiệp vụ cốt lõi tại `BR-RET-07` / `BR-CAN-06` (tham số `return.refund_working_days = 7 ngày làm việc`). Đồng thời, trên các mẫu xuất phiếu nghiệm thu trả kho và điều khoản xác nhận thanh lý cũng đang in ra mốc 24-48 giờ, gây rủi ro khiếu nại tài chính khi ngân hàng/kế toán chưa thể giải ngân trong 2 ngày.
   * **Nguyên nhân gốc (Root Cause):** Nhóm Frontend hardcode chuỗi text quảng bá chưa qua đối chiếu với thông số hệ thống trong `docs/BUSINESS-RULES.md § 2`. Chưa có cơ chế đọc tham số chính sách hoàn cọc động từ bảng `system_policy` (`policy_key = 'return.refund_working_days'`).
   * **Hành vi kỳ vọng (Expected Behavior):** Thẻ thông tin và tất cả các mẫu phiếu in/báo cáo phải hiển thị đồng nhất: **Hoàn trả tiền cọc trong vòng 7 ngày làm việc** (kể từ ngày hoàn tất thủ tục bàn giao/nghiệm thu hiện trạng ô kho và xác nhận không có hư hại kết cấu). Text giao diện nên lấy trực tiếp từ config hệ thống hoặc resource bundle chuẩn thay vì hardcode số giờ.
-  * **Hướng xử lý & File liên quan:**  
-    - Frontend: `RentalPolicyCards.tsx`, `ReturnInspectionReportModal.tsx` (sửa 24-48 giờ thành 7 ngày làm việc).  
-    - Backend & Docs: Khớp chuẩn xác với `docs/BUSINESS-RULES.md` (`BR-RET-07`).
+  * **File liên quan đã hoàn thành:**  
+    - Frontend: `frontend/src/features/customer/pages/MyUnitsPage.tsx`, `frontend/src/features/customer/components/ScheduleReturnModal.tsx` (chuẩn hóa hiển thị 7 ngày làm việc).  
+    - Backend & Docs: Khớp chuẩn xác với `docs/BUSINESS-RULES.md` (`BR-RET-07` / `BR-RET-05` / `BR-CAN-06`).
+  * **Kết quả kiểm thử:** Đã bổ sung bộ test `DepositSlaAudit.test.tsx` đảm bảo 100% không còn xuất hiện mốc 24-48 giờ trên các giao diện hoàn cọc.
 
 #### 5. Cơ chế phân loại SLA xử lý sự cố chưa thực tế (Khách hàng tự tích khẩn cấp 2h cho mọi loại sự cố)
 - **Hình ảnh minh chứng:**  

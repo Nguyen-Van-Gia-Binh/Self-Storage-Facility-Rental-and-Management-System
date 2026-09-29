@@ -192,7 +192,7 @@ export const MyUnitsPage: React.FC = () => {
               className="flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-bold shadow-xs cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>Thuê thêm ngăn kho mới</span>
+              <span>Thuê thêm ô kho mới</span>
             </Button>
           </Link>
         </div>
@@ -420,7 +420,7 @@ export const MyUnitsPage: React.FC = () => {
           </div>
           <h4 className="font-extrabold text-sm text-[#0a1614]">Quy định hoàn cọc</h4>
           <p className="text-xs text-slate-500 leading-relaxed">
-            Tiền cọc Deposit 1 tháng được bảo lưu an toàn tại ngân hàng và tự động hoàn trả 100% trong 24-48 giờ sau khi hoàn tất biên bản nghiệm thu trả kho không hư hại.
+            Tiền cọc Deposit 1 tháng được bảo lưu an toàn tại ngân hàng và hoàn trả trong vòng 7 ngày làm việc sau khi hoàn tất biên bản nghiệm thu trả kho không hư hại.
           </p>
         </Card>
 

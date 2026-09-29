@@ -217,7 +217,7 @@ export const customerApi = {
       id: res.id,
       code: res.code,
       facilityName: res.facilityName || 'SmartStorage Cơ sở chính',
-      unitTypeName: res.unitTypeName || 'Storage Locker',
+      unitTypeName: res.unitTypeName || 'Kho Tiêu Chuẩn',
       totalPayable: res.totalPayable || res.depositAmount,
       depositAmount: res.depositAmount,
       status: res.status,

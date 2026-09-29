@@ -191,7 +191,7 @@ export async function getDailyDispatchTasks(
       tasks.push({
         id: ticket.id,
         taskType: 'INCIDENT',
-        title: `[Sự cố] ${ticket.categoryDisplayName} - Ngăn ${ticket.storageUnitCode}`,
+        title: `[Sự cố] ${ticket.categoryDisplayName} - Ô kho ${ticket.storageUnitCode}`,
         facilityId: ticket.facilityId,
         facilityName: ticket.facilityName,
         unitCode: ticket.storageUnitCode,
@@ -270,7 +270,7 @@ export async function getDailyDispatchTasks(
           assignedStaffName: contract.assignedStaffName,
           referenceId: contract.id,
           referenceCode: contract.code,
-          notes: 'Khách hàng đã dọn sạch ngăn kho và gửi yêu cầu nghiệm thu.',
+          notes: 'Khách hàng đã dọn sạch ô kho và gửi yêu cầu nghiệm thu.',
         });
       });
     }

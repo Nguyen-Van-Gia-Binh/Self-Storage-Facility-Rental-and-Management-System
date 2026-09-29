@@ -85,7 +85,7 @@ export const EarlyRenewalReminderModal: React.FC<EarlyRenewalReminderModalProps>
 
           <p className="text-xs sm:text-sm text-amber-100 mt-1 flex items-center gap-1.5">
             <Box className="w-3.5 h-3.5 shrink-0" />
-            <span>Ngăn kho <strong>{contract.unitNumber}</strong> · {contract.facilityName}</span>
+            <span>Ô kho <strong>{contract.unitNumber}</strong> · {contract.facilityName}</span>
           </p>
         </div>
 
