@@ -35,3 +35,12 @@ BEGIN
     WHERE description LIKE N'%ngăn kho%';
 END
 GO
+
+-- 3. Dong bo tham so chinh sach cancel_late_refund_rate = 0.0 theo BR-CAN-02
+IF OBJECT_ID('policy_version', 'U') IS NOT NULL
+BEGIN
+    UPDATE policy_version
+    SET cancel_late_refund_rate = 0.0
+    WHERE cancel_late_refund_rate = 0.5;
+END
+GO
