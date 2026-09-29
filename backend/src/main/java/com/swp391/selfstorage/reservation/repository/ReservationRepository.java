@@ -31,19 +31,23 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     Optional<Reservation> findByCodeAndFacilityId(String code, Long facilityId);
 
-    @Query("SELECT COUNT(r) > 0 FROM Reservation r " +
-           "WHERE r.storageUnitId = :storageUnitId " +
-           "  AND ( " +
-           "       (r.status = 'PENDING_PAYMENT' AND r.holdExpiresAt > :now) " +
-           "       OR (r.status IN ('CONFIRMED', 'FULFILLED')) " +
-           "  ) " +
-           "  AND r.startDate < :endDateExclusive " +
-           "  AND r.endDateExclusive > :startDate")
+    /**
+     * Reservation còn hiệu lực trên đúng ô kho, nới ngày kết thúc thêm rental.buffer_days.
+     * FULFILLED không tính: Contract kế thừa đã chiếm slot (BR-AVL-01, BR-AVL-02).
+     */
+    @Query(value = "SELECT CASE WHEN EXISTS (" +
+           "SELECT 1 FROM reservation r " +
+           "WHERE r.storage_unit_id = :storageUnitId " +
+           "  AND ((r.status = 'PENDING_PAYMENT' AND r.hold_expires_at > :now) OR r.status = 'CONFIRMED') " +
+           "  AND r.start_date < :endDateExclusive " +
+           "  AND DATEADD(DAY, :bufferDays, r.end_date_exclusive) > :startDate" +
+           ") THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END", nativeQuery = true)
     boolean existsOverlappingReservationForUnit(
             @Param("storageUnitId") Long storageUnitId,
             @Param("startDate") java.time.LocalDate startDate,
             @Param("endDateExclusive") java.time.LocalDate endDateExclusive,
-            @Param("now") OffsetDateTime now
+            @Param("now") OffsetDateTime now,
+            @Param("bufferDays") int bufferDays
     );
 
     @Query("SELECT r FROM Reservation r WHERE " +

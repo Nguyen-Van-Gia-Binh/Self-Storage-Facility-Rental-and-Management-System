@@ -6,6 +6,8 @@ import com.swp391.selfstorage.facility.entity.Facility;
 import com.swp391.selfstorage.facility.entity.FacilityStatus;
 import com.swp391.selfstorage.facility.repository.FacilityRepository;
 import com.swp391.selfstorage.unit.dto.AvailabilityResponse;
+import com.swp391.selfstorage.policy.entity.PolicyVersion;
+import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
 import com.swp391.selfstorage.unit.entity.FacilityUnitTypePrice;
 import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
 import com.swp391.selfstorage.unit.entity.UnitType;
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Service
@@ -25,17 +28,20 @@ public class AvailabilityServiceImpl implements AvailabilityService {
     private final UnitTypeRepository unitTypeRepository;
     private final FacilityUnitTypePriceRepository priceRepository;
     private final StorageUnitRepository storageUnitRepository;
+    private final PolicyVersionRepository policyVersionRepository;
 
     public AvailabilityServiceImpl(
             FacilityRepository facilityRepository,
             UnitTypeRepository unitTypeRepository,
             FacilityUnitTypePriceRepository priceRepository,
-            StorageUnitRepository storageUnitRepository
+            StorageUnitRepository storageUnitRepository,
+            PolicyVersionRepository policyVersionRepository
     ) {
         this.facilityRepository = facilityRepository;
         this.unitTypeRepository = unitTypeRepository;
         this.priceRepository = priceRepository;
         this.storageUnitRepository = storageUnitRepository;
+        this.policyVersionRepository = policyVersionRepository;
     }
 
     @Override
@@ -68,15 +74,12 @@ public class AvailabilityServiceImpl implements AvailabilityService {
                 facilityId, unitTypeId, List.of(StorageUnitStatus.MAINTENANCE, StorageUnitStatus.OUT_OF_SERVICE)
         );
 
-        long overlappingReservations = storageUnitRepository.countOverlappingReservations(
-                facilityId, unitTypeId, startDate, endDateExclusive
+        int bufferDays = requireBufferDays();
+        long busyUnits = storageUnitRepository.countBusyUnits(
+                facilityId, unitTypeId, startDate, endDateExclusive, bufferDays
         );
 
-        long overlappingContracts = storageUnitRepository.countOverlappingContracts(
-                facilityId, unitTypeId, startDate, endDateExclusive
-        );
-
-        long availableSlots = Math.max(0, exploitableUnits - overlappingReservations - overlappingContracts);
+        long availableSlots = Math.max(0, exploitableUnits - busyUnits);
 
         return AvailabilityResponse.builder()
                 .facilityId(facilityId)
@@ -89,5 +92,18 @@ public class AvailabilityServiceImpl implements AvailabilityService {
                 .totalRentalFee(totalRentalFee)
                 .depositAmount(depositAmount)
                 .build();
+    }
+
+    private int requireBufferDays() {
+        if (policyVersionRepository == null) {
+            throw new CustomException(ErrorCode.POLICY_NOT_FOUND);
+        }
+        PolicyVersion policy = policyVersionRepository
+                .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(OffsetDateTime.now())
+                .orElseThrow(() -> new CustomException(ErrorCode.POLICY_NOT_FOUND));
+        if (policy.getRentalBufferDays() == null) {
+            throw new CustomException(ErrorCode.POLICY_NOT_FOUND, "Chinh sach hieu luc thieu rental_buffer_days");
+        }
+        return policy.getRentalBufferDays();
     }
 }

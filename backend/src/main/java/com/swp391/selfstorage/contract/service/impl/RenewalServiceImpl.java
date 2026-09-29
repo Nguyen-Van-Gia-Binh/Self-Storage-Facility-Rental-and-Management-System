@@ -68,14 +68,25 @@ public class RenewalServiceImpl implements RenewalService {
         // 2. Tính toán ngày kết thúc mới
         LocalDate newEndDate = contract.getEndDateExclusive().plusMonths(months);
 
-        // 3. Kiểm tra Capacity ô kho cho kỳ gia hạn mới (BR-REN-09, BR-AVL-01)
+        int bufferDays = activePolicy.getRentalBufferDays() == null ? -1 : activePolicy.getRentalBufferDays();
+        if (bufferDays < 0) {
+            throw new CustomException(ErrorCode.POLICY_NOT_FOUND, "Chinh sach hieu luc thieu rental_buffer_days");
+        }
+
         if (contract.getStorageUnitId() != null) {
             boolean hasUpcomingReservation = reservationRepository.existsOverlappingReservationForUnit(
                     contract.getStorageUnitId(),
                     contract.getEndDateExclusive(),
                     newEndDate,
-                    OffsetDateTime.now());
-            if (hasUpcomingReservation) {
+                    OffsetDateTime.now(),
+                    bufferDays);
+            boolean hasOtherContract = rentalContractRepository.existsOverlappingContractForUnit(
+                    contract.getStorageUnitId(),
+                    contract.getEndDateExclusive(),
+                    newEndDate,
+                    bufferDays,
+                    contract.getId());
+            if (hasUpcomingReservation || hasOtherContract) {
                 throw new CustomException(ErrorCode.CAPACITY_NOT_AVAILABLE);
             }
         }
@@ -99,6 +110,13 @@ public class RenewalServiceImpl implements RenewalService {
     @Override
     @Transactional
     public RenewalResponse processRenewal(Long contractId, RenewalRequest request, Long paymentTransactionId) {
+        if (paymentTransactionId != null) {
+            var existing = contractRenewalRepository.findByPaymentTransactionId(paymentTransactionId);
+            if (existing.isPresent()) {
+                return renewalMapper.toResponse(existing.get());
+            }
+        }
+
         RenewalQuoteResponse quote = getRenewalQuote(contractId, request);
         RentalContract contract = rentalContractRepository.findById(contractId)
                 .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
@@ -124,7 +142,8 @@ public class RenewalServiceImpl implements RenewalService {
                 quote.getPolicyVersionId(),
                 quote.getOverdueFeeSettled(),
                 quote.getRentalFeeAmount(),
-                quote.getTotalAmount());
+                quote.getTotalAmount(),
+                paymentTransactionId);
         ContractRenewal savedRenewal = contractRenewalRepository.save(renewal);
 
         return renewalMapper.toResponse(savedRenewal);

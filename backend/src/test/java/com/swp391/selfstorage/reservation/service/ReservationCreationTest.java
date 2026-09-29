@@ -8,8 +8,13 @@ import com.swp391.selfstorage.reservation.dto.ReservationResponse;
 import com.swp391.selfstorage.reservation.entity.Reservation;
 import com.swp391.selfstorage.reservation.entity.ReservationStatus;
 import com.swp391.selfstorage.reservation.repository.ReservationRepository;
+import com.swp391.selfstorage.contract.repository.RentalContractRepository;
+import com.swp391.selfstorage.policy.entity.PolicyVersion;
+import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
+import com.swp391.selfstorage.unit.entity.FacilityUnitTypePrice;
 import com.swp391.selfstorage.unit.entity.StorageUnit;
 import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
+import com.swp391.selfstorage.unit.repository.FacilityUnitTypePriceRepository;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
 import com.swp391.selfstorage.user.entity.UserRole;
 import com.swp391.selfstorage.user.entity.UserStatus;
@@ -31,8 +36,9 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -40,6 +46,9 @@ class ReservationCreationTest {
 
     @Mock private ReservationRepository reservationRepository;
     @Mock private StorageUnitRepository storageUnitRepository;
+    @Mock private RentalContractRepository rentalContractRepository;
+    @Mock private FacilityUnitTypePriceRepository facilityUnitTypePriceRepository;
+    @Mock private PolicyVersionRepository policyVersionRepository;
     @InjectMocks private ReservationServiceImpl service;
 
     private CreateReservationRequest request;
@@ -62,6 +71,28 @@ class ReservationCreationTest {
         request.setCustomerPhone("0987654321");
         request.setCustomerEmail("nguyenvana@example.com");
         request.setIdentityNumber("012345678901");
+
+        StorageUnit availableUnit = new StorageUnit();
+        availableUnit.setId(10L);
+        availableUnit.setFacilityId(1L);
+        availableUnit.setUnitTypeId(2L);
+        availableUnit.setStatus(StorageUnitStatus.AVAILABLE);
+        lenient().when(storageUnitRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(availableUnit));
+
+        PolicyVersion policy = PolicyVersion.builder()
+                .id(1L)
+                .reservationHoldHours(48)
+                .rentalBufferDays(15)
+                .rentalDailyDivisor(30)
+                .build();
+        lenient().when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(any()))
+                .thenReturn(Optional.of(policy));
+
+        FacilityUnitTypePrice price = new FacilityUnitTypePrice();
+        price.setMonthlyPrice(1200000L);
+        lenient().when(facilityUnitTypePriceRepository.findByFacilityIdAndUnitTypeId(1L, 2L)).thenReturn(Optional.of(price));
+        lenient().when(rentalContractRepository.existsOverlappingContractForUnit(eq(10L), any(), any(), anyInt(), eq(0L)))
+                .thenReturn(false);
     }
 
     @Test
@@ -75,7 +106,7 @@ class ReservationCreationTest {
     @Test
     @DisplayName("Tạo đơn đặt chỗ thành công khi ô kho trống (AVAILABLE)")
     void shouldCreateReservationSuccessfully_whenUnitIsAvailable() {
-        when(reservationRepository.existsOverlappingReservationForUnit(eq(10L), any(), any(), any())).thenReturn(false);
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(10L), any(), any(), any(), eq(15))).thenReturn(false);
         when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> {
             Reservation r = inv.getArgument(0);
             r.setId(500L);
@@ -121,7 +152,8 @@ class ReservationCreationTest {
                 eq(10L),
                 eq(LocalDate.of(2027, 1, 15)),
                 eq(LocalDate.of(2028, 1, 15)),
-                any(OffsetDateTime.class)
+                any(OffsetDateTime.class),
+                eq(15)
         )).thenReturn(false);
 
         when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> {
@@ -152,7 +184,8 @@ class ReservationCreationTest {
                 eq(10L),
                 eq(LocalDate.of(2026, 10, 1)),
                 eq(LocalDate.of(2027, 1, 1)),
-                any(OffsetDateTime.class)
+                any(OffsetDateTime.class),
+                eq(15)
         )).thenReturn(false);
 
         when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> {
@@ -173,7 +206,7 @@ class ReservationCreationTest {
     @DisplayName("BR-RES-02 & BR-AVL-04: Ném ngoại lệ UNIT_NOT_AVAILABLE khi ô kho đã được người khác giữ chỗ trùng lịch")
     void shouldThrowUnitNotAvailable_whenUnitIsAlreadyTaken() {
         when(reservationRepository.existsOverlappingReservationForUnit(
-                eq(10L), any(), any(), any()
+                eq(10L), any(), any(), any(), eq(15)
         )).thenReturn(true);
 
         CustomException exception = assertThrows(CustomException.class, () -> service.createReservation(request, testCustomer));
@@ -190,7 +223,7 @@ class ReservationCreationTest {
         unit.setId(10L);
         unit.setFacilityId(1L);
         unit.setStatus(StorageUnitStatus.MAINTENANCE);
-        when(storageUnitRepository.findById(10L)).thenReturn(Optional.of(unit));
+        when(storageUnitRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(unit));
 
         CustomException exception = assertThrows(CustomException.class, () -> service.createReservation(request, testCustomer));
 
@@ -206,7 +239,7 @@ class ReservationCreationTest {
         unit.setId(10L);
         unit.setFacilityId(1L);
         unit.setStatus(StorageUnitStatus.OUT_OF_SERVICE);
-        when(storageUnitRepository.findById(10L)).thenReturn(Optional.of(unit));
+        when(storageUnitRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(unit));
 
         CustomException exception = assertThrows(CustomException.class, () -> service.createReservation(request, testCustomer));
 
@@ -222,7 +255,7 @@ class ReservationCreationTest {
         unit.setId(10L);
         unit.setFacilityId(99L); // Cơ sở khác 1L
         unit.setStatus(StorageUnitStatus.AVAILABLE);
-        when(storageUnitRepository.findById(10L)).thenReturn(Optional.of(unit));
+        when(storageUnitRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(unit));
 
         CustomException exception = assertThrows(CustomException.class, () -> service.createReservation(request, testCustomer));
 
@@ -243,46 +276,44 @@ class ReservationCreationTest {
     }
 
     @Test
-    @DisplayName("Tạo đơn đặt chỗ thành công khi khách hàng chưa chọn ô kho cụ thể (storageUnitId == null)")
-    void shouldCreateReservationSuccessfully_whenNoSpecificUnitSelected() {
+    @DisplayName("BR-AVL-04: Từ chối đặt chỗ khi khách không chọn ô kho cụ thể")
+    void shouldRejectReservation_whenNoSpecificUnitSelected() {
         request.setStorageUnitId(null);
-
-        when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> {
-            Reservation r = inv.getArgument(0);
-            r.setId(501L);
-            return r;
-        });
-
-        ReservationResponse response = service.createReservation(request, testCustomer);
-
-        assertNotNull(response);
-        assertNull(response.getStorageUnitId());
-        assertEquals("Chua chon o", response.getStorageUnitCode());
-        // Không kiểm tra ô kho trùng nếu storageUnitId == null
-        verify(reservationRepository, never()).existsOverlappingReservationForUnit(any(), any(), any(), any());
-        verify(reservationRepository).save(any(Reservation.class));
-    }
-
-    @Test
-    @DisplayName("BR-AVL-03: Ném ngoại lệ CAPACITY_NOT_AVAILABLE khi khách không chọn ô cụ thể nhưng loại kho đã hết capacity trống")
-    void shouldThrowCapacityNotAvailable_whenNoSpecificUnitAndCapacityFull() {
-        request.setStorageUnitId(null);
-
-        // Tổng ô kho khai thác được = 5, nhưng đang có 3 reservation + 2 contract trùng lịch = 5 bận
-        when(storageUnitRepository.countExploitableUnits(eq(1L), eq(2L), anyList())).thenReturn(5L);
-        when(storageUnitRepository.countOverlappingReservations(eq(1L), eq(2L), any(), any())).thenReturn(3L);
-        when(storageUnitRepository.countOverlappingContracts(eq(1L), eq(2L), any(), any())).thenReturn(2L);
 
         CustomException exception = assertThrows(CustomException.class, () -> service.createReservation(request, testCustomer));
 
-        assertEquals(ErrorCode.CAPACITY_NOT_AVAILABLE, exception.getErrorCode());
+        assertEquals(ErrorCode.UNIT_NOT_AVAILABLE, exception.getErrorCode());
+        assertEquals("Khach phai chon dung o kho", exception.getMessage());
+        verify(reservationRepository, never()).save(any(Reservation.class));
+    }
+
+    @Test
+    @DisplayName("BR-AVL-02: Từ chối khi hợp đồng hiện hữu còn giao khoảng đệm 15 ngày")
+    void shouldRejectReservation_whenContractOverlapsWithinBuffer() {
+        when(rentalContractRepository.existsOverlappingContractForUnit(eq(10L), any(), any(), eq(15), eq(0L)))
+                .thenReturn(true);
+
+        CustomException exception = assertThrows(CustomException.class, () -> service.createReservation(request, testCustomer));
+
+        assertEquals(ErrorCode.UNIT_NOT_AVAILABLE, exception.getErrorCode());
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Không bịa giá 1.200.000 khi cơ sở chưa cấu hình đơn giá")
+    void shouldRejectReservation_whenPriceIsMissing() {
+        when(facilityUnitTypePriceRepository.findByFacilityIdAndUnitTypeId(1L, 2L)).thenReturn(Optional.empty());
+
+        CustomException exception = assertThrows(CustomException.class, () -> service.createReservation(request, testCustomer));
+
+        assertEquals(ErrorCode.UNIT_TYPE_NOT_FOUND, exception.getErrorCode());
         verify(reservationRepository, never()).save(any());
     }
 
     @Test
     @DisplayName("Tạo thông tin chuyển khoản VietQR Napas247 chính xác theo mã đơn đặt chỗ")
     void shouldGenerateCorrectTransferContentAndVietQrPayload() {
-        when(reservationRepository.existsOverlappingReservationForUnit(eq(10L), any(), any(), any())).thenReturn(false);
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(10L), any(), any(), any(), eq(15))).thenReturn(false);
         when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> {
             Reservation r = inv.getArgument(0);
             r.setId(502L);
@@ -305,7 +336,7 @@ class ReservationCreationTest {
         request.setStartDate(LocalDate.of(2026, 11, 1));
         request.setRentalMonths(6);
 
-        when(reservationRepository.existsOverlappingReservationForUnit(eq(10L), any(), any(), any())).thenReturn(false);
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(10L), any(), any(), any(), eq(15))).thenReturn(false);
         when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> inv.getArgument(0));
 
         ReservationResponse response = service.createReservation(request, testCustomer);

@@ -67,6 +67,7 @@ public class PaymentServiceImpl implements PaymentService {
         Long reservationId = null;
         Long contractId = null;
         String txnType;
+        Integer storedRenewalMonths = null;
 
         if ("RESERVATION".equalsIgnoreCase(request.getReferenceType())) {
             Reservation reservation = reservationRepository.findById(request.getReferenceId())
@@ -110,6 +111,7 @@ public class PaymentServiceImpl implements PaymentService {
             defaultDesc = "GH" + contract.getId() + "T" + months;
             contractId = contract.getId();
             txnType = "CONTRACT_RENEWAL";
+            storedRenewalMonths = months;
         } else if ("SETTLEMENT".equalsIgnoreCase(request.getReferenceType())) {
             com.swp391.selfstorage.contract.entity.RentalContract contract = rentalContractRepository.findById(request.getReferenceId())
                     .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND,
@@ -171,6 +173,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .paymentMethod("SANDBOX_VIETQR")
                 .orderCode(orderCode)
                 .providerReference("SBX-" + orderCode)
+                .renewalMonths(storedRenewalMonths)
                 .build();
 
         paymentTransactionRepository.save(payment);
@@ -217,9 +220,7 @@ public class PaymentServiceImpl implements PaymentService {
             eventPublisher.publishEvent(new PaymentCompletedEvent(payment.getReservationId(), payment.getId()));
         } else if (payment.getContractId() != null
                 && "CONTRACT_RENEWAL".equalsIgnoreCase(payment.getTransactionType())) {
-            int months = 1;
-            eventPublisher.publishEvent(new com.swp391.selfstorage.payment.event.ContractRenewalPaymentCompletedEvent(
-                    payment.getContractId(), payment.getId(), months, payment.getAmount()));
+            publishContractRenewalCompleted(payment);
         } else if ("SETTLEMENT".equalsIgnoreCase(payment.getTransactionType())) {
             log.info("Thanh toán quyết toán thu nợ Sandbox thành công cho contractId={}, transactionId={}",
                     payment.getContractId(), payment.getId());
@@ -248,7 +249,6 @@ public class PaymentServiceImpl implements PaymentService {
         Long orderCode = null;
         String code = "00";
         String reference = null;
-        String description = null;
 
         if (webhookBody instanceof Map<?, ?> map) {
             Object codeObj = map.get("code");
@@ -263,8 +263,6 @@ public class PaymentServiceImpl implements PaymentService {
                 }
                 Object ref = dataMap.get("reference");
                 if (ref != null) reference = ref.toString();
-                Object desc = dataMap.get("description");
-                if (desc != null) description = desc.toString();
             } else {
                 Object oc = map.get("orderCode");
                 if (oc instanceof Number num) {
@@ -315,17 +313,7 @@ public class PaymentServiceImpl implements PaymentService {
             eventPublisher.publishEvent(new PaymentCompletedEvent(payment.getReservationId(), payment.getId()));
         } else if (payment.getContractId() != null
                 && "CONTRACT_RENEWAL".equalsIgnoreCase(payment.getTransactionType())) {
-            int months = 1;
-            if (description != null && description.contains("T")) {
-                try {
-                    String part = description.substring(description.indexOf("T") + 1);
-                    months = Integer.parseInt(part.replaceAll("\\D", ""));
-                } catch (Exception ignored) {
-                    months = 1;
-                }
-            }
-            eventPublisher.publishEvent(new com.swp391.selfstorage.payment.event.ContractRenewalPaymentCompletedEvent(
-                    payment.getContractId(), payment.getId(), months, payment.getAmount()));
+            publishContractRenewalCompleted(payment);
         } else if ("SETTLEMENT".equalsIgnoreCase(payment.getTransactionType())) {
             log.info("Thanh toán quyết toán thu nợ PayOS thành công cho contractId={}, transactionId={}",
                     payment.getContractId(), payment.getId());
@@ -343,6 +331,41 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         return paymentMapper.toResponse(payment);
+    }
+
+    private void publishContractRenewalCompleted(PaymentTransaction payment) {
+        int months = resolveRenewalMonths(payment);
+        eventPublisher.publishEvent(new com.swp391.selfstorage.payment.event.ContractRenewalPaymentCompletedEvent(
+                payment.getContractId(), payment.getId(), months, payment.getAmount()));
+    }
+
+    /**
+     * Số tháng đã chốt lúc checkout. Không được mặc định 1 tháng khi khách đã trả tiền cho kỳ dài hơn.
+     * Giao dịch cũ chưa có cột renewal_months thì suy ra từ số tiền chia đơn giá tháng.
+     */
+    private int resolveRenewalMonths(PaymentTransaction payment) {
+        if (payment.getRenewalMonths() != null && payment.getRenewalMonths() > 0) {
+            return payment.getRenewalMonths();
+        }
+        if (payment.getContractId() == null || payment.getAmount() == null || payment.getAmount() <= 0) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                    "Giao dịch gia hạn thiếu số tháng đã chốt");
+        }
+        com.swp391.selfstorage.contract.entity.RentalContract contract = rentalContractRepository
+                .findById(payment.getContractId())
+                .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
+        long monthlyPrice = contract.getMonthlyPrice();
+        if (monthlyPrice <= 0 || payment.getAmount() % monthlyPrice != 0) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                    "Không xác định được số tháng gia hạn từ số tiền đã thanh toán");
+        }
+        int months = (int) (payment.getAmount() / monthlyPrice);
+        if (months < 1 || months > 12) {
+            throw new CustomException(ErrorCode.RENEWAL_MONTHS_INVALID);
+        }
+        log.warn("Giao dịch {} thiếu renewal_months, suy ra {} tháng từ amount={}",
+                payment.getId(), months, payment.getAmount());
+        return months;
     }
 
     @Override

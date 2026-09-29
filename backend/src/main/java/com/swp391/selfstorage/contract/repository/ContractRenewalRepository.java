@@ -21,4 +21,9 @@ public interface ContractRenewalRepository extends JpaRepository<ContractRenewal
      * Lấy lần gia hạn gần nhất của hợp đồng.
      */
     Optional<ContractRenewal> findTopByContractIdOrderByCreatedAtDesc(Long contractId);
+
+    /**
+     * Một giao dịch thanh toán chỉ được ghi nhận một lần gia hạn.
+     */
+    Optional<ContractRenewal> findByPaymentTransactionId(Long paymentTransactionId);
 }

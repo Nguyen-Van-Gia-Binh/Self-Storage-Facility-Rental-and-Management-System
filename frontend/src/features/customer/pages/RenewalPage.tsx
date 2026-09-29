@@ -22,7 +22,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { getCustomerContracts, renewContract, getRenewalQuote, type RenewalQuote } from '@/api/customerRentals';
+import { getCustomerContracts, getRenewalQuote, waitForAppliedRenewal, type RenewalQuote } from '@/api/customerRentals';
 import { customerApi, type CheckoutResponse } from '../api/customerApi';
 import { formatVND } from '../utils/pricing';
 import { calculateRenewalPricing, calculateExtendedEndDate, calculateDaysRemaining } from '../utils/renewalPricing';
@@ -41,6 +41,11 @@ export const RenewalPage: React.FC = () => {
   const [copiedBankInfo, setCopiedBankInfo] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [renewalResult, setRenewalResult] = useState<RenewContractResponse | null>(null);
+  const [confirmedRenewal, setConfirmedRenewal] = useState<{
+    newEndDate: string;
+    renewalMonths: number;
+    totalPaid: number;
+  } | null>(null);
   const [showReceiptModal, setShowReceiptModal] = useState<boolean>(false);
   const [countdownSeconds, setCountdownSeconds] = useState<number>(900); // 15 phút đếm ngược
   const [payosCheckout, setPayosCheckout] = useState<CheckoutResponse | null>(null);
@@ -189,30 +194,45 @@ export const RenewalPage: React.FC = () => {
     });
   }, [contract, renewalMonths, renewalQuote]);
 
-  // Kích hoạt gia hạn hợp đồng sau khi đã thanh toán thành công (SC-03)
+  // Đọc hạn mới do backend ghi một lần khi thanh toán thành công (BR-REN-04).
   const executeRenewalActivation = useCallback(async () => {
     if (!contract) return;
     setIsProcessing(true);
 
     try {
-      const res = await renewContract({
-        contractId: contract.id,
-        months: renewalMonths,
-        newEndDate,
-        totalAmount: pricing.finalTotal,
-        paymentMethod: 'VIETQR',
-        transactionReference: payosCheckout?.orderCode ? `NAPAS-${payosCheckout.orderCode}` : `MB-${Date.now().toString().slice(-8)}`,
-      });
+      const applied = await waitForAppliedRenewal(Number(contract.id), contract.endDate);
+      const refreshedList = await getCustomerContracts();
+      const refreshed = refreshedList.find((item) => item.id === contract.id);
+      const endDate = applied.newEndDate.slice(0, 10);
+      const updatedContract: RentedContract = {
+        ...(refreshed || contract),
+        endDate,
+        status: 'ACTIVE',
+        overdueDays: 0,
+        overdueFee: 0,
+      };
 
-      setRenewalResult(res);
+      setContract(updatedContract);
+      setConfirmedRenewal({
+        newEndDate: endDate,
+        renewalMonths: applied.renewalMonths,
+        totalPaid: applied.totalPaid,
+      });
+      setRenewalResult({
+        success: true,
+        contract: updatedContract,
+        receiptNumber: `REN-${applied.id}`,
+        renewedAt: applied.createdAt || new Date().toISOString(),
+        message: `Gia hạn thành công thêm ${applied.renewalMonths} tháng cho ngăn kho ${updatedContract.unitNumber}. Hạn mới đến ngày ${endDate}.`,
+      });
       setIsProcessing(false);
       setShowReceiptModal(true);
     } catch (err) {
-      console.error('Lỗi khi kích hoạt gia hạn:', err);
+      console.error('Lỗi khi đọc kết quả gia hạn:', err);
       setIsProcessing(false);
-      setPaymentNotice('Có lỗi xảy ra trong quá trình xử lý gia hạn. Vui lòng liên hệ lễ tân.');
+      setPaymentNotice('Thanh toán đã ghi nhận nhưng chưa đọc được hạn mới. Vui lòng tải lại trang hợp đồng.');
     }
-  }, [contract, renewalMonths, newEndDate, pricing.finalTotal, payosCheckout]);
+  }, [contract]);
 
   // Kiểm tra thanh toán chủ động (Nút "Tôi đã hoàn tất chuyển khoản")
   const handleCheckPaymentAndRenew = async () => {
@@ -991,9 +1011,9 @@ export const RenewalPage: React.FC = () => {
           isOpen={showReceiptModal}
           onClose={() => setShowReceiptModal(false)}
           contract={renewalResult.contract}
-          renewalMonths={renewalMonths}
-          newEndDate={newEndDate}
-          totalPaid={pricing.finalTotal}
+          renewalMonths={confirmedRenewal?.renewalMonths ?? renewalMonths}
+          newEndDate={confirmedRenewal?.newEndDate || newEndDate}
+          totalPaid={confirmedRenewal?.totalPaid ?? pricing.finalTotal}
           receiptNumber={renewalResult.receiptNumber}
           renewedAt={new Date(renewalResult.renewedAt).toLocaleString('vi-VN')}
           onBackToDashboard={() => navigate('/customer/my-units')}

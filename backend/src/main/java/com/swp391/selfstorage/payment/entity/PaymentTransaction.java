@@ -51,4 +51,8 @@ public class PaymentTransaction extends BaseEntity {
     @Column(name = "order_code", unique = true)
     private Long orderCode;
 
+    /** Số tháng gia hạn đã chốt lúc tạo checkout. Chỉ có với CONTRACT_RENEWAL. */
+    @Column(name = "renewal_months")
+    private Integer renewalMonths;
+
 }

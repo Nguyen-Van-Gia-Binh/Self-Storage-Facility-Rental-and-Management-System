@@ -344,6 +344,45 @@ export async function submitRenewal(
   return res.data;
 }
 
+export interface AppliedRenewal {
+  id: number;
+  contractId: number;
+  previousEndDate: string;
+  newEndDate: string;
+  renewalMonths: number;
+  totalPaid: number;
+  createdAt: string;
+}
+
+function dateOnly(value?: string): string {
+  return (value || '').slice(0, 10);
+}
+
+/**
+ * Đợi backend ghi nhận gia hạn sau thanh toán (listener AFTER_COMMIT).
+ * Khớp previousEndDate với hạn cũ để không lấy lần gia hạn trước đó.
+ */
+export async function waitForAppliedRenewal(
+  contractId: number,
+  previousEndDate: string,
+): Promise<AppliedRenewal> {
+  const expected = dateOnly(previousEndDate);
+  for (let attempt = 0; attempt < 12; attempt++) {
+    try {
+      const res = await apiClient<ApiResponse<AppliedRenewal[]>>(`/contracts/${contractId}/renewals`);
+      const history = Array.isArray(res?.data) ? res.data : [];
+      const applied = history.find((item) => dateOnly(item.previousEndDate) === expected);
+      if (applied?.newEndDate) {
+        return applied;
+      }
+    } catch (err) {
+      console.warn('Chưa đọc được lịch sử gia hạn:', err);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  throw new Error('Hệ thống chưa ghi nhận ngày hết hạn mới sau thanh toán.');
+}
+
 // 5. Gửi thông báo trả kho (POST /contracts/{id}/return-notices)
 export async function submitReturnNotice(
   contractId: number,
@@ -389,7 +428,7 @@ export async function getCustomerContracts(): Promise<RentedContract[]> {
       return [];
     } catch (err) {
       console.warn('Lỗi gọi API /customers/me/rentals:', err);
-      return [];
+      throw err;
     }
   }
 
@@ -461,12 +500,17 @@ export async function scheduleContractReturn(
   request: ScheduleReturnRequest
 ): Promise<ScheduleReturnResponse> {
   if (!isMockEnabled('WS1')) {
-    try {
-      await submitReturnNotice(Number(request.contractId), request.returnDate, request.notes);
-    } catch (err) {
-      console.error('Lỗi gọi API đăng ký trả kho thật:', err);
-      throw err;
-    }
+    const notice = await submitReturnNotice(Number(request.contractId), request.returnDate, request.notes);
+    const refund = Number(
+      notice?.estimatedDepositRefund ?? notice?.depositRefundAmount ?? notice?.depositBalance ?? 0
+    );
+    return {
+      contractId: request.contractId,
+      scheduledReturnDate: request.returnDate,
+      status: 'PENDING_RETURN',
+      estimatedDepositRefund: Number.isFinite(refund) ? refund : 0,
+      message: notice?.message || 'Đăng ký lịch hẹn trả kho thành công. Vui lòng dọn dẹp ngăn tủ trước ngày hẹn.',
+    };
   }
 
   saveStoredOverride(request.contractId, {
@@ -478,8 +522,8 @@ export async function scheduleContractReturn(
     contractId: request.contractId,
     scheduledReturnDate: request.returnDate,
     status: 'PENDING_RETURN',
-    estimatedDepositRefund: 2400000,
-    message: 'Đăng ký lịch hẹn trả kho thành công. Vui lòng dọn dẹp ngăn tủ trước ngày hẹn.',
+    estimatedDepositRefund: 0,
+    message: 'Đăng ký lịch hẹn trả kho thành công (chế độ demo).',
   };
 }
 
@@ -489,17 +533,10 @@ export async function scheduleContractReturn(
  */
 export async function getContractAccessLogs(contractId: string): Promise<AccessLogEntry[]> {
   if (!isMockEnabled('WS1')) {
-    try {
-      const res = await apiClient<ApiResponse<AccessLogEntry[]>>(`/customers/me/rentals/${contractId}/access-logs`);
-      if (res && res.data && Array.isArray(res.data) && res.data.length > 0) {
-        return res.data;
-      }
-    } catch (err) {
-      console.warn('Lỗi gọi API lấy nhật ký ra vào thật, fallback dữ liệu mẫu:', err);
-    }
+    const res = await apiClient<ApiResponse<AccessLogEntry[]>>(`/customers/me/rentals/${contractId}/access-logs`);
+    return Array.isArray(res?.data) ? res.data : [];
   }
 
-  // Fallback dữ liệu mẫu dự phòng khi chưa có nhật ký thật hoặc offline
   const now = Date.now();
   return [
     {
