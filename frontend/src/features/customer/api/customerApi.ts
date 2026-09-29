@@ -1,5 +1,5 @@
 import type { Facility, UnitType, StorageUnit, RentedContract, SupportTicket, CreateSupportTicketPayload } from '../types';
-import { mockFacilities, mockUnitTypes, mockStorageUnits, mockRentedContracts } from '../mockData';
+import { mockFacilities, mockUnitTypes, mockStorageUnits } from '../mockData';
 import { calculateBookingTotal } from '../utils/pricing';
 import type { PricingCalculationResult } from '../utils/pricing';
 import { apiClient, type ApiResponse, type PageResponse, isMockEnabled } from '@/api/client';
@@ -117,27 +117,21 @@ export const customerApi = {
    */
   async getFacilities(): Promise<Facility[]> {
     if (isMockEnabled('WS1')) return mockFacilities;
-    try {
-      const res = await apiClient<any>('/facilities');
-      const items = res?.content || res?.data?.content || res?.data;
-      if (Array.isArray(items) && items.length > 0) {
-        return items.map((f: any) => ({
-          id: String(f.id),
-          code: f.code || `FAC-${f.id}`,
-          name: f.name,
-          address: f.address || '',
-          district: f.district || 'Trung tâm',
-          city: f.city || 'TP.HCM',
-          distance: f.distance || '1.0 km',
-          startingPrice: f.lowestMonthlyPrice || f.startingPrice || 450000,
-          image: f.image || 'https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=800&q=80',
-          phone: f.phone || '028-3822-1234',
-        }));
-      }
-    } catch {
-      // Backend offline -> Fallback mock
-    }
-    return mockFacilities;
+    const res = await apiClient<any>('/facilities');
+    const items = res?.content || res?.data?.content || res?.data;
+    if (!Array.isArray(items)) return [];
+    return items.map((f: any) => ({
+      id: String(f.id),
+      code: f.code || '',
+      name: f.name,
+      address: f.address || '',
+      district: f.district || '',
+      city: f.city || '',
+      distance: f.distance || '',
+      startingPrice: Number(f.lowestMonthlyPrice ?? f.startingPrice ?? 0),
+      image: f.image || '',
+      phone: f.phone || '',
+    }));
   },
 
   /**
@@ -145,29 +139,23 @@ export const customerApi = {
    */
   async getUnitTypes(facilityId?: string | number): Promise<UnitType[]> {
     if (isMockEnabled('WS1')) return mockUnitTypes;
-    try {
-      const fId = facilityId || 1;
-      const res = await apiClient<any>(`/facilities/${fId}/unit-types?size=50`);
-      const items = res?.content || res?.data?.content || res?.data;
-      if (Array.isArray(items) && items.length > 0) {
-        return items.map((u: any) => ({
-          id: String(u.id),
-          code: u.code || `UT-${u.id}`,
-          name: u.name,
-          sizeCategory: (u.sizeCategory || (u.code?.includes('SMALL') ? 'S' : u.code?.includes('LARGE') ? 'L' : u.code?.includes('XL') ? 'XL' : 'M')) as any,
-          storageType: (u.code?.toUpperCase().includes('CLIMATE') || u.name?.toLowerCase().includes('lạnh'))
-            ? 'CLIMATE_CONTROLLED' : 'STANDARD',
-          areaM2: u.areaM2 ? Number(u.areaM2) : 3,
-          volumeM3: u.volumeM3 ? Number(u.volumeM3) : 7.5,
-          dimensions: `${u.widthM || 1.5}m x ${u.depthM || 2.0}m x ${u.heightM || 2.5}m`,
-          capacityDescription: u.description || 'Hệ thống an ninh và PCCC chuẩn quốc tế',
-          baseMonthlyPrice: u.monthlyPrice ? Number(u.monthlyPrice) : 450000,
-        }));
-      }
-    } catch {
-      // Fallback
-    }
-    return mockUnitTypes;
+    if (facilityId == null || facilityId === '') return [];
+    const res = await apiClient<any>(`/facilities/${facilityId}/unit-types?size=50`);
+    const items = res?.content || res?.data?.content || res?.data;
+    if (!Array.isArray(items)) return [];
+    return items.map((u: any) => ({
+      id: String(u.id),
+      code: u.code || '',
+      name: u.name,
+      sizeCategory: (u.sizeCategory || 'M') as any,
+      storageType: (u.code?.toUpperCase().includes('CLIMATE') || u.name?.toLowerCase().includes('lạnh'))
+        ? 'CLIMATE_CONTROLLED' : 'STANDARD',
+      areaM2: Number(u.areaM2 ?? 0),
+      volumeM3: Number(u.volumeM3 ?? 0),
+      dimensions: `${u.widthM ?? 0}m x ${u.depthM ?? 0}m x ${u.heightM ?? 0}m`,
+      capacityDescription: u.description || '',
+      baseMonthlyPrice: Number(u.monthlyPrice ?? 0),
+    }));
   },
 
   /**
@@ -175,26 +163,20 @@ export const customerApi = {
    */
   async getStorageUnits(_facilityId: string): Promise<StorageUnit[]> {
     if (isMockEnabled('WS1')) return mockStorageUnits;
-    try {
-      const res = await apiClient<any>(`/facilities/${_facilityId}/storage-units?size=100`);
-      const items = res?.content || res?.data?.content || res?.data;
-      if (Array.isArray(items) && items.length > 0) {
-        return items.map((u: any) => ({
-          id: String(u.id),
-          unitNumber: u.code || `U-${u.id}`,
-          facilityId: String(u.facilityId || _facilityId),
-          unitTypeId: String(u.unitTypeId),
-          floor: u.floor || 1,
-          zone: u.position || 'A',
-          status: (u.status || 'AVAILABLE') as any,
-          monthlyPrice: u.monthlyPrice || 1200000,
-          locationNote: u.locationNote,
-        }));
-      }
-    } catch {
-      // Fallback
-    }
-    return mockStorageUnits;
+    const res = await apiClient<any>(`/facilities/${_facilityId}/storage-units?size=100`);
+    const items = res?.content || res?.data?.content || res?.data;
+    if (!Array.isArray(items)) return [];
+    return items.map((u: any) => ({
+      id: String(u.id),
+      unitNumber: u.code || '',
+      facilityId: String(u.facilityId || _facilityId),
+      unitTypeId: String(u.unitTypeId),
+      floor: Number(u.floor ?? 0),
+      zone: u.position || '',
+      status: (u.status || 'AVAILABLE') as any,
+      monthlyPrice: Number(u.monthlyPrice ?? 0),
+      locationNote: u.locationNote,
+    }));
   },
 
   /**
@@ -317,15 +299,8 @@ export const customerApi = {
    * Lấy danh sách hợp đồng kho đang thuê của khách hàng (SC-05)
    */
   async getMyRentals(): Promise<RentedContract[]> {
-    try {
-      const contracts = await getCustomerContracts();
-      if (contracts && contracts.length > 0) {
-        return contracts;
-      }
-    } catch {
-      // Fallback
-    }
-    return mockRentedContracts;
+    const contracts = await getCustomerContracts();
+    return contracts ?? [];
   },
   /**
    * Lấy danh sách yêu cầu hỗ trợ sự cố của khách (SC-06, US-SC-06.2)

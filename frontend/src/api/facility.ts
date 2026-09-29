@@ -54,14 +54,8 @@ export async function fetchUnitTypes(facilityId: number): Promise<UnitTypeCatalo
     return map[String(facilityId)] ?? [];
   }
 
-  try {
-    const res = await apiClient<{ content: UnitTypeCatalog[] }>(`/facilities/${facilityId}/unit-types?isActive=true&size=50`);
-    return res.content;
-  } catch (err) {
-    console.warn(`Lỗi gọi API /facilities/${facilityId}/unit-types, fallback sang mock data:`, err);
-    const map = mockUnitTypesData as Record<string, UnitTypeCatalog[]>;
-    return map[String(facilityId)] ?? [];
-  }
+  const res = await apiClient<{ content: UnitTypeCatalog[] }>(`/facilities/${facilityId}/unit-types?isActive=true&size=50`);
+  return res.content ?? [];
 }
 
 export async function checkAvailability(facilityId: number, unitTypeId: number, query: AvailabilityQuery): Promise<AvailabilityResult> {
@@ -84,28 +78,8 @@ export async function checkAvailability(facilityId: number, unitTypeId: number, 
     };
   }
 
-  try {
-    const qs = new URLSearchParams({ startDate: query.startDate, rentalMonths: String(query.rentalMonths) });
-    return await apiClient<AvailabilityResult>(`/facilities/${facilityId}/unit-types/${unitTypeId}/availability?${qs}`);
-  } catch (err) {
-    console.warn('Lỗi gọi API checkAvailability, fallback sang mock data:', err);
-    const map = mockUnitTypesData as Record<string, UnitTypeCatalog[]>;
-    const ut = (map[String(facilityId)] ?? []).find((u) => u.id === unitTypeId);
-    if (!ut) throw { status: 404, message: 'Không tìm thấy loại ô kho', timestamp: new Date().toISOString() };
-    const end = new Date(query.startDate);
-    end.setMonth(end.getMonth() + query.rentalMonths);
-    return {
-      facilityId,
-      unitTypeId,
-      startDate: query.startDate,
-      endDateExclusive: end.toISOString().split('T')[0],
-      rentalMonths: query.rentalMonths,
-      availableSlots: Math.max(0, ut.totalUnits - 1),
-      monthlyPrice: ut.monthlyPrice,
-      totalRentalFee: ut.monthlyPrice * query.rentalMonths,
-      depositAmount: ut.monthlyPrice,
-    };
-  }
+  const qs = new URLSearchParams({ startDate: query.startDate, rentalMonths: String(query.rentalMonths) });
+  return await apiClient<AvailabilityResult>(`/facilities/${facilityId}/unit-types/${unitTypeId}/availability?${qs}`);
 }
 
 // --- BOM Facility Management APIs (BM-01) ---

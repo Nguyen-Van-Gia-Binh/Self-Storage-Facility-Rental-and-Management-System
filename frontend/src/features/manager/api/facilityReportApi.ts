@@ -33,23 +33,14 @@ export async function getFacilityOverviewReport(
     };
   }
 
-  try {
-    const query = month ? `?month=${encodeURIComponent(month)}` : '';
-    const res = await apiClient<ApiResponse<FacilityOverviewReport>>(
-      `/reports/facility/${facilityId}/overview${query}`
-    );
-    if (res && res.data) {
-      return res.data;
-    }
-    return facilityId === 2 ? mockOverviewReportFAC2 : mockOverviewReportFAC1;
-  } catch (error) {
-    console.warn('Lỗi gọi API /reports/facility/{id}/overview, fallback mock:', error);
-    const baseMock = facilityId === 2 ? mockOverviewReportFAC2 : mockOverviewReportFAC1;
-    return {
-      ...baseMock,
-      month: month || baseMock.month,
-    };
+  const query = month ? `?month=${encodeURIComponent(month)}` : '';
+  const res = await apiClient<ApiResponse<FacilityOverviewReport>>(
+    `/reports/facility/${facilityId}/overview${query}`
+  );
+  if (!res?.data) {
+    throw new Error('Báo cáo tổng quan cơ sở không có dữ liệu');
   }
+  return res.data;
 }
 
 /**
@@ -66,18 +57,13 @@ export async function getFacilityOverdueDebtReport(
     };
   }
 
-  try {
-    const res = await apiClient<ApiResponse<OverdueDebtReport>>(
-      `/reports/facility/${facilityId}/overdue-debt`
-    );
-    if (res && res.data) {
-      return res.data;
-    }
-    return { ...mockOverdueReportFAC1, facilityId };
-  } catch (error) {
-    console.warn('Lỗi gọi API /reports/facility/{id}/overdue-debt, fallback mock:', error);
-    return { ...mockOverdueReportFAC1, facilityId };
+  const res = await apiClient<ApiResponse<OverdueDebtReport>>(
+    `/reports/facility/${facilityId}/overdue-debt`
+  );
+  if (!res?.data) {
+    throw new Error('Báo cáo nợ quá hạn không có dữ liệu');
   }
+  return res.data;
 }
 
 /**
@@ -108,34 +94,21 @@ export async function getFacilityContractsReport(
     };
   }
 
-  try {
-    const query = new URLSearchParams();
-    if (params?.status && params.status !== 'ALL') query.set('status', params.status);
-    if (params?.expiringSoonDays) query.set('expiringSoonDays', String(params.expiringSoonDays));
-    if (params?.page !== undefined) query.set('page', String(params.page));
-    if (params?.size !== undefined) query.set('size', String(params.size));
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== 'ALL') query.set('status', params.status);
+  if (params?.expiringSoonDays) query.set('expiringSoonDays', String(params.expiringSoonDays));
+  if (params?.page !== undefined) query.set('page', String(params.page));
+  if (params?.size !== undefined) query.set('size', String(params.size));
 
-    const queryString = query.toString() ? `?${query.toString()}` : '';
-    const res = await apiClient<ApiResponse<{ content: FacilityContractSummary[]; totalElements: number; totalPages: number }>>(
-      `/reports/facility/${facilityId}/contracts${queryString}`
-    );
+  const queryString = query.toString() ? `?${query.toString()}` : '';
+  const res = await apiClient<ApiResponse<{ content: FacilityContractSummary[]; totalElements: number; totalPages: number }>>(
+    `/reports/facility/${facilityId}/contracts${queryString}`
+  );
 
-    if (res && res.data) {
-      return res.data;
-    }
-    return {
-      content: mockFacilityContractsFAC1,
-      totalElements: mockFacilityContractsFAC1.length,
-      totalPages: 1,
-    };
-  } catch (error) {
-    console.warn('Lỗi gọi API /reports/facility/{id}/contracts, fallback mock:', error);
-    return {
-      content: mockFacilityContractsFAC1,
-      totalElements: mockFacilityContractsFAC1.length,
-      totalPages: 1,
-    };
+  if (!res?.data) {
+    return { content: [], totalElements: 0, totalPages: 0 };
   }
+  return res.data;
 }
 
 /**
@@ -146,17 +119,15 @@ export async function getAssignedFacilities(): Promise<FacilityInfo[]> {
     return mockFacilities;
   }
 
-  try {
-    const res = await apiClient<ApiResponse<FacilityInfo[]> | FacilityInfo[]>('/facilities');
-    if ('data' in res && Array.isArray(res.data)) {
-      return res.data;
-    }
-    if (Array.isArray(res)) {
-      return res;
-    }
-    return mockFacilities;
-  } catch (error) {
-    console.warn('Lỗi gọi API /facilities, fallback mock:', error);
-    return mockFacilities;
+  const res = await apiClient<ApiResponse<FacilityInfo[]> | FacilityInfo[] | { content: FacilityInfo[] }>('/facilities');
+  if (res && typeof res === 'object' && 'data' in res && Array.isArray(res.data)) {
+    return res.data;
   }
+  if (Array.isArray(res)) {
+    return res;
+  }
+  if (res && typeof res === 'object' && 'content' in res && Array.isArray(res.content)) {
+    return res.content;
+  }
+  return [];
 }

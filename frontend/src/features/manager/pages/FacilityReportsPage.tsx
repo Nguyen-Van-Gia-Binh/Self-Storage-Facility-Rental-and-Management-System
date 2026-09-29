@@ -18,18 +18,17 @@ import { FacilityReportKpiCards } from '../components/reports/FacilityReportKpiC
 import { FacilityRevenueBreakdown } from '../components/reports/FacilityRevenueBreakdown';
 import { FacilityOverdueDebtRisk } from '../components/reports/FacilityOverdueDebtRisk';
 import { FacilityContractsReportTable } from '../components/reports/FacilityContractsReportTable';
-import { mockOverviewReportFAC1, mockOverdueReportFAC1, mockFacilityContractsFAC1 } from '../mock/mockFacilityReportData';
 
 export const FacilityReportsPage: React.FC = () => {
   const currentMonthStr = new Date().toISOString().slice(0, 7); // e.g. "2026-09"
 
   const [facilities, setFacilities] = useState<FacilityInfo[]>([]);
-  const [selectedFacilityId, setSelectedFacilityId] = useState<number>(1);
+  const [selectedFacilityId, setSelectedFacilityId] = useState<number>(0);
   const [selectedMonth, setSelectedMonth] = useState<string>(currentMonthStr);
 
-  const [overviewData, setOverviewData] = useState<FacilityOverviewReport>(mockOverviewReportFAC1);
-  const [overdueData, setOverdueData] = useState<OverdueDebtReport>(mockOverdueReportFAC1);
-  const [contractsData, setContractsData] = useState<FacilityContractSummary[]>(mockFacilityContractsFAC1);
+  const [overviewData, setOverviewData] = useState<FacilityOverviewReport | null>(null);
+  const [overdueData, setOverdueData] = useState<OverdueDebtReport | null>(null);
+  const [contractsData, setContractsData] = useState<FacilityContractSummary[]>([]);
 
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
@@ -54,6 +53,10 @@ export const FacilityReportsPage: React.FC = () => {
 
   // Load dữ liệu báo cáo
   const loadReportData = useCallback(async (isManualRefresh = false) => {
+    if (!selectedFacilityId) {
+      setLoading(false);
+      return;
+    }
     if (isManualRefresh) {
       setRefreshing(true);
     } else {
@@ -73,7 +76,10 @@ export const FacilityReportsPage: React.FC = () => {
       setContractsData(contractsRes.content || []);
     } catch (err: unknown) {
       console.error('Lỗi khi tải báo cáo cơ sở:', err);
-      setErrorMessage('Không thể kết nối đến máy chủ. Đang hiển thị dữ liệu bộ nhớ đệm cơ sở.');
+      setOverviewData(null);
+      setOverdueData(null);
+      setContractsData([]);
+      setErrorMessage('Không thể tải báo cáo từ máy chủ.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -85,7 +91,7 @@ export const FacilityReportsPage: React.FC = () => {
   }, [loadReportData]);
 
   const selectedFacilityName =
-    facilities.find((f) => f.id === selectedFacilityId)?.name || overviewData.facilityName || 'Cơ sở Cầu Giấy';
+    facilities.find((f) => f.id === selectedFacilityId)?.name || overviewData?.facilityName || 'Chưa chọn cơ sở';
 
   return (
     <div className="space-y-6 pb-10">
@@ -123,7 +129,7 @@ export const FacilityReportsPage: React.FC = () => {
                     </option>
                   ))
                 ) : (
-                  <option value={1}>Cơ sở Cầu Giấy - Hà Nội (FAC-CG)</option>
+                  <option value={0}>Chưa có cơ sở</option>
                 )}
               </select>
             </div>
@@ -171,14 +177,14 @@ export const FacilityReportsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Phần 1: 4 Thẻ KPI ô kho & Thẻ Usage Rate chuẩn (AC-1, AC-2) */}
-      <FacilityReportKpiCards data={overviewData} loading={loading} />
+      {overviewData && (
+        <>
+          <FacilityReportKpiCards data={overviewData} loading={loading} />
+          <FacilityRevenueBreakdown data={overviewData} loading={loading} />
+        </>
+      )}
 
-      {/* Phần 2: Báo cáo tài chính cơ sở (AC-3) */}
-      <FacilityRevenueBreakdown data={overviewData} loading={loading} />
-
-      {/* Phần 3: Báo cáo rủi ro nợ quá hạn theo độ tuổi nợ (AC-4, UC-F6-10) */}
-      <FacilityOverdueDebtRisk data={overdueData} loading={loading} />
+      {overdueData && <FacilityOverdueDebtRisk data={overdueData} loading={loading} />}
 
       {/* Phần 4: Bảng danh sách hợp đồng & hợp đồng sắp hết hạn (FM-06) */}
       <FacilityContractsReportTable contracts={contractsData} loading={loading} />

@@ -230,10 +230,5 @@ export async function fetchActivePolicy(): Promise<ActivePolicyInfo> {
     return { ...mockActivePolicy };
   }
 
-  try {
-    return await apiClient<ActivePolicyInfo>('/policies/active');
-  } catch (err) {
-    console.warn('Lỗi gọi /policies/active, fallback mock policy:', err);
-    return { ...mockActivePolicy };
-  }
+  return await apiClient<ActivePolicyInfo>('/policies/active');
 }
