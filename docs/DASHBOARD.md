@@ -52,6 +52,7 @@
 | `ISS-42` | Đặt chỗ ẩn danh (Anonymous booking) tự động gán khách hàng mặc định ID=1L. | Bắt buộc xác thực, ném UNAUTHORIZED nếu chưa đăng nhập và kích hoạt Auth Guard. | Bình / Nhi | `RESOLVED` |
 | `ISS-43` | Rò rỉ phiên làm việc do `clearSession()` không xóa sạch mock override và sessionStorage. | Dọn sạch toàn bộ key `smartstorage_*`, `selfstorage_*` và `sessionStorage`. | Bình | `RESOLVED` |
 | `ISS-44` | Đặt chỗ hiển thị mock Tân Bình Flagship và gọi sai endpoint catalog ô kho. | Nối Real API `/facilities`, `/storage-units` và ánh xạ động tên cơ sở theo ID. | Bình / Nhi | `RESOLVED` |
+| `ISS-45` | Hợp đồng PENDING_RETURN bị mất mã PIN trên API và hiển thị nút Gia hạn trên UI. | Giữ accessCode cho PENDING_RETURN, ẩn nút Gia hạn theo BR-REN-02, thêm migration V26. | Bình | `RESOLVED` (#167) |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 
