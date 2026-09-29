@@ -182,18 +182,21 @@ public class ContractController {
                 .body(ApiResponse.success(response, "Gửi thông báo trả kho thành công"));
     }
 
-    /** T4.15: Manager phân công Staff nghiệm thu trả kho (FM-05, FS-04) */
+    /** T4.15 / FS-04: Phân công hoặc tự nhận việc nghiệm thu trả kho */
     @PatchMapping("/{id}/assign-return")
-    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
-    @Operation(summary = "Manager phân công nhân viên nghiệm thu trả kho")
+    @PreAuthorize("hasAnyRole('STAFF', 'MANAGER', 'ADMIN')")
+    @Operation(summary = "Phân công hoặc tự nhận nhân viên nghiệm thu trả kho")
     public ResponseEntity<ApiResponse<ContractResponse>> assignReturnStaff(
             @PathVariable Long id,
             @Valid @RequestBody AssignReturnStaffRequest request,
             @AuthenticationPrincipal UserPrincipal currentUser) {
-        Long managerId = requireUserId(currentUser);
+        Long operatorId = requireUserId(currentUser);
         List<Long> facilities = resolveFacilityScope(currentUser, null);
-        ContractResponse response = contractService.assignReturnStaff(id, request, managerId, facilities);
-        return ResponseEntity.ok(ApiResponse.success(response, "Phân công nhân viên nghiệm thu thành công"));
+        if (currentUser.getRole() == UserRole.FACILITY_STAFF && request.getStaffId() == null) {
+            request.setStaffId(operatorId);
+        }
+        ContractResponse response = contractService.assignReturnStaff(id, request, operatorId, facilities);
+        return ResponseEntity.ok(ApiResponse.success(response, "Phân công / Tiếp nhận nhiệm vụ nghiệm thu thành công"));
     }
 
     /** Manager phân công Staff tiếp đón bàn giao Check-in (FM-05, FS-01) */

@@ -267,8 +267,8 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
         </div>
       </div>
 
-      {/* Action Buttons Bar */}
-      <div className="pt-4 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
+      {/* Sticky Action Buttons Bar (FS-01, FS-02) */}
+      <div className="sticky bottom-0 bg-white/95 backdrop-blur-md -mx-5 -mb-5 p-4 rounded-b-2xl border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 z-20 shadow-lg">
         {/* Nút báo sự cố ngoại lệ (BR-CHK-06) */}
         <button
           type="button"
@@ -283,14 +283,14 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
         {/* Nhóm nút chính */}
         <div className="flex items-center gap-3">
           {!canSubmit && (
-            <span className="text-[11px] text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+            <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200 shadow-xs">
               {!allCriteriaPassed
-                ? 'Cần tích đủ 4 tiêu chí'
+                ? '⚠️ Cần tích đủ 4/4 tiêu chí hiện trạng'
                 : !signatureDataUrl
-                ? 'Cần có chữ ký khách'
+                ? '⚠️ Cần có chữ ký xác nhận của khách'
                 : !customerConfirmed
-                ? 'Cần tích đồng ý'
-                : 'Chưa đủ điều kiện'}
+                ? '⚠️ Cần tích đồng ý nhận bàn giao'
+                : '⚠️ Chưa đủ điều kiện bàn giao'}
             </span>
           )}
 
@@ -300,10 +300,10 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
             isLoading={isSubmitting}
             size="md"
             variant="primary"
-            className="px-6 py-2.5 shadow-sm cursor-pointer"
+            className="px-6 py-2.5 shadow-md cursor-pointer font-bold tracking-wide"
           >
             <KeyRound className="w-4 h-4 mr-2" />
-            BÀN GIAO & CẤP MÃ PIN
+            XÁC NHẬN BÀN GIAO & KÍCH HOẠT MÃ PIN
           </Button>
         </div>
       </div>

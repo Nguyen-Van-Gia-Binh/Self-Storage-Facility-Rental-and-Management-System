@@ -66,6 +66,7 @@
   "openSupportRequests": [
     {
       "ticketId": 301,
+      "code": "SUP-20260928-0001",
       "title": "Gắn khóa ngoài Overlock ô kho nợ quá hạn mốc D+4 (US-FM-04.3)",
       "category": "OVERLOCK_D4",
       "priority": "URGENT",
@@ -77,6 +78,7 @@
     },
     {
       "ticketId": 302,
+      "code": "SUP-20260928-0003",
       "title": "Hỗ trợ khách cấp lại mã PIN do quên mật mã tại quầy (SLA 2h)",
       "category": "ACCESS_CODE",
       "priority": "HIGH",
@@ -84,6 +86,18 @@
       "customerName": "Đỗ Thu Hà",
       "slaDeadline": "12:30",
       "status": "IN_PROGRESS",
+      "isOverlockTask": false
+    },
+    {
+      "ticketId": 303,
+      "code": "SUP-20260928-0002",
+      "title": "Hư hại bản lề ô kho CG-S101",
+      "category": "DAMAGED_UNIT",
+      "priority": "URGENT",
+      "unitCode": "CG-S101",
+      "customerName": "Nguyễn Phạm Xuân Nhi",
+      "slaDeadline": "SLA 2h: Còn 01:15:00",
+      "status": "PENDING",
       "isOverlockTask": false
     }
   ]

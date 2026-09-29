@@ -55,7 +55,7 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({ tasks, o
               {tasks.pendingReturns.length}
             </span>
             <span className="text-xs font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-700">
-              Chờ khám
+              Chờ nghiệm thu
             </span>
           </div>
         </div>
@@ -268,28 +268,37 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({ tasks, o
               ) : (
                 filteredIncidents.map((item) => (
                   <div
-                    key={item.ticketId}
+                    key={item.ticketId || item.code}
                     className="p-4 rounded-xl border border-slate-200 hover:border-rose-200 transition flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                   >
                     <div className="space-y-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         {item.isOverlockTask ? (
-                          <span className="p-1 rounded bg-purple-100 text-purple-700">
+                          <span className="p-1 rounded bg-purple-100 text-purple-700" title="Khóa ngoài Overlock">
                             <Lock className="w-3.5 h-3.5" />
                           </span>
                         ) : (
-                          <span className="p-1 rounded bg-rose-100 text-rose-700">
+                          <span className="p-1 rounded bg-rose-100 text-rose-700" title="Sự cố kỹ thuật / Hỗ trợ">
                             <AlertTriangle className="w-3.5 h-3.5" />
                           </span>
                         )}
-                        <span className="font-bold text-slate-900 text-sm">{item.title}</span>
+                        {item.code && (
+                          <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">
+                            {item.code}
+                          </span>
+                        )}
+                        <span className="font-bold text-slate-900 text-sm">{item.title || 'Sự cố vận hành'}</span>
                         <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700">
-                          {item.unitCode}
+                          {item.unitCode || '---'}
                         </span>
                       </div>
-                      <div className="flex items-center gap-4 text-xs text-slate-500">
-                        {item.customerName && <span>Khách: {item.customerName}</span>}
-                        <span className="text-rose-600 font-medium">Hạn SLA: {item.slaDeadline}</span>
+                      <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500">
+                        {item.customerName && (
+                          <span>
+                            Khách: <strong className="text-slate-700">{item.customerName}</strong>
+                          </span>
+                        )}
+                        <span className="text-rose-600 font-medium">Hạn SLA: {item.slaDeadline || 'SLA 2h'}</span>
                         <span
                           className={`font-medium px-2 py-0.2 rounded text-[11px] ${
                             item.status === 'IN_PROGRESS'
@@ -303,7 +312,7 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({ tasks, o
                     </div>
 
                     <button
-                      onClick={() => alert(`Nhiệm vụ #${item.ticketId} đã được ghi nhận vào nhật ký ca trực.`)}
+                      onClick={() => alert(`Nhiệm vụ #${item.code || item.ticketId} đã được ghi nhận vào nhật ký ca trực.`)}
                       className="px-3.5 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-medium shrink-0"
                     >
                       {item.status === 'IN_PROGRESS' ? 'Cập nhật tiến độ' : 'Tiếp nhận xử lý'}
