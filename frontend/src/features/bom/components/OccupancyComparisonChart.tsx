@@ -79,7 +79,9 @@ export const OccupancyComparisonChart: React.FC<OccupancyComparisonChartProps> =
           </div>
         ) : (
           sortedData.map((item) => {
-          const ratePercent = Math.min(item.occupancyRate * 100, 100);
+          const exploitableUnits = Math.max(0, item.totalUnits - (item.outOfServiceUnits || 0));
+          const rateUnknown = exploitableUnits === 0;
+          const ratePercent = rateUnknown ? 0 : Math.min(item.occupancyRate * 100, 100);
           const barColor = getBarColor(item.occupancyRate);
 
           return (
@@ -99,13 +101,13 @@ export const OccupancyComparisonChart: React.FC<OccupancyComparisonChartProps> =
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-slate-500">Tỷ lệ lấp đầy:</span>
                   <span className="text-sm font-bold font-mono text-slate-900">
-                    {item.totalUnits === 0 && item.occupancyRate === 0
-                      ? 'Không xác định'
-                      : formatPercent(item.occupancyRate)}
+                    {rateUnknown ? 'Không xác định' : formatPercent(item.occupancyRate)}
                   </span>
-                  <span className="text-xs text-slate-400 font-mono">
-                    ({item.occupiedUnits}/{item.totalUnits} ô)
-                  </span>
+                  {!rateUnknown && (
+                    <span className="text-xs text-slate-400 font-mono">
+                      ({item.occupiedUnits}/{exploitableUnits} ô)
+                    </span>
+                  )}
                 </div>
               </div>
 

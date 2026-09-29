@@ -43,14 +43,19 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
       overdueFeeRevenue,
       totalRevenue,
       occupancyRate: occ ? occ.occupancyRate : 0,
-      occupiedUnits: occ ? occ.occupiedUnits : 0,
-      availableUnits: occ ? occ.availableUnits : 0,
-      totalUnits: occ ? occ.totalUnits : 0,
-      overdueCount: occ ? occ.overdueContractsCount : 0,
+      occupiedUnits: occ ? money(occ.occupiedUnits) : 0,
+      availableUnits: occ ? money(occ.availableUnits) : 0,
+      outOfServiceUnits: occ ? money(occ.outOfServiceUnits) : 0,
+      totalUnits: occ ? money(occ.totalUnits) : 0,
+      overdueCount: occ ? money(occ.overdueContractsCount) : 0,
     };
   });
 
+  const exploitableOf = (occupiedSource: { totalUnits: number; outOfServiceUnits: number }) =>
+    Math.max(0, occupiedSource.totalUnits - occupiedSource.outOfServiceUnits);
+
   // Tính tổng hàng cuối (System Total Row) - US-BM-04.1 AC-2
+  // Usage Rate = Occupied / (tổng ô − Out of service) — US-BM-04.2 AC-1
   const totalRental = rows.reduce((acc, r) => acc + r.rentalRevenue, 0);
   const totalSurcharges = rows.reduce((acc, r) => acc + r.surchargesAndRenewals, 0);
   const totalOverdueFees = rows.reduce((acc, r) => acc + r.overdueFeeRevenue, 0);
@@ -58,7 +63,8 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
   const totalOccupied = rows.reduce((acc, r) => acc + r.occupiedUnits, 0);
   const totalAvailable = rows.reduce((acc, r) => acc + r.availableUnits, 0);
   const totalCapacity = rows.reduce((acc, r) => acc + r.totalUnits, 0);
-  const averageOccupancy = totalCapacity > 0 ? totalOccupied / totalCapacity : 0;
+  const totalExploitable = rows.reduce((acc, r) => acc + exploitableOf(r), 0);
+  const averageOccupancy = totalExploitable > 0 ? totalOccupied / totalExploitable : null;
 
   return (
     <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
@@ -94,7 +100,8 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
           </thead>
           <tbody className="divide-y divide-slate-100">
             {rows.map((row) => {
-              const occPercent = (row.occupancyRate * 100).toFixed(1);
+              const exploitableUnits = exploitableOf(row);
+              const rateUnknown = exploitableUnits === 0;
               return (
                 <tr
                   key={row.facilityId}
@@ -135,20 +142,28 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
                   <td className="py-3 px-3 text-center">
                     <span
                       className={`inline-flex items-center px-2 py-0.5 rounded-full font-mono font-semibold text-[11px] border ${
-                        row.occupancyRate >= 0.8
+                        rateUnknown
+                          ? 'bg-slate-50 text-slate-600 border-slate-200'
+                          : row.occupancyRate >= 0.8
                           ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                           : row.occupancyRate >= 0.5
                           ? 'bg-sky-50 text-sky-700 border-sky-200'
                           : 'bg-amber-50 text-amber-700 border-amber-200'
                       }`}
                     >
-                      {occPercent}%
+                      {rateUnknown ? 'Không xác định' : formatPercent(row.occupancyRate)}
                     </span>
                   </td>
                   <td className="py-3 px-3 text-center font-mono text-slate-600">
-                    <span className="text-emerald-600 font-semibold">{row.availableUnits}</span>
-                    <span className="text-slate-400"> / </span>
-                    <span>{row.totalUnits} ô</span>
+                    {row.totalUnits === 0 ? (
+                      <span className="text-slate-500">Không xác định</span>
+                    ) : (
+                      <>
+                        <span className="text-emerald-600 font-semibold">{row.availableUnits}</span>
+                        <span className="text-slate-400"> / </span>
+                        <span>{row.totalUnits} ô</span>
+                      </>
+                    )}
                   </td>
                   <td className="py-3 px-3 text-center">
                     <button
@@ -181,13 +196,15 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
                 {formatCurrency(grandTotalRevenue)}
               </td>
               <td className="py-3.5 px-3 text-center font-mono text-slate-900">
-                {formatPercent(averageOccupancy)}
+                {averageOccupancy == null ? 'Không xác định' : formatPercent(averageOccupancy)}
               </td>
               <td className="py-3.5 px-3 text-center font-mono text-slate-900">
-                {totalAvailable} trống / {totalCapacity} ô
+                {totalCapacity === 0
+                  ? 'Không xác định'
+                  : `${totalAvailable} trống / ${totalCapacity} ô`}
               </td>
               <td className="py-3.5 px-3 text-center text-slate-400 text-[11px]">
-                3 Cơ sở
+                {rows.length} cơ sở
               </td>
             </tr>
           </tfoot>

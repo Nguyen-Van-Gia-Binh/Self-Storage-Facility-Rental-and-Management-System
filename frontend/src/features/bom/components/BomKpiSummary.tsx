@@ -36,14 +36,23 @@ export const BomKpiSummary: React.FC<BomKpiSummaryProps> = ({
   const totalRev = revenue?.totalRevenue ?? 0;
   const refundAmount = revenue?.totalRefundAmount ?? 0;
   const avgOccupancy = occupancy?.averageOccupancyRate ?? 0;
-  const totalUnits = occupancy?.totalUnitsSystem ?? 0;
   const occupiedUnits = occupancy?.occupiedUnitsSystem ?? 0;
   const overdueCount = overdue?.totalOverdueContracts ?? 0;
   const overdueFee = overdue?.totalAccruedFee ?? 0;
-  const reservedUnits = (occupancy?.data ?? []).reduce(
+  const occupancyRows = occupancy?.data ?? [];
+  const reservedUnits = occupancyRows.reduce(
     (sum, row) => sum + (row.reservedUnits || 0),
     0,
   );
+  const occupiedForRate = occupancyRows.reduce(
+    (sum, row) => sum + (row.occupiedUnits || 0),
+    0,
+  );
+  const exploitableUnits = occupancyRows.reduce(
+    (sum, row) => sum + Math.max(0, (row.totalUnits || 0) - (row.outOfServiceUnits || 0)),
+    0,
+  );
+  const rateUnknown = exploitableUnits === 0;
 
   // Đánh giá tỷ lệ lấp đầy
   const getOccupancyBadge = (rate: number) => {
@@ -101,15 +110,21 @@ export const BomKpiSummary: React.FC<BomKpiSummaryProps> = ({
         </div>
         <div className="mt-2.5">
           <div className="text-2xl font-bold font-mono tracking-tight text-slate-900">
-            {formatPercent(avgOccupancy)}
+            {rateUnknown ? 'Không xác định' : formatPercent(avgOccupancy)}
           </div>
           <div className="mt-1.5 flex items-center gap-2">
-            <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${occBadge.classes}`}>
-              {occBadge.label}
-            </span>
-            <span className="text-xs text-slate-500">
-              ({occupiedUnits}/{totalUnits} ô)
-            </span>
+            {rateUnknown ? (
+              <span className="text-xs text-slate-500">Chưa có ô khai thác được</span>
+            ) : (
+              <>
+                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${occBadge.classes}`}>
+                  {occBadge.label}
+                </span>
+                <span className="text-xs text-slate-500">
+                  ({occupiedForRate}/{exploitableUnits} ô)
+                </span>
+              </>
+            )}
           </div>
         </div>
       </div>
