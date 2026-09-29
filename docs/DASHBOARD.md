@@ -57,6 +57,7 @@
 | `ISS-47` | Thiếu khóa mã PIN tại mốc D+7 (BR-OVD-05) ở backend, còn frontend khóa sớm ở D+4. | Cronjob khóa accessCode tại D+7; Frontend chỉ khóa hiển thị mã PIN khi D+7. | Bình | `RESOLVED` |
 | `ISS-48` | Thiếu đệm an toàn 15 ngày gối đầu và lỗi tự động chọn sẵn ô kho mặc định. | Cập nhật SQL buffer 15 ngày (DATEADD) và bỏ auto-select trên UnitPickerPage. | Bình / Nhi | `RESOLVED` |
 | `ISS-49` | PaymentController và các trang thanh toán thiếu Auth Guard. | Thêm @PreAuthorize("isAuthenticated()") và Auth Guard redirect login. | Bình | `RESOLVED` |
+| `ISS-50` | Staff nộp biên bản nghiệm thu không xóa task; Customer hiển thị chờ nghiệm thu; Manager không hiện nút duyệt quyết toán. | Bổ sung cờ `isInspected` & `inspectionDone`, xóa task sau khi nộp và mở nút Duyệt quyết toán cho FM. | Bình | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 
