@@ -69,7 +69,7 @@ export const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedStaffId) {
-      setErrorMessage('Vui lòng chọn nhân viên phụ trách nhiệm vụ.');
+      setErrorMessage('Vui lòng chọn nhân viên phụ trách ca trực.');
       return;
     }
 
@@ -343,7 +343,7 @@ export const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
           <button
             form="assign-staff-form"
             type="submit"
-            disabled={isSubmitting || staffList.length === 0}
+            disabled={isSubmitting || staffList.length === 0 || !selectedStaffId}
             className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-md flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
