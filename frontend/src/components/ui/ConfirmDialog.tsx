@@ -1,5 +1,5 @@
 import React from 'react';
-import { Lock, Unlock, AlertCircle, CheckCircle2, Loader2, Info } from 'lucide-react';
+import { Lock, Unlock, AlertCircle, Loader2, Info } from 'lucide-react';
 import { Modal } from './Modal';
 
 interface ConfirmDialogProps {
