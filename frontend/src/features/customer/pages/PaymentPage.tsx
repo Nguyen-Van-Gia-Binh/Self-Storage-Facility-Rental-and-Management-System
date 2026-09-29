@@ -28,10 +28,19 @@ import {
 } from '@/api/payment';
 import { DigitalMoveInPassModal } from '../components/DigitalMoveInPassModal';
 import type { MoveInPassData } from '@/types';
+import { tokenStorage } from '@/utils/tokenStorage';
 
 export const PaymentPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+
+  // Auth Guard: Mục 2 — Yêu cầu đăng nhập trước khi thanh toán
+  useEffect(() => {
+    if (!tokenStorage.getAccessToken()) {
+      const currentUrl = window.location.pathname + window.location.search;
+      navigate(`/auth/login?redirect=${encodeURIComponent(currentUrl)}`, { replace: true });
+    }
+  }, [navigate]);
 
   // Đọc thông số từ URL query hoặc mặc định
   const unitNumber = searchParams.get('unitNumber') || 'A102';
