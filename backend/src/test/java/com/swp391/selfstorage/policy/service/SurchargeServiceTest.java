@@ -67,6 +67,29 @@ class SurchargeServiceTest {
     }
 
     @Test
+    @DisplayName("Sinh mã từ tên khi form không gửi code")
+    void testCreateSurchargeGeneratesCodeFromName() {
+        CreateSurchargeRequest request = CreateSurchargeRequest.builder()
+                .name("Phụ phí thang hàng")
+                .amount(100000L)
+                .type("FIXED")
+                .build();
+
+        when(extraFeeTypeRepository.existsByCode("PHU-PHI-THANG-HANG")).thenReturn(false);
+        when(extraFeeTypeRepository.save(any(ExtraFeeType.class))).thenAnswer(invocation -> {
+            ExtraFeeType entity = invocation.getArgument(0);
+            entity.setId(2L);
+            return entity;
+        });
+
+        SurchargeResponse response = surchargeService.createSurcharge(request);
+
+        assertEquals("PHU-PHI-THANG-HANG", response.getCode());
+        assertEquals("FIXED", response.getType());
+        assertEquals("Toàn hệ thống", response.getFacilityName());
+    }
+
+    @Test
     @DisplayName("Ném lỗi CONFLICT khi tạo phụ phí trùng mã đã có")
     void testCreateSurchargeDuplicateCodeThrowsConflict() {
         CreateSurchargeRequest request = CreateSurchargeRequest.builder()

@@ -5,8 +5,14 @@
 import { apiClient, type ApiResponse } from '@/api/client';
 
 export interface CalculatePriceRequest {
-  monthlyPrice: number;
+  facilityId: number;
+  unitTypeId: number;
   months: number;
+}
+
+export interface SurchargeLine {
+  name: string;
+  amount: number;
 }
 
 export interface CalculatePriceResponse {
@@ -18,6 +24,8 @@ export interface CalculatePriceResponse {
   finalRentTotal: number;
   depositAmount: number;
   totalDueToday: number;
+  surcharges?: SurchargeLine[];
+  surchargeTotal?: number;
 }
 
 export interface CreateReservationRequest {
@@ -67,17 +75,30 @@ export interface AvailabilityResponse {
   monthlyPrice: number;
   totalRentalFee?: number;
   depositAmount: number;
+  surcharges?: SurchargeLine[];
+  surchargeTotal?: number;
 }
 
 /**
  * 1. Tính toán trước tiền thuê, chiết khấu và cọc 1 tháng (BR-DEP-01, BR-GEN-04)
  */
 export async function calculateBookingPrice(req: CalculatePriceRequest): Promise<CalculatePriceResponse> {
-  const res = await apiClient<ApiResponse<CalculatePriceResponse>>('/reservations/calculate-price', {
-    method: 'POST',
-    body: JSON.stringify(req),
-  });
-  return res.data;
+  const res = await apiClient<ApiResponse<CalculatePriceResponse> | CalculatePriceResponse>(
+    '/reservations/calculate-price',
+    {
+      method: 'POST',
+      body: JSON.stringify(req),
+    }
+  );
+  const wrapped = res as ApiResponse<CalculatePriceResponse>;
+  const payload =
+    wrapped?.data && typeof wrapped.data.monthlyPrice === 'number'
+      ? wrapped.data
+      : (res as CalculatePriceResponse);
+  if (!payload || typeof payload.monthlyPrice !== 'number' || payload.monthlyPrice <= 0) {
+    throw new Error('Báo giá không có đơn giá');
+  }
+  return payload;
 }
 
 /**

@@ -72,6 +72,12 @@ export interface UnitTypeCatalog {
   monthlyPrice: number;
   totalUnits: number;
   isActive: boolean;
+  /** Đơn giá 1 m² đang áp dụng (VND/m²/tháng) */
+  pricePerM2?: number | null;
+  /** Chưa niêm yết | Đang áp dụng | Chưa áp dụng */
+  priceStatus?: string | null;
+  scheduledEffectiveFrom?: string | null;
+  scheduledPricePerM2?: number | null;
 }
 
 export interface AvailabilityResult {

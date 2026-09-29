@@ -11,6 +11,64 @@ export interface BomFilterBarProps {
   isLoading?: boolean;
 }
 
+/** Ngày hiện tại theo Asia/Ho_Chi_Minh (YYYY-MM-DD). */
+function todayInHoChiMinh(): string {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+}
+
+function formatYmd(year: number, monthIndex0: number, day: number): string {
+  return `${year}-${String(monthIndex0 + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function daysInMonth(year: number, monthIndex0: number): number {
+  return new Date(Date.UTC(year, monthIndex0 + 1, 0)).getUTCDate();
+}
+
+function periodRange(
+  type: Exclude<ReportFilterParams['periodType'], 'CUSTOM'>
+): { from: string; to: string } {
+  const today = todayInHoChiMinh();
+  const [y, m] = today.split('-').map(Number);
+  const monthIndex0 = m - 1;
+
+  if (type === 'THIS_MONTH') {
+    return {
+      from: formatYmd(y, monthIndex0, 1),
+      to: formatYmd(y, monthIndex0, daysInMonth(y, monthIndex0)),
+    };
+  }
+
+  if (type === 'LAST_MONTH') {
+    const lastMonthIndex = monthIndex0 === 0 ? 11 : monthIndex0 - 1;
+    const lastMonthYear = monthIndex0 === 0 ? y - 1 : y;
+    return {
+      from: formatYmd(lastMonthYear, lastMonthIndex, 1),
+      to: formatYmd(lastMonthYear, lastMonthIndex, daysInMonth(lastMonthYear, lastMonthIndex)),
+    };
+  }
+
+  // THIS_QUARTER
+  const quarterStartMonth = Math.floor(monthIndex0 / 3) * 3;
+  const quarterEndMonth = quarterStartMonth + 2;
+  return {
+    from: formatYmd(y, quarterStartMonth, 1),
+    to: formatYmd(y, quarterEndMonth, daysInMonth(y, quarterEndMonth)),
+  };
+}
+
+function thisMonthLabel(): string {
+  const today = todayInHoChiMinh();
+  const [y, m] = today.split('-');
+  return `Tháng ${Number(m)}/${y}`;
+}
+
+function thisQuarterLabel(): string {
+  const today = todayInHoChiMinh();
+  const [y, m] = today.split('-').map(Number);
+  const quarter = Math.floor((m - 1) / 3) + 1;
+  return `Quý ${quarter}/${y}`;
+}
+
 export const BomFilterBar: React.FC<BomFilterBarProps> = ({
   filters,
   onChange,
@@ -22,27 +80,9 @@ export const BomFilterBar: React.FC<BomFilterBarProps> = ({
   const [dateError, setDateError] = useState<string | null>(null);
 
   const handlePeriodChange = (type: ReportFilterParams['periodType']) => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth(); // 0-indexed
-
-    let newFrom = '';
-    let newTo = '';
-
-    if (type === 'THIS_MONTH') {
-      newFrom = new Date(year, month, 1).toISOString().split('T')[0];
-      newTo = new Date(year, month + 1, 0).toISOString().split('T')[0];
-    } else if (type === 'LAST_MONTH') {
-      newFrom = new Date(year, month - 1, 1).toISOString().split('T')[0];
-      newTo = new Date(year, month, 0).toISOString().split('T')[0];
-    } else if (type === 'THIS_QUARTER') {
-      const currentQuarter = Math.floor(month / 3);
-      newFrom = new Date(year, currentQuarter * 3, 1).toISOString().split('T')[0];
-      newTo = new Date(year, (currentQuarter + 1) * 3, 0).toISOString().split('T')[0];
-    }
-
     setDateError(null);
     if (type !== 'CUSTOM') {
+      const { from: newFrom, to: newTo } = periodRange(type);
       setCustomFrom(newFrom);
       setCustomTo(newTo);
       onChange({
@@ -88,10 +128,10 @@ export const BomFilterBar: React.FC<BomFilterBarProps> = ({
           </span>
           {(
             [
-              { id: 'THIS_MONTH', label: 'Tháng 10/2026' },
+              { id: 'THIS_MONTH', label: thisMonthLabel() },
               { id: 'LAST_MONTH', label: 'Tháng trước' },
-              { id: 'THIS_QUARTER', label: 'Quý 4/2026' },
-              { id: 'CUSTOM', label: 'Tùy chọn' },
+              { id: 'THIS_QUARTER', label: thisQuarterLabel() },
+              { id: 'CUSTOM', label: 'Tùy chọn / 30 ngày gần nhất' },
             ] as const
           ).map((p) => {
             const isActive = filters.periodType === p.id;
@@ -125,6 +165,9 @@ export const BomFilterBar: React.FC<BomFilterBarProps> = ({
               onChange={(e) => {
                 setCustomFrom(e.target.value);
                 setDateError(null);
+                if (filters.periodType !== 'CUSTOM') {
+                  onChange({ ...filters, periodType: 'CUSTOM', from: e.target.value, to: currentTo });
+                }
               }}
               className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 font-mono focus:outline-none focus:ring-1 focus:ring-brand-500 focus:bg-white"
             />
@@ -138,6 +181,9 @@ export const BomFilterBar: React.FC<BomFilterBarProps> = ({
               onChange={(e) => {
                 setCustomTo(e.target.value);
                 setDateError(null);
+                if (filters.periodType !== 'CUSTOM') {
+                  onChange({ ...filters, periodType: 'CUSTOM', from: currentFrom, to: e.target.value });
+                }
               }}
               className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 font-mono focus:outline-none focus:ring-1 focus:ring-brand-500 focus:bg-white"
             />
@@ -155,16 +201,20 @@ export const BomFilterBar: React.FC<BomFilterBarProps> = ({
             </Button>
           )}
 
-          {/* Dropdown cơ sở */}
+          {/* Dropdown cơ sở — value rỗng = toàn hệ thống (không gửi facilityId=all) */}
           <div className="flex items-center gap-2 ml-0 sm:ml-2">
             <Building2 className="w-3.5 h-3.5 text-slate-400" />
             <select
-              value={filters.facilityId || ''}
+              value={filters.facilityId ?? ''}
               onChange={(e) => {
-                const val = e.target.value ? parseInt(e.target.value, 10) : undefined;
+                const raw = e.target.value;
+                const val =
+                  raw === '' || raw.toLowerCase() === 'all'
+                    ? undefined
+                    : Number.parseInt(raw, 10);
                 onChange({
                   ...filters,
-                  facilityId: val,
+                  facilityId: Number.isFinite(val as number) ? (val as number) : undefined,
                 });
               }}
               className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:ring-1 focus:ring-brand-500 focus:bg-white cursor-pointer"

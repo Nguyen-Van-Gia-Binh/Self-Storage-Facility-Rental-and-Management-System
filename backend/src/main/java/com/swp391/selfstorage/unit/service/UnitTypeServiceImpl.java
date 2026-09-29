@@ -3,6 +3,8 @@ package com.swp391.selfstorage.unit.service;
 import com.swp391.selfstorage.common.dto.PageResponse;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
+import com.swp391.selfstorage.policy.service.AppliedPriceInfo;
+import com.swp391.selfstorage.policy.service.AppliedPriceLookup;
 import com.swp391.selfstorage.unit.dto.CreateUnitTypeRequest;
 import com.swp391.selfstorage.unit.dto.UnitTypeResponse;
 import com.swp391.selfstorage.unit.dto.UpdateUnitTypeRequest;
@@ -13,6 +15,7 @@ import com.swp391.selfstorage.unit.mapper.UnitMapper;
 import com.swp391.selfstorage.unit.repository.FacilityUnitTypePriceRepository;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
 import com.swp391.selfstorage.unit.repository.UnitTypeRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -28,6 +31,9 @@ public class UnitTypeServiceImpl implements UnitTypeService {
     private final FacilityUnitTypePriceRepository priceRepository;
     private final StorageUnitRepository storageUnitRepository;
     private final UnitMapper mapper;
+
+    @Autowired(required = false)
+    private AppliedPriceLookup appliedPriceLookup;
 
     public UnitTypeServiceImpl(UnitTypeRepository unitTypeRepository,
                                FacilityUnitTypePriceRepository priceRepository,
@@ -48,7 +54,7 @@ public class UnitTypeServiceImpl implements UnitTypeService {
                     .map(FacilityUnitTypePrice::getMonthlyPrice)
                     .orElse(0L);
             long totalUnits = storageUnitRepository.countByFacilityIdAndUnitTypeId(facilityId, ut.getId());
-            return mapper.toUnitTypeResponse(ut, facilityId, price, totalUnits);
+            return finish(ut, facilityId, price, totalUnits);
         }).toList();
 
         return new PageResponse<>(content, page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages());
@@ -65,7 +71,7 @@ public class UnitTypeServiceImpl implements UnitTypeService {
                 .orElse(0L);
         long totalUnits = storageUnitRepository.countByFacilityIdAndUnitTypeId(facilityId, ut.getId());
 
-        return mapper.toUnitTypeResponse(ut, facilityId, price, totalUnits);
+        return finish(ut, facilityId, price, totalUnits);
     }
 
     @Override
@@ -94,7 +100,7 @@ public class UnitTypeServiceImpl implements UnitTypeService {
                     .build());
         }
 
-        return mapper.toUnitTypeResponse(unitType, facilityId, request.getMonthlyPrice(), 0L);
+        return finish(unitType, facilityId, request.getMonthlyPrice(), 0L);
     }
 
     @Override
@@ -128,7 +134,21 @@ public class UnitTypeServiceImpl implements UnitTypeService {
                 .orElse(0L);
         long totalUnits = storageUnitRepository.countByFacilityIdAndUnitTypeId(facilityId, ut.getId());
 
-        return mapper.toUnitTypeResponse(ut, facilityId, priceVal, totalUnits);
+        return finish(ut, facilityId, priceVal, totalUnits);
+    }
+
+    private UnitTypeResponse finish(UnitType ut, Long facilityId, Long monthlyFromTable, long totalUnits) {
+        UnitTypeResponse response = mapper.toUnitTypeResponse(ut, facilityId, monthlyFromTable, totalUnits);
+        if (appliedPriceLookup == null || ut.getId() == null) {
+            return response;
+        }
+        AppliedPriceInfo info = appliedPriceLookup.describe(facilityId, ut.getId());
+        response.setMonthlyPrice(info.getMonthlyPrice() != null ? info.getMonthlyPrice() : 0L);
+        response.setPricePerM2(info.getPricePerM2());
+        response.setPriceStatus(info.getPriceStatus());
+        response.setScheduledEffectiveFrom(info.getScheduledEffectiveFrom());
+        response.setScheduledPricePerM2(info.getScheduledPricePerM2());
+        return response;
     }
 
     @Override

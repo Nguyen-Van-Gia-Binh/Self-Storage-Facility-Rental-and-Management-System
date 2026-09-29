@@ -15,6 +15,7 @@ export interface PricingCalculationResult {
   finalRentTotal: number;
   depositAmount: number;
   totalDueToday: number;
+  surcharges?: { name: string; amount: number }[];
 }
 
 export function calculateBookingTotal(monthlyRate: number, months: number): PricingCalculationResult {

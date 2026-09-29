@@ -5,22 +5,28 @@ import jakarta.validation.constraints.NotNull;
 
 public class CalculatePriceRequest {
 
-    @NotNull(message = "Đơn giá tháng không được để trống")
-    @Min(value = 0, message = "Đơn giá tháng phải lớn hơn hoặc bằng 0")
-    private Long monthlyPrice;
+    @NotNull(message = "Cơ sở không được để trống")
+    private Long facilityId;
+
+    @NotNull(message = "Loại ô kho không được để trống")
+    private Long unitTypeId;
 
     @Min(value = 1, message = "Số tháng thuê tối thiểu là 1 tháng")
     private int months = 1;
 
     public CalculatePriceRequest() {}
 
-    public CalculatePriceRequest(Long monthlyPrice, int months) {
-        this.monthlyPrice = monthlyPrice;
+    public CalculatePriceRequest(Long facilityId, Long unitTypeId, int months) {
+        this.facilityId = facilityId;
+        this.unitTypeId = unitTypeId;
         this.months = months;
     }
 
-    public Long getMonthlyPrice() { return monthlyPrice; }
-    public void setMonthlyPrice(Long monthlyPrice) { this.monthlyPrice = monthlyPrice; }
+    public Long getFacilityId() { return facilityId; }
+    public void setFacilityId(Long facilityId) { this.facilityId = facilityId; }
+
+    public Long getUnitTypeId() { return unitTypeId; }
+    public void setUnitTypeId(Long unitTypeId) { this.unitTypeId = unitTypeId; }
 
     public int getMonths() { return months; }
     public void setMonths(int months) { this.months = months; }

@@ -23,8 +23,10 @@ import com.swp391.selfstorage.policy.dto.PolicyResponse;
 import com.swp391.selfstorage.policy.service.PolicyService;
 import com.swp391.selfstorage.reservation.entity.ReservationStatus;
 import com.swp391.selfstorage.reservation.repository.ReservationRepository;
+import com.swp391.selfstorage.policy.service.AppliedPriceLookup;
 import com.swp391.selfstorage.unit.entity.FacilityUnitTypePrice;
 import com.swp391.selfstorage.unit.repository.FacilityUnitTypePriceRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 @Transactional(readOnly = true)
@@ -36,6 +38,9 @@ public class RenewalServiceImpl implements RenewalService {
     private final FacilityUnitTypePriceRepository facilityPriceRepository;
     private final PolicyService policyService;
     private final RenewalMapper renewalMapper;
+
+    @Autowired(required = false)
+    private AppliedPriceLookup appliedPriceLookup;
 
     public RenewalServiceImpl(RentalContractRepository rentalContractRepository,
             ContractRenewalRepository contractRenewalRepository,
@@ -193,6 +198,11 @@ public class RenewalServiceImpl implements RenewalService {
     }
 
     private long getLatestMonthlyPrice(RentalContract contract) {
+        if (appliedPriceLookup != null) {
+            return appliedPriceLookup.resolveMonthlyPrice(contract.getFacilityId(), contract.getUnitTypeId())
+                    .filter(p -> p > 0)
+                    .orElse(contract.getMonthlyPrice());
+        }
         return facilityPriceRepository.findByFacilityIdAndUnitTypeId(contract.getFacilityId(), contract.getUnitTypeId())
                 .map(FacilityUnitTypePrice::getMonthlyPrice)
                 .orElse(contract.getMonthlyPrice());

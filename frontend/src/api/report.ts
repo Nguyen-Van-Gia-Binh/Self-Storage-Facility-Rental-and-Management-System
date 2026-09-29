@@ -7,14 +7,23 @@ import type {
   ReportFilterParams,
   ReportExportParams,
 } from '../types';
-import mockData from '../mock/mock-system-reports.json';
-import { generateCsvFromData } from '../utils/format';
-
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
-
 function asMoney(value: unknown): number {
   const amount = Number(value);
   return Number.isFinite(amount) ? amount : 0;
+}
+
+/**
+ * Backend ApiResponse dùng `status` + `data` (không có `success`).
+ * Cũng chấp nhận payload đã là body thuần hoặc mock có `success`.
+ */
+function unwrapReportPayload<T extends object>(res: unknown): T {
+  if (res && typeof res === 'object' && 'data' in res) {
+    const envelope = res as { data?: unknown; success?: boolean; status?: number };
+    if (envelope.data && typeof envelope.data === 'object') {
+      return envelope.data as T;
+    }
+  }
+  return res as T;
 }
 
 function normalizeRevenueReport(raw: {
@@ -62,8 +71,15 @@ function normalizeRevenueReport(raw: {
   };
 }
 
-function normalizeOccupancyReport(raw: SystemOccupancyReport & { facilities?: SystemOccupancyReport['data']; overallOccupancyRate?: number; totalUnits?: number; totalOccupiedUnits?: number; totalAvailableUnits?: number }, month?: string): SystemOccupancyReport {
-  const rows = raw?.data ?? raw?.facilities ?? [];
+function normalizeOccupancyReport(raw: SystemOccupancyReport & {
+  facilities?: SystemOccupancyReport['data'];
+  overallOccupancyRate?: number;
+  totalUnits?: number;
+  totalOccupiedUnits?: number;
+  totalAvailableUnits?: number;
+}, month?: string): SystemOccupancyReport {
+  const rowsCandidate = raw?.data ?? raw?.facilities;
+  const rows = Array.isArray(rowsCandidate) ? rowsCandidate : [];
   return {
     month: raw?.month || month || '',
     averageOccupancyRate: asMoney(raw?.averageOccupancyRate ?? raw?.overallOccupancyRate),
@@ -90,41 +106,18 @@ function normalizeOccupancyReport(raw: SystemOccupancyReport & { facilities?: Sy
  * GET /api/v1/reports/system/revenue
  */
 export async function getSystemRevenueReport(params: ReportFilterParams): Promise<SystemRevenueReport> {
-  if (USE_MOCK) {
-    const raw = JSON.parse(JSON.stringify(mockData.revenue)) as SystemRevenueReport;
-    raw.from = params.from;
-    raw.to = params.to;
-
-    if (params.facilityId) {
-      const facility = raw.byFacility.find((f) => f.facilityId === params.facilityId);
-      if (facility) {
-        return {
-          from: params.from,
-          to: params.to,
-          totalRevenue: facility.totalRevenue,
-          rentalRevenue: facility.rentalRevenue,
-          surchargeRevenue: facility.surchargeRevenue,
-          overdueFeeRevenue: facility.overdueFeeRevenue,
-          renewalRevenue: facility.renewalRevenue,
-          depositBalance: facility.depositBalance,
-          totalRefundAmount: facility.refundAmount,
-          byFacility: [facility],
-        };
-      }
-    }
-    return raw;
-  }
-
   const query = new URLSearchParams();
   if (params.from) query.append('from', params.from);
   if (params.to) query.append('to', params.to);
-  if (params.facilityId) query.append('facilityId', String(params.facilityId));
+  // Chỉ gửi facilityId khi là số hợp lệ; "all"/undefined = toàn hệ thống (BM-04)
+  if (params.facilityId != null && Number.isFinite(params.facilityId)) {
+    query.append('facilityId', String(params.facilityId));
+  }
 
   const res = await apiClient<ApiResponse<SystemRevenueReport> | SystemRevenueReport>(
     `/reports/system/revenue?${query.toString()}`
   );
-  const payload = ('success' in res && res.data ? res.data : res) as Parameters<typeof normalizeRevenueReport>[0];
-  return normalizeRevenueReport(payload);
+  return normalizeRevenueReport(unwrapReportPayload(res));
 }
 
 /**
@@ -135,30 +128,16 @@ export async function getSystemOccupancyReport(
   month?: string,
   facilityId?: number
 ): Promise<SystemOccupancyReport> {
-  if (USE_MOCK) {
-    const raw = JSON.parse(JSON.stringify(mockData.occupancy)) as SystemOccupancyReport;
-    if (month) raw.month = month;
-    if (facilityId) {
-      raw.data = raw.data.filter((d) => d.facilityId === facilityId);
-      if (raw.data.length > 0) {
-        raw.averageOccupancyRate = raw.data[0].occupancyRate;
-        raw.totalUnitsSystem = raw.data[0].totalUnits;
-        raw.occupiedUnitsSystem = raw.data[0].occupiedUnits;
-        raw.availableUnitsSystem = raw.data[0].availableUnits;
-      }
-    }
-    return raw;
-  }
-
   const query = new URLSearchParams();
   if (month) query.append('month', month);
-  if (facilityId) query.append('facilityId', String(facilityId));
+  if (facilityId != null && Number.isFinite(facilityId)) {
+    query.append('facilityId', String(facilityId));
+  }
 
   const res = await apiClient<ApiResponse<SystemOccupancyReport> | SystemOccupancyReport>(
     `/reports/system/occupancy?${query.toString()}`
   );
-  const payload = 'success' in res && res.data ? res.data : (res as SystemOccupancyReport);
-  return normalizeOccupancyReport(payload, month);
+  return normalizeOccupancyReport(unwrapReportPayload(res), month);
 }
 
 /**
@@ -166,24 +145,16 @@ export async function getSystemOccupancyReport(
  * GET /api/v1/reports/system/overdue
  */
 export async function getSystemOverdueReport(facilityId?: number): Promise<OverdueReportResponse> {
-  if (USE_MOCK) {
-    const raw = JSON.parse(JSON.stringify(mockData.overdue)) as OverdueReportResponse;
-    if (facilityId) {
-      raw.content = raw.content.filter((c) => c.facilityId === facilityId);
-      raw.totalOverdueContracts = raw.content.length;
-      raw.totalAccruedFee = raw.content.reduce((acc, c) => acc + c.accruedOverdueFee, 0);
-    }
-    return raw;
-  }
-
   const query = new URLSearchParams({ page: '0', size: '200' });
-  if (facilityId) query.append('facilityId', String(facilityId));
+  if (facilityId != null && Number.isFinite(facilityId)) {
+    query.append('facilityId', String(facilityId));
+  }
 
   const res = await apiClient<ApiResponse<OverdueReportResponse & { totalElements?: number }> | (OverdueReportResponse & { totalElements?: number })>(
     `/reports/system/overdue?${query.toString()}`
   );
-  const page = 'success' in res && res.data ? res.data : (res as OverdueReportResponse & { totalElements?: number });
-  const content = page.content ?? [];
+  const page = unwrapReportPayload<OverdueReportResponse & { totalElements?: number }>(res);
+  const content = Array.isArray(page.content) ? page.content : [];
   return {
     totalOverdueContracts: page.totalOverdueContracts ?? page.totalElements ?? content.length,
     totalAccruedFee: page.totalAccruedFee ?? content.reduce((sum, item) => sum + (item.accruedOverdueFee || 0), 0),
@@ -196,51 +167,6 @@ export async function getSystemOverdueReport(facilityId?: number): Promise<Overd
  * GET /api/v1/reports/system/export
  */
 export async function exportSystemReport(params: ReportExportParams): Promise<Blob> {
-  if (USE_MOCK) {
-    // Giả lập tạo file CSV/XLSX từ dữ liệu mock có sẵn
-    if (params.type === 'REVENUE') {
-      const headers = ['Mã Cơ Sở', 'Tên Cơ Sở', 'Tiền Thuê Kho', 'Phụ Phí', 'Gia Hạn', 'Phạt Quá Hạn', 'Tổng Doanh Thu (VNĐ)'];
-      const rows = mockData.revenue.byFacility.map((f) => [
-        f.facilityId,
-        f.facilityName,
-        f.rentalRevenue,
-        f.surchargeRevenue,
-        f.renewalRevenue,
-        f.overdueFeeRevenue,
-        f.totalRevenue,
-      ]);
-      return generateCsvFromData(headers, rows);
-    }
-
-    if (params.type === 'OCCUPANCY') {
-      const headers = ['Mã Cơ Sở', 'Tên Cơ Sở', 'Tổng Ô', 'Đang Thuê', 'Còn Trống', 'Đặt Chỗ', 'Bảo Trì', 'Tỷ Lệ Lấp Đầy'];
-      const rows = mockData.occupancy.data.map((o) => [
-        o.facilityId,
-        o.facilityName,
-        o.totalUnits,
-        o.occupiedUnits,
-        o.availableUnits,
-        o.reservedUnits,
-        o.maintenanceUnits,
-        `${(o.occupancyRate * 100).toFixed(1)}%`,
-      ]);
-      return generateCsvFromData(headers, rows);
-    }
-
-    // OVERDUE
-    const headers = ['Mã Hợp Đồng', 'Khách Hàng', 'Số Điện Thoại', 'Ô Kho', 'Cơ Sở', 'Số Ngày Quá Hạn', 'Nợ Phạt Tích Lũy (VNĐ)'];
-    const rows = mockData.overdue.content.map((c) => [
-      c.contractCode,
-      c.customerName,
-      c.customerPhone,
-      c.unitCode,
-      c.facilityName,
-      c.overdueDays,
-      c.accruedOverdueFee,
-    ]);
-    return generateCsvFromData(headers, rows);
-  }
-
   const query = new URLSearchParams({
     type: params.type,
     from: params.from,

@@ -20,6 +20,8 @@ import com.swp391.selfstorage.unit.repository.UnitTypeRepository;
 import com.swp391.selfstorage.support.entity.AssignmentTaskType;
 import com.swp391.selfstorage.support.entity.StaffDailyAssignment;
 import com.swp391.selfstorage.support.repository.StaffDailyAssignmentRepository;
+import com.swp391.selfstorage.policy.entity.PolicyVersion;
+import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
 import com.swp391.selfstorage.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +33,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
@@ -62,6 +65,9 @@ public class ContractServiceImpl implements ContractService {
 
         @Autowired(required = false)
         private StaffDailyAssignmentRepository staffDailyAssignmentRepository;
+
+        @Autowired(required = false)
+        private PolicyVersionRepository policyVersionRepository;
 
         @Override
         @Transactional
@@ -240,6 +246,7 @@ public class ContractServiceImpl implements ContractService {
                 Page<RentalContract> page = contractRepository.findAll(spec, pageable);
                 LocalDate now = LocalDate.now();
                 LocalDate threshold = now.plusDays(7);
+                OverduePreviewRates overdueRates = loadOverduePreviewRates();
 
                 List<ContractSummaryResponse> content = page.getContent().stream().map(c -> {
                         boolean nearExp = c.getStatus() == ContractStatus.ACTIVE
@@ -283,13 +290,7 @@ public class ContractServiceImpl implements ContractService {
                                 long days = java.time.temporal.ChronoUnit.DAYS.between(c.getEndDateExclusive(), LocalDate.now());
                                 if (days > 0) {
                                         overdueDays = (int) days;
-                                        long deposit = c.getDepositAmount();
-                                        long accrued = 0L;
-                                        if (days > 3 && days <= 10) {
-                                                accrued = (long) Math.round((days - 3) * (0.10 * deposit));
-                                        } else if (days > 10) {
-                                                accrued = (long) Math.round(0.70 * deposit);
-                                        }
+                                        long accrued = previewOverdueFee(days, c.getDepositAmount(), overdueRates);
                                         if (c.getStatus() == ContractStatus.OVERDUE && c.getOverdueFeeAccrued() > 0) {
                                                 accruedOverdueFee = c.getOverdueFeeAccrued();
                                         } else if (accruedOverdueFee == null || accruedOverdueFee == 0) {
@@ -1057,18 +1058,46 @@ public class ContractServiceImpl implements ContractService {
                         long days = java.time.temporal.ChronoUnit.DAYS.between(c.getEndDateExclusive(), LocalDate.now());
                         if (days > 0) {
                                 r.setOverdueDays((int) days);
-                                long deposit = c.getDepositAmount();
-                                long accrued = 0L;
-                                if (days > 3 && days <= 10) {
-                                        accrued = (long) Math.round((days - 3) * (0.10 * deposit));
-                                } else if (days > 10) {
-                                        accrued = (long) Math.round(0.70 * deposit);
-                                }
+                                long accrued = previewOverdueFee(days, c.getDepositAmount(), loadOverduePreviewRates());
                                 r.setAccruedOverdueFee(c.getOverdueFeeAccrued() > 0 ? c.getOverdueFeeAccrued() : accrued);
                         }
                 } else {
                         r.setAccruedOverdueFee(c.getOverdueFeeAccrued());
                 }
                 return r;
+        }
+
+        private OverduePreviewRates loadOverduePreviewRates() {
+                PolicyVersion policy = null;
+                if (policyVersionRepository != null) {
+                        policy = policyVersionRepository
+                                        .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(OffsetDateTime.now())
+                                        .orElse(null);
+                }
+                int graceDays = policy != null && policy.getOverdueGraceDays() != null
+                                ? policy.getOverdueGraceDays() : 3;
+                BigDecimal dailyRate = policy != null && policy.getOverdueDailyRate() != null
+                                ? policy.getOverdueDailyRate() : BigDecimal.valueOf(0.10);
+                BigDecimal capRate = policy != null && policy.getOverdueCapRate() != null
+                                ? policy.getOverdueCapRate() : BigDecimal.valueOf(0.70);
+                int terminationDays = policy != null && policy.getOverdueTerminationDays() != null
+                                ? policy.getOverdueTerminationDays() : 10;
+                return new OverduePreviewRates(graceDays, dailyRate, capRate, terminationDays);
+        }
+
+        /** Cùng mốc với OverdueProcessingServiceImpl: ân hạn, phạt theo ngày, rồi trần khi tới ngày chấm dứt. */
+        private static long previewOverdueFee(long overdueDays, long deposit, OverduePreviewRates rates) {
+                if (overdueDays <= rates.graceDays) {
+                        return 0L;
+                }
+                long maxCapFee = Math.round(deposit * rates.capRate.doubleValue());
+                if (overdueDays < rates.terminationDays) {
+                        long daysToCharge = overdueDays - rates.graceDays;
+                        return Math.min(Math.round(deposit * rates.dailyRate.doubleValue() * daysToCharge), maxCapFee);
+                }
+                return maxCapFee;
+        }
+
+        private record OverduePreviewRates(int graceDays, BigDecimal dailyRate, BigDecimal capRate, int terminationDays) {
         }
 }

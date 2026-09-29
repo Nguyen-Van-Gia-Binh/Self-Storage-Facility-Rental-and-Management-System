@@ -129,6 +129,51 @@ class FacilityServiceTest {
     }
 
     @Test
+    @DisplayName("BM-01: Từ chối mã cơ sở không đúng dạng FAC-XXXX")
+    void shouldRejectFacilityCode_whenFormatIsInvalid() {
+        CreateFacilityRequest req = new CreateFacilityRequest();
+        req.setCode("ABC");
+        req.setName("Kho sai mã");
+        req.setAddress("456 Cầu Giấy");
+
+        CustomException ex = assertThrows(CustomException.class, () -> facilityService.createFacility(req));
+        assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
+        verify(facilityRepository, never()).existsByCode(any());
+    }
+
+    @Test
+    @DisplayName("BR-GEN-07: Từ chối mã cơ sở bắt đầu bằng số FAC-12")
+    void shouldRejectFacilityCode_whenSuffixStartsWithDigit() {
+        CreateFacilityRequest req = new CreateFacilityRequest();
+        req.setCode("FAC-12");
+        req.setName("Kho sai mã");
+        req.setAddress("456 Cầu Giấy");
+
+        CustomException ex = assertThrows(CustomException.class, () -> facilityService.createFacility(req));
+        assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
+        verify(facilityRepository, never()).existsByCode(any());
+    }
+
+    @Test
+    @DisplayName("BM-01: Chuẩn hóa fac-hn01 thành FAC-HN01 khi tạo cơ sở")
+    void shouldNormalizeFacilityCode_whenLowercasePrefix() {
+        CreateFacilityRequest req = new CreateFacilityRequest();
+        req.setCode("fac-hn01");
+        req.setName("Kho Hà Nội");
+        req.setAddress("456 Cầu Giấy");
+
+        when(facilityRepository.existsByCode("FAC-HN01")).thenReturn(false);
+        when(facilityRepository.save(any(Facility.class))).thenAnswer(i -> {
+            Facility saved = i.getArgument(0);
+            saved.setId(3L);
+            return saved;
+        });
+
+        FacilityResponse res = facilityService.createFacility(req);
+        assertEquals("FAC-HN01", res.getCode());
+    }
+
+    @Test
     @DisplayName("US-BM-01.1 AC-3: Cập nhật thông tin tên và địa chỉ cơ sở thành công")
     void shouldUpdateFacility_whenValidRequest() {
         UpdateFacilityRequest req = new UpdateFacilityRequest();

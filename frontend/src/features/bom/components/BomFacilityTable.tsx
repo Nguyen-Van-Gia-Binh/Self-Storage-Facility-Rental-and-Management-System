@@ -114,11 +114,11 @@ export const BomFacilityTable: React.FC<BomFacilityTableProps> = ({
                 <td className="py-4 px-4 text-xs space-y-1">
                   <div className="flex items-center space-x-1.5 text-slate-600">
                     <Phone className="w-3.5 h-3.5 text-slate-400" />
-                    <span>{fac.phone || '028-1234-5678'}</span>
+                    <span>{fac.phone || 'Chưa cập nhật'}</span>
                   </div>
                   <div className="flex items-center space-x-1.5 text-slate-500">
                     <Clock className="w-3.5 h-3.5 text-slate-400" />
-                    <span>{fac.openingHours || '06:00–22:00'}</span>
+                    <span>{fac.openingHours || 'Chưa cập nhật'}</span>
                   </div>
                 </td>
 
@@ -136,7 +136,7 @@ export const BomFacilityTable: React.FC<BomFacilityTableProps> = ({
                         fac.isActive ? 'bg-emerald-500' : 'bg-slate-400'
                       }`}
                     />
-                    {fac.isActive ? 'Đang khai thác' : 'Ngừng khai thác'}
+                    {fac.isActive ? 'Đang hoạt động' : 'Ngừng hoạt động'}
                   </span>
                 </td>
 
@@ -165,7 +165,7 @@ export const BomFacilityTable: React.FC<BomFacilityTableProps> = ({
                           ? 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
                           : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'
                       }`}
-                      title={fac.isActive ? 'Ngừng khai thác' : 'Mở lại cơ sở'}
+                      title={fac.isActive ? 'Ngừng hoạt động' : 'Mở lại cơ sở'}
                     >
                       <Power className="w-4 h-4" />
                     </button>
@@ -207,12 +207,12 @@ export const BomFacilityTable: React.FC<BomFacilityTableProps> = ({
                   <h4 className="font-bold text-slate-900 text-base">
                     {confirmTarget.newStatus
                       ? 'Mở lại hoạt động cơ sở?'
-                      : 'Ngừng khai thác cơ sở?'}
+                      : 'Ngừng hoạt động cơ sở?'}
                   </h4>
                   <p className="text-sm text-slate-600 mt-1">
                     {confirmTarget.newStatus
                       ? `Cơ sở "${confirmTarget.facility.name}" sẽ hiển thị trở lại trên danh mục công khai và cho phép đặt chỗ.`
-                      : `Cơ sở "${confirmTarget.facility.name}" sẽ ẩn khỏi trang đặt chỗ. Lưu ý: Chỉ được ngừng khai thác khi không còn hợp đồng thuê active hoặc overdue.`}
+                      : `Cơ sở "${confirmTarget.facility.name}" sẽ ẩn khỏi trang đặt chỗ. Lưu ý: Chỉ được ngừng hoạt động khi không còn hợp đồng thuê active hoặc overdue.`}
                   </p>
                 </div>
               </div>

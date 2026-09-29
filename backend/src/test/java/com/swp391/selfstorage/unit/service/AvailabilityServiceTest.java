@@ -21,6 +21,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Optional;
 
@@ -188,7 +189,30 @@ class AvailabilityServiceTest {
         assertEquals(3L, response.getAvailableSlots()); // 10 - 7 ô bận (mỗi ô một lần)
         assertEquals(800000L, response.getMonthlyPrice());
         assertEquals(2400000L, response.getTotalRentalFee()); // 800000 * 3 (BR-PRI-01)
-        assertEquals(800000L, response.getDepositAmount());   // 1 tháng cọc (BR-DEP-01)
+        assertEquals(800000L, response.getDepositAmount());   // multiplier null -> 1 tháng cọc (BR-DEP-01)
+    }
+
+    @Test
+    @DisplayName("BR-DEP-01: Tiền cọc bằng đơn giá nhân depositMultiplier của chính sách hiệu lực")
+    void shouldApplyDepositMultiplierFromActivePolicy() {
+        LocalDate startDate = LocalDate.now().plusDays(2);
+        PolicyVersion pricedPolicy = PolicyVersion.builder()
+                .id(2L)
+                .rentalBufferDays(15)
+                .depositMultiplier(new BigDecimal("1.50"))
+                .build();
+        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(any()))
+                .thenReturn(Optional.of(pricedPolicy));
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(activeFacility));
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(activeUnitType));
+        when(priceRepository.findByFacilityIdAndUnitTypeId(1L, 7L)).thenReturn(Optional.of(unitPrice));
+        when(storageUnitRepository.countExploitableUnits(eq(1L), eq(7L), anyCollection())).thenReturn(4L);
+        when(storageUnitRepository.countBusyUnits(eq(1L), eq(7L), any(), any(), eq(15))).thenReturn(1L);
+
+        AvailabilityResponse response = availabilityService.checkAvailability(1L, 7L, startDate, 1);
+
+        assertEquals(800000L, response.getMonthlyPrice());
+        assertEquals(1200000L, response.getDepositAmount());
     }
 
     @Test

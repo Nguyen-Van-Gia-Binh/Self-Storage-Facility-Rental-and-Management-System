@@ -70,6 +70,9 @@ public class OverdueProcessingServiceImpl implements OverdueProcessingService {
 
             long deposit = contract.getDepositAmount();
             long maxCapFee = Math.round(deposit * capRate.doubleValue());
+            long daysToCharge = Math.max(0L, overdueDays - graceDays);
+            long accruedByDays = Math.round(deposit * dailyRate.doubleValue() * daysToCharge);
+            long calculatedFee = Math.min(accruedByDays, maxCapFee);
 
             if (overdueDays <= graceDays) {
                 // Mốc D+1..D+3: Ân hạn (BR-OVD-01, BR-OVD-02)
@@ -85,9 +88,6 @@ public class OverdueProcessingServiceImpl implements OverdueProcessingService {
                     contract.setStatus(ContractStatus.OVERDUE);
                     markedOverdueCount++;
                 }
-
-                long daysToCharge = overdueDays - graceDays;
-                long calculatedFee = Math.min(Math.round(deposit * dailyRate.doubleValue() * daysToCharge), maxCapFee);
 
                 long penaltyDelta = calculatedFee - contract.getOverdueFeeAccrued();
                 if (penaltyDelta > 0) {
@@ -109,8 +109,8 @@ public class OverdueProcessingServiceImpl implements OverdueProcessingService {
                 }
             } else {
                 // Mốc D+10+: Cưỡng chế chấm dứt (BR-OVD-05, BR-OVD-07)
-                contract.setOverdueFeeAccrued(maxCapFee);
-                contract.setDepositBalance(Math.max(0L, deposit - maxCapFee));
+                contract.setOverdueFeeAccrued(calculatedFee);
+                contract.setDepositBalance(Math.max(0L, deposit - calculatedFee));
                 contract.setAccessCode(null); // Vô hiệu hóa mã truy cập
                 contract.setStatus(ContractStatus.TERMINATED);
                 terminatedCount++;

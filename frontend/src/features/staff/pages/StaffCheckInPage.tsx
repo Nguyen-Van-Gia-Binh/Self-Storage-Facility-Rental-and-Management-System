@@ -17,23 +17,11 @@ import { HandoverInspectionForm } from '../components/HandoverInspectionForm';
 import { AccessCodePinModal } from '../components/AccessCodePinModal';
 import { HandoverRejectionModal } from '../components/HandoverRejectionModal';
 
-const DEFAULT_FACILITIES = [
-  { id: 0, name: 'Tất cả cơ sở' },
-  { id: 1, name: 'Cơ sở Cầu Giấy - Hà Nội' },
-  { id: 2, name: 'Cơ sở Quận 7 - TP.HCM' },
-  { id: 3, name: 'Cơ sở Hai Bà Trưng - Hà Nội' },
-  { id: 4, name: 'Cơ sở Thanh Xuân - Hà Nội' },
-  { id: 5, name: 'Cơ sở Quận 1 - TP.HCM' },
-  { id: 6, name: 'Cơ sở Bình Thạnh - TP.HCM' },
-  { id: 7, name: 'Cơ sở TP. Thủ Đức - TP.HCM' },
-  { id: 8, name: 'Cơ sở Hải Châu - Đà Nẵng' },
-];
-
 export const StaffCheckInPage: React.FC = () => {
   const user = useCurrentUser();
   const staffId = user?.id ? Number(user.id) : undefined;
   const userFacilityId = user?.facilityId ? Number(user.facilityId) : 0;
-  const [facilities, setFacilities] = useState<Array<{ id: number; name: string }>>(DEFAULT_FACILITIES);
+  const [facilities, setFacilities] = useState<Array<{ id: number; name: string }>>([]);
   const [selectedFacilityId, setSelectedFacilityId] = useState<number>(userFacilityId);
   const [contracts, setContracts] = useState<CheckInContract[]>([]);
   const [selectedContract, setSelectedContract] = useState<CheckInContract | null>(null);

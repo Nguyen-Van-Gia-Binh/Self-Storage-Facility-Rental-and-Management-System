@@ -35,6 +35,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Collections;
@@ -107,14 +108,14 @@ class ReservationServiceTest {
     @DisplayName("BR-PRI-01 & BR-GEN-04: Tính giá đúng chiết khấu và tiền cọc 1 tháng làm tròn 1.000đ")
     void calculatePrice_ShouldCalculateCorrectly() {
         // 1 tháng, giá 1.200.000 đ
-        CalculatePriceResponse res1 = reservationService.calculatePrice(new CalculatePriceRequest(1200000L, 1));
+        CalculatePriceResponse res1 = reservationService.quote(1200000L, 1, BigDecimal.ONE);
         assertEquals(1200000L, res1.getRawRentTotal());
         assertEquals(0, res1.getDiscountAmount());
         assertEquals(1200000L, res1.getDepositAmount());
         assertEquals(2400000L, res1.getTotalDueToday());
 
         // 6 tháng -> chiết khấu 5%
-        CalculatePriceResponse res6 = reservationService.calculatePrice(new CalculatePriceRequest(1200000L, 6));
+        CalculatePriceResponse res6 = reservationService.quote(1200000L, 6, BigDecimal.ONE);
         assertEquals(7200000L, res6.getRawRentTotal());
         assertEquals(360000L, res6.getDiscountAmount());
         assertEquals(6840000L, res6.getFinalRentTotal());
@@ -122,12 +123,39 @@ class ReservationServiceTest {
         assertEquals(8040000L, res6.getTotalDueToday());
 
         // 12 tháng -> chiết khấu 10%
-        CalculatePriceResponse res12 = reservationService.calculatePrice(new CalculatePriceRequest(1200000L, 12));
+        CalculatePriceResponse res12 = reservationService.quote(1200000L, 12, BigDecimal.ONE);
         assertEquals(14400000L, res12.getRawRentTotal());
         assertEquals(1440000L, res12.getDiscountAmount());
         assertEquals(12960000L, res12.getFinalRentTotal());
         assertEquals(1200000L, res12.getDepositAmount());
         assertEquals(14160000L, res12.getTotalDueToday());
+    }
+
+    @Test
+    @DisplayName("BR-DEP-01: Báo giá đọc đơn giá cơ sở và hệ số cọc của chính sách đang hiệu lực")
+    void calculatePrice_UsesFacilityPriceAndPolicyMultiplier() {
+        FacilityUnitTypePrice price = FacilityUnitTypePrice.builder()
+                .facilityId(1L)
+                .unitTypeId(7L)
+                .monthlyPrice(800_000L)
+                .build();
+        when(facilityUnitTypePriceRepository.findByFacilityIdAndUnitTypeId(1L, 7L)).thenReturn(Optional.of(price));
+
+        PolicyVersion pricedPolicy = PolicyVersion.builder()
+                .id(3L)
+                .reservationHoldHours(48)
+                .rentalBufferDays(15)
+                .depositMultiplier(new BigDecimal("1.50"))
+                .build();
+        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(any()))
+                .thenReturn(Optional.of(pricedPolicy));
+
+        CalculatePriceResponse response = reservationService.calculatePrice(new CalculatePriceRequest(1L, 7L, 3));
+
+        assertEquals(800_000L, response.getMonthlyPrice());
+        assertEquals(2_400_000L, response.getRawRentTotal());
+        assertEquals(1_200_000L, response.getDepositAmount());
+        assertEquals(3_600_000L, response.getTotalDueToday());
     }
 
     @Test

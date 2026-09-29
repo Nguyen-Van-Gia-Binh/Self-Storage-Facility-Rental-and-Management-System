@@ -1,5 +1,4 @@
 import type { Facility, UnitType, StorageUnit, RentedContract, SupportTicket, CreateSupportTicketPayload } from '../types';
-import { calculateBookingTotal } from '../utils/pricing';
 import type { PricingCalculationResult } from '../utils/pricing';
 import { apiClient, type ApiResponse, type PageResponse } from '@/api/client';
 import { calculateBookingPrice, createReservation as apiCreateReservation } from '@/api/reservation';
@@ -179,22 +178,18 @@ export const customerApi = {
   /**
    * Tính toán trước tiền thuê và tiền cọc theo BR-DEP-01 & BR-GEN-04
    */
-  async calculatePrice(monthlyPrice: number, months: number): Promise<PricingCalculationResult> {
-    try {
-      const data = await calculateBookingPrice({ monthlyPrice, months });
-      return {
-        monthlyRate: data.monthlyPrice,
-        months: data.rentalMonths,
-        rawRentTotal: data.rawRentTotal,
-        discountPercentage: data.discountPercentage,
-        discountAmount: data.discountAmount,
-        finalRentTotal: data.finalRentTotal,
-        depositAmount: data.depositAmount,
-        totalDueToday: data.totalDueToday,
-      };
-    } catch {
-      return calculateBookingTotal(monthlyPrice, months);
-    }
+  async calculatePrice(facilityId: number, unitTypeId: number, months: number): Promise<PricingCalculationResult> {
+    const data = await calculateBookingPrice({ facilityId, unitTypeId, months });
+    return {
+      monthlyRate: data.monthlyPrice,
+      months: data.rentalMonths,
+      rawRentTotal: data.rawRentTotal,
+      discountPercentage: data.discountPercentage,
+      discountAmount: data.discountAmount,
+      finalRentTotal: data.finalRentTotal,
+      depositAmount: data.depositAmount,
+      totalDueToday: data.totalDueToday,
+    };
   },
 
   /**

@@ -21,7 +21,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { calculateBookingTotal, formatVND } from '../utils/pricing';
+import { formatVND } from '../utils/pricing';
 import { BookingPriceSummary } from '../components/BookingPriceSummary';
 import { DigitalMoveInPassModal } from '../components/DigitalMoveInPassModal';
 import { generateMoveInPass } from '@/api/payment';
@@ -77,15 +77,15 @@ export const BookingPage: React.FC = () => {
 
   const [facility, setFacility] = useState<Facility>({
     id: facilityId,
-    code: `FAC-${facilityId}`,
-    name: 'Cơ sở lưu trữ',
-    address: 'Số 88 Nguyễn Văn Linh, Phường Nam Dương, Quận Hải Châu, Đà Nẵng',
-    district: 'Hải Châu',
-    city: 'Đà Nẵng',
-    distance: '1.2 km',
-    startingPrice: 45000,
-    image: 'https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=800&q=80',
-    phone: '0236-365-7788',
+    code: '',
+    name: '',
+    address: '',
+    district: '',
+    city: '',
+    distance: '',
+    startingPrice: 0,
+    image: '',
+    phone: '',
   });
 
   const [unitType, setUnitType] = useState<UnitType>({
@@ -98,7 +98,7 @@ export const BookingPage: React.FC = () => {
     volumeM3: 7.5,
     dimensions: '1.5m x 2.0m x 2.5m',
     capacityDescription: 'Hệ thống an ninh và PCCC chuẩn quốc tế',
-    baseMonthlyPrice: 450000,
+    baseMonthlyPrice: 0,
   });
 
   useEffect(() => {
@@ -116,13 +116,13 @@ export const BookingPage: React.FC = () => {
             id: String(matched.id),
             code: matched.code || `FAC-${matched.id}`,
             name: matched.name,
-            address: matched.address || 'Hồ Chí Minh',
-            district: 'Quận 1',
-            city: 'TP. Hồ Chí Minh',
-            distance: '1.2 km',
-            startingPrice: matched.lowestMonthlyPrice || 45000,
-            image: 'https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=800&q=80',
-            phone: matched.phone || '028-3822-1234',
+            address: matched.address || '',
+            district: '',
+            city: '',
+            distance: '',
+            startingPrice: matched.lowestMonthlyPrice && matched.lowestMonthlyPrice > 0 ? matched.lowestMonthlyPrice : 0,
+            image: '',
+            phone: matched.phone || 'Chưa cập nhật',
           });
 
           const numericId = typeof matched.id === 'number' ? matched.id : Number(matched.id);
@@ -155,7 +155,7 @@ export const BookingPage: React.FC = () => {
                 volumeM3: vol,
                 dimensions: `${width}m x ${depth}m x ${height}m`,
                 capacityDescription: foundUT.description || `${foundUT.name} - An ninh và PCCC chuẩn quốc tế`,
-                baseMonthlyPrice: foundUT.monthlyPrice || 450000,
+                baseMonthlyPrice: foundUT.monthlyPrice && foundUT.monthlyPrice > 0 ? foundUT.monthlyPrice : 0,
               });
             }
           }
@@ -266,8 +266,15 @@ export const BookingPage: React.FC = () => {
   useEffect(() => {
     let isMounted = true;
     async function loadAvailability() {
-      const fId = parseInt(facilityId, 10) || 1;
-      const uId = parseInt(typeId, 10) || 1;
+      const fId = Number(facilityId);
+      const uId = Number(typeId);
+      if (!Number.isFinite(fId) || fId <= 0 || !Number.isFinite(uId) || uId <= 0) {
+        if (isMounted) {
+          setAvailability(null);
+          setIsCheckingAvailability(false);
+        }
+        return;
+      }
       setIsCheckingAvailability(true);
       try {
         const res = await checkUnitAvailability(fId, uId, startDate, durationMonths);
@@ -276,6 +283,7 @@ export const BookingPage: React.FC = () => {
         }
       } catch (err) {
         console.warn('Lỗi kiểm tra availability từ backend:', err);
+        if (isMounted) setAvailability(null);
       } finally {
         if (isMounted) {
           setIsCheckingAvailability(false);
@@ -286,31 +294,36 @@ export const BookingPage: React.FC = () => {
     return () => { isMounted = false; };
   }, [facilityId, typeId, startDate, durationMonths]);
 
-  // Tải tính giá tự động từ backend (SC-02, BR-DEP-01, BR-GEN-04)
+  // Báo giá từ bảng giá và chính sách BOM (SC-02, BR-DEP-01, BR-GEN-04)
   useEffect(() => {
     let isMounted = true;
     async function loadPrice() {
-      if (unitType.baseMonthlyPrice > 0 && durationMonths > 0) {
-        try {
-          const res = await calculateBookingPrice({
-            monthlyPrice: unitType.baseMonthlyPrice,
-            months: durationMonths,
-          });
-          if (isMounted) {
-            setBackendPricing(res);
-          }
-        } catch (err) {
-          console.warn('Lỗi gọi API tính giá backend:', err);
+      const fId = Number(facilityId);
+      const uId = Number(typeId);
+      if (!Number.isFinite(fId) || fId <= 0 || !Number.isFinite(uId) || uId <= 0 || durationMonths <= 0) {
+        if (isMounted) setBackendPricing(null);
+        return;
+      }
+      try {
+        const res = await calculateBookingPrice({
+          facilityId: fId,
+          unitTypeId: uId,
+          months: durationMonths,
+        });
+        if (isMounted) {
+          setBackendPricing(res);
         }
+      } catch (err) {
+        console.warn('Lỗi gọi API tính giá backend:', err);
+        if (isMounted) setBackendPricing(null);
       }
     }
     loadPrice();
     return () => { isMounted = false; };
-  }, [unitType.baseMonthlyPrice, durationMonths]);
+  }, [facilityId, typeId, durationMonths]);
 
-  // Price Calculation
   const calculation = useMemo(() => {
-    if (backendPricing) {
+    if (backendPricing && backendPricing.monthlyPrice > 0) {
       return {
         monthlyRate: backendPricing.monthlyPrice,
         months: backendPricing.rentalMonths,
@@ -320,10 +333,29 @@ export const BookingPage: React.FC = () => {
         finalRentTotal: backendPricing.finalRentTotal,
         depositAmount: backendPricing.depositAmount,
         totalDueToday: backendPricing.totalDueToday,
+        surcharges: backendPricing.surcharges ?? [],
       };
     }
-    return calculateBookingTotal(unitType.baseMonthlyPrice, durationMonths);
-  }, [backendPricing, unitType.baseMonthlyPrice, durationMonths]);
+    if (availability && availability.monthlyPrice > 0) {
+      const months = durationMonths > 0 ? durationMonths : availability.rentalMonths;
+      const rawRentTotal = availability.monthlyPrice * months;
+      const depositAmount = availability.depositAmount > 0 ? availability.depositAmount : 0;
+      const surcharges = availability.surcharges ?? [];
+      const surchargeTotal = surcharges.reduce((sum, line) => sum + (line.amount || 0), 0);
+      return {
+        monthlyRate: availability.monthlyPrice,
+        months,
+        rawRentTotal,
+        discountPercentage: 0,
+        discountAmount: 0,
+        finalRentTotal: rawRentTotal,
+        depositAmount,
+        totalDueToday: rawRentTotal + depositAmount + surchargeTotal,
+        surcharges,
+      };
+    }
+    return null;
+  }, [backendPricing, availability, durationMonths]);
 
   // Xử lý tạo MoveInPass khi đã thanh toán thành công (SC-03, BR-ACC-01)
   const handleConfirmBookingPayment = useCallback(() => {
@@ -339,7 +371,7 @@ export const BookingPage: React.FC = () => {
       customerIdentity: customerIdCard,
       startDate,
       checkInWindow: 'Trong vòng 48 giờ kể từ lúc cọc',
-      totalPaid: checkoutData?.amount || calculation.totalDueToday,
+      totalPaid: checkoutData?.amount || calculation?.totalDueToday || 0,
     });
     setCreatedPass(pass);
     setShowPassModal(true);
@@ -347,7 +379,7 @@ export const BookingPage: React.FC = () => {
     createdReservationId,
     createdReservationCode,
     checkoutData?.amount,
-    calculation.totalDueToday,
+    calculation?.totalDueToday,
     finalUnitNumber,
     facility.id,
     facility.name,
@@ -502,6 +534,10 @@ export const BookingPage: React.FC = () => {
     if (!tokenStorage.getAccessToken() || !tokenStorage.getUser()) {
       const currentUrl = `/customer/booking${window.location.search}`;
       navigate(`/auth/login?redirect=${encodeURIComponent(currentUrl)}`);
+      return;
+    }
+
+    if (!calculation) {
       return;
     }
 
@@ -695,9 +731,9 @@ export const BookingPage: React.FC = () => {
                 <div className="text-left sm:text-right sm:border-l sm:border-slate-100 sm:pl-5">
                   <span className="text-[11px] text-slate-400 block">Đơn giá cơ sở</span>
                   <span className="text-base sm:text-lg font-bold text-brand-600">
-                    {formatVND(unitType.baseMonthlyPrice)}
+                    {calculation ? formatVND(calculation.monthlyRate) : 'Chưa niêm yết'}
                   </span>
-                  <span className="text-xs text-slate-500">/tháng</span>
+                  {calculation && <span className="text-xs text-slate-500">/tháng</span>}
                 </div>
               </div>
 
@@ -961,7 +997,7 @@ export const BookingPage: React.FC = () => {
                 type="submit"
                 variant="primary"
                 size="md"
-                disabled={isSubmitting || isCheckingAvailability || (availability !== null && availability.availableSlots <= 0)}
+                disabled={isSubmitting || isCheckingAvailability || !calculation || (availability !== null && availability.availableSlots <= 0)}
                 className="px-6 py-2.5 flex items-center gap-2 text-xs sm:text-sm font-bold shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 title={availability && availability.availableSlots <= 0 ? 'Loại ô kho này đã hết chỗ trong kỳ hạn đã chọn' : undefined}
               >
@@ -987,13 +1023,19 @@ export const BookingPage: React.FC = () => {
 
           {/* Pricing Column (1/3) */}
           <div className="lg:col-span-1">
-            <BookingPriceSummary
-              unitType={unitType}
-              facility={facility}
-              calculation={calculation}
-              startDate={startDate}
-              endDate={endDate}
-            />
+            {calculation ? (
+              <BookingPriceSummary
+                unitType={unitType}
+                facility={facility}
+                calculation={calculation}
+                startDate={startDate}
+                endDate={endDate}
+              />
+            ) : (
+              <Card className="p-5 bg-white border border-slate-200/90 rounded-xl">
+                <p className="text-sm font-semibold text-slate-600">Chưa niêm yết đơn giá cho loại ô kho này. Không thể đặt chỗ.</p>
+              </Card>
+            )}
           </div>
         </div>
       ) : (
@@ -1090,7 +1132,7 @@ export const BookingPage: React.FC = () => {
                       />
                     ) : (
                       <img
-                        src={`https://img.vietqr.io/image/970422-0888567999-compact2.png?amount=${checkoutData?.amount || calculation.totalDueToday}&addInfo=${encodeURIComponent(checkoutData?.description || transferContent)}&accountName=${encodeURIComponent(checkoutData?.accountName || 'SMARTSTORAGE')}`}
+                        src={`https://img.vietqr.io/image/970422-0888567999-compact2.png?amount=${checkoutData?.amount || calculation?.totalDueToday || 0}&addInfo=${encodeURIComponent(checkoutData?.description || transferContent)}&accountName=${encodeURIComponent(checkoutData?.accountName || 'SMARTSTORAGE')}`}
                         alt="VietQR Code"
                         className="w-40 h-40 object-contain"
                       />
@@ -1142,7 +1184,7 @@ export const BookingPage: React.FC = () => {
                     <div>
                       <span className="text-emerald-800 font-semibold block">Số tiền cần thanh toán:</span>
                       <strong className="text-base text-emerald-950 font-extrabold tracking-tight">
-                        {formatVND(checkoutData?.amount || calculation.totalDueToday)}
+                        {formatVND(checkoutData?.amount || calculation?.totalDueToday || 0)}
                       </strong>
                     </div>
                   </div>
@@ -1272,13 +1314,19 @@ export const BookingPage: React.FC = () => {
 
           {/* Pricing Column (1/3) */}
           <div className="lg:col-span-1">
-            <BookingPriceSummary
-              unitType={unitType}
-              facility={facility}
-              calculation={calculation}
-              startDate={startDate}
-              endDate={endDate}
-            />
+            {calculation ? (
+              <BookingPriceSummary
+                unitType={unitType}
+                facility={facility}
+                calculation={calculation}
+                startDate={startDate}
+                endDate={endDate}
+              />
+            ) : (
+              <Card className="p-5 bg-white border border-slate-200/90 rounded-xl">
+                <p className="text-sm font-semibold text-slate-600">Chưa niêm yết đơn giá cho loại ô kho này. Không thể đặt chỗ.</p>
+              </Card>
+            )}
           </div>
         </div>
       )}

@@ -94,9 +94,38 @@ public class SystemReportServiceImpl implements SystemReportService {
             long facDeposit = 0L;
             long facRefund = 0L;
 
-            for (Long contractId : contractMap.keySet()) {
-                List<PaymentTransaction> payments = paymentTransactionRepository.findByContractId(contractId);
-                if (payments == null) {
+            for (RentalContract contract : contractMap.values()) {
+                // Gộp thanh toán theo contract_id và reservation_id (INITIAL_PAYMENT thường chỉ có reservationId)
+                List<PaymentTransaction> payments = new ArrayList<>();
+                Set<Long> seenPaymentIds = new HashSet<>();
+                List<PaymentTransaction> byContract = paymentTransactionRepository.findByContractId(contract.getId());
+                if (byContract != null) {
+                    for (PaymentTransaction p : byContract) {
+                        if (p.getId() != null) {
+                            if (seenPaymentIds.add(p.getId())) {
+                                payments.add(p);
+                            }
+                        } else {
+                            payments.add(p);
+                        }
+                    }
+                }
+                if (contract.getReservationId() != null) {
+                    List<PaymentTransaction> byReservation =
+                            paymentTransactionRepository.findByReservationId(contract.getReservationId());
+                    if (byReservation != null) {
+                        for (PaymentTransaction p : byReservation) {
+                            if (p.getId() != null) {
+                                if (seenPaymentIds.add(p.getId())) {
+                                    payments.add(p);
+                                }
+                            } else {
+                                payments.add(p);
+                            }
+                        }
+                    }
+                }
+                if (payments.isEmpty()) {
                     continue;
                 }
                 for (PaymentTransaction payment : payments) {
@@ -125,9 +154,8 @@ public class SystemReportServiceImpl implements SystemReportService {
                     } else if ("OVERDUE_PENALTY".equalsIgnoreCase(type)) {
                         facOverdueFeeRevenue += amount;
                     } else if ("INITIAL_PAYMENT".equalsIgnoreCase(type)) {
-                        RentalContract contract = contractMap.get(payment.getContractId());
-                        long rentCap = contract != null ? contract.getTotalRentalFee() : amount;
-                        long depositCap = contract != null ? contract.getDepositAmount() : 0L;
+                        long rentCap = contract.getTotalRentalFee();
+                        long depositCap = contract.getDepositAmount();
                         long rentPart = Math.min(amount, Math.max(0L, rentCap));
                         long depositPart = Math.min(Math.max(0L, amount - rentPart), Math.max(0L, depositCap));
                         long extra = amount - rentPart - depositPart;

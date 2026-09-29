@@ -30,4 +30,11 @@ public class UnitTypeResponse {
     public boolean isActive() {
         return isActive;
     }
+
+    /** Đơn giá 1 m² đang áp dụng (hoặc suy ra từ monthly/area). */
+    private Long pricePerM2;
+    /** Chưa niêm yết | Đang áp dụng | Chưa áp dụng */
+    private String priceStatus;
+    private java.time.LocalDate scheduledEffectiveFrom;
+    private Long scheduledPricePerM2;
 }

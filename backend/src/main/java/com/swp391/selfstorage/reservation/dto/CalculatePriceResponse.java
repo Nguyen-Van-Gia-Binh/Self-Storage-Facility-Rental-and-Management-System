@@ -1,8 +1,13 @@
 package com.swp391.selfstorage.reservation.dto;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import com.swp391.selfstorage.policy.dto.SurchargeLineResponse;
+
 /**
  * Phản hồi chi tiết bảng tính tiền thuê kho và tiền cọc.
- * Tuân thủ BR-DEP-01 (cọc 1 tháng) và BR-GEN-04 (làm tròn đến 1.000 VNĐ).
+ * Tuân thủ BR-DEP-01 và BR-GEN-04 (làm tròn đến 1.000 VNĐ).
  */
 public class CalculatePriceResponse {
 
@@ -14,6 +19,8 @@ public class CalculatePriceResponse {
     private long finalRentTotal;
     private long depositAmount;
     private long totalDueToday;
+    private List<SurchargeLineResponse> surcharges = new ArrayList<>();
+    private long surchargeTotal;
 
     public CalculatePriceResponse() {}
 
@@ -54,4 +61,21 @@ public class CalculatePriceResponse {
 
     public long getTotalDueToday() { return totalDueToday; }
     public void setTotalDueToday(long totalDueToday) { this.totalDueToday = totalDueToday; }
+
+    public List<SurchargeLineResponse> getSurcharges() { return surcharges; }
+    public void setSurcharges(List<SurchargeLineResponse> surcharges) {
+        this.surcharges = surcharges == null ? new ArrayList<>() : surcharges;
+    }
+
+    public long getSurchargeTotal() { return surchargeTotal; }
+    public void setSurchargeTotal(long surchargeTotal) { this.surchargeTotal = surchargeTotal; }
+
+    public void applySurchargeLines(List<SurchargeLineResponse> lines) {
+        setSurcharges(lines);
+        this.surchargeTotal = 0L;
+        for (SurchargeLineResponse line : this.surcharges) {
+            this.surchargeTotal += line.getAmount();
+        }
+        this.totalDueToday = this.finalRentTotal + this.depositAmount + this.surchargeTotal;
+    }
 }

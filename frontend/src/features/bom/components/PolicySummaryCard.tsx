@@ -122,17 +122,34 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
           </p>
         </div>
 
-        {/* Trả kho (Return) */}
+        {/* Thời hạn khóa quyền gia hạn (Renewal Cutoff) — BR-REN-02 */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
           <div className="flex items-center space-x-2 text-emerald-600">
+            <RefreshCw className="w-5 h-5" />
+            <h4 className="font-bold text-sm text-slate-900">
+              Thời hạn khóa quyền gia hạn (Renewal Cutoff)
+            </h4>
+          </div>
+          <p className="text-2xl font-black text-emerald-600">
+            Trước {policy.returnNoticeDays} ngày
+          </p>
+          <p className="text-xs text-slate-500">
+            Khách hàng chỉ được phép gia hạn khi thời hạn hợp đồng còn từ {policy.returnNoticeDays} ngày trở
+            lên. Khi còn dưới {policy.returnNoticeDays} ngày hoặc quá hạn, tính năng gia hạn sẽ tự động bị
+            khóa, khách buộc phải ký hợp đồng mới nếu muốn tiếp tục thuê ô kho.
+          </p>
+        </div>
+
+        {/* Quy định trả kho (Return) — BR-RET-06: linh hoạt, không bắt báo trước */}
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
+          <div className="flex items-center space-x-2 text-teal-600">
             <ShieldCheck className="w-5 h-5" />
             <h4 className="font-bold text-sm text-slate-900">Quy định trả kho</h4>
           </div>
-          <p className="text-2xl font-black text-emerald-600">
-            Báo trước {policy.returnNoticeDays} ngày
-          </p>
+          <p className="text-2xl font-black text-teal-600">Linh hoạt 24/7</p>
           <p className="text-xs text-slate-500">
-            Khách hàng đăng ký trả kho trước ít nhất {policy.returnNoticeDays} ngày làm việc để đối soát hoàn cọc.
+            Khách có thể tạo yêu cầu trả kho bất cứ lúc nào khi hợp đồng đang hoạt động; hoàn tất đối soát
+            và hoàn cọc trong 3 ngày làm việc sau khi nghiệm thu kho.
           </p>
         </div>
 

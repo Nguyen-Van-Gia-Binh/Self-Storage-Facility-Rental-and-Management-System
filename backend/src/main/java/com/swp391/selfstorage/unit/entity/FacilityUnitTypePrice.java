@@ -28,6 +28,9 @@ public class FacilityUnitTypePrice {
     @Column(name = "monthly_price", nullable = false)
     private Long monthlyPrice;
 
+    @Column(name = "price_per_m2")
+    private Long pricePerM2;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
@@ -57,6 +60,9 @@ public class FacilityUnitTypePrice {
 
     public Long getMonthlyPrice() { return monthlyPrice; }
     public void setMonthlyPrice(Long monthlyPrice) { this.monthlyPrice = monthlyPrice; }
+
+    public Long getPricePerM2() { return pricePerM2; }
+    public void setPricePerM2(Long pricePerM2) { this.pricePerM2 = pricePerM2; }
 
     public OffsetDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(OffsetDateTime createdAt) { this.createdAt = createdAt; }

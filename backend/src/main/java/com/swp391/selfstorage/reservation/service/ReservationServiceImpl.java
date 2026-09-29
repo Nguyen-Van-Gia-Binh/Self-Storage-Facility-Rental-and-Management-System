@@ -23,16 +23,22 @@ import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
 import com.swp391.selfstorage.unit.repository.UnitTypeRepository;
 import com.swp391.selfstorage.payment.entity.PaymentTransaction;
 import com.swp391.selfstorage.payment.repository.PaymentTransactionRepository;
+import com.swp391.selfstorage.policy.dto.SurchargeLineResponse;
 import com.swp391.selfstorage.policy.entity.PolicyVersion;
+import com.swp391.selfstorage.policy.repository.ExtraFeeTypeRepository;
 import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
+import com.swp391.selfstorage.policy.service.AppliedPriceLookup;
+import com.swp391.selfstorage.policy.service.SurchargeAmountCalculator;
 import com.swp391.selfstorage.user.entity.UserRole;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -55,6 +61,12 @@ public class ReservationServiceImpl implements ReservationService {
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final PolicyVersionRepository policyVersionRepository;
 
+    @Autowired(required = false)
+    private ExtraFeeTypeRepository extraFeeTypeRepository;
+
+    @Autowired(required = false)
+    private AppliedPriceLookup appliedPriceLookup;
+
     public ReservationServiceImpl(ReservationRepository reservationRepository,
                                   StorageUnitRepository storageUnitRepository,
                                   FacilityRepository facilityRepository,
@@ -76,16 +88,34 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     @Transactional(readOnly = true)
     public CalculatePriceResponse calculatePrice(CalculatePriceRequest request) {
-        long rate = Math.max(0, request.getMonthlyPrice());
-        int months = Math.max(1, request.getMonths());
+        if (request.getFacilityId() == null || request.getUnitTypeId() == null) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED, "Can co so va loai o kho de tinh gia");
+        }
+        long monthlyPrice = lookupMonthlyPrice(request.getFacilityId(), request.getUnitTypeId());
+        PolicyVersion policy = requireActivePolicy();
+        BigDecimal multiplier = policy.getDepositMultiplier() != null
+                ? policy.getDepositMultiplier()
+                : BigDecimal.ONE;
+        CalculatePriceResponse response = quote(monthlyPrice, Math.max(1, request.getMonths()), multiplier);
+        applySurcharges(response, request.getFacilityId());
+        return response;
+    }
 
-        long rawRent = rate * months;
+    /**
+     * Công thức thuê, chiết khấu và cọc. Đơn giá và hệ số cọc do người gọi lấy từ BOM.
+     */
+    CalculatePriceResponse quote(long monthlyPrice, int months, BigDecimal depositMultiplier) {
+        long rate = Math.max(0, monthlyPrice);
+        int safeMonths = Math.max(1, months);
+        BigDecimal multiplier = depositMultiplier != null ? depositMultiplier : BigDecimal.ONE;
+
+        long rawRent = rate * safeMonths;
 
         // Chiet khau theo BR-PRI-01: 6 thang -> 5%, 12 thang -> 10%
         double discountRate = 0.0;
-        if (months >= 12) {
+        if (safeMonths >= 12) {
             discountRate = 0.10;
-        } else if (months >= 6) {
+        } else if (safeMonths >= 6) {
             discountRate = 0.05;
         }
 
@@ -93,14 +123,14 @@ public class ReservationServiceImpl implements ReservationService {
         long discountAmount = Math.round((rawRent * discountRate) / 1000.0) * 1000;
         long finalRent = rawRent - discountAmount;
 
-        // BR-DEP-01: Tien coc an ninh mac dinh dung 1 thang tien thue
-        long deposit = Math.round(rate / 1000.0) * 1000;
+        // BR-DEP-01: Deposit = deposit.multiplier × đơn giá tháng
+        long deposit = Math.round((rate * multiplier.doubleValue()) / 1000.0) * 1000;
 
         long totalDueToday = finalRent + deposit;
 
         return new CalculatePriceResponse(
                 rate,
-                months,
+                safeMonths,
                 rawRent,
                 discountRate,
                 discountAmount,
@@ -108,6 +138,38 @@ public class ReservationServiceImpl implements ReservationService {
                 deposit,
                 totalDueToday
         );
+    }
+
+    private void applySurcharges(CalculatePriceResponse response, Long facilityId) {
+        if (extraFeeTypeRepository == null || facilityId == null || response == null) {
+            return;
+        }
+        List<SurchargeLineResponse> lines = SurchargeAmountCalculator.lines(
+                extraFeeTypeRepository.findApplicable(facilityId, LocalDate.now()),
+                response.getMonthlyPrice(),
+                response.getRentalMonths());
+        response.applySurchargeLines(lines);
+    }
+
+    private long lookupMonthlyPrice(Long facilityId, Long unitTypeId) {
+        if (appliedPriceLookup != null) {
+            return appliedPriceLookup.resolveMonthlyPrice(facilityId, unitTypeId)
+                    .filter(p -> p > 0)
+                    .orElseThrow(() -> new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND,
+                            "Loai o kho chua duoc cau hinh gia tai co so nay"));
+        }
+        if (facilityUnitTypePriceRepository == null) {
+            throw new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND, "Loai o kho chua duoc cau hinh gia tai co so nay");
+        }
+        long monthlyPrice = facilityUnitTypePriceRepository
+                .findByFacilityIdAndUnitTypeId(facilityId, unitTypeId)
+                .map(FacilityUnitTypePrice::getMonthlyPrice)
+                .orElseThrow(() -> new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND,
+                        "Loai o kho chua duoc cau hinh gia tai co so nay"));
+        if (monthlyPrice <= 0) {
+            throw new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND, "Loai o kho chua duoc cau hinh gia tai co so nay");
+        }
+        return monthlyPrice;
     }
 
     @Override
@@ -188,15 +250,12 @@ public class ReservationServiceImpl implements ReservationService {
             throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, "O kho nay da co hop dong trong thoi gian da chon, ke ca khoang dem an toan");
         }
 
-        if (facilityUnitTypePriceRepository == null) {
-            throw new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND, "Loai o kho chua duoc cau hinh gia tai co so nay");
-        }
-        long monthlyPrice = facilityUnitTypePriceRepository
-                .findByFacilityIdAndUnitTypeId(request.getFacilityId(), request.getUnitTypeId())
-                .map(FacilityUnitTypePrice::getMonthlyPrice)
-                .orElseThrow(() -> new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND, "Loai o kho chua duoc cau hinh gia tai co so nay"));
-
-        CalculatePriceResponse pricing = calculatePrice(new CalculatePriceRequest(monthlyPrice, months));
+        long monthlyPrice = lookupMonthlyPrice(request.getFacilityId(), request.getUnitTypeId());
+        BigDecimal multiplier = policy.getDepositMultiplier() != null
+                ? policy.getDepositMultiplier()
+                : BigDecimal.ONE;
+        CalculatePriceResponse pricing = quote(monthlyPrice, months, multiplier);
+        applySurcharges(pricing, request.getFacilityId());
 
         // 7. Tao entity Reservation
         Reservation reservation = new Reservation();

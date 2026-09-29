@@ -18,7 +18,6 @@ type FormState = {
   overdueGraceDays: string;
   overdueDailyRate: string;
   overdueCapRate: string;
-  overdueNoticeDays: string;
   overdueLockAccessDays: string;
   overdueTerminationDays: string;
   returnNoticeDays: string;
@@ -32,6 +31,15 @@ type FormState = {
 
 function todayInVietnam(): string {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+}
+
+function rateToPercent(rate: number | null | undefined, fallbackFraction: number): string {
+  const fraction = rate == null || Number.isNaN(rate) ? fallbackFraction : rate;
+  return String(Math.round(fraction * 1000) / 10);
+}
+
+function percentToRate(raw: string): number {
+  return Number(raw) / 100;
 }
 
 function emptyForm(): FormState {
@@ -49,9 +57,8 @@ function emptyForm(): FormState {
     renewalMinMonths: '1',
     renewalMaxMonths: '12',
     overdueGraceDays: '3',
-    overdueDailyRate: '0.1',
-    overdueCapRate: '0.7',
-    overdueNoticeDays: '4',
+    overdueDailyRate: '10',
+    overdueCapRate: '70',
     overdueLockAccessDays: '7',
     overdueTerminationDays: '10',
     returnNoticeDays: '30',
@@ -77,20 +84,19 @@ function fromPolicy(policy: PolicyPublishPayload): FormState {
     rentalDailyDivisor: String(policy.rentalDailyDivisor ?? 30),
     checkinGraceDays: String(policy.checkinGraceDays ?? 10),
     cancelFullRefundHours: String(policy.cancelFullRefundHours ?? 48),
-    cancelLateRefundRate: String(policy.cancelLateRefundRate ?? 0),
-    cancelNoShowRefundRate: String(policy.cancelNoShowRefundRate ?? 0),
+    cancelLateRefundRate: rateToPercent(policy.cancelLateRefundRate, 0),
+    cancelNoShowRefundRate: rateToPercent(policy.cancelNoShowRefundRate, 0),
     renewalReminderDays: policy.renewalReminderDays || '60,7,3,1',
     renewalMinMonths: String(policy.renewalMinMonths ?? 1),
     renewalMaxMonths: String(policy.renewalMaxMonths ?? 12),
     overdueGraceDays: String(policy.overdueGraceDays ?? 3),
-    overdueDailyRate: String(policy.overdueDailyRate ?? 0.1),
-    overdueCapRate: String(policy.overdueCapRate ?? 0.7),
-    overdueNoticeDays: String(policy.overdueNoticeDays ?? 4),
+    overdueDailyRate: rateToPercent(policy.overdueDailyRate, 0.1),
+    overdueCapRate: rateToPercent(policy.overdueCapRate, 0.7),
     overdueLockAccessDays: String(policy.overdueLockAccessDays ?? 7),
     overdueTerminationDays: String(policy.overdueTerminationDays ?? 10),
     returnNoticeDays: String(policy.returnNoticeDays ?? 30),
     returnRefundWorkingDays: String(policy.returnRefundWorkingDays ?? 7),
-    returnEarlyRefundRate: String(policy.returnEarlyRefundRate ?? 0),
+    returnEarlyRefundRate: rateToPercent(policy.returnEarlyRefundRate, 0),
     accessPinLength: String(policy.accessPinLength ?? 6),
     supportUrgentSlaHours: String(policy.supportUrgentSlaHours ?? 2),
     supportAutoCloseWorkingDays: String(policy.supportAutoCloseWorkingDays ?? 7),
@@ -162,12 +168,24 @@ export const BomPolicyPage: React.FC = () => {
       }
       seen.add(item);
     }
+    const rates: Array<[string, string]> = [
+      ['Tỷ lệ hoàn khi hủy muộn', form.cancelLateRefundRate],
+      ['Tỷ lệ hoàn no-show', form.cancelNoShowRefundRate],
+      ['Phí quá hạn mỗi ngày', form.overdueDailyRate],
+      ['Trần phí quá hạn', form.overdueCapRate],
+      ['Tỷ lệ hoàn khi trả sớm', form.returnEarlyRefundRate],
+    ];
+    for (const [label, raw] of rates) {
+      const value = Number(raw);
+      if (!Number.isFinite(value) || value < 0 || value > 100) {
+        return `${label} phải từ 0% đến 100%`;
+      }
+    }
     const grace = Number(form.overdueGraceDays);
-    const notice = Number(form.overdueNoticeDays);
     const lock = Number(form.overdueLockAccessDays);
     const termination = Number(form.overdueTerminationDays);
-    if (!(grace < notice && notice <= lock && lock <= termination)) {
-      return 'Các mốc quá hạn phải theo thứ tự: ân hạn → bắt đầu tính phí → khóa truy cập → chấm dứt';
+    if (!(Number.isInteger(grace) && Number.isInteger(lock) && Number.isInteger(termination) && grace < lock && lock <= termination)) {
+      return 'Ân hạn phải nhỏ hơn mốc khóa truy cập, và mốc khóa không được sau ngày chấm dứt';
     }
     if (!form.confirmed) {
       return 'Cần xác nhận ban hành trước khi lưu phiên bản mới';
@@ -192,20 +210,20 @@ export const BomPolicyPage: React.FC = () => {
       rentalDailyDivisor: Number(form.rentalDailyDivisor),
       checkinGraceDays: Number(form.checkinGraceDays),
       cancelFullRefundHours: Number(form.cancelFullRefundHours),
-      cancelLateRefundRate: Number(form.cancelLateRefundRate),
-      cancelNoShowRefundRate: Number(form.cancelNoShowRefundRate),
+      cancelLateRefundRate: percentToRate(form.cancelLateRefundRate),
+      cancelNoShowRefundRate: percentToRate(form.cancelNoShowRefundRate),
       renewalReminderDays: form.renewalReminderDays,
       renewalMinMonths: Number(form.renewalMinMonths),
       renewalMaxMonths: Number(form.renewalMaxMonths),
       overdueGraceDays: Number(form.overdueGraceDays),
-      overdueDailyRate: Number(form.overdueDailyRate),
-      overdueCapRate: Number(form.overdueCapRate),
-      overdueNoticeDays: Number(form.overdueNoticeDays),
+      overdueDailyRate: percentToRate(form.overdueDailyRate),
+      overdueCapRate: percentToRate(form.overdueCapRate),
+      overdueNoticeDays: Number(form.overdueGraceDays) + 1,
       overdueLockAccessDays: Number(form.overdueLockAccessDays),
       overdueTerminationDays: Number(form.overdueTerminationDays),
       returnNoticeDays: Number(form.returnNoticeDays),
       returnRefundWorkingDays: Number(form.returnRefundWorkingDays),
-      returnEarlyRefundRate: Number(form.returnEarlyRefundRate),
+      returnEarlyRefundRate: percentToRate(form.returnEarlyRefundRate),
       accessPinLength: Number(form.accessPinLength),
       supportUrgentSlaHours: Number(form.supportUrgentSlaHours),
       supportAutoCloseWorkingDays: Number(form.supportAutoCloseWorkingDays),
@@ -243,6 +261,8 @@ export const BomPolicyPage: React.FC = () => {
         <Field label="Hệ số cọc (lớn hơn 0)" value={form.depositMultiplier} step="0.1" onChange={set('depositMultiplier')} />
         <Field label="Giờ giữ chỗ" value={form.reservationHoldHours} onChange={set('reservationHoldHours')} />
         <Field label="Ngày ân hạn nhận kho" value={form.checkinGraceDays} onChange={set('checkinGraceDays')} />
+        <Field label="Ngày đệm sau kỳ thuê" value={form.rentalBufferDays} onChange={set('rentalBufferDays')} />
+        <Field label="Số ngày quy ước của một tháng" value={form.rentalDailyDivisor} onChange={set('rentalDailyDivisor')} />
       </section>
 
       <section className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
@@ -259,25 +279,42 @@ export const BomPolicyPage: React.FC = () => {
         <p className="text-xs text-slate-500">Cơ sở hủy thì hoàn 100%. Không có ô tỷ lệ phạt cho trường hợp này.</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Field label="Giờ hủy được hoàn 100%" value={form.cancelFullRefundHours} onChange={set('cancelFullRefundHours')} />
-          <Field label="Tỷ lệ hoàn khi hủy muộn (0–1)" value={form.cancelLateRefundRate} step="0.01" onChange={set('cancelLateRefundRate')} />
-          <Field label="Tỷ lệ hoàn no-show (0–1)" value={form.cancelNoShowRefundRate} step="0.01" onChange={set('cancelNoShowRefundRate')} />
-          <Field label="Ngày báo trả" value={form.returnNoticeDays} onChange={set('returnNoticeDays')} />
+          <Field label="Tỷ lệ hoàn khi hủy muộn (%)" value={form.cancelLateRefundRate} step="0.1" onChange={set('cancelLateRefundRate')} />
+          <Field label="Tỷ lệ hoàn no-show (%)" value={form.cancelNoShowRefundRate} step="0.1" onChange={set('cancelNoShowRefundRate')} />
+          <Field
+            label="Mốc khóa gia hạn / chuẩn bị trả kho (ngày trước hết hạn)"
+            value={form.returnNoticeDays}
+            onChange={set('returnNoticeDays')}
+          />
           <Field label="Ngày làm việc hoàn cọc" value={form.returnRefundWorkingDays} onChange={set('returnRefundWorkingDays')} />
-          <Field label="Tỷ lệ hoàn khi trả sớm (0–1)" value={form.returnEarlyRefundRate} step="0.01" onChange={set('returnEarlyRefundRate')} />
+          <Field label="Tỷ lệ hoàn khi trả sớm (%)" value={form.returnEarlyRefundRate} step="0.1" onChange={set('returnEarlyRefundRate')} />
         </div>
         <p className="text-xs text-slate-500">Quyết toán trả kho = cọc trừ hư hại, phí quá hạn và phụ phí chưa trả. Công thức này không tắt được.</p>
       </section>
 
       <section className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
         <h2 className="font-semibold text-slate-900">Quá hạn</h2>
-        <p className="text-xs text-slate-500">Thứ tự bắt buộc: ân hạn, rồi bắt đầu tính phí, rồi khóa truy cập, rồi chấm dứt. Khách quá hạn không đặt chỗ mới.</p>
+        <p className="text-xs text-slate-500">
+          Phí bắt đầu vào ngày ngay sau ân hạn. Ân hạn phải nhỏ hơn mốc khóa truy cập, và mốc khóa không được sau ngày chấm dứt. Khách quá hạn không đặt chỗ mới.
+        </p>
+        <p className="text-sm text-slate-700">
+          Bắt đầu tính phí: ngày thứ {Number.isInteger(Number(form.overdueGraceDays)) ? Number(form.overdueGraceDays) + 1 : '—'} sau ngày hết hạn
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Field label="Ân hạn (ngày)" value={form.overdueGraceDays} onChange={set('overdueGraceDays')} />
-          <Field label="Bắt đầu tính phí (ngày)" value={form.overdueNoticeDays} onChange={set('overdueNoticeDays')} />
           <Field label="Khóa truy cập (ngày)" value={form.overdueLockAccessDays} onChange={set('overdueLockAccessDays')} />
           <Field label="Chấm dứt (ngày)" value={form.overdueTerminationDays} onChange={set('overdueTerminationDays')} />
-          <Field label="Phí mỗi ngày (0–1)" value={form.overdueDailyRate} step="0.01" onChange={set('overdueDailyRate')} />
-          <Field label="Trần phí (0–1)" value={form.overdueCapRate} step="0.01" onChange={set('overdueCapRate')} />
+          <Field label="Phí mỗi ngày (%)" value={form.overdueDailyRate} step="0.1" onChange={set('overdueDailyRate')} />
+          <Field label="Trần phí (%)" value={form.overdueCapRate} step="0.1" onChange={set('overdueCapRate')} />
+        </div>
+      </section>
+
+      <section className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
+        <h2 className="font-semibold text-slate-900">Truy cập và hỗ trợ</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Field label="Độ dài mã PIN" value={form.accessPinLength} onChange={set('accessPinLength')} />
+          <Field label="SLA sự cố khẩn cấp (giờ)" value={form.supportUrgentSlaHours} onChange={set('supportUrgentSlaHours')} />
+          <Field label="Ngày làm việc tự đóng hỗ trợ" value={form.supportAutoCloseWorkingDays} onChange={set('supportAutoCloseWorkingDays')} />
         </div>
       </section>
 

@@ -3,6 +3,8 @@ package com.swp391.selfstorage.report.controller;
 import com.swp391.selfstorage.auth.service.UserPrincipal;
 import com.swp391.selfstorage.common.dto.ApiResponse;
 import com.swp391.selfstorage.common.dto.PageResponse;
+import com.swp391.selfstorage.common.exception.CustomException;
+import com.swp391.selfstorage.common.exception.ErrorCode;
 import com.swp391.selfstorage.report.dto.OverdueContractDetailDto;
 import com.swp391.selfstorage.report.dto.ReportExportType;
 import com.swp391.selfstorage.report.dto.SystemOccupancyReportResponse;
@@ -34,17 +36,37 @@ public class SystemReportController {
 
     private final SystemReportService systemReportService;
 
+    /**
+     * Chuẩn hóa facilityId từ query: null / rỗng / "all" = toàn hệ thống (BM-04 audit #20).
+     */
+    static Long parseFacilityIdParam(String facilityId) {
+        if (facilityId == null) {
+            return null;
+        }
+        String trimmed = facilityId.trim();
+        if (trimmed.isEmpty() || "all".equalsIgnoreCase(trimmed) || "null".equalsIgnoreCase(trimmed)) {
+            return null;
+        }
+        try {
+            return Long.valueOf(trimmed);
+        } catch (NumberFormatException ex) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                    "facilityId không hợp lệ: " + facilityId);
+        }
+    }
+
     @GetMapping("/revenue")
     @PreAuthorize("hasAnyRole('BUSINESS_OPERATIONS_MANAGER', 'SYSTEM_ADMINISTRATOR')")
     @Operation(summary = "Xem báo cáo doanh thu toàn hệ thống theo kỳ và phân bổ theo cơ sở (BM-04, US-BM-04.1)")
     public ResponseEntity<ApiResponse<SystemRevenueReportResponse>> getSystemRevenueReport(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-            @RequestParam(required = false) Long facilityId) {
+            @RequestParam(required = false) String facilityId) {
 
+        Long resolvedFacilityId = parseFacilityIdParam(facilityId);
         log.info("REST request to get system revenue report: from={}, to={}, facilityId={}", from, to, facilityId);
 
-        SystemRevenueReportResponse response = systemReportService.getSystemRevenueReport(from, to, facilityId);
+        SystemRevenueReportResponse response = systemReportService.getSystemRevenueReport(from, to, resolvedFacilityId);
         return ResponseEntity.ok(ApiResponse.success(response, "Lấy báo cáo doanh thu toàn hệ thống thành công"));
     }
 
@@ -52,28 +74,30 @@ public class SystemReportController {
     @PreAuthorize("hasAnyRole('BUSINESS_OPERATIONS_MANAGER', 'SYSTEM_ADMINISTRATOR')")
     @Operation(summary = "Xem báo cáo tỷ lệ lấp đầy và bóc tách trạng thái ô kho toàn hệ thống (BM-04, US-BM-04.2)")
     public ResponseEntity<ApiResponse<SystemOccupancyReportResponse>> getSystemOccupancyReport(
-            @RequestParam(required = false) Long facilityId) {
+            @RequestParam(required = false) String facilityId) {
 
+        Long resolvedFacilityId = parseFacilityIdParam(facilityId);
         log.info("REST request to get system occupancy report: facilityId={}", facilityId);
 
-        SystemOccupancyReportResponse response = systemReportService.getSystemOccupancyReport(facilityId);
+        SystemOccupancyReportResponse response = systemReportService.getSystemOccupancyReport(resolvedFacilityId);
         return ResponseEntity.ok(ApiResponse.success(response, "Lấy báo cáo tỷ lệ lấp đầy toàn hệ thống thành công"));
     }
 
-        @GetMapping("/overdue")
+    @GetMapping("/overdue")
     @PreAuthorize("hasAnyRole('BUSINESS_OPERATIONS_MANAGER', 'SYSTEM_ADMINISTRATOR')")
     @Operation(summary = "Xem danh sách hợp đồng nợ quá hạn toàn hệ thống hoặc theo cơ sở (BM-05)")
     public ResponseEntity<ApiResponse<PageResponse<OverdueContractDetailDto>>> getSystemOverdueContracts(
-            @RequestParam(required = false) Long facilityId,
+            @RequestParam(required = false) String facilityId,
             @RequestParam(required = false) Integer minOverdueDays,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
+        Long resolvedFacilityId = parseFacilityIdParam(facilityId);
         log.info("REST request to get system overdue contracts: facilityId={}, minOverdueDays={}, page={}, size={}",
                 facilityId, minOverdueDays, page, size);
 
         PageResponse<OverdueContractDetailDto> response = systemReportService.getSystemOverdueContracts(
-                facilityId, minOverdueDays, PageRequest.of(page, size));
+                resolvedFacilityId, minOverdueDays, PageRequest.of(page, size));
         return ResponseEntity.ok(ApiResponse.success(response, "Lấy danh sách hợp đồng quá hạn thành công"));
     }
 
@@ -84,14 +108,15 @@ public class SystemReportController {
             @RequestParam(required = false, defaultValue = "REVENUE") ReportExportType type,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-            @RequestParam(required = false) Long facilityId,
+            @RequestParam(required = false) String facilityId,
             @RequestParam(required = false, defaultValue = "CSV") String format,
             @AuthenticationPrincipal UserPrincipal currentUser) {
 
+        Long resolvedFacilityId = parseFacilityIdParam(facilityId);
         log.info("REST request to export system report: type={}, from={}, to={}, facilityId={}, user={}",
                 type, from, to, facilityId, currentUser != null ? currentUser.getUsername() : "anonymous");
 
-        byte[] csvData = systemReportService.exportSystemReport(type, from, to, facilityId, currentUser);
+        byte[] csvData = systemReportService.exportSystemReport(type, from, to, resolvedFacilityId, currentUser);
 
         String filename = String.format("report_%s_%s.csv", type.name().toLowerCase(), LocalDate.now());
 

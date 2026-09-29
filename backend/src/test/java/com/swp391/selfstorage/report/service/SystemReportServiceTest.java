@@ -199,6 +199,40 @@ class SystemReportServiceTest {
     }
 
     @Test
+    @DisplayName("US-BM-04.1: Gộp INITIAL_PAYMENT gắn reservationId vào doanh thu thuê và cọc")
+    void testSystemRevenueReport_IncludesReservationLinkedInitialPayment() {
+        LocalDate from = LocalDate.of(2026, 9, 1);
+        LocalDate to = LocalDate.of(2026, 9, 30);
+        when(facilityRepository.findAll()).thenReturn(List.of(facility1));
+
+        RentalContract contract = RentalContract.builder()
+                .id(301L)
+                .facilityId(1L)
+                .reservationId(501L)
+                .totalRentalFee(2_000_000L)
+                .depositAmount(1_000_000L)
+                .build();
+        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(List.of(contract));
+        when(paymentTransactionRepository.findByContractId(301L)).thenReturn(Collections.emptyList());
+
+        PaymentTransaction initial = PaymentTransaction.builder()
+                .id(90L)
+                .reservationId(501L)
+                .amount(3_000_000L)
+                .transactionType("INITIAL_PAYMENT")
+                .status("SUCCESS")
+                .build();
+        initial.setCreatedAt(java.time.Instant.parse("2026-09-10T03:00:00Z"));
+        when(paymentTransactionRepository.findByReservationId(501L)).thenReturn(List.of(initial));
+
+        SystemRevenueReportResponse report = systemReportService.getSystemRevenueReport(from, to, null);
+
+        assertEquals(2_000_000L, report.getRentalRevenue());
+        assertEquals(1_000_000L, report.getDepositBalance());
+        assertEquals(2_000_000L, report.getTotalRevenue());
+    }
+
+    @Test
     @DisplayName("US-BM-04.1 AC-4: Ném VALIDATION_FAILED khi ngày kết thúc nhỏ hơn ngày bắt đầu")
     void testSystemRevenueReport_InvalidDateRange() {
         LocalDate from = LocalDate.of(2026, 10, 31);
