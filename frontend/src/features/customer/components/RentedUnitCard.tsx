@@ -20,6 +20,7 @@ import {
   RotateCcw,
   CreditCard,
   Lock,
+  Clock,
 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
@@ -246,10 +247,15 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                   </button>
                 </div>
               </div>
-            ) : (
+            ) : contract.status === 'PENDING_CHECKIN' || (contract.status as string) === 'PENDING_CHECK_IN' ? (
               <div className="text-[11px] text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-200/80 flex items-start gap-1.5 mt-1">
                 <AlertCircle className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
                 <span>Mã PIN & QR mở khóa tự động kích hoạt sau khi đối chiếu CCCD tại quầy.</span>
+              </div>
+            ) : (
+              <div className="text-[11px] text-slate-500 bg-slate-50 p-2 rounded-lg border border-slate-200 flex items-start gap-1.5 mt-1">
+                <AlertCircle className="w-3.5 h-3.5 text-slate-400 flex-shrink-0 mt-0.5" />
+                <span>Mã PIN không khả dụng hoặc đã thu hồi theo trạng thái hợp đồng.</span>
               </div>
             )}
           </div>
@@ -340,6 +346,16 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                     <span>Đóng nợ phạt ({formatVND(penaltyFee)})</span>
                   </Button>
                 )}
+              </div>
+            ) : contract.status === 'PENDING_RETURN' ? (
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
+                <Clock className="w-3.5 h-3.5 flex-shrink-0" />
+                <span>Đang chờ nhân viên nghiệm thu trả kho</span>
+              </div>
+            ) : contract.status === 'CLOSED' || contract.status === 'TERMINATED' ? (
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+                <Check className="w-3.5 h-3.5 flex-shrink-0 text-slate-500" />
+                <span>Hợp đồng đã kết thúc</span>
               </div>
             ) : isCutoffLocked ? (
               <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full sm:w-auto">
