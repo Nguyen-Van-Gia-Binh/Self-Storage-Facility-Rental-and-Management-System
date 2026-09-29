@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import type { ManagerContractItem, ContractKpiData } from '@/types/contractManager';
 import { getManagerContracts, getManagerKpiData } from '@/api/contract';
-import { fetchFacilities } from '@/api/facility';
+import { fetchMyAssignedFacilities } from '@/api/facility';
 import { ContractKpiCards } from '../components/ContractKpiCards';
 import { ReassignUnitModal } from '../components/ReassignUnitModal';
 import { ContractFinancialModal } from '../components/ContractFinancialModal';
@@ -65,9 +65,9 @@ export const ContractsHubPage: React.FC = () => {
     setTimeout(() => setToastMessage(null), 5000);
   };
 
-  // Nạp danh mục cơ sở thực tế từ API backend
+  // Nạp danh mục cơ sở thực tế từ API backend (chỉ hiển thị cơ sở được phân công cho FM)
   useEffect(() => {
-    fetchFacilities(undefined, true)
+    fetchMyAssignedFacilities()
       .then((list) => {
         const mapped = list.map((f) => ({
           id: f.id,

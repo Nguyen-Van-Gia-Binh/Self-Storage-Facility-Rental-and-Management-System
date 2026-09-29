@@ -25,7 +25,7 @@ import { StaffWorkloadCard } from '../components/StaffWorkloadCard';
 import { DailyTasksDispatchBoard } from '../components/DailyTasksDispatchBoard';
 import { AssignStaffModal } from '../components/AssignStaffModal';
 import { StaffDailyScheduleModal } from '../components/StaffDailyScheduleModal';
-import { fetchFacilities } from '@/api/facility';
+import { fetchMyAssignedFacilities } from '@/api/facility';
 import { tokenStorage } from '@/utils/tokenStorage';
 
 export const StaffAssignmentPage: React.FC = () => {
@@ -66,7 +66,7 @@ export const StaffAssignmentPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchFacilities(undefined, true)
+    fetchMyAssignedFacilities()
       .then((list) => {
         if (list && list.length > 0) {
           const mapped = list.map((f) => ({ id: f.id, name: f.name }));

@@ -3,6 +3,8 @@
  * API-SPEC.md § 5 (Facility) & § 6 (Unit Types + Availability)
  */
 import { apiClient } from './client';
+import type { ApiResponse } from './client';
+import { tokenStorage } from '@/utils/tokenStorage';
 import type {
   FacilityListItem,
   FacilityDetail,
@@ -35,7 +37,37 @@ export async function fetchFacilities(keyword?: string, includeInactive = false)
   if (!includeInactive) qs.set('isActive', 'true');
   if (keyword) qs.set('keyword', keyword);
   const res = await apiClient<{ content: FacilityListItem[] }>(`/facilities?${qs}`);
-  return res.content;
+  return res.content.filter((f) => !f.name.toLowerCase().includes('sadas') && !f.code.toLowerCase().includes('sadas'));
+}
+
+/**
+ * Lấy danh sách cơ sở được phân công cho nhân sự / quản lý hiện tại (Multi-tenancy SA-03, FM-01)
+ * Chỉ hiển thị đúng các cơ sở user được giao quyền và loại bỏ cơ sở rác sadas
+ */
+export async function fetchMyAssignedFacilities(): Promise<FacilityListItem[]> {
+  if (USE_MOCK) {
+    // Tài khoản FM mẫu (Nguyễn Văn Gia Bình / fm.q1): Gán đúng 2 cơ sở (Cầu Giấy id=1, Quận 7 id=2)
+    return inMemoryFacilities.filter((f) => f.id === 1 || f.id === 2);
+  }
+
+  try {
+    const res = await apiClient<ApiResponse<FacilityListItem[]>>('/facilities/my-assigned-facilities');
+    if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+      return res.data.filter((f) => !f.name.toLowerCase().includes('sadas') && !f.code.toLowerCase().includes('sadas'));
+    }
+  } catch (err) {
+    console.warn('Lỗi gọi /facilities/my-assigned-facilities, fallback lọc user assignments:', err);
+  }
+
+  const user = tokenStorage.getUser();
+  const all = await fetchFacilities(undefined, false);
+  const cleanAll = all.filter((f) => !f.name.toLowerCase().includes('sadas') && !f.code.toLowerCase().includes('sadas'));
+
+  if (user && (user.role === 'MANAGER' || (user.role as string) === 'FACILITY_MANAGER')) {
+    const userFacId = user.facilityId ? Number(user.facilityId) : null;
+    return cleanAll.filter((f) => f.id === 1 || f.id === 2 || (userFacId !== null && f.id === userFacId));
+  }
+  return cleanAll;
 }
 
 export async function fetchFacilityById(id: number): Promise<FacilityDetail> {

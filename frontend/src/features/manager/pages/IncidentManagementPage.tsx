@@ -27,7 +27,7 @@ import {
 import { IncidentDetailModal } from '../components/IncidentDetailModal';
 import { AssignStaffModal } from '../components/AssignStaffModal';
 import { SlaCountdownBadge } from '../components/SlaCountdownBadge';
-import { fetchFacilities } from '@/api/facility';
+import { fetchMyAssignedFacilities } from '@/api/facility';
 import { tokenStorage } from '@/utils/tokenStorage';
 
 const CATEGORIES: { key: SupportCategory | 'ALL'; label: string }[] = [
@@ -72,7 +72,7 @@ export const IncidentManagementPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchFacilities(undefined, true)
+    fetchMyAssignedFacilities()
       .then((list) => {
         if (list && list.length > 0) {
           const mapped = list.map((f) => ({ id: f.id, name: f.name }));
