@@ -336,12 +336,16 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
 
 ### 2.3. Giao diện Ban Giám đốc (BOM - Board of Management)
 
-#### 16. [Bỏ qua, và ưu tiên sửa các lỗi khác trước] Thiếu kiểm tra hợp lệ dữ liệu (Validation) định dạng và tính duy nhất của Mã cơ sở lưu trữ (`BM-01`)
+#### 16. [ĐÃ FIX] Thiếu kiểm tra hợp lệ dữ liệu (Validation) định dạng và tính duy nhất của Mã cơ sở lưu trữ (`BM-01`)
 - **Hình ảnh minh chứng:**  
   ![Mã cơ sở đặt đại](./images/notion-audit/image-16.png)
 - **Ghi chú gốc từ Lead Dev:**  
-  > *"Chưa validate mã cơ sở, đặt đại cũng được"*  
-  > *(Ghi chú ưu tiên: Bỏ qua, và ưu tiên sửa các lỗi khác trước)*
+  > *"Chưa validate mã cơ sở, đặt đại cũng được"* — `[ĐÃ FIX]`
+- **Kết quả đã xử lý (`BR-GEN-07`):**
+  1. *Mã cơ sở:* `FAC-` + viết tắt 2–4 ký tự, bắt đầu bằng chữ (`FAC-Q7`, `FAC-CG`, `FAC-HBT`, trùng thì `FAC-CG2`). Form viết hoa và chặn ký tự lạ. Backend từ chối sai mẫu và trả `409` khi trùng.
+  2. *Số điện thoại:* nếu có nhập thì đúng 10 chữ số và bắt đầu bằng 0. Dữ liệu cũ bỏ dấu gạch (`024-3795-8888` → `0243795888`) ở `V37__normalize_facility_contact.sql`.
+  3. *Giờ hoạt động:* hai ô chọn giờ mở cửa và đóng cửa, lưu `HH:mm–HH:mm`. Ca qua đêm được phép. Mốc `24:00` của cơ sở mở cả ngày được đổi thành `23:59`.
+  4. *File:* `docs/BUSINESS-RULES.md`, `FacilityModal.tsx`, `CreateFacilityRequest.java`, `UpdateFacilityRequest.java`, `FacilityServiceImpl.java`.
 - **Mô tả kỹ thuật chuẩn hóa:**  
   * **Tên vấn đề:** Trường `MÃ CƠ SỞ (CODE) *` trong modal *"Thêm cơ sở lưu trữ mới"* hoàn toàn thiếu validation định dạng chuẩn (Regex pattern) và kiểm tra tính duy nhất (Uniqueness) trên cả Frontend lẫn Backend, dẫn đến việc người dùng nhập tùy tiện bất kỳ ký tự nào cũng lưu thành công vào cơ sở dữ liệu.
   * **Hiện trạng ghi nhận trên UI (`image-16.png`):**  
@@ -359,12 +363,16 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
     - Frontend: `AddFacilityModal.tsx` (thêm regex validation, uppercase transform, thông báo lỗi field-level).  
     - Backend: `CreateFacilityRequest.java` (`@Pattern`, `@NotBlank`), `FacilityService.java` (kiểm tra `existsByCode`).
 
-#### 17. [Bỏ qua, và ưu tiên sửa các lỗi khác trước] Tính năng "In ấn / PDF" báo cáo tài chính hoạt động sai bản chất (In nguyên xi popup modal thay vì xuất biểu mẫu báo cáo A4 hoàn chỉnh)
+#### 17. [ĐÃ FIX] Tính năng "In ấn / PDF" báo cáo tài chính hoạt động sai bản chất (In nguyên xi popup modal thay vì xuất biểu mẫu báo cáo A4 hoàn chỉnh)
 - **Hình ảnh minh chứng:**  
   ![In ấn sơ sài](./images/notion-audit/image-17.png)
 - **Ghi chú gốc từ Lead Dev:**  
-  > *"In ấn còn sơ sài"*  
-  > *(Ghi chú ưu tiên: Bỏ qua, và ưu tiên sửa các lỗi khác trước)*
+  > *"In ấn còn sơ sài"* — `[ĐÃ FIX]`
+- **Kết quả đã xử lý:**
+  1. *Bộ hồ sơ trình ký A4:* `ExecutivePrintReport.tsx` in đủ doanh thu, tỷ lệ lấp đầy và nợ quá hạn của đúng kỳ và phạm vi trên màn hình. Tiền cọc đứng riêng, không cộng vào doanh thu. CSV và Excel vẫn xuất từng danh mục cho kế toán.
+  2. *Không in popup:* Modal gắn `no-print`. CSS `@media print` ẩn sidebar, bộ lọc và bảng trên màn hình. Lệnh in chỉ chạy sau khi modal đã đóng và số liệu của phạm vi đã tải xong.
+  3. *Khi chọn PDF:* ẩn radio loại báo cáo và ghi rõ đây là bộ đủ 3 phần. Người lập biểu là họ tên tài khoản đang đăng nhập, kèm ngày lập. Hai ô kia để ký tay.
+  4. *File:* `ReportExportModal.tsx`, `ExecutivePrintReport.tsx`, `BomDashboardPage.tsx`, `index.css`.
 - **Mô tả kỹ thuật chuẩn hóa:**  
   * **Tên vấn đề:** Tại màn hình Báo cáo Doanh thu (`/bom/revenue`), khi người dùng chọn định dạng xuất *"In ấn / PDF (Báo cáo Ban Giám Đốc)"*, hệ thống kích hoạt lệnh in mặc định của trình duyệt (`window.print()`) trực tiếp trên màn hình hiện tại mà không có CSS `@media print` hay template in riêng, dẫn đến việc hộp thoại in hiển thị nguyên xi cái **cửa sổ Modal cấu hình xuất tệp** trôi nổi giữa trang giấy trắng tinh thay vì xuất ra mẫu biểu báo cáo tài chính hoàn chỉnh.
   * **Hiện trạng ghi nhận trên UI (`image-17.png`):**  

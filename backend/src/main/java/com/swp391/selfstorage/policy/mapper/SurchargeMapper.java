@@ -11,10 +11,15 @@ public class SurchargeMapper {
     public ExtraFeeType toEntity(CreateSurchargeRequest request) {
         if (request == null)
             return null;
+        String feeType = request.getType() == null || request.getType().isBlank()
+                ? "FIXED"
+                : request.getType().trim().toUpperCase();
         return ExtraFeeType.builder()
-                .code(request.getCode().trim().toUpperCase())
                 .name(request.getName().trim())
                 .amount(request.getAmount())
+                .facilityId(request.getFacilityId())
+                .feeType(feeType)
+                .effectiveFrom(request.getEffectiveDate())
                 .isActive(true)
                 .build();
     }
@@ -37,6 +42,10 @@ public class SurchargeMapper {
                 .code(entity.getCode())
                 .name(entity.getName())
                 .amount(entity.getAmount())
+                .facilityId(entity.getFacilityId())
+                .facilityName(entity.getFacilityId() == null ? "Toàn hệ thống" : null)
+                .type(entity.getFeeType() == null ? "FIXED" : entity.getFeeType())
+                .effectiveDate(entity.getEffectiveFrom())
                 .isActive(entity.getIsActive())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())

@@ -50,19 +50,22 @@ export const PaymentPage: React.FC = () => {
   const facilityPhone = searchParams.get('facilityPhone') || '';
   const rentalMonths = Number(searchParams.get('months')) || 1;
   const monthlyPrice = Number(searchParams.get('monthlyPrice')) || 0;
-  const amountParam = searchParams.get('amount');
+  const depositFromQuery = searchParams.get('depositAmount');
+  const explicitAmount = Number(searchParams.get('amount')) || 0;
   const currentUser = tokenStorage.getUser();
   const customerName = searchParams.get('customerName') || currentUser?.fullName || '';
-  const customerPhone = searchParams.get('customerPhone') || (currentUser as any)?.phone || '';
+  const customerPhone = searchParams.get('customerPhone') || (currentUser as { phone?: string } | null)?.phone || '';
   const customerIdCard = searchParams.get('cccd') || '';
   const startDate = searchParams.get('startDate') || new Date().toISOString().split('T')[0];
   const contractIdParam = searchParams.get('contractId');
   const reservationIdParam = searchParams.get('reservationId');
 
-  // Tính toán phí
-  const rentalFee = rentalMonths * monthlyPrice;
-  const depositAmount = monthlyPrice; // Cọc 1 tháng (BR-DEP-01)
-  const totalAmount = amountParam ? Number(amountParam) : rentalFee + depositAmount;
+  // Số tiền đến từ báo giá (depositAmount) hoặc khoản đã chốt (amount). Không tự đặt cọc bằng 1 tháng.
+  const rentalFee = monthlyPrice > 0 ? rentalMonths * monthlyPrice : 0;
+  const depositAmount = depositFromQuery != null && depositFromQuery !== '' ? Number(depositFromQuery) : 0;
+  const quotedTotal = monthlyPrice > 0 ? rentalFee + depositAmount : 0;
+  const totalAmount = explicitAmount > 0 ? explicitAmount : quotedTotal;
+  const priceReady = totalAmount > 0;
 
   // State phương thức thanh toán
   const [selectedMethod, setSelectedMethod] = useState<'VIETQR' | 'CARD'>('VIETQR');
@@ -108,6 +111,7 @@ export const PaymentPage: React.FC = () => {
 
   // Khởi tạo link PayOS checkout
   useEffect(() => {
+    if (!priceReady) return;
     let isSubscribed = true;
     const refType = contractIdParam ? 'CONTRACT_RENEWAL' : 'RESERVATION';
     const refId = contractIdParam
@@ -135,7 +139,7 @@ export const PaymentPage: React.FC = () => {
     return () => {
       isSubscribed = false;
     };
-  }, [totalAmount, transferMemo, contractIdParam, reservationIdParam]);
+  }, [priceReady, totalAmount, transferMemo, contractIdParam, reservationIdParam]);
 
   // Auto-polling trạng thái giao dịch mỗi 3s (SC-03)
   useEffect(() => {
@@ -601,25 +605,33 @@ export const PaymentPage: React.FC = () => {
 
             {/* Financial Breakdown Table: BR-DEP-02 & BR-PAY-01 */}
             <div className="border-t border-slate-200 pt-3 space-y-2 text-xs">
-              <div className="flex justify-between text-slate-600">
-                <span>Tiền thuê {rentalMonths} tháng:</span>
-                <span className="font-semibold text-slate-800">{formatVND(rentalFee)}</span>
-              </div>
-
-              <div className="flex justify-between text-slate-600">
-                <div>
-                  <span className="block">Tiền cọc bảo đảm (1 tháng):</span>
-                  <span className="text-[10px] text-slate-400 italic">
-                    Quyết toán hoàn lại khi hết hạn
-                  </span>
-                </div>
-                <span className="font-semibold text-slate-800">{formatVND(depositAmount)}</span>
-              </div>
-
-              <div className="pt-2 border-t border-slate-200 flex justify-between items-center">
-                <span className="font-bold text-slate-900 text-sm">Tổng cộng thanh toán:</span>
-                <span className="font-black text-lg text-brand-600">{formatVND(totalAmount)}</span>
-              </div>
+              {!priceReady ? (
+                <p className="text-sm font-semibold text-slate-600">Chưa có số tiền cần thanh toán.</p>
+              ) : (
+                <>
+                  {monthlyPrice > 0 && (
+                    <div className="flex justify-between text-slate-600">
+                      <span>Tiền thuê {rentalMonths} tháng:</span>
+                      <span className="font-semibold text-slate-800">{formatVND(rentalFee)}</span>
+                    </div>
+                  )}
+                  {depositFromQuery != null && depositFromQuery !== '' && (
+                    <div className="flex justify-between text-slate-600">
+                      <div>
+                        <span className="block">Tiền cọc bảo đảm:</span>
+                        <span className="text-[10px] text-slate-400 italic">
+                          Quyết toán hoàn lại khi hết hạn
+                        </span>
+                      </div>
+                      <span className="font-semibold text-slate-800">{formatVND(depositAmount)}</span>
+                    </div>
+                  )}
+                  <div className="pt-2 border-t border-slate-200 flex justify-between items-center">
+                    <span className="font-bold text-slate-900 text-sm">Tổng cộng thanh toán:</span>
+                    <span className="font-black text-lg text-brand-600">{formatVND(totalAmount)}</span>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Security Guarantee */}

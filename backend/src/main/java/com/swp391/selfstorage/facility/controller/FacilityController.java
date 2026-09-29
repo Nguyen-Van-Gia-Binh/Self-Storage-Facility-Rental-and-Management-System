@@ -81,7 +81,7 @@ public class FacilityController {
 
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('BUSINESS_OPERATIONS_MANAGER')")
-    @Operation(summary = "Kích hoạt hoặc ngừng khai thác cơ sở (BOM)")
+    @Operation(summary = "Kích hoạt hoặc ngừng hoạt động cơ sở (BOM)")
     public ResponseEntity<FacilityResponse> updateFacilityStatus(
             @PathVariable Long id,
             @Valid @RequestBody UpdateFacilityStatusRequest request) {

@@ -1,6 +1,7 @@
 package com.swp391.selfstorage.policy.controller;
 
 import com.swp391.selfstorage.policy.dto.FacilityPriceResponse;
+import com.swp391.selfstorage.policy.dto.PriceVersionResponse;
 import com.swp391.selfstorage.policy.dto.UpdatePriceRequest;
 import com.swp391.selfstorage.policy.service.PricingService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,9 +30,18 @@ public class PricingController {
         return ResponseEntity.ok(pricingService.getPricesByFacility(facilityId));
     }
 
+    @GetMapping("/history")
+    @PreAuthorize("hasRole('BUSINESS_OPERATIONS_MANAGER')")
+    @Operation(summary = "Lịch sử phiên bản giá theo cơ sở / loại ô kho (BOM)")
+    public ResponseEntity<List<PriceVersionResponse>> getPriceHistory(
+            @PathVariable Long facilityId,
+            @RequestParam(required = false) Long unitTypeId) {
+        return ResponseEntity.ok(pricingService.getPriceHistory(facilityId, unitTypeId));
+    }
+
     @PutMapping("/{unitTypeId}")
     @PreAuthorize("hasRole('BUSINESS_OPERATIONS_MANAGER')")
-    @Operation(summary = "Cập nhật đơn giá tháng cho loại ô kho tại cơ sở (BOM)")
+    @Operation(summary = "Cập nhật đơn giá m² / tháng cho loại ô kho tại cơ sở (BOM)")
     public ResponseEntity<FacilityPriceResponse> updatePrice(
             @PathVariable Long facilityId,
             @PathVariable Long unitTypeId,

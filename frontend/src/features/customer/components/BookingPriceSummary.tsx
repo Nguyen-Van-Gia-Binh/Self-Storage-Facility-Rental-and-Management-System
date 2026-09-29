@@ -52,6 +52,13 @@ export const BookingPriceSummary: React.FC<BookingPriceSummaryProps> = ({
           <span className="font-medium text-slate-800">{formatVND(calculation.rawRentTotal)}</span>
         </div>
 
+        {(calculation.surcharges ?? []).map((line) => (
+          <div key={line.name} className="flex justify-between items-center text-amber-800">
+            <span>Phụ phí: {line.name}</span>
+            <span className="font-medium">{formatVND(line.amount)}</span>
+          </div>
+        ))}
+
         {calculation.discountAmount > 0 && (
           <div className="flex justify-between items-center text-[#7c94c3] bg-[#7c94c3]/8 px-2.5 py-1.5 rounded-md text-xs font-semibold">
             <span className="flex items-center gap-1">

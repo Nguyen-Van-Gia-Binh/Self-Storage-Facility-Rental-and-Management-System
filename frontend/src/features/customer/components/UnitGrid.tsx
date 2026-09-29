@@ -470,8 +470,10 @@ export const UnitGrid: React.FC<UnitGridProps> = ({
                   </span>
                 )}
                 {activeSelectedUnit.areaM2 && ` · Diện tích: ${activeSelectedUnit.areaM2} m²`}
-                {activeSelectedUnit.monthlyPrice && (
+                {activeSelectedUnit.monthlyPrice ? (
                   <> · Đơn giá: <strong className="text-brand-600 font-extrabold">{formatVND(activeSelectedUnit.monthlyPrice)}</strong>/tháng</>
+                ) : (
+                  <> · <strong className="text-slate-500">Chưa niêm yết</strong></>
                 )}
               </p>
             </div>
@@ -483,6 +485,7 @@ export const UnitGrid: React.FC<UnitGridProps> = ({
               variant="primary"
               size="md"
               onClick={() => onConfirmSelection(activeSelectedUnit)}
+              disabled={!activeSelectedUnit.monthlyPrice}
               className="w-full sm:w-auto px-5 py-2.5 text-xs sm:text-sm font-bold shadow-xs shrink-0 flex items-center justify-center gap-2"
             >
               <span>Xác nhận ô kho này & Tiếp tục</span>

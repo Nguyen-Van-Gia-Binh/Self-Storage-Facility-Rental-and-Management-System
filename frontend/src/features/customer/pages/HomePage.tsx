@@ -14,7 +14,7 @@ interface DisplayFacility {
   address: string;
   district: string;
   city: string;
-  startingPrice: number;
+  startingPrice: number | null;
   openingHours: string;
   image: string;
   phone: string;
@@ -64,10 +64,10 @@ export const HomePage: React.FC = () => {
             address: f.address,
             city: parseCity(f.address),
             district: parseDistrict(f.address),
-            startingPrice: f.lowestMonthlyPrice || 500000,
-            openingHours: f.openingHours || '06:00–22:00',
+            startingPrice: f.lowestMonthlyPrice && f.lowestMonthlyPrice > 0 ? f.lowestMonthlyPrice : null,
+            openingHours: f.openingHours || '',
             image: FACILITY_IMAGES[idx % FACILITY_IMAGES.length],
-            phone: f.phone || '1900 8888',
+            phone: f.phone || '',
             description: f.description,
             activeUnitTypeCount: f.activeUnitTypeCount || 4,
           }));
@@ -217,7 +217,7 @@ export const HomePage: React.FC = () => {
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                     />
                     <span className="absolute top-2.5 left-2.5 bg-[#0a1614]/80 backdrop-blur-xs text-white text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-brand-400" /> {fac.openingHours}
+                      <Clock className="w-3 h-3 text-brand-400" /> {fac.openingHours || 'Chưa cập nhật giờ mở cửa'}
                     </span>
                     <span className="absolute top-2.5 right-2.5 bg-brand-600/90 backdrop-blur-xs text-white text-[10px] font-mono font-bold px-2 py-0.5 rounded">
                       {fac.code}
@@ -251,9 +251,15 @@ export const HomePage: React.FC = () => {
                   <div className="pt-2.5 border-t border-slate-100 flex items-baseline justify-between">
                     <span className="text-xs text-slate-500 font-medium">Giá thuê khởi điểm:</span>
                     <div className="text-right">
-                      <span className="text-xs text-slate-500">Từ </span>
-                      <strong className="text-base font-extrabold text-brand-600">{formatVND(fac.startingPrice)}</strong>
-                      <span className="text-xs text-slate-500">/tháng</span>
+                      {fac.startingPrice != null ? (
+                        <>
+                          <span className="text-xs text-slate-500">Từ </span>
+                          <strong className="text-base font-extrabold text-brand-600">{formatVND(fac.startingPrice)}</strong>
+                          <span className="text-xs text-slate-500">/tháng</span>
+                        </>
+                      ) : (
+                        <strong className="text-sm font-bold text-slate-500">Chưa niêm yết</strong>
+                      )}
                     </div>
                   </div>
 

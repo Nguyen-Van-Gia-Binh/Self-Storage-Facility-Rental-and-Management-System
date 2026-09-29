@@ -21,6 +21,7 @@ import com.swp391.selfstorage.auth.service.UserPrincipal;
 import com.swp391.selfstorage.user.repository.UserFacilityAssignmentRepository;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
 
 @Service
 @Transactional
@@ -81,9 +82,15 @@ public class FacilityServiceImpl implements FacilityService {
         resp.setActiveUnitTypeCount(facilityRepository.countActiveUnitTypesByFacilityId(resp.getId()));
     }
 
+    private static final Pattern FACILITY_CODE_PATTERN = Pattern.compile("^FAC-[A-Z][A-Z0-9]{1,3}$");
+
     @Override
     public FacilityResponse createFacility(CreateFacilityRequest request) {
         String normalizedCode = request.getCode().trim().toUpperCase();
+        if (!FACILITY_CODE_PATTERN.matcher(normalizedCode).matches()) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                    "Mã cơ sở phải có dạng FAC- và 2–4 ký tự, bắt đầu bằng chữ (ví dụ FAC-Q7, FAC-CG)");
+        }
         if (facilityRepository.existsByCode(normalizedCode)) {
             throw new CustomException(ErrorCode.FACILITY_CODE_ALREADY_EXISTS);
         }

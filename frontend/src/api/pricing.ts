@@ -19,12 +19,33 @@ export interface FacilityPriceItem {
   unitTypeCode?: string;
   unitTypeName: string;
   monthlyPrice: number;
+  pricePerM2?: number | null;
   effectiveDate?: string;
+  effectiveFrom?: string;
+  priceStatus?: string | null;
+  scheduledEffectiveFrom?: string | null;
+  scheduledPricePerM2?: number | null;
   updatedAt?: string;
 }
 
 export interface UpdatePricePayload {
+  pricePerM2: number;
+  effectiveDate?: string;
+  /** Legacy — không dùng từ UI mới */
+  monthlyPrice?: number;
+}
+
+export interface PriceVersionItem {
+  id: number;
+  facilityId: number;
+  unitTypeId: number;
+  unitTypeCode?: string;
+  unitTypeName?: string;
+  pricePerM2: number;
   monthlyPrice: number;
+  effectiveFrom: string;
+  status: string;
+  createdAt?: string;
 }
 
 /**
@@ -51,20 +72,27 @@ export async function updateUnitPrice(
 }
 
 /**
- * Cập nhật đơn giá thuê tháng cho Unit Type tại một Facility (Tương thích ngược) (BM-03)
+ * Cập nhật đơn giá m² cho Unit Type tại Facility (BM-03 / BR-GEN-05)
  */
 export async function updateUnitTypePrice(
   facilityId: number,
   unitTypeId: number,
-  monthlyPrice: number,
-  _effectiveDate?: string
+  pricePerM2: number,
+  effectiveDate?: string
 ): Promise<UnitTypeCatalog> {
-  const res = await updateUnitPrice(facilityId, unitTypeId, { monthlyPrice });
+  const res = await updateUnitPrice(facilityId, unitTypeId, {
+    pricePerM2,
+    effectiveDate,
+  });
   return {
     id: res.unitTypeId || res.id,
     facilityId,
     name: res.unitTypeName || `Loại ô kho #${unitTypeId}`,
     monthlyPrice: res.monthlyPrice,
+    pricePerM2: res.pricePerM2 ?? pricePerM2,
+    priceStatus: res.priceStatus,
+    scheduledEffectiveFrom: res.scheduledEffectiveFrom ?? null,
+    scheduledPricePerM2: res.scheduledPricePerM2 ?? null,
     description: '',
     widthM: 0,
     depthM: 0,
@@ -73,6 +101,21 @@ export async function updateUnitTypePrice(
     totalUnits: 0,
     isActive: true,
   };
+}
+
+/**
+ * Lịch sử phiên bản giá tại cơ sở (BOM)
+ */
+export async function fetchPriceHistory(
+  facilityId: number,
+  unitTypeId?: number
+): Promise<PriceVersionItem[]> {
+  const qs = new URLSearchParams();
+  if (unitTypeId != null) qs.set('unitTypeId', String(unitTypeId));
+  const url = qs.toString()
+    ? `/facilities/${facilityId}/prices/history?${qs}`
+    : `/facilities/${facilityId}/prices/history`;
+  return await apiClient<PriceVersionItem[]>(url);
 }
 
 /**

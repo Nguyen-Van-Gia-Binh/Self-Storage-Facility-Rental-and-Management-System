@@ -116,6 +116,9 @@ export const BomFacilityManagementPage: React.FC = () => {
       reloadData();
     } catch (err: unknown) {
       const errorObj = err as { message?: string; errorCode?: string };
+      if (errorObj.errorCode === 'FACILITY_CODE_ALREADY_EXISTS') {
+        throw err;
+      }
       const msg = errorObj.message || 'Thao tác không thành công, vui lòng thử lại';
       showToast(msg, 'error');
     } finally {
@@ -132,14 +135,14 @@ export const BomFacilityManagementPage: React.FC = () => {
       showToast(
         targetStatus
           ? `Đã kích hoạt lại cơ sở "${facility.name}"`
-          : `Đã ngừng khai thác cơ sở "${facility.name}"`
+          : `Đã ngừng hoạt động cơ sở "${facility.name}"`
       );
       reloadData();
     } catch (err: unknown) {
       const errorObj = err as { message?: string; errorCode?: string };
       const msg =
         errorObj.errorCode === 'FACILITY_HAS_ACTIVE_CONTRACTS'
-          ? 'Không thể ngừng khai thác: Cơ sở đang còn hợp đồng thuê còn hiệu lực hoặc quá hạn!'
+          ? 'Không thể ngừng hoạt động: Cơ sở đang còn hợp đồng thuê còn hiệu lực hoặc quá hạn!'
           : errorObj.message || 'Lỗi khi cập nhật trạng thái cơ sở';
       showToast(msg, 'error');
     }
@@ -177,7 +180,7 @@ export const BomFacilityManagementPage: React.FC = () => {
                 Quản lý danh sách cơ sở
               </h1>
               <p className="text-xs text-slate-500 mt-0.5">
-                Quản lý thông tin, địa chỉ và trạng thái khai thác mạng lưới cơ sở lưu trữ
+                Quản lý thông tin, địa chỉ và trạng thái hoạt động mạng lưới cơ sở lưu trữ
               </p>
             </div>
           </div>
@@ -227,7 +230,7 @@ export const BomFacilityManagementPage: React.FC = () => {
                   : 'hover:text-slate-900'
               }`}
             >
-              Đang khai thác ({facilities.filter((f) => f.isActive).length})
+              Đang hoạt động ({facilities.filter((f) => f.isActive).length})
             </button>
             <button
               onClick={() => setStatusFilter('INACTIVE')}
@@ -237,7 +240,7 @@ export const BomFacilityManagementPage: React.FC = () => {
                   : 'hover:text-slate-900'
               }`}
             >
-              Ngừng ({facilities.filter((f) => !f.isActive).length})
+              Ngừng hoạt động ({facilities.filter((f) => !f.isActive).length})
             </button>
           </div>
 

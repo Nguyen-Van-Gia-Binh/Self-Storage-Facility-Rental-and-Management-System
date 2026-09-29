@@ -144,12 +144,14 @@ class PolicyServiceTest {
             return entity;
         });
 
+        request.setOverdueNoticeDays(99);
         PolicyResponse response = policyService.createPolicy(request, 200L);
 
         assertNotNull(response);
         assertEquals(10L, response.getId());
         assertEquals(5, response.getVersionNo());
         assertEquals(200L, response.getPublishedBy());
+        assertEquals(4, response.getOverdueNoticeDays());
         verify(policyVersionRepository).save(any(PolicyVersion.class));
     }
 

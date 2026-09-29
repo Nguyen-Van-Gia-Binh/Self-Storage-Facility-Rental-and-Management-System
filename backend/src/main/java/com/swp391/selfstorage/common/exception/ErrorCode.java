@@ -51,7 +51,7 @@ public enum ErrorCode {
     USERNAME_ALREADY_EXISTS(HttpStatus.CONFLICT, "Tên đăng nhập đã được sử dụng"),
     UNIT_NOT_AVAILABLE(HttpStatus.CONFLICT, "Ô kho không còn khả dụng"),
     FACILITY_CODE_ALREADY_EXISTS(HttpStatus.CONFLICT, "Mã cơ sở đã được sử dụng"),
-    FACILITY_HAS_ACTIVE_CONTRACTS(HttpStatus.CONFLICT, "Không thể vô hiệu hóa cơ sở khi còn hợp đồng đang hoạt động"),
+    FACILITY_HAS_ACTIVE_CONTRACTS(HttpStatus.CONFLICT, "Không thể ngừng hoạt động cơ sở khi còn hợp đồng đang hoạt động"),
     UNIT_TYPE_CODE_ALREADY_EXISTS(HttpStatus.CONFLICT, "Mã loại ô kho đã tồn tại"),
     UNIT_TYPE_HAS_ACTIVE_UNITS(HttpStatus.CONFLICT,
             "Không thể vô hiệu hóa loại kho đang có ô kho được thuê hoặc đặt chỗ"),
@@ -76,7 +76,7 @@ public enum ErrorCode {
 
     // 422 Unprocessable Entity
     RETURN_NOTICE_TOO_SHORT(HttpStatus.UNPROCESSABLE_ENTITY,
-            "Thời gian hẹn trả kho không hợp lệ theo quy định báo trước"),
+            "Thời gian hẹn trả kho không hợp lệ"),
     AMOUNT_MISMATCH(HttpStatus.UNPROCESSABLE_ENTITY, "Số tiền không khớp với tổng phải trả"),
 
     // 500 Internal Server Error

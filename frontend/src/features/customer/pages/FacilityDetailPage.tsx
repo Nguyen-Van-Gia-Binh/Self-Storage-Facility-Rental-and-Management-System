@@ -80,7 +80,7 @@ export const FacilityDetailPage: React.FC = () => {
           <div className="space-y-3">
             {!facility.isActive && (
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-xs font-medium">
-                <AlertTriangle className="w-3.5 h-3.5" /> Cơ sở tạm ngừng khai thác
+                <AlertTriangle className="w-3.5 h-3.5" /> Cơ sở đang ngừng hoạt động
               </div>
             )}
             <h1 className="text-2xl sm:text-3xl font-bold leading-tight">{facility.name}</h1>

@@ -99,6 +99,51 @@ class SystemReportControllerTest {
                 .andExpect(jsonPath("$.data.facilities[0].occupancyRate").value(0.75));
     }
 
+    @Test
+    @DisplayName("GET /reports/system/occupancy - facilityId=all được xử lý như toàn hệ thống (BM-04)")
+    void testGetSystemOccupancyReport_FacilityIdAll() throws Exception {
+        SystemOccupancyReportResponse mockResponse = SystemOccupancyReportResponse.builder()
+                .overallOccupancyRate(0.5)
+                .totalUnits(10)
+                .totalOccupiedUnits(5)
+                .totalAvailableUnits(5)
+                .facilities(List.of())
+                .build();
+
+        when(systemReportService.getSystemOccupancyReport(eq(null))).thenReturn(mockResponse);
+
+        mockMvc.perform(get("/reports/system/occupancy")
+                        .param("facilityId", "all")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.totalUnits").value(10))
+                .andExpect(jsonPath("$.data.totalOccupiedUnits").value(5));
+    }
+
+    @Test
+    @DisplayName("GET /reports/system/revenue - facilityId=all được xử lý như toàn hệ thống (BM-04)")
+    void testGetSystemRevenueReport_FacilityIdAll() throws Exception {
+        SystemRevenueReportResponse mockResponse = SystemRevenueReportResponse.builder()
+                .from("2026-09-01")
+                .to("2026-09-30")
+                .totalRevenue(1_000_000L)
+                .rentalRevenue(1_000_000L)
+                .byFacility(List.of())
+                .build();
+
+        when(systemReportService.getSystemRevenueReport(any(), any(), eq(null))).thenReturn(mockResponse);
+
+        mockMvc.perform(get("/reports/system/revenue")
+                        .param("from", "2026-09-01")
+                        .param("to", "2026-09-30")
+                        .param("facilityId", "all")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.totalRevenue").value(1000000));
+    }
+
         @Test
     @DisplayName("GET /reports/system/overdue - Lấy danh sách hợp đồng quá hạn trả về 200 OK")
     void testGetSystemOverdueContracts_Success() throws Exception {

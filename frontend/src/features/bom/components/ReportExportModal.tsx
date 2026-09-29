@@ -117,7 +117,20 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
 
         {/* Nội dung form */}
         <div className="p-5 space-y-4">
-          {/* 1. Chọn loại báo cáo */}
+          {/* 1. Chọn loại báo cáo — CSV/Excel. PDF luôn in cả bộ trình ký. */}
+          {format === 'PDF' ? (
+            <div className="p-3 rounded-xl border border-brand-200 bg-brand-50/40 text-xs text-slate-700 leading-relaxed">
+              Bản in là bộ báo cáo trình ký đủ 3 phần của kỳ{' '}
+              <strong>{formatDate(currentFilters.from)} → {formatDate(currentFilters.to)}</strong>
+              {' '}và phạm vi{' '}
+              <strong>
+                {facilityId
+                  ? facilities.find((fac) => fac.id === facilityId)?.name || 'Cơ sở đã chọn'
+                  : 'toàn bộ hệ thống'}
+              </strong>
+              : doanh thu, tỷ lệ lấp đầy và nợ quá hạn. CSV và Excel vẫn xuất từng danh mục riêng.
+            </div>
+          ) : (
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
               1. Chọn danh mục số liệu báo cáo:
@@ -163,6 +176,7 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
               ))}
             </div>
           </div>
+          )}
 
           {/* 2. Phạm vi & Kỳ báo cáo */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">

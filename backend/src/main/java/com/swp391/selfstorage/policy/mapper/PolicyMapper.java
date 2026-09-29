@@ -35,7 +35,9 @@ public class PolicyMapper {
                 .overdueDailyRate(request.getOverdueDailyRate())
                 .overdueCapRate(request.getOverdueCapRate())
                 .overdueLockAccessDays(request.getOverdueLockAccessDays())
-                .overdueNoticeDays(request.getOverdueNoticeDays())
+                .overdueNoticeDays(request.getOverdueGraceDays() == null
+                        ? null
+                        : request.getOverdueGraceDays() + 1)
                 .overdueTerminationDays(request.getOverdueTerminationDays())
                 .returnNoticeDays(request.getReturnNoticeDays())
                 .returnRefundWorkingDays(request.getReturnRefundWorkingDays())

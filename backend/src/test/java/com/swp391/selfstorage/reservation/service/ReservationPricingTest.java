@@ -1,6 +1,5 @@
 package com.swp391.selfstorage.reservation.service;
 
-import com.swp391.selfstorage.reservation.dto.CalculatePriceRequest;
 import com.swp391.selfstorage.reservation.dto.CalculatePriceResponse;
 import com.swp391.selfstorage.reservation.repository.ReservationRepository;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
@@ -12,6 +11,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -27,9 +28,7 @@ class ReservationPricingTest {
     void shouldCalculateCorrectDeposit_accordingToBRDEP01() {
         long monthlyRate = 1_500_000L;
         int months = 3;
-        CalculatePriceRequest request = new CalculatePriceRequest(monthlyRate, months);
-
-        CalculatePriceResponse response = service.calculatePrice(request);
+        CalculatePriceResponse response = service.quote(monthlyRate, months, BigDecimal.ONE);
 
         assertNotNull(response);
         assertEquals(monthlyRate, response.getDepositAmount(),
@@ -41,9 +40,7 @@ class ReservationPricingTest {
     @DisplayName("Chiết khấu: Kỳ hạn dưới 6 tháng được chiết khấu 0%")
     void shouldApplyNoDiscount_whenRentalPeriodLessThan6Months(int months) {
         long monthlyRate = 1_000_000L;
-        CalculatePriceRequest request = new CalculatePriceRequest(monthlyRate, months);
-
-        CalculatePriceResponse response = service.calculatePrice(request);
+        CalculatePriceResponse response = service.quote(monthlyRate, months, BigDecimal.ONE);
 
         assertEquals(0.0, response.getDiscountPercentage());
         assertEquals(0L, response.getDiscountAmount());
@@ -56,9 +53,7 @@ class ReservationPricingTest {
     @DisplayName("Chiết khấu: Kỳ hạn từ 6 đến 11 tháng được chiết khấu 5%")
     void shouldApply5PercentDiscount_whenRentalPeriodBetween6And11Months(int months) {
         long monthlyRate = 1_000_000L;
-        CalculatePriceRequest request = new CalculatePriceRequest(monthlyRate, months);
-
-        CalculatePriceResponse response = service.calculatePrice(request);
+        CalculatePriceResponse response = service.quote(monthlyRate, months, BigDecimal.ONE);
 
         long expectedRawRent = monthlyRate * months;
         long expectedDiscount = Math.round((expectedRawRent * 0.05) / 1000.0) * 1000;
@@ -75,9 +70,7 @@ class ReservationPricingTest {
     @DisplayName("Chiết khấu: Kỳ hạn từ 12 tháng trở lên được chiết khấu 10%")
     void shouldApply10PercentDiscount_whenRentalPeriodIs12MonthsOrMore(int months) {
         long monthlyRate = 2_000_000L;
-        CalculatePriceRequest request = new CalculatePriceRequest(monthlyRate, months);
-
-        CalculatePriceResponse response = service.calculatePrice(request);
+        CalculatePriceResponse response = service.quote(monthlyRate, months, BigDecimal.ONE);
 
         long expectedRawRent = monthlyRate * months;
         long expectedDiscount = Math.round((expectedRawRent * 0.10) / 1000.0) * 1000;
@@ -94,9 +87,7 @@ class ReservationPricingTest {
     void shouldRoundToNearest1000Vnd_accordingToBRGEN04() {
         long monthlyRate = 1_234_567L; // Số lẻ không chia hết cho 1.000
         int months = 6;
-        CalculatePriceRequest request = new CalculatePriceRequest(monthlyRate, months);
-
-        CalculatePriceResponse response = service.calculatePrice(request);
+        CalculatePriceResponse response = service.quote(monthlyRate, months, BigDecimal.ONE);
 
         // 1_234_567 làm tròn đến 1000 -> 1_235_000
         assertEquals(1_235_000L, response.getDepositAmount());
@@ -106,8 +97,7 @@ class ReservationPricingTest {
         assertEquals(0L, response.getDiscountAmount() % 1000);
 
         // Khi đơn giá chuẩn bội số của 1.000 VNĐ
-        CalculatePriceRequest standardReq = new CalculatePriceRequest(1_234_000L, 6);
-        CalculatePriceResponse standardRes = service.calculatePrice(standardReq);
+        CalculatePriceResponse standardRes = service.quote(1_234_000L, 6, BigDecimal.ONE);
         assertEquals(0L, standardRes.getDepositAmount() % 1000);
         assertEquals(0L, standardRes.getDiscountAmount() % 1000);
         assertEquals(0L, standardRes.getFinalRentTotal() % 1000);
@@ -119,9 +109,7 @@ class ReservationPricingTest {
     void shouldCalculateTotalDueToday_asSumOfFinalRentAndDeposit() {
         long monthlyRate = 1_200_000L;
         int months = 6;
-        CalculatePriceRequest request = new CalculatePriceRequest(monthlyRate, months);
-
-        CalculatePriceResponse response = service.calculatePrice(request);
+        CalculatePriceResponse response = service.quote(monthlyRate, months, BigDecimal.ONE);
 
         assertEquals(response.getFinalRentTotal() + response.getDepositAmount(), response.getTotalDueToday());
     }
@@ -130,16 +118,14 @@ class ReservationPricingTest {
     @DisplayName("Xử lý ngoại lệ biên: Giá thuê hoặc số tháng <= 0")
     void shouldHandleEdgeCases_zeroRateOrNegativeMonths() {
         // Giá thuê âm -> đưa về 0
-        CalculatePriceRequest negativePriceReq = new CalculatePriceRequest(-500_000L, 3);
-        CalculatePriceResponse response1 = service.calculatePrice(negativePriceReq);
+        CalculatePriceResponse response1 = service.quote(-500_000L, 3, BigDecimal.ONE);
         assertEquals(0L, response1.getMonthlyPrice());
         assertEquals(0L, response1.getRawRentTotal());
         assertEquals(0L, response1.getDepositAmount());
         assertEquals(0L, response1.getTotalDueToday());
 
         // Số tháng <= 0 -> đưa về tối thiểu 1 tháng
-        CalculatePriceRequest negativeMonthsReq = new CalculatePriceRequest(1_000_000L, -2);
-        CalculatePriceResponse response2 = service.calculatePrice(negativeMonthsReq);
+        CalculatePriceResponse response2 = service.quote(1_000_000L, -2, BigDecimal.ONE);
         assertEquals(1, response2.getRentalMonths());
         assertEquals(1_000_000L, response2.getRawRentTotal());
         assertEquals(1_000_000L, response2.getDepositAmount());

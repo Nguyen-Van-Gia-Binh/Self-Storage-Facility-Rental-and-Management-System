@@ -177,7 +177,7 @@ export const UnitPickerPage: React.FC = () => {
                 volumeM3: vol,
                 dimensions: `${width}m x ${depth}m x ${height}m`,
                 capacityDescription: ut.description || `${ut.name} - Hệ thống an ninh và PCCC chuẩn quốc tế`,
-                baseMonthlyPrice: ut.monthlyPrice || 500000,
+                baseMonthlyPrice: ut.monthlyPrice && ut.monthlyPrice > 0 ? ut.monthlyPrice : 0,
                 badge: sizeCat === 'M' ? 'POPULAR' : sizeCat === 'L' ? 'SPACIOUS' : undefined,
               };
             });
@@ -223,7 +223,9 @@ export const UnitPickerPage: React.FC = () => {
                 areaM2: parentType ? parentType.areaM2 : 4,
                 volumeM3: parentType ? parentType.volumeM3 : 10,
                 locationDescription: `Tầng ${su.floor || 1} - ${su.position || 'Khu A'} - Cạnh cửa chính`,
-                monthlyPrice: su.monthlyPrice || (parentType ? parentType.baseMonthlyPrice : 500000),
+                monthlyPrice: su.monthlyPrice && su.monthlyPrice > 0
+                  ? su.monthlyPrice
+                  : (parentType && parentType.baseMonthlyPrice > 0 ? parentType.baseMonthlyPrice : 0),
               };
             });
             setFacilityUnits(mappedSUs);
@@ -304,7 +306,9 @@ export const UnitPickerPage: React.FC = () => {
                     areaM2: parentType ? parentType.areaM2 : 4,
                     volumeM3: parentType ? parentType.volumeM3 : 10,
                     locationDescription: `Tầng ${su.floor || 1} - ${su.position || 'Khu A'} - Cạnh cửa chính`,
-                    monthlyPrice: su.monthlyPrice || (parentType ? parentType.baseMonthlyPrice : 500000),
+                    monthlyPrice: su.monthlyPrice && su.monthlyPrice > 0
+                  ? su.monthlyPrice
+                  : (parentType && parentType.baseMonthlyPrice > 0 ? parentType.baseMonthlyPrice : 0),
                   };
                 });
                 setFacilityUnits(mappedSUs);
@@ -406,6 +410,12 @@ export const UnitPickerPage: React.FC = () => {
   const handleProceedToBooking = (unitToBook?: StorageUnit) => {
     const targetUnit = unitToBook || selectedUnit;
     if (!targetUnit) {
+      return;
+    }
+    const listedPrice = (targetUnit.monthlyPrice && targetUnit.monthlyPrice > 0)
+      ? targetUnit.monthlyPrice
+      : (currentUnitType?.baseMonthlyPrice ?? 0);
+    if (listedPrice <= 0) {
       return;
     }
     const typeIdToPass = targetUnit.unitTypeId || (currentUnitType ? currentUnitType.id : (unitTypes[0]?.id || '1'));
@@ -599,9 +609,19 @@ export const UnitPickerPage: React.FC = () => {
                   <div className="flex items-baseline justify-between">
                     <span className="text-[11px] text-slate-400">Đơn giá:</span>
                     <span className="text-sm font-extrabold text-[#0a1614]">
-                      {formatVND(type.baseMonthlyPrice)} <span className="text-[10px] font-normal text-slate-400">/tháng</span>
+                      {type.baseMonthlyPrice > 0 ? (
+                        <>{formatVND(type.baseMonthlyPrice)} <span className="text-[10px] font-normal text-slate-400">/tháng</span></>
+                      ) : (
+                        <span className="text-xs font-bold text-slate-500">Chưa niêm yết</span>
+                      )}
                     </span>
                   </div>
+                  {(availInfo?.surcharges ?? []).map((line) => (
+                    <div key={line.name} className="flex items-baseline justify-between text-[11px] text-amber-800">
+                      <span>Phụ phí: {line.name}</span>
+                      <span className="font-semibold">+{formatVND(line.amount)}</span>
+                    </div>
+                  ))}
 
                   <Button
                     type="button"

@@ -6,17 +6,23 @@ import com.swp391.selfstorage.facility.entity.Facility;
 import com.swp391.selfstorage.facility.entity.FacilityStatus;
 import com.swp391.selfstorage.facility.repository.FacilityRepository;
 import com.swp391.selfstorage.unit.dto.AvailabilityResponse;
+import com.swp391.selfstorage.policy.dto.SurchargeLineResponse;
 import com.swp391.selfstorage.policy.entity.PolicyVersion;
+import com.swp391.selfstorage.policy.repository.ExtraFeeTypeRepository;
 import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
+import com.swp391.selfstorage.policy.service.AppliedPriceLookup;
+import com.swp391.selfstorage.policy.service.SurchargeAmountCalculator;
 import com.swp391.selfstorage.unit.entity.FacilityUnitTypePrice;
 import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
 import com.swp391.selfstorage.unit.entity.UnitType;
 import com.swp391.selfstorage.unit.repository.FacilityUnitTypePriceRepository;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
 import com.swp391.selfstorage.unit.repository.UnitTypeRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -29,6 +35,12 @@ public class AvailabilityServiceImpl implements AvailabilityService {
     private final FacilityUnitTypePriceRepository priceRepository;
     private final StorageUnitRepository storageUnitRepository;
     private final PolicyVersionRepository policyVersionRepository;
+
+    @Autowired(required = false)
+    private ExtraFeeTypeRepository extraFeeTypeRepository;
+
+    @Autowired(required = false)
+    private AppliedPriceLookup appliedPriceLookup;
 
     public AvailabilityServiceImpl(
             FacilityRepository facilityRepository,
@@ -62,19 +74,44 @@ public class AvailabilityServiceImpl implements AvailabilityService {
                 .filter(UnitType::isActive)
                 .orElseThrow(() -> new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND, "Không tìm thấy loại ô kho"));
 
-        FacilityUnitTypePrice price = priceRepository.findByFacilityIdAndUnitTypeId(facilityId, unitTypeId)
-                .orElseThrow(() -> new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND, "Loại ô kho chưa được cấu hình giá tại cơ sở này"));
+        long monthlyPrice;
+        if (appliedPriceLookup != null) {
+            monthlyPrice = appliedPriceLookup.resolveMonthlyPrice(facilityId, unitTypeId)
+                    .filter(p -> p > 0)
+                    .orElseThrow(() -> new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND,
+                            "Loại ô kho chưa được cấu hình giá tại cơ sở này"));
+        } else {
+            FacilityUnitTypePrice price = priceRepository.findByFacilityIdAndUnitTypeId(facilityId, unitTypeId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND,
+                            "Loại ô kho chưa được cấu hình giá tại cơ sở này"));
+            if (price.getMonthlyPrice() == null || price.getMonthlyPrice() <= 0) {
+                throw new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND,
+                        "Loại ô kho chưa được cấu hình giá tại cơ sở này");
+            }
+            monthlyPrice = price.getMonthlyPrice();
+        }
 
         LocalDate endDateExclusive = startDate.plusMonths(rentalMonths);
-        long monthlyPrice = price.getMonthlyPrice();
         long totalRentalFee = monthlyPrice * rentalMonths;
-        long depositAmount = monthlyPrice;
+        PolicyVersion policy = requireActivePolicy();
+        BigDecimal multiplier = policy.getDepositMultiplier() != null
+                ? policy.getDepositMultiplier()
+                : BigDecimal.ONE;
+        long depositAmount = Math.round((monthlyPrice * multiplier.doubleValue()) / 1000.0) * 1000;
+        List<SurchargeLineResponse> surchargeLines = List.of();
+        if (extraFeeTypeRepository != null) {
+            surchargeLines = SurchargeAmountCalculator.lines(
+                    extraFeeTypeRepository.findApplicable(facilityId, LocalDate.now()),
+                    monthlyPrice,
+                    rentalMonths);
+        }
+        long surchargeTotal = SurchargeAmountCalculator.total(surchargeLines);
 
         long exploitableUnits = storageUnitRepository.countExploitableUnits(
                 facilityId, unitTypeId, List.of(StorageUnitStatus.MAINTENANCE, StorageUnitStatus.OUT_OF_SERVICE)
         );
 
-        int bufferDays = requireBufferDays();
+        int bufferDays = policy.getRentalBufferDays();
         long busyUnits = storageUnitRepository.countBusyUnits(
                 facilityId, unitTypeId, startDate, endDateExclusive, bufferDays
         );
@@ -91,10 +128,12 @@ public class AvailabilityServiceImpl implements AvailabilityService {
                 .monthlyPrice(monthlyPrice)
                 .totalRentalFee(totalRentalFee)
                 .depositAmount(depositAmount)
+                .surcharges(surchargeLines)
+                .surchargeTotal(surchargeTotal)
                 .build();
     }
 
-    private int requireBufferDays() {
+    private PolicyVersion requireActivePolicy() {
         if (policyVersionRepository == null) {
             throw new CustomException(ErrorCode.POLICY_NOT_FOUND);
         }
@@ -104,6 +143,6 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         if (policy.getRentalBufferDays() == null) {
             throw new CustomException(ErrorCode.POLICY_NOT_FOUND, "Chinh sach hieu luc thieu rental_buffer_days");
         }
-        return policy.getRentalBufferDays();
+        return policy;
     }
 }

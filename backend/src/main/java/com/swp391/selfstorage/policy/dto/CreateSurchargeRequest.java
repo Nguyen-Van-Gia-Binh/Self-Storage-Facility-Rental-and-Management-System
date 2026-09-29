@@ -1,7 +1,10 @@
 package com.swp391.selfstorage.policy.dto;
 
+import java.time.LocalDate;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -17,7 +20,6 @@ import lombok.Setter;
 @Builder
 public class CreateSurchargeRequest {
 
-    @NotBlank(message = "Mã phụ phí không được để trống")
     @Size(max = 30, message = "Mã phụ phí tối đa 30 ký tự")
     private String code;
 
@@ -28,4 +30,12 @@ public class CreateSurchargeRequest {
     @NotNull(message = "Số tiền phụ phí không được để trống")
     @PositiveOrZero(message = "Số tiền phụ phí phải lớn hơn hoặc bằng 0")
     private Long amount;
+
+    /** Null = áp dụng toàn hệ thống. */
+    private Long facilityId;
+
+    @Pattern(regexp = "FIXED|PERCENTAGE", message = "Loại phụ phí phải là FIXED hoặc PERCENTAGE")
+    private String type;
+
+    private LocalDate effectiveDate;
 }

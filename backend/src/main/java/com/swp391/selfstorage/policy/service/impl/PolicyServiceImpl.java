@@ -122,12 +122,14 @@ public class PolicyServiceImpl implements PolicyService {
                     "Số tháng gia hạn tối thiểu không được lớn hơn số tháng tối đa");
         }
         validateReminderDays(request.getRenewalReminderDays());
-        if (!(request.getOverdueGraceDays() < request.getOverdueNoticeDays()
-                && request.getOverdueNoticeDays() <= request.getOverdueLockAccessDays()
-                && request.getOverdueLockAccessDays() <= request.getOverdueTerminationDays())) {
+        Integer grace = request.getOverdueGraceDays();
+        Integer lock = request.getOverdueLockAccessDays();
+        Integer termination = request.getOverdueTerminationDays();
+        if (grace == null || lock == null || termination == null || !(grace < lock && lock <= termination)) {
             throw new CustomException(ErrorCode.VALIDATION_FAILED,
-                    "Các mốc quá hạn phải theo thứ tự: ân hạn → bắt đầu tính phí → khóa truy cập → chấm dứt");
+                    "Ân hạn phải nhỏ hơn mốc khóa truy cập, và mốc khóa không được sau ngày chấm dứt");
         }
+        request.setOverdueNoticeDays(grace + 1);
     }
 
     private void validateReminderDays(String raw) {

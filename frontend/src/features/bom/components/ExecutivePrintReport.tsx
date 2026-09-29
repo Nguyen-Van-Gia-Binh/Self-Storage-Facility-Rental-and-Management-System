@@ -10,6 +10,8 @@ export interface ExecutivePrintReportProps {
   to: string;
   scopeName: string;
   printedAt: string;
+  preparedBy: string;
+  preparedOn: string;
 }
 
 function overdueStage(days: number): string {
@@ -27,6 +29,8 @@ export const ExecutivePrintReport: React.FC<ExecutivePrintReportProps> = ({
   to,
   scopeName,
   printedAt,
+  preparedBy,
+  preparedOn,
 }) => {
   const facilities = revenue?.byFacility ?? [];
   const units = occupancy?.data ?? [];
@@ -57,7 +61,7 @@ export const ExecutivePrintReport: React.FC<ExecutivePrintReportProps> = ({
           <tr>
             <td><span>Kỳ báo cáo</span>{formatDate(from)} – {formatDate(to)}</td>
             <td><span>Phạm vi</span>{scopeName}</td>
-            <td><span>Người lập</span>Business Operations Manager</td>
+            <td><span>Người lập</span>{preparedBy} · {preparedOn}</td>
             <td><span>Nguồn số liệu</span>Sổ hợp đồng và giao dịch đã ghi nhận</td>
           </tr>
         </tbody>
@@ -221,7 +225,7 @@ export const ExecutivePrintReport: React.FC<ExecutivePrintReportProps> = ({
         <div className="ss-sign ss-keep">
           <div>
             <strong>Người lập biểu</strong>
-            <span>Business Operations</span>
+            <span>{preparedBy} · {preparedOn}</span>
           </div>
           <div>
             <strong>Phụ trách vận hành</strong>

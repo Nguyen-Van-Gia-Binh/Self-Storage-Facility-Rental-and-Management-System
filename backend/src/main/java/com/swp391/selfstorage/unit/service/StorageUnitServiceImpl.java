@@ -5,6 +5,8 @@ import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
 import com.swp391.selfstorage.policy.entity.PolicyVersion;
 import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
+import com.swp391.selfstorage.policy.service.AppliedPriceLookup;
+import org.springframework.beans.factory.annotation.Autowired;
 import com.swp391.selfstorage.unit.dto.BatchCreateStorageUnitsRequest;
 import com.swp391.selfstorage.unit.dto.CreateStorageUnitRequest;
 import com.swp391.selfstorage.unit.dto.StorageUnitResponse;
@@ -35,6 +37,9 @@ public class StorageUnitServiceImpl implements StorageUnitService {
     private final FacilityUnitTypePriceRepository priceRepository;
     private final UnitMapper mapper;
     private final PolicyVersionRepository policyVersionRepository;
+
+    @Autowired(required = false)
+    private AppliedPriceLookup appliedPriceLookup;
 
     public StorageUnitServiceImpl(StorageUnitRepository storageUnitRepository,
                                   UnitTypeRepository unitTypeRepository,
@@ -97,10 +102,7 @@ public class StorageUnitServiceImpl implements StorageUnitService {
 
         List<StorageUnitResponse> content = page.getContent().stream().map(su -> {
             UnitType ut = unitTypeRepository.findById(su.getUnitTypeId()).orElse(null);
-            Long price = (priceRepository != null)
-                    ? priceRepository.findByFacilityIdAndUnitTypeId(facilityId, su.getUnitTypeId())
-                            .map(FacilityUnitTypePrice::getMonthlyPrice).orElse(0L)
-                    : 0L;
+            Long price = resolveMonthlyPrice(facilityId, su.getUnitTypeId());
             StorageUnitResponse res = mapper.toStorageUnitResponse(su, ut, price);
             if (startDate != null && rentalMonths != null && rentalMonths > 0) {
                 if (su.getStatus() == StorageUnitStatus.MAINTENANCE || su.getStatus() == StorageUnitStatus.OUT_OF_SERVICE) {
@@ -139,12 +141,20 @@ public class StorageUnitServiceImpl implements StorageUnitService {
                 .orElseThrow(() -> new CustomException(ErrorCode.STORAGE_UNIT_NOT_FOUND));
 
         UnitType ut = unitTypeRepository.findById(su.getUnitTypeId()).orElse(null);
-        Long price = (priceRepository != null)
-                ? priceRepository.findByFacilityIdAndUnitTypeId(facilityId, su.getUnitTypeId())
-                        .map(FacilityUnitTypePrice::getMonthlyPrice).orElse(0L)
-                : 0L;
+        Long price = resolveMonthlyPrice(facilityId, su.getUnitTypeId());
 
         return mapper.toStorageUnitResponse(su, ut, price);
+    }
+
+    private Long resolveMonthlyPrice(Long facilityId, Long unitTypeId) {
+        if (appliedPriceLookup != null) {
+            return appliedPriceLookup.resolveMonthlyPrice(facilityId, unitTypeId).orElse(0L);
+        }
+        if (priceRepository != null) {
+            return priceRepository.findByFacilityIdAndUnitTypeId(facilityId, unitTypeId)
+                    .map(FacilityUnitTypePrice::getMonthlyPrice).orElse(0L);
+        }
+        return 0L;
     }
 
     @Override

@@ -1,5 +1,5 @@
 import React from 'react';
-import { DollarSign, Layers, FileText, AlertTriangle, ArrowUpRight } from 'lucide-react';
+import { DollarSign, Layers, FileText, AlertTriangle } from 'lucide-react';
 import type { SystemRevenueReport, SystemOccupancyReport, OverdueReportResponse } from '@/types';
 import { formatCurrency, formatPercent } from '@/utils/format';
 
@@ -40,6 +40,10 @@ export const BomKpiSummary: React.FC<BomKpiSummaryProps> = ({
   const occupiedUnits = occupancy?.occupiedUnitsSystem ?? 0;
   const overdueCount = overdue?.totalOverdueContracts ?? 0;
   const overdueFee = overdue?.totalAccruedFee ?? 0;
+  const reservedUnits = (occupancy?.data ?? []).reduce(
+    (sum, row) => sum + (row.reservedUnits || 0),
+    0,
+  );
 
   // Đánh giá tỷ lệ lấp đầy
   const getOccupancyBadge = (rate: number) => {
@@ -79,13 +83,8 @@ export const BomKpiSummary: React.FC<BomKpiSummaryProps> = ({
           <div className="text-2xl font-bold font-mono tracking-tight text-slate-900">
             {formatCurrency(totalRev)}
           </div>
-          <div className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-500">
-            <span className="inline-flex items-center text-emerald-600 font-semibold">
-              <ArrowUpRight className="w-3.5 h-3.5 mr-0.5" />
-              +14.2%
-            </span>
-            <span className="text-slate-400">•</span>
-            <span>Đã trừ hoàn {formatCurrency(refundAmount)}</span>
+          <div className="mt-1.5 text-xs text-slate-500">
+            Đã hoàn {formatCurrency(refundAmount)}
           </div>
         </div>
       </div>
@@ -119,7 +118,7 @@ export const BomKpiSummary: React.FC<BomKpiSummaryProps> = ({
       <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:border-brand-300 transition-all">
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-            Hợp Đồng Đang Hiệu Lực
+            Ô đang thuê
           </span>
           <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
             <FileText className="w-4 h-4" />
@@ -127,12 +126,12 @@ export const BomKpiSummary: React.FC<BomKpiSummaryProps> = ({
         </div>
         <div className="mt-2.5">
           <div className="text-2xl font-bold font-mono tracking-tight text-slate-900">
-            {occupiedUnits} <span className="text-sm font-medium text-slate-500">hợp đồng</span>
+            {occupiedUnits} <span className="text-sm font-medium text-slate-500">ô</span>
           </div>
-          <div className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-500">
-            <span className="text-sky-600 font-medium">8 đơn cọc giữ chỗ</span>
-            <span className="text-slate-400">•</span>
-            <span>Chờ tiếp đón</span>
+          <div className="mt-1.5 text-xs text-slate-500">
+            <span className="text-sky-600 font-medium">
+              {reservedUnits} ô đang giữ chỗ
+            </span>
           </div>
         </div>
       </div>

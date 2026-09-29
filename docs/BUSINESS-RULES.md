@@ -39,8 +39,9 @@
 | `BR-GEN-02` | **Chính sách có phiên bản.** Reservation lưu phiên bản chính sách đang hiệu lực tại thời điểm tạo; Contract kế thừa snapshot đó khi Reservation được xác nhận. Thay đổi sau đó không hồi tố. Mỗi lần Renewal dùng giá và phiên bản chính sách đang hiệu lực tại thời điểm gia hạn cho kỳ mới |
 | `BR-GEN-03` | **Chu kỳ thuê tính theo tháng.** Khách chọn thời hạn N tháng nguyên và **thanh toán trước toàn bộ** phí thuê N tháng cùng Deposit khi đặt chỗ. Hết N tháng thì gia hạn (§ 7) hoặc trả kho (§ 9) |
 | `BR-GEN-04` | Đơn vị tiền tệ là **VND**. Mỗi line item được làm tròn lên đến **1.000 đ** sau khi áp công thức và tỷ lệ; tổng thanh toán là tổng các line item đã làm tròn, không làm tròn lại theo cách khác |
-| `BR-GEN-05` | Đơn giá tháng được tính theo **đơn giá diện tích (VNĐ / m² / tháng) × diện tích quy chuẩn (m²)** của **Unit Type × Facility** tại thời điểm tạo Reservation (`Giá thuê 1 tháng = Đơn giá m² × Diện tích`) và được lưu thành snapshot. Snapshot này không đổi trong thời hạn thuê ban đầu |
+| `BR-GEN-05` | Đơn giá tháng được tính theo **đơn giá diện tích (VNĐ / m² / tháng) × diện tích quy chuẩn (m²)** của **Unit Type × Facility** tại thời điểm tạo Reservation (`Giá thuê 1 tháng = Đơn giá m² × Diện tích`) và được lưu thành snapshot. Số BOM nhập trên bảng giá là **đơn giá 1 m²** của Unit Type tại Facility đó. Snapshot này không đổi trong thời hạn thuê ban đầu |
 | `BR-GEN-06` | Múi giờ nghiệp vụ là `Asia/Ho_Chi_Minh`. Tham số theo **giờ** dùng chênh lệch timestamp chính xác; tham số theo **ngày lịch** đổi ngày lúc 00:00; "ngày làm việc" loại trừ Thứ Bảy, Chủ Nhật và ngày lễ |
+| `BR-GEN-07` | **Định danh Facility.** Mã cơ sở do Business Operations Manager nhập khi tạo và không sửa sau đó. Dạng `FAC-` cộng viết tắt 2–4 ký tự: ký tự đầu là chữ in hoa, các ký tự sau là chữ in hoa hoặc số (`^FAC-[A-Z][A-Z0-9]{1,3}$`). Quận đánh số dùng `Q` + số (`FAC-Q7`). Địa danh chữ lấy chữ cái đầu mỗi tiếng, bỏ dấu (`FAC-CG`, `FAC-HBT`). Viết tắt đã dùng thì thêm một số (`FAC-CG2`). Số điện thoại liên hệ, nếu có, gồm đúng 10 chữ số và bắt đầu bằng 0. Giờ hoạt động là hai mốc mở cửa và đóng cửa do BOM chọn, lưu `HH:mm–HH:mm`; đóng cửa sớm hơn mở cửa là ca qua đêm |
 
 ---
 
@@ -338,7 +339,7 @@ Check-in / Handover đã hoàn tất và Contract đã chuyển *Active*.
 | **Check-in & Handover** `BR-CHK-*` | `UC-F2-01` `UC-F2-02` `UC-F2-03` `UC-F2-06` `UC-F2-07` `UC-F2-08` | `UC-F4-04` |
 | **Access & Security** `BR-ACC-*` | `UC-F2-04` `UC-F3-07` `UC-F6-07` `UC-F7-05` | `UC-F4-06` |
 | **Support & On-site SLA** `BR-SUP-*` | `UC-F7-03` `UC-F7-04` `UC-F7-05` `UC-F7-06` `UC-F7-08` | `UC-F4-09` |
-| **Chung** `BR-GEN-*` | Toàn bộ | `UC-F4-07` `UC-F4-09` |
+| **Chung** `BR-GEN-*` | Toàn bộ | `UC-F4-01` `UC-F4-07` `UC-F4-09` |
 
 > **Quy trình đổi quy tắc:** theo [PLAN.md § 7](PLAN.md#7-rủi-ro-và-đối-sách), business rules phải chốt
 > xong trong Giai đoạn 1. Mọi thay đổi sau đó phải qua họp nhóm, cập nhật tài liệu này trước, rồi mới

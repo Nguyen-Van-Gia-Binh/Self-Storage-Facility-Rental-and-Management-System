@@ -35,6 +35,19 @@ describe('Mock Data Cleanup & Real Database API Audit', () => {
     expect(fs.existsSync(utMockPath)).toBe(false);
   });
 
+  it('report.ts không còn USE_MOCK hay mock-system-reports.json và gọi API thật', () => {
+    const filePath = path.resolve(process.cwd(), 'src/api/report.ts');
+    const content = fs.readFileSync(filePath, 'utf-8');
+    const mockPath = path.resolve(process.cwd(), 'src/mock/mock-system-reports.json');
+    expect(content).not.toContain('USE_MOCK');
+    expect(content).not.toContain('mock-system-reports.json');
+    expect(fs.existsSync(mockPath)).toBe(false);
+    expect(content).toContain('/reports/system/revenue');
+    expect(content).toContain('/reports/system/occupancy');
+    expect(content).toContain('/reports/system/overdue');
+    expect(content).toContain('/reports/system/export');
+  });
+
   it('customerApi.ts không còn fallback Storage Locker', () => {
     const filePath = path.resolve(process.cwd(), 'src/features/customer/api/customerApi.ts');
     const content = fs.readFileSync(filePath, 'utf-8');

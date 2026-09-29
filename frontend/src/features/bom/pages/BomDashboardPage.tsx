@@ -20,6 +20,7 @@ import {
   getSystemOverdueReport,
 } from '@/api/report';
 import { fetchFacilities } from '@/api/facility';
+import { tokenStorage } from '@/utils/tokenStorage';
 import { Button } from '@/components/ui/Button';
 import { BomFilterBar } from '../components/BomFilterBar';
 import { BomKpiSummary } from '../components/BomKpiSummary';
@@ -30,6 +31,26 @@ import { OverdueContractsTable } from '../components/OverdueContractsTable';
 import { ReportExportModal } from '../components/ReportExportModal';
 import { ExecutivePrintReport } from '../components/ExecutivePrintReport';
 
+/** Ngày hiện tại theo Asia/Ho_Chi_Minh (YYYY-MM-DD). */
+function todayInHoChiMinh(): string {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+}
+
+/** Kỳ mặc định: 30 ngày gần nhất đến hôm nay (BM-04 audit #20). */
+function defaultLast30DaysFilter(): ReportFilterParams {
+  const to = todayInHoChiMinh();
+  const toDate = new Date(`${to}T12:00:00`);
+  const fromDate = new Date(toDate);
+  fromDate.setDate(fromDate.getDate() - 29);
+  const from = fromDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+  return {
+    periodType: 'CUSTOM',
+    from,
+    to,
+    facilityId: undefined,
+  };
+}
+
 export interface BomDashboardPageProps {
   initialOpenExport?: boolean;
 }
@@ -38,12 +59,7 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
   initialOpenExport = false,
 }) => {
   const [facilities, setFacilities] = useState<FacilityListItem[]>([]);
-  const [filters, setFilters] = useState<ReportFilterParams>({
-    periodType: 'THIS_MONTH',
-    from: '2026-10-01',
-    to: '2026-10-31',
-    facilityId: undefined,
-  });
+  const [filters, setFilters] = useState<ReportFilterParams>(defaultLast30DaysFilter);
 
   const [activeTab, setActiveTab] = useState<'REVENUE' | 'OCCUPANCY' | 'OVERDUE'>('REVENUE');
   const [revenueData, setRevenueData] = useState<SystemRevenueReport | undefined>();
@@ -51,6 +67,7 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
   const [overdueData, setOverdueData] = useState<OverdueReportResponse | undefined>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(initialOpenExport);
+  const [printRequested, setPrintRequested] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<string>('');
 
   // Nạp danh sách cơ sở động từ API (BM-04, BM-05)
@@ -93,6 +110,7 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
         console.error('Lỗi khi tải dữ liệu báo cáo BOM:', err);
         if (!ignore) {
           setIsLoading(false);
+          setPrintRequested(false);
         }
       });
 
@@ -101,43 +119,23 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
     };
   }, [filters]);
 
-  const loadReports = (nextFilters: ReportFilterParams) => {
-    const monthStr = nextFilters.from.substring(0, 7);
-    return Promise.all([
-      getSystemRevenueReport(nextFilters),
-      getSystemOccupancyReport(monthStr, nextFilters.facilityId),
-      getSystemOverdueReport(nextFilters.facilityId),
-    ]);
-  };
-
   const handlePrintReport = (facilityId?: number) => {
     setIsExportModalOpen(false);
-    const printWhenReady = () => {
-      window.setTimeout(() => window.print(), 250);
-    };
-
-    if (facilityId === filters.facilityId) {
-      printWhenReady();
-      return;
+    if (facilityId !== filters.facilityId) {
+      setIsLoading(true);
+      setFilters((current) => ({ ...current, facilityId }));
     }
-
-    const nextFilters = { ...filters, facilityId };
-    setFilters(nextFilters);
-    setIsLoading(true);
-    loadReports(nextFilters)
-      .then(([rev, occ, ovd]) => {
-        setRevenueData(rev);
-        setOccupancyData(occ);
-        setOverdueData(ovd);
-        setLastRefreshed(new Date().toLocaleTimeString('vi-VN'));
-        setIsLoading(false);
-        printWhenReady();
-      })
-      .catch((err) => {
-        console.error('Lỗi khi tải báo cáo để in:', err);
-        setIsLoading(false);
-      });
+    setPrintRequested(true);
   };
+
+  useEffect(() => {
+    if (!printRequested || isExportModalOpen || isLoading) return;
+    const frame = window.requestAnimationFrame(() => {
+      window.print();
+      setPrintRequested(false);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [printRequested, isExportModalOpen, isLoading]);
 
   const handleRefresh = () => {
     setIsLoading(true);
@@ -163,6 +161,8 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
   const selectedFacilityName = filters.facilityId
     ? facilities.find((f) => f.id === filters.facilityId)?.name || 'Cơ sở đã chọn'
     : 'Toàn bộ hệ thống (Toàn quốc)';
+  const preparedBy = tokenStorage.getUser()?.fullName || 'Ban vận hành kinh doanh';
+  const preparedOn = new Date().toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
@@ -337,6 +337,8 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
           to={filters.to}
           scopeName={selectedFacilityName}
           printedAt={new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}
+          preparedBy={preparedBy}
+          preparedOn={preparedOn}
         />
       </div>
 

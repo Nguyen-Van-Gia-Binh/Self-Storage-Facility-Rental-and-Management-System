@@ -14,17 +14,15 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class FacilityPriceResponse {
+public class PriceVersionResponse {
     private Long id;
     private Long facilityId;
     private Long unitTypeId;
     private String unitTypeCode;
     private String unitTypeName;
-    private Long monthlyPrice;
     private Long pricePerM2;
+    private Long monthlyPrice;
     private LocalDate effectiveFrom;
-    private String priceStatus;
-    private LocalDate scheduledEffectiveFrom;
-    private Long scheduledPricePerM2;
-    private OffsetDateTime updatedAt;
+    private String status;
+    private OffsetDateTime createdAt;
 }

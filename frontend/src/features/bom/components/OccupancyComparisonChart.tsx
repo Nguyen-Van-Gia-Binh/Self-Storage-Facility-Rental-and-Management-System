@@ -70,7 +70,15 @@ export const OccupancyComparisonChart: React.FC<OccupancyComparisonChartProps> =
 
       {/* Danh sách các thanh so sánh */}
       <div className="space-y-4 pt-1">
-        {sortedData.map((item) => {
+        {sortedData.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/60 px-4 py-10 text-center">
+            <p className="text-sm font-medium text-slate-700">Chưa có dữ liệu tỷ lệ lấp đầy</p>
+            <p className="mt-1 text-xs text-slate-500">
+              Hệ thống chưa ghi nhận Storage Unit nào trong phạm vi đang xem.
+            </p>
+          </div>
+        ) : (
+          sortedData.map((item) => {
           const ratePercent = Math.min(item.occupancyRate * 100, 100);
           const barColor = getBarColor(item.occupancyRate);
 
@@ -91,7 +99,9 @@ export const OccupancyComparisonChart: React.FC<OccupancyComparisonChartProps> =
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-slate-500">Tỷ lệ lấp đầy:</span>
                   <span className="text-sm font-bold font-mono text-slate-900">
-                    {formatPercent(item.occupancyRate)}
+                    {item.totalUnits === 0 && item.occupancyRate === 0
+                      ? 'Không xác định'
+                      : formatPercent(item.occupancyRate)}
                   </span>
                   <span className="text-xs text-slate-400 font-mono">
                     ({item.occupiedUnits}/{item.totalUnits} ô)
@@ -146,7 +156,8 @@ export const OccupancyComparisonChart: React.FC<OccupancyComparisonChartProps> =
               </div>
             </div>
           );
-        })}
+        })
+        )}
       </div>
     </div>
   );
