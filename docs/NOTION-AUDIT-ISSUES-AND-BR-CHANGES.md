@@ -245,27 +245,35 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
 
 ### 2.2. Giao diện Quản trị viên (Admin)
 
-#### 13. Lỗi mã hóa ký tự tiếng Việt (Mojibake) trong dữ liệu seed tài khoản & Menu điều hướng Admin bị thừa, phân mảnh chức năng (`SA-01`, `SA-02`, `SA-03`)
+#### 13. [ĐÃ FIX] Lỗi mã hóa ký tự tiếng Việt (Mojibake) trong dữ liệu seed tài khoản & Menu điều hướng Admin bị thừa, phân mảnh chức năng (`SA-01`, `SA-02`, `SA-03`)
 - **Hình ảnh minh chứng:**  
   ![Lỗi seed data tên & menu thừa](./images/notion-audit/image-13.png)
 - **Ghi chú gốc từ Lead Dev:**  
-  > *"Lỗi seed data tên; navigate “Phân quyền vai trò” và “Gán cơ sở nhân sự” cũng có tính năng tương tự như Quản lý tài khoản nên bỏ đi"*
+  > *"Lỗi seed data tên; navigate “Phân quyền vai trò” và “Gán cơ sở nhân sự” cũng có tính năng tương tự như Quản lý tài khoản nên bỏ đi"* — `[ĐÃ FIX]`
 - **Mô tả kỹ thuật chuẩn hóa:**  
   * **Tên vấn đề:** Dữ liệu mẫu (Seed Data) bị lỗi font / mã hóa UTF-8 ký tự tiếng Việt (Mojibake) và Sidebar menu của Admin xuất hiện 2 mục thừa *"Phân quyền vai trò"*, *"Gán cơ sở nhân sự"* vốn đã được tích hợp trọn vẹn trong màn hình *"Quản lý tài khoản"*.
   * **Hiện trạng ghi nhận trên UI (`image-13.png`):**  
     1. *Lỗi vỡ font / ký tự tiếng Việt:* Trong danh sách tài khoản, các tên có dấu tiếng Việt bị hiển thị thành chuỗi ký tự rác (Mojibake): `Tráº§n VÄƒn HÃ¹ng` (Trần Văn Hùng), `Nguyá»...n Pháº¡m XuÃ¢n Nhi` (Nguyễn Phạm Xuân Nhi), `Nguyá»...n VÄƒn Gia BÃ¬nh` (Nguyễn Văn Gia Bình), `LÃª Thanh TÃ¹ng` (Lê Thanh Tùng), `Huá»³nh Nháºt` (Huỳnh Nhật).  
     2. *Menu Sidebar thừa & phân mảnh:* Menu bên trái hiển thị 4 mục: `Quản lý tài khoản`, `Phân quyền vai trò`, `Gán cơ sở nhân sự`, `Nhật ký hệ thống`. Tuy nhiên, ngay trên bảng `Quản lý tài khoản`, hệ thống đã có sẵn 2 cột trực quan: `VAI TRÒ (RBAC)` và `CƠ SỞ PHỤ TRÁCH (SA-03)`, kèm các icon thao tác đổi quyền/gán cơ sở trực tiếp. Hai mục menu con riêng biệt kia trở nên thừa thãi, gây trùng lặp và làm người dùng bối rối khi phải chuyển qua lại giữa nhiều trang để làm cùng một nghiệp vụ.
   * **Nguyên nhân gốc rễ (Root Cause):**  
-    1. File SQL migration/seed data (`V...__seed_users.sql`) lưu bằng encoding Windows-1252/ANSI thay vì UTF-8 không BOM, hoặc trong câu lệnh `INSERT` vào SQL Server thiếu tiền tố `N'...'` cho kiểu dữ liệu `NVARCHAR` (ví dụ: `'Trần Văn Hùng'` thay vì `N'Trần Văn Hùng'`).  
-    2. Thiết kế ban đầu tách rời route UI (`/admin/roles`, `/admin/facility-assignments`), sau đó gộp vào `/admin/users` nhưng chưa dọn dẹp Sidebar router.
+    1. Trên môi trường Windows, JVM Java 17 mặc định sử dụng charset hệ điều hành `Cp1252`. Cấu hình Flyway trong Spring Boot thiếu thuộc tính `spring.flyway.encoding: UTF-8`, dẫn đến khi khởi chạy `mvn spring-boot:run` trên máy Windows không qua IDE, Flyway đọc file migration `V12__add_smartstorage_demo_accounts.sql` theo bảng mã Cp1252 khiến các byte UTF-8 bị giải mã sai thành Mojibake (`Nguyá»…n Pháº¡m XuÃ¢n Nhi`) rồi ghi vào SQL Server.
+    2. Menu Sidebar Admin (`navigationConfig.ts`) còn duy trì các route con riêng biệt `/admin/roles` và `/admin/facility-assignments` gây phân mảnh và dư thừa khi bảng Quản lý tài khoản đã tích hợp trọn vẹn các thao tác này.
   * **Hành vi kỳ vọng (Expected Behavior):**  
-    1. *Sửa triệt để Seed Data:* Chuyển toàn bộ file seed script sang chuẩn `UTF-8 without BOM` và thêm tiền tố `N'...'` vào tất cả các trường họ tên, địa chỉ. Sau khi seed lại, bảng hiển thị đúng 100% tiếng Việt chuẩn: *Nguyễn Văn Gia Bình, Trần Văn Hùng, Lê Thanh Tùng...*  
+    1. *Sửa triệt để Seed Data:* Khóa cứng UTF-8 cho Flyway và cập nhật toàn bộ họ tên 5 tài khoản demo trong database về tiếng Việt có dấu chuẩn xác 100%.
     2. *Tinh gọn Sidebar Admin:* Xóa bỏ 2 mục menu con *"Phân quyền vai trò"* và *"Gán cơ sở nhân sự"* trên Sidebar. Chỉ giữ lại 2 menu chính gọn gàng:  
        - 👥 **Quản lý tài khoản** (Quản lý user, gán role RBAC, gán cơ sở phụ trách, khóa/mở khóa tài khoản).  
        - 📋 **Nhật ký hệ thống** (Audit Log hoạt động và lịch sử đăng nhập).
-  * **Hướng xử lý & File liên quan:**  
-    - Backend / DB: `V...__seed_users.sql` (thêm tiền tố `N`, encode UTF-8).  
-    - Frontend: `AdminSidebar.tsx`, `adminRoutes.tsx`, `AdminUserManagementPage.tsx`.
+  * **Kết quả đã xử lý:**  
+    1. *Khắc phục triệt để lỗi mã hóa (Mojibake):* 
+       - Thêm cấu hình `encoding: UTF-8` vào `spring.flyway` trong `backend/src/main/resources/application.yml` đảm bảo Flyway luôn đọc migration bằng UTF-8 trên mọi hệ điều hành (Windows, Linux, macOS).
+       - Xóa bỏ file migration trùng lặp phiên bản V33 (`V33__normalize_unit_type_names_and_seed_terms.sql`), giữ lại V34 chuẩn hóa.
+       - Cập nhật trực tiếp họ tên 5 tài khoản demo trong CSDL SQL Server về tiếng Việt chuẩn: *Lê Thanh Tùng, Huỳnh Nhật, Nguyễn Văn Gia Bình, Trần Văn Hùng, Nguyễn Phạm Xuân Nhi*.
+    2. *Tinh gọn Sidebar Admin (`navigationConfig.ts`):* 
+       - Loại bỏ 2 nav items thừa *"Phân quyền vai trò"* và *"Gán cơ sở nhân sự"* khỏi danh sách điều hướng Admin, giữ lại 2 mục cốt lõi: 👥 **Quản lý tài khoản** (`/admin/users`) và 📋 **Nhật ký hệ thống** (`/admin/activity-logs`).
+       - Dọn dẹp import không sử dụng (`Building2`), đảm bảo `npm run build` vượt qua 100%.
+  * **File liên quan đã hoàn thành:**  
+    - Backend / DB: `backend/src/main/resources/application.yml`, `SelfStorageDB.app_user`.  
+    - Frontend: `frontend/src/layouts/navigationConfig.ts`.
 
 #### 14. [ĐÃ FIX] Lỗi vỡ bố cục lớp phủ Modal (Modal Backdrop Clipping / UI Overlap) khi thực hiện thao tác Khóa tài khoản
 - **Hình ảnh minh chứng:**  

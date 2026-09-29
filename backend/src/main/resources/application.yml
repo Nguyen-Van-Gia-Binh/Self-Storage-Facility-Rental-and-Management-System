@@ -26,6 +26,7 @@ spring:
 
   flyway:
     enabled: true
+    encoding: UTF-8
     baseline-on-migrate: true
     validate-on-migrate: false
     locations: classpath:db/migration
