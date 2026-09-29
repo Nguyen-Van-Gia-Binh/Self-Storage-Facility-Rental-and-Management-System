@@ -118,12 +118,21 @@ export const customerApi = {
   async getFacilities(): Promise<Facility[]> {
     if (isMockEnabled('WS1')) return mockFacilities;
     try {
-      const res = await apiClient<ApiResponse<any>>('/facilities');
-      if (res?.data?.content && Array.isArray(res.data.content)) {
-        return res.data.content;
-      }
-      if (Array.isArray(res?.data)) {
-        return res.data;
+      const res = await apiClient<any>('/facilities');
+      const items = res?.content || res?.data?.content || res?.data;
+      if (Array.isArray(items) && items.length > 0) {
+        return items.map((f: any) => ({
+          id: String(f.id),
+          code: f.code || `FAC-${f.id}`,
+          name: f.name,
+          address: f.address || '',
+          district: f.district || 'Trung tâm',
+          city: f.city || 'TP.HCM',
+          distance: f.distance || '1.0 km',
+          startingPrice: f.lowestMonthlyPrice || f.startingPrice || 450000,
+          image: f.image || 'https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=800&q=80',
+          phone: f.phone || '028-3822-1234',
+        }));
       }
     } catch {
       // Backend offline -> Fallback mock
@@ -134,15 +143,26 @@ export const customerApi = {
   /**
    * Lấy danh mục 4 loại kích thước kho
    */
-  async getUnitTypes(): Promise<UnitType[]> {
+  async getUnitTypes(facilityId?: string | number): Promise<UnitType[]> {
     if (isMockEnabled('WS1')) return mockUnitTypes;
     try {
-      const res = await apiClient<ApiResponse<any>>('/facilities/1/unit-types');
-      if (res?.data?.content && Array.isArray(res.data.content)) {
-        return res.data.content;
-      }
-      if (Array.isArray(res?.data)) {
-        return res.data;
+      const fId = facilityId || 1;
+      const res = await apiClient<any>(`/facilities/${fId}/unit-types?size=50`);
+      const items = res?.content || res?.data?.content || res?.data;
+      if (Array.isArray(items) && items.length > 0) {
+        return items.map((u: any) => ({
+          id: String(u.id),
+          code: u.code || `UT-${u.id}`,
+          name: u.name,
+          sizeCategory: (u.sizeCategory || (u.code?.includes('SMALL') ? 'S' : u.code?.includes('LARGE') ? 'L' : u.code?.includes('XL') ? 'XL' : 'M')) as any,
+          storageType: (u.code?.toUpperCase().includes('CLIMATE') || u.name?.toLowerCase().includes('lạnh'))
+            ? 'CLIMATE_CONTROLLED' : 'STANDARD',
+          areaM2: u.areaM2 ? Number(u.areaM2) : 3,
+          volumeM3: u.volumeM3 ? Number(u.volumeM3) : 7.5,
+          dimensions: `${u.widthM || 1.5}m x ${u.depthM || 2.0}m x ${u.heightM || 2.5}m`,
+          capacityDescription: u.description || 'Hệ thống an ninh và PCCC chuẩn quốc tế',
+          baseMonthlyPrice: u.monthlyPrice ? Number(u.monthlyPrice) : 450000,
+        }));
       }
     } catch {
       // Fallback
@@ -156,9 +176,20 @@ export const customerApi = {
   async getStorageUnits(_facilityId: string): Promise<StorageUnit[]> {
     if (isMockEnabled('WS1')) return mockStorageUnits;
     try {
-      const res = await apiClient<ApiResponse<any>>(`/public/facilities/${_facilityId}/units`);
-      if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
-        return res.data;
+      const res = await apiClient<any>(`/facilities/${_facilityId}/storage-units?size=100`);
+      const items = res?.content || res?.data?.content || res?.data;
+      if (Array.isArray(items) && items.length > 0) {
+        return items.map((u: any) => ({
+          id: String(u.id),
+          unitNumber: u.code || `U-${u.id}`,
+          facilityId: String(u.facilityId || _facilityId),
+          unitTypeId: String(u.unitTypeId),
+          floor: u.floor || 1,
+          zone: u.position || 'A',
+          status: (u.status || 'AVAILABLE') as any,
+          monthlyPrice: u.monthlyPrice || 1200000,
+          locationNote: u.locationNote,
+        }));
       }
     } catch {
       // Fallback

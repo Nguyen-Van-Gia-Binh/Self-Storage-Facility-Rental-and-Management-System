@@ -93,6 +93,25 @@ function mockCalculatePrice(req: CalculatePriceRequest): CalculatePriceResponse 
   };
 }
 
+function getFacilityNameById(facilityId?: number): string {
+  switch (facilityId) {
+    case 1:
+      return 'Cơ sở Cầu Giấy - Hà Nội';
+    case 2:
+      return 'Cơ sở Quận 7 - TP.HCM';
+    case 3:
+      return 'Cơ sở Hai Bà Trưng - Hà Nội';
+    case 4:
+      return 'Cơ sở Thanh Xuân - Hà Nội';
+    case 5:
+      return 'Cơ sở Quận 1 - TP.HCM';
+    case 6:
+      return 'Cơ sở Bình Thạnh - TP.HCM';
+    default:
+      return `Cơ sở SmartStorage #${facilityId || 1}`;
+  }
+}
+
 function mockCreateReservation(req: CreateReservationRequest): ReservationResponse {
   const randomSuffix = Math.floor(1000 + Math.random() * 9000);
   const code = `RSV-202610-${randomSuffix}`;
@@ -102,7 +121,7 @@ function mockCreateReservation(req: CreateReservationRequest): ReservationRespon
     id: randomSuffix,
     code,
     facilityId: req.facilityId,
-    facilityName: 'SmartStorage Tân Bình Flagship',
+    facilityName: getFacilityNameById(req.facilityId),
     unitTypeId: req.unitTypeId,
     unitTypeName: 'Kho Cỡ S – Tủ Đồ Cá Nhân',
     storageUnitId: req.storageUnitId,
