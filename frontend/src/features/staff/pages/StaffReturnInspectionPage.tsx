@@ -109,8 +109,6 @@ export const StaffReturnInspectionPage: React.FC = () => {
     ? contracts.filter((c) => Number(c.assignedStaffId) === Number(staffId))
     : [];
 
-  // Đếm số đơn đang chờ Quản lý phân công nhân viên
-  const unassignedCount = contracts.filter((c) => !c.assignedStaffId).length;
 
   const handleSubmitInspection = async (data: ReturnInspectionRequest) => {
     if (!selectedContract) return;
@@ -217,11 +215,6 @@ export const StaffReturnInspectionPage: React.FC = () => {
           <p className="text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
             Quản lý cơ sở sẽ phân công nhiệm vụ nghiệm thu trả kho cho bạn khi có khách hàng gửi yêu cầu. Vui lòng chờ thông báo từ Quản lý.
           </p>
-          {unassignedCount > 0 && (
-            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 inline-block font-medium">
-              Hiện có <strong>{unassignedCount}</strong> đơn trả kho đang chờ Quản lý phân công nhân viên.
-            </p>
-          )}
           <div>
             <button
               onClick={() => navigate('/staff')}

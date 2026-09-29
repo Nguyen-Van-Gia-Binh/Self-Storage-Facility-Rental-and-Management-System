@@ -224,13 +224,18 @@ export interface ReturnContractDetail {
 export interface DailyCheckInTask {
   reservationId: number;
   contractId?: number;
+  contractCode?: string;
   customerName: string;
   customerPhone: string;
   unitCode: string;
+  storageUnitCode?: string;
+  facilityId?: number;
+  facilityName?: string;
   startDate: string;
   appointmentTime: string;
   isFullyPaid: boolean;
-  status: 'WAITING' | 'ARRIVED' | 'COMPLETED';
+  status: 'WAITING' | 'ARRIVED' | 'COMPLETED' | 'PENDING' | string;
+  completed?: boolean;
 }
 
 export interface DailyReturnTask {
@@ -239,10 +244,14 @@ export interface DailyReturnTask {
   customerName: string;
   customerPhone: string;
   unitCode: string;
+  storageUnitCode?: string;
+  facilityId?: number;
+  facilityName?: string;
   returnDate: string;
   appointmentTime: string;
   depositAmount: number;
-  status: 'PENDING_INSPECTION' | 'INSPECTED' | 'WAITING_MANAGER';
+  status: 'PENDING_INSPECTION' | 'INSPECTED' | 'WAITING_MANAGER' | 'COMPLETED' | string;
+  completed?: boolean;
 }
 
 export interface DailyIncidentTask {

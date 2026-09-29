@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Building2, Calendar, KeyRound, ClipboardCheck, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { StaffDailyTaskReport } from '@/types';
 import { getStaffDailyTasks } from '@/api/staff';
+import { fetchMyAssignedFacilities } from '@/api/facility';
 import { DailyTasksOverview } from '../components/DailyTasksOverview';
 import { useCurrentUser } from '@/utils/useCurrentUser';
 
@@ -15,6 +16,30 @@ export const StaffDashboardPage: React.FC = () => {
     new Date().toISOString().split('T')[0]
   );
   const [loading, setLoading] = useState(true);
+
+  // Danh sách cơ sở nhân viên phụ trách và cơ sở đang chọn lọc
+  const [facilities, setFacilities] = useState<Array<{ id: number; name: string }>>([]);
+  const [selectedFacilityId, setSelectedFacilityId] = useState<number>(0);
+
+  useEffect(() => {
+    let active = true;
+    fetchMyAssignedFacilities()
+      .then((list) => {
+        if (active && list && list.length > 0) {
+          setFacilities([
+            { id: 0, name: `Tất cả cơ sở phụ trách (${list.length})` },
+            ...list.map((f) => ({ id: f.id, name: f.name })),
+          ]);
+        }
+      })
+      .catch((err) => {
+        console.error('Không tải được danh sách cơ sở phân công:', err);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!staffId) return;
@@ -50,6 +75,18 @@ export const StaffDashboardPage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // Lọc công việc theo cơ sở được chọn (0 = Tất cả cơ sở)
+  const filteredTasks = useMemo(() => {
+    if (!tasks) return null;
+    if (selectedFacilityId === 0) return tasks;
+    return {
+      ...tasks,
+      pendingCheckIns: tasks.pendingCheckIns.filter((c) => Number(c.facilityId) === selectedFacilityId),
+      pendingReturns: tasks.pendingReturns.filter((r) => Number(r.facilityId) === selectedFacilityId),
+      openSupportRequests: tasks.openSupportRequests.filter((i) => Number(i.facilityId) === selectedFacilityId),
+    };
+  }, [tasks, selectedFacilityId]);
 
   const now = new Date();
   const hour = now.getHours();
@@ -104,13 +141,29 @@ export const StaffDashboardPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Facility & Date selector */}
-        <div className="flex items-center gap-3">
+        {/* Facility Dropdown Selector & Date selector */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Dropdown chọn cơ sở */}
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 shadow-sm">
-            <Building2 className="w-4 h-4 text-teal-600" />
-            <span>{tasks?.facilityName || 'Flagship Quận 7'}</span>
+            <Building2 className="w-4 h-4 text-teal-600 shrink-0" />
+            <select
+              value={selectedFacilityId}
+              onChange={(e) => setSelectedFacilityId(Number(e.target.value))}
+              className="bg-transparent font-bold text-slate-800 focus:outline-none cursor-pointer pr-1"
+            >
+              {facilities.length > 0 ? (
+                facilities.map((f) => (
+                  <option key={f.id} value={f.id} className="text-slate-900 bg-white">
+                    {f.name}
+                  </option>
+                ))
+              ) : (
+                <option value={0}>Tất cả cơ sở phụ trách</option>
+              )}
+            </select>
           </div>
 
+          {/* Date Picker */}
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs text-slate-700 shadow-sm">
             <Calendar className="w-4 h-4 text-slate-400" />
             <input
@@ -130,8 +183,8 @@ export const StaffDashboardPage: React.FC = () => {
             <div key={i} className="h-16 skeleton rounded-xl" />
           ))}
         </div>
-      ) : tasks ? (
-        <DailyTasksOverview tasks={tasks} onRefresh={handleRefresh} />
+      ) : filteredTasks ? (
+        <DailyTasksOverview tasks={filteredTasks} onRefresh={handleRefresh} />
       ) : (
         <div className="p-8 text-center text-rose-500">
           Không thể tải dữ liệu ca trực. Vui lòng thử lại.
@@ -140,4 +193,3 @@ export const StaffDashboardPage: React.FC = () => {
     </div>
   );
 };
-
