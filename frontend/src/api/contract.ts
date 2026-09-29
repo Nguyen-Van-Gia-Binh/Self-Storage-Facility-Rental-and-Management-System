@@ -183,6 +183,9 @@ export function mapBackendSummaryToReturnContract(item: any): ReturnContractDeta
     assignedStaffId: item.assignedStaffId,
     assignedStaffName: item.assignedStaffName,
     assignmentStatus: item.assignedStaffId ? 'ASSIGNED' : 'UNASSIGNED',
+    isInspected: Boolean(item.isInspected),
+    damageCost: item.damageCost || 0,
+    damageNotes: item.damageNotes || '',
   };
 }
 
@@ -353,8 +356,19 @@ export async function getManagerContracts(filter?: {
         }
       }
 
+      const isInspected = Boolean(c.isInspected);
+      let mappedStatus = c.status;
+      if (c.status === 'PENDING_RETURN' && isInspected) {
+        mappedStatus = 'INSPECTED';
+      }
+
       return {
         ...c,
+        status: mappedStatus,
+        isInspected,
+        inspectionCondition: isInspected ? (c.damageCost > 0 ? 'MINOR_DAMAGE' : 'GOOD') : undefined,
+        damageCost: c.damageCost || 0,
+        damageNotes: c.damageNotes || '',
         overdueDays,
         accruedOverdueFee,
         daysRemaining,

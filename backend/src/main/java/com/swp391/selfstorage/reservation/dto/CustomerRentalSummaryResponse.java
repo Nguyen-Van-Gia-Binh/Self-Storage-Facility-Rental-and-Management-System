@@ -47,6 +47,9 @@ public class CustomerRentalSummaryResponse {
     private String accessCode;
     private boolean accessCodeLocked;
 
+    // Trạng thái nghiệm thu trả kho
+    private boolean inspectionDone;
+
     // Thông tin quá hạn (nếu có)
     private long overdueDays;
     private long overdueFeeAccrued;
@@ -141,4 +144,7 @@ public class CustomerRentalSummaryResponse {
 
     public long getTotalOutstandingDebt() { return totalOutstandingDebt; }
     public void setTotalOutstandingDebt(long totalOutstandingDebt) { this.totalOutstandingDebt = totalOutstandingDebt; }
+
+    public boolean isInspectionDone() { return inspectionDone; }
+    public void setInspectionDone(boolean inspectionDone) { this.inspectionDone = inspectionDone; }
 }

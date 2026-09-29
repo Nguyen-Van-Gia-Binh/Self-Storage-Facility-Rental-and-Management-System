@@ -216,6 +216,9 @@ export interface ReturnContractDetail {
   assignedStaffId?: number;
   assignedStaffName?: string;
   assignmentStatus?: 'UNASSIGNED' | 'ASSIGNED';
+  isInspected?: boolean;
+  damageCost?: number;
+  damageNotes?: string;
 }
 
 export interface DailyCheckInTask {

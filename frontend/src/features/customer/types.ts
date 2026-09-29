@@ -107,6 +107,7 @@ export interface RentedContract {
   overdueDays?: number;
   overdueFee?: number;
   scheduledReturnDate?: string;
+  inspectionDone?: boolean;
 }
 
 // Nhật ký truy cập ra vào kho (US-SC-05.2, BR-ACC-02)

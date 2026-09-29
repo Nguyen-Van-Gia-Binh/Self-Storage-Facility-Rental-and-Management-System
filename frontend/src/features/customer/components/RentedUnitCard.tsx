@@ -21,6 +21,7 @@ import {
   CreditCard,
   Lock,
   Clock,
+  CheckCircle2,
 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
@@ -117,6 +118,13 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
           </Badge>
         );
       case 'PENDING_RETURN':
+        if (contract.inspectionDone) {
+          return (
+            <Badge variant="info" className="bg-purple-100 text-purple-800 border-purple-200">
+              Đã nghiệm thu (Chờ hoàn cọc)
+            </Badge>
+          );
+        }
         return <Badge variant="warning">Đang chờ nghiệm thu trả kho</Badge>;
       case 'CLOSED':
         return <Badge variant="default">Đã kết thúc</Badge>;
@@ -348,10 +356,17 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                 )}
               </div>
             ) : contract.status === 'PENDING_RETURN' ? (
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
-                <Clock className="w-3.5 h-3.5 flex-shrink-0" />
-                <span>Đang chờ nhân viên nghiệm thu trả kho</span>
-              </div>
+              contract.inspectionDone ? (
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-purple-700 bg-purple-50 px-3 py-1.5 rounded-lg border border-purple-200">
+                  <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0 text-purple-600" />
+                  <span>Biên bản nghiệm thu đã lập • Đang chờ Quản lý duyệt quyết toán</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
+                  <Clock className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>Đang chờ nhân viên nghiệm thu trả kho</span>
+                </div>
+              )
             ) : contract.status === 'CLOSED' || contract.status === 'TERMINATED' ? (
               <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
                 <Check className="w-3.5 h-3.5 flex-shrink-0 text-slate-500" />

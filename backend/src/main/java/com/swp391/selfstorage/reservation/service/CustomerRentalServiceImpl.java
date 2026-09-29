@@ -7,6 +7,7 @@ import com.swp391.selfstorage.common.exception.ErrorCode;
 import com.swp391.selfstorage.contract.entity.ContractStatus;
 import com.swp391.selfstorage.contract.entity.RentalContract;
 import com.swp391.selfstorage.contract.repository.RentalContractRepository;
+import com.swp391.selfstorage.contract.repository.ReturnRequestRepository;
 import com.swp391.selfstorage.facility.entity.Facility;
 import com.swp391.selfstorage.facility.repository.FacilityRepository;
 import com.swp391.selfstorage.reservation.dto.CustomerRentalDetailResponse;
@@ -45,6 +46,7 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
     private final FacilityRepository facilityRepository;
     private final UnitTypeRepository unitTypeRepository;
     private final AccessLogRepository accessLogRepository;
+    private final ReturnRequestRepository returnRequestRepository;
 
     public CustomerRentalServiceImpl(
             RentalContractRepository rentalContractRepository,
@@ -52,7 +54,8 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
             StorageUnitRepository storageUnitRepository,
             FacilityRepository facilityRepository,
             UnitTypeRepository unitTypeRepository,
-            AccessLogRepository accessLogRepository
+            AccessLogRepository accessLogRepository,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) ReturnRequestRepository returnRequestRepository
     ) {
         this.rentalContractRepository = rentalContractRepository;
         this.reservationRepository = reservationRepository;
@@ -60,6 +63,7 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
         this.facilityRepository = facilityRepository;
         this.unitTypeRepository = unitTypeRepository;
         this.accessLogRepository = accessLogRepository;
+        this.returnRequestRepository = returnRequestRepository;
     }
 
 
@@ -141,7 +145,11 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
         } else if (contract.getStatus() == ContractStatus.ACTIVE) {
             detail.setInstructionNotes("Để mở khóa điện tử, quý khách vui lòng nhập mã PIN 6 số tại bảng điều khiển cửa kho rồi bấm phím #.");
         } else if (contract.getStatus() == ContractStatus.PENDING_RETURN) {
-            detail.setInstructionNotes("Hợp đồng đang chờ nhân viên cơ sở nghiệm thu trả kho. Quý khách vui lòng dọn sạch đồ đạc và sử dụng mã PIN để ra vào kho.");
+            if (detail.isInspectionDone()) {
+                detail.setInstructionNotes("Nhân viên cơ sở đã hoàn tất biên bản nghiệm thu trả kho. Hồ sơ đang được chuyển tới Quản lý cơ sở để duyệt quyết toán hoàn cọc.");
+            } else {
+                detail.setInstructionNotes("Hợp đồng đang chờ nhân viên cơ sở nghiệm thu trả kho. Quý khách vui lòng dọn sạch đồ đạc và sử dụng mã PIN để ra vào kho.");
+            }
         } else if (contract.getStatus() == ContractStatus.PENDING_CHECK_IN) {
             detail.setInstructionNotes("Quý khách vui lòng đến cơ sở để hoàn tất thủ tục bàn giao và nhận mã PIN mở khóa kho.");
         } else {
@@ -243,6 +251,15 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
             }
         }
 
+        // Kiểm tra nghiệm thu trả kho
+        if (contract.getStatus() == ContractStatus.PENDING_RETURN && returnRequestRepository != null) {
+            returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(contract.getId()).ifPresent(req -> {
+                if (req.getInspectedAt() != null) {
+                    res.setInspectionDone(true);
+                }
+            });
+        }
+
         // Xử lý mã Access Code và Quá hạn theo BR-OVD-01..03 & BR-RET-09
         if (contract.getStatus() == ContractStatus.OVERDUE) {
             long overdueDays = 0;
@@ -272,8 +289,13 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
                 }
             }
         } else if (contract.getStatus() == ContractStatus.ACTIVE || contract.getStatus() == ContractStatus.PENDING_RETURN) {
-            res.setAccessCode(contract.getAccessCode());
-            res.setAccessCodeLocked(false);
+            if (res.isInspectionDone()) {
+                res.setAccessCode(null);
+                res.setAccessCodeLocked(true);
+            } else {
+                res.setAccessCode(contract.getAccessCode());
+                res.setAccessCodeLocked(false);
+            }
             res.setOverdueDays(0);
             res.setOverdueFeeAccrued(0);
             res.setTotalOutstandingDebt(0);

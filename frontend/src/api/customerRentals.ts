@@ -44,6 +44,7 @@ export interface BackendRentalSummary {
   daysRemaining?: number;
   accessCode?: string;
   accessCodeLocked?: boolean;
+  inspectionDone?: boolean;
   overdueDays?: number;
   overdueFeeAccrued?: number;
   totalOutstandingDebt?: number;
@@ -115,6 +116,7 @@ export function mapBackendRentalToContract(item: BackendRentalSummary): RentedCo
       status: mappedStatus,
       overdueDays: item.overdueDays || 0,
       overdueFee: item.overdueFeeAccrued || 0,
+      inspectionDone: Boolean(item.inspectionDone),
     };
   }
 
