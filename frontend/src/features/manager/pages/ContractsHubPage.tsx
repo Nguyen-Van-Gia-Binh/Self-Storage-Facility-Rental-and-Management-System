@@ -429,10 +429,30 @@ export const ContractsHubPage: React.FC = () => {
 
                         {activeTab === 'PENDING_CHECK_IN' && (
                           <div>
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-800 border border-blue-200">
-                              <Clock className="w-3 h-3" />
-                              Ân hạn còn {contract.daysRemaining} ngày
-                            </span>
+                            {contract.checkInGraceDaysRemaining !== undefined ? (
+                              contract.checkInGraceDaysRemaining >= 0 ? (
+                                <span
+                                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold ${
+                                    contract.checkInGraceDaysRemaining <= 3
+                                      ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                      : 'bg-blue-100 text-blue-800 border border-blue-200'
+                                  }`}
+                                >
+                                  <Clock className="w-3 h-3" />
+                                  Ân hạn nhận kho còn {contract.checkInGraceDaysRemaining} ngày
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
+                                  <AlertTriangle className="w-3 h-3" />
+                                  Quá hạn nhận kho (Chờ No-Show)
+                                </span>
+                              )
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+                                <Clock className="w-3 h-3" />
+                                Ân hạn 10 ngày (BR-CAN-04)
+                              </span>
+                            )}
                             <span className="block text-[10px] text-slate-400 mt-0.5">
                               Hẹn nhận: {contract.startDate}
                             </span>
@@ -531,16 +551,16 @@ export const ContractsHubPage: React.FC = () => {
 
                       {/* Thao tác */}
                       <td className="py-3 px-4 text-right space-x-2 whitespace-nowrap">
-                        {/* Nút Bàn giao kho & Đổi ô kho (PENDING_CHECK_IN) */}
+                        {/* Thao tác Điều phối nhân sự đón khách & Đổi ô kho (PENDING_CHECK_IN) */}
                         {activeTab === 'PENDING_CHECK_IN' && (
                           <>
                             <Link
-                              to={`/staff/handover?contractId=${contract.id}`}
+                              to={`/manager/staff-assignment?contractId=${contract.id}`}
                               className="px-2.5 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors inline-flex items-center gap-1"
-                              title="Mở Bàn giao kho tại quầy (Check-in)"
+                              title="Điều phối nhân sự tiếp đón bàn giao kho (SCR-FM-03)"
                             >
-                              <FileCheck className="w-3 h-3" />
-                              Bàn giao
+                              <UserPlus className="w-3 h-3" />
+                              {contract.assignedStaffId ? 'Điều chuyển' : 'Điều phối'}
                             </Link>
 
                             <button
@@ -550,6 +570,7 @@ export const ContractsHubPage: React.FC = () => {
                                 setReassignModalOpen(true);
                               }}
                               className="px-2.5 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors inline-flex items-center gap-1"
+                              title="Đổi ô kho trước khi nhận nếu phát sinh sự cố (BR-AVL-05)"
                             >
                               <RefreshCw className="w-3 h-3" />
                               Đổi ô kho

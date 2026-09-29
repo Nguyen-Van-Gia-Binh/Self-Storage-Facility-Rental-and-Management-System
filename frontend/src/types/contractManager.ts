@@ -39,6 +39,7 @@ export interface ManagerContractItem {
   accessCode?: string;
   nearExpiration?: boolean;
   daysRemaining?: number;
+  checkInGraceDaysRemaining?: number;
 
   // Thuộc tính phục vụ Tab Overdue & Sealing
   overdueDays?: number;

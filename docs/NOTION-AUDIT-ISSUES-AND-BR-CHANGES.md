@@ -523,7 +523,7 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
     - Frontend: `ContractManagementTable.tsx`, `RelocateUnitModal.tsx`.  
     - Backend: `ContractService.java`, `IncidentTicketService.java`.
 
-#### 24. Nhầm lẫn phân định trách nhiệm vận hành: Nút "Bàn giao" đặt sai trên màn hình Quản lý của FM và tính sai số ngày ân hạn nhận kho (`FM-02` vs `FS-01`, `BR-CAN-04`)
+#### 24. [ĐÃ FIX — Tùng đã fix] Nhầm lẫn phân định trách nhiệm vận hành: Nút "Bàn giao" đặt sai trên màn hình Quản lý của FM và tính sai số ngày ân hạn nhận kho (`FM-02` vs `FS-01`, `BR-CAN-04`)
 - **Hình ảnh minh chứng:**  
   ![Nút bàn giao ở FM](./images/notion-audit/image-24.png)
 - **Ghi chú gốc từ Lead Dev:**  
