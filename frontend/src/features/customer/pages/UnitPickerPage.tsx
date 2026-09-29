@@ -361,29 +361,13 @@ export const UnitPickerPage: React.FC = () => {
     });
   }, [facilityUnits, unitTypes, availabilityMap]);
 
-  // Ô kho khả dụng phù hợp nhất theo phân loại đang chọn
-  const defaultMatchingUnit = useMemo(() => {
-    return (
-      displayFacilityUnits.find(
-        (u) =>
-          u.status === 'AVAILABLE' &&
-          u.sizeCategory === selectedSize &&
-          u.storageType === storageType
-      ) ||
-      displayFacilityUnits.find((u) => u.status === 'AVAILABLE') ||
-      displayFacilityUnits[0] ||
-      null
-    );
-  }, [displayFacilityUnits, selectedSize, storageType]);
-
-  // Ô kho đang được chọn
+  // Ô kho đang được chọn — chỉ set khi khách chủ động nhấp, không auto-select
   const selectedUnit = useMemo(() => {
     if (selectedUnitId) {
-      const found = displayFacilityUnits.find((u) => u.id === selectedUnitId);
-      if (found) return found;
+      return displayFacilityUnits.find((u) => u.id === selectedUnitId) || null;
     }
-    return defaultMatchingUnit;
-  }, [displayFacilityUnits, selectedUnitId, defaultMatchingUnit]);
+    return null; // Không fallback về ô kho mặc định — tránh chọn trước khi khách click
+  }, [displayFacilityUnits, selectedUnitId]);
 
   const handleSelectUnitOnGrid = (unit: StorageUnit) => {
     setSelectedUnitId(unit.id);
