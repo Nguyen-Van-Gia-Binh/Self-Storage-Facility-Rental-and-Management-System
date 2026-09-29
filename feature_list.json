@@ -53,5 +53,60 @@
     "notes": "Full system verification",
     "priority": "P1",
     "blocked_by": []
+  },
+  {
+    "id": "phase-01-lock-access-code-d7",
+    "title": "Chuẩn hóa thời điểm tự động khóa mã mở cửa chính xác tại mốc D+7",
+    "status": "completed",
+    "evidence": "CustomerRentalServiceTest: 14/14 tests pass, kiểm chứng D+4..D+6 mở PIN dọn kho, D+7 khóa an ninh nếu còn nợ phạt, nộp phạt xong mở lại PIN.",
+    "user_visible_behavior": "D+4..D+6 khách vẫn mở được mã PIN để dọn đồ; chạm D+7 mã PIN khóa an ninh; nộp phạt xong mở lại PIN.",
+    "verification_command": "mvn test -Dtest=CustomerRentalServiceTest",
+    "notes": "Covers Notion Audit Issue 7 (BR-OVD-02, BR-OVD-03, BR-OVD-05)",
+    "priority": "P1",
+    "blocked_by": []
+  },
+  {
+    "id": "phase-02-overdue-cleared-status-and-banner",
+    "title": "Chuẩn hóa trạng thái & cảnh báo thẻ ô kho sau khi nộp phạt quá hạn",
+    "status": "not_started",
+    "evidence": "",
+    "user_visible_behavior": "Thẻ ô kho nộp phạt xong hiển thị badge cam Đã tất toán phạt — Chờ dọn kho / trả kho kèm banner cảnh báo, không còn badge xanh gây ngộ nhận.",
+    "verification_command": "npm test OverdueClearedAudit",
+    "notes": "Covers Notion Audit Issue 8",
+    "priority": "P1",
+    "blocked_by": []
+  },
+  {
+    "id": "phase-03-cancel-return-request-flow",
+    "title": "Ẩn nút Gia hạn khi Chờ nghiệm thu & Bổ sung API/UI Hủy yêu cầu trả kho",
+    "status": "not_started",
+    "evidence": "",
+    "user_visible_behavior": "Ẩn nút Gia hạn khi PENDING_RETURN; hiển thị nút Hủy yêu cầu trả kho, khi hủy thành công hợp đồng quay về ACTIVE và nút Gia hạn mở lại.",
+    "verification_command": "mvn test -Dtest=ContractReturnServiceTest ; npm test CancelReturnFlow",
+    "notes": "Covers Notion Audit Issue 9 (BR-RET-12)",
+    "priority": "P1",
+    "blocked_by": []
+  },
+  {
+    "id": "phase-04-revamped-renewal-mechanism",
+    "title": "Đổi mới cơ chế Gia hạn: Bỏ khóa 30 ngày, Cho gia hạn sau nộp phạt, Xử lý xung đột đặt trước",
+    "status": "not_started",
+    "evidence": "",
+    "user_visible_behavior": "Còn dưới 30 ngày vẫn gia hạn bình thường; quá hạn nộp phạt xong được gia hạn; nếu ô kho bị trùng lịch người khác đặt trước thì hiển thị hướng dẫn đặt ô kho mới.",
+    "verification_command": "mvn test -Dtest=RenewalServiceTest ; npm test RenewalRevampFlow",
+    "notes": "Covers Notion Audit Issue 10 (BR-REN-01, 02, 06)",
+    "priority": "P1",
+    "blocked_by": []
+  },
+  {
+    "id": "phase-05-customer-flows-e2e-and-docs",
+    "title": "Kiểm thử Hồi quy Toàn diện, Đồng bộ Business Rules & Dashboard",
+    "status": "not_started",
+    "evidence": "",
+    "user_visible_behavior": "Toàn bộ test suite backend và frontend xanh 100%, BUSINESS-RULES.md và DASHBOARD.md cập nhật đầy đủ.",
+    "verification_command": "mvn clean test ; npm run build",
+    "notes": "Full system E2E verification for Customer Renewal & Overdue Flows",
+    "priority": "P1",
+    "blocked_by": []
   }
 ]

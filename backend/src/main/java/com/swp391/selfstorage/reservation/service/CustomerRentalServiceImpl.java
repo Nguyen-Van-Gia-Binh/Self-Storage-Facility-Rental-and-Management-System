@@ -149,8 +149,18 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
         detail.setPolicySnapshot(contract.getPolicySnapshot());
 
         // Hướng dẫn mở cửa kho
-        if (detail.isAccessCodeLocked()) {
-            detail.setInstructionNotes("Mã PIN của quý khách hiện đang tạm khóa do hợp đồng quá hạn vượt quá thời gian ân hạn 3 ngày. Vui lòng hoàn tất thanh toán khoản nợ để kích hoạt lại quyền truy cập.");
+        if (contract.getStatus() == ContractStatus.OVERDUE) {
+            if (detail.isAccessCodeLocked()) {
+                detail.setInstructionNotes("Mã PIN của quý khách hiện đang tạm khóa an ninh từ mốc D+7 do hợp đồng quá hạn. Vui lòng thanh toán khoản nợ phạt để mở khóa quyền truy cập.");
+            } else if (detail.getOverdueDays() >= 4 && detail.getOverdueDays() < 7) {
+                detail.setInstructionNotes("Hợp đồng đã quá hạn " + detail.getOverdueDays() + " ngày và đang phát sinh phí phạt. Quý khách vui lòng dọn đồ hoặc thanh toán nợ phạt sớm trước mốc D+7 để tránh bị khóa mã cửa.");
+            } else if (detail.getOverdueDays() <= 3) {
+                detail.setInstructionNotes("Hợp đồng đang trong thời gian ân hạn quá hạn 3 ngày. Quý khách vui lòng dọn đồ hoặc gia hạn/thanh toán sớm.");
+            } else {
+                detail.setInstructionNotes("Hợp đồng đã quá hạn nhưng đã tất toán nợ phạt. Quý khách vui lòng hoàn tất dọn đồ hoặc gia hạn hợp đồng.");
+            }
+        } else if (detail.isAccessCodeLocked()) {
+            detail.setInstructionNotes("Mã PIN của quý khách hiện đang tạm khóa an ninh từ mốc D+7 do hợp đồng quá hạn. Vui lòng thanh toán khoản nợ phạt để mở khóa quyền truy cập.");
         } else if (contract.getStatus() == ContractStatus.ACTIVE) {
             detail.setInstructionNotes("Để mở khóa điện tử, quý khách vui lòng nhập mã PIN 6 số tại bảng điều khiển cửa kho rồi bấm phím #.");
         } else if (contract.getStatus() == ContractStatus.PENDING_RETURN) {
@@ -288,13 +298,20 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
                 res.setOverdueFeeAccrued(fee);
                 res.setTotalOutstandingDebt(fee);
 
-                // BR-OVD-02 & BR-OVD-08: Nếu còn nợ phí phạt (> 0), khóa mã PIN. Nếu đã tất toán (fee == 0), mở lại mã PIN để dọn kho.
-                if (fee > 0) {
-                    res.setAccessCode(null);
-                    res.setAccessCodeLocked(true);
-                } else {
+                // BR-OVD-02, BR-OVD-03 & BR-OVD-05:
+                // D+4..D+6: Phí phạt phát sinh nhưng mã mở cửa VẪN BÌNH THƯỜNG để khách vào dọn đồ trả kho.
+                // D+7: Khóa an ninh nếu còn nợ phí phạt (fee > 0). Nếu đã tất toán (fee == 0), mở lại mã PIN để dọn kho.
+                if (overdueDays < 7) {
                     res.setAccessCode(contract.getAccessCode());
                     res.setAccessCodeLocked(false);
+                } else {
+                    if (fee > 0) {
+                        res.setAccessCode(null);
+                        res.setAccessCodeLocked(true);
+                    } else {
+                        res.setAccessCode(contract.getAccessCode());
+                        res.setAccessCodeLocked(false);
+                    }
                 }
             }
         } else if (contract.getStatus() == ContractStatus.ACTIVE || contract.getStatus() == ContractStatus.PENDING_RETURN) {

@@ -237,30 +237,37 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                 </span>
               </div>
             ) : contract.accessPin ? (
-              <div className="flex items-center justify-between pt-1">
-                <span className="font-mono text-base font-black tracking-widest text-[#0a1614]">
-                  {showPin ? contract.accessPin : '••••'}
-                </span>
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => handleCopyPin(contract.accessPin!)}
-                    className="inline-flex items-center gap-1 text-[11px] text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 px-2 py-1 rounded border border-brand-200 transition-colors cursor-pointer"
-                    title="Sao chép mã PIN"
-                  >
-                    {copiedPin ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
-                    <span>{copiedPin ? 'Đã chép' : 'Sao chép'}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleOpenModal}
-                    className="inline-flex items-center gap-1 text-[11px] text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded border border-emerald-200 transition-colors font-medium cursor-pointer"
-                    title="Mở mã QR mở khóa (QR Pass)"
-                  >
-                    <QrCode className="w-3 h-3" />
-                    <span>Mã QR</span>
-                  </button>
+              <div className="pt-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-base font-black tracking-widest text-[#0a1614]">
+                    {showPin ? contract.accessPin : '••••'}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleCopyPin(contract.accessPin!)}
+                      className="inline-flex items-center gap-1 text-[11px] text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 px-2 py-1 rounded border border-brand-200 transition-colors cursor-pointer"
+                      title="Sao chép mã PIN"
+                    >
+                      {copiedPin ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                      <span>{copiedPin ? 'Đã chép' : 'Sao chép'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleOpenModal}
+                      className="inline-flex items-center gap-1 text-[11px] text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded border border-emerald-200 transition-colors font-medium cursor-pointer"
+                      title="Mở mã QR mở khóa (QR Pass)"
+                    >
+                      <QrCode className="w-3 h-3" />
+                      <span>Mã QR</span>
+                    </button>
+                  </div>
                 </div>
+                {contract.status === 'OVERDUE' && overdueDays >= 4 && overdueDays < 7 && (
+                  <p className="text-[11px] text-amber-700 mt-1">
+                    Hợp đồng quá hạn {overdueDays} ngày (đang tính phạt). Quý khách vẫn dùng được mã PIN để dọn kho trước D+7.
+                  </p>
+                )}
               </div>
             ) : contract.status === 'PENDING_CHECKIN' || (contract.status as string) === 'PENDING_CHECK_IN' ? (
               <div className="text-[11px] text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-200/80 flex items-start gap-1.5 mt-1">
