@@ -8,8 +8,11 @@ import {
   AlertTriangle,
   Lock,
   Filter,
+  CheckCircle2,
+  ExternalLink,
 } from 'lucide-react';
-import type { StaffDailyTaskReport } from '@/types';
+import type { StaffDailyTaskReport, DailyIncidentTask } from '@/types';
+import { StaffResolveIncidentModal } from './StaffResolveIncidentModal';
 
 interface DailyTasksOverviewProps {
   tasks: StaffDailyTaskReport;
@@ -20,6 +23,13 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({ tasks, o
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'checkin' | 'return' | 'incident'>('checkin');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING'>('ALL');
+  const [selectedIncident, setSelectedIncident] = useState<DailyIncidentTask | null>(null);
+  const [incidentModalOpen, setIncidentModalOpen] = useState(false);
+
+  const handleOpenIncident = (ticket: DailyIncidentTask) => {
+    setSelectedIncident(ticket);
+    setIncidentModalOpen(true);
+  };
 
   // Lọc theo tab & trạng thái
   const filteredCheckIns = tasks.pendingCheckIns.filter((c) =>
@@ -261,6 +271,20 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({ tasks, o
           {/* TAB 3: INCIDENTS & OVERLOCK */}
           {activeTab === 'incident' && (
             <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-teal-50/70 border border-teal-200/80 text-xs">
+                <span className="text-teal-900 font-medium">
+                  Xem và xử lý toàn bộ sự cố kỹ thuật, cắt khóa cơ và kiểm tra thực địa ca trực:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => navigate('/staff/incidents')}
+                  className="px-3 py-1 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-semibold flex items-center gap-1 shrink-0 transition"
+                >
+                  <span>Trang Xử lý sự cố chi tiết</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
               {filteredIncidents.length === 0 ? (
                 <div className="p-8 text-center text-slate-400 text-sm">
                   Không có sự cố hoặc nhiệm vụ vận hành nào tồn đọng.
@@ -296,26 +320,49 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({ tasks, o
                         {item.customerName && (
                           <span>
                             Khách: <strong className="text-slate-700">{item.customerName}</strong>
+                            {item.customerPhone && <span className="ml-1 text-slate-400">({item.customerPhone})</span>}
                           </span>
                         )}
                         <span className="text-rose-600 font-medium">Hạn SLA: {item.slaDeadline || 'SLA 2h'}</span>
                         <span
                           className={`font-medium px-2 py-0.2 rounded text-[11px] ${
-                            item.status === 'IN_PROGRESS'
+                            item.status === 'RESOLVED' || item.status === 'CLOSED'
+                              ? 'bg-emerald-50 text-emerald-700'
+                              : item.status === 'IN_PROGRESS'
                               ? 'bg-sky-50 text-sky-700'
                               : 'bg-amber-50 text-amber-700'
                           }`}
                         >
-                          {item.status === 'IN_PROGRESS' ? 'Đang xử lý' : 'Chưa tiếp nhận'}
+                          {item.status === 'RESOLVED' || item.status === 'CLOSED'
+                            ? 'Đã khắc phục'
+                            : item.status === 'IN_PROGRESS'
+                            ? 'Đang xử lý'
+                            : 'Chờ tiếp nhận'}
                         </span>
                       </div>
                     </div>
 
                     <button
-                      onClick={() => alert(`Nhiệm vụ #${item.code || item.ticketId} đã được ghi nhận vào nhật ký ca trực.`)}
-                      className="px-3.5 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-medium shrink-0"
+                      type="button"
+                      onClick={() => handleOpenIncident(item)}
+                      className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition flex items-center gap-1.5 ${
+                        item.status === 'IN_PROGRESS'
+                          ? 'bg-teal-600 hover:bg-teal-700 text-white shadow-xs'
+                          : item.status === 'RESOLVED' || item.status === 'CLOSED'
+                          ? 'border border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                          : 'bg-sky-600 hover:bg-sky-700 text-white shadow-xs'
+                      }`}
                     >
-                      {item.status === 'IN_PROGRESS' ? 'Cập nhật tiến độ' : 'Tiếp nhận xử lý'}
+                      {item.status === 'IN_PROGRESS' ? (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Cập nhật tiến độ & Nghiệm thu</span>
+                        </>
+                      ) : item.status === 'RESOLVED' || item.status === 'CLOSED' ? (
+                        <span>Xem biên bản kết quả</span>
+                      ) : (
+                        <span>Tiếp nhận xử lý</span>
+                      )}
                     </button>
                   </div>
                 ))
@@ -324,6 +371,17 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({ tasks, o
           )}
         </div>
       </div>
+
+      {/* Modal xử lý sự cố tại hiện trường */}
+      <StaffResolveIncidentModal
+        isOpen={incidentModalOpen}
+        onClose={() => setIncidentModalOpen(false)}
+        ticket={selectedIncident}
+        onSuccess={() => {
+          onRefresh();
+          setIncidentModalOpen(false);
+        }}
+      />
     </div>
   );
 };

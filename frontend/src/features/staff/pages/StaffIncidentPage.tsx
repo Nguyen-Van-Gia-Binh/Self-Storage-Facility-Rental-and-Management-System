@@ -10,19 +10,16 @@ import {
   ShieldCheck,
   User,
   Phone,
-  Building2,
   Loader2,
-  ExternalLink,
   ChevronRight,
-  Filter,
 } from 'lucide-react';
-import { useAuth } from '@/features/auth/AuthContext';
+import { useCurrentUser } from '@/utils/useCurrentUser';
 import { getStaffIncidents, getStaffDailyTasks, startStaffIncident } from '@/api/staff';
 import type { DailyIncidentTask } from '@/types';
 import { StaffResolveIncidentModal } from '../components/StaffResolveIncidentModal';
 
 export const StaffIncidentPage: React.FC = () => {
-  const { user } = useAuth();
+  const user = useCurrentUser();
   const [incidents, setIncidents] = useState<DailyIncidentTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'ALL' | 'ASSIGNED' | 'IN_PROGRESS' | 'RESOLVED'>('ALL');
@@ -46,7 +43,7 @@ export const StaffIncidentPage: React.FC = () => {
     const fetchIncidents = async () => {
       setLoading(true);
       try {
-        const staffId = user?.id || 1;
+        const staffId = Number(user?.id) || 1;
         // 1. Lấy danh sách sự cố qua API quản lý sự cố của nhân viên
         const [mgmtRes, dailyRes] = await Promise.allSettled([
           getStaffIncidents({
