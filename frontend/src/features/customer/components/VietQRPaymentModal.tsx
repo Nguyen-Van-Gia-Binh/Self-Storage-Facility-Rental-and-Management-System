@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
+import { useActivePolicy } from '@/hooks/useActivePolicy';
 import {
   createCheckout,
   pollPaymentStatus,
@@ -69,6 +70,8 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
   contractId,
   paymentType = 'RESERVATION',
 }) => {
+  const policy = useActivePolicy();
+  const holdHours = policy?.reservationHoldHours ?? 0;
   const [selectedMethod, setSelectedMethod] = useState<'VIETQR' | 'CARD'>('VIETQR');
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -80,8 +83,11 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
   const [isSimulating, setIsSimulating] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
 
-  // 48 giờ tính bằng giây: 48 * 3600 = 172800s (BR-DEP-03)
-  const [secondsRemaining, setSecondsRemaining] = useState(172800);
+  const [secondsRemaining, setSecondsRemaining] = useState(0);
+
+  useEffect(() => {
+    if (holdHours > 0) setSecondsRemaining(holdHours * 3600);
+  }, [holdHours]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -196,7 +202,7 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
               customerPhone: customerPhone || (tokenStorage.getUser() as any)?.phone || '',
               customerIdentity: customerIdCard || '',
               startDate: startDate || new Date().toISOString().split('T')[0],
-              checkInWindow: 'Trong vòng 48 giờ kể từ lúc cọc',
+              checkInWindow: holdHours > 0 ? `Giữ chỗ ${holdHours} giờ kể từ lúc đặt cọc` : 'Giữ chỗ theo chính sách đang hiệu lực',
               totalPaid: totalAmount,
             });
 
@@ -268,7 +274,7 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
             customerPhone: customerPhone || (tokenStorage.getUser() as any)?.phone || '',
             customerIdentity: customerIdCard || '',
             startDate: startDate || new Date().toISOString().split('T')[0],
-            checkInWindow: 'Trong vòng 48 giờ kể từ lúc cọc',
+            checkInWindow: holdHours > 0 ? `Giữ chỗ ${holdHours} giờ kể từ lúc đặt cọc` : 'Giữ chỗ theo chính sách đang hiệu lực',
             totalPaid: totalAmount,
           });
           onPaymentSuccess(pass);
@@ -307,7 +313,7 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
             customerPhone: customerPhone || (tokenStorage.getUser() as any)?.phone || '',
             customerIdentity: customerIdCard || '',
             startDate: startDate || new Date().toISOString().split('T')[0],
-            checkInWindow: 'Trong vòng 48 giờ kể từ lúc cọc',
+            checkInWindow: holdHours > 0 ? `Giữ chỗ ${holdHours} giờ kể từ lúc đặt cọc` : 'Giữ chỗ theo chính sách đang hiệu lực',
             totalPaid: totalAmount,
           });
 
@@ -392,7 +398,7 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
                 <Clock className="w-5 h-5 text-amber-600 flex-shrink-0 animate-pulse" />
                 <div>
                   <span className="text-xs font-bold block">Thời gian giữ chỗ nguyên tử</span>
-                  <span className="text-[11px] text-amber-700">Ô kho được khoá ưu tiên cho bạn trong 48 giờ</span>
+                  <span className="text-[11px] text-amber-700">Ô kho được khoá ưu tiên cho bạn trong {holdHours > 0 ? `${holdHours} giờ` : 'thời hạn chính sách'}</span>
                 </div>
               </div>
               <div className="text-right">

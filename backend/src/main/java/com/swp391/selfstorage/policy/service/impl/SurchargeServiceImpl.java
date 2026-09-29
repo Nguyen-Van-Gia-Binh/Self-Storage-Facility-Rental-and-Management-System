@@ -1,7 +1,12 @@
 package com.swp391.selfstorage.policy.service.impl;
 
 import java.text.Normalizer;
+import java.time.LocalDate;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+
+import com.swp391.selfstorage.auth.service.UserPrincipal;
 import com.swp391.selfstorage.common.dto.PageResponse;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
@@ -11,8 +16,11 @@ import com.swp391.selfstorage.policy.dto.CreateSurchargeRequest;
 import com.swp391.selfstorage.policy.dto.SurchargeResponse;
 import com.swp391.selfstorage.policy.dto.UpdateSurchargeRequest;
 import com.swp391.selfstorage.policy.entity.ExtraFeeType;
+import com.swp391.selfstorage.policy.entity.ExtraFeeVersion;
 import com.swp391.selfstorage.policy.mapper.SurchargeMapper;
 import com.swp391.selfstorage.policy.repository.ExtraFeeTypeRepository;
+import com.swp391.selfstorage.policy.repository.ExtraFeeVersionRepository;
+import com.swp391.selfstorage.policy.service.AppliedPriceLookup;
 import com.swp391.selfstorage.policy.service.SurchargeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -30,6 +38,9 @@ public class SurchargeServiceImpl implements SurchargeService {
     @Autowired(required = false)
     private FacilityRepository facilityRepository;
 
+    @Autowired(required = false)
+    private ExtraFeeVersionRepository extraFeeVersionRepository;
+
     public SurchargeServiceImpl(ExtraFeeTypeRepository extraFeeTypeRepository,
             SurchargeMapper surchargeMapper) {
         this.extraFeeTypeRepository = extraFeeTypeRepository;
@@ -39,6 +50,10 @@ public class SurchargeServiceImpl implements SurchargeService {
     @Override
     @Transactional
     public SurchargeResponse createSurcharge(CreateSurchargeRequest request) {
+        requireEffectiveNotInPast(request.getEffectiveDate());
+        if (request.getEffectiveDate() == null) {
+            request.setEffectiveDate(AppliedPriceLookup.todayVn());
+        }
         String feeType = request.getType() == null || request.getType().isBlank()
                 ? "FIXED"
                 : request.getType().trim().toUpperCase();
@@ -56,6 +71,7 @@ public class SurchargeServiceImpl implements SurchargeService {
         entity.setCode(normalizedCode);
         entity.setFeeType(feeType);
         ExtraFeeType savedEntity = extraFeeTypeRepository.save(entity);
+        recordVersion(savedEntity);
 
         return withFacilityName(surchargeMapper.toResponse(savedEntity));
     }
@@ -83,10 +99,44 @@ public class SurchargeServiceImpl implements SurchargeService {
         ExtraFeeType entity = extraFeeTypeRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.SURCHARGE_NOT_FOUND));
 
+        requireEffectiveNotInPast(request.getEffectiveDate());
         surchargeMapper.updateEntity(entity, request);
         ExtraFeeType updatedEntity = extraFeeTypeRepository.save(entity);
+        recordVersion(updatedEntity);
 
         return withFacilityName(surchargeMapper.toResponse(updatedEntity));
+    }
+
+    private void requireEffectiveNotInPast(LocalDate effectiveDate) {
+        if (effectiveDate != null && effectiveDate.isBefore(AppliedPriceLookup.todayVn())) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED, "Ngày hiệu lực không được ở quá khứ");
+        }
+    }
+
+    private void recordVersion(ExtraFeeType entity) {
+        if (extraFeeVersionRepository == null || entity.getId() == null) {
+            return;
+        }
+        ExtraFeeVersion version = ExtraFeeVersion.builder()
+                .extraFeeTypeId(entity.getId())
+                .code(entity.getCode())
+                .name(entity.getName())
+                .facilityId(entity.getFacilityId())
+                .amount(entity.getAmount())
+                .feeType(entity.getFeeType() == null ? "FIXED" : entity.getFeeType())
+                .isActive(entity.getIsActive() == null || entity.getIsActive())
+                .effectiveFrom(entity.getEffectiveFrom())
+                .createdBy(currentActorId())
+                .build();
+        extraFeeVersionRepository.save(version);
+    }
+
+    private Long currentActorId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof UserPrincipal principal)) {
+            return null;
+        }
+        return principal.getId();
     }
 
     private String resolveCode(String rawCode, String name) {

@@ -27,10 +27,15 @@ import { EarlyRenewalReminderModal } from '../components/EarlyRenewalReminderMod
 import { VietQRPaymentModal } from '../components/VietQRPaymentModal';
 import { getCustomerContracts } from '@/api/customerRentals';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
+import { parseReminderDays, shouldRemindRenewal } from '../utils/policyTerms';
+import { useActivePolicy } from '@/hooks/useActivePolicy';
 import type { RentedContract } from '../types';
 
 export const MyUnitsPage: React.FC = () => {
   const isAuthenticated = Boolean(tokenStorage.getAccessToken());
+  const policy = useActivePolicy();
+  const noticeDays = policy?.returnNoticeDays ?? 0;
+  const reminderDays = useMemo(() => parseReminderDays(policy?.renewalReminderDays), [policy]);
 
   const [contracts, setContracts] = useState<RentedContract[]>([]);
   const [loading, setLoading] = useState(true);
@@ -136,16 +141,15 @@ export const MyUnitsPage: React.FC = () => {
     });
   }, [contracts, activeTab, searchQuery]);
 
-  // Kiểm tra xem có hợp đồng nào đang ở giai đoạn cảnh báo gia hạn sớm (30..37 ngày)
   const earlyRenewalCandidate = useMemo(() => {
+    if (!policy) return null;
     return (
       contracts.find((c) => {
         if (c.status !== 'ACTIVE') return false;
-        const days = calculateDaysRemaining(c.endDate);
-        return days >= 30 && days <= 37;
+        return shouldRemindRenewal(calculateDaysRemaining(c.endDate), noticeDays, reminderDays);
       }) || null
     );
-  }, [contracts]);
+  }, [contracts, policy, noticeDays, reminderDays]);
 
   // Tự động bung Pop-up nếu chưa bị bỏ qua (dismissed) trong phiên duyệt hiện tại
   useEffect(() => {
@@ -259,7 +263,8 @@ export const MyUnitsPage: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs text-amber-800 leading-relaxed">
-                Chỉ còn <strong>{calculateDaysRemaining(earlyRenewalCandidate.endDate) - 30} ngày nữa</strong> sẽ chạm mốc khóa gia hạn tự động (trước ngày hết hạn 30 ngày). Gia hạn ngay để đảm bảo giữ nguyên vị trí ô kho và mã PIN mở tủ!
+                Còn <strong>{calculateDaysRemaining(earlyRenewalCandidate.endDate)} ngày</strong> đến hết hạn. Mốc nhắc trên chính sách là trước <strong>{noticeDays} ngày</strong>
+                {reminderDays.length > 0 ? ` (các mốc ${reminderDays.join(', ')} ngày)` : ''}. Gia hạn để giữ nguyên ô kho và mã PIN. Nút gia hạn vẫn mở khi ô kho chưa có người đặt trước.
               </p>
             </div>
           </div>
@@ -374,6 +379,7 @@ export const MyUnitsPage: React.FC = () => {
               onViewDetail={(c) => setSelectedDetailContract(c)}
               onOpenOverduePayment={(c) => setSelectedOverdueContract(c)}
               onCancelReturn={() => loadContracts()}
+              renewalNoticeDays={noticeDays > 0 ? noticeDays : undefined}
             />
           ))}
         </div>
@@ -431,7 +437,7 @@ export const MyUnitsPage: React.FC = () => {
           </div>
           <h4 className="font-extrabold text-sm text-[#0a1614]">Khóa số thông minh</h4>
           <p className="text-xs text-slate-500 leading-relaxed">
-            Nhập mã PIN 4-6 số trên bàn phím cảm ứng hoặc quét mã QR Pass để mở cửa ô kho 24/7. Bạn có thể chủ động đổi mã PIN mới bất cứ lúc nào ngay trên Dashboard.
+            Nhập mã PIN theo độ dài trên chính sách của hợp đồng, hoặc quét mã QR Pass để mở cửa ô kho 24/7. Bạn có thể chủ động đổi mã PIN mới bất cứ lúc nào ngay trên Dashboard.
           </p>
         </Card>
 
@@ -471,6 +477,8 @@ export const MyUnitsPage: React.FC = () => {
         isOpen={showEarlyRenewalModal}
         onClose={handleCloseEarlyRenewalModal}
         contract={earlyRenewalContract}
+        noticeDays={noticeDays}
+        reminderDays={reminderDays}
       />
 
       {selectedOverdueContract && (

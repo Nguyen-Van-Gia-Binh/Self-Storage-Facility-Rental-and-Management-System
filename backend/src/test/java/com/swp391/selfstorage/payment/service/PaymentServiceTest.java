@@ -66,6 +66,9 @@ class PaymentServiceTest {
     @Mock
     private PaymentGateway paymentGateway;
 
+    @Mock
+    private com.swp391.selfstorage.policy.repository.PolicyVersionRepository policyVersionRepository;
+
     @Spy
     private PaymentMapper paymentMapper = new PaymentMapper();
 

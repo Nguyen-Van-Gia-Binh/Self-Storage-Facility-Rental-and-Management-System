@@ -33,6 +33,8 @@ public class SupportRequestSummaryResponse {
     private OffsetDateTime resolvedAt;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
+    private Boolean relocationRequired;
+    private String customerNotice;
 
     public SupportRequestSummaryResponse() {}
 
@@ -63,6 +65,8 @@ public class SupportRequestSummaryResponse {
         public Builder resolvedAt(OffsetDateTime resolvedAt) { r.resolvedAt = resolvedAt; return this; }
         public Builder createdAt(OffsetDateTime createdAt) { r.createdAt = createdAt; return this; }
         public Builder updatedAt(OffsetDateTime updatedAt) { r.updatedAt = updatedAt; return this; }
+        public Builder relocationRequired(Boolean relocationRequired) { r.relocationRequired = relocationRequired; return this; }
+        public Builder customerNotice(String customerNotice) { r.customerNotice = customerNotice; return this; }
 
         public SupportRequestSummaryResponse build() {
             return r;
@@ -128,4 +132,10 @@ public class SupportRequestSummaryResponse {
 
     public OffsetDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(OffsetDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public Boolean getRelocationRequired() { return relocationRequired; }
+    public void setRelocationRequired(Boolean relocationRequired) { this.relocationRequired = relocationRequired; }
+
+    public String getCustomerNotice() { return customerNotice; }
+    public void setCustomerNotice(String customerNotice) { this.customerNotice = customerNotice; }
 }

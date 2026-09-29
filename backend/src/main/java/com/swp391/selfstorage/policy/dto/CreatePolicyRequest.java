@@ -95,7 +95,7 @@ public class CreatePolicyRequest {
     @Min(value = 0, message = "Số ngày thanh lý không được âm")
     private Integer overdueTerminationDays;
 
-    @NotNull(message = "Mốc khóa gia hạn / chuẩn bị trả kho (ngày trước hết hạn) không được để trống")
+    @NotNull(message = "Thời hạn khóa quyền gia hạn (ngày trước hết hạn) không được để trống")
     @Min(value = 0, message = "Mốc khóa gia hạn không được âm")
     private Integer returnNoticeDays;
 

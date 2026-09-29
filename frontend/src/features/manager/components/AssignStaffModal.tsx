@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { UrgentSlaLabel } from '@/components/UrgentSlaLabel';
 import { createPortal } from 'react-dom';
 import {
   X,
@@ -310,7 +311,7 @@ export const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-bold text-rose-700 flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
-                    Khẩn cấp (SLA 2h)
+                    Khẩn cấp (<UrgentSlaLabel />)
                   </span>
                   <input
                     type="radio"

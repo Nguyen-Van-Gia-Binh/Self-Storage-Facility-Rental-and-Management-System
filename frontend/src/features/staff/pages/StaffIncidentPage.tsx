@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { UrgentSlaLabel } from '@/components/UrgentSlaLabel';
 import {
   Wrench,
   AlertTriangle,
@@ -139,6 +140,10 @@ export const StaffIncidentPage: React.FC = () => {
 
   // Bắt đầu xử lý nhanh tại hiện trường
   const handleQuickStart = async (ticket: DailyIncidentTask) => {
+    if (ticket.ticketId == null) {
+      alert('Phiếu sự cố không có mã từ hệ thống.');
+      return;
+    }
     setActionLoadingId(ticket.ticketId);
     try {
       await startStaffIncident(ticket.ticketId);
@@ -162,6 +167,7 @@ export const StaffIncidentPage: React.FC = () => {
         return 'Lỗi mã truy cập PIN/QR';
       case 'LOST_KEY':
         return 'Mất chìa / Cắt khóa cơ';
+      case 'UNIT_DAMAGE':
       case 'DAMAGED_UNIT':
         return 'Hư hại vật lý ô kho';
       case 'OVERLOCK_D4':
@@ -243,7 +249,7 @@ export const StaffIncidentPage: React.FC = () => {
         </div>
 
         <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs">
-          <span className="text-xs font-medium text-slate-500">Khẩn cấp SLA 2h</span>
+          <span className="text-xs font-medium text-slate-500"><UrgentSlaLabel lead="Khẩn cấp" /></span>
           <div className="mt-1 flex items-baseline justify-between">
             <span className="text-2xl font-bold text-rose-600 font-mono">{stats.urgentCount}</span>
             <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-rose-50 text-rose-700">

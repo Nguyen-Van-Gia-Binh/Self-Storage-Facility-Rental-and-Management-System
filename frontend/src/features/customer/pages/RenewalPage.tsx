@@ -34,8 +34,16 @@ import { RenewalExpiryBanner } from '../components/RenewalExpiryBanner';
 import { RenewalReceiptModal } from '../components/RenewalReceiptModal';
 import { ScheduleReturnModal } from '../components/ScheduleReturnModal';
 import { tokenStorage } from '@/utils/tokenStorage';
+import { useActivePolicy } from '@/hooks/useActivePolicy';
+import { discountTag, termMonthChoices } from '../utils/policyTerms';
 
 export const RenewalPage: React.FC = () => {
+  const policy = useActivePolicy();
+  const holdHours = policy?.reservationHoldHours ?? 0;
+  const termMonths = useMemo(
+    () => (policy ? termMonthChoices(policy.renewalMinMonths, policy.renewalMaxMonths) : []),
+    [policy],
+  );
   const { contractId } = useParams<{ contractId: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -346,10 +354,13 @@ export const RenewalPage: React.FC = () => {
       if (contract?.pendingRenewalExpiresAt) {
         setPaymentExpiresAt(new Date(contract.pendingRenewalExpiresAt));
       } else {
-        setPaymentExpiresAt(new Date(Date.now() + 48 * 60 * 60 * 1000));
+        const hours = holdHours > 0 ? holdHours : 0;
+        if (hours > 0) {
+          setPaymentExpiresAt(new Date(Date.now() + hours * 60 * 60 * 1000));
+        }
       }
     }
-  }, [currentStep, payosCheckout, contract, paymentExpiresAt]);
+  }, [currentStep, payosCheckout, contract, paymentExpiresAt, holdHours]);
 
   // Bộ đếm ngược thời gian thanh toán VietQR (48 giờ)
   useEffect(() => {
@@ -684,16 +695,18 @@ export const RenewalPage: React.FC = () => {
                   <label className="block text-sm font-bold text-[#0a1614]">
                     Chọn kỳ hạn muốn gia hạn thêm:
                   </label>
-                  <span className="text-xs text-slate-500">Kỳ hạn từ 1 đến 12 tháng</span>
+                  <span className="text-xs text-slate-500">
+                    Kỳ hạn từ {policy?.renewalMinMonths ?? '…'} đến {policy?.renewalMaxMonths ?? '…'} tháng
+                  </span>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {[
-                    { months: 1, label: '1 Tháng', discountTag: null },
-                    { months: 3, label: '3 Tháng', discountTag: 'Phổ biến' },
-                    { months: 6, label: '6 Tháng', discountTag: 'Giảm 5%' },
-                    { months: 12, label: '12 Tháng', discountTag: 'Giảm 10%' },
-                  ].map((pkg) => {
+                  {termMonths.map((months) => {
+                    const pkg = {
+                      months,
+                      label: `${months} Tháng`,
+                      discountTag: discountTag(months, 'reduce'),
+                    };
                     const isSelected = renewalMonths === pkg.months;
                     return (
                       <button

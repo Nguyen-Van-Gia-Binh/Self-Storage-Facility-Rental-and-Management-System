@@ -37,6 +37,8 @@ import {
 import type { BookingDraft } from '../types';
 import type { MoveInPassData } from '@/types';
 import { fetchFacilities } from '@/api/facility';
+import { useActivePolicy } from '@/hooks/useActivePolicy';
+import { termMonthChoices } from '../utils/policyTerms';
 import { fetchUnitTypes as fetchUnitTypesApi } from '@/api/unit';
 import { tokenStorage } from '@/utils/tokenStorage';
 import type { FacilityListItem } from '@/types';
@@ -67,6 +69,12 @@ function formatDateVN(dateStr: string): string {
 }
 
 export const BookingPage: React.FC = () => {
+  const policy = useActivePolicy();
+  const holdHours = policy?.reservationHoldHours ?? 0;
+  const termMonths = useMemo(
+    () => (policy ? termMonthChoices(policy.renewalMinMonths, policy.renewalMaxMonths) : []),
+    [policy],
+  );
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -370,7 +378,7 @@ export const BookingPage: React.FC = () => {
       customerPhone,
       customerIdentity: customerIdCard,
       startDate,
-      checkInWindow: 'Trong vòng 48 giờ kể từ lúc cọc',
+      checkInWindow: holdHours > 0 ? `Giữ chỗ ${holdHours} giờ kể từ lúc đặt cọc` : 'Giữ chỗ theo chính sách đang hiệu lực',
       totalPaid: checkoutData?.amount || calculation?.totalDueToday || 0,
     });
     setCreatedPass(pass);
@@ -413,16 +421,25 @@ export const BookingPage: React.FC = () => {
     }
   };
 
-  // Đồng hồ đếm ngược giữ chỗ 48 giờ thực tế (BR-DEP-03)
-  const [secondsLeft, setSecondsLeft] = useState<number>(48 * 3600 - 15); // 47h 59m 45s
+  const [reservationHoldExpiresAt, setReservationHoldExpiresAt] = useState<string | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState<number>(0);
 
   useEffect(() => {
     if (currentStep !== 3) return;
-    const interval = setInterval(() => {
-      setSecondsLeft((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
+    const tick = () => {
+      if (reservationHoldExpiresAt) {
+        const left = Math.floor((new Date(reservationHoldExpiresAt).getTime() - Date.now()) / 1000);
+        setSecondsLeft(Math.max(0, left));
+        return;
+      }
+      if (holdHours > 0) {
+        setSecondsLeft((prev) => (prev > 0 ? prev - 1 : holdHours * 3600));
+      }
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [currentStep]);
+  }, [currentStep, reservationHoldExpiresAt, holdHours]);
 
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
   const [redirectCountdown, setRedirectCountdown] = useState<number>(3);
@@ -596,6 +613,9 @@ export const BookingPage: React.FC = () => {
       const rsvId = rsv.id || 1;
       setCreatedReservationId(rsvId);
       setCreatedReservationCode(rsv.code || (rsv.id ? `RSV-${rsv.id}` : `RSV-${finalUnitNumber}`));
+      if (rsv.holdExpiresAt) {
+        setReservationHoldExpiresAt(rsv.holdExpiresAt);
+      }
 
       // 3. Khởi tạo PayOS VietQR payment link thật
       const checkout = await customerApi.createPaymentCheckout({
@@ -627,7 +647,8 @@ export const BookingPage: React.FC = () => {
         customerPhone,
         customerEmail,
         customerIdentityNumber: customerIdCard,
-        holdExpiresAt: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
+        holdExpiresAt: rsv.holdExpiresAt
+          || (holdHours > 0 ? new Date(Date.now() + holdHours * 3600 * 1000).toISOString() : new Date().toISOString()),
       };
 
       try {
@@ -668,7 +689,7 @@ export const BookingPage: React.FC = () => {
             Quay lại sơ đồ mặt bằng chọn ô khác
           </Link>
           <h1 className="text-xl sm:text-2xl font-extrabold text-[#0a1614] tracking-tight">
-            {currentStep === 2 ? 'Xác Nhận Hồ Sơ Đặt Chỗ' : 'Thanh Toán Giữ Chỗ VietQR (48 Giờ)'}
+            {currentStep === 2 ? 'Xác Nhận Hồ Sơ Đặt Chỗ' : `Thanh Toán Giữ Chỗ VietQR${holdHours > 0 ? ` (${holdHours} Giờ)` : ''}`}
           </h1>
         </div>
 
@@ -798,7 +819,7 @@ export const BookingPage: React.FC = () => {
                           Chọn số tháng thuê:
                         </label>
                         <div className="grid grid-cols-4 gap-1.5">
-                          {[1, 3, 6, 12].map((m) => (
+                          {termMonths.map((m) => (
                             <button
                               key={m}
                               type="button"
@@ -1030,6 +1051,7 @@ export const BookingPage: React.FC = () => {
                 calculation={calculation}
                 startDate={startDate}
                 endDate={endDate}
+                holdHours={holdHours}
               />
             ) : (
               <Card className="p-5 bg-white border border-slate-200/90 rounded-xl">
@@ -1321,6 +1343,7 @@ export const BookingPage: React.FC = () => {
                 calculation={calculation}
                 startDate={startDate}
                 endDate={endDate}
+                holdHours={holdHours}
               />
             ) : (
               <Card className="p-5 bg-white border border-slate-200/90 rounded-xl">

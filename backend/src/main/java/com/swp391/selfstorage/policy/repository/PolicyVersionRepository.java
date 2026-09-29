@@ -12,9 +12,9 @@ import com.swp391.selfstorage.policy.entity.PolicyVersion;
 public interface PolicyVersionRepository extends JpaRepository<PolicyVersion, Long> {
 
     /**
-     * Tìm phiên bản chính sách đang có hiệu lực tại thời điểm hiện tại.
+     * Phiên bản đang hiệu lực: effectiveFrom không sau mốc thời gian, rồi versionNo lớn nhất.
      */
-    Optional<PolicyVersion> findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(OffsetDateTime now);
+    Optional<PolicyVersion> findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(OffsetDateTime now);
 
     /**
      * Tìm phiên bản theo số version_no duy nhất.

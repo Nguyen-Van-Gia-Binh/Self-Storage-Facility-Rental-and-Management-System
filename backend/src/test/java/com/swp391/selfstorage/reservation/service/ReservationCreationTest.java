@@ -84,8 +84,10 @@ class ReservationCreationTest {
                 .reservationHoldHours(48)
                 .rentalBufferDays(15)
                 .rentalDailyDivisor(30)
+                .renewalMinMonths(1)
+                .renewalMaxMonths(12)
                 .build();
-        lenient().when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(any()))
+        lenient().when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any()))
                 .thenReturn(Optional.of(policy));
 
         FacilityUnitTypePrice price = new FacilityUnitTypePrice();

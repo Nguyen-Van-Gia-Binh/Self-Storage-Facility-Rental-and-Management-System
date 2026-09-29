@@ -18,6 +18,9 @@ import com.swp391.selfstorage.reservation.entity.AccessLog;
 import com.swp391.selfstorage.reservation.repository.AccessLogRepository;
 import com.swp391.selfstorage.payment.entity.PaymentTransaction;
 import com.swp391.selfstorage.payment.repository.PaymentTransactionRepository;
+import com.swp391.selfstorage.policy.entity.PolicyVersion;
+import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
+import com.swp391.selfstorage.policy.service.PolicyNumbers;
 import com.swp391.selfstorage.reservation.entity.Reservation;
 import com.swp391.selfstorage.reservation.repository.ReservationRepository;
 import com.swp391.selfstorage.unit.entity.StorageUnit;
@@ -53,6 +56,7 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
     private final AccessLogRepository accessLogRepository;
     private final ReturnRequestRepository returnRequestRepository;
     private final PaymentTransactionRepository paymentTransactionRepository;
+    private final PolicyVersionRepository policyVersionRepository;
 
     public CustomerRentalServiceImpl(
             RentalContractRepository rentalContractRepository,
@@ -62,7 +66,8 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
             UnitTypeRepository unitTypeRepository,
             AccessLogRepository accessLogRepository,
             @org.springframework.beans.factory.annotation.Autowired(required = false) ReturnRequestRepository returnRequestRepository,
-            @org.springframework.beans.factory.annotation.Autowired(required = false) PaymentTransactionRepository paymentTransactionRepository
+            @org.springframework.beans.factory.annotation.Autowired(required = false) PaymentTransactionRepository paymentTransactionRepository,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) PolicyVersionRepository policyVersionRepository
     ) {
         this.rentalContractRepository = rentalContractRepository;
         this.reservationRepository = reservationRepository;
@@ -72,6 +77,18 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
         this.accessLogRepository = accessLogRepository;
         this.returnRequestRepository = returnRequestRepository;
         this.paymentTransactionRepository = paymentTransactionRepository;
+        this.policyVersionRepository = policyVersionRepository;
+    }
+
+    private int activeHoldHours() {
+        if (policyVersionRepository == null) {
+            return 48;
+        }
+        return policyVersionRepository
+                .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(java.time.OffsetDateTime.now())
+                .map(PolicyVersion::getReservationHoldHours)
+                .filter(hours -> hours != null && hours > 0)
+                .orElse(48);
     }
 
 
@@ -255,6 +272,7 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
         res.setDepositAmount(contract.getDepositAmount());
         res.setDepositBalance(contract.getDepositBalance());
         res.setStatus(contract.getStatus().name());
+        res.setAccessPinLength(PolicyNumbers.snapshotInt(contract.getPolicySnapshot(), "accessPinLength", 6));
 
         LocalDate now = LocalDate.now();
 
@@ -342,7 +360,7 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
             paymentTransactionRepository.findTopByContractIdAndTransactionTypeOrderByCreatedAtDesc(contract.getId(), "CONTRACT_RENEWAL")
                     .ifPresent(txn -> {
                         if ("PENDING".equals(txn.getStatus())) {
-                            Instant expiresAt = txn.getCreatedAt().plus(48, ChronoUnit.HOURS);
+                            Instant expiresAt = txn.getCreatedAt().plus(activeHoldHours(), ChronoUnit.HOURS);
                             if (Instant.now().isBefore(expiresAt)) {
                                 res.setHasPendingRenewal(true);
                                 res.setPendingRenewalOrderCode(txn.getOrderCode());
@@ -377,7 +395,13 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
             throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION, "Chỉ có thể đổi mã PIN khi hợp đồng đang kích hoạt hoặc trong hạn cho phép");
         }
 
-        contract.setAccessCode(request.getNewPin());
+        int pinLength = PolicyNumbers.snapshotInt(contract.getPolicySnapshot(), "accessPinLength", 6);
+        String newPin = request.getNewPin() == null ? "" : request.getNewPin().trim();
+        if (!newPin.matches("\\d{" + pinLength + "}")) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                    "Mã PIN phải gồm đúng " + pinLength + " chữ số theo hợp đồng");
+        }
+        contract.setAccessCode(newPin);
         rentalContractRepository.save(contract);
 
         // Ghi nhật ký thao tác

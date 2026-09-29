@@ -58,6 +58,8 @@ export interface ManagerContractItem {
   damageNotes?: string;
   estimatedRefund?: number;
   evidenceImageUrls?: string[];
+  relocationEligible?: boolean;
+  openSupportRequestId?: number | null;
 }
 
 export interface ContractKpiData {
@@ -75,6 +77,8 @@ export interface ReassignUnitRequest {
   newUnitId: number;
   newUnitCode: string;
   reason: string;
+  supportRequestId?: number;
+  customerConsent?: boolean;
 }
 
 export interface AvailableUnitOption {

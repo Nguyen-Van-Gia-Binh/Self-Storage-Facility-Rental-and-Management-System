@@ -81,7 +81,7 @@ class OverdueProcessingServiceTest {
                 .accessCode("AC-123456")
                 .build();
 
-        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(any()))
+        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any()))
                 .thenReturn(Optional.of(mockPolicy));
         when(rentalContractRepository.findByStatusInAndEndDateExclusiveLessThanEqual(anyList(), eq(runDate)))
                 .thenReturn(List.of(contract));
@@ -117,7 +117,7 @@ class OverdueProcessingServiceTest {
                 .accessCode("AC-123456")
                 .build();
 
-        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(any()))
+        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any()))
                 .thenReturn(Optional.of(mockPolicy));
         when(rentalContractRepository.findByStatusInAndEndDateExclusiveLessThanEqual(anyList(), eq(runDate)))
                 .thenReturn(List.of(contract));
@@ -155,7 +155,7 @@ class OverdueProcessingServiceTest {
                 .status(StorageUnitStatus.OCCUPIED)
                 .build();
 
-        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(any()))
+        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any()))
                 .thenReturn(Optional.of(mockPolicy));
         when(rentalContractRepository.findByStatusInAndEndDateExclusiveLessThanEqual(anyList(), eq(runDate)))
                 .thenReturn(List.of(contract));
@@ -194,7 +194,7 @@ class OverdueProcessingServiceTest {
                 .accessCode("AC-123456")
                 .build();
 
-        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(any()))
+        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any()))
                 .thenReturn(Optional.of(mockPolicy));
         when(rentalContractRepository.findByStatusInAndEndDateExclusiveLessThanEqual(anyList(), eq(runDate)))
                 .thenReturn(List.of(contract));
@@ -219,7 +219,7 @@ class OverdueProcessingServiceTest {
                 .depositBalance(2_000_000L).overdueFeeAccrued(400_000L)
                 .accessCode("AC-777999").build();
 
-        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(any()))
+        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any()))
                 .thenReturn(Optional.of(mockPolicy));
         when(rentalContractRepository.findByStatusInAndEndDateExclusiveLessThanEqual(anyList(), eq(runDate)))
                 .thenReturn(List.of(contract));
@@ -243,7 +243,7 @@ class OverdueProcessingServiceTest {
                 .depositBalance(2_000_000L).overdueFeeAccrued(0L)
                 .accessCode("AC-555111").build();
 
-        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(any()))
+        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any()))
                 .thenReturn(Optional.of(mockPolicy));
         when(rentalContractRepository.findByStatusInAndEndDateExclusiveLessThanEqual(anyList(), eq(runDate)))
                 .thenReturn(List.of(contract));

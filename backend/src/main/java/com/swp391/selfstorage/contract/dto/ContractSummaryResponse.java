@@ -21,6 +21,7 @@ public class ContractSummaryResponse {
     private String unitTypeName;
     private LocalDate startDate;
     private LocalDate endDateExclusive;
+    private Integer checkinGraceDays;
     private int rentalMonths;
     private long monthlyPrice;
     private long depositAmount;
@@ -34,5 +35,7 @@ public class ContractSummaryResponse {
     private Boolean isInspected;
     private Long damageCost;
     private String damageNotes;
+    private Boolean relocationEligible;
+    private Long openSupportRequestId;
 }
 

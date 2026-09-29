@@ -31,7 +31,7 @@ export interface RenewalPricingOutput {
  * Tính toán biểu giá chi phí gia hạn minh bạch
  */
 export function calculateRenewalPricing(input: RenewalPricingInput): RenewalPricingOutput {
-  const { monthlyRent, renewalMonths, isOverdue = false, overdueDays = 0, overdueFee = 0 } = input;
+  const { monthlyRent, renewalMonths, isOverdue = false, overdueFee = 0 } = input;
 
   const rawRent = monthlyRent * renewalMonths;
 
@@ -47,21 +47,7 @@ export function calculateRenewalPricing(input: RenewalPricingInput): RenewalPric
   const netRent = rawRent - discountAmount;
 
   // BR-REN-06: Gộp nợ & phí phạt quá hạn nếu có (BR-OVD-02..04)
-  let calculatedOverdueFee = 0;
-  if (isOverdue) {
-    if (overdueFee > 0) {
-      calculatedOverdueFee = overdueFee;
-    } else if (overdueDays > 3) {
-      const deposit = monthlyRent; // BR-DEP-01: Deposit mặc định = 1 tháng tiền thuê
-      if (overdueDays <= 10) {
-        calculatedOverdueFee = Math.round((overdueDays - 3) * 0.10 * deposit);
-      } else {
-        calculatedOverdueFee = Math.round(0.70 * deposit);
-      }
-    } else {
-      calculatedOverdueFee = 0; // D+1..D+3: Ân hạn chưa tính phí phạt (BR-OVD-02)
-    }
-  }
+  const calculatedOverdueFee = isOverdue ? overdueFee : 0;
 
   // BR-DEP-01: Không thu thêm tiền cọc bảo đảm
   const extraDeposit = 0;

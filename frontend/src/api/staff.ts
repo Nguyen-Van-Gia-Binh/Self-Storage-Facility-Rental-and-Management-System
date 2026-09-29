@@ -1,18 +1,16 @@
-import { apiClient, isMockEnabled } from './client';
+import { apiClient } from './client';
 import type { ApiResponse } from './client';
 import type { StaffDailyTaskReport, DailyIncidentTask } from '../types';
-import mockDailyTasksData from '../mock/mock-daily-tasks.json';
-
-const localDailyTasks: StaffDailyTaskReport = JSON.parse(JSON.stringify(mockDailyTasksData));
 
 function mapRawSupportTask(item: any): DailyIncidentTask {
   const isUrgent = item.isUrgent ?? (item.priority === 'URGENT');
+  const ticketId = item.ticketId ?? item.supportRequestId ?? item.id;
   return {
-    ticketId: item.ticketId ?? item.supportRequestId ?? item.id ?? Math.floor(Math.random() * 10000),
-    code: item.code ?? (item.supportRequestId ? `SUP-${item.supportRequestId}` : (item.id ? `SUP-${item.id}` : undefined)),
-    title: item.title ?? item.description ?? 'Sự cố vận hành',
-    description: item.description ?? item.title ?? 'Sự cố vận hành',
-    category: item.category ?? 'DAMAGED_UNIT',
+    ticketId,
+    code: item.code,
+    title: item.title ?? item.description ?? '',
+    description: item.description ?? item.title ?? '',
+    category: item.category ?? '',
     priority: item.priority ?? (isUrgent ? 'URGENT' : 'MEDIUM'),
     unitCode: item.unitCode ?? item.storageUnitCode ?? '---',
     storageUnitId: item.storageUnitId,
@@ -30,6 +28,7 @@ function mapRawSupportTask(item: any): DailyIncidentTask {
     resolutionAttachmentUrls: item.resolutionAttachmentUrls,
     resolutionNote: item.resolutionNote,
     createdAt: item.createdAt,
+    relocationRequired: Boolean(item.relocationRequired),
   };
 }
 
@@ -43,11 +42,6 @@ export async function getStaffDailyTasks(
 ): Promise<StaffDailyTaskReport> {
   const queryDate = date || new Date().toISOString().split('T')[0];
 
-  if (isMockEnabled('WS2')) {
-    return { ...localDailyTasks, date: queryDate };
-  }
-
-  // Không fallback về mock — để lỗi propagate để UI xử lý
   const res = await apiClient<ApiResponse<any>>(
     `/reports/staff/${staffId}/daily-tasks?date=${queryDate}`
   );
@@ -60,7 +54,7 @@ export async function getStaffDailyTasks(
     ...data,
     pendingCheckIns: rawCheckIns.map((ci: any) => ({
       ...ci,
-      reservationId: ci.reservationId ?? ci.contractId ?? Math.floor(Math.random() * 100000),
+      reservationId: ci.reservationId ?? ci.contractId,
       contractCode: ci.contractCode,
       unitCode: ci.storageUnitCode || ci.unitCode || '---',
       facilityId: ci.facilityId,
@@ -129,6 +123,22 @@ export async function getStaffIncidentDetail(ticketId: number): Promise<DailyInc
  * Tiếp nhận và bắt đầu kiểm tra hiện trường (FS-05, US-FS-05.2 AC-1)
  * Endpoint: PATCH /api/v1/support-requests/{id}/in-progress
  */
+export async function markStaffIncidentRelocation(
+  ticketId: number,
+  required: boolean
+): Promise<{ success: boolean; message: string }> {
+  await apiClient(`/support-requests/${ticketId}/relocation-required`, {
+    method: 'PATCH',
+    body: JSON.stringify({ required }),
+  });
+  return {
+    success: true,
+    message: required
+      ? 'Đã đánh dấu phiếu cần di dời sang ô dự phòng'
+      : 'Đã bỏ đánh dấu cần di dời',
+  };
+}
+
 export async function startStaffIncident(ticketId: number): Promise<{ success: boolean; message: string }> {
   await apiClient(`/support-requests/${ticketId}/in-progress`, {
     method: 'PATCH',
@@ -158,33 +168,4 @@ export async function resolveStaffIncident(
     success: true,
     message: 'Đã hoàn tất khắc phục sự cố và chuyển biên bản nghiệm thu cho khách hàng',
   };
-}
-
-/**
- * Cập nhật trạng thái một công việc trong ca trực (lưu cục bộ session mock)
- */
-export function updateTaskStatusInSession(
-  type: 'checkIn' | 'return' | 'incident',
-  id: number,
-  newStatus: string
-) {
-  if (type === 'return') {
-    localDailyTasks.pendingReturns = localDailyTasks.pendingReturns.map((r) =>
-      r.contractId === id
-        ? { ...r, status: newStatus as StaffDailyTaskReport['pendingReturns'][number]['status'] }
-        : r
-    );
-  } else if (type === 'checkIn') {
-    localDailyTasks.pendingCheckIns = localDailyTasks.pendingCheckIns.map((c) =>
-      c.reservationId === id
-        ? { ...c, status: newStatus as StaffDailyTaskReport['pendingCheckIns'][number]['status'] }
-        : c
-    );
-  } else if (type === 'incident') {
-    localDailyTasks.openSupportRequests = localDailyTasks.openSupportRequests.map((i) =>
-      i.ticketId === id
-        ? { ...i, status: newStatus as StaffDailyTaskReport['openSupportRequests'][number]['status'] }
-        : i
-    );
-  }
 }

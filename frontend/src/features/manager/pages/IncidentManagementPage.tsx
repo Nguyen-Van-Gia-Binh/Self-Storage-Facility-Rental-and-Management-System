@@ -11,6 +11,7 @@ import {
   ArrowRightLeft,
   Filter,
 } from 'lucide-react';
+import { UrgentSlaLabel } from '@/components/UrgentSlaLabel';
 import type {
   ManagementSupportTicket,
   SupportStatus,
@@ -240,7 +241,7 @@ export const IncidentManagementPage: React.FC = () => {
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Tiếp nhận khiếu nại, phân loại sự cố hiện trường và phân công nhân viên theo SLA 2h
+            Tiếp nhận khiếu nại, phân loại sự cố hiện trường và phân công nhân viên theo <UrgentSlaLabel lead="SLA" />
             (Flow 7 · UC-F7-03, UC-F7-04)
           </p>
         </div>
@@ -304,7 +305,7 @@ export const IncidentManagementPage: React.FC = () => {
         <div className="bg-white rounded-2xl border border-rose-200 bg-rose-50/30 p-4 shadow-sm">
           <p className="text-xs font-semibold text-rose-800 flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-            Khẩn cấp SLA 2h
+            <UrgentSlaLabel lead="Khẩn cấp" />
           </p>
           <p className="text-2xl font-black text-rose-900 mt-1">{stats.urgentCount}</p>
           <p className="text-[11px] text-rose-700 mt-0.5">Cam kết BR-SUP-01</p>
@@ -359,7 +360,7 @@ export const IncidentManagementPage: React.FC = () => {
                 onChange={(e) => setOnlyUrgent(e.target.checked)}
                 className="rounded text-rose-600 focus:ring-rose-500 w-4 h-4"
               />
-              <span>Chỉ hiện vé khẩn cấp SLA 2h</span>
+              <span>Chỉ hiện vé <UrgentSlaLabel lead="khẩn cấp" /></span>
             </label>
           </div>
         </div>

@@ -87,6 +87,9 @@ public class RentalContract {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
+    @Column(name = "relocation_support_request_id")
+    private Long relocationSupportRequestId;
+
     @PrePersist
     protected void onCreate() {
         if (createdAt == null) createdAt = OffsetDateTime.now();
@@ -170,4 +173,7 @@ public class RentalContract {
 
     public OffsetDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(OffsetDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public Long getRelocationSupportRequestId() { return relocationSupportRequestId; }
+    public void setRelocationSupportRequestId(Long relocationSupportRequestId) { this.relocationSupportRequestId = relocationSupportRequestId; }
 }

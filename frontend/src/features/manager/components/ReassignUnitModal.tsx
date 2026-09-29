@@ -12,10 +12,9 @@ interface ReassignUnitModalProps {
 }
 
 const COMMON_REASONS = [
-  'Cửa cuốn bị kẹt hoặc hỏng khóa phụ cần bảo trì khẩn cấp',
-  'Phát hiện vết ẩm mốc/thấm trần khi kiểm tra trước bàn giao',
+  'Cửa cuốn bị kẹt hoặc hỏng khóa phụ, không sửa tại chỗ được',
+  'Phát hiện vết ẩm mốc/thấm trần trên ô đã chọn',
   'Hệ thống chiếu sáng hoặc cảm biến an ninh tại ô kho gặp sự cố',
-  'Khách hàng đề nghị đổi vị trí ô kho cùng diện tích gần lối đi chính',
 ];
 
 export const ReassignUnitModal: React.FC<ReassignUnitModalProps> = ({
@@ -31,12 +30,18 @@ export const ReassignUnitModal: React.FC<ReassignUnitModalProps> = ({
   const [loading, setLoading] = useState<boolean>(false);
   const [fetchingUnits, setFetchingUnits] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [customerConsent, setCustomerConsent] = useState(false);
+
+  const needsConsent = contract?.status === 'PENDING_CHECK_IN';
 
   useEffect(() => {
     if (isOpen && contract) {
       setFetchingUnits(true);
       setError(null);
       setSelectedUnitId(null);
+      setCustomerConsent(false);
+      setReason(COMMON_REASONS[0]);
+      setCustomReason('');
       getAvailableUnitsForReassign(contract.facilityId, contract.unitTypeId)
         .then((units) => {
           setAvailableUnits(units);
@@ -70,6 +75,14 @@ export const ReassignUnitModal: React.FC<ReassignUnitModalProps> = ({
       setError('Vui lòng nhập lý do đổi ô kho.');
       return;
     }
+    if (!contract.openSupportRequestId) {
+      setError('Hợp đồng này chưa có phiếu hư hỏng ô kho đang mở.');
+      return;
+    }
+    if (needsConsent && !customerConsent) {
+      setError('Cần ghi nhận khách đã đồng ý đổi ô trước khi nhận kho.');
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -80,6 +93,8 @@ export const ReassignUnitModal: React.FC<ReassignUnitModalProps> = ({
         newUnitId: chosenUnit.id,
         newUnitCode: chosenUnit.code,
         reason: finalReason,
+        supportRequestId: contract.openSupportRequestId ?? undefined,
+        customerConsent: needsConsent ? customerConsent : undefined,
       });
 
       onSuccess(result.updatedContract, result.message);
@@ -100,9 +115,9 @@ export const ReassignUnitModal: React.FC<ReassignUnitModalProps> = ({
           <div className="flex items-center gap-2">
             <RefreshCw className="w-5 h-5 text-white/90" />
             <div>
-              <h3 className="font-bold text-base">Đổi ô kho ngoại lệ (SCR-FM-02.2)</h3>
+              <h3 className="font-bold text-base">Đổi ô kho vì sự cố</h3>
               <p className="text-xs text-white/80">
-                Xử lý điều phối khi ô kho gặp sự cố kỹ thuật hoặc bảo trì đột xuất
+                Chỉ ô cùng loại. Giá thuê và tiền cọc trên hợp đồng giữ nguyên.
               </p>
             </div>
           </div>
@@ -165,7 +180,9 @@ export const ReassignUnitModal: React.FC<ReassignUnitModalProps> = ({
               </div>
             ) : availableUnits.length === 0 ? (
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
-                Hiện tại cơ sở này không còn ô kho nào cùng loại ({contract.unitTypeName}) ở trạng thái trống. Vui lòng liên hệ bộ phận vận hành hoặc hỗ trợ khách đổi sang loại kho khác.
+                {contract.status === 'PENDING_CHECK_IN'
+                  ? `Không còn ô cùng loại (${contract.unitTypeName}). Khách có thể hủy đặt chỗ để được hoàn 100% tiền thuê và tiền cọc.`
+                  : `Không còn ô cùng loại (${contract.unitTypeName}). Khách cần trả kho rồi đặt hợp đồng mới. Không nâng loại kho trên hợp đồng này.`}
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-48 overflow-y-auto p-1">
@@ -238,6 +255,18 @@ export const ReassignUnitModal: React.FC<ReassignUnitModalProps> = ({
               />
             )}
           </div>
+
+          {needsConsent && (
+            <label className="flex items-start gap-2 p-3 rounded-xl border border-amber-200 bg-amber-50 text-xs text-amber-900 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={customerConsent}
+                onChange={(e) => setCustomerConsent(e.target.checked)}
+                className="mt-0.5 text-amber-600 focus:ring-amber-500"
+              />
+              <span>Khách đã đồng ý đổi sang ô cùng loại này. Không có ô cùng loại thì khách có thể hủy để được hoàn 100%.</span>
+            </label>
+          )}
         </div>
 
         {/* Footer actions */}
@@ -253,7 +282,7 @@ export const ReassignUnitModal: React.FC<ReassignUnitModalProps> = ({
           <button
             type="button"
             onClick={handleConfirm}
-            disabled={loading || availableUnits.length === 0}
+            disabled={loading || availableUnits.length === 0 || (needsConsent && !customerConsent)}
             className="px-5 py-2 text-xs font-semibold text-white bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
           >
             {loading ? (

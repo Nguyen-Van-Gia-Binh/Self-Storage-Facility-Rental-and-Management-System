@@ -29,6 +29,11 @@ public interface StaffSupportService {
     SupportRequestDetailResponse startInProgress(Long requestId, UserPrincipal currentUser);
 
     /**
+     * Staff đánh dấu phiếu hư hỏng ô kho không sửa tại chỗ được, để Facility Manager di dời (US-FS-05.2 AC-3).
+     */
+    SupportRequestDetailResponse markRelocationRequired(Long requestId, boolean required, UserPrincipal currentUser);
+
+    /**
      * Facility Staff cập nhật kết quả xử lý và chuyển sang RESOLVED (US-FS-05.2 AC-2, AC-4, UC-F7-08).
      */
     SupportRequestDetailResponse resolveSupportRequest(Long requestId, ResolveSupportRequest request, UserPrincipal currentUser);

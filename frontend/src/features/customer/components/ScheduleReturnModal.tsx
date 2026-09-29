@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
 import { scheduleContractReturn } from '@/api/customerRentals';
+import { useActivePolicy } from '@/hooks/useActivePolicy';
 import type { RentedContract } from '../types';
 
 export interface ScheduleReturnModalProps {
@@ -49,10 +50,12 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
     return new Date(returnDate) < new Date(contract.endDate);
   }, [contract, returnDate]);
 
-  // Kiểm tra xem hợp đồng có đang trong 3 ngày ân hạn không (BR-OVD-02)
+  const policy = useActivePolicy();
+  const graceDays = policy?.overdueGraceDays ?? 0;
+
   const isGracePeriod = useMemo(() => {
     if (!contract) return false;
-    return contract.status === 'OVERDUE' && (contract.overdueDays ?? 0) <= 3;
+    return contract.status === 'OVERDUE' && (contract.overdueFee ?? 0) === 0;
   }, [contract]);
 
   if (!isOpen || !contract) return null;
@@ -239,7 +242,8 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
             <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-2.5 text-xs text-emerald-900">
               <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
               <span className="leading-snug">
-                <strong>Chính sách ân hạn:</strong> Hợp đồng đã quá hạn {contract.overdueDays} ngày (trong hạn 3 ngày ân hạn). Nhờ bạn hoàn tất dọn đồ và báo trả hôm nay, bạn vẫn được <strong>hoàn trả 100% tiền cọc ({formatVND(contract.depositHeld)})</strong> và được <strong>miễn toàn bộ phí phạt quá hạn</strong>.
+                <strong>Chính sách ân hạn:</strong> Hợp đồng đã quá hạn {contract.overdueDays} ngày
+                {graceDays > 0 ? ` (ân hạn ${graceDays} ngày trên chính sách đang hiệu lực)` : ''}. Nhờ bạn hoàn tất dọn đồ và báo trả hôm nay, bạn vẫn được <strong>hoàn trả 100% tiền cọc ({formatVND(contract.depositHeld)})</strong> và được <strong>miễn toàn bộ phí phạt quá hạn</strong>.
               </span>
             </div>
           )}

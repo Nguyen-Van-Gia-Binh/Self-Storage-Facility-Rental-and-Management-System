@@ -36,6 +36,7 @@ export interface RentedUnitCardProps {
   onViewDetail?: (contract: RentedContract) => void;
   onOpenOverduePayment?: (contract: RentedContract) => void;
   onCancelReturn?: (contract: RentedContract) => void;
+  renewalNoticeDays?: number;
 }
 
 export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
@@ -45,6 +46,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
   onViewDetail,
   onOpenOverduePayment,
   onCancelReturn,
+  renewalNoticeDays,
 }) => {
   const [showPin, setShowPin] = useState(false);
   const [copiedPin, setCopiedPin] = useState(false);
@@ -85,16 +87,8 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
       ? 1
       : 0;
 
-  const isGracePeriod = contract.status === 'OVERDUE' && overdueDays <= 3;
-
-  const penaltyFee =
-    typeof contract.overdueFee === 'number'
-      ? contract.overdueFee
-      : overdueDays > 3
-      ? overdueDays <= 10
-        ? Math.round((overdueDays - 3) * 0.10 * contract.depositHeld)
-        : Math.round(0.70 * contract.depositHeld)
-      : 0;
+  const penaltyFee = contract.overdueFee ?? 0;
+  const isGracePeriod = contract.status === 'OVERDUE' && penaltyFee === 0;
 
   const handleOpenModal = () => {
     if (contract.status === 'PENDING_CHECKIN' || (contract.status as string) === 'PENDING_CHECK_IN') {
@@ -461,10 +455,10 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
               </Link>
             ) : (
               <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full sm:w-auto">
-                {contract.status === 'ACTIVE' && daysRemaining < 30 && daysRemaining >= 0 && (
+                {contract.status === 'ACTIVE' && renewalNoticeDays != null && daysRemaining <= renewalNoticeDays && daysRemaining >= 0 && (
                   <span
                     className="text-[11px] font-medium text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200"
-                    title="Mốc 30 ngày là thời điểm nhắc nhở. Hãy gia hạn sớm trước khi khách khác đặt giữ chỗ ô kho này."
+                    title={`Mốc ${renewalNoticeDays} ngày trước hết hạn là thời điểm nhắc gia hạn. Hãy gia hạn sớm trước khi khách khác đặt giữ chỗ ô kho này.`}
                   >
                     ⏳ Còn {daysRemaining} ngày — Hãy gia hạn sớm
                   </span>
@@ -566,7 +560,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
           customerPhone: (tokenStorage.getUser() as any)?.phone || '',
           customerIdentity: '',
           startDate: contract.startDate,
-          checkInWindow: 'Trong vòng 48 giờ kể từ lúc cọc',
+          checkInWindow: 'Giữ chỗ theo thời hạn trên chính sách đang hiệu lực',
           status: 'PENDING_CHECKIN',
           totalPaid: contract.monthlyRent + contract.depositHeld,
         }}

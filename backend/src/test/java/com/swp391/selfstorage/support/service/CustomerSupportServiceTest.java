@@ -65,6 +65,9 @@ class CustomerSupportServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private com.swp391.selfstorage.policy.repository.PolicyVersionRepository policyVersionRepository;
+
     @InjectMocks
     private CustomerSupportServiceImpl customerSupportService;
 

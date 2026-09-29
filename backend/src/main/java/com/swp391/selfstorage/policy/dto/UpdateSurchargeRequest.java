@@ -1,5 +1,7 @@
 package com.swp391.selfstorage.policy.dto;
 
+import java.time.LocalDate;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -27,4 +29,7 @@ public class UpdateSurchargeRequest {
 
     @NotNull(message = "Trạng thái hoạt động không được để trống")
     private Boolean isActive;
+
+    /** Nếu gửi lên, ngày hiệu lực không được ở quá khứ (BR-GEN-01). */
+    private LocalDate effectiveDate;
 }

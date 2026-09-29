@@ -36,7 +36,7 @@ public class OverdueProcessingServiceImpl implements OverdueProcessingService {
 
         // 1. Lấy PolicyVersion hiện hành (nếu chưa có thì dùng mặc định theo BR-OVD-*)
         PolicyVersion policy = policyVersionRepository
-                .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(OffsetDateTime.now())
+                .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(OffsetDateTime.now())
                 .orElse(null);
 
         int graceDays = (policy != null && policy.getOverdueGraceDays() != null) ? policy.getOverdueGraceDays() : 3;

@@ -49,7 +49,8 @@ export function mapBackendSummaryToCheckInContract(item: any): CheckInContract {
   const diffDays = Number.isFinite(startDayTime)
     ? Math.floor((nowDayTime - startDayTime) / (1000 * 3600 * 24))
     : 0;
-  const graceDaysRemaining = startDateStr ? Math.max(0, 10 - diffDays) : 0;
+  const checkinGraceDays = Number(item.checkinGraceDays ?? 10);
+  const graceDaysRemaining = startDateStr ? Math.max(0, checkinGraceDays - diffDays) : 0;
 
   return {
     id: item.id,
@@ -94,6 +95,7 @@ export function mapBackendSummaryToCheckInContract(item: any): CheckInContract {
     status: item.status || 'PENDING_CHECK_IN',
     appointmentTime: appointmentTime,
     graceDaysRemaining: graceDaysRemaining,
+    checkinGraceDays,
     assignedStaffId: item.assignedStaffId,
     assignedStaffName: item.assignedStaffName,
   };
@@ -354,8 +356,8 @@ export async function getManagerContracts(filter?: {
           const parts = String(c.startDate).split('-');
           if (parts.length === 3) {
             const start = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-            // BR-CAN-04 / BR-CHK-05: Ân hạn nhận kho 10 ngày kể từ ngày bắt đầu hợp đồng (startDate)
-            const deadline = new Date(start.getTime() + 10 * 24 * 60 * 60 * 1000);
+            const graceDays = Number(c.checkinGraceDays ?? 10);
+            const deadline = new Date(start.getTime() + graceDays * 24 * 60 * 60 * 1000);
             const now = new Date();
             now.setHours(0, 0, 0, 0);
             checkInGraceDaysRemaining = Math.round((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
@@ -380,17 +382,7 @@ export async function getManagerContracts(filter?: {
         }
       }
 
-      let accruedOverdueFee = c.accruedOverdueFee;
-      if (accruedOverdueFee === undefined && overdueDays !== undefined && overdueDays > 0) {
-        const deposit = c.depositAmount || 0;
-        if (overdueDays <= 3) {
-          accruedOverdueFee = 0;
-        } else if (overdueDays <= 10) {
-          accruedOverdueFee = Math.round((overdueDays - 3) * 0.10 * deposit);
-        } else {
-          accruedOverdueFee = Math.round(0.70 * deposit);
-        }
-      }
+      const accruedOverdueFee = c.accruedOverdueFee ?? c.overdueFeeAccrued ?? 0;
 
       const isInspected = Boolean(c.isInspected);
       let mappedStatus = c.status;
@@ -495,6 +487,8 @@ export async function reassignStorageUnit(
       body: JSON.stringify({
         newStorageUnitId: data.newUnitId,
         reason: data.reason,
+        supportRequestId: data.supportRequestId,
+        customerConsent: data.customerConsent,
       }),
     }
   );

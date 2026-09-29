@@ -128,6 +128,7 @@ export interface CheckInContract {
   status: 'PENDING_CHECK_IN' | 'PENDING_CHECKIN' | 'ACTIVE' | 'TERMINATED' | 'OVERDUE';
   appointmentTime: string;
   graceDaysRemaining: number;
+  checkinGraceDays?: number;
   assignedStaffId?: number;
   assignedStaffName?: string;
 }
@@ -228,7 +229,7 @@ export interface ReturnContractDetail {
 }
 
 export interface DailyCheckInTask {
-  reservationId: number;
+  reservationId?: number;
   contractId?: number;
   contractCode?: string;
   customerName: string;
@@ -261,7 +262,7 @@ export interface DailyReturnTask {
 }
 
 export interface DailyIncidentTask {
-  ticketId: number;
+  ticketId?: number;
   code?: string;
   title: string;
   description?: string;
@@ -283,6 +284,7 @@ export interface DailyIncidentTask {
   resolutionAttachmentUrls?: string[];
   resolutionNote?: string;
   createdAt?: string;
+  relocationRequired?: boolean;
 }
 
 export interface StaffDailyTaskReport {
@@ -353,6 +355,15 @@ export interface ActivePolicyInfo {
   overdueCapRate: number;
   returnNoticeDays: number;
   returnRefundWorkingDays?: number;
+  rentalBufferDays?: number;
+  cancelNoShowRefundRate?: number;
+  renewalReminderDays?: string;
+  returnEarlyRefundRate?: number;
+  overdueLockAccessDays?: number;
+  overdueTerminationDays?: number;
+  accessPinLength?: number;
+  supportUrgentSlaHours?: number;
+  supportAutoCloseWorkingDays?: number;
 }
 
 export * from './report';

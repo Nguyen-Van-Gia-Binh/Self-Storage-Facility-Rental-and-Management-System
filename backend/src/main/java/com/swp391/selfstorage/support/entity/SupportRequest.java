@@ -65,6 +65,12 @@ public class SupportRequest {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
+    @Column(name = "relocation_required", nullable = false)
+    private Boolean relocationRequired = Boolean.FALSE;
+
+    @Column(name = "customer_notice", length = 500)
+    private String customerNotice;
+
     public SupportRequest() {}
 
     public SupportRequest(Long id, String code, Long customerId, Long contractId, Long storageUnitId,
@@ -113,6 +119,8 @@ public class SupportRequest {
         private OffsetDateTime autoClosedAt;
         private OffsetDateTime createdAt;
         private OffsetDateTime updatedAt;
+        private Boolean relocationRequired = Boolean.FALSE;
+        private String customerNotice;
 
         public Builder id(Long id) { this.id = id; return this; }
         public Builder code(String code) { this.code = code; return this; }
@@ -131,12 +139,17 @@ public class SupportRequest {
         public Builder autoClosedAt(OffsetDateTime autoClosedAt) { this.autoClosedAt = autoClosedAt; return this; }
         public Builder createdAt(OffsetDateTime createdAt) { this.createdAt = createdAt; return this; }
         public Builder updatedAt(OffsetDateTime updatedAt) { this.updatedAt = updatedAt; return this; }
+        public Builder relocationRequired(Boolean relocationRequired) { this.relocationRequired = relocationRequired; return this; }
+        public Builder customerNotice(String customerNotice) { this.customerNotice = customerNotice; return this; }
 
         public SupportRequest build() {
-            return new SupportRequest(id, code, customerId, contractId, storageUnitId,
+            SupportRequest request = new SupportRequest(id, code, customerId, contractId, storageUnitId,
                     category, description, status, assignedStaffId, slaDueAt,
                     resolvedAt, resolutionNote, isUrgent, customerConfirmedAt,
                     autoClosedAt, createdAt, updatedAt);
+            request.setRelocationRequired(relocationRequired != null ? relocationRequired : Boolean.FALSE);
+            request.setCustomerNotice(customerNotice);
+            return request;
         }
     }
 
@@ -160,6 +173,9 @@ public class SupportRequest {
         }
         if (this.status == null) {
             this.status = SupportStatus.NEW;
+        }
+        if (this.relocationRequired == null) {
+            this.relocationRequired = Boolean.FALSE;
         }
     }
 
@@ -218,4 +234,10 @@ public class SupportRequest {
 
     public OffsetDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(OffsetDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public Boolean getRelocationRequired() { return relocationRequired; }
+    public void setRelocationRequired(Boolean relocationRequired) { this.relocationRequired = relocationRequired; }
+
+    public String getCustomerNotice() { return customerNotice; }
+    public void setCustomerNotice(String customerNotice) { this.customerNotice = customerNotice; }
 }

@@ -1,5 +1,6 @@
 // frontend/src/features/bom/components/FacilityPriceTable.tsx
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Building2, Layers, Edit3, AlertCircle } from 'lucide-react';
 import type { FacilityListItem, UnitTypeCatalog } from '@/types';
 
@@ -47,6 +48,9 @@ export const FacilityPriceTable: React.FC<FacilityPriceTableProps> = ({
             <p className="text-sm font-bold text-slate-900">
               {selectedFacility ? selectedFacility.name : 'Đang chọn cơ sở...'}
             </p>
+            <Link to="/bom/price-audit" className="text-xs font-semibold text-amber-700 hover:text-amber-800">
+              Xem nhật ký đầy đủ
+            </Link>
           </div>
         </div>
 

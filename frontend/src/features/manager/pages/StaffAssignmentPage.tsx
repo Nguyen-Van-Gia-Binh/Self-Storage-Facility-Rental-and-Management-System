@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { UrgentSlaLabel } from '@/components/UrgentSlaLabel';
 import { useSearchParams } from 'react-router-dom';
 import {
   Building2,
@@ -313,7 +314,7 @@ export const StaffAssignmentPage: React.FC = () => {
         {/* KPI 4: Sự cố khẩn cấp SLA 2h */}
         <div className="bg-white rounded-2xl border border-amber-200 bg-amber-50/20 p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-amber-800">Sự cố khẩn cấp SLA 2h</span>
+            <span className="text-xs font-semibold text-amber-800">Sự cố <UrgentSlaLabel lead="khẩn cấp" /></span>
             <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
               <Clock className="w-4 h-4" />
             </div>

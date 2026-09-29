@@ -1,3 +1,4 @@
+import { UrgentSlaLabel } from '@/components/UrgentSlaLabel';
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -18,7 +19,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { DailyIncidentTask } from '@/types';
-import { startStaffIncident, resolveStaffIncident } from '@/api/staff';
+import { startStaffIncident, resolveStaffIncident, markStaffIncidentRelocation } from '@/api/staff';
 
 interface StaffResolveIncidentModalProps {
   isOpen: boolean;
@@ -41,6 +42,8 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
   const [imageUrlInput, setImageUrlInput] = useState('');
   const [attachmentUrls, setAttachmentUrls] = useState<string[]>([]);
   const [isAgreed, setIsAgreed] = useState(false);
+  const [needsRelocation, setNeedsRelocation] = useState(false);
+  const [savingRelocation, setSavingRelocation] = useState(false);
 
   useEffect(() => {
     if (ticket) {
@@ -49,6 +52,7 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
       setAttachmentUrls(ticket.resolutionAttachmentUrls || []);
       setImageUrlInput('');
       setIsAgreed(false);
+      setNeedsRelocation(Boolean(ticket.relocationRequired));
     }
   }, [ticket]);
 
@@ -58,6 +62,25 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
     ticket.status === 'PENDING' || ticket.status === 'ASSIGNED' || ticket.status === 'NEW';
   const isInProgress = ticket.status === 'IN_PROGRESS';
   const isResolved = ticket.status === 'RESOLVED' || ticket.status === 'CLOSED';
+  const isUnitDamage = ticket.category === 'UNIT_DAMAGE';
+
+  const handleRelocationChange = async (checked: boolean) => {
+    if (ticket.ticketId == null) {
+      setErrorMsg('Phiếu sự cố không có mã từ hệ thống.');
+      return;
+    }
+    setSavingRelocation(true);
+    setErrorMsg(null);
+    try {
+      await markStaffIncidentRelocation(ticket.ticketId, checked);
+      setNeedsRelocation(checked);
+      onSuccess();
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'Không cập nhật được nhu cầu di dời.');
+    } finally {
+      setSavingRelocation(false);
+    }
+  };
 
   // Thêm ảnh nghiệm thu vào danh sách
   const handleAddImage = () => {
@@ -77,6 +100,10 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
 
   // Bước 1: Tiếp nhận xử lý sự cố (chuyển sang IN_PROGRESS)
   const handleStartInProgress = async () => {
+    if (ticket.ticketId == null) {
+      setErrorMsg('Phiếu sự cố không có mã từ hệ thống.');
+      return;
+    }
     setSubmitting(true);
     setErrorMsg(null);
     try {
@@ -97,6 +124,10 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
       return;
     }
 
+    if (ticket.ticketId == null) {
+      setErrorMsg('Phiếu sự cố không có mã từ hệ thống.');
+      return;
+    }
     setSubmitting(true);
     setErrorMsg(null);
     try {
@@ -156,7 +187,7 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
                 {ticket.priority === 'URGENT' && (
                   <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-700 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-                    Khẩn SLA 2h
+                    <UrgentSlaLabel lead="Khẩn" />
                   </span>
                 )}
               </div>
@@ -266,6 +297,21 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
                 ))}
               </div>
             </div>
+          )}
+
+          {isUnitDamage && !isResolved && (
+            <label className="flex items-start gap-2 p-3.5 rounded-xl border border-amber-200 bg-amber-50 text-xs text-amber-950 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={needsRelocation}
+                disabled={savingRelocation}
+                onChange={(e) => handleRelocationChange(e.target.checked)}
+                className="mt-0.5 text-amber-600 focus:ring-amber-500"
+              />
+              <span>
+                <strong>Không sửa tại chỗ được — cần di dời.</strong> Quản lý cơ sở chỉ đổi sang ô cùng loại khi cờ này được bật. Giá thuê và tiền cọc giữ nguyên.
+              </span>
+            </label>
           )}
 
           {/* TRẠNG THÁI 1: MỚI ĐƯỢC GIAO */}

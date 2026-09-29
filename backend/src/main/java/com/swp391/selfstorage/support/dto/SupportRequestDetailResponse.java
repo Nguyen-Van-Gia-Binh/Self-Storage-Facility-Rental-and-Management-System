@@ -44,6 +44,8 @@ public class SupportRequestDetailResponse {
 
     private boolean canCancel;
     private boolean canConfirm;
+    private Boolean relocationRequired;
+    private String customerNotice;
 
     public SupportRequestDetailResponse() {}
 
@@ -82,6 +84,8 @@ public class SupportRequestDetailResponse {
         public Builder resolutionAttachmentUrls(List<String> resolutionAttachmentUrls) { r.resolutionAttachmentUrls = resolutionAttachmentUrls; return this; }
         public Builder canCancel(boolean canCancel) { r.canCancel = canCancel; return this; }
         public Builder canConfirm(boolean canConfirm) { r.canConfirm = canConfirm; return this; }
+        public Builder relocationRequired(Boolean relocationRequired) { r.relocationRequired = relocationRequired; return this; }
+        public Builder customerNotice(String customerNotice) { r.customerNotice = customerNotice; return this; }
 
         public SupportRequestDetailResponse build() {
             return r;
@@ -171,4 +175,10 @@ public class SupportRequestDetailResponse {
 
     public boolean isCanConfirm() { return canConfirm; }
     public void setCanConfirm(boolean canConfirm) { this.canConfirm = canConfirm; }
+
+    public Boolean getRelocationRequired() { return relocationRequired; }
+    public void setRelocationRequired(Boolean relocationRequired) { this.relocationRequired = relocationRequired; }
+
+    public String getCustomerNotice() { return customerNotice; }
+    public void setCustomerNotice(String customerNotice) { this.customerNotice = customerNotice; }
 }

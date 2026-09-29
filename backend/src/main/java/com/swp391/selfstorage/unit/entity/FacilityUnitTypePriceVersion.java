@@ -34,6 +34,9 @@ public class FacilityUnitTypePriceVersion {
     @Column(name = "effective_from", nullable = false)
     private LocalDate effectiveFrom;
 
+    @Column(name = "created_by")
+    private Long createdBy;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 

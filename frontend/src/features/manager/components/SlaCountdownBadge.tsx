@@ -48,8 +48,7 @@ export const SlaCountdownBadge: React.FC<SlaCountdownBadgeProps> = ({
   } else if (createdAt) {
     deadlineMs = new Date(createdAt).getTime() + slaHours * 60 * 60 * 1000;
   } else {
-    // Nếu không có cả hai, fallback tạo cách đây 45 phút để hiển thị demo đếm ngược sinh động
-    deadlineMs = Date.now() + 75 * 60 * 1000;
+    return null;
   }
 
   const diffMs = deadlineMs - now;
@@ -82,7 +81,7 @@ export const SlaCountdownBadge: React.FC<SlaCountdownBadgeProps> = ({
     return (
       <span
         className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-black bg-rose-100 text-rose-800 border border-rose-300 animate-pulse ${className}`}
-        title="Cam kết SLA 2h - Cần giải quyết khẩn cấp!"
+        title="Sắp hết hạn SLA - Cần giải quyết khẩn cấp!"
       >
         <span className="w-2 h-2 rounded-full bg-rose-600 animate-ping shrink-0" />
         <Clock className="w-3 h-3 text-rose-700 shrink-0" />
@@ -95,7 +94,7 @@ export const SlaCountdownBadge: React.FC<SlaCountdownBadgeProps> = ({
   return (
     <span
       className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300 ${className}`}
-      title="Cam kết SLA 2h theo BR-SUP-01"
+      title="Hạn SLA lấy từ phiếu hỗ trợ"
     >
       <Clock className="w-3 h-3 text-amber-600 shrink-0" />
       <span>⏱ SLA: Còn {timeFormatted}</span>

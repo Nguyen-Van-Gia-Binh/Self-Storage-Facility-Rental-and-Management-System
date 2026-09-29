@@ -29,6 +29,7 @@ import com.swp391.selfstorage.payment.service.PaymentService;
 import com.swp391.selfstorage.reservation.entity.Reservation;
 import com.swp391.selfstorage.reservation.entity.ReservationStatus;
 import com.swp391.selfstorage.reservation.repository.ReservationRepository;
+import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
 import com.swp391.selfstorage.reservation.service.ReservationService;
 
 import jakarta.persistence.criteria.Predicate;
@@ -55,6 +56,18 @@ public class PaymentServiceImpl implements PaymentService {
     private final ApplicationEventPublisher eventPublisher;
     private final PaymentMapper paymentMapper;
     private final PaymentGateway paymentGateway;
+    private final PolicyVersionRepository policyVersionRepository;
+
+    private int activeHoldHours() {
+        if (policyVersionRepository == null) {
+            return 48;
+        }
+        return policyVersionRepository
+                .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(OffsetDateTime.now())
+                .map(com.swp391.selfstorage.policy.entity.PolicyVersion::getReservationHoldHours)
+                .filter(hours -> hours != null && hours > 0)
+                .orElse(48);
+    }
 
     @Override
     @Transactional
@@ -118,7 +131,7 @@ public class PaymentServiceImpl implements PaymentService {
             if (existingPending.isPresent()) {
                 PaymentTransaction txn = existingPending.get();
                 if ("PENDING".equals(txn.getStatus())) {
-                    java.time.Instant expiresAt = txn.getCreatedAt().plus(48, java.time.temporal.ChronoUnit.HOURS);
+                    java.time.Instant expiresAt = txn.getCreatedAt().plus(activeHoldHours(), java.time.temporal.ChronoUnit.HOURS);
                     if (java.time.Instant.now().isBefore(expiresAt)) {
                         if (txn.getRenewalMonths() != null && txn.getRenewalMonths().equals(months)) {
                             // Tái sử dụng

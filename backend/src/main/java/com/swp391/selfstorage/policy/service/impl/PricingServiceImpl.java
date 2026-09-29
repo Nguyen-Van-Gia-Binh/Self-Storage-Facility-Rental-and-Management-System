@@ -4,9 +4,12 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.swp391.selfstorage.auth.service.UserPrincipal;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
 import com.swp391.selfstorage.facility.entity.Facility;
@@ -175,6 +178,7 @@ public class PricingServiceImpl implements PricingService {
                     .pricePerM2(pricePerM2)
                     .monthlyPrice(monthlyRent)
                     .effectiveFrom(effectiveFrom)
+                    .createdBy(currentActorId())
                     .build();
             versionRepository.save(version);
         }
@@ -228,5 +232,13 @@ public class PricingServiceImpl implements PricingService {
                 .scheduledPricePerM2(info != null ? info.getScheduledPricePerM2() : null)
                 .updatedAt(priceEntity != null ? priceEntity.getUpdatedAt() : null)
                 .build();
+    }
+
+    private Long currentActorId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof UserPrincipal principal)) {
+            return null;
+        }
+        return principal.getId();
     }
 }

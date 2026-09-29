@@ -44,7 +44,7 @@ public class PolicyServiceImpl implements PolicyService {
     @Override
     public PolicyResponse getActivePolicy() {
         PolicyVersion activePolicy = policyVersionRepository
-                .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(OffsetDateTime.now())
+                .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(OffsetDateTime.now())
                 .orElseThrow(() -> new CustomException(ErrorCode.POLICY_NOT_FOUND));
 
         return policyMapper.toResponse(activePolicy);

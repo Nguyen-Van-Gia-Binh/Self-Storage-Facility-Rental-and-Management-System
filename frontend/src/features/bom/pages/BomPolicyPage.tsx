@@ -231,7 +231,13 @@ export const BomPolicyPage: React.FC = () => {
     setSaving(true);
     try {
       const saved = await publishPolicy(payload);
-      setMessage(`Đã ban hành phiên bản ${saved.versionNo ?? ''}. Bản ghi cũ không bị đổi.`);
+      const versionLabel = saved.versionNo != null ? `v${saved.versionNo}` : '';
+      const snapshotNote = 'Hợp đồng đã ký giữ snapshot.';
+      setMessage(
+        form.effectiveDate <= todayInVietnam()
+          ? `Đã ban hành phiên bản ${versionLabel}, đang hiệu lực từ hôm nay. ${snapshotNote}`
+          : `Đã ban hành phiên bản ${versionLabel}, chưa áp dụng cho đến ${form.effectiveDate}. ${snapshotNote}`
+      );
       setForm((current) => ({ ...current, confirmed: false }));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Không ban hành được chính sách');
@@ -282,7 +288,7 @@ export const BomPolicyPage: React.FC = () => {
           <Field label="Tỷ lệ hoàn khi hủy muộn (%)" value={form.cancelLateRefundRate} step="0.1" onChange={set('cancelLateRefundRate')} />
           <Field label="Tỷ lệ hoàn no-show (%)" value={form.cancelNoShowRefundRate} step="0.1" onChange={set('cancelNoShowRefundRate')} />
           <Field
-            label="Mốc khóa gia hạn / chuẩn bị trả kho (ngày trước hết hạn)"
+            label="Thời hạn khóa quyền gia hạn (ngày trước hết hạn)"
             value={form.returnNoticeDays}
             onChange={set('returnNoticeDays')}
           />

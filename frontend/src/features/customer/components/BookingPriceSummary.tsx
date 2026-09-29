@@ -11,12 +11,14 @@ export interface BookingPriceSummaryProps {
   calculation: PricingCalculationResult;
   startDate: string;
   endDate: string;
+  holdHours?: number;
 }
 
 export const BookingPriceSummary: React.FC<BookingPriceSummaryProps> = ({
   calculation,
   startDate,
   endDate,
+  holdHours,
 }) => {
   return (
     <Card className="p-5 bg-white border border-slate-200/90 shadow-sm rounded-xl sticky top-24 space-y-5">
@@ -86,7 +88,7 @@ export const BookingPriceSummary: React.FC<BookingPriceSummaryProps> = ({
       <div className="rounded-lg p-3 bg-[#96b3cf]/12 border border-[#96b3cf]/30 flex items-start gap-2.5 text-xs text-slate-700">
         <Clock className="w-4 h-4 text-[#7c94c3] flex-shrink-0 mt-0.5" />
         <p className="leading-relaxed">
-          <strong className="text-[#0a1614]">Giữ chỗ trong 48 giờ:</strong> Hệ thống sẽ tạm giữ ô kho này trong vòng 48h để quý khách hoàn tất chuyển khoản VietQR.
+          <strong className="text-[#0a1614]">Giữ chỗ trong {holdHours && holdHours > 0 ? holdHours : '…'} giờ:</strong> Hệ thống sẽ tạm giữ ô kho này trong vòng {holdHours && holdHours > 0 ? `${holdHours} giờ` : 'thời gian trên chính sách'} để quý khách hoàn tất chuyển khoản VietQR.
         </p>
       </div>
     </Card>
