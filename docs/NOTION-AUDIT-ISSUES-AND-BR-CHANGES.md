@@ -86,7 +86,7 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
       + `Facility` $\rightarrow$ **Cơ sở lưu trữ** / **Cơ sở kho**.  
     - *Làm sạch Dữ liệu Mẫu (Seed Data Cleanup):* Xóa bỏ triệt để cơ sở ảo "Tân Bình Flagship", chuẩn hóa danh mục cơ sở và ô kho theo đúng danh sách chính thức đã được ban hành trong tài liệu đặc tả.
   * **Hướng xử lý & File liên quan đã hoàn thành:**  
-    - Database & Backend: Migration `V33__normalize_unit_type_names_and_seed_terms.sql` (chuẩn hóa tên loại kho UT-SMALL bỏ Locker, cập nhật text seed).  
+    - Database & Backend: Migration `V34__normalize_unit_type_names_and_seed_terms.sql` (chuẩn hóa tên loại kho UT-SMALL bỏ Locker, cập nhật text seed).  
     - Frontend: Chuẩn hóa toàn bộ từ khóa `ngăn tủ`, `ngăn kho`, `tủ đồ` thành `ô kho` trong `ContractDetailModal.tsx`, `RentedUnitCard.tsx`, `BookingPage.tsx`, `EarlyRenewalReminderModal.tsx`, `RenewalReceiptModal.tsx`, `HomePage.tsx`, `MyUnitsPage.tsx`, `staffAssignmentApi.ts`. Dọn dẹp mock `pricing.ts`, `customerApi.ts`, `mock-facilities.json`.
   * **Kết quả kiểm thử:** Đã bổ sung bộ test `TerminologyAudit.test.tsx`, `mockDataCleanup.test.ts` đảm bảo 100% không còn vi phạm.
 
