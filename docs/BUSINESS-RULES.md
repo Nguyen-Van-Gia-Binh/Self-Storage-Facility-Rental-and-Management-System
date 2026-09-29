@@ -168,7 +168,7 @@ kho sớm, xử lý theo § 9.
 | `BR-REN-07` | Gia hạn không được vượt quá `renewal.max_months` (**12 tháng**) trong một lần thao tác, để tránh khóa giá quá dài |
 | `BR-REN-08` | Sau khi gia hạn thành công, ô kho giữ nguyên — hệ thống **không** đổi ô kho cho khách. Muốn đổi ô kho thì phải trả kho rồi đặt hợp đồng mới |
 | `BR-REN-09` | Trước khi nhận thanh toán Renewal, hệ thống phải kiểm tra Availability cho khoảng gia hạn theo `BR-AVL-01` xem ô kho có bất kỳ ai đặt trước trong tương lai hay không. Nếu bị trùng lịch đặt trước (không còn capacity), yêu cầu gia hạn bị từ chối trước khi thu tiền và hệ thống hiển thị lý do kèm hướng dẫn khách chuẩn bị trả kho khi hết hạn hoặc tạo Reservation đặt ô kho khác |
-| `BR-REN-10` | Khi khách yêu cầu gia hạn và nhận mã thanh toán, đơn gia hạn được giữ chỗ trong `reservation.hold_hours` (48 giờ). Nếu hết thời hạn này hoặc đến ngày hết hạn hợp đồng mà chưa thanh toán thành công, yêu cầu gia hạn tự động bị hủy và hợp đồng chuyển *Overdue* theo `BR-OVD-01` |
+| `BR-REN-10` | Khi khách hàng xác nhận tạo mã thanh toán VietQR gia hạn hợp đồng, hệ thống tạm khóa capacity và giữ chỗ ô kho trong vòng **48 giờ** kể từ khi sinh mã QR (`reservation.hold_hours = 48`). Trong 48 giờ này, hợp đồng mang trạng thái chờ thanh toán (`PENDING_RENEWAL`). Nếu quá 48 giờ mà chưa thanh toán hoặc khách chủ động hủy lệnh, giao dịch chuyển sang `FAILED` và giải phóng capacity. Khi đến hạn hợp đồng mà chưa thanh toán thành công, hợp đồng chuyển *Overdue* theo `BR-OVD-01` |
 
 ---
 

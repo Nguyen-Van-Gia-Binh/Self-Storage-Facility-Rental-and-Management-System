@@ -55,6 +55,13 @@ public class CustomerRentalSummaryResponse {
     private long overdueFeeAccrued;
     private long totalOutstandingDebt;
 
+    // Thông tin thanh toán gia hạn đang chờ
+    private Boolean hasPendingRenewal;
+    private Long pendingRenewalOrderCode;
+    private Integer pendingRenewalMonths;
+    private Long pendingRenewalAmount;
+    private String pendingRenewalExpiresAt;
+
     public CustomerRentalSummaryResponse() {}
 
     // Getters and Setters
@@ -147,4 +154,19 @@ public class CustomerRentalSummaryResponse {
 
     public boolean isInspectionDone() { return inspectionDone; }
     public void setInspectionDone(boolean inspectionDone) { this.inspectionDone = inspectionDone; }
+
+    public Boolean getHasPendingRenewal() { return hasPendingRenewal; }
+    public void setHasPendingRenewal(Boolean hasPendingRenewal) { this.hasPendingRenewal = hasPendingRenewal; }
+
+    public Long getPendingRenewalOrderCode() { return pendingRenewalOrderCode; }
+    public void setPendingRenewalOrderCode(Long pendingRenewalOrderCode) { this.pendingRenewalOrderCode = pendingRenewalOrderCode; }
+
+    public Integer getPendingRenewalMonths() { return pendingRenewalMonths; }
+    public void setPendingRenewalMonths(Integer pendingRenewalMonths) { this.pendingRenewalMonths = pendingRenewalMonths; }
+
+    public Long getPendingRenewalAmount() { return pendingRenewalAmount; }
+    public void setPendingRenewalAmount(Long pendingRenewalAmount) { this.pendingRenewalAmount = pendingRenewalAmount; }
+
+    public String getPendingRenewalExpiresAt() { return pendingRenewalExpiresAt; }
+    public void setPendingRenewalExpiresAt(String pendingRenewalExpiresAt) { this.pendingRenewalExpiresAt = pendingRenewalExpiresAt; }
 }

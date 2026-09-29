@@ -112,6 +112,45 @@ public class PaymentServiceImpl implements PaymentService {
             contractId = contract.getId();
             txnType = "CONTRACT_RENEWAL";
             storedRenewalMonths = months;
+
+            Optional<PaymentTransaction> existingPending = paymentTransactionRepository
+                    .findTopByContractIdAndTransactionTypeOrderByCreatedAtDesc(contract.getId(), "CONTRACT_RENEWAL");
+            if (existingPending.isPresent()) {
+                PaymentTransaction txn = existingPending.get();
+                if ("PENDING".equals(txn.getStatus())) {
+                    java.time.Instant expiresAt = txn.getCreatedAt().plus(48, java.time.temporal.ChronoUnit.HOURS);
+                    if (java.time.Instant.now().isBefore(expiresAt)) {
+                        if (txn.getRenewalMonths() != null && txn.getRenewalMonths().equals(months)) {
+                            // Tái sử dụng
+                            PaymentCheckoutResult reused = paymentGateway.createPayment(
+                                    PaymentCheckoutCommand.builder()
+                                            .orderCode(txn.getOrderCode())
+                                            .amount(txn.getAmount())
+                                            .description(txn.getProviderReference())
+                                            .build());
+                            return CheckoutResponse.builder()
+                                    .orderCode(reused.getOrderCode())
+                                    .checkoutUrl(reused.getCheckoutUrl())
+                                    .qrCode(reused.getQrCode())
+                                    .amount(reused.getAmount())
+                                    .description(reused.getDescription())
+                                    .accountName(reused.getAccountName())
+                                    .accountNumber(reused.getAccountNumber())
+                                    .bin(reused.getBin())
+                                    .status("PENDING")
+                                    .build();
+                        } else {
+                            // Số tháng khác - hủy giao dịch cũ
+                            txn.setStatus("FAILED");
+                            paymentTransactionRepository.save(txn);
+                        }
+                    } else {
+                        // Hết hạn - hủy
+                        txn.setStatus("FAILED");
+                        paymentTransactionRepository.save(txn);
+                    }
+                }
+            }
         } else if ("SETTLEMENT".equalsIgnoreCase(request.getReferenceType())) {
             com.swp391.selfstorage.contract.entity.RentalContract contract = rentalContractRepository.findById(request.getReferenceId())
                     .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND,

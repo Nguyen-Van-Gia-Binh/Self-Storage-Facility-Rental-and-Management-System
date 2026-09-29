@@ -16,6 +16,8 @@ import com.swp391.selfstorage.reservation.dto.AccessLogResponse;
 import com.swp391.selfstorage.reservation.dto.ChangePinRequest;
 import com.swp391.selfstorage.reservation.entity.AccessLog;
 import com.swp391.selfstorage.reservation.repository.AccessLogRepository;
+import com.swp391.selfstorage.payment.entity.PaymentTransaction;
+import com.swp391.selfstorage.payment.repository.PaymentTransactionRepository;
 import com.swp391.selfstorage.reservation.entity.Reservation;
 import com.swp391.selfstorage.reservation.repository.ReservationRepository;
 import com.swp391.selfstorage.unit.entity.StorageUnit;
@@ -28,7 +30,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,6 +52,7 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
     private final UnitTypeRepository unitTypeRepository;
     private final AccessLogRepository accessLogRepository;
     private final ReturnRequestRepository returnRequestRepository;
+    private final PaymentTransactionRepository paymentTransactionRepository;
 
     public CustomerRentalServiceImpl(
             RentalContractRepository rentalContractRepository,
@@ -55,7 +61,8 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
             FacilityRepository facilityRepository,
             UnitTypeRepository unitTypeRepository,
             AccessLogRepository accessLogRepository,
-            @org.springframework.beans.factory.annotation.Autowired(required = false) ReturnRequestRepository returnRequestRepository
+            @org.springframework.beans.factory.annotation.Autowired(required = false) ReturnRequestRepository returnRequestRepository,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) PaymentTransactionRepository paymentTransactionRepository
     ) {
         this.rentalContractRepository = rentalContractRepository;
         this.reservationRepository = reservationRepository;
@@ -64,6 +71,7 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
         this.unitTypeRepository = unitTypeRepository;
         this.accessLogRepository = accessLogRepository;
         this.returnRequestRepository = returnRequestRepository;
+        this.paymentTransactionRepository = paymentTransactionRepository;
     }
 
 
@@ -307,6 +315,28 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
             res.setOverdueDays(0);
             res.setOverdueFeeAccrued(0);
             res.setTotalOutstandingDebt(0);
+        }
+
+        // Khởi tạo mặc định
+        res.setHasPendingRenewal(false);
+
+        // Kiểm tra đơn gia hạn đang chờ
+        if (paymentTransactionRepository != null && (contract.getStatus() == ContractStatus.ACTIVE || contract.getStatus() == ContractStatus.OVERDUE)) {
+            paymentTransactionRepository.findTopByContractIdAndTransactionTypeOrderByCreatedAtDesc(contract.getId(), "CONTRACT_RENEWAL")
+                    .ifPresent(txn -> {
+                        if ("PENDING".equals(txn.getStatus())) {
+                            Instant expiresAt = txn.getCreatedAt().plus(48, ChronoUnit.HOURS);
+                            if (Instant.now().isBefore(expiresAt)) {
+                                res.setHasPendingRenewal(true);
+                                res.setPendingRenewalOrderCode(txn.getOrderCode());
+                                res.setPendingRenewalMonths(txn.getRenewalMonths());
+                                res.setPendingRenewalAmount(txn.getAmount());
+                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX")
+                                        .withZone(ZoneId.systemDefault());
+                                res.setPendingRenewalExpiresAt(formatter.format(expiresAt));
+                            }
+                        }
+                    });
         }
     }
 

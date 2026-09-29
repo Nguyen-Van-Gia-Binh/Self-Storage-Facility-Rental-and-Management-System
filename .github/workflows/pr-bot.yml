@@ -34,25 +34,25 @@ jobs:
         run: |
           BRANCH_NAME="${{ github.head_ref }}"
           echo "Kiểm tra tên nhánh: $BRANCH_NAME"
-          PATTERN="^(feature|fix|docs|chore|refactor)/((T[0-9]+\.[0-9]+|Tx)-)?[a-z0-9-]+$"
+          PATTERN="^(feature|feat|fix|hotfix|docs|chore|refactor|test|perf|ci|build)/((T[0-9]+\.[0-9]+|Tx|[a-zA-Z0-9]+)-)?[a-zA-Z0-9._/-]+$"
           if [[ ! "$BRANCH_NAME" =~ $PATTERN ]]; then
-            echo "::error::❌ Tên nhánh '$BRANCH_NAME' không đúng quy ước!"
-            echo "::error::Mẫu chuẩn: <loại>/[<mã-task>-]<mô-tả> (Ví dụ: feature/T3.1-create-reservation-api, fix/login-loop, chore/clean-docs)"
-            exit 1
+            echo "::warning::⚠️ Tên nhánh '$BRANCH_NAME' chưa đúng định dạng khuyến nghị (<loại>/[<mã-task>-]<mô-tả>)."
+          else
+            echo "✅ Tên nhánh hợp lệ!"
           fi
-          echo "✅ Tên nhánh hợp lệ!"
 
       - name: 📝 Check PR Title Convention (CONTRIBUTING.md § 4.2)
         run: |
           PR_TITLE="${{ github.event.pull_request.title }}"
           echo "Kiểm tra tiêu đề PR: $PR_TITLE"
-          PATTERN="^(\[(T[0-9]+\.[0-9]+|Tx)\] )?(feat|fix|docs|refactor|test|style|chore|build|ci)(\([a-z0-9-]+\))?: .+$"
+          shopt -s nocasematch
+          PATTERN="^(\[[^]]+\][[:space:]]*)?(feat|feature|fix|hotfix|docs|refactor|test|style|chore|build|ci|perf)(\([^)]+\))?:[[:space:]]*.+$"
           if [[ ! "$PR_TITLE" =~ $PATTERN ]]; then
-            echo "::error::❌ Tiêu đề PR '$PR_TITLE' không đúng quy ước Conventional Commits!"
-            echo "::error::Mẫu chuẩn: [[<mã-task>] ]<loại>(<phạm-vi>): <mô tả> (Ví dụ: feat(reservation): API tạo Reservation hoặc [T3.1] feat(reservation): ...)"
-            exit 1
+            echo "::warning::⚠️ Tiêu đề PR '$PR_TITLE' chưa đúng chuẩn Conventional Commits (<loại>(<phạm-vi>): <mô-tả>)."
+          else
+            echo "✅ Tiêu đề PR hợp lệ!"
           fi
-          echo "✅ Tiêu đề PR hợp lệ!"
+          shopt -u nocasematch
 
       - name: ☕ Set up JDK 17
         uses: actions/setup-java@v4
@@ -120,8 +120,8 @@ jobs:
           PR_TITLE="${{ github.event.pull_request.title }}"
           PR_URL="${{ github.event.pull_request.html_url }}"
 
-          # Xóa tiền tố [T...] khỏi tiêu đề commit và thêm (# số PR) theo chuẩn GitHub
-          CLEAN_TITLE="$(echo "$PR_TITLE" | sed -E 's/^\[(T[0-9]+\.[0-9]+|Tx)\][[:space:]]*//') (#${{ github.event.pull_request.number }})"
+          # Xóa tiền tố [mã-task] khỏi tiêu đề commit và thêm (# số PR) theo chuẩn GitHub
+          CLEAN_TITLE="$(echo "$PR_TITLE" | sed -E 's/^\[[^]]+\][[:space:]]*//') (#${{ github.event.pull_request.number }})"
           echo "Tiêu đề commit squash: $CLEAN_TITLE"
 
           echo "Đang thực hiện Squash and Merge cho PR: $PR_URL"

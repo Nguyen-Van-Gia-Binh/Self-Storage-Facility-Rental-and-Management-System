@@ -1,7 +1,7 @@
 // frontend/src/layouts/navigationConfig.ts
 import type { LucideIcon } from 'lucide-react';
 import {
-  Home, Building2, Archive,
+  Home, Archive,
   KeyRound, ClipboardCheck,
   Layers, FileText, BarChart3, Wrench, Users,
   Map, DollarSign, TrendingUp,
@@ -73,10 +73,8 @@ export const ROLE_NAVIGATIONS: Record<UserRole, RoleNavigation> = {
     role: 'ADMIN',
     badgeColor: 'bg-rose-500',
     navItems: [
-      { label: 'Quản lý tài khoản',  href: '/admin/users',                icon: UserCog },
-      { label: 'Phân quyền vai trò', href: '/admin/roles',                icon: ShieldCheck },
-      { label: 'Gán cơ sở nhân sự',  href: '/admin/facility-assignments', icon: Building2 },
-      { label: 'Nhật ký hệ thống',   href: '/admin/activity-logs',        icon: Activity },
+      { label: 'Quản lý tài khoản',  href: '/admin/users',         icon: UserCog },
+      { label: 'Nhật ký hệ thống',   href: '/admin/activity-logs', icon: Activity },
     ],
   },
 };

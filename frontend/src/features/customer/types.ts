@@ -108,6 +108,11 @@ export interface RentedContract {
   overdueFee?: number;
   scheduledReturnDate?: string;
   inspectionDone?: boolean;
+  hasPendingRenewal?: boolean;
+  pendingRenewalOrderCode?: number;
+  pendingRenewalMonths?: number;
+  pendingRenewalAmount?: number;
+  pendingRenewalExpiresAt?: string;
 }
 
 // Nhật ký truy cập ra vào kho (US-SC-05.2, BR-ACC-02)
