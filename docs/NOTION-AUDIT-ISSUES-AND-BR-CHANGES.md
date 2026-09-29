@@ -17,6 +17,7 @@
    - [2.3. Giao diện Ban Giám đốc (BOM - Board of Management)](#23-giao-diện-ban-giám-đốc-bom---board-of-management)
    - [2.4. Giao diện Quản lý Cơ sở (FM - Facility Manager)](#24-giao-diện-quản-lý-cơ-sở-fm---facility-manager)
    - [2.5. Giao diện Nhân viên Vận hành (Staff)](#25-giao-diện-nhân-viên-vận-hành-staff)
+   - [2.6. Cơ Chế Điều Hướng Cổng Vai Trò (System Navigation & Role Portals)](#26-cơ-chế-điều-hướng-cổng-vai-trò-system-navigation--role-portals)
 3. [Những Thay Đổi Hệ Thống Buộc Phải Thực Hiện Khi Có BR Mới](#3-những-thay-đổi-hệ-thống-buộc-phải-thực-hiện-khi-có-br-mới)
    - [3.1. Thay đổi tầng Cơ sở dữ liệu (Database Schema & Seed Data)](#31-thay-đổi-tầng-cơ-sở-dữ-liệu-database-schema--seed-data)
    - [3.2. Thay đổi tầng Backend (Spring Boot Services & Scheduled Jobs)](#32-thay-đổi-tầng-backend-spring-boot-services--scheduled-jobs)
@@ -730,6 +731,31 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
   * **Hướng xử lý & File liên quan:**  
     - Frontend: `StaffCheckInPage.tsx`, `UnitPhysicalInfoCard.tsx`, `CheckInInspectionForm.tsx`.  
     - Backend: `StorageUnitDto.java`, `CheckInService.java`.
+
+---
+
+### 2.6. Cơ Chế Điều Hướng Cổng Vai Trò (System Navigation & Role Portals)
+
+#### 33. [ĐÃ FIX — commit `98f4cad`, branch `fix/role-portal-redirect`] Tài khoản nhân sự (Manager / Staff / BOM / Admin) truy cập đường link gốc (/) bị kẹt ở giao diện Khách hàng, thiếu cơ chế tự động chuyển hướng theo vai trò (Role-based Portal Auto-Redirect) (`US-GEN-01`, `RBAC`)
+- **Ghi chú gốc từ Lead Dev:**  
+  > *"tự nhiên tôi lấy đường link gõ: http://localhost:5173 thì màn hình nó ra như này là sao: trong khi thằng này là manager ... phương án B chứ người nào role nào thì vào trang đó chứ, sao lại vô trang khác được ??? ... hãy ghi lại cái lỗi mới này vào đây và ghi đã fix để họ biết tôi đã làm gì"*
+- **Mô tả kỹ thuật chuẩn hóa:**  
+  * **Tên vấn đề:** Tài khoản người dùng nội bộ (Quản lý cơ sở, Nhân viên trực quầy, Quản lý vận hành kinh doanh BOM, Quản trị viên Admin) sau khi đăng nhập thành công vào hệ thống, nếu gõ trực tiếp URL gốc `http://localhost:5173/` hoặc nhấp vào liên kết ngoài dẫn về `/`, ứng dụng vẫn render nguyên vẹn giao diện Landing Page của Khách hàng (`CustomerLayout` + `HomePage`).  
+  * **Hiện trạng bất cập:**  
+    1. Một Quản lý cơ sở (`FACILITY_MANAGER`) hoặc Nhân viên (`FACILITY_STAFF`) khi truy cập `/` lại nhìn thấy giao diện quảng cáo thuê kho, banner tìm kho, bảng giá của khách hàng mà không có bất kỳ dấu hiệu điều hướng hay lối tắt nào để quay lại Dashboard làm việc của mình.  
+    2. Người dùng buộc phải nhớ và gõ tay URL trên thanh địa chỉ trình duyệt (`/manager`, `/staff`, `/bom/facilities`, `/admin/users`). Điều này vi phạm nguyên lý trải nghiệm người dùng RBAC (Role-based Portal Navigation).
+  * **Nguyên nhân gốc rễ (Root Cause):**  
+    `CustomerRoutes.tsx` cấu hình route mặc định `path="" element={<HomePage />}` là public component và không có bộ lọc kiểm tra vai trò người dùng hiện tại (`useAuthContext().user?.role`), dẫn tới mọi người dùng khi vào trang chủ đều bị render giao diện khách hàng.
+  * **Hành vi kỳ vọng & Kết quả đã khắc phục (commit `98f4cad`):**  
+    1. *Tự động chuyển hướng vai trò thông minh (Role-based Portal Auto-Redirect):* Tại `CustomerRoutes.tsx`, xây dựng bảng định tuyến `ROLE_PORTAL_MAP`:
+       - `FACILITY_MANAGER` $\rightarrow$ Chuyển hướng ngay tới `/manager`
+       - `FACILITY_STAFF` $\rightarrow$ Chuyển hướng ngay tới `/staff`
+       - `BUSINESS_OPERATIONS_MANAGER` $\rightarrow$ Chuyển hướng ngay tới `/bom/facilities`
+       - `SYSTEM_ADMINISTRATOR` $\rightarrow$ Chuyển hướng ngay tới `/admin/users`
+       Khi tài khoản nội bộ truy cập `/`, hệ thống tự động `<Navigate to={portalPath} replace />` thẳng về đúng trang làm việc theo đúng vai trò mà không cần thao tác thủ công.
+    2. *Bổ sung lối tắt tiện ích trên thanh điều hướng (`CustomerLayout.tsx`):* Trong User Dropdown Menu trên Header, hệ thống tự động nhận diện nếu người dùng có vai trò nội bộ sẽ hiển thị thêm nút bấm nổi bật: **"Vào trang Quản lý [Tên vai trò]"** giúp nhân sự chủ động chuyển đổi giao diện mọi lúc.
+  * **File liên quan đã hoàn thành:**  
+    - Frontend: `frontend/src/features/customer/CustomerRoutes.tsx`, `frontend/src/layouts/CustomerLayout.tsx`.
 
 ---
 
