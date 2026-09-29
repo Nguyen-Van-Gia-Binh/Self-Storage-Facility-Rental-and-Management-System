@@ -314,7 +314,7 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({ tasks, o
                       {isDone ? (
                         <button
                           type="button"
-                          onClick={() => navigate('/staff/checkin')}
+                          onClick={() => navigate('/staff/check-in')}
                           className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 shrink-0 shadow-xs transition"
                         >
                           <CheckCircle2 className="w-4 h-4 text-emerald-600" />
@@ -323,7 +323,7 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({ tasks, o
                       ) : (
                         <button
                           type="button"
-                          onClick={() => navigate('/staff/checkin')}
+                          onClick={() => navigate('/staff/check-in')}
                           className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold flex items-center justify-center gap-1.5 shrink-0 shadow-sm transition"
                         >
                           <span>Tiếp đón & Bàn giao</span>

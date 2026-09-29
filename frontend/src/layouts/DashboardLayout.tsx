@@ -201,11 +201,21 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         {/* Navigation */}
         <nav className="flex-1 py-4 px-2.5 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
-            const isExact = location.pathname === item.href || location.pathname === `${item.href}/`;
-            const isChildActive = navItems.some(
-              (other) => other.href !== item.href && other.href.startsWith(item.href) && location.pathname.startsWith(other.href)
-            );
-            const isActive = isExact || (location.pathname.startsWith(`${item.href}/`) && !isChildActive);
+            const currentPath = location.pathname.replace(/\/+$/, '') || '/';
+            const itemHref = item.href.replace(/\/+$/, '') || '/';
+
+            // Khớp chính xác hoặc khớp alias (ví dụ: /staff/checkin <-> /staff/check-in)
+            const isAliasMatch =
+              (itemHref === '/staff/check-in' && (currentPath === '/staff/checkin' || currentPath.startsWith('/staff/checkin/')));
+
+            const isExact = currentPath === itemHref || isAliasMatch;
+            const isChildActive = navItems.some((other) => {
+              const otherHref = other.href.replace(/\/+$/, '') || '/';
+              if (otherHref === itemHref) return false;
+              if (otherHref === '/staff/check-in' && (currentPath === '/staff/checkin' || currentPath.startsWith('/staff/checkin/'))) return true;
+              return otherHref.startsWith(itemHref) && (currentPath === otherHref || currentPath.startsWith(`${otherHref}/`));
+            });
+            const isActive = isExact || (currentPath.startsWith(`${itemHref}/`) && !isChildActive);
             const Icon = item.icon || Layers;
             return (
               <Link
