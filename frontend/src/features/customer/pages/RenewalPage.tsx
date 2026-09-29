@@ -20,16 +20,19 @@ import {
   AlertTriangle,
   Loader2,
   ExternalLink,
-  XCircle
+  XCircle,
+  PlusCircle,
+  RotateCcw
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { getCustomerContracts, getRenewalQuote, waitForAppliedRenewal, type RenewalQuote } from '@/api/customerRentals';
 import { customerApi, type CheckoutResponse } from '../api/customerApi';
 import { formatVND } from '../utils/pricing';
-import { calculateRenewalPricing, calculateExtendedEndDate, calculateDaysRemaining } from '../utils/renewalPricing';
+import { calculateRenewalPricing, calculateExtendedEndDate } from '../utils/renewalPricing';
 import type { RentedContract, RenewContractResponse } from '../types';
 import { RenewalExpiryBanner } from '../components/RenewalExpiryBanner';
 import { RenewalReceiptModal } from '../components/RenewalReceiptModal';
+import { ScheduleReturnModal } from '../components/ScheduleReturnModal';
 import { tokenStorage } from '@/utils/tokenStorage';
 
 export const RenewalPage: React.FC = () => {
@@ -74,6 +77,9 @@ export const RenewalPage: React.FC = () => {
   const [paymentNotice, setPaymentNotice] = useState<string | null>(null);
   const [renewalQuote, setRenewalQuote] = useState<RenewalQuote | null>(null);
   const [loadingQuote, setLoadingQuote] = useState<boolean>(false);
+  const [isCapacityConflict, setIsCapacityConflict] = useState<boolean>(false);
+  const [capacityConflictMessage, setCapacityConflictMessage] = useState<string>('');
+  const [showReturnModal, setShowReturnModal] = useState<boolean>(false);
 
   const [isSandboxing, setIsSandboxing] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -85,6 +91,7 @@ export const RenewalPage: React.FC = () => {
     let isMounted = true;
     const fetchQuote = async () => {
       setLoadingQuote(true);
+      setIsCapacityConflict(false);
       try {
         const numId = parseInt(contract.id, 10);
         const rawId = contract.id.replace(/\D/g, '');
@@ -93,8 +100,16 @@ export const RenewalPage: React.FC = () => {
         if (isMounted) {
           setRenewalQuote(quote);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.warn('Lỗi lấy báo giá gia hạn từ backend:', err);
+        const code = err?.errorCode || err?.data?.errorCode;
+        const msg = err?.message || err?.data?.message || '';
+        if (code === 'CAPACITY_NOT_AVAILABLE' || msg.includes('đặt trước') || msg.includes('CAPACITY_NOT_AVAILABLE')) {
+          if (isMounted) {
+            setIsCapacityConflict(true);
+            setCapacityConflictMessage(msg || 'Ô kho này đã có khách hàng khác đặt trước cho chu kỳ tiếp theo.');
+          }
+        }
       } finally {
         if (isMounted) {
           setLoadingQuote(false);
@@ -118,15 +133,16 @@ export const RenewalPage: React.FC = () => {
       setIsLoadingCheckout(true);
       setCheckoutError(null);
       try {
-        const remDays = calculateDaysRemaining(contract.endDate);
-        if (contract.status === 'OVERDUE' || remDays < 0) {
-          throw new Error('Hợp đồng đã quá hạn và không thể gia hạn tiếp trực tuyến theo quy định.');
+        if (contract.status === 'PENDING_RETURN') {
+          throw new Error('Hợp đồng đang ở trạng thái chờ nghiệm thu trả kho. Vui lòng hủy yêu cầu trả kho trước nếu muốn gia hạn.');
         }
-        if (contract.status !== 'ACTIVE') {
-          throw new Error(`Hợp đồng đang ở trạng thái "${contract.status}". Chỉ hợp đồng ACTIVE mới được phép gia hạn.`);
-        }
-        if (remDays < 30) {
-          throw new Error('Đã quá thời hạn gia hạn. Khách hàng phải gia hạn trước ngày hết hạn ít nhất 30 ngày theo quy định.');
+        if (contract.status === 'OVERDUE') {
+          const fee = contract.overdueFee ?? 0;
+          if (fee > 0) {
+            throw new Error('Hợp đồng đang có nợ phạt quá hạn. Vui lòng thanh toán nợ phạt trước khi gia hạn.');
+          }
+        } else if (contract.status !== 'ACTIVE') {
+          throw new Error(`Hợp đồng đang ở trạng thái "${contract.status}". Chỉ hợp đồng ACTIVE hoặc OVERDUE đã tất toán nợ mới được phép gia hạn.`);
         }
 
         const numId = parseInt(contract.id, 10);
@@ -144,10 +160,17 @@ export const RenewalPage: React.FC = () => {
         }
       } catch (err: unknown) {
         console.warn('Lỗi khởi tạo PayOS cho hợp đồng:', err);
+        const code = (err as any)?.errorCode || (err as any)?.data?.errorCode;
         const msg =
           err instanceof Error
             ? err.message
             : 'Không thể kết nối cổng thanh toán PayOS. Vui lòng kiểm tra lại kết nối!';
+        if (code === 'CAPACITY_NOT_AVAILABLE' || msg.includes('đặt trước')) {
+          if (isMounted) {
+            setIsCapacityConflict(true);
+            setCapacityConflictMessage(msg);
+          }
+        }
         if (isMounted) {
           setCheckoutError(msg);
         }
@@ -437,11 +460,10 @@ export const RenewalPage: React.FC = () => {
     );
   }
 
-  const daysRemaining = contract ? calculateDaysRemaining(contract.endDate) : 0;
   const isTerminated = contract ? (contract.status === 'TERMINATED' || contract.status === 'CLOSED') : false;
-  const isOverdue = contract ? (contract.status === 'OVERDUE' || daysRemaining < 0) : false;
-  const isCutoffLocked = contract ? (contract.status === 'ACTIVE' && daysRemaining < 30) : false;
-  const isRenewalBlocked = isTerminated || isOverdue || isCutoffLocked;
+  const isPendingReturn = contract ? contract.status === 'PENDING_RETURN' : false;
+  const hasUnpaidOverdue = contract ? (contract.status === 'OVERDUE' && (contract.overdueFee ?? 0) > 0) : false;
+  const isRenewalBlocked = isTerminated || isPendingReturn || hasUnpaidOverdue || isCapacityConflict;
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
@@ -550,8 +572,58 @@ export const RenewalPage: React.FC = () => {
       {/* Dynamic Expiry & Eligibility Banner */}
       <RenewalExpiryBanner contract={contract} />
 
-      {/* STEP 1: CHỌN KỲ HẠN & KIỂM TRA ĐIỀU KIỆN */}
-      {currentStep === 1 && (
+      {/* MÀN HÌNH CẢNH BÁO XUNG ĐỘT TRÙNG LỊCH ĐẶT TRƯỚC (Availability Conflict) */}
+      {isCapacityConflict ? (
+        <Card className="p-8 sm:p-12 text-center bg-white border border-amber-300 rounded-2xl shadow-sm space-y-6 max-w-2xl mx-auto">
+          <div className="w-16 h-16 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center mx-auto border-2 border-amber-200">
+            <AlertTriangle className="w-8 h-8 text-amber-600" />
+          </div>
+
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-800 bg-amber-100/80 px-3 py-1 rounded-full uppercase tracking-wider">
+              Xung đột lịch đặt trước
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black text-[#0a1614]">
+              Ô kho {contract.unitNumber} đã có người đặt trước cho kỳ tiếp theo
+            </h2>
+            {capacityConflictMessage && (
+              <p className="text-xs text-amber-800 bg-amber-50 p-2.5 rounded-lg border border-amber-200 max-w-lg mx-auto">
+                {capacityConflictMessage}
+              </p>
+            )}
+            <p className="text-sm text-slate-600 max-w-lg mx-auto leading-relaxed">
+              Rất tiếc, khoảng thời gian tiếp theo của ô kho này đã được một khách hàng khác đặt chỗ trước. Bạn không thể tiếp tục gia hạn trên ô kho này.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4 border-t border-slate-100">
+            <Link
+              to={contract.facilityId ? `/booking/picker?facilityId=${contract.facilityId}` : '/booking/picker'}
+              className="w-full sm:w-auto"
+            >
+              <Button
+                variant="primary"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 shadow-xs font-bold text-sm cursor-pointer"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>Tìm & Thuê ô kho mới tại cơ sở này</span>
+              </Button>
+            </Link>
+
+            <Button
+              variant="outline"
+              onClick={() => setShowReturnModal(true)}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 text-slate-700 hover:text-amber-800 hover:bg-amber-50 border-slate-300 font-bold text-sm cursor-pointer"
+            >
+              <RotateCcw className="w-4 h-4 text-amber-600" />
+              <span>Lên lịch nghiệm thu & Trả kho</span>
+            </Button>
+          </div>
+        </Card>
+      ) : (
+        <>
+          {/* STEP 1: CHỌN KỲ HẠN & KIỂM TRA ĐIỀU KIỆN */}
+          {currentStep === 1 && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           {/* Extension Form Left (2/3) */}
           <div className="lg:col-span-2 space-y-5">
@@ -1152,6 +1224,19 @@ export const RenewalPage: React.FC = () => {
           </Card>
         </div>
       )}
+        </>
+      )}
+
+      {/* Schedule Return Modal from Conflict Screen */}
+      <ScheduleReturnModal
+        isOpen={showReturnModal}
+        onClose={() => setShowReturnModal(false)}
+        contract={contract}
+        onReturnScheduled={() => {
+          setShowReturnModal(false);
+          navigate('/customer/my-units');
+        }}
+      />
 
       {/* Electronic Renewal Receipt Modal (E-Receipt) */}
       {renewalResult && (

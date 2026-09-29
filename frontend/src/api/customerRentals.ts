@@ -318,6 +318,14 @@ export async function getContractAccessLogs(contractId: string): Promise<AccessL
 }
 
 /**
+ * Hủy yêu cầu trả kho khi nhân viên chưa nghiệm thu (BR-RET-12)
+ * POST /contracts/{contractId}/cancel-return
+ */
+export async function cancelContractReturn(contractId: number | string): Promise<any> {
+  return apiClient(`/contracts/${contractId}/cancel-return`, { method: 'POST' });
+}
+
+/**
  * Gia hạn hợp đồng trực tuyến (US-SC-05.3, BR-REN-01..08)
  */
 export async function renewContract(

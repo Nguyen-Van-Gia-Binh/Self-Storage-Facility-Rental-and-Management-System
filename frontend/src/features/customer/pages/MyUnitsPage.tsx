@@ -373,6 +373,7 @@ export const MyUnitsPage: React.FC = () => {
               onScheduleReturn={(c) => setSelectedReturnContract(c)}
               onViewDetail={(c) => setSelectedDetailContract(c)}
               onOpenOverduePayment={(c) => setSelectedOverdueContract(c)}
+              onCancelReturn={() => loadContracts()}
             />
           ))}
         </div>

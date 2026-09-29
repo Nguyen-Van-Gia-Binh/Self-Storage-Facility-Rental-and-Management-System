@@ -68,6 +68,10 @@
 | `ISS-58` | Jackson serialize thiếu `@JsonProperty("isActive")` khiến Unit Catalog hiển thị Vô hiệu và khóa nút Thêm ô kho vật lý. | Bổ sung `@JsonProperty("isActive")` ở DTO Backend, đồng bộ types và resilience cho Frontend. | Bình | `RESOLVED` |
 | `ISS-59` | Dữ liệu mẫu chứa Tân Bình Flagship, sai thuật ngữ ngăn tủ/tủ đồ, SLA hoàn cọc 24-48h (Lỗi 3, 4). | Chuẩn hóa toàn bộ ô kho trên UI, đổi SLA cọc 7 ngày LV, xóa sạch mock facility/pricing, nối Real DB API và migration V33. | Bình | `RESOLVED` |
 | `ISS-60` | Lỗi font Mojibake tên người dùng seed data do Windows Cp1252 và thừa menu Admin (Lỗi 13, SA-01..03). | Ép UTF-8 Flyway application.yml, update tên DB chuẩn Unicode và tinh gọn 2 menu Admin. | Bình | `RESOLVED` |
+| `ISS-61` | Khóa PIN quá sớm tại D+4 khiến khách không dọn được kho; nộp phạt xong không mở lại PIN (Lỗi 7, BR-OVD-05). | Sửa logic chỉ khóa an ninh tại D+7 khi còn nợ; D+4..D+6 mở PIN dọn đồ; nộp phạt xong mở lại PIN. | Bình | `RESOLVED` |
+| `ISS-62` | Nộp phạt xong chuyển badge xanh Đang hoạt động gây ngộ nhận còn hạn thuê (Lỗi 8). | Đổi badge cam Đã tất toán phạt — Chờ dọn kho / trả kho, thêm banner nhắc nhở, mở sáng nút Báo trả kho. | Bình | `RESOLVED` |
+| `ISS-63` | Hợp đồng PENDING_RETURN vẫn mở nút Gia hạn gây lỗi thanh toán; thiếu luồng hủy trả kho (Lỗi 9, BR-RET-12). | Ẩn nút Gia hạn khi PENDING_RETURN; bổ sung API POST /cancel-return và nút Hủy yêu cầu trả kho. | Bình | `RESOLVED` |
+| `ISS-64` | Khóa cứng gia hạn trước 30 ngày, cấm gia hạn sau nộp phạt, thiếu xử lý trùng lịch đặt trước (Lỗi 10, BR-REN-01..06). | Bỏ khóa 30 ngày, cho phép gia hạn sau nộp phạt, hiển thị Conflict Notice View khi ô kho bị đặt trước. | Bình | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 
@@ -84,8 +88,8 @@
 | **Nghiệm thu trả kho & Tất toán**| Flow 3 | ✅ Sẵn sàng | ✅ Sẵn sàng | ✅ Đạt | Manager phân công, Staff nghiệm thu |
 | **Bảng giá & Chính sách BOM** | Flow 4 | ✅ Sẵn sàng | ✅ Sẵn sàng | ✅ Đạt | Cấu hình giá, chiết khấu |
 | **Điều phối nhân sự cơ sở** | Flow 5 | ✅ Sẵn sàng | ✅ Sẵn sàng | ✅ Đạt | Phân công ca trực và tiếp nhận việc |
-| **Gia hạn thuê online** | Flow 6.1 | ✅ Sẵn sàng | ✅ Sẵn sàng | ✅ Đạt | Thanh toán tiền thuê chu kỳ mới |
-| **Cronjob Quá hạn & Khóa mã** | Flow 6.2 | ✅ Sẵn sàng | ✅ Sẵn sàng | ✅ Đạt | Tự động tính phí D+1, khóa mã D+4 |
+| **Gia hạn thuê online** | Flow 6.1 | ✅ Sẵn sàng | ✅ Sẵn sàng | ✅ Đạt | Thanh toán tiền thuê chu kỳ mới, bỏ khóa 30 ngày |
+| **Cronjob Quá hạn & Khóa mã** | Flow 6.2 | ✅ Sẵn sàng | ✅ Sẵn sàng | ✅ Đạt | Tự động tính phí D+1, khóa mã D+7 (BR-OVD-05) |
 | **Xử lý sự cố & Báo cáo** | Flow 7 | ✅ Sẵn sàng | ✅ Sẵn sàng | ✅ Đạt | Gửi ticket, phản hồi và đóng sự cố |
 
 ---

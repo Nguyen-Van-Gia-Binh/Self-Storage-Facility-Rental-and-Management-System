@@ -64,6 +64,7 @@ public enum ErrorCode {
     CONTRACT_NOT_ACTIVE_OR_OVERDUE(HttpStatus.CONFLICT,
             "Hợp đồng phải ở trạng thái đang hoạt động hoặc quá hạn để trả kho"),
     CONTRACT_NOT_PENDING_RETURN(HttpStatus.CONFLICT, "Hợp đồng chưa ở trạng thái chờ duyệt trả kho"),
+    RETURN_INSPECTION_ALREADY_STARTED(HttpStatus.CONFLICT, "Không thể hủy vì nhân viên đã bắt đầu tiến hành kiểm tra nghiệm thu"),
     SURCHARGE_CODE_ALREADY_EXISTS(HttpStatus.CONFLICT, "Mã phụ phí đã tồn tại"),
     PAYMENT_FAILED(HttpStatus.CONFLICT, "Thanh toán thất bại ở cổng thanh toán"),
     POLICY_VERSION_ALREADY_EXISTS(HttpStatus.CONFLICT, "Số phiên bản chính sách đã tồn tại"),

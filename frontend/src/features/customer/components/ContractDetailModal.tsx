@@ -87,8 +87,25 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
         return <Badge variant="reserved">Chờ đối chiếu CCCD tại quầy</Badge>;
       case 'EXPIRING_SOON':
         return <Badge variant="warning">Sắp hết hạn</Badge>;
-      case 'OVERDUE':
-        return <Badge variant="overdue">Quá hạn thanh toán</Badge>;
+      case 'OVERDUE': {
+        const overdueDays =
+          contract.overdueDays !== undefined && contract.overdueDays > 0
+            ? contract.overdueDays
+            : 1;
+        const isGracePeriod = overdueDays <= 3;
+        if (contract.overdueFee === 0 && !isGracePeriod) {
+          return (
+            <Badge variant="warning" className="bg-amber-50 text-amber-800 border-amber-300">
+              Đã tất toán phạt — Chờ dọn kho / trả kho
+            </Badge>
+          );
+        }
+        return (
+          <Badge variant={isGracePeriod ? 'warning' : 'overdue'}>
+            {isGracePeriod ? `Ân hạn D+${overdueDays}` : `Quá hạn D+${overdueDays}`}
+          </Badge>
+        );
+      }
       case 'PENDING_RETURN':
         return <Badge variant="warning">Đang chờ trả kho</Badge>;
       case 'CLOSED':

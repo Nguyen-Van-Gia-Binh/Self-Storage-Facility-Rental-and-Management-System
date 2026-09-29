@@ -1,5 +1,6 @@
 package com.swp391.selfstorage.contract.service.impl;
 
+import com.swp391.selfstorage.auth.service.UserPrincipal;
 import com.swp391.selfstorage.common.dto.PageResponse;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
@@ -22,6 +23,7 @@ import com.swp391.selfstorage.support.entity.StaffDailyAssignment;
 import com.swp391.selfstorage.support.repository.StaffDailyAssignmentRepository;
 import com.swp391.selfstorage.policy.entity.PolicyVersion;
 import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
+import com.swp391.selfstorage.user.entity.UserRole;
 import com.swp391.selfstorage.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -591,6 +593,53 @@ public class ContractServiceImpl implements ContractService {
                                 .intendedReturnDate(saved.getRequestedReturnDate())
                                 .status(saved.getStatus())
                                 .createdAt(saved.getCreatedAt())
+                                .build();
+        }
+
+        @Override
+        @Transactional
+        public ReturnNoticeResponse cancelReturnNotice(Long contractId, UserPrincipal currentUser) {
+                RentalContract contract = contractRepository.findById(contractId)
+                                .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
+
+                if (currentUser != null && currentUser.getRole() == UserRole.STORAGE_CUSTOMER) {
+                        if (!contract.getCustomerId().equals(currentUser.getId())) {
+                                throw new CustomException(ErrorCode.ACCESS_DENIED, "Bạn không có quyền hủy yêu cầu trả kho của hợp đồng này");
+                        }
+                }
+
+                if (contract.getStatus() != ContractStatus.PENDING_RETURN) {
+                        throw new CustomException(ErrorCode.CONTRACT_NOT_PENDING_RETURN, "Hợp đồng không ở trạng thái chờ trả kho để hủy");
+                }
+
+                ReturnRequest returnRequest = returnRequestRepository
+                                .findTopByContractIdOrderByCreatedAtDesc(contractId)
+                                .orElseThrow(() -> new CustomException(ErrorCode.RETURN_REQUEST_NOT_FOUND));
+
+                if (returnRequest.getInspectedAt() != null || returnRequest.getStatus() != ReturnRequestStatus.PENDING) {
+                        throw new CustomException(ErrorCode.RETURN_INSPECTION_ALREADY_STARTED,
+                                        "Không thể hủy vì nhân viên đã bắt đầu tiến hành kiểm tra nghiệm thu.");
+                }
+
+                returnRequest.setStatus(ReturnRequestStatus.CANCELLED);
+                returnRequest.setCancelledAt(OffsetDateTime.now());
+                returnRequestRepository.save(returnRequest);
+
+                LocalDate today = LocalDate.now();
+                if (contract.getEndDateExclusive() != null && today.isAfter(contract.getEndDateExclusive())) {
+                        contract.setStatus(ContractStatus.OVERDUE);
+                } else {
+                        contract.setStatus(ContractStatus.ACTIVE);
+                }
+                contract.setReturnDate(null);
+                contractRepository.save(contract);
+
+                return ReturnNoticeResponse.builder()
+                                .id(returnRequest.getId())
+                                .contractId(contract.getId())
+                                .intendedReturnDate(returnRequest.getRequestedReturnDate())
+                                .status(returnRequest.getStatus())
+                                .createdAt(returnRequest.getCreatedAt())
                                 .build();
         }
 

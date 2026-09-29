@@ -127,28 +127,79 @@ class RenewalServiceTest {
     }
 
     @Test
-    @DisplayName("Ném RENEWAL_NOT_ALLOWED khi hợp đồng còn dưới 30 ngày theo BR-REN-02")
-    void testGetRenewalQuote_lessThan30Days_throwsRenewalNotAllowed() {
+    @DisplayName("Cho phép lấy báo giá gia hạn khi hợp đồng còn dưới 30 ngày (BR-REN-01 & BR-REN-02 mới)")
+    void testGetRenewalQuote_lessThan30Days_success() {
         RentalContract contract = buildContract(ContractStatus.ACTIVE);
-        contract.setEndDateExclusive(LocalDate.now().plusDays(29)); // Còn 29 ngày (< 30 ngày)
+        contract.setEndDateExclusive(LocalDate.now().plusDays(10)); // Còn 10 ngày (< 30 ngày)
         when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
+        when(policyService.getActivePolicy()).thenReturn(buildActivePolicy());
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any(), anyInt())).thenReturn(false);
+        when(facilityPriceRepository.findByFacilityIdAndUnitTypeId(1L, 7L))
+                .thenReturn(Optional.of(FacilityUnitTypePrice.builder().monthlyPrice(800000L).build()));
 
-        CustomException ex = assertThrows(CustomException.class,
-                () -> renewalService.getRenewalQuote(100L, new RenewalRequest(3)));
+        RenewalQuoteResponse quote = renewalService.getRenewalQuote(100L, new RenewalRequest(1));
 
-        assertEquals(ErrorCode.RENEWAL_NOT_ALLOWED, ex.getErrorCode());
+        assertNotNull(quote);
+        assertEquals(100L, quote.getContractId());
+        assertEquals(1, quote.getRenewalMonths());
+        assertEquals(800000L, quote.getTotalAmount());
     }
 
     @Test
-    @DisplayName("Ném RENEWAL_NOT_ALLOWED khi hợp đồng ở trạng thái OVERDUE")
-    void testGetRenewalQuote_overdue_throwsRenewalNotAllowed() {
+    @DisplayName("Ném RENEWAL_NOT_ALLOWED khi hợp đồng OVERDUE còn nợ phạt chưa thanh toán (BR-REN-06)")
+    void testGetRenewalQuote_overdueWithUnpaidDebt_throwsRenewalNotAllowed() {
         RentalContract contract = buildContract(ContractStatus.OVERDUE);
+        contract.setOverdueFeeAccrued(160000L);
         when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
 
         CustomException ex = assertThrows(CustomException.class,
                 () -> renewalService.getRenewalQuote(100L, new RenewalRequest(2)));
 
         assertEquals(ErrorCode.RENEWAL_NOT_ALLOWED, ex.getErrorCode());
+        assertEquals("Hợp đồng đang có nợ phạt quá hạn. Vui lòng thanh toán nợ phạt trước khi gia hạn.", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("Cho phép lấy báo giá gia hạn khi hợp đồng OVERDUE đã tất toán hết nợ phạt (overdueFeeAccrued == 0) (BR-REN-06)")
+    void testGetRenewalQuote_overdueClearedDebt_success() {
+        RentalContract contract = buildContract(ContractStatus.OVERDUE);
+        contract.setOverdueFeeAccrued(0L);
+        when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
+        when(policyService.getActivePolicy()).thenReturn(buildActivePolicy());
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any(), anyInt())).thenReturn(false);
+        when(facilityPriceRepository.findByFacilityIdAndUnitTypeId(1L, 7L))
+                .thenReturn(Optional.of(FacilityUnitTypePrice.builder().monthlyPrice(800000L).build()));
+
+        RenewalQuoteResponse quote = renewalService.getRenewalQuote(100L, new RenewalRequest(3));
+
+        assertNotNull(quote);
+        assertEquals(100L, quote.getContractId());
+        assertEquals(0L, quote.getOverdueFeeSettled());
+        assertEquals(2400000L, quote.getTotalAmount());
+    }
+
+    @Test
+    @DisplayName("Gia hạn thành công cho hợp đồng OVERDUE đã nộp phạt: khôi phục ACTIVE và xóa nợ")
+    void testProcessRenewal_overdueClearedDebt_success() {
+        RentalContract contract = buildContract(ContractStatus.OVERDUE);
+        contract.setOverdueFeeAccrued(0L);
+        when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
+        when(policyService.getActivePolicy()).thenReturn(buildActivePolicy());
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any(), anyInt())).thenReturn(false);
+        when(facilityPriceRepository.findByFacilityIdAndUnitTypeId(1L, 7L))
+                .thenReturn(Optional.of(FacilityUnitTypePrice.builder().monthlyPrice(800000L).build()));
+        when(contractRenewalRepository.save(any(ContractRenewal.class))).thenAnswer(inv -> {
+            ContractRenewal cr = inv.getArgument(0);
+            cr.setId(1L);
+            return cr;
+        });
+
+        RenewalResponse response = renewalService.processRenewal(100L, new RenewalRequest(3), 777L);
+
+        assertNotNull(response);
+        assertEquals(ContractStatus.ACTIVE, contract.getStatus());
+        assertEquals(0L, contract.getOverdueFeeAccrued());
+        verify(rentalContractRepository).save(contract);
     }
 
     @Test
@@ -199,6 +250,7 @@ class RenewalServiceTest {
                 () -> renewalService.getRenewalQuote(100L, new RenewalRequest(3)));
 
         assertEquals(ErrorCode.CAPACITY_NOT_AVAILABLE, ex.getErrorCode());
+        assertEquals("Ô kho này đã có khách hàng khác đặt trước cho chu kỳ tiếp theo. Quý khách vui lòng chọn thuê ô kho mới hoặc lên lịch trả kho.", ex.getMessage());
     }
 
     @Test

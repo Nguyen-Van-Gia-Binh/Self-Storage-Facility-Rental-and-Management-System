@@ -182,6 +182,20 @@ public class ContractController {
                 .body(ApiResponse.success(response, "Gửi thông báo trả kho thành công"));
     }
 
+    /** BR-RET-12: Hủy yêu cầu trả kho khi nhân viên chưa nghiệm thu */
+    @PostMapping("/{id}/cancel-return")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Hủy yêu cầu trả kho khi chưa nghiệm thu (BR-RET-12)")
+    public ResponseEntity<ApiResponse<ReturnNoticeResponse>> cancelReturnNotice(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        if (currentUser == null) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED);
+        }
+        ReturnNoticeResponse response = contractService.cancelReturnNotice(id, currentUser);
+        return ResponseEntity.ok(ApiResponse.success(response, "Hủy yêu cầu trả kho thành công"));
+    }
+
     /** T4.15 / FS-04: Phân công hoặc tự nhận việc nghiệm thu trả kho */
     @PatchMapping("/{id}/assign-return")
     @PreAuthorize("hasAnyRole('STAFF', 'MANAGER', 'ADMIN')")

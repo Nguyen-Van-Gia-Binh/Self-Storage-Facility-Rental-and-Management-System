@@ -173,9 +173,10 @@ class CustomerRentalServiceTest {
     }
 
     @Test
-    @DisplayName("US-SC-05.1 & BR-OVD-01..02: Hợp đồng quá hạn trên 3 ngày bị khóa mã PIN và tính tiền phạt")
-    void shouldLockPin_andCalculateOverdueFee_whenOverdueExceedsGracePeriod() {
+    @DisplayName("US-SC-05.1 & BR-OVD-05: Hợp đồng quá hạn từ D+7 trở lên bị khóa an ninh mã PIN nếu còn nợ phạt")
+    void shouldLockPin_andCalculateOverdueFee_whenOverdueExceedsD7() {
         Pageable pageable = PageRequest.of(0, 10);
+        overdueContract.setEndDateExclusive(LocalDate.now().minusDays(7)); // Quá hạn đúng 7 ngày -> Khóa an ninh PIN
         Page<RentalContract> page = new PageImpl<>(List.of(overdueContract), pageable, 1);
 
         when(rentalContractRepository.findByCustomerIdAndStatus(eq(15L), eq(ContractStatus.OVERDUE), any(Pageable.class)))
@@ -188,11 +189,59 @@ class CustomerRentalServiceTest {
         assertNotNull(response);
         assertEquals(1, response.getContent().size());
         CustomerRentalSummaryResponse item = response.getContent().get(0);
-        assertEquals(6, item.getOverdueDays());
+        assertEquals(7, item.getOverdueDays());
         assertTrue(item.isAccessCodeLocked());
         assertNull(item.getAccessCode());
         assertEquals(300000L, item.getOverdueFeeAccrued());
         assertEquals(300000L, item.getTotalOutstandingDebt());
+    }
+
+    @Test
+    @DisplayName("US-SC-05.1 & BR-OVD-03: Tại D+4..D+6 có nợ phạt nhưng mã PIN vẫn mở để khách vào dọn kho")
+    void shouldKeepPinActive_atOverdueDays4to6_withAccruedPenalty() {
+        Pageable pageable = PageRequest.of(0, 10);
+        overdueContract.setEndDateExclusive(LocalDate.now().minusDays(5)); // D+5
+        overdueContract.setOverdueFeeAccrued(200000L);
+        Page<RentalContract> page = new PageImpl<>(List.of(overdueContract), pageable, 1);
+
+        when(rentalContractRepository.findByCustomerIdAndStatus(eq(15L), eq(ContractStatus.OVERDUE), any(Pageable.class)))
+                .thenReturn(page);
+
+        PageResponse<CustomerRentalSummaryResponse> response = customerRentalService.getMyRentals(
+                customerUser, "OVERDUE", pageable
+        );
+
+        assertNotNull(response);
+        assertEquals(1, response.getContent().size());
+        CustomerRentalSummaryResponse item = response.getContent().get(0);
+        assertEquals(5, item.getOverdueDays());
+        assertFalse(item.isAccessCodeLocked());
+        assertEquals("999888", item.getAccessCode());
+        assertEquals(200000L, item.getOverdueFeeAccrued());
+    }
+
+    @Test
+    @DisplayName("US-SC-05.1 & BR-OVD-05: Khi đã tất toán nợ phạt về 0 thì mở lại mã PIN dù quá hạn sau D+7")
+    void shouldReopenPin_whenOverdueDebtPaidZero_evenAfterD7() {
+        Pageable pageable = PageRequest.of(0, 10);
+        overdueContract.setEndDateExclusive(LocalDate.now().minusDays(8)); // D+8
+        overdueContract.setOverdueFeeAccrued(0L); // Đã nộp phạt xong
+        Page<RentalContract> page = new PageImpl<>(List.of(overdueContract), pageable, 1);
+
+        when(rentalContractRepository.findByCustomerIdAndStatus(eq(15L), eq(ContractStatus.OVERDUE), any(Pageable.class)))
+                .thenReturn(page);
+
+        PageResponse<CustomerRentalSummaryResponse> response = customerRentalService.getMyRentals(
+                customerUser, "OVERDUE", pageable
+        );
+
+        assertNotNull(response);
+        assertEquals(1, response.getContent().size());
+        CustomerRentalSummaryResponse item = response.getContent().get(0);
+        assertEquals(8, item.getOverdueDays());
+        assertFalse(item.isAccessCodeLocked());
+        assertEquals("999888", item.getAccessCode());
+        assertEquals(0L, item.getOverdueFeeAccrued());
     }
 
     @Test
