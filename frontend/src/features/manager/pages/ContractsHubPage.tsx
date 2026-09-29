@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Search,
-  FileCheck,
   Clock,
   RotateCcw,
   ShieldAlert,
@@ -531,16 +530,16 @@ export const ContractsHubPage: React.FC = () => {
 
                       {/* Thao tác */}
                       <td className="py-3 px-4 text-right space-x-2 whitespace-nowrap">
-                        {/* Nút Bàn giao kho & Đổi ô kho (PENDING_CHECK_IN) */}
+                        {/* Nút Phân công Staff & Đổi ô kho (PENDING_CHECK_IN) */}
                         {activeTab === 'PENDING_CHECK_IN' && (
                           <>
                             <Link
-                              to={`/staff/handover?contractId=${contract.id}`}
+                              to={`/manager/staff-assignment?contractId=${contract.id}`}
                               className="px-2.5 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors inline-flex items-center gap-1"
-                              title="Mở Bàn giao kho tại quầy (Check-in)"
+                              title="Phân công nhân viên đón tiếp khách nhận kho (Check-in)"
                             >
-                              <FileCheck className="w-3 h-3" />
-                              Bàn giao
+                              <UserPlus className="w-3 h-3" />
+                              {contract.assignedStaffId ? 'Điều chuyển' : 'Phân công'}
                             </Link>
 
                             <button
