@@ -2,32 +2,42 @@ import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 
-describe('Mock Data Cleanup Audit', () => {
-  it('pricing.ts không còn chứa Kho Tân Bình', () => {
+describe('Mock Data Cleanup & Real Database API Audit', () => {
+  it('pricing.ts không còn mockActivePolicy, không còn inMemory mock và gọi API thật', () => {
     const filePath = path.resolve(process.cwd(), 'src/api/pricing.ts');
     const content = fs.readFileSync(filePath, 'utf-8');
+    expect(content).not.toContain('mockActivePolicy');
+    expect(content).not.toContain('inMemoryUnitTypes');
+    expect(content).not.toContain('inMemorySurcharges');
+    expect(content).not.toContain('mock-unit-types.json');
     expect(content).not.toContain('Tân Bình');
+    expect(content).toContain('/policies/active');
+    expect(content).toContain('/facilities/${facilityId}/prices');
+    expect(content).toContain('/surcharges');
+  });
+
+  it('facility.ts không còn USE_MOCK hay import mock json và gọi API thật', () => {
+    const filePath = path.resolve(process.cwd(), 'src/api/facility.ts');
+    const content = fs.readFileSync(filePath, 'utf-8');
+    expect(content).not.toContain('USE_MOCK');
+    expect(content).not.toContain('inMemoryFacilities');
+    expect(content).not.toContain('mockFacilities');
+    expect(content).not.toContain('mock-facilities.json');
+    expect(content).not.toContain('mock-unit-types.json');
+    expect(content).toContain('/facilities');
+    expect(content).toContain('/facilities/${facilityId}/unit-types');
+  });
+
+  it('mock-facilities.json và mock-unit-types.json đã được xóa hoàn toàn', () => {
+    const facMockPath = path.resolve(process.cwd(), 'src/mock/mock-facilities.json');
+    const utMockPath = path.resolve(process.cwd(), 'src/mock/mock-unit-types.json');
+    expect(fs.existsSync(facMockPath)).toBe(false);
+    expect(fs.existsSync(utMockPath)).toBe(false);
   });
 
   it('customerApi.ts không còn fallback Storage Locker', () => {
     const filePath = path.resolve(process.cwd(), 'src/features/customer/api/customerApi.ts');
     const content = fs.readFileSync(filePath, 'utf-8');
     expect(content).not.toContain('Storage Locker');
-  });
-
-  it('mock-facilities.json chứa các cơ sở chuẩn toàn quốc và không có Tân Bình', () => {
-    const filePath = path.resolve(process.cwd(), 'src/mock/mock-facilities.json');
-    const content = fs.readFileSync(filePath, 'utf-8');
-    const facilities = JSON.parse(content);
-    expect(facilities.some((f: any) => f.code === 'FAC-CG')).toBe(true);
-    expect(facilities.some((f: any) => f.code === 'FAC-TX')).toBe(true);
-    expect(facilities.some((f: any) => f.name.includes('Tân Bình'))).toBe(false);
-  });
-
-  it('mock-unit-types.json dùng đúng thuật ngữ Ô kho và không chứa Locker', () => {
-    const filePath = path.resolve(process.cwd(), 'src/mock/mock-unit-types.json');
-    const content = fs.readFileSync(filePath, 'utf-8');
-    expect(content).not.toMatch(/Locker/i);
-    expect(content).not.toMatch(/tủ đồ/i);
   });
 });
