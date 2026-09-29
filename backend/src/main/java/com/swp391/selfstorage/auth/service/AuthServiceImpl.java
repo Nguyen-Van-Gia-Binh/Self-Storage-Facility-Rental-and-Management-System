@@ -104,6 +104,11 @@ public class AuthServiceImpl implements AuthService {
 
         AppUser savedUser = userRepository.save(user);
 
+        // Ghi nhận đăng ký thành công
+        if (auditLogService != null) {
+            auditLogService.recordLogin(savedUser.getId(), savedUser.getEmail(), ipAddress, userAgent, true, "Đăng ký tài khoản mới");
+        }
+
         List<Long> facilityIds = Collections.emptyList();
         String accessToken = jwtTokenProvider.generateAccessToken(savedUser, facilityIds);
         String refreshToken = jwtTokenProvider.generateRefreshToken(savedUser);
