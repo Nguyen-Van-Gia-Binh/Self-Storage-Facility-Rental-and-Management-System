@@ -448,11 +448,16 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
     - Frontend: `PricingTable.tsx`, `UpdatePriceModal.tsx`, `PricingPolicyManagementPage.tsx`.  
     - Backend: `PriceService.java`, `UnitTypePriceHistory.java`, `PolicyConfigController.java`.
 
-#### 20. Lỗi không tải được dữ liệu báo cáo vận hành & hiệu suất lấp đầy ô kho (Tất cả chỉ số KPIs hiển thị 0 và 0/0 ô kho) (`BM-04`, `US-BM-04.1`)
+#### 20. [ĐÃ FIX] Lỗi không tải được dữ liệu báo cáo vận hành & hiệu suất lấp đầy ô kho (Tất cả chỉ số KPIs hiển thị 0 và 0/0 ô kho) (`BM-04`, `US-BM-04.1`)
 - **Hình ảnh minh chứng:**  
   ![Không load được báo cáo](./images/notion-audit/image-20.png)
 - **Ghi chú gốc từ Lead Dev:**  
-  > *"Chưa load dữ liệu lên, lỗi “hiệu suất & tỷ lệ lấp đầy”"*
+  > *"Chưa load dữ liệu lên, lỗi “hiệu suất & tỷ lệ lấp đầy”"* — `[ĐÃ FIX]`
+- **Kết quả đã xử lý:**
+  1. *Kỳ và phạm vi:* Bộ lọc mặc định là 30 ngày gần nhất tới hôm nay (giờ Việt Nam). `facilityId` rỗng hoặc `all` là toàn hệ thống. Doanh thu cộng giao dịch `SUCCESS` trong kỳ; kỳ không có giao dịch thì tổng là 0.
+  2. *Usage Rate:* Occupied / (tổng ô − Out of service), lấy tại thời điểm xem, không lọc theo kỳ doanh thu. Phân số cạnh phần trăm dùng cùng mẫu số.
+  3. *Mẫu số bằng 0:* Cơ sở hoặc cả hệ thống không có ô khai thác được hiện "Không xác định", không hiện `0.0%` hay `0/0`. Hàng tổng đếm số cơ sở thật.
+  4. *File:* `BomDashboardPage.tsx`, `BomKpiSummary.tsx`, `FacilityPerformanceTable.tsx`, `OccupancyComparisonChart.tsx`, `SystemReportController.java`, `SystemReportServiceImpl.java`.
 - **Mô tả kỹ thuật chuẩn hóa:**  
   * **Tên vấn đề:** Màn hình Giám sát Doanh thu & Hiệu quả Vận hành (`/bom/revenue`) không load được dữ liệu từ API hoặc bị sai lệch bộ lọc: Tất cả các thẻ chỉ số cốt lõi (`Tổng doanh thu`, `Tỷ lệ lấp đầy`, `Hợp đồng đang hiệu lực`) đều hiển thị bằng 0 (`0 đ`, `0.0%`, `0/0 ô`), khiến toàn bộ phân hệ báo cáo của Ban Giám Đốc bị tê liệt.
   * **Hiện trạng ghi nhận trên UI (`image-20.png`):**  
