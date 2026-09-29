@@ -148,7 +148,7 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
     - Tài liệu: Cập nhật điều chỉnh `BR-REN-10` trong `docs/BUSINESS-RULES.md`.
   * **Trạng thái:** `[ĐÃ XONG]` - Đã tích hợp Sandbox Dev Bar, đếm ngược 48h, nút Hủy lệnh thanh toán và cơ chế lưu vết PENDING_RENEWAL.
 
-#### 7. Chuẩn hóa thời điểm tự động khóa mã mở cửa chính xác tại mốc D+7 theo Business Rules mới
+#### 7. [ĐÃ XONG] Chuẩn hóa thời điểm tự động khóa mã mở cửa chính xác tại mốc D+7 theo Business Rules mới
 - **Hình ảnh minh chứng:**  
   ![Lỗi hiển thị khóa ô kho](./images/notion-audit/image-07.png)
 - **Ghi chú gốc từ Lead Dev:**  
@@ -160,10 +160,11 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
     - Backend Job chạy lúc 00:00 ngày D+7: Tự động chuyển trạng thái Access Code sang `SUSPENDED`.  
     - Khách thanh toán nợ phạt thành công $\rightarrow$ Mở khóa quyền truy cập tạm thời và mở lại nút "Báo trả kho" để khách hoàn tất thủ tục bàn giao.
   * **Hướng xử lý & File liên quan:**  
-    - Backend: `OverdueScheduledJob.java` (trigger khóa PIN tại đúng D+7).  
-    - Docs: Cập nhật tham số `overdue.lock_access_days = 7` trong `docs/BUSINESS-RULES.md`.
+    - Backend: `CustomerRentalServiceImpl.java` (chuẩn hóa khóa an ninh tại D+7 khi còn nợ; D+4..D+6 mở PIN dọn đồ; nộp phạt xong mở lại PIN).  
+    - Docs: Cập nhật tham số `overdue.lock_access_days = 7` và quy tắc `BR-OVD-05` trong `docs/BUSINESS-RULES.md`.
+  * **Trạng thái:** `[ĐÃ XONG]` — `CustomerRentalServiceTest` đạt 14/14 tests pass, đã kiểm chứng đúng các mốc D+5 giữ PIN, D+7 khóa PIN, D+8 mở lại PIN sau khi tất toán phạt.
 
-#### 8. Trạng thái ô kho chuyển sai về màu xanh "Đang hoạt động" sau khi khách nộp tiền phạt quá hạn
+#### 8. [ĐÃ XONG] Trạng thái ô kho chuyển sai về màu xanh "Đang hoạt động" sau khi khách nộp tiền phạt quá hạn
 - **Hình ảnh minh chứng:**  
   ![Thanh toán nợ xong vẫn xanh](./images/notion-audit/image-08.png)
 - **Ghi chú gốc từ Lead Dev:**  
@@ -173,13 +174,13 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
   * **Hiện trạng & Đánh giá:** Khách hàng tại ảnh 7 bấm nộp phạt 250.000 đ thành công, hệ thống lại chuyển thẻ ô kho về màu xanh `Đang hoạt động 24/7`, trong khi hợp đồng đã hết hạn thuê từ trước và nút gia hạn đang bị khóa (`Đã khóa gia hạn < 30 ngày`). Khách mới chỉ nộp **tiền phạt cho các ngày quá hạn**, hoàn toàn **chưa đóng tiền thuê kỳ mới**. Việc hiển thị màu xanh an toàn khiến khách tưởng mình còn hạn thuê và không chịu dọn đồ, tiếp tục bị quá hạn ở các ngày sau.
   * **Hành vi kỳ vọng (Expected Behavior):**  
     - Tuyệt đối không đưa về trạng thái `ACTIVE` màu xanh.  
-    - Phải hiển thị badge cảnh báo màu cam: `Đã nộp phạt — Chờ trả kho`, kèm banner nhắc nhở: *"Hợp đồng đã kết thúc thời hạn thuê. Bạn đã hoàn tất nộp phạt, vui lòng dọn đồ và bấm 'Báo trả kho' trước 00:00 ngày mai để tránh phát sinh nợ phạt mới."*  
-    - Mở lại nút **"Báo trả kho"** để khách tiến hành thủ tục bàn giao.
+    - Phải hiển thị badge cảnh báo màu cam: `Đã tất toán phạt — Chờ dọn kho / trả kho`, kèm banner nhắc nhở: *"Hợp đồng đã kết thúc thời hạn thuê. Bạn đã hoàn tất nộp phạt, vui lòng hoàn tất dọn sạch đồ đạc và bấm 'Báo trả kho' trước 00:00 để tránh phát sinh phạt mới, hoặc bấm 'Gia hạn hợp đồng' để tiếp tục sử dụng nếu ô kho còn trống."*  
+    - Mở sáng nút **"Báo trả kho"** và nút **"Gia hạn hợp đồng trực tuyến"** để khách chủ động thao tác.
   * **Hướng xử lý & File liên quan:**  
-    - Backend: `ContractService.java`, `PaymentService.java` (chuyển sang trạng thái `OVERDUE_CLEARED` thay vì `ACTIVE`).  
-    - Frontend: `RentalCard.tsx`, `RentalStatusBadge.tsx` (thêm màu badge và banner nhắc dọn đồ).
+    - Frontend: `RentedUnitCard.tsx`, `ContractDetailModal.tsx` (hiển thị badge cam `variant="warning"` và banner cảnh báo).  
+  * **Trạng thái:** `[ĐÃ XONG]` — `OverdueClearedAudit.test.tsx` đạt 2/2 tests pass, xác nhận giao diện thẻ và modal hiển thị chuẩn badge cam, không còn badge xanh gây ngộ nhận.
 
-#### 9. Hợp đồng "Đang chờ nghiệm thu trả kho" vẫn mở nút "Gia hạn hợp đồng trực tuyến", gây lỗi chặn thanh toán
+#### 9. [ĐÃ XONG] Hợp đồng "Đang chờ nghiệm thu trả kho" vẫn mở nút "Gia hạn hợp đồng trực tuyến", gây lỗi chặn thanh toán
 - **Hình ảnh minh chứng:**  
   ![Không thanh toán được](./images/notion-audit/image-09.png)
 - **Ghi chú gốc từ Lead Dev:**  
@@ -189,25 +190,29 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
   * **Hiện trạng & Đánh giá:** Hợp đồng `CTR-20260902-8821` đang có badge màu cam: `Đang chờ nghiệm thu trả kho` (khách đã đăng ký trả kho và đang chờ nhân viên kiểm tra hiện trạng). Tuy nhiên, góc phải chân thẻ vẫn sáng nút xanh: **"Gia hạn hợp đồng trực tuyến"**. Khi khách bấm gia hạn và thanh toán, Backend từ chối tạo đơn gia hạn cho hợp đồng đang thanh lý, dẫn đến lỗi chặn thanh toán không rõ nguyên nhân trên UI.
   * **Hành vi kỳ vọng (Expected Behavior):**  
     - Khi hợp đồng ở trạng thái `Đang chờ nghiệm thu trả kho`: Bắt buộc **ẨN / KHÓA** nút *"Gia hạn hợp đồng trực tuyến"*.  
-    - Thay thế bằng nút **"Hủy yêu cầu trả kho"** (dành cho trường hợp khách đổi ý muốn thuê tiếp).  
+    - Thay thế bằng nút **"Hủy yêu cầu trả kho"** (dành cho trường hợp khách đổi ý muốn thuê tiếp theo `BR-RET-12`).  
     - Chỉ khi khách bấm "Hủy yêu cầu trả kho" và hợp đồng quay về `ACTIVE` bình thường thì nút Gia hạn mới được phép xuất hiện trở lại.
   * **Hướng xử lý & File liên quan:**  
-    - Frontend: `RentalCard.tsx`, `RentalActionButtons.tsx` (ẩn nút Gia hạn khi `PENDING_RETURN`, bổ sung nút Hủy yêu cầu trả kho).  
-    - Backend: `ContractService.java` (API hủy yêu cầu trả kho).
+    - Frontend: `RentedUnitCard.tsx`, `customerRentals.ts`, `customerApi.ts`, `RenewalPage.tsx`, `RenewalExpiryBanner.tsx`.  
+    - Backend: `ContractService.java`, `ContractServiceImpl.java`, `ContractController.java` (`POST /api/contracts/{id}/cancel-return`).  
+  * **Trạng thái:** `[ĐÃ XONG]` — `ContractReturnServiceTest` (14/14 tests) và `CancelReturnFlow.test.tsx` (3/3 tests) pass 100%.
 
-#### 10. Thiếu cảnh báo đếm ngược về mốc khóa quyền gia hạn (Khóa trước ngày hết hạn 30 ngày, buộc tạo hợp đồng mới)
+#### 10. [ĐÃ XONG] Đổi mới cơ chế Gia hạn: Bỏ khóa 30 ngày, Cho gia hạn sau nộp phạt, Xử lý xung đột đặt trước
 - **Hình ảnh minh chứng:**  
   ![Thiếu cảnh báo gia hạn](./images/notion-audit/image-10.png)
 - **Ghi chú gốc từ Lead Dev:**  
   > *"Liệu có nên thêm thông tin trong ô kho này nữa là sắp hết thời gian có thể gia hạn không ?"*
 - **Mô tả kỹ thuật chuẩn hóa (Ngắn gọn):**  
-  * **Tên vấn đề:** Thẻ ô kho thiếu thông báo/badge đếm ngược cảnh báo mốc khóa tính năng gia hạn (trước ngày kết thúc 30 ngày theo quy định), khiến khách hàng không kịp trở tay khi nút gia hạn bị vô hiệu hóa (disabled).
-  * **Hiện trạng & Đánh giá (`image-10.png`):** Hợp đồng `CTR-20260801-7182` có ngày kết thúc là `2026-11-01`. Hiện tại nút *"Gia hạn hợp đồng trực tuyến"* vẫn đang mở (màu xanh). Theo quy tắc nghiệp vụ: Khi thời hạn thuê chỉ còn **dưới 30 ngày**, hệ thống sẽ **khóa vĩnh viễn tính năng gia hạn (disable nút)**; khách hàng không thể gia hạn hợp đồng cũ nữa mà buộc phải tạo một hợp đồng mới từ đầu. Tuy nhiên, trên thẻ ô kho ở giai đoạn này lại hoàn toàn không có thông báo đếm ngược nào để cảnh báo khách hàng về mốc chặn này.
+  * **Tên vấn đề:** Cơ chế gia hạn cũ bị cứng nhắc: Khóa cứng gia hạn trước 30 ngày khiến khách hàng không kịp gia hạn; cấm gia hạn khi quá hạn dù đã nộp hết phạt; thiếu luồng xử lý xung đột khi ô kho đã có người đặt trước chu kỳ tiếp theo.
   * **Hành vi kỳ vọng (Expected Behavior):**  
-    - Khi thời điểm hiện tại tiến gần đến mốc 30 ngày trước ngày hết hạn: Bắt buộc hiển thị badge đếm ngược cảnh báo màu cam nổi bật trên thẻ ô kho: `⚠️ Sắp hết hạn gia hạn: Còn N ngày nữa sẽ chạm mốc khóa gia hạn tự động (trước ngày hết hạn 30 ngày)`.  
-    - Kèm dòng giải thích: *"Sau mốc này, nút Gia hạn sẽ bị khóa vĩnh viễn và bạn buộc phải tạo hợp đồng mới nếu muốn tiếp tục thuê ô kho này."*
+    - Bỏ khóa cứng gia hạn trước 30 ngày (`BR-REN-01`, `BR-REN-02`): Mốc 30 ngày chỉ là mốc nhắc nhở khách hàng (`⏳ Còn N ngày — Hãy gia hạn sớm`); khách hàng vẫn được quyền gia hạn trực tuyến bất cứ lúc nào.  
+    - Cho phép hợp đồng `OVERDUE` gia hạn trực tuyến sau khi đã tất toán toàn bộ nợ phạt phát sinh (`overdueFeeAccrued == 0`) theo `BR-REN-06`.  
+    - Xử lý xung đột ô kho đã có người đặt trước: Khi Backend kiểm tra thấy ô kho đã có người đặt trước cho khoảng thời gian tiếp theo, ném lỗi `CAPACITY_NOT_AVAILABLE` kèm thông báo rõ ràng. Frontend hiển thị màn hình hướng dẫn (Conflict Notice View) cung cấp 2 nút hành động: (1) "Tìm & Thuê ô kho mới tại cơ sở này", (2) "Lên lịch nghiệm thu & Trả kho".
   * **Hướng xử lý & File liên quan:**  
-    - Frontend: `RentalCard.tsx` (tính số ngày đếm ngược đến mốc `endDate - 30 days`, hiển thị banner cảnh báo sớm).
+    - Backend: `RenewalServiceImpl.java`, `RenewalServiceTest.java`.  
+    - Frontend: `RentedUnitCard.tsx`, `RenewalPage.tsx`, `RenewalExpiryBanner.tsx`, `RenewalRevampFlow.test.tsx`.  
+    - Docs: Cập nhật `BR-REN-01`, `BR-REN-02`, `BR-REN-06`, `BR-RET-01` trong `docs/BUSINESS-RULES.md`.  
+  * **Trạng thái:** `[ĐÃ XONG]` — `RenewalServiceTest` (16/16 tests) và `RenewalRevampFlow.test.tsx` (3/3 tests) pass 100%.
 
 #### 11. Lỗ hổng rò rỉ dữ liệu phiên nghiêm trọng: Tài khoản đăng ký mới tinh bị dính dữ liệu hợp đồng của tài khoản cũ (Session Bleed / Cache Leak)
 - **Hình ảnh minh chứng:**  

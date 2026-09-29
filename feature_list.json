@@ -101,8 +101,8 @@
   {
     "id": "phase-05-customer-flows-e2e-and-docs",
     "title": "Kiểm thử Hồi quy Toàn diện, Đồng bộ Business Rules & Dashboard",
-    "status": "not_started",
-    "evidence": "",
+    "status": "completed",
+    "evidence": "mvn test (RenewalServiceTest, CustomerRentalServiceTest, ContractReturnServiceTest) xanh 100%; vitest (16 test files, 50/50 tests pass); npm run build xanh; đồng bộ BUSINESS-RULES.md, DASHBOARD.md và NOTION-AUDIT-ISSUES-AND-BR-CHANGES.md.",
     "user_visible_behavior": "Toàn bộ test suite backend và frontend xanh 100%, BUSINESS-RULES.md và DASHBOARD.md cập nhật đầy đủ.",
     "verification_command": "mvn clean test ; npm run build",
     "notes": "Full system E2E verification for Customer Renewal & Overdue Flows",
