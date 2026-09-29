@@ -37,6 +37,16 @@ public class TaskAssignmentRequest {
     @Schema(description = "Ghi chú ngắn", example = "Tiếp đón khách hàng")
     private String note;
 
+    @Schema(description = "Ghi chú mở rộng (alias của note)")
+    private String notes;
+
+    public String getNotes() {
+        if (notes != null && !notes.isBlank()) {
+            return notes;
+        }
+        return note;
+    }
+
     public Long getResolvedStaffId() {
         return staffId != null ? staffId : assignedUserId;
     }

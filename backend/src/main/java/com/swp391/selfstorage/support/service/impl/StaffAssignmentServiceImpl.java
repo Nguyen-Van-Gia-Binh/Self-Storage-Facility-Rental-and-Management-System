@@ -109,13 +109,15 @@ public class StaffAssignmentServiceImpl implements StaffAssignmentService {
         // Lưu hoặc cập nhật bản ghi vào bảng staff_daily_assignment
         String refType = contractId != null ? "CONTRACT" : "SUPPORT_REQUEST";
         Long refId = contractId != null ? contractId : (rawTaskId != null ? rawTaskId : 0L);
+        final Long finalFacilityId = targetFacilityId;
+        final AssignmentTaskType finalAssignmentType = assignmentType;
 
         StaffDailyAssignment assignment = staffDailyAssignmentRepository
                 .findByReferenceTypeAndReferenceId(refType, refId)
                 .orElseGet(() -> StaffDailyAssignment.builder()
-                        .facilityId(targetFacilityId)
+                        .facilityId(finalFacilityId)
                         .workDate(LocalDate.now())
-                        .taskType(assignmentType)
+                        .taskType(finalAssignmentType)
                         .referenceType(refType)
                         .referenceId(refId)
                         .createdAt(OffsetDateTime.now())
