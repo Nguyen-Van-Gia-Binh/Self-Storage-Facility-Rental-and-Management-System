@@ -64,6 +64,7 @@ export const ROLE_NAVIGATIONS: Record<UserRole, RoleNavigation> = {
     navItems: [
       { label: 'Danh mục cơ sở',      href: '/bom/facilities', icon: Map },
       { label: 'Bảng giá & Phụ phí',  href: '/bom/pricing',    icon: DollarSign },
+      { label: 'Chính sách thuê',     href: '/bom/policies',   icon: ShieldCheck },
       { label: 'Doanh thu & Báo cáo', href: '/bom/revenue',    icon: TrendingUp },
     ],
   },

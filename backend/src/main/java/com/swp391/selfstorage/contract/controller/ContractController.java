@@ -252,6 +252,18 @@ public class ContractController {
         Long managerId = requireUserId(currentUser);
         List<Long> facilities = resolveFacilityScope(currentUser, null);
         SettlementApprovalResponse response = contractService.approveSettlement(id, request, managerId, facilities);
-        return ResponseEntity.ok(ApiResponse.success(response, "Phê duyệt quyết toán thành công"));
+        return ResponseEntity.ok(ApiResponse.success(response, response.getMessage()));
+    }
+
+    /** BR-RET-09: sau khi dọn xong, ô CLEANING về RESERVED hoặc AVAILABLE. */
+    @PostMapping("/{id}/cleaning-complete")
+    @PreAuthorize("hasAnyRole('STAFF', 'MANAGER', 'ADMIN')")
+    @Operation(summary = "Hoàn tất dọn ô kho sau nghiệm thu trả kho")
+    public ResponseEntity<ApiResponse<ContractResponse>> completeCleaning(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        List<Long> facilities = resolveFacilityScope(currentUser, null);
+        ContractResponse response = contractService.completeCleaning(id, facilities);
+        return ResponseEntity.ok(ApiResponse.success(response, "Đã hoàn tất dọn ô kho"));
     }
 }

@@ -222,8 +222,8 @@ public class PaymentServiceImpl implements PaymentService {
                 && "CONTRACT_RENEWAL".equalsIgnoreCase(payment.getTransactionType())) {
             publishContractRenewalCompleted(payment);
         } else if ("SETTLEMENT".equalsIgnoreCase(payment.getTransactionType())) {
-            log.info("Thanh toán quyết toán thu nợ Sandbox thành công cho contractId={}, transactionId={}",
-                    payment.getContractId(), payment.getId());
+            eventPublisher.publishEvent(new com.swp391.selfstorage.payment.event.SettlementDebtPaidEvent(
+                    payment.getContractId(), payment.getId()));
         } else if ("OVERDUE_PENALTY".equalsIgnoreCase(payment.getTransactionType())
                 || "EXTRA_FEE_PAYMENT".equalsIgnoreCase(payment.getTransactionType())) {
             if (payment.getContractId() != null) {
@@ -315,8 +315,8 @@ public class PaymentServiceImpl implements PaymentService {
                 && "CONTRACT_RENEWAL".equalsIgnoreCase(payment.getTransactionType())) {
             publishContractRenewalCompleted(payment);
         } else if ("SETTLEMENT".equalsIgnoreCase(payment.getTransactionType())) {
-            log.info("Thanh toán quyết toán thu nợ PayOS thành công cho contractId={}, transactionId={}",
-                    payment.getContractId(), payment.getId());
+            eventPublisher.publishEvent(new com.swp391.selfstorage.payment.event.SettlementDebtPaidEvent(
+                    payment.getContractId(), payment.getId()));
         } else if ("OVERDUE_PENALTY".equalsIgnoreCase(payment.getTransactionType())
                 || "EXTRA_FEE_PAYMENT".equalsIgnoreCase(payment.getTransactionType())) {
             if (payment.getContractId() != null) {

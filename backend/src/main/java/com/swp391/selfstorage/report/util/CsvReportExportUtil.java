@@ -38,7 +38,10 @@ public class CsvReportExportUtil {
         sb.append("Tổng doanh thu,").append(report.getTotalRevenue()).append("\n");
         sb.append("Doanh thu tiền thuê,").append(report.getRentalRevenue()).append("\n");
         sb.append("Doanh thu phụ phí,").append(report.getSurchargeRevenue()).append("\n");
-        sb.append("Doanh thu phạt quá hạn,").append(report.getOverdueFeeRevenue()).append("\n\n");
+        sb.append("Doanh thu phạt quá hạn,").append(report.getOverdueFeeRevenue()).append("\n");
+        sb.append("Doanh thu gia hạn,").append(report.getRenewalRevenue()).append("\n");
+        sb.append("Tiền cọc đã thu,").append(report.getDepositBalance()).append("\n");
+        sb.append("Tiền đã hoàn,").append(report.getTotalRefundAmount()).append("\n\n");
 
         // 3. Detail by Facility
         sb.append("PHÂN BỔ THEO CƠ SỞ\n");

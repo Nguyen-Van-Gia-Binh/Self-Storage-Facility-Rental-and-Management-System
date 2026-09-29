@@ -2,6 +2,7 @@ package com.swp391.selfstorage.contract.event;
 
 import com.swp391.selfstorage.contract.service.ContractService;
 import com.swp391.selfstorage.payment.event.PaymentCompletedEvent;
+import com.swp391.selfstorage.payment.event.SettlementDebtPaidEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -54,6 +55,23 @@ public class ContractEventListener {
             log.info("Contract renewal successfully processed for contractId={}", event.contractId());
         } catch (Exception e) {
             log.error("Contract renewal failed for contractId={}: {}", event.contractId(), e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Đóng hợp đồng sau khi khách nộp đủ phần thiếu của quyết toán (BR-RET-04).
+     */
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void onSettlementDebtPaid(SettlementDebtPaidEvent event) {
+        if (event.contractId() == null) {
+            return;
+        }
+        try {
+            contractService.closeContractAfterSettlementPayment(event.contractId());
+        } catch (Exception e) {
+            log.error("Không đóng được hợp đồng sau thanh toán quyết toán contractId={}: {}",
+                    event.contractId(), e.getMessage(), e);
         }
     }
 }

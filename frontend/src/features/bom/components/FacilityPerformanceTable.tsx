@@ -26,15 +26,22 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
   }
 
   // Khớp dữ liệu doanh thu và lấp đầy theo facilityId
+  const money = (value: number | undefined | null) => (Number.isFinite(Number(value)) ? Number(value) : 0);
+
   const rows = revenues.map((rev) => {
     const occ = occupancies.find((o) => o.facilityId === rev.facilityId);
+    const rentalRevenue = money(rev.rentalRevenue);
+    const surchargeRevenue = money(rev.surchargeRevenue);
+    const renewalRevenue = money(rev.renewalRevenue);
+    const overdueFeeRevenue = money(rev.overdueFeeRevenue);
+    const totalRevenue = money(rev.totalRevenue) || rentalRevenue + surchargeRevenue + renewalRevenue + overdueFeeRevenue;
     return {
       facilityId: rev.facilityId,
       facilityName: rev.facilityName,
-      rentalRevenue: rev.rentalRevenue,
-      surchargesAndRenewals: rev.surchargeRevenue + rev.renewalRevenue,
-      overdueFeeRevenue: rev.overdueFeeRevenue,
-      totalRevenue: rev.totalRevenue,
+      rentalRevenue,
+      surchargesAndRenewals: surchargeRevenue + renewalRevenue,
+      overdueFeeRevenue,
+      totalRevenue,
       occupancyRate: occ ? occ.occupancyRate : 0,
       occupiedUnits: occ ? occ.occupiedUnits : 0,
       availableUnits: occ ? occ.availableUnits : 0,

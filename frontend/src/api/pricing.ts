@@ -232,3 +232,41 @@ export async function fetchActivePolicy(): Promise<ActivePolicyInfo> {
 
   return await apiClient<ActivePolicyInfo>('/policies/active');
 }
+
+export interface PolicyPublishPayload {
+  effectiveFrom: string;
+  depositMultiplier: number;
+  reservationHoldHours: number;
+  rentalBufferDays: number;
+  rentalDailyDivisor: number;
+  checkinGraceDays: number;
+  cancelFullRefundHours: number;
+  cancelLateRefundRate: number;
+  cancelNoShowRefundRate: number;
+  renewalReminderDays: string;
+  renewalMinMonths: number;
+  renewalMaxMonths: number;
+  overdueGraceDays: number;
+  overdueDailyRate: number;
+  overdueCapRate: number;
+  overdueNoticeDays: number;
+  overdueLockAccessDays: number;
+  overdueTerminationDays: number;
+  returnNoticeDays: number;
+  returnRefundWorkingDays: number;
+  returnEarlyRefundRate: number;
+  accessPinLength: number;
+  supportUrgentSlaHours: number;
+  supportAutoCloseWorkingDays: number;
+}
+
+export async function fetchPolicyForPublish(): Promise<PolicyPublishPayload & { versionNo?: number }> {
+  return await apiClient('/policies/active');
+}
+
+export async function publishPolicy(data: PolicyPublishPayload): Promise<PolicyPublishPayload & { versionNo?: number }> {
+  return await apiClient('/policies', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}

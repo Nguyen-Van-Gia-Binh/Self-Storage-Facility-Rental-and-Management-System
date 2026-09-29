@@ -67,6 +67,17 @@ export const ReturnInspectionForm: React.FC<ReturnInspectionFormProps> = ({
       }
     }
 
+    const intactChecklist = criteria.assetsCleared && criteria.wallsAndFloorIntact && criteria.lockAndHingesWorking;
+    if (condition === 'GOOD' && !intactChecklist) {
+      setErrorMessage('Checklist nguyên trạng chưa đủ. Không thể chọn Đạt chuẩn khi còn mục chưa tick.');
+      return;
+    }
+
+    if (!signatureData) {
+      setErrorMessage('Cần chữ ký xác nhận của khách trên biên bản.');
+      return;
+    }
+
     if (!customerAgreed) {
       setErrorMessage('Khách hàng và nhân viên cần xác nhận đồng ý với biên bản kiểm tra.');
       return;

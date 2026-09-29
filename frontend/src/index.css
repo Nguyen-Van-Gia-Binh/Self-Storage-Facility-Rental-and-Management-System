@@ -102,30 +102,250 @@
   animation: modalPopOut 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Print optimization for Executive BI Reports */
+/* Bản in BOM: chỉ in biểu mẫu, cho phép nhiều trang A4 */
+.bom-print-stack {
+  display: none;
+}
+
+@page {
+  size: A4 portrait;
+  margin: 12mm 11mm 14mm;
+}
+
 @media print {
+  html,
+  body,
+  #root,
+  .app-shell,
+  .app-shell-main,
+  .app-shell main {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    display: block !important;
+    background: #ffffff !important;
+  }
+
   aside,
   nav,
   header,
-  .no-print {
+  .no-print,
+  .bom-screen-panels {
     display: none !important;
   }
 
-  body {
-    background-color: #ffffff !important;
-    color: #000000 !important;
-    font-size: 11pt !important;
+  .bom-print-stack {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
   }
 
-  .print-break-inside-avoid {
+  .max-w-7xl {
+    max-width: none !important;
+  }
+
+  .ss-report,
+  .ss-report * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .ss-page-break {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  .ss-keep {
     break-inside: avoid;
     page-break-inside: avoid;
   }
+}
 
-  .shadow-sm,
-  .shadow-md,
-  .shadow-2xl {
-    box-shadow: none !important;
-  }
+.ss-report {
+  color: #0f172a;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.ss-letterhead {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 2.5px solid #0f3d38;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+.ss-brand {
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #0f3d38;
+}
+
+.ss-brand-sub {
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 10px;
+  color: #475569;
+  margin-top: 2px;
+}
+
+.ss-doc-meta {
+  text-align: right;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 10px;
+  color: #334155;
+}
+
+.ss-title {
+  text-align: center;
+  margin: 8px 0 10px;
+}
+
+.ss-title h1 {
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.ss-title p {
+  margin: 3px 0 0;
+  font-size: 11px;
+}
+
+.ss-meta {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 12px;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.ss-meta td {
+  border: 1px solid #cbd5e1;
+  padding: 4px 8px;
+  width: 25%;
+}
+
+.ss-meta td span {
+  display: block;
+  font-size: 9px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ss-section-title {
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  color: #0f3d38;
+  margin: 0 0 8px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid #0f3d38;
+}
+
+.ss-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.ss-kpi {
+  border: 1px solid #cbd5e1;
+  border-top: 3px solid #0f3d38;
+  padding: 6px 8px;
+}
+
+.ss-kpi b {
+  display: block;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.ss-kpi span {
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 9px;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.ss-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 8px;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 10px;
+}
+
+.ss-table th {
+  background: #0f3d38;
+  color: #ffffff;
+  font-weight: 700;
+  text-align: left;
+  padding: 5px 6px;
+  border: 1px solid #0f3d38;
+}
+
+.ss-table td {
+  border: 1px solid #cbd5e1;
+  padding: 4px 6px;
+  vertical-align: top;
+}
+
+.ss-table tr:nth-child(even) td {
+  background: #f8fafc;
+}
+
+.ss-table tfoot td {
+  background: #ecfdf5;
+  font-weight: 700;
+}
+
+.ss-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ss-note {
+  font-size: 10px;
+  color: #475569;
+  margin: 0 0 8px;
+}
+
+.ss-empty {
+  border: 1px dashed #94a3b8;
+  padding: 10px;
+  text-align: center;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.ss-sign {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-top: 18px;
+  text-align: center;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.ss-sign strong {
+  display: block;
+  font-size: 11px;
+}
+
+.ss-sign span {
+  display: block;
+  font-size: 9px;
+  color: #64748b;
+  margin-bottom: 42px;
 }
 

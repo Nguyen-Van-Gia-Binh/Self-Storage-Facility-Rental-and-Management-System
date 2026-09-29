@@ -73,53 +73,66 @@ public class SystemReportServiceImpl implements SystemReportService {
         long totalRentalRevenue = 0L;
         long totalSurchargeRevenue = 0L;
         long totalOverdueFeeRevenue = 0L;
+        long totalRenewalRevenue = 0L;
+        long totalDeposit = 0L;
+        long totalRefund = 0L;
         List<FacilityRevenueShareDto> byFacility = new ArrayList<>();
+        ZoneId zone = ZoneId.of("Asia/Ho_Chi_Minh");
 
-        // 3. Tính doanh thu cho từng cơ sở
         for (Facility facility : targetFacilities) {
             List<RentalContract> contracts = rentalContractRepository.findByFacilityId(facility.getId());
             if (contracts == null) {
                 contracts = Collections.emptyList();
             }
+            Map<Long, RentalContract> contractMap = contracts.stream()
+                    .collect(Collectors.toMap(RentalContract::getId, c -> c, (c1, c2) -> c1));
 
             long facRentalRevenue = 0L;
             long facSurchargeRevenue = 0L;
             long facOverdueFeeRevenue = 0L;
+            long facRenewalRevenue = 0L;
+            long facDeposit = 0L;
+            long facRefund = 0L;
 
-            List<Long> contractIds = contracts.stream().map(RentalContract::getId).toList();
-            List<PaymentTransaction> successfulPayments = new ArrayList<>();
-
-            for (Long cId : contractIds) {
-                List<PaymentTransaction> pList = paymentTransactionRepository.findByContractId(cId);
-                if (pList != null) {
-                    for (PaymentTransaction p : pList) {
-                        if ("SUCCESS".equalsIgnoreCase(p.getStatus()) && p.getCreatedAt() != null) {
-                            LocalDate payDate = p.getCreatedAt().atZone(ZoneId.systemDefault()).toLocalDate();
-                            if (!payDate.isBefore(effectiveFrom) && !payDate.isAfter(effectiveTo)) {
-                                successfulPayments.add(p);
-                            }
-                        }
-                    }
+            for (Long contractId : contractMap.keySet()) {
+                List<PaymentTransaction> payments = paymentTransactionRepository.findByContractId(contractId);
+                if (payments == null) {
+                    continue;
                 }
-            }
-
-            if (!successfulPayments.isEmpty()) {
-                Map<Long, RentalContract> contractMap = contracts.stream()
-                        .collect(Collectors.toMap(RentalContract::getId, c -> c, (c1, c2) -> c1));
-
-                for (PaymentTransaction p : successfulPayments) {
-                    RentalContract c = contractMap.get(p.getContractId());
-                    long amount = p.getAmount() != null ? p.getAmount() : 0L;
-
-                    if ("RENEWAL_PAYMENT".equalsIgnoreCase(p.getTransactionType())) {
-                        facRentalRevenue += amount;
-                    } else if ("EXTRA_FEE_PAYMENT".equalsIgnoreCase(p.getTransactionType())) {
+                for (PaymentTransaction payment : payments) {
+                    if (payment.getCreatedAt() == null || payment.getAmount() == null) {
+                        continue;
+                    }
+                    LocalDate payDate = payment.getCreatedAt().atZone(zone).toLocalDate();
+                    if (payDate.isBefore(effectiveFrom) || payDate.isAfter(effectiveTo)) {
+                        continue;
+                    }
+                    String type = payment.getTransactionType() == null ? "" : payment.getTransactionType();
+                    boolean refund = "REFUND".equalsIgnoreCase(type)
+                            || "PENDING_REFUND".equalsIgnoreCase(payment.getStatus());
+                    if (refund) {
+                        facRefund += payment.getAmount();
+                        continue;
+                    }
+                    if (!"SUCCESS".equalsIgnoreCase(payment.getStatus())) {
+                        continue;
+                    }
+                    long amount = payment.getAmount();
+                    if ("CONTRACT_RENEWAL".equalsIgnoreCase(type) || "RENEWAL_PAYMENT".equalsIgnoreCase(type)) {
+                        facRenewalRevenue += amount;
+                    } else if ("EXTRA_FEE_PAYMENT".equalsIgnoreCase(type) || "SETTLEMENT".equalsIgnoreCase(type)) {
                         facSurchargeRevenue += amount;
-                    } else if ("INITIAL_PAYMENT".equalsIgnoreCase(p.getTransactionType())) {
-                        long rent = (c != null) ? c.getTotalRentalFee() : amount;
-                        long rentPart = Math.min(amount, rent);
+                    } else if ("OVERDUE_PENALTY".equalsIgnoreCase(type)) {
+                        facOverdueFeeRevenue += amount;
+                    } else if ("INITIAL_PAYMENT".equalsIgnoreCase(type)) {
+                        RentalContract contract = contractMap.get(payment.getContractId());
+                        long rentCap = contract != null ? contract.getTotalRentalFee() : amount;
+                        long depositCap = contract != null ? contract.getDepositAmount() : 0L;
+                        long rentPart = Math.min(amount, Math.max(0L, rentCap));
+                        long depositPart = Math.min(Math.max(0L, amount - rentPart), Math.max(0L, depositCap));
+                        long extra = amount - rentPart - depositPart;
                         facRentalRevenue += rentPart;
-                        long extra = amount - rentPart - ((c != null) ? c.getDepositAmount() : 0L);
+                        facDeposit += depositPart;
                         if (extra > 0) {
                             facSurchargeRevenue += extra;
                         }
@@ -127,47 +140,31 @@ public class SystemReportServiceImpl implements SystemReportService {
                         facRentalRevenue += amount;
                     }
                 }
-
-                facOverdueFeeRevenue = contracts.stream()
-                        .filter(c -> c.getOverdueFeeAccrued() > 0
-                                && c.getEndDateExclusive() != null
-                                && !c.getEndDateExclusive().isAfter(effectiveTo))
-                        .mapToLong(RentalContract::getOverdueFeeAccrued)
-                        .sum();
-
-            } else {
-                // Fallback tính theo hợp đồng nếu chưa có giao dịch PaymentTransaction (dữ liệu
-                // mock/seed)
-                facRentalRevenue = contracts.stream()
-                        .filter(c -> (c.getStartDate() != null && !c.getStartDate().isBefore(effectiveFrom)
-                                && !c.getStartDate().isAfter(effectiveTo))
-                                || (c.getCreatedAt() != null && !c.getCreatedAt().toLocalDate().isBefore(effectiveFrom)
-                                        && !c.getCreatedAt().toLocalDate().isAfter(effectiveTo)))
-                        .mapToLong(RentalContract::getTotalRentalFee)
-                        .sum();
-
-                facOverdueFeeRevenue = contracts.stream()
-                        .filter(c -> c.getOverdueFeeAccrued() > 0
-                                && c.getEndDateExclusive() != null
-                                && !c.getEndDateExclusive().isAfter(effectiveTo))
-                        .mapToLong(RentalContract::getOverdueFeeAccrued)
-                        .sum();
-
             }
 
-            long facTotalRevenue = facRentalRevenue + facSurchargeRevenue + facOverdueFeeRevenue;
+            long facTotalRevenue = facRentalRevenue + facRenewalRevenue + facSurchargeRevenue + facOverdueFeeRevenue;
             byFacility.add(FacilityRevenueShareDto.builder()
                     .facilityId(facility.getId())
                     .facilityName(facility.getName())
                     .revenue(facTotalRevenue)
+                    .totalRevenue(facTotalRevenue)
+                    .rentalRevenue(facRentalRevenue)
+                    .surchargeRevenue(facSurchargeRevenue)
+                    .overdueFeeRevenue(facOverdueFeeRevenue)
+                    .renewalRevenue(facRenewalRevenue)
+                    .depositBalance(facDeposit)
+                    .refundAmount(facRefund)
                     .build());
 
             totalRentalRevenue += facRentalRevenue;
             totalSurchargeRevenue += facSurchargeRevenue;
             totalOverdueFeeRevenue += facOverdueFeeRevenue;
+            totalRenewalRevenue += facRenewalRevenue;
+            totalDeposit += facDeposit;
+            totalRefund += facRefund;
         }
 
-        long totalRevenue = totalRentalRevenue + totalSurchargeRevenue + totalOverdueFeeRevenue;
+        long totalRevenue = totalRentalRevenue + totalRenewalRevenue + totalSurchargeRevenue + totalOverdueFeeRevenue;
 
         return SystemRevenueReportResponse.builder()
                 .from(effectiveFrom.toString())
@@ -176,6 +173,9 @@ public class SystemReportServiceImpl implements SystemReportService {
                 .rentalRevenue(totalRentalRevenue)
                 .surchargeRevenue(totalSurchargeRevenue)
                 .overdueFeeRevenue(totalOverdueFeeRevenue)
+                .renewalRevenue(totalRenewalRevenue)
+                .depositBalance(totalDeposit)
+                .totalRefundAmount(totalRefund)
                 .byFacility(byFacility)
                 .build();
     }

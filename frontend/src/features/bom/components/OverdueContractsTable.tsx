@@ -25,20 +25,27 @@ export const OverdueContractsTable: React.FC<OverdueContractsTableProps> = ({
     if (days <= 3) {
       return {
         stage: 'D+1..D+3: Ân hạn',
-        desc: 'Đang gửi thông báo nhắc nợ tự động (Chưa phạt tiền)',
+        desc: 'Phí phạt = 0. Vẫn truy cập ô kho. Nhắc dọn đồ mỗi ngày.',
         badge: 'bg-amber-50 text-amber-700 border-amber-200',
       };
     }
-    if (days < 10) {
+    if (days <= 6) {
       return {
         stage: `D+${days}: Phạt 10%/ngày`,
-        desc: 'Đã khóa quyền Access Code • Phạt trễ hạn tích lũy',
+        desc: 'Khóa báo trả kho. Chưa khóa Access Code. Phải đóng nợ phạt trước khi trả kho.',
+        badge: 'bg-orange-50 text-orange-800 border-orange-200 font-semibold',
+      };
+    }
+    if (days <= 9) {
+      return {
+        stage: `D+${days}: Khóa Access Code`,
+        desc: 'Phí 10%/ngày trên tiền cọc, trần 70%. Access Code bị khóa.',
         badge: 'bg-rose-50 text-rose-700 border-rose-200 font-semibold',
       };
     }
     return {
-      stage: 'D+10: Chấm dứt & Niêm phong',
-      desc: 'Hủy hợp đồng, FM niêm phong khóa cơ, chuẩn bị thanh lý',
+      stage: 'D+10: Chấm dứt hợp đồng',
+      desc: 'Hợp đồng chấm dứt. Ô kho chuyển sang dọn dẹp và niêm phong đồ.',
       badge: 'bg-red-100 text-red-800 border-red-300 font-bold',
     };
   };

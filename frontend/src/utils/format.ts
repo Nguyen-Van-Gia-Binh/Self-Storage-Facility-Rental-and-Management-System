@@ -8,11 +8,19 @@
  * Ví dụ: 1500000 -> "1.500.000 ₫"
  */
 export function formatCurrency(amount: number): string {
+  const value = Number(amount);
+  if (!Number.isFinite(value)) {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+      maximumFractionDigits: 0,
+    }).format(0);
+  }
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
     currency: 'VND',
     maximumFractionDigits: 0,
-  }).format(amount);
+  }).format(value);
 }
 
 /**

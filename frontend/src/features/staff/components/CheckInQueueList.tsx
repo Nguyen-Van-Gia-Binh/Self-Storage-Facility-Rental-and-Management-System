@@ -12,6 +12,23 @@ export interface CheckInQueueListProps {
 
 type FilterTab = 'ALL' | 'TODAY' | 'LATE';
 
+function localToday(): string {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${now.getFullYear()}-${month}-${day}`;
+}
+
+function isTodayAppointment(contract: CheckInContract): boolean {
+  const label = (contract.appointmentTime || '').toLowerCase();
+  return contract.startDate === localToday() || label.includes('hôm nay');
+}
+
+function isLateAppointment(contract: CheckInContract): boolean {
+  const label = (contract.appointmentTime || '').toLowerCase();
+  return label.includes('quá hạn') || contract.graceDaysRemaining < 10;
+}
+
 export const CheckInQueueList: React.FC<CheckInQueueListProps> = ({
   contracts,
   selectedContractId,
@@ -26,11 +43,11 @@ export const CheckInQueueList: React.FC<CheckInQueueListProps> = ({
     return contracts.filter((contract) => {
       // 1. Lọc theo tab
       if (activeTab === 'TODAY') {
-        if (!contract.appointmentTime.toLowerCase().includes('hôm nay')) {
+        if (!isTodayAppointment(contract)) {
           return false;
         }
       } else if (activeTab === 'LATE') {
-        if (!contract.appointmentTime.toLowerCase().includes('quá hạn') && contract.graceDaysRemaining >= 10) {
+        if (!isLateAppointment(contract)) {
           return false;
         }
       }
@@ -52,12 +69,8 @@ export const CheckInQueueList: React.FC<CheckInQueueListProps> = ({
 
   // Thống kê nhanh số lượng
   const stats = useMemo(() => {
-    const todayCount = contracts.filter((c) =>
-      c.appointmentTime.toLowerCase().includes('hôm nay')
-    ).length;
-    const lateCount = contracts.filter((c) =>
-      c.appointmentTime.toLowerCase().includes('quá hạn') || c.graceDaysRemaining < 10
-    ).length;
+    const todayCount = contracts.filter(isTodayAppointment).length;
+    const lateCount = contracts.filter(isLateAppointment).length;
     return {
       all: contracts.length,
       today: todayCount,
@@ -174,7 +187,7 @@ export const CheckInQueueList: React.FC<CheckInQueueListProps> = ({
         ) : (
           filteredContracts.map((contract) => {
             const isSelected = contract.id === selectedContractId;
-            const isLate = contract.appointmentTime.toLowerCase().includes('quá hạn') || contract.graceDaysRemaining < 10;
+            const isLate = isLateAppointment(contract);
             const isFinished = contract.status === 'ACTIVE';
             const isTerminated = contract.status === 'TERMINATED';
 
@@ -193,9 +206,11 @@ export const CheckInQueueList: React.FC<CheckInQueueListProps> = ({
                     <span className="font-bold text-slate-900 text-sm hover:text-brand-700 transition-colors">
                       {contract.customerName}
                     </span>
-                    <div className="text-xs text-slate-500 font-mono mt-0.5">
-                      CCCD: <span className="text-slate-700 font-semibold">{contract.customerIdentityNumber}</span>
-                    </div>
+                    {contract.customerIdentityNumber ? (
+                      <div className="text-xs text-slate-500 font-mono mt-0.5">
+                        CCCD: <span className="text-slate-700 font-semibold">{contract.customerIdentityNumber}</span>
+                      </div>
+                    ) : null}
                   </div>
 
                   {/* Badge Ô kho */}

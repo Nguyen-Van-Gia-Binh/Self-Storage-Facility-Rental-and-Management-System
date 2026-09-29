@@ -188,7 +188,7 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
             ) : (
               <>
                 <CheckCircle className="w-3.5 h-3.5" />
-                Duyệt quyết toán & Hoàn cọc
+                {payableAmount > 0 ? 'Ghi nhận nợ, chờ khách thanh toán' : 'Duyệt quyết toán & Hoàn cọc'}
               </>
             )}
           </button>

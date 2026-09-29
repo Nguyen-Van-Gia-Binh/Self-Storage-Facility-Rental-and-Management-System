@@ -23,6 +23,12 @@ public interface ContractService {
     ReturnInspectionResponse submitReturnInspection(Long contractId, ReturnInspectionRequest request, Long staffId, List<Long> facilityIds);
     SettlementPreviewResponse getSettlementPreview(Long contractId, List<Long> facilityIds);
     SettlementApprovalResponse approveSettlement(Long contractId, SettlementApprovalRequest request, Long managerId, List<Long> facilityIds);
+
+    /** Đóng hợp đồng sau khi khách nộp đủ phần thiếu (BR-RET-04). */
+    void closeContractAfterSettlementPayment(Long contractId);
+
+    /** CLEANING → RESERVED nếu còn Reservation CONFIRMED chưa check-in, không thì AVAILABLE (BR-RET-09). */
+    ContractResponse completeCleaning(Long contractId, List<Long> facilityIds);
     ContractResponse assignReturnStaff(Long contractId, AssignReturnStaffRequest request, Long managerId, List<Long> facilityIds);
     ContractResponse assignCheckInStaff(Long contractId, AssignReturnStaffRequest request, Long managerId, List<Long> facilityIds);
 }

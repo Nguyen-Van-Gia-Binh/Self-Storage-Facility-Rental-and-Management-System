@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { UserPlus, Mail, Lock, Phone, CreditCard, Building2, Check, X, Loader2, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import type { AppUser, UserRoleType } from '@/api/user';
 import { createUser } from '@/api/user';
-import { fetchFacilities } from '@/api/facility';
+import { fetchAllActiveFacilities } from '@/api/facility';
 import type { FacilityListItem } from '@/types';
 
 interface CreateUserModalProps {
@@ -42,7 +42,7 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
 
   useEffect(() => {
     let isMounted = true;
-    fetchFacilities()
+    fetchAllActiveFacilities()
 
       .then((data) => {
         if (isMounted) {
@@ -284,14 +284,26 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
           {/* Phân quyền cơ sở khi vai trò là Staff / Manager */}
           {requiresFacility && (
             <div className="space-y-2 pt-2 border-t border-slate-100">
-              <label className="text-xs font-semibold text-slate-800 flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
                   <Building2 className="w-4 h-4 text-slate-500" />
                   <span>Cơ sở làm việc phụ trách (SA-03)</span>
                   <span className="text-red-500">*</span>
+                </label>
+                <span className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedFacilityIds(facilities.map((facility) => facility.id));
+                      setErrorMsg(null);
+                    }}
+                    className="text-xs font-semibold text-blue-700 hover:text-blue-900"
+                  >
+                    Chọn tất cả
+                  </button>
+                  <span className="text-xs text-slate-500">Đã chọn: {selectedFacilityIds.length}</span>
                 </span>
-                <span className="text-xs text-slate-500">Đã chọn: {selectedFacilityIds.length}</span>
-              </label>
+              </div>
 
               {loadingFacilities ? (
                 <div className="p-4 text-center text-slate-400 text-xs flex items-center justify-center gap-2">

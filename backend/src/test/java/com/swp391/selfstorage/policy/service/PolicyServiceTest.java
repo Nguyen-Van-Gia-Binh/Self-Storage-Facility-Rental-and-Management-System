@@ -95,9 +95,9 @@ class PolicyServiceTest {
                 .overdueGraceDays(3)
                 .overdueDailyRate(BigDecimal.valueOf(0.10))
                 .overdueCapRate(BigDecimal.valueOf(1.00))
+                .overdueNoticeDays(4)
                 .overdueLockAccessDays(7)
-                .overdueNoticeDays(15)
-                .overdueTerminationDays(30)
+                .overdueTerminationDays(10)
                 .returnNoticeDays(7)
                 .returnRefundWorkingDays(5)
                 .returnEarlyRefundRate(BigDecimal.valueOf(0.80))
@@ -238,5 +238,56 @@ class PolicyServiceTest {
         assertNotNull(response);
         assertEquals(1, response.getContent().size());
         assertEquals(1, response.getTotalElements());
+    }
+
+    @Test
+    @DisplayName("BR-GEN-01: từ chối ngày hiệu lực trong quá khứ")
+    void testCreatePolicy_rejectsPastEffectiveDate() {
+        CreatePolicyRequest request = buildMockRequest(6);
+        request.setEffectiveFrom(OffsetDateTime.now().minusDays(1));
+
+        CustomException ex = assertThrows(CustomException.class, () -> policyService.createPolicy(request, 200L));
+
+        assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
+        verify(policyVersionRepository, never()).save(any(PolicyVersion.class));
+    }
+
+    @Test
+    @DisplayName("US-BM-02.1: từ chối hệ số cọc bằng 0")
+    void testCreatePolicy_rejectsZeroDepositMultiplier() {
+        CreatePolicyRequest request = buildMockRequest(6);
+        request.setDepositMultiplier(BigDecimal.ZERO);
+
+        CustomException ex = assertThrows(CustomException.class, () -> policyService.createPolicy(request, 200L));
+
+        assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("US-BM-02.2: từ chối tháng gia hạn tối thiểu lớn hơn tối đa và mốc nhắc trùng")
+    void testCreatePolicy_rejectsInvalidRenewalMilestones() {
+        CreatePolicyRequest minOverMax = buildMockRequest(6);
+        minOverMax.setRenewalMinMonths(12);
+        minOverMax.setRenewalMaxMonths(1);
+        assertThrows(CustomException.class, () -> policyService.createPolicy(minOverMax, 200L));
+
+        CreatePolicyRequest duplicate = buildMockRequest(6);
+        duplicate.setRenewalReminderDays("7,3,7");
+        assertThrows(CustomException.class, () -> policyService.createPolicy(duplicate, 200L));
+        verify(policyVersionRepository, never()).save(any(PolicyVersion.class));
+    }
+
+    @Test
+    @DisplayName("US-BM-02.5: từ chối mốc quá hạn lệch thứ tự")
+    void testCreatePolicy_rejectsOverdueOrder() {
+        CreatePolicyRequest request = buildMockRequest(6);
+        request.setOverdueGraceDays(10);
+        request.setOverdueNoticeDays(4);
+        request.setOverdueLockAccessDays(7);
+        request.setOverdueTerminationDays(10);
+
+        CustomException ex = assertThrows(CustomException.class, () -> policyService.createPolicy(request, 200L));
+
+        assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
     }
 }

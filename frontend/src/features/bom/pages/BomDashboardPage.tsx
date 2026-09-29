@@ -20,7 +20,6 @@ import {
   getSystemOverdueReport,
 } from '@/api/report';
 import { fetchFacilities } from '@/api/facility';
-import { formatDate } from '@/utils/format';
 import { Button } from '@/components/ui/Button';
 import { BomFilterBar } from '../components/BomFilterBar';
 import { BomKpiSummary } from '../components/BomKpiSummary';
@@ -29,6 +28,7 @@ import { OccupancyComparisonChart } from '../components/OccupancyComparisonChart
 import { FacilityPerformanceTable } from '../components/FacilityPerformanceTable';
 import { OverdueContractsTable } from '../components/OverdueContractsTable';
 import { ReportExportModal } from '../components/ReportExportModal';
+import { ExecutivePrintReport } from '../components/ExecutivePrintReport';
 
 export interface BomDashboardPageProps {
   initialOpenExport?: boolean;
@@ -101,6 +101,44 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
     };
   }, [filters]);
 
+  const loadReports = (nextFilters: ReportFilterParams) => {
+    const monthStr = nextFilters.from.substring(0, 7);
+    return Promise.all([
+      getSystemRevenueReport(nextFilters),
+      getSystemOccupancyReport(monthStr, nextFilters.facilityId),
+      getSystemOverdueReport(nextFilters.facilityId),
+    ]);
+  };
+
+  const handlePrintReport = (facilityId?: number) => {
+    setIsExportModalOpen(false);
+    const printWhenReady = () => {
+      window.setTimeout(() => window.print(), 250);
+    };
+
+    if (facilityId === filters.facilityId) {
+      printWhenReady();
+      return;
+    }
+
+    const nextFilters = { ...filters, facilityId };
+    setFilters(nextFilters);
+    setIsLoading(true);
+    loadReports(nextFilters)
+      .then(([rev, occ, ovd]) => {
+        setRevenueData(rev);
+        setOccupancyData(occ);
+        setOverdueData(ovd);
+        setLastRefreshed(new Date().toLocaleTimeString('vi-VN'));
+        setIsLoading(false);
+        printWhenReady();
+      })
+      .catch((err) => {
+        console.error('Lỗi khi tải báo cáo để in:', err);
+        setIsLoading(false);
+      });
+  };
+
   const handleRefresh = () => {
     setIsLoading(true);
     const monthStr = filters.from.substring(0, 7);
@@ -128,18 +166,6 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
-      {/* Tiêu đề in ấn dành riêng cho bản in PDF/Print (@media print) */}
-      <div className="hidden print:block pb-4 border-b-2 border-black">
-        <h1 className="text-xl font-bold uppercase text-black">
-          Báo Cáo Giám Sát Doanh Thu & Hiệu Quả Vận Hành Kho Tự Quản SmartStorage
-        </h1>
-        <div className="text-xs text-black mt-1 space-y-0.5">
-          <p>Kỳ báo cáo: Từ {formatDate(filters.from)} đến {formatDate(filters.to)}</p>
-          <p>Phạm vi: {selectedFacilityName}</p>
-          <p>Người trích xuất: BOM (Business Operations Manager) • Múi giờ: Asia/Ho_Chi_Minh</p>
-        </div>
-      </div>
-
       {/* Header trang (ẩn khi in) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print">
         <div>
@@ -196,7 +222,7 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
       </div>
 
       {/* 2. Dải 4 Thẻ KPI Chiến Lược */}
-      <div className="print-break-inside-avoid">
+      <div className="no-print">
         <BomKpiSummary
           revenue={revenueData}
           occupancy={occupancyData}
@@ -252,8 +278,8 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
         </nav>
       </div>
 
-      {/* 4. Nội dung theo Tab được chọn */}
-      <div className="space-y-6">
+      {/* 4. Nội dung theo Tab được chọn (chỉ trên màn hình) */}
+      <div className="bom-screen-panels space-y-6">
         {/* Tab 1: Cơ cấu Doanh thu & Ma trận chi nhánh */}
         {activeTab === 'REVENUE' && (
           <div className="space-y-6">
@@ -302,10 +328,23 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
         )}
       </div>
 
+      <div className="bom-print-stack">
+        <ExecutivePrintReport
+          revenue={revenueData}
+          occupancy={occupancyData}
+          overdue={overdueData}
+          from={filters.from}
+          to={filters.to}
+          scopeName={selectedFacilityName}
+          printedAt={new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}
+        />
+      </div>
+
       {/* 5. Modal xuất báo cáo (CSV/XLSX/PDF) */}
       <ReportExportModal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
+        onPrint={handlePrintReport}
         currentFilters={filters}
         facilities={facilities}
       />

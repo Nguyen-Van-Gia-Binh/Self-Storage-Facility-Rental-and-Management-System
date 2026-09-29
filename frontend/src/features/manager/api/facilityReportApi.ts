@@ -1,6 +1,7 @@
 // frontend/src/features/manager/api/facilityReportApi.ts
 
 import { apiClient, isMockEnabled } from '@/api/client';
+import { fetchMyAssignedFacilities } from '@/api/facility';
 import type { ApiResponse } from '@/api/client';
 import type {
   FacilityOverviewReport,
@@ -119,15 +120,11 @@ export async function getAssignedFacilities(): Promise<FacilityInfo[]> {
     return mockFacilities;
   }
 
-  const res = await apiClient<ApiResponse<FacilityInfo[]> | FacilityInfo[] | { content: FacilityInfo[] }>('/facilities');
-  if (res && typeof res === 'object' && 'data' in res && Array.isArray(res.data)) {
-    return res.data;
-  }
-  if (Array.isArray(res)) {
-    return res;
-  }
-  if (res && typeof res === 'object' && 'content' in res && Array.isArray(res.content)) {
-    return res.content;
-  }
-  return [];
+  const assigned = await fetchMyAssignedFacilities();
+  return assigned.map((facility) => ({
+    id: facility.id,
+    code: facility.code,
+    name: facility.name,
+    address: facility.address,
+  }));
 }

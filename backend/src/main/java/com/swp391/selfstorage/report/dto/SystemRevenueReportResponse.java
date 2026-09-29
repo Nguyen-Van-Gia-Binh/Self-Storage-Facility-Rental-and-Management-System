@@ -15,5 +15,8 @@ public class SystemRevenueReportResponse {
     private long rentalRevenue;
     private long surchargeRevenue;
     private long overdueFeeRevenue;
+    private long renewalRevenue;
+    private long depositBalance;
+    private long totalRefundAmount;
     private List<FacilityRevenueShareDto> byFacility;
 }

@@ -1,6 +1,11 @@
 package com.swp391.selfstorage.policy.service.impl;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -72,6 +77,7 @@ public class PolicyServiceImpl implements PolicyService {
     @Override
     @Transactional
     public PolicyResponse createPolicy(CreatePolicyRequest request, Long publishedBy) {
+        validatePublishRules(request);
         Integer calculatedVersionNo;
 
         // Nhánh 1: Nếu người dùng tự chỉ định số phiên bản (versionNo)
@@ -95,5 +101,53 @@ public class PolicyServiceImpl implements PolicyService {
 
         // Trả về DTO kết quả
         return policyMapper.toResponse(saved);
+    }
+
+    /**
+     * BR-GEN-01 và US-BM-02: ngày hiệu lực không ở quá khứ, hệ số cọc lớn hơn 0,
+     * mốc nhắc gia hạn phân biệt, và mốc quá hạn đi theo thứ tự.
+     */
+    private void validatePublishRules(CreatePolicyRequest request) {
+        ZoneId zone = ZoneId.of("Asia/Ho_Chi_Minh");
+        LocalDate effectiveDate = request.getEffectiveFrom().atZoneSameInstant(zone).toLocalDate();
+        if (effectiveDate.isBefore(LocalDate.now(zone))) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED, "Ngày hiệu lực không được ở quá khứ");
+        }
+        if (request.getDepositMultiplier() == null
+                || request.getDepositMultiplier().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED, "Hệ số cọc phải lớn hơn 0");
+        }
+        if (request.getRenewalMinMonths() > request.getRenewalMaxMonths()) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                    "Số tháng gia hạn tối thiểu không được lớn hơn số tháng tối đa");
+        }
+        validateReminderDays(request.getRenewalReminderDays());
+        if (!(request.getOverdueGraceDays() < request.getOverdueNoticeDays()
+                && request.getOverdueNoticeDays() <= request.getOverdueLockAccessDays()
+                && request.getOverdueLockAccessDays() <= request.getOverdueTerminationDays())) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                    "Các mốc quá hạn phải theo thứ tự: ân hạn → bắt đầu tính phí → khóa truy cập → chấm dứt");
+        }
+    }
+
+    private void validateReminderDays(String raw) {
+        String[] parts = raw.split(",");
+        Set<Integer> seen = new HashSet<>();
+        for (String part : parts) {
+            String token = part.trim();
+            if (token.isEmpty()) {
+                throw new CustomException(ErrorCode.VALIDATION_FAILED, "Mốc nhắc gia hạn phải là số nguyên dương");
+            }
+            int day;
+            try {
+                day = Integer.parseInt(token);
+            } catch (NumberFormatException ex) {
+                throw new CustomException(ErrorCode.VALIDATION_FAILED, "Mốc nhắc gia hạn phải là số nguyên dương");
+            }
+            if (day <= 0 || !seen.add(day)) {
+                throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                        "Các mốc nhắc gia hạn phải lớn hơn 0 và không được trùng nhau");
+            }
+        }
     }
 }

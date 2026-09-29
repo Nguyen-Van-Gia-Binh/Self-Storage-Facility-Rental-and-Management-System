@@ -5,6 +5,7 @@ import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { BomFacilityManagementPage } from './pages/BomFacilityManagementPage';
 import { BomPricingManagementPage } from './pages/BomPricingManagementPage';
 import { BomDashboardPage } from './pages/BomDashboardPage';
+import { BomPolicyPage } from './pages/BomPolicyPage';
 
 export const BomRoutes: React.FC = () => {
   return (
@@ -16,7 +17,7 @@ export const BomRoutes: React.FC = () => {
         <Route path="revenue" element={<BomDashboardPage />} />
         <Route path="reports" element={<BomDashboardPage initialOpenExport={true} />} />
         {/* Route tương thích */}
-        <Route path="policies" element={<Navigate to="/bom/pricing" replace />} />
+        <Route path="policies" element={<BomPolicyPage />} />
       </Routes>
     </DashboardLayout>
   );

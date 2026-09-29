@@ -10,6 +10,7 @@ interface ReturnSuccessModalProps {
   customerName: string;
   refundAmount: number;
   onClose: () => void;
+  onMarkCleaned?: () => Promise<void>;
 }
 
 export const ReturnSuccessModal: React.FC<ReturnSuccessModalProps> = ({
@@ -19,8 +20,11 @@ export const ReturnSuccessModal: React.FC<ReturnSuccessModalProps> = ({
   customerName,
   refundAmount,
   onClose,
+  onMarkCleaned,
 }) => {
   const navigate = useNavigate();
+  const [cleaning, setCleaning] = React.useState(false);
+  const [cleaned, setCleaned] = React.useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -95,6 +99,27 @@ export const ReturnSuccessModal: React.FC<ReturnSuccessModalProps> = ({
             <li>Tiền cọc sẽ được chuyển khoản về tài khoản gốc trong <b>7 ngày làm việc</b>.</li>
           </ul>
         </div>
+
+        {onMarkCleaned && (
+          <button
+            type="button"
+            disabled={cleaning || cleaned}
+            onClick={async () => {
+              setCleaning(true);
+              try {
+                await onMarkCleaned();
+                setCleaned(true);
+              } catch {
+                window.alert('Chưa đánh dấu dọn xong được. Ô kho cần đang ở trạng thái CLEANING.');
+              } finally {
+                setCleaning(false);
+              }
+            }}
+            className="mt-4 w-full py-2.5 px-4 rounded-xl font-medium border border-teal-300 text-teal-800 hover:bg-teal-50 transition disabled:opacity-60"
+          >
+            {cleaned ? 'Ô kho đã sẵn sàng cho lượt thuê sau' : cleaning ? 'Đang cập nhật...' : 'Đánh dấu đã dọn xong'}
+          </button>
+        )}
 
         <div className="mt-6 flex items-center gap-3">
           <button
