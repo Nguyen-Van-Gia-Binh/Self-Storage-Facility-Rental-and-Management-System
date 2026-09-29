@@ -59,6 +59,45 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).body(response);
     }
 
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNoResourceFoundException(
+            org.springframework.web.servlet.resource.NoResourceFoundException ex, HttpServletRequest request) {
+        ApiResponse<Void> response = ApiResponse.error(
+                404,
+                "NOT_FOUND",
+                "Đường dẫn hoặc tài nguyên không tồn tại: " + request.getRequestURI(),
+                request.getRequestURI(),
+                null
+        );
+        return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND).body(response);
+    }
+
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodNotSupportedException(
+            org.springframework.web.HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
+        ApiResponse<Void> response = ApiResponse.error(
+                405,
+                "METHOD_NOT_ALLOWED",
+                "Phương thức HTTP " + request.getMethod() + " không được hỗ trợ cho đường dẫn này",
+                request.getRequestURI(),
+                null
+        );
+        return ResponseEntity.status(org.springframework.http.HttpStatus.METHOD_NOT_ALLOWED).body(response);
+    }
+
+    @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAuthenticationException(
+            org.springframework.security.core.AuthenticationException ex, HttpServletRequest request) {
+        ApiResponse<Void> response = ApiResponse.error(
+                401,
+                ErrorCode.UNAUTHORIZED.name(),
+                ErrorCode.UNAUTHORIZED.getDefaultMessage(),
+                request.getRequestURI(),
+                null
+        );
+        return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body(response);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex, HttpServletRequest request) {
         log.error("Unhandled exception occurred on path: {}", request.getRequestURI(), ex);

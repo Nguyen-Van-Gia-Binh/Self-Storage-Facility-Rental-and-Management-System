@@ -142,4 +142,25 @@ class ContractReturnControllerTest {
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    @DisplayName("POST /contracts/{id}/cancel-return thành công trả về 200 OK")
+    void testCancelReturnNotice_Success() throws Exception {
+        ReturnNoticeResponse res = ReturnNoticeResponse.builder()
+                .id(10L)
+                .contractId(500L)
+                .intendedReturnDate(LocalDate.now().plusDays(2))
+                .status(ReturnRequestStatus.CANCELLED)
+                .createdAt(OffsetDateTime.now())
+                .build();
+
+        when(contractService.cancelReturnNotice(eq(500L), any(UserPrincipal.class)))
+                .thenReturn(res);
+
+        mockMvc.perform(post("/contracts/500/cancel-return"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.contractId").value(500))
+                .andExpect(jsonPath("$.data.status").value("CANCELLED"));
+    }
 }
