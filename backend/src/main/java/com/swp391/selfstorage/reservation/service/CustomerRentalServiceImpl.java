@@ -140,6 +140,8 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
             detail.setInstructionNotes("Mã PIN của quý khách hiện đang tạm khóa do hợp đồng quá hạn vượt quá thời gian ân hạn 3 ngày. Vui lòng hoàn tất thanh toán khoản nợ để kích hoạt lại quyền truy cập.");
         } else if (contract.getStatus() == ContractStatus.ACTIVE) {
             detail.setInstructionNotes("Để mở khóa điện tử, quý khách vui lòng nhập mã PIN 6 số tại bảng điều khiển cửa kho rồi bấm phím #.");
+        } else if (contract.getStatus() == ContractStatus.PENDING_RETURN) {
+            detail.setInstructionNotes("Hợp đồng đang chờ nhân viên cơ sở nghiệm thu trả kho. Quý khách vui lòng dọn sạch đồ đạc và sử dụng mã PIN để ra vào kho.");
         } else if (contract.getStatus() == ContractStatus.PENDING_CHECK_IN) {
             detail.setInstructionNotes("Quý khách vui lòng đến cơ sở để hoàn tất thủ tục bàn giao và nhận mã PIN mở khóa kho.");
         } else {
@@ -151,6 +153,9 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
         if (contract.getStatus() == ContractStatus.ACTIVE) {
             actions.add("RENEW");
             actions.add("RETURN_NOTICE");
+            actions.add("SUPPORT_TICKET");
+        } else if (contract.getStatus() == ContractStatus.PENDING_RETURN) {
+            actions.add("VIEW_RETURN_STATUS");
             actions.add("SUPPORT_TICKET");
         } else if (contract.getStatus() == ContractStatus.OVERDUE) {
             actions.add("PAY_DEBT");
@@ -238,7 +243,7 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
             }
         }
 
-        // Xử lý mã Access Code và Quá hạn theo BR-OVD-01..03
+        // Xử lý mã Access Code và Quá hạn theo BR-OVD-01..03 & BR-RET-09
         if (contract.getStatus() == ContractStatus.OVERDUE) {
             long overdueDays = 0;
             if (contract.getEndDateExclusive() != null && now.isAfter(contract.getEndDateExclusive())) {
@@ -266,7 +271,7 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
                     res.setAccessCodeLocked(false);
                 }
             }
-        } else if (contract.getStatus() == ContractStatus.ACTIVE) {
+        } else if (contract.getStatus() == ContractStatus.ACTIVE || contract.getStatus() == ContractStatus.PENDING_RETURN) {
             res.setAccessCode(contract.getAccessCode());
             res.setAccessCodeLocked(false);
             res.setOverdueDays(0);
