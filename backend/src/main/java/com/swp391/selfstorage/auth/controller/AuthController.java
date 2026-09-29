@@ -36,10 +36,14 @@ public class AuthController {
 
     @PostMapping("/register")
     @Operation(summary = "Đăng ký tài khoản Storage Customer mới (Công khai)")
-    public ResponseEntity<ApiResponse<AuthResponse>> register(@Valid @RequestBody RegisterRequest request) {
-        AuthResponse response = authService.register(request);
+    public ResponseEntity<ApiResponse<AuthResponse>> register(
+            @Valid @RequestBody RegisterRequest request,
+            jakarta.servlet.http.HttpServletRequest servletRequest) {
+        String ipAddress = extractClientIp(servletRequest);
+        String userAgent = servletRequest != null ? servletRequest.getHeader("User-Agent") : null;
+        AuthResponse response = authService.register(request, ipAddress, userAgent);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(response, "Đăng ký tài khoản thành công"));
+                .body(ApiResponse.created(response, "Đăng ký tài khoản thành công"));
     }
 
     @PostMapping("/login")

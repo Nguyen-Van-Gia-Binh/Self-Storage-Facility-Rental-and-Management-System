@@ -83,13 +83,13 @@ class AuthControllerTest {
         );
         AuthResponse response = AuthResponse.of("new-access-token", "new-refresh-token", 900L, userInfo);
 
-        when(authService.register(any(RegisterRequest.class))).thenReturn(response);
+        when(authService.register(any(RegisterRequest.class), any(), any())).thenReturn(response);
 
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.status").value(201))
                 .andExpect(jsonPath("$.data.accessToken").value("new-access-token"))
                 .andExpect(jsonPath("$.data.user.role").value("STORAGE_CUSTOMER"));
     }

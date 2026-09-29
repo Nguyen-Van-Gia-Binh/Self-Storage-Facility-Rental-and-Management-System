@@ -291,11 +291,17 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
   * **Hướng xử lý & File liên quan:**  
     - Frontend: `Modal.tsx` / `ConfirmDialog.tsx`, `LockUserModal.tsx`, `AdminUserManagementPage.tsx`.
 
-#### 15. Thiếu bản ghi Audit Log thời gian thực cho sự kiện Đăng ký / Đăng nhập mới và thiếu kịch bản kiểm thử Đăng nhập thất bại (`SA-04`, `US-SA-04.1`)
+#### 15. [ĐÃ FIX] Thiếu bản ghi Audit Log thời gian thực cho sự kiện Đăng ký / Đăng nhập mới và thiếu kịch bản kiểm thử Đăng nhập thất bại (`SA-04`, `US-SA-04.1`)
 - **Hình ảnh minh chứng:**  
   ![Không thấy log đăng nhập mới](./images/notion-audit/image-15.png)
 - **Ghi chú gốc từ Lead Dev:**  
-  > *"Không thấy log tài khoản mới đăng ký đăng nhập/ chưa có demo thất bại (và xử lý thế nào ? có ghi lỗi thất bại không ?)"*
+  > *"Không thấy log tài khoản mới đăng ký đăng nhập/ chưa có demo thất bại (và xử lý thế nào ? có ghi lỗi thất bại không ?)"* — `[ĐÃ FIX]`
+- **Kết quả đã xử lý (PR branch `fix/T3.15-admin--audit-log`):**
+  1. *Ghi login khi đăng ký:* Thêm `auditLogService.recordLogin()` trong `AuthServiceImpl.register()` để ghi nhận khi tài khoản mới đăng ký thành công.
+  2. *Seed data login history:* Tạo `V33__seed_login_history.sql` với dữ liệu demo bao gồm:
+     - Lịch sử đăng nhập thành công cho admin, BOM, manager, staff, customer
+     - Demo đăng nhập thất bại (sai mật khẩu) cho các tài khoản
+     - Demo tấn công brute-force với email không tồn tại (hacker@evil.com, fake@scam.net)
 - **Mô tả kỹ thuật chuẩn hóa:**  
   * **Tên vấn đề:** Màn hình Nhật ký hệ thống (`/admin/activity-logs`) không ghi nhận log thời gian thực khi có tài khoản mới đăng ký hoặc đăng nhập; đồng thời chỉ số *"Đăng nhập thất bại"* bằng 0 do thiếu cơ chế ghi nhận và kịch bản demo cảnh báo xâm nhập / đăng nhập sai mật khẩu.
   * **Hiện trạng ghi nhận trên UI (`image-15.png`):**  
