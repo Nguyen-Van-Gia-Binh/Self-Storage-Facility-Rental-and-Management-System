@@ -216,10 +216,10 @@ export const BookingPage: React.FC = () => {
   }, [navigate]);
 
   const currentUser = tokenStorage.getUser();
-  const [customerName, setCustomerName] = useState(() => currentUser?.fullName || 'Nguyễn Phạm Xuân Nhi');
-  const [customerPhone, setCustomerPhone] = useState('0967890123');
-  const [customerEmail, setCustomerEmail] = useState(() => currentUser?.email || 'nhi.customer@gmail.com');
-  const [customerIdCard, setCustomerIdCard] = useState('079099007890');
+  const [customerName, setCustomerName] = useState(() => currentUser?.fullName || '');
+  const [customerPhone, setCustomerPhone] = useState(() => (currentUser as any)?.phone || '');
+  const [customerEmail, setCustomerEmail] = useState(() => currentUser?.email || '');
+  const [customerIdCard, setCustomerIdCard] = useState('');
   const [agreeTerms, setAgreeTerms] = useState(true);
 
   // Validation Errors

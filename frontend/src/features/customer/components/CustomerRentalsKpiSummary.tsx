@@ -36,7 +36,7 @@ export const CustomerRentalsKpiSummary: React.FC<CustomerRentalsKpiSummaryProps>
   const kpis = [
     {
       id: 'ALL',
-      title: 'Tổng số ngăn kho',
+      title: 'Tổng số ô kho',
       count: totalCount,
       subtext: `Tổng phí thuê: ${formatVND(totalMonthlyRent)}/tháng`,
       icon: Layers,
@@ -74,7 +74,7 @@ export const CustomerRentalsKpiSummary: React.FC<CustomerRentalsKpiSummaryProps>
       id: 'ATTENTION',
       title: 'Cần chú ý / Gia hạn',
       count: attentionCount,
-      subtext: 'Ngăn tủ sắp hết hạn, quá hạn hoặc đang hẹn trả',
+      subtext: 'Ô kho sắp hết hạn, quá hạn hoặc đang hẹn trả',
       icon: AlertTriangle,
       bgGradient: 'from-rose-500/10 to-orange-500/5',
       borderColor: 'border-rose-200/80',
@@ -111,7 +111,7 @@ export const CustomerRentalsKpiSummary: React.FC<CustomerRentalsKpiSummaryProps>
               <span className={`text-2xl sm:text-3xl font-black tracking-tight ${kpi.textColor}`}>
                 {kpi.count}
               </span>
-              <span className="text-xs font-semibold text-slate-400">ngăn</span>
+              <span className="text-xs font-semibold text-slate-400">ô</span>
             </div>
 
             <p className="text-[11px] text-slate-500 mt-1 line-clamp-1">

@@ -105,25 +105,6 @@ export async function fetchUnitTypes(facilityId: number): Promise<UnitTypeCatalo
 }
 
 export async function checkAvailability(facilityId: number, unitTypeId: number, query: AvailabilityQuery): Promise<AvailabilityResult> {
-  if (USE_MOCK) {
-    const map = mockUnitTypesData as Record<string, UnitTypeCatalog[]>;
-    const ut = (map[String(facilityId)] ?? []).find((u) => u.id === unitTypeId);
-    if (!ut) throw { status: 404, message: 'Không tìm thấy loại ô kho', timestamp: new Date().toISOString() };
-    const end = new Date(query.startDate);
-    end.setMonth(end.getMonth() + query.rentalMonths);
-    return {
-      facilityId,
-      unitTypeId,
-      startDate: query.startDate,
-      endDateExclusive: end.toISOString().split('T')[0],
-      rentalMonths: query.rentalMonths,
-      availableSlots: Math.max(0, ut.totalUnits - 1),
-      monthlyPrice: ut.monthlyPrice,
-      totalRentalFee: ut.monthlyPrice * query.rentalMonths,
-      depositAmount: ut.monthlyPrice, // BR-DEP-01
-    };
-  }
-
   const qs = new URLSearchParams({ startDate: query.startDate, rentalMonths: String(query.rentalMonths) });
   return await apiClient<AvailabilityResult>(`/facilities/${facilityId}/unit-types/${unitTypeId}/availability?${qs}`);
 }

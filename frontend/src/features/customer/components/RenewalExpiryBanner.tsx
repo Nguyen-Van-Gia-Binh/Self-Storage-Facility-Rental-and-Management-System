@@ -56,7 +56,7 @@ export const RenewalExpiryBanner: React.FC<RenewalExpiryBannerProps> = ({
                 className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white border border-rose-300 hover:bg-rose-100/60 text-rose-900 text-xs font-bold transition-colors shadow-xs"
               >
                 <PlusCircle className="w-3.5 h-3.5" />
-                <span>Thuê ngăn kho mới</span>
+                <span>Thuê ô kho mới</span>
               </Link>
             </div>
           </div>
@@ -87,7 +87,7 @@ export const RenewalExpiryBanner: React.FC<RenewalExpiryBannerProps> = ({
               Hợp đồng đã quá hạn và bị khóa tính năng gia hạn
             </h3>
             <p className="text-xs sm:text-sm text-rose-800 leading-relaxed">
-              Theo quy định, hợp đồng ở trạng thái quá hạn không thể tiếp tục gia hạn trực tuyến. Quý khách vui lòng thanh toán phí quá hạn, hoàn tất trả kho hoặc đăng ký hợp đồng thuê mới nếu có nhu cầu tiếp tục sử dụng ngăn kho (tùy thuộc vào tình trạng còn trống của ngăn kho).
+              Theo quy định, hợp đồng ở trạng thái quá hạn không thể tiếp tục gia hạn trực tuyến. Quý khách vui lòng thanh toán phí quá hạn, hoàn tất trả kho hoặc đăng ký hợp đồng thuê mới nếu có nhu cầu tiếp tục sử dụng ô kho (tùy thuộc vào tình trạng còn trống của ô kho).
             </p>
             <div className="flex flex-wrap items-center gap-2.5 pt-2">
               <Link
@@ -103,7 +103,7 @@ export const RenewalExpiryBanner: React.FC<RenewalExpiryBannerProps> = ({
                 className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white border border-rose-300 hover:bg-rose-100/60 text-rose-900 text-xs font-bold transition-colors shadow-xs"
               >
                 <PlusCircle className="w-3.5 h-3.5" />
-                <span>Thuê ngăn kho mới</span>
+                <span>Thuê ô kho mới</span>
               </Link>
             </div>
           </div>
@@ -148,7 +148,7 @@ export const RenewalExpiryBanner: React.FC<RenewalExpiryBannerProps> = ({
                 className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white border border-rose-300 hover:bg-rose-100/60 text-rose-900 text-xs font-bold transition-colors shadow-xs"
               >
                 <PlusCircle className="w-3.5 h-3.5" />
-                <span>Thuê ngăn kho mới</span>
+                <span>Thuê ô kho mới</span>
               </Link>
             </div>
           </div>
@@ -176,10 +176,10 @@ export const RenewalExpiryBanner: React.FC<RenewalExpiryBannerProps> = ({
               </span>
             </div>
             <h3 className="text-base font-bold text-amber-950">
-              Gia hạn ngay để không bị khóa và mất vị trí ngăn kho ({daysUntilCutoff === 0 ? 'Hôm nay là ngày cuối cùng gia hạn' : `Còn ${daysUntilCutoff} ngày`})!
+              Gia hạn ngay để không bị khóa và mất vị trí ô kho ({daysUntilCutoff === 0 ? 'Hôm nay là ngày cuối cùng gia hạn' : `Còn ${daysUntilCutoff} ngày`})!
             </h3>
             <p className="text-xs sm:text-sm text-amber-800 leading-relaxed">
-              Theo quy định, quý khách cần gia hạn trước mốc 30 ngày. Khi chỉ còn dưới 30 ngày, tính năng gia hạn sẽ tự động bị khóa và ngăn kho có thể được phân bổ cho khách hàng khác sau ngày {contract.endDate}.
+              Theo quy định, quý khách cần gia hạn trước mốc 30 ngày. Khi chỉ còn dưới 30 ngày, tính năng gia hạn sẽ tự động bị khóa và ô kho có thể được phân bổ cho khách hàng khác sau ngày {contract.endDate}.
             </p>
           </div>
         </div>

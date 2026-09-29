@@ -155,17 +155,6 @@ export const tokenStorage = {
     );
     return roles.includes(normalizeRole(user.role));
   },
-
-  /**
-   * Chuyển đổi nhanh vai trò để chạy demo hoặc kiểm thử các portal khác nhau.
-   */
-  setDemoRole(role: UserRole): UserSession {
-    const normalized = normalizeRole(role);
-    const demoUser = DEMO_USERS[normalized] || DEMO_USERS.CUSTOMER;
-    this.setUser(demoUser);
-    this.setAccessToken(`mock-jwt-token-for-${normalized.toLowerCase()}`);
-    return demoUser;
-  },
 };
 
 /**

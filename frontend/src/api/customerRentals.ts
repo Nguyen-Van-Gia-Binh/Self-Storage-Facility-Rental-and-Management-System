@@ -120,79 +120,8 @@ export function mapBackendRentalToContract(item: BackendRentalSummary): RentedCo
     };
   }
 
-// Danh sách hợp đồng mẫu phong phú với ID số thực tế khớp Database Seed (1, 2, 3...)
-export const initialCustomerContracts: RentedContract[] = [
-  {
-    id: '1',
-    contractNumber: 'CTR-202610-0001',
-    facilityId: '1',
-    facilityName: 'Cơ sở Cầu Giấy - Hà Nội',
-    unitId: '1',
-    unitNumber: 'U-101',
-    unitTypeName: 'Kho Cỡ S – Tủ Đồ Cá Nhân',
-    sizeCategory: 'S',
-    storageType: 'STANDARD',
-    startDate: '2026-10-01',
-    endDate: '2026-11-01',
-    monthlyRent: 500000,
-    depositHeld: 500000,
-    accessPin: '1234',
-    status: 'ACTIVE',
-  },
-  {
-    id: '2',
-    contractNumber: 'CTR-202610-0002',
-    facilityId: '1',
-    facilityName: 'Cơ sở Cầu Giấy - Hà Nội',
-    unitId: '2',
-    unitNumber: 'U-102',
-    unitTypeName: 'Kho Cỡ M – Tiêu Chuẩn Gia Đình',
-    sizeCategory: 'M',
-    storageType: 'STANDARD',
-    startDate: '2026-09-25',
-    endDate: '2026-12-25',
-    monthlyRent: 1200000,
-    depositHeld: 1200000,
-    accessPin: undefined,
-    status: 'PENDING_CHECKIN',
-  },
-  {
-    id: '3',
-    contractNumber: 'CTR-202610-0003',
-    facilityId: '5',
-    facilityName: 'Cơ sở Quận 1 - TP.HCM',
-    unitId: '3',
-    unitNumber: 'U-B201',
-    unitTypeName: 'Kho Cỡ L – Doanh Nghiệp',
-    sizeCategory: 'L',
-    storageType: 'CLIMATE_CONTROLLED',
-    startDate: '2026-06-01',
-    endDate: '2026-09-30',
-    monthlyRent: 4800000,
-    depositHeld: 4800000,
-    accessPin: '5190',
-    status: 'EXPIRING_SOON',
-  },
-  {
-    id: '4',
-    contractNumber: 'CTR-202610-0004',
-    facilityId: '2',
-    facilityName: 'Cơ sở Quận 7 - TP.HCM',
-    unitId: '4',
-    unitNumber: 'U-A110',
-    unitTypeName: 'Kho Cỡ S – Tủ Đồ Cá Nhân',
-    sizeCategory: 'S',
-    storageType: 'STANDARD',
-    startDate: '2026-05-15',
-    endDate: '2026-09-19',
-    monthlyRent: 1200000,
-    depositHeld: 1200000,
-    accessPin: '4092',
-    status: 'OVERDUE',
-    overdueDays: 2,
-    overdueFee: 0,
-  },
-];
+// Danh sách hợp đồng mẫu ban đầu (để rỗng, dữ liệu tải trực tiếp từ Backend API)
+export const initialCustomerContracts: RentedContract[] = [];
 
 /**
  * Lấy danh sách hợp đồng đã ghi đè từ localStorage
@@ -511,7 +440,7 @@ export async function scheduleContractReturn(
       scheduledReturnDate: request.returnDate,
       status: 'PENDING_RETURN',
       estimatedDepositRefund: Number.isFinite(refund) ? refund : 0,
-      message: notice?.message || 'Đăng ký lịch hẹn trả kho thành công. Vui lòng dọn dẹp ngăn tủ trước ngày hẹn.',
+      message: notice?.message || 'Đăng ký lịch hẹn trả kho thành công. Vui lòng dọn dẹp ô kho trước ngày hẹn.',
     };
   }
 
@@ -549,7 +478,7 @@ export async function getContractAccessLogs(contractId: string): Promise<AccessL
       method: 'PIN_CODE',
       accessorName: 'Chủ hợp đồng',
       status: 'SUCCESS',
-      deviceInfo: 'Khóa cửa số bàn phím cảm ứng tủ',
+      deviceInfo: 'Khóa cửa số bàn phím cảm ứng ô kho',
     },
     {
       id: `LOG-${contractId}-2`,
@@ -594,7 +523,7 @@ export async function renewContract(
 
   saveStoredOverride(request.contractId, updates);
   const updatedContract: RentedContract = {
-    ...(target || initialCustomerContracts[0]),
+    ...(target || ({ id: request.contractId, unitNumber: '' } as RentedContract)),
     ...updates,
   };
   return {
@@ -602,6 +531,6 @@ export async function renewContract(
     contract: updatedContract,
     receiptNumber,
     renewedAt,
-    message: `Gia hạn thành công thêm ${request.months} tháng cho ngăn kho ${updatedContract.unitNumber}. Hạn mới đến ngày ${request.newEndDate}.`,
+    message: `Gia hạn thành công thêm ${request.months} tháng cho ô kho ${updatedContract.unitNumber}. Hạn mới đến ngày ${request.newEndDate}.`,
   };
 }

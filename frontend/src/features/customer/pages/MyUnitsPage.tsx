@@ -340,7 +340,7 @@ export const MyUnitsPage: React.FC = () => {
         {/* Search Box */}
         <div className="relative w-full md:w-72 flex-shrink-0">
           <Input
-            placeholder="Tìm theo số ngăn, cơ sở, mã HĐ..."
+            placeholder="Tìm theo mã ô kho, cơ sở, mã HĐ..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="text-xs pl-8 pr-7 py-1.5 h-9"
@@ -361,7 +361,7 @@ export const MyUnitsPage: React.FC = () => {
       {/* List of Rented Unit Cards */}
       {loading ? (
         <div className="py-16 text-center text-xs text-slate-400">
-          Đang tải dữ liệu danh sách ngăn kho...
+          Đang tải dữ liệu danh sách ô kho...
         </div>
       ) : filteredContracts.length > 0 ? (
         <div className="space-y-5">
@@ -383,7 +383,7 @@ export const MyUnitsPage: React.FC = () => {
           </div>
           <div>
             <h3 className="text-base font-extrabold text-[#0a1614]">
-              {searchQuery ? 'Không tìm thấy ngăn kho nào phù hợp' : 'Không có hợp đồng nào trong mục này'}
+              {searchQuery ? 'Không tìm thấy ô kho nào phù hợp' : 'Không có hợp đồng nào trong mục này'}
             </h3>
             <p className="text-xs text-slate-500 mt-1">
               {searchQuery
@@ -403,7 +403,7 @@ export const MyUnitsPage: React.FC = () => {
           ) : (
             <Link to="/customer">
               <Button variant="primary" size="sm" className="mt-2 text-xs font-bold cursor-pointer">
-                Khám phá và thuê ngăn kho mới
+                Khám phá và thuê ô kho mới
               </Button>
             </Link>
           )}

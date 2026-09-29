@@ -143,20 +143,18 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
 
     // Find selected contract
     const contract = rentals.find(r => String(r.id) === String(selectedContractId));
-    let facilityId = 1;
-    let storageUnitId: number | undefined;
+    const rawFacilityId = contract?.facilityId || (facilities.length > 0 ? facilities[0].id : '1');
+    const facilityId = Number(rawFacilityId) || Number(String(rawFacilityId).replace(/\D/g, '')) || 1;
 
-    if (contract) {
-      facilityId = contract.facilityId === 'FAC-D7-02' ? 2 : 1;
-      storageUnitId = contract.unitId === 'U-A108' ? 8 : 4;
-    } else if (facilities.length > 0) {
-      facilityId = facilities[0].id === 'FAC-D7-02' ? 2 : 1;
-    }
+    const rawUnitId = contract?.unitId;
+    const storageUnitId = rawUnitId ? (Number(rawUnitId) || Number(String(rawUnitId).replace(/\D/g, '')) || undefined) : undefined;
+
+    const contractId = contract ? (Number(contract.id) || Number(String(contract.id).replace(/\D/g, '')) || undefined) : undefined;
 
     try {
       setLoading(true);
       await onSubmit({
-        contractId: contract ? (typeof contract.id === 'number' ? contract.id : (parseInt(String(contract.id).replace(/\D/g, ''), 10) || 89)) : undefined,
+        contractId,
         facilityId,
         storageUnitId,
         title: title.trim() || undefined,

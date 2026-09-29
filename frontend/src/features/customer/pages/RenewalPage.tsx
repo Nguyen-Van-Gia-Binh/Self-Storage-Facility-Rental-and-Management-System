@@ -29,10 +29,19 @@ import { calculateRenewalPricing, calculateExtendedEndDate, calculateDaysRemaini
 import type { RentedContract, RenewContractResponse } from '../types';
 import { RenewalExpiryBanner } from '../components/RenewalExpiryBanner';
 import { RenewalReceiptModal } from '../components/RenewalReceiptModal';
+import { tokenStorage } from '@/utils/tokenStorage';
 
 export const RenewalPage: React.FC = () => {
   const { contractId } = useParams<{ contractId: string }>();
   const navigate = useNavigate();
+
+  // Auth Guard: Mục 2 — Yêu cầu đăng nhập trước khi gia hạn hợp đồng
+  useEffect(() => {
+    if (!tokenStorage.getAccessToken()) {
+      const currentUrl = window.location.pathname + window.location.search;
+      navigate(`/auth/login?redirect=${encodeURIComponent(currentUrl)}`, { replace: true });
+    }
+  }, [navigate]);
 
   const [contract, setContract] = useState<RentedContract | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -223,7 +232,7 @@ export const RenewalPage: React.FC = () => {
         contract: updatedContract,
         receiptNumber: `REN-${applied.id}`,
         renewedAt: applied.createdAt || new Date().toISOString(),
-        message: `Gia hạn thành công thêm ${applied.renewalMonths} tháng cho ngăn kho ${updatedContract.unitNumber}. Hạn mới đến ngày ${endDate}.`,
+        message: `Gia hạn thành công thêm ${applied.renewalMonths} tháng cho ô kho ${updatedContract.unitNumber}. Hạn mới đến ngày ${endDate}.`,
       });
       setIsProcessing(false);
       setShowReceiptModal(true);
@@ -281,7 +290,7 @@ export const RenewalPage: React.FC = () => {
     getCustomerContracts()
       .then((contracts) => {
         if (!isMounted) return;
-        const found = contracts.find((c) => c.id === contractId) || contracts[0] || null;
+        const found = contracts.find((c) => c.id === contractId) || null;
         setContract(found);
         setLoading(false);
       })
@@ -466,7 +475,7 @@ export const RenewalPage: React.FC = () => {
                   </div>
                   <h2 className="text-base font-bold text-[#0a1614] flex items-center gap-2">
                     <Box className="w-4 h-4 text-brand-600" />
-                    Ngăn kho {contract.unitNumber} · {contract.unitTypeName.split('–')[0].trim()}
+                    Ô kho {contract.unitNumber} · {contract.unitTypeName.split('–')[0].trim()}
                   </h2>
                   <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
                     <Building2 className="w-3.5 h-3.5" />
@@ -567,7 +576,7 @@ export const RenewalPage: React.FC = () => {
                 <div className="p-3 rounded-lg bg-sky-50/60 border border-sky-200 flex items-start gap-2.5 text-xs text-slate-700">
                   <Sparkles className="w-4 h-4 text-sky-600 flex-shrink-0 mt-0.5" />
                   <p className="leading-relaxed">
-                    <strong className="text-sky-950">Bảo lưu ngăn kho:</strong> Giữ nguyên vị trí ngăn {contract.unitNumber} và mã PIN mở tủ không thay đổi.
+                    <strong className="text-sky-950">Bảo lưu ô kho:</strong> Giữ nguyên vị trí ô {contract.unitNumber} và mã PIN mở cửa không thay đổi.
                   </p>
                 </div>
               </div>
@@ -695,7 +704,7 @@ export const RenewalPage: React.FC = () => {
                 {/* Dòng 1: Tiền thuê kỳ mới */}
                 <div className="px-4 py-3.5 grid grid-cols-12 gap-2 items-center">
                   <div className="col-span-6 sm:col-span-7">
-                    <strong className="text-slate-800 block">Tiền thuê ngăn kho {contract.unitNumber}</strong>
+                    <strong className="text-slate-800 block">Tiền thuê ô kho {contract.unitNumber}</strong>
                     <span className="text-xs text-slate-500">
                       Thời hạn {renewalMonths} tháng · Đơn giá {formatVND(pricing.monthlyRent)}/tháng
                     </span>
@@ -734,7 +743,7 @@ export const RenewalPage: React.FC = () => {
                         Khoản nợ quá hạn & Phí phạt chậm trả gộp
                       </strong>
                       <span className="text-xs text-rose-800">
-                        Tự động gộp để giải tỏa trạng thái khóa ngăn kho và kích hoạt lại mã PIN
+                        Tự động gộp để giải tỏa trạng thái khóa ô kho và kích hoạt lại mã PIN
                       </span>
                     </div>
                     <span className="col-span-2 text-center text-rose-900 font-semibold">Gộp nợ</span>

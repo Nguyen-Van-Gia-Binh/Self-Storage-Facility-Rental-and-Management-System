@@ -2,7 +2,7 @@
  * Reservation API Client — WS1 (SC-01, SC-02, BR-DEP-01, BR-DEP-03, BR-GEN-04)
  * Quản lý tính giá trước, kiểm tra sức chứa và tạo đơn đặt chỗ giữ kho 48h.
  */
-import { apiClient, isMockEnabled, type ApiResponse } from '@/api/client';
+import { apiClient, type ApiResponse } from '@/api/client';
 
 export interface CalculatePriceRequest {
   monthlyPrice: number;
@@ -69,85 +69,10 @@ export interface AvailabilityResponse {
   depositAmount: number;
 }
 
-// Mock fallback dự phòng khi bật cờ VITE_MOCK_WS1=true
-function mockCalculatePrice(req: CalculatePriceRequest): CalculatePriceResponse {
-  const rawTotal = req.monthlyPrice * req.months;
-  let discountPercentage = 0;
-  if (req.months >= 12) discountPercentage = 0.10;
-  else if (req.months >= 6) discountPercentage = 0.05;
-
-  const discountAmount = Math.round((rawTotal * discountPercentage) / 1000) * 1000;
-  const finalRentTotal = rawTotal - discountAmount;
-  const depositAmount = req.monthlyPrice; // BR-DEP-01
-  const totalDueToday = finalRentTotal + depositAmount;
-
-  return {
-    monthlyPrice: req.monthlyPrice,
-    rentalMonths: req.months,
-    rawRentTotal: rawTotal,
-    discountPercentage: discountPercentage * 100,
-    discountAmount,
-    finalRentTotal,
-    depositAmount,
-    totalDueToday,
-  };
-}
-
-function getFacilityNameById(facilityId?: number): string {
-  switch (facilityId) {
-    case 1:
-      return 'Cơ sở Cầu Giấy - Hà Nội';
-    case 2:
-      return 'Cơ sở Quận 7 - TP.HCM';
-    case 3:
-      return 'Cơ sở Hai Bà Trưng - Hà Nội';
-    case 4:
-      return 'Cơ sở Thanh Xuân - Hà Nội';
-    case 5:
-      return 'Cơ sở Quận 1 - TP.HCM';
-    case 6:
-      return 'Cơ sở Bình Thạnh - TP.HCM';
-    default:
-      return `Cơ sở SmartStorage #${facilityId || 1}`;
-  }
-}
-
-function mockCreateReservation(req: CreateReservationRequest): ReservationResponse {
-  const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-  const code = `RSV-202610-${randomSuffix}`;
-  const pricing = mockCalculatePrice({ monthlyPrice: 1200000, months: req.rentalMonths });
-
-  return {
-    id: randomSuffix,
-    code,
-    facilityId: req.facilityId,
-    facilityName: getFacilityNameById(req.facilityId),
-    unitTypeId: req.unitTypeId,
-    unitTypeName: 'Kho Cỡ S – Tủ Đồ Cá Nhân',
-    storageUnitId: req.storageUnitId,
-    storageUnitCode: req.storageUnitId ? `U-${req.storageUnitId}` : 'U-101',
-    startDate: req.startDate,
-    rentalMonths: req.rentalMonths,
-    monthlyPrice: 1200000,
-    discountAmount: pricing.discountAmount,
-    depositAmount: pricing.depositAmount,
-    totalRentalFee: pricing.finalRentTotal,
-    totalPayable: pricing.totalDueToday,
-    status: 'PENDING_PAYMENT',
-    holdExpiresAt: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
-    bankAccountNumber: '0888 567 999',
-    bankName: 'MB Bank',
-    transferContent: `SMARTSTORAGE ${code}`,
-  };
-}
-
 /**
  * 1. Tính toán trước tiền thuê, chiết khấu và cọc 1 tháng (BR-DEP-01, BR-GEN-04)
  */
 export async function calculateBookingPrice(req: CalculatePriceRequest): Promise<CalculatePriceResponse> {
-  if (isMockEnabled('WS1')) {
-    return mockCalculatePrice(req);
-  }
   const res = await apiClient<ApiResponse<CalculatePriceResponse>>('/reservations/calculate-price', {
     method: 'POST',
     body: JSON.stringify(req),
@@ -159,9 +84,6 @@ export async function calculateBookingPrice(req: CalculatePriceRequest): Promise
  * 2. Tạo đơn đặt chỗ mới & giữ chỗ 48h trên CSDL (SC-02, BR-RES-02, BR-DEP-03)
  */
 export async function createReservation(req: CreateReservationRequest): Promise<ReservationResponse> {
-  if (isMockEnabled('WS1')) {
-    return mockCreateReservation(req);
-  }
   const res = await apiClient<ApiResponse<ReservationResponse>>('/reservations', {
     method: 'POST',
     body: JSON.stringify(req),
@@ -178,17 +100,6 @@ export async function checkUnitAvailability(
   startDate: string,
   rentalMonths: number
 ): Promise<AvailabilityResponse> {
-  if (isMockEnabled('WS1')) {
-    return {
-      facilityId,
-      unitTypeId,
-      startDate,
-      rentalMonths,
-      availableSlots: 8,
-      monthlyPrice: 1200000,
-      depositAmount: 1200000,
-    };
-  }
   const query = new URLSearchParams({
     startDate,
     rentalMonths: String(rentalMonths),
@@ -201,18 +112,6 @@ export async function checkUnitAvailability(
  * 4. Tra cứu thông tin chi tiết đơn đặt chỗ theo mã Code
  */
 export async function getReservationByCode(code: string): Promise<ReservationResponse> {
-  if (isMockEnabled('WS1')) {
-    return mockCreateReservation({
-      facilityId: 1,
-      unitTypeId: 1,
-      startDate: new Date().toISOString().split('T')[0],
-      rentalMonths: 3,
-      customerName: 'Khách hàng',
-      customerPhone: '0901234567',
-      customerEmail: 'customer@example.com',
-      identityNumber: '079204001234',
-    });
-  }
   const res = await apiClient<ApiResponse<ReservationResponse>>(`/reservations/${code}`);
   return res.data;
 }

@@ -22,12 +22,14 @@ import {
   type CheckoutResult,
 } from '@/api/payment';
 import type { MoveInPassData } from '@/types';
+import { tokenStorage } from '@/utils/tokenStorage';
 
 export interface VietQRPaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onPaymentSuccess: (passData?: MoveInPassData) => void;
   unitNumber: string;
+  facilityId?: string | number;
   facilityName: string;
   facilityAddress?: string;
   facilityPhone?: string;
@@ -50,6 +52,7 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
   onClose,
   onPaymentSuccess,
   unitNumber,
+  facilityId,
   facilityName,
   facilityAddress,
   facilityPhone,
@@ -97,14 +100,14 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
 
   // 4 số cuối CCCD để làm cú pháp memo đối chiếu
   const idLast4 = useMemo(() => {
-    const clean = customerIdCard ? customerIdCard.replace(/\D/g, '') : '8888';
-    return clean.slice(-4) || '8888';
+    const clean = customerIdCard ? customerIdCard.replace(/\D/g, '') : '';
+    return clean.slice(-4) || '';
   }, [customerIdCard]);
 
   // Cú pháp nội dung chuyển khoản bắt buộc
   const transferMemo = paymentType === 'OVERDUE_PENALTY'
     ? `PHAT${contractId || ''} ${unitNumber}`
-    : `SMARTSTORAGE ${unitNumber} ${idLast4}`;
+    : `SMARTSTORAGE ${unitNumber}${idLast4 ? ` ${idLast4}` : ''}`;
   const bankAccount = checkoutData?.accountNumber || '0888567999';
   const bankName = 'MB Bank (Ngân hàng Quân Đội)';
   const accountHolder = checkoutData?.accountName || 'CONG TY CP SMARTSTORAGE VIETNAM';
@@ -128,7 +131,7 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
 
     setIsInitializing(true);
     const refType = paymentType || (contractId ? 'CONTRACT_RENEWAL' : 'RESERVATION');
-    const refId = contractId || reservationId || 1;
+    const refId = contractId || reservationId || 0;
 
     createCheckout({
       referenceType: refType,
@@ -185,13 +188,13 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
             const pass = generateMoveInPass({
               reservationId: `RES-${orderCode}`,
               unitNumber,
-              facilityId: 'FAC-D7-01',
+              facilityId: String(facilityId || ''),
               facilityName,
-              facilityAddress: facilityAddress || 'SmartStorage',
-              facilityPhone: facilityPhone || '1900 8888',
-              customerName: customerName || 'Quý khách hàng',
-              customerPhone: customerPhone || '0901234567',
-              customerIdentity: customerIdCard || '079199001234',
+              facilityAddress: facilityAddress || '',
+              facilityPhone: facilityPhone || '',
+              customerName: customerName || tokenStorage.getUser()?.fullName || '',
+              customerPhone: customerPhone || (tokenStorage.getUser() as any)?.phone || '',
+              customerIdentity: customerIdCard || '',
               startDate: startDate || new Date().toISOString().split('T')[0],
               checkInWindow: 'Trong vòng 48 giờ kể từ lúc cọc',
               totalPaid: totalAmount,
@@ -257,13 +260,13 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
           const pass = generateMoveInPass({
             reservationId: `RES-${orderCode}`,
             unitNumber,
-            facilityId: 'FAC-D7-01',
+            facilityId: String(facilityId || ''),
             facilityName,
-            facilityAddress: facilityAddress || 'SmartStorage',
-            facilityPhone: facilityPhone || '1900 8888',
-            customerName: customerName || 'Quý khách hàng',
-            customerPhone: customerPhone || '0901234567',
-            customerIdentity: customerIdCard || '079199001234',
+            facilityAddress: facilityAddress || '',
+            facilityPhone: facilityPhone || '',
+            customerName: customerName || tokenStorage.getUser()?.fullName || '',
+            customerPhone: customerPhone || (tokenStorage.getUser() as any)?.phone || '',
+            customerIdentity: customerIdCard || '',
             startDate: startDate || new Date().toISOString().split('T')[0],
             checkInWindow: 'Trong vòng 48 giờ kể từ lúc cọc',
             totalPaid: totalAmount,
@@ -296,13 +299,13 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
           const pass = generateMoveInPass({
             reservationId: `RES-${orderCode}`,
             unitNumber,
-            facilityId: 'FAC-D7-01',
+            facilityId: String(facilityId || ''),
             facilityName,
-            facilityAddress: facilityAddress || 'SmartStorage',
-            facilityPhone: facilityPhone || '1900 8888',
-            customerName: customerName || 'Quý khách hàng',
-            customerPhone: customerPhone || '0901234567',
-            customerIdentity: customerIdCard || '079199001234',
+            facilityAddress: facilityAddress || '',
+            facilityPhone: facilityPhone || '',
+            customerName: customerName || tokenStorage.getUser()?.fullName || '',
+            customerPhone: customerPhone || (tokenStorage.getUser() as any)?.phone || '',
+            customerIdentity: customerIdCard || '',
             startDate: startDate || new Date().toISOString().split('T')[0],
             checkInWindow: 'Trong vòng 48 giờ kể từ lúc cọc',
             totalPaid: totalAmount,
@@ -358,7 +361,7 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
 
           <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
             {paymentType === 'OVERDUE_PENALTY'
-              ? `Đóng Nợ Phạt Ngăn Tủ ${unitNumber}`
+              ? `Đóng Nợ Phạt Ô Kho ${unitNumber}`
               : `Thanh Toán Giữ Chỗ Ô Kho ${unitNumber}`}
           </h2>
           <p className="text-xs text-emerald-100/90 mt-0.5">

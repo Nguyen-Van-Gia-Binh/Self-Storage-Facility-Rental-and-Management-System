@@ -42,17 +42,19 @@ export const PaymentPage: React.FC = () => {
     }
   }, [navigate]);
 
-  // Đọc thông số từ URL query hoặc mặc định
-  const unitNumber = searchParams.get('unitNumber') || 'A102';
-  const facilityName = searchParams.get('facilityName') || 'SmartStorage Quận 7 Flagship';
-  const facilityAddress =
-    searchParams.get('facilityAddress') || '52 Nguyễn Hữu Thọ, Phường Tân Phong, Quận 7, TP.HCM';
-  const facilityPhone = searchParams.get('facilityPhone') || '1900 8888';
-  const rentalMonths = Number(searchParams.get('months')) || 3;
-  const monthlyPrice = Number(searchParams.get('monthlyPrice')) || 2400000;
-  const customerName = searchParams.get('customerName') || 'Nguyễn Phạm Xuân Nhi';
-  const customerPhone = searchParams.get('customerPhone') || '0908 123 456';
-  const customerIdCard = searchParams.get('cccd') || '079199001234';
+  // Đọc thông số từ URL query hoặc người dùng hiện tại
+  const unitNumber = searchParams.get('unitNumber') || '';
+  const facilityId = searchParams.get('facilityId') || '';
+  const facilityName = searchParams.get('facilityName') || 'Cơ sở lưu trữ';
+  const facilityAddress = searchParams.get('facilityAddress') || '';
+  const facilityPhone = searchParams.get('facilityPhone') || '';
+  const rentalMonths = Number(searchParams.get('months')) || 1;
+  const monthlyPrice = Number(searchParams.get('monthlyPrice')) || 0;
+  const amountParam = searchParams.get('amount');
+  const currentUser = tokenStorage.getUser();
+  const customerName = searchParams.get('customerName') || currentUser?.fullName || '';
+  const customerPhone = searchParams.get('customerPhone') || (currentUser as any)?.phone || '';
+  const customerIdCard = searchParams.get('cccd') || '';
   const startDate = searchParams.get('startDate') || new Date().toISOString().split('T')[0];
   const contractIdParam = searchParams.get('contractId');
   const reservationIdParam = searchParams.get('reservationId');
@@ -60,7 +62,7 @@ export const PaymentPage: React.FC = () => {
   // Tính toán phí
   const rentalFee = rentalMonths * monthlyPrice;
   const depositAmount = monthlyPrice; // Cọc 1 tháng (BR-DEP-01)
-  const totalAmount = rentalFee + depositAmount;
+  const totalAmount = amountParam ? Number(amountParam) : rentalFee + depositAmount;
 
   // State phương thức thanh toán
   const [selectedMethod, setSelectedMethod] = useState<'VIETQR' | 'CARD'>('VIETQR');
@@ -95,11 +97,11 @@ export const PaymentPage: React.FC = () => {
   // 4 số cuối CCCD
   const idLast4 = useMemo(() => {
     const clean = customerIdCard.replace(/\D/g, '');
-    return clean.slice(-4) || '1234';
+    return clean.slice(-4) || '';
   }, [customerIdCard]);
 
   // Thông tin ngân hàng & QR
-  const transferMemo = `SMARTSTORAGE ${unitNumber} ${idLast4}`;
+  const transferMemo = `SMARTSTORAGE ${unitNumber}${idLast4 ? ` ${idLast4}` : ''}`;
   const bankAccount = checkoutData?.accountNumber || '0888567999';
   const bankName = 'MB Bank (Ngân hàng Quân Đội)';
   const accountHolder = checkoutData?.accountName || 'CONG TY CP SMARTSTORAGE VIETNAM';
@@ -112,7 +114,7 @@ export const PaymentPage: React.FC = () => {
       ? Number(contractIdParam)
       : reservationIdParam
       ? Number(reservationIdParam)
-      : 1;
+      : 0;
 
     createCheckout({
       referenceType: refType,
@@ -149,7 +151,7 @@ export const PaymentPage: React.FC = () => {
           const pass = generateMoveInPass({
             reservationId: `RES-${orderCode}`,
             unitNumber,
-            facilityId: 'FAC-D7-01',
+            facilityId: facilityId || '',
             facilityName,
             facilityAddress,
             facilityPhone,
@@ -257,7 +259,7 @@ export const PaymentPage: React.FC = () => {
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-[#0a1614] tracking-tight">
-            Thanh Toán Đặt Chỗ Ngăn Tủ {unitNumber}
+            Thanh Toán Đặt Chỗ Ô Kho {unitNumber}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
             Quét mã VietQR chuyển khoản liên ngân hàng 24/7. Hệ thống tự động xác nhận và cấp Thẻ nhận kho trong vài giây.
@@ -561,7 +563,7 @@ export const PaymentPage: React.FC = () => {
             {/* Unit Info */}
             <div className="space-y-2 text-xs">
               <div className="flex justify-between items-center">
-                <span className="text-slate-500">Mã ngăn kho:</span>
+                <span className="text-slate-500">Mã ô kho:</span>
                 <span className="font-extrabold text-brand-700 text-sm">{unitNumber}</span>
               </div>
               <div className="flex justify-between items-center">

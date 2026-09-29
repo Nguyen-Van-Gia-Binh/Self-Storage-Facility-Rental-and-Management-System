@@ -5,7 +5,7 @@
 import { apiClient } from './client';
 import type { ApiResponse } from './client';
 import type { UserRoleType } from './user';
-import { tokenStorage, normalizeRole, DEMO_USERS, type UserSession, type UserRole } from '@/utils/tokenStorage';
+import { tokenStorage, normalizeRole } from '@/utils/tokenStorage';
 
 export interface UserInfo {
   id: number;
@@ -180,35 +180,6 @@ export function getPortalUrlByRole(role: string): string {
   }
 }
 
-/**
- * Đăng nhập nhanh vào tài khoản demo của một vai trò:
- * Tự động gọi API backend /auth/login để nhận access_token và refresh_token thật,
- * lưu vào localStorage và cập nhật phiên làm việc.
- */
-export async function loginAsDemoRole(role: UserRole | string): Promise<UserSession> {
-  const normalized = normalizeRole(role);
-  const demoUser = DEMO_USERS[normalized] || DEMO_USERS.CUSTOMER;
-
-  try {
-    const authData = await loginUser({
-      email: demoUser.email,
-      password: 'password123',
-    });
-    const session: UserSession = {
-      id: authData.user.id,
-      username: authData.user.email,
-      email: authData.user.email,
-      fullName: authData.user.fullName,
-      role: normalized,
-      facilityId: authData.user.facilityIds?.[0],
-    };
-    tokenStorage.setUser(session);
-    return session;
-  } catch (err) {
-    throw err;
-  }
-}
-
 export const authApi = {
   login: loginUser,
   loginWithGoogle,
@@ -219,5 +190,4 @@ export const authApi = {
   logout: logoutUser,
   getPortalUrlByRole,
   saveSession,
-  loginAsDemoRole,
 };
