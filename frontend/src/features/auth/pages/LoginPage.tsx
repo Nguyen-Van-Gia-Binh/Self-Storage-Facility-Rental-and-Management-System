@@ -14,7 +14,6 @@ import {
   AlertCircle,
   Loader2,
   Sparkles,
-  Building2,
 } from 'lucide-react';
 import { loginUser, loginWithGoogle, getPortalUrlByRole } from '@/api/auth';
 import type { UserRoleType } from '@/api/user';
@@ -33,69 +32,19 @@ declare global {
   }
 }
 
-const DEMO_ACCOUNTS: {
-  label: string;
-  roleName: string;
-  email: string;
-  role: UserRoleType;
-  color: string;
-}[] = [
-  {
-    label: '👑 Admin',
-    roleName: 'Quản trị hệ thống',
-    email: 'admin@smartstorage.vn',
-    role: 'SYSTEM_ADMINISTRATOR',
-    color: 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100',
-  },
-  {
-    label: '💼 BOM',
-    roleName: 'Quản lý kinh doanh',
-    email: 'bom@smartstorage.vn',
-    role: 'BUSINESS_OPERATIONS_MANAGER',
-    color: 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100',
-  },
-  {
-    label: '🏢 Quản lý cơ sở',
-    roleName: 'Facility Manager',
-    email: 'fm.q1@smartstorage.vn',
-    role: 'FACILITY_MANAGER',
-    color: 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100',
-  },
-  {
-    label: '👷 Nhân viên',
-    roleName: 'Facility Staff',
-    email: 'staff.q1@smartstorage.vn',
-    role: 'FACILITY_STAFF',
-    color: 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100',
-  },
-  {
-    label: '📦 Khách thuê',
-    roleName: 'Customer',
-    email: 'nhi.customer@gmail.com',
-    role: 'STORAGE_CUSTOMER',
-    color: 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100',
-  },
-];
-
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectParam = searchParams.get('redirect');
 
-  const [email, setEmail] = useState('admin@smartstorage.vn');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successRole, setSuccessRole] = useState<UserRoleType | null>(null);
-
-  const handleSelectDemo = (account: (typeof DEMO_ACCOUNTS)[0]) => {
-    setEmail(account.email);
-    setPassword('password123');
-    setErrorMsg(null);
-  };
 
   useEffect(() => {
     const clientId =
@@ -321,7 +270,7 @@ export const LoginPage: React.FC = () => {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@smartstorage.vn"
+                  placeholder="name@example.com"
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all shadow-xs"
                 />
               </div>
@@ -418,33 +367,6 @@ export const LoginPage: React.FC = () => {
               >
                 Đăng ký tài khoản mới <ArrowRight className="w-3 h-3" />
               </Link>
-            </p>
-          </div>
-
-          {/* Quick Demo Switcher */}
-          <div className="pt-2 border-t border-slate-200 space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5 text-brand-600" />
-                <span>Chọn nhanh tài khoản Demo (SWP391):</span>
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {DEMO_ACCOUNTS.map((acc) => (
-                <button
-                  key={acc.email}
-                  type="button"
-                  onClick={() => handleSelectDemo(acc)}
-                  className={`p-2 rounded-xl border text-left text-xs transition-all flex flex-col justify-between cursor-pointer shadow-xs hover:shadow-sm ${acc.color}`}
-                >
-                  <span className="font-bold">{acc.label}</span>
-                  <span className="text-[10px] opacity-80 mt-1 truncate">{acc.email.split('@')[0]}</span>
-                </button>
-              ))}
-            </div>
-            <p className="text-[11px] text-slate-400 text-center">
-              💡 Bấm vào nút role ở trên để tự động điền Email và Mật khẩu mẫu.
             </p>
           </div>
 

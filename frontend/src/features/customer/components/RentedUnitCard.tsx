@@ -27,6 +27,7 @@ import { formatVND } from '../utils/pricing';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
 import type { RentedContract } from '../types';
 import { DigitalMoveInPassModal } from './DigitalMoveInPassModal';
+import { tokenStorage } from '@/utils/tokenStorage';
 
 export interface RentedUnitCardProps {
   contract: RentedContract;
@@ -479,11 +480,11 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
           unitNumber: contract.unitNumber,
           facilityId: contract.facilityId,
           facilityName: contract.facilityName,
-          facilityAddress: '52 Nguyễn Hữu Thọ, Phường Tân Phong, Quận 7, TP.HCM',
-          facilityPhone: '1900 8888',
-          customerName: 'Nguyễn Phạm Xuân Nhi',
-          customerPhone: '0908 123 456',
-          customerIdentity: '079199001234',
+          facilityAddress: '',
+          facilityPhone: '',
+          customerName: tokenStorage.getUser()?.fullName || '',
+          customerPhone: (tokenStorage.getUser() as any)?.phone || '',
+          customerIdentity: '',
           startDate: contract.startDate,
           checkInWindow: 'Trong vòng 48 giờ kể từ lúc cọc',
           status: 'PENDING_CHECKIN',

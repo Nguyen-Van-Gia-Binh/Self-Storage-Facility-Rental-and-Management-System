@@ -110,9 +110,9 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
               {/* Unit & Booking Details */}
               <div className="space-y-3 text-xs">
                 <div className="bg-white p-3 rounded-xl border border-slate-200 space-y-1">
-                  <span className="text-[11px] text-slate-400 block">Ngăn tủ được phân bổ</span>
+                  <span className="text-[11px] text-slate-400 block">Ô kho được phân bổ</span>
                   <div className="text-xl font-black text-[#0a1614] flex items-center gap-2">
-                    Ngăn {passData.unitNumber}
+                    Ô {passData.unitNumber}
                     <span className="text-xs font-semibold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
                       Đã giữ chỗ
                     </span>

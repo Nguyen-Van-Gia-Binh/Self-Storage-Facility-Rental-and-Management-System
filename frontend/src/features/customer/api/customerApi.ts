@@ -1,10 +1,10 @@
 import type { Facility, UnitType, StorageUnit, RentedContract, SupportTicket, CreateSupportTicketPayload } from '../types';
-import { mockFacilities, mockUnitTypes, mockStorageUnits } from '../mockData';
 import { calculateBookingTotal } from '../utils/pricing';
 import type { PricingCalculationResult } from '../utils/pricing';
-import { apiClient, type ApiResponse, type PageResponse, isMockEnabled } from '@/api/client';
+import { apiClient, type ApiResponse, type PageResponse } from '@/api/client';
 import { calculateBookingPrice, createReservation as apiCreateReservation } from '@/api/reservation';
 import { getCustomerContracts } from '@/api/customerRentals';
+import { tokenStorage } from '@/utils/tokenStorage';
 
 export interface CreateReservationPayload {
   facilityId: number;
@@ -84,8 +84,8 @@ export function mapBackendSupportRequest(item: any): SupportTicket {
     id: item.id,
     ticketCode: item.code || item.ticketCode || `SUP-${item.id}`,
     customerId: item.customerId,
-    customerName: item.customerName || 'Nguyễn Phạm Xuân Nhi',
-    customerPhone: item.customerPhone || '0967890123',
+    customerName: item.customerName || (typeof window !== 'undefined' ? tokenStorage.getUser()?.fullName : '') || '',
+    customerPhone: item.customerPhone || (typeof window !== 'undefined' ? (tokenStorage.getUser() as any)?.phone : '') || '',
     contractId: item.contractId,
     contractNumber: item.contractCode || item.contractNumber,
     facilityId: item.facilityId || 1,
@@ -116,7 +116,6 @@ export const customerApi = {
    * Lấy danh sách chi nhánh cơ sở kho đang hoạt động
    */
   async getFacilities(): Promise<Facility[]> {
-    if (isMockEnabled('WS1')) return mockFacilities;
     const res = await apiClient<any>('/facilities');
     const items = res?.content || res?.data?.content || res?.data;
     if (!Array.isArray(items)) return [];
@@ -138,7 +137,6 @@ export const customerApi = {
    * Lấy danh mục 4 loại kích thước kho
    */
   async getUnitTypes(facilityId?: string | number): Promise<UnitType[]> {
-    if (isMockEnabled('WS1')) return mockUnitTypes;
     if (facilityId == null || facilityId === '') return [];
     const res = await apiClient<any>(`/facilities/${facilityId}/unit-types?size=50`);
     const items = res?.content || res?.data?.content || res?.data;
@@ -162,7 +160,6 @@ export const customerApi = {
    * Lấy danh sách ô kho và sơ đồ mặt bằng
    */
   async getStorageUnits(_facilityId: string): Promise<StorageUnit[]> {
-    if (isMockEnabled('WS1')) return mockStorageUnits;
     const res = await apiClient<any>(`/facilities/${_facilityId}/storage-units?size=100`);
     const items = res?.content || res?.data?.content || res?.data;
     if (!Array.isArray(items)) return [];

@@ -42,43 +42,32 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
 
 ### 2.1. Giao diện Khách hàng (SC - Storage Customer)
 
-#### 1. Bất đồng bộ sức chứa trên sơ đồ mặt bằng & Lỗi không phản ứng khi đổi thời hạn thuê ở trang xác nhận tiếp theo
+#### 1. [ĐÃ XONG] Bất đồng bộ sức chứa trên sơ đồ mặt bằng & Lỗi không phản ứng khi đổi thời hạn thuê ở trang xác nhận tiếp theo
 - **Hình ảnh minh chứng:**  
   * ![Lỗi hiển thị ô trống 1](./images/notion-audit/image-01.png) *(Giao diện Bước chọn ô kho trên sơ đồ mặt bằng)*  
   * ![Lỗi hiển thị ô trống 2](./images/notion-audit/image-02.png) *(Giao diện Trang tiếp theo sau khi bấm Xác nhận ô kho & Tiếp tục)*
 - **Ghi chú gốc từ Lead Dev:**  
   > *"Chưa fix lỗi trống 1 ô nhưng không hiện ô trống nào ? Và thông tin ô trống không được thay đổi khi tôi thay đổi thời gian thuê ? Thông tin ô kho trống là để làm gì ?"* — `[NHI ĐÃ FIX]`
-- **Mô tả kỹ thuật chuẩn hóa:**  
-  * **Tên vấn đề:** Bất đồng bộ dữ liệu sức chứa ô kho trên sơ đồ mặt bằng (báo còn chỗ nhưng bản đồ trống), chân trang tự gán mã ô kho cho phép bấm tiếp tục, và lỗi không cập nhật lại trạng thái ô trống khi đổi thời hạn thuê tại màn hình xác nhận kế tiếp.
-  * **Hiện trạng ghi nhận trên UI:**  
-    1. *Tại Màn hình 1 — Bước chọn ô kho (`image-01.png`):* Ở bước 1, thẻ *Kho Lớn (Large Unit)* hiển thị badge `Còn 1 ô trống`. Tuy nhiên, khi cuộn xuống bước 3 (*Sơ Đồ Mặt Bằng Ô Kho Vật Lý* - Tầng 1, Cơ sở Thanh Xuân), hệ thống lại báo `Còn trống: 0/0 ô` và khung mặt bằng hoàn toàn trống trơn với thông báo: *"Không tìm thấy ô kho nào phù hợp với bộ lọc hiện tại. Vui lòng thử chuyển tầng hoặc chọn 'Tất cả các khu'"*. Người dùng không thấy và không thể click chọn ô nào trên bản đồ. Dù vậy, thanh điều hướng cố định ở chân trang (Footer) vẫn tự động chọn sẵn một mã kho mặc định: *"Đã chọn: TX-A102 (Tầng 1 - Khu A)"* và sáng nút **"Xác nhận ô kho này & Tiếp tục"**, cho phép người dùng bấm chuyển tiếp dù ô này không được chọn thực tế từ sơ đồ.  
-    2. *Tại Màn hình 2 — Trang tiếp theo sau khi bấm Xác nhận (`image-02.png`):* Sau khi người dùng bấm nút *"Xác nhận ô kho này & Tiếp tục"* từ màn hình 1, hệ thống chuyển sang trang xác nhận chi tiết ô kho trước khi sang bước thanh toán. Tại đây hiển thị thẻ thông tin ô kho (ví dụ `TX-A101`), số lượng ô khả dụng (`Trống 2 ô`) và dòng: *"Thời hạn thuê đã chọn: 3 tháng (từ 28/09/2026 đến 28/12/2026)"* kèm nút liên kết **"Thay đổi thời gian"**. Khi người dùng click vào nút *"Thay đổi thời gian"* để điều chỉnh lại số tháng hoặc khoảng ngày thuê, số lượng ô trống và trạng thái sẵn sàng của ô kho không tự động kích hoạt tính toán lại theo khoảng thời gian mới, khiến tính năng kiểm tra tình trạng trống bị vô hiệu hóa.
-  * **Nguyên nhân gốc (Root Cause):**  
-    - *Màn hình 1:* State `selectedUnit` của Footer bị giữ giá trị mặc định/giá trị cũ từ cache chứ không phụ thuộc vào hành động click chọn thực tế trên sơ đồ; API lấy ô kho theo tầng (`/map`) và API đếm tổng ô trống theo loại kho không đồng nhất logic filter thời gian.  
-    - *Màn hình 2:* Nút *"Thay đổi thời gian"* khi cập nhật state ngày tháng mới không kích hoạt re-fetch API kiểm tra tính khả dụng (`AvailabilityService`) cho ô kho đó (thiếu dependency trong `useEffect`).
-  * **Hành vi kỳ vọng (Expected Behavior):**  
-    - *Màn hình 1:* Sơ đồ mặt bằng phải phản ánh chính xác từng ô kho vật lý khả dụng. Nút *"Xác nhận ô kho này & Tiếp tục"* ở footer **bắt buộc phải bị vô hiệu hóa (disabled)** cho đến khi khách hàng thực sự nhấp chọn một ô kho cụ thể trên bản đồ.  
-    - *Màn hình 2:* Khi khách hàng thay đổi thời hạn hoặc ngày thuê tại nút *"Thay đổi thời gian"*, hệ thống phải lập tức re-fetch API availability để xác nhận ô kho đó có còn trống trong toàn bộ kỳ hạn mới hay không (kèm buffer 15 ngày theo `BR-RES-01`). Nếu bị trùng lịch với khách khác, phải lập tức cảnh báo và hướng dẫn chọn ô kho khác.
-  * **Hướng xử lý & File liên quan:**  
-    - Frontend: `FloorPlanViewer.tsx` (disable nút Submit khi `selectedUnit === null`), `BookingSummaryStep.tsx` / `RentalBookingPage.tsx` (lắng nghe sự kiện đổi date range để re-fetch availability).  
-    - Backend: `AvailabilityService.java` (chuẩn hóa query kiểm tra xung đột lịch thuê).
+- **Tóm tắt vấn đề & Kết quả đã giải quyết:**  
+  * **Vấn đề:** Sơ đồ mặt bằng đa tầng bị kẹt hiển thị tầng không có ô kho trống dẫn đến báo 0/0 ô dù loại kho còn chỗ, thanh footer tự gán ô kho ảo cho phép tiếp tục; màn hình xác nhận Booking khi đổi thời hạn thuê không phản ứng cập nhật lại tình trạng sẵn sàng.
+  * **Kết quả đã xử lý (commit `d238dff`):**  
+    1. *Tự động chuyển tầng thông minh & Đồng bộ bộ lọc (`UnitGrid.tsx`):* Tự động phát hiện và nhảy tới tầng đầu tiên có ô kho khả dụng; hỗ trợ chuyển tầng linh hoạt; vô hiệu hóa nút xác nhận ở footer nếu chưa có ô kho nào được click chọn thực tế trên sơ đồ (`selectedUnit === null`).  
+    2. *Phản ứng tức thì khi thay đổi lịch thuê (`BookingPage.tsx`, `UnitPickerPage.tsx`):* Khi khách hàng đổi thời hạn thuê (số tháng hoặc ngày bắt đầu), hệ thống cập nhật state/URL query ngay lập tức, tự động gọi lại API `checkUnitAvailability` để kiểm tra xung đột lịch giữ chỗ và tính lại đơn giá, chiết khấu và tiền cọc theo thời hạn mới.
+  * **File liên quan đã hoàn thành:** `frontend/src/features/customer/components/UnitGrid.tsx`, `frontend/src/features/customer/pages/BookingPage.tsx`, `frontend/src/features/customer/pages/UnitPickerPage.tsx`.
 
-#### 2. Lỗ hổng xác thực & Phân quyền nghiêm trọng (Bỏ qua Authentication)
+#### 2. [ĐÃ XONG] Lỗ hổng xác thực & Phân quyền nghiêm trọng (Bỏ qua Authentication)
 - **Hình ảnh minh chứng:**  
   ![Chưa đăng nhập vẫn cho thanh toán](./images/notion-audit/image-03.png)
 - **Ghi chú gốc từ Lead Dev:**  
   > *"Lỗi xác thực phân quyền, chưa đăng nhập cũng cho thanh toán + không đăng nhập thì thông tin kho này của ai vậy ?"* — `[NHI ĐÃ FIX]`  
   > *(Chưa đăng nhập → không có thông tin My Rentals & Support Tickets → đăng nhập vào để xem; khi thanh toán mà chưa đăng nhập → chuyển hướng trang đăng nhập)*
-- **Mô tả kỹ thuật chuẩn hóa:**  
-  * **Tên vấn đề:** Thiếu bộ lọc bảo vệ xác thực (Authentication Guard) trên các trang quản lý hợp đồng/ô kho cá nhân (`/my-rentals`, `/support-tickets`) và luồng thanh toán đơn hàng thuê kho.
-  * **Hiện trạng ghi nhận trên UI:** Trên thanh điều hướng Header, hệ thống vẫn hiển thị rõ ràng 2 nút: `Đăng nhập` và `Đăng ký` (tức phiên làm việc hiện tại là khách vãng lai / Anonymous User, hoàn toàn chưa có JWT Token). Tuy nhiên, người dùng ẩn danh vẫn truy cập trực tiếp được vào màn hình `/my-rentals` (*Kho Của Tôi*), xem được toàn bộ thông tin hợp đồng mẫu: *"Tổng số ô kho: 9, Đang hoạt động: 1, Chờ nhận kho: 6, Cần chú ý: 2"*, xem được cả chi tiết hợp đồng `CTR-202610-0001` và mã PIN khóa điện tử. Tại luồng đặt kho, người dùng chưa đăng nhập vẫn bấm được nút "Xác nhận & Thanh toán", hệ thống vẫn sinh mã thanh toán mà không có định danh khách hàng (không biết gán hợp đồng cho tài khoản nào).
-  * **Nguyên nhân gốc (Root Cause):** Route `/my-rentals`, `/checkout`, `/support` trong `App.tsx` chưa được bọc bởi component `<ProtectedRoute />` hoặc `<RequireAuth />`. Khi chưa có user token, trang `MyRentalsPage.tsx` thay vì chặn lại và yêu cầu đăng nhập thì lại fallback hiển thị dữ liệu mock/state cũ của phiên trước.
-  * **Hành vi kỳ vọng (Expected Behavior):**  
-    - Khi người dùng chưa đăng nhập bấm vào menu *Kho của tôi* hoặc *Hỗ trợ 24/7*: Hệ thống phải hiển thị màn hình yêu cầu đăng nhập thân thiện (hoặc tự động chuyển hướng sang `/login` kèm `redirectUrl` để tự động quay lại sau khi đăng nhập thành công).  
-    - Tại bước thanh toán đặt chỗ (`/checkout`): Bắt buộc kiểm tra token khách hàng. Nếu chưa đăng nhập, hiển thị modal/trang đăng nhập trước khi gọi API tạo `Reservation` và tạo yêu cầu thanh toán (`Payment`). Tuyệt đối không cho phép tạo hợp đồng vô chủ.
-  * **Hướng xử lý & File liên quan:**  
-    - Frontend: `ProtectedRoute.tsx`, `AppRoutes.tsx`, `RentalCheckoutPage.tsx`, `MyRentalsPage.tsx`.  
-    - Backend: `SecurityConfig.java` (đảm bảo các API `/api/contracts/my-contracts`, `/api/reservations`, `/api/payments/**` trả về `401 Unauthorized` nếu thiếu Bearer Token).
+- **Tóm tắt vấn đề & Kết quả đã giải quyết:**  
+  * **Vấn đề:** Người dùng ẩn danh chưa đăng nhập vẫn truy cập được vào màn hình quản lý kho cá nhân (`/my-rentals`), xem được hợp đồng mẫu và mã PIN mở cửa; tại bước đặt kho vẫn cho phép bấm thanh toán tạo hợp đồng vô chủ.
+  * **Kết quả đã xử lý (commit `683c30d` & hoàn thiện Auth):**  
+    1. *Xóa bỏ triệt để Demo Switcher & Mock Auth:* Loại bỏ hoàn toàn `DemoRoleSwitcher` và các bộ chọn demo user giả lập trên toàn bộ Header, Layout và trang Đăng nhập; không cho phép bypass đăng nhập.  
+    2. *Bảo vệ định tuyến chặt chẽ (Auth Guard):* Trang `BookingPage`, `PaymentPage` kiểm tra token; nếu chưa đăng nhập lập tức chuyển hướng sang `/auth/login?redirect=...` lưu vết URL đặt phòng. Trang `MyUnitsPage` và `SupportPage` hiển thị thẻ yêu cầu đăng nhập thân thiện khi chưa có session, không fallback hiển thị hợp đồng mock cũ.  
+    3. *Bảo mật Backend Spring Security:* Các API nghiệp vụ (`/customers/me/rentals`, `/reservations`, `/payments/**`) bắt buộc Bearer JWT token, trích xuất danh tính từ token ngăn chặn triệt để tạo hợp đồng vô chủ hoặc rò rỉ dữ liệu phiên giữa các tài khoản.
+  * **File liên quan đã hoàn thành:** `frontend/src/layouts/CustomerLayout.tsx`, `frontend/src/features/auth/pages/LoginPage.tsx`, `frontend/src/features/customer/pages/BookingPage.tsx`, `frontend/src/features/customer/pages/MyUnitsPage.tsx`.
 
 #### 3. Dữ liệu mẫu (Seed Data) sai cơ sở thực tế & Sai lệch thuật ngữ nghiệp vụ: Dùng từ "Ngăn tủ / Tủ đồ" thay vì "Ô kho thực tế"
 - **Hình ảnh minh chứng:** *(Cùng màn hình thanh toán trên - `image-03.png`)*

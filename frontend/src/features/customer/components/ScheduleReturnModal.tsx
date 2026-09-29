@@ -72,12 +72,12 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
 
   const validate = (): boolean => {
     if (!isCleaned) {
-      setError('Vui lòng xác nhận bạn đã dọn sạch toàn bộ đồ đạc và rác thải trong ngăn tủ.');
+      setError('Vui lòng xác nhận bạn đã dọn sạch toàn bộ đồ đạc và rác thải trong ô kho.');
       return false;
     }
 
     if (!isConditionOk) {
-      setError('Vui lòng xác nhận ngăn tủ nguyên vẹn trước khi gửi yêu cầu nghiệm thu.');
+      setError('Vui lòng xác nhận ô kho nguyên vẹn trước khi gửi yêu cầu nghiệm thu.');
       return false;
     }
 
@@ -147,7 +147,7 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
 
           <h3 className="text-xl font-black text-white">Xác Nhận Đã Dọn Đồ & Báo Trả Kho</h3>
           <p className="text-xs text-emerald-100/90 mt-0.5">
-            Ngăn tủ <span className="font-bold text-white">{contract.unitNumber}</span> — Cơ sở {contract.facilityName}
+            Ô kho <span className="font-bold text-white">{contract.unitNumber}</span> — Cơ sở {contract.facilityName}
           </p>
         </div>
 
@@ -188,7 +188,7 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
                 required
               />
               <span className="leading-snug">
-                <strong>Đã dọn sạch 100% đồ đạc:</strong> Tôi xác nhận đã lấy hết toàn bộ tài sản cá nhân ra khỏi ngăn tủ và không để lại rác thải.
+                <strong>Đã dọn sạch 100% đồ đạc:</strong> Tôi xác nhận đã lấy hết toàn bộ tài sản cá nhân ra khỏi ô kho và không để lại rác thải.
               </span>
             </label>
 
@@ -204,7 +204,7 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
                 required
               />
               <span className="leading-snug">
-                <strong>Ngăn tủ nguyên vẹn:</strong> Cửa tủ, sàn, vách ngăn và ổ khóa không bị hư hại, biến dạng hay vẽ bậy.
+                <strong>Ô kho nguyên vẹn:</strong> Cửa kho, sàn, vách ngăn và ổ khóa không bị hư hại, biến dạng hay vẽ bậy.
               </span>
             </label>
           </div>
