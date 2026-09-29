@@ -299,14 +299,23 @@ public class ContractServiceImpl implements ContractService {
                         ContractStatus displayStatus = c.getStatus();
                         Long assignedStaffId = null;
                         String assignedStaffName = null;
+                        Boolean isInspected = false;
+                        Long damageCost = 0L;
+                        String damageNotes = null;
                         if (returnRequestRepository != null && c.getStatus() != ContractStatus.CLOSED && c.getStatus() != ContractStatus.TERMINATED) {
                                 var reqOpt = returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(c.getId());
                                 if (reqOpt.isPresent()) {
-                                        if (reqOpt.get().getStatus() == ReturnRequestStatus.PENDING) {
+                                        var req = reqOpt.get();
+                                        if (req.getStatus() == ReturnRequestStatus.PENDING) {
                                                 displayStatus = ContractStatus.PENDING_RETURN;
                                         }
-                                        if (reqOpt.get().getInspectedBy() != null) {
-                                                assignedStaffId = reqOpt.get().getInspectedBy();
+                                        if (req.getInspectedAt() != null) {
+                                                isInspected = true;
+                                                damageCost = req.getDamageCost();
+                                                damageNotes = req.getConditionNote();
+                                        }
+                                        if (req.getInspectedBy() != null) {
+                                                assignedStaffId = req.getInspectedBy();
                                                 if (userService != null) {
                                                         try {
                                                                 var staffUser = userService.getUserById(assignedStaffId);
@@ -361,6 +370,9 @@ public class ContractServiceImpl implements ContractService {
                                         .accruedOverdueFee(accruedOverdueFee)
                                         .assignedStaffId(assignedStaffId)
                                         .assignedStaffName(assignedStaffName)
+                                        .isInspected(isInspected)
+                                        .damageCost(damageCost)
+                                        .damageNotes(damageNotes)
                                         .build();
                 }).toList();
 
@@ -888,6 +900,11 @@ public class ContractServiceImpl implements ContractService {
 
                 if (c.getStatus() == ContractStatus.PENDING_RETURN && returnRequestRepository != null) {
                         returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(c.getId()).ifPresent(req -> {
+                                if (req.getInspectedAt() != null) {
+                                        r.setIsInspected(true);
+                                        r.setDamageCost(req.getDamageCost());
+                                        r.setDamageNotes(req.getConditionNote());
+                                }
                                 if (req.getInspectedBy() != null) {
                                         r.setAssignedStaffId(req.getInspectedBy());
                                         if (userService != null) {

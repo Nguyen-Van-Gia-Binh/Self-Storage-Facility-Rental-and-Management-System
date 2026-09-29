@@ -30,4 +30,8 @@ public class ContractSummaryResponse {
     private Long accruedOverdueFee;
     private Long assignedStaffId;
     private String assignedStaffName;
+    private Boolean isInspected;
+    private Long damageCost;
+    private String damageNotes;
 }
+

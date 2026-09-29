@@ -51,15 +51,17 @@ export const StaffReturnInspectionPage: React.FC = () => {
     try {
       const targetFacilityId = facilityId !== undefined ? facilityId : selectedFacilityId;
       const list = await getReturnContracts(targetFacilityId === 0 ? undefined : targetFacilityId);
-      setContracts(list);
+      // Chỉ hiển thị các hợp đồng chưa được nghiệm thu trong danh mục ca trực của Staff
+      const pendingList = list.filter((c) => !c.isInspected && c.status !== 'INSPECTED');
+      setContracts(pendingList);
 
       const targetId = contractId ? parseInt(contractId, 10) : parseInt(searchParams.get('id') || '', 10);
       if (targetId) {
-        const item = list.find((c) => c.id === targetId) || (await getReturnContractById(targetId));
+        const item = pendingList.find((c) => c.id === targetId) || (await getReturnContractById(targetId));
         setSelectedContract(item);
       } else {
         // Tự động chọn đơn đầu tiên được phân công cho nhân viên này
-        const myTask = staffId ? list.find((c) => Number(c.assignedStaffId) === Number(staffId)) : null;
+        const myTask = staffId ? pendingList.find((c) => Number(c.assignedStaffId) === Number(staffId)) : null;
         setSelectedContract(myTask ?? null);
       }
     } catch (err) {
@@ -91,11 +93,16 @@ export const StaffReturnInspectionPage: React.FC = () => {
     setSubmitting(true);
     try {
       const res = await submitReturnInspection(selectedContract.id, data, staffId);
+      const finishedContract = selectedContract;
+      // Lập tức loại bỏ hợp đồng đã nghiệm thu khỏi danh sách của nhân viên
+      setContracts((prev) => prev.filter((c) => c.id !== finishedContract.id));
+      setSelectedContract(null);
+
       setSuccessData({
         isOpen: true,
-        contractCode: selectedContract.code,
-        unitCode: selectedContract.storageUnitCode,
-        customerName: selectedContract.customerName,
+        contractCode: finishedContract.code,
+        unitCode: finishedContract.storageUnitCode,
+        customerName: finishedContract.customerName,
         refundAmount: res.estimatedDepositRefund,
       });
     } catch (err) {
