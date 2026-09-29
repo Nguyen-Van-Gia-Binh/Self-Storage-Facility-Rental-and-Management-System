@@ -757,6 +757,24 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
   * **File liên quan đã hoàn thành:**  
     - Frontend: `frontend/src/features/customer/CustomerRoutes.tsx`, `frontend/src/layouts/CustomerLayout.tsx`.
 
+#### 34. [ĐÃ FIX — TÙNG ĐÃ FIX — branch `fix/sync-assigned-facilities`] Bất đồng bộ danh sách cơ sở phân công giữa trang Admin và trang Manager: Admin hiển thị 9 cơ sở kèm mã thô "Cơ sở #9", trong khi Manager chỉ có 8 cơ sở (`SA-03`, `FM-01`, `RBAC`)
+- **Ghi chú gốc từ Lead Dev:**  
+  > *"ở trang admin tôi thấy Nguyễn văn gia bình có nhiêu đây cơ sở nhưng mà khi vào bên trang manager của Nguyễn văn gia bình thì chỉ co nhiu đây ... theo bạn cách khắc phục nào là tốt về mặt logic và bussiness nhát ... ok cách 3 sủa xong thì cho ảnh bằng chứng và ghi lại lỗi nha. Rồi ghi đã là do Tugnf đa fix nha"*
+- **Mô tả kỹ thuật chuẩn hóa:**  
+  * **Tên vấn đề:** Tại màn hình Quản lý tài khoản Admin (`/admin/users`), cột *"Cơ sở phụ trách (SA-03)"* của tài khoản Quản lý cơ sở `Nguyễn Văn Gia Bình` hiển thị 9 cơ sở, trong đó có một badge lạ mang tên **`Cơ sở #9`**. Tuy nhiên khi đăng nhập vào phân hệ Quản lý cơ sở (`/manager`), dropdown chọn cơ sở của chính người dùng này chỉ hiển thị 8 cơ sở (từ Cầu Giấy đến Hải Châu).
+  * **Nguyên nhân gốc rễ (Root Cause):**  
+    1. *Phía Database:* Hệ thống chỉ có 8 cơ sở đang mở cửa hoạt động (`status = 'ACTIVE'`). Cơ sở thứ 9 (`id = 9`, mã `FAC-DN`, "Kho Nhơn Trạch") là cơ sở đã tạm ngừng hoạt động (`status = 'INACTIVE'`).  
+    2. *Phía Backend:* Bảng phân công `user_facility_assignment` vẫn còn lưu bản ghi mồ côi gán user với `facility_id = 9`. Method `findFacilityIdsByUserId` trong `UserFacilityAssignmentRepository` query trực tiếp `SELECT ufa.facilityId` mà không `JOIN` với bảng `facility` để lọc `status = 'ACTIVE'`, khiến API trả về cả ID cơ sở đã ngừng hoạt động cho Admin. Ngược lại, API phía Manager (`getMyAssignedFacilities`) lại có bộ lọc `isAssignableFacility` chỉ lấy cơ sở `ACTIVE`, tạo ra sự bất nhất dữ liệu giữa 2 phân hệ.  
+    3. *Phía Frontend Admin:* `AdminUsersPage.tsx` gọi `fetchFacilities()` không lấy cơ sở `INACTIVE`, dẫn đến `facilityMap` không có key `9` và fallback ra text thô **`Cơ sở #9`**.
+  * **Hành vi kỳ vọng & Kết quả đã khắc phục (TÙNG ĐÃ FIX):**  
+    1. *Chuẩn hóa Backend (Single Source of Truth):* Cập nhật query trong `UserFacilityAssignmentRepository.java`: Thực hiện `JOIN Facility f` và kiểm tra nghiêm ngặt `f.status = FacilityStatus.ACTIVE AND LOWER(f.name) NOT LIKE '%sadas%'`. Đảm bảo mọi API truy vấn quyền hạn cơ sở (Admin xem user, Manager/Staff làm việc, JWT login) đều đồng nhất 100% chỉ trả về các cơ sở đang hoạt động.  
+    2. *Tạo Flyway Migration dọn sạch dữ liệu mồ côi (`V35__cleanup_orphan_facility_assignments.sql`):* Tự động xóa sạch các bản ghi phân công mồ côi trỏ vào các cơ sở không còn hoạt động hoặc không tồn tại.  
+    3. *Phòng vệ giao diện Frontend (`AdminUsersPage.tsx`):* Bổ sung `includeInactive = true` khi nạp map cơ sở; đồng thời bổ sung bộ lọc an toàn `filter((fId) => facilityMap.has(fId))` và hiển thị badge xám phân biệt rõ ràng nếu cơ sở tạm dừng, triệt tiêu vĩnh viễn việc để lộ chuỗi thô `Cơ sở #ID`.  
+    4. *Kết quả thực tế sau khi sửa:* Cột cơ sở phụ trách của Quản lý Nguyễn Văn Gia Bình tại trang Admin hiển thị chuẩn xác **8 cơ sở**, khớp 100% với 8 cơ sở trong phân hệ Manager!
+  * **File liên quan đã hoàn thành:**  
+    - Backend: `UserFacilityAssignmentRepository.java`, `V35__cleanup_orphan_facility_assignments.sql`.  
+    - Frontend: `AdminUsersPage.tsx`.
+
 ---
 
 ## 3. Những Thay Đổi Hệ Thống Buộc Phải Thực Hiện Khi Có BR Mới
