@@ -18,6 +18,12 @@ public class OverdueDebtReportResponse {
     private String facilityName;
     private int totalOverdueContracts;
     private long totalOverdueDebt;
+    private DebtAgeBracket bracketD1ToD3;
+    private DebtAgeBracket bracketD4ToD6;
+    private DebtAgeBracket bracketD7ToD10;
+    private DebtAgeBracket bracketTerminatedD10Plus;
+
+    // Giữ lại tương thích ngược
     private DebtAgeBracket bracketD1ToD10;
     private DebtAgeBracket bracketD11ToD30;
     private DebtAgeBracket bracketOverD30;

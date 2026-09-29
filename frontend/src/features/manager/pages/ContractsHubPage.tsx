@@ -11,6 +11,7 @@ import {
   AlertTriangle,
   Receipt,
   Unlock,
+  Lock,
   CheckCircle2,
   Users,
   UserPlus,
@@ -474,13 +475,17 @@ export const ContractsHubPage: React.FC = () => {
                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
                                 Quá hạn D+{contract.overdueDays} ngày (Ân hạn)
                               </span>
-                            ) : contract.overdueDays !== undefined && contract.overdueDays <= 9 ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
+                            ) : contract.overdueDays !== undefined && contract.overdueDays <= 6 ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-orange-100 text-orange-800 border border-orange-300">
                                 Quá hạn D+{contract.overdueDays} ngày (Phạt 10%/ngày)
                               </span>
+                            ) : contract.overdueDays !== undefined && contract.overdueDays <= 10 ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
+                                Quá hạn D+{contract.overdueDays} ngày (Đã khóa PIN D+7)
+                              </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-rose-200 text-rose-900 border border-rose-400">
-                                Quá hạn D+{contract.overdueDays ?? 10} ngày (Vi phạm D+10)
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-purple-100 text-purple-900 border border-purple-400">
+                                Quá hạn D+{contract.overdueDays ?? 10} ngày (Niêm phong D+10+)
                               </span>
                             )}
 
@@ -490,22 +495,34 @@ export const ContractsHubPage: React.FC = () => {
                                 <Unlock className="w-3 h-3 text-amber-600" />
                                 Trong 3 ngày ân hạn (chưa tính phí phạt · PIN mở bình thường)
                               </span>
-                            ) : contract.overdueDays !== undefined && contract.overdueDays <= 9 ? (
+                            ) : contract.overdueDays !== undefined && contract.overdueDays <= 6 ? (
                               <div className="space-y-0.5">
-                                <span className="block text-[10px] text-rose-700 font-bold flex items-center gap-1">
-                                  <AlertTriangle className="w-3 h-3 text-rose-600" />
-                                  Đang tính phí phạt cộng dồn • Nhắc dọn đồ hàng ngày
+                                <span className="block text-[10px] text-orange-700 font-bold flex items-center gap-1">
+                                  <AlertTriangle className="w-3 h-3 text-orange-600" />
+                                  Đang tính phí phạt 10%/ngày • Cảnh báo khóa PIN vào D+7
                                 </span>
                                 {contract.accruedOverdueFee && contract.accruedOverdueFee > 0 ? (
-                                  <span className="block text-[10px] text-rose-800 font-semibold">
+                                  <span className="block text-[10px] text-orange-800 font-semibold">
                                     Nợ phạt tạm tính: {contract.accruedOverdueFee.toLocaleString('vi-VN')} đ
                                   </span>
                                 ) : null}
                               </div>
+                            ) : contract.overdueDays !== undefined && contract.overdueDays <= 10 ? (
+                              <div className="space-y-0.5">
+                                <span className="block text-[10px] text-rose-700 font-bold flex items-center gap-1">
+                                  <Lock className="w-3 h-3 text-rose-600" />
+                                  Đã khóa mã PIN/QR • Phạt tiếp đến trần 70% cọc
+                                </span>
+                                {contract.accruedOverdueFee && contract.accruedOverdueFee > 0 ? (
+                                  <span className="block text-[10px] text-rose-800 font-semibold">
+                                    Nợ phạt: {contract.accruedOverdueFee.toLocaleString('vi-VN')} đ (Hạn chót 23:59 D+10)
+                                  </span>
+                                ) : null}
+                              </div>
                             ) : (
-                              <span className="block text-[10px] text-rose-900 font-bold flex items-center gap-1">
-                                <ShieldAlert className="w-3 h-3 text-rose-700" />
-                                Đã khóa PIN • Kích hoạt niêm phong Sealing (D+10)
+                              <span className="block text-[10px] text-purple-900 font-bold flex items-center gap-1">
+                                <ShieldAlert className="w-3 h-3 text-purple-700" />
+                                Đã chấm dứt HĐ • Kích hoạt niêm phong Sealing (D+10+)
                               </span>
                             )}
                           </div>
