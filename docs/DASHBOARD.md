@@ -65,6 +65,7 @@
 | `ISS-55` | FM truy cập toàn bộ 9 cơ sở toàn quốc và thấy cơ sở rác sadas (Lỗi 25, SA-03). | Migration V28 dọn sadas, bổ sung GET /facilities/my-assigned-facilities, cô lập đa cơ sở. | Bình | `RESOLVED` |
 | `ISS-56` | Sự cố phân công từ FM không hiển thị bên Staff; thiếu giao diện và chức năng xử lý sự cố cho Staff (FS-05). | Sửa mapping supportTasks, tạo trang /staff/incidents, bổ sung modal tiếp nhận/nghiệm thu và gắn menu sidebar. | Bình | `RESOLVED` |
 | `ISS-57` | PR #175 ép cứng cơ sở 2 khiến Staff không thấy đơn Check-in/Return từ FM; mất đồng bộ phân công hai chiều. | Phục hồi bộ chọn cơ sở linh hoạt, tab Việc của tôi cho Check-in, đồng bộ ReturnRequest.inspectedBy và gọi API hai chiều. | Bình | `RESOLVED` |
+| `ISS-58` | Jackson serialize thiếu `@JsonProperty("isActive")` khiến Unit Catalog hiển thị Vô hiệu và khóa nút Thêm ô kho vật lý. | Bổ sung `@JsonProperty("isActive")` ở DTO Backend, đồng bộ types và resilience cho Frontend. | Bình | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 
