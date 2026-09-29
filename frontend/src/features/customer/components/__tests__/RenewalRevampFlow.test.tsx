@@ -16,10 +16,17 @@ describe('RenewalRevampFlow (Task 10 / Phase 4)', () => {
     vi.restoreAllMocks();
   });
 
+  const formatDateLocal = (d: Date): string => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const createActiveContract = (daysFromNow: number): RentedContract => {
     const d = new Date();
     d.setDate(d.getDate() + daysFromNow);
-    const endDateStr = d.toISOString().split('T')[0];
+    const endDateStr = formatDateLocal(d);
 
     return {
       id: '101',
@@ -46,7 +53,7 @@ describe('RenewalRevampFlow (Task 10 / Phase 4)', () => {
   const createOverdueClearedContract = (): RentedContract => {
     const d = new Date();
     d.setDate(d.getDate() - 5);
-    const endDateStr = d.toISOString().split('T')[0];
+    const endDateStr = formatDateLocal(d);
 
     return {
       id: '102',
@@ -66,6 +73,33 @@ describe('RenewalRevampFlow (Task 10 / Phase 4)', () => {
       inspectionDone: false,
       overdueDays: 5,
       overdueFee: 0, // Đã nộp phạt xong
+      accessPin: '123456',
+    };
+  };
+
+  const createGracePeriodContract = (overdueDays: number): RentedContract => {
+    const d = new Date();
+    d.setDate(d.getDate() - overdueDays);
+    const endDateStr = formatDateLocal(d);
+
+    return {
+      id: '103',
+      contractNumber: 'CTR-OVERDUE-GRACE',
+      facilityId: '1',
+      facilityName: 'SmartStorage Q1',
+      unitId: 'U-103',
+      unitNumber: 'U-103',
+      unitTypeName: 'Kho Tiêu Chuẩn',
+      sizeCategory: 'S',
+      storageType: 'STANDARD',
+      startDate: '2024-01-01',
+      endDate: endDateStr,
+      monthlyRent: 1200000,
+      depositHeld: 1200000,
+      status: 'OVERDUE',
+      inspectionDone: false,
+      overdueDays,
+      overdueFee: 0, // Trong ân hạn chưa tính phạt
       accessPin: '123456',
     };
   };
@@ -142,5 +176,26 @@ describe('RenewalRevampFlow (Task 10 / Phase 4)', () => {
     // Kiểm tra 2 nút hành động: Tìm & Thuê ô kho mới và Lên lịch nghiệm thu & Trả kho
     expect(screen.getByRole('button', { name: /Tìm & Thuê ô kho mới tại cơ sở này/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Lên lịch nghiệm thu & Trả kho/i })).toBeInTheDocument();
+  });
+
+  it('4. Hợp đồng OVERDUE trong 3 ngày ân hạn (D+1..D+3): hiển thị nhãn Ân hạn và nút Gia hạn hợp đồng trực tuyến', () => {
+    const contract = createGracePeriodContract(2);
+    render(
+      <BrowserRouter>
+        <RentedUnitCard contract={contract} onScheduleReturn={vi.fn()} />
+      </BrowserRouter>
+    );
+
+    // Hiển thị nhãn Ân hạn
+    expect(screen.getByText(/Ân hạn D\+2: Chưa tính phí phạt/i)).toBeInTheDocument();
+
+    // Hiển thị nút Gia hạn hợp đồng trực tuyến sáng và click được
+    const renewBtn = screen.getByRole('button', { name: /Gia hạn hợp đồng trực tuyến/i });
+    expect(renewBtn).toBeInTheDocument();
+    expect(renewBtn).not.toBeDisabled();
+
+    // Hiển thị nút Báo trả kho
+    const returnBtn = screen.getByRole('button', { name: /Báo trả kho/i });
+    expect(returnBtn).toBeInTheDocument();
   });
 });

@@ -367,12 +367,27 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
             ) : contract.status === 'OVERDUE' ? (
               <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full sm:w-auto">
                 {isGracePeriod ? (
-                  <span
-                    className="text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-300"
-                    title="Trong 3 ngày ân hạn (D+1..D+3), chưa phát sinh phí phạt. Hoàn tất trả kho để nhận lại 100% cọc."
-                  >
-                    Ân hạn D+{overdueDays}: Chưa tính phí phạt
-                  </span>
+                  <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full sm:w-auto">
+                    <span
+                      className="text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-300"
+                      title="Trong 3 ngày ân hạn (D+1..D+3), chưa phát sinh phí phạt. Bạn có thể gia hạn hợp đồng trực tuyến để tiếp tục thuê hoặc báo trả kho."
+                    >
+                      Ân hạn D+{overdueDays}: Chưa tính phí phạt
+                    </span>
+                    <Link
+                      to={`/customer/renew/${contract.id}`}
+                      className="w-full sm:w-auto"
+                    >
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3.5 shadow-xs text-xs font-bold"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>Gia hạn hợp đồng trực tuyến</span>
+                      </Button>
+                    </Link>
+                  </div>
                 ) : penaltyFee === 0 ? (
                   <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full sm:w-auto">
                     <span
