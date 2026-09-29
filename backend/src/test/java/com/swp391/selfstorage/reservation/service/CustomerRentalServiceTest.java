@@ -59,6 +59,7 @@ class CustomerRentalServiceTest {
     @Mock private UnitTypeRepository unitTypeRepository;
     @Mock private AccessLogRepository accessLogRepository;
     @Mock private com.swp391.selfstorage.contract.repository.ReturnRequestRepository returnRequestRepository;
+    @Mock private com.swp391.selfstorage.payment.repository.PaymentTransactionRepository paymentTransactionRepository;
 
     @InjectMocks
     private CustomerRentalServiceImpl customerRentalService;
@@ -352,6 +353,71 @@ class CustomerRentalServiceTest {
         assertEquals(1, logs.size());
         assertEquals("S-101", logs.get(0).getUnitNumber());
         assertEquals("SUCCESS", logs.get(0).getStatus());
+    }
+    @Test
+    @DisplayName("US-SC-05.2: Báo có thanh toán gia hạn đang chờ nếu còn trong 48h")
+    void testPopulateSummaryFields_WithPendingRenewalPayment_Within48Hours() {
+        com.swp391.selfstorage.payment.entity.PaymentTransaction pendingTxn = new com.swp391.selfstorage.payment.entity.PaymentTransaction();
+        pendingTxn.setId(901L);
+        pendingTxn.setContractId(501L);
+        pendingTxn.setTransactionType("CONTRACT_RENEWAL");
+        pendingTxn.setStatus("PENDING");
+        pendingTxn.setAmount(1600000L);
+        pendingTxn.setRenewalMonths(2);
+        pendingTxn.setOrderCode(123456789L);
+        pendingTxn.setCreatedAt(java.time.Instant.now().minus(24, java.time.temporal.ChronoUnit.HOURS));
+
+        when(rentalContractRepository.findByCustomerIdAndStatus(eq(15L), eq(ContractStatus.ACTIVE), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(activeContract), PageRequest.of(0, 10), 1));
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(facility));
+        when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(storageUnit));
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(unitType));
+        when(reservationRepository.findById(1042L)).thenReturn(Optional.of(reservation));
+        
+        when(paymentTransactionRepository.findTopByContractIdAndTransactionTypeOrderByCreatedAtDesc(501L, "CONTRACT_RENEWAL"))
+                .thenReturn(Optional.of(pendingTxn));
+
+        PageResponse<CustomerRentalSummaryResponse> response = customerRentalService.getMyRentals(
+                customerUser, "ACTIVE", PageRequest.of(0, 10)
+        );
+
+        assertNotNull(response);
+        CustomerRentalSummaryResponse item = response.getContent().get(0);
+        assertTrue(item.getHasPendingRenewal());
+        assertEquals(123456789L, item.getPendingRenewalOrderCode());
+        assertEquals(2, item.getPendingRenewalMonths());
+        assertEquals(1600000L, item.getPendingRenewalAmount());
+        assertNotNull(item.getPendingRenewalExpiresAt());
+    }
+
+    @Test
+    @DisplayName("US-SC-05.2: Bỏ qua thanh toán gia hạn nếu đã quá 48h")
+    void testPopulateSummaryFields_WithExpiredRenewalPayment_After48Hours() {
+        com.swp391.selfstorage.payment.entity.PaymentTransaction expiredTxn = new com.swp391.selfstorage.payment.entity.PaymentTransaction();
+        expiredTxn.setId(902L);
+        expiredTxn.setContractId(501L);
+        expiredTxn.setTransactionType("CONTRACT_RENEWAL");
+        expiredTxn.setStatus("PENDING");
+        expiredTxn.setCreatedAt(java.time.Instant.now().minus(49, java.time.temporal.ChronoUnit.HOURS));
+
+        when(rentalContractRepository.findByCustomerIdAndStatus(eq(15L), eq(ContractStatus.ACTIVE), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(activeContract), PageRequest.of(0, 10), 1));
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(facility));
+        when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(storageUnit));
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(unitType));
+        when(reservationRepository.findById(1042L)).thenReturn(Optional.of(reservation));
+        
+        when(paymentTransactionRepository.findTopByContractIdAndTransactionTypeOrderByCreatedAtDesc(501L, "CONTRACT_RENEWAL"))
+                .thenReturn(Optional.of(expiredTxn));
+
+        PageResponse<CustomerRentalSummaryResponse> response = customerRentalService.getMyRentals(
+                customerUser, "ACTIVE", PageRequest.of(0, 10)
+        );
+
+        assertNotNull(response);
+        CustomerRentalSummaryResponse item = response.getContent().get(0);
+        assertFalse(item.getHasPendingRenewal());
+        assertNull(item.getPendingRenewalOrderCode());
     }
 }
 
