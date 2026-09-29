@@ -25,7 +25,7 @@ const BREADCRUMB_MAP: Record<string, string> = {
   '/staff/check-in':           'Tiếp đón Check-in',
   '/staff/checkin':            'Tiếp đón Check-in',
   '/staff/return':             'Nghiệm thu trả kho',
-  '/staff/tasks':              'Việc trong ngày',
+  '/staff/tasks':              'Tổng quan ca trực',
   '/manager':                  'Tổng quan cơ sở',
   '/manager/units':            'Quản lý ô kho',
   '/manager/contracts':        'Giám sát hợp đồng',
