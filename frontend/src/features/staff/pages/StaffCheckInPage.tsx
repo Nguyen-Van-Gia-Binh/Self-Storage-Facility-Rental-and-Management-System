@@ -9,15 +9,13 @@ import {
 } from 'lucide-react';
 import type { CheckInContract, CheckInSubmitRequest, HandoverRejectRequest } from '../../../types';
 import { getPendingContracts, checkInContract, rejectHandoverContract } from '../../../api/contract';
-import { fetchMyAssignedFacilities } from '@/api/facility';
-import type { FacilityListItem } from '@/types';
+import { fetchFacilities, fetchMyAssignedFacilities } from '@/api/facility';
 import { useCurrentUser } from '@/utils/useCurrentUser';
 import { CheckInQueueList } from '../components/CheckInQueueList';
 import { CustomerVerificationCard } from '../components/CustomerVerificationCard';
 import { HandoverInspectionForm } from '../components/HandoverInspectionForm';
 import { AccessCodePinModal } from '../components/AccessCodePinModal';
 import { HandoverRejectionModal } from '../components/HandoverRejectionModal';
-import { fetchFacilities } from '@/api/facility';
 
 const DEFAULT_FACILITIES = [
   { id: 0, name: 'Tất cả cơ sở' },

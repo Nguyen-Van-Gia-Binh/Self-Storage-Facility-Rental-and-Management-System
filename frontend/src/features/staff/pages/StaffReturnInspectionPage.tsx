@@ -5,8 +5,8 @@ import {
   UserCheck, ClipboardList,
 } from 'lucide-react';
 import type { ReturnContractDetail, ReturnInspectionRequest } from '@/types';
-import { getReturnContracts, getReturnContractById, submitReturnInspection, assignReturnStaff, completeUnitCleaning } from '@/api/contract';
-import { fetchFacilities, fetchMyAssignedFacilities } from '@/api/facility';
+import { getReturnContracts, getReturnContractById, submitReturnInspection, completeUnitCleaning } from '@/api/contract';
+import { fetchFacilities } from '@/api/facility';
 import { useCurrentUser } from '@/utils/useCurrentUser';
 import { ReturnInspectionForm } from '../components/ReturnInspectionForm';
 import { ReturnSuccessModal } from '../components/ReturnSuccessModal';
@@ -69,19 +69,6 @@ export const StaffReturnInspectionPage: React.FC = () => {
     };
   }, []);
 
-  const [successData, setSuccessData] = useState<{
-    isOpen: boolean;
-    contractCode: string;
-    unitCode: string;
-    customerName: string;
-    refundAmount: number;
-  }>({
-    isOpen: false,
-    contractCode: '',
-    unitCode: '',
-    customerName: '',
-    refundAmount: 0,
-  });
 
   const loadData = useCallback(async (facilityId?: number) => {
     setLoading(true);
