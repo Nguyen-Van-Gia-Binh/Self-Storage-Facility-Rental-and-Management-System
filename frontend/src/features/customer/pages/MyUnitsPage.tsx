@@ -192,7 +192,7 @@ export const MyUnitsPage: React.FC = () => {
               className="flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-bold shadow-xs cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>Thuê thêm ngăn kho mới</span>
+              <span>Thuê thêm ô kho mới</span>
             </Button>
           </Link>
         </div>

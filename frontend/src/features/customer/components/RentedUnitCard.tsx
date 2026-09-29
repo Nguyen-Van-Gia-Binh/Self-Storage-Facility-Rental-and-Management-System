@@ -147,7 +147,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
               {getStatusBadge()}
             </div>
             <h3 className="text-xl font-black text-[#0a1614] flex items-center gap-2">
-              Ngăn tủ {contract.unitNumber}
+              Ô kho {contract.unitNumber}
               <span className="text-sm font-normal text-slate-500">
                 — {contract.unitTypeName} ({contract.sizeCategory})
               </span>

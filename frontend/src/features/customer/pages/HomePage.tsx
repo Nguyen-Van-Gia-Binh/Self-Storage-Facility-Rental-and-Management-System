@@ -119,7 +119,7 @@ export const HomePage: React.FC = () => {
           Tìm Cơ Sở Kho Tự Quản Gần Bạn Nhất
         </h1>
         <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-          Lựa chọn cơ sở lưu trữ tại TP.HCM, Hà Nội hoặc Đà Nẵng để tra cứu các kích thước ngăn kho còn trống, chế độ máy lạnh bảo quản đồ đạc và bảng giá niêm yết minh bạch.
+          Lựa chọn cơ sở lưu trữ tại TP.HCM, Hà Nội hoặc Đà Nẵng để tra cứu các kích thước ô kho còn trống, chế độ máy lạnh bảo quản đồ đạc và bảng giá niêm yết minh bạch.
         </p>
       </div>
 

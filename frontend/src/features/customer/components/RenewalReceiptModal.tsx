@@ -93,13 +93,13 @@ export const RenewalReceiptModal: React.FC<RenewalReceiptModalProps> = ({
           {/* Unit & Contract Details */}
           <div className="space-y-2.5">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Thông tin ngăn kho & Hợp đồng
+              Thông tin ô kho & Hợp đồng
             </h3>
             <div className="p-3.5 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-slate-500 flex items-center gap-1.5">
                   <Box className="w-4 h-4 text-brand-600" />
-                  Số ngăn kho:
+                  Mã ô kho:
                 </span>
                 <span className="font-extrabold text-base text-[#0a1614]">
                   {contract.unitNumber}

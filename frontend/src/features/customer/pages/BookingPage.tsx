@@ -1223,7 +1223,7 @@ export const BookingPage: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span>
-                    <strong>Bảo mật truy cập:</strong> Thẻ nhận kho và mã PIN mở ngăn tủ chỉ được cấp ngay sau khi hệ thống ghi nhận thanh toán cọc thành công.
+                    <strong>Bảo mật truy cập:</strong> Thẻ nhận kho và mã PIN mở ô kho chỉ được cấp ngay sau khi hệ thống ghi nhận thanh toán cọc thành công.
                   </span>
                 </div>
               </div>
