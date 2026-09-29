@@ -37,6 +37,10 @@ public class ApiResponse<T> {
         return new ApiResponse<>(200, message, data);
     }
 
+    public static <T> ApiResponse<T> created(T data, String message) {
+        return new ApiResponse<>(201, message, data);
+    }
+
     public static <T> ApiResponse<T> error(int status, String errorCode, String message, String path, List<String> details) {
         return new ApiResponse<>(status, errorCode, message, path, details);
     }

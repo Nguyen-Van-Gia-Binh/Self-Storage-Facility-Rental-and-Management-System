@@ -43,7 +43,7 @@ public class AuthController {
         String userAgent = servletRequest != null ? servletRequest.getHeader("User-Agent") : null;
         AuthResponse response = authService.register(request, ipAddress, userAgent);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(response, "Đăng ký tài khoản thành công"));
+                .body(ApiResponse.created(response, "Đăng ký tài khoản thành công"));
     }
 
     @PostMapping("/login")
