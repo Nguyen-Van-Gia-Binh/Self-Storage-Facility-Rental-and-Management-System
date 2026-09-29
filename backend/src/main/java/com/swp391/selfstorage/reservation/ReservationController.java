@@ -3,6 +3,8 @@ package com.swp391.selfstorage.reservation;
 import com.swp391.selfstorage.auth.service.UserPrincipal;
 import com.swp391.selfstorage.common.dto.ApiResponse;
 import com.swp391.selfstorage.common.dto.PageResponse;
+import com.swp391.selfstorage.common.exception.CustomException;
+import com.swp391.selfstorage.common.exception.ErrorCode;
 import com.swp391.selfstorage.reservation.dto.*;
 import com.swp391.selfstorage.reservation.service.ReservationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -47,11 +50,15 @@ public class ReservationController {
      * API tạo đơn đặt chỗ mới & giữ capacity trong 48 giờ (SC-02, BR-RES-02, BR-DEP-03).
      */
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Tạo mới đơn giữ chỗ (Customer)")
     public ResponseEntity<ApiResponse<ReservationResponse>> createReservation(
             @Valid @RequestBody CreateReservationRequest request,
             @AuthenticationPrincipal UserPrincipal currentUser
     ) {
+        if (currentUser == null || currentUser.getId() == null) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED, "Vui lòng đăng nhập tài khoản để đặt chỗ lưu trữ.");
+        }
         ReservationResponse response = reservationService.createReservation(request, currentUser);
         URI location = URI.create("/api/v1/reservations/" + response.getId());
         return ResponseEntity.created(location)
@@ -119,12 +126,15 @@ public class ReservationController {
      * Tra cứu danh sách đơn đặt chỗ / hợp đồng của khách hàng (My Rentals).
      */
     @GetMapping("/my-rentals")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Lấy danh sách thuê kho của tôi")
     public ResponseEntity<ApiResponse<List<ReservationResponse>>> getMyRentals(
             @AuthenticationPrincipal UserPrincipal currentUser
     ) {
-        Long customerId = (currentUser != null) ? currentUser.getId() : 1L;
-        List<ReservationResponse> list = reservationService.getCustomerReservations(customerId);
+        if (currentUser == null || currentUser.getId() == null) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED, "Vui lòng đăng nhập để xem danh sách thuê kho");
+        }
+        List<ReservationResponse> list = reservationService.getCustomerReservations(currentUser.getId());
         return ResponseEntity.ok(ApiResponse.success(list, "Lấy danh sách thuê kho thành công"));
     }
 

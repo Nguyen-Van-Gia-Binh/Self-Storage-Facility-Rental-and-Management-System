@@ -113,8 +113,11 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public ReservationResponse createReservation(CreateReservationRequest request, UserPrincipal currentUser) {
-        // 1. Xac dinh customerId tu JWT hoac seed fallback neu goi tu he thong demo
-        Long customerId = (currentUser != null) ? currentUser.getId() : 1L;
+        // 1. Xác thực người dùng: Bắt buộc đăng nhập, ném UNAUTHORIZED nếu currentUser == null
+        if (currentUser == null || currentUser.getId() == null) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED, "Vui lòng đăng nhập tài khoản để đặt chỗ lưu trữ.");
+        }
+        Long customerId = currentUser.getId();
 
         // 2. Kiem tra BR-OVD-09: Chan khach hang dang co hop dong OVERDUE
         if (customerId != null && rentalContractRepository != null && rentalContractRepository.existsByCustomerIdAndStatus(customerId, ContractStatus.OVERDUE)) {

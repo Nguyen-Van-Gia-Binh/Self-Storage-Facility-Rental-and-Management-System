@@ -109,20 +109,20 @@ export const BookingPage: React.FC = () => {
         if (!isMounted) return;
         const matched = facList.find(
           (f: FacilityListItem) => String(f.id) === facilityId || f.code === facilityId
-        ) || facList.find((f: FacilityListItem) => f.id === 8) || facList[0];
+        ) || facList[0];
 
         if (matched) {
           setFacility({
             id: String(matched.id),
             code: matched.code || `FAC-${matched.id}`,
             name: matched.name,
-            address: matched.address || 'Đà Nẵng',
-            district: 'Hải Châu',
-            city: 'Đà Nẵng',
+            address: matched.address || 'Hồ Chí Minh',
+            district: 'Quận 1',
+            city: 'TP. Hồ Chí Minh',
             distance: '1.2 km',
-            startingPrice: 45000,
+            startingPrice: matched.lowestMonthlyPrice || 45000,
             image: 'https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=800&q=80',
-            phone: '0236-365-7788',
+            phone: matched.phone || '028-3822-1234',
           });
 
           const numericId = typeof matched.id === 'number' ? matched.id : Number(matched.id);
@@ -479,7 +479,7 @@ export const BookingPage: React.FC = () => {
 
   const handleProceedToPayment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tokenStorage.getAccessToken()) {
+    if (!tokenStorage.getAccessToken() || !tokenStorage.getUser()) {
       const currentUrl = `/customer/booking${window.location.search}`;
       navigate(`/auth/login?redirect=${encodeURIComponent(currentUrl)}`);
       return;

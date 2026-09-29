@@ -6,6 +6,7 @@ import com.swp391.selfstorage.unit.dto.CreateStorageUnitRequest;
 import com.swp391.selfstorage.unit.dto.StorageUnitResponse;
 import com.swp391.selfstorage.unit.dto.UpdateStorageUnitStatusRequest;
 import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
+import com.swp391.selfstorage.auth.service.FacilitySecurityService;
 import com.swp391.selfstorage.unit.service.StorageUnitService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,7 @@ class StorageUnitControllerTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
     @MockBean private StorageUnitService storageUnitService;
+    @MockBean(name = "facilitySecurity") private FacilitySecurityService facilitySecurityService;
 
     @Test
     @DisplayName("GET /api/v1/facilities/{facilityId}/storage-units trả về danh sách ô kho")

@@ -150,7 +150,7 @@ export async function getContractById(id: number): Promise<CheckInContract> {
 export async function checkInContract(
   id: number,
   data: CheckInSubmitRequest,
-  staffId?: number
+  _staffId?: number
 ): Promise<CheckInSubmitResponse> {
   if (isMockEnabled('WS2')) {
     const generatedPin = Math.floor(100000 + Math.random() * 900000).toString();
@@ -168,12 +168,8 @@ export async function checkInContract(
     };
   }
 
-  const headers: Record<string, string> = {};
-  if (staffId) headers['X-Staff-Id'] = String(staffId);
-
   const res = await apiClient<ApiResponse<CheckInSubmitResponse>>(`/contracts/${id}/check-in`, {
     method: 'POST',
-    headers,
     body: JSON.stringify({
       checkinDate: data.checkinDate,
       conditionNote: data.conditionNote,
@@ -192,7 +188,7 @@ export async function checkInContract(
 export async function rejectHandoverContract(
   id: number,
   data: HandoverRejectRequest,
-  staffId?: number
+  _staffId?: number
 ): Promise<HandoverRejectResponse> {
   if (isMockEnabled('WS2')) {
     localMockContracts = localMockContracts.map((c) => {
@@ -209,13 +205,11 @@ export async function rejectHandoverContract(
     };
   }
 
-  const headers: Record<string, string> = {};
-  if (staffId) headers['X-Staff-Id'] = String(staffId);
 
   // Kh\u00f4ng c\u00f3 catch silent \u2014 \u0111\u1ec3 l\u1ed7i propagate l\u00ean UI x\u1eed l\u00fd
   const res = await apiClient<ApiResponse<HandoverRejectResponse>>(
     `/contracts/${id}/handover-rejection`,
-    { method: 'POST', headers, body: JSON.stringify(data) }
+    { method: 'POST', body: JSON.stringify(data) }
   );
   return res.data;
 }
@@ -263,7 +257,6 @@ export async function assignReturnStaff(
 ): Promise<any> {
   const res = await apiClient<ApiResponse<any>>(`/contracts/${contractId}/assign-return`, {
     method: 'PATCH',
-    headers: { 'X-Manager-Id': '1' },
     body: JSON.stringify({ staffId, notes }),
   });
   return res.data;
@@ -336,7 +329,7 @@ export async function getSettlementPreview(id: number): Promise<SettlementPrevie
 export async function submitReturnInspection(
   id: number,
   data: ReturnInspectionRequest,
-  staffId?: number
+  _staffId?: number
 ): Promise<ReturnInspectionResponse> {
   if (isMockEnabled('WS2')) {
     const damageCost = data.damageCost || 0;
@@ -347,12 +340,8 @@ export async function submitReturnInspection(
     return { id, status: 'PENDING_RETURN', returnDate: data.returnDate, estimatedDepositRefund: refund, overdueFee: 0, damageCost };
   }
 
-  const headers: Record<string, string> = {};
-  if (staffId) headers['X-Staff-Id'] = String(staffId);
-
   const res = await apiClient<ApiResponse<ReturnInspectionResponse>>(`/contracts/${id}/return-inspections`, {
     method: 'POST',
-    headers,
     body: JSON.stringify({
       returnDate: data.returnDate,
       condition: data.condition,
@@ -560,14 +549,10 @@ export async function getContractFinancialDetail(id: number): Promise<ContractFi
  */
 export async function approveSettlementRefund(
   data: SettlementApprovalRequest,
-  managerId?: number
+  _managerId?: number
 ): Promise<{ success: boolean; message: string }> {
-  const headers: Record<string, string> = {};
-  if (managerId) headers['X-Manager-Id'] = String(managerId);
-
   const res = await apiClient<ApiResponse<any>>(`/contracts/${data.contractId}/settlement-approval`, {
     method: 'POST',
-    headers,
     body: JSON.stringify(data),
   });
   return {

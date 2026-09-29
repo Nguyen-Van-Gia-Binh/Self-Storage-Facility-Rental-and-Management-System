@@ -1,12 +1,18 @@
 package com.swp391.selfstorage.contract;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.swp391.selfstorage.auth.service.FacilitySecurityService;
+import com.swp391.selfstorage.auth.service.UserPrincipal;
 import com.swp391.selfstorage.contract.controller.ContractController;
 import com.swp391.selfstorage.contract.dto.SettlementApprovalRequest;
 import com.swp391.selfstorage.contract.dto.SettlementApprovalResponse;
 import com.swp391.selfstorage.contract.dto.SettlementPreviewResponse;
 import com.swp391.selfstorage.contract.entity.ContractStatus;
 import com.swp391.selfstorage.contract.service.ContractService;
+import com.swp391.selfstorage.user.entity.UserRole;
+import com.swp391.selfstorage.user.entity.UserStatus;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,9 +20,13 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.OffsetDateTime;
+import java.util.Collections;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -30,66 +40,101 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc(addFilters = false)
 class ContractSettlementControllerTest {
 
-        @Autowired
-        private MockMvc mockMvc;
+    @Autowired
+    private MockMvc mockMvc;
 
-        @Autowired
-        private ObjectMapper objectMapper;
+    @Autowired
+    private ObjectMapper objectMapper;
 
-        @MockBean
-        private ContractService contractService;
+    @MockBean
+    private ContractService contractService;
 
-        @Test
-        @DisplayName("GET /contracts/{id}/settlement-preview trả về 200 OK")
-        void testGetSettlementPreview() throws Exception {
-                SettlementPreviewResponse preview = SettlementPreviewResponse.builder()
-                                .contractId(500L)
-                                .depositAmount(1_000_000L)
-                                .damageCost(150_000L)
-                                .overdueFee(100_000L)
-                                .unpaidExtraCharges(0L)
-                                .depositRefundAmount(750_000L)
-                                .payableAmount(0L)
-                                .build();
+    @MockBean(name = "facilitySecurity")
+    private FacilitySecurityService facilitySecurityService;
 
-                when(contractService.getSettlementPreview(eq(500L), any())).thenReturn(preview);
+    private UserPrincipal managerPrincipal;
 
-                mockMvc.perform(get("/contracts/500/settlement-preview")
-                                .contentType(MediaType.APPLICATION_JSON))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.status").value(200))
-                                .andExpect(jsonPath("$.data.contractId").value(500))
-                                .andExpect(jsonPath("$.data.depositRefundAmount").value(750_000))
-                                .andExpect(jsonPath("$.data.payableAmount").value(0));
-        }
+    @BeforeEach
+    void setUp() {
+        managerPrincipal = new UserPrincipal(99L, "manager@test.com", "hash", "Lê Văn Manager",
+                UserRole.FACILITY_MANAGER, UserStatus.ACTIVE, List.of(1L), Collections.emptyList());
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(managerPrincipal, null, managerPrincipal.getAuthorities())
+        );
+    }
 
-        @Test
-        @DisplayName("POST /contracts/{id}/settlement-approval trả về 200 OK kèm CLOSED")
-        void testApproveSettlement() throws Exception {
-                SettlementApprovalRequest request = SettlementApprovalRequest.builder()
-                                .adjustedDamageCost(150_000L)
-                                .approvedNotes("FM đồng ý thanh lý")
-                                .build();
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
 
-                SettlementApprovalResponse response = SettlementApprovalResponse.builder()
-                                .contractId(500L)
-                                .status(ContractStatus.CLOSED)
-                                .depositRefundAmount(750_000L)
-                                .payableAmount(0L)
-                                .settledAt(OffsetDateTime.now())
-                                .message("Phê duyệt quyết toán và hoàn cọc thành công")
-                                .build();
+    @Test
+    @DisplayName("GET /contracts/{id}/settlement-preview trả về 200 OK")
+    void testGetSettlementPreview() throws Exception {
+        SettlementPreviewResponse preview = SettlementPreviewResponse.builder()
+                .contractId(500L)
+                .depositAmount(1_000_000L)
+                .damageCost(150_000L)
+                .overdueFee(100_000L)
+                .unpaidExtraCharges(0L)
+                .depositRefundAmount(750_000L)
+                .payableAmount(0L)
+                .build();
 
-                when(contractService.approveSettlement(eq(500L), any(), any(), any())).thenReturn(response);
+        when(contractService.getSettlementPreview(eq(500L), any())).thenReturn(preview);
 
-                mockMvc.perform(post("/contracts/500/settlement-approval")
-                                .header("X-Manager-Id", "99")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.status").value(200))
-                                .andExpect(jsonPath("$.data.contractId").value(500))
-                                .andExpect(jsonPath("$.data.status").value("CLOSED"))
-                                .andExpect(jsonPath("$.data.depositRefundAmount").value(750_000));
-        }
+        mockMvc.perform(get("/contracts/500/settlement-preview")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.contractId").value(500))
+                .andExpect(jsonPath("$.data.depositRefundAmount").value(750_000))
+                .andExpect(jsonPath("$.data.payableAmount").value(0));
+    }
+
+    @Test
+    @DisplayName("POST /contracts/{id}/settlement-approval trả về 200 OK kèm CLOSED với danh tính từ UserPrincipal")
+    void testApproveSettlement() throws Exception {
+        SettlementApprovalRequest request = SettlementApprovalRequest.builder()
+                .adjustedDamageCost(150_000L)
+                .approvedNotes("FM đồng ý thanh lý")
+                .build();
+
+        SettlementApprovalResponse response = SettlementApprovalResponse.builder()
+                .contractId(500L)
+                .status(ContractStatus.CLOSED)
+                .depositRefundAmount(750_000L)
+                .payableAmount(0L)
+                .settledAt(OffsetDateTime.now())
+                .message("Phê duyệt quyết toán và hoàn cọc thành công")
+                .build();
+
+        when(contractService.approveSettlement(eq(500L), any(), eq(99L), any())).thenReturn(response);
+
+        // Không gửi header X-Manager-Id
+        mockMvc.perform(post("/contracts/500/settlement-approval")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.contractId").value(500))
+                .andExpect(jsonPath("$.data.status").value("CLOSED"))
+                .andExpect(jsonPath("$.data.depositRefundAmount").value(750_000));
+    }
+
+    @Test
+    @DisplayName("POST /contracts/{id}/settlement-approval trả về 401 khi chưa đăng nhập")
+    void testApproveSettlement_Unauthorized() throws Exception {
+        SecurityContextHolder.clearContext();
+
+        SettlementApprovalRequest request = SettlementApprovalRequest.builder()
+                .adjustedDamageCost(150_000L)
+                .approvedNotes("FM đồng ý thanh lý")
+                .build();
+
+        mockMvc.perform(post("/contracts/500/settlement-approval")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized());
+    }
 }

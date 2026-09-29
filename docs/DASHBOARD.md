@@ -47,6 +47,11 @@
 | `ISS-37` | Sơ đồ mặt bằng và số ô trống chưa phản ánh động theo kỳ hạn thuê. | Đã hỗ trợ tham số startDate/rentalMonths tại API storage-units và đồng bộ UI. | Bình / Nhi | `RESOLVED` |
 | `ISS-38` | Khách chưa đăng nhập bị lỗi 403 đỏ ở Hỗ trợ, thấy ô ảo ở Kho của tôi và đặt kho sai ID. | Bổ sung Auth Guard đồng bộ, prompt đăng nhập trang nhã và bảo vệ Booking flow. | Nhi | `RESOLVED` |
 | `ISS-39` | Thiếu role canonical trong `@PreAuthorize` StaffSupportController và alias authorities. | Đã bổ sung canonical role + alias vào UserPrincipal và controller. | Bình | `RESOLVED` |
+| `ISS-40` | Lỗ hổng Header Spoofing cho phép giả mạo `X-Staff-Id`, `X-Manager-Id`. | Bỏ header giả mạo, xác thực danh tính qua `@AuthenticationPrincipal UserPrincipal`. | Bình | `RESOLVED` |
+| `ISS-41` | Rò rỉ dữ liệu đa cơ sở của FM và Staff khi thao tác contract/storage-unit. | Tích hợp `FacilitySecurityService` và kiểm tra quyền cơ sở gán cho nhân sự. | Bình | `RESOLVED` |
+| `ISS-42` | Đặt chỗ ẩn danh (Anonymous booking) tự động gán khách hàng mặc định ID=1L. | Bắt buộc xác thực, ném UNAUTHORIZED nếu chưa đăng nhập và kích hoạt Auth Guard. | Bình / Nhi | `RESOLVED` |
+| `ISS-43` | Rò rỉ phiên làm việc do `clearSession()` không xóa sạch mock override và sessionStorage. | Dọn sạch toàn bộ key `smartstorage_*`, `selfstorage_*` và `sessionStorage`. | Bình | `RESOLVED` |
+| `ISS-44` | Đặt chỗ hiển thị mock Tân Bình Flagship và gọi sai endpoint catalog ô kho. | Nối Real API `/facilities`, `/storage-units` và ánh xạ động tên cơ sở theo ID. | Bình / Nhi | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 

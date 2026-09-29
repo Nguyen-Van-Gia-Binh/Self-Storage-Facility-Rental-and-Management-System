@@ -29,9 +29,10 @@ describe('checkInContract (real API mode)', () => {
       '/contracts/5/check-in',
       expect.objectContaining({
         method: 'POST',
-        headers: expect.objectContaining({ 'X-Staff-Id': '42' }),
       })
     );
+    const callArgs = spy.mock.calls[0][1];
+    expect(callArgs?.headers?.['X-Staff-Id']).toBeUndefined();
     expect(result.accessCode).toBe('482019');
     expect(result.status).toBe('ACTIVE');
   });
