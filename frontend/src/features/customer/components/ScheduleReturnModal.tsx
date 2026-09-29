@@ -289,7 +289,7 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
               </div>
               <div className="p-2 bg-white rounded-lg border border-slate-200/80 shadow-2xs">
                 <div className="font-bold text-purple-700">3. Quyết toán</div>
-                <div className="text-slate-500 text-[10px] mt-0.5">Hoàn cọc 24-48h</div>
+                <div className="text-slate-500 text-[10px] mt-0.5">Hoàn cọc 7 ngày làm việc</div>
               </div>
             </div>
           </div>
