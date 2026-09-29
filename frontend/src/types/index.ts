@@ -249,13 +249,25 @@ export interface DailyIncidentTask {
   ticketId: number;
   code?: string;
   title: string;
+  description?: string;
   category: 'ACCESS_CODE' | 'LOST_KEY' | 'DAMAGED_UNIT' | 'OVERLOCK_D4' | 'CLEANING' | string;
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT' | string;
   unitCode: string;
+  storageUnitId?: number;
+  facilityId?: number;
+  facilityName?: string;
   customerName?: string;
+  customerPhone?: string;
   slaDeadline: string;
-  status: 'PENDING' | 'IN_PROGRESS' | 'RESOLVED' | string;
+  slaDueAt?: string;
+  status: 'PENDING' | 'ASSIGNED' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED' | string;
   isOverlockTask?: boolean;
+  assignedStaffId?: number;
+  assignedStaffName?: string;
+  attachmentUrls?: string[];
+  resolutionAttachmentUrls?: string[];
+  resolutionNote?: string;
+  createdAt?: string;
 }
 
 export interface StaffDailyTaskReport {

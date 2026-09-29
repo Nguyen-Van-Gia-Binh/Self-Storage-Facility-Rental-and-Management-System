@@ -407,14 +407,22 @@ export async function startIncidentInProgress(
  */
 export async function resolveSupportTicket(
   ticketId: number,
-  payload: ResolveSupportRequestDto
+  payload: ResolveSupportRequestDto | { resolutionNote: string; resolutionAttachmentUrls?: string[] }
 ): Promise<{ success: boolean; message: string }> {
+  const note =
+    (payload as any).resolutionNote ||
+    (payload as ResolveSupportRequestDto).resolutionNotes ||
+    'Đã xử lý xong sự cố';
+  const urls =
+    (payload as any).resolutionAttachmentUrls ||
+    (payload as ResolveSupportRequestDto).resolutionImageUrls ||
+    [];
+
   await apiClient(`/support-requests/${ticketId}/resolve`, {
     method: 'PATCH',
     body: JSON.stringify({
-      resolutionNotes: payload.resolutionNotes,
-      actualDamageCost: 0,
-      evidenceUrls: payload.resolutionImageUrls || [],
+      resolutionNote: note,
+      resolutionAttachmentUrls: urls,
     }),
   });
 
