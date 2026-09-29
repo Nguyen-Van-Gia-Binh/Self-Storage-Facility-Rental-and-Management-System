@@ -88,6 +88,13 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
       case 'EXPIRING_SOON':
         return <Badge variant="warning">Sắp hết hạn</Badge>;
       case 'OVERDUE':
+        if (contract.overdueFee === 0) {
+          return (
+            <Badge variant="warning" className="bg-amber-50 text-amber-800 border-amber-300">
+              Đã tất toán phạt — Chờ dọn kho / trả kho
+            </Badge>
+          );
+        }
         return <Badge variant="overdue">Quá hạn thanh toán</Badge>;
       case 'PENDING_RETURN':
         return <Badge variant="warning">Đang chờ trả kho</Badge>;

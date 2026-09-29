@@ -108,8 +108,8 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
       case 'OVERDUE':
         if (penaltyFee === 0 && !isGracePeriod) {
           return (
-            <Badge variant="available" className="bg-emerald-50 text-emerald-700 border-emerald-300">
-              Đã nộp phạt (Chờ trả kho)
+            <Badge variant="warning" className="bg-amber-50 text-amber-800 border-amber-300">
+              Đã tất toán phạt — Chờ dọn kho / trả kho
             </Badge>
           );
         }
@@ -174,6 +174,16 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
             </span>
           </div>
         </div>
+
+        {/* Banner nhắc nhở sau khi tất toán nợ phạt */}
+        {contract.status === 'OVERDUE' && penaltyFee === 0 && !isGracePeriod && (
+          <div className="mt-4 text-xs text-amber-800 bg-amber-50 border border-amber-300 p-3 rounded-xl flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <span className="font-bold">Bạn đã hoàn tất nộp phạt quá hạn:</span> Hợp đồng cũ đã hết thời hạn thuê. Vui lòng hoàn tất dọn sạch đồ đạc và bấm <strong>"Báo trả kho"</strong> trước 00:00 để tránh phát sinh phạt mới, hoặc bấm <strong>"Gia hạn hợp đồng"</strong> để tiếp tục sử dụng nếu ô kho còn trống.
+            </div>
+          </div>
+        )}
 
         {/* Contract Duration and Access PIN */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">

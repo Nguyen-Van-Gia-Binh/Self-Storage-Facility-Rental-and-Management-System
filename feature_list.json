@@ -68,8 +68,8 @@
   {
     "id": "phase-02-overdue-cleared-status-and-banner",
     "title": "Chuẩn hóa trạng thái & cảnh báo thẻ ô kho sau khi nộp phạt quá hạn",
-    "status": "not_started",
-    "evidence": "",
+    "status": "completed",
+    "evidence": "OverdueClearedAudit.test.tsx: 2/2 tests pass, xác nhận RentedUnitCard và ContractDetailModal hiển thị badge cam Đã tất toán phạt, có banner cảnh báo, mở sáng nút Báo trả kho.",
     "user_visible_behavior": "Thẻ ô kho nộp phạt xong hiển thị badge cam Đã tất toán phạt — Chờ dọn kho / trả kho kèm banner cảnh báo, không còn badge xanh gây ngộ nhận.",
     "verification_command": "npm test OverdueClearedAudit",
     "notes": "Covers Notion Audit Issue 8",
