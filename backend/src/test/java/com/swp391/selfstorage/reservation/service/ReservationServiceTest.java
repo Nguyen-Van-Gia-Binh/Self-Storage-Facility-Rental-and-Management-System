@@ -115,6 +115,22 @@ class ReservationServiceTest {
     }
 
     @Test
+    @DisplayName("createReservation ném UNAUTHORIZED khi currentUser là null")
+    void createReservation_AnonymousUser_ThrowsUnauthorized() {
+        CreateReservationRequest req = new CreateReservationRequest();
+        req.setFacilityId(1L);
+        req.setUnitTypeId(7L);
+        req.setStartDate(LocalDate.now().plusDays(1));
+        req.setRentalMonths(3);
+
+        CustomException ex = assertThrows(CustomException.class, () ->
+                reservationService.createReservation(req, null)
+        );
+        assertEquals(ErrorCode.UNAUTHORIZED, ex.getErrorCode());
+        assertEquals("Vui lòng đăng nhập tài khoản để đặt chỗ lưu trữ.", ex.getMessage());
+    }
+
+    @Test
     @DisplayName("BR-OVD-09: Khách hàng có hợp đồng OVERDUE thì bị chặn đặt chỗ")
     void createReservation_CustomerHasOverdueContract_ShouldThrow() {
         when(rentalContractRepository.existsByCustomerIdAndStatus(15L, ContractStatus.OVERDUE)).thenReturn(true);

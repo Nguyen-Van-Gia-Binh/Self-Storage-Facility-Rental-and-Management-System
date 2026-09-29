@@ -47,11 +47,15 @@ public class ReservationController {
      * API tạo đơn đặt chỗ mới & giữ capacity trong 48 giờ (SC-02, BR-RES-02, BR-DEP-03).
      */
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Tạo mới đơn giữ chỗ (Customer)")
     public ResponseEntity<ApiResponse<ReservationResponse>> createReservation(
             @Valid @RequestBody CreateReservationRequest request,
             @AuthenticationPrincipal UserPrincipal currentUser
     ) {
+        if (currentUser == null || currentUser.getId() == null) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED, "Vui lòng đăng nhập tài khoản để đặt chỗ lưu trữ.");
+        }
         ReservationResponse response = reservationService.createReservation(request, currentUser);
         URI location = URI.create("/api/v1/reservations/" + response.getId());
         return ResponseEntity.created(location)
@@ -119,12 +123,15 @@ public class ReservationController {
      * Tra cứu danh sách đơn đặt chỗ / hợp đồng của khách hàng (My Rentals).
      */
     @GetMapping("/my-rentals")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Lấy danh sách thuê kho của tôi")
     public ResponseEntity<ApiResponse<List<ReservationResponse>>> getMyRentals(
             @AuthenticationPrincipal UserPrincipal currentUser
     ) {
-        Long customerId = (currentUser != null) ? currentUser.getId() : 1L;
-        List<ReservationResponse> list = reservationService.getCustomerReservations(customerId);
+        if (currentUser == null || currentUser.getId() == null) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED, "Vui lòng đăng nhập để xem danh sách thuê kho");
+        }
+        List<ReservationResponse> list = reservationService.getCustomerReservations(currentUser.getId());
         return ResponseEntity.ok(ApiResponse.success(list, "Lấy danh sách thuê kho thành công"));
     }
 

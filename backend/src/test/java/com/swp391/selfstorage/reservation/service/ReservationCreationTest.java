@@ -2,6 +2,7 @@ package com.swp391.selfstorage.reservation.service;
 
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
+import com.swp391.selfstorage.auth.service.UserPrincipal;
 import com.swp391.selfstorage.reservation.dto.CreateReservationRequest;
 import com.swp391.selfstorage.reservation.dto.ReservationResponse;
 import com.swp391.selfstorage.reservation.entity.Reservation;
@@ -10,6 +11,8 @@ import com.swp391.selfstorage.reservation.repository.ReservationRepository;
 import com.swp391.selfstorage.unit.entity.StorageUnit;
 import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
+import com.swp391.selfstorage.user.entity.UserRole;
+import com.swp391.selfstorage.user.entity.UserStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,6 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -39,9 +43,15 @@ class ReservationCreationTest {
     @InjectMocks private ReservationServiceImpl service;
 
     private CreateReservationRequest request;
+    private UserPrincipal testCustomer;
 
     @BeforeEach
     void setUp() {
+        testCustomer = new UserPrincipal(
+                1L, "nguyenvana@example.com", "password", "Nguyễn Văn A",
+                UserRole.STORAGE_CUSTOMER, UserStatus.ACTIVE, Collections.emptyList(), Collections.emptyList()
+        );
+
         request = new CreateReservationRequest();
         request.setFacilityId(1L);
         request.setUnitTypeId(2L);
@@ -55,6 +65,14 @@ class ReservationCreationTest {
     }
 
     @Test
+    @DisplayName("Ném ngoại lệ UNAUTHORIZED khi người dùng chưa đăng nhập (currentUser == null)")
+    void shouldThrowUnauthorized_whenCurrentUserIsNull() {
+        CustomException exception = assertThrows(CustomException.class, () -> service.createReservation(request, null));
+        assertEquals(ErrorCode.UNAUTHORIZED, exception.getErrorCode());
+        assertEquals("Vui lòng đăng nhập tài khoản để đặt chỗ lưu trữ.", exception.getMessage());
+    }
+
+    @Test
     @DisplayName("Tạo đơn đặt chỗ thành công khi ô kho trống (AVAILABLE)")
     void shouldCreateReservationSuccessfully_whenUnitIsAvailable() {
         when(reservationRepository.existsOverlappingReservationForUnit(eq(10L), any(), any(), any())).thenReturn(false);
@@ -64,7 +82,7 @@ class ReservationCreationTest {
             return r;
         });
 
-        ReservationResponse response = service.createReservation(request);
+        ReservationResponse response = service.createReservation(request, testCustomer);
 
         assertNotNull(response);
         assertEquals(500L, response.getId());
@@ -112,7 +130,7 @@ class ReservationCreationTest {
             return r;
         });
 
-        ReservationResponse response = service.createReservation(request);
+        ReservationResponse response = service.createReservation(request, testCustomer);
 
         assertNotNull(response);
         assertEquals(505L, response.getId());
@@ -143,7 +161,7 @@ class ReservationCreationTest {
             return r;
         });
 
-        ReservationResponse response = service.createReservation(request);
+        ReservationResponse response = service.createReservation(request, testCustomer);
 
         assertNotNull(response);
         assertEquals(LocalDate.of(2026, 10, 1), response.getStartDate());
@@ -158,7 +176,7 @@ class ReservationCreationTest {
                 eq(10L), any(), any(), any()
         )).thenReturn(true);
 
-        CustomException exception = assertThrows(CustomException.class, () -> service.createReservation(request));
+        CustomException exception = assertThrows(CustomException.class, () -> service.createReservation(request, testCustomer));
 
         assertEquals(ErrorCode.UNIT_NOT_AVAILABLE, exception.getErrorCode());
         assertEquals("O kho nay da co nguoi khac giu cho trong thoi gian da chon", exception.getMessage());
@@ -174,7 +192,7 @@ class ReservationCreationTest {
         unit.setStatus(StorageUnitStatus.MAINTENANCE);
         when(storageUnitRepository.findById(10L)).thenReturn(Optional.of(unit));
 
-        CustomException exception = assertThrows(CustomException.class, () -> service.createReservation(request));
+        CustomException exception = assertThrows(CustomException.class, () -> service.createReservation(request, testCustomer));
 
         assertEquals(ErrorCode.UNIT_NOT_AVAILABLE, exception.getErrorCode());
         assertEquals("O kho dang trong che do bao tri hoac ngung hoat dong", exception.getMessage());
@@ -190,7 +208,7 @@ class ReservationCreationTest {
         unit.setStatus(StorageUnitStatus.OUT_OF_SERVICE);
         when(storageUnitRepository.findById(10L)).thenReturn(Optional.of(unit));
 
-        CustomException exception = assertThrows(CustomException.class, () -> service.createReservation(request));
+        CustomException exception = assertThrows(CustomException.class, () -> service.createReservation(request, testCustomer));
 
         assertEquals(ErrorCode.UNIT_NOT_AVAILABLE, exception.getErrorCode());
         assertEquals("O kho dang trong che do bao tri hoac ngung hoat dong", exception.getMessage());
@@ -206,7 +224,7 @@ class ReservationCreationTest {
         unit.setStatus(StorageUnitStatus.AVAILABLE);
         when(storageUnitRepository.findById(10L)).thenReturn(Optional.of(unit));
 
-        CustomException exception = assertThrows(CustomException.class, () -> service.createReservation(request));
+        CustomException exception = assertThrows(CustomException.class, () -> service.createReservation(request, testCustomer));
 
         assertEquals(ErrorCode.STORAGE_UNIT_NOT_FOUND, exception.getErrorCode());
         assertEquals("O kho khong thuoc co so hoac loai o kho da chon", exception.getMessage());
@@ -218,7 +236,7 @@ class ReservationCreationTest {
     void shouldThrowInvalidStartDate_whenStartDateIsInThePast() {
         request.setStartDate(LocalDate.now().minusDays(1));
 
-        CustomException exception = assertThrows(CustomException.class, () -> service.createReservation(request));
+        CustomException exception = assertThrows(CustomException.class, () -> service.createReservation(request, testCustomer));
 
         assertEquals(ErrorCode.INVALID_START_DATE, exception.getErrorCode());
         verify(reservationRepository, never()).save(any());
@@ -235,7 +253,7 @@ class ReservationCreationTest {
             return r;
         });
 
-        ReservationResponse response = service.createReservation(request);
+        ReservationResponse response = service.createReservation(request, testCustomer);
 
         assertNotNull(response);
         assertNull(response.getStorageUnitId());
@@ -255,7 +273,7 @@ class ReservationCreationTest {
         when(storageUnitRepository.countOverlappingReservations(eq(1L), eq(2L), any(), any())).thenReturn(3L);
         when(storageUnitRepository.countOverlappingContracts(eq(1L), eq(2L), any(), any())).thenReturn(2L);
 
-        CustomException exception = assertThrows(CustomException.class, () -> service.createReservation(request));
+        CustomException exception = assertThrows(CustomException.class, () -> service.createReservation(request, testCustomer));
 
         assertEquals(ErrorCode.CAPACITY_NOT_AVAILABLE, exception.getErrorCode());
         verify(reservationRepository, never()).save(any());
@@ -271,7 +289,7 @@ class ReservationCreationTest {
             return r;
         });
 
-        ReservationResponse response = service.createReservation(request);
+        ReservationResponse response = service.createReservation(request, testCustomer);
 
         assertNotNull(response.getTransferContent());
         assertEquals("SMARTSTORAGE " + response.getCode(), response.getTransferContent());
@@ -290,7 +308,7 @@ class ReservationCreationTest {
         when(reservationRepository.existsOverlappingReservationForUnit(eq(10L), any(), any(), any())).thenReturn(false);
         when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        ReservationResponse response = service.createReservation(request);
+        ReservationResponse response = service.createReservation(request, testCustomer);
 
         assertEquals(LocalDate.of(2026, 11, 1), response.getStartDate());
         assertEquals(LocalDate.of(2027, 5, 1), response.getEndDateExclusive());
