@@ -16,10 +16,11 @@ public interface UnitTypeRepository extends JpaRepository<UnitType, Long> {
     boolean existsByCodeAndIdNot(String code, Long id);
 
     @Query("""
-        SELECT ut FROM UnitType ut
-        JOIN FacilityUnitTypePrice futp ON ut.id = futp.unitTypeId
-        WHERE futp.facilityId = :facilityId
+        SELECT DISTINCT ut FROM UnitType ut
+        LEFT JOIN FacilityUnitTypePrice futp ON ut.id = futp.unitTypeId AND futp.facilityId = :facilityId
+        WHERE futp.facilityId IS NOT NULL
           AND (:isActive IS NULL OR ut.isActive = :isActive)
+        ORDER BY ut.isActive DESC, ut.id ASC
     """)
     Page<UnitType> findByFacilityIdAndFilter(
             @Param("facilityId") Long facilityId,

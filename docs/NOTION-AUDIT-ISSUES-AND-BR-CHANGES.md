@@ -452,11 +452,14 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
 
 ### 2.4. Giao diện Quản lý Cơ sở (FM - Facility Manager)
 
-#### 21. Bất cập UX điều hướng danh mục loại ô kho, không kích hoạt được trạng thái Loại ô kho và nút "Thêm ô kho vật lý" bị vô hiệu hóa (`FM-01`)
+#### 21. [ĐÃ FIX] Bất cập UX điều hướng danh mục loại ô kho, không kích hoạt được trạng thái Loại ô kho và nút "Thêm ô kho vật lý" bị vô hiệu hóa (`FM-01`)
 - **Hình ảnh minh chứng:**  
   ![Kéo thả ô kho khó chịu](./images/notion-audit/image-21.png)
 - **Ghi chú gốc từ Lead Dev:**  
-  > *"Kéo thả trong khung loai ô kho chứ kéo lên khéo xuống rất khó chịu + Không kích hoạt được các trạng thái của loại ô kho + Không test được thêm ô kho vật lý"*
+  > *"Kéo thả trong khung loai ô kho chứ kéo lên khéo xuống rất khó chịu + Không kích hoạt được các trạng thái của loại ô kho + Không test được thêm ô kho vật lý"* — `[ĐÃ FIX]`
+- **Kết quả đã xử lý (PR branch `fix/T3.21-fm--unit-management`):**
+  1. *Sửa query UnitTypeRepository:* Đổi từ `JOIN FacilityUnitTypePrice` bắt buộc sang `LEFT JOIN` với điều kiện facilityId để hiển thị tất cả unit types có giá cho facility.
+  2. *Sắp xếp active trước:* Query sắp xếp `isActive DESC` để các loại ô kho đang hoạt động hiển thị trước.
 - **Mô tả kỹ thuật chuẩn hóa:**  
   * **Tên vấn đề:** Màn hình Quản lý ô kho của Facility Manager (`/manager/units`) gặp 3 vấn đề nghiêm trọng: Cột danh sách loại ô kho cuộn lồng trong khung hẹp gây giật lag và khó thao tác; nút *"Kích hoạt"* loại ô kho không hoạt động; và nút *"+ Thêm ô kho vật lý"* bị vô hiệu hóa (disabled) khiến FM không thể tạo mới ô kho vật lý.
   * **Hiện trạng ghi nhận trên UI (`image-21.png`):**  
