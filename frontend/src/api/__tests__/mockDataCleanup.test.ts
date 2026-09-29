@@ -48,6 +48,19 @@ describe('Mock Data Cleanup & Real Database API Audit', () => {
     expect(content).toContain('/reports/system/export');
   });
 
+  it('staff.ts không còn mock ca trực và mock-daily-tasks.json đã được xóa', () => {
+    const filePath = path.resolve(process.cwd(), 'src/api/staff.ts');
+    const content = fs.readFileSync(filePath, 'utf-8');
+    const mockPath = path.resolve(process.cwd(), 'src/mock/mock-daily-tasks.json');
+    expect(content).not.toContain('mock-daily-tasks.json');
+    expect(content).not.toContain('isMockEnabled');
+    expect(content).not.toContain('updateTaskStatusInSession');
+    expect(content).not.toContain('DAMAGED_UNIT');
+    expect(content).not.toContain('Math.random');
+    expect(content).toContain('/reports/staff/${staffId}/daily-tasks');
+    expect(fs.existsSync(mockPath)).toBe(false);
+  });
+
   it('customerApi.ts không còn fallback Storage Locker', () => {
     const filePath = path.resolve(process.cwd(), 'src/features/customer/api/customerApi.ts');
     const content = fs.readFileSync(filePath, 'utf-8');

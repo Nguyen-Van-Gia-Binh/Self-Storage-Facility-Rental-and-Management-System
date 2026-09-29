@@ -27,7 +27,8 @@ function isTodayAppointment(contract: CheckInContract): boolean {
 
 function isLateAppointment(contract: CheckInContract): boolean {
   const label = (contract.appointmentTime || '').toLowerCase();
-  return label.includes('quá hạn') || contract.graceDaysRemaining < 10;
+  const grace = contract.checkinGraceDays ?? 10;
+  return label.includes('quá hạn') || (contract.graceDaysRemaining >= 0 && contract.graceDaysRemaining < grace);
 }
 
 export const CheckInQueueList: React.FC<CheckInQueueListProps> = ({

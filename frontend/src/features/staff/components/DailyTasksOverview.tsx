@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { UrgentSlaLabel } from '@/components/UrgentSlaLabel';
 import { useNavigate } from 'react-router-dom';
 import {
   Clock,
@@ -108,7 +109,7 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({ tasks, o
               {tasks.openSupportRequests.filter((i) => i.priority === 'URGENT').length}
             </span>
             <span className="text-xs font-semibold px-2 py-0.5 rounded bg-rose-50 text-rose-700">
-              SLA 2h
+              <UrgentSlaLabel />
             </span>
           </div>
         </div>
@@ -494,7 +495,7 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({ tasks, o
                             {item.customerPhone && <span className="ml-1 text-slate-400">({item.customerPhone})</span>}
                           </span>
                         )}
-                        <span className="text-rose-600 font-medium">Hạn SLA: {item.slaDeadline || 'SLA 2h'}</span>
+                        <span className="text-rose-600 font-medium">Hạn SLA: {item.slaDeadline || <UrgentSlaLabel />}</span>
                         <span
                           className={`font-medium px-2 py-0.2 rounded text-[11px] ${
                             item.status === 'RESOLVED' || item.status === 'CLOSED'

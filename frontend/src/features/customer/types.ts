@@ -103,6 +103,7 @@ export interface RentedContract {
   monthlyRent: number;
   depositHeld: number;
   accessPin?: string; // Mã PIN mở cửa (chỉ cấp khi ACTIVE theo BR-ACC-01)
+  accessPinLength?: number;
   status: 'ACTIVE' | 'PENDING_CHECKIN' | 'EXPIRING_SOON' | 'OVERDUE' | 'PENDING_RETURN' | 'CLOSED' | 'TERMINATED';
   overdueDays?: number;
   overdueFee?: number;
@@ -197,6 +198,7 @@ export interface SupportTicket {
   assignedStaffName?: string;
   assignedStaffPhone?: string;
   resolutionNote?: string;
+  customerNotice?: string;
   resolvedAt?: string;
   autoCloseDeadline?: string;
   createdAt: string;

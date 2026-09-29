@@ -4,6 +4,15 @@ import { createPortal } from 'react-dom';
 import { X, Tag, Calendar, Building2, AlertCircle, Loader2 } from 'lucide-react';
 import type { FacilityListItem, CreateSurchargeRequest } from '@/types';
 
+function vietnamToday(): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+}
+
 interface SurchargeModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -19,7 +28,7 @@ export const SurchargeModal: React.FC<SurchargeModalProps> = ({
   onSubmit,
   isLoading = false,
 }) => {
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = vietnamToday();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -60,6 +69,8 @@ export const SurchargeModal: React.FC<SurchargeModalProps> = ({
 
     if (!formData.effectiveDate) {
       errs.effectiveDate = 'Vui lòng chọn ngày hiệu lực';
+    } else if (formData.effectiveDate < vietnamToday()) {
+      errs.effectiveDate = 'Ngày hiệu lực không được ở quá khứ';
     }
 
     setErrors(errs);
@@ -208,6 +219,7 @@ export const SurchargeModal: React.FC<SurchargeModalProps> = ({
               <input
                 type="date"
                 value={formData.effectiveDate}
+                min={todayStr}
                 onChange={(e) => setFormData({ ...formData, effectiveDate: e.target.value })}
                 className="w-full text-sm border border-slate-300 rounded-xl pl-10 pr-3.5 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
               />

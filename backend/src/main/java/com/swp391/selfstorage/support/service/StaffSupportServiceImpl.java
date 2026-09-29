@@ -145,6 +145,33 @@ public class StaffSupportServiceImpl implements StaffSupportService {
     }
 
     @Override
+    public SupportRequestDetailResponse markRelocationRequired(Long requestId, boolean required, UserPrincipal currentUser) {
+        SupportRequest ticket = supportRequestRepository.findById(requestId)
+                .orElseThrow(() -> new CustomException(ErrorCode.SUPPORT_REQUEST_NOT_FOUND));
+
+        if (currentUser.getRole() == UserRole.FACILITY_STAFF) {
+            if (ticket.getAssignedStaffId() != null && !ticket.getAssignedStaffId().equals(currentUser.getId())) {
+                throw new CustomException(ErrorCode.SUPPORT_REQUEST_NOT_ASSIGNED_TO_STAFF);
+            }
+        }
+
+        if (ticket.getCategory() != SupportCategory.UNIT_DAMAGE) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED, "Chỉ phiếu hư hỏng ô kho mới được đánh dấu cần di dời.");
+        }
+
+        if (ticket.getStatus() != SupportStatus.NEW
+                && ticket.getStatus() != SupportStatus.ASSIGNED
+                && ticket.getStatus() != SupportStatus.IN_PROGRESS) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED, "Phiếu sự cố không còn mở nên không đổi được cờ di dời.");
+        }
+
+        ticket.setRelocationRequired(required);
+        ticket.setUpdatedAt(OffsetDateTime.now());
+        supportRequestRepository.save(ticket);
+        return mapToDetailResponse(ticket);
+    }
+
+    @Override
     public SupportRequestDetailResponse resolveSupportRequest(Long requestId, ResolveSupportRequest request, UserPrincipal currentUser) {
         SupportRequest ticket = supportRequestRepository.findById(requestId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SUPPORT_REQUEST_NOT_FOUND));
@@ -407,6 +434,8 @@ public class StaffSupportServiceImpl implements StaffSupportService {
                 .resolutionAttachmentUrls(resolutionAttachmentUrls)
                 .canCancel(canCancel)
                 .canConfirm(canConfirm)
+                .relocationRequired(Boolean.TRUE.equals(ticket.getRelocationRequired()))
+                .customerNotice(ticket.getCustomerNotice())
                 .build();
     }
 
@@ -465,6 +494,8 @@ public class StaffSupportServiceImpl implements StaffSupportService {
                 .resolvedAt(ticket.getResolvedAt())
                 .createdAt(ticket.getCreatedAt())
                 .updatedAt(ticket.getUpdatedAt())
+                .relocationRequired(Boolean.TRUE.equals(ticket.getRelocationRequired()))
+                .customerNotice(ticket.getCustomerNotice())
                 .build();
     }
 }

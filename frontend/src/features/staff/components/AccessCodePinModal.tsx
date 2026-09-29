@@ -72,7 +72,7 @@ export const AccessCodePinModal: React.FC<AccessCodePinModalProps> = ({
             </div>
           </div>
 
-          {/* Hộp mã PIN 6 số lớn (BR-ACC-01) */}
+          {/* Hộp mã PIN theo độ dài chính sách (BR-ACC-01) */}
           <div className="text-center space-y-2">
             <div className="flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-600">
               <KeyRound className="w-4 h-4 text-brand-600" />
@@ -105,7 +105,7 @@ export const AccessCodePinModal: React.FC<AccessCodePinModalProps> = ({
             </div>
 
             <p className="text-[11px] text-slate-500 leading-relaxed max-w-sm mx-auto">
-              Mã PIN gồm 6 số duy nhất dùng để mở cổng chính cơ sở và cửa ô kho <strong className="text-slate-800">{contract.storageUnitCode}</strong>. Có hiệu lực ngay lập tức.
+              Mã PIN gồm {accessCode.replace(/\D/g, '').length} số duy nhất dùng để mở cổng chính cơ sở và cửa ô kho <strong className="text-slate-800">{contract.storageUnitCode}</strong>. Có hiệu lực ngay lập tức.
             </p>
           </div>
 

@@ -20,6 +20,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
+import { useActivePolicy } from '@/hooks/useActivePolicy';
 import {
   createCheckout,
   pollPaymentStatus,
@@ -31,6 +32,8 @@ import type { MoveInPassData } from '@/types';
 import { tokenStorage } from '@/utils/tokenStorage';
 
 export const PaymentPage: React.FC = () => {
+  const policy = useActivePolicy();
+  const holdHours = policy?.reservationHoldHours ?? 0;
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -80,8 +83,13 @@ export const PaymentPage: React.FC = () => {
   const [showPassModal, setShowPassModal] = useState(false);
   const [createdPass, setCreatedPass] = useState<MoveInPassData | null>(null);
 
-  // 48 giờ đếm ngược (BR-DEP-03)
-  const [secondsRemaining, setSecondsRemaining] = useState(172800);
+  const [secondsRemaining, setSecondsRemaining] = useState(0);
+
+  useEffect(() => {
+    if (holdHours > 0) {
+      setSecondsRemaining(holdHours * 3600);
+    }
+  }, [holdHours]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -163,7 +171,7 @@ export const PaymentPage: React.FC = () => {
             customerPhone,
             customerIdentity: customerIdCard,
             startDate,
-            checkInWindow: 'Trong vòng 48 giờ kể từ lúc cọc',
+            checkInWindow: holdHours > 0 ? `Giữ chỗ ${holdHours} giờ kể từ lúc đặt cọc` : 'Giữ chỗ theo chính sách đang hiệu lực',
             totalPaid: totalAmount,
           });
 
@@ -219,7 +227,7 @@ export const PaymentPage: React.FC = () => {
           customerPhone,
           customerIdentity: customerIdCard,
           startDate,
-          checkInWindow: 'Trong vòng 48 giờ kể từ lúc cọc',
+          checkInWindow: holdHours > 0 ? `Giữ chỗ ${holdHours} giờ kể từ lúc đặt cọc` : 'Giữ chỗ theo chính sách đang hiệu lực',
           totalPaid: totalAmount,
         });
 
@@ -290,7 +298,7 @@ export const PaymentPage: React.FC = () => {
               </div>
               <div>
                 <h4 className="text-xs sm:text-sm font-bold text-amber-950">
-                  Thời hạn bảo lưu giữ chỗ 48 giờ
+                  Thời hạn bảo lưu giữ chỗ {holdHours > 0 ? `${holdHours} giờ` : 'theo chính sách'}
                 </h4>
                 <p className="text-[11px] sm:text-xs text-amber-800">
                   Ô kho {unitNumber} đang được bảo lưu nguyên tử cho bạn. Vui lòng hoàn tất nộp cọc trước khi hết hạn.

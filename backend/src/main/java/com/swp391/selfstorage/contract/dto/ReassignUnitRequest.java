@@ -16,4 +16,8 @@ public class ReassignUnitRequest {
 
     @NotBlank(message = "Lý do đổi ô kho không được để trống")
     private String reason;
+
+    private Long supportRequestId;
+
+    private Boolean customerConsent;
 }

@@ -50,9 +50,10 @@ export const ChangePinModal: React.FC<ChangePinModalProps> = ({
   };
 
   const validate = (): boolean => {
-    const pinRegex = /^\d{4,6}$/;
+    const pinLength = contract.accessPinLength && contract.accessPinLength >= 4 ? contract.accessPinLength : 6;
+    const pinRegex = new RegExp(`^\\d{${pinLength}}$`);
     if (!pinRegex.test(newPin)) {
-      setError('Mã PIN bắt buộc phải gồm từ 4 đến 6 chữ số (0-9).');
+      setError(`Mã PIN bắt buộc phải gồm đúng ${pinLength} chữ số (0-9).`);
       return false;
     }
 
@@ -150,7 +151,7 @@ export const ChangePinModal: React.FC<ChangePinModalProps> = ({
           <div className="space-y-3">
             <div className="relative">
               <Input
-                label="Mã PIN mới (4 - 6 số)"
+                label={`Mã PIN mới (${contract.accessPinLength && contract.accessPinLength >= 4 ? contract.accessPinLength : 6} số)`}
                 type={showNewPin ? 'text' : 'password'}
                 placeholder="Ví dụ: 7892"
                 maxLength={6}

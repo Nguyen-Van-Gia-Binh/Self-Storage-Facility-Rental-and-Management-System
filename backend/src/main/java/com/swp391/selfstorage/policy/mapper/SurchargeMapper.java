@@ -32,6 +32,9 @@ public class SurchargeMapper {
         if (request.getIsActive() != null) {
             entity.setIsActive(request.getIsActive());
         }
+        if (request.getEffectiveDate() != null) {
+            entity.setEffectiveFrom(request.getEffectiveDate());
+        }
     }
 
     public SurchargeResponse toResponse(ExtraFeeType entity) {

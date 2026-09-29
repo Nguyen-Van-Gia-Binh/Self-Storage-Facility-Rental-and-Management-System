@@ -47,7 +47,7 @@ class StorageUnitServiceTest {
     @BeforeEach
     void setUp() {
         PolicyVersion policy = PolicyVersion.builder().id(1L).rentalBufferDays(15).reservationHoldHours(48).build();
-        lenient().when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(any()))
+        lenient().when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any()))
                 .thenReturn(Optional.of(policy));
         storageUnitService = new StorageUnitServiceImpl(
                 storageUnitRepository, unitTypeRepository, null, mapper, policyVersionRepository);

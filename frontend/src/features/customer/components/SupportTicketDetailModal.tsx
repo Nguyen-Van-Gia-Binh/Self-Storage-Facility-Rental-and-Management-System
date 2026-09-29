@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { UrgentSlaLabel } from '@/components/UrgentSlaLabel';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { 
@@ -122,7 +123,7 @@ export const SupportTicketDetailModal: React.FC<SupportTicketDetailModalProps> =
                 {ticket.isUrgent && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-700 border border-rose-200">
                     <AlertTriangle className="w-3 h-3" />
-                    SLA Xử lý 2 Giờ
+                    <UrgentSlaLabel lead="SLA xử lý" />
                   </span>
                 )}
               </div>
@@ -254,6 +255,15 @@ export const SupportTicketDetailModal: React.FC<SupportTicketDetailModalProps> =
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {ticket.customerNotice && (
+            <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-950 leading-relaxed">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700 mb-1">
+                Thông báo từ cơ sở
+              </p>
+              {ticket.customerNotice}
             </div>
           )}
 

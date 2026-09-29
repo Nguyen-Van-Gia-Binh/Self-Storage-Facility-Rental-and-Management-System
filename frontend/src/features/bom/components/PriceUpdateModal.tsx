@@ -160,7 +160,7 @@ export const PriceUpdateModal: React.FC<PriceUpdateModalProps> = ({
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
-              Đơn giá 1 m² (VND/m²/tháng) <span className="text-rose-500">*</span>
+              Đơn giá 1 m² (VNĐ/m²/tháng) <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
               <input
@@ -189,10 +189,10 @@ export const PriceUpdateModal: React.FC<PriceUpdateModalProps> = ({
           </div>
 
           <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900">
-            <p className="font-semibold mb-0.5">Giá thuê niêm yết / tháng (xem trước)</p>
+            <p className="font-semibold mb-0.5">Giá thuê tháng = đơn giá × diện tích</p>
             <p>
               {previewMonthly > 0
-                ? `${previewMonthly.toLocaleString('vi-VN')} VND / tháng`
+                ? `${previewMonthly.toLocaleString('vi-VN')} VNĐ / tháng`
                 : '—'}{' '}
               <span className="text-amber-700/80">
                 (= đơn giá × {unitType.areaM2} m², làm tròn 1.000)

@@ -23,10 +23,12 @@ import { ContractKpiCards } from '../components/ContractKpiCards';
 import { ReassignUnitModal } from '../components/ReassignUnitModal';
 import { ContractFinancialModal } from '../components/ContractFinancialModal';
 import { SettlementApprovalModal } from '../components/SettlementApprovalModal';
+import { useActivePolicy } from '@/hooks/useActivePolicy';
 
 type TabKey = 'ACTIVE' | 'PENDING_CHECK_IN' | 'RETURN' | 'OVERDUE';
 
 export const ContractsHubPage: React.FC = () => {
+  const policy = useActivePolicy();
   const [activeTab, setActiveTab] = useState<TabKey>('ACTIVE');
   const [facilities, setFacilities] = useState<Array<{ id: number; name: string }>>([
     { id: 0, name: 'Tất cả cơ sở' },
@@ -195,6 +197,7 @@ export const ContractsHubPage: React.FC = () => {
       <ContractKpiCards
         kpi={kpiData}
         activeTab={activeTab}
+        checkinGraceDays={policy?.checkinGraceDays}
         onSelectTab={(tab) => setActiveTab(tab)}
       />
 
@@ -563,6 +566,7 @@ export const ContractsHubPage: React.FC = () => {
                               {contract.assignedStaffId ? 'Điều chuyển' : 'Điều phối'}
                             </Link>
 
+                            {contract.relocationEligible && (
                             <button
                               type="button"
                               onClick={() => {
@@ -570,16 +574,16 @@ export const ContractsHubPage: React.FC = () => {
                                 setReassignModalOpen(true);
                               }}
                               className="px-2.5 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors inline-flex items-center gap-1"
-                              title="Đổi ô kho trước khi nhận nếu phát sinh sự cố (BR-AVL-05)"
+                              title="Đổi ô cùng loại khi ô đã chọn có phiếu hư hỏng đang mở (BR-AVL-05)"
                             >
                               <RefreshCw className="w-3 h-3" />
                               Đổi ô kho
                             </button>
+                            )}
                           </>
                         )}
 
-                        {/* Nút Đổi ô kho khi ACTIVE nếu cần xử lý ngoại lệ */}
-                        {activeTab === 'ACTIVE' && (
+                        {activeTab === 'ACTIVE' && contract.relocationEligible && (
                           <button
                             type="button"
                             onClick={() => {
@@ -587,7 +591,7 @@ export const ContractsHubPage: React.FC = () => {
                               setReassignModalOpen(true);
                             }}
                             className="px-2.5 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors inline-flex items-center gap-1"
-                            title="Đổi ô kho ngoại lệ khi bảo trì hoặc phát sinh sự cố"
+                            title="Đổi ô cùng loại khi phiếu hư hỏng được đánh dấu cần di dời (BR-SUP-02)"
                           >
                             <RefreshCw className="w-3 h-3" />
                             Đổi ô

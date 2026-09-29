@@ -4,6 +4,7 @@ import com.swp391.selfstorage.auth.service.UserPrincipal;
 import com.swp391.selfstorage.common.dto.ApiResponse;
 import com.swp391.selfstorage.common.dto.PageResponse;
 import com.swp391.selfstorage.support.dto.AssignStaffRequest;
+import com.swp391.selfstorage.support.dto.RelocationRequiredRequest;
 import com.swp391.selfstorage.support.dto.ResolveSupportRequest;
 import com.swp391.selfstorage.support.dto.StaffWorkloadResponse;
 import com.swp391.selfstorage.support.dto.SupportRequestDetailResponse;
@@ -56,6 +57,19 @@ public class StaffSupportController {
     ) {
         SupportRequestDetailResponse response = staffSupportService.startInProgress(id, currentUser);
         return ResponseEntity.ok(ApiResponse.success(response, "Chuyển trạng thái yêu cầu sang đang xử lý"));
+    }
+
+    @PatchMapping("/support-requests/{id}/relocation-required")
+    @PreAuthorize("hasRole('FACILITY_STAFF') or hasRole('FACILITY_MANAGER') or hasRole('SYSTEM_ADMINISTRATOR') or hasRole('ADMIN')")
+    @Operation(summary = "Đánh dấu phiếu hư hỏng ô kho cần di dời khi không sửa tại chỗ được (US-FS-05.2 AC-3)")
+    public ResponseEntity<ApiResponse<SupportRequestDetailResponse>> markRelocationRequired(
+            @PathVariable Long id,
+            @Valid @RequestBody RelocationRequiredRequest request,
+            @AuthenticationPrincipal UserPrincipal currentUser
+    ) {
+        SupportRequestDetailResponse response = staffSupportService.markRelocationRequired(
+                id, Boolean.TRUE.equals(request.getRequired()), currentUser);
+        return ResponseEntity.ok(ApiResponse.success(response, "Đã cập nhật nhu cầu di dời ô kho"));
     }
 
     @PatchMapping("/support-requests/{id}/resolve")

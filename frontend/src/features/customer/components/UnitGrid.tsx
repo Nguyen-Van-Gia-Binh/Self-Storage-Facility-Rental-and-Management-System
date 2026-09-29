@@ -16,6 +16,7 @@ import {
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { formatVND } from '../utils/pricing';
+import { useActivePolicy } from '@/hooks/useActivePolicy';
 
 interface UnitGridProps {
   units: StorageUnit[];
@@ -43,11 +44,11 @@ const statusConfigMap: Record<UnitStatus, {
     hint: 'Nhấp để chọn ô kho này',
   },
   RESERVED: {
-    label: 'Đang giữ 48h',
+    label: 'Đang giữ chỗ',
     badgeVariant: 'reserved',
     cardClass: 'bg-sky-50/60 border-sky-200 text-sky-900 cursor-not-allowed opacity-80',
     isSelectable: false,
-    hint: 'Ô kho đang được giữ chỗ trực tuyến (tối đa 48 giờ)',
+    hint: 'Ô kho đang được giữ chỗ trực tuyến theo thời hạn chính sách',
   },
   OCCUPIED: {
     label: 'Đang thuê',
@@ -88,6 +89,8 @@ export const UnitGrid: React.FC<UnitGridProps> = ({
   onConfirmSelection,
   facilityName,
 }) => {
+  const policy = useActivePolicy();
+  const holdLabel = policy?.reservationHoldHours ? `Đang giữ ${policy.reservationHoldHours} giờ` : 'Đang giữ chỗ';
   // 1. Tầng hiện tại (Floor Selector)
   const availableFloors = useMemo(() => {
     const floors = Array.from(new Set(units.map((u) => u.floor)))
@@ -280,7 +283,7 @@ export const UnitGrid: React.FC<UnitGridProps> = ({
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-xs bg-sky-400"></span>
-            <span className="text-slate-500">Đang giữ 48h</span>
+            <span className="text-slate-500">{holdLabel}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-xs bg-slate-400"></span>

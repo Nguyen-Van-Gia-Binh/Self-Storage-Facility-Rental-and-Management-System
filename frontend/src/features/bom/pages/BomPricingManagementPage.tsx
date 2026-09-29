@@ -6,7 +6,6 @@ import {
   ShieldCheck,
   CheckCircle2,
   AlertCircle,
-  History,
 } from 'lucide-react';
 import { fetchFacilities, fetchUnitTypes } from '@/api/facility';
 import {
@@ -14,9 +13,10 @@ import {
   fetchSurcharges,
   createSurcharge,
   fetchActivePolicy,
-  fetchPriceHistory,
+  fetchPolicyVersions,
+  nextScheduledPolicy,
 } from '@/api/pricing';
-import type { PriceVersionItem } from '@/api/pricing';
+import type { PolicyVersionListItem } from '@/api/pricing';
 import type {
   FacilityListItem,
   UnitTypeCatalog,
@@ -26,12 +26,11 @@ import type {
 } from '@/types';
 import { FacilityPriceTable } from '../components/FacilityPriceTable';
 import { PriceUpdateModal } from '../components/PriceUpdateModal';
-import { PriceHistoryTable } from '../components/PriceHistoryTable';
 import { SurchargeTable } from '../components/SurchargeTable';
 import { SurchargeModal } from '../components/SurchargeModal';
 import { PolicySummaryCard } from '../components/PolicySummaryCard';
 
-type PricingTab = 'PRICING' | 'HISTORY' | 'SURCHARGES' | 'POLICIES';
+type PricingTab = 'PRICING' | 'SURCHARGES' | 'POLICIES';
 
 export const BomPricingManagementPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<PricingTab>('PRICING');
@@ -45,11 +44,9 @@ export const BomPricingManagementPage: React.FC = () => {
   const [surcharges, setSurcharges] = useState<SurchargeItem[]>([]);
   const [isLoadingSurcharges, setIsLoadingSurcharges] = useState(false);
   const [activePolicy, setActivePolicy] = useState<ActivePolicyInfo | null>(null);
+  const [policyVersions, setPolicyVersions] = useState<PolicyVersionListItem[]>([]);
+  const [scheduledPolicy, setScheduledPolicy] = useState<{ version: string; effectiveDate: string } | null>(null);
   const [isLoadingPolicy, setIsLoadingPolicy] = useState(false);
-
-  const [priceHistory, setPriceHistory] = useState<PriceVersionItem[]>([]);
-  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-  const [historyUnitTypeFilter, setHistoryUnitTypeFilter] = useState<number | 'ALL'>('ALL');
 
   const [priceModalUnitType, setPriceModalUnitType] = useState<UnitTypeCatalog | null>(null);
   const [isUpdatingPrice, setIsUpdatingPrice] = useState(false);
@@ -134,10 +131,15 @@ export const BomPricingManagementPage: React.FC = () => {
         });
     } else if (activeTab === 'POLICIES') {
       setIsLoadingPolicy(true);
-      fetchActivePolicy()
-        .then((data) => {
+      Promise.all([
+        fetchActivePolicy(),
+        fetchPolicyVersions().catch(() => [] as PolicyVersionListItem[]),
+      ])
+        .then(([data, versions]) => {
           if (!ignore) {
             setActivePolicy(data);
+            setPolicyVersions(versions);
+            setScheduledPolicy(nextScheduledPolicy(versions));
             setIsLoadingPolicy(false);
           }
         })
@@ -150,30 +152,6 @@ export const BomPricingManagementPage: React.FC = () => {
       ignore = true;
     };
   }, [activeTab]);
-
-  useEffect(() => {
-    if (activeTab !== 'HISTORY' || !selectedFacilityId) return;
-    let ignore = false;
-    setIsLoadingHistory(true);
-    const unitTypeId = historyUnitTypeFilter === 'ALL' ? undefined : historyUnitTypeFilter;
-    fetchPriceHistory(selectedFacilityId, unitTypeId)
-      .then((data) => {
-        if (!ignore) {
-          setPriceHistory(data);
-          setIsLoadingHistory(false);
-        }
-      })
-      .catch((err) => {
-        if (!ignore) {
-          setPriceHistory([]);
-          setIsLoadingHistory(false);
-          showToast(err instanceof Error ? err.message : 'Lỗi tải lịch sử giá', 'error');
-        }
-      });
-    return () => {
-      ignore = true;
-    };
-  }, [activeTab, selectedFacilityId, historyUnitTypeFilter]);
 
   const handleConfirmPriceUpdate = async (pricePerM2: number, effectiveDate: string) => {
     if (!priceModalUnitType) return;
@@ -193,13 +171,6 @@ export const BomPricingManagementPage: React.FC = () => {
 
       const refreshed = await fetchUnitTypes(selectedFacilityId);
       setUnitTypes(refreshed);
-      if (activeTab === 'HISTORY') {
-        const hist = await fetchPriceHistory(
-          selectedFacilityId,
-          historyUnitTypeFilter === 'ALL' ? undefined : historyUnitTypeFilter
-        );
-        setPriceHistory(hist);
-      }
     } catch (err: unknown) {
       const errorObj = err as { message?: string };
       showToast(errorObj.message || 'Lỗi khi cập nhật giá', 'error');
@@ -230,7 +201,6 @@ export const BomPricingManagementPage: React.FC = () => {
   const selectFacility = (id: number) => {
     setIsLoadingUnitTypes(true);
     setSelectedFacilityId(id);
-    setHistoryUnitTypeFilter('ALL');
   };
 
   return (
@@ -280,17 +250,6 @@ export const BomPricingManagementPage: React.FC = () => {
             <span>Khung giá thuê ô kho</span>
           </button>
           <button
-            onClick={() => setActiveTab('HISTORY')}
-            className={`flex items-center space-x-1.5 px-3 py-2 rounded-lg transition-all ${
-              activeTab === 'HISTORY'
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <History className="w-4 h-4 text-violet-500" />
-            <span>Lịch sử giá</span>
-          </button>
-          <button
             onClick={() => setActiveTab('SURCHARGES')}
             className={`flex items-center space-x-1.5 px-3 py-2 rounded-lg transition-all ${
               activeTab === 'SURCHARGES'
@@ -326,19 +285,6 @@ export const BomPricingManagementPage: React.FC = () => {
         />
       )}
 
-      {activeTab === 'HISTORY' && (
-        <PriceHistoryTable
-          facilities={facilities}
-          selectedFacilityId={selectedFacilityId}
-          onSelectFacility={selectFacility}
-          unitTypes={unitTypes}
-          filterUnitTypeId={historyUnitTypeFilter}
-          onFilterUnitType={setHistoryUnitTypeFilter}
-          versions={priceHistory}
-          isLoading={isLoadingFacilities || isLoadingHistory}
-        />
-      )}
-
       {activeTab === 'SURCHARGES' && (
         <SurchargeTable
           surcharges={surcharges}
@@ -348,7 +294,12 @@ export const BomPricingManagementPage: React.FC = () => {
       )}
 
       {activeTab === 'POLICIES' && (
-        <PolicySummaryCard policy={activePolicy} isLoading={isLoadingPolicy} />
+        <PolicySummaryCard
+          policy={activePolicy}
+          scheduledPolicy={scheduledPolicy}
+          versions={policyVersions}
+          isLoading={isLoadingPolicy}
+        />
       )}
 
       {priceModalUnitType && (

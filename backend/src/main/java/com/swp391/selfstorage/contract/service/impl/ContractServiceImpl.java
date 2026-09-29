@@ -20,10 +20,16 @@ import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
 import com.swp391.selfstorage.unit.repository.UnitTypeRepository;
 import com.swp391.selfstorage.support.entity.AssignmentTaskType;
 import com.swp391.selfstorage.support.entity.StaffDailyAssignment;
+import com.swp391.selfstorage.support.entity.SupportCategory;
+import com.swp391.selfstorage.support.entity.SupportRequest;
+import com.swp391.selfstorage.support.entity.SupportStatus;
 import com.swp391.selfstorage.support.repository.StaffDailyAssignmentRepository;
+import com.swp391.selfstorage.support.repository.SupportRequestRepository;
 import com.swp391.selfstorage.policy.entity.PolicyVersion;
 import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
+import com.swp391.selfstorage.policy.service.PolicyNumbers;
 import com.swp391.selfstorage.user.entity.UserRole;
+import com.swp391.selfstorage.user.service.AuditLogService;
 import com.swp391.selfstorage.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +45,11 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -71,6 +81,15 @@ public class ContractServiceImpl implements ContractService {
         @Autowired(required = false)
         private PolicyVersionRepository policyVersionRepository;
 
+        @Autowired(required = false)
+        private SupportRequestRepository supportRequestRepository;
+
+        @Autowired(required = false)
+        private AuditLogService auditLogService;
+
+        private static final List<SupportStatus> OPEN_UNIT_DAMAGE = List.of(
+                        SupportStatus.NEW, SupportStatus.ASSIGNED, SupportStatus.IN_PROGRESS);
+
         @Override
         @Transactional
         public ContractResponse createFromReservation(Long reservationId) {
@@ -85,9 +104,19 @@ public class ContractServiceImpl implements ContractService {
                 String code = "CTR-" + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
                                 + "-" + ThreadLocalRandom.current().nextInt(1000, 9999);
 
+                Long policyVersionId = rsv.getPolicyVersionId() != null ? rsv.getPolicyVersionId() : 1L;
+                PolicyVersion lockedPolicy = policyVersionRepository != null
+                                ? policyVersionRepository.findById(policyVersionId).orElse(null)
+                                : null;
+                int checkinGraceDays = lockedPolicy != null && lockedPolicy.getCheckinGraceDays() != null
+                                ? lockedPolicy.getCheckinGraceDays()
+                                : 10;
+                int accessPinLength = lockedPolicy != null && lockedPolicy.getAccessPinLength() != null
+                                ? lockedPolicy.getAccessPinLength()
+                                : 6;
                 String snapshot = String.format(
-                                "{\"policyVersionId\":%d,\"checkinGraceDays\":10,\"accessPinLength\":6}",
-                                rsv.getPolicyVersionId() != null ? rsv.getPolicyVersionId() : 1);
+                                "{\"policyVersionId\":%d,\"checkinGraceDays\":%d,\"accessPinLength\":%d}",
+                                policyVersionId, checkinGraceDays, accessPinLength);
 
                 RentalContract contract = RentalContract.builder()
                                 .code(code)
@@ -105,7 +134,7 @@ public class ContractServiceImpl implements ContractService {
                                 .depositBalance(rsv.getDepositAmount())
                                 .status(ContractStatus.PENDING_CHECK_IN)
                                 .policySnapshot(snapshot)
-                                .policyVersionId(rsv.getPolicyVersionId() != null ? rsv.getPolicyVersionId() : 1L)
+                                .policyVersionId(policyVersionId)
                                 .build();
 
                 return toResponse(contractRepository.save(contract));
@@ -136,7 +165,7 @@ public class ContractServiceImpl implements ContractService {
                 if (contract.getStatus() != ContractStatus.PENDING_CHECK_IN)
                         throw new CustomException(ErrorCode.CONTRACT_NOT_PENDING_CHECKIN);
 
-                String pin = generateUniquePin();
+                String pin = generateUniquePin(PolicyNumbers.snapshotInt(contract.getPolicySnapshot(), "accessPinLength", 6));
                 contract.setAccessCode(pin);
                 contract.setStatus(ContractStatus.ACTIVE);
                 contract.setCheckinDate(request.getCheckinDate());
@@ -249,6 +278,7 @@ public class ContractServiceImpl implements ContractService {
                 LocalDate now = LocalDate.now();
                 LocalDate threshold = now.plusDays(7);
                 OverduePreviewRates overdueRates = loadOverduePreviewRates();
+                Map<Long, SupportRequest> relocationTickets = findRelocationTickets(page.getContent());
 
                 List<ContractSummaryResponse> content = page.getContent().stream().map(c -> {
                         boolean nearExp = c.getStatus() == ContractStatus.ACTIVE
@@ -366,6 +396,7 @@ public class ContractServiceImpl implements ContractService {
                                         .unitTypeName(unitName)
                                         .startDate(c.getStartDate())
                                         .endDateExclusive(c.getEndDateExclusive())
+                                        .checkinGraceDays(PolicyNumbers.snapshotInt(c.getPolicySnapshot(), "checkinGraceDays", 10))
                                         .rentalMonths(c.getRentalMonths())
                                         .monthlyPrice(c.getMonthlyPrice())
                                         .depositAmount(c.getDepositAmount())
@@ -379,6 +410,10 @@ public class ContractServiceImpl implements ContractService {
                                         .isInspected(isInspected)
                                         .damageCost(damageCost)
                                         .damageNotes(damageNotes)
+                                        .relocationEligible(relocationTickets.get(c.getId()) != null)
+                                        .openSupportRequestId(relocationTickets.containsKey(c.getId())
+                                                        ? relocationTickets.get(c.getId()).getId()
+                                                        : null)
                                         .build();
                 }).toList();
 
@@ -459,6 +494,39 @@ public class ContractServiceImpl implements ContractService {
                                         "Chỉ có thể đổi ô kho cho hợp đồng đang chờ nhận kho hoặc đang hoạt động.");
                 }
 
+                if (request.getSupportRequestId() == null) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                                        "Đổi ô chỉ thực hiện khi có phiếu hư hỏng ô kho đang mở.");
+                }
+                if (supportRequestRepository == null) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Không xác minh được phiếu sự cố.");
+                }
+
+                SupportRequest ticket = supportRequestRepository.findById(request.getSupportRequestId())
+                                .orElseThrow(() -> new CustomException(ErrorCode.VALIDATION_FAILED,
+                                                "Không tìm thấy phiếu sự cố."));
+                if (ticket.getCategory() != SupportCategory.UNIT_DAMAGE) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                                        "Chỉ phiếu hư hỏng ô kho mới được dùng để đổi ô.");
+                }
+                if (!OPEN_UNIT_DAMAGE.contains(ticket.getStatus())) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Phiếu sự cố không còn mở.");
+                }
+                if (!ticketMatchesCurrentUnit(ticket, contract)) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                                        "Phiếu sự cố không gắn với ô kho hiện tại của hợp đồng.");
+                }
+                if (contract.getStatus() == ContractStatus.PENDING_CHECK_IN
+                                && !Boolean.TRUE.equals(request.getCustomerConsent())) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                                        "Cần ghi nhận khách đã đồng ý đổi ô trước khi nhận kho.");
+                }
+                if (contract.getStatus() == ContractStatus.ACTIVE
+                                && !Boolean.TRUE.equals(ticket.getRelocationRequired())) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                                        "Phiếu hư hỏng chưa được đánh dấu cần di dời.");
+                }
+
                 if (contract.getStorageUnitId().equals(request.getNewStorageUnitId())) {
                         throw new CustomException(ErrorCode.VALIDATION_FAILED, "Ô kho mới trùng với ô kho hiện tại.");
                 }
@@ -469,31 +537,56 @@ public class ContractServiceImpl implements ContractService {
                 if (!newUnit.getFacilityId().equals(contract.getFacilityId())) {
                         throw new CustomException(ErrorCode.VALIDATION_FAILED, "Ô kho mới phải thuộc cùng cơ sở với hợp đồng.");
                 }
-
+                if (contract.getUnitTypeId() == null || newUnit.getUnitTypeId() == null
+                                || !contract.getUnitTypeId().equals(newUnit.getUnitTypeId())) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Chỉ được đổi sang ô cùng Unit Type.");
+                }
                 if (newUnit.getStatus() != StorageUnitStatus.AVAILABLE) {
                         throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, "Ô kho mới hiện không có sẵn (trạng thái: " + newUnit.getStatus() + ").");
                 }
 
-                // Giải phóng ô kho cũ về AVAILABLE
-                storageUnitRepository.findById(contract.getStorageUnitId()).ifPresent(oldUnit -> {
-                        oldUnit.setStatus(StorageUnitStatus.AVAILABLE);
-                        storageUnitRepository.save(oldUnit);
-                });
+                Long oldUnitId = contract.getStorageUnitId();
+                StorageUnit oldUnit = storageUnitRepository.findById(oldUnitId)
+                                .orElseThrow(() -> new CustomException(ErrorCode.STORAGE_UNIT_NOT_FOUND, "Không tìm thấy ô kho hiện tại."));
+                String oldCode = oldUnit.getCode() != null ? oldUnit.getCode() : ("U-" + oldUnitId);
 
-                // Cập nhật trạng thái ô kho mới tương ứng trạng thái hợp đồng
+                if (ticket.getStorageUnitId() == null) {
+                        ticket.setStorageUnitId(oldUnitId);
+                }
+                oldUnit.setStatus(StorageUnitStatus.MAINTENANCE);
+                storageUnitRepository.save(oldUnit);
+
                 if (contract.getStatus() == ContractStatus.PENDING_CHECK_IN) {
                         newUnit.setStatus(StorageUnitStatus.RESERVED);
                 } else {
                         newUnit.setStatus(StorageUnitStatus.OCCUPIED);
+                        ticket.setRelocationRequired(Boolean.FALSE);
                 }
                 storageUnitRepository.save(newUnit);
 
-                // Cập nhật hợp đồng
+                long monthlyPriceSnapshot = contract.getMonthlyPrice();
+                long depositSnapshot = contract.getDepositAmount();
                 contract.setStorageUnitId(newUnit.getId());
+                contract.setRelocationSupportRequestId(ticket.getId());
+                contract.setMonthlyPrice(monthlyPriceSnapshot);
+                contract.setDepositAmount(depositSnapshot);
                 contractRepository.save(contract);
 
-                log.info("Manager {} đã đổi ô kho cho hợp đồng {} sang ô kho {}. Lý do: {}",
-                                managerId, contract.getCode(), newUnit.getCode(), request.getReason());
+                String notice = "Cơ sở đã đổi ô kho từ " + oldCode + " sang " + newUnit.getCode()
+                                + ". Giá thuê và tiền cọc giữ nguyên.";
+                if (notice.length() > 500) {
+                        notice = notice.substring(0, 500);
+                }
+                ticket.setCustomerNotice(notice);
+                supportRequestRepository.save(ticket);
+
+                if (auditLogService != null) {
+                        auditLogService.logAction(managerId, "REASSIGN_UNIT", "RENTAL_CONTRACT", contract.getId(),
+                                        "unit:" + oldUnitId, "unit:" + newUnit.getId() + ",ticket:" + ticket.getId());
+                }
+
+                log.info("Manager {} đã đổi ô kho cho hợp đồng {} từ {} sang {} theo phiếu {}. Lý do: {}",
+                                managerId, contract.getCode(), oldCode, newUnit.getCode(), ticket.getCode(), request.getReason());
 
                 String storageCode = newUnit.getCode();
                 String unitName = (unitTypeRepository != null && contract.getUnitTypeId() != null)
@@ -542,13 +635,78 @@ public class ContractServiceImpl implements ContractService {
                                 .unitTypeName(unitName)
                                 .startDate(contract.getStartDate())
                                 .endDateExclusive(contract.getEndDateExclusive())
+                                .checkinGraceDays(PolicyNumbers.snapshotInt(contract.getPolicySnapshot(), "checkinGraceDays", 10))
                                 .rentalMonths(contract.getRentalMonths())
                                 .monthlyPrice(contract.getMonthlyPrice())
                                 .depositAmount(contract.getDepositAmount())
                                 .depositBalance(contract.getDepositBalance())
                                 .status(contract.getStatus())
                                 .nearExpiration(nearExp)
+                                .relocationEligible(false)
+                                .openSupportRequestId(null)
                                 .build();
+        }
+
+        private Map<Long, SupportRequest> findRelocationTickets(List<RentalContract> contracts) {
+                Map<Long, SupportRequest> result = new HashMap<>();
+                if (supportRequestRepository == null || contracts == null || contracts.isEmpty()) {
+                        return result;
+                }
+                List<Long> contractIds = contracts.stream().map(RentalContract::getId).filter(Objects::nonNull).distinct().toList();
+                List<Long> unitIds = contracts.stream().map(RentalContract::getStorageUnitId).filter(Objects::nonNull).distinct().toList();
+                Map<Long, SupportRequest> byId = new LinkedHashMap<>();
+                if (!contractIds.isEmpty()) {
+                        for (SupportRequest ticket : supportRequestRepository.findByContractIdInAndCategoryAndStatusIn(
+                                        contractIds, SupportCategory.UNIT_DAMAGE, OPEN_UNIT_DAMAGE)) {
+                                byId.putIfAbsent(ticket.getId(), ticket);
+                        }
+                }
+                if (!unitIds.isEmpty()) {
+                        for (SupportRequest ticket : supportRequestRepository.findByStorageUnitIdInAndCategoryAndStatusIn(
+                                        unitIds, SupportCategory.UNIT_DAMAGE, OPEN_UNIT_DAMAGE)) {
+                                byId.putIfAbsent(ticket.getId(), ticket);
+                        }
+                }
+                for (RentalContract contract : contracts) {
+                        if (contract.getStatus() != ContractStatus.PENDING_CHECK_IN
+                                        && contract.getStatus() != ContractStatus.ACTIVE) {
+                                continue;
+                        }
+                        SupportRequest best = null;
+                        for (SupportRequest ticket : byId.values()) {
+                                if (!ticketMatchesCurrentUnit(ticket, contract)) {
+                                        continue;
+                                }
+                                if (contract.getStatus() == ContractStatus.ACTIVE
+                                                && !Boolean.TRUE.equals(ticket.getRelocationRequired())) {
+                                        continue;
+                                }
+                                if (best == null || isNewerTicket(ticket, best)) {
+                                        best = ticket;
+                                }
+                        }
+                        if (best != null && contract.getId() != null) {
+                                result.put(contract.getId(), best);
+                        }
+                }
+                return result;
+        }
+
+        private static boolean ticketMatchesCurrentUnit(SupportRequest ticket, RentalContract contract) {
+                if (ticket.getStorageUnitId() != null) {
+                        return ticket.getStorageUnitId().equals(contract.getStorageUnitId());
+                }
+                return ticket.getContractId() != null && ticket.getContractId().equals(contract.getId());
+        }
+
+        private static boolean isNewerTicket(SupportRequest candidate, SupportRequest current) {
+                if (candidate.getCreatedAt() == null) {
+                        return false;
+                }
+                if (current.getCreatedAt() == null) {
+                        return true;
+                }
+                return candidate.getCreatedAt().isAfter(current.getCreatedAt());
         }
 
         // ==========================================
@@ -722,8 +880,9 @@ public class ContractServiceImpl implements ContractService {
                         });
                 }
 
+                long earlyRentRefund = earlyRentRefund(contract, request.getReturnDate());
                 long estimatedRefund = Math.max(0, contract.getDepositBalance() - request.getDamageCost()
-                                - contract.getOverdueFeeAccrued());
+                                - contract.getOverdueFeeAccrued()) + earlyRentRefund;
 
                 return ReturnInspectionResponse.builder()
                                 .id(contract.getId())
@@ -763,8 +922,10 @@ public class ContractServiceImpl implements ContractService {
                 long overdue = contract.getOverdueFeeAccrued();
 
                 long totalDeduction = damage + overdue + totalUnpaid;
-                long refundAmount = Math.max(0, deposit - totalDeduction);
-                long payableAmount = Math.max(0, totalDeduction - deposit);
+                long earlyRentRefund = earlyRentRefund(contract, contract.getReturnDate());
+                long net = totalDeduction - deposit - earlyRentRefund;
+                long refundAmount = Math.max(0, -net);
+                long payableAmount = Math.max(0, net);
 
                 return SettlementPreviewResponse.builder()
                                 .contractId(contract.getId())
@@ -815,9 +976,10 @@ public class ContractServiceImpl implements ContractService {
                 long damage = returnReq.getDamageCost();
                 long overdue = contract.getOverdueFeeAccrued();
                 long totalDeduction = damage + overdue + totalUnpaid;
-
-                long refundAmount = Math.max(0, deposit - totalDeduction);
-                long payableAmount = Math.max(0, totalDeduction - deposit);
+                long earlyRentRefund = earlyRentRefund(contract, contract.getReturnDate());
+                long net = totalDeduction - deposit - earlyRentRefund;
+                long refundAmount = Math.max(0, -net);
+                long payableAmount = Math.max(0, net);
 
                 // BR-RET-04: còn phần thiếu thì giữ hợp đồng mở và chờ thanh toán SETTLEMENT.
                 if (payableAmount > 0) {
@@ -936,7 +1098,8 @@ public class ContractServiceImpl implements ContractService {
                                 .payableAmount(payableAmount)
                                 .settledAt(returnReq.getSettledAt())
                                 .message(refundAmount > 0
-                                                ? "Phê duyệt quyết toán và hoàn cọc thành công"
+                                                ? "Phê duyệt quyết toán và hoàn cọc thành công. Hoàn trong "
+                                                                + refundWorkingDays(contract) + " ngày làm việc"
                                                 : "Đã đóng hợp đồng sau khi khách nộp đủ phần thiếu")
                                 .build();
         }
@@ -1009,10 +1172,39 @@ public class ContractServiceImpl implements ContractService {
                 return toResponse(contract);
         }
 
-        /** BR-ACC-01: PIN 6 chu so unique toan he thong */
-        private String generateUniquePin() {
+        private int refundWorkingDays(RentalContract contract) {
+                if (policyVersionRepository == null || contract.getPolicyVersionId() == null) {
+                        return 7;
+                }
+                return policyVersionRepository.findById(contract.getPolicyVersionId())
+                                .map(PolicyVersion::getReturnRefundWorkingDays)
+                                .filter(days -> days != null && days >= 0)
+                                .orElse(7);
+        }
+
+        private long earlyRentRefund(RentalContract contract, LocalDate returnDate) {
+                if (contract == null || returnDate == null || contract.getEndDateExclusive() == null
+                                || !returnDate.isBefore(contract.getEndDateExclusive())) {
+                        return 0L;
+                }
+                PolicyVersion policy = null;
+                if (policyVersionRepository != null && contract.getPolicyVersionId() != null) {
+                        policy = policyVersionRepository.findById(contract.getPolicyVersionId()).orElse(null);
+                }
+                if (policy == null || policy.getReturnEarlyRefundRate() == null) {
+                        return 0L;
+                }
+                long unusedDays = java.time.temporal.ChronoUnit.DAYS.between(returnDate, contract.getEndDateExclusive());
+                long unusedRent = PolicyNumbers.dailyRent(contract.getMonthlyPrice(), policy) * unusedDays;
+                return PolicyNumbers.share(unusedRent, policy.getReturnEarlyRefundRate());
+        }
+
+        /** PIN theo độ dài trong snapshot hợp đồng, không ghim 6 số. */
+        private String generateUniquePin(int length) {
+                int digits = Math.min(10, Math.max(4, length));
+                int bound = (int) Math.pow(10, digits);
                 for (int i = 0; i < 10; i++) {
-                        String pin = String.format("%06d", ThreadLocalRandom.current().nextInt(1_000_000));
+                        String pin = String.format("%0" + digits + "d", ThreadLocalRandom.current().nextInt(bound));
                         if (!contractRepository.existsByAccessCode(pin))
                                 return pin;
                 }
@@ -1120,7 +1312,7 @@ public class ContractServiceImpl implements ContractService {
                 PolicyVersion policy = null;
                 if (policyVersionRepository != null) {
                         policy = policyVersionRepository
-                                        .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(OffsetDateTime.now())
+                                        .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(OffsetDateTime.now())
                                         .orElse(null);
                 }
                 int graceDays = policy != null && policy.getOverdueGraceDays() != null

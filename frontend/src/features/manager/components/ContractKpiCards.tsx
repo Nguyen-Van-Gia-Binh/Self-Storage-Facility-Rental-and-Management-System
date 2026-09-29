@@ -11,12 +11,14 @@ import type { ContractKpiData } from '@/types/contractManager';
 interface ContractKpiCardsProps {
   kpi: ContractKpiData;
   activeTab: string;
+  checkinGraceDays?: number;
   onSelectTab: (tabKey: 'ACTIVE' | 'PENDING_CHECK_IN' | 'RETURN' | 'OVERDUE') => void;
 }
 
 export const ContractKpiCards: React.FC<ContractKpiCardsProps> = ({
   kpi,
   activeTab,
+  checkinGraceDays,
   onSelectTab,
 }) => {
   return (
@@ -73,7 +75,7 @@ export const ContractKpiCards: React.FC<ContractKpiCardsProps> = ({
         </div>
         <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
           <span className="text-blue-800 font-medium">
-            Ân hạn nhận kho 10 ngày (BR-CAN-04)
+            Ân hạn nhận kho {checkinGraceDays ?? '…'} ngày (BR-CAN-04)
           </span>
         </div>
       </div>

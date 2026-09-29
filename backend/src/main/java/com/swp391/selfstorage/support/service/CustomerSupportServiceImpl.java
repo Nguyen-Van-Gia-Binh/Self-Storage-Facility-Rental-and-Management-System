@@ -6,6 +6,8 @@ import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
 import com.swp391.selfstorage.contract.entity.RentalContract;
 import com.swp391.selfstorage.contract.repository.RentalContractRepository;
+import com.swp391.selfstorage.policy.entity.PolicyVersion;
+import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
 import com.swp391.selfstorage.facility.entity.Facility;
 import com.swp391.selfstorage.facility.repository.FacilityRepository;
 import com.swp391.selfstorage.support.dto.ConfirmResolutionRequest;
@@ -45,6 +47,7 @@ public class CustomerSupportServiceImpl implements CustomerSupportService {
     private final StorageUnitRepository storageUnitRepository;
     private final FacilityRepository facilityRepository;
     private final UserRepository userRepository;
+    private final PolicyVersionRepository policyVersionRepository;
 
     public CustomerSupportServiceImpl(
             SupportRequestRepository supportRequestRepository,
@@ -52,7 +55,8 @@ public class CustomerSupportServiceImpl implements CustomerSupportService {
             RentalContractRepository rentalContractRepository,
             StorageUnitRepository storageUnitRepository,
             FacilityRepository facilityRepository,
-            UserRepository userRepository
+            UserRepository userRepository,
+            PolicyVersionRepository policyVersionRepository
     ) {
         this.supportRequestRepository = supportRequestRepository;
         this.attachmentRepository = attachmentRepository;
@@ -60,6 +64,7 @@ public class CustomerSupportServiceImpl implements CustomerSupportService {
         this.storageUnitRepository = storageUnitRepository;
         this.facilityRepository = facilityRepository;
         this.userRepository = userRepository;
+        this.policyVersionRepository = policyVersionRepository;
     }
 
     private static final String ENTITY_TYPE_SUPPORT = "SUPPORT_REQUEST";
@@ -83,9 +88,17 @@ public class CustomerSupportServiceImpl implements CustomerSupportService {
         long seq = supportRequestRepository.countByCodeStartingWith(monthPrefix) + 1;
         String code = String.format("%s%04d", monthPrefix, seq);
 
-        // 2. Tính toán SLA: Khẩn cấp hoặc khóa/PIN thì SLA 2 giờ theo BR-SUP-01
         boolean isUrgent = Boolean.TRUE.equals(request.getIsUrgent()) || request.getCategory() == SupportCategory.LOCK_ACCESS;
-        OffsetDateTime slaDueAt = isUrgent ? now.plusHours(2) : now.plusHours(24);
+        int urgentHours = 2;
+        if (policyVersionRepository != null) {
+            PolicyVersion policy = policyVersionRepository
+                    .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(now)
+                    .orElse(null);
+            if (policy != null && policy.getSupportUrgentSlaHours() != null && policy.getSupportUrgentSlaHours() > 0) {
+                urgentHours = policy.getSupportUrgentSlaHours();
+            }
+        }
+        OffsetDateTime slaDueAt = isUrgent ? now.plusHours(urgentHours) : now.plusHours(24);
 
         // 3. Nếu có contractId, tự động điền storageUnitId nếu chưa có
         Long storageUnitId = request.getStorageUnitId();
@@ -278,6 +291,8 @@ public class CustomerSupportServiceImpl implements CustomerSupportService {
         dto.setResolvedAt(ticket.getResolvedAt());
         dto.setCreatedAt(ticket.getCreatedAt());
         dto.setUpdatedAt(ticket.getUpdatedAt());
+        dto.setRelocationRequired(Boolean.TRUE.equals(ticket.getRelocationRequired()));
+        dto.setCustomerNotice(ticket.getCustomerNotice());
 
         enrichRelationInfo(dto, ticket);
         return dto;
@@ -308,6 +323,8 @@ public class CustomerSupportServiceImpl implements CustomerSupportService {
 
         detail.setCanCancel(ticket.getStatus() == SupportStatus.NEW);
         detail.setCanConfirm(ticket.getStatus() == SupportStatus.RESOLVED);
+        detail.setRelocationRequired(Boolean.TRUE.equals(ticket.getRelocationRequired()));
+        detail.setCustomerNotice(ticket.getCustomerNotice());
 
         enrichRelationInfo(detail, ticket);
         return detail;

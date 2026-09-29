@@ -9,6 +9,10 @@ import com.swp391.selfstorage.contract.service.impl.ContractServiceImpl;
 import com.swp391.selfstorage.reservation.entity.Reservation;
 import com.swp391.selfstorage.reservation.entity.ReservationStatus;
 import com.swp391.selfstorage.reservation.repository.ReservationRepository;
+import com.swp391.selfstorage.support.entity.SupportCategory;
+import com.swp391.selfstorage.support.entity.SupportRequest;
+import com.swp391.selfstorage.support.entity.SupportStatus;
+import com.swp391.selfstorage.support.repository.SupportRequestRepository;
 import com.swp391.selfstorage.unit.entity.StorageUnit;
 import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
@@ -41,6 +45,8 @@ class ContractServiceTest {
     private ReturnRequestRepository returnRequestRepository;
     @Mock
     private com.swp391.selfstorage.support.repository.StaffDailyAssignmentRepository staffDailyAssignmentRepository;
+    @Mock
+    private SupportRequestRepository supportRequestRepository;
     @InjectMocks
     private ContractServiceImpl contractService;
 
@@ -65,6 +71,23 @@ class ContractServiceTest {
         confirmedReservation.setHoldExpiresAt(OffsetDateTime.now().plusHours(48));
 
         org.springframework.test.util.ReflectionTestUtils.setField(contractService, "staffDailyAssignmentRepository", staffDailyAssignmentRepository);
+        org.springframework.test.util.ReflectionTestUtils.setField(contractService, "supportRequestRepository", supportRequestRepository);
+    }
+
+    private SupportRequest openDamageTicket(Long id, Long contractId, Long unitId, boolean relocationRequired) {
+        return SupportRequest.builder()
+                .id(id)
+                .code("SUP-" + id)
+                .customerId(15L)
+                .contractId(contractId)
+                .storageUnitId(unitId)
+                .category(SupportCategory.UNIT_DAMAGE)
+                .description("Cua khoa hong")
+                .status(SupportStatus.IN_PROGRESS)
+                .relocationRequired(relocationRequired)
+                .createdAt(OffsetDateTime.now())
+                .updatedAt(OffsetDateTime.now())
+                .build();
     }
 
     @Test
@@ -177,7 +200,7 @@ class ContractServiceTest {
     }
 
     @Test
-    @DisplayName("SCR-FM-02.2: reassignUnit khi PENDING_CHECK_IN -> Kho cu AVAILABLE, kho moi RESERVED, contract update")
+    @DisplayName("BR-AVL-05: reassignUnit khi PENDING_CHECK_IN co phieu UNIT_DAMAGE va khach dong y -> o cu MAINTENANCE, o moi RESERVED, giu gia")
     void shouldReassignUnitSuccessfully_whenContractPendingCheckIn() {
         RentalContract contract = RentalContract.builder()
                 .id(500L).code("CTR-500").facilityId(1L).storageUnitId(42L).unitTypeId(7L)
@@ -186,10 +209,13 @@ class ContractServiceTest {
                 .endDateExclusive(LocalDate.of(2027, 1, 1))
                 .rentalMonths(3).monthlyPrice(800_000L).depositAmount(800_000L).depositBalance(800_000L)
                 .build();
-        StorageUnit oldUnit = StorageUnit.builder().id(42L).facilityId(1L).code("U-42").status(StorageUnitStatus.RESERVED).build();
-        StorageUnit newUnit = StorageUnit.builder().id(43L).facilityId(1L).code("U-43").status(StorageUnitStatus.AVAILABLE).build();
+        StorageUnit oldUnit = StorageUnit.builder().id(42L).facilityId(1L).code("U-42").unitTypeId(7L).status(StorageUnitStatus.RESERVED).build();
+        StorageUnit newUnit = StorageUnit.builder().id(43L).facilityId(1L).code("U-43").unitTypeId(7L).status(StorageUnitStatus.AVAILABLE).build();
+        SupportRequest ticket = openDamageTicket(90L, 500L, 42L, false);
 
         when(contractRepository.findByIdAndFacilityIdIn(500L, List.of(1L))).thenReturn(Optional.of(contract));
+        when(supportRequestRepository.findById(90L)).thenReturn(Optional.of(ticket));
+        when(supportRequestRepository.save(any(SupportRequest.class))).thenAnswer(inv -> inv.getArgument(0));
         when(storageUnitRepository.findById(43L)).thenReturn(Optional.of(newUnit));
         when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(oldUnit));
         when(storageUnitRepository.save(any(StorageUnit.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -198,6 +224,8 @@ class ContractServiceTest {
         ReassignUnitRequest req = ReassignUnitRequest.builder()
                 .newStorageUnitId(43L)
                 .reason("Cửa ô kho cũ bị kẹt ray")
+                .supportRequestId(90L)
+                .customerConsent(true)
                 .build();
 
         ContractSummaryResponse response = contractService.reassignUnit(500L, req, 1L, List.of(1L));
@@ -205,13 +233,19 @@ class ContractServiceTest {
         assertNotNull(response);
         assertEquals(43L, response.getStorageUnitId());
         assertEquals("U-43", response.getStorageUnitCode());
-        assertEquals(StorageUnitStatus.AVAILABLE, oldUnit.getStatus());
+        assertEquals(800_000L, response.getMonthlyPrice());
+        assertEquals(800_000L, response.getDepositAmount());
+        assertEquals(StorageUnitStatus.MAINTENANCE, oldUnit.getStatus());
         assertEquals(StorageUnitStatus.RESERVED, newUnit.getStatus());
         assertEquals(43L, contract.getStorageUnitId());
+        assertEquals(90L, contract.getRelocationSupportRequestId());
+        assertEquals(800_000L, contract.getMonthlyPrice());
+        assertTrue(ticket.getCustomerNotice().contains("U-43"));
+        assertFalse(response.getRelocationEligible());
     }
 
     @Test
-    @DisplayName("SCR-FM-02.2: reassignUnit khi ACTIVE -> Kho cu AVAILABLE, kho moi OCCUPIED, contract update")
+    @DisplayName("BR-SUP-02: reassignUnit khi ACTIVE co co can di doi -> o cu MAINTENANCE, o moi OCCUPIED, giu snapshot gia")
     void shouldReassignUnitSuccessfully_whenContractActive() {
         RentalContract contract = RentalContract.builder()
                 .id(500L).code("CTR-500").facilityId(1L).storageUnitId(42L).unitTypeId(7L)
@@ -220,10 +254,13 @@ class ContractServiceTest {
                 .endDateExclusive(LocalDate.of(2027, 1, 1))
                 .rentalMonths(3).monthlyPrice(800_000L).depositAmount(800_000L).depositBalance(800_000L)
                 .build();
-        StorageUnit oldUnit = StorageUnit.builder().id(42L).facilityId(1L).code("U-42").status(StorageUnitStatus.OCCUPIED).build();
-        StorageUnit newUnit = StorageUnit.builder().id(43L).facilityId(1L).code("U-43").status(StorageUnitStatus.AVAILABLE).build();
+        StorageUnit oldUnit = StorageUnit.builder().id(42L).facilityId(1L).code("U-42").unitTypeId(7L).status(StorageUnitStatus.OCCUPIED).build();
+        StorageUnit newUnit = StorageUnit.builder().id(43L).facilityId(1L).code("U-43").unitTypeId(7L).status(StorageUnitStatus.AVAILABLE).build();
+        SupportRequest ticket = openDamageTicket(91L, 500L, 42L, true);
 
         when(contractRepository.findByIdAndFacilityIdIn(500L, List.of(1L))).thenReturn(Optional.of(contract));
+        when(supportRequestRepository.findById(91L)).thenReturn(Optional.of(ticket));
+        when(supportRequestRepository.save(any(SupportRequest.class))).thenAnswer(inv -> inv.getArgument(0));
         when(storageUnitRepository.findById(43L)).thenReturn(Optional.of(newUnit));
         when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(oldUnit));
         when(storageUnitRepository.save(any(StorageUnit.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -231,17 +268,65 @@ class ContractServiceTest {
 
         ReassignUnitRequest req = ReassignUnitRequest.builder()
                 .newStorageUnitId(43L)
-                .reason("Khách yêu cầu chuyển ô gần thang máy")
+                .reason("Khong sua tai cho duoc")
+                .supportRequestId(91L)
                 .build();
 
         ContractSummaryResponse response = contractService.reassignUnit(500L, req, 1L, List.of(1L));
 
         assertNotNull(response);
         assertEquals(43L, response.getStorageUnitId());
-        assertEquals("U-43", response.getStorageUnitCode());
-        assertEquals(StorageUnitStatus.AVAILABLE, oldUnit.getStatus());
+        assertEquals(StorageUnitStatus.MAINTENANCE, oldUnit.getStatus());
         assertEquals(StorageUnitStatus.OCCUPIED, newUnit.getStatus());
-        assertEquals(43L, contract.getStorageUnitId());
+        assertEquals(800_000L, contract.getMonthlyPrice());
+        assertEquals(800_000L, contract.getDepositAmount());
+        assertEquals(91L, contract.getRelocationSupportRequestId());
+        assertEquals(Boolean.FALSE, ticket.getRelocationRequired());
+    }
+
+    @Test
+    @DisplayName("BR-SUP-02: reassignUnit khi ACTIVE chua danh dau can di doi -> tu choi")
+    void shouldThrow_whenActiveTicketNotFlaggedForRelocation() {
+        RentalContract contract = RentalContract.builder()
+                .id(500L).code("CTR-500").facilityId(1L).storageUnitId(42L).unitTypeId(7L)
+                .status(ContractStatus.ACTIVE).build();
+        SupportRequest ticket = openDamageTicket(91L, 500L, 42L, false);
+        when(contractRepository.findByIdAndFacilityIdIn(500L, List.of(1L))).thenReturn(Optional.of(contract));
+        when(supportRequestRepository.findById(91L)).thenReturn(Optional.of(ticket));
+
+        ReassignUnitRequest req = ReassignUnitRequest.builder()
+                .newStorageUnitId(43L)
+                .reason("Doi o")
+                .supportRequestId(91L)
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> contractService.reassignUnit(500L, req, 1L, List.of(1L)));
+        assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("BR-AVL-05: reassignUnit sang Unit Type khac -> tu choi")
+    void shouldThrow_whenNewUnitTypeDiffers() {
+        RentalContract contract = RentalContract.builder()
+                .id(500L).code("CTR-500").facilityId(1L).storageUnitId(42L).unitTypeId(7L)
+                .status(ContractStatus.PENDING_CHECK_IN).build();
+        StorageUnit newUnit = StorageUnit.builder().id(43L).facilityId(1L).code("U-43").unitTypeId(8L).status(StorageUnitStatus.AVAILABLE).build();
+        SupportRequest ticket = openDamageTicket(90L, 500L, 42L, false);
+        when(contractRepository.findByIdAndFacilityIdIn(500L, List.of(1L))).thenReturn(Optional.of(contract));
+        when(supportRequestRepository.findById(90L)).thenReturn(Optional.of(ticket));
+        when(storageUnitRepository.findById(43L)).thenReturn(Optional.of(newUnit));
+
+        ReassignUnitRequest req = ReassignUnitRequest.builder()
+                .newStorageUnitId(43L)
+                .reason("Doi o")
+                .supportRequestId(90L)
+                .customerConsent(true)
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> contractService.reassignUnit(500L, req, 1L, List.of(1L)));
+        assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
     }
 
     @Test
@@ -250,14 +335,17 @@ class ContractServiceTest {
         RentalContract contract = RentalContract.builder()
                 .id(500L).code("CTR-500").facilityId(1L).storageUnitId(42L).unitTypeId(7L)
                 .status(ContractStatus.ACTIVE).build();
-        StorageUnit newUnit = StorageUnit.builder().id(43L).facilityId(1L).code("U-43").status(StorageUnitStatus.OCCUPIED).build();
+        StorageUnit newUnit = StorageUnit.builder().id(43L).facilityId(1L).code("U-43").unitTypeId(7L).status(StorageUnitStatus.OCCUPIED).build();
+        SupportRequest ticket = openDamageTicket(91L, 500L, 42L, true);
 
         when(contractRepository.findByIdAndFacilityIdIn(500L, List.of(1L))).thenReturn(Optional.of(contract));
+        when(supportRequestRepository.findById(91L)).thenReturn(Optional.of(ticket));
         when(storageUnitRepository.findById(43L)).thenReturn(Optional.of(newUnit));
 
         ReassignUnitRequest req = ReassignUnitRequest.builder()
                 .newStorageUnitId(43L)
                 .reason("Doi o")
+                .supportRequestId(91L)
                 .build();
 
         CustomException ex = assertThrows(CustomException.class,

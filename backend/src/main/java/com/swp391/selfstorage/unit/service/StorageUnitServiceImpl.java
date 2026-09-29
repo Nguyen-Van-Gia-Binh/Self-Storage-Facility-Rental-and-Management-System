@@ -126,7 +126,7 @@ public class StorageUnitServiceImpl implements StorageUnitService {
             throw new CustomException(ErrorCode.POLICY_NOT_FOUND);
         }
         PolicyVersion policy = policyVersionRepository
-                .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(OffsetDateTime.now())
+                .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(OffsetDateTime.now())
                 .orElseThrow(() -> new CustomException(ErrorCode.POLICY_NOT_FOUND));
         if (policy.getRentalBufferDays() == null) {
             throw new CustomException(ErrorCode.POLICY_NOT_FOUND, "Chinh sach hieu luc thieu rental_buffer_days");

@@ -6,6 +6,7 @@ import { BomFacilityManagementPage } from './pages/BomFacilityManagementPage';
 import { BomPricingManagementPage } from './pages/BomPricingManagementPage';
 import { BomDashboardPage } from './pages/BomDashboardPage';
 import { BomPolicyPage } from './pages/BomPolicyPage';
+import { BomPriceAuditPage } from './pages/BomPriceAuditPage';
 
 export const BomRoutes: React.FC = () => {
   return (
@@ -15,6 +16,7 @@ export const BomRoutes: React.FC = () => {
         <Route path="facilities" element={<BomFacilityManagementPage />} />
         <Route path="pricing" element={<BomPricingManagementPage />} />
         <Route path="revenue" element={<BomDashboardPage />} />
+        <Route path="price-audit" element={<BomPriceAuditPage />} />
         <Route path="reports" element={<BomDashboardPage initialOpenExport={true} />} />
         {/* Route tương thích */}
         <Route path="policies" element={<BomPolicyPage />} />

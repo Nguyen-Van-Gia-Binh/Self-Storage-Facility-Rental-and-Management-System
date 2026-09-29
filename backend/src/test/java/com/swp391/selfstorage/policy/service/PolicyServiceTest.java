@@ -111,7 +111,7 @@ class PolicyServiceTest {
     @DisplayName("Lấy chính sách hiệu lực thành công khi có phiên bản phù hợp")
     void testGetActivePolicy_success() {
         PolicyVersion entity = buildMockEntity(1L, 1);
-        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(any(OffsetDateTime.class)))
+        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any(OffsetDateTime.class)))
                 .thenReturn(Optional.of(entity));
 
         PolicyResponse response = policyService.getActivePolicy();
@@ -125,7 +125,7 @@ class PolicyServiceTest {
     @Test
     @DisplayName("Ném POLICY_NOT_FOUND (404) khi chưa có chính sách nào có hiệu lực")
     void testGetActivePolicy_notFound() {
-        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(any(OffsetDateTime.class)))
+        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any(OffsetDateTime.class)))
                 .thenReturn(Optional.empty());
 
         CustomException ex = assertThrows(CustomException.class, () -> policyService.getActivePolicy());

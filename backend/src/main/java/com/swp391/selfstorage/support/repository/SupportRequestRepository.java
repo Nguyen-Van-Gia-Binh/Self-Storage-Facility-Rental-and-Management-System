@@ -8,6 +8,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -27,7 +29,15 @@ public interface SupportRequestRepository extends JpaRepository<SupportRequest, 
 
     Optional<SupportRequest> findByCode(String code);
 
+    List<SupportRequest> findByContractIdInAndCategoryAndStatusIn(
+            Collection<Long> contractIds, SupportCategory category, Collection<SupportStatus> statuses);
+
+    List<SupportRequest> findByStorageUnitIdInAndCategoryAndStatusIn(
+            Collection<Long> storageUnitIds, SupportCategory category, Collection<SupportStatus> statuses);
+
     long countByCodeStartingWith(String prefix);
+
+    java.util.List<SupportRequest> findByStatus(SupportStatus status);
 
     long countByAssignedStaffIdAndStatusIn(Long assignedStaffId, java.util.Collection<SupportStatus> statuses);
 

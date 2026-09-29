@@ -19,6 +19,8 @@ import { UnitGrid } from '../components/UnitGrid';
 import { fetchFacilities } from '@/api/facility';
 import { fetchUnitTypes as fetchUnitTypesApi, fetchStorageUnits as fetchStorageUnitsApi } from '@/api/unit';
 import { checkUnitAvailability, type AvailabilityResponse } from '@/api/reservation';
+import { useActivePolicy } from '@/hooks/useActivePolicy';
+import { discountTag, termMonthChoices } from '../utils/policyTerms';
 import { tokenStorage } from '@/utils/tokenStorage';
 import type { FacilityListItem } from '@/types';
 import type { StorageType, UnitSizeCategory, StorageUnit, UnitType, UnitStatus } from '../types';
@@ -32,14 +34,6 @@ function formatDateVN(dateStr: string): string {
   }
   return dateStr;
 }
-
-// Danh sách các gói thời hạn thuê chuẩn
-const DURATION_PACKAGES = [
-  { months: 1, label: '1 Tháng', discountLabel: '' },
-  { months: 3, label: '3 Tháng', discountLabel: 'Phổ biến', popular: true },
-  { months: 6, label: '6 Tháng', discountLabel: 'Tiết kiệm 5%' },
-  { months: 12, label: '12 Tháng', discountLabel: 'Tiết kiệm 10%' },
-];
 
 // Hàm xác định nhóm kích thước chuẩn từ mã/tên loại kho và diện tích
 function resolveSizeCategory(codeOrName: string, areaM2?: number): UnitSizeCategory {
@@ -89,9 +83,27 @@ export const UnitPickerPage: React.FC = () => {
     }
     return todayStr;
   });
+  const policy = useActivePolicy();
+  const durationPackages = useMemo(() => {
+    if (!policy) return [];
+    const months = termMonthChoices(policy.renewalMinMonths, policy.renewalMaxMonths);
+    return months.map((value) => ({
+      months: value,
+      label: `${value} Tháng`,
+      discountLabel: discountTag(value, 'save') ?? '',
+      popular: value === 3,
+    }));
+  }, [policy]);
   const [durationMonths, setDurationMonths] = useState<number>(
     !isNaN(initialMonthsParam) && initialMonthsParam > 0 ? initialMonthsParam : 3
   );
+
+  useEffect(() => {
+    if (!policy) return;
+    if (durationMonths < policy.renewalMinMonths || durationMonths > policy.renewalMaxMonths) {
+      setDurationMonths(policy.renewalMinMonths);
+    }
+  }, [policy, durationMonths]);
 
   // Tính ngày kết thúc dự kiến
   const calculatedEndDate = useMemo(() => {
@@ -674,7 +686,10 @@ export const UnitPickerPage: React.FC = () => {
               Gói thời hạn thuê:
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {DURATION_PACKAGES.map((pkg) => {
+              {durationPackages.length === 0 && (
+                <span className="col-span-full text-xs text-slate-500">Đang tải kỳ hạn từ chính sách...</span>
+              )}
+              {durationPackages.map((pkg) => {
                 const isSelected = durationMonths === pkg.months;
                 return (
                   <button

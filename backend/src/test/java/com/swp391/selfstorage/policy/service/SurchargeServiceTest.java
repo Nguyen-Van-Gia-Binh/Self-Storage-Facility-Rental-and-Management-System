@@ -16,6 +16,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -124,5 +126,47 @@ class SurchargeServiceTest {
         });
 
         assertEquals(ErrorCode.SURCHARGE_NOT_FOUND, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("Từ chối tạo phụ phí khi ngày hiệu lực ở quá khứ")
+    void testCreateSurchargeRejectsPastEffectiveDate() {
+        CreateSurchargeRequest request = CreateSurchargeRequest.builder()
+                .code("FEE_OLD")
+                .name("Phí quá khứ")
+                .amount(10000L)
+                .effectiveDate(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).minusDays(1))
+                .build();
+
+        CustomException exception = assertThrows(CustomException.class, () -> surchargeService.createSurcharge(request));
+
+        assertEquals(ErrorCode.VALIDATION_FAILED, exception.getErrorCode());
+        assertEquals("Ngày hiệu lực không được ở quá khứ", exception.getMessage());
+        verify(extraFeeTypeRepository, never()).save(any(ExtraFeeType.class));
+    }
+
+    @Test
+    @DisplayName("Từ chối sửa phụ phí khi ngày hiệu lực mới ở quá khứ")
+    void testUpdateSurchargeRejectsPastEffectiveDate() {
+        ExtraFeeType existing = ExtraFeeType.builder()
+                .code("FEE_CARD")
+                .name("Phí cấp lại thẻ từ")
+                .amount(50000L)
+                .feeType("FIXED")
+                .isActive(true)
+                .build();
+        existing.setId(1L);
+        UpdateSurchargeRequest request = UpdateSurchargeRequest.builder()
+                .name("Phí cấp lại thẻ từ")
+                .amount(60000L)
+                .isActive(true)
+                .effectiveDate(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).minusDays(1))
+                .build();
+        when(extraFeeTypeRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+        CustomException exception = assertThrows(CustomException.class, () -> surchargeService.updateSurcharge(1L, request));
+
+        assertEquals("Ngày hiệu lực không được ở quá khứ", exception.getMessage());
+        verify(extraFeeTypeRepository, never()).save(any(ExtraFeeType.class));
     }
 }

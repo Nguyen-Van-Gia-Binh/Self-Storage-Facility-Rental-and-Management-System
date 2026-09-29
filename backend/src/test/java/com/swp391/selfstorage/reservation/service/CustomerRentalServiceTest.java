@@ -60,6 +60,7 @@ class CustomerRentalServiceTest {
     @Mock private AccessLogRepository accessLogRepository;
     @Mock private com.swp391.selfstorage.contract.repository.ReturnRequestRepository returnRequestRepository;
     @Mock private com.swp391.selfstorage.payment.repository.PaymentTransactionRepository paymentTransactionRepository;
+    @Mock private com.swp391.selfstorage.policy.repository.PolicyVersionRepository policyVersionRepository;
 
     @InjectMocks
     private CustomerRentalServiceImpl customerRentalService;

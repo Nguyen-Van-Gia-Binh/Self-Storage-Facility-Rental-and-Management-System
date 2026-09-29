@@ -140,6 +140,10 @@ public class CustomerRentalSummaryResponse {
     public String getAccessCode() { return accessCode; }
     public void setAccessCode(String accessCode) { this.accessCode = accessCode; }
 
+    private Integer accessPinLength;
+    public Integer getAccessPinLength() { return accessPinLength; }
+    public void setAccessPinLength(Integer accessPinLength) { this.accessPinLength = accessPinLength; }
+
     public boolean isAccessCodeLocked() { return accessCodeLocked; }
     public void setAccessCodeLocked(boolean accessCodeLocked) { this.accessCodeLocked = accessCodeLocked; }
 

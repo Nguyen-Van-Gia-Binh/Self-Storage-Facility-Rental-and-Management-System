@@ -96,8 +96,15 @@ class ReservationServiceTest {
                 .reservationHoldHours(48)
                 .rentalBufferDays(15)
                 .rentalDailyDivisor(30)
+                .renewalMinMonths(1)
+                .renewalMaxMonths(12)
+                .cancelFullRefundHours(48)
+                .cancelLateRefundRate(new BigDecimal("0.50"))
+                .cancelNoShowRefundRate(BigDecimal.ZERO)
+                .checkinGraceDays(10)
+                .accessPinLength(6)
                 .build();
-        lenient().when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(any()))
+        lenient().when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any()))
                 .thenReturn(Optional.of(policy));
         lenient().when(storageUnitRepository.findByIdForUpdate(42L)).thenReturn(Optional.of(availableStorageUnit));
         lenient().when(rentalContractRepository.existsOverlappingContractForUnit(eq(42L), any(), any(), anyInt(), eq(0L)))
@@ -147,7 +154,7 @@ class ReservationServiceTest {
                 .rentalBufferDays(15)
                 .depositMultiplier(new BigDecimal("1.50"))
                 .build();
-        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(any()))
+        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any()))
                 .thenReturn(Optional.of(pricedPolicy));
 
         CalculatePriceResponse response = reservationService.calculatePrice(new CalculatePriceRequest(1L, 7L, 3));
@@ -273,6 +280,26 @@ class ReservationServiceTest {
         assertEquals(6000000L, response.getTotalPayable());
         assertTrue(response.getHoldExpiresAt().isAfter(OffsetDateTime.now().plusHours(47)));
         assertTrue(response.getCode().startsWith("RSV-"));
+    }
+
+    @Test
+    @DisplayName("Đặt chỗ từ chối số tháng ngoài khoảng chính sách đang hiệu lực")
+    void createReservation_MonthsOutsidePolicy_ShouldThrow() {
+        when(rentalContractRepository.existsByCustomerIdAndStatus(15L, ContractStatus.OVERDUE)).thenReturn(false);
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(activeFacility));
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(activeUnitType));
+
+        CreateReservationRequest req = new CreateReservationRequest();
+        req.setFacilityId(1L);
+        req.setUnitTypeId(7L);
+        req.setStorageUnitId(42L);
+        req.setStartDate(LocalDate.now().plusDays(2));
+        req.setRentalMonths(15);
+
+        CustomException ex = assertThrows(CustomException.class, () ->
+                reservationService.createReservation(req, customerUser)
+        );
+        assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
     }
 
     @Test

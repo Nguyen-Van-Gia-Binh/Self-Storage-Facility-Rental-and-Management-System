@@ -28,6 +28,7 @@ import com.swp391.selfstorage.policy.entity.PolicyVersion;
 import com.swp391.selfstorage.policy.repository.ExtraFeeTypeRepository;
 import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
 import com.swp391.selfstorage.policy.service.AppliedPriceLookup;
+import com.swp391.selfstorage.policy.service.PolicyNumbers;
 import com.swp391.selfstorage.policy.service.SurchargeAmountCalculator;
 import com.swp391.selfstorage.user.entity.UserRole;
 import org.springframework.data.domain.Page;
@@ -93,10 +94,12 @@ public class ReservationServiceImpl implements ReservationService {
         }
         long monthlyPrice = lookupMonthlyPrice(request.getFacilityId(), request.getUnitTypeId());
         PolicyVersion policy = requireActivePolicy();
+        int quotedMonths = Math.max(1, request.getMonths());
+        PolicyNumbers.requireTerm(policy, quotedMonths);
         BigDecimal multiplier = policy.getDepositMultiplier() != null
                 ? policy.getDepositMultiplier()
                 : BigDecimal.ONE;
-        CalculatePriceResponse response = quote(monthlyPrice, Math.max(1, request.getMonths()), multiplier);
+        CalculatePriceResponse response = quote(monthlyPrice, quotedMonths, multiplier);
         applySurcharges(response, request.getFacilityId());
         return response;
     }
@@ -222,6 +225,7 @@ public class ReservationServiceImpl implements ReservationService {
         }
 
         PolicyVersion policy = requireActivePolicy();
+        PolicyNumbers.requireTerm(policy, months);
         int bufferDays = policy.getRentalBufferDays();
         int holdHours = policy.getReservationHoldHours();
 
@@ -291,12 +295,30 @@ public class ReservationServiceImpl implements ReservationService {
             throw new CustomException(ErrorCode.POLICY_NOT_FOUND);
         }
         PolicyVersion policy = policyVersionRepository
-                .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(OffsetDateTime.now())
+                .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(OffsetDateTime.now())
                 .orElseThrow(() -> new CustomException(ErrorCode.POLICY_NOT_FOUND));
         if (policy.getRentalBufferDays() == null || policy.getReservationHoldHours() == null || policy.getId() == null) {
             throw new CustomException(ErrorCode.POLICY_NOT_FOUND, "Chinh sach hieu luc thieu tham so giu cho hoac khoang dem");
         }
         return policy;
+    }
+
+    private PolicyVersion policyOf(Reservation reservation) {
+        if (reservation != null && reservation.getPolicyVersionId() != null && policyVersionRepository != null) {
+            return policyVersionRepository.findById(reservation.getPolicyVersionId()).orElse(null);
+        }
+        if (policyVersionRepository == null) {
+            return null;
+        }
+        return policyVersionRepository
+                .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(OffsetDateTime.now())
+                .orElse(null);
+    }
+
+    private String randomPin(int length) {
+        int digits = Math.min(10, Math.max(4, length));
+        int bound = (int) Math.pow(10, digits);
+        return String.format("%0" + digits + "d", ThreadLocalRandom.current().nextInt(bound));
     }
 
     @Override
@@ -391,19 +413,25 @@ public class ReservationServiceImpl implements ReservationService {
         if (reservation.getStatus() == ReservationStatus.CONFIRMED) {
             OffsetDateTime startDateTime = reservation.getStartDate().atStartOfDay().atOffset(now.getOffset());
             long hoursUntilStart = Duration.between(now, startDateTime).toHours();
-            long refundAmount = 0L;
+            PolicyVersion cancelPolicy = policyOf(reservation);
+            int fullRefundHours = cancelPolicy != null && cancelPolicy.getCancelFullRefundHours() != null
+                    ? cancelPolicy.getCancelFullRefundHours()
+                    : 48;
+            long deposit = reservation.getDepositAmount();
+            long rentalFee = Math.max(0, reservation.getTotalPayable() - deposit);
+            long refundAmount;
 
-            if (hoursUntilStart >= 48) {
-                // BR-CAN-01: Hủy trước >= 48 giờ -> Hoàn 100% tiền thuê + 100% tiền cọc
+            if (hoursUntilStart >= fullRefundHours) {
                 refundAmount = reservation.getTotalPayable();
             } else if (now.isBefore(startDateTime)) {
-                // BR-CAN-02: Hủy trong vòng < 48 giờ trước ngày bắt đầu -> Hoàn 100% tiền thuê + 50% tiền cọc
-                long deposit = reservation.getDepositAmount();
-                long rentalFee = Math.max(0, reservation.getTotalPayable() - deposit);
-                refundAmount = rentalFee + (deposit / 2);
+                BigDecimal lateRate = cancelPolicy != null ? cancelPolicy.getCancelLateRefundRate() : BigDecimal.ZERO;
+                refundAmount = rentalFee + PolicyNumbers.share(deposit, lateRate);
             } else {
-                // Quá 00:00 ngày bắt đầu thuê
-                refundAmount = 0L;
+                BigDecimal noShowRate = cancelPolicy != null ? cancelPolicy.getCancelNoShowRefundRate() : BigDecimal.ZERO;
+                long heldDays = Math.max(0, java.time.temporal.ChronoUnit.DAYS.between(reservation.getStartDate(), now.toLocalDate()));
+                long daily = PolicyNumbers.dailyRent(reservation.getMonthlyPriceSnapshot(), cancelPolicy);
+                long rentCharged = Math.min(rentalFee, daily * heldDays);
+                refundAmount = Math.max(0, rentalFee - rentCharged) + PolicyNumbers.share(deposit, noShowRate);
             }
 
             if (refundAmount > 0) {
@@ -610,7 +638,11 @@ public class ReservationServiceImpl implements ReservationService {
         response.setStatus(reservation.getStatus().name());
         response.setStartDate(reservation.getStartDate());
 
-        LocalDate gracePeriodEnd = reservation.getStartDate().plusDays(10);
+        PolicyVersion checkInPolicy = policyOf(reservation);
+        int checkinGraceDays = checkInPolicy != null && checkInPolicy.getCheckinGraceDays() != null
+                ? checkInPolicy.getCheckinGraceDays()
+                : 10;
+        LocalDate gracePeriodEnd = reservation.getStartDate().plusDays(checkinGraceDays);
         response.setGracePeriodEnd(gracePeriodEnd);
         long daysRemaining = java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), gracePeriodEnd);
         response.setDaysRemaining(Math.max(0, daysRemaining));
@@ -658,7 +690,8 @@ public class ReservationServiceImpl implements ReservationService {
                 "Mã đặt chỗ (" + reservation.getCode() + ") hoặc mã QR Check-in trên ứng dụng",
                 "Khóa phụ cá nhân (nếu quý khách có nhu cầu sử dụng thêm khóa cơ riêng)"
         ));
-        response.setNotes("Quý khách vui lòng đến nhận kho trong vòng 10 ngày kể từ ngày bắt đầu thuê để hoàn tất thủ tục bàn giao và tránh bị hủy do No-show theo điều khoản BR-CAN-04.");
+        response.setNotes("Quý khách vui lòng đến nhận kho trong vòng " + checkinGraceDays
+                + " ngày kể từ ngày bắt đầu thuê để hoàn tất thủ tục bàn giao và tránh bị hủy do No-show theo điều khoản BR-CAN-04.");
 
         return response;
     }
@@ -718,7 +751,9 @@ public class ReservationServiceImpl implements ReservationService {
 
                 String accessCode = contract.getAccessCode();
                 if (accessCode == null || accessCode.isBlank()) {
-                    accessCode = String.format("%06d", ThreadLocalRandom.current().nextInt(100000, 1000000));
+                    int length = PolicyNumbers.snapshotInt(contract.getPolicySnapshot(), "accessPinLength",
+                            PolicyNumbers.pinLength(policyOf(reservation)));
+                    accessCode = randomPin(length);
                     contract.setAccessCode(accessCode);
                     rentalContractRepository.save(contract);
                 }
@@ -727,7 +762,7 @@ public class ReservationServiceImpl implements ReservationService {
         }
 
         if (response.getAccessCode() == null) {
-            response.setAccessCode(String.format("%06d", ThreadLocalRandom.current().nextInt(100000, 1000000)));
+            response.setAccessCode(randomPin(PolicyNumbers.pinLength(policyOf(reservation))));
         }
 
         return response;

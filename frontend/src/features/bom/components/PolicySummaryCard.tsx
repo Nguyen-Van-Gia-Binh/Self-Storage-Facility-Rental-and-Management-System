@@ -8,15 +8,32 @@ import {
   RefreshCw,
   Info,
 } from 'lucide-react';
+import type { PolicyVersionListItem } from '@/api/pricing';
 import type { ActivePolicyInfo } from '@/types';
 
 interface PolicySummaryCardProps {
   policy: ActivePolicyInfo | null;
+  scheduledPolicy?: { version: string; effectiveDate: string } | null;
+  versions?: PolicyVersionListItem[];
   isLoading?: boolean;
+}
+
+function statusClass(status: string): string {
+  if (status === 'Đang hiệu lực') return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+  if (status === 'Chưa áp dụng') return 'bg-amber-50 text-amber-700 border-amber-200';
+  return 'bg-slate-50 text-slate-600 border-slate-200';
+}
+
+function formatDay(value: string): string {
+  const [year, month, day] = value.split('-');
+  if (!year || !month || !day) return value || '—';
+  return `${day}/${month}/${year}`;
 }
 
 export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
   policy,
+  scheduledPolicy = null,
+  versions = [],
   isLoading = false,
 }) => {
   if (isLoading || !policy) {
@@ -45,8 +62,13 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Ngày bắt đầu áp dụng: <span className="font-medium text-slate-700">{policy.effectiveDate}</span> (BM-02 / BM-03)
+              Ngày bắt đầu áp dụng: <span className="font-medium text-slate-700">{policy.effectiveDate ? formatDay(policy.effectiveDate) : '—'}</span> (BM-02 / BM-03)
             </p>
+            {scheduledPolicy && (
+              <p className="text-xs text-amber-700 mt-1">
+                Phiên bản {scheduledPolicy.version} chưa áp dụng, bắt đầu từ {formatDay(scheduledPolicy.effectiveDate)}.
+              </p>
+            )}
           </div>
         </div>
         <Link to="/bom/policies" className="text-sm font-medium text-indigo-700 hover:text-indigo-900">
@@ -66,7 +88,7 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
             {policy.depositMultiplier} × tháng tiền thuê
           </p>
           <p className="text-xs text-slate-500">
-            Khách hàng đặt cọc đúng bằng 01 tháng tiền thuê khi đặt chỗ và nhận kho bàn giao.
+            Khách hàng đặt cọc bằng {policy.depositMultiplier} tháng tiền thuê khi đặt chỗ và nhận kho bàn giao.
           </p>
         </div>
 
@@ -85,7 +107,7 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
             </span>
           </div>
           <p className="text-xs text-slate-500">
-            Tạm giữ chỗ ô kho 48h để hoàn tất thanh toán, ân hạn 3 ngày tiếp đón trước khi chuyển No-Show.
+            Tạm giữ chỗ ô kho {policy.reservationHoldHours} giờ để hoàn tất thanh toán, ân hạn {policy.checkinGraceDays} ngày tiếp đón trước khi chuyển No-Show.
           </p>
         </div>
 
@@ -104,7 +126,7 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
             </span>
           </div>
           <p className="text-xs text-slate-500">
-            Ân hạn {policy.overdueGraceDays} ngày. Từ ngày thứ 4 quá hạn tính phạt 10%/ngày, trần tối đa 70% tiền cọc.
+            Ân hạn {policy.overdueGraceDays} ngày. Từ ngày thứ {policy.overdueGraceDays + 1} quá hạn tính phạt {Math.round(policy.overdueDailyRate * 100)}%/ngày, trần tối đa {Math.round(policy.overdueCapRate * 100)}% tiền cọc.
           </p>
         </div>
 
@@ -115,7 +137,7 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
             <h4 className="font-bold text-sm text-slate-900">Chính sách hủy đặt chỗ</h4>
           </div>
           <p className="text-2xl font-black text-purple-600">
-            Hoàn 100% / 50%
+            Hoàn 100% / {Math.round(policy.cancelLateRefundRate * 100)}%
           </p>
           <p className="text-xs text-slate-500">
             Hủy trước {policy.cancelFullRefundHours}h hoàn tiền 100%. Hủy sau {policy.cancelFullRefundHours}h hoàn {Math.round(policy.cancelLateRefundRate * 100)}% tổng số tiền đã nộp.
@@ -149,7 +171,7 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
           <p className="text-2xl font-black text-teal-600">Linh hoạt 24/7</p>
           <p className="text-xs text-slate-500">
             Khách có thể tạo yêu cầu trả kho bất cứ lúc nào khi hợp đồng đang hoạt động; hoàn tất đối soát
-            và hoàn cọc trong 3 ngày làm việc sau khi nghiệm thu kho.
+            và hoàn cọc trong {policy.returnRefundWorkingDays ?? 7} ngày làm việc sau khi nghiệm thu kho.
           </p>
         </div>
 
@@ -167,6 +189,36 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
           </p>
         </div>
       </div>
+
+      {versions.length > 0 && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100">
+            <h4 className="font-bold text-sm text-slate-900">Các phiên bản đã ban hành</h4>
+          </div>
+          <table className="w-full text-left text-sm">
+            <thead className="bg-slate-50 text-xs text-slate-500">
+              <tr>
+                <th className="px-5 py-3 font-semibold">Phiên bản</th>
+                <th className="px-5 py-3 font-semibold">Ngày hiệu lực</th>
+                <th className="px-5 py-3 font-semibold">Tình trạng</th>
+              </tr>
+            </thead>
+            <tbody>
+              {versions.map((item) => (
+                <tr key={`${item.id}-${item.versionNo}`} className="border-t border-slate-100">
+                  <td className="px-5 py-3 font-medium text-slate-900">v{item.versionNo}</td>
+                  <td className="px-5 py-3 text-slate-700">{formatDay(item.effectiveDate)}</td>
+                  <td className="px-5 py-3">
+                    <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${statusClass(item.status)}`}>
+                      {item.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Note footer */}
       <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-start space-x-3 text-xs text-slate-600 leading-relaxed">

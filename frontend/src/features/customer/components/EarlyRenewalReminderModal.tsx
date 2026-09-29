@@ -19,19 +19,23 @@ export interface EarlyRenewalReminderModalProps {
   isOpen: boolean;
   onClose: () => void;
   contract: RentedContract | null;
+  noticeDays?: number;
+  reminderDays?: number[];
 }
 
 export const EarlyRenewalReminderModal: React.FC<EarlyRenewalReminderModalProps> = ({
   isOpen,
   onClose,
   contract,
+  noticeDays = 0,
+  reminderDays = [],
 }) => {
   const [isClosing, setIsClosing] = useState(false);
 
   if (!isOpen || !contract) return null;
 
   const daysRemaining = calculateDaysRemaining(contract.endDate);
-  const daysUntilCutoff = Math.max(0, daysRemaining - 30);
+  const daysUntilCutoff = Math.max(0, daysRemaining - noticeDays);
 
   const handleClose = () => {
     setIsClosing(true);
@@ -108,7 +112,7 @@ export const EarlyRenewalReminderModal: React.FC<EarlyRenewalReminderModalProps>
                 <Clock className="w-3.5 h-3.5 text-rose-500" />
                 Còn {daysUntilCutoff} ngày
               </span>
-              <span className="text-[10px] text-rose-700 font-medium">Khóa trước ngày hết 30 ngày</span>
+              <span className="text-[10px] text-rose-700 font-medium">Nhắc trước ngày hết {noticeDays} ngày</span>
             </div>
           </div>
 
@@ -116,7 +120,9 @@ export const EarlyRenewalReminderModal: React.FC<EarlyRenewalReminderModalProps>
           <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-start gap-2.5">
             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
             <p className="text-xs text-slate-600 leading-relaxed">
-              Theo quy định gia hạn hợp đồng, khách hàng bắt buộc phải hoàn tất gia hạn trước ngày hết hạn <strong>ít nhất 30 ngày</strong>. Nếu không gia hạn trước mốc này, nút gia hạn sẽ bị <strong>khóa hoàn toàn</strong> và ô kho sẽ được mở cho khách hàng khác đặt trước, quý khách sẽ phải hoàn tất thủ tục trả kho khi hết hạn.
+              Chính sách đang hiệu lực nhắc gia hạn trước ngày hết hạn <strong>{noticeDays} ngày</strong>
+              {reminderDays.length > 0 ? <>, các mốc nhắc là <strong>{reminderDays.join(', ')}</strong> ngày</> : null}
+              . Nút gia hạn vẫn dùng được khi ô kho chưa có người khác đặt trước.
             </p>
           </div>
 

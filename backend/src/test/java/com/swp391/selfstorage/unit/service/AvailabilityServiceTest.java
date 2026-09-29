@@ -83,7 +83,7 @@ class AvailabilityServiceTest {
                 .rentalDailyDivisor(30)
                 .reservationHoldHours(48)
                 .build();
-        lenient().when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(any()))
+        lenient().when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any()))
                 .thenReturn(Optional.of(policy));
     }
 
@@ -201,7 +201,7 @@ class AvailabilityServiceTest {
                 .rentalBufferDays(15)
                 .depositMultiplier(new BigDecimal("1.50"))
                 .build();
-        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDesc(any()))
+        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any()))
                 .thenReturn(Optional.of(pricedPolicy));
         when(facilityRepository.findById(1L)).thenReturn(Optional.of(activeFacility));
         when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(activeUnitType));

@@ -52,7 +52,7 @@ const NAV_CARDS = [
     textColor: 'text-amber-600',
     label: 'Xử lý Sự cố & Ticket',
     subtitle: 'SCR-FM-05',
-    desc: 'Tiếp nhận khiếu nại, giám sát thời hạn cam kết SLA 2 giờ và giao việc xử lý kẹt khóa, thấm dột.',
+    desc: 'Tiếp nhận khiếu nại, giám sát thời hạn cam kết SLA khẩn trên chính sách và giao việc xử lý kẹt khóa, thấm dột.',
     cta: 'Mở Bàn điều phối',
   },
   {

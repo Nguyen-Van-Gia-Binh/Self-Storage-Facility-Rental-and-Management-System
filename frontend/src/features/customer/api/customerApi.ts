@@ -101,6 +101,7 @@ export function mapBackendSupportRequest(item: any): SupportTicket {
     assignedStaffName: item.assignedStaffName,
     assignedStaffPhone: item.assignedStaffPhone,
     resolutionNote: item.resolutionNote,
+    customerNotice: item.customerNotice,
     resolvedAt: item.resolvedAt,
     autoCloseDeadline: item.autoClosedAt || item.slaDueAt,
     createdAt: item.createdAt || new Date().toISOString(),

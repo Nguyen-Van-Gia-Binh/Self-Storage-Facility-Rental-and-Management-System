@@ -106,6 +106,63 @@ export async function updateUnitTypePrice(
 /**
  * Lịch sử phiên bản giá tại cơ sở (BOM)
  */
+export interface PriceAuditField {
+  key: string;
+  label: string;
+  oldValue: string | null;
+  newValue: string | null;
+}
+
+export interface PriceAuditActor {
+  id: number;
+  name: string;
+}
+
+export interface PriceAuditEntry {
+  id: string;
+  category: 'RENT' | 'SURCHARGE' | 'POLICY';
+  recordedAt?: string | null;
+  actorId?: number | null;
+  actorName: string;
+  subject: string;
+  facilityId?: number | null;
+  facilityName?: string | null;
+  changeSummary: string;
+  changes: PriceAuditField[];
+  snapshot: PriceAuditField[];
+  effectiveFrom?: string | null;
+  status: string;
+}
+
+export interface PriceAuditPage {
+  content: PriceAuditEntry[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  actors: PriceAuditActor[];
+}
+
+export async function fetchPriceAudit(params: {
+  category?: string;
+  facilityId?: number;
+  from?: string;
+  to?: string;
+  actorId?: number;
+  page?: number;
+  size?: number;
+}): Promise<PriceAuditPage> {
+  const qs = new URLSearchParams();
+  if (params.category && params.category !== 'ALL') qs.set('category', params.category);
+  if (params.facilityId != null) qs.set('facilityId', String(params.facilityId));
+  if (params.from) qs.set('from', params.from);
+  if (params.to) qs.set('to', params.to);
+  if (params.actorId != null) qs.set('actorId', String(params.actorId));
+  qs.set('page', String(params.page ?? 0));
+  qs.set('size', String(params.size ?? 20));
+  return await apiClient<PriceAuditPage>(`/pricing/audit?${qs}`);
+}
+
 export async function fetchPriceHistory(
   facilityId: number,
   unitTypeId?: number
@@ -152,8 +209,8 @@ export async function fetchActivePolicy(): Promise<ActivePolicyInfo> {
   const res = await apiClient<any>('/policies/active');
   return {
     id: res.id,
-    version: res.version || (res.versionNo ? `v${res.versionNo}` : '2026-Q4'),
-    effectiveDate: (res.effectiveDate || res.effectiveFrom || '').split('T')[0],
+    version: res.versionNo != null ? `v${res.versionNo}` : (res.version || '2026-Q4'),
+    effectiveDate: vietnamCalendarDate(res.effectiveFrom || res.effectiveDate),
     depositMultiplier: Number(res.depositMultiplier ?? 1.0),
     reservationHoldHours: Number(res.reservationHoldHours ?? 48),
     rentalDailyDivisor: Number(res.rentalDailyDivisor ?? 30),
@@ -167,6 +224,15 @@ export async function fetchActivePolicy(): Promise<ActivePolicyInfo> {
     overdueCapRate: Number(res.overdueCapRate ?? 0.7),
     returnNoticeDays: Number(res.returnNoticeDays ?? 30),
     returnRefundWorkingDays: Number(res.returnRefundWorkingDays ?? 7),
+    rentalBufferDays: Number(res.rentalBufferDays ?? 15),
+    cancelNoShowRefundRate: Number(res.cancelNoShowRefundRate ?? 0),
+    renewalReminderDays: typeof res.renewalReminderDays === 'string' ? res.renewalReminderDays : '',
+    returnEarlyRefundRate: Number(res.returnEarlyRefundRate ?? 0),
+    overdueLockAccessDays: Number(res.overdueLockAccessDays ?? 10),
+    overdueTerminationDays: Number(res.overdueTerminationDays ?? 10),
+    accessPinLength: Number(res.accessPinLength ?? 6),
+    supportUrgentSlaHours: Number(res.supportUrgentSlaHours ?? 2),
+    supportAutoCloseWorkingDays: Number(res.supportAutoCloseWorkingDays ?? 7),
   };
 }
 
@@ -195,6 +261,63 @@ export interface PolicyPublishPayload {
   accessPinLength: number;
   supportUrgentSlaHours: number;
   supportAutoCloseWorkingDays: number;
+}
+
+export type PolicyVersionStatus = 'Đang hiệu lực' | 'Chưa áp dụng' | 'Đã thay thế';
+
+export interface PolicyVersionListItem {
+  id: number;
+  versionNo: number;
+  effectiveDate: string;
+  status: PolicyVersionStatus;
+}
+
+function vietnamCalendarDate(value?: string | null): string {
+  if (!value) {
+    return '';
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return String(value).split('T')[0];
+  }
+  return parsed.toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+}
+
+export async function fetchPolicyVersions(): Promise<PolicyVersionListItem[]> {
+  const page = await apiClient<{ content?: Array<{ id?: number; versionNo?: number; effectiveFrom?: string }> }>(
+    '/policies?page=0&size=50&sort=versionNo,desc'
+  );
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+  const rows = (page.content ?? [])
+    .filter((item) => item.versionNo != null)
+    .map((item) => ({
+      id: item.id ?? 0,
+      versionNo: item.versionNo as number,
+      effectiveDate: vietnamCalendarDate(item.effectiveFrom),
+    }));
+  const applied = rows
+    .filter((row) => row.effectiveDate && row.effectiveDate <= today)
+    .sort((left, right) => right.versionNo - left.versionNo)[0];
+  return rows.map((row) => ({
+    ...row,
+    status: !row.effectiveDate || row.effectiveDate > today
+      ? 'Chưa áp dụng'
+      : applied && row.versionNo === applied.versionNo
+        ? 'Đang hiệu lực'
+        : 'Đã thay thế',
+  }));
+}
+
+export function nextScheduledPolicy(
+  versions: PolicyVersionListItem[]
+): { version: string; effectiveDate: string } | null {
+  const scheduled = versions
+    .filter((item) => item.status === 'Chưa áp dụng' && item.effectiveDate)
+    .sort((left, right) => right.versionNo - left.versionNo)[0];
+  if (!scheduled) {
+    return null;
+  }
+  return { version: `v${scheduled.versionNo}`, effectiveDate: scheduled.effectiveDate };
 }
 
 export async function fetchPolicyForPublish(): Promise<PolicyPublishPayload & { versionNo?: number }> {

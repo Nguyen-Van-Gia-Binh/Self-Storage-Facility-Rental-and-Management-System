@@ -41,6 +41,7 @@ const BREADCRUMB_MAP: Record<string, string> = {
   '/bom/pricing':              'Bảng giá & Phụ phí',
   '/bom/policies':             'Chính sách thuê',
   '/bom/revenue':              'Doanh thu & Báo cáo',
+  '/bom/price-audit':          'Nhật ký giá & phí',
   '/bom/reports':              'Doanh thu & Báo cáo',
 };
 
