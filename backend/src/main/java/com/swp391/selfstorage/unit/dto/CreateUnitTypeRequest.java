@@ -23,18 +23,23 @@ public class CreateUnitTypeRequest {
     private String description;
 
     @NotNull(message = "Chiều rộng không được để trống")
-    @DecimalMin(value = "0.1", message = "Chiều rộng phải lớn hơn 0")
+    @DecimalMin(value = "0.1", message = "Chiều rộng phải từ 0.1m trở lên")
+    @DecimalMax(value = "999.99", message = "Chiều rộng tối đa 999.99m")
+    @Digits(integer = 3, fraction = 2, message = "Chiều rộng tối đa 3 chữ số nguyên và 2 chữ số thập phân (đơn vị mét)")
     private BigDecimal widthM;
 
     @NotNull(message = "Chiều dài/sâu không được để trống")
-    @DecimalMin(value = "0.1", message = "Chiều dài phải lớn hơn 0")
+    @DecimalMin(value = "0.1", message = "Chiều dài/sâu phải từ 0.1m trở lên")
+    @DecimalMax(value = "999.99", message = "Chiều dài/sâu tối đa 999.99m")
+    @Digits(integer = 3, fraction = 2, message = "Chiều dài/sâu tối đa 3 chữ số nguyên và 2 chữ số thập phân (đơn vị mét)")
     private BigDecimal depthM;
 
     @NotNull(message = "Chiều cao không được để trống")
-    @DecimalMin(value = "0.1", message = "Chiều cao phải lớn hơn 0")
+    @DecimalMin(value = "0.1", message = "Chiều cao phải từ 0.1m trở lên")
+    @DecimalMax(value = "999.99", message = "Chiều cao tối đa 999.99m")
+    @Digits(integer = 3, fraction = 2, message = "Chiều cao tối đa 3 chữ số nguyên và 2 chữ số thập phân (đơn vị mét)")
     private BigDecimal heightM;
 
-    @NotNull(message = "Đơn giá tháng không được để trống")
-    @Min(value = 1, message = "Đơn giá tháng phải lớn hơn 0")
+    @Min(value = 0, message = "Đơn giá tháng không được âm")
     private Long monthlyPrice;
 }

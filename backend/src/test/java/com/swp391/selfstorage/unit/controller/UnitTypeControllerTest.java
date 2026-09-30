@@ -80,4 +80,56 @@ class UnitTypeControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.name").value("Loại M — 6m²"));
     }
+
+    @Test
+    @DisplayName("POST /facilities/{facilityId}/unit-types cho phép FM tạo loại ô kho với giá 0 (chờ BOM duyệt giá)")
+    void testCreateUnitTypeWithoutPrice() throws Exception {
+        CreateUnitTypeRequest req = CreateUnitTypeRequest.builder()
+                .code("UT-FM-NEW")
+                .name("Loại Kho Mới — FM")
+                .widthM(new BigDecimal("2.5"))
+                .depthM(new BigDecimal("4.0"))
+                .heightM(new BigDecimal("2.8"))
+                .monthlyPrice(0L)
+                .build();
+
+        UnitTypeResponse res = UnitTypeResponse.builder()
+                .id(9L)
+                .facilityId(1L)
+                .name("Loại Kho Mới — FM")
+                .monthlyPrice(0L)
+                .priceStatus("Chưa niêm yết")
+                .build();
+
+        when(unitTypeService.createUnitType(eq(1L), any(CreateUnitTypeRequest.class))).thenReturn(res);
+
+        mockMvc.perform(post("/facilities/1/unit-types")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.name").value("Loại Kho Mới — FM"))
+                .andExpect(jsonPath("$.data.monthlyPrice").value(0))
+                .andExpect(jsonPath("$.data.priceStatus").value("Chưa niêm yết"));
+    }
+
+    @Test
+    @DisplayName("POST /facilities/{facilityId}/unit-types kích thước vượt quá 999.99m trả về 400 Bad Request")
+    void testCreateUnitTypeExceedingDimensionsReturns400() throws Exception {
+        CreateUnitTypeRequest req = CreateUnitTypeRequest.builder()
+                .code("UT-OVERFLOW")
+                .name("Loại Kho Quá Khổ")
+                .widthM(new BigDecimal("1000.00")) // Vượt quá 999.99m
+                .depthM(new BigDecimal("2.0"))
+                .heightM(new BigDecimal("2.5"))
+                .monthlyPrice(0L)
+                .build();
+
+        mockMvc.perform(post("/facilities/1/unit-types")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.details[0]").exists());
+    }
 }

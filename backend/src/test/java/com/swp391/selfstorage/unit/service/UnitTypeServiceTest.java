@@ -156,7 +156,7 @@ class UnitTypeServiceTest {
 
         assertNotNull(res);
         assertEquals(9L, res.getId());
-        verify(priceRepository, never()).save(any(FacilityUnitTypePrice.class));
+        verify(priceRepository).save(argThat(p -> p.getFacilityId().equals(1L) && p.getUnitTypeId().equals(9L) && p.getMonthlyPrice().equals(0L)));
     }
 
     @Test

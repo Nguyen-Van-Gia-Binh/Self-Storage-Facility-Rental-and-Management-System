@@ -24,13 +24,13 @@ public class UnitType {
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(name = "width_m", nullable = false, precision = 5, scale = 2)
+    @Column(name = "width_m", nullable = false, precision = 10, scale = 2)
     private BigDecimal widthM;
 
-    @Column(name = "length_m", nullable = false, precision = 5, scale = 2)
+    @Column(name = "length_m", nullable = false, precision = 10, scale = 2)
     private BigDecimal lengthM;
 
-    @Column(name = "height_m", nullable = false, precision = 5, scale = 2)
+    @Column(name = "height_m", nullable = false, precision = 10, scale = 2)
     private BigDecimal heightM;
 
     @Column(length = 500)

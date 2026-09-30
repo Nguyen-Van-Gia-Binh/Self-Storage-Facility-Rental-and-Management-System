@@ -14,6 +14,8 @@ export interface UnitTypeResponse {
   areaM2: number;
   volumeM3?: number;
   monthlyPrice: number;
+  pricePerM2?: number;
+  priceStatus?: string;
   totalUnits: number;
   isActive?: boolean;
   active?: boolean;

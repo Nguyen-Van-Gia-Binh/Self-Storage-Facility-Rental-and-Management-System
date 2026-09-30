@@ -100,9 +100,9 @@ Danh mục kích thước quy chuẩn ô kho toàn hệ thống (`FM-01`, `UC-F5
 | `id` | `BIGINT` | Có | `PK`, `IDENTITY(1,1)` | Khóa chính |
 | `code` | `NVARCHAR(20)` | Có | `UNIQUE` | Mã loại kho (vd: `S`, `M`, `L`, `XL`) |
 | `name` | `NVARCHAR(100)` | Có | | Tên loại kho hiển thị |
-| `width_m` | `DECIMAL(5,2)` | Có | | Chiều rộng ô kho (mét) |
-| `length_m` | `DECIMAL(5,2)` | Có | | Chiều dài ô kho (mét) |
-| `height_m` | `DECIMAL(5,2)` | Có | | Chiều cao ô kho (mét) |
+| `width_m` | `DECIMAL(10,2)` | Có | | Chiều rộng ô kho (mét) |
+| `length_m` | `DECIMAL(10,2)` | Có | | Chiều dài ô kho (mét) |
+| `height_m` | `DECIMAL(10,2)` | Có | | Chiều cao ô kho (mét) |
 | `description` | `NVARCHAR(500)` | Không | | Mô tả công năng lưu trữ phù hợp |
 | `is_active` | `BIT` | Có | `DEFAULT 1` | Cờ trạng thái hoạt động (Soft Delete) |
 | `created_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Ngày tạo |
