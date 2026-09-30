@@ -10,14 +10,14 @@
 }
 
 /* ========== Page Transition Animation ========== */
+/* NOTE: chỉ dùng opacity, KHÔNG dùng transform để tránh tạo containing block mới */
+/* (transform trên ancestor khiến fixed-position modal bị giới hạn trong <main>) */
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(14px);
   }
   to {
     opacity: 1;
-    transform: none;
   }
 }
 

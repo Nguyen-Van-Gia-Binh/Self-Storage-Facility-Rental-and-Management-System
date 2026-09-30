@@ -140,12 +140,10 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
             <X className="w-5 h-5" />
           </button>
 
-          <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-100 uppercase tracking-wider mb-1">
-            <RotateCcw className="w-4 h-4" />
-            <span>Quy Trình Nghiệm Thu & Hoàn Cọc (FS-04 · FM-04)</span>
+          <div className="flex items-center gap-2">
+            <RotateCcw className="w-5 h-5 text-emerald-200" />
+            <h3 className="text-xl font-black text-white">Xác Nhận Đã Dọn Đồ & Báo Trả Kho</h3>
           </div>
-
-          <h3 className="text-xl font-black text-white">Xác Nhận Đã Dọn Đồ & Báo Trả Kho</h3>
           <p className="text-xs text-emerald-100/90 mt-0.5">
             Ô kho <span className="font-bold text-white">{contract.unitNumber}</span> — Cơ sở {contract.facilityName}
           </p>
@@ -272,27 +270,6 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
               </label>
             </div>
           )}
-
-          {/* Quy trình điều phối tiếp theo */}
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
-            <div className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
-              <span>Quy trình xử lý tiếp theo:</span>
-            </div>
-            <div className="grid grid-cols-3 gap-2 text-center text-[11px] pt-1">
-              <div className="p-2 bg-white rounded-lg border border-slate-200/80 shadow-2xs">
-                <div className="font-bold text-emerald-700">1. Gửi báo trả</div>
-                <div className="text-slate-500 text-[10px] mt-0.5">Khách đã dọn đồ</div>
-              </div>
-              <div className="p-2 bg-white rounded-lg border border-slate-200/80 shadow-2xs">
-                <div className="font-bold text-blue-700">2. Nghiệm thu</div>
-                <div className="text-slate-500 text-[10px] mt-0.5">Staff kiểm tra kho</div>
-              </div>
-              <div className="p-2 bg-white rounded-lg border border-slate-200/80 shadow-2xs">
-                <div className="font-bold text-purple-700">3. Quyết toán</div>
-                <div className="text-slate-500 text-[10px] mt-0.5">Hoàn cọc 7 ngày làm việc</div>
-              </div>
-            </div>
-          </div>
 
           {/* Validation Error */}
           {error && (

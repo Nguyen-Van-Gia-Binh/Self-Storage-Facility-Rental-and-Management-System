@@ -315,10 +315,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
         {/* Page Content with background Soft Mint Mist */}
         <main
-          key={location.pathname}
-          className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto bg-[#f2f9f7] page-enter"
+          className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto bg-[#f2f9f7]"
         >
-          {children}
+          <div key={location.pathname} className="page-enter">
+            {children}
+          </div>
         </main>
       </div>
     </div>
