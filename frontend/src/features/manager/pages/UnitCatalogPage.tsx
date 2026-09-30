@@ -172,9 +172,12 @@ export const UnitCatalogPage: React.FC = () => {
         await createUnitType(facilityId, data);
       }
       await refreshUnitTypes();
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error(err);
-      setError(err instanceof Error ? err.message : 'Lưu loại ô kho thất bại. Vui lòng kiểm tra lại.');
+      const apiMsg = err?.response?.data?.message;
+      const msg = apiMsg || (err instanceof Error ? err.message : 'Lưu loại ô kho thất bại. Vui lòng kiểm tra lại.');
+      setError(msg);
+      throw new Error(msg);
     }
   };
 

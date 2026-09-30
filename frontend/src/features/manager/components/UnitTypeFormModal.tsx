@@ -69,6 +69,10 @@ export const UnitTypeFormModal: React.FC<UnitTypeFormModalProps> = ({
     e.preventDefault();
     if (!form.name.trim()) { setError('Tên loại ô kho không được để trống.'); return; }
     if (form.widthM <= 0 || form.depthM <= 0) { setError('Chiều rộng và chiều sâu phải lớn hơn 0.'); return; }
+    if (form.widthM > 999.99 || form.depthM > 999.99 || (form.heightM && form.heightM > 999.99)) {
+      setError('Kích thước (Rộng, Sâu, Cao) tính bằng mét (m), tối đa 999.99m. Vui lòng kiểm tra lại nếu bạn đang nhập đơn vị milimet (mm) hoặc centimet (cm).');
+      return;
+    }
     if (canSetPrice && form.monthlyPrice <= 0) {
       setError('Đơn giá niêm yết phải lớn hơn 0.'); return;
     }
@@ -81,8 +85,8 @@ export const UnitTypeFormModal: React.FC<UnitTypeFormModalProps> = ({
       setError(null);
       await onSubmit(submitData);
       onClose();
-    } catch {
-      setError('Lưu thông tin thất bại. Vui lòng kiểm tra kết nối và thử lại.');
+    } catch (err: any) {
+      setError(err?.response?.data?.message || err?.message || 'Lưu thông tin thất bại. Vui lòng kiểm tra lại.');
     } finally {
       setSubmitting(false);
     }
@@ -209,12 +213,15 @@ export const UnitTypeFormModal: React.FC<UnitTypeFormModalProps> = ({
                 <input
                   id={`ut-${field}`}
                   type="number"
-                  step="0.1"
+                  step="0.01"
                   min="0.1"
-                  value={form[field]}
-                  onChange={(e) => set(field, parseFloat(e.target.value))}
+                  max="999.99"
+                  placeholder="VD: 2.5"
+                  value={form[field] ? form[field] : ''}
+                  onChange={(e) => set(field, parseFloat(e.target.value) || 0)}
                   className={`${inputCls} font-mono`}
                 />
+                <span className="text-[10px] text-slate-400 mt-1 block">Tối đa 999.99m</span>
               </div>
             ))}
           </div>
