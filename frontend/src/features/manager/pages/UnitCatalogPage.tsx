@@ -380,7 +380,16 @@ export const UnitCatalogPage: React.FC = () => {
                     </span>
                     <span>&bull;</span>
                     <span>
-                      Đơn giá: <strong className="font-mono text-brand-600">{new Intl.NumberFormat('vi-VN').format(selectedType.monthlyPrice)} đ/tháng</strong>
+                      Đơn giá:{' '}
+                      {selectedType.monthlyPrice && selectedType.monthlyPrice > 0 && selectedType.priceStatus !== 'UNLISTED' && selectedType.priceStatus !== 'Chưa niêm yết' ? (
+                        <strong className="font-mono text-brand-600">
+                          {new Intl.NumberFormat('vi-VN').format(selectedType.monthlyPrice)} đ/tháng
+                        </strong>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                          Chờ BOM duyệt giá
+                        </span>
+                      )}
                     </span>
                   </div>
                 </div>

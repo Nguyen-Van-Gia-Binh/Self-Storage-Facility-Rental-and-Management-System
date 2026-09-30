@@ -30,7 +30,7 @@ public class UpdateUnitTypeRequest {
     @DecimalMin(value = "0.1", message = "Chiều cao phải lớn hơn 0")
     private BigDecimal heightM;
 
-    @Min(value = 1, message = "Đơn giá tháng phải lớn hơn 0")
+    @Min(value = 0, message = "Đơn giá tháng không được âm")
     private Long monthlyPrice;
 
     private Boolean isActive;

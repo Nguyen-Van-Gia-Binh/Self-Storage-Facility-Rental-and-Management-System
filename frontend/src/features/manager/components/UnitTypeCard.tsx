@@ -77,7 +77,15 @@ export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({
       </div>
       <div className="col-span-2 pt-1 border-t border-slate-200/50">
         <span className="text-slate-400 font-medium text-[11px] block">Đơn giá niêm yết</span>
-        <p className="font-mono font-extrabold text-brand-600 mt-0.5">{fmt(type.monthlyPrice)}</p>
+        {type.monthlyPrice && type.monthlyPrice > 0 && type.priceStatus !== 'UNLISTED' && type.priceStatus !== 'Chưa niêm yết' ? (
+          <p className="font-mono font-extrabold text-brand-600 mt-0.5">{fmt(type.monthlyPrice)}</p>
+        ) : (
+          <div className="mt-1 flex items-center gap-1.5">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80">
+              Chờ BOM duyệt giá
+            </span>
+          </div>
+        )}
       </div>
     </div>
 

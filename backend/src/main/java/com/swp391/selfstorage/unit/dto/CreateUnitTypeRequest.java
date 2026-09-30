@@ -34,7 +34,6 @@ public class CreateUnitTypeRequest {
     @DecimalMin(value = "0.1", message = "Chiều cao phải lớn hơn 0")
     private BigDecimal heightM;
 
-    @NotNull(message = "Đơn giá tháng không được để trống")
-    @Min(value = 1, message = "Đơn giá tháng phải lớn hơn 0")
+    @Min(value = 0, message = "Đơn giá tháng không được âm")
     private Long monthlyPrice;
 }

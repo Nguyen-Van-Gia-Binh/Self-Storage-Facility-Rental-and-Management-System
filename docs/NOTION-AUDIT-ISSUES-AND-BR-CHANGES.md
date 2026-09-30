@@ -509,11 +509,12 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
 - **Hình ảnh minh chứng:**  
   ![FM có quyền sửa giá](./images/notion-audit/image-22.png)
 - **Ghi chú gốc từ Lead Dev:**  
-  > *"FM không có quyền niêm yết giá trong này, sai logic BR"* — `[ĐÃ FIX]`
-- **Kết quả đã xử lý (PR branch `fix/T3.22-fm--rbac-unit-type`):**
-  1. *Ẩn trường giá cho MANAGER:* Trong `UnitTypeFormModal.tsx`, kiểm tra `userRole === 'MANAGER'` và ẩn input giá, hiển thị text "Chỉ BOM mới được nhập giá niêm yết".
-  2. *Loại bỏ validation giá cho FM:* Khi submit, MANAGER không bị validate giá.
-  3. *Import tokenStorage:* Để lấy thông tin user role từ session.
+  > *"FM không có quyền niêm yết giá trong này, sai logic BR"* — `[ĐÃ FIX — TÙNG ĐÃ FIX]`
+- **Kết quả đã xử lý toàn diện (Tùng đã fix kết nối Backend & Frontend):**
+  1. *Backend validation DTO:* Trong `CreateUnitTypeRequest.java` và `UpdateUnitTypeRequest.java`, loại bỏ `@NotNull` và đổi `@Min(value = 1)` thành `@Min(value = 0)`. Cho phép FM tạo loại ô kho với giá = 0 / null mà không bị lỗi 400 `Đơn giá tháng phải lớn hơn 0`.
+  2. *Móc nối với hệ thống định giá của BOM:* Loại ô kho mới tạo sẽ tự động liên kết với `AppliedPriceLookup` của BOM. Nếu cơ sở chưa có bảng giá m² hoặc chưa niêm yết, backend trả về `priceStatus = 'UNLISTED'`.
+  3. *Frontend UI & Badges:* Trong `UnitTypeFormModal.tsx`, giải thích rõ BOM là thẩm quyền độc quyền định giá. Trong `UnitTypeCard.tsx` và `UnitCatalogPage.tsx`, nếu loại kho chưa có giá niêm yết hoặc đang `UNLISTED`, hiển thị badge thẩm mỹ **"Chờ BOM duyệt giá"** thay vì hiển thị `0 đ/tháng`.
+  4. *Unit Test:* Bổ sung test case `testCreateUnitTypeWithoutPrice` trong `UnitTypeControllerTest.java` xác nhận mã HTTP 201 Created khi FM tạo loại kho với giá 0.
 - **Mô tả kỹ thuật chuẩn hóa:**  
   * **Tên vấn đề:** Vi phạm ranh giới phân quyền vai trò (RBAC) giữa FM và BOM: Modal *"Thêm loại ô kho mới"* trên phân hệ của Facility Manager (`/manager/units`) xuất hiện trường nhập liệu `Đơn giá niêm yết (VND/tháng) *`, cho phép FM tự ý định giá kho trái thẩm quyền.
   * **Hiện trạng ghi nhận trên UI (`image-22.png`):**  

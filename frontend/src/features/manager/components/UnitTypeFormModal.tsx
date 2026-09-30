@@ -221,11 +221,12 @@ export const UnitTypeFormModal: React.FC<UnitTypeFormModalProps> = ({
 
           <div>
             <label className={labelCls}>
-              Đơn giá niêm yết (VND/tháng) <span className="text-rose-500">*</span>
+              Đơn giá niêm yết (VND/tháng) {!isManager && <span className="text-rose-500">*</span>}
             </label>
             {isManager ? (
-              <div className="px-3.5 py-2 text-sm text-slate-400 italic bg-slate-100 border border-slate-200 rounded-xl">
-                Chỉ BOM mới được nhập giá niêm yết
+              <div className="p-3 bg-amber-50/60 border border-amber-200/80 rounded-xl text-xs text-amber-800 flex items-start gap-2">
+                <span className="font-bold shrink-0">Chờ BOM định giá:</span>
+                <span className="text-amber-700">Đơn giá niêm yết sẽ do Ban Giám Đốc (BOM) thẩm định và ban hành theo đơn giá m² của cơ sở (BR-GEN-01).</span>
               </div>
             ) : (
               <input
