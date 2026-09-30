@@ -92,15 +92,16 @@ public class UnitTypeServiceImpl implements UnitTypeService {
 
         unitType = unitTypeRepository.save(unitType);
 
-        if (request.getMonthlyPrice() != null && request.getMonthlyPrice() > 0) {
-            priceRepository.save(FacilityUnitTypePrice.builder()
-                    .facilityId(facilityId)
-                    .unitTypeId(unitType.getId())
-                    .monthlyPrice(request.getMonthlyPrice())
-                    .build());
-        }
+        long initialPrice = (request.getMonthlyPrice() != null && request.getMonthlyPrice() > 0)
+                ? request.getMonthlyPrice()
+                : 0L;
+        priceRepository.save(FacilityUnitTypePrice.builder()
+                .facilityId(facilityId)
+                .unitTypeId(unitType.getId())
+                .monthlyPrice(initialPrice)
+                .build());
 
-        return finish(unitType, facilityId, request.getMonthlyPrice(), 0L);
+        return finish(unitType, facilityId, initialPrice, 0L);
     }
 
     @Override
