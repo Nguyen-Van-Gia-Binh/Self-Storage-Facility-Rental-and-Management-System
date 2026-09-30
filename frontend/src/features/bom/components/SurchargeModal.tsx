@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Tag, Calendar, Building2, AlertCircle, Loader2 } from 'lucide-react';
-import type { FacilityListItem, CreateSurchargeRequest } from '@/types';
+import type { FacilityListItem, CreateSurchargeRequest, SurchargeItem } from '@/types';
 import { FEE_CATEGORIES, type FeeCategory } from '@/features/pricing/feeCategory';
 
 function vietnamToday(): string {
@@ -14,11 +14,28 @@ function vietnamToday(): string {
   }).format(new Date());
 }
 
+function dateOnly(value: string): string {
+  return value.slice(0, 10);
+}
+
+export type SurchargeModalSubmit =
+  | { mode: 'create'; body: CreateSurchargeRequest }
+  | {
+      mode: 'edit';
+      body: {
+        name: string;
+        category: FeeCategory;
+        amount: number;
+        effectiveDate?: string;
+      };
+    };
+
 interface SurchargeModalProps {
   isOpen: boolean;
   onClose: () => void;
   facilities: FacilityListItem[];
-  onSubmit: (data: CreateSurchargeRequest) => Promise<void>;
+  editing?: SurchargeItem | null;
+  onSubmit: (data: SurchargeModalSubmit) => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -26,19 +43,24 @@ export const SurchargeModal: React.FC<SurchargeModalProps> = ({
   isOpen,
   onClose,
   facilities,
+  editing = null,
   onSubmit,
   isLoading = false,
 }) => {
   const todayStr = vietnamToday();
+  const isEditing = editing != null;
+  const originalDate = editing ? dateOnly(editing.effectiveDate) : '';
+  const originalIsPast = isEditing && originalDate < todayStr;
 
-  const [formData, setFormData] = useState({
-    name: '',
-    category: '' as '' | FeeCategory,
-    facilityId: '' as string, // '' means all facilities
-    type: 'FIXED' as 'FIXED' | 'PERCENTAGE',
-    amount: '',
-    effectiveDate: todayStr,
-  });
+  const [formData, setFormData] = useState(() => ({
+    name: editing?.name ?? '',
+    category: (editing?.category || '') as '' | FeeCategory,
+    facilityId: editing?.facilityId != null ? String(editing.facilityId) : '',
+    type: (editing?.type ?? 'FIXED') as 'FIXED' | 'PERCENTAGE',
+    amount: editing ? String(editing.amount) : '',
+    effectiveDate: editing && !originalIsPast ? originalDate : todayStr,
+    newEffectiveDate: '',
+  }));
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -72,9 +94,14 @@ export const SurchargeModal: React.FC<SurchargeModalProps> = ({
       errs.amount = 'Tỷ lệ phần trăm phải từ 1% đến 100%';
     }
 
-    if (!formData.effectiveDate) {
-      errs.effectiveDate = 'Vui lòng chọn ngày hiệu lực';
-    } else if (formData.effectiveDate < vietnamToday()) {
+    const chosenDate = originalIsPast ? formData.newEffectiveDate : formData.effectiveDate;
+    if (!isEditing || !originalIsPast) {
+      if (!chosenDate) {
+        errs.effectiveDate = 'Vui lòng chọn ngày hiệu lực';
+      } else if (chosenDate < todayStr) {
+        errs.effectiveDate = 'Ngày hiệu lực không được ở quá khứ';
+      }
+    } else if (chosenDate && chosenDate < todayStr) {
       errs.effectiveDate = 'Ngày hiệu lực không được ở quá khứ';
     }
 
@@ -87,13 +114,33 @@ export const SurchargeModal: React.FC<SurchargeModalProps> = ({
     if (!validate()) return;
 
     const num = parseInt(formData.amount.replace(/[^0-9]/g, ''), 10);
+    const category = formData.category as FeeCategory;
+    if (isEditing) {
+      const chosenDate = originalIsPast ? formData.newEffectiveDate : formData.effectiveDate;
+      const effectiveDate =
+        chosenDate && chosenDate >= todayStr && chosenDate !== originalDate ? chosenDate : undefined;
+      await onSubmit({
+        mode: 'edit',
+        body: {
+          name: formData.name.trim(),
+          category,
+          amount: num,
+          effectiveDate,
+        },
+      });
+      return;
+    }
+
     await onSubmit({
-      name: formData.name.trim(),
-      category: formData.category as FeeCategory,
-      facilityId: formData.facilityId ? Number(formData.facilityId) : null,
-      type: formData.type,
-      amount: num,
-      effectiveDate: formData.effectiveDate,
+      mode: 'create',
+      body: {
+        name: formData.name.trim(),
+        category,
+        facilityId: formData.facilityId ? Number(formData.facilityId) : null,
+        type: formData.type,
+        amount: num,
+        effectiveDate: formData.effectiveDate,
+      },
     });
   };
 
@@ -107,11 +154,12 @@ export const SurchargeModal: React.FC<SurchargeModalProps> = ({
       }}
     >
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
-        {/* Header */}
         <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Tag className="w-5 h-5 text-amber-400" />
-            <h3 className="font-bold text-lg text-white">Thêm khoản phụ phí mới</h3>
+            <h3 className="font-bold text-lg text-white">
+              {isEditing ? 'Sửa phụ phí' : 'Thêm khoản phụ phí mới'}
+            </h3>
           </div>
           <button
             onClick={onClose}
@@ -122,9 +170,7 @@ export const SurchargeModal: React.FC<SurchargeModalProps> = ({
           </button>
         </div>
 
-        {/* Body Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Tên phụ phí */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
               Tên phụ phí <span className="text-rose-500">*</span>
@@ -176,7 +222,6 @@ export const SurchargeModal: React.FC<SurchargeModalProps> = ({
             )}
           </div>
 
-          {/* Cơ sở áp dụng */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
               Phạm vi cơ sở áp dụng
@@ -185,8 +230,9 @@ export const SurchargeModal: React.FC<SurchargeModalProps> = ({
               <Building2 className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
               <select
                 value={formData.facilityId}
+                disabled={isEditing}
                 onChange={(e) => setFormData({ ...formData, facilityId: e.target.value })}
-                className="w-full text-sm border border-slate-300 rounded-xl pl-10 pr-3.5 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100 bg-white"
+                className="w-full text-sm border border-slate-300 rounded-xl pl-10 pr-3.5 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100 bg-white disabled:bg-slate-50 disabled:text-slate-500"
               >
                 <option value="">Toàn hệ thống (Tất cả cơ sở)</option>
                 {facilities.map((fac) => (
@@ -196,9 +242,11 @@ export const SurchargeModal: React.FC<SurchargeModalProps> = ({
                 ))}
               </select>
             </div>
+            {isEditing && (
+              <p className="mt-1 text-[11px] text-slate-500">Phạm vi không đổi sau khi tạo.</p>
+            )}
           </div>
 
-          {/* Loại phụ phí */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
@@ -206,6 +254,7 @@ export const SurchargeModal: React.FC<SurchargeModalProps> = ({
               </label>
               <select
                 value={formData.type}
+                disabled={isEditing}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
@@ -213,14 +262,13 @@ export const SurchargeModal: React.FC<SurchargeModalProps> = ({
                     amount: '',
                   })
                 }
-                className="w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100 bg-white font-medium"
+                className="w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100 bg-white font-medium disabled:bg-slate-50 disabled:text-slate-500"
               >
                 <option value="FIXED">Cố định (VND)</option>
                 <option value="PERCENTAGE">Phần trăm (%)</option>
               </select>
             </div>
 
-            {/* Mức phí */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
                 {formData.type === 'FIXED' ? 'Số tiền (VND)' : 'Tỷ lệ (%)'} <span className="text-rose-500">*</span>
@@ -238,27 +286,54 @@ export const SurchargeModal: React.FC<SurchargeModalProps> = ({
               />
             </div>
           </div>
+          {isEditing && (
+            <p className="-mt-2 text-[11px] text-slate-500">Hình thức không đổi sau khi tạo.</p>
+          )}
           {errors.amount && (
             <p className="text-xs text-rose-500 flex items-center gap-1">
               <AlertCircle className="w-3.5 h-3.5" /> {errors.amount}
             </p>
           )}
 
-          {/* Ngày hiệu lực */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
-              Ngày bắt đầu có hiệu lực <span className="text-rose-500">*</span>
+              {originalIsPast ? 'Ngày hiệu lực hiện tại' : 'Ngày bắt đầu có hiệu lực'}{' '}
+              {!originalIsPast && <span className="text-rose-500">*</span>}
             </label>
-            <div className="relative">
-              <Calendar className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-              <input
-                type="date"
-                value={formData.effectiveDate}
-                min={todayStr}
-                onChange={(e) => setFormData({ ...formData, effectiveDate: e.target.value })}
-                className="w-full text-sm border border-slate-300 rounded-xl pl-10 pr-3.5 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
-              />
-            </div>
+            {originalIsPast ? (
+              <p className="text-sm text-slate-700">{originalDate}</p>
+            ) : (
+              <div className="relative">
+                <Calendar className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                <input
+                  type="date"
+                  value={formData.effectiveDate}
+                  min={todayStr}
+                  onChange={(e) => setFormData({ ...formData, effectiveDate: e.target.value })}
+                  className="w-full text-sm border border-slate-300 rounded-xl pl-10 pr-3.5 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+                />
+              </div>
+            )}
+            {originalIsPast && (
+              <div className="mt-3">
+                <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                  Ngày hiệu lực mới
+                </label>
+                <div className="relative">
+                  <Calendar className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <input
+                    type="date"
+                    value={formData.newEffectiveDate}
+                    min={todayStr}
+                    onChange={(e) => setFormData({ ...formData, newEffectiveDate: e.target.value })}
+                    className="w-full text-sm border border-slate-300 rounded-xl pl-10 pr-3.5 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+                  />
+                </div>
+                <p className="mt-1 text-[11px] text-slate-500">
+                  Để trống nếu giữ ngày hiện tại. Ngày đã qua không gửi lại.
+                </p>
+              </div>
+            )}
             {errors.effectiveDate && (
               <p className="mt-1 text-xs text-rose-500 flex items-center gap-1">
                 <AlertCircle className="w-3.5 h-3.5" /> {errors.effectiveDate}
@@ -266,7 +341,6 @@ export const SurchargeModal: React.FC<SurchargeModalProps> = ({
             )}
           </div>
 
-          {/* Actions */}
           <div className="pt-3 border-t border-slate-100 flex items-center justify-end space-x-3">
             <button
               type="button"
@@ -282,7 +356,7 @@ export const SurchargeModal: React.FC<SurchargeModalProps> = ({
               className="px-5 py-2 text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 active:bg-amber-700 rounded-xl shadow-md transition-all flex items-center space-x-1.5 disabled:opacity-50"
             >
               {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-              <span>Thêm phụ phí</span>
+              <span>{isEditing ? 'Lưu thay đổi' : 'Thêm phụ phí'}</span>
             </button>
           </div>
         </form>

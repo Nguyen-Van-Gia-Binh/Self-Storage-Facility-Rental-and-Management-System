@@ -22,14 +22,12 @@ import type {
   FacilityListItem,
   UnitTypeCatalog,
   SurchargeItem,
-  CreateSurchargeRequest,
   ActivePolicyInfo,
 } from '@/types';
 import { FacilityPriceTable } from '../components/FacilityPriceTable';
 import { PriceUpdateModal } from '../components/PriceUpdateModal';
 import { SurchargeTable } from '../components/SurchargeTable';
-import type { FeeCategory } from '@/features/pricing/feeCategory';
-import { SurchargeModal } from '../components/SurchargeModal';
+import { SurchargeModal, type SurchargeModalSubmit } from '../components/SurchargeModal';
 import { PolicySummaryCard } from '../components/PolicySummaryCard';
 
 type PricingTab = 'PRICING' | 'SURCHARGES' | 'POLICIES';
@@ -53,7 +51,8 @@ export const BomPricingManagementPage: React.FC = () => {
   const [priceModalUnitType, setPriceModalUnitType] = useState<UnitTypeCatalog | null>(null);
   const [isUpdatingPrice, setIsUpdatingPrice] = useState(false);
   const [isSurchargeModalOpen, setIsSurchargeModalOpen] = useState(false);
-  const [isCreatingSurcharge, setIsCreatingSurcharge] = useState(false);
+  const [editingSurcharge, setEditingSurcharge] = useState<SurchargeItem | null>(null);
+  const [isSavingSurcharge, setIsSavingSurcharge] = useState(false);
 
   const [toastMessage, setToastMessage] = useState<{
     type: 'success' | 'error';
@@ -181,46 +180,45 @@ export const BomPricingManagementPage: React.FC = () => {
     }
   };
 
-  const handleCreateSurcharge = async (data: CreateSurchargeRequest) => {
-    setIsCreatingSurcharge(true);
-    try {
-      await createSurcharge(data);
-      showToast(`Đã thêm phụ phí "${data.name}" thành công!`);
-      setIsSurchargeModalOpen(false);
+  const closeSurchargeModal = () => {
+    setIsSurchargeModalOpen(false);
+    setEditingSurcharge(null);
+  };
 
+  const handleSubmitSurcharge = async (data: SurchargeModalSubmit) => {
+    setIsSavingSurcharge(true);
+    try {
+      if (data.mode === 'create') {
+        await createSurcharge(data.body);
+        showToast(`Đã thêm phụ phí "${data.body.name}" thành công!`);
+      } else if (editingSurcharge) {
+        await updateSurcharge(editingSurcharge, data.body);
+        showToast(`Đã cập nhật phụ phí "${data.body.name}". Lần ghi sau dùng số mới.`);
+      }
+      closeSurchargeModal();
       const updated = await fetchSurcharges();
       setSurcharges(updated);
     } catch (err: unknown) {
       const errorObj = err as { message?: string };
-      showToast(errorObj.message || 'Lỗi khi thêm phụ phí', 'error');
+      showToast(errorObj.message || 'Không lưu được phụ phí', 'error');
     } finally {
-      setIsCreatingSurcharge(false);
+      setIsSavingSurcharge(false);
     }
   };
 
-  const handleChangeSurchargeAmount = async (item: SurchargeItem, amount: number) => {
-    if (item.amount === amount) return;
+  const handleDeactivateSurcharge = async (item: SurchargeItem) => {
+    const confirmed = window.confirm(
+      `Ngừng áp dụng phụ phí "${item.name}"? Các hợp đồng đã ghi nhận khoản này không đổi.`,
+    );
+    if (!confirmed) return;
     try {
-      await updateSurcharge(item, { amount });
-      showToast(`Đã cập nhật mức phí "${item.name}". Lần ghi sau dùng số mới.`);
+      await updateSurcharge(item, { isActive: false });
+      showToast(`Đã ngừng áp dụng "${item.name}".`);
       const updated = await fetchSurcharges();
       setSurcharges(updated);
     } catch (err: unknown) {
       const errorObj = err as { message?: string };
-      showToast(errorObj.message || 'Không cập nhật được mức phí', 'error');
-    }
-  };
-
-  const handleChangeSurchargeCategory = async (item: SurchargeItem, category: FeeCategory) => {
-    if (item.category === category) return;
-    try {
-      await updateSurcharge(item, { category });
-      showToast(`Đã chuyển "${item.name}" sang nhóm mới.`);
-      const updated = await fetchSurcharges();
-      setSurcharges(updated);
-    } catch (err: unknown) {
-      const errorObj = err as { message?: string };
-      showToast(errorObj.message || 'Không đổi được nhóm phụ phí', 'error');
+      showToast(errorObj.message || 'Không ngừng áp dụng được phụ phí', 'error');
     }
   };
 
@@ -316,9 +314,15 @@ export const BomPricingManagementPage: React.FC = () => {
       {activeTab === 'SURCHARGES' && (
         <SurchargeTable
           surcharges={surcharges}
-          onOpenModal={() => setIsSurchargeModalOpen(true)}
-          onChangeCategory={handleChangeSurchargeCategory}
-          onChangeAmount={handleChangeSurchargeAmount}
+          onOpenModal={() => {
+            setEditingSurcharge(null);
+            setIsSurchargeModalOpen(true);
+          }}
+          onEdit={(item) => {
+            setEditingSurcharge(item);
+            setIsSurchargeModalOpen(true);
+          }}
+          onDeactivate={handleDeactivateSurcharge}
           isLoading={isLoadingSurcharges}
         />
       )}
@@ -346,12 +350,13 @@ export const BomPricingManagementPage: React.FC = () => {
 
       {isSurchargeModalOpen && (
         <SurchargeModal
-          key="create-surcharge-modal"
+          key={editingSurcharge ? `edit-surcharge-${editingSurcharge.id}` : 'create-surcharge-modal'}
           isOpen={isSurchargeModalOpen}
-          onClose={() => setIsSurchargeModalOpen(false)}
+          onClose={closeSurchargeModal}
           facilities={facilities}
-          onSubmit={handleCreateSurcharge}
-          isLoading={isCreatingSurcharge}
+          editing={editingSurcharge}
+          onSubmit={handleSubmitSurcharge}
+          isLoading={isSavingSurcharge}
         />
       )}
     </div>

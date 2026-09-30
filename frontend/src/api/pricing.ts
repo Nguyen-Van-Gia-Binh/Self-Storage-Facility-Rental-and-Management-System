@@ -203,16 +203,32 @@ export async function createSurcharge(data: CreateSurchargeRequest): Promise<Sur
 
 export async function updateSurcharge(
   item: SurchargeItem,
-  patch: { category?: string; amount?: number },
+  patch: {
+    name?: string;
+    category?: string;
+    amount?: number;
+    isActive?: boolean;
+    effectiveDate?: string;
+  },
 ): Promise<SurchargeItem> {
+  const body: {
+    name: string;
+    amount: number;
+    isActive: boolean;
+    category?: string;
+    effectiveDate?: string;
+  } = {
+    name: patch.name ?? item.name,
+    amount: patch.amount ?? item.amount,
+    isActive: patch.isActive ?? item.isActive,
+    category: patch.category ?? item.category,
+  };
+  if (patch.effectiveDate) {
+    body.effectiveDate = patch.effectiveDate;
+  }
   return await apiClient<SurchargeItem>(`/surcharges/${item.id}`, {
     method: 'PUT',
-    body: JSON.stringify({
-      name: item.name,
-      amount: patch.amount ?? item.amount,
-      isActive: item.isActive,
-      category: patch.category ?? item.category,
-    }),
+    body: JSON.stringify(body),
   });
 }
 
