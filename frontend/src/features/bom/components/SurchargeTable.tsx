@@ -1,76 +1,33 @@
 // frontend/src/features/bom/components/SurchargeTable.tsx
-import React, { useEffect, useState } from 'react';
-import { Tag, Building2, Calendar, AlertCircle } from 'lucide-react';
+import React from 'react';
+import { Tag, Building2, Calendar, AlertCircle, Pencil, Trash2 } from 'lucide-react';
 import type { SurchargeItem } from '@/types';
-import { FEE_CATEGORIES, feeCategoryLabel, type FeeCategory } from '@/features/pricing/feeCategory';
+import { feeCategoryLabel } from '@/features/pricing/feeCategory';
 
 interface SurchargeTableProps {
   surcharges: SurchargeItem[];
   onOpenModal: () => void;
-  onChangeCategory?: (item: SurchargeItem, category: FeeCategory) => void;
-  onChangeAmount?: (item: SurchargeItem, amount: number) => void;
+  onEdit: (item: SurchargeItem) => void;
+  onDeactivate: (item: SurchargeItem) => void;
   isLoading?: boolean;
 }
 
-function FeeAmountEditor({
-  item,
-  onChangeAmount,
-}: {
-  item: SurchargeItem;
-  onChangeAmount: (item: SurchargeItem, amount: number) => void;
-}) {
-  const [draft, setDraft] = useState(String(item.amount));
-
-  useEffect(() => {
-    setDraft(String(item.amount));
-  }, [item.id, item.amount]);
-
-  const commit = () => {
-    const num = parseInt(draft.replace(/[^0-9]/g, ''), 10);
-    if (Number.isNaN(num) || num === item.amount) {
-      setDraft(String(item.amount));
-      return;
-    }
-    if (item.type === 'PERCENTAGE' && (num < 1 || num > 100)) {
-      setDraft(String(item.amount));
-      return;
-    }
-    if (item.type !== 'PERCENTAGE' && num <= 0) {
-      setDraft(String(item.amount));
-      return;
-    }
-    onChangeAmount(item, num);
-  };
-
-  return (
-    <label className="inline-flex items-center justify-end gap-1">
-      <input
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            e.currentTarget.blur();
-          }
-        }}
-        aria-label={`Mức phí của ${item.name}`}
-        className="w-28 text-right text-sm font-bold text-amber-700 border border-slate-200 rounded-lg px-2 py-1"
-      />
-      <span className="text-[11px] text-slate-500">{item.type === 'PERCENTAGE' ? '%' : 'VND'}</span>
-    </label>
-  );
+function feeAmountLabel(item: SurchargeItem): string {
+  if (item.type === 'PERCENTAGE') {
+    return `${item.amount}%`;
+  }
+  return `${item.amount.toLocaleString('vi-VN')} VND`;
 }
 
 export const SurchargeTable: React.FC<SurchargeTableProps> = ({
   surcharges,
   onOpenModal,
-  onChangeCategory,
-  onChangeAmount,
+  onEdit,
+  onDeactivate,
   isLoading = false,
 }) => {
   return (
     <div className="space-y-4">
-      {/* Header bar */}
       <div className="flex items-center justify-between bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
         <div className="flex items-center space-x-2.5">
           <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
@@ -92,7 +49,6 @@ export const SurchargeTable: React.FC<SurchargeTableProps> = ({
         </button>
       </div>
 
-      {/* Table */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-sm">
@@ -106,18 +62,19 @@ export const SurchargeTable: React.FC<SurchargeTableProps> = ({
                 <th className="py-3.5 px-4 text-right">Mức phí</th>
                 <th className="py-3.5 px-4">Ngày hiệu lực</th>
                 <th className="py-3.5 px-4 text-center">Trạng thái</th>
+                <th className="py-3.5 px-4 text-center">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-500 text-sm">
+                  <td colSpan={9} className="py-12 text-center text-slate-500 text-sm">
                     <p>Đang tải danh sách phụ phí...</p>
                   </td>
                 </tr>
               ) : surcharges.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-500 text-sm">
+                  <td colSpan={9} className="py-12 text-center text-slate-500 text-sm">
                     <AlertCircle className="w-8 h-8 text-slate-300 mx-auto mb-2" />
                     <p className="font-medium text-slate-600">Chưa có phụ phí nào được cấu hình</p>
                   </td>
@@ -126,35 +83,14 @@ export const SurchargeTable: React.FC<SurchargeTableProps> = ({
                 surcharges.map((item) => (
                   <tr key={item.id} className="hover:bg-amber-50/30 transition-colors">
                     <td className="py-3.5 px-4 font-mono text-xs text-slate-500">#{item.id}</td>
-
                     <td className="py-3.5 px-4 font-medium text-slate-900">{item.name}</td>
-                    <td className="py-3.5 px-4 text-xs text-slate-700">
-                      {onChangeCategory ? (
-                        <select
-                          value={item.category || ''}
-                          onChange={(e) => onChangeCategory(item, e.target.value as FeeCategory)}
-                          className="text-xs border border-slate-200 rounded-lg px-2 py-1 bg-white"
-                          aria-label={`Nhóm của ${item.name}`}
-                        >
-                          {!item.category && <option value="">Chưa phân nhóm</option>}
-                          {FEE_CATEGORIES.map((group) => (
-                            <option key={group.value} value={group.value}>
-                              {group.label}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        feeCategoryLabel(item.category)
-                      )}
-                    </td>
-
+                    <td className="py-3.5 px-4 text-xs text-slate-700">{feeCategoryLabel(item.category)}</td>
                     <td className="py-3.5 px-4">
                       <div className="flex items-center space-x-1.5 text-xs text-slate-600">
                         <Building2 className="w-3.5 h-3.5 text-slate-400" />
                         <span>{item.facilityName || 'Toàn hệ thống'}</span>
                       </div>
                     </td>
-
                     <td className="py-3.5 px-4">
                       <span
                         className={`inline-block px-2 py-0.5 rounded text-[11px] font-semibold ${
@@ -166,28 +102,49 @@ export const SurchargeTable: React.FC<SurchargeTableProps> = ({
                         {item.type === 'FIXED' ? 'Cố định' : 'Tỷ lệ %'}
                       </span>
                     </td>
-
                     <td className="py-3.5 px-4 text-right font-bold text-amber-600 text-sm">
-                      {onChangeAmount ? (
-                        <FeeAmountEditor item={item} onChangeAmount={onChangeAmount} />
-                      ) : item.type === 'FIXED' ? (
-                        `${item.amount.toLocaleString('vi-VN')} VND`
-                      ) : (
-                        `${item.amount}%`
-                      )}
+                      {feeAmountLabel(item)}
                     </td>
-
                     <td className="py-3.5 px-4 text-xs text-slate-600">
                       <div className="flex items-center space-x-1">
                         <Calendar className="w-3.5 h-3.5 text-slate-400" />
                         <span>{item.effectiveDate}</span>
                       </div>
                     </td>
-
                     <td className="py-3.5 px-4 text-center">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        Đang áp dụng
-                      </span>
+                      {item.isActive ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          Đang áp dụng
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                          Ngừng áp dụng
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-4 text-center">
+                      {item.isActive ? (
+                        <div className="inline-flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => onEdit(item)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                            Sửa
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onDeactivate(item)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-rose-700 bg-white border border-rose-200 rounded-lg hover:bg-rose-50"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            Xóa
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-400">—</span>
+                      )}
                     </td>
                   </tr>
                 ))
