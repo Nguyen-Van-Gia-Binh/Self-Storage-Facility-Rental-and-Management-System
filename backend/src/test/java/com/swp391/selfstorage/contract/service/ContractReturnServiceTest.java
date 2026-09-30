@@ -11,6 +11,10 @@ import com.swp391.selfstorage.reservation.repository.ReservationRepository;
 import com.swp391.selfstorage.unit.entity.StorageUnit;
 import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
+import com.swp391.selfstorage.policy.entity.ExtraFeeType;
+import com.swp391.selfstorage.policy.repository.ExtraFeeTypeRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.swp391.selfstorage.auth.service.UserPrincipal;
 import com.swp391.selfstorage.common.exception.ErrorCode;
@@ -48,8 +52,15 @@ class ContractReturnServiceTest {
         private ReservationRepository reservationRepository;
         @Mock
         private ApplicationEventPublisher eventPublisher;
+        @Mock
+        private ExtraFeeTypeRepository extraFeeTypeRepository;
         @InjectMocks
         private ContractServiceImpl contractService;
+
+        @BeforeEach
+        void wireFeeCatalog() {
+                ReflectionTestUtils.setField(contractService, "extraFeeTypeRepository", extraFeeTypeRepository);
+        }
 
         @Test
         @DisplayName("FS-04: submitReturnNotice tạo ReturnRequest thành công")
@@ -113,12 +124,24 @@ class ContractReturnServiceTest {
                 when(returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(500L))
                                 .thenReturn(Optional.empty());
                 when(returnRequestRepository.save(any(ReturnRequest.class))).thenAnswer(i -> i.getArgument(0));
+                ExtraFeeType fee = ExtraFeeType.builder()
+                                .code("DAMAGE_HINGE")
+                                .name("Bản lề cửa")
+                                .category("DAMAGE")
+                                .amount(200_000L)
+                                .feeType("FIXED")
+                                .facilityId(1L)
+                                .isActive(true)
+                                .build();
+                fee.setId(7L);
+                when(extraFeeTypeRepository.findById(7L)).thenReturn(Optional.of(fee));
 
                 ReturnInspectionRequest request = ReturnInspectionRequest.builder()
                                 .returnDate(LocalDate.now())
                                 .condition("MINOR_DAMAGE")
                                 .damageNotes("Vỡ bản lề cửa")
-                                .damageCost(200_000L)
+                                .damageCost(999_000L)
+                                .extraFeeTypeIds(List.of(7L))
                                 .evidenceImageUrls("https://storage.example.com/img1.jpg")
                                 .customerConfirmed(true)
                                 .signatureDataUrl("data:image/png;base64,abc")
@@ -131,7 +154,14 @@ class ContractReturnServiceTest {
                 assertEquals(ContractStatus.PENDING_RETURN, contract.getStatus());
                 assertEquals(200_000L, response.getDamageCost());
                 assertEquals(800_000L, response.getEstimatedDepositRefund());
-                verify(extraChargeRepository).save(any(ContractExtraCharge.class));
+                ArgumentCaptor<ReturnRequest> savedReturn = ArgumentCaptor.forClass(ReturnRequest.class);
+                verify(returnRequestRepository).save(savedReturn.capture());
+                assertEquals(0L, savedReturn.getValue().getDamageCost());
+                ArgumentCaptor<ContractExtraCharge> savedCharge = ArgumentCaptor.forClass(ContractExtraCharge.class);
+                verify(extraChargeRepository).save(savedCharge.capture());
+                assertEquals(7L, savedCharge.getValue().getExtraFeeTypeId());
+                assertEquals(200_000L, savedCharge.getValue().getAmount());
+                assertTrue(savedCharge.getValue().getReason().startsWith("DAMAGE:"));
         }
 
         @Test
@@ -176,7 +206,7 @@ class ContractReturnServiceTest {
                                 .returnDate(LocalDate.now())
                                 .condition("MAJOR_DAMAGE")
                                 .damageNotes("Gãy khóa")
-                                .damageCost(500_000L)
+                                .extraFeeTypeIds(List.of(8L))
                                 .customerConfirmed(true)
                                 .signatureDataUrl("data:image/png;base64,abc")
                                 .build();
@@ -446,5 +476,42 @@ class ContractReturnServiceTest {
                 CustomException ex = assertThrows(CustomException.class,
                                 () -> contractService.cancelReturnNotice(500L, otherCustomer));
                 assertEquals(ErrorCode.ACCESS_DENIED, ex.getErrorCode());
+        }
+
+        @Test
+        @DisplayName("BR-RET-04: phụ phí danh mục chỉ tính một lần trong khoản chưa thu")
+        void testSettlementPreview_CountsCatalogFeeOnce() {
+                RentalContract contract = RentalContract.builder()
+                                .id(500L)
+                                .facilityId(1L)
+                                .depositAmount(1_000_000L)
+                                .status(ContractStatus.PENDING_RETURN)
+                                .build();
+                ReturnRequest returnReq = ReturnRequest.builder().contractId(500L).damageCost(0L).build();
+                ContractExtraCharge catalog = ContractExtraCharge.builder()
+                                .contractId(500L)
+                                .extraFeeTypeId(7L)
+                                .amount(200_000L)
+                                .reason("DAMAGE: Bản lề cửa — Vỡ")
+                                .status(ExtraChargeStatus.UNPAID)
+                                .build();
+                ContractExtraCharge legacy = ContractExtraCharge.builder()
+                                .contractId(500L)
+                                .amount(200_000L)
+                                .reason("Bồi thường hư hại ô kho: biên bản cũ")
+                                .status(ExtraChargeStatus.UNPAID)
+                                .build();
+                when(contractRepository.findByIdAndFacilityIdIn(eq(500L), anyList())).thenReturn(Optional.of(contract));
+                when(returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(500L))
+                                .thenReturn(Optional.of(returnReq));
+                when(extraChargeRepository.findByContractIdAndStatus(500L, ExtraChargeStatus.UNPAID))
+                                .thenReturn(List.of(catalog, legacy));
+
+                SettlementPreviewResponse preview = contractService.getSettlementPreview(500L, List.of(1L));
+
+                assertEquals(0L, preview.getDamageCost());
+                assertEquals(200_000L, preview.getUnpaidExtraCharges());
+                assertEquals(800_000L, preview.getDepositRefundAmount());
+                assertEquals(0L, preview.getPayableAmount());
         }
 }

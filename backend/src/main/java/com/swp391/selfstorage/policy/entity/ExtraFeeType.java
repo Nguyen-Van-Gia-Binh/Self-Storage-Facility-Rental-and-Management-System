@@ -23,6 +23,10 @@ public class ExtraFeeType extends BaseEntity {
     @Column(name = "code", nullable = false, unique = true, length = 30)
     private String code;
 
+    /** ACCESS_KEY, CLEANING, DAMAGE hoặc VALUE_ADDED (BR-PRI-04). */
+    @Column(name = "category", nullable = false, length = 30)
+    private String category;
+
     @Column(name = "name", nullable = false, length = 150)
     private String name;
 

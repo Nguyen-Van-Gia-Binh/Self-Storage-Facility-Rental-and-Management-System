@@ -148,7 +148,8 @@ public class ReservationServiceImpl implements ReservationService {
             return;
         }
         List<SurchargeLineResponse> lines = SurchargeAmountCalculator.lines(
-                extraFeeTypeRepository.findApplicable(facilityId, LocalDate.now()),
+                SurchargeAmountCalculator.prepaidValueAdded(
+                        extraFeeTypeRepository.findApplicable(facilityId, LocalDate.now())),
                 response.getMonthlyPrice(),
                 response.getRentalMonths());
         response.applySurchargeLines(lines);

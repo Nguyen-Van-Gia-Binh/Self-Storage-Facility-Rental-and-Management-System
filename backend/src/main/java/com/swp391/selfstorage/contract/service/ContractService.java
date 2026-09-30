@@ -23,6 +23,9 @@ public interface ContractService {
     ReturnNoticeResponse submitReturnNotice(Long contractId, ReturnNoticeRequest request, List<Long> facilityIds);
     ReturnNoticeResponse cancelReturnNotice(Long contractId, UserPrincipal currentUser);
     ReturnInspectionResponse submitReturnInspection(Long contractId, ReturnInspectionRequest request, Long staffId, List<Long> facilityIds);
+
+    /** Ghi ACCESS_KEY hoặc VALUE_ADDED từ danh mục vào hợp đồng đang thuê (BR-PRI-04). */
+    CatalogFeeChargeResponse applyCatalogFee(Long contractId, ApplyCatalogFeeRequest request, Long actorId, List<Long> facilityIds);
     SettlementPreviewResponse getSettlementPreview(Long contractId, List<Long> facilityIds);
     SettlementApprovalResponse approveSettlement(Long contractId, SettlementApprovalRequest request, Long managerId, List<Long> facilityIds);
 

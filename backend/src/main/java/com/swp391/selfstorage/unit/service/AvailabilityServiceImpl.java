@@ -101,7 +101,8 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         List<SurchargeLineResponse> surchargeLines = List.of();
         if (extraFeeTypeRepository != null) {
             surchargeLines = SurchargeAmountCalculator.lines(
-                    extraFeeTypeRepository.findApplicable(facilityId, LocalDate.now()),
+                    SurchargeAmountCalculator.prepaidValueAdded(
+                            extraFeeTypeRepository.findApplicable(facilityId, LocalDate.now())),
                     monthlyPrice,
                     rentalMonths);
         }

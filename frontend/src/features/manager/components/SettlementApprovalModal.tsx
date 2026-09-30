@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, CheckCircle, AlertCircle, RotateCcw } from 'lucide-react';
 import type { ManagerContractItem } from '@/types/contractManager';
-import { approveSettlementRefund } from '@/api/contract';
+import type { SettlementPreviewData } from '@/types';
+import { approveSettlementRefund, getSettlementPreview } from '@/api/contract';
 
 interface SettlementApprovalModalProps {
   isOpen: boolean;
@@ -17,26 +18,31 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
   onClose,
   onSuccess,
 }) => {
-  const [damageCost, setDamageCost] = useState<number>(contract?.damageCost || 0);
   const [note, setNote] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [preview, setPreview] = useState<SettlementPreviewData | null>(null);
 
-  // Sync initial damage cost when contract changes
   React.useEffect(() => {
-    if (contract) {
-      setDamageCost(contract.damageCost || 0);
-      setNote(contract.damageNotes ? `Căn cứ theo biên bản: ${contract.damageNotes}` : '');
-    }
-  }, [contract]);
+    if (!isOpen || !contract) return;
+    setNote(contract.damageNotes ? `Căn cứ theo biên bản: ${contract.damageNotes}` : '');
+    setPreview(null);
+    setError(null);
+    getSettlementPreview(contract.id)
+      .then(setPreview)
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : 'Không tải được bảng tất toán.');
+      });
+  }, [isOpen, contract]);
 
   if (!isOpen || !contract) return null;
 
-  const originalDeposit = contract.depositAmount || 800000;
-  const overdueFee = contract.overdueFeeAccrued || 0;
-  const totalDeduction = damageCost + overdueFee;
-  const netRefund = Math.max(0, originalDeposit - totalDeduction);
-  const payableAmount = Math.max(0, totalDeduction - originalDeposit);
+  const originalDeposit = preview?.depositAmount ?? contract.depositAmount ?? 0;
+  const overdueFee = preview?.overdueFee ?? contract.overdueFeeAccrued ?? 0;
+  const recordedDamage = preview?.damageCost ?? 0;
+  const unpaidExtras = preview?.unpaidExtraCharges ?? 0;
+  const netRefund = preview?.depositRefundAmount ?? 0;
+  const payableAmount = preview?.payableAmount ?? 0;
 
   const handleApprove = async () => {
     setLoading(true);
@@ -44,7 +50,7 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
     try {
       const res = await approveSettlementRefund({
         contractId: contract.id,
-        damageCost,
+        damageCost: recordedDamage,
         depositRefundAmount: netRefund,
         penaltyAmount: overdueFee,
         note: note.trim() || undefined,
@@ -118,24 +124,25 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
               </span>
             </div>
 
-            <div className="flex justify-between text-slate-700 items-center">
-              <span>2. Khấu trừ chi phí bồi thường hư hại:</span>
-              <div className="flex items-center gap-1">
-                <span className="text-rose-600 font-semibold font-mono">-</span>
-                <input
-                  type="number"
-                  min={0}
-                  value={damageCost}
-                  onChange={(e) => setDamageCost(Number(e.target.value) || 0)}
-                  className="w-28 px-2 py-1 text-right font-mono font-semibold text-xs border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
-                />
-                <span className="text-xs text-slate-500">đ</span>
-              </div>
+            <div className="flex justify-between text-slate-700">
+              <span>2. Chi phí khắc phục đã ghi nhận:</span>
+              <span className="font-mono font-semibold text-rose-700">
+                -{recordedDamage.toLocaleString('vi-VN')} đ
+              </span>
             </div>
+            <div className="flex justify-between text-slate-700">
+              <span>3. Phụ phí chưa thanh toán:</span>
+              <span className="font-mono font-semibold text-rose-700">
+                -{unpaidExtras.toLocaleString('vi-VN')} đ
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500">
+              Các dòng này lấy từ danh mục đã chọn. Không nhập thêm một số tiền hư hỏng tự do cho cùng sự việc.
+            </p>
 
             {overdueFee > 0 && (
               <div className="flex justify-between text-rose-600">
-                <span>3. Khấu trừ phí quá hạn phát sinh:</span>
+                <span>4. Khấu trừ phí quá hạn phát sinh:</span>
                 <span className="font-mono font-semibold">
                   -{overdueFee.toLocaleString('vi-VN')} đ
                 </span>
@@ -180,7 +187,7 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
           <button
             type="button"
             onClick={handleApprove}
-            disabled={loading}
+            disabled={loading || preview == null}
             className="px-5 py-2 text-xs font-semibold text-white bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-50 flex items-center gap-1.5"
           >
             {loading ? (

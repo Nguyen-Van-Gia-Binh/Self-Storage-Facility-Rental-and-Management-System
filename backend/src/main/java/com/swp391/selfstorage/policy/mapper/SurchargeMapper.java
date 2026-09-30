@@ -16,6 +16,7 @@ public class SurchargeMapper {
                 : request.getType().trim().toUpperCase();
         return ExtraFeeType.builder()
                 .name(request.getName().trim())
+                .category(request.getCategory())
                 .amount(request.getAmount())
                 .facilityId(request.getFacilityId())
                 .feeType(feeType)
@@ -29,6 +30,9 @@ public class SurchargeMapper {
             return;
         entity.setName(request.getName().trim());
         entity.setAmount(request.getAmount());
+        if (request.getCategory() != null && !request.getCategory().isBlank()) {
+            entity.setCategory(request.getCategory().trim().toUpperCase());
+        }
         if (request.getIsActive() != null) {
             entity.setIsActive(request.getIsActive());
         }
@@ -44,6 +48,7 @@ public class SurchargeMapper {
                 .id(entity.getId())
                 .code(entity.getCode())
                 .name(entity.getName())
+                .category(entity.getCategory())
                 .amount(entity.getAmount())
                 .facilityId(entity.getFacilityId())
                 .facilityName(entity.getFacilityId() == null ? "Toàn hệ thống" : null)

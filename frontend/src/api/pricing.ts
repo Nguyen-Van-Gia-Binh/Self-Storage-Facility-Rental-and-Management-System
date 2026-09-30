@@ -201,6 +201,21 @@ export async function createSurcharge(data: CreateSurchargeRequest): Promise<Sur
   });
 }
 
+export async function updateSurcharge(
+  item: SurchargeItem,
+  patch: { category?: string; amount?: number },
+): Promise<SurchargeItem> {
+  return await apiClient<SurchargeItem>(`/surcharges/${item.id}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      name: item.name,
+      amount: patch.amount ?? item.amount,
+      isActive: item.isActive,
+      category: patch.category ?? item.category,
+    }),
+  });
+}
+
 /**
  * Lấy chính sách cọc & quá hạn đang hiệu lực trực tiếp từ CSDL (BM-02 / BM-03)
  * Gọi endpoint: GET /api/v1/policies/active

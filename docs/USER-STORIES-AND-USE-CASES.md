@@ -1333,8 +1333,8 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 
 - **AC-1** — *Given* tôi mở bảng phí, *when* trang tải xong, *then* tôi thấy `overdue.daily_rate` và
   `overdue.cap_rate` dùng cho `BR-OVD-03` và `BR-OVD-04`, cùng danh sách phụ phí có mã, tên, số tiền
-  hoặc cách tính (ví dụ cấp lại Access Card).
-- **AC-2** — *Given* tôi thêm phụ phí "Cấp lại Access Card" với số tiền cố định, *when* tôi lưu,
+  hoặc cách tính (ví dụ cấp lại khóa cơ).
+- **AC-2** — *Given* tôi thêm phụ phí "Cấp lại khóa cơ" với số tiền cố định, *when* tôi lưu,
   *then* Facility Staff chọn được khoản này khi ghi nhận phụ thu cho hợp đồng, và khách thấy khoản đó
   ở `UC-F3-13`.
 - **AC-3** — *Given* tôi sửa `overdue.daily_rate`, *when* phiên bản có hiệu lực, *then* chỉ Contract

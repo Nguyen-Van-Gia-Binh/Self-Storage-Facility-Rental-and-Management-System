@@ -29,6 +29,7 @@ function mapRawSupportTask(item: any): DailyIncidentTask {
     resolutionNote: item.resolutionNote,
     createdAt: item.createdAt,
     relocationRequired: Boolean(item.relocationRequired),
+    contractId: item.contractId ?? undefined,
   };
 }
 

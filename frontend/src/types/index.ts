@@ -176,6 +176,7 @@ export interface ReturnInspectionRequest {
   condition: InspectionCondition;
   damageNotes?: string;
   damageCost?: number;
+  extraFeeTypeIds?: number[];
   evidenceImageUrls?: string;
   customerConfirmed: boolean;
   signatureDataUrl?: string;
@@ -285,6 +286,7 @@ export interface DailyIncidentTask {
   resolutionNote?: string;
   createdAt?: string;
   relocationRequired?: boolean;
+  contractId?: number;
 }
 
 export interface StaffDailyTaskReport {
@@ -320,6 +322,7 @@ export interface UpdateFacilityRequest {
 export interface SurchargeItem {
   id: number;
   name: string;
+  category?: 'ACCESS_KEY' | 'CLEANING' | 'DAMAGE' | 'VALUE_ADDED' | string;
   facilityId?: number | null;
   facilityName?: string;
   unitTypeId?: number | null;
@@ -331,6 +334,7 @@ export interface SurchargeItem {
 
 export interface CreateSurchargeRequest {
   name: string;
+  category: 'ACCESS_KEY' | 'CLEANING' | 'DAMAGE' | 'VALUE_ADDED';
   facilityId?: number | null;
   unitTypeId?: number | null;
   amount: number;

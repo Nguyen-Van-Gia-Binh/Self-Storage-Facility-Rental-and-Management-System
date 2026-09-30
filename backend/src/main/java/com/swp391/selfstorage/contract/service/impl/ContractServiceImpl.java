@@ -25,9 +25,13 @@ import com.swp391.selfstorage.support.entity.SupportRequest;
 import com.swp391.selfstorage.support.entity.SupportStatus;
 import com.swp391.selfstorage.support.repository.StaffDailyAssignmentRepository;
 import com.swp391.selfstorage.support.repository.SupportRequestRepository;
+import com.swp391.selfstorage.policy.entity.ExtraFeeType;
 import com.swp391.selfstorage.policy.entity.PolicyVersion;
+import com.swp391.selfstorage.policy.repository.ExtraFeeTypeRepository;
 import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
+import com.swp391.selfstorage.policy.service.AppliedPriceLookup;
 import com.swp391.selfstorage.policy.service.PolicyNumbers;
+import com.swp391.selfstorage.policy.service.SurchargeAmountCalculator;
 import com.swp391.selfstorage.user.entity.UserRole;
 import com.swp391.selfstorage.user.service.AuditLogService;
 import com.swp391.selfstorage.user.service.UserService;
@@ -51,6 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Service
@@ -85,10 +90,17 @@ public class ContractServiceImpl implements ContractService {
         private SupportRequestRepository supportRequestRepository;
 
         @Autowired(required = false)
+        private ExtraFeeTypeRepository extraFeeTypeRepository;
+
+        @Autowired(required = false)
         private AuditLogService auditLogService;
 
         private static final List<SupportStatus> OPEN_UNIT_DAMAGE = List.of(
                         SupportStatus.NEW, SupportStatus.ASSIGNED, SupportStatus.IN_PROGRESS);
+
+        private static final String LEGACY_DAMAGE_REASON = "Bồi thường hư hại ô kho";
+        private static final Set<String> INSPECTION_FEE_CATEGORIES = Set.of("CLEANING", "DAMAGE");
+        private static final Set<String> RENTAL_FEE_CATEGORIES = Set.of("ACCESS_KEY", "VALUE_ADDED");
 
         @Override
         @Transactional
@@ -831,39 +843,54 @@ public class ContractServiceImpl implements ContractService {
                         throw new CustomException(ErrorCode.VALIDATION_FAILED,
                                         "Khách hàng phải ký và xác nhận biên bản nghiệm thu");
                 }
-                if (request.getDamageCost() > 0
+
+                boolean isIntact = "GOOD".equalsIgnoreCase(request.getCondition());
+                List<Long> feeIds = request.getExtraFeeTypeIds() == null ? List.of() : request.getExtraFeeTypeIds();
+                if (isIntact && !feeIds.isEmpty()) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                                        "Ô nguyên trạng không ghi phụ phí vệ sinh hoặc bồi thường");
+                }
+                if (!isIntact && feeIds.isEmpty()) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                                        "Chọn khoản vệ sinh hoặc bồi thường đang hiệu lực trong danh mục");
+                }
+                if (!isIntact
                                 && (request.getDamageNotes() == null || request.getDamageNotes().isBlank()
                                                 || request.getEvidenceImageUrls() == null
                                                 || request.getEvidenceImageUrls().isBlank())) {
                         throw new CustomException(ErrorCode.VALIDATION_FAILED,
-                                        "Nghiệm thu có hư hại phải có ghi chú và ảnh bằng chứng");
+                                        "Nghiệm thu có phụ phí phải có mô tả và ít nhất một ảnh");
                 }
 
-                boolean isIntact = "GOOD".equalsIgnoreCase(request.getCondition()) && request.getDamageCost() == 0;
+                long catalogSum = 0L;
+                for (Long feeId : feeIds) {
+                        ExtraFeeType fee = requireApplicableFee(feeId, contract, INSPECTION_FEE_CATEGORIES);
+                        long amount = snapshotFeeAmount(fee, contract.getMonthlyPrice());
+                        catalogSum += amount;
+                        String note = request.getDamageNotes() == null ? "" : request.getDamageNotes().trim();
+                        extraChargeRepository.save(ContractExtraCharge.builder()
+                                        .contractId(contract.getId())
+                                        .extraFeeTypeId(fee.getId())
+                                        .amount(amount)
+                                        .reason(fee.getCategory() + ": " + fee.getName()
+                                                        + (note.isBlank() ? "" : " — " + note))
+                                        .recordedBy(staffId)
+                                        .status(ExtraChargeStatus.UNPAID)
+                                        .build());
+                }
+
                 returnRequest.setInspectedBy(staffId);
                 returnRequest.setInspectedAt(OffsetDateTime.now());
                 returnRequest.setIsIntact(isIntact);
                 returnRequest.setConditionNote(request.getDamageNotes());
-                returnRequest.setDamageCost(request.getDamageCost());
+                // Phụ phí danh mục nằm trên contract_extra_charge. Không lưu thêm số tự do (BR-RET-04).
+                returnRequest.setDamageCost(0L);
                 returnRequest.setEvidenceImageUrls(request.getEvidenceImageUrls());
                 returnRequest.setCustomerConfirmed(true);
                 returnRequest.setCustomerConfirmedAt(OffsetDateTime.now());
                 returnRequest.setSignatureData(request.getSignatureDataUrl());
                 returnRequest.setStatus(ReturnRequestStatus.PENDING);
                 returnRequestRepository.save(returnRequest);
-
-                if (request.getDamageCost() > 0) {
-                        ContractExtraCharge extraCharge = ContractExtraCharge.builder()
-                                        .contractId(contract.getId())
-                                        .amount(request.getDamageCost())
-                                        .reason("Bồi thường hư hại ô kho: "
-                                                        + (request.getDamageNotes() != null ? request.getDamageNotes()
-                                                                        : "Inspection damage"))
-                                        .recordedBy(staffId)
-                                        .status(ExtraChargeStatus.UNPAID)
-                                        .build();
-                        extraChargeRepository.save(extraCharge);
-                }
 
                 contract.setStatus(ContractStatus.PENDING_RETURN);
                 contract.setReturnDate(request.getReturnDate());
@@ -881,7 +908,7 @@ public class ContractServiceImpl implements ContractService {
                 }
 
                 long earlyRentRefund = earlyRentRefund(contract, request.getReturnDate());
-                long estimatedRefund = Math.max(0, contract.getDepositBalance() - request.getDamageCost()
+                long estimatedRefund = Math.max(0, contract.getDepositBalance() - catalogSum
                                 - contract.getOverdueFeeAccrued()) + earlyRentRefund;
 
                 return ReturnInspectionResponse.builder()
@@ -890,7 +917,44 @@ public class ContractServiceImpl implements ContractService {
                                 .returnDate(request.getReturnDate())
                                 .estimatedDepositRefund(estimatedRefund)
                                 .overdueFee(contract.getOverdueFeeAccrued())
-                                .damageCost(request.getDamageCost())
+                                .damageCost(catalogSum)
+                                .build();
+        }
+
+        @Override
+        @Transactional
+        public CatalogFeeChargeResponse applyCatalogFee(Long contractId, ApplyCatalogFeeRequest request,
+                        Long actorId, List<Long> facilityIds) {
+                Optional<RentalContract> contractOpt = (facilityIds == null || facilityIds.isEmpty())
+                                ? contractRepository.findById(contractId)
+                                : contractRepository.findByIdAndFacilityIdIn(contractId, facilityIds);
+                RentalContract contract = contractOpt
+                                .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
+                if (contract.getStatus() != ContractStatus.ACTIVE && contract.getStatus() != ContractStatus.OVERDUE) {
+                        throw new CustomException(ErrorCode.CONTRACT_NOT_ACTIVE_OR_OVERDUE);
+                }
+                if (request == null || request.getExtraFeeTypeId() == null) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Phải chọn khoản phụ phí trong danh mục");
+                }
+                ExtraFeeType fee = requireApplicableFee(request.getExtraFeeTypeId(), contract, RENTAL_FEE_CATEGORIES);
+                long amount = snapshotFeeAmount(fee, contract.getMonthlyPrice());
+                String note = request.getNote() == null ? "" : request.getNote().trim();
+                ContractExtraCharge saved = extraChargeRepository.save(ContractExtraCharge.builder()
+                                .contractId(contract.getId())
+                                .extraFeeTypeId(fee.getId())
+                                .amount(amount)
+                                .reason(fee.getCategory() + ": " + fee.getName() + (note.isBlank() ? "" : " — " + note))
+                                .recordedBy(actorId)
+                                .status(ExtraChargeStatus.UNPAID)
+                                .build());
+                return CatalogFeeChargeResponse.builder()
+                                .id(saved.getId())
+                                .contractId(contract.getId())
+                                .extraFeeTypeId(fee.getId())
+                                .name(fee.getName())
+                                .category(fee.getCategory())
+                                .amount(amount)
+                                .status(saved.getStatus().name())
                                 .build();
         }
 
@@ -909,13 +973,7 @@ public class ContractServiceImpl implements ContractService {
 
                 List<ContractExtraCharge> unpaidCharges = extraChargeRepository.findByContractIdAndStatus(contractId,
                                 ExtraChargeStatus.UNPAID);
-                // Loại trừ phụ phí hư hại ô kho đã được tính độc lập ở biến damage để tránh
-                // khấu trừ kép (ISS-14, BR-RET-04)
-                long totalUnpaid = unpaidCharges.stream()
-                                .filter(charge -> charge.getReason() == null
-                                                || !charge.getReason().startsWith("Bồi thường hư hại ô kho"))
-                                .mapToLong(ContractExtraCharge::getAmount)
-                                .sum();
+                long totalUnpaid = unpaidChargesOutsideLegacyDamage(unpaidCharges);
 
                 long deposit = contract.getDepositAmount();
                 long damage = returnReq.getDamageCost();
@@ -957,20 +1015,14 @@ public class ContractServiceImpl implements ContractService {
                 ReturnRequest returnReq = returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(contractId)
                                 .orElseThrow(() -> new CustomException(ErrorCode.RETURN_REQUEST_NOT_FOUND));
 
-                // Cho phep FM dieu chinh so tien khau tru hu hai neu co
-                if (request != null && request.getAdjustedDamageCost() != null) {
-                        returnReq.setDamageCost(request.getAdjustedDamageCost());
-                }
-
                 List<ContractExtraCharge> unpaidCharges = extraChargeRepository.findByContractIdAndStatus(contractId,
                                 ExtraChargeStatus.UNPAID);
-                // Loại trừ phụ phí hư hại ô kho đã được tính độc lập ở biến damage để tránh
-                // khấu trừ kép (ISS-14, BR-RET-04)
-                long totalUnpaid = unpaidCharges.stream()
-                                .filter(charge -> charge.getReason() == null
-                                                || !charge.getReason().startsWith("Bồi thường hư hại ô kho"))
-                                .mapToLong(ContractExtraCharge::getAmount)
-                                .sum();
+                boolean catalogInspection = unpaidCharges.stream().anyMatch(this::isCatalogInspectionCharge);
+                // Số tự do chỉ còn cho biên bản cũ. Phụ phí danh mục đã nằm trong dòng chưa thu.
+                if (request != null && request.getAdjustedDamageCost() != null && !catalogInspection) {
+                        returnReq.setDamageCost(request.getAdjustedDamageCost());
+                }
+                long totalUnpaid = unpaidChargesOutsideLegacyDamage(unpaidCharges);
 
                 long deposit = contract.getDepositAmount();
                 long damage = returnReq.getDamageCost();
@@ -1180,6 +1232,55 @@ public class ContractServiceImpl implements ContractService {
                                 .map(PolicyVersion::getReturnRefundWorkingDays)
                                 .filter(days -> days != null && days >= 0)
                                 .orElse(7);
+        }
+
+        private ExtraFeeType requireApplicableFee(Long feeId, RentalContract contract, Set<String> allowedCategories) {
+                if (extraFeeTypeRepository == null || feeId == null) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Không xác minh được danh mục phụ phí");
+                }
+                ExtraFeeType fee = extraFeeTypeRepository.findById(feeId)
+                                .orElseThrow(() -> new CustomException(ErrorCode.VALIDATION_FAILED,
+                                                "Khoản phụ phí không còn trong danh mục"));
+                String category = fee.getCategory() == null ? "" : fee.getCategory().trim().toUpperCase();
+                if (!allowedCategories.contains(category)) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                                        "Khoản phụ phí không thuộc nhóm được phép cho thao tác này");
+                }
+                if (!Boolean.TRUE.equals(fee.getIsActive())) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Khoản phụ phí đã ngừng hiệu lực");
+                }
+                if (fee.getFacilityId() != null && !fee.getFacilityId().equals(contract.getFacilityId())) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                                        "Khoản phụ phí không áp dụng cho cơ sở của hợp đồng");
+                }
+                if (fee.getEffectiveFrom() != null && fee.getEffectiveFrom().isAfter(AppliedPriceLookup.todayVn())) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Khoản phụ phí chưa đến ngày hiệu lực");
+                }
+                return fee;
+        }
+
+        private long snapshotFeeAmount(ExtraFeeType fee, long monthlyPrice) {
+                var lines = SurchargeAmountCalculator.lines(List.of(fee), monthlyPrice, 1);
+                if (lines.isEmpty()) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Không tính được số tiền phụ phí");
+                }
+                return lines.get(0).getAmount();
+        }
+
+        private boolean isCatalogInspectionCharge(ContractExtraCharge charge) {
+                if (charge.getExtraFeeTypeId() == null || charge.getReason() == null) {
+                        return false;
+                }
+                return charge.getReason().startsWith("CLEANING:") || charge.getReason().startsWith("DAMAGE:");
+        }
+
+        /** Dòng danh mục tính một lần. Biên bản cũ gắn tiền tự do thì loại prefix để không cộng trùng. */
+        private long unpaidChargesOutsideLegacyDamage(List<ContractExtraCharge> unpaidCharges) {
+                return unpaidCharges.stream()
+                                .filter(charge -> charge.getReason() == null
+                                                || !charge.getReason().startsWith(LEGACY_DAMAGE_REASON))
+                                .mapToLong(ContractExtraCharge::getAmount)
+                                .sum();
         }
 
         private long earlyRentRefund(RentalContract contract, LocalDate returnDate) {

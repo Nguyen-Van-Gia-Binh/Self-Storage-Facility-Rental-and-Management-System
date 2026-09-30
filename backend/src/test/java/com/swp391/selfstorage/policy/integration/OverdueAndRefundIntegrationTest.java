@@ -8,6 +8,8 @@ import com.swp391.selfstorage.contract.entity.RentalContract;
 import com.swp391.selfstorage.contract.repository.RentalContractRepository;
 import com.swp391.selfstorage.contract.service.ContractService;
 import com.swp391.selfstorage.policy.dto.OverdueProcessingResult;
+import com.swp391.selfstorage.policy.entity.ExtraFeeType;
+import com.swp391.selfstorage.policy.repository.ExtraFeeTypeRepository;
 import com.swp391.selfstorage.policy.service.OverdueProcessingService;
 import com.swp391.selfstorage.unit.entity.StorageUnit;
 import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
@@ -50,6 +52,9 @@ class OverdueAndRefundIntegrationTest {
     @Autowired
     private ReservationRepository reservationRepository;
 
+    @Autowired
+    private ExtraFeeTypeRepository extraFeeTypeRepository;
+
     private StorageUnit testUnit;
     private LocalDate baseEndDate;
 
@@ -65,6 +70,20 @@ class OverdueAndRefundIntegrationTest {
                 .status(StorageUnitStatus.OCCUPIED)
                 .build();
         testUnit = storageUnitRepository.save(testUnit);
+    }
+
+    private Long saveDamageFee(long amount) {
+        ExtraFeeType fee = ExtraFeeType.builder()
+                .code("DMG-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
+                .name("Bồi thường kiểm thử")
+                .category("DAMAGE")
+                .amount(amount)
+                .feeType("FIXED")
+                .facilityId(1L)
+                .isActive(true)
+                .effectiveFrom(LocalDate.of(2026, 1, 1))
+                .build();
+        return extraFeeTypeRepository.save(fee).getId();
     }
 
     private RentalContract createAndSaveContract(LocalDate endDate, long depositAmount) {
@@ -169,8 +188,8 @@ class OverdueAndRefundIntegrationTest {
         // 2. Staff nghiệm thu phát hiện hư hỏng cửa 100.000 đ
         ReturnInspectionRequest inspectionReq = ReturnInspectionRequest.builder()
                 .returnDate(returnDate)
-                .condition("DAMAGED")
-                .damageCost(100_000L)
+                .condition("MINOR_DAMAGE")
+                .extraFeeTypeIds(List.of(saveDamageFee(100_000L)))
                 .damageNotes("Trầy xước cửa cuốn")
                 .evidenceImageUrls("https://example.com/damage.jpg")
                 .customerConfirmed(true)
@@ -185,7 +204,8 @@ class OverdueAndRefundIntegrationTest {
                 List.of(1L));
         assertEquals(2_000_000L, settlement.getDepositAmount());
         assertEquals(400_000L, settlement.getOverdueFee());
-        assertEquals(100_000L, settlement.getDamageCost());
+        assertEquals(0L, settlement.getDamageCost());
+        assertEquals(100_000L, settlement.getUnpaidExtraCharges());
         assertEquals(1_500_000L, settlement.getDepositRefundAmount());
         assertEquals(0L, settlement.getPayableAmount());
     }
@@ -224,8 +244,8 @@ class OverdueAndRefundIntegrationTest {
         // cọc)
         ReturnInspectionRequest inspectionReq = ReturnInspectionRequest.builder()
                 .returnDate(returnDate)
-                .condition("HEAVILY_DAMAGED")
-                .damageCost(1_500_000L)
+                .condition("MAJOR_DAMAGE")
+                .extraFeeTypeIds(List.of(saveDamageFee(1_500_000L)))
                 .damageNotes("Hư hỏng kết cấu vách ngăn")
                 .evidenceImageUrls("https://example.com/damage.jpg")
                 .customerConfirmed(true)
@@ -240,7 +260,8 @@ class OverdueAndRefundIntegrationTest {
         SettlementPreviewResponse settlement = contractService.getSettlementPreview(contract.getId(), List.of(1L));
         assertEquals(1_000_000L, settlement.getDepositAmount());
         assertEquals(200_000L, settlement.getOverdueFee());
-        assertEquals(1_500_000L, settlement.getDamageCost());
+        assertEquals(0L, settlement.getDamageCost());
+        assertEquals(1_500_000L, settlement.getUnpaidExtraCharges());
         assertEquals(0L, settlement.getDepositRefundAmount());
         assertEquals(700_000L, settlement.getPayableAmount()); // BR-RET-04: Kết quả âm, khách nộp bổ sung
     }

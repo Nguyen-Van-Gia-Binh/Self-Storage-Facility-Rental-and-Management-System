@@ -241,6 +241,20 @@ public class ContractController {
         return ResponseEntity.ok(ApiResponse.success(response, "Nghiệm thu trả kho thành công"));
     }
 
+    /** Ghi khoản ACCESS_KEY hoặc VALUE_ADDED đang hiệu lực vào hợp đồng đang thuê (BR-PRI-04). */
+    @PostMapping("/{id}/catalog-fees")
+    @PreAuthorize("hasAnyRole('STAFF', 'MANAGER', 'ADMIN')")
+    @Operation(summary = "Ghi phụ phí danh mục vào hợp đồng đang thuê")
+    public ResponseEntity<ApiResponse<CatalogFeeChargeResponse>> applyCatalogFee(
+            @PathVariable Long id,
+            @Valid @RequestBody ApplyCatalogFeeRequest request,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        Long actorId = requireUserId(currentUser);
+        List<Long> facilities = resolveFacilityScope(currentUser, null);
+        CatalogFeeChargeResponse response = contractService.applyCatalogFee(id, request, actorId, facilities);
+        return ResponseEntity.ok(ApiResponse.success(response, "Đã ghi phụ phí vào hợp đồng"));
+    }
+
     /** T4.3: Xem trước bảng quyết toán thanh lý và hoàn cọc (FM-04) */
     @GetMapping("/{id}/settlement-preview")
     @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")

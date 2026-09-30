@@ -11,6 +11,7 @@ import { fetchFacilities, fetchUnitTypes } from '@/api/facility';
 import {
   updateUnitTypePrice,
   fetchSurcharges,
+  updateSurcharge,
   createSurcharge,
   fetchActivePolicy,
   fetchPolicyVersions,
@@ -27,6 +28,7 @@ import type {
 import { FacilityPriceTable } from '../components/FacilityPriceTable';
 import { PriceUpdateModal } from '../components/PriceUpdateModal';
 import { SurchargeTable } from '../components/SurchargeTable';
+import type { FeeCategory } from '@/features/pricing/feeCategory';
 import { SurchargeModal } from '../components/SurchargeModal';
 import { PolicySummaryCard } from '../components/PolicySummaryCard';
 
@@ -196,6 +198,32 @@ export const BomPricingManagementPage: React.FC = () => {
     }
   };
 
+  const handleChangeSurchargeAmount = async (item: SurchargeItem, amount: number) => {
+    if (item.amount === amount) return;
+    try {
+      await updateSurcharge(item, { amount });
+      showToast(`Đã cập nhật mức phí "${item.name}". Lần ghi sau dùng số mới.`);
+      const updated = await fetchSurcharges();
+      setSurcharges(updated);
+    } catch (err: unknown) {
+      const errorObj = err as { message?: string };
+      showToast(errorObj.message || 'Không cập nhật được mức phí', 'error');
+    }
+  };
+
+  const handleChangeSurchargeCategory = async (item: SurchargeItem, category: FeeCategory) => {
+    if (item.category === category) return;
+    try {
+      await updateSurcharge(item, { category });
+      showToast(`Đã chuyển "${item.name}" sang nhóm mới.`);
+      const updated = await fetchSurcharges();
+      setSurcharges(updated);
+    } catch (err: unknown) {
+      const errorObj = err as { message?: string };
+      showToast(errorObj.message || 'Không đổi được nhóm phụ phí', 'error');
+    }
+  };
+
   const currentFacility = facilities.find((f) => f.id === selectedFacilityId);
 
   const selectFacility = (id: number) => {
@@ -289,6 +317,8 @@ export const BomPricingManagementPage: React.FC = () => {
         <SurchargeTable
           surcharges={surcharges}
           onOpenModal={() => setIsSurchargeModalOpen(true)}
+          onChangeCategory={handleChangeSurchargeCategory}
+          onChangeAmount={handleChangeSurchargeAmount}
           isLoading={isLoadingSurcharges}
         />
       )}
