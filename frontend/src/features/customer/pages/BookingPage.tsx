@@ -1052,6 +1052,7 @@ export const BookingPage: React.FC = () => {
                 startDate={startDate}
                 endDate={endDate}
                 holdHours={holdHours}
+                depositMultiplier={policy?.depositMultiplier ?? 1}
               />
             ) : (
               <Card className="p-5 bg-white border border-slate-200/90 rounded-xl">
@@ -1344,6 +1345,7 @@ export const BookingPage: React.FC = () => {
                 startDate={startDate}
                 endDate={endDate}
                 holdHours={holdHours}
+                depositMultiplier={policy?.depositMultiplier ?? 1}
               />
             ) : (
               <Card className="p-5 bg-white border border-slate-200/90 rounded-xl">
