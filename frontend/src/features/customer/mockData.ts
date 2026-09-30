@@ -20,7 +20,7 @@ export const mockSupportFaqs: SupportFaq[] = [
   {
     id: 2,
     question: 'Nếu tôi bị kẹt khóa hoặc quên mã PIN thì xử lý mất bao lâu?',
-    answer: 'Theo tiêu chuẩn dịch vụ khẩn cấp, các sự cố về kẹt khóa cơ, hỏng khóa số, quên mã PIN hoặc mất thẻ từ sẽ được nhân viên trực quầy xử lý tận nơi trong vòng tối đa 02 giờ.',
+    answer: 'Theo tiêu chuẩn dịch vụ khẩn cấp, các sự cố về kẹt khóa cơ, hỏng khóa số, quên mã PIN hoặc mất chìa khóa cơ sẽ được nhân viên trực quầy xử lý tận nơi trong vòng tối đa 02 giờ.',
     category: 'Khóa & Truy cập',
   },
   {

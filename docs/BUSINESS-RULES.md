@@ -109,8 +109,9 @@ bảng chính sách của hệ thống (`BM-02`, `BM-03`).
 | Mã | Quy tắc |
 |----|---------|
 | `BR-PRI-01` | Phí thuê gộp = (đơn giá diện tích snapshot × diện tích quy chuẩn m²) × N tháng. Khoản giảm giá, nếu có, chỉ trừ vào phí thuê; Deposit tính trên đơn giá tháng trước giảm giá, trừ khi chính sách giảm giá quy định rõ khác đi |
-| `BR-PRI-02` | Tổng phải trả ban đầu = phí thuê gộp − giảm giá + Deposit + phụ phí trả trước (nếu có). Bảng xác nhận phải hiển thị tách từng thành phần trước khi khách đồng ý |
+| `BR-PRI-02` | Tổng phải trả ban đầu = phí thuê gộp − giảm giá + Deposit + phụ phí trả trước (nếu có). Phụ phí trả trước, nếu có, chỉ là khoản `VALUE_ADDED` khách đã chọn trước. Ba nhóm `ACCESS_KEY`, `CLEANING`, `DAMAGE` không nằm trong khoản thanh toán ban đầu. Bảng xác nhận phải hiển thị tách từng thành phần trước khi khách đồng ý |
 | `BR-PRI-03` | Khi business rule yêu cầu quy đổi tiền thuê theo ngày, tiền một ngày = đơn giá tháng ÷ `rental.daily_divisor`; số tiền cuối cùng làm tròn theo `BR-GEN-04` |
+| `BR-PRI-04` | Danh mục phụ phí có bốn nhóm `ACCESS_KEY`, `CLEANING`, `DAMAGE`, `VALUE_ADDED`. Business Operations Manager niêm yết mã, tên và số tiền. Facility Staff chỉ chọn khoản đang hiệu lực, không gõ số tiền. Số tiền ghi nhận được giữ snapshot trên hợp đồng |
 
 ### 4.2. Payment
 
@@ -209,11 +210,11 @@ Ngày quá hạn ký hiệu **D+n**, đếm từ ngày liền sau ngày kết th
 | `BR-RET-01` | **Quy trình trả kho chủ động & kết thúc hợp đồng:** Mốc 1 tháng (30 ngày) trước khi hết hạn là thời điểm hệ thống bắt đầu gửi nhắc nhở để khách hàng chủ động lên kế hoạch gia hạn hoặc chuẩn bị trả kho. Khách hàng có thể gia hạn bất cứ lúc nào hoặc bấm "Báo trả kho" để hẹn lịch nghiệm thu. Khi hết hạn hợp đồng mà khách chưa gia hạn cũng chưa trả kho, hợp đồng chuyển sang quy trình quá hạn Overdue theo § 8 (`UC-F3-05`) |
 | `BR-RET-02` | Trả kho chỉ hoàn tất khi Facility Staff đã kiểm tra và xác nhận hiện trạng ô kho tại chỗ (`FS-04`, `UC-F3-06`). Khi khách bấm "Báo trả kho", hợp đồng chuyển sang `PENDING_RETURN`; thông tin được gửi về Facility Manager để phân công Facility Staff xuống trực tiếp kiểm tra hiện trạng. Khách dọn hết đồ nhưng chưa có biên bản nghiệm thu từ nhân viên thì hợp đồng **vẫn** chưa thể đóng |
 | `BR-RET-03` | Ô kho được coi là **nguyên trạng** khi: trống hoàn toàn, không hư hỏng kết cấu, cửa và khóa còn nguyên, sạch ở mức sử dụng bình thường |
-| `BR-RET-04` | Quyết toán khi trả kho: **Số tiền hoàn = Deposit − chi phí khắc phục hư hỏng − phí quá hạn còn nợ − phụ phí chưa thanh toán**. Nếu kết quả **âm**, khách phải nộp bổ sung phần thiếu trước khi hợp đồng đóng (`UC-F3-13`) |
+| `BR-RET-04` | Quyết toán khi trả kho: **Số tiền hoàn = Deposit − chi phí khắc phục hư hỏng − phí quá hạn còn nợ − phụ phí chưa thanh toán**. “Chi phí khắc phục” và “phụ phí chưa thanh toán” là các dòng đã ghi nhận. Không cộng thêm một số tiền hư hỏng tự do cho cùng một sự việc. Nếu kết quả **âm**, khách phải nộp bổ sung phần thiếu trước khi hợp đồng đóng (`UC-F3-13`) |
 | `BR-RET-05` | Tiền hoàn được chuyển về phương thức thanh toán gốc trong `return.refund_working_days` (7 ngày làm việc) kể từ ngày Facility Staff xác nhận |
 | `BR-RET-06` | **Trả sớm không được hoàn** tiền thuê của phần thời hạn chưa dùng (`return.early_refund_rate` = 0%). Quy tắc này phải hiển thị rõ trước khi khách xác nhận đặt chỗ. **Nút "Báo trả kho" luôn hiển thị trên giao diện chi tiết hợp đồng của khách hàng trong suốt thời gian Contract đang ở trạng thái *Active***, cho phép khách chủ động hẹn lịch nghiệm thu trả kho sớm bất cứ lúc nào |
 | `BR-RET-07` | Khách không dọn đồ và không hoàn tất trả kho đúng ngày kết thúc hợp đồng thì chuyển sang xử lý quá hạn theo § 8 |
-| `BR-RET-08` | Chi phí khắc phục hư hỏng phải có biên bản kiểm tra kèm ảnh chụp do Facility Staff lập, khách ký xác nhận |
+| `BR-RET-08` | Phí vệ sinh và phí bồi thường đều cần mô tả, ít nhất một ảnh, và khách xác nhận. Facility Staff chọn khoản `CLEANING` hoặc `DAMAGE` đang hiệu lực trong danh mục, không gõ số tiền |
 | `BR-RET-09` | Sau khi xác nhận trả kho (`BR-RET-02`), Facility Staff thu hồi chìa khóa cơ (nếu có), vô hiệu hóa Access Code (`UC-F3-07`) (không sử dụng thẻ từ RFID), ô kho chuyển *Cleaning*. Khi dọn xong (`UC-F3-09`): nếu unit còn Reservation *Confirmed* chưa Check-in → *Reserved*; không thì *Available* |
 | `BR-RET-10` | Khách hàng sau khi dọn sạch đồ đạc và tài sản trong ngăn tủ sẽ thực hiện "Báo trả kho" trên ứng dụng kèm cam kết hiện trạng. Hệ thống chuyển hợp đồng sang *Pending Return* và gửi thông báo đến Facility Manager để điều phối Facility Staff xuống nghiệm thu thực tế tại chỗ (`FS-04`, `FM-04`) |
 | `BR-RET-11` | Contract *Overdue* được phép yêu cầu trả kho trước D+10 để giảm phí phạt. Nợ quá hạn, hư hỏng và phụ phí được cấn trừ cùng Deposit theo `BR-RET-04` |
@@ -244,7 +245,7 @@ Quy tắc quản lý mã Access Code và chìa khóa vật lý tại cơ sở (`
 |----|---------|
 | `BR-ACC-01` | **Định dạng và cấp phát mã Access Code:** Hệ thống tự động sinh mã PIN ngẫu nhiên gồm `access.pin_length` (6 chữ số); hoặc sinh mã QR động bảo mật hiển thị trên ứng dụng của khách (`UC-F2-04`). Đối với ô kho dùng khóa cơ, nhân viên bàn giao chìa khóa vật lý kèm theo |
 | `BR-ACC-02` | **Phạm vi và hiệu lực truy cập:** Access Credential (PIN / QR) chỉ mở cổng chung của đúng Facility và Storage Unit đã thuê theo hợp đồng. Credential dùng được khi Contract *Active*, trong giai đoạn *Overdue* trước D+7; tại D+7 tự động chuyển *Suspended* theo `BR-OVD-05` |
-| `BR-ACC-03` | **Cấp lại và thu hồi phương tiện truy cập:** Khách hàng có thể yêu cầu cấp lại mã PIN trực tiếp trên ứng dụng; hệ thống tự động sinh ngẫu nhiên mã PIN mới và kích hoạt tức thì (real-time) mà không cần duyệt thủ công. Đối với ô kho dùng khóa cơ bị mất chìa, nhân viên cơ sở tiếp nhận và cấp chìa thay thế tại quầy tiếp tân sau khi đối chiếu CCCD (`UC-F7-05`). Khi hoàn tất thủ tục trả kho hoặc hợp đồng bị chấm dứt tại D+10, mọi mã truy cập bị vô hiệu hóa vĩnh viễn trên hệ thống (`UC-F3-07`, `BR-RET-09`) |
+| `BR-ACC-03` | **Cấp lại và thu hồi phương tiện truy cập:** Khách hàng có thể yêu cầu cấp lại mã PIN trực tiếp trên ứng dụng; hệ thống tự động sinh ngẫu nhiên mã PIN mới và kích hoạt tức thì (real-time) mà không cần duyệt thủ công. Cấp lại PIN/QR không phát sinh phụ phí. Đối với ô kho dùng khóa cơ bị mất chìa, nhân viên cơ sở tiếp nhận và cấp chìa thay thế tại quầy tiếp tân sau khi đối chiếu CCCD, và chọn khoản `ACCESS_KEY` đang hiệu lực (`UC-F7-05`). Khi hoàn tất thủ tục trả kho hoặc hợp đồng bị chấm dứt tại D+10, mọi mã truy cập bị vô hiệu hóa vĩnh viễn trên hệ thống (`UC-F3-07`, `BR-RET-09`) |
 
 ---
 
@@ -255,7 +256,7 @@ Quy tắc xử lý các yêu cầu hỗ trợ và sự cố phát sinh tại cơ
 | Mã | Quy tắc |
 |----|---------|
 | `BR-SUP-01` | **Thời hạn cam kết xử lý sự cố (SLA):**<br>- *Sự cố quyền truy cập số (quên PIN, lỗi mã QR):* Hệ thống tự động cấp phát lại ngay lập tức (real-time, < 1 phút) trên ứng dụng của khách (`UC-F7-05`).<br>- *Sự cố cơ học / hạ tầng tại chỗ (kẹt khóa cửa ô kho, mất chìa cơ, hư hỏng bản lề):* Nhân viên cơ sở và FM bắt buộc phải tiếp nhận và có mặt xử lý tại chỗ trong vòng `support.urgent_sla_hours` (2 giờ) kể từ khi tạo ticket (`UC-F7-04`). Dashboard của FM và Staff có đồng hồ đếm ngược SLA để theo dõi tiến độ xử lý |
-| `BR-SUP-02` | **Trách nhiệm và chi phí khắc phục hư hại:** Nếu hư hỏng do lỗi kỹ thuật hoặc hạ tầng cơ sở (thấm dột, chập điện đèn kho), cơ sở chịu 100% chi phí sửa chữa và ưu tiên di dời đồ sang ô kho dự phòng nếu cần (`UC-F7-06`); nếu do lỗi chủ quan của khách, chi phí sửa chữa được tính theo bảng phụ phí `BM-03` |
+| `BR-SUP-02` | **Trách nhiệm và chi phí khắc phục hư hại:** Nếu hư hỏng do lỗi kỹ thuật hoặc hạ tầng cơ sở (thấm dột, chập điện đèn kho), cơ sở chịu 100% chi phí sửa chữa, không tạo phụ phí, và ưu tiên di dời đồ sang ô kho dự phòng nếu cần (`UC-F7-06`); nếu do lỗi chủ quan của khách, Facility Staff chọn khoản `DAMAGE` theo `BM-03` |
 | `BR-SUP-03` | **Quy trình nghiệm thu và đóng Support Request:** Nhân viên phải tải ảnh sau khắc phục và khách xác nhận nghiệm thu (`UC-F7-08`). Nếu khách không phản hồi trong `support.auto_close_working_days`, hệ thống tự đóng yêu cầu và ghi rõ lý do tự động |
 
 ---
@@ -297,7 +298,7 @@ Check-in / Handover đã hoàn tất và Contract đã chuyển *Active*.
 
 | Trạng thái | Ý nghĩa |
 |------------|---------|
-| `Active` | Access Code / Access Card đang sử dụng được |
+| `Active` | PIN/QR và chìa khóa cơ đang sử dụng được |
 | `Suspended` | Tạm khóa do Overdue hoặc quyết định vận hành; có thể mở lại |
 | `Revoked` | Đã thu hồi / vô hiệu vĩnh viễn sau Return hoặc chấm dứt Contract |
 

@@ -11,6 +11,16 @@ public final class SurchargeAmountCalculator {
     private SurchargeAmountCalculator() {
     }
 
+    /** Khoản thanh toán ban đầu chỉ gồm VALUE_ADDED đang hiệu lực (BR-PRI-02). */
+    public static List<ExtraFeeType> prepaidValueAdded(List<ExtraFeeType> fees) {
+        if (fees == null || fees.isEmpty()) {
+            return List.of();
+        }
+        return fees.stream()
+                .filter(fee -> fee != null && "VALUE_ADDED".equalsIgnoreCase(fee.getCategory()))
+                .toList();
+    }
+
     public static List<SurchargeLineResponse> lines(List<ExtraFeeType> fees, long monthlyPrice, int months) {
         if (fees == null || fees.isEmpty()) {
             return List.of();

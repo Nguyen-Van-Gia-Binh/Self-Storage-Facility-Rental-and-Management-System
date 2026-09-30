@@ -35,6 +35,9 @@ public class ExtraFeeVersion {
     @Column(name = "code", nullable = false, length = 30)
     private String code;
 
+    @Column(name = "category", nullable = false, length = 30)
+    private String category;
+
     @Column(name = "name", nullable = false, length = 150)
     private String name;
 

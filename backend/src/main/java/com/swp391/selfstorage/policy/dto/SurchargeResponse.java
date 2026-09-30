@@ -18,6 +18,8 @@ public class SurchargeResponse {
     private Long id;
     private String code;
     private String name;
+    /** ACCESS_KEY, CLEANING, DAMAGE hoặc VALUE_ADDED. */
+    private String category;
     private Long amount;
     private Long facilityId;
     private String facilityName;

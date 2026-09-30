@@ -18,8 +18,11 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react';
-import type { DailyIncidentTask } from '@/types';
+import type { DailyIncidentTask, SurchargeItem } from '@/types';
 import { startStaffIncident, resolveStaffIncident, markStaffIncidentRelocation } from '@/api/staff';
+import { fetchSurcharges } from '@/api/pricing';
+import { applyCatalogFee } from '@/api/contract';
+import { catalogFeePriceLabel } from '@/features/pricing/feeCategory';
 
 interface StaffResolveIncidentModalProps {
   isOpen: boolean;
@@ -44,6 +47,11 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
   const [isAgreed, setIsAgreed] = useState(false);
   const [needsRelocation, setNeedsRelocation] = useState(false);
   const [savingRelocation, setSavingRelocation] = useState(false);
+  const [accessFees, setAccessFees] = useState<SurchargeItem[]>([]);
+  const [lostKey, setLostKey] = useState(false);
+  const [selectedKeyFeeId, setSelectedKeyFeeId] = useState<number | ''>('');
+  const [keyFeeRecorded, setKeyFeeRecorded] = useState(false);
+  const [recordingKeyFee, setRecordingKeyFee] = useState(false);
 
   useEffect(() => {
     if (ticket) {
@@ -53,8 +61,27 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
       setImageUrlInput('');
       setIsAgreed(false);
       setNeedsRelocation(Boolean(ticket.relocationRequired));
+      setLostKey(false);
+      setSelectedKeyFeeId('');
+      setKeyFeeRecorded(false);
     }
   }, [ticket]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    fetchSurcharges({ isActive: true })
+      .then((list) =>
+        setAccessFees(
+          list.filter(
+            (fee) =>
+              fee.isActive &&
+              fee.category === 'ACCESS_KEY' &&
+              (fee.facilityId == null || fee.facilityId === ticket?.facilityId),
+          ),
+        ),
+      )
+      .catch(() => setAccessFees([]));
+  }, [isOpen, ticket?.facilityId]);
 
   if (!isOpen || !ticket) return null;
 
@@ -63,6 +90,28 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
   const isInProgress = ticket.status === 'IN_PROGRESS';
   const isResolved = ticket.status === 'RESOLVED' || ticket.status === 'CLOSED';
   const isUnitDamage = ticket.category === 'UNIT_DAMAGE';
+  const isLockAccess = ticket.category === 'LOCK_ACCESS';
+
+  const handleRecordKeyFee = async () => {
+    if (ticket.contractId == null) {
+      setErrorMsg('Phiếu chưa gắn hợp đồng nên không ghi được phí cấp lại khóa.');
+      return;
+    }
+    if (selectedKeyFeeId === '') {
+      setErrorMsg('Chọn khoản cấp lại khóa cơ đang hiệu lực.');
+      return;
+    }
+    setRecordingKeyFee(true);
+    setErrorMsg(null);
+    try {
+      await applyCatalogFee(ticket.contractId, selectedKeyFeeId, 'Mất chìa khóa cơ, đã đối chiếu CCCD');
+      setKeyFeeRecorded(true);
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : 'Không ghi được phí cấp lại khóa.');
+    } finally {
+      setRecordingKeyFee(false);
+    }
+  };
 
   const handleRelocationChange = async (checked: boolean) => {
     if (ticket.ticketId == null) {
@@ -121,6 +170,10 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
     e.preventDefault();
     if (!resolutionNote.trim() || resolutionNote.trim().length < 5) {
       setErrorMsg('Vui lòng nhập chi tiết kết quả xử lý (tối thiểu 5 ký tự)');
+      return;
+    }
+    if (lostKey && !keyFeeRecorded) {
+      setErrorMsg('Đã đánh dấu mất chìa khóa cơ thì ghi nhận khoản ACCESS_KEY trước, hoặc bỏ đánh dấu nếu chỉ cấp lại PIN.');
       return;
     }
 
@@ -296,6 +349,62 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
                   </a>
                 ))}
               </div>
+            </div>
+          )}
+
+          {isUnitDamage && !isResolved && (
+            <p className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-xl p-3">
+              Hư do cơ sở không tạo phụ phí. Nếu hư do khách, khoản bồi thường được chọn lúc nghiệm thu trả kho.
+            </p>
+          )}
+
+          {isLockAccess && !isResolved && (
+            <div className="space-y-2 p-3.5 rounded-xl border border-slate-200 bg-slate-50">
+              <p className="text-xs text-slate-600">
+                Cấp lại PIN/QR là miễn phí và khách tự làm trên ứng dụng. Chỉ mất chìa khóa cơ mới thu phí, sau khi đối chiếu CCCD.
+              </p>
+              <label className="flex items-start gap-2 text-xs text-slate-800 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={lostKey}
+                  onChange={(e) => {
+                    setLostKey(e.target.checked);
+                    setKeyFeeRecorded(false);
+                  }}
+                  className="mt-0.5"
+                />
+                <span>Khách mất chìa khóa cơ và đã đối chiếu CCCD</span>
+              </label>
+              {lostKey && (
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <select
+                    value={selectedKeyFeeId}
+                    onChange={(e) => setSelectedKeyFeeId(e.target.value ? Number(e.target.value) : '')}
+                    className="flex-1 text-xs border border-slate-300 rounded-lg px-2 py-2 bg-white"
+                  >
+                    <option value="">Chọn khoản cấp lại khóa</option>
+                    {accessFees.map((fee) => (
+                      <option key={fee.id} value={fee.id}>
+                        {fee.name} — {catalogFeePriceLabel(fee)}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={handleRecordKeyFee}
+                    disabled={recordingKeyFee || keyFeeRecorded || ticket.contractId == null}
+                    className="px-3 py-2 text-xs font-semibold rounded-lg bg-slate-900 text-white disabled:opacity-50"
+                  >
+                    {keyFeeRecorded ? 'Đã ghi phí' : recordingKeyFee ? 'Đang ghi...' : 'Ghi nhận phí'}
+                  </button>
+                </div>
+              )}
+              {lostKey && accessFees.length === 0 && (
+                <p className="text-[11px] text-amber-700">Chưa có khoản ACCESS_KEY đang hiệu lực.</p>
+              )}
+              {lostKey && ticket.contractId == null && (
+                <p className="text-[11px] text-rose-700">Phiếu chưa gắn hợp đồng.</p>
+              )}
             </div>
           )}
 

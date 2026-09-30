@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Tag, Calendar, Building2, AlertCircle, Loader2 } from 'lucide-react';
 import type { FacilityListItem, CreateSurchargeRequest } from '@/types';
+import { FEE_CATEGORIES, type FeeCategory } from '@/features/pricing/feeCategory';
 
 function vietnamToday(): string {
   return new Intl.DateTimeFormat('en-CA', {
@@ -32,9 +33,10 @@ export const SurchargeModal: React.FC<SurchargeModalProps> = ({
 
   const [formData, setFormData] = useState({
     name: '',
+    category: '' as '' | FeeCategory,
     facilityId: '' as string, // '' means all facilities
     type: 'FIXED' as 'FIXED' | 'PERCENTAGE',
-    amount: '100000',
+    amount: '',
     effectiveDate: todayStr,
   });
 
@@ -58,6 +60,9 @@ export const SurchargeModal: React.FC<SurchargeModalProps> = ({
       errs.name = 'Tên phụ phí không được để trống';
     } else if (formData.name.trim().length < 3) {
       errs.name = 'Tên phụ phí phải từ 3 ký tự trở lên';
+    }
+    if (!formData.category) {
+      errs.category = 'Chọn nhóm phụ phí';
     }
 
     const num = parseInt(formData.amount.replace(/[^0-9]/g, ''), 10);
@@ -84,6 +89,7 @@ export const SurchargeModal: React.FC<SurchargeModalProps> = ({
     const num = parseInt(formData.amount.replace(/[^0-9]/g, ''), 10);
     await onSubmit({
       name: formData.name.trim(),
+      category: formData.category as FeeCategory,
       facilityId: formData.facilityId ? Number(formData.facilityId) : null,
       type: formData.type,
       amount: num,
@@ -125,7 +131,7 @@ export const SurchargeModal: React.FC<SurchargeModalProps> = ({
             </label>
             <input
               type="text"
-              placeholder="VD: Cấp lại thẻ từ, Phụ phí thang hàng..."
+              placeholder="VD: Cấp lại khóa cơ, Phí vệ sinh, Pallet..."
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className={`w-full text-sm border rounded-xl px-3.5 py-2.5 outline-none transition-all ${
@@ -137,6 +143,35 @@ export const SurchargeModal: React.FC<SurchargeModalProps> = ({
             {errors.name && (
               <p className="mt-1 text-xs text-rose-500 flex items-center gap-1">
                 <AlertCircle className="w-3.5 h-3.5" /> {errors.name}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              Nhóm phụ phí <span className="text-rose-500">*</span>
+            </label>
+            <select
+              value={formData.category}
+              onChange={(e) =>
+                setFormData({ ...formData, category: e.target.value as '' | FeeCategory })
+              }
+              className={`w-full text-sm border rounded-xl px-3.5 py-2.5 outline-none bg-white ${
+                errors.category
+                  ? 'border-rose-300 focus:ring-2 focus:ring-rose-200'
+                  : 'border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-100'
+              }`}
+            >
+              <option value="">Chọn nhóm</option>
+              {FEE_CATEGORIES.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+            {errors.category && (
+              <p className="mt-1 text-xs text-rose-500 flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5" /> {errors.category}
               </p>
             )}
           </div>
@@ -175,7 +210,7 @@ export const SurchargeModal: React.FC<SurchargeModalProps> = ({
                   setFormData({
                     ...formData,
                     type: e.target.value as 'FIXED' | 'PERCENTAGE',
-                    amount: e.target.value === 'PERCENTAGE' ? '5' : '100000',
+                    amount: '',
                   })
                 }
                 className="w-full text-sm border border-slate-300 rounded-xl px-3 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100 bg-white font-medium"

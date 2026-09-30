@@ -44,12 +44,13 @@ class SurchargeServiceTest {
     void testCreateSurchargeSuccess() {
         // 1. Arrange (Chuẩn bị dữ liệu)
         CreateSurchargeRequest request = CreateSurchargeRequest.builder()
-                .code("FEE_CARD")
-                .name("Phí cấp lại thẻ từ")
+                .code("FEE_KEY")
+                .name("Phí cấp lại khóa cơ")
+                .category("ACCESS_KEY")
                 .amount(50000L)
                 .build();
 
-        when(extraFeeTypeRepository.existsByCode("FEE_CARD")).thenReturn(false);
+        when(extraFeeTypeRepository.existsByCode("FEE_KEY")).thenReturn(false);
         when(extraFeeTypeRepository.save(any(ExtraFeeType.class))).thenAnswer(invocation -> {
             ExtraFeeType entity = invocation.getArgument(0);
             entity.setId(1L);
@@ -62,7 +63,8 @@ class SurchargeServiceTest {
         // 3. Assert (Kiểm chứng kết quả)
         assertNotNull(response);
         assertEquals(1L, response.getId());
-        assertEquals("FEE_CARD", response.getCode());
+        assertEquals("FEE_KEY", response.getCode());
+        assertEquals("ACCESS_KEY", response.getCategory());
         assertEquals(50000L, response.getAmount());
         assertTrue(response.getIsActive());
         verify(extraFeeTypeRepository, times(1)).save(any(ExtraFeeType.class));
@@ -73,6 +75,7 @@ class SurchargeServiceTest {
     void testCreateSurchargeGeneratesCodeFromName() {
         CreateSurchargeRequest request = CreateSurchargeRequest.builder()
                 .name("Phụ phí thang hàng")
+                .category("VALUE_ADDED")
                 .amount(100000L)
                 .type("FIXED")
                 .build();
@@ -87,6 +90,7 @@ class SurchargeServiceTest {
         SurchargeResponse response = surchargeService.createSurcharge(request);
 
         assertEquals("PHU-PHI-THANG-HANG", response.getCode());
+        assertEquals("VALUE_ADDED", response.getCategory());
         assertEquals("FIXED", response.getType());
         assertEquals("Toàn hệ thống", response.getFacilityName());
     }
@@ -95,12 +99,13 @@ class SurchargeServiceTest {
     @DisplayName("Ném lỗi CONFLICT khi tạo phụ phí trùng mã đã có")
     void testCreateSurchargeDuplicateCodeThrowsConflict() {
         CreateSurchargeRequest request = CreateSurchargeRequest.builder()
-                .code("FEE_CARD")
-                .name("Phí cấp lại thẻ từ")
+                .code("FEE_KEY")
+                .name("Phí cấp lại khóa cơ")
+                .category("ACCESS_KEY")
                 .amount(50000L)
                 .build();
 
-        when(extraFeeTypeRepository.existsByCode("FEE_CARD")).thenReturn(true);
+        when(extraFeeTypeRepository.existsByCode("FEE_KEY")).thenReturn(true);
 
         CustomException exception = assertThrows(CustomException.class, () -> {
             surchargeService.createSurcharge(request);
@@ -149,15 +154,16 @@ class SurchargeServiceTest {
     @DisplayName("Từ chối sửa phụ phí khi ngày hiệu lực mới ở quá khứ")
     void testUpdateSurchargeRejectsPastEffectiveDate() {
         ExtraFeeType existing = ExtraFeeType.builder()
-                .code("FEE_CARD")
-                .name("Phí cấp lại thẻ từ")
+                .code("FEE_KEY")
+                .name("Phí cấp lại khóa cơ")
+                .category("ACCESS_KEY")
                 .amount(50000L)
                 .feeType("FIXED")
                 .isActive(true)
                 .build();
         existing.setId(1L);
         UpdateSurchargeRequest request = UpdateSurchargeRequest.builder()
-                .name("Phí cấp lại thẻ từ")
+                .name("Phí cấp lại khóa cơ")
                 .amount(60000L)
                 .isActive(true)
                 .effectiveDate(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).minusDays(1))

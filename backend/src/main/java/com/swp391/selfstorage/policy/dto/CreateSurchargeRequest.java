@@ -27,6 +27,11 @@ public class CreateSurchargeRequest {
     @Size(max = 150, message = "Tên phụ phí tối đa 150 ký tự")
     private String name;
 
+    @NotBlank(message = "Nhóm phụ phí không được để trống")
+    @Pattern(regexp = "ACCESS_KEY|CLEANING|DAMAGE|VALUE_ADDED",
+            message = "Nhóm phụ phí phải là ACCESS_KEY, CLEANING, DAMAGE hoặc VALUE_ADDED")
+    private String category;
+
     @NotNull(message = "Số tiền phụ phí không được để trống")
     @PositiveOrZero(message = "Số tiền phụ phí phải lớn hơn hoặc bằng 0")
     private Long amount;

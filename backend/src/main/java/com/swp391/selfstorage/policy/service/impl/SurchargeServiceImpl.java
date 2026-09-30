@@ -2,6 +2,7 @@ package com.swp391.selfstorage.policy.service.impl;
 
 import java.text.Normalizer;
 import java.time.LocalDate;
+import java.util.Set;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -32,6 +33,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class SurchargeServiceImpl implements SurchargeService {
 
+    private static final Set<String> FEE_CATEGORIES = Set.of(
+            "ACCESS_KEY", "CLEANING", "DAMAGE", "VALUE_ADDED");
+
     private final ExtraFeeTypeRepository extraFeeTypeRepository;
     private final SurchargeMapper surchargeMapper;
 
@@ -51,6 +55,7 @@ public class SurchargeServiceImpl implements SurchargeService {
     @Transactional
     public SurchargeResponse createSurcharge(CreateSurchargeRequest request) {
         requireEffectiveNotInPast(request.getEffectiveDate());
+        request.setCategory(requireCategory(request.getCategory()));
         if (request.getEffectiveDate() == null) {
             request.setEffectiveDate(AppliedPriceLookup.todayVn());
         }
@@ -100,11 +105,26 @@ public class SurchargeServiceImpl implements SurchargeService {
                 .orElseThrow(() -> new CustomException(ErrorCode.SURCHARGE_NOT_FOUND));
 
         requireEffectiveNotInPast(request.getEffectiveDate());
+        if (request.getCategory() != null && !request.getCategory().isBlank()) {
+            request.setCategory(requireCategory(request.getCategory()));
+        }
+        if ("PERCENTAGE".equalsIgnoreCase(entity.getFeeType())
+                && (request.getAmount() == null || request.getAmount() < 1 || request.getAmount() > 100)) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED, "Tỷ lệ phụ phí phải từ 1% đến 100%");
+        }
         surchargeMapper.updateEntity(entity, request);
         ExtraFeeType updatedEntity = extraFeeTypeRepository.save(entity);
         recordVersion(updatedEntity);
 
         return withFacilityName(surchargeMapper.toResponse(updatedEntity));
+    }
+
+    private String requireCategory(String raw) {
+        if (raw == null || raw.isBlank() || !FEE_CATEGORIES.contains(raw.trim().toUpperCase())) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                    "Nhóm phụ phí phải là ACCESS_KEY, CLEANING, DAMAGE hoặc VALUE_ADDED");
+        }
+        return raw.trim().toUpperCase();
     }
 
     private void requireEffectiveNotInPast(LocalDate effectiveDate) {
@@ -121,6 +141,7 @@ public class SurchargeServiceImpl implements SurchargeService {
                 .extraFeeTypeId(entity.getId())
                 .code(entity.getCode())
                 .name(entity.getName())
+                .category(entity.getCategory() == null ? "VALUE_ADDED" : entity.getCategory())
                 .facilityId(entity.getFacilityId())
                 .amount(entity.getAmount())
                 .feeType(entity.getFeeType() == null ? "FIXED" : entity.getFeeType())
