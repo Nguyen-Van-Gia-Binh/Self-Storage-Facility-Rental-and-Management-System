@@ -12,6 +12,11 @@ export interface BookingPriceSummaryProps {
   startDate: string;
   endDate: string;
   holdHours?: number;
+  /**
+   * Hệ số cọc lấy từ chính sách BOM đang hiệu lực (BR-DEP-01).
+   * Mặc định 1 để an toàn khi policy chưa sẵn sàng; backend vẫn là nơi tính số tiền cuối cùng.
+   */
+  depositMultiplier?: number;
 }
 
 export const BookingPriceSummary: React.FC<BookingPriceSummaryProps> = ({
@@ -19,7 +24,11 @@ export const BookingPriceSummary: React.FC<BookingPriceSummaryProps> = ({
   startDate,
   endDate,
   holdHours,
+  depositMultiplier = 1,
 }) => {
+  const multiplierLabel = Number.isInteger(depositMultiplier)
+    ? String(depositMultiplier)
+    : depositMultiplier.toFixed(1).replace(/\.0$/, '');
   return (
     <Card className="p-5 bg-white border border-slate-200/90 shadow-sm rounded-xl sticky top-24 space-y-5">
       <h3 className="text-base font-bold text-[#0a1614] pb-2 border-b border-slate-100">
@@ -72,7 +81,7 @@ export const BookingPriceSummary: React.FC<BookingPriceSummaryProps> = ({
         )}
 
         <div className="flex justify-between items-center text-slate-600 pt-2 border-t border-slate-100">
-          <span>Tiền cọc (1 tháng):</span>
+          <span>Tiền cọc ({multiplierLabel} × tháng tiền thuê):</span>
           <span className="font-semibold text-slate-800">{formatVND(calculation.depositAmount)}</span>
         </div>
 

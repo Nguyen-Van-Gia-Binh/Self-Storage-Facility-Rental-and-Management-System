@@ -72,6 +72,10 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
 }) => {
   const policy = useActivePolicy();
   const holdHours = policy?.reservationHoldHours ?? 0;
+  const depositMultiplier = policy?.depositMultiplier ?? 1;
+  const depositMultiplierLabel = Number.isInteger(depositMultiplier)
+    ? String(depositMultiplier)
+    : depositMultiplier.toFixed(1).replace(/\.0$/, '');
   const [selectedMethod, setSelectedMethod] = useState<'VIETQR' | 'CARD'>('VIETQR');
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -598,7 +602,7 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
 
               <div className="flex justify-between text-slate-600">
                 <div>
-                  <span className="block">Tiền cọc bảo đảm (1 tháng):</span>
+                  <span className="block">Tiền cọc bảo đảm ({depositMultiplierLabel} × tháng tiền thuê):</span>
                   <span className="text-[10px] text-slate-400 italic">
                     Được hoàn lại 100% khi thanh lý hợp đồng đúng hạn
                   </span>
