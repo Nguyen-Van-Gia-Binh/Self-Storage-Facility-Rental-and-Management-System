@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
 import { 
   LifeBuoy, 
   Plus, 
@@ -51,6 +52,10 @@ export const SupportPage: React.FC = () => {
   // Modals state - Khởi tạo mở modal ngay nếu URL có preContractId/preUnitId (và đã login)
   const [isCreateOpen, setIsCreateOpen] = useState<boolean>(() => Boolean(isAuthenticated && (preContractId || preUnitId)));
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
+  const [createdSuccessTicket, setCreatedSuccessTicket] = useState<SupportTicket | null>(null);
+  const [cancellingTicket, setCancellingTicket] = useState<SupportTicket | null>(null);
+  const [isCancellingTicket, setIsCancellingTicket] = useState<boolean>(false);
+  const [cancelTicketError, setCancelTicketError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
@@ -145,6 +150,7 @@ export const SupportPage: React.FC = () => {
     }
     const created = await customerApi.createSupportRequest(payload);
     setTickets(prev => [created, ...prev]);
+    setCreatedSuccessTicket(created);
     showToast(`Đã tạo yêu cầu hỗ trợ thành công (Mã: ${created.ticketCode})`);
   };
 
@@ -159,7 +165,29 @@ export const SupportPage: React.FC = () => {
     }
   };
 
-  // Handle Cancel Ticket
+  // Handle Confirm Cancel Ticket (ISS-79)
+  const handleConfirmCancelTicket = async () => {
+    if (!cancellingTicket) return;
+    try {
+      setIsCancellingTicket(true);
+      setCancelTicketError(null);
+      const ok = await customerApi.cancelSupportRequest(cancellingTicket.id);
+      if (ok) {
+        setTickets(prev => prev.filter(t => t.id !== cancellingTicket.id));
+        setCancellingTicket(null);
+        showToast('Đã hủy yêu cầu hỗ trợ thành công.');
+      } else {
+        setCancelTicketError('Không thể hủy yêu cầu hỗ trợ. Vui lòng thử lại.');
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Không thể hủy yêu cầu hỗ trợ.';
+      setCancelTicketError(message);
+    } finally {
+      setIsCancellingTicket(false);
+    }
+  };
+
+  // Handle Cancel Ticket directly (fallback)
   const handleCancelTicket = async (id: number) => {
     const ok = await customerApi.cancelSupportRequest(id);
     if (ok) {
@@ -455,7 +483,10 @@ export const SupportPage: React.FC = () => {
                   key={ticket.id}
                   ticket={ticket}
                   onViewDetail={handleViewDetail}
-                  onCancel={(t) => handleCancelTicket(t.id)}
+                  onCancel={(t) => {
+                    setCancelTicketError(null);
+                    setCancellingTicket(t);
+                  }}
                 />
               ))}
             </div>
@@ -514,6 +545,126 @@ export const SupportPage: React.FC = () => {
         onConfirmResolution={handleConfirmResolution}
         onCancelTicket={handleCancelTicket}
       />
+
+      {/* Modal Thông báo Tạo vé Hỗ trợ Thành công (ISS-79) */}
+      <Modal
+        isOpen={Boolean(createdSuccessTicket)}
+        onClose={() => setCreatedSuccessTicket(null)}
+        className="max-w-md w-full text-center"
+      >
+        <div className="p-6 space-y-4">
+          <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto border-2 border-emerald-200">
+            <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="text-lg font-bold text-slate-900">
+              Gửi yêu cầu hỗ trợ thành công!
+            </h3>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-mono font-bold">
+              Mã vé: {createdSuccessTicket?.ticketCode}
+            </div>
+            <p className="text-xs text-slate-600 leading-relaxed max-w-sm mx-auto">
+              Yêu cầu sự cố của bạn đã được ghi nhận vào hệ thống. Nhân viên trực cơ sở sẽ tiếp nhận và tiến hành xử lý trong thời gian sớm nhất.
+            </p>
+          </div>
+
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCreatedSuccessTicket(null)}
+              className="w-full sm:w-auto text-slate-700 hover:bg-slate-100 cursor-pointer"
+            >
+              Đóng
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                const target = createdSuccessTicket;
+                setCreatedSuccessTicket(null);
+                if (target) handleViewDetail(target);
+              }}
+              className="w-full sm:w-auto font-bold cursor-pointer"
+            >
+              Xem chi tiết & Tiến trình
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal Xác nhận Hủy Yêu Cầu Hỗ Trợ (ISS-79) */}
+      <Modal
+        isOpen={Boolean(cancellingTicket)}
+        onClose={() => {
+          if (!isCancellingTicket) setCancellingTicket(null);
+        }}
+        className="max-w-md w-full"
+      >
+        <div className="p-5 sm:p-6 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-rose-600" />
+              Xác nhận hủy yêu cầu hỗ trợ
+            </h3>
+            <button
+              type="button"
+              disabled={isCancellingTicket}
+              onClick={() => setCancellingTicket(null)}
+              className="text-slate-400 hover:text-slate-600 font-bold px-1.5 py-0.5 rounded cursor-pointer"
+            >
+              ×
+            </button>
+          </div>
+
+          <div className="flex items-start gap-3 p-3.5 bg-rose-50 rounded-xl border border-rose-100 text-rose-800 text-xs leading-relaxed">
+            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-rose-900 mb-1">
+                Bạn có chắc chắn muốn hủy vé hỗ trợ {cancellingTicket?.ticketCode}?
+              </p>
+              <p className="text-rose-700">
+                Thao tác này sẽ đóng yêu cầu hỗ trợ và nhân viên cơ sở sẽ không tiếp tục xử lý sự cố này nữa.
+              </p>
+            </div>
+          </div>
+
+          {cancelTicketError && (
+            <p className="text-xs text-rose-600 font-semibold">{cancelTicketError}</p>
+          )}
+
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isCancellingTicket}
+              onClick={() => setCancellingTicket(null)}
+              className="text-slate-700 hover:bg-slate-100 cursor-pointer"
+            >
+              Quay lại (Giữ vé)
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              disabled={isCancellingTicket}
+              onClick={handleConfirmCancelTicket}
+              className="bg-rose-600 hover:bg-rose-700 text-white font-bold cursor-pointer"
+            >
+              {isCancellingTicket ? (
+                <>
+                  <RotateCw className="w-4 h-4 mr-1.5 animate-spin" />
+                  Đang hủy...
+                </>
+              ) : (
+                'Xác nhận hủy vé'
+              )}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

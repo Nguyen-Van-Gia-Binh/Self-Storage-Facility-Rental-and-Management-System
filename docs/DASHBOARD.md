@@ -85,6 +85,7 @@
 | `ISS-76` | Bấm "Xác nhận ô kho này & Tiếp tục" chưa gọi database kiểm tra tính sẵn sàng thời gian thực (trùng lịch hoặc bảo trì). | Bổ sung kiểm tra database thời gian thực trong handleProceedToBooking, hiển thị popup cảnh báo nếu ô kho vừa bị khóa/bảo trì/người khác đặt và refresh sơ đồ. | Nhi | `RESOLVED` |
 | `ISS-77` | Nút "Sửa lại thông tin" ở màn thanh toán VietQR cho phép quay lại khi đơn giữ chỗ đã tạo, gây treo reservation. | Đổi thành nút "Hủy giữ chỗ" kèm modal xác nhận, gọi API hủy reservation giải phóng ô kho và xóa draft. | Nhi | `RESOLVED` |
 | `ISS-78` | Trang "Kho của tôi" thiếu mục hiển thị đơn đang giữ chỗ 48h, khiến khách không xem được thời gian và thanh toán tiếp. | Thêm thẻ KPI, tab Đang giữ chỗ, component PendingReservationCard kèm đếm ngược 48h, nút Thanh toán VietQR và Hủy giữ chỗ. | Nhi | `RESOLVED` |
+| `ISS-79` | Hủy yêu cầu trả kho dùng window.confirm thô; Tạo/Hủy vé hỗ trợ thiếu Modal popup thông báo và xác nhận đồng bộ. | Thay window.confirm bằng Modal xác nhận custom chuẩn Design System; Bổ sung Modal thông báo tạo vé thành công (kèm mã SUP) và Modal xác nhận trước khi hủy vé. | Nhi | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 

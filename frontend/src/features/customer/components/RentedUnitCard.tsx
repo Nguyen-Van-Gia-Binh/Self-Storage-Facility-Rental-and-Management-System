@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
 import {
   KeyRound,
   Calendar,
@@ -54,23 +55,22 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
   const [showPassModal, setShowPassModal] = useState(false);
   const [isClosingModal, setIsClosingModal] = useState(false);
   const [isCancellingReturn, setIsCancellingReturn] = useState(false);
+  const [showCancelReturnModal, setShowCancelReturnModal] = useState(false);
+  const [cancelReturnError, setCancelReturnError] = useState<string | null>(null);
 
-  const handleCancelReturn = async () => {
-    const confirmed = window.confirm(
-      'Bạn có chắc chắn muốn hủy yêu cầu trả kho để tiếp tục giữ lại ô kho này không?'
-    );
-    if (!confirmed) return;
-
+  const handleConfirmCancelReturn = async () => {
     try {
       setIsCancellingReturn(true);
+      setCancelReturnError(null);
       await cancelContractReturn(contract.id);
+      setShowCancelReturnModal(false);
       if (onCancelReturn) {
         onCancelReturn(contract);
       } else {
         window.location.reload();
       }
     } catch (err: any) {
-      alert(err.message || 'Không thể hủy yêu cầu trả kho. Vui lòng thử lại.');
+      setCancelReturnError(err.message || 'Không thể hủy yêu cầu trả kho. Vui lòng thử lại.');
     } finally {
       setIsCancellingReturn(false);
     }
@@ -453,7 +453,10 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={handleCancelReturn}
+                    onClick={() => {
+                      setCancelReturnError(null);
+                      setShowCancelReturnModal(true);
+                    }}
                     disabled={isCancellingReturn}
                     className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3 border-amber-300 text-amber-900 hover:bg-amber-50 text-xs font-semibold cursor-pointer"
                   >
@@ -593,6 +596,78 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
           totalPaid: contract.monthlyRent + contract.depositHeld,
         }}
       />
+
+      {/* Modal xác nhận Hủy yêu cầu trả kho (ISS-79) */}
+      <Modal
+        isOpen={showCancelReturnModal}
+        onClose={() => {
+          if (!isCancellingReturn) setShowCancelReturnModal(false);
+        }}
+        className="max-w-md w-full"
+      >
+        <div className="p-5 sm:p-6 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-rose-600" />
+              Xác nhận hủy yêu cầu trả kho
+            </h3>
+            <button
+              type="button"
+              disabled={isCancellingReturn}
+              onClick={() => setShowCancelReturnModal(false)}
+              className="text-slate-400 hover:text-slate-600 font-bold px-1.5 py-0.5 rounded cursor-pointer"
+            >
+              ×
+            </button>
+          </div>
+
+          <div className="flex items-start gap-3 p-3.5 bg-rose-50 rounded-xl border border-rose-100 text-rose-800 text-xs leading-relaxed">
+            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-rose-900 mb-1">
+                Bạn có chắc chắn muốn hủy yêu cầu trả kho cho ô {contract.unitNumber}?
+              </p>
+              <p className="text-rose-700">
+                Lịch hẹn nghiệm thu bàn giao ô kho sẽ được bãi bỏ. Hợp đồng của bạn sẽ tiếp tục được duy trì hiệu lực để sử dụng bình thường.
+              </p>
+            </div>
+          </div>
+
+          {cancelReturnError && (
+            <p className="text-xs text-rose-600 font-semibold">{cancelReturnError}</p>
+          )}
+
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isCancellingReturn}
+              onClick={() => setShowCancelReturnModal(false)}
+              className="text-slate-700 hover:bg-slate-100 cursor-pointer"
+            >
+              Quay lại (Giữ lịch trả)
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              disabled={isCancellingReturn}
+              onClick={handleConfirmCancelReturn}
+              className="bg-rose-600 hover:bg-rose-700 text-white font-bold cursor-pointer"
+            >
+              {isCancellingReturn ? (
+                <>
+                  <RotateCcw className="w-4 h-4 mr-1.5 animate-spin" />
+                  Đang hủy...
+                </>
+              ) : (
+                'Xác nhận hủy trả kho'
+              )}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 };
