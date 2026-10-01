@@ -35,6 +35,12 @@ public interface SupportRequestRepository extends JpaRepository<SupportRequest, 
     List<SupportRequest> findByStorageUnitIdInAndCategoryAndStatusIn(
             Collection<Long> storageUnitIds, SupportCategory category, Collection<SupportStatus> statuses);
 
+    List<SupportRequest> findByContractIdInAndStatusIn(
+            Collection<Long> contractIds, Collection<SupportStatus> statuses);
+
+    List<SupportRequest> findByStorageUnitIdInAndStatusIn(
+            Collection<Long> storageUnitIds, Collection<SupportStatus> statuses);
+
     long countByCodeStartingWith(String prefix);
 
     java.util.List<SupportRequest> findByStatus(SupportStatus status);
