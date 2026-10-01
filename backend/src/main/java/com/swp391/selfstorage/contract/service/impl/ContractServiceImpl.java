@@ -518,10 +518,6 @@ public class ContractServiceImpl implements ContractService {
                 SupportRequest ticket = supportRequestRepository.findById(request.getSupportRequestId())
                                 .orElseThrow(() -> new CustomException(ErrorCode.VALIDATION_FAILED,
                                                 "Không tìm thấy phiếu sự cố."));
-                if (ticket.getCategory() != SupportCategory.UNIT_DAMAGE) {
-                        throw new CustomException(ErrorCode.VALIDATION_FAILED,
-                                        "Chỉ phiếu hư hỏng ô kho mới được dùng để đổi ô.");
-                }
                 if (!OPEN_UNIT_DAMAGE.contains(ticket.getStatus())) {
                         throw new CustomException(ErrorCode.VALIDATION_FAILED, "Phiếu sự cố không còn mở.");
                 }
@@ -669,14 +665,14 @@ public class ContractServiceImpl implements ContractService {
                 List<Long> unitIds = contracts.stream().map(RentalContract::getStorageUnitId).filter(Objects::nonNull).distinct().toList();
                 Map<Long, SupportRequest> byId = new LinkedHashMap<>();
                 if (!contractIds.isEmpty()) {
-                        for (SupportRequest ticket : supportRequestRepository.findByContractIdInAndCategoryAndStatusIn(
-                                        contractIds, SupportCategory.UNIT_DAMAGE, OPEN_UNIT_DAMAGE)) {
+                        for (SupportRequest ticket : supportRequestRepository.findByContractIdInAndStatusIn(
+                                        contractIds, OPEN_UNIT_DAMAGE)) {
                                 byId.putIfAbsent(ticket.getId(), ticket);
                         }
                 }
                 if (!unitIds.isEmpty()) {
-                        for (SupportRequest ticket : supportRequestRepository.findByStorageUnitIdInAndCategoryAndStatusIn(
-                                        unitIds, SupportCategory.UNIT_DAMAGE, OPEN_UNIT_DAMAGE)) {
+                        for (SupportRequest ticket : supportRequestRepository.findByStorageUnitIdInAndStatusIn(
+                                        unitIds, OPEN_UNIT_DAMAGE)) {
                                 byId.putIfAbsent(ticket.getId(), ticket);
                         }
                 }

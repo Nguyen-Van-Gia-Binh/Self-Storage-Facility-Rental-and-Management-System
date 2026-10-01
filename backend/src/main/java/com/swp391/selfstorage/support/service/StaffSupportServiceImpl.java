@@ -155,10 +155,6 @@ public class StaffSupportServiceImpl implements StaffSupportService {
             }
         }
 
-        if (ticket.getCategory() != SupportCategory.UNIT_DAMAGE) {
-            throw new CustomException(ErrorCode.VALIDATION_FAILED, "Chỉ phiếu hư hỏng ô kho mới được đánh dấu cần di dời.");
-        }
-
         if (ticket.getStatus() != SupportStatus.NEW
                 && ticket.getStatus() != SupportStatus.ASSIGNED
                 && ticket.getStatus() != SupportStatus.IN_PROGRESS) {
