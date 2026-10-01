@@ -69,37 +69,37 @@ export const PendingReservationCard: React.FC<PendingReservationCardProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-sky-100">
         <div className="space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-200 uppercase tracking-wider font-mono">
+            <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-900 border border-sky-300 uppercase tracking-wider font-mono">
               Ô kho {reservation.storageUnitCode || reservation.unitTypeName || 'Tự động phân bổ'}
             </span>
-            <Badge className="bg-amber-500 text-white font-bold text-[10px] px-2 py-0.5 flex items-center gap-1 shadow-xs">
-              <Clock className="w-3 h-3" />
-              Đang giữ chỗ 48h
-            </Badge>
-            <span className="text-xs text-slate-400 font-mono">#{reservation.code}</span>
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-black px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-400 shadow-2xs">
+              <Clock className="w-3.5 h-3.5 text-amber-900 shrink-0" />
+              <span>Đang giữ chỗ 48h</span>
+            </span>
+            <span className="text-xs text-slate-500 font-mono font-medium">#{reservation.code}</span>
           </div>
           <h3 className="text-base sm:text-lg font-bold text-slate-900 mt-1">
             {reservation.unitTypeName || 'Loại ô kho tiêu chuẩn'}
           </h3>
-          <p className="text-xs text-slate-500 flex items-center gap-1">
+          <p className="text-xs text-slate-600 flex items-center gap-1 font-medium">
             <MapPin className="w-3.5 h-3.5 text-sky-600 shrink-0" />
             <span>{reservation.facilityName || 'Cơ sở lưu trữ SmartStorage'}</span>
           </p>
         </div>
 
         {/* Realtime Countdown Box */}
-        <div className="sm:text-right shrink-0 bg-white/90 p-2.5 sm:p-3 rounded-xl border border-sky-200/80 shadow-2xs">
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-0.5">
+        <div className="sm:text-right shrink-0 bg-white/95 p-2.5 sm:p-3 rounded-xl border border-sky-200 shadow-2xs">
+          <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-0.5">
             Thời gian giữ chỗ còn lại
           </span>
-          <div className="flex items-center sm:justify-end gap-1.5 font-mono text-sm sm:text-base font-black text-sky-700">
-            <Clock className={`w-4 h-4 ${isExpired ? 'text-rose-500' : 'text-sky-600 animate-pulse'}`} />
-            <span className={isExpired ? 'text-rose-600' : 'text-sky-800'}>
+          <div className="flex items-center sm:justify-end gap-1.5 font-mono text-sm sm:text-base font-black text-sky-900">
+            <Clock className={`w-4 h-4 ${isExpired ? 'text-rose-600' : 'text-sky-600 animate-pulse'}`} />
+            <span className={isExpired ? 'text-rose-700' : 'text-sky-950'}>
               {formattedCountdown}
             </span>
           </div>
           {!isExpired && (
-            <span className="text-[10px] text-slate-400 block mt-0.5">
+            <span className="text-[10px] text-slate-500 font-medium block mt-0.5">
               Hết hạn lúc: {new Date(reservation.holdExpiresAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - {new Date(reservation.holdExpiresAt).toLocaleDateString('vi-VN')}
             </span>
           )}
@@ -107,29 +107,29 @@ export const PendingReservationCard: React.FC<PendingReservationCardProps> = ({
       </div>
 
       {/* Summary Content Details */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-white/80 p-3 sm:p-3.5 rounded-xl border border-slate-100 text-xs">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-white/90 p-3 sm:p-3.5 rounded-xl border border-slate-200 text-xs">
         <div>
-          <span className="text-slate-400 block text-[11px]">Thời gian thuê:</span>
-          <span className="font-bold text-slate-800 flex items-center gap-1 mt-0.5">
+          <span className="text-slate-500 block text-[11px] font-medium">Thời gian thuê:</span>
+          <span className="font-bold text-slate-900 flex items-center gap-1 mt-0.5">
             <Calendar className="w-3.5 h-3.5 text-brand-600" />
             {reservation.rentalMonths} Tháng (từ {formatDateVN(reservation.startDate)})
           </span>
         </div>
 
         <div>
-          <span className="text-slate-400 block text-[11px]">Đơn giá tháng:</span>
-          <span className="font-bold text-slate-800 mt-0.5 block">
+          <span className="text-slate-500 block text-[11px] font-medium">Đơn giá tháng:</span>
+          <span className="font-bold text-slate-900 mt-0.5 block">
             {formatVND(reservation.monthlyPrice)}/tháng
           </span>
         </div>
 
         <div>
-          <span className="text-slate-400 block text-[11px]">Tổng tiền cần thanh toán:</span>
-          <span className="font-black text-sm text-brand-600 mt-0.5 block">
+          <span className="text-slate-500 block text-[11px] font-medium">Tổng tiền cần thanh toán:</span>
+          <span className="font-black text-sm text-brand-700 mt-0.5 block">
             {formatVND(reservation.totalPayable || reservation.depositAmount)}
           </span>
           {reservation.depositAmount > 0 && (
-            <span className="text-[10px] text-slate-400 block">
+            <span className="text-[10px] text-slate-500 font-medium block">
               (Đã gồm tiền cọc: {formatVND(reservation.depositAmount)})
             </span>
           )}
@@ -137,7 +137,7 @@ export const PendingReservationCard: React.FC<PendingReservationCardProps> = ({
       </div>
 
       {/* Notice */}
-      <div className="bg-sky-50/70 p-2.5 rounded-xl border border-sky-100/90 text-xs text-sky-900 flex items-center justify-between gap-3">
+      <div className="bg-sky-50 p-2.5 rounded-xl border border-sky-200 text-xs text-sky-950 font-medium flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-sky-600 shrink-0" />
           <span>
@@ -153,9 +153,9 @@ export const PendingReservationCard: React.FC<PendingReservationCardProps> = ({
           variant="outline"
           size="sm"
           onClick={() => onCancel?.(reservation)}
-          className="w-full sm:w-auto text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 font-semibold cursor-pointer"
+          className="w-full sm:w-auto text-rose-700 border-rose-300 hover:bg-rose-50 hover:border-rose-400 font-bold cursor-pointer"
         >
-          <XCircle className="w-4 h-4 mr-1.5 text-rose-500" />
+          <XCircle className="w-4 h-4 mr-1.5 text-rose-600" />
           Hủy giữ chỗ
         </Button>
 
