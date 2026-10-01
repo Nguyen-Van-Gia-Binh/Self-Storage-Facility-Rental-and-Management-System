@@ -164,5 +164,18 @@ export async function apiClient<T>(
     throw new ApiException(errorData);
   }
 
-  return response.json();
+  if (response.status === 204) {
+    return {} as T;
+  }
+
+  const text = await response.text();
+  if (!text || !text.trim()) {
+    return {} as T;
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text as unknown as T;
+  }
 }
