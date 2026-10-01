@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
-  Boxes,
   User,
   Mail,
   Phone,
@@ -16,6 +15,7 @@ import {
   ShieldCheck,
   Check,
 } from 'lucide-react';
+import { Logo } from '@/components/ui/Logo';
 import { registerUser } from '@/api/auth';
 
 export const RegisterPage: React.FC = () => {
@@ -125,20 +125,13 @@ export const RegisterPage: React.FC = () => {
 
         {/* Top Header / Logo */}
         <div className="relative z-10">
-          <Link to="/" className="inline-flex items-center gap-3 group">
-            <div className="w-11 h-11 rounded-2xl bg-brand-500 text-white flex items-center justify-center shadow-lg shadow-brand-500/30 group-hover:scale-105 transition-transform">
-              <Boxes className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xl font-black tracking-tight text-white">SmartStorage</span>
-                <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-brand-500/20 text-brand-300 border border-brand-500/30 rounded-full">
-                  Customer
-                </span>
-              </div>
-              <p className="text-xs text-slate-400">Self-Storage Facility Rental & Management</p>
-            </div>
-          </Link>
+          <Logo 
+            to="/" 
+            variant="light" 
+            size="lg" 
+            badge="Customer" 
+            subtitle="Self-Storage Facility Rental & Management" 
+          />
         </div>
 
         {/* Center Benefits */}
@@ -192,14 +185,12 @@ export const RegisterPage: React.FC = () => {
       <div className="flex-1 flex flex-col justify-center items-center p-6 sm:p-10 lg:p-12 bg-[#f2f9f7] lg:bg-white relative">
         <div className="w-full max-w-lg space-y-6">
           {/* Mobile Header */}
-          <div className="lg:hidden flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-brand-500 text-white flex items-center justify-center shadow-sm">
-              <Boxes className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-lg font-bold text-slate-900">SmartStorage</span>
-              <p className="text-xs text-slate-500">Đăng ký tài khoản khách hàng</p>
-            </div>
+          <div className="lg:hidden mb-2">
+            <Logo 
+              to="/" 
+              size="md" 
+              subtitle="Đăng ký tài khoản khách hàng" 
+            />
           </div>
 
           {/* Form Header */}

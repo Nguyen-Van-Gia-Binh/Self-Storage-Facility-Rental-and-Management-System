@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Boxes,
   Mail,
   ArrowRight,
   CheckCircle2,
@@ -17,6 +16,7 @@ import {
   Clock,
   Check,
 } from 'lucide-react';
+import { Logo } from '@/components/ui/Logo';
 import { forgotPassword, verifyOtp, resetPassword } from '@/api/auth';
 
 export const ForgotPasswordPage: React.FC = () => {
@@ -171,15 +171,11 @@ export const ForgotPasswordPage: React.FC = () => {
 
       {/* Brand Header */}
       <div className="relative z-10 mb-8 text-center">
-        <Link to="/" className="inline-flex items-center gap-3 group">
-          <div className="w-11 h-11 rounded-2xl bg-brand-500 text-white flex items-center justify-center shadow-lg shadow-brand-500/30 group-hover:scale-105 transition-transform">
-            <Boxes className="w-6 h-6" />
-          </div>
-          <div className="text-left">
-            <span className="text-xl font-extrabold tracking-tight text-slate-900">SmartStorage</span>
-            <p className="text-xs text-slate-500">Self-Storage Management</p>
-          </div>
-        </Link>
+        <Logo 
+          to="/" 
+          size="lg" 
+          subtitle="Self-Storage Facility Rental & Management" 
+        />
       </div>
 
       {/* Main Card */}
