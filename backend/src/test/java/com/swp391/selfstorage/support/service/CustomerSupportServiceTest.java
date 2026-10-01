@@ -5,6 +5,7 @@ import com.swp391.selfstorage.common.dto.PageResponse;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
 import com.swp391.selfstorage.user.entity.UserStatus;
+import com.swp391.selfstorage.contract.entity.ContractStatus;
 import com.swp391.selfstorage.contract.entity.RentalContract;
 import com.swp391.selfstorage.contract.repository.RentalContractRepository;
 import com.swp391.selfstorage.facility.entity.Facility;
@@ -296,4 +297,55 @@ class CustomerSupportServiceTest {
         assertEquals(ErrorCode.SUPPORT_REQUEST_CANNOT_BE_CANCELLED, ex.getErrorCode());
         verify(supportRequestRepository, never()).delete(any());
     }
+
+    @Test
+    @DisplayName("US-SC-06: Chặn tạo ticket khi hợp đồng đã TERMINATED hoặc CLOSED")
+    void shouldRejectCreate_whenContractIsTerminatedOrClosed() {
+        CreateSupportRequest request = CreateSupportRequest.builder()
+                .contractId(501L)
+                .category(SupportCategory.LOCK_ACCESS)
+                .description("Báo hỏng khóa ô kho")
+                .isUrgent(false)
+                .build();
+
+        RentalContract terminatedContract = new RentalContract();
+        terminatedContract.setId(501L);
+        terminatedContract.setCustomerId(15L);
+        terminatedContract.setStatus(ContractStatus.TERMINATED);
+
+        when(rentalContractRepository.findById(501L)).thenReturn(Optional.of(terminatedContract));
+
+        CustomException ex = assertThrows(CustomException.class, () ->
+                customerSupportService.createSupportRequest(request, customerUser)
+        );
+
+        assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
+        verify(supportRequestRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("US-SC-06: Chặn tạo ticket khi hợp đồng không thuộc quyền sở hữu của khách hàng")
+    void shouldRejectCreate_whenContractDoesNotBelongToCustomer() {
+        CreateSupportRequest request = CreateSupportRequest.builder()
+                .contractId(501L)
+                .category(SupportCategory.LOCK_ACCESS)
+                .description("Báo hỏng khóa ô kho khác")
+                .isUrgent(false)
+                .build();
+
+        RentalContract otherContract = new RentalContract();
+        otherContract.setId(501L);
+        otherContract.setCustomerId(999L); // ID khác với customerUser (15L)
+        otherContract.setStatus(ContractStatus.ACTIVE);
+
+        when(rentalContractRepository.findById(501L)).thenReturn(Optional.of(otherContract));
+
+        CustomException ex = assertThrows(CustomException.class, () ->
+                customerSupportService.createSupportRequest(request, customerUser)
+        );
+
+        assertEquals(ErrorCode.ACCESS_DENIED, ex.getErrorCode());
+        verify(supportRequestRepository, never()).save(any());
+    }
 }
+

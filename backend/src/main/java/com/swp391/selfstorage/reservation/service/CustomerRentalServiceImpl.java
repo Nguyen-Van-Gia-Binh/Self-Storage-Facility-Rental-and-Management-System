@@ -209,7 +209,6 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
             actions.add("RESCHEDULE");
         } else if (contract.getStatus() == ContractStatus.CLOSED || contract.getStatus() == ContractStatus.TERMINATED) {
             actions.add("VIEW_INSPECTION");
-            actions.add("SUPPORT_TICKET");
         }
         detail.setAllowedActions(actions);
 
