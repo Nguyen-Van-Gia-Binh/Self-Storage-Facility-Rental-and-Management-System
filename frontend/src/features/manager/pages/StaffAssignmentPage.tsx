@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { UrgentSlaLabel } from '@/components/UrgentSlaLabel';
 import { useSearchParams } from 'react-router-dom';
 import {
   Building2,
@@ -206,7 +205,7 @@ export const StaffAssignmentPage: React.FC = () => {
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Cân bằng tải ca trực, phân bổ nhiệm vụ Bàn giao Check-in, Trả kho, Sự cố khẩn cấp và
+            Cân bằng tải ca trực, phân bổ nhiệm vụ Bàn giao Check-in, Trả kho, Xử lý sự cố và
             Khóa ngoài Overlock (FM-05)
           </p>
         </div>
@@ -311,20 +310,20 @@ export const StaffAssignmentPage: React.FC = () => {
           </p>
         </div>
 
-        {/* KPI 4: Sự cố khẩn cấp SLA 2h */}
+        {/* KPI 4: Sự cố tiếp nhận */}
         <div className="bg-white rounded-2xl border border-amber-200 bg-amber-50/20 p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-amber-800">Sự cố <UrgentSlaLabel lead="khẩn cấp" /></span>
+            <span className="text-xs font-semibold text-amber-800">Sự cố tại cơ sở</span>
             <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
               <Clock className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl font-black text-amber-900">{stats.urgentTasks}</span>
-            <span className="text-[11px] text-amber-700 font-semibold">cam kết BR-SUP-01</span>
+            <span className="text-[11px] text-amber-700 font-semibold">yêu cầu hỗ trợ</span>
           </div>
           <p className="text-[11px] text-amber-700 mt-1">
-            Xử lý kịp thời tránh vi phạm thỏa thuận
+            Điều phối nhân viên xử lý theo ca trực
           </p>
         </div>
       </div>

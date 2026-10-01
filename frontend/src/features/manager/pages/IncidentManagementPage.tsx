@@ -11,7 +11,6 @@ import {
   ArrowRightLeft,
   Filter,
 } from 'lucide-react';
-import { UrgentSlaLabel } from '@/components/UrgentSlaLabel';
 import type {
   ManagementSupportTicket,
   SupportStatus,
@@ -27,7 +26,6 @@ import {
 } from '../api/staffAssignmentApi';
 import { IncidentDetailModal } from '../components/IncidentDetailModal';
 import { AssignStaffModal } from '../components/AssignStaffModal';
-import { SlaCountdownBadge } from '../components/SlaCountdownBadge';
 import { fetchMyAssignedFacilities } from '@/api/facility';
 import { tokenStorage } from '@/utils/tokenStorage';
 
@@ -50,7 +48,6 @@ export const IncidentManagementPage: React.FC = () => {
   const [keyword, setKeyword] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<SupportCategory | 'ALL'>('ALL');
   const [activeStatusTab, setActiveStatusTab] = useState<SupportStatus | 'ALL'>('ALL');
-  const [onlyUrgent, setOnlyUrgent] = useState<boolean>(false);
 
   const [tickets, setTickets] = useState<ManagementSupportTicket[]>([]);
   const [staffList, setStaffList] = useState<StaffWorkloadItem[]>([]);
@@ -97,7 +94,6 @@ export const IncidentManagementPage: React.FC = () => {
             facilityId: selectedFacilityId,
             status: activeStatusTab === 'ALL' ? undefined : activeStatusTab,
             category: selectedCategory === 'ALL' ? undefined : selectedCategory,
-            isUrgent: onlyUrgent ? true : undefined,
             keyword,
           }),
           getStaffWorkload(selectedFacilityId),
@@ -120,19 +116,19 @@ export const IncidentManagementPage: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [selectedFacilityId, activeStatusTab, selectedCategory, onlyUrgent, keyword, reloadKey]);
+  }, [selectedFacilityId, activeStatusTab, selectedCategory, keyword, reloadKey]);
 
   // Thống kê nhanh KPI
   const stats = useMemo(() => {
     const total = tickets.length;
     const openCount = tickets.filter((t) => t.status === 'OPEN').length;
+    const assignedCount = tickets.filter((t) => t.status === 'ASSIGNED').length;
     const inProgressCount = tickets.filter((t) => t.status === 'IN_PROGRESS').length;
-    const urgentCount = tickets.filter((t) => t.isUrgent).length;
     const resolvedCount = tickets.filter(
       (t) => t.status === 'RESOLVED' || t.status === 'CLOSED'
     ).length;
 
-    return { total, openCount, inProgressCount, urgentCount, resolvedCount };
+    return { total, openCount, assignedCount, inProgressCount, resolvedCount };
   }, [tickets]);
 
   // Mở modal chi tiết
@@ -241,7 +237,7 @@ export const IncidentManagementPage: React.FC = () => {
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Tiếp nhận khiếu nại, phân loại sự cố hiện trường và phân công nhân viên theo <UrgentSlaLabel lead="SLA" />
+            Tiếp nhận khiếu nại, hỗ trợ sự cố hiện trường và phân công nhân viên theo ca trực
             (Flow 7 · UC-F7-03, UC-F7-04)
           </p>
         </div>
@@ -301,14 +297,11 @@ export const IncidentManagementPage: React.FC = () => {
           <p className="text-[11px] text-amber-700 mt-0.5">Nhân viên đang kiểm tra</p>
         </div>
 
-        {/* Urgent SLA 2h */}
-        <div className="bg-white rounded-2xl border border-rose-200 bg-rose-50/30 p-4 shadow-sm">
-          <p className="text-xs font-semibold text-rose-800 flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-            <UrgentSlaLabel lead="Khẩn cấp" />
-          </p>
-          <p className="text-2xl font-black text-rose-900 mt-1">{stats.urgentCount}</p>
-          <p className="text-[11px] text-rose-700 mt-0.5">Cam kết BR-SUP-01</p>
+        {/* Assigned */}
+        <div className="bg-white rounded-2xl border border-blue-200 bg-blue-50/20 p-4 shadow-sm">
+          <p className="text-xs font-semibold text-blue-700">Đã phân công</p>
+          <p className="text-2xl font-black text-blue-800 mt-1">{stats.assignedCount}</p>
+          <p className="text-[11px] text-blue-600 mt-0.5">Nhân viên tiếp nhận</p>
         </div>
 
         {/* Resolved */}
@@ -351,17 +344,6 @@ export const IncidentManagementPage: React.FC = () => {
                 ))}
               </select>
             </div>
-
-            {/* Urgent Toggle */}
-            <label className="flex items-center gap-2 text-xs font-semibold text-rose-700 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={onlyUrgent}
-                onChange={(e) => setOnlyUrgent(e.target.checked)}
-                className="rounded text-rose-600 focus:ring-rose-500 w-4 h-4"
-              />
-              <span>Chỉ hiện vé <UrgentSlaLabel lead="khẩn cấp" /></span>
-            </label>
           </div>
         </div>
 
@@ -427,15 +409,6 @@ export const IncidentManagementPage: React.FC = () => {
                         })}{' '}
                         ({new Date(ticket.createdAt).toLocaleDateString('vi-VN')})
                       </p>
-                      {ticket.isUrgent && (
-                        <div className="mt-1">
-                          <SlaCountdownBadge
-                            slaDeadline={ticket.slaDueAt}
-                            createdAt={ticket.createdAt}
-                            isCompleted={ticket.status === 'RESOLVED' || ticket.status === 'CLOSED'}
-                          />
-                        </div>
-                      )}
                     </td>
 
                     {/* Khách hàng & Ô kho */}

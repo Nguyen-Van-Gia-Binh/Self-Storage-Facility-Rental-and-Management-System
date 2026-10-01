@@ -1,5 +1,4 @@
 import React from 'react';
-import { UrgentSlaLabel } from '@/components/UrgentSlaLabel';
 import { createPortal } from 'react-dom';
 import {
   X,
@@ -81,12 +80,6 @@ export const IncidentDetailModal: React.FC<IncidentDetailModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-bold text-slate-900">{ticket.code}</h3>
-                {ticket.isUrgent && (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-                    <UrgentSlaLabel lead="Khẩn cấp" />
-                  </span>
-                )}
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
                 Tạo lúc: {new Date(ticket.createdAt).toLocaleString('vi-VN')} · {ticket.facilityName}
