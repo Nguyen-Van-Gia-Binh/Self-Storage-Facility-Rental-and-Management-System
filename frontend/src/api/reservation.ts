@@ -136,3 +136,15 @@ export async function getReservationByCode(code: string): Promise<ReservationRes
   const res = await apiClient<ApiResponse<ReservationResponse>>(`/reservations/${code}`);
   return res.data;
 }
+
+/**
+ * 5. Hủy đơn đặt chỗ kèm lý do (BR-RES-04, API-SPEC § 7.4)
+ */
+export async function cancelReservationApi(id: number, reason?: string): Promise<ReservationResponse> {
+  const res = await apiClient<ApiResponse<ReservationResponse>>(`/reservations/${id}/cancellation`, {
+    method: 'POST',
+    body: JSON.stringify({ reason: reason || 'Khách hàng hủy giữ chỗ trên trang thanh toán' }),
+  });
+  return res.data;
+}
+

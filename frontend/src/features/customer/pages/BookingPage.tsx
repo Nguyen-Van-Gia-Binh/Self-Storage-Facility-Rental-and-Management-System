@@ -19,7 +19,8 @@ import {
   FileText,
   Loader2,
   ExternalLink,
-  ShieldCheck
+  ShieldCheck,
+  XCircle
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Modal } from '@/components/ui/Modal';
@@ -32,6 +33,7 @@ import type { CheckoutResponse } from '../api/customerApi';
 import {
   calculateBookingPrice,
   createReservation,
+  cancelReservationApi,
   checkUnitAvailability,
   type AvailabilityResponse,
   type CalculatePriceResponse,
@@ -286,6 +288,11 @@ export const BookingPage: React.FC = () => {
   const [createdReservationId, setCreatedReservationId] = useState<number | null>(null);
   const [createdReservationCode, setCreatedReservationCode] = useState<string>('');
 
+  // Cancel Reservation States (ISS-77)
+  const [showCancelModal, setShowCancelModal] = useState<boolean>(false);
+  const [isCancellingReservation, setIsCancellingReservation] = useState<boolean>(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+
   // Calculate End Date
   const endDate = useMemo(() => {
     if (!startDate) return '';
@@ -495,6 +502,33 @@ export const BookingPage: React.FC = () => {
 
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
   const [redirectCountdown, setRedirectCountdown] = useState<number>(3);
+
+  // Xử lý Hủy giữ chỗ khi khách bấm hủy trên màn hình thanh toán VietQR (ISS-77)
+  const handleConfirmCancelReservation = async () => {
+    setIsCancellingReservation(true);
+    setCancelError(null);
+    try {
+      if (createdReservationId) {
+        await cancelReservationApi(createdReservationId, 'Khách hàng chủ động hủy giữ chỗ trên trang thanh toán');
+      }
+      try {
+        localStorage.removeItem('smartstorage_pending_booking');
+      } catch {
+        // Bỏ qua
+      }
+      setShowCancelModal(false);
+      if (facility.id) {
+        navigate(`/customer/units?facility=${facility.id}${unitType.id ? `&type=${unitType.id}` : ''}`, { replace: true });
+      } else {
+        navigate('/customer', { replace: true });
+      }
+    } catch (err: any) {
+      console.error('Lỗi khi hủy đơn giữ chỗ:', err);
+      setCancelError(err?.message || 'Không thể hủy đơn đặt chỗ lúc này. Vui lòng thử lại.');
+    } finally {
+      setIsCancellingReservation(false);
+    }
+  };
 
   // Xử lý mô phỏng chuyển tiền Sandbox trực tiếp
   const handleSimulateTransfer = async () => {
@@ -1399,13 +1433,18 @@ export const BookingPage: React.FC = () => {
               {/* Action buttons */}
               <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <Button
+                  type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentStep(2)}
-                  className="w-full sm:w-auto"
+                  onClick={() => {
+                    setCancelError(null);
+                    setShowCancelModal(true);
+                  }}
+                  disabled={isCancellingReservation || paymentStatus === 'SUCCESS'}
+                  className="w-full sm:w-auto text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 font-semibold cursor-pointer"
                 >
-                  <ArrowLeft className="w-4 h-4 mr-1.5" />
-                  Sửa lại thông tin
+                  <XCircle className="w-4 h-4 mr-1.5 text-rose-500" />
+                  Hủy giữ chỗ
                 </Button>
 
                 <div className="flex flex-col items-stretch gap-2 w-full sm:w-auto">
@@ -1522,6 +1561,76 @@ export const BookingPage: React.FC = () => {
                 Chọn ô kho khác
               </Button>
             )}
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal xác nhận hủy giữ chỗ (ISS-77) */}
+      <Modal
+        isOpen={showCancelModal}
+        onClose={() => {
+          if (!isCancellingReservation) setShowCancelModal(false);
+        }}
+        className="max-w-md w-full"
+      >
+        <div className="p-5 sm:p-6 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-rose-600" />
+              Xác nhận hủy giữ chỗ
+            </h3>
+            <button
+              type="button"
+              disabled={isCancellingReservation}
+              onClick={() => setShowCancelModal(false)}
+              className="text-slate-400 hover:text-slate-600 font-bold px-1.5 py-0.5 rounded cursor-pointer"
+            >
+              ×
+            </button>
+          </div>
+
+          <div className="flex items-start gap-3 p-3.5 bg-rose-50 rounded-xl border border-rose-100 text-rose-800 text-xs leading-relaxed">
+            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-rose-900 mb-1">Bạn có chắc chắn muốn hủy giữ chỗ?</p>
+              <p className="text-rose-700">
+                Sau khi hủy, ô kho <strong>{finalUnitNumber}</strong> sẽ được giải phóng ngay lập tức trên hệ thống cho khách hàng khác và đơn đặt chỗ này sẽ bị hủy bỏ.
+              </p>
+            </div>
+          </div>
+
+          {cancelError && (
+            <p className="text-xs text-rose-600 font-semibold">{cancelError}</p>
+          )}
+
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isCancellingReservation}
+              onClick={() => setShowCancelModal(false)}
+              className="text-slate-700 hover:bg-slate-100"
+            >
+              Quay lại (Giữ đơn)
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              disabled={isCancellingReservation}
+              onClick={handleConfirmCancelReservation}
+              className="bg-rose-600 hover:bg-rose-700 text-white font-bold"
+            >
+              {isCancellingReservation ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                  Đang hủy...
+                </>
+              ) : (
+                'Xác nhận hủy giữ chỗ'
+              )}
+            </Button>
           </div>
         </div>
       </Modal>
