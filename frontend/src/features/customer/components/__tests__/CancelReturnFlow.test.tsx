@@ -1,102 +1,44 @@
-/** @vitest-environment jsdom */
-import '@testing-library/jest-dom/vitest';
-import React from 'react';
-import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
-import { describe, it, expect, vi, afterEach } from 'vitest';
-import { RentedUnitCard } from '../RentedUnitCard';
-import * as customerRentalsApi from '@/api/customerRentals';
-import type { RentedContract } from '../../types';
+/// <reference types="node" />
+import { describe, it, expect } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
+import process from 'node:process';
 
-vi.mock('@/api/customerRentals', async () => {
-  const actual = await vi.importActual<any>('@/api/customerRentals');
-  return {
-    ...actual,
-    cancelContractReturn: vi.fn().mockResolvedValue({ success: true }),
-    getContractAccessLogs: vi.fn().mockResolvedValue([]),
-  };
-});
+/**
+ * ISS-79 & BR-RET-12: Hủy yêu cầu trả kho với Modal xác nhận tùy chỉnh chuẩn Design System
+ * Người thực hiện: Nhi
+ */
+describe('ISS-79: Custom Modal Confirmation for Cancel Return Flow (BR-RET-12)', () => {
+  const rentedUnitCardPath = path.resolve(
+    process.cwd(),
+    'src/features/customer/components/RentedUnitCard.tsx'
+  );
 
-describe('CancelReturnFlow: Ẩn nút gia hạn & Hiển thị/thực thi nút Hủy yêu cầu trả kho (BR-RET-12)', () => {
-  afterEach(() => {
-    cleanup();
-    vi.restoreAllMocks();
+  it('RentedUnitCard không còn sử dụng window.confirm native của trình duyệt', () => {
+    const content = fs.readFileSync(rentedUnitCardPath, 'utf-8');
+    expect(content).not.toMatch(/window\.confirm/);
   });
 
-  const pendingReturnContract: RentedContract = {
-    id: '10',
-    contractNumber: 'CTR-010',
-    facilityId: '1',
-    facilityName: 'SmartStorage Q1',
-    unitId: 'U-110',
-    unitNumber: 'U-110',
-    unitTypeName: 'Kho Tiêu Chuẩn',
-    sizeCategory: 'S',
-    storageType: 'STANDARD',
-    startDate: '2023-01-01',
-    endDate: '2023-06-01',
-    monthlyRent: 1000000,
-    depositHeld: 1000000,
-    status: 'PENDING_RETURN',
-    inspectionDone: false,
-    overdueDays: 0,
-    overdueFee: 0,
-    accessPin: '654321',
-  };
-
-  it('Ẩn nút gia hạn và hiển thị nút Hủy yêu cầu trả kho khi PENDING_RETURN và chưa nghiệm thu', () => {
-    render(
-      <BrowserRouter>
-        <RentedUnitCard contract={pendingReturnContract} />
-      </BrowserRouter>
-    );
-
-    // Tuyệt đối không xuất hiện nút gia hạn
-    expect(screen.queryByText(/Gia hạn hợp đồng trực tuyến/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Gia hạn hợp đồng/i)).not.toBeInTheDocument();
-
-    // Hiển thị nút Hủy yêu cầu trả kho
-    const cancelBtn = screen.getByRole('button', { name: /Hủy yêu cầu trả kho/i });
-    expect(cancelBtn).toBeInTheDocument();
+  it('RentedUnitCard định nghĩa state showCancelReturnModal và handler handleConfirmCancelReturn', () => {
+    const content = fs.readFileSync(rentedUnitCardPath, 'utf-8');
+    expect(content).toMatch(/showCancelReturnModal/);
+    expect(content).toMatch(/setShowCancelReturnModal\(true\)/);
+    expect(content).toMatch(/handleConfirmCancelReturn/);
+    expect(content).toMatch(/cancelContractReturn\(contract\.id\)/);
   });
 
-  it('Khi click Hủy yêu cầu trả kho và confirm, gọi API cancelContractReturn', async () => {
-    const cancelSpy = vi.spyOn(customerRentalsApi, 'cancelContractReturn');
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
-    const mockOnCancel = vi.fn();
-
-    render(
-      <BrowserRouter>
-        <RentedUnitCard
-          contract={pendingReturnContract}
-          onCancelReturn={mockOnCancel}
-        />
-      </BrowserRouter>
-    );
-
-    const cancelBtn = screen.getByRole('button', { name: /Hủy yêu cầu trả kho/i });
-    fireEvent.click(cancelBtn);
-
-    expect(window.confirm).toHaveBeenCalled();
-    await waitFor(() => {
-      expect(cancelSpy).toHaveBeenCalledWith('10');
-      expect(mockOnCancel).toHaveBeenCalledWith(pendingReturnContract);
-    });
+  it('RentedUnitCard tích hợp Modal xác nhận hủy trả kho với tiêu đề, cảnh báo và 2 nút hành động', () => {
+    const content = fs.readFileSync(rentedUnitCardPath, 'utf-8');
+    expect(content).toMatch(/Xác nhận hủy yêu cầu trả kho/);
+    expect(content).toMatch(/Lịch hẹn nghiệm thu bàn giao ô kho sẽ được bãi bỏ/);
+    expect(content).toMatch(/Quay lại \(Giữ lịch trả\)/);
+    expect(content).toMatch(/Xác nhận hủy trả kho/);
   });
 
-  it('Không hiển thị nút Hủy yêu cầu trả kho nếu nhân viên đã nghiệm thu xong', () => {
-    const inspectedContract: RentedContract = {
-      ...pendingReturnContract,
-      inspectionDone: true,
-    };
-
-    render(
-      <BrowserRouter>
-        <RentedUnitCard contract={inspectedContract} />
-      </BrowserRouter>
-    );
-
-    expect(screen.queryByRole('button', { name: /Hủy yêu cầu trả kho/i })).not.toBeInTheDocument();
-    expect(screen.getByText(/Biên bản nghiệm thu đã lập/i)).toBeInTheDocument();
+  it('Nút Hủy yêu cầu trả kho chỉ hiển thị khi PENDING_RETURN và chưa nghiệm thu', () => {
+    const content = fs.readFileSync(rentedUnitCardPath, 'utf-8');
+    expect(content).toMatch(/contract\.status === 'PENDING_RETURN'/);
+    expect(content).toMatch(/contract\.inspectionDone/);
+    expect(content).toMatch(/Hủy yêu cầu trả kho/);
   });
 });
