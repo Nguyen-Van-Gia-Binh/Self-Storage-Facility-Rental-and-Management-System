@@ -46,6 +46,7 @@ export interface UnitType {
   capacityDescription: string;
   baseMonthlyPrice: number;
   badge?: 'POPULAR' | 'SPACIOUS' | 'COMMERCIAL' | 'COMPACT';
+  priceStatus?: string | null;
 }
 
 // Ngăn ô kho thực tế trên mặt bằng (Storage Unit - FM-01, SC-01)

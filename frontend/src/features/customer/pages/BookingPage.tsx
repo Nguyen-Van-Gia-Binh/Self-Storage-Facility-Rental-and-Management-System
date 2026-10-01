@@ -177,6 +177,17 @@ export const BookingPage: React.FC = () => {
             return;
           }
 
+          const isUnlisted = !foundUT.monthlyPrice || foundUT.monthlyPrice <= 0 || foundUT.priceStatus === 'UNLISTED' || foundUT.priceStatus === 'Chưa niêm yết';
+          if (isUnlisted) {
+            setUnavailableModal({
+              isOpen: true,
+              title: 'Loại ô kho chưa niêm yết giá',
+              message: 'Loại ô kho này chưa được Ban Quản Trị niêm yết giá chính thức nên tạm thời chưa thể đặt chỗ. Quý khách vui lòng quay lại sơ đồ để chọn loại kho khác.',
+              actionType: 'NAVIGATE_UNITS',
+            });
+            return;
+          }
+
           const codeUpper = (foundUT.code || foundUT.name).toUpperCase();
           const sizeCat = resolveSizeCategory(foundUT.code || foundUT.name, foundUT.areaM2);
           const isClimate = codeUpper.includes('CLIMATE') || foundUT.name.toLowerCase().includes('lạnh');
