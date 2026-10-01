@@ -42,4 +42,16 @@ describe('ISS-79: Support Ticket Success Modal & Cancel Confirmation Modal', () 
     expect(content).toMatch(/onCancel\(ticket\)/);
     expect(content).toMatch(/Hủy yêu cầu/);
   });
+
+  it('SupportTicketDetailModal không còn dùng window.confirm và tích hợp Modal xác nhận hủy vé', () => {
+    const detailModalPath = path.resolve(
+      process.cwd(),
+      'src/features/customer/components/SupportTicketDetailModal.tsx'
+    );
+    const content = fs.readFileSync(detailModalPath, 'utf-8');
+    expect(content).not.toMatch(/window\.confirm/);
+    expect(content).toMatch(/showCancelConfirm/);
+    expect(content).toMatch(/handleConfirmCancel/);
+    expect(content).toMatch(/Xác nhận hủy yêu cầu hỗ trợ/);
+  });
 });
