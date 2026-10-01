@@ -114,6 +114,20 @@ export interface RentedContract {
   pendingRenewalMonths?: number;
   pendingRenewalAmount?: number;
   pendingRenewalExpiresAt?: string;
+  floor?: number;
+  position?: string;
+  unitDimensions?: string;
+  checkinDate?: string;
+  customerName?: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  customerIdentityNumber?: string;
+  handoverStaffName?: string;
+  handoverConditionNote?: string;
+  customerConfirmedAt?: string;
+  relocationSupportRequestId?: number;
+  relocationSupportRequestCode?: string;
+  relocationReason?: string;
 }
 
 // Nhật ký truy cập ra vào kho (US-SC-05.2, BR-ACC-02)

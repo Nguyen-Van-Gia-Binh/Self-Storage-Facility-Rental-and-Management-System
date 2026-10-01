@@ -81,15 +81,9 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
 }) => {
   // Lọc chỉ những hợp đồng đang hoạt động hoặc chưa kết thúc
   const activeRentals = rentals.filter((r) => {
-    const s = r.status as string;
-    return (
-      s === 'ACTIVE' ||
-      s === 'PENDING_CHECKIN' ||
-      s === 'PENDING_CHECK_IN' ||
-      s === 'EXPIRING_SOON' ||
-      s === 'OVERDUE' ||
-      s === 'PENDING_RETURN'
-    );
+    const s = (r.status as string) || '';
+    if (!s) return true;
+    return !['CLOSED', 'TERMINATED', 'CANCELLED', 'RETURNED'].includes(s);
   });
 
   const getInitialContractId = (): string => {

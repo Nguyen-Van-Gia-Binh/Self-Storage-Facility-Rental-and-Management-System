@@ -74,6 +74,20 @@ export interface CustomerRentalDetail extends CustomerRentalSummary {
   overdueFeeAccrued: number;
   facilityAddress: string;
   facilityPhone: string;
+  floor?: number;
+  position?: string;
+  unitDimensions?: string;
+  checkinDate?: string;
+  customerName?: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  customerIdentityNumber?: string;
+  handoverStaffName?: string;
+  handoverConditionNote?: string;
+  customerConfirmedAt?: string;
+  relocationSupportRequestId?: number;
+  relocationSupportRequestCode?: string;
+  relocationReason?: string;
 }
 
 export interface RenewalQuote {

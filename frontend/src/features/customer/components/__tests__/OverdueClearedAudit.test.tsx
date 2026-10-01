@@ -10,6 +10,7 @@ import type { RentedContract } from '../../types';
 
 vi.mock('@/api/customerRentals', () => ({
   getContractAccessLogs: vi.fn().mockResolvedValue([]),
+  getMyRentalDetail: vi.fn().mockResolvedValue(null),
 }));
 
 describe('OverdueClearedAudit: Trạng thái & Cảnh báo Thẻ ô kho sau khi nộp phạt quá hạn', () => {
