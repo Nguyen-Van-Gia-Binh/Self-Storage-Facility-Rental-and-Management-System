@@ -25,6 +25,7 @@ interface UnitGridProps {
   onSelectUnit: (unit: StorageUnit) => void;
   filterType?: StorageType | 'ALL';
   filterSize?: UnitSizeCategory | 'ALL';
+  filterUnitTypeId?: string | null;
   onConfirmSelection?: (unit: StorageUnit) => void;
   isConfirming?: boolean;
   facilityName?: string;
@@ -88,6 +89,7 @@ export const UnitGrid: React.FC<UnitGridProps> = ({
   onSelectUnit,
   filterType = 'ALL',
   filterSize = 'ALL',
+  filterUnitTypeId,
   onConfirmSelection,
   isConfirming = false,
   facilityName,
@@ -116,7 +118,7 @@ export const UnitGrid: React.FC<UnitGridProps> = ({
       setCurrentFloor('ALL');
     }
     setSelectedZone('ALL');
-  }, [filterType, filterSize, isSingleFloor]);
+  }, [filterType, filterSize, filterUnitTypeId, isSingleFloor]);
 
   // Đồng bộ lại currentFloor nếu danh sách tầng thay đổi
   React.useEffect(() => {
@@ -139,14 +141,18 @@ export const UnitGrid: React.FC<UnitGridProps> = ({
     return units.filter((u) => u.floor === currentFloor);
   }, [units, currentFloor]);
 
-  // Các ô kho trên tầng khớp với Chế độ và Kích cỡ đang chọn
+  // Các ô kho trên tầng khớp với Chế độ, Kích cỡ và Loại kho đang chọn
   const categoryUnits = useMemo(() => {
     return floorUnits.filter((u) => {
       if (filterType !== 'ALL' && u.storageType && u.storageType !== filterType) return false;
-      if (filterSize !== 'ALL' && u.sizeCategory && u.sizeCategory !== filterSize) return false;
+      if (filterUnitTypeId) {
+        if (u.unitTypeId && String(u.unitTypeId) !== String(filterUnitTypeId)) return false;
+      } else if (filterSize !== 'ALL' && u.sizeCategory && u.sizeCategory !== filterSize) {
+        return false;
+      }
       return true;
     });
-  }, [floorUnits, filterType, filterSize]);
+  }, [floorUnits, filterType, filterSize, filterUnitTypeId]);
 
   const availableZones = useMemo(() => {
     return Array.from(new Set(categoryUnits.map((u) => u.zone))).sort();
@@ -166,15 +172,19 @@ export const UnitGrid: React.FC<UnitGridProps> = ({
   const totalCategoryCount = categoryUnits.length;
   const availableCategoryCount = categoryUnits.filter((u) => u.status === 'AVAILABLE').length;
 
-  // Ô kho đang được chọn - phải khớp với filterType & filterSize và floor hiện tại nếu có
+  // Ô kho đang được chọn - phải khớp với filterType, filterSize / filterUnitTypeId và floor hiện tại nếu có
   const activeSelectedUnit = useMemo(() => {
     const found = units.find((u) => u.id === selectedUnitId);
     if (!found) return null;
     if (filterType !== 'ALL' && found.storageType && found.storageType !== filterType) return null;
-    if (filterSize !== 'ALL' && found.sizeCategory && found.sizeCategory !== filterSize) return null;
+    if (filterUnitTypeId) {
+      if (found.unitTypeId && String(found.unitTypeId) !== String(filterUnitTypeId)) return null;
+    } else if (filterSize !== 'ALL' && found.sizeCategory && found.sizeCategory !== filterSize) {
+      return null;
+    }
     if (currentFloor !== 'ALL' && found.floor !== currentFloor) return null;
     return found;
-  }, [units, selectedUnitId, filterType, filterSize, currentFloor]);
+  }, [units, selectedUnitId, filterType, filterSize, filterUnitTypeId, currentFloor]);
 
   return (
     <div className="space-y-4">

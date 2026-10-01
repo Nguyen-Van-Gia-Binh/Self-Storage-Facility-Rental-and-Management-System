@@ -62,5 +62,14 @@ describe('ISS-80: Chặn Đặt Chỗ & Khóa Chọn Loại Ô Kho Chưa Niêm Y
     const content = fs.readFileSync(unitGrid, 'utf-8');
     expect(content).toMatch(/disabled=\{!activeSelectedUnit\.monthlyPrice \|\| activeSelectedUnit\.monthlyPrice <= 0 \|\| isConfirming\}/);
     expect(content).toMatch(/Chưa niêm yết giá — Tạm chưa mở đặt/);
+    expect(content).toMatch(/filterUnitTypeId/);
+  });
+
+  it('UnitPickerPage chọn loại kho theo selectedTypeId duy nhất, không bị chọn đồng thời 2 thẻ cùng sizeCategory', () => {
+    const content = fs.readFileSync(unitPickerPage, 'utf-8');
+    expect(content).toMatch(/selectedTypeId/);
+    expect(content).toMatch(/isSelected = !isUnlisted && \(selectedTypeId \? selectedTypeId === type\.id : selectedSize === type\.sizeCategory\)/);
+    expect(content).toMatch(/handleSelectType\(type\)/);
+    expect(content).toMatch(/filterUnitTypeId=\{selectedTypeId\}/);
   });
 });

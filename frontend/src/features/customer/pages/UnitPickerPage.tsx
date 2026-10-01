@@ -123,6 +123,7 @@ export const UnitPickerPage: React.FC = () => {
   const [loadingAvailability, setLoadingAvailability] = useState<boolean>(false);
 
   const [storageType, setStorageType] = useState<StorageType>('STANDARD');
+  const [selectedTypeId, setSelectedTypeId] = useState<string>('');
   const [selectedSize, setSelectedSize] = useState<UnitSizeCategory>('S');
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   const [facilityInactiveModalOpen, setFacilityInactiveModalOpen] = useState<boolean>(false);
@@ -219,6 +220,7 @@ export const UnitPickerPage: React.FC = () => {
               if (found) {
                 const isFoundUnlisted = !found.baseMonthlyPrice || found.baseMonthlyPrice <= 0 || found.priceStatus === 'UNLISTED' || found.priceStatus === 'Chưa niêm yết';
                 if (!isFoundUnlisted) {
+                  setSelectedTypeId(found.id);
                   setSelectedSize(found.sizeCategory);
                   setStorageType(found.storageType);
                 }
@@ -227,6 +229,7 @@ export const UnitPickerPage: React.FC = () => {
               // Ưu tiên chọn loại kho đầu tiên đã niêm yết giá
               const firstListed = mappedUTs.find((ut) => ut.baseMonthlyPrice > 0 && ut.priceStatus !== 'UNLISTED' && ut.priceStatus !== 'Chưa niêm yết');
               if (firstListed) {
+                setSelectedTypeId(firstListed.id);
                 setSelectedSize(firstListed.sizeCategory);
                 setStorageType(firstListed.storageType);
               }
@@ -382,13 +385,17 @@ export const UnitPickerPage: React.FC = () => {
   }, [unitTypes, storageType]);
 
   const currentUnitType = useMemo(() => {
-    const matched = availableTypes.find((t) => t.sizeCategory === selectedSize);
-    if (matched) return matched;
+    if (selectedTypeId) {
+      const matchedById = availableTypes.find((t) => t.id === selectedTypeId);
+      if (matchedById) return matchedById;
+    }
+    const matchedBySize = availableTypes.find((t) => t.sizeCategory === selectedSize);
+    if (matchedBySize) return matchedBySize;
     const firstListed = availableTypes.find(
       (t) => t.baseMonthlyPrice > 0 && t.priceStatus !== 'UNLISTED' && t.priceStatus !== 'Chưa niêm yết'
     );
     return firstListed || availableTypes[0];
-  }, [availableTypes, selectedSize]);
+  }, [availableTypes, selectedTypeId, selectedSize]);
 
   // Cập nhật trạng thái ô kho trên sơ đồ theo availability của loại kho trong kỳ hạn đã chọn
   const displayFacilityUnits = useMemo(() => {
@@ -415,22 +422,25 @@ export const UnitPickerPage: React.FC = () => {
     if (selectedUnitId) {
       const found = displayFacilityUnits.find((u) => u.id === selectedUnitId);
       if (!found) return null;
+      if (selectedTypeId && found.unitTypeId && found.unitTypeId !== selectedTypeId) return null;
       if (selectedSize && found.sizeCategory !== selectedSize) return null;
       if (storageType && found.storageType !== storageType) return null;
       return found;
     }
     return null; // Không fallback về ô kho mặc định — tránh chọn trước khi khách click
-  }, [displayFacilityUnits, selectedUnitId, selectedSize, storageType]);
+  }, [displayFacilityUnits, selectedUnitId, selectedTypeId, selectedSize, storageType]);
 
-  const handleSelectSize = (sizeCat: UnitSizeCategory) => {
-    setSelectedSize(sizeCat);
+  const handleSelectType = (type: UnitType) => {
+    setSelectedTypeId(type.id);
+    setSelectedSize(type.sizeCategory);
     if (selectedUnitId) {
       const current = displayFacilityUnits.find((u) => u.id === selectedUnitId);
-      if (!current || current.sizeCategory !== sizeCat) {
+      if (!current || (current.unitTypeId && current.unitTypeId !== type.id)) {
         setSelectedUnitId(null);
       }
     }
   };
+
 
   const handleSelectStorageType = (sType: StorageType) => {
     setStorageType(sType);
@@ -445,12 +455,19 @@ export const UnitPickerPage: React.FC = () => {
       (t) => t.baseMonthlyPrice > 0 && t.priceStatus !== 'UNLISTED' && t.priceStatus !== 'Chưa niêm yết'
     );
     if (firstListed) {
+      setSelectedTypeId(firstListed.id);
       setSelectedSize(firstListed.sizeCategory);
+    } else if (typesForType.length > 0) {
+      setSelectedTypeId(typesForType[0].id);
+      setSelectedSize(typesForType[0].sizeCategory);
     }
   };
 
   const handleSelectUnitOnGrid = (unit: StorageUnit) => {
     setSelectedUnitId(unit.id);
+    if (unit.unitTypeId && unit.unitTypeId !== selectedTypeId) {
+      setSelectedTypeId(unit.unitTypeId);
+    }
     if (unit.sizeCategory && unit.sizeCategory !== selectedSize) {
       setSelectedSize(unit.sizeCategory);
     }
@@ -711,7 +728,7 @@ export const UnitPickerPage: React.FC = () => {
         <div className="flex flex-wrap justify-center gap-4 max-w-4xl mx-auto">
           {availableTypes.map((type) => {
             const isUnlisted = !type.baseMonthlyPrice || type.baseMonthlyPrice <= 0 || type.priceStatus === 'UNLISTED' || type.priceStatus === 'Chưa niêm yết';
-            const isSelected = !isUnlisted && selectedSize === type.sizeCategory;
+            const isSelected = !isUnlisted && (selectedTypeId ? selectedTypeId === type.id : selectedSize === type.sizeCategory);
             const availInfo = availabilityMap[type.id];
 
             return (
@@ -719,7 +736,7 @@ export const UnitPickerPage: React.FC = () => {
                 key={type.id}
                 onClick={() => {
                   if (!isUnlisted) {
-                    handleSelectSize(type.sizeCategory);
+                    handleSelectType(type);
                   }
                 }}
                 className={`w-full sm:w-[calc(50%-0.6rem)] md:w-[calc(33.333%-0.75rem)] max-w-[290px] rounded-xl p-3.5 border-2 transition-all flex flex-col justify-between ${
@@ -822,7 +839,7 @@ export const UnitPickerPage: React.FC = () => {
                     onClick={(e) => {
                       e.stopPropagation();
                       if (!isUnlisted) {
-                        handleSelectSize(type.sizeCategory);
+                        handleSelectType(type);
                       }
                     }}
                     className={`w-full gap-1 text-xs py-1.5 font-semibold ${
@@ -832,9 +849,9 @@ export const UnitPickerPage: React.FC = () => {
                     {isUnlisted ? (
                       'Tạm chưa mở đặt'
                     ) : isSelected ? (
-                      <>Đang chọn Cỡ {type.sizeCategory} <Check className="w-3.5 h-3.5" /></>
+                      <>Đang chọn {type.name.split('–')[0] || `Cỡ ${type.sizeCategory}`} <Check className="w-3.5 h-3.5" /></>
                     ) : (
-                      `Chọn Cỡ ${type.sizeCategory}`
+                      `Chọn ${type.name.split('–')[0] || `Cỡ ${type.sizeCategory}`}`
                     )}
                   </Button>
                 </div>
@@ -954,7 +971,7 @@ export const UnitPickerPage: React.FC = () => {
           </div>
           <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
             <span className="text-xs font-semibold text-brand-700 bg-brand-50 px-2.5 py-1 rounded-full border border-brand-200">
-              Đang lọc Cỡ {selectedSize} • {durationMonths} tháng
+              Đang lọc {currentUnitType?.name || `Cỡ ${selectedSize}`} • {durationMonths} tháng
             </span>
           </div>
         </div>
@@ -965,6 +982,7 @@ export const UnitPickerPage: React.FC = () => {
           onSelectUnit={handleSelectUnitOnGrid}
           filterType={storageType}
           filterSize={selectedSize}
+          filterUnitTypeId={selectedTypeId}
           onConfirmSelection={handleProceedToBooking}
           isConfirming={isConfirming}
           facilityName={currentFacility.name}
