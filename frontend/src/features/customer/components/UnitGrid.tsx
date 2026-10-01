@@ -11,7 +11,8 @@ import {
   Wind, 
   ThermometerSnowflake,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -25,6 +26,7 @@ interface UnitGridProps {
   filterType?: StorageType | 'ALL';
   filterSize?: UnitSizeCategory | 'ALL';
   onConfirmSelection?: (unit: StorageUnit) => void;
+  isConfirming?: boolean;
   facilityName?: string;
 }
 
@@ -87,6 +89,7 @@ export const UnitGrid: React.FC<UnitGridProps> = ({
   filterType = 'ALL',
   filterSize = 'ALL',
   onConfirmSelection,
+  isConfirming = false,
   facilityName,
 }) => {
   const policy = useActivePolicy();
@@ -487,12 +490,21 @@ export const UnitGrid: React.FC<UnitGridProps> = ({
               type="button"
               variant="primary"
               size="md"
-              onClick={() => onConfirmSelection(activeSelectedUnit)}
-              disabled={!activeSelectedUnit.monthlyPrice}
-              className="w-full sm:w-auto px-5 py-2.5 text-xs sm:text-sm font-bold shadow-xs shrink-0 flex items-center justify-center gap-2"
+              onClick={() => !isConfirming && onConfirmSelection(activeSelectedUnit)}
+              disabled={!activeSelectedUnit.monthlyPrice || isConfirming}
+              className="w-full sm:w-auto px-5 py-2.5 text-xs sm:text-sm font-bold shadow-xs shrink-0 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <span>Xác nhận ô kho này & Tiếp tục</span>
-              <ArrowRight className="w-4 h-4" />
+              {isConfirming ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Đang kiểm tra ô kho...</span>
+                </>
+              ) : (
+                <>
+                  <span>Xác nhận ô kho này & Tiếp tục</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </Button>
           )}
         </div>
