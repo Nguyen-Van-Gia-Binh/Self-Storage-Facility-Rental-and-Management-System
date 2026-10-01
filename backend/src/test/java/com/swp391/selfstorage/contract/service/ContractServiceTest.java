@@ -6,6 +6,8 @@ import com.swp391.selfstorage.contract.dto.*;
 import com.swp391.selfstorage.contract.entity.*;
 import com.swp391.selfstorage.contract.repository.*;
 import com.swp391.selfstorage.contract.service.impl.ContractServiceImpl;
+import com.swp391.selfstorage.policy.entity.PolicyVersion;
+import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
 import com.swp391.selfstorage.reservation.entity.Reservation;
 import com.swp391.selfstorage.reservation.entity.ReservationStatus;
 import com.swp391.selfstorage.reservation.repository.ReservationRepository;
@@ -20,7 +22,9 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -482,5 +486,37 @@ class ContractServiceTest {
         CustomException ex = assertThrows(CustomException.class,
                 () -> contractService.assignCheckInStaff(801L, req, 1L, List.of(1L)));
         assertEquals(ErrorCode.CONTRACT_NOT_PENDING_CHECKIN, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("BR-GEN-02: preview phí quá hạn đọc policyVersionId trên hợp đồng")
+    void previewUsesSnapshottedPolicy_notTheActiveOne() {
+        PolicyVersionRepository policyVersionRepository = mock(PolicyVersionRepository.class);
+        ReflectionTestUtils.setField(contractService, "policyVersionRepository", policyVersionRepository);
+        PolicyVersion snapshot = PolicyVersion.builder()
+                .id(4L)
+                .overdueGraceDays(1)
+                .overdueDailyRate(BigDecimal.valueOf(0.10))
+                .overdueCapRate(BigDecimal.valueOf(0.70))
+                .overdueTerminationDays(10)
+                .build();
+        when(policyVersionRepository.findById(4L)).thenReturn(Optional.of(snapshot));
+
+        RentalContract contract = RentalContract.builder()
+                .id(602L).code("CTR-602").facilityId(1L).storageUnitId(42L).unitTypeId(7L)
+                .depositAmount(1_000_000L)
+                .endDateExclusive(LocalDate.now().minusDays(5))
+                .status(ContractStatus.OVERDUE)
+                .policyVersionId(4L)
+                .build();
+        when(contractRepository.findByIdAndFacilityIdIn(602L, List.of(1L))).thenReturn(Optional.of(contract));
+
+        ContractResponse res = contractService.getContractById(602L, List.of(1L));
+
+        assertEquals(5, res.getOverdueDays());
+        // 5 - 1 ngày ân hạn = 4 ngày × 10% × 1.000.000đ. Bản mặc định (ân hạn 3 ngày) chỉ ra 200.000đ.
+        assertEquals(400_000L, res.getAccruedOverdueFee());
+        verify(policyVersionRepository, never())
+                .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any());
     }
 }

@@ -18,7 +18,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -34,19 +36,8 @@ public class OverdueProcessingServiceImpl implements OverdueProcessingService {
     public OverdueProcessingResult processOverdueContracts(LocalDate runDate) {
         log.info("Bắt đầu quét xử lý hợp đồng quá hạn cho ngày mốc: {}", runDate);
 
-        // 1. Lấy PolicyVersion hiện hành (nếu chưa có thì dùng mặc định theo BR-OVD-*)
-        PolicyVersion policy = policyVersionRepository
-                .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(OffsetDateTime.now())
-                .orElse(null);
-
-        int graceDays = (policy != null && policy.getOverdueGraceDays() != null) ? policy.getOverdueGraceDays() : 3;
-        BigDecimal dailyRate = (policy != null && policy.getOverdueDailyRate() != null) ? policy.getOverdueDailyRate()
-                : BigDecimal.valueOf(0.10);
-        BigDecimal capRate = (policy != null && policy.getOverdueCapRate() != null) ? policy.getOverdueCapRate()
-                : BigDecimal.valueOf(0.70);
-        int terminationDays = (policy != null && policy.getOverdueTerminationDays() != null)
-                ? policy.getOverdueTerminationDays()
-                : 10;
+        // Mỗi hợp đồng dùng đúng phiên bản đã lưu lúc tạo (BR-GEN-02), không lấy bản đang hiệu lực.
+        Map<Long, OverdueTerms> termsByPolicyId = new HashMap<>();
 
         // 2. Tìm tất cả hợp đồng có status là ACTIVE hoặc OVERDUE mà endDateExclusive
         // <= runDate
@@ -68,13 +59,14 @@ public class OverdueProcessingServiceImpl implements OverdueProcessingService {
                 continue; // Chưa quá hạn, bỏ qua
             }
 
+            OverdueTerms terms = termsOf(contract, termsByPolicyId);
             long deposit = contract.getDepositAmount();
-            long maxCapFee = Math.round(deposit * capRate.doubleValue());
-            long daysToCharge = Math.max(0L, overdueDays - graceDays);
-            long accruedByDays = Math.round(deposit * dailyRate.doubleValue() * daysToCharge);
+            long maxCapFee = Math.round(deposit * terms.capRate().doubleValue());
+            long daysToCharge = Math.max(0L, overdueDays - terms.graceDays());
+            long accruedByDays = Math.round(deposit * terms.dailyRate().doubleValue() * daysToCharge);
             long calculatedFee = Math.min(accruedByDays, maxCapFee);
 
-            if (overdueDays <= graceDays) {
+            if (overdueDays <= terms.graceDays()) {
                 // Mốc D+1..D+3: Ân hạn (BR-OVD-01, BR-OVD-02)
                 if (contract.getStatus() == ContractStatus.ACTIVE) {
                     contract.setStatus(ContractStatus.OVERDUE);
@@ -82,7 +74,7 @@ public class OverdueProcessingServiceImpl implements OverdueProcessingService {
                     markedOverdueCount++;
                     log.info("Hợp đồng [{}] chuyển sang OVERDUE (ân hạn D+{}).", contract.getCode(), overdueDays);
                 }
-            } else if (overdueDays < terminationDays) {
+            } else if (overdueDays < terms.terminationDays()) {
                 // Mốc D+4..D+9: Phạt theo ngày (BR-OVD-03, BR-OVD-04)
                 if (contract.getStatus() == ContractStatus.ACTIVE) {
                     contract.setStatus(ContractStatus.OVERDUE);
@@ -99,9 +91,8 @@ public class OverdueProcessingServiceImpl implements OverdueProcessingService {
                 log.info("Hợp đồng [{}] D+{}: Phạt {} ngày = {} đ.", contract.getCode(), overdueDays, daysToCharge,
                         calculatedFee);
 
-                // BR-OVD-05: Khóa mã truy cập tại D+7 (D+4..D+6 khách vẫn vào dọn đồ được)
-                int lockAccessDays = (policy != null && policy.getOverdueLockAccessDays() != null)
-                        ? policy.getOverdueLockAccessDays() : 7;
+                // BR-OVD-05: Khóa mã truy cập theo mốc của phiên bản đã gắn trên hợp đồng
+                int lockAccessDays = terms.lockAccessDays();
                 if (overdueDays >= lockAccessDays && contract.getAccessCode() != null) {
                     contract.setAccessCode(null);
                     log.info("Hợp đồng [{}] D+{}: Khóa mã truy cập theo BR-OVD-05 (lockAccessDays={}).",
@@ -137,5 +128,40 @@ public class OverdueProcessingServiceImpl implements OverdueProcessingService {
                 .totalPenaltiesAccrued(totalPenaltiesAccrued)
                 .executedAt(OffsetDateTime.now())
                 .build();
+    }
+
+    private OverdueTerms termsOf(RentalContract contract, Map<Long, OverdueTerms> cache) {
+        Long policyVersionId = contract.getPolicyVersionId();
+        if (policyVersionId == null) {
+            return OverdueTerms.defaults();
+        }
+        return cache.computeIfAbsent(policyVersionId, this::loadTerms);
+    }
+
+    private OverdueTerms loadTerms(Long policyVersionId) {
+        return policyVersionRepository.findById(policyVersionId)
+                .map(OverdueTerms::from)
+                .orElseGet(OverdueTerms::defaults);
+    }
+
+    private record OverdueTerms(
+            int graceDays,
+            BigDecimal dailyRate,
+            BigDecimal capRate,
+            int lockAccessDays,
+            int terminationDays) {
+
+        static OverdueTerms defaults() {
+            return new OverdueTerms(3, BigDecimal.valueOf(0.10), BigDecimal.valueOf(0.70), 7, 10);
+        }
+
+        static OverdueTerms from(PolicyVersion policy) {
+            return new OverdueTerms(
+                    policy.getOverdueGraceDays() != null ? policy.getOverdueGraceDays() : 3,
+                    policy.getOverdueDailyRate() != null ? policy.getOverdueDailyRate() : BigDecimal.valueOf(0.10),
+                    policy.getOverdueCapRate() != null ? policy.getOverdueCapRate() : BigDecimal.valueOf(0.70),
+                    policy.getOverdueLockAccessDays() != null ? policy.getOverdueLockAccessDays() : 7,
+                    policy.getOverdueTerminationDays() != null ? policy.getOverdueTerminationDays() : 10);
+        }
     }
 }
