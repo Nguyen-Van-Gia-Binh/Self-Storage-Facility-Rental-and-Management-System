@@ -388,6 +388,16 @@ public class StaffSupportServiceImpl implements StaffSupportService {
             }
         }
 
+        String customerName = null;
+        String customerPhone = null;
+        if (ticket.getCustomerId() != null) {
+            AppUser customer = userRepository.findById(ticket.getCustomerId()).orElse(null);
+            if (customer != null) {
+                customerName = customer.getFullName();
+                customerPhone = customer.getPhone();
+            }
+        }
+
         List<String> attachmentUrls = attachmentRepository
                 .findByEntityTypeAndEntityId("SUPPORT_REQUEST", ticket.getId())
                 .stream()
@@ -409,6 +419,8 @@ public class StaffSupportServiceImpl implements StaffSupportService {
                 .id(ticket.getId())
                 .code(ticket.getCode())
                 .customerId(ticket.getCustomerId())
+                .customerName(customerName)
+                .customerPhone(customerPhone)
                 .contractId(ticket.getContractId())
                 .contractCode(contractCode)
                 .storageUnitId(ticket.getStorageUnitId())
@@ -473,10 +485,22 @@ public class StaffSupportServiceImpl implements StaffSupportService {
             }
         }
 
+        String customerName = null;
+        String customerPhone = null;
+        if (ticket.getCustomerId() != null) {
+            AppUser customer = userRepository.findById(ticket.getCustomerId()).orElse(null);
+            if (customer != null) {
+                customerName = customer.getFullName();
+                customerPhone = customer.getPhone();
+            }
+        }
+
         return SupportRequestSummaryResponse.builder()
                 .id(ticket.getId())
                 .code(ticket.getCode())
                 .customerId(ticket.getCustomerId())
+                .customerName(customerName)
+                .customerPhone(customerPhone)
                 .contractId(ticket.getContractId())
                 .contractCode(contractCode)
                 .storageUnitId(ticket.getStorageUnitId())

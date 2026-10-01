@@ -51,6 +51,9 @@ public class DailySupportTaskDto {
     @Schema(description = "Số điện thoại khách hàng")
     private String customerPhone;
 
+    @Schema(description = "Thời điểm gửi yêu cầu")
+    private OffsetDateTime createdAt;
+
     @Schema(description = "Trạng thái sự cố")
     private SupportStatus status;
 
@@ -243,6 +246,14 @@ public class DailySupportTaskDto {
         this.customerPhone = customerPhone;
     }
 
+    public OffsetDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(OffsetDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
     public static class Builder {
         private Long supportRequestId;
         private String code;
@@ -256,6 +267,7 @@ public class DailySupportTaskDto {
         private Long customerId;
         private String customerName;
         private String customerPhone;
+        private OffsetDateTime createdAt;
         private Boolean isUrgent;
         private OffsetDateTime slaDueAt;
         private SupportStatus status;
@@ -322,6 +334,11 @@ public class DailySupportTaskDto {
             return this;
         }
 
+        public Builder createdAt(OffsetDateTime createdAt) {
+            this.createdAt = createdAt;
+            return this;
+        }
+
         public Builder isUrgent(Boolean isUrgent) {
             this.isUrgent = isUrgent;
             return this;
@@ -348,10 +365,12 @@ public class DailySupportTaskDto {
         }
 
         public DailySupportTaskDto build() {
-            return new DailySupportTaskDto(supportRequestId, code, category, categoryDisplayName, description,
+            DailySupportTaskDto dto = new DailySupportTaskDto(supportRequestId, code, category, categoryDisplayName, description,
                     storageUnitId, storageUnitCode, facilityId, facilityName,
                     customerId, customerName, customerPhone,
                     isUrgent, slaDueAt, status, statusDisplayName, completed);
+            dto.setCreatedAt(createdAt);
+            return dto;
         }
     }
 }

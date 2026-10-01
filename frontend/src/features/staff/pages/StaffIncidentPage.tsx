@@ -60,10 +60,18 @@ export const StaffIncidentPage: React.FC = () => {
         if (dailyRes.status === 'fulfilled' && dailyRes.value?.openSupportRequests) {
           const dailyTasks = dailyRes.value.openSupportRequests;
           dailyTasks.forEach((dt) => {
-            const exists = combined.some(
+            const existingIndex = combined.findIndex(
               (c) => c.ticketId === dt.ticketId || (c.code && dt.code && c.code === dt.code)
             );
-            if (!exists) {
+            if (existingIndex >= 0) {
+              combined[existingIndex] = {
+                ...dt,
+                ...combined[existingIndex],
+                customerName: combined[existingIndex].customerName || dt.customerName,
+                customerPhone: combined[existingIndex].customerPhone || dt.customerPhone,
+                createdAt: combined[existingIndex].createdAt || dt.createdAt,
+              };
+            } else {
               combined.push(dt);
             }
           });
@@ -169,6 +177,22 @@ export const StaffIncidentPage: React.FC = () => {
         return 'Vệ sinh / Ẩm mốc';
       default:
         return category || 'Sự cố vận hành';
+    }
+  };
+
+  const formatIncidentTime = (createdAt?: string) => {
+    if (!createdAt) return 'Ca trực hôm nay';
+    try {
+      const d = new Date(createdAt);
+      if (isNaN(d.getTime())) return 'Ca trực hôm nay';
+      const timeStr = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+      const now = new Date();
+      const isToday = d.toDateString() === now.toDateString();
+      if (isToday) return timeStr;
+      const dateStr = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+      return `${timeStr} (${dateStr})`;
+    } catch {
+      return 'Ca trực hôm nay';
     }
   };
 
@@ -389,13 +413,11 @@ export const StaffIncidentPage: React.FC = () => {
                       <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                       <span>Tiếp nhận:</span>
                       <strong className="text-slate-700">
-                        {item.createdAt
-                          ? new Date(item.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
-                          : 'Trong ca'}
+                        {formatIncidentTime(item.createdAt)}
                       </strong>
                     </div>
 
-                    {item.customerName && (
+                    {item.customerName ? (
                       <div className="flex items-center gap-1.5 text-slate-600 col-span-2">
                         <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                         <span>Khách:</span>
@@ -409,6 +431,12 @@ export const StaffIncidentPage: React.FC = () => {
                             {item.customerPhone}
                           </a>
                         )}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-slate-400 col-span-2">
+                        <User className="w-3.5 h-3.5 text-slate-300 shrink-0" />
+                        <span>Khách:</span>
+                        <span className="italic text-slate-400">Khách lẻ / Báo cáo nội bộ</span>
                       </div>
                     )}
                   </div>
