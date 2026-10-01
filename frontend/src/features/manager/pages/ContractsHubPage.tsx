@@ -15,7 +15,6 @@ import {
   CheckCircle2,
   Users,
   UserPlus,
-  Package,
 } from 'lucide-react';
 import type { ManagerContractItem, ContractKpiData } from '@/types/contractManager';
 import { getManagerContracts, getManagerKpiData } from '@/api/contract';
@@ -24,7 +23,6 @@ import { ContractKpiCards } from '../components/ContractKpiCards';
 import { ReassignUnitModal } from '../components/ReassignUnitModal';
 import { ContractFinancialModal } from '../components/ContractFinancialModal';
 import { SettlementApprovalModal } from '../components/SettlementApprovalModal';
-import { ValueAddedFeeModal } from '../components/ValueAddedFeeModal';
 import { useActivePolicy } from '@/hooks/useActivePolicy';
 
 type TabKey = 'ACTIVE' | 'PENDING_CHECK_IN' | 'RETURN' | 'OVERDUE';
@@ -61,8 +59,7 @@ export const ContractsHubPage: React.FC = () => {
 
   const [settlementModalOpen, setSettlementModalOpen] = useState<boolean>(false);
   const [selectedForSettlement, setSelectedForSettlement] = useState<ManagerContractItem | null>(null);
-  const [valueAddedOpen, setValueAddedOpen] = useState(false);
-  const [selectedForValueAdded, setSelectedForValueAdded] = useState<ManagerContractItem | null>(null);
+
 
   const [reloadKey, setReloadKey] = useState<number>(0);
 
@@ -587,20 +584,7 @@ export const ContractsHubPage: React.FC = () => {
                           </>
                         )}
 
-                        {(activeTab === 'ACTIVE' || activeTab === 'OVERDUE') && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedForValueAdded(contract);
-                              setValueAddedOpen(true);
-                            }}
-                            className="px-2.5 py-1.5 text-xs font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors inline-flex items-center gap-1"
-                            title="Ghi khoản tiện ích bổ sung đang hiệu lực vào hợp đồng"
-                          >
-                            <Package className="w-3 h-3" />
-                            Tiện ích
-                          </button>
-                        )}
+
 
                         {activeTab === 'ACTIVE' && contract.relocationEligible && (
                           <button
@@ -686,18 +670,7 @@ export const ContractsHubPage: React.FC = () => {
         }}
       />
 
-      <ValueAddedFeeModal
-        isOpen={valueAddedOpen}
-        contractId={selectedForValueAdded?.id ?? null}
-        contractCode={selectedForValueAdded?.code}
-        facilityId={selectedForValueAdded?.facilityId}
-        monthlyPrice={selectedForValueAdded?.monthlyPrice}
-        onClose={() => {
-          setValueAddedOpen(false);
-          setSelectedForValueAdded(null);
-        }}
-        onSuccess={showToast}
-      />
+
 
       <SettlementApprovalModal
         isOpen={settlementModalOpen}
