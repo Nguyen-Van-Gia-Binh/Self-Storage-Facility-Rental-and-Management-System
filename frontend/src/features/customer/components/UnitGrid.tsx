@@ -491,7 +491,7 @@ export const UnitGrid: React.FC<UnitGridProps> = ({
               variant="primary"
               size="md"
               onClick={() => !isConfirming && onConfirmSelection(activeSelectedUnit)}
-              disabled={!activeSelectedUnit.monthlyPrice || isConfirming}
+              disabled={!activeSelectedUnit.monthlyPrice || activeSelectedUnit.monthlyPrice <= 0 || isConfirming}
               className="w-full sm:w-auto px-5 py-2.5 text-xs sm:text-sm font-bold shadow-xs shrink-0 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isConfirming ? (
@@ -499,6 +499,8 @@ export const UnitGrid: React.FC<UnitGridProps> = ({
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span>Đang kiểm tra ô kho...</span>
                 </>
+              ) : !activeSelectedUnit.monthlyPrice || activeSelectedUnit.monthlyPrice <= 0 ? (
+                <span>Chưa niêm yết giá — Tạm chưa mở đặt</span>
               ) : (
                 <>
                   <span>Xác nhận ô kho này & Tiếp tục</span>

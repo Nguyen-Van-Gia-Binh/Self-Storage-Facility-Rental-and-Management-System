@@ -209,6 +209,7 @@ export const UnitPickerPage: React.FC = () => {
                 capacityDescription: ut.description || `${ut.name} - Hệ thống an ninh và PCCC chuẩn quốc tế`,
                 baseMonthlyPrice: ut.monthlyPrice && ut.monthlyPrice > 0 ? ut.monthlyPrice : 0,
                 badge: sizeCat === 'M' ? 'POPULAR' : sizeCat === 'L' ? 'SPACIOUS' : undefined,
+                priceStatus: ut.priceStatus ?? (ut.monthlyPrice && ut.monthlyPrice > 0 ? 'Đang áp dụng' : 'Chưa niêm yết'),
               };
             });
             setUnitTypes(mappedUTs);
@@ -216,8 +217,18 @@ export const UnitPickerPage: React.FC = () => {
             if (initialTypeId) {
               const found = mappedUTs.find((ut) => ut.id === initialTypeId || ut.code === initialTypeId);
               if (found) {
-                setSelectedSize(found.sizeCategory);
-                setStorageType(found.storageType);
+                const isFoundUnlisted = !found.baseMonthlyPrice || found.baseMonthlyPrice <= 0 || found.priceStatus === 'UNLISTED' || found.priceStatus === 'Chưa niêm yết';
+                if (!isFoundUnlisted) {
+                  setSelectedSize(found.sizeCategory);
+                  setStorageType(found.storageType);
+                }
+              }
+            } else {
+              // Ưu tiên chọn loại kho đầu tiên đã niêm yết giá
+              const firstListed = mappedUTs.find((ut) => ut.baseMonthlyPrice > 0 && ut.priceStatus !== 'UNLISTED' && ut.priceStatus !== 'Chưa niêm yết');
+              if (firstListed) {
+                setSelectedSize(firstListed.sizeCategory);
+                setStorageType(firstListed.storageType);
               }
             }
           } else {
@@ -371,7 +382,12 @@ export const UnitPickerPage: React.FC = () => {
   }, [unitTypes, storageType]);
 
   const currentUnitType = useMemo(() => {
-    return availableTypes.find((t) => t.sizeCategory === selectedSize) || availableTypes[0];
+    const matched = availableTypes.find((t) => t.sizeCategory === selectedSize);
+    if (matched) return matched;
+    const firstListed = availableTypes.find(
+      (t) => t.baseMonthlyPrice > 0 && t.priceStatus !== 'UNLISTED' && t.priceStatus !== 'Chưa niêm yết'
+    );
+    return firstListed || availableTypes[0];
   }, [availableTypes, selectedSize]);
 
   // Cập nhật trạng thái ô kho trên sơ đồ theo availability của loại kho trong kỳ hạn đã chọn
@@ -424,6 +440,13 @@ export const UnitPickerPage: React.FC = () => {
         setSelectedUnitId(null);
       }
     }
+    const typesForType = unitTypes.filter((t) => t.storageType === sType);
+    const firstListed = typesForType.find(
+      (t) => t.baseMonthlyPrice > 0 && t.priceStatus !== 'UNLISTED' && t.priceStatus !== 'Chưa niêm yết'
+    );
+    if (firstListed) {
+      setSelectedSize(firstListed.sizeCategory);
+    }
   };
 
   const handleSelectUnitOnGrid = (unit: StorageUnit) => {
@@ -445,6 +468,11 @@ export const UnitPickerPage: React.FC = () => {
       ? targetUnit.monthlyPrice
       : (currentUnitType?.baseMonthlyPrice ?? 0);
     if (listedPrice <= 0) {
+      setUnitUnavailableModal({
+        isOpen: true,
+        title: 'Loại ô kho chưa niêm yết giá',
+        message: 'Loại ô kho này chưa được Ban Quản Trị niêm yết giá chính thức nên tạm thời chưa thể đặt chỗ. Quý khách vui lòng chọn loại kho khác.',
+      });
       return;
     }
 
@@ -682,17 +710,24 @@ export const UnitPickerPage: React.FC = () => {
         {/* Danh mục các thẻ kích cỡ kho: CĂN GIỮA CHO CÂN ĐỐI */}
         <div className="flex flex-wrap justify-center gap-4 max-w-4xl mx-auto">
           {availableTypes.map((type) => {
-            const isSelected = selectedSize === type.sizeCategory;
+            const isUnlisted = !type.baseMonthlyPrice || type.baseMonthlyPrice <= 0 || type.priceStatus === 'UNLISTED' || type.priceStatus === 'Chưa niêm yết';
+            const isSelected = !isUnlisted && selectedSize === type.sizeCategory;
             const availInfo = availabilityMap[type.id];
 
             return (
               <div
                 key={type.id}
-                onClick={() => handleSelectSize(type.sizeCategory)}
-                className={`w-full sm:w-[calc(50%-0.6rem)] md:w-[calc(33.333%-0.75rem)] max-w-[290px] rounded-xl p-3.5 border-2 transition-all flex flex-col justify-between cursor-pointer bg-white ${
-                  isSelected
-                    ? 'border-brand-500 ring-2 ring-brand-500/20 shadow-sm scale-[1.01]'
-                    : 'border-slate-200/90 hover:border-slate-300 hover:shadow-2xs'
+                onClick={() => {
+                  if (!isUnlisted) {
+                    handleSelectSize(type.sizeCategory);
+                  }
+                }}
+                className={`w-full sm:w-[calc(50%-0.6rem)] md:w-[calc(33.333%-0.75rem)] max-w-[290px] rounded-xl p-3.5 border-2 transition-all flex flex-col justify-between ${
+                  isUnlisted
+                    ? 'opacity-70 cursor-not-allowed bg-slate-50/70 border-dashed border-slate-300'
+                    : isSelected
+                    ? 'border-brand-500 ring-2 ring-brand-500/20 shadow-sm scale-[1.01] cursor-pointer bg-white'
+                    : 'border-slate-200/90 hover:border-slate-300 hover:shadow-2xs cursor-pointer bg-white'
                 }`}
               >
                 <div className="space-y-2.5">
@@ -701,26 +736,39 @@ export const UnitPickerPage: React.FC = () => {
                     <h3 className="text-sm font-extrabold text-[#0a1614]">
                       {type.name.split('–')[0]}
                     </h3>
-                    {type.badge === 'POPULAR' && (
+                    {isUnlisted ? (
+                      <Badge 
+                        variant="warning"
+                        className="text-[10px] px-2 py-0.5 whitespace-nowrap shrink-0 bg-amber-50 text-amber-700 border-amber-200"
+                      >
+                        Chưa niêm yết giá
+                      </Badge>
+                    ) : type.badge === 'POPULAR' ? (
                       <Badge 
                         variant="primary"
                         className="text-[10px] px-2 py-0.5 whitespace-nowrap shrink-0"
                       >
                         Phổ biến nhất
                       </Badge>
-                    )}
+                    ) : null}
                   </div>
 
                   {/* 3D Cube Icon Visual */}
-                  <div className="h-12 w-full rounded-lg bg-brand-50/40 border border-brand-100/60 flex items-center justify-center">
-                    <Box className={`w-6 h-6 transition-transform ${isSelected ? 'text-brand-500 scale-110' : 'text-slate-400'}`} />
+                  <div className={`h-12 w-full rounded-lg border flex items-center justify-center ${
+                    isUnlisted ? 'bg-slate-100/60 border-slate-200' : 'bg-brand-50/40 border-brand-100/60'
+                  }`}>
+                    <Box className={`w-6 h-6 transition-transform ${
+                      isUnlisted ? 'text-slate-300' : isSelected ? 'text-brand-500 scale-110' : 'text-slate-400'
+                    }`} />
                   </div>
 
                   {/* Size & Dimensions */}
                   <div className="space-y-1 text-xs">
                     <div className="flex items-baseline justify-between font-bold text-slate-800">
                       <span>Diện tích sàn:</span>
-                      <span className="text-xs text-brand-700 font-extrabold">{type.areaM2} m² ({type.volumeM3} m³)</span>
+                      <span className={`text-xs font-extrabold ${isUnlisted ? 'text-slate-500' : 'text-brand-700'}`}>
+                        {type.areaM2} m² ({type.volumeM3} m³)
+                      </span>
                     </div>
                     <div className="text-slate-500 text-[11px] flex justify-between">
                       <span>Kích thước:</span>
@@ -728,7 +776,7 @@ export const UnitPickerPage: React.FC = () => {
                     </div>
 
                     {/* Sức chứa ô kho trống thời gian thực */}
-                    {availInfo && (
+                    {!isUnlisted && availInfo && (
                       <div className="pt-1">
                         {availInfo.availableSlots > 0 ? (
                           <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
@@ -750,14 +798,16 @@ export const UnitPickerPage: React.FC = () => {
                   <div className="flex items-baseline justify-between">
                     <span className="text-[11px] text-slate-400">Đơn giá:</span>
                     <span className="text-sm font-extrabold text-[#0a1614]">
-                      {type.baseMonthlyPrice > 0 ? (
+                      {!isUnlisted ? (
                         <>{formatVND(type.baseMonthlyPrice)} <span className="text-[10px] font-normal text-slate-400">/tháng</span></>
                       ) : (
-                        <span className="text-xs font-bold text-slate-500">Chưa niêm yết</span>
+                        <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                          Chưa niêm yết
+                        </span>
                       )}
                     </span>
                   </div>
-                  {(availInfo?.surcharges ?? []).map((line) => (
+                  {!isUnlisted && (availInfo?.surcharges ?? []).map((line) => (
                     <div key={line.name} className="flex items-baseline justify-between text-[11px] text-amber-800">
                       <span>Phụ phí: {line.name}</span>
                       <span className="font-semibold">+{formatVND(line.amount)}</span>
@@ -766,15 +816,22 @@ export const UnitPickerPage: React.FC = () => {
 
                   <Button
                     type="button"
-                    variant={isSelected ? 'primary' : 'outline'}
+                    variant={isUnlisted ? 'outline' : isSelected ? 'primary' : 'outline'}
                     size="sm"
+                    disabled={isUnlisted}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleSelectSize(type.sizeCategory);
+                      if (!isUnlisted) {
+                        handleSelectSize(type.sizeCategory);
+                      }
                     }}
-                    className="w-full gap-1 text-xs py-1.5 font-semibold"
+                    className={`w-full gap-1 text-xs py-1.5 font-semibold ${
+                      isUnlisted ? 'text-slate-400 bg-slate-100/80 border-slate-200 cursor-not-allowed' : ''
+                    }`}
                   >
-                    {isSelected ? (
+                    {isUnlisted ? (
+                      'Tạm chưa mở đặt'
+                    ) : isSelected ? (
                       <>Đang chọn Cỡ {type.sizeCategory} <Check className="w-3.5 h-3.5" /></>
                     ) : (
                       `Chọn Cỡ ${type.sizeCategory}`
