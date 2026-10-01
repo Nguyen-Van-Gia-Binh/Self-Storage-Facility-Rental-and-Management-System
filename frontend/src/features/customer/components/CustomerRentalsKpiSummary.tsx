@@ -4,23 +4,26 @@ import {
   CheckCircle2,
   Clock,
   AlertTriangle,
+  CreditCard,
 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
 import type { RentedContract } from '../types';
 
 export interface CustomerRentalsKpiSummaryProps {
   contracts: RentedContract[];
+  pendingReservationsCount?: number;
   activeTab: string;
   onSelectTab: (tab: string) => void;
 }
 
 export const CustomerRentalsKpiSummary: React.FC<CustomerRentalsKpiSummaryProps> = ({
   contracts,
+  pendingReservationsCount = 0,
   activeTab,
   onSelectTab,
 }) => {
   // Tính toán các chỉ số thống kê
-  const totalCount = contracts.length;
+  const totalCount = contracts.length + pendingReservationsCount;
   const activeCount = contracts.filter((c) => c.status === 'ACTIVE').length;
   const pendingCheckinCount = contracts.filter(
     (c) => c.status === 'PENDING_CHECKIN' || (c.status as string) === 'PENDING_CHECK_IN'
@@ -47,6 +50,18 @@ export const CustomerRentalsKpiSummary: React.FC<CustomerRentalsKpiSummaryProps>
       iconColor: 'text-blue-600',
     },
     {
+      id: 'PENDING_PAYMENT',
+      title: 'Đang giữ chỗ',
+      count: pendingReservationsCount,
+      subtext: 'Chờ thanh toán cọc giữ chỗ 48h',
+      icon: CreditCard,
+      bgGradient: 'from-sky-500/10 to-cyan-500/5',
+      borderColor: 'border-sky-200/80',
+      activeBorder: 'border-sky-600 ring-2 ring-sky-500/20',
+      textColor: 'text-sky-950',
+      iconColor: 'text-sky-600',
+    },
+    {
       id: 'ACTIVE',
       title: 'Đang hoạt động',
       count: activeCount,
@@ -60,7 +75,7 @@ export const CustomerRentalsKpiSummary: React.FC<CustomerRentalsKpiSummaryProps>
     },
     {
       id: 'PENDING_CHECKIN',
-      title: 'Chờ nhận kho tại quầy',
+      title: 'Chờ nhận kho',
       count: pendingCheckinCount,
       subtext: 'Cần đối chiếu CCCD gốc để cấp mã PIN',
       icon: Clock,
@@ -74,7 +89,7 @@ export const CustomerRentalsKpiSummary: React.FC<CustomerRentalsKpiSummaryProps>
       id: 'ATTENTION',
       title: 'Cần chú ý / Gia hạn',
       count: attentionCount,
-      subtext: 'Ô kho sắp hết hạn, quá hạn hoặc đang hẹn trả',
+      subtext: 'Ô kho sắp hết hạn, quá hạn hoặc hẹn trả',
       icon: AlertTriangle,
       bgGradient: 'from-rose-500/10 to-orange-500/5',
       borderColor: 'border-rose-200/80',
@@ -85,7 +100,7 @@ export const CustomerRentalsKpiSummary: React.FC<CustomerRentalsKpiSummaryProps>
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-3.5">
       {kpis.map((kpi) => {
         const Icon = kpi.icon;
         const isSelected = activeTab === kpi.id;
@@ -94,27 +109,27 @@ export const CustomerRentalsKpiSummary: React.FC<CustomerRentalsKpiSummaryProps>
           <div
             key={kpi.id}
             onClick={() => onSelectTab(kpi.id)}
-            className={`p-4 rounded-2xl bg-gradient-to-br ${kpi.bgGradient} bg-white border transition-all duration-200 cursor-pointer shadow-xs hover:shadow-md relative overflow-hidden group ${
+            className={`p-3.5 sm:p-4 rounded-2xl bg-gradient-to-br ${kpi.bgGradient} bg-white border transition-all duration-200 cursor-pointer shadow-xs hover:shadow-md relative overflow-hidden group ${
               isSelected ? kpi.activeBorder : kpi.borderColor
             }`}
           >
             <div className="flex items-start justify-between">
-              <span className="text-xs font-bold text-slate-600 group-hover:text-slate-900 transition-colors uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors uppercase tracking-wider">
                 {kpi.title}
               </span>
-              <div className={`p-2 rounded-xl bg-white shadow-xs ${kpi.iconColor}`}>
+              <div className={`p-1.5 rounded-xl bg-white shadow-xs ${kpi.iconColor}`}>
                 <Icon className="w-4 h-4" />
               </div>
             </div>
 
-            <div className="mt-2 flex items-baseline gap-2">
+            <div className="mt-1.5 flex items-baseline gap-1.5">
               <span className={`text-2xl sm:text-3xl font-black tracking-tight ${kpi.textColor}`}>
                 {kpi.count}
               </span>
               <span className="text-xs font-semibold text-slate-400">ô</span>
             </div>
 
-            <p className="text-[11px] text-slate-500 mt-1 line-clamp-1">
+            <p className="text-[10px] text-slate-500 mt-1 line-clamp-1">
               {kpi.subtext}
             </p>
           </div>
@@ -123,3 +138,4 @@ export const CustomerRentalsKpiSummary: React.FC<CustomerRentalsKpiSummaryProps>
     </div>
   );
 };
+

@@ -148,3 +148,12 @@ export async function cancelReservationApi(id: number, reason?: string): Promise
   return res.data;
 }
 
+/**
+ * 6. Lấy danh sách tất cả đơn đặt chỗ của khách hàng (My Reservations)
+ */
+export async function getMyReservationsApi(): Promise<ReservationResponse[]> {
+  const res = await apiClient<ApiResponse<ReservationResponse[]>>('/reservations/my-rentals');
+  return res.data || [];
+}
+
+

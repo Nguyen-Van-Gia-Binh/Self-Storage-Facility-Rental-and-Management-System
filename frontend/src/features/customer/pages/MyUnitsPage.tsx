@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Modal } from '@/components/ui/Modal';
 import {
   Plus,
   HelpCircle,
@@ -16,9 +17,12 @@ import {
   Lock,
   LogIn,
   UserPlus,
+  CreditCard,
+  AlertTriangle,
 } from 'lucide-react';
 import { tokenStorage } from '@/utils/tokenStorage';
 import { RentedUnitCard } from '../components/RentedUnitCard';
+import { PendingReservationCard } from '../components/PendingReservationCard';
 import { CustomerRentalsKpiSummary } from '../components/CustomerRentalsKpiSummary';
 import { ChangePinModal } from '../components/ChangePinModal';
 import { ScheduleReturnModal } from '../components/ScheduleReturnModal';
@@ -26,6 +30,7 @@ import { ContractDetailModal } from '../components/ContractDetailModal';
 import { EarlyRenewalReminderModal } from '../components/EarlyRenewalReminderModal';
 import { VietQRPaymentModal } from '../components/VietQRPaymentModal';
 import { getCustomerContracts } from '@/api/customerRentals';
+import { getMyReservationsApi, cancelReservationApi, type ReservationResponse } from '@/api/reservation';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
 import { parseReminderDays, shouldRemindRenewal } from '../utils/policyTerms';
 import { useActivePolicy } from '@/hooks/useActivePolicy';
@@ -38,6 +43,11 @@ export const MyUnitsPage: React.FC = () => {
   const reminderDays = useMemo(() => parseReminderDays(policy?.renewalReminderDays), [policy]);
 
   const [contracts, setContracts] = useState<RentedContract[]>([]);
+  const [pendingReservations, setPendingReservations] = useState<ReservationResponse[]>([]);
+  const [cancellingReservation, setCancellingReservation] = useState<ReservationResponse | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,15 +63,30 @@ export const MyUnitsPage: React.FC = () => {
   const loadContracts = useCallback(async () => {
     if (!isAuthenticated) {
       setContracts([]);
+      setPendingReservations([]);
       setLoading(false);
       return;
     }
     setLoading(true);
     try {
-      const data = await getCustomerContracts();
-      setContracts(data);
+      const [contractsData, reservationsData] = await Promise.all([
+        getCustomerContracts(),
+        getMyReservationsApi().catch((err) => {
+          console.warn('Lỗi tải danh sách reservations:', err);
+          return [] as ReservationResponse[];
+        }),
+      ]);
+      setContracts(contractsData);
+
+      // Lọc các đơn đang ở trạng thái PENDING_PAYMENT và chưa hết hạn giữ chỗ
+      const activePending = reservationsData.filter((r) => {
+        if (r.status !== 'PENDING_PAYMENT') return false;
+        if (r.holdExpiresAt && new Date(r.holdExpiresAt).getTime() <= Date.now()) return false;
+        return true;
+      });
+      setPendingReservations(activePending);
     } catch (err) {
-      console.error('Lỗi tải danh sách hợp đồng:', err);
+      console.error('Lỗi tải danh sách hợp đồng & đơn đặt chỗ:', err);
     } finally {
       setLoading(false);
     }
@@ -70,6 +95,23 @@ export const MyUnitsPage: React.FC = () => {
   useEffect(() => {
     loadContracts();
   }, [loadContracts]);
+
+  // Handler hủy đơn giữ chỗ từ trang My Units
+  const handleConfirmCancelReservation = async () => {
+    if (!cancellingReservation) return;
+    setIsCancelling(true);
+    setCancelError(null);
+    try {
+      await cancelReservationApi(cancellingReservation.id, 'Khách hàng hủy giữ chỗ từ trang Kho của tôi');
+      setCancellingReservation(null);
+      loadContracts();
+    } catch (err: any) {
+      console.error('Lỗi hủy đơn giữ chỗ:', err);
+      setCancelError(err?.message || 'Không thể hủy đơn đặt chỗ. Vui lòng thử lại.');
+    } finally {
+      setIsCancelling(false);
+    }
+  };
 
   // Handler khi đổi mã PIN thành công
   const handlePinChanged = (contractId: string, newPin: string) => {
@@ -90,8 +132,10 @@ export const MyUnitsPage: React.FC = () => {
     loadContracts();
   };
 
+
   // Lọc theo Tab và Search Query
   const filteredContracts = useMemo(() => {
+    if (activeTab === 'PENDING_PAYMENT') return [];
     return contracts.filter((contract) => {
       // 1. Lọc theo Tab
       if (activeTab === 'ACTIVE' && contract.status !== 'ACTIVE') return false;
@@ -141,6 +185,20 @@ export const MyUnitsPage: React.FC = () => {
     });
   }, [contracts, activeTab, searchQuery]);
 
+  // Lọc danh sách đơn đang giữ chỗ theo search query
+  const filteredPendingReservations = useMemo(() => {
+    if (activeTab !== 'ALL' && activeTab !== 'PENDING_PAYMENT') return [];
+    return pendingReservations.filter((rsv) => {
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase().trim();
+      const matchUnit = (rsv.storageUnitCode || '').toLowerCase().includes(q);
+      const matchFacility = (rsv.facilityName || '').toLowerCase().includes(q);
+      const matchCode = (rsv.code || '').toLowerCase().includes(q);
+      const matchTypeName = (rsv.unitTypeName || '').toLowerCase().includes(q);
+      return matchUnit || matchFacility || matchCode || matchTypeName;
+    });
+  }, [pendingReservations, activeTab, searchQuery]);
+
   const earlyRenewalCandidate = useMemo(() => {
     if (!policy) return null;
     return (
@@ -167,6 +225,8 @@ export const MyUnitsPage: React.FC = () => {
     }
     setShowEarlyRenewalModal(false);
   };
+
+  const totalDisplayItems = filteredContracts.length + filteredPendingReservations.length;
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
@@ -242,180 +302,219 @@ export const MyUnitsPage: React.FC = () => {
           {/* KPI Summary Banner */}
           <CustomerRentalsKpiSummary
             contracts={contracts}
+            pendingReservationsCount={pendingReservations.length}
             activeTab={activeTab}
             onSelectTab={(tab) => setActiveTab(tab)}
           />
 
-      {/* Cảnh báo đề xuất gia hạn sớm trước mốc khóa 30 ngày (BR-REN-01 & BR-REN-02) */}
-      {earlyRenewalCandidate && (
-        <div className="rounded-2xl border border-amber-300 bg-amber-50/90 p-4 sm:p-4.5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-start sm:items-center gap-3.5">
-            <div className="p-2.5 rounded-xl bg-amber-100 text-amber-700 shrink-0 mt-0.5 sm:mt-0">
-              <Clock className="w-5 h-5" />
-            </div>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 uppercase tracking-wide">
-                  Đề xuất gia hạn giữ chỗ
-                </span>
-                <span className="text-xs font-bold text-amber-950">
-                  Ô kho {earlyRenewalCandidate.unitNumber} · {earlyRenewalCandidate.facilityName}
-                </span>
+          {/* Banner Nhắc nhở Đơn đang giữ chỗ 48h (ISS-78) */}
+          {pendingReservations.length > 0 && activeTab !== 'PENDING_PAYMENT' && (
+            <div className="rounded-2xl border border-sky-300 bg-sky-50/90 p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-200">
+              <div className="flex items-center gap-3.5">
+                <div className="p-2.5 rounded-xl bg-sky-100 text-sky-700 shrink-0">
+                  <CreditCard className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-sky-950 block">
+                    Bạn đang có <strong>{pendingReservations.length} ô kho đang giữ chỗ</strong> trong 48 giờ
+                  </span>
+                  <p className="text-xs text-sky-800 mt-0.5">
+                    Vui lòng hoàn tất thanh toán cọc VietQR để không bị tự động hủy đơn giữ chỗ.
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-amber-800 leading-relaxed">
-                Còn <strong>{calculateDaysRemaining(earlyRenewalCandidate.endDate)} ngày</strong> đến hết hạn. Mốc nhắc trên chính sách là trước <strong>{noticeDays} ngày</strong>
-                {reminderDays.length > 0 ? ` (các mốc ${reminderDays.join(', ')} ngày)` : ''}. Gia hạn để giữ nguyên ô kho và mã PIN. Nút gia hạn vẫn mở khi ô kho chưa có người đặt trước.
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setEarlyRenewalContract(earlyRenewalCandidate);
-                setShowEarlyRenewalModal(true);
-              }}
-              className="w-full sm:w-auto text-xs font-semibold text-amber-900 border-amber-300 hover:bg-amber-100/60 cursor-pointer"
-            >
-              Chi tiết đề xuất
-            </Button>
-            <Link to={`/customer/renew/${earlyRenewalCandidate.id}`} className="w-full sm:w-auto">
               <Button
                 variant="primary"
                 size="sm"
-                className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-bold text-xs shadow-xs cursor-pointer"
+                onClick={() => setActiveTab('PENDING_PAYMENT')}
+                className="w-full sm:w-auto px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-xs cursor-pointer whitespace-nowrap"
               >
-                Gia hạn ngay
+                Xem đơn giữ chỗ ({pendingReservations.length})
               </Button>
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 border-b border-slate-200 pb-3">
-        {/* Status Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto text-xs sm:text-sm font-bold pb-1 md:pb-0 scrollbar-none">
-          {[
-            { id: 'ALL', label: `Tất cả (${contracts.length})` },
-            { id: 'ACTIVE', label: `Đang hoạt động (${contracts.filter((c) => c.status === 'ACTIVE').length})` },
-            {
-              id: 'PENDING_CHECKIN',
-              label: `Chờ nhận kho (${
-                contracts.filter(
-                  (c) => c.status === 'PENDING_CHECKIN' || (c.status as string) === 'PENDING_CHECK_IN'
-                ).length
-              })`,
-            },
-            {
-              id: 'ATTENTION',
-              label: `Cần chú ý (${
-                contracts.filter(
-                  (c) =>
-                    c.status === 'EXPIRING_SOON' ||
-                    c.status === 'OVERDUE' ||
-                    c.status === 'PENDING_RETURN'
-                ).length
-              })`,
-            },
-            {
-              id: 'CLOSED',
-              label: `Lịch sử (${contracts.filter((c) => c.status === 'CLOSED' || c.status === 'TERMINATED').length})`,
-            },
-          ].map((tab) => {
-            const isSelected = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`pb-2 px-2.5 border-b-2 transition-all whitespace-nowrap cursor-pointer ${
-                  isSelected
-                    ? 'border-brand-600 text-brand-700 font-black'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Search Box */}
-        <div className="relative w-full md:w-72 flex-shrink-0">
-          <Input
-            placeholder="Tìm theo mã ô kho, cơ sở, mã HĐ..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="text-xs pl-8 pr-7 py-1.5 h-9"
-          />
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-3" />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-3 text-slate-400 hover:text-slate-600 cursor-pointer"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
+            </div>
           )}
-        </div>
-      </div>
 
-      {/* List of Rented Unit Cards */}
-      {loading ? (
-        <div className="py-16 text-center text-xs text-slate-400">
-          Đang tải dữ liệu danh sách ô kho...
-        </div>
-      ) : filteredContracts.length > 0 ? (
-        <div className="space-y-5">
-          {filteredContracts.map((contract) => (
-            <RentedUnitCard
-              key={contract.id}
-              contract={contract}
-              onChangePin={(c) => setSelectedPinContract(c)}
-              onScheduleReturn={(c) => setSelectedReturnContract(c)}
-              onViewDetail={(c) => setSelectedDetailContract(c)}
-              onOpenOverduePayment={(c) => setSelectedOverdueContract(c)}
-              onCancelReturn={() => loadContracts()}
-              renewalNoticeDays={noticeDays > 0 ? noticeDays : undefined}
-            />
-          ))}
-        </div>
-      ) : (
-        <Card className="p-12 text-center bg-white border border-slate-200/90 rounded-2xl space-y-4">
-          <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
-            <Layers className="w-6 h-6" />
+          {/* Cảnh báo đề xuất gia hạn sớm trước mốc khóa 30 ngày (BR-REN-01 & BR-REN-02) */}
+          {earlyRenewalCandidate && (
+            <div className="rounded-2xl border border-amber-300 bg-amber-50/90 p-4 sm:p-4.5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start sm:items-center gap-3.5">
+                <div className="p-2.5 rounded-xl bg-amber-100 text-amber-700 shrink-0 mt-0.5 sm:mt-0">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 uppercase tracking-wide">
+                      Đề xuất gia hạn giữ chỗ
+                    </span>
+                    <span className="text-xs font-bold text-amber-950">
+                      Ô kho {earlyRenewalCandidate.unitNumber} · {earlyRenewalCandidate.facilityName}
+                    </span>
+                  </div>
+                  <p className="text-xs text-amber-800 leading-relaxed">
+                    Còn <strong>{calculateDaysRemaining(earlyRenewalCandidate.endDate)} ngày</strong> đến hết hạn. Mốc nhắc trên chính sách là trước <strong>{noticeDays} ngày</strong>
+                    {reminderDays.length > 0 ? ` (các mốc ${reminderDays.join(', ')} ngày)` : ''}. Gia hạn để giữ nguyên ô kho và mã PIN. Nút gia hạn vẫn mở khi ô kho chưa có người đặt trước.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setEarlyRenewalContract(earlyRenewalCandidate);
+                    setShowEarlyRenewalModal(true);
+                  }}
+                  className="w-full sm:w-auto text-xs font-semibold text-amber-900 border-amber-300 hover:bg-amber-100/60 cursor-pointer"
+                >
+                  Chi tiết đề xuất
+                </Button>
+                <Link to={`/customer/renew/${earlyRenewalCandidate.id}`} className="w-full sm:w-auto">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-bold text-xs shadow-xs cursor-pointer"
+                  >
+                    Gia hạn ngay
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* Filter and Search Bar */}
+          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+            {/* Status Tabs */}
+            <div className="flex items-center gap-2 overflow-x-auto text-xs sm:text-sm font-bold pb-1 md:pb-0 scrollbar-none">
+              {[
+                { id: 'ALL', label: `Tất cả (${contracts.length + pendingReservations.length})` },
+                { id: 'PENDING_PAYMENT', label: `Đang giữ chỗ (${pendingReservations.length})` },
+                { id: 'ACTIVE', label: `Đang hoạt động (${contracts.filter((c) => c.status === 'ACTIVE').length})` },
+                {
+                  id: 'PENDING_CHECKIN',
+                  label: `Chờ nhận kho (${
+                    contracts.filter(
+                      (c) => c.status === 'PENDING_CHECKIN' || (c.status as string) === 'PENDING_CHECK_IN'
+                    ).length
+                  })`,
+                },
+                {
+                  id: 'ATTENTION',
+                  label: `Cần chú ý (${
+                    contracts.filter(
+                      (c) =>
+                        c.status === 'EXPIRING_SOON' ||
+                        c.status === 'OVERDUE' ||
+                        c.status === 'PENDING_RETURN'
+                    ).length
+                  })`,
+                },
+                {
+                  id: 'CLOSED',
+                  label: `Lịch sử (${contracts.filter((c) => c.status === 'CLOSED' || c.status === 'TERMINATED').length})`,
+                },
+              ].map((tab) => {
+                const isSelected = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`pb-2 px-2.5 border-b-2 transition-all whitespace-nowrap cursor-pointer ${
+                      isSelected
+                        ? 'border-brand-600 text-brand-700 font-black'
+                        : 'border-transparent text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Search Box */}
+            <div className="relative w-full md:w-72 flex-shrink-0">
+              <Input
+                placeholder="Tìm theo mã ô kho, cơ sở, mã HĐ..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="text-xs pl-8 pr-7 py-1.5 h-9"
+              />
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-3" />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-3 text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
           </div>
-          <div>
-            <h3 className="text-base font-extrabold text-[#0a1614]">
-              {searchQuery ? 'Không tìm thấy ô kho nào phù hợp' : 'Không có hợp đồng nào trong mục này'}
-            </h3>
-            <p className="text-xs text-slate-500 mt-1">
-              {searchQuery
-                ? `Không có kết quả nào khớp với từ khóa "${searchQuery}". Hãy thử tìm kiếm khác.`
-                : 'Bạn chưa có hợp đồng nào tương ứng với bộ lọc đã chọn.'}
-            </p>
-          </div>
-          {searchQuery ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSearchQuery('')}
-              className="mt-2 text-xs font-semibold cursor-pointer"
-            >
-              Xóa bộ lọc tìm kiếm
-            </Button>
+
+          {/* List of Unit Cards (Pending Reservations + Rented Contracts) */}
+          {loading ? (
+            <div className="py-16 text-center text-xs text-slate-400">
+              Đang tải dữ liệu danh sách ô kho...
+            </div>
+          ) : totalDisplayItems > 0 ? (
+            <div className="space-y-5">
+              {/* 1. Render Đơn đang giữ chỗ 48h */}
+              {filteredPendingReservations.map((rsv) => (
+                <PendingReservationCard
+                  key={`rsv-${rsv.id}`}
+                  reservation={rsv}
+                  onCancel={(r) => setCancellingReservation(r)}
+                />
+              ))}
+
+              {/* 2. Render Hợp đồng thuê kho */}
+              {filteredContracts.map((contract) => (
+                <RentedUnitCard
+                  key={contract.id}
+                  contract={contract}
+                  onChangePin={(c) => setSelectedPinContract(c)}
+                  onScheduleReturn={(c) => setSelectedReturnContract(c)}
+                  onViewDetail={(c) => setSelectedDetailContract(c)}
+                  onOpenOverduePayment={(c) => setSelectedOverdueContract(c)}
+                  onCancelReturn={() => loadContracts()}
+                  renewalNoticeDays={noticeDays > 0 ? noticeDays : undefined}
+                />
+              ))}
+            </div>
           ) : (
-            <Link to="/customer">
-              <Button variant="primary" size="sm" className="mt-2 text-xs font-bold cursor-pointer">
-                Khám phá và thuê ô kho mới
-              </Button>
-            </Link>
+            <Card className="p-12 text-center bg-white border border-slate-200/90 rounded-2xl space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+                <Layers className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-extrabold text-[#0a1614]">
+                  {searchQuery ? 'Không tìm thấy ô kho nào phù hợp' : 'Không có ô kho nào trong mục này'}
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  {searchQuery
+                    ? `Không có kết quả nào khớp với từ khóa "${searchQuery}". Hãy thử tìm kiếm khác.`
+                    : 'Bạn chưa có đơn đặt chỗ hoặc hợp đồng nào tương ứng với bộ lọc đã chọn.'}
+                </p>
+              </div>
+              {searchQuery ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSearchQuery('')}
+                  className="mt-2 text-xs font-semibold cursor-pointer"
+                >
+                  Xóa bộ lọc tìm kiếm
+                </Button>
+              ) : (
+                <Link to="/customer">
+                  <Button variant="primary" size="sm" className="mt-2 text-xs font-bold cursor-pointer">
+                    Khám phá và thuê ô kho mới
+                  </Button>
+                </Link>
+              )}
+            </Card>
           )}
-        </Card>
-      )}
         </>
       )}
 
@@ -496,6 +595,77 @@ export const MyUnitsPage: React.FC = () => {
           paymentType="OVERDUE_PENALTY"
         />
       )}
+
+      {/* Modal Xác nhận Hủy giữ chỗ từ trang Kho của tôi (ISS-78) */}
+      <Modal
+        isOpen={Boolean(cancellingReservation)}
+        onClose={() => {
+          if (!isCancelling) setCancellingReservation(null);
+        }}
+        className="max-w-md w-full"
+      >
+        <div className="p-5 sm:p-6 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-rose-600" />
+              Xác nhận hủy giữ chỗ
+            </h3>
+            <button
+              type="button"
+              disabled={isCancelling}
+              onClick={() => setCancellingReservation(null)}
+              className="text-slate-400 hover:text-slate-600 font-bold px-1.5 py-0.5 rounded cursor-pointer"
+            >
+              ×
+            </button>
+          </div>
+
+          <div className="flex items-start gap-3 p-3.5 bg-rose-50 rounded-xl border border-rose-100 text-rose-800 text-xs leading-relaxed">
+            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-rose-900 mb-1">Bạn có chắc chắn muốn hủy giữ chỗ?</p>
+              <p className="text-rose-700">
+                Sau khi hủy, ô kho <strong>{cancellingReservation?.storageUnitCode || cancellingReservation?.unitTypeName}</strong> sẽ được giải phóng ngay lập tức trên hệ thống và bạn cần tạo đơn mới nếu muốn thuê lại.
+              </p>
+            </div>
+          </div>
+
+          {cancelError && (
+            <p className="text-xs text-rose-600 font-semibold">{cancelError}</p>
+          )}
+
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isCancelling}
+              onClick={() => setCancellingReservation(null)}
+              className="text-slate-700 hover:bg-slate-100"
+            >
+              Quay lại (Giữ đơn)
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              disabled={isCancelling}
+              onClick={handleConfirmCancelReservation}
+              className="bg-rose-600 hover:bg-rose-700 text-white font-bold"
+            >
+              {isCancelling ? (
+                <>
+                  <RotateCcw className="w-4 h-4 mr-1.5 animate-spin" />
+                  Đang hủy...
+                </>
+              ) : (
+                'Xác nhận hủy giữ chỗ'
+              )}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
+
