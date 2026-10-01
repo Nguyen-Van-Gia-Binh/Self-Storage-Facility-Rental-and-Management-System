@@ -77,6 +77,7 @@
 | `ISS-67` | `BookingPriceSummary` & `VietQRPaymentModal` hiển thị cứng "Tiền cọc (1 tháng)" dù BOM đã cấu hình `depositMultiplier` = N (BR-DEP-01). | Truyền `depositMultiplier` từ `useActivePolicy` vào component, đổi label sang `N × tháng tiền thuê` theo policy; áp dụng đồng bộ cho luồng Gia hạn. | Nhi | `RESOLVED` (#198) |
 | `ISS-68` | Deadlock giao dịch SQL Server khi đăng ký tài khoản mới và màn hình trắng khi chuyển hướng đăng nhập. | Tách commit `app_user` trước khi ghi `login_history`, thêm alias `/login`, `/register` và fallback route chống trắng trang. | Tùng | `RESOLVED` |
 | `ISS-70` | Vé sự cố hiển thị vi phạm SLA 2h và đếm ngược gây áp lực sai thực tế vận hành. | Bãi bỏ cam kết SLA 2h, phân loại Khẩn cấp/Bình thường và đếm ngược; đơn giản hóa phân công theo ca trực. | Tùng | `RESOLVED` |
+| `ISS-71` | Modal nghiệm thu sự cố thiếu danh mục phụ phí BOM và cơ chế phân định lỗi công ty vs khách hàng. | Móc nối API phụ phí BOM multi-select, phân định 2 nút trách nhiệm lỗi và khóa nghiệm thu nếu chưa thu phí khách. | Tùng | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 

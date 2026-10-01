@@ -16,12 +16,13 @@ import {
   ShieldCheck,
   Plus,
   Trash2,
+  Receipt,
 } from 'lucide-react';
 import type { DailyIncidentTask, SurchargeItem } from '@/types';
 import { startStaffIncident, resolveStaffIncident, markStaffIncidentRelocation } from '@/api/staff';
 import { fetchSurcharges } from '@/api/pricing';
 import { applyCatalogFee } from '@/api/contract';
-import { catalogFeePriceLabel } from '@/features/pricing/feeCategory';
+import { feeCategoryLabel } from '@/features/pricing/feeCategory';
 
 interface StaffResolveIncidentModalProps {
   isOpen: boolean;
@@ -46,11 +47,15 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
   const [isAgreed, setIsAgreed] = useState(false);
   const [needsRelocation, setNeedsRelocation] = useState(false);
   const [savingRelocation, setSavingRelocation] = useState(false);
-  const [accessFees, setAccessFees] = useState<SurchargeItem[]>([]);
-  const [lostKey, setLostKey] = useState(false);
-  const [selectedKeyFeeId, setSelectedKeyFeeId] = useState<number | ''>('');
-  const [keyFeeRecorded, setKeyFeeRecorded] = useState(false);
-  const [recordingKeyFee, setRecordingKeyFee] = useState(false);
+
+  // BOM surcharges list and selection states
+  const [allSurcharges, setAllSurcharges] = useState<SurchargeItem[]>([]);
+  const [loadingSurcharges, setLoadingSurcharges] = useState(false);
+  const [selectedFeeIds, setSelectedFeeIds] = useState<number[]>([]);
+
+  // Fault attribution states: COMPANY vs CUSTOMER
+  const [faultParty, setFaultParty] = useState<'COMPANY' | 'CUSTOMER' | null>(null);
+  const [isCustomerPaidConfirmed, setIsCustomerPaidConfirmed] = useState(false);
 
   useEffect(() => {
     if (ticket) {
@@ -60,26 +65,27 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
       setImageUrlInput('');
       setIsAgreed(false);
       setNeedsRelocation(Boolean(ticket.relocationRequired));
-      setLostKey(false);
-      setSelectedKeyFeeId('');
-      setKeyFeeRecorded(false);
+      setSelectedFeeIds([]);
+      setFaultParty(null);
+      setIsCustomerPaidConfirmed(false);
     }
   }, [ticket]);
 
+  // Lấy toàn bộ danh mục phụ phí đang active từ BOM API
   useEffect(() => {
     if (!isOpen) return;
+    setLoadingSurcharges(true);
     fetchSurcharges({ isActive: true })
-      .then((list) =>
-        setAccessFees(
-          list.filter(
-            (fee) =>
-              fee.isActive &&
-              fee.category === 'ACCESS_KEY' &&
-              (fee.facilityId == null || fee.facilityId === ticket?.facilityId),
-          ),
-        ),
-      )
-      .catch(() => setAccessFees([]));
+      .then((list) => {
+        const validFees = list.filter(
+          (fee) =>
+            fee.isActive &&
+            (fee.facilityId == null || fee.facilityId === ticket?.facilityId),
+        );
+        setAllSurcharges(validFees);
+      })
+      .catch(() => setAllSurcharges([]))
+      .finally(() => setLoadingSurcharges(false));
   }, [isOpen, ticket?.facilityId]);
 
   if (!isOpen || !ticket) return null;
@@ -89,27 +95,24 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
   const isInProgress = ticket.status === 'IN_PROGRESS';
   const isResolved = ticket.status === 'RESOLVED' || ticket.status === 'CLOSED';
   const isUnitDamage = ticket.category === 'UNIT_DAMAGE';
-  const isLockAccess = ticket.category === 'LOCK_ACCESS';
 
-  const handleRecordKeyFee = async () => {
-    if (ticket.contractId == null) {
-      setErrorMsg('Phiếu chưa gắn hợp đồng nên không ghi được phí cấp lại khóa.');
-      return;
+  // Tính số tiền của từng phụ phí
+  const calculateFeeAmount = (fee: SurchargeItem): number => {
+    if (fee.type === 'PERCENTAGE') {
+      return Math.round((1_000_000 * (fee.amount / 100)) / 1000) * 1000;
     }
-    if (selectedKeyFeeId === '') {
-      setErrorMsg('Chọn khoản cấp lại khóa cơ đang hiệu lực.');
-      return;
-    }
-    setRecordingKeyFee(true);
-    setErrorMsg(null);
-    try {
-      await applyCatalogFee(ticket.contractId, selectedKeyFeeId, 'Mất chìa khóa cơ, đã đối chiếu CCCD');
-      setKeyFeeRecorded(true);
-    } catch (err: unknown) {
-      setErrorMsg(err instanceof Error ? err.message : 'Không ghi được phí cấp lại khóa.');
-    } finally {
-      setRecordingKeyFee(false);
-    }
+    return fee.amount || 0;
+  };
+
+  // Tổng số tiền phụ phí được chọn
+  const totalFeeAmount = allSurcharges
+    .filter((fee) => selectedFeeIds.includes(fee.id))
+    .reduce((sum, fee) => sum + calculateFeeAmount(fee), 0);
+
+  const toggleFee = (feeId: number) => {
+    setSelectedFeeIds((current) =>
+      current.includes(feeId) ? current.filter((id) => id !== feeId) : [...current, feeId],
+    );
   };
 
   const handleRelocationChange = async (checked: boolean) => {
@@ -171,8 +174,14 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
       setErrorMsg('Vui lòng nhập chi tiết kết quả xử lý (tối thiểu 5 ký tự)');
       return;
     }
-    if (lostKey && !keyFeeRecorded) {
-      setErrorMsg('Đã đánh dấu mất chìa khóa cơ thì ghi nhận khoản ACCESS_KEY trước, hoặc bỏ đánh dấu nếu chỉ cấp lại PIN.');
+
+    if (!faultParty) {
+      setErrorMsg('Vui lòng chọn phân định trách nhiệm: Lỗi do công ty hay Lỗi do khách hàng.');
+      return;
+    }
+
+    if (faultParty === 'CUSTOMER' && !isCustomerPaidConfirmed) {
+      setErrorMsg('Khách hàng chưa thanh toán toàn bộ số phí. Vui lòng xác nhận đã thu đủ phí trước khi hoàn tất nghiệm thu.');
       return;
     }
 
@@ -180,13 +189,47 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
       setErrorMsg('Phiếu sự cố không có mã từ hệ thống.');
       return;
     }
+
     setSubmitting(true);
     setErrorMsg(null);
+
     try {
+      // Nếu lỗi do khách hàng và có phụ phí chọn + có contractId: ghi nhận phụ phí vào hợp đồng
+      if (faultParty === 'CUSTOMER' && selectedFeeIds.length > 0 && ticket.contractId != null) {
+        for (const feeId of selectedFeeIds) {
+          try {
+            const feeItem = allSurcharges.find((f) => f.id === feeId);
+            const feeName = feeItem ? feeItem.name : `Phụ phí #${feeId}`;
+            await applyCatalogFee(
+              ticket.contractId,
+              feeId,
+              `[Sự cố ${ticket.code || `SUP-${ticket.ticketId}`}] ${feeName} - Khách đã thanh toán`,
+            );
+          } catch (feeErr) {
+            console.warn('Lỗi ghi nhận phụ phí vào hợp đồng:', feeErr);
+          }
+        }
+      }
+
+      // Soạn nội dung biên bản hoàn chỉnh kèm phân định trách nhiệm & phụ phí
+      let faultSummary = '';
+      if (faultParty === 'COMPANY') {
+        faultSummary = '\n[Trách nhiệm: Lỗi do công ty (100% công ty chi trả theo BR-SUP-02) - Khách hàng miễn phí 0 đ]';
+      } else {
+        const selectedFeeNames = allSurcharges
+          .filter((f) => selectedFeeIds.includes(f.id))
+          .map((f) => f.name)
+          .join(', ');
+        faultSummary = `\n[Trách nhiệm: Lỗi do khách hàng | Phụ phí: ${selectedFeeNames || 'Không phát sinh phụ phí'} | Tổng thu: ${totalFeeAmount.toLocaleString('vi-VN')} đ | Đã thanh toán đầy đủ 100%]`;
+      }
+
+      const fullResolutionNote = `${resolutionNote.trim()} ${faultSummary}`;
+
       await resolveStaffIncident(ticket.ticketId, {
-        resolutionNote: resolutionNote.trim(),
+        resolutionNote: fullResolutionNote,
         resolutionAttachmentUrls: attachmentUrls,
       });
+
       onSuccess();
       onClose();
     } catch (err: any) {
@@ -217,6 +260,13 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
       </span>
     );
   };
+
+  const isSubmitDisabled =
+    submitting ||
+    !isAgreed ||
+    !resolutionNote.trim() ||
+    faultParty === null ||
+    (faultParty === 'CUSTOMER' && !isCustomerPaidConfirmed);
 
   return createPortal(
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -319,7 +369,7 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
               <FileText className="w-3.5 h-3.5 text-slate-500" />
               Mô tả sự cố từ khách hàng
             </label>
-            <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200 text-xs text-slate-800 leading-relaxed">
+            <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200 text-xs text-slate-800 leading-relaxed font-medium">
               {ticket.description || ticket.title}
             </div>
           </div>
@@ -351,62 +401,6 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
                   </a>
                 ))}
               </div>
-            </div>
-          )}
-
-          {isUnitDamage && !isResolved && (
-            <p className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-xl p-3">
-              Hư do cơ sở không tạo phụ phí. Nếu hư do khách, khoản bồi thường được chọn lúc nghiệm thu trả kho.
-            </p>
-          )}
-
-          {isLockAccess && !isResolved && (
-            <div className="space-y-2 p-3.5 rounded-xl border border-slate-200 bg-slate-50">
-              <p className="text-xs text-slate-600">
-                Cấp lại PIN/QR là miễn phí và khách tự làm trên ứng dụng. Chỉ mất chìa khóa cơ mới thu phí, sau khi đối chiếu CCCD.
-              </p>
-              <label className="flex items-start gap-2 text-xs text-slate-800 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={lostKey}
-                  onChange={(e) => {
-                    setLostKey(e.target.checked);
-                    setKeyFeeRecorded(false);
-                  }}
-                  className="mt-0.5"
-                />
-                <span>Khách mất chìa khóa cơ và đã đối chiếu CCCD</span>
-              </label>
-              {lostKey && (
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <select
-                    value={selectedKeyFeeId}
-                    onChange={(e) => setSelectedKeyFeeId(e.target.value ? Number(e.target.value) : '')}
-                    className="flex-1 text-xs border border-slate-300 rounded-lg px-2 py-2 bg-white"
-                  >
-                    <option value="">Chọn khoản cấp lại khóa</option>
-                    {accessFees.map((fee) => (
-                      <option key={fee.id} value={fee.id}>
-                        {fee.name} — {catalogFeePriceLabel(fee)}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={handleRecordKeyFee}
-                    disabled={recordingKeyFee || keyFeeRecorded || ticket.contractId == null}
-                    className="px-3 py-2 text-xs font-semibold rounded-lg bg-slate-900 text-white disabled:opacity-50"
-                  >
-                    {keyFeeRecorded ? 'Đã ghi phí' : recordingKeyFee ? 'Đang ghi...' : 'Ghi nhận phí'}
-                  </button>
-                </div>
-              )}
-              {lostKey && accessFees.length === 0 && (
-                <p className="text-[11px] text-amber-700">Chưa có khoản ACCESS_KEY đang hiệu lực.</p>
-              )}
-              {lostKey && ticket.contractId == null && (
-                <p className="text-[11px] text-rose-700">Phiếu chưa gắn hợp đồng.</p>
-              )}
             </div>
           )}
 
@@ -462,7 +456,212 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
 
           {/* FORM NGHIỆM THU & GIẢI QUYẾT: Cho phép khi Đang xử lý hoặc Mới được giao */}
           {(isInProgress || isPending) && (
-            <form onSubmit={handleResolveSubmit} className="space-y-4 pt-2 border-t border-slate-200">
+            <form onSubmit={handleResolveSubmit} className="space-y-5 pt-2 border-t border-slate-200">
+              {/* 1. DANH MỤC PHỤ PHÍ TỪ BOM (CHECKBOX MULTI-SELECT) */}
+              <div className="space-y-2.5 p-4 rounded-xl border border-slate-200 bg-slate-50/70">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <Receipt className="w-4 h-4 text-teal-600" />
+                    <span>Danh mục phụ phí phát sinh (Biểu phí BOM)</span>
+                  </label>
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-semibold">
+                    {selectedFeeIds.length} khoản đã chọn
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  Chọn các khoản phụ phí tương ứng nếu sự cố có phát sinh vật tư, thay khóa cơ, vệ sinh hoặc sửa chữa theo bảng giá BOM.
+                </p>
+
+                {loadingSurcharges ? (
+                  <div className="flex items-center justify-center py-4 text-xs text-slate-500 gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-teal-600" />
+                    <span>Đang tải biểu phí BOM...</span>
+                  </div>
+                ) : allSurcharges.length === 0 ? (
+                  <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800">
+                    Chưa có danh mục phụ phí đang hiệu lực tại cơ sở.
+                  </div>
+                ) : (
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                    {allSurcharges.map((fee) => {
+                      const isChecked = selectedFeeIds.includes(fee.id);
+                      const feePrice = calculateFeeAmount(fee);
+                      return (
+                        <label
+                          key={fee.id}
+                          className={`flex items-center justify-between gap-3 p-2.5 rounded-lg border text-xs cursor-pointer transition ${
+                            isChecked
+                              ? 'border-teal-500 bg-teal-50/70 shadow-xs'
+                              : 'border-slate-200 bg-white hover:bg-slate-100/70'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => toggleFee(fee.id)}
+                              className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-4 h-4"
+                            />
+                            <div className="min-w-0">
+                              <span className="font-semibold text-slate-800 truncate block">
+                                {fee.name}
+                              </span>
+                              <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 inline-block font-medium">
+                                {feeCategoryLabel(fee.category)}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="font-mono font-bold text-slate-800 shrink-0 ml-2">
+                            {fee.type === 'PERCENTAGE'
+                              ? `${fee.amount}% (${feePrice.toLocaleString('vi-VN')} đ)`
+                              : `${feePrice.toLocaleString('vi-VN')} đ`}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {selectedFeeIds.length > 0 && (
+                  <div className="flex items-center justify-between pt-2.5 border-t border-slate-200 text-xs font-semibold">
+                    <span className="text-slate-600">Tổng phụ phí phát sinh:</span>
+                    <span className="font-mono text-teal-700 text-sm font-bold">
+                      {totalFeeAmount.toLocaleString('vi-VN')} đ
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* 2. PHÂN ĐỊNH TRÁCH NHIỆM: 2 NÚT CHỌN */}
+              <div className="space-y-3 p-4 rounded-xl border border-slate-200 bg-slate-50/70">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <AlertTriangle className="w-4 h-4 text-amber-600" />
+                    <span>Phân định trách nhiệm sự cố *</span>
+                  </label>
+                  <span className="text-[11px] text-slate-500">Quy tắc BR-SUP-02</span>
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  Nhân viên hiện trường bắt buộc chọn 1 trong 2 nút bên dưới để xác định trách nhiệm chi trả.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Nút 1: Lỗi do công ty */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFaultParty('COMPANY');
+                      setIsCustomerPaidConfirmed(false);
+                    }}
+                    className={`p-3.5 rounded-xl border text-left transition flex items-start gap-3 cursor-pointer ${
+                      faultParty === 'COMPANY'
+                        ? 'border-emerald-500 bg-emerald-50 text-emerald-950 ring-2 ring-emerald-500/20 shadow-xs'
+                        : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                    }`}
+                  >
+                    <div
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                        faultParty === 'COMPANY'
+                          ? 'bg-emerald-600 text-white shadow-xs'
+                          : 'bg-slate-100 text-slate-500'
+                      }`}
+                    >
+                      <Building2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-xs">Lỗi do công ty / cơ sở</div>
+                      <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                        Hạ tầng, kỹ thuật, hao mòn tự nhiên. Công ty chịu 100% chi phí.
+                      </p>
+                    </div>
+                  </button>
+
+                  {/* Nút 2: Lỗi do khách hàng */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFaultParty('CUSTOMER');
+                      setIsCustomerPaidConfirmed(false);
+                    }}
+                    className={`p-3.5 rounded-xl border text-left transition flex items-start gap-3 cursor-pointer ${
+                      faultParty === 'CUSTOMER'
+                        ? 'border-rose-500 bg-rose-50 text-rose-950 ring-2 ring-rose-500/20 shadow-xs'
+                        : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                    }`}
+                  >
+                    <div
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                        faultParty === 'CUSTOMER'
+                          ? 'bg-rose-600 text-white shadow-xs'
+                          : 'bg-slate-100 text-slate-500'
+                      }`}
+                    >
+                      <User className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-xs">Lỗi do khách hàng</div>
+                      <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                        Làm mất chìa cơ, làm hỏng ổ khóa. Khách hàng thanh toán phụ phí.
+                      </p>
+                    </div>
+                  </button>
+                </div>
+
+                {/* KHI CHỌN: LỖI DO CÔNG TY */}
+                {faultParty === 'COMPANY' && (
+                  <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-950 flex items-start gap-2.5 animate-in fade-in duration-150">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <div className="font-bold text-emerald-900">
+                        100% Chi phí do công ty chi trả (Quy tắc BR-SUP-02)
+                      </div>
+                      <p className="text-[11px] text-emerald-800 leading-relaxed">
+                        Khách hàng <strong>hoàn toàn không phải chịu bất kỳ khoản phí nào (0 VNĐ)</strong>. Toàn bộ chi phí vật tư, thay khóa hoặc sửa chữa sẽ do công ty thanh toán vào chi phí bảo dưỡng cơ sở.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* KHI CHỌN: LỖI DO KHÁCH HÀNG */}
+                {faultParty === 'CUSTOMER' && (
+                  <div className="space-y-3 p-3.5 rounded-xl bg-rose-50/80 border border-rose-200 text-xs text-rose-950 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-rose-900 flex items-center gap-1.5">
+                        <AlertTriangle className="w-4 h-4 text-rose-600" />
+                        Khoản phụ phí khách hàng cần thanh toán:
+                      </span>
+                      <span className="font-mono font-bold text-sm text-rose-700">
+                        {totalFeeAmount.toLocaleString('vi-VN')} đ
+                      </span>
+                    </div>
+
+                    {/* CHECKBOX MÔ PHỎNG XÁC NHẬN THANH TOÁN BẮT BUỘC */}
+                    <label className="flex items-start gap-2.5 p-3 rounded-lg border border-rose-200 bg-white cursor-pointer hover:bg-rose-50/50 transition">
+                      <input
+                        type="checkbox"
+                        checked={isCustomerPaidConfirmed}
+                        onChange={(e) => setIsCustomerPaidConfirmed(e.target.checked)}
+                        className="mt-0.5 rounded border-rose-300 text-rose-600 focus:ring-rose-500 w-4 h-4 shrink-0"
+                      />
+                      <div className="text-xs">
+                        <span className="font-bold text-rose-900">
+                          Khách hàng đã thanh toán toàn bộ số phí cần phải trả
+                        </span>
+                        {totalFeeAmount > 0 && (
+                          <span className="font-mono font-bold text-rose-700 ml-1">
+                            ({totalFeeAmount.toLocaleString('vi-VN')} đ)
+                          </span>
+                        )}
+                        <p className="text-[11px] text-rose-600 mt-0.5 font-normal leading-relaxed">
+                          * Nhân viên bắt buộc thu đủ tiền (tiền mặt / chuyển khoản) và tick xác nhận vào ô này mới có thể hoàn tất nghiệm thu sự cố.
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                )}
+              </div>
+
+              {/* 3. NỘI DUNG KHẮC PHỤC & BIÊN BẢN */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-800 flex items-center justify-between">
                   <span>Nội dung khắc phục & Biên bản xử lý hiện trường *</span>
@@ -478,7 +677,7 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
                 />
               </div>
 
-              {/* Tải / nhập link ảnh nghiệm thu */}
+              {/* 4. TẢI / NHẬP LINK ẢNH NGHIỆM THU */}
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-800 flex items-center justify-between">
                   <span>Ảnh chụp nghiệm thu sau khắc phục (Tối đa 5 ảnh)</span>
@@ -526,6 +725,7 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
                 )}
               </div>
 
+              {/* 5. CAM KẾT QUY TRÌNH BÀN GIAO */}
               <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200/80 text-xs text-amber-800">
                 <label className="flex items-start gap-2 cursor-pointer">
                   <input
@@ -541,10 +741,11 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
                 </label>
               </div>
 
+              {/* NÚT SUBMIT NGHIỆM THU */}
               <button
                 type="submit"
-                disabled={submitting || !isAgreed || !resolutionNote.trim()}
-                className="w-full py-2.5 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition disabled:opacity-50"
+                disabled={isSubmitDisabled}
+                className="w-full py-2.5 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? (
                   <>
@@ -570,7 +771,7 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
                   <span>Sự cố đã được khắc phục hoàn tất</span>
                 </div>
                 {ticket.resolutionNote && (
-                  <p className="text-emerald-800/90 leading-relaxed bg-white/70 p-2.5 rounded-lg border border-emerald-100">
+                  <p className="text-emerald-800/90 leading-relaxed bg-white/70 p-2.5 rounded-lg border border-emerald-100 whitespace-pre-line">
                     <strong>Biên bản khắc phục:</strong> {ticket.resolutionNote}
                   </p>
                 )}

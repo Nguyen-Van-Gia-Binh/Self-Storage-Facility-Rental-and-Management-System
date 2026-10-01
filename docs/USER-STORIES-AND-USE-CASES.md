@@ -844,7 +844,7 @@ Bảng thuộc tính đi kèm mỗi story:
 **Acceptance Criteria**
 
 - **AC-1** — *Given* tôi được phân công một ticket sự cố hư hỏng ô kho, *when* tôi đến hiện trường kiểm tra, *then* tôi chuyển trạng thái ticket sang *In Progress*.
-- **AC-2** — *Given* sự cố được khắc phục tại chỗ (tra dầu bản lề, thay bóng đèn, gia cố vách), *when* hoàn thành, *then* tôi chụp ảnh hiện trạng sau sửa chữa và tải lên hệ thống; nếu do hư hỏng kỹ thuật từ phía cơ sở thì khách được miễn phí sửa chữa theo `BR-SUP-02`.
+- **AC-2** — *Given* sự cố được khắc phục tại chỗ (tra dầu bản lề, thay bóng đèn, gia cố vách, thay ổ khóa), *when* hoàn thành nghiệm thu, *then* tôi phân định trách nhiệm lỗi (Lỗi do công ty hay Lỗi do khách hàng) và chọn các phụ phí phát sinh từ biểu phí BOM (`BM-03`); nếu do lỗi kỹ thuật/cơ sở thì khách được miễn phí 100% (0 VND); nếu do lỗi khách hàng thì bắt buộc xác nhận khách đã thanh toán toàn bộ phụ phí mới được hoàn tất nghiệm thu theo `BR-SUP-02`.
 - **AC-3** — *Given* sự cố nghiêm trọng không thể khắc phục ngay (dột trần lớn gây ướt đồ), *when* tôi ghi nhận, *then* hệ thống cho phép đẩy cờ khẩn cấp lên Facility Manager để kích hoạt phương án di dời đồ sang ô kho dự phòng.
 - **AC-4** — *Given* việc sửa chữa hoàn tất, *when* tôi bấm "Đã xử lý", *then* hệ thống gửi thông báo cho khách hàng xác nhận nghiệm thu theo `US-SC-06.3` và thực hiện quy trình đóng ticket theo `BR-SUP-03`.
 
