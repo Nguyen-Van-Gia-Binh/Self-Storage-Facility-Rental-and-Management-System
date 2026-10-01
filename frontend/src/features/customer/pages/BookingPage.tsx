@@ -249,6 +249,8 @@ export const BookingPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const [paymentNotice, setPaymentNotice] = useState<string | null>(null);
+  const [bookingError, setBookingError] = useState<string | null>(null);
+  const [showReturnToPayment, setShowReturnToPayment] = useState(false);
   const [checkoutData, setCheckoutData] = useState<CheckoutResponse | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<'PENDING' | 'SUCCESS' | 'FAILED'>('PENDING');
   const [createdReservationId, setCreatedReservationId] = useState<number | null>(null);
@@ -451,6 +453,15 @@ export const BookingPage: React.FC = () => {
   }, [currentStep, reservationHoldExpiresAt, holdHours]);
 
   const holdExpired = currentStep === 3 && paymentStatus !== 'SUCCESS' && holdClockReady && secondsLeft === 0;
+  const hasPaymentSession = checkoutData != null;
+  const previousHoldElapsed = hasPaymentSession && paymentStatus !== 'SUCCESS' && holdClockReady && secondsLeft === 0;
+
+  const returnToPayment = () => {
+    setBookingError(null);
+    setShowReturnToPayment(false);
+    setCurrentStep(3);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
   const [redirectCountdown, setRedirectCountdown] = useState<number>(3);
@@ -573,8 +584,16 @@ export const BookingPage: React.FC = () => {
       return;
     }
 
-    if (availability && availability.availableSlots <= 0) {
-      alert('Loại ô kho này đã hết chỗ trong kỳ hạn đã chọn. Vui lòng thay đổi thời gian hoặc chọn ô kho khác.');
+    setBookingError(null);
+    setShowReturnToPayment(false);
+
+    if (hasPaymentSession && paymentStatus !== 'SUCCESS' && !previousHoldElapsed) {
+      returnToPayment();
+      return;
+    }
+
+    if (availability && availability.availableSlots <= 0 && !previousHoldElapsed) {
+      setBookingError('Loại ô kho này đã hết chỗ trong kỳ hạn đã chọn. Vui lòng thay đổi thời gian hoặc chọn ô kho khác.');
       return;
     }
 
@@ -624,9 +643,11 @@ export const BookingPage: React.FC = () => {
       const rsvId = rsv.id || 1;
       setCreatedReservationId(rsvId);
       setCreatedReservationCode(rsv.code || (rsv.id ? `RSV-${rsv.id}` : `RSV-${finalUnitNumber}`));
-      if (rsv.holdExpiresAt) {
-        setReservationHoldExpiresAt(rsv.holdExpiresAt);
-      }
+      const nextHoldExpiresAt = rsv.holdExpiresAt
+        || (holdHours > 0 ? new Date(Date.now() + holdHours * 3600 * 1000).toISOString() : new Date().toISOString());
+      fallbackHoldStarted.current = false;
+      setHoldClockReady(false);
+      setReservationHoldExpiresAt(nextHoldExpiresAt);
 
       // 3. Khởi tạo PayOS VietQR payment link thật
       const checkout = await customerApi.createPaymentCheckout({
@@ -658,8 +679,7 @@ export const BookingPage: React.FC = () => {
         customerPhone,
         customerEmail,
         customerIdentityNumber: customerIdCard,
-        holdExpiresAt: rsv.holdExpiresAt
-          || (holdHours > 0 ? new Date(Date.now() + holdHours * 3600 * 1000).toISOString() : new Date().toISOString()),
+        holdExpiresAt: nextHoldExpiresAt,
       };
 
       try {
@@ -673,7 +693,10 @@ export const BookingPage: React.FC = () => {
     } catch (err: unknown) {
       console.error('Lỗi khi khởi tạo đơn đặt chỗ hoặc PayOS:', err);
       const msg = (err as any)?.message || (err instanceof Error ? err.message : 'Không thể tạo mã thanh toán PayOS. Vui lòng kiểm tra lại kết nối!');
-      alert(msg);
+      const oldHoldStillValid = reservationHoldExpiresAt != null
+        && new Date(reservationHoldExpiresAt).getTime() > Date.now();
+      setBookingError(msg);
+      setShowReturnToPayment(oldHoldStillValid && checkoutData != null);
     } finally {
       setIsSubmitting(false);
     }
@@ -1029,9 +1052,9 @@ export const BookingPage: React.FC = () => {
                 type="submit"
                 variant="primary"
                 size="md"
-                disabled={isSubmitting || isCheckingAvailability || !calculation || (availability !== null && availability.availableSlots <= 0)}
+                disabled={isSubmitting || isCheckingAvailability || !calculation || (availability !== null && availability.availableSlots <= 0 && !previousHoldElapsed)}
                 className="px-6 py-2.5 flex items-center gap-2 text-xs sm:text-sm font-bold shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                title={availability && availability.availableSlots <= 0 ? 'Loại ô kho này đã hết chỗ trong kỳ hạn đã chọn' : undefined}
+                title={availability && availability.availableSlots <= 0 && !previousHoldElapsed ? 'Loại ô kho này đã hết chỗ trong kỳ hạn đã chọn' : undefined}
               >
                 {isSubmitting ? (
                   <>
@@ -1046,10 +1069,24 @@ export const BookingPage: React.FC = () => {
                 )}
               </Button>
             </div>
-            {availability && availability.availableSlots <= 0 && (
+            {availability && availability.availableSlots <= 0 && !previousHoldElapsed && (
               <p className="text-right text-xs text-rose-600 font-bold mt-1">
                 ⚠️ Loại ô kho này đã hết chỗ trong khoảng thời gian đã chọn. Vui lòng bấm "Thay đổi thời gian" hoặc quay lại sơ đồ để chọn ô kho khác.
               </p>
+            )}
+            {bookingError && currentStep === 2 && (
+              <div className="mt-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+                <p>{bookingError}</p>
+                {showReturnToPayment && (
+                  <button
+                    type="button"
+                    onClick={returnToPayment}
+                    className="mt-2 font-bold text-rose-900 underline"
+                  >
+                    Quay lại trang thanh toán
+                  </button>
+                )}
+              </div>
             )}
           </form>
 
@@ -1319,15 +1356,27 @@ export const BookingPage: React.FC = () => {
                   Sửa lại thông tin
                 </Button>
 
-                <div className="flex items-center gap-3 w-full sm:w-auto">
+                <div className="flex flex-col items-stretch gap-2 w-full sm:w-auto">
+                  {holdExpired && bookingError && (
+                    <p className="text-xs font-semibold text-rose-700">{bookingError}</p>
+                  )}
                   <Button
                     variant="primary"
                     size="md"
-                    onClick={handleCheckPaymentStatus}
-                    disabled={isVerifying || paymentStatus === 'SUCCESS' || holdExpired}
+                    onClick={holdExpired ? () => { void handleProceedToPayment({ preventDefault() {} } as React.FormEvent); } : handleCheckPaymentStatus}
+                    disabled={holdExpired ? isSubmitting : (isVerifying || paymentStatus === 'SUCCESS')}
                     className="w-full sm:w-auto px-6 py-2.5 flex items-center justify-center gap-2 cursor-pointer shadow-sm text-xs font-bold whitespace-nowrap"
                   >
-                    {isVerifying ? (
+                    {holdExpired ? (
+                      isSubmitting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Đang đặt lại...</span>
+                        </>
+                      ) : (
+                        <span>Đặt lại</span>
+                      )
+                    ) : isVerifying ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
                         <span>Đang kiểm tra đối soát...</span>
