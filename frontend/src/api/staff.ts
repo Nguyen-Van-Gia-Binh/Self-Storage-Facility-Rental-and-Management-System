@@ -18,7 +18,7 @@ function mapRawSupportTask(item: any): DailyIncidentTask {
     facilityName: item.facilityName,
     customerName: item.customerName ?? item.reporterName ?? undefined,
     customerPhone: item.customerPhone ?? undefined,
-    slaDeadline: item.slaDeadline ?? (item.slaDueAt ? new Date(item.slaDueAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : 'SLA 2h'),
+    slaDeadline: item.slaDeadline ?? (item.slaDueAt ? new Date(item.slaDueAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : ''),
     slaDueAt: item.slaDueAt,
     status: item.status === 'RESOLVED' ? 'RESOLVED' : item.status === 'IN_PROGRESS' ? 'IN_PROGRESS' : item.status === 'ASSIGNED' ? 'ASSIGNED' : item.status === 'CLOSED' ? 'CLOSED' : 'PENDING',
     isOverlockTask: item.isOverlockTask ?? (item.category === 'OVERLOCK_D4' || item.category === 'OVERLOCK'),

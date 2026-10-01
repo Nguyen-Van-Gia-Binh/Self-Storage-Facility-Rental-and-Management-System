@@ -75,7 +75,12 @@
 | `ISS-65` | Báo cáo BOM hiện 0 và 0/0 ô vì kỳ lọc lệch và facilityId=all không được xử lý (Lỗi 20, BM-04). | Kỳ mặc định 30 ngày, lấp đầy theo Usage Rate, mẫu số 0 hiện "Không xác định". | Bình | `RESOLVED` |
 | `ISS-66` | FM tạo loại ô kho bị chặn bởi validation backend bắt buộc đơn giá > 0 (Lỗi 22, FM-01, BR-GEN-01). | Nới lỏng Create/UpdateUnitTypeRequest cho phép giá 0/null; móc nối với BOM AppliedPriceLookup và hiện badge "Chờ BOM duyệt giá". | Tùng | `RESOLVED` (#197) |
 | `ISS-67` | `BookingPriceSummary` & `VietQRPaymentModal` hiển thị cứng "Tiền cọc (1 tháng)" dù BOM đã cấu hình `depositMultiplier` = N (BR-DEP-01). | Truyền `depositMultiplier` từ `useActivePolicy` vào component, đổi label sang `N × tháng tiền thuê` theo policy; áp dụng đồng bộ cho luồng Gia hạn. | Nhi | `RESOLVED` (#198) |
-| `ISS-68` | Deadlock giao dịch SQL Server khi đăng ký tài khoản mới và màn hình trắng khi chuyển hướng đăng nhập. | Tách commit `app_user` trước khi ghi `login_history`, thêm alias `/login`, `/register` và fallback route chống trắng trang. | Bình | `RESOLVED` |
+| `ISS-68` | Deadlock giao dịch SQL Server khi đăng ký tài khoản mới và màn hình trắng khi chuyển hướng đăng nhập. | Tách commit `app_user` trước khi ghi `login_history`, thêm alias `/login`, `/register` và fallback route chống trắng trang. | Tùng | `RESOLVED` |
+| `ISS-70` | Vé sự cố hiển thị vi phạm SLA 2h và đếm ngược gây áp lực sai thực tế vận hành. | Bãi bỏ cam kết SLA 2h, phân loại Khẩn cấp/Bình thường và đếm ngược; đơn giản hóa phân công theo ca trực. | Tùng | `RESOLVED` |
+| `ISS-71` | Modal nghiệm thu sự cố thiếu danh mục phụ phí BOM và cơ chế phân định lỗi công ty vs khách hàng. | Móc nối API phụ phí BOM multi-select, phân định 2 nút trách nhiệm lỗi và khóa nghiệm thu nếu chưa thu phí khách. | Tùng | `RESOLVED` |
+| `ISS-72` | Giao diện khách hàng thừa tab Chờ nghiệm thu và banner nhắc đóng vé gây rườm rà. | Bỏ tab Chờ nghiệm thu và banner nhắc nhở; đóng thẳng ticket sau khi Staff nghiệm thu hiện trường. | Tùng | `RESOLVED` |
+| `ISS-73` | Vé sự cố đã hoàn thành ở tab Sự cố Kỹ thuật trên bàn Phân công nhân sự vẫn hiện nút Điều chuyển. | Thay bằng badge "Đã xong" màu xanh, ẩn điều chuyển trên các vé đã hoàn thành/đã đóng. | Tùng | `RESOLVED` |
+| `ISS-74` | Lệch số lượng và thông tin ticket sự cố giữa màn hình Phân công nhân sự và Xử lý sự cố theo cơ sở. | Đồng bộ lưu cơ sở qua localStorage, chuẩn hóa facilityId ở Backend qua COALESCE(su.facilityId, rc.facilityId). | Tùng | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 

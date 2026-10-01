@@ -106,12 +106,14 @@ export interface ManagementSupportTicket {
   isUrgent: boolean;
   assignedStaffId?: number;
   assignedStaffName?: string;
+  assignedStaffPhone?: string;
   slaDueAt?: string;
   resolvedAt?: string;
   createdAt: string;
   updatedAt?: string;
   assignmentNotes?: string;
   resolutionNotes?: string;
+  relocationRequired?: boolean;
   attachments?: IncidentAttachment[];
   resolutionAttachments?: IncidentAttachment[];
 }

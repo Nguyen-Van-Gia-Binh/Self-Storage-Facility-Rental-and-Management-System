@@ -1,7 +1,6 @@
 import React from 'react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
 import { 
   KeyRound, 
   Wrench, 
@@ -9,20 +8,16 @@ import {
   Package, 
   HelpCircle, 
   Clock, 
-  AlertTriangle, 
-  CheckCircle2, 
   UserCheck, 
   ChevronRight,
   FileImage,
-  XCircle,
-  Sparkles
+  XCircle
 } from 'lucide-react';
 import type { SupportTicket, SupportCategory, SupportStatus } from '../types';
 
 export interface SupportTicketCardProps {
   ticket: SupportTicket;
   onViewDetail: (ticket: SupportTicket) => void;
-  onConfirmResolution?: (ticket: SupportTicket) => void;
   onCancel?: (ticket: SupportTicket) => void;
 }
 
@@ -91,7 +86,7 @@ export const getStatusMeta = (status: SupportStatus) => {
       return {
         label: 'Đã xử lý xong',
         variant: 'success' as const,
-        description: 'Chờ bạn nghiệm thu đóng vé',
+        description: 'Sự cố đã được nhân viên hoàn tất khắc phục',
       };
     case 'CLOSED':
       return {
@@ -117,7 +112,6 @@ export const getStatusMeta = (status: SupportStatus) => {
 export const SupportTicketCard: React.FC<SupportTicketCardProps> = ({
   ticket,
   onViewDetail,
-  onConfirmResolution,
   onCancel,
 }) => {
   const catMeta = getCategoryMeta(ticket.category);
@@ -132,13 +126,13 @@ export const SupportTicketCard: React.FC<SupportTicketCardProps> = ({
     year: 'numeric',
   });
 
+  const isClosedOrResolved = ticket.status === 'RESOLVED' || ticket.status === 'CLOSED' || ticket.status === 'AUTO_CLOSED';
+
   return (
     <Card 
       className={`p-5 transition-all duration-200 border rounded-2xl bg-white hover:shadow-md ${
-        ticket.status === 'RESOLVED'
-          ? 'border-emerald-300 ring-1 ring-emerald-100 bg-emerald-50/20'
-          : ticket.isUrgent
-          ? 'border-amber-300'
+        isClosedOrResolved
+          ? 'border-emerald-200/80 bg-emerald-50/10'
           : 'border-slate-200 hover:border-brand-300'
       }`}
     >
@@ -156,12 +150,6 @@ export const SupportTicketCard: React.FC<SupportTicketCardProps> = ({
               <Badge variant={statusMeta.variant}>
                 {statusMeta.label}
               </Badge>
-              {ticket.isUrgent && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-700 border border-rose-200">
-                  <AlertTriangle className="w-3 h-3" />
-                  Khẩn cấp
-                </span>
-              )}
             </div>
             <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
               <Clock className="w-3 h-3" />
@@ -208,35 +196,6 @@ export const SupportTicketCard: React.FC<SupportTicketCardProps> = ({
             </span>
           )}
         </div>
-
-        {/* Callout if RESOLVED (US-SC-06.3) */}
-        {ticket.status === 'RESOLVED' && (
-          <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-            <div className="flex items-start gap-2 text-emerald-800">
-              <Sparkles className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-              <div>
-                <p className="font-bold text-emerald-900">Nhân viên đã hoàn thành xử lý sự cố!</p>
-                <p className="text-[11px] text-emerald-700 mt-0.5 line-clamp-1">
-                  {ticket.resolutionNote || 'Vui lòng kiểm tra thực tế và xác nhận nghiệm thu đóng ticket.'}
-                </p>
-              </div>
-            </div>
-            {onConfirmResolution && (
-              <Button
-                variant="primary"
-                size="sm"
-                className="shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onConfirmResolution(ticket);
-                }}
-              >
-                <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-                Nghiệm thu đóng vé
-              </Button>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Footer Actions */}

@@ -79,6 +79,18 @@ export function mapBackendSupportRequest(item: any): SupportTicket {
     }));
   }
 
+  let resAttachments: any[] = [];
+  if (Array.isArray(item.resolutionAttachments)) {
+    resAttachments = item.resolutionAttachments;
+  } else if (Array.isArray(item.resolutionAttachmentUrls)) {
+    resAttachments = item.resolutionAttachmentUrls.map((url: string, idx: number) => ({
+      id: idx + 1,
+      fileUrl: url,
+      fileType: url.endsWith('.png') ? 'image/png' : 'image/jpeg',
+      uploadedAt: item.resolvedAt || item.updatedAt || item.createdAt,
+    }));
+  }
+
   return {
     id: item.id,
     ticketCode: item.code || item.ticketCode || `SUP-${item.id}`,
@@ -107,7 +119,7 @@ export function mapBackendSupportRequest(item: any): SupportTicket {
     createdAt: item.createdAt || new Date().toISOString(),
     updatedAt: item.updatedAt || item.createdAt,
     attachments: attachments,
-    resolutionAttachments: item.resolutionAttachments || [],
+    resolutionAttachments: resAttachments,
   };
 }
 

@@ -9,7 +9,6 @@ import {
   CheckCircle2, 
   AlertTriangle, 
   RotateCw,
-  Sparkles,
   Clock,
   Lock,
   LogIn,
@@ -28,7 +27,7 @@ import { SupportTicketDetailModal } from '../components/SupportTicketDetailModal
 import { CreateSupportTicketModal } from '../components/CreateSupportTicketModal';
 import { SupportFaqSection } from '../components/SupportFaqSection';
 
-export type SupportTabKey = 'ALL' | 'ACTIVE' | 'RESOLVED' | 'CLOSED';
+export type SupportTabKey = 'ALL' | 'ACTIVE' | 'CLOSED';
 
 export const SupportPage: React.FC = () => {
   const navigate = useNavigate();
@@ -169,15 +168,26 @@ export const SupportPage: React.FC = () => {
     }
   };
 
+  // Handle View Detail (tải thêm chi tiết đầy đủ nếu cần)
+  const handleViewDetail = async (ticket: SupportTicket) => {
+    setSelectedTicket(ticket);
+    try {
+      const fullDetail = await customerApi.getSupportRequestDetail(ticket.id);
+      if (fullDetail) {
+        setSelectedTicket(fullDetail);
+      }
+    } catch {
+      // Giữ nguyên ticket đã chọn
+    }
+  };
+
   // Filter logic
   const filteredTickets = tickets.filter(t => {
     // Tab filter
     if (activeTab === 'ACTIVE') {
       if (!['NEW', 'ASSIGNED', 'IN_PROGRESS'].includes(t.status)) return false;
-    } else if (activeTab === 'RESOLVED') {
-      if (t.status !== 'RESOLVED') return false;
     } else if (activeTab === 'CLOSED') {
-      if (!['CLOSED', 'AUTO_CLOSED'].includes(t.status)) return false;
+      if (!['CLOSED', 'AUTO_CLOSED', 'RESOLVED'].includes(t.status)) return false;
     }
 
     // Category filter
@@ -197,9 +207,8 @@ export const SupportPage: React.FC = () => {
   });
 
   // Metrics count
-  const countWaitingConfirm = tickets.filter(t => t.status === 'RESOLVED').length;
   const countInProgress = tickets.filter(t => ['NEW', 'ASSIGNED', 'IN_PROGRESS'].includes(t.status)).length;
-  const countClosed = tickets.filter(t => ['CLOSED', 'AUTO_CLOSED'].includes(t.status)).length;
+  const countClosed = tickets.filter(t => ['CLOSED', 'AUTO_CLOSED', 'RESOLVED'].includes(t.status)).length;
 
   const kpis = [
     {
@@ -227,28 +236,16 @@ export const SupportPage: React.FC = () => {
       iconColor: 'text-amber-600',
     },
     {
-      tab: 'RESOLVED' as SupportTabKey,
-      title: 'Chờ nghiệm thu',
-      count: countWaitingConfirm,
-      subtext: 'Đã hoàn thành, cần bạn xác nhận',
-      icon: Sparkles,
+      tab: 'CLOSED' as SupportTabKey,
+      title: 'Đã đóng',
+      count: countClosed,
+      subtext: 'Sự cố đã được khắc phục hoàn tất',
+      icon: CheckCircle2,
       bgGradient: 'from-emerald-500/10 to-teal-500/5',
       borderColor: 'border-emerald-200/80',
       activeBorder: 'border-emerald-600 ring-2 ring-emerald-500/20',
       textColor: 'text-emerald-950',
       iconColor: 'text-emerald-600',
-    },
-    {
-      tab: 'CLOSED' as SupportTabKey,
-      title: 'Đã hoàn tất',
-      count: countClosed,
-      subtext: 'Yêu cầu hỗ trợ đã đóng',
-      icon: CheckCircle2,
-      bgGradient: 'from-slate-500/10 to-slate-500/5',
-      borderColor: 'border-slate-200/80',
-      activeBorder: 'border-slate-600 ring-2 ring-slate-500/20',
-      textColor: 'text-slate-900',
-      iconColor: 'text-slate-600',
     },
   ];
 
@@ -349,7 +346,7 @@ export const SupportPage: React.FC = () => {
       ) : (
         <>
           {/* Quick Metrics Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">
             {kpis.map((kpi) => {
               const Icon = kpi.icon;
               const isSelected = activeTab === kpi.tab;
@@ -386,33 +383,6 @@ export const SupportPage: React.FC = () => {
             })}
           </div>
 
-          {/* Action banner if any ticket is waiting for customer confirmation (US-SC-06.3) */}
-          {countWaitingConfirm > 0 && (
-            <div className="p-4 rounded-2xl bg-emerald-600 text-white shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-                  <CheckCircle2 className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h4 className="font-extrabold text-sm sm:text-base">
-                    Bạn có {countWaitingConfirm} yêu cầu hỗ trợ đã được nhân viên khắc phục xong!
-                  </h4>
-                  <p className="text-xs text-emerald-100 mt-0.5">
-                    Vui lòng kiểm tra thực tế và xác nhận nghiệm thu để đóng vé hoặc báo nếu chưa khắc phục triệt để.
-                  </p>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setActiveTab('RESOLVED')}
-                className="bg-white text-emerald-900 hover:bg-emerald-50 border-transparent font-bold text-xs shrink-0"
-              >
-                Xem vé chờ nghiệm thu
-              </Button>
-            </div>
-          )}
-
           {/* Filter Tabs & Search Bar */}
           <div className="space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200">
@@ -422,7 +392,6 @@ export const SupportPage: React.FC = () => {
                   [
                     { key: 'ALL', label: `Tất cả (${tickets.length})` },
                     { key: 'ACTIVE', label: `Đang xử lý (${countInProgress})` },
-                    { key: 'RESOLVED', label: `Chờ nghiệm thu (${countWaitingConfirm})` },
                     { key: 'CLOSED', label: `Đã đóng (${countClosed})` },
                   ] as const satisfies readonly { key: SupportTabKey; label: string }[]
                 ).map(tab => {
@@ -485,8 +454,7 @@ export const SupportPage: React.FC = () => {
                 <SupportTicketCard
                   key={ticket.id}
                   ticket={ticket}
-                  onViewDetail={(t) => setSelectedTicket(t)}
-                  onConfirmResolution={(t) => setSelectedTicket(t)}
+                  onViewDetail={handleViewDetail}
                   onCancel={(t) => handleCancelTicket(t.id)}
                 />
               ))}

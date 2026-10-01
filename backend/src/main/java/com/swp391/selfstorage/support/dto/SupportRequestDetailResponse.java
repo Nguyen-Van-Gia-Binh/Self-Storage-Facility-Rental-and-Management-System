@@ -14,10 +14,13 @@ public class SupportRequestDetailResponse {
     private Long id;
     private String code;
     private Long customerId;
+    private String customerName;
+    private String customerPhone;
     private Long contractId;
     private String contractCode;
     private Long storageUnitId;
     private String storageUnitCode;
+    private Long facilityId;
     private String facilityName;
 
     private SupportCategory category;
@@ -59,10 +62,13 @@ public class SupportRequestDetailResponse {
         public Builder id(Long id) { r.id = id; return this; }
         public Builder code(String code) { r.code = code; return this; }
         public Builder customerId(Long customerId) { r.customerId = customerId; return this; }
+        public Builder customerName(String customerName) { r.customerName = customerName; return this; }
+        public Builder customerPhone(String customerPhone) { r.customerPhone = customerPhone; return this; }
         public Builder contractId(Long contractId) { r.contractId = contractId; return this; }
         public Builder contractCode(String contractCode) { r.contractCode = contractCode; return this; }
         public Builder storageUnitId(Long storageUnitId) { r.storageUnitId = storageUnitId; return this; }
         public Builder storageUnitCode(String storageUnitCode) { r.storageUnitCode = storageUnitCode; return this; }
+        public Builder facilityId(Long facilityId) { r.facilityId = facilityId; return this; }
         public Builder facilityName(String facilityName) { r.facilityName = facilityName; return this; }
         public Builder category(SupportCategory category) { r.category = category; return this; }
         public Builder categoryDisplayName(String categoryDisplayName) { r.categoryDisplayName = categoryDisplayName; return this; }
@@ -101,6 +107,12 @@ public class SupportRequestDetailResponse {
     public Long getCustomerId() { return customerId; }
     public void setCustomerId(Long customerId) { this.customerId = customerId; }
 
+    public String getCustomerName() { return customerName; }
+    public void setCustomerName(String customerName) { this.customerName = customerName; }
+
+    public String getCustomerPhone() { return customerPhone; }
+    public void setCustomerPhone(String customerPhone) { this.customerPhone = customerPhone; }
+
     public Long getContractId() { return contractId; }
     public void setContractId(Long contractId) { this.contractId = contractId; }
 
@@ -112,6 +124,9 @@ public class SupportRequestDetailResponse {
 
     public String getStorageUnitCode() { return storageUnitCode; }
     public void setStorageUnitCode(String storageUnitCode) { this.storageUnitCode = storageUnitCode; }
+
+    public Long getFacilityId() { return facilityId; }
+    public void setFacilityId(Long facilityId) { this.facilityId = facilityId; }
 
     public String getFacilityName() { return facilityName; }
     public void setFacilityName(String facilityName) { this.facilityName = facilityName; }

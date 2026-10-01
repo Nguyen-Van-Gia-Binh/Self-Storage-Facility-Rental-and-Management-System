@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { UrgentSlaLabel } from '@/components/UrgentSlaLabel';
 import { createPortal } from 'react-dom';
 import {
   X,
@@ -12,12 +11,10 @@ import {
   Send,
   Loader2,
 } from 'lucide-react';
-import { SlaCountdownBadge } from './SlaCountdownBadge';
 import type {
   DailyDispatchTaskItem,
   StaffWorkloadItem,
   AssignTaskPayload,
-  DispatchTaskPriority,
 } from '../types/staffAssignment';
 
 interface AssignStaffModalProps {
@@ -36,7 +33,6 @@ export const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
   onAssign,
 }) => {
   const [selectedStaffId, setSelectedStaffId] = useState<number | ''>('');
-  const [priority, setPriority] = useState<DispatchTaskPriority>('NORMAL');
   const [notes, setNotes] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -44,9 +40,6 @@ export const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
   useEffect(() => {
     if (isOpen && task) {
       setSelectedStaffId(task.assignedStaffId || '');
-      const initialPriority: DispatchTaskPriority =
-        task.priority === 'URGENT' || task.isUrgent ? 'URGENT' : 'NORMAL';
-      setPriority(initialPriority);
       setNotes(task.notes || '');
       setErrorMessage(null);
     }
@@ -84,7 +77,7 @@ export const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
         taskId: task.id,
         taskType: task.taskType,
         staffId: Number(selectedStaffId),
-        priority,
+        priority: 'NORMAL',
         notes: notes.trim(),
       });
       onClose();
@@ -141,17 +134,9 @@ export const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
               <span className="font-mono font-bold text-slate-700">
                 {task.referenceCode || `#TASK-${task.id}`}
               </span>
-              <div className="flex items-center gap-2">
-                {(task.isUrgent || task.taskType === 'INCIDENT') && (
-                  <SlaCountdownBadge
-                    slaDeadline={task.slaDeadline}
-                    createdAt={task.scheduledDate}
-                  />
-                )}
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-700 font-mono">
-                  Ô kho {task.unitCode}
-                </span>
-              </div>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-700 font-mono">
+                Ô kho {task.unitCode}
+              </span>
             </div>
             <h4 className="text-xs font-bold text-slate-900 leading-snug">{task.title}</h4>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-500 pt-1">
@@ -270,64 +255,7 @@ export const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
             )}
           </div>
 
-          {/* Priority Selection (AC-2 & BR-SUP-01) */}
-          <div>
-            <label className="block text-xs font-bold text-slate-800 mb-2">
-              Mức độ ưu tiên & Cam kết xử lý (SLA)
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <div
-                onClick={() => setPriority('NORMAL')}
-                className={`p-3 rounded-xl border cursor-pointer flex flex-col justify-between transition-all ${
-                  priority === 'NORMAL'
-                    ? 'border-blue-500 bg-blue-50/50 ring-2 ring-blue-500'
-                    : 'border-slate-200 bg-white hover:bg-slate-50'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-bold text-slate-900">Bình thường</span>
-                  <input
-                    type="radio"
-                    name="assignModalPriority"
-                    value="NORMAL"
-                    checked={priority === 'NORMAL'}
-                    onChange={() => setPriority('NORMAL')}
-                    className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                  />
-                </div>
-                <p className="text-[11px] text-slate-500">
-                  Xử lý theo đúng khung giờ hẹn trước trong ngày
-                </p>
-              </div>
 
-              <div
-                onClick={() => setPriority('URGENT')}
-                className={`p-3 rounded-xl border cursor-pointer flex flex-col justify-between transition-all ${
-                  priority === 'URGENT'
-                    ? 'border-rose-500 bg-rose-50/50 ring-2 ring-rose-500'
-                    : 'border-slate-200 bg-white hover:bg-slate-50'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-bold text-rose-700 flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
-                    Khẩn cấp (<UrgentSlaLabel />)
-                  </span>
-                  <input
-                    type="radio"
-                    name="assignModalPriority"
-                    value="URGENT"
-                    checked={priority === 'URGENT'}
-                    onChange={() => setPriority('URGENT')}
-                    className="w-4 h-4 text-rose-600 focus:ring-rose-500"
-                  />
-                </div>
-                <p className="text-[11px] text-rose-600 font-medium">
-                  Bắt buộc tiếp nhận & xử lý trong 2 giờ (BR-SUP-01)
-                </p>
-              </div>
-            </div>
-          </div>
 
           {/* Notes / Instructions */}
           <div>

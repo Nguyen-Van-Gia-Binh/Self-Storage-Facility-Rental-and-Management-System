@@ -114,14 +114,24 @@ export async function getManagementSupportRequests(params?: {
       isUrgent: Boolean(item.isUrgent),
       assignedStaffId: item.assignedStaffId,
       assignedStaffName: item.assignedStaffName,
+      assignedStaffPhone: item.assignedStaffPhone,
       slaDueAt: item.slaDueAt,
       resolvedAt: item.resolvedAt,
       createdAt: item.createdAt || new Date().toISOString(),
       updatedAt: item.updatedAt,
       assignmentNotes: item.assignmentNotes,
-      resolutionNotes: item.resolutionNotes,
-      attachments: item.attachments || [],
-      resolutionAttachments: item.resolutionAttachments || [],
+      resolutionNotes: item.resolutionNote || item.resolutionNotes,
+      relocationRequired: Boolean(item.relocationRequired),
+      attachments: item.attachments || (item.attachmentUrls || []).map((url: string, idx: number) => ({
+        id: idx + 1,
+        fileUrl: url,
+        fileName: `Hiện trường ${idx + 1}`,
+      })),
+      resolutionAttachments: item.resolutionAttachments || (item.resolutionAttachmentUrls || []).map((url: string, idx: number) => ({
+        id: idx + 1,
+        fileUrl: url,
+        fileName: `Nghiệm thu ${idx + 1}`,
+      })),
     }));
 
     if (params?.isUrgent !== undefined) {
@@ -171,14 +181,24 @@ export async function getSupportRequestDetail(id: number): Promise<ManagementSup
     isUrgent: Boolean(item.isUrgent),
     assignedStaffId: item.assignedStaffId,
     assignedStaffName: item.assignedStaffName,
+    assignedStaffPhone: item.assignedStaffPhone,
     slaDueAt: item.slaDueAt,
     resolvedAt: item.resolvedAt,
     createdAt: item.createdAt || new Date().toISOString(),
     updatedAt: item.updatedAt,
     assignmentNotes: item.assignmentNotes,
-    resolutionNotes: item.resolutionNotes,
-    attachments: item.attachments || [],
-    resolutionAttachments: item.resolutionAttachments || [],
+    resolutionNotes: item.resolutionNote || item.resolutionNotes,
+    relocationRequired: Boolean(item.relocationRequired),
+    attachments: item.attachments || (item.attachmentUrls || []).map((url: string, idx: number) => ({
+      id: idx + 1,
+      fileUrl: url,
+      fileName: `Hiện trường ${idx + 1}`,
+    })),
+    resolutionAttachments: item.resolutionAttachments || (item.resolutionAttachmentUrls || []).map((url: string, idx: number) => ({
+      id: idx + 1,
+      fileUrl: url,
+      fileName: `Nghiệm thu ${idx + 1}`,
+    })),
   };
 }
 
@@ -204,11 +224,13 @@ export async function getDailyDispatchTasks(
 
     // 1. Map các sự cố kỹ thuật (INCIDENT)
     incidents.forEach((ticket) => {
+      if ((ticket.status as string) === 'CANCELLED') return;
+
       let dispatchStatus: DailyDispatchTaskItem['status'] = 'UNASSIGNED';
       if (ticket.status === 'ASSIGNED') dispatchStatus = 'ASSIGNED';
       else if (ticket.status === 'IN_PROGRESS') dispatchStatus = 'IN_PROGRESS';
       else if (ticket.status === 'RESOLVED') dispatchStatus = 'RESOLVED';
-      else if (ticket.status === 'CLOSED') dispatchStatus = 'COMPLETED';
+      else if (ticket.status === 'CLOSED' || (ticket.status as string) === 'AUTO_CLOSED') dispatchStatus = 'COMPLETED';
 
       tasks.push({
         id: ticket.id,

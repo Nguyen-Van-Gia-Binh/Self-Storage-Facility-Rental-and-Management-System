@@ -392,6 +392,7 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                 .customerPhone(customerPhone)
                 .isUrgent(sr.getIsUrgent())
                 .slaDueAt(sr.getSlaDueAt())
+                .createdAt(sr.getCreatedAt())
                 .status(sr.getStatus())
                 .statusDisplayName(sr.getStatus() != null ? sr.getStatus().getDisplayName() : null)
                 .completed(completed)
