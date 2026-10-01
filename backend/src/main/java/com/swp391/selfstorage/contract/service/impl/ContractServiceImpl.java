@@ -289,7 +289,7 @@ public class ContractServiceImpl implements ContractService {
                 Page<RentalContract> page = contractRepository.findAll(spec, pageable);
                 LocalDate now = LocalDate.now();
                 LocalDate threshold = now.plusDays(7);
-                OverduePreviewRates overdueRates = loadOverduePreviewRates();
+                Map<Long, OverduePreviewRates> overdueRatesByPolicy = new HashMap<>();
                 Map<Long, SupportRequest> relocationTickets = findRelocationTickets(page.getContent());
 
                 List<ContractSummaryResponse> content = page.getContent().stream().map(c -> {
@@ -334,7 +334,8 @@ public class ContractServiceImpl implements ContractService {
                                 long days = java.time.temporal.ChronoUnit.DAYS.between(c.getEndDateExclusive(), LocalDate.now());
                                 if (days > 0) {
                                         overdueDays = (int) days;
-                                        long accrued = previewOverdueFee(days, c.getDepositAmount(), overdueRates);
+                                        long accrued = previewOverdueFee(days, c.getDepositAmount(),
+                                                        overdueRatesFor(c, overdueRatesByPolicy));
                                         if (c.getStatus() == ContractStatus.OVERDUE && c.getOverdueFeeAccrued() > 0) {
                                                 accruedOverdueFee = c.getOverdueFeeAccrued();
                                         } else if (accruedOverdueFee == null || accruedOverdueFee == 0) {
@@ -1400,7 +1401,7 @@ public class ContractServiceImpl implements ContractService {
                         long days = java.time.temporal.ChronoUnit.DAYS.between(c.getEndDateExclusive(), LocalDate.now());
                         if (days > 0) {
                                 r.setOverdueDays((int) days);
-                                long accrued = previewOverdueFee(days, c.getDepositAmount(), loadOverduePreviewRates());
+                                long accrued = previewOverdueFee(days, c.getDepositAmount(), loadOverduePreviewRates(c));
                                 r.setAccruedOverdueFee(c.getOverdueFeeAccrued() > 0 ? c.getOverdueFeeAccrued() : accrued);
                         }
                 } else {
@@ -1409,12 +1410,18 @@ public class ContractServiceImpl implements ContractService {
                 return r;
         }
 
-        private OverduePreviewRates loadOverduePreviewRates() {
+        private OverduePreviewRates overdueRatesFor(RentalContract contract, Map<Long, OverduePreviewRates> cache) {
+                Long policyVersionId = contract.getPolicyVersionId();
+                if (policyVersionId == null) {
+                        return loadOverduePreviewRates(contract);
+                }
+                return cache.computeIfAbsent(policyVersionId, id -> loadOverduePreviewRates(contract));
+        }
+
+        private OverduePreviewRates loadOverduePreviewRates(RentalContract contract) {
                 PolicyVersion policy = null;
-                if (policyVersionRepository != null) {
-                        policy = policyVersionRepository
-                                        .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(OffsetDateTime.now())
-                                        .orElse(null);
+                if (policyVersionRepository != null && contract.getPolicyVersionId() != null) {
+                        policy = policyVersionRepository.findById(contract.getPolicyVersionId()).orElse(null);
                 }
                 int graceDays = policy != null && policy.getOverdueGraceDays() != null
                                 ? policy.getOverdueGraceDays() : 3;

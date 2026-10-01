@@ -63,6 +63,7 @@ class OverdueProcessingServiceTest {
                 .build();
 
         baseEndDate = LocalDate.of(2026, 10, 1);
+        lenient().when(policyVersionRepository.findById(1L)).thenReturn(Optional.of(mockPolicy));
     }
 
     @Test
@@ -81,8 +82,6 @@ class OverdueProcessingServiceTest {
                 .accessCode("AC-123456")
                 .build();
 
-        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any()))
-                .thenReturn(Optional.of(mockPolicy));
         when(rentalContractRepository.findByStatusInAndEndDateExclusiveLessThanEqual(anyList(), eq(runDate)))
                 .thenReturn(List.of(contract));
 
@@ -117,8 +116,6 @@ class OverdueProcessingServiceTest {
                 .accessCode("AC-123456")
                 .build();
 
-        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any()))
-                .thenReturn(Optional.of(mockPolicy));
         when(rentalContractRepository.findByStatusInAndEndDateExclusiveLessThanEqual(anyList(), eq(runDate)))
                 .thenReturn(List.of(contract));
 
@@ -155,8 +152,6 @@ class OverdueProcessingServiceTest {
                 .status(StorageUnitStatus.OCCUPIED)
                 .build();
 
-        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any()))
-                .thenReturn(Optional.of(mockPolicy));
         when(rentalContractRepository.findByStatusInAndEndDateExclusiveLessThanEqual(anyList(), eq(runDate)))
                 .thenReturn(List.of(contract));
         when(storageUnitRepository.findById(55L)).thenReturn(Optional.of(mockUnit));
@@ -194,8 +189,6 @@ class OverdueProcessingServiceTest {
                 .accessCode("AC-123456")
                 .build();
 
-        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any()))
-                .thenReturn(Optional.of(mockPolicy));
         when(rentalContractRepository.findByStatusInAndEndDateExclusiveLessThanEqual(anyList(), eq(runDate)))
                 .thenReturn(List.of(contract));
 
@@ -219,8 +212,6 @@ class OverdueProcessingServiceTest {
                 .depositBalance(2_000_000L).overdueFeeAccrued(400_000L)
                 .accessCode("AC-777999").build();
 
-        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any()))
-                .thenReturn(Optional.of(mockPolicy));
         when(rentalContractRepository.findByStatusInAndEndDateExclusiveLessThanEqual(anyList(), eq(runDate)))
                 .thenReturn(List.of(contract));
 
@@ -243,8 +234,6 @@ class OverdueProcessingServiceTest {
                 .depositBalance(2_000_000L).overdueFeeAccrued(0L)
                 .accessCode("AC-555111").build();
 
-        when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any()))
-                .thenReturn(Optional.of(mockPolicy));
         when(rentalContractRepository.findByStatusInAndEndDateExclusiveLessThanEqual(anyList(), eq(runDate)))
                 .thenReturn(List.of(contract));
 
@@ -253,5 +242,40 @@ class OverdueProcessingServiceTest {
         assertEquals("AC-555111", contract.getAccessCode(),
                 "D+5: accessCode CHƯA bị khóa — khách vẫn vào được để dọn đồ (BR-OVD-05)");
         assertEquals(ContractStatus.OVERDUE, contract.getStatus());
+    }
+
+    @Test
+    @DisplayName("BR-GEN-02: quá hạn dùng policyVersionId trên hợp đồng, không dùng chính sách đang hiệu lực")
+    void usesContractPolicySnapshot_notTheCurrentPolicy() {
+        PolicyVersion currentPolicy = PolicyVersion.builder()
+                .id(9L)
+                .overdueGraceDays(0)
+                .overdueDailyRate(BigDecimal.valueOf(0.50))
+                .overdueCapRate(BigDecimal.valueOf(0.70))
+                .overdueLockAccessDays(1)
+                .overdueTerminationDays(30)
+                .build();
+        lenient().when(policyVersionRepository
+                        .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any()))
+                .thenReturn(Optional.of(currentPolicy));
+
+        LocalDate runDate = baseEndDate.plusDays(5);
+        RentalContract contract = RentalContract.builder()
+                .id(106L).code("CTR-007").status(ContractStatus.OVERDUE)
+                .endDateExclusive(baseEndDate).depositAmount(2_000_000L)
+                .depositBalance(2_000_000L).overdueFeeAccrued(0L)
+                .policyVersionId(1L)
+                .accessCode("AC-000111")
+                .build();
+
+        when(rentalContractRepository.findByStatusInAndEndDateExclusiveLessThanEqual(anyList(), eq(runDate)))
+                .thenReturn(List.of(contract));
+
+        overdueProcessingService.processOverdueContracts(runDate);
+
+        assertEquals(400_000L, contract.getOverdueFeeAccrued());
+        assertEquals("AC-000111", contract.getAccessCode());
+        verify(policyVersionRepository, never())
+                .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any());
     }
 }

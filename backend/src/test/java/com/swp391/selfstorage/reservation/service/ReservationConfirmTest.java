@@ -94,6 +94,8 @@ class ReservationConfirmTest {
         CustomException ex = assertThrows(CustomException.class,
                 () -> service.confirmAfterPayment(1042L));
         assertEquals(ErrorCode.RESERVATION_EXPIRED, ex.getErrorCode());
+        assertEquals(ReservationStatus.EXPIRED, pendingReservation.getStatus());
+        verify(reservationRepository).save(pendingReservation);
         verify(storageUnitRepository, never()).findByIdForUpdate(any());
     }
 

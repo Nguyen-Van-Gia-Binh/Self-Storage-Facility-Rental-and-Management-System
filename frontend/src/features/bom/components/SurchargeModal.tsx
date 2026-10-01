@@ -18,6 +18,15 @@ function dateOnly(value: string): string {
   return value.slice(0, 10);
 }
 
+/** Giữ dấu trừ. Chỉ nhận số nguyên dương; số âm, số 0 và chữ không được đổi thành số dương. */
+function parsePositiveInteger(raw: string): number | null {
+  const text = raw.trim();
+  if (!/^\d+$/.test(text)) return null;
+  const num = Number(text);
+  if (!Number.isSafeInteger(num) || num <= 0) return null;
+  return num;
+}
+
 export type SurchargeModalSubmit =
   | { mode: 'create'; body: CreateSurchargeRequest }
   | {
@@ -87,11 +96,13 @@ export const SurchargeModal: React.FC<SurchargeModalProps> = ({
       errs.category = 'Chọn nhóm phụ phí';
     }
 
-    const num = parseInt(formData.amount.replace(/[^0-9]/g, ''), 10);
-    if (isNaN(num) || num < 0) {
-      errs.amount = 'Mức phí phải là số không âm';
-    } else if (formData.type === 'PERCENTAGE' && (num <= 0 || num > 100)) {
-      errs.amount = 'Tỷ lệ phần trăm phải từ 1% đến 100%';
+    const num = parsePositiveInteger(formData.amount);
+    if (formData.type === 'PERCENTAGE') {
+      if (num == null || num > 100) {
+        errs.amount = 'Tỷ lệ phần trăm phải từ 1% đến 100%';
+      }
+    } else if (num == null) {
+      errs.amount = 'Mức phí phải lớn hơn 0';
     }
 
     const chosenDate = originalIsPast ? formData.newEffectiveDate : formData.effectiveDate;
@@ -113,7 +124,8 @@ export const SurchargeModal: React.FC<SurchargeModalProps> = ({
     e.preventDefault();
     if (!validate()) return;
 
-    const num = parseInt(formData.amount.replace(/[^0-9]/g, ''), 10);
+    const num = parsePositiveInteger(formData.amount);
+    if (num == null) return;
     const category = formData.category as FeeCategory;
     if (isEditing) {
       const chosenDate = originalIsPast ? formData.newEffectiveDate : formData.effectiveDate;

@@ -141,6 +141,8 @@ class PaymentServiceTest {
                 () -> paymentService.processPayment(validRequest));
 
         assertEquals(ErrorCode.RESERVATION_EXPIRED, ex.getErrorCode());
+        assertEquals(ReservationStatus.EXPIRED, mockReservation.getStatus());
+        verify(reservationRepository).save(mockReservation);
     }
 
     @Test
@@ -214,6 +216,8 @@ class PaymentServiceTest {
 
         CustomException ex = assertThrows(CustomException.class, () -> paymentService.createCheckoutLink(req));
         assertEquals(ErrorCode.RESERVATION_EXPIRED, ex.getErrorCode());
+        assertEquals(ReservationStatus.EXPIRED, mockReservation.getStatus());
+        verify(reservationRepository).save(mockReservation);
         verify(paymentTransactionRepository, never()).save(any());
     }
 

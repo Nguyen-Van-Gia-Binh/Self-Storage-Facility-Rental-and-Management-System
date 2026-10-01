@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -30,6 +31,7 @@ import com.swp391.selfstorage.reservation.entity.Reservation;
 import com.swp391.selfstorage.reservation.entity.ReservationStatus;
 import com.swp391.selfstorage.reservation.repository.ReservationRepository;
 import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
+import com.swp391.selfstorage.reservation.service.ReservationHoldExpiryService;
 import com.swp391.selfstorage.reservation.service.ReservationService;
 
 import jakarta.persistence.criteria.Predicate;
@@ -57,6 +59,25 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentMapper paymentMapper;
     private final PaymentGateway paymentGateway;
     private final PolicyVersionRepository policyVersionRepository;
+
+    @Autowired(required = false)
+    private ReservationHoldExpiryService reservationHoldExpiryService;
+
+    private void rejectIfHoldElapsed(Reservation reservation) {
+        if (reservation.getHoldExpiresAt() == null
+                || !reservation.getHoldExpiresAt().isBefore(OffsetDateTime.now())) {
+            return;
+        }
+        if (reservation.getStatus() == ReservationStatus.PENDING_PAYMENT) {
+            if (reservationHoldExpiryService != null) {
+                reservationHoldExpiryService.expireIfElapsed(reservation.getId());
+            } else {
+                reservation.setStatus(ReservationStatus.EXPIRED);
+                reservationRepository.save(reservation);
+            }
+        }
+        throw new CustomException(ErrorCode.RESERVATION_EXPIRED);
+    }
 
     private int activeHoldHours() {
         if (policyVersionRepository == null) {
@@ -94,10 +115,7 @@ public class PaymentServiceImpl implements PaymentService {
                 throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION,
                         "Đơn đặt chỗ không ở trạng thái chờ thanh toán");
             }
-            if (reservation.getHoldExpiresAt() != null
-                    && reservation.getHoldExpiresAt().isBefore(OffsetDateTime.now())) {
-                throw new CustomException(ErrorCode.RESERVATION_EXPIRED);
-            }
+            rejectIfHoldElapsed(reservation);
 
             if (reservation.getTotalPayable() <= 0) {
                 throw new CustomException(ErrorCode.VALIDATION_FAILED, "Tổng số tiền phải trả không hợp lệ");
@@ -453,11 +471,8 @@ public class PaymentServiceImpl implements PaymentService {
                     "Đơn đặt chỗ không ở trạng thái chờ thanh toán");
         }
 
-        // 3. Kiểm tra thời gian giữ chỗ 48h theo BR-DEP-03
-        if (reservation.getHoldExpiresAt() != null
-                && reservation.getHoldExpiresAt().isBefore(OffsetDateTime.now())) {
-            throw new CustomException(ErrorCode.RESERVATION_EXPIRED);
-        }
+        // 3. Kiểm tra thời gian giữ chỗ theo BR-DEP-03
+        rejectIfHoldElapsed(reservation);
 
         // 4. Kiểm tra số tiền khớp với tổng phải trả theo BR-DEP-01, BR-DEP-02
         if (request.getAmount() != reservation.getTotalPayable()) {
