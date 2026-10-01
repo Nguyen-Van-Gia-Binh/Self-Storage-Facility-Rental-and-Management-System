@@ -82,6 +82,7 @@
 | `ISS-73` | Vé sự cố đã hoàn thành ở tab Sự cố Kỹ thuật trên bàn Phân công nhân sự vẫn hiện nút Điều chuyển. | Thay bằng badge "Đã xong" màu xanh, ẩn điều chuyển trên các vé đã hoàn thành/đã đóng. | Tùng | `RESOLVED` |
 | `ISS-74` | Lệch số lượng và thông tin ticket sự cố giữa màn hình Phân công nhân sự và Xử lý sự cố theo cơ sở. | Đồng bộ lưu cơ sở qua localStorage, chuẩn hóa facilityId ở Backend qua COALESCE(su.facilityId, rc.facilityId). | Tùng | `RESOLVED` |
 | `ISS-75` | Khách đặt kho ở cơ sở/ô kho bị ngừng hoạt động không có popup cảnh báo và bị tự động điều hướng sai cơ sở. | Bỏ fallback ngầm facList[0], chặn đặt kho cơ sở inactive, bổ sung Popup cảnh báo khi cơ sở/ô kho ngừng hoạt động và điều hướng về trang chủ/danh sách cơ sở. | Nhi | `RESOLVED` |
+| `ISS-76` | Bấm "Xác nhận ô kho này & Tiếp tục" chưa gọi database kiểm tra tính sẵn sàng thời gian thực (trùng lịch hoặc bảo trì). | Bổ sung kiểm tra database thời gian thực trong handleProceedToBooking, hiển thị popup cảnh báo nếu ô kho vừa bị khóa/bảo trì/người khác đặt và refresh sơ đồ. | Nhi | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 

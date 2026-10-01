@@ -126,6 +126,16 @@ export const UnitPickerPage: React.FC = () => {
   const [selectedSize, setSelectedSize] = useState<UnitSizeCategory>('S');
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   const [facilityInactiveModalOpen, setFacilityInactiveModalOpen] = useState<boolean>(false);
+  const [unitUnavailableModal, setUnitUnavailableModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+  });
+  const [isConfirming, setIsConfirming] = useState<boolean>(false);
 
   // Tải dữ liệu thực tế từ backend khi facilityParam thay đổi
   useEffect(() => {
@@ -426,7 +436,7 @@ export const UnitPickerPage: React.FC = () => {
     }
   };
 
-  const handleProceedToBooking = (unitToBook?: StorageUnit) => {
+  const handleProceedToBooking = async (unitToBook?: StorageUnit) => {
     const targetUnit = unitToBook || selectedUnit;
     if (!targetUnit) {
       return;
@@ -437,29 +447,141 @@ export const UnitPickerPage: React.FC = () => {
     if (listedPrice <= 0) {
       return;
     }
-    const typeIdToPass = targetUnit.unitTypeId || (currentUnitType ? currentUnitType.id : (unitTypes[0]?.id || '1'));
 
-    const params = new URLSearchParams({
-      facility: String(currentFacility.id),
-      type: String(typeIdToPass),
-      startDate,
-      months: String(durationMonths),
-    });
+    const fId = parseInt(currentFacility.id, 10);
+    if (isNaN(fId)) return;
 
-    if (targetUnit?.id) {
-      params.set('unitId', String(targetUnit.id));
+    setIsConfirming(true);
+
+    try {
+      // 1. Gọi trực tiếp xuống Database kiểm tra trạng thái thời gian thực của ô kho và cơ sở (ISS-76)
+      const suPage = await fetchStorageUnitsApi(fId, {
+        startDate,
+        rentalMonths: durationMonths,
+        size: 100,
+      });
+
+      // Cập nhật lại sơ đồ ô kho mới nhất từ DB
+      if (suPage?.content && suPage.content.length > 0) {
+        const mappedSUs: StorageUnit[] = suPage.content.map((su) => {
+          const parentType = unitTypes.find((ut) => String(ut.id) === String(su.unitTypeId));
+          const sizeCat = parentType ? parentType.sizeCategory : 'S';
+          const sType = parentType ? parentType.storageType : 'STANDARD';
+
+          const statusRaw = (su.status || 'AVAILABLE').toUpperCase();
+          let unitStatus: UnitStatus = 'AVAILABLE';
+          if (statusRaw === 'OCCUPIED') unitStatus = 'OCCUPIED';
+          else if (statusRaw === 'RESERVED') unitStatus = 'RESERVED';
+          else if (statusRaw === 'MAINTENANCE') unitStatus = 'MAINTENANCE';
+          else if (statusRaw === 'OVERDUE') unitStatus = 'OVERDUE';
+          else if (statusRaw === 'LOCKED') unitStatus = 'LOCKED';
+
+          return {
+            id: String(su.id),
+            unitNumber: su.code || `S-${su.id}`,
+            facilityId: String(su.facilityId || currentFacility.id),
+            unitTypeId: String(su.unitTypeId || (parentType ? parentType.id : '1')),
+            floor: su.floor || 1,
+            zone: su.position || 'Khu A',
+            sizeCategory: sizeCat,
+            storageType: sType,
+            status: unitStatus,
+            dimensions: parentType ? parentType.dimensions : '2m x 2m x 2.5m',
+            areaM2: parentType ? parentType.areaM2 : 4,
+            volumeM3: parentType ? parentType.volumeM3 : 10,
+            locationDescription: `Tầng ${su.floor || 1} - ${su.position || 'Khu A'} - Cạnh cửa chính`,
+            monthlyPrice: su.monthlyPrice && su.monthlyPrice > 0
+              ? su.monthlyPrice
+              : (parentType && parentType.baseMonthlyPrice > 0 ? parentType.baseMonthlyPrice : 0),
+          };
+        });
+        setFacilityUnits(mappedSUs);
+      }
+
+      // Kiểm tra xem ô kho mục tiêu có còn tồn tại và sẵn sàng không
+      const latestUnit = suPage?.content?.find((su) => String(su.id) === String(targetUnit.id));
+
+      if (!latestUnit) {
+        setUnitUnavailableModal({
+          isOpen: true,
+          title: 'Ô kho không tồn tại',
+          message: `Ô kho ${targetUnit.unitNumber} không tìm thấy hoặc đã bị thay đổi trên hệ thống. Vui lòng chọn ô kho khác trên sơ đồ.`,
+        });
+        setSelectedUnitId(null);
+        return;
+      }
+
+      const statusRaw = (latestUnit.status || 'AVAILABLE').toUpperCase();
+
+      if (statusRaw === 'MAINTENANCE' || statusRaw === 'OUT_OF_SERVICE') {
+        setUnitUnavailableModal({
+          isOpen: true,
+          title: 'Ô kho đang tạm ngừng hoạt động / Bảo trì',
+          message: `Ô kho ${targetUnit.unitNumber} hiện đang trong chế độ bảo trì hoặc tạm ngưng phục vụ. Quý khách vui lòng chọn một ô kho còn trống khác trên sơ đồ.`,
+        });
+        setSelectedUnitId(null);
+        return;
+      }
+
+      if (statusRaw === 'RESERVED') {
+        setUnitUnavailableModal({
+          isOpen: true,
+          title: 'Ô kho đã có người giữ chỗ',
+          message: `Ô kho ${targetUnit.unitNumber} vừa có khách hàng khác thực hiện giữ chỗ trong kỳ hạn bạn đã chọn. Vui lòng chọn ô kho còn trống khác.`,
+        });
+        setSelectedUnitId(null);
+        return;
+      }
+
+      if (statusRaw === 'OCCUPIED' || statusRaw === 'LOCKED' || statusRaw === 'OVERDUE') {
+        setUnitUnavailableModal({
+          isOpen: true,
+          title: 'Ô kho đã có người thuê',
+          message: `Ô kho ${targetUnit.unitNumber} hiện đã có hợp đồng thuê trong kỳ hạn bạn đã chọn. Vui lòng chọn ô kho còn trống khác.`,
+        });
+        setSelectedUnitId(null);
+        return;
+      }
+
+      // 2. Ô kho hoàn toàn khả dụng -> Tiếp tục điều hướng sang trang Đặt chỗ
+      const typeIdToPass = targetUnit.unitTypeId || (currentUnitType ? currentUnitType.id : (unitTypes[0]?.id || '1'));
+
+      const params = new URLSearchParams({
+        facility: String(currentFacility.id),
+        type: String(typeIdToPass),
+        startDate,
+        months: String(durationMonths),
+      });
+
+      if (targetUnit?.id) {
+        params.set('unitId', String(targetUnit.id));
+      }
+      if (targetUnit?.unitNumber) {
+        params.set('unitNumber', targetUnit.unitNumber);
+      }
+
+      const bookingUrl = `/customer/booking?${params.toString()}`;
+      if (!tokenStorage.getAccessToken()) {
+        navigate(`/auth/login?redirect=${encodeURIComponent(bookingUrl)}`);
+        return;
+      }
+
+      navigate(bookingUrl);
+    } catch (err: unknown) {
+      console.error('Lỗi khi kiểm tra tính sẵn sàng của ô kho thời gian thực:', err);
+      const msg = (err as any)?.message || '';
+      if (msg.toLowerCase().includes('co so') || msg.toLowerCase().includes('facility') || msg.toLowerCase().includes('ngung hoat dong')) {
+        setFacilityInactiveModalOpen(true);
+      } else {
+        setUnitUnavailableModal({
+          isOpen: true,
+          title: 'Không thể xác nhận ô kho',
+          message: 'Hệ thống không thể kiểm tra trạng thái ô kho vào lúc này. Vui lòng thử lại hoặc chọn ô kho khác.',
+        });
+      }
+    } finally {
+      setIsConfirming(false);
     }
-    if (targetUnit?.unitNumber) {
-      params.set('unitNumber', targetUnit.unitNumber);
-    }
-
-    const bookingUrl = `/customer/booking?${params.toString()}`;
-    if (!tokenStorage.getAccessToken()) {
-      navigate(`/auth/login?redirect=${encodeURIComponent(bookingUrl)}`);
-      return;
-    }
-
-    navigate(bookingUrl);
   };
 
   if (loading) {
@@ -787,6 +909,7 @@ export const UnitPickerPage: React.FC = () => {
           filterType={storageType}
           filterSize={selectedSize}
           onConfirmSelection={handleProceedToBooking}
+          isConfirming={isConfirming}
           facilityName={currentFacility.name}
         />
       </div>
@@ -810,6 +933,33 @@ export const UnitPickerPage: React.FC = () => {
               onClick={() => navigate('/customer')}
             >
               Quay lại danh sách cơ sở
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal cảnh báo khi ô kho bị bảo trì hoặc có người khác đặt trước (ISS-76) */}
+      <Modal
+        isOpen={unitUnavailableModal.isOpen}
+        onClose={() => setUnitUnavailableModal((prev) => ({ ...prev, isOpen: false }))}
+      >
+        <div className="p-6 max-w-md w-full text-center space-y-4">
+          <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
+            <AlertTriangle className="w-6 h-6" />
+          </div>
+          <div className="space-y-1.5">
+            <h3 className="text-lg font-bold text-slate-900">{unitUnavailableModal.title}</h3>
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+              {unitUnavailableModal.message}
+            </p>
+          </div>
+          <div className="pt-2">
+            <Button
+              variant="primary"
+              className="w-full justify-center py-2.5 text-xs sm:text-sm font-semibold"
+              onClick={() => setUnitUnavailableModal((prev) => ({ ...prev, isOpen: false }))}
+            >
+              Đã hiểu, chọn ô kho khác
             </Button>
           </div>
         </div>
