@@ -73,8 +73,9 @@
 | `ISS-63` | Hợp đồng PENDING_RETURN vẫn mở nút Gia hạn gây lỗi thanh toán; thiếu luồng hủy trả kho (Lỗi 9, BR-RET-12). | Ẩn nút Gia hạn khi PENDING_RETURN; bổ sung API POST /cancel-return và nút Hủy yêu cầu trả kho. | Bình | `RESOLVED` |
 | `ISS-64` | Khóa cứng gia hạn trước 30 ngày, cấm gia hạn sau nộp phạt, thiếu xử lý trùng lịch đặt trước (Lỗi 10, BR-REN-01..06). | Bỏ khóa 30 ngày, cho phép gia hạn sau nộp phạt, hiển thị Conflict Notice View khi ô kho bị đặt trước. | Bình | `RESOLVED` |
 | `ISS-65` | Báo cáo BOM hiện 0 và 0/0 ô vì kỳ lọc lệch và facilityId=all không được xử lý (Lỗi 20, BM-04). | Kỳ mặc định 30 ngày, lấp đầy theo Usage Rate, mẫu số 0 hiện "Không xác định". | Bình | `RESOLVED` |
-| `ISS-66` | FM tạo loại ô kho bị chặn bởi validation backend bắt buộc đơn giá > 0 (Lỗi 22, FM-01, BR-GEN-01). | Nới lỏng Create/UpdateUnitTypeRequest cho phép giá 0/null; móc nối với BOM AppliedPriceLookup và hiện badge "Chờ BOM duyệt giá". | Tùng | `RESOLVED` |
-| `ISS-67` | `BookingPriceSummary` & `VietQRPaymentModal` hiển thị cứng "Tiền cọc (1 tháng)" dù BOM đã cấu hình `depositMultiplier` = N (BR-DEP-01). | Truyền `depositMultiplier` từ `useActivePolicy` vào component, đổi label sang `N × tháng tiền thuê` theo policy; áp dụng đồng bộ cho luồng Gia hạn. | Nhi | `OPEN` |
+| `ISS-66` | FM tạo loại ô kho bị chặn bởi validation backend bắt buộc đơn giá > 0 (Lỗi 22, FM-01, BR-GEN-01). | Nới lỏng Create/UpdateUnitTypeRequest cho phép giá 0/null; móc nối với BOM AppliedPriceLookup và hiện badge "Chờ BOM duyệt giá". | Tùng | `RESOLVED` (#197) |
+| `ISS-67` | `BookingPriceSummary` & `VietQRPaymentModal` hiển thị cứng "Tiền cọc (1 tháng)" dù BOM đã cấu hình `depositMultiplier` = N (BR-DEP-01). | Truyền `depositMultiplier` từ `useActivePolicy` vào component, đổi label sang `N × tháng tiền thuê` theo policy; áp dụng đồng bộ cho luồng Gia hạn. | Nhi | `RESOLVED` (#198) |
+| `ISS-69` | Phiếu sự cố bên Manager hiển thị "Khách hàng #ID" và "Chưa cập nhật" thay vì tên thật của khách. | Bổ sung `customerName`, `customerPhone`, `customerEmail` vào response DTOs và nạp tự động từ `AppUser`. | Bình | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 

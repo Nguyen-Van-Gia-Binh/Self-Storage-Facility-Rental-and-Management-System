@@ -6,6 +6,7 @@ import {
   Clock,
   User,
   Phone,
+  Mail,
   Building2,
   FileText,
   UserCheck,
@@ -120,6 +121,12 @@ export const IncidentDetailModal: React.FC<IncidentDetailModalProps> = ({
                 <Phone className="w-3 h-3 text-slate-400" />
                 <span>{ticket.customerPhone}</span>
               </div>
+              {ticket.customerEmail && (
+                <div className="flex items-center gap-1.5 text-slate-500 text-[11px]">
+                  <Mail className="w-3 h-3 text-slate-400" />
+                  <span>{ticket.customerEmail}</span>
+                </div>
+              )}
             </div>
 
             {/* Storage Unit info */}

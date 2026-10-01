@@ -13,6 +13,9 @@ public class SupportRequestSummaryResponse {
     private Long id;
     private String code;
     private Long customerId;
+    private String customerName;
+    private String customerPhone;
+    private String customerEmail;
     private Long contractId;
     private String contractCode;
     private Long storageUnitId;
@@ -48,6 +51,9 @@ public class SupportRequestSummaryResponse {
         public Builder id(Long id) { r.id = id; return this; }
         public Builder code(String code) { r.code = code; return this; }
         public Builder customerId(Long customerId) { r.customerId = customerId; return this; }
+        public Builder customerName(String customerName) { r.customerName = customerName; return this; }
+        public Builder customerPhone(String customerPhone) { r.customerPhone = customerPhone; return this; }
+        public Builder customerEmail(String customerEmail) { r.customerEmail = customerEmail; return this; }
         public Builder contractId(Long contractId) { r.contractId = contractId; return this; }
         public Builder contractCode(String contractCode) { r.contractCode = contractCode; return this; }
         public Builder storageUnitId(Long storageUnitId) { r.storageUnitId = storageUnitId; return this; }
@@ -81,6 +87,15 @@ public class SupportRequestSummaryResponse {
 
     public Long getCustomerId() { return customerId; }
     public void setCustomerId(Long customerId) { this.customerId = customerId; }
+
+    public String getCustomerName() { return customerName; }
+    public void setCustomerName(String customerName) { this.customerName = customerName; }
+
+    public String getCustomerPhone() { return customerPhone; }
+    public void setCustomerPhone(String customerPhone) { this.customerPhone = customerPhone; }
+
+    public String getCustomerEmail() { return customerEmail; }
+    public void setCustomerEmail(String customerEmail) { this.customerEmail = customerEmail; }
 
     public Long getContractId() { return contractId; }
     public void setContractId(Long contractId) { this.contractId = contractId; }

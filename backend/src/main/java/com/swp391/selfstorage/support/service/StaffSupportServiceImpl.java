@@ -378,6 +378,18 @@ public class StaffSupportServiceImpl implements StaffSupportService {
             }
         }
 
+        String customerName = null;
+        String customerPhone = null;
+        String customerEmail = null;
+        if (ticket.getCustomerId() != null) {
+            AppUser customer = userRepository.findById(ticket.getCustomerId()).orElse(null);
+            if (customer != null) {
+                customerName = customer.getFullName();
+                customerPhone = customer.getPhone();
+                customerEmail = customer.getEmail();
+            }
+        }
+
         String assignedStaffName = null;
         String assignedStaffPhone = null;
         if (ticket.getAssignedStaffId() != null) {
@@ -409,6 +421,9 @@ public class StaffSupportServiceImpl implements StaffSupportService {
                 .id(ticket.getId())
                 .code(ticket.getCode())
                 .customerId(ticket.getCustomerId())
+                .customerName(customerName)
+                .customerPhone(customerPhone)
+                .customerEmail(customerEmail)
                 .contractId(ticket.getContractId())
                 .contractCode(contractCode)
                 .storageUnitId(ticket.getStorageUnitId())
@@ -465,6 +480,18 @@ public class StaffSupportServiceImpl implements StaffSupportService {
             }
         }
 
+        String customerName = null;
+        String customerPhone = null;
+        String customerEmail = null;
+        if (ticket.getCustomerId() != null) {
+            AppUser customer = userRepository.findById(ticket.getCustomerId()).orElse(null);
+            if (customer != null) {
+                customerName = customer.getFullName();
+                customerPhone = customer.getPhone();
+                customerEmail = customer.getEmail();
+            }
+        }
+
         String assignedStaffName = null;
         if (ticket.getAssignedStaffId() != null) {
             AppUser staff = userRepository.findById(ticket.getAssignedStaffId()).orElse(null);
@@ -477,6 +504,9 @@ public class StaffSupportServiceImpl implements StaffSupportService {
                 .id(ticket.getId())
                 .code(ticket.getCode())
                 .customerId(ticket.getCustomerId())
+                .customerName(customerName)
+                .customerPhone(customerPhone)
+                .customerEmail(customerEmail)
                 .contractId(ticket.getContractId())
                 .contractCode(contractCode)
                 .storageUnitId(ticket.getStorageUnitId())

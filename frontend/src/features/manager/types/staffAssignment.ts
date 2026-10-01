@@ -92,6 +92,7 @@ export interface ManagementSupportTicket {
   customerId: number;
   customerName: string;
   customerPhone: string;
+  customerEmail?: string;
   contractId?: number;
   contractCode?: string;
   storageUnitId?: number;

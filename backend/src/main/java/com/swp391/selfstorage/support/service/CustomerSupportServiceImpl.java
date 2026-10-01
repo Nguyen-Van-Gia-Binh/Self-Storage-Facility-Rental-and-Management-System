@@ -331,6 +331,13 @@ public class CustomerSupportServiceImpl implements CustomerSupportService {
     }
 
     private void enrichRelationInfo(SupportRequestSummaryResponse dto, SupportRequest ticket) {
+        if (ticket.getCustomerId() != null) {
+            userRepository.findById(ticket.getCustomerId()).ifPresent(u -> {
+                dto.setCustomerName(u.getFullName());
+                dto.setCustomerPhone(u.getPhone());
+                dto.setCustomerEmail(u.getEmail());
+            });
+        }
         if (ticket.getContractId() != null) {
             rentalContractRepository.findById(ticket.getContractId()).ifPresent(c -> {
                 dto.setContractCode(c.getCode());
@@ -348,6 +355,13 @@ public class CustomerSupportServiceImpl implements CustomerSupportService {
     }
 
     private void enrichRelationInfo(SupportRequestDetailResponse dto, SupportRequest ticket) {
+        if (ticket.getCustomerId() != null) {
+            userRepository.findById(ticket.getCustomerId()).ifPresent(u -> {
+                dto.setCustomerName(u.getFullName());
+                dto.setCustomerPhone(u.getPhone());
+                dto.setCustomerEmail(u.getEmail());
+            });
+        }
         if (ticket.getContractId() != null) {
             rentalContractRepository.findById(ticket.getContractId()).ifPresent(c -> {
                 dto.setContractCode(c.getCode());

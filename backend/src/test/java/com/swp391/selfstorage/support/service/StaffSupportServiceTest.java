@@ -336,4 +336,36 @@ class StaffSupportServiceTest {
         assertEquals(3L, staffW.getActiveTaskCount());
         assertEquals(7L, staffW.getCompletedTaskCount());
     }
+
+    @Test
+    @DisplayName("US-FM-05: Lấy danh sách ticket cho Manager hiển thị đầy đủ thông tin khách hàng")
+    void shouldReturnCustomerInfo_whenGetManagementSupportRequests() {
+        AppUser customer = new AppUser();
+        customer.setId(15L);
+        customer.setFullName("Nguyễn Văn Khách Hàng");
+        customer.setPhone("0988776655");
+        customer.setEmail("khach@gmail.com");
+
+        when(userRepository.findById(15L)).thenReturn(Optional.of(customer));
+        when(rentalContractRepository.findById(501L)).thenReturn(Optional.of(sampleContract));
+        Facility facility = new Facility();
+        facility.setId(1L);
+        facility.setName("Cơ sở Cầu Giấy");
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(facility));
+
+        when(supportRequestRepository.findByFacilityIdsAndFilters(eq(List.of(1L)), isNull(), isNull(), isNull(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(sampleTicket)));
+
+        PageResponse<SupportRequestSummaryResponse> response = staffSupportService.getManagementSupportRequests(
+                1L, null, null, null, PageRequest.of(0, 10), managerUser
+        );
+
+        assertNotNull(response);
+        assertEquals(1, response.getContent().size());
+        SupportRequestSummaryResponse item = response.getContent().get(0);
+        assertEquals(15L, item.getCustomerId());
+        assertEquals("Nguyễn Văn Khách Hàng", item.getCustomerName());
+        assertEquals("0988776655", item.getCustomerPhone());
+        assertEquals("khach@gmail.com", item.getCustomerEmail());
+    }
 }
