@@ -10,10 +10,12 @@ import {
   Layers,
   Loader2,
   Calendar,
-  Clock
+  Clock,
+  AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { Modal } from '@/components/ui/Modal';
 import { formatVND } from '../utils/pricing';
 import { UnitGrid } from '../components/UnitGrid';
 import { fetchFacilities } from '@/api/facility';
@@ -123,6 +125,7 @@ export const UnitPickerPage: React.FC = () => {
   const [storageType, setStorageType] = useState<StorageType>('STANDARD');
   const [selectedSize, setSelectedSize] = useState<UnitSizeCategory>('S');
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
+  const [facilityInactiveModalOpen, setFacilityInactiveModalOpen] = useState<boolean>(false);
 
   // Tải dữ liệu thực tế từ backend khi facilityParam thay đổi
   useEffect(() => {
@@ -137,16 +140,21 @@ export const UnitPickerPage: React.FC = () => {
     async function loadFacilityAndUnits() {
       setLoading(true);
       try {
-        // 1. Lấy danh sách cơ sở thực tế
+        // 1. Lấy danh sách cơ sở thực tế (chỉ các cơ sở đang ACTIVE)
         const facList = await fetchFacilities();
         if (!isMounted) return;
 
         // Tìm cơ sở tương ứng theo ID hoặc Code (ví dụ: '1' hoặc 'FAC-HC')
         const matchedFac = facList.find(
           (f: FacilityListItem) => String(f.id) === facilityParam || f.code === facilityParam
-        ) || facList[0];
+        );
 
-        if (matchedFac) {
+        if (!matchedFac) {
+          // Cơ sở không tồn tại hoặc đã bị ngừng hoạt động
+          setFacilityInactiveModalOpen(true);
+          setLoading(false);
+          return;
+        }
           setCurrentFacility({
             id: String(matchedFac.id),
             name: matchedFac.name,
@@ -244,7 +252,6 @@ export const UnitPickerPage: React.FC = () => {
           } else {
             setFacilityUnits([]);
           }
-        }
       } catch (err) {
         console.error('Lỗi khi tải dữ liệu cơ sở & ô kho từ API backend:', err);
         setUnitTypes([]);
@@ -783,6 +790,30 @@ export const UnitPickerPage: React.FC = () => {
           facilityName={currentFacility.name}
         />
       </div>
+
+      {/* Modal cảnh báo khi cơ sở bị BOM ngừng hoạt động (ISS-75) */}
+      <Modal isOpen={facilityInactiveModalOpen} onClose={() => navigate('/customer')}>
+        <div className="p-6 max-w-md w-full text-center space-y-4">
+          <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto">
+            <AlertTriangle className="w-6 h-6" />
+          </div>
+          <div className="space-y-1.5">
+            <h3 className="text-lg font-bold text-slate-900">Cơ sở tạm ngừng hoạt động</h3>
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+              Cơ sở lưu trữ bạn đang chọn hiện đã tạm dừng phục vụ hoặc không tồn tại trên hệ thống. Quý khách vui lòng chọn cơ sở lưu trữ khác đang hoạt động.
+            </p>
+          </div>
+          <div className="pt-2">
+            <Button
+              variant="primary"
+              className="w-full justify-center py-2.5 text-xs sm:text-sm font-semibold"
+              onClick={() => navigate('/customer')}
+            >
+              Quay lại danh sách cơ sở
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

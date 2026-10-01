@@ -15,12 +15,14 @@ import {
   Sparkles,
   ArrowRight,
   AlertCircle,
+  AlertTriangle,
   FileText,
   Loader2,
   ExternalLink,
   ShieldCheck
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { Modal } from '@/components/ui/Modal';
 import { formatVND } from '../utils/pricing';
 import { BookingPriceSummary } from '../components/BookingPriceSummary';
 import { DigitalMoveInPassModal } from '../components/DigitalMoveInPassModal';
@@ -109,6 +111,18 @@ export const BookingPage: React.FC = () => {
     baseMonthlyPrice: 0,
   });
 
+  const [unavailableModal, setUnavailableModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    actionType: 'NAVIGATE_HOME' | 'NAVIGATE_UNITS';
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    actionType: 'NAVIGATE_HOME',
+  });
+
   useEffect(() => {
     let isMounted = true;
     async function loadData() {
@@ -117,56 +131,72 @@ export const BookingPage: React.FC = () => {
         if (!isMounted) return;
         const matched = facList.find(
           (f: FacilityListItem) => String(f.id) === facilityId || f.code === facilityId
-        ) || facList[0];
+        );
 
-        if (matched) {
-          setFacility({
-            id: String(matched.id),
-            code: matched.code || `FAC-${matched.id}`,
-            name: matched.name,
-            address: matched.address || '',
-            district: '',
-            city: '',
-            distance: '',
-            startingPrice: matched.lowestMonthlyPrice && matched.lowestMonthlyPrice > 0 ? matched.lowestMonthlyPrice : 0,
-            image: '',
-            phone: matched.phone || 'Chưa cập nhật',
+        if (!matched) {
+          setUnavailableModal({
+            isOpen: true,
+            title: 'Cơ sở lưu trữ tạm ngừng hoạt động',
+            message: 'Cơ sở lưu trữ bạn đang chọn hiện đã tạm dừng phục vụ hoặc không tồn tại trên hệ thống. Quý khách vui lòng chọn cơ sở lưu trữ khác đang hoạt động.',
+            actionType: 'NAVIGATE_HOME',
           });
+          return;
+        }
 
-          const numericId = typeof matched.id === 'number' ? matched.id : Number(matched.id);
-          const utPage = await fetchUnitTypesApi(numericId, { size: 50 });
-          if (!isMounted) return;
+        setFacility({
+          id: String(matched.id),
+          code: matched.code || `FAC-${matched.id}`,
+          name: matched.name,
+          address: matched.address || '',
+          district: '',
+          city: '',
+          distance: '',
+          startingPrice: matched.lowestMonthlyPrice && matched.lowestMonthlyPrice > 0 ? matched.lowestMonthlyPrice : 0,
+          image: '',
+          phone: matched.phone || 'Chưa cập nhật',
+        });
 
-          if (utPage?.content && utPage.content.length > 0) {
-            const foundUT = utPage.content.find(
-              (ut) => String(ut.id) === typeId || ut.code === typeId
-            ) || utPage.content[0];
+        const numericId = typeof matched.id === 'number' ? matched.id : Number(matched.id);
+        const utPage = await fetchUnitTypesApi(numericId, { size: 50 });
+        if (!isMounted) return;
 
-            if (foundUT) {
-              const codeUpper = (foundUT.code || foundUT.name).toUpperCase();
-              const sizeCat = resolveSizeCategory(foundUT.code || foundUT.name, foundUT.areaM2);
-              const isClimate = codeUpper.includes('CLIMATE') || foundUT.name.toLowerCase().includes('lạnh');
-              const sType: StorageType = isClimate ? 'CLIMATE_CONTROLLED' : 'STANDARD';
-              const width = foundUT.widthM || 2;
-              const depth = foundUT.depthM || 2;
-              const height = foundUT.heightM || 2.5;
-              const area = foundUT.areaM2 || Number((width * depth).toFixed(1));
-              const vol = foundUT.volumeM3 || Number((width * depth * height).toFixed(1));
+        if (utPage?.content && utPage.content.length > 0) {
+          const foundUT = utPage.content.find(
+            (ut) => String(ut.id) === typeId || ut.code === typeId
+          );
 
-              setUnitType({
-                id: String(foundUT.id),
-                code: foundUT.code || `UT-${foundUT.id}`,
-                name: foundUT.name,
-                sizeCategory: sizeCat,
-                storageType: sType,
-                areaM2: area,
-                volumeM3: vol,
-                dimensions: `${width}m x ${depth}m x ${height}m`,
-                capacityDescription: foundUT.description || `${foundUT.name} - An ninh và PCCC chuẩn quốc tế`,
-                baseMonthlyPrice: foundUT.monthlyPrice && foundUT.monthlyPrice > 0 ? foundUT.monthlyPrice : 0,
-              });
-            }
+          if (!foundUT) {
+            setUnavailableModal({
+              isOpen: true,
+              title: 'Loại ô kho không khả dụng',
+              message: 'Loại ô kho bạn đang chọn hiện không còn khả dụng tại cơ sở này. Vui lòng quay lại sơ đồ để chọn loại ô kho khác.',
+              actionType: 'NAVIGATE_UNITS',
+            });
+            return;
           }
+
+          const codeUpper = (foundUT.code || foundUT.name).toUpperCase();
+          const sizeCat = resolveSizeCategory(foundUT.code || foundUT.name, foundUT.areaM2);
+          const isClimate = codeUpper.includes('CLIMATE') || foundUT.name.toLowerCase().includes('lạnh');
+          const sType: StorageType = isClimate ? 'CLIMATE_CONTROLLED' : 'STANDARD';
+          const width = foundUT.widthM || 2;
+          const depth = foundUT.depthM || 2;
+          const height = foundUT.heightM || 2.5;
+          const area = foundUT.areaM2 || Number((width * depth).toFixed(1));
+          const vol = foundUT.volumeM3 || Number((width * depth * height).toFixed(1));
+
+          setUnitType({
+            id: String(foundUT.id),
+            code: foundUT.code || `UT-${foundUT.id}`,
+            name: foundUT.name,
+            sizeCategory: sizeCat,
+            storageType: sType,
+            areaM2: area,
+            volumeM3: vol,
+            dimensions: `${width}m x ${depth}m x ${height}m`,
+            capacityDescription: foundUT.description || `${foundUT.name} - An ninh và PCCC chuẩn quốc tế`,
+            baseMonthlyPrice: foundUT.monthlyPrice && foundUT.monthlyPrice > 0 ? foundUT.monthlyPrice : 0,
+          });
         }
       } catch (err) {
         console.error('Lỗi khi tải thông tin cơ sở & loại kho cho trang Booking:', err);
@@ -693,6 +723,28 @@ export const BookingPage: React.FC = () => {
     } catch (err: unknown) {
       console.error('Lỗi khi khởi tạo đơn đặt chỗ hoặc PayOS:', err);
       const msg = (err as any)?.message || (err instanceof Error ? err.message : 'Không thể tạo mã thanh toán PayOS. Vui lòng kiểm tra lại kết nối!');
+      const rawMsgLower = msg.toLowerCase();
+
+      // Bắt các trường hợp cơ sở hoặc ô kho bị ngừng hoạt động giữa chừng
+      const isFacilityInactive = rawMsgLower.includes('co so') || rawMsgLower.includes('facility') || rawMsgLower.includes('hien khong hoat dong') || rawMsgLower.includes('ngung hoat dong');
+      const isUnitUnavailable = rawMsgLower.includes('o kho khong thuoc') || rawMsgLower.includes('khong hop le') || rawMsgLower.includes('bao tri') || rawMsgLower.includes('unit') || rawMsgLower.includes('nguoi khac giu cho') || rawMsgLower.includes('hop dong');
+
+      if (isFacilityInactive) {
+        setUnavailableModal({
+          isOpen: true,
+          title: 'Cơ sở lưu trữ tạm ngừng hoạt động',
+          message: 'Cơ sở lưu trữ bạn đang chọn vừa được quản trị viên tạm dừng hoạt động trên hệ thống. Quý khách vui lòng chọn cơ sở lưu trữ khác đang hoạt động để tiếp tục.',
+          actionType: 'NAVIGATE_HOME',
+        });
+      } else if (isUnitUnavailable) {
+        setUnavailableModal({
+          isOpen: true,
+          title: 'Ô kho không còn khả dụng',
+          message: 'Ô kho bạn đang chọn hiện không còn khả dụng hoặc thông tin cơ sở đã có thay đổi. Vui lòng chọn lại ô kho trên sơ đồ hoặc chọn cơ sở khác.',
+          actionType: 'NAVIGATE_UNITS',
+        });
+      }
+
       const oldHoldStillValid = reservationHoldExpiresAt != null
         && new Date(reservationHoldExpiresAt).getTime() > Date.now();
       setBookingError(msg);
@@ -716,7 +768,7 @@ export const BookingPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-4">
         <div>
           <Link
-            to={`/customer/units?facility=${facility.id}&type=${unitType.id}`}
+            to={facility.id ? `/customer/units?facility=${facility.id}&type=${unitType.id}` : '/customer'}
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-brand-600 transition-colors mb-1.5"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
@@ -730,7 +782,7 @@ export const BookingPage: React.FC = () => {
         {/* Stepper pills */}
         <div className="flex items-center gap-1.5 text-xs font-semibold shrink-0">
           <Link 
-            to={`/customer/units?facility=${facility.id}&type=${unitType.id}`}
+            to={facility.id ? `/customer/units?facility=${facility.id}&type=${unitType.id}` : '/customer'}
             className="flex items-center gap-1.5 text-brand-600 bg-brand-50 px-2.5 py-1 rounded-full border border-brand-200 hover:bg-brand-100"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
@@ -903,7 +955,7 @@ export const BookingPage: React.FC = () => {
                         Hạn kết thúc mới: <strong className="text-slate-800 font-bold">{formatDateVN(endDate)}</strong>
                       </span>
                       <Link
-                        to={`/customer/units?facility=${facility.id}&type=${unitType.id}&startDate=${startDate}&months=${durationMonths}`}
+                        to={facility.id ? `/customer/units?facility=${facility.id}&type=${unitType.id}&startDate=${startDate}&months=${durationMonths}` : '/customer'}
                         className="text-brand-600 hover:text-brand-700 underline font-medium"
                       >
                         Quay lại chọn ô kho trên sơ đồ
@@ -1044,7 +1096,7 @@ export const BookingPage: React.FC = () => {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => navigate(`/customer/units?facility=${facility.id}&type=${unitType.id}`)}
+                onClick={() => navigate(facility.id ? `/customer/units?facility=${facility.id}&type=${unitType.id}` : '/customer')}
               >
                 Hủy bỏ
               </Button>
@@ -1428,6 +1480,51 @@ export const BookingPage: React.FC = () => {
         }}
         passData={createdPass}
       />
+
+      {/* Modal Cảnh báo Cơ sở / Ô kho ngừng hoạt động (ISS-75) */}
+      <Modal
+        isOpen={unavailableModal.isOpen}
+        onClose={() => {
+          setUnavailableModal((prev) => ({ ...prev, isOpen: false }));
+          navigate(unavailableModal.actionType === 'NAVIGATE_HOME' ? '/customer' : `/customer/units?facility=${facility.id}&type=${unitType.id}`);
+        }}
+      >
+        <div className="p-6 max-w-md w-full text-center space-y-4">
+          <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
+            <AlertTriangle className="w-6 h-6" />
+          </div>
+          <div className="space-y-1.5">
+            <h3 className="text-lg font-bold text-slate-900">{unavailableModal.title}</h3>
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+              {unavailableModal.message}
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center gap-2 pt-2">
+            <Button
+              variant="primary"
+              className="w-full justify-center py-2.5 text-xs sm:text-sm font-semibold"
+              onClick={() => {
+                setUnavailableModal((prev) => ({ ...prev, isOpen: false }));
+                navigate('/customer');
+              }}
+            >
+              Xem danh sách cơ sở khác
+            </Button>
+            {unavailableModal.actionType === 'NAVIGATE_UNITS' && facility.id && (
+              <Button
+                variant="outline"
+                className="w-full justify-center py-2.5 text-xs sm:text-sm font-semibold"
+                onClick={() => {
+                  setUnavailableModal((prev) => ({ ...prev, isOpen: false }));
+                  navigate(`/customer/units?facility=${facility.id}`);
+                }}
+              >
+                Chọn ô kho khác
+              </Button>
+            )}
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

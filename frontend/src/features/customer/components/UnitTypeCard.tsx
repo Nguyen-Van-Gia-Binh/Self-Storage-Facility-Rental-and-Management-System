@@ -6,6 +6,7 @@ import { AvailabilityChecker } from './AvailabilityChecker';
 interface UnitTypeCardProps {
   unitType: UnitTypeCatalog;
   facilityId: number;
+  isFacilityActive?: boolean;
   onBook: (unitTypeId: number) => void;
 }
 
@@ -13,7 +14,7 @@ const fmt = (n: number) => new Intl.NumberFormat('vi-VN').format(n) + ' đ';
 const isCC = (name: string) =>
   name.toLowerCase().includes('máy lạnh') || name.toLowerCase().includes('cc-');
 
-export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({ unitType, facilityId, onBook }) => {
+export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({ unitType, facilityId, isFacilityActive = true, onBook }) => {
   const [showChecker, setShowChecker] = useState(false);
   const cc = isCC(unitType.name);
 
@@ -60,10 +61,15 @@ export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({ unitType, facilityId
           <div className="flex flex-col gap-2">
             <button
               id={`btn-book-unit-type-${unitType.id}`}
-              onClick={() => onBook(unitType.id)}
-              className="px-5 py-2 rounded-lg bg-teal-600 text-white text-sm font-medium hover:bg-teal-700 transition-colors"
+              onClick={() => isFacilityActive && onBook(unitType.id)}
+              disabled={!isFacilityActive}
+              className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isFacilityActive
+                  ? 'bg-teal-600 text-white hover:bg-teal-700 cursor-pointer'
+                  : 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'
+              }`}
             >
-              Đặt chỗ ngay
+              {isFacilityActive ? 'Đặt chỗ ngay' : 'Tạm ngưng nhận đặt'}
             </button>
             <button
               id={`btn-toggle-checker-${unitType.id}`}
