@@ -1,6 +1,8 @@
+/// <reference types="node" />
 import { describe, it, expect } from 'vitest';
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
+import process from 'node:process';
 
 /**
  * ISS-75: Xử lý cảnh báo & điều hướng khi Cơ sở / Ô kho bị ngừng hoạt động
