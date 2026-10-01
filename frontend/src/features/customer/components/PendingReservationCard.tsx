@@ -68,14 +68,14 @@ export const PendingReservationCard: React.FC<PendingReservationCardProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-sky-100">
         <div className="space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-900 border border-sky-300 uppercase tracking-wider font-mono">
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 uppercase tracking-wider font-mono">
               Ô kho {reservation.storageUnitCode || reservation.unitTypeName || 'Tự động phân bổ'}
             </span>
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-black px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-400 shadow-2xs">
-              <Clock className="w-3.5 h-3.5 text-amber-900 shrink-0" />
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+              <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
               <span>Đang giữ chỗ 48h</span>
             </span>
-            <span className="text-xs text-slate-500 font-mono font-medium">#{reservation.code}</span>
+            <span className="text-xs text-slate-400 font-mono">#{reservation.code}</span>
           </div>
           <h3 className="text-base sm:text-lg font-bold text-slate-900 mt-1">
             {reservation.unitTypeName || 'Loại ô kho tiêu chuẩn'}
