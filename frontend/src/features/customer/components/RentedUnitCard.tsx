@@ -46,7 +46,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
   onViewDetail,
   onOpenOverduePayment,
   onCancelReturn,
-  renewalNoticeDays,
+  renewalNoticeDays = 30,
 }) => {
   const [showPin, setShowPin] = useState(false);
   const [copiedPin, setCopiedPin] = useState(false);
@@ -88,7 +88,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
       : 0;
 
   const penaltyFee = contract.overdueFee ?? 0;
-  const isGracePeriod = contract.status === 'OVERDUE' && penaltyFee === 0;
+  const isGracePeriod = contract.status === 'OVERDUE' && penaltyFee === 0 && overdueDays <= 3;
 
   const handleOpenModal = () => {
     if (contract.status === 'PENDING_CHECKIN' || (contract.status as string) === 'PENDING_CHECK_IN') {
@@ -340,19 +340,32 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
           </div>
 
           <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
-            <Link
-              to={`/customer/support?contractId=${contract.id}&unitId=${contract.unitId}`}
-              className="w-full sm:w-auto"
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onViewDetail?.(contract)}
+              className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3 border-slate-300 text-slate-700 hover:text-brand-800 hover:bg-brand-50 hover:border-brand-300 text-xs font-semibold cursor-pointer"
             >
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full sm:w-auto flex items-center justify-center gap-1 px-3 border-slate-300 text-slate-700 hover:text-amber-800 hover:bg-amber-50 hover:border-amber-300 text-xs"
+              <FileText className="w-3.5 h-3.5 text-brand-600" />
+              <span>Hợp đồng điện tử</span>
+            </Button>
+
+            {contract.status !== 'CLOSED' && contract.status !== 'TERMINATED' && (
+              <Link
+                to={`/customer/support?contractId=${contract.id}&unitId=${contract.unitId}`}
+                className="w-full sm:w-auto"
               >
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
-                <span>Báo sự cố</span>
-              </Button>
-            </Link>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full sm:w-auto flex items-center justify-center gap-1 px-3 border-slate-300 text-slate-700 hover:text-amber-800 hover:bg-amber-50 hover:border-amber-300 text-xs"
+                >
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Báo sự cố</span>
+                </Button>
+              </Link>
+            )}
 
             {contract.status === 'PENDING_CHECKIN' || (contract.status as string) === 'PENDING_CHECK_IN' ? (
               <Button

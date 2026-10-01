@@ -10,6 +10,9 @@ import com.swp391.selfstorage.contract.repository.RentalContractRepository;
 import com.swp391.selfstorage.contract.repository.ReturnRequestRepository;
 import com.swp391.selfstorage.facility.entity.Facility;
 import com.swp391.selfstorage.facility.repository.FacilityRepository;
+import com.swp391.selfstorage.contract.repository.HandoverRecordRepository;
+import com.swp391.selfstorage.support.repository.SupportRequestRepository;
+import com.swp391.selfstorage.user.repository.UserRepository;
 import com.swp391.selfstorage.reservation.dto.CustomerRentalDetailResponse;
 import com.swp391.selfstorage.reservation.dto.CustomerRentalSummaryResponse;
 import com.swp391.selfstorage.reservation.dto.AccessLogResponse;
@@ -57,6 +60,9 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
     private final ReturnRequestRepository returnRequestRepository;
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final PolicyVersionRepository policyVersionRepository;
+    private final UserRepository userRepository;
+    private final HandoverRecordRepository handoverRecordRepository;
+    private final SupportRequestRepository supportRequestRepository;
 
     public CustomerRentalServiceImpl(
             RentalContractRepository rentalContractRepository,
@@ -67,7 +73,10 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
             AccessLogRepository accessLogRepository,
             @org.springframework.beans.factory.annotation.Autowired(required = false) ReturnRequestRepository returnRequestRepository,
             @org.springframework.beans.factory.annotation.Autowired(required = false) PaymentTransactionRepository paymentTransactionRepository,
-            @org.springframework.beans.factory.annotation.Autowired(required = false) PolicyVersionRepository policyVersionRepository
+            @org.springframework.beans.factory.annotation.Autowired(required = false) PolicyVersionRepository policyVersionRepository,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) UserRepository userRepository,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) HandoverRecordRepository handoverRecordRepository,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) SupportRequestRepository supportRequestRepository
     ) {
         this.rentalContractRepository = rentalContractRepository;
         this.reservationRepository = reservationRepository;
@@ -78,6 +87,9 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
         this.returnRequestRepository = returnRequestRepository;
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.policyVersionRepository = policyVersionRepository;
+        this.userRepository = userRepository;
+        this.handoverRecordRepository = handoverRecordRepository;
+        this.supportRequestRepository = supportRequestRepository;
     }
 
     private int activeHoldHours() {
@@ -165,6 +177,42 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
         detail.setTotalRentalFee(contract.getTotalRentalFee());
         detail.setPolicySnapshot(contract.getPolicySnapshot());
 
+        // Điền thông tin khách hàng phục vụ xem hợp đồng điện tử
+        if (contract.getCustomerId() != null && userRepository != null) {
+            userRepository.findById(contract.getCustomerId()).ifPresent(u -> {
+                detail.setCustomerName(u.getFullName());
+                detail.setCustomerPhone(u.getPhone());
+                detail.setCustomerEmail(u.getEmail());
+                detail.setCustomerIdentityNumber(u.getIdentityNumber());
+            });
+        }
+
+        // Điền thông tin bàn giao thực tế (Handover Record)
+        if (handoverRecordRepository != null) {
+            handoverRecordRepository.findTopByContractIdAndRejectedFalseOrderByHandoverAtDesc(contract.getId())
+                    .ifPresent(hr -> {
+                        detail.setHandoverConditionNote(hr.getConditionNote());
+                        detail.setCustomerConfirmedAt(hr.getCustomerConfirmedAt());
+                        if (hr.getStaffId() != null && userRepository != null) {
+                            userRepository.findById(hr.getStaffId()).ifPresent(staff -> {
+                                detail.setHandoverStaffName(staff.getFullName());
+                            });
+                        }
+                    });
+        }
+
+        // Điền thông tin phụ lục điều chuyển kho do sự cố kỹ thuật (nếu có)
+        if (contract.getRelocationSupportRequestId() != null) {
+            detail.setRelocationSupportRequestId(contract.getRelocationSupportRequestId());
+            if (supportRequestRepository != null) {
+                supportRequestRepository.findById(contract.getRelocationSupportRequestId())
+                        .ifPresent(ticket -> {
+                            detail.setRelocationSupportRequestCode(ticket.getCode());
+                            detail.setRelocationReason(ticket.getDescription());
+                        });
+            }
+        }
+
         // Hướng dẫn mở cửa kho
         if (contract.getStatus() == ContractStatus.OVERDUE) {
             if (detail.isAccessCodeLocked()) {
@@ -209,7 +257,6 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
             actions.add("RESCHEDULE");
         } else if (contract.getStatus() == ContractStatus.CLOSED || contract.getStatus() == ContractStatus.TERMINATED) {
             actions.add("VIEW_INSPECTION");
-            actions.add("SUPPORT_TICKET");
         }
         detail.setAllowedActions(actions);
 

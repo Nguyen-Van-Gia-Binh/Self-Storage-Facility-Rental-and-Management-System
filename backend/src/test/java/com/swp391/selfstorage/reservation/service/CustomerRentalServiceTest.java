@@ -61,6 +61,9 @@ class CustomerRentalServiceTest {
     @Mock private com.swp391.selfstorage.contract.repository.ReturnRequestRepository returnRequestRepository;
     @Mock private com.swp391.selfstorage.payment.repository.PaymentTransactionRepository paymentTransactionRepository;
     @Mock private com.swp391.selfstorage.policy.repository.PolicyVersionRepository policyVersionRepository;
+    @Mock private com.swp391.selfstorage.user.repository.UserRepository userRepository;
+    @Mock private com.swp391.selfstorage.contract.repository.HandoverRecordRepository handoverRecordRepository;
+    @Mock private com.swp391.selfstorage.support.repository.SupportRequestRepository supportRequestRepository;
 
     @InjectMocks
     private CustomerRentalServiceImpl customerRentalService;
@@ -468,6 +471,66 @@ class CustomerRentalServiceTest {
         CustomerRentalSummaryResponse item = response.getContent().get(0);
         assertFalse(item.getHasPendingRenewal());
         assertNull(item.getPendingRenewalOrderCode());
+    }
+
+    @Test
+    @DisplayName("US-SC-05.2: getMyRentalDetail trả về đầy đủ thông tin khách hàng, biên bản bàn giao và phụ lục đổi kho")
+    void testMyRentalDetail_PopulatesCustomerHandoverAndRelocationFields() {
+        RentalContract contractWithRelocation = new RentalContract();
+        contractWithRelocation.setId(501L);
+        contractWithRelocation.setCode("CTR-202610-001");
+        contractWithRelocation.setCustomerId(15L);
+        contractWithRelocation.setFacilityId(1L);
+        contractWithRelocation.setStorageUnitId(42L);
+        contractWithRelocation.setUnitTypeId(7L);
+        contractWithRelocation.setStatus(ContractStatus.ACTIVE);
+        contractWithRelocation.setRelocationSupportRequestId(801L);
+
+        when(rentalContractRepository.findById(501L)).thenReturn(Optional.of(contractWithRelocation));
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(facility));
+        when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(storageUnit));
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(unitType));
+
+        com.swp391.selfstorage.user.entity.AppUser customerAppUser = new com.swp391.selfstorage.user.entity.AppUser();
+        customerAppUser.setFullName("Nguyễn Văn Khách");
+        customerAppUser.setPhone("0987654321");
+        customerAppUser.setEmail("customer@test.com");
+        customerAppUser.setIdentityNumber("079201001234");
+        when(userRepository.findById(15L)).thenReturn(Optional.of(customerAppUser));
+
+        com.swp391.selfstorage.contract.entity.HandoverRecord hr = com.swp391.selfstorage.contract.entity.HandoverRecord.builder()
+                .contractId(501L)
+                .staffId(20L)
+                .conditionNote("Đạt chuẩn 4 tiêu chí bàn giao")
+                .customerConfirmed(true)
+                .customerConfirmedAt(OffsetDateTime.now())
+                .build();
+        when(handoverRecordRepository.findTopByContractIdAndRejectedFalseOrderByHandoverAtDesc(501L))
+                .thenReturn(Optional.of(hr));
+
+        com.swp391.selfstorage.user.entity.AppUser staffAppUser = new com.swp391.selfstorage.user.entity.AppUser();
+        staffAppUser.setFullName("Trần Văn Staff");
+        when(userRepository.findById(20L)).thenReturn(Optional.of(staffAppUser));
+
+        com.swp391.selfstorage.support.entity.SupportRequest ticket = com.swp391.selfstorage.support.entity.SupportRequest.builder()
+                .id(801L)
+                .code("SUP-202610-0001")
+                .description("Di dời kho do lỗi tường thấm dột")
+                .build();
+        when(supportRequestRepository.findById(801L)).thenReturn(Optional.of(ticket));
+
+        CustomerRentalDetailResponse detail = customerRentalService.getMyRentalDetail(501L, customerUser);
+
+        assertNotNull(detail);
+        assertEquals("Nguyễn Văn Khách", detail.getCustomerName());
+        assertEquals("0987654321", detail.getCustomerPhone());
+        assertEquals("079201001234", detail.getCustomerIdentityNumber());
+        assertEquals("Trần Văn Staff", detail.getHandoverStaffName());
+        assertEquals("Đạt chuẩn 4 tiêu chí bàn giao", detail.getHandoverConditionNote());
+        assertNotNull(detail.getCustomerConfirmedAt());
+        assertEquals(801L, detail.getRelocationSupportRequestId());
+        assertEquals("SUP-202610-0001", detail.getRelocationSupportRequestCode());
+        assertEquals("Di dời kho do lỗi tường thấm dột", detail.getRelocationReason());
     }
 }
 

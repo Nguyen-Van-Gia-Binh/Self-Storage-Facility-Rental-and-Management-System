@@ -79,13 +79,22 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
   preselectedUnitId,
   onSubmit,
 }) => {
+  // Lọc chỉ những hợp đồng đang hoạt động hoặc chưa kết thúc
+  const activeRentals = rentals.filter((r) => {
+    const s = (r.status as string) || '';
+    if (!s) return true;
+    return !['CLOSED', 'TERMINATED', 'CANCELLED', 'RETURNED'].includes(s);
+  });
+
   const getInitialContractId = (): string => {
-    if (preselectedContractId) return preselectedContractId;
+    if (preselectedContractId && activeRentals.some(r => String(r.id) === String(preselectedContractId))) {
+      return preselectedContractId;
+    }
     if (preselectedUnitId) {
-      const found = rentals.find(r => r.unitId === preselectedUnitId);
+      const found = activeRentals.find(r => String(r.unitId) === String(preselectedUnitId));
       if (found) return found.id;
     }
-    return rentals[0]?.id || '';
+    return activeRentals[0]?.id || '';
   };
 
   const [selectedContractId, setSelectedContractId] = useState<string>(getInitialContractId);
@@ -135,8 +144,13 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
       return;
     }
 
+    if (activeRentals.length === 0) {
+      setErrorMsg('Bạn hiện không có hợp đồng kho nào đang hoạt động để gửi yêu cầu hỗ trợ.');
+      return;
+    }
+
     // Find selected contract
-    const contract = rentals.find(r => String(r.id) === String(selectedContractId));
+    const contract = activeRentals.find(r => String(r.id) === String(selectedContractId));
     const rawFacilityId = contract?.facilityId || (facilities.length > 0 ? facilities[0].id : '1');
     const facilityId = Number(rawFacilityId) || Number(String(rawFacilityId).replace(/\D/g, '')) || 1;
 
@@ -212,22 +226,22 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
             <label className="block text-xs font-bold text-slate-800 uppercase tracking-wide mb-1.5">
               1. Chọn ô kho đang thuê liên quan <span className="text-rose-500">*</span>
             </label>
-            {rentals.length > 0 ? (
+            {activeRentals.length > 0 ? (
               <select
                 value={selectedContractId}
                 onChange={(e) => setSelectedContractId(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
               >
-                {rentals.map((r) => (
+                {activeRentals.map((r) => (
                   <option key={r.id} value={r.id}>
                     Kho {r.unitNumber} — {r.facilityName} ({r.unitTypeName})
                   </option>
                 ))}
               </select>
             ) : (
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-center gap-2">
-                <Info className="w-4 h-4 text-brand-600" />
-                <span>Yêu cầu chung cho cơ sở (Bạn chưa có hợp đồng kho đang hoạt động)</span>
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-center gap-2">
+                <Info className="w-4 h-4 text-brand-600 shrink-0" />
+                <span>Bạn hiện không có hợp đồng kho nào đang hoạt động để gửi yêu cầu hỗ trợ theo ô kho.</span>
               </div>
             )}
           </div>

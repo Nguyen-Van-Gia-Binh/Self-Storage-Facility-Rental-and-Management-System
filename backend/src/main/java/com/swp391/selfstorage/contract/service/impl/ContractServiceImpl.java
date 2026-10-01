@@ -95,8 +95,8 @@ public class ContractServiceImpl implements ContractService {
         @Autowired(required = false)
         private AuditLogService auditLogService;
 
-        private static final List<SupportStatus> OPEN_UNIT_DAMAGE = List.of(
-                        SupportStatus.NEW, SupportStatus.ASSIGNED, SupportStatus.IN_PROGRESS);
+        private static final List<SupportStatus> RELOCATION_TICKET_STATUSES = List.of(
+                        SupportStatus.NEW, SupportStatus.ASSIGNED, SupportStatus.IN_PROGRESS, SupportStatus.RESOLVED, SupportStatus.CLOSED);
 
         private static final String LEGACY_DAMAGE_REASON = "Bồi thường hư hại ô kho";
         private static final Set<String> INSPECTION_FEE_CATEGORIES = Set.of("CLEANING", "DAMAGE");
@@ -518,12 +518,8 @@ public class ContractServiceImpl implements ContractService {
                 SupportRequest ticket = supportRequestRepository.findById(request.getSupportRequestId())
                                 .orElseThrow(() -> new CustomException(ErrorCode.VALIDATION_FAILED,
                                                 "Không tìm thấy phiếu sự cố."));
-                if (ticket.getCategory() != SupportCategory.UNIT_DAMAGE) {
-                        throw new CustomException(ErrorCode.VALIDATION_FAILED,
-                                        "Chỉ phiếu hư hỏng ô kho mới được dùng để đổi ô.");
-                }
-                if (!OPEN_UNIT_DAMAGE.contains(ticket.getStatus())) {
-                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Phiếu sự cố không còn mở.");
+                if (!RELOCATION_TICKET_STATUSES.contains(ticket.getStatus())) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Phiếu sự cố không hợp lệ.");
                 }
                 if (!ticketMatchesCurrentUnit(ticket, contract)) {
                         throw new CustomException(ErrorCode.VALIDATION_FAILED,
@@ -669,14 +665,14 @@ public class ContractServiceImpl implements ContractService {
                 List<Long> unitIds = contracts.stream().map(RentalContract::getStorageUnitId).filter(Objects::nonNull).distinct().toList();
                 Map<Long, SupportRequest> byId = new LinkedHashMap<>();
                 if (!contractIds.isEmpty()) {
-                        for (SupportRequest ticket : supportRequestRepository.findByContractIdInAndCategoryAndStatusIn(
-                                        contractIds, SupportCategory.UNIT_DAMAGE, OPEN_UNIT_DAMAGE)) {
+                        for (SupportRequest ticket : supportRequestRepository.findByContractIdInAndStatusIn(
+                                        contractIds, RELOCATION_TICKET_STATUSES)) {
                                 byId.putIfAbsent(ticket.getId(), ticket);
                         }
                 }
                 if (!unitIds.isEmpty()) {
-                        for (SupportRequest ticket : supportRequestRepository.findByStorageUnitIdInAndCategoryAndStatusIn(
-                                        unitIds, SupportCategory.UNIT_DAMAGE, OPEN_UNIT_DAMAGE)) {
+                        for (SupportRequest ticket : supportRequestRepository.findByStorageUnitIdInAndStatusIn(
+                                        unitIds, RELOCATION_TICKET_STATUSES)) {
                                 byId.putIfAbsent(ticket.getId(), ticket);
                         }
                 }

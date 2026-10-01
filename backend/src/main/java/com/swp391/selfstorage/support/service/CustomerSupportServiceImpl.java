@@ -4,6 +4,7 @@ import com.swp391.selfstorage.auth.service.UserPrincipal;
 import com.swp391.selfstorage.common.dto.PageResponse;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
+import com.swp391.selfstorage.contract.entity.ContractStatus;
 import com.swp391.selfstorage.contract.entity.RentalContract;
 import com.swp391.selfstorage.contract.repository.RentalContractRepository;
 import com.swp391.selfstorage.policy.entity.PolicyVersion;
@@ -93,12 +94,26 @@ public class CustomerSupportServiceImpl implements CustomerSupportService {
         boolean isUrgent = Boolean.TRUE.equals(request.getIsUrgent());
         OffsetDateTime slaDueAt = null;
 
-        // 3. Nếu có contractId, tự động điền storageUnitId nếu chưa có
+        // 3. Nếu có contractId, kiểm tra tính hợp lệ của hợp đồng và tự động điền storageUnitId nếu chưa có
         Long storageUnitId = request.getStorageUnitId();
-        if (request.getContractId() != null && storageUnitId == null) {
-            storageUnitId = rentalContractRepository.findById(request.getContractId())
-                    .map(RentalContract::getStorageUnitId)
-                    .orElse(null);
+        if (request.getContractId() != null) {
+            RentalContract contract = rentalContractRepository.findById(request.getContractId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND, "Không tìm thấy hợp đồng"));
+
+            if (currentUser.getRole() == UserRole.STORAGE_CUSTOMER && !contract.getCustomerId().equals(customerId)) {
+                throw new CustomException(ErrorCode.ACCESS_DENIED, "Bạn không có quyền gửi yêu cầu hỗ trợ cho hợp đồng này");
+            }
+
+            if (contract.getStatus() == ContractStatus.TERMINATED
+                    || contract.getStatus() == ContractStatus.CANCELLED
+                    || contract.getStatus() == ContractStatus.CLOSED
+                    || contract.getStatus() == ContractStatus.RETURNED) {
+                throw new CustomException(ErrorCode.VALIDATION_FAILED, "Hợp đồng đã kết thúc hoặc không còn hiệu lực, không thể gửi yêu cầu hỗ trợ.");
+            }
+
+            if (storageUnitId == null) {
+                storageUnitId = contract.getStorageUnitId();
+            }
         }
 
         String desc = request.getDescription();
