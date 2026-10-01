@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { UrgentSlaLabel } from '@/components/UrgentSlaLabel';
 import { createPortal } from 'react-dom';
 import {
   X,
@@ -266,12 +265,9 @@ export const StaffDailyScheduleModal: React.FC<StaffDailyScheduleModalProps> = (
                           </p>
                         </div>
                         <div className="text-right whitespace-nowrap">
-                          {inc.priority === 'URGENT' && (
-                            <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700 mb-1">
-                              <UrgentSlaLabel />
-                            </span>
+                          {inc.createdAt && (
+                            <p className="text-[11px] text-slate-500">Tạo lúc: {new Date(inc.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</p>
                           )}
-                          <p className="text-[11px] text-slate-500">Hạn: {inc.slaDeadline}</p>
                         </div>
                       </div>
                     ))}

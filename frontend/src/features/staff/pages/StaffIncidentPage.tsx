@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { UrgentSlaLabel } from '@/components/UrgentSlaLabel';
 import {
   Wrench,
-  AlertTriangle,
   Clock,
   Search,
   RotateCcw,
@@ -25,7 +23,6 @@ export const StaffIncidentPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'ALL' | 'ASSIGNED' | 'IN_PROGRESS' | 'RESOLVED'>('ALL');
   const [searchKeyword, setSearchKeyword] = useState('');
-  const [onlyUrgent, setOnlyUrgent] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
   // Modal xử lý / nghiệm thu
@@ -104,11 +101,6 @@ export const StaffIncidentPage: React.FC = () => {
         if (item.status !== 'RESOLVED' && item.status !== 'CLOSED') return false;
       }
 
-      // Lọc khẩn cấp
-      if (onlyUrgent && item.priority !== 'URGENT') {
-        return false;
-      }
-
       // Lọc từ khóa tìm kiếm
       if (searchKeyword.trim()) {
         const kw = searchKeyword.toLowerCase();
@@ -121,7 +113,7 @@ export const StaffIncidentPage: React.FC = () => {
 
       return true;
     });
-  }, [incidents, activeTab, onlyUrgent, searchKeyword]);
+  }, [incidents, activeTab, searchKeyword]);
 
   // KPI thống kê
   const stats = useMemo(() => {
@@ -249,11 +241,11 @@ export const StaffIncidentPage: React.FC = () => {
         </div>
 
         <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs">
-          <span className="text-xs font-medium text-slate-500"><UrgentSlaLabel lead="Khẩn cấp" /></span>
+          <span className="text-xs font-medium text-slate-500">Đã hoàn tất</span>
           <div className="mt-1 flex items-baseline justify-between">
-            <span className="text-2xl font-bold text-rose-600 font-mono">{stats.urgentCount}</span>
-            <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-rose-50 text-rose-700">
-              Ưu tiên số 1
+            <span className="text-2xl font-bold text-emerald-600 font-mono">{stats.resolvedCount}</span>
+            <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700">
+              Đã đóng
             </span>
           </div>
         </div>
@@ -305,19 +297,6 @@ export const StaffIncidentPage: React.FC = () => {
               Đã xong ({stats.resolvedCount})
             </button>
           </div>
-
-          {/* Toggle khẩn cấp */}
-          <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700 shrink-0">
-            <input
-              type="checkbox"
-              checked={onlyUrgent}
-              onChange={(e) => setOnlyUrgent(e.target.checked)}
-              className="rounded border-slate-300 text-rose-600 focus:ring-rose-500"
-            />
-            <span className="text-rose-600 flex items-center gap-1">
-              <AlertTriangle className="w-3.5 h-3.5" /> Chỉ sự cố khẩn SLA
-            </span>
-          </label>
         </div>
 
         {/* Search bar */}

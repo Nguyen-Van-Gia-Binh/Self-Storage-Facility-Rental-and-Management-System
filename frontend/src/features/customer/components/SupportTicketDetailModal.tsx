@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { UrgentSlaLabel } from '@/components/UrgentSlaLabel';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { 
@@ -8,7 +7,6 @@ import {
   MapPin, 
   FileText, 
   CheckCircle2, 
-  AlertTriangle, 
   UserCheck, 
   Phone, 
   Image as ImageIcon,
@@ -120,12 +118,6 @@ export const SupportTicketDetailModal: React.FC<SupportTicketDetailModalProps> =
                 <Badge variant={statusMeta.variant}>
                   {statusMeta.label}
                 </Badge>
-                {ticket.isUrgent && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-700 border border-rose-200">
-                    <AlertTriangle className="w-3 h-3" />
-                    <UrgentSlaLabel lead="SLA xử lý" />
-                  </span>
-                )}
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
                 Danh mục: <strong className="text-slate-700">{catMeta.label}</strong>

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { UrgentSlaLabel } from '@/components/UrgentSlaLabel';
 import { useNavigate } from 'react-router-dom';
 import {
   Clock,
@@ -103,13 +102,13 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({ tasks, o
         </div>
 
         <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm">
-          <span className="text-xs font-medium text-slate-500">Sự cố khẩn SLA</span>
+          <span className="text-xs font-medium text-slate-500">Sự cố kỹ thuật</span>
           <div className="mt-1 flex items-baseline justify-between">
-            <span className="text-2xl font-bold text-rose-600 font-mono">
-              {tasks.openSupportRequests.filter((i) => i.priority === 'URGENT').length}
+            <span className="text-2xl font-bold text-amber-600 font-mono">
+              {tasks.openSupportRequests.length}
             </span>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded bg-rose-50 text-rose-700">
-              <UrgentSlaLabel />
+            <span className="text-xs font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-700">
+              Cần xử lý
             </span>
           </div>
         </div>
@@ -495,7 +494,9 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({ tasks, o
                             {item.customerPhone && <span className="ml-1 text-slate-400">({item.customerPhone})</span>}
                           </span>
                         )}
-                        <span className="text-rose-600 font-medium">Hạn SLA: {item.slaDeadline || <UrgentSlaLabel />}</span>
+                        {item.createdAt && (
+                          <span className="text-slate-500 font-medium">Tạo lúc: {new Date(item.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
+                        )}
                         <span
                           className={`font-medium px-2 py-0.2 rounded text-[11px] ${
                             item.status === 'RESOLVED' || item.status === 'CLOSED'

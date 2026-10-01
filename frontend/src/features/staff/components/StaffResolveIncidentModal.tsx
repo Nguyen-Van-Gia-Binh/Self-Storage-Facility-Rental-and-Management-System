@@ -1,4 +1,3 @@
-import { UrgentSlaLabel } from '@/components/UrgentSlaLabel';
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -237,12 +236,6 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
                 <h3 className="text-base font-bold text-slate-900 font-mono">
                   {ticket.code || `SUP-${ticket.ticketId}`}
                 </h3>
-                {ticket.priority === 'URGENT' && (
-                  <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-700 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-                    <UrgentSlaLabel lead="Khẩn" />
-                  </span>
-                )}
               </div>
               <p className="text-xs text-slate-500 mt-0.5 font-medium">{ticket.title}</p>
             </div>
