@@ -68,6 +68,9 @@ public class ReservationServiceImpl implements ReservationService {
     @Autowired(required = false)
     private AppliedPriceLookup appliedPriceLookup;
 
+    @Autowired(required = false)
+    private ReservationHoldExpiryService reservationHoldExpiryService;
+
     public ReservationServiceImpl(ReservationRepository reservationRepository,
                                   StorageUnitRepository storageUnitRepository,
                                   FacilityRepository facilityRepository,
@@ -502,14 +505,22 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     @Transactional(timeout = 5)
     public void confirmAfterPayment(Long reservationId) {
+        if (reservationHoldExpiryService != null && reservationHoldExpiryService.expireIfElapsed(reservationId)) {
+            throw new CustomException(ErrorCode.RESERVATION_EXPIRED);
+        }
         Reservation rsv = reservationRepository.findByIdWithLock(reservationId)
                 .orElseThrow(() -> new CustomException(ErrorCode.RESERVATION_NOT_FOUND));
 
         if (rsv.getStatus() == ReservationStatus.CONFIRMED) return; // idempotent
         if (rsv.getStatus() == ReservationStatus.FULFILLED)
             throw new CustomException(ErrorCode.RESERVATION_ALREADY_FULFILLED);
-        if (rsv.getHoldExpiresAt().isBefore(OffsetDateTime.now()))
+        if (rsv.getHoldExpiresAt() != null && rsv.getHoldExpiresAt().isBefore(OffsetDateTime.now())) {
+            if (rsv.getStatus() == ReservationStatus.PENDING_PAYMENT) {
+                rsv.setStatus(ReservationStatus.EXPIRED);
+                reservationRepository.save(rsv);
+            }
             throw new CustomException(ErrorCode.RESERVATION_EXPIRED);
+        }
 
         if (rsv.getStorageUnitId() != null) {
             StorageUnit unit = storageUnitRepository.findByIdForUpdate(rsv.getStorageUnitId())

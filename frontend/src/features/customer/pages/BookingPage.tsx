@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -423,6 +423,8 @@ export const BookingPage: React.FC = () => {
 
   const [reservationHoldExpiresAt, setReservationHoldExpiresAt] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number>(0);
+  const [holdClockReady, setHoldClockReady] = useState(false);
+  const fallbackHoldStarted = useRef(false);
 
   useEffect(() => {
     if (currentStep !== 3) return;
@@ -430,23 +432,32 @@ export const BookingPage: React.FC = () => {
       if (reservationHoldExpiresAt) {
         const left = Math.floor((new Date(reservationHoldExpiresAt).getTime() - Date.now()) / 1000);
         setSecondsLeft(Math.max(0, left));
+        setHoldClockReady(true);
         return;
       }
-      if (holdHours > 0) {
-        setSecondsLeft((prev) => (prev > 0 ? prev - 1 : holdHours * 3600));
-      }
+      if (holdHours <= 0) return;
+      setSecondsLeft((prev) => {
+        if (!fallbackHoldStarted.current) {
+          fallbackHoldStarted.current = true;
+          return holdHours * 3600;
+        }
+        return prev > 0 ? prev - 1 : 0;
+      });
+      setHoldClockReady(true);
     };
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
   }, [currentStep, reservationHoldExpiresAt, holdHours]);
 
+  const holdExpired = currentStep === 3 && paymentStatus !== 'SUCCESS' && holdClockReady && secondsLeft === 0;
+
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
   const [redirectCountdown, setRedirectCountdown] = useState<number>(3);
 
   // Xử lý mô phỏng chuyển tiền Sandbox trực tiếp
   const handleSimulateTransfer = async () => {
-    if (!checkoutData?.orderCode) return;
+    if (!checkoutData?.orderCode || holdExpired) return;
     setIsSimulating(true);
     setPaymentNotice(null);
     try {
@@ -1079,10 +1090,13 @@ export const BookingPage: React.FC = () => {
                 </div>
                 <div className="sm:text-right">
                   <span className="text-[11px] text-slate-400 block">Thời gian giữ chỗ còn lại:</span>
-                  <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[#7c94c3] bg-[#7c94c3]/10 px-2.5 py-1 rounded-lg mt-0.5 font-mono tabular-nums">
-                    <Clock className="w-4 h-4 text-brand-600 animate-pulse" />
+                  <span className={`inline-flex items-center gap-1.5 text-sm font-bold px-2.5 py-1 rounded-lg mt-0.5 font-mono tabular-nums ${holdExpired ? 'text-rose-700 bg-rose-50' : 'text-[#7c94c3] bg-[#7c94c3]/10'}`}>
+                    <Clock className={`w-4 h-4 ${holdExpired ? 'text-rose-600' : 'text-brand-600 animate-pulse'}`} />
                     {formattedCountdown}
                   </span>
+                  {holdExpired && (
+                    <span className="mt-1 block text-xs font-semibold text-rose-700">Giữ chỗ đã hết</span>
+                  )}
                 </div>
               </div>
 
@@ -1237,7 +1251,7 @@ export const BookingPage: React.FC = () => {
                       size="lg"
                       className="w-full py-3 text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md flex items-center justify-center gap-2 cursor-pointer"
                       onClick={handleSimulateTransfer}
-                      disabled={isSimulating || paymentStatus === 'SUCCESS'}
+                      disabled={isSimulating || paymentStatus === 'SUCCESS' || holdExpired}
                     >
                       {isSimulating ? (
                         <>
@@ -1310,7 +1324,7 @@ export const BookingPage: React.FC = () => {
                     variant="primary"
                     size="md"
                     onClick={handleCheckPaymentStatus}
-                    disabled={isVerifying || paymentStatus === 'SUCCESS'}
+                    disabled={isVerifying || paymentStatus === 'SUCCESS' || holdExpired}
                     className="w-full sm:w-auto px-6 py-2.5 flex items-center justify-center gap-2 cursor-pointer shadow-sm text-xs font-bold whitespace-nowrap"
                   >
                     {isVerifying ? (
