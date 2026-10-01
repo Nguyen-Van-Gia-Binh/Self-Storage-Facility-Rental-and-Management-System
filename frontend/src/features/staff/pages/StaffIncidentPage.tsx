@@ -348,12 +348,6 @@ export const StaffIncidentPage: React.FC = () => {
                       <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-800 border border-slate-200">
                         {item.code || `SUP-${item.ticketId}`}
                       </span>
-                      {item.priority === 'URGENT' && (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700 flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-                          Khẩn SLA
-                        </span>
-                      )}
                     </div>
 
                     {isItemPending && (
@@ -393,8 +387,12 @@ export const StaffIncidentPage: React.FC = () => {
 
                     <div className="flex items-center gap-1.5 text-slate-600">
                       <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      <span>Hạn SLA:</span>
-                      <strong className="text-rose-600">{item.slaDeadline}</strong>
+                      <span>Tiếp nhận:</span>
+                      <strong className="text-slate-700">
+                        {item.createdAt
+                          ? new Date(item.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+                          : 'Trong ca'}
+                      </strong>
                     </div>
 
                     {item.customerName && (

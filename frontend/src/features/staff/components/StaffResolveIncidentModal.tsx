@@ -298,8 +298,17 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
               )}
               <div className="flex items-center gap-2 text-slate-600">
                 <Clock className="w-3.5 h-3.5 text-slate-400" />
-                <span>Hạn cam kết SLA:</span>
-                <span className="font-medium text-rose-600">{ticket.slaDeadline}</span>
+                <span>Thời gian gửi:</span>
+                <span className="font-medium text-slate-800">
+                  {ticket.createdAt
+                    ? new Date(ticket.createdAt).toLocaleString('vi-VN', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        day: '2-digit',
+                        month: '2-digit',
+                      })
+                    : 'Gần đây'}
+                </span>
               </div>
             </div>
           </div>

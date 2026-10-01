@@ -205,10 +205,10 @@ export const IncidentDetailModal: React.FC<IncidentDetailModalProps> = ({
                     Chỉ đạo của Quản lý: "{ticket.assignmentNotes}"
                   </p>
                 )}
-                {ticket.slaDueAt && (
+                {ticket.createdAt && (
                   <p className="text-slate-500 flex items-center gap-1 pt-1">
                     <Clock className="w-3 h-3 text-slate-400" />
-                    Hạn cam kết SLA: {new Date(ticket.slaDueAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                    Thời gian gửi: {new Date(ticket.createdAt).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}
                   </p>
                 )}
               </div>
