@@ -340,19 +340,21 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
           </div>
 
           <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
-            <Link
-              to={`/customer/support?contractId=${contract.id}&unitId=${contract.unitId}`}
-              className="w-full sm:w-auto"
-            >
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full sm:w-auto flex items-center justify-center gap-1 px-3 border-slate-300 text-slate-700 hover:text-amber-800 hover:bg-amber-50 hover:border-amber-300 text-xs"
+            {contract.status !== 'CLOSED' && contract.status !== 'TERMINATED' && (
+              <Link
+                to={`/customer/support?contractId=${contract.id}&unitId=${contract.unitId}`}
+                className="w-full sm:w-auto"
               >
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
-                <span>Báo sự cố</span>
-              </Button>
-            </Link>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full sm:w-auto flex items-center justify-center gap-1 px-3 border-slate-300 text-slate-700 hover:text-amber-800 hover:bg-amber-50 hover:border-amber-300 text-xs"
+                >
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Báo sự cố</span>
+                </Button>
+              </Link>
+            )}
 
             {contract.status === 'PENDING_CHECKIN' || (contract.status as string) === 'PENDING_CHECK_IN' ? (
               <Button
