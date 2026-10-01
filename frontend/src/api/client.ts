@@ -84,10 +84,35 @@ export async function apiClient<T>(
     ...options.headers,
   };
 
-  let response = await fetch(`${BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  let response: Response;
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    const signal = options.signal || controller.signal;
+
+    response = await fetch(`${BASE_URL}${endpoint}`, {
+      ...options,
+      headers,
+      signal,
+    });
+    clearTimeout(timeoutId);
+  } catch (err: any) {
+    if (err instanceof ApiException) {
+      throw err;
+    }
+    if (err?.name === 'AbortError' || err?.name === 'TimeoutError') {
+      throw new ApiException({
+        status: 504,
+        message: 'Quá thời gian chờ phản hồi từ máy chủ (Timeout 30s). Vui lòng kiểm tra lại dịch vụ backend.',
+        timestamp: new Date().toISOString(),
+      });
+    }
+    throw new ApiException({
+      status: 503,
+      message: 'Không thể kết nối đến máy chủ backend (Port 8080). Vui lòng kiểm tra xem Backend đã được khởi động chưa.',
+      timestamp: new Date().toISOString(),
+    });
+  }
 
   // Tự động làm mới Access Token bằng Refresh Token nếu token hết hạn (401/403)
   if ((response.status === 401 || response.status === 403 || response.status === 500) && !endpoint.includes('/auth/')) {

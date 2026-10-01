@@ -44,6 +44,8 @@ export const CustomerRoutes: React.FC = () => {
         <Route path="renew/:contractId" element={<RenewalPage />} />
         {/* T4.12 — Support Tickets Hub (SC-06) */}
         <Route path="support" element={<SupportPage />} />
+        {/* Fallback cho các đường dẫn không xác định trong Customer space */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </CustomerLayout>
   );

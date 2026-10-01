@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom';
 import {
   Shield,
   Lock,
@@ -34,6 +34,7 @@ declare global {
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const redirectParam = searchParams.get('redirect');
 
@@ -44,7 +45,20 @@ export const LoginPage: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [successRole, setSuccessRole] = useState<UserRoleType | null>(null);
+
+  // Điền sẵn email và hiển thị thông báo nếu vừa đăng ký thành công
+  useEffect(() => {
+    const isRegistered = searchParams.get('registered') === 'true' || (location.state as any)?.registered;
+    const initialEmail = searchParams.get('email') || (location.state as any)?.email;
+    if (isRegistered) {
+      if (initialEmail) {
+        setEmail(initialEmail);
+      }
+      setSuccessMsg('Đăng ký tài khoản thành công! Vui lòng nhập mật khẩu để đăng nhập.');
+    }
+  }, [searchParams, location.state]);
 
   useEffect(() => {
     const clientId =
@@ -246,6 +260,13 @@ export const LoginPage: React.FC = () => {
             <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs sm:text-sm flex items-start gap-2.5 animate-in fade-in">
               <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-rose-500" />
               <span>{errorMsg}</span>
+            </div>
+          )}
+
+          {successMsg && !errorMsg && !successRole && (
+            <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs sm:text-sm flex items-center gap-2.5 animate-in fade-in">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+              <span>{successMsg}</span>
             </div>
           )}
 

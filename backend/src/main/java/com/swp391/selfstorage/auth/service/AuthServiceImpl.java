@@ -27,6 +27,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.client.RestTemplate;
 
 import java.security.SecureRandom;
@@ -111,8 +113,18 @@ public class AuthServiceImpl implements AuthService {
         AppUser savedUser = userRepository.save(user);
 
         // Ghi nhận đăng ký thành công (T3.15 - Issue #15: Audit Log thời gian thực)
+        // Chạy sau khi commit để tránh lock conflict giữa app_user uncommitted và REQUIRES_NEW trong SQL Server
         if (auditLogService != null) {
-            auditLogService.recordLogin(savedUser.getId(), savedUser.getEmail(), ipAddress, userAgent, true, "Đăng ký tài khoản mới");
+            if (TransactionSynchronizationManager.isActualTransactionActive()) {
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        auditLogService.recordLogin(savedUser.getId(), savedUser.getEmail(), ipAddress, userAgent, true, "Đăng ký tài khoản mới");
+                    }
+                });
+            } else {
+                auditLogService.recordLogin(savedUser.getId(), savedUser.getEmail(), ipAddress, userAgent, true, "Đăng ký tài khoản mới");
+            }
         }
 
         List<Long> facilityIds = Collections.emptyList();
