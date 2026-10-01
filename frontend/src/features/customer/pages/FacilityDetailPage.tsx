@@ -53,7 +53,7 @@ export const FacilityDetailPage: React.FC = () => {
         <p className="text-slate-700 font-medium">{error || 'Không tìm thấy cơ sở.'}</p>
         <button
           id="btn-back-to-catalog-error"
-          onClick={() => navigate('/facilities')}
+          onClick={() => navigate('/customer')}
           className="text-sm text-teal-600 underline"
         >
           Quay lại danh sách cơ sở
@@ -67,7 +67,7 @@ export const FacilityDetailPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         <button
           id="btn-back-to-catalog"
-          onClick={() => navigate('/facilities')}
+          onClick={() => navigate('/customer')}
           className="flex items-center gap-2 text-sm text-slate-500 hover:text-teal-700 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" /> Quay lại danh sách cơ sở
@@ -106,6 +106,28 @@ export const FacilityDetailPage: React.FC = () => {
           )}
         </div>
 
+        {/* Warning banner when facility is inactive */}
+        {!facility.isActive && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-amber-900 shadow-xs">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <h3 className="font-bold text-sm sm:text-base text-amber-950">Cơ sở hiện đang tạm ngừng hoạt động</h3>
+                <p className="text-xs sm:text-sm text-amber-800 leading-relaxed">
+                  Cơ sở này tạm thời không nhận đặt chỗ mới. Quý khách vui lòng tham khảo các cơ sở khác đang hoạt động trong hệ thống SmartStorage.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/customer')}
+              className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs sm:text-sm font-semibold shrink-0 transition-colors shadow-xs"
+            >
+              Xem danh sách cơ sở khác
+            </button>
+          </div>
+        )}
+
         {/* Unit types */}
         <div className="space-y-4">
           <div>
@@ -126,9 +148,10 @@ export const FacilityDetailPage: React.FC = () => {
                   key={ut.id}
                   unitType={ut}
                   facilityId={id}
+                  isFacilityActive={facility.isActive}
                   onBook={(unitTypeId) => {
-                    const facParam = id === 1 ? 'FAC-D7-01' : id === 2 ? 'FAC-D7-02' : id === 3 ? 'FAC-D7-03' : String(id);
-                    navigate(`/customer/units?facility=${facParam}&type=${unitTypeId}`);
+                    if (!facility.isActive) return;
+                    navigate(`/customer/units?facility=${id}&type=${unitTypeId}`);
                   }}
                 />
               ))}
