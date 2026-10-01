@@ -66,7 +66,7 @@ export const FacilityOverdueDebtRisk: React.FC<Props> = ({ data, loading }) => {
           <div className="flex items-center gap-2">
             <ShieldAlert className="w-5 h-5 text-rose-600" />
             <h2 className="text-base font-bold text-slate-900">
-              Báo cáo rủi ro nợ quá hạn theo độ tuổi (BR-OVD-01, 02, 03)
+              Báo cáo rủi ro quá hạn (BR-OVD-01, 02, 03)
             </h2>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
