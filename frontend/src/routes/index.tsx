@@ -1,6 +1,6 @@
 // frontend/src/routes/index.tsx
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { CustomerRoutes } from '@/features/customer/CustomerRoutes';
 import { StaffRoutes } from '@/features/staff/StaffRoutes';
 import { BomRoutes } from '@/features/bom/BomRoutes';
@@ -12,10 +12,20 @@ import { UnauthorizedPage } from '@/components/auth/UnauthorizedPage';
 
 import { SandboxCheckoutPage } from '@/features/customer/pages/SandboxCheckoutPage';
 
+const RedirectWithQuery: React.FC<{ to: string }> = ({ to }) => {
+  const location = useLocation();
+  return <Navigate to={`${to}${location.search}`} state={location.state} replace />;
+};
+
 export const AppRoutes: React.FC = () => {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Alias chuyển hướng thân thiện cho login / register */}
+        <Route path="/login" element={<RedirectWithQuery to="/auth/login" />} />
+        <Route path="/register" element={<RedirectWithQuery to="/auth/register" />} />
+        <Route path="/forgot-password" element={<RedirectWithQuery to="/auth/forgot-password" />} />
+
         {/* Cổng giả lập thanh toán VietQR Sandbox (Mobile-friendly checkout) */}
         <Route path="/payment/checkout" element={<SandboxCheckoutPage />} />
 

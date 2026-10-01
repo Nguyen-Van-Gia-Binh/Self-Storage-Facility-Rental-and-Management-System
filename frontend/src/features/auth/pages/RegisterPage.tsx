@@ -89,10 +89,16 @@ export const RegisterPage: React.FC = () => {
 
       setSuccess(true);
 
-      // Chuyển hướng sau 1s để người dùng nhận biết đăng ký thành công
+      // Chuyển hướng sang trang đăng nhập sau 1.2s để người dùng tự đăng nhập
       setTimeout(() => {
-        navigate('/');
-      }, 1000);
+        const targetEmail = email.trim().toLowerCase();
+        navigate(`/auth/login?registered=true&email=${encodeURIComponent(targetEmail)}`, {
+          state: {
+            registered: true,
+            email: targetEmail,
+          },
+        });
+      }, 1200);
     } catch (err: unknown) {
       const error = err as { status?: number; message?: string; errors?: Record<string, string> };
 
@@ -217,7 +223,7 @@ export const RegisterPage: React.FC = () => {
           {success && (
             <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs sm:text-sm flex items-center gap-2.5 animate-in fade-in">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-              <span>Đăng ký tài khoản thành công! Đang chuyển hướng bạn tới trang chủ...</span>
+              <span>Đăng ký tài khoản thành công! Đang chuyển hướng bạn tới trang đăng nhập...</span>
             </div>
           )}
 

@@ -61,7 +61,7 @@ export async function registerUser(payload: RegisterPayload): Promise<AuthData> 
   });
 
   const authData = ('data' in res && res.data) ? res.data : (res as AuthData);
-  saveSession(authData);
+  // Không lưu session tự động để người dùng tự nhập mật khẩu đăng nhập tại /login
   return authData;
 }
 
