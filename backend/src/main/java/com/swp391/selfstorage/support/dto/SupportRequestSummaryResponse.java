@@ -19,6 +19,7 @@ public class SupportRequestSummaryResponse {
     private String contractCode;
     private Long storageUnitId;
     private String storageUnitCode;
+    private Long facilityId;
     private String facilityName;
 
     private SupportCategory category;
@@ -37,6 +38,9 @@ public class SupportRequestSummaryResponse {
     private OffsetDateTime updatedAt;
     private Boolean relocationRequired;
     private String customerNotice;
+    private String resolutionNote;
+    private java.util.List<String> resolutionAttachmentUrls;
+    private java.util.List<String> attachmentUrls;
 
     public SupportRequestSummaryResponse() {}
 
@@ -56,6 +60,7 @@ public class SupportRequestSummaryResponse {
         public Builder contractCode(String contractCode) { r.contractCode = contractCode; return this; }
         public Builder storageUnitId(Long storageUnitId) { r.storageUnitId = storageUnitId; return this; }
         public Builder storageUnitCode(String storageUnitCode) { r.storageUnitCode = storageUnitCode; return this; }
+        public Builder facilityId(Long facilityId) { r.facilityId = facilityId; return this; }
         public Builder facilityName(String facilityName) { r.facilityName = facilityName; return this; }
         public Builder category(SupportCategory category) { r.category = category; return this; }
         public Builder categoryDisplayName(String categoryDisplayName) { r.categoryDisplayName = categoryDisplayName; return this; }
@@ -71,6 +76,9 @@ public class SupportRequestSummaryResponse {
         public Builder updatedAt(OffsetDateTime updatedAt) { r.updatedAt = updatedAt; return this; }
         public Builder relocationRequired(Boolean relocationRequired) { r.relocationRequired = relocationRequired; return this; }
         public Builder customerNotice(String customerNotice) { r.customerNotice = customerNotice; return this; }
+        public Builder resolutionNote(String resolutionNote) { r.resolutionNote = resolutionNote; return this; }
+        public Builder resolutionAttachmentUrls(java.util.List<String> resolutionAttachmentUrls) { r.resolutionAttachmentUrls = resolutionAttachmentUrls; return this; }
+        public Builder attachmentUrls(java.util.List<String> attachmentUrls) { r.attachmentUrls = attachmentUrls; return this; }
 
         public SupportRequestSummaryResponse build() {
             return r;
@@ -103,6 +111,9 @@ public class SupportRequestSummaryResponse {
 
     public String getStorageUnitCode() { return storageUnitCode; }
     public void setStorageUnitCode(String storageUnitCode) { this.storageUnitCode = storageUnitCode; }
+
+    public Long getFacilityId() { return facilityId; }
+    public void setFacilityId(Long facilityId) { this.facilityId = facilityId; }
 
     public String getFacilityName() { return facilityName; }
     public void setFacilityName(String facilityName) { this.facilityName = facilityName; }
@@ -148,4 +159,13 @@ public class SupportRequestSummaryResponse {
 
     public String getCustomerNotice() { return customerNotice; }
     public void setCustomerNotice(String customerNotice) { this.customerNotice = customerNotice; }
+
+    public String getResolutionNote() { return resolutionNote; }
+    public void setResolutionNote(String resolutionNote) { this.resolutionNote = resolutionNote; }
+
+    public java.util.List<String> getResolutionAttachmentUrls() { return resolutionAttachmentUrls; }
+    public void setResolutionAttachmentUrls(java.util.List<String> resolutionAttachmentUrls) { this.resolutionAttachmentUrls = resolutionAttachmentUrls; }
+
+    public java.util.List<String> getAttachmentUrls() { return attachmentUrls; }
+    public void setAttachmentUrls(java.util.List<String> attachmentUrls) { this.attachmentUrls = attachmentUrls; }
 }

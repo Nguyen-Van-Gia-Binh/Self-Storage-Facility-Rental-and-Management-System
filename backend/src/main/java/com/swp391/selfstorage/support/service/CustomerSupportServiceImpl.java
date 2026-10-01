@@ -286,6 +286,14 @@ public class CustomerSupportServiceImpl implements CustomerSupportService {
         dto.setUpdatedAt(ticket.getUpdatedAt());
         dto.setRelocationRequired(Boolean.TRUE.equals(ticket.getRelocationRequired()));
         dto.setCustomerNotice(ticket.getCustomerNotice());
+        dto.setResolutionNote(ticket.getResolutionNote());
+
+        List<String> summaryResUrls = attachmentRepository
+                .findByEntityTypeAndEntityId("SUPPORT_RESOLUTION", ticket.getId())
+                .stream()
+                .map(Attachment::getFileUrl)
+                .toList();
+        dto.setResolutionAttachmentUrls(summaryResUrls);
 
         enrichRelationInfo(dto, ticket);
         return dto;
@@ -313,6 +321,13 @@ public class CustomerSupportServiceImpl implements CustomerSupportService {
         detail.setCreatedAt(ticket.getCreatedAt());
         detail.setUpdatedAt(ticket.getUpdatedAt());
         detail.setAttachmentUrls(attachmentUrls != null ? attachmentUrls : Collections.emptyList());
+
+        List<String> detailResUrls = attachmentRepository
+                .findByEntityTypeAndEntityId("SUPPORT_RESOLUTION", ticket.getId())
+                .stream()
+                .map(Attachment::getFileUrl)
+                .toList();
+        detail.setResolutionAttachmentUrls(detailResUrls);
 
         detail.setCanCancel(ticket.getStatus() == SupportStatus.NEW);
         detail.setCanConfirm(ticket.getStatus() == SupportStatus.RESOLVED);

@@ -49,9 +49,9 @@ public interface SupportRequestRepository extends JpaRepository<SupportRequest, 
 
     @org.springframework.data.jpa.repository.Query(
             "SELECT sr FROM SupportRequest sr " +
-            "LEFT JOIN com.swp391.selfstorage.contract.entity.RentalContract rc ON sr.contractId = rc.id " +
             "LEFT JOIN com.swp391.selfstorage.unit.entity.StorageUnit su ON sr.storageUnitId = su.id " +
-            "WHERE (rc.facilityId IN :facilityIds OR su.facilityId IN :facilityIds) " +
+            "LEFT JOIN com.swp391.selfstorage.contract.entity.RentalContract rc ON sr.contractId = rc.id " +
+            "WHERE (COALESCE(su.facilityId, rc.facilityId) IN :facilityIds) " +
             "AND (:status IS NULL OR sr.status = :status) " +
             "AND (:category IS NULL OR sr.category = :category) " +
             "AND (:assignedStaffId IS NULL OR sr.assignedStaffId = :assignedStaffId)"
@@ -66,9 +66,9 @@ public interface SupportRequestRepository extends JpaRepository<SupportRequest, 
 
     @org.springframework.data.jpa.repository.Query(
             "SELECT sr FROM SupportRequest sr " +
-            "LEFT JOIN com.swp391.selfstorage.contract.entity.RentalContract rc ON sr.contractId = rc.id " +
             "LEFT JOIN com.swp391.selfstorage.unit.entity.StorageUnit su ON sr.storageUnitId = su.id " +
-            "WHERE (:facilityId IS NULL OR rc.facilityId = :facilityId OR su.facilityId = :facilityId) " +
+            "LEFT JOIN com.swp391.selfstorage.contract.entity.RentalContract rc ON sr.contractId = rc.id " +
+            "WHERE (:facilityId IS NULL OR COALESCE(su.facilityId, rc.facilityId) = :facilityId) " +
             "AND (:status IS NULL OR sr.status = :status) " +
             "AND (:category IS NULL OR sr.category = :category) " +
             "AND (:assignedStaffId IS NULL OR sr.assignedStaffId = :assignedStaffId)"

@@ -115,7 +115,7 @@ class StaffSupportControllerTest {
         SupportRequestDetailResponse response = SupportRequestDetailResponse.builder()
                 .id(801L)
                 .code("SUP-202610-0001")
-                .status(SupportStatus.RESOLVED)
+                .status(SupportStatus.CLOSED)
                 .resolutionNote("Đã cấp lại mã PIN thành công")
                 .resolvedAt(OffsetDateTime.now())
                 .build();
@@ -128,7 +128,7 @@ class StaffSupportControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.data.status").value("RESOLVED"))
+                .andExpect(jsonPath("$.data.status").value("CLOSED"))
                 .andExpect(jsonPath("$.data.resolutionNote").value("Đã cấp lại mã PIN thành công"));
     }
 

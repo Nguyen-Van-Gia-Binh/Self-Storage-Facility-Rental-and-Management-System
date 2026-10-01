@@ -192,10 +192,12 @@ public class StaffSupportServiceImpl implements StaffSupportService {
             throw new CustomException(ErrorCode.VALIDATION_FAILED, "Tối đa 5 ảnh hiện trạng sau sửa chữa");
         }
 
-        ticket.setStatus(SupportStatus.RESOLVED);
+        ticket.setStatus(SupportStatus.CLOSED);
         ticket.setResolutionNote(request.getResolutionNote());
-        ticket.setResolvedAt(OffsetDateTime.now());
-        ticket.setUpdatedAt(OffsetDateTime.now());
+        OffsetDateTime now = OffsetDateTime.now();
+        ticket.setResolvedAt(now);
+        ticket.setCustomerConfirmedAt(now);
+        ticket.setUpdatedAt(now);
         supportRequestRepository.save(ticket);
 
         // Lưu ảnh hiện trạng sau xử lý
@@ -333,16 +335,16 @@ public class StaffSupportServiceImpl implements StaffSupportService {
     }
 
     private Long resolveFacilityId(SupportRequest ticket) {
-        if (ticket.getContractId() != null) {
-            RentalContract contract = rentalContractRepository.findById(ticket.getContractId()).orElse(null);
-            if (contract != null) {
-                return contract.getFacilityId();
-            }
-        }
         if (ticket.getStorageUnitId() != null) {
             StorageUnit unit = storageUnitRepository.findById(ticket.getStorageUnitId()).orElse(null);
-            if (unit != null) {
+            if (unit != null && unit.getFacilityId() != null) {
                 return unit.getFacilityId();
+            }
+        }
+        if (ticket.getContractId() != null) {
+            RentalContract contract = rentalContractRepository.findById(ticket.getContractId()).orElse(null);
+            if (contract != null && contract.getFacilityId() != null) {
+                return contract.getFacilityId();
             }
         }
         return null;
@@ -353,28 +355,26 @@ public class StaffSupportServiceImpl implements StaffSupportService {
     }
 
     private SupportRequestDetailResponse mapToDetailResponse(SupportRequest ticket, List<String> resolutionAttachmentUrlsOverride) {
+        Long facilityId = resolveFacilityId(ticket);
         String facilityName = null;
-        String contractCode = null;
-        String storageUnitCode = null;
+        if (facilityId != null) {
+            facilityName = facilityRepository.findById(facilityId)
+                    .map(Facility::getName).orElse(null);
+        }
 
+        String contractCode = null;
         if (ticket.getContractId() != null) {
             RentalContract contract = rentalContractRepository.findById(ticket.getContractId()).orElse(null);
             if (contract != null) {
                 contractCode = contract.getCode();
-                if (contract.getFacilityId() != null) {
-                    facilityName = facilityRepository.findById(contract.getFacilityId())
-                            .map(Facility::getName).orElse(null);
-                }
             }
         }
+
+        String storageUnitCode = null;
         if (ticket.getStorageUnitId() != null) {
             StorageUnit unit = storageUnitRepository.findById(ticket.getStorageUnitId()).orElse(null);
             if (unit != null) {
                 storageUnitCode = unit.getCode();
-                if (facilityName == null && unit.getFacilityId() != null) {
-                    facilityName = facilityRepository.findById(unit.getFacilityId())
-                            .map(Facility::getName).orElse(null);
-                }
             }
         }
 
@@ -425,6 +425,7 @@ public class StaffSupportServiceImpl implements StaffSupportService {
                 .contractCode(contractCode)
                 .storageUnitId(ticket.getStorageUnitId())
                 .storageUnitCode(storageUnitCode)
+                .facilityId(facilityId)
                 .facilityName(facilityName)
                 .category(ticket.getCategory())
                 .categoryDisplayName(ticket.getCategory() != null ? ticket.getCategory().getDisplayName() : null)
@@ -452,28 +453,26 @@ public class StaffSupportServiceImpl implements StaffSupportService {
     }
 
     private SupportRequestSummaryResponse mapToSummaryResponse(SupportRequest ticket) {
+        Long facilityId = resolveFacilityId(ticket);
         String facilityName = null;
-        String contractCode = null;
-        String storageUnitCode = null;
+        if (facilityId != null) {
+            facilityName = facilityRepository.findById(facilityId)
+                    .map(Facility::getName).orElse(null);
+        }
 
+        String contractCode = null;
         if (ticket.getContractId() != null) {
             RentalContract contract = rentalContractRepository.findById(ticket.getContractId()).orElse(null);
             if (contract != null) {
                 contractCode = contract.getCode();
-                if (contract.getFacilityId() != null) {
-                    facilityName = facilityRepository.findById(contract.getFacilityId())
-                            .map(Facility::getName).orElse(null);
-                }
             }
         }
+
+        String storageUnitCode = null;
         if (ticket.getStorageUnitId() != null) {
             StorageUnit unit = storageUnitRepository.findById(ticket.getStorageUnitId()).orElse(null);
             if (unit != null) {
                 storageUnitCode = unit.getCode();
-                if (facilityName == null && unit.getFacilityId() != null) {
-                    facilityName = facilityRepository.findById(unit.getFacilityId())
-                            .map(Facility::getName).orElse(null);
-                }
             }
         }
 
@@ -495,6 +494,18 @@ public class StaffSupportServiceImpl implements StaffSupportService {
             }
         }
 
+        List<String> attachmentUrls = attachmentRepository
+                .findByEntityTypeAndEntityId("SUPPORT_REQUEST", ticket.getId())
+                .stream()
+                .map(Attachment::getFileUrl)
+                .toList();
+
+        List<String> resolutionAttachmentUrls = attachmentRepository
+                .findByEntityTypeAndEntityId("SUPPORT_RESOLUTION", ticket.getId())
+                .stream()
+                .map(Attachment::getFileUrl)
+                .toList();
+
         return SupportRequestSummaryResponse.builder()
                 .id(ticket.getId())
                 .code(ticket.getCode())
@@ -505,6 +516,7 @@ public class StaffSupportServiceImpl implements StaffSupportService {
                 .contractCode(contractCode)
                 .storageUnitId(ticket.getStorageUnitId())
                 .storageUnitCode(storageUnitCode)
+                .facilityId(facilityId)
                 .facilityName(facilityName)
                 .category(ticket.getCategory())
                 .categoryDisplayName(ticket.getCategory() != null ? ticket.getCategory().getDisplayName() : null)
@@ -520,6 +532,9 @@ public class StaffSupportServiceImpl implements StaffSupportService {
                 .updatedAt(ticket.getUpdatedAt())
                 .relocationRequired(Boolean.TRUE.equals(ticket.getRelocationRequired()))
                 .customerNotice(ticket.getCustomerNotice())
+                .resolutionNote(ticket.getResolutionNote())
+                .resolutionAttachmentUrls(resolutionAttachmentUrls)
+                .attachmentUrls(attachmentUrls)
                 .build();
     }
 }

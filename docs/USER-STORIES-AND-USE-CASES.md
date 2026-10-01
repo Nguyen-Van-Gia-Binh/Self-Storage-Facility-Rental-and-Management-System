@@ -633,10 +633,9 @@ Bảng thuộc tính đi kèm mỗi story:
 
 ---
 
-### `US-SC-06.3` — Xác nhận kết quả xử lý
+### `US-SC-06.3` — Theo dõi kết quả và đóng sự cố
 
-> **Là** Storage Customer, **tôi muốn** xác nhận sự cố đã được xử lý xong, **để** yêu cầu chỉ đóng
-> khi vấn đề thực sự được giải quyết.
+> **Là** Storage Customer, **tôi muốn** theo dõi biên bản và ảnh hiện trường sau khắc phục của nhân viên, **để** nắm rõ nguyên nhân, trách nhiệm và kết quả xử lý sự cố tại ô kho của mình mà không cần qua quy trình chờ nghiệm thu trực tuyến phức tạp.
 
 | Use case     | Ưu tiên | Story point | Giai đoạn |
 | ------------ | --------- | :---------: | :---------: |
@@ -644,14 +643,8 @@ Bảng thuộc tính đi kèm mỗi story:
 
 **Acceptance Criteria**
 
-- **AC-1** — *Given* Facility Staff đánh dấu đã xử lý xong, *when* tôi mở yêu cầu, *then* tôi thấy
-  mô tả kết quả xử lý và hai lựa chọn: xác nhận hài lòng hoặc báo chưa giải quyết được.
-- **AC-2** — *Given* tôi xác nhận hài lòng, *when* tôi gửi, *then* yêu cầu chuyển sang *Đã đóng* và
-  không thể chỉnh sửa nữa.
-- **AC-3** — *Given* tôi báo chưa giải quyết được kèm lý do, *when* tôi gửi, *then* yêu cầu quay lại
-  trạng thái *Đang xử lý* và được đẩy lên Facility Manager theo `UC-F7-04`.
-- **AC-4** — *Given* tôi không phản hồi trong 7 ngày kể từ khi nhân viên báo xử lý xong, *when* tác
-  vụ nền chạy, *then* yêu cầu tự động đóng và tôi nhận thông báo về việc đóng tự động.
+- **AC-1** — *Given* Facility Staff hoàn tất xử lý tại hiện trường và nộp biên bản theo `US-FS-05.2`, *when* tôi kiểm tra danh sách hỗ trợ, *then* yêu cầu chuyển thẳng sang trạng thái *Đã đóng* kèm đầy đủ biên bản kết quả xử lý, phân định trách nhiệm lỗi (Công ty hoặc Khách hàng) và ảnh chụp nghiệm thu hiện trường.
+- **AC-2** — *Given* yêu cầu hỗ trợ đã đóng, *when* tôi phát sinh sự cố hoặc nhu cầu hỗ trợ mới tại ô kho, *then* hệ thống cho phép tôi bấm "Tạo yêu cầu hỗ trợ mới" (`US-SC-06.1`) theo `BR-SUP-03`.
 
 ---
 
@@ -846,7 +839,7 @@ Bảng thuộc tính đi kèm mỗi story:
 - **AC-1** — *Given* tôi được phân công một ticket sự cố hư hỏng ô kho, *when* tôi đến hiện trường kiểm tra, *then* tôi chuyển trạng thái ticket sang *In Progress*.
 - **AC-2** — *Given* sự cố được khắc phục tại chỗ (tra dầu bản lề, thay bóng đèn, gia cố vách, thay ổ khóa), *when* hoàn thành nghiệm thu, *then* tôi phân định trách nhiệm lỗi (Lỗi do công ty hay Lỗi do khách hàng) và chọn các phụ phí phát sinh từ biểu phí BOM (`BM-03`); nếu do lỗi kỹ thuật/cơ sở thì khách được miễn phí 100% (0 VND); nếu do lỗi khách hàng thì bắt buộc xác nhận khách đã thanh toán toàn bộ phụ phí mới được hoàn tất nghiệm thu theo `BR-SUP-02`.
 - **AC-3** — *Given* sự cố nghiêm trọng không thể khắc phục ngay (dột trần lớn gây ướt đồ), *when* tôi ghi nhận, *then* hệ thống cho phép đẩy cờ khẩn cấp lên Facility Manager để kích hoạt phương án di dời đồ sang ô kho dự phòng.
-- **AC-4** — *Given* việc sửa chữa hoàn tất, *when* tôi bấm "Đã xử lý", *then* hệ thống gửi thông báo cho khách hàng xác nhận nghiệm thu theo `US-SC-06.3` và thực hiện quy trình đóng ticket theo `BR-SUP-03`.
+- **AC-4** — *Given* việc sửa chữa hoàn tất, *when* tôi nộp biên bản nghiệm thu hiện trường, *then* hệ thống chuyển trạng thái ticket sang *Đã đóng* theo `BR-SUP-03` và khách hàng có thể tra cứu toàn bộ kết quả trong mục Đã đóng.
 
 ---
 

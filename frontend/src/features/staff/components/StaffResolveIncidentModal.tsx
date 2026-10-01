@@ -94,7 +94,6 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
     ticket.status === 'PENDING' || ticket.status === 'ASSIGNED' || ticket.status === 'NEW';
   const isInProgress = ticket.status === 'IN_PROGRESS';
   const isResolved = ticket.status === 'RESOLVED' || ticket.status === 'CLOSED';
-  const isUnitDamage = ticket.category === 'UNIT_DAMAGE';
 
   // Tính số tiền của từng phụ phí
   const calculateFeeAmount = (fee: SurchargeItem): number => {
@@ -211,16 +210,26 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
         }
       }
 
+      // Đảm bảo trạng thái cờ di dời kho được đồng bộ với backend
+      if (needsRelocation !== Boolean(ticket.relocationRequired)) {
+        try {
+          await markStaffIncidentRelocation(ticket.ticketId, needsRelocation);
+        } catch (rErr) {
+          console.warn('Lỗi cập nhật cờ di dời kho:', rErr);
+        }
+      }
+
       // Soạn nội dung biên bản hoàn chỉnh kèm phân định trách nhiệm & phụ phí
       let faultSummary = '';
+      const relocationText = needsRelocation ? ' | Phương án: Kích hoạt di dời sang ô kho khác do hư hại nặng' : '';
       if (faultParty === 'COMPANY') {
-        faultSummary = '\n[Trách nhiệm: Lỗi do công ty (100% công ty chi trả theo BR-SUP-02) - Khách hàng miễn phí 0 đ]';
+        faultSummary = `\n[Trách nhiệm: Lỗi do công ty (100% công ty chi trả theo BR-SUP-02) - Khách hàng miễn phí 0 đ${relocationText}]`;
       } else {
         const selectedFeeNames = allSurcharges
           .filter((f) => selectedFeeIds.includes(f.id))
           .map((f) => f.name)
           .join(', ');
-        faultSummary = `\n[Trách nhiệm: Lỗi do khách hàng | Phụ phí: ${selectedFeeNames || 'Không phát sinh phụ phí'} | Tổng thu: ${totalFeeAmount.toLocaleString('vi-VN')} đ | Đã thanh toán đầy đủ 100%]`;
+        faultSummary = `\n[Trách nhiệm: Lỗi do khách hàng | Phụ phí: ${selectedFeeNames || 'Không phát sinh phụ phí'} | Tổng thu: ${totalFeeAmount.toLocaleString('vi-VN')} đ | Đã thanh toán đầy đủ 100%${relocationText}]`;
       }
 
       const fullResolutionNote = `${resolutionNote.trim()} ${faultSummary}`;
@@ -404,19 +413,41 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
             </div>
           )}
 
-          {isUnitDamage && !isResolved && (
-            <label className="flex items-start gap-2 p-3.5 rounded-xl border border-amber-200 bg-amber-50 text-xs text-amber-950 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={needsRelocation}
-                disabled={savingRelocation}
-                onChange={(e) => handleRelocationChange(e.target.checked)}
-                className="mt-0.5 text-amber-600 focus:ring-amber-500"
-              />
-              <span>
-                <strong>Không sửa tại chỗ được — cần di dời.</strong> Quản lý cơ sở chỉ đổi sang ô cùng loại khi cờ này được bật. Giá thuê và tiền cọc giữ nguyên.
-              </span>
-            </label>
+          {!isResolved && (
+            <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/80 space-y-2 text-xs text-amber-950">
+              <label className="flex items-start gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={needsRelocation}
+                  disabled={savingRelocation}
+                  onChange={(e) => handleRelocationChange(e.target.checked)}
+                  className="mt-0.5 rounded border-amber-300 text-amber-600 focus:ring-amber-500 w-4 h-4 shrink-0"
+                />
+                <div className="space-y-0.5">
+                  <span className="font-bold text-amber-900 block">
+                    Không sửa tại chỗ được — Cần kích hoạt di dời sang ô kho khác
+                  </span>
+                  <span className="text-[11px] text-amber-800 block leading-relaxed">
+                    Bật cờ này khi kiểm tra hiện trường phát hiện hư hại nghiêm trọng. Quản lý cơ sở sẽ nhận thông báo để thực hiện đổi ô kho tương đương cho khách.
+                  </span>
+                </div>
+              </label>
+
+              {needsRelocation && (
+                <div className="pt-2 border-t border-amber-200/80 text-[11px] space-y-1">
+                  {faultParty === 'COMPANY' && (
+                    <p className="text-emerald-800 font-semibold">
+                      ✓ Di dời do lỗi kỹ thuật / cơ sở: Khách hàng được đổi ô kho dự phòng <strong>hoàn toàn miễn phí (0 đ)</strong> theo quy tắc BR-SUP-02.
+                    </p>
+                  )}
+                  {faultParty === 'CUSTOMER' && (
+                    <p className="text-rose-800 font-semibold">
+                      ⚠️ Di dời do lỗi khách hàng: Phụ phí sửa chữa, công di chuyển (chọn từ danh mục BOM bên dưới) sẽ do khách hàng thanh toán 100%.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
           )}
 
           {/* TRẠNG THÁI 1: MỚI ĐƯỢC GIAO */}

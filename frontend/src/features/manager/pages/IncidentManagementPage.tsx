@@ -42,6 +42,8 @@ const CATEGORIES: { key: SupportCategory | 'ALL'; label: string }[] = [
 export const IncidentManagementPage: React.FC = () => {
   const [facilities, setFacilities] = useState<{ id: number; name: string }[]>([]);
   const [selectedFacilityId, setSelectedFacilityId] = useState<number>(() => {
+    const saved = localStorage.getItem('manager_selected_facility_id');
+    if (saved && Number(saved) > 0) return Number(saved);
     const user = tokenStorage.getUser();
     return user?.facilityId ? Number(user.facilityId) : 1;
   });
@@ -76,7 +78,9 @@ export const IncidentManagementPage: React.FC = () => {
           const mapped = list.map((f) => ({ id: f.id, name: f.name }));
           setFacilities(mapped);
           setSelectedFacilityId((current) => {
-            if (mapped.some((f) => f.id === current)) return current;
+            const saved = localStorage.getItem('manager_selected_facility_id');
+            const targetId = saved && Number(saved) > 0 ? Number(saved) : current;
+            if (mapped.some((f) => f.id === targetId)) return targetId;
             return mapped[0].id;
           });
         }
@@ -248,7 +252,11 @@ export const IncidentManagementPage: React.FC = () => {
             <Building2 className="w-4 h-4 text-slate-400" />
             <select
               value={selectedFacilityId}
-              onChange={(e) => setSelectedFacilityId(Number(e.target.value))}
+              onChange={(e) => {
+                const newId = Number(e.target.value);
+                setSelectedFacilityId(newId);
+                localStorage.setItem('manager_selected_facility_id', String(newId));
+              }}
               className="text-xs font-semibold text-slate-700 bg-transparent outline-none cursor-pointer"
             >
               {facilities.map((f) => (
@@ -471,27 +479,29 @@ export const IncidentManagementPage: React.FC = () => {
                           <span>Chi tiết</span>
                         </button>
 
-                        <button
-                          type="button"
-                          onClick={() => handleOpenAssignModal(ticket)}
-                          className={`py-1.5 px-2.5 rounded-lg font-semibold text-xs flex items-center gap-1 transition-colors ${
-                            ticket.assignedStaffId
-                              ? 'border border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
-                              : 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'
-                          }`}
-                        >
-                          {ticket.assignedStaffId ? (
-                            <>
-                              <ArrowRightLeft className="w-3.5 h-3.5 text-slate-500" />
-                              <span>Điều chuyển</span>
-                            </>
-                          ) : (
-                            <>
-                              <UserPlus className="w-3.5 h-3.5" />
-                              <span>Phân công</span>
-                            </>
-                          )}
-                        </button>
+                        {!['RESOLVED', 'CLOSED', 'AUTO_CLOSED', 'CANCELLED'].includes(ticket.status) && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenAssignModal(ticket)}
+                            className={`py-1.5 px-2.5 rounded-lg font-semibold text-xs flex items-center gap-1 transition-colors ${
+                              ticket.assignedStaffId
+                                ? 'border border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                                : 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'
+                            }`}
+                          >
+                            {ticket.assignedStaffId ? (
+                              <>
+                                <ArrowRightLeft className="w-3.5 h-3.5 text-slate-500" />
+                                <span>Điều chuyển</span>
+                              </>
+                            ) : (
+                              <>
+                                <UserPlus className="w-3.5 h-3.5" />
+                                <span>Phân công</span>
+                              </>
+                            )}
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

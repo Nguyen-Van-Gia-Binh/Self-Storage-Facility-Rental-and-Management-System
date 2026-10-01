@@ -34,6 +34,8 @@ export const StaffAssignmentPage: React.FC = () => {
 
   const [facilities, setFacilities] = useState<{ id: number; name: string }[]>([]);
   const [selectedFacilityId, setSelectedFacilityId] = useState<number>(() => {
+    const saved = localStorage.getItem('manager_selected_facility_id');
+    if (saved && Number(saved) > 0) return Number(saved);
     const user = tokenStorage.getUser();
     return user?.facilityId ? Number(user.facilityId) : 1;
   });
@@ -72,7 +74,9 @@ export const StaffAssignmentPage: React.FC = () => {
           const mapped = list.map((f) => ({ id: f.id, name: f.name }));
           setFacilities(mapped);
           setSelectedFacilityId((current) => {
-            if (mapped.some((f) => f.id === current)) return current;
+            const saved = localStorage.getItem('manager_selected_facility_id');
+            const targetId = saved && Number(saved) > 0 ? Number(saved) : current;
+            if (mapped.some((f) => f.id === targetId)) return targetId;
             return mapped[0].id;
           });
         }
@@ -216,7 +220,11 @@ export const StaffAssignmentPage: React.FC = () => {
             <Building2 className="w-4 h-4 text-slate-400" />
             <select
               value={selectedFacilityId}
-              onChange={(e) => setSelectedFacilityId(Number(e.target.value))}
+              onChange={(e) => {
+                const newId = Number(e.target.value);
+                setSelectedFacilityId(newId);
+                localStorage.setItem('manager_selected_facility_id', String(newId));
+              }}
               className="text-xs font-semibold text-slate-700 bg-transparent outline-none cursor-pointer"
             >
               {facilities.map((f) => (

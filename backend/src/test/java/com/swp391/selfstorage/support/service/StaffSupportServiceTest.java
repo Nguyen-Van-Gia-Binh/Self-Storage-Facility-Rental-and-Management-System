@@ -262,7 +262,7 @@ class StaffSupportServiceTest {
         SupportRequestDetailResponse response = staffSupportService.resolveSupportRequest(801L, request, staffUser);
 
         assertNotNull(response);
-        assertEquals(SupportStatus.RESOLVED, response.getStatus());
+        assertEquals(SupportStatus.CLOSED, response.getStatus());
         assertEquals("Đã tra dầu bản lề cửa cuốn và cấp lại mã PIN mới", response.getResolutionNote());
         assertNotNull(response.getResolvedAt());
         assertNotNull(response.getResolutionAttachmentUrls());
