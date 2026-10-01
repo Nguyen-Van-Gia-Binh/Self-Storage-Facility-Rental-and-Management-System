@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
-  Box, 
   Phone, 
   Mail, 
   ChevronDown, 
@@ -10,6 +9,7 @@ import {
   LogOut,
   LayoutDashboard
 } from 'lucide-react';
+import { Logo } from '@/components/ui/Logo';
 import { tokenStorage, normalizeRole, type UserSession } from '@/utils/tokenStorage';
 
 
@@ -80,19 +80,7 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
       <header className="sticky top-0 z-50 bg-white border-b border-slate-200/90 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
           {/* Logo */}
-          <Link to="/customer" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-brand-500 flex items-center justify-center text-white shadow-sm">
-              <Box className="w-5 h-5" />
-            </div>
-            <div className="leading-tight">
-              <span className="text-xl font-extrabold text-slate-900 tracking-tight block">
-                SmartStorage
-              </span>
-              <span className="text-[10px] font-bold text-brand-600 tracking-wider uppercase block">
-                Self-Storage Solutions
-              </span>
-            </div>
-          </Link>
+          <Logo to="/customer" subtitle="Self-Storage Solutions" size="md" />
 
           {/* Navigation links */}
           <nav className="hidden md:flex items-center gap-8 text-sm font-semibold">
@@ -224,10 +212,7 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
       <footer className="bg-white border-t border-slate-200 text-slate-600 text-xs mt-24 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-brand-500 flex items-center justify-center text-white">
-              <Box className="w-3.5 h-3.5" />
-            </div>
-            <span className="font-bold text-slate-900">SmartStorage</span>
+            <Logo showSubtitle={false} size="sm" />
             <span className="text-slate-400">• © 2026 SmartStorage. Toàn bộ bản quyền được bảo lưu.</span>
           </div>
 

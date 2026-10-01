@@ -7,7 +7,6 @@ import {
   ArrowRight,
   Eye,
   EyeOff,
-  Boxes,
   Thermometer,
   KeyRound,
   CheckCircle2,
@@ -15,6 +14,7 @@ import {
   Loader2,
   Sparkles,
 } from 'lucide-react';
+import { Logo } from '@/components/ui/Logo';
 import { loginUser, loginWithGoogle, getPortalUrlByRole } from '@/api/auth';
 import type { UserRoleType } from '@/api/user';
 
@@ -156,20 +156,13 @@ export const LoginPage: React.FC = () => {
 
         {/* Top Header / Logo */}
         <div className="relative z-10">
-          <Link to="/" className="inline-flex items-center gap-3 group">
-            <div className="w-11 h-11 rounded-2xl bg-brand-500 text-white flex items-center justify-center shadow-lg shadow-brand-500/30 group-hover:scale-105 transition-transform">
-              <Boxes className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xl font-black tracking-tight text-white">SmartStorage</span>
-                <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-brand-500/20 text-brand-300 border border-brand-500/30 rounded-full">
-                  v2.0
-                </span>
-              </div>
-              <p className="text-xs text-slate-400">Self-Storage Facility Rental & Management</p>
-            </div>
-          </Link>
+          <Logo 
+            to="/" 
+            variant="light" 
+            size="lg" 
+            badge="v2.0" 
+            subtitle="Self-Storage Facility Rental & Management" 
+          />
         </div>
 
         {/* Center Content: Slogan & Highlights */}
@@ -235,14 +228,12 @@ export const LoginPage: React.FC = () => {
       <div className="flex-1 flex flex-col justify-center items-center p-6 sm:p-12 lg:p-16 bg-[#f2f9f7] lg:bg-white relative">
         <div className="w-full max-w-md space-y-7">
           {/* Mobile Header */}
-          <div className="lg:hidden flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-brand-500 text-white flex items-center justify-center shadow-sm">
-              <Boxes className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-lg font-bold text-slate-900">SmartStorage</span>
-              <p className="text-xs text-slate-500">Hệ Thống Quản Lý Kho Tự Phục Vụ</p>
-            </div>
+          <div className="lg:hidden mb-4">
+            <Logo 
+              to="/" 
+              size="md" 
+              subtitle="Hệ Thống Quản Lý Kho Tự Phục Vụ" 
+            />
           </div>
 
           {/* Form Header */}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Menu, X, LogOut, Layers, Box } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Menu, X, LogOut, Layers, Boxes } from 'lucide-react';
+import { Logo } from '@/components/ui/Logo';
 import {
   tokenStorage,
   type UserRole,
@@ -128,19 +129,12 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     <div className="app-shell h-screen bg-[#f2f9f7] flex flex-col md:flex-row overflow-hidden">
       {/* Mobile Header */}
       <div className="md:hidden bg-white text-slate-900 border-b border-slate-200/90 px-4 py-3 flex items-center justify-between shadow-xs sticky top-0 z-30 shrink-0">
-        <Link 
+        <Logo 
           to={logoHomePath} 
+          subtitle={displayTitle} 
+          size="sm" 
           onClick={() => setMobileMenuOpen(false)} 
-          className="flex items-center gap-2"
-        >
-          <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center text-white shadow-xs">
-            <Box className="w-4 h-4" />
-          </div>
-          <div className="leading-tight">
-            <span className="font-extrabold text-base text-slate-900 block leading-tight">SmartStorage</span>
-            <span className="text-[10px] font-bold text-brand-600 uppercase tracking-wider block">{displayTitle}</span>
-          </div>
-        </Link>
+        />
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
@@ -164,19 +158,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         {sidebarOpen ? (
           <div className="h-16 hidden md:flex items-center justify-between px-3.5 border-b border-slate-100">
             <div className="overflow-hidden transition-all duration-300 w-48 opacity-100">
-              <Link to={logoHomePath} className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center text-white shadow-xs shrink-0">
-                  <Box className="w-4 h-4" />
-                </div>
-                <div className="leading-tight truncate">
-                  <span className="text-sm font-extrabold text-slate-900 tracking-tight block">
-                    SmartStorage
-                  </span>
-                  <span className="text-[10px] font-bold text-brand-600 tracking-wider uppercase block truncate">
-                    {portalLabel}
-                  </span>
-                </div>
-              </Link>
+              <Logo to={logoHomePath} subtitle={portalLabel} size="sm" />
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
@@ -193,7 +175,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               className="group relative w-10 h-10 rounded-xl bg-brand-500 hover:bg-brand-600 text-white flex items-center justify-center transition-all shadow-xs shrink-0 cursor-pointer"
               title="Mở rộng menu"
             >
-              <Box className="w-5 h-5 transition-transform duration-200 group-hover:scale-0 group-hover:opacity-0 absolute" />
+              <Boxes className="w-5 h-5 transition-transform duration-200 group-hover:scale-0 group-hover:opacity-0 absolute" />
               <ChevronRight className="w-5 h-5 transition-transform duration-200 scale-0 opacity-0 group-hover:scale-110 group-hover:opacity-100 absolute" />
             </button>
           </div>
