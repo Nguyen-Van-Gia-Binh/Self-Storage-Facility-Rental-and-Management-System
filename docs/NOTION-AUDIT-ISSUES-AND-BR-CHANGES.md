@@ -621,6 +621,7 @@ Dưới đây là tổng hợp **32 hình ảnh bằng chứng** và các vấn 
   * **Hướng xử lý & File liên quan:**  
     - Frontend: `ReassignStaffModal.tsx`, `SlaCountdownBadge.tsx`, `StaffAssignmentPage.tsx`.  
     - Backend: `SupportTicketDto.java` (trả về `slaDeadline`, `isEmergency`).
+  * **Cập nhật Nghiệp vụ (01/10/2026 — Tùng):** Sau khi xem xét thực tế vận hành và phản hồi người dùng, hệ thống chính thức **bãi bỏ cam kết SLA 2 giờ, cờ phân loại khẩn cấp/bình thường và đồng hồ đếm ngược vi phạm SLA**. Quy trình hỗ trợ sự cố được tinh gọn tối đa: Khách hàng tạo ticket → Facility Manager phân công nhân sự đang trực ca → Nhân viên tiếp nhận và xử lý theo thực tế cơ sở (`ISS-70`).
 
 #### 27. [ĐÃ FIX — TÙNG ĐÃ FIX] Thao tác "Phân công Nhân sự Cơ sở" bị lỗi API, không lưu được người phụ trách nhiệm vụ thực địa (`FM-05`, `US-FM-05.1 AC-1`)
 - **Hình ảnh minh chứng:**  

@@ -826,7 +826,7 @@ Bảng thuộc tính đi kèm mỗi story:
 
 **Acceptance Criteria**
 
-- **AC-1** — *Given* khách báo quên hoặc hỏng mã PIN/QR, *when* tôi đối chiếu đúng CCCD của chủ hợp đồng, *then* hệ thống cho phép tôi bấm "Cấp lại Access Code", sinh mã mới và thu hồi mã cũ theo `BR-ACC-03` và `UC-F7-05`, đảm bảo SLA tại chỗ theo `BR-SUP-01`.
+- **AC-1** — *Given* khách báo quên hoặc hỏng mã PIN/QR, *when* tôi đối chiếu đúng CCCD của chủ hợp đồng, *then* hệ thống cho phép tôi bấm "Cấp lại Access Code", sinh mã mới và thu hồi mã cũ theo `BR-ACC-03`, `UC-F7-05` và `BR-SUP-01`.
 - **AC-2** — *Given* khách báo mất chìa khóa cơ, *when* xác minh danh tính thành công, *then* tôi hỗ trợ cắt khóa cơ cũ, cấp ổ khóa mới và thu phí cấp lại khóa theo quy định phụ phí tại `BM-03`.
 - **AC-3** — *Given* người đến yêu cầu mở khóa không phải chủ hợp đồng và không có tên trong danh sách người được ủy quyền (`UC-F3-03`), *when* tôi kiểm tra, *then* hệ thống từ chối cấp quyền và tôi không được phép mở kho.
 - **AC-4** — *Given* sự cố được xử lý xong, *when* tôi cập nhật yêu cầu, *then* thời gian xử lý và hình thức hỗ trợ được ghi vào nhật ký lịch sử của ô kho.
@@ -1057,7 +1057,7 @@ Bảng thuộc tính đi kèm mỗi story:
 **Acceptance Criteria**
 
 - **AC-1** — *Given* danh sách các lượt hẹn check-in và yêu cầu trả kho (`PENDING_RETURN`) trong ngày, *when* tôi chọn nhiệm vụ và chọn nhân viên trực từ danh sách Staff của cơ sở, *then* hệ thống cập nhật nhân viên phụ trách qua API `PATCH /contracts/{id}/assign-return` và nhiệm vụ xuất hiện ngay trên màn hình ca trực của nhân viên được gán (`US-FS-06.1`, `US-FS-04.1`).
-- **AC-2** — *Given* có một sự cố hỏng hóc khẩn cấp do khách báo về (`US-SC-06.1`), *when* tôi tiếp nhận, *then* tôi có thể gán nhân viên phụ trách kèm mức độ ưu tiên "Khẩn cấp (High)" và hạn xử lý theo SLA `BR-SUP-01` và `UC-F7-04`.
+- **AC-2** — *Given* có một sự cố hỏng hóc do khách báo về (`US-SC-06.1`), *when* tôi tiếp nhận, *then* tôi phân công nhân viên đang trực ca phụ trách xử lý trực tiếp (`UC-F7-04`) mà không áp đặt phân loại khẩn cấp hay đồng hồ đếm ngược SLA theo `BR-SUP-01`.
 - **AC-3** — *Given* một nhân viên đang có quá nhiều nhiệm vụ tồn đọng hoặc báo nghỉ phép, *when* tôi mở danh sách phân công, *then* hệ thống hiển thị số lượng task đang gán của từng nhân viên để tôi phân bổ đồng đều.
 - **AC-4** — *Given* tôi muốn điều chuyển nhiệm vụ từ nhân viên A sang nhân viên B, *when* tôi cập nhật người phụ trách, *then* hệ thống gửi thông báo thay đổi phân công đến cả hai nhân viên.
 
@@ -1861,14 +1861,14 @@ Activity Diagram: [activity-diagram-flow-6-1-storage-renewal.drawio](diagrams/ac
 
 *Luồng yêu cầu hỗ trợ và xử lý sự cố.* Tác nhân chính: **Storage Customer**, **Facility Staff** · Liên quan: **Facility Manager**
 
-Activity Diagram: [activity-diagram-flow-7-support-incident-handling.drawio](diagrams/activity-diagram-flow-7-support-incident-handling.drawio) (lưu trữ cũ: [diagrams/_archive/activity-flow-7.puml](diagrams/_archive/activity-flow-7.puml)) — gửi và phân loại (`UC-F7-01`, `UC-F7-03`), phân công theo SLA (`UC-F7-04`), nhánh xử lý theo loại sự cố (`UC-F7-05`, `UC-F7-06`), cập nhật ô kho và nghiệm thu / tự đóng (`UC-F7-07`, `UC-F7-08`); khách theo dõi song song (`UC-F7-02`).
+Activity Diagram: [activity-diagram-flow-7-support-incident-handling.drawio](diagrams/activity-diagram-flow-7-support-incident-handling.drawio) (lưu trữ cũ: [diagrams/_archive/activity-flow-7.puml](diagrams/_archive/activity-flow-7.puml)) — gửi và tiếp nhận (`UC-F7-01`, `UC-F7-03`), phân công nhân sự ca trực (`UC-F7-04`), nhánh xử lý theo loại sự cố (`UC-F7-05`, `UC-F7-06`), cập nhật ô kho và nghiệm thu / tự đóng (`UC-F7-07`, `UC-F7-08`); khách theo dõi song song (`UC-F7-02`).
 
 | Mã UC       | Use case                                                                            | Actor chính     | Actor liên quan | Mã yêu cầu |
 | ------------ | ----------------------------------------------------------------------------------- | ---------------- | ---------------- | ------------- |
 | `UC-F7-01` | Gửi yêu cầu hỗ trợ về ô kho, khóa, Access Code, thanh toán hoặc tài sản | Storage Customer | —               | `SC-06`     |
 | `UC-F7-02` | Theo dõi trạng thái và phản hồi của yêu cầu hỗ trợ                       | Storage Customer | —               | `SC-06`     |
-| `UC-F7-03` | Tiếp nhận và phân loại yêu cầu hỗ trợ sự cố                              | Facility Manager | Facility Staff   | `FM-05`     |
-| `UC-F7-04` | Phân công Facility Staff xử lý sự cố                                          | Facility Manager | Facility Staff   | `FM-05`     |
+| `UC-F7-03` | Tiếp nhận yêu cầu hỗ trợ sự cố                                          | Facility Manager | Facility Staff   | `FM-05`     |
+| `UC-F7-04` | Phân công Facility Staff xử lý sự cố theo ca trực                             | Facility Manager | Facility Staff   | `FM-05`     |
 | `UC-F7-05` | Xử lý sự cố mất chìa khóa hoặc lỗi Access Code                             | Facility Staff   | Storage Customer | `FS-05`     |
 | `UC-F7-06` | Xử lý ô kho hư hỏng và yêu cầu bảo trì                                    | Facility Staff   | Facility Manager | `FS-05`     |
 | `UC-F7-07` | Cập nhật trạng thái ô kho sau khi xử lý sự cố                              | Facility Staff   | —               | `FS-03`     |

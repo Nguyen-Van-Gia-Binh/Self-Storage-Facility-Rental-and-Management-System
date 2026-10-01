@@ -72,8 +72,7 @@ bảng chính sách của hệ thống (`BM-02`, `BM-03`).
 | `return.notice_days` | Mốc tự động đánh dấu trả kho nếu không gia hạn trước ngày hết hạn | `30 ngày` | `BR-REN-01`, `BR-RET-01` |
 | `return.refund_working_days` | Số ngày làm việc để hoàn Deposit sau khi nghiệm thu | `7 ngày` | `BR-RET-05` |
 | `return.early_refund_rate` | Tỷ lệ hoàn tiền thuê phần chưa dùng khi trả sớm | `0%` | `BR-RET-06` |
-| `access.pin_length` | Độ dài chữ số của mã PIN truy cập (không dùng thẻ RFID) | `6 số` | `BR-ACC-01` |
-| `support.urgent_sla_hours` | Thời hạn cam kết xử lý sự cố truy cập khẩn cấp tại cơ sở | `2 giờ` | `BR-SUP-01` |
+| `support.urgent_sla_hours` | *(Đã bãi bỏ)* Không áp đặt thời hạn cứng 2 giờ; xử lý linh hoạt theo ca trực cơ sở | `Không áp dụng` | `BR-SUP-01` |
 | `support.auto_close_working_days` | Số ngày làm việc chờ khách phản hồi trước khi tự đóng Support Request | `7 ngày` | `BR-SUP-03` |
 
 ---
@@ -255,7 +254,7 @@ Quy tắc xử lý các yêu cầu hỗ trợ và sự cố phát sinh tại cơ
 
 | Mã | Quy tắc |
 |----|---------|
-| `BR-SUP-01` | **Thời hạn cam kết xử lý sự cố (SLA):**<br>- *Sự cố quyền truy cập số (quên PIN, lỗi mã QR):* Hệ thống tự động cấp phát lại ngay lập tức (real-time, < 1 phút) trên ứng dụng của khách (`UC-F7-05`).<br>- *Sự cố cơ học / hạ tầng tại chỗ (kẹt khóa cửa ô kho, mất chìa cơ, hư hỏng bản lề):* Nhân viên cơ sở và FM bắt buộc phải tiếp nhận và có mặt xử lý tại chỗ trong vòng `support.urgent_sla_hours` (2 giờ) kể từ khi tạo ticket (`UC-F7-04`). Dashboard của FM và Staff có đồng hồ đếm ngược SLA để theo dõi tiến độ xử lý |
+| `BR-SUP-01` | **Quy trình tiếp nhận và phân công xử lý sự cố:**<br>- *Sự cố quyền truy cập số (quên PIN, lỗi mã QR):* Hệ thống tự động cấp phát lại ngay lập tức (real-time, < 1 phút) trên ứng dụng của khách (`UC-F7-05`).<br>- *Sự cố cơ học / hạ tầng tại chỗ (kẹt khóa cửa ô kho, mất chìa cơ, hư hỏng bản lề):* Khách hàng gửi yêu cầu hỗ trợ qua ứng dụng; Facility Manager tiếp nhận và phân công cho nhân viên đang trực ca tại cơ sở để xử lý theo ca trực thực tế (`UC-F7-04`). Bãi bỏ hoàn toàn quy định đếm ngược SLA 2 giờ và cờ phân loại khẩn cấp/bình thường nhằm phản ánh chính xác thực tế vận hành cơ sở. |
 | `BR-SUP-02` | **Trách nhiệm và chi phí khắc phục hư hại:** Nếu hư hỏng do lỗi kỹ thuật hoặc hạ tầng cơ sở (thấm dột, chập điện đèn kho), cơ sở chịu 100% chi phí sửa chữa, không tạo phụ phí, và ưu tiên di dời đồ sang ô kho dự phòng nếu cần (`UC-F7-06`); nếu do lỗi chủ quan của khách, Facility Staff chọn khoản `DAMAGE` theo `BM-03` |
 | `BR-SUP-03` | **Quy trình nghiệm thu và đóng Support Request:** Nhân viên phải tải ảnh sau khắc phục và khách xác nhận nghiệm thu (`UC-F7-08`). Nếu khách không phản hồi trong `support.auto_close_working_days`, hệ thống tự đóng yêu cầu và ghi rõ lý do tự động |
 
