@@ -88,17 +88,10 @@ public class CustomerSupportServiceImpl implements CustomerSupportService {
         long seq = supportRequestRepository.countByCodeStartingWith(monthPrefix) + 1;
         String code = String.format("%s%04d", monthPrefix, seq);
 
-        boolean isUrgent = Boolean.TRUE.equals(request.getIsUrgent()) || request.getCategory() == SupportCategory.LOCK_ACCESS;
-        int urgentHours = 2;
-        if (policyVersionRepository != null) {
-            PolicyVersion policy = policyVersionRepository
-                    .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(now)
-                    .orElse(null);
-            if (policy != null && policy.getSupportUrgentSlaHours() != null && policy.getSupportUrgentSlaHours() > 0) {
-                urgentHours = policy.getSupportUrgentSlaHours();
-            }
-        }
-        OffsetDateTime slaDueAt = isUrgent ? now.plusHours(urgentHours) : now.plusHours(24);
+        // Quyết định nghiệp vụ (BR-SUP-01 - 01/10/2026): Bãi bỏ cam kết SLA cứng 2 giờ/24 giờ và đồng hồ đếm ngược.
+        // Hỗ trợ xử lý linh hoạt theo ca trực cơ sở; slaDueAt để null và isUrgent theo request (mặc định false).
+        boolean isUrgent = Boolean.TRUE.equals(request.getIsUrgent());
+        OffsetDateTime slaDueAt = null;
 
         // 3. Nếu có contractId, tự động điền storageUnitId nếu chưa có
         Long storageUnitId = request.getStorageUnitId();

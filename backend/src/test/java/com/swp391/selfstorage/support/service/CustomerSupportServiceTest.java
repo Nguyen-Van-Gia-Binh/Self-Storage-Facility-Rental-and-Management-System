@@ -97,14 +97,14 @@ class CustomerSupportServiceTest {
     }
 
     @Test
-    @DisplayName("US-SC-06.1 & BR-SUP-01: Tạo ticket khẩn cấp LOCK_ACCESS có SLA 2 giờ")
-    void shouldCreateUrgentLockAccessSupportRequest_with2HourSla_andGenerateCode() {
+    @DisplayName("US-SC-06.1 & BR-SUP-01: Tạo ticket LOCK_ACCESS thành công không áp đặt SLA cứng 2 giờ")
+    void shouldCreateLockAccessSupportRequest_withoutEnforcingSla_andGenerateCode() {
         CreateSupportRequest request = CreateSupportRequest.builder()
                 .contractId(501L)
                 .storageUnitId(42L)
                 .category(SupportCategory.LOCK_ACCESS)
                 .description("Quên mã PIN và bàn phím khóa bị kẹt")
-                .isUrgent(true)
+                .isUrgent(false)
                 .build();
 
         RentalContract contract = new RentalContract();
@@ -138,13 +138,8 @@ class CustomerSupportServiceTest {
         assertEquals(801L, response.getId());
         assertTrue(response.getCode().startsWith("SUP-"));
         assertEquals(SupportStatus.NEW, response.getStatus());
-        assertTrue(response.getIsUrgent());
-        assertNotNull(response.getSlaDueAt());
-
-        // Kiểm tra SLA khoảng 2 giờ (+/- 5 phút)
-        OffsetDateTime expectedSla = OffsetDateTime.now().plusHours(2);
-        assertTrue(response.getSlaDueAt().isAfter(expectedSla.minusMinutes(5)));
-        assertTrue(response.getSlaDueAt().isBefore(expectedSla.plusMinutes(5)));
+        assertFalse(response.getIsUrgent());
+        assertNull(response.getSlaDueAt());
 
         verify(supportRequestRepository).save(any(SupportRequest.class));
     }
