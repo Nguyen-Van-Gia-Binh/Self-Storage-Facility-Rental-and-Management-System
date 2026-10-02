@@ -100,7 +100,7 @@ public class StaffSupportController {
     @Operation(summary = "Xem danh sách yêu cầu hỗ trợ dành cho nhân viên và quản lý cơ sở")
     public ResponseEntity<ApiResponse<PageResponse<SupportRequestSummaryResponse>>> getManagementSupportRequests(
             @RequestParam(required = false) Long facilityId,
-            @RequestParam(required = false) SupportStatus status,
+            @RequestParam(required = false) String status,
             @RequestParam(required = false) SupportCategory category,
             @RequestParam(required = false) Long assignedStaffId,
             @RequestParam(defaultValue = "0") int page,
@@ -117,8 +117,21 @@ public class StaffSupportController {
         );
         Pageable pageable = PageRequest.of(page, size, sortObj);
 
+        SupportStatus parsedStatus = null;
+        if (status != null && !status.isBlank() && !"ALL".equalsIgnoreCase(status)) {
+            if ("OPEN".equalsIgnoreCase(status)) {
+                parsedStatus = SupportStatus.NEW;
+            } else {
+                try {
+                    parsedStatus = SupportStatus.valueOf(status.trim().toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    parsedStatus = null;
+                }
+            }
+        }
+
         PageResponse<SupportRequestSummaryResponse> response = staffSupportService.getManagementSupportRequests(
-                facilityId, status, category, assignedStaffId, pageable, currentUser
+                facilityId, parsedStatus, category, assignedStaffId, pageable, currentUser
         );
         return ResponseEntity.ok(ApiResponse.success(response, "Lấy danh sách yêu cầu quản lý thành công"));
     }

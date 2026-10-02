@@ -125,7 +125,7 @@ export const IncidentManagementPage: React.FC = () => {
   // Thống kê nhanh KPI
   const stats = useMemo(() => {
     const total = tickets.length;
-    const openCount = tickets.filter((t) => t.status === 'OPEN').length;
+    const openCount = tickets.filter((t) => t.status === 'NEW' || t.status === 'OPEN').length;
     const assignedCount = tickets.filter((t) => t.status === 'ASSIGNED').length;
     const inProgressCount = tickets.filter((t) => t.status === 'IN_PROGRESS').length;
     const resolvedCount = tickets.filter(
@@ -161,7 +161,7 @@ export const IncidentManagementPage: React.FC = () => {
       isUrgent: ticket.isUrgent,
       assignedStaffId: ticket.assignedStaffId,
       assignedStaffName: ticket.assignedStaffName,
-      status: ticket.status === 'OPEN' ? 'UNASSIGNED' : 'ASSIGNED',
+      status: (ticket.status === 'NEW' || ticket.status === 'OPEN') ? 'UNASSIGNED' : 'ASSIGNED',
       notes: ticket.assignmentNotes,
       referenceId: ticket.id,
       referenceCode: ticket.code,
@@ -180,6 +180,7 @@ export const IncidentManagementPage: React.FC = () => {
 
   const getStatusBadge = (status: SupportStatus) => {
     switch (status) {
+      case 'NEW':
       case 'OPEN':
         return (
           <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-100 text-rose-700 animate-pulse">
@@ -359,7 +360,7 @@ export const IncidentManagementPage: React.FC = () => {
         <div className="flex border-b border-slate-200 px-4 bg-white overflow-x-auto text-xs font-semibold">
           {[
             { key: 'ALL', label: 'Tất cả' },
-            { key: 'OPEN', label: 'Chờ tiếp nhận' },
+            { key: 'NEW', label: 'Chờ tiếp nhận' },
             { key: 'ASSIGNED', label: 'Đã phân công' },
             { key: 'IN_PROGRESS', label: 'Đang xử lý' },
             { key: 'RESOLVED', label: 'Đã giải quyết' },
