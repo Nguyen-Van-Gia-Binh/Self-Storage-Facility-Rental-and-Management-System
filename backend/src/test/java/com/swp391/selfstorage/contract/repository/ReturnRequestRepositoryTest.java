@@ -28,6 +28,8 @@ class ReturnRequestRepositoryTest {
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("Không có hợp đồng mẫu để test"));
 
+        returnRequestRepository.deleteAll(returnRequestRepository.findByContractIdOrderByCreatedAtDesc(contract.getId()));
+
         ReturnRequest request = ReturnRequest.builder()
                 .contractId(contract.getId())
                 .requestedReturnDate(LocalDate.now().plusDays(3))
