@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { CreateSupportTicketModal } from '../CreateSupportTicketModal';
 import { RentedUnitCard } from '../RentedUnitCard';
 import { BrowserRouter } from 'react-router-dom';
@@ -9,6 +9,9 @@ import '@testing-library/jest-dom/vitest';
 import type { RentedContract } from '../../types';
 
 describe('CreateSupportTicketModal - Lọc hợp đồng hợp lệ', () => {
+  afterEach(() => {
+    cleanup();
+  });
   const mixedRentals: RentedContract[] = [
     {
       id: '1',
@@ -112,5 +115,48 @@ describe('CreateSupportTicketModal - Lọc hợp đồng hợp lệ', () => {
 
     // Không được có nút Báo sự cố
     expect(screen.queryByText('Báo sự cố')).not.toBeInTheDocument();
+  });
+
+  it('tự động gắn contractId và storageUnitId khi người dùng gửi ticket mà không cần bấm chọn lại dropdown', async () => {
+    const handleSubmit = vi.fn();
+
+    const { rerender } = render(
+      <BrowserRouter>
+        <CreateSupportTicketModal
+          isOpen={true}
+          onClose={vi.fn()}
+          rentals={[]} // Ban đầu rỗng do đang tải bất đồng bộ
+          facilities={[{ id: '1', name: 'Cơ sở Quận 7' } as any]}
+          onSubmit={handleSubmit}
+        />
+      </BrowserRouter>
+    );
+
+    // Dữ liệu tải xong, re-render với danh sách hợp đồng
+    rerender(
+      <BrowserRouter>
+        <CreateSupportTicketModal
+          isOpen={true}
+          onClose={vi.fn()}
+          rentals={mixedRentals}
+          facilities={[{ id: '1', name: 'Cơ sở Quận 7' } as any]}
+          onSubmit={handleSubmit}
+        />
+      </BrowserRouter>
+    );
+
+    // Nhập mô tả hợp lệ (>= 10 ký tự)
+    const textarea = screen.getByPlaceholderText(/Mô tả cụ thể hiện tượng/i);
+    fireEvent.change(textarea, { target: { value: 'Khóa cửa kho bị kẹt không mở được bằng mã PIN' } });
+
+    // Submit form
+    const submitBtn = screen.getByRole('button', { name: /Gửi yêu cầu/i });
+    fireEvent.click(submitBtn);
+
+    expect(handleSubmit).toHaveBeenCalledTimes(1);
+    const submittedPayload = handleSubmit.mock.calls[0][0];
+    expect(submittedPayload.contractId).toBe(1);
+    expect(submittedPayload.storageUnitId).toBe(101);
+    expect(submittedPayload.facilityId).toBe(1);
   });
 });

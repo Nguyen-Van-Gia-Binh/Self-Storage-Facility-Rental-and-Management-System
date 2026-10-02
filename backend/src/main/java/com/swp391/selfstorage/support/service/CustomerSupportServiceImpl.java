@@ -96,8 +96,9 @@ public class CustomerSupportServiceImpl implements CustomerSupportService {
 
         // 3. Nếu có contractId, kiểm tra tính hợp lệ của hợp đồng và tự động điền storageUnitId nếu chưa có
         Long storageUnitId = request.getStorageUnitId();
-        if (request.getContractId() != null) {
-            RentalContract contract = rentalContractRepository.findById(request.getContractId())
+        Long contractId = request.getContractId();
+        if (contractId != null) {
+            RentalContract contract = rentalContractRepository.findById(contractId)
                     .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND, "Không tìm thấy hợp đồng"));
 
             if (currentUser.getRole() == UserRole.STORAGE_CUSTOMER && !contract.getCustomerId().equals(customerId)) {
@@ -114,6 +115,41 @@ public class CustomerSupportServiceImpl implements CustomerSupportService {
             if (storageUnitId == null) {
                 storageUnitId = contract.getStorageUnitId();
             }
+        } else if (storageUnitId != null) {
+            if (rentalContractRepository != null) {
+                org.springframework.data.domain.Page<RentalContract> activePage = rentalContractRepository.findByCustomerIdAndStatus(
+                        customerId, ContractStatus.ACTIVE, org.springframework.data.domain.PageRequest.of(0, 10)
+                );
+                if (activePage != null && activePage.getContent() != null) {
+                    for (RentalContract ac : activePage.getContent()) {
+                        if (storageUnitId.equals(ac.getStorageUnitId())) {
+                            contractId = ac.getId();
+                            break;
+                        }
+                    }
+                }
+            }
+        } else {
+            if (rentalContractRepository != null) {
+                org.springframework.data.domain.Page<RentalContract> activePage = rentalContractRepository.findByCustomerIdAndStatus(
+                        customerId, ContractStatus.ACTIVE, org.springframework.data.domain.PageRequest.of(0, 10)
+                );
+                if (activePage != null && activePage.getContent() != null && !activePage.getContent().isEmpty()) {
+                    Long targetFacId = request.getFacilityId();
+                    RentalContract matched = null;
+                    if (targetFacId != null) {
+                        matched = activePage.getContent().stream()
+                                .filter(c -> targetFacId.equals(c.getFacilityId()))
+                                .findFirst()
+                                .orElse(null);
+                    }
+                    if (matched == null) {
+                        matched = activePage.getContent().get(0);
+                    }
+                    contractId = matched.getId();
+                    storageUnitId = matched.getStorageUnitId();
+                }
+            }
         }
 
         String desc = request.getDescription();
@@ -126,7 +162,7 @@ public class CustomerSupportServiceImpl implements CustomerSupportService {
         SupportRequest ticket = SupportRequest.builder()
                 .code(code)
                 .customerId(customerId)
-                .contractId(request.getContractId())
+                .contractId(contractId)
                 .storageUnitId(storageUnitId)
                 .category(request.getCategory())
                 .description(desc)

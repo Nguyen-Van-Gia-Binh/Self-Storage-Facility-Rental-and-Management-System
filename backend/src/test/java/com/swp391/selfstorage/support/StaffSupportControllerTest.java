@@ -26,6 +26,7 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -177,5 +178,29 @@ class StaffSupportControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.data.content[0].code").value("SUP-202610-0001"));
+    }
+
+    @Test
+    @DisplayName("GET /management/support-requests với status=OPEN tự động ánh xạ sang SupportStatus.NEW")
+    void shouldMapOpenStatusToNewStatusInManagementSupportRequests() throws Exception {
+        SupportRequestSummaryResponse item = SupportRequestSummaryResponse.builder()
+                .id(802L)
+                .code("SUP-202610-0002")
+                .status(SupportStatus.NEW)
+                .build();
+
+        PageResponse<SupportRequestSummaryResponse> pageResponse = new PageResponse<>(
+                List.of(item), 0, 10, 1, 1
+        );
+
+        when(staffSupportService.getManagementSupportRequests(
+                isNull(), eq(SupportStatus.NEW), isNull(), isNull(), any(), any()))
+                .thenReturn(pageResponse);
+
+        mockMvc.perform(get("/management/support-requests")
+                        .param("status", "OPEN"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.content[0].id").value(802L));
     }
 }

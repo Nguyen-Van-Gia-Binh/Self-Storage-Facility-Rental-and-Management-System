@@ -71,11 +71,13 @@ export type SupportCategory =
   | 'OTHER';             // Yêu cầu hỗ trợ khác
 
 export type SupportStatus = 
-  | 'OPEN'               // Chờ tiếp nhận
+  | 'NEW'                // Mới gửi (SupportStatus.java)
+  | 'OPEN'               // Chờ tiếp nhận (alias UI)
   | 'ASSIGNED'           // Đã phân công nhân viên
   | 'IN_PROGRESS'        // Nhân viên đang xử lý tại chỗ
   | 'RESOLVED'           // Đã hoàn thành xử lý
   | 'CLOSED'             // Đã nghiệm thu & đóng
+  | 'AUTO_CLOSED'        // Tự động đóng
   | 'CANCELLED';         // Khách hủy
 
 export interface IncidentAttachment {

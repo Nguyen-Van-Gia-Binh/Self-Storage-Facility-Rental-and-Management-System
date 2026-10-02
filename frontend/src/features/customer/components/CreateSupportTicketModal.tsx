@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { 
   X, 
@@ -98,6 +98,26 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
   };
 
   const [selectedContractId, setSelectedContractId] = useState<string>(getInitialContractId);
+
+  // Đồng bộ selectedContractId khi activeRentals được tải xong hoặc props thay đổi
+  useEffect(() => {
+    if (activeRentals.length > 0) {
+      setSelectedContractId((current) => {
+        if (preselectedContractId && activeRentals.some((r) => String(r.id) === String(preselectedContractId))) {
+          return String(preselectedContractId);
+        }
+        if (preselectedUnitId) {
+          const matchUnit = activeRentals.find((r) => String(r.unitId) === String(preselectedUnitId));
+          if (matchUnit) return String(matchUnit.id);
+        }
+        if (!current || !activeRentals.some((r) => String(r.id) === String(current))) {
+          return String(activeRentals[0].id);
+        }
+        return current;
+      });
+    }
+  }, [activeRentals, preselectedContractId, preselectedUnitId]);
+
   const [selectedCategory, setSelectedCategory] = useState<SupportCategory>('LOCK_ACCESS');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -149,15 +169,24 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
       return;
     }
 
-    // Find selected contract
-    const contract = activeRentals.find(r => String(r.id) === String(selectedContractId));
-    const rawFacilityId = contract?.facilityId || (facilities.length > 0 ? facilities[0].id : '1');
+    // Find selected contract with robust fallback to first active contract
+    const contract =
+      activeRentals.find((r) => String(r.id) === String(selectedContractId)) ||
+      (preselectedContractId ? activeRentals.find((r) => String(r.id) === String(preselectedContractId)) : undefined) ||
+      activeRentals[0];
+
+    if (!contract) {
+      setErrorMsg('Vui lòng chọn ô kho / hợp đồng đang thuê liên quan để gửi yêu cầu hỗ trợ.');
+      return;
+    }
+
+    const rawFacilityId = contract.facilityId || (facilities.length > 0 ? facilities[0].id : '1');
     const facilityId = Number(rawFacilityId) || Number(String(rawFacilityId).replace(/\D/g, '')) || 1;
 
-    const rawUnitId = contract?.unitId;
+    const rawUnitId = contract.unitId;
     const storageUnitId = rawUnitId ? (Number(rawUnitId) || Number(String(rawUnitId).replace(/\D/g, '')) || undefined) : undefined;
 
-    const contractId = contract ? (Number(contract.id) || Number(String(contract.id).replace(/\D/g, '')) || undefined) : undefined;
+    const contractId = Number(contract.id) || Number(String(contract.id).replace(/\D/g, '')) || undefined;
 
     try {
       setLoading(true);

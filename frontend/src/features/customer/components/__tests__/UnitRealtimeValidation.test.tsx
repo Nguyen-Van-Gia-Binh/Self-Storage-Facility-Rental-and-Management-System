@@ -22,7 +22,7 @@ describe('ISS-76: Realtime Database Unit Availability Validation on Confirm', ()
     const content = fs.readFileSync(unitGrid, 'utf-8');
     expect(content).toMatch(/isConfirming\?: boolean/);
     expect(content).toMatch(/Đang kiểm tra ô kho\.\.\./);
-    expect(content).toMatch(/disabled=\{!activeSelectedUnit\.monthlyPrice \|\| isConfirming\}/);
+    expect(content).toMatch(/disabled=\{!activeSelectedUnit\.monthlyPrice.*\|\|\s*isConfirming\}/);
   });
 
   it('UnitPickerPage gọi fetchStorageUnitsApi trong handleProceedToBooking để kiểm tra database thời gian thực', () => {

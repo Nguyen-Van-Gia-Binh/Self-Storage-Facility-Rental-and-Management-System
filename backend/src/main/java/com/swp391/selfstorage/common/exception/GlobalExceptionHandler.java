@@ -46,6 +46,20 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(response);
     }
 
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Void>> handleHttpMessageNotReadable(
+            org.springframework.http.converter.HttpMessageNotReadableException ex, HttpServletRequest request) {
+        log.warn("Malformed JSON request on {}: {}", request.getRequestURI(), ex.getMessage());
+        ApiResponse<Void> response = ApiResponse.error(
+                400,
+                ErrorCode.VALIDATION_FAILED.name(),
+                "Dữ liệu gửi lên không đúng định dạng JSON hoặc trường dữ liệu không hợp lệ",
+                request.getRequestURI(),
+                null
+        );
+        return ResponseEntity.badRequest().body(response);
+    }
+
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
     public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(
             org.springframework.security.access.AccessDeniedException ex, HttpServletRequest request) {

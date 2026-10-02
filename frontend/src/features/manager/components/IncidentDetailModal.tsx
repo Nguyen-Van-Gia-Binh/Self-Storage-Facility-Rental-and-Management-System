@@ -161,6 +161,7 @@ export const IncidentDetailModal: React.FC<IncidentDetailModalProps> = ({
 
   const getStatusBadge = () => {
     switch (ticket.status) {
+      case 'NEW':
       case 'OPEN':
         return (
           <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-rose-100 text-rose-700">
