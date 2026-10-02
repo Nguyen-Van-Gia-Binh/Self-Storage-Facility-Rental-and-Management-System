@@ -156,4 +156,12 @@ export async function getMyReservationsApi(): Promise<ReservationResponse[]> {
   return res.data || [];
 }
 
+/**
+ * 7. Tra cứu thông tin chi tiết đơn đặt chỗ theo ID (SC-02, ISS-81)
+ */
+export async function getReservationById(id: number | string): Promise<ReservationResponse> {
+  const res = await apiClient<ApiResponse<ReservationResponse>>(`/reservations/${id}`);
+  return res.data;
+}
+
 
