@@ -88,6 +88,8 @@
 | `ISS-79` | Hủy yêu cầu trả kho dùng window.confirm thô; Tạo/Hủy vé hỗ trợ thiếu Modal popup thông báo và xác nhận đồng bộ. | Thay window.confirm bằng Modal xác nhận custom chuẩn Design System; Bổ sung Modal thông báo tạo vé thành công (kèm mã SUP) và Modal xác nhận trước khi hủy vé. | Nhi | `RESOLVED` |
 | `ISS-80` | Loại kho mới tạo chưa được BOM niêm yết giá vẫn cho phép Customer chọn đặt chỗ (sai US-BM-03.1 AC-5). | Khóa chọn thẻ loại kho chưa niêm yết (badge "Chưa niêm yết giá", disable nút chọn) và chặn ở API Reservation backend. | Nhi | `RESOLVED` |
 | `ISS-81` | Logo thương hiệu không đồng bộ giữa các phân hệ (Customer/Dashboard dùng icon Box 1 khối, Auth dùng icon Boxes 3 khối). | Chuẩn hóa thống nhất Logo toàn hệ thống sử dụng icon Boxes 3 khối thông minh (`lucide-react`), tạo component Logo dùng chung và đồng bộ favicon. | Nhi | `RESOLVED` |
+| `ISS-82` | Khách thanh toán đơn đang giữ chỗ 48h bị chặn "Hết chỗ" do tính trùng đơn của mình và BookingPage tạo lại reservation mới. | Hỗ trợ `reservationId` chuyển thẳng Bước 3 thanh toán VietQR cho đơn cũ, không tạo trùng và không bị chặn bởi availability. | Nhi | `RESOLVED` |
+
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 

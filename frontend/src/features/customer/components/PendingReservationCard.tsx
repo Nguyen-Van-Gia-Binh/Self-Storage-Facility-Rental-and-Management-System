@@ -58,8 +58,10 @@ export const PendingReservationCard: React.FC<PendingReservationCardProps> = ({
     return `${d}/${m}/${y}`;
   };
 
-  const bookingUrl = `/customer/booking?facility=${reservation.facilityId}&type=${reservation.unitTypeId}${
+  const bookingUrl = `/customer/booking?reservationId=${reservation.id}&facility=${reservation.facilityId}&type=${reservation.unitTypeId}${
     reservation.storageUnitId ? `&unitId=${reservation.storageUnitId}` : ''
+  }${
+    reservation.storageUnitCode ? `&unitNumber=${encodeURIComponent(reservation.storageUnitCode)}` : ''
   }&months=${reservation.rentalMonths}&startDate=${reservation.startDate}`;
 
   return (

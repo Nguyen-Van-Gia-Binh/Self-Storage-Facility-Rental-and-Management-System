@@ -35,8 +35,10 @@ import {
   createReservation,
   cancelReservationApi,
   checkUnitAvailability,
+  getReservationById,
   type AvailabilityResponse,
   type CalculatePriceResponse,
+  type ReservationResponse,
 } from '@/api/reservation';
 import type { BookingDraft } from '../types';
 import type { MoveInPassData } from '@/types';
@@ -288,6 +290,10 @@ export const BookingPage: React.FC = () => {
   const [showPassModal, setShowPassModal] = useState(false);
   const [createdPass, setCreatedPass] = useState<MoveInPassData | null>(null);
 
+  const reservationIdParam = searchParams.get('reservationId') || searchParams.get('rsvId');
+  const [isLoadingExistingReservation, setIsLoadingExistingReservation] = useState<boolean>(!!reservationIdParam);
+  const [existingReservation, setExistingReservation] = useState<ReservationResponse | null>(null);
+
   // Payment States (SC-03)
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
@@ -315,13 +321,76 @@ export const BookingPage: React.FC = () => {
     return `${year}-${month}-${day}`;
   }, [startDate, durationMonths]);
 
+  // Xử lý nạp đơn giữ chỗ 48h hiện có khi khách tiếp tục thanh toán (ISS-81)
+  useEffect(() => {
+    if (!reservationIdParam) {
+      setIsLoadingExistingReservation(false);
+      return;
+    }
+    let isMounted = true;
+    async function loadExistingReservation() {
+      setIsLoadingExistingReservation(true);
+      try {
+        const rsv = await getReservationById(reservationIdParam!);
+        if (!isMounted) return;
+
+        if (rsv.status === 'CANCELLED' || rsv.status === 'EXPIRED') {
+          setUnavailableModal({
+            isOpen: true,
+            title: 'Đơn giữ chỗ đã hết hạn hoặc bị hủy',
+            message: 'Đơn giữ chỗ này đã hết thời gian hiệu lực 48h hoặc đã được hủy. Quý khách vui lòng chọn lại ô kho mới.',
+            actionType: 'NAVIGATE_UNITS',
+          });
+          return;
+        }
+
+        if (rsv.status === 'ACTIVE' || rsv.status === 'CONFIRMED' || rsv.status === 'PAID') {
+          navigate('/customer/my-units', { replace: true });
+          return;
+        }
+
+        setExistingReservation(rsv);
+        setCreatedReservationId(rsv.id);
+        setCreatedReservationCode(rsv.code || `RSV-${rsv.id}`);
+        setReservationHoldExpiresAt(rsv.holdExpiresAt);
+        if (rsv.startDate) setStartDate(rsv.startDate);
+        if (rsv.rentalMonths) setDurationMonths(rsv.rentalMonths);
+
+        // Khởi tạo Checkout PayOS VietQR cho đơn đặt chỗ có sẵn
+        const checkout = await customerApi.createPaymentCheckout({
+          referenceType: 'RESERVATION',
+          referenceId: rsv.id,
+          description: `DH${rsv.id}`,
+        });
+
+        if (!isMounted) return;
+        setCheckoutData(checkout);
+        setPaymentStatus('PENDING');
+        setCurrentStep(3);
+      } catch (err) {
+        console.error('Lỗi khi nạp đơn giữ chỗ có sẵn:', err);
+      } finally {
+        if (isMounted) {
+          setIsLoadingExistingReservation(false);
+        }
+      }
+    }
+    loadExistingReservation();
+    return () => { isMounted = false; };
+  }, [reservationIdParam, navigate]);
+
   // Backend Availability & Real Pricing States (SC-01, SC-02)
   const [availability, setAvailability] = useState<AvailabilityResponse | null>(null);
   const [isCheckingAvailability, setIsCheckingAvailability] = useState<boolean>(false);
   const [backendPricing, setBackendPricing] = useState<CalculatePriceResponse | null>(null);
 
-  // Tải sức chứa ô kho thực tế từ backend (SC-01)
+  // Tải sức chứa ô kho thực tế từ backend (SC-01) - Bỏ qua khi tiếp tục thanh toán đơn giữ chỗ hiện có (ISS-81)
   useEffect(() => {
+    if (reservationIdParam) {
+      setAvailability(null);
+      setIsCheckingAvailability(false);
+      return;
+    }
     let isMounted = true;
     async function loadAvailability() {
       const fId = Number(facilityId);
@@ -350,7 +419,7 @@ export const BookingPage: React.FC = () => {
     }
     loadAvailability();
     return () => { isMounted = false; };
-  }, [facilityId, typeId, startDate, durationMonths]);
+  }, [reservationIdParam, facilityId, typeId, startDate, durationMonths]);
 
   // Báo giá từ bảng giá và chính sách BOM (SC-02, BR-DEP-01, BR-GEN-04)
   useEffect(() => {
@@ -412,8 +481,25 @@ export const BookingPage: React.FC = () => {
         surcharges,
       };
     }
+    if (existingReservation && existingReservation.monthlyPrice > 0) {
+      const months = existingReservation.rentalMonths || durationMonths || 1;
+      const rawRentTotal = existingReservation.monthlyPrice * months;
+      const depositAmount = existingReservation.depositAmount > 0 ? existingReservation.depositAmount : 0;
+      const totalDueToday = existingReservation.totalPayable || (rawRentTotal + depositAmount);
+      return {
+        monthlyRate: existingReservation.monthlyPrice,
+        months,
+        rawRentTotal,
+        discountPercentage: 0,
+        discountAmount: existingReservation.discountAmount || 0,
+        finalRentTotal: existingReservation.totalRentalFee || rawRentTotal,
+        depositAmount,
+        totalDueToday,
+        surcharges: [],
+      };
+    }
     return null;
-  }, [backendPricing, availability, durationMonths]);
+  }, [backendPricing, availability, existingReservation, durationMonths]);
 
   // Xử lý tạo MoveInPass khi đã thanh toán thành công (SC-03, BR-ACC-01)
   const handleConfirmBookingPayment = useCallback(() => {
@@ -802,10 +888,21 @@ export const BookingPage: React.FC = () => {
   const transferContent = checkoutData?.description || (createdReservationCode ? `SMARTSTORAGE ${createdReservationCode}` : `SMARTSTORAGE ${customerIdCard.slice(-4)}`);
 
   const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+    }
     setCopiedBankInfo(true);
     setTimeout(() => setCopiedBankInfo(false), 2500);
   };
+
+  if (isLoadingExistingReservation) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-3 py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-brand-600" />
+        <p className="text-sm font-bold text-slate-700">Đang nạp thông tin đơn giữ chỗ 48h...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-5 space-y-6">

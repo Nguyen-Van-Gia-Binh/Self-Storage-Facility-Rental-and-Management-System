@@ -178,14 +178,15 @@ class ReservationCreationTest {
     @Test
     @DisplayName("BR-AVL-02: Hai kỳ thuê liền kề (endExclusive kỳ trước == startDate kỳ sau) không bị tính là xung đột")
     void shouldCreateReservation_whenAdjacentTimeSlots_Success() {
-        // Khách thuê bắt đầu đúng ngày kỳ cũ kết thúc (ví dụ 01/10/2026)
-        request.setStartDate(LocalDate.of(2026, 10, 1));
+        // Khách thuê bắt đầu đúng ngày kỳ cũ kết thúc
+        LocalDate testStartDate = LocalDate.now().plusDays(10);
+        request.setStartDate(testStartDate);
         request.setRentalMonths(3);
 
         when(reservationRepository.existsOverlappingReservationForUnit(
                 eq(10L),
-                eq(LocalDate.of(2026, 10, 1)),
-                eq(LocalDate.of(2027, 1, 1)),
+                eq(testStartDate),
+                eq(testStartDate.plusMonths(3)),
                 any(OffsetDateTime.class),
                 eq(15)
         )).thenReturn(false);
@@ -199,8 +200,8 @@ class ReservationCreationTest {
         ReservationResponse response = service.createReservation(request, testCustomer);
 
         assertNotNull(response);
-        assertEquals(LocalDate.of(2026, 10, 1), response.getStartDate());
-        assertEquals(LocalDate.of(2027, 1, 1), response.getEndDateExclusive());
+        assertEquals(testStartDate, response.getStartDate());
+        assertEquals(testStartDate.plusMonths(3), response.getEndDateExclusive());
         verify(reservationRepository).save(any(Reservation.class));
     }
 

@@ -168,7 +168,7 @@ class AvailabilityServiceTest {
     @Test
     @DisplayName("US-SC-01.3, BR-AVL-01..02, BR-PRI-01, BR-DEP-01: Tính toán chính xác availableSlots, ngày kết thúc, phí thuê và tiền cọc")
     void shouldCalculateAvailabilityAndPricingCorrectly_whenValidRequest() {
-        LocalDate startDate = LocalDate.of(2026, 10, 1);
+        LocalDate startDate = LocalDate.now().plusDays(1);
         int rentalMonths = 3;
 
         when(facilityRepository.findById(1L)).thenReturn(Optional.of(activeFacility));
@@ -184,7 +184,7 @@ class AvailabilityServiceTest {
         assertEquals(1L, response.getFacilityId());
         assertEquals(7L, response.getUnitTypeId());
         assertEquals(startDate, response.getStartDate());
-        assertEquals(LocalDate.of(2027, 1, 1), response.getEndDateExclusive());
+        assertEquals(startDate.plusMonths(rentalMonths), response.getEndDateExclusive());
         assertEquals(3, response.getRentalMonths());
         assertEquals(3L, response.getAvailableSlots()); // 10 - 7 ô bận (mỗi ô một lần)
         assertEquals(800000L, response.getMonthlyPrice());
