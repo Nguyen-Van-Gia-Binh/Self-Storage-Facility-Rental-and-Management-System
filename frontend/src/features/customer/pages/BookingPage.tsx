@@ -27,6 +27,7 @@ import { Modal } from '@/components/ui/Modal';
 import { formatVND } from '../utils/pricing';
 import { BookingPriceSummary } from '../components/BookingPriceSummary';
 import { DigitalMoveInPassModal } from '../components/DigitalMoveInPassModal';
+import { TermsOfServiceModal } from '../components/TermsOfServiceModal';
 import { generateMoveInPass } from '@/api/payment';
 import { customerApi } from '../api/customerApi';
 import type { CheckoutResponse } from '../api/customerApi';
@@ -288,6 +289,7 @@ export const BookingPage: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<2 | 3>(2);
   const [copiedBankInfo, setCopiedBankInfo] = useState(false);
   const [showPassModal, setShowPassModal] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const [createdPass, setCreatedPass] = useState<MoveInPassData | null>(null);
 
   const reservationIdParam = searchParams.get('reservationId') || searchParams.get('rsvId');
@@ -1216,7 +1218,15 @@ export const BookingPage: React.FC = () => {
                     required
                   />
                   <span>
-                    Tôi cam kết thông tin CCCD là chính xác, đồng ý với các quy định lưu trữ an toàn PCCC và các điều khoản hoàn tiền nêu trên.
+                    Tôi cam kết thông tin CCCD là chính xác và đồng ý với các{' '}
+                    <button
+                      type="button"
+                      onClick={() => setShowTermsModal(true)}
+                      className="text-brand-600 hover:text-brand-800 font-bold underline cursor-pointer bg-transparent border-none p-0"
+                    >
+                      điều khoản dịch vụ và chính sách bảo mật
+                    </button>{' '}
+                    của Smart Storage.
                   </span>
                 </label>
                 {formErrors.agreeTerms && (
@@ -1737,6 +1747,12 @@ export const BookingPage: React.FC = () => {
           </div>
         </div>
       </Modal>
+
+      {/* Terms of Service Modal (Issue #37) */}
+      <TermsOfServiceModal
+        isOpen={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+      />
     </div>
   );
 };
