@@ -49,6 +49,65 @@ public class EmailService {
         }
     }
 
+    public void sendRegistrationOtpEmail(String toEmail, String otpCode, int expirationMinutes) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, StandardCharsets.UTF_8.name());
+
+            String sender = (fromEmail != null && !fromEmail.isBlank()) ? fromEmail : "noreply@smartstorage.vn";
+            log.info("Bắt đầu gửi email OTP đăng ký: từ sender={}, tới recipient={}", sender, toEmail);
+            helper.setFrom(sender, "SmartStorage System");
+            helper.setTo(toEmail);
+            helper.setSubject("[SmartStorage] Mã xác thực đăng ký tài khoản: " + otpCode);
+
+            String htmlContent = buildRegistrationOtpHtmlContent(otpCode, expirationMinutes);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            log.info("Đã gửi mã OTP đăng ký tới email: {}", toEmail);
+        } catch (MessagingException | java.io.UnsupportedEncodingException e) {
+            log.error("Lỗi khi gửi email OTP đăng ký tới {}: {}", toEmail, e.getMessage(), e);
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR, "Không thể gửi email xác thực. Vui lòng thử lại sau.");
+        }
+    }
+
+    private String buildRegistrationOtpHtmlContent(String otpCode, int expirationMinutes) {
+        return "<!DOCTYPE html>"
+                + "<html lang=\"vi\">"
+                + "<head><meta charset=\"UTF-8\"><title>Xác thực đăng ký tài khoản</title></head>"
+                + "<body style=\"font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 30px;\">"
+                + "  <div style=\"max-width: 520px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08);\">"
+                + "    <div style=\"background: linear-gradient(135deg, #10b981, #059669); padding: 28px 24px; text-align: center;\">"
+                + "      <h1 style=\"color: #ffffff; margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.5px;\">SmartStorage</h1>"
+                + "      <p style=\"color: #d1fae5; margin: 6px 0 0; font-size: 13px;\">Hệ thống Quản lý & Cho thuê Kho Tự Quản</p>"
+                + "    </div>"
+                + "    <div style=\"padding: 32px 28px;\">"
+                + "      <h2 style=\"color: #1e293b; font-size: 18px; margin-top: 0; font-weight: 600;\">Xác thực Tạo Tài khoản Mới</h2>"
+                + "      <p style=\"color: #475569; font-size: 14px; line-height: 1.6; margin-bottom: 24px;\">"
+                + "        Chào mừng bạn đến với <strong>SmartStorage</strong>! Để hoàn tất quy trình tạo tài khoản khách hàng, vui lòng nhập mã OTP dưới đây để xác minh địa chỉ email của bạn:"
+                + "      </p>"
+                + "      <div style=\"background: #f0fdf4; border: 2px dashed #86efac; border-radius: 8px; text-align: center; padding: 18px; margin: 24px 0;\">"
+                + "        <span style=\"font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #059669; font-family: monospace;\">"
+                + otpCode
+                + "</span>"
+                + "      </div>"
+                + "      <p style=\"color: #059669; font-size: 13px; font-weight: 600; text-align: center; margin-bottom: 24px;\">"
+                + "        ⏰ Mã OTP này có hiệu lực trong vòng <strong>" + expirationMinutes + " phút</strong>."
+                + "      </p>"
+                + "      <div style=\"background-color: #f8fafc; border-left: 4px solid #64748b; padding: 12px 16px; border-radius: 4px;\">"
+                + "        <p style=\"color: #475569; font-size: 12px; margin: 0; line-height: 1.5;\">"
+                + "          <strong>Lưu ý bảo mật:</strong> Tuyệt đối không chia sẻ mã này cho người khác. Nếu bạn không yêu cầu đăng ký tài khoản tại SmartStorage, vui lòng bỏ qua email này."
+                + "        </p>"
+                + "      </div>"
+                + "    </div>"
+                + "    <div style=\"background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 16px; text-align: center;\">"
+                + "      <p style=\"color: #94a3b8; font-size: 11px; margin: 0;\">© 2026 SmartStorage Facility Rental System · SWP391</p>"
+                + "    </div>"
+                + "  </div>"
+                + "</body>"
+                + "</html>";
+    }
+
     private String buildOtpHtmlContent(String otpCode, int expirationSeconds) {
         return "<!DOCTYPE html>"
                 + "<html lang=\"vi\">"

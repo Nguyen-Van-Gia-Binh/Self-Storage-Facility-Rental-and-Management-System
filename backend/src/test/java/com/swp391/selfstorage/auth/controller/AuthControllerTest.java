@@ -73,10 +73,24 @@ class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("POST /auth/send-register-otp - Gửi mã OTP xác thực đăng ký thành công trả về 200 OK")
+    void sendRegisterOtp_Success() throws Exception {
+        SendRegisterOtpRequest request = new SendRegisterOtpRequest("newbie@example.com");
+        doNothing().when(authService).sendRegistrationOtp(any(SendRegisterOtpRequest.class));
+
+        mockMvc.perform(post("/auth/send-register-otp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value("Mã xác thực OTP đã được gửi đến email của bạn"));
+    }
+
+    @Test
     @DisplayName("POST /auth/register - Đăng ký tài khoản khách hàng mới thành công trả về 201 Created")
     void register_Success() throws Exception {
         RegisterRequest request = new RegisterRequest(
-                "Khách hàng mới", "newbie@example.com", "0912345678", "079099009999", "password123"
+                "Khách hàng mới", "newbie@example.com", "0912345678", "079099009999", "password123", "123456"
         );
         AuthResponse.UserInfo userInfo = new AuthResponse.UserInfo(
                 10L, "Khách hàng mới", "newbie@example.com", UserRole.STORAGE_CUSTOMER, List.of()

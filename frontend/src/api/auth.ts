@@ -34,6 +34,22 @@ export interface RegisterPayload {
   email: string;
   phone?: string;
   password: string;
+  otp: string;
+}
+
+/**
+ * Yêu cầu mã xác thực OTP 5 phút qua email để đăng ký tài khoản khách hàng mới
+ */
+export async function sendRegisterOtp(email: string): Promise<{ message: string }> {
+  const res = await apiClient<ApiResponse<void> | void>('/auth/send-register-otp', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+
+  const msg = (res && typeof res === 'object' && 'message' in res)
+    ? String((res as { message: unknown }).message)
+    : 'Mã xác thực OTP đã được gửi đến email của bạn';
+  return { message: msg };
 }
 
 /**
@@ -184,6 +200,7 @@ export const authApi = {
   login: loginUser,
   loginWithGoogle,
   register: registerUser,
+  sendRegisterOtp,
   forgotPassword,
   verifyOtp,
   resetPassword,

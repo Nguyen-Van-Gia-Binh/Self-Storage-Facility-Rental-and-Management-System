@@ -8,9 +8,12 @@ import com.swp391.selfstorage.auth.dto.LoginRequest;
 import com.swp391.selfstorage.auth.dto.RefreshTokenRequest;
 import com.swp391.selfstorage.auth.dto.RegisterRequest;
 import com.swp391.selfstorage.auth.dto.ResetPasswordRequest;
+import com.swp391.selfstorage.auth.dto.SendRegisterOtpRequest;
 import com.swp391.selfstorage.auth.dto.VerifyOtpRequest;
 
 public interface AuthService {
+
+    void sendRegistrationOtp(SendRegisterOtpRequest request);
 
     AuthResponse register(RegisterRequest request);
 

@@ -8,9 +8,12 @@ import com.swp391.selfstorage.auth.dto.LoginRequest;
 import com.swp391.selfstorage.auth.dto.RefreshTokenRequest;
 import com.swp391.selfstorage.auth.dto.RegisterRequest;
 import com.swp391.selfstorage.auth.dto.ResetPasswordRequest;
+import com.swp391.selfstorage.auth.dto.SendRegisterOtpRequest;
 import com.swp391.selfstorage.auth.entity.PasswordResetOtp;
+import com.swp391.selfstorage.auth.entity.RegistrationOtp;
 import com.swp391.selfstorage.auth.jwt.JwtTokenProvider;
 import com.swp391.selfstorage.auth.repository.PasswordResetOtpRepository;
+import com.swp391.selfstorage.auth.repository.RegistrationOtpRepository;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
 import com.swp391.selfstorage.common.service.EmailService;
@@ -49,6 +52,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final AuditLogService auditLogService;
     private final PasswordResetOtpRepository passwordResetOtpRepository;
+    private final RegistrationOtpRepository registrationOtpRepository;
     private final EmailService emailService;
     private final RestTemplate restTemplate;
 
@@ -59,7 +63,7 @@ public class AuthServiceImpl implements AuthService {
                            UserFacilityAssignmentRepository userFacilityAssignmentRepository,
                            PasswordEncoder passwordEncoder,
                            JwtTokenProvider jwtTokenProvider) {
-        this(userRepository, userFacilityAssignmentRepository, passwordEncoder, jwtTokenProvider, null, null, null, null);
+        this(userRepository, userFacilityAssignmentRepository, passwordEncoder, jwtTokenProvider, null, null, null, null, null);
     }
 
     @Autowired
@@ -69,6 +73,7 @@ public class AuthServiceImpl implements AuthService {
                            JwtTokenProvider jwtTokenProvider,
                            @Autowired(required = false) AuditLogService auditLogService,
                            @Autowired(required = false) PasswordResetOtpRepository passwordResetOtpRepository,
+                           @Autowired(required = false) RegistrationOtpRepository registrationOtpRepository,
                            @Autowired(required = false) EmailService emailService,
                            @Autowired(required = false) RestTemplate restTemplate) {
         this.userRepository = userRepository;
@@ -77,12 +82,43 @@ public class AuthServiceImpl implements AuthService {
         this.jwtTokenProvider = jwtTokenProvider;
         this.auditLogService = auditLogService;
         this.passwordResetOtpRepository = passwordResetOtpRepository;
+        this.registrationOtpRepository = registrationOtpRepository;
         this.emailService = emailService;
         this.restTemplate = restTemplate;
     }
 
     public void setGoogleClientId(String googleClientId) {
         this.googleClientId = googleClientId;
+    }
+
+    @Override
+    @Transactional
+    public void sendRegistrationOtp(SendRegisterOtpRequest request) {
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new CustomException(ErrorCode.EMAIL_ALREADY_EXISTS, "Email này đã được sử dụng bởi tài khoản khác");
+        }
+
+        // Giới hạn gửi lại: Tối thiểu 60 giây giữa các lần yêu cầu
+        if (registrationOtpRepository != null) {
+            registrationOtpRepository.findTopByEmailOrderByCreatedAtDesc(request.getEmail())
+                    .ifPresent(lastOtp -> {
+                        if (lastOtp.getCreatedAt().isAfter(LocalDateTime.now().minusSeconds(60))) {
+                            throw new CustomException(ErrorCode.VALIDATION_FAILED, "Vui lòng đợi 60 giây trước khi yêu cầu gửi lại mã OTP");
+                        }
+                    });
+        }
+
+        String otpCode = String.format("%06d", new SecureRandom().nextInt(1000000));
+        LocalDateTime expiredAt = LocalDateTime.now().plusMinutes(5); // 5 phút chuẩn thị trường
+
+        if (registrationOtpRepository != null) {
+            RegistrationOtp otpEntity = new RegistrationOtp(request.getEmail(), otpCode, expiredAt);
+            registrationOtpRepository.save(otpEntity);
+        }
+
+        if (emailService != null) {
+            emailService.sendRegistrationOtpEmail(request.getEmail(), otpCode, 5);
+        }
     }
 
     @Override
@@ -96,6 +132,20 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse register(RegisterRequest request, String ipAddress, String userAgent) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new CustomException(ErrorCode.EMAIL_ALREADY_EXISTS);
+        }
+
+        // Xác thực mã OTP đăng ký (hiệu lực 5 phút)
+        if (registrationOtpRepository != null) {
+            RegistrationOtp otpEntity = registrationOtpRepository
+                    .findTopByEmailAndOtpCodeAndIsUsedFalseOrderByCreatedAtDesc(request.getEmail(), request.getOtp())
+                    .orElseThrow(() -> new CustomException(ErrorCode.INVALID_OTP, "Mã xác thực OTP không đúng hoặc đã qua sử dụng"));
+
+            if (otpEntity.isExpired()) {
+                throw new CustomException(ErrorCode.OTP_EXPIRED, "Mã xác thực OTP đã hết hạn (chỉ có hiệu lực trong 5 phút)");
+            }
+
+            otpEntity.setUsed(true);
+            registrationOtpRepository.save(otpEntity);
         }
 
         String passwordHash = passwordEncoder.encode(request.getPassword());

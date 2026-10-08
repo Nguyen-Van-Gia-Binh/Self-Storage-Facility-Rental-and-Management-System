@@ -34,6 +34,13 @@ public class AuthController {
         this.authService = authService;
     }
 
+    @PostMapping("/send-register-otp")
+    @Operation(summary = "Gửi mã OTP 5 phút qua email để xác thực đăng ký tài khoản (Công khai)")
+    public ResponseEntity<ApiResponse<Void>> sendRegisterOtp(@Valid @RequestBody com.swp391.selfstorage.auth.dto.SendRegisterOtpRequest request) {
+        authService.sendRegistrationOtp(request);
+        return ResponseEntity.ok(ApiResponse.success(null, "Mã xác thực OTP đã được gửi đến email của bạn"));
+    }
+
     @PostMapping("/register")
     @Operation(summary = "Đăng ký tài khoản Storage Customer mới (Công khai)")
     public ResponseEntity<ApiResponse<AuthResponse>> register(

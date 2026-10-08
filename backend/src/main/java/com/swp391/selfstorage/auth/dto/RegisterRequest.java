@@ -24,14 +24,23 @@ public class RegisterRequest {
     @Size(min = 8, message = "Mật khẩu phải có tối thiểu 8 ký tự")
     private String password;
 
+    @NotBlank(message = "Mã xác thực OTP không được để trống")
+    @Size(min = 6, max = 10, message = "Mã xác thực OTP gồm 6 chữ số")
+    private String otp;
+
     public RegisterRequest() {}
 
     public RegisterRequest(String fullName, String email, String phone, String identityNumber, String password) {
+        this(fullName, email, phone, identityNumber, password, null);
+    }
+
+    public RegisterRequest(String fullName, String email, String phone, String identityNumber, String password, String otp) {
         this.fullName = fullName;
         this.email = email;
         this.phone = phone;
         this.identityNumber = identityNumber;
         this.password = password;
+        this.otp = otp;
     }
 
     public String getFullName() {
@@ -72,5 +81,13 @@ public class RegisterRequest {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getOtp() {
+        return otp;
+    }
+
+    public void setOtp(String otp) {
+        this.otp = otp;
     }
 }
