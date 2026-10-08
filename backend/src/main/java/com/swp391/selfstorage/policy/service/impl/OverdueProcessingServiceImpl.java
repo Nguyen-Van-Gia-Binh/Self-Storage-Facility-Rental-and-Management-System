@@ -68,9 +68,16 @@ public class OverdueProcessingServiceImpl implements OverdueProcessingService {
 
             if (overdueDays <= terms.graceDays()) {
                 // Mốc D+1..D+3: Ân hạn (BR-OVD-01, BR-OVD-02)
+                boolean statusChanged = false;
                 if (contract.getStatus() == ContractStatus.ACTIVE) {
                     contract.setStatus(ContractStatus.OVERDUE);
+                    statusChanged = true;
+                }
+                // Luôn reset fee về 0 trong thời gian ân hạn (phòng trường hợp cron chạy không liên tục)
+                if (contract.getOverdueFeeAccrued() != 0L) {
                     contract.setOverdueFeeAccrued(0L);
+                }
+                if (statusChanged) {
                     markedOverdueCount++;
                     log.info("Hợp đồng [{}] chuyển sang OVERDUE (ân hạn D+{}).", contract.getCode(), overdueDays);
                 }
