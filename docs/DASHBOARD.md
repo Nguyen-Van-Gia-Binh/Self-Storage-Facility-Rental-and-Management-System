@@ -92,6 +92,7 @@
 | `ISS-83` | Vé sự cố khách hàng tạo không hiển thị bên Manager do thiếu liên kết hợp đồng/cơ sở và lệch enum status OPEN vs NEW. | Bổ sung fallback tự động gán hợp đồng ACTIVE, thêm @JsonIgnoreProperties/facilityId, đổi tab Frontend sang NEW và alias an toàn ở Backend. | Tùng | `RESOLVED` |
 | `ISS-84` | Thanh thao tác bàn giao Check-in bị ghim `sticky bottom-0` đè lên form khi cuộn chuột. | Bỏ `sticky bottom-0` và `shadow-lg`, chuyển thành thanh footer tự nhiên ở đáy card form (`bg-slate-50/80 border-t`). | Bình | `RESOLVED` |
 | `ISS-85` | Đăng ký tài khoản khách hàng không xác thực email, dẫn đến nguy cơ spam tài khoản và email giả. | Tạo bảng `registration_otp` (hiệu lực 5 phút), mã hóa OTP 6 số, resend cooldown 60s, Stepper 2 bước xác thực email thật trước khi tạo `AppUser`. | Bình | `RESOLVED` |
+| `ISS-86` | Thẻ Tỷ lệ lấp đầy cơ sở (FM-06) hiển thị sai 0.2% thay vì 23.5% do Frontend hiểu nhầm hệ số thập phân backend trả về. | Chuẩn hóa quy đổi hệ số (0.0..1.0) sang tỷ lệ phần trăm (0..100%), đồng bộ mock data và type definition. | Bình | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 
