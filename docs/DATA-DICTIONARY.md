@@ -72,6 +72,30 @@ Nhật ký kiểm toán ghi nhận các thao tác nhạy cảm (thay đổi giá
 | `after_value` | `NVARCHAR(MAX)` | Không | | Dữ liệu JSON sau khi đổi |
 | `created_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Mốc thời gian thực hiện |
 
+### 1.5. Bảng `password_reset_otp`
+Lưu trữ mã OTP phục vụ yêu cầu đặt lại mật khẩu với hiệu lực ngắn hạn 60 giây (`US-SA-01.3`).
+
+| Tên cột | Kiểu dữ liệu | Bắt buộc | Ràng buộc / Mặc định | Ý nghĩa & Mô tả nghiệp vụ |
+| :--- | :--- | :---: | :--- | :--- |
+| `id` | `BIGINT` | Có | `PK`, `IDENTITY(1,1)` | Khóa chính |
+| `email` | `NVARCHAR(255)` | Có | | Email tài khoản yêu cầu cấp lại mật khẩu |
+| `otp_code` | `NVARCHAR(10)` | Có | | Mã OTP 6 chữ số ngẫu nhiên |
+| `expired_at` | `DATETIME2` | Có | | Thời điểm hết hạn mã OTP (60 giây kể từ khi tạo) |
+| `is_used` | `BIT` | Có | `DEFAULT 0` | 1: Đã dùng đổi mật khẩu, 0: Chưa dùng |
+| `created_at` | `DATETIME2` | Có | `DEFAULT CURRENT_TIMESTAMP` | Thời điểm gửi mã |
+
+### 1.6. Bảng `registration_otp`
+Lưu trữ mã xác thực OTP gửi qua email khi đăng ký tài khoản khách hàng mới để chống email rác/spam, hiệu lực chuẩn thị trường 5 phút (`US-SC-01.1`, `V46`).
+
+| Tên cột | Kiểu dữ liệu | Bắt buộc | Ràng buộc / Mặc định | Ý nghĩa & Mô tả nghiệp vụ |
+| :--- | :--- | :---: | :--- | :--- |
+| `id` | `BIGINT` | Có | `PK`, `IDENTITY(1,1)` | Khóa chính |
+| `email` | `NVARCHAR(255)` | Có | | Email đăng ký nhận mã xác minh |
+| `otp_code` | `NVARCHAR(10)` | Có | | Mã OTP 6 chữ số ngẫu nhiên |
+| `expired_at` | `DATETIME2` | Có | | Thời điểm hết hạn mã OTP (5 phút = 300 giây) |
+| `is_used` | `BIT` | Có | `DEFAULT 0` | 1: Đã xác thực tạo tài khoản, 0: Chưa dùng |
+| `created_at` | `DATETIME2` | Có | `DEFAULT CURRENT_TIMESTAMP` | Thời điểm phát sinh yêu cầu gửi OTP |
+
 ---
 
 ## 2. Phân hệ Cơ sở & Ô kho

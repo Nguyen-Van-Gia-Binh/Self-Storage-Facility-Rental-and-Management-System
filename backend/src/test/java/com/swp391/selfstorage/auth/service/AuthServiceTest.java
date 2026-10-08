@@ -6,9 +6,12 @@ import com.swp391.selfstorage.auth.dto.GoogleLoginRequest;
 import com.swp391.selfstorage.auth.dto.LoginRequest;
 import com.swp391.selfstorage.auth.dto.RegisterRequest;
 import com.swp391.selfstorage.auth.dto.ResetPasswordRequest;
+import com.swp391.selfstorage.auth.dto.SendRegisterOtpRequest;
 import com.swp391.selfstorage.auth.entity.PasswordResetOtp;
+import com.swp391.selfstorage.auth.entity.RegistrationOtp;
 import com.swp391.selfstorage.auth.jwt.JwtTokenProvider;
 import com.swp391.selfstorage.auth.repository.PasswordResetOtpRepository;
+import com.swp391.selfstorage.auth.repository.RegistrationOtpRepository;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
 import com.swp391.selfstorage.common.service.EmailService;
@@ -63,6 +66,9 @@ class AuthServiceTest {
     private PasswordResetOtpRepository passwordResetOtpRepository;
 
     @Mock
+    private RegistrationOtpRepository registrationOtpRepository;
+
+    @Mock
     private EmailService emailService;
 
     @Mock
@@ -88,17 +94,52 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("Đăng ký thành công tài khoản Storage Customer mới")
+    @DisplayName("Gửi mã OTP đăng ký thành công với hiệu lực 5 phút")
+    void sendRegistrationOtp_Success() {
+        SendRegisterOtpRequest request = new SendRegisterOtpRequest("tung@example.com");
+
+        when(userRepository.existsByEmail("tung@example.com")).thenReturn(false);
+        when(registrationOtpRepository.findTopByEmailOrderByCreatedAtDesc("tung@example.com")).thenReturn(Optional.empty());
+
+        authService.sendRegistrationOtp(request);
+
+        verify(registrationOtpRepository).save(any(RegistrationOtp.class));
+        verify(emailService).sendRegistrationOtpEmail(eq("tung@example.com"), anyString(), eq(5));
+    }
+
+    @Test
+    @DisplayName("Gửi mã OTP đăng ký thất bại khi yêu cầu lại quá nhanh (< 60s cooldown)")
+    void sendRegistrationOtp_CooldownActive() {
+        SendRegisterOtpRequest request = new SendRegisterOtpRequest("tung@example.com");
+
+        RegistrationOtp recentOtp = new RegistrationOtp("tung@example.com", "123456", LocalDateTime.now().plusMinutes(5));
+        recentOtp.setCreatedAt(LocalDateTime.now().minusSeconds(30));
+
+        when(userRepository.existsByEmail("tung@example.com")).thenReturn(false);
+        when(registrationOtpRepository.findTopByEmailOrderByCreatedAtDesc("tung@example.com")).thenReturn(Optional.of(recentOtp));
+
+        assertThatThrownBy(() -> authService.sendRegistrationOtp(request))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.VALIDATION_FAILED);
+    }
+
+    @Test
+    @DisplayName("Đăng ký thành công tài khoản Storage Customer mới khi OTP hợp lệ (hiệu lực 5 phút)")
     void register_Success() {
         RegisterRequest request = new RegisterRequest(
                 "Lê Thanh Tùng",
                 "tung@example.com",
                 "0901234567",
                 "0123456789",
-                "Password123"
+                "Password123",
+                "123456"
         );
 
+        RegistrationOtp validOtp = new RegistrationOtp("tung@example.com", "123456", LocalDateTime.now().plusMinutes(5));
+
         when(userRepository.existsByEmail(request.getEmail())).thenReturn(false);
+        when(registrationOtpRepository.findTopByEmailAndOtpCodeAndIsUsedFalseOrderByCreatedAtDesc("tung@example.com", "123456"))
+                .thenReturn(Optional.of(validOtp));
         when(passwordEncoder.encode(request.getPassword())).thenReturn("hashed_pwd");
         when(userRepository.save(any(AppUser.class))).thenReturn(sampleUser);
         when(jwtTokenProvider.generateAccessToken(any(AppUser.class), anyList())).thenReturn("mock-access-token");
@@ -112,8 +153,31 @@ class AuthServiceTest {
         assertThat(response.getRefreshToken()).isEqualTo("mock-refresh-token");
         assertThat(response.getUser().getEmail()).isEqualTo("tung@example.com");
         assertThat(response.getUser().getRole()).isEqualTo(UserRole.STORAGE_CUSTOMER);
+        assertThat(validOtp.isUsed()).isTrue();
 
         verify(userRepository).save(any(AppUser.class));
+        verify(registrationOtpRepository).save(validOtp);
+    }
+
+    @Test
+    @DisplayName("Đăng ký thất bại khi OTP không đúng hoặc đã dùng")
+    void register_InvalidOtp() {
+        RegisterRequest request = new RegisterRequest(
+                "Lê Thanh Tùng",
+                "tung@example.com",
+                "0901234567",
+                "0123456789",
+                "Password123",
+                "999999"
+        );
+
+        when(userRepository.existsByEmail(request.getEmail())).thenReturn(false);
+        when(registrationOtpRepository.findTopByEmailAndOtpCodeAndIsUsedFalseOrderByCreatedAtDesc("tung@example.com", "999999"))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> authService.register(request))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_OTP);
     }
 
     @Test
@@ -124,7 +188,8 @@ class AuthServiceTest {
                 "tung@example.com",
                 "0901234567",
                 "0123456789",
-                "Password123"
+                "Password123",
+                "123456"
         );
 
         when(userRepository.existsByEmail(request.getEmail())).thenReturn(true);
