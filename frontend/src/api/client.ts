@@ -156,11 +156,17 @@ export async function apiClient<T>(
   }
 
   if (!response.ok) {
-    const errorData: ApiError = await response.json().catch(() => ({
-      status: response.status,
-      message: 'Đã xảy ra lỗi không xác định từ máy chủ',
-      timestamp: new Date().toISOString(),
-    }));
+    let errorData: ApiError;
+    try {
+      errorData = await response.json();
+    } catch {
+      const text = await response.text().catch(() => '');
+      errorData = {
+        status: response.status,
+        message: text && text.length > 0 && text.length < 150 ? text : `Đã xảy ra lỗi từ máy chủ (${response.status})`,
+        timestamp: new Date().toISOString(),
+      };
+    }
     throw new ApiException(errorData);
   }
 

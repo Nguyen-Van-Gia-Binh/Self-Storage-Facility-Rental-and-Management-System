@@ -267,8 +267,8 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
         </div>
       </div>
 
-      {/* Sticky Action Buttons Bar (FS-01, FS-02) */}
-      <div className="sticky bottom-0 bg-white/95 backdrop-blur-md -mx-5 -mb-5 p-4 rounded-b-2xl border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 z-20 shadow-lg">
+      {/* Action Buttons Bar (FS-01, FS-02) */}
+      <div className="bg-slate-50/80 -mx-5 -mb-5 p-4 rounded-b-2xl border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
         {/* Nút báo sự cố ngoại lệ (BR-CHK-06) */}
         <button
           type="button"
