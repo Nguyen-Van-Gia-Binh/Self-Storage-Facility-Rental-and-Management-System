@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Card } from '@/components/ui/Card';
-import { Clock, Tag } from 'lucide-react';
+import { Clock, Tag, CheckCircle2 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
+import { calculateBookingPrice, type CalculatePriceResponse } from '@/api/reservation';
 import type { PricingCalculationResult } from '../utils/pricing';
 import type { UnitType, Facility } from '../types';
 
@@ -20,6 +21,8 @@ export interface BookingPriceSummaryProps {
 }
 
 export const BookingPriceSummary: React.FC<BookingPriceSummaryProps> = ({
+  unitType,
+  facility,
   calculation,
   startDate,
   endDate,
@@ -29,8 +32,69 @@ export const BookingPriceSummary: React.FC<BookingPriceSummaryProps> = ({
   const multiplierLabel = Number.isInteger(depositMultiplier)
     ? String(depositMultiplier)
     : depositMultiplier.toFixed(1).replace(/\.0$/, '');
+
+  // Issue #8: Verify price from backend when viewing cost breakdown (step 2 and step 3)
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const hasVerified = useRef(false);
+
+  useEffect(() => {
+    // Only verify once per calculation change to avoid excessive API calls
+    if (!unitType?.id || !facility?.id || !calculation || hasVerified.current) {
+      return;
+    }
+
+    const facilityId = typeof facility.id === 'number' ? facility.id : parseInt(String(facility.id), 10);
+    const unitTypeId = typeof unitType.id === 'number' ? unitType.id : parseInt(String(unitType.id), 10);
+
+    if (!Number.isFinite(facilityId) || !Number.isFinite(unitTypeId)) {
+      return;
+    }
+
+    hasVerified.current = true;
+
+    async function verifyPrice() {
+      try {
+        const res = await calculateBookingPrice({
+          facilityId,
+          unitTypeId,
+          months: calculation.months,
+        });
+
+        // Compare with displayed price
+        const priceChanged =
+          res.monthlyPrice !== calculation.monthlyRate ||
+          res.totalDueToday !== calculation.totalDueToday;
+
+        if (priceChanged) {
+          setToastMessage('Giá đã được cập nhật, vui lòng xem lại');
+          // Auto-hide toast after 4 seconds
+          setTimeout(() => setToastMessage(null), 4000);
+        }
+      } catch {
+        // Silently ignore price verification errors
+      }
+    }
+
+    verifyPrice();
+  }, [unitType?.id, facility?.id, calculation?.months]);
+
+  // Reset verification flag when calculation changes significantly
+  useEffect(() => {
+    if (calculation) {
+      hasVerified.current = false;
+    }
+  }, [calculation?.totalDueToday]);
+
   return (
     <Card className="p-5 bg-white border border-slate-200/90 shadow-sm rounded-xl sticky top-24 space-y-5">
+      {/* Toast notification for price changes */}
+      {toastMessage && (
+        <div className="fixed bottom-5 right-5 z-50 p-4 rounded-xl bg-slate-900 text-white text-xs font-semibold shadow-xl flex items-center gap-2 animate-in slide-in-from-bottom-5">
+          <CheckCircle2 className="w-4 h-4 text-amber-400" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
       <h3 className="text-base font-bold text-[#0a1614] pb-2 border-b border-slate-100">
         Tóm Tắt Chi Phí Thuê
       </h3>
