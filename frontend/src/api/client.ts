@@ -68,15 +68,15 @@ export class ApiException extends Error implements ApiError {
   }
 }
 
+import { tokenStorage } from '@/utils/tokenStorage';
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 export async function apiClient<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const token =
-    localStorage.getItem('selfstorage_access_token') ||
-    localStorage.getItem('access_token');
+  const token = tokenStorage.getAccessToken();
 
   const headers: HeadersInit = {
     'Content-Type': 'application/json',

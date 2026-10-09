@@ -97,6 +97,7 @@
 | `ISS-89` | Màn hình Phân công nhân sự FM nhồi nhét danh sách nhân viên + ca trực + công việc trên 1 trang (FM-05). | Tái thiết kế Drill-down 4 cấp (Cơ sở -> Lịch ca trực -> Danh sách công việc -> Chi tiết việc 3 Case A/B/C) kèm Calendar View, Search, Filter, Sort và Pagination theo ngưỡng (>12 cards, >10 items). | Bình | `RESOLVED` |
 | `ISS-90` | Ô kho HC-B202 (và các ô CG-S104, CG-C404, Q1-B201, HBT-B202, Q1-B203, Q7-A103) bị mồ côi hoặc lệch trạng thái. | Seed HĐ đầy đủ (V47, V48), chuẩn hóa toàn bộ ô mồ côi CSDL; Bổ sung UI phòng thủ Cấp 3/Cấp 4 và bộ test kiểm toán hồi quy tự động. | Bình | `RESOLVED` |
 | `ISS-91` | Trùng lặp 2 hợp đồng trên ô CG-S101 khiến chi tiết ô kho hiển thị lệch khách hàng; link điều hướng thiếu context. | Migration V49 tách hợp đồng về đúng CG-M204; đồng bộ ?contractId giữa Giám sát HĐ và Chi tiết ô kho. | Bình | `RESOLVED` |
+| `ISS-92` | Tiền cọc giữ kho vọt lên 6tr do multiplier cũ, lệch ô kho chọn giữa 2 trang, và giới hạn kỳ hạn thuê 12 tháng. | Migration V50 chuẩn hóa multiplier 1.0 (BR-DEP-01), đồng bộ unitNumber/unitTypeId Real DB, mở rộng kỳ hạn 1..60 tháng. | Nhi / Bình | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 
