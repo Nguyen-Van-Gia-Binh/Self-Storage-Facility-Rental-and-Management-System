@@ -7,6 +7,8 @@ import { FacilityCard } from '../components/FacilityCard';
 import { UnitTypeCard } from '../components/UnitTypeCard';
 import { StorageUnitTable } from '../components/StorageUnitTable';
 import { MiniFloorPlan } from '../components/MiniFloorPlan';
+import { Pagination } from '../components/Pagination';
+import { getFacilityRegion } from '../pages/FacilityListPage';
 import type { FacilityListItem } from '@/types';
 import type { UnitTypeResponse, StorageUnitResponse } from '@/types/unit';
 import type { ManagerContractItem } from '@/types/contractManager';
@@ -98,16 +100,16 @@ describe('Quản lý ô kho — Kiến trúc Drill-down 4 Cấp độ (FM-01)', 
     expect(html).toContain('Vào quản lý cơ sở');
   });
 
-  it('2. Cấp 2 (UnitTypeCard): Hiển thị thông số diện tích, đơn giá và mini-stats 3 màu (Trống, Thuê, Bảo trì)', () => {
+  it('2. Cấp 2 (UnitTypeCard): Hiển thị mini progress bar tỷ lệ đã thuê / tổng và 3 màu trực quan', () => {
     const html = cleanHtml(
       renderToString(
         <UnitTypeCard
           type={mockUnitType}
           stats={{
-            total: 8,
-            available: 5,
-            occupied: 2,
-            maintenance: 1,
+            total: 10,
+            available: 2,
+            occupied: 8,
+            maintenance: 0,
           }}
           onClick={() => {}}
           onEdit={() => {}}
@@ -119,18 +121,22 @@ describe('Quản lý ô kho — Kiến trúc Drill-down 4 Cấp độ (FM-01)', 
     expect(html).toContain('Kho Nhỏ (4m²)');
     expect(html).toContain('4 m²');
     expect(html).toContain('800.000 đ/tháng');
-    expect(html).toContain('5 ô');
+    expect(html).toContain('Đã thuê: 8 / 10 ô');
+    expect(html).toContain('80%');
     expect(html).toContain('2 ô');
-    expect(html).toContain('1 ô');
+    expect(html).toContain('8 ô');
     expect(html).toContain('Xem danh sách ô');
   });
 
-  it('3. Cấp 3 (StorageUnitTable): Hiển thị mã ô kho, tầng, vị trí, khách thuê và hạn hợp đồng', () => {
+  it('3. Cấp 3 (StorageUnitTable): Hiển thị bảng sortable columns, mã ô, tầng, khách và hạn hợp đồng', () => {
     const html = cleanHtml(
       renderToString(
         <StorageUnitTable
           units={[mockStorageUnit]}
           contractsMap={{ 101: mockContract }}
+          sortField="code"
+          sortDirection="asc"
+          onSort={() => {}}
           onSelectUnit={() => {}}
         />
       )
@@ -184,5 +190,47 @@ describe('Quản lý ô kho — Kiến trúc Drill-down 4 Cấp độ (FM-01)', 
     expect(html).toContain('Cơ sở Cầu Giấy');
     expect(html).toContain('Kho Nhỏ (4m²)');
     expect(html).toContain('Ô CG-S101');
+  });
+
+  it('6. Pagination Component: Tự động ẩn khi data <= threshold và phân trang khi > threshold', () => {
+    // Trường hợp <= threshold (12): Không hiển thị
+    const hiddenHtml = renderToString(
+      <Pagination
+        currentPage={1}
+        totalPages={1}
+        totalItems={12}
+        pageSize={12}
+        threshold={12}
+        itemName="cơ sở"
+        onPageChange={() => {}}
+      />
+    );
+    expect(hiddenHtml).toBe('');
+
+    // Trường hợp > threshold (100 items, pageSize 12, threshold 12): Hiển thị đầy đủ
+    const visibleHtml = cleanHtml(
+      renderToString(
+        <Pagination
+          currentPage={1}
+          totalPages={9}
+          totalItems={100}
+          pageSize={12}
+          threshold={12}
+          itemName="cơ sở"
+          onPageChange={() => {}}
+        />
+      )
+    );
+    expect(visibleHtml).toContain('Hiển thị');
+    expect(visibleHtml).toContain('12');
+    expect(visibleHtml).toContain('100');
+    expect(visibleHtml).toContain('cơ sở');
+  });
+
+  it('7. Phân loại khu vực RegionFilter: Phân loại chính xác Hà Nội, TP.HCM, Đà Nẵng và Khác', () => {
+    expect(getFacilityRegion({ name: 'FAC-CG', address: '12 Cầu Giấy, Hà Nội' })).toBe('HN');
+    expect(getFacilityRegion({ name: 'FAC-Q7', address: '88 Nguyễn Thị Thập, Quận 7, TP.HCM' })).toBe('HCM');
+    expect(getFacilityRegion({ name: 'FAC-DN', address: '15 Bạch Đằng, Hải Châu, Đà Nẵng' })).toBe('DN');
+    expect(getFacilityRegion({ name: 'FAC-BD', address: 'Bình Dương' })).toBe('OTHER');
   });
 });

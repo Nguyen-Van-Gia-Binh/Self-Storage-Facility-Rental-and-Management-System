@@ -1,13 +1,21 @@
-import { Box, User, Calendar, Eye } from 'lucide-react';
+// frontend/src/features/manager/components/StorageUnitTable.tsx
+import React from 'react';
+import { Box, User, Calendar, Eye, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import type { StorageUnitResponse, UnitStatus } from '@/types/unit';
 import type { ManagerContractItem } from '@/types/contractManager';
 import { StatusBadge } from './StatusBadge';
+
+export type StorageUnitSortField = 'code' | 'floor' | 'status' | 'customer' | 'endDate';
+export type SortDirection = 'asc' | 'desc';
 
 interface StorageUnitTableProps {
   units: StorageUnitResponse[];
   contractsMap?: Record<number, ManagerContractItem>;
   onSelectUnit: (unit: StorageUnitResponse) => void;
   onStatusChange?: (unit: StorageUnitResponse, status: UnitStatus) => void;
+  sortField?: StorageUnitSortField;
+  sortDirection?: SortDirection;
+  onSort?: (field: StorageUnitSortField) => void;
 }
 
 export const StorageUnitTable: React.FC<StorageUnitTableProps> = ({
@@ -15,6 +23,9 @@ export const StorageUnitTable: React.FC<StorageUnitTableProps> = ({
   contractsMap = {},
   onSelectUnit,
   onStatusChange,
+  sortField,
+  sortDirection = 'asc',
+  onSort,
 }) => {
   if (units.length === 0) {
     return (
@@ -24,23 +35,96 @@ export const StorageUnitTable: React.FC<StorageUnitTableProps> = ({
         </div>
         <h3 className="text-sm font-bold text-slate-800">Không có ô kho nào phù hợp</h3>
         <p className="text-xs text-slate-500 mt-1">
-          Chưa có ô kho vật lý nào khớp với bộ lọc trạng thái được chọn.
+          Chưa có ô kho vật lý nào khớp với bộ lọc và từ khóa được chọn.
         </p>
       </div>
     );
   }
+
+  const renderSortIcon = (field: StorageUnitSortField) => {
+    if (!onSort) return null;
+    if (sortField === field) {
+      return sortDirection === 'asc' ? (
+        <ArrowUp className="w-3.5 h-3.5 text-brand-600 shrink-0" />
+      ) : (
+        <ArrowDown className="w-3.5 h-3.5 text-brand-600 shrink-0" />
+      );
+    }
+    return <ArrowUpDown className="w-3.5 h-3.5 text-slate-300 group-hover/col:text-slate-500 shrink-0" />;
+  };
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-50/75 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              <th className="py-3.5 px-4">Mã ô kho</th>
-              <th className="py-3.5 px-4">Tầng / Vị trí</th>
-              <th className="py-3.5 px-4">Trạng thái</th>
-              <th className="py-3.5 px-4">Khách thuê hiện tại</th>
-              <th className="py-3.5 px-4">Hạn hợp đồng</th>
+            <tr className="bg-slate-50/75 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider select-none">
+              {/* Cột Mã ô kho */}
+              <th
+                onClick={() => onSort?.('code')}
+                className={`py-3.5 px-4 cursor-pointer hover:bg-slate-100/70 transition-colors group/col ${
+                  sortField === 'code' ? 'text-brand-600 bg-brand-50/30' : ''
+                }`}
+              >
+                <div className="flex items-center gap-1.5">
+                  <span>Mã ô kho</span>
+                  {renderSortIcon('code')}
+                </div>
+              </th>
+
+              {/* Cột Tầng / Vị trí */}
+              <th
+                onClick={() => onSort?.('floor')}
+                className={`py-3.5 px-4 cursor-pointer hover:bg-slate-100/70 transition-colors group/col ${
+                  sortField === 'floor' ? 'text-brand-600 bg-brand-50/30' : ''
+                }`}
+              >
+                <div className="flex items-center gap-1.5">
+                  <span>Tầng / Vị trí</span>
+                  {renderSortIcon('floor')}
+                </div>
+              </th>
+
+              {/* Cột Trạng thái */}
+              <th
+                onClick={() => onSort?.('status')}
+                className={`py-3.5 px-4 cursor-pointer hover:bg-slate-100/70 transition-colors group/col ${
+                  sortField === 'status' ? 'text-brand-600 bg-brand-50/30' : ''
+                }`}
+              >
+                <div className="flex items-center gap-1.5">
+                  <span>Trạng thái</span>
+                  {renderSortIcon('status')}
+                </div>
+              </th>
+
+              {/* Cột Khách thuê */}
+              <th
+                onClick={() => onSort?.('customer')}
+                className={`py-3.5 px-4 cursor-pointer hover:bg-slate-100/70 transition-colors group/col ${
+                  sortField === 'customer' ? 'text-brand-600 bg-brand-50/30' : ''
+                }`}
+              >
+                <div className="flex items-center gap-1.5">
+                  <span>Khách thuê hiện tại</span>
+                  {renderSortIcon('customer')}
+                </div>
+              </th>
+
+              {/* Cột Hạn hợp đồng */}
+              <th
+                onClick={() => onSort?.('endDate')}
+                className={`py-3.5 px-4 cursor-pointer hover:bg-slate-100/70 transition-colors group/col ${
+                  sortField === 'endDate' ? 'text-brand-600 bg-brand-50/30' : ''
+                }`}
+              >
+                <div className="flex items-center gap-1.5">
+                  <span>Hạn hợp đồng</span>
+                  {renderSortIcon('endDate')}
+                </div>
+              </th>
+
+              {/* Cột Thao tác */}
               <th className="py-3.5 px-4 text-right">Thao tác</th>
             </tr>
           </thead>
@@ -76,9 +160,7 @@ export const StorageUnitTable: React.FC<StorageUnitTableProps> = ({
 
                   {/* Tầng / Vị trí */}
                   <td className="py-3.5 px-4">
-                    <div className="font-medium text-slate-800">
-                      Tầng {unit.floor ?? 1}
-                    </div>
+                    <div className="font-medium text-slate-800">Tầng {unit.floor ?? 1}</div>
                     <div className="text-[11px] text-slate-500 font-mono">
                       {unit.position || 'Chưa định vị'}
                     </div>
