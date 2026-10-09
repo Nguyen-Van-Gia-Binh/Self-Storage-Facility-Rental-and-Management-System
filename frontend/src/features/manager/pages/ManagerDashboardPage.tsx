@@ -17,7 +17,7 @@ const NAV_CARDS = [
     cta: 'Mở Contracts Hub',
   },
   {
-    to: '/manager/units',
+    to: '/manager/facilities',
     icon: Layers,
     color: 'emerald',
     iconBg: 'from-emerald-500 to-emerald-600',

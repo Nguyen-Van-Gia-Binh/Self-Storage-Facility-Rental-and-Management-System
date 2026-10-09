@@ -92,6 +92,7 @@
 | `ISS-83` | Vé sự cố khách hàng tạo không hiển thị bên Manager do thiếu liên kết hợp đồng/cơ sở và lệch enum status OPEN vs NEW. | Bổ sung fallback tự động gán hợp đồng ACTIVE, thêm @JsonIgnoreProperties/facilityId, đổi tab Frontend sang NEW và alias an toàn ở Backend. | Tùng | `RESOLVED` |
 | `ISS-84` | Thanh thao tác bàn giao Check-in bị ghim `sticky bottom-0` đè lên form khi cuộn chuột. | Bỏ `sticky bottom-0` và `shadow-lg`, chuyển thành thanh footer tự nhiên ở đáy card form (`bg-slate-50/80 border-t`). | Bình | `RESOLVED` |
 | `ISS-85` | Đăng ký tài khoản khách hàng không xác thực email, dẫn đến nguy cơ spam tài khoản và email giả. | Tạo bảng `registration_otp` (hiệu lực 5 phút), mã hóa OTP 6 số, resend cooldown 60s, Stepper 2 bước xác thực email thật trước khi tạo `AppUser`. | Bình | `RESOLVED` |
+| `ISS-87` | Màn hình Quản lý ô kho dồn hết dữ liệu vào 1 trang gây loãng và trống nửa màn hình. | Tái thiết kế toàn diện theo mô hình Drill-down 4 cấp (Cơ sở -> Loại kho -> Ô kho -> Chi tiết) kèm Breadcrumb, Less is More. | Bình | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 
