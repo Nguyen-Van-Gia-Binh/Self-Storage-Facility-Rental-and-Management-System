@@ -77,7 +77,7 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen flex flex-col bg-[#f2f9f7]">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-slate-200/90 shadow-sm">
+      <header className="sticky top-0 z-30 bg-white border-b border-slate-200/90 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
           {/* Logo */}
           <Logo to="/customer" subtitle="Self-Storage Solutions" size="md" />

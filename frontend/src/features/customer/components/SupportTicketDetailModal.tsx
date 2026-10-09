@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
@@ -167,8 +168,8 @@ export const SupportTicketDetailModal: React.FC<SupportTicketDetailModalProps> =
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200" onClick={onClose}>
       <div 
         className="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
@@ -566,7 +567,7 @@ export const SupportTicketDetailModal: React.FC<SupportTicketDetailModalProps> =
         {/* Lightbox Image Zoom Modal */}
         {activeImageZoom && (
           <div 
-            className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-[110] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
             onClick={() => setActiveImageZoom(null)}
           >
             <div className="relative max-w-4xl max-h-[90vh]">
@@ -658,6 +659,7 @@ export const SupportTicketDetailModal: React.FC<SupportTicketDetailModalProps> =
           </div>
         </Modal>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

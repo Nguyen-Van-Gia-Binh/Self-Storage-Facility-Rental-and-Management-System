@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -338,11 +339,11 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
       </div>
 
       {/* QR Code Modal for Door Unlock */}
-      {showQrModal && (
+      {showQrModal && createPortal(
         <div
           role="dialog"
           aria-modal="true"
-          className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs transition-opacity duration-200 ${
+          className={`fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs transition-opacity duration-200 ${
             isClosingModal ? 'opacity-0' : 'opacity-100'
           }`}
           onClick={handleCloseModal}
@@ -389,7 +390,8 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
               Đưa mã QR này trước camera tại cổng an ninh hoặc cửa kho để mở khóa tự động.
             </p>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Digital Move-In Pass Modal for Check-in */}
