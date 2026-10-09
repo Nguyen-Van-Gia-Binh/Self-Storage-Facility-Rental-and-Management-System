@@ -962,14 +962,9 @@ export const BookingPage: React.FC = () => {
             <Card className="p-4 sm:p-5 bg-white border border-slate-200/90 rounded-xl space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-brand-700 uppercase tracking-wider bg-brand-50 px-2 py-0.5 rounded-full border border-brand-200 font-mono">
-                      Ô kho {finalUnitNumber}
-                    </span>
-                    <Badge variant="available" className="text-[10px] px-1.5 py-0.5">
-                      Sẵn sàng nhận kho
-                    </Badge>
-                  </div>
+                  <span className="text-xs font-bold text-brand-700 uppercase tracking-wider bg-brand-50 px-2 py-0.5 rounded-full border border-brand-200 font-mono">
+                    Ô kho {finalUnitNumber}
+                  </span>
                   <h2 className="text-base sm:text-lg font-bold text-[#0a1614] mt-1.5">
                     {unitType.name}
                   </h2>
