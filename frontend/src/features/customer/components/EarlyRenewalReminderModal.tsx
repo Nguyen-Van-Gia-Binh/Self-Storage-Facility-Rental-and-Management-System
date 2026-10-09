@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import {
@@ -45,11 +46,11 @@ export const EarlyRenewalReminderModal: React.FC<EarlyRenewalReminderModalProps>
     }, 180);
   };
 
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
-      className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity duration-200 ${
+      className={`fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity duration-200 ${
         isClosing ? 'opacity-0' : 'opacity-100'
       }`}
       onClick={(e) => {
@@ -175,6 +176,7 @@ export const EarlyRenewalReminderModal: React.FC<EarlyRenewalReminderModalProps>
           </Link>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

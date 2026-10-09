@@ -1,17 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import {
   FileText,
   Calendar,
-  MapPin,
   KeyRound,
   ShieldCheck,
-  Clock,
-  User,
   History,
   CheckCircle2,
-  AlertCircle,
   Copy,
   Check,
   X,
@@ -21,8 +18,8 @@ import {
   CheckSquare,
 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
-import { getContractAccessLogs, getMyRentalDetail, type CustomerRentalDetail } from '@/api/customerRentals';
-import type { RentedContract, AccessLogEntry } from '../types';
+import { getMyRentalDetail, type CustomerRentalDetail } from '@/api/customerRentals';
+import type { RentedContract } from '../types';
 
 export interface ContractDetailModalProps {
   isOpen: boolean;
@@ -41,8 +38,6 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'DETAILS' | 'LOGS'>('DETAILS');
   const [detail, setDetail] = useState<CustomerRentalDetail | null>(null);
-  const [logs, setLogs] = useState<AccessLogEntry[]>([]);
-  const [loadingLogs, setLoadingLogs] = useState(false);
   const [copiedContractNum, setCopiedContractNum] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
 
@@ -57,20 +52,6 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
       })
       .catch((err) => {
         console.error('Lỗi tải chi tiết hợp đồng:', err);
-      });
-
-    // Tải nhật ký ra vào
-    setLoadingLogs(true);
-    getContractAccessLogs(contract.id)
-      .then((data) => {
-        if (isMounted) {
-          setLogs(data);
-          setLoadingLogs(false);
-        }
-      })
-      .catch((err) => {
-        console.error('Lỗi tải nhật ký:', err);
-        if (isMounted) setLoadingLogs(false);
       });
 
     return () => {
@@ -158,9 +139,9 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
     }
   };
 
-  return (
+  return createPortal(
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto ${
+      className={`fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto ${
         isClosing ? 'modal-backdrop-exit' : 'modal-backdrop-enter'
       }`}
       onClick={handleClose}
@@ -171,7 +152,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
         }`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header Quốc hiệu & Trạng thái */}
+        {/* Header Thông tin hợp đồng & Trạng thái */}
         <div className="bg-gradient-to-r from-[#0a483c] via-[#0d6050] to-[#14937a] p-5 text-white relative">
           <button
             type="button"
@@ -181,16 +162,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
             <X className="w-5 h-5" />
           </button>
 
-          <div className="text-center pb-2 border-b border-white/15 mb-3">
-            <p className="text-[10px] font-black tracking-widest uppercase text-emerald-200">
-              CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
-            </p>
-            <p className="text-[9px] font-semibold tracking-wider text-emerald-100/90">
-              Độc lập – Tự do – Hạnh phúc
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8 sm:pr-0">
             <div>
               <span className="inline-flex items-center gap-1.5 text-[11px] font-bold bg-white/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider text-emerald-100 mb-1">
                 <FileText className="w-3.5 h-3.5 text-amber-300" />
@@ -198,9 +170,6 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
               </span>
               <h3 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2 mt-0.5">
                 Ô kho {effectiveUnitNumber}
-                <span className="text-sm font-medium text-emerald-100">
-                  ({effectiveUnitTypeName})
-                </span>
               </h3>
             </div>
             <div className="flex sm:flex-col items-start sm:items-end gap-1.5">
@@ -218,10 +187,6 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
               </div>
             </div>
           </div>
-          <p className="text-xs text-emerald-100/90 mt-1 flex items-center gap-1">
-            <MapPin className="w-3.5 h-3.5 text-emerald-200" />
-            {effectiveFacilityName} • {effectiveFacilityAddress}
-          </p>
         </div>
 
         {/* Navigation Tabs */}
@@ -249,7 +214,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
             }`}
           >
             <History className="w-4 h-4" />
-            <span>Lịch sử ra vào ô kho ({logs.length})</span>
+            <span>Lịch sử ra vào ô kho</span>
           </button>
         </div>
 
@@ -305,7 +270,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                     </span>
                     <p className="font-bold text-slate-800">{effectiveCustomerName}</p>
                     <p className="text-slate-500 text-[11px]">Số ĐT: <strong className="text-slate-700">{effectiveCustomerPhone}</strong></p>
-                    <p className="text-slate-500 text-[11px]">Số CCCD/Định danh: <strong className="font-mono text-slate-700">{effectiveCustomerIdentity}</strong></p>
+                    <p className="text-slate-500 text-[11px]">Số CCCD: <strong className="font-mono text-slate-700">{effectiveCustomerIdentity}</strong></p>
                     <p className="text-slate-500 text-[11px]">Email: {effectiveCustomerEmail}</p>
                   </div>
                 </div>
@@ -346,18 +311,6 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                     <span className="font-bold text-slate-800">{contract.endDate}</span>
                   </div>
                 </div>
-
-                {contract.accessPin && (
-                  <div className="p-2.5 bg-emerald-50 rounded-lg border border-emerald-200 flex items-center justify-between text-xs">
-                    <span className="text-emerald-800 flex items-center gap-1.5 font-semibold">
-                      <KeyRound className="w-4 h-4 text-emerald-600" />
-                      Mã PIN khóa điện tử 24/7:
-                    </span>
-                    <span className="font-mono text-sm font-black text-emerald-900 bg-white px-2 py-0.5 rounded border border-emerald-200">
-                      {contract.accessPin}
-                    </span>
-                  </div>
-                )}
               </div>
 
               {/* Điều 3: Tài chính & Tiền cọc bảo đảm */}
@@ -460,79 +413,15 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
               </div>
             </div>
           ) : (
-            /* Tab 2: Access Logs (US-SC-05.2) */
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-xs text-slate-500 pb-1">
-                <span>Nhật ký ra vào cảm biến số (mới nhất xếp trước)</span>
-                <span className="font-semibold text-brand-700">Mã hóa bảo mật 24/7</span>
+            /* Tab 2: Lịch sử ra vào ô kho */
+            <div className="py-14 px-4 text-center bg-slate-50/70 rounded-2xl border border-dashed border-slate-200 my-2">
+              <div className="w-12 h-12 mx-auto rounded-full bg-emerald-50 text-brand-600 border border-emerald-100 flex items-center justify-center mb-3">
+                <History className="w-6 h-6" />
               </div>
-
-              {loadingLogs ? (
-                <div className="py-8 text-center text-xs text-slate-400">
-                  Đang tải dữ liệu nhật ký ra vào...
-                </div>
-              ) : logs.length > 0 ? (
-                <div className="space-y-2">
-                  {logs.map((log) => (
-                    <div
-                      key={log.id}
-                      className="p-3 bg-white rounded-xl border border-slate-200 hover:border-slate-300 transition-colors flex items-center justify-between text-xs gap-3"
-                    >
-                      <div className="flex items-start gap-2.5">
-                        <div
-                          className={`p-2 rounded-lg flex-shrink-0 mt-0.5 ${
-                            log.status === 'SUCCESS'
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                              : 'bg-rose-50 text-rose-700 border border-rose-200'
-                          }`}
-                        >
-                          {log.status === 'SUCCESS' ? (
-                            <CheckCircle2 className="w-4 h-4" />
-                          ) : (
-                            <AlertCircle className="w-4 h-4" />
-                          )}
-                        </div>
-
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-slate-900">
-                              {log.status === 'SUCCESS' ? 'Mở khóa thành công' : 'Mở khóa thất bại'}
-                            </span>
-                            <span className="text-[10px] px-2 py-0.5 rounded bg-slate-100 font-mono font-medium text-slate-600">
-                              {log.method === 'PIN_CODE' ? 'Bàn phím PIN' : log.method === 'QR_PASS' ? 'Quét mã QR Pass' : 'Lễ tân'}
-                            </span>
-                          </div>
-                          <div className="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5">
-                            <span className="flex items-center gap-1">
-                              <User className="w-3 h-3 text-slate-400" />
-                              {log.accessorName}
-                            </span>
-                            <span>• {log.deviceInfo}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="text-right flex-shrink-0">
-                        <span className="text-[11px] font-mono text-slate-500 flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-slate-400" />
-                          {log.timestamp}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-8 text-center text-xs text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                  Chưa ghi nhận lượt ra vào nào cho ô kho này.
-                </div>
-              )}
-
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-start gap-2 text-[11px] text-slate-500 mt-2">
-                <ShieldCheck className="w-4 h-4 text-brand-600 flex-shrink-0 mt-0.5" />
-                <span>
-                  Hệ thống giám sát cửa khóa IoT tự động lưu trữ nhật ký mở cửa trong 90 ngày để phục vụ bảo đảm an ninh tài sản theo tiêu chuẩn an ninh thông minh.
-                </span>
-              </div>
+              <h4 className="text-sm font-bold text-slate-800">Tính năng đang được phát triển</h4>
+              <p className="text-xs text-slate-500 mt-1.5 max-w-sm mx-auto leading-relaxed">
+                Hệ thống ghi nhận nhật ký cảm biến và lịch sử ra vào ô kho thông minh đang được nâng cấp và sẽ sớm ra mắt trong bản cập nhật tới.
+              </p>
             </div>
           )}
         </div>
@@ -592,6 +481,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
