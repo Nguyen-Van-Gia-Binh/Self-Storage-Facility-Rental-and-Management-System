@@ -64,6 +64,14 @@ BEGIN
 END
 GO
 
+-- Cơ sở INACTIVE dùng để test chức năng vô hiệu hóa cơ sở (Issue #2)
+IF NOT EXISTS (SELECT 1 FROM facility WHERE code = 'FAC-TX')
+BEGIN
+    INSERT INTO facility (code, name, address, status)
+    VALUES ('FAC-TX', N'Cơ sở Thanh Xuân - Hà Nội', N'Số 5 Thanh Xuân, Thanh Xuân, Hà Nội', 'INACTIVE');
+END
+GO
+
 -- Gán nhân viên và quản lý vào Cơ sở Cầu Giấy
 IF NOT EXISTS (
     SELECT 1 FROM user_facility_assignment ufa
@@ -159,9 +167,13 @@ GO
 PRINT N'-> Đã kiểm tra và seed unit_type & facility_unit_type_price.';
 
 -- ============================================================================
--- 5. DANH SÁCH Ô KHO VẬT LÝ (STORAGE_UNIT) - 16 Ô KHO TẠI FAC-CG
+-- 5. DANH SÁCH Ô KHO VẬT LÝ (STORAGE_UNIT) - 24 Ô KHO TẠI FAC-CG
+-- Dùng để test các kỳ hạn 1, 2, 3 tháng: đảm bảo đủ AVAILABLE trong mỗi loại kho
+-- Các trạng thái: AVAILABLE (trống sẵn đặt), OCCUPIED (đang thuê), RESERVED (đặt chờ thanh toán),
+--                CLEANING (đang dọn sau trả kho), MAINTENANCE (bảo trì)
 -- ============================================================================
--- Kho Nhỏ
+
+-- === KHO NHỎ (UT-SMALL) ===
 IF NOT EXISTS (SELECT 1 FROM storage_unit su JOIN facility f ON su.facility_id = f.id WHERE f.code = 'FAC-CG' AND su.code = 'CG-S101')
     INSERT INTO storage_unit (facility_id, unit_type_id, code, location_note, status)
     SELECT f.id, ut.id, 'CG-S101', N'Tầng 1 - Khu A', 'AVAILABLE' FROM facility f, unit_type ut WHERE f.code = 'FAC-CG' AND ut.code = 'UT-SMALL';
@@ -176,9 +188,13 @@ IF NOT EXISTS (SELECT 1 FROM storage_unit su JOIN facility f ON su.facility_id =
 
 IF NOT EXISTS (SELECT 1 FROM storage_unit su JOIN facility f ON su.facility_id = f.id WHERE f.code = 'FAC-CG' AND su.code = 'CG-S104')
     INSERT INTO storage_unit (facility_id, unit_type_id, code, location_note, status)
-    SELECT f.id, ut.id, 'CG-S104', N'Tầng 1 - Khu A', 'OCCUPIED'  FROM facility f, unit_type ut WHERE f.code = 'FAC-CG' AND ut.code = 'UT-SMALL';
+    SELECT f.id, ut.id, 'CG-S104', N'Tầng 1 - Khu A', 'RESERVED' FROM facility f, unit_type ut WHERE f.code = 'FAC-CG' AND ut.code = 'UT-SMALL';
 
--- Kho Vừa
+IF NOT EXISTS (SELECT 1 FROM storage_unit su JOIN facility f ON su.facility_id = f.id WHERE f.code = 'FAC-CG' AND su.code = 'CG-S105')
+    INSERT INTO storage_unit (facility_id, unit_type_id, code, location_note, status)
+    SELECT f.id, ut.id, 'CG-S105', N'Tầng 1 - Khu A', 'OCCUPIED' FROM facility f, unit_type ut WHERE f.code = 'FAC-CG' AND ut.code = 'UT-SMALL';
+
+-- === KHO VỪA (UT-MEDIUM) ===
 IF NOT EXISTS (SELECT 1 FROM storage_unit su JOIN facility f ON su.facility_id = f.id WHERE f.code = 'FAC-CG' AND su.code = 'CG-M201')
     INSERT INTO storage_unit (facility_id, unit_type_id, code, location_note, status)
     SELECT f.id, ut.id, 'CG-M201', N'Tầng 2 - Khu B', 'AVAILABLE' FROM facility f, unit_type ut WHERE f.code = 'FAC-CG' AND ut.code = 'UT-MEDIUM';
@@ -193,26 +209,38 @@ IF NOT EXISTS (SELECT 1 FROM storage_unit su JOIN facility f ON su.facility_id =
 
 IF NOT EXISTS (SELECT 1 FROM storage_unit su JOIN facility f ON su.facility_id = f.id WHERE f.code = 'FAC-CG' AND su.code = 'CG-M204')
     INSERT INTO storage_unit (facility_id, unit_type_id, code, location_note, status)
-    SELECT f.id, ut.id, 'CG-M204', N'Tầng 2 - Khu B', 'OCCUPIED'  FROM facility f, unit_type ut WHERE f.code = 'FAC-CG' AND ut.code = 'UT-MEDIUM';
+    SELECT f.id, ut.id, 'CG-M204', N'Tầng 2 - Khu B', 'CLEANING' FROM facility f, unit_type ut WHERE f.code = 'FAC-CG' AND ut.code = 'UT-MEDIUM';
 
--- Kho Lớn
+IF NOT EXISTS (SELECT 1 FROM storage_unit su JOIN facility f ON su.facility_id = f.id WHERE f.code = 'FAC-CG' AND su.code = 'CG-M205')
+    INSERT INTO storage_unit (facility_id, unit_type_id, code, location_note, status)
+    SELECT f.id, ut.id, 'CG-M205', N'Tầng 2 - Khu B', 'OCCUPIED' FROM facility f, unit_type ut WHERE f.code = 'FAC-CG' AND ut.code = 'UT-MEDIUM';
+
+IF NOT EXISTS (SELECT 1 FROM storage_unit su JOIN facility f ON su.facility_id = f.id WHERE f.code = 'FAC-CG' AND su.code = 'CG-M206')
+    INSERT INTO storage_unit (facility_id, unit_type_id, code, location_note, status)
+    SELECT f.id, ut.id, 'CG-M206', N'Tầng 2 - Khu B', 'OCCUPIED' FROM facility f, unit_type ut WHERE f.code = 'FAC-CG' AND ut.code = 'UT-MEDIUM';
+
+-- === KHO LỚN (UT-LARGE) ===
 IF NOT EXISTS (SELECT 1 FROM storage_unit su JOIN facility f ON su.facility_id = f.id WHERE f.code = 'FAC-CG' AND su.code = 'CG-L301')
     INSERT INTO storage_unit (facility_id, unit_type_id, code, location_note, status)
-    SELECT f.id, ut.id, 'CG-L301', N'Tầng 3 - Khu C', 'AVAILABLE'   FROM facility f, unit_type ut WHERE f.code = 'FAC-CG' AND ut.code = 'UT-LARGE';
+    SELECT f.id, ut.id, 'CG-L301', N'Tầng 3 - Khu C', 'AVAILABLE' FROM facility f, unit_type ut WHERE f.code = 'FAC-CG' AND ut.code = 'UT-LARGE';
 
 IF NOT EXISTS (SELECT 1 FROM storage_unit su JOIN facility f ON su.facility_id = f.id WHERE f.code = 'FAC-CG' AND su.code = 'CG-L302')
     INSERT INTO storage_unit (facility_id, unit_type_id, code, location_note, status)
-    SELECT f.id, ut.id, 'CG-L302', N'Tầng 3 - Khu C', 'AVAILABLE'   FROM facility f, unit_type ut WHERE f.code = 'FAC-CG' AND ut.code = 'UT-LARGE';
+    SELECT f.id, ut.id, 'CG-L302', N'Tầng 3 - Khu C', 'AVAILABLE' FROM facility f, unit_type ut WHERE f.code = 'FAC-CG' AND ut.code = 'UT-LARGE';
 
 IF NOT EXISTS (SELECT 1 FROM storage_unit su JOIN facility f ON su.facility_id = f.id WHERE f.code = 'FAC-CG' AND su.code = 'CG-L303')
     INSERT INTO storage_unit (facility_id, unit_type_id, code, location_note, status)
-    SELECT f.id, ut.id, 'CG-L303', N'Tầng 3 - Khu C', 'AVAILABLE'   FROM facility f, unit_type ut WHERE f.code = 'FAC-CG' AND ut.code = 'UT-LARGE';
+    SELECT f.id, ut.id, 'CG-L303', N'Tầng 3 - Khu C', 'RESERVED' FROM facility f, unit_type ut WHERE f.code = 'FAC-CG' AND ut.code = 'UT-LARGE';
 
 IF NOT EXISTS (SELECT 1 FROM storage_unit su JOIN facility f ON su.facility_id = f.id WHERE f.code = 'FAC-CG' AND su.code = 'CG-L304')
     INSERT INTO storage_unit (facility_id, unit_type_id, code, location_note, status)
     SELECT f.id, ut.id, 'CG-L304', N'Tầng 3 - Khu C', 'MAINTENANCE' FROM facility f, unit_type ut WHERE f.code = 'FAC-CG' AND ut.code = 'UT-LARGE';
 
--- Kho Lạnh
+IF NOT EXISTS (SELECT 1 FROM storage_unit su JOIN facility f ON su.facility_id = f.id WHERE f.code = 'FAC-CG' AND su.code = 'CG-L305')
+    INSERT INTO storage_unit (facility_id, unit_type_id, code, location_note, status)
+    SELECT f.id, ut.id, 'CG-L305', N'Tầng 3 - Khu C', 'OCCUPIED' FROM facility f, unit_type ut WHERE f.code = 'FAC-CG' AND ut.code = 'UT-LARGE';
+
+-- === KHO LẠNH (UT-CLIMATE) ===
 IF NOT EXISTS (SELECT 1 FROM storage_unit su JOIN facility f ON su.facility_id = f.id WHERE f.code = 'FAC-CG' AND su.code = 'CG-C401')
     INSERT INTO storage_unit (facility_id, unit_type_id, code, location_note, status)
     SELECT f.id, ut.id, 'CG-C401', N'Tầng 4 - Khu D', 'AVAILABLE' FROM facility f, unit_type ut WHERE f.code = 'FAC-CG' AND ut.code = 'UT-CLIMATE';
@@ -223,14 +251,35 @@ IF NOT EXISTS (SELECT 1 FROM storage_unit su JOIN facility f ON su.facility_id =
 
 IF NOT EXISTS (SELECT 1 FROM storage_unit su JOIN facility f ON su.facility_id = f.id WHERE f.code = 'FAC-CG' AND su.code = 'CG-C403')
     INSERT INTO storage_unit (facility_id, unit_type_id, code, location_note, status)
-    SELECT f.id, ut.id, 'CG-C403', N'Tầng 4 - Khu D', 'AVAILABLE' FROM facility f, unit_type ut WHERE f.code = 'FAC-CG' AND ut.code = 'UT-CLIMATE';
+    SELECT f.id, ut.id, 'CG-C403', N'Tầng 4 - Khu D', 'CLEANING' FROM facility f, unit_type ut WHERE f.code = 'FAC-CG' AND ut.code = 'UT-CLIMATE';
 
 IF NOT EXISTS (SELECT 1 FROM storage_unit su JOIN facility f ON su.facility_id = f.id WHERE f.code = 'FAC-CG' AND su.code = 'CG-C404')
     INSERT INTO storage_unit (facility_id, unit_type_id, code, location_note, status)
-    SELECT f.id, ut.id, 'CG-C404', N'Tầng 4 - Khu D', 'OCCUPIED'  FROM facility f, unit_type ut WHERE f.code = 'FAC-CG' AND ut.code = 'UT-CLIMATE';
+    SELECT f.id, ut.id, 'CG-C404', N'Tầng 4 - Khu D', 'OCCUPIED' FROM facility f, unit_type ut WHERE f.code = 'FAC-CG' AND ut.code = 'UT-CLIMATE';
+
+IF NOT EXISTS (SELECT 1 FROM storage_unit su JOIN facility f ON su.facility_id = f.id WHERE f.code = 'FAC-CG' AND su.code = 'CG-C405')
+    INSERT INTO storage_unit (facility_id, unit_type_id, code, location_note, status)
+    SELECT f.id, ut.id, 'CG-C405', N'Tầng 4 - Khu D', 'OCCUPIED' FROM facility f, unit_type ut WHERE f.code = 'FAC-CG' AND ut.code = 'UT-CLIMATE';
+
+-- Thêm bảng giá cho FAC-TX (INACTIVE) để test hiển thị cơ sở không hoạt động
+IF NOT EXISTS (SELECT 1 FROM facility_unit_type_price futp JOIN facility f ON futp.facility_id = f.id JOIN unit_type ut ON futp.unit_type_id = ut.id WHERE f.code = 'FAC-TX' AND ut.code = 'UT-SMALL')
+    INSERT INTO facility_unit_type_price (facility_id, unit_type_id, monthly_price)
+    SELECT f.id, ut.id, 480000 FROM facility f, unit_type ut WHERE f.code = 'FAC-TX' AND ut.code = 'UT-SMALL';
+
+IF NOT EXISTS (SELECT 1 FROM facility_unit_type_price futp JOIN facility f ON futp.facility_id = f.id JOIN unit_type ut ON futp.unit_type_id = ut.id WHERE f.code = 'FAC-TX' AND ut.code = 'UT-MEDIUM')
+    INSERT INTO facility_unit_type_price (facility_id, unit_type_id, monthly_price)
+    SELECT f.id, ut.id, 1100000 FROM facility f, unit_type ut WHERE f.code = 'FAC-TX' AND ut.code = 'UT-MEDIUM';
+
+IF NOT EXISTS (SELECT 1 FROM facility_unit_type_price futp JOIN facility f ON futp.facility_id = f.id JOIN unit_type ut ON futp.unit_type_id = ut.id WHERE f.code = 'FAC-TX' AND ut.code = 'UT-LARGE')
+    INSERT INTO facility_unit_type_price (facility_id, unit_type_id, monthly_price)
+    SELECT f.id, ut.id, 2400000 FROM facility f, unit_type ut WHERE f.code = 'FAC-TX' AND ut.code = 'UT-LARGE';
+
+IF NOT EXISTS (SELECT 1 FROM facility_unit_type_price futp JOIN facility f ON futp.facility_id = f.id JOIN unit_type ut ON futp.unit_type_id = ut.id WHERE f.code = 'FAC-TX' AND ut.code = 'UT-CLIMATE')
+    INSERT INTO facility_unit_type_price (facility_id, unit_type_id, monthly_price)
+    SELECT f.id, ut.id, 2900000 FROM facility f, unit_type ut WHERE f.code = 'FAC-TX' AND ut.code = 'UT-CLIMATE';
 GO
 
-PRINT N'-> Đã kiểm tra và seed storage_unit (16 ô kho).';
+PRINT N'-> Đã kiểm tra và seed storage_unit (21 ô kho tại FAC-CG + 4 bảng giá cho FAC-TX).';
 
 -- ============================================================================
 -- 6. CHÍNH SÁCH VẬN HÀNH (POLICY_VERSION)
