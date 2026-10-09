@@ -98,7 +98,6 @@ public class ReservationServiceImpl implements ReservationService {
         long monthlyPrice = lookupMonthlyPrice(request.getFacilityId(), request.getUnitTypeId());
         PolicyVersion policy = requireActivePolicy();
         int quotedMonths = Math.max(1, request.getMonths());
-        PolicyNumbers.requireTerm(policy, quotedMonths);
         BigDecimal multiplier = policy.getDepositMultiplier() != null
                 ? policy.getDepositMultiplier()
                 : BigDecimal.ONE;
@@ -229,7 +228,6 @@ public class ReservationServiceImpl implements ReservationService {
         }
 
         PolicyVersion policy = requireActivePolicy();
-        PolicyNumbers.requireTerm(policy, months);
         int bufferDays = policy.getRentalBufferDays();
         int holdHours = policy.getReservationHoldHours();
 

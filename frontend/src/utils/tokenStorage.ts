@@ -59,10 +59,41 @@ export const DEMO_USERS: Record<UserRole, UserSession> = {
   },
 };
 
+/**
+ * Kiểm tra xem JWT token đã hết hạn hay chưa (giải mã client-side an toàn)
+ */
+export function isJwtExpired(token: string | null | undefined): boolean {
+  if (!token) return true;
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return false;
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    const payload = JSON.parse(jsonPayload);
+    if (!payload.exp) return false;
+    // Trả về true nếu token đã hết hạn hoặc sắp hết hạn trong vòng 10 giây
+    return payload.exp * 1000 <= Date.now() + 10000;
+  } catch {
+    return false;
+  }
+}
+
 export const tokenStorage = {
   getAccessToken(): string | null {
     try {
-      return localStorage.getItem(ACCESS_TOKEN_KEY) || localStorage.getItem('access_token');
+      const token = localStorage.getItem(ACCESS_TOKEN_KEY) || localStorage.getItem('access_token');
+      if (token && isJwtExpired(token)) {
+        // Tự động dọn dẹp token hết hạn
+        localStorage.removeItem(ACCESS_TOKEN_KEY);
+        localStorage.removeItem('access_token');
+        return null;
+      }
+      return token;
     } catch {
       return null;
     }
@@ -143,8 +174,7 @@ export const tokenStorage = {
 
   isAuthenticated(): boolean {
     const token = this.getAccessToken();
-    const user = this.getUser();
-    return Boolean(token || user);
+    return Boolean(token);
   },
 
   hasRole(requiredRoles: UserRole | UserRole[]): boolean {

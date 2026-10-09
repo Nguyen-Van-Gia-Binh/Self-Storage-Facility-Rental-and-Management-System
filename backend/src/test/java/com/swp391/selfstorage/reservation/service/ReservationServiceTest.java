@@ -283,11 +283,26 @@ class ReservationServiceTest {
     }
 
     @Test
-    @DisplayName("Đặt chỗ từ chối số tháng ngoài khoảng chính sách đang hiệu lực")
-    void createReservation_MonthsOutsidePolicy_ShouldThrow() {
+    @DisplayName("BR-RES-01: Đặt chỗ hỗ trợ thời hạn linh hoạt (15 tháng - giảm 10%) thành công")
+    void createReservation_FlexibleMonths_Success() {
         when(rentalContractRepository.existsByCustomerIdAndStatus(15L, ContractStatus.OVERDUE)).thenReturn(false);
         when(facilityRepository.findById(1L)).thenReturn(Optional.of(activeFacility));
         when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(activeUnitType));
+        when(storageUnitRepository.findByIdForUpdate(42L)).thenReturn(Optional.of(availableStorageUnit));
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any(), eq(15)))
+                .thenReturn(false);
+
+        FacilityUnitTypePrice price = new FacilityUnitTypePrice();
+        price.setFacilityId(1L);
+        price.setUnitTypeId(7L);
+        price.setMonthlyPrice(1500000L);
+        when(facilityUnitTypePriceRepository.findByFacilityIdAndUnitTypeId(1L, 7L)).thenReturn(Optional.of(price));
+
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> {
+            Reservation r = inv.getArgument(0);
+            r.setId(1043L);
+            return r;
+        });
 
         CreateReservationRequest req = new CreateReservationRequest();
         req.setFacilityId(1L);
@@ -296,10 +311,11 @@ class ReservationServiceTest {
         req.setStartDate(LocalDate.now().plusDays(2));
         req.setRentalMonths(15);
 
-        CustomException ex = assertThrows(CustomException.class, () ->
-                reservationService.createReservation(req, customerUser)
-        );
-        assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
+        ReservationResponse response = reservationService.createReservation(req, customerUser);
+        assertNotNull(response);
+        assertEquals(15, response.getRentalMonths());
+        // Giá gốc 15 tháng * 1.500.000 = 22.500.000đ; giảm 10% = 2.250.000đ -> tiền thuê = 20.250.000đ; cọc = 1.500.000đ -> Tổng = 21.750.000đ
+        assertEquals(21750000L, response.getTotalPayable());
     }
 
     @Test

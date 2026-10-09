@@ -71,7 +71,7 @@ export const PendingReservationCard: React.FC<PendingReservationCardProps> = ({
         <div className="space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 uppercase tracking-wider font-mono">
-              Ô kho {reservation.storageUnitCode || reservation.unitTypeName || 'Tự động phân bổ'}
+              Ô kho {reservation.storageUnitCode || reservation.unitTypeName || 'Đã định danh'}
             </span>
             <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
               <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />

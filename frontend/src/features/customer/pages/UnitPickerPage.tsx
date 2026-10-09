@@ -3,31 +3,22 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
   Check, 
-  Box, 
-  Wind, 
-  ThermometerSnowflake, 
   MapPin, 
-  Layers,
-  Loader2,
-  Calendar,
-  Clock,
-  AlertTriangle
+  Loader2, 
+  Clock, 
+  AlertTriangle,
+  ArrowRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { formatVND } from '../utils/pricing';
-import { UnitGrid } from '../components/UnitGrid';
 import { fetchFacilities } from '@/api/facility';
 import { fetchUnitTypes as fetchUnitTypesApi, fetchStorageUnits as fetchStorageUnitsApi } from '@/api/unit';
 import { checkUnitAvailability, type AvailabilityResponse } from '@/api/reservation';
-import { useActivePolicy } from '@/hooks/useActivePolicy';
-import { discountTag, termMonthChoices } from '../utils/policyTerms';
-import { tokenStorage } from '@/utils/tokenStorage';
 import type { FacilityListItem } from '@/types';
 import type { StorageType, UnitSizeCategory, StorageUnit, UnitType, UnitStatus } from '../types';
 
-// Hàm định dạng ngày Việt Nam DD/MM/YYYY
+// Định dạng ngày Việt Nam DD/MM/YYYY
 function formatDateVN(dateStr: string): string {
   if (!dateStr) return '';
   const parts = dateStr.split('-');
@@ -63,7 +54,7 @@ export const UnitPickerPage: React.FC = () => {
   const initialStartDateParam = searchParams.get('startDate');
 
   const [loading, setLoading] = useState<boolean>(true);
-  const [currentFacility, setCurrentFacility] = useState<{ id: string; name: string; address?: string }>({
+  const [currentFacility, setCurrentFacility] = useState<{ id: string; name: string; address?: string; phone?: string }>({
     id: facilityParam || '',
     name: 'Cơ sở lưu trữ',
   });
@@ -85,27 +76,33 @@ export const UnitPickerPage: React.FC = () => {
     }
     return todayStr;
   });
-  const policy = useActivePolicy();
-  const durationPackages = useMemo(() => {
-    if (!policy) return [];
-    const months = termMonthChoices(policy.renewalMinMonths, policy.renewalMaxMonths);
-    return months.map((value) => ({
-      months: value,
-      label: `${value} Tháng`,
-      discountLabel: discountTag(value, 'save') ?? '',
-      popular: value === 3,
-    }));
-  }, [policy]);
+
+  const [isCustomDuration, setIsCustomDuration] = useState<boolean>(false);
   const [durationMonths, setDurationMonths] = useState<number>(
     !isNaN(initialMonthsParam) && initialMonthsParam > 0 ? initialMonthsParam : 3
   );
 
-  useEffect(() => {
-    if (!policy) return;
-    if (durationMonths < policy.renewalMinMonths || durationMonths > policy.renewalMaxMonths) {
-      setDurationMonths(policy.renewalMinMonths);
-    }
-  }, [policy, durationMonths]);
+  const durationPackages = useMemo(() => {
+    return [
+      { months: 1, label: '1 Tháng' },
+      { months: 2, label: '2 Tháng' },
+      { months: 3, label: '3 Tháng' },
+      { months: 4, label: '4 Tháng' },
+      { months: 5, label: '5 Tháng' },
+      { months: 6, label: '6 Tháng (Ưu đãi -5%)' },
+      { months: 7, label: '7 Tháng' },
+      { months: 8, label: '8 Tháng' },
+      { months: 9, label: '9 Tháng' },
+      { months: 10, label: '10 Tháng' },
+      { months: 11, label: '11 Tháng' },
+      { months: 12, label: '12 Tháng / 1 Năm (Ưu đãi -10%)' },
+      { months: 18, label: '18 Tháng / 1.5 Năm (Ưu đãi -10%)' },
+      { months: 24, label: '24 Tháng / 2 Năm (Ưu đãi -10%)' },
+      { months: 36, label: '36 Tháng / 3 Năm (Ưu đãi -10%)' },
+      { months: 48, label: '48 Tháng / 4 Năm (Ưu đãi -10%)' },
+      { months: 60, label: '60 Tháng / 5 Năm (Ưu đãi -10%)' },
+    ];
+  }, []);
 
   // Tính ngày kết thúc dự kiến
   const calculatedEndDate = useMemo(() => {
@@ -140,7 +137,6 @@ export const UnitPickerPage: React.FC = () => {
 
   // Tải dữ liệu thực tế từ backend khi facilityParam thay đổi
   useEffect(() => {
-    // Nếu URL không có tham số cơ sở, tự động chuyển hướng về Trang chủ để khách chọn cơ sở
     if (!facilityParam) {
       navigate('/customer', { replace: true });
       return;
@@ -151,135 +147,118 @@ export const UnitPickerPage: React.FC = () => {
     async function loadFacilityAndUnits() {
       setLoading(true);
       try {
-        // 1. Lấy danh sách cơ sở thực tế (chỉ các cơ sở đang ACTIVE)
         const facList = await fetchFacilities();
         if (!isMounted) return;
 
-        // Tìm cơ sở tương ứng theo ID hoặc Code (ví dụ: '1' hoặc 'FAC-HC')
         const matchedFac = facList.find(
           (f: FacilityListItem) => String(f.id) === facilityParam || f.code === facilityParam
         );
 
         if (!matchedFac) {
-          // Cơ sở không tồn tại hoặc đã bị ngừng hoạt động
           setFacilityInactiveModalOpen(true);
           setLoading(false);
           return;
         }
-          setCurrentFacility({
-            id: String(matchedFac.id),
-            name: matchedFac.name,
-            address: matchedFac.address,
+
+        setCurrentFacility({
+          id: String(matchedFac.id),
+          name: matchedFac.name,
+          address: matchedFac.address,
+          phone: matchedFac.phone,
+        });
+
+        const numericId = typeof matchedFac.id === 'number' ? matchedFac.id : Number(matchedFac.id);
+
+        const utPage = await fetchUnitTypesApi(numericId, { size: 50 });
+        const suPage = await fetchStorageUnitsApi(numericId, { size: 100 });
+
+        if (!isMounted) return;
+
+        let mappedUTs: UnitType[] = [];
+        if (utPage?.content && utPage.content.length > 0) {
+          mappedUTs = utPage.content.map((ut) => {
+            const codeUpper = (ut.code || ut.name).toUpperCase();
+            const sizeCat: UnitSizeCategory = resolveSizeCategory(ut.code || ut.name, ut.areaM2);
+            const isClimate = codeUpper.includes('CLIMATE') || ut.name.toLowerCase().includes('lạnh');
+            const sType: StorageType = isClimate ? 'CLIMATE_CONTROLLED' : 'STANDARD';
+
+            const width = ut.widthM || 2;
+            const depth = ut.depthM || 2;
+            const height = ut.heightM || 2.5;
+            const area = ut.areaM2 || Number((width * depth).toFixed(1));
+            const vol = ut.volumeM3 || Number((width * depth * height).toFixed(1));
+
+            return {
+              id: String(ut.id),
+              code: ut.code || `UT-${ut.id}`,
+              name: ut.name,
+              sizeCategory: sizeCat,
+              storageType: sType,
+              areaM2: area,
+              volumeM3: vol,
+              dimensions: `${width}m x ${depth}m x ${height}m`,
+              capacityDescription: ut.description || `${ut.name} - Hệ thống an ninh và PCCC chuẩn quốc tế`,
+              baseMonthlyPrice: ut.monthlyPrice && ut.monthlyPrice > 0 ? ut.monthlyPrice : 0,
+              badge: sizeCat === 'M' ? 'POPULAR' : sizeCat === 'L' ? 'SPACIOUS' : undefined,
+              priceStatus: ut.priceStatus ?? (ut.monthlyPrice && ut.monthlyPrice > 0 ? 'Đang áp dụng' : 'Chưa niêm yết'),
+            };
           });
+          setUnitTypes(mappedUTs);
 
-          const numericId = typeof matchedFac.id === 'number' ? matchedFac.id : Number(matchedFac.id);
-
-          // 2. Gọi API lấy bảng giá Loại ô kho thực tế của cơ sở này (T2.8)
-          const utPage = await fetchUnitTypesApi(numericId, { size: 50 });
-
-          // 3. Gọi API lấy danh sách Ô kho vật lý thực tế của cơ sở này (T2.10)
-          const suPage = await fetchStorageUnitsApi(numericId, { size: 100 });
-
-          if (!isMounted) return;
-
-          // Chuyển đổi dữ liệu backend UnitTypeResponse sang domain UnitType
-          let mappedUTs: UnitType[] = [];
-          if (utPage?.content && utPage.content.length > 0) {
-            mappedUTs = utPage.content.map((ut) => {
-              const codeUpper = (ut.code || ut.name).toUpperCase();
-              const sizeCat: UnitSizeCategory = resolveSizeCategory(ut.code || ut.name, ut.areaM2);
-
-              const isClimate = codeUpper.includes('CLIMATE') || ut.name.toLowerCase().includes('lạnh');
-              const sType: StorageType = isClimate ? 'CLIMATE_CONTROLLED' : 'STANDARD';
-
-              const width = ut.widthM || 2;
-              const depth = ut.depthM || 2;
-              const height = ut.heightM || 2.5;
-              const area = ut.areaM2 || Number((width * depth).toFixed(1));
-              const vol = ut.volumeM3 || Number((width * depth * height).toFixed(1));
-
-              return {
-                id: String(ut.id),
-                code: ut.code || `UT-${ut.id}`,
-                name: ut.name,
-                sizeCategory: sizeCat,
-                storageType: sType,
-                areaM2: area,
-                volumeM3: vol,
-                dimensions: `${width}m x ${depth}m x ${height}m`,
-                capacityDescription: ut.description || `${ut.name} - Hệ thống an ninh và PCCC chuẩn quốc tế`,
-                baseMonthlyPrice: ut.monthlyPrice && ut.monthlyPrice > 0 ? ut.monthlyPrice : 0,
-                badge: sizeCat === 'M' ? 'POPULAR' : sizeCat === 'L' ? 'SPACIOUS' : undefined,
-                priceStatus: ut.priceStatus ?? (ut.monthlyPrice && ut.monthlyPrice > 0 ? 'Đang áp dụng' : 'Chưa niêm yết'),
-              };
-            });
-            setUnitTypes(mappedUTs);
-
-            if (initialTypeId) {
-              const found = mappedUTs.find((ut) => ut.id === initialTypeId || ut.code === initialTypeId);
-              if (found) {
-                const isFoundUnlisted = !found.baseMonthlyPrice || found.baseMonthlyPrice <= 0 || found.priceStatus === 'UNLISTED' || found.priceStatus === 'Chưa niêm yết';
-                if (!isFoundUnlisted) {
-                  setSelectedTypeId(found.id);
-                  setSelectedSize(found.sizeCategory);
-                  setStorageType(found.storageType);
-                }
-              }
-            } else {
-              // Ưu tiên chọn loại kho đầu tiên đã niêm yết giá
-              const firstListed = mappedUTs.find((ut) => ut.baseMonthlyPrice > 0 && ut.priceStatus !== 'UNLISTED' && ut.priceStatus !== 'Chưa niêm yết');
-              if (firstListed) {
-                setSelectedTypeId(firstListed.id);
-                setSelectedSize(firstListed.sizeCategory);
-                setStorageType(firstListed.storageType);
-              }
+          if (initialTypeId) {
+            const found = mappedUTs.find((ut) => ut.id === initialTypeId || ut.code === initialTypeId);
+            if (found && found.baseMonthlyPrice > 0) {
+              setSelectedTypeId(found.id);
+              setSelectedSize(found.sizeCategory);
+              setStorageType(found.storageType);
             }
           } else {
-            setUnitTypes([]);
+            const firstListed = mappedUTs.find((ut) => ut.baseMonthlyPrice > 0);
+            if (firstListed) {
+              setSelectedTypeId(firstListed.id);
+              setSelectedSize(firstListed.sizeCategory);
+              setStorageType(firstListed.storageType);
+            }
           }
+        }
 
-          // Chuyển đổi dữ liệu backend StorageUnitResponse sang domain StorageUnit
-          if (suPage?.content && suPage.content.length > 0) {
-            const mappedSUs: StorageUnit[] = suPage.content.map((su) => {
-              const parentType = mappedUTs.find((ut) => String(ut.id) === String(su.unitTypeId));
-              const sizeCat = parentType ? parentType.sizeCategory : 'S';
-              const sType = parentType ? parentType.storageType : 'STANDARD';
+        if (suPage?.content && suPage.content.length > 0) {
+          const mappedSUs: StorageUnit[] = suPage.content.map((su) => {
+            const parentType = mappedUTs.find((ut) => String(ut.id) === String(su.unitTypeId));
+            const sizeCat = parentType ? parentType.sizeCategory : 'S';
+            const sType = parentType ? parentType.storageType : 'STANDARD';
+            const statusRaw = (su.status || 'AVAILABLE').toUpperCase();
 
-              const statusRaw = (su.status || 'AVAILABLE').toUpperCase();
-              let unitStatus: UnitStatus = 'AVAILABLE';
-              if (statusRaw === 'OCCUPIED') unitStatus = 'OCCUPIED';
-              else if (statusRaw === 'RESERVED') unitStatus = 'RESERVED';
-              else if (statusRaw === 'MAINTENANCE') unitStatus = 'MAINTENANCE';
-              else if (statusRaw === 'OVERDUE') unitStatus = 'OVERDUE';
-              else if (statusRaw === 'LOCKED') unitStatus = 'LOCKED';
+            let unitStatus: UnitStatus = 'AVAILABLE';
+            if (statusRaw === 'OCCUPIED') unitStatus = 'OCCUPIED';
+            else if (statusRaw === 'RESERVED') unitStatus = 'RESERVED';
+            else if (statusRaw === 'MAINTENANCE') unitStatus = 'MAINTENANCE';
+            else if (statusRaw === 'OVERDUE') unitStatus = 'OVERDUE';
+            else if (statusRaw === 'LOCKED') unitStatus = 'LOCKED';
 
-              return {
-                id: String(su.id),
-                unitNumber: su.code || `S-${su.id}`,
-                facilityId: String(su.facilityId || currentFacility.id),
-                unitTypeId: String(su.unitTypeId || (parentType ? parentType.id : '1')),
-                floor: su.floor || 1,
-                zone: su.position || 'Khu A',
-                sizeCategory: sizeCat,
-                storageType: sType,
-                status: unitStatus,
-                dimensions: parentType ? parentType.dimensions : '2m x 2m x 2.5m',
-                areaM2: parentType ? parentType.areaM2 : 4,
-                volumeM3: parentType ? parentType.volumeM3 : 10,
-                locationDescription: `Tầng ${su.floor || 1} - ${su.position || 'Khu A'} - Cạnh cửa chính`,
-                monthlyPrice: su.monthlyPrice && su.monthlyPrice > 0
-                  ? su.monthlyPrice
-                  : (parentType && parentType.baseMonthlyPrice > 0 ? parentType.baseMonthlyPrice : 0),
-              };
-            });
-            setFacilityUnits(mappedSUs);
-          } else {
-            setFacilityUnits([]);
-          }
+            return {
+              id: String(su.id),
+              unitNumber: su.code || `S-${su.id}`,
+              facilityId: String(su.facilityId || currentFacility.id),
+              unitTypeId: String(su.unitTypeId || (parentType ? parentType.id : '1')),
+              floor: su.floor || 1,
+              zone: su.position || 'Khu A',
+              sizeCategory: sizeCat,
+              storageType: sType,
+              status: unitStatus,
+              dimensions: parentType ? parentType.dimensions : '2m x 2m x 2.5m',
+              areaM2: parentType ? parentType.areaM2 : 4,
+              volumeM3: parentType ? parentType.volumeM3 : 10,
+              locationDescription: `Tầng ${su.floor || 1} - ${su.position || 'Khu A'}`,
+              monthlyPrice: su.monthlyPrice && su.monthlyPrice > 0
+                ? su.monthlyPrice
+                : (parentType && parentType.baseMonthlyPrice > 0 ? parentType.baseMonthlyPrice : 0),
+            };
+          });
+          setFacilityUnits(mappedSUs);
+        }
       } catch (err) {
-        console.error('Lỗi khi tải dữ liệu cơ sở & ô kho từ API backend:', err);
-        setUnitTypes([]);
-        setFacilityUnits([]);
+        console.error('Lỗi khi tải dữ liệu cơ sở:', err);
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -289,7 +268,7 @@ export const UnitPickerPage: React.FC = () => {
     return () => { isMounted = false; };
   }, [facilityParam, initialTypeId, navigate]);
 
-  // Tải sức chứa ô kho thực tế và danh sách ô kho động theo khoảng thời gian khách chọn (SC-01)
+  // Tải sức chứa ô kho thực tế theo khoảng thời gian khách chọn
   useEffect(() => {
     const fId = parseInt(currentFacility.id, 10);
     if (isNaN(fId) || unitTypes.length === 0) return;
@@ -326,8 +305,8 @@ export const UnitPickerPage: React.FC = () => {
                   const parentType = unitTypes.find((ut) => String(ut.id) === String(su.unitTypeId));
                   const sizeCat = parentType ? parentType.sizeCategory : 'S';
                   const sType = parentType ? parentType.storageType : 'STANDARD';
-
                   const statusRaw = (su.status || 'AVAILABLE').toUpperCase();
+
                   let unitStatus: UnitStatus = 'AVAILABLE';
                   if (statusRaw === 'OCCUPIED') unitStatus = 'OCCUPIED';
                   else if (statusRaw === 'RESERVED') unitStatus = 'RESERVED';
@@ -348,16 +327,16 @@ export const UnitPickerPage: React.FC = () => {
                     dimensions: parentType ? parentType.dimensions : '2m x 2m x 2.5m',
                     areaM2: parentType ? parentType.areaM2 : 4,
                     volumeM3: parentType ? parentType.volumeM3 : 10,
-                    locationDescription: `Tầng ${su.floor || 1} - ${su.position || 'Khu A'} - Cạnh cửa chính`,
+                    locationDescription: `Tầng ${su.floor || 1} - ${su.position || 'Khu A'}`,
                     monthlyPrice: su.monthlyPrice && su.monthlyPrice > 0
-                  ? su.monthlyPrice
-                  : (parentType && parentType.baseMonthlyPrice > 0 ? parentType.baseMonthlyPrice : 0),
+                      ? su.monthlyPrice
+                      : (parentType && parentType.baseMonthlyPrice > 0 ? parentType.baseMonthlyPrice : 0),
                   };
                 });
                 setFacilityUnits(mappedSUs);
               }
             } catch (err) {
-              console.error('Lỗi khi tải ô kho theo kỳ hạn:', err);
+              console.error('Lỗi khi tải ô kho:', err);
             }
           })(),
         ]);
@@ -391,13 +370,11 @@ export const UnitPickerPage: React.FC = () => {
     }
     const matchedBySize = availableTypes.find((t) => t.sizeCategory === selectedSize);
     if (matchedBySize) return matchedBySize;
-    const firstListed = availableTypes.find(
-      (t) => t.baseMonthlyPrice > 0 && t.priceStatus !== 'UNLISTED' && t.priceStatus !== 'Chưa niêm yết'
-    );
+    const firstListed = availableTypes.find((t) => t.baseMonthlyPrice > 0);
     return firstListed || availableTypes[0];
   }, [availableTypes, selectedTypeId, selectedSize]);
 
-  // Cập nhật trạng thái ô kho trên sơ đồ theo availability của loại kho trong kỳ hạn đã chọn
+  // Cập nhật trạng thái ô kho trên sơ đồ theo availability
   const displayFacilityUnits = useMemo(() => {
     return facilityUnits.map((u) => {
       const matchedUT = unitTypes.find(
@@ -405,7 +382,6 @@ export const UnitPickerPage: React.FC = () => {
       );
       if (matchedUT && availabilityMap[matchedUT.id]) {
         const avail = availabilityMap[matchedUT.id];
-        // Nếu loại kho này hết chỗ trong kỳ hạn đã chọn, chuyển sang OCCUPIED nếu đang AVAILABLE
         if (avail.availableSlots === 0 && u.status === 'AVAILABLE') {
           return {
             ...u,
@@ -417,7 +393,7 @@ export const UnitPickerPage: React.FC = () => {
     });
   }, [facilityUnits, unitTypes, availabilityMap]);
 
-  // Ô kho đang được chọn — chỉ set khi khách chủ động nhấp, không auto-select
+  // Ô kho đang được chọn
   const selectedUnit = useMemo(() => {
     if (selectedUnitId) {
       const found = displayFacilityUnits.find((u) => u.id === selectedUnitId);
@@ -427,8 +403,27 @@ export const UnitPickerPage: React.FC = () => {
       if (storageType && found.storageType !== storageType) return null;
       return found;
     }
-    return null; // Không fallback về ô kho mặc định — tránh chọn trước khi khách click
+    return null;
   }, [displayFacilityUnits, selectedUnitId, selectedTypeId, selectedSize, storageType]);
+
+  // Tự động chọn ô kho còn trống đầu tiên khi đổi loại kho hoặc tải trang
+  useEffect(() => {
+    const currentUnitsForType = displayFacilityUnits.filter((u) => {
+      if (selectedTypeId && u.unitTypeId) return u.unitTypeId === selectedTypeId;
+      if (storageType && u.storageType) return u.storageType === storageType;
+      return true;
+    });
+
+    const isCurrentValid = currentUnitsForType.some((u) => u.id === selectedUnitId && u.status === 'AVAILABLE');
+    if (!isCurrentValid) {
+      const firstAvailable = currentUnitsForType.find((u) => u.status === 'AVAILABLE');
+      if (firstAvailable) {
+        setSelectedUnitId(firstAvailable.id);
+      } else {
+        setSelectedUnitId(null);
+      }
+    }
+  }, [displayFacilityUnits, selectedTypeId, storageType, selectedUnitId]);
 
   const handleSelectType = (type: UnitType) => {
     setSelectedTypeId(type.id);
@@ -441,7 +436,6 @@ export const UnitPickerPage: React.FC = () => {
     }
   };
 
-
   const handleSelectStorageType = (sType: StorageType) => {
     setStorageType(sType);
     if (selectedUnitId) {
@@ -451,9 +445,7 @@ export const UnitPickerPage: React.FC = () => {
       }
     }
     const typesForType = unitTypes.filter((t) => t.storageType === sType);
-    const firstListed = typesForType.find(
-      (t) => t.baseMonthlyPrice > 0 && t.priceStatus !== 'UNLISTED' && t.priceStatus !== 'Chưa niêm yết'
-    );
+    const firstListed = typesForType.find((t) => t.baseMonthlyPrice > 0);
     if (firstListed) {
       setSelectedTypeId(firstListed.id);
       setSelectedSize(firstListed.sizeCategory);
@@ -476,11 +468,61 @@ export const UnitPickerPage: React.FC = () => {
     }
   };
 
-  const handleProceedToBooking = async (unitToBook?: StorageUnit) => {
-    const targetUnit = unitToBook || selectedUnit;
+  // Tính toán bảng giá minh bạch
+  const priceCalculation = useMemo(() => {
+    const basePrice = (selectedUnit?.monthlyPrice && selectedUnit.monthlyPrice > 0)
+      ? selectedUnit.monthlyPrice
+      : (currentUnitType?.baseMonthlyPrice ?? 0);
+
+    const grossRent = basePrice * durationMonths;
+    let discountPercent = 0;
+    if (durationMonths >= 12) {
+      discountPercent = 10;
+    } else if (durationMonths >= 6) {
+      discountPercent = 5;
+    }
+
+    const discountAmount = Math.round((grossRent * discountPercent) / 100);
+    const netRent = grossRent - discountAmount;
+    const depositAmount = basePrice; // 1 tháng tiền cọc
+    const totalDue = netRent + depositAmount;
+
+    return {
+      basePrice,
+      grossRent,
+      discountPercent,
+      discountAmount,
+      netRent,
+      depositAmount,
+      totalDue,
+    };
+  }, [selectedUnit, currentUnitType, durationMonths]);
+
+  const handleProceedToBooking = async () => {
+    const targetUnit = selectedUnit;
     if (!targetUnit) {
+      // Nếu chưa chọn ô kho cụ thể trên sơ đồ, tự động chọn ô kho trống đầu tiên
+      const firstAvailable = displayFacilityUnits.find(
+        (u) =>
+          u.status === 'AVAILABLE' &&
+          u.storageType === storageType &&
+          (!selectedTypeId || u.unitTypeId === selectedTypeId)
+      );
+      if (firstAvailable) {
+        handleProceedToBookingWithUnit(firstAvailable);
+      } else {
+        setUnitUnavailableModal({
+          isOpen: true,
+          title: 'Vui lòng chọn 1 ô kho',
+          message: 'Quý khách vui lòng nhấp chọn một ô kho còn trống trên sơ đồ mặt bằng để tiếp tục đặt chỗ.',
+        });
+      }
       return;
     }
+    handleProceedToBookingWithUnit(targetUnit);
+  };
+
+  const handleProceedToBookingWithUnit = async (targetUnit: StorageUnit) => {
     const listedPrice = (targetUnit.monthlyPrice && targetUnit.monthlyPrice > 0)
       ? targetUnit.monthlyPrice
       : (currentUnitType?.baseMonthlyPrice ?? 0);
@@ -488,7 +530,7 @@ export const UnitPickerPage: React.FC = () => {
       setUnitUnavailableModal({
         isOpen: true,
         title: 'Loại ô kho chưa niêm yết giá',
-        message: 'Loại ô kho này chưa được Ban Quản Trị niêm yết giá chính thức nên tạm thời chưa thể đặt chỗ. Quý khách vui lòng chọn loại kho khác.',
+        message: 'Loại ô kho này chưa được niêm yết giá chính thức nên tạm thời chưa thể đặt chỗ. Quý khách vui lòng chọn loại kho khác.',
       });
       return;
     }
@@ -497,133 +539,19 @@ export const UnitPickerPage: React.FC = () => {
     if (isNaN(fId)) return;
 
     setIsConfirming(true);
-
     try {
-      // 1. Gọi trực tiếp xuống Database kiểm tra trạng thái thời gian thực của ô kho và cơ sở (ISS-76)
-      const suPage = await fetchStorageUnitsApi(fId, {
-        startDate,
-        rentalMonths: durationMonths,
-        size: 100,
-      });
-
-      // Cập nhật lại sơ đồ ô kho mới nhất từ DB
-      if (suPage?.content && suPage.content.length > 0) {
-        const mappedSUs: StorageUnit[] = suPage.content.map((su) => {
-          const parentType = unitTypes.find((ut) => String(ut.id) === String(su.unitTypeId));
-          const sizeCat = parentType ? parentType.sizeCategory : 'S';
-          const sType = parentType ? parentType.storageType : 'STANDARD';
-
-          const statusRaw = (su.status || 'AVAILABLE').toUpperCase();
-          let unitStatus: UnitStatus = 'AVAILABLE';
-          if (statusRaw === 'OCCUPIED') unitStatus = 'OCCUPIED';
-          else if (statusRaw === 'RESERVED') unitStatus = 'RESERVED';
-          else if (statusRaw === 'MAINTENANCE') unitStatus = 'MAINTENANCE';
-          else if (statusRaw === 'OVERDUE') unitStatus = 'OVERDUE';
-          else if (statusRaw === 'LOCKED') unitStatus = 'LOCKED';
-
-          return {
-            id: String(su.id),
-            unitNumber: su.code || `S-${su.id}`,
-            facilityId: String(su.facilityId || currentFacility.id),
-            unitTypeId: String(su.unitTypeId || (parentType ? parentType.id : '1')),
-            floor: su.floor || 1,
-            zone: su.position || 'Khu A',
-            sizeCategory: sizeCat,
-            storageType: sType,
-            status: unitStatus,
-            dimensions: parentType ? parentType.dimensions : '2m x 2m x 2.5m',
-            areaM2: parentType ? parentType.areaM2 : 4,
-            volumeM3: parentType ? parentType.volumeM3 : 10,
-            locationDescription: `Tầng ${su.floor || 1} - ${su.position || 'Khu A'} - Cạnh cửa chính`,
-            monthlyPrice: su.monthlyPrice && su.monthlyPrice > 0
-              ? su.monthlyPrice
-              : (parentType && parentType.baseMonthlyPrice > 0 ? parentType.baseMonthlyPrice : 0),
-          };
-        });
-        setFacilityUnits(mappedSUs);
-      }
-
-      // Kiểm tra xem ô kho mục tiêu có còn tồn tại và sẵn sàng không
-      const latestUnit = suPage?.content?.find((su) => String(su.id) === String(targetUnit.id));
-
-      if (!latestUnit) {
-        setUnitUnavailableModal({
-          isOpen: true,
-          title: 'Ô kho không tồn tại',
-          message: `Ô kho ${targetUnit.unitNumber} không tìm thấy hoặc đã bị thay đổi trên hệ thống. Vui lòng chọn ô kho khác trên sơ đồ.`,
-        });
-        setSelectedUnitId(null);
-        return;
-      }
-
-      const statusRaw = (latestUnit.status || 'AVAILABLE').toUpperCase();
-
-      if (statusRaw === 'MAINTENANCE' || statusRaw === 'OUT_OF_SERVICE') {
-        setUnitUnavailableModal({
-          isOpen: true,
-          title: 'Ô kho đang tạm ngừng hoạt động / Bảo trì',
-          message: `Ô kho ${targetUnit.unitNumber} hiện đang trong chế độ bảo trì hoặc tạm ngưng phục vụ. Quý khách vui lòng chọn một ô kho còn trống khác trên sơ đồ.`,
-        });
-        setSelectedUnitId(null);
-        return;
-      }
-
-      if (statusRaw === 'RESERVED') {
-        setUnitUnavailableModal({
-          isOpen: true,
-          title: 'Ô kho đã có người giữ chỗ',
-          message: `Ô kho ${targetUnit.unitNumber} vừa có khách hàng khác thực hiện giữ chỗ trong kỳ hạn bạn đã chọn. Vui lòng chọn ô kho còn trống khác.`,
-        });
-        setSelectedUnitId(null);
-        return;
-      }
-
-      if (statusRaw === 'OCCUPIED' || statusRaw === 'LOCKED' || statusRaw === 'OVERDUE') {
-        setUnitUnavailableModal({
-          isOpen: true,
-          title: 'Ô kho đã có người thuê',
-          message: `Ô kho ${targetUnit.unitNumber} hiện đã có hợp đồng thuê trong kỳ hạn bạn đã chọn. Vui lòng chọn ô kho còn trống khác.`,
-        });
-        setSelectedUnitId(null);
-        return;
-      }
-
-      // 2. Ô kho hoàn toàn khả dụng -> Tiếp tục điều hướng sang trang Đặt chỗ
       const typeIdToPass = targetUnit.unitTypeId || (currentUnitType ? currentUnitType.id : (unitTypes[0]?.id || '1'));
 
       const params = new URLSearchParams({
         facility: String(currentFacility.id),
         type: String(typeIdToPass),
+        unit: String(targetUnit.id),
+        unitNumber: targetUnit.unitNumber,
         startDate,
         months: String(durationMonths),
       });
 
-      if (targetUnit?.id) {
-        params.set('unitId', String(targetUnit.id));
-      }
-      if (targetUnit?.unitNumber) {
-        params.set('unitNumber', targetUnit.unitNumber);
-      }
-
-      const bookingUrl = `/customer/booking?${params.toString()}`;
-      if (!tokenStorage.getAccessToken()) {
-        navigate(`/auth/login?redirect=${encodeURIComponent(bookingUrl)}`);
-        return;
-      }
-
-      navigate(bookingUrl);
-    } catch (err: unknown) {
-      console.error('Lỗi khi kiểm tra tính sẵn sàng của ô kho thời gian thực:', err);
-      const msg = (err as any)?.message || '';
-      if (msg.toLowerCase().includes('co so') || msg.toLowerCase().includes('facility') || msg.toLowerCase().includes('ngung hoat dong')) {
-        setFacilityInactiveModalOpen(true);
-      } else {
-        setUnitUnavailableModal({
-          isOpen: true,
-          title: 'Không thể xác nhận ô kho',
-          message: 'Hệ thống không thể kiểm tra trạng thái ô kho vào lúc này. Vui lòng thử lại hoặc chọn ô kho khác.',
-        });
-      }
+      navigate(`/customer/booking?${params.toString()}`);
     } finally {
       setIsConfirming(false);
     }
@@ -631,365 +559,415 @@ export const UnitPickerPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 flex flex-col items-center justify-center space-y-4">
-        <Loader2 className="w-8 h-8 text-brand-600 animate-spin" />
-        <p className="text-sm font-medium text-slate-500">Đang tải sơ đồ mặt bằng và biểu giá ô kho thực tế...</p>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-3">
+        <Loader2 className="w-8 h-8 text-brand-500 animate-spin" />
+        <p className="text-xs text-slate-500 font-semibold">Đang tải thông tin cơ sở và sơ đồ ô kho...</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 space-y-6">
-      {/* 1. Header & Stepper đồng bộ (Pill Breadcrumbs chuẩn Dub.co SaaS) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      
+      {/* TOP BAR: FACILITY INFO */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-brand-200/60">
         <div>
           <Link
             to="/customer"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-brand-600 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-700 hover:text-brand-800 transition-colors mb-1"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            Đổi cơ sở khác (<MapPin className="w-3 h-3 text-brand-600 inline" /> {currentFacility.name})
+            <span>Chọn cơ sở khác</span>
           </Link>
-        </div>
-
-        {/* Stepper pills đồng bộ với toàn bộ luồng */}
-        <div className="flex items-center gap-2 text-xs font-semibold shrink-0">
-          <div className="flex items-center gap-1.5 bg-brand-500 text-white px-3 py-1 rounded-full border border-brand-500 shadow-xs">
-            <span className="w-4 h-4 rounded-full bg-white text-brand-700 text-[10px] flex items-center justify-center font-bold">1</span>
-            <span>Chọn loại & Sơ đồ</span>
-          </div>
-          <span className="text-slate-300">/</span>
-          <div className="flex items-center gap-1.5 text-slate-400 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-200">
-            <span className="w-4 h-4 rounded-full bg-slate-200 text-slate-500 text-[10px] flex items-center justify-center font-bold">2</span>
-            <span>Hồ sơ đặt chỗ</span>
-          </div>
-          <span className="text-slate-300">/</span>
-          <div className="flex items-center gap-1.5 text-slate-400 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-200">
-            <span className="w-4 h-4 rounded-full bg-slate-200 text-slate-500 text-[10px] flex items-center justify-center font-bold">3</span>
-            <span>Thanh toán VietQR</span>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0a1614] tracking-tight">
+            {currentFacility.name}
+          </h1>
+          <div className="flex items-center gap-2 text-xs text-slate-600 mt-1">
+            <MapPin className="w-3.5 h-3.5 text-brand-600 shrink-0" />
+            <span>{currentFacility.address || 'Hệ thống kho tự quản thông minh'}</span>
           </div>
         </div>
       </div>
 
-      {/* 1. CHỌN LOẠI KHO TRƯỚC (Bộ chuyển đổi Standard/Climate & 3 thẻ cỡ kho căn giữa cân đối) */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-100 pb-2.5">
-          <div>
-            <h2 className="text-base font-extrabold text-[#0a1614] flex items-center gap-2">
-              <Box className="w-4 h-4 text-brand-600" />
-              1. Chọn Loại Kho & Kích Thước
-            </h2>
-          </div>
-          <span className="text-xs font-semibold text-brand-700 bg-brand-50 px-2.5 py-1 rounded-full border border-brand-200 shrink-0 self-start sm:self-auto">
-            Cơ sở: {currentFacility.name}
-          </span>
-        </div>
+      {/* 2 COLUMNS LAYOUT: LEFT (Controls & Matrix Grid) + RIGHT (Sticky Summary Sidebar) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        {/* ==================== CỘT TRÁI: 2 THẺ TỐI GIẢN (8 cols) ==================== */}
+        <div className="lg:col-span-8 space-y-6">
 
-        {/* Bộ chuyển đổi chế độ kho (Standard vs Climate-Controlled) */}
-        <div className="max-w-md mx-auto grid grid-cols-2 gap-2 p-1 bg-white rounded-xl border border-slate-200/90 shadow-2xs">
-          <button
-            type="button"
-            onClick={() => handleSelectStorageType('STANDARD')}
-            className={`flex items-center gap-2.5 p-2.5 rounded-lg transition-all text-left cursor-pointer ${
-              storageType === 'STANDARD'
-                ? 'bg-brand-50 border-2 border-brand-500 shadow-2xs text-brand-900'
-                : 'border-2 border-transparent hover:bg-slate-50 text-slate-600'
-            }`}
-          >
-            <div className="w-7 h-7 rounded-lg bg-brand-100 text-brand-700 flex items-center justify-center shrink-0">
-              <Wind className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="text-xs sm:text-sm font-bold text-[#0a1614] block">Kho Tiêu Chuẩn</span>
-              <span className="text-[11px] text-slate-500 block">Khô thoáng, đồ gia dụng</span>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleSelectStorageType('CLIMATE_CONTROLLED')}
-            className={`flex items-center gap-2.5 p-2.5 rounded-lg transition-all text-left cursor-pointer ${
-              storageType === 'CLIMATE_CONTROLLED'
-                ? 'bg-sky-50 border-2 border-[#96b3cf] shadow-2xs text-sky-900'
-                : 'border-2 border-transparent hover:bg-slate-50 text-slate-600'
-            }`}
-          >
-            <div className="w-7 h-7 rounded-lg bg-sky-100 text-sky-800 flex items-center justify-center shrink-0">
-              <ThermometerSnowflake className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="text-xs sm:text-sm font-bold text-[#0a1614] block">Kho Máy Lạnh 24/7</span>
-              <span className="text-[11px] text-slate-500 block">22°C–25°C, hút ẩm</span>
-            </div>
-          </button>
-        </div>
-
-        {/* Danh mục các thẻ kích cỡ kho: CĂN GIỮA CHO CÂN ĐỐI */}
-        <div className="flex flex-wrap justify-center gap-4 max-w-4xl mx-auto">
-          {availableTypes.map((type) => {
-            const isUnlisted = !type.baseMonthlyPrice || type.baseMonthlyPrice <= 0 || type.priceStatus === 'UNLISTED' || type.priceStatus === 'Chưa niêm yết';
-            const isSelected = !isUnlisted && (selectedTypeId ? selectedTypeId === type.id : selectedSize === type.sizeCategory);
-            const availInfo = availabilityMap[type.id];
-
-            return (
-              <div
-                key={type.id}
-                onClick={() => {
-                  if (!isUnlisted) {
-                    handleSelectType(type);
-                  }
-                }}
-                className={`w-full sm:w-[calc(50%-0.6rem)] md:w-[calc(33.333%-0.75rem)] max-w-[290px] rounded-xl p-3.5 border-2 transition-all flex flex-col justify-between ${
-                  isUnlisted
-                    ? 'opacity-70 cursor-not-allowed bg-slate-50/70 border-dashed border-slate-300'
-                    : isSelected
-                    ? 'border-brand-500 ring-2 ring-brand-500/20 shadow-sm scale-[1.01] cursor-pointer bg-white'
-                    : 'border-slate-200/90 hover:border-slate-300 hover:shadow-2xs cursor-pointer bg-white'
-                }`}
-              >
-                <div className="space-y-2.5">
-                  {/* Header & Badge */}
-                  <div className="flex items-start justify-between gap-1">
-                    <h3 className="text-sm font-extrabold text-[#0a1614]">
-                      {type.name.split('–')[0]}
-                    </h3>
-                    {isUnlisted ? (
-                      <Badge 
-                        variant="warning"
-                        className="text-[10px] px-2 py-0.5 whitespace-nowrap shrink-0 bg-amber-50 text-amber-700 border-amber-200"
-                      >
-                        Chưa niêm yết giá
-                      </Badge>
-                    ) : type.badge === 'POPULAR' ? (
-                      <Badge 
-                        variant="primary"
-                        className="text-[10px] px-2 py-0.5 whitespace-nowrap shrink-0"
-                      >
-                        Phổ biến nhất
-                      </Badge>
-                    ) : null}
-                  </div>
-
-                  {/* 3D Cube Icon Visual */}
-                  <div className={`h-12 w-full rounded-lg border flex items-center justify-center ${
-                    isUnlisted ? 'bg-slate-100/60 border-slate-200' : 'bg-brand-50/40 border-brand-100/60'
-                  }`}>
-                    <Box className={`w-6 h-6 transition-transform ${
-                      isUnlisted ? 'text-slate-300' : isSelected ? 'text-brand-500 scale-110' : 'text-slate-400'
-                    }`} />
-                  </div>
-
-                  {/* Size & Dimensions */}
-                  <div className="space-y-1 text-xs">
-                    <div className="flex items-baseline justify-between font-bold text-slate-800">
-                      <span>Diện tích sàn:</span>
-                      <span className={`text-xs font-extrabold ${isUnlisted ? 'text-slate-500' : 'text-brand-700'}`}>
-                        {type.areaM2} m² ({type.volumeM3} m³)
-                      </span>
-                    </div>
-                    <div className="text-slate-500 text-[11px] flex justify-between">
-                      <span>Kích thước:</span>
-                      <span>{type.dimensions}</span>
-                    </div>
-
-                    {/* Sức chứa ô kho trống thời gian thực */}
-                    {!isUnlisted && availInfo && (
-                      <div className="pt-1">
-                        {availInfo.availableSlots > 0 ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                            <Check className="w-3 h-3 text-emerald-600" />
-                            Còn {availInfo.availableSlots} ô trống
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
-                            Hết chỗ trong kỳ hạn
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Price & Selection Button */}
-                <div className="mt-3 pt-2.5 border-t border-slate-100 space-y-2">
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-[11px] text-slate-400">Đơn giá:</span>
-                    <span className="text-sm font-extrabold text-[#0a1614]">
-                      {!isUnlisted ? (
-                        <>{formatVND(type.baseMonthlyPrice)} <span className="text-[10px] font-normal text-slate-400">/tháng</span></>
-                      ) : (
-                        <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
-                          Chưa niêm yết
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                  {!isUnlisted && (availInfo?.surcharges ?? []).map((line) => (
-                    <div key={line.name} className="flex items-baseline justify-between text-[11px] text-amber-800">
-                      <span>Phụ phí: {line.name}</span>
-                      <span className="font-semibold">+{formatVND(line.amount)}</span>
-                    </div>
-                  ))}
-
-                  <Button
-                    type="button"
-                    variant={isUnlisted ? 'outline' : isSelected ? 'primary' : 'outline'}
-                    size="sm"
-                    disabled={isUnlisted}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (!isUnlisted) {
-                        handleSelectType(type);
-                      }
-                    }}
-                    className={`w-full gap-1 text-xs py-1.5 font-semibold ${
-                      isUnlisted ? 'text-slate-400 bg-slate-100/80 border-slate-200 cursor-not-allowed' : ''
-                    }`}
-                  >
-                    {isUnlisted ? (
-                      'Tạm chưa mở đặt'
-                    ) : isSelected ? (
-                      <>Đang chọn {type.name.split('–')[0] || `Cỡ ${type.sizeCategory}`} <Check className="w-3.5 h-3.5" /></>
-                    ) : (
-                      `Chọn ${type.name.split('–')[0] || `Cỡ ${type.sizeCategory}`}`
-                    )}
-                  </Button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 2. CHỌN THỜI GIAN THUÊ KHO DỰ KIẾN (Sau khi chọn loại kho) */}
-      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
-          <div>
-            <h2 className="text-base font-extrabold text-[#0a1614] flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-brand-600" />
-              2. Chọn Thời Gian Thuê Kho Dự Kiến
-            </h2>
-          </div>
-          {loadingAvailability ? (
-            <span className="text-xs font-semibold text-brand-600 flex items-center gap-1.5 animate-pulse">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              Đang kiểm tra ô trống...
+          {/* 1. THỜI GIAN THUÊ */}
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-4">
+            <span className="text-xs font-extrabold uppercase tracking-wider text-brand-800 block">
+              1. Thời gian thuê
             </span>
-          ) : (
-            <Badge variant="available" className="text-xs px-2.5 py-1">
-              Đã đồng bộ sức chứa
-            </Badge>
-          )}
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
-          {/* Gói thời hạn thuê (Left 7 cols) */}
-          <div className="lg:col-span-7 space-y-2">
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-              Gói thời hạn thuê:
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {durationPackages.length === 0 && (
-                <span className="col-span-full text-xs text-slate-500">Đang tải kỳ hạn từ chính sách...</span>
-              )}
-              {durationPackages.map((pkg) => {
-                const isSelected = durationMonths === pkg.months;
-                return (
-                  <button
-                    key={pkg.months}
-                    type="button"
-                    onClick={() => setDurationMonths(pkg.months)}
-                    className={`relative p-2.5 rounded-xl border-2 transition-all text-center cursor-pointer flex flex-col items-center justify-center ${
-                      isSelected
-                        ? 'border-brand-500 bg-brand-50/60 shadow-2xs text-brand-900 ring-2 ring-brand-500/20'
-                        : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'
-                    }`}
-                  >
-                    {pkg.discountLabel && (
-                      <span className={`absolute -top-2 px-1.5 py-0.2 rounded-full text-[9px] font-extrabold shadow-2xs ${
-                        pkg.popular
-                          ? 'bg-emerald-500 text-white'
-                          : 'bg-brand-600 text-white'
-                      }`}>
-                        {pkg.discountLabel}
-                      </span>
-                    )}
-                    <span className="text-sm font-extrabold">{pkg.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Ngày bắt đầu & Ngày kết thúc (Right 5 cols) */}
-          <div className="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Ngày bắt đầu thuê:
-              </label>
-              <div className="relative">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                  Ngày bắt đầu vào kho
+                </label>
                 <input
                   type="date"
                   min={todayStr}
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 transition-all shadow-2xs"
                 />
+                <p className="text-[11px] text-slate-500 mt-1.5 flex items-center gap-1 font-medium">
+                  <Clock className="w-3.5 h-3.5 text-brand-600 shrink-0" />
+                  <span>Dự kiến kết thúc: <strong className="text-slate-800">{formatDateVN(calculatedEndDate)}</strong></span>
+                </p>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-slate-700">
+                    Thời hạn thuê
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomDuration(!isCustomDuration)}
+                    className="text-[11px] text-brand-600 hover:text-brand-700 font-bold underline cursor-pointer"
+                  >
+                    {isCustomDuration ? 'Chọn theo danh mục' : 'Nhập số tháng tùy chỉnh'}
+                  </button>
+                </div>
+                {isCustomDuration ? (
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min={1}
+                      max={120}
+                      value={durationMonths}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10);
+                        setDurationMonths(isNaN(val) || val < 1 ? 1 : val);
+                      }}
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 transition-all shadow-2xs"
+                      placeholder="Nhập số tháng thuê (ví dụ: 5, 15, 24...)"
+                    />
+                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">
+                      Tháng
+                    </span>
+                  </div>
+                ) : (
+                  <select
+                    value={durationMonths}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      if (val === -1) {
+                        setIsCustomDuration(true);
+                      } else {
+                        setDurationMonths(val);
+                      }
+                    }}
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 transition-all shadow-2xs cursor-pointer"
+                  >
+                    {durationPackages.map((pkg) => (
+                      <option key={pkg.months} value={pkg.months}>
+                        {pkg.label}
+                      </option>
+                    ))}
+                    <option value={-1}>✏️ Nhập số tháng tùy chỉnh khác...</option>
+                  </select>
+                )}
+                <p className="text-[11px] text-slate-500 mt-1.5 font-medium">
+                  {durationMonths >= 12
+                    ? '🎉 Giảm 10% tổng tiền thuê cho kỳ từ 12 tháng trở lên'
+                    : durationMonths >= 6
+                    ? '🎉 Giảm 5% tổng tiền thuê cho kỳ từ 6 tháng trở lên'
+                    : '💡 Thanh toán trọn kỳ khi đặt chỗ'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. CHỌN LOẠI KHO & KÍCH THƯỚC */}
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-brand-800 block">
+                2. Chọn loại kho & Kích thước
+              </span>
+              {loadingAvailability && (
+                <span className="text-[11px] text-brand-600 flex items-center gap-1 font-bold animate-pulse">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Đang tải ô trống...</span>
+                </span>
+              )}
+            </div>
+
+            {/* Môi trường kho tabs */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <button
+                type="button"
+                onClick={() => handleSelectStorageType('STANDARD')}
+                className={`p-4 rounded-xl border-2 text-left transition-all cursor-pointer flex items-center justify-between ${
+                  storageType === 'STANDARD'
+                    ? 'border-[#008B74] bg-[#e6f7f4] shadow-xs'
+                    : 'border-slate-200 hover:border-slate-300 bg-white'
+                }`}
+              >
+                <div className="text-sm font-black text-slate-900 flex items-center gap-2">
+                  <span className="text-base">📦</span>
+                  <span>Kho Tiêu Chuẩn</span>
+                </div>
+                {storageType === 'STANDARD' && (
+                  <div className="w-5 h-5 rounded-full bg-[#008B74] text-white flex items-center justify-center shrink-0">
+                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                  </div>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSelectStorageType('CLIMATE_CONTROLLED')}
+                className={`p-4 rounded-xl border-2 text-left transition-all cursor-pointer flex items-center justify-between ${
+                  storageType === 'CLIMATE_CONTROLLED'
+                    ? 'border-[#008B74] bg-[#e6f7f4] shadow-xs'
+                    : 'border-slate-200 hover:border-slate-300 bg-white'
+                }`}
+              >
+                <div className="text-sm font-black text-slate-900 flex items-center gap-2">
+                  <span className="text-base">❄️</span>
+                  <span>Kho Máy Lạnh (24/7)</span>
+                </div>
+                {storageType === 'CLIMATE_CONTROLLED' && (
+                  <div className="w-5 h-5 rounded-full bg-[#008B74] text-white flex items-center justify-center shrink-0">
+                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                  </div>
+                )}
+              </button>
+            </div>
+
+            {/* Kích thước tương ứng - High Contrast */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {availableTypes.map((type) => {
+                const isSelected = selectedTypeId === type.id || selectedSize === type.sizeCategory;
+                const avail = availabilityMap[type.id];
+                const slots = avail ? avail.availableSlots : null;
+                const isOutOfSlots = slots !== null && slots <= 0;
+
+                return (
+                  <button
+                    key={type.id}
+                    type="button"
+                    onClick={() => handleSelectType(type)}
+                    className={`p-3.5 rounded-xl border-2 text-left transition-all cursor-pointer relative flex flex-col justify-between ${
+                      isSelected
+                        ? 'border-[#008B74] bg-[#e6f7f4] shadow-xs ring-2 ring-[#008B74]/25'
+                        : isOutOfSlots
+                        ? 'border-slate-200 bg-slate-50 text-slate-700'
+                        : 'border-slate-200 hover:border-emerald-400 bg-white text-slate-900 shadow-2xs'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <strong className={`text-xs font-black block ${isSelected ? 'text-[#008B74]' : 'text-slate-900'}`}>
+                          Size {type.sizeCategory}
+                        </strong>
+                        <span className={`text-[10px] font-bold font-mono px-1.5 py-0.5 rounded ${isSelected ? 'bg-[#008B74] text-white' : 'bg-slate-100 text-slate-600'}`}>
+                          {type.areaM2} m²
+                        </span>
+                      </div>
+                      <span className={`text-xs block mt-1.5 font-black font-mono ${isSelected ? 'text-[#008B74]' : 'text-emerald-700'}`}>
+                        {formatVND(type.baseMonthlyPrice)}/tháng
+                      </span>
+                    </div>
+
+                    <div className="mt-2.5 text-[11px] font-bold">
+                      {slots !== null ? (
+                        slots > 0 ? (
+                          <span className="inline-flex items-center gap-1 text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-md">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                            Còn {slots} ô
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-rose-700 bg-rose-100/80 px-2 py-0.5 rounded-md">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+                            Hết chỗ
+                          </span>
+                        )
+                      ) : null}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Chú thích trạng thái sơ đồ ô kho */}
+            <div className="flex items-center gap-4 text-xs text-slate-700 pt-3.5 border-t border-slate-100 font-semibold flex-wrap">
+              <span className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded bg-emerald-600 shadow-2xs"></span>
+                <span>Còn trống</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded bg-[#008B74] shadow-2xs"></span>
+                <span>Đang chọn</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded bg-blue-500 shadow-2xs"></span>
+                <span>Đang giữ chỗ</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded bg-slate-300 shadow-2xs"></span>
+                <span>Đã thuê</span>
+              </span>
+            </div>
+
+            {/* SƠ ĐỒ MA TRẬN Ô KHO THỰC TẾ - VIBRANT HIGH CONTRAST */}
+            <div className="pt-1">
+              {displayFacilityUnits.filter((u) => {
+                if (selectedTypeId && u.unitTypeId) return u.unitTypeId === selectedTypeId;
+                if (storageType && u.storageType) return u.storageType === storageType;
+                return true;
+              }).length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                  {displayFacilityUnits
+                    .filter((u) => {
+                      if (selectedTypeId && u.unitTypeId) return u.unitTypeId === selectedTypeId;
+                      if (storageType && u.storageType) return u.storageType === storageType;
+                      return true;
+                    })
+                    .map((unit) => {
+                      const isSelected = selectedUnit?.id === unit.id;
+                      const isAvailable = unit.status === 'AVAILABLE';
+                      const isReserved = (unit.status as string) === 'RESERVED' || (unit.status as string) === 'PENDING_PAYMENT';
+
+                      return (
+                        <button
+                          key={unit.id}
+                          type="button"
+                          disabled={!isAvailable}
+                          onClick={() => handleSelectUnitOnGrid(unit)}
+                          className={`p-3.5 rounded-xl text-center transition-all cursor-pointer border-2 flex flex-col items-center justify-center ${
+                            isSelected
+                              ? 'bg-[#008B74] text-white border-[#006e5c] shadow-md ring-4 ring-[#008B74]/20 scale-[1.03]'
+                              : isAvailable
+                              ? 'bg-[#ecfdf5] border-[#a7f3d0] text-[#065f46] hover:border-[#10b981] hover:bg-[#d1fae5] hover:shadow-xs'
+                              : isReserved
+                              ? 'bg-[#eff6ff] border-[#bfdbfe] text-[#1e40af] cursor-not-allowed'
+                              : 'bg-[#f8fafc] border-[#e2e8f0] text-[#64748b] cursor-not-allowed'
+                          }`}
+                        >
+                          <span className={`text-xs font-black font-mono block ${isSelected ? 'text-white' : ''}`}>
+                            {unit.unitNumber}
+                          </span>
+                          <span className={`text-[10px] font-bold mt-1 px-2 py-0.5 rounded block ${
+                            isSelected
+                              ? 'bg-white/20 text-white'
+                              : isAvailable
+                              ? 'bg-emerald-100/90 text-emerald-800'
+                              : isReserved
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-slate-200/80 text-slate-600'
+                          }`}>
+                            {isSelected ? 'Đang chọn' : isAvailable ? 'Trống' : isReserved ? 'Giữ chỗ' : 'Đã thuê'}
+                          </span>
+                        </button>
+                      );
+                    })}
+                </div>
+              ) : (
+                <div className="text-center py-6 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-xs font-semibold text-slate-600">
+                  Cơ sở hiện chưa có ô kho thuộc loại này.
+                </div>
+              )}
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* ==================== CỘT PHẢI: TÓM TẮT ĐẶT CHỖ (STICKY SIDEBAR - 4 cols) ==================== */}
+        <div className="lg:col-span-4">
+          <div className="bg-white border border-brand-200/90 rounded-2xl p-6 shadow-sm sticky top-24 space-y-4">
+            <h3 className="text-base font-bold text-[#0a1614] pb-3 border-b border-brand-100">
+              Tóm tắt đặt chỗ
+            </h3>
+
+            <div className="space-y-2.5 text-xs text-slate-600">
+              <div className="flex justify-between">
+                <span>Cơ sở:</span>
+                <strong className="text-[#0a1614] text-right">{currentFacility.name}</strong>
+              </div>
+              <div className="flex justify-between items-center">
+                <span>Mã ô kho:</span>
+                <strong className={`font-mono px-2 py-0.5 rounded border ${
+                  selectedUnit
+                    ? 'text-brand-700 bg-brand-50 border-brand-200'
+                    : 'text-rose-700 bg-rose-50 border-rose-200'
+                }`}>
+                  {selectedUnit ? selectedUnit.unitNumber : 'Chưa chọn ô'}
+                </strong>
+              </div>
+              <div className="flex justify-between">
+                <span>Loại ô kho:</span>
+                <strong className="text-[#0a1614]">
+                  {storageType === 'CLIMATE_CONTROLLED' ? 'Kho Máy Lạnh' : 'Kho Tiêu Chuẩn'} — Size {selectedSize} ({currentUnitType?.areaM2 || 3} m²)
+                </strong>
+              </div>
+              <div className="flex justify-between">
+                <span>Kỳ thuê:</span>
+                <strong className="text-[#0a1614] text-right">
+                  {formatDateVN(startDate)} → {formatDateVN(calculatedEndDate)} ({durationMonths} tháng)
+                </strong>
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Ngày kết thúc dự kiến:
-              </label>
-              <div className="w-full px-3 py-2 bg-slate-100/80 border border-slate-200 rounded-lg text-xs sm:text-sm font-bold text-slate-700 flex items-center justify-between">
-                <span>{formatDateVN(calculatedEndDate)}</span>
-                <Clock className="w-3.5 h-3.5 text-slate-400" />
+            <div className="border-t border-slate-200 pt-3 space-y-2 text-xs text-slate-600">
+              <div className="flex justify-between">
+                <span>Đơn giá:</span>
+                <span className="font-semibold text-[#0a1614]">{formatVND(priceCalculation.basePrice)} / tháng</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Tiền thuê {durationMonths} tháng:</span>
+                <span className="font-semibold text-[#0a1614]">{formatVND(priceCalculation.grossRent)}</span>
+              </div>
+              {priceCalculation.discountAmount > 0 && (
+                <div className="flex justify-between text-emerald-700 font-semibold">
+                  <span>Chiết khấu ({priceCalculation.discountPercent}%):</span>
+                  <span>-{formatVND(priceCalculation.discountAmount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span>Tiền đặt cọc:</span>
+                <span className="font-semibold text-[#0a1614]">{formatVND(priceCalculation.depositAmount)}</span>
               </div>
             </div>
+
+            <div className="pt-3 border-t border-dashed border-brand-300 flex items-baseline justify-between">
+              <span className="text-sm font-bold text-[#0a1614]">Tổng thanh toán:</span>
+              <span className="text-xl font-extrabold text-brand-700 font-mono">
+                {formatVND(priceCalculation.totalDue)}
+              </span>
+            </div>
+
+            <Button
+              type="button"
+              variant="primary"
+              size="md"
+              onClick={handleProceedToBooking}
+              disabled={isConfirming}
+              className="w-full py-3.5 text-xs sm:text-sm font-bold bg-brand-500 hover:bg-brand-600 text-white rounded-xl shadow-xs transition-all hover:scale-[1.01] flex items-center justify-center gap-2 cursor-pointer mt-2"
+            >
+              {isConfirming ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Đang chuyển tiếp...</span>
+                </>
+              ) : (
+                <>
+                  <span>Điền thông tin và thanh toán</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </Button>
           </div>
         </div>
 
-        {/* Banner tóm tắt kỳ hạn đã chọn */}
-        <div className="p-2.5 bg-emerald-50/70 border border-emerald-200/80 rounded-xl flex items-center justify-between text-xs text-emerald-900">
-          <div className="flex items-center gap-2">
-            <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>
-              Sơ đồ bên dưới đang phản ánh các ô kho trống cho kỳ hạn <strong>{durationMonths} tháng</strong> (từ <strong>{formatDateVN(startDate)}</strong> đến <strong>{formatDateVN(calculatedEndDate)}</strong>).
-            </span>
-          </div>
-        </div>
       </div>
 
-      {/* 3. SƠ ĐỒ MẶT BẰNG Ô KHO VẬT LÝ (Hiển thị sau khi chọn loại kho và thời gian) */}
-      <div className="space-y-3 pt-2">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-100 pb-2.5">
-          <div>
-            <h2 className="text-base font-extrabold text-[#0a1614] flex items-center gap-2">
-              <Layers className="w-4 h-4 text-brand-600" /> 3. Sơ Đồ Mặt Bằng Ô Kho Vật Lý
-            </h2>
-          </div>
-          <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
-            <span className="text-xs font-semibold text-brand-700 bg-brand-50 px-2.5 py-1 rounded-full border border-brand-200">
-              Đang lọc {currentUnitType?.name || `Cỡ ${selectedSize}`} • {durationMonths} tháng
-            </span>
-          </div>
-        </div>
-
-        <UnitGrid
-          units={displayFacilityUnits}
-          selectedUnitId={selectedUnit ? selectedUnit.id : null}
-          onSelectUnit={handleSelectUnitOnGrid}
-          filterType={storageType}
-          filterSize={selectedSize}
-          filterUnitTypeId={selectedTypeId}
-          onConfirmSelection={handleProceedToBooking}
-          isConfirming={isConfirming}
-          facilityName={currentFacility.name}
-        />
-      </div>
-
-      {/* Modal cảnh báo khi cơ sở bị BOM ngừng hoạt động (ISS-75) */}
+      {/* Modal cảnh báo khi cơ sở ngừng hoạt động */}
       <Modal isOpen={facilityInactiveModalOpen} onClose={() => navigate('/customer')}>
         <div className="p-6 max-w-md w-full text-center space-y-4">
           <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto">
@@ -998,7 +976,7 @@ export const UnitPickerPage: React.FC = () => {
           <div className="space-y-1.5">
             <h3 className="text-lg font-bold text-slate-900">Cơ sở tạm ngừng hoạt động</h3>
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              Cơ sở lưu trữ bạn đang chọn hiện đã tạm dừng phục vụ hoặc không tồn tại trên hệ thống. Quý khách vui lòng chọn cơ sở lưu trữ khác đang hoạt động.
+              Cơ sở lưu trữ bạn đang chọn hiện đã tạm dừng phục vụ. Quý khách vui lòng chọn cơ sở khác đang hoạt động.
             </p>
           </div>
           <div className="pt-2">
@@ -1013,7 +991,7 @@ export const UnitPickerPage: React.FC = () => {
         </div>
       </Modal>
 
-      {/* Modal cảnh báo khi ô kho bị bảo trì hoặc có người khác đặt trước (ISS-76) */}
+      {/* Modal cảnh báo ô kho không khả dụng */}
       <Modal
         isOpen={unitUnavailableModal.isOpen}
         onClose={() => setUnitUnavailableModal((prev) => ({ ...prev, isOpen: false }))}
@@ -1039,6 +1017,7 @@ export const UnitPickerPage: React.FC = () => {
           </div>
         </div>
       </Modal>
+
     </div>
   );
 };
