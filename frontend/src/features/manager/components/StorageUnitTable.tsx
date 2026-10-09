@@ -183,6 +183,8 @@ export const StorageUnitTable: React.FC<StorageUnitTableProps> = ({
                           {contract.customerPhone}
                         </div>
                       </div>
+                    ) : isOccupied ? (
+                      <span className="text-amber-600 font-semibold italic text-[11px]">Chưa gắn HĐ</span>
                     ) : (
                       <span className="text-slate-400 italic">—</span>
                     )}
@@ -210,6 +212,8 @@ export const StorageUnitTable: React.FC<StorageUnitTableProps> = ({
                           </span>
                         )}
                       </div>
+                    ) : isOccupied ? (
+                      <span className="text-amber-600 font-semibold italic text-[11px]">Chưa gắn HĐ</span>
                     ) : (
                       <span className="text-slate-400 italic">—</span>
                     )}

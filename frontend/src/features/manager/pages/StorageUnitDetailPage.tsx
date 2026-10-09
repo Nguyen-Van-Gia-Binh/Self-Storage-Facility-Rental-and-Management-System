@@ -410,6 +410,27 @@ export const StorageUnitDetailPage: React.FC = () => {
                 </div>
               </div>
             </div>
+          ) : unit?.status === 'OCCUPIED' ? (
+            <div className="bg-white rounded-2xl border border-amber-200/90 shadow-2xs p-6 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-3">
+                <AlertCircle className="w-6 h-6" />
+              </div>
+              <h3 className="text-sm font-bold text-slate-800">
+                Ô kho ghi nhận Đang thuê nhưng chưa có Hợp đồng liên kết
+              </h3>
+              <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
+                Hệ thống ghi nhận trạng thái ô kho là Đang thuê ({unit?.status}), nhưng hiện chưa tìm thấy hồ sơ hợp đồng điện tử nào đang hoạt động liên kết với ô kho này trong CSDL.
+              </p>
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleStatusChange('AVAILABLE')}
+                  className="px-3.5 py-1.5 text-xs font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 rounded-xl transition-colors cursor-pointer"
+                >
+                  🔄 Đưa về Trạng thái Trống (AVAILABLE)
+                </button>
+              </div>
+            </div>
           ) : (
             <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5 text-center">
               <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-3">
