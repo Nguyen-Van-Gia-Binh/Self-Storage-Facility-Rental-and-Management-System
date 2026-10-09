@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Clock, Tag, CheckCircle2 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
-import { calculateBookingPrice, type CalculatePriceResponse } from '@/api/reservation';
+import { calculateBookingPrice } from '@/api/reservation';
 import type { PricingCalculationResult } from '../utils/pricing';
 import type { UnitType, Facility } from '../types';
 
