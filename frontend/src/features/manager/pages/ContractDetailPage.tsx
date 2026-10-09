@@ -325,7 +325,7 @@ export const ContractDetailPage: React.FC = () => {
                   type="button"
                   onClick={() =>
                     navigate(
-                      `/manager/facilities/${contract.facilityId}/unit-types/${contract.unitTypeId}/units/${contract.storageUnitId}`
+                      `/manager/facilities/${contract.facilityId}/unit-types/${contract.unitTypeId}/units/${contract.storageUnitId}?contractId=${contract.id}`
                     )
                   }
                   className="inline-flex items-center gap-1 font-bold text-brand-600 hover:text-brand-700 hover:underline cursor-pointer"

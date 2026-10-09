@@ -1,6 +1,5 @@
-// frontend/src/features/manager/pages/StorageUnitDetailPage.tsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Box,
   Building2,
@@ -41,6 +40,8 @@ export const StorageUnitDetailPage: React.FC = () => {
     unitId: string;
   }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const queryContractId = Number(searchParams.get('contractId')) || 0;
 
   const facilityIdNum = Number(facilityId) || 0;
   const typeIdNum = Number(typeId) || 0;
@@ -93,19 +94,28 @@ export const StorageUnitDetailPage: React.FC = () => {
       const allContracts = contractsRes || [];
       const unitContracts = allContracts.filter((c) => c.storageUnitId === unitIdNum);
 
-      const activeContract = unitContracts.find(
-        (c) =>
-          c.status === 'ACTIVE' ||
-          c.status === 'OVERDUE' ||
-          (c.status as string) === 'PENDING_RETURN' ||
-          c.status === 'PENDING_CHECK_IN'
-      );
-      setCurrentContract(activeContract || null);
+      // Nếu người dùng điều hướng từ 1 hợp đồng cụ thể qua link (?contractId=...), ưu tiên hợp đồng đó
+      const targetedContract = queryContractId
+        ? unitContracts.find((c) => c.id === queryContractId)
+        : null;
 
-      const closedContracts = unitContracts.filter(
-        (c) => c.status === 'CLOSED' || c.status === 'TERMINATED'
+      const activeContract =
+        targetedContract ||
+        unitContracts.find(
+          (c) =>
+            c.status === 'ACTIVE' ||
+            c.status === 'OVERDUE' ||
+            (c.status as string) === 'PENDING_RETURN' ||
+            c.status === 'PENDING_CHECK_IN'
+        ) ||
+        null;
+      setCurrentContract(activeContract);
+
+      // Các hợp đồng khác liên quan tới ô kho này (để xem trong danh sách lịch sử)
+      const otherContracts = unitContracts.filter(
+        (c) => !activeContract || c.id !== activeContract.id
       );
-      setPastContracts(closedContracts);
+      setPastContracts(otherContracts);
     } catch (err) {
       console.error('Lỗi khi tải chi tiết ô kho:', err);
       setError('Không thể tải thông tin chi tiết ô kho.');
@@ -113,7 +123,7 @@ export const StorageUnitDetailPage: React.FC = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [facilityIdNum, typeIdNum, unitIdNum]);
+  }, [facilityIdNum, typeIdNum, unitIdNum, queryContractId]);
 
   useEffect(() => {
     loadData();
@@ -393,7 +403,13 @@ export const StorageUnitDetailPage: React.FC = () => {
                 {/* Nút thao tác hợp đồng */}
                 <div className="pt-2 flex flex-col gap-2">
                   <button
-                    onClick={() => navigate(`/manager/contracts`)}
+                    onClick={() =>
+                      navigate(
+                        currentContract
+                          ? `/manager/contracts/${currentContract.id}`
+                          : `/manager/contracts`
+                      )
+                    }
                     className="w-full py-2 px-3 bg-brand-50 hover:bg-brand-100 text-brand-700 font-bold rounded-xl border border-brand-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <FileText className="w-3.5 h-3.5" />
@@ -473,18 +489,31 @@ export const StorageUnitDetailPage: React.FC = () => {
                 ) : (
                   <div className="divide-y divide-slate-100 text-xs">
                     {pastContracts.map((c) => (
-                      <div key={c.id} className="py-2.5 flex items-center justify-between">
+                      <div
+                        key={c.id}
+                        className="py-2.5 flex items-center justify-between hover:bg-slate-50/80 px-2 rounded-xl transition-colors"
+                      >
                         <div>
                           <span className="font-mono font-bold text-slate-800">{c.code}</span>
                           <p className="text-[11px] text-slate-500">{c.customerName}</p>
                         </div>
-                        <div className="text-right">
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600">
-                            {c.status}
-                          </span>
-                          <p className="text-[10px] text-slate-400 mt-0.5">
-                            {c.startDate} → {c.endDateExclusive}
-                          </p>
+                        <div className="flex items-center gap-2">
+                          <div className="text-right">
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600">
+                              {c.status}
+                            </span>
+                            <p className="text-[10px] text-slate-400 mt-0.5">
+                              {c.startDate} → {c.endDateExclusive}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/manager/contracts/${c.id}`)}
+                            className="p-1.5 text-brand-600 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition-colors cursor-pointer"
+                            title="Xem chi tiết hợp đồng này"
+                          >
+                            <FileText className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
                     ))}

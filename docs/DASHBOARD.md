@@ -96,6 +96,7 @@
 | `ISS-88` | Màn hình Giám sát hợp đồng FM dồn hàng trăm dòng không phân cấp, thiếu bộ lọc cơ sở/trạng thái (FM-02). | Tái thiết kế Drill-down 3 cấp (Tổng quan Cơ sở -> Danh sách Hợp đồng -> Chi tiết Hợp đồng) kèm Search, Filter tabs, Sortable table, Pagination theo ngưỡng (>12 cards, >10 dòng) và Overdue Banner. | Bình | `RESOLVED` |
 | `ISS-89` | Màn hình Phân công nhân sự FM nhồi nhét danh sách nhân viên + ca trực + công việc trên 1 trang (FM-05). | Tái thiết kế Drill-down 4 cấp (Cơ sở -> Lịch ca trực -> Danh sách công việc -> Chi tiết việc 3 Case A/B/C) kèm Calendar View, Search, Filter, Sort và Pagination theo ngưỡng (>12 cards, >10 items). | Bình | `RESOLVED` |
 | `ISS-90` | Ô kho HC-B202 (và các ô CG-S104, CG-C404, Q1-B201, HBT-B202, Q1-B203, Q7-A103) bị mồ côi hoặc lệch trạng thái. | Seed HĐ đầy đủ (V47, V48), chuẩn hóa toàn bộ ô mồ côi CSDL; Bổ sung UI phòng thủ Cấp 3/Cấp 4 và bộ test kiểm toán hồi quy tự động. | Bình | `RESOLVED` |
+| `ISS-91` | Trùng lặp 2 hợp đồng trên ô CG-S101 khiến chi tiết ô kho hiển thị lệch khách hàng; link điều hướng thiếu context. | Migration V49 tách hợp đồng về đúng CG-M204; đồng bộ ?contractId giữa Giám sát HĐ và Chi tiết ô kho. | Bình | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 
