@@ -112,6 +112,7 @@ export const ContractDetailPage: React.FC = () => {
 
   const isOverdue = contract.status === 'OVERDUE';
   const isActive = contract.status === 'ACTIVE';
+  const canRelocate = Boolean(contract.relocationEligible) && (isActive || contract.status === 'PENDING_CHECK_IN');
   const isSettlementReady =
     contract.status === 'PENDING_RETURN' ||
     (contract.status as string) === 'INSPECTED' ||
@@ -194,6 +195,33 @@ export const ContractDetailPage: React.FC = () => {
             alert('Đã ghi nhận yêu cầu trả kho cho hợp đồng quá hạn này.');
           }}
         />
+      )}
+
+      {/* Banner Cảnh báo Di dời Sự cố (Chỉ hiển thị khi có sự cố được Staff xác nhận cần di dời - BR-SUP-02) */}
+      {canRelocate && (
+        <div className="bg-amber-50/90 border border-amber-300 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-900 shadow-2xs">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-xl bg-amber-100 text-amber-700 shrink-0 mt-0.5">
+              <AlertCircle className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-amber-900">
+                Ô kho phát sinh sự cố — Nhân viên hiện trường đã đề xuất di dời khẩn cấp (BR-SUP-02)
+              </h4>
+              <p className="text-xs text-amber-700 mt-0.5">
+                Ô kho <span className="font-mono font-bold text-amber-900">{contract.storageUnitCode}</span> gặp sự cố kỹ thuật. Bạn có thể tiến hành đổi sang ô kho trống cùng loại cho khách hàng.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setReassignModalOpen(true)}
+            className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs shrink-0 cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            <Repeat className="w-4 h-4" />
+            <span>Tiến hành Đổi ô kho</span>
+          </button>
+        </div>
       )}
 
       {/* Main Grid: 2 Cột Đối xứng Desktop */}
@@ -338,15 +366,16 @@ export const ContractDetailPage: React.FC = () => {
             <span>Chi tiết công nợ</span>
           </button>
 
-          {/* Đổi ô kho ngoại lệ (Chỉ khi Active) */}
-          {isActive && (
+          {/* Đổi ô kho ngoại lệ: Chỉ khi có sự cố được Staff xác nhận cần di dời (BR-SUP-02 / BR-AVL-05) */}
+          {canRelocate && (
             <button
               type="button"
               onClick={() => setReassignModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs"
+              title="Đổi ô cùng loại khi sự cố hư hỏng được nhân viên xác nhận cần di dời (BR-SUP-02)"
             >
-              <Repeat className="w-4 h-4" />
-              <span>Đổi ô kho ngoại lệ</span>
+              <Repeat className="w-4 h-4 text-amber-600" />
+              <span>Đổi ô kho do sự cố</span>
             </button>
           )}
 

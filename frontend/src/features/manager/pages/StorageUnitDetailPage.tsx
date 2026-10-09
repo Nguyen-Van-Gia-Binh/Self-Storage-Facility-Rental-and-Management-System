@@ -400,13 +400,15 @@ export const StorageUnitDetailPage: React.FC = () => {
                     <span>Xem hợp đồng tại Giám sát hợp đồng</span>
                   </button>
 
-                  <button
-                    onClick={() => setReassignModalOpen(true)}
-                    className="w-full py-2 px-3 bg-white hover:bg-slate-50 text-slate-700 font-semibold rounded-xl border border-slate-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <Repeat className="w-3.5 h-3.5 text-slate-500" />
-                    <span>Đổi ô kho ngoại lệ (Reassign)</span>
-                  </button>
+                  {Boolean(currentContract.relocationEligible) && (
+                    <button
+                      onClick={() => setReassignModalOpen(true)}
+                      className="w-full py-2 px-3 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold rounded-xl border border-amber-300 transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                    >
+                      <Repeat className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Đổi ô kho do sự cố (Reassign)</span>
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
