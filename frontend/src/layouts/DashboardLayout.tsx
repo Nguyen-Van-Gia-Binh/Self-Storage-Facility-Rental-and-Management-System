@@ -31,6 +31,7 @@ const BREADCRUMB_MAP: Record<string, string> = {
   '/manager/units':            'Quản lý ô kho',
   '/manager/facilities':       'Quản lý ô kho',
   '/manager/contracts':        'Giám sát hợp đồng',
+  '/manager/staff-schedule':   'Phân công nhân sự',
   '/manager/staff-assignment': 'Phân công nhân sự',
   '/manager/incidents':        'Xử lý sự cố',
   '/manager/reports':          'Báo cáo cơ sở',

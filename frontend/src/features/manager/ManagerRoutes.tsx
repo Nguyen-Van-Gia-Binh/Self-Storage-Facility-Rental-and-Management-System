@@ -9,7 +9,10 @@ import { StorageUnitDetailPage } from './pages/StorageUnitDetailPage';
 import { ContractDashboardPage } from './pages/ContractDashboardPage';
 import { ContractListPage } from './pages/ContractListPage';
 import { ContractDetailPage } from './pages/ContractDetailPage';
-import { StaffAssignmentPage } from './pages/StaffAssignmentPage';
+import { StaffSchedulePage } from './pages/StaffSchedulePage';
+import { ShiftCalendarPage } from './pages/ShiftCalendarPage';
+import { WorkListPage } from './pages/WorkListPage';
+import { WorkDetailPage } from './pages/WorkDetailPage';
 import { IncidentManagementPage } from './pages/IncidentManagementPage';
 import { FacilityReportsPage } from './pages/FacilityReportsPage';
 
@@ -39,8 +42,16 @@ export const ManagerRoutes: React.FC = () => {
         <Route path="contracts/facilities/:facilityId" element={<ContractListPage />} />
         <Route path="contracts/:contractId" element={<ContractDetailPage />} />
 
+        {/* 4 Cấp độ Drill-down Phân công nhân sự & Ca trực (FM-05) */}
+        <Route path="staff-schedule" element={<StaffSchedulePage />} />
+        <Route path="staff-schedule/facilities/:facilityId" element={<ShiftCalendarPage />} />
+        <Route path="staff-schedule/facilities/:facilityId/shifts" element={<WorkListPage />} />
+        <Route path="staff-schedule/assignments/:assignmentId" element={<WorkDetailPage />} />
+
+        {/* Alias chuyển hướng /manager/staff-assignment sang Cấp 1 */}
+        <Route path="staff-assignment" element={<Navigate to="/manager/staff-schedule" replace />} />
+
         {/* Các trang quản trị khác */}
-        <Route path="staff-assignment" element={<StaffAssignmentPage />} />
         <Route path="incidents" element={<IncidentManagementPage />} />
         <Route path="reports" element={<FacilityReportsPage />} />
       </Routes>

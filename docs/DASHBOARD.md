@@ -94,6 +94,7 @@
 | `ISS-85` | Đăng ký tài khoản khách hàng không xác thực email, dẫn đến nguy cơ spam tài khoản và email giả. | Tạo bảng `registration_otp` (hiệu lực 5 phút), mã hóa OTP 6 số, resend cooldown 60s, Stepper 2 bước xác thực email thật trước khi tạo `AppUser`. | Bình | `RESOLVED` |
 | `ISS-87` | Màn hình Quản lý ô kho dồn hết dữ liệu vào 1 trang gây loãng và chưa xử lý phân trang khi dữ liệu lớn. | Tái thiết kế toàn diện Drill-down 4 cấp kèm Breadcrumb, Search realtime, Filter tabs (Khu vực/Trạng thái/Tầng), Sort và Pagination theo ngưỡng threshold (>12 cơ sở/loại kho, >10 ô kho). | Bình | `RESOLVED` |
 | `ISS-88` | Màn hình Giám sát hợp đồng FM dồn hàng trăm dòng không phân cấp, thiếu bộ lọc cơ sở/trạng thái (FM-02). | Tái thiết kế Drill-down 3 cấp (Tổng quan Cơ sở -> Danh sách Hợp đồng -> Chi tiết Hợp đồng) kèm Search, Filter tabs, Sortable table, Pagination theo ngưỡng (>12 cards, >10 dòng) và Overdue Banner. | Bình | `RESOLVED` |
+| `ISS-89` | Màn hình Phân công nhân sự FM nhồi nhét danh sách nhân viên + ca trực + công việc trên 1 trang (FM-05). | Tái thiết kế Drill-down 4 cấp (Cơ sở -> Lịch ca trực -> Danh sách công việc -> Chi tiết việc 3 Case A/B/C) kèm Calendar View, Search, Filter, Sort và Pagination theo ngưỡng (>12 cards, >10 items). | Bình | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 
