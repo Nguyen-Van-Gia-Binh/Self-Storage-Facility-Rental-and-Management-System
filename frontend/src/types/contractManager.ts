@@ -6,11 +6,13 @@
 export type ManagerContractStatus =
   | 'ACTIVE'
   | 'PENDING_CHECK_IN'
+  | 'PENDING_RETURN'
   | 'NOTICE_SUBMITTED'
   | 'INSPECTED'
   | 'OVERDUE'
   | 'CLOSED'
-  | 'TERMINATED';
+  | 'TERMINATED'
+  | 'CANCELLED';
 
 export interface ManagerContractItem {
   id: number;
@@ -58,6 +60,7 @@ export interface ManagerContractItem {
   damageNotes?: string;
   estimatedRefund?: number;
   evidenceImageUrls?: string[];
+  isInspected?: boolean;
   relocationEligible?: boolean;
   openSupportRequestId?: number | null;
 }
