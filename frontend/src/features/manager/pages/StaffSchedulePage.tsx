@@ -143,34 +143,49 @@ export const StaffSchedulePage: React.FC = () => {
       </div>
 
       {/* KPI Cards Thống kê toàn hệ thống */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-4.5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Card 1: Tổng cơ sở */}
+        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5 flex items-center justify-between hover:border-blue-200 transition-all">
+          <div className="space-y-1">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tổng cơ sở phân công</p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-black text-slate-900 tracking-tight">{facilities.length}</span>
+              <span className="text-xs font-semibold text-slate-500">cơ sở</span>
+            </div>
+            <p className="text-[11px] text-slate-400">Được phân quyền quản lý</p>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
             <Building2 className="w-6 h-6" />
           </div>
-          <div>
-            <p className="text-xs font-medium text-slate-500">Tổng cơ sở phân công</p>
-            <p className="text-2xl font-black text-slate-900 mt-0.5">{facilities.length}</p>
-          </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-4.5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600">
+        {/* Card 2: Tổng nhân viên */}
+        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5 flex items-center justify-between hover:border-emerald-200 transition-all">
+          <div className="space-y-1">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tổng nhân viên vận hành</p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-black text-emerald-600 tracking-tight">{totalStaffCount}</span>
+              <span className="text-xs font-semibold text-emerald-700">nhân sự</span>
+            </div>
+            <p className="text-[11px] text-slate-400">Trực thuộc các cơ sở</p>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
             <Users className="w-6 h-6" />
           </div>
-          <div>
-            <p className="text-xs font-medium text-slate-500">Tổng nhân viên vận hành</p>
-            <p className="text-2xl font-black text-emerald-600 mt-0.5">{totalStaffCount}</p>
-          </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-4.5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600">
-            <Clock className="w-6 h-6" />
+        {/* Card 3: Khung ca trực tiêu chuẩn */}
+        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5 flex items-center justify-between hover:border-purple-200 transition-all">
+          <div className="space-y-1">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Khung ca trực tiêu chuẩn</p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-black text-purple-600 tracking-tight">3</span>
+              <span className="text-xs font-semibold text-purple-700">ca / ngày</span>
+            </div>
+            <p className="text-[11px] text-slate-400">Sáng · Chiều · Đêm (24/7)</p>
           </div>
-          <div>
-            <p className="text-xs font-medium text-slate-500">Khung ca trực tiêu chuẩn</p>
-            <p className="text-sm font-bold text-slate-800 mt-1">3 ca (Sáng · Chiều · Đêm)</p>
+          <div className="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
+            <Clock className="w-6 h-6" />
           </div>
         </div>
       </div>
@@ -180,13 +195,13 @@ export const StaffSchedulePage: React.FC = () => {
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
           {/* Search Input */}
           <div className="relative flex-1 max-w-md">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Tìm kiếm theo mã, tên cơ sở, địa chỉ..."
-              className="w-full pl-9.5 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
+              className="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-slate-900 placeholder:text-slate-400"
             />
           </div>
 
