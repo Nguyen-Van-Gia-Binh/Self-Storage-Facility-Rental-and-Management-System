@@ -857,9 +857,6 @@ export const RenewalPage: React.FC = () => {
                   Bảng Kê Chi Phí Gia Hạn Hợp Đồng Chi Tiết
                 </h2>
               </div>
-              <Badge variant="available" className="text-xs px-2.5 py-1">
-                Hóa đơn hợp lệ
-              </Badge>
             </div>
 
             {/* Invoicing Table */}
@@ -875,9 +872,6 @@ export const RenewalPage: React.FC = () => {
                 <div className="px-4 py-3.5 grid grid-cols-12 gap-2 items-center">
                   <div className="col-span-6 sm:col-span-7">
                     <strong className="text-slate-800 block">Tiền thuê ô kho {contract.unitNumber}</strong>
-                    <span className="text-xs text-slate-500">
-                      Thời hạn {renewalMonths} tháng · Đơn giá {formatVND(pricing.monthlyRent)}/tháng
-                    </span>
                   </div>
                   <span className="col-span-2 text-center text-slate-600">{renewalMonths} tháng</span>
                   <span className="col-span-4 sm:col-span-3 text-right font-bold text-slate-900">
@@ -943,14 +937,9 @@ export const RenewalPage: React.FC = () => {
 
               {/* Total Footer */}
               <div className="bg-slate-50/90 p-4 flex items-center justify-between border-t border-slate-200">
-                <div>
-                  <span className="text-sm sm:text-base font-extrabold text-[#0a1614] block">
-                    Tổng số tiền thanh toán thực tế:
-                  </span>
-                  <span className="text-xs text-slate-500">
-                    Thời hạn sử dụng mới kéo dài liên tục đến ngày <strong>{newEndDate}</strong>
-                  </span>
-                </div>
+                <span className="text-sm sm:text-base font-extrabold text-[#0a1614] block">
+                  Tổng số tiền thanh toán thực tế:
+                </span>
                 <span className="text-xl sm:text-2xl font-black text-brand-600">
                   {formatVND(pricing.finalTotal)}
                 </span>
