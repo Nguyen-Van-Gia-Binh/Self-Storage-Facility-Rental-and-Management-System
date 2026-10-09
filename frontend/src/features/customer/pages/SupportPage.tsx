@@ -2,15 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { 
-  LifeBuoy, 
+  LifeBuoy,
   Plus, 
   Search, 
-  CheckCircle2, 
+  X,
   AlertTriangle, 
   RotateCw,
-  Clock,
+  CheckCircle2,
   Lock,
   LogIn,
   UserPlus
@@ -26,7 +27,6 @@ import { customerApi } from '../api/customerApi';
 import { SupportTicketCard } from '../components/SupportTicketCard';
 import { SupportTicketDetailModal } from '../components/SupportTicketDetailModal';
 import { CreateSupportTicketModal } from '../components/CreateSupportTicketModal';
-import { SupportFaqSection } from '../components/SupportFaqSection';
 
 export type SupportTabKey = 'ALL' | 'ACTIVE' | 'CLOSED';
 
@@ -46,7 +46,6 @@ export const SupportPage: React.FC = () => {
 
   // Filters
   const [activeTab, setActiveTab] = useState<SupportTabKey>('ALL');
-  const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Modals state - Khởi tạo mở modal ngay nếu URL có preContractId/preUnitId (và đã login)
@@ -218,9 +217,6 @@ export const SupportPage: React.FC = () => {
       if (!['CLOSED', 'AUTO_CLOSED', 'RESOLVED'].includes(t.status)) return false;
     }
 
-    // Category filter
-    if (categoryFilter !== 'ALL' && t.category !== categoryFilter) return false;
-
     // Search query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -238,44 +234,7 @@ export const SupportPage: React.FC = () => {
   const countInProgress = tickets.filter(t => ['NEW', 'ASSIGNED', 'IN_PROGRESS'].includes(t.status)).length;
   const countClosed = tickets.filter(t => ['CLOSED', 'AUTO_CLOSED', 'RESOLVED'].includes(t.status)).length;
 
-  const kpis = [
-    {
-      tab: 'ALL' as SupportTabKey,
-      title: 'Tổng yêu cầu',
-      count: tickets.length,
-      subtext: 'Tổng số vé hỗ trợ đã tạo',
-      icon: LifeBuoy,
-      bgGradient: 'from-blue-500/10 to-indigo-500/5',
-      borderColor: 'border-blue-200/80',
-      activeBorder: 'border-blue-600 ring-2 ring-blue-500/20',
-      textColor: 'text-blue-950',
-      iconColor: 'text-blue-600',
-    },
-    {
-      tab: 'ACTIVE' as SupportTabKey,
-      title: 'Đang xử lý',
-      count: countInProgress,
-      subtext: 'Nhân viên đang phối hợp xử lý',
-      icon: Clock,
-      bgGradient: 'from-amber-500/10 to-yellow-500/5',
-      borderColor: 'border-amber-200/80',
-      activeBorder: 'border-amber-600 ring-2 ring-amber-500/20',
-      textColor: 'text-amber-950',
-      iconColor: 'text-amber-600',
-    },
-    {
-      tab: 'CLOSED' as SupportTabKey,
-      title: 'Đã đóng',
-      count: countClosed,
-      subtext: 'Sự cố đã được khắc phục hoàn tất',
-      icon: CheckCircle2,
-      bgGradient: 'from-emerald-500/10 to-teal-500/5',
-      borderColor: 'border-emerald-200/80',
-      activeBorder: 'border-emerald-600 ring-2 ring-emerald-500/20',
-      textColor: 'text-emerald-950',
-      iconColor: 'text-emerald-600',
-    },
-  ];
+
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
@@ -310,20 +269,47 @@ export const SupportPage: React.FC = () => {
         </div>
       )}
 
-      {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-5">
+      {/* Top Banner & Live Search */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200/80 pb-5">
         <div>
-          <div className="flex items-center gap-1.5 text-brand-600 font-semibold text-xs tracking-wider uppercase mb-1">
-            <LifeBuoy className="w-3.5 h-3.5" />
-            <span>Trung Tâm Chăm Sóc & Hỗ Trợ Kỹ Thuật</span>
-          </div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-black text-[#0a1614] tracking-tight">
             Yêu Cầu Hỗ Trợ & Xử Lý Sự Cố
           </h1>
         </div>
 
-        {/* CTA Buttons */}
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Search Box */}
+          <div className="relative w-full sm:w-64">
+            <Input
+              placeholder="Tìm mã vé, ô kho..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="text-xs pl-8 pr-7 py-1.5 h-9 bg-white"
+            />
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-3" />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-3 text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadData}
+            disabled={loading}
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold cursor-pointer h-9"
+            title="Tải lại danh sách"
+          >
+            <RotateCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <span>Làm mới</span>
+          </Button>
+
           <Button
             variant="primary"
             size="sm"
@@ -334,10 +320,10 @@ export const SupportPage: React.FC = () => {
               }
               setIsCreateOpen(true);
             }}
-            className="bg-brand-600 hover:bg-brand-700 text-white shadow-xs font-bold text-xs flex items-center gap-1.5"
+            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold shadow-xs cursor-pointer h-9 bg-brand-600 hover:bg-brand-700 text-white"
           >
             <Plus className="w-4 h-4" />
-            Báo sự cố mới
+            <span>Báo sự cố mới</span>
           </Button>
         </div>
       </div>
@@ -373,101 +359,72 @@ export const SupportPage: React.FC = () => {
         </Card>
       ) : (
         <>
-          {/* Quick Metrics Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">
-            {kpis.map((kpi) => {
-              const Icon = kpi.icon;
-              const isSelected = activeTab === kpi.tab;
 
-              return (
-                <div
-                  key={kpi.title}
-                  onClick={() => setActiveTab(kpi.tab)}
-                  className={`p-4 rounded-2xl bg-gradient-to-br ${kpi.bgGradient} bg-white border transition-all duration-200 cursor-pointer shadow-xs hover:shadow-md relative overflow-hidden group ${
-                    isSelected ? kpi.activeBorder : kpi.borderColor
+          {/* Status Tabs (Clean Pills matching MyUnitsPage) */}
+          <div className="flex items-center gap-2 overflow-x-auto text-xs font-semibold border-b border-slate-200/80 pb-3 pt-1">
+            <button
+              type="button"
+              onClick={() => setActiveTab('ALL')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === 'ALL'
+                  ? 'bg-brand-600 text-white font-bold shadow-xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+              }`}
+            >
+              <span>Tất cả</span>
+              <span
+                className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
+                  activeTab === 'ALL' ? 'bg-white/25 text-white' : 'bg-slate-200/80 text-slate-700'
+                }`}
+              >
+                {tickets.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('ACTIVE')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === 'ACTIVE'
+                  ? 'bg-amber-600 text-white font-bold shadow-xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+              }`}
+            >
+              <span>Đang xử lý</span>
+              {countInProgress > 0 && (
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    activeTab === 'ACTIVE' ? 'bg-white' : 'bg-amber-500 animate-pulse'
                   }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <span className="text-xs font-bold text-slate-600 group-hover:text-slate-900 transition-colors uppercase tracking-wider">
-                      {kpi.title}
-                    </span>
-                    <div className={`p-2 rounded-xl bg-white shadow-xs ${kpi.iconColor}`}>
-                      <Icon className="w-4 h-4" />
-                    </div>
-                  </div>
+                />
+              )}
+              <span
+                className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
+                  activeTab === 'ACTIVE' ? 'bg-white/25 text-white' : 'bg-slate-200/80 text-slate-700'
+                }`}
+              >
+                {countInProgress}
+              </span>
+            </button>
 
-                  <div className="mt-2 flex items-baseline gap-2">
-                    <span className={`text-2xl sm:text-3xl font-black tracking-tight ${kpi.textColor}`}>
-                      {kpi.count}
-                    </span>
-                    <span className="text-xs font-semibold text-slate-400">vé</span>
-                  </div>
-
-                  <p className="text-[11px] text-slate-500 mt-1 line-clamp-1">
-                    {kpi.subtext}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Filter Tabs & Search Bar */}
-          <div className="space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200">
-              {/* Status Tabs */}
-              <div className="flex items-center gap-6 overflow-x-auto text-xs font-semibold">
-                {(
-                  [
-                    { key: 'ALL', label: `Tất cả (${tickets.length})` },
-                    { key: 'ACTIVE', label: `Đang xử lý (${countInProgress})` },
-                    { key: 'CLOSED', label: `Đã đóng (${countClosed})` },
-                  ] as const satisfies readonly { key: SupportTabKey; label: string }[]
-                ).map(tab => {
-                  const isSelected = activeTab === tab.key;
-                  return (
-                    <button
-                      key={tab.key}
-                      type="button"
-                      onClick={() => setActiveTab(tab.key)}
-                      className={`pb-3 px-1 border-b-2 transition-colors whitespace-nowrap ${
-                        isSelected
-                          ? 'border-brand-600 text-brand-700 font-bold'
-                          : 'border-transparent text-slate-500 hover:text-slate-800'
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Category Filter & Search Box */}
-              <div className="flex items-center gap-2 pb-2 sm:pb-3">
-                <div className="relative">
-                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Tìm mã vé, ô kho..."
-                    className="pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500 w-36 sm:w-48"
-                  />
-                </div>
-
-                <select
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500"
-                >
-                  <option value="ALL">Mọi danh mục</option>
-                  <option value="LOCK_ACCESS">Khóa & PIN</option>
-                  <option value="UNIT_DAMAGE">Hư hỏng kho</option>
-                  <option value="PAYMENT">Thanh toán</option>
-                  <option value="BELONGINGS">Tài sản</option>
-                  <option value="OTHER">Khác</option>
-                </select>
-              </div>
-            </div>
+            <button
+              type="button"
+              onClick={() => setActiveTab('CLOSED')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === 'CLOSED'
+                  ? 'bg-slate-800 text-white font-bold shadow-xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+              }`}
+            >
+              <span>Đã đóng</span>
+              <span
+                className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
+                  activeTab === 'CLOSED' ? 'bg-white/25 text-white' : 'bg-slate-200/80 text-slate-700'
+                }`}
+              >
+                {countClosed}
+              </span>
+            </button>
           </div>
 
           {/* Ticket Cards List */}
@@ -477,7 +434,7 @@ export const SupportPage: React.FC = () => {
               <p className="text-xs text-slate-500">Đang tải danh sách vé hỗ trợ...</p>
             </div>
           ) : filteredTickets.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+            <div className="flex flex-col gap-2">
               {filteredTickets.map((ticket) => (
                 <SupportTicketCard
                   key={ticket.id}
@@ -500,7 +457,7 @@ export const SupportPage: React.FC = () => {
                   Không có yêu cầu hỗ trợ nào
                 </h3>
                 <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                  {searchQuery || categoryFilter !== 'ALL' || activeTab !== 'ALL'
+                  {searchQuery || activeTab !== 'ALL'
                     ? 'Không tìm thấy vé nào phù hợp với bộ lọc hiện tại của bạn.'
                     : 'Mọi ô kho của bạn đều đang hoạt động tốt. Khi gặp bất kỳ sự cố nào, hãy nhấn nút bên dưới.'}
                 </p>
@@ -510,7 +467,6 @@ export const SupportPage: React.FC = () => {
                 size="sm"
                 onClick={() => {
                   setActiveTab('ALL');
-                  setCategoryFilter('ALL');
                   setSearchQuery('');
                   setIsCreateOpen(true);
                 }}
@@ -523,8 +479,6 @@ export const SupportPage: React.FC = () => {
         </>
       )}
 
-      {/* Support FAQ & Business Rules Section */}
-      <SupportFaqSection />
 
       {/* Modals */}
       <CreateSupportTicketModal

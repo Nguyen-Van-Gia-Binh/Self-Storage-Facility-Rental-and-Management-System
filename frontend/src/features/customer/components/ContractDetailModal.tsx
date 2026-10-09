@@ -28,12 +28,16 @@ export interface ContractDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   contract: RentedContract | null;
+  onScheduleReturn?: (contract: RentedContract) => void;
+  onChangePin?: (contract: RentedContract) => void;
 }
 
 export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
   isOpen,
   onClose,
   contract,
+  onScheduleReturn,
+  onChangePin,
 }) => {
   const [activeTab, setActiveTab] = useState<'DETAILS' | 'LOGS'>('DETAILS');
   const [detail, setDetail] = useState<CustomerRentalDetail | null>(null);
@@ -533,17 +537,50 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
           )}
         </div>
 
-        {/* Footer với nút In hợp đồng và Đóng */}
-        <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handlePrint}
-            className="flex items-center gap-1.5 px-4 cursor-pointer text-xs font-semibold text-slate-700 border-slate-300 hover:bg-slate-100"
-          >
-            <Printer className="w-4 h-4 text-slate-600" />
-            <span>In hợp đồng</span>
-          </Button>
+        {/* Footer với nút In hợp đồng, Đổi PIN, Báo trả kho và Đóng */}
+        <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrint}
+              className="flex items-center gap-1.5 px-3.5 cursor-pointer text-xs font-semibold text-slate-700 border-slate-300 hover:bg-slate-100"
+            >
+              <Printer className="w-4 h-4 text-slate-600" />
+              <span>In hợp đồng</span>
+            </Button>
+
+            {onChangePin && contract && contract.status === 'ACTIVE' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  handleClose();
+                  onChangePin(contract);
+                }}
+                className="flex items-center gap-1.5 px-3 cursor-pointer text-xs font-semibold text-brand-700 border-brand-200 hover:bg-brand-50"
+              >
+                <KeyRound className="w-3.5 h-3.5" />
+                <span>Đổi PIN</span>
+              </Button>
+            )}
+
+            {onScheduleReturn &&
+              contract &&
+              (contract.status === 'ACTIVE' || contract.status === 'EXPIRING_SOON') && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    handleClose();
+                    onScheduleReturn(contract);
+                  }}
+                  className="flex items-center gap-1.5 px-3 cursor-pointer text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50"
+                >
+                  <span>Báo trả kho</span>
+                </Button>
+              )}
+          </div>
 
           <Button
             variant="primary"
@@ -551,7 +588,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
             onClick={handleClose}
             className="px-5 cursor-pointer text-xs font-semibold"
           >
-            Đóng cửa sổ
+            Đóng
           </Button>
         </div>
       </div>
