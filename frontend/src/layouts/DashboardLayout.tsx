@@ -29,7 +29,9 @@ const BREADCRUMB_MAP: Record<string, string> = {
   '/staff/tasks':              'Tổng quan ca trực',
   '/manager':                  'Tổng quan cơ sở',
   '/manager/units':            'Quản lý ô kho',
+  '/manager/facilities':       'Quản lý ô kho',
   '/manager/contracts':        'Giám sát hợp đồng',
+  '/manager/staff-schedule':   'Phân công nhân sự',
   '/manager/staff-assignment': 'Phân công nhân sự',
   '/manager/incidents':        'Xử lý sự cố',
   '/manager/reports':          'Báo cáo cơ sở',
@@ -189,7 +191,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
             // Khớp chính xác hoặc khớp alias (ví dụ: /staff/checkin <-> /staff/check-in)
             const isAliasMatch =
-              (itemHref === '/staff/check-in' && (currentPath === '/staff/checkin' || currentPath.startsWith('/staff/checkin/')));
+              (itemHref === '/staff/check-in' && (currentPath === '/staff/checkin' || currentPath.startsWith('/staff/checkin/'))) ||
+              (itemHref === '/manager/facilities' && (currentPath === '/manager/units' || currentPath.startsWith('/manager/units/')));
 
             const isExact = currentPath === itemHref || isAliasMatch;
             const isChildActive = navItems.some((other) => {

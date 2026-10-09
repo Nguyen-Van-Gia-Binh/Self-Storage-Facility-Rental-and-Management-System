@@ -50,9 +50,9 @@ export const ROLE_NAVIGATIONS: Record<UserRole, RoleNavigation> = {
     badgeColor: 'bg-purple-500',
     navItems: [
       { label: 'Tổng quan cơ sở',    href: '/manager',                  icon: Home },
-      { label: 'Quản lý ô kho',      href: '/manager/units',            icon: Layers },
+      { label: 'Quản lý ô kho',      href: '/manager/facilities',       icon: Layers },
       { label: 'Giám sát hợp đồng',  href: '/manager/contracts',        icon: FileText },
-      { label: 'Phân công nhân sự',  href: '/manager/staff-assignment', icon: Users },
+      { label: 'Phân công nhân sự',  href: '/manager/staff-schedule',   icon: Users },
       { label: 'Xử lý sự cố',        href: '/manager/incidents',        icon: Wrench },
       { label: 'Báo cáo cơ sở',      href: '/manager/reports',          icon: BarChart3 },
     ],

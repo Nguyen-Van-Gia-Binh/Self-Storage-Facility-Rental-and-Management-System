@@ -187,7 +187,7 @@ export function getPortalUrlByRole(role: string): string {
     case 'BOM':
       return '/bom/facilities';
     case 'MANAGER':
-      return '/manager/units';
+      return '/manager/facilities';
     case 'STAFF':
       return '/staff/check-in';
     case 'CUSTOMER':

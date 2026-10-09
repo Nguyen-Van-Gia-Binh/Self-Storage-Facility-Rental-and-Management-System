@@ -593,11 +593,11 @@ export const ContractsHubPage: React.FC = () => {
                               setSelectedForReassign(contract);
                               setReassignModalOpen(true);
                             }}
-                            className="px-2.5 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors inline-flex items-center gap-1"
+                            className="px-2.5 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors inline-flex items-center gap-1 shadow-2xs"
                             title="Đổi ô cùng loại khi phiếu hư hỏng được đánh dấu cần di dời (BR-SUP-02)"
                           >
-                            <RefreshCw className="w-3 h-3" />
-                            Đổi ô
+                            <RefreshCw className="w-3 h-3 text-amber-600" />
+                            Đổi ô sự cố
                           </button>
                         )}
 
