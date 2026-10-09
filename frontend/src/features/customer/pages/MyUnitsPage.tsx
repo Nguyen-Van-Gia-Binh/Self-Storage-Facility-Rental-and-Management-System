@@ -336,7 +336,7 @@ export const MyUnitsPage: React.FC = () => {
 
           {/* Cảnh báo đề xuất gia hạn sớm trước mốc khóa 30 ngày (BR-REN-01 & BR-REN-02) */}
           {earlyRenewalCandidate && (
-            <div className="rounded-2xl border border-amber-300 bg-amber-50/90 p-4 sm:p-4.5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="rounded-2xl border border-amber-300 bg-amber-50/90 p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-start sm:items-center gap-3.5">
                 <div className="p-2.5 rounded-xl bg-amber-100 text-amber-700 shrink-0 mt-0.5 sm:mt-0">
                   <Clock className="w-5 h-5" />
