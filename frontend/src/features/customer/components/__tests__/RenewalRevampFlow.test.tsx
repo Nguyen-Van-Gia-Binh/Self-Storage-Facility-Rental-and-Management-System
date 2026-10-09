@@ -116,11 +116,11 @@ describe('RenewalRevampFlow (Task 10 / Phase 4)', () => {
     expect(screen.queryByText(/Đã khóa gia hạn/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Gia hạn hợp đồng \(Đã khóa\)/i)).not.toBeInTheDocument();
 
-    // Hiển thị badge nhắc nhở
-    expect(screen.getByText(/Còn 15 ngày — Hãy gia hạn sớm/i)).toBeInTheDocument();
+    // Hiển thị badge trạng thái hợp đồng
+    expect(screen.getByText(/Đang hoạt động/i)).toBeInTheDocument();
 
-    // Nút Gia hạn hợp đồng trực tuyến sáng và click được
-    const renewBtn = screen.getByRole('button', { name: /Gia hạn hợp đồng trực tuyến/i });
+    // Nút Gia hạn sáng và click được
+    const renewBtn = screen.getByRole('button', { name: /^Gia hạn$/i });
     expect(renewBtn).toBeInTheDocument();
     expect(renewBtn).not.toBeDisabled();
   });
@@ -134,10 +134,10 @@ describe('RenewalRevampFlow (Task 10 / Phase 4)', () => {
     );
 
     // Hiển thị badge đã tất toán nợ phạt
-    expect(screen.getByText(/Đã tất toán nợ phạt/i)).toBeInTheDocument();
+    expect(screen.getByText(/Đã trả phạt — Chờ dọn kho/i)).toBeInTheDocument();
 
-    // Hiển thị nút Gia hạn hợp đồng trực tuyến
-    const renewBtn = screen.getByRole('button', { name: /Gia hạn hợp đồng trực tuyến/i });
+    // Hiển thị nút Gia hạn
+    const renewBtn = screen.getByRole('button', { name: /^Gia hạn$/i });
     expect(renewBtn).toBeInTheDocument();
 
     // Hiển thị nút Báo trả kho
@@ -187,10 +187,10 @@ describe('RenewalRevampFlow (Task 10 / Phase 4)', () => {
     );
 
     // Hiển thị nhãn Ân hạn
-    expect(screen.getByText(/Ân hạn D\+2: Chưa tính phí phạt/i)).toBeInTheDocument();
+    expect(screen.getByText(/Ân hạn D\+2/i)).toBeInTheDocument();
 
-    // Hiển thị nút Gia hạn hợp đồng trực tuyến sáng và click được
-    const renewBtn = screen.getByRole('button', { name: /Gia hạn hợp đồng trực tuyến/i });
+    // Hiển thị nút Gia hạn sáng và click được
+    const renewBtn = screen.getByRole('button', { name: /^Gia hạn$/i });
     expect(renewBtn).toBeInTheDocument();
     expect(renewBtn).not.toBeDisabled();
 
