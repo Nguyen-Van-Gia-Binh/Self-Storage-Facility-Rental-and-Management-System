@@ -223,7 +223,9 @@ export const WorkListPage: React.FC = () => {
   }, [filteredTasks, currentPage]);
 
   const handleViewTaskDetail = (taskId: number) => {
-    navigate(`/manager/staff-schedule/assignments/${taskId}`);
+    navigate(
+      `/manager/staff-schedule/assignments/${taskId}?facilityId=${facilityId}&date=${queryDate}`
+    );
   };
 
   const getShiftTitle = () => {
