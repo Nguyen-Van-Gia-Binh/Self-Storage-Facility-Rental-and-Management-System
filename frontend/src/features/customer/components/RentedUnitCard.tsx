@@ -1,27 +1,19 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import {
-  KeyRound,
-  Calendar,
-  MapPin,
   Eye,
   EyeOff,
   Copy,
   Check,
-  RefreshCw,
-  AlertCircle,
-  AlertTriangle,
   QrCode,
   X,
   FileText,
   RotateCcw,
   CreditCard,
   Clock,
-  CheckCircle2,
 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
@@ -42,12 +34,10 @@ export interface RentedUnitCardProps {
 
 export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
   contract,
-  onChangePin,
   onScheduleReturn,
   onViewDetail,
   onOpenOverduePayment,
   onCancelReturn,
-  renewalNoticeDays = 30,
 }) => {
   const [showPin, setShowPin] = useState(false);
   const [copiedPin, setCopiedPin] = useState(false);
@@ -116,7 +106,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
   const getStatusBadge = () => {
     switch (contract.status) {
       case 'ACTIVE':
-        return <Badge variant="available">Đang hoạt động 24/7</Badge>;
+        return <Badge variant="available">Đang hoạt động</Badge>;
       case 'PENDING_CHECKIN':
       case 'PENDING_CHECK_IN' as any:
         return <Badge variant="reserved">Chờ nhận kho</Badge>;
@@ -126,7 +116,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
         if (penaltyFee === 0 && !isGracePeriod) {
           return (
             <Badge variant="warning" className="bg-amber-50 text-amber-800 border-amber-300">
-              Đã tất toán phạt — Chờ dọn kho / trả kho
+              Đã trả phạt — Chờ dọn kho
             </Badge>
           );
         }
@@ -139,465 +129,277 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
         if (contract.inspectionDone) {
           return (
             <Badge variant="info" className="bg-purple-100 text-purple-800 border-purple-200">
-              Đã nghiệm thu (Chờ hoàn cọc)
+              Đã nghiệm thu
             </Badge>
           );
         }
-        return <Badge variant="warning">Đang chờ nghiệm thu trả kho</Badge>;
+        return <Badge variant="warning">Chờ nghiệm thu</Badge>;
       case 'CLOSED':
+      case 'TERMINATED' as any:
         return <Badge variant="default">Đã kết thúc</Badge>;
       default:
         return <Badge variant="default">{contract.status}</Badge>;
     }
   };
 
+  const isAttention =
+    contract.status === 'EXPIRING_SOON' ||
+    contract.status === 'OVERDUE' ||
+    contract.status === 'PENDING_RETURN';
+
+  const moveInPassData =
+    contract.status === 'PENDING_CHECKIN' || (contract.status as string) === 'PENDING_CHECK_IN'
+      ? {
+          passCode: `PASS-${contract.contractNumber}`,
+          reservationId: contract.contractNumber,
+          unitNumber: contract.unitNumber,
+          facilityId: contract.facilityId || '',
+          facilityName: contract.facilityName,
+          facilityAddress: (contract as any).facilityAddress || contract.facilityName || 'Cơ sở lưu trữ SmartStorage',
+          facilityPhone: '1900 8888',
+          customerName: tokenStorage.getUser()?.fullName || 'Khách hàng',
+          customerPhone: (tokenStorage.getUser() as any)?.phone || '',
+          customerIdentity: '',
+          startDate: contract.startDate,
+          checkInWindow: '08:00 - 20:00 (Giờ làm việc quầy lễ tân)',
+          status: 'PENDING_CHECKIN' as const,
+          totalPaid: (contract.monthlyRent || 0) + (contract.depositHeld || 0),
+        }
+      : null;
+
   return (
     <>
-      <Card className="p-6 bg-white border border-slate-200/90 rounded-2xl shadow-xs hover:shadow-md transition-shadow">
-        {/* Top Unit Info Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-          <div>
-            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-              <span className="text-xs font-mono font-bold text-brand-700 bg-brand-50 border border-brand-200 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                {contract.contractNumber}
+      <div
+        className={`bg-white rounded-2xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 transition-all duration-150 shadow-xs hover:shadow-md ${
+          contract.status === 'OVERDUE' && penaltyFee > 0
+            ? 'border-2 border-rose-300 bg-rose-50/20'
+            : isAttention
+            ? 'border border-amber-300 bg-amber-50/15'
+            : 'border border-slate-200/90'
+        }`}
+      >
+        {/* LEFT: UNIT & CONTRACT CORE INFO */}
+        <div className="flex items-start gap-3.5">
+          <div
+            className={`w-11 h-11 rounded-xl flex items-center justify-center font-mono font-black text-xs shrink-0 ${
+              contract.status === 'OVERDUE'
+                ? 'bg-rose-50 border border-rose-200 text-rose-700'
+                : isAttention
+                ? 'bg-amber-50 border border-amber-200 text-amber-700'
+                : 'bg-brand-50 border border-brand-100 text-brand-700'
+            }`}
+          >
+            {contract.unitNumber ? contract.unitNumber.split('-').pop() : 'UNIT'}
+          </div>
+
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-extrabold text-slate-900 tracking-tight">
+                Ô kho {contract.unitNumber}
+              </span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700">
+                {(contract.unitTypeName || 'Kho tiêu chuẩn').replace(/\s*\([^)]*\)/g, '').trim()}
               </span>
               {getStatusBadge()}
               {contract.hasPendingRenewal && (
-                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-300 px-2 py-0.5 rounded-full">
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md">
                   <Clock className="w-3 h-3 text-amber-600 animate-pulse" />
                   Chờ thanh toán gia hạn
                 </span>
               )}
             </div>
-            <h3 className="text-xl font-black text-[#0a1614] flex items-center gap-2">
-              Ô kho {contract.unitNumber}
-              <span className="text-sm font-normal text-slate-500">
-                — {contract.unitTypeName} ({contract.sizeCategory})
-              </span>
-            </h3>
-            <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-1">
-              <MapPin className="w-3.5 h-3.5 text-brand-600 flex-shrink-0" />
-              <span>{contract.facilityName}</span>
+
+            <p className="text-xs text-slate-500">
+              {contract.facilityName}
             </p>
           </div>
-
-          <div className="text-left sm:text-right sm:border-l sm:border-slate-100 sm:pl-6">
-            <span className="text-xs text-slate-400 block">Tiền thuê hàng tháng</span>
-            <span className="text-lg font-black text-brand-600">
-              {formatVND(contract.monthlyRent)}
-            </span>
-            <span className="text-xs text-slate-500 block mt-0.5">
-              Tiền cọc: {formatVND(contract.depositHeld)}
-            </span>
-          </div>
         </div>
 
-        {/* Banner nhắc nhở sau khi tất toán nợ phạt */}
-        {contract.status === 'OVERDUE' && penaltyFee === 0 && !isGracePeriod && (
-          <div className="mt-4 text-xs text-amber-800 bg-amber-50 border border-amber-300 p-3 rounded-xl flex items-start gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <span className="font-bold">Bạn đã hoàn tất nộp phạt quá hạn:</span> Hợp đồng cũ đã hết thời hạn thuê. Vui lòng hoàn tất dọn sạch đồ đạc và bấm <strong>"Báo trả kho"</strong> trước 00:00 để tránh phát sinh phạt mới, hoặc bấm <strong>"Gia hạn hợp đồng"</strong> để tiếp tục sử dụng nếu ô kho còn trống.
-            </div>
-          </div>
-        )}
-
-        {/* Contract Duration and Access PIN */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
-          {/* Period info */}
-          <div className="bg-[#f2f9f7] p-3.5 rounded-xl border border-emerald-100/80 space-y-1.5 text-xs">
-            <div className="flex items-center gap-1.5 text-slate-700 font-bold">
-              <Calendar className="w-4 h-4 text-brand-600" />
-              <span>Thời hạn hợp đồng</span>
-            </div>
-            <div className="flex justify-between text-slate-600 pt-1">
-              <span>Ngày bắt đầu:</span>
-              <span className="font-semibold text-[#0a1614]">{contract.startDate}</span>
-            </div>
-            <div className="flex justify-between text-slate-600">
-              <span>Ngày kết thúc:</span>
-              <span className="font-semibold text-[#0a1614]">{contract.endDate}</span>
-            </div>
-            {contract.scheduledReturnDate && (
-              <div className="pt-1 border-t border-emerald-200/60 flex justify-between text-amber-800 font-semibold">
-                <span>Hẹn nghiệm thu:</span>
-                <span>{contract.scheduledReturnDate}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Access PIN Box (BR-ACC-01) */}
-          <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-1.5 text-xs">
-            <div className="flex items-center justify-between text-slate-700 font-bold">
-              <div className="flex items-center gap-1.5">
-                <KeyRound className="w-4 h-4 text-brand-600" />
-                <span>Mã PIN Khóa Điện Tử</span>
-              </div>
-              {contract.accessPin && (
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowPin(!showPin)}
-                    className="text-xs text-slate-500 hover:text-brand-600 flex items-center gap-1 cursor-pointer"
-                  >
-                    {showPin ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                    <span>{showPin ? 'Ẩn' : 'Hiện'}</span>
-                  </button>
-                  {onChangePin && (
-                    <button
-                      type="button"
-                      onClick={() => onChangePin(contract)}
-                      className="text-[11px] text-brand-700 hover:underline font-semibold cursor-pointer"
-                    >
-                      Đổi PIN
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {contract.status === 'OVERDUE' && overdueDays >= 7 && !contract.accessPin ? (
-              <div className="text-[11px] text-rose-700 bg-rose-50 p-2.5 rounded-lg border border-rose-200/80 flex items-start gap-1.5 mt-1">
-                <AlertCircle className="w-3.5 h-3.5 text-rose-600 flex-shrink-0 mt-0.5" />
-                <span>
-                  Mã PIN & QR mở khóa đã tạm khóa an ninh từ D+7 do hợp đồng quá hạn. Vui lòng thanh toán tiền phạt và liên hệ nhân viên để hoàn tất trả kho.
-                </span>
-              </div>
-            ) : contract.accessPin ? (
-              <div className="pt-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-base font-black tracking-widest text-[#0a1614]">
-                    {showPin ? contract.accessPin : '••••'}
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => handleCopyPin(contract.accessPin!)}
-                      className="inline-flex items-center gap-1 text-[11px] text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 px-2 py-1 rounded border border-brand-200 transition-colors cursor-pointer"
-                      title="Sao chép mã PIN"
-                    >
-                      {copiedPin ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
-                      <span>{copiedPin ? 'Đã chép' : 'Sao chép'}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleOpenModal}
-                      className="inline-flex items-center gap-1 text-[11px] text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded border border-emerald-200 transition-colors font-medium cursor-pointer"
-                      title="Mở mã QR mở khóa (QR Pass)"
-                    >
-                      <QrCode className="w-3 h-3" />
-                      <span>Mã QR</span>
-                    </button>
-                  </div>
-                </div>
-                {contract.status === 'OVERDUE' && overdueDays >= 4 && overdueDays < 7 && (
-                  <p className="text-[11px] text-amber-700 mt-1">
-                    Hợp đồng quá hạn {overdueDays} ngày (đang tính phạt). Quý khách vẫn dùng được mã PIN để dọn kho trước D+7.
-                  </p>
-                )}
-              </div>
-            ) : contract.status === 'PENDING_CHECKIN' || (contract.status as string) === 'PENDING_CHECK_IN' ? (
-              <div className="text-[11px] text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-200/80 flex items-start gap-1.5 mt-1">
-                <AlertCircle className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
-                <span>Mã PIN & QR mở khóa tự động kích hoạt sau khi đối chiếu CCCD tại quầy.</span>
-              </div>
-            ) : (
-              <div className="text-[11px] text-slate-500 bg-slate-50 p-2 rounded-lg border border-slate-200 flex items-start gap-1.5 mt-1">
-                <AlertCircle className="w-3.5 h-3.5 text-slate-400 flex-shrink-0 mt-0.5" />
-                <span>Mã PIN không khả dụng hoặc đã thu hồi theo trạng thái hợp đồng.</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Action Footer */}
-        <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            {onViewDetail && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onViewDetail(contract)}
-                className="flex items-center gap-1.5 text-xs font-semibold cursor-pointer"
+        {/* RIGHT: PIN PILL & CONTEXTUAL ACTIONS */}
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-end lg:self-center">
+          {/* ACCESS PIN PILL (FOR ACTIVE/EXPIRING CONTRACTS) */}
+          {contract.accessPin && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+              <span className="text-slate-400 text-[11px] font-medium">PIN:</span>
+              <span className="font-mono font-black text-slate-800 tracking-wider">
+                {showPin ? contract.accessPin : '••••••'}
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowPin(!showPin)}
+                className="text-slate-400 hover:text-slate-700 p-0.5 cursor-pointer transition-colors"
+                title={showPin ? 'Ẩn mã PIN' : 'Hiện mã PIN'}
               >
-                <FileText className="w-3.5 h-3.5" />
-                <span>Chi tiết & Lịch sử</span>
-              </Button>
-            )}
+                {showPin ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleCopyPin(contract.accessPin!)}
+                className="text-slate-400 hover:text-slate-700 p-0.5 cursor-pointer transition-colors"
+                title="Sao chép PIN"
+              >
+                {copiedPin ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+              </button>
+              <button
+                type="button"
+                onClick={handleOpenModal}
+                className="text-slate-400 hover:text-emerald-700 p-0.5 cursor-pointer transition-colors"
+                title="Mở mã QR mở khóa"
+              >
+                <QrCode className="w-3.5 h-3.5 text-emerald-600" />
+              </button>
+            </div>
+          )}
 
-            {onScheduleReturn && (contract.status === 'ACTIVE' || contract.status === 'EXPIRING_SOON' || isGracePeriod || (contract.status === 'OVERDUE' && penaltyFee === 0)) && (
+          {/* CONTEXTUAL BUTTONS */}
+          {contract.status === 'PENDING_CHECKIN' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleOpenModal}
+              className="text-xs font-bold text-sky-700 border-sky-300 hover:bg-sky-50 cursor-pointer"
+            >
+              <QrCode className="w-3.5 h-3.5 mr-1" />
+              e-Pass nhận kho
+            </Button>
+          )}
+
+          {contract.status === 'OVERDUE' && penaltyFee > 0 && onOpenOverduePayment && (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => onOpenOverduePayment(contract)}
+              className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-black shadow-xs cursor-pointer"
+            >
+              <CreditCard className="w-3.5 h-3.5 mr-1" />
+              Nộp phạt {formatVND(penaltyFee)}
+            </Button>
+          )}
+
+          {/* SCHEDULE RETURN / CANCEL RETURN */}
+          {contract.status === 'PENDING_RETURN' ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowCancelReturnModal(true)}
+              className="text-xs font-semibold text-rose-700 border-rose-200 hover:bg-rose-50 cursor-pointer"
+            >
+              Hủy hẹn trả kho
+            </Button>
+          ) : (
+            onScheduleReturn &&
+            (contract.status === 'EXPIRING_SOON' ||
+              isGracePeriod ||
+              (contract.status === 'OVERDUE' && penaltyFee === 0)) && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => onScheduleReturn(contract)}
-                className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-rose-700 cursor-pointer"
-                title={isGracePeriod ? 'Dọn đồ trả kho trong 3 ngày ân hạn để được hoàn 100% tiền cọc' : undefined}
+                className="text-xs font-semibold text-slate-600 hover:text-rose-700 hover:border-rose-200 cursor-pointer"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Báo trả kho</span>
+                <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                Báo trả kho
               </Button>
-            )}
-          </div>
+            )
+          )}
 
-          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
+          {/* VIEW DETAIL MODAL TRIGGER */}
+          {onViewDetail && (
             <Button
-              type="button"
               variant="outline"
               size="sm"
-              onClick={() => onViewDetail?.(contract)}
-              className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3 border-slate-300 text-slate-700 hover:text-brand-800 hover:bg-brand-50 hover:border-brand-300 text-xs font-semibold cursor-pointer"
+              onClick={() => onViewDetail(contract)}
+              className="text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
             >
-              <FileText className="w-3.5 h-3.5 text-brand-600" />
-              <span>Hợp đồng điện tử</span>
+              <FileText className="w-3.5 h-3.5 mr-1 text-slate-400" />
+              Chi tiết
             </Button>
+          )}
 
-            {contract.status !== 'CLOSED' && contract.status !== 'TERMINATED' && (
-              <Link
-                to={`/customer/support?contractId=${contract.id}&unitId=${contract.unitId}`}
-                className="w-full sm:w-auto"
-              >
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full sm:w-auto flex items-center justify-center gap-1 px-3 border-slate-300 text-slate-700 hover:text-amber-800 hover:bg-amber-50 hover:border-amber-300 text-xs"
-                >
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
-                  <span>Báo sự cố</span>
-                </Button>
-              </Link>
-            )}
-
-            {contract.status === 'PENDING_CHECKIN' || (contract.status as string) === 'PENDING_CHECK_IN' ? (
+          {/* RENEW BUTTON */}
+          {(contract.status === 'ACTIVE' ||
+            contract.status === 'EXPIRING_SOON' ||
+            (contract.status === 'OVERDUE' && penaltyFee === 0)) && (
+            <Link to={`/customer/renew/${contract.id}`}>
               <Button
-                variant="primary"
+                variant={contract.status === 'EXPIRING_SOON' ? 'primary' : 'outline'}
                 size="sm"
-                onClick={handleOpenModal}
-                className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 cursor-pointer shadow-xs"
+                className={`text-xs font-bold shadow-xs cursor-pointer ${
+                  contract.status === 'EXPIRING_SOON'
+                    ? 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white'
+                    : 'text-brand-700 border-brand-200 hover:bg-brand-50'
+                }`}
               >
-                <QrCode className="w-3.5 h-3.5" />
-                <span>Xem Thẻ nhận kho (Move-in Pass)</span>
+                Gia hạn
               </Button>
-            ) : contract.status === 'OVERDUE' ? (
-              <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full sm:w-auto">
-                {isGracePeriod ? (
-                  <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full sm:w-auto">
-                    <span
-                      className="text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-300"
-                      title="Trong 3 ngày ân hạn (D+1..D+3), chưa phát sinh phí phạt. Bạn có thể gia hạn hợp đồng trực tuyến để tiếp tục thuê hoặc báo trả kho."
-                    >
-                      Ân hạn D+{overdueDays}: Chưa tính phí phạt
-                    </span>
-                    <Link
-                      to={`/customer/renew/${contract.id}`}
-                      className="w-full sm:w-auto"
-                    >
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3.5 shadow-xs text-xs font-bold"
-                      >
-                        <RefreshCw className="w-3.5 h-3.5" />
-                        <span>Gia hạn hợp đồng trực tuyến</span>
-                      </Button>
-                    </Link>
-                  </div>
-                ) : penaltyFee === 0 ? (
-                  <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full sm:w-auto">
-                    <span
-                      className="text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-300 flex items-center gap-1"
-                      title="Đã tất toán toàn bộ nợ phạt quá hạn. Bạn có thể gia hạn hoặc báo trả kho."
-                    >
-                      <Check className="w-3.5 h-3.5 text-amber-600" />
-                      Đã tất toán nợ phạt
-                    </span>
-                    <Link
-                      to={`/customer/renew/${contract.id}`}
-                      className="w-full sm:w-auto"
-                    >
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3.5 shadow-xs text-xs font-bold"
-                      >
-                        <RefreshCw className="w-3.5 h-3.5" />
-                        <span>Gia hạn hợp đồng trực tuyến</span>
-                      </Button>
-                    </Link>
-                  </div>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onOpenOverduePayment?.(contract)}
-                    className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3 text-rose-700 border-rose-300 hover:bg-rose-50 shadow-xs text-xs font-bold cursor-pointer"
-                  >
-                    <CreditCard className="w-3.5 h-3.5" />
-                    <span>Đóng nợ phạt ({formatVND(penaltyFee)})</span>
-                  </Button>
-                )}
-              </div>
-            ) : contract.status === 'PENDING_RETURN' ? (
-              contract.inspectionDone ? (
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-purple-700 bg-purple-50 px-3 py-1.5 rounded-lg border border-purple-200">
-                  <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0 text-purple-600" />
-                  <span>Biên bản nghiệm thu đã lập • Đang chờ Quản lý duyệt quyết toán</span>
-                </div>
-              ) : (
-                <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full sm:w-auto">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
-                    <Clock className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span>Đang chờ nhân viên nghiệm thu trả kho</span>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setCancelReturnError(null);
-                      setShowCancelReturnModal(true);
-                    }}
-                    disabled={isCancellingReturn}
-                    className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3 border-amber-300 text-amber-900 hover:bg-amber-50 text-xs font-semibold cursor-pointer"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5 text-amber-700" />
-                    <span>{isCancellingReturn ? 'Đang hủy...' : 'Hủy yêu cầu trả kho'}</span>
-                  </Button>
-                </div>
-              )
-            ) : contract.status === 'CLOSED' || contract.status === 'TERMINATED' ? (
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
-                <Check className="w-3.5 h-3.5 flex-shrink-0 text-slate-500" />
-                <span>Hợp đồng đã kết thúc</span>
-              </div>
-            ) : contract.hasPendingRenewal && contract.pendingRenewalOrderCode ? (
-              <Link
-                to={`/customer/renew/${contract.id}?orderCode=${contract.pendingRenewalOrderCode}&step=3`}
-                className="w-full sm:w-auto"
-              >
-                <Button
-                  variant="primary"
-                  size="sm"
-                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 shadow-xs"
-                >
-                  <CreditCard className="w-3.5 h-3.5" />
-                  <span>Tiếp tục thanh toán</span>
-                </Button>
-              </Link>
-            ) : (
-              <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full sm:w-auto">
-                {contract.status === 'ACTIVE' && renewalNoticeDays != null && daysRemaining <= renewalNoticeDays && daysRemaining >= 0 && (
-                  <span
-                    className="text-[11px] font-medium text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200"
-                    title={`Mốc ${renewalNoticeDays} ngày trước hết hạn là thời điểm nhắc gia hạn. Hãy gia hạn sớm trước khi khách khác đặt giữ chỗ ô kho này.`}
-                  >
-                    ⏳ Còn {daysRemaining} ngày — Hãy gia hạn sớm
-                  </span>
-                )}
-                <Link
-                  to={`/customer/renew/${contract.id}`}
-                  className="w-full sm:w-auto"
-                >
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 shadow-xs"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Gia hạn hợp đồng trực tuyến</span>
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </div>
+            </Link>
+          )}
         </div>
-      </Card>
+      </div>
 
-      {/* QR Code Modal (QR Pass mở khóa ô kho 24/7) */}
+      {/* QR Code Modal for Door Unlock */}
       {showQrModal && (
         <div
-          className={`fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 ${
-            isClosingModal ? 'modal-backdrop-exit' : 'modal-backdrop-enter'
+          role="dialog"
+          aria-modal="true"
+          className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs transition-opacity duration-200 ${
+            isClosingModal ? 'opacity-0' : 'opacity-100'
           }`}
           onClick={handleCloseModal}
         >
           <div
-            className={`bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 relative space-y-4 ${
-              isClosingModal ? 'modal-panel-exit' : 'modal-panel-enter'
+            className={`bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center space-y-5 shadow-2xl relative transition-all duration-200 transform ${
+              isClosingModal ? 'scale-95 opacity-0' : 'scale-100 opacity-100'
             }`}
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              type="button"
               onClick={handleCloseModal}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="text-center space-y-1 pr-6">
-              <div className="inline-flex items-center gap-1 text-[11px] font-bold text-brand-700 bg-brand-50 px-2.5 py-0.5 rounded-full uppercase tracking-wider mb-1">
-                Quyền Mở Cửa Số 24/7 (QR Pass)
-              </div>
-              <h3 className="text-base font-black text-[#0a1614]">
-                Mã QR Mở Khóa Ô Kho {contract.unitNumber}
-              </h3>
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold text-brand-600 uppercase tracking-wider block">
+                Mã QR Mở Cửa 24/7
+              </span>
+              <h3 className="text-xl font-black text-slate-900">Ô kho {contract.unitNumber}</h3>
               <p className="text-xs text-slate-500">{contract.facilityName}</p>
             </div>
 
-            <div className="flex flex-col items-center justify-center p-5 bg-[#f8fdfb] border-2 border-dashed border-brand-200 rounded-xl space-y-3">
+            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 inline-block shadow-inner">
               <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
-                  `SMARTSTORAGE:ACCESS:${contract.contractNumber}:${contract.unitNumber}:${contract.accessPin}`
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
+                  `SMARTSTORAGE:UNLOCK:${contract.contractNumber}:${contract.unitNumber}:${contract.accessPin || 'ACTIVE'}`
                 )}`}
-                alt="QR Pass"
-                className="w-44 h-44 rounded-lg bg-white p-2 shadow-xs border border-slate-200"
+                alt="QR Mở Khóa"
+                className="w-44 h-44 mx-auto rounded-lg"
               />
-              <span className="font-mono text-xs font-bold text-slate-700 bg-white px-3 py-1 rounded border border-slate-200 inline-block">
-                Mã PIN: {contract.accessPin || '••••'}
+            </div>
+
+            <div className="bg-brand-50/80 p-3.5 rounded-xl border border-brand-200 text-xs text-brand-900">
+              <span className="font-bold block mb-0.5">Mã PIN dự phòng:</span>
+              <span className="font-mono text-lg font-black tracking-widest text-brand-700">
+                {contract.accessPin || '••••'}
               </span>
             </div>
 
-            <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-1 leading-relaxed">
-              <p className="font-semibold text-slate-800">Cách mở cửa kho:</p>
-              <p>Đưa mã QR này lại gần mắt đọc cảm ứng trên khóa điện tử ô kho, hoặc nhập mã PIN trực tiếp trên bàn phím số.</p>
-            </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCloseModal}
-              className="w-full py-2 text-xs font-semibold cursor-pointer"
-            >
-              Đóng cửa sổ
-            </Button>
+            <p className="text-[11px] text-slate-400">
+              Đưa mã QR này trước camera tại cổng an ninh hoặc cửa kho để mở khóa tự động.
+            </p>
           </div>
         </div>
       )}
 
-      {/* Digital Move-in Pass Modal cho hợp đồng PENDING_CHECKIN (SCR-SC-03.1) */}
+      {/* Digital Move-In Pass Modal for Check-in */}
       <DigitalMoveInPassModal
         isOpen={showPassModal}
         onClose={() => setShowPassModal(false)}
-        passData={{
-          passCode: contract.contractNumber,
-          reservationId: contract.id,
-          unitNumber: contract.unitNumber,
-          facilityId: contract.facilityId,
-          facilityName: contract.facilityName,
-          facilityAddress: '',
-          facilityPhone: '',
-          customerName: tokenStorage.getUser()?.fullName || '',
-          customerPhone: (tokenStorage.getUser() as any)?.phone || '',
-          customerIdentity: '',
-          startDate: contract.startDate,
-          checkInWindow: 'Giữ chỗ theo thời hạn trên chính sách đang hiệu lực',
-          status: 'PENDING_CHECKIN',
-          totalPaid: contract.monthlyRent + contract.depositHeld,
-        }}
+        passData={moveInPassData}
       />
 
-      {/* Modal xác nhận Hủy yêu cầu trả kho (ISS-79) */}
+      {/* Cancel Return Modal */}
       <Modal
         isOpen={showCancelReturnModal}
         onClose={() => {
@@ -607,10 +409,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
       >
         <div className="p-5 sm:p-6 space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-rose-600" />
-              Xác nhận hủy yêu cầu trả kho
-            </h3>
+            <h3 className="text-base font-bold text-slate-900">Xác nhận hủy yêu cầu trả kho</h3>
             <button
               type="button"
               disabled={isCancellingReturn}
@@ -621,49 +420,37 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
             </button>
           </div>
 
-          <div className="flex items-start gap-3 p-3.5 bg-rose-50 rounded-xl border border-rose-100 text-rose-800 text-xs leading-relaxed">
-            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-bold text-rose-900 mb-1">
-                Bạn có chắc chắn muốn hủy yêu cầu trả kho cho ô {contract.unitNumber}?
-              </p>
-              <p className="text-rose-700">
-                Lịch hẹn nghiệm thu bàn giao ô kho sẽ được bãi bỏ. Hợp đồng của bạn sẽ tiếp tục được duy trì hiệu lực để sử dụng bình thường.
-              </p>
-            </div>
+          <p className="text-sm text-slate-600">
+            Bạn có chắc chắn muốn hủy yêu cầu trả kho cho ô kho{' '}
+            <strong className="text-slate-900">{contract.unitNumber}</strong>?
+          </p>
+          <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl text-xs text-amber-900">
+            Sau khi hủy, hợp đồng sẽ tiếp tục được duy trì hoạt động bình thường. Bạn vẫn có thể tiếp tục sử dụng mã PIN để mở khóa ô kho.
           </div>
 
           {cancelReturnError && (
-            <p className="text-xs text-rose-600 font-semibold">{cancelReturnError}</p>
+            <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl">
+              {cancelReturnError}
+            </div>
           )}
 
-          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+          <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
             <Button
-              type="button"
               variant="outline"
               size="sm"
-              disabled={isCancellingReturn}
               onClick={() => setShowCancelReturnModal(false)}
-              className="text-slate-700 hover:bg-slate-100 cursor-pointer"
+              disabled={isCancellingReturn}
             >
-              Quay lại (Giữ lịch trả)
+              Đóng
             </Button>
             <Button
-              type="button"
-              variant="danger"
+              variant="primary"
               size="sm"
-              disabled={isCancellingReturn}
               onClick={handleConfirmCancelReturn}
-              className="bg-rose-600 hover:bg-rose-700 text-white font-bold cursor-pointer"
+              disabled={isCancellingReturn}
+              className="bg-rose-600 hover:bg-rose-700 text-white"
             >
-              {isCancellingReturn ? (
-                <>
-                  <RotateCcw className="w-4 h-4 mr-1.5 animate-spin" />
-                  Đang hủy...
-                </>
-              ) : (
-                'Xác nhận hủy trả kho'
-              )}
+              {isCancellingReturn ? 'Đang hủy...' : 'Xác nhận hủy yêu cầu'}
             </Button>
           </div>
         </div>

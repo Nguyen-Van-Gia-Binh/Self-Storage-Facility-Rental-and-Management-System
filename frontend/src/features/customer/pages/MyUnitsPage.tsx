@@ -6,24 +6,18 @@ import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import {
   Plus,
-  HelpCircle,
-  PhoneCall,
-  Shield,
   Layers,
   Search,
   X,
   RotateCcw,
-  Clock,
   Lock,
   LogIn,
   UserPlus,
-  CreditCard,
   AlertTriangle,
 } from 'lucide-react';
 import { tokenStorage } from '@/utils/tokenStorage';
 import { RentedUnitCard } from '../components/RentedUnitCard';
 import { PendingReservationCard } from '../components/PendingReservationCard';
-import { CustomerRentalsKpiSummary } from '../components/CustomerRentalsKpiSummary';
 import { ChangePinModal } from '../components/ChangePinModal';
 import { ScheduleReturnModal } from '../components/ScheduleReturnModal';
 import { ContractDetailModal } from '../components/ContractDetailModal';
@@ -49,7 +43,7 @@ export const MyUnitsPage: React.FC = () => {
   const [cancelError, setCancelError] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<string>('ALL');
+  const [activeTab, setActiveTab] = useState<string>('ACTIVE');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Modal states
@@ -132,57 +126,51 @@ export const MyUnitsPage: React.FC = () => {
     loadContracts();
   };
 
-
   // Lọc theo Tab và Search Query
   const filteredContracts = useMemo(() => {
     if (activeTab === 'PENDING_PAYMENT') return [];
-    return contracts.filter((contract) => {
-      // 1. Lọc theo Tab
-      if (activeTab === 'ACTIVE' && contract.status !== 'ACTIVE') return false;
-      if (
-        activeTab === 'PENDING_CHECKIN' &&
-        contract.status !== 'PENDING_CHECKIN' &&
-        (contract.status as string) !== 'PENDING_CHECK_IN'
-      )
-        return false;
-      if (activeTab === 'ATTENTION') {
-        const isAttention =
-          contract.status === 'EXPIRING_SOON' ||
-          contract.status === 'OVERDUE' ||
-          contract.status === 'PENDING_RETURN';
-        if (!isAttention) return false;
-      }
-      if (activeTab === 'CLOSED' && contract.status !== 'CLOSED' && contract.status !== 'TERMINATED') {
-        return false;
-      }
+    return contracts
+      .filter((contract) => {
+        // 1. Lọc theo Tab
+        if (activeTab === 'ACTIVE' && contract.status !== 'ACTIVE') return false;
+        if (
+          activeTab === 'PENDING_CHECKIN' &&
+          contract.status !== 'PENDING_CHECKIN' &&
+          (contract.status as string) !== 'PENDING_CHECK_IN'
+        )
+          return false;
+        if (activeTab === 'ATTENTION') {
+          const isAttention =
+            contract.status === 'EXPIRING_SOON' ||
+            contract.status === 'OVERDUE' ||
+            contract.status === 'PENDING_RETURN';
+          if (!isAttention) return false;
+        }
+        if (activeTab === 'CLOSED' && contract.status !== 'CLOSED' && contract.status !== 'TERMINATED') {
+          return false;
+        }
 
-      // 2. Lọc theo từ khóa tìm kiếm (mã ô, tên cơ sở, số hợp đồng)
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
-        const matchUnit = contract.unitNumber.toLowerCase().includes(q);
-        const matchFacility = contract.facilityName.toLowerCase().includes(q);
-        const matchContract = contract.contractNumber.toLowerCase().includes(q);
-        if (!matchUnit && !matchFacility && !matchContract) return false;
-      }
+        // 2. Lọc theo từ khóa tìm kiếm
+        if (searchQuery.trim()) {
+          const q = searchQuery.toLowerCase().trim();
+          const matchUnit = (contract.unitNumber || '').toLowerCase().includes(q);
+          const matchFacility = (contract.facilityName || '').toLowerCase().includes(q);
+          const matchContract = (contract.contractNumber || '').toLowerCase().includes(q);
+          const matchType = (contract.unitTypeName || '').toLowerCase().includes(q);
+          if (!matchUnit && !matchFacility && !matchContract && !matchType) return false;
+        }
 
-      return true;
-    })
-    .sort((a, b) => {
-      // Luôn hiển thị các kho mới nhất lên trên cùng:
-      // 1. So sánh ngày bắt đầu thuê (startDate DESC - ngày mới hơn lên trước)
-      const timeA = a.startDate ? new Date(a.startDate).getTime() : 0;
-      const timeB = b.startDate ? new Date(b.startDate).getTime() : 0;
-      if (timeB !== timeA) {
-        return timeB - timeA;
-      }
-      // 2. Nếu cùng ngày thì theo ID hoặc số hợp đồng giảm dần
-      const idA = parseInt(a.id, 10);
-      const idB = parseInt(b.id, 10);
-      if (!isNaN(idA) && !isNaN(idB)) {
-        return idB - idA;
-      }
-      return (b.contractNumber || '').localeCompare(a.contractNumber || '');
-    });
+        return true;
+      })
+      .sort((a, b) => {
+        const timeA = a.startDate ? new Date(a.startDate).getTime() : 0;
+        const timeB = b.startDate ? new Date(b.startDate).getTime() : 0;
+        if (timeB !== timeA) return timeB - timeA;
+        const idA = parseInt(a.id, 10);
+        const idB = parseInt(b.id, 10);
+        if (!isNaN(idA) && !isNaN(idB)) return idB - idA;
+        return (b.contractNumber || '').localeCompare(a.contractNumber || '');
+      });
   }, [contracts, activeTab, searchQuery]);
 
   // Lọc danh sách đơn đang giữ chỗ theo search query
@@ -209,7 +197,7 @@ export const MyUnitsPage: React.FC = () => {
     );
   }, [contracts, policy, noticeDays, reminderDays]);
 
-  // Tự động bung Pop-up nếu chưa bị bỏ qua (dismissed) trong phiên duyệt hiện tại
+  // Tự động bung Pop-up nếu chưa bị dismiss trong phiên
   useEffect(() => {
     if (!earlyRenewalCandidate) return;
     const isDismissed = sessionStorage.getItem(`early_renewal_dismissed_${earlyRenewalCandidate.id}`) === 'true';
@@ -228,35 +216,77 @@ export const MyUnitsPage: React.FC = () => {
 
   const totalDisplayItems = filteredContracts.length + filteredPendingReservations.length;
 
+  const activeCount = useMemo(() => contracts.filter((c) => c.status === 'ACTIVE').length, [contracts]);
+  const pendingCheckinCount = useMemo(
+    () =>
+      contracts.filter(
+        (c) => c.status === 'PENDING_CHECKIN' || (c.status as string) === 'PENDING_CHECK_IN'
+      ).length,
+    [contracts]
+  );
+  const attentionCount = useMemo(
+    () =>
+      contracts.filter(
+        (c) =>
+          c.status === 'EXPIRING_SOON' || c.status === 'OVERDUE' || c.status === 'PENDING_RETURN'
+      ).length,
+    [contracts]
+  );
+  const closedCount = useMemo(
+    () => contracts.filter((c) => c.status === 'CLOSED' || c.status === 'TERMINATED').length,
+    [contracts]
+  );
+
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-4">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+      {/* Top Banner & Live Search */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200/80 pb-5">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-[#0a1614] tracking-tight">
             Kho Của Tôi
           </h1>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Search Box */}
+          <div className="relative w-full sm:w-64">
+            <Input
+              placeholder="Tìm mã kho, cơ sở, mã HĐ..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="text-xs pl-8 pr-7 py-1.5 h-9 bg-white"
+            />
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-3" />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-3 text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
           <Button
             variant="outline"
             size="sm"
             onClick={loadContracts}
             disabled={loading}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold cursor-pointer h-9"
           >
             <RotateCcw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             <span>Làm mới</span>
           </Button>
+
           <Link to="/customer">
             <Button
               variant="primary"
               size="sm"
-              className="flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-bold shadow-xs cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold shadow-xs cursor-pointer h-9"
             >
               <Plus className="w-4 h-4" />
-              <span>Thuê thêm ô kho mới</span>
+              <span>Thuê thêm ô kho</span>
             </Button>
           </Link>
         </div>
@@ -264,7 +294,7 @@ export const MyUnitsPage: React.FC = () => {
 
       {!isAuthenticated ? (
         /* Card Yêu cầu đăng nhập cho khách vãng lai */
-        <Card className="p-8 sm:p-12 text-center bg-gradient-to-b from-white to-slate-50 border border-slate-200/90 rounded-2xl shadow-xs space-y-4 max-w-2xl mx-auto my-6">
+        <Card className="p-8 sm:p-12 text-center bg-white border border-slate-200/90 rounded-2xl shadow-xs space-y-4 max-w-2xl mx-auto my-6">
           <div className="w-16 h-16 rounded-3xl bg-brand-50 border border-brand-100 flex items-center justify-center mx-auto text-brand-600 shadow-xs">
             <Lock className="w-8 h-8" />
           </div>
@@ -289,7 +319,7 @@ export const MyUnitsPage: React.FC = () => {
                 Đăng ký tài khoản
               </Button>
             </Link>
-            <Link to="/customer/unit-picker" className="w-full sm:w-auto">
+            <Link to="/customer" className="w-full sm:w-auto">
               <Button variant="outline" size="md" className="w-full font-bold text-xs flex items-center justify-center gap-2 text-brand-600 border-brand-200 hover:bg-brand-50">
                 <Plus className="w-4 h-4" />
                 Tìm ô kho mới
@@ -299,166 +329,125 @@ export const MyUnitsPage: React.FC = () => {
         </Card>
       ) : (
         <>
-          {/* KPI Summary Banner */}
-          <CustomerRentalsKpiSummary
-            contracts={contracts}
-            pendingReservationsCount={pendingReservations.length}
-            activeTab={activeTab}
-            onSelectTab={(tab) => setActiveTab(tab)}
-          />
-
-          {/* Banner Nhắc nhở Đơn đang giữ chỗ 48h (ISS-78) */}
-          {pendingReservations.length > 0 && activeTab !== 'PENDING_PAYMENT' && (
-            <div className="rounded-2xl border border-sky-300 bg-sky-50/90 p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-200">
-              <div className="flex items-center gap-3.5">
-                <div className="p-2.5 rounded-xl bg-sky-100 text-sky-700 shrink-0">
-                  <CreditCard className="w-5 h-5" />
-                </div>
-                <div>
-                  <span className="text-xs font-bold text-sky-950 block">
-                    Bạn đang có <strong>{pendingReservations.length} ô kho đang giữ chỗ</strong> trong 48 giờ
-                  </span>
-                  <p className="text-xs text-sky-800 mt-0.5">
-                    Vui lòng hoàn tất thanh toán cọc VietQR để không bị tự động hủy đơn giữ chỗ.
-                  </p>
-                </div>
-              </div>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => setActiveTab('PENDING_PAYMENT')}
-                className="w-full sm:w-auto px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-xs cursor-pointer whitespace-nowrap"
+          {/* Status Filter Tabs (Clean Pills matching SupportPage) */}
+          <div className="flex items-center gap-2 overflow-x-auto text-xs font-semibold border-b border-slate-200/80 pb-3 pt-1">
+            <button
+              type="button"
+              onClick={() => setActiveTab('ACTIVE')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === 'ACTIVE'
+                  ? 'bg-brand-600 text-white font-bold shadow-xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+              }`}
+            >
+              <span>Đang hoạt động</span>
+              <span
+                className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
+                  activeTab === 'ACTIVE' ? 'bg-white/25 text-white' : 'bg-slate-200/80 text-slate-700'
+                }`}
               >
-                Xem đơn giữ chỗ ({pendingReservations.length})
-              </Button>
-            </div>
-          )}
+                {activeCount}
+              </span>
+            </button>
 
-          {/* Cảnh báo đề xuất gia hạn sớm trước mốc khóa 30 ngày (BR-REN-01 & BR-REN-02) */}
-          {earlyRenewalCandidate && (
-            <div className="rounded-2xl border border-amber-300 bg-amber-50/90 p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-start sm:items-center gap-3.5">
-                <div className="p-2.5 rounded-xl bg-amber-100 text-amber-700 shrink-0 mt-0.5 sm:mt-0">
-                  <Clock className="w-5 h-5" />
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 uppercase tracking-wide">
-                      Đề xuất gia hạn giữ chỗ
-                    </span>
-                    <span className="text-xs font-bold text-amber-950">
-                      Ô kho {earlyRenewalCandidate.unitNumber} · {earlyRenewalCandidate.facilityName}
-                    </span>
-                  </div>
-                  <p className="text-xs text-amber-800 leading-relaxed">
-                    Còn <strong>{calculateDaysRemaining(earlyRenewalCandidate.endDate)} ngày</strong> đến hết hạn. Mốc nhắc trên chính sách là trước <strong>{noticeDays} ngày</strong>
-                    {reminderDays.length > 0 ? ` (các mốc ${reminderDays.join(', ')} ngày)` : ''}. Gia hạn để giữ nguyên ô kho và mã PIN. Nút gia hạn vẫn mở khi ô kho chưa có người đặt trước.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setEarlyRenewalContract(earlyRenewalCandidate);
-                    setShowEarlyRenewalModal(true);
-                  }}
-                  className="w-full sm:w-auto text-xs font-semibold text-amber-900 border-amber-300 hover:bg-amber-100/60 cursor-pointer"
-                >
-                  Chi tiết đề xuất
-                </Button>
-                <Link to={`/customer/renew/${earlyRenewalCandidate.id}`} className="w-full sm:w-auto">
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-bold text-xs shadow-xs cursor-pointer"
-                  >
-                    Gia hạn ngay
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          )}
-
-          {/* Filter and Search Bar */}
-          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 border-b border-slate-200 pb-3">
-            {/* Status Tabs */}
-            <div className="flex items-center gap-2 overflow-x-auto text-xs sm:text-sm font-bold pb-1 md:pb-0 scrollbar-none">
-              {[
-                { id: 'ALL', label: `Tất cả (${contracts.length + pendingReservations.length})` },
-                { id: 'PENDING_PAYMENT', label: `Đang giữ chỗ (${pendingReservations.length})` },
-                { id: 'ACTIVE', label: `Đang hoạt động (${contracts.filter((c) => c.status === 'ACTIVE').length})` },
-                {
-                  id: 'PENDING_CHECKIN',
-                  label: `Chờ nhận kho (${
-                    contracts.filter(
-                      (c) => c.status === 'PENDING_CHECKIN' || (c.status as string) === 'PENDING_CHECK_IN'
-                    ).length
-                  })`,
-                },
-                {
-                  id: 'ATTENTION',
-                  label: `Cần chú ý (${
-                    contracts.filter(
-                      (c) =>
-                        c.status === 'EXPIRING_SOON' ||
-                        c.status === 'OVERDUE' ||
-                        c.status === 'PENDING_RETURN'
-                    ).length
-                  })`,
-                },
-                {
-                  id: 'CLOSED',
-                  label: `Lịch sử (${contracts.filter((c) => c.status === 'CLOSED' || c.status === 'TERMINATED').length})`,
-                },
-              ].map((tab) => {
-                const isSelected = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`pb-2 px-2.5 border-b-2 transition-all whitespace-nowrap cursor-pointer ${
-                      isSelected
-                        ? 'border-brand-600 text-brand-700 font-black'
-                        : 'border-transparent text-slate-500 hover:text-slate-800'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Search Box */}
-            <div className="relative w-full md:w-72 flex-shrink-0">
-              <Input
-                placeholder="Tìm theo mã ô kho, cơ sở, mã HĐ..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="text-xs pl-8 pr-7 py-1.5 h-9"
-              />
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-3" />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 top-3 text-slate-400 hover:text-slate-600 cursor-pointer"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('ATTENTION')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === 'ATTENTION'
+                  ? 'bg-amber-600 text-white font-bold shadow-xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+              }`}
+            >
+              <span>Cần gia hạn</span>
+              {attentionCount > 0 && (
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    activeTab === 'ATTENTION' ? 'bg-white' : 'bg-amber-500 animate-pulse'
+                  }`}
+                />
               )}
-            </div>
+              <span
+                className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
+                  activeTab === 'ATTENTION' ? 'bg-white/25 text-white' : 'bg-slate-200/80 text-slate-700'
+                }`}
+              >
+                {attentionCount}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('PENDING_CHECKIN')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === 'PENDING_CHECKIN'
+                  ? 'bg-sky-600 text-white font-bold shadow-xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+              }`}
+            >
+              <span>Chờ nhận kho</span>
+              <span
+                className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
+                  activeTab === 'PENDING_CHECKIN' ? 'bg-white/25 text-white' : 'bg-slate-200/80 text-slate-700'
+                }`}
+              >
+                {pendingCheckinCount}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('PENDING_PAYMENT')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === 'PENDING_PAYMENT'
+                  ? 'bg-rose-600 text-white font-bold shadow-xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+              }`}
+            >
+              <span>Giữ chỗ 48h</span>
+              {pendingReservations.length > 0 && (
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    activeTab === 'PENDING_PAYMENT' ? 'bg-white' : 'bg-rose-500'
+                  }`}
+                />
+              )}
+              <span
+                className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
+                  activeTab === 'PENDING_PAYMENT' ? 'bg-white/25 text-white' : 'bg-slate-200/80 text-slate-700'
+                }`}
+              >
+                {pendingReservations.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('CLOSED')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === 'CLOSED'
+                  ? 'bg-slate-800 text-white font-bold shadow-xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+              }`}
+            >
+              <span>Đã kết thúc</span>
+              <span
+                className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
+                  activeTab === 'CLOSED' ? 'bg-white/25 text-white' : 'bg-slate-200/80 text-slate-700'
+                }`}
+              >
+                {closedCount}
+              </span>
+            </button>
           </div>
 
-          {/* List of Unit Cards (Pending Reservations + Rented Contracts) */}
+          {/* List of Compact Master Rows */}
           {loading ? (
             <div className="py-16 text-center text-xs text-slate-400">
               Đang tải dữ liệu danh sách ô kho...
             </div>
           ) : totalDisplayItems > 0 ? (
-            <div className="space-y-5">
+            <div className="space-y-3">
               {/* 1. Render Đơn đang giữ chỗ 48h */}
               {filteredPendingReservations.map((rsv) => (
                 <PendingReservationCard
@@ -483,18 +472,18 @@ export const MyUnitsPage: React.FC = () => {
               ))}
             </div>
           ) : (
-            <Card className="p-12 text-center bg-white border border-slate-200/90 rounded-2xl space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
-                <Layers className="w-6 h-6" />
+            <Card className="p-10 text-center bg-white border border-slate-200/90 rounded-2xl space-y-3">
+              <div className="w-11 h-11 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+                <Layers className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base font-extrabold text-[#0a1614]">
+                <h3 className="text-sm font-extrabold text-[#0a1614]">
                   {searchQuery ? 'Không tìm thấy ô kho nào phù hợp' : 'Không có ô kho nào trong mục này'}
                 </h3>
                 <p className="text-xs text-slate-500 mt-1">
                   {searchQuery
                     ? `Không có kết quả nào khớp với từ khóa "${searchQuery}". Hãy thử tìm kiếm khác.`
-                    : 'Bạn chưa có đơn đặt chỗ hoặc hợp đồng nào tương ứng với bộ lọc đã chọn.'}
+                    : 'Bạn chưa có đơn đặt chỗ hoặc hợp đồng nào tương ứng với danh mục đã chọn.'}
                 </p>
               </div>
               {searchQuery ? (
@@ -502,13 +491,13 @@ export const MyUnitsPage: React.FC = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => setSearchQuery('')}
-                  className="mt-2 text-xs font-semibold cursor-pointer"
+                  className="mt-1 text-xs font-semibold cursor-pointer"
                 >
                   Xóa bộ lọc tìm kiếm
                 </Button>
               ) : (
                 <Link to="/customer">
-                  <Button variant="primary" size="sm" className="mt-2 text-xs font-bold cursor-pointer">
+                  <Button variant="primary" size="sm" className="mt-1 text-xs font-bold cursor-pointer">
                     Khám phá và thuê ô kho mới
                   </Button>
                 </Link>
@@ -517,39 +506,6 @@ export const MyUnitsPage: React.FC = () => {
           )}
         </>
       )}
-
-      {/* Quick Help & Guidelines */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-4">
-        <Card className="p-5 bg-white border border-slate-200/90 rounded-2xl space-y-2.5 shadow-xs">
-          <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center text-brand-600">
-            <Shield className="w-5 h-5" />
-          </div>
-          <h4 className="font-extrabold text-sm text-[#0a1614]">Quy định hoàn cọc</h4>
-          <p className="text-xs text-slate-500 leading-relaxed">
-            Tiền cọc Deposit 1 tháng được bảo lưu an toàn tại ngân hàng và hoàn trả trong vòng 7 ngày làm việc sau khi hoàn tất biên bản nghiệm thu trả kho không hư hại.
-          </p>
-        </Card>
-
-        <Card className="p-5 bg-white border border-slate-200/90 rounded-2xl space-y-2.5 shadow-xs">
-          <div className="w-9 h-9 rounded-xl bg-[#96b3cf]/15 flex items-center justify-center text-[#96b3cf]">
-            <HelpCircle className="w-5 h-5" />
-          </div>
-          <h4 className="font-extrabold text-sm text-[#0a1614]">Khóa số thông minh</h4>
-          <p className="text-xs text-slate-500 leading-relaxed">
-            Nhập mã PIN theo độ dài trên chính sách của hợp đồng, hoặc quét mã QR Pass để mở cửa ô kho 24/7. Bạn có thể chủ động đổi mã PIN mới bất cứ lúc nào ngay trên Dashboard.
-          </p>
-        </Card>
-
-        <Card className="p-5 bg-white border border-slate-200/90 rounded-2xl space-y-2.5 shadow-xs">
-          <div className="w-9 h-9 rounded-xl bg-[#7c94c3]/15 flex items-center justify-center text-[#7c94c3]">
-            <PhoneCall className="w-5 h-5" />
-          </div>
-          <h4 className="font-extrabold text-sm text-[#0a1614]">Đường dây nóng hỗ trợ 24/7</h4>
-          <p className="text-xs text-slate-500 leading-relaxed">
-            Gặp sự cố kẹt khóa điện tử hoặc cần hỗ trợ khẩn cấp tại quầy? Gọi ngay Hotline <strong className="text-brand-700">1900 8888</strong> để nhân viên trực cơ sở hỗ trợ tại chỗ.
-          </p>
-        </Card>
-      </div>
 
       {/* Modals Management */}
       <ChangePinModal
@@ -570,6 +526,8 @@ export const MyUnitsPage: React.FC = () => {
         isOpen={Boolean(selectedDetailContract)}
         onClose={() => setSelectedDetailContract(null)}
         contract={selectedDetailContract}
+        onScheduleReturn={(c) => setSelectedReturnContract(c)}
+        onChangePin={(c) => setSelectedPinContract(c)}
       />
 
       <EarlyRenewalReminderModal
@@ -596,7 +554,7 @@ export const MyUnitsPage: React.FC = () => {
         />
       )}
 
-      {/* Modal Xác nhận Hủy giữ chỗ từ trang Kho của tôi (ISS-78) */}
+      {/* Modal Xác nhận Hủy giữ chỗ */}
       <Modal
         isOpen={Boolean(cancellingReservation)}
         onClose={() => {
@@ -668,4 +626,3 @@ export const MyUnitsPage: React.FC = () => {
     </div>
   );
 };
-

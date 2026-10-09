@@ -1,12 +1,10 @@
 import React from 'react';
 import {
-  Layers,
   CheckCircle2,
   Clock,
   AlertTriangle,
   CreditCard,
 } from 'lucide-react';
-import { formatVND } from '../utils/pricing';
 import type { RentedContract } from '../types';
 
 export interface CustomerRentalsKpiSummaryProps {
@@ -22,8 +20,6 @@ export const CustomerRentalsKpiSummary: React.FC<CustomerRentalsKpiSummaryProps>
   activeTab,
   onSelectTab,
 }) => {
-  // Tính toán các chỉ số thống kê
-  const totalCount = contracts.length + pendingReservationsCount;
   const activeCount = contracts.filter((c) => c.status === 'ACTIVE').length;
   const pendingCheckinCount = contracts.filter(
     (c) => c.status === 'PENDING_CHECKIN' || (c.status as string) === 'PENDING_CHECK_IN'
@@ -32,110 +28,97 @@ export const CustomerRentalsKpiSummary: React.FC<CustomerRentalsKpiSummaryProps>
     (c) => c.status === 'EXPIRING_SOON' || c.status === 'OVERDUE' || c.status === 'PENDING_RETURN'
   ).length;
 
-  const totalMonthlyRent = contracts
-    .filter((c) => c.status !== 'CLOSED' && c.status !== 'TERMINATED')
-    .reduce((sum, c) => sum + (c.monthlyRent || 0), 0);
-
-  const kpis = [
-    {
-      id: 'ALL',
-      title: 'Tổng số ô kho',
-      count: totalCount,
-      subtext: `Tổng phí thuê: ${formatVND(totalMonthlyRent)}/tháng`,
-      icon: Layers,
-      bgGradient: 'from-blue-500/10 to-indigo-500/5',
-      borderColor: 'border-blue-200/80',
-      activeBorder: 'border-blue-600 ring-2 ring-blue-500/20',
-      textColor: 'text-blue-950',
-      iconColor: 'text-blue-600',
-    },
-    {
-      id: 'PENDING_PAYMENT',
-      title: 'Đang giữ chỗ',
-      count: pendingReservationsCount,
-      subtext: 'Chờ thanh toán cọc giữ chỗ 48h',
-      icon: CreditCard,
-      bgGradient: 'from-sky-500/10 to-cyan-500/5',
-      borderColor: 'border-sky-200/80',
-      activeBorder: 'border-sky-600 ring-2 ring-sky-500/20',
-      textColor: 'text-sky-950',
-      iconColor: 'text-sky-600',
-    },
+  const bentoTiles = [
     {
       id: 'ACTIVE',
-      title: 'Đang hoạt động',
+      label: 'Đang hoạt động',
       count: activeCount,
-      subtext: 'Mã PIN & QR mở khóa đang kích hoạt 24/7',
-      icon: CheckCircle2,
-      bgGradient: 'from-emerald-500/10 to-teal-500/5',
-      borderColor: 'border-emerald-200/80',
-      activeBorder: 'border-emerald-600 ring-2 ring-emerald-500/20',
-      textColor: 'text-emerald-950',
-      iconColor: 'text-emerald-600',
-    },
-    {
-      id: 'PENDING_CHECKIN',
-      title: 'Chờ nhận kho',
-      count: pendingCheckinCount,
-      subtext: 'Cần đối chiếu CCCD gốc để cấp mã PIN',
-      icon: Clock,
-      bgGradient: 'from-amber-500/10 to-yellow-500/5',
-      borderColor: 'border-amber-200/80',
-      activeBorder: 'border-amber-600 ring-2 ring-amber-500/20',
-      textColor: 'text-amber-950',
-      iconColor: 'text-amber-600',
+      unitLabel: 'ô kho',
+      badgeText: 'Mã PIN 24/7',
+      dotColor: 'bg-emerald-500',
+      badgeBg: 'bg-emerald-50 text-emerald-700',
+      badgeIcon: CheckCircle2,
+      countColor: 'text-slate-900',
     },
     {
       id: 'ATTENTION',
-      title: 'Cần chú ý / Gia hạn',
+      label: 'Cần gia hạn',
       count: attentionCount,
-      subtext: 'Ô kho sắp hết hạn, quá hạn hoặc hẹn trả',
-      icon: AlertTriangle,
-      bgGradient: 'from-rose-500/10 to-orange-500/5',
-      borderColor: 'border-rose-200/80',
-      activeBorder: 'border-rose-600 ring-2 ring-rose-500/20',
-      textColor: 'text-rose-950',
-      iconColor: 'text-rose-600',
+      unitLabel: 'ô kho',
+      badgeText: 'Sắp hết hạn',
+      dotColor: attentionCount > 0 ? 'bg-amber-500 animate-pulse' : 'bg-slate-300',
+      badgeBg: attentionCount > 0 ? 'bg-amber-50 text-amber-800' : 'bg-slate-50 text-slate-500',
+      badgeIcon: AlertTriangle,
+      countColor: attentionCount > 0 ? 'text-amber-600' : 'text-slate-900',
+    },
+    {
+      id: 'PENDING_CHECKIN',
+      label: 'Chờ nhận kho',
+      count: pendingCheckinCount,
+      unitLabel: 'ô kho',
+      badgeText: 'Đã cọc thành công',
+      dotColor: 'bg-sky-500',
+      badgeBg: 'bg-sky-50 text-sky-800',
+      badgeIcon: Clock,
+      countColor: 'text-slate-900',
+    },
+    {
+      id: 'PENDING_PAYMENT',
+      label: 'Giữ chỗ 48h',
+      count: pendingReservationsCount,
+      unitLabel: 'đơn',
+      badgeText: 'Chờ thanh toán',
+      dotColor: pendingReservationsCount > 0 ? 'bg-rose-500' : 'bg-slate-300',
+      badgeBg: pendingReservationsCount > 0 ? 'bg-rose-50 text-rose-800' : 'bg-slate-50 text-slate-500',
+      badgeIcon: CreditCard,
+      countColor: pendingReservationsCount > 0 ? 'text-rose-600' : 'text-slate-900',
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-3.5">
-      {kpis.map((kpi) => {
-        const Icon = kpi.icon;
-        const isSelected = activeTab === kpi.id;
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-3.5">
+      {bentoTiles.map((tile) => {
+        const isSelected = activeTab === tile.id;
+        const BadgeIcon = tile.badgeIcon;
 
         return (
-          <div
-            key={kpi.id}
-            onClick={() => onSelectTab(kpi.id)}
-            className={`p-3.5 sm:p-4 rounded-2xl bg-gradient-to-br ${kpi.bgGradient} bg-white border transition-all duration-200 cursor-pointer shadow-xs hover:shadow-md relative overflow-hidden group ${
-              isSelected ? kpi.activeBorder : kpi.borderColor
+          <button
+            key={tile.id}
+            type="button"
+            onClick={() => onSelectTab(tile.id)}
+            className={`text-left p-3.5 sm:p-4 rounded-2xl bg-white transition-all duration-200 cursor-pointer relative overflow-hidden group shadow-xs hover:shadow-md ${
+              isSelected
+                ? 'border-2 border-brand-500 ring-2 ring-brand-500/10'
+                : 'border border-slate-200/90 hover:border-slate-300'
             }`}
           >
-            <div className="flex items-start justify-between">
-              <span className="text-[11px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors uppercase tracking-wider">
-                {kpi.title}
+            <div className="flex items-center justify-between mb-1.5">
+              <span
+                className={`text-xs font-bold transition-colors ${
+                  isSelected ? 'text-brand-700' : 'text-slate-600 group-hover:text-slate-900'
+                }`}
+              >
+                {tile.label}
               </span>
-              <div className={`p-1.5 rounded-xl bg-white shadow-xs ${kpi.iconColor}`}>
-                <Icon className="w-4 h-4" />
-              </div>
+              <span className={`w-2.5 h-2.5 rounded-full ${tile.dotColor}`} />
             </div>
 
-            <div className="mt-1.5 flex items-baseline gap-1.5">
-              <span className={`text-2xl sm:text-3xl font-black tracking-tight ${kpi.textColor}`}>
-                {kpi.count}
+            <div className="flex items-baseline gap-1.5">
+              <span className={`text-2xl sm:text-3xl font-black tracking-tight ${tile.countColor}`}>
+                {tile.count}
               </span>
-              <span className="text-xs font-semibold text-slate-400">ô</span>
+              <span className="text-xs font-semibold text-slate-400">{tile.unitLabel}</span>
             </div>
 
-            <p className="text-[10px] text-slate-500 mt-1 line-clamp-1">
-              {kpi.subtext}
-            </p>
-          </div>
+            <div
+              className={`mt-2 text-[11px] font-medium px-2 py-0.5 rounded-md inline-flex items-center gap-1 ${tile.badgeBg}`}
+            >
+              <BadgeIcon className="w-3 h-3 shrink-0" />
+              <span className="truncate">{tile.badgeText}</span>
+            </div>
+          </button>
         );
       })}
     </div>
   );
 };
-
