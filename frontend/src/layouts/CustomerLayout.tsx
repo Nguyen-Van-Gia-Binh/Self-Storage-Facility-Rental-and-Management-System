@@ -36,14 +36,22 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
   const isInternalUser = normalizedRole && normalizedRole !== 'CUSTOMER';
   const rolePortalUrl = normalizedRole ? ROLE_PORTAL_MAP[normalizedRole] : null;
 
-  // Đồng bộ phiên đăng nhập khi có thay đổi trong localStorage
+  // Đồng bộ phiên đăng nhập khi có thay đổi trong localStorage, khi focus tab hoặc khi chuyển trang
   useEffect(() => {
     const handleStorageChange = () => {
       setUser(tokenStorage.getUser());
     };
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('focus', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleStorageChange);
+    };
   }, []);
+
+  useEffect(() => {
+    setUser(tokenStorage.getUser());
+  }, [location.pathname]);
 
   // Đóng dropdown khi click bên ngoài
   useEffect(() => {
