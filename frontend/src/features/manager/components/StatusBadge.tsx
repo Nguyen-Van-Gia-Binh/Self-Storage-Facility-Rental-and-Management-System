@@ -60,7 +60,7 @@ const STATUS_CONFIG: Record<string, { label: string; className: string; dotColor
     dotColor: 'bg-rose-500',
   },
   CLOSED: {
-    label: '📋 Đã đóng',
+    label: '📋 Closed',
     className: 'bg-slate-100 text-slate-700 border-slate-200',
     dotColor: 'bg-slate-400',
   },

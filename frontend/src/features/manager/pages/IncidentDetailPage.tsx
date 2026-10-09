@@ -9,10 +9,7 @@ import {
   RotateCcw,
   ShieldCheck,
   Printer,
-  FileText,
   RefreshCw,
-  Building2,
-  XCircle,
 } from 'lucide-react';
 import { apiClient } from '@/api/client';
 import {
@@ -90,6 +87,7 @@ export const IncidentDetailPage: React.FC = () => {
         taskId: ticket.id,
         taskType: 'INCIDENT',
         staffId,
+        priority: ticket.isUrgent ? 'URGENT' : 'NORMAL',
         notes,
       });
       showToast(res.message || 'Phân công nhân viên thành công');
@@ -107,7 +105,9 @@ export const IncidentDetailPage: React.FC = () => {
     if (!ticket) return;
     setActionLoading(true);
     try {
-      await apiClient.patch(`/support-requests/${ticket.id}/in-progress`, {});
+      await apiClient<any>(`/support-requests/${ticket.id}/in-progress`, {
+        method: 'PATCH',
+      });
       showToast('Đã chuyển trạng thái sang đang kiểm tra hiện trường');
       await loadTicket();
     } catch (err) {
@@ -124,8 +124,9 @@ export const IncidentDetailPage: React.FC = () => {
     setActionLoading(true);
     try {
       const nextVal = !ticket.relocationRequired;
-      await apiClient.patch(`/support-requests/${ticket.id}/relocation-required`, {
-        required: nextVal,
+      await apiClient<any>(`/support-requests/${ticket.id}/relocation-required`, {
+        method: 'PATCH',
+        body: JSON.stringify({ required: nextVal }),
       });
       showToast(
         nextVal
@@ -145,15 +146,18 @@ export const IncidentDetailPage: React.FC = () => {
     if (!ticket) return;
     setActionLoading(true);
     try {
-      await apiClient.patch(`/support-requests/${ticket.id}/resolve`, {
-        resolutionNote:
-          faultType === 'COMPANY'
-            ? 'Đã sửa chữa và khắc phục lỗi thiết bị cơ sở hoàn tất. Miễn phí cho khách hàng.'
-            : `Đã thay thế linh kiện do hư hại khách hàng. Phụ thu ${surchargeCost.toLocaleString('vi-VN')} đ (${feeCategory}).`,
-        relocationRequired: ticket.relocationRequired,
-        faultType,
-        surchargeAmount: surchargeCost,
-        surchargeCategory: feeCategory,
+      await apiClient<any>(`/support-requests/${ticket.id}/resolve`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          resolutionNote:
+            faultType === 'COMPANY'
+              ? 'Đã sửa chữa và khắc phục lỗi thiết bị cơ sở hoàn tất. Miễn phí cho khách hàng.'
+              : `Đã thay thế linh kiện do hư hại khách hàng. Phụ thu ${surchargeCost.toLocaleString('vi-VN')} đ (${feeCategory}).`,
+          relocationRequired: ticket.relocationRequired,
+          faultType,
+          surchargeAmount: surchargeCost,
+          surchargeCategory: feeCategory,
+        }),
       });
       showToast('Đã cập nhật hoàn thành xử lý sự cố');
       await loadTicket();
@@ -171,12 +175,12 @@ export const IncidentDetailPage: React.FC = () => {
     setActionLoading(true);
     try {
       // Đóng ticket và lưu biên bản
-      await apiClient.patch(`/support-requests/${ticket.id}/resolve`, {
-        resolutionNote: closingNotes,
-        status: 'CLOSED',
-      }).catch(async () => {
-        // Fallback endpoint if available
-        await apiClient.put(`/api/incidents/${ticket.id}/close`, { notes: closingNotes });
+      await apiClient<any>(`/support-requests/${ticket.id}/resolve`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          resolutionNote: closingNotes,
+          status: 'CLOSED',
+        }),
       });
 
       showToast('Đã đóng sự cố và hoàn tất biên bản nghiệm thu');
@@ -239,12 +243,12 @@ export const IncidentDetailPage: React.FC = () => {
       {/* Breadcrumb */}
       <Breadcrumb
         items={[
-          { label: 'Xử lý sự cố', href: '/manager/incidents' },
+          { label: 'Xử lý sự cố', to: '/manager/incidents' },
           {
             label: `${facilityCode} (${ticket.facilityName})`,
-            href: `/manager/incidents/facilities/${ticket.facilityId}`,
+            to: `/manager/incidents/facilities/${ticket.facilityId}`,
           },
-          { label: `Sự cố #${ticket.code}`, current: true },
+          { label: `Sự cố #${ticket.code}` },
         ]}
       />
 
@@ -453,6 +457,7 @@ export const IncidentDetailPage: React.FC = () => {
             customerName={ticket.customerName}
             customerPhone={ticket.customerPhone}
             customerEmail={`customer${ticket.customerId}@smartstorage.vn`}
+            customerId={ticket.customerId}
           />
 
           {/* Panel Ô kho */}

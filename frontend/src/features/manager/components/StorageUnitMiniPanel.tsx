@@ -1,6 +1,6 @@
 // frontend/src/features/manager/components/StorageUnitMiniPanel.tsx
 import React from 'react';
-import { Box, Layers, MapPin } from 'lucide-react';
+import { Box } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
 
 interface StorageUnitMiniPanelProps {

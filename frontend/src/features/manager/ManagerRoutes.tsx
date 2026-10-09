@@ -13,7 +13,9 @@ import { StaffSchedulePage } from './pages/StaffSchedulePage';
 import { ShiftCalendarPage } from './pages/ShiftCalendarPage';
 import { WorkListPage } from './pages/WorkListPage';
 import { WorkDetailPage } from './pages/WorkDetailPage';
-import { IncidentManagementPage } from './pages/IncidentManagementPage';
+import { IncidentDashboardPage } from './pages/IncidentDashboardPage';
+import { IncidentListPage } from './pages/IncidentListPage';
+import { IncidentDetailPage } from './pages/IncidentDetailPage';
 import { FacilityReportsPage } from './pages/FacilityReportsPage';
 
 export const ManagerRoutes: React.FC = () => {
@@ -51,8 +53,12 @@ export const ManagerRoutes: React.FC = () => {
         {/* Alias chuyển hướng /manager/staff-assignment sang Cấp 1 */}
         <Route path="staff-assignment" element={<Navigate to="/manager/staff-schedule" replace />} />
 
-        {/* Các trang quản trị khác */}
-        <Route path="incidents" element={<IncidentManagementPage />} />
+        {/* 3 Cấp độ Drill-down Xử lý sự cố kỹ thuật (FM-05, Flow 7) */}
+        <Route path="incidents" element={<IncidentDashboardPage />} />
+        <Route path="incidents/facilities/:facilityId" element={<IncidentListPage />} />
+        <Route path="incidents/:incidentId" element={<IncidentDetailPage />} />
+
+        {/* Báo cáo thống kê */}
         <Route path="reports" element={<FacilityReportsPage />} />
       </Routes>
     </DashboardLayout>

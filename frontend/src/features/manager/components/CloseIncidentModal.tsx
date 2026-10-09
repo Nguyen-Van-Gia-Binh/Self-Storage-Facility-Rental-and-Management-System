@@ -1,6 +1,6 @@
 // frontend/src/features/manager/components/CloseIncidentModal.tsx
 import React, { useState } from 'react';
-import { X, CheckCircle2, ShieldCheck, AlertCircle, FileText } from 'lucide-react';
+import { X, CheckCircle2, ShieldCheck, FileText } from 'lucide-react';
 import type { ManagementSupportTicket } from '../types/staffAssignment';
 
 interface CloseIncidentModalProps {

@@ -21,7 +21,6 @@ import { Pagination } from '../components/Pagination';
 export const IncidentDashboardPage: React.FC = () => {
   const navigate = useNavigate();
 
-  const [facilities, setFacilities] = useState<any[]>([]);
   const [facilityStats, setFacilityStats] = useState<IncidentFacilityStats[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchKeyword, setSearchKeyword] = useState<string>('');
@@ -36,8 +35,6 @@ export const IncidentDashboardPage: React.FC = () => {
         fetchMyAssignedFacilities().catch(() => []),
         getManagementSupportRequests({}).catch(() => []),
       ]);
-
-      setFacilities(facList);
 
       // Gom nhóm thống kê theo từng cơ sở
       const statsMap: Record<number, IncidentFacilityStats> = {};

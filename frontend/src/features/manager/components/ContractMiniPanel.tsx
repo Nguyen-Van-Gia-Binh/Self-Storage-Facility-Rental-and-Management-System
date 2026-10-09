@@ -1,6 +1,6 @@
 // frontend/src/features/manager/components/ContractMiniPanel.tsx
 import React from 'react';
-import { FileCheck, Calendar, ShieldCheck } from 'lucide-react';
+import { FileCheck } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
 
 interface ContractMiniPanelProps {

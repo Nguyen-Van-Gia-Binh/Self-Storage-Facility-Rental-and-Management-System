@@ -4,12 +4,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   Search,
-  Filter,
   RefreshCw,
   Clock,
   AlertTriangle,
   CheckCircle2,
-  SlidersHorizontal,
 } from 'lucide-react';
 import { fetchFacilityById } from '@/api/facility';
 import { getManagementSupportRequests } from '../api/staffAssignmentApi';
@@ -163,8 +161,8 @@ export const IncidentListPage: React.FC = () => {
       {/* Breadcrumb */}
       <Breadcrumb
         items={[
-          { label: 'Xử lý sự cố', href: '/manager/incidents' },
-          { label: `${facilityCode} (${facilityName})`, current: true },
+          { label: 'Xử lý sự cố', to: '/manager/incidents' },
+          { label: `${facilityCode} (${facilityName})` },
         ]}
       />
 

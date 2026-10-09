@@ -2,11 +2,7 @@
 import React from 'react';
 import {
   Wrench,
-  Clock,
   User,
-  Phone,
-  Mail,
-  AlertTriangle,
   FileText,
   Image as ImageIcon,
 } from 'lucide-react';

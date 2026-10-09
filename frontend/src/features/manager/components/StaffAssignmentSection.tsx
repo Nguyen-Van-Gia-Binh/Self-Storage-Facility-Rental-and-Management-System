@@ -1,6 +1,6 @@
 // frontend/src/features/manager/components/StaffAssignmentSection.tsx
 import React, { useState } from 'react';
-import { UserCheck, UserX, RefreshCw, Edit3, Send, Phone, Clock, FileText } from 'lucide-react';
+import { UserCheck, UserX, RefreshCw, Send, Phone, Clock, FileText } from 'lucide-react';
 import type { StaffWorkloadItem } from '../types/staffAssignment';
 
 interface StaffAssignmentSectionProps {
@@ -19,7 +19,6 @@ export const StaffAssignmentSection: React.FC<StaffAssignmentSectionProps> = ({
   assignedStaffName,
   assignedStaffPhone,
   assignmentNotes,
-  assignedAt,
   staffList,
   onAssign,
   isSubmitting = false,
