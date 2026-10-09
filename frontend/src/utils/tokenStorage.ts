@@ -88,9 +88,8 @@ export const tokenStorage = {
     try {
       const token = localStorage.getItem(ACCESS_TOKEN_KEY) || localStorage.getItem('access_token');
       if (token && isJwtExpired(token)) {
-        // Tự động dọn dẹp token hết hạn
-        localStorage.removeItem(ACCESS_TOKEN_KEY);
-        localStorage.removeItem('access_token');
+        // Tự động dọn dẹp sạch toàn bộ phiên khi token hết hạn
+        this.clearSession();
         return null;
       }
       return token;
@@ -127,6 +126,10 @@ export const tokenStorage = {
 
   getUser(): UserSession | null {
     try {
+      // Nếu không có access token hợp lệ hoặc token đã hết hạn, coi như chưa đăng nhập
+      if (!this.getAccessToken()) {
+        return null;
+      }
       const raw = localStorage.getItem(USER_KEY) || localStorage.getItem('current_user');
       if (!raw) return null;
       return JSON.parse(raw) as UserSession;

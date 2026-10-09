@@ -88,4 +88,39 @@ describe('tokenStorage.clearSession', () => {
     expect(localStorage.getItem('selfstorage_sample_key')).toBeNull();
     expect(sessionStorage.getItem('temp_session_key')).toBeNull();
   });
+
+  function createMockJwt(expSecondsFromNow: number): string {
+    const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+    const payload = btoa(
+      JSON.stringify({
+        sub: 'test@example.com',
+        exp: Math.floor(Date.now() / 1000) + expSecondsFromNow,
+      })
+    );
+    return `${header}.${payload}.mock_signature`;
+  }
+
+  it('phải trả về null khi getUser() được gọi mà không có access token', () => {
+    // Giả lập trạng thái có user trong localStorage nhưng KHÔNG có access token
+    localStorage.setItem('selfstorage_user_session', JSON.stringify(DEMO_USERS.CUSTOMER));
+    expect(tokenStorage.getAccessToken()).toBeNull();
+
+    // getUser() không được trả về user mồ côi
+    expect(tokenStorage.getUser()).toBeNull();
+    expect(tokenStorage.isAuthenticated()).toBe(false);
+  });
+
+  it('phải tự động dọn sạch user session khi access token hết hạn', () => {
+    const expiredToken = createMockJwt(-3600); // hết hạn 1 tiếng trước
+    tokenStorage.setAccessToken(expiredToken);
+    tokenStorage.setRefreshToken('mock_refresh_token');
+    localStorage.setItem('selfstorage_user_session', JSON.stringify(DEMO_USERS.CUSTOMER));
+
+    // Gọi getAccessToken() phải phát hiện hết hạn và dọn dẹp sạch
+    expect(tokenStorage.getAccessToken()).toBeNull();
+    expect(tokenStorage.getUser()).toBeNull();
+    expect(tokenStorage.getRefreshToken()).toBeNull();
+    expect(tokenStorage.isAuthenticated()).toBe(false);
+  });
 });
+
