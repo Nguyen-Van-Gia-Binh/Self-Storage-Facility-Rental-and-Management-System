@@ -1,12 +1,11 @@
 import React from 'react';
 import { 
   AlertCircle, 
-  ShieldCheck, 
   PhoneCall, 
-  PlusCircle,
-  Ban,
-  CheckCircle2,
-  Clock
+  PlusCircle, 
+  Ban, 
+  CheckCircle2, 
+  Clock 
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { RentedContract } from '../types';
@@ -231,27 +230,6 @@ export const RenewalExpiryBanner: React.FC<RenewalExpiryBannerProps> = ({
     );
   }
 
-  // 5. Còn dài (> 30 ngày): Hiệu lực an toàn
-  return (
-    <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 sm:p-5 shadow-xs">
-      <div className="flex items-start gap-3.5">
-        <div className="p-2 bg-emerald-100 rounded-lg text-emerald-700 flex-shrink-0 mt-0.5">
-          <ShieldCheck className="w-5 h-5" />
-        </div>
-        <div className="space-y-1 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-200 text-emerald-900 uppercase tracking-wider">
-              Hiệu lực an toàn (Còn {daysRemaining} ngày)
-            </span>
-          </div>
-          <h3 className="text-base font-bold text-emerald-950">
-            Hợp đồng đang có hiệu lực tốt đến ngày {contract.endDate}
-          </h3>
-          <p className="text-xs sm:text-sm text-emerald-800 leading-relaxed">
-            Bạn có thể đăng ký gia hạn thêm thời gian sử dụng bất kỳ lúc nào. Kỳ hạn mới sẽ tự động cộng nối tiếp vào sau ngày hết hạn hiện tại.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
+  // 5. Còn dài (> 30 ngày): Hiệu lực an toàn — Ẩn banner để giao diện tinh gọn, tập trung vào form gia hạn
+  return null;
 };

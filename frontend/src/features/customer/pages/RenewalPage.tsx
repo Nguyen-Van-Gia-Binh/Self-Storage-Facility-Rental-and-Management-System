@@ -645,9 +645,11 @@ export const RenewalPage: React.FC = () => {
                     <span className="text-[11px] font-bold text-brand-700 bg-brand-50 px-2.5 py-0.5 rounded-full">
                       Hợp đồng #{contract.contractNumber}
                     </span>
-                    <Badge variant={contract.status === 'OVERDUE' ? 'overdue' : 'available'} className="text-[10px] px-2 py-0.5">
-                      {contract.status === 'OVERDUE' ? 'Quá hạn' : 'Đang hiệu lực'}
-                    </Badge>
+                    {contract.status === 'OVERDUE' && (
+                      <Badge variant="overdue" className="text-[10px] px-2 py-0.5">
+                        Quá hạn
+                      </Badge>
+                    )}
                   </div>
                   <h2 className="text-base font-bold text-[#0a1614] flex items-center gap-2">
                     <Box className="w-4 h-4 text-brand-600" />
@@ -674,7 +676,6 @@ export const RenewalPage: React.FC = () => {
                     <Calendar className="w-3.5 h-3.5 text-slate-500" />
                     {contract.endDate}
                   </span>
-                  <span className="text-[11px] text-amber-700">Mốc hết hạn hợp đồng hiện tại</span>
                 </div>
 
                 <div className="p-3.5 bg-emerald-50/70 rounded-xl border border-emerald-200 space-y-1">
@@ -682,9 +683,6 @@ export const RenewalPage: React.FC = () => {
                   <span className="text-sm font-extrabold text-emerald-700 block flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-emerald-600" />
                     {newEndDate}
-                  </span>
-                  <span className="text-[11px] text-emerald-600 font-semibold">
-                    +{renewalMonths} tháng sử dụng liên tục
                   </span>
                 </div>
               </div>
@@ -790,9 +788,6 @@ export const RenewalPage: React.FC = () => {
                   <h3 className="text-base font-bold text-[#0a1614]">
                     Tóm Tắt Gia Hạn
                   </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Kỳ hạn {renewalMonths} tháng cho ngăn {contract.unitNumber}
-                  </p>
                 </div>
                 {loadingQuote && (
                   <span className="text-[11px] text-brand-600 font-medium animate-pulse">
@@ -838,10 +833,7 @@ export const RenewalPage: React.FC = () => {
                 </div>
 
                 <div className="pt-3 border-t-2 border-slate-100 flex justify-between items-baseline">
-                  <div>
-                    <span className="text-sm font-bold text-[#0a1614] block">Tổng thanh toán:</span>
-                    <span className="text-[11px] text-slate-500">Đến ngày {newEndDate}</span>
-                  </div>
+                  <span className="text-sm font-bold text-[#0a1614] block">Tổng thanh toán:</span>
                   <span className="text-xl font-black text-brand-600">
                     {formatVND(pricing.finalTotal)}
                   </span>
@@ -865,9 +857,6 @@ export const RenewalPage: React.FC = () => {
                   Bảng Kê Chi Phí Gia Hạn Hợp Đồng Chi Tiết
                 </h2>
               </div>
-              <Badge variant="available" className="text-xs px-2.5 py-1">
-                Hóa đơn hợp lệ
-              </Badge>
             </div>
 
             {/* Invoicing Table */}
@@ -883,9 +872,6 @@ export const RenewalPage: React.FC = () => {
                 <div className="px-4 py-3.5 grid grid-cols-12 gap-2 items-center">
                   <div className="col-span-6 sm:col-span-7">
                     <strong className="text-slate-800 block">Tiền thuê ô kho {contract.unitNumber}</strong>
-                    <span className="text-xs text-slate-500">
-                      Thời hạn {renewalMonths} tháng · Đơn giá {formatVND(pricing.monthlyRent)}/tháng
-                    </span>
                   </div>
                   <span className="col-span-2 text-center text-slate-600">{renewalMonths} tháng</span>
                   <span className="col-span-4 sm:col-span-3 text-right font-bold text-slate-900">
@@ -951,14 +937,9 @@ export const RenewalPage: React.FC = () => {
 
               {/* Total Footer */}
               <div className="bg-slate-50/90 p-4 flex items-center justify-between border-t border-slate-200">
-                <div>
-                  <span className="text-sm sm:text-base font-extrabold text-[#0a1614] block">
-                    Tổng số tiền thanh toán thực tế:
-                  </span>
-                  <span className="text-xs text-slate-500">
-                    Thời hạn sử dụng mới kéo dài liên tục đến ngày <strong>{newEndDate}</strong>
-                  </span>
-                </div>
+                <span className="text-sm sm:text-base font-extrabold text-[#0a1614] block">
+                  Tổng số tiền thanh toán thực tế:
+                </span>
                 <span className="text-xl sm:text-2xl font-black text-brand-600">
                   {formatVND(pricing.finalTotal)}
                 </span>
