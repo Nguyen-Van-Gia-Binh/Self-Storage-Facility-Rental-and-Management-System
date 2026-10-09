@@ -95,7 +95,7 @@
 | `ISS-87` | Màn hình Quản lý ô kho dồn hết dữ liệu vào 1 trang gây loãng và chưa xử lý phân trang khi dữ liệu lớn. | Tái thiết kế toàn diện Drill-down 4 cấp kèm Breadcrumb, Search realtime, Filter tabs (Khu vực/Trạng thái/Tầng), Sort và Pagination theo ngưỡng threshold (>12 cơ sở/loại kho, >10 ô kho). | Bình | `RESOLVED` |
 | `ISS-88` | Màn hình Giám sát hợp đồng FM dồn hàng trăm dòng không phân cấp, thiếu bộ lọc cơ sở/trạng thái (FM-02). | Tái thiết kế Drill-down 3 cấp (Tổng quan Cơ sở -> Danh sách Hợp đồng -> Chi tiết Hợp đồng) kèm Search, Filter tabs, Sortable table, Pagination theo ngưỡng (>12 cards, >10 dòng) và Overdue Banner. | Bình | `RESOLVED` |
 | `ISS-89` | Màn hình Phân công nhân sự FM nhồi nhét danh sách nhân viên + ca trực + công việc trên 1 trang (FM-05). | Tái thiết kế Drill-down 4 cấp (Cơ sở -> Lịch ca trực -> Danh sách công việc -> Chi tiết việc 3 Case A/B/C) kèm Calendar View, Search, Filter, Sort và Pagination theo ngưỡng (>12 cards, >10 items). | Bình | `RESOLVED` |
-| `ISS-90` | Ô kho HC-B202 (và HBT-A103, Q7-A104) báo Đang thuê nhưng cột Khách thuê rỗng và Cấp 4 báo "Ô kho đang trống". | Seed bổ sung HĐ đầy đủ (V47) cho các ô OCCUPIED mồ côi; Bổ sung UI phòng thủ Cấp 3 và Cấp 4 hiển thị cảnh báo thay vì fallback nhầm sang ô trống. | Bình | `RESOLVED` |
+| `ISS-90` | Ô kho HC-B202 (và các ô CG-S104, CG-C404, Q1-B201, HBT-B202, Q1-B203, Q7-A103) bị mồ côi hoặc lệch trạng thái. | Seed HĐ đầy đủ (V47, V48), chuẩn hóa toàn bộ ô mồ côi CSDL; Bổ sung UI phòng thủ Cấp 3/Cấp 4 và bộ test kiểm toán hồi quy tự động. | Bình | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 
