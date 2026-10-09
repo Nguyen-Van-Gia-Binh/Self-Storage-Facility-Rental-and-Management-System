@@ -14,7 +14,11 @@
 
    3. Ô Q1-A101 (Quận 1):
       - Tách hợp đồng CTR-20260625-8802 (Trần Yến Nhi) sang ô Q1-A102 (Kho Nhỏ cùng loại đang trống).
-      - Đặt ô Q1-A102 thành OCCUPIED, giữ CTR-20260927-3277 (Lê Thanh Tùng) trên ô Q1-A101.
+      - Đặt ô Q1-A102 thành OCCUPIED, chuyển access_credential sang Q1-A102, trả ô Q1-A101 về AVAILABLE.
+
+   4. Bảo đảm tính toàn vẹn dữ liệu (Audit Safeguards):
+      - Quét và chuyển tất cả ô OCCUPIED / RESERVED mồ côi về AVAILABLE.
+      - Đồng bộ các ô có hợp đồng hoạt động thành OCCUPIED.
    ============================================================================ */
 
 -- ============================================================================
@@ -87,8 +91,65 @@ BEGIN
         SET storage_unit_id = @SuQ1A102Id
         WHERE code = 'RSV-20260625-8802';
 
+        -- Cập nhật access_credential sang ô Q1-A102
+        UPDATE access_credential
+        SET storage_unit_id = @SuQ1A102Id
+        WHERE contract_id = (SELECT id FROM rental_contract WHERE code = 'CTR-20260625-8802');
+
+        -- Đặt ô Q1-A102 thành OCCUPIED
         UPDATE storage_unit
         SET status = 'OCCUPIED'
         WHERE id = @SuQ1A102Id;
+
+        -- Đặt lại ô Q1-A101 về AVAILABLE nếu không còn hợp đồng hoạt động
+        UPDATE su
+        SET su.status = 'AVAILABLE'
+        FROM storage_unit su
+        JOIN facility f ON su.facility_id = f.id
+        WHERE f.code = 'FAC-Q1' AND su.code = 'Q1-A101'
+          AND NOT EXISTS (
+              SELECT 1 FROM rental_contract rc 
+              WHERE rc.storage_unit_id = su.id 
+                AND rc.status IN ('ACTIVE', 'OVERDUE', 'PENDING_RETURN', 'PENDING_CHECK_IN')
+          );
     END;
 END;
+
+-- ============================================================================
+-- 4. BẢO ĐẢM TÍNH TOÀN VẸN TOÀN HỆ THỐNG (DATA INTEGRITY AUDIT SAFEGUARDS)
+-- ============================================================================
+-- 4.1. Đưa tất cả các ô kho OCCUPIED mồ côi (không có hợp đồng hoạt động) về AVAILABLE
+UPDATE su
+SET su.status = 'AVAILABLE'
+FROM storage_unit su
+WHERE su.status = 'OCCUPIED'
+  AND NOT EXISTS (
+      SELECT 1 FROM rental_contract rc 
+      WHERE rc.storage_unit_id = su.id 
+        AND rc.status IN ('ACTIVE', 'OVERDUE', 'PENDING_RETURN', 'PENDING_CHECK_IN')
+  );
+
+-- 4.2. Đưa tất cả các ô kho RESERVED mồ côi (không có đơn giữ chỗ hoặc hợp đồng chờ check-in) về AVAILABLE
+UPDATE su
+SET su.status = 'AVAILABLE'
+FROM storage_unit su
+WHERE su.status = 'RESERVED'
+  AND NOT EXISTS (
+      SELECT 1 FROM reservation r 
+      WHERE r.storage_unit_id = su.id 
+        AND r.status IN ('PENDING_PAYMENT', 'CONFIRMED')
+  )
+  AND NOT EXISTS (
+      SELECT 1 FROM rental_contract rc 
+      WHERE rc.storage_unit_id = su.id 
+        AND rc.status = 'PENDING_CHECK_IN'
+  );
+
+-- 4.3. Đảm bảo mọi ô kho đang có hợp đồng ACTIVE / OVERDUE / PENDING_RETURN đều mang trạng thái OCCUPIED
+UPDATE su
+SET su.status = 'OCCUPIED'
+FROM storage_unit su
+JOIN rental_contract rc ON su.id = rc.storage_unit_id
+WHERE rc.status IN ('ACTIVE', 'OVERDUE', 'PENDING_RETURN')
+  AND su.status <> 'OCCUPIED';
+
