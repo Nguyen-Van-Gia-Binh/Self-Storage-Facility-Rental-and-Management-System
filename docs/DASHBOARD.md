@@ -104,6 +104,7 @@
 | `ISS-96` | Khi Access Token hết hạn (>15p), Header vẫn lưu user session mồ côi hiển thị tên người dùng trong khi nội dung trang bắt đăng nhập. | Sửa `tokenStorage.getAccessToken()` tự động `clearSession()` khi token hết hạn; `tokenStorage.getUser()` không trả về session mồ côi khi thiếu token; `CustomerLayout` đồng bộ tức thì qua focus/route. | Xuân Nhi | `RESOLVED` |
 | `ISS-97` | Màn hình Gia hạn hợp đồng chứa nhiều banner, badge và subtext dư thừa gây chật chội giao diện. | Ẩn banner hiệu lực an toàn khi >30 ngày; bỏ badge Đang hiệu lực; loại bỏ subtext rườm rà ở 2 ô ngày kết thúc và tóm tắt gia hạn. | Xuân Nhi | `RESOLVED` |
 | `ISS-98` | Hợp đồng PENDING_CHECKIN (Chờ nhận kho) hiển thị Điều 4 đã nghiệm thu 4 tiêu chí và ký nhận bàn giao. | Hiển thị Điều 4 ở trạng thái "Chờ bàn giao & nghiệm thu tại quầy"; chỉ hiển thị đã ký khi hợp đồng đã hoàn tất bàn giao thực tế. | Xuân Nhi | `RESOLVED` |
+| `ISS-99` | Khách hàng có thể giữ chỗ nhiều ô kho cùng lúc dẫn đến spam và ảo capacity (BR-RES-02). | Giới hạn mỗi khách hàng chỉ giữ chỗ tối đa 1 ô kho PENDING; hiện popup cảnh báo yêu cầu thanh toán ô kho cũ trước khi đặt ô mới. | Xuân Nhi | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 

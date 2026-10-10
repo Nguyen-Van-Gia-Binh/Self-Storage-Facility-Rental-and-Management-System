@@ -71,6 +71,7 @@ public enum ErrorCode {
     CAPACITY_NOT_AVAILABLE(HttpStatus.CONFLICT, "Không còn sức chứa khả dụng cho loại ô kho này trong khoảng thời gian đã chọn"),
     CONTRACT_OVERDUE(HttpStatus.CONFLICT, "Bạn có hợp đồng đang quá hạn, vui lòng giải quyết trước khi tạo đơn đặt chỗ mới"),
     RESERVATION_ALREADY_CANCELLED(HttpStatus.CONFLICT, "Đơn đặt chỗ đã được hủy trước đó"),
+    PENDING_RESERVATION_EXISTS(HttpStatus.CONFLICT, "Quý khách đang có 1 đơn giữ chỗ ô kho chưa thanh toán. Vui lòng thanh toán hoặc hủy đơn cũ trước khi đặt ô kho khác"),
     SUPPORT_REQUEST_CANNOT_BE_CANCELLED(HttpStatus.CONFLICT, "Chỉ có thể hủy yêu cầu hỗ trợ khi ở trạng thái Mới"),
     SUPPORT_REQUEST_ALREADY_CLOSED(HttpStatus.CONFLICT, "Yêu cầu hỗ trợ đã kết thúc"),
     SUPPORT_REQUEST_NOT_RESOLVED(HttpStatus.CONFLICT, "Yêu cầu hỗ trợ chưa được xử lý xong để xác nhận"),
