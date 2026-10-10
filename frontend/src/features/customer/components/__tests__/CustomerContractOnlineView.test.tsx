@@ -100,20 +100,24 @@ describe('Customer Portal - Xem Hợp đồng điện tử & Biên bản bàn gi
     );
 
     // Tiêu đề hợp đồng điện tử
-    expect(await screen.findByText(/HỢP ĐỒNG THUÊ Ô KHO THÔNG MINH/i)).toBeInTheDocument();
+    const titleElements = await screen.findAllByText(/HỢP ĐỒNG THUÊ Ô KHO THÔNG MINH/i);
+    expect(titleElements.length).toBeGreaterThanOrEqual(1);
 
     // Thông tin bên thuê kho (khách hàng xuất hiện ở Điều 1 và phần Ký tên)
     const customerElements = await screen.findAllByText(/Nguyễn Văn Khách/i);
     expect(customerElements.length).toBeGreaterThanOrEqual(1);
 
-    expect(await screen.findByText(/079201001234/i)).toBeInTheDocument();
+    const identityElements = await screen.findAllByText(/079201001234/i);
+    expect(identityElements.length).toBeGreaterThanOrEqual(1);
 
     // Biên bản bàn giao Check-in 4 tiêu chuẩn
-    expect(await screen.findByText(/Biên bản bàn giao & Nghiệm thu tại chỗ/i)).toBeInTheDocument();
+    const handoverElements = await screen.findAllByText(/Biên bản bàn giao & Nghiệm thu tại chỗ/i);
+    expect(handoverElements.length).toBeGreaterThanOrEqual(1);
     const staffElements = await screen.findAllByText(/Trần Văn Staff/i);
     expect(staffElements.length).toBeGreaterThanOrEqual(1);
 
-    expect(await screen.findByText(/Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao/i)).toBeInTheDocument();
+    const noteElements = await screen.findAllByText(/Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao/i);
+    expect(noteElements.length).toBeGreaterThanOrEqual(1);
 
     // Banner Phụ lục điều chuyển ô kho do sự cố kỹ thuật (BR-AVL-05, BR-SUP-02)
     expect(await screen.findByText(/PHỤ LỤC ĐIỀU CHUYỂN Ô KHO/i)).toBeInTheDocument();

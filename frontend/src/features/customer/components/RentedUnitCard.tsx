@@ -309,6 +309,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
             <Button
               variant="outline"
               size="sm"
+              aria-label="Hợp đồng điện tử"
               onClick={() => onViewDetail(contract)}
               className="text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
             >
