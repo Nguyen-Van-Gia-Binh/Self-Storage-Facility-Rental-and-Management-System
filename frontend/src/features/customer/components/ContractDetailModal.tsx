@@ -20,6 +20,7 @@ import {
 import { formatVND } from '../utils/pricing';
 import { getMyRentalDetail, type CustomerRentalDetail } from '@/api/customerRentals';
 import type { RentedContract } from '../types';
+import { ContractPrintDocument } from './ContractPrintDocument';
 
 export interface ContractDetailModalProps {
   isOpen: boolean;
@@ -140,12 +141,13 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
   };
 
   return createPortal(
-    <div
-      className={`fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto ${
-        isClosing ? 'modal-backdrop-exit' : 'modal-backdrop-enter'
-      }`}
-      onClick={handleClose}
-    >
+    <>
+      <div
+        className={`no-print fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto ${
+          isClosing ? 'modal-backdrop-exit' : 'modal-backdrop-enter'
+        }`}
+        onClick={handleClose}
+      >
       <div
         className={`bg-white rounded-2xl max-w-3xl w-full shadow-2xl border border-slate-200 overflow-hidden relative my-auto ${
           isClosing ? 'modal-panel-exit' : 'modal-panel-enter'
@@ -481,7 +483,14 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
           </Button>
         </div>
       </div>
-    </div>,
-    document.body
-  );
+    </div>
+
+    {/* Bản in hợp đồng & biên bản bàn giao chuẩn pháp lý A4 (kết xuất khi in/lưu PDF) */}
+    <ContractPrintDocument
+      contract={contract}
+      detail={detail}
+    />
+  </>,
+  document.body
+);
 };

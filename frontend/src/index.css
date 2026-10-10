@@ -129,12 +129,24 @@
   aside,
   nav,
   header,
+  footer,
   .no-print,
   .bom-screen-panels {
     display: none !important;
   }
 
-  .bom-print-stack {
+  /* Khi in hợp đồng: Ẩn triệt để giao diện ứng dụng web và chỉ in duy nhất văn bản hợp đồng */
+  body:has(.contract-print-document) #root,
+  body.printing-contract #root,
+  body:has(.contract-print-document) footer,
+  body.printing-contract footer,
+  body:has(.contract-print-document) main,
+  body.printing-contract main {
+    display: none !important;
+  }
+
+  .bom-print-stack,
+  .contract-print-document {
     display: block !important;
     width: 100% !important;
     max-width: none !important;
@@ -145,7 +157,9 @@
   }
 
   .ss-report,
-  .ss-report * {
+  .ss-report *,
+  .contract-print-document,
+  .contract-print-document * {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
@@ -159,6 +173,10 @@
     break-inside: avoid;
     page-break-inside: avoid;
   }
+}
+
+.contract-print-document {
+  display: none;
 }
 
 .ss-report {
