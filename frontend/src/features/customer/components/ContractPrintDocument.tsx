@@ -47,6 +47,9 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
   const relocationReason = detail?.relocationReason || contract.relocationReason;
 
   // Lấy ngày lập hợp đồng
+  const isPendingCheckin =
+    contract.status === 'PENDING_CHECKIN' || contract.status === ('PENDING_CHECK_IN' as any);
+
   const dateParts = effectiveCheckinDate.split('-');
   const printYear = dateParts[0] || '2026';
   const printMonth = dateParts[1] || '09';
@@ -234,37 +237,48 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
           ĐIỀU 4: BIÊN BẢN BÀN GIAO & NGHIỆM THU HIỆN TRƯỜNG (CHECK-IN HANDOVER)
         </h2>
 
-        <div className="text-[11px] mb-1.5 flex justify-between bg-slate-50 p-1.5 border border-slate-200 rounded">
-          <span>Thời điểm hoàn tất bàn giao: <strong>{effectiveCheckinDate}</strong></span>
-          <span>Nhân viên đón tiếp & lập biên bản: <strong>{effectiveHandoverStaff}</strong></span>
-        </div>
-
-        <div className="border border-slate-300 p-2 rounded bg-white text-[11px]">
-          <p className="font-bold mb-1 text-slate-800">
-            Kết quả kiểm tra 4 tiêu chí nghiệm thu vật lý bàn giao tại chỗ (BR-CHK-02):
-          </p>
-          <div className="grid grid-cols-2 gap-1 text-slate-800 font-medium">
-            <div className="flex items-center gap-1.5">
-              <span className="text-emerald-700 font-bold">[✓]</span>
-              <span>Mặt bằng kho sạch sẽ, thông thoáng, không vật cản</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-emerald-700 font-bold">[✓]</span>
-              <span>Cửa cuốn & cơ cấu khóa vận hành an toàn, trơn tru</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-emerald-700 font-bold">[✓]</span>
-              <span>Sàn tường khô ráo, phòng chống ẩm mốc & PCCC đạt chuẩn</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-emerald-700 font-bold">[✓]</span>
-              <span>Khóa điện tử IoT đã sẵn sàng, cấp mã PIN mở cửa 24/7</span>
-            </div>
+        {isPendingCheckin ? (
+          <div className="border border-amber-300 p-2.5 rounded bg-amber-50/50 text-[11px] text-amber-900 mb-1.5">
+            <p className="font-bold uppercase mb-0.5">TRẠNG THÁI: CHỜ KHÁCH HÀNG ĐẾN LÀM THỦ TỤC CHECK-IN TẠI CƠ SỞ</p>
+            <p>
+              Khách hàng đã thanh toán cọc và phí thuê trực tuyến. Biên bản bàn giao hiện trường và kiểm tra 4 tiêu chí nghiệm thu vật lý tại chỗ (BR-CHK-02) sẽ được nhân viên trực quầy và Bên B cùng thực hiện và ký số trực tiếp khi khách hàng đến nhận kho thực tế tại cơ sở.
+            </p>
           </div>
-          <p className="mt-1.5 pt-1 border-t border-slate-200 text-slate-700 italic">
-            Ghi chú hiện trường: <strong>{effectiveHandoverNote}</strong>
-          </p>
-        </div>
+        ) : (
+          <>
+            <div className="text-[11px] mb-1.5 flex justify-between bg-slate-50 p-1.5 border border-slate-200 rounded">
+              <span>Thời điểm hoàn tất bàn giao: <strong>{effectiveCheckinDate}</strong></span>
+              <span>Nhân viên đón tiếp & lập biên bản: <strong>{effectiveHandoverStaff}</strong></span>
+            </div>
+
+            <div className="border border-slate-300 p-2 rounded bg-white text-[11px]">
+              <p className="font-bold mb-1 text-slate-800">
+                Kết quả kiểm tra 4 tiêu chí nghiệm thu vật lý bàn giao tại chỗ (BR-CHK-02):
+              </p>
+              <div className="grid grid-cols-2 gap-1 text-slate-800 font-medium">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-emerald-700 font-bold">[✓]</span>
+                  <span>Mặt bằng kho sạch sẽ, thông thoáng, không vật cản</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-emerald-700 font-bold">[✓]</span>
+                  <span>Cửa cuốn & cơ cấu khóa vận hành an toàn, trơn tru</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-emerald-700 font-bold">[✓]</span>
+                  <span>Sàn tường khô ráo, phòng chống ẩm mốc & PCCC đạt chuẩn</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-emerald-700 font-bold">[✓]</span>
+                  <span>Khóa điện tử IoT đã sẵn sàng, cấp mã PIN mở cửa 24/7</span>
+                </div>
+              </div>
+              <p className="mt-1.5 pt-1 border-t border-slate-200 text-slate-700 italic">
+                Ghi chú hiện trường: <strong>{effectiveHandoverNote}</strong>
+              </p>
+            </div>
+          </>
+        )}
       </section>
 
       {/* ĐIỀU 5: NỘI QUY AN TOÀN, AN NINH & QUYỀN TRUY CẬP */}
@@ -297,10 +311,14 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
             </div>
             <div className="text-[10.5px] text-slate-500 mb-2">Ban Quản lý cơ sở</div>
             <div className="my-2 py-1.5 px-3 inline-block border-2 border-emerald-600 bg-emerald-50 rounded text-[11px] font-bold text-emerald-800 tracking-wider">
-              ✓ ĐÃ KÝ SỐ ĐIỆN TỬ
+              {isPendingCheckin ? '✓ ĐÃ XÁC NHẬN ĐẶT CHỖ' : '✓ ĐÃ KÝ SỐ ĐIỆN TỬ'}
             </div>
-            <div className="text-[10px] text-slate-500">Thời gian ký: {effectiveCheckinDate}</div>
-            <div className="font-semibold text-[11.5px] text-slate-800 mt-1">{effectiveHandoverStaff}</div>
+            <div className="text-[10px] text-slate-500">
+              {isPendingCheckin ? `Xác nhận: ${effectiveStartDate}` : `Thời gian ký: ${effectiveCheckinDate}`}
+            </div>
+            <div className="font-semibold text-[11.5px] text-slate-800 mt-1">
+              {isPendingCheckin ? 'Hệ thống SmartStorage' : effectiveHandoverStaff}
+            </div>
           </div>
 
           {/* Bên B */}
@@ -309,10 +327,18 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
               ĐẠI DIỆN BÊN THUÊ KHO (BÊN B)
             </div>
             <div className="text-[10.5px] text-slate-500 mb-2">Khách hàng xác nhận</div>
-            <div className="my-2 py-1.5 px-3 inline-block border-2 border-emerald-600 bg-emerald-50 rounded text-[11px] font-bold text-emerald-800 tracking-wider">
-              ✓ ĐÃ XÁC NHẬN BÀN GIAO
+            <div
+              className={`my-2 py-1.5 px-3 inline-block border-2 rounded text-[11px] font-bold tracking-wider ${
+                isPendingCheckin
+                  ? 'border-amber-600 bg-amber-50 text-amber-800'
+                  : 'border-emerald-600 bg-emerald-50 text-emerald-800'
+              }`}
+            >
+              {isPendingCheckin ? '⏳ CHỜ KÝ KHI NHẬN KHO' : '✓ ĐÃ XÁC NHẬN BÀN GIAO'}
             </div>
-            <div className="text-[10px] text-slate-500">Thời gian ký: {effectiveCheckinDate}</div>
+            <div className="text-[10px] text-slate-500">
+              {isPendingCheckin ? 'Ký số tại quầy khi nhận kho' : `Thời gian ký: ${effectiveCheckinDate}`}
+            </div>
             <div className="font-semibold text-[11.5px] text-slate-800 mt-1">{effectiveCustomerName}</div>
           </div>
         </div>
