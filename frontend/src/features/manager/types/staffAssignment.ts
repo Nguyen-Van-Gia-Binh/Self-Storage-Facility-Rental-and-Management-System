@@ -96,6 +96,9 @@ export interface ManagementSupportTicket {
   customerPhone: string;
   contractId?: number;
   contractCode?: string;
+  contractStartDate?: string;
+  contractEndDate?: string;
+  contractStatus?: string;
   storageUnitId?: number;
   storageUnitCode: string;
   facilityId: number;

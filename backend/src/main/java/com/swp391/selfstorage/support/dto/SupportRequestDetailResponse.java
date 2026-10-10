@@ -18,6 +18,9 @@ public class SupportRequestDetailResponse {
     private String customerPhone;
     private Long contractId;
     private String contractCode;
+    private String contractStartDate;
+    private String contractEndDate;
+    private String contractStatus;
     private Long storageUnitId;
     private String storageUnitCode;
     private Long facilityId;
@@ -66,6 +69,9 @@ public class SupportRequestDetailResponse {
         public Builder customerPhone(String customerPhone) { r.customerPhone = customerPhone; return this; }
         public Builder contractId(Long contractId) { r.contractId = contractId; return this; }
         public Builder contractCode(String contractCode) { r.contractCode = contractCode; return this; }
+        public Builder contractStartDate(String contractStartDate) { r.contractStartDate = contractStartDate; return this; }
+        public Builder contractEndDate(String contractEndDate) { r.contractEndDate = contractEndDate; return this; }
+        public Builder contractStatus(String contractStatus) { r.contractStatus = contractStatus; return this; }
         public Builder storageUnitId(Long storageUnitId) { r.storageUnitId = storageUnitId; return this; }
         public Builder storageUnitCode(String storageUnitCode) { r.storageUnitCode = storageUnitCode; return this; }
         public Builder facilityId(Long facilityId) { r.facilityId = facilityId; return this; }
@@ -118,6 +124,15 @@ public class SupportRequestDetailResponse {
 
     public String getContractCode() { return contractCode; }
     public void setContractCode(String contractCode) { this.contractCode = contractCode; }
+
+    public String getContractStartDate() { return contractStartDate; }
+    public void setContractStartDate(String contractStartDate) { this.contractStartDate = contractStartDate; }
+
+    public String getContractEndDate() { return contractEndDate; }
+    public void setContractEndDate(String contractEndDate) { this.contractEndDate = contractEndDate; }
+
+    public String getContractStatus() { return contractStatus; }
+    public void setContractStatus(String contractStatus) { this.contractStatus = contractStatus; }
 
     public Long getStorageUnitId() { return storageUnitId; }
     public void setStorageUnitId(Long storageUnitId) { this.storageUnitId = storageUnitId; }

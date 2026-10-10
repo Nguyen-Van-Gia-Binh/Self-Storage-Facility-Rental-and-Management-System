@@ -70,9 +70,36 @@ const STATUS_CONFIG: Record<string, { label: string; className: string; dotColor
     dotColor: 'bg-blue-500',
   },
   CANCELLED: {
-    label: 'Đã hủy',
+    label: '❌ Đã hủy',
     className: 'bg-slate-100 text-slate-500 border-slate-200',
-    dotColor: 'bg-slate-300',
+    dotColor: 'bg-slate-400',
+  },
+
+  // Trạng thái Sự cố (SupportStatus)
+  NEW: {
+    label: '⏳ Chờ tiếp nhận',
+    className: 'bg-amber-50 text-amber-700 border-amber-200/80',
+    dotColor: 'bg-amber-500',
+  },
+  OPEN: {
+    label: '⏳ Chờ tiếp nhận',
+    className: 'bg-amber-50 text-amber-700 border-amber-200/80',
+    dotColor: 'bg-amber-500',
+  },
+  ASSIGNED: {
+    label: '👤 Đã phân công',
+    className: 'bg-sky-50 text-sky-700 border-sky-200/80',
+    dotColor: 'bg-sky-500',
+  },
+  IN_PROGRESS: {
+    label: '⚠️ Đang xử lý',
+    className: 'bg-orange-50 text-orange-700 border-orange-200/80',
+    dotColor: 'bg-orange-500',
+  },
+  RESOLVED: {
+    label: '✓ Đã xử lý',
+    className: 'bg-emerald-50 text-emerald-700 border-emerald-200/80',
+    dotColor: 'bg-emerald-500',
   },
 };
 

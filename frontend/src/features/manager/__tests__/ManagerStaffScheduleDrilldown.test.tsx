@@ -213,24 +213,26 @@ describe('Facility Manager - Phân công nhân sự Drill-down (FM-05)', () => {
     expect(html).toContain('In biên bản bàn giao');
   });
 
-  // Test 6: Cấp 4 - IncidentFaultDetermination (Case B)
-  it('Cấp 4: IncidentFaultDetermination cho phép phân định lỗi công ty vs khách hàng', () => {
+  // Test 6: Cấp 4 - IncidentFaultDetermination (Read-only do Staff xác lập, FM chỉ xem)
+  it('Cấp 4: IncidentFaultDetermination hiển thị kết quả phân định lỗi do Staff xác lập (Read-only)', () => {
     const html = cleanHtml(
       renderToString(
         <IncidentFaultDetermination
-          initialFaultType="CUSTOMER"
-          initialCost={200000}
-          initialFeeCategory="ACCESS_KEY"
-          onConfirmFault={vi.fn()}
+          faultType="CUSTOMER"
+          cost={200000}
+          feeCategoryName="Mất chìa khóa"
+          isResolvedOrClosed={true}
+          staffName="Trần Văn Hùng"
         />
       )
     );
 
     expect(html).toContain('Phân định trách nhiệm lỗi & Chi phí xử lý');
+    expect(html).toContain('Chỉ đọc · Staff xác lập');
     expect(html).toContain('Lỗi do Công ty / Hệ thống');
     expect(html).toContain('Lỗi do Khách hàng gây ra');
     expect(html).toContain('200.000 đ');
-    expect(html).toContain('Xác nhận phân định lỗi');
+    expect(html).toContain('Đã thu tiền tại chỗ');
   });
 
   // Test 7: Cấp 4 - ReturnInspectionForm (Case C)
