@@ -1,5 +1,4 @@
-// frontend/src/features/manager/pages/IncidentDetailPage.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -42,11 +41,6 @@ export const IncidentDetailPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  // Trạng thái phân định lỗi
-  const [faultType, setFaultType] = useState<'COMPANY' | 'CUSTOMER'>('COMPANY');
-  const [surchargeCost, setSurchargeCost] = useState<number>(0);
-  const [feeCategory, setFeeCategory] = useState<string>('ACCESS_KEY');
 
   // Modal đóng sự cố
   const [closeModalOpen, setCloseModalOpen] = useState<boolean>(false);
@@ -141,35 +135,7 @@ export const IncidentDetailPage: React.FC = () => {
     }
   };
 
-  // 4. Hoàn thành xử lý sự cố (Resolve)
-  const handleResolveTicket = async () => {
-    if (!ticket) return;
-    setActionLoading(true);
-    try {
-      await apiClient<any>(`/support-requests/${ticket.id}/resolve`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          resolutionNote:
-            faultType === 'COMPANY'
-              ? 'Đã sửa chữa và khắc phục lỗi thiết bị cơ sở hoàn tất. Miễn phí cho khách hàng.'
-              : `Đã thay thế linh kiện do hư hại khách hàng. Phụ thu ${surchargeCost.toLocaleString('vi-VN')} đ (${feeCategory}).`,
-          relocationRequired: ticket.relocationRequired,
-          faultType,
-          surchargeAmount: surchargeCost,
-          surchargeCategory: feeCategory,
-        }),
-      });
-      showToast('Đã cập nhật hoàn thành xử lý sự cố');
-      await loadTicket();
-    } catch (err) {
-      console.error('Lỗi hoàn thành sự cố:', err);
-      showToast('Không thể cập nhật hoàn thành');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  // 5. Đóng sự cố hoàn tất (Close)
+  // 4. Đóng sự cố hoàn tất (Close - Nghiệm thu sau khi Staff đã resolve)
   const handleConfirmClose = async (closingNotes: string) => {
     if (!ticket) return;
     setActionLoading(true);
@@ -226,7 +192,57 @@ export const IncidentDetailPage: React.FC = () => {
   const facilityCode = `FAC-${ticket.facilityId}`;
   const isClosed = ticket.status === 'CLOSED';
   const isResolved = ticket.status === 'RESOLVED';
-  const isHandling = ticket.status === 'IN_PROGRESS' || ticket.status === 'ASSIGNED';
+
+  // Trích xuất kết quả phân định lỗi từ biên bản giải quyết của Staff (Read-only)
+  const parsedFaultInfo = useMemo(() => {
+    if (!ticket?.resolutionNotes) {
+      return {
+        faultType: isResolved || isClosed ? ('COMPANY' as const) : null,
+        cost: 0,
+        feeCategoryName: '',
+      };
+    }
+
+    const note = ticket.resolutionNotes;
+    const isCustomerFault =
+      note.includes('Lỗi do khách hàng') ||
+      note.includes('Khách hàng chịu') ||
+      note.includes('Tổng thu:');
+    const isCompanyFault =
+      note.includes('Lỗi do công ty') ||
+      note.includes('công ty chi trả') ||
+      note.includes('Miễn phí 0 đ');
+
+    if (isCustomerFault) {
+      const costMatch = note.match(/Tổng thu:\s*([\d.,]+)\s*đ/i) || note.match(/([\d.,]+)\s*đ/);
+      let cost = 0;
+      if (costMatch) {
+        cost = Number(costMatch[1].replace(/[.,]/g, '')) || 0;
+      }
+      const feeMatch = note.match(/Phụ phí:\s*([^|]+)/i);
+      const feeName = feeMatch ? feeMatch[1].trim() : 'Khoản phụ phí danh mục';
+
+      return {
+        faultType: 'CUSTOMER' as const,
+        cost,
+        feeCategoryName: feeName,
+      };
+    }
+
+    if (isCompanyFault || isResolved || isClosed) {
+      return {
+        faultType: 'COMPANY' as const,
+        cost: 0,
+        feeCategoryName: '',
+      };
+    }
+
+    return {
+      faultType: null,
+      cost: 0,
+      feeCategoryName: '',
+    };
+  }, [ticket?.resolutionNotes, isResolved, isClosed]);
 
   const resolutionImages = (ticket.resolutionAttachments || []).map((a) => a.fileUrl);
 
@@ -318,20 +334,14 @@ export const IncidentDetailPage: React.FC = () => {
             isSubmitting={actionLoading}
           />
 
-          {/* Form Phân định trách nhiệm lỗi (khi đang xử lý hoặc đã xong) */}
-          {(isHandling || isResolved || isClosed) && (
-            <IncidentFaultDetermination
-              initialFaultType={faultType}
-              initialCost={surchargeCost}
-              initialFeeCategory={feeCategory}
-              onConfirmFault={(data) => {
-                setFaultType(data.faultType);
-                setSurchargeCost(data.cost);
-                setFeeCategory(data.feeCategory);
-                showToast(`Đã ghi nhận: ${data.faultType === 'COMPANY' ? 'Lỗi công ty (0đ)' : `Lỗi khách (${data.cost.toLocaleString('vi-VN')} đ)`}`);
-              }}
-            />
-          )}
+          {/* Phân định trách nhiệm lỗi (Chỉ đọc từ biên bản của Nhân viên kỹ thuật hiện trường) */}
+          <IncidentFaultDetermination
+            faultType={parsedFaultInfo.faultType}
+            cost={parsedFaultInfo.cost}
+            feeCategoryName={parsedFaultInfo.feeCategoryName}
+            isResolvedOrClosed={isResolved || isClosed}
+            staffName={ticket.assignedStaffName}
+          />
 
           {/* Ghi chú & Hình ảnh sau xử lý */}
           {(isResolved || isClosed) && (
@@ -376,7 +386,7 @@ export const IncidentDetailPage: React.FC = () => {
               <div className="text-xs text-emerald-900 space-y-1.5 pt-2 border-t border-emerald-200/60">
                 <p>• <strong>Người xác nhận đóng:</strong> Quản lý cơ sở</p>
                 <p>• <strong>Kết quả:</strong> ✓ Đã hoàn tất sửa chữa & kiểm tra hiện trường an toàn</p>
-                <p>• <strong>Trách nhiệm chi phí:</strong> {faultType === 'COMPANY' ? 'Cơ sở chịu 100% chi phí' : `Khách hàng thanh toán ${surchargeCost.toLocaleString('vi-VN')} đ`}</p>
+                <p>• <strong>Trách nhiệm chi phí:</strong> {parsedFaultInfo.faultType === 'CUSTOMER' ? `Khách hàng đã thanh toán tại chỗ ${parsedFaultInfo.cost.toLocaleString('vi-VN')} đ` : 'Cơ sở chịu 100% chi phí'}</p>
                 <p>• <strong>Khách hàng xác nhận:</strong> ✓ Đã ký biên bản điện tử</p>
               </div>
             </div>
@@ -421,20 +431,7 @@ export const IncidentDetailPage: React.FC = () => {
                 </button>
               )}
 
-              {/* Nút Hoàn thành xử lý */}
-              {ticket.status === 'IN_PROGRESS' && (
-                <button
-                  type="button"
-                  disabled={actionLoading}
-                  onClick={handleResolveTicket}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition-colors shadow-2xs"
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>✓ Hoàn thành xử lý</span>
-                </button>
-              )}
-
-              {/* Nút Đóng sự cố */}
+              {/* Nút Đóng sự cố (Chỉ hiển thị khi Staff đã xử lý xong sang RESOLVED) */}
               {ticket.status === 'RESOLVED' && (
                 <button
                   type="button"
@@ -488,8 +485,8 @@ export const IncidentDetailPage: React.FC = () => {
         isOpen={closeModalOpen}
         onClose={() => setCloseModalOpen(false)}
         ticket={ticket}
-        faultType={faultType}
-        surchargeAmount={surchargeCost}
+        faultType={parsedFaultInfo.faultType || 'COMPANY'}
+        surchargeAmount={parsedFaultInfo.cost}
         onConfirmClose={handleConfirmClose}
         isSubmitting={actionLoading}
       />
