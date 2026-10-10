@@ -129,13 +129,8 @@ export const StaffSchedulePage: React.FC = () => {
     <div className="space-y-6">
       {/* Tiêu đề & Giới thiệu */}
       <div>
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-[11px] font-bold text-brand-600 bg-brand-50 border border-brand-200/80 px-2 py-0.5 rounded-full uppercase tracking-wider">
-            Cấp 1 — Tổng quan Cơ sở
-          </span>
-        </div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-          Phân công nhân sự & Ca trực
+          Phân công nhân sự & Điều phối công việc
         </h1>
         <p className="text-sm text-slate-500 mt-1">
           Quản lý lịch ca trực, phân công công việc tiếp nhận check-in, nghiệm thu trả kho và giải quyết sự cố kỹ thuật.

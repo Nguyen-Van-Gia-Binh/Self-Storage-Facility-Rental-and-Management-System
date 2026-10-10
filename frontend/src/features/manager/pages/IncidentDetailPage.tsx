@@ -319,9 +319,6 @@ export const IncidentDetailPage: React.FC = () => {
               <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
                 Chi tiết sự cố #{ticket.code}
               </h1>
-              <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-brand-100 text-brand-800">
-                Cấp 3 · Chi tiết
-              </span>
             </div>
             <p className="text-xs text-slate-500 mt-1">
               {ticket.facilityName} · Ô kho {ticket.storageUnitCode} · {ticket.categoryDisplayName}

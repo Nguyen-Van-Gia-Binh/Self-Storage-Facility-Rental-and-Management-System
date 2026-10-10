@@ -163,7 +163,7 @@ export const ContractDashboardPage: React.FC = () => {
               <FileCheck className="w-5 h-5" />
             </div>
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-              Giám sát hợp đồng — Tổng quan theo Cơ sở (Cấp 1)
+              Giám sát hợp đồng — Danh sách Cơ sở
             </h1>
             <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
               FM-02

@@ -264,7 +264,7 @@ export const UnitTypeListPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-              Danh sách Loại ô kho (Cấp 2)
+              Danh sách Loại ô kho
             </h1>
             {facility && (
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200/80">

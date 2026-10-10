@@ -260,7 +260,6 @@ export const WorkListPage: React.FC = () => {
                 <span className="text-xs font-bold text-brand-600 uppercase tracking-wider">
                   {getShiftTitle()}
                 </span>
-                <span className="text-[11px] font-semibold text-slate-400">· Cấp 3: Danh sách Công việc</span>
               </div>
               <h1 className="text-xl font-bold text-slate-900 mt-0.5">
                 Ngày {queryDate} — {filteredTasks.length} công việc

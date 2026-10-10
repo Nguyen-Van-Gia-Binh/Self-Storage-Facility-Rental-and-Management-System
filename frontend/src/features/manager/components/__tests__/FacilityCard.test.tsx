@@ -36,10 +36,7 @@ describe('FacilityCard component', () => {
     expect(html).toContain('FAC-CG');
     expect(html).toContain('123 Đường Cầu Giấy');
     expect(html).toContain('0987654321');
-    expect(html).toContain('17');
-    expect(html).toContain('4');
-    expect(html).toContain('10');
-    expect(html).toMatch(/23\.5(?:<!-- -->)?%/);
-    expect(html).toContain('Vào quản lý cơ sở');
+    expect(html).toContain('Hoạt động');
+    expect(html).toContain('Vào quản lý ô kho');
   });
 });

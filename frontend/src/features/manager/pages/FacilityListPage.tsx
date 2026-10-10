@@ -232,14 +232,14 @@ export const FacilityListPage: React.FC = () => {
               <Building2 className="w-5 h-5" />
             </div>
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-              Quản lý ô kho — Chọn Cơ sở (Cấp 1)
+              Quản lý ô kho — Danh sách Cơ sở
             </h1>
             <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
               FM-01
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Chọn cơ sở cần quản lý để bắt đầu xem danh mục loại ô kho và ô kho vật lý (Mô hình Drill-down)
+            Chọn cơ sở cần quản lý để xem danh mục loại ô kho và sơ đồ ô kho vật lý.
           </p>
         </div>
 

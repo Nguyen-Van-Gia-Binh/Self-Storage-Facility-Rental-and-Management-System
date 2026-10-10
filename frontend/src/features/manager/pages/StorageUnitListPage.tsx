@@ -268,7 +268,7 @@ export const StorageUnitListPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-              Danh sách Ô kho vật lý (Cấp 3)
+              Danh sách Ô kho vật lý
             </h1>
             {unitType && (
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200/80">

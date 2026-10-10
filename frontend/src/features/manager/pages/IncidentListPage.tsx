@@ -184,9 +184,6 @@ export const IncidentListPage: React.FC = () => {
               <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-slate-100 text-slate-700">
                 {facilityCode}
               </span>
-              <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-brand-100 text-brand-800">
-                Cấp 2 · Danh sách
-              </span>
             </div>
             <p className="text-xs text-slate-500 mt-1">
               {facility?.address ? `${facility.address} · ` : ''}
