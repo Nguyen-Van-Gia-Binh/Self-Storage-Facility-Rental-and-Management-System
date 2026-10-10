@@ -6,6 +6,10 @@ import {
   RefreshCw,
   AlertCircle,
   Building2,
+  FileCheck,
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
 } from 'lucide-react';
 import { fetchMyAssignedFacilities } from '@/api/facility';
 import { getManagerContracts } from '@/api/contract';
@@ -93,12 +97,20 @@ export const ContractListPage: React.FC = () => {
     setCurrentPage(1);
   }, [searchTerm, statusFilter, sortField, sortDirection]);
 
-  // Thống kê nhanh cơ sở
+  // Thống kê nhanh cơ sở cho 4 thẻ KPI
   const stats = useMemo(() => {
     const total = contracts.length;
     const active = contracts.filter((c) => c.status === 'ACTIVE').length;
-    const overdue = contracts.filter((c) => c.status === 'OVERDUE').length;
-    return { total, active, overdue };
+    const pending = contracts.filter(
+      (c) =>
+        c.status === 'PENDING_RETURN' ||
+        c.status === 'PENDING_CHECK_IN' ||
+        (c.status as string) === 'INSPECTED'
+    ).length;
+    const overdue = contracts.filter(
+      (c) => c.status === 'OVERDUE' || c.status === 'TERMINATED'
+    ).length;
+    return { total, active, pending, overdue };
   }, [contracts]);
 
   // Đếm số lượng theo từng tab trạng thái
@@ -208,13 +220,11 @@ export const ContractListPage: React.FC = () => {
               </span>
             )}
           </div>
-          <p className="text-xs text-slate-500 mt-1 flex items-center gap-2">
-            <span>Tổng: <strong>{stats.total}</strong> hợp đồng</span>
-            <span>•</span>
-            <span className="text-emerald-700 font-semibold">Active: {stats.active}</span>
-            <span>•</span>
-            <span className="text-rose-700 font-semibold">Quá hạn: {stats.overdue}</span>
-          </p>
+          {facility?.address && (
+            <p className="text-xs text-slate-500 mt-1 line-clamp-1">
+              Địa chỉ: {facility.address} {facility.phone ? `• Hotline: ${facility.phone}` : ''}
+            </p>
+          )}
         </div>
 
         {/* Toolbar: Tìm kiếm mã HĐ/khách & Làm mới */}
@@ -238,6 +248,97 @@ export const ContractListPage: React.FC = () => {
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
           </button>
+        </div>
+      </div>
+
+      {/* KPI Summary Bar 4 Thẻ Trực Quan - Đưa từ thẻ ngoài vào trong màn hình chi tiết */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        {/* Card 1: Tổng hợp đồng */}
+        <div
+          onClick={() => setStatusFilter('ALL')}
+          className={`bg-white rounded-2xl border p-4 shadow-2xs transition-all duration-300 cursor-pointer select-none hover:-translate-y-1 hover:shadow-md ${
+            statusFilter === 'ALL'
+              ? 'border-brand-500 ring-2 ring-brand-500/20 bg-brand-50/20'
+              : 'border-slate-200/90 hover:border-slate-300'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tổng hợp đồng</span>
+            <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
+              <FileCheck className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-1.5">
+            <span className="text-2xl font-black font-mono text-slate-900">{stats.total}</span>
+            <span className="text-xs text-slate-500 font-medium">hợp đồng</span>
+          </div>
+          <p className="text-[10px] text-slate-400 mt-1">Toàn bộ hồ sơ tại cơ sở</p>
+        </div>
+
+        {/* Card 2: Đang hiệu lực (Active) */}
+        <div
+          onClick={() => setStatusFilter('ACTIVE')}
+          className={`bg-white rounded-2xl border p-4 shadow-2xs transition-all duration-300 cursor-pointer select-none hover:-translate-y-1 hover:shadow-md ${
+            statusFilter === 'ACTIVE'
+              ? 'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/30'
+              : 'border-slate-200/90 hover:border-emerald-200'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">Đang hiệu lực</span>
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/60 flex items-center justify-center">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-1.5">
+            <span className="text-2xl font-black font-mono text-emerald-600">{stats.active}</span>
+            <span className="text-xs text-emerald-600 font-medium">đang thuê</span>
+          </div>
+          <p className="text-[10px] text-emerald-600/80 mt-1">Khách sử dụng bình thường</p>
+        </div>
+
+        {/* Card 3: Chờ bàn giao / thanh lý (Pending) */}
+        <div
+          onClick={() => setStatusFilter('PENDING_RETURN')}
+          className={`bg-white rounded-2xl border p-4 shadow-2xs transition-all duration-300 cursor-pointer select-none hover:-translate-y-1 hover:shadow-md ${
+            statusFilter === 'PENDING_RETURN' || statusFilter === 'PENDING_CHECK_IN'
+              ? 'border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/30'
+              : 'border-slate-200/90 hover:border-amber-200'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">Chờ xử lý</span>
+            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 border border-amber-200/60 flex items-center justify-center">
+              <Clock className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-1.5">
+            <span className="text-2xl font-black font-mono text-amber-600">{stats.pending}</span>
+            <span className="text-xs text-amber-600 font-medium">chờ xử lý</span>
+          </div>
+          <p className="text-[10px] text-amber-600/80 mt-1">Chờ nhận kho hoặc thanh lý</p>
+        </div>
+
+        {/* Card 4: Quá hạn / Cần can thiệp (Overdue) */}
+        <div
+          onClick={() => setStatusFilter('OVERDUE')}
+          className={`bg-white rounded-2xl border p-4 shadow-2xs transition-all duration-300 cursor-pointer select-none hover:-translate-y-1 hover:shadow-md ${
+            statusFilter === 'OVERDUE' || statusFilter === 'TERMINATED'
+              ? 'border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/30'
+              : 'border-slate-200/90 hover:border-rose-200'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-rose-700 uppercase tracking-wider">Quá hạn / Nguy cơ</span>
+            <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 border border-rose-200/60 flex items-center justify-center">
+              <AlertTriangle className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-1.5">
+            <span className="text-2xl font-black font-mono text-rose-600">{stats.overdue}</span>
+            <span className="text-xs text-rose-600 font-medium">quá hạn</span>
+          </div>
+          <p className="text-[10px] text-rose-600/80 mt-1">Cần đốc thúc nợ phạt / niêm phong</p>
         </div>
       </div>
 

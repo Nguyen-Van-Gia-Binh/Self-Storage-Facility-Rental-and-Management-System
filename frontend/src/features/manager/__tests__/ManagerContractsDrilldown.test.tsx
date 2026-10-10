@@ -79,7 +79,7 @@ describe('Giám sát hợp đồng — Kiến trúc Drill-down 3 Cấp độ (FM
     expect(closedHtml).toContain('📋 Closed');
   });
 
-  it('2. Cấp 1 (FacilityContractSummaryCard): Hiển thị mini-stats hợp đồng và nút xem chi tiết', () => {
+  it('2. Cấp 1 (FacilityContractSummaryCard): Hiển thị thông tin cơ sở, địa chỉ, hotline và nút xem chi tiết', () => {
     const html = cleanHtml(
       renderToString(
         <FacilityContractSummaryCard
@@ -97,10 +97,8 @@ describe('Giám sát hợp đồng — Kiến trúc Drill-down 3 Cấp độ (FM
 
     expect(html).toContain('Cơ sở Cầu Giấy');
     expect(html).toContain('FAC-CG');
-    expect(html).toContain('8 HĐ');
-    expect(html).toContain('5');
-    expect(html).toContain('1');
-    expect(html).toContain('2');
+    expect(html).toContain('123 Cầu Giấy, Hà Nội');
+    expect(html).toContain('0901234567');
     expect(html).toContain('Xem danh sách hợp đồng');
   });
 
