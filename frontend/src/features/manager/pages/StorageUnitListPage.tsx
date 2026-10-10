@@ -182,7 +182,7 @@ export const StorageUnitListPage: React.FC = () => {
     const occupied = storageUnits.filter((u) => u.status === 'OCCUPIED').length;
     const maintenance = storageUnits.filter((u) => u.status === 'MAINTENANCE').length;
     const occupancyRate = total > 0 ? (occupied / total) * 100 : 0;
-    const isFull = total > 0 && available === 0;
+    const isFull = total > 0 && occupancyRate >= 100;
     const isNearFull = !isFull && occupancyRate >= 75;
 
     return {
@@ -457,7 +457,9 @@ export const StorageUnitListPage: React.FC = () => {
               ? 'Đã kín chỗ 100%'
               : statsOverview.isNearFull
               ? 'Sắp lấp đầy (≥75%)'
-              : `Còn ${statsOverview.available} ô sẵn sàng`}
+              : statsOverview.available > 0
+              ? `Còn ${statsOverview.available} ô sẵn sàng`
+              : '0 ô trống khả dụng'}
           </span>
         </div>
       </div>
