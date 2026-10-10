@@ -16,6 +16,8 @@ import {
   Building2,
   Printer,
   CheckSquare,
+  Circle,
+  Clock,
 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
 import { getMyRentalDetail, type CustomerRentalDetail } from '@/api/customerRentals';
@@ -94,9 +96,29 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
   const effectiveDimensions = detail?.unitDimensions || contract.unitDimensions || '1.5m x 2.0m x 2.5m';
   const effectiveFloor = detail?.floor ?? contract.floor ?? 1;
   const effectivePosition = detail?.position || contract.position || 'Khu A';
-  const effectiveCheckinDate = detail?.checkinDate || contract.checkinDate || contract.startDate;
-  const effectiveHandoverStaff = detail?.handoverStaffName || contract.handoverStaffName || 'Nhân viên lễ tân cơ sở';
-  const effectiveHandoverNote = detail?.handoverConditionNote || contract.handoverConditionNote || 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao';
+
+  const isPendingCheckin =
+    contract.status === 'PENDING_CHECKIN' ||
+    (contract.status as string) === 'PENDING_CHECK_IN';
+
+  const isHandoverCompleted =
+    !isPendingCheckin &&
+    (contract.status === 'ACTIVE' ||
+      contract.status === 'OVERDUE' ||
+      contract.status === 'PENDING_RETURN' ||
+      contract.status === 'CLOSED' ||
+      contract.status === 'TERMINATED' ||
+      Boolean(detail?.checkinDate || contract.checkinDate || detail?.customerConfirmedAt));
+
+  const effectiveCheckinDate = isHandoverCompleted
+    ? (detail?.checkinDate || contract.checkinDate || contract.startDate)
+    : 'Chưa thực hiện (Chờ làm thủ tục nhận kho tại quầy)';
+  const effectiveHandoverStaff = isHandoverCompleted
+    ? (detail?.handoverStaffName || contract.handoverStaffName || 'Nhân viên lễ tân cơ sở')
+    : 'Chờ phân công tiếp đón tại quầy';
+  const effectiveHandoverNote = isHandoverCompleted
+    ? (detail?.handoverConditionNote || contract.handoverConditionNote || 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao')
+    : 'Đang chờ khách hàng xuất trình CCCD và mã e-Pass tại quầy lễ tân để tiến hành nghiệm thu thực địa.';
   const relocationId = detail?.relocationSupportRequestId || contract.relocationSupportRequestId;
   const relocationCode = detail?.relocationSupportRequestCode || contract.relocationSupportRequestCode || 'SUP-202610-0001';
   const relocationReason = detail?.relocationReason || contract.relocationReason || 'Di dời kho đạt chuẩn kỹ thuật theo sự cố hỗ trợ';
@@ -353,42 +375,96 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
 
               {/* Điều 4: Biên bản bàn giao & Nghiệm thu tại chỗ (Check-in Handover) */}
               <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
-                <h4 className="font-bold text-slate-800 flex items-center gap-1.5 text-xs uppercase tracking-wider pb-1.5 border-b border-slate-100">
-                  <CheckSquare className="w-4 h-4 text-brand-600" />
-                  <span>ĐIỀU 4: BIÊN BẢN BÀN GIAO & NGHIỆM THU TẠI CHỖ (CHECK-IN HANDOVER)</span>
-                </h4>
+                <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
+                  <h4 className="font-bold text-slate-800 flex items-center gap-1.5 text-xs uppercase tracking-wider">
+                    <CheckSquare className="w-4 h-4 text-brand-600" />
+                    <span>ĐIỀU 4: BIÊN BẢN BÀN GIAO & NGHIỆM THU TẠI CHỖ (CHECK-IN HANDOVER)</span>
+                  </h4>
+                  {isPendingCheckin && (
+                    <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                      Chờ nghiệm thu tại quầy
+                    </span>
+                  )}
+                </div>
+
+                {isPendingCheckin && (
+                  <div className="p-3 bg-amber-50/70 rounded-lg border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5">
+                    <Clock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <p className="font-semibold text-amber-900">Ô kho đang ở trạng thái Chờ nhận kho</p>
+                      <p className="text-[11px] text-amber-800 leading-relaxed">
+                        Quý khách vui lòng xuất trình CCCD và mã e-Pass tại quầy lễ tân cơ sở. Nhân viên trực sẽ hướng dẫn kiểm tra 4 tiêu chí nghiệm thu thực địa và cùng quý khách xác nhận bàn giao.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-2 text-[11px]">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-slate-600">
-                    <span>Thời điểm hoàn tất bàn giao: <strong className="text-slate-800">{effectiveCheckinDate}</strong></span>
-                    <span>Nhân viên đón tiếp & lập biên bản: <strong className="text-brand-800">{effectiveHandoverStaff}</strong></span>
+                    <span>
+                      Thời điểm hoàn tất bàn giao:{' '}
+                      <strong className={isHandoverCompleted ? 'text-slate-800' : 'text-amber-800 font-semibold'}>
+                        {effectiveCheckinDate}
+                      </strong>
+                    </span>
+                    <span>
+                      Nhân viên đón tiếp & lập biên bản:{' '}
+                      <strong className={isHandoverCompleted ? 'text-brand-800' : 'text-slate-500 font-normal italic'}>
+                        {effectiveHandoverStaff}
+                      </strong>
+                    </span>
                   </div>
 
                   <div className="pt-2 border-t border-slate-200/80">
-                    <p className="font-bold text-slate-700 mb-1.5">Kết quả kiểm tra 4 tiêu chí nghiệm thu vật lý bàn giao (BR-CHK-02):</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-emerald-800 font-medium">
-                      <div className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Mặt bằng kho sạch sẽ, thông thoáng, không vật cản</span>
+                    <p className="font-bold text-slate-700 mb-1.5">
+                      Kết quả kiểm tra 4 tiêu chí nghiệm thu vật lý bàn giao (BR-CHK-02):
+                    </p>
+                    {isHandoverCompleted ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-emerald-800 font-medium">
+                        <div className="flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Mặt bằng kho sạch sẽ, thông thoáng, không vật cản</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Cửa cuốn & cơ cấu khóa vận hành an toàn, trơn tru</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Sàn tường khô ráo, phòng chống ẩm mốc & PCCC đạt chuẩn</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Khóa điện tử IoT đã sẵn sàng, cấp mã PIN mở cửa 24/7</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Cửa cuốn & cơ cấu khóa vận hành an toàn, trơn tru</span>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-slate-600 font-medium">
+                        <div className="flex items-center gap-1.5">
+                          <Circle className="w-3.5 h-3.5 text-amber-500" />
+                          <span>Mặt bằng kho sạch sẽ (Chờ đồng kiểm tại quầy)</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Circle className="w-3.5 h-3.5 text-amber-500" />
+                          <span>Cửa cuốn & cơ cấu khóa (Chờ đồng kiểm tại quầy)</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Circle className="w-3.5 h-3.5 text-amber-500" />
+                          <span>Sàn tường & PCCC đạt chuẩn (Chờ đồng kiểm tại quầy)</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Circle className="w-3.5 h-3.5 text-amber-500" />
+                          <span>Khóa điện tử IoT & cấp mã PIN (Kích hoạt khi nhận kho)</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Sàn tường khô ráo, phòng chống ẩm mốc & PCCC đạt chuẩn</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Khóa điện tử IoT đã sẵn sàng, cấp mã PIN mở cửa 24/7</span>
-                      </div>
-                    </div>
+                    )}
                   </div>
 
                   <div className="pt-2 border-t border-slate-200/80 text-slate-600">
                     <span>Ghi chú hiện trường: </span>
-                    <em className="text-slate-800 font-semibold">{effectiveHandoverNote}</em>
+                    <em className={isHandoverCompleted ? 'text-slate-800 font-semibold' : 'text-slate-600 font-medium'}>
+                      {effectiveHandoverNote}
+                    </em>
                   </div>
                 </div>
 
@@ -397,19 +473,41 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                   <div className="p-3 bg-slate-50/80 rounded-lg border border-slate-200">
                     <p className="font-bold text-slate-800">ĐẠI DIỆN BÊN CHO THUÊ</p>
                     <p className="text-[10px] text-slate-400 mt-0.5">Ban Quản lý cơ sở</p>
-                    <div className="my-3 py-1 px-2 inline-block border border-dashed border-emerald-400 bg-emerald-50/60 rounded text-[11px] font-bold text-emerald-800">
-                      ✓ ĐÃ KÝ SỐ ĐIỆN TỬ
-                    </div>
-                    <p className="font-semibold text-slate-700 text-[11px]">{effectiveHandoverStaff}</p>
+                    {isHandoverCompleted ? (
+                      <>
+                        <div className="my-3 py-1 px-2 inline-block border border-dashed border-emerald-400 bg-emerald-50/60 rounded text-[11px] font-bold text-emerald-800">
+                          ✓ ĐÃ KÝ SỐ ĐIỆN TỬ
+                        </div>
+                        <p className="font-semibold text-slate-700 text-[11px]">{effectiveHandoverStaff}</p>
+                      </>
+                    ) : (
+                      <>
+                        <div className="my-3 py-1 px-2 inline-block border border-dashed border-slate-300 bg-slate-100 rounded text-[11px] font-bold text-slate-500">
+                          CHỜ TIẾP ĐÓN & KÝ TẠI QUẦY
+                        </div>
+                        <p className="font-medium text-slate-400 text-[11px]">Chưa ký biên bản bàn giao</p>
+                      </>
+                    )}
                   </div>
 
                   <div className="p-3 bg-slate-50/80 rounded-lg border border-slate-200">
                     <p className="font-bold text-slate-800">ĐẠI DIỆN BÊN THUÊ KHO</p>
                     <p className="text-[10px] text-slate-400 mt-0.5">Khách hàng xác nhận</p>
-                    <div className="my-3 py-1 px-2 inline-block border border-dashed border-emerald-400 bg-emerald-50/60 rounded text-[11px] font-bold text-emerald-800">
-                      ✓ ĐÃ XÁC NHẬN BÀN GIAO
-                    </div>
-                    <p className="font-semibold text-slate-700 text-[11px]">{effectiveCustomerName}</p>
+                    {isHandoverCompleted ? (
+                      <>
+                        <div className="my-3 py-1 px-2 inline-block border border-dashed border-emerald-400 bg-emerald-50/60 rounded text-[11px] font-bold text-emerald-800">
+                          ✓ ĐÃ XÁC NHẬN BÀN GIAO
+                        </div>
+                        <p className="font-semibold text-slate-700 text-[11px]">{effectiveCustomerName}</p>
+                      </>
+                    ) : (
+                      <>
+                        <div className="my-3 py-1 px-2 inline-block border border-dashed border-amber-300 bg-amber-50/80 rounded text-[11px] font-bold text-amber-700">
+                          CHỜ XÁC NHẬN KHI NHẬN KHO
+                        </div>
+                        <p className="font-semibold text-slate-700 text-[11px]">{effectiveCustomerName}</p>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

@@ -201,4 +201,34 @@ describe('ContractPrintDocument & Print Contract Flow', () => {
     // Đảm bảo văn bản in hợp đồng tồn tại trong DOM dành cho in ấn
     expect(screen.getByTestId('contract-print-document')).toBeInTheDocument();
   });
+
+  it('renders pending signature status in ContractPrintDocument when contract is PENDING_CHECKIN', () => {
+    const pendingContract: RentedContract = {
+      ...sampleContract,
+      status: 'PENDING_CHECKIN',
+      checkinDate: undefined,
+      handoverStaffName: undefined,
+      handoverConditionNote: undefined,
+    };
+    const pendingDetail: CustomerRentalDetail = {
+      ...sampleDetail,
+      status: 'PENDING_CHECKIN',
+      checkinDate: undefined,
+      handoverStaffName: undefined,
+      handoverConditionNote: undefined,
+      customerConfirmedAt: undefined,
+    };
+
+    render(
+      <ContractPrintDocument
+        contract={pendingContract}
+        detail={pendingDetail}
+      />
+    );
+
+    expect(screen.getByText(/CHỜ KÝ BÀN GIAO TẠI QUẦY/i)).toBeInTheDocument();
+    expect(screen.getByText(/CHỜ XÁC NHẬN KHI NHẬN KHO/i)).toBeInTheDocument();
+    expect(screen.queryByText(/✓ ĐÃ KÝ SỐ ĐIỆN TỬ/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/✓ ĐÃ XÁC NHẬN BÀN GIAO/i)).not.toBeInTheDocument();
+  });
 });

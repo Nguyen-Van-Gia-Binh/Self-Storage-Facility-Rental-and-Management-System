@@ -103,6 +103,7 @@
 | `ISS-95` | Modal ở phân hệ Customer bị lộ vệt trắng header/footer; Modal hợp đồng thừa quốc hiệu, mã PIN và thông tin trùng lặp. | Chuyển toàn bộ 10 modal Customer sang createPortal với z-[100], hạ navbar z-30 triệt tiêu vệt trắng; tinh gọn header modal hợp đồng (bỏ quốc hiệu, bỏ mã PIN ở Điều 2, bỏ lặp loại kho/địa chỉ, chuẩn hóa Số CCCD); hiển thị trạng thái đang phát triển cho tab lịch sử ra vào. | Xuân Nhi | `RESOLVED` |
 | `ISS-96` | Khi Access Token hết hạn (>15p), Header vẫn lưu user session mồ côi hiển thị tên người dùng trong khi nội dung trang bắt đăng nhập. | Sửa `tokenStorage.getAccessToken()` tự động `clearSession()` khi token hết hạn; `tokenStorage.getUser()` không trả về session mồ côi khi thiếu token; `CustomerLayout` đồng bộ tức thì qua focus/route. | Xuân Nhi | `RESOLVED` |
 | `ISS-97` | Màn hình Gia hạn hợp đồng chứa nhiều banner, badge và subtext dư thừa gây chật chội giao diện. | Ẩn banner hiệu lực an toàn khi >30 ngày; bỏ badge Đang hiệu lực; loại bỏ subtext rườm rà ở 2 ô ngày kết thúc và tóm tắt gia hạn. | Xuân Nhi | `RESOLVED` |
+| `ISS-98` | Hợp đồng PENDING_CHECKIN (Chờ nhận kho) hiển thị Điều 4 đã nghiệm thu 4 tiêu chí và ký nhận bàn giao. | Hiển thị Điều 4 ở trạng thái "Chờ bàn giao & nghiệm thu tại quầy"; chỉ hiển thị đã ký khi hợp đồng đã hoàn tất bàn giao thực tế. | Xuân Nhi | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 
