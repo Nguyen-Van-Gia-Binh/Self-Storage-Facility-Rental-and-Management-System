@@ -14,7 +14,8 @@ import { Modal } from '@/components/ui/Modal';
 import { formatVND } from '../utils/pricing';
 import { fetchFacilities } from '@/api/facility';
 import { fetchUnitTypes as fetchUnitTypesApi, fetchStorageUnits as fetchStorageUnitsApi } from '@/api/unit';
-import { checkUnitAvailability, type AvailabilityResponse } from '@/api/reservation';
+import { checkUnitAvailability, getMyReservationsApi, type AvailabilityResponse } from '@/api/reservation';
+import { tokenStorage } from '@/utils/tokenStorage';
 import type { FacilityListItem } from '@/types';
 import type { StorageType, UnitSizeCategory, StorageUnit, UnitType, UnitStatus } from '../types';
 
@@ -132,6 +133,13 @@ export const UnitPickerPage: React.FC = () => {
     isOpen: false,
     title: '',
     message: '',
+  });
+  const [pendingLimitModal, setPendingLimitModal] = useState<{
+    isOpen: boolean;
+    pendingReservation: any | null;
+  }>({
+    isOpen: false,
+    pendingReservation: null,
   });
   const [isConfirming, setIsConfirming] = useState<boolean>(false);
 
@@ -540,6 +548,65 @@ export const UnitPickerPage: React.FC = () => {
 
     setIsConfirming(true);
     try {
+      // 1. Kiểm tra giới hạn 1 đơn giữ chỗ PENDING_PAYMENT (BR-RES-02)
+      if (tokenStorage.getAccessToken()) {
+        try {
+          const myReservations = await getMyReservationsApi();
+          const activePending = myReservations?.find((r) => {
+            if (r.status !== 'PENDING_PAYMENT') return false;
+            if (!r.holdExpiresAt) return true;
+            return new Date(r.holdExpiresAt).getTime() > Date.now();
+          });
+
+          if (activePending) {
+            setPendingLimitModal({
+              isOpen: true,
+              pendingReservation: activePending,
+            });
+            return;
+          }
+        } catch (err) {
+          console.error('Không thể kiểm tra đơn giữ chỗ hiện tại:', err);
+        }
+      }
+
+      // 2. Realtime Database Unit Availability Validation on Confirm (ISS-76)
+      const liveUnitsPage = await fetchStorageUnitsApi(fId, {
+        startDate,
+        rentalMonths: durationMonths,
+        size: 200,
+      });
+      const liveUnits = liveUnitsPage?.content || [];
+      const currentLiveUnit = liveUnits.find((u) => String(u.id) === String(targetUnit.id));
+
+      if (currentLiveUnit) {
+        const liveStatus = (currentLiveUnit.status || 'AVAILABLE').toUpperCase();
+        if (liveStatus === 'MAINTENANCE') {
+          setUnitUnavailableModal({
+            isOpen: true,
+            title: 'Ô kho đang tạm ngừng hoạt động / Bảo trì',
+            message: `Ô kho ${targetUnit.unitNumber} hiện đang được bảo trì hoặc kiểm tra kỹ thuật. Quý khách vui lòng chọn ô kho khác.`,
+          });
+          return;
+        }
+        if (liveStatus === 'RESERVED') {
+          setUnitUnavailableModal({
+            isOpen: true,
+            title: 'Ô kho đã có người giữ chỗ',
+            message: `Ô kho ${targetUnit.unitNumber} vừa được người khác giữ chỗ. Quý khách vui lòng chọn ô kho khác.`,
+          });
+          return;
+        }
+        if (liveStatus === 'OCCUPIED' || liveStatus === 'OVERDUE' || liveStatus === 'LOCKED') {
+          setUnitUnavailableModal({
+            isOpen: true,
+            title: 'Ô kho đã có người thuê',
+            message: `Ô kho ${targetUnit.unitNumber} đã có khách hàng thuê. Quý khách vui lòng chọn ô kho khác còn trống.`,
+          });
+          return;
+        }
+      }
+
       const typeIdToPass = targetUnit.unitTypeId || (currentUnitType ? currentUnitType.id : (unitTypes[0]?.id || '1'));
 
       const params = new URLSearchParams({
@@ -1013,6 +1080,51 @@ export const UnitPickerPage: React.FC = () => {
               onClick={() => setUnitUnavailableModal((prev) => ({ ...prev, isOpen: false }))}
             >
               Đã hiểu, chọn ô kho khác
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal cảnh báo giới hạn 1 đơn giữ chỗ PENDING_PAYMENT */}
+      <Modal
+        isOpen={pendingLimitModal.isOpen}
+        onClose={() => setPendingLimitModal({ isOpen: false, pendingReservation: null })}
+      >
+        <div className="p-6 max-w-md w-full text-center space-y-4">
+          <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto shadow-xs">
+            <AlertTriangle className="w-6 h-6" />
+          </div>
+          <div className="space-y-1.5">
+            <h3 className="text-lg font-bold text-slate-900">Quý khách đang có đơn giữ chỗ</h3>
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+              Quý khách vui lòng thanh toán ô kho{' '}
+              <strong className="text-slate-900 font-semibold">
+                {pendingLimitModal.pendingReservation?.storageUnitCode || pendingLimitModal.pendingReservation?.code || ''}
+              </strong>
+              {pendingLimitModal.pendingReservation?.facilityName ? ` (tại ${pendingLimitModal.pendingReservation.facilityName})` : ''}{' '}
+              trước khi đặt ô kho khác.
+            </p>
+          </div>
+          <div className="pt-2 flex flex-col gap-2">
+            <Button
+              variant="primary"
+              className="w-full justify-center py-2.5 text-xs sm:text-sm font-semibold"
+              onClick={() => {
+                const rsv = pendingLimitModal.pendingReservation;
+                setPendingLimitModal({ isOpen: false, pendingReservation: null });
+                if (rsv) {
+                  navigate(`/customer/booking?facility=${rsv.facilityId}&reservationId=${rsv.id}`);
+                }
+              }}
+            >
+              Thanh toán ô kho đang giữ chỗ
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-center py-2.5 text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-800"
+              onClick={() => setPendingLimitModal({ isOpen: false, pendingReservation: null })}
+            >
+              Đã hiểu
             </Button>
           </div>
         </div>

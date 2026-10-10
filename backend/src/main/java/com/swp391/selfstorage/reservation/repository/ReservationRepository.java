@@ -25,6 +25,16 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     boolean existsByStorageUnitIdAndStatusIn(Long storageUnitId, Collection<ReservationStatus> statuses);
 
+    @Query("SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END FROM Reservation r " +
+           "WHERE r.customerId = :customerId " +
+           "  AND r.status = :status " +
+           "  AND r.holdExpiresAt > :now")
+    boolean existsActivePendingByCustomerId(
+            @Param("customerId") Long customerId,
+            @Param("status") ReservationStatus status,
+            @Param("now") OffsetDateTime now
+    );
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT r FROM Reservation r WHERE r.id = :id")
     Optional<Reservation> findByIdWithLock(@Param("id") Long id);
