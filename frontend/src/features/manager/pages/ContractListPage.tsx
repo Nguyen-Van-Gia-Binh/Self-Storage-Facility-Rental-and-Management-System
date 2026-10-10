@@ -38,7 +38,7 @@ const STATUS_TABS: { label: string; value: ContractTabFilter }[] = [
   { label: '🔵 Chờ nhận', value: 'PENDING_CHECK_IN' },
 ];
 
-const PAGE_SIZE = 10;
+const DEFAULT_PAGE_SIZE = 10;
 
 export const ContractListPage: React.FC = () => {
   const { facilityId } = useParams<{ facilityId: string }>();
@@ -56,6 +56,7 @@ export const ContractListPage: React.FC = () => {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -92,10 +93,10 @@ export const ContractListPage: React.FC = () => {
     loadData();
   }, [loadData]);
 
-  // Reset trang về 1 khi đổi bộ lọc
+  // Reset trang về 1 khi đổi bộ lọc hoặc đổi pageSize
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, sortField, sortDirection]);
+  }, [searchTerm, statusFilter, sortField, sortDirection, pageSize]);
 
   // Thống kê nhanh cơ sở cho 4 thẻ KPI
   const stats = useMemo(() => {
@@ -188,12 +189,12 @@ export const ContractListPage: React.FC = () => {
     });
   }, [contracts, statusFilter, searchTerm, sortField, sortDirection]);
 
-  // Phân trang: 10 dòng/trang
-  const totalPages = Math.ceil(processedContracts.length / PAGE_SIZE) || 1;
+  // Phân trang
+  const totalPages = Math.ceil(processedContracts.length / pageSize) || 1;
   const paginatedContracts = useMemo(() => {
-    const startIndex = (currentPage - 1) * PAGE_SIZE;
-    return processedContracts.slice(startIndex, startIndex + PAGE_SIZE);
-  }, [processedContracts, currentPage]);
+    const startIndex = (currentPage - 1) * pageSize;
+    return processedContracts.slice(startIndex, startIndex + pageSize);
+  }, [processedContracts, currentPage, pageSize]);
 
   return (
     <div className="space-y-6 pb-12">
@@ -398,13 +399,15 @@ export const ContractListPage: React.FC = () => {
             onSort={handleSort}
           />
 
-          {/* Phân trang: Threshold > 10 hợp đồng */}
+          {/* Phân trang: Hỗ trợ chuyển đổi số lượng/trang và luôn hiển thị điều hướng */}
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
             totalItems={processedContracts.length}
-            pageSize={PAGE_SIZE}
-            threshold={10}
+            pageSize={pageSize}
+            pageSizeOptions={[5, 10, 20, 50]}
+            onPageSizeChange={(newSize) => setPageSize(newSize)}
+            showAlways={true}
             itemName="hợp đồng"
             onPageChange={(page) => setCurrentPage(page)}
           />

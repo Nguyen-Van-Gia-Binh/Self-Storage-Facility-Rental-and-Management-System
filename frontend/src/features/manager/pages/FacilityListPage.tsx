@@ -87,7 +87,7 @@ export const getFacilityRegion = (facility: { address?: string; name: string }):
   return 'OTHER';
 };
 
-const PAGE_SIZE = 12;
+const DEFAULT_PAGE_SIZE = 12;
 
 export const FacilityListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -98,6 +98,7 @@ export const FacilityListPage: React.FC = () => {
   const [selectedRegion, setSelectedRegion] = useState<RegionFilter>('ALL');
   const [sortBy, setSortBy] = useState<SortOption>('name-asc');
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
   const [loading, setLoading] = useState(true);
@@ -168,10 +169,10 @@ export const FacilityListPage: React.FC = () => {
     loadData();
   }, []);
 
-  // Reset về trang 1 khi đổi bộ lọc hoặc từ khóa
+  // Reset về trang 1 khi đổi bộ lọc, từ khóa hoặc pageSize
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, selectedRegion, sortBy]);
+  }, [searchTerm, selectedRegion, sortBy, pageSize]);
 
   // Đếm số lượng cơ sở theo từng khu vực
   const regionCounts = useMemo(() => {
@@ -244,11 +245,11 @@ export const FacilityListPage: React.FC = () => {
   }, [facilities, selectedRegion, searchTerm, sortBy, statsMap]);
 
   // Phân trang
-  const totalPages = Math.ceil(processedFacilities.length / PAGE_SIZE) || 1;
+  const totalPages = Math.ceil(processedFacilities.length / pageSize) || 1;
   const paginatedFacilities = useMemo(() => {
-    const startIndex = (currentPage - 1) * PAGE_SIZE;
-    return processedFacilities.slice(startIndex, startIndex + PAGE_SIZE);
-  }, [processedFacilities, currentPage]);
+    const startIndex = (currentPage - 1) * pageSize;
+    return processedFacilities.slice(startIndex, startIndex + pageSize);
+  }, [processedFacilities, currentPage, pageSize]);
 
   return (
     <div className="space-y-6 pb-12">
@@ -557,13 +558,15 @@ export const FacilityListPage: React.FC = () => {
             </div>
           )}
 
-          {/* Phân trang: Threshold > 12 */}
+          {/* Phân trang: Hỗ trợ chuyển đổi số lượng/trang và luôn hiển thị điều hướng */}
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
             totalItems={processedFacilities.length}
-            pageSize={PAGE_SIZE}
-            threshold={12}
+            pageSize={pageSize}
+            pageSizeOptions={[6, 12, 24, 48]}
+            onPageSizeChange={(newSize) => setPageSize(newSize)}
+            showAlways={true}
             itemName="cơ sở"
             onPageChange={(page) => setCurrentPage(page)}
           />

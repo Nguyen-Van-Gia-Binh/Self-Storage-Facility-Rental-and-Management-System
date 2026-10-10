@@ -7,8 +7,11 @@ export interface PaginationProps {
   totalItems: number;
   pageSize: number;
   onPageChange: (page: number) => void;
-  threshold?: number; // Ngưỡng bật phân trang. Nếu totalItems <= threshold, component trả về null
-  itemName?: string; // Tên danh từ: "cơ sở", "loại ô kho", "ô kho"
+  threshold?: number; // Ngưỡng bật phân trang. Nếu totalItems <= threshold, component trả về null (trừ khi showAlways=true)
+  itemName?: string; // Tên danh từ: "cơ sở", "loại ô kho", "ô kho", "hợp đồng"
+  pageSizeOptions?: number[]; // Các tùy chọn kích thước trang (ví dụ [6, 12, 24] hoặc [10, 25, 50])
+  onPageSizeChange?: (size: number) => void;
+  showAlways?: boolean; // Bật thanh phân trang luôn luôn ngay cả khi chỉ có 1 trang
 }
 
 export const Pagination: React.FC<PaginationProps> = ({
@@ -19,9 +22,17 @@ export const Pagination: React.FC<PaginationProps> = ({
   onPageChange,
   threshold = 10,
   itemName = 'mục',
+  pageSizeOptions,
+  onPageSizeChange,
+  showAlways = false,
 }) => {
-  // Chỉ bật phân trang khi tổng số items vượt quá ngưỡng threshold
-  if (totalItems <= threshold || totalPages <= 1) {
+  // Nếu không yêu cầu showAlways và số items quá ít, ẩn đi
+  if (!showAlways && (totalItems <= threshold || totalPages <= 1)) {
+    return null;
+  }
+
+  // Nếu không có item nào thì không hiển thị
+  if (totalItems === 0) {
     return null;
   }
 
@@ -104,10 +115,29 @@ export const Pagination: React.FC<PaginationProps> = ({
         </button>
       </div>
 
-      {/* Hiển thị số lượng: Hiển thị 12/100 cơ sở */}
-      <div className="text-slate-500 font-medium">
-        Hiển thị <span className="font-bold text-slate-800">{currentDisplayed}</span> /{' '}
-        <span className="font-bold text-slate-800">{totalItems}</span> {itemName}
+      {/* Hiển thị số lượng & Bộ chọn kích thước trang */}
+      <div className="flex items-center gap-4 text-slate-500 font-medium">
+        {pageSizeOptions && pageSizeOptions.length > 0 && onPageSizeChange && (
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] text-slate-400">Hiển thị:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => onPageSizeChange(Number(e.target.value))}
+              className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500 cursor-pointer shadow-2xs"
+            >
+              {pageSizeOptions.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt} / trang
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <div>
+          Hiển thị <span className="font-bold text-slate-800">{currentDisplayed}</span> /{' '}
+          <span className="font-bold text-slate-800">{totalItems}</span> {itemName}
+        </div>
       </div>
     </div>
   );

@@ -37,7 +37,7 @@ const REGION_TABS: { label: string; value: RegionFilter }[] = [
   { label: 'Khác', value: 'OTHER' },
 ];
 
-const PAGE_SIZE = 12;
+const DEFAULT_PAGE_SIZE = 12;
 
 export const ContractDashboardPage: React.FC = () => {
   const navigate = useNavigate();
@@ -48,6 +48,7 @@ export const ContractDashboardPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRegion, setSelectedRegion] = useState<RegionFilter>('ALL');
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
   const [loading, setLoading] = useState(true);
@@ -101,10 +102,10 @@ export const ContractDashboardPage: React.FC = () => {
     loadData();
   }, []);
 
-  // Reset về trang 1 khi tìm kiếm hoặc đổi khu vực
+  // Reset về trang 1 khi tìm kiếm, đổi khu vực hoặc đổi pageSize
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, selectedRegion]);
+  }, [searchTerm, selectedRegion, pageSize]);
 
   // Tổng hợp KPI toàn hệ thống
   const globalKpis = useMemo(() => {
@@ -154,12 +155,12 @@ export const ContractDashboardPage: React.FC = () => {
     });
   }, [facilities, selectedRegion, searchTerm]);
 
-  // Phân trang: 12 cards/trang
-  const totalPages = Math.ceil(filteredFacilities.length / PAGE_SIZE) || 1;
+  // Phân trang
+  const totalPages = Math.ceil(filteredFacilities.length / pageSize) || 1;
   const paginatedFacilities = useMemo(() => {
-    const startIndex = (currentPage - 1) * PAGE_SIZE;
-    return filteredFacilities.slice(startIndex, startIndex + PAGE_SIZE);
-  }, [filteredFacilities, currentPage]);
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredFacilities.slice(startIndex, startIndex + pageSize);
+  }, [filteredFacilities, currentPage, pageSize]);
 
   return (
     <div className="space-y-6 pb-12">
@@ -448,13 +449,15 @@ export const ContractDashboardPage: React.FC = () => {
             </div>
           )}
 
-          {/* Phân trang: 12 cards/trang, threshold > 12 */}
+          {/* Phân trang: Hỗ trợ chuyển đổi số lượng/trang và luôn hiển thị điều hướng */}
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
             totalItems={filteredFacilities.length}
-            pageSize={PAGE_SIZE}
-            threshold={12}
+            pageSize={pageSize}
+            pageSizeOptions={[6, 12, 24, 48]}
+            onPageSizeChange={(newSize) => setPageSize(newSize)}
+            showAlways={true}
             itemName="cơ sở"
             onPageChange={(page) => setCurrentPage(page)}
           />
