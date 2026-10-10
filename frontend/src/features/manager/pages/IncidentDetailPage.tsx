@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -30,6 +30,62 @@ import { IncidentFaultDetermination } from '../components/IncidentFaultDetermina
 import { IncidentTimeline } from '../components/IncidentTimeline';
 import { CloseIncidentModal } from '../components/CloseIncidentModal';
 import { ImageGallery } from '../components/ImageGallery';
+
+/**
+ * Trích xuất kết quả phân định lỗi từ biên bản giải quyết của Staff (Read-only)
+ */
+function extractFaultInfo(ticket: ManagementSupportTicket) {
+  const isClosed = ticket.status === 'CLOSED';
+  const isResolved = ticket.status === 'RESOLVED';
+  const note = ticket.resolutionNotes || '';
+
+  if (!note) {
+    return {
+      faultType: isResolved || isClosed ? ('COMPANY' as const) : null,
+      cost: 0,
+      feeCategoryName: '',
+    };
+  }
+
+  const isCustomerFault =
+    note.includes('Lỗi do khách hàng') ||
+    note.includes('Khách hàng chịu') ||
+    note.includes('Tổng thu:');
+  const isCompanyFault =
+    note.includes('Lỗi do công ty') ||
+    note.includes('công ty chi trả') ||
+    note.includes('Miễn phí 0 đ');
+
+  if (isCustomerFault) {
+    const costMatch = note.match(/Tổng thu:\s*([\d.,]+)\s*đ/i) || note.match(/([\d.,]+)\s*đ/);
+    let cost = 0;
+    if (costMatch) {
+      cost = Number(costMatch[1].replace(/[.,]/g, '')) || 0;
+    }
+    const feeMatch = note.match(/Phụ phí:\s*([^|]+)/i);
+    const feeName = feeMatch ? feeMatch[1].trim() : 'Khoản phụ phí danh mục';
+
+    return {
+      faultType: 'CUSTOMER' as const,
+      cost,
+      feeCategoryName: feeName,
+    };
+  }
+
+  if (isCompanyFault || isResolved || isClosed) {
+    return {
+      faultType: 'COMPANY' as const,
+      cost: 0,
+      feeCategoryName: '',
+    };
+  }
+
+  return {
+    faultType: null,
+    cost: 0,
+    feeCategoryName: '',
+  };
+}
 
 export const IncidentDetailPage: React.FC = () => {
   const { incidentId } = useParams<{ incidentId: string }>();
@@ -194,55 +250,7 @@ export const IncidentDetailPage: React.FC = () => {
   const isResolved = ticket.status === 'RESOLVED';
 
   // Trích xuất kết quả phân định lỗi từ biên bản giải quyết của Staff (Read-only)
-  const parsedFaultInfo = useMemo(() => {
-    if (!ticket?.resolutionNotes) {
-      return {
-        faultType: isResolved || isClosed ? ('COMPANY' as const) : null,
-        cost: 0,
-        feeCategoryName: '',
-      };
-    }
-
-    const note = ticket.resolutionNotes;
-    const isCustomerFault =
-      note.includes('Lỗi do khách hàng') ||
-      note.includes('Khách hàng chịu') ||
-      note.includes('Tổng thu:');
-    const isCompanyFault =
-      note.includes('Lỗi do công ty') ||
-      note.includes('công ty chi trả') ||
-      note.includes('Miễn phí 0 đ');
-
-    if (isCustomerFault) {
-      const costMatch = note.match(/Tổng thu:\s*([\d.,]+)\s*đ/i) || note.match(/([\d.,]+)\s*đ/);
-      let cost = 0;
-      if (costMatch) {
-        cost = Number(costMatch[1].replace(/[.,]/g, '')) || 0;
-      }
-      const feeMatch = note.match(/Phụ phí:\s*([^|]+)/i);
-      const feeName = feeMatch ? feeMatch[1].trim() : 'Khoản phụ phí danh mục';
-
-      return {
-        faultType: 'CUSTOMER' as const,
-        cost,
-        feeCategoryName: feeName,
-      };
-    }
-
-    if (isCompanyFault || isResolved || isClosed) {
-      return {
-        faultType: 'COMPANY' as const,
-        cost: 0,
-        feeCategoryName: '',
-      };
-    }
-
-    return {
-      faultType: null,
-      cost: 0,
-      feeCategoryName: '',
-    };
-  }, [ticket?.resolutionNotes, isResolved, isClosed]);
+  const parsedFaultInfo = extractFaultInfo(ticket);
 
   const resolutionImages = (ticket.resolutionAttachments || []).map((a) => a.fileUrl);
 
