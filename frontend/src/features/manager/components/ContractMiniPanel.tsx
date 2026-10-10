@@ -65,7 +65,17 @@ export const ContractMiniPanel: React.FC<ContractMiniPanelProps> = ({
           </div>
           <div className="flex justify-between py-1">
             <span className="text-slate-500">Tình trạng hợp đồng:</span>
-            <span className="font-semibold text-emerald-600">Đang hiệu lực (Active)</span>
+            <span className={`font-semibold ${status === 'ACTIVE' ? 'text-emerald-600' : 'text-amber-600'}`}>
+              {status === 'ACTIVE'
+                ? 'Đang hiệu lực (Active)'
+                : status === 'OVERDUE'
+                ? 'Quá hạn (Overdue)'
+                : status === 'PENDING_CHECK_IN'
+                ? 'Chờ nhận kho'
+                : status === 'TERMINATED' || status === 'CLOSED'
+                ? 'Đã kết thúc'
+                : status}
+            </span>
           </div>
         </div>
       </div>

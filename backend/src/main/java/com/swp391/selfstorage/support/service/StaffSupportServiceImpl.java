@@ -359,10 +359,16 @@ public class StaffSupportServiceImpl implements StaffSupportService {
         }
 
         String contractCode = null;
+        String contractStartDate = null;
+        String contractEndDate = null;
+        String contractStatus = null;
         if (ticket.getContractId() != null) {
             RentalContract contract = rentalContractRepository.findById(ticket.getContractId()).orElse(null);
             if (contract != null) {
                 contractCode = contract.getCode();
+                contractStartDate = contract.getStartDate() != null ? contract.getStartDate().toString() : null;
+                contractEndDate = contract.getEndDateExclusive() != null ? contract.getEndDateExclusive().toString() : null;
+                contractStatus = contract.getStatus() != null ? contract.getStatus().name() : null;
             }
         }
 
@@ -419,6 +425,9 @@ public class StaffSupportServiceImpl implements StaffSupportService {
                 .customerPhone(customerPhone)
                 .contractId(ticket.getContractId())
                 .contractCode(contractCode)
+                .contractStartDate(contractStartDate)
+                .contractEndDate(contractEndDate)
+                .contractStatus(contractStatus)
                 .storageUnitId(ticket.getStorageUnitId())
                 .storageUnitCode(storageUnitCode)
                 .facilityId(facilityId)

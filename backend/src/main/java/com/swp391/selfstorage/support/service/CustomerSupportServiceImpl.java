@@ -410,6 +410,9 @@ public class CustomerSupportServiceImpl implements CustomerSupportService {
         if (ticket.getContractId() != null) {
             rentalContractRepository.findById(ticket.getContractId()).ifPresent(c -> {
                 dto.setContractCode(c.getCode());
+                dto.setContractStartDate(c.getStartDate() != null ? c.getStartDate().toString() : null);
+                dto.setContractEndDate(c.getEndDateExclusive() != null ? c.getEndDateExclusive().toString() : null);
+                dto.setContractStatus(c.getStatus() != null ? c.getStatus().name() : null);
                 if (c.getFacilityId() != null) {
                     facilityRepository.findById(c.getFacilityId()).ifPresent(f -> dto.setFacilityName(f.getName()));
                 }

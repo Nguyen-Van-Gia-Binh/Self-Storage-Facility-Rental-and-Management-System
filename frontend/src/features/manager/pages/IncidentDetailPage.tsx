@@ -16,6 +16,7 @@ import {
   getStaffWorkload,
   assignStaffToTask,
 } from '../api/staffAssignmentApi';
+import { getContractById } from '@/api/contract';
 import type {
   ManagementSupportTicket,
   StaffWorkloadItem,
@@ -101,6 +102,16 @@ export const IncidentDetailPage: React.FC = () => {
   // Modal đóng sự cố
   const [closeModalOpen, setCloseModalOpen] = useState<boolean>(false);
 
+  // Chi tiết hợp đồng & thông tin ô kho từ hợp đồng
+  const [contractDetail, setContractDetail] = useState<{
+    startDate?: string;
+    endDate?: string;
+    status?: string;
+    unitType?: string;
+    floor?: number | string;
+    zone?: string;
+  } | null>(null);
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 4000);
@@ -116,6 +127,23 @@ export const IncidentDetailPage: React.FC = () => {
       if (data.facilityId) {
         const staff = await getStaffWorkload(data.facilityId).catch(() => []);
         setStaffList(staff);
+      }
+
+      // Tải chi tiết hợp đồng nếu ticket liên kết với hợp đồng
+      if (data.contractId) {
+        try {
+          const c = await getContractById(data.contractId);
+          setContractDetail({
+            startDate: c.startDate,
+            endDate: c.endDateExclusive,
+            status: c.status,
+            unitType: c.unitTypeName,
+            floor: c.floor,
+            zone: c.position,
+          });
+        } catch (cErr) {
+          console.warn('Lỗi tải chi tiết hợp đồng:', cErr);
+        }
       }
     } catch (err) {
       console.error('Lỗi tải chi tiết sự cố:', err);
@@ -468,6 +496,9 @@ export const IncidentDetailPage: React.FC = () => {
           {/* Panel Ô kho */}
           <StorageUnitMiniPanel
             unitCode={ticket.storageUnitCode}
+            unitType={contractDetail?.unitType}
+            floor={contractDetail?.floor}
+            zone={contractDetail?.zone}
             onViewUnitDetail={() => {
               navigate(`/manager/facilities/${ticket.facilityId}`);
             }}
@@ -476,6 +507,9 @@ export const IncidentDetailPage: React.FC = () => {
           {/* Panel Hợp đồng */}
           <ContractMiniPanel
             contractCode={ticket.contractCode}
+            startDate={contractDetail?.startDate || ticket.contractStartDate}
+            endDate={contractDetail?.endDate || ticket.contractEndDate}
+            status={contractDetail?.status || ticket.contractStatus || 'ACTIVE'}
             onViewContractDetail={() => {
               if (ticket.contractId) {
                 navigate(`/manager/contracts/${ticket.contractId}`);
