@@ -18,7 +18,6 @@ import {
   CheckSquare,
   Circle,
   Clock,
-  Calendar,
 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
 import { getMyRentalDetail, type CustomerRentalDetail } from '@/api/customerRentals';
