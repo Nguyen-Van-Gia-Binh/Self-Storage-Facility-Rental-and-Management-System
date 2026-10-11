@@ -22,8 +22,11 @@ export interface ManagerContractItem {
   customerName: string;
   customerPhone: string;
   customerEmail?: string;
+  customerIdentityNumber?: string;
   facilityId: number;
   facilityName: string;
+  facilityAddress?: string;
+  facilityPhone?: string;
   storageUnitId: number;
   storageUnitCode: string;
   unitTypeId: number;

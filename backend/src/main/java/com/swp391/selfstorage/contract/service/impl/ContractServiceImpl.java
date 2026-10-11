@@ -297,17 +297,29 @@ public class ContractServiceImpl implements ContractService {
                                         && !c.getEndDateExclusive().isBefore(now)
                                         && !c.getEndDateExclusive().isAfter(threshold);
 
-                        String storageCode = (storageUnitRepository != null && c.getStorageUnitId() != null)
-                                        ? storageUnitRepository.findById(c.getStorageUnitId()).map(StorageUnit::getCode).orElse("U-" + c.getStorageUnitId())
-                                        : (c.getStorageUnitId() != null ? "U-" + c.getStorageUnitId() : "Chưa gán");
+                        var storageOpt = (storageUnitRepository != null && c.getStorageUnitId() != null)
+                                        ? storageUnitRepository.findById(c.getStorageUnitId())
+                                        : java.util.Optional.<StorageUnit>empty();
+                        String storageCode = storageOpt.map(StorageUnit::getCode)
+                                        .orElse(c.getStorageUnitId() != null ? "U-" + c.getStorageUnitId() : "Chưa gán");
+                        Integer floor = storageOpt.map(StorageUnit::getFloor).orElse(null);
+                        String position = storageOpt.map(StorageUnit::getPosition).orElse(null);
 
-                        String unitName = (unitTypeRepository != null && c.getUnitTypeId() != null)
-                                        ? unitTypeRepository.findById(c.getUnitTypeId()).map(UnitType::getName).orElse(null)
-                                        : null;
+                        var unitTypeOpt = (unitTypeRepository != null && c.getUnitTypeId() != null)
+                                        ? unitTypeRepository.findById(c.getUnitTypeId())
+                                        : java.util.Optional.<UnitType>empty();
+                        String unitName = unitTypeOpt.map(UnitType::getName).orElse(null);
+                        String unitDimensions = unitTypeOpt.map(ut -> String.format(java.util.Locale.US, "%.1fm x %.1fm x %.1fm",
+                                        ut.getWidthM() != null ? ut.getWidthM().doubleValue() : 0.0,
+                                        ut.getLengthM() != null ? ut.getLengthM().doubleValue() : 0.0,
+                                        ut.getHeightM() != null ? ut.getHeightM().doubleValue() : 0.0)).orElse(null);
 
-                        String facName = (facilityRepository != null && c.getFacilityId() != null)
-                                        ? facilityRepository.findById(c.getFacilityId()).map(Facility::getName).orElse(null)
-                                        : null;
+                        var facOpt = (facilityRepository != null && c.getFacilityId() != null)
+                                        ? facilityRepository.findById(c.getFacilityId())
+                                        : java.util.Optional.<Facility>empty();
+                        String facName = facOpt.map(Facility::getName).orElse(null);
+                        String facAddress = facOpt.map(Facility::getAddress).orElse(null);
+                        String facPhone = facOpt.map(Facility::getPhone).orElse(null);
 
                         String custName = "Khách hàng #" + c.getCustomerId();
                         String custPhone = "";
@@ -403,10 +415,15 @@ public class ContractServiceImpl implements ContractService {
                                         .customerEmail(custEmail)
                                         .facilityId(c.getFacilityId())
                                         .facilityName(facName)
+                                        .facilityAddress(facAddress)
+                                        .facilityPhone(facPhone)
                                         .storageUnitId(c.getStorageUnitId())
                                         .storageUnitCode(storageCode)
+                                        .floor(floor)
+                                        .position(position)
                                         .unitTypeId(c.getUnitTypeId())
                                         .unitTypeName(unitName)
+                                        .unitDimensions(unitDimensions)
                                         .startDate(c.getStartDate())
                                         .endDateExclusive(c.getEndDateExclusive())
                                         .checkinGraceDays(PolicyNumbers.snapshotInt(c.getPolicySnapshot(), "checkinGraceDays", 10))
@@ -1332,13 +1349,27 @@ public class ContractServiceImpl implements ContractService {
                 r.setReturnDate(c.getReturnDate());
 
                 if (storageUnitRepository != null && c.getStorageUnitId() != null) {
-                        storageUnitRepository.findById(c.getStorageUnitId()).ifPresent(su -> r.setStorageUnitCode(su.getCode()));
+                        storageUnitRepository.findById(c.getStorageUnitId()).ifPresent(su -> {
+                                r.setStorageUnitCode(su.getCode());
+                                r.setFloor(su.getFloor());
+                                r.setPosition(su.getPosition());
+                        });
                 }
                 if (unitTypeRepository != null && c.getUnitTypeId() != null) {
-                        unitTypeRepository.findById(c.getUnitTypeId()).ifPresent(ut -> r.setUnitTypeName(ut.getName()));
+                        unitTypeRepository.findById(c.getUnitTypeId()).ifPresent(ut -> {
+                                r.setUnitTypeName(ut.getName());
+                                r.setUnitDimensions(String.format(java.util.Locale.US, "%.1fm x %.1fm x %.1fm",
+                                                ut.getWidthM() != null ? ut.getWidthM().doubleValue() : 0.0,
+                                                ut.getLengthM() != null ? ut.getLengthM().doubleValue() : 0.0,
+                                                ut.getHeightM() != null ? ut.getHeightM().doubleValue() : 0.0));
+                        });
                 }
                 if (facilityRepository != null && c.getFacilityId() != null) {
-                        facilityRepository.findById(c.getFacilityId()).ifPresent(f -> r.setFacilityName(f.getName()));
+                        facilityRepository.findById(c.getFacilityId()).ifPresent(f -> {
+                                r.setFacilityName(f.getName());
+                                r.setFacilityAddress(f.getAddress());
+                                r.setFacilityPhone(f.getPhone());
+                        });
                 }
                 if (userService != null && c.getCustomerId() != null) {
                         try {
@@ -1347,6 +1378,7 @@ public class ContractServiceImpl implements ContractService {
                                         r.setCustomerName(userDto.getFullName());
                                         r.setCustomerPhone(userDto.getPhone());
                                         r.setCustomerEmail(userDto.getEmail());
+                                        r.setCustomerIdentityNumber(userDto.getIdentityNumber());
                                 }
                         } catch (Exception ignored) {
                         }

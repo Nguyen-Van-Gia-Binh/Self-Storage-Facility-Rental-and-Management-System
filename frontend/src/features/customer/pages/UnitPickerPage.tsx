@@ -742,7 +742,8 @@ export const UnitPickerPage: React.FC = () => {
             {/* Kích thước tương ứng - High Contrast */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {availableTypes.map((type) => {
-                const isSelected = selectedTypeId === type.id || selectedSize === type.sizeCategory;
+                const isUnlisted = !type.baseMonthlyPrice || type.baseMonthlyPrice <= 0 || type.priceStatus === 'UNLISTED' || type.priceStatus === 'Chưa niêm yết';
+                const isSelected = !isUnlisted && (selectedTypeId ? selectedTypeId === type.id : selectedSize === type.sizeCategory);
                 const avail = availabilityMap[type.id];
                 const slots = avail ? avail.availableSlots : null;
                 const isOutOfSlots = slots !== null && slots <= 0;
@@ -814,7 +815,7 @@ export const UnitPickerPage: React.FC = () => {
               </span>
             </div>
 
-            {/* SƠ ĐỒ MA TRẬN Ô KHO THỰC TẾ - VIBRANT HIGH CONTRAST */}
+            {/* SƠ ĐỒ MA TRẬN Ô KHO THỰC TẾ - VIBRANT HIGH CONTRAST (filterUnitTypeId={selectedTypeId}) */}
             <div className="pt-1">
               {displayFacilityUnits.filter((u) => {
                 if (selectedTypeId && u.unitTypeId) return u.unitTypeId === selectedTypeId;

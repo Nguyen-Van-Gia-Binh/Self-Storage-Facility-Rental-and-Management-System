@@ -20,8 +20,8 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
   const effectiveUnitNumber = detail?.unitCode || contract.unitNumber || 'HC-B203';
   const effectiveFacilityName = detail?.facilityName || contract.facilityName || 'SmartStorage Landmark Center';
   const effectiveFacilityAddress =
-    detail?.facilityAddress || 'Cơ sở trực thuộc Hệ thống Cho thuê kho tự quản SmartStorage';
-  const effectiveFacilityPhone = detail?.facilityPhone || '1900 8888';
+    detail?.facilityAddress || contract.facilityAddress || 'Cơ sở trực thuộc Hệ thống Cho thuê kho tự quản SmartStorage';
+  const effectiveFacilityPhone = detail?.facilityPhone || contract.facilityPhone || '1900 8888';
   const effectiveCustomerName = detail?.customerName || contract.customerName || 'Nguyễn Văn Khách';
   const effectiveCustomerPhone = detail?.customerPhone || contract.customerPhone || '0987654321';
   const effectiveCustomerIdentity =
