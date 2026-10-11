@@ -42,6 +42,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
   onOpenOverduePayment,
   onCancelReturn,
   onReschedulePeriod,
+  renewalNoticeDays,
 }) => {
   const [showPin, setShowPin] = useState(false);
   const [copiedPin, setCopiedPin] = useState(false);
@@ -71,6 +72,9 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
   };
 
   const daysRemaining = calculateDaysRemaining(contract.endDate);
+  const noticeThreshold = (renewalNoticeDays && renewalNoticeDays > 0 ? renewalNoticeDays : 30) + 7;
+  const isExpiringSoon = contract.status === 'ACTIVE' && daysRemaining > 0 && daysRemaining <= noticeThreshold;
+  const isUrgentExpiring = isExpiringSoon && daysRemaining <= 7;
 
   const overdueDays =
     contract.overdueDays !== undefined && contract.overdueDays > 0
@@ -110,6 +114,20 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
   const getStatusBadge = () => {
     switch (contract.status) {
       case 'ACTIVE':
+        if (isExpiringSoon) {
+          if (isUrgentExpiring) {
+            return (
+              <Badge variant="overdue" className="bg-red-50 text-red-700 border-red-300">
+                Sắp hết hạn ({daysRemaining} ngày)
+              </Badge>
+            );
+          }
+          return (
+            <Badge variant="warning">
+              Sắp hết hạn ({daysRemaining} ngày)
+            </Badge>
+          );
+        }
         return <Badge variant="available">Đang hoạt động</Badge>;
       case 'PENDING_CHECKIN':
       case 'PENDING_CHECK_IN' as any:
@@ -147,6 +165,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
   };
 
   const isAttention =
+    isExpiringSoon ||
     contract.status === 'EXPIRING_SOON' ||
     contract.status === 'OVERDUE' ||
     contract.status === 'PENDING_RETURN';
@@ -175,7 +194,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
     <>
       <div
         className={`bg-white rounded-2xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 transition-all duration-150 shadow-xs hover:shadow-md ${
-          contract.status === 'OVERDUE' && penaltyFee > 0
+          (contract.status === 'OVERDUE' && penaltyFee > 0) || isUrgentExpiring
             ? 'border-2 border-rose-300 bg-rose-50/20'
             : isAttention
             ? 'border border-amber-300 bg-amber-50/15'
@@ -186,7 +205,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
         <div className="flex items-start gap-3.5">
           <div
             className={`w-11 h-11 rounded-xl flex items-center justify-center font-mono font-black text-xs shrink-0 ${
-              contract.status === 'OVERDUE'
+              contract.status === 'OVERDUE' || isUrgentExpiring
                 ? 'bg-rose-50 border border-rose-200 text-rose-700'
                 : isAttention
                 ? 'bg-amber-50 border border-amber-200 text-amber-700'
@@ -306,6 +325,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
           ) : (
             onScheduleReturn &&
             (contract.status === 'EXPIRING_SOON' ||
+              isExpiringSoon ||
               isGracePeriod ||
               (contract.status === 'OVERDUE' && penaltyFee === 0)) && (
               <Button
@@ -340,10 +360,10 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
             (contract.status === 'OVERDUE' && penaltyFee === 0)) && (
             <Link to={`/customer/renew/${contract.id}`}>
               <Button
-                variant={contract.status === 'EXPIRING_SOON' ? 'primary' : 'outline'}
+                variant={contract.status === 'EXPIRING_SOON' || isExpiringSoon ? 'primary' : 'outline'}
                 size="sm"
                 className={`text-xs font-bold shadow-xs cursor-pointer ${
-                  contract.status === 'EXPIRING_SOON'
+                  contract.status === 'EXPIRING_SOON' || isExpiringSoon
                     ? 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white'
                     : 'text-brand-700 border-brand-200 hover:bg-brand-50'
                 }`}

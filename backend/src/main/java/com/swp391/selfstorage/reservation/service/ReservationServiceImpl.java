@@ -196,6 +196,13 @@ public class ReservationServiceImpl implements ReservationService {
             throw new CustomException(ErrorCode.CONTRACT_OVERDUE);
         }
 
+        // 2.1 Kiem tra BR-RES-02: Moi khach hang chi duoc giu cho toi da 1 o kho (PENDING_PAYMENT con han)
+        if (customerId != null && reservationRepository != null &&
+                reservationRepository.existsActivePendingByCustomerId(customerId, ReservationStatus.PENDING_PAYMENT, OffsetDateTime.now())) {
+            throw new CustomException(ErrorCode.PENDING_RESERVATION_EXISTS,
+                    "Quý khách đang có 1 đơn giữ chỗ ô kho chưa thanh toán. Vui lòng thanh toán hoặc hủy đơn cũ trước khi đặt ô kho khác.");
+        }
+
         // 3. Kiem tra BR-RES-01: Facility va UnitType dang hoat dong
         if (facilityRepository != null) {
             Facility facility = facilityRepository.findById(request.getFacilityId())

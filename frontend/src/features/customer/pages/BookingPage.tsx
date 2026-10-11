@@ -28,6 +28,7 @@ import {
   cancelReservationApi,
   checkUnitAvailability,
   getReservationById,
+  getMyReservationsApi,
   type AvailabilityResponse,
   type CalculatePriceResponse,
 } from '@/api/reservation';
@@ -110,6 +111,13 @@ export const BookingPage: React.FC = () => {
     title: '',
     message: '',
     actionType: 'NAVIGATE_HOME',
+  });
+  const [pendingLimitModal, setPendingLimitModal] = useState<{
+    isOpen: boolean;
+    pendingReservation: any | null;
+  }>({
+    isOpen: false,
+    pendingReservation: null,
   });
 
   useEffect(() => {
@@ -348,6 +356,34 @@ export const BookingPage: React.FC = () => {
     loadExistingReservation();
     return () => { isMounted = false; };
   }, [reservationIdParam, navigate]);
+
+  // Kiểm tra nếu khách hàng đã có đơn giữ chỗ PENDING_PAYMENT khác (BR-RES-02)
+  useEffect(() => {
+    if (reservationIdParam) return;
+    if (!tokenStorage.getAccessToken()) return;
+    let isMounted = true;
+    async function checkPendingReservation() {
+      try {
+        const myReservations = await getMyReservationsApi();
+        if (!isMounted) return;
+        const activePending = myReservations?.find((r) => {
+          if (r.status !== 'PENDING_PAYMENT') return false;
+          if (!r.holdExpiresAt) return true;
+          return new Date(r.holdExpiresAt).getTime() > Date.now();
+        });
+        if (activePending) {
+          setPendingLimitModal({
+            isOpen: true,
+            pendingReservation: activePending,
+          });
+        }
+      } catch (err) {
+        console.error('Không thể kiểm tra đơn giữ chỗ hiện tại:', err);
+      }
+    }
+    checkPendingReservation();
+    return () => { isMounted = false; };
+  }, [reservationIdParam]);
 
   // Backend Pricing
   const [backendPricing, setBackendPricing] = useState<CalculatePriceResponse | null>(null);
@@ -717,6 +753,26 @@ export const BookingPage: React.FC = () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {
       console.error('Lỗi khi khởi tạo đơn đặt chỗ hoặc PayOS:', err);
+      const errorMsg = err?.message || '';
+      if (errorMsg.includes('chưa thanh toán') || errorMsg.includes('giữ chỗ') || err?.status === 409) {
+        try {
+          const myReservations = await getMyReservationsApi();
+          const activePending = myReservations?.find((r) => {
+            if (r.status !== 'PENDING_PAYMENT') return false;
+            if (!r.holdExpiresAt) return true;
+            return new Date(r.holdExpiresAt).getTime() > Date.now();
+          });
+          if (activePending) {
+            setPendingLimitModal({
+              isOpen: true,
+              pendingReservation: activePending,
+            });
+            return;
+          }
+        } catch {
+          // fallback
+        }
+      }
       setBookingError(err?.message || 'Không thể tạo đơn đặt chỗ. Vui lòng thử lại!');
     } finally {
       setIsSubmitting(false);
@@ -1371,6 +1427,57 @@ export const BookingPage: React.FC = () => {
               }}
             >
               Quay lại
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal cảnh báo giới hạn 1 đơn giữ chỗ PENDING_PAYMENT */}
+      <Modal
+        isOpen={pendingLimitModal.isOpen}
+        onClose={() => {
+          setPendingLimitModal({ isOpen: false, pendingReservation: null });
+          navigate(`/customer/units?facility=${facility.id || ''}`);
+        }}
+      >
+        <div className="p-6 max-w-md w-full text-center space-y-4">
+          <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto shadow-xs">
+            <AlertTriangle className="w-6 h-6" />
+          </div>
+          <div className="space-y-1.5">
+            <h3 className="text-lg font-bold text-slate-900">Quý khách đang có đơn giữ chỗ</h3>
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+              Quý khách vui lòng thanh toán ô kho{' '}
+              <strong className="text-slate-900 font-semibold">
+                {pendingLimitModal.pendingReservation?.storageUnitCode || pendingLimitModal.pendingReservation?.code || 'đang giữ chỗ'}
+              </strong>
+              {pendingLimitModal.pendingReservation?.facilityName ? ` (tại ${pendingLimitModal.pendingReservation.facilityName})` : ''}{' '}
+              trước khi đặt ô kho khác.
+            </p>
+          </div>
+          <div className="pt-2 flex flex-col gap-2">
+            <Button
+              variant="primary"
+              className="w-full justify-center py-2.5 text-xs sm:text-sm font-semibold"
+              onClick={() => {
+                const rsv = pendingLimitModal.pendingReservation;
+                setPendingLimitModal({ isOpen: false, pendingReservation: null });
+                if (rsv) {
+                  navigate(`/customer/booking?facility=${rsv.facilityId}&reservationId=${rsv.id}`);
+                }
+              }}
+            >
+              Thanh toán ô kho đang giữ chỗ
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-center py-2.5 text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-800"
+              onClick={() => {
+                setPendingLimitModal({ isOpen: false, pendingReservation: null });
+                navigate(`/customer/units?facility=${facility.id || ''}`);
+              }}
+            >
+              Quay lại danh sách ô kho
             </Button>
           </div>
         </div>

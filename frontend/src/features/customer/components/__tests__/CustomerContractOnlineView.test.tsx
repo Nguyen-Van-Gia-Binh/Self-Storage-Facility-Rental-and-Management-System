@@ -25,7 +25,7 @@ vi.mock('@/api/customerRentals', () => ({
       unitDimensions: '1.5m x 2.0m x 2.5m',
       startDate: '2026-10-01',
       endDateExclusive: '2026-11-01',
-      status: id === 202 ? 'PENDING_CHECKIN' : 'ACTIVE',
+      status: 'ACTIVE',
       monthlyPrice: 1500000,
       depositAmount: 1500000,
       depositBalance: 1500000,
@@ -129,12 +129,14 @@ describe('Customer Portal - Xem Hợp đồng điện tử & Biên bản bàn gi
     expect(screen.getByRole('button', { name: /In hợp đồng/i })).toBeInTheDocument();
   });
 
-  it('ContractDetailModal khi status PENDING_CHECK_IN: hiển thị trạng thái chờ làm thủ tục check-in và KHÔNG ghi đã xác nhận bàn giao', async () => {
+  it('ContractDetailModal khi ở trạng thái PENDING_CHECKIN hiển thị Điều 4 chờ nghiệm thu và chưa ký bàn giao', async () => {
     const pendingContract: RentedContract = {
       ...sampleContract,
-      id: '202',
-      contractNumber: 'CTR-202610-002',
-      status: 'PENDING_CHECKIN' as any,
+      id: 999,
+      status: 'PENDING_CHECKIN',
+      checkinDate: undefined,
+      handoverStaffName: undefined,
+      handoverConditionNote: undefined,
     };
 
     render(
@@ -145,16 +147,19 @@ describe('Customer Portal - Xem Hợp đồng điện tử & Biên bản bàn gi
       />
     );
 
-    // Thông báo trạng thái chờ check-in tại cơ sở
-    expect(
-      await screen.findByText(/TRẠNG THÁI: CHỜ LÀM THỦ TỤC CHECK-IN/i)
-    ).toBeInTheDocument();
+    // Banner và badge chờ nghiệm thu
+    expect(await screen.findByText(/Chờ nghiệm thu tại quầy/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Ô kho đang ở trạng thái Chờ nhận kho/i)).toBeInTheDocument();
 
-    // Đại diện bên thuê kho
-    const customerReps = await screen.findAllByText(/ĐẠI DIỆN BÊN THUÊ KHO/i);
-    expect(customerReps.length).toBeGreaterThanOrEqual(1);
+    // Chữ ký hiển thị chờ tiếp đón tại quầy
+    const staffSigns = await screen.findAllByText(/CHỜ TIẾP ĐÓN & KÝ TẠI QUẦY|CHỜ KÝ BÀN GIAO TẠI QUẦY/i);
+    expect(staffSigns.length).toBeGreaterThanOrEqual(1);
 
-    // Không hiển thị đã xác nhận bàn giao
+    const customerSigns = await screen.findAllByText(/CHỜ XÁC NHẬN KHI NHẬN KHO/i);
+    expect(customerSigns.length).toBeGreaterThanOrEqual(1);
+
+    // Không được hiển thị đã ký số bàn giao
+    expect(screen.queryByText(/✓ ĐÃ KÝ SỐ ĐIỆN TỬ/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/✓ ĐÃ XÁC NHẬN BÀN GIAO/i)).not.toBeInTheDocument();
   });
 });

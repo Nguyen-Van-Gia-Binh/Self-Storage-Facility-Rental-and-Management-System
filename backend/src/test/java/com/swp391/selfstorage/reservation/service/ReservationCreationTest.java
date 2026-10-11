@@ -95,6 +95,8 @@ class ReservationCreationTest {
         lenient().when(facilityUnitTypePriceRepository.findByFacilityIdAndUnitTypeId(1L, 2L)).thenReturn(Optional.of(price));
         lenient().when(rentalContractRepository.existsOverlappingContractForUnit(eq(10L), any(), any(), anyInt(), eq(0L)))
                 .thenReturn(false);
+        lenient().when(reservationRepository.existsActivePendingByCustomerId(any(), any(), any()))
+                .thenReturn(false);
     }
 
     @Test
@@ -347,5 +349,16 @@ class ReservationCreationTest {
         assertEquals(LocalDate.of(2026, 11, 1), response.getStartDate());
         assertEquals(LocalDate.of(2027, 5, 1), response.getEndDateExclusive());
         assertEquals(6, response.getRentalMonths());
+    }
+
+    @Test
+    @DisplayName("Ném ngoại lệ PENDING_RESERVATION_EXISTS khi khách hàng đã có đơn giữ chỗ chưa thanh toán")
+    void shouldThrowPendingReservationExists_whenCustomerAlreadyHasActivePendingReservation() {
+        when(reservationRepository.existsActivePendingByCustomerId(eq(testCustomer.getId()), eq(ReservationStatus.PENDING_PAYMENT), any(OffsetDateTime.class)))
+                .thenReturn(true);
+
+        CustomException exception = assertThrows(CustomException.class, () -> service.createReservation(request, testCustomer));
+        assertEquals(ErrorCode.PENDING_RESERVATION_EXISTS, exception.getErrorCode());
+        assertTrue(exception.getMessage().contains("thanh toán"));
     }
 }
