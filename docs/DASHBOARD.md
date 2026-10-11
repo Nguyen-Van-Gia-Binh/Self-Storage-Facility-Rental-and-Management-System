@@ -109,6 +109,7 @@
 | `ISS-101` | Thiếu bộ script T-SQL kiểm thử và truy vấn kiểm toán ma trận 4 giai đoạn quá hạn theo chuẩn BR-OVD-01..08. | Xây dựng script test ma trận 4 mốc (D+2, D+5, D+8, D+11) có teardown và audit tổng hợp kèm hướng dẫn Docker/sqlcmd/GUI. | Bình | `RESOLVED` (#230) |
 | `ISS-102` | Bảng giá BOM và Nhật ký giá bị bó hẹp khung hình, thiếu thể tích m³, badge Đang áp dụng vỡ 2 dòng. | Gộp Quy cách không gian (m³ + m² + D×R×C), mở rộng khung 1600px, cố định min-w/nowrap badge trạng thái 1 dòng. | Bình | `RESOLVED` |
 | `ISS-103` | Phụ phí đã tắt bên Quản lý nhưng bên Nhật ký vẫn hiện Đang áp dụng; tên phụ phí #3 lỗi font Mojibake. | Bổ sung kiểm tra isActive trong PriceAuditServiceImpl, hỗ trợ STATUS_DISABLED, sửa lỗi font UTF-8 DB. | Bình | `RESOLVED` |
+| `ISS-104` | Drawer mở làm trôi cuộn màn hình nền; cột Giá trị cũ -> mới rườm rà thiếu nút Chi tiết. | Khóa cuộn thẻ main khi mở Drawer, tinh giản thành cột Thông tin kèm nút Chi tiết, restart backend nạp code. | Bình | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 
