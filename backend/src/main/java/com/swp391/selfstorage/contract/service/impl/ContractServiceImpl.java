@@ -1035,6 +1035,11 @@ public class ContractServiceImpl implements ContractService {
                 ReturnRequest returnReq = returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(contractId)
                                 .orElseThrow(() -> new CustomException(ErrorCode.RETURN_REQUEST_NOT_FOUND));
 
+                if (returnReq.getInspectedAt() == null) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                                        "Chưa thể quyết toán: Ô kho chưa được nhân viên kiểm tra hiện trường và lập biên bản nghiệm thu (BR-RET-02)");
+                }
+
                 List<ContractExtraCharge> unpaidCharges = extraChargeRepository.findByContractIdAndStatus(contractId,
                                 ExtraChargeStatus.UNPAID);
                 boolean catalogInspection = unpaidCharges.stream().anyMatch(this::isCatalogInspectionCharge);
