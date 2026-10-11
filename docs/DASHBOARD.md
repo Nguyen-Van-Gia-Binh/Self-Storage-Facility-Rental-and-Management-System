@@ -107,7 +107,7 @@
 | `ISS-99` | Khách hàng có thể giữ chỗ nhiều ô kho cùng lúc dẫn đến spam và ảo capacity (BR-RES-02). | Giới hạn mỗi khách hàng chỉ giữ chỗ tối đa 1 ô kho PENDING; hiện popup cảnh báo yêu cầu thanh toán ô kho cũ trước khi đặt ô mới. | Xuân Nhi | `RESOLVED` |
 | `ISS-100` | Thẻ ô kho ACTIVE thiếu Badge cảnh báo khi sắp hết hạn; thiếu bộ script test ma trận 30 ngày (BR-REN-01). | Bổ sung script test ma trận 5 mốc biên T-SQL, hiển thị Badge Vàng/Đỏ phân tầng trên thẻ kho và giữ nguyên bộ lọc tab. | Bình | `RESOLVED` (#228) |
 | `ISS-101` | Thiếu bộ script T-SQL kiểm thử và truy vấn kiểm toán ma trận 4 giai đoạn quá hạn theo chuẩn BR-OVD-01..08. | Xây dựng script test ma trận 4 mốc (D+2, D+5, D+8, D+11) có teardown và audit tổng hợp kèm hướng dẫn Docker/sqlcmd/GUI. | Bình | `RESOLVED` (#230) |
-| `ISS-102` | Bảng giá BOM hiển thị kích thước R×D×C thiếu thể tích m³ và lặp chữ VND/m², VND/tháng gây chật chội. | Gộp cột Quy cách không gian (m³ + m² + D×R×C), đưa đơn vị lên header (₫/m², ₫/tháng), tinh gọn chip lịch đổi giá. | Bình | `RESOLVED` |
+| `ISS-102` | Bảng giá BOM và Nhật ký giá bị bó hẹp khung hình, thiếu thể tích m³, badge Đang áp dụng vỡ 2 dòng. | Gộp Quy cách không gian (m³ + m² + D×R×C), mở rộng khung 1600px, cố định min-w/nowrap badge trạng thái 1 dòng. | Bình | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 
