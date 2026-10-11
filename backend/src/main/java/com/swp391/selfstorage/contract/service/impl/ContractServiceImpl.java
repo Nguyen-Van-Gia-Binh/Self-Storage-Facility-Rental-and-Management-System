@@ -1373,9 +1373,21 @@ public class ContractServiceImpl implements ContractService {
                                 unit.getId(), newStartDate, newEndDate, bufferDays, excludeContractId != null ? excludeContractId : 0L);
                 if (overlappingContracts != null && !overlappingContracts.isEmpty()) {
                         RentalContract c = overlappingContracts.get(0);
-                        return new UnitConflictCheckResult(false,
-                                        String.format("Trùng lịch với hợp đồng %s (từ %s đến %s, cộng %d ngày đệm dọn dẹp vệ sinh)",
-                                                        c.getCode(), c.getStartDate(), c.getEndDateExclusive(), bufferDays));
+                        boolean directOverlap = newStartDate.isBefore(c.getEndDateExclusive()) && newEndDate.isAfter(c.getStartDate());
+                        if (directOverlap) {
+                                return new UnitConflictCheckResult(false,
+                                                String.format("Dính lịch hợp đồng thuê của khách khác %s (từ %s đến %s)",
+                                                                c.getCode(), c.getStartDate(), c.getEndDateExclusive()));
+                        } else if (!newStartDate.isBefore(c.getEndDateExclusive())) {
+                                LocalDate bufferEnd = c.getEndDateExclusive().plusDays(bufferDays);
+                                return new UnitConflictCheckResult(false,
+                                                String.format("Dính lịch dọn dẹp vệ sinh sau trả kho (D+%d) của hợp đồng %s (thời gian dọn dẹp từ %s đến %s)",
+                                                                bufferDays, c.getCode(), c.getEndDateExclusive(), bufferEnd));
+                        } else {
+                                return new UnitConflictCheckResult(false,
+                                                String.format("Không đủ %d ngày đệm dọn dẹp vệ sinh trước hợp đồng tiếp theo %s (bắt đầu ngày %s)",
+                                                                bufferDays, c.getCode(), c.getStartDate()));
+                        }
                 }
 
                 // 4. Kiểm tra trùng đơn giữ chỗ (tính cả bufferDays)
@@ -1383,9 +1395,21 @@ public class ContractServiceImpl implements ContractService {
                                 unit.getId(), newStartDate, newEndDate, now, bufferDays, excludeReservationId != null ? excludeReservationId : 0L);
                 if (overlappingReservations != null && !overlappingReservations.isEmpty()) {
                         Reservation r = overlappingReservations.get(0);
-                        return new UnitConflictCheckResult(false,
-                                        String.format("Trùng lịch với đơn đặt chỗ %s (từ %s đến %s, cộng %d ngày đệm dọn dẹp vệ sinh)",
-                                                        r.getCode(), r.getStartDate(), r.getEndDateExclusive(), bufferDays));
+                        boolean directOverlap = newStartDate.isBefore(r.getEndDateExclusive()) && newEndDate.isAfter(r.getStartDate());
+                        if (directOverlap) {
+                                return new UnitConflictCheckResult(false,
+                                                String.format("Dính lịch đơn đặt chỗ trước %s (từ %s đến %s)",
+                                                                r.getCode(), r.getStartDate(), r.getEndDateExclusive()));
+                        } else if (!newStartDate.isBefore(r.getEndDateExclusive())) {
+                                LocalDate bufferEnd = r.getEndDateExclusive().plusDays(bufferDays);
+                                return new UnitConflictCheckResult(false,
+                                                String.format("Dính lịch dọn dẹp vệ sinh sau trả kho (D+%d) của đơn %s (thời gian dọn dẹp từ %s đến %s)",
+                                                                bufferDays, r.getCode(), r.getEndDateExclusive(), bufferEnd));
+                        } else {
+                                return new UnitConflictCheckResult(false,
+                                                String.format("Không đủ %d ngày đệm dọn dẹp vệ sinh trước đơn đặt chỗ tiếp theo %s (bắt đầu ngày %s)",
+                                                                bufferDays, r.getCode(), r.getStartDate()));
+                        }
                 }
 
                 return new UnitConflictCheckResult(true, null);
