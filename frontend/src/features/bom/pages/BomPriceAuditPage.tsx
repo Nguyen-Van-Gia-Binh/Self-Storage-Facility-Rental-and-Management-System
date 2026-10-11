@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { History, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { fetchFacilities } from '@/api/facility';
 import { fetchPriceAudit } from '@/api/pricing';
@@ -61,6 +62,16 @@ export const BomPriceAuditPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<PriceAuditEntry | null>(null);
+
+  useEffect(() => {
+    if (selected) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [selected]);
 
   useEffect(() => {
     let ignore = false;
@@ -284,50 +295,67 @@ export const BomPriceAuditPage: React.FC = () => {
         )}
       </div>
 
-      {selected && (
-        <div className="fixed inset-0 z-[80] flex justify-end bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setSelected(null)}>
-          <aside
-            className="h-full w-full max-w-lg bg-white shadow-2xl overflow-y-auto animate-in slide-in-from-right duration-300 flex flex-col"
-            onClick={(event) => event.stopPropagation()}
+      {selected &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] flex justify-end bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={() => setSelected(null)}
           >
-            <div className="px-6 py-5 border-b border-slate-200 flex items-start justify-between gap-3 bg-slate-50/50">
-              <div>
-                <p className="text-xs font-semibold text-violet-600 uppercase tracking-wide">{categoryLabel(selected.category)}</p>
-                <h2 className="text-lg font-bold text-slate-900 mt-0.5">{selected.subject}</h2>
-                <p className="text-xs text-slate-500 mt-1">
-                  {selected.actorName} · {formatWhen(selected.recordedAt)} · hiệu lực {formatDay(selected.effectiveFrom)}
-                </p>
+            <aside
+              className="h-full w-full max-w-lg bg-white shadow-2xl animate-in slide-in-from-right duration-300 flex flex-col overflow-hidden"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="shrink-0 px-6 py-5 border-b border-slate-200 flex items-start justify-between gap-3 bg-white z-10 shadow-sm">
+                <div>
+                  <p className="text-xs font-semibold text-violet-600 uppercase tracking-wide">
+                    {categoryLabel(selected.category)}
+                  </p>
+                  <h2 className="text-lg font-bold text-slate-900 mt-0.5">{selected.subject}</h2>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {selected.actorName} · {formatWhen(selected.recordedAt)} · hiệu lực{' '}
+                    {formatDay(selected.effectiveFrom)}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelected(null)}
+                  className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setSelected(null)}
-                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-6 space-y-4 flex-1">
-              <div className="p-3 bg-violet-50/60 border border-violet-100 rounded-xl text-sm font-medium text-slate-800">
-                {selected.changeSummary}
+              <div className="p-6 space-y-4 flex-1 overflow-y-auto">
+                <div className="p-3 bg-violet-50/60 border border-violet-100 rounded-xl text-sm font-medium text-slate-800">
+                  {selected.changeSummary}
+                </div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 pt-2">
+                  Snapshot phiên bản
+                </h3>
+                <ul className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                  {(selected.snapshot.length > 0 ? selected.snapshot : selected.changes).map(
+                    (field) => {
+                      const changed = fieldChanged(selected, field);
+                      return (
+                        <li
+                          key={field.key}
+                          className={`px-4 py-3 text-sm transition-colors ${changed ? 'bg-amber-50/80 font-semibold' : 'bg-white'}`}
+                        >
+                          <p className="text-xs font-medium text-slate-500">{field.label}</p>
+                          <p className="font-semibold text-slate-800 mt-0.5">
+                            {field.oldValue
+                              ? `${field.oldValue} → ${field.newValue ?? '—'}`
+                              : field.newValue ?? '—'}
+                          </p>
+                        </li>
+                      );
+                    }
+                  )}
+                </ul>
               </div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 pt-2">Snapshot phiên bản</h3>
-              <ul className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                {(selected.snapshot.length > 0 ? selected.snapshot : selected.changes).map((field) => {
-                  const changed = fieldChanged(selected, field);
-                  return (
-                    <li key={field.key} className={`px-4 py-3 text-sm transition-colors ${changed ? 'bg-amber-50/80 font-semibold' : 'bg-white'}`}>
-                      <p className="text-xs font-medium text-slate-500">{field.label}</p>
-                      <p className="font-semibold text-slate-800 mt-0.5">
-                        {field.oldValue ? `${field.oldValue} → ${field.newValue ?? '—'}` : field.newValue ?? '—'}
-                      </p>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          </aside>
-        </div>
-      )}
+            </aside>
+          </div>,
+          document.body
+        )}
     </div>
   );
 };
