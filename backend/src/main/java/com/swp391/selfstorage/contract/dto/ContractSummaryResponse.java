@@ -42,5 +42,7 @@ public class ContractSummaryResponse {
     private String damageNotes;
     private Boolean relocationEligible;
     private Long openSupportRequestId;
+    private LocalDate requestedReturnDate;
+    private String appointmentSlot;
 }
 

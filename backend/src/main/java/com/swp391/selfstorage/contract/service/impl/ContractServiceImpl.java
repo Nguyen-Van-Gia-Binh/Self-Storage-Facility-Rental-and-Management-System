@@ -362,10 +362,14 @@ public class ContractServiceImpl implements ContractService {
                         Boolean isInspected = false;
                         Long damageCost = 0L;
                         String damageNotes = null;
+                        LocalDate requestedReturnDate = null;
+                        String appointmentSlot = null;
                         if (returnRequestRepository != null && c.getStatus() != ContractStatus.CLOSED && c.getStatus() != ContractStatus.TERMINATED) {
                                 var reqOpt = returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(c.getId());
                                 if (reqOpt.isPresent()) {
                                         var req = reqOpt.get();
+                                        requestedReturnDate = req.getRequestedReturnDate();
+                                        appointmentSlot = req.getAppointmentSlot();
                                         if (req.getStatus() == ReturnRequestStatus.PENDING) {
                                                 displayStatus = ContractStatus.PENDING_RETURN;
                                         }
@@ -444,6 +448,8 @@ public class ContractServiceImpl implements ContractService {
                                         .openSupportRequestId(relocationTickets.containsKey(c.getId())
                                                         ? relocationTickets.get(c.getId()).getId()
                                                         : null)
+                                        .requestedReturnDate(requestedReturnDate)
+                                        .appointmentSlot(appointmentSlot)
                                         .build();
                 }).toList();
 
