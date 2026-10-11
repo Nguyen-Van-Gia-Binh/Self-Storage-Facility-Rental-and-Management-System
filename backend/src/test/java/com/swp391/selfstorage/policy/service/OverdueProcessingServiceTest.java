@@ -342,4 +342,54 @@ class OverdueProcessingServiceTest {
         verify(policyVersionRepository, never())
                 .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any());
     }
+
+    @Test
+    @DisplayName("BR-RET-09: Ô kho CLEANING chưa đủ 5 ngày thì giữ nguyên trạng thái CLEANING")
+    void testCleaningUnit_LessThan5Days_ShouldRemainCleaning() {
+        LocalDate runDate = LocalDate.of(2026, 10, 11);
+        StorageUnit unit = StorageUnit.builder()
+                .id(201L).code("Q1-B201").status(StorageUnitStatus.CLEANING)
+                .updatedAt(OffsetDateTime.parse("2026-10-08T00:00:00Z"))
+                .build();
+
+        RentalContract closedContract = RentalContract.builder()
+                .id(999L).code("CTR-CLOSED").status(ContractStatus.CLOSED)
+                .closedAt(OffsetDateTime.parse("2026-10-08T00:00:00Z"))
+                .build();
+
+        when(storageUnitRepository.findByStatus(StorageUnitStatus.CLEANING)).thenReturn(List.of(unit));
+        when(rentalContractRepository.findFirstByStorageUnitIdAndStatusOrderByClosedAtDesc(201L, ContractStatus.CLOSED))
+                .thenReturn(Optional.of(closedContract));
+
+        overdueProcessingService.processOverdueContracts(runDate);
+
+        assertEquals(StorageUnitStatus.CLEANING, unit.getStatus(), "Mới được 3 ngày (<5), vẫn phải là CLEANING");
+        verify(storageUnitRepository, never()).save(unit);
+    }
+
+    @Test
+    @DisplayName("BR-RET-09: Ô kho CLEANING đủ 5 ngày trở lên tự động giải phóng sang AVAILABLE")
+    void testCleaningUnit_5DaysOrMore_ShouldBecomeAvailable() {
+        LocalDate runDate = LocalDate.of(2026, 10, 11);
+        StorageUnit unit = StorageUnit.builder()
+                .id(201L).code("Q1-B201").status(StorageUnitStatus.CLEANING)
+                .updatedAt(OffsetDateTime.parse("2026-10-05T00:00:00Z"))
+                .build();
+
+        RentalContract closedContract = RentalContract.builder()
+                .id(999L).code("CTR-CLOSED").status(ContractStatus.CLOSED)
+                .closedAt(OffsetDateTime.parse("2026-10-05T00:00:00Z"))
+                .build();
+
+        when(storageUnitRepository.findByStatus(StorageUnitStatus.CLEANING)).thenReturn(List.of(unit));
+        when(rentalContractRepository.findFirstByStorageUnitIdAndStatusOrderByClosedAtDesc(201L, ContractStatus.CLOSED))
+                .thenReturn(Optional.of(closedContract));
+        when(reservationRepository.existsActiveOrFutureReservation(eq(201L), anyList(), eq(runDate)))
+                .thenReturn(false);
+
+        overdueProcessingService.processOverdueContracts(runDate);
+
+        assertEquals(StorageUnitStatus.AVAILABLE, unit.getStatus(), "Đã qua 6 ngày (>=5), tự động chuyển sang AVAILABLE");
+        verify(storageUnitRepository).save(unit);
+    }
 }

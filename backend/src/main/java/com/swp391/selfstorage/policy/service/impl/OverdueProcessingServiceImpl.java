@@ -9,6 +9,7 @@ import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
 import com.swp391.selfstorage.policy.service.OverdueProcessingService;
 import com.swp391.selfstorage.reservation.entity.ReservationStatus;
 import com.swp391.selfstorage.reservation.repository.ReservationRepository;
+import com.swp391.selfstorage.unit.entity.StorageUnit;
 import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -158,6 +160,33 @@ public class OverdueProcessingServiceImpl implements OverdueProcessingService {
             }
 
             rentalContractRepository.save(contract);
+        }
+
+        // 4. Tự động giải phóng các ô kho CLEANING sau 5 ngày dọn dẹp (BR-RET-09 / Trả kho hoàn tất)
+        List<StorageUnit> cleaningUnits = storageUnitRepository.findByStatus(StorageUnitStatus.CLEANING);
+        for (StorageUnit unit : cleaningUnits) {
+            LocalDate cleaningStartDate = null;
+            Optional<RentalContract> latestClosedContract = rentalContractRepository
+                    .findFirstByStorageUnitIdAndStatusOrderByClosedAtDesc(unit.getId(), ContractStatus.CLOSED);
+            if (latestClosedContract.isPresent() && latestClosedContract.get().getClosedAt() != null) {
+                cleaningStartDate = latestClosedContract.get().getClosedAt().toLocalDate();
+            } else if (unit.getUpdatedAt() != null) {
+                cleaningStartDate = unit.getUpdatedAt().toLocalDate();
+            }
+
+            if (cleaningStartDate != null) {
+                long cleaningDays = ChronoUnit.DAYS.between(cleaningStartDate, runDate);
+                if (cleaningDays >= 5) {
+                    boolean awaitingCheckIn = reservationRepository != null &&
+                            reservationRepository.existsActiveOrFutureReservation(
+                                    unit.getId(), List.of(ReservationStatus.CONFIRMED), runDate);
+                    StorageUnitStatus newStatus = awaitingCheckIn ? StorageUnitStatus.RESERVED : StorageUnitStatus.AVAILABLE;
+                    unit.setStatus(newStatus);
+                    storageUnitRepository.save(unit);
+                    log.info("Ô kho [{}] đã dọn dẹp {} ngày (>= 5 ngày từ {}): Tự động chuyển sang {}.",
+                            unit.getCode(), cleaningDays, cleaningStartDate, newStatus);
+                }
+            }
         }
 
         return OverdueProcessingResult.builder()

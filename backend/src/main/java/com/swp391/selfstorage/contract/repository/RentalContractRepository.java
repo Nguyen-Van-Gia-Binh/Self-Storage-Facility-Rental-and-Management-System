@@ -58,6 +58,11 @@ public interface RentalContractRepository
     Optional<RentalContract> findByIdAndCustomerId(Long id, Long customerId);
 
     /**
+     * Tìm hợp đồng CLOSED gần nhất của một ô kho để xác định thời điểm bắt đầu dọn dẹp.
+     */
+    Optional<RentalContract> findFirstByStorageUnitIdAndStatusOrderByClosedAtDesc(Long storageUnitId, ContractStatus status);
+
+    /**
      * Tìm tất cả hợp đồng có trạng thái nằm trong danh sách và ngày kết thúc <=
      * ngày chỉ định.
      * Dùng cho Cronjob quét quá hạn (T4.6).

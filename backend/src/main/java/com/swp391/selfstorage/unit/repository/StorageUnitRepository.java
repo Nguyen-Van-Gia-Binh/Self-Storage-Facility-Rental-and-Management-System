@@ -26,6 +26,8 @@ public interface StorageUnitRepository extends JpaRepository<StorageUnit, Long> 
 
         List<StorageUnit> findByFacilityId(Long facilityId);
 
+        List<StorageUnit> findByStatus(StorageUnitStatus status);
+
         long countByFacilityIdAndUnitTypeId(Long facilityId, Long unitTypeId);
 
         long countByUnitTypeIdAndStatusIn(Long unitTypeId, Collection<StorageUnitStatus> statuses);
