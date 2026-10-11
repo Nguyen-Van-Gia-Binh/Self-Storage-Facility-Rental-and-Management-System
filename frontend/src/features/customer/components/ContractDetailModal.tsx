@@ -28,6 +28,7 @@ export interface ContractDetailModalProps {
   contract: RentedContract | null;
   onScheduleReturn?: (contract: RentedContract) => void;
   onChangePin?: (contract: RentedContract) => void;
+  onReschedulePeriod?: (contract: RentedContract) => void;
 }
 
 export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
@@ -36,6 +37,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
   contract,
   onScheduleReturn,
   onChangePin,
+  onReschedulePeriod,
 }) => {
   const [detail, setDetail] = useState<CustomerRentalDetail | null>(null);
   const [copiedContractNum, setCopiedContractNum] = useState(false);
@@ -449,6 +451,21 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
               >
                 <KeyRound className="w-3.5 h-3.5" />
                 <span>Đổi PIN</span>
+              </Button>
+            )}
+
+            {onReschedulePeriod && contract && isPendingCheckin && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  handleClose();
+                  onReschedulePeriod(contract);
+                }}
+                className="flex items-center gap-1.5 px-3 cursor-pointer text-xs font-semibold text-blue-700 border-blue-200 hover:bg-blue-50"
+              >
+                <Calendar className="w-3.5 h-3.5" />
+                <span>Dời ngày thuê</span>
               </Button>
             )}
 

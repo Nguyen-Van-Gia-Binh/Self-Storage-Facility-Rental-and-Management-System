@@ -9,6 +9,7 @@ import com.swp391.selfstorage.contract.entity.*;
 import com.swp391.selfstorage.contract.event.ContractSettledEvent;
 import com.swp391.selfstorage.contract.repository.*;
 import com.swp391.selfstorage.contract.service.ContractService;
+import com.swp391.selfstorage.reservation.entity.Reservation;
 import com.swp391.selfstorage.reservation.entity.ReservationStatus;
 import com.swp391.selfstorage.reservation.repository.ReservationRepository;
 import com.swp391.selfstorage.facility.entity.Facility;
@@ -1323,6 +1324,135 @@ public class ContractServiceImpl implements ContractService {
                 long unusedDays = java.time.temporal.ChronoUnit.DAYS.between(returnDate, contract.getEndDateExclusive());
                 long unusedRent = PolicyNumbers.dailyRent(contract.getMonthlyPrice(), policy) * unusedDays;
                 return PolicyNumbers.share(unusedRent, policy.getReturnEarlyRefundRate());
+        }
+
+        @Override
+        @Transactional
+        public ContractResponse rescheduleRentalPeriod(Long contractId, RescheduleRentalPeriodRequest request, Long currentUserId) {
+                if (request == null || request.getNewStartDate() == null) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Ngày bắt đầu mới không được để trống");
+                }
+
+                LocalDate newStartDate = request.getNewStartDate();
+                LocalDate today = LocalDate.now();
+                if (newStartDate.isBefore(today.plusDays(1))) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Ngày bắt đầu mới phải từ ngày mai trở đi");
+                }
+
+                RentalContract contract = contractRepository.findById(contractId)
+                                .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
+
+                if (contract.getStatus() != ContractStatus.PENDING_CHECK_IN) {
+                        throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION,
+                                        "Chỉ được dời lịch khi hợp đồng đang ở trạng thái Chờ nhận kho (PENDING_CHECK_IN)");
+                }
+
+                if (newStartDate.equals(contract.getStartDate())) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Ngày bắt đầu mới phải khác ngày bắt đầu hiện tại");
+                }
+
+                int months = contract.getRentalMonths() > 0 ? contract.getRentalMonths() : 1;
+                LocalDate newEndDate = newStartDate.plusMonths(months);
+
+                Long currentUnitId = contract.getStorageUnitId();
+                Long facilityId = contract.getFacilityId();
+                Long unitTypeId = contract.getUnitTypeId();
+
+                // Lấy policy buffer days
+                int bufferDays = 15;
+                if (contract.getPolicyVersionId() != null && policyVersionRepository != null) {
+                        bufferDays = policyVersionRepository.findById(contract.getPolicyVersionId())
+                                        .map(p -> p.getRentalBufferDays() != null ? p.getRentalBufferDays() : 15)
+                                        .orElse(15);
+                }
+
+                OffsetDateTime now = OffsetDateTime.now();
+                Long reservationId = contract.getReservationId();
+
+                // Kiểm tra xem ô kho hiện tại có bị trùng lịch trong khoảng [newStartDate, newEndDate) không
+                boolean hasConflict = false;
+                if (currentUnitId != null) {
+                        boolean contractConflict = contractRepository.existsOverlappingContractForUnit(
+                                        currentUnitId, newStartDate, newEndDate, bufferDays, contract.getId());
+                        boolean reservationConflict = reservationRepository.existsOverlappingReservationForUnit(
+                                        currentUnitId, newStartDate, newEndDate, now, bufferDays);
+                        hasConflict = contractConflict || reservationConflict;
+                } else {
+                        hasConflict = true;
+                }
+
+                Long targetUnitId = currentUnitId;
+
+                if (hasConflict) {
+                        // Tìm ô kho khác cùng loại tại cơ sở còn trống
+                        List<StorageUnit> candidateUnits = storageUnitRepository.findByFacilityId(facilityId)
+                                        .stream()
+                                        .filter(u -> Objects.equals(u.getUnitTypeId(), unitTypeId))
+                                        .filter(u -> u.getStatus() == StorageUnitStatus.AVAILABLE || u.getStatus() == StorageUnitStatus.RESERVED)
+                                        .filter(u -> !Objects.equals(u.getId(), currentUnitId))
+                                        .toList();
+
+                        StorageUnit availableUnit = null;
+                        for (StorageUnit candidate : candidateUnits) {
+                                boolean cConf = contractRepository.existsOverlappingContractForUnit(
+                                                candidate.getId(), newStartDate, newEndDate, bufferDays, contract.getId());
+                                boolean rConf = reservationRepository.existsOverlappingReservationForUnit(
+                                                candidate.getId(), newStartDate, newEndDate, now, bufferDays);
+                                if (!cConf && !rConf) {
+                                        availableUnit = candidate;
+                                        break;
+                                }
+                        }
+
+                        if (availableUnit == null) {
+                                throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE,
+                                                "Không còn ô kho trống cùng loại trong khoảng thời gian từ " + newStartDate + " đến " + newEndDate + ". Vui lòng chọn ngày khác!");
+                        }
+
+                        targetUnitId = availableUnit.getId();
+
+                        // Cập nhật ô kho cũ nếu không còn ai giữ
+                        if (currentUnitId != null) {
+                                storageUnitRepository.findById(currentUnitId).ifPresent(oldUnit -> {
+                                        boolean stillReserved = reservationRepository.existsByStorageUnitIdAndStatusIn(
+                                                        oldUnit.getId(), List.of(ReservationStatus.CONFIRMED, ReservationStatus.PENDING_PAYMENT));
+                                        if (!stillReserved) {
+                                                oldUnit.setStatus(StorageUnitStatus.AVAILABLE);
+                                                storageUnitRepository.save(oldUnit);
+                                        }
+                                });
+                        }
+
+                        // Đổi trạng thái ô kho mới sang RESERVED
+                        availableUnit.setStatus(StorageUnitStatus.RESERVED);
+                        storageUnitRepository.save(availableUnit);
+                }
+
+                contract.setStartDate(newStartDate);
+                contract.setEndDateExclusive(newEndDate);
+                if (targetUnitId != null) {
+                        contract.setStorageUnitId(targetUnitId);
+                }
+                contractRepository.save(contract);
+
+                // Đồng bộ sang Reservation
+                if (reservationId != null) {
+                        Optional<Reservation> rsvOpt = reservationRepository.findById(reservationId);
+                        if (rsvOpt.isPresent()) {
+                                Reservation rsv = rsvOpt.get();
+                                rsv.setStartDate(newStartDate);
+                                rsv.setEndDateExclusive(newEndDate);
+                                if (targetUnitId != null) {
+                                        rsv.setStorageUnitId(targetUnitId);
+                                }
+                                reservationRepository.save(rsv);
+                        }
+                }
+
+                log.info("Dời thời gian hợp đồng [{}] thành công sang: {} -> {}, ô kho: {}",
+                                contract.getCode(), newStartDate, newEndDate, targetUnitId);
+
+                return toResponse(contract);
         }
 
         /** PIN theo độ dài trong snapshot hợp đồng, không ghim 6 số. */

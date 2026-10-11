@@ -88,6 +88,7 @@ bảng chính sách của hệ thống (`BM-02`, `BM-03`).
 | `BR-RES-03` | Một Storage Customer có thể có nhiều Reservation *Pending Payment*; mỗi Reservation giữ capacity và hết hạn độc lập. Khách có Contract *Overdue* bị chặn theo `BR-OVD-09` |
 | `BR-RES-04` | Reservation *Pending Payment* có thể được khách hủy; vì chưa thu tiền nên không phát sinh hoàn tiền và capacity được giải phóng ngay |
 | `BR-RES-05` | Reservation chỉ hoàn tất ở trạng thái *Fulfilled* sau Check-in / Handover thành công. Từ thời điểm đó, việc kết thúc thuê đi theo Return (§ 9), không đi theo Cancellation (§ 6) |
+| `BR-RES-06` | **Dời thời gian thuê trước khi nhận kho (Reschedule Rental Period):** Khách hàng có hợp đồng ở trạng thái *Pending Check-in* (đã thanh toán, chưa nhận kho) có quyền yêu cầu dời ngày bắt đầu nhận kho sang ngày mới (`newStartDate >= CURRENT_DATE + 1`). Hệ thống giữ nguyên thời lượng thuê (`rentalMonths`) và toàn bộ số tiền đã thanh toán (không phát sinh hoàn tiền hay truy thu), tự động tính `newEndDate = newStartDate + rentalMonths`. Hệ thống kiểm tra: nếu ô kho hiện tại trống trong khung ngày mới thì giữ nguyên; nếu bị trùng lịch thì tự động đổi sang ô kho trống khác cùng loại (`unit_type`) trong cơ sở; nếu tất cả ô cùng loại đều kín lịch thì từ chối yêu cầu và yêu cầu khách chọn ngày khác |
 
 ### 3.2. Availability
 

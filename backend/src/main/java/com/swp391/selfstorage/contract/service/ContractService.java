@@ -36,4 +36,7 @@ public interface ContractService {
     ContractResponse completeCleaning(Long contractId, List<Long> facilityIds);
     ContractResponse assignReturnStaff(Long contractId, AssignReturnStaffRequest request, Long managerId, List<Long> facilityIds);
     ContractResponse assignCheckInStaff(Long contractId, AssignReturnStaffRequest request, Long managerId, List<Long> facilityIds);
+
+    /** Dời thời gian thuê trước khi nhận kho khi ở trạng thái PENDING_CHECK_IN (BR-RES-06). */
+    ContractResponse rescheduleRentalPeriod(Long contractId, com.swp391.selfstorage.contract.dto.RescheduleRentalPeriodRequest request, Long currentUserId);
 }

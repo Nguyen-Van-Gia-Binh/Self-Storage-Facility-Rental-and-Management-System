@@ -375,3 +375,18 @@ export async function renewContract(
     throw err;
   }
 }
+
+/**
+ * Dời ngày bắt đầu nhận kho trước khi Check-in (BR-RES-06)
+ * POST /contracts/{contractId}/reschedule-period
+ */
+export async function rescheduleRentalPeriod(
+  contractId: number | string,
+  newStartDate: string
+): Promise<any> {
+  return apiClient(`/contracts/${contractId}/reschedule-period`, {
+    method: 'POST',
+    body: JSON.stringify({ newStartDate }),
+  });
+}
+
