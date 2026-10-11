@@ -125,7 +125,7 @@ class ContractRescheduleServiceTest {
         when(contractRepository.findById(100L)).thenReturn(Optional.of(contract));
         when(contractRepository.existsOverlappingContractForUnit(eq(201L), eq(newStartDate), any(), anyInt(), eq(100L)))
                 .thenReturn(false);
-        when(reservationRepository.existsOverlappingReservationForUnit(eq(201L), eq(newStartDate), any(), any(), anyInt()))
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(201L), eq(newStartDate), any(), any(), anyInt(), anyLong()))
                 .thenReturn(false);
         when(reservationRepository.findById(500L)).thenReturn(Optional.of(reservation));
         when(contractRepository.save(any(RentalContract.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -156,7 +156,7 @@ class ContractRescheduleServiceTest {
         // Ô kho 202 trống
         when(contractRepository.existsOverlappingContractForUnit(eq(202L), eq(newStartDate), any(), anyInt(), eq(100L)))
                 .thenReturn(false);
-        when(reservationRepository.existsOverlappingReservationForUnit(eq(202L), eq(newStartDate), any(), any(), anyInt()))
+        when(reservationRepository.existsOverlappingReservationForUnit(eq(202L), eq(newStartDate), any(), any(), anyInt(), anyLong()))
                 .thenReturn(false);
 
         when(storageUnitRepository.findById(201L)).thenReturn(Optional.of(unit1));

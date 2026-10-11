@@ -1368,6 +1368,7 @@ public class ContractServiceImpl implements ContractService {
 
                 OffsetDateTime now = OffsetDateTime.now();
                 Long reservationId = contract.getReservationId();
+                long excludeReservationId = reservationId != null ? reservationId : 0L;
 
                 // Kiểm tra xem ô kho hiện tại có bị trùng lịch trong khoảng [newStartDate, newEndDate) không
                 boolean hasConflict = false;
@@ -1375,7 +1376,7 @@ public class ContractServiceImpl implements ContractService {
                         boolean contractConflict = contractRepository.existsOverlappingContractForUnit(
                                         currentUnitId, newStartDate, newEndDate, bufferDays, contract.getId());
                         boolean reservationConflict = reservationRepository.existsOverlappingReservationForUnit(
-                                        currentUnitId, newStartDate, newEndDate, now, bufferDays);
+                                        currentUnitId, newStartDate, newEndDate, now, bufferDays, excludeReservationId);
                         hasConflict = contractConflict || reservationConflict;
                 } else {
                         hasConflict = true;
@@ -1384,11 +1385,12 @@ public class ContractServiceImpl implements ContractService {
                 Long targetUnitId = currentUnitId;
 
                 if (hasConflict) {
-                        // Tìm ô kho khác cùng loại tại cơ sở còn trống
+                        // Tìm ô kho khác cùng loại tại cơ sở còn trống (không bảo trì / hỏng)
                         List<StorageUnit> candidateUnits = storageUnitRepository.findByFacilityId(facilityId)
                                         .stream()
                                         .filter(u -> Objects.equals(u.getUnitTypeId(), unitTypeId))
-                                        .filter(u -> u.getStatus() == StorageUnitStatus.AVAILABLE || u.getStatus() == StorageUnitStatus.RESERVED)
+                                        .filter(u -> u.getStatus() != StorageUnitStatus.MAINTENANCE
+                                                        && u.getStatus() != StorageUnitStatus.OUT_OF_SERVICE)
                                         .filter(u -> !Objects.equals(u.getId(), currentUnitId))
                                         .toList();
 
@@ -1397,7 +1399,7 @@ public class ContractServiceImpl implements ContractService {
                                 boolean cConf = contractRepository.existsOverlappingContractForUnit(
                                                 candidate.getId(), newStartDate, newEndDate, bufferDays, contract.getId());
                                 boolean rConf = reservationRepository.existsOverlappingReservationForUnit(
-                                                candidate.getId(), newStartDate, newEndDate, now, bufferDays);
+                                                candidate.getId(), newStartDate, newEndDate, now, bufferDays, excludeReservationId);
                                 if (!cConf && !rConf) {
                                         availableUnit = candidate;
                                         break;
