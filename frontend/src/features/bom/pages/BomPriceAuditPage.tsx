@@ -51,28 +51,7 @@ function fieldChanged(entry: PriceAuditEntry, field: PriceAuditField): boolean {
   );
 }
 
-function getEntryDisplayInfo(entry: PriceAuditEntry): string {
-  if (entry.category === 'SURCHARGE') {
-    const amountField = entry.snapshot?.find((f) => f.key === 'amount') || entry.changes?.find((f) => f.key === 'amount');
-    if (amountField?.newValue) {
-      return `Mức phí: ${amountField.newValue}`;
-    }
-  }
-  if (entry.category === 'RENT') {
-    const m2Field = entry.snapshot?.find((f) => f.key === 'pricePerM2') || entry.changes?.find((f) => f.key === 'pricePerM2');
-    const monthField = entry.snapshot?.find((f) => f.key === 'monthlyPrice') || entry.changes?.find((f) => f.key === 'monthlyPrice');
-    if (m2Field?.newValue && monthField?.newValue) {
-      return `${m2Field.newValue} · ${monthField.newValue}/tháng`;
-    }
-    if (m2Field?.newValue) {
-      return m2Field.newValue;
-    }
-  }
-  if (entry.category === 'POLICY') {
-    return '23 tham số chính sách';
-  }
-  return entry.changeSummary || '—';
-}
+
 
 export const BomPriceAuditPage: React.FC = () => {
   const [facilities, setFacilities] = useState<FacilityListItem[]>([]);
@@ -269,7 +248,7 @@ export const BomPriceAuditPage: React.FC = () => {
                   <th className="py-3.5 px-4 whitespace-nowrap min-w-[130px] w-36">Người thực hiện</th>
                   <th className="py-3.5 px-4 whitespace-nowrap min-w-[110px] w-28">Loại</th>
                   <th className="py-3.5 px-4 whitespace-nowrap min-w-[160px] w-44">Đối tượng</th>
-                  <th className="py-3.5 px-4 min-w-[240px]">Thông tin</th>
+                  <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[100px] w-28">Thông tin</th>
                   <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[110px] w-28">Hiệu lực</th>
                   <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[140px] w-36">Trạng thái</th>
                 </tr>
@@ -289,23 +268,18 @@ export const BomPriceAuditPage: React.FC = () => {
                       </span>
                     </td>
                     <td className="py-3 px-4 whitespace-nowrap font-semibold text-slate-900">{entry.subject}</td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="font-semibold text-slate-800 text-xs sm:text-sm">
-                          {getEntryDisplayInfo(entry)}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setSelected(entry);
-                          }}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-200/60 rounded-lg transition-colors cursor-pointer shrink-0"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          Chi tiết
-                        </button>
-                      </div>
+                    <td className="py-3 px-4 text-center whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setSelected(entry);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg transition-colors cursor-pointer shadow-2xs"
+                      >
+                        <Eye className="w-3.5 h-3.5 text-slate-400" />
+                        Chi tiết
+                      </button>
                     </td>
                     <td className="py-3 px-4 text-center whitespace-nowrap font-mono text-xs text-slate-600">{formatDay(entry.effectiveFrom)}</td>
                     <td className="py-3 px-4 text-center whitespace-nowrap min-w-[140px]">
