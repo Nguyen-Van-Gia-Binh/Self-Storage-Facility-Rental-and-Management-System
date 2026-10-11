@@ -28,4 +28,8 @@ public class FacilityOverviewReportResponse {
     private long rentalRevenue;
     private long surchargeRevenue;
     private long depositBalance;
+    private long customerServiceFee;
+    private long overduePenaltyFee;
+    private long companyIncidentCost;
+    private long netRevenue;
 }
