@@ -1105,9 +1105,9 @@ public class ContractServiceImpl implements ContractService {
                 }
                 StorageUnit unit = storageUnitRepository.findById(contract.getStorageUnitId())
                                 .orElseThrow(() -> new CustomException(ErrorCode.STORAGE_UNIT_NOT_FOUND));
-                if (unit.getStatus() != StorageUnitStatus.CLEANING) {
+                if (unit.getStatus() != StorageUnitStatus.CLEANING && unit.getStatus() != StorageUnitStatus.RESERVED) {
                         throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION,
-                                        "Chỉ hoàn tất dọn khi ô kho đang ở trạng thái CLEANING");
+                                        "Chỉ hoàn tất dọn khi ô kho đang ở trạng thái CLEANING hoặc RESERVED");
                 }
                 boolean awaitingCheckIn = reservationRepository.existsByStorageUnitIdAndStatusIn(
                                 unit.getId(), List.of(ReservationStatus.CONFIRMED));

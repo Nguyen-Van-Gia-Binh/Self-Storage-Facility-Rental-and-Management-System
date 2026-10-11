@@ -527,7 +527,8 @@ public class ReservationServiceImpl implements ReservationService {
             if (unit.getStatus() == StorageUnitStatus.OCCUPIED) {
                 // Future claim: unit dang thue voi ky cu — khong doi status
             } else if (unit.getStatus() == StorageUnitStatus.AVAILABLE
-                    || unit.getStatus() == StorageUnitStatus.RESERVED) {
+                    || unit.getStatus() == StorageUnitStatus.RESERVED
+                    || unit.getStatus() == StorageUnitStatus.CLEANING) {
                 unit.setStatus(StorageUnitStatus.RESERVED);
                 storageUnitRepository.save(unit);
             } else {
