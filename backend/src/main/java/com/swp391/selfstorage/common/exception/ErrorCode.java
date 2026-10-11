@@ -66,6 +66,7 @@ public enum ErrorCode {
     CONTRACT_NOT_PENDING_RETURN(HttpStatus.CONFLICT, "Hợp đồng chưa ở trạng thái chờ duyệt trả kho"),
     RETURN_INSPECTION_ALREADY_STARTED(HttpStatus.CONFLICT, "Không thể hủy vì nhân viên đã bắt đầu tiến hành kiểm tra nghiệm thu"),
     SURCHARGE_CODE_ALREADY_EXISTS(HttpStatus.CONFLICT, "Mã phụ phí đã tồn tại"),
+    SURCHARGE_NAME_ALREADY_EXISTS(HttpStatus.CONFLICT, "Tên phụ phí đã tồn tại"),
     PAYMENT_FAILED(HttpStatus.CONFLICT, "Thanh toán thất bại ở cổng thanh toán"),
     POLICY_VERSION_ALREADY_EXISTS(HttpStatus.CONFLICT, "Số phiên bản chính sách đã tồn tại"),
     CAPACITY_NOT_AVAILABLE(HttpStatus.CONFLICT, "Không còn sức chứa khả dụng cho loại ô kho này trong khoảng thời gian đã chọn"),

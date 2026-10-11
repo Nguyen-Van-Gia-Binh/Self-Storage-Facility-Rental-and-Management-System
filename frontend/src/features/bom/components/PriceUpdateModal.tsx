@@ -89,7 +89,7 @@ export const PriceUpdateModal: React.FC<PriceUpdateModalProps> = ({
     }
 
     if (priceNum % 1000 !== 0) {
-      setError('Đơn giá m² phải là bội số của 1.000 đồng (VD: 800.000 VND/m²)');
+      setError('Đơn giá m² phải là bội số của 1.000 đồng (VD: 800.000 ₫/m²)');
       return;
     }
 
@@ -137,30 +137,44 @@ export const PriceUpdateModal: React.FC<PriceUpdateModalProps> = ({
         </div>
 
         <form onSubmit={validateAndSubmit} className="p-6 space-y-4">
-          <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1 text-xs">
-            <p className="text-slate-500">
-              Cơ sở: <span className="font-bold text-slate-800">{facilityName}</span>
-            </p>
-            <p className="text-slate-500">
-              Loại ô kho: <span className="font-bold text-slate-800">{unitType.name}</span> (
-              {unitType.areaM2} m²)
-            </p>
-            <p className="text-slate-500">
-              Kích thước: {unitType.widthM}m × {unitType.depthM}m × {unitType.heightM}m
-            </p>
-            <p className="text-slate-500">
-              Giá thuê tháng hiện tại:{' '}
-              <span className="font-bold text-amber-600">
+          <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 text-xs">
+            <div className="flex justify-between items-center">
+              <span className="text-slate-500">Cơ sở:</span>
+              <span className="font-bold text-slate-800">{facilityName}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-slate-500">Loại ô kho:</span>
+              <span className="font-bold text-slate-800">{unitType.name}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-slate-500">Quy cách không gian:</span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-mono font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/60">
+                  {unitType.volumeM3 ?? Number((unitType.widthM * unitType.depthM * unitType.heightM).toFixed(2))} m³
+                </span>
+                <span className="text-slate-400">·</span>
+                <span className="font-semibold text-slate-700">{unitType.areaM2} m²</span>
+              </div>
+            </div>
+            <div className="flex justify-between items-center text-slate-500">
+              <span>Kích thước:</span>
+              <span className="font-mono text-slate-600">
+                D: {unitType.depthM}m × R: {unitType.widthM}m × C: {unitType.heightM}m
+              </span>
+            </div>
+            <div className="flex justify-between items-center pt-1 border-t border-slate-200/60">
+              <span className="text-slate-500">Giá thuê hiện tại:</span>
+              <span className="font-bold text-amber-600 font-mono">
                 {unitType.monthlyPrice > 0
-                  ? `${unitType.monthlyPrice.toLocaleString('vi-VN')} VND / tháng`
+                  ? `${unitType.monthlyPrice.toLocaleString('vi-VN')} ₫/tháng`
                   : 'Chưa niêm yết'}
               </span>
-            </p>
+            </div>
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
-              Đơn giá 1 m² (VNĐ/m²/tháng) <span className="text-rose-500">*</span>
+              Đơn giá 1 m² (₫/m²) <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
               <input
@@ -178,7 +192,7 @@ export const PriceUpdateModal: React.FC<PriceUpdateModalProps> = ({
                 }`}
               />
               <span className="absolute right-3.5 top-2.5 text-xs text-slate-400 font-normal">
-                ≈ {formattedDisplayPrice(priceInput)} VND/m²
+                ≈ {formattedDisplayPrice(priceInput)} ₫/m²
               </span>
             </div>
             {error && (
@@ -192,7 +206,7 @@ export const PriceUpdateModal: React.FC<PriceUpdateModalProps> = ({
             <p className="font-semibold mb-0.5">Giá thuê tháng = đơn giá × diện tích</p>
             <p>
               {previewMonthly > 0
-                ? `${previewMonthly.toLocaleString('vi-VN')} VNĐ / tháng`
+                ? `${previewMonthly.toLocaleString('vi-VN')} ₫/tháng`
                 : '—'}{' '}
               <span className="text-amber-700/80">
                 (= đơn giá × {unitType.areaM2} m², làm tròn 1.000)

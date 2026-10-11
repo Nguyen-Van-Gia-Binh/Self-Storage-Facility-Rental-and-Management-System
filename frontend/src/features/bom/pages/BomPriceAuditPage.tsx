@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { History, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { History, X, ChevronLeft, ChevronRight, Loader2, Eye } from 'lucide-react';
 import { fetchFacilities } from '@/api/facility';
 import { fetchPriceAudit } from '@/api/pricing';
 import type { PriceAuditEntry, PriceAuditField, PriceAuditPage } from '@/api/pricing';
@@ -19,6 +20,7 @@ function categoryLabel(category: string): string {
 function statusClass(status: string): string {
   if (status === 'Đang áp dụng') return 'bg-emerald-50 text-emerald-700 border-emerald-200';
   if (status === 'Chưa áp dụng') return 'bg-amber-50 text-amber-700 border-amber-200';
+  if (status === 'Ngừng áp dụng') return 'bg-rose-50 text-rose-700 border-rose-200';
   return 'bg-slate-50 text-slate-600 border-slate-200';
 }
 
@@ -49,6 +51,8 @@ function fieldChanged(entry: PriceAuditEntry, field: PriceAuditField): boolean {
   );
 }
 
+
+
 export const BomPriceAuditPage: React.FC = () => {
   const [facilities, setFacilities] = useState<FacilityListItem[]>([]);
   const [category, setCategory] = useState('ALL');
@@ -61,6 +65,26 @@ export const BomPriceAuditPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<PriceAuditEntry | null>(null);
+
+  useEffect(() => {
+    if (selected) {
+      const mainElement = document.querySelector('main');
+      const originalMainOverflow = mainElement?.style.overflow ?? '';
+      const originalBodyOverflow = document.body.style.overflow;
+
+      if (mainElement) {
+        mainElement.style.overflow = 'hidden';
+      }
+      document.body.style.overflow = 'hidden';
+
+      return () => {
+        if (mainElement) {
+          mainElement.style.overflow = originalMainOverflow;
+        }
+        document.body.style.overflow = originalBodyOverflow;
+      };
+    }
+  }, [selected]);
 
   useEffect(() => {
     let ignore = false;
@@ -110,7 +134,7 @@ export const BomPriceAuditPage: React.FC = () => {
   const resetPage = () => setPage(0);
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+    <div className="space-y-6 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-12">
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center space-x-2.5">
         <div className="p-2.5 rounded-xl bg-violet-600 text-white">
           <History className="w-6 h-6" />
@@ -220,13 +244,13 @@ export const BomPriceAuditPage: React.FC = () => {
             <table className="w-full text-left border-collapse text-sm">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  <th className="py-3.5 px-4">Thời điểm ghi</th>
-                  <th className="py-3.5 px-4">Người thực hiện</th>
-                  <th className="py-3.5 px-4">Loại</th>
-                  <th className="py-3.5 px-4">Đối tượng</th>
-                  <th className="py-3.5 px-4">Giá trị cũ → mới</th>
-                  <th className="py-3.5 px-4">Hiệu lực</th>
-                  <th className="py-3.5 px-4">Trạng thái</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap min-w-[150px] w-40">Thời điểm ghi</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap min-w-[130px] w-36">Người thực hiện</th>
+                  <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[110px] w-28">Loại</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap min-w-[160px] w-44">Đối tượng</th>
+                  <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[100px] w-28">Thông tin</th>
+                  <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[110px] w-28">Hiệu lực</th>
+                  <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[140px] w-36">Trạng thái</th>
                 </tr>
               </thead>
               <tbody>
@@ -234,16 +258,32 @@ export const BomPriceAuditPage: React.FC = () => {
                   <tr
                     key={entry.id}
                     onClick={() => setSelected(entry)}
-                    className="border-b border-slate-100 hover:bg-violet-50/40 cursor-pointer"
+                    className="border-b border-slate-100 hover:bg-violet-50/40 cursor-pointer transition-colors"
                   >
-                    <td className="py-3 px-4 whitespace-nowrap text-slate-700">{formatWhen(entry.recordedAt)}</td>
-                    <td className="py-3 px-4 whitespace-nowrap">{entry.actorName}</td>
-                    <td className="py-3 px-4 whitespace-nowrap">{categoryLabel(entry.category)}</td>
-                    <td className="py-3 px-4">{entry.subject}</td>
-                    <td className="py-3 px-4 text-slate-700">{entry.changeSummary}</td>
-                    <td className="py-3 px-4 whitespace-nowrap">{formatDay(entry.effectiveFrom)}</td>
-                    <td className="py-3 px-4">
-                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold border ${statusClass(entry.status)}`}>
+                    <td className="py-3 px-4 whitespace-nowrap text-slate-700 font-mono text-xs">{formatWhen(entry.recordedAt)}</td>
+                    <td className="py-3 px-4 whitespace-nowrap font-medium text-slate-800">{entry.actorName}</td>
+                    <td className="py-3 px-4 text-center whitespace-nowrap">
+                      <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200/60">
+                        {categoryLabel(entry.category)}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 whitespace-nowrap font-semibold text-slate-900">{entry.subject}</td>
+                    <td className="py-3 px-4 text-center whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setSelected(entry);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg transition-colors cursor-pointer shadow-2xs"
+                      >
+                        <Eye className="w-3.5 h-3.5 text-slate-400" />
+                        Chi tiết
+                      </button>
+                    </td>
+                    <td className="py-3 px-4 text-center whitespace-nowrap font-mono text-xs text-slate-600">{formatDay(entry.effectiveFrom)}</td>
+                    <td className="py-3 px-4 text-center whitespace-nowrap min-w-[140px]">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border whitespace-nowrap shadow-sm ${statusClass(entry.status)}`}>
                         {entry.status}
                       </span>
                     </td>
@@ -280,44 +320,66 @@ export const BomPriceAuditPage: React.FC = () => {
         )}
       </div>
 
-      {selected && (
-        <div className="fixed inset-0 z-[80] flex justify-end bg-slate-900/40" onClick={() => setSelected(null)}>
-          <aside
-            className="h-full w-full max-w-md bg-white shadow-2xl overflow-y-auto"
-            onClick={(event) => event.stopPropagation()}
+      {selected &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] flex justify-end bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200 overscroll-contain"
+            onClick={() => setSelected(null)}
+            onWheel={(event) => event.stopPropagation()}
+            onTouchMove={(event) => event.stopPropagation()}
           >
-            <div className="px-5 py-4 border-b border-slate-200 flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold text-violet-600 uppercase">{categoryLabel(selected.category)}</p>
-                <h2 className="text-lg font-bold text-slate-900">{selected.subject}</h2>
-                <p className="text-xs text-slate-500 mt-1">
-                  {selected.actorName} · {formatWhen(selected.recordedAt)} · hiệu lực {formatDay(selected.effectiveFrom)}
-                </p>
+            <aside
+              className="h-full w-full max-w-lg bg-white shadow-2xl animate-in slide-in-from-right duration-300 flex flex-col overflow-hidden"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="shrink-0 px-6 py-5 border-b border-slate-200 flex items-start justify-between gap-3 bg-white z-10 shadow-sm">
+                <div>
+                  <p className="text-xs font-semibold text-violet-600 uppercase tracking-wide">
+                    {categoryLabel(selected.category)}
+                  </p>
+                  <h2 className="text-lg font-bold text-slate-900 mt-0.5">{selected.subject}</h2>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {selected.actorName} · {formatWhen(selected.recordedAt)} · hiệu lực{' '}
+                    {formatDay(selected.effectiveFrom)}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelected(null)}
+                  className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <button type="button" onClick={() => setSelected(null)} className="p-1 text-slate-400 hover:text-slate-700">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-5 space-y-3">
-              <p className="text-sm text-slate-700">{selected.changeSummary}</p>
-              <h3 className="text-xs font-semibold uppercase text-slate-500 pt-2">Snapshot phiên bản</h3>
-              <ul className="divide-y divide-slate-100 border border-slate-200 rounded-xl">
-                {(selected.snapshot.length > 0 ? selected.snapshot : selected.changes).map((field) => {
-                  const changed = fieldChanged(selected, field);
-                  return (
-                    <li key={field.key} className={`px-3 py-2.5 text-sm ${changed ? 'bg-amber-50' : ''}`}>
-                      <p className="text-xs text-slate-500">{field.label}</p>
-                      <p className="font-medium text-slate-800">
-                        {field.oldValue ? `${field.oldValue} → ${field.newValue ?? '—'}` : field.newValue ?? '—'}
-                      </p>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          </aside>
-        </div>
-      )}
+              <div className="p-6 space-y-4 flex-1 overflow-y-auto">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Snapshot phiên bản
+                </h3>
+                <ul className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                  {(selected.snapshot.length > 0 ? selected.snapshot : selected.changes).map(
+                    (field) => {
+                      const changed = fieldChanged(selected, field);
+                      return (
+                        <li
+                          key={field.key}
+                          className={`px-4 py-3 text-sm transition-colors ${changed ? 'bg-amber-50/80 font-semibold' : 'bg-white'}`}
+                        >
+                          <p className="text-xs font-medium text-slate-500">{field.label}</p>
+                          <p className="font-semibold text-slate-800 mt-0.5">
+                            {changed && field.oldValue
+                              ? `${field.oldValue} → ${field.newValue ?? '—'}`
+                              : field.newValue ?? '—'}
+                          </p>
+                        </li>
+                      );
+                    }
+                  )}
+                </ul>
+              </div>
+            </aside>
+          </div>,
+          document.body
+        )}
     </div>
   );
 };

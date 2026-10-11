@@ -69,6 +69,7 @@ export interface UnitTypeCatalog {
   depthM: number;
   heightM: number;
   areaM2: number;
+  volumeM3?: number;
   monthlyPrice: number;
   totalUnits: number;
   isActive: boolean;

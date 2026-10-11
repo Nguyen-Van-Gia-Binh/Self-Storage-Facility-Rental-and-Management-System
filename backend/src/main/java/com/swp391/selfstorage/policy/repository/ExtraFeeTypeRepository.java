@@ -20,6 +20,16 @@ public interface ExtraFeeTypeRepository extends JpaRepository<ExtraFeeType, Long
     boolean existsByCode(String code);
 
     /**
+     * Kiểm tra tên phụ phí đã tồn tại hay chưa (không phân biệt chữ hoa chữ thường)
+     */
+    boolean existsByNameIgnoreCase(String name);
+
+    /**
+     * Kiểm tra tên phụ phí đã tồn tại ở bản ghi khác hay chưa (dùng khi cập nhật)
+     */
+    boolean existsByNameIgnoreCaseAndIdNot(String name, Long id);
+
+    /**
      * Tìm phụ phí theo mã định danh duy nhất (dùng khi tra cứu dịch vụ)
      */
     Optional<ExtraFeeType> findByCode(String code);

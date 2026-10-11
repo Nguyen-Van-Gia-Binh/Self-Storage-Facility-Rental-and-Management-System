@@ -106,7 +106,11 @@
 | `ISS-98` | Hợp đồng PENDING_CHECKIN (Chờ nhận kho) hiển thị Điều 4 đã nghiệm thu 4 tiêu chí và ký nhận bàn giao. | Hiển thị Điều 4 ở trạng thái "Chờ bàn giao & nghiệm thu tại quầy"; chỉ hiển thị đã ký khi hợp đồng đã hoàn tất bàn giao thực tế. | Xuân Nhi | `RESOLVED` |
 | `ISS-99` | Khách hàng có thể giữ chỗ nhiều ô kho cùng lúc dẫn đến spam và ảo capacity (BR-RES-02). | Giới hạn mỗi khách hàng chỉ giữ chỗ tối đa 1 ô kho PENDING; hiện popup cảnh báo yêu cầu thanh toán ô kho cũ trước khi đặt ô mới. | Xuân Nhi | `RESOLVED` |
 | `ISS-100` | Thẻ ô kho ACTIVE thiếu Badge cảnh báo khi sắp hết hạn; thiếu bộ script test ma trận 30 ngày (BR-REN-01). | Bổ sung script test ma trận 5 mốc biên T-SQL, hiển thị Badge Vàng/Đỏ phân tầng trên thẻ kho và giữ nguyên bộ lọc tab. | Bình | `RESOLVED` (#228) |
-| `ISS-101` | Thiếu bộ script T-SQL kiểm thử và truy vấn kiểm toán ma trận 4 giai đoạn quá hạn theo chuẩn BR-OVD-01..08. | Xây dựng script test ma trận 4 mốc (D+2, D+5, D+8, D+11) có teardown và audit tổng hợp kèm hướng dẫn Docker/sqlcmd/GUI. | Bình | `RESOLVED` |
+| `ISS-101` | Thiếu bộ script T-SQL kiểm thử và truy vấn kiểm toán ma trận 4 giai đoạn quá hạn theo chuẩn BR-OVD-01..08. | Xây dựng script test ma trận 4 mốc (D+2, D+5, D+8, D+11) có teardown và audit tổng hợp kèm hướng dẫn Docker/sqlcmd/GUI. | Bình | `RESOLVED` (#230) |
+| `ISS-102` | Bảng giá BOM và Nhật ký giá bị bó hẹp khung hình, thiếu thể tích m³, badge Đang áp dụng vỡ 2 dòng. | Gộp Quy cách không gian (m³ + m² + D×R×C), mở rộng khung 1600px, cố định min-w/nowrap badge trạng thái 1 dòng. | Bình | `RESOLVED` |
+| `ISS-103` | Phụ phí đã tắt bên Quản lý nhưng bên Nhật ký vẫn hiện Đang áp dụng; tên phụ phí #3 lỗi font Mojibake. | Bổ sung kiểm tra isActive trong PriceAuditServiceImpl, hỗ trợ STATUS_DISABLED, sửa lỗi font UTF-8 DB. | Bình | `RESOLVED` |
+| `ISS-104` | Drawer mở làm trôi cuộn màn hình nền; cột Giá trị cũ -> mới rườm rà thiếu nút Chi tiết. | Khóa cuộn thẻ main khi mở Drawer, tinh giản thành cột Thông tin kèm nút Chi tiết, restart backend nạp code. | Bình | `RESOLVED` (#232) |
+| `ISS-105` | Cột Loại lệch lề, trùng tên phụ phí làm loạn trạng thái Đã thay thế vs Ngừng áp dụng, Snapshot in thừa A -> A. | Căn giữa cột Loại, dọn CSDL & validate unique name, xóa khối div tím lặp lại, sửa Snapshot thông minh. | Bình | `RESOLVED` (#232) |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 

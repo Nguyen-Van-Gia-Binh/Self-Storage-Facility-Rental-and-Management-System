@@ -175,4 +175,47 @@ class SurchargeServiceTest {
         assertEquals("Ngày hiệu lực không được ở quá khứ", exception.getMessage());
         verify(extraFeeTypeRepository, never()).save(any(ExtraFeeType.class));
     }
+
+    @Test
+    @DisplayName("Từ chối tạo phụ phí khi tên đã tồn tại trong hệ thống")
+    void testCreateSurchargeRejectsDuplicateName() {
+        CreateSurchargeRequest request = CreateSurchargeRequest.builder()
+                .name("Hư hại")
+                .category("DAMAGE")
+                .amount(100000L)
+                .build();
+        when(extraFeeTypeRepository.existsByNameIgnoreCase("Hư hại")).thenReturn(true);
+
+        CustomException exception = assertThrows(CustomException.class, () -> surchargeService.createSurcharge(request));
+
+        assertEquals(ErrorCode.SURCHARGE_NAME_ALREADY_EXISTS, exception.getErrorCode());
+        assertTrue(exception.getMessage().contains("Hư hại"));
+        verify(extraFeeTypeRepository, never()).save(any(ExtraFeeType.class));
+    }
+
+    @Test
+    @DisplayName("Từ chối cập nhật phụ phí khi tên mới trùng với phụ phí khác")
+    void testUpdateSurchargeRejectsDuplicateName() {
+        ExtraFeeType existing = ExtraFeeType.builder()
+                .code("FEE_CLEAN")
+                .name("Vệ sinh")
+                .category("CLEANING")
+                .amount(50000L)
+                .feeType("FIXED")
+                .isActive(true)
+                .build();
+        existing.setId(2L);
+        UpdateSurchargeRequest request = UpdateSurchargeRequest.builder()
+                .name("Hư hại")
+                .amount(50000L)
+                .build();
+        when(extraFeeTypeRepository.findById(2L)).thenReturn(Optional.of(existing));
+        when(extraFeeTypeRepository.existsByNameIgnoreCaseAndIdNot("Hư hại", 2L)).thenReturn(true);
+
+        CustomException exception = assertThrows(CustomException.class, () -> surchargeService.updateSurcharge(2L, request));
+
+        assertEquals(ErrorCode.SURCHARGE_NAME_ALREADY_EXISTS, exception.getErrorCode());
+        assertTrue(exception.getMessage().contains("Hư hại"));
+        verify(extraFeeTypeRepository, never()).save(any(ExtraFeeType.class));
+    }
 }
