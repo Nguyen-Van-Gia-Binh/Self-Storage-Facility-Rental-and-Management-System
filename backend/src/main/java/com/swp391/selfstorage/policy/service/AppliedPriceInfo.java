@@ -11,6 +11,7 @@ public class AppliedPriceInfo {
     public static final String STATUS_APPLIED = "Đang áp dụng";
     public static final String STATUS_PENDING = "Chưa áp dụng";
     public static final String STATUS_REPLACED = "Đã thay thế";
+    public static final String STATUS_DISABLED = "Ngừng áp dụng";
 
     private final Long monthlyPrice;
     private final Long pricePerM2;

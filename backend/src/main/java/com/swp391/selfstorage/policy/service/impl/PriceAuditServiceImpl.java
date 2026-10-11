@@ -224,7 +224,7 @@ public class PriceAuditServiceImpl implements PriceAuditService {
                                 field("isActive", "Trạng thái", previous == null ? null : activeLabel(previous.getIsActive()), activeLabel(version.getIsActive())),
                                 field("name", "Tên phụ phí", previous == null ? null : previous.getName(), version.getName())))
                         .effectiveFrom(version.getEffectiveFrom())
-                        .status(statusFor(version.getEffectiveFrom(), isApplied))
+                        .status(statusForSurcharge(version.getEffectiveFrom(), isApplied, version.getIsActive()))
                         .build());
                 previous = version;
             }
@@ -405,6 +405,18 @@ public class PriceAuditServiceImpl implements PriceAuditService {
             return AppliedPriceInfo.STATUS_PENDING;
         }
         return isApplied ? AppliedPriceInfo.STATUS_APPLIED : AppliedPriceInfo.STATUS_REPLACED;
+    }
+
+    private String statusForSurcharge(LocalDate effectiveFrom, boolean isApplied, Boolean isActive) {
+        if (effectiveFrom != null && effectiveFrom.isAfter(AppliedPriceLookup.todayVn())) {
+            return AppliedPriceInfo.STATUS_PENDING;
+        }
+        if (!isApplied) {
+            return AppliedPriceInfo.STATUS_REPLACED;
+        }
+        return Boolean.FALSE.equals(isActive)
+                ? AppliedPriceInfo.STATUS_DISABLED
+                : AppliedPriceInfo.STATUS_APPLIED;
     }
 
     private String readPolicyField(PolicyField field, PolicyVersion version) {

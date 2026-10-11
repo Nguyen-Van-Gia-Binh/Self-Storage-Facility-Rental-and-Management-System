@@ -201,4 +201,46 @@ class PriceAuditServiceTest {
         assertEquals("Nguyễn BOM", page.getContent().get(0).getActorName());
         assertEquals("Không rõ", page.getContent().get(1).getActorName());
     }
+
+    @Test
+    @DisplayName("Phụ phí đã ngừng áp dụng phải có trạng thái 'Ngừng áp dụng', phiên bản trước đó là 'Đã thay thế'")
+    void deactivatedSurchargeShowsDisabledStatus() {
+        OffsetDateTime earlier = OffsetDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).minusDays(5);
+        OffsetDateTime later = OffsetDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+        ExtraFeeVersion activeVersion = ExtraFeeVersion.builder()
+                .id(1L)
+                .extraFeeTypeId(4L)
+                .code("LOCK")
+                .name("Phí khóa")
+                .amount(50_000L)
+                .feeType("FIXED")
+                .isActive(true)
+                .effectiveFrom(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).minusDays(5))
+                .createdAt(earlier)
+                .build();
+        ExtraFeeVersion deactivatedVersion = ExtraFeeVersion.builder()
+                .id(2L)
+                .extraFeeTypeId(4L)
+                .code("LOCK")
+                .name("Phí khóa")
+                .amount(50_000L)
+                .feeType("FIXED")
+                .isActive(false)
+                .effectiveFrom(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")))
+                .createdBy(7L)
+                .createdAt(later)
+                .build();
+        AppUser actor = new AppUser();
+        actor.setId(7L);
+        actor.setFullName("Nguyễn BOM");
+
+        when(extraFeeVersionRepository.findAll()).thenReturn(List.of(activeVersion, deactivatedVersion));
+        when(userRepository.findAllById(any())).thenReturn(List.of(actor));
+
+        PriceAuditPageResponse page = service.search("SURCHARGE", null, null, null, null, 0, 20);
+
+        assertEquals(2, page.getContent().size());
+        assertEquals(AppliedPriceInfo.STATUS_DISABLED, page.getContent().get(0).getStatus());
+        assertEquals(AppliedPriceInfo.STATUS_REPLACED, page.getContent().get(1).getStatus());
+    }
 }

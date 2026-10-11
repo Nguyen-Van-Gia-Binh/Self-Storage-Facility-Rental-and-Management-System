@@ -20,6 +20,7 @@ function categoryLabel(category: string): string {
 function statusClass(status: string): string {
   if (status === 'Đang áp dụng') return 'bg-emerald-50 text-emerald-700 border-emerald-200';
   if (status === 'Chưa áp dụng') return 'bg-amber-50 text-amber-700 border-amber-200';
+  if (status === 'Ngừng áp dụng') return 'bg-rose-50 text-rose-700 border-rose-200';
   return 'bg-slate-50 text-slate-600 border-slate-200';
 }
 
