@@ -19,9 +19,9 @@ SELECT
     f.name AS facility_name,
     su.code AS unit_code,
     ut.name AS unit_type_name,
-    c.end_date_exclusive,
-    DATEDIFF(DAY, CAST(GETDATE() AS DATE), c.end_date_exclusive) AS days_until_expiry,
-    c.monthly_price AS monthly_price,
+    c.end_date,
+    DATEDIFF(DAY, CAST(GETDATE() AS DATE), c.end_date) AS days_until_expiry,
+    c.monthly_price_snapshot AS monthly_price,
     c.deposit_amount,
     c.status,
     c.overdue_fee_accrued
@@ -31,34 +31,39 @@ JOIN facility f ON c.facility_id = f.id
 JOIN storage_unit su ON c.storage_unit_id = su.id
 JOIN unit_type ut ON c.unit_type_id = ut.id
 WHERE c.status = 'ACTIVE'
-  AND c.end_date_exclusive > CAST(GETDATE() AS DATE)
-  AND c.end_date_exclusive <= DATEADD(DAY, 30, CAST(GETDATE() AS DATE))
-ORDER BY c.end_date_exclusive ASC;
+  AND c.end_date > CAST(GETDATE() AS DATE)
+  AND c.end_date <= DATEADD(DAY, 30, CAST(GETDATE() AS DATE))
+ORDER BY c.end_date ASC;
 
 -- Thống kê số lượng theo nhóm ngày
-SELECT
-    CASE
-        WHEN DATEDIFF(DAY, CAST(GETDATE() AS DATE), c.end_date_exclusive) <= 7 THEN '1-7 ngày'
-        WHEN DATEDIFF(DAY, CAST(GETDATE() AS DATE), c.end_date_exclusive) <= 14 THEN '8-14 ngày'
-        WHEN DATEDIFF(DAY, CAST(GETDATE() AS DATE), c.end_date_exclusive) <= 21 THEN '15-21 ngày'
-        ELSE '22-30 ngày'
-    END AS expiry_group,
-    COUNT(*) AS contract_count
-FROM rental_contract c
-WHERE c.status = 'ACTIVE'
-  AND c.end_date_exclusive > CAST(GETDATE() AS DATE)
-  AND c.end_date_exclusive <= DATEADD(DAY, 30, CAST(GETDATE() AS DATE))
-GROUP BY
-    CASE
-        WHEN DATEDIFF(DAY, CAST(GETDATE() AS DATE), c.end_date_exclusive) <= 7 THEN '1-7 ngày'
-        WHEN DATEDIFF(DAY, CAST(GETDATE() AS DATE), c.end_date_exclusive) <= 14 THEN '8-14 ngày'
-        WHEN DATEDIFF(DAY, CAST(GETDATE() AS DATE), c.end_date_exclusive) <= 21 THEN '15-21 ngày'
-        ELSE '22-30 ngày'
-    END
+WITH ExpirySummary AS (
+    SELECT
+        CASE
+            WHEN DATEDIFF(DAY, CAST(GETDATE() AS DATE), c.end_date) <= 7 THEN N'1-7 ngày'
+            WHEN DATEDIFF(DAY, CAST(GETDATE() AS DATE), c.end_date) <= 14 THEN N'8-14 ngày'
+            WHEN DATEDIFF(DAY, CAST(GETDATE() AS DATE), c.end_date) <= 21 THEN N'15-21 ngày'
+            ELSE N'22-30 ngày'
+        END AS expiry_group,
+        COUNT(*) AS contract_count
+    FROM rental_contract c
+    WHERE c.status = 'ACTIVE'
+      AND c.end_date > CAST(GETDATE() AS DATE)
+      AND c.end_date <= DATEADD(DAY, 30, CAST(GETDATE() AS DATE))
+    GROUP BY
+        CASE
+            WHEN DATEDIFF(DAY, CAST(GETDATE() AS DATE), c.end_date) <= 7 THEN N'1-7 ngày'
+            WHEN DATEDIFF(DAY, CAST(GETDATE() AS DATE), c.end_date) <= 14 THEN N'8-14 ngày'
+            WHEN DATEDIFF(DAY, CAST(GETDATE() AS DATE), c.end_date) <= 21 THEN N'15-21 ngày'
+            ELSE N'22-30 ngày'
+        END
+)
+SELECT expiry_group, contract_count
+FROM ExpirySummary
 ORDER BY
     CASE expiry_group
-        WHEN '1-7 ngày' THEN 1
-        WHEN '8-14 ngày' THEN 2
-        WHEN '15-21 ngày' THEN 3
-        WHEN '22-30 ngày' THEN 4
+        WHEN N'1-7 ngày' THEN 1
+        WHEN N'8-14 ngày' THEN 2
+        WHEN N'15-21 ngày' THEN 3
+        WHEN N'22-30 ngày' THEN 4
     END;
+
