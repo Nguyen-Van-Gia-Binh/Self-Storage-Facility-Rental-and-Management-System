@@ -229,7 +229,7 @@ export const ReschedulePeriodModal: React.FC<ReschedulePeriodModalProps> = ({
             {error && (
               <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 flex items-start gap-2.5 text-xs text-rose-700 animate-shake">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                <span>{error}</span>
+                <span className="whitespace-pre-line leading-relaxed">{error}</span>
               </div>
             )}
 

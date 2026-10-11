@@ -123,10 +123,11 @@ class ContractRescheduleServiceTest {
         RescheduleRentalPeriodRequest req = new RescheduleRentalPeriodRequest(newStartDate);
 
         when(contractRepository.findById(100L)).thenReturn(Optional.of(contract));
-        when(contractRepository.existsOverlappingContractForUnit(eq(201L), eq(newStartDate), any(), anyInt(), eq(100L)))
-                .thenReturn(false);
-        when(reservationRepository.existsOverlappingReservationForUnit(eq(201L), eq(newStartDate), any(), any(), anyInt(), anyLong()))
-                .thenReturn(false);
+        when(storageUnitRepository.findById(201L)).thenReturn(Optional.of(unit1));
+        when(contractRepository.findOverlappingContractsForUnit(eq(201L), eq(newStartDate), any(), anyInt(), eq(100L)))
+                .thenReturn(List.of());
+        when(reservationRepository.findOverlappingReservationsForUnit(eq(201L), eq(newStartDate), any(), any(), anyInt(), anyLong()))
+                .thenReturn(List.of());
         when(reservationRepository.findById(500L)).thenReturn(Optional.of(reservation));
         when(contractRepository.save(any(RentalContract.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -146,20 +147,26 @@ class ContractRescheduleServiceTest {
         LocalDate newStartDate = LocalDate.now().plusDays(10);
         RescheduleRentalPeriodRequest req = new RescheduleRentalPeriodRequest(newStartDate);
 
+        RentalContract conf = RentalContract.builder()
+                .code("CTR-CONFLICT")
+                .startDate(newStartDate)
+                .endDateExclusive(newStartDate.plusMonths(1))
+                .build();
+
         when(contractRepository.findById(100L)).thenReturn(Optional.of(contract));
+        when(storageUnitRepository.findById(201L)).thenReturn(Optional.of(unit1));
         // Ô kho cũ bị conflict
-        when(contractRepository.existsOverlappingContractForUnit(eq(201L), eq(newStartDate), any(), anyInt(), eq(100L)))
-                .thenReturn(true);
+        when(contractRepository.findOverlappingContractsForUnit(eq(201L), eq(newStartDate), any(), anyInt(), eq(100L)))
+                .thenReturn(List.of(conf));
 
         // Tìm candidate units
         when(storageUnitRepository.findByFacilityId(1L)).thenReturn(List.of(unit1, unit2));
         // Ô kho 202 trống
-        when(contractRepository.existsOverlappingContractForUnit(eq(202L), eq(newStartDate), any(), anyInt(), eq(100L)))
-                .thenReturn(false);
-        when(reservationRepository.existsOverlappingReservationForUnit(eq(202L), eq(newStartDate), any(), any(), anyInt(), anyLong()))
-                .thenReturn(false);
+        when(contractRepository.findOverlappingContractsForUnit(eq(202L), eq(newStartDate), any(), anyInt(), eq(100L)))
+                .thenReturn(List.of());
+        when(reservationRepository.findOverlappingReservationsForUnit(eq(202L), eq(newStartDate), any(), any(), anyInt(), anyLong()))
+                .thenReturn(List.of());
 
-        when(storageUnitRepository.findById(201L)).thenReturn(Optional.of(unit1));
         when(reservationRepository.existsByStorageUnitIdAndStatusIn(eq(201L), anyList())).thenReturn(false);
         when(reservationRepository.findById(500L)).thenReturn(Optional.of(reservation));
         when(contractRepository.save(any(RentalContract.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -174,22 +181,32 @@ class ContractRescheduleServiceTest {
     }
 
     @Test
-    @DisplayName("BR-RES-06: Toàn bộ ô kho cùng loại đều kín lịch -> Ném lỗi STORAGE_UNIT_UNAVAILABLE")
+    @DisplayName("BR-RES-06: Toàn bộ ô kho cùng loại đều kín lịch -> Ném lỗi UNIT_NOT_AVAILABLE với lý do chi tiết")
     void reschedule_throws_whenAllUnitsConflict() {
         LocalDate newStartDate = LocalDate.now().plusDays(10);
         RescheduleRentalPeriodRequest req = new RescheduleRentalPeriodRequest(newStartDate);
 
+        RentalContract conf = RentalContract.builder()
+                .code("CTR-CONFLICT")
+                .startDate(newStartDate)
+                .endDateExclusive(newStartDate.plusMonths(1))
+                .build();
+
         when(contractRepository.findById(100L)).thenReturn(Optional.of(contract));
-        when(contractRepository.existsOverlappingContractForUnit(eq(201L), eq(newStartDate), any(), anyInt(), eq(100L)))
-                .thenReturn(true);
+        when(storageUnitRepository.findById(201L)).thenReturn(Optional.of(unit1));
+        when(contractRepository.findOverlappingContractsForUnit(eq(201L), eq(newStartDate), any(), anyInt(), eq(100L)))
+                .thenReturn(List.of(conf));
+
         when(storageUnitRepository.findByFacilityId(1L)).thenReturn(List.of(unit1, unit2));
         // Ô kho 202 cũng bị conflict
-        when(contractRepository.existsOverlappingContractForUnit(eq(202L), eq(newStartDate), any(), anyInt(), eq(100L)))
-                .thenReturn(true);
+        when(contractRepository.findOverlappingContractsForUnit(eq(202L), eq(newStartDate), any(), anyInt(), eq(100L)))
+                .thenReturn(List.of(conf));
 
         CustomException ex = assertThrows(CustomException.class, () ->
                 contractService.rescheduleRentalPeriod(100L, req, 10L));
         assertEquals(ErrorCode.UNIT_NOT_AVAILABLE, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("Q1-B201"), "Thông báo lỗi phải chỉ rõ ô kho cũ Q1-B201");
+        assertTrue(ex.getMessage().contains("Q1-B202"), "Thông báo lỗi phải chỉ rõ ô kho thay thế Q1-B202");
     }
 
     @Test
