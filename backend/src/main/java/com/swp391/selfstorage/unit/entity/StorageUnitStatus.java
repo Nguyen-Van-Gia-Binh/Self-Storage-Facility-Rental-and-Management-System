@@ -13,9 +13,9 @@ public enum StorageUnitStatus {
         return switch (this) {
             case AVAILABLE -> target == MAINTENANCE || target == OUT_OF_SERVICE || target == RESERVED;
             case RESERVED -> target == OCCUPIED || target == AVAILABLE;
-            case OCCUPIED -> target == CLEANING;
+            case OCCUPIED -> target == CLEANING || target == MAINTENANCE;
             case CLEANING -> target == AVAILABLE || target == RESERVED || target == MAINTENANCE;
-            case MAINTENANCE -> target == AVAILABLE || target == CLEANING || target == OUT_OF_SERVICE;
+            case MAINTENANCE -> target == AVAILABLE || target == RESERVED || target == CLEANING || target == OUT_OF_SERVICE;
             case OUT_OF_SERVICE -> target == MAINTENANCE || target == AVAILABLE;
         };
     }

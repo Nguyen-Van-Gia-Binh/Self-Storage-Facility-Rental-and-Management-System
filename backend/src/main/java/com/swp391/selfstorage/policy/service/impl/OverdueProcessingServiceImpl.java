@@ -7,6 +7,8 @@ import com.swp391.selfstorage.policy.dto.OverdueProcessingResult;
 import com.swp391.selfstorage.policy.entity.PolicyVersion;
 import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
 import com.swp391.selfstorage.policy.service.OverdueProcessingService;
+import com.swp391.selfstorage.reservation.entity.ReservationStatus;
+import com.swp391.selfstorage.reservation.repository.ReservationRepository;
 import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +32,7 @@ public class OverdueProcessingServiceImpl implements OverdueProcessingService {
     private final RentalContractRepository rentalContractRepository;
     private final PolicyVersionRepository policyVersionRepository;
     private final StorageUnitRepository storageUnitRepository;
+    private final ReservationRepository reservationRepository;
 
     @Override
     @Transactional
@@ -39,10 +42,10 @@ public class OverdueProcessingServiceImpl implements OverdueProcessingService {
         // Mỗi hợp đồng dùng đúng phiên bản đã lưu lúc tạo (BR-GEN-02), không lấy bản đang hiệu lực.
         Map<Long, OverdueTerms> termsByPolicyId = new HashMap<>();
 
-        // 2. Tìm tất cả hợp đồng có status là ACTIVE hoặc OVERDUE mà endDateExclusive
-        // <= runDate
+        // 2. Tìm tất cả hợp đồng ACTIVE, OVERDUE và TERMINATED (để kiểm tra giải phóng kho D+15)
         List<RentalContract> candidateContracts = rentalContractRepository
-                .findByStatusInAndEndDateExclusiveLessThanEqual(List.of(ContractStatus.ACTIVE, ContractStatus.OVERDUE),
+                .findByStatusInAndEndDateExclusiveLessThanEqual(
+                        List.of(ContractStatus.ACTIVE, ContractStatus.OVERDUE, ContractStatus.TERMINATED),
                         runDate);
 
         int totalScanned = candidateContracts.size();
@@ -57,6 +60,25 @@ public class OverdueProcessingServiceImpl implements OverdueProcessingService {
 
             if (overdueDays <= 0) {
                 continue; // Chưa quá hạn, bỏ qua
+            }
+
+            // Hợp đồng đã bị TERMINATED từ trước: Kiểm tra giải phóng bảo trì tại mốc D+15
+            if (contract.getStatus() == ContractStatus.TERMINATED) {
+                if (overdueDays >= 15 && contract.getStorageUnitId() != null) {
+                    storageUnitRepository.findById(contract.getStorageUnitId()).ifPresent(unit -> {
+                        if (unit.getStatus() == StorageUnitStatus.MAINTENANCE || unit.getStatus() == StorageUnitStatus.CLEANING) {
+                            boolean awaitingCheckIn = reservationRepository != null &&
+                                    reservationRepository.existsActiveOrFutureReservation(
+                                            unit.getId(), List.of(ReservationStatus.CONFIRMED), runDate);
+                            StorageUnitStatus newStatus = awaitingCheckIn ? StorageUnitStatus.RESERVED : StorageUnitStatus.AVAILABLE;
+                            unit.setStatus(newStatus);
+                            storageUnitRepository.save(unit);
+                            log.info("Hợp đồng [{}] chạm mốc D+{} (>=15): Ô kho [{}] tự động hoàn tất bảo trì, chuyển sang {}.",
+                                    contract.getCode(), overdueDays, unit.getId(), newStatus);
+                        }
+                    });
+                }
+                continue; // Hợp đồng đã chấm dứt không tính lại phí phạt
             }
 
             OverdueTerms terms = termsOf(contract, termsByPolicyId);
@@ -113,12 +135,23 @@ public class OverdueProcessingServiceImpl implements OverdueProcessingService {
                 contract.setStatus(ContractStatus.TERMINATED);
                 terminatedCount++;
 
-                // Chuyển ô kho vật lý sang trạng thái CLEANING
+                // Chuyển ô kho vật lý sang trạng thái MAINTENANCE hoặc giải phóng nếu >= D+15
                 if (contract.getStorageUnitId() != null) {
                     storageUnitRepository.findById(contract.getStorageUnitId()).ifPresent(unit -> {
-                        unit.setStatus(StorageUnitStatus.CLEANING);
-                        storageUnitRepository.save(unit);
-                        log.info("Ô kho [{}] chuyển sang CLEANING để dọn đồ tồn.", unit.getId());
+                        if (overdueDays >= 15) {
+                            boolean awaitingCheckIn = reservationRepository != null &&
+                                    reservationRepository.existsActiveOrFutureReservation(
+                                            unit.getId(), List.of(ReservationStatus.CONFIRMED), runDate);
+                            StorageUnitStatus newStatus = awaitingCheckIn ? StorageUnitStatus.RESERVED : StorageUnitStatus.AVAILABLE;
+                            unit.setStatus(newStatus);
+                            storageUnitRepository.save(unit);
+                            log.info("Hợp đồng [{}] cưỡng chế tại D+{} (>=15): Ô kho [{}] tự động hoàn tất bảo trì, chuyển sang {}.",
+                                    contract.getCode(), overdueDays, unit.getId(), newStatus);
+                        } else {
+                            unit.setStatus(StorageUnitStatus.MAINTENANCE);
+                            storageUnitRepository.save(unit);
+                            log.info("Ô kho [{}] chuyển sang MAINTENANCE để bảo trì & niêm phong đồ tồn.", unit.getId());
+                        }
                     });
                 }
                 log.warn("Hợp đồng [{}] bị CHẤM DỨT cưỡng chế tại D+{}.", contract.getCode(), overdueDays);

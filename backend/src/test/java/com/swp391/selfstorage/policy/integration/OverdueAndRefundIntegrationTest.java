@@ -211,7 +211,7 @@ class OverdueAndRefundIntegrationTest {
     }
 
     @Test
-    @DisplayName("Kịch bản 3: Cưỡng chế tại D+10 -> Cronjob chốt trần 70% cọc, khóa mã, TERMINATED, ô kho CLEANING")
+    @DisplayName("Kịch bản 3: Cưỡng chế tại D+10 -> Cronjob chốt trần 70% cọc, khóa mã, TERMINATED, ô kho MAINTENANCE")
     void testForcedTermination_AtD10_ShouldEnforceSystemRules() {
         RentalContract contract = createAndSaveContract(baseEndDate, 2_000_000L);
         LocalDate runDate = baseEndDate.plusDays(10); // D+10
@@ -226,9 +226,29 @@ class OverdueAndRefundIntegrationTest {
         assertEquals(600_000L, terminatedContract.getDepositBalance()); // Cọc còn lại: 2tr - 1.4tr
         assertNull(terminatedContract.getAccessCode()); // Khóa mã mở cửa
 
-        // Ô kho vật lý chuyển sang CLEANING để nhân viên thu dọn
+        // Ô kho vật lý chuyển sang MAINTENANCE để nhân viên thu dọn & bảo trì
         StorageUnit unitInDb = storageUnitRepository.findById(testUnit.getId()).orElseThrow();
-        assertEquals(StorageUnitStatus.CLEANING, unitInDb.getStatus());
+        assertEquals(StorageUnitStatus.MAINTENANCE, unitInDb.getStatus());
+    }
+
+    @Test
+    @DisplayName("Kịch bản 3.1: Tại D+15 -> Tự động giải phóng ô kho MAINTENANCE về AVAILABLE khi hết thời gian bảo trì")
+    void testAutoReleaseUnit_AtD15_ShouldReleaseToAvailable() {
+        RentalContract contract = createAndSaveContract(baseEndDate, 2_000_000L);
+        LocalDate d10Date = baseEndDate.plusDays(10); // D+10
+        overdueProcessingService.processOverdueContracts(d10Date);
+
+        // Ô kho đang MAINTENANCE
+        StorageUnit unitAtD10 = storageUnitRepository.findById(testUnit.getId()).orElseThrow();
+        assertEquals(StorageUnitStatus.MAINTENANCE, unitAtD10.getStatus());
+
+        // Chạy tiếp tại D+15
+        LocalDate d15Date = baseEndDate.plusDays(15); // D+15
+        overdueProcessingService.processOverdueContracts(d15Date);
+
+        // Ô kho tự động chuyển sang AVAILABLE
+        StorageUnit unitAtD15 = storageUnitRepository.findById(testUnit.getId()).orElseThrow();
+        assertEquals(StorageUnitStatus.AVAILABLE, unitAtD15.getStatus());
     }
 
     @Test
