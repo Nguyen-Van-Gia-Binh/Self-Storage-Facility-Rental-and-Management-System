@@ -17,6 +17,10 @@ export interface FacilityOverviewReport {
   rentalRevenue: number;
   surchargeRevenue: number;
   depositBalance: number;
+  customerServiceFee?: number;
+  overduePenaltyFee?: number;
+  companyIncidentCost?: number;
+  netRevenue?: number;
 }
 
 export interface OverdueContractDebt {

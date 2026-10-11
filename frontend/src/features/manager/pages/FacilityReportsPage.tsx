@@ -5,19 +5,16 @@ import { Building2, Calendar, RefreshCw, BarChart3, AlertCircle } from 'lucide-r
 import type {
   FacilityOverviewReport,
   OverdueDebtReport,
-  FacilityContractSummary,
   FacilityInfo,
 } from '../types/report';
 import {
   getFacilityOverviewReport,
   getFacilityOverdueDebtReport,
-  getFacilityContractsReport,
   getAssignedFacilities,
 } from '../api/facilityReportApi';
 import { FacilityReportKpiCards } from '../components/reports/FacilityReportKpiCards';
 import { FacilityRevenueBreakdown } from '../components/reports/FacilityRevenueBreakdown';
 import { FacilityOverdueDebtRisk } from '../components/reports/FacilityOverdueDebtRisk';
-import { FacilityContractsReportTable } from '../components/reports/FacilityContractsReportTable';
 
 export const FacilityReportsPage: React.FC = () => {
   const currentMonthStr = new Date().toISOString().slice(0, 7); // e.g. "2026-09"
@@ -28,7 +25,6 @@ export const FacilityReportsPage: React.FC = () => {
 
   const [overviewData, setOverviewData] = useState<FacilityOverviewReport | null>(null);
   const [overdueData, setOverdueData] = useState<OverdueDebtReport | null>(null);
-  const [contractsData, setContractsData] = useState<FacilityContractSummary[]>([]);
 
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
@@ -65,20 +61,17 @@ export const FacilityReportsPage: React.FC = () => {
     setErrorMessage(null);
 
     try {
-      const [overviewRes, overdueRes, contractsRes] = await Promise.all([
+      const [overviewRes, overdueRes] = await Promise.all([
         getFacilityOverviewReport(selectedFacilityId, selectedMonth),
         getFacilityOverdueDebtReport(selectedFacilityId),
-        getFacilityContractsReport(selectedFacilityId),
       ]);
 
       setOverviewData(overviewRes);
       setOverdueData(overdueRes);
-      setContractsData(contractsRes.content || []);
     } catch (err: unknown) {
       console.error('Lỗi khi tải báo cáo cơ sở:', err);
       setOverviewData(null);
       setOverdueData(null);
-      setContractsData([]);
       setErrorMessage('Không thể tải báo cáo từ máy chủ.');
     } finally {
       setLoading(false);
@@ -185,9 +178,6 @@ export const FacilityReportsPage: React.FC = () => {
       )}
 
       {overdueData && <FacilityOverdueDebtRisk data={overdueData} loading={loading} />}
-
-      {/* Phần 4: Bảng danh sách hợp đồng & hợp đồng sắp hết hạn (FM-06) */}
-      <FacilityContractsReportTable contracts={contractsData} loading={loading} />
     </div>
   );
 };

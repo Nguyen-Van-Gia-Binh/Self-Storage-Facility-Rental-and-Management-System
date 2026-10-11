@@ -17,6 +17,10 @@ import com.swp391.selfstorage.report.dto.FacilityOverviewReportResponse;
 import com.swp391.selfstorage.report.dto.OverdueContractDebtDto;
 import com.swp391.selfstorage.report.dto.OverdueDebtReportResponse;
 import com.swp391.selfstorage.report.service.FacilityReportService;
+import com.swp391.selfstorage.support.entity.SupportCategory;
+import com.swp391.selfstorage.support.entity.SupportRequest;
+import com.swp391.selfstorage.support.entity.SupportStatus;
+import com.swp391.selfstorage.support.repository.SupportRequestRepository;
 import com.swp391.selfstorage.unit.entity.StorageUnit;
 import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
@@ -35,6 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
@@ -52,6 +57,7 @@ public class FacilityReportServiceImpl implements FacilityReportService {
     private final RentalContractRepository rentalContractRepository;
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final UserRepository userRepository;
+    private final SupportRequestRepository supportRequestRepository;
 
     @Override
     public FacilityOverviewReportResponse getFacilityOverview(Long facilityId, String month, UserPrincipal currentUser) {
@@ -173,7 +179,52 @@ public class FacilityReportServiceImpl implements FacilityReportService {
             }
         }
 
-        long totalRevenue = rentalRevenue + surchargeRevenue;
+        // 4. Tính toán các thành phần tài chính theo công thức chuẩn:
+        // Tổng doanh thu thuần = (Phí thuê + Phí dịch vụ khách trả + Phí phạt quá hạn) - Chi phí sự cố công ty chịu
+        long customerServiceFee = surchargeRevenue;
+
+        long overduePenaltyFee = contracts.stream()
+                .filter(c -> c.getStatus() == ContractStatus.OVERDUE || c.getOverdueFeeAccrued() > 0)
+                .mapToLong(RentalContract::getOverdueFeeAccrued)
+                .sum();
+
+        long companyIncidentCost = 0L;
+        if (supportRequestRepository != null) {
+            try {
+                List<Long> unitIds = allUnits.stream().map(StorageUnit::getId).toList();
+                List<SupportRequest> tickets = new ArrayList<>();
+                if (!contractIds.isEmpty()) {
+                    tickets.addAll(supportRequestRepository.findByContractIdInAndStatusIn(
+                            contractIds,
+                            List.of(SupportStatus.IN_PROGRESS, SupportStatus.RESOLVED, SupportStatus.CLOSED, SupportStatus.AUTO_CLOSED)
+                    ));
+                }
+                if (!unitIds.isEmpty()) {
+                    tickets.addAll(supportRequestRepository.findByStorageUnitIdInAndStatusIn(
+                            unitIds,
+                            List.of(SupportStatus.IN_PROGRESS, SupportStatus.RESOLVED, SupportStatus.CLOSED, SupportStatus.AUTO_CLOSED)
+                    ));
+                }
+
+                companyIncidentCost = tickets.stream()
+                        .distinct()
+                        .filter(t -> {
+                            OffsetDateTime tTime = t.getResolvedAt() != null ? t.getResolvedAt() : t.getCreatedAt();
+                            return tTime != null && YearMonth.from(tTime.atZoneSameInstant(ZoneId.systemDefault())).equals(targetMonth);
+                        })
+                        .filter(t -> {
+                            String note = t.getResolutionNote() != null ? t.getResolutionNote().toLowerCase() : "";
+                            return note.contains("lỗi do công ty") || note.contains("cong ty") || t.getCategory() == SupportCategory.UNIT_DAMAGE;
+                        })
+                        .mapToLong(t -> 200_000L) // Định mức khắc phục sự cố kỹ thuật hạ tầng cơ sở chịu 100% theo BR-SUP-02
+                        .sum();
+            } catch (Exception e) {
+                log.warn("Lỗi khi tính chi phí sự cố công ty chịu: {}", e.getMessage());
+            }
+        }
+
+        long netRevenue = Math.max(0L, rentalRevenue + customerServiceFee + overduePenaltyFee - companyIncidentCost);
+        long totalRevenue = netRevenue;
 
         return FacilityOverviewReportResponse.builder()
                 .facilityId(facility.getId())
@@ -191,6 +242,10 @@ public class FacilityReportServiceImpl implements FacilityReportService {
                 .totalRevenue(totalRevenue)
                 .rentalRevenue(rentalRevenue)
                 .surchargeRevenue(surchargeRevenue)
+                .customerServiceFee(customerServiceFee)
+                .overduePenaltyFee(overduePenaltyFee)
+                .companyIncidentCost(companyIncidentCost)
+                .netRevenue(netRevenue)
                 .depositBalance(depositBalance)
                 .build();
     }

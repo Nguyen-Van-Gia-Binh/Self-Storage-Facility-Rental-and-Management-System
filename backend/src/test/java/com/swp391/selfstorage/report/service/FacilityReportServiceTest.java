@@ -67,6 +67,9 @@ class FacilityReportServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private com.swp391.selfstorage.support.repository.SupportRequestRepository supportRequestRepository;
+
     @InjectMocks
     private FacilityReportServiceImpl reportService;
 
