@@ -105,6 +105,7 @@
 | `ISS-97` | Màn hình Gia hạn hợp đồng chứa nhiều banner, badge và subtext dư thừa gây chật chội giao diện. | Ẩn banner hiệu lực an toàn khi >30 ngày; bỏ badge Đang hiệu lực; loại bỏ subtext rườm rà ở 2 ô ngày kết thúc và tóm tắt gia hạn. | Xuân Nhi | `RESOLVED` |
 | `ISS-98` | Hợp đồng PENDING_CHECKIN (Chờ nhận kho) hiển thị Điều 4 đã nghiệm thu 4 tiêu chí và ký nhận bàn giao. | Hiển thị Điều 4 ở trạng thái "Chờ bàn giao & nghiệm thu tại quầy"; chỉ hiển thị đã ký khi hợp đồng đã hoàn tất bàn giao thực tế. | Xuân Nhi | `RESOLVED` |
 | `ISS-99` | Khách hàng có thể giữ chỗ nhiều ô kho cùng lúc dẫn đến spam và ảo capacity (BR-RES-02). | Giới hạn mỗi khách hàng chỉ giữ chỗ tối đa 1 ô kho PENDING; hiện popup cảnh báo yêu cầu thanh toán ô kho cũ trước khi đặt ô mới. | Xuân Nhi | `RESOLVED` |
+| `ISS-100` | Thẻ ô kho ACTIVE thiếu Badge cảnh báo khi sắp hết hạn; thiếu bộ script test ma trận 30 ngày (BR-REN-01). | Bổ sung script test ma trận 5 mốc biên T-SQL, hiển thị Badge Vàng/Đỏ phân tầng trên thẻ kho và giữ nguyên bộ lọc tab. | Bình | `RESOLVED` (#228) |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 
