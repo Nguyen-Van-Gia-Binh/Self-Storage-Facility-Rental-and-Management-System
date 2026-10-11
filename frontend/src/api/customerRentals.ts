@@ -131,11 +131,16 @@ export function mapBackendRentalToContract(item: BackendRentalSummary): RentedCo
     contractNumber: item.contractCode || `CTR-${item.contractId}`,
     facilityId: item.facilityId ? String(item.facilityId) : '1',
     facilityName: item.facilityName || 'SmartStorage Facility',
+    facilityAddress: item.facilityAddress,
+    facilityPhone: item.facilityPhone,
     unitId: item.storageUnitId ? String(item.storageUnitId) : (item.storageUnitCode || 'U-101'),
     unitNumber: item.storageUnitCode || 'U-101',
     unitTypeName: typeName,
     sizeCategory,
     storageType: 'STANDARD',
+    floor: item.floor,
+    position: item.position,
+    unitDimensions: item.unitDimensions,
     startDate: item.startDate || '',
     endDate: item.endDateExclusive || '',
     monthlyRent: item.monthlyPrice || 0,
@@ -370,3 +375,18 @@ export async function renewContract(
     throw err;
   }
 }
+
+/**
+ * Dời ngày bắt đầu nhận kho trước khi Check-in (BR-RES-06)
+ * POST /contracts/{contractId}/reschedule-period
+ */
+export async function rescheduleRentalPeriod(
+  contractId: number | string,
+  newStartDate: string
+): Promise<any> {
+  return apiClient(`/contracts/${contractId}/reschedule-period`, {
+    method: 'POST',
+    body: JSON.stringify({ newStartDate }),
+  });
+}
+

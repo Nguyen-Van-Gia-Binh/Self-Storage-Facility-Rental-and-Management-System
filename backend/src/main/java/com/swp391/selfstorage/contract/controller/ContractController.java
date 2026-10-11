@@ -294,4 +294,19 @@ public class ContractController {
         ContractResponse response = contractService.completeCleaning(id, facilities);
         return ResponseEntity.ok(ApiResponse.success(response, "Đã hoàn tất dọn ô kho"));
     }
+
+    /**
+     * BR-RES-06: Dời thời gian thuê trước khi nhận kho khi ở trạng thái PENDING_CHECK_IN.
+     */
+    @PostMapping("/{id}/reschedule-period")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Dời ngày bắt đầu nhận kho (giữ nguyên thời lượng thuê)")
+    public ResponseEntity<ApiResponse<ContractResponse>> rescheduleRentalPeriod(
+            @PathVariable Long id,
+            @Valid @RequestBody RescheduleRentalPeriodRequest request,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        Long currentUserId = requireUserId(currentUser);
+        ContractResponse response = contractService.rescheduleRentalPeriod(id, request, currentUserId);
+        return ResponseEntity.ok(ApiResponse.success(response, "Dời thời gian thuê thành công"));
+    }
 }

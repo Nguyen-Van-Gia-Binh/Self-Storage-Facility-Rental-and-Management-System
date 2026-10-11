@@ -9,6 +9,12 @@ import {
   Box,
   Building2,
   ArrowUpDown,
+  LayoutGrid,
+  Table2,
+  Edit2,
+  Power,
+  ArrowRight,
+  Sparkles,
 } from 'lucide-react';
 import { fetchMyAssignedFacilities } from '@/api/facility';
 import {
@@ -25,6 +31,7 @@ import { UnitTypeCard } from '../components/UnitTypeCard';
 import type { UnitTypeBreakdownStats } from '../components/UnitTypeCard';
 import { UnitTypeFormModal } from '../components/UnitTypeFormModal';
 import { Pagination } from '../components/Pagination';
+import { getUnitTypeTheme } from '../utils/unitTypeTheme';
 
 export type UnitTypeStatusFilter = 'ALL' | 'AVAILABLE' | 'FULL';
 
@@ -66,6 +73,7 @@ export const UnitTypeListPage: React.FC = () => {
   const [sortBy, setSortBy] = useState<UnitTypeSortOption>('name-asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [showInactive, setShowInactive] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -264,7 +272,7 @@ export const UnitTypeListPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-              Danh sách Loại ô kho (Cấp 2)
+              Danh sách Loại ô kho
             </h1>
             {facility && (
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200/80">
@@ -352,21 +360,54 @@ export const UnitTypeListPage: React.FC = () => {
           })}
         </div>
 
-        {/* Sort Dropdown */}
-        <div className="flex items-center gap-2 text-xs text-slate-600 self-end sm:self-auto">
-          <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
-          <span className="font-medium text-slate-500 whitespace-nowrap">Sắp xếp:</span>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as UnitTypeSortOption)}
-            className="bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 cursor-pointer shadow-2xs"
-          >
-            {SORT_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+        {/* Right: Layout Switcher + Sort Dropdown */}
+        <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto">
+          {/* Layout Mode Switcher */}
+          <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <button
+              type="button"
+              onClick={() => setViewMode('grid')}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                viewMode === 'grid'
+                  ? 'bg-white text-brand-700 shadow-2xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+              title="Xem dạng Lưới Thẻ Trực Quan"
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Lưới Thẻ</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('table')}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                viewMode === 'table'
+                  ? 'bg-white text-brand-700 shadow-2xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+              title="Xem dạng Bảng Ma Trận Thông Số Kỹ Thuật"
+            >
+              <Table2 className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Bảng Thông Số</span>
+            </button>
+          </div>
+
+          {/* Sort Dropdown */}
+          <div className="flex items-center gap-2 text-xs text-slate-600">
+            <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+            <span className="font-medium text-slate-500 whitespace-nowrap">Sắp xếp:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as UnitTypeSortOption)}
+              className="bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 cursor-pointer shadow-2xs"
+            >
+              {SORT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -382,7 +423,7 @@ export const UnitTypeListPage: React.FC = () => {
         </div>
       )}
 
-      {/* Grid Danh sách Loại ô kho: Desktop >=1280px 3 cột, Tablet 768-1279px 2 cột, Mobile 1 cột */}
+      {/* Danh sách Loại ô kho: Lưới Thẻ Showcase hoặc Bảng Ma Trận Kỹ Thuật */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -403,21 +444,154 @@ export const UnitTypeListPage: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {paginatedTypes.map((type) => (
-              <UnitTypeCard
-                key={type.id}
-                type={type}
-                stats={typeStatsMap[type.id]}
-                onClick={() => navigate(`/manager/facilities/${facilityIdNum}/unit-types/${type.id}`)}
-                onEdit={() => {
-                  setEditingType(type);
-                  setUtModalOpen(true);
-                }}
-                onToggle={() => handleToggleType(type)}
-              />
-            ))}
-          </div>
+          {viewMode === 'grid' ? (
+            /* Lưới thẻ sinh động với Visual Theme & Micro-animations */
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {paginatedTypes.map((type) => (
+                <UnitTypeCard
+                  key={type.id}
+                  type={type}
+                  stats={typeStatsMap[type.id]}
+                  onClick={() => navigate(`/manager/facilities/${facilityIdNum}/unit-types/${type.id}`)}
+                  onEdit={() => {
+                    setEditingType(type);
+                    setUtModalOpen(true);
+                  }}
+                  onToggle={() => handleToggleType(type)}
+                />
+              ))}
+            </div>
+          ) : (
+            /* Bảng Ma Trận So Sánh Thông Số Kỹ Thuật (Technical Specs Matrix) */
+            <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-2xs">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
+                      <th className="py-3.5 px-4">Loại ô kho</th>
+                      <th className="py-3.5 px-4">Phân loại & Tiện ích</th>
+                      <th className="py-3.5 px-4 text-center">Kích thước (R×S×C)</th>
+                      <th className="py-3.5 px-4 text-center">Diện tích</th>
+                      <th className="py-3.5 px-4 text-right">Đơn giá niêm yết</th>
+                      <th className="py-3.5 px-4 text-center">Tổng quy mô</th>
+                      <th className="py-3.5 px-4 text-center">Trạng thái</th>
+                      <th className="py-3.5 px-4 text-right">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {paginatedTypes.map((type) => {
+                      const theme = getUnitTypeTheme(type);
+                      const Icon = theme.icon;
+                      const isTypeActive = type.isActive ?? type.active ?? true;
+                      const area = type.areaM2 || (type.widthM && type.depthM ? Number((type.widthM * type.depthM).toFixed(1)) : 0);
+                      return (
+                        <tr
+                          key={type.id}
+                          onClick={() => navigate(`/manager/facilities/${facilityIdNum}/unit-types/${type.id}`)}
+                          className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                        >
+                          <td className="py-3.5 px-4">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-xl flex items-center justify-center border shadow-2xs shrink-0 ${theme.iconBg}`}>
+                                <Icon className={`w-4 h-4 ${theme.iconColor}`} />
+                              </div>
+                              <div>
+                                <div className="font-bold text-slate-900 group-hover:text-brand-600 transition-colors">
+                                  {type.name}
+                                </div>
+                                <span className="text-[10px] font-mono text-slate-500">
+                                  {type.code || 'UT-STD'}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <div className="flex flex-col gap-1 items-start">
+                              <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${theme.badgeBg} ${theme.badgeTextCol} ${theme.badgeBorder}`}>
+                                <Sparkles className="w-2.5 h-2.5" />
+                                {theme.categoryLabel}
+                              </span>
+                              <span className="text-[10px] text-slate-400">
+                                {theme.badgeText}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4 text-center font-mono font-medium text-slate-700">
+                            {type.widthM}m × {type.depthM}m × {type.heightM}m
+                          </td>
+                          <td className="py-3.5 px-4 text-center">
+                            <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md text-[11px]">
+                              {area} m²
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            {type.monthlyPrice && type.monthlyPrice > 0 ? (
+                              <span className="font-mono font-extrabold text-brand-700">
+                                {new Intl.NumberFormat('vi-VN').format(type.monthlyPrice)} đ/tháng
+                              </span>
+                            ) : (
+                              <span className="inline-block text-[10px] font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded border border-amber-200">
+                                Chờ BOM duyệt
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4 text-center font-mono font-bold text-slate-700">
+                            {type.totalUnits ?? 0} ô
+                          </td>
+                          <td className="py-3.5 px-4 text-center">
+                            {isTypeActive ? (
+                              <span className="inline-block text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                Hoạt động
+                              </span>
+                            ) : (
+                              <span className="inline-block text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-200 px-2 py-0.5 rounded-full">
+                                Vô hiệu
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingType(type);
+                                  setUtModalOpen(true);
+                                }}
+                                className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:text-brand-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                                title="Chỉnh sửa loại kho"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleType(type)}
+                                className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
+                                  isTypeActive
+                                    ? 'border-rose-200 text-rose-600 hover:bg-rose-50'
+                                    : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'
+                                }`}
+                                title={isTypeActive ? 'Tắt' : 'Bật'}
+                              >
+                                <Power className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => navigate(`/manager/facilities/${facilityIdNum}/unit-types/${type.id}`)}
+                                className="p-1.5 rounded-lg border border-brand-200 text-brand-600 hover:bg-brand-50 transition-colors cursor-pointer"
+                                title="Vào xem danh sách ô kho"
+                              >
+                                <ArrowRight className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {/* Phân trang: Threshold > 12 */}
           <Pagination

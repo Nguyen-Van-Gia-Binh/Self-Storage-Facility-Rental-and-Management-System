@@ -175,11 +175,8 @@ export const IncidentDashboardPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-              Xử lý sự cố
+              Xử lý sự cố — Danh sách Cơ sở
             </h1>
-            <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-amber-100 text-amber-800">
-              Cấp 1 · Cơ sở
-            </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
             Chọn cơ sở để kiểm tra và điều phối danh sách sự cố kỹ thuật phát sinh tại kho

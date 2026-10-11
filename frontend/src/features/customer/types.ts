@@ -94,6 +94,8 @@ export interface RentedContract {
   contractNumber: string;
   facilityId: string;
   facilityName: string;
+  facilityAddress?: string;
+  facilityPhone?: string;
   unitId: string;
   unitNumber: string;
   unitTypeName: string;

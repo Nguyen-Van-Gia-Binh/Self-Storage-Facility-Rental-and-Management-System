@@ -23,6 +23,7 @@ import { ScheduleReturnModal } from '../components/ScheduleReturnModal';
 import { ContractDetailModal } from '../components/ContractDetailModal';
 import { EarlyRenewalReminderModal } from '../components/EarlyRenewalReminderModal';
 import { VietQRPaymentModal } from '../components/VietQRPaymentModal';
+import { ReschedulePeriodModal } from '../components/ReschedulePeriodModal';
 import { getCustomerContracts } from '@/api/customerRentals';
 import { getMyReservationsApi, cancelReservationApi, type ReservationResponse } from '@/api/reservation';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
@@ -50,6 +51,7 @@ export const MyUnitsPage: React.FC = () => {
   const [selectedPinContract, setSelectedPinContract] = useState<RentedContract | null>(null);
   const [selectedReturnContract, setSelectedReturnContract] = useState<RentedContract | null>(null);
   const [selectedDetailContract, setSelectedDetailContract] = useState<RentedContract | null>(null);
+  const [selectedRescheduleContract, setSelectedRescheduleContract] = useState<RentedContract | null>(null);
   const [selectedOverdueContract, setSelectedOverdueContract] = useState<RentedContract | null>(null);
   const [earlyRenewalContract, setEarlyRenewalContract] = useState<RentedContract | null>(null);
   const [showEarlyRenewalModal, setShowEarlyRenewalModal] = useState(false);
@@ -464,6 +466,7 @@ export const MyUnitsPage: React.FC = () => {
                   contract={contract}
                   onChangePin={(c) => setSelectedPinContract(c)}
                   onScheduleReturn={(c) => setSelectedReturnContract(c)}
+                  onReschedulePeriod={(c) => setSelectedRescheduleContract(c)}
                   onViewDetail={(c) => setSelectedDetailContract(c)}
                   onOpenOverduePayment={(c) => setSelectedOverdueContract(c)}
                   onCancelReturn={() => loadContracts()}
@@ -528,6 +531,17 @@ export const MyUnitsPage: React.FC = () => {
         contract={selectedDetailContract}
         onScheduleReturn={(c) => setSelectedReturnContract(c)}
         onChangePin={(c) => setSelectedPinContract(c)}
+        onReschedulePeriod={(c) => setSelectedRescheduleContract(c)}
+      />
+
+      <ReschedulePeriodModal
+        isOpen={Boolean(selectedRescheduleContract)}
+        onClose={() => setSelectedRescheduleContract(null)}
+        contract={selectedRescheduleContract}
+        onSuccess={() => {
+          setSelectedRescheduleContract(null);
+          loadContracts();
+        }}
       />
 
       <EarlyRenewalReminderModal

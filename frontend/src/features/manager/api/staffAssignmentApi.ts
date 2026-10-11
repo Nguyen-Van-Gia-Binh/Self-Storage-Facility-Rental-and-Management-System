@@ -305,8 +305,12 @@ export async function getDailyDispatchTasks(
           unitCode: contract.storageUnitCode || `U-${contract.storageUnitId || contract.id}`,
           customerName: contract.customerName || 'Khách hàng',
           customerPhone: contract.customerPhone || 'Chưa cập nhật',
-          scheduledDate: contract.endDateExclusive || new Date().toISOString().split('T')[0],
-          scheduledTime: '14:00 - 16:30',
+          scheduledDate:
+            contract.requestedReturnDate ||
+            (contract.status === 'PENDING_RETURN'
+              ? new Date().toISOString().split('T')[0]
+              : contract.endDateExclusive || new Date().toISOString().split('T')[0]),
+          scheduledTime: contract.appointmentSlot || '14:00 - 16:30',
           priority: 'NORMAL',
           isUrgent: false,
           status: dispatchStatus,

@@ -16,8 +16,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+
+import com.swp391.selfstorage.common.exception.CustomException;
+import com.swp391.selfstorage.common.exception.ErrorCode;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -88,6 +92,7 @@ class ContractSettlementApprovalTest {
                                 .id(20L)
                                 .contractId(500L)
                                 .damageCost(200_000L)
+                                .inspectedAt(OffsetDateTime.now())
                                 .build();
 
                 StorageUnit unit = StorageUnit.builder()
@@ -116,5 +121,33 @@ class ContractSettlementApprovalTest {
                 assertEquals(StorageUnitStatus.CLEANING, unit.getStatus());
                 assertEquals(800_000L, response.getDepositRefundAmount());
                 verify(eventPublisher).publishEvent(any(ContractSettledEvent.class));
+        }
+
+        @Test
+        @DisplayName("BR-RET-02: approveSettlement ném VALIDATION_FAILED khi chưa có biên bản nghiệm thu từ nhân viên")
+        void testApproveSettlement_ThrowsWhenNotInspected() {
+                RentalContract contract = RentalContract.builder()
+                                .id(500L)
+                                .customerId(15L)
+                                .facilityId(1L)
+                                .storageUnitId(42L)
+                                .status(ContractStatus.PENDING_RETURN)
+                                .build();
+
+                ReturnRequest uninspectedReq = ReturnRequest.builder()
+                                .id(20L)
+                                .contractId(500L)
+                                .inspectedAt(null)
+                                .build();
+
+                when(contractRepository.findByIdAndFacilityIdIn(eq(500L), anyList())).thenReturn(Optional.of(contract));
+                when(returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(500L))
+                                .thenReturn(Optional.of(uninspectedReq));
+
+                CustomException ex = assertThrows(CustomException.class, () ->
+                                contractService.approveSettlement(500L, SettlementApprovalRequest.builder().build(), 99L, List.of(1L)));
+
+                assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
+                assertTrue(ex.getMessage().contains("chưa được nhân viên kiểm tra"));
         }
 }

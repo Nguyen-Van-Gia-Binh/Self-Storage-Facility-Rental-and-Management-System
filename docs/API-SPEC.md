@@ -1405,6 +1405,55 @@ Nhân viên ghi nhận khách hàng từ chối nhận bàn giao ô kho do sự 
 
 ---
 
+### `POST /api/v1/contracts/{id}/reschedule-period`
+
+Dời ngày bắt đầu nhận kho trước khi Check-in — `SC-04`, `BR-RES-06`.
+
+**Auth:** `STORAGE_CUSTOMER` (chính mình), `FACILITY_MANAGER`, `ADMIN`
+**Điều kiện:** Hợp đồng ở trạng thái `PENDING_CHECK_IN`.
+
+**Request body:**
+
+```json
+{
+  "newStartDate": "2026-11-01"
+}
+```
+
+| Trường | Kiểu | Bắt buộc | Mô tả |
+| :--- | :--- | :---: | :--- |
+| `newStartDate` | `string` (date) | ✓ | Ngày bắt đầu mới (`YYYY-MM-DD`), phải từ ngày mai trở đi và khác ngày hiện tại |
+
+**Response `200`:**
+
+```json
+{
+  "status": 200,
+  "message": "Dời thời gian thuê thành công",
+  "data": {
+    "id": 500,
+    "code": "CTR-20261011-1234",
+    "startDate": "2026-11-01",
+    "endDate": "2026-12-01",
+    "rentalMonths": 1,
+    "status": "PENDING_CHECK_IN",
+    "storageUnitId": 42,
+    "storageUnitCode": "Q1-B201"
+  }
+}
+```
+
+**Lỗi:**
+
+| Status | errorCode | Điều kiện |
+| :--- | :--- | :--- |
+| `400` | `VALIDATION_FAILED` | Ngày bắt đầu mới ở quá khứ hoặc trùng ngày hiện tại |
+| `404` | `CONTRACT_NOT_FOUND` | Hợp đồng không tồn tại |
+| `409` | `INVALID_STATUS_TRANSITION` | Hợp đồng không ở trạng thái PENDING_CHECK_IN |
+| `409` | `STORAGE_UNIT_UNAVAILABLE` | Không còn ô kho trống cùng loại trong khoảng ngày mới |
+
+---
+
 ### `POST /api/v1/contracts/{id}/return-notices`
 
 Gửi thông báo trả kho — `SC-05`, `BR-RET-01`.

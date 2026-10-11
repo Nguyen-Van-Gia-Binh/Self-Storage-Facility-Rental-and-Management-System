@@ -1,13 +1,28 @@
 // frontend/src/features/manager/pages/FacilityListPage.tsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, Search, RefreshCw, AlertCircle, Layers, ArrowUpDown } from 'lucide-react';
+import {
+  Building2,
+  Search,
+  RefreshCw,
+  AlertCircle,
+  Layers,
+  ArrowUpDown,
+  LayoutGrid,
+  Table2,
+  ArrowRight,
+  Compass,
+  CheckCircle2,
+  MapPin,
+  Phone,
+} from 'lucide-react';
 import { fetchMyAssignedFacilities } from '@/api/facility';
 import { fetchStorageUnits } from '@/api/unit';
 import type { FacilityListItem } from '@/types';
 import { FacilityCard } from '../components/FacilityCard';
 import type { FacilityStats } from '../components/FacilityCard';
 import { Pagination } from '../components/Pagination';
+import { getFacilityTheme, extractProvinceName } from '../utils/facilityTheme';
 
 export type RegionFilter = 'ALL' | 'HN' | 'HCM' | 'DN' | 'OTHER';
 
@@ -72,7 +87,7 @@ export const getFacilityRegion = (facility: { address?: string; name: string }):
   return 'OTHER';
 };
 
-const PAGE_SIZE = 12;
+const DEFAULT_PAGE_SIZE = 12;
 
 export const FacilityListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -83,6 +98,8 @@ export const FacilityListPage: React.FC = () => {
   const [selectedRegion, setSelectedRegion] = useState<RegionFilter>('ALL');
   const [sortBy, setSortBy] = useState<SortOption>('name-asc');
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -152,10 +169,10 @@ export const FacilityListPage: React.FC = () => {
     loadData();
   }, []);
 
-  // Reset về trang 1 khi đổi bộ lọc hoặc từ khóa
+  // Reset về trang 1 khi đổi bộ lọc, từ khóa hoặc pageSize
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, selectedRegion, sortBy]);
+  }, [searchTerm, selectedRegion, sortBy, pageSize]);
 
   // Đếm số lượng cơ sở theo từng khu vực
   const regionCounts = useMemo(() => {
@@ -171,6 +188,18 @@ export const FacilityListPage: React.FC = () => {
       counts[region] = (counts[region] || 0) + 1;
     });
     return counts;
+  }, [facilities]);
+
+  // Thống kê tổng quan cấp cao mạng lưới (Executive Network Hub)
+  const networkOverview = useMemo(() => {
+    const total = facilities.length;
+    const active = facilities.filter((f) => f.isActive).length;
+    const provinces = new Set(facilities.map((f) => extractProvinceName(f.address, f.name)));
+    return {
+      total,
+      active,
+      provinceCount: provinces.size,
+    };
   }, [facilities]);
 
   // Lọc và sắp xếp dữ liệu
@@ -216,11 +245,11 @@ export const FacilityListPage: React.FC = () => {
   }, [facilities, selectedRegion, searchTerm, sortBy, statsMap]);
 
   // Phân trang
-  const totalPages = Math.ceil(processedFacilities.length / PAGE_SIZE) || 1;
+  const totalPages = Math.ceil(processedFacilities.length / pageSize) || 1;
   const paginatedFacilities = useMemo(() => {
-    const startIndex = (currentPage - 1) * PAGE_SIZE;
-    return processedFacilities.slice(startIndex, startIndex + PAGE_SIZE);
-  }, [processedFacilities, currentPage]);
+    const startIndex = (currentPage - 1) * pageSize;
+    return processedFacilities.slice(startIndex, startIndex + pageSize);
+  }, [processedFacilities, currentPage, pageSize]);
 
   return (
     <div className="space-y-6 pb-12">
@@ -232,14 +261,14 @@ export const FacilityListPage: React.FC = () => {
               <Building2 className="w-5 h-5" />
             </div>
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-              Quản lý ô kho — Chọn Cơ sở (Cấp 1)
+              Quản lý ô kho — Danh sách Cơ sở
             </h1>
             <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
               FM-01
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Chọn cơ sở cần quản lý để bắt đầu xem danh mục loại ô kho và ô kho vật lý (Mô hình Drill-down)
+            Chọn cơ sở cần quản lý để xem danh mục loại ô kho và sơ đồ ô kho vật lý.
           </p>
         </div>
 
@@ -267,7 +296,49 @@ export const FacilityListPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Filter Tabs Khu vực & Dropdown Sắp xếp */}
+      {/* Executive Network Hub Bar: Tóm tắt cấp cao quy mô chuỗi cơ sở */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-200/80 flex items-center justify-center text-brand-600 shrink-0">
+            <Building2 className="w-5 h-5" />
+          </div>
+          <div>
+            <span className="text-[11px] font-semibold text-slate-500 block">Cơ sở phân công</span>
+            <div className="flex items-baseline gap-1 mt-0.5">
+              <span className="text-xl font-bold font-mono text-slate-900">{networkOverview.total}</span>
+              <span className="text-xs text-slate-400">điểm lưu trữ</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200/80 flex items-center justify-center text-emerald-600 shrink-0">
+            <CheckCircle2 className="w-5 h-5" />
+          </div>
+          <div>
+            <span className="text-[11px] font-semibold text-emerald-700 block">Vận hành mạng lưới</span>
+            <div className="flex items-baseline gap-1 mt-0.5">
+              <span className="text-xl font-bold font-mono text-emerald-700">{networkOverview.active} / {networkOverview.total}</span>
+              <span className="text-xs text-emerald-600 font-medium">sẵn sàng</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200/80 flex items-center justify-center text-blue-600 shrink-0">
+            <Compass className="w-5 h-5" />
+          </div>
+          <div>
+            <span className="text-[11px] font-semibold text-blue-700 block">Độ phủ địa bàn</span>
+            <div className="flex items-baseline gap-1 mt-0.5">
+              <span className="text-xl font-bold font-mono text-blue-700">{networkOverview.provinceCount}</span>
+              <span className="text-xs text-blue-600 font-medium">tỉnh / thành phố</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filter Tabs Khu vực & Dropdown Sắp xếp + Layout Switcher */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         {/* Region Tabs: [Tất cả] [Hà Nội] [TP.HCM] [Đà Nẵng] [Khác] */}
         <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl overflow-x-auto">
@@ -297,21 +368,54 @@ export const FacilityListPage: React.FC = () => {
           })}
         </div>
 
-        {/* Sort Dropdown */}
-        <div className="flex items-center gap-2 text-xs text-slate-600 self-end sm:self-auto">
-          <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
-          <span className="font-medium text-slate-500 whitespace-nowrap">Sắp xếp:</span>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SortOption)}
-            className="bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 cursor-pointer shadow-2xs"
-          >
-            {SORT_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+        {/* Right: Layout Switcher + Sort Dropdown */}
+        <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto">
+          {/* Layout Mode Switcher */}
+          <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <button
+              type="button"
+              onClick={() => setViewMode('grid')}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                viewMode === 'grid'
+                  ? 'bg-white text-brand-700 shadow-2xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+              title="Xem dạng Lưới Thẻ Trực Quan"
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Lưới Thẻ</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('table')}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                viewMode === 'table'
+                  ? 'bg-white text-brand-700 shadow-2xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+              title="Xem dạng Bảng Danh Mục Mạng Lưới"
+            >
+              <Table2 className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Bảng Danh Mục</span>
+            </button>
+          </div>
+
+          {/* Sort Dropdown */}
+          <div className="flex items-center gap-2 text-xs text-slate-600">
+            <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+            <span className="font-medium text-slate-500 whitespace-nowrap">Sắp xếp:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortOption)}
+              className="bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 cursor-pointer shadow-2xs"
+            >
+              {SORT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -348,24 +452,121 @@ export const FacilityListPage: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {paginatedFacilities.map((facility) => (
-              <FacilityCard
-                key={facility.id}
-                facility={facility}
-                stats={statsMap[facility.id]}
-                onClick={() => navigate(`/manager/facilities/${facility.id}`)}
-              />
-            ))}
-          </div>
+          {viewMode === 'grid' ? (
+            /* Chế độ Lưới Thẻ: Hiệu ứng Hover Elevation & Ambient Glow */
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {paginatedFacilities.map((facility) => (
+                <FacilityCard
+                  key={facility.id}
+                  facility={facility}
+                  stats={statsMap[facility.id]}
+                  onClick={() => navigate(`/manager/facilities/${facility.id}`)}
+                />
+              ))}
+            </div>
+          ) : (
+            /* Chế độ Bảng Danh Mục Quản Trị (Executive Portfolio Table) */
+            <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-2xs">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
+                      <th className="py-3.5 px-4">Cơ sở lưu trữ</th>
+                      <th className="py-3.5 px-4">Khu vực / Tỉnh thành</th>
+                      <th className="py-3.5 px-4">Địa chỉ hoạt động</th>
+                      <th className="py-3.5 px-4">Hotline</th>
+                      <th className="py-3.5 px-4 text-center">Trạng thái</th>
+                      <th className="py-3.5 px-4 text-right">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {paginatedFacilities.map((facility) => {
+                      const theme = getFacilityTheme(facility);
+                      return (
+                        <tr
+                          key={facility.id}
+                          onClick={() => navigate(`/manager/facilities/${facility.id}`)}
+                          className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                        >
+                          <td className="py-3.5 px-4">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-xl flex items-center justify-center border shadow-2xs shrink-0 ${theme.iconBg}`}>
+                                <Building2 className={`w-4 h-4 ${theme.iconColor}`} />
+                              </div>
+                              <div>
+                                <div className="font-bold text-slate-900 group-hover:text-brand-600 transition-colors">
+                                  {facility.name}
+                                </div>
+                                <span className="text-[10px] font-mono text-slate-500">
+                                  {facility.code}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${theme.badgeBg} ${theme.badgeTextCol} ${theme.badgeBorder}`}>
+                              <Compass className="w-2.5 h-2.5" />
+                              {theme.regionLabel}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-600 max-w-xs truncate">
+                            <div className="flex items-center gap-1.5">
+                              <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                              <span className="truncate">{facility.address || 'Chưa cập nhật'}</span>
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4 font-mono text-slate-700">
+                            {facility.phone ? (
+                              <div className="flex items-center gap-1">
+                                <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+                                <span>{facility.phone}</span>
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 italic">--</span>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4 text-center">
+                            {facility.isActive ? (
+                              <span className="inline-block text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                                Hoạt động
+                              </span>
+                            ) : (
+                              <span className="inline-block text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-0.5 rounded-full">
+                                Tạm dừng
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/manager/facilities/${facility.id}`);
+                              }}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-brand-200 text-brand-600 hover:bg-brand-50 transition-colors font-bold text-xs cursor-pointer"
+                            >
+                              <span>Vào quản lý kho</span>
+                              <ArrowRight className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
-          {/* Phân trang: Threshold > 12 */}
+          {/* Phân trang: Hỗ trợ chuyển đổi số lượng/trang và luôn hiển thị điều hướng */}
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
             totalItems={processedFacilities.length}
-            pageSize={PAGE_SIZE}
-            threshold={12}
+            pageSize={pageSize}
+            pageSizeOptions={[6, 12, 24, 48]}
+            onPageSizeChange={(newSize) => setPageSize(newSize)}
+            showAlways={true}
             itemName="cơ sở"
             onPageChange={(page) => setCurrentPage(page)}
           />

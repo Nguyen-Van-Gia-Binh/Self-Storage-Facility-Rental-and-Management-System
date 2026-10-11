@@ -7,6 +7,7 @@ import com.swp391.selfstorage.policy.dto.OverdueProcessingResult;
 import com.swp391.selfstorage.policy.entity.PolicyVersion;
 import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
 import com.swp391.selfstorage.policy.service.impl.OverdueProcessingServiceImpl;
+import com.swp391.selfstorage.reservation.repository.ReservationRepository;
 import com.swp391.selfstorage.unit.entity.StorageUnit;
 import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
@@ -40,6 +41,9 @@ class OverdueProcessingServiceTest {
 
     @Mock
     private StorageUnitRepository storageUnitRepository;
+
+    @Mock
+    private ReservationRepository reservationRepository;
 
     @InjectMocks
     private OverdueProcessingServiceImpl overdueProcessingService;
@@ -131,8 +135,8 @@ class OverdueProcessingServiceTest {
     }
 
     @Test
-    @DisplayName("Kịch bản 3: Mốc D+10 (Cưỡng chế) - Chốt trần 70% cọc, cấn trừ cọc, khóa accessCode, TERMINATED, kho CLEANING")
-    void testForcedTermination_D10_ShouldTerminateLockAccessAndSetCleaning() {
+    @DisplayName("Kịch bản 3: Mốc D+10 (Cưỡng chế) - Chốt trần 70% cọc, cấn trừ cọc, khóa accessCode, TERMINATED, kho MAINTENANCE")
+    void testForcedTermination_D10_ShouldTerminateLockAccessAndSetMaintenance() {
         LocalDate runDate = baseEndDate.plusDays(10); // 2026-10-11 (D+10)
 
         RentalContract contract = RentalContract.builder()
@@ -169,8 +173,68 @@ class OverdueProcessingServiceTest {
         assertNull(contract.getAccessCode());
         // Hợp đồng chuyển sang TERMINATED
         assertEquals(ContractStatus.TERMINATED, contract.getStatus());
-        // Ô kho chuyển sang CLEANING để dọn đồ
-        assertEquals(StorageUnitStatus.CLEANING, mockUnit.getStatus());
+        // Ô kho chuyển sang MAINTENANCE để bảo trì & niêm phong đồ tồn
+        assertEquals(StorageUnitStatus.MAINTENANCE, mockUnit.getStatus());
+    }
+
+    @Test
+    @DisplayName("Kịch bản 3.1: Mốc D+15 (Hết bảo trì) - Tự động chuyển kho sang RESERVED nếu có người đặt trước CONFIRMED")
+    void testAutoReleaseUnit_D15_ShouldSetReserved_WhenConfirmedReservationExists() {
+        LocalDate runDate = baseEndDate.plusDays(15); // D+15
+
+        RentalContract terminatedContract = RentalContract.builder()
+                .id(104L)
+                .code("CTR-004")
+                .status(ContractStatus.TERMINATED)
+                .endDateExclusive(baseEndDate)
+                .storageUnitId(60L)
+                .build();
+
+        StorageUnit maintenanceUnit = StorageUnit.builder()
+                .id(60L)
+                .status(StorageUnitStatus.MAINTENANCE)
+                .build();
+
+        when(rentalContractRepository.findByStatusInAndEndDateExclusiveLessThanEqual(anyList(), eq(runDate)))
+                .thenReturn(List.of(terminatedContract));
+        when(storageUnitRepository.findById(60L)).thenReturn(Optional.of(maintenanceUnit));
+        when(reservationRepository.existsActiveOrFutureReservation(eq(60L), any(), eq(runDate))).thenReturn(true);
+
+        OverdueProcessingResult result = overdueProcessingService.processOverdueContracts(runDate);
+
+        assertEquals(1, result.getTotalScanned());
+        assertEquals(StorageUnitStatus.RESERVED, maintenanceUnit.getStatus());
+        verify(storageUnitRepository).save(maintenanceUnit);
+    }
+
+    @Test
+    @DisplayName("Kịch bản 3.2: Mốc D+15 (Hết bảo trì) - Tự động chuyển kho sang AVAILABLE nếu chưa có ai đặt trước")
+    void testAutoReleaseUnit_D15_ShouldSetAvailable_WhenNoReservationExists() {
+        LocalDate runDate = baseEndDate.plusDays(15); // D+15
+
+        RentalContract terminatedContract = RentalContract.builder()
+                .id(105L)
+                .code("CTR-005")
+                .status(ContractStatus.TERMINATED)
+                .endDateExclusive(baseEndDate)
+                .storageUnitId(61L)
+                .build();
+
+        StorageUnit maintenanceUnit = StorageUnit.builder()
+                .id(61L)
+                .status(StorageUnitStatus.MAINTENANCE)
+                .build();
+
+        when(rentalContractRepository.findByStatusInAndEndDateExclusiveLessThanEqual(anyList(), eq(runDate)))
+                .thenReturn(List.of(terminatedContract));
+        when(storageUnitRepository.findById(61L)).thenReturn(Optional.of(maintenanceUnit));
+        when(reservationRepository.existsActiveOrFutureReservation(eq(61L), any(), eq(runDate))).thenReturn(false);
+
+        OverdueProcessingResult result = overdueProcessingService.processOverdueContracts(runDate);
+
+        assertEquals(1, result.getTotalScanned());
+        assertEquals(StorageUnitStatus.AVAILABLE, maintenanceUnit.getStatus());
+        verify(storageUnitRepository).save(maintenanceUnit);
     }
 
     @Test
@@ -277,5 +341,55 @@ class OverdueProcessingServiceTest {
         assertEquals("AC-000111", contract.getAccessCode());
         verify(policyVersionRepository, never())
                 .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any());
+    }
+
+    @Test
+    @DisplayName("BR-RET-09: Ô kho CLEANING chưa đủ 5 ngày thì giữ nguyên trạng thái CLEANING")
+    void testCleaningUnit_LessThan5Days_ShouldRemainCleaning() {
+        LocalDate runDate = LocalDate.of(2026, 10, 11);
+        StorageUnit unit = StorageUnit.builder()
+                .id(201L).code("Q1-B201").status(StorageUnitStatus.CLEANING)
+                .updatedAt(OffsetDateTime.parse("2026-10-08T00:00:00Z"))
+                .build();
+
+        RentalContract closedContract = RentalContract.builder()
+                .id(999L).code("CTR-CLOSED").status(ContractStatus.CLOSED)
+                .closedAt(OffsetDateTime.parse("2026-10-08T00:00:00Z"))
+                .build();
+
+        when(storageUnitRepository.findByStatus(StorageUnitStatus.CLEANING)).thenReturn(List.of(unit));
+        when(rentalContractRepository.findFirstByStorageUnitIdAndStatusOrderByClosedAtDesc(201L, ContractStatus.CLOSED))
+                .thenReturn(Optional.of(closedContract));
+
+        overdueProcessingService.processOverdueContracts(runDate);
+
+        assertEquals(StorageUnitStatus.CLEANING, unit.getStatus(), "Mới được 3 ngày (<5), vẫn phải là CLEANING");
+        verify(storageUnitRepository, never()).save(unit);
+    }
+
+    @Test
+    @DisplayName("BR-RET-09: Ô kho CLEANING đủ 5 ngày trở lên tự động giải phóng sang AVAILABLE")
+    void testCleaningUnit_5DaysOrMore_ShouldBecomeAvailable() {
+        LocalDate runDate = LocalDate.of(2026, 10, 11);
+        StorageUnit unit = StorageUnit.builder()
+                .id(201L).code("Q1-B201").status(StorageUnitStatus.CLEANING)
+                .updatedAt(OffsetDateTime.parse("2026-10-05T00:00:00Z"))
+                .build();
+
+        RentalContract closedContract = RentalContract.builder()
+                .id(999L).code("CTR-CLOSED").status(ContractStatus.CLOSED)
+                .closedAt(OffsetDateTime.parse("2026-10-05T00:00:00Z"))
+                .build();
+
+        when(storageUnitRepository.findByStatus(StorageUnitStatus.CLEANING)).thenReturn(List.of(unit));
+        when(rentalContractRepository.findFirstByStorageUnitIdAndStatusOrderByClosedAtDesc(201L, ContractStatus.CLOSED))
+                .thenReturn(Optional.of(closedContract));
+        when(reservationRepository.existsActiveOrFutureReservation(eq(201L), anyList(), eq(runDate)))
+                .thenReturn(false);
+
+        overdueProcessingService.processOverdueContracts(runDate);
+
+        assertEquals(StorageUnitStatus.AVAILABLE, unit.getStatus(), "Đã qua 6 ngày (>=5), tự động chuyển sang AVAILABLE");
+        verify(storageUnitRepository).save(unit);
     }
 }

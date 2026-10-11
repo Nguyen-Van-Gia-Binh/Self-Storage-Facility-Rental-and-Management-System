@@ -4,14 +4,13 @@ import type { UnitTypeResponse } from '@/types/unit';
 import {
   Edit2,
   Power,
-  Snowflake,
-  Package,
   ArrowRight,
-  CheckCircle2,
-  AlertTriangle,
-  Wrench,
-  TrendingUp,
+  Maximize2,
+  Box,
+  Layers,
+  Sparkles,
 } from 'lucide-react';
+import { getUnitTypeTheme } from '../utils/unitTypeTheme';
 
 export interface UnitTypeBreakdownStats {
   total: number;
@@ -45,86 +44,122 @@ export const isClimateType = (t: { code?: string; name: string }) => {
 export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({
   type,
   isSelected = false,
-  stats,
   onClick,
   onEdit,
   onToggle,
 }) => {
-  const isClimate = isClimateType(type);
   const isTypeActive = type.isActive ?? type.active ?? true;
+  const theme = getUnitTypeTheme(type);
+  const IconComponent = theme.icon;
 
-  const total = stats ? stats.total : (type.totalUnits ?? 0);
-  const available = stats ? stats.available : 0;
-  const occupied = stats ? stats.occupied : 0;
-  const maintenance = stats ? stats.maintenance : 0;
-
-  // Tính tỷ lệ đã thuê / lấp đầy
-  const occupancyRate = total > 0 ? (occupied / total) * 100 : 0;
-  const isFull = (total > 0 && available === 0) || occupancyRate >= 100;
-  const isNearFull = !isFull && occupancyRate >= 75;
+  const area = type.areaM2 || (type.widthM && type.depthM ? Number((type.widthM * type.depthM).toFixed(1)) : 0);
+  const totalUnits = type.totalUnits ?? 0;
 
   return (
     <div
       onClick={onClick}
-      className={`group relative rounded-2xl border transition-all duration-200 p-5 select-none cursor-pointer flex flex-col justify-between ${
+      className={`group relative rounded-2xl border transition-all duration-300 select-none cursor-pointer flex flex-col justify-between overflow-hidden bg-white hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/60 ${
         isSelected
-          ? 'border-brand-500 bg-brand-50/50 shadow-sm ring-2 ring-brand-500/20'
-          : 'border-slate-200/90 bg-white hover:border-brand-500/70 hover:shadow-md'
+          ? 'border-brand-500 ring-2 ring-brand-500/20 shadow-md'
+          : `border-slate-200/90 ${theme.borderAccent}`
       }`}
     >
-      <div>
-        {/* Top Header: Name + Badges */}
+      {/* Top Ambient Glow / Gradient Background */}
+      <div
+        className={`absolute inset-x-0 top-0 h-28 bg-gradient-to-b ${theme.gradientBg} pointer-events-none transition-opacity duration-300 group-hover:opacity-100`}
+      />
+
+      <div className="relative p-5">
+        {/* Header: Visual Icon + Badges */}
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-slate-900 group-hover:text-brand-600 transition-colors truncate">
-                {type.name}
-              </h3>
+          <div className="flex items-center gap-3">
+            <div
+              className={`w-11 h-11 rounded-2xl flex items-center justify-center border shadow-2xs transition-all duration-300 group-hover:scale-105 group-hover:shadow-xs ${theme.iconBg}`}
+            >
+              <IconComponent className={`w-5 h-5 transition-transform duration-300 group-hover:scale-110 ${theme.iconColor}`} />
             </div>
-            <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200/80 mt-1 inline-block">
-              {type.code}
-            </span>
+            <div className="min-w-0">
+              <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded bg-slate-100/90 text-slate-600 border border-slate-200/80 inline-block">
+                {type.code || 'UT-STD'}
+              </span>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span
+                  className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${theme.badgeBg} ${theme.badgeTextCol} ${theme.badgeBorder}`}
+                >
+                  <Sparkles className="w-2.5 h-2.5" />
+                  {theme.categoryLabel}
+                </span>
+              </div>
+            </div>
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
             {!isTypeActive && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200 shadow-2xs">
                 Vô hiệu
-              </span>
-            )}
-            {isClimate ? (
-              <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-cyan-50 text-cyan-700 border border-cyan-200">
-                <Snowflake className="w-3 h-3 text-cyan-600" />
-                Kho Máy Lạnh
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
-                <Package className="w-3 h-3 text-slate-400" />
-                Tiêu chuẩn
               </span>
             )}
           </div>
         </div>
 
-        {type.description && (
-          <p className="text-xs text-slate-500 mt-2 line-clamp-2 leading-relaxed">
-            {type.description}
+        {/* Name & Subtitle */}
+        <div className="mt-3.5">
+          <h3 className="text-base font-bold text-slate-900 group-hover:text-brand-600 transition-colors line-clamp-1">
+            {type.name}
+          </h3>
+          <p className="text-xs text-slate-500 mt-1 line-clamp-2 min-h-[32px] leading-relaxed">
+            {type.description || `Khoang lưu trữ tiêu chuẩn phục vụ nhu cầu lưu trữ chuyên biệt với diện tích ${area} m².`}
           </p>
-        )}
+        </div>
 
-        {/* Specs & Pricing Banner */}
-        <div className="mt-4 grid grid-cols-2 gap-3 text-xs bg-slate-50/80 p-3 rounded-xl border border-slate-100">
-          <div>
-            <span className="text-slate-400 font-medium text-[11px] block">Diện tích quy chuẩn</span>
-            <p className="font-mono font-bold text-slate-800 mt-0.5 text-sm">{type.areaM2} m²</p>
+        {/* Feature Pill Badge */}
+        <div className="mt-2.5">
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-600 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            {theme.badgeText}
+          </span>
+        </div>
+
+        {/* Technical Specs 3-Column Grid */}
+        <div className="mt-4 grid grid-cols-3 gap-2 bg-slate-50/70 p-3 rounded-xl border border-slate-100 text-center">
+          <div className="px-1">
+            <span className="text-slate-400 font-medium text-[10px] flex items-center justify-center gap-1">
+              <Maximize2 className="w-2.5 h-2.5" />
+              Diện tích
+            </span>
+            <p className="font-mono font-bold text-slate-800 mt-0.5 text-xs">
+              {area} m²
+            </p>
           </div>
+          <div className="px-1 border-x border-slate-200/70">
+            <span className="text-slate-400 font-medium text-[10px] flex items-center justify-center gap-1">
+              <Box className="w-2.5 h-2.5" />
+              Kích thước
+            </span>
+            <p className="font-mono font-semibold text-slate-700 mt-0.5 text-[11px] whitespace-nowrap">
+              {type.widthM}×{type.depthM}×{type.heightM}m
+            </p>
+          </div>
+          <div className="px-1">
+            <span className="text-slate-400 font-medium text-[10px] flex items-center justify-center gap-1">
+              <Layers className="w-2.5 h-2.5" />
+              Tổng quy mô
+            </span>
+            <p className="font-mono font-bold text-slate-800 mt-0.5 text-xs">
+              {totalUnits} ô
+            </p>
+          </div>
+        </div>
+
+        {/* Pricing Banner */}
+        <div className="mt-3.5 bg-gradient-to-r from-slate-50 to-brand-50/30 p-3 rounded-xl border border-slate-100 flex items-center justify-between">
           <div>
-            <span className="text-slate-400 font-medium text-[11px] block">Đơn giá niêm yết</span>
+            <span className="text-slate-400 font-medium text-[10px] block">Đơn giá niêm yết</span>
             {type.monthlyPrice &&
             type.monthlyPrice > 0 &&
             type.priceStatus !== 'UNLISTED' &&
             type.priceStatus !== 'Chưa niêm yết' ? (
-              <p className="font-mono font-extrabold text-brand-600 mt-0.5 text-sm">
+              <p className="font-mono font-extrabold text-brand-700 mt-0.5 text-sm tracking-tight">
                 {fmt(type.monthlyPrice)}
               </p>
             ) : (
@@ -133,67 +168,15 @@ export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({
               </span>
             )}
           </div>
-        </div>
 
-        {/* Mini Progress Bar tỉ lệ đã thuê / tổng */}
-        <div className="mt-4 bg-slate-50/80 p-3 rounded-xl border border-slate-100">
-          <div className="flex items-center justify-between text-xs mb-1.5">
-            <span className="font-semibold text-slate-700 flex items-center gap-1 text-[11px]">
-              <TrendingUp className="w-3 h-3 text-slate-400" />
-              Đã thuê: {occupied} / {total} ô
-            </span>
-            <span
-              className={`text-[11px] font-bold ${
-                isFull ? 'text-rose-600' : isNearFull ? 'text-amber-600' : 'text-emerald-600'
-              }`}
-            >
-              {isFull ? 'Đã lấp đầy 100%' : `${occupancyRate.toFixed(0)}%`}
-            </span>
-          </div>
-
-          {/* Thanh progress bar: Xanh (trống) -> Cam (gần full >=75%) -> Đỏ (full 100%) */}
-          <div className="w-full bg-slate-200/80 rounded-full h-2 overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-500 ${
-                isFull ? 'bg-rose-500' : isNearFull ? 'bg-amber-500' : 'bg-emerald-500'
-              }`}
-              style={{ width: `${Math.min(100, Math.max(0, occupancyRate))}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Stats breakdown 3 màu: Trống (Xanh), Đang thuê (Cam), Bảo trì (Đỏ) */}
-        <div className="mt-3">
-          <div className="grid grid-cols-3 gap-2 text-center text-xs">
-            <div className="bg-emerald-50/80 border border-emerald-200/80 rounded-xl py-2 px-1">
-              <div className="text-[10px] font-semibold text-emerald-700 flex items-center justify-center gap-1">
-                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                <span>Trống</span>
-              </div>
-              <div className="text-sm font-bold text-emerald-800 mt-0.5">{available} ô</div>
-            </div>
-
-            <div className="bg-amber-50/80 border border-amber-200/80 rounded-xl py-2 px-1">
-              <div className="text-[10px] font-semibold text-amber-700 flex items-center justify-center gap-1">
-                <AlertTriangle className="w-3 h-3 text-amber-600" />
-                <span>Đang thuê</span>
-              </div>
-              <div className="text-sm font-bold text-amber-800 mt-0.5">{occupied} ô</div>
-            </div>
-
-            <div className="bg-rose-50/80 border border-rose-200/80 rounded-xl py-2 px-1">
-              <div className="text-[10px] font-semibold text-rose-700 flex items-center justify-center gap-1">
-                <Wrench className="w-3 h-3 text-rose-600" />
-                <span>Bảo trì</span>
-              </div>
-              <div className="text-sm font-bold text-rose-800 mt-0.5">{maintenance} ô</div>
-            </div>
-          </div>
+          <span className="text-[11px] font-semibold text-slate-400">
+            / tháng
+          </span>
         </div>
       </div>
 
       {/* Bottom Action Footer */}
-      <div className="mt-5 pt-3.5 border-t border-slate-100 flex items-center justify-between">
+      <div className="relative px-5 py-3.5 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <button
             type="button"
@@ -201,7 +184,7 @@ export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({
               e.stopPropagation();
               onEdit();
             }}
-            className="text-xs font-semibold text-slate-600 hover:text-brand-700 hover:bg-brand-50 px-2.5 py-1.5 rounded-lg border border-slate-200/80 transition-colors flex items-center gap-1 cursor-pointer"
+            className="text-xs font-semibold text-slate-600 hover:text-brand-700 hover:bg-white px-2.5 py-1.5 rounded-lg border border-slate-200/80 transition-colors flex items-center gap-1 cursor-pointer shadow-2xs"
             title="Chỉnh sửa loại kho"
           >
             <Edit2 className="w-3 h-3" />
@@ -213,10 +196,10 @@ export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({
               e.stopPropagation();
               onToggle();
             }}
-            className={`text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition-colors flex items-center gap-1 cursor-pointer ${
+            className={`text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition-colors flex items-center gap-1 cursor-pointer shadow-2xs ${
               isTypeActive
-                ? 'text-rose-600 hover:bg-rose-50 border-rose-200 hover:border-rose-300'
-                : 'text-emerald-700 hover:bg-emerald-50 border-emerald-200 hover:border-emerald-300'
+                ? 'text-rose-600 hover:bg-white border-rose-200 hover:border-rose-300'
+                : 'text-emerald-700 hover:bg-white border-emerald-200 hover:border-emerald-300'
             }`}
             title={isTypeActive ? 'Vô hiệu hóa loại ô kho' : 'Kích hoạt loại ô kho'}
           >
@@ -226,7 +209,7 @@ export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({
         </div>
 
         <div className="flex items-center gap-1 text-xs font-bold text-brand-600 group-hover:text-brand-700">
-          <span>{isFull ? 'Xem chi tiết' : 'Xem danh sách ô'}</span>
+          <span>Xem danh sách ô</span>
           <ArrowRight className="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" />
         </div>
       </div>

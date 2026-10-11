@@ -15,6 +15,8 @@ import {
   Receipt,
   Eye,
   CheckCircle2,
+  Clock,
+  UserPlus,
 } from 'lucide-react';
 import { getManagerContracts } from '@/api/contract';
 import type { ManagerContractItem } from '@/types/contractManager';
@@ -113,10 +115,12 @@ export const ContractDetailPage: React.FC = () => {
   const isOverdue = contract.status === 'OVERDUE';
   const isActive = contract.status === 'ACTIVE';
   const canRelocate = Boolean(contract.relocationEligible) && (isActive || contract.status === 'PENDING_CHECK_IN');
-  const isSettlementReady =
-    contract.status === 'PENDING_RETURN' ||
-    (contract.status as string) === 'INSPECTED' ||
-    (contract.status as string) === 'NOTICE_SUBMITTED';
+  const isPendingReturn =
+    contract.status === 'PENDING_RETURN' || (contract.status as string) === 'INSPECTED';
+  const isInspected =
+    Boolean(contract.isInspected) || (contract.status as string) === 'INSPECTED';
+  // Chỉ cho phép duyệt quyết toán khi nhân viên ĐÃ lập biên bản nghiệm thu (BR-RET-02)
+  const isSettlementReady = isInspected;
 
   return (
     <div className="space-y-6 pb-12">
@@ -221,6 +225,39 @@ export const ContractDetailPage: React.FC = () => {
             <Repeat className="w-4 h-4" />
             <span>Tiến hành Đổi ô kho</span>
           </button>
+        </div>
+      )}
+
+      {/* Banner Trả kho chờ nghiệm thu hiện trường (BR-RET-02) */}
+      {isPendingReturn && !isInspected && (
+        <div className="bg-amber-50/90 border border-amber-300 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-900 shadow-2xs">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-xl bg-amber-100 text-amber-700 shrink-0 mt-0.5">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-amber-900">
+                {contract.assignedStaffId
+                  ? `Đang chờ nhân viên ${contract.assignedStaffName || 'phụ trách'} nghiệm thu hiện trường (BR-RET-02)`
+                  : 'Đơn trả kho chưa phân công nhân viên kiểm tra (BR-RET-02)'}
+              </h4>
+              <p className="text-xs text-amber-700 mt-0.5">
+                {contract.assignedStaffId
+                  ? `Nhiệm vụ kiểm tra ô kho ${contract.storageUnitCode} đã được phân công. Quản lý chỉ có thể duyệt quyết toán & hoàn cọc sau khi nhân viên hoàn tất kiểm tra và nộp biên bản nghiệm thu hiện trạng.`
+                  : `Khách hàng đã gửi yêu cầu trả kho. Bạn cần phân công nhân viên trực ca đến kiểm tra hiện trạng ô kho ${contract.storageUnitCode} trước khi thực hiện quyết toán.`}
+              </p>
+            </div>
+          </div>
+          {!contract.assignedStaffId && (
+            <button
+              type="button"
+              onClick={() => navigate(`/manager/staff-schedule/facilities/${contract.facilityId}`)}
+              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs shrink-0 cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>Phân công ngay</span>
+            </button>
+          )}
         </div>
       )}
 
@@ -379,7 +416,30 @@ export const ContractDetailPage: React.FC = () => {
             </button>
           )}
 
-          {/* Duyệt quyết toán hoàn cọc (Khi PENDING_RETURN hoặc INSPECTED) */}
+          {/* Nút Phân công nếu đang PENDING_RETURN mà chưa phân công nhân viên */}
+          {isPendingReturn && !isInspected && !contract.assignedStaffId && (
+            <button
+              type="button"
+              onClick={() => navigate(`/manager/staff-schedule/facilities/${contract.facilityId}`)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>Phân công kiểm tra kho</span>
+            </button>
+          )}
+
+          {/* Huy hiệu chờ nhân viên nộp biên bản nếu đã phân công */}
+          {isPendingReturn && !isInspected && contract.assignedStaffId && (
+            <div
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-xs font-semibold cursor-default"
+              title="Nhân viên đang tiến hành kiểm tra kho tại chỗ. Quản lý sẽ duyệt quyết toán sau khi có biên bản nghiệm thu."
+            >
+              <Clock className="w-4 h-4 text-amber-600" />
+              <span>Chờ NV ({contract.assignedStaffName}) nộp biên bản</span>
+            </div>
+          )}
+
+          {/* Duyệt quyết toán hoàn cọc (CHỈ KHI ĐÃ ĐƯỢC NGHIỆM THU - BR-RET-02) */}
           {isSettlementReady && (
             <button
               type="button"
@@ -520,17 +580,26 @@ export const ContractDetailPage: React.FC = () => {
             contractNumber: contract.code,
             facilityId: String(contract.facilityId),
             facilityName: contract.facilityName,
+            facilityAddress: contract.facilityAddress,
+            facilityPhone: contract.facilityPhone,
             unitId: String(contract.storageUnitId),
             unitNumber: contract.storageUnitCode,
             unitTypeName: contract.unitTypeName,
             sizeCategory: 'M',
             storageType: 'STANDARD',
+            floor: contract.floor,
+            position: contract.position,
+            unitDimensions: contract.unitDimensions,
             monthlyRent: contract.monthlyPrice,
             startDate: contract.startDate,
             endDate: contract.endDateExclusive,
             status: (contract.status === 'PENDING_CHECK_IN' ? 'PENDING_CHECKIN' : contract.status) as any,
             depositHeld: contract.depositAmount,
             accessPin: contract.accessCode,
+            customerName: contract.customerName,
+            customerPhone: contract.customerPhone,
+            customerEmail: contract.customerEmail,
+            customerIdentityNumber: contract.customerIdentityNumber,
           }}
           onClose={() => setEContractModalOpen(false)}
         />

@@ -73,6 +73,22 @@ class ReservationConfirmTest {
     }
 
     @Test
+    @DisplayName("BR-AVL-04: CLEANING -> RESERVED, Reservation -> CONFIRMED sau payment")
+    void shouldConfirmAndReserveUnit_whenUnitIsCleaning() {
+        availableUnit.setStatus(StorageUnitStatus.CLEANING);
+        when(reservationRepository.findByIdWithLock(1042L)).thenReturn(Optional.of(pendingReservation));
+        when(storageUnitRepository.findByIdForUpdate(42L)).thenReturn(Optional.of(availableUnit));
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(storageUnitRepository.save(any(StorageUnit.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        service.confirmAfterPayment(1042L);
+
+        assertEquals(ReservationStatus.CONFIRMED, pendingReservation.getStatus());
+        assertNotNull(pendingReservation.getConfirmedAt());
+        assertEquals(StorageUnitStatus.RESERVED, availableUnit.getStatus());
+    }
+
+    @Test
     @DisplayName("BR-AVL-04: Unit MAINTENANCE -> nem UNIT_ASSIGNMENT_FAILED, khong save")
     void shouldThrowUnitAssignmentFailed_whenUnitIsInMaintenance() {
         availableUnit.setStatus(StorageUnitStatus.MAINTENANCE);

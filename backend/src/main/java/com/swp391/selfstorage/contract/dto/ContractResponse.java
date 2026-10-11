@@ -13,12 +13,18 @@ public class ContractResponse {
     private String customerName;
     private String customerPhone;
     private String customerEmail;
+    private String customerIdentityNumber;
     private Long facilityId;
     private String facilityName;
+    private String facilityAddress;
+    private String facilityPhone;
     private Long storageUnitId;
     private String storageUnitCode;
+    private Integer floor;
+    private String position;
     private Long unitTypeId;
     private String unitTypeName;
+    private String unitDimensions;
     private LocalDate startDate;
     private LocalDate endDateExclusive;
     private int rentalMonths;

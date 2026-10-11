@@ -9,6 +9,7 @@ import com.swp391.selfstorage.contract.entity.*;
 import com.swp391.selfstorage.contract.event.ContractSettledEvent;
 import com.swp391.selfstorage.contract.repository.*;
 import com.swp391.selfstorage.contract.service.ContractService;
+import com.swp391.selfstorage.reservation.entity.Reservation;
 import com.swp391.selfstorage.reservation.entity.ReservationStatus;
 import com.swp391.selfstorage.reservation.repository.ReservationRepository;
 import com.swp391.selfstorage.facility.entity.Facility;
@@ -49,6 +50,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -297,17 +299,29 @@ public class ContractServiceImpl implements ContractService {
                                         && !c.getEndDateExclusive().isBefore(now)
                                         && !c.getEndDateExclusive().isAfter(threshold);
 
-                        String storageCode = (storageUnitRepository != null && c.getStorageUnitId() != null)
-                                        ? storageUnitRepository.findById(c.getStorageUnitId()).map(StorageUnit::getCode).orElse("U-" + c.getStorageUnitId())
-                                        : (c.getStorageUnitId() != null ? "U-" + c.getStorageUnitId() : "Chưa gán");
+                        var storageOpt = (storageUnitRepository != null && c.getStorageUnitId() != null)
+                                        ? storageUnitRepository.findById(c.getStorageUnitId())
+                                        : java.util.Optional.<StorageUnit>empty();
+                        String storageCode = storageOpt.map(StorageUnit::getCode)
+                                        .orElse(c.getStorageUnitId() != null ? "U-" + c.getStorageUnitId() : "Chưa gán");
+                        Integer floor = storageOpt.map(StorageUnit::getFloor).orElse(null);
+                        String position = storageOpt.map(StorageUnit::getPosition).orElse(null);
 
-                        String unitName = (unitTypeRepository != null && c.getUnitTypeId() != null)
-                                        ? unitTypeRepository.findById(c.getUnitTypeId()).map(UnitType::getName).orElse(null)
-                                        : null;
+                        var unitTypeOpt = (unitTypeRepository != null && c.getUnitTypeId() != null)
+                                        ? unitTypeRepository.findById(c.getUnitTypeId())
+                                        : java.util.Optional.<UnitType>empty();
+                        String unitName = unitTypeOpt.map(UnitType::getName).orElse(null);
+                        String unitDimensions = unitTypeOpt.map(ut -> String.format(java.util.Locale.US, "%.1fm x %.1fm x %.1fm",
+                                        ut.getWidthM() != null ? ut.getWidthM().doubleValue() : 0.0,
+                                        ut.getLengthM() != null ? ut.getLengthM().doubleValue() : 0.0,
+                                        ut.getHeightM() != null ? ut.getHeightM().doubleValue() : 0.0)).orElse(null);
 
-                        String facName = (facilityRepository != null && c.getFacilityId() != null)
-                                        ? facilityRepository.findById(c.getFacilityId()).map(Facility::getName).orElse(null)
-                                        : null;
+                        var facOpt = (facilityRepository != null && c.getFacilityId() != null)
+                                        ? facilityRepository.findById(c.getFacilityId())
+                                        : java.util.Optional.<Facility>empty();
+                        String facName = facOpt.map(Facility::getName).orElse(null);
+                        String facAddress = facOpt.map(Facility::getAddress).orElse(null);
+                        String facPhone = facOpt.map(Facility::getPhone).orElse(null);
 
                         String custName = "Khách hàng #" + c.getCustomerId();
                         String custPhone = "";
@@ -350,10 +364,14 @@ public class ContractServiceImpl implements ContractService {
                         Boolean isInspected = false;
                         Long damageCost = 0L;
                         String damageNotes = null;
+                        LocalDate requestedReturnDate = null;
+                        String appointmentSlot = null;
                         if (returnRequestRepository != null && c.getStatus() != ContractStatus.CLOSED && c.getStatus() != ContractStatus.TERMINATED) {
                                 var reqOpt = returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(c.getId());
                                 if (reqOpt.isPresent()) {
                                         var req = reqOpt.get();
+                                        requestedReturnDate = req.getRequestedReturnDate();
+                                        appointmentSlot = req.getAppointmentSlot();
                                         if (req.getStatus() == ReturnRequestStatus.PENDING) {
                                                 displayStatus = ContractStatus.PENDING_RETURN;
                                         }
@@ -403,10 +421,15 @@ public class ContractServiceImpl implements ContractService {
                                         .customerEmail(custEmail)
                                         .facilityId(c.getFacilityId())
                                         .facilityName(facName)
+                                        .facilityAddress(facAddress)
+                                        .facilityPhone(facPhone)
                                         .storageUnitId(c.getStorageUnitId())
                                         .storageUnitCode(storageCode)
+                                        .floor(floor)
+                                        .position(position)
                                         .unitTypeId(c.getUnitTypeId())
                                         .unitTypeName(unitName)
+                                        .unitDimensions(unitDimensions)
                                         .startDate(c.getStartDate())
                                         .endDateExclusive(c.getEndDateExclusive())
                                         .checkinGraceDays(PolicyNumbers.snapshotInt(c.getPolicySnapshot(), "checkinGraceDays", 10))
@@ -427,6 +450,8 @@ public class ContractServiceImpl implements ContractService {
                                         .openSupportRequestId(relocationTickets.containsKey(c.getId())
                                                         ? relocationTickets.get(c.getId()).getId()
                                                         : null)
+                                        .requestedReturnDate(requestedReturnDate)
+                                        .appointmentSlot(appointmentSlot)
                                         .build();
                 }).toList();
 
@@ -1012,6 +1037,11 @@ public class ContractServiceImpl implements ContractService {
                 ReturnRequest returnReq = returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(contractId)
                                 .orElseThrow(() -> new CustomException(ErrorCode.RETURN_REQUEST_NOT_FOUND));
 
+                if (returnReq.getInspectedAt() == null) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                                        "Chưa thể quyết toán: Ô kho chưa được nhân viên kiểm tra hiện trường và lập biên bản nghiệm thu (BR-RET-02)");
+                }
+
                 List<ContractExtraCharge> unpaidCharges = extraChargeRepository.findByContractIdAndStatus(contractId,
                                 ExtraChargeStatus.UNPAID);
                 boolean catalogInspection = unpaidCharges.stream().anyMatch(this::isCatalogInspectionCharge);
@@ -1088,9 +1118,9 @@ public class ContractServiceImpl implements ContractService {
                 }
                 StorageUnit unit = storageUnitRepository.findById(contract.getStorageUnitId())
                                 .orElseThrow(() -> new CustomException(ErrorCode.STORAGE_UNIT_NOT_FOUND));
-                if (unit.getStatus() != StorageUnitStatus.CLEANING) {
+                if (unit.getStatus() != StorageUnitStatus.CLEANING && unit.getStatus() != StorageUnitStatus.RESERVED) {
                         throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION,
-                                        "Chỉ hoàn tất dọn khi ô kho đang ở trạng thái CLEANING");
+                                        "Chỉ hoàn tất dọn khi ô kho đang ở trạng thái CLEANING hoặc RESERVED");
                 }
                 boolean awaitingCheckIn = reservationRepository.existsByStorageUnitIdAndStatusIn(
                                 unit.getId(), List.of(ReservationStatus.CONFIRMED));
@@ -1297,6 +1327,240 @@ public class ContractServiceImpl implements ContractService {
                 return PolicyNumbers.share(unusedRent, policy.getReturnEarlyRefundRate());
         }
 
+        private record UnitConflictCheckResult(boolean available, String reason) {}
+
+        private UnitConflictCheckResult evaluateUnitAvailability(
+                        StorageUnit unit,
+                        LocalDate newStartDate,
+                        LocalDate newEndDate,
+                        int bufferDays,
+                        Long excludeContractId,
+                        Long excludeReservationId,
+                        OffsetDateTime now) {
+                if (unit == null) {
+                        return new UnitConflictCheckResult(false, "Không tìm thấy dữ liệu ô kho");
+                }
+
+                // 1. Kiểm tra trạng thái vật lý
+                if (unit.getStatus() == StorageUnitStatus.MAINTENANCE) {
+                        return new UnitConflictCheckResult(false, "Ô kho đang trong chế độ bảo trì");
+                }
+                if (unit.getStatus() == StorageUnitStatus.OUT_OF_SERVICE) {
+                        return new UnitConflictCheckResult(false, "Ô kho đang ngừng hoạt động");
+                }
+
+                // 2. Kiểm tra tiến trình dọn dẹp (CLEANING)
+                if (unit.getStatus() == StorageUnitStatus.CLEANING) {
+                        LocalDate cleaningStartDate = null;
+                        var latestClosed = contractRepository.findFirstByStorageUnitIdAndStatusOrderByClosedAtDesc(
+                                        unit.getId(), ContractStatus.CLOSED);
+                        if (latestClosed.isPresent() && latestClosed.get().getClosedAt() != null) {
+                                cleaningStartDate = latestClosed.get().getClosedAt().toLocalDate();
+                        } else if (unit.getUpdatedAt() != null) {
+                                cleaningStartDate = unit.getUpdatedAt().toLocalDate();
+                        } else {
+                                cleaningStartDate = LocalDate.now();
+                        }
+                        LocalDate readyDate = cleaningStartDate.plusDays(bufferDays);
+                        if (newStartDate.isBefore(readyDate)) {
+                                return new UnitConflictCheckResult(false,
+                                                String.format("Ô kho đang được vệ sinh dọn dẹp sau trả kho (dự kiến hoàn tất vào ngày %s)", readyDate));
+                        }
+                }
+
+                // 3. Kiểm tra trùng hợp đồng (tính cả bufferDays)
+                List<RentalContract> overlappingContracts = contractRepository.findOverlappingContractsForUnit(
+                                unit.getId(), newStartDate, newEndDate, bufferDays, excludeContractId != null ? excludeContractId : 0L);
+                if (overlappingContracts != null && !overlappingContracts.isEmpty()) {
+                        RentalContract c = overlappingContracts.get(0);
+                        boolean directOverlap = newStartDate.isBefore(c.getEndDateExclusive()) && newEndDate.isAfter(c.getStartDate());
+                        if (directOverlap) {
+                                return new UnitConflictCheckResult(false,
+                                                String.format("Dính lịch hợp đồng thuê của khách khác %s (từ %s đến %s)",
+                                                                c.getCode(), c.getStartDate(), c.getEndDateExclusive()));
+                        } else if (!newStartDate.isBefore(c.getEndDateExclusive())) {
+                                LocalDate bufferEnd = c.getEndDateExclusive().plusDays(bufferDays);
+                                return new UnitConflictCheckResult(false,
+                                                String.format("Dính lịch dọn dẹp vệ sinh sau trả kho (D+%d) của hợp đồng %s (thời gian dọn dẹp từ %s đến %s)",
+                                                                bufferDays, c.getCode(), c.getEndDateExclusive(), bufferEnd));
+                        } else {
+                                return new UnitConflictCheckResult(false,
+                                                String.format("Không đủ %d ngày đệm dọn dẹp vệ sinh trước hợp đồng tiếp theo %s (bắt đầu ngày %s)",
+                                                                bufferDays, c.getCode(), c.getStartDate()));
+                        }
+                }
+
+                // 4. Kiểm tra trùng đơn giữ chỗ (tính cả bufferDays)
+                List<Reservation> overlappingReservations = reservationRepository.findOverlappingReservationsForUnit(
+                                unit.getId(), newStartDate, newEndDate, now, bufferDays, excludeReservationId != null ? excludeReservationId : 0L);
+                if (overlappingReservations != null && !overlappingReservations.isEmpty()) {
+                        Reservation r = overlappingReservations.get(0);
+                        boolean directOverlap = newStartDate.isBefore(r.getEndDateExclusive()) && newEndDate.isAfter(r.getStartDate());
+                        if (directOverlap) {
+                                return new UnitConflictCheckResult(false,
+                                                String.format("Dính lịch đơn đặt chỗ trước %s (từ %s đến %s)",
+                                                                r.getCode(), r.getStartDate(), r.getEndDateExclusive()));
+                        } else if (!newStartDate.isBefore(r.getEndDateExclusive())) {
+                                LocalDate bufferEnd = r.getEndDateExclusive().plusDays(bufferDays);
+                                return new UnitConflictCheckResult(false,
+                                                String.format("Dính lịch dọn dẹp vệ sinh sau trả kho (D+%d) của đơn %s (thời gian dọn dẹp từ %s đến %s)",
+                                                                bufferDays, r.getCode(), r.getEndDateExclusive(), bufferEnd));
+                        } else {
+                                return new UnitConflictCheckResult(false,
+                                                String.format("Không đủ %d ngày đệm dọn dẹp vệ sinh trước đơn đặt chỗ tiếp theo %s (bắt đầu ngày %s)",
+                                                                bufferDays, r.getCode(), r.getStartDate()));
+                        }
+                }
+
+                return new UnitConflictCheckResult(true, null);
+        }
+
+        @Override
+        @Transactional
+        public ContractResponse rescheduleRentalPeriod(Long contractId, RescheduleRentalPeriodRequest request, Long currentUserId) {
+                if (request == null || request.getNewStartDate() == null) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Ngày bắt đầu mới không được để trống");
+                }
+
+                LocalDate newStartDate = request.getNewStartDate();
+                LocalDate today = LocalDate.now();
+                if (newStartDate.isBefore(today.plusDays(1))) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Ngày bắt đầu mới phải từ ngày mai trở đi");
+                }
+
+                RentalContract contract = contractRepository.findById(contractId)
+                                .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
+
+                if (contract.getStatus() != ContractStatus.PENDING_CHECK_IN) {
+                        throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION,
+                                        "Chỉ được dời lịch khi hợp đồng đang ở trạng thái Chờ nhận kho (PENDING_CHECK_IN)");
+                }
+
+                if (newStartDate.equals(contract.getStartDate())) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Ngày bắt đầu mới phải khác ngày bắt đầu hiện tại");
+                }
+
+                int months = contract.getRentalMonths() > 0 ? contract.getRentalMonths() : 1;
+                LocalDate newEndDate = newStartDate.plusMonths(months);
+
+                Long currentUnitId = contract.getStorageUnitId();
+                Long facilityId = contract.getFacilityId();
+                Long unitTypeId = contract.getUnitTypeId();
+
+                // Lấy policy buffer days
+                int bufferDays = 15;
+                if (contract.getPolicyVersionId() != null && policyVersionRepository != null) {
+                        bufferDays = policyVersionRepository.findById(contract.getPolicyVersionId())
+                                        .map(p -> p.getRentalBufferDays() != null ? p.getRentalBufferDays() : 15)
+                                        .orElse(15);
+                }
+
+                OffsetDateTime now = OffsetDateTime.now();
+                Long reservationId = contract.getReservationId();
+                long excludeReservationId = reservationId != null ? reservationId : 0L;
+
+                StorageUnit currentUnit = currentUnitId != null
+                                ? storageUnitRepository.findById(currentUnitId).orElse(null)
+                                : null;
+
+                UnitConflictCheckResult currentUnitCheck = evaluateUnitAvailability(
+                                currentUnit, newStartDate, newEndDate, bufferDays, contract.getId(), excludeReservationId, now);
+
+                Long targetUnitId = currentUnitId;
+
+                if (!currentUnitCheck.available()) {
+                        // Tìm các ô kho khác cùng loại tại cơ sở (kể cả ô đang có khách nhưng sẽ hết hạn trước newStartDate)
+                        List<StorageUnit> candidateUnits = storageUnitRepository.findByFacilityId(facilityId)
+                                        .stream()
+                                        .filter(u -> Objects.equals(u.getUnitTypeId(), unitTypeId))
+                                        .filter(u -> !Objects.equals(u.getId(), currentUnitId))
+                                        .toList();
+
+                        StorageUnit availableUnit = null;
+                        List<String> candidateReasons = new ArrayList<>();
+
+                        for (StorageUnit candidate : candidateUnits) {
+                                UnitConflictCheckResult candCheck = evaluateUnitAvailability(
+                                                candidate, newStartDate, newEndDate, bufferDays, contract.getId(), excludeReservationId, now);
+                                if (candCheck.available()) {
+                                        availableUnit = candidate;
+                                        break;
+                                } else {
+                                        candidateReasons.add("Ô " + candidate.getCode() + ": " + candCheck.reason());
+                                }
+                        }
+
+                        if (availableUnit == null) {
+                                String currentUnitCode = currentUnit != null ? currentUnit.getCode() : ("U-" + currentUnitId);
+                                String unitTypeName = unitTypeRepository != null && unitTypeId != null
+                                                ? unitTypeRepository.findById(unitTypeId).map(UnitType::getName).orElse("Kho tiêu chuẩn")
+                                                : "Kho tiêu chuẩn";
+                                String facilityName = facilityRepository != null && facilityId != null
+                                                ? facilityRepository.findById(facilityId).map(Facility::getName).orElse("Cơ sở")
+                                                : "Cơ sở";
+
+                                StringBuilder sb = new StringBuilder();
+                                sb.append(String.format("Ô kho hiện tại [%s] không khả dụng trong khung ngày mới (%s đến %s) do: %s.\n\n",
+                                                currentUnitCode, newStartDate, newEndDate, currentUnitCheck.reason()));
+
+                                if (candidateUnits.isEmpty()) {
+                                        sb.append(String.format("Tại cơ sở '%s' không còn ô kho nào khác thuộc loại '%s'.\n", facilityName, unitTypeName));
+                                } else {
+                                        sb.append(String.format("Hệ thống đã tự động kiểm tra các ô kho cùng loại '%s' tại cơ sở '%s' nhưng không thể bố trí:\n",
+                                                        unitTypeName, facilityName));
+                                        for (String r : candidateReasons) {
+                                                sb.append("• ").append(r).append("\n");
+                                        }
+                                }
+                                sb.append("\nVui lòng chọn một ngày nhận kho khác phù hợp hơn!");
+
+                                throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, sb.toString());
+                        }
+
+                        targetUnitId = availableUnit.getId();
+
+                        // Cập nhật ô kho cũ nếu không còn ai giữ
+                        if (currentUnit != null) {
+                                boolean stillReserved = reservationRepository.existsByStorageUnitIdAndStatusIn(
+                                                currentUnit.getId(), List.of(ReservationStatus.CONFIRMED, ReservationStatus.PENDING_PAYMENT));
+                                if (!stillReserved) {
+                                        currentUnit.setStatus(StorageUnitStatus.AVAILABLE);
+                                        storageUnitRepository.save(currentUnit);
+                                }
+                        }
+
+                        // Đổi trạng thái ô kho mới sang RESERVED
+                        availableUnit.setStatus(StorageUnitStatus.RESERVED);
+                        storageUnitRepository.save(availableUnit);
+                }
+
+                contract.setStartDate(newStartDate);
+                contract.setEndDateExclusive(newEndDate);
+                if (targetUnitId != null) {
+                        contract.setStorageUnitId(targetUnitId);
+                }
+                contractRepository.save(contract);
+
+                // Đồng bộ sang Reservation
+                if (reservationId != null) {
+                        Optional<Reservation> rsvOpt = reservationRepository.findById(reservationId);
+                        if (rsvOpt.isPresent()) {
+                                Reservation rsv = rsvOpt.get();
+                                rsv.setStartDate(newStartDate);
+                                rsv.setEndDateExclusive(newEndDate);
+                                if (targetUnitId != null) {
+                                        rsv.setStorageUnitId(targetUnitId);
+                                }
+                                reservationRepository.save(rsv);
+                        }
+                }
+
+                log.info("Dời thời gian hợp đồng [{}] thành công sang: {} -> {}, ô kho: {}",
+                                contract.getCode(), newStartDate, newEndDate, targetUnitId);
+
+                return toResponse(contract);
+        }
+
         /** PIN theo độ dài trong snapshot hợp đồng, không ghim 6 số. */
         private String generateUniquePin(int length) {
                 int digits = Math.min(10, Math.max(4, length));
@@ -1332,13 +1596,27 @@ public class ContractServiceImpl implements ContractService {
                 r.setReturnDate(c.getReturnDate());
 
                 if (storageUnitRepository != null && c.getStorageUnitId() != null) {
-                        storageUnitRepository.findById(c.getStorageUnitId()).ifPresent(su -> r.setStorageUnitCode(su.getCode()));
+                        storageUnitRepository.findById(c.getStorageUnitId()).ifPresent(su -> {
+                                r.setStorageUnitCode(su.getCode());
+                                r.setFloor(su.getFloor());
+                                r.setPosition(su.getPosition());
+                        });
                 }
                 if (unitTypeRepository != null && c.getUnitTypeId() != null) {
-                        unitTypeRepository.findById(c.getUnitTypeId()).ifPresent(ut -> r.setUnitTypeName(ut.getName()));
+                        unitTypeRepository.findById(c.getUnitTypeId()).ifPresent(ut -> {
+                                r.setUnitTypeName(ut.getName());
+                                r.setUnitDimensions(String.format(java.util.Locale.US, "%.1fm x %.1fm x %.1fm",
+                                                ut.getWidthM() != null ? ut.getWidthM().doubleValue() : 0.0,
+                                                ut.getLengthM() != null ? ut.getLengthM().doubleValue() : 0.0,
+                                                ut.getHeightM() != null ? ut.getHeightM().doubleValue() : 0.0));
+                        });
                 }
                 if (facilityRepository != null && c.getFacilityId() != null) {
-                        facilityRepository.findById(c.getFacilityId()).ifPresent(f -> r.setFacilityName(f.getName()));
+                        facilityRepository.findById(c.getFacilityId()).ifPresent(f -> {
+                                r.setFacilityName(f.getName());
+                                r.setFacilityAddress(f.getAddress());
+                                r.setFacilityPhone(f.getPhone());
+                        });
                 }
                 if (userService != null && c.getCustomerId() != null) {
                         try {
@@ -1347,6 +1625,7 @@ public class ContractServiceImpl implements ContractService {
                                         r.setCustomerName(userDto.getFullName());
                                         r.setCustomerPhone(userDto.getPhone());
                                         r.setCustomerEmail(userDto.getEmail());
+                                        r.setCustomerIdentityNumber(userDto.getIdentityNumber());
                                 }
                         } catch (Exception ignored) {
                         }

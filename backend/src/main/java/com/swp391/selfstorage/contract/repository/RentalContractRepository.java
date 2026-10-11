@@ -47,6 +47,20 @@ public interface RentalContractRepository
             @Param("excludeContractId") long excludeContractId
     );
 
+    @Query(value = "SELECT c.* FROM rental_contract c " +
+            "WHERE c.storage_unit_id = :storageUnitId " +
+            "  AND c.id <> :excludeContractId " +
+            "  AND c.status IN ('PENDING_CHECK_IN', 'ACTIVE', 'PENDING_RETURN', 'OVERDUE') " +
+            "  AND c.start_date < DATEADD(DAY, :bufferDays, :endDateExclusive) " +
+            "  AND DATEADD(DAY, :bufferDays, c.end_date) > :startDate", nativeQuery = true)
+    List<RentalContract> findOverlappingContractsForUnit(
+            @Param("storageUnitId") Long storageUnitId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDateExclusive") LocalDate endDateExclusive,
+            @Param("bufferDays") int bufferDays,
+            @Param("excludeContractId") long excludeContractId
+    );
+
     Page<RentalContract> findByCustomerId(Long customerId, Pageable pageable);
 
     Page<RentalContract> findByCustomerIdAndStatusNot(Long customerId, ContractStatus status, Pageable pageable);
@@ -56,6 +70,11 @@ public interface RentalContractRepository
     Page<RentalContract> findByCustomerIdAndStatusIn(Long customerId, List<ContractStatus> statuses, Pageable pageable);
 
     Optional<RentalContract> findByIdAndCustomerId(Long id, Long customerId);
+
+    /**
+     * Tìm hợp đồng CLOSED gần nhất của một ô kho để xác định thời điểm bắt đầu dọn dẹp.
+     */
+    Optional<RentalContract> findFirstByStorageUnitIdAndStatusOrderByClosedAtDesc(Long storageUnitId, ContractStatus status);
 
     /**
      * Tìm tất cả hợp đồng có trạng thái nằm trong danh sách và ngày kết thúc <=

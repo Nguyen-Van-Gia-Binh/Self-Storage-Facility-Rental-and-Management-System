@@ -284,7 +284,7 @@ class ContractReturnServiceTest {
                                 .depositBalance(1_000_000L)
                                 .status(ContractStatus.PENDING_RETURN)
                                 .build();
-                ReturnRequest returnReq = ReturnRequest.builder().id(20L).contractId(500L).damageCost(1_500_000L).build();
+                ReturnRequest returnReq = ReturnRequest.builder().id(20L).contractId(500L).damageCost(1_500_000L).inspectedAt(OffsetDateTime.now()).build();
                 when(contractRepository.findByIdAndFacilityIdIn(eq(500L), anyList())).thenReturn(Optional.of(contract));
                 when(returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(500L))
                                 .thenReturn(Optional.of(returnReq));
@@ -313,7 +313,7 @@ class ContractReturnServiceTest {
                                 .depositBalance(1_000_000L)
                                 .status(ContractStatus.PENDING_RETURN)
                                 .build();
-                ReturnRequest returnReq = ReturnRequest.builder().id(20L).contractId(500L).damageCost(200_000L).build();
+                ReturnRequest returnReq = ReturnRequest.builder().id(20L).contractId(500L).damageCost(200_000L).inspectedAt(OffsetDateTime.now()).build();
                 when(contractRepository.findByIdAndFacilityIdIn(eq(500L), anyList())).thenReturn(Optional.of(contract));
                 when(returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(500L))
                                 .thenReturn(Optional.of(returnReq));

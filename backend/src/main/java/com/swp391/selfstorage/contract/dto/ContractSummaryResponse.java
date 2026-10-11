@@ -15,10 +15,15 @@ public class ContractSummaryResponse {
     private String customerEmail;
     private Long facilityId;
     private String facilityName;
+    private String facilityAddress;
+    private String facilityPhone;
     private Long storageUnitId;
     private String storageUnitCode;
+    private Integer floor;
+    private String position;
     private Long unitTypeId;
     private String unitTypeName;
+    private String unitDimensions;
     private LocalDate startDate;
     private LocalDate endDateExclusive;
     private Integer checkinGraceDays;
@@ -37,5 +42,7 @@ public class ContractSummaryResponse {
     private String damageNotes;
     private Boolean relocationEligible;
     private Long openSupportRequestId;
+    private LocalDate requestedReturnDate;
+    private String appointmentSlot;
 }
 

@@ -6,9 +6,13 @@ import {
   Search,
   RefreshCw,
   AlertCircle,
+  AlertTriangle,
   Building2,
   Layers,
   Filter,
+  CheckCircle2,
+  TrendingUp,
+  Wrench,
 } from 'lucide-react';
 import { fetchMyAssignedFacilities } from '@/api/facility';
 import {
@@ -171,6 +175,27 @@ export const StorageUnitListPage: React.FC = () => {
     return counts;
   }, [storageUnits]);
 
+  // Tính toán KPI Tổng quan khoang lưu trữ (Đưa từ cấp ngoài vào cấp trong)
+  const statsOverview = useMemo(() => {
+    const total = storageUnits.length;
+    const available = storageUnits.filter((u) => u.status === 'AVAILABLE').length;
+    const occupied = storageUnits.filter((u) => u.status === 'OCCUPIED').length;
+    const maintenance = storageUnits.filter((u) => u.status === 'MAINTENANCE').length;
+    const occupancyRate = total > 0 ? (occupied / total) * 100 : 0;
+    const isFull = total > 0 && occupancyRate >= 100;
+    const isNearFull = !isFull && occupancyRate >= 75;
+
+    return {
+      total,
+      available,
+      occupied,
+      maintenance,
+      occupancyRate,
+      isFull,
+      isNearFull,
+    };
+  }, [storageUnits]);
+
   // Handler khi click sort trên header bảng
   const handleSort = (field: StorageUnitSortField) => {
     if (sortField === field) {
@@ -268,7 +293,7 @@ export const StorageUnitListPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-              Danh sách Ô kho vật lý (Cấp 3)
+              Danh sách Ô kho vật lý
             </h1>
             {unitType && (
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200/80">
@@ -299,6 +324,143 @@ export const StorageUnitListPage: React.FC = () => {
             <Plus className="w-4 h-4" />
             <span>Thêm ô kho vật lý</span>
           </button>
+        </div>
+      </div>
+
+      {/* KPI Summary Bar: Đưa thông tin Trống / Đang thuê / Bảo trì / Lấp đầy từ cấp ngoài vào cấp trong */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
+        {/* 1. Tổng số ô */}
+        <div
+          onClick={() => setStatusFilter('ALL')}
+          className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer bg-white shadow-2xs hover:shadow-sm ${
+            statusFilter === 'ALL'
+              ? 'border-brand-500 ring-2 ring-brand-500/20 bg-brand-50/20'
+              : 'border-slate-200 hover:border-slate-300'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-slate-500">Tổng ô kho</span>
+            <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600">
+              <Layers className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-1">
+            <span className="text-xl font-bold font-mono text-slate-900">{statsOverview.total}</span>
+            <span className="text-xs text-slate-400">ô</span>
+          </div>
+          <span className="text-[10px] text-slate-400 mt-1 block">Quy mô hiện tại</span>
+        </div>
+
+        {/* 2. Ô còn trống */}
+        <div
+          onClick={() => setStatusFilter('AVAILABLE')}
+          className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer bg-white shadow-2xs hover:shadow-sm ${
+            statusFilter === 'AVAILABLE'
+              ? 'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/30'
+              : 'border-emerald-200/80 hover:border-emerald-300'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-emerald-700">Ô còn trống</span>
+            <div className="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-200/80 flex items-center justify-center text-emerald-600">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-1">
+            <span className="text-xl font-bold font-mono text-emerald-700">{statsOverview.available}</span>
+            <span className="text-xs text-emerald-600">ô</span>
+          </div>
+          <span className="text-[10px] text-emerald-600 font-medium mt-1 block">Sẵn sàng nhận khách</span>
+        </div>
+
+        {/* 3. Đang cho thuê */}
+        <div
+          onClick={() => setStatusFilter('OCCUPIED')}
+          className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer bg-white shadow-2xs hover:shadow-sm ${
+            statusFilter === 'OCCUPIED'
+              ? 'border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/30'
+              : 'border-amber-200/80 hover:border-amber-300'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-amber-700">Đang thuê</span>
+            <div className="w-7 h-7 rounded-lg bg-amber-50 border border-amber-200/80 flex items-center justify-center text-amber-600">
+              <AlertTriangle className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-1">
+            <span className="text-xl font-bold font-mono text-amber-700">{statsOverview.occupied}</span>
+            <span className="text-xs text-amber-600">ô</span>
+          </div>
+          <span className="text-[10px] text-amber-600 font-medium mt-1 block">Hợp đồng hiệu lực</span>
+        </div>
+
+        {/* 4. Đang bảo trì */}
+        <div
+          onClick={() => setStatusFilter('MAINTENANCE')}
+          className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer bg-white shadow-2xs hover:shadow-sm ${
+            statusFilter === 'MAINTENANCE'
+              ? 'border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/30'
+              : 'border-rose-200/80 hover:border-rose-300'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-rose-700">Đang bảo trì</span>
+            <div className="w-7 h-7 rounded-lg bg-rose-50 border border-rose-200/80 flex items-center justify-center text-rose-600">
+              <Wrench className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-1">
+            <span className="text-xl font-bold font-mono text-rose-700">{statsOverview.maintenance}</span>
+            <span className="text-xs text-rose-600">ô</span>
+          </div>
+          <span className="text-[10px] text-rose-600 font-medium mt-1 block">Tạm ngưng khai thác</span>
+        </div>
+
+        {/* 5. Tỷ lệ lấp đầy */}
+        <div className="col-span-2 md:col-span-4 lg:col-span-1 p-4 rounded-2xl border border-slate-200/90 bg-gradient-to-br from-white to-slate-50 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-slate-700 flex items-center gap-1">
+              <TrendingUp className="w-3.5 h-3.5 text-slate-400" />
+              Tỷ lệ lấp đầy
+            </span>
+            <span
+              className={`text-xs font-mono font-bold ${
+                statsOverview.isFull
+                  ? 'text-rose-600'
+                  : statsOverview.isNearFull
+                  ? 'text-amber-600'
+                  : 'text-emerald-600'
+              }`}
+            >
+              {statsOverview.occupancyRate.toFixed(0)}%
+            </span>
+          </div>
+
+          <div className="my-2.5">
+            <div className="w-full bg-slate-200/80 rounded-full h-2 overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${
+                  statsOverview.isFull
+                    ? 'bg-rose-500'
+                    : statsOverview.isNearFull
+                    ? 'bg-amber-500'
+                    : 'bg-emerald-500'
+                }`}
+                style={{ width: `${Math.min(100, Math.max(0, statsOverview.occupancyRate))}%` }}
+              />
+            </div>
+          </div>
+
+          <span className="text-[10px] text-slate-400">
+            {statsOverview.isFull
+              ? 'Đã kín chỗ 100%'
+              : statsOverview.isNearFull
+              ? 'Sắp lấp đầy (≥75%)'
+              : statsOverview.available > 0
+              ? `Còn ${statsOverview.available} ô sẵn sàng`
+              : '0 ô trống khả dụng'}
+          </span>
         </div>
       </div>
 

@@ -15,6 +15,7 @@ import {
   RotateCcw,
   CreditCard,
   Clock,
+  Calendar,
 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
@@ -30,6 +31,7 @@ export interface RentedUnitCardProps {
   onViewDetail?: (contract: RentedContract) => void;
   onOpenOverduePayment?: (contract: RentedContract) => void;
   onCancelReturn?: (contract: RentedContract) => void;
+  onReschedulePeriod?: (contract: RentedContract) => void;
   renewalNoticeDays?: number;
 }
 
@@ -39,6 +41,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
   onViewDetail,
   onOpenOverduePayment,
   onCancelReturn,
+  onReschedulePeriod,
   renewalNoticeDays,
 }) => {
   const [showPin, setShowPin] = useState(false);
@@ -273,15 +276,28 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
 
           {/* CONTEXTUAL BUTTONS */}
           {contract.status === 'PENDING_CHECKIN' && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleOpenModal}
-              className="text-xs font-bold text-sky-700 border-sky-300 hover:bg-sky-50 cursor-pointer"
-            >
-              <QrCode className="w-3.5 h-3.5 mr-1" />
-              e-Pass nhận kho
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleOpenModal}
+                className="text-xs font-bold text-sky-700 border-sky-300 hover:bg-sky-50 cursor-pointer"
+              >
+                <QrCode className="w-3.5 h-3.5 mr-1" />
+                e-Pass nhận kho
+              </Button>
+              {onReschedulePeriod && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onReschedulePeriod(contract)}
+                  className="text-xs font-semibold text-emerald-700 border-emerald-300 hover:bg-emerald-50 cursor-pointer"
+                >
+                  <Calendar className="w-3.5 h-3.5 mr-1 text-emerald-600" />
+                  Dời ngày
+                </Button>
+              )}
+            </>
           )}
 
           {contract.status === 'OVERDUE' && penaltyFee > 0 && onOpenOverduePayment && (

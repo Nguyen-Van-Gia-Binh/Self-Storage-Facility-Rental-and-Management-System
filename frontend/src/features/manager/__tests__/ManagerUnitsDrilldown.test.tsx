@@ -74,18 +74,11 @@ describe('Quản lý ô kho — Kiến trúc Drill-down 4 Cấp độ (FM-01)', 
     status: 'ACTIVE',
   };
 
-  it('1. Cấp 1 (FacilityCard): Hiển thị đầy đủ thông tin cơ sở và tỷ lệ lấp đầy trực quan', () => {
+  it('1. FacilityCard: Hiển thị thông tin cơ sở, địa chỉ và nút vào quản lý theo Less is More', () => {
     const html = cleanHtml(
       renderToString(
         <FacilityCard
           facility={mockFacility}
-          stats={{
-            totalUnits: 17,
-            occupiedUnits: 4,
-            availableUnits: 10,
-            maintenanceUnits: 3,
-            occupancyRate: 23.5,
-          }}
           onClick={() => {}}
         />
       )
@@ -93,24 +86,15 @@ describe('Quản lý ô kho — Kiến trúc Drill-down 4 Cấp độ (FM-01)', 
 
     expect(html).toContain('Cơ sở Cầu Giấy - Hà Nội');
     expect(html).toContain('FAC-CG');
-    expect(html).toContain('17');
-    expect(html).toContain('4');
-    expect(html).toContain('10');
-    expect(html).toContain('23.5%');
-    expect(html).toContain('Vào quản lý cơ sở');
+    expect(html).toContain('Hoạt động');
+    expect(html).toContain('Vào quản lý ô kho');
   });
 
-  it('2. Cấp 2 (UnitTypeCard): Hiển thị mini progress bar tỷ lệ đã thuê / tổng và 3 màu trực quan', () => {
+  it('2. UnitTypeCard: Hiển thị thông số quy chuẩn, diện tích, giá niêm yết, quy mô và theme thông minh', () => {
     const html = cleanHtml(
       renderToString(
         <UnitTypeCard
           type={mockUnitType}
-          stats={{
-            total: 10,
-            available: 2,
-            occupied: 8,
-            maintenance: 0,
-          }}
           onClick={() => {}}
           onEdit={() => {}}
           onToggle={() => {}}
@@ -121,10 +105,6 @@ describe('Quản lý ô kho — Kiến trúc Drill-down 4 Cấp độ (FM-01)', 
     expect(html).toContain('Kho Nhỏ (4m²)');
     expect(html).toContain('4 m²');
     expect(html).toContain('800.000 đ/tháng');
-    expect(html).toContain('Đã thuê: 8 / 10 ô');
-    expect(html).toContain('80%');
-    expect(html).toContain('2 ô');
-    expect(html).toContain('8 ô');
     expect(html).toContain('Xem danh sách ô');
   });
 
