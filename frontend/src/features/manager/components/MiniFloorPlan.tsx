@@ -4,7 +4,7 @@ import type { StorageUnitResponse } from '@/types/unit';
 interface MiniFloorPlanProps {
   currentUnit: StorageUnitResponse;
   surroundingUnits?: StorageUnitResponse[];
-  onSelectUnit?: (unitId: number) => void;
+  onSelectUnit?: (unitId: number, targetUnit?: StorageUnitResponse) => void;
 }
 
 export const MiniFloorPlan: React.FC<MiniFloorPlanProps> = ({
@@ -30,8 +30,12 @@ export const MiniFloorPlan: React.FC<MiniFloorPlanProps> = ({
     switch (status) {
       case 'AVAILABLE':
         return 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100';
+      case 'RESERVED':
+        return 'bg-sky-50 text-sky-800 border-sky-300 hover:bg-sky-100';
       case 'OCCUPIED':
         return 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100';
+      case 'CLEANING':
+        return 'bg-purple-50 text-purple-800 border-purple-300 hover:bg-purple-100';
       case 'MAINTENANCE':
         return 'bg-rose-50 text-rose-800 border-rose-300 hover:bg-rose-100';
       default:
@@ -61,7 +65,7 @@ export const MiniFloorPlan: React.FC<MiniFloorPlanProps> = ({
             return (
               <div
                 key={unit.id}
-                onClick={() => onSelectUnit && onSelectUnit(unit.id)}
+                onClick={() => onSelectUnit && onSelectUnit(unit.id, unit)}
                 className={`relative p-2.5 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center min-h-[58px] ${getStatusColor(
                   unit.status,
                   isCurrent
@@ -90,8 +94,16 @@ export const MiniFloorPlan: React.FC<MiniFloorPlanProps> = ({
             <span>Trống (Available)</span>
           </div>
           <div className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded bg-sky-500" />
+            <span>Đã đặt (Reserved)</span>
+          </div>
+          <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded bg-amber-500" />
             <span>Đang thuê (Occupied)</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded bg-purple-500" />
+            <span>Dọn dẹp (Cleaning)</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded bg-rose-500" />

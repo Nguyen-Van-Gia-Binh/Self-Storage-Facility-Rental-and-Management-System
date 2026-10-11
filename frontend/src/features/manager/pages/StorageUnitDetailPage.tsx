@@ -324,9 +324,9 @@ export const StorageUnitDetailPage: React.FC = () => {
           <MiniFloorPlan
             currentUnit={unit}
             surroundingUnits={surroundingUnits}
-            onSelectUnit={(targetId) => {
+            onSelectUnit={(targetId, targetUnit) => {
               navigate(
-                `/manager/facilities/${facilityIdNum}/unit-types/${typeIdNum}/units/${targetId}`
+                `/manager/facilities/${facilityIdNum}/unit-types/${targetUnit?.unitTypeId || typeIdNum}/units/${targetId}`
               );
             }}
           />

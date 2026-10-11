@@ -14,13 +14,18 @@ const STATUS_CONFIG: Record<string, { label: string; className: string; dotColor
   },
   RESERVED: {
     label: 'Đã đặt',
-    className: 'bg-amber-50 text-amber-700 border-amber-200/80',
-    dotColor: 'bg-amber-500',
+    className: 'bg-sky-50 text-sky-700 border-sky-200/80',
+    dotColor: 'bg-sky-500',
   },
   OCCUPIED: {
     label: 'Đang thuê',
     className: 'bg-blue-50 text-blue-700 border-blue-200/80',
     dotColor: 'bg-blue-500',
+  },
+  CLEANING: {
+    label: 'Dọn dẹp',
+    className: 'bg-purple-50 text-purple-700 border-purple-200/80',
+    dotColor: 'bg-purple-500',
   },
   MAINTENANCE: {
     label: 'Bảo trì',
