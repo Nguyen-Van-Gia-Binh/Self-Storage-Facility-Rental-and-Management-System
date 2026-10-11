@@ -7,7 +7,6 @@ import {
   Calendar,
   KeyRound,
   ShieldCheck,
-  History,
   CheckCircle2,
   Copy,
   Check,
@@ -38,7 +37,6 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
   onScheduleReturn,
   onChangePin,
 }) => {
-  const [activeTab, setActiveTab] = useState<'DETAILS' | 'LOGS'>('DETAILS');
   const [detail, setDetail] = useState<CustomerRentalDetail | null>(null);
   const [copiedContractNum, setCopiedContractNum] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -68,7 +66,6 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
     setTimeout(() => {
       onClose();
       setIsClosing(false);
-      setActiveTab('DETAILS');
     }, 180);
   };
 
@@ -195,39 +192,9 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="flex items-center border-b border-slate-200 px-5 pt-3 bg-slate-50/50 gap-4 text-xs font-bold">
-          <button
-            type="button"
-            onClick={() => setActiveTab('DETAILS')}
-            className={`pb-3 px-1 border-b-2 transition-colors flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'DETAILS'
-                ? 'border-brand-600 text-brand-700'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <FileText className="w-4 h-4" />
-            <span>Văn bản hợp đồng & Biên bản bàn giao</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('LOGS')}
-            className={`pb-3 px-1 border-b-2 transition-colors flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'LOGS'
-                ? 'border-brand-600 text-brand-700'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <History className="w-4 h-4" />
-            <span>Lịch sử ra vào ô kho</span>
-          </button>
-        </div>
-
         {/* Modal Content */}
         <div className="p-5 sm:p-6 max-h-[72vh] overflow-y-auto space-y-4">
-          {activeTab === 'DETAILS' ? (
-            <div className="space-y-4 text-xs">
+          <div className="space-y-4 text-xs">
               {/* Banner Phụ lục điều chuyển ô kho do sự cố kỹ thuật (nếu có) */}
               {relocationId && (
                 <div className="p-4 rounded-xl bg-amber-50/90 border-2 border-amber-300 space-y-2 animate-in fade-in duration-200 shadow-xs">
@@ -455,18 +422,6 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                 )}
               </div>
             </div>
-          ) : (
-            /* Tab 2: Lịch sử ra vào ô kho */
-            <div className="py-14 px-4 text-center bg-slate-50/70 rounded-2xl border border-dashed border-slate-200 my-2">
-              <div className="w-12 h-12 mx-auto rounded-full bg-emerald-50 text-brand-600 border border-emerald-100 flex items-center justify-center mb-3">
-                <History className="w-6 h-6" />
-              </div>
-              <h4 className="text-sm font-bold text-slate-800">Tính năng đang được phát triển</h4>
-              <p className="text-xs text-slate-500 mt-1.5 max-w-sm mx-auto leading-relaxed">
-                Hệ thống ghi nhận nhật ký cảm biến và lịch sử ra vào ô kho thông minh đang được nâng cấp và sẽ sớm ra mắt trong bản cập nhật tới.
-              </p>
-            </div>
-          )}
         </div>
 
         {/* Footer với nút In hợp đồng, Đổi PIN, Báo trả kho và Đóng */}
