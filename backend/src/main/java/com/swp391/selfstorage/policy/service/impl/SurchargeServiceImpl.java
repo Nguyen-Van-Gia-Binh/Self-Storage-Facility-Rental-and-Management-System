@@ -70,6 +70,12 @@ public class SurchargeServiceImpl implements SurchargeService {
             throw new CustomException(ErrorCode.FACILITY_NOT_FOUND);
         }
 
+        if (request.getName() != null && !request.getName().isBlank()
+                && extraFeeTypeRepository.existsByNameIgnoreCase(request.getName().trim())) {
+            throw new CustomException(ErrorCode.SURCHARGE_NAME_ALREADY_EXISTS,
+                    "Tên phụ phí '" + request.getName().trim() + "' đã tồn tại trong hệ thống");
+        }
+
         String normalizedCode = resolveCode(request.getCode(), request.getName());
 
         ExtraFeeType entity = surchargeMapper.toEntity(request);
@@ -105,6 +111,11 @@ public class SurchargeServiceImpl implements SurchargeService {
                 .orElseThrow(() -> new CustomException(ErrorCode.SURCHARGE_NOT_FOUND));
 
         requireEffectiveNotInPast(request.getEffectiveDate());
+        if (request.getName() != null && !request.getName().isBlank()
+                && extraFeeTypeRepository.existsByNameIgnoreCaseAndIdNot(request.getName().trim(), id)) {
+            throw new CustomException(ErrorCode.SURCHARGE_NAME_ALREADY_EXISTS,
+                    "Tên phụ phí '" + request.getName().trim() + "' đã tồn tại trong hệ thống");
+        }
         if (request.getCategory() != null && !request.getCategory().isBlank()) {
             request.setCategory(requireCategory(request.getCategory()));
         }

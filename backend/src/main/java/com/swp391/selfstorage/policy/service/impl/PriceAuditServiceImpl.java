@@ -195,19 +195,45 @@ public class PriceAuditServiceImpl implements PriceAuditService {
                 List<PriceAuditFieldResponse> changes = new ArrayList<>();
                 String oldAmount = previous == null ? null : formatFee(previous.getAmount(), previous.getFeeType());
                 String newAmount = formatFee(version.getAmount(), version.getFeeType());
-                changes.add(field("amount", "Mức phí", oldAmount, newAmount));
-                if (previous != null && !Objects.equals(previous.getName(), version.getName())) {
+
+                boolean amountChanged = previous == null || !Objects.equals(oldAmount, newAmount);
+                boolean feeTypeChanged = previous != null && !Objects.equals(previous.getFeeType(), version.getFeeType());
+                boolean nameChanged = previous != null && !Objects.equals(previous.getName(), version.getName());
+                boolean statusChanged = previous != null && !Objects.equals(previous.getIsActive(), version.getIsActive());
+
+                if (amountChanged) {
+                    changes.add(field("amount", "Mức phí", oldAmount, newAmount));
+                }
+                if (feeTypeChanged) {
+                    changes.add(field("feeType", "Loại phí", feeTypeLabel(previous.getFeeType()), feeTypeLabel(version.getFeeType())));
+                }
+                if (nameChanged) {
                     changes.add(field("name", "Tên phụ phí", previous.getName(), version.getName()));
                 }
-                if (previous != null && !Objects.equals(previous.getIsActive(), version.getIsActive())) {
+                if (statusChanged) {
                     changes.add(field("isActive", "Trạng thái", activeLabel(previous.getIsActive()), activeLabel(version.getIsActive())));
                 }
-                String summary = arrow("Mức phí", oldAmount, newAmount);
-                if (changes.size() > 1) {
-                    summary = summary + " · " + changes.stream().skip(1)
-                            .map(change -> arrow(change.getLabel(), change.getOldValue(), change.getNewValue()))
-                            .collect(Collectors.joining(" · "));
+
+                String summary;
+                if (previous == null) {
+                    summary = "Thiết lập ban đầu: " + newAmount;
+                } else if (statusChanged && !amountChanged) {
+                    summary = Boolean.FALSE.equals(version.getIsActive())
+                            ? "Ngừng áp dụng phụ phí (Mức phí: " + newAmount + ")"
+                            : "Kích hoạt lại phụ phí (Mức phí: " + newAmount + ")";
+                } else if (amountChanged && !statusChanged) {
+                    summary = "Điều chỉnh mức phí: " + oldAmount + " → " + newAmount;
+                } else if (amountChanged && statusChanged) {
+                    summary = (Boolean.FALSE.equals(version.getIsActive()) ? "Ngừng áp dụng" : "Kích hoạt lại")
+                            + " · Mức phí: " + oldAmount + " → " + newAmount;
+                } else if (nameChanged) {
+                    summary = "Đổi tên phụ phí: " + previous.getName() + " → " + version.getName();
+                } else if (feeTypeChanged) {
+                    summary = "Đổi loại phí: " + feeTypeLabel(previous.getFeeType()) + " → " + feeTypeLabel(version.getFeeType());
+                } else {
+                    summary = "Không có thay đổi";
                 }
+
                 boolean isApplied = applied != null && Objects.equals(applied.getId(), version.getId());
                 entries.add(PriceAuditEntryResponse.builder()
                         .id(CATEGORY_SURCHARGE + "-" + version.getId())

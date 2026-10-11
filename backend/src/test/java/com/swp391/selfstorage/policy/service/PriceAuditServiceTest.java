@@ -242,5 +242,9 @@ class PriceAuditServiceTest {
         assertEquals(2, page.getContent().size());
         assertEquals(AppliedPriceInfo.STATUS_DISABLED, page.getContent().get(0).getStatus());
         assertEquals(AppliedPriceInfo.STATUS_REPLACED, page.getContent().get(1).getStatus());
+        assertEquals("Ngừng áp dụng phụ phí (Mức phí: 50.000 đ)", page.getContent().get(0).getChangeSummary());
+        assertEquals(1, page.getContent().get(0).getChanges().size());
+        assertEquals("isActive", page.getContent().get(0).getChanges().get(0).getKey());
+        assertEquals("Thiết lập ban đầu: 50.000 đ", page.getContent().get(1).getChangeSummary());
     }
 }

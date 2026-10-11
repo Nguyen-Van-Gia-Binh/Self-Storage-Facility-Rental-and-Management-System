@@ -246,7 +246,7 @@ export const BomPriceAuditPage: React.FC = () => {
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                   <th className="py-3.5 px-4 whitespace-nowrap min-w-[150px] w-40">Thời điểm ghi</th>
                   <th className="py-3.5 px-4 whitespace-nowrap min-w-[130px] w-36">Người thực hiện</th>
-                  <th className="py-3.5 px-4 whitespace-nowrap min-w-[110px] w-28">Loại</th>
+                  <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[110px] w-28">Loại</th>
                   <th className="py-3.5 px-4 whitespace-nowrap min-w-[160px] w-44">Đối tượng</th>
                   <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[100px] w-28">Thông tin</th>
                   <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[110px] w-28">Hiệu lực</th>
@@ -262,7 +262,7 @@ export const BomPriceAuditPage: React.FC = () => {
                   >
                     <td className="py-3 px-4 whitespace-nowrap text-slate-700 font-mono text-xs">{formatWhen(entry.recordedAt)}</td>
                     <td className="py-3 px-4 whitespace-nowrap font-medium text-slate-800">{entry.actorName}</td>
-                    <td className="py-3 px-4 whitespace-nowrap">
+                    <td className="py-3 px-4 text-center whitespace-nowrap">
                       <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200/60">
                         {categoryLabel(entry.category)}
                       </span>
@@ -352,10 +352,7 @@ export const BomPriceAuditPage: React.FC = () => {
                 </button>
               </div>
               <div className="p-6 space-y-4 flex-1 overflow-y-auto">
-                <div className="p-3 bg-violet-50/60 border border-violet-100 rounded-xl text-sm font-medium text-slate-800">
-                  {selected.changeSummary}
-                </div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 pt-2">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
                   Snapshot phiên bản
                 </h3>
                 <ul className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden shadow-sm">
@@ -369,7 +366,7 @@ export const BomPriceAuditPage: React.FC = () => {
                         >
                           <p className="text-xs font-medium text-slate-500">{field.label}</p>
                           <p className="font-semibold text-slate-800 mt-0.5">
-                            {field.oldValue
+                            {changed && field.oldValue
                               ? `${field.oldValue} → ${field.newValue ?? '—'}`
                               : field.newValue ?? '—'}
                           </p>
