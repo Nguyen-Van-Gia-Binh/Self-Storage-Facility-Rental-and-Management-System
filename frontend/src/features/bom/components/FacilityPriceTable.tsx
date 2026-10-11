@@ -75,10 +75,9 @@ export const FacilityPriceTable: React.FC<FacilityPriceTableProps> = ({
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                 <th className="py-3.5 px-4">Loại ô kho</th>
-                <th className="py-3.5 px-4">Kích thước (R × D × C)</th>
-                <th className="py-3.5 px-4">Diện tích</th>
-                <th className="py-3.5 px-4 text-right">Đơn giá (VND/m²/tháng)</th>
-                <th className="py-3.5 px-4 text-right">Giá thuê / tháng</th>
+                <th className="py-3.5 px-4">Quy cách không gian</th>
+                <th className="py-3.5 px-4 text-right">Đơn giá (₫/m²)</th>
+                <th className="py-3.5 px-4 text-right">Giá thuê (₫/tháng)</th>
                 <th className="py-3.5 px-4 text-center">Tổng ô kho</th>
                 <th className="py-3.5 px-4 text-center">Tình trạng giá</th>
                 <th className="py-3.5 px-4 text-right">Thao tác</th>
@@ -87,7 +86,7 @@ export const FacilityPriceTable: React.FC<FacilityPriceTableProps> = ({
             <tbody className="divide-y divide-slate-100 text-slate-700">
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-500 text-sm">
+                  <td colSpan={7} className="py-12 text-center text-slate-500 text-sm">
                     <div className="inline-block p-2 rounded-xl bg-amber-50 text-amber-500 animate-pulse mb-2">
                       <Layers className="w-6 h-6" />
                     </div>
@@ -96,7 +95,7 @@ export const FacilityPriceTable: React.FC<FacilityPriceTableProps> = ({
                 </tr>
               ) : unitTypes.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-500 text-sm">
+                  <td colSpan={7} className="py-12 text-center text-slate-500 text-sm">
                     <AlertCircle className="w-8 h-8 text-slate-300 mx-auto mb-2" />
                     <p className="font-medium text-slate-600">
                       Cơ sở này chưa có loại ô kho nào được khai báo
@@ -107,6 +106,9 @@ export const FacilityPriceTable: React.FC<FacilityPriceTableProps> = ({
                 unitTypes.map((ut) => {
                   const status = ut.priceStatus
                     ?? (ut.monthlyPrice > 0 ? 'Đang áp dụng' : 'Chưa niêm yết');
+                  const volumeM3 =
+                    ut.volumeM3 ?? Number((ut.widthM * ut.depthM * ut.heightM).toFixed(2));
+
                   return (
                     <tr key={ut.id} className="hover:bg-amber-50/30 transition-colors group">
                       <td className="py-4 px-4">
@@ -127,12 +129,19 @@ export const FacilityPriceTable: React.FC<FacilityPriceTableProps> = ({
                         </div>
                       </td>
 
-                      <td className="py-4 px-4 font-mono text-xs text-slate-600">
-                        {ut.widthM}m × {ut.depthM}m × {ut.heightM}m
-                      </td>
-
-                      <td className="py-4 px-4 text-xs font-semibold text-slate-700">
-                        {ut.areaM2} m²
+                      <td className="py-4 px-4">
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800">
+                            <span className="text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded font-mono font-bold border border-amber-200/60">
+                              {volumeM3} m³
+                            </span>
+                            <span className="text-slate-400">·</span>
+                            <span>{ut.areaM2} m²</span>
+                          </div>
+                          <span className="text-[11px] font-mono text-slate-500 mt-0.5">
+                            D: {ut.depthM}m × R: {ut.widthM}m × C: {ut.heightM}m
+                          </span>
+                        </div>
                       </td>
 
                       <td className="py-4 px-4 text-right">
@@ -146,10 +155,9 @@ export const FacilityPriceTable: React.FC<FacilityPriceTableProps> = ({
                                   ? Math.round(ut.monthlyPrice / ut.areaM2)
                                   : null;
                           return rate != null && rate > 0 ? (
-                            <div className="font-bold text-slate-800 text-sm">
-                              {rate.toLocaleString('vi-VN')}{' '}
-                              <span className="text-xs font-normal text-slate-400">VND/m²</span>
-                            </div>
+                            <span className="font-bold text-slate-800 text-sm font-mono">
+                              {rate.toLocaleString('vi-VN')}
+                            </span>
                           ) : (
                             <span className="text-xs text-slate-400">—</span>
                           );
@@ -158,13 +166,12 @@ export const FacilityPriceTable: React.FC<FacilityPriceTableProps> = ({
 
                       <td className="py-4 px-4 text-right">
                         {ut.monthlyPrice > 0 ? (
-                          <div className="font-bold text-amber-600 text-sm">
-                            {ut.monthlyPrice.toLocaleString('vi-VN')}{' '}
-                            <span className="text-xs font-normal text-slate-400">VND/tháng</span>
-                          </div>
+                          <span className="font-bold text-amber-600 text-sm font-mono">
+                            {ut.monthlyPrice.toLocaleString('vi-VN')}
+                          </span>
                         ) : (
                           <span className="text-xs text-rose-500 font-medium bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
-                            Chưa niêm yết giá
+                            Chưa niêm yết
                           </span>
                         )}
                       </td>
@@ -181,11 +188,8 @@ export const FacilityPriceTable: React.FC<FacilityPriceTableProps> = ({
                             {status}
                           </span>
                           {status === 'Đang áp dụng' && ut.scheduledEffectiveFrom && (
-                            <span className="text-[10px] text-slate-500">
-                              Giá mới bắt đầu từ {ut.scheduledEffectiveFrom}
-                              {ut.scheduledPricePerM2 != null
-                                ? ` · ${ut.scheduledPricePerM2.toLocaleString('vi-VN')} VND/m²`
-                                : ''}
+                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/80 whitespace-nowrap">
+                              Từ {ut.scheduledEffectiveFrom}: {ut.scheduledPricePerM2 != null ? `${ut.scheduledPricePerM2.toLocaleString('vi-VN')} ₫` : ''}
                             </span>
                           )}
                         </div>

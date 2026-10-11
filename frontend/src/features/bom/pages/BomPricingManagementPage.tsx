@@ -166,7 +166,7 @@ export const BomPricingManagementPage: React.FC = () => {
       );
       const monthly = Math.round((pricePerM2 * (priceModalUnitType.areaM2 || 0)) / 1000) * 1000;
       showToast(
-        `Đã lưu đơn giá ${pricePerM2.toLocaleString('vi-VN')} VND/m²/tháng cho "${priceModalUnitType.name}". Giá thuê niêm yết ${monthly.toLocaleString('vi-VN')} VND/tháng, hiệu lực ${effectiveDate}.`
+        `Đã lưu đơn giá ${pricePerM2.toLocaleString('vi-VN')} ₫/m² cho "${priceModalUnitType.name}". Giá thuê niêm yết ${monthly.toLocaleString('vi-VN')} ₫/tháng, hiệu lực ${effectiveDate}.`
       );
       setPriceModalUnitType(null);
 
