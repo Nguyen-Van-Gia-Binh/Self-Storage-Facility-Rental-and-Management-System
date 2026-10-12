@@ -147,20 +147,8 @@ export const PriceUpdateModal: React.FC<PriceUpdateModalProps> = ({
               <span className="font-bold text-slate-800">{unitType.name}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-slate-500">Quy cách không gian:</span>
-              <div className="flex items-center gap-1.5">
-                <span className="font-mono font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/60">
-                  {unitType.volumeM3 ?? Number((unitType.widthM * unitType.depthM * unitType.heightM).toFixed(2))} m³
-                </span>
-                <span className="text-slate-400">·</span>
-                <span className="font-semibold text-slate-700">{unitType.areaM2} m²</span>
-              </div>
-            </div>
-            <div className="flex justify-between items-center text-slate-500">
-              <span>Kích thước:</span>
-              <span className="font-mono text-slate-600">
-                D: {unitType.depthM}m × R: {unitType.widthM}m × C: {unitType.heightM}m
-              </span>
+              <span className="text-slate-500">Diện tích:</span>
+              <span className="font-mono font-bold text-slate-800">{unitType.areaM2} m²</span>
             </div>
             <div className="flex justify-between items-center pt-1 border-t border-slate-200/60">
               <span className="text-slate-500">Giá thuê hiện tại:</span>
