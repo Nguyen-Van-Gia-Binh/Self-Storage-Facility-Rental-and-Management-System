@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ArrowRight,
   AlertTriangle,
@@ -26,6 +26,7 @@ interface DailyTasksOverviewProps {
   selectedFacilityId?: number;
   onRefresh: () => void;
   onDateChange?: (date: string) => void;
+  onDetailViewChange?: (isOpen: boolean) => void;
   loading?: boolean;
 }
 
@@ -35,11 +36,19 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
   selectedDate = '',
   onRefresh,
   onDateChange,
+  onDetailViewChange,
   loading = false,
 }) => {
   const [filterCategory, setFilterCategory] = useState<'checkin' | 'return' | 'incident'>('checkin');
   const [statusFilter, setStatusFilter] = useState<'PENDING' | 'COMPLETED'>('PENDING');
   const [activeTaskView, setActiveTaskView] = useState<ActiveTaskView>(null);
+
+  useEffect(() => {
+    onDetailViewChange?.(activeTaskView !== null);
+    return () => {
+      onDetailViewChange?.(false);
+    };
+  }, [activeTaskView, onDetailViewChange]);
 
   // Helper nhận diện công việc đã xong
   const isCheckInDone = (c: any) => Boolean(c.completed || c.status === 'COMPLETED' || c.status === 'ACTIVE');

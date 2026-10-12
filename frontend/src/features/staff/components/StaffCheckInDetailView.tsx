@@ -5,8 +5,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Clock,
-  ShieldCheck,
-  Calendar,
+  RefreshCw,
 } from 'lucide-react';
 import type { DailyCheckInTask, CheckInContract, CheckInSubmitRequest, HandoverRejectRequest } from '@/types';
 import { getPendingContracts, checkInContract, rejectHandoverContract } from '@/api/contract';
@@ -157,7 +156,7 @@ export const StaffCheckInDetailView: React.FC<StaffCheckInDetailViewProps> = ({
   const isDone = Boolean(contract && (contract.status === 'ACTIVE' || task.completed || task.status === 'COMPLETED'));
 
   return (
-    <div className="space-y-4 max-w-7xl mx-auto pb-10 animate-in fade-in-50 duration-200">
+    <div className="space-y-6 animate-in fade-in duration-200">
       {/* Toast Notification */}
       {toastMessage && (
         <div
@@ -176,115 +175,81 @@ export const StaffCheckInDetailView: React.FC<StaffCheckInDetailViewProps> = ({
         </div>
       )}
 
-      {/* Top Header Command Bar với nút [← Quay lại ca trực] */}
-      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
+      {/* Top Header Điều hướng quay lại & Tiêu đề đồng nhất */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={onBack}
-            className="p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-white hover:border-slate-300 text-slate-700 transition flex items-center gap-1.5 text-xs font-bold shadow-2xs cursor-pointer group"
-            title="Quay lại danh sách ca trực"
+            className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold inline-flex items-center gap-1.5 transition shadow-xs cursor-pointer hover:border-slate-300"
           >
-            <ArrowLeft className="w-4 h-4 text-slate-500 group-hover:-translate-x-0.5 transition-transform" />
-            <span>Quay lại ca trực</span>
+            <ArrowLeft className="w-4 h-4 text-slate-500" />
+            <span>Quay lại danh sách ca trực</span>
           </button>
-
+          <div className="h-5 w-px bg-slate-200 hidden sm:block" />
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200">
-                Tiếp đón Check-in
+              <span className="font-mono text-xs font-bold text-teal-700 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-md">
+                Ô {task.unitCode}
               </span>
-              <span className="text-xs text-slate-400">•</span>
-              <span className="text-xs text-slate-500 font-medium">Bàn giao & Ký số điện tử</span>
+              <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                Tiếp đón & Bàn giao ô kho
+              </h2>
             </div>
-            <h1 className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight mt-0.5 flex items-center gap-2">
-              <KeyRound className="w-5 h-5 sm:w-6 sm:h-6 text-teal-600" />
-              <span>Bàn Giao Ô Kho: {task.unitCode}</span>
-              <span className="text-slate-400 font-normal">·</span>
-              <span className="text-slate-700 font-bold">{task.customerName}</span>
-            </h1>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Hợp đồng #{contract?.code || task.contractCode || task.contractId} · Khách hàng {task.customerName}
+            </p>
           </div>
         </div>
 
-        {/* Trạng thái bàn giao */}
         <div className="flex items-center gap-2">
           {isDone ? (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
               <span>Đã hoàn tất bàn giao</span>
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
               <Clock className="w-4 h-4 text-amber-600" />
               <span>Chờ tiếp đón & Bàn giao</span>
             </span>
           )}
+
+          <button
+            type="button"
+            onClick={loadContractDetail}
+            disabled={loading}
+            className="p-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-slate-600 transition shadow-xs cursor-pointer disabled:opacity-50"
+            title="Làm mới dữ liệu"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-teal-600' : ''}`} />
+          </button>
         </div>
       </div>
 
       {/* Main 2-Column Full-Width Console */}
       {loading ? (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-          <div className="lg:col-span-5 h-96 skeleton rounded-2xl" />
-          <div className="lg:col-span-7 h-96 skeleton rounded-2xl" />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-4 h-96 skeleton rounded-2xl" />
+          <div className="lg:col-span-8 h-96 skeleton rounded-2xl" />
         </div>
       ) : contract ? (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-          {/* CỘT TRÁI (5/12 ~ 40%): Hồ sơ hợp đồng & Xác minh danh tính */}
-          <div className="lg:col-span-5 space-y-4">
-            {/* Banner phân công */}
-            <div className="bg-teal-50/80 border border-teal-200 rounded-2xl p-4 flex items-start gap-3 text-xs text-teal-900 shadow-2xs">
-              <ShieldCheck className="w-5 h-5 text-teal-600 shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <div className="font-bold">Quy trình bàn giao trực tiếp tại quầy (BR-CHK-01..06)</div>
-                <p className="text-teal-800 text-[11px] leading-relaxed">
-                  Nhân viên tiến hành xác minh số CCCD của khách hàng, cùng khách kiểm tra thực tế 4 tiêu chí mặt bằng ô kho trước khi lấy chữ ký xác nhận và kích hoạt mã PIN.
-                </p>
-              </div>
-            </div>
-
-            {/* Thẻ xác minh thông tin khách & Ô kho */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* CỘT TRÁI (4/12): 1 thẻ Hồ sơ tiếp đón duy nhất, rõ ràng, không trùng lặp */}
+          <div className="lg:col-span-4">
             <CustomerVerificationCard contract={contract} />
-
-            {/* Thẻ tóm tắt lịch hẹn */}
-            <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs space-y-2.5 text-xs">
-              <div className="font-bold text-slate-800 flex items-center gap-2 pb-2 border-b border-slate-100">
-                <Calendar className="w-4 h-4 text-slate-500" />
-                <span>Thông tin lịch hẹn tiếp đón</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-slate-600">
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Giờ hẹn dự kiến:</span>
-                  <span className="font-bold text-slate-800">{contract.appointmentTime}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Ngày bắt đầu:</span>
-                  <span className="font-bold text-slate-800">{contract.startDate}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Số điện thoại:</span>
-                  <a href={`tel:${contract.customerPhone}`} className="font-mono font-bold text-teal-700 hover:underline">
-                    {contract.customerPhone}
-                  </a>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Cơ sở bàn giao:</span>
-                  <span className="font-semibold text-slate-800">{contract.facilityName}</span>
-                </div>
-              </div>
-            </div>
           </div>
 
-          {/* CỘT PHẢI (7/12 ~ 60%): Biên bản bàn giao hoặc Trạng thái đã xong */}
-          <div className="lg:col-span-7 space-y-4">
+          {/* CỘT PHẢI (8/12): Biên bản bàn giao hoặc Trạng thái đã xong */}
+          <div className="lg:col-span-8">
             {isDone ? (
-              <div className="bg-white rounded-2xl border border-emerald-200/90 p-6 sm:p-8 text-center space-y-4 shadow-sm">
-                <div className="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-3xl flex items-center justify-center mx-auto shadow-2xs">
-                  <CheckCircle2 className="w-9 h-9" />
+              <div className="bg-white rounded-2xl border border-emerald-200/90 p-6 sm:p-8 text-center space-y-4 shadow-xs">
+                <div className="w-14 h-14 bg-emerald-100 text-emerald-700 rounded-2xl flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-8 h-8" />
                 </div>
                 <div className="space-y-1.5 max-w-md mx-auto">
-                  <h3 className="text-lg font-black text-slate-900 tracking-tight">
-                    HỢP ĐỒNG ĐÃ ĐƯỢC BÀN GIAO & KÍCH HOẠT THÀNH CÔNG
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900">
+                    Hợp đồng đã được bàn giao & kích hoạt
                   </h3>
                   <p className="text-xs text-slate-600 leading-relaxed">
                     Khách hàng <strong className="text-slate-900">{contract.customerName}</strong> đã nhận bàn giao ô kho{' '}
@@ -292,7 +257,7 @@ export const StaffCheckInDetailView: React.FC<StaffCheckInDetailViewProps> = ({
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                <div className="pt-2">
                   <button
                     type="button"
                     onClick={() => setIsPinModalOpen(true)}
@@ -300,14 +265,6 @@ export const StaffCheckInDetailView: React.FC<StaffCheckInDetailViewProps> = ({
                   >
                     <KeyRound className="w-4 h-4" />
                     <span>Xem lại Mã PIN bảo mật</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onBack}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                    <span>Về danh sách ca trực</span>
                   </button>
                 </div>
               </div>

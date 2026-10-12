@@ -115,87 +115,91 @@ export const StaffDashboardPage: React.FC = () => {
 
   // State tìm kiếm nhanh theo tên khách, SĐT, mã ô kho, mã HĐ
   const [searchQuery, setSearchQuery] = useState('');
+  // Ẩn thanh chào hỏi & bộ lọc danh sách khi đang mở màn hình chi tiết nhiệm vụ
+  const [isDetailViewOpen, setIsDetailViewOpen] = useState(false);
 
   return (
     <div className="max-w-7xl mx-auto space-y-4">
-      {/* Shift Command Bar - Tinh gọn, hiện đại, loại bỏ nút trùng lặp */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-4 sm:p-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          {/* Thông tin ca trực & Nhân viên */}
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                {greeting}, {user?.fullName || 'Nhân viên'}! 👋
-              </h1>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse" />
-                Đang trong ca trực
-              </span>
+      {/* Shift Command Bar - Chỉ hiển thị ở màn hình danh sách ca trực */}
+      {!isDetailViewOpen && (
+        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-4 sm:p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            {/* Thông tin ca trực & Nhân viên */}
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                  {greeting}, {user?.fullName || 'Nhân viên'}! 👋
+                </h1>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse" />
+                  Đang trong ca trực
+                </span>
+              </div>
+            </div>
+
+            <div className="hidden lg:flex items-center gap-2 text-xs font-medium text-slate-500 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/80">
+              <span>Phiên trực lễ tân / thực địa</span>
             </div>
           </div>
 
-          <div className="hidden lg:flex items-center gap-2 text-xs font-medium text-slate-500 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/80">
-            <span>Phiên trực lễ tân / thực địa</span>
-          </div>
-        </div>
+          {/* Bảng điều khiển bộ lọc & Tra cứu nhanh */}
+          <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+            {/* Ô tìm kiếm nhanh trên danh sách ca trực */}
+            <div className="relative flex-1 max-w-md">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="🔍 Tìm nhanh: SĐT, Tên khách, Mã kho (A-102), Mã HĐ..."
+                className="w-full pl-3.5 pr-8 py-2 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-teal-500 rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 transition"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
 
-        {/* Bảng điều khiển bộ lọc & Tra cứu nhanh */}
-        <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-          {/* Ô tìm kiếm nhanh trên danh sách ca trực */}
-          <div className="relative flex-1 max-w-md">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="🔍 Tìm nhanh: SĐT, Tên khách, Mã kho (A-102), Mã HĐ..."
-              className="w-full pl-3.5 pr-8 py-2 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-teal-500 rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 transition"
-            />
-            {searchQuery && (
+            {/* Cơ sở phụ trách & Nút làm mới */}
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Dropdown chọn cơ sở */}
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 shadow-xs">
+                <Building2 className="w-4 h-4 text-teal-600 shrink-0" />
+                <select
+                  value={selectedFacilityId}
+                  onChange={(e) => handleFacilityChange(Number(e.target.value))}
+                  className="bg-transparent font-bold text-slate-800 focus:outline-none cursor-pointer pr-1"
+                >
+                  {facilities.length > 0 ? (
+                    facilities.map((f) => (
+                      <option key={f.id} value={f.id} className="text-slate-900 bg-white">
+                        {f.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option value={0}>Tất cả cơ sở phụ trách</option>
+                  )}
+                </select>
+              </div>
+
+              {/* Nút làm mới */}
               <button
                 type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold"
+                onClick={handleRefresh}
+                disabled={loading}
+                title="Làm mới dữ liệu ca trực"
+                className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs flex items-center justify-center transition disabled:opacity-50"
               >
-                ✕
+                <RotateCcw className={`w-4 h-4 ${loading ? 'animate-spin text-teal-600' : ''}`} />
               </button>
-            )}
-          </div>
-
-          {/* Cơ sở phụ trách & Nút làm mới */}
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Dropdown chọn cơ sở */}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 shadow-xs">
-              <Building2 className="w-4 h-4 text-teal-600 shrink-0" />
-              <select
-                value={selectedFacilityId}
-                onChange={(e) => handleFacilityChange(Number(e.target.value))}
-                className="bg-transparent font-bold text-slate-800 focus:outline-none cursor-pointer pr-1"
-              >
-                {facilities.length > 0 ? (
-                  facilities.map((f) => (
-                    <option key={f.id} value={f.id} className="text-slate-900 bg-white">
-                      {f.name}
-                    </option>
-                  ))
-                ) : (
-                  <option value={0}>Tất cả cơ sở phụ trách</option>
-                )}
-              </select>
             </div>
-
-            {/* Nút làm mới */}
-            <button
-              type="button"
-              onClick={handleRefresh}
-              disabled={loading}
-              title="Làm mới dữ liệu ca trực"
-              className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs flex items-center justify-center transition disabled:opacity-50"
-            >
-              <RotateCcw className={`w-4 h-4 ${loading ? 'animate-spin text-teal-600' : ''}`} />
-            </button>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Main Operational Tasks Body */}
       {loading && !filteredTasks ? (
@@ -212,6 +216,7 @@ export const StaffDashboardPage: React.FC = () => {
           selectedFacilityId={selectedFacilityId}
           onRefresh={handleRefresh}
           onDateChange={handleDateChange}
+          onDetailViewChange={setIsDetailViewOpen}
           loading={loading}
         />
       ) : (

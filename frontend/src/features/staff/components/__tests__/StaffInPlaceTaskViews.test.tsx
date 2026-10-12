@@ -84,6 +84,26 @@ describe('Staff In-Place Task Views & Full-Screen Detail View Integration', () =
     expect(overviewContent).not.toMatch(/Tiền cọc:/);
     expect(incidentViewContent).toMatch(/detailDescription/);
   });
+
+  it('Ẩn thanh chào hỏi khi mở chi tiết nhiệm vụ và bố trí lại màn hình Check-in không còn khối trùng lặp hay vỡ cột', () => {
+    const staffDashboardPath = path.resolve(
+      process.cwd(),
+      'src/features/staff/pages/StaffDashboardPage.tsx'
+    );
+    const customerCardPath = path.resolve(
+      process.cwd(),
+      'src/features/staff/components/CustomerVerificationCard.tsx'
+    );
+    const dashboardContent = fs.readFileSync(staffDashboardPath, 'utf-8');
+    const checkInContent = fs.readFileSync(staffCheckInViewPath, 'utf-8');
+    const customerCardContent = fs.readFileSync(customerCardPath, 'utf-8');
+
+    expect(dashboardContent).toMatch(/!isDetailViewOpen/);
+    expect(checkInContent).not.toMatch(/Thông tin lịch hẹn tiếp đón/);
+    expect(checkInContent).not.toMatch(/Về danh sách ca trực/);
+    expect(customerCardContent).not.toMatch(/md:grid-cols-3/);
+  });
 });
+
 
 

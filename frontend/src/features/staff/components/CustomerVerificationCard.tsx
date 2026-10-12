@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserCheck, ShieldCheck, MapPin, Calendar, CreditCard, Box, AlertCircle, Phone } from 'lucide-react';
+import { ShieldCheck, Calendar, CreditCard, AlertCircle, Phone, User, KeyRound } from 'lucide-react';
 import type { CheckInContract } from '../../../types';
 
 export interface CustomerVerificationCardProps {
@@ -12,146 +12,123 @@ export const CustomerVerificationCard: React.FC<CustomerVerificationCardProps> =
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      {/* Header Bar */}
-      <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-brand-500/20 border border-brand-500/40 flex items-center justify-center text-brand-400">
-              <UserCheck className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-base text-white">{contract.customerName}</h3>
-                <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-brand-500/30 text-brand-300 border border-brand-500/40">
-                  Khách thuê
-                </span>
-              </div>
-              <div className="flex items-center gap-3 text-xs text-slate-300 mt-0.5 font-mono">
-                <span>HĐ: {contract.code}</span>
-                <span>•</span>
-                <span>Đơn: {contract.reservationCode}</span>
-              </div>
-            </div>
-          </div>
+    <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs space-y-4">
+      {/* Header thẻ Hồ sơ tiếp đón */}
+      <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="flex items-center gap-2">
+          <KeyRound className="w-4 h-4 text-teal-600" />
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
+            Hồ sơ tiếp đón
+          </span>
+        </div>
+        <span className="font-mono text-xs font-bold text-slate-500">
+          #{contract.code}
+        </span>
+      </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-300 font-medium">Cơ sở:</span>
-            <span className="text-xs font-semibold px-2.5 py-1 bg-white/10 rounded-lg text-white border border-white/10">
-              {contract.facilityName}
-            </span>
-          </div>
+      {/* 1. Thông tin ô kho bàn giao */}
+      <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 space-y-2 text-xs">
+        <div className="flex items-center justify-between">
+          <span className="text-slate-500">Ô kho bàn giao:</span>
+          <span className="font-mono font-bold text-teal-700 bg-teal-50 border border-teal-200 px-2.5 py-0.5 rounded-md text-sm">
+            {contract.storageUnitCode}
+          </span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-slate-500">Vị trí & Tầng:</span>
+          <span className="font-semibold text-slate-800">
+            Tầng {contract.floor} · {contract.position}
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-slate-500 shrink-0">Loại ô kho:</span>
+          <span className="font-medium text-slate-800 text-right">
+            {contract.unitTypeName} ({contract.unitTypeDimensions})
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-slate-500 shrink-0">Cơ sở:</span>
+          <span className="font-medium text-slate-800 text-right truncate">
+            {contract.facilityName}
+          </span>
         </div>
       </div>
 
-      {/* Thông tin đối soát 3 cột */}
-      <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4 border-b border-slate-100 bg-slate-50/50 text-xs">
-        {/* Cột 1: Giấy tờ tùy thân & Liên hệ */}
-        <div className="space-y-2 bg-white p-3 rounded-xl border border-slate-200/80">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
-            <ShieldCheck className="w-3.5 h-3.5 text-brand-600" />
-            Đối soát danh tính & CCCD
-          </div>
-          <div>
-            <div className="text-slate-500 text-[11px]">Số CCCD / Hộ chiếu:</div>
-            <div className="text-sm font-mono font-bold text-slate-900 flex items-center gap-1.5 mt-0.5">
-              {contract.customerIdentityNumber}
-              <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded">
-                Trùng khớp ✓
-              </span>
-            </div>
-          </div>
-          <div>
-            <div className="text-slate-500 text-[11px]">Số điện thoại liên hệ:</div>
-            <div className="text-xs font-semibold text-slate-800 flex items-center gap-1 mt-0.5">
-              <Phone className="w-3 h-3 text-slate-400" />
-              {contract.customerPhone}
-            </div>
-          </div>
+      {/* 2. Xác minh khách hàng & CCCD */}
+      <div className="space-y-2.5 pt-1 text-xs">
+        <div className="flex items-center gap-2.5 text-slate-700">
+          <User className="w-4 h-4 text-slate-400 shrink-0" />
+          <span className="font-bold text-slate-900 text-sm">{contract.customerName}</span>
         </div>
 
-        {/* Cột 2: Ô kho vật lý đã phân bổ */}
-        <div className="space-y-2 bg-white p-3 rounded-xl border border-slate-200/80">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
-            <Box className="w-3.5 h-3.5 text-brand-600" />
-            Vị trí ô kho thực tế
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5 text-slate-600">
+            <ShieldCheck className="w-4 h-4 text-teal-600 shrink-0" />
+            <span>
+              CCCD: <strong className="font-mono text-slate-900">{contract.customerIdentityNumber}</strong>
+            </span>
           </div>
+          <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md shrink-0">
+            Trùng khớp ✓
+          </span>
+        </div>
+
+        {contract.customerPhone && (
           <div className="flex items-center justify-between">
-            <div>
-              <div className="text-slate-500 text-[11px]">Mã ô kho:</div>
-              <div className="text-base font-mono font-extrabold text-brand-700">
-                {contract.storageUnitCode}
-              </div>
+            <div className="flex items-center gap-2.5 text-slate-600">
+              <Phone className="w-4 h-4 text-slate-400 shrink-0" />
+              <span className="font-mono font-semibold text-slate-800">{contract.customerPhone}</span>
             </div>
-            <div className="text-right">
-              <div className="text-slate-500 text-[11px]">Tầng & Vị trí:</div>
-              <div className="text-xs font-semibold text-slate-800">
-                Tầng {contract.floor}
-              </div>
-            </div>
+            <a
+              href={`tel:${contract.customerPhone}`}
+              className="inline-flex items-center gap-1 font-mono text-xs font-semibold px-2.5 py-1 rounded-md bg-teal-50 hover:bg-teal-100 text-teal-700 transition"
+            >
+              <span>Gọi điện</span>
+            </a>
           </div>
-          <div className="text-[11px] text-slate-600 flex items-center gap-1 truncate" title={contract.position}>
-            <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-            <span className="truncate">{contract.position}</span>
-          </div>
-          <div className="text-[11px] text-slate-500 font-medium">
-            Loại kho: <span className="font-semibold text-slate-800">{contract.unitTypeName}</span> ({contract.unitTypeDimensions})
-          </div>
-        </div>
-
-        {/* Cột 3: Thời hạn thuê & Lịch trình */}
-        <div className="space-y-2 bg-white p-3 rounded-xl border border-slate-200/80">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
-            <Calendar className="w-3.5 h-3.5 text-brand-600" />
-            Kỳ hạn thuê ({contract.rentalMonths} tháng)
-          </div>
-          <div>
-            <div className="text-slate-500 text-[11px]">Khoảng thời gian thuê:</div>
-            <div className="text-xs font-semibold text-slate-800 mt-0.5">
-              {contract.startDate} → {contract.endDateExclusive}
-            </div>
-          </div>
-          <div>
-            <div className="text-slate-500 text-[11px]">Giờ hẹn bàn giao:</div>
-            <div className="text-xs font-semibold text-brand-700 mt-0.5">
-              {contract.appointmentTime}
-            </div>
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* Thanh trạng thái thanh toán tài chính (BR-CHK-02) */}
-      <div className="p-3.5 bg-slate-50 flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1.5">
-            <CreditCard className="w-4 h-4 text-slate-500" />
-            <span className="text-slate-500">Tiền thuê ({contract.rentalMonths}T):</span>
-            <span className="font-bold text-slate-800">{formatCurrency(contract.totalRentalFee)}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-slate-500">Cọc Deposit:</span>
-            <span className="font-bold text-slate-800">{formatCurrency(contract.depositAmount)}</span>
-          </div>
-          <div className="flex items-center gap-1.5 font-semibold text-slate-900">
-            <span>Tổng thu:</span>
-            <span className="text-sm font-extrabold text-slate-900">{formatCurrency(contract.totalPayable)}</span>
-          </div>
+      {/* 3. Kỳ hạn thuê & Thanh toán */}
+      <div className="pt-3 border-t border-slate-100 space-y-2 text-xs">
+        <div className="flex items-center justify-between text-slate-600">
+          <span className="flex items-center gap-1.5 text-slate-500">
+            <Calendar className="w-3.5 h-3.5 text-teal-600" /> Kỳ hạn ({contract.rentalMonths} tháng):
+          </span>
+          <strong className="text-slate-900 font-mono">
+            {contract.startDate} → {contract.endDateExclusive}
+          </strong>
         </div>
 
-        <div>
+        <div className="flex items-center justify-between text-slate-600">
+          <span className="text-slate-500">Giờ hẹn bàn giao:</span>
+          <strong className="text-slate-800">{contract.appointmentTime}</strong>
+        </div>
+
+        <div className="flex items-center justify-between text-slate-600 pt-1">
+          <span className="flex items-center gap-1.5 text-slate-500">
+            <CreditCard className="w-3.5 h-3.5 text-emerald-600" /> Tổng thanh toán (Thuê + Cọc):
+          </span>
+          <strong className="font-mono text-sm text-slate-900 font-bold">
+            {formatCurrency(contract.totalPayable)}
+          </strong>
+        </div>
+
+        <div className="pt-1">
           {contract.isFullyPaid ? (
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-800 bg-emerald-100/90 px-3 py-1 rounded-lg border border-emerald-300 shadow-xs">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              ĐÃ THANH TOÁN ĐỦ 100% QUA VIETQR (ĐỦ ĐIỀU KIỆN NHẬN KHO)
-            </span>
+            <div className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-200">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Đã thanh toán đủ 100% (Đủ điều kiện nhận kho)</span>
+            </div>
           ) : (
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-red-700 bg-red-100 px-3 py-1 rounded-lg border border-red-300">
-              <AlertCircle className="w-4 h-4 text-red-600" />
-              CHƯA HOÀN TẤT THANH TOÁN (VÔ HIỆU HÓA BÀN GIAO)
-            </span>
+            <div className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-rose-700 bg-rose-50 px-3 py-2 rounded-xl border border-rose-200">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>Chưa hoàn tất thanh toán (Tạm khóa bàn giao)</span>
+            </div>
           )}
         </div>
       </div>
     </div>
   );
 };
+
