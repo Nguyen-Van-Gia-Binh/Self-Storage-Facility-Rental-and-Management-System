@@ -178,7 +178,7 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
               onClick={handleGoToMyUnits}
               className="w-full sm:w-1/2 py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
             >
-              <span>Xem Kho của tôi (My Units)</span>
+              <span>Xem Kho của tôi</span>
               <ArrowRight className="w-4 h-4" />
             </Button>
           </div>

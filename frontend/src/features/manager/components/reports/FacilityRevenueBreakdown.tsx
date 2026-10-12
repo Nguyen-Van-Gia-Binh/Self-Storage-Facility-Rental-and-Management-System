@@ -94,7 +94,7 @@ export const FacilityRevenueBreakdown: React.FC<Props> = ({ data, loading }) => 
             <div className="text-xl font-black text-purple-700 font-mono">{formatVND(customerServiceFee)}</div>
           </div>
           <p className="text-[11px] text-slate-500 mt-2">
-            Phụ phí dịch vụ & sửa chữa sự cố do khách chịu (BR-SUP-02)
+            Phụ phí dịch vụ & sửa chữa sự cố do khách chịu
           </p>
         </div>
 
@@ -110,7 +110,7 @@ export const FacilityRevenueBreakdown: React.FC<Props> = ({ data, loading }) => 
             <div className="text-xl font-black text-amber-700 font-mono">{formatVND(overduePenaltyFee)}</div>
           </div>
           <p className="text-[11px] text-slate-500 mt-2">
-            Phạt trễ hạn 10%/ngày trên tiền cọc từ D+4 đến D+10 (BR-OVD)
+            Phạt trễ hạn 10%/ngày trên tiền cọc từ D+4 đến D+10
           </p>
         </div>
 
@@ -128,7 +128,7 @@ export const FacilityRevenueBreakdown: React.FC<Props> = ({ data, loading }) => 
             </div>
           </div>
           <p className="text-[11px] text-rose-700/80 mt-2">
-            Chi phí sửa chữa hư hỏng kỹ thuật cơ sở chịu 100% (BR-SUP-02)
+            Chi phí sửa chữa hư hỏng kỹ thuật cơ sở chịu 100%
           </p>
         </div>
       </div>

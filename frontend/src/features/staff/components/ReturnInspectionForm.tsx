@@ -96,7 +96,7 @@ export const ReturnInspectionForm: React.FC<ReturnInspectionFormProps> = ({
     e.preventDefault();
     setErrorMessage('');
 
-    // Kiểm tra ràng buộc AC-3
+    // Kiểm tra ràng buộc dữ liệu
     if (condition !== 'GOOD') {
       if (!damageNotes.trim()) {
         setErrorMessage('Vui lòng nhập mô tả hiện trường.');
@@ -114,7 +114,7 @@ export const ReturnInspectionForm: React.FC<ReturnInspectionFormProps> = ({
 
     const intactChecklist = criteria.assetsCleared && criteria.wallsAndFloorIntact && criteria.lockAndHingesWorking;
     if (condition === 'GOOD' && !intactChecklist) {
-      setErrorMessage('Checklist nguyên trạng chưa đủ. Không thể chọn Đạt chuẩn khi còn mục chưa tick.');
+      setErrorMessage('Danh sách tiêu chí nguyên trạng chưa đủ. Không thể chọn Đạt chuẩn khi còn mục chưa đánh dấu.');
       return;
     }
 
@@ -144,11 +144,11 @@ export const ReturnInspectionForm: React.FC<ReturnInspectionFormProps> = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* 1. Checklist 3 tiêu chí theo US-FS-04.1 */}
+      {/* 1. Danh sách 3 tiêu chí kiểm tra */}
       <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-3">
         <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
           <CheckSquare className="w-4 h-4 text-teal-600" />
-          Tiêu chuẩn kiểm tra mặt bằng ô kho (Checklist)
+          Tiêu chuẩn kiểm tra mặt bằng ô kho
         </h3>
         <p className="text-xs text-slate-500">
           Nhân viên trực tiếp đối soát cùng khách hàng tại hiện trường ô kho {contract.storageUnitCode}.
@@ -208,7 +208,7 @@ export const ReturnInspectionForm: React.FC<ReturnInspectionFormProps> = ({
         </div>
       </div>
 
-      {/* 2. Đánh giá tình trạng hiện trường (Condition) */}
+      {/* 2. Đánh giá tình trạng hiện trường */}
       <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-3">
         <h3 className="text-sm font-semibold text-slate-900">Đánh giá kết quả nghiệm thu</h3>
 
@@ -223,7 +223,7 @@ export const ReturnInspectionForm: React.FC<ReturnInspectionFormProps> = ({
             }`}
           >
             <div className="flex items-center justify-between w-full mb-1">
-              <span className="font-semibold text-emerald-800 text-sm">Đạt chuẩn (GOOD)</span>
+              <span className="font-semibold text-emerald-800 text-sm">Đạt chuẩn</span>
               {condition === 'GOOD' && <CheckSquare className="w-4 h-4 text-emerald-600" />}
             </div>
             <p className="text-xs text-emerald-700">
@@ -290,7 +290,7 @@ export const ReturnInspectionForm: React.FC<ReturnInspectionFormProps> = ({
               </label>
               {catalogFees.length === 0 ? (
                 <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
-                  Chưa có khoản vệ sinh hoặc bồi thường đang hiệu lực. Business Operations Manager cần niêm yết trước.
+                  Chưa có khoản vệ sinh hoặc bồi thường đang hiệu lực. Quản lý vận hành kinh doanh cần niêm yết trước.
                 </p>
               ) : (
                 <div className="space-y-2">
@@ -356,7 +356,7 @@ export const ReturnInspectionForm: React.FC<ReturnInspectionFormProps> = ({
       {/* 4. Khung ký số điện tử */}
       <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
         <h3 className="text-sm font-semibold text-slate-900">
-          Chữ ký số xác nhận biên bản (Staff & Khách hàng)
+          Chữ ký số xác nhận biên bản (Nhân viên & Khách hàng)
         </h3>
         <SignaturePad onSignatureChange={setSignatureData} />
 
@@ -381,7 +381,7 @@ export const ReturnInspectionForm: React.FC<ReturnInspectionFormProps> = ({
         </div>
       )}
 
-      {/* Action Submit */}
+      {/* Nút gửi biên bản */}
       <div className="flex justify-end gap-3 pt-2">
         <button
           type="submit"
@@ -393,7 +393,7 @@ export const ReturnInspectionForm: React.FC<ReturnInspectionFormProps> = ({
           ) : (
             <>
               <Send className="w-4 h-4" />
-              <span>Nộp biên bản & Gửi Facility Manager</span>
+              <span>Nộp biên bản & Gửi Quản lý cơ sở</span>
             </>
           )}
         </button>

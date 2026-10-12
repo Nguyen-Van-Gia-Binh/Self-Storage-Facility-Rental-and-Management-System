@@ -237,7 +237,7 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
       let faultSummary = '';
       const relocationText = needsRelocation ? ' | Phương án: Kích hoạt di dời sang ô kho khác do hư hại nặng' : '';
       if (faultParty === 'COMPANY') {
-        faultSummary = `\n[Trách nhiệm: Lỗi do công ty (100% công ty chi trả theo BR-SUP-02) - Khách hàng miễn phí 0 đ${relocationText}]`;
+        faultSummary = `\n[Trách nhiệm: Lỗi do công ty (100% công ty chi trả) - Khách hàng miễn phí 0 đ${relocationText}]`;
       } else {
         const selectedFeeNames = allSurcharges
           .filter((f) => selectedFeeIds.includes(f.id))
@@ -317,7 +317,7 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
         </div>
       )}
 
-      {/* Nội dung chi tiết 2 cột (Tràn màn hình in-place) */}
+      {/* Nội dung chi tiết 2 cột (Tràn màn hình tại chỗ) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* CỘT TRÁI (4/12): Thông tin phiếu sự cố, khách hàng & hành động tiếp nhận */}
         <div className="lg:col-span-4 space-y-4">
@@ -396,7 +396,7 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
               )}
             </div>
 
-            {/* Cờ chuyển ô kho khẩn cấp (Emergency Relocation) */}
+            {/* Cờ chuyển ô kho khẩn cấp */}
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-800">Cần di dời ô kho khẩn cấp:</span>
@@ -465,10 +465,10 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
                 <div>
                   <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                     <FileText className="w-4 h-4 text-teal-600" />
-                    <span>Biên bản giải quyết hiện trường (FS-05)</span>
+                    <span>Biên bản giải quyết hiện trường</span>
                   </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Xác nhận khắc phục, phân định trách nhiệm chi phí theo BR-SUP-02 và lưu ảnh bằng chứng.
+                    Xác nhận khắc phục, phân định trách nhiệm chi phí và lưu ảnh bằng chứng.
                   </p>
                 </div>
               </div>
@@ -477,7 +477,7 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
               <div className="space-y-3">
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
                   <ShieldCheck className="w-4 h-4 text-teal-600" />
-                  <span>1. Phân định trách nhiệm (BR-SUP-02) <span className="text-rose-500">*</span></span>
+                  <span>1. Phân định trách nhiệm <span className="text-rose-500">*</span></span>
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
@@ -513,7 +513,7 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-xs text-slate-900">Lỗi do Khách hàng</span>
-                      <span className="font-bold text-xs text-amber-700">Áp dụng phụ phí BOM</span>
+                      <span className="font-bold text-xs text-amber-700">Áp dụng phụ phí niêm yết</span>
                     </div>
                     <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
                       Sử dụng sai quy cách, làm gãy khóa, bẩn tường. Khách hàng phải bồi hoàn theo biểu giá niêm yết.
@@ -522,13 +522,13 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
                 </div>
               </div>
 
-              {/* Danh mục phụ phí BOM (Khi lỗi do khách hàng) */}
+              {/* Danh mục phụ phí niêm yết (Khi lỗi do khách hàng) */}
               {faultParty === 'CUSTOMER' && (
                 <div className="p-4 rounded-xl bg-amber-50/50 border border-amber-200 space-y-3 animate-in fade-in">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
                       <Receipt className="w-4 h-4 text-amber-700" />
-                      <span>Chọn phụ phí bồi hoàn từ danh mục BOM:</span>
+                      <span>Chọn phụ phí bồi hoàn từ danh mục niêm yết:</span>
                     </label>
                     <span className="font-mono font-bold text-xs text-amber-900">
                       Tổng thu: {totalFeeAmount.toLocaleString('vi-VN')} đ

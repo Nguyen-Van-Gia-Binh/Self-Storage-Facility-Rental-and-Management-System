@@ -126,14 +126,14 @@ export const StorageUnitFormModal: React.FC<StorageUnitFormModalProps> = ({
                 <div className="mt-2 p-2.5 rounded-xl bg-cyan-50/80 border border-cyan-200 text-cyan-800 text-xs flex items-center gap-2">
                   <Snowflake className="w-4 h-4 shrink-0 text-cyan-600" />
                   <span>
-                    Ô kho này thuộc phân khúc <strong>Kho Máy Lạnh (Climate-Controlled 22°C - 25°C)</strong>, nhiệt độ và độ ẩm luôn được duy trì ổn định.
+                    Ô kho này thuộc phân khúc <strong>Kho Máy Lạnh (22°C - 25°C)</strong>, nhiệt độ và độ ẩm luôn được duy trì ổn định.
                   </span>
                 </div>
               ) : (
                 <div className="mt-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-xs flex items-center gap-2">
                   <Package className="w-4 h-4 shrink-0 text-slate-500" />
                   <span>
-                    Ô kho này thuộc phân khúc <strong>Kho Tiêu Chuẩn (Standard)</strong> nhiệt độ phòng tự nhiên.
+                    Ô kho này thuộc phân khúc <strong>Kho Tiêu Chuẩn</strong> nhiệt độ phòng tự nhiên.
                   </span>
                 </div>
               );

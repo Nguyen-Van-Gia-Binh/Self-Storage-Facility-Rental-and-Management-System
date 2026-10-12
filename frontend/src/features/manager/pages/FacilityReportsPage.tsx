@@ -97,11 +97,11 @@ export const FacilityReportsPage: React.FC = () => {
                 <BarChart3 className="w-5 h-5" />
               </div>
               <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-                Báo cáo hiệu suất & Tỷ lệ lấp đầy cơ sở (FM-06)
+                Báo cáo hiệu suất & Tỷ lệ lấp đầy cơ sở
               </h1>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Giám sát tình hình vận hành mặt bằng, tỷ lệ Usage Rate và rủi ro nợ quá hạn thời gian thực
+              Giám sát tình hình vận hành mặt bằng, tỷ lệ sử dụng kho và rủi ro nợ quá hạn thời gian thực
             </p>
           </div>
 

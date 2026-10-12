@@ -152,7 +152,7 @@ export const StaffIncidentPage: React.FC = () => {
         return 'Hư hại vật lý ô kho';
       case 'OVERLOCK_D4':
       case 'OVERLOCK':
-        return 'Khóa ngoài Overlock (D+4)';
+        return 'Khóa ngoài quá hạn';
       case 'CLEANING':
         return 'Vệ sinh / Ẩm mốc';
       default:
@@ -196,7 +196,7 @@ export const StaffIncidentPage: React.FC = () => {
             <div>
               <h1 className="text-xl font-bold text-slate-900">Xử lý Sự cố & Vận hành Hiện trường</h1>
               <p className="text-xs text-slate-500 mt-0.5">
-                Tiếp nhận yêu cầu hỗ trợ kỹ thuật, kiểm tra thực địa và lập biên bản hoàn tất (FS-05, US-FS-05.1, US-FS-05.2)
+                Tiếp nhận yêu cầu hỗ trợ kỹ thuật, kiểm tra thực địa và lập biên bản hoàn tất
               </p>
             </div>
           </div>
@@ -310,7 +310,7 @@ export const StaffIncidentPage: React.FC = () => {
             type="text"
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
-            placeholder="Tìm theo mã sự cố (SUP-...), mã ô kho, tên khách hàng hoặc nội dung..."
+            placeholder="Tìm theo mã sự cố, mã ô kho, tên khách hàng hoặc nội dung..."
             className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 transition"
           />
         </div>

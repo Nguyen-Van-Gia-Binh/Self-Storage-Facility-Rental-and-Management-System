@@ -365,10 +365,10 @@ export const WorkDetailPage: React.FC = () => {
               <span className="text-slate-500">Loại công việc:</span>
               <span className="font-semibold text-slate-800">
                 {task.taskType === 'CHECK_IN'
-                  ? 'Bàn giao nhận kho (Check-in)'
+                  ? 'Bàn giao nhận kho'
                   : task.taskType === 'RETURN'
-                  ? 'Nghiệm thu trả kho (Return)'
-                  : 'Sự cố kỹ thuật (Incident)'}
+                  ? 'Nghiệm thu trả kho'
+                  : 'Sự cố kỹ thuật'}
               </span>
             </div>
             <div className="flex justify-between">
@@ -499,7 +499,7 @@ export const WorkDetailPage: React.FC = () => {
           <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
             <CheckCircle className="w-4 h-4 text-emerald-600" />
             <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">
-              Quy trình đón tiếp & Bàn giao nhận kho (Check-in)
+              Quy trình đón tiếp & Bàn giao nhận kho
             </h3>
           </div>
           <p className="text-xs text-slate-600">

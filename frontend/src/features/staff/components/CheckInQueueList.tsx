@@ -268,7 +268,7 @@ export const CheckInQueueList: React.FC<CheckInQueueListProps> = ({
                   ) : null}
 
                   {isFinished ? (
-                    <Badge variant="available">Đã nhận kho (ACTIVE)</Badge>
+                    <Badge variant="available">Đã nhận kho</Badge>
                   ) : isTerminated ? (
                     <Badge variant="locked">Từ chối nhận kho</Badge>
                   ) : isLate ? (

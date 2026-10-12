@@ -235,15 +235,11 @@ export const IncidentManagementPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-              Bàn Điều phối Sự cố & Ticket Kỹ thuật
+              Bàn Điều phối Sự cố & Phiếu Kỹ thuật
             </h1>
-            <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-amber-100 text-amber-800">
-              SCR-FM-05
-            </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
             Tiếp nhận khiếu nại, hỗ trợ sự cố hiện trường và phân công nhân viên theo ca trực
-            (Flow 7 · UC-F7-03, UC-F7-04)
           </p>
         </div>
 

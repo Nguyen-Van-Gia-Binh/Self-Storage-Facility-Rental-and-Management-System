@@ -105,7 +105,7 @@ export const TermsOfServiceModal: React.FC<TermsOfServiceModalProps> = ({
             <li>
               <strong>Hoàn cọc:</strong> Được hoàn 100% nếu hủy trước 48 giờ kể từ ngày bắt đầu
               thuê; hoàn 50% nếu hủy trong vòng 24 giờ trước ngày bắt đầu; không hoàn nếu hủy
-              trễ hoặc không đến nhận kho (no-show).
+              trễ hoặc không đến nhận kho đúng hạn.
             </li>
             <li>
               <strong>Thanh toán:</strong> Tiền thuê các tháng tiếp theo thanh toán trước theo

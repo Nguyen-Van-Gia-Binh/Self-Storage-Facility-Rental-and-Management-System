@@ -105,8 +105,8 @@ export const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
               </h3>
               <p className="text-xs text-slate-500">
                 {isReassign
-                  ? `Chuyển giao nhiệm vụ từ ${task.assignedStaffName || 'nhân viên cũ'} sang người mới (AC-4)`
-                  : 'Chỉ định nhân viên tiếp nhận nhiệm vụ thực địa (US-FM-05.1 AC-1)'}
+                  ? `Chuyển giao nhiệm vụ từ ${task.assignedStaffName || 'nhân viên cũ'} sang người mới`
+                  : 'Chỉ định nhân viên tiếp nhận nhiệm vụ thực địa'}
               </p>
             </div>
           </div>
@@ -153,7 +153,7 @@ export const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
             </div>
           </div>
 
-          {/* Staff Selection (Cân bằng tải AC-3) */}
+          {/* Staff Selection */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-xs font-bold text-slate-800 flex items-center gap-1">
@@ -242,12 +242,12 @@ export const AssignStaffModal: React.FC<AssignStaffModalProps> = ({
               )}
             </div>
 
-            {/* Warning if selecting overloaded staff (AC-3) */}
+            {/* Warning if selecting overloaded staff */}
             {selectedStaff && selectedStaff.activeTaskCount >= 5 && (
               <div className="mt-2.5 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2">
                 <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
                 <span>
-                  <strong>Lưu ý cân bằng tải (AC-3):</strong> Nhân viên {selectedStaff.staffName}{' '}
+                  <strong>Lưu ý cân bằng tải:</strong> Nhân viên {selectedStaff.staffName}{' '}
                   hiện đang có {selectedStaff.activeTaskCount} nhiệm vụ tồn đọng. Bạn nên cân nhắc
                   phân bổ cho nhân viên khác có khối lượng nhẹ hơn.
                 </span>

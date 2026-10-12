@@ -173,7 +173,7 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
             <p><strong>Họ và tên khách hàng:</strong> {effectiveCustomerName}</p>
             <p><strong>Số CMND / CCCD:</strong> <span className="font-mono font-bold">{effectiveCustomerIdentity}</span></p>
             <p><strong>Số điện thoại:</strong> {effectiveCustomerPhone}</p>
-            <p><strong>Thư điện tử (Email):</strong> {effectiveCustomerEmail}</p>
+            <p><strong>Thư điện tử:</strong> {effectiveCustomerEmail}</p>
           </div>
         </div>
       </section>
@@ -214,7 +214,7 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
 
         {relocationCode && (
           <div className="mt-1.5 p-2 bg-amber-50 border border-amber-300 rounded text-[11px] text-amber-950">
-            <strong>Phụ lục điều chuyển kỹ thuật ({relocationCode}):</strong> Ô kho được điều chuyển từ ô ban đầu sang <strong>{effectiveUnitNumber}</strong> ({relocationReason}). Toàn bộ đơn giá thuê và tiền cọc bảo đảm được giữ nguyên vẹn theo quy tắc BR-AVL-05 & BR-SUP-02.
+            <strong>Phụ lục điều chuyển kỹ thuật ({relocationCode}):</strong> Ô kho được điều chuyển từ ô ban đầu sang <strong>{effectiveUnitNumber}</strong> ({relocationReason}). Toàn bộ đơn giá thuê và tiền cọc bảo đảm được giữ nguyên vẹn.
           </div>
         )}
       </section>
@@ -231,25 +231,25 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
             <span className="font-bold">{formatCurrencyVND(effectiveMonthlyRent)} / tháng</span> (Đã bao gồm chi phí bảo quản tiêu chuẩn, giám sát an ninh 24/7 và điện chiếu sáng công cộng).
           </p>
           <p>
-            <strong>2. Tiền cọc bảo đảm (Deposit):</strong>{' '}
-            <span className="font-bold">{formatCurrencyVND(effectiveDeposit)}</span>. Khoản tiền cọc được bảo lưu tại tài khoản ngân hàng của Bên A để bảo đảm thực hiện nghĩa vụ hợp đồng và sẽ được hoàn trả 100% cho Bên B sau khi nghiệm thu trả kho theo quy tắc <strong>BR-RET-04</strong>.
+            <strong>2. Tiền cọc bảo đảm:</strong>{' '}
+            <span className="font-bold">{formatCurrencyVND(effectiveDeposit)}</span>. Khoản tiền cọc được bảo lưu tại tài khoản ngân hàng của Bên A để bảo đảm thực hiện nghĩa vụ hợp đồng và sẽ được hoàn trả 100% cho Bên B sau khi nghiệm thu trả kho đúng quy định.
           </p>
           <p>
-            <strong>3. Xử lý chậm nộp & quá hạn (BR-OVD):</strong>
+            <strong>3. Xử lý chậm nộp & quá hạn:</strong>
           </p>
           <ul className="list-disc pl-5 text-[11px] text-slate-700 space-y-0.5">
             <li><strong>Ân hạn D+1 đến D+3:</strong> Miễn phí phạt quá hạn; Bên B vẫn duy trì đầy đủ quyền ra vào ô kho.</li>
             <li><strong>Từ D+4 đến D+6:</strong> Áp dụng phí phạt quá hạn 10%/ngày trên số dư nợ phí thuê.</li>
-            <li><strong>Từ D+7 đến D+9:</strong> Tạm khóa mã PIN/Access Code mở kho; tổng phí phạt không vượt trần 70% tiền cọc.</li>
+            <li><strong>Từ D+7 đến D+9:</strong> Tạm khóa mã PIN mở kho; tổng phí phạt không vượt trần 70% tiền cọc.</li>
             <li><strong>Từ D+10:</strong> Hệ thống tiến hành quy trình chấm dứt hợp đồng và xử lý tài sản theo hợp đồng dịch vụ.</li>
           </ul>
         </div>
       </section>
 
-      {/* ĐIỀU 4: BIÊN BẢN BÀN GIAO & NGHIỆM THU HIỆN TRƯỜNG (CHECK-IN HANDOVER) */}
+      {/* ĐIỀU 4: BIÊN BẢN BÀN GIAO & NGHIỆM THU HIỆN TRƯỜNG */}
       <section className="mb-3 break-inside-avoid">
         <h2 className="font-bold text-[12.5px] uppercase border-b border-slate-400 pb-0.5 mb-1.5 flex justify-between items-center">
-          <span>ĐIỀU 4: BIÊN BẢN BÀN GIAO & NGHIỆM THU HIỆN TRƯỜNG (CHECK-IN HANDOVER)</span>
+          <span>ĐIỀU 4: BIÊN BẢN BÀN GIAO & NGHIỆM THU HIỆN TRƯỜNG</span>
           {isPendingCheckin && (
             <span className="text-[10px] font-normal italic text-slate-600 lowercase tracking-normal">
               (chờ thực hiện tại quầy khi nhận kho)
@@ -264,7 +264,7 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
 
         <div className="border border-slate-300 p-2 rounded bg-white text-[11px]">
           <p className="font-bold mb-1 text-slate-800">
-            Kết quả kiểm tra 4 tiêu chí nghiệm thu vật lý bàn giao tại chỗ (BR-CHK-02):
+            Kết quả kiểm tra 4 tiêu chí nghiệm thu vật lý bàn giao tại chỗ:
           </p>
           {isHandoverCompleted ? (
             <div className="grid grid-cols-2 gap-1 text-slate-800 font-medium">
@@ -282,7 +282,7 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="text-emerald-700 font-bold">[✓]</span>
-                <span>Khóa điện tử IoT đã sẵn sàng, cấp mã PIN mở cửa 24/7</span>
+                <span>Khóa điện tử thông minh đã sẵn sàng, cấp mã PIN mở cửa 24/7</span>
               </div>
             </div>
           ) : (
@@ -301,7 +301,7 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="text-slate-400 font-bold">[  ]</span>
-                <span>Khóa điện tử IoT & mã PIN (Chờ kích hoạt tại quầy)</span>
+                <span>Khóa điện tử & mã PIN (Chờ kích hoạt tại quầy)</span>
               </div>
             </div>
           )}
@@ -317,8 +317,8 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
           ĐIỀU 5: NỘI QUY AN TOÀN, AN NINH & QUYỀN TRUY CẬP
         </h2>
         <ul className="list-disc pl-5 text-[11px] text-slate-700 space-y-0.5">
-          <li>Bên B được cấp quyền ra vào cơ sở và mở khóa ô kho 24/7 thông qua mã số bảo mật PIN / mã QR điện tử (BR-ACC-01, BR-ACC-02).</li>
-          <li>Tuyệt đối nghiêm cấm lưu trữ các chất độc hại, chất cháy nổ, vũ khí, hàng lậu hoặc các chất bị pháp luật cấm (BR-GEN-01).</li>
+          <li>Bên B được cấp quyền ra vào cơ sở và mở khóa ô kho 24/7 thông qua mã số bảo mật PIN / mã QR điện tử.</li>
+          <li>Tuyệt đối nghiêm cấm lưu trữ các chất độc hại, chất cháy nổ, vũ khí, hàng lậu hoặc các chất bị pháp luật cấm.</li>
           <li>Bên B có trách nhiệm tự bảo mật mã mở khóa và khóa cửa ô kho cẩn thận sau mỗi lần truy cập.</li>
         </ul>
       </section>

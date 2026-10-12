@@ -67,9 +67,9 @@ export const ContractMiniPanel: React.FC<ContractMiniPanelProps> = ({
             <span className="text-slate-500">Tình trạng hợp đồng:</span>
             <span className={`font-semibold ${status === 'ACTIVE' ? 'text-emerald-600' : 'text-amber-600'}`}>
               {status === 'ACTIVE'
-                ? 'Đang hiệu lực (Active)'
+                ? 'Đang hiệu lực'
                 : status === 'OVERDUE'
-                ? 'Quá hạn (Overdue)'
+                ? 'Quá hạn'
                 : status === 'PENDING_CHECK_IN'
                 ? 'Chờ nhận kho'
                 : status === 'TERMINATED' || status === 'CLOSED'

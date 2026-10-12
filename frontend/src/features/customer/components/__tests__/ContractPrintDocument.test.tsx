@@ -158,14 +158,14 @@ describe('ContractPrintDocument & Print Contract Flow', () => {
     expect(screen.getAllByText(/2026-09-15/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/2027-04-15/i).length).toBeGreaterThanOrEqual(1);
 
-    // Tiền cọc & Quy định BR-RET-04
-    expect(screen.getByText(/BR-RET-04/i)).toBeInTheDocument();
+    // Tiền cọc & Quy định hoàn trả cọc
+    expect(screen.getByText(/hoàn trả 100% cho Bên B sau khi nghiệm thu trả kho/i)).toBeInTheDocument();
 
     // 4 tiêu chí nghiệm thu vật lý hiện trường BR-CHK-02
     expect(screen.getByText(/Mặt bằng kho sạch sẽ, thông thoáng, không vật cản/i)).toBeInTheDocument();
     expect(screen.getByText(/Cửa cuốn & cơ cấu khóa vận hành an toàn, trơn tru/i)).toBeInTheDocument();
     expect(screen.getByText(/Sàn tường khô ráo, phòng chống ẩm mốc & PCCC đạt chuẩn/i)).toBeInTheDocument();
-    expect(screen.getByText(/Khóa điện tử IoT đã sẵn sàng, cấp mã PIN mở cửa 24\/7/i)).toBeInTheDocument();
+    expect(screen.getByText(/Khóa điện tử thông minh đã sẵn sàng, cấp mã PIN mở cửa 24\/7/i)).toBeInTheDocument();
   });
 
   it('renders digital signatures and QR verification block', () => {

@@ -43,7 +43,7 @@ describe('Staff In-Place Task Views & Full-Screen Detail View Integration', () =
     expect(content).toMatch(/grid grid-cols-1 lg:grid-cols-12/);
     expect(content).toMatch(/Lỗi do Công ty \(Hạ tầng\)/);
     expect(content).toMatch(/Lỗi do Khách hàng/);
-    expect(content).toMatch(/Phân định trách nhiệm \(BR-SUP-02\)/);
+    expect(content).toMatch(/1\. Phân định trách nhiệm/);
     expect(content).toMatch(/Hoàn tất giải quyết sự cố/);
   });
 

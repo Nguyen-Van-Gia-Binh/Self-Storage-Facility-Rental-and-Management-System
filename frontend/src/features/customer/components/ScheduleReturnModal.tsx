@@ -146,7 +146,7 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
 
           <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-100 uppercase tracking-wider mb-1">
             <RotateCcw className="w-4 h-4" />
-            <span>Quy Trình Nghiệm Thu & Hoàn Cọc (FS-04 · FM-04)</span>
+            <span>Quy Trình Nghiệm Thu & Hoàn Cọc</span>
           </div>
 
           <h3 className="text-xl font-black text-white">Xác Nhận Đã Dọn Đồ & Báo Trả Kho</h3>

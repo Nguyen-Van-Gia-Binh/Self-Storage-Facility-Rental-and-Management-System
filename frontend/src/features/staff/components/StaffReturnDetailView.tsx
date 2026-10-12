@@ -259,7 +259,7 @@ export const StaffReturnDetailView: React.FC<StaffReturnDetailViewProps> = ({
             <div className="p-3 rounded-xl bg-blue-50/60 border border-blue-200/70 text-xs text-blue-900 space-y-1.5">
               <div className="font-bold flex items-center gap-1.5 text-blue-800">
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Quy trình nghiệm thu (FS-04)</span>
+                <span>Quy trình nghiệm thu</span>
               </div>
               <ul className="list-disc list-inside space-y-1 text-slate-600 text-[11px] leading-relaxed">
                 <li>Kiểm tra khách đã dọn sạch toàn bộ tài sản.</li>

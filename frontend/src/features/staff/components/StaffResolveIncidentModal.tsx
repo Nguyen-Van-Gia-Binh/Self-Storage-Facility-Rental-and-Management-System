@@ -211,7 +211,7 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
       let faultSummary = '';
       const relocationText = needsRelocation ? ' | Phương án: Kích hoạt di dời sang ô kho khác do hư hại nặng' : '';
       if (faultParty === 'COMPANY') {
-        faultSummary = `\n[Trách nhiệm: Lỗi do công ty (100% công ty chi trả theo BR-SUP-02) - Khách hàng miễn phí 0 đ${relocationText}]`;
+        faultSummary = `\n[Trách nhiệm: Lỗi do công ty (100% công ty chi trả) - Khách hàng miễn phí 0 đ${relocationText}]`;
       } else {
         const selectedFeeNames = allSurcharges
           .filter((f) => selectedFeeIds.includes(f.id))
@@ -240,7 +240,7 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
     if (isPending) {
       return (
         <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700">
-          Mới được giao (Chờ xử lý)
+          Mới được giao
         </span>
       );
     }
@@ -425,12 +425,12 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
                 <div className="pt-2 border-t border-amber-200/80 text-[11px] space-y-1">
                   {faultParty === 'COMPANY' && (
                     <p className="text-emerald-800 font-semibold">
-                      ✓ Di dời do lỗi kỹ thuật / cơ sở: Khách hàng được đổi ô kho dự phòng <strong>hoàn toàn miễn phí (0 đ)</strong> theo quy tắc BR-SUP-02.
+                      ✓ Di dời do lỗi kỹ thuật / cơ sở: Khách hàng được đổi ô kho dự phòng <strong>hoàn toàn miễn phí (0 đ)</strong>.
                     </p>
                   )}
                   {faultParty === 'CUSTOMER' && (
                     <p className="text-rose-800 font-semibold">
-                      ⚠️ Di dời do lỗi khách hàng: Phụ phí sửa chữa, công di chuyển (chọn từ danh mục BOM bên dưới) sẽ do khách hàng thanh toán 100%.
+                      ⚠️ Di dời do lỗi khách hàng: Phụ phí sửa chữa, công di chuyển (chọn từ danh mục bên dưới) sẽ do khách hàng thanh toán 100%.
                     </p>
                   )}
                 </div>
@@ -441,25 +441,25 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
           {/* FORM NGHIỆM THU & GIẢI QUYẾT: Cho phép khi Đang xử lý hoặc Mới được giao */}
           {(isInProgress || isPending) && (
             <form onSubmit={handleResolveSubmit} className="space-y-5 pt-2 border-t border-slate-200">
-              {/* 1. DANH MỤC PHỤ PHÍ TỪ BOM (CHECKBOX MULTI-SELECT) */}
+              {/* 1. DANH MỤC PHỤ PHÍ NIÊM YẾT */}
               <div className="space-y-2.5 p-4 rounded-xl border border-slate-200 bg-slate-50/70">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
                     <Receipt className="w-4 h-4 text-teal-600" />
-                    <span>Danh mục phụ phí phát sinh (Biểu phí BOM)</span>
+                    <span>Danh mục phụ phí phát sinh</span>
                   </label>
                   <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-semibold">
                     {selectedFeeIds.length} khoản đã chọn
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500">
-                  Chọn các khoản phụ phí tương ứng nếu sự cố có phát sinh vật tư, thay khóa cơ, vệ sinh hoặc sửa chữa theo bảng giá BOM.
+                  Chọn các khoản phụ phí tương ứng nếu sự cố có phát sinh vật tư, thay khóa cơ, vệ sinh hoặc sửa chữa theo bảng giá niêm yết.
                 </p>
 
                 {loadingSurcharges ? (
                   <div className="flex items-center justify-center py-4 text-xs text-slate-500 gap-2">
                     <Loader2 className="w-4 h-4 animate-spin text-teal-600" />
-                    <span>Đang tải biểu phí BOM...</span>
+                    <span>Đang tải biểu phí niêm yết...</span>
                   </div>
                 ) : allSurcharges.length === 0 ? (
                   <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800">
@@ -523,7 +523,6 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
                     <AlertTriangle className="w-4 h-4 text-amber-600" />
                     <span>Phân định trách nhiệm sự cố *</span>
                   </label>
-                  <span className="text-[11px] text-slate-500">Quy tắc BR-SUP-02</span>
                 </div>
                 <p className="text-[11px] text-slate-500">
                   Nhân viên hiện trường bắt buộc chọn 1 trong 2 nút bên dưới để xác định trách nhiệm chi trả.
@@ -597,7 +596,7 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
                     <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
                     <div className="space-y-1">
                       <div className="font-bold text-emerald-900">
-                        100% Chi phí do công ty chi trả (Quy tắc BR-SUP-02)
+                        100% Chi phí do công ty chi trả
                       </div>
                       <p className="text-[11px] text-emerald-800 leading-relaxed">
                         Khách hàng <strong>hoàn toàn không phải chịu bất kỳ khoản phí nào (0 VNĐ)</strong>. Toàn bộ chi phí vật tư, thay khóa hoặc sửa chữa sẽ do công ty thanh toán vào chi phí bảo dưỡng cơ sở.
@@ -637,7 +636,7 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
                           </span>
                         )}
                         <p className="text-[11px] text-rose-600 mt-0.5 font-normal leading-relaxed">
-                          * Nhân viên bắt buộc thu đủ tiền (tiền mặt / chuyển khoản) và tick xác nhận vào ô này mới có thể hoàn tất nghiệm thu sự cố.
+                          * Nhân viên bắt buộc thu đủ tiền (tiền mặt / chuyển khoản) và đánh dấu xác nhận vào ô này mới có thể hoàn tất nghiệm thu sự cố.
                         </p>
                       </div>
                     </label>
@@ -681,7 +680,7 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
                   />
                   <span>
                     Tôi xác nhận đã hoàn tất khắc phục sự cố tại hiện trường theo đúng quy trình bàn
-                    giao (US-FS-05.2) và chịu trách nhiệm về thông tin ghi chú.
+                    giao và chịu trách nhiệm về thông tin ghi chú.
                   </span>
                 </label>
               </div>

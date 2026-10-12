@@ -78,7 +78,7 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
               Ma Trận So Sánh Hiệu Quả & Doanh Thu Từng Cơ Sở
             </h3>
             <p className="text-xs text-slate-500">
-              Đa chiều theo Facility, Unit Type và trạng thái dòng tiền (US-BM-05.1 AC-1)
+              Đa chiều theo cơ sở, loại ô kho và trạng thái dòng tiền
             </p>
           </div>
         </div>

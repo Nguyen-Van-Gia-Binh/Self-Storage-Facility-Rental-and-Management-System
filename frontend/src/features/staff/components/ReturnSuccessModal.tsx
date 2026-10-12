@@ -50,7 +50,7 @@ export const ReturnSuccessModal: React.FC<ReturnSuccessModalProps> = ({
           type="button"
           onClick={onClose}
           className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-          title="Đóng popup"
+          title="Đóng hộp thoại"
         >
           <X className="w-5 h-5" />
         </button>
@@ -61,7 +61,7 @@ export const ReturnSuccessModal: React.FC<ReturnSuccessModalProps> = ({
           </div>
           <h2 className="text-xl font-bold text-slate-900">Nghiệm thu trả kho hoàn tất!</h2>
           <p className="text-sm text-slate-500">
-            Biên bản kiểm tra hiện trạng đã được nộp thành công và chuyển đến Facility Manager để phê duyệt quyết toán.
+            Biên bản kiểm tra hiện trạng đã được nộp thành công và chuyển đến Quản lý cơ sở để phê duyệt quyết toán.
           </p>
         </div>
 
@@ -92,7 +92,7 @@ export const ReturnSuccessModal: React.FC<ReturnSuccessModalProps> = ({
           </p>
           <ul className="list-disc list-inside space-y-0.5 text-teal-700 pl-1">
             <li>Mã mở cửa của khách đã được vô hiệu hóa tức thì.</li>
-            <li>Ô kho chuyển sang trạng thái <b>CLEANING</b> chờ dọn dẹp.</li>
+            <li>Ô kho chuyển sang trạng thái <b>Đang vệ sinh</b> chờ dọn dẹp.</li>
             <li>Tiền cọc sẽ được chuyển khoản về tài khoản gốc trong <b>7 ngày làm việc</b>.</li>
           </ul>
         </div>

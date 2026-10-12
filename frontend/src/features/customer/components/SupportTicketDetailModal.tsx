@@ -69,7 +69,7 @@ export function parseResolutionNote(rawNote?: string): ResolutionReportInfo {
 
   if (isCompany) {
     faultParty = 'COMPANY';
-    faultPartyLabel = 'Lỗi do phía công ty / thiết bị cơ sở (BR-SUP-02)';
+    faultPartyLabel = 'Lỗi do phía công ty / thiết bị cơ sở';
     totalCollected = '0 đ (Miễn phí 100%)';
     isPaidFully = true;
   } else if (isCustomer) {
@@ -211,7 +211,7 @@ export const SupportTicketDetailModal: React.FC<SupportTicketDetailModalProps> =
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-brand-600" />
-                Tiến trình xử lý vé (SLA & Timeline)
+                Tiến trình xử lý yêu cầu
               </span>
               <span className="text-[11px] text-slate-500">
                 Cập nhật lần cuối: {new Date(ticket.updatedAt || ticket.createdAt).toLocaleString('vi-VN')}
@@ -344,7 +344,7 @@ export const SupportTicketDetailModal: React.FC<SupportTicketDetailModalProps> =
                     {ticket.assignedStaffName}
                   </p>
                   <p className="text-xs text-slate-500">
-                    Trực ban tại quầy Staff Desk (Facility Staff)
+                    Nhân viên vận hành tại cơ sở
                   </p>
                 </div>
               </div>
@@ -375,7 +375,7 @@ export const SupportTicketDetailModal: React.FC<SupportTicketDetailModalProps> =
                       Biên bản nghiệm thu & Khắc phục sự cố
                     </h5>
                     <p className="text-[11px] text-emerald-700 font-medium">
-                      Ghi nhận chính thức từ nhân viên kỹ thuật cơ sở (US-FS-05.2)
+                      Ghi nhận chính thức từ nhân viên kỹ thuật cơ sở
                     </p>
                   </div>
                 </div>
@@ -420,9 +420,9 @@ export const SupportTicketDetailModal: React.FC<SupportTicketDetailModalProps> =
                         </p>
                         <p className="text-[11px] mt-1 text-slate-600 leading-relaxed">
                           {resInfo.faultParty === 'COMPANY'
-                            ? 'Theo quy định BR-SUP-02, 100% chi phí kiểm tra và linh kiện do công ty chi trả. Khách hàng không phải chịu bất kỳ khoản phí nào.'
+                            ? '100% chi phí kiểm tra và linh kiện do công ty chi trả. Khách hàng không phải chịu bất kỳ khoản phí nào.'
                             : resInfo.faultParty === 'CUSTOMER'
-                            ? 'Sự cố phát sinh từ thao tác sử dụng của khách hàng. Các phụ phí vật tư/thay thế được áp dụng theo biểu phí BOM niêm yết.'
+                            ? 'Sự cố phát sinh từ thao tác sử dụng của khách hàng. Các phụ phí vật tư/thay thế được áp dụng theo biểu phí niêm yết.'
                             : 'Nhân viên kỹ thuật cơ sở đã trực tiếp đến kiểm tra, sửa chữa và nghiệm thu hoạt động bình thường.'}
                         </p>
                       </div>

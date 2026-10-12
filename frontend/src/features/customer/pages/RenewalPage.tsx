@@ -997,7 +997,7 @@ export const RenewalPage: React.FC = () => {
             {import.meta.env.DEV && (
               <div className="p-4 rounded-xl bg-slate-50 border-2 border-dashed border-slate-300 space-y-3">
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
-                  <span>🧪 Môi trường Thử nghiệm (Sandbox Payment)</span>
+                  <span>🧪 Môi trường Thử nghiệm Thanh toán</span>
                 </div>
                 <div className="flex flex-wrap gap-2.5">
                   <Button

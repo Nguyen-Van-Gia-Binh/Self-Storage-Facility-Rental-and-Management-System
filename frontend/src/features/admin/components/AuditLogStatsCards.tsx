@@ -34,7 +34,7 @@ export const AuditLogStatsCards: React.FC<AuditLogStatsCardsProps> = ({ stats, l
             <span className="text-2xl font-bold text-gray-900">{stats.totalActivities.toLocaleString('vi-VN')}</span>
             <span className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">Toàn hệ thống</span>
           </div>
-          <p className="text-xs text-gray-400 mt-1">Phục vụ kiểm toán SA-04</p>
+          <p className="text-xs text-gray-400 mt-1">Phục vụ kiểm toán hệ thống</p>
         </div>
         <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
           <Activity className="w-6 h-6" />

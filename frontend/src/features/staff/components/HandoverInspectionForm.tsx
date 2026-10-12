@@ -177,7 +177,7 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
             )}
             <div className="text-xs">
               <span className="font-bold block">Hệ thống khóa thông minh sẵn sàng</span>
-              <span className="text-slate-500">Đèn hành lang sáng tốt, bàn phím số IoT hoạt động bình thường</span>
+              <span className="text-slate-500">Đèn hành lang sáng tốt, bàn phím số thông minh hoạt động bình thường</span>
             </div>
           </div>
         </div>
@@ -207,7 +207,7 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
         />
       </div>
 
-      {/* Khung ký số điện tử (BR-CHK-03) */}
+      {/* Khung ký số điện tử */}
       <div className="space-y-2 pt-2 border-t border-slate-100">
         <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
           3. Chữ ký số xác nhận của khách hàng
@@ -235,9 +235,9 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
         </div>
       </div>
 
-      {/* Action Buttons Bar (FS-01, FS-02) */}
+      {/* Thanh nút thao tác */}
       <div className="bg-slate-50/80 -mx-5 -mb-5 p-4 rounded-b-2xl border-t border-slate-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        {/* Nút báo sự cố ngoại lệ (BR-CHK-06) */}
+        {/* Nút báo sự cố ngoại lệ */}
         <button
           type="button"
           onClick={onOpenRejectionModal}

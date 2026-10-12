@@ -58,7 +58,7 @@ export const FacilityContractsReportTable: React.FC<Props> = ({ contracts, loadi
         <div>
           <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <FileText className="w-5 h-5 text-indigo-600" />
-            Tra cứu hợp đồng & danh sách sắp hết hạn (FM-06)
+            Tra cứu hợp đồng & danh sách sắp hết hạn
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
             Theo dõi tình trạng hợp đồng thuê thực tế để chủ động liên hệ gia hạn hoặc điều phối trả kho

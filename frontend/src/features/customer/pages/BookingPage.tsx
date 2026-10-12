@@ -1228,8 +1228,8 @@ export const BookingPage: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <span className="text-sm">🧪</span>
                     <div>
-                      <div className="text-xs font-bold text-amber-900">Môi trường Thử nghiệm (Sandbox Payment)</div>
-                      <div className="text-[11px] text-amber-800/80">Dùng để test demo chuyển khoản nhanh không cần tiền thật</div>
+                      <div className="text-xs font-bold text-amber-900">Môi trường Thử nghiệm Thanh toán</div>
+                      <div className="text-[11px] text-amber-800/80">Dùng để kiểm thử chuyển khoản nhanh không cần tiền thật</div>
                     </div>
                   </div>
                   

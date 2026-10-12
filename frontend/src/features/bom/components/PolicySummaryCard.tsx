@@ -62,7 +62,7 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Ngày bắt đầu áp dụng: <span className="font-medium text-slate-700">{policy.effectiveDate ? formatDay(policy.effectiveDate) : '—'}</span> (BM-02 / BM-03)
+              Ngày bắt đầu áp dụng: <span className="font-medium text-slate-700">{policy.effectiveDate ? formatDay(policy.effectiveDate) : '—'}</span>
             </p>
             {scheduledPolicy && (
               <p className="text-xs text-amber-700 mt-1">
@@ -82,7 +82,7 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
           <div className="flex items-center space-x-2 text-amber-600">
             <ShieldCheck className="w-5 h-5" />
-            <h4 className="font-bold text-sm text-slate-900">Quy định tiền cọc (Deposit)</h4>
+            <h4 className="font-bold text-sm text-slate-900">Quy định tiền cọc</h4>
           </div>
           <p className="text-2xl font-black text-amber-600">
             {policy.depositMultiplier} × tháng tiền thuê
@@ -92,26 +92,26 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
           </p>
         </div>
 
-        {/* Giữ chỗ & Check-in */}
+        {/* Giữ chỗ & Nhận kho */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
           <div className="flex items-center space-x-2 text-blue-600">
             <Clock className="w-5 h-5" />
-            <h4 className="font-bold text-sm text-slate-900">Thời hạn giữ chỗ & Check-in</h4>
+            <h4 className="font-bold text-sm text-slate-900">Thời hạn giữ chỗ & Nhận kho</h4>
           </div>
           <div className="flex items-baseline space-x-2">
             <span className="text-2xl font-black text-blue-600">
               {policy.reservationHoldHours} giờ
             </span>
             <span className="text-xs text-slate-500 font-medium">
-              (Ân hạn check-in: +{policy.checkinGraceDays} ngày)
+              (Ân hạn nhận kho: +{policy.checkinGraceDays} ngày)
             </span>
           </div>
           <p className="text-xs text-slate-500">
-            Tạm giữ chỗ ô kho {policy.reservationHoldHours} giờ để hoàn tất thanh toán, ân hạn {policy.checkinGraceDays} ngày tiếp đón trước khi chuyển No-Show.
+            Tạm giữ chỗ ô kho {policy.reservationHoldHours} giờ để hoàn tất thanh toán, ân hạn {policy.checkinGraceDays} ngày tiếp đón trước khi hủy do vắng mặt.
           </p>
         </div>
 
-        {/* Xử lý Quá hạn (Overdue) */}
+        {/* Xử lý Quá hạn */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
           <div className="flex items-center space-x-2 text-rose-600">
             <AlertTriangle className="w-5 h-5" />
@@ -130,7 +130,7 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
           </p>
         </div>
 
-        {/* Hủy đặt chỗ (Cancellation) */}
+        {/* Hủy đặt chỗ */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
           <div className="flex items-center space-x-2 text-purple-600">
             <RefreshCw className="w-5 h-5" />
@@ -144,12 +144,12 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
           </p>
         </div>
 
-        {/* Thời hạn khóa quyền gia hạn (Renewal Cutoff) — BR-REN-02 */}
+        {/* Thời hạn khóa quyền gia hạn */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
           <div className="flex items-center space-x-2 text-emerald-600">
             <RefreshCw className="w-5 h-5" />
             <h4 className="font-bold text-sm text-slate-900">
-              Thời hạn khóa quyền gia hạn (Renewal Cutoff)
+              Thời hạn khóa quyền gia hạn
             </h4>
           </div>
           <p className="text-2xl font-black text-emerald-600">
@@ -162,7 +162,7 @@ export const PolicySummaryCard: React.FC<PolicySummaryCardProps> = ({
           </p>
         </div>
 
-        {/* Quy định trả kho (Return) — BR-RET-06: linh hoạt, không bắt báo trước */}
+        {/* Quy định trả kho */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
           <div className="flex items-center space-x-2 text-teal-600">
             <ShieldCheck className="w-5 h-5" />

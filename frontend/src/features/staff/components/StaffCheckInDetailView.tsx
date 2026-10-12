@@ -85,7 +85,7 @@ export const StaffCheckInDetailView: React.FC<StaffCheckInDetailViewProps> = ({
     loadContractDetail();
   }, [loadContractDetail]);
 
-  // Nộp biên bản nghiệm thu bàn giao & kích hoạt mã PIN (Happy Path)
+  // Nộp biên bản nghiệm thu bàn giao & kích hoạt mã PIN
   const handleHandoverSubmit = async (request: CheckInSubmitRequest) => {
     if (!contract) return;
     setIsSubmitting(true);
@@ -93,7 +93,7 @@ export const StaffCheckInDetailView: React.FC<StaffCheckInDetailViewProps> = ({
       const res = await checkInContract(contract.id, request, staffId);
       setCurrentPin(res.accessCode);
       setIsPinModalOpen(true);
-      showToast('success', `Bàn giao thành công ô kho ${contract.storageUnitCode}. Hợp đồng đã kích hoạt ACTIVE.`);
+      showToast('success', `Bàn giao thành công ô kho ${contract.storageUnitCode}. Hợp đồng đã được kích hoạt.`);
 
       setContract((prev) =>
         prev
@@ -109,7 +109,7 @@ export const StaffCheckInDetailView: React.FC<StaffCheckInDetailViewProps> = ({
     }
   };
 
-  // Từ chối nhận bàn giao / Báo hỏng (BR-CHK-06)
+  // Từ chối nhận bàn giao / Báo hỏng
   const handleRejectionConfirm = async (reason: string, reportedDefects: string) => {
     if (!contract) return;
     setIsSubmitting(true);

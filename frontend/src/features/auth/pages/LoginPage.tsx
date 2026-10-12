@@ -200,7 +200,7 @@ export const LoginPage: React.FC = () => {
                 <Thermometer className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-white">Kho Máy Lạnh Climate-Controlled</h4>
+                <h4 className="text-sm font-semibold text-white">Kho Máy Lạnh Tiêu Chuẩn</h4>
                 <p className="text-xs text-slate-300 mt-0.5">Duy trì nhiệt độ và độ ẩm chuẩn xác, bảo vệ tối đa hàng hóa.</p>
               </div>
             </div>
@@ -211,7 +211,7 @@ export const LoginPage: React.FC = () => {
               </div>
               <div>
                 <h4 className="text-sm font-semibold text-white">Phân Quyền Chi Nhánh Chặt Chẽ</h4>
-                <p className="text-xs text-slate-300 mt-0.5">Cách ly dữ liệu từng cơ sở (SA-03), kiểm soát truy cập tuyệt đối.</p>
+                <p className="text-xs text-slate-300 mt-0.5">Cách ly dữ liệu từng cơ sở, kiểm soát truy cập tuyệt đối.</p>
               </div>
             </div>
           </div>

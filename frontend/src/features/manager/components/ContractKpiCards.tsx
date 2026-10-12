@@ -71,11 +71,11 @@ export const ContractKpiCards: React.FC<ContractKpiCardsProps> = ({
         </div>
         <div className="mt-2 flex items-baseline gap-2">
           <span className="text-2xl font-bold text-slate-800">{kpi.pendingCheckInCount}</span>
-          <span className="text-xs text-slate-700">lượt check-in</span>
+          <span className="text-xs text-slate-700">lượt nhận kho</span>
         </div>
         <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
           <span className="text-blue-800 font-medium">
-            Ân hạn nhận kho {checkinGraceDays ?? '…'} ngày (BR-CAN-04)
+            Ân hạn nhận kho {checkinGraceDays ?? '…'} ngày
           </span>
         </div>
       </div>

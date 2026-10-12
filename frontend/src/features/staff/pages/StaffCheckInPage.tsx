@@ -134,7 +134,7 @@ export const StaffCheckInPage: React.FC = () => {
       const res = await checkInContract(selectedContract.id, request, staffId);
       setCurrentPin(res.accessCode);
       setIsPinModalOpen(true);
-      showToast('success', `Bàn giao thành công ô kho ${selectedContract.storageUnitCode}. Hợp đồng đã kích hoạt ACTIVE.`);
+      showToast('success', `Bàn giao thành công ô kho ${selectedContract.storageUnitCode}. Hợp đồng đã được kích hoạt.`);
 
       // Cập nhật lại danh sách trên UI
       setContracts((prev) =>
@@ -161,7 +161,7 @@ export const StaffCheckInPage: React.FC = () => {
     }
   };
 
-  // Xử lý từ chối nhận kho / Báo hỏng (Exception Path theo BR-CHK-06)
+  // Xử lý từ chối nhận kho / Báo hỏng
   const handleRejectionConfirm = async (reason: string, reportedDefects: string) => {
     if (!selectedContract) return;
 
@@ -173,7 +173,7 @@ export const StaffCheckInPage: React.FC = () => {
       };
       await rejectHandoverContract(selectedContract.id, req, staffId);
       setIsRejectionModalOpen(false);
-      showToast('error', `Đã khóa ô kho ${selectedContract.storageUnitCode} sang MAINTENANCE và hủy lượt bàn giao.`);
+      showToast('error', `Đã khóa ô kho ${selectedContract.storageUnitCode} sang trạng thái Bảo trì và hủy lượt bàn giao.`);
 
       // Cập nhật lại danh sách trên UI
       setContracts((prev) =>
@@ -235,14 +235,14 @@ export const StaffCheckInPage: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200">
-                Check-in & Tiếp Đón
+                Tiếp đón & Bàn giao
               </span>
               <span className="text-xs text-slate-400">•</span>
               <span className="text-xs text-slate-500 font-medium">Bàn giao & Ký số điện tử</span>
             </div>
             <h1 className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight mt-0.5 flex items-center gap-2">
               <KeyRound className="w-5 h-5 sm:w-6 sm:h-6 text-teal-600" />
-              Bàn Giao Kho & Tiếp Đón Check-in
+              Bàn Giao Kho & Tiếp Đón Khách Hàng
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
               Xác minh danh tính khách, đối soát thanh toán 100%, nghiệm thu hiện trạng mặt bằng và kích hoạt mã PIN mở cửa 24/7.
@@ -250,7 +250,7 @@ export const StaffCheckInPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Thanh công cụ cơ sở & làm mới (FS-01, FS-02) */}
+        {/* Thanh công cụ cơ sở & làm mới */}
         <div className="flex items-center gap-2.5">
           <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100/80 rounded-xl border border-slate-200 text-xs text-slate-700">
             <Building2 className="w-4 h-4 text-slate-500 shrink-0" />
@@ -297,12 +297,12 @@ export const StaffCheckInPage: React.FC = () => {
         <div className="lg:col-span-7 space-y-4">
           {selectedContract ? (
             <>
-              {/* Banner phân công nhiệm vụ Check-in */}
+              {/* Banner phân công nhiệm vụ tiếp đón */}
               {Number(selectedContract.assignedStaffId) === staffId ? (
                 <div className="bg-emerald-50 border border-emerald-300 rounded-xl px-4 py-3 flex items-center gap-2.5 text-xs text-emerald-900 font-medium shadow-xs">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span>
-                    Đơn check-in này đã được Quản lý phân công đích danh cho bạn ({<strong>{user?.fullName || 'Nhân viên'}</strong>}). Vui lòng tiến hành tiếp đón khách hàng và thực hiện thủ tục bàn giao.
+                    Đơn tiếp đón này đã được Quản lý phân công đích danh cho bạn ({<strong>{user?.fullName || 'Nhân viên'}</strong>}). Vui lòng tiến hành tiếp đón khách hàng và thực hiện thủ tục bàn giao.
                   </span>
                 </div>
               ) : selectedContract.assignedStaffName ? (
@@ -324,7 +324,7 @@ export const StaffCheckInPage: React.FC = () => {
                     <CheckCircle2 className="w-7 h-7" />
                   </div>
                   <h3 className="text-base font-bold text-emerald-900">
-                    HỢP ĐỒNG ĐÃ ĐƯỢC BÀN GIAO & KÍCH HOẠT (ACTIVE)
+                    HỢP ĐỒNG ĐÃ ĐƯỢC BÀN GIAO & KÍCH HOẠT
                   </h3>
                   <p className="text-xs text-emerald-800 max-w-md mx-auto leading-relaxed">
                     Khách hàng <strong className="text-emerald-950">{selectedContract.customerName}</strong> đã nhận bàn giao ô kho <strong className="font-mono text-emerald-950">{selectedContract.storageUnitCode}</strong>. Khách có thể dùng mã PIN hoặc mã QR trên điện thoại để ra vào cơ sở bất kỳ lúc nào.
@@ -347,7 +347,7 @@ export const StaffCheckInPage: React.FC = () => {
                     LƯỢT BÀN GIAO ĐÃ BỊ HỦY BỎ DO PHÁT SINH SỰ CỐ
                   </h3>
                   <p className="text-xs text-red-800 max-w-md mx-auto leading-relaxed">
-                    Ô kho <strong className="font-mono text-red-950">{selectedContract.storageUnitCode}</strong> đã được chuyển sang trạng thái <strong>MAINTENANCE</strong> (Bảo trì). Lệnh hoàn tiền 100% đã được gửi sang Quản lý cơ sở (FM) để hoàn tất trong 3 ngày làm việc theo quy định bồi hoàn của cơ sở.
+                    Ô kho <strong className="font-mono text-red-950">{selectedContract.storageUnitCode}</strong> đã được chuyển sang trạng thái <strong>Bảo trì</strong>. Lệnh hoàn tiền 100% đã được gửi sang Quản lý cơ sở để hoàn tất trong 3 ngày làm việc theo quy định bồi hoàn của cơ sở.
                   </p>
                 </div>
               ) : (
