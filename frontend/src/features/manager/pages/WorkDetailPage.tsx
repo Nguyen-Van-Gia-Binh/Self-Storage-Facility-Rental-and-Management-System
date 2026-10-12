@@ -304,18 +304,6 @@ export const WorkDetailPage: React.FC = () => {
               <span className="text-slate-500">Giờ thực hiện:</span>
               <span className="font-medium text-slate-700">{task.scheduledTime}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500">Mức độ ưu tiên:</span>
-              <span
-                className={`font-bold px-2 py-0.5 rounded text-[10px] ${
-                  task.isUrgent
-                    ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                    : 'bg-slate-100 text-slate-700'
-                }`}
-              >
-                {task.isUrgent ? 'Khẩn cấp' : 'Bình thường'}
-              </span>
-            </div>
             <div className="flex justify-between pt-1 border-t border-slate-100">
               <span className="text-slate-500">Ghi chú yêu cầu:</span>
               <span className="font-medium text-slate-700 text-right max-w-xs">{task.notes}</span>

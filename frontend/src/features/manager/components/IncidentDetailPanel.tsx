@@ -9,7 +9,6 @@ import {
 import type { ManagementSupportTicket } from '../types/staffAssignment';
 import { StatusBadge } from './StatusBadge';
 import { TypeBadge } from './TypeBadge';
-import { PriorityBadge } from './PriorityBadge';
 import { ImageGallery } from './ImageGallery';
 
 interface IncidentDetailPanelProps {
@@ -43,7 +42,6 @@ export const IncidentDetailPanel: React.FC<IncidentDetailPanelProps> = ({ ticket
               <span className="font-mono font-bold text-base text-slate-900">
                 #{ticket.code}
               </span>
-              <PriorityBadge isUrgent={ticket.isUrgent} />
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
               Báo cáo lúc {formatDate(ticket.createdAt)}

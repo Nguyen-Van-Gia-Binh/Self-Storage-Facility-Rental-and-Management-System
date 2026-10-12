@@ -81,7 +81,7 @@ export const SlaCountdownBadge: React.FC<SlaCountdownBadgeProps> = ({
     return (
       <span
         className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-black bg-rose-100 text-rose-800 border border-rose-300 animate-pulse ${className}`}
-        title="Sắp hết hạn SLA - Cần giải quyết khẩn cấp!"
+        title="Sắp hết hạn SLA - Cần xử lý sớm!"
       >
         <span className="w-2 h-2 rounded-full bg-rose-600 animate-ping shrink-0" />
         <Clock className="w-3 h-3 text-rose-700 shrink-0" />
