@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { ClipboardCheck, CheckSquare, Square, Camera, AlertOctagon, KeyRound, Sparkles, Check } from 'lucide-react';
+import { ClipboardCheck, CheckSquare, Square, AlertOctagon, KeyRound, Sparkles, Check } from 'lucide-react';
 import type { CheckInContract, CheckInSubmitRequest } from '../../../types';
 import { SignaturePad } from './SignaturePad';
+import { EvidencePhotoCapture } from './EvidencePhotoCapture';
 import { Button } from '../../../components/ui/Button';
 
 export interface HandoverInspectionFormProps {
@@ -28,7 +29,7 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
   const [conditionNote, setConditionNote] = useState('');
   const [customerConfirmed, setCustomerConfirmed] = useState(false);
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
-  const [attachedPhoto, setAttachedPhoto] = useState<string | null>(null);
+  const [attachedPhotos, setAttachedPhotos] = useState<string[]>([]);
 
   const allCriteriaPassed =
     criteria.cleanAndEmpty &&
@@ -51,12 +52,6 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
       dryWallsFloor: true,
       smartLockReady: true,
     });
-  };
-
-  // Nút nhanh: Tải ảnh mẫu hiện trường kho sạch
-  const handleAddSamplePhoto = () => {
-    // Ảnh mẫu mặt bằng kho sạch (kho mini hiện đại)
-    setAttachedPhoto('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&auto=format&fit=crop&q=80');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -188,14 +183,14 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
         </div>
       </div>
 
-      {/* Ghi chú & Đính kèm ảnh thực tế */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="md:col-span-2 space-y-1.5">
+      {/* Ghi chú & Chụp ảnh thực tế bằng Camera */}
+      <div className="space-y-4 pt-2 border-t border-slate-100">
+        <div className="space-y-1.5">
           <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
             2. Ghi chú hiện trạng tại chỗ (Tùy chọn)
           </label>
           <textarea
-            rows={3}
+            rows={2}
             value={conditionNote}
             onChange={(e) => setConditionNote(e.target.value)}
             placeholder="Ví dụ: Ô kho mới sơn lại, sàn sạch bóng, bàn giao kèm 01 chìa khóa cơ dự phòng..."
@@ -203,40 +198,13 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
           />
         </div>
 
-        <div className="space-y-1.5">
-          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-            Ảnh hiện trạng kho
-          </label>
-          {attachedPhoto ? (
-            <div className="relative rounded-xl overflow-hidden border border-slate-200 h-24 group">
-              <img
-                src={attachedPhoto}
-                alt="Ảnh hiện trạng ô kho"
-                className="w-full h-full object-cover"
-              />
-              <button
-                type="button"
-                onClick={() => setAttachedPhoto(null)}
-                className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-1 text-[10px] hover:bg-red-600 transition-colors"
-              >
-                Xóa
-              </button>
-              <span className="absolute bottom-1 left-1.5 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded">
-                Đã đính kèm ảnh
-              </span>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={handleAddSamplePhoto}
-              className="w-full h-24 border-2 border-dashed border-slate-300 rounded-xl flex flex-col items-center justify-center gap-1.5 text-xs text-slate-500 hover:border-brand-500 hover:bg-brand-50/20 transition-all cursor-pointer"
-            >
-              <Camera className="w-5 h-5 text-slate-400" />
-              <span>Chụp / Tải ảnh kho</span>
-              <span className="text-[10px] text-brand-600 font-semibold">(Bấm để thêm ảnh mẫu)</span>
-            </button>
-          )}
-        </div>
+        <EvidencePhotoCapture
+          photos={attachedPhotos}
+          onChange={setAttachedPhotos}
+          maxPhotos={3}
+          label="Ảnh chụp hiện trạng bàn giao kho (Tùy chọn)"
+          helperText="Kích hoạt camera trước của máy tính/điện thoại để chụp trực tiếp hiện trạng bàn giao hoặc tải ảnh từ máy"
+        />
       </div>
 
       {/* Khung ký số điện tử (BR-CHK-03) */}

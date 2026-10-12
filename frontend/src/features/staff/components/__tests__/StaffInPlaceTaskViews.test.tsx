@@ -122,6 +122,35 @@ describe('Staff In-Place Task Views & Full-Screen Detail View Integration', () =
     expect(incidentPageContent).not.toMatch(/Bắt đầu xử lý/);
     expect(resolveModalContent).not.toMatch(/startStaffIncident/);
   });
+
+  it('Tích hợp component chụp ảnh trực tiếp bằng Camera (EvidencePhotoCapture) cho cả 3 luồng Tiếp đón, Nghiệm thu trả kho và Sự cố, xóa bỏ ô dán link https thủ công', () => {
+    const photoCapturePath = path.resolve(
+      process.cwd(),
+      'src/features/staff/components/EvidencePhotoCapture.tsx'
+    );
+    const handoverFormPath = path.resolve(
+      process.cwd(),
+      'src/features/staff/components/HandoverInspectionForm.tsx'
+    );
+    const returnFormPath = path.resolve(
+      process.cwd(),
+      'src/features/staff/components/ReturnInspectionForm.tsx'
+    );
+
+    const photoCaptureContent = fs.readFileSync(photoCapturePath, 'utf-8');
+    const handoverFormContent = fs.readFileSync(handoverFormPath, 'utf-8');
+    const returnFormContent = fs.readFileSync(returnFormPath, 'utf-8');
+    const incidentViewContent = fs.readFileSync(staffIncidentViewPath, 'utf-8');
+
+    expect(photoCaptureContent).toMatch(/getUserMedia/);
+    expect(photoCaptureContent).toMatch(/facingMode/);
+    expect(handoverFormContent).toMatch(/EvidencePhotoCapture/);
+    expect(handoverFormContent).not.toMatch(/Bấm để thêm ảnh mẫu/);
+    expect(returnFormContent).toMatch(/EvidencePhotoCapture/);
+    expect(returnFormContent).not.toMatch(/Đường dẫn ảnh bằng chứng/);
+    expect(incidentViewContent).toMatch(/EvidencePhotoCapture/);
+    expect(incidentViewContent).not.toMatch(/Dán đường dẫn ảnh hiện trường/);
+  });
 });
 
 

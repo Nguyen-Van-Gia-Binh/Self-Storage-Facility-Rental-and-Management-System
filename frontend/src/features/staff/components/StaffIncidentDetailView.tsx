@@ -5,9 +5,6 @@ import {
   CheckCircle2,
   User,
   Phone,
-  Camera,
-  Plus,
-  Trash2,
   Receipt,
   ShieldCheck,
   Loader2,
@@ -22,6 +19,7 @@ import {
 import { fetchSurcharges } from '@/api/pricing';
 import { applyCatalogFee } from '@/api/contract';
 import { feeCategoryLabel } from '@/features/pricing/feeCategory';
+import { EvidencePhotoCapture } from './EvidencePhotoCapture';
 
 export interface StaffIncidentDetailViewProps {
   task: DailyIncidentTask;
@@ -40,7 +38,6 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
 
   // Form states for resolution
   const [resolutionNote, setResolutionNote] = useState<string>(task.resolutionNote || '');
-  const [imageUrlInput, setImageUrlInput] = useState<string>('');
   const [attachmentUrls, setAttachmentUrls] = useState<string[]>(task.resolutionAttachmentUrls || []);
   const [isAgreed, setIsAgreed] = useState<boolean>(false);
   const [needsRelocation, setNeedsRelocation] = useState<boolean>(Boolean(task.relocationRequired));
@@ -131,22 +128,6 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
     } finally {
       setSavingRelocation(false);
     }
-  };
-
-  // Thêm ảnh hiện trường
-  const handleAddImage = () => {
-    if (!imageUrlInput.trim()) return;
-    if (attachmentUrls.length >= 5) {
-      setErrorMsg('Tối đa 5 ảnh hiện trường sau khắc phục');
-      return;
-    }
-    setAttachmentUrls([...attachmentUrls, imageUrlInput.trim()]);
-    setImageUrlInput('');
-    setErrorMsg(null);
-  };
-
-  const handleRemoveImage = (index: number) => {
-    setAttachmentUrls(attachmentUrls.filter((_, i) => i !== index));
   };
 
   // Hoàn tất khắc phục sự cố trực tiếp (1 bước duy nhất)
@@ -576,52 +557,14 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
                 />
               </div>
 
-              {/* Ảnh nghiệm thu hiện trường */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <Camera className="w-4 h-4 text-slate-400" />
-                    <span>3. Ảnh chụp hiện trường sau nghiệm thu (tối đa 5 ảnh)</span>
-                  </span>
-                  <span className="text-[11px] text-slate-400 font-normal">{attachmentUrls.length}/5 ảnh</span>
-                </label>
-
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    value={imageUrlInput}
-                    onChange={(e) => setImageUrlInput(e.target.value)}
-                    placeholder="Dán đường dẫn ảnh hiện trường (https://...)"
-                    className="flex-1 text-xs p-2.5 rounded-xl border border-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition outline-hidden"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddImage}
-                    disabled={!imageUrlInput.trim() || attachmentUrls.length >= 5}
-                    className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Thêm ảnh</span>
-                  </button>
-                </div>
-
-                {attachmentUrls.length > 0 && (
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    {attachmentUrls.map((url, index) => (
-                      <div key={index} className="relative group w-20 h-20 rounded-xl border border-slate-200 overflow-hidden bg-slate-50 shadow-2xs">
-                        <img src={url} alt={`Ảnh ${index + 1}`} className="w-full h-full object-cover" />
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveImage(index)}
-                          className="absolute top-1 right-1 p-1 bg-rose-600 text-white rounded-md opacity-90 hover:opacity-100 transition shadow-xs cursor-pointer"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              {/* Ảnh nghiệm thu hiện trường bằng Camera */}
+              <EvidencePhotoCapture
+                photos={attachmentUrls}
+                onChange={setAttachmentUrls}
+                maxPhotos={5}
+                label="3. Ảnh chụp hiện trường sau nghiệm thu"
+                helperText="Bấm Mở Camera để kích hoạt cam trước chụp trực tiếp hiện trường sau khi khắc phục hoặc tải ảnh từ máy"
+              />
 
               {/* Cam kết của nhân viên */}
               <div className="pt-2 border-t border-slate-100 flex items-start gap-2.5">

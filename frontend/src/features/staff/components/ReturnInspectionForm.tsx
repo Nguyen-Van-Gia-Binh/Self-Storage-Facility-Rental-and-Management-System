@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import type { ReturnContractDetail, InspectionCondition, ReturnInspectionRequest, SurchargeItem } from '@/types';
 import { SignaturePad } from './SignaturePad';
+import { EvidencePhotoCapture } from './EvidencePhotoCapture';
 import { SettlementPreviewCard } from './SettlementPreviewCard';
 import { fetchSurcharges } from '@/api/pricing';
 import { catalogLineAmount, feeCategoryLabel } from '@/features/pricing/feeCategory';
@@ -32,7 +33,7 @@ export const ReturnInspectionForm: React.FC<ReturnInspectionFormProps> = ({
   const [damageNotes, setDamageNotes] = useState('');
   const [catalogFees, setCatalogFees] = useState<SurchargeItem[]>([]);
   const [selectedFeeIds, setSelectedFeeIds] = useState<number[]>([]);
-  const [evidenceUrl, setEvidenceUrl] = useState('');
+  const [evidencePhotos, setEvidencePhotos] = useState<string[]>([]);
   const [signatureData, setSignatureData] = useState<string | null>(null);
   const [customerAgreed, setCustomerAgreed] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
@@ -69,7 +70,6 @@ export const ReturnInspectionForm: React.FC<ReturnInspectionFormProps> = ({
     if (newCondition === 'GOOD') {
       setSelectedFeeIds([]);
       setDamageNotes('');
-      setEvidenceUrl('');
     }
   };
 
@@ -87,8 +87,8 @@ export const ReturnInspectionForm: React.FC<ReturnInspectionFormProps> = ({
         setErrorMessage('Chọn khoản vệ sinh hoặc bồi thường đang hiệu lực trong danh mục.');
         return;
       }
-      if (!evidenceUrl.trim()) {
-        setErrorMessage('Bắt buộc có ít nhất một ảnh bằng chứng.');
+      if (evidencePhotos.length === 0) {
+        setErrorMessage('Bắt buộc có ít nhất một ảnh bằng chứng hiện trường.');
         return;
       }
     }
@@ -115,7 +115,7 @@ export const ReturnInspectionForm: React.FC<ReturnInspectionFormProps> = ({
       damageNotes: condition !== 'GOOD' ? damageNotes : undefined,
       damageCost: 0,
       extraFeeTypeIds: condition !== 'GOOD' ? selectedFeeIds : [],
-      evidenceImageUrls: condition !== 'GOOD' ? evidenceUrl : undefined,
+      evidenceImageUrls: evidencePhotos.length > 0 ? evidencePhotos[0] : undefined,
       customerConfirmed: customerAgreed,
       signatureDataUrl: signatureData || undefined,
     };
@@ -305,21 +305,24 @@ export const ReturnInspectionForm: React.FC<ReturnInspectionFormProps> = ({
                 </div>
               )}
             </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Đường dẫn ảnh bằng chứng <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={evidenceUrl}
-                onChange={(e) => setEvidenceUrl(e.target.value)}
-                placeholder="https://..."
-                className="w-full text-sm rounded-lg border border-slate-300 p-2.5 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
-              />
-            </div>
           </div>
         )}
+
+        {/* Chụp ảnh hiện trạng bằng chứng khi trả kho */}
+        <div className="pt-3 border-t border-slate-100">
+          <EvidencePhotoCapture
+            photos={evidencePhotos}
+            onChange={setEvidencePhotos}
+            maxPhotos={3}
+            required={condition !== 'GOOD'}
+            label={
+              condition !== 'GOOD'
+                ? 'Ảnh chụp bằng chứng hư hại hiện trường (Bắt buộc)'
+                : 'Ảnh chụp hiện trạng bàn giao trả kho (Tùy chọn)'
+            }
+            helperText="Bấm Mở Camera để kích hoạt cam trước chụp ảnh hiện trạng kho trực tiếp hoặc chọn ảnh từ máy"
+          />
+        </div>
       </div>
 
       {/* 3. Bảng tính quyết toán hoàn cọc trực quan */}

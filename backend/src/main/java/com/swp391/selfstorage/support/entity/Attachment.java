@@ -21,7 +21,7 @@ public class Attachment {
     @Column(name = "entity_id", nullable = false)
     private Long entityId;
 
-    @Column(name = "file_url", nullable = false, length = 500)
+    @Column(name = "file_url", nullable = false, columnDefinition = "NVARCHAR(MAX)")
     private String fileUrl;
 
     @Column(name = "uploaded_by", nullable = false)

@@ -13,8 +13,6 @@ import {
   FileText,
   Loader2,
   ExternalLink,
-  Plus,
-  Trash2,
   Receipt,
 } from 'lucide-react';
 import type { DailyIncidentTask, SurchargeItem } from '@/types';
@@ -22,6 +20,7 @@ import { resolveStaffIncident, markStaffIncidentRelocation } from '@/api/staff';
 import { fetchSurcharges } from '@/api/pricing';
 import { applyCatalogFee } from '@/api/contract';
 import { feeCategoryLabel } from '@/features/pricing/feeCategory';
+import { EvidencePhotoCapture } from './EvidencePhotoCapture';
 
 interface StaffResolveIncidentModalProps {
   isOpen: boolean;
@@ -41,7 +40,6 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
 
   // Form states for resolution
   const [resolutionNote, setResolutionNote] = useState('');
-  const [imageUrlInput, setImageUrlInput] = useState('');
   const [attachmentUrls, setAttachmentUrls] = useState<string[]>([]);
   const [isAgreed, setIsAgreed] = useState(false);
   const [needsRelocation, setNeedsRelocation] = useState(false);
@@ -61,7 +59,6 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
       setErrorMsg(null);
       setResolutionNote(ticket.resolutionNote || '');
       setAttachmentUrls(ticket.resolutionAttachmentUrls || []);
-      setImageUrlInput('');
       setIsAgreed(false);
       setNeedsRelocation(Boolean(ticket.relocationRequired));
       setSelectedFeeIds([]);
@@ -129,22 +126,6 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
     } finally {
       setSavingRelocation(false);
     }
-  };
-
-  // Thêm ảnh nghiệm thu vào danh sách
-  const handleAddImage = () => {
-    if (!imageUrlInput.trim()) return;
-    if (attachmentUrls.length >= 5) {
-      setErrorMsg('Tối đa 5 ảnh hiện trường sau khắc phục');
-      return;
-    }
-    setAttachmentUrls([...attachmentUrls, imageUrlInput.trim()]);
-    setImageUrlInput('');
-    setErrorMsg(null);
-  };
-
-  const handleRemoveImage = (index: number) => {
-    setAttachmentUrls(attachmentUrls.filter((_, i) => i !== index));
   };
 
   // Hoàn tất khắc phục sự cố trực tiếp (1 bước duy nhất)
@@ -654,53 +635,14 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
                 />
               </div>
 
-              {/* 4. TẢI / NHẬP LINK ẢNH NGHIỆM THU */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-800 flex items-center justify-between">
-                  <span>Ảnh chụp nghiệm thu sau khắc phục (Tối đa 5 ảnh)</span>
-                  <span className="text-[11px] font-normal text-slate-400">
-                    {attachmentUrls.length}/5 ảnh
-                  </span>
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    value={imageUrlInput}
-                    onChange={(e) => setImageUrlInput(e.target.value)}
-                    placeholder="Dán link ảnh chụp (ví dụ: https://...)"
-                    className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-teal-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddImage}
-                    disabled={!imageUrlInput.trim() || attachmentUrls.length >= 5}
-                    className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1 transition disabled:opacity-40"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Thêm ảnh
-                  </button>
-                </div>
-
-                {/* Danh sách ảnh đã thêm */}
-                {attachmentUrls.length > 0 && (
-                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 pt-1">
-                    {attachmentUrls.map((url, i) => (
-                      <div
-                        key={i}
-                        className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 group bg-slate-100"
-                      >
-                        <img src={url} alt="Nghiệm thu" className="w-full h-full object-cover" />
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveImage(i)}
-                          className="absolute top-1 right-1 p-1 rounded-md bg-rose-600 text-white opacity-90 hover:opacity-100 transition"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              {/* 4. CHỤP / TẢI ẢNH NGHIỆM THU BẰNG CAMERA */}
+              <EvidencePhotoCapture
+                photos={attachmentUrls}
+                onChange={setAttachmentUrls}
+                maxPhotos={5}
+                label="Ảnh chụp nghiệm thu sau khắc phục"
+                helperText="Bấm Mở Camera để kích hoạt cam trước chụp trực tiếp hiện trường hoặc chọn ảnh từ máy"
+              />
 
               {/* 5. CAM KẾT QUY TRÌNH BÀN GIAO */}
               <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200/80 text-xs text-amber-800">
