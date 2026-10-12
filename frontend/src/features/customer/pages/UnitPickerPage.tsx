@@ -29,6 +29,22 @@ function formatDateVN(dateStr: string): string {
   return dateStr;
 }
 
+// Hàm nhận diện loại kho máy lạnh chuẩn xác theo mã, tên và mô tả công năng
+export function isClimateUnitType(ut: { code?: string; name?: string; description?: string }): boolean {
+  const code = (ut.code || '').toUpperCase();
+  const name = (ut.name || '').toLowerCase();
+  const desc = (ut.description || '').toLowerCase();
+  return (
+    code.includes('CLIMATE') ||
+    name.includes('lạnh') ||
+    name.includes('máy lạnh') ||
+    name.includes('điều hòa') ||
+    desc.includes('điều hòa') ||
+    desc.includes('máy lạnh') ||
+    desc.includes('độ ẩm')
+  );
+}
+
 // Hàm xác định nhóm kích thước chuẩn từ mã/tên loại kho và diện tích
 function resolveSizeCategory(codeOrName: string, areaM2?: number): UnitSizeCategory {
   const upper = codeOrName.toUpperCase();
@@ -185,9 +201,8 @@ export const UnitPickerPage: React.FC = () => {
         let mappedUTs: UnitType[] = [];
         if (utPage?.content && utPage.content.length > 0) {
           mappedUTs = utPage.content.map((ut) => {
-            const codeUpper = (ut.code || ut.name).toUpperCase();
             const sizeCat: UnitSizeCategory = resolveSizeCategory(ut.code || ut.name, ut.areaM2);
-            const isClimate = codeUpper.includes('CLIMATE') || ut.name.toLowerCase().includes('lạnh');
+            const isClimate = isClimateUnitType(ut);
             const sType: StorageType = isClimate ? 'CLIMATE_CONTROLLED' : 'STANDARD';
 
             const width = ut.widthM || 2;
@@ -371,6 +386,9 @@ export const UnitPickerPage: React.FC = () => {
     return list.length > 0 ? list : unitTypes;
   }, [unitTypes, storageType]);
 
+  const standardTypesCount = useMemo(() => unitTypes.filter((t) => t.storageType === 'STANDARD').length, [unitTypes]);
+  const climateTypesCount = useMemo(() => unitTypes.filter((t) => t.storageType === 'CLIMATE_CONTROLLED').length, [unitTypes]);
+
   const currentUnitType = useMemo(() => {
     if (selectedTypeId) {
       const matchedById = availableTypes.find((t) => t.id === selectedTypeId);
@@ -436,6 +454,7 @@ export const UnitPickerPage: React.FC = () => {
   const handleSelectType = (type: UnitType) => {
     setSelectedTypeId(type.id);
     setSelectedSize(type.sizeCategory);
+    setStorageType(type.storageType);
     if (selectedUnitId) {
       const current = displayFacilityUnits.find((u) => u.id === selectedUnitId);
       if (!current || (current.unitTypeId && current.unitTypeId !== type.id)) {
@@ -763,20 +782,23 @@ export const UnitPickerPage: React.FC = () => {
               )}
             </div>
 
-            {/* Môi trường kho tabs */}
+            {/* Môi trường kho tabs - 2 chế độ: Tiêu chuẩn, Máy lạnh */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <button
                 type="button"
                 onClick={() => handleSelectStorageType('STANDARD')}
                 className={`p-4 rounded-xl border-2 text-left transition-all cursor-pointer flex items-center justify-between ${
                   storageType === 'STANDARD'
-                    ? 'border-[#008B74] bg-[#e6f7f4] shadow-xs'
+                    ? 'border-[#008B74] bg-[#e6f7f4] shadow-xs ring-2 ring-[#008B74]/20'
                     : 'border-slate-200 hover:border-slate-300 bg-white'
                 }`}
               >
-                <div className="text-sm font-black text-slate-900 flex items-center gap-2">
-                  <span className="text-base">📦</span>
-                  <span>Kho Tiêu Chuẩn</span>
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xl">📦</span>
+                  <div>
+                    <span className="text-sm font-black text-slate-900 block">Kho Tiêu Chuẩn</span>
+                    <span className="text-[11px] text-slate-500 font-medium">Nhiệt độ phòng ({standardTypesCount} loại)</span>
+                  </div>
                 </div>
                 {storageType === 'STANDARD' && (
                   <div className="w-5 h-5 rounded-full bg-[#008B74] text-white flex items-center justify-center shrink-0">
@@ -790,13 +812,16 @@ export const UnitPickerPage: React.FC = () => {
                 onClick={() => handleSelectStorageType('CLIMATE_CONTROLLED')}
                 className={`p-4 rounded-xl border-2 text-left transition-all cursor-pointer flex items-center justify-between ${
                   storageType === 'CLIMATE_CONTROLLED'
-                    ? 'border-[#008B74] bg-[#e6f7f4] shadow-xs'
+                    ? 'border-[#008B74] bg-[#e6f7f4] shadow-xs ring-2 ring-[#008B74]/20'
                     : 'border-slate-200 hover:border-slate-300 bg-white'
                 }`}
               >
-                <div className="text-sm font-black text-slate-900 flex items-center gap-2">
-                  <span className="text-base">❄️</span>
-                  <span>Kho Máy Lạnh (24/7)</span>
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xl">❄️</span>
+                  <div>
+                    <span className="text-sm font-black text-slate-900 block">Kho Máy Lạnh (24/7)</span>
+                    <span className="text-[11px] text-slate-500 font-medium">22°C - 25°C & kiểm soát ẩm ({climateTypesCount} loại)</span>
+                  </div>
                 </div>
                 {storageType === 'CLIMATE_CONTROLLED' && (
                   <div className="w-5 h-5 rounded-full bg-[#008B74] text-white flex items-center justify-center shrink-0">
@@ -806,8 +831,8 @@ export const UnitPickerPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Kích thước tương ứng - High Contrast */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {/* Danh sách Loại ô kho theo CSDL thật - High Contrast Showcase */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {availableTypes.map((type) => {
                 const isUnlisted = !type.baseMonthlyPrice || type.baseMonthlyPrice <= 0 || type.priceStatus === 'UNLISTED' || type.priceStatus === 'Chưa niêm yết';
                 const isSelected = !isUnlisted && (selectedTypeId ? selectedTypeId === type.id : selectedSize === type.sizeCategory);
@@ -819,31 +844,63 @@ export const UnitPickerPage: React.FC = () => {
                   <button
                     key={type.id}
                     type="button"
-                    onClick={() => handleSelectType(type)}
-                    className={`p-3.5 rounded-xl border-2 text-left transition-all cursor-pointer relative flex flex-col justify-between ${
-                      isSelected
-                        ? 'border-[#008B74] bg-[#e6f7f4] shadow-xs ring-2 ring-[#008B74]/25'
+                    disabled={isUnlisted}
+                    onClick={() => {
+                      if (!isUnlisted) {
+                        handleSelectType(type);
+                      }
+                    }}
+                    className={`p-4 rounded-xl border-2 text-left transition-all relative flex flex-col justify-between ${
+                      isUnlisted
+                        ? 'opacity-70 cursor-not-allowed border-slate-200 bg-slate-50'
+                        : isSelected
+                        ? 'border-[#008B74] bg-[#e6f7f4] shadow-xs ring-2 ring-[#008B74]/25 cursor-pointer'
                         : isOutOfSlots
-                        ? 'border-slate-200 bg-slate-50 text-slate-700'
-                        : 'border-slate-200 hover:border-emerald-400 bg-white text-slate-900 shadow-2xs'
+                        ? 'border-slate-200 bg-slate-50 text-slate-700 cursor-pointer hover:border-slate-300'
+                        : 'border-slate-200 hover:border-emerald-400 bg-white text-slate-900 shadow-2xs cursor-pointer'
                     }`}
                   >
                     <div>
-                      <div className="flex items-center justify-between">
-                        <strong className={`text-xs font-black block ${isSelected ? 'text-[#008B74]' : 'text-slate-900'}`}>
-                          Size {type.sizeCategory}
+                      {/* Tên loại kho từ CSDL thật & Diện tích */}
+                      <div className="flex items-start justify-between gap-2">
+                        <strong className={`text-xs sm:text-sm font-black block leading-snug ${isSelected ? 'text-[#008B74]' : 'text-slate-900'}`} title={type.name}>
+                          {type.name}
                         </strong>
-                        <span className={`text-[10px] font-bold font-mono px-1.5 py-0.5 rounded ${isSelected ? 'bg-[#008B74] text-white' : 'bg-slate-100 text-slate-600'}`}>
+                        <span className={`text-[10px] font-bold font-mono px-1.5 py-0.5 rounded shrink-0 ${isSelected ? 'bg-[#008B74] text-white' : 'bg-slate-100 text-slate-700'}`}>
                           {type.areaM2} m²
                         </span>
                       </div>
-                      <span className={`text-xs block mt-1.5 font-black font-mono ${isSelected ? 'text-[#008B74]' : 'text-emerald-700'}`}>
-                        {formatVND(type.baseMonthlyPrice)}/tháng
-                      </span>
+
+                      {/* Phân nhóm, Kích thước thực tế & Chế độ môi trường */}
+                      <div className="flex items-center gap-1.5 mt-1.5 text-[11px] text-slate-500 font-medium flex-wrap">
+                        <span className="font-bold text-slate-700 font-mono">Size {type.sizeCategory}</span>
+                        <span>•</span>
+                        <span className="font-mono">{type.dimensions}</span>
+                        <span>•</span>
+                        <span className={type.storageType === 'CLIMATE_CONTROLLED' ? 'text-cyan-700 font-bold' : 'text-emerald-700 font-bold'}>
+                          {type.storageType === 'CLIMATE_CONTROLLED' ? '❄️ Máy lạnh' : '📦 Tiêu chuẩn'}
+                        </span>
+                      </div>
+
+                      {/* Đơn giá niêm yết từ CSDL */}
+                      <div className="mt-2.5">
+                        {isUnlisted ? (
+                          <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md inline-block">
+                            Chưa niêm yết giá
+                          </span>
+                        ) : (
+                          <span className={`text-sm block font-black font-mono ${isSelected ? 'text-[#008B74]' : 'text-emerald-700'}`}>
+                            {formatVND(type.baseMonthlyPrice)}/tháng
+                          </span>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="mt-2.5 text-[11px] font-bold">
-                      {slots !== null ? (
+                    {/* Tình trạng ô kho thực tế */}
+                    <div className="mt-3 text-[11px] font-bold">
+                      {isUnlisted ? (
+                        <span className="text-slate-400 italic font-medium">Tạm chưa mở đặt</span>
+                      ) : slots !== null ? (
                         slots > 0 ? (
                           <span className="inline-flex items-center gap-1 text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-md">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
@@ -852,10 +909,12 @@ export const UnitPickerPage: React.FC = () => {
                         ) : (
                           <span className="inline-flex items-center gap-1 text-rose-700 bg-rose-100/80 px-2 py-0.5 rounded-md">
                             <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
-                            Hết chỗ
+                            Hết chỗ (0 ô)
                           </span>
                         )
-                      ) : null}
+                      ) : (
+                        <span className="text-slate-400 text-[10px]">Đang kiểm tra...</span>
+                      )}
                     </div>
                   </button>
                 );
