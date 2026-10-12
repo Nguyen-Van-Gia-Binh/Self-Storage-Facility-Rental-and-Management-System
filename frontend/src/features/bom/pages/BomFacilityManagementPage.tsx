@@ -307,6 +307,7 @@ export const BomFacilityManagementPage: React.FC = () => {
           onClose={() => setModalOpen(false)}
           onSubmit={handleSubmitModal}
           initialData={selectedFacility}
+          existingCodes={facilities.map((f) => f.code)}
           isLoading={isSubmitting}
         />
       )}

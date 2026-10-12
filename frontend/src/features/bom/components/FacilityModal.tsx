@@ -1,8 +1,9 @@
 // frontend/src/features/bom/components/FacilityModal.tsx
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Building2, MapPin, Phone, Clock, FileText, Loader2, AlertCircle } from 'lucide-react';
+import { X, Building2, MapPin, Phone, Clock, FileText, Loader2, AlertCircle, Sparkles } from 'lucide-react';
 import type { FacilityListItem, CreateFacilityRequest, UpdateFacilityRequest } from '@/types';
+import { generateFacilityCode } from '../utils/facilityCodeGenerator';
 
 const FACILITY_CODE_PATTERN = /^FAC-[A-Z][A-Z0-9]{1,3}$/;
 const FACILITY_CODE_HINT = 'Quận 7 → FAC-Q7. Cầu Giấy → FAC-CG. Trùng thì thêm số: FAC-CG2.';
@@ -34,6 +35,7 @@ interface FacilityModalProps {
   onClose: () => void;
   onSubmit: (data: CreateFacilityRequest | UpdateFacilityRequest) => Promise<void>;
   initialData?: FacilityListItem | null;
+  existingCodes?: string[];
   isLoading?: boolean;
 }
 
@@ -42,6 +44,7 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
   onClose,
   onSubmit,
   initialData,
+  existingCodes = [],
   isLoading = false,
 }) => {
   const isEdit = Boolean(initialData);
@@ -59,7 +62,39 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
     };
   });
 
+  const [isCodeManuallyEdited, setIsCodeManuallyEdited] = useState(false);
+  const [autoGenInfo, setAutoGenInfo] = useState<{ code: string; reason: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Tự động sinh mã cơ sở dựa trên Tên & Địa chỉ (chỉ kích hoạt khi Thêm mới và chưa tự sửa tay)
+  useEffect(() => {
+    if (isEdit || isCodeManuallyEdited) return;
+
+    if (!formData.name.trim() && !formData.address.trim()) {
+      return;
+    }
+
+    const generated = generateFacilityCode(formData.name, formData.address, existingCodes);
+    if (generated && generated.code) {
+      setFormData((prev) => ({ ...prev, code: generated.code }));
+      setAutoGenInfo(generated);
+      if (errors.code) {
+        setErrors((current) => ({ ...current, code: '' }));
+      }
+    }
+  }, [formData.name, formData.address, isEdit, isCodeManuallyEdited, existingCodes]);
+
+  const handleRegenerateCode = () => {
+    const generated = generateFacilityCode(formData.name, formData.address, existingCodes);
+    if (generated && generated.code) {
+      setFormData((prev) => ({ ...prev, code: generated.code }));
+      setAutoGenInfo(generated);
+      setIsCodeManuallyEdited(false);
+      if (errors.code) {
+        setErrors((current) => ({ ...current, code: '' }));
+      }
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -194,19 +229,36 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
                   onChange={(e) => {
                     const nextCode = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 8);
                     setFormData({ ...formData, code: nextCode });
+                    setIsCodeManuallyEdited(true);
+                    setAutoGenInfo(null);
                     if (errors.code) {
                       setErrors((current) => ({ ...current, code: '' }));
                     }
                   }}
-                  className={`w-full text-sm font-mono border rounded-xl px-3.5 py-2.5 outline-none transition-all ${
+                  className={`w-full text-sm font-mono border rounded-xl pl-3.5 pr-24 py-2.5 outline-none transition-all ${
                     errors.code
                       ? 'border-rose-300 focus:ring-2 focus:ring-rose-200'
                       : 'border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-100'
                   }`}
                 />
+                <button
+                  type="button"
+                  onClick={handleRegenerateCode}
+                  title="Tự động tính lại mã dựa trên Tên & Địa chỉ"
+                  className="absolute right-2 top-2 px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 transition-all flex items-center gap-1 cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Tự tạo</span>
+                </button>
               </div>
             )}
-            {!isEdit && (
+            {!isEdit && autoGenInfo && (
+              <p className="mt-1 text-xs text-amber-700 font-medium flex items-center gap-1">
+                <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <span>{autoGenInfo.reason}</span>
+              </p>
+            )}
+            {!isEdit && !autoGenInfo && (
               <p className="mt-1 text-xs text-slate-500">{FACILITY_CODE_HINT}</p>
             )}
             {errors.code && (
