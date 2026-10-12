@@ -213,6 +213,55 @@ class FacilityReportServiceTest {
     }
 
     @Test
+    @DisplayName("AC-3 Extension: Giao dịch OVERDUE_PENALTY được ghi nhận đúng vào overduePenaltyFee thay vì lẫn vào rentalRevenue")
+    void testGetFacilityOverview_FinancialRevenue_WithOverduePenalty() {
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(testFacility));
+        when(storageUnitRepository.findByFacilityIdAndFilters(eq(1L), eq(null), eq(null), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        RentalContract c1 = RentalContract.builder()
+                .id(102L)
+                .facilityId(1L)
+                .status(ContractStatus.PENDING_RETURN)
+                .totalRentalFee(3_600_000L)
+                .depositAmount(1_200_000L)
+                .depositBalance(1_200_000L)
+                .startDate(LocalDate.of(2026, 7, 7))
+                .overdueFeeAccrued(0L)
+                .build();
+
+        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(List.of(c1));
+
+        PaymentTransaction pInitial = PaymentTransaction.builder()
+                .id(11L)
+                .contractId(102L)
+                .transactionType("INITIAL_PAYMENT")
+                .amount(4_800_000L)
+                .status("SUCCESS")
+                .build();
+        pInitial.setCreatedAt(java.time.Instant.parse("2026-10-12T13:42:00Z"));
+
+        PaymentTransaction pPenalty = PaymentTransaction.builder()
+                .id(12L)
+                .contractId(102L)
+                .transactionType("OVERDUE_PENALTY")
+                .amount(240_000L)
+                .status("SUCCESS")
+                .build();
+        pPenalty.setCreatedAt(java.time.Instant.parse("2026-10-12T14:01:00Z"));
+
+        when(paymentTransactionRepository.findByContractId(102L)).thenReturn(List.of(pInitial, pPenalty));
+
+        FacilityOverviewReportResponse response = reportService.getFacilityOverview(1L, "2026-10", facilityManagerPrincipal);
+
+        assertNotNull(response);
+        assertEquals(3_600_000L, response.getRentalRevenue());
+        assertEquals(240_000L, response.getOverduePenaltyFee());
+        assertEquals(0L, response.getCustomerServiceFee());
+        assertEquals(3_840_000L, response.getTotalRevenue());
+    }
+
+    @Test
     @DisplayName("AC-4: Báo cáo rủi ro nợ quá hạn phân bổ chính xác theo 3 nhóm độ tuổi nợ")
     void testGetFacilityOverdueDebt_AgingBrackets() {
         when(facilityRepository.findById(1L)).thenReturn(Optional.of(testFacility));

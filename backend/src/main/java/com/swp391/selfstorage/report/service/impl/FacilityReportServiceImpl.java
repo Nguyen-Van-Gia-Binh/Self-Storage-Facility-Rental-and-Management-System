@@ -124,8 +124,9 @@ public class FacilityReportServiceImpl implements FacilityReportService {
 
         // 3. Tính doanh thu tài chính theo tháng (AC-3)
         List<Long> contractIds = contracts.stream().map(RentalContract::getId).toList();
-        long rentalRevenue = 0;
-        long surchargeRevenue = 0;
+        long rentalRevenue = 0L;
+        long surchargeRevenue = 0L;
+        long paidOverdueFee = 0L;
 
         if (!contractIds.isEmpty()) {
             List<PaymentTransaction> monthlyPayments = new ArrayList<>();
@@ -148,19 +149,23 @@ public class FacilityReportServiceImpl implements FacilityReportService {
 
                 for (PaymentTransaction p : monthlyPayments) {
                     RentalContract c = contractMap.get(p.getContractId());
-                    if ("RENEWAL_PAYMENT".equalsIgnoreCase(p.getTransactionType())) {
-                        rentalRevenue += p.getAmount() != null ? p.getAmount() : 0L;
-                    } else if ("EXTRA_FEE_PAYMENT".equalsIgnoreCase(p.getTransactionType())) {
-                        surchargeRevenue += p.getAmount() != null ? p.getAmount() : 0L;
-                    } else if ("INITIAL_PAYMENT".equalsIgnoreCase(p.getTransactionType())) {
-                        long amount = p.getAmount() != null ? p.getAmount() : 0L;
+                    String txnType = p.getTransactionType() != null ? p.getTransactionType() : "";
+                    long amount = p.getAmount() != null ? p.getAmount() : 0L;
+
+                    if ("RENEWAL_PAYMENT".equalsIgnoreCase(txnType) || "CONTRACT_RENEWAL".equalsIgnoreCase(txnType)) {
+                        rentalRevenue += amount;
+                    } else if ("EXTRA_FEE_PAYMENT".equalsIgnoreCase(txnType) || "SETTLEMENT".equalsIgnoreCase(txnType)) {
+                        surchargeRevenue += amount;
+                    } else if ("OVERDUE_PENALTY".equalsIgnoreCase(txnType)) {
+                        paidOverdueFee += amount;
+                    } else if ("INITIAL_PAYMENT".equalsIgnoreCase(txnType)) {
                         long rent = c != null ? c.getTotalRentalFee() : amount;
                         long rentPart = Math.min(amount, rent);
                         rentalRevenue += rentPart;
                         long extra = amount - rentPart - (c != null ? c.getDepositAmount() : 0L);
                         if (extra > 0) surchargeRevenue += extra;
                     } else {
-                        rentalRevenue += p.getAmount() != null ? p.getAmount() : 0L;
+                        rentalRevenue += amount;
                     }
                 }
             } else {
@@ -183,10 +188,16 @@ public class FacilityReportServiceImpl implements FacilityReportService {
         // Tổng doanh thu thuần = (Phí thuê + Phí dịch vụ khách trả + Phí phạt quá hạn) - Chi phí sự cố công ty chịu
         long customerServiceFee = surchargeRevenue;
 
-        long overduePenaltyFee = contracts.stream()
-                .filter(c -> c.getStatus() == ContractStatus.OVERDUE || c.getOverdueFeeAccrued() > 0)
-                .mapToLong(RentalContract::getOverdueFeeAccrued)
-                .sum();
+        long overduePenaltyFee = paidOverdueFee;
+        if (overduePenaltyFee == 0L && contracts != null) {
+            // Fallback nếu chưa có giao dịch thu phạt nhưng có hợp đồng nợ phạt ghi nhận trong kỳ
+            overduePenaltyFee = contracts.stream()
+                    .filter(c -> (c.getStatus() == ContractStatus.OVERDUE || c.getOverdueFeeAccrued() > 0)
+                            && ((c.getStartDate() != null && YearMonth.from(c.getStartDate()).equals(targetMonth))
+                            || (c.getCreatedAt() != null && YearMonth.from(c.getCreatedAt()).equals(targetMonth))))
+                    .mapToLong(RentalContract::getOverdueFeeAccrued)
+                    .sum();
+        }
 
         long companyIncidentCost = 0L;
         long customerIncidentFee = 0L;
