@@ -120,6 +120,7 @@
 | `ISS-111` | Thao tác Check-in, Trả kho, Sự cố mở popup modal gây chật chội hoặc chuyển trang rời rạc làm mất trạng thái ca trực. | Tích hợp hiển thị tràn in-place (StaffCheckInDetailView, StaffReturnDetailView, StaffIncidentDetailView) có nút quay lại lưu tiến độ ca trực. | Bình | `RESOLVED` |
 | `ISS-112` | Loại kho giữa FM và Khách hàng không đồng bộ (thiếu loại kho mới tạo hoặc hiển thị chung nhãn Size S/M/L gây hiểu nhầm). | Chuẩn hóa hàm phân loại `isClimateUnitType` quét cả mã, tên và mô tả công năng; hiển thị trực tiếp Tên loại kho (`type.name`) thật từ CSDL kèm kích thước, diện tích, đơn giá và số ô khả dụng trên 2 tab Tiêu chuẩn & Máy lạnh (24/7). | Xuân Nhi | `RESOLVED` |
 | `ISS-113` | Loại ô kho BOM chưa niêm yết giá vẫn hiển thị trên thẻ/sơ đồ Customer; badge hiển thị m²; dropdown khu vực thô sơ. | Ẩn hoàn toàn loại kho và ô kho chưa niêm yết giá khỏi Customer; đổi đơn vị badge trên card sang m³ (giữ nguyên tính giá m²); tái thiết kế Custom Dropdown khu vực hiện đại với CSDL thật. | Xuân Nhi | `RESOLVED` |
+| `ISS-114` | Thẻ ngoài RentedUnitCard của hợp đồng ACTIVE 30 ngày hiện thừa nút Báo trả kho dù đã có trong Chi tiết. | Xóa điều kiện `isExpiringSoon` khỏi nút Báo trả kho ngoài thẻ; giữ nút này chỉ trong modal Chi tiết và diện đặc biệt (Ân hạn/Quá hạn đã xóa nợ). | Bình | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 
