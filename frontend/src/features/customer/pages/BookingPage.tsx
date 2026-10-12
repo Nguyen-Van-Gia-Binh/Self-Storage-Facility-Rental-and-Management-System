@@ -188,6 +188,17 @@ export const BookingPage: React.FC = () => {
             return;
           }
 
+          const isUnlisted = !foundUT.monthlyPrice || foundUT.monthlyPrice <= 0 || foundUT.priceStatus === 'UNLISTED' || foundUT.priceStatus === 'Chưa niêm yết';
+          if (isUnlisted) {
+            setUnavailableModal({
+              isOpen: true,
+              title: 'Loại ô kho chưa niêm yết giá',
+              message: 'Loại ô kho bạn đang chọn hiện chưa được ban hành giá niêm yết chính thức. Vui lòng chọn loại ô kho khác.',
+              actionType: 'NAVIGATE_UNITS',
+            });
+            return;
+          }
+
           const codeUpper = (foundUT.code || foundUT.name).toUpperCase();
           const sizeCat = resolveSizeCategory(foundUT.code || foundUT.name, foundUT.areaM2);
           const isClimate = codeUpper.includes('CLIMATE') || foundUT.name.toLowerCase().includes('lạnh');

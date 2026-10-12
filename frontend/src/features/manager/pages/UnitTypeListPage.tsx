@@ -139,7 +139,14 @@ export const UnitTypeListPage: React.FC = () => {
   const handleSubmitType = async (data: UnitTypeFormData) => {
     try {
       if (!data.code) {
-        data.code = 'UT-' + Date.now().toString().slice(-6);
+        const isClimate =
+          (data.name || '').toLowerCase().includes('lạnh') ||
+          (data.name || '').toLowerCase().includes('máy lạnh') ||
+          (data.description || '').toLowerCase().includes('điều hòa') ||
+          (data.description || '').toLowerCase().includes('máy lạnh') ||
+          (data.description || '').toLowerCase().includes('độ ẩm');
+        const prefix = isClimate ? 'UT-CLI-' : 'UT-';
+        data.code = prefix + Date.now().toString().slice(-6);
       }
       if (editingType) {
         await updateUnitType(facilityIdNum, editingType.id, data);
