@@ -309,31 +309,38 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             )}
           </div>
 
-          <div className="flex items-center space-x-3 ml-auto">
-            {/* User Profile */}
-            <div className="flex items-center space-x-2.5">
+          <div className="flex items-center gap-2.5 ml-auto">
+            {/* User Profile Pill */}
+            <div className="flex items-center gap-2.5 pl-1.5 pr-3.5 py-1 rounded-full bg-slate-50/90 border border-slate-200/80">
               {/* Avatar */}
-              <div className="w-8 h-8 rounded-full bg-brand-50 text-brand-700 border border-brand-200 flex items-center justify-center font-bold text-xs flex-shrink-0 shadow-xs">
+              <div className="w-8 h-8 rounded-full bg-teal-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
                 {initials}
               </div>
-              {/* Name + Role */}
-              <div className="text-right hidden sm:block">
-                <p className="text-xs font-bold text-slate-900 leading-none">
+              {/* Name + Role (Căn trái thẳng hàng) */}
+              <div className="text-left hidden sm:block">
+                <p className="text-xs font-bold text-slate-900 leading-tight">
                   {displayFullName}
                 </p>
-                <span className="inline-block text-[10px] text-brand-700 bg-brand-50 border border-brand-200/60 px-2 py-0.5 rounded-full mt-1 font-bold">
-                  {currentRole}
-                </span>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                  <span className="text-[11px] font-medium text-slate-500 leading-none">
+                    {portalLabel}
+                  </span>
+                </div>
               </div>
-              {/* Logout */}
-              <button
-                onClick={handleLogout}
-                title="Đăng xuất"
-                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
             </div>
+
+            <div className="h-5 w-px bg-slate-200 hidden sm:block" />
+
+            {/* Logout */}
+            <button
+              onClick={handleLogout}
+              title="Đăng xuất"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-rose-600 bg-white hover:bg-rose-50 border border-slate-200/80 hover:border-rose-200 rounded-xl transition-all cursor-pointer shadow-2xs"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Đăng xuất</span>
+            </button>
           </div>
         </header>
 

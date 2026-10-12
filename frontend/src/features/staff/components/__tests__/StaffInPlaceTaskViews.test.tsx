@@ -98,6 +98,8 @@ describe('Staff In-Place Task Views & Full-Screen Detail View Integration', () =
     expect(navConfigContent).not.toMatch(/Staff Desk/);
     expect(layoutContent).toMatch(/staff-sub-breadcrumb/);
     expect(layoutContent).toMatch(/staff-reset-task-view/);
+    expect(layoutContent).not.toMatch(/text-right hidden sm:block/);
+    expect(layoutContent).toMatch(/text-left hidden sm:block/);
   });
 
   it('Rút gọn luồng xử lý về đúng 1 bước xác nhận duy nhất, loại bỏ bước trung gian Bắt đầu xử lý / Tiếp nhận xử lý', () => {
