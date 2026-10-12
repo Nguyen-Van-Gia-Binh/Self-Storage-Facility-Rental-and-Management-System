@@ -113,6 +113,7 @@
 | `ISS-105` | Cột Loại lệch lề, trùng tên phụ phí làm loạn trạng thái Đã thay thế vs Ngừng áp dụng, Snapshot in thừa A -> A. | Căn giữa cột Loại, dọn CSDL & validate unique name, xóa khối div tím lặp lại, sửa Snapshot thông minh. | Bình | `RESOLVED` (#232) |
 | `ISS-106` | Tài khoản staff@storage.vn thiếu dữ liệu ca trực mẫu đa dạng để kiểm thử UI điều phối bàn giao/nghiệm thu. | Tạo Flyway V51 nạp đủ 3 nhóm task: Check-in (chờ/xong), Trả kho (chờ/xong), Sự cố (4 loại SUP). | Bình | `RESOLVED` |
 | `ISS-107` | Menu Staff nhiều tab gây phân mảnh và rối luồng thao tác ca trực thực địa. | Tinh giản sidebar còn 1 mục "Nhiệm vụ ca trực" (/staff), hiển thị trực tiếp toàn bộ việc nhận kho, trả kho, sự cố trên 1 màn hình. | Bình | `RESOLVED` |
+| `ISS-108` | Phụ đề ca trực thừa chữ và 3 KPI cards chiếm diện tích màn hình; thiếu xem theo tuần. | Xóa phụ đề, thay 3 thẻ KPI bằng lịch tuần cuộn ngang StaffWeekCalendarStrip chọn ngày hiển thị việc trực tiếp. | Bình | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 

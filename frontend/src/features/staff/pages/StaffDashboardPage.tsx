@@ -132,9 +132,6 @@ export const StaffDashboardPage: React.FC = () => {
                 Đang trong ca trực
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-slate-500">
-              {now.toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} · Trung tâm điều phối tiếp đón nhận kho, nghiệm thu trả kho và giải quyết sự cố thực địa.
-            </p>
           </div>
 
           <div className="hidden lg:flex items-center gap-2 text-xs font-medium text-slate-500 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/80">
@@ -212,7 +209,7 @@ export const StaffDashboardPage: React.FC = () => {
       </div>
 
       {/* Main Operational Tasks Body */}
-      {loading ? (
+      {loading && !filteredTasks ? (
         <div className="space-y-3">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="h-16 skeleton rounded-xl" />
@@ -225,6 +222,8 @@ export const StaffDashboardPage: React.FC = () => {
           selectedDate={selectedDate}
           selectedFacilityId={selectedFacilityId}
           onRefresh={handleRefresh}
+          onDateChange={handleDateChange}
+          loading={loading}
         />
       ) : (
         <div className="p-8 text-center text-rose-500 bg-white rounded-2xl border border-rose-100">

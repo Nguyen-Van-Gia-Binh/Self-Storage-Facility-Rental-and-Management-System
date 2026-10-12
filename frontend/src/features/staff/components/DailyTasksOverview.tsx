@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import type { StaffDailyTaskReport, DailyIncidentTask, DailyCheckInTask, DailyReturnTask } from '@/types';
 import { StaffResolveIncidentModal } from './StaffResolveIncidentModal';
+import { StaffWeekCalendarStrip } from './StaffWeekCalendarStrip';
 
 interface DailyTasksOverviewProps {
   tasks: StaffDailyTaskReport;
@@ -21,6 +22,8 @@ interface DailyTasksOverviewProps {
   selectedDate?: string;
   selectedFacilityId?: number;
   onRefresh: () => void;
+  onDateChange?: (date: string) => void;
+  loading?: boolean;
 }
 
 export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
@@ -29,6 +32,8 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
   selectedDate = '',
   selectedFacilityId = 0,
   onRefresh,
+  onDateChange,
+  loading = false,
 }) => {
   const navigate = useNavigate();
 
@@ -419,136 +424,14 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* 3 Cards Thống kê KPI ca trực - Đồng thời là bộ lọc nhanh 1-chạm */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
-        {/* Thẻ 1: Lịch Check-in */}
-        <button
-          type="button"
-          onClick={() => setFilterCategory((prev) => (prev === 'checkin' ? 'ALL' : 'checkin'))}
-          className={`p-4 sm:p-5 rounded-2xl border text-left transition-all duration-200 shadow-xs relative overflow-hidden group cursor-pointer ${
-            filterCategory === 'checkin'
-              ? 'bg-teal-50/50 border-teal-500 ring-2 ring-teal-500/20 shadow-sm'
-              : 'bg-white border-slate-200/90 hover:border-teal-300 hover:shadow-sm'
-          }`}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs sm:text-sm font-bold text-slate-700 flex items-center gap-2">
-              <KeyRound className="w-4.5 h-4.5 text-teal-600" />
-              Lịch Check-in tiếp đón
-            </span>
-            <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
-              checkInPendingCount > 0 ? 'bg-teal-100 text-teal-800' : 'bg-emerald-100 text-emerald-800'
-            }`}>
-              {checkInPendingCount} chờ tiếp đón
-            </span>
-          </div>
-          <div className="flex items-baseline justify-between mt-2">
-            <span className="text-2xl sm:text-3xl font-black text-slate-900 font-mono tracking-tight">
-              {tasks.pendingCheckIns.length}
-            </span>
-            <span className="text-xs font-semibold text-slate-500">
-              {checkInDoneCount} đã hoàn tất bàn giao
-            </span>
-          </div>
-          <div className="mt-3 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-teal-500 rounded-full transition-all duration-500"
-              style={{
-                width: tasks.pendingCheckIns.length > 0
-                  ? `${(checkInDoneCount / tasks.pendingCheckIns.length) * 100}%`
-                  : '100%',
-              }}
-            />
-          </div>
-        </button>
-
-        {/* Thẻ 2: Lịch hẹn Trả kho */}
-        <button
-          type="button"
-          onClick={() => setFilterCategory((prev) => (prev === 'return' ? 'ALL' : 'return'))}
-          className={`p-4 sm:p-5 rounded-2xl border text-left transition-all duration-200 shadow-xs relative overflow-hidden group cursor-pointer ${
-            filterCategory === 'return'
-              ? 'bg-blue-50/50 border-blue-500 ring-2 ring-blue-500/20 shadow-sm'
-              : 'bg-white border-slate-200/90 hover:border-blue-300 hover:shadow-sm'
-          }`}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs sm:text-sm font-bold text-slate-700 flex items-center gap-2">
-              <ClipboardCheck className="w-4.5 h-4.5 text-blue-600" />
-              Lịch Trả kho & Nghiệm thu
-            </span>
-            <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
-              returnPendingCount > 0 ? 'bg-blue-100 text-blue-800' : 'bg-emerald-100 text-emerald-800'
-            }`}>
-              {returnPendingCount} chờ nghiệm thu
-            </span>
-          </div>
-          <div className="flex items-baseline justify-between mt-2">
-            <span className="text-2xl sm:text-3xl font-black text-slate-900 font-mono tracking-tight">
-              {tasks.pendingReturns.length}
-            </span>
-            <span className="text-xs font-semibold text-slate-500">
-              {returnDoneCount} đã hoàn tất nghiệm thu
-            </span>
-          </div>
-          <div className="mt-3 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-blue-500 rounded-full transition-all duration-500"
-              style={{
-                width: tasks.pendingReturns.length > 0
-                  ? `${(returnDoneCount / tasks.pendingReturns.length) * 100}%`
-                  : '100%',
-              }}
-            />
-          </div>
-        </button>
-
-        {/* Thẻ 3: Sự cố thực địa */}
-        <button
-          type="button"
-          onClick={() => setFilterCategory((prev) => (prev === 'incident' ? 'ALL' : 'incident'))}
-          className={`p-4 sm:p-5 rounded-2xl border text-left transition-all duration-200 shadow-xs relative overflow-hidden group cursor-pointer ${
-            filterCategory === 'incident'
-              ? 'bg-amber-50/60 border-amber-500 ring-2 ring-amber-500/20 shadow-sm'
-              : tasks.openSupportRequests.length > 0
-              ? 'bg-amber-50/20 border-amber-200 hover:border-amber-400'
-              : 'bg-white border-slate-200/90 hover:border-amber-300'
-          }`}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs sm:text-sm font-bold text-slate-700 flex items-center gap-2">
-              <AlertTriangle className="w-4.5 h-4.5 text-amber-600" />
-              Sự cố kỹ thuật & Vận hành
-            </span>
-            <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
-              incidentPendingCount > 0 ? 'bg-amber-100 text-amber-900 font-bold' : 'bg-emerald-100 text-emerald-800'
-            }`}>
-              {incidentPendingCount > 0 ? `${incidentPendingCount} cần xử lý` : 'Đã thông suốt'}
-            </span>
-          </div>
-          <div className="flex items-baseline justify-between mt-2">
-            <span className={`text-2xl sm:text-3xl font-black font-mono tracking-tight ${
-              incidentPendingCount > 0 ? 'text-amber-700' : 'text-slate-900'
-            }`}>
-              {tasks.openSupportRequests.length}
-            </span>
-            <span className="text-xs font-semibold text-slate-500">
-              {incidentDoneCount} đã khắc phục xong
-            </span>
-          </div>
-          <div className="mt-3 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-amber-500 rounded-full transition-all duration-500"
-              style={{
-                width: tasks.openSupportRequests.length > 0
-                  ? `${(incidentDoneCount / tasks.openSupportRequests.length) * 100}%`
-                  : '100%',
-              }}
-            />
-          </div>
-        </button>
-      </div>
-
+      {/* Lịch ca trực tuần cuộn ngang - Chọn ngày hiển thị công việc tương ứng phía dưới */}
+      {onDateChange && (
+        <StaffWeekCalendarStrip
+          selectedDate={selectedDate || new Date().toISOString().split('T')[0]}
+          onDateChange={onDateChange}
+          totalTasksForSelectedDate={totalAllTasks}
+        />
+      )}
       {/* Bảng Danh sách Nhiệm vụ Ca trực Tập trung */}
       <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
         {/* Header điều khiển Danh mục & Trạng thái */}
@@ -652,7 +535,15 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
         </div>
 
         {/* Nội dung danh sách công việc */}
-        <div className="p-4 sm:p-5 space-y-6">
+        <div className="p-4 sm:p-5 space-y-6 relative">
+          {loading && (
+            <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-b-2xl">
+              <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-md border border-slate-200 text-xs font-bold text-teal-700">
+                <span className="w-4 h-4 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
+                <span>Đang nạp dữ liệu công việc ca trực...</span>
+              </div>
+            </div>
+          )}
           {totalFilteredCount === 0 ? (
             <div className="py-14 px-4 text-center rounded-2xl bg-slate-50/50 border border-dashed border-slate-200">
               <div className="w-12 h-12 mx-auto rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
