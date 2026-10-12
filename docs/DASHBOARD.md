@@ -123,6 +123,7 @@
 | `ISS-114` | Thẻ ngoài RentedUnitCard của hợp đồng ACTIVE 30 ngày hiện thừa nút Báo trả kho dù đã có trong Chi tiết. | Xóa điều kiện `isExpiringSoon` khỏi nút Báo trả kho ngoài thẻ; giữ nút này chỉ trong modal Chi tiết và diện đặc biệt (Ân hạn/Quá hạn đã xóa nợ). | Bình | `RESOLVED` |
 | `ISS-115` | Staff đăng nhập bị điều hướng sai vào màn tiếp đón check-in lẻ (`/staff/check-in`) thay vì màn tổng quan ca trực. | Cập nhật `getPortalUrlByRole` điều hướng role STAFF về đúng màn `/staff` (Nhiệm vụ ca trực / Bàn làm việc ca trực thật). | Xuân Nhi | `RESOLVED` |
 | `ISS-116` | Bảng giá BOM thừa thể tích m³ và kích thước 3 chiều, các cột bị lệch phải và khung 1280px chật chội. | Chuẩn hóa cột Diện tích m², bỏ m³ và D×R×C, căn giữa toàn bộ các cột dữ liệu, mở rộng khung max-w-[1600px]. | Bình | `RESOLVED` |
+| `ISS-117` | Trang Chính sách thuê BOM dính lề trái màn hình rộng và các ô input lệch hàng ngang do nhãn dài ngắn khác nhau. | Căn giữa max-w-5xl mx-auto, đồng bộ chiều cao nhãn min-h-[2.5rem] và căn đáy để toàn bộ ô input thẳng hàng ngang tăm tắp. | Bình | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 
