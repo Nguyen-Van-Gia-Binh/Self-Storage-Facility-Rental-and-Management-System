@@ -432,7 +432,17 @@ public class ReservationServiceImpl implements ReservationService {
             long rentalFee = Math.max(0, reservation.getTotalPayable() - deposit);
             long refundAmount;
 
-            if (hoursUntilStart >= fullRefundHours) {
+            boolean isWithinCoolingOff = false;
+            if (reservation.getConfirmedAt() != null) {
+                isWithinCoolingOff = Duration.between(reservation.getConfirmedAt(), now).toHours() <= fullRefundHours;
+            } else if (reservation.getCreatedAt() != null) {
+                isWithinCoolingOff = Duration.between(reservation.getCreatedAt().atOffset(now.getOffset()), now).toHours() <= fullRefundHours;
+            }
+
+            // Đủ điều kiện hoàn 100% (cả cọc + tiền thuê) nếu:
+            // 1. Hủy trong vòng 48 giờ kể từ khi thanh toán (cooling-off period)
+            // 2. HOẶC hủy trước ngày bắt đầu thuê >= 48 giờ
+            if (isWithinCoolingOff || hoursUntilStart >= fullRefundHours) {
                 refundAmount = reservation.getTotalPayable();
             } else if (now.isBefore(startDateTime)) {
                 BigDecimal lateRate = cancelPolicy != null ? cancelPolicy.getCancelLateRefundRate() : BigDecimal.ZERO;

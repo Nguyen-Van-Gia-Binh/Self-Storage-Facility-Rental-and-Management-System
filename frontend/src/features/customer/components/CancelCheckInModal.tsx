@@ -48,12 +48,19 @@ export const CancelCheckInModal: React.FC<CancelCheckInModalProps> = ({
   // Số giờ trước thời điểm bắt đầu nhận kho (nếu trong tương lai)
   const hoursUntilStart = (startDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
 
+  // Số giờ kể từ thời điểm thanh toán / tạo hợp đồng (hủy trong 48h sau khi thanh toán)
+  const contractCreatedTime = contract.createdAt ? new Date(contract.createdAt).getTime() : NaN;
+  const hoursSincePayment = Number.isFinite(contractCreatedTime)
+    ? Math.max(0, (now.getTime() - contractCreatedTime) / (1000 * 60 * 60))
+    : 0; // Mặc định nếu hợp đồng mới tạo thì coi như trong 48h sau thanh toán
+
   const graceDays = 10; // checkin.grace_days = 10 ngày theo BR-CAN-04 & BR-CHK-05
 
-  // BR-CAN-01: Hủy trước 48h được hoàn 100% (cả cọc + tiền thuê)
-  // BR-CAN-02: Hủy trong 48h hoặc trong ngày nhận kho / ân hạn: Phạt 100% cọc, hoàn tiền thuê kho
-  // BR-CAN-04: Quá hạn 10 ngày nhận kho (heldDays > 10): Mới bị No-show phạt 100% cọc + 100% tiền thuê (Hoàn 0đ)
-  const isFullRefund = hoursUntilStart >= 48;
+  // BR-CAN-01: Đủ điều kiện hoàn 100% (cả cọc + tiền thuê) nếu:
+  // 1. Hủy trong vòng 48 giờ sau khi thanh toán (cooling-off period)
+  // 2. HOẶC hủy trước ngày nhận kho >= 48 giờ
+  const isWithin48hAfterPayment = hoursSincePayment <= 48;
+  const isFullRefund = isWithin48hAfterPayment || hoursUntilStart >= 48;
   const isOverdueCheckIn = heldDays > graceDays;
   const isWithin48hOrGrace = !isFullRefund && !isOverdueCheckIn;
 
@@ -164,12 +171,21 @@ export const CancelCheckInModal: React.FC<CancelCheckInModalProps> = ({
                 <span>Đủ điều kiện hoàn 100% toàn bộ chi phí (BR-CAN-01)</span>
               </div>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0">
-                Hủy sớm ≥ 48h
+                {isWithin48hAfterPayment ? 'Hủy trong 48h sau thanh toán' : 'Hủy sớm ≥ 48h'}
               </span>
             </div>
             <p className="text-[11px] text-emerald-700 leading-relaxed">
-              Bạn đang hủy trước thời điểm bắt đầu hợp đồng hơn <strong>48 giờ</strong>. Bạn sẽ được hoàn lại{' '}
-              <strong>100%</strong> toàn bộ số tiền đã thanh toán (gồm cả tiền thuê kho và tiền đặt cọc).
+              {isWithin48hAfterPayment ? (
+                <>
+                  Bạn đang hủy <strong>trong vòng 48 giờ sau khi thanh toán</strong>. Bạn sẽ được hoàn lại{' '}
+                  <strong>100%</strong> toàn bộ số tiền đã thanh toán (gồm cả tiền thuê kho và tiền đặt cọc).
+                </>
+              ) : (
+                <>
+                  Bạn đang hủy trước thời điểm bắt đầu hợp đồng hơn <strong>48 giờ</strong>. Bạn sẽ được hoàn lại{' '}
+                  <strong>100%</strong> toàn bộ số tiền đã thanh toán (gồm cả tiền thuê kho và tiền đặt cọc).
+                </>
+              )}
             </p>
             <div className="space-y-1.5 pt-2 border-t border-emerald-200/80 text-[11px]">
               <div className="flex justify-between text-emerald-800">

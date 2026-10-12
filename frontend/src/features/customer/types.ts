@@ -134,6 +134,7 @@ export interface RentedContract {
   relocationSupportRequestId?: number;
   relocationSupportRequestCode?: string;
   relocationReason?: string;
+  createdAt?: string;
 }
 
 // Nhật ký truy cập ra vào kho (US-SC-05.2, BR-ACC-02)

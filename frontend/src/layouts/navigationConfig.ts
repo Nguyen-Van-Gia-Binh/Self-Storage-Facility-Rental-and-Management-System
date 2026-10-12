@@ -39,6 +39,7 @@ export const ROLE_NAVIGATIONS: Record<UserRole, RoleNavigation> = {
     badgeColor: 'bg-emerald-600',
     navItems: [
       { label: 'Nhiệm vụ ca trực', href: '/staff', icon: ClipboardCheck },
+      { label: 'Sự cố kỹ thuật', href: '/staff/incidents', icon: Wrench },
     ],
   },
   MANAGER: {

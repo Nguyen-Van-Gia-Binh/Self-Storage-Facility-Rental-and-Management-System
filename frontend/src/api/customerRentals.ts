@@ -52,6 +52,7 @@ export interface BackendRentalSummary {
   pendingRenewalMonths?: number;
   pendingRenewalAmount?: number;
   pendingRenewalExpiresAt?: string;
+  createdAt?: string;
 }
 
 export interface CustomerRentalSummary {
@@ -159,6 +160,7 @@ export function mapBackendRentalToContract(item: BackendRentalSummary): RentedCo
     reservationId: item.reservationId,
     reservationCode: item.reservationCode,
     rentalMonths: item.rentalMonths,
+    createdAt: item.createdAt ? String(item.createdAt) : undefined,
   };
 }
 

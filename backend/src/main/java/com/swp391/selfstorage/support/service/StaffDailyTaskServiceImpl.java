@@ -429,6 +429,11 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
         }
 
         String facilityName = null;
+        if (facilityId != null) {
+            facilityName = facilityRepository.findById(facilityId)
+                    .map(Facility::getName)
+                    .orElse(null);
+        }
         String customerName = null;
         String customerPhone = null;
         if (sr.getCustomerId() != null) {
