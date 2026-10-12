@@ -72,7 +72,7 @@ export const CustomerRentalsKpiSummary: React.FC<CustomerRentalsKpiSummaryProps>
     },
     {
       id: 'PENDING_PAYMENT',
-      label: 'Giữ chỗ 48h',
+      label: 'Giữ chỗ 48h', // Đang giữ chỗ 48h
       count: pendingReservationsCount,
       unitLabel: 'đơn',
       badgeText: 'Chờ thanh toán',
