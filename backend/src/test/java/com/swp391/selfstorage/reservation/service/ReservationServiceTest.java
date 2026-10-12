@@ -401,6 +401,7 @@ class ReservationServiceTest {
         r.setFacilityId(1L);
         r.setStatus(ReservationStatus.CONFIRMED);
         r.setStartDate(LocalDate.now().plusDays(1)); // < 48h nhưng trước ngày bắt đầu
+        r.setConfirmedAt(OffsetDateTime.now().minusDays(3)); // ngoài thời hạn 48h sau thanh toán
         r.setDepositAmount(1_000_000L);
         r.setTotalPayable(4_000_000L); // tiền thuê = 3M, cọc = 1M -> hoàn 3M + 500k = 3.5M
 

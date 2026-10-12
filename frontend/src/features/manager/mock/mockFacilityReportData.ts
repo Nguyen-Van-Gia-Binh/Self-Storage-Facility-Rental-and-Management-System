@@ -135,14 +135,14 @@ export const mockOverdueReportFAC1: OverdueDebtReport = {
   },
   bracketD7ToD10: {
     bracketCode: 'D7_TO_D10',
-    bracketName: 'Giai đoạn D+7 đến D+10 (Khóa mã PIN & Cảnh báo cưỡng chế)',
+    bracketName: 'Giai đoạn D+7 đến D+10 (Khóa mã PIN • Phạt 20%/ngày & Cảnh báo cưỡng chế)',
     contractCount: 1,
     totalDebt: 3000000,
     contracts: [contractD8],
   },
   bracketTerminatedD10Plus: {
     bracketCode: 'D10_PLUS_TERMINATED',
-    bracketName: 'Mốc D+10+ (Đã chấm dứt & Niêm phong thanh lý)',
+    bracketName: 'Mốc D+10+ (Đã chấm dứt, khấu trừ 100% cọc & Ô kho Cleaning đến D+15)',
     contractCount: 1,
     totalDebt: 4250000,
     contracts: [contractD11],

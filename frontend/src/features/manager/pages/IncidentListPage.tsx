@@ -73,9 +73,8 @@ export const IncidentListPage: React.FC = () => {
     const resolved = tickets.filter(
       (t) => t.status === 'RESOLVED' || t.status === 'CLOSED'
     ).length;
-    const urgent = tickets.filter((t) => t.isUrgent).length;
 
-    return { total, pending, inProgress, resolved, urgent };
+    return { total, pending, inProgress, resolved };
   }, [tickets]);
 
   // Filter & Search & Sort
@@ -118,11 +117,6 @@ export const IncidentListPage: React.FC = () => {
     result.sort((a, b) => {
       let valA: any = a[sortField];
       let valB: any = b[sortField];
-
-      if (sortField === 'isUrgent') {
-        valA = a.isUrgent ? 1 : 0;
-        valB = b.isUrgent ? 1 : 0;
-      }
 
       if (typeof valA === 'string') {
         return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
@@ -241,18 +235,6 @@ export const IncidentListPage: React.FC = () => {
               {stats.resolved}
             </span>
           </div>
-
-          {stats.urgent > 0 && (
-            <>
-              <div className="h-4 w-px bg-slate-200 hidden sm:block" />
-              <div className="flex items-center gap-1.5 text-rose-700 font-medium animate-pulse">
-                <span>🔴 Khẩn cấp:</span>
-                <span className="font-bold bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200/60">
-                  {stats.urgent}
-                </span>
-              </div>
-            </>
-          )}
         </div>
       </div>
 
@@ -312,7 +294,6 @@ export const IncidentListPage: React.FC = () => {
               >
                 <option value="createdAt_desc">Ngày báo gần nhất</option>
                 <option value="createdAt_asc">Ngày báo cũ nhất</option>
-                <option value="isUrgent_desc">Ưu tiên khẩn cấp trước</option>
                 <option value="code_asc">Mã sự cố (A-Z)</option>
               </select>
             </div>

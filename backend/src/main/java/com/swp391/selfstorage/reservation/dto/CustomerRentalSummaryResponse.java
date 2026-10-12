@@ -61,6 +61,7 @@ public class CustomerRentalSummaryResponse {
     private Integer pendingRenewalMonths;
     private Long pendingRenewalAmount;
     private String pendingRenewalExpiresAt;
+    private java.time.OffsetDateTime createdAt;
 
     public CustomerRentalSummaryResponse() {}
 
@@ -173,4 +174,7 @@ public class CustomerRentalSummaryResponse {
 
     public String getPendingRenewalExpiresAt() { return pendingRenewalExpiresAt; }
     public void setPendingRenewalExpiresAt(String pendingRenewalExpiresAt) { this.pendingRenewalExpiresAt = pendingRenewalExpiresAt; }
+
+    public java.time.OffsetDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(java.time.OffsetDateTime createdAt) { this.createdAt = createdAt; }
 }

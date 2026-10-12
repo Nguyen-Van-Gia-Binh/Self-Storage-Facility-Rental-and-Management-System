@@ -16,6 +16,7 @@ import {
   CreditCard,
   Clock,
   Calendar,
+  XCircle,
 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
@@ -32,6 +33,7 @@ export interface RentedUnitCardProps {
   onOpenOverduePayment?: (contract: RentedContract) => void;
   onCancelReturn?: (contract: RentedContract) => void;
   onReschedulePeriod?: (contract: RentedContract) => void;
+  onCancelPendingCheckIn?: (contract: RentedContract) => void;
   renewalNoticeDays?: number;
 }
 
@@ -42,6 +44,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
   onOpenOverduePayment,
   onCancelReturn,
   onReschedulePeriod,
+  onCancelPendingCheckIn,
   renewalNoticeDays,
 }) => {
   const [showPin, setShowPin] = useState(false);
@@ -295,6 +298,18 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                 >
                   <Calendar className="w-3.5 h-3.5 mr-1 text-emerald-600" />
                   Dời ngày
+                </Button>
+              )}
+              {onCancelPendingCheckIn && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onCancelPendingCheckIn(contract)}
+                  className="text-xs font-semibold text-rose-700 border-rose-300 hover:bg-rose-50 cursor-pointer"
+                  title="Hủy đơn nhận kho & yêu cầu hoàn tiền"
+                >
+                  <XCircle className="w-3.5 h-3.5 mr-1 text-rose-600" />
+                  Hủy nhận kho
                 </Button>
               )}
             </>

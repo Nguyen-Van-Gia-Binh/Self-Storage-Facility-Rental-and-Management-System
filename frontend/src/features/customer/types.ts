@@ -128,9 +128,13 @@ export interface RentedContract {
   handoverStaffName?: string;
   handoverConditionNote?: string;
   customerConfirmedAt?: string;
+  reservationId?: number;
+  reservationCode?: string;
+  rentalMonths?: number;
   relocationSupportRequestId?: number;
   relocationSupportRequestCode?: string;
   relocationReason?: string;
+  createdAt?: string;
 }
 
 // Nhật ký truy cập ra vào kho (US-SC-05.2, BR-ACC-02)

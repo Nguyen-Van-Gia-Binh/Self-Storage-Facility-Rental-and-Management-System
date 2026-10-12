@@ -128,7 +128,6 @@ describe('Xử lý sự cố — Kiến trúc Drill-down 3 Cấp độ (FM-05, S
       expect(html).toContain('HD-012');
       expect(html).toContain('Lê Văn C');
       expect(html).toContain('Hoàng Văn E');
-      expect(html).toContain('🔴 Khẩn cấp');
       expect(html).toContain('Chi tiết');
     });
 

@@ -273,6 +273,7 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
         res.setContractId(contract.getId());
         res.setContractCode(contract.getCode());
         res.setReservationId(contract.getReservationId());
+        res.setCreatedAt(contract.getCreatedAt());
 
         if (contract.getReservationId() != null && reservationRepository != null) {
             reservationRepository.findById(contract.getReservationId())

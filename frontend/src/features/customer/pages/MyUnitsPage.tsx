@@ -24,6 +24,7 @@ import { ContractDetailModal } from '../components/ContractDetailModal';
 import { EarlyRenewalReminderModal } from '../components/EarlyRenewalReminderModal';
 import { VietQRPaymentModal } from '../components/VietQRPaymentModal';
 import { ReschedulePeriodModal } from '../components/ReschedulePeriodModal';
+import { CancelCheckInModal } from '../components/CancelCheckInModal';
 import { getCustomerContracts } from '@/api/customerRentals';
 import { getMyReservationsApi, cancelReservationApi, type ReservationResponse } from '@/api/reservation';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
@@ -53,8 +54,15 @@ export const MyUnitsPage: React.FC = () => {
   const [selectedDetailContract, setSelectedDetailContract] = useState<RentedContract | null>(null);
   const [selectedRescheduleContract, setSelectedRescheduleContract] = useState<RentedContract | null>(null);
   const [selectedOverdueContract, setSelectedOverdueContract] = useState<RentedContract | null>(null);
+  const [selectedCancelCheckInContract, setSelectedCancelCheckInContract] = useState<RentedContract | null>(null);
   const [earlyRenewalContract, setEarlyRenewalContract] = useState<RentedContract | null>(null);
   const [showEarlyRenewalModal, setShowEarlyRenewalModal] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const showToast = (text: string, type: 'success' | 'error' = 'success') => {
+    setToastMessage({ text, type });
+    setTimeout(() => setToastMessage(null), 4000);
+  };
 
   const loadContracts = useCallback(async () => {
     if (!isAuthenticated) {
@@ -128,12 +136,12 @@ export const MyUnitsPage: React.FC = () => {
     loadContracts();
   };
 
-  // Lọc theo Tab và Search Query (Phương án A: Rành rọt từng trạng thái nghiệp vụ)
+  // Lọc theo Tab và Search Query
   const filteredContracts = useMemo(() => {
     if (activeTab === 'PENDING_PAYMENT') return [];
     return contracts
       .filter((contract) => {
-        // 1. Lọc theo Tab
+        // 1. Lọc theo Tab (Phương án A: Rành rọt từng trạng thái nghiệp vụ)
         if (activeTab === 'ACTIVE' && contract.status !== 'ACTIVE') return false;
         if (activeTab === 'OVERDUE' && contract.status !== 'OVERDUE') return false;
         if (activeTab === 'PENDING_RETURN' && contract.status !== 'PENDING_RETURN') return false;
@@ -506,6 +514,7 @@ export const MyUnitsPage: React.FC = () => {
                   onViewDetail={(c) => setSelectedDetailContract(c)}
                   onOpenOverduePayment={(c) => setSelectedOverdueContract(c)}
                   onCancelReturn={() => loadContracts()}
+                  onCancelPendingCheckIn={(c) => setSelectedCancelCheckInContract(c)}
                   renewalNoticeDays={noticeDays > 0 ? noticeDays : undefined}
                 />
               ))}
@@ -577,6 +586,17 @@ export const MyUnitsPage: React.FC = () => {
         onSuccess={() => {
           setSelectedRescheduleContract(null);
           loadContracts();
+        }}
+      />
+
+      <CancelCheckInModal
+        isOpen={Boolean(selectedCancelCheckInContract)}
+        onClose={() => setSelectedCancelCheckInContract(null)}
+        contract={selectedCancelCheckInContract}
+        onSuccess={() => {
+          setSelectedCancelCheckInContract(null);
+          loadContracts();
+          showToast('Đã hủy nhận kho thành công. Hệ thống đã tự động ghi nhận giao dịch hoàn tiền.');
         }}
       />
 
@@ -673,6 +693,26 @@ export const MyUnitsPage: React.FC = () => {
           </div>
         </div>
       </Modal>
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-5 duration-300">
+          <div
+            className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl border text-xs font-bold ${
+              toastMessage.type === 'success'
+                ? 'bg-emerald-900 text-white border-emerald-700 shadow-emerald-950/20'
+                : 'bg-rose-900 text-white border-rose-700 shadow-rose-950/20'
+            }`}
+          >
+            {toastMessage.type === 'success' ? (
+              <RotateCcw className="w-4 h-4 text-emerald-400" />
+            ) : (
+              <AlertTriangle className="w-4 h-4 text-rose-400" />
+            )}
+            <span>{toastMessage.text}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

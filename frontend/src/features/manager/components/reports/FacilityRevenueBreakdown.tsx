@@ -42,7 +42,7 @@ export const FacilityRevenueBreakdown: React.FC<Props> = ({ data, loading }) => 
   const companyIncidentCost = data.companyIncidentCost ?? 0;
   // 5. Tổng doanh thu thuần = (Phí thuê + Phí dịch vụ + Phí quá hạn) - Chi phí công ty chịu
   const grossInflow = rentalRevenue + customerServiceFee + overduePenaltyFee;
-  const netRevenue = data.netRevenue ?? Math.max(0, grossInflow - companyIncidentCost);
+  const netRevenue = Math.max(0, grossInflow - companyIncidentCost);
 
   return (
     <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-6">
@@ -110,7 +110,7 @@ export const FacilityRevenueBreakdown: React.FC<Props> = ({ data, loading }) => 
             <div className="text-xl font-black text-amber-700 font-mono">{formatVND(overduePenaltyFee)}</div>
           </div>
           <p className="text-[11px] text-slate-500 mt-2">
-            Phạt trễ hạn 10%/ngày trên tiền cọc từ D+4 đến D+10
+            Phạt lũy tiến (10% - 20%/ngày) trên tiền cọc từ D+4 đến D+10
           </p>
         </div>
 

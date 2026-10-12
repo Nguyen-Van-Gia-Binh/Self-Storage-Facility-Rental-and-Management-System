@@ -418,6 +418,8 @@ public class ReservationServiceImpl implements ReservationService {
                 ? request.getReason()
                 : "Khach hang chu dong huy don";
 
+        boolean isNoShow = false;
+
         // Xử lý hoàn tiền khi đơn đã thanh toán (CONFIRMED) theo BR-CAN-01 & BR-CAN-02
         if (reservation.getStatus() == ReservationStatus.CONFIRMED) {
             OffsetDateTime startDateTime = reservation.getStartDate().atStartOfDay().atOffset(now.getOffset());
@@ -430,17 +432,36 @@ public class ReservationServiceImpl implements ReservationService {
             long rentalFee = Math.max(0, reservation.getTotalPayable() - deposit);
             long refundAmount;
 
-            if (hoursUntilStart >= fullRefundHours) {
+            boolean isWithinCoolingOff = false;
+            if (reservation.getConfirmedAt() != null) {
+                isWithinCoolingOff = Duration.between(reservation.getConfirmedAt(), now).toHours() <= fullRefundHours;
+            } else if (reservation.getCreatedAt() != null) {
+                isWithinCoolingOff = Duration.between(reservation.getCreatedAt().atOffset(now.getOffset()), now).toHours() <= fullRefundHours;
+            }
+
+            // Đủ điều kiện hoàn 100% (cả cọc + tiền thuê) nếu:
+            // 1. Hủy trong vòng 48 giờ kể từ khi thanh toán (cooling-off period)
+            // 2. HOẶC hủy trước ngày bắt đầu thuê >= 48 giờ
+            if (isWithinCoolingOff || hoursUntilStart >= fullRefundHours) {
                 refundAmount = reservation.getTotalPayable();
             } else if (now.isBefore(startDateTime)) {
                 BigDecimal lateRate = cancelPolicy != null ? cancelPolicy.getCancelLateRefundRate() : BigDecimal.ZERO;
                 refundAmount = rentalFee + PolicyNumbers.share(deposit, lateRate);
             } else {
-                BigDecimal noShowRate = cancelPolicy != null ? cancelPolicy.getCancelNoShowRefundRate() : BigDecimal.ZERO;
+                int graceDays = cancelPolicy != null && cancelPolicy.getCheckinGraceDays() != null
+                        ? cancelPolicy.getCheckinGraceDays()
+                        : 10;
                 long heldDays = Math.max(0, java.time.temporal.ChronoUnit.DAYS.between(reservation.getStartDate(), now.toLocalDate()));
-                long daily = PolicyNumbers.dailyRent(reservation.getMonthlyPriceSnapshot(), cancelPolicy);
-                long rentCharged = Math.min(rentalFee, daily * heldDays);
-                refundAmount = Math.max(0, rentalFee - rentCharged) + PolicyNumbers.share(deposit, noShowRate);
+                if (heldDays > graceDays) {
+                    // Quá hạn ân hạn nhận kho (No-show quá hạn theo BR-CAN-04): Không hoàn tiền cả 2 khoản (0đ), chỉ giải phóng ô kho
+                    refundAmount = 0L;
+                    isNoShow = true;
+                } else {
+                    BigDecimal noShowRate = cancelPolicy != null ? cancelPolicy.getCancelNoShowRefundRate() : BigDecimal.ZERO;
+                    long daily = PolicyNumbers.dailyRent(reservation.getMonthlyPriceSnapshot(), cancelPolicy);
+                    long rentCharged = Math.min(rentalFee, daily * heldDays);
+                    refundAmount = Math.max(0, rentalFee - rentCharged) + PolicyNumbers.share(deposit, noShowRate);
+                }
             }
 
             if (refundAmount > 0) {
@@ -471,7 +492,7 @@ public class ReservationServiceImpl implements ReservationService {
             });
         }
 
-        reservation.setStatus(ReservationStatus.CANCELLED);
+        reservation.setStatus(isNoShow ? ReservationStatus.NO_SHOW : ReservationStatus.CANCELLED);
         reservation.setCancelledAt(now);
         reservation.setCancelReason(reason);
 

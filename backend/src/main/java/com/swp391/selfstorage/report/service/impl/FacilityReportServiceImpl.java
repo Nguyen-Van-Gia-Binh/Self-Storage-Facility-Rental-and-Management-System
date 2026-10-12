@@ -124,8 +124,9 @@ public class FacilityReportServiceImpl implements FacilityReportService {
 
         // 3. Tính doanh thu tài chính theo tháng (AC-3)
         List<Long> contractIds = contracts.stream().map(RentalContract::getId).toList();
-        long rentalRevenue = 0;
-        long surchargeRevenue = 0;
+        long rentalRevenue = 0L;
+        long surchargeRevenue = 0L;
+        long paidOverdueFee = 0L;
 
         if (!contractIds.isEmpty()) {
             List<PaymentTransaction> monthlyPayments = new ArrayList<>();
@@ -148,19 +149,23 @@ public class FacilityReportServiceImpl implements FacilityReportService {
 
                 for (PaymentTransaction p : monthlyPayments) {
                     RentalContract c = contractMap.get(p.getContractId());
-                    if ("RENEWAL_PAYMENT".equalsIgnoreCase(p.getTransactionType())) {
-                        rentalRevenue += p.getAmount() != null ? p.getAmount() : 0L;
-                    } else if ("EXTRA_FEE_PAYMENT".equalsIgnoreCase(p.getTransactionType())) {
-                        surchargeRevenue += p.getAmount() != null ? p.getAmount() : 0L;
-                    } else if ("INITIAL_PAYMENT".equalsIgnoreCase(p.getTransactionType())) {
-                        long amount = p.getAmount() != null ? p.getAmount() : 0L;
+                    String txnType = p.getTransactionType() != null ? p.getTransactionType() : "";
+                    long amount = p.getAmount() != null ? p.getAmount() : 0L;
+
+                    if ("RENEWAL_PAYMENT".equalsIgnoreCase(txnType) || "CONTRACT_RENEWAL".equalsIgnoreCase(txnType)) {
+                        rentalRevenue += amount;
+                    } else if ("EXTRA_FEE_PAYMENT".equalsIgnoreCase(txnType) || "SETTLEMENT".equalsIgnoreCase(txnType)) {
+                        surchargeRevenue += amount;
+                    } else if ("OVERDUE_PENALTY".equalsIgnoreCase(txnType)) {
+                        paidOverdueFee += amount;
+                    } else if ("INITIAL_PAYMENT".equalsIgnoreCase(txnType)) {
                         long rent = c != null ? c.getTotalRentalFee() : amount;
                         long rentPart = Math.min(amount, rent);
                         rentalRevenue += rentPart;
                         long extra = amount - rentPart - (c != null ? c.getDepositAmount() : 0L);
                         if (extra > 0) surchargeRevenue += extra;
                     } else {
-                        rentalRevenue += p.getAmount() != null ? p.getAmount() : 0L;
+                        rentalRevenue += amount;
                     }
                 }
             } else {
@@ -183,12 +188,19 @@ public class FacilityReportServiceImpl implements FacilityReportService {
         // Tổng doanh thu thuần = (Phí thuê + Phí dịch vụ khách trả + Phí phạt quá hạn) - Chi phí sự cố công ty chịu
         long customerServiceFee = surchargeRevenue;
 
-        long overduePenaltyFee = contracts.stream()
-                .filter(c -> c.getStatus() == ContractStatus.OVERDUE || c.getOverdueFeeAccrued() > 0)
-                .mapToLong(RentalContract::getOverdueFeeAccrued)
-                .sum();
+        long overduePenaltyFee = paidOverdueFee;
+        if (overduePenaltyFee == 0L && contracts != null) {
+            // Fallback nếu chưa có giao dịch thu phạt nhưng có hợp đồng nợ phạt ghi nhận trong kỳ
+            overduePenaltyFee = contracts.stream()
+                    .filter(c -> (c.getStatus() == ContractStatus.OVERDUE || c.getOverdueFeeAccrued() > 0)
+                            && ((c.getStartDate() != null && YearMonth.from(c.getStartDate()).equals(targetMonth))
+                            || (c.getCreatedAt() != null && YearMonth.from(c.getCreatedAt()).equals(targetMonth))))
+                    .mapToLong(RentalContract::getOverdueFeeAccrued)
+                    .sum();
+        }
 
         long companyIncidentCost = 0L;
+        long customerIncidentFee = 0L;
         if (supportRequestRepository != null) {
             try {
                 List<Long> unitIds = allUnits.stream().map(StorageUnit::getId).toList();
@@ -206,23 +218,36 @@ public class FacilityReportServiceImpl implements FacilityReportService {
                     ));
                 }
 
-                companyIncidentCost = tickets.stream()
+                List<SupportRequest> monthlyTickets = tickets.stream()
                         .distinct()
                         .filter(t -> {
                             OffsetDateTime tTime = t.getResolvedAt() != null ? t.getResolvedAt() : t.getCreatedAt();
                             return tTime != null && YearMonth.from(tTime.atZoneSameInstant(ZoneId.systemDefault())).equals(targetMonth);
                         })
+                        .toList();
+
+                companyIncidentCost = monthlyTickets.stream()
                         .filter(t -> {
                             String note = t.getResolutionNote() != null ? t.getResolutionNote().toLowerCase() : "";
-                            return note.contains("lỗi do công ty") || note.contains("cong ty") || t.getCategory() == SupportCategory.UNIT_DAMAGE;
+                            return note.contains("công ty") || note.contains("cong ty") || note.contains("cng ty") || t.getCategory() == SupportCategory.UNIT_DAMAGE;
                         })
-                        .mapToLong(t -> 200_000L) // Định mức khắc phục sự cố kỹ thuật hạ tầng cơ sở chịu 100% theo BR-SUP-02
+                        .mapToLong(t -> extractCompanyIncidentCost(t.getResolutionNote()))
+                        .sum();
+
+                customerIncidentFee = monthlyTickets.stream()
+                        .filter(t -> {
+                            String note = t.getResolutionNote() != null ? t.getResolutionNote().toLowerCase() : "";
+                            return note.contains("khách hàng") || note.contains("khach hang") || note.contains("kh?ch h?ng");
+                        })
+                        .mapToLong(t -> extractCustomerIncidentFee(t.getResolutionNote()))
                         .sum();
             } catch (Exception e) {
-                log.warn("Lỗi khi tính chi phí sự cố công ty chịu: {}", e.getMessage());
+                log.warn("Lỗi khi tính chi phí sự cố công ty chịu hoặc phí dịch vụ khách trả: {}", e.getMessage());
             }
         }
 
+        customerServiceFee += customerIncidentFee;
+        surchargeRevenue = customerServiceFee;
         long netRevenue = Math.max(0L, rentalRevenue + customerServiceFee + overduePenaltyFee - companyIncidentCost);
         long totalRevenue = netRevenue;
 
@@ -496,6 +521,46 @@ public class FacilityReportServiceImpl implements FacilityReportService {
         }
 
         return facility;
+    }
+
+    private long extractCompanyIncidentCost(String note) {
+        if (note == null || note.isBlank()) {
+            return 200_000L;
+        }
+        // Khớp định dạng: "Chi phí công ty chịu: 320.000 đ" hoặc "Chi phí công ty chịu: 450 đ"
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile(
+                "(?:Chi phí công ty chịu|Chi phi cong ty chiu|Chi ph\\? cng ty ch\\?u):\\s*([0-9\\.,]+)",
+                java.util.regex.Pattern.CASE_INSENSITIVE | java.util.regex.Pattern.UNICODE_CASE
+        ).matcher(note);
+        if (m.find()) {
+            String digits = m.group(1).replaceAll("[^0-9]", "");
+            if (!digits.isEmpty()) {
+                try {
+                    return Long.parseLong(digits);
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+        return 200_000L;
+    }
+
+    private long extractCustomerIncidentFee(String note) {
+        if (note == null || note.isBlank()) {
+            return 0L;
+        }
+        // Khớp định dạng: "Tổng thu: 250.000 đ", "Tổng thu: 250 đ", "Tổng thu từ khách: ...", "Khách thanh toán: ...", "Khách trả: ..."
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile(
+                "(?:Tổng thu|Tong thu|T\\?ng thu|Tổng thu từ khách|Tong thu tu khach|Khách thanh toán|Khach thanh toan|Khách trả|Khach tra):\\s*([0-9\\.,]+)",
+                java.util.regex.Pattern.CASE_INSENSITIVE | java.util.regex.Pattern.UNICODE_CASE
+        ).matcher(note);
+        if (m.find()) {
+            String digits = m.group(1).replaceAll("[^0-9]", "");
+            if (!digits.isEmpty()) {
+                try {
+                    return Long.parseLong(digits);
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+        return 0L;
     }
 
     private YearMonth parseYearMonth(String month) {

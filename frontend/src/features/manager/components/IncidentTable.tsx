@@ -4,9 +4,8 @@ import { ArrowUpDown, ArrowUp, ArrowDown, Eye, AlertCircle, UserX } from 'lucide
 import type { ManagementSupportTicket } from '../types/staffAssignment';
 import { StatusBadge } from './StatusBadge';
 import { TypeBadge } from './TypeBadge';
-import { PriorityBadge } from './PriorityBadge';
 
-export type IncidentSortField = 'code' | 'createdAt' | 'category' | 'customerName' | 'status' | 'isUrgent';
+export type IncidentSortField = 'code' | 'createdAt' | 'category' | 'customerName' | 'status';
 
 interface IncidentTableProps {
   tickets: ManagementSupportTicket[];
@@ -87,12 +86,6 @@ export const IncidentTable: React.FC<IncidentTableProps> = ({
               >
                 Khách thuê {renderSortIcon('customerName')}
               </th>
-              <th
-                onClick={() => onSort('isUrgent')}
-                className="py-3.5 px-4 cursor-pointer hover:text-slate-900 transition-colors"
-              >
-                Mức ưu tiên {renderSortIcon('isUrgent')}
-              </th>
               <th className="py-3.5 px-4">Nhân viên phụ trách</th>
               <th
                 onClick={() => onSort('status')}
@@ -145,11 +138,6 @@ export const IncidentTable: React.FC<IncidentTableProps> = ({
                   <span className="text-[11px] text-slate-500 block">
                     {t.customerPhone || 'Chưa có SĐT'}
                   </span>
-                </td>
-
-                {/* Mức ưu tiên */}
-                <td className="py-3.5 px-4 whitespace-nowrap">
-                  <PriorityBadge isUrgent={t.isUrgent} />
                 </td>
 
                 {/* Nhân viên phụ trách */}

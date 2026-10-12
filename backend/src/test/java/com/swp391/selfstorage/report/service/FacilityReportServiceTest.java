@@ -213,6 +213,55 @@ class FacilityReportServiceTest {
     }
 
     @Test
+    @DisplayName("AC-3 Extension: Giao dịch OVERDUE_PENALTY được ghi nhận đúng vào overduePenaltyFee thay vì lẫn vào rentalRevenue")
+    void testGetFacilityOverview_FinancialRevenue_WithOverduePenalty() {
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(testFacility));
+        when(storageUnitRepository.findByFacilityIdAndFilters(eq(1L), eq(null), eq(null), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        RentalContract c1 = RentalContract.builder()
+                .id(102L)
+                .facilityId(1L)
+                .status(ContractStatus.PENDING_RETURN)
+                .totalRentalFee(3_600_000L)
+                .depositAmount(1_200_000L)
+                .depositBalance(1_200_000L)
+                .startDate(LocalDate.of(2026, 7, 7))
+                .overdueFeeAccrued(0L)
+                .build();
+
+        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(List.of(c1));
+
+        PaymentTransaction pInitial = PaymentTransaction.builder()
+                .id(11L)
+                .contractId(102L)
+                .transactionType("INITIAL_PAYMENT")
+                .amount(4_800_000L)
+                .status("SUCCESS")
+                .build();
+        pInitial.setCreatedAt(java.time.Instant.parse("2026-10-12T13:42:00Z"));
+
+        PaymentTransaction pPenalty = PaymentTransaction.builder()
+                .id(12L)
+                .contractId(102L)
+                .transactionType("OVERDUE_PENALTY")
+                .amount(240_000L)
+                .status("SUCCESS")
+                .build();
+        pPenalty.setCreatedAt(java.time.Instant.parse("2026-10-12T14:01:00Z"));
+
+        when(paymentTransactionRepository.findByContractId(102L)).thenReturn(List.of(pInitial, pPenalty));
+
+        FacilityOverviewReportResponse response = reportService.getFacilityOverview(1L, "2026-10", facilityManagerPrincipal);
+
+        assertNotNull(response);
+        assertEquals(3_600_000L, response.getRentalRevenue());
+        assertEquals(240_000L, response.getOverduePenaltyFee());
+        assertEquals(0L, response.getCustomerServiceFee());
+        assertEquals(3_840_000L, response.getTotalRevenue());
+    }
+
+    @Test
     @DisplayName("AC-4: Báo cáo rủi ro nợ quá hạn phân bổ chính xác theo 3 nhóm độ tuổi nợ")
     void testGetFacilityOverdueDebt_AgingBrackets() {
         when(facilityRepository.findById(1L)).thenReturn(Optional.of(testFacility));
@@ -372,5 +421,109 @@ class FacilityReportServiceTest {
         assertEquals(1, response.getContent().size());
         assertEquals("CTR-1", response.getContent().get(0).getCode());
         assertTrue(response.getContent().get(0).isNearExpiration());
+    }
+
+    @Test
+    @DisplayName("AC-3: Tính toán chính xác chi phí sự cố công ty chịu từ biên bản xử lý và trừ vào doanh thu thuần")
+    void testGetFacilityOverview_CompanyIncidentCostDeduction() {
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(testFacility));
+        StorageUnit su = StorageUnit.builder().id(501L).facilityId(1L).code("U-501").status(StorageUnitStatus.AVAILABLE).build();
+        when(storageUnitRepository.findByFacilityIdAndFilters(eq(1L), eq(null), eq(null), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(su)));
+
+        RentalContract c1 = RentalContract.builder()
+                .id(101L)
+                .facilityId(1L)
+                .status(ContractStatus.ACTIVE)
+                .totalRentalFee(5_000_000L)
+                .startDate(LocalDate.of(2026, 10, 1))
+                .build();
+        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(List.of(c1));
+
+        PaymentTransaction p1 = PaymentTransaction.builder()
+                .id(1L)
+                .contractId(101L)
+                .transactionType("RENEWAL_PAYMENT")
+                .amount(5_000_000L)
+                .status("SUCCESS")
+                .build();
+        p1.setCreatedAt(java.time.Instant.parse("2026-10-02T03:00:00Z"));
+        when(paymentTransactionRepository.findByContractId(101L)).thenReturn(List.of(p1));
+
+        com.swp391.selfstorage.support.entity.SupportRequest ticket = com.swp391.selfstorage.support.entity.SupportRequest.builder()
+                .id(88L)
+                .contractId(101L)
+                .storageUnitId(501L)
+                .status(com.swp391.selfstorage.support.entity.SupportStatus.RESOLVED)
+                .category(com.swp391.selfstorage.support.entity.SupportCategory.UNIT_DAMAGE)
+                .resolutionNote("[Trách nhiệm: Lỗi do công ty | Hạng mục sửa chữa: Hư khóa (120.000 đ), Hư cửa (200.000 đ) | Chi phí công ty chịu: 320.000 đ | Khách hàng miễn phí: 0 đ]")
+                .resolvedAt(java.time.OffsetDateTime.parse("2026-10-12T10:00:00Z"))
+                .build();
+
+        when(supportRequestRepository.findByContractIdInAndStatusIn(any(), any()))
+                .thenReturn(List.of(ticket));
+        when(supportRequestRepository.findByStorageUnitIdInAndStatusIn(any(), any()))
+                .thenReturn(Collections.emptyList());
+
+        FacilityOverviewReportResponse response = reportService.getFacilityOverview(1L, "2026-10", facilityManagerPrincipal);
+
+        assertNotNull(response);
+        assertEquals(5_000_000L, response.getRentalRevenue());
+        assertEquals(320_000L, response.getCompanyIncidentCost());
+        // Doanh thu thuần = 5_000_000 - 320_000 = 4_680_000
+        assertEquals(4_680_000L, response.getNetRevenue());
+    }
+
+    @Test
+    @DisplayName("AC-3: Tính toán chính xác phụ phí sự cố do khách hàng chịu từ biên bản và cộng vào phí dịch vụ / doanh thu thuần")
+    void testGetFacilityOverview_CustomerIncidentFeeAddition() {
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(testFacility));
+        StorageUnit su = StorageUnit.builder().id(501L).facilityId(1L).code("U-501").status(StorageUnitStatus.AVAILABLE).build();
+        when(storageUnitRepository.findByFacilityIdAndFilters(eq(1L), eq(null), eq(null), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(su)));
+
+        RentalContract c1 = RentalContract.builder()
+                .id(101L)
+                .facilityId(1L)
+                .status(ContractStatus.ACTIVE)
+                .totalRentalFee(5_000_000L)
+                .startDate(LocalDate.of(2026, 10, 1))
+                .build();
+        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(List.of(c1));
+
+        PaymentTransaction p1 = PaymentTransaction.builder()
+                .id(1L)
+                .contractId(101L)
+                .transactionType("RENEWAL_PAYMENT")
+                .amount(5_000_000L)
+                .status("SUCCESS")
+                .build();
+        p1.setCreatedAt(java.time.Instant.parse("2026-10-02T03:00:00Z"));
+        when(paymentTransactionRepository.findByContractId(101L)).thenReturn(List.of(p1));
+
+        com.swp391.selfstorage.support.entity.SupportRequest ticket = com.swp391.selfstorage.support.entity.SupportRequest.builder()
+                .id(89L)
+                .contractId(101L)
+                .storageUnitId(501L)
+                .status(com.swp391.selfstorage.support.entity.SupportStatus.RESOLVED)
+                .category(com.swp391.selfstorage.support.entity.SupportCategory.OTHER)
+                .resolutionNote("[Trách nhiệm: Lỗi do khách hàng | Phụ phí: Đổi ổ khóa (150.000 đ), Vệ sinh (100.000 đ) | Tổng thu: 250.000 đ | Đã thanh toán đầy đủ 100%]")
+                .resolvedAt(java.time.OffsetDateTime.parse("2026-10-12T10:00:00Z"))
+                .build();
+
+        when(supportRequestRepository.findByContractIdInAndStatusIn(any(), any()))
+                .thenReturn(List.of(ticket));
+        when(supportRequestRepository.findByStorageUnitIdInAndStatusIn(any(), any()))
+                .thenReturn(Collections.emptyList());
+
+        FacilityOverviewReportResponse response = reportService.getFacilityOverview(1L, "2026-10", facilityManagerPrincipal);
+
+        assertNotNull(response);
+        assertEquals(5_000_000L, response.getRentalRevenue());
+        assertEquals(250_000L, response.getCustomerServiceFee());
+        assertEquals(250_000L, response.getSurchargeRevenue());
+        assertEquals(0L, response.getCompanyIncidentCost());
+        // Doanh thu thuần = 5_000_000 + 250_000 = 5_250_000
+        assertEquals(5_250_000L, response.getNetRevenue());
     }
 }

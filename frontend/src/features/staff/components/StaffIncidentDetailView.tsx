@@ -10,6 +10,7 @@ import {
   Loader2,
   FileText,
   AlertCircle,
+  Wrench,
 } from 'lucide-react';
 import type { DailyIncidentTask, SurchargeItem } from '@/types';
 import {
@@ -192,6 +193,16 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
       return;
     }
 
+    if (faultParty === 'COMPANY' && allSurcharges.length > 0 && selectedFeeIds.length === 0) {
+      setErrorMsg('Vui lòng chọn ít nhất 1 hạng mục sửa chữa/vật tư để hệ thống hạch toán chi phí bảo trì cơ sở.');
+      return;
+    }
+
+    if (faultParty === 'CUSTOMER' && allSurcharges.length > 0 && selectedFeeIds.length === 0) {
+      setErrorMsg('Vui lòng chọn ít nhất 1 khoản phụ phí / bồi hoàn niêm yết để lập biên bản thu phí từ khách hàng.');
+      return;
+    }
+
     if (faultParty === 'CUSTOMER' && !isCustomerPaidConfirmed) {
       setErrorMsg('Khách hàng chưa thanh toán toàn bộ số phí. Vui lòng xác nhận đã thu đủ phí trước khi hoàn tất nghiệm thu.');
       return;
@@ -237,11 +248,15 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
       let faultSummary = '';
       const relocationText = needsRelocation ? ' | Phương án: Kích hoạt di dời sang ô kho khác do hư hại nặng' : '';
       if (faultParty === 'COMPANY') {
-        faultSummary = `\n[Trách nhiệm: Lỗi do công ty (100% công ty chi trả) - Khách hàng miễn phí 0 đ${relocationText}]`;
+        const selectedFeeNames = allSurcharges
+          .filter((f) => selectedFeeIds.includes(f.id))
+          .map((f) => `${f.name} (${calculateFeeAmount(f).toLocaleString('vi-VN')} đ)`)
+          .join(', ');
+        faultSummary = `\n[Trách nhiệm: Lỗi do công ty | Hạng mục sửa chữa: ${selectedFeeNames || 'Không có'} | Chi phí công ty chịu: ${totalFeeAmount.toLocaleString('vi-VN')} đ | Khách hàng miễn phí: 0 đ${relocationText}]`;
       } else {
         const selectedFeeNames = allSurcharges
           .filter((f) => selectedFeeIds.includes(f.id))
-          .map((f) => f.name)
+          .map((f) => `${f.name} (${calculateFeeAmount(f).toLocaleString('vi-VN')} đ)`)
           .join(', ');
         faultSummary = `\n[Trách nhiệm: Lỗi do khách hàng | Phụ phí: ${selectedFeeNames || 'Không phát sinh phụ phí'} | Tổng thu: ${totalFeeAmount.toLocaleString('vi-VN')} đ | Đã thanh toán đầy đủ 100%${relocationText}]`;
       }
@@ -272,6 +287,7 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
     !isAgreed ||
     !resolutionNote.trim() ||
     faultParty === null ||
+    (allSurcharges.length > 0 && selectedFeeIds.length === 0) ||
     (faultParty === 'CUSTOMER' && !isCustomerPaidConfirmed);
 
   const rawTitle = incidentDetail.title || 'Xử lý sự cố thực địa';
@@ -484,7 +500,6 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
                     type="button"
                     onClick={() => {
                       setFaultParty('COMPANY');
-                      setSelectedFeeIds([]);
                       setIsCustomerPaidConfirmed(false);
                     }}
                     className={`p-4 rounded-xl border text-left transition cursor-pointer ${
@@ -495,16 +510,22 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-xs text-slate-900">Lỗi do Công ty (Hạ tầng)</span>
-                      <span className="font-bold text-xs text-emerald-700 font-mono">0 đ (Miễn phí)</span>
+                      <span className="font-bold text-xs text-emerald-700 font-mono">
+                        {faultParty === 'COMPANY' && totalFeeAmount > 0
+                          ? `${totalFeeAmount.toLocaleString('vi-VN')} đ (Công ty chịu)`
+                          : 'Công ty chịu 100%'}
+                      </span>
                     </div>
                     <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-                      Sự cố do cơ sở vật chất xuống cấp, thấm dột tự nhiên. Công ty chịu 100% chi phí khắc phục.
+                      Sự cố do cơ sở vật chất xuống cấp, thấm dột tự nhiên. Khách hàng miễn phí 0 đ, chi phí khắc phục trừ vào doanh thu cơ sở.
                     </p>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => setFaultParty('CUSTOMER')}
+                    onClick={() => {
+                      setFaultParty('CUSTOMER');
+                    }}
                     className={`p-4 rounded-xl border text-left transition cursor-pointer ${
                       faultParty === 'CUSTOMER'
                         ? 'border-amber-500 bg-amber-50/50 shadow-xs ring-1 ring-amber-400'
@@ -513,7 +534,11 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-xs text-slate-900">Lỗi do Khách hàng</span>
-                      <span className="font-bold text-xs text-amber-700">Áp dụng phụ phí niêm yết</span>
+                      <span className="font-bold text-xs text-amber-700 font-mono">
+                        {faultParty === 'CUSTOMER' && totalFeeAmount > 0
+                          ? `${totalFeeAmount.toLocaleString('vi-VN')} đ (Khách trả)`
+                          : 'Áp dụng phụ phí niêm yết'}
+                      </span>
                     </div>
                     <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
                       Sử dụng sai quy cách, làm gãy khóa, bẩn tường. Khách hàng phải bồi hoàn theo biểu giá niêm yết.
@@ -521,6 +546,82 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
                   </button>
                 </div>
               </div>
+
+              {/* Danh mục hạng mục sửa chữa / vật tư khi Lỗi do Công ty */}
+              {faultParty === 'COMPANY' && (
+                <div className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-200 space-y-3 animate-in fade-in">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
+                      <Wrench className="w-4 h-4 text-emerald-700" />
+                      <span>Chọn hạng mục sửa chữa / vật tư khắc phục (Công ty chi trả):</span>
+                    </label>
+                    <span className="font-mono font-bold text-xs text-emerald-900">
+                      Chi phí công ty chịu: {totalFeeAmount.toLocaleString('vi-VN')} đ
+                    </span>
+                  </div>
+
+                  {loadingSurcharges ? (
+                    <div className="py-4 text-center text-xs text-slate-500">
+                      <Loader2 className="w-4 h-4 animate-spin mx-auto mb-1 text-emerald-600" />
+                      Đang tải danh mục sửa chữa / vật tư...
+                    </div>
+                  ) : allSurcharges.length === 0 ? (
+                    <p className="text-xs text-slate-500 italic">Không có danh mục sửa chữa nào đang hoạt động trong hệ thống.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                      {allSurcharges.map((fee) => {
+                        const isChecked = selectedFeeIds.includes(fee.id);
+                        const cost = calculateFeeAmount(fee);
+                        return (
+                          <label
+                            key={fee.id}
+                            className={`p-2.5 rounded-lg border text-xs flex items-center justify-between cursor-pointer transition ${
+                              isChecked
+                                ? 'bg-emerald-100/70 border-emerald-400 text-emerald-950 font-medium'
+                                : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => toggleFee(fee.id)}
+                                className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5"
+                              />
+                              <div>
+                                <p className="font-semibold">{fee.name}</p>
+                                <span className="text-[10px] text-slate-500">{feeCategoryLabel(fee.category)}</span>
+                              </div>
+                            </div>
+                            <span className="font-mono font-bold text-emerald-800">
+                              {cost.toLocaleString('vi-VN')} đ
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Giải thích hạch toán vào báo cáo cơ sở FM-06 */}
+                  <div className="pt-2 border-t border-emerald-200/80 space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between text-emerald-950 font-semibold">
+                      <span>Khách hàng thanh toán:</span>
+                      <span className="font-mono text-emerald-700 font-bold">0 đ (Miễn phí hoàn toàn theo BR-SUP-02)</span>
+                    </div>
+                    <p className="text-[11px] text-emerald-800 leading-relaxed bg-emerald-100/60 p-2.5 rounded-lg border border-emerald-300/80">
+                      💡 <strong>Hạch toán kế toán vận hành:</strong> Chi phí sửa chữa{' '}
+                      <span className="font-mono font-bold text-emerald-900">{totalFeeAmount.toLocaleString('vi-VN')} đ</span> này được ghi nhận trực tiếp vào{' '}
+                      <strong>Báo cáo cơ sở (FM-06)</strong> tại mục <em>"4. Chi phí công ty chịu"</em> và trừ thẳng vào <em>Doanh thu thuần cơ sở</em>.
+                    </p>
+                    {allSurcharges.length > 0 && selectedFeeIds.length === 0 && (
+                      <p className="text-[11px] text-amber-700 font-medium flex items-center gap-1 mt-1">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0 text-amber-600" />
+                        <span>Vui lòng tích chọn các hạng mục vật tư / sửa chữa đã thực hiện để hệ thống hạch toán chi phí cơ sở.</span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Danh mục phụ phí niêm yết (Khi lỗi do khách hàng) */}
               {faultParty === 'CUSTOMER' && (
@@ -589,6 +690,21 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
                     <label htmlFor="customer-paid-checkbox" className="text-xs font-semibold text-amber-950 cursor-pointer">
                       Xác nhận: Khách hàng đã thanh toán đủ số tiền {totalFeeAmount.toLocaleString('vi-VN')} đ (hoặc đồng ý khấu trừ cọc khi thanh lý).
                     </label>
+                  </div>
+
+                  {/* Giải thích hạch toán vào báo cáo cơ sở FM-06 */}
+                  <div className="pt-2 border-t border-amber-200/80 space-y-1.5 text-xs">
+                    <p className="text-[11px] text-amber-900 leading-relaxed bg-amber-100/70 p-2.5 rounded-lg border border-amber-300/80">
+                      💡 <strong>Hạch toán kế toán vận hành:</strong> Khoản phụ phí bồi hoàn{' '}
+                      <span className="font-mono font-bold text-amber-950">{totalFeeAmount.toLocaleString('vi-VN')} đ</span> này được cộng trực tiếp vào{' '}
+                      <strong>Báo cáo cơ sở (FM-06)</strong> tại mục <em>"2. Phí dịch vụ (Khách trả)"</em> và tính vào <em>Doanh thu thuần cơ sở</em>.
+                    </p>
+                    {allSurcharges.length > 0 && selectedFeeIds.length === 0 && (
+                      <p className="text-[11px] text-amber-800 font-medium flex items-center gap-1 mt-1">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0 text-amber-700" />
+                        <span>Vui lòng tích chọn các khoản phụ phí bồi hoàn để hệ thống ghi nhận doanh thu dịch vụ cho cơ sở.</span>
+                      </p>
+                    )}
                   </div>
                 </div>
               )}

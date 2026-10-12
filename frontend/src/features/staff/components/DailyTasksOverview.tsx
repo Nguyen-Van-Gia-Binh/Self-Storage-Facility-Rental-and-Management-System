@@ -406,8 +406,19 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
                   : 'text-slate-600 hover:text-amber-700 hover:bg-amber-50'
               }`}
             >
-              <AlertTriangle className="w-3.5 h-3.5" />
+              <AlertTriangle className={`w-3.5 h-3.5 ${incidentPendingCount > 0 && filterCategory !== 'incident' ? 'text-amber-500 animate-pulse' : ''}`} />
               <span>Sự cố ({tasks.openSupportRequests.length})</span>
+              {incidentPendingCount > 0 && (
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded-full font-extrabold ${
+                    filterCategory === 'incident'
+                      ? 'bg-amber-700 text-white'
+                      : 'bg-amber-100 text-amber-800 border border-amber-200'
+                  }`}
+                >
+                  {incidentPendingCount} chờ xử lý
+                </span>
+              )}
             </button>
           </div>
 

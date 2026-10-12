@@ -28,7 +28,7 @@ export const DEMO_USERS: Record<UserRole, UserSession> = {
     role: 'CUSTOMER',
   },
   STAFF: {
-    id: 4,
+    id: 10,
     username: 'staff.q1@smartstorage.vn',
     email: 'staff.q1@smartstorage.vn',
     fullName: 'Trần Văn Hùng',
