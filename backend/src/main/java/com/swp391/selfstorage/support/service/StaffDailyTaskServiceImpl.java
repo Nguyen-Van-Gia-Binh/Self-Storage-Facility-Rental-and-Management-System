@@ -127,16 +127,37 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
         }
     }
 
+    private boolean isCheckInTaskForDate(RentalContract c, LocalDate date) {
+        if (c == null || c.getStartDate() == null || date == null) {
+            return false;
+        }
+        boolean completed = c.getStatus() == ContractStatus.ACTIVE
+                || c.getCheckinDate() != null
+                || c.getStatus() == ContractStatus.TERMINATED;
+        if (completed) {
+            LocalDate completedDate = c.getCheckinDate() != null ? c.getCheckinDate() : c.getStartDate();
+            return completedDate.isEqual(date);
+        }
+        // BR-CHK-05: Khách hàng được phép đến nhận kho trễ tối đa checkin.grace_days (10 ngày) tính từ startDate
+        if (c.getStatus() == ContractStatus.PENDING_CHECK_IN) {
+            int graceDays = com.swp391.selfstorage.policy.service.PolicyNumbers.snapshotInt(
+                    c.getPolicySnapshot(), "checkinGraceDays", 10);
+            LocalDate graceDeadline = c.getStartDate().plusDays(Math.max(0, graceDays));
+            return !date.isBefore(c.getStartDate()) && !date.isAfter(graceDeadline);
+        }
+        return c.getStartDate().isEqual(date);
+    }
+
     private List<DailyCheckInTaskDto> loadCheckInTasks(Long staffId, List<Long> facilityIds, LocalDate date, boolean onlyPending) {
         List<DailyCheckInTaskDto> result = new ArrayList<>();
         Set<Long> processedContractIds = new HashSet<>();
 
-        // Hợp đồng check-in trong ngày tại các cơ sở của staff
+        // Hợp đồng check-in tại các cơ sở của staff (bao gồm các đơn PENDING_CHECK_IN trong thời hạn ân hạn BR-CHK-05)
         if (facilityIds != null) {
             for (Long fId : facilityIds) {
                 List<RentalContract> contracts = rentalContractRepository.findByFacilityId(fId);
                 for (RentalContract c : contracts) {
-                    if (c.getStartDate() != null && c.getStartDate().isEqual(date)) {
+                    if (isCheckInTaskForDate(c, date)) {
                         if (processedContractIds.add(c.getId())) {
                             DailyCheckInTaskDto dto = toCheckInDto(c);
                             if (!onlyPending || !dto.isCompleted()) {
@@ -148,15 +169,34 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
             }
         }
 
-        // Nhiệm vụ phân công cụ thể qua staff_daily_assignment (HANDOVER)
+        // Nhiệm vụ phân công cụ thể qua staff_daily_assignment (HANDOVER) đúng ngày workDate
         List<StaffDailyAssignment> assignments = staffDailyAssignmentRepository.findByStaffIdAndWorkDate(staffId, date);
-        for (StaffDailyAssignment a : assignments) {
-            if (a.getTaskType() == AssignmentTaskType.HANDOVER && a.getReferenceId() != null) {
-                if (processedContractIds.add(a.getReferenceId())) {
+        if (assignments != null) {
+            for (StaffDailyAssignment a : assignments) {
+                if (a.getTaskType() == AssignmentTaskType.HANDOVER && a.getReferenceId() != null) {
+                    if (processedContractIds.add(a.getReferenceId())) {
+                        rentalContractRepository.findById(a.getReferenceId()).ifPresent(c -> {
+                            DailyCheckInTaskDto dto = toCheckInDto(c);
+                            if (!onlyPending || !dto.isCompleted()) {
+                                result.add(dto);
+                            }
+                        });
+                    }
+                }
+            }
+        }
+
+        // Các nhiệm vụ HANDOVER đã phân công cho nhân viên này và hợp đồng vẫn đang trong thời gian ân hạn PENDING_CHECK_IN (BR-CHK-05)
+        List<StaffDailyAssignment> allStaffAssignments = staffDailyAssignmentRepository.findByStaffId(staffId);
+        if (allStaffAssignments != null) {
+            for (StaffDailyAssignment a : allStaffAssignments) {
+                if (a.getTaskType() == AssignmentTaskType.HANDOVER && a.getReferenceId() != null) {
                     rentalContractRepository.findById(a.getReferenceId()).ifPresent(c -> {
-                        DailyCheckInTaskDto dto = toCheckInDto(c);
-                        if (!onlyPending || !dto.isCompleted()) {
-                            result.add(dto);
+                        if (isCheckInTaskForDate(c, date) && processedContractIds.add(c.getId())) {
+                            DailyCheckInTaskDto dto = toCheckInDto(c);
+                            if (!onlyPending || !dto.isCompleted()) {
+                                result.add(dto);
+                            }
                         }
                     });
                 }
@@ -193,14 +233,36 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
 
         // Nhiệm vụ phân công cụ thể qua staff_daily_assignment (RETURN / INSPECTION)
         List<StaffDailyAssignment> assignments = staffDailyAssignmentRepository.findByStaffIdAndWorkDate(staffId, date);
-        for (StaffDailyAssignment a : assignments) {
-            if ((a.getTaskType() == AssignmentTaskType.RETURN || a.getTaskType() == AssignmentTaskType.INSPECTION)
-                    && a.getReferenceId() != null) {
-                if (processedContractIds.add(a.getReferenceId())) {
+        if (assignments != null) {
+            for (StaffDailyAssignment a : assignments) {
+                if ((a.getTaskType() == AssignmentTaskType.RETURN || a.getTaskType() == AssignmentTaskType.INSPECTION)
+                        && a.getReferenceId() != null) {
+                    if (processedContractIds.add(a.getReferenceId())) {
+                        rentalContractRepository.findById(a.getReferenceId()).ifPresent(c -> {
+                            DailyReturnTaskDto dto = toReturnDto(c);
+                            if (!onlyPending || !dto.isCompleted()) {
+                                result.add(dto);
+                            }
+                        });
+                    }
+                }
+            }
+        }
+
+        // Các nhiệm vụ RETURN / INSPECTION đã phân công cho nhân viên này mà vẫn còn ở trạng thái PENDING_RETURN hoặc OVERDUE
+        List<StaffDailyAssignment> allStaffAssignments = staffDailyAssignmentRepository.findByStaffId(staffId);
+        if (allStaffAssignments != null) {
+            for (StaffDailyAssignment a : allStaffAssignments) {
+                if ((a.getTaskType() == AssignmentTaskType.RETURN || a.getTaskType() == AssignmentTaskType.INSPECTION)
+                        && a.getReferenceId() != null) {
                     rentalContractRepository.findById(a.getReferenceId()).ifPresent(c -> {
-                        DailyReturnTaskDto dto = toReturnDto(c);
-                        if (!onlyPending || !dto.isCompleted()) {
-                            result.add(dto);
+                        boolean isPendingOrOverdue = c.getStatus() == ContractStatus.PENDING_RETURN
+                                || c.getStatus() == ContractStatus.OVERDUE;
+                        if (isPendingOrOverdue && processedContractIds.add(c.getId())) {
+                            DailyReturnTaskDto dto = toReturnDto(c);
+                            if (!onlyPending || !dto.isCompleted()) {
+                                result.add(dto);
+                            }
                         }
                     });
                 }

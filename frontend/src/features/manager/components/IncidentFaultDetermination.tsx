@@ -81,7 +81,7 @@ export const IncidentFaultDetermination: React.FC<IncidentFaultDeterminationProp
                 )}
               </div>
               <p className="text-[11px] text-slate-600 leading-relaxed mt-1">
-                Sự cố hao mòn tự nhiên, hỏng hóc cơ sở vật chất. Cơ sở SmartStorage chịu 100% chi phí sửa chữa theo quy định BR-SUP-02.
+                Sự cố hao mòn tự nhiên, hỏng hóc cơ sở vật chất. Cơ sở chịu 100% chi phí sửa chữa.
               </p>
             </div>
 

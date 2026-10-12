@@ -70,7 +70,7 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
             </div>
             <div>
               <h3 className="font-semibold text-gray-900">Chi tiết nhật ký thao tác nghiệp vụ</h3>
-              <p className="text-xs text-gray-500">Mã kiểm toán SA-04 · Toàn vẹn dữ liệu</p>
+              <p className="text-xs text-gray-500">Kiểm toán hệ thống · Toàn vẹn dữ liệu</p>
             </div>
           </div>
           <div className="flex items-center gap-1">

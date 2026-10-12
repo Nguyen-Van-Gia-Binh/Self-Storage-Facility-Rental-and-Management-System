@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   CheckCircle2,
   AlertTriangle,
-  Play,
   RotateCcw,
   ShieldCheck,
   Printer,
@@ -178,25 +177,7 @@ export const IncidentDetailPage: React.FC = () => {
     }
   };
 
-  // 2. Chuyển sang đang xử lý (In-progress)
-  const handleStartInProgress = async () => {
-    if (!ticket) return;
-    setActionLoading(true);
-    try {
-      await apiClient<any>(`/support-requests/${ticket.id}/in-progress`, {
-        method: 'PATCH',
-      });
-      showToast('Đã chuyển trạng thái sang đang kiểm tra hiện trường');
-      await loadTicket();
-    } catch (err) {
-      console.error('Lỗi chuyển trạng thái:', err);
-      showToast('Không thể chuyển trạng thái');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  // 3. Đánh dấu cần di dời ô kho
+  // 2. Đánh dấu cần di dời ô kho
   const handleToggleRelocation = async () => {
     if (!ticket) return;
     setActionLoading(true);
@@ -432,21 +413,8 @@ export const IncidentDetailPage: React.FC = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              {/* Nút bắt đầu xử lý khi đang ASSIGNED */}
-              {ticket.status === 'ASSIGNED' && (
-                <button
-                  type="button"
-                  disabled={actionLoading}
-                  onClick={handleStartInProgress}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-semibold transition-colors shadow-2xs"
-                >
-                  <Play className="w-3.5 h-3.5" />
-                  <span>▶ Bắt đầu xử lý hiện trường</span>
-                </button>
-              )}
-
               {/* Nút Yêu cầu di dời kho */}
-              {(ticket.status === 'IN_PROGRESS' || ticket.status === 'ASSIGNED') && (
+              {(ticket.status === 'IN_PROGRESS' || ticket.status === 'ASSIGNED' || ticket.status === 'NEW') && (
                 <button
                   type="button"
                   disabled={actionLoading}

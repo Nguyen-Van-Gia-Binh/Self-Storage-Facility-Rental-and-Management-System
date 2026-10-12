@@ -45,7 +45,7 @@ export const ExecutivePrintReport: React.FC<ExecutivePrintReportProps> = ({
           <div className="ss-brand-sub">Hệ thống cho thuê kho tự quản · Ban vận hành kinh doanh</div>
         </div>
         <div className="ss-doc-meta">
-          <div>Mã biểu: BM-05/BC-VH</div>
+          <div>Mã biểu: BC-VH-05</div>
           <div>Múi giờ: Asia/Ho_Chi_Minh</div>
           <div>Lập lúc: {printedAt}</div>
         </div>

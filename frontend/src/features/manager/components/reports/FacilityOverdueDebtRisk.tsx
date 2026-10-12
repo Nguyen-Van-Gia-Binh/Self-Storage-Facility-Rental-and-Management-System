@@ -54,9 +54,6 @@ export const FacilityOverdueDebtRisk: React.FC<Props> = ({ data, loading }) => {
               <h2 className="text-base font-bold text-slate-900">
                 Tổng tiền phạt quá hạn tại cơ sở
               </h2>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">
-                BR-OVD
-              </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
               Giai đoạn D+1 đến D+3 được ân hạn miễn phạt; từ ngày D+4 đến D+10 áp dụng phạt 10%/ngày trên tiền cọc (trần tối đa 70%).
@@ -110,7 +107,7 @@ export const FacilityOverdueDebtRisk: React.FC<Props> = ({ data, loading }) => {
           </div>
 
           <div className="pt-2 border-t border-slate-200/60 text-[11px] text-slate-500">
-            Quy chuẩn BR-OVD-04: Phí phạt được tính cộng dồn hàng ngày và chốt trần tối đa 70% tiền cọc bảo đảm tại mốc D+10 trước khi kích hoạt niêm phong.
+            Phí phạt được tính cộng dồn hàng ngày và chốt trần tối đa 70% tiền cọc bảo đảm tại mốc D+10 trước khi kích hoạt niêm phong.
           </div>
         </div>
       </div>

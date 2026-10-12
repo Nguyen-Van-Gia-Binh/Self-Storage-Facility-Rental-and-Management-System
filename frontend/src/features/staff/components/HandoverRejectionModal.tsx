@@ -15,7 +15,7 @@ export interface HandoverRejectionModalProps {
 const REJECTION_REASONS = [
   'Ô kho bị ẩm ướt / dột nước từ trần kho',
   'Cửa cuốn / khóa cơ bị kẹt, hư hỏng cơ học không mở được',
-  'Bàn phím số IoT hoặc khóa thông minh bị lỗi kỹ thuật',
+  'Bàn phím số hoặc khóa thông minh bị lỗi kỹ thuật',
   'Khách hàng thay đổi nhu cầu cá nhân, không đồng ý nhận kho',
   'Lý do kỹ thuật hoặc sự cố mặt bằng khác...',
 ];
@@ -130,16 +130,16 @@ export const HandoverRejectionModal: React.FC<HandoverRejectionModalProps> = ({
             />
           </div>
 
-          {/* Cảnh báo hệ quả tự động BR-CHK-06 */}
+          {/* Cảnh báo hệ quả tự động */}
           <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 space-y-1.5 text-[11px]">
             <div className="font-bold flex items-center gap-1.5 text-amber-800">
               <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0" />
               Quy trình xử lý sự cố cơ sở:
             </div>
             <ul className="space-y-1 pl-4 list-disc text-amber-800/90 leading-relaxed">
-              <li>Ô kho <strong className="font-mono">{contract.storageUnitCode}</strong> lập tức chuyển sang trạng thái <strong>MAINTENANCE</strong> (Bảo trì) và bị khóa trên sơ đồ.</li>
-              <li>Lượt bàn giao này bị hủy; Hợp đồng chuyển sang <strong>TERMINATED</strong>.</li>
-              <li>Hệ thống gửi phiếu yêu cầu cho Quản lý cơ sở (FM) thực hiện <strong>hoàn trả 100% (cọc + tiền thuê)</strong> cho khách trong vòng 3 ngày làm việc.</li>
+              <li>Ô kho <strong className="font-mono">{contract.storageUnitCode}</strong> lập tức chuyển sang trạng thái <strong>Bảo trì</strong> và bị khóa trên sơ đồ.</li>
+              <li>Lượt bàn giao này bị hủy; Hợp đồng chuyển sang trạng thái <strong>Đã chấm dứt</strong>.</li>
+              <li>Hệ thống gửi phiếu yêu cầu cho Quản lý cơ sở thực hiện <strong>hoàn trả 100% (cọc + tiền thuê)</strong> cho khách trong vòng 3 ngày làm việc.</li>
             </ul>
           </div>
 

@@ -26,10 +26,12 @@ describe('ISS-84: HandoverInspectionForm Action Footer Clean Scroll Fix', () => 
     expect(content).toMatch(/bg-slate-50\/80\s+-mx-5\s+-mb-5\s+p-4\s+rounded-b-2xl\s+border-t\s+border-slate-200/);
   });
 
-  it('Giữ nguyên đầy đủ 2 nhánh hành động: Báo hỏng / Từ chối nhận và Xác nhận bàn giao & Kích hoạt mã PIN', () => {
+  it('Giữ nguyên đầy đủ 2 nhánh hành động trên cùng 1 hàng ngang cân đối, loại bỏ nhãn vàng gây rớt dòng', () => {
     const content = fs.readFileSync(handoverInspectionFormPath, 'utf-8');
     expect(content).toMatch(/Báo hỏng \/ Khách từ chối nhận/);
     expect(content).toMatch(/XÁC NHẬN BÀN GIAO & KÍCH HOẠT MÃ PIN/);
     expect(content).toMatch(/onOpenRejectionModal/);
+    expect(content).not.toMatch(/Cần có chữ ký xác nhận của khách/);
+    expect(content).toMatch(/sm:flex-row items-stretch sm:items-center justify-between/);
   });
 });

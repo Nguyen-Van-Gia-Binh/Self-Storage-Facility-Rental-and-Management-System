@@ -13,16 +13,14 @@ import {
   FileText,
   Loader2,
   ExternalLink,
-  ShieldCheck,
-  Plus,
-  Trash2,
   Receipt,
 } from 'lucide-react';
 import type { DailyIncidentTask, SurchargeItem } from '@/types';
-import { startStaffIncident, resolveStaffIncident, markStaffIncidentRelocation } from '@/api/staff';
+import { getStaffIncidentDetail, resolveStaffIncident, markStaffIncidentRelocation } from '@/api/staff';
 import { fetchSurcharges } from '@/api/pricing';
-import { applyCatalogFee } from '@/api/contract';
-import { feeCategoryLabel } from '@/features/pricing/feeCategory';
+import { applyCatalogFee, getContractById } from '@/api/contract';
+import { catalogLineAmount, feeCategoryLabel } from '@/features/pricing/feeCategory';
+import { EvidencePhotoCapture } from './EvidencePhotoCapture';
 
 interface StaffResolveIncidentModalProps {
   isOpen: boolean;
@@ -42,7 +40,6 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
 
   // Form states for resolution
   const [resolutionNote, setResolutionNote] = useState('');
-  const [imageUrlInput, setImageUrlInput] = useState('');
   const [attachmentUrls, setAttachmentUrls] = useState<string[]>([]);
   const [isAgreed, setIsAgreed] = useState(false);
   const [needsRelocation, setNeedsRelocation] = useState(false);
@@ -52,6 +49,7 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
   const [allSurcharges, setAllSurcharges] = useState<SurchargeItem[]>([]);
   const [loadingSurcharges, setLoadingSurcharges] = useState(false);
   const [selectedFeeIds, setSelectedFeeIds] = useState<number[]>([]);
+  const [contractMonthlyPrice, setContractMonthlyPrice] = useState<number>(0);
 
   // Fault attribution states: COMPANY vs CUSTOMER
   const [faultParty, setFaultParty] = useState<'COMPANY' | 'CUSTOMER' | null>(null);
@@ -62,12 +60,39 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
       setErrorMsg(null);
       setResolutionNote(ticket.resolutionNote || '');
       setAttachmentUrls(ticket.resolutionAttachmentUrls || []);
-      setImageUrlInput('');
       setIsAgreed(false);
       setNeedsRelocation(Boolean(ticket.relocationRequired));
       setSelectedFeeIds([]);
       setFaultParty(null);
       setIsCustomerPaidConfirmed(false);
+
+      if (ticket.ticketId) {
+        getStaffIncidentDetail(ticket.ticketId)
+          .then((detail) => {
+            if (!detail) return;
+            if (detail.resolutionNote) setResolutionNote(detail.resolutionNote);
+            if (detail.resolutionAttachmentUrls && detail.resolutionAttachmentUrls.length > 0) {
+              setAttachmentUrls(detail.resolutionAttachmentUrls);
+            }
+            if (detail.relocationRequired !== undefined) {
+              setNeedsRelocation(Boolean(detail.relocationRequired));
+            }
+            if (detail.contractId) {
+              getContractById(detail.contractId)
+                .then((c) => {
+                  if (c?.monthlyPrice) setContractMonthlyPrice(c.monthlyPrice);
+                })
+                .catch(() => {});
+            }
+          })
+          .catch(() => {});
+      } else if (ticket.contractId) {
+        getContractById(ticket.contractId)
+          .then((c) => {
+            if (c?.monthlyPrice) setContractMonthlyPrice(c.monthlyPrice);
+          })
+          .catch(() => {});
+      }
     }
   }, [ticket]);
 
@@ -95,12 +120,9 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
   const isInProgress = ticket.status === 'IN_PROGRESS';
   const isResolved = ticket.status === 'RESOLVED' || ticket.status === 'CLOSED';
 
-  // Tính số tiền của từng phụ phí
+  // Tính số tiền của từng phụ phí theo công thức chuẩn catalogLineAmount từ Backend
   const calculateFeeAmount = (fee: SurchargeItem): number => {
-    if (fee.type === 'PERCENTAGE') {
-      return Math.round((1_000_000 * (fee.amount / 100)) / 1000) * 1000;
-    }
-    return fee.amount || 0;
+    return catalogLineAmount(fee, contractMonthlyPrice);
   };
 
   // Tổng số tiền phụ phí được chọn
@@ -132,41 +154,7 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
     }
   };
 
-  // Thêm ảnh nghiệm thu vào danh sách
-  const handleAddImage = () => {
-    if (!imageUrlInput.trim()) return;
-    if (attachmentUrls.length >= 5) {
-      setErrorMsg('Tối đa 5 ảnh hiện trường sau khắc phục');
-      return;
-    }
-    setAttachmentUrls([...attachmentUrls, imageUrlInput.trim()]);
-    setImageUrlInput('');
-    setErrorMsg(null);
-  };
-
-  const handleRemoveImage = (index: number) => {
-    setAttachmentUrls(attachmentUrls.filter((_, i) => i !== index));
-  };
-
-  // Bước 1: Tiếp nhận xử lý sự cố (chuyển sang IN_PROGRESS)
-  const handleStartInProgress = async () => {
-    if (ticket.ticketId == null) {
-      setErrorMsg('Phiếu sự cố không có mã từ hệ thống.');
-      return;
-    }
-    setSubmitting(true);
-    setErrorMsg(null);
-    try {
-      await startStaffIncident(ticket.ticketId);
-      onSuccess();
-    } catch (err: any) {
-      setErrorMsg(err?.message || 'Không thể tiếp nhận sự cố. Vui lòng thử lại.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  // Bước 2: Hoàn tất khắc phục sự cố (chuyển sang RESOLVED)
+  // Hoàn tất khắc phục sự cố trực tiếp (1 bước duy nhất)
   const handleResolveSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resolutionNote.trim() || resolutionNote.trim().length < 5) {
@@ -223,7 +211,7 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
       let faultSummary = '';
       const relocationText = needsRelocation ? ' | Phương án: Kích hoạt di dời sang ô kho khác do hư hại nặng' : '';
       if (faultParty === 'COMPANY') {
-        faultSummary = `\n[Trách nhiệm: Lỗi do công ty (100% công ty chi trả theo BR-SUP-02) - Khách hàng miễn phí 0 đ${relocationText}]`;
+        faultSummary = `\n[Trách nhiệm: Lỗi do công ty (100% công ty chi trả) - Khách hàng miễn phí 0 đ${relocationText}]`;
       } else {
         const selectedFeeNames = allSurcharges
           .filter((f) => selectedFeeIds.includes(f.id))
@@ -252,7 +240,7 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
     if (isPending) {
       return (
         <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700">
-          Mới được giao (Chờ xử lý)
+          Mới được giao
         </span>
       );
     }
@@ -437,12 +425,12 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
                 <div className="pt-2 border-t border-amber-200/80 text-[11px] space-y-1">
                   {faultParty === 'COMPANY' && (
                     <p className="text-emerald-800 font-semibold">
-                      ✓ Di dời do lỗi kỹ thuật / cơ sở: Khách hàng được đổi ô kho dự phòng <strong>hoàn toàn miễn phí (0 đ)</strong> theo quy tắc BR-SUP-02.
+                      ✓ Di dời do lỗi kỹ thuật / cơ sở: Khách hàng được đổi ô kho dự phòng <strong>hoàn toàn miễn phí (0 đ)</strong>.
                     </p>
                   )}
                   {faultParty === 'CUSTOMER' && (
                     <p className="text-rose-800 font-semibold">
-                      ⚠️ Di dời do lỗi khách hàng: Phụ phí sửa chữa, công di chuyển (chọn từ danh mục BOM bên dưới) sẽ do khách hàng thanh toán 100%.
+                      ⚠️ Di dời do lỗi khách hàng: Phụ phí sửa chữa, công di chuyển (chọn từ danh mục bên dưới) sẽ do khách hàng thanh toán 100%.
                     </p>
                   )}
                 </div>
@@ -450,63 +438,28 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
             </div>
           )}
 
-          {/* TRẠNG THÁI 1: MỚI ĐƯỢC GIAO */}
-          {isPending && (
-            <div className="p-4 rounded-xl bg-sky-50 border border-sky-200 space-y-3">
-              <div className="flex items-start gap-2.5">
-                <ShieldCheck className="w-5 h-5 text-sky-600 shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="text-xs font-bold text-sky-900">Nhiệm vụ mới được phân công cho ca trực của bạn</h4>
-                  <p className="text-xs text-sky-700 mt-0.5">
-                    Bàn điều phối cơ sở đã giao sự cố này cho bạn. Bấm <strong>"Bắt đầu xử lý"</strong> khi bạn di chuyển tới hiện trường, hoặc bạn có thể điền ngay biên bản xử lý bên dưới nếu đã khắc phục xong.
-                  </p>
-                </div>
-              </div>
-              <div className="flex flex-col sm:flex-row items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleStartInProgress}
-                  disabled={submitting}
-                  className="w-full py-2.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition disabled:opacity-50"
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Đang cập nhật...</span>
-                    </>
-                  ) : (
-                    <>
-                      <ShieldCheck className="w-4 h-4" />
-                      <span>Bắt đầu xử lý tại hiện trường (In Progress)</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* FORM NGHIỆM THU & GIẢI QUYẾT: Cho phép khi Đang xử lý hoặc Mới được giao */}
           {(isInProgress || isPending) && (
             <form onSubmit={handleResolveSubmit} className="space-y-5 pt-2 border-t border-slate-200">
-              {/* 1. DANH MỤC PHỤ PHÍ TỪ BOM (CHECKBOX MULTI-SELECT) */}
+              {/* 1. DANH MỤC PHỤ PHÍ NIÊM YẾT */}
               <div className="space-y-2.5 p-4 rounded-xl border border-slate-200 bg-slate-50/70">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
                     <Receipt className="w-4 h-4 text-teal-600" />
-                    <span>Danh mục phụ phí phát sinh (Biểu phí BOM)</span>
+                    <span>Danh mục phụ phí phát sinh</span>
                   </label>
                   <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-semibold">
                     {selectedFeeIds.length} khoản đã chọn
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500">
-                  Chọn các khoản phụ phí tương ứng nếu sự cố có phát sinh vật tư, thay khóa cơ, vệ sinh hoặc sửa chữa theo bảng giá BOM.
+                  Chọn các khoản phụ phí tương ứng nếu sự cố có phát sinh vật tư, thay khóa cơ, vệ sinh hoặc sửa chữa theo bảng giá niêm yết.
                 </p>
 
                 {loadingSurcharges ? (
                   <div className="flex items-center justify-center py-4 text-xs text-slate-500 gap-2">
                     <Loader2 className="w-4 h-4 animate-spin text-teal-600" />
-                    <span>Đang tải biểu phí BOM...</span>
+                    <span>Đang tải biểu phí niêm yết...</span>
                   </div>
                 ) : allSurcharges.length === 0 ? (
                   <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800">
@@ -570,7 +523,6 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
                     <AlertTriangle className="w-4 h-4 text-amber-600" />
                     <span>Phân định trách nhiệm sự cố *</span>
                   </label>
-                  <span className="text-[11px] text-slate-500">Quy tắc BR-SUP-02</span>
                 </div>
                 <p className="text-[11px] text-slate-500">
                   Nhân viên hiện trường bắt buộc chọn 1 trong 2 nút bên dưới để xác định trách nhiệm chi trả.
@@ -644,7 +596,7 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
                     <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
                     <div className="space-y-1">
                       <div className="font-bold text-emerald-900">
-                        100% Chi phí do công ty chi trả (Quy tắc BR-SUP-02)
+                        100% Chi phí do công ty chi trả
                       </div>
                       <p className="text-[11px] text-emerald-800 leading-relaxed">
                         Khách hàng <strong>hoàn toàn không phải chịu bất kỳ khoản phí nào (0 VNĐ)</strong>. Toàn bộ chi phí vật tư, thay khóa hoặc sửa chữa sẽ do công ty thanh toán vào chi phí bảo dưỡng cơ sở.
@@ -684,7 +636,7 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
                           </span>
                         )}
                         <p className="text-[11px] text-rose-600 mt-0.5 font-normal leading-relaxed">
-                          * Nhân viên bắt buộc thu đủ tiền (tiền mặt / chuyển khoản) và tick xác nhận vào ô này mới có thể hoàn tất nghiệm thu sự cố.
+                          * Nhân viên bắt buộc thu đủ tiền (tiền mặt / chuyển khoản) và đánh dấu xác nhận vào ô này mới có thể hoàn tất nghiệm thu sự cố.
                         </p>
                       </div>
                     </label>
@@ -708,53 +660,14 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
                 />
               </div>
 
-              {/* 4. TẢI / NHẬP LINK ẢNH NGHIỆM THU */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-800 flex items-center justify-between">
-                  <span>Ảnh chụp nghiệm thu sau khắc phục (Tối đa 5 ảnh)</span>
-                  <span className="text-[11px] font-normal text-slate-400">
-                    {attachmentUrls.length}/5 ảnh
-                  </span>
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    value={imageUrlInput}
-                    onChange={(e) => setImageUrlInput(e.target.value)}
-                    placeholder="Dán link ảnh chụp (ví dụ: https://...)"
-                    className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-teal-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddImage}
-                    disabled={!imageUrlInput.trim() || attachmentUrls.length >= 5}
-                    className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1 transition disabled:opacity-40"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Thêm ảnh
-                  </button>
-                </div>
-
-                {/* Danh sách ảnh đã thêm */}
-                {attachmentUrls.length > 0 && (
-                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 pt-1">
-                    {attachmentUrls.map((url, i) => (
-                      <div
-                        key={i}
-                        className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 group bg-slate-100"
-                      >
-                        <img src={url} alt="Nghiệm thu" className="w-full h-full object-cover" />
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveImage(i)}
-                          className="absolute top-1 right-1 p-1 rounded-md bg-rose-600 text-white opacity-90 hover:opacity-100 transition"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              {/* 4. CHỤP / TẢI ẢNH NGHIỆM THU BẰNG CAMERA */}
+              <EvidencePhotoCapture
+                photos={attachmentUrls}
+                onChange={setAttachmentUrls}
+                maxPhotos={5}
+                label="Ảnh chụp nghiệm thu sau khắc phục"
+                helperText="Bấm Mở Camera để kích hoạt cam trước chụp trực tiếp hiện trường hoặc chọn ảnh từ máy"
+              />
 
               {/* 5. CAM KẾT QUY TRÌNH BÀN GIAO */}
               <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200/80 text-xs text-amber-800">
@@ -767,7 +680,7 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
                   />
                   <span>
                     Tôi xác nhận đã hoàn tất khắc phục sự cố tại hiện trường theo đúng quy trình bàn
-                    giao (US-FS-05.2) và chịu trách nhiệm về thông tin ghi chú.
+                    giao và chịu trách nhiệm về thông tin ghi chú.
                   </span>
                 </label>
               </div>

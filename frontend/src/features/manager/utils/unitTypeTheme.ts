@@ -179,7 +179,7 @@ export function getUnitTypeTheme(type: {
   if (area > 0 && area < 2) {
     // Siêu nhỏ / Locker (< 2m²)
     return {
-      categoryLabel: 'Kho Nhỏ (Mini Locker)',
+      categoryLabel: 'Kho Nhỏ',
       badgeText: `Tối ưu cá nhân · ${area} m²`,
       icon: Box,
       gradientBg: 'from-violet-500/15 via-violet-500/5 to-transparent',
@@ -230,7 +230,7 @@ export function getUnitTypeTheme(type: {
   if (area >= 15) {
     // Siêu lớn / Nhà xưởng (>= 15m²)
     return {
-      categoryLabel: 'Kho Siêu Lớn (Warehouse)',
+      categoryLabel: 'Kho Siêu Lớn',
       badgeText: `Quy mô nhà xưởng · ${area} m²`,
       icon: Warehouse,
       gradientBg: 'from-indigo-500/15 via-indigo-500/5 to-transparent',

@@ -45,7 +45,7 @@ export const ContractFinancialModal: React.FC<ContractFinancialModalProps> = ({
               <Receipt className="w-4 h-4 text-emerald-400" />
             </div>
             <div>
-              <h3 className="font-bold text-base">Chi tiết tài chính & Công nợ (FM-03)</h3>
+              <h3 className="font-bold text-base">Chi tiết tài chính & Công nợ</h3>
               <p className="text-xs text-slate-300">
                 Theo dõi tiền cọc, phí quá hạn và các khoản phụ phí phát sinh
               </p>
@@ -80,7 +80,7 @@ export const ContractFinancialModal: React.FC<ContractFinancialModalProps> = ({
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl">
                   <span className="text-emerald-700 font-medium block mb-1 flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5" /> Tiền cọc giữ (Deposit)
+                    <ShieldCheck className="w-3.5 h-3.5" /> Tiền cọc giữ
                   </span>
                   <span className="text-base font-bold text-emerald-900">
                     {data.depositAmount.toLocaleString('vi-VN')} đ

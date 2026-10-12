@@ -12,9 +12,9 @@ const NAV_CARDS = [
     hoverShadow: 'hover:shadow-blue-100',
     textColor: 'text-blue-600',
     label: 'Hợp đồng & Khách thuê',
-    subtitle: 'SCR-FM-02',
+    subtitle: 'Quản lý vòng đời thuê',
     desc: 'Theo dõi hợp đồng đang thuê, danh sách chờ bàn giao, đổi ô kho ngoại lệ và quyết toán hoàn cọc.',
-    cta: 'Mở Contracts Hub',
+    cta: 'Mở Giám sát hợp đồng',
   },
   {
     to: '/manager/facilities',
@@ -24,9 +24,9 @@ const NAV_CARDS = [
     hoverBorder: 'hover:border-emerald-400',
     hoverShadow: 'hover:shadow-emerald-100',
     textColor: 'text-emerald-600',
-    label: 'Danh mục Ô kho & Layout',
-    subtitle: 'SCR-FM-01',
-    desc: 'Quản lý danh sách ô kho vật lý, phân loại Type S/M/L/XL và kiểm soát trạng thái sẵn sàng.',
+    label: 'Danh mục Ô kho & Sơ đồ',
+    subtitle: 'Danh mục cơ sở & mặt bằng',
+    desc: 'Quản lý danh sách ô kho vật lý, phân loại kích thước và kiểm soát trạng thái sẵn sàng.',
     cta: 'Mở Quản lý ô kho',
   },
   {
@@ -38,8 +38,8 @@ const NAV_CARDS = [
     hoverShadow: 'hover:shadow-purple-100',
     textColor: 'text-purple-600',
     label: 'Phân công Nhân sự',
-    subtitle: 'SCR-FM-03',
-    desc: 'Cân bằng tải nhân viên ca trực, điều phối bàn giao Check-in, Trả kho, Khóa ngoài Overlock.',
+    subtitle: 'Điều phối nhân viên ca trực',
+    desc: 'Cân bằng tải nhân viên ca trực, điều phối bàn giao nhận kho, trả kho và niêm phong khóa ngoài.',
     cta: 'Mở Bàn phân công',
   },
   {
@@ -50,8 +50,8 @@ const NAV_CARDS = [
     hoverBorder: 'hover:border-amber-400',
     hoverShadow: 'hover:shadow-amber-100',
     textColor: 'text-amber-600',
-    label: 'Xử lý Sự cố & Ticket',
-    subtitle: 'SCR-FM-05',
+    label: 'Xử lý Sự cố & Phiếu hỗ trợ',
+    subtitle: 'Bàn điều phối kỹ thuật',
     desc: 'Tiếp nhận khiếu nại, phân công nhân viên kiểm tra thực địa và xử lý kẹt khóa, thấm dột.',
     cta: 'Mở Bàn điều phối',
   },
@@ -64,9 +64,9 @@ const NAV_CARDS = [
     hoverShadow: 'hover:shadow-indigo-100',
     textColor: 'text-indigo-600',
     label: 'Báo cáo Cơ sở & Hiệu suất',
-    subtitle: 'SCR-FM-04',
-    desc: 'Giám sát tỷ lệ lấp đầy Usage Rate, phân tích doanh thu tháng và rủi ro nợ quá hạn theo 3 độ tuổi.',
-    cta: 'Mở Dashboard Báo cáo',
+    subtitle: 'Phân tích vận hành & tài chính',
+    desc: 'Giám sát tỷ lệ lấp đầy kho, phân tích doanh thu tháng và rủi ro nợ quá hạn theo 3 độ tuổi.',
+    cta: 'Mở Báo cáo cơ sở',
   },
 ];
 
@@ -93,7 +93,7 @@ export const ManagerDashboardPage: React.FC = () => {
           <div className="flex items-center gap-2 mb-3">
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-white/10 text-blue-200 px-3 py-1 rounded-full border border-white/20">
               <Building2 className="w-3.5 h-3.5" />
-              Facility Manager Portal
+              Cổng Quản lý Cơ sở
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
@@ -134,7 +134,7 @@ export const ManagerDashboardPage: React.FC = () => {
                     {card.label}
                   </h3>
                 </div>
-                <span className={`text-[10px] font-mono ${card.textColor} bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100`}>
+                <span className={`text-[10px] font-semibold ${card.textColor} bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100`}>
                   {card.subtitle}
                 </span>
                 <p className="text-xs text-slate-500 leading-relaxed mt-2">

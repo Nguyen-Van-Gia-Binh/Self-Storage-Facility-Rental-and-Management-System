@@ -210,7 +210,7 @@ export const ContractDetailPage: React.FC = () => {
             </div>
             <div>
               <h4 className="text-sm font-bold text-amber-900">
-                Ô kho phát sinh sự cố — Nhân viên hiện trường đã đề xuất di dời khẩn cấp (BR-SUP-02)
+                Ô kho phát sinh sự cố — Nhân viên hiện trường đã đề xuất di dời khẩn cấp
               </h4>
               <p className="text-xs text-amber-700 mt-0.5">
                 Ô kho <span className="font-mono font-bold text-amber-900">{contract.storageUnitCode}</span> gặp sự cố kỹ thuật. Bạn có thể tiến hành đổi sang ô kho trống cùng loại cho khách hàng.
@@ -238,8 +238,8 @@ export const ContractDetailPage: React.FC = () => {
             <div>
               <h4 className="text-sm font-bold text-amber-900">
                 {contract.assignedStaffId
-                  ? `Đang chờ nhân viên ${contract.assignedStaffName || 'phụ trách'} nghiệm thu hiện trường (BR-RET-02)`
-                  : 'Đơn trả kho chưa phân công nhân viên kiểm tra (BR-RET-02)'}
+                  ? `Đang chờ nhân viên ${contract.assignedStaffName || 'phụ trách'} nghiệm thu hiện trường`
+                  : 'Đơn trả kho chưa phân công nhân viên kiểm tra'}
               </h4>
               <p className="text-xs text-amber-700 mt-0.5">
                 {contract.assignedStaffId
@@ -409,7 +409,7 @@ export const ContractDetailPage: React.FC = () => {
               type="button"
               onClick={() => setReassignModalOpen(true)}
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs"
-              title="Đổi ô cùng loại khi sự cố hư hỏng được nhân viên xác nhận cần di dời (BR-SUP-02)"
+              title="Đổi ô cùng loại khi sự cố hư hỏng được nhân viên xác nhận cần di dời"
             >
               <Repeat className="w-4 h-4 text-amber-600" />
               <span>Đổi ô kho do sự cố</span>

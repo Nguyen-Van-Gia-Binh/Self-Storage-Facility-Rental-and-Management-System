@@ -2,7 +2,7 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   Home, Archive,
-  KeyRound, ClipboardCheck,
+  ClipboardCheck,
   Layers, FileText, BarChart3, Wrench, Users,
   Map, DollarSign, TrendingUp, History,
   UserCog, ShieldCheck, Activity,
@@ -34,14 +34,11 @@ export const ROLE_NAVIGATIONS: Record<UserRole, RoleNavigation> = {
     ],
   },
   STAFF: {
-    portalTitle: 'Staff Desk',
+    portalTitle: 'Nhân viên vận hành',
     role: 'STAFF',
-    badgeColor: 'bg-blue-500',
+    badgeColor: 'bg-emerald-600',
     navItems: [
-      { label: 'Tổng quan ca trực',   href: '/staff',          icon: Home },
-      { label: 'Tiếp đón Check-in',   href: '/staff/check-in', icon: KeyRound },
-      { label: 'Nghiệm thu trả kho',  href: '/staff/return',   icon: ClipboardCheck },
-      { label: 'Xử lý sự cố',         href: '/staff/incidents', icon: Wrench },
+      { label: 'Nhiệm vụ ca trực', href: '/staff', icon: ClipboardCheck },
     ],
   },
   MANAGER: {

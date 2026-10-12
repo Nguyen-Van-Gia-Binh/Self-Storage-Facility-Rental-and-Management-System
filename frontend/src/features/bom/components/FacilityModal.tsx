@@ -213,7 +213,7 @@ export const FacilityModal: React.FC<FacilityModalProps> = ({
           {/* Mã cơ sở */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
-              Mã cơ sở (Code) <span className="text-rose-500">*</span>
+              Mã cơ sở <span className="text-rose-500">*</span>
             </label>
             {isEdit ? (
               <div className="text-sm font-mono font-bold text-slate-700 bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5">

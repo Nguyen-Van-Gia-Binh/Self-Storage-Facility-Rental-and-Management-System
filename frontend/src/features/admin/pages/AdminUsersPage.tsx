@@ -231,7 +231,7 @@ export const AdminUsersPage: React.FC<AdminUsersPageProps> = ({ defaultRoleFilte
                 Quản Trị Người Dùng & Phân Quyền
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-                Quản lý tài khoản, gán vai trò RBAC và cấu hình phân quyền theo chi nhánh cơ sở (SA-01, SA-02, SA-03)
+                Quản lý tài khoản, gán vai trò và cấu hình phân quyền theo chi nhánh cơ sở
               </p>
             </div>
           </div>
@@ -338,8 +338,8 @@ export const AdminUsersPage: React.FC<AdminUsersPageProps> = ({ defaultRoleFilte
             <option value="STORAGE_CUSTOMER">Khách thuê kho</option>
             <option value="FACILITY_STAFF">Nhân viên cơ sở</option>
             <option value="FACILITY_MANAGER">Quản lý cơ sở</option>
-            <option value="BUSINESS_OPERATIONS_MANAGER">Quản lý kinh doanh (BOM)</option>
-            <option value="SYSTEM_ADMINISTRATOR">Quản trị viên (Admin)</option>
+            <option value="BUSINESS_OPERATIONS_MANAGER">Quản lý vận hành kinh doanh</option>
+            <option value="SYSTEM_ADMINISTRATOR">Quản trị viên hệ thống</option>
           </select>
 
           {/* Trạng thái */}
@@ -380,8 +380,8 @@ export const AdminUsersPage: React.FC<AdminUsersPageProps> = ({ defaultRoleFilte
               <tr className="bg-slate-50/80 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 <th className="py-3.5 px-4">Người dùng</th>
                 <th className="py-3.5 px-4">Số điện thoại & CCCD</th>
-                <th className="py-3.5 px-4">Vai trò (RBAC)</th>
-                <th className="py-3.5 px-4">Cơ sở phụ trách (SA-03)</th>
+                <th className="py-3.5 px-4">Vai trò</th>
+                <th className="py-3.5 px-4">Cơ sở phụ trách</th>
                 <th className="py-3.5 px-4">Trạng thái</th>
                 <th className="py-3.5 px-4 text-right">Thao tác</th>
               </tr>

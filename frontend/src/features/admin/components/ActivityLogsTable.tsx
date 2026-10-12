@@ -116,7 +116,7 @@ export const ActivityLogsTable: React.FC<ActivityLogsTableProps> = ({
       <div className="p-5 border-b border-gray-100 space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <h3 className="text-base font-bold text-gray-900">Nhật ký thao tác người dùng (US-SA-04.2)</h3>
+            <h3 className="text-base font-bold text-gray-900">Nhật ký thao tác người dùng</h3>
             <p className="text-xs text-gray-500">Giám sát các thay đổi quyền hạn, trạng thái tài khoản, chính sách và cơ cấu cơ sở</p>
           </div>
 

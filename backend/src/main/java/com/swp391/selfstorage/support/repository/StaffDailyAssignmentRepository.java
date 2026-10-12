@@ -12,6 +12,8 @@ import java.util.Optional;
 @Repository
 public interface StaffDailyAssignmentRepository extends JpaRepository<StaffDailyAssignment, Long> {
 
+    List<StaffDailyAssignment> findByStaffId(Long staffId);
+
     List<StaffDailyAssignment> findByStaffIdAndWorkDate(Long staffId, LocalDate workDate);
 
     List<StaffDailyAssignment> findByFacilityIdAndWorkDate(Long facilityId, LocalDate workDate);

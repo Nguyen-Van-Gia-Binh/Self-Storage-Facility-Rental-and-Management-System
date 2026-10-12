@@ -54,7 +54,7 @@ export const SettlementPreviewCard: React.FC<SettlementPreviewCardProps> = ({
       {/* Chi tiết khấu trừ */}
       <div className="space-y-2 text-sm">
         <div className="flex justify-between text-slate-600">
-          <span>Tiền cọc Deposit ban đầu:</span>
+          <span>Tiền cọc ban đầu:</span>
           <span className="font-mono font-medium text-slate-900">
             {depositAmount.toLocaleString('vi-VN')} đ
           </span>
@@ -96,7 +96,7 @@ export const SettlementPreviewCard: React.FC<SettlementPreviewCardProps> = ({
             <p className="text-[11px] text-slate-400">
               {payableAmount > 0
                 ? 'Hư hại vượt quá tiền cọc giữ chỗ ban đầu'
-                : 'FM sẽ duyệt chuyển khoản hoàn cọc trong 7 ngày làm việc'}
+                : 'Quản lý cơ sở sẽ duyệt chuyển khoản hoàn cọc trong 7 ngày làm việc'}
             </p>
           </div>
           <span
@@ -121,7 +121,7 @@ export const SettlementPreviewCard: React.FC<SettlementPreviewCardProps> = ({
         <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-50 text-amber-800 text-xs">
           <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <span>
-            Khấu trừ {damageCost.toLocaleString('vi-VN')} đ tiền bồi thường. Bắt buộc cung cấp ít nhất 1 ảnh chụp hiện trường để FM đối soát.
+            Khấu trừ {damageCost.toLocaleString('vi-VN')} đ tiền bồi thường. Bắt buộc cung cấp ít nhất 1 ảnh chụp hiện trường để Quản lý cơ sở đối soát.
           </span>
         </div>
       )}

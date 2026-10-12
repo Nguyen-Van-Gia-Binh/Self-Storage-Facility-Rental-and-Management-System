@@ -204,13 +204,10 @@ export const StaffAssignmentPage: React.FC = () => {
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
               Phân công Nhân sự & Điều phối Vận hành
             </h1>
-            <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-blue-100 text-blue-700">
-              SCR-FM-03
-            </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Cân bằng tải ca trực, phân bổ nhiệm vụ Bàn giao Check-in, Trả kho, Xử lý sự cố và
-            Khóa ngoài Overlock (FM-05)
+            Cân bằng tải ca trực, phân bổ nhiệm vụ Bàn giao nhận kho, Trả kho, Xử lý sự cố và
+            Niêm phong khóa ngoài
           </p>
         </div>
 
@@ -297,7 +294,7 @@ export const StaffAssignmentPage: React.FC = () => {
             <span className="text-[11px] text-slate-400">việc thực địa</span>
           </div>
           <p className="text-[11px] text-slate-500 mt-1">
-            Check-in, Trả kho, Sự cố & Niêm phong
+            Nhận kho, Trả kho, Sự cố & Niêm phong
           </p>
         </div>
 
@@ -336,13 +333,13 @@ export const StaffAssignmentPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Staff Workload Balancing Section (US-FM-05.1 AC-3) */}
+      {/* Staff Workload Balancing Section */}
       <div className="space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
           <div>
             <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
               <Users className="w-4 h-4 text-blue-600" />
-              <span>Khối lượng Công việc Nhân sự tại Cơ sở (Cân bằng tải AC-3)</span>
+              <span>Khối lượng Công việc Nhân sự tại Cơ sở</span>
             </h2>
             <p className="text-[11px] text-slate-500 mt-0.5">
               Quan sát số việc đang phụ trách để san sẻ đồng đều, tránh giao dồn việc cho một người
@@ -386,8 +383,8 @@ export const StaffAssignmentPage: React.FC = () => {
             <span>Bàn Điều phối Nhiệm vụ Thực địa trong ngày</span>
           </h2>
           <p className="text-[11px] text-slate-500 mt-0.5">
-            Phân công và điều chuyển nhân viên cho các lượt hẹn Check-in, Return, Sự cố và Khóa
-            ngoài (AC-1, AC-4)
+            Phân công và điều chuyển nhân viên cho các lượt hẹn nhận kho, trả kho, sự cố và khóa
+            ngoài
           </p>
         </div>
 

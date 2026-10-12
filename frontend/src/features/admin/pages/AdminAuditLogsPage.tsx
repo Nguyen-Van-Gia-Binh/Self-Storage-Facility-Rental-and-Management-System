@@ -160,7 +160,7 @@ export const AdminAuditLogsPage: React.FC = () => {
                 <ShieldCheck className="w-4 h-4 text-blue-300" />
               </div>
               <span className="text-xs font-semibold text-blue-300 bg-blue-500/10 border border-blue-400/20 px-2.5 py-1 rounded-full">
-                Mã yêu cầu SA-04 · An ninh & Kiểm toán
+                An ninh & Kiểm toán Hệ thống
               </span>
             </div>
             <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">

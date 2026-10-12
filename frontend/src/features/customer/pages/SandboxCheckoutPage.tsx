@@ -123,9 +123,9 @@ export const SandboxCheckoutPage: React.FC = () => {
         <div className="text-center space-y-1.5">
           <div className="inline-flex items-center gap-1.5 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-xs">
             <ShieldCheck className="w-3.5 h-3.5" />
-            Cổng Giả Lập Ngân Hàng VietQR (Sandbox)
+            Cổng Giả Lập Ngân Hàng VietQR
           </div>
-          <h1 className="text-xl font-black text-slate-900 tracking-tight">SmartStorage Payment Gateway</h1>
+          <h1 className="text-xl font-black text-slate-900 tracking-tight">Cổng Thanh Toán SmartStorage</h1>
           {paymentData?.referenceType === 'OVERDUE_PENALTY' && (
             <div>
               <span className="inline-block text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 px-3 py-1 rounded-full shadow-2xs">

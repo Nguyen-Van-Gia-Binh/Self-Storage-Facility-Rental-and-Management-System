@@ -36,7 +36,7 @@ export const SurchargeTable: React.FC<SurchargeTableProps> = ({
           <div>
             <h3 className="font-bold text-slate-900 text-sm">Danh mục phụ phí toàn hệ thống</h3>
             <p className="text-xs text-slate-500">
-              Bốn nhóm: cấp lại khóa cơ, vệ sinh khi trả kho, bồi thường hư hại, tiện ích bổ sung (BM-03)
+              Bốn nhóm: cấp lại khóa cơ, vệ sinh khi trả kho, bồi thường hư hại, tiện ích bổ sung
             </p>
           </div>
         </div>
