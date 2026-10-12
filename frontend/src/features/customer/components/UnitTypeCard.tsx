@@ -42,7 +42,7 @@ export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({ unitType, facilityId
             </span>
             <span className="flex items-center gap-1">
               <Package className="w-3.5 h-3.5 text-slate-400" />
-              {unitType.areaM2} m²
+              {unitType.volumeM3 ?? Number(((unitType.widthM || 2) * (unitType.depthM || 2) * (unitType.heightM || 2.5)).toFixed(1))} m³
             </span>
             <span className="flex items-center gap-1">
               <LayoutGrid className="w-3.5 h-3.5 text-slate-400" />

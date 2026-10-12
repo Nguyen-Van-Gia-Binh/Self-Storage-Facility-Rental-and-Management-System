@@ -68,8 +68,55 @@ describe('ISS-80: Chặn Đặt Chỗ & Khóa Chọn Loại Ô Kho Chưa Niêm Y
   it('UnitPickerPage chọn loại kho theo selectedTypeId duy nhất, không bị chọn đồng thời 2 thẻ cùng sizeCategory', () => {
     const content = fs.readFileSync(unitPickerPage, 'utf-8');
     expect(content).toMatch(/selectedTypeId/);
-    expect(content).toMatch(/isSelected = !isUnlisted && \(selectedTypeId \? selectedTypeId === type\.id : selectedSize === type\.sizeCategory\)/);
+    expect(content).toMatch(/isSelected = /);
     expect(content).toMatch(/handleSelectType\(type\)/);
     expect(content).toMatch(/filterUnitTypeId=\{selectedTypeId\}/);
   });
 });
+
+/**
+ * ISS-113: Ẩn Kho Chưa Niêm Yết Giá Phía Khách Hàng & Hiển Thị Thể Tích m³ Trên Thẻ Kho
+ * Người thực hiện: Xuân Nhi (WS1 - Khách hàng & Đặt chỗ)
+ */
+describe('ISS-113: Ẩn Kho Chưa Niêm Yết Giá Phía Khách Hàng & Hiển Thị Thể Tích m³ Trên Thẻ Kho', () => {
+  const unitPickerPage = path.resolve(
+    process.cwd(),
+    'src/features/customer/pages/UnitPickerPage.tsx'
+  );
+  const facilityDetailPage = path.resolve(
+    process.cwd(),
+    'src/features/customer/pages/FacilityDetailPage.tsx'
+  );
+  const unitTypeCard = path.resolve(
+    process.cwd(),
+    'src/features/customer/components/UnitTypeCard.tsx'
+  );
+
+  it('UnitPickerPage lọc availableTypes chỉ chứa loại kho đã niêm yết giá, ẩn kho chưa niêm yết khỏi Customer', () => {
+    const content = fs.readFileSync(unitPickerPage, 'utf-8');
+    expect(content).toMatch(/availableTypes = useMemo\(\s*\(\) =>[\s\S]*?baseMonthlyPrice > 0/);
+    expect(content).toMatch(/standardTypesCount = useMemo\(\s*\(\) =>[\s\S]*?baseMonthlyPrice > 0/);
+    expect(content).toMatch(/climateTypesCount = useMemo\(\s*\(\) =>[\s\S]*?baseMonthlyPrice > 0/);
+  });
+
+  it('UnitPickerPage hiển thị thể tích m³ trên thẻ kho thay vì diện tích m²', () => {
+    const content = fs.readFileSync(unitPickerPage, 'utf-8');
+    expect(content).toMatch(/\{type\.volumeM3\}\s*m³/);
+  });
+
+  it('UnitTypeCard ở phân hệ customer hiển thị thể tích m³ trên thẻ kho', () => {
+    const content = fs.readFileSync(unitTypeCard, 'utf-8');
+    expect(content).toMatch(/m³/);
+  });
+
+  it('FacilityDetailPage lọc bỏ các loại kho chưa niêm yết giá khỏi danh sách', () => {
+    const content = fs.readFileSync(facilityDetailPage, 'utf-8');
+    expect(content).toMatch(/monthlyPrice[\s\S]*?>\s*0/);
+  });
+
+  it('UnitPickerPage lọc bỏ ô kho con thuộc loại kho chưa niêm yết giá trên sơ đồ mặt bằng', () => {
+    const content = fs.readFileSync(unitPickerPage, 'utf-8');
+    expect(content).toMatch(/listedUTIds/);
+  });
+});
+

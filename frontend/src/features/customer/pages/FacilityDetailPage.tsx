@@ -26,7 +26,15 @@ export const FacilityDetailPage: React.FC = () => {
     Promise.all([fetchFacilityById(id), fetchUnitTypes(id)])
       .then(([fac, uts]) => {
         setFacility(fac);
-        setUnitTypes(uts.filter((u) => u.isActive));
+        setUnitTypes(
+          uts.filter(
+            (u) =>
+              u.isActive &&
+              (u.monthlyPrice ?? 0) > 0 &&
+              u.priceStatus !== 'UNLISTED' &&
+              u.priceStatus !== 'Chưa niêm yết'
+          )
+        );
       })
       .catch((e: { message?: string; status?: number }) => {
         setError(

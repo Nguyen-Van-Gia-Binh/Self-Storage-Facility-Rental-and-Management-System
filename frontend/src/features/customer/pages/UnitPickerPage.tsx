@@ -246,7 +246,14 @@ export const UnitPickerPage: React.FC = () => {
         }
 
         if (suPage?.content && suPage.content.length > 0) {
-          const mappedSUs: StorageUnit[] = suPage.content.map((su) => {
+          const listedUTIds = new Set(
+            mappedUTs
+              .filter((ut) => ut.baseMonthlyPrice > 0 && ut.priceStatus !== 'UNLISTED' && ut.priceStatus !== 'Chưa niêm yết')
+              .map((ut) => String(ut.id))
+          );
+          const mappedSUs: StorageUnit[] = suPage.content
+            .filter((su) => listedUTIds.has(String(su.unitTypeId)))
+            .map((su) => {
             const parentType = mappedUTs.find((ut) => String(ut.id) === String(su.unitTypeId));
             const sizeCat = parentType ? parentType.sizeCategory : 'S';
             const sType = parentType ? parentType.storageType : 'STANDARD';
@@ -324,7 +331,14 @@ export const UnitPickerPage: React.FC = () => {
               });
               if (!isMounted) return;
               if (suPage?.content && suPage.content.length > 0) {
-                const mappedSUs: StorageUnit[] = suPage.content.map((su) => {
+                const listedUTIds = new Set(
+                  unitTypes
+                    .filter((ut) => ut.baseMonthlyPrice > 0 && ut.priceStatus !== 'UNLISTED' && ut.priceStatus !== 'Chưa niêm yết')
+                    .map((ut) => String(ut.id))
+                );
+                const mappedSUs: StorageUnit[] = suPage.content
+                  .filter((su) => listedUTIds.has(String(su.unitTypeId)))
+                  .map((su) => {
                   const parentType = unitTypes.find((ut) => String(ut.id) === String(su.unitTypeId));
                   const sizeCat = parentType ? parentType.sizeCategory : 'S';
                   const sType = parentType ? parentType.storageType : 'STANDARD';
@@ -380,14 +394,39 @@ export const UnitPickerPage: React.FC = () => {
     };
   }, [currentFacility.id, unitTypes, startDate, durationMonths]);
 
-  // Lọc các loại kho theo chế độ Standard / Climate
+  // Lọc các loại kho theo chế độ Standard / Climate và chỉ hiển thị loại kho đã niêm yết giá chính thức (ISS-113)
   const availableTypes = useMemo(() => {
-    const list = unitTypes.filter((t) => t.storageType === storageType);
-    return list.length > 0 ? list : unitTypes;
+    return unitTypes.filter(
+      (t) =>
+        t.baseMonthlyPrice > 0 &&
+        t.priceStatus !== 'UNLISTED' &&
+        t.priceStatus !== 'Chưa niêm yết' &&
+        t.storageType === storageType
+    );
   }, [unitTypes, storageType]);
 
-  const standardTypesCount = useMemo(() => unitTypes.filter((t) => t.storageType === 'STANDARD').length, [unitTypes]);
-  const climateTypesCount = useMemo(() => unitTypes.filter((t) => t.storageType === 'CLIMATE_CONTROLLED').length, [unitTypes]);
+  const standardTypesCount = useMemo(
+    () =>
+      unitTypes.filter(
+        (t) =>
+          t.baseMonthlyPrice > 0 &&
+          t.priceStatus !== 'UNLISTED' &&
+          t.priceStatus !== 'Chưa niêm yết' &&
+          t.storageType === 'STANDARD'
+      ).length,
+    [unitTypes]
+  );
+  const climateTypesCount = useMemo(
+    () =>
+      unitTypes.filter(
+        (t) =>
+          t.baseMonthlyPrice > 0 &&
+          t.priceStatus !== 'UNLISTED' &&
+          t.priceStatus !== 'Chưa niêm yết' &&
+          t.storageType === 'CLIMATE_CONTROLLED'
+      ).length,
+    [unitTypes]
+  );
 
   const currentUnitType = useMemo(() => {
     if (selectedTypeId) {
@@ -832,94 +871,100 @@ export const UnitPickerPage: React.FC = () => {
             </div>
 
             {/* Danh sách Loại ô kho theo CSDL thật - High Contrast Showcase */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {availableTypes.map((type) => {
-                const isUnlisted = !type.baseMonthlyPrice || type.baseMonthlyPrice <= 0 || type.priceStatus === 'UNLISTED' || type.priceStatus === 'Chưa niêm yết';
-                const isSelected = !isUnlisted && (selectedTypeId ? selectedTypeId === type.id : selectedSize === type.sizeCategory);
-                const avail = availabilityMap[type.id];
-                const slots = avail ? avail.availableSlots : null;
-                const isOutOfSlots = slots !== null && slots <= 0;
+            {availableTypes.length === 0 ? (
+              <div className="p-8 text-center bg-slate-50 border border-dashed border-slate-200 rounded-xl text-slate-500 text-xs sm:text-sm">
+                Hiện tại cơ sở chưa có loại ô kho nào được niêm yết giá chính thức cho danh mục này. Quý khách vui lòng chọn phân loại khác.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {availableTypes.map((type) => {
+                  const isUnlisted = !type.baseMonthlyPrice || type.baseMonthlyPrice <= 0 || type.priceStatus === 'UNLISTED' || type.priceStatus === 'Chưa niêm yết';
+                  const isSelected = !isUnlisted && (selectedTypeId ? selectedTypeId === type.id : selectedSize === type.sizeCategory);
+                  const avail = availabilityMap[type.id];
+                  const slots = avail ? avail.availableSlots : null;
+                  const isOutOfSlots = slots !== null && slots <= 0;
 
-                return (
-                  <button
-                    key={type.id}
-                    type="button"
-                    disabled={isUnlisted}
-                    onClick={() => {
-                      if (!isUnlisted) {
-                        handleSelectType(type);
-                      }
-                    }}
-                    className={`p-4 rounded-xl border-2 text-left transition-all relative flex flex-col justify-between ${
-                      isUnlisted
-                        ? 'opacity-70 cursor-not-allowed border-slate-200 bg-slate-50'
-                        : isSelected
-                        ? 'border-[#008B74] bg-[#e6f7f4] shadow-xs ring-2 ring-[#008B74]/25 cursor-pointer'
-                        : isOutOfSlots
-                        ? 'border-slate-200 bg-slate-50 text-slate-700 cursor-pointer hover:border-slate-300'
-                        : 'border-slate-200 hover:border-emerald-400 bg-white text-slate-900 shadow-2xs cursor-pointer'
-                    }`}
-                  >
-                    <div>
-                      {/* Tên loại kho từ CSDL thật & Diện tích */}
-                      <div className="flex items-start justify-between gap-2">
-                        <strong className={`text-xs sm:text-sm font-black block leading-snug ${isSelected ? 'text-[#008B74]' : 'text-slate-900'}`} title={type.name}>
-                          {type.name}
-                        </strong>
-                        <span className={`text-[10px] font-bold font-mono px-1.5 py-0.5 rounded shrink-0 ${isSelected ? 'bg-[#008B74] text-white' : 'bg-slate-100 text-slate-700'}`}>
-                          {type.areaM2} m²
-                        </span>
+                  return (
+                    <button
+                      key={type.id}
+                      type="button"
+                      disabled={isUnlisted}
+                      onClick={() => {
+                        if (!isUnlisted) {
+                          handleSelectType(type);
+                        }
+                      }}
+                      className={`p-4 rounded-xl border-2 text-left transition-all relative flex flex-col justify-between ${
+                        isUnlisted
+                          ? 'opacity-70 cursor-not-allowed border-slate-200 bg-slate-50'
+                          : isSelected
+                          ? 'border-[#008B74] bg-[#e6f7f4] shadow-xs ring-2 ring-[#008B74]/25 cursor-pointer'
+                          : isOutOfSlots
+                          ? 'border-slate-200 bg-slate-50 text-slate-700 cursor-pointer hover:border-slate-300'
+                          : 'border-slate-200 hover:border-emerald-400 bg-white text-slate-900 shadow-2xs cursor-pointer'
+                      }`}
+                    >
+                      <div>
+                        {/* Tên loại kho từ CSDL thật & Thể tích */}
+                        <div className="flex items-start justify-between gap-2">
+                          <strong className={`text-xs sm:text-sm font-black block leading-snug ${isSelected ? 'text-[#008B74]' : 'text-slate-900'}`} title={type.name}>
+                            {type.name}
+                          </strong>
+                          <span className={`text-[10px] font-bold font-mono px-1.5 py-0.5 rounded shrink-0 ${isSelected ? 'bg-[#008B74] text-white' : 'bg-slate-100 text-slate-700'}`}>
+                            {type.volumeM3} m³
+                          </span>
+                        </div>
+
+                        {/* Phân nhóm, Kích thước thực tế & Chế độ môi trường */}
+                        <div className="flex items-center gap-1.5 mt-1.5 text-[11px] text-slate-500 font-medium flex-wrap">
+                          <span className="font-bold text-slate-700 font-mono">Size {type.sizeCategory}</span>
+                          <span>•</span>
+                          <span className="font-mono">{type.dimensions}</span>
+                          <span>•</span>
+                          <span className={type.storageType === 'CLIMATE_CONTROLLED' ? 'text-cyan-700 font-bold' : 'text-emerald-700 font-bold'}>
+                            {type.storageType === 'CLIMATE_CONTROLLED' ? '❄️ Máy lạnh' : '📦 Tiêu chuẩn'}
+                          </span>
+                        </div>
+
+                        {/* Đơn giá niêm yết từ CSDL */}
+                        <div className="mt-2.5">
+                          {isUnlisted ? (
+                            <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md inline-block">
+                              Chưa niêm yết giá
+                            </span>
+                          ) : (
+                            <span className={`text-sm block font-black font-mono ${isSelected ? 'text-[#008B74]' : 'text-emerald-700'}`}>
+                              {formatVND(type.baseMonthlyPrice)}/tháng
+                            </span>
+                          )}
+                        </div>
                       </div>
 
-                      {/* Phân nhóm, Kích thước thực tế & Chế độ môi trường */}
-                      <div className="flex items-center gap-1.5 mt-1.5 text-[11px] text-slate-500 font-medium flex-wrap">
-                        <span className="font-bold text-slate-700 font-mono">Size {type.sizeCategory}</span>
-                        <span>•</span>
-                        <span className="font-mono">{type.dimensions}</span>
-                        <span>•</span>
-                        <span className={type.storageType === 'CLIMATE_CONTROLLED' ? 'text-cyan-700 font-bold' : 'text-emerald-700 font-bold'}>
-                          {type.storageType === 'CLIMATE_CONTROLLED' ? '❄️ Máy lạnh' : '📦 Tiêu chuẩn'}
-                        </span>
-                      </div>
-
-                      {/* Đơn giá niêm yết từ CSDL */}
-                      <div className="mt-2.5">
+                      {/* Tình trạng ô kho thực tế */}
+                      <div className="mt-3 text-[11px] font-bold">
                         {isUnlisted ? (
-                          <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md inline-block">
-                            Chưa niêm yết giá
-                          </span>
+                          <span className="text-slate-400 italic font-medium">Tạm chưa mở đặt</span>
+                        ) : slots !== null ? (
+                          slots > 0 ? (
+                            <span className="inline-flex items-center gap-1 text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-md">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                              Còn {slots} ô
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-rose-700 bg-rose-100/80 px-2 py-0.5 rounded-md">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+                              Hết chỗ (0 ô)
+                            </span>
+                          )
                         ) : (
-                          <span className={`text-sm block font-black font-mono ${isSelected ? 'text-[#008B74]' : 'text-emerald-700'}`}>
-                            {formatVND(type.baseMonthlyPrice)}/tháng
-                          </span>
+                          <span className="text-slate-400 text-[10px]">Đang kiểm tra...</span>
                         )}
                       </div>
-                    </div>
-
-                    {/* Tình trạng ô kho thực tế */}
-                    <div className="mt-3 text-[11px] font-bold">
-                      {isUnlisted ? (
-                        <span className="text-slate-400 italic font-medium">Tạm chưa mở đặt</span>
-                      ) : slots !== null ? (
-                        slots > 0 ? (
-                          <span className="inline-flex items-center gap-1 text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-md">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-                            Còn {slots} ô
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-rose-700 bg-rose-100/80 px-2 py-0.5 rounded-md">
-                            <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
-                            Hết chỗ (0 ô)
-                          </span>
-                        )
-                      ) : (
-                        <span className="text-slate-400 text-[10px]">Đang kiểm tra...</span>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Chú thích trạng thái sơ đồ ô kho */}
             <div className="flex items-center gap-4 text-xs text-slate-700 pt-3.5 border-t border-slate-100 font-semibold flex-wrap">
