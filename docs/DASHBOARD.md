@@ -111,6 +111,7 @@
 | `ISS-103` | Phụ phí đã tắt bên Quản lý nhưng bên Nhật ký vẫn hiện Đang áp dụng; tên phụ phí #3 lỗi font Mojibake. | Bổ sung kiểm tra isActive trong PriceAuditServiceImpl, hỗ trợ STATUS_DISABLED, sửa lỗi font UTF-8 DB. | Bình | `RESOLVED` |
 | `ISS-104` | Drawer mở làm trôi cuộn màn hình nền; cột Giá trị cũ -> mới rườm rà thiếu nút Chi tiết. | Khóa cuộn thẻ main khi mở Drawer, tinh giản thành cột Thông tin kèm nút Chi tiết, restart backend nạp code. | Bình | `RESOLVED` (#232) |
 | `ISS-105` | Cột Loại lệch lề, trùng tên phụ phí làm loạn trạng thái Đã thay thế vs Ngừng áp dụng, Snapshot in thừa A -> A. | Căn giữa cột Loại, dọn CSDL & validate unique name, xóa khối div tím lặp lại, sửa Snapshot thông minh. | Bình | `RESOLVED` (#232) |
+| `ISS-106` | Tài khoản staff@storage.vn thiếu dữ liệu ca trực mẫu đa dạng để kiểm thử UI điều phối bàn giao/nghiệm thu. | Tạo Flyway V51 nạp đủ 3 nhóm task: Check-in (chờ/xong), Trả kho (chờ/xong), Sự cố (4 loại SUP). | Bình | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 
