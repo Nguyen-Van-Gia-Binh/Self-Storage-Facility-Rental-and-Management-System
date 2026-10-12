@@ -5,7 +5,6 @@ import {
   Phone,
   ArrowRight,
   AlertTriangle,
-  Lock,
   CheckCircle2,
   ExternalLink,
   KeyRound,
@@ -17,12 +16,16 @@ import { StaffResolveIncidentModal } from './StaffResolveIncidentModal';
 interface DailyTasksOverviewProps {
   tasks: StaffDailyTaskReport;
   searchQuery?: string;
+  selectedDate?: string;
+  selectedFacilityId?: number;
   onRefresh: () => void;
 }
 
 export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
   tasks,
   searchQuery = '',
+  selectedDate = '',
+  selectedFacilityId = 0,
   onRefresh,
 }) => {
   const navigate = useNavigate();
@@ -50,8 +53,6 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
 
   const incidentDoneCount = tasks.openSupportRequests.filter(isIncidentDone).length;
   const incidentPendingCount = tasks.openSupportRequests.length - incidentDoneCount;
-
-  const overlockTaskCount = tasks.openSupportRequests.filter((i) => i.isOverlockTask).length;
 
   // Lọc tìm kiếm theo từ khóa searchQuery
   const q = searchQuery.trim().toLowerCase();
@@ -124,38 +125,38 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* 4 Cards Thống kê KPI ca trực - Dàn đều 100% chiều ngang & Phân cấp ngữ nghĩa */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      {/* 3 Cards Thống kê KPI ca trực - Dàn đều 3 cột cân đối & Bỏ Overlock */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
         {/* Thẻ 1: Lịch Check-in */}
         <button
           type="button"
           onClick={() => setActiveTab('checkin')}
-          className={`p-4 rounded-2xl border text-left transition-all duration-200 shadow-xs relative overflow-hidden group ${
+          className={`p-4 sm:p-5 rounded-2xl border text-left transition-all duration-200 shadow-xs relative overflow-hidden group ${
             activeTab === 'checkin'
               ? 'bg-teal-50/40 border-teal-500 ring-2 ring-teal-500/20'
               : 'bg-white border-slate-200/90 hover:border-teal-300 hover:shadow-sm'
           }`}
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
-              <KeyRound className="w-4 h-4 text-teal-600" />
-              Lịch Check-in
+            <span className="text-xs sm:text-sm font-bold text-slate-700 flex items-center gap-2">
+              <KeyRound className="w-4.5 h-4.5 text-teal-600" />
+              Lịch Check-in hôm nay
             </span>
-            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+            <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
               checkInPendingCount > 0 ? 'bg-teal-100 text-teal-800' : 'bg-emerald-100 text-emerald-800'
             }`}>
-              {checkInPendingCount} chờ
+              {checkInPendingCount} chờ tiếp đón
             </span>
           </div>
-          <div className="flex items-baseline justify-between mt-1">
+          <div className="flex items-baseline justify-between mt-2">
             <span className="text-2xl sm:text-3xl font-black text-slate-900 font-mono tracking-tight">
               {tasks.pendingCheckIns.length}
             </span>
             <span className="text-xs font-semibold text-slate-500">
-              {checkInDoneCount} đã hoàn tất
+              {checkInDoneCount} đã hoàn tất bàn giao
             </span>
           </div>
-          <div className="mt-2.5 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+          <div className="mt-3 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
             <div
               className="h-full bg-teal-500 rounded-full transition-all duration-500"
               style={{
@@ -171,32 +172,32 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
         <button
           type="button"
           onClick={() => setActiveTab('return')}
-          className={`p-4 rounded-2xl border text-left transition-all duration-200 shadow-xs relative overflow-hidden group ${
+          className={`p-4 sm:p-5 rounded-2xl border text-left transition-all duration-200 shadow-xs relative overflow-hidden group ${
             activeTab === 'return'
               ? 'bg-blue-50/40 border-blue-500 ring-2 ring-blue-500/20'
               : 'bg-white border-slate-200/90 hover:border-blue-300 hover:shadow-sm'
           }`}
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
-              <ClipboardCheck className="w-4 h-4 text-blue-600" />
-              Lịch Trả kho
+            <span className="text-xs sm:text-sm font-bold text-slate-700 flex items-center gap-2">
+              <ClipboardCheck className="w-4.5 h-4.5 text-blue-600" />
+              Lịch Trả kho & Nghiệm thu
             </span>
-            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+            <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
               returnPendingCount > 0 ? 'bg-blue-100 text-blue-800' : 'bg-emerald-100 text-emerald-800'
             }`}>
-              {returnPendingCount} chờ
+              {returnPendingCount} chờ nghiệm thu
             </span>
           </div>
-          <div className="flex items-baseline justify-between mt-1">
+          <div className="flex items-baseline justify-between mt-2">
             <span className="text-2xl sm:text-3xl font-black text-slate-900 font-mono tracking-tight">
               {tasks.pendingReturns.length}
             </span>
             <span className="text-xs font-semibold text-slate-500">
-              {returnDoneCount} đã hoàn tất
+              {returnDoneCount} đã hoàn tất nghiệm thu
             </span>
           </div>
-          <div className="mt-2.5 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+          <div className="mt-3 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
             <div
               className="h-full bg-blue-500 rounded-full transition-all duration-500"
               style={{
@@ -212,8 +213,8 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
         <button
           type="button"
           onClick={() => setActiveTab('incident')}
-          className={`p-4 rounded-2xl border text-left transition-all duration-200 shadow-xs relative overflow-hidden group ${
-            activeTab === 'incident' && !overlockTaskCount
+          className={`p-4 sm:p-5 rounded-2xl border text-left transition-all duration-200 shadow-xs relative overflow-hidden group ${
+            activeTab === 'incident'
               ? 'bg-amber-50/50 border-amber-500 ring-2 ring-amber-500/20'
               : tasks.openSupportRequests.length > 0
               ? 'bg-amber-50/20 border-amber-200 hover:border-amber-400'
@@ -221,27 +222,27 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
           }`}
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
-              <AlertTriangle className="w-4 h-4 text-amber-600" />
-              Sự cố kỹ thuật
+            <span className="text-xs sm:text-sm font-bold text-slate-700 flex items-center gap-2">
+              <AlertTriangle className="w-4.5 h-4.5 text-amber-600" />
+              Sự cố kỹ thuật & Vận hành
             </span>
-            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+            <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
               incidentPendingCount > 0 ? 'bg-amber-100 text-amber-900 font-bold' : 'bg-emerald-100 text-emerald-800'
             }`}>
-              {incidentPendingCount > 0 ? `${incidentPendingCount} cần xử lý` : 'Đã xong'}
+              {incidentPendingCount > 0 ? `${incidentPendingCount} cần xử lý` : 'Đã thông suốt'}
             </span>
           </div>
-          <div className="flex items-baseline justify-between mt-1">
+          <div className="flex items-baseline justify-between mt-2">
             <span className={`text-2xl sm:text-3xl font-black font-mono tracking-tight ${
               incidentPendingCount > 0 ? 'text-amber-700' : 'text-slate-900'
             }`}>
               {tasks.openSupportRequests.length}
             </span>
             <span className="text-xs font-semibold text-slate-500">
-              {incidentDoneCount} đã khắc phục
+              {incidentDoneCount} đã khắc phục xong
             </span>
           </div>
-          <div className="mt-2.5 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+          <div className="mt-3 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
             <div
               className="h-full bg-amber-500 rounded-full transition-all duration-500"
               style={{
@@ -249,43 +250,6 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
                   ? `${(incidentDoneCount / tasks.openSupportRequests.length) * 100}%`
                   : '100%',
               }}
-            />
-          </div>
-        </button>
-
-        {/* Thẻ 4: Nhiệm vụ Overlock */}
-        <button
-          type="button"
-          onClick={() => setActiveTab('incident')}
-          className={`p-4 rounded-2xl border text-left transition-all duration-200 shadow-xs relative overflow-hidden group ${
-            activeTab === 'incident' && overlockTaskCount > 0
-              ? 'bg-purple-50/50 border-purple-500 ring-2 ring-purple-500/20'
-              : overlockTaskCount > 0
-              ? 'bg-purple-50/20 border-purple-200 hover:border-purple-400'
-              : 'bg-white border-slate-200/90 hover:border-purple-300'
-          }`}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
-              <Lock className="w-4 h-4 text-purple-600" />
-              Khóa Overlock (D+4)
-            </span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">
-              Niêm phong
-            </span>
-          </div>
-          <div className="flex items-baseline justify-between mt-1">
-            <span className="text-2xl sm:text-3xl font-black text-slate-900 font-mono tracking-tight">
-              {overlockTaskCount}
-            </span>
-            <span className="text-xs font-semibold text-slate-500">
-              {overlockTaskCount > 0 ? 'Ô kho nợ quá hạn' : 'Không có vi phạm'}
-            </span>
-          </div>
-          <div className="mt-2.5 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-purple-500 rounded-full transition-all duration-500"
-              style={{ width: overlockTaskCount > 0 ? '100%' : '0%' }}
             />
           </div>
         </button>
@@ -425,8 +389,13 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
                   {!q && (
                     <button
                       type="button"
-                      onClick={() => navigate('/staff/check-in')}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition shadow-xs"
+                      onClick={() => {
+                        const params = new URLSearchParams();
+                        if (selectedDate) params.set('date', selectedDate);
+                        if (selectedFacilityId) params.set('facilityId', String(selectedFacilityId));
+                        navigate(`/staff/check-in${params.toString() ? `?${params.toString()}` : ''}`);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition shadow-xs cursor-pointer"
                     >
                       <KeyRound className="w-4 h-4" />
                       <span>Tiếp đón khách vãng lai (Check-in ngay)</span>
@@ -436,6 +405,15 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
               ) : (
                 filteredCheckIns.map((item) => {
                   const isDone = isCheckInDone(item);
+                  const handleGoToCheckIn = () => {
+                    const params = new URLSearchParams();
+                    const cId = item.contractId || item.reservationId;
+                    if (cId) params.set('contractId', String(cId));
+                    if (selectedDate) params.set('date', selectedDate);
+                    if (selectedFacilityId) params.set('facilityId', String(selectedFacilityId));
+                    navigate(`/staff/check-in?${params.toString()}`);
+                  };
+
                   return (
                     <div
                       key={item.reservationId || item.contractId}
@@ -497,8 +475,8 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
                         {isDone ? (
                           <button
                             type="button"
-                            onClick={() => navigate('/staff/check-in')}
-                            className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition shadow-xs"
+                            onClick={handleGoToCheckIn}
+                            className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
                           >
                             <span>Hồ sơ bàn giao</span>
                             <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
@@ -506,8 +484,8 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
                         ) : (
                           <button
                             type="button"
-                            onClick={() => navigate('/staff/check-in')}
-                            className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs hover:shadow-sm"
+                            onClick={handleGoToCheckIn}
+                            className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs hover:shadow-sm cursor-pointer"
                           >
                             <KeyRound className="w-3.5 h-3.5" />
                             <span>Tiếp đón & Bàn giao</span>
@@ -543,8 +521,13 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
                   {!q && (
                     <button
                       type="button"
-                      onClick={() => navigate('/staff/return')}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-xs"
+                      onClick={() => {
+                        const params = new URLSearchParams();
+                        if (selectedDate) params.set('date', selectedDate);
+                        if (selectedFacilityId) params.set('facilityId', String(selectedFacilityId));
+                        navigate(`/staff/return${params.toString() ? `?${params.toString()}` : ''}`);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-xs cursor-pointer"
                     >
                       <ClipboardCheck className="w-4 h-4" />
                       <span>Tra cứu hợp đồng trả kho</span>
@@ -554,6 +537,13 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
               ) : (
                 filteredReturns.map((item) => {
                   const isDone = isReturnDone(item);
+                  const handleGoToReturn = () => {
+                    const params = new URLSearchParams();
+                    if (selectedDate) params.set('date', selectedDate);
+                    if (selectedFacilityId) params.set('facilityId', String(selectedFacilityId));
+                    navigate(`/staff/return/${item.contractId}${params.toString() ? `?${params.toString()}` : ''}`);
+                  };
+
                   return (
                     <div
                       key={item.contractId}
@@ -620,8 +610,8 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
                         {isDone ? (
                           <button
                             type="button"
-                            onClick={() => navigate(`/staff/return/${item.contractId}`)}
-                            className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition shadow-xs"
+                            onClick={handleGoToReturn}
+                            className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
                           >
                             <span>Biên bản nghiệm thu</span>
                             <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
@@ -629,8 +619,8 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
                         ) : (
                           <button
                             type="button"
-                            onClick={() => navigate(`/staff/return/${item.contractId}`)}
-                            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs hover:shadow-sm"
+                            onClick={handleGoToReturn}
+                            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs hover:shadow-sm cursor-pointer"
                           >
                             <ClipboardCheck className="w-3.5 h-3.5" />
                             <span>Tiến hành nghiệm thu</span>
@@ -645,19 +635,19 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
             </div>
           )}
 
-          {/* TAB 3: INCIDENTS & OVERLOCK */}
+          {/* TAB 3: INCIDENTS */}
           {activeTab === 'incident' && (
             <div className="space-y-3">
               {/* Shortcut chuyển nhanh sang trang Sự cố chi tiết */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/80 text-xs gap-2">
                 <span className="text-amber-950 font-medium flex items-center gap-1.5">
                   <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                  Xem và xử lý toàn bộ sự cố kỹ thuật, cắt khóa cơ và kiểm tra thực địa ca trực:
+                  Xem và xử lý toàn bộ sự cố kỹ thuật và kiểm tra thực địa ca trực:
                 </span>
                 <button
                   type="button"
                   onClick={() => navigate('/staff/incidents')}
-                  className="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold flex items-center gap-1 shrink-0 transition shadow-xs self-start sm:self-auto"
+                  className="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold flex items-center gap-1 shrink-0 transition shadow-xs self-start sm:self-auto cursor-pointer"
                 >
                   <span>Mở Trang Sự cố chi tiết</span>
                   <ExternalLink className="w-3.5 h-3.5" />
@@ -685,10 +675,8 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
                     className="p-4 rounded-xl border border-slate-200/90 hover:border-amber-300 bg-white shadow-xs hover:shadow-sm transition-all duration-200 flex flex-col md:flex-row md:items-center justify-between gap-4"
                   >
                     <div className="flex items-start sm:items-center gap-3.5 flex-1 min-w-0">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
-                        item.isOverlockTask ? 'bg-purple-50 text-purple-700 border border-purple-200' : 'bg-amber-50 text-amber-700 border border-amber-200'
-                      }`}>
-                        {item.isOverlockTask ? <Lock className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-amber-50 text-amber-700 border border-amber-200">
+                        <AlertTriangle className="w-5 h-5" />
                       </div>
                       <div className="space-y-1 min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
@@ -701,11 +689,6 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
                           <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
                             Ô {item.unitCode || '---'}
                           </span>
-                          {item.isOverlockTask && (
-                            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">
-                              Khóa Overlock (D+4)
-                            </span>
-                          )}
                         </div>
                         <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
                           {item.customerName && (

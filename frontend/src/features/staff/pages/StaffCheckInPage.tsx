@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   KeyRound,
   Building2,
   RefreshCw,
   CheckCircle2,
   AlertCircle,
-  HelpCircle
+  HelpCircle,
+  ArrowLeft,
 } from 'lucide-react';
 import type { CheckInContract, CheckInSubmitRequest, HandoverRejectRequest } from '../../../types';
 import { getPendingContracts, checkInContract, rejectHandoverContract } from '../../../api/contract';
@@ -18,11 +20,19 @@ import { AccessCodePinModal } from '../components/AccessCodePinModal';
 import { HandoverRejectionModal } from '../components/HandoverRejectionModal';
 
 export const StaffCheckInPage: React.FC = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const urlContractId = searchParams.get('contractId');
+  const urlDate = searchParams.get('date');
+  const urlFacilityId = searchParams.get('facilityId');
+
   const user = useCurrentUser();
   const staffId = user?.id ? Number(user.id) : undefined;
   const userFacilityId = user?.facilityId ? Number(user.facilityId) : 0;
+  const initialFacilityId = urlFacilityId ? Number(urlFacilityId) : userFacilityId;
+
   const [facilities, setFacilities] = useState<Array<{ id: number; name: string }>>([]);
-  const [selectedFacilityId, setSelectedFacilityId] = useState<number>(userFacilityId);
+  const [selectedFacilityId, setSelectedFacilityId] = useState<number>(initialFacilityId);
   const [contracts, setContracts] = useState<CheckInContract[]>([]);
   const [selectedContract, setSelectedContract] = useState<CheckInContract | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -65,7 +75,9 @@ export const StaffCheckInPage: React.FC = () => {
         if (list && list.length > 0) {
           const opts = [{ id: 0, name: 'Tất cả cơ sở' }, ...list.map((f) => ({ id: f.id, name: f.name }))];
           setFacilities(opts);
-          if (userFacilityId && list.some((f) => f.id === userFacilityId)) {
+          if (urlFacilityId && list.some((f) => f.id === Number(urlFacilityId))) {
+            setSelectedFacilityId(Number(urlFacilityId));
+          } else if (userFacilityId && list.some((f) => f.id === userFacilityId)) {
             setSelectedFacilityId(userFacilityId);
           } else {
             setSelectedFacilityId(list[0].id);
@@ -75,7 +87,7 @@ export const StaffCheckInPage: React.FC = () => {
       .catch((error) => {
         console.error('Không tải được cơ sở được phân công:', error);
       });
-  }, [userFacilityId]);
+  }, [userFacilityId, urlFacilityId]);
 
   // Tải danh sách hợp đồng chờ check-in theo cơ sở được chọn
   const loadContracts = useCallback(async (facilityId?: number) => {
@@ -86,6 +98,10 @@ export const StaffCheckInPage: React.FC = () => {
       setContracts(data);
       if (data.length > 0) {
         setSelectedContract((prev) => {
+          if (urlContractId) {
+            const matched = data.find((c) => String(c.id) === urlContractId || c.code === urlContractId || String(c.reservationId) === urlContractId || c.reservationCode === urlContractId);
+            if (matched) return matched;
+          }
           if (!prev) {
             // Ưu tiên chọn đơn được phân công cho nhân viên này trước
             const myTask = staffId ? data.find((c) => Number(c.assignedStaffId) === staffId) : null;
@@ -103,11 +119,18 @@ export const StaffCheckInPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedFacilityId, staffId]);
+  }, [selectedFacilityId, staffId, urlContractId]);
 
   const handleFacilityChange = (newFacilityId: number) => {
     setSelectedFacilityId(newFacilityId);
     loadContracts(newFacilityId);
+  };
+
+  const handleBackToShift = () => {
+    const params = new URLSearchParams();
+    if (urlDate) params.set('date', urlDate);
+    if (selectedFacilityId) params.set('facilityId', String(selectedFacilityId));
+    navigate(`/staff${params.toString() ? `?${params.toString()}` : ''}`);
   };
 
   useEffect(() => {
@@ -209,23 +232,34 @@ export const StaffCheckInPage: React.FC = () => {
         </div>
       )}
 
-      {/* Page Header */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 border-l-4 border-l-amber-500 shadow-sm flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-brand-700 bg-brand-50 px-2.5 py-0.5 rounded-full border border-brand-200">
-              Check-in & Tiếp Đón
-            </span>
-            <span className="text-xs text-slate-400">•</span>
-            <span className="text-xs text-slate-500 font-medium">Bàn giao & Ký số điện tử</span>
+      {/* Page Header with Back button preserving shift params */}
+      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <button
+            type="button"
+            onClick={handleBackToShift}
+            className="p-2 sm:px-3 sm:py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+            title="Quay lại bàn điều phối ca trực"
+          >
+            <ArrowLeft className="w-4 h-4 text-slate-600" />
+            <span className="hidden sm:inline">Quay lại Ca trực</span>
+          </button>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200">
+                Check-in & Tiếp Đón
+              </span>
+              <span className="text-xs text-slate-400">•</span>
+              <span className="text-xs text-slate-500 font-medium">Bàn giao & Ký số điện tử</span>
+            </div>
+            <h1 className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight mt-0.5 flex items-center gap-2">
+              <KeyRound className="w-5 h-5 sm:w-6 sm:h-6 text-teal-600" />
+              Bàn Giao Kho & Tiếp Đón Check-in
+            </h1>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Xác minh danh tính khách, đối soát thanh toán 100%, nghiệm thu hiện trạng mặt bằng và kích hoạt mã PIN mở cửa 24/7.
+            </p>
           </div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-1 flex items-center gap-2">
-            <KeyRound className="w-6 h-6 text-brand-600" />
-            Bàn Giao Kho & Tiếp Đón Check-in
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Xác minh danh tính khách, đối soát thanh toán 100%, nghiệm thu hiện trạng mặt bằng và kích hoạt mã PIN mở cửa 24/7.
-          </p>
         </div>
 
         {/* Thanh công cụ cơ sở & làm mới (FS-01, FS-02) */}

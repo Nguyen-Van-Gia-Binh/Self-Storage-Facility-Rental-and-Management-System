@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Building2, Calendar, KeyRound, ClipboardCheck, ArrowRight, RotateCcw } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { Building2, Calendar, RotateCcw } from 'lucide-react';
 import type { StaffDailyTaskReport } from '@/types';
 import { getStaffDailyTasks } from '@/api/staff';
 import { fetchMyAssignedFacilities } from '@/api/facility';
@@ -11,15 +11,36 @@ export const StaffDashboardPage: React.FC = () => {
   const user = useCurrentUser();
   const staffId = user?.id as number | undefined;
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialDate = searchParams.get('date') || new Date().toISOString().split('T')[0];
+  const initialFacilityId = Number(searchParams.get('facilityId')) || 0;
+
   const [tasks, setTasks] = useState<StaffDailyTaskReport | null>(null);
-  const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split('T')[0]
-  );
+  const [selectedDate, setSelectedDate] = useState<string>(initialDate);
   const [loading, setLoading] = useState(true);
 
   // Danh sách cơ sở nhân viên phụ trách và cơ sở đang chọn lọc
   const [facilities, setFacilities] = useState<Array<{ id: number; name: string }>>([]);
-  const [selectedFacilityId, setSelectedFacilityId] = useState<number>(0);
+  const [selectedFacilityId, setSelectedFacilityId] = useState<number>(initialFacilityId);
+
+  // Đồng bộ searchParams khi chọn ngày hoặc cơ sở để giữ tiến độ ca trực
+  const handleDateChange = (newDate: string) => {
+    setSelectedDate(newDate);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('date', newDate);
+      return next;
+    }, { replace: true });
+  };
+
+  const handleFacilityChange = (newFacId: number) => {
+    setSelectedFacilityId(newFacId);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('facilityId', String(newFacId));
+      return next;
+    }, { replace: true });
+  };
 
   useEffect(() => {
     let active = true;
@@ -97,9 +118,9 @@ export const StaffDashboardPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto space-y-4">
-      {/* Shift Command Bar - Tinh gọn, hiện đại và tập trung thao tác */}
+      {/* Shift Command Bar - Tinh gọn, hiện đại, loại bỏ nút trùng lặp */}
       <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-4 sm:p-5">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           {/* Thông tin ca trực & Nhân viên */}
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -112,28 +133,12 @@ export const StaffDashboardPage: React.FC = () => {
               </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-500">
-              {now.toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} · Theo dõi đón khách nhận kho, nghiệm thu trả kho và giải quyết sự cố.
+              {now.toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} · Trung tâm điều phối tiếp đón nhận kho, nghiệm thu trả kho và giải quyết sự cố thực địa.
             </p>
           </div>
 
-          {/* Quick Action Buttons (Chuyển trang nghiệp vụ 1 chạm) */}
-          <div className="flex items-center gap-2.5 shrink-0">
-            <Link
-              to="/staff/check-in"
-              className="flex items-center gap-2 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-sm transition group"
-            >
-              <KeyRound className="w-4 h-4" />
-              <span>Tiếp đón Check-in</span>
-              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-            <Link
-              to="/staff/return"
-              className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-sm transition group"
-            >
-              <ClipboardCheck className="w-4 h-4" />
-              <span>Nghiệm thu trả kho</span>
-              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
+          <div className="hidden lg:flex items-center gap-2 text-xs font-medium text-slate-500 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/80">
+            <span>Phiên trực lễ tân / thực địa</span>
           </div>
         </div>
 
@@ -166,7 +171,7 @@ export const StaffDashboardPage: React.FC = () => {
               <Building2 className="w-4 h-4 text-teal-600 shrink-0" />
               <select
                 value={selectedFacilityId}
-                onChange={(e) => setSelectedFacilityId(Number(e.target.value))}
+                onChange={(e) => handleFacilityChange(Number(e.target.value))}
                 className="bg-transparent font-bold text-slate-800 focus:outline-none cursor-pointer pr-1"
               >
                 {facilities.length > 0 ? (
@@ -187,7 +192,7 @@ export const StaffDashboardPage: React.FC = () => {
               <input
                 type="date"
                 value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
+                onChange={(e) => handleDateChange(e.target.value)}
                 className="outline-none text-xs font-medium cursor-pointer"
               />
             </div>
@@ -217,6 +222,8 @@ export const StaffDashboardPage: React.FC = () => {
         <DailyTasksOverview
           tasks={filteredTasks}
           searchQuery={searchQuery}
+          selectedDate={selectedDate}
+          selectedFacilityId={selectedFacilityId}
           onRefresh={handleRefresh}
         />
       ) : (
