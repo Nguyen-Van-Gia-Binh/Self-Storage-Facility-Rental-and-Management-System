@@ -268,44 +268,30 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
       </div>
 
       {/* Action Buttons Bar (FS-01, FS-02) */}
-      <div className="bg-slate-50/80 -mx-5 -mb-5 p-4 rounded-b-2xl border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
+      <div className="bg-slate-50/80 -mx-5 -mb-5 p-4 rounded-b-2xl border-t border-slate-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         {/* Nút báo sự cố ngoại lệ (BR-CHK-06) */}
         <button
           type="button"
           onClick={onOpenRejectionModal}
           disabled={isSubmitting}
-          className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all cursor-pointer"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all cursor-pointer shrink-0"
         >
-          <AlertOctagon className="w-4 h-4" />
-          Báo hỏng / Khách từ chối nhận
+          <AlertOctagon className="w-4 h-4 shrink-0" />
+          <span>Báo hỏng / Khách từ chối nhận</span>
         </button>
 
-        {/* Nhóm nút chính */}
-        <div className="flex items-center gap-3">
-          {!canSubmit && (
-            <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200 shadow-xs">
-              {!allCriteriaPassed
-                ? '⚠️ Cần tích đủ 4/4 tiêu chí hiện trạng'
-                : !signatureDataUrl
-                ? '⚠️ Cần có chữ ký xác nhận của khách'
-                : !customerConfirmed
-                ? '⚠️ Cần tích đồng ý nhận bàn giao'
-                : '⚠️ Chưa đủ điều kiện bàn giao'}
-            </span>
-          )}
-
-          <Button
-            type="submit"
-            disabled={!canSubmit}
-            isLoading={isSubmitting}
-            size="md"
-            variant="primary"
-            className="px-6 py-2.5 shadow-md cursor-pointer font-bold tracking-wide"
-          >
-            <KeyRound className="w-4 h-4 mr-2" />
-            XÁC NHẬN BÀN GIAO & KÍCH HOẠT MÃ PIN
-          </Button>
-        </div>
+        {/* Nút xác nhận chính */}
+        <Button
+          type="submit"
+          disabled={!canSubmit}
+          isLoading={isSubmitting}
+          size="md"
+          variant="primary"
+          className="px-5 py-2.5 shadow-xs cursor-pointer font-bold tracking-wide text-xs shrink-0"
+        >
+          <KeyRound className="w-4 h-4 mr-2 shrink-0" />
+          XÁC NHẬN BÀN GIAO & KÍCH HOẠT MÃ PIN
+        </Button>
       </div>
     </form>
   );
