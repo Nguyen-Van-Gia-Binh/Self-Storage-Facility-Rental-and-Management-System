@@ -35,30 +35,44 @@ export const CancelCheckInModal: React.FC<CancelCheckInModalProps> = ({
 
   if (!contract) return null;
 
-  // Tính số giờ còn lại từ thời điểm hiện tại đến ngày bắt đầu nhận kho (00:00:00 ngày startDate)
+  // Tính số ngày và số giờ đến ngày nhận kho
   const now = new Date();
   const cleanStartDate = (contract.startDate || '').slice(0, 10);
   const startDateTime = new Date(cleanStartDate + 'T00:00:00');
+
+  // Chuẩn hóa mốc 00:00:00 để tính số ngày giữ kho thực tế
+  const todayZero = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startZero = new Date(startDateTime.getFullYear(), startDateTime.getMonth(), startDateTime.getDate());
+  const heldDays = Math.max(0, Math.floor((todayZero.getTime() - startZero.getTime()) / (1000 * 60 * 60 * 24)));
+
+  // Số giờ trước thời điểm bắt đầu nhận kho (nếu trong tương lai)
   const hoursUntilStart = (startDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
 
+  const graceDays = 10; // checkin.grace_days = 10 ngày theo BR-CAN-04 & BR-CHK-05
+
   // BR-CAN-01: Hủy trước 48h được hoàn 100% (cả cọc + tiền thuê)
-  // BR-CAN-02: Hủy trong 48h phạt 100% cọc, hoàn 100% tiền thuê
-  // BR-CAN-04: Quá hạn Check-in / No-show: Phạt 100% cọc + 100% tiền thuê (Hoàn 0đ), giải phóng kho
+  // BR-CAN-02: Hủy trong 48h hoặc trong ngày nhận kho / ân hạn: Phạt 100% cọc, hoàn tiền thuê kho
+  // BR-CAN-04: Quá hạn 10 ngày nhận kho (heldDays > 10): Mới bị No-show phạt 100% cọc + 100% tiền thuê (Hoàn 0đ)
   const isFullRefund = hoursUntilStart >= 48;
-  const isWithin48h = hoursUntilStart > 0 && hoursUntilStart < 48;
-  const isOverdueCheckIn = hoursUntilStart <= 0;
+  const isOverdueCheckIn = heldDays > graceDays;
+  const isWithin48hOrGrace = !isFullRefund && !isOverdueCheckIn;
 
   const depositAmount = contract.depositHeld || 0;
   const rentalMonths = contract.rentalMonths || 1;
   const rentalFee = (contract.monthlyRent || 0) * rentalMonths;
 
+  // Tính tiền thuê trừ theo ngày nếu hủy khi đã quá ngày bắt đầu (nếu heldDays = 0 thì không trừ)
+  const dailyRent = Math.round(rentalFee / Math.max(1, rentalMonths * 30));
+  const rentCharged = Math.min(rentalFee, dailyRent * heldDays);
+  const refundableRentalFee = Math.max(0, rentalFee - rentCharged);
+
   let estimatedRefund = 0;
   if (isFullRefund) {
     estimatedRefund = rentalFee + depositAmount;
-  } else if (isWithin48h) {
-    estimatedRefund = rentalFee;
+  } else if (isWithin48hOrGrace) {
+    estimatedRefund = refundableRentalFee;
   } else {
-    // Quá hạn ngày bắt đầu (No show / Quá hạn Check-in): Không hoàn tiền cả 2 khoản
+    // Quá hạn No-show 10 ngày (BR-CAN-04): Không hoàn tiền cả 2 khoản
     estimatedRefund = 0;
   }
 
@@ -172,19 +186,29 @@ export const CancelCheckInModal: React.FC<CancelCheckInModalProps> = ({
               </div>
             </div>
           </div>
-        ) : isWithin48h ? (
+        ) : isWithin48hOrGrace ? (
           <div className="p-4 bg-amber-50/90 rounded-xl border border-amber-200 text-xs space-y-3 text-amber-950">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 font-bold text-amber-800">
                 <Clock className="w-4 h-4 text-amber-600 shrink-0" />
-                <span>Chính sách hủy cận giờ (BR-CAN-02)</span>
+                <span>Chính sách hủy cận giờ &amp; trong hạn nhận kho (BR-CAN-02)</span>
               </div>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300 shrink-0">
-                Hủy trễ &lt; 48h
+                {heldDays > 0 ? `Đã giữ kho ${heldDays} ngày` : 'Hủy cận giờ / Ngày nhận kho'}
               </span>
             </div>
             <p className="text-[11px] text-amber-700 leading-relaxed">
-              Thời gian đến ngày bắt đầu nhận kho còn <strong>dưới 48 giờ</strong>. Theo quy định chính sách hủy:
+              {heldDays > 0 ? (
+                <>
+                  Hợp đồng đã bắt đầu từ ngày <strong>{formatDateVN(contract.startDate)}</strong> (đang trong hạn nhận kho 10 ngày).
+                  Theo quy định <strong>BR-CAN-02</strong>, tiền đặt cọc được giữ lại làm phí hủy đơn, và tiền thuê kho được hoàn trả sau khi trừ {heldDays} ngày đã giữ kho:
+                </>
+              ) : (
+                <>
+                  Bạn hủy trong vòng 48 giờ trước hoặc đúng ngày bắt đầu nhận kho (<strong>{formatDateVN(contract.startDate)}</strong>).
+                  Theo quy định <strong>BR-CAN-02</strong>, tiền đặt cọc được khấu trừ làm phí giữ chỗ, và bạn sẽ được <strong>hoàn trả 100% tiền thuê kho</strong>:
+                </>
+              )}
             </p>
             <div className="space-y-1.5 pt-2 border-t border-amber-200/80 text-[11px]">
               <div className="flex justify-between text-amber-800">
@@ -193,7 +217,9 @@ export const CancelCheckInModal: React.FC<CancelCheckInModalProps> = ({
               </div>
               <div className="flex justify-between text-amber-800">
                 <span>Tiền thuê kho ({rentalMonths} tháng):</span>
-                <span className="font-semibold text-emerald-700">+{formatVND(rentalFee)} (Hoàn trả 100%)</span>
+                <span className="font-semibold text-emerald-700">
+                  +{formatVND(refundableRentalFee)} {heldDays > 0 ? `(Đã trừ ${formatVND(rentCharged)} cho ${heldDays} ngày)` : '(Hoàn trả 100%)'}
+                </span>
               </div>
               <div className="pt-2 border-t border-amber-300 flex items-center justify-between font-bold text-xs text-amber-950">
                 <span>Số tiền dự kiến hoàn trả:</span>
@@ -209,11 +235,11 @@ export const CancelCheckInModal: React.FC<CancelCheckInModalProps> = ({
                 <span>Quá hạn nhận kho / No-show (BR-CAN-04)</span>
               </div>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300 shrink-0">
-                Đã quá hạn
+                Quá {graceDays} ngày ân hạn
               </span>
             </div>
             <p className="text-[11px] text-rose-700 leading-relaxed">
-              Lịch nhận kho của bạn đã quá hạn (từ ngày <strong>{formatDateVN(contract.startDate)}</strong>). Theo quy định vận hành, toàn bộ chi phí đã thanh toán sẽ được giữ lại làm phí bồi thường và giữ chỗ quá hạn:
+              Lịch nhận kho của bạn đã quá hạn hơn <strong>{graceDays} ngày</strong> (từ ngày <strong>{formatDateVN(contract.startDate)}</strong>). Theo quy định No-show (BR-CAN-04 &amp; BR-CHK-05), toàn bộ chi phí đã thanh toán sẽ được giữ lại làm phí bồi thường và giải phóng ô kho:
             </p>
             <div className="space-y-1.5 pt-2 border-t border-rose-200/80 text-[11px]">
               <div className="flex justify-between text-rose-800">
