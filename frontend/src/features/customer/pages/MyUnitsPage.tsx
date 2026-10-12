@@ -24,6 +24,7 @@ import { ContractDetailModal } from '../components/ContractDetailModal';
 import { EarlyRenewalReminderModal } from '../components/EarlyRenewalReminderModal';
 import { VietQRPaymentModal } from '../components/VietQRPaymentModal';
 import { ReschedulePeriodModal } from '../components/ReschedulePeriodModal';
+import { CancelCheckInModal } from '../components/CancelCheckInModal';
 import { getCustomerContracts } from '@/api/customerRentals';
 import { getMyReservationsApi, cancelReservationApi, type ReservationResponse } from '@/api/reservation';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
@@ -53,8 +54,15 @@ export const MyUnitsPage: React.FC = () => {
   const [selectedDetailContract, setSelectedDetailContract] = useState<RentedContract | null>(null);
   const [selectedRescheduleContract, setSelectedRescheduleContract] = useState<RentedContract | null>(null);
   const [selectedOverdueContract, setSelectedOverdueContract] = useState<RentedContract | null>(null);
+  const [selectedCancelCheckInContract, setSelectedCancelCheckInContract] = useState<RentedContract | null>(null);
   const [earlyRenewalContract, setEarlyRenewalContract] = useState<RentedContract | null>(null);
   const [showEarlyRenewalModal, setShowEarlyRenewalModal] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const showToast = (text: string, type: 'success' | 'error' = 'success') => {
+    setToastMessage({ text, type });
+    setTimeout(() => setToastMessage(null), 4000);
+  };
 
   const loadContracts = useCallback(async () => {
     if (!isAuthenticated) {
@@ -128,21 +136,26 @@ export const MyUnitsPage: React.FC = () => {
     loadContracts();
   };
 
-  // Lọc theo Tab và Search Query (Phương án A: Rành rọt từng trạng thái nghiệp vụ)
+  // Lọc theo Tab và Search Query
   const filteredContracts = useMemo(() => {
     if (activeTab === 'PENDING_PAYMENT') return [];
     return contracts
       .filter((contract) => {
         // 1. Lọc theo Tab
         if (activeTab === 'ACTIVE' && contract.status !== 'ACTIVE') return false;
-        if (activeTab === 'OVERDUE' && contract.status !== 'OVERDUE') return false;
-        if (activeTab === 'PENDING_RETURN' && contract.status !== 'PENDING_RETURN') return false;
         if (
           activeTab === 'PENDING_CHECKIN' &&
           contract.status !== 'PENDING_CHECKIN' &&
           (contract.status as string) !== 'PENDING_CHECK_IN'
         )
           return false;
+        if (activeTab === 'ATTENTION') {
+          const isAttention =
+            contract.status === 'EXPIRING_SOON' ||
+            contract.status === 'OVERDUE' ||
+            contract.status === 'PENDING_RETURN';
+          if (!isAttention) return false;
+        }
         if (activeTab === 'CLOSED' && contract.status !== 'CLOSED' && contract.status !== 'TERMINATED') {
           return false;
         }
@@ -214,25 +227,18 @@ export const MyUnitsPage: React.FC = () => {
   const totalDisplayItems = filteredContracts.length + filteredPendingReservations.length;
 
   const activeCount = useMemo(() => contracts.filter((c) => c.status === 'ACTIVE').length, [contracts]);
-  const expiringCount = useMemo(
-    () =>
-      contracts.filter((c) => {
-        if (c.status !== 'ACTIVE') return false;
-        const days = calculateDaysRemaining(c.endDate);
-        const threshold = (noticeDays && noticeDays > 0 ? noticeDays : 30) + 7;
-        return days > 0 && days <= threshold;
-      }).length,
-    [contracts, noticeDays]
-  );
-  const overdueCount = useMemo(() => contracts.filter((c) => c.status === 'OVERDUE').length, [contracts]);
-  const pendingReturnCount = useMemo(
-    () => contracts.filter((c) => c.status === 'PENDING_RETURN').length,
-    [contracts]
-  );
   const pendingCheckinCount = useMemo(
     () =>
       contracts.filter(
         (c) => c.status === 'PENDING_CHECKIN' || (c.status as string) === 'PENDING_CHECK_IN'
+      ).length,
+    [contracts]
+  );
+  const attentionCount = useMemo(
+    () =>
+      contracts.filter(
+        (c) =>
+          c.status === 'EXPIRING_SOON' || c.status === 'OVERDUE' || c.status === 'PENDING_RETURN'
       ).length,
     [contracts]
   );
@@ -333,10 +339,8 @@ export const MyUnitsPage: React.FC = () => {
         </Card>
       ) : (
         <>
-          {/* Status Filter Tabs (Phương án A: Rành rọt từng trạng thái nghiệp vụ) */}
-          {/* Cam kết hoàn cọc trong 7 ngày làm việc theo BR-RET-05 */}
+          {/* Status Filter Tabs (Clean Pills matching SupportPage) */}
           <div className="flex items-center gap-2 overflow-x-auto text-xs font-semibold border-b border-slate-200/80 pb-3 pt-1">
-            {/* 1. Tab Đang hoạt động */}
             <button
               type="button"
               onClick={() => setActiveTab('ACTIVE')}
@@ -347,14 +351,6 @@ export const MyUnitsPage: React.FC = () => {
               }`}
             >
               <span>Đang hoạt động</span>
-              {expiringCount > 0 && (
-                <span
-                  title={`${expiringCount} ô kho sắp hết hạn`}
-                  className={`w-2 h-2 rounded-full ${
-                    activeTab === 'ACTIVE' ? 'bg-amber-300' : 'bg-amber-500 animate-pulse'
-                  }`}
-                />
-              )}
               <span
                 className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
                   activeTab === 'ACTIVE' ? 'bg-white/25 text-white' : 'bg-slate-200/80 text-slate-700'
@@ -364,54 +360,32 @@ export const MyUnitsPage: React.FC = () => {
               </span>
             </button>
 
-            {/* 2. Tab Quá hạn */}
             <button
               type="button"
-              onClick={() => setActiveTab('OVERDUE')}
+              onClick={() => setActiveTab('ATTENTION')}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === 'OVERDUE'
-                  ? 'bg-rose-600 text-white font-bold shadow-xs'
+                activeTab === 'ATTENTION'
+                  ? 'bg-amber-600 text-white font-bold shadow-xs'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
               }`}
             >
-              <span>Quá hạn</span>
-              {overdueCount > 0 && (
+              <span>Cần gia hạn</span>
+              {attentionCount > 0 && (
                 <span
                   className={`w-2 h-2 rounded-full ${
-                    activeTab === 'OVERDUE' ? 'bg-white' : 'bg-rose-500 animate-pulse'
+                    activeTab === 'ATTENTION' ? 'bg-white' : 'bg-amber-500 animate-pulse'
                   }`}
                 />
               )}
               <span
                 className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
-                  activeTab === 'OVERDUE' ? 'bg-white/25 text-white' : 'bg-slate-200/80 text-slate-700'
+                  activeTab === 'ATTENTION' ? 'bg-white/25 text-white' : 'bg-slate-200/80 text-slate-700'
                 }`}
               >
-                {overdueCount}
+                {attentionCount}
               </span>
             </button>
 
-            {/* 3. Tab Chờ trả kho */}
-            <button
-              type="button"
-              onClick={() => setActiveTab('PENDING_RETURN')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === 'PENDING_RETURN'
-                  ? 'bg-purple-700 text-white font-bold shadow-xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
-              }`}
-            >
-              <span>Chờ trả kho</span>
-              <span
-                className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
-                  activeTab === 'PENDING_RETURN' ? 'bg-white/25 text-white' : 'bg-slate-200/80 text-slate-700'
-                }`}
-              >
-                {pendingReturnCount}
-              </span>
-            </button>
-
-            {/* 4. Tab Chờ nhận kho */}
             <button
               type="button"
               onClick={() => setActiveTab('PENDING_CHECKIN')}
@@ -431,13 +405,12 @@ export const MyUnitsPage: React.FC = () => {
               </span>
             </button>
 
-            {/* 5. Tab Giữ chỗ 48h */}
             <button
               type="button"
               onClick={() => setActiveTab('PENDING_PAYMENT')}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === 'PENDING_PAYMENT'
-                  ? 'bg-amber-600 text-white font-bold shadow-xs'
+                  ? 'bg-rose-600 text-white font-bold shadow-xs'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
               }`}
             >
@@ -445,7 +418,7 @@ export const MyUnitsPage: React.FC = () => {
               {pendingReservations.length > 0 && (
                 <span
                   className={`w-2 h-2 rounded-full ${
-                    activeTab === 'PENDING_PAYMENT' ? 'bg-white' : 'bg-amber-500'
+                    activeTab === 'PENDING_PAYMENT' ? 'bg-white' : 'bg-rose-500'
                   }`}
                 />
               )}
@@ -458,7 +431,6 @@ export const MyUnitsPage: React.FC = () => {
               </span>
             </button>
 
-            {/* 6. Tab Đã kết thúc */}
             <button
               type="button"
               onClick={() => setActiveTab('CLOSED')}
@@ -506,6 +478,7 @@ export const MyUnitsPage: React.FC = () => {
                   onViewDetail={(c) => setSelectedDetailContract(c)}
                   onOpenOverduePayment={(c) => setSelectedOverdueContract(c)}
                   onCancelReturn={() => loadContracts()}
+                  onCancelPendingCheckIn={(c) => setSelectedCancelCheckInContract(c)}
                   renewalNoticeDays={noticeDays > 0 ? noticeDays : undefined}
                 />
               ))}
@@ -577,6 +550,17 @@ export const MyUnitsPage: React.FC = () => {
         onSuccess={() => {
           setSelectedRescheduleContract(null);
           loadContracts();
+        }}
+      />
+
+      <CancelCheckInModal
+        isOpen={Boolean(selectedCancelCheckInContract)}
+        onClose={() => setSelectedCancelCheckInContract(null)}
+        contract={selectedCancelCheckInContract}
+        onSuccess={() => {
+          setSelectedCancelCheckInContract(null);
+          loadContracts();
+          showToast('Đã hủy nhận kho thành công. Hệ thống đã tự động ghi nhận giao dịch hoàn tiền.');
         }}
       />
 
@@ -673,6 +657,26 @@ export const MyUnitsPage: React.FC = () => {
           </div>
         </div>
       </Modal>
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-5 duration-300">
+          <div
+            className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl border text-xs font-bold ${
+              toastMessage.type === 'success'
+                ? 'bg-emerald-900 text-white border-emerald-700 shadow-emerald-950/20'
+                : 'bg-rose-900 text-white border-rose-700 shadow-rose-950/20'
+            }`}
+          >
+            {toastMessage.type === 'success' ? (
+              <RotateCcw className="w-4 h-4 text-emerald-400" />
+            ) : (
+              <AlertTriangle className="w-4 h-4 text-rose-400" />
+            )}
+            <span>{toastMessage.text}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -128,6 +128,9 @@ export interface RentedContract {
   handoverStaffName?: string;
   handoverConditionNote?: string;
   customerConfirmedAt?: string;
+  reservationId?: number;
+  reservationCode?: string;
+  rentalMonths?: number;
   relocationSupportRequestId?: number;
   relocationSupportRequestCode?: string;
   relocationReason?: string;

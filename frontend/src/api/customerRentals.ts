@@ -156,6 +156,9 @@ export function mapBackendRentalToContract(item: BackendRentalSummary): RentedCo
     pendingRenewalMonths: item.pendingRenewalMonths,
     pendingRenewalAmount: item.pendingRenewalAmount,
     pendingRenewalExpiresAt: item.pendingRenewalExpiresAt,
+    reservationId: item.reservationId,
+    reservationCode: item.reservationCode,
+    rentalMonths: item.rentalMonths,
   };
 }
 
