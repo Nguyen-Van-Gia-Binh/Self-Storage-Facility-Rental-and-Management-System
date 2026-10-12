@@ -54,4 +54,18 @@ describe('StaffWeekCalendarStrip - Date Calculations', () => {
       '2026-10-18',
     ]);
   });
+
+  it('ẩn hoàn toàn thanh cuộn ngang và không dùng scale gây tràn khung khi bấm chọn Chủ Nhật', async () => {
+    const fs = await import('fs');
+    const path = await import('path');
+    const filePath = path.resolve(
+      process.cwd(),
+      'src/features/staff/components/StaffWeekCalendarStrip.tsx'
+    );
+    const content = fs.readFileSync(filePath, 'utf-8');
+    expect(content).toContain('[&::-webkit-scrollbar]:hidden');
+    expect(content).toContain('md:overflow-visible');
+    expect(content).not.toContain('scale-[1.01]');
+    expect(content).not.toContain('scrollbar-thumb-slate-200');
+  });
 });

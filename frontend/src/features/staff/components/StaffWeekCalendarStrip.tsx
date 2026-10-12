@@ -177,8 +177,8 @@ export const StaffWeekCalendarStrip: React.FC<StaffWeekCalendarStripProps> = ({
         </div>
       </div>
 
-      {/* Dải 7 thẻ ngày cuộn ngang (Horizontal scroll on mobile, even grid on desktop) */}
-      <div className="flex items-stretch gap-2 sm:gap-2.5 overflow-x-auto pb-1 pt-0.5 scrollbar-thin scrollbar-thumb-slate-200">
+      {/* Dải 7 thẻ ngày (Ẩn hoàn toàn thanh cuộn ngang, chia đều 7 cột trên màn hình lớn) */}
+      <div className="flex md:grid md:grid-cols-7 items-stretch gap-2 sm:gap-2.5 overflow-x-auto md:overflow-visible [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {weekDays.map((day) => {
           const { dateStr, dayLabel, dayNumber, monthText, isToday, isSelected } = day;
 
@@ -187,9 +187,9 @@ export const StaffWeekCalendarStrip: React.FC<StaffWeekCalendarStripProps> = ({
               key={dateStr}
               type="button"
               onClick={() => onDateChange(dateStr)}
-              className={`flex-1 min-w-[96px] sm:min-w-[110px] rounded-2xl p-2.5 sm:p-3 text-center transition-all duration-200 cursor-pointer border flex flex-col justify-between select-none ${
+              className={`flex-1 min-w-[92px] md:min-w-0 rounded-2xl p-2.5 sm:p-3 text-center transition-colors duration-200 cursor-pointer border flex flex-col justify-between select-none ${
                 isSelected
-                  ? 'bg-teal-600 text-white border-teal-700 shadow-md ring-2 ring-teal-500/25 scale-[1.01]'
+                  ? 'bg-teal-600 text-white border-teal-700 shadow-sm'
                   : 'bg-white hover:bg-teal-50/40 text-slate-700 border-slate-200/90 hover:border-teal-300 shadow-2xs hover:shadow-xs'
               }`}
             >
