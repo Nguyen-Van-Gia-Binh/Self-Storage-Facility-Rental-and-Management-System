@@ -112,7 +112,7 @@
 | `ISS-103` | Phụ phí đã tắt bên Quản lý nhưng bên Nhật ký vẫn hiện Đang áp dụng; tên phụ phí #3 lỗi font Mojibake. | Bổ sung kiểm tra isActive trong PriceAuditServiceImpl, hỗ trợ STATUS_DISABLED, sửa lỗi font UTF-8 DB. | Bình | `RESOLVED` |
 | `ISS-104` | Drawer mở làm trôi cuộn màn hình nền; cột Giá trị cũ -> mới rườm rà thiếu nút Chi tiết. | Khóa cuộn thẻ main khi mở Drawer, tinh giản thành cột Thông tin kèm nút Chi tiết, restart backend nạp code. | Bình | `RESOLVED` (#232) |
 | `ISS-105` | Cột Loại lệch lề, trùng tên phụ phí làm loạn trạng thái Đã thay thế vs Ngừng áp dụng, Snapshot in thừa A -> A. | Căn giữa cột Loại, dọn CSDL & validate unique name, xóa khối div tím lặp lại, sửa Snapshot thông minh. | Bình | `RESOLVED` (#232) |
-| `ISS-106` | Tab "Cần gia hạn" ở Customer gom nhầm OVERDUE, PENDING_RETURN và bỏ sót HĐ sắp hết hạn do so sánh sai enum. | Đổi tab/Bento thành "Cần xử lý", sửa logic đếm và lọc theo daysRemaining kết hợp quá hạn/chờ trả kho. | Bình | `OPEN` |
+| `ISS-106` | Tab "Cần gia hạn" ở Customer gom nhầm OVERDUE, PENDING_RETURN làm sai lệch luồng nghiệp vụ. | Áp dụng Phương án A tách rành rọt 6 tab độc lập (Đang HĐ, Quá hạn, Chờ trả kho, Chờ nhận kho, Giữ chỗ 48h, Đã kết thúc) & migration V51 test data thật. | Bình | `RESOLVED` (#234) |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 
