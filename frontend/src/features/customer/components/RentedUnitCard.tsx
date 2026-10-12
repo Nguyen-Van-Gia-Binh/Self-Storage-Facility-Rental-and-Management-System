@@ -325,7 +325,6 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
           ) : (
             onScheduleReturn &&
             (contract.status === 'EXPIRING_SOON' ||
-              isExpiringSoon ||
               isGracePeriod ||
               (contract.status === 'OVERDUE' && penaltyFee === 0)) && (
               <Button
