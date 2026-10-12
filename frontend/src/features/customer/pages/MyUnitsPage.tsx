@@ -128,6 +128,24 @@ export const MyUnitsPage: React.FC = () => {
     loadContracts();
   };
 
+  // Kiểm tra hợp đồng cần khách hàng xử lý (sắp hết hạn, quá hạn hoặc chờ nghiệm thu trả kho)
+  const isAttentionContract = useCallback(
+    (c: RentedContract) => {
+      // 1. Quá hạn hoặc Đang chờ nghiệm thu trả kho
+      if (c.status === 'OVERDUE' || c.status === 'PENDING_RETURN' || c.status === 'EXPIRING_SOON') {
+        return true;
+      }
+      // 2. Đang hoạt động nhưng sắp tới ngày hết hạn (còn <= noticeThreshold ngày)
+      if (c.status === 'ACTIVE') {
+        const days = calculateDaysRemaining(c.endDate);
+        const threshold = (noticeDays && noticeDays > 0 ? noticeDays : 30) + 7;
+        return days > 0 && days <= threshold;
+      }
+      return false;
+    },
+    [noticeDays]
+  );
+
   // Lọc theo Tab và Search Query
   const filteredContracts = useMemo(() => {
     if (activeTab === 'PENDING_PAYMENT') return [];
@@ -142,11 +160,7 @@ export const MyUnitsPage: React.FC = () => {
         )
           return false;
         if (activeTab === 'ATTENTION') {
-          const isAttention =
-            contract.status === 'EXPIRING_SOON' ||
-            contract.status === 'OVERDUE' ||
-            contract.status === 'PENDING_RETURN';
-          if (!isAttention) return false;
+          if (!isAttentionContract(contract)) return false;
         }
         if (activeTab === 'CLOSED' && contract.status !== 'CLOSED' && contract.status !== 'TERMINATED') {
           return false;
@@ -173,7 +187,7 @@ export const MyUnitsPage: React.FC = () => {
         if (!isNaN(idA) && !isNaN(idB)) return idB - idA;
         return (b.contractNumber || '').localeCompare(a.contractNumber || '');
       });
-  }, [contracts, activeTab, searchQuery]);
+  }, [contracts, activeTab, searchQuery, isAttentionContract]);
 
   // Lọc danh sách đơn đang giữ chỗ theo search query
   const filteredPendingReservations = useMemo(() => {
@@ -227,12 +241,8 @@ export const MyUnitsPage: React.FC = () => {
     [contracts]
   );
   const attentionCount = useMemo(
-    () =>
-      contracts.filter(
-        (c) =>
-          c.status === 'EXPIRING_SOON' || c.status === 'OVERDUE' || c.status === 'PENDING_RETURN'
-      ).length,
-    [contracts]
+    () => contracts.filter((c) => isAttentionContract(c)).length,
+    [contracts, isAttentionContract]
   );
   const closedCount = useMemo(
     () => contracts.filter((c) => c.status === 'CLOSED' || c.status === 'TERMINATED').length,
@@ -361,7 +371,7 @@ export const MyUnitsPage: React.FC = () => {
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
               }`}
             >
-              <span>Cần gia hạn</span>
+              <span>Cần xử lý</span>
               {attentionCount > 0 && (
                 <span
                   className={`w-2 h-2 rounded-full ${
