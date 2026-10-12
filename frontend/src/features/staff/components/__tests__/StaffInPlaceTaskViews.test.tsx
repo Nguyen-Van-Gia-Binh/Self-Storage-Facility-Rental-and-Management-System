@@ -58,4 +58,20 @@ describe('Staff In-Place Task Views & Full-Screen Detail View Integration', () =
     expect(content).toMatch(/StaffIncidentDetailView/);
     expect(content).not.toMatch(/StaffResolveIncidentModal/);
   });
+
+  it('StaffDashboardPage và DailyTasksOverview đã xóa bỏ ô chọn ngày dư thừa, tab Tất cả nhiệm vụ và nút lọc Tất cả trạng thái', () => {
+    const staffDashboardPath = path.resolve(
+      process.cwd(),
+      'src/features/staff/pages/StaffDashboardPage.tsx'
+    );
+    const dashboardContent = fs.readFileSync(staffDashboardPath, 'utf-8');
+    const overviewContent = fs.readFileSync(dailyTasksOverviewPath, 'utf-8');
+
+    expect(dashboardContent).not.toMatch(/type="date"/);
+    expect(overviewContent).not.toMatch(/Tất cả nhiệm vụ/);
+    expect(overviewContent).not.toMatch(/Tất cả \(\{currentTotal\}\)/);
+    expect(overviewContent).toMatch(/Chờ xử lý \(\{currentPending\}\)/);
+    expect(overviewContent).toMatch(/Đã xong \(\{currentDone\}\)/);
+  });
 });
+

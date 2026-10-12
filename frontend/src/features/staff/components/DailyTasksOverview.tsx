@@ -9,7 +9,6 @@ import {
   ExternalLink,
   KeyRound,
   ClipboardCheck,
-  ListFilter,
   CheckCheck,
 } from 'lucide-react';
 import type { StaffDailyTaskReport, DailyIncidentTask, DailyCheckInTask, DailyReturnTask } from '@/types';
@@ -45,9 +44,8 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
 }) => {
   const navigate = useNavigate();
 
-  // Mặc định xem TẤT CẢ nhiệm vụ ca trực (không bắt ép bấm chuyển tab)
-  const [filterCategory, setFilterCategory] = useState<'ALL' | 'checkin' | 'return' | 'incident'>('ALL');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'COMPLETED'>('ALL');
+  const [filterCategory, setFilterCategory] = useState<'checkin' | 'return' | 'incident'>('checkin');
+  const [statusFilter, setStatusFilter] = useState<'PENDING' | 'COMPLETED'>('PENDING');
   const [activeTaskView, setActiveTaskView] = useState<ActiveTaskView>(null);
 
 
@@ -67,8 +65,6 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
   const incidentPendingCount = tasks.openSupportRequests.length - incidentDoneCount;
 
   const totalAllTasks = tasks.pendingCheckIns.length + tasks.pendingReturns.length + tasks.openSupportRequests.length;
-  const totalAllPending = checkInPendingCount + returnPendingCount + incidentPendingCount;
-  const totalAllDone = checkInDoneCount + returnDoneCount + incidentDoneCount;
 
   // Lọc tìm kiếm theo từ khóa searchQuery
   const q = searchQuery.trim().toLowerCase();
@@ -118,37 +114,26 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
   });
 
   // Tính tổng số lượng tương ứng với nhóm đang chọn
-  const currentTotal =
-    filterCategory === 'checkin'
-      ? tasks.pendingCheckIns.length
-      : filterCategory === 'return'
-      ? tasks.pendingReturns.length
-      : filterCategory === 'incident'
-      ? tasks.openSupportRequests.length
-      : totalAllTasks;
-
   const currentPending =
     filterCategory === 'checkin'
       ? checkInPendingCount
       : filterCategory === 'return'
       ? returnPendingCount
-      : filterCategory === 'incident'
-      ? incidentPendingCount
-      : totalAllPending;
+      : incidentPendingCount;
 
   const currentDone =
     filterCategory === 'checkin'
       ? checkInDoneCount
       : filterCategory === 'return'
       ? returnDoneCount
-      : filterCategory === 'incident'
-      ? incidentDoneCount
-      : totalAllDone;
+      : incidentDoneCount;
 
   const totalFilteredCount =
-    (filterCategory === 'ALL' || filterCategory === 'checkin' ? filteredCheckIns.length : 0) +
-    (filterCategory === 'ALL' || filterCategory === 'return' ? filteredReturns.length : 0) +
-    (filterCategory === 'ALL' || filterCategory === 'incident' ? filteredIncidents.length : 0);
+    filterCategory === 'checkin'
+      ? filteredCheckIns.length
+      : filterCategory === 'return'
+      ? filteredReturns.length
+      : filteredIncidents.length;
 
   // Render từng thẻ Check-in
   const renderCheckInItem = (item: DailyCheckInTask) => {
@@ -474,24 +459,6 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
             <button
               type="button"
-              onClick={() => setFilterCategory('ALL')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 shrink-0 cursor-pointer ${
-                filterCategory === 'ALL'
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              <ListFilter className="w-4 h-4" />
-              <span>Tất cả nhiệm vụ</span>
-              <span className={`px-2 py-0.5 rounded-full text-xs font-mono font-bold ${
-                filterCategory === 'ALL' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
-              }`}>
-                {totalAllTasks}
-              </span>
-            </button>
-
-            <button
-              type="button"
               onClick={() => setFilterCategory('checkin')}
               className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
                 filterCategory === 'checkin'
@@ -530,19 +497,8 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
             </button>
           </div>
 
-          {/* Bộ lọc trạng thái: Tất cả / Chờ xử lý / Đã xong */}
+          {/* Bộ lọc trạng thái: Chờ xử lý / Đã xong */}
           <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto bg-slate-100/90 p-1 rounded-xl">
-            <button
-              type="button"
-              onClick={() => setStatusFilter('ALL')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
-                statusFilter === 'ALL'
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              Tất cả ({currentTotal})
-            </button>
             <button
               type="button"
               onClick={() => setStatusFilter('PENDING')}
@@ -591,13 +547,13 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
                   ? 'Vui lòng kiểm tra lại từ khóa tìm kiếm (SĐT, Họ tên, Mã kho) hoặc làm mới danh sách.'
                   : statusFilter === 'PENDING'
                   ? 'Tuyệt vời! Toàn bộ nhiệm vụ trong ca trực đã hoàn tất xuất sắc.'
-                  : 'Hiện tại chưa có công việc nào được phân công trong ngày này.'}
+                  : 'Hiện tại chưa có công việc nào hoàn tất trong mục này.'}
               </p>
             </div>
           ) : (
             <>
               {/* KHỐI 1: LỊCH TIẾP ĐÓN NHẬN KHO (CHECK-IN) */}
-              {(filterCategory === 'ALL' || filterCategory === 'checkin') && filteredCheckIns.length > 0 && (
+              {filterCategory === 'checkin' && filteredCheckIns.length > 0 && (
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-2">
@@ -625,7 +581,7 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
               )}
 
               {/* KHỐI 2: LỊCH TRẢ KHO & NGHIỆM THU PHÒNG (RETURN) */}
-              {(filterCategory === 'ALL' || filterCategory === 'return') && filteredReturns.length > 0 && (
+              {filterCategory === 'return' && filteredReturns.length > 0 && (
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-2">
@@ -653,7 +609,7 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
               )}
 
               {/* KHỐI 3: SỰ CỐ KỸ THUẬT & VẬN HÀNH (INCIDENTS) */}
-              {(filterCategory === 'ALL' || filterCategory === 'incident') && filteredIncidents.length > 0 && (
+              {filterCategory === 'incident' && filteredIncidents.length > 0 && (
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-2">

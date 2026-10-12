@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Building2, Calendar, RotateCcw } from 'lucide-react';
+import { Building2, RotateCcw } from 'lucide-react';
 import type { StaffDailyTaskReport } from '@/types';
 import { getStaffDailyTasks } from '@/api/staff';
 import { fetchMyAssignedFacilities } from '@/api/facility';
@@ -161,7 +161,7 @@ export const StaffDashboardPage: React.FC = () => {
             )}
           </div>
 
-          {/* Cơ sở phụ trách, Ngày trực & Nút làm mới */}
+          {/* Cơ sở phụ trách & Nút làm mới */}
           <div className="flex flex-wrap items-center gap-2">
             {/* Dropdown chọn cơ sở */}
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 shadow-xs">
@@ -181,17 +181,6 @@ export const StaffDashboardPage: React.FC = () => {
                   <option value={0}>Tất cả cơ sở phụ trách</option>
                 )}
               </select>
-            </div>
-
-            {/* Date Picker */}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs text-slate-700 shadow-xs">
-              <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => handleDateChange(e.target.value)}
-                className="outline-none text-xs font-medium cursor-pointer"
-              />
             </div>
 
             {/* Nút làm mới */}
