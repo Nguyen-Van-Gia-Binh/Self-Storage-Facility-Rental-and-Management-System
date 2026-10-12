@@ -13,8 +13,16 @@ import {
   CheckCheck,
 } from 'lucide-react';
 import type { StaffDailyTaskReport, DailyIncidentTask, DailyCheckInTask, DailyReturnTask } from '@/types';
-import { StaffResolveIncidentModal } from './StaffResolveIncidentModal';
 import { StaffWeekCalendarStrip } from './StaffWeekCalendarStrip';
+import { StaffCheckInDetailView } from './StaffCheckInDetailView';
+import { StaffReturnDetailView } from './StaffReturnDetailView';
+import { StaffIncidentDetailView } from './StaffIncidentDetailView';
+
+type ActiveTaskView =
+  | { type: 'checkin'; task: DailyCheckInTask }
+  | { type: 'return'; task: DailyReturnTask }
+  | { type: 'incident'; task: DailyIncidentTask }
+  | null;
 
 interface DailyTasksOverviewProps {
   tasks: StaffDailyTaskReport;
@@ -40,13 +48,8 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
   // Mặc định xem TẤT CẢ nhiệm vụ ca trực (không bắt ép bấm chuyển tab)
   const [filterCategory, setFilterCategory] = useState<'ALL' | 'checkin' | 'return' | 'incident'>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'COMPLETED'>('ALL');
-  const [selectedIncident, setSelectedIncident] = useState<DailyIncidentTask | null>(null);
-  const [incidentModalOpen, setIncidentModalOpen] = useState(false);
+  const [activeTaskView, setActiveTaskView] = useState<ActiveTaskView>(null);
 
-  const handleOpenIncident = (ticket: DailyIncidentTask) => {
-    setSelectedIncident(ticket);
-    setIncidentModalOpen(true);
-  };
 
   // Helper nhận diện công việc đã xong
   const isCheckInDone = (c: any) => Boolean(c.completed || c.status === 'COMPLETED' || c.status === 'ACTIVE');
@@ -151,12 +154,7 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
   const renderCheckInItem = (item: DailyCheckInTask) => {
     const isDone = isCheckInDone(item);
     const handleGoToCheckIn = () => {
-      const params = new URLSearchParams();
-      const cId = item.contractId || item.reservationId;
-      if (cId) params.set('contractId', String(cId));
-      if (selectedDate) params.set('date', selectedDate);
-      if (selectedFacilityId) params.set('facilityId', String(selectedFacilityId));
-      navigate(`/staff/check-in?${params.toString()}`);
+      setActiveTaskView({ type: 'checkin', task: item });
     };
 
     return (
@@ -246,10 +244,7 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
   const renderReturnItem = (item: DailyReturnTask) => {
     const isDone = isReturnDone(item);
     const handleGoToReturn = () => {
-      const params = new URLSearchParams();
-      if (selectedDate) params.set('date', selectedDate);
-      if (selectedFacilityId) params.set('facilityId', String(selectedFacilityId));
-      navigate(`/staff/return/${item.contractId}${params.toString() ? `?${params.toString()}` : ''}`);
+      setActiveTaskView({ type: 'return', task: item });
     };
 
     return (
@@ -400,7 +395,7 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
 
           <button
             type="button"
-            onClick={() => handleOpenIncident(item)}
+            onClick={() => setActiveTaskView({ type: 'incident', task: item })}
             className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs hover:shadow-sm cursor-pointer"
           >
             {isDone ? (
@@ -421,6 +416,45 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
       </div>
     );
   };
+
+  if (activeTaskView) {
+    if (activeTaskView.type === 'checkin') {
+      return (
+        <StaffCheckInDetailView
+          task={activeTaskView.task}
+          onBack={() => setActiveTaskView(null)}
+          onSuccess={() => {
+            setActiveTaskView(null);
+            onRefresh();
+          }}
+        />
+      );
+    }
+    if (activeTaskView.type === 'return') {
+      return (
+        <StaffReturnDetailView
+          task={activeTaskView.task}
+          onBack={() => setActiveTaskView(null)}
+          onSuccess={() => {
+            setActiveTaskView(null);
+            onRefresh();
+          }}
+        />
+      );
+    }
+    if (activeTaskView.type === 'incident') {
+      return (
+        <StaffIncidentDetailView
+          task={activeTaskView.task}
+          onBack={() => setActiveTaskView(null)}
+          onSuccess={() => {
+            setActiveTaskView(null);
+            onRefresh();
+          }}
+        />
+      );
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -645,16 +679,7 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
         </div>
       </div>
 
-      {/* Modal xử lý sự cố tại hiện trường */}
-      <StaffResolveIncidentModal
-        isOpen={incidentModalOpen}
-        onClose={() => setIncidentModalOpen(false)}
-        ticket={selectedIncident}
-        onSuccess={() => {
-          onRefresh();
-          setIncidentModalOpen(false);
-        }}
-      />
+
     </div>
   );
 };
