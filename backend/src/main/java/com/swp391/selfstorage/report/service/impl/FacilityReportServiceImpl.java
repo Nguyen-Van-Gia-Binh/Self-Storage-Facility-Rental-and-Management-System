@@ -216,7 +216,7 @@ public class FacilityReportServiceImpl implements FacilityReportService {
                             String note = t.getResolutionNote() != null ? t.getResolutionNote().toLowerCase() : "";
                             return note.contains("lỗi do công ty") || note.contains("cong ty") || t.getCategory() == SupportCategory.UNIT_DAMAGE;
                         })
-                        .mapToLong(t -> 200_000L) // Định mức khắc phục sự cố kỹ thuật hạ tầng cơ sở chịu 100% theo BR-SUP-02
+                        .mapToLong(t -> extractCompanyIncidentCost(t.getResolutionNote()))
                         .sum();
             } catch (Exception e) {
                 log.warn("Lỗi khi tính chi phí sự cố công ty chịu: {}", e.getMessage());
@@ -496,6 +496,23 @@ public class FacilityReportServiceImpl implements FacilityReportService {
         }
 
         return facility;
+    }
+
+    private long extractCompanyIncidentCost(String note) {
+        if (note == null || note.isBlank()) {
+            return 200_000L;
+        }
+        // Khớp định dạng: "Chi phí công ty chịu: 320.000 đ" hoặc "Chi phí công ty chịu: 320000"
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("Chi phí công ty chịu:\\s*([0-9\\.,]+)").matcher(note);
+        if (m.find()) {
+            String digits = m.group(1).replaceAll("[^0-9]", "");
+            if (!digits.isEmpty()) {
+                try {
+                    return Long.parseLong(digits);
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+        return 200_000L;
     }
 
     private YearMonth parseYearMonth(String month) {
