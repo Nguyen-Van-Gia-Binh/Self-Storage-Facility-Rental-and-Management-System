@@ -194,7 +194,8 @@ export const tokenStorage = {
  * Chuẩn hóa tên vai trò giữa chuẩn ngắn (CUSTOMER, STAFF...) và chuẩn Backend (STORAGE_CUSTOMER...)
  */
 export function normalizeRole(role: string): UserRole {
-  switch (role) {
+  const upper = (role || '').trim().toUpperCase();
+  switch (upper) {
     case 'STORAGE_CUSTOMER':
     case 'CUSTOMER':
       return 'CUSTOMER';
