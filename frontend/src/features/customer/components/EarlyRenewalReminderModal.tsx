@@ -84,8 +84,8 @@ export const EarlyRenewalReminderModal: React.FC<EarlyRenewalReminderModalProps>
 
           <h2 className="text-xl sm:text-2xl font-black tracking-tight leading-snug">
             {daysUntilCutoff === 0
-              ? 'Hôm nay là ngày cuối cùng gia hạn!'
-              : `Chỉ còn ${daysUntilCutoff} ngày nữa sẽ khóa gia hạn!`}
+              ? 'Hôm nay là ngày cuối cùng ưu tiên gia hạn!'
+              : `Chỉ còn ${daysUntilCutoff} ngày nữa là hết ưu tiên gia hạn`}
           </h2>
 
           <p className="text-xs sm:text-sm text-amber-100 mt-1 flex items-center gap-1.5">
@@ -108,7 +108,7 @@ export const EarlyRenewalReminderModal: React.FC<EarlyRenewalReminderModalProps>
             </div>
 
             <div className="border-l border-amber-200 pl-3">
-              <span className="text-[11px] font-semibold text-amber-900/80 block">Thời hạn chót gia hạn:</span>
+              <span className="text-[11px] font-semibold text-amber-900/80 block">Thời hạn ưu tiên gia hạn:</span>
               <span className="text-sm font-black text-rose-600 flex items-center gap-1 mt-0.5">
                 <Clock className="w-3.5 h-3.5 text-rose-500" />
                 Còn {daysUntilCutoff} ngày
