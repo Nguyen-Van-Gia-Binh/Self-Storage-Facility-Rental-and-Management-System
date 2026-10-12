@@ -198,6 +198,11 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
       return;
     }
 
+    if (faultParty === 'CUSTOMER' && allSurcharges.length > 0 && selectedFeeIds.length === 0) {
+      setErrorMsg('Vui lòng chọn ít nhất 1 khoản phụ phí / bồi hoàn niêm yết để lập biên bản thu phí từ khách hàng.');
+      return;
+    }
+
     if (faultParty === 'CUSTOMER' && !isCustomerPaidConfirmed) {
       setErrorMsg('Khách hàng chưa thanh toán toàn bộ số phí. Vui lòng xác nhận đã thu đủ phí trước khi hoàn tất nghiệm thu.');
       return;
@@ -282,7 +287,7 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
     !isAgreed ||
     !resolutionNote.trim() ||
     faultParty === null ||
-    (faultParty === 'COMPANY' && allSurcharges.length > 0 && selectedFeeIds.length === 0) ||
+    (allSurcharges.length > 0 && selectedFeeIds.length === 0) ||
     (faultParty === 'CUSTOMER' && !isCustomerPaidConfirmed);
 
   const rawTitle = incidentDetail.title || 'Xử lý sự cố thực địa';
@@ -685,6 +690,21 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
                     <label htmlFor="customer-paid-checkbox" className="text-xs font-semibold text-amber-950 cursor-pointer">
                       Xác nhận: Khách hàng đã thanh toán đủ số tiền {totalFeeAmount.toLocaleString('vi-VN')} đ (hoặc đồng ý khấu trừ cọc khi thanh lý).
                     </label>
+                  </div>
+
+                  {/* Giải thích hạch toán vào báo cáo cơ sở FM-06 */}
+                  <div className="pt-2 border-t border-amber-200/80 space-y-1.5 text-xs">
+                    <p className="text-[11px] text-amber-900 leading-relaxed bg-amber-100/70 p-2.5 rounded-lg border border-amber-300/80">
+                      💡 <strong>Hạch toán kế toán vận hành:</strong> Khoản phụ phí bồi hoàn{' '}
+                      <span className="font-mono font-bold text-amber-950">{totalFeeAmount.toLocaleString('vi-VN')} đ</span> này được cộng trực tiếp vào{' '}
+                      <strong>Báo cáo cơ sở (FM-06)</strong> tại mục <em>"2. Phí dịch vụ (Khách trả)"</em> và tính vào <em>Doanh thu thuần cơ sở</em>.
+                    </p>
+                    {allSurcharges.length > 0 && selectedFeeIds.length === 0 && (
+                      <p className="text-[11px] text-amber-800 font-medium flex items-center gap-1 mt-1">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0 text-amber-700" />
+                        <span>Vui lòng tích chọn các khoản phụ phí bồi hoàn để hệ thống ghi nhận doanh thu dịch vụ cho cơ sở.</span>
+                      </p>
+                    )}
                   </div>
                 </div>
               )}

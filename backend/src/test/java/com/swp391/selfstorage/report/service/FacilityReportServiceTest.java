@@ -424,4 +424,57 @@ class FacilityReportServiceTest {
         // Doanh thu thuần = 5_000_000 - 320_000 = 4_680_000
         assertEquals(4_680_000L, response.getNetRevenue());
     }
+
+    @Test
+    @DisplayName("AC-3: Tính toán chính xác phụ phí sự cố do khách hàng chịu từ biên bản và cộng vào phí dịch vụ / doanh thu thuần")
+    void testGetFacilityOverview_CustomerIncidentFeeAddition() {
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(testFacility));
+        StorageUnit su = StorageUnit.builder().id(501L).facilityId(1L).code("U-501").status(StorageUnitStatus.AVAILABLE).build();
+        when(storageUnitRepository.findByFacilityIdAndFilters(eq(1L), eq(null), eq(null), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(su)));
+
+        RentalContract c1 = RentalContract.builder()
+                .id(101L)
+                .facilityId(1L)
+                .status(ContractStatus.ACTIVE)
+                .totalRentalFee(5_000_000L)
+                .startDate(LocalDate.of(2026, 10, 1))
+                .build();
+        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(List.of(c1));
+
+        PaymentTransaction p1 = PaymentTransaction.builder()
+                .id(1L)
+                .contractId(101L)
+                .transactionType("RENEWAL_PAYMENT")
+                .amount(5_000_000L)
+                .status("SUCCESS")
+                .build();
+        p1.setCreatedAt(java.time.Instant.parse("2026-10-02T03:00:00Z"));
+        when(paymentTransactionRepository.findByContractId(101L)).thenReturn(List.of(p1));
+
+        com.swp391.selfstorage.support.entity.SupportRequest ticket = com.swp391.selfstorage.support.entity.SupportRequest.builder()
+                .id(89L)
+                .contractId(101L)
+                .storageUnitId(501L)
+                .status(com.swp391.selfstorage.support.entity.SupportStatus.RESOLVED)
+                .category(com.swp391.selfstorage.support.entity.SupportCategory.OTHER)
+                .resolutionNote("[Trách nhiệm: Lỗi do khách hàng | Phụ phí: Đổi ổ khóa (150.000 đ), Vệ sinh (100.000 đ) | Tổng thu: 250.000 đ | Đã thanh toán đầy đủ 100%]")
+                .resolvedAt(java.time.OffsetDateTime.parse("2026-10-12T10:00:00Z"))
+                .build();
+
+        when(supportRequestRepository.findByContractIdInAndStatusIn(any(), any()))
+                .thenReturn(List.of(ticket));
+        when(supportRequestRepository.findByStorageUnitIdInAndStatusIn(any(), any()))
+                .thenReturn(Collections.emptyList());
+
+        FacilityOverviewReportResponse response = reportService.getFacilityOverview(1L, "2026-10", facilityManagerPrincipal);
+
+        assertNotNull(response);
+        assertEquals(5_000_000L, response.getRentalRevenue());
+        assertEquals(250_000L, response.getCustomerServiceFee());
+        assertEquals(250_000L, response.getSurchargeRevenue());
+        assertEquals(0L, response.getCompanyIncidentCost());
+        // Doanh thu thuần = 5_000_000 + 250_000 = 5_250_000
+        assertEquals(5_250_000L, response.getNetRevenue());
+    }
 }
