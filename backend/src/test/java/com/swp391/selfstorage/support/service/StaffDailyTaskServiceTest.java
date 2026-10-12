@@ -312,4 +312,44 @@ class StaffDailyTaskServiceTest {
                 .isInstanceOf(CustomException.class)
                 .matches(e -> ((CustomException) e).getErrorCode() == ErrorCode.STAFF_NOT_ACTIVE);
     }
+
+    @Test
+    @DisplayName("BR-CHK-05: Hợp đồng PENDING_CHECK_IN vẫn hiển thị vào các ngày kế tiếp trong thời hạn ân hạn 10 ngày và ẩn khi quá hạn No-show")
+    void shouldIncludePendingCheckInDuringGraceDaysWindow_andExcludeAfterGraceExpires() {
+        LocalDate startDate = LocalDate.of(2026, 10, 12);
+        LocalDate nextDay = startDate.plusDays(1);      // 13/10 (còn trong 10 ngày ân hạn)
+        LocalDate lastGraceDay = startDate.plusDays(10); // 22/10 (ngày cuối ân hạn)
+        LocalDate expiredDay = startDate.plusDays(11);   // 23/10 (quá hạn 10 ngày -> No-show)
+
+        when(userRepository.findById(8L)).thenReturn(Optional.of(sampleStaff));
+        when(userFacilityAssignmentRepository.findFacilityIdsByUserId(8L)).thenReturn(List.of(1L));
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(sampleFacility));
+
+        RentalContract pendingCheckIn = createContract(601L, "CTR-20261012-601", 2001L, 15L, 1L, 101L,
+                startDate, startDate.plusMonths(3), ContractStatus.PENDING_CHECK_IN, null, null);
+        pendingCheckIn.setPolicySnapshot("{\"policyVersionId\":1,\"checkinGraceDays\":10,\"accessPinLength\":6}");
+
+        RentalContract alreadyCheckedIn = createContract(602L, "CTR-20261012-602", 2002L, 15L, 1L, 101L,
+                startDate, startDate.plusMonths(3), ContractStatus.ACTIVE, startDate, null);
+
+        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(List.of(pendingCheckIn, alreadyCheckedIn));
+        when(staffDailyAssignmentRepository.findByStaffIdAndWorkDate(any(), any())).thenReturn(Collections.emptyList());
+        when(staffDailyAssignmentRepository.findByStaffId(8L)).thenReturn(Collections.emptyList());
+        when(supportRequestRepository.findAllByAssignedStaffId(8L)).thenReturn(Collections.emptyList());
+        when(userRepository.findById(15L)).thenReturn(Optional.of(sampleCustomer));
+        when(storageUnitRepository.findById(101L)).thenReturn(Optional.of(sampleUnit));
+
+        // 1. Qua ngày hôm sau (13/10): Đơn PENDING_CHECK_IN vẫn hiển thị, đơn ACTIVE ngày 12/10 không lặp lại
+        StaffDailyTasksResponse nextDayRes = staffDailyTaskService.getDailyTasks(8L, nextDay, false, staffPrincipal);
+        assertThat(nextDayRes.getCheckInTasks()).hasSize(1);
+        assertThat(nextDayRes.getCheckInTasks().get(0).getContractCode()).isEqualTo("CTR-20261012-601");
+
+        // 2. Ngày thứ 10 (22/10): Vẫn trong hạn ân hạn nhận kho
+        StaffDailyTasksResponse lastGraceRes = staffDailyTaskService.getDailyTasks(8L, lastGraceDay, false, staffPrincipal);
+        assertThat(lastGraceRes.getCheckInTasks()).hasSize(1);
+
+        // 3. Ngày thứ 11 (23/10): Quá 10 ngày ân hạn -> Không còn hiển thị
+        StaffDailyTasksResponse expiredRes = staffDailyTaskService.getDailyTasks(8L, expiredDay, false, staffPrincipal);
+        assertThat(expiredRes.getCheckInTasks()).isEmpty();
+    }
 }

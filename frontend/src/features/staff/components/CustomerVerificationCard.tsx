@@ -120,8 +120,10 @@ export const CustomerVerificationCard: React.FC<CustomerVerificationCardProps> =
         </div>
 
         <div className="flex items-center justify-between text-slate-600">
-          <span className="text-slate-500">Giờ hẹn bàn giao:</span>
-          <strong className="text-slate-800">{contract.appointmentTime}</strong>
+          <span className="text-slate-500">Ngày bắt đầu & Ân hạn (BR-CHK-05):</span>
+          <strong className="text-teal-700 bg-teal-50 border border-teal-200/70 px-2 py-0.5 rounded-md font-semibold">
+            Ân hạn {contract.checkinGraceDays ?? 10} ngày (Còn {contract.graceDaysRemaining ?? 10} ngày)
+          </strong>
         </div>
 
         <div className="flex items-center justify-between text-slate-600 pt-1">

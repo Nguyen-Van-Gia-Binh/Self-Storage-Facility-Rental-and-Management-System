@@ -150,14 +150,27 @@ export const ShiftCalendarPage: React.FC = () => {
     }
   };
 
-  // Lọc nhiệm vụ thuộc ngày đang chọn (và việc tồn đọng chưa gán nếu chọn ngày hôm nay)
+  // Lọc nhiệm vụ thuộc ngày đang chọn (và đơn Check-in trong thời hạn ân hạn 10 ngày BR-CHK-05)
   const dailyTasks = useMemo(() => {
     return allTasks.filter((t) => {
       // 1. Task chính xác của ngày được chọn
       if (t.scheduledDate === selectedDate) return true;
 
-      // 2. Nếu đang xem ngày hôm nay và bật cờ bao gồm việc chưa gán:
-      // Các đơn Check-in hoặc Incident chưa có người nhận (UNASSIGNED) từ ngày trước đó vẫn được hiển thị để không bỏ sót khách!
+      // 2. BR-CHK-05: Đơn Check-in chưa hoàn thành được phép nhận kho trễ tối đa 10 ngày từ ngày bắt đầu thuê
+      if (t.taskType === 'CHECK_IN' && t.status !== 'COMPLETED' && t.scheduledDate) {
+        const startParts = t.scheduledDate.split('-').map(Number);
+        const targetParts = selectedDate.split('-').map(Number);
+        if (startParts.length === 3 && targetParts.length === 3) {
+          const startUtc = Date.UTC(startParts[0], startParts[1] - 1, startParts[2]);
+          const targetUtc = Date.UTC(targetParts[0], targetParts[1] - 1, targetParts[2]);
+          const diffDays = Math.round((targetUtc - startUtc) / (1000 * 60 * 60 * 24));
+          if (diffDays >= 0 && diffDays <= 10) {
+            return true;
+          }
+        }
+      }
+
+      // 3. Nếu đang xem ngày hôm nay và bật cờ bao gồm việc chưa gán:
       if (
         includeBacklogUnassigned &&
         selectedDate === todayStr &&

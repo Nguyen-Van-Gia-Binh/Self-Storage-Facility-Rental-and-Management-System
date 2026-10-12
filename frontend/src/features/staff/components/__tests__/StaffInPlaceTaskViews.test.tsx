@@ -153,7 +153,24 @@ describe('Staff In-Place Task Views & Full-Screen Detail View Integration', () =
     expect(incidentViewContent).toMatch(/EvidencePhotoCapture/);
     expect(incidentViewContent).not.toMatch(/Dán đường dẫn ảnh hiện trường/);
   });
+
+  it('Giữ nhiệm vụ tiếp đón check-in hiển thị xuyên suốt 10 ngày ân hạn (BR-CHK-05) cho đến khi khách hoàn tất hoặc quá hạn hủy No-show', async () => {
+    const { isWithinCheckInGraceWindow } = await import('../../../../api/staff');
+
+    // Hợp đồng bắt đầu 2026-10-12:
+    // - Trước ngày bắt đầu (2026-10-11): false
+    // - Ngày bắt đầu (2026-10-12): true
+    // - Ngày hôm sau (2026-10-13): true
+    // - Ngày ân hạn cuối cùng D+10 (2026-10-22): true
+    // - Quá hạn 10 ngày -> No-show D+11 (2026-10-23): false
+    expect(isWithinCheckInGraceWindow('2026-10-12', '2026-10-11', 10)).toBe(false);
+    expect(isWithinCheckInGraceWindow('2026-10-12', '2026-10-12', 10)).toBe(true);
+    expect(isWithinCheckInGraceWindow('2026-10-12', '2026-10-13', 10)).toBe(true);
+    expect(isWithinCheckInGraceWindow('2026-10-12', '2026-10-22', 10)).toBe(true);
+    expect(isWithinCheckInGraceWindow('2026-10-12', '2026-10-23', 10)).toBe(false);
+  });
 });
+
 
 
 
