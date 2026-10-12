@@ -6,14 +6,13 @@ import {
   RotateCcw,
   CheckCircle2,
   Lock,
-  ShieldCheck,
   User,
   Phone,
   Loader2,
   ChevronRight,
 } from 'lucide-react';
 import { useCurrentUser } from '@/utils/useCurrentUser';
-import { getStaffIncidents, getStaffDailyTasks, startStaffIncident } from '@/api/staff';
+import { getStaffIncidents, getStaffDailyTasks } from '@/api/staff';
 import type { DailyIncidentTask } from '@/types';
 import { StaffResolveIncidentModal } from '../components/StaffResolveIncidentModal';
 
@@ -28,7 +27,6 @@ export const StaffIncidentPage: React.FC = () => {
   // Modal xử lý / nghiệm thu
   const [selectedTicket, setSelectedTicket] = useState<DailyIncidentTask | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -137,24 +135,6 @@ export const StaffIncidentPage: React.FC = () => {
 
     return { total, pendingCount, inProgressCount, resolvedCount, urgentCount };
   }, [incidents]);
-
-  // Bắt đầu xử lý nhanh tại hiện trường
-  const handleQuickStart = async (ticket: DailyIncidentTask) => {
-    if (ticket.ticketId == null) {
-      alert('Phiếu sự cố không có mã từ hệ thống.');
-      return;
-    }
-    setActionLoadingId(ticket.ticketId);
-    try {
-      await startStaffIncident(ticket.ticketId);
-      showToast(`Đã bắt đầu xử lý sự cố ${ticket.code || '#' + ticket.ticketId} tại hiện trường.`);
-      setReloadKey((k) => k + 1);
-    } catch (err: any) {
-      alert(err?.message || 'Không thể cập nhật trạng thái sự cố.');
-    } finally {
-      setActionLoadingId(null);
-    }
-  };
 
   const handleOpenDetailModal = (ticket: DailyIncidentTask) => {
     setSelectedTicket(ticket);
@@ -460,34 +440,16 @@ export const StaffIncidentPage: React.FC = () => {
                   </button>
 
                   <div className="flex items-center gap-2">
-                    {isItemPending && (
-                      <button
-                        type="button"
-                        onClick={() => handleQuickStart(item)}
-                        disabled={actionLoadingId === item.ticketId}
-                        className="px-3.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold transition flex items-center gap-1 shadow-xs disabled:opacity-50"
-                      >
-                        {actionLoadingId === item.ticketId ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <ShieldCheck className="w-3.5 h-3.5" />
-                        )}
-                        <span>Bắt đầu xử lý</span>
-                      </button>
-                    )}
-
-                    {isItemInProgress && (
+                    {!isItemResolved ? (
                       <button
                         type="button"
                         onClick={() => handleOpenDetailModal(item)}
                         className="px-3.5 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold transition flex items-center gap-1 shadow-xs"
                       >
                         <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Nghiệm thu & Hoàn thành</span>
+                        <span>Xử lý & Hoàn thành</span>
                       </button>
-                    )}
-
-                    {isItemResolved && (
+                    ) : (
                       <button
                         type="button"
                         onClick={() => handleOpenDetailModal(item)}

@@ -99,6 +99,29 @@ describe('Staff In-Place Task Views & Full-Screen Detail View Integration', () =
     expect(layoutContent).toMatch(/staff-sub-breadcrumb/);
     expect(layoutContent).toMatch(/staff-reset-task-view/);
   });
+
+  it('Rút gọn luồng xử lý về đúng 1 bước xác nhận duy nhất, loại bỏ bước trung gian Bắt đầu xử lý / Tiếp nhận xử lý', () => {
+    const incidentViewContent = fs.readFileSync(staffIncidentViewPath, 'utf-8');
+    const overviewContent = fs.readFileSync(dailyTasksOverviewPath, 'utf-8');
+    const staffIncidentPagePath = path.resolve(
+      process.cwd(),
+      'src/features/staff/pages/StaffIncidentPage.tsx'
+    );
+    const staffResolveModalPath = path.resolve(
+      process.cwd(),
+      'src/features/staff/components/StaffResolveIncidentModal.tsx'
+    );
+    const incidentPageContent = fs.readFileSync(staffIncidentPagePath, 'utf-8');
+    const resolveModalContent = fs.readFileSync(staffResolveModalPath, 'utf-8');
+
+    expect(incidentViewContent).not.toMatch(/startStaffIncident/);
+    expect(incidentViewContent).not.toMatch(/Bước 1: Tiếp nhận xử lý/);
+    expect(incidentViewContent).not.toMatch(/Tiếp nhận xử lý tại hiện trường/);
+    expect(overviewContent).not.toMatch(/<span>Cập nhật<\/span>/);
+    expect(incidentPageContent).not.toMatch(/startStaffIncident/);
+    expect(incidentPageContent).not.toMatch(/Bắt đầu xử lý/);
+    expect(resolveModalContent).not.toMatch(/startStaffIncident/);
+  });
 });
 
 

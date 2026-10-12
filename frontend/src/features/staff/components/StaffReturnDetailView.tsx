@@ -107,6 +107,13 @@ export const StaffReturnDetailView: React.FC<StaffReturnDetailViewProps> = ({
     setSubmitting(true);
     try {
       const res = await submitReturnInspection(contract.id, data, staffId);
+      if (data.condition === 'GOOD') {
+        try {
+          await completeUnitCleaning(contract.id);
+        } catch {
+          // Bỏ qua nếu backend xử lý bất đồng bộ
+        }
+      }
       showToast('success', 'Đã hoàn tất biên bản nghiệm thu hiện trạng trả kho!');
 
       setSuccessData({
@@ -337,18 +344,6 @@ export const StaffReturnDetailView: React.FC<StaffReturnDetailViewProps> = ({
           onSuccess();
           onBack();
         }}
-        onMarkCleaned={
-          contract
-            ? async () => {
-                try {
-                  await completeUnitCleaning(contract.id);
-                  showToast('success', 'Đã đánh dấu hoàn tất dọn dẹp vệ sinh ô kho!');
-                } catch (err: any) {
-                  showToast('error', err?.message || 'Không thể cập nhật trạng thái vệ sinh.');
-                }
-              }
-            : undefined
-        }
       />
     </div>
   );

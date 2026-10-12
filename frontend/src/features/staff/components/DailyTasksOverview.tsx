@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   ArrowRight,
   AlertTriangle,
-  CheckCircle2,
   KeyRound,
   ClipboardCheck,
   CheckCheck,
@@ -310,23 +309,8 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
               : 'bg-amber-500 hover:bg-amber-600 text-white shadow-xs'
           }`}
         >
-          {isDone ? (
-            <>
-              <span>Xem kết quả</span>
-              <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
-            </>
-          ) : item.status === 'IN_PROGRESS' ? (
-            <>
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Cập nhật</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </>
-          ) : (
-            <>
-              <span>Xử lý ngay</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </>
-          )}
+          <span>{isDone ? 'Xem kết quả' : 'Xử lý ngay'}</span>
+          <ArrowRight className={`w-3.5 h-3.5 ${isDone ? 'text-slate-400' : ''}`} />
         </button>
       </div>
     );

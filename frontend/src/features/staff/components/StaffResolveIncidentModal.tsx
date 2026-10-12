@@ -13,13 +13,12 @@ import {
   FileText,
   Loader2,
   ExternalLink,
-  ShieldCheck,
   Plus,
   Trash2,
   Receipt,
 } from 'lucide-react';
 import type { DailyIncidentTask, SurchargeItem } from '@/types';
-import { startStaffIncident, resolveStaffIncident, markStaffIncidentRelocation } from '@/api/staff';
+import { resolveStaffIncident, markStaffIncidentRelocation } from '@/api/staff';
 import { fetchSurcharges } from '@/api/pricing';
 import { applyCatalogFee } from '@/api/contract';
 import { feeCategoryLabel } from '@/features/pricing/feeCategory';
@@ -148,25 +147,7 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
     setAttachmentUrls(attachmentUrls.filter((_, i) => i !== index));
   };
 
-  // Bước 1: Tiếp nhận xử lý sự cố (chuyển sang IN_PROGRESS)
-  const handleStartInProgress = async () => {
-    if (ticket.ticketId == null) {
-      setErrorMsg('Phiếu sự cố không có mã từ hệ thống.');
-      return;
-    }
-    setSubmitting(true);
-    setErrorMsg(null);
-    try {
-      await startStaffIncident(ticket.ticketId);
-      onSuccess();
-    } catch (err: any) {
-      setErrorMsg(err?.message || 'Không thể tiếp nhận sự cố. Vui lòng thử lại.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  // Bước 2: Hoàn tất khắc phục sự cố (chuyển sang RESOLVED)
+  // Hoàn tất khắc phục sự cố trực tiếp (1 bước duy nhất)
   const handleResolveSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resolutionNote.trim() || resolutionNote.trim().length < 5) {
@@ -447,41 +428,6 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
                   )}
                 </div>
               )}
-            </div>
-          )}
-
-          {/* TRẠNG THÁI 1: MỚI ĐƯỢC GIAO */}
-          {isPending && (
-            <div className="p-4 rounded-xl bg-sky-50 border border-sky-200 space-y-3">
-              <div className="flex items-start gap-2.5">
-                <ShieldCheck className="w-5 h-5 text-sky-600 shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="text-xs font-bold text-sky-900">Nhiệm vụ mới được phân công cho ca trực của bạn</h4>
-                  <p className="text-xs text-sky-700 mt-0.5">
-                    Bàn điều phối cơ sở đã giao sự cố này cho bạn. Bấm <strong>"Bắt đầu xử lý"</strong> khi bạn di chuyển tới hiện trường, hoặc bạn có thể điền ngay biên bản xử lý bên dưới nếu đã khắc phục xong.
-                  </p>
-                </div>
-              </div>
-              <div className="flex flex-col sm:flex-row items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleStartInProgress}
-                  disabled={submitting}
-                  className="w-full py-2.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition disabled:opacity-50"
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Đang cập nhật...</span>
-                    </>
-                  ) : (
-                    <>
-                      <ShieldCheck className="w-4 h-4" />
-                      <span>Bắt đầu xử lý tại hiện trường (In Progress)</span>
-                    </>
-                  )}
-                </button>
-              </div>
             </div>
           )}
 

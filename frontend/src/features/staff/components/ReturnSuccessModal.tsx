@@ -20,11 +20,8 @@ export const ReturnSuccessModal: React.FC<ReturnSuccessModalProps> = ({
   customerName,
   refundAmount,
   onClose,
-  onMarkCleaned,
 }) => {
   const navigate = useNavigate();
-  const [cleaning, setCleaning] = React.useState(false);
-  const [cleaned, setCleaned] = React.useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -100,44 +97,16 @@ export const ReturnSuccessModal: React.FC<ReturnSuccessModalProps> = ({
           </ul>
         </div>
 
-        {onMarkCleaned && (
-          <button
-            type="button"
-            disabled={cleaning || cleaned}
-            onClick={async () => {
-              setCleaning(true);
-              try {
-                await onMarkCleaned();
-                setCleaned(true);
-              } catch {
-                window.alert('Chưa đánh dấu dọn xong được. Ô kho cần đang ở trạng thái CLEANING.');
-              } finally {
-                setCleaning(false);
-              }
-            }}
-            className="mt-4 w-full py-2.5 px-4 rounded-xl font-medium border border-teal-300 text-teal-800 hover:bg-teal-50 transition disabled:opacity-60"
-          >
-            {cleaned ? 'Ô kho đã sẵn sàng cho lượt thuê sau' : cleaning ? 'Đang cập nhật...' : 'Đánh dấu đã dọn xong'}
-          </button>
-        )}
-
-        <div className="mt-6 flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 py-2.5 px-4 rounded-xl font-medium border border-slate-300 text-slate-700 hover:bg-slate-100 transition flex items-center justify-center cursor-pointer shadow-xs"
-          >
-            Đóng
-          </button>
+        <div className="mt-6">
           <button
             type="button"
             onClick={() => {
               onClose();
               navigate('/staff');
             }}
-            className="flex-1 py-2.5 px-4 rounded-xl font-medium bg-teal-600 text-white hover:bg-teal-700 transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+            className="w-full py-2.5 px-4 rounded-xl font-bold bg-teal-600 text-white hover:bg-teal-700 transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer text-xs"
           >
-            <Home className="w-4 h-4" /> Về ca trực
+            <Home className="w-4 h-4" /> Hoàn tất & Về ca trực
           </button>
         </div>
       </div>

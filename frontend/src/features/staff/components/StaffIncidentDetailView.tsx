@@ -3,7 +3,6 @@ import {
   ArrowLeft,
   AlertTriangle,
   CheckCircle2,
-  Clock,
   User,
   Phone,
   Camera,
@@ -17,7 +16,6 @@ import {
 } from 'lucide-react';
 import type { DailyIncidentTask, SurchargeItem } from '@/types';
 import {
-  startStaffIncident,
   resolveStaffIncident,
   markStaffIncidentRelocation,
 } from '@/api/staff';
@@ -38,7 +36,6 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
 }) => {
   const [ticketStatus, setTicketStatus] = useState<string>(task.status || 'PENDING');
   const [submitting, setSubmitting] = useState<boolean>(false);
-  const [startingProgress, setStartingProgress] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Form states for resolution
@@ -95,8 +92,6 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
     loadSurcharges();
   }, [loadSurcharges]);
 
-  const isPending =
-    ticketStatus === 'PENDING' || ticketStatus === 'ASSIGNED' || ticketStatus === 'NEW';
   const isResolved = ticketStatus === 'RESOLVED' || ticketStatus === 'CLOSED';
 
   // Tính số tiền của từng phụ phí
@@ -154,28 +149,7 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
     setAttachmentUrls(attachmentUrls.filter((_, i) => i !== index));
   };
 
-  // Bước 1: Tiếp nhận xử lý sự cố (chuyển sang IN_PROGRESS)
-  const handleStartInProgress = async () => {
-    if (task.ticketId == null) {
-      setErrorMsg('Phiếu sự cố không có mã từ hệ thống.');
-      return;
-    }
-    setStartingProgress(true);
-    setErrorMsg(null);
-    try {
-      await startStaffIncident(task.ticketId);
-      setTicketStatus('IN_PROGRESS');
-      showToast('success', 'Đã tiếp nhận xử lý sự cố tại hiện trường!');
-      onSuccess();
-    } catch (err: any) {
-      setErrorMsg(err?.message || 'Không thể tiếp nhận sự cố. Vui lòng thử lại.');
-      showToast('error', err?.message || 'Không thể tiếp nhận sự cố.');
-    } finally {
-      setStartingProgress(false);
-    }
-  };
-
-  // Bước 2: Hoàn tất khắc phục sự cố (chuyển sang RESOLVED)
+  // Hoàn tất khắc phục sự cố trực tiếp (1 bước duy nhất)
   const handleResolveSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resolutionNote.trim() || resolutionNote.trim().length < 5) {
@@ -390,37 +364,6 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
                 </div>
               )}
             </div>
-
-            {/* Bước 1: Tiếp nhận xử lý sự cố (nếu chưa IN_PROGRESS) */}
-            {isPending && (
-              <div className="p-3.5 rounded-xl bg-amber-50/80 border border-amber-200 space-y-2.5 pt-3">
-                <div className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
-                  <Clock className="w-4 h-4 text-amber-700" />
-                  <span>Bước 1: Tiếp nhận xử lý</span>
-                </div>
-                <p className="text-[11px] text-amber-800 leading-relaxed">
-                  Bấm nút bên dưới để chuyển trạng thái sang <strong>Đang xử lý</strong> trước khi tiến hành can thiệp tại hiện trường.
-                </p>
-                <button
-                  type="button"
-                  onClick={handleStartInProgress}
-                  disabled={startingProgress}
-                  className="w-full py-2.5 px-4 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs transition shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                >
-                  {startingProgress ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Đang tiếp nhận...</span>
-                    </>
-                  ) : (
-                    <>
-                      <AlertTriangle className="w-4 h-4" />
-                      <span>Tiếp nhận xử lý tại hiện trường</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
 
             {/* Cờ chuyển ô kho khẩn cấp (Emergency Relocation) */}
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70 space-y-2">
