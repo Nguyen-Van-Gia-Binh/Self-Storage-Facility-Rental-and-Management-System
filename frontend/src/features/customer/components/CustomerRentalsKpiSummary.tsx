@@ -6,6 +6,7 @@ import {
   CreditCard,
 } from 'lucide-react';
 import type { RentedContract } from '../types';
+import { calculateDaysRemaining } from '../utils/renewalPricing';
 
 export interface CustomerRentalsKpiSummaryProps {
   contracts: RentedContract[];
@@ -24,9 +25,16 @@ export const CustomerRentalsKpiSummary: React.FC<CustomerRentalsKpiSummaryProps>
   const pendingCheckinCount = contracts.filter(
     (c) => c.status === 'PENDING_CHECKIN' || (c.status as string) === 'PENDING_CHECK_IN'
   ).length;
-  const attentionCount = contracts.filter(
-    (c) => c.status === 'EXPIRING_SOON' || c.status === 'OVERDUE' || c.status === 'PENDING_RETURN'
-  ).length;
+  const attentionCount = contracts.filter((c) => {
+    if (c.status === 'OVERDUE' || c.status === 'PENDING_RETURN' || c.status === 'EXPIRING_SOON') {
+      return true;
+    }
+    if (c.status === 'ACTIVE') {
+      const days = calculateDaysRemaining(c.endDate);
+      return days > 0 && days <= 37;
+    }
+    return false;
+  }).length;
 
   const bentoTiles = [
     {
@@ -42,10 +50,10 @@ export const CustomerRentalsKpiSummary: React.FC<CustomerRentalsKpiSummaryProps>
     },
     {
       id: 'ATTENTION',
-      label: 'Cần gia hạn',
+      label: 'Cần xử lý',
       count: attentionCount,
       unitLabel: 'ô kho',
-      badgeText: 'Sắp hết hạn',
+      badgeText: 'Cần thao tác',
       dotColor: attentionCount > 0 ? 'bg-amber-500 animate-pulse' : 'bg-slate-300',
       badgeBg: attentionCount > 0 ? 'bg-amber-50 text-amber-800' : 'bg-slate-50 text-slate-500',
       badgeIcon: AlertTriangle,
@@ -64,7 +72,7 @@ export const CustomerRentalsKpiSummary: React.FC<CustomerRentalsKpiSummaryProps>
     },
     {
       id: 'PENDING_PAYMENT',
-      label: 'Giữ chỗ 48h',
+      label: 'Giữ chỗ 48h', // Đang giữ chỗ 48h
       count: pendingReservationsCount,
       unitLabel: 'đơn',
       badgeText: 'Chờ thanh toán',

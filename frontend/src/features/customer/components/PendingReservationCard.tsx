@@ -64,7 +64,7 @@ export const PendingReservationCard: React.FC<PendingReservationCardProps> = ({
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-extrabold text-slate-900 tracking-tight">
-              Đơn giữ chỗ {reservation.storageUnitCode || reservation.unitTypeName || `#${reservation.code}`}
+              Đang giữ chỗ {reservation.storageUnitCode || reservation.unitTypeName || `#${reservation.code}`}
             </span>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700">
               {(reservation.unitTypeName || 'Kho tiêu chuẩn').replace(/\s*\([^)]*\)/g, '').trim()}
@@ -93,7 +93,7 @@ export const PendingReservationCard: React.FC<PendingReservationCardProps> = ({
           className="text-xs font-semibold text-rose-700 border-rose-200 hover:bg-rose-50 cursor-pointer"
         >
           <XCircle className="w-3.5 h-3.5 mr-1" />
-          Hủy đơn
+          Hủy giữ chỗ
         </Button>
 
         <Link to={bookingUrl}>
@@ -103,7 +103,7 @@ export const PendingReservationCard: React.FC<PendingReservationCardProps> = ({
             className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-xs flex items-center gap-1.5 cursor-pointer"
           >
             <CreditCard className="w-3.5 h-3.5" />
-            <span>Thanh toán VietQR</span>
+            <span>Tiếp tục thanh toán VietQR</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Button>
         </Link>
