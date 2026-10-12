@@ -20,7 +20,9 @@ export const FacilityReportKpiCards: React.FC<Props> = ({ data, loading }) => {
     );
   }
 
-  const rate = data.occupancyRate || 0;
+  const rawRate = data.occupancyRate ?? 0;
+  // Chuẩn hóa tỷ lệ lấp đầy: nếu Backend trả về tỷ lệ hệ số (0.0 -> 1.0) thì quy đổi về dạng phần trăm 0..100%
+  const rate = rawRate > 0 && rawRate <= 1 ? rawRate * 100 : rawRate;
   const isOptimal = rate >= 80;
   const isModerate = rate >= 50 && rate < 80;
 

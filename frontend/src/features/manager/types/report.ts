@@ -8,7 +8,7 @@ export interface FacilityOverviewReport {
   availableUnits: number;
   occupiedUnits: number;
   maintenanceUnits: number;
-  occupancyRate: number;
+  occupancyRate: number; // Tỷ lệ thập phân 0.0 -> 1.0 (ví dụ: 0.235 ứng với 23.5%)
   activeContracts: number;
   overdueContracts: number;
   newContracts: number;
