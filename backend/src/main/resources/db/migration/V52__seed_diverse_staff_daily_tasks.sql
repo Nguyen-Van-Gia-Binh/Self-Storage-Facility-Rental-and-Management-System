@@ -471,3 +471,14 @@ BEGIN
         DATEADD(DAY, -1, SYSDATETIMEOFFSET()), SYSDATETIMEOFFSET()
     );
 END;
+
+-- ============================================================================
+-- D. ĐỒNG BỘ TRẠNG THÁI Ô KHO OCCUPIED THEO BR-AVL-01
+-- ============================================================================
+UPDATE su
+SET su.status = 'OCCUPIED'
+FROM storage_unit su
+JOIN rental_contract rc ON rc.storage_unit_id = su.id
+WHERE rc.code IN ('CTR-20261012-2011', 'CTR-20261012-2022')
+  AND su.status <> 'OCCUPIED';
+
