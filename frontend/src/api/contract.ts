@@ -52,6 +52,12 @@ export function mapBackendSummaryToCheckInContract(item: any): CheckInContract {
   const checkinGraceDays = Number(item.checkinGraceDays ?? 10);
   const graceDaysRemaining = startDateStr ? Math.max(0, checkinGraceDays - diffDays) : 0;
 
+  const rentalMonths = Number(item.rentalMonths || 0);
+  const monthlyPrice = Number(item.monthlyPrice || 0);
+  const totalRentalFee = Number(item.totalRentalFee || monthlyPrice * rentalMonths);
+  const depositAmount = Number(item.depositAmount || 0);
+  const totalPayable = Number(item.totalPayable || totalRentalFee + depositAmount);
+
   return {
     id: item.id,
     code: item.code || '',
@@ -68,34 +74,21 @@ export function mapBackendSummaryToCheckInContract(item: any): CheckInContract {
     floor: floor,
     position: item.position || `${zone} • Tầng ${floor}`,
     unitTypeId: item.unitTypeId || 1,
-    unitTypeName: item.unitTypeName || 'Kho Tiêu Chuẩn',
-    unitTypeDimensions: (() => {
-      if (item.unitTypeDimensions && item.unitTypeDimensions !== '2.0m x 2.0m x 2.5m') {
-        return item.unitTypeDimensions;
-      }
-      const typeName = (item.unitTypeName || '').toLowerCase();
-      const code = (unitCode || '').toUpperCase();
-      if (typeName.includes('nhỏ') || typeName.includes('small') || code.includes('-S')) {
-        return '1.0m x 1.0m x 1.5m (Diện tích: 1m²)';
-      } else if (typeName.includes('lớn') || typeName.includes('large') || code.includes('-L')) {
-        return '3.0m x 3.0m x 2.8m (Diện tích: 9m²)';
-      } else if (typeName.includes('lạnh') || typeName.includes('climate')) {
-        return '2.0m x 2.5m x 2.5m (Diện tích: 5m²)';
-      }
-      return '2.0m x 2.0m x 2.5m (Diện tích: 4m²)';
-    })(),
+    unitTypeName: item.unitTypeName || '',
+    unitTypeDimensions: item.unitDimensions || item.unitTypeDimensions || '',
     startDate: item.startDate || todayStr,
     endDateExclusive: item.endDateExclusive || '',
-    rentalMonths: item.rentalMonths || 0,
-    monthlyPrice: item.monthlyPrice || 0,
-    totalRentalFee: item.totalRentalFee || 0,
-    depositAmount: item.depositAmount || 0,
-    totalPayable: item.totalPayable || 0,
-    isFullyPaid: item.isFullyPaid === true || item.status === 'PENDING_CHECK_IN',
+    rentalMonths,
+    monthlyPrice,
+    totalRentalFee,
+    depositAmount,
+    totalPayable,
+    isFullyPaid: item.isFullyPaid === true || item.status === 'PENDING_CHECK_IN' || item.status === 'ACTIVE',
     status: item.status || 'PENDING_CHECK_IN',
     appointmentTime: appointmentTime,
     graceDaysRemaining: graceDaysRemaining,
     checkinGraceDays,
+    accessCode: item.accessCode || undefined,
     assignedStaffId: item.assignedStaffId,
     assignedStaffName: item.assignedStaffName,
   };

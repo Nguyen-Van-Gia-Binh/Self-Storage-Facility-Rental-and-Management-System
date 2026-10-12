@@ -27,6 +27,7 @@ public class ContractResponse {
     private String unitDimensions;
     private LocalDate startDate;
     private LocalDate endDateExclusive;
+    private Integer checkinGraceDays;
     private int rentalMonths;
     private long monthlyPrice;
     private long totalRentalFee;

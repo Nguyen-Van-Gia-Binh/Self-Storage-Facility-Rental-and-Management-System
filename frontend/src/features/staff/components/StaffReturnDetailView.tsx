@@ -33,7 +33,7 @@ export const StaffReturnDetailView: React.FC<StaffReturnDetailViewProps> = ({
   const staffId = user?.id ? Number(user.id) : undefined;
 
   const [contract, setContract] = useState<ReturnContractDetail | null>(null);
-  const [, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -59,7 +59,7 @@ export const StaffReturnDetailView: React.FC<StaffReturnDetailViewProps> = ({
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  // Nạp chi tiết hợp đồng trả kho từ API backend
+  // Nạp chi tiết hợp đồng trả kho trực tiếp từ API Backend GET /contracts/{id}
   const loadContractDetail = useCallback(async () => {
     setLoading(true);
     setErrorMsg(null);
@@ -70,29 +70,9 @@ export const StaffReturnDetailView: React.FC<StaffReturnDetailViewProps> = ({
       const data = await getReturnContractById(task.contractId);
       setContract(data);
     } catch (err: any) {
-      console.warn('Lỗi nạp hợp đồng trả kho:', err);
+      console.error('Lỗi nạp hợp đồng trả kho từ Backend:', err);
       setErrorMsg(err?.message || 'Không thể tải thông tin hợp đồng từ hệ thống.');
-      // Tạo đối tượng fallback từ thông tin trong task
-      setContract({
-        id: task.contractId,
-        code: task.contractCode || `HD-${task.contractId}`,
-        storageUnitId: 0,
-        storageUnitCode: task.unitCode,
-        unitTypeName: 'Tiêu chuẩn',
-        facilityId: task.facilityId || 0,
-        facilityName: task.facilityName || 'Cơ sở hiện tại',
-        customerId: 0,
-        customerName: task.customerName,
-        customerPhone: task.customerPhone || '',
-        customerIdentityNumber: 'Đang cập nhật',
-        startDate: '',
-        endDateExclusive: '',
-        rentalMonths: 1,
-        monthlyPrice: 0,
-        depositAmount: task.depositAmount || 0,
-        status: task.status || 'PENDING_RETURN',
-        isInspected: false,
-      });
+      setContract(null);
     } finally {
       setLoading(false);
     }
@@ -293,7 +273,12 @@ export const StaffReturnDetailView: React.FC<StaffReturnDetailViewProps> = ({
 
         {/* CỘT PHẢI (8/12): Form Nghiệm thu trả kho */}
         <div className="lg:col-span-8 space-y-4">
-          {contract ? (
+          {loading ? (
+            <div className="p-12 text-center text-slate-400 bg-white rounded-2xl border border-slate-200 shadow-xs">
+              <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-slate-400" />
+              <p className="text-sm">Đang tải hồ sơ hợp đồng & biểu mẫu nghiệm thu từ hệ thống...</p>
+            </div>
+          ) : contract ? (
             isCompleted ? (
               <div className="bg-white rounded-2xl border border-emerald-200 p-8 text-center space-y-4 shadow-xs">
                 <div className="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-2xl flex items-center justify-center mx-auto">
@@ -324,9 +309,15 @@ export const StaffReturnDetailView: React.FC<StaffReturnDetailViewProps> = ({
               />
             )
           ) : (
-            <div className="p-12 text-center text-slate-400 bg-white rounded-2xl border border-slate-200 shadow-xs">
-              <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-slate-400" />
-              <p className="text-sm">Đang tải biểu mẫu nghiệm thu...</p>
+            <div className="p-8 text-center text-slate-500 bg-white rounded-2xl border border-slate-200 shadow-xs space-y-3">
+              <p className="text-sm font-medium">Không thể nạp thông tin hợp đồng từ hệ thống.</p>
+              <button
+                type="button"
+                onClick={loadContractDetail}
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition cursor-pointer"
+              >
+                Tải lại dữ liệu
+              </button>
             </div>
           )}
         </div>

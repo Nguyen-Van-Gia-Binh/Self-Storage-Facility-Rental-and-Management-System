@@ -4,11 +4,12 @@ import {
   AlertCircle,
   Send,
 } from 'lucide-react';
-import type { ReturnContractDetail, InspectionCondition, ReturnInspectionRequest, SurchargeItem } from '@/types';
+import type { ReturnContractDetail, InspectionCondition, ReturnInspectionRequest, SurchargeItem, SettlementPreviewData } from '@/types';
 import { SignaturePad } from './SignaturePad';
 import { EvidencePhotoCapture } from './EvidencePhotoCapture';
 import { SettlementPreviewCard } from './SettlementPreviewCard';
 import { fetchSurcharges } from '@/api/pricing';
+import { getSettlementPreview } from '@/api/contract';
 import { catalogLineAmount, feeCategoryLabel } from '@/features/pricing/feeCategory';
 
 interface ReturnInspectionFormProps {
@@ -33,6 +34,7 @@ export const ReturnInspectionForm: React.FC<ReturnInspectionFormProps> = ({
   const [damageNotes, setDamageNotes] = useState('');
   const [catalogFees, setCatalogFees] = useState<SurchargeItem[]>([]);
   const [selectedFeeIds, setSelectedFeeIds] = useState<number[]>([]);
+  const [settlementPreview, setSettlementPreview] = useState<SettlementPreviewData | null>(null);
   const [evidencePhotos, setEvidencePhotos] = useState<string[]>([]);
   const [signatureData, setSignatureData] = useState<string | null>(null);
   const [customerAgreed, setCustomerAgreed] = useState(true);
@@ -52,6 +54,23 @@ export const ReturnInspectionForm: React.FC<ReturnInspectionFormProps> = ({
       )
       .catch(() => setCatalogFees([]));
   }, [contract.facilityId]);
+
+  useEffect(() => {
+    if (!contract.id) return;
+    let active = true;
+    getSettlementPreview(contract.id)
+      .then((preview) => {
+        if (active && preview) {
+          setSettlementPreview(preview);
+        }
+      })
+      .catch(() => {
+        if (active) setSettlementPreview(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [contract.id]);
 
   const selectedFees = catalogFees.filter((fee) => selectedFeeIds.includes(fee.id));
   const catalogTotal = selectedFees.reduce(
@@ -327,8 +346,10 @@ export const ReturnInspectionForm: React.FC<ReturnInspectionFormProps> = ({
 
       {/* 3. Bảng tính quyết toán hoàn cọc trực quan */}
       <SettlementPreviewCard
-        depositAmount={contract.depositAmount}
+        depositAmount={settlementPreview?.depositAmount ?? contract.depositAmount}
         damageCost={condition !== 'GOOD' ? catalogTotal : 0}
+        overdueFee={settlementPreview?.overdueFee ?? 0}
+        unpaidExtraCharges={settlementPreview?.unpaidExtraCharges ?? 0}
         condition={condition}
       />
 

@@ -5,7 +5,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import type { DailyCheckInTask, CheckInContract, CheckInSubmitRequest, HandoverRejectRequest } from '@/types';
-import { getPendingContracts, checkInContract, rejectHandoverContract } from '@/api/contract';
+import { getContractById, getPendingContracts, checkInContract, rejectHandoverContract } from '@/api/contract';
 import { useCurrentUser } from '@/utils/useCurrentUser';
 import { CustomerVerificationCard } from './CustomerVerificationCard';
 import { HandoverInspectionForm } from './HandoverInspectionForm';
@@ -32,7 +32,7 @@ export const StaffCheckInDetailView: React.FC<StaffCheckInDetailViewProps> = ({
 
   // Modals state
   const [isPinModalOpen, setIsPinModalOpen] = useState<boolean>(false);
-  const [currentPin, setCurrentPin] = useState<string>('482019');
+  const [currentPin, setCurrentPin] = useState<string>('');
   const [isRejectionModalOpen, setIsRejectionModalOpen] = useState<boolean>(false);
 
   // Toast notification
@@ -43,65 +43,43 @@ export const StaffCheckInDetailView: React.FC<StaffCheckInDetailViewProps> = ({
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  // Nạp thông tin hợp đồng chi tiết từ Real API
+  // Nạp thông tin hợp đồng chi tiết trực tiếp từ Backend API GET /contracts/{id}
   const loadContractDetail = useCallback(async () => {
     setLoading(true);
     try {
-      const facilityId = task.facilityId || 0;
-      const list = await getPendingContracts(facilityId === 0 ? undefined : facilityId);
+      let targetContractId = task.contractId;
 
-      // Tìm hợp đồng khớp với task
-      const found = list.find(
-        (c) =>
-          (task.contractId && c.id === task.contractId) ||
-          (task.reservationId && c.reservationId === task.reservationId) ||
-          (task.contractCode && c.code === task.contractCode) ||
-          (task.unitCode && (c.storageUnitCode === task.unitCode || c.storageUnitCode.includes(task.unitCode)))
-      );
+      if (!targetContractId) {
+        const facilityId = task.facilityId || 0;
+        const list = await getPendingContracts(facilityId === 0 ? undefined : facilityId);
+        const found = list.find(
+          (c) =>
+            (task.reservationId && c.reservationId === task.reservationId) ||
+            (task.contractCode && c.code === task.contractCode) ||
+            (task.unitCode && (c.storageUnitCode === task.unitCode || c.storageUnitCode.includes(task.unitCode)))
+        );
+        if (found) {
+          targetContractId = found.id;
+        }
+      }
 
-      if (found) {
-        setContract(found);
+      if (targetContractId) {
+        const detail = await getContractById(targetContractId);
+        setContract(detail);
+        if (detail.accessCode) {
+          setCurrentPin(detail.accessCode);
+        }
       } else {
-        // Fallback tạo object hợp đồng từ task để luôn sẵn sàng hiển thị đầy đủ
-        setContract({
-          id: task.contractId || task.reservationId || 1,
-          code: task.contractCode || `CTR-20261012-${task.unitCode}`,
-          reservationId: task.reservationId || 1,
-          reservationCode: `RSV-${task.unitCode}`,
-          customerId: 1,
-          customerName: task.customerName,
-          customerPhone: task.customerPhone,
-          customerIdentityNumber: '079201004829',
-          facilityId: task.facilityId || 1,
-          facilityName: task.facilityName || 'Cơ sở Cầu Giấy - Hà Nội',
-          storageUnitId: 1,
-          storageUnitCode: task.unitCode,
-          floor: 1,
-          position: 'Khu A',
-          unitTypeId: 1,
-          unitTypeName: 'Kho mini tiêu chuẩn (Standard)',
-          unitTypeDimensions: '2.0m x 2.0m x 2.5m',
-          startDate: task.startDate || '2026-10-12',
-          endDateExclusive: '2027-01-12',
-          rentalMonths: 3,
-          monthlyPrice: 1500000,
-          totalRentalFee: 4500000,
-          depositAmount: 1500000,
-          totalPayable: 6000000,
-          isFullyPaid: task.isFullyPaid !== undefined ? task.isFullyPaid : true,
-          status: task.completed || task.status === 'COMPLETED' || task.status === 'ACTIVE' ? 'ACTIVE' : 'PENDING_CHECK_IN',
-          appointmentTime: task.appointmentTime || '09:00',
-          graceDaysRemaining: 3,
-          assignedStaffId: staffId,
-          assignedStaffName: user?.fullName || 'Trần Thị Nhân Viên',
-        });
+        setContract(null);
       }
     } catch (err) {
-      console.error('Lỗi khi nạp chi tiết hợp đồng check-in:', err);
+      console.error('Lỗi khi nạp chi tiết hợp đồng check-in từ Backend:', err);
+      showToast('error', 'Không thể tải thông tin hợp đồng từ hệ thống.');
+      setContract(null);
     } finally {
       setLoading(false);
     }
-  }, [task, staffId, user?.fullName]);
+  }, [task]);
 
   useEffect(() => {
     loadContractDetail();
@@ -113,11 +91,15 @@ export const StaffCheckInDetailView: React.FC<StaffCheckInDetailViewProps> = ({
     setIsSubmitting(true);
     try {
       const res = await checkInContract(contract.id, request, staffId);
-      setCurrentPin(res.accessCode || '839201');
+      setCurrentPin(res.accessCode);
       setIsPinModalOpen(true);
       showToast('success', `Bàn giao thành công ô kho ${contract.storageUnitCode}. Hợp đồng đã kích hoạt ACTIVE.`);
 
-      setContract((prev) => (prev ? { ...prev, status: 'ACTIVE', appointmentTime: 'Đã hoàn tất bàn giao' } : null));
+      setContract((prev) =>
+        prev
+          ? { ...prev, status: 'ACTIVE', accessCode: res.accessCode, appointmentTime: 'Đã hoàn tất bàn giao' }
+          : null
+      );
       onSuccess();
     } catch (error) {
       console.error('Lỗi khi bàn giao kho:', error);

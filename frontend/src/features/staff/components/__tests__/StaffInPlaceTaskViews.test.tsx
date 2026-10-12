@@ -169,8 +169,56 @@ describe('Staff In-Place Task Views & Full-Screen Detail View Integration', () =
     expect(isWithinCheckInGraceWindow('2026-10-12', '2026-10-22', 10)).toBe(true);
     expect(isWithinCheckInGraceWindow('2026-10-12', '2026-10-23', 10)).toBe(false);
   });
+
+  it('Xóa sạch toàn bộ dữ liệu mock fallback cứng trong phân hệ Staff và kết nối trực tiếp API Backend thực tế', () => {
+    const checkInViewContent = fs.readFileSync(staffCheckInViewPath, 'utf-8');
+    const returnViewContent = fs.readFileSync(staffReturnViewPath, 'utf-8');
+    const incidentViewContent = fs.readFileSync(staffIncidentViewPath, 'utf-8');
+    const checkInPagePath = path.resolve(
+      process.cwd(),
+      'src/features/staff/pages/StaffCheckInPage.tsx'
+    );
+    const returnFormPath = path.resolve(
+      process.cwd(),
+      'src/features/staff/components/ReturnInspectionForm.tsx'
+    );
+    const resolveModalPath = path.resolve(
+      process.cwd(),
+      'src/features/staff/components/StaffResolveIncidentModal.tsx'
+    );
+    const contractApiPath = path.resolve(process.cwd(), 'src/api/contract.ts');
+
+    const checkInPageContent = fs.readFileSync(checkInPagePath, 'utf-8');
+    const returnFormContent = fs.readFileSync(returnFormPath, 'utf-8');
+    const resolveModalContent = fs.readFileSync(resolveModalPath, 'utf-8');
+    const contractApiContent = fs.readFileSync(contractApiPath, 'utf-8');
+
+    // Không còn dữ liệu hợp đồng giả hay mã PIN cứng
+    expect(checkInViewContent).not.toMatch(/079201004829/);
+    expect(checkInViewContent).not.toMatch(/482019/);
+    expect(checkInViewContent).not.toMatch(/839201/);
+    expect(checkInViewContent).not.toMatch(/Trần Thị Nhân Viên/);
+    expect(checkInViewContent).toMatch(/getContractById/);
+
+    expect(checkInPageContent).not.toMatch(/482019/);
+
+    // Không còn đối tượng ReturnContractDetail giả trong catch block và lấy preview quyết toán từ Backend
+    expect(returnViewContent).not.toMatch(/unitType: 'Standard'/);
+    expect(returnFormContent).toMatch(/getSettlementPreview/);
+
+    // Không còn giá cơ sở giả 1_000_000 khi tính phụ phí % và gọi chi tiết sự cố từ Backend
+    expect(incidentViewContent).not.toMatch(/1_000_000/);
+    expect(incidentViewContent).toMatch(/getStaffIncidentDetail/);
+    expect(incidentViewContent).toMatch(/getContractById/);
+    expect(incidentViewContent).toMatch(/catalogLineAmount/);
+
+    expect(resolveModalContent).not.toMatch(/1_000_000/);
+    expect(resolveModalContent).toMatch(/getStaffIncidentDetail/);
+    expect(resolveModalContent).toMatch(/getContractById/);
+
+    // Không còn chuỗi kích thước giả định theo tên loại kho trong contract.ts
+    expect(contractApiContent).not.toMatch(/1\.0m x 1\.0m x 1\.5m/);
+    expect(contractApiContent).not.toMatch(/3\.0m x 3\.0m x 2\.5m/);
+  });
 });
-
-
-
 

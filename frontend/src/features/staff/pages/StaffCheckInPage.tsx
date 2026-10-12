@@ -38,27 +38,9 @@ export const StaffCheckInPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // Tải danh sách cơ sở thực tế từ API Backend
-  useEffect(() => {
-    let active = true;
-    fetchFacilities()
-      .then((res) => {
-        if (active && res && res.length > 0) {
-          setFacilities([
-            { id: 0, name: 'Tất cả cơ sở' },
-            ...res.map((f) => ({ id: f.id, name: f.name })),
-          ]);
-        }
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, []);
-
   // Modals state
   const [isPinModalOpen, setIsPinModalOpen] = useState<boolean>(false);
-  const [currentPin, setCurrentPin] = useState<string>('482019');
+  const [currentPin, setCurrentPin] = useState<string>('');
   const [isRejectionModalOpen, setIsRejectionModalOpen] = useState<boolean>(false);
 
   // Toast notification
@@ -70,23 +52,29 @@ export const StaffCheckInPage: React.FC = () => {
   };
 
   useEffect(() => {
+    let active = true;
     fetchMyAssignedFacilities()
-      .then((list) => {
-        if (list && list.length > 0) {
-          const opts = [{ id: 0, name: 'Tất cả cơ sở' }, ...list.map((f) => ({ id: f.id, name: f.name }))];
+      .then(async (list) => {
+        if (!active) return;
+        const resolvedList = list && list.length > 0 ? list : await fetchFacilities();
+        if (active && resolvedList && resolvedList.length > 0) {
+          const opts = [{ id: 0, name: 'Tất cả cơ sở' }, ...resolvedList.map((f) => ({ id: f.id, name: f.name }))];
           setFacilities(opts);
-          if (urlFacilityId && list.some((f) => f.id === Number(urlFacilityId))) {
+          if (urlFacilityId && resolvedList.some((f) => f.id === Number(urlFacilityId))) {
             setSelectedFacilityId(Number(urlFacilityId));
-          } else if (userFacilityId && list.some((f) => f.id === userFacilityId)) {
+          } else if (userFacilityId && resolvedList.some((f) => f.id === userFacilityId)) {
             setSelectedFacilityId(userFacilityId);
           } else {
-            setSelectedFacilityId(list[0].id);
+            setSelectedFacilityId(resolvedList[0].id);
           }
         }
       })
       .catch((error) => {
         console.error('Không tải được cơ sở được phân công:', error);
       });
+    return () => {
+      active = false;
+    };
   }, [userFacilityId, urlFacilityId]);
 
   // Tải danh sách hợp đồng chờ check-in theo cơ sở được chọn

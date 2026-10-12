@@ -16,10 +16,10 @@ import {
   Receipt,
 } from 'lucide-react';
 import type { DailyIncidentTask, SurchargeItem } from '@/types';
-import { resolveStaffIncident, markStaffIncidentRelocation } from '@/api/staff';
+import { getStaffIncidentDetail, resolveStaffIncident, markStaffIncidentRelocation } from '@/api/staff';
 import { fetchSurcharges } from '@/api/pricing';
-import { applyCatalogFee } from '@/api/contract';
-import { feeCategoryLabel } from '@/features/pricing/feeCategory';
+import { applyCatalogFee, getContractById } from '@/api/contract';
+import { catalogLineAmount, feeCategoryLabel } from '@/features/pricing/feeCategory';
 import { EvidencePhotoCapture } from './EvidencePhotoCapture';
 
 interface StaffResolveIncidentModalProps {
@@ -49,6 +49,7 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
   const [allSurcharges, setAllSurcharges] = useState<SurchargeItem[]>([]);
   const [loadingSurcharges, setLoadingSurcharges] = useState(false);
   const [selectedFeeIds, setSelectedFeeIds] = useState<number[]>([]);
+  const [contractMonthlyPrice, setContractMonthlyPrice] = useState<number>(0);
 
   // Fault attribution states: COMPANY vs CUSTOMER
   const [faultParty, setFaultParty] = useState<'COMPANY' | 'CUSTOMER' | null>(null);
@@ -64,6 +65,34 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
       setSelectedFeeIds([]);
       setFaultParty(null);
       setIsCustomerPaidConfirmed(false);
+
+      if (ticket.ticketId) {
+        getStaffIncidentDetail(ticket.ticketId)
+          .then((detail) => {
+            if (!detail) return;
+            if (detail.resolutionNote) setResolutionNote(detail.resolutionNote);
+            if (detail.resolutionAttachmentUrls && detail.resolutionAttachmentUrls.length > 0) {
+              setAttachmentUrls(detail.resolutionAttachmentUrls);
+            }
+            if (detail.relocationRequired !== undefined) {
+              setNeedsRelocation(Boolean(detail.relocationRequired));
+            }
+            if (detail.contractId) {
+              getContractById(detail.contractId)
+                .then((c) => {
+                  if (c?.monthlyPrice) setContractMonthlyPrice(c.monthlyPrice);
+                })
+                .catch(() => {});
+            }
+          })
+          .catch(() => {});
+      } else if (ticket.contractId) {
+        getContractById(ticket.contractId)
+          .then((c) => {
+            if (c?.monthlyPrice) setContractMonthlyPrice(c.monthlyPrice);
+          })
+          .catch(() => {});
+      }
     }
   }, [ticket]);
 
@@ -91,12 +120,9 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
   const isInProgress = ticket.status === 'IN_PROGRESS';
   const isResolved = ticket.status === 'RESOLVED' || ticket.status === 'CLOSED';
 
-  // Tính số tiền của từng phụ phí
+  // Tính số tiền của từng phụ phí theo công thức chuẩn catalogLineAmount từ Backend
   const calculateFeeAmount = (fee: SurchargeItem): number => {
-    if (fee.type === 'PERCENTAGE') {
-      return Math.round((1_000_000 * (fee.amount / 100)) / 1000) * 1000;
-    }
-    return fee.amount || 0;
+    return catalogLineAmount(fee, contractMonthlyPrice);
   };
 
   // Tổng số tiền phụ phí được chọn

@@ -130,6 +130,7 @@ export interface CheckInContract {
   appointmentTime: string;
   graceDaysRemaining: number;
   checkinGraceDays?: number;
+  accessCode?: string;
   assignedStaffId?: number;
   assignedStaffName?: string;
 }

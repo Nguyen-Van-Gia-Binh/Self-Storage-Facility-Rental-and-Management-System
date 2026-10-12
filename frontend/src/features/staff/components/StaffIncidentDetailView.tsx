@@ -13,12 +13,13 @@ import {
 } from 'lucide-react';
 import type { DailyIncidentTask, SurchargeItem } from '@/types';
 import {
+  getStaffIncidentDetail,
   resolveStaffIncident,
   markStaffIncidentRelocation,
 } from '@/api/staff';
 import { fetchSurcharges } from '@/api/pricing';
-import { applyCatalogFee } from '@/api/contract';
-import { feeCategoryLabel } from '@/features/pricing/feeCategory';
+import { applyCatalogFee, getContractById } from '@/api/contract';
+import { catalogLineAmount, feeCategoryLabel } from '@/features/pricing/feeCategory';
 import { EvidencePhotoCapture } from './EvidencePhotoCapture';
 
 export interface StaffIncidentDetailViewProps {
@@ -32,6 +33,7 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
   onBack,
   onSuccess,
 }) => {
+  const [incidentDetail, setIncidentDetail] = useState<DailyIncidentTask>(task);
   const [ticketStatus, setTicketStatus] = useState<string>(task.status || 'PENDING');
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -47,6 +49,7 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
   const [allSurcharges, setAllSurcharges] = useState<SurchargeItem[]>([]);
   const [loadingSurcharges, setLoadingSurcharges] = useState<boolean>(false);
   const [selectedFeeIds, setSelectedFeeIds] = useState<number[]>([]);
+  const [contractMonthlyPrice, setContractMonthlyPrice] = useState<number>(0);
 
   // Fault attribution states: COMPANY vs CUSTOMER
   const [faultParty, setFaultParty] = useState<'COMPANY' | 'CUSTOMER' | null>(null);
@@ -59,22 +62,71 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
     setTimeout(() => setToastMessage(null), 4000);
   };
 
+  // Nạp chi tiết phiếu sự cố từ Backend GET /management/support-requests/{id}
   useEffect(() => {
+    setIncidentDetail(task);
     setTicketStatus(task.status || 'PENDING');
     setResolutionNote(task.resolutionNote || '');
     setAttachmentUrls(task.resolutionAttachmentUrls || []);
     setNeedsRelocation(Boolean(task.relocationRequired));
+
+    if (!task.ticketId) return;
+    let active = true;
+    getStaffIncidentDetail(task.ticketId)
+      .then((detail) => {
+        if (!active || !detail) return;
+        setIncidentDetail((prev) => ({
+          ...prev,
+          ...detail,
+          title: detail.title || prev.title,
+          description: detail.description || prev.description,
+          unitCode: detail.unitCode && detail.unitCode !== '---' ? detail.unitCode : prev.unitCode,
+          facilityName: detail.facilityName || prev.facilityName,
+          customerName: detail.customerName || prev.customerName,
+          customerPhone: detail.customerPhone || prev.customerPhone,
+        }));
+        if (detail.status) setTicketStatus(detail.status);
+        if (detail.resolutionNote) setResolutionNote(detail.resolutionNote);
+        if (detail.resolutionAttachmentUrls && detail.resolutionAttachmentUrls.length > 0) {
+          setAttachmentUrls(detail.resolutionAttachmentUrls);
+        }
+        if (detail.relocationRequired !== undefined) {
+          setNeedsRelocation(Boolean(detail.relocationRequired));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
   }, [task]);
+
+  // Nạp giá thuê hàng tháng thực tế từ hợp đồng trên Backend để tính phụ phí theo % (nếu có)
+  useEffect(() => {
+    const targetContractId = incidentDetail.contractId ?? task.contractId;
+    if (!targetContractId) return;
+    let active = true;
+    getContractById(targetContractId)
+      .then((contract) => {
+        if (active && contract?.monthlyPrice) {
+          setContractMonthlyPrice(contract.monthlyPrice);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [incidentDetail.contractId, task.contractId]);
 
   // Nạp danh mục phụ phí từ BOM API
   const loadSurcharges = useCallback(async () => {
     setLoadingSurcharges(true);
     try {
+      const targetFacilityId = incidentDetail.facilityId ?? task.facilityId;
       const list = await fetchSurcharges({ isActive: true });
       const validFees = list.filter(
         (fee) =>
           fee.isActive &&
-          (fee.facilityId == null || fee.facilityId === task.facilityId),
+          (fee.facilityId == null || fee.facilityId === targetFacilityId),
       );
       setAllSurcharges(validFees);
     } catch (err) {
@@ -83,7 +135,7 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
     } finally {
       setLoadingSurcharges(false);
     }
-  }, [task.facilityId]);
+  }, [incidentDetail.facilityId, task.facilityId]);
 
   useEffect(() => {
     loadSurcharges();
@@ -91,12 +143,9 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
 
   const isResolved = ticketStatus === 'RESOLVED' || ticketStatus === 'CLOSED';
 
-  // Tính số tiền của từng phụ phí
+  // Tính số tiền của từng phụ phí theo công thức chuẩn catalogLineAmount từ Backend
   const calculateFeeAmount = (fee: SurchargeItem): number => {
-    if (fee.type === 'PERCENTAGE') {
-      return Math.round((1_000_000 * (fee.amount / 100)) / 1000) * 1000;
-    }
-    return fee.amount || 0;
+    return catalogLineAmount(fee, contractMonthlyPrice);
   };
 
   // Tổng số tiền phụ phí được chọn
@@ -157,16 +206,17 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
     setErrorMsg(null);
 
     try {
+      const targetContractId = incidentDetail.contractId ?? task.contractId;
       // Nếu lỗi do khách hàng và có phụ phí chọn + có contractId: ghi nhận phụ phí vào hợp đồng
-      if (faultParty === 'CUSTOMER' && selectedFeeIds.length > 0 && task.contractId != null) {
+      if (faultParty === 'CUSTOMER' && selectedFeeIds.length > 0 && targetContractId != null) {
         for (const feeId of selectedFeeIds) {
           try {
             const feeItem = allSurcharges.find((f) => f.id === feeId);
             const feeName = feeItem ? feeItem.name : `Phụ phí #${feeId}`;
             await applyCatalogFee(
-              task.contractId,
+              targetContractId,
               feeId,
-              `[Sự cố ${task.code || `SUP-${task.ticketId}`}] ${feeName} - Khách đã thanh toán`,
+              `[Sự cố ${incidentDetail.code || `SUP-${task.ticketId}`}] ${feeName} - Khách đã thanh toán`,
             );
           } catch (feeErr) {
             console.warn('Lỗi ghi nhận phụ phí vào hợp đồng:', feeErr);
@@ -175,7 +225,7 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
       }
 
       // Đảm bảo trạng thái cờ di dời kho được đồng bộ với backend
-      if (needsRelocation !== Boolean(task.relocationRequired)) {
+      if (needsRelocation !== Boolean(incidentDetail.relocationRequired)) {
         try {
           await markStaffIncidentRelocation(task.ticketId, needsRelocation);
         } catch (rErr) {
@@ -224,11 +274,11 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
     faultParty === null ||
     (faultParty === 'CUSTOMER' && !isCustomerPaidConfirmed);
 
-  const rawTitle = task.title || 'Xử lý sự cố thực địa';
+  const rawTitle = incidentDetail.title || 'Xử lý sự cố thực địa';
   const colonIdx = rawTitle.indexOf(':');
   const shortTitle = colonIdx !== -1 ? rawTitle.slice(0, colonIdx).trim() : rawTitle;
   const detailDescription =
-    task.description || (colonIdx !== -1 ? rawTitle.slice(colonIdx + 1).trim() : '');
+    incidentDetail.description || (colonIdx !== -1 ? rawTitle.slice(colonIdx + 1).trim() : '');
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
@@ -289,7 +339,7 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
                 </span>
               </div>
               <span className="font-mono text-xs font-bold text-slate-500">
-                {task.code || `SUP-${task.ticketId}`}
+                {incidentDetail.code || `SUP-${task.ticketId}`}
               </span>
             </div>
 
@@ -304,20 +354,20 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
               <div className="flex items-center justify-between text-xs pt-1">
                 <span className="text-slate-500">Mã ô kho:</span>
                 <span className="font-mono font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded">
-                  {task.unitCode || 'Chưa gán'}
+                  {incidentDetail.unitCode || 'Chưa gán'}
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-500">Cơ sở:</span>
                 <span className="font-medium text-slate-800 truncate max-w-[170px]">
-                  {task.facilityName || 'Cơ sở hiện tại'}
+                  {incidentDetail.facilityName || 'Cơ sở hiện tại'}
                 </span>
               </div>
-              {task.createdAt && (
+              {incidentDetail.createdAt && (
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-slate-500">Thời gian báo:</span>
                   <span className="font-mono font-medium text-slate-700">
-                    {new Date(task.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(incidentDetail.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
               )}
@@ -327,17 +377,17 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
             <div className="space-y-2.5 pt-1">
               <div className="flex items-center gap-2.5 text-slate-700">
                 <User className="w-4 h-4 text-slate-400 shrink-0" />
-                <span className="font-bold text-slate-900 text-sm">{task.customerName || 'Khách thuê kho'}</span>
+                <span className="font-bold text-slate-900 text-sm">{incidentDetail.customerName || 'Khách thuê kho'}</span>
               </div>
 
-              {task.customerPhone && (
+              {incidentDetail.customerPhone && (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5 text-slate-600 text-xs">
                     <Phone className="w-4 h-4 text-slate-400 shrink-0" />
-                    <span className="font-mono">{task.customerPhone}</span>
+                    <span className="font-mono">{incidentDetail.customerPhone}</span>
                   </div>
                   <a
-                    href={`tel:${task.customerPhone}`}
+                    href={`tel:${incidentDetail.customerPhone}`}
                     className="inline-flex items-center gap-1 font-mono text-xs font-semibold px-2 py-1 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-800 transition"
                   >
                     <span>Gọi điện</span>
@@ -374,11 +424,11 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
                 <CheckCircle2 className="w-8 h-8" />
               </div>
               <h3 className="text-lg font-bold text-slate-900">
-                Sự cố #{task.code || task.ticketId} đã được khắc phục hoàn tất
+                Sự cố #{incidentDetail.code || task.ticketId} đã được khắc phục hoàn tất
               </h3>
               <div className="text-left bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs">
                 <span className="font-bold text-slate-700">Biên bản kết quả xử lý:</span>
-                <p className="text-slate-800 whitespace-pre-wrap">{task.resolutionNote || resolutionNote || 'Không có ghi chú thêm.'}</p>
+                <p className="text-slate-800 whitespace-pre-wrap">{incidentDetail.resolutionNote || resolutionNote || 'Không có ghi chú thêm.'}</p>
               </div>
               {attachmentUrls.length > 0 && (
                 <div className="text-left space-y-2">
