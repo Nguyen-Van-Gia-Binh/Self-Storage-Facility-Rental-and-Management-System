@@ -189,7 +189,7 @@ export function getPortalUrlByRole(role: string): string {
     case 'MANAGER':
       return '/manager/facilities';
     case 'STAFF':
-      return '/staff/check-in';
+      return '/staff';
     case 'CUSTOMER':
     default:
       return '/customer';
