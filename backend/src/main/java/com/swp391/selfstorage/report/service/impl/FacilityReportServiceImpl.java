@@ -214,7 +214,7 @@ public class FacilityReportServiceImpl implements FacilityReportService {
                         })
                         .filter(t -> {
                             String note = t.getResolutionNote() != null ? t.getResolutionNote().toLowerCase() : "";
-                            return note.contains("lỗi do công ty") || note.contains("cong ty") || t.getCategory() == SupportCategory.UNIT_DAMAGE;
+                            return note.contains("công ty") || note.contains("cong ty") || t.getCategory() == SupportCategory.UNIT_DAMAGE;
                         })
                         .mapToLong(t -> extractCompanyIncidentCost(t.getResolutionNote()))
                         .sum();
@@ -502,8 +502,11 @@ public class FacilityReportServiceImpl implements FacilityReportService {
         if (note == null || note.isBlank()) {
             return 200_000L;
         }
-        // Khớp định dạng: "Chi phí công ty chịu: 320.000 đ" hoặc "Chi phí công ty chịu: 320000"
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("Chi phí công ty chịu:\\s*([0-9\\.,]+)").matcher(note);
+        // Khớp định dạng: "Chi phí công ty chịu: 320.000 đ" hoặc "Chi phí công ty chịu: 450 đ"
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile(
+                "Chi phí công ty chịu:\\s*([0-9\\.,]+)",
+                java.util.regex.Pattern.CASE_INSENSITIVE | java.util.regex.Pattern.UNICODE_CASE
+        ).matcher(note);
         if (m.find()) {
             String digits = m.group(1).replaceAll("[^0-9]", "");
             if (!digits.isEmpty()) {
