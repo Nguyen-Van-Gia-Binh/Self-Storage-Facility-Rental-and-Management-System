@@ -118,16 +118,18 @@ function Field({
   step?: string;
 }) {
   return (
-    <label className="block text-sm">
-      <span className="font-medium text-slate-700">{label}</span>
+    <div className="flex flex-col justify-end text-sm">
+      <span className="font-medium text-slate-700 leading-snug min-h-[2.5rem] flex items-end pb-1.5">
+        <span>{label}</span>
+      </span>
       <input
         type={type}
         step={step}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+        className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white"
       />
-    </label>
+    </div>
   );
 }
 
@@ -251,9 +253,11 @@ export const BomPolicyPage: React.FC = () => {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-5xl">
-      <div className="flex items-center gap-3">
-        <ShieldCheck className="w-6 h-6 text-indigo-600" />
+    <form onSubmit={handleSubmit} className="space-y-6 max-w-5xl mx-auto pb-12">
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-2xs flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+          <ShieldCheck className="w-5 h-5" />
+        </div>
         <div>
           <h1 className="text-xl font-bold text-slate-900">Ban hành chính sách thuê</h1>
           <p className="text-sm text-slate-500">
@@ -262,7 +266,7 @@ export const BomPolicyPage: React.FC = () => {
         </div>
       </div>
 
-      <section className="bg-white rounded-2xl border border-slate-200 p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <section className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-2xs grid grid-cols-1 md:grid-cols-2 gap-4">
         <Field label="Ngày hiệu lực" type="date" value={form.effectiveDate} onChange={set('effectiveDate')} />
         <Field label="Hệ số cọc (lớn hơn 0)" value={form.depositMultiplier} step="0.1" onChange={set('depositMultiplier')} />
         <Field label="Giờ giữ chỗ" value={form.reservationHoldHours} onChange={set('reservationHoldHours')} />
@@ -271,8 +275,8 @@ export const BomPolicyPage: React.FC = () => {
         <Field label="Số ngày quy ước của một tháng" value={form.rentalDailyDivisor} onChange={set('rentalDailyDivisor')} />
       </section>
 
-      <section className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
-        <h2 className="font-semibold text-slate-900">Gia hạn</h2>
+      <section className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-2xs space-y-4">
+        <h2 className="font-semibold text-slate-900 text-base">Gia hạn</h2>
         <Field label="Mốc nhắc, cách nhau bởi dấu phẩy" type="text" value={form.renewalReminderDays} onChange={set('renewalReminderDays')} />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Tháng tối thiểu" value={form.renewalMinMonths} onChange={set('renewalMinMonths')} />
@@ -280,8 +284,8 @@ export const BomPolicyPage: React.FC = () => {
         </div>
       </section>
 
-      <section className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
-        <h2 className="font-semibold text-slate-900">Hủy và trả kho</h2>
+      <section className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-2xs space-y-4">
+        <h2 className="font-semibold text-slate-900 text-base">Hủy và trả kho</h2>
         <p className="text-xs text-slate-500">Cơ sở hủy thì hoàn 100%. Không có ô tỷ lệ phạt cho trường hợp này.</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Field label="Giờ hủy được hoàn 100%" value={form.cancelFullRefundHours} onChange={set('cancelFullRefundHours')} />
@@ -298,12 +302,12 @@ export const BomPolicyPage: React.FC = () => {
         <p className="text-xs text-slate-500">Quyết toán trả kho = cọc trừ hư hại, phí quá hạn và phụ phí chưa trả. Công thức này không tắt được.</p>
       </section>
 
-      <section className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
-        <h2 className="font-semibold text-slate-900">Quá hạn</h2>
+      <section className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-2xs space-y-4">
+        <h2 className="font-semibold text-slate-900 text-base">Quá hạn</h2>
         <p className="text-xs text-slate-500">
           Phí bắt đầu vào ngày ngay sau ân hạn. Ân hạn phải nhỏ hơn mốc khóa truy cập, và mốc khóa không được sau ngày chấm dứt. Khách quá hạn không đặt chỗ mới.
         </p>
-        <p className="text-sm text-slate-700">
+        <p className="text-sm font-medium text-slate-700">
           Bắt đầu tính phí: ngày thứ {Number.isInteger(Number(form.overdueGraceDays)) ? Number(form.overdueGraceDays) + 1 : '—'} sau ngày hết hạn
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -315,8 +319,8 @@ export const BomPolicyPage: React.FC = () => {
         </div>
       </section>
 
-      <section className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
-        <h2 className="font-semibold text-slate-900">Truy cập và hỗ trợ</h2>
+      <section className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-2xs space-y-4">
+        <h2 className="font-semibold text-slate-900 text-base">Truy cập và hỗ trợ</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Field label="Độ dài mã PIN" value={form.accessPinLength} onChange={set('accessPinLength')} />
           <Field label="SLA sự cố khẩn cấp (giờ)" value={form.supportUrgentSlaHours} onChange={set('supportUrgentSlaHours')} />
@@ -324,25 +328,28 @@ export const BomPolicyPage: React.FC = () => {
         </div>
       </section>
 
-      <label className="flex items-center gap-2 text-sm text-slate-700">
-        <input
-          type="checkbox"
-          checked={form.confirmed}
-          onChange={(event) => setForm((current) => ({ ...current, confirmed: event.target.checked }))}
-        />
-        Tôi xác nhận ban hành phiên bản mới
-      </label>
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-2xs space-y-4">
+        <label className="flex items-center gap-2.5 text-sm font-medium text-slate-700 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={form.confirmed}
+            onChange={(event) => setForm((current) => ({ ...current, confirmed: event.target.checked }))}
+            className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300"
+          />
+          Tôi xác nhận ban hành phiên bản mới
+        </label>
 
-      {error && <p className="text-sm text-rose-700">{error}</p>}
-      {message && <p className="text-sm text-emerald-700">{message}</p>}
+        {error && <p className="text-sm font-medium text-rose-700">{error}</p>}
+        {message && <p className="text-sm font-medium text-emerald-700">{message}</p>}
 
-      <button
-        type="submit"
-        disabled={saving}
-        className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium disabled:opacity-50"
-      >
-        {saving ? 'Đang ban hành...' : 'Ban hành chính sách'}
-      </button>
+        <button
+          type="submit"
+          disabled={saving}
+          className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold disabled:opacity-50 transition-colors shadow-2xs cursor-pointer"
+        >
+          {saving ? 'Đang ban hành...' : 'Ban hành chính sách'}
+        </button>
+      </div>
     </form>
   );
 };

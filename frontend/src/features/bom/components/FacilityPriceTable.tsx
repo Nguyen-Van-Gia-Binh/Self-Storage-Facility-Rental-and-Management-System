@@ -75,12 +75,12 @@ export const FacilityPriceTable: React.FC<FacilityPriceTableProps> = ({
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                 <th className="py-3.5 px-4">Loại ô kho</th>
-                <th className="py-3.5 px-4">Quy cách không gian</th>
-                <th className="py-3.5 px-4 text-right">Đơn giá (₫/m²)</th>
-                <th className="py-3.5 px-4 text-right">Giá thuê (₫/tháng)</th>
+                <th className="py-3.5 px-4 text-center">Diện tích (m²)</th>
+                <th className="py-3.5 px-4 text-center">Đơn giá (₫/m²)</th>
+                <th className="py-3.5 px-4 text-center">Giá thuê (₫/tháng)</th>
                 <th className="py-3.5 px-4 text-center">Tổng ô kho</th>
                 <th className="py-3.5 px-4 text-center">Tình trạng giá</th>
-                <th className="py-3.5 px-4 text-right">Thao tác</th>
+                <th className="py-3.5 px-4 text-center">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -106,8 +106,6 @@ export const FacilityPriceTable: React.FC<FacilityPriceTableProps> = ({
                 unitTypes.map((ut) => {
                   const status = ut.priceStatus
                     ?? (ut.monthlyPrice > 0 ? 'Đang áp dụng' : 'Chưa niêm yết');
-                  const volumeM3 =
-                    ut.volumeM3 ?? Number((ut.widthM * ut.depthM * ut.heightM).toFixed(2));
 
                   return (
                     <tr key={ut.id} className="hover:bg-amber-50/30 transition-colors group">
@@ -129,22 +127,13 @@ export const FacilityPriceTable: React.FC<FacilityPriceTableProps> = ({
                         </div>
                       </td>
 
-                      <td className="py-4 px-4">
-                        <div className="flex flex-col">
-                          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800">
-                            <span className="text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded font-mono font-bold border border-amber-200/60">
-                              {volumeM3} m³
-                            </span>
-                            <span className="text-slate-400">·</span>
-                            <span>{ut.areaM2} m²</span>
-                          </div>
-                          <span className="text-[11px] font-mono text-slate-500 mt-0.5">
-                            D: {ut.depthM}m × R: {ut.widthM}m × C: {ut.heightM}m
-                          </span>
-                        </div>
+                      <td className="py-4 px-4 text-center">
+                        <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-slate-100 text-slate-800 border border-slate-200">
+                          {ut.areaM2} m²
+                        </span>
                       </td>
 
-                      <td className="py-4 px-4 text-right">
+                      <td className="py-4 px-4 text-center">
                         {(() => {
                           const rate =
                             ut.pricePerM2 != null && ut.pricePerM2 > 0
@@ -164,7 +153,7 @@ export const FacilityPriceTable: React.FC<FacilityPriceTableProps> = ({
                         })()}
                       </td>
 
-                      <td className="py-4 px-4 text-right">
+                      <td className="py-4 px-4 text-center">
                         {ut.monthlyPrice > 0 ? (
                           <span className="font-bold text-amber-600 text-sm font-mono">
                             {ut.monthlyPrice.toLocaleString('vi-VN')}
@@ -195,10 +184,10 @@ export const FacilityPriceTable: React.FC<FacilityPriceTableProps> = ({
                         </div>
                       </td>
 
-                      <td className="py-4 px-4 text-right">
+                      <td className="py-4 px-4 text-center">
                         <button
                           onClick={() => onOpenPriceModal(ut)}
-                          className="inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 hover:text-amber-800 rounded-lg border border-amber-200 transition-colors shadow-sm"
+                          className="inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 hover:text-amber-800 rounded-lg border border-amber-200 transition-colors shadow-sm cursor-pointer"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                           <span>Đổi giá</span>
