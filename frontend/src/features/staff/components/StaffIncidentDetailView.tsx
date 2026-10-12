@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   ArrowLeft,
-  RefreshCw,
   AlertTriangle,
   CheckCircle2,
   Clock,
@@ -98,7 +97,6 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
 
   const isPending =
     ticketStatus === 'PENDING' || ticketStatus === 'ASSIGNED' || ticketStatus === 'NEW';
-  const isInProgress = ticketStatus === 'IN_PROGRESS';
   const isResolved = ticketStatus === 'RESOLVED' || ticketStatus === 'CLOSED';
 
   // Tính số tiền của từng phụ phí
@@ -297,66 +295,6 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
         </div>
       )}
 
-      {/* Top Header Điều hướng quay lại & Tiêu đề */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onBack}
-            className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold inline-flex items-center gap-1.5 transition shadow-xs cursor-pointer hover:border-slate-300"
-          >
-            <ArrowLeft className="w-4 h-4 text-slate-500" />
-            <span>Quay lại danh sách ca trực</span>
-          </button>
-          <div className="h-5 w-px bg-slate-200 hidden sm:block" />
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
-                {task.code || `SUP-${task.ticketId}`}
-              </span>
-              <span className="font-mono text-xs font-bold text-teal-700 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-md">
-                Ô {task.unitCode || '---'}
-              </span>
-              <h2 className="text-base sm:text-lg font-bold text-slate-900">
-                {shortTitle}
-              </h2>
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Cơ sở {task.facilityName || 'Cơ sở hiện tại'} · Khách hàng {task.customerName || 'Khách thuê kho'}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {isResolved ? (
-            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl font-bold text-xs bg-emerald-50 text-emerald-700 border border-emerald-200">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span>Đã khắc phục xong</span>
-            </span>
-          ) : isInProgress ? (
-            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl font-bold text-xs bg-sky-50 text-sky-700 border border-sky-200">
-              <Clock className="w-4 h-4 text-sky-600" />
-              <span>Đang xử lý tại hiện trường</span>
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl font-bold text-xs bg-amber-50 text-amber-700 border border-amber-200">
-              <AlertTriangle className="w-4 h-4 text-amber-600" />
-              <span>Chờ tiếp nhận xử lý</span>
-            </span>
-          )}
-
-          <button
-            type="button"
-            onClick={loadSurcharges}
-            disabled={loadingSurcharges}
-            className="p-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-slate-600 transition shadow-xs cursor-pointer disabled:opacity-50"
-            title="Làm mới bảng phụ phí"
-          >
-            <RefreshCw className={`w-4 h-4 ${loadingSurcharges ? 'animate-spin text-amber-600' : ''}`} />
-          </button>
-        </div>
-      </div>
-
       {/* Hiển thị lỗi nếu có */}
       {errorMsg && (
         <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-center justify-between">
@@ -382,6 +320,14 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
           <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={onBack}
+                  className="p-1 -ml-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                  title="Quay lại Nhiệm vụ ca trực"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </button>
                 <AlertTriangle className="w-4 h-4 text-amber-600" />
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
                   Thông tin phản ánh

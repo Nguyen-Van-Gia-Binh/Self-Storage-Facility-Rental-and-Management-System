@@ -33,7 +33,7 @@ export const StaffReturnDetailView: React.FC<StaffReturnDetailViewProps> = ({
   const staffId = user?.id ? Number(user.id) : undefined;
 
   const [contract, setContract] = useState<ReturnContractDetail | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [, setLoading] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -153,58 +153,6 @@ export const StaffReturnDetailView: React.FC<StaffReturnDetailViewProps> = ({
         </div>
       )}
 
-      {/* Top Header Điều hướng quay lại & Tiêu đề */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onBack}
-            className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold inline-flex items-center gap-1.5 transition shadow-xs cursor-pointer hover:border-slate-300"
-          >
-            <ArrowLeft className="w-4 h-4 text-slate-500" />
-            <span>Quay lại danh sách ca trực</span>
-          </button>
-          <div className="h-5 w-px bg-slate-200 hidden sm:block" />
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md">
-                Ô {task.unitCode}
-              </span>
-              <h2 className="text-base sm:text-lg font-bold text-slate-900">
-                Nghiệm thu trả kho & Quyết toán cọc
-              </h2>
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Hợp đồng #{task.contractCode || task.contractId} · Khách hàng {task.customerName}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {isCompleted ? (
-            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl font-bold text-xs bg-emerald-50 text-emerald-700 border border-emerald-200">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span>Đã nghiệm thu hoàn tất</span>
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl font-bold text-xs bg-blue-50 text-blue-700 border border-blue-200">
-              <ClipboardCheck className="w-4 h-4 text-blue-600" />
-              <span>Đang tiến hành nghiệm thu</span>
-            </span>
-          )}
-
-          <button
-            type="button"
-            onClick={loadContractDetail}
-            disabled={loading}
-            className="p-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-slate-600 transition shadow-xs cursor-pointer disabled:opacity-50"
-            title="Làm mới dữ liệu"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-blue-600' : ''}`} />
-          </button>
-        </div>
-      </div>
-
       {/* Hiển thị lỗi nếu có */}
       {errorMsg && (
         <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-center justify-between">
@@ -229,6 +177,14 @@ export const StaffReturnDetailView: React.FC<StaffReturnDetailViewProps> = ({
           <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={onBack}
+                  className="p-1 -ml-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                  title="Quay lại Nhiệm vụ ca trực"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </button>
                 <ClipboardCheck className="w-4 h-4 text-blue-600" />
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
                   Hồ sơ trả kho

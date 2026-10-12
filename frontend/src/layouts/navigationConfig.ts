@@ -34,7 +34,7 @@ export const ROLE_NAVIGATIONS: Record<UserRole, RoleNavigation> = {
     ],
   },
   STAFF: {
-    portalTitle: 'Staff Desk',
+    portalTitle: 'Nhân viên vận hành',
     role: 'STAFF',
     badgeColor: 'bg-emerald-600',
     navItems: [

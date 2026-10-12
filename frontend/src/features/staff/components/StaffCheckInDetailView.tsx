@@ -1,11 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  ArrowLeft,
   KeyRound,
   CheckCircle2,
   AlertCircle,
-  Clock,
-  RefreshCw,
 } from 'lucide-react';
 import type { DailyCheckInTask, CheckInContract, CheckInSubmitRequest, HandoverRejectRequest } from '@/types';
 import { getPendingContracts, checkInContract, rejectHandoverContract } from '@/api/contract';
@@ -175,58 +172,6 @@ export const StaffCheckInDetailView: React.FC<StaffCheckInDetailViewProps> = ({
         </div>
       )}
 
-      {/* Top Header Điều hướng quay lại & Tiêu đề đồng nhất */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onBack}
-            className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold inline-flex items-center gap-1.5 transition shadow-xs cursor-pointer hover:border-slate-300"
-          >
-            <ArrowLeft className="w-4 h-4 text-slate-500" />
-            <span>Quay lại danh sách ca trực</span>
-          </button>
-          <div className="h-5 w-px bg-slate-200 hidden sm:block" />
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-xs font-bold text-teal-700 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-md">
-                Ô {task.unitCode}
-              </span>
-              <h2 className="text-base sm:text-lg font-bold text-slate-900">
-                Tiếp đón & Bàn giao ô kho
-              </h2>
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Hợp đồng #{contract?.code || task.contractCode || task.contractId} · Khách hàng {task.customerName}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {isDone ? (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span>Đã hoàn tất bàn giao</span>
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
-              <Clock className="w-4 h-4 text-amber-600" />
-              <span>Chờ tiếp đón & Bàn giao</span>
-            </span>
-          )}
-
-          <button
-            type="button"
-            onClick={loadContractDetail}
-            disabled={loading}
-            className="p-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-slate-600 transition shadow-xs cursor-pointer disabled:opacity-50"
-            title="Làm mới dữ liệu"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-teal-600' : ''}`} />
-          </button>
-        </div>
-      </div>
-
       {/* Main 2-Column Full-Width Console */}
       {loading ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -237,7 +182,7 @@ export const StaffCheckInDetailView: React.FC<StaffCheckInDetailViewProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* CỘT TRÁI (4/12): 1 thẻ Hồ sơ tiếp đón duy nhất, rõ ràng, không trùng lặp */}
           <div className="lg:col-span-4">
-            <CustomerVerificationCard contract={contract} />
+            <CustomerVerificationCard contract={contract} onBack={onBack} />
           </div>
 
           {/* CỘT PHẢI (8/12): Biên bản bàn giao hoặc Trạng thái đã xong */}

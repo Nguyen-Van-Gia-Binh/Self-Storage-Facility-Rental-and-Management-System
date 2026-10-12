@@ -22,27 +22,24 @@ describe('Staff In-Place Task Views & Full-Screen Detail View Integration', () =
     'src/features/staff/components/DailyTasksOverview.tsx'
   );
 
-  it('StaffCheckInDetailView có nút quay lại ca trực và bố cục 2 cột gọn gàng', () => {
+  it('StaffCheckInDetailView có bố cục 2 cột cân xứng, không còn hộp tiêu đề lặp lại thông tin phía trên', () => {
     const content = fs.readFileSync(staffCheckInViewPath, 'utf-8');
-    expect(content).toMatch(/Quay lại danh sách ca trực/);
+    expect(content).not.toMatch(/Tiếp đón & Bàn giao ô kho/);
     expect(content).toMatch(/grid grid-cols-1 lg:grid-cols-12/);
     expect(content).toMatch(/CustomerVerificationCard/);
     expect(content).toMatch(/HandoverInspectionForm/);
     expect(content).toMatch(/AccessCodePinModal/);
   });
 
-  it('StaffReturnDetailView có nút quay lại ca trực và tích hợp ReturnInspectionForm', () => {
+  it('StaffReturnDetailView có bố cục 2 cột cân xứng và tích hợp ReturnInspectionForm', () => {
     const content = fs.readFileSync(staffReturnViewPath, 'utf-8');
-    expect(content).toMatch(/Quay lại danh sách ca trực/);
     expect(content).toMatch(/grid grid-cols-1 lg:grid-cols-12/);
-    expect(content).toMatch(/Nghiệm thu trả kho & Quyết toán cọc/);
     expect(content).toMatch(/ReturnInspectionForm/);
     expect(content).toMatch(/ReturnSuccessModal/);
   });
 
-  it('StaffIncidentDetailView có nút quay lại ca trực, phân định trách nhiệm BR-SUP-02 và biểu giá BOM', () => {
+  it('StaffIncidentDetailView có bố cục 2 cột cân xứng, phân định trách nhiệm BR-SUP-02 và biểu giá BOM', () => {
     const content = fs.readFileSync(staffIncidentViewPath, 'utf-8');
-    expect(content).toMatch(/Quay lại danh sách ca trực/);
     expect(content).toMatch(/grid grid-cols-1 lg:grid-cols-12/);
     expect(content).toMatch(/Lỗi do Công ty \(Hạ tầng\)/);
     expect(content).toMatch(/Lỗi do Khách hàng/);
@@ -85,23 +82,22 @@ describe('Staff In-Place Task Views & Full-Screen Detail View Integration', () =
     expect(incidentViewContent).toMatch(/detailDescription/);
   });
 
-  it('Ẩn thanh chào hỏi khi mở chi tiết nhiệm vụ và bố trí lại màn hình Check-in không còn khối trùng lặp hay vỡ cột', () => {
-    const staffDashboardPath = path.resolve(
+  it('DashboardLayout bỏ chữ Staff Desk, cho phép bấm vào Nhiệm vụ ca trực và hiển thị cấp > đi sâu khi mở chi tiết nhiệm vụ', () => {
+    const layoutPath = path.resolve(
       process.cwd(),
-      'src/features/staff/pages/StaffDashboardPage.tsx'
+      'src/layouts/DashboardLayout.tsx'
     );
-    const customerCardPath = path.resolve(
+    const navConfigPath = path.resolve(
       process.cwd(),
-      'src/features/staff/components/CustomerVerificationCard.tsx'
+      'src/layouts/navigationConfig.ts'
     );
-    const dashboardContent = fs.readFileSync(staffDashboardPath, 'utf-8');
-    const checkInContent = fs.readFileSync(staffCheckInViewPath, 'utf-8');
-    const customerCardContent = fs.readFileSync(customerCardPath, 'utf-8');
+    const layoutContent = fs.readFileSync(layoutPath, 'utf-8');
+    const navConfigContent = fs.readFileSync(navConfigPath, 'utf-8');
 
-    expect(dashboardContent).toMatch(/!isDetailViewOpen/);
-    expect(checkInContent).not.toMatch(/Thông tin lịch hẹn tiếp đón/);
-    expect(checkInContent).not.toMatch(/Về danh sách ca trực/);
-    expect(customerCardContent).not.toMatch(/md:grid-cols-3/);
+    expect(layoutContent).not.toMatch(/Staff Desk/);
+    expect(navConfigContent).not.toMatch(/Staff Desk/);
+    expect(layoutContent).toMatch(/staff-sub-breadcrumb/);
+    expect(layoutContent).toMatch(/staff-reset-task-view/);
   });
 });
 

@@ -52,7 +52,7 @@ const BREADCRUMB_MAP: Record<string, string> = {
 const ROLE_PORTAL_LABEL: Record<UserRole, string> = {
   ADMIN:    'System Admin',
   MANAGER:  'Facility Manager',
-  STAFF:    'Staff Desk',
+  STAFF:    'Nhân viên vận hành',
   BOM:      'BOM Operations',
   CUSTOMER: 'Customer Portal',
 };
@@ -83,6 +83,22 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [subBreadcrumb, setSubBreadcrumb] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSubBreadcrumb(null);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const handleSubBreadcrumb = (e: Event) => {
+      const customEvent = e as CustomEvent<string | null>;
+      setSubBreadcrumb(customEvent.detail || null);
+    };
+    window.addEventListener('staff-sub-breadcrumb', handleSubBreadcrumb);
+    return () => {
+      window.removeEventListener('staff-sub-breadcrumb', handleSubBreadcrumb);
+    };
+  }, []);
 
   // Xác định role từ URL
   const detectRoleFromUrl = (): UserRole => {
@@ -120,6 +136,14 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const detectedRole = detectRoleFromUrl();
   const effectiveRole = detectedRole !== 'CUSTOMER' ? detectedRole : currentRole;
   const logoHomePath = ROLE_HOME_PATH[effectiveRole] || navItems[0]?.href || '/';
+
+  const handleResetToRoot = () => {
+    window.dispatchEvent(new CustomEvent('staff-reset-task-view'));
+    setSubBreadcrumb(null);
+    if (location.pathname !== logoHomePath) {
+      navigate(logoHomePath);
+    }
+  };
 
   const handleLogout = () => {
     tokenStorage.clearSession();
@@ -207,7 +231,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               <Link
                 key={item.href}
                 to={item.href}
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  window.dispatchEvent(new CustomEvent('staff-reset-task-view'));
+                  setSubBreadcrumb(null);
+                }}
                 title={!sidebarOpen ? item.label : undefined}
                 className={`
                   flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold
@@ -260,13 +288,23 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       <div className="app-shell-main flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {/* Top Header */}
         <header className="h-16 bg-white border-b border-slate-200/90 flex items-center justify-between px-4 sm:px-6 shadow-xs shrink-0 sticky top-0 z-10">
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-slate-600 font-bold hidden sm:inline">{displayTitle}</span>
-            {currentLabel && (
+          {/* Breadcrumb tương tác */}
+          <div className="flex items-center gap-2 text-sm min-w-0">
+            <button
+              type="button"
+              onClick={handleResetToRoot}
+              className={`transition-colors cursor-pointer shrink-0 ${
+                subBreadcrumb
+                  ? 'text-slate-500 hover:text-teal-600 font-bold'
+                  : 'font-extrabold text-slate-900 hover:text-teal-700'
+              }`}
+            >
+              {currentLabel || displayTitle}
+            </button>
+            {subBreadcrumb && (
               <>
-                <ChevronRight className="w-3.5 h-3.5 text-slate-300 hidden sm:inline" />
-                <span className="font-extrabold text-slate-900">{currentLabel}</span>
+                <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
+                <span className="font-extrabold text-slate-900 truncate">{subBreadcrumb}</span>
               </>
             )}
           </div>

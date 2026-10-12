@@ -1,12 +1,13 @@
 import React from 'react';
-import { ShieldCheck, Calendar, CreditCard, AlertCircle, Phone, User, KeyRound } from 'lucide-react';
+import { ShieldCheck, Calendar, CreditCard, AlertCircle, Phone, User, KeyRound, ArrowLeft } from 'lucide-react';
 import type { CheckInContract } from '../../../types';
 
 export interface CustomerVerificationCardProps {
   contract: CheckInContract;
+  onBack?: () => void;
 }
 
-export const CustomerVerificationCard: React.FC<CustomerVerificationCardProps> = ({ contract }) => {
+export const CustomerVerificationCard: React.FC<CustomerVerificationCardProps> = ({ contract, onBack }) => {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
   };
@@ -16,6 +17,16 @@ export const CustomerVerificationCard: React.FC<CustomerVerificationCardProps> =
       {/* Header thẻ Hồ sơ tiếp đón */}
       <div className="flex items-center justify-between pb-3 border-b border-slate-100">
         <div className="flex items-center gap-2">
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="p-1 -ml-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+              title="Quay lại Nhiệm vụ ca trực"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+          )}
           <KeyRound className="w-4 h-4 text-teal-600" />
           <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
             Hồ sơ tiếp đón
@@ -27,7 +38,7 @@ export const CustomerVerificationCard: React.FC<CustomerVerificationCardProps> =
       </div>
 
       {/* 1. Thông tin ô kho bàn giao */}
-      <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 space-y-2 text-xs">
+      <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 space-y-2.5 text-xs">
         <div className="flex items-center justify-between">
           <span className="text-slate-500">Ô kho bàn giao:</span>
           <span className="font-mono font-bold text-teal-700 bg-teal-50 border border-teal-200 px-2.5 py-0.5 rounded-md text-sm">
@@ -42,10 +53,18 @@ export const CustomerVerificationCard: React.FC<CustomerVerificationCardProps> =
         </div>
         <div className="flex items-center justify-between gap-2">
           <span className="text-slate-500 shrink-0">Loại ô kho:</span>
-          <span className="font-medium text-slate-800 text-right">
-            {contract.unitTypeName} ({contract.unitTypeDimensions})
+          <span className="font-semibold text-slate-800 text-right">
+            {contract.unitTypeName}
           </span>
         </div>
+        {contract.unitTypeDimensions && (
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-slate-500 shrink-0">Kích thước:</span>
+            <span className="font-medium text-slate-700 text-right">
+              {contract.unitTypeDimensions}
+            </span>
+          </div>
+        )}
         <div className="flex items-center justify-between gap-2">
           <span className="text-slate-500 shrink-0">Cơ sở:</span>
           <span className="font-medium text-slate-800 text-right truncate">

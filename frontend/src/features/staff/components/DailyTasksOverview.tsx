@@ -45,10 +45,30 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
 
   useEffect(() => {
     onDetailViewChange?.(activeTaskView !== null);
+
+    let subLabel: string | null = null;
+    if (activeTaskView?.type === 'checkin') {
+      subLabel = `Tiếp đón & Bàn giao (${activeTaskView.task.unitCode})`;
+    } else if (activeTaskView?.type === 'return') {
+      subLabel = `Nghiệm thu trả kho (${activeTaskView.task.unitCode})`;
+    } else if (activeTaskView?.type === 'incident') {
+      subLabel = `Xử lý sự cố (${activeTaskView.task.unitCode || activeTaskView.task.code || ''})`;
+    }
+    window.dispatchEvent(new CustomEvent('staff-sub-breadcrumb', { detail: subLabel }));
+
     return () => {
       onDetailViewChange?.(false);
+      window.dispatchEvent(new CustomEvent('staff-sub-breadcrumb', { detail: null }));
     };
   }, [activeTaskView, onDetailViewChange]);
+
+  useEffect(() => {
+    const handleReset = () => setActiveTaskView(null);
+    window.addEventListener('staff-reset-task-view', handleReset);
+    return () => {
+      window.removeEventListener('staff-reset-task-view', handleReset);
+    };
+  }, []);
 
   // Helper nhận diện công việc đã xong
   const isCheckInDone = (c: any) => Boolean(c.completed || c.status === 'COMPLETED' || c.status === 'ACTIVE');
