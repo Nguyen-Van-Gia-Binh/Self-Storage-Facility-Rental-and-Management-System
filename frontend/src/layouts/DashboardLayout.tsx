@@ -22,7 +22,7 @@ interface DashboardLayoutProps {
 
 // Breadcrumb label map
 const BREADCRUMB_MAP: Record<string, string> = {
-  '/staff':                    'Tổng quan ca trực',
+  '/staff':                    'Nhiệm vụ ca trực',
   '/staff/check-in':           'Tiếp đón Check-in',
   '/staff/checkin':            'Tiếp đón Check-in',
   '/staff/return':             'Nghiệm thu trả kho',

@@ -9,8 +9,10 @@ import {
   ExternalLink,
   KeyRound,
   ClipboardCheck,
+  ListFilter,
+  CheckCheck,
 } from 'lucide-react';
-import type { StaffDailyTaskReport, DailyIncidentTask } from '@/types';
+import type { StaffDailyTaskReport, DailyIncidentTask, DailyCheckInTask, DailyReturnTask } from '@/types';
 import { StaffResolveIncidentModal } from './StaffResolveIncidentModal';
 
 interface DailyTasksOverviewProps {
@@ -29,7 +31,9 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
   onRefresh,
 }) => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'checkin' | 'return' | 'incident'>('checkin');
+
+  // Mặc định xem TẤT CẢ nhiệm vụ ca trực (không bắt ép bấm chuyển tab)
+  const [filterCategory, setFilterCategory] = useState<'ALL' | 'checkin' | 'return' | 'incident'>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'COMPLETED'>('ALL');
   const [selectedIncident, setSelectedIncident] = useState<DailyIncidentTask | null>(null);
   const [incidentModalOpen, setIncidentModalOpen] = useState(false);
@@ -53,6 +57,10 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
 
   const incidentDoneCount = tasks.openSupportRequests.filter(isIncidentDone).length;
   const incidentPendingCount = tasks.openSupportRequests.length - incidentDoneCount;
+
+  const totalAllTasks = tasks.pendingCheckIns.length + tasks.pendingReturns.length + tasks.openSupportRequests.length;
+  const totalAllPending = checkInPendingCount + returnPendingCount + incidentPendingCount;
+  const totalAllDone = checkInDoneCount + returnDoneCount + incidentDoneCount;
 
   // Lọc tìm kiếm theo từ khóa searchQuery
   const q = searchQuery.trim().toLowerCase();
@@ -101,46 +109,332 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
     return true;
   });
 
-  // Số lượng hiển thị theo tab hiện tại
+  // Tính tổng số lượng tương ứng với nhóm đang chọn
   const currentTotal =
-    activeTab === 'checkin'
+    filterCategory === 'checkin'
       ? tasks.pendingCheckIns.length
-      : activeTab === 'return'
+      : filterCategory === 'return'
       ? tasks.pendingReturns.length
-      : tasks.openSupportRequests.length;
+      : filterCategory === 'incident'
+      ? tasks.openSupportRequests.length
+      : totalAllTasks;
 
   const currentPending =
-    activeTab === 'checkin'
+    filterCategory === 'checkin'
       ? checkInPendingCount
-      : activeTab === 'return'
+      : filterCategory === 'return'
       ? returnPendingCount
-      : incidentPendingCount;
+      : filterCategory === 'incident'
+      ? incidentPendingCount
+      : totalAllPending;
 
   const currentDone =
-    activeTab === 'checkin'
+    filterCategory === 'checkin'
       ? checkInDoneCount
-      : activeTab === 'return'
+      : filterCategory === 'return'
       ? returnDoneCount
-      : incidentDoneCount;
+      : filterCategory === 'incident'
+      ? incidentDoneCount
+      : totalAllDone;
+
+  const totalFilteredCount =
+    (filterCategory === 'ALL' || filterCategory === 'checkin' ? filteredCheckIns.length : 0) +
+    (filterCategory === 'ALL' || filterCategory === 'return' ? filteredReturns.length : 0) +
+    (filterCategory === 'ALL' || filterCategory === 'incident' ? filteredIncidents.length : 0);
+
+  // Render từng thẻ Check-in
+  const renderCheckInItem = (item: DailyCheckInTask) => {
+    const isDone = isCheckInDone(item);
+    const handleGoToCheckIn = () => {
+      const params = new URLSearchParams();
+      const cId = item.contractId || item.reservationId;
+      if (cId) params.set('contractId', String(cId));
+      if (selectedDate) params.set('date', selectedDate);
+      if (selectedFacilityId) params.set('facilityId', String(selectedFacilityId));
+      navigate(`/staff/check-in?${params.toString()}`);
+    };
+
+    return (
+      <div
+        key={item.reservationId || item.contractId}
+        className={`p-4 rounded-xl border transition-all duration-200 flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+          isDone
+            ? 'border-emerald-200/70 bg-emerald-50/15 hover:border-emerald-300'
+            : 'border-slate-200/90 hover:border-teal-300 bg-white shadow-xs hover:shadow-sm'
+        }`}
+      >
+        <div className="flex items-start sm:items-center gap-3.5 flex-1 min-w-0">
+          <div
+            className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 font-mono font-bold text-sm ${
+              isDone ? 'bg-emerald-100 text-emerald-800' : 'bg-teal-50 text-teal-700 border border-teal-200'
+            }`}
+          >
+            {item.unitCode}
+          </div>
+          <div className="space-y-1 min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-bold text-slate-900 text-sm sm:text-base truncate">{item.customerName}</span>
+              {item.customerPhone && (
+                <a
+                  href={`tel:${item.customerPhone}`}
+                  className="inline-flex items-center gap-1 font-mono text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100 hover:bg-teal-50 text-slate-600 hover:text-teal-700 transition"
+                  title="Gọi cho khách hàng"
+                >
+                  <Phone className="w-3 h-3 text-slate-400" />
+                  <span>{item.customerPhone}</span>
+                </a>
+              )}
+              {item.contractCode && (
+                <span className="font-mono text-xs text-slate-400">#{item.contractCode}</span>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+              <span className="flex items-center gap-1 text-slate-600 font-medium">
+                <Clock className="w-3.5 h-3.5 text-teal-600" /> Giờ hẹn: <strong className="text-slate-800">{item.appointmentTime}</strong>
+              </span>
+              {item.facilityName && (
+                <span className="text-slate-500 font-medium">· Cơ sở: {item.facilityName}</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 shrink-0 self-end md:self-center">
+          {isDone ? (
+            <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Đã bàn giao</span>
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+              <Clock className="w-3.5 h-3.5 text-amber-600" />
+              <span>Chờ tiếp đón</span>
+            </span>
+          )}
+
+          {isDone ? (
+            <button
+              type="button"
+              onClick={handleGoToCheckIn}
+              className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+            >
+              <span>Hồ sơ bàn giao</span>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleGoToCheckIn}
+              className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs hover:shadow-sm cursor-pointer"
+            >
+              <KeyRound className="w-3.5 h-3.5" />
+              <span>Tiếp đón & Bàn giao</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Render từng thẻ Trả kho
+  const renderReturnItem = (item: DailyReturnTask) => {
+    const isDone = isReturnDone(item);
+    const handleGoToReturn = () => {
+      const params = new URLSearchParams();
+      if (selectedDate) params.set('date', selectedDate);
+      if (selectedFacilityId) params.set('facilityId', String(selectedFacilityId));
+      navigate(`/staff/return/${item.contractId}${params.toString() ? `?${params.toString()}` : ''}`);
+    };
+
+    return (
+      <div
+        key={item.contractId}
+        className={`p-4 rounded-xl border transition-all duration-200 flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+          isDone
+            ? 'border-emerald-200/70 bg-emerald-50/15 hover:border-emerald-300'
+            : 'border-slate-200/90 hover:border-blue-300 bg-white shadow-xs hover:shadow-sm'
+        }`}
+      >
+        <div className="flex items-start sm:items-center gap-3.5 flex-1 min-w-0">
+          <div
+            className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 font-mono font-bold text-sm ${
+              isDone ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-50 text-blue-700 border border-blue-200'
+            }`}
+          >
+            {item.unitCode}
+          </div>
+          <div className="space-y-1 min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-bold text-slate-900 text-sm sm:text-base truncate">{item.customerName}</span>
+              {item.customerPhone && (
+                <a
+                  href={`tel:${item.customerPhone}`}
+                  className="inline-flex items-center gap-1 font-mono text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-700 transition"
+                  title="Gọi cho khách hàng"
+                >
+                  <Phone className="w-3 h-3 text-slate-400" />
+                  <span>{item.customerPhone}</span>
+                </a>
+              )}
+              {item.contractCode && (
+                <span className="font-mono text-xs text-slate-400">#{item.contractCode}</span>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+              <span className="flex items-center gap-1 text-slate-600 font-medium">
+                <Clock className="w-3.5 h-3.5 text-blue-600" /> Hẹn trả: <strong className="text-slate-800">{item.appointmentTime}</strong>
+              </span>
+              {item.depositAmount !== undefined && (
+                <span className="text-slate-600">
+                  Tiền cọc: <strong className="font-mono text-emerald-700">{item.depositAmount.toLocaleString('vi-VN')} đ</strong>
+                </span>
+              )}
+              {item.facilityName && (
+                <span className="text-slate-500 font-medium">· Cơ sở: {item.facilityName}</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 shrink-0 self-end md:self-center">
+          {isDone ? (
+            <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Đã nghiệm thu</span>
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+              <Clock className="w-3.5 h-3.5 text-amber-600" />
+              <span>Chờ kiểm tra phòng</span>
+            </span>
+          )}
+
+          {isDone ? (
+            <button
+              type="button"
+              onClick={handleGoToReturn}
+              className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+            >
+              <span>Biên bản nghiệm thu</span>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleGoToReturn}
+              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs hover:shadow-sm cursor-pointer"
+            >
+              <ClipboardCheck className="w-3.5 h-3.5" />
+              <span>Tiến hành nghiệm thu</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Render từng thẻ Sự cố
+  const renderIncidentItem = (item: DailyIncidentTask) => {
+    const isDone = isIncidentDone(item);
+    return (
+      <div
+        key={item.ticketId || item.code}
+        className="p-4 rounded-xl border border-slate-200/90 hover:border-amber-300 bg-white shadow-xs hover:shadow-sm transition-all duration-200 flex flex-col md:flex-row md:items-center justify-between gap-4"
+      >
+        <div className="flex items-start sm:items-center gap-3.5 flex-1 min-w-0">
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-amber-50 text-amber-700 border border-amber-200">
+            <AlertTriangle className="w-5 h-5" />
+          </div>
+          <div className="space-y-1 min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              {item.code && (
+                <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
+                  {item.code}
+                </span>
+              )}
+              <span className="font-bold text-slate-900 text-sm sm:text-base">{item.title || 'Sự cố vận hành'}</span>
+              <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
+                Ô {item.unitCode || '---'}
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+              {item.customerName && (
+                <span>Khách: <strong className="text-slate-700">{item.customerName}</strong></span>
+              )}
+              {item.customerPhone && (
+                <a href={`tel:${item.customerPhone}`} className="hover:text-teal-600 transition">
+                  ({item.customerPhone})
+                </a>
+              )}
+              {item.facilityName && <span>· Cơ sở: {item.facilityName}</span>}
+              {item.createdAt && (
+                <span className="text-slate-400">· Tạo: {new Date(item.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 shrink-0 self-end md:self-center">
+          <span
+            className={`font-semibold px-2.5 py-1 rounded-full text-xs ${
+              isDone
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                : item.status === 'IN_PROGRESS'
+                ? 'bg-sky-50 text-sky-700 border border-sky-200'
+                : 'bg-amber-50 text-amber-700 border border-amber-200'
+            }`}
+          >
+            {isDone
+              ? 'Đã khắc phục'
+              : item.status === 'IN_PROGRESS'
+              ? 'Đang xử lý'
+              : 'Cần xử lý'}
+          </span>
+
+          <button
+            type="button"
+            onClick={() => handleOpenIncident(item)}
+            className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs hover:shadow-sm cursor-pointer"
+          >
+            {isDone ? (
+              <span>Xem kết quả</span>
+            ) : item.status === 'IN_PROGRESS' ? (
+              <>
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Cập nhật & Nghiệm thu</span>
+              </>
+            ) : (
+              <>
+                <AlertTriangle className="w-3.5 h-3.5" />
+                <span>Xử lý ngay</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-4">
-      {/* 3 Cards Thống kê KPI ca trực - Dàn đều 3 cột cân đối & Bỏ Overlock */}
+      {/* 3 Cards Thống kê KPI ca trực - Đồng thời là bộ lọc nhanh 1-chạm */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
         {/* Thẻ 1: Lịch Check-in */}
         <button
           type="button"
-          onClick={() => setActiveTab('checkin')}
-          className={`p-4 sm:p-5 rounded-2xl border text-left transition-all duration-200 shadow-xs relative overflow-hidden group ${
-            activeTab === 'checkin'
-              ? 'bg-teal-50/40 border-teal-500 ring-2 ring-teal-500/20'
+          onClick={() => setFilterCategory((prev) => (prev === 'checkin' ? 'ALL' : 'checkin'))}
+          className={`p-4 sm:p-5 rounded-2xl border text-left transition-all duration-200 shadow-xs relative overflow-hidden group cursor-pointer ${
+            filterCategory === 'checkin'
+              ? 'bg-teal-50/50 border-teal-500 ring-2 ring-teal-500/20 shadow-sm'
               : 'bg-white border-slate-200/90 hover:border-teal-300 hover:shadow-sm'
           }`}
         >
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs sm:text-sm font-bold text-slate-700 flex items-center gap-2">
               <KeyRound className="w-4.5 h-4.5 text-teal-600" />
-              Lịch Check-in hôm nay
+              Lịch Check-in tiếp đón
             </span>
             <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
               checkInPendingCount > 0 ? 'bg-teal-100 text-teal-800' : 'bg-emerald-100 text-emerald-800'
@@ -171,10 +465,10 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
         {/* Thẻ 2: Lịch hẹn Trả kho */}
         <button
           type="button"
-          onClick={() => setActiveTab('return')}
-          className={`p-4 sm:p-5 rounded-2xl border text-left transition-all duration-200 shadow-xs relative overflow-hidden group ${
-            activeTab === 'return'
-              ? 'bg-blue-50/40 border-blue-500 ring-2 ring-blue-500/20'
+          onClick={() => setFilterCategory((prev) => (prev === 'return' ? 'ALL' : 'return'))}
+          className={`p-4 sm:p-5 rounded-2xl border text-left transition-all duration-200 shadow-xs relative overflow-hidden group cursor-pointer ${
+            filterCategory === 'return'
+              ? 'bg-blue-50/50 border-blue-500 ring-2 ring-blue-500/20 shadow-sm'
               : 'bg-white border-slate-200/90 hover:border-blue-300 hover:shadow-sm'
           }`}
         >
@@ -212,10 +506,10 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
         {/* Thẻ 3: Sự cố thực địa */}
         <button
           type="button"
-          onClick={() => setActiveTab('incident')}
-          className={`p-4 sm:p-5 rounded-2xl border text-left transition-all duration-200 shadow-xs relative overflow-hidden group ${
-            activeTab === 'incident'
-              ? 'bg-amber-50/50 border-amber-500 ring-2 ring-amber-500/20'
+          onClick={() => setFilterCategory((prev) => (prev === 'incident' ? 'ALL' : 'incident'))}
+          className={`p-4 sm:p-5 rounded-2xl border text-left transition-all duration-200 shadow-xs relative overflow-hidden group cursor-pointer ${
+            filterCategory === 'incident'
+              ? 'bg-amber-50/60 border-amber-500 ring-2 ring-amber-500/20 shadow-sm'
               : tasks.openSupportRequests.length > 0
               ? 'bg-amber-50/20 border-amber-200 hover:border-amber-400'
               : 'bg-white border-slate-200/90 hover:border-amber-300'
@@ -255,88 +549,79 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
         </button>
       </div>
 
-      {/* Tabs bar & Danh mục công việc 100% Full Width */}
+      {/* Bảng Danh sách Nhiệm vụ Ca trực Tập trung */}
       <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
-        {/* Navigation Tabs Header */}
+        {/* Header điều khiển Danh mục & Trạng thái */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 p-3 sm:px-5 gap-3 bg-slate-50/40">
-          {/* 3 Tabs chính */}
+          {/* Lọc danh mục nhiệm vụ */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
             <button
               type="button"
-              onClick={() => setActiveTab('checkin')}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 shrink-0 ${
-                activeTab === 'checkin'
+              onClick={() => setFilterCategory('ALL')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 shrink-0 cursor-pointer ${
+                filterCategory === 'ALL'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <ListFilter className="w-4 h-4" />
+              <span>Tất cả nhiệm vụ</span>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-mono font-bold ${
+                filterCategory === 'ALL' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+              }`}>
+                {totalAllTasks}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFilterCategory('checkin')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                filterCategory === 'checkin'
                   ? 'bg-teal-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                  : 'text-slate-600 hover:text-teal-700 hover:bg-teal-50'
               }`}
             >
-              <KeyRound className="w-4 h-4" />
-              <span>1. Lịch nhận kho</span>
-              <span className={`px-2 py-0.5 rounded-full text-xs font-mono font-bold ${
-                activeTab === 'checkin'
-                  ? 'bg-white/20 text-white'
-                  : checkInPendingCount > 0
-                  ? 'bg-teal-100 text-teal-800'
-                  : 'bg-slate-200 text-slate-700'
-              }`}>
-                {checkInPendingCount > 0 ? `${checkInPendingCount} chờ` : `${tasks.pendingCheckIns.length} xong`}
-              </span>
+              <KeyRound className="w-3.5 h-3.5" />
+              <span>Tiếp đón ({tasks.pendingCheckIns.length})</span>
             </button>
 
             <button
               type="button"
-              onClick={() => setActiveTab('return')}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 shrink-0 ${
-                activeTab === 'return'
+              onClick={() => setFilterCategory('return')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                filterCategory === 'return'
                   ? 'bg-blue-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                  : 'text-slate-600 hover:text-blue-700 hover:bg-blue-50'
               }`}
             >
-              <ClipboardCheck className="w-4 h-4" />
-              <span>2. Lịch trả kho</span>
-              <span className={`px-2 py-0.5 rounded-full text-xs font-mono font-bold ${
-                activeTab === 'return'
-                  ? 'bg-white/20 text-white'
-                  : returnPendingCount > 0
-                  ? 'bg-blue-100 text-blue-800'
-                  : 'bg-slate-200 text-slate-700'
-              }`}>
-                {returnPendingCount > 0 ? `${returnPendingCount} chờ` : `${tasks.pendingReturns.length} xong`}
-              </span>
+              <ClipboardCheck className="w-3.5 h-3.5" />
+              <span>Nghiệm thu ({tasks.pendingReturns.length})</span>
             </button>
 
             <button
               type="button"
-              onClick={() => setActiveTab('incident')}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 shrink-0 ${
-                activeTab === 'incident'
+              onClick={() => setFilterCategory('incident')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                filterCategory === 'incident'
                   ? 'bg-amber-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                  : 'text-slate-600 hover:text-amber-700 hover:bg-amber-50'
               }`}
             >
-              <AlertTriangle className="w-4 h-4" />
-              <span>3. Sự cố & Vận hành</span>
-              <span className={`px-2 py-0.5 rounded-full text-xs font-mono font-bold ${
-                activeTab === 'incident'
-                  ? 'bg-white/20 text-white'
-                  : incidentPendingCount > 0
-                  ? 'bg-amber-100 text-amber-800'
-                  : 'bg-slate-200 text-slate-700'
-              }`}>
-                {incidentPendingCount > 0 ? `${incidentPendingCount} cần xử lý` : `${tasks.openSupportRequests.length} xong`}
-              </span>
+              <AlertTriangle className="w-3.5 h-3.5" />
+              <span>Sự cố ({tasks.openSupportRequests.length})</span>
             </button>
           </div>
 
-          {/* Quick Status Chips */}
-          <div className="flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl text-xs font-semibold self-start sm:self-center">
+          {/* Bộ lọc trạng thái: Tất cả / Chờ xử lý / Đã xong */}
+          <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto bg-slate-100/90 p-1 rounded-xl">
             <button
               type="button"
               onClick={() => setStatusFilter('ALL')}
-              className={`px-3 py-1.5 rounded-lg transition ${
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
                 statusFilter === 'ALL'
-                  ? 'bg-white text-slate-900 shadow-xs font-bold'
-                  : 'text-slate-500 hover:text-slate-900'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
               }`}
             >
               Tất cả ({currentTotal})
@@ -344,10 +629,10 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
             <button
               type="button"
               onClick={() => setStatusFilter('PENDING')}
-              className={`px-3 py-1.5 rounded-lg transition ${
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
                 statusFilter === 'PENDING'
-                  ? 'bg-white text-amber-700 shadow-xs font-bold'
-                  : 'text-slate-500 hover:text-slate-900'
+                  ? 'bg-white text-amber-700 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
               }`}
             >
               Chờ xử lý ({currentPending})
@@ -355,10 +640,10 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
             <button
               type="button"
               onClick={() => setStatusFilter('COMPLETED')}
-              className={`px-3 py-1.5 rounded-lg transition ${
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
                 statusFilter === 'COMPLETED'
-                  ? 'bg-white text-emerald-700 shadow-xs font-bold'
-                  : 'text-slate-500 hover:text-slate-900'
+                  ? 'bg-white text-emerald-700 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
               }`}
             >
               Đã xong ({currentDone})
@@ -366,27 +651,34 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
           </div>
         </div>
 
-        {/* Nội dung tương ứng từng Tab */}
-        <div className="p-4 sm:p-5">
-          {/* TAB 1: CHECK-IN QUEUE */}
-          {activeTab === 'checkin' && (
-            <div className="space-y-3">
-              {filteredCheckIns.length === 0 ? (
-                <div className="py-12 px-4 text-center rounded-2xl bg-slate-50/50 border border-dashed border-slate-200">
-                  <div className="w-12 h-12 mx-auto rounded-full bg-teal-50 text-teal-600 flex items-center justify-center mb-3">
-                    <CheckCircle2 className="w-6 h-6" />
-                  </div>
-                  <h3 className="text-sm font-bold text-slate-900 mb-1">
-                    {q ? `Không tìm thấy kết quả nào khớp với "${searchQuery}"` : 'Không có lịch hẹn nhận kho cần xử lý'}
-                  </h3>
-                  <p className="text-xs text-slate-500 max-w-md mx-auto mb-4">
-                    {q
-                      ? 'Vui lòng kiểm tra lại từ khóa tìm kiếm (SĐT, Họ tên, Mã kho) hoặc làm mới danh sách.'
-                      : statusFilter === 'PENDING'
-                      ? 'Tuyệt vời! Toàn bộ lịch nhận kho trong ca trực đã được tiếp đón & bàn giao hoàn tất.'
-                      : 'Chưa có lịch hẹn nhận kho nào được xếp trong ngày này.'}
-                  </p>
-                  {!q && (
+        {/* Nội dung danh sách công việc */}
+        <div className="p-4 sm:p-5 space-y-6">
+          {totalFilteredCount === 0 ? (
+            <div className="py-14 px-4 text-center rounded-2xl bg-slate-50/50 border border-dashed border-slate-200">
+              <div className="w-12 h-12 mx-auto rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
+                <CheckCheck className="w-6 h-6" />
+              </div>
+              <h3 className="text-sm font-bold text-slate-900 mb-1">
+                {q ? `Không tìm thấy kết quả nào khớp với "${searchQuery}"` : 'Không có công việc nào cần xử lý'}
+              </h3>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                {q
+                  ? 'Vui lòng kiểm tra lại từ khóa tìm kiếm (SĐT, Họ tên, Mã kho) hoặc làm mới danh sách.'
+                  : statusFilter === 'PENDING'
+                  ? 'Tuyệt vời! Toàn bộ nhiệm vụ trong ca trực đã hoàn tất xuất sắc.'
+                  : 'Hiện tại chưa có công việc nào được phân công trong ngày này.'}
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* KHỐI 1: LỊCH TIẾP ĐÓN NHẬN KHO (CHECK-IN) */}
+              {(filterCategory === 'ALL' || filterCategory === 'checkin') && filteredCheckIns.length > 0 && (
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-2">
+                      <KeyRound className="w-4 h-4 text-teal-600" />
+                      <span>1. Lịch tiếp đón nhận kho ({filteredCheckIns.length})</span>
+                    </h3>
                     <button
                       type="button"
                       onClick={() => {
@@ -395,130 +687,26 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
                         if (selectedFacilityId) params.set('facilityId', String(selectedFacilityId));
                         navigate(`/staff/check-in${params.toString() ? `?${params.toString()}` : ''}`);
                       }}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition shadow-xs cursor-pointer"
+                      className="text-xs font-semibold text-teal-700 hover:text-teal-800 flex items-center gap-1 cursor-pointer"
                     >
-                      <KeyRound className="w-4 h-4" />
-                      <span>Tiếp đón khách vãng lai (Check-in ngay)</span>
+                      <span>Mở bàn Check-in toàn cảnh</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
                     </button>
-                  )}
-                </div>
-              ) : (
-                filteredCheckIns.map((item) => {
-                  const isDone = isCheckInDone(item);
-                  const handleGoToCheckIn = () => {
-                    const params = new URLSearchParams();
-                    const cId = item.contractId || item.reservationId;
-                    if (cId) params.set('contractId', String(cId));
-                    if (selectedDate) params.set('date', selectedDate);
-                    if (selectedFacilityId) params.set('facilityId', String(selectedFacilityId));
-                    navigate(`/staff/check-in?${params.toString()}`);
-                  };
-
-                  return (
-                    <div
-                      key={item.reservationId || item.contractId}
-                      className={`p-4 rounded-xl border transition-all duration-200 flex flex-col md:flex-row md:items-center justify-between gap-4 ${
-                        isDone
-                          ? 'border-emerald-200/70 bg-emerald-50/15 hover:border-emerald-300'
-                          : 'border-slate-200/90 hover:border-teal-300 bg-white shadow-xs hover:shadow-sm'
-                      }`}
-                    >
-                      <div className="flex items-start sm:items-center gap-3.5 flex-1 min-w-0">
-                        {/* Unit Code Badge to bản */}
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 font-mono font-bold text-sm ${
-                          isDone ? 'bg-emerald-100 text-emerald-800' : 'bg-teal-50 text-teal-700 border border-teal-200'
-                        }`}>
-                          {item.unitCode}
-                        </div>
-                        <div className="space-y-1 min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-bold text-slate-900 text-sm sm:text-base truncate">{item.customerName}</span>
-                            {item.customerPhone && (
-                              <a
-                                href={`tel:${item.customerPhone}`}
-                                className="inline-flex items-center gap-1 font-mono text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100 hover:bg-teal-50 text-slate-600 hover:text-teal-700 transition"
-                                title="Gọi cho khách hàng"
-                              >
-                                <Phone className="w-3 h-3 text-slate-400" />
-                                <span>{item.customerPhone}</span>
-                              </a>
-                            )}
-                            {item.contractCode && (
-                              <span className="font-mono text-xs text-slate-400">#{item.contractCode}</span>
-                            )}
-                          </div>
-                          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                            <span className="flex items-center gap-1 text-slate-600 font-medium">
-                              <Clock className="w-3.5 h-3.5 text-teal-600" /> Giờ hẹn: <strong className="text-slate-800">{item.appointmentTime}</strong>
-                            </span>
-                            {item.facilityName && (
-                              <span className="text-slate-500 font-medium">· Cơ sở: {item.facilityName}</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Trạng thái & Nút thao tác 1 chạm */}
-                      <div className="flex items-center gap-3 shrink-0 self-end md:self-center">
-                        {isDone ? (
-                          <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                            <span>Đã bàn giao</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                            <Clock className="w-3.5 h-3.5 text-amber-600" />
-                            <span>Chờ tiếp đón</span>
-                          </span>
-                        )}
-
-                        {isDone ? (
-                          <button
-                            type="button"
-                            onClick={handleGoToCheckIn}
-                            className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
-                          >
-                            <span>Hồ sơ bàn giao</span>
-                            <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={handleGoToCheckIn}
-                            className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs hover:shadow-sm cursor-pointer"
-                          >
-                            <KeyRound className="w-3.5 h-3.5" />
-                            <span>Tiếp đón & Bàn giao</span>
-                            <ArrowRight className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          )}
-
-          {/* TAB 2: RETURN QUEUE */}
-          {activeTab === 'return' && (
-            <div className="space-y-3">
-              {filteredReturns.length === 0 ? (
-                <div className="py-12 px-4 text-center rounded-2xl bg-slate-50/50 border border-dashed border-slate-200">
-                  <div className="w-12 h-12 mx-auto rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
-                    <CheckCircle2 className="w-6 h-6" />
                   </div>
-                  <h3 className="text-sm font-bold text-slate-900 mb-1">
-                    {q ? `Không tìm thấy kết quả nào khớp với "${searchQuery}"` : 'Không có lịch hẹn trả kho cần xử lý'}
-                  </h3>
-                  <p className="text-xs text-slate-500 max-w-md mx-auto mb-4">
-                    {q
-                      ? 'Vui lòng kiểm tra lại từ khóa tìm kiếm hoặc làm mới danh sách.'
-                      : statusFilter === 'PENDING'
-                      ? 'Toàn bộ hợp đồng trả kho đã được nghiệm thu và hoàn cọc hoàn tất.'
-                      : 'Chưa có hợp đồng nào hẹn trả kho trong ngày này.'}
-                  </p>
-                  {!q && (
+                  <div className="space-y-3">
+                    {filteredCheckIns.map(renderCheckInItem)}
+                  </div>
+                </div>
+              )}
+
+              {/* KHỐI 2: LỊCH TRẢ KHO & NGHIỆM THU PHÒNG (RETURN) */}
+              {(filterCategory === 'ALL' || filterCategory === 'return') && filteredReturns.length > 0 && (
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-2">
+                      <ClipboardCheck className="w-4 h-4 text-blue-600" />
+                      <span>2. Lịch trả kho & Nghiệm thu phòng ({filteredReturns.length})</span>
+                    </h3>
                     <button
                       type="button"
                       onClick={() => {
@@ -527,227 +715,41 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
                         if (selectedFacilityId) params.set('facilityId', String(selectedFacilityId));
                         navigate(`/staff/return${params.toString() ? `?${params.toString()}` : ''}`);
                       }}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-xs cursor-pointer"
+                      className="text-xs font-semibold text-blue-700 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
                     >
-                      <ClipboardCheck className="w-4 h-4" />
-                      <span>Tra cứu hợp đồng trả kho</span>
+                      <span>Tra cứu tất cả hợp đồng trả kho</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
                     </button>
-                  )}
+                  </div>
+                  <div className="space-y-3">
+                    {filteredReturns.map(renderReturnItem)}
+                  </div>
                 </div>
-              ) : (
-                filteredReturns.map((item) => {
-                  const isDone = isReturnDone(item);
-                  const handleGoToReturn = () => {
-                    const params = new URLSearchParams();
-                    if (selectedDate) params.set('date', selectedDate);
-                    if (selectedFacilityId) params.set('facilityId', String(selectedFacilityId));
-                    navigate(`/staff/return/${item.contractId}${params.toString() ? `?${params.toString()}` : ''}`);
-                  };
+              )}
 
-                  return (
-                    <div
-                      key={item.contractId}
-                      className={`p-4 rounded-xl border transition-all duration-200 flex flex-col md:flex-row md:items-center justify-between gap-4 ${
-                        isDone
-                          ? 'border-emerald-200/70 bg-emerald-50/15 hover:border-emerald-300'
-                          : 'border-slate-200/90 hover:border-blue-300 bg-white shadow-xs hover:shadow-sm'
-                      }`}
+              {/* KHỐI 3: SỰ CỐ KỸ THUẬT & VẬN HÀNH (INCIDENTS) */}
+              {(filterCategory === 'ALL' || filterCategory === 'incident') && filteredIncidents.length > 0 && (
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-amber-600" />
+                      <span>3. Sự cố kỹ thuật & Vận hành thực địa ({filteredIncidents.length})</span>
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/staff/incidents')}
+                      className="text-xs font-semibold text-amber-700 hover:text-amber-800 flex items-center gap-1 cursor-pointer"
                     >
-                      <div className="flex items-start sm:items-center gap-3.5 flex-1 min-w-0">
-                        {/* Unit Code Badge */}
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 font-mono font-bold text-sm ${
-                          isDone ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-50 text-blue-700 border border-blue-200'
-                        }`}>
-                          {item.unitCode}
-                        </div>
-                        <div className="space-y-1 min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-bold text-slate-900 text-sm sm:text-base truncate">{item.customerName}</span>
-                            {item.customerPhone && (
-                              <a
-                                href={`tel:${item.customerPhone}`}
-                                className="inline-flex items-center gap-1 font-mono text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-700 transition"
-                                title="Gọi cho khách hàng"
-                              >
-                                <Phone className="w-3 h-3 text-slate-400" />
-                                <span>{item.customerPhone}</span>
-                              </a>
-                            )}
-                            {item.contractCode && (
-                              <span className="font-mono text-xs text-slate-400">#{item.contractCode}</span>
-                            )}
-                          </div>
-                          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                            <span className="flex items-center gap-1 text-slate-600 font-medium">
-                              <Clock className="w-3.5 h-3.5 text-blue-600" /> Hẹn trả: <strong className="text-slate-800">{item.appointmentTime}</strong>
-                            </span>
-                            {item.depositAmount !== undefined && (
-                              <span className="text-slate-600">
-                                Tiền cọc: <strong className="font-mono text-emerald-700">{item.depositAmount.toLocaleString('vi-VN')} đ</strong>
-                              </span>
-                            )}
-                            {item.facilityName && (
-                              <span className="text-slate-500">· {item.facilityName}</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Trạng thái & Nút thao tác 1 chạm */}
-                      <div className="flex items-center gap-3 shrink-0 self-end md:self-center">
-                        {isDone ? (
-                          <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                            <span>Đã nghiệm thu</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                            <Clock className="w-3.5 h-3.5 text-amber-600" />
-                            <span>Chờ kiểm tra phòng</span>
-                          </span>
-                        )}
-
-                        {isDone ? (
-                          <button
-                            type="button"
-                            onClick={handleGoToReturn}
-                            className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
-                          >
-                            <span>Biên bản nghiệm thu</span>
-                            <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={handleGoToReturn}
-                            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs hover:shadow-sm cursor-pointer"
-                          >
-                            <ClipboardCheck className="w-3.5 h-3.5" />
-                            <span>Tiến hành nghiệm thu</span>
-                            <ArrowRight className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          )}
-
-          {/* TAB 3: INCIDENTS */}
-          {activeTab === 'incident' && (
-            <div className="space-y-3">
-              {/* Shortcut chuyển nhanh sang trang Sự cố chi tiết */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/80 text-xs gap-2">
-                <span className="text-amber-950 font-medium flex items-center gap-1.5">
-                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                  Xem và xử lý toàn bộ sự cố kỹ thuật và kiểm tra thực địa ca trực:
-                </span>
-                <button
-                  type="button"
-                  onClick={() => navigate('/staff/incidents')}
-                  className="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold flex items-center gap-1 shrink-0 transition shadow-xs self-start sm:self-auto cursor-pointer"
-                >
-                  <span>Mở Trang Sự cố chi tiết</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              {filteredIncidents.length === 0 ? (
-                <div className="py-12 px-4 text-center rounded-2xl bg-slate-50/50 border border-dashed border-slate-200">
-                  <div className="w-12 h-12 mx-auto rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
-                    <CheckCircle2 className="w-6 h-6" />
+                      <span>Chi tiết sự cố</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </button>
                   </div>
-                  <h3 className="text-sm font-bold text-slate-900 mb-1">
-                    {q ? `Không tìm thấy kết quả nào khớp với "${searchQuery}"` : 'Không có sự cố kỹ thuật nào tồn đọng'}
-                  </h3>
-                  <p className="text-xs text-slate-500 max-w-md mx-auto">
-                    {q
-                      ? 'Vui lòng kiểm tra lại từ khóa tìm kiếm.'
-                      : 'Hệ thống vận hành và các ô kho tại cơ sở đang hoạt động an toàn và ổn định.'}
-                  </p>
+                  <div className="space-y-3">
+                    {filteredIncidents.map(renderIncidentItem)}
+                  </div>
                 </div>
-              ) : (
-                filteredIncidents.map((item) => (
-                  <div
-                    key={item.ticketId || item.code}
-                    className="p-4 rounded-xl border border-slate-200/90 hover:border-amber-300 bg-white shadow-xs hover:shadow-sm transition-all duration-200 flex flex-col md:flex-row md:items-center justify-between gap-4"
-                  >
-                    <div className="flex items-start sm:items-center gap-3.5 flex-1 min-w-0">
-                      <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-amber-50 text-amber-700 border border-amber-200">
-                        <AlertTriangle className="w-5 h-5" />
-                      </div>
-                      <div className="space-y-1 min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          {item.code && (
-                            <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
-                              {item.code}
-                            </span>
-                          )}
-                          <span className="font-bold text-slate-900 text-sm sm:text-base">{item.title || 'Sự cố vận hành'}</span>
-                          <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
-                            Ô {item.unitCode || '---'}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                          {item.customerName && (
-                            <span>Khách: <strong className="text-slate-700">{item.customerName}</strong></span>
-                          )}
-                          {item.customerPhone && (
-                            <a href={`tel:${item.customerPhone}`} className="hover:text-teal-600 transition">
-                              ({item.customerPhone})
-                            </a>
-                          )}
-                          {item.facilityName && <span>· {item.facilityName}</span>}
-                          {item.createdAt && (
-                            <span className="text-slate-400">· Tạo: {new Date(item.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 shrink-0 self-end md:self-center">
-                      <span
-                        className={`font-semibold px-2.5 py-1 rounded-full text-xs ${
-                          item.status === 'RESOLVED' || item.status === 'CLOSED'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : item.status === 'IN_PROGRESS'
-                            ? 'bg-sky-50 text-sky-700 border border-sky-200'
-                            : 'bg-amber-50 text-amber-700 border border-amber-200'
-                        }`}
-                      >
-                        {item.status === 'RESOLVED' || item.status === 'CLOSED'
-                          ? 'Đã khắc phục'
-                          : item.status === 'IN_PROGRESS'
-                          ? 'Đang xử lý'
-                          : 'Cần xử lý'}
-                      </span>
-
-                      <button
-                        type="button"
-                        onClick={() => handleOpenIncident(item)}
-                        className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs hover:shadow-sm"
-                      >
-                        {item.status === 'RESOLVED' || item.status === 'CLOSED' ? (
-                          <span>Xem kết quả</span>
-                        ) : item.status === 'IN_PROGRESS' ? (
-                          <>
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>Cập nhật & Nghiệm thu</span>
-                          </>
-                        ) : (
-                          <>
-                            <AlertTriangle className="w-3.5 h-3.5" />
-                            <span>Xử lý ngay</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                ))
               )}
-            </div>
+            </>
           )}
         </div>
       </div>
