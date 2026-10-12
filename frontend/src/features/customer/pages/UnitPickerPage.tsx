@@ -380,15 +380,11 @@ export const UnitPickerPage: React.FC = () => {
     };
   }, [currentFacility.id, unitTypes, startDate, durationMonths]);
 
-  // Bộ lọc môi trường kho: Tất cả, Tiêu chuẩn, Máy lạnh
-  const [envFilter, setEnvFilter] = useState<'ALL' | 'STANDARD' | 'CLIMATE_CONTROLLED'>('ALL');
-
-  // Lọc các loại kho theo chế độ Tất cả / Standard / Climate
+  // Lọc các loại kho theo chế độ Standard / Climate
   const availableTypes = useMemo(() => {
-    if (envFilter === 'ALL') return unitTypes;
-    const list = unitTypes.filter((t) => t.storageType === envFilter);
+    const list = unitTypes.filter((t) => t.storageType === storageType);
     return list.length > 0 ? list : unitTypes;
-  }, [unitTypes, envFilter]);
+  }, [unitTypes, storageType]);
 
   const standardTypesCount = useMemo(() => unitTypes.filter((t) => t.storageType === 'STANDARD').length, [unitTypes]);
   const climateTypesCount = useMemo(() => unitTypes.filter((t) => t.storageType === 'CLIMATE_CONTROLLED').length, [unitTypes]);
@@ -467,27 +463,23 @@ export const UnitPickerPage: React.FC = () => {
     }
   };
 
-  const handleSelectEnvTab = (mode: 'ALL' | 'STANDARD' | 'CLIMATE_CONTROLLED') => {
-    setEnvFilter(mode);
-    if (mode !== 'ALL') {
-      setStorageType(mode);
+  const handleSelectStorageType = (sType: StorageType) => {
+    setStorageType(sType);
+    if (selectedUnitId) {
+      const current = displayFacilityUnits.find((u) => u.id === selectedUnitId);
+      if (!current || current.storageType !== sType) {
+        setSelectedUnitId(null);
+      }
     }
-    const filtered = mode === 'ALL' ? unitTypes : unitTypes.filter((t) => t.storageType === mode);
-    const firstListed = filtered.find((t) => t.baseMonthlyPrice > 0);
+    const typesForType = unitTypes.filter((t) => t.storageType === sType);
+    const firstListed = typesForType.find((t) => t.baseMonthlyPrice > 0);
     if (firstListed) {
       setSelectedTypeId(firstListed.id);
       setSelectedSize(firstListed.sizeCategory);
-      setStorageType(firstListed.storageType);
-    } else if (filtered.length > 0) {
-      setSelectedTypeId(filtered[0].id);
-      setSelectedSize(filtered[0].sizeCategory);
-      setStorageType(filtered[0].storageType);
+    } else if (typesForType.length > 0) {
+      setSelectedTypeId(typesForType[0].id);
+      setSelectedSize(typesForType[0].sizeCategory);
     }
-    setSelectedUnitId(null);
-  };
-
-  const handleSelectStorageType = (sType: StorageType) => {
-    handleSelectEnvTab(sType);
   };
 
   const handleSelectUnitOnGrid = (unit: StorageUnit) => {
@@ -790,48 +782,25 @@ export const UnitPickerPage: React.FC = () => {
               )}
             </div>
 
-            {/* Môi trường kho tabs - 3 chế độ: Tất cả, Tiêu chuẩn, Máy lạnh */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <button
-                type="button"
-                onClick={() => handleSelectEnvTab('ALL')}
-                className={`p-3.5 rounded-xl border-2 text-left transition-all cursor-pointer flex items-center justify-between ${
-                  envFilter === 'ALL'
-                    ? 'border-[#008B74] bg-[#e6f7f4] shadow-xs ring-2 ring-[#008B74]/20'
-                    : 'border-slate-200 hover:border-slate-300 bg-white'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-base">🏢</span>
-                  <div>
-                    <span className="text-xs font-black text-slate-900 block">Tất cả loại kho</span>
-                    <span className="text-[10px] text-slate-500 font-medium">Toàn bộ ({unitTypes.length} loại)</span>
-                  </div>
-                </div>
-                {envFilter === 'ALL' && (
-                  <div className="w-5 h-5 rounded-full bg-[#008B74] text-white flex items-center justify-center shrink-0">
-                    <Check className="w-3.5 h-3.5 stroke-[3]" />
-                  </div>
-                )}
-              </button>
-
+            {/* Môi trường kho tabs - 2 chế độ: Tiêu chuẩn, Máy lạnh */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <button
                 type="button"
                 onClick={() => handleSelectStorageType('STANDARD')}
-                className={`p-3.5 rounded-xl border-2 text-left transition-all cursor-pointer flex items-center justify-between ${
-                  envFilter === 'STANDARD'
+                className={`p-4 rounded-xl border-2 text-left transition-all cursor-pointer flex items-center justify-between ${
+                  storageType === 'STANDARD'
                     ? 'border-[#008B74] bg-[#e6f7f4] shadow-xs ring-2 ring-[#008B74]/20'
                     : 'border-slate-200 hover:border-slate-300 bg-white'
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <span className="text-base">📦</span>
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xl">📦</span>
                   <div>
-                    <span className="text-xs font-black text-slate-900 block">Kho Tiêu Chuẩn</span>
-                    <span className="text-[10px] text-slate-500 font-medium">Nhiệt độ phòng ({standardTypesCount} loại)</span>
+                    <span className="text-sm font-black text-slate-900 block">Kho Tiêu Chuẩn</span>
+                    <span className="text-[11px] text-slate-500 font-medium">Nhiệt độ phòng ({standardTypesCount} loại)</span>
                   </div>
                 </div>
-                {envFilter === 'STANDARD' && (
+                {storageType === 'STANDARD' && (
                   <div className="w-5 h-5 rounded-full bg-[#008B74] text-white flex items-center justify-center shrink-0">
                     <Check className="w-3.5 h-3.5 stroke-[3]" />
                   </div>
@@ -841,20 +810,20 @@ export const UnitPickerPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleSelectStorageType('CLIMATE_CONTROLLED')}
-                className={`p-3.5 rounded-xl border-2 text-left transition-all cursor-pointer flex items-center justify-between ${
-                  envFilter === 'CLIMATE_CONTROLLED'
+                className={`p-4 rounded-xl border-2 text-left transition-all cursor-pointer flex items-center justify-between ${
+                  storageType === 'CLIMATE_CONTROLLED'
                     ? 'border-[#008B74] bg-[#e6f7f4] shadow-xs ring-2 ring-[#008B74]/20'
                     : 'border-slate-200 hover:border-slate-300 bg-white'
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <span className="text-base">❄️</span>
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xl">❄️</span>
                   <div>
-                    <span className="text-xs font-black text-slate-900 block">Kho Máy Lạnh (24/7)</span>
-                    <span className="text-[10px] text-slate-500 font-medium">22°C - 25°C ({climateTypesCount} loại)</span>
+                    <span className="text-sm font-black text-slate-900 block">Kho Máy Lạnh (24/7)</span>
+                    <span className="text-[11px] text-slate-500 font-medium">22°C - 25°C & kiểm soát ẩm ({climateTypesCount} loại)</span>
                   </div>
                 </div>
-                {envFilter === 'CLIMATE_CONTROLLED' && (
+                {storageType === 'CLIMATE_CONTROLLED' && (
                   <div className="w-5 h-5 rounded-full bg-[#008B74] text-white flex items-center justify-center shrink-0">
                     <Check className="w-3.5 h-3.5 stroke-[3]" />
                   </div>
