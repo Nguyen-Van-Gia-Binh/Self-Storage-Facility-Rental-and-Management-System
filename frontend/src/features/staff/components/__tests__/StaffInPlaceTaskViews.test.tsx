@@ -73,5 +73,17 @@ describe('Staff In-Place Task Views & Full-Screen Detail View Integration', () =
     expect(overviewContent).toMatch(/Chờ xử lý \(\{currentPending\}\)/);
     expect(overviewContent).toMatch(/Đã xong \(\{currentDone\}\)/);
   });
+
+  it('DailyTasksOverview rút gọn thẻ nhiệm vụ tối giản, loại bỏ tiêu đề phụ lặp lại và đẩy thông tin chi tiết vào bên trong view', () => {
+    const overviewContent = fs.readFileSync(dailyTasksOverviewPath, 'utf-8');
+    const incidentViewContent = fs.readFileSync(staffIncidentViewPath, 'utf-8');
+
+    expect(overviewContent).not.toMatch(/1\. Lịch tiếp đón nhận kho/);
+    expect(overviewContent).not.toMatch(/2\. Lịch trả kho & Nghiệm thu phòng/);
+    expect(overviewContent).not.toMatch(/3\. Sự cố kỹ thuật & Vận hành thực địa/);
+    expect(overviewContent).not.toMatch(/Tiền cọc:/);
+    expect(incidentViewContent).toMatch(/detailDescription/);
+  });
 });
+
 

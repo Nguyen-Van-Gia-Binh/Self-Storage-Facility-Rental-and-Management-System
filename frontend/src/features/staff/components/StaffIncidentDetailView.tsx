@@ -271,6 +271,12 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
     faultParty === null ||
     (faultParty === 'CUSTOMER' && !isCustomerPaidConfirmed);
 
+  const rawTitle = task.title || 'Xử lý sự cố thực địa';
+  const colonIdx = rawTitle.indexOf(':');
+  const shortTitle = colonIdx !== -1 ? rawTitle.slice(0, colonIdx).trim() : rawTitle;
+  const detailDescription =
+    task.description || (colonIdx !== -1 ? rawTitle.slice(colonIdx + 1).trim() : '');
+
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* Toast Notification */}
@@ -312,7 +318,7 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
                 Ô {task.unitCode || '---'}
               </span>
               <h2 className="text-base sm:text-lg font-bold text-slate-900">
-                {task.title || 'Xử lý sự cố thực địa'}
+                {shortTitle}
               </h2>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -387,11 +393,11 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
             </div>
 
             {/* Mô tả sự cố */}
-            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 space-y-2">
-              <span className="text-xs font-bold text-slate-700">Tiêu đề: {task.title}</span>
-              {task.description && (
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 space-y-2.5">
+              <span className="text-xs font-bold text-slate-800 block">{shortTitle}</span>
+              {detailDescription && (
                 <p className="text-xs text-slate-600 leading-relaxed bg-white p-2.5 rounded-lg border border-slate-200/60">
-                  "{task.description}"
+                  {detailDescription}
                 </p>
               )}
               <div className="flex items-center justify-between text-xs pt-1">
@@ -406,6 +412,14 @@ export const StaffIncidentDetailView: React.FC<StaffIncidentDetailViewProps> = (
                   {task.facilityName || 'Cơ sở hiện tại'}
                 </span>
               </div>
+              {task.createdAt && (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-500">Thời gian báo:</span>
+                  <span className="font-mono font-medium text-slate-700">
+                    {new Date(task.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Thông tin khách hàng */}
