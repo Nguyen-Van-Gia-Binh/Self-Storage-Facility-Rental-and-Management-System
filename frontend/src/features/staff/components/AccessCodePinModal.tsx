@@ -52,7 +52,7 @@ export const AccessCodePinModal: React.FC<AccessCodePinModalProps> = ({
           </div>
           <h2 className="text-xl font-extrabold tracking-tight">BÀN GIAO Ô KHO THÀNH CÔNG!</h2>
           <p className="text-xs text-white/90 mt-1">
-            Hợp đồng <span className="font-mono font-bold text-white">{contract.code}</span> đã chính thức chuyển sang trạng thái <strong className="underline">ACTIVE</strong>
+            Hợp đồng <span className="font-mono font-bold text-white">{contract.code}</span> đã chính thức chuyển sang trạng thái <strong className="underline">Đang hiệu lực</strong>
           </p>
         </div>
 
@@ -72,7 +72,7 @@ export const AccessCodePinModal: React.FC<AccessCodePinModalProps> = ({
             </div>
           </div>
 
-          {/* Hộp mã PIN theo độ dài chính sách (BR-ACC-01) */}
+          {/* Hộp mã PIN mở cửa bảo mật */}
           <div className="text-center space-y-2">
             <div className="flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-600">
               <KeyRound className="w-4 h-4 text-brand-600" />
@@ -116,9 +116,9 @@ export const AccessCodePinModal: React.FC<AccessCodePinModalProps> = ({
               Hệ thống tự động kích hoạt:
             </div>
             <ul className="list-disc list-inside space-y-1 text-[11px] text-emerald-800 pl-1">
-              <li>Ô kho <strong className="font-mono">{contract.storageUnitCode}</strong> đã chuyển từ <em>Reserved</em> sang <em>Occupied</em>.</li>
-              <li>Hợp đồng đã chốt ngày bắt đầu thuê và gửi mã kích hoạt lên app của khách.</li>
-              <li>Đã tự động gửi SMS và đính kèm bản sao PDF biên bản bàn giao điện tử về email.</li>
+              <li>Ô kho <strong className="font-mono">{contract.storageUnitCode}</strong> đã chuyển từ trạng thái <em>Đã đặt chỗ</em> sang <em>Đang lưu trữ</em>.</li>
+              <li>Hợp đồng đã chốt ngày bắt đầu thuê và gửi mã kích hoạt lên ứng dụng của khách.</li>
+              <li>Đã tự động gửi tin nhắn và đính kèm bản sao biên bản bàn giao điện tử về hộp thư của khách hàng.</li>
             </ul>
           </div>
 

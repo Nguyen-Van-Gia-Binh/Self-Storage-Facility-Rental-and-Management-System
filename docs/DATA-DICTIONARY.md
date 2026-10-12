@@ -500,6 +500,6 @@ Lưu trữ tệp đa hình: ảnh biên bản bàn giao, ảnh trả kho, bằng
 | `id` | `BIGINT` | Có | `PK`, `IDENTITY(1,1)` | Khóa chính |
 | `entity_type` | `NVARCHAR(30)` | Có | | Bảng liên kết (vd: `HANDOVER_RECORD`, `RETURN_REQUEST`, `SUPPORT_REQUEST`) |
 | `entity_id` | `BIGINT` | Có | | ID bản ghi liên kết |
-| `file_url` | `NVARCHAR(500)` | Có | | Đường dẫn lưu trữ tệp (Cloudinary / S3 URL) |
+| `file_url` | `NVARCHAR(MAX)` | Có | | Đường dẫn lưu trữ tệp hoặc dữ liệu ảnh chụp trực tiếp từ Camera (Data URL / Cloud URL) |
 | `uploaded_by` | `BIGINT` | Có | `FK` $\rightarrow$ `app_user(id)` | Người tải tệp lên hệ thống |
 | `created_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Thời điểm tải lên |

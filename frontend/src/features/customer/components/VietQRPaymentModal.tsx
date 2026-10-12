@@ -386,7 +386,7 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
               <div className="flex items-center gap-2">
                 <Clock className="w-5 h-5 text-rose-600 flex-shrink-0" />
                 <div>
-                  <span className="text-xs font-bold block">Xử lý quá hạn theo quy định BR-OVD-03</span>
+                  <span className="text-xs font-bold block">Xử lý quá hạn hợp đồng</span>
                   <span className="text-[11px] text-rose-700">Phí phạt 10% tiền cọc/ngày. Tất toán nợ để khôi phục quyền Báo trả kho.</span>
                 </div>
               </div>
@@ -483,7 +483,7 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
                   </div>
                   <span className="text-[11px] text-slate-500 font-medium mt-2 flex items-center gap-1">
                     <QrCode className="w-3.5 h-3.5 text-brand-600" />
-                    Quét bằng app ngân hàng
+                    Quét bằng ứng dụng ngân hàng
                   </span>
                 </div>
 
@@ -581,7 +581,7 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
                 <span className="text-[11px] text-rose-600 font-semibold">Tất toán nợ phạt</span>
               </div>
               <div className="flex justify-between text-slate-600">
-                <span>Phí phạt quá hạn tích lũy (BR-OVD-03):</span>
+                <span>Phí phạt quá hạn tích lũy:</span>
                 <span className="font-bold text-rose-600">{formatVND(totalAmount)}</span>
               </div>
               <div className="pt-2 border-t border-slate-200 flex justify-between items-center text-sm">
@@ -624,7 +624,7 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
             <span>
               {paymentType === 'OVERDUE_PENALTY'
                 ? 'Hệ thống sẽ đối soát tự động trong 10-30 giây. Sau khi thanh toán thành công, nợ phạt sẽ được xóa và quyền Báo trả kho sẽ được mở lại ngay lập tức.'
-                : 'Hệ thống sẽ đối soát tự động trong 10-30 giây và cấp ngay Thẻ nhận kho điện tử (Move-in Pass). Mã PIN mở khóa sẽ được kích hoạt tại quầy lễ tân.'}
+                : 'Hệ thống sẽ đối soát tự động trong 10-30 giây và cấp ngay Thẻ nhận kho điện tử. Mã PIN mở khóa sẽ được kích hoạt tại quầy lễ tân.'}
             </span>
           </div>
 

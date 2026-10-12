@@ -266,7 +266,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                   <div className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 flex items-center gap-1.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                     <span>
-                      Bảo lưu toàn bộ quyền lợi khách hàng: Đơn giá thuê ({formatVND(detail?.monthlyPrice || contract.monthlyRent)}/tháng) và tiền cọc bảo đảm ban đầu ({formatVND(detail?.depositAmount || contract.depositHeld)}) được giữ nguyên vẹn theo quy tắc BR-AVL-05 & BR-SUP-02.
+                      Bảo lưu toàn bộ quyền lợi khách hàng: Đơn giá thuê ({formatVND(detail?.monthlyPrice || contract.monthlyRent)}/tháng) và tiền cọc bảo đảm ban đầu ({formatVND(detail?.depositAmount || contract.depositHeld)}) được giữ nguyên vẹn.
                     </span>
                   </div>
                 </div>
@@ -356,9 +356,9 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
 
                   <div className="flex justify-between items-center py-1 border-t border-slate-100">
                     <div>
-                      <span className="text-slate-700 font-semibold block">Tiền cọc bảo đảm (Deposit):</span>
+                      <span className="text-slate-700 font-semibold block">Tiền cọc bảo đảm:</span>
                       <span className="text-[10px] text-slate-400 italic">
-                        Bảo lưu tại tài khoản ngân hàng, quyết toán hoàn cọc sau nghiệm thu trả kho theo BR-RET-04
+                        Bảo lưu tại tài khoản ngân hàng, quyết toán hoàn cọc sau nghiệm thu trả kho
                       </span>
                     </div>
                     <span className="font-bold text-emerald-700 text-sm">
@@ -375,12 +375,12 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                 </div>
               </div>
 
-              {/* Điều 4: Biên bản bàn giao & Nghiệm thu tại chỗ (Check-in Handover) */}
+              {/* Điều 4: Biên bản bàn giao & Nghiệm thu tại chỗ */}
               <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
                 <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
                   <h4 className="font-bold text-slate-800 flex items-center gap-1.5 text-xs uppercase tracking-wider">
                     <CheckSquare className="w-4 h-4 text-brand-600" />
-                    <span>ĐIỀU 4: BIÊN BẢN BÀN GIAO & NGHIỆM THU TẠI CHỖ (CHECK-IN HANDOVER)</span>
+                    <span>ĐIỀU 4: BIÊN BẢN BÀN GIAO & NGHIỆM THU TẠI CHỖ</span>
                   </h4>
                   {isPendingCheckin && (
                     <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
@@ -395,7 +395,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                     <div className="space-y-1">
                       <p className="font-semibold text-amber-900">Ô kho đang ở trạng thái Chờ nhận kho</p>
                       <p className="text-[11px] text-amber-800 leading-relaxed">
-                        Quý khách vui lòng xuất trình CCCD và mã e-Pass tại quầy lễ tân cơ sở. Nhân viên trực sẽ hướng dẫn kiểm tra 4 tiêu chí nghiệm thu thực địa và cùng quý khách xác nhận bàn giao.
+                        Quý khách vui lòng xuất trình CCCD và thẻ nhận kho điện tử tại quầy lễ tân cơ sở. Nhân viên trực sẽ hướng dẫn kiểm tra 4 tiêu chí nghiệm thu thực địa và cùng quý khách xác nhận bàn giao.
                       </p>
                     </div>
                   </div>
@@ -419,7 +419,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
 
                   <div className="pt-2 border-t border-slate-200/80">
                     <p className="font-bold text-slate-700 mb-1.5">
-                      Kết quả kiểm tra 4 tiêu chí nghiệm thu vật lý bàn giao (BR-CHK-02):
+                      Kết quả kiểm tra 4 tiêu chí nghiệm thu vật lý bàn giao:
                     </p>
                     {isHandoverCompleted ? (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-emerald-800 font-medium">

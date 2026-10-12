@@ -42,7 +42,7 @@ describe('CreateSupportTicketModal - SLA Audit', () => {
     expect(screen.queryByText(/Cam kết SLA xử lý tại chỗ trong vòng 2 giờ/i)).not.toBeInTheDocument();
     
     // Check if notice replaced it
-    expect(screen.getByText(/Quản lý cơ sở \(FM\) sẽ tiếp nhận/i)).toBeInTheDocument();
+    expect(screen.getByText(/Quản lý cơ sở sẽ tiếp nhận/i)).toBeInTheDocument();
 
     // Select LOCK_ACCESS
     const lockAccessOption = screen.getByText('Khóa & Mã PIN');

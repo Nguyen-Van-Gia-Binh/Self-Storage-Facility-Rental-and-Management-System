@@ -73,9 +73,9 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
           <div className="flex items-center gap-2">
             <RotateCcw className="w-5 h-5 text-purple-200" />
             <div>
-              <h3 className="font-bold text-base">Phê duyệt quyết toán & Hoàn cọc (FM-04)</h3>
+              <h3 className="font-bold text-base">Phê duyệt quyết toán & Hoàn cọc</h3>
               <p className="text-xs text-purple-200">
-                Thanh lý hợp đồng và xuất lệnh hoàn tiền cọc Deposit trong 7 ngày (BR-RET-05)
+                Thanh lý hợp đồng và xuất lệnh hoàn tiền cọc trong 7 ngày
               </p>
             </div>
           </div>
@@ -114,11 +114,11 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
           {/* Bảng tính quyết toán */}
           <div className="bg-purple-50/50 p-4 rounded-xl border border-purple-200 text-xs space-y-2.5">
             <h4 className="font-bold text-purple-900 uppercase tracking-wider text-[11px]">
-              Bảng tính quyết toán hoàn cọc Deposit (BR-RET-04)
+              Bảng tính quyết toán hoàn cọc
             </h4>
 
             <div className="flex justify-between text-slate-700 pt-1">
-              <span>1. Tiền cọc ban đầu (Deposit):</span>
+              <span>1. Tiền cọc ban đầu:</span>
               <span className="font-mono font-semibold text-slate-900">
                 +{originalDeposit.toLocaleString('vi-VN')} đ
               </span>

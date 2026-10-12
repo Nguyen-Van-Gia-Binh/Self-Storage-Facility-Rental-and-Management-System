@@ -151,7 +151,7 @@ export const UnitTypeFormModal: React.FC<UnitTypeFormModalProps> = ({
                 type="button"
                 onClick={() => {
                   if (!form.name || form.name.includes('Loại S') || form.name.includes('Tiêu Chuẩn')) {
-                    set('name', 'Kho Máy Lạnh (Climate Unit)');
+                    set('name', 'Kho Máy Lạnh');
                   } else if (!form.name.includes('Máy Lạnh') && !form.name.includes('Lạnh')) {
                     set('name', `Kho Máy Lạnh — ${form.name}`);
                   }
@@ -232,8 +232,8 @@ export const UnitTypeFormModal: React.FC<UnitTypeFormModalProps> = ({
             </label>
             {isManager ? (
               <div className="p-3 bg-amber-50/60 border border-amber-200/80 rounded-xl text-xs text-amber-800 flex items-start gap-2">
-                <span className="font-bold shrink-0">Chờ BOM định giá:</span>
-                <span className="text-amber-700">Đơn giá niêm yết sẽ do Ban Giám Đốc (BOM) thẩm định và ban hành theo đơn giá m² của cơ sở (BR-GEN-01).</span>
+                <span className="font-bold shrink-0">Chờ định giá:</span>
+                <span className="text-amber-700">Đơn giá niêm yết sẽ do Ban Giám Đốc thẩm định và ban hành theo đơn giá m² của cơ sở.</span>
               </div>
             ) : (
               <input

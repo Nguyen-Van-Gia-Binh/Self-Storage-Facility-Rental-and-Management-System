@@ -61,7 +61,7 @@ export const ContractTimeline: React.FC<ContractTimelineProps> = ({ contract }) 
     events.push({
       id: 'overdue',
       time: contract.endDateExclusive || '—',
-      title: 'Hợp đồng chuyển trạng thái Quá hạn (OVERDUE)',
+      title: 'Hợp đồng chuyển trạng thái Quá hạn',
       description: `Đã quá hạn ${contract.overdueDays || 1} ngày • Đang tích lũy phí phạt`,
       icon: AlertTriangle,
       color: 'bg-orange-100 text-orange-700',
@@ -86,7 +86,7 @@ export const ContractTimeline: React.FC<ContractTimelineProps> = ({ contract }) 
       id: 'closed',
       time: contract.endDateExclusive || '—',
       title: 'Quyết toán thanh lý & Hoàn cọc thành công',
-      description: 'Hợp đồng đã đóng (CLOSED). Ô kho đã được giải phóng sẵn sàng đón khách mới.',
+      description: 'Hợp đồng đã đóng. Ô kho đã được giải phóng sẵn sàng đón khách mới.',
       icon: CheckCircle2,
       color: 'bg-slate-100 text-slate-700',
     });

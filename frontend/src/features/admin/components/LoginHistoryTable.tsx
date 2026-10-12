@@ -83,7 +83,7 @@ export const LoginHistoryTable: React.FC<LoginHistoryTableProps> = ({
       <div className="p-5 border-b border-gray-100 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
-            <h3 className="text-base font-bold text-gray-900">Lịch sử đăng nhập hệ thống (US-SA-04.1)</h3>
+            <h3 className="text-base font-bold text-gray-900">Lịch sử đăng nhập hệ thống</h3>
             <p className="text-xs text-gray-500">Giám sát các phiên xác thực thành công và cảnh báo nỗ lực xâm nhập bất thường</p>
           </div>
         </div>

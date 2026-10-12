@@ -75,7 +75,7 @@ export function parseResolutionNote(rawNote?: string): ResolutionReportInfo {
 
   if (isCompany) {
     faultParty = 'COMPANY';
-    faultPartyLabel = 'Lỗi do phía công ty / thiết bị cơ sở (BR-SUP-02)';
+    faultPartyLabel = 'Lỗi do phía công ty / thiết bị cơ sở';
     totalCollected = '0 đ (Miễn phí 100%)';
     isPaidFully = true;
   } else if (isCustomer) {
@@ -425,7 +425,7 @@ export const IncidentDetailModal: React.FC<IncidentDetailModalProps> = ({
             ) : (
               <div className="flex items-center justify-between">
                 <p className="text-slate-500 italic">
-                  Chưa có nhân viên trực ca nào được giao xử lý ticket này.
+                  Chưa có nhân viên trực ca nào được giao xử lý yêu cầu này.
                 </p>
                 <button
                   type="button"
@@ -456,7 +456,7 @@ export const IncidentDetailModal: React.FC<IncidentDetailModalProps> = ({
                       Biên bản nghiệm thu & Khắc phục sự cố
                     </h5>
                     <p className="text-[11px] text-emerald-700 font-medium">
-                      Báo cáo chính thức từ nhân viên kỹ thuật (SCR-FS-05 / BR-SUP-02)
+                      Báo cáo chính thức từ nhân viên kỹ thuật
                     </p>
                   </div>
                 </div>
@@ -503,9 +503,9 @@ export const IncidentDetailModal: React.FC<IncidentDetailModalProps> = ({
                         </p>
                         <p className="text-[11px] mt-1 text-slate-600 leading-relaxed">
                           {resInfo.faultParty === 'COMPANY'
-                            ? 'Theo quy định BR-SUP-02, 100% chi phí kiểm tra và linh kiện do công ty chi trả. Khách hàng được miễn phí 0 đ.'
+                            ? '100% chi phí kiểm tra và linh kiện do công ty chi trả. Khách hàng được miễn phí 0 đ.'
                             : resInfo.faultParty === 'CUSTOMER'
-                            ? 'Sự cố phát sinh từ thao tác của khách hàng. Phụ phí vật tư/thay thế được áp dụng theo biểu phí BOM niêm yết.'
+                            ? 'Sự cố phát sinh từ thao tác của khách hàng. Phụ phí vật tư/thay thế được áp dụng theo biểu phí niêm yết.'
                             : 'Nhân viên kỹ thuật cơ sở đã trực tiếp kiểm tra và nghiệm thu hoạt động bình thường.'}
                         </p>
                       </div>

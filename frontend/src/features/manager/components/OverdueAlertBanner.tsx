@@ -31,7 +31,7 @@ export const OverdueAlertBanner: React.FC<OverdueAlertBannerProps> = ({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="text-sm font-bold text-orange-950 uppercase tracking-wide">
-              Cảnh báo quá hạn (Overdue)
+              Cảnh báo quá hạn
             </h3>
             <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-orange-200/80 text-orange-900">
               D+{overdueDays}
@@ -41,7 +41,7 @@ export const OverdueAlertBanner: React.FC<OverdueAlertBannerProps> = ({
           <p className="text-xs text-orange-800 mt-1">
             Hợp đồng đã quá hạn thuê từ ngày{' '}
             <strong>{contract.endDateExclusive || 'gần đây'}</strong>. Hệ thống tự động tính phí phạt
-            quá hạn mỗi ngày và khóa mã truy cập vào mốc D+7 (BR-OVD-05).
+            quá hạn mỗi ngày và khóa mã truy cập vào mốc D+7.
           </p>
 
           {/* Chi tiết công nợ phạt */}

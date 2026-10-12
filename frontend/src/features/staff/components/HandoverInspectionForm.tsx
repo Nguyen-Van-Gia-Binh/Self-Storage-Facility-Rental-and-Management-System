@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { ClipboardCheck, CheckSquare, Square, Camera, AlertOctagon, KeyRound, Sparkles, Check } from 'lucide-react';
+import { ClipboardCheck, CheckSquare, Square, AlertOctagon, KeyRound, Sparkles, Check } from 'lucide-react';
 import type { CheckInContract, CheckInSubmitRequest } from '../../../types';
 import { SignaturePad } from './SignaturePad';
+import { EvidencePhotoCapture } from './EvidencePhotoCapture';
 import { Button } from '../../../components/ui/Button';
 
 export interface HandoverInspectionFormProps {
@@ -28,7 +29,7 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
   const [conditionNote, setConditionNote] = useState('');
   const [customerConfirmed, setCustomerConfirmed] = useState(false);
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
-  const [attachedPhoto, setAttachedPhoto] = useState<string | null>(null);
+  const [attachedPhotos, setAttachedPhotos] = useState<string[]>([]);
 
   const allCriteriaPassed =
     criteria.cleanAndEmpty &&
@@ -51,12 +52,6 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
       dryWallsFloor: true,
       smartLockReady: true,
     });
-  };
-
-  // Nút nhanh: Tải ảnh mẫu hiện trường kho sạch
-  const handleAddSamplePhoto = () => {
-    // Ảnh mẫu mặt bằng kho sạch (kho mini hiện đại)
-    setAttachedPhoto('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&auto=format&fit=crop&q=80');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -182,20 +177,20 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
             )}
             <div className="text-xs">
               <span className="font-bold block">Hệ thống khóa thông minh sẵn sàng</span>
-              <span className="text-slate-500">Đèn hành lang sáng tốt, bàn phím số IoT hoạt động bình thường</span>
+              <span className="text-slate-500">Đèn hành lang sáng tốt, bàn phím số thông minh hoạt động bình thường</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Ghi chú & Đính kèm ảnh thực tế */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="md:col-span-2 space-y-1.5">
+      {/* Ghi chú & Chụp ảnh thực tế bằng Camera */}
+      <div className="space-y-4 pt-2 border-t border-slate-100">
+        <div className="space-y-1.5">
           <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
             2. Ghi chú hiện trạng tại chỗ (Tùy chọn)
           </label>
           <textarea
-            rows={3}
+            rows={2}
             value={conditionNote}
             onChange={(e) => setConditionNote(e.target.value)}
             placeholder="Ví dụ: Ô kho mới sơn lại, sàn sạch bóng, bàn giao kèm 01 chìa khóa cơ dự phòng..."
@@ -203,43 +198,16 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
           />
         </div>
 
-        <div className="space-y-1.5">
-          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-            Ảnh hiện trạng kho
-          </label>
-          {attachedPhoto ? (
-            <div className="relative rounded-xl overflow-hidden border border-slate-200 h-24 group">
-              <img
-                src={attachedPhoto}
-                alt="Ảnh hiện trạng ô kho"
-                className="w-full h-full object-cover"
-              />
-              <button
-                type="button"
-                onClick={() => setAttachedPhoto(null)}
-                className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-1 text-[10px] hover:bg-red-600 transition-colors"
-              >
-                Xóa
-              </button>
-              <span className="absolute bottom-1 left-1.5 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded">
-                Đã đính kèm ảnh
-              </span>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={handleAddSamplePhoto}
-              className="w-full h-24 border-2 border-dashed border-slate-300 rounded-xl flex flex-col items-center justify-center gap-1.5 text-xs text-slate-500 hover:border-brand-500 hover:bg-brand-50/20 transition-all cursor-pointer"
-            >
-              <Camera className="w-5 h-5 text-slate-400" />
-              <span>Chụp / Tải ảnh kho</span>
-              <span className="text-[10px] text-brand-600 font-semibold">(Bấm để thêm ảnh mẫu)</span>
-            </button>
-          )}
-        </div>
+        <EvidencePhotoCapture
+          photos={attachedPhotos}
+          onChange={setAttachedPhotos}
+          maxPhotos={3}
+          label="Ảnh chụp hiện trạng bàn giao kho (Tùy chọn)"
+          helperText="Kích hoạt camera trước của máy tính/điện thoại để chụp trực tiếp hiện trạng bàn giao hoặc tải ảnh từ máy"
+        />
       </div>
 
-      {/* Khung ký số điện tử (BR-CHK-03) */}
+      {/* Khung ký số điện tử */}
       <div className="space-y-2 pt-2 border-t border-slate-100">
         <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
           3. Chữ ký số xác nhận của khách hàng
@@ -267,45 +235,31 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
         </div>
       </div>
 
-      {/* Action Buttons Bar (FS-01, FS-02) */}
-      <div className="bg-slate-50/80 -mx-5 -mb-5 p-4 rounded-b-2xl border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
-        {/* Nút báo sự cố ngoại lệ (BR-CHK-06) */}
+      {/* Thanh nút thao tác */}
+      <div className="bg-slate-50/80 -mx-5 -mb-5 p-4 rounded-b-2xl border-t border-slate-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        {/* Nút báo sự cố ngoại lệ */}
         <button
           type="button"
           onClick={onOpenRejectionModal}
           disabled={isSubmitting}
-          className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all cursor-pointer"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all cursor-pointer shrink-0"
         >
-          <AlertOctagon className="w-4 h-4" />
-          Báo hỏng / Khách từ chối nhận
+          <AlertOctagon className="w-4 h-4 shrink-0" />
+          <span>Báo hỏng / Khách từ chối nhận</span>
         </button>
 
-        {/* Nhóm nút chính */}
-        <div className="flex items-center gap-3">
-          {!canSubmit && (
-            <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200 shadow-xs">
-              {!allCriteriaPassed
-                ? '⚠️ Cần tích đủ 4/4 tiêu chí hiện trạng'
-                : !signatureDataUrl
-                ? '⚠️ Cần có chữ ký xác nhận của khách'
-                : !customerConfirmed
-                ? '⚠️ Cần tích đồng ý nhận bàn giao'
-                : '⚠️ Chưa đủ điều kiện bàn giao'}
-            </span>
-          )}
-
-          <Button
-            type="submit"
-            disabled={!canSubmit}
-            isLoading={isSubmitting}
-            size="md"
-            variant="primary"
-            className="px-6 py-2.5 shadow-md cursor-pointer font-bold tracking-wide"
-          >
-            <KeyRound className="w-4 h-4 mr-2" />
-            XÁC NHẬN BÀN GIAO & KÍCH HOẠT MÃ PIN
-          </Button>
-        </div>
+        {/* Nút xác nhận chính */}
+        <Button
+          type="submit"
+          disabled={!canSubmit}
+          isLoading={isSubmitting}
+          size="md"
+          variant="primary"
+          className="px-5 py-2.5 shadow-xs cursor-pointer font-bold tracking-wide text-xs shrink-0"
+        >
+          <KeyRound className="w-4 h-4 mr-2 shrink-0" />
+          XÁC NHẬN BÀN GIAO & KÍCH HOẠT MÃ PIN
+        </Button>
       </div>
     </form>
   );

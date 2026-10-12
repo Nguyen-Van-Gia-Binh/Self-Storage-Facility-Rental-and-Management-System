@@ -168,9 +168,6 @@ export const ContractsHubPage: React.FC = () => {
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
               Giám sát Hợp đồng & Điều phối Ô kho
             </h1>
-            <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-blue-100 text-blue-700">
-              SCR-FM-02
-            </span>
           </div>
           <p className="text-xs text-slate-700 mt-1">
             Trung tâm quản lý vòng đời thuê, phân bổ ô kho, xử lý đổi kho ngoại lệ và thanh lý cọc
@@ -234,7 +231,7 @@ export const ContractsHubPage: React.FC = () => {
             <Link
               to="/manager/staff-assignment"
               className="py-1.5 px-3 rounded-lg border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold text-xs flex items-center gap-1.5 transition-colors shadow-sm"
-              title="Mở Bàn phân công nhân sự (SCR-FM-03)"
+              title="Mở Bàn phân công nhân sự"
             >
               <Users className="w-3.5 h-3.5 text-purple-600" />
               <span>Điều phối nhân sự</span>
@@ -448,13 +445,13 @@ export const ContractsHubPage: React.FC = () => {
                               ) : (
                                 <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
                                   <AlertTriangle className="w-3 h-3" />
-                                  Quá hạn nhận kho (Chờ No-Show)
+                                  Quá hạn nhận kho (Chờ xử lý vắng mặt)
                                 </span>
                               )
                             ) : (
                               <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-800 border border-blue-200">
                                 <Clock className="w-3 h-3" />
-                                Ân hạn 10 ngày (BR-CAN-04)
+                                Ân hạn 10 ngày
                               </span>
                             )}
                             <span className="block text-[10px] text-slate-400 mt-0.5">
@@ -471,7 +468,7 @@ export const ContractsHubPage: React.FC = () => {
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-                                Đã báo trả • Chờ Staff kiểm tra
+                                Đã báo trả • Chờ nhân viên kiểm tra
                               </span>
                             )}
                             {contract.assignedStaffName ? (
@@ -481,7 +478,7 @@ export const ContractsHubPage: React.FC = () => {
                               </span>
                             ) : contract.status !== 'INSPECTED' ? (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                                Chưa phân công Staff
+                                Chưa phân công nhân viên
                               </span>
                             ) : null}
                             {contract.damageCost && contract.damageCost > 0 ? (
@@ -546,7 +543,7 @@ export const ContractsHubPage: React.FC = () => {
                             ) : (
                               <span className="block text-[10px] text-purple-900 font-bold flex items-center gap-1">
                                 <ShieldAlert className="w-3 h-3 text-purple-700" />
-                                Đã chấm dứt HĐ • Kích hoạt niêm phong Sealing (D+10+)
+                                Đã chấm dứt HĐ • Kích hoạt niêm phong (D+10+)
                               </span>
                             )}
                           </div>
@@ -561,7 +558,7 @@ export const ContractsHubPage: React.FC = () => {
                             <Link
                               to={`/manager/staff-assignment?contractId=${contract.id}`}
                               className="px-2.5 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors inline-flex items-center gap-1"
-                              title="Điều phối nhân sự tiếp đón bàn giao kho (SCR-FM-03)"
+                              title="Điều phối nhân sự tiếp đón bàn giao kho"
                             >
                               <UserPlus className="w-3 h-3" />
                               {contract.assignedStaffId ? 'Điều chuyển' : 'Điều phối'}
@@ -575,7 +572,7 @@ export const ContractsHubPage: React.FC = () => {
                                 setReassignModalOpen(true);
                               }}
                               className="px-2.5 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors inline-flex items-center gap-1"
-                              title="Đổi ô cùng loại khi ô đã chọn có phiếu hư hỏng đang mở (BR-AVL-05)"
+                              title="Đổi ô cùng loại khi ô đã chọn có phiếu hư hỏng đang mở"
                             >
                               <RefreshCw className="w-3 h-3" />
                               Đổi ô kho
@@ -594,7 +591,7 @@ export const ContractsHubPage: React.FC = () => {
                               setReassignModalOpen(true);
                             }}
                             className="px-2.5 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors inline-flex items-center gap-1 shadow-2xs"
-                            title="Đổi ô cùng loại khi phiếu hư hỏng được đánh dấu cần di dời (BR-SUP-02)"
+                            title="Đổi ô cùng loại khi phiếu hư hỏng được đánh dấu cần di dời"
                           >
                             <RefreshCw className="w-3 h-3 text-amber-600" />
                             Đổi ô sự cố

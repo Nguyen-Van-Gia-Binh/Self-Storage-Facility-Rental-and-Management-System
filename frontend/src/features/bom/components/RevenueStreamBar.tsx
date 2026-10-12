@@ -106,7 +106,7 @@ export const RevenueStreamBar: React.FC<RevenueStreamBarProps> = ({ revenue, isL
       {/* Thanh Stacked Bar phân bổ */}
       {streamSum === 0 ? (
         <div className="h-6 w-full bg-slate-100 rounded-lg flex items-center justify-center text-xs text-slate-400 italic">
-          Chưa có giao dịch phát sinh trong kỳ (US-BM-04.1)
+          Chưa có giao dịch phát sinh trong kỳ
         </div>
       ) : (
         <div className="h-6 w-full bg-slate-100 rounded-lg flex overflow-hidden shadow-inner p-0.5 gap-0.5">

@@ -192,11 +192,14 @@ public class ContractServiceImpl implements ContractService {
                         });
                 }
 
+                String conditionText = (request.getConditionNote() != null && !request.getConditionNote().isBlank())
+                                ? request.getConditionNote()
+                                : request.getNotes();
                 handoverRecordRepository.save(HandoverRecord.builder()
                                 .contractId(contractId)
                                 .staffId(staffId)
                                 .handoverAt(OffsetDateTime.now())
-                                .conditionNote(request.getNotes())
+                                .conditionNote(conditionText)
                                 .customerConfirmed(true)
                                 .customerConfirmedAt(OffsetDateTime.now())
                                 .rejected(false)
@@ -1585,6 +1588,7 @@ public class ContractServiceImpl implements ContractService {
                 r.setUnitTypeId(c.getUnitTypeId());
                 r.setStartDate(c.getStartDate());
                 r.setEndDateExclusive(c.getEndDateExclusive());
+                r.setCheckinGraceDays(PolicyNumbers.snapshotInt(c.getPolicySnapshot(), "checkinGraceDays", 10));
                 r.setRentalMonths(c.getRentalMonths());
                 r.setMonthlyPrice(c.getMonthlyPrice());
                 r.setTotalRentalFee(c.getTotalRentalFee());

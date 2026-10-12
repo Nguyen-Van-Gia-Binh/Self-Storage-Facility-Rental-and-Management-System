@@ -260,14 +260,14 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
             </div>
           </div>
 
-          {/* 4. Audit Trail Metadata (US-BM-05.1 AC-2, AC-5) */}
+          {/* 4. Thông tin kiểm toán */}
           <div className="p-3 bg-slate-50 border border-slate-200/70 rounded-xl space-y-1.5 text-[11px] text-slate-600">
             <div className="flex items-center gap-1.5 font-bold text-slate-800">
               <ShieldCheck className="w-3.5 h-3.5 text-brand-600" />
-              <span>Nhật Ký Kiểm Toán (Audit Trail Metadata):</span>
+              <span>Nhật Ký Kiểm Toán:</span>
             </div>
             <div className="grid grid-cols-2 gap-x-2 gap-y-1 font-mono text-[10px] text-slate-500 pt-0.5">
-              <div>Người xuất: <strong className="text-slate-800">BOM (Business Operations)</strong></div>
+              <div>Người xuất: <strong className="text-slate-800">Quản lý vận hành kinh doanh</strong></div>
               <div>Múi giờ: <strong className="text-slate-800">Asia/Ho_Chi_Minh</strong></div>
               <div>Thời điểm: <strong className="text-slate-800">{exportTimestamp}</strong></div>
               <div>Mã phiên: <strong className="text-slate-800">{sessionId}</strong></div>

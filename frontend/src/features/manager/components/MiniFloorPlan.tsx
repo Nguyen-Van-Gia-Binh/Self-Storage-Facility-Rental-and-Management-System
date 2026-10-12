@@ -91,23 +91,23 @@ export const MiniFloorPlan: React.FC<MiniFloorPlanProps> = ({
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded bg-emerald-500" />
-            <span>Trống (Available)</span>
+            <span>Trống</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded bg-sky-500" />
-            <span>Đã đặt (Reserved)</span>
+            <span>Đã đặt</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded bg-amber-500" />
-            <span>Đang thuê (Occupied)</span>
+            <span>Đang thuê</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded bg-purple-500" />
-            <span>Dọn dẹp (Cleaning)</span>
+            <span>Dọn dẹp</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded bg-rose-500" />
-            <span>Bảo trì (Maintenance)</span>
+            <span>Bảo trì</span>
           </div>
         </div>
       </div>

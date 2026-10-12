@@ -135,7 +135,7 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
     if (!files) return;
 
     if (attachments.length + files.length > 5) {
-      setErrorMsg('Bạn chỉ có thể đính kèm tối đa 5 hình ảnh minh họa (US-SC-06.1)');
+      setErrorMsg('Bạn chỉ có thể đính kèm tối đa 5 hình ảnh minh họa');
       return;
     }
 
@@ -351,7 +351,7 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
               <Info className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
               <div>
                 <span className="text-xs font-bold text-blue-900 block">
-                  Smart PIN Hint
+                  Gợi ý kiểm tra mã PIN
                 </span>
                 <span className="text-[11px] text-blue-800/80 leading-relaxed block mt-0.5">
                   Kiểm tra lại mã PIN của bạn trong phần "Kho của tôi" hoặc yêu cầu cấp lại mã mới nếu quên.
@@ -365,7 +365,7 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
               Thời gian tiếp nhận & xử lý
             </span>
             <span className="text-[11px] text-slate-600 leading-relaxed block">
-              Quản lý cơ sở (FM) sẽ tiếp nhận và đánh giá mức độ khẩn cấp của sự cố để điều phối nhân viên kỹ thuật có mặt hỗ trợ trong thời gian sớm nhất.
+              Quản lý cơ sở sẽ tiếp nhận và đánh giá mức độ khẩn cấp của sự cố để điều phối nhân viên kỹ thuật có mặt hỗ trợ trong thời gian sớm nhất.
             </span>
           </div>
 

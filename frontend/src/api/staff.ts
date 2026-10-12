@@ -34,6 +34,33 @@ function mapRawSupportTask(item: any): DailyIncidentTask {
 }
 
 /**
+ * Kiểm tra xem ngày đang chọn (targetDateStr) có nằm trong thời gian ân hạn nhận kho
+ * từ ngày bắt đầu hợp đồng (scheduledDateStr) tới tối đa graceDays (mặc định 10 ngày theo BR-CHK-05) hay không.
+ */
+export function isWithinCheckInGraceWindow(
+  scheduledDateStr: string | undefined,
+  targetDateStr: string,
+  graceDays = 10
+): boolean {
+  if (!scheduledDateStr || !targetDateStr) return false;
+  const startParts = scheduledDateStr.split('-').map(Number);
+  const targetParts = targetDateStr.split('-').map(Number);
+  if (startParts.length !== 3 || targetParts.length !== 3) return false;
+  const startUtc = Date.UTC(startParts[0], startParts[1] - 1, startParts[2]);
+  const targetUtc = Date.UTC(targetParts[0], targetParts[1] - 1, targetParts[2]);
+  const diffDays = Math.round((targetUtc - startUtc) / (1000 * 60 * 60 * 24));
+  return diffDays >= 0 && diffDays <= graceDays;
+}
+
+function getLocalTodayStr(): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+/**
  * Lấy danh sách công việc hằng ngày trong ca trực của Staff (FS-06, T4.9)
  * Endpoint: GET /api/v1/reports/staff/{staffId}/daily-tasks?date={date}
  */
@@ -41,15 +68,74 @@ export async function getStaffDailyTasks(
   staffId: number,
   date?: string
 ): Promise<StaffDailyTaskReport> {
-  const queryDate = date || new Date().toISOString().split('T')[0];
+  const todayStr = getLocalTodayStr();
+  const queryDate = date || todayStr;
 
-  const res = await apiClient<ApiResponse<any>>(
-    `/reports/staff/${staffId}/daily-tasks?date=${queryDate}`
-  );
+  const [res, todayRes] = await Promise.all([
+    apiClient<ApiResponse<any>>(
+      `/reports/staff/${staffId}/daily-tasks?date=${queryDate}`
+    ),
+    queryDate !== todayStr
+      ? apiClient<ApiResponse<any>>(
+          `/reports/staff/${staffId}/daily-tasks?date=${todayStr}`
+        ).catch(() => null)
+      : Promise.resolve(null),
+  ]);
+
   const data = res.data;
+  const todayData = todayRes?.data;
+
   const rawList = data?.supportTasks || data?.openSupportRequests || [];
-  const rawCheckIns = data?.checkInTasks || data?.pendingCheckIns || [];
-  const rawReturns = data?.returnTasks || data?.pendingReturns || [];
+  const rawCheckInsFromQuery: any[] = data?.checkInTasks || data?.pendingCheckIns || [];
+  const rawReturnsFromQuery: any[] = data?.returnTasks || data?.pendingReturns || [];
+
+  // BR-CHK-05: Hợp đồng chờ nhận kho (PENDING_CHECK_IN) chưa hoàn tất bàn giao sẽ hiển thị xuyên suốt
+  // trong thời gian ân hạn nhận kho (10 ngày tính từ scheduledDate) trước khi bị hủy No-show
+  const mergedCheckInsMap = new Map<string | number, any>();
+  for (const ci of rawCheckInsFromQuery) {
+    const key = ci.contractId ?? ci.reservationId ?? ci.contractCode;
+    const isDone = Boolean(ci.completed || ci.status === 'COMPLETED' || ci.status === 'ACTIVE');
+    const sched = ci.scheduledDate || ci.startDate || queryDate;
+    if (isDone) {
+      if (sched === queryDate) {
+        mergedCheckInsMap.set(key, ci);
+      }
+    } else if (isWithinCheckInGraceWindow(sched, queryDate, ci.checkinGraceDays ?? 10)) {
+      mergedCheckInsMap.set(key, ci);
+    }
+  }
+
+  if (todayData) {
+    const todayCheckIns: any[] = todayData.checkInTasks || todayData.pendingCheckIns || [];
+    for (const ci of todayCheckIns) {
+      const key = ci.contractId ?? ci.reservationId ?? ci.contractCode;
+      const isDone = Boolean(ci.completed || ci.status === 'COMPLETED' || ci.status === 'ACTIVE');
+      const sched = ci.scheduledDate || ci.startDate || todayStr;
+      if (!isDone && !mergedCheckInsMap.has(key) && isWithinCheckInGraceWindow(sched, queryDate, ci.checkinGraceDays ?? 10)) {
+        mergedCheckInsMap.set(key, ci);
+      }
+    }
+  }
+
+  // Các nhiệm vụ trả kho (PENDING_RETURN / OVERDUE) chưa hoàn tất cũng được giữ nguyên cho ca trực tiếp theo
+  const mergedReturnsMap = new Map<string | number, any>();
+  for (const rt of rawReturnsFromQuery) {
+    const key = rt.contractId ?? rt.contractCode;
+    mergedReturnsMap.set(key, rt);
+  }
+  if (todayData && queryDate >= todayStr) {
+    const todayReturns: any[] = todayData.returnTasks || todayData.pendingReturns || [];
+    for (const rt of todayReturns) {
+      const key = rt.contractId ?? rt.contractCode;
+      const isDone = Boolean(rt.completed || rt.status === 'COMPLETED' || rt.status === 'INSPECTED' || rt.status === 'RETURNED');
+      if (!isDone && !mergedReturnsMap.has(key)) {
+        mergedReturnsMap.set(key, rt);
+      }
+    }
+  }
+
+  const rawCheckIns = Array.from(mergedCheckInsMap.values());
+  const rawReturns = Array.from(mergedReturnsMap.values());
 
   return {
     ...data,
@@ -60,6 +146,7 @@ export async function getStaffDailyTasks(
       unitCode: ci.storageUnitCode || ci.unitCode || '---',
       facilityId: ci.facilityId,
       facilityName: ci.facilityName,
+      startDate: ci.scheduledDate || ci.startDate || todayStr,
       appointmentTime: ci.appointmentTime || (ci.scheduledDate ? `Ngày ${ci.scheduledDate}` : 'Trong ngày'),
       status: (ci.completed || ci.status === 'COMPLETED' || ci.status === 'ACTIVE') ? 'COMPLETED' : (ci.status || 'PENDING'),
       completed: Boolean(ci.completed || ci.status === 'COMPLETED' || ci.status === 'ACTIVE'),

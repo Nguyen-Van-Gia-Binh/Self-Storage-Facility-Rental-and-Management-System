@@ -422,7 +422,7 @@ export const StorageUnitDetailPage: React.FC = () => {
                       className="w-full py-2 px-3 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold rounded-xl border border-amber-300 transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
                     >
                       <Repeat className="w-3.5 h-3.5 text-amber-600" />
-                      <span>Đổi ô kho do sự cố (Reassign)</span>
+                      <span>Đổi ô kho do sự cố</span>
                     </button>
                   )}
                 </div>
@@ -437,7 +437,7 @@ export const StorageUnitDetailPage: React.FC = () => {
                 Ô kho ghi nhận Đang thuê nhưng chưa có Hợp đồng liên kết
               </h3>
               <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
-                Hệ thống ghi nhận trạng thái ô kho là Đang thuê ({unit?.status}), nhưng hiện chưa tìm thấy hồ sơ hợp đồng điện tử nào đang hoạt động liên kết với ô kho này trong CSDL.
+                Hệ thống ghi nhận trạng thái ô kho là Đang thuê, nhưng hiện chưa tìm thấy hồ sơ hợp đồng điện tử nào đang hoạt động liên kết với ô kho này trong CSDL.
               </p>
               <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-center gap-2">
                 <button
@@ -445,7 +445,7 @@ export const StorageUnitDetailPage: React.FC = () => {
                   onClick={() => handleStatusChange('AVAILABLE')}
                   className="px-3.5 py-1.5 text-xs font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 rounded-xl transition-colors cursor-pointer"
                 >
-                  🔄 Đưa về Trạng thái Trống (AVAILABLE)
+                  🔄 Đưa về Trạng thái Trống
                 </button>
               </div>
             </div>

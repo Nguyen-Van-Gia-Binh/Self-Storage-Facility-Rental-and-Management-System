@@ -113,7 +113,11 @@
 | `ISS-104` | Drawer mở làm trôi cuộn màn hình nền; cột Giá trị cũ -> mới rườm rà thiếu nút Chi tiết. | Khóa cuộn thẻ main khi mở Drawer, tinh giản thành cột Thông tin kèm nút Chi tiết, restart backend nạp code. | Bình | `RESOLVED` (#232) |
 | `ISS-105` | Cột Loại lệch lề, trùng tên phụ phí làm loạn trạng thái Đã thay thế vs Ngừng áp dụng, Snapshot in thừa A -> A. | Căn giữa cột Loại, dọn CSDL & validate unique name, xóa khối div tím lặp lại, sửa Snapshot thông minh. | Bình | `RESOLVED` (#232) |
 | `ISS-106` | Tab "Cần gia hạn" ở Customer gom nhầm OVERDUE, PENDING_RETURN làm sai lệch luồng nghiệp vụ. | Áp dụng Phương án A tách rành rọt 6 tab độc lập (Đang HĐ, Quá hạn, Chờ trả kho, Chờ nhận kho, Giữ chỗ 48h, Đã kết thúc) & migration V51 test data thật. | Xuân Nhi | `RESOLVED` (#234) |
-| `ISS-107` | Khi tạo cơ sở mới (BOM-01), người dùng phải tự gõ mã thủ công dễ sai chuẩn Regex và trùng lặp mã. | Tự động sinh mã cơ sở thông minh chuẩn `FAC-...` dựa trên Tên & Địa chỉ (Quận số/chữ), chống trùng từ CSDL thật và hỗ trợ sửa tay. | Xuân Nhi | `RESOLVED` |
+| `ISS-107` | Khi tạo cơ sở mới (BOM-01), người dùng phải tự gõ mã thủ công dễ sai chuẩn Regex và trùng lặp mã. | Tự động sinh mã cơ sở thông minh chuẩn `FAC-...` dựa trên Tên & Địa chỉ (Quận số/chữ), chống trùng từ CSDL thật và hỗ trợ sửa tay. | Xuân Nhi | `RESOLVED` (#235) |
+| `ISS-108` | Tài khoản staff@storage.vn thiếu dữ liệu ca trực mẫu đa dạng để kiểm thử UI điều phối bàn giao/nghiệm thu. | Tạo Flyway V52 nạp đủ 3 nhóm task: Check-in (chờ/xong), Trả kho (chờ/xong), Sự cố (4 loại SUP). | Bình | `RESOLVED` |
+| `ISS-109` | Menu Staff nhiều tab gây phân mảnh và rối luồng thao tác ca trực thực địa. | Tinh giản sidebar còn 1 mục "Nhiệm vụ ca trực" (/staff), hiển thị trực tiếp toàn bộ việc nhận kho, trả kho, sự cố trên 1 màn hình. | Bình | `RESOLVED` |
+| `ISS-110` | Phụ đề ca trực thừa chữ và 3 KPI cards chiếm diện tích màn hình; thiếu xem theo tuần. | Xóa phụ đề, thay 3 thẻ KPI bằng lịch tuần cuộn ngang StaffWeekCalendarStrip chọn ngày hiển thị việc trực tiếp. | Bình | `RESOLVED` |
+| `ISS-111` | Thao tác Check-in, Trả kho, Sự cố mở popup modal gây chật chội hoặc chuyển trang rời rạc làm mất trạng thái ca trực. | Tích hợp hiển thị tràn in-place (StaffCheckInDetailView, StaffReturnDetailView, StaffIncidentDetailView) có nút quay lại lưu tiến độ ca trực. | Bình | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 

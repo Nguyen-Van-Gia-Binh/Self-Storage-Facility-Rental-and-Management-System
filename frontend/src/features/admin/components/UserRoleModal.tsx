@@ -201,7 +201,7 @@ export const UserRoleModal: React.FC<UserRoleModalProps> = ({
             <div className="flex items-center justify-between">
               <label className="text-sm font-semibold text-slate-800 flex items-center gap-1.5">
                 <Building2 className="w-4 h-4 text-slate-500" />
-                <span>2. Chỉ định cơ sở làm việc (SA-03)</span>
+                <span>2. Chỉ định cơ sở làm việc</span>
                 <span className="text-red-500">*</span>
               </label>
               <div className="flex items-center gap-3">

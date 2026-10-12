@@ -174,9 +174,6 @@ export const ContractDashboardPage: React.FC = () => {
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">
               Giám sát hợp đồng — Danh sách Cơ sở
             </h1>
-            <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-              FM-02
-            </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
             Chọn cơ sở để theo dõi danh sách hợp đồng thuê, công nợ quá hạn và thủ tục nghiệm thu thanh lý

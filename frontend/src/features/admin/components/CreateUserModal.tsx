@@ -143,7 +143,7 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
           </div>
           <div>
             <h2 className="text-lg font-bold">Thêm Mới Tài Khoản Người Dùng</h2>
-            <p className="text-xs text-slate-300">Cấp quyền truy cập hệ thống (SA-01)</p>
+            <p className="text-xs text-slate-300">Cấp quyền truy cập hệ thống</p>
           </div>
         </div>
         <button
@@ -284,7 +284,7 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
             <div className="flex items-center justify-between">
               <label className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
                 <Building2 className="w-4 h-4 text-slate-500" />
-                <span>Cơ sở làm việc phụ trách (SA-03)</span>
+                <span>Cơ sở làm việc phụ trách</span>
                 <span className="text-red-500">*</span>
               </label>
               <span className="flex items-center gap-3">

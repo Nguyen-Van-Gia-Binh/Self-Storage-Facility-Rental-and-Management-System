@@ -15,11 +15,16 @@ export const StaffReturnInspectionPage: React.FC = () => {
   const { contractId } = useParams<{ contractId?: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const urlDate = searchParams.get('date');
+  const urlFacilityId = searchParams.get('facilityId');
+
   const user = useCurrentUser();
   const staffId = user?.id ? Number(user.id) : undefined;
   const userFacilityId = user?.facilityId ? Number(user.facilityId) : 0;
+  const initialFacilityId = urlFacilityId ? Number(urlFacilityId) : userFacilityId;
+
   const [facilities, setFacilities] = useState<Array<{ id: number; name: string }>>([]);
-  const [selectedFacilityId, setSelectedFacilityId] = useState<number>(userFacilityId);
+  const [selectedFacilityId, setSelectedFacilityId] = useState<number>(initialFacilityId);
   const [contracts, setContracts] = useState<ReturnContractDetail[]>([]);
   const [selectedContract, setSelectedContract] = useState<ReturnContractDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -39,6 +44,13 @@ export const StaffReturnInspectionPage: React.FC = () => {
     refundAmount: 0,
   });
 
+  const handleBackToShift = () => {
+    const params = new URLSearchParams();
+    if (urlDate) params.set('date', urlDate);
+    if (selectedFacilityId) params.set('facilityId', String(selectedFacilityId));
+    navigate(`/staff${params.toString() ? `?${params.toString()}` : ''}`);
+  };
+
   // Tải danh sách cơ sở thực tế từ API Backend
   useEffect(() => {
     let active = true;
@@ -49,13 +61,16 @@ export const StaffReturnInspectionPage: React.FC = () => {
             { id: 0, name: 'Tất cả cơ sở' },
             ...res.map((f) => ({ id: f.id, name: f.name })),
           ]);
+          if (urlFacilityId && res.some((f) => f.id === Number(urlFacilityId))) {
+            setSelectedFacilityId(Number(urlFacilityId));
+          }
         }
       })
       .catch(() => {});
     return () => {
       active = false;
     };
-  }, []);
+  }, [urlFacilityId]);
 
 
   const loadData = useCallback(async (facilityId?: number) => {
@@ -147,11 +162,13 @@ export const StaffReturnInspectionPage: React.FC = () => {
       <div className="flex flex-wrap items-center justify-between pb-4 border-b border-slate-200 gap-4">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate('/staff')}
-            className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 transition cursor-pointer"
-            title="Quay lại danh mục ca trực"
+            type="button"
+            onClick={handleBackToShift}
+            className="p-2 sm:px-3 sm:py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+            title="Quay lại bàn điều phối ca trực"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4 text-slate-600" />
+            <span className="hidden sm:inline">Quay lại Ca trực</span>
           </button>
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
@@ -205,10 +222,12 @@ export const StaffReturnInspectionPage: React.FC = () => {
           </p>
           <div>
             <button
-              onClick={() => navigate('/staff')}
-              className="mt-2 px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+              type="button"
+              onClick={handleBackToShift}
+              className="mt-2 px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1.5"
             >
-              Về trang ca trực
+              <ArrowLeft className="w-4 h-4" />
+              <span>Về ca trực</span>
             </button>
           </div>
         </div>
@@ -300,7 +319,7 @@ export const StaffReturnInspectionPage: React.FC = () => {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Tiền cọc Deposit:</span>
+                      <span>Tiền cọc:</span>
                       <span className="font-mono font-bold text-slate-900">
                         {selectedContract.depositAmount.toLocaleString('vi-VN')} đ
                       </span>

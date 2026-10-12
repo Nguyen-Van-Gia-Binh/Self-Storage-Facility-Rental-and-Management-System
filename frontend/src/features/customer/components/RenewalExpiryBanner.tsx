@@ -82,7 +82,7 @@ export const RenewalExpiryBanner: React.FC<RenewalExpiryBannerProps> = ({
               Hợp đồng này đã chấm dứt hiệu lực hoặc hoàn tất thanh lý
             </h3>
             <p className="text-xs sm:text-sm text-rose-800 leading-relaxed">
-              Theo quy định, các hợp đồng ở trạng thái <em>Đã thanh lý (TERMINATED)</em> hoặc <em>Đã đóng (CLOSED)</em> không được phép gia hạn trực tuyến. Quý khách vui lòng liên hệ nhân viên quản lý cơ sở để được hỗ trợ hoặc tạo đơn đặt thuê ô kho mới.
+              Theo quy định, các hợp đồng ở trạng thái <em>Đã thanh lý</em> hoặc <em>Đã đóng</em> không được phép gia hạn trực tuyến. Quý khách vui lòng liên hệ nhân viên quản lý cơ sở để được hỗ trợ hoặc tạo đơn đặt thuê ô kho mới.
             </p>
             <div className="flex flex-wrap items-center gap-2.5 pt-2">
               <a
@@ -106,7 +106,7 @@ export const RenewalExpiryBanner: React.FC<RenewalExpiryBannerProps> = ({
     );
   }
 
-  // 2. Trường hợp quá hạn còn nợ phạt: Cần nộp phạt trước khi gia hạn (BR-REN-06)
+  // 2. Trường hợp quá hạn còn nợ phạt: Cần nộp phạt trước khi gia hạn
   if (hasUnpaidOverdue) {
     const overdueCount = contract.overdueDays || Math.abs(daysRemaining) || 1;
     return (
@@ -128,7 +128,7 @@ export const RenewalExpiryBanner: React.FC<RenewalExpiryBannerProps> = ({
               Vui lòng thanh toán phí quá hạn trước khi gia hạn
             </h3>
             <p className="text-xs sm:text-sm text-rose-800 leading-relaxed">
-              Theo quy định <strong>BR-REN-06</strong>, hợp đồng quá hạn cần thanh toán toàn bộ nợ phạt phát sinh trước khi có thể gia hạn trực tuyến. Sau khi nộp phạt, quý khách có thể tiếp tục gia hạn nếu ô kho chưa có người khác đặt trước.
+              Theo quy định của cơ sở, hợp đồng quá hạn cần thanh toán toàn bộ nợ phạt phát sinh trước khi có thể gia hạn trực tuyến. Sau khi nộp phạt, quý khách có thể tiếp tục gia hạn nếu ô kho chưa có người khác đặt trước.
             </p>
             <div className="flex flex-wrap items-center gap-2.5 pt-2">
               <Link
