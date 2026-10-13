@@ -43,6 +43,10 @@ public interface SupportRequestRepository extends JpaRepository<SupportRequest, 
 
     long countByCodeStartingWith(String prefix);
 
+    Optional<SupportRequest> findFirstByCodeStartingWithOrderByCodeDesc(String prefix);
+
+    boolean existsByCode(String code);
+
     java.util.List<SupportRequest> findByStatus(SupportStatus status);
 
     long countByAssignedStaffIdAndStatusIn(Long assignedStaffId, java.util.Collection<SupportStatus> statuses);

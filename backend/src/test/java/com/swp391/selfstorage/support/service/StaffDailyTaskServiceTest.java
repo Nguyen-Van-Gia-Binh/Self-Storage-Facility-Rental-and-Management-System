@@ -28,6 +28,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
+
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Collections;
@@ -62,6 +64,9 @@ class StaffDailyTaskServiceTest {
 
     @Mock
     private UserFacilityAssignmentRepository userFacilityAssignmentRepository;
+
+    @Mock
+    private PolicyVersionRepository policyVersionRepository;
 
     @InjectMocks
     private StaffDailyTaskServiceImpl staffDailyTaskService;

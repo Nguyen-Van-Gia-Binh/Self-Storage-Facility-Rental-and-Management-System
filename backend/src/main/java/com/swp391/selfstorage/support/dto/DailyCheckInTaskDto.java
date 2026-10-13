@@ -46,6 +46,9 @@ public class DailyCheckInTaskDto {
     @Schema(description = "Cờ đánh dấu đã hoàn tất bàn giao")
     private boolean completed;
 
+    @Schema(description = "Số ngày ân hạn nhận kho theo chính sách BOM (BR-CHK-05)")
+    private Integer checkinGraceDays;
+
     public DailyCheckInTaskDto() {
     }
 
@@ -54,6 +57,16 @@ public class DailyCheckInTaskDto {
                                Long storageUnitId, String storageUnitCode,
                                Long facilityId, String facilityName,
                                LocalDate scheduledDate, String status, boolean completed) {
+        this(contractId, contractCode, reservationId, customerId, customerName, customerPhone,
+                storageUnitId, storageUnitCode, facilityId, facilityName, scheduledDate, status, completed, null);
+    }
+
+    public DailyCheckInTaskDto(Long contractId, String contractCode, Long reservationId,
+                               Long customerId, String customerName, String customerPhone,
+                               Long storageUnitId, String storageUnitCode,
+                               Long facilityId, String facilityName,
+                               LocalDate scheduledDate, String status, boolean completed,
+                               Integer checkinGraceDays) {
         this.contractId = contractId;
         this.contractCode = contractCode;
         this.reservationId = reservationId;
@@ -67,6 +80,7 @@ public class DailyCheckInTaskDto {
         this.scheduledDate = scheduledDate;
         this.status = status;
         this.completed = completed;
+        this.checkinGraceDays = checkinGraceDays;
     }
 
     public static Builder builder() {
@@ -177,6 +191,14 @@ public class DailyCheckInTaskDto {
         this.completed = completed;
     }
 
+    public Integer getCheckinGraceDays() {
+        return checkinGraceDays;
+    }
+
+    public void setCheckinGraceDays(Integer checkinGraceDays) {
+        this.checkinGraceDays = checkinGraceDays;
+    }
+
     public static class Builder {
         private Long contractId;
         private String contractCode;
@@ -191,6 +213,7 @@ public class DailyCheckInTaskDto {
         private LocalDate scheduledDate;
         private String status;
         private boolean completed;
+        private Integer checkinGraceDays;
 
         public Builder contractId(Long contractId) {
             this.contractId = contractId;
@@ -257,9 +280,14 @@ public class DailyCheckInTaskDto {
             return this;
         }
 
+        public Builder checkinGraceDays(Integer checkinGraceDays) {
+            this.checkinGraceDays = checkinGraceDays;
+            return this;
+        }
+
         public DailyCheckInTaskDto build() {
             return new DailyCheckInTaskDto(contractId, contractCode, reservationId, customerId, customerName, customerPhone,
-                    storageUnitId, storageUnitCode, facilityId, facilityName, scheduledDate, status, completed);
+                    storageUnitId, storageUnitCode, facilityId, facilityName, scheduledDate, status, completed, checkinGraceDays);
         }
     }
 }
