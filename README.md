@@ -13,7 +13,7 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 > 🏢 **Đồ án chuyên ngành SWP391 — FPT University (Fall 2026)**  
-> 📄 Đặc tả nghiệp vụ chuẩn: **[docs/TOPIC.md](docs/TOPIC.md)** · Bảng điều hành dự án: **[docs/DASHBOARD.md](docs/DASHBOARD.md)**
+> 📄 Đặc tả nghiệp vụ chuẩn: **[docs/TOPIC.md](docs/TOPIC.md)** · Bảng điều hành: **[docs/DASHBOARD.md](docs/DASHBOARD.md)** · Bản đồ luồng đi kỹ thuật: **[docs/WORKFLOWS.md](docs/WORKFLOWS.md)**
 
 ---
 
@@ -180,6 +180,7 @@ Self-Storage-Facility-Rental-and-Management-System/
 │   └── package.json                       # Cấu hình dependency, script build và chạy kiểm thử Vitest
 │
 ├── docs/                                  # Toàn bộ kho tài liệu kỹ thuật & phân tích nghiệp vụ
+│   ├── WORKFLOWS.md                       # Bản đồ luồng đi toàn hệ thống (Frontend -> Controller -> Service -> DB -> Jobs)
 │   ├── DASHBOARD.md                       # Bảng điều hành trung tâm: Sprint, 4 Workstreams, sổ Issue 3 dòng
 │   ├── TOPIC.md                           # Chân lý đề tài gốc: 5 Actor, 27 chức năng, 7 luồng nghiệp vụ
 │   ├── USER-STORIES-AND-USE-CASES.md      # Đặc tả yêu cầu hợp nhất: User Stories & Phân rã Use Cases chi tiết
