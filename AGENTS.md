@@ -41,6 +41,9 @@ The core **specification and analysis layer** built on top of `docs/TOPIC.md` in
 - `docs/BUSINESS-RULES.md` defines rules coded
   `BR-<GEN|RES|AVL|PRI|PAY|DEP|CAN|REN|OVD|RET|CHK|ACC|SUP>-<nn>`. Its § 2 parameter
   table is the single place numeric values live.
+- `docs/WORKFLOWS.md` is the **technical end-to-end workflow map** tracing each flow from Frontend UI
+  → Controller → Service Layer → Repository / DB → Scheduled background jobs, along with entity state machines
+  and quick code index.
 
 Legacy analysis files (`USE-CASES.md`, `USER-STORIES-*.md`, `REVIEW-CHECKLIST.md`, `OPEN-ISSUES.md`,
 `DEMO-GUIDE.md`, `check-docs.sh`, etc.) have been moved to `docs/_archive/` for historical reference.
