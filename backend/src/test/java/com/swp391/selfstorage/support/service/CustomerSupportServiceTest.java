@@ -146,6 +146,34 @@ class CustomerSupportServiceTest {
     }
 
     @Test
+    @DisplayName("Fix Duplicate Code: Tự động phát hiện mã lớn nhất và tăng sequence tránh xung đột uq_support_request_code")
+    void shouldGenerateNextCode_whenMaxCodeExists_andAvoidCollision() {
+        CreateSupportRequest request = CreateSupportRequest.builder()
+                .category(SupportCategory.OTHER)
+                .description("Yêu cầu kiểm tra hệ thống điều hòa")
+                .isUrgent(false)
+                .build();
+
+        SupportRequest existingLatest = new SupportRequest();
+        existingLatest.setCode("SUP-202610-0009");
+
+        when(supportRequestRepository.findFirstByCodeStartingWithOrderByCodeDesc(anyString()))
+                .thenReturn(Optional.of(existingLatest));
+        when(supportRequestRepository.existsByCode("SUP-202610-0010")).thenReturn(false);
+        when(supportRequestRepository.save(any(SupportRequest.class))).thenAnswer(invocation -> {
+            SupportRequest saved = invocation.getArgument(0);
+            saved.setId(809L);
+            return saved;
+        });
+
+        SupportRequestDetailResponse response = customerSupportService.createSupportRequest(request, customerUser);
+
+        assertNotNull(response);
+        assertEquals(809L, response.getId());
+        assertEquals("SUP-202610-0010", response.getCode());
+    }
+
+    @Test
     @DisplayName("US-SC-06.1 AC-3: Tạo ticket kèm ảnh đính kèm thành công")
     void shouldCreateSupportRequest_withAttachments_successfully() {
         CreateSupportRequest request = CreateSupportRequest.builder()

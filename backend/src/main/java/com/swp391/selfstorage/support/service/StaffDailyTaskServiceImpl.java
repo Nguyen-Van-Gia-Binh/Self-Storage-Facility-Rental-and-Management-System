@@ -17,6 +17,8 @@ import com.swp391.selfstorage.support.repository.StaffDailyAssignmentRepository;
 import com.swp391.selfstorage.support.repository.SupportRequestRepository;
 import com.swp391.selfstorage.unit.entity.StorageUnit;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
+import com.swp391.selfstorage.policy.entity.PolicyVersion;
+import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
 import com.swp391.selfstorage.user.entity.AppUser;
 import com.swp391.selfstorage.user.entity.UserRole;
 import com.swp391.selfstorage.user.entity.UserStatus;
@@ -26,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.*;
 
 @Service
@@ -39,6 +42,7 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
     private final FacilityRepository facilityRepository;
     private final UserRepository userRepository;
     private final UserFacilityAssignmentRepository userFacilityAssignmentRepository;
+    private final PolicyVersionRepository policyVersionRepository;
 
     public StaffDailyTaskServiceImpl(
             SupportRequestRepository supportRequestRepository,
@@ -47,7 +51,8 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
             StorageUnitRepository storageUnitRepository,
             FacilityRepository facilityRepository,
             UserRepository userRepository,
-            UserFacilityAssignmentRepository userFacilityAssignmentRepository
+            UserFacilityAssignmentRepository userFacilityAssignmentRepository,
+            PolicyVersionRepository policyVersionRepository
     ) {
         this.supportRequestRepository = supportRequestRepository;
         this.staffDailyAssignmentRepository = staffDailyAssignmentRepository;
@@ -56,6 +61,7 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
         this.facilityRepository = facilityRepository;
         this.userRepository = userRepository;
         this.userFacilityAssignmentRepository = userFacilityAssignmentRepository;
+        this.policyVersionRepository = policyVersionRepository;
     }
 
     @Override
@@ -127,6 +133,18 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
         }
     }
 
+    private int resolveCheckinGraceDays(RentalContract c) {
+        if (policyVersionRepository != null) {
+            Optional<PolicyVersion> active = policyVersionRepository
+                    .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(OffsetDateTime.now());
+            if (active.isPresent() && active.get().getCheckinGraceDays() != null) {
+                return active.get().getCheckinGraceDays();
+            }
+        }
+        return com.swp391.selfstorage.policy.service.PolicyNumbers.snapshotInt(
+                c != null ? c.getPolicySnapshot() : null, "checkinGraceDays", 10);
+    }
+
     private boolean isCheckInTaskForDate(RentalContract c, LocalDate date) {
         if (c == null || c.getStartDate() == null || date == null) {
             return false;
@@ -138,10 +156,9 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
             LocalDate completedDate = c.getCheckinDate() != null ? c.getCheckinDate() : c.getStartDate();
             return completedDate.isEqual(date);
         }
-        // BR-CHK-05: Khách hàng được phép đến nhận kho trễ tối đa checkin.grace_days (10 ngày) tính từ startDate
+        // BR-CHK-05: Khách hàng được phép đến nhận kho trễ tối đa checkin.grace_days từ ngày bắt đầu thuê (đồng bộ BOM Policy)
         if (c.getStatus() == ContractStatus.PENDING_CHECK_IN) {
-            int graceDays = com.swp391.selfstorage.policy.service.PolicyNumbers.snapshotInt(
-                    c.getPolicySnapshot(), "checkinGraceDays", 10);
+            int graceDays = resolveCheckinGraceDays(c);
             LocalDate graceDeadline = c.getStartDate().plusDays(Math.max(0, graceDays));
             return !date.isBefore(c.getStartDate()) && !date.isAfter(graceDeadline);
         }
@@ -355,6 +372,7 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
                 .scheduledDate(c.getStartDate())
                 .status(status)
                 .completed(completed)
+                .checkinGraceDays(resolveCheckinGraceDays(c))
                 .build();
     }
 

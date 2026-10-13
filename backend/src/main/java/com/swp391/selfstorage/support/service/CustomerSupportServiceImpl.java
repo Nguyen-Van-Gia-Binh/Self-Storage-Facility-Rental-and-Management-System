@@ -34,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -84,10 +85,27 @@ public class CustomerSupportServiceImpl implements CustomerSupportService {
         Long customerId = currentUser.getId();
         OffsetDateTime now = OffsetDateTime.now();
 
-        // 1. Tự động sinh mã phiếu: SUP-YYYYMM-XXXX
+        // 1. Tự động sinh mã phiếu an toàn: SUP-YYYYMM-XXXX (tránh xung đột uq_support_request_code khi có gap sequence)
         String monthPrefix = "SUP-" + now.format(DateTimeFormatter.ofPattern("yyyyMM")) + "-";
-        long seq = supportRequestRepository.countByCodeStartingWith(monthPrefix) + 1;
+        long seq = 1;
+        Optional<SupportRequest> latest = supportRequestRepository.findFirstByCodeStartingWithOrderByCodeDesc(monthPrefix);
+        if (latest.isPresent()) {
+            try {
+                String latestCode = latest.get().getCode();
+                String numPart = latestCode.substring(monthPrefix.length());
+                seq = Long.parseLong(numPart) + 1;
+            } catch (Exception e) {
+                seq = supportRequestRepository.countByCodeStartingWith(monthPrefix) + 1;
+            }
+        } else {
+            seq = supportRequestRepository.countByCodeStartingWith(monthPrefix) + 1;
+        }
+
         String code = String.format("%s%04d", monthPrefix, seq);
+        while (supportRequestRepository.existsByCode(code)) {
+            seq++;
+            code = String.format("%s%04d", monthPrefix, seq);
+        }
 
         // Quyết định nghiệp vụ (BR-SUP-01 - 01/10/2026): Bãi bỏ cam kết SLA cứng 2 giờ/24 giờ và đồng hồ đếm ngược.
         // Hỗ trợ xử lý linh hoạt theo ca trực cơ sở; slaDueAt để null và isUrgent theo request (mặc định false).

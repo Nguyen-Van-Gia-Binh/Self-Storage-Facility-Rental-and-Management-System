@@ -13,6 +13,7 @@ import type {
 import type { StaffDailyTaskReport } from '@/types';
 import { getStaffDailyTasks } from '@/api/staff';
 import { getPendingContracts, getManagerContracts, assignReturnStaff, assignCheckInStaff } from '@/api/contract';
+import { fetchActivePolicy } from '@/api/pricing';
 
 const TASK_OVERRIDES_KEY = 'smartstorage_dispatch_task_overrides';
 
@@ -216,10 +217,11 @@ export async function getDailyDispatchTasks(
   const tasks: DailyDispatchTaskItem[] = [];
 
   try {
-    const [incidents, pendingCheckIns, returnContracts] = await Promise.all([
+    const [incidents, pendingCheckIns, returnContracts, activePolicy] = await Promise.all([
       getManagementSupportRequests({ facilityId }),
       getPendingContracts(facilityId).catch(() => []),
       getManagerContracts({ facilityId, status: 'PENDING_RETURN' }).catch(() => []),
+      fetchActivePolicy().catch(() => null),
     ]);
 
     // 1. Map các sự cố kỹ thuật (INCIDENT)
@@ -282,6 +284,7 @@ export async function getDailyDispatchTasks(
           referenceId: contract.id,
           referenceCode: contract.code,
           notes: 'Khách hàng đã đặt cọc VietQR thành công, sẵn sàng nhận kho.',
+          checkinGraceDays: contract.checkinGraceDays ?? activePolicy?.checkinGraceDays ?? 3,
         });
       });
     }

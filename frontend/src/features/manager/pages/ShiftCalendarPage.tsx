@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { fetchMyAssignedFacilities } from '@/api/facility';
 import { getStaffWorkload, getDailyDispatchTasks, assignStaffToTask } from '../api/staffAssignmentApi';
+import { fetchActivePolicy } from '@/api/pricing';
 import type { FacilityListItem } from '@/types';
 import type { StaffWorkloadItem, DailyDispatchTaskItem, AssignTaskPayload } from '../types/staffAssignment';
 import { Breadcrumb } from '../components/Breadcrumb';
@@ -49,6 +50,9 @@ export const ShiftCalendarPage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>(() => {
     return searchParams.get('date') || todayStr;
   });
+
+  // Số ngày ân hạn nhận kho theo chính sách BOM (BR-CHK-05, mặc định 3 ngày nếu đã cấu hình)
+  const [policyGraceDays, setPolicyGraceDays] = useState<number>(3);
 
   const [facility, setFacility] = useState<FacilityListItem | null>(null);
   const [staffList, setStaffList] = useState<StaffWorkloadItem[]>([]);
@@ -85,11 +89,16 @@ export const ShiftCalendarPage: React.FC = () => {
       else setLoading(true);
       setError(null);
 
-      const [facRes, staffData, taskData] = await Promise.all([
+      const [facRes, staffData, taskData, activePolicy] = await Promise.all([
         fetchMyAssignedFacilities().catch(() => []),
         getStaffWorkload(Number(facilityId)).catch(() => []),
         getDailyDispatchTasks(Number(facilityId), selectedDate).catch(() => []),
+        fetchActivePolicy().catch(() => null),
       ]);
+
+      if (activePolicy && typeof activePolicy.checkinGraceDays === 'number') {
+        setPolicyGraceDays(activePolicy.checkinGraceDays);
+      }
 
       const currentFac = facRes.find((f) => String(f.id) === String(facilityId));
       if (currentFac) {
@@ -156,7 +165,7 @@ export const ShiftCalendarPage: React.FC = () => {
       // 1. Task chính xác của ngày được chọn
       if (t.scheduledDate === selectedDate) return true;
 
-      // 2. BR-CHK-05: Đơn Check-in chưa hoàn thành được phép nhận kho trễ tối đa 10 ngày từ ngày bắt đầu thuê
+      // 2. BR-CHK-05: Đơn Check-in chưa hoàn thành được phép nhận kho trễ tối đa số ngày ân hạn từ ngày bắt đầu thuê (đồng bộ BOM Policy)
       if (t.taskType === 'CHECK_IN' && t.status !== 'COMPLETED' && t.scheduledDate) {
         const startParts = t.scheduledDate.split('-').map(Number);
         const targetParts = selectedDate.split('-').map(Number);
@@ -164,7 +173,8 @@ export const ShiftCalendarPage: React.FC = () => {
           const startUtc = Date.UTC(startParts[0], startParts[1] - 1, startParts[2]);
           const targetUtc = Date.UTC(targetParts[0], targetParts[1] - 1, targetParts[2]);
           const diffDays = Math.round((targetUtc - startUtc) / (1000 * 60 * 60 * 24));
-          if (diffDays >= 0 && diffDays <= 10) {
+          const effectiveGraceDays = t.checkinGraceDays ?? policyGraceDays ?? 3;
+          if (diffDays >= 0 && diffDays <= effectiveGraceDays) {
             return true;
           }
         }
@@ -183,7 +193,7 @@ export const ShiftCalendarPage: React.FC = () => {
 
       return false;
     });
-  }, [allTasks, selectedDate, todayStr, includeBacklogUnassigned]);
+  }, [allTasks, selectedDate, todayStr, includeBacklogUnassigned, policyGraceDays]);
 
   // Thống kê nhanh công việc trong ngày
   const dailyStats = useMemo(() => {
@@ -473,7 +483,7 @@ export const ShiftCalendarPage: React.FC = () => {
                   </span>
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Đón tiếp khách nhận kho, kiểm tra trả kho và sửa chữa sự cố kỹ thuật theo ngày.
+                  Đón tiếp khách nhận kho (ân hạn tối đa {policyGraceDays} ngày theo chính sách BOM), kiểm tra trả kho và sửa chữa sự cố kỹ thuật theo ngày.
                 </p>
               </div>
 

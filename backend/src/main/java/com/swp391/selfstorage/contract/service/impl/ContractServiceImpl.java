@@ -435,7 +435,7 @@ public class ContractServiceImpl implements ContractService {
                                         .unitDimensions(unitDimensions)
                                         .startDate(c.getStartDate())
                                         .endDateExclusive(c.getEndDateExclusive())
-                                        .checkinGraceDays(PolicyNumbers.snapshotInt(c.getPolicySnapshot(), "checkinGraceDays", 10))
+                                        .checkinGraceDays(resolveCheckinGraceDays(c))
                                         .rentalMonths(c.getRentalMonths())
                                         .monthlyPrice(c.getMonthlyPrice())
                                         .depositAmount(c.getDepositAmount())
@@ -672,7 +672,7 @@ public class ContractServiceImpl implements ContractService {
                                 .unitTypeName(unitName)
                                 .startDate(contract.getStartDate())
                                 .endDateExclusive(contract.getEndDateExclusive())
-                                .checkinGraceDays(PolicyNumbers.snapshotInt(contract.getPolicySnapshot(), "checkinGraceDays", 10))
+                                .checkinGraceDays(resolveCheckinGraceDays(contract))
                                 .rentalMonths(contract.getRentalMonths())
                                 .monthlyPrice(contract.getMonthlyPrice())
                                 .depositAmount(contract.getDepositAmount())
@@ -1588,7 +1588,7 @@ public class ContractServiceImpl implements ContractService {
                 r.setUnitTypeId(c.getUnitTypeId());
                 r.setStartDate(c.getStartDate());
                 r.setEndDateExclusive(c.getEndDateExclusive());
-                r.setCheckinGraceDays(PolicyNumbers.snapshotInt(c.getPolicySnapshot(), "checkinGraceDays", 10));
+                r.setCheckinGraceDays(resolveCheckinGraceDays(c));
                 r.setRentalMonths(c.getRentalMonths());
                 r.setMonthlyPrice(c.getMonthlyPrice());
                 r.setTotalRentalFee(c.getTotalRentalFee());
@@ -1724,6 +1724,20 @@ public class ContractServiceImpl implements ContractService {
                         return Math.min(Math.round(deposit * rates.dailyRate.doubleValue() * daysToCharge), maxCapFee);
                 }
                 return maxCapFee;
+        }
+
+        private int resolveCheckinGraceDays(RentalContract c) {
+                if (c == null) {
+                        return 10;
+                }
+                if (c.getStatus() == ContractStatus.PENDING_CHECK_IN && policyVersionRepository != null) {
+                        Optional<PolicyVersion> active = policyVersionRepository
+                                        .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(OffsetDateTime.now());
+                        if (active.isPresent() && active.get().getCheckinGraceDays() != null) {
+                                return active.get().getCheckinGraceDays();
+                        }
+                }
+                return PolicyNumbers.snapshotInt(c.getPolicySnapshot(), "checkinGraceDays", 10);
         }
 
         private record OverduePreviewRates(int graceDays, BigDecimal dailyRate, BigDecimal capRate, int terminationDays) {

@@ -52,6 +52,7 @@ export interface DailyDispatchTaskItem {
   notes?: string;
   referenceId?: number;
   referenceCode?: string;
+  checkinGraceDays?: number;
 }
 
 export interface AssignTaskPayload {
