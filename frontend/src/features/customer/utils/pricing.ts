@@ -18,9 +18,14 @@ export interface PricingCalculationResult {
   surcharges?: { name: string; amount: number }[];
 }
 
-export function calculateBookingTotal(monthlyRate: number, months: number): PricingCalculationResult {
+export function calculateBookingTotal(
+  monthlyRate: number,
+  months: number,
+  depositMultiplier: number = 1
+): PricingCalculationResult {
   const safeRate = Math.max(0, monthlyRate);
   const safeMonths = Math.max(1, months);
+  const safeMultiplier = Math.max(0, depositMultiplier);
 
   const rawRentTotal = safeRate * safeMonths;
 
@@ -35,8 +40,8 @@ export function calculateBookingTotal(monthlyRate: number, months: number): Pric
   const discountAmount = Math.round((rawRentTotal * discountPercentage) / 1000) * 1000;
   const finalRentTotal = rawRentTotal - discountAmount;
 
-  // BR-DEP-01: Deposit is exactly 1 month of base monthly rate
-  const depositAmount = Math.round(safeRate / 1000) * 1000;
+  // BR-DEP-01: Deposit is depositMultiplier × base monthly rate (rounded to 1,000 VND per BR-GEN-04)
+  const depositAmount = Math.round((safeRate * safeMultiplier) / 1000) * 1000;
 
   // Total due today includes first rent period + security deposit
   const totalDueToday = finalRentTotal + depositAmount;

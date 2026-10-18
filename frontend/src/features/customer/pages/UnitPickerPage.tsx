@@ -15,6 +15,7 @@ import { formatVND } from '../utils/pricing';
 import { fetchFacilities } from '@/api/facility';
 import { fetchUnitTypes as fetchUnitTypesApi, fetchStorageUnits as fetchStorageUnitsApi } from '@/api/unit';
 import { checkUnitAvailability, getMyReservationsApi, type AvailabilityResponse } from '@/api/reservation';
+import { useActivePolicy } from '@/hooks/useActivePolicy';
 import { tokenStorage } from '@/utils/tokenStorage';
 import type { FacilityListItem } from '@/types';
 import type { StorageType, UnitSizeCategory, StorageUnit, UnitType, UnitStatus } from '../types';
@@ -98,6 +99,12 @@ export const UnitPickerPage: React.FC = () => {
   const [durationMonths, setDurationMonths] = useState<number>(
     !isNaN(initialMonthsParam) && initialMonthsParam > 0 ? initialMonthsParam : 3
   );
+
+  const policy = useActivePolicy();
+  const depositMultiplier = policy?.depositMultiplier ?? 1;
+  const depositMultiplierLabel = Number.isInteger(depositMultiplier)
+    ? String(depositMultiplier)
+    : depositMultiplier.toFixed(1).replace(/\.0$/, '');
 
   const durationPackages = useMemo(() => {
     return [
@@ -550,7 +557,7 @@ export const UnitPickerPage: React.FC = () => {
 
     const discountAmount = Math.round((grossRent * discountPercent) / 100);
     const netRent = grossRent - discountAmount;
-    const depositAmount = basePrice; // 1 tháng tiền cọc
+    const depositAmount = Math.round((basePrice * depositMultiplier) / 1000) * 1000;
     const totalDue = netRent + depositAmount;
 
     return {
@@ -562,7 +569,7 @@ export const UnitPickerPage: React.FC = () => {
       depositAmount,
       totalDue,
     };
-  }, [selectedUnit, currentUnitType, durationMonths]);
+  }, [selectedUnit, currentUnitType, durationMonths, depositMultiplier]);
 
   const handleProceedToBooking = async () => {
     const targetUnit = selectedUnit;
@@ -1102,7 +1109,7 @@ export const UnitPickerPage: React.FC = () => {
                 </div>
               )}
               <div className="flex justify-between">
-                <span>Tiền đặt cọc:</span>
+                <span>Tiền đặt cọc ({depositMultiplierLabel} tháng):</span>
                 <span className="font-semibold text-[#0a1614]">{formatVND(priceCalculation.depositAmount)}</span>
               </div>
             </div>
