@@ -66,6 +66,10 @@ function formatDateVN(dateStr: string): string {
 
 export const BookingPage: React.FC = () => {
   const policy = useActivePolicy();
+  const depositMultiplier = policy?.depositMultiplier ?? 1;
+  const depositMultiplierLabel = Number.isInteger(depositMultiplier)
+    ? String(depositMultiplier)
+    : depositMultiplier.toFixed(1).replace(/\.0$/, '');
   const holdHours = policy?.reservationHoldHours ?? 48;
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -451,14 +455,15 @@ export const BookingPage: React.FC = () => {
   // Tính toán bảng giá
   const calculation = useMemo(() => {
     const baseMonthlyPrice = unitType.baseMonthlyPrice || 0;
+    const fallbackDeposit = Math.round((baseMonthlyPrice * depositMultiplier) / 1000) * 1000;
     if (backendPricing) {
       return {
         unitPrice: backendPricing.monthlyPrice || baseMonthlyPrice,
         rentalFee: backendPricing.rawRentTotal || baseMonthlyPrice * durationMonths,
         discountAmount: backendPricing.discountAmount || 0,
         discountPercent: backendPricing.discountPercentage || (durationMonths >= 12 ? 10 : durationMonths >= 6 ? 5 : 0),
-        depositAmount: backendPricing.depositAmount || baseMonthlyPrice,
-        totalDueToday: backendPricing.totalDueToday || (baseMonthlyPrice * durationMonths + baseMonthlyPrice),
+        depositAmount: backendPricing.depositAmount || fallbackDeposit,
+        totalDueToday: backendPricing.totalDueToday || (baseMonthlyPrice * durationMonths + fallbackDeposit),
       };
     }
 
@@ -469,7 +474,7 @@ export const BookingPage: React.FC = () => {
 
     const discountAmount = Math.round((grossRent * discountPercent) / 100);
     const netRent = grossRent - discountAmount;
-    const depositAmount = baseMonthlyPrice;
+    const depositAmount = fallbackDeposit;
     const totalDueToday = netRent + depositAmount;
 
     return {
@@ -480,7 +485,7 @@ export const BookingPage: React.FC = () => {
       depositAmount,
       totalDueToday,
     };
-  }, [backendPricing, unitType.baseMonthlyPrice, durationMonths]);
+  }, [backendPricing, unitType.baseMonthlyPrice, durationMonths, depositMultiplier]);
 
   // Tạo MoveInPass khi đã thanh toán thành công
   const handleConfirmBookingPayment = useCallback(() => {
@@ -925,8 +930,8 @@ export const BookingPage: React.FC = () => {
 
                 <div className="p-4 bg-brand-50/50 border border-brand-200/70 rounded-xl space-y-2 text-xs text-slate-600">
                   <p>• <strong>Nhận bàn giao kho:</strong> Quý khách xuất trình CCCD trùng khớp khi đến cơ sở để nhận mã PIN điện tử (hoặc mã QR) và hướng dẫn mở kho.</p>
-                  <p>• <strong>Chính sách giữ chỗ:</strong> Đơn đặt cọc giữ chỗ có hiệu lực trong 48 giờ. Hủy trước ngày bắt đầu được hoàn 100% tiền thuê.</p>
-                  <p>• <strong>Hoàn trả tiền cọc:</strong> Tiền cọc giữ kho (1 tháng) được hoàn trả 100% ngay khi thanh lý hợp đồng đúng hạn.</p>
+                  <p>• <strong>Chính sách giữ chỗ:</strong> Đơn đặt cọc giữ chỗ có hiệu lực trong {holdHours} giờ. Hủy trước ngày bắt đầu được hoàn 100% tiền thuê.</p>
+                  <p>• <strong>Hoàn trả tiền cọc:</strong> Tiền cọc giữ kho ({depositMultiplierLabel} tháng) được hoàn trả 100% ngay khi thanh lý hợp đồng đúng hạn.</p>
                 </div>
 
                 <label className="flex items-start gap-2.5 pt-2 cursor-pointer">
@@ -1021,7 +1026,7 @@ export const BookingPage: React.FC = () => {
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <span>Tiền cọc giữ kho (1 tháng):</span>
+                  <span>Tiền cọc giữ kho ({depositMultiplierLabel} tháng):</span>
                   <span className="font-semibold text-[#0a1614]">{formatVND(calculation.depositAmount)}</span>
                 </div>
               </div>
@@ -1339,7 +1344,7 @@ export const BookingPage: React.FC = () => {
                     </div>
                   )}
                   <div className="flex justify-between">
-                    <span>Tiền cọc giữ kho (1 tháng):</span>
+                    <span>Tiền cọc giữ kho ({depositMultiplierLabel} tháng):</span>
                     <span className="font-semibold text-[#0a1614]">{formatVND(calculation.depositAmount)}</span>
                   </div>
                 </div>

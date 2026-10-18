@@ -125,6 +125,7 @@
 | `ISS-116` | Bảng giá BOM thừa thể tích m³ và kích thước 3 chiều, các cột bị lệch phải và khung 1280px chật chội. | Chuẩn hóa cột Diện tích m², bỏ m³ và D×R×C, căn giữa toàn bộ các cột dữ liệu, mở rộng khung max-w-[1600px]. | Bình | `RESOLVED` |
 | `ISS-117` | Trang Chính sách thuê BOM dính lề trái màn hình rộng và các ô input lệch hàng ngang do nhãn dài ngắn khác nhau. | Căn giữa max-w-5xl mx-auto, đồng bộ chiều cao nhãn min-h-[2.5rem] và căn đáy để toàn bộ ô input thẳng hàng ngang tăm tắp. | Bình | `RESOLVED` |
 | `ISS-118` | Thiếu tài liệu bản đồ kỹ thuật mô tả trọn vẹn mọi luồng đi từ UI -> API -> Service -> DB -> Jobs cho toàn bộ dự án. | Hoàn thành tài liệu `docs/WORKFLOWS.md` bao quát toàn bộ 7 luồng nghiệp vụ, luồng hệ thống, 3 cron jobs, state machines và bảng tra cứu code. | Bình | `RESOLVED` |
+| `ISS-119` | Tiền cọc giữ kho tại BookingPage và UnitPickerPage bị hardcode 1 tháng và label không phản ánh hệ số cọc BOM Policy (BR-DEP-01). | Kết nối `useActivePolicy()` lấy `depositMultiplier`, đồng bộ công thức tính cọc `calculateBookingTotal` và hiển thị động nhãn `(N tháng)` thay vì hardcode 1 tháng. | Xuân Nhi | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 
