@@ -1020,7 +1020,11 @@ export const BookingPage: React.FC = () => {
                 </div>
                 {calculation.discountAmount > 0 && (
                   <div className="flex justify-between text-emerald-700 font-semibold">
-                    <span>Chiết khấu ({calculation.discountPercent}%):</span>
+                    <span>
+                      {calculation.discountProgramName
+                        ? `${calculation.discountProgramName}${calculation.discountPercent > 0 ? ` (-${calculation.discountPercent}%)` : ''}:`
+                        : `Chiết khấu (-${calculation.discountPercent}%):`}
+                    </span>
                     <span>-{formatVND(calculation.discountAmount)}</span>
                   </div>
                 )}
@@ -1338,7 +1342,11 @@ export const BookingPage: React.FC = () => {
                   </div>
                   {calculation.discountAmount > 0 && (
                     <div className="flex justify-between text-emerald-700 font-semibold">
-                      <span>Chiết khấu ({calculation.discountPercent}%):</span>
+                      <span>
+                        {calculation.discountProgramName
+                          ? `${calculation.discountProgramName}${calculation.discountPercent > 0 ? ` (-${calculation.discountPercent}%)` : ''}:`
+                          : `Chiết khấu (-${calculation.discountPercent}%):`}
+                      </span>
                       <span>-{formatVND(calculation.discountAmount)}</span>
                     </div>
                   )}

@@ -1147,8 +1147,8 @@ export const UnitPickerPage: React.FC = () => {
                 <div className="flex justify-between text-emerald-700 font-semibold">
                   <span>
                     {priceCalculation.discountProgramName
-                      ? `${priceCalculation.discountProgramName}:`
-                      : `Chiết khấu (${priceCalculation.discountPercent}%):`}
+                      ? `${priceCalculation.discountProgramName}${priceCalculation.discountPercent > 0 ? ` (-${priceCalculation.discountPercent}%)` : ''}:`
+                      : `Chiết khấu (-${priceCalculation.discountPercent}%):`}
                   </span>
                   <span>-{formatVND(priceCalculation.discountAmount)}</span>
                 </div>
