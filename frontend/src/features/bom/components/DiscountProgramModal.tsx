@@ -1,7 +1,7 @@
 // frontend/src/features/bom/components/DiscountProgramModal.tsx
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Percent, Calendar, Building2, AlertCircle, Loader2 } from 'lucide-react';
+import { X, Percent, Loader2 } from 'lucide-react';
 import type { FacilityListItem } from '@/types';
 import type {
   DiscountProgramItem,

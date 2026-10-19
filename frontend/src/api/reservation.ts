@@ -26,6 +26,8 @@ export interface CalculatePriceResponse {
   totalDueToday: number;
   surcharges?: SurchargeLine[];
   surchargeTotal?: number;
+  discountProgramId?: number | null;
+  discountProgramName?: string | null;
 }
 
 export interface CreateReservationRequest {

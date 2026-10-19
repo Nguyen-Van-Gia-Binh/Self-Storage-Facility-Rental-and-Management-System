@@ -14,7 +14,13 @@ import { Modal } from '@/components/ui/Modal';
 import { formatVND } from '../utils/pricing';
 import { fetchFacilities } from '@/api/facility';
 import { fetchUnitTypes as fetchUnitTypesApi, fetchStorageUnits as fetchStorageUnitsApi } from '@/api/unit';
-import { checkUnitAvailability, getMyReservationsApi, type AvailabilityResponse } from '@/api/reservation';
+import {
+  checkUnitAvailability,
+  getMyReservationsApi,
+  calculateBookingPrice,
+  type AvailabilityResponse,
+  type CalculatePriceResponse,
+} from '@/api/reservation';
 import { useActivePolicy } from '@/hooks/useActivePolicy';
 import { tokenStorage } from '@/utils/tokenStorage';
 import type { FacilityListItem } from '@/types';
@@ -541,35 +547,72 @@ export const UnitPickerPage: React.FC = () => {
     }
   };
 
-  // Tính toán bảng giá minh bạch
+  const [serverPricing, setServerPricing] = useState<CalculatePriceResponse | null>(null);
+
+  useEffect(() => {
+    let isCurrent = true;
+    const fId = parseInt(currentFacility?.id, 10);
+    const utId = currentUnitType ? parseInt(String(currentUnitType.id), 10) : null;
+    if (!fId || !utId || durationMonths <= 0) {
+      setServerPricing(null);
+      return;
+    }
+
+    calculateBookingPrice({
+      facilityId: fId,
+      unitTypeId: utId,
+      months: durationMonths,
+    })
+      .then((data) => {
+        if (isCurrent) {
+          setServerPricing(data);
+        }
+      })
+      .catch((err) => {
+        console.warn('Lỗi tính giá đặt chỗ từ server:', err);
+        if (isCurrent) {
+          setServerPricing(null);
+        }
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [currentFacility?.id, currentUnitType?.id, durationMonths]);
+
+  // Tính toán bảng giá minh bạch từ Backend CSDL (BR-PRI-01, US-BM-03.3)
   const priceCalculation = useMemo(() => {
     const basePrice = (selectedUnit?.monthlyPrice && selectedUnit.monthlyPrice > 0)
       ? selectedUnit.monthlyPrice
       : (currentUnitType?.baseMonthlyPrice ?? 0);
 
     const grossRent = basePrice * durationMonths;
-    let discountPercent = 0;
-    if (durationMonths >= 12) {
-      discountPercent = 10;
-    } else if (durationMonths >= 6) {
-      discountPercent = 5;
-    }
+    const fallbackDeposit = Math.round((basePrice * depositMultiplier) / 1000) * 1000;
 
-    const discountAmount = Math.round((grossRent * discountPercent) / 100);
-    const netRent = grossRent - discountAmount;
-    const depositAmount = Math.round((basePrice * depositMultiplier) / 1000) * 1000;
-    const totalDue = netRent + depositAmount;
+    if (serverPricing) {
+      return {
+        basePrice: serverPricing.monthlyPrice || basePrice,
+        grossRent: serverPricing.rawRentTotal || grossRent,
+        discountPercent: serverPricing.discountPercentage || 0,
+        discountAmount: serverPricing.discountAmount || 0,
+        discountProgramName: serverPricing.discountProgramName || null,
+        netRent: serverPricing.finalRentTotal || (grossRent - (serverPricing.discountAmount || 0)),
+        depositAmount: serverPricing.depositAmount || fallbackDeposit,
+        totalDue: serverPricing.totalDueToday || ((serverPricing.finalRentTotal || grossRent) + fallbackDeposit),
+      };
+    }
 
     return {
       basePrice,
       grossRent,
-      discountPercent,
-      discountAmount,
-      netRent,
-      depositAmount,
-      totalDue,
+      discountPercent: 0,
+      discountAmount: 0,
+      discountProgramName: null,
+      netRent: grossRent,
+      depositAmount: fallbackDeposit,
+      totalDue: grossRent + fallbackDeposit,
     };
-  }, [selectedUnit, currentUnitType, durationMonths, depositMultiplier]);
+  }, [selectedUnit, currentUnitType, durationMonths, depositMultiplier, serverPricing]);
 
   const handleProceedToBooking = async () => {
     const targetUnit = selectedUnit;
@@ -804,10 +847,8 @@ export const UnitPickerPage: React.FC = () => {
                   </select>
                 )}
                 <p className="text-[11px] text-slate-500 mt-1.5 font-medium">
-                  {durationMonths >= 12
-                    ? '🎉 Giảm 10% tổng tiền thuê cho kỳ từ 12 tháng trở lên'
-                    : durationMonths >= 6
-                    ? '🎉 Giảm 5% tổng tiền thuê cho kỳ từ 6 tháng trở lên'
+                  {priceCalculation.discountAmount > 0
+                    ? `🎉 ${priceCalculation.discountProgramName || `Ưu đãi giảm ${priceCalculation.discountPercent}%`} khi thuê ${durationMonths} tháng`
                     : '💡 Thanh toán trọn kỳ khi đặt chỗ'}
                 </p>
               </div>
@@ -1104,7 +1145,11 @@ export const UnitPickerPage: React.FC = () => {
               </div>
               {priceCalculation.discountAmount > 0 && (
                 <div className="flex justify-between text-emerald-700 font-semibold">
-                  <span>Chiết khấu ({priceCalculation.discountPercent}%):</span>
+                  <span>
+                    {priceCalculation.discountProgramName
+                      ? `${priceCalculation.discountProgramName}:`
+                      : `Chiết khấu (${priceCalculation.discountPercent}%):`}
+                  </span>
                   <span>-{formatVND(priceCalculation.discountAmount)}</span>
                 </div>
               )}

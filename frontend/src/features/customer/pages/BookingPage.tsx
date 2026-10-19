@@ -461,19 +461,17 @@ export const BookingPage: React.FC = () => {
         unitPrice: backendPricing.monthlyPrice || baseMonthlyPrice,
         rentalFee: backendPricing.rawRentTotal || baseMonthlyPrice * durationMonths,
         discountAmount: backendPricing.discountAmount || 0,
-        discountPercent: backendPricing.discountPercentage || (durationMonths >= 12 ? 10 : durationMonths >= 6 ? 5 : 0),
+        discountPercent: backendPricing.discountPercentage || 0,
+        discountProgramName: backendPricing.discountProgramName || null,
         depositAmount: backendPricing.depositAmount || fallbackDeposit,
         totalDueToday: backendPricing.totalDueToday || (baseMonthlyPrice * durationMonths + fallbackDeposit),
       };
     }
 
     const grossRent = baseMonthlyPrice * durationMonths;
-    let discountPercent = 0;
-    if (durationMonths >= 12) discountPercent = 10;
-    else if (durationMonths >= 6) discountPercent = 5;
-
-    const discountAmount = Math.round((grossRent * discountPercent) / 100);
-    const netRent = grossRent - discountAmount;
+    const discountPercent = 0;
+    const discountAmount = 0;
+    const netRent = grossRent;
     const depositAmount = fallbackDeposit;
     const totalDueToday = netRent + depositAmount;
 
@@ -482,6 +480,7 @@ export const BookingPage: React.FC = () => {
       rentalFee: grossRent,
       discountAmount,
       discountPercent,
+      discountProgramName: null,
       depositAmount,
       totalDueToday,
     };
