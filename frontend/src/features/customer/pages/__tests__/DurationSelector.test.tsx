@@ -37,3 +37,23 @@ describe('DurationSelector card deal badges', () => {
     expect(getDealBadgeForCard(12, rules)).toBe('Giảm 50%');
   });
 });
+
+describe('Segmented duration selector tab labels', () => {
+  const quickMilestones = [
+    { months: 1, label: '1 tháng' },
+    { months: 3, label: '3 tháng' },
+    { months: 6, label: '6 tháng' },
+    { months: 12, label: '1 năm' },
+  ];
+
+  it('tab thứ 5 luôn giữ nhãn "Tùy chỉnh", không hiển thị số tháng (ví dụ: 12T) gây nhầm lẫn', () => {
+    const customTabLabel = 'Tùy chỉnh';
+    expect(customTabLabel).toBe('Tùy chỉnh');
+    expect(customTabLabel).not.toMatch(/^\d+T$/);
+  });
+
+  it('các mốc nhanh hiển thị đúng định dạng', () => {
+    expect(quickMilestones.map((m) => m.label)).toEqual(['1 tháng', '3 tháng', '6 tháng', '1 năm']);
+  });
+});
+

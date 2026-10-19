@@ -831,7 +831,7 @@ export const UnitPickerPage: React.FC = () => {
                         : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                     }`}
                   >
-                    {isCustomMode ? `${durationMonths}T` : 'Tùy chỉnh'}
+                    Tùy chỉnh
                   </button>
                 </div>
 
