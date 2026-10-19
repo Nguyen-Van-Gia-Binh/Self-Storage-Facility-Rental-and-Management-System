@@ -12,6 +12,7 @@ BEGIN
     ALTER TABLE discount_program
     ADD CONSTRAINT ck_discount_program_min_months CHECK (min_rental_months >= 1);
 END;
+GO
 
 -- Seed 2 chương trình khuyến mãi mặc định toàn hệ thống để tương thích ngược 100%
 IF NOT EXISTS (SELECT 1 FROM discount_program WHERE name = N'Ưu đãi thuê từ 6 tháng (5%)')
@@ -25,6 +26,7 @@ BEGIN
         '2026-01-01', '2026-12-31', 'SYSTEM', 1, SYSDATETIMEOFFSET(), SYSDATETIMEOFFSET()
     );
 END;
+GO
 
 IF NOT EXISTS (SELECT 1 FROM discount_program WHERE name = N'Ưu đãi thuê dài hạn từ 12 tháng (10%)')
 BEGIN
@@ -37,3 +39,5 @@ BEGIN
         '2026-01-01', '2026-12-31', 'SYSTEM', 1, SYSDATETIMEOFFSET(), SYSDATETIMEOFFSET()
     );
 END;
+GO
+
