@@ -7,7 +7,10 @@ import {
   Loader2, 
   Clock, 
   AlertTriangle,
-  ArrowRight
+  ArrowRight,
+  Sparkles,
+  Plus,
+  Minus
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
@@ -21,6 +24,7 @@ import {
   type AvailabilityResponse,
   type CalculatePriceResponse,
 } from '@/api/reservation';
+import { fetchDiscountPrograms, type DiscountProgramItem } from '@/api/discount';
 import { useActivePolicy } from '@/hooks/useActivePolicy';
 import { tokenStorage } from '@/utils/tokenStorage';
 import type { FacilityListItem } from '@/types';
@@ -101,7 +105,6 @@ export const UnitPickerPage: React.FC = () => {
     return todayStr;
   });
 
-  const [isCustomDuration, setIsCustomDuration] = useState<boolean>(false);
   const [durationMonths, setDurationMonths] = useState<number>(
     !isNaN(initialMonthsParam) && initialMonthsParam > 0 ? initialMonthsParam : 3
   );
@@ -112,27 +115,32 @@ export const UnitPickerPage: React.FC = () => {
     ? String(depositMultiplier)
     : depositMultiplier.toFixed(1).replace(/\.0$/, '');
 
-  const durationPackages = useMemo(() => {
-    return [
-      { months: 1, label: '1 Tháng' },
-      { months: 2, label: '2 Tháng' },
-      { months: 3, label: '3 Tháng' },
-      { months: 4, label: '4 Tháng' },
-      { months: 5, label: '5 Tháng' },
-      { months: 6, label: '6 Tháng (Ưu đãi -5%)' },
-      { months: 7, label: '7 Tháng' },
-      { months: 8, label: '8 Tháng' },
-      { months: 9, label: '9 Tháng' },
-      { months: 10, label: '10 Tháng' },
-      { months: 11, label: '11 Tháng' },
-      { months: 12, label: '12 Tháng / 1 Năm (Ưu đãi -10%)' },
-      { months: 18, label: '18 Tháng / 1.5 Năm (Ưu đãi -10%)' },
-      { months: 24, label: '24 Tháng / 2 Năm (Ưu đãi -10%)' },
-      { months: 36, label: '36 Tháng / 3 Năm (Ưu đãi -10%)' },
-      { months: 48, label: '48 Tháng / 4 Năm (Ưu đãi -10%)' },
-      { months: 60, label: '60 Tháng / 5 Năm (Ưu đãi -10%)' },
-    ];
+  const [activeDiscounts, setActiveDiscounts] = useState<DiscountProgramItem[]>([]);
+
+  useEffect(() => {
+    fetchDiscountPrograms({ isActive: true })
+      .then((res) => setActiveDiscounts(res.content || []))
+      .catch(() => setActiveDiscounts([]));
   }, []);
+
+  const quickMilestones = useMemo(() => [
+    { months: 1, label: '1 tháng' },
+    { months: 3, label: '3 tháng' },
+    { months: 6, label: '6 tháng' },
+    { months: 12, label: '1 năm' },
+    { months: 24, label: '2 năm' },
+  ], []);
+
+  const getBestDealBadge = (months: number): string | null => {
+    const eligible = activeDiscounts.filter((p) => p.minRentalMonths <= months && p.isActive);
+    if (eligible.length === 0) return null;
+    const percentPrograms = eligible.filter((p) => p.discountType === 'PERCENT');
+    if (percentPrograms.length > 0) {
+      const maxVal = Math.max(...percentPrograms.map((p) => p.discountValue));
+      return `-${maxVal}%`;
+    }
+    return 'Ưu đãi';
+  };
 
   // Tính ngày kết thúc dự kiến
   const calculatedEndDate = useMemo(() => {
@@ -795,20 +803,63 @@ export const UnitPickerPage: React.FC = () => {
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-bold text-slate-700">
-                    Thời hạn thuê
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    <span>Thời hạn thuê</span>
+                    {priceCalculation.discountPercent > 0 && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-700 border border-amber-200">
+                        <Sparkles className="w-3 h-3 text-amber-600" />
+                        Ưu đãi -{priceCalculation.discountPercent}%
+                      </span>
+                    )}
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => setIsCustomDuration(!isCustomDuration)}
-                    className="text-[11px] text-brand-600 hover:text-brand-700 font-bold underline cursor-pointer"
-                  >
-                    {isCustomDuration ? 'Chọn theo danh mục' : 'Nhập số tháng tùy chỉnh'}
-                  </button>
+                  <span className="text-[11px] font-semibold text-slate-500">
+                    Đang chọn: <strong className="text-brand-700 font-bold">{durationMonths} tháng</strong>
+                  </span>
                 </div>
-                {isCustomDuration ? (
-                  <div className="relative">
+
+                {/* 1. Quick-select Chips Grid */}
+                <div className="grid grid-cols-5 gap-2 mb-3">
+                  {quickMilestones.map((pkg) => {
+                    const isSelected = durationMonths === pkg.months;
+                    const dealBadge = getBestDealBadge(pkg.months);
+                    return (
+                      <button
+                        key={pkg.months}
+                        type="button"
+                        onClick={() => setDurationMonths(pkg.months)}
+                        className={`relative py-2.5 px-1 rounded-xl text-xs font-bold transition-all text-center border cursor-pointer ${
+                          isSelected
+                            ? 'bg-brand-50 border-brand-500 text-brand-800 shadow-2xs ring-2 ring-brand-500/20'
+                            : 'bg-white border-slate-200 text-slate-700 hover:border-brand-300 hover:bg-slate-50/80'
+                        }`}
+                      >
+                        {dealBadge && (
+                          <span className="absolute -top-2 -right-1 px-1.5 py-0.5 text-[9px] font-extrabold bg-gradient-to-r from-rose-500 to-amber-500 text-white rounded-full shadow-2xs leading-none">
+                            {dealBadge}
+                          </span>
+                        )}
+                        <span>{pkg.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* 2. Custom Duration Inline Stepper / Input */}
+                <div className="flex items-center justify-between p-2.5 bg-slate-50/80 border border-slate-200 rounded-xl">
+                  <span className="text-xs font-semibold text-slate-600">
+                    Nhập số tháng tùy chỉnh:
+                  </span>
+                  <div className="flex items-center">
+                    <button
+                      type="button"
+                      onClick={() => setDurationMonths(Math.max(1, durationMonths - 1))}
+                      disabled={durationMonths <= 1}
+                      className="w-8 h-8 flex items-center justify-center rounded-l-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition-colors cursor-pointer"
+                      title="Giảm 1 tháng"
+                    >
+                      <Minus className="w-3.5 h-3.5" />
+                    </button>
                     <input
                       type="number"
                       min={1}
@@ -816,40 +867,27 @@ export const UnitPickerPage: React.FC = () => {
                       value={durationMonths}
                       onChange={(e) => {
                         const val = parseInt(e.target.value, 10);
-                        setDurationMonths(isNaN(val) || val < 1 ? 1 : val);
+                        setDurationMonths(isNaN(val) || val < 1 ? 1 : Math.min(120, val));
                       }}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 transition-all shadow-2xs"
-                      placeholder="Nhập số tháng thuê (ví dụ: 5, 15, 24...)"
+                      className="w-16 h-8 text-center border-y border-slate-300 bg-white font-bold text-xs sm:text-sm text-slate-900 focus:outline-none focus:bg-amber-50/30"
                     />
-                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">
-                      Tháng
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setDurationMonths(Math.min(120, durationMonths + 1))}
+                      disabled={durationMonths >= 120}
+                      className="w-8 h-8 flex items-center justify-center rounded-r-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition-colors cursor-pointer"
+                      title="Tăng 1 tháng"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="text-xs font-bold text-slate-500 ml-2">Tháng</span>
                   </div>
-                ) : (
-                  <select
-                    value={durationMonths}
-                    onChange={(e) => {
-                      const val = Number(e.target.value);
-                      if (val === -1) {
-                        setIsCustomDuration(true);
-                      } else {
-                        setDurationMonths(val);
-                      }
-                    }}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 transition-all shadow-2xs cursor-pointer"
-                  >
-                    {durationPackages.map((pkg) => (
-                      <option key={pkg.months} value={pkg.months}>
-                        {pkg.label}
-                      </option>
-                    ))}
-                    <option value={-1}>✏️ Nhập số tháng tùy chỉnh khác...</option>
-                  </select>
-                )}
-                <p className="text-[11px] text-slate-500 mt-1.5 font-medium">
+                </div>
+
+                <p className="text-[11px] text-slate-500 mt-2 font-medium">
                   {priceCalculation.discountAmount > 0
-                    ? `🎉 ${priceCalculation.discountProgramName || `Ưu đãi giảm ${priceCalculation.discountPercent}%`} khi thuê ${durationMonths} tháng`
-                    : '💡 Thanh toán trọn kỳ khi đặt chỗ'}
+                    ? `🎉 ${priceCalculation.discountProgramName ? `${priceCalculation.discountProgramName} (-${priceCalculation.discountPercent}%)` : `Ưu đãi giảm ${priceCalculation.discountPercent}%`} khi thuê ${durationMonths} tháng`
+                    : '💡 Thanh toán trọn kỳ khi đặt chỗ. Thuê thời hạn dài hơn để nhận thêm ưu đãi!'}
                 </p>
               </div>
             </div>
