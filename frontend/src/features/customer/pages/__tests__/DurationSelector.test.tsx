@@ -4,40 +4,36 @@ export interface DiscountRule {
   minRentalMonths: number;
   discountType: 'PERCENT' | 'AMOUNT';
   discountValue: number;
+  isActive?: boolean;
 }
 
-export function getBestDealBadge(months: number, rules: DiscountRule[]): string | null {
-  const eligible = rules.filter((r) => r.minRentalMonths <= months);
+export function getDealBadgeForCard(months: number, rules: DiscountRule[]): string | null {
+  const eligible = rules.filter((r) => r.minRentalMonths <= months && (r.isActive ?? true));
   if (eligible.length === 0) return null;
   const percentRules = eligible.filter((r) => r.discountType === 'PERCENT');
   if (percentRules.length > 0) {
     const maxVal = Math.max(...percentRules.map((r) => r.discountValue));
-    return `-${maxVal}%`;
+    return `Giảm ${maxVal}%`;
   }
   return 'Ưu đãi';
 }
 
-describe('DurationSelector deal badges', () => {
+describe('DurationSelector card deal badges', () => {
   const rules: DiscountRule[] = [
-    { minRentalMonths: 6, discountType: 'PERCENT', discountValue: 5 },
-    { minRentalMonths: 10, discountType: 'PERCENT', discountValue: 50 },
-    { minRentalMonths: 12, discountType: 'PERCENT', discountValue: 10 },
+    { minRentalMonths: 6, discountType: 'PERCENT', discountValue: 50, isActive: true },
+    { minRentalMonths: 12, discountType: 'PERCENT', discountValue: 10, isActive: true },
   ];
 
-  it('không gắn badge cho các tháng dưới ngưỡng tối thiểu (1, 3 tháng)', () => {
-    expect(getBestDealBadge(1, rules)).toBeNull();
-    expect(getBestDealBadge(3, rules)).toBeNull();
+  it('trả về null cho mốc 1 và 3 tháng khi không có ưu đãi', () => {
+    expect(getDealBadgeForCard(1, rules)).toBeNull();
+    expect(getDealBadgeForCard(3, rules)).toBeNull();
   });
 
-  it('gắn đúng badge tốt nhất khi đạt 6 tháng (-5%)', () => {
-    expect(getBestDealBadge(6, rules)).toBe('-5%');
+  it('hiển thị Giảm 50% cho mốc 6 tháng', () => {
+    expect(getDealBadgeForCard(6, rules)).toBe('Giảm 50%');
   });
 
-  it('chọn deal cao nhất khi đạt 10 tháng (-50%)', () => {
-    expect(getBestDealBadge(10, rules)).toBe('-50%');
-  });
-
-  it('vẫn giữ deal tốt nhất khi chọn mốc cao hơn (12 tháng vẫn áp dụng -50% nếu lớn hơn 10%)', () => {
-    expect(getBestDealBadge(12, rules)).toBe('-50%');
+  it('chọn deal cao nhất khi đạt 12 tháng (50% cao hơn 10%)', () => {
+    expect(getDealBadgeForCard(12, rules)).toBe('Giảm 50%');
   });
 });

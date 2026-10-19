@@ -128,8 +128,9 @@ export const UnitPickerPage: React.FC = () => {
     { months: 3, label: '3 tháng' },
     { months: 6, label: '6 tháng' },
     { months: 12, label: '1 năm' },
-    { months: 24, label: '2 năm' },
   ], []);
+
+  const [isCustomMode, setIsCustomMode] = useState<boolean>(![1, 3, 6, 12].includes(durationMonths));
 
   const getBestDealBadge = (months: number): string | null => {
     const eligible = activeDiscounts.filter((p) => p.minRentalMonths <= months && p.isActive);
@@ -137,7 +138,7 @@ export const UnitPickerPage: React.FC = () => {
     const percentPrograms = eligible.filter((p) => p.discountType === 'PERCENT');
     if (percentPrograms.length > 0) {
       const maxVal = Math.max(...percentPrograms.map((p) => p.discountValue));
-      return `-${maxVal}%`;
+      return `${maxVal}%`;
     }
     return 'Ưu đãi';
   };
@@ -804,91 +805,115 @@ export const UnitPickerPage: React.FC = () => {
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                    <span>Thời hạn thuê</span>
-                    {priceCalculation.discountPercent > 0 && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-700 border border-amber-200">
-                        <Sparkles className="w-3 h-3 text-amber-600" />
-                        Ưu đãi -{priceCalculation.discountPercent}%
-                      </span>
-                    )}
+                  <label className="text-xs sm:text-sm font-bold text-slate-800">
+                    Thời hạn thuê
                   </label>
-                  <span className="text-[11px] font-semibold text-slate-500">
-                    Đang chọn: <strong className="text-brand-700 font-bold">{durationMonths} tháng</strong>
-                  </span>
                 </div>
 
-                {/* 1. Quick-select Chips Grid */}
-                <div className="grid grid-cols-5 gap-2 mb-3">
+                {/* 1. Segmented Cards Grid (2 dòng gọn gàng, không badge đè viền) */}
+                <div className="grid grid-cols-5 gap-2 mb-2.5">
                   {quickMilestones.map((pkg) => {
-                    const isSelected = durationMonths === pkg.months;
+                    const isSelected = !isCustomMode && durationMonths === pkg.months;
                     const dealBadge = getBestDealBadge(pkg.months);
                     return (
                       <button
                         key={pkg.months}
                         type="button"
-                        onClick={() => setDurationMonths(pkg.months)}
-                        className={`relative py-2.5 px-1 rounded-xl text-xs font-bold transition-all text-center border cursor-pointer ${
+                        onClick={() => {
+                          setIsCustomMode(false);
+                          setDurationMonths(pkg.months);
+                        }}
+                        className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl transition-all border cursor-pointer ${
                           isSelected
-                            ? 'bg-brand-50 border-brand-500 text-brand-800 shadow-2xs ring-2 ring-brand-500/20'
+                            ? 'bg-brand-50 border-brand-500 text-brand-900 shadow-2xs ring-2 ring-brand-500/20'
                             : 'bg-white border-slate-200 text-slate-700 hover:border-brand-300 hover:bg-slate-50/80'
                         }`}
                       >
-                        {dealBadge && (
-                          <span className="absolute -top-2 -right-1 px-1.5 py-0.5 text-[9px] font-extrabold bg-gradient-to-r from-rose-500 to-amber-500 text-white rounded-full shadow-2xs leading-none">
-                            {dealBadge}
-                          </span>
-                        )}
-                        <span>{pkg.label}</span>
+                        <span className="text-xs sm:text-sm font-bold leading-tight">{pkg.label}</span>
+                        <span
+                          className={`text-[10px] mt-1 font-semibold leading-tight px-1.5 py-0.5 rounded ${
+                            dealBadge
+                              ? 'bg-amber-100 text-amber-800 font-extrabold'
+                              : 'text-slate-600'
+                          }`}
+                        >
+                          {dealBadge ? `Giảm ${dealBadge}` : 'Tiêu chuẩn'}
+                        </span>
                       </button>
                     );
                   })}
+
+                  {/* Thẻ 5: Tùy chỉnh */}
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomMode(true)}
+                    className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl transition-all border cursor-pointer ${
+                      isCustomMode
+                        ? 'bg-brand-50 border-brand-500 text-brand-900 shadow-2xs ring-2 ring-brand-500/20'
+                        : 'bg-white border-slate-200 text-slate-700 hover:border-brand-300 hover:bg-slate-50/80'
+                    }`}
+                  >
+                    <span className="text-xs sm:text-sm font-bold leading-tight">Tùy chỉnh</span>
+                    <span className="text-[10px] mt-1 font-semibold leading-tight text-slate-600 px-1 py-0.5">
+                      {isCustomMode ? `${durationMonths} tháng` : 'Khác...'}
+                    </span>
+                  </button>
                 </div>
 
-                {/* 2. Custom Duration Inline Stepper / Input */}
-                <div className="flex items-center justify-between p-2.5 bg-slate-50/80 border border-slate-200 rounded-xl">
-                  <span className="text-xs font-semibold text-slate-600">
-                    Nhập số tháng tùy chỉnh:
-                  </span>
-                  <div className="flex items-center">
-                    <button
-                      type="button"
-                      onClick={() => setDurationMonths(Math.max(1, durationMonths - 1))}
-                      disabled={durationMonths <= 1}
-                      className="w-8 h-8 flex items-center justify-center rounded-l-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition-colors cursor-pointer"
-                      title="Giảm 1 tháng"
-                    >
-                      <Minus className="w-3.5 h-3.5" />
-                    </button>
-                    <input
-                      type="number"
-                      min={1}
-                      max={120}
-                      value={durationMonths}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value, 10);
-                        setDurationMonths(isNaN(val) || val < 1 ? 1 : Math.min(120, val));
-                      }}
-                      className="w-16 h-8 text-center border-y border-slate-300 bg-white font-bold text-xs sm:text-sm text-slate-900 focus:outline-none focus:bg-amber-50/30"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setDurationMonths(Math.min(120, durationMonths + 1))}
-                      disabled={durationMonths >= 120}
-                      className="w-8 h-8 flex items-center justify-center rounded-r-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition-colors cursor-pointer"
-                      title="Tăng 1 tháng"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                    </button>
-                    <span className="text-xs font-bold text-slate-500 ml-2">Tháng</span>
+                {/* 2. Custom Stepper (Chỉ hiển thị khi chọn tab Tùy chỉnh) */}
+                {isCustomMode && (
+                  <div className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl mb-2.5">
+                    <span className="text-xs font-semibold text-slate-600">
+                      Nhập số tháng thuê tùy chỉnh:
+                    </span>
+                    <div className="flex items-center">
+                      <button
+                        type="button"
+                        onClick={() => setDurationMonths(Math.max(1, durationMonths - 1))}
+                        disabled={durationMonths <= 1}
+                        className="w-8 h-8 flex items-center justify-center rounded-l-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition-colors cursor-pointer"
+                        title="Giảm 1 tháng"
+                      >
+                        <Minus className="w-3.5 h-3.5" />
+                      </button>
+                      <input
+                        type="number"
+                        min={1}
+                        max={120}
+                        value={durationMonths}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          setDurationMonths(isNaN(val) || val < 1 ? 1 : Math.min(120, val));
+                        }}
+                        className="w-16 h-8 text-center border-y border-slate-300 bg-white font-bold text-xs sm:text-sm text-slate-900 focus:outline-none focus:bg-amber-50/30"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setDurationMonths(Math.min(120, durationMonths + 1))}
+                        disabled={durationMonths >= 120}
+                        className="w-8 h-8 flex items-center justify-center rounded-r-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition-colors cursor-pointer"
+                        title="Tăng 1 tháng"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                      </button>
+                      <span className="text-xs font-bold text-slate-500 ml-2">Tháng</span>
+                    </div>
                   </div>
-                </div>
+                )}
 
-                <p className="text-[11px] text-slate-500 mt-2 font-medium">
-                  {priceCalculation.discountAmount > 0
-                    ? `🎉 ${priceCalculation.discountProgramName ? `${priceCalculation.discountProgramName} (-${priceCalculation.discountPercent}%)` : `Ưu đãi giảm ${priceCalculation.discountPercent}%`} khi thuê ${durationMonths} tháng`
-                    : '💡 Thanh toán trọn kỳ khi đặt chỗ. Thuê thời hạn dài hơn để nhận thêm ưu đãi!'}
-                </p>
+                {/* 3. Dòng thông báo ưu đãi duy nhất, tinh tế */}
+                {priceCalculation.discountAmount > 0 ? (
+                  <div className="flex items-center gap-1.5 text-xs text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-3 py-2 rounded-xl font-medium mt-1">
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>
+                      Áp dụng ưu đãi: <strong className="font-bold">{priceCalculation.discountProgramName || 'Chương trình ưu đãi'}</strong> (Giảm {priceCalculation.discountPercent}%) khi thuê {durationMonths} tháng
+                    </span>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-slate-500 mt-1 font-medium">
+                    💡 Thuê từ 6 tháng trở lên để nhận các chương trình chiết khấu hấp dẫn!
+                  </p>
+                )}
               </div>
             </div>
           </div>
