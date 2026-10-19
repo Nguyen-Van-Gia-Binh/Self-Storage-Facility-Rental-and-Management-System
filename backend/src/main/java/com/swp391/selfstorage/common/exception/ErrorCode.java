@@ -45,6 +45,7 @@ public enum ErrorCode {
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy thanh toán"),
     POLICY_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy phiên bản chính sách"),
     SUPPORT_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy yêu cầu hỗ trợ"),
+    DISCOUNT_PROGRAM_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy chương trình khuyến mại"),
 
     // 409 Conflict
     EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "Email đã được sử dụng"),
