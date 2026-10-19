@@ -10,7 +10,9 @@ import {
   ArrowRight,
   Sparkles,
   Plus,
-  Minus
+  Minus,
+  ChevronDown,
+  HelpCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
@@ -24,7 +26,6 @@ import {
   type AvailabilityResponse,
   type CalculatePriceResponse,
 } from '@/api/reservation';
-import { fetchDiscountPrograms, type DiscountProgramItem } from '@/api/discount';
 import { useActivePolicy } from '@/hooks/useActivePolicy';
 import { tokenStorage } from '@/utils/tokenStorage';
 import type { FacilityListItem } from '@/types';
@@ -115,13 +116,6 @@ export const UnitPickerPage: React.FC = () => {
     ? String(depositMultiplier)
     : depositMultiplier.toFixed(1).replace(/\.0$/, '');
 
-  const [activeDiscounts, setActiveDiscounts] = useState<DiscountProgramItem[]>([]);
-
-  useEffect(() => {
-    fetchDiscountPrograms({ isActive: true })
-      .then((res) => setActiveDiscounts(res.content || []))
-      .catch(() => setActiveDiscounts([]));
-  }, []);
 
   const quickMilestones = useMemo(() => [
     { months: 1, label: '1 tháng' },
@@ -132,16 +126,6 @@ export const UnitPickerPage: React.FC = () => {
 
   const [isCustomMode, setIsCustomMode] = useState<boolean>(![1, 3, 6, 12].includes(durationMonths));
 
-  const getBestDealBadge = (months: number): string | null => {
-    const eligible = activeDiscounts.filter((p) => p.minRentalMonths <= months && p.isActive);
-    if (eligible.length === 0) return null;
-    const percentPrograms = eligible.filter((p) => p.discountType === 'PERCENT');
-    if (percentPrograms.length > 0) {
-      const maxVal = Math.max(...percentPrograms.map((p) => p.discountValue));
-      return `${maxVal}%`;
-    }
-    return 'Ưu đãi';
-  };
 
   // Tính ngày kết thúc dự kiến
   const calculatedEndDate = useMemo(() => {
@@ -787,16 +771,16 @@ export const UnitPickerPage: React.FC = () => {
         {/* ==================== CỘT TRÁI: 2 THẺ TỐI GIẢN (8 cols) ==================== */}
         <div className="lg:col-span-8 space-y-6">
 
-          {/* 1. THỜI GIAN THUÊ */}
+          {/* 1. THỜI GIAN THUÊ (Rent Duration - Segmented Control) */}
           <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-4">
             <span className="text-xs font-extrabold uppercase tracking-wider text-brand-800 block">
               1. Thời gian thuê
             </span>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1.5">
-                  Ngày bắt đầu vào kho
+                  Ngày bắt đầu lưu kho
                 </label>
                 <input
                   type="date"
@@ -812,17 +796,14 @@ export const UnitPickerPage: React.FC = () => {
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs sm:text-sm font-bold text-slate-800">
-                    Thời hạn thuê
-                  </label>
-                </div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                  Thời hạn thuê
+                </label>
 
-                {/* 1. Segmented Cards Grid (2 dòng gọn gàng, không badge đè viền) */}
-                <div className="grid grid-cols-5 gap-2 mb-2.5">
+                {/* Segmented Control phẳng & hiện đại */}
+                <div className="grid grid-cols-5 gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200">
                   {quickMilestones.map((pkg) => {
                     const isSelected = !isCustomMode && durationMonths === pkg.months;
-                    const dealBadge = getBestDealBadge(pkg.months);
                     return (
                       <button
                         key={pkg.months}
@@ -831,58 +812,44 @@ export const UnitPickerPage: React.FC = () => {
                           setIsCustomMode(false);
                           setDurationMonths(pkg.months);
                         }}
-                        className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl transition-all border cursor-pointer ${
+                        className={`py-2 px-1 text-center rounded-lg text-xs font-bold transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-brand-50 border-brand-500 text-brand-900 shadow-2xs ring-2 ring-brand-500/20'
-                            : 'bg-white border-slate-200 text-slate-700 hover:border-brand-300 hover:bg-slate-50/80'
+                            ? 'bg-white text-brand-800 shadow-xs font-black'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                         }`}
                       >
-                        <span className="text-xs sm:text-sm font-bold leading-tight">{pkg.label}</span>
-                        <span
-                          className={`text-[10px] mt-1 font-semibold leading-tight px-1.5 py-0.5 rounded ${
-                            dealBadge
-                              ? 'bg-amber-100 text-amber-800 font-extrabold'
-                              : 'text-slate-600'
-                          }`}
-                        >
-                          {dealBadge ? `Giảm ${dealBadge}` : 'Tiêu chuẩn'}
-                        </span>
+                        {pkg.label}
                       </button>
                     );
                   })}
-
-                  {/* Thẻ 5: Tùy chỉnh */}
                   <button
                     type="button"
                     onClick={() => setIsCustomMode(true)}
-                    className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl transition-all border cursor-pointer ${
+                    className={`py-2 px-1 text-center rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       isCustomMode
-                        ? 'bg-brand-50 border-brand-500 text-brand-900 shadow-2xs ring-2 ring-brand-500/20'
-                        : 'bg-white border-slate-200 text-slate-700 hover:border-brand-300 hover:bg-slate-50/80'
+                        ? 'bg-white text-brand-800 shadow-xs font-black'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                     }`}
                   >
-                    <span className="text-xs sm:text-sm font-bold leading-tight">Tùy chỉnh</span>
-                    <span className="text-[10px] mt-1 font-semibold leading-tight text-slate-600 px-1 py-0.5">
-                      {isCustomMode ? `${durationMonths} tháng` : 'Khác...'}
-                    </span>
+                    {isCustomMode ? `${durationMonths}T` : 'Tùy chỉnh'}
                   </button>
                 </div>
 
-                {/* 2. Custom Stepper (Chỉ hiển thị khi chọn tab Tùy chỉnh) */}
+                {/* Stepper chỉ hiện khi isCustomMode */}
                 {isCustomMode && (
-                  <div className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl mb-2.5">
-                    <span className="text-xs font-semibold text-slate-600">
-                      Nhập số tháng thuê tùy chỉnh:
+                  <div className="flex items-center justify-between p-2 mt-2 bg-slate-50 border border-slate-200 rounded-xl">
+                    <span className="text-[11px] font-semibold text-slate-600">
+                      Số tháng tùy chỉnh:
                     </span>
                     <div className="flex items-center">
                       <button
                         type="button"
                         onClick={() => setDurationMonths(Math.max(1, durationMonths - 1))}
                         disabled={durationMonths <= 1}
-                        className="w-8 h-8 flex items-center justify-center rounded-l-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition-colors cursor-pointer"
+                        className="w-7 h-7 flex items-center justify-center rounded-l border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition-colors cursor-pointer"
                         title="Giảm 1 tháng"
                       >
-                        <Minus className="w-3.5 h-3.5" />
+                        <Minus className="w-3 h-3" />
                       </button>
                       <input
                         type="number"
@@ -893,40 +860,36 @@ export const UnitPickerPage: React.FC = () => {
                           const val = parseInt(e.target.value, 10);
                           setDurationMonths(isNaN(val) || val < 1 ? 1 : Math.min(120, val));
                         }}
-                        className="w-16 h-8 text-center border-y border-slate-300 bg-white font-bold text-xs sm:text-sm text-slate-900 focus:outline-none focus:bg-amber-50/30"
+                        className="w-14 h-7 text-center border-y border-slate-300 bg-white font-bold text-xs text-slate-900 focus:outline-none"
                       />
                       <button
                         type="button"
                         onClick={() => setDurationMonths(Math.min(120, durationMonths + 1))}
                         disabled={durationMonths >= 120}
-                        className="w-8 h-8 flex items-center justify-center rounded-r-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition-colors cursor-pointer"
+                        className="w-7 h-7 flex items-center justify-center rounded-r border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition-colors cursor-pointer"
                         title="Tăng 1 tháng"
                       >
-                        <Plus className="w-3.5 h-3.5" />
+                        <Plus className="w-3 h-3" />
                       </button>
-                      <span className="text-xs font-bold text-slate-500 ml-2">Tháng</span>
+                      <span className="text-xs font-bold text-slate-500 ml-1.5">tháng</span>
                     </div>
                   </div>
                 )}
 
-                {/* 3. Dòng thông báo ưu đãi duy nhất, tinh tế */}
-                {priceCalculation.discountAmount > 0 ? (
-                  <div className="flex items-center gap-1.5 text-xs text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-3 py-2 rounded-xl font-medium mt-1">
+                {/* Dòng text xanh nhỏ kích thích mua hàng khi có ưu đãi */}
+                {priceCalculation.discountAmount > 0 && (
+                  <p className="text-[11px] font-medium text-emerald-700 mt-2 flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                     <span>
-                      Áp dụng ưu đãi: <strong className="font-bold">{priceCalculation.discountProgramName || 'Chương trình ưu đãi'}</strong> (Giảm {priceCalculation.discountPercent}%) khi thuê {durationMonths} tháng
+                      Tiết kiệm {priceCalculation.discountPercent}%: <strong>{priceCalculation.discountProgramName || 'Chương trình ưu đãi'}</strong> (-{priceCalculation.discountPercent}%)
                     </span>
-                  </div>
-                ) : (
-                  <p className="text-[11px] text-slate-500 mt-1 font-medium">
-                    💡 Thuê từ 6 tháng trở lên để nhận các chương trình chiết khấu hấp dẫn!
                   </p>
                 )}
               </div>
             </div>
           </div>
 
-          {/* 2. CHỌN LOẠI KHO & KÍCH THƯỚC */}
+          {/* 2. CHỌN LOẠI KHO & KÍCH THƯỚC (Progressive Disclosure) */}
           <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-extrabold uppercase tracking-wider text-brand-800 block">
@@ -935,12 +898,12 @@ export const UnitPickerPage: React.FC = () => {
               {loadingAvailability && (
                 <span className="text-[11px] text-brand-600 flex items-center gap-1 font-bold animate-pulse">
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Đang tải ô trống...</span>
+                  <span>Đang kiểm tra ô trống...</span>
                 </span>
               )}
             </div>
 
-            {/* Môi trường kho tabs - 2 chế độ: Tiêu chuẩn, Máy lạnh */}
+            {/* Bước 2.1: Môi trường kho tabs kèm Tooltip */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <button
                 type="button"
@@ -954,8 +917,13 @@ export const UnitPickerPage: React.FC = () => {
                 <div className="flex items-center gap-2.5">
                   <span className="text-xl">📦</span>
                   <div>
-                    <span className="text-sm font-black text-slate-900 block">Kho Tiêu Chuẩn</span>
-                    <span className="text-[11px] text-slate-500 font-medium">Nhiệt độ phòng ({standardTypesCount} loại)</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm font-black text-slate-900 block">Kho Tiêu Chuẩn</span>
+                      <span className="text-slate-400 hover:text-slate-600 cursor-help" title="Nhiệt độ phòng thoáng khí tự nhiên, phù hợp đồ đạc gia đình, nội thất, hàng hóa thông thường">
+                        <HelpCircle className="w-3.5 h-3.5" />
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-slate-500 font-medium">Nhiệt độ phòng thoáng khí ({standardTypesCount} loại)</span>
                   </div>
                 </div>
                 {storageType === 'STANDARD' && (
@@ -977,7 +945,12 @@ export const UnitPickerPage: React.FC = () => {
                 <div className="flex items-center gap-2.5">
                   <span className="text-xl">❄️</span>
                   <div>
-                    <span className="text-sm font-black text-slate-900 block">Kho Máy Lạnh (24/7)</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm font-black text-slate-900 block">Kho Máy Lạnh (24/7)</span>
+                      <span className="text-slate-400 hover:text-slate-600 cursor-help" title="Kiểm soát 22°C - 25°C và độ ẩm ổn định, chuyên dụng bảo quản tài liệu, đồ gỗ cao cấp, thiết bị điện tử">
+                        <HelpCircle className="w-3.5 h-3.5" />
+                      </span>
+                    </div>
                     <span className="text-[11px] text-slate-500 font-medium">22°C - 25°C & kiểm soát ẩm ({climateTypesCount} loại)</span>
                   </div>
                 </div>
@@ -989,182 +962,183 @@ export const UnitPickerPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Danh sách Loại ô kho theo CSDL thật - High Contrast Showcase */}
+            {/* Bước 2.2: Danh sách Kích thước dạng List Card Rows kèm Accordion Sơ đồ ô kho */}
             {availableTypes.length === 0 ? (
               <div className="p-8 text-center bg-slate-50 border border-dashed border-slate-200 rounded-xl text-slate-500 text-xs sm:text-sm">
                 Hiện tại cơ sở chưa có loại ô kho nào được niêm yết giá chính thức cho danh mục này. Quý khách vui lòng chọn phân loại khác.
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="space-y-3">
                 {availableTypes.map((type) => {
                   const isUnlisted = !type.baseMonthlyPrice || type.baseMonthlyPrice <= 0 || type.priceStatus === 'UNLISTED' || type.priceStatus === 'Chưa niêm yết';
-                  const isSelected = !isUnlisted && (selectedTypeId ? selectedTypeId === type.id : selectedSize === type.sizeCategory);
+                  const isSelected = !isUnlisted && selectedTypeId === type.id;
+                  const isExpanded = isSelected && expandedTypeId === type.id;
                   const avail = availabilityMap[type.id];
                   const slots = avail ? avail.availableSlots : null;
-                  const isOutOfSlots = slots !== null && slots <= 0;
+
+                  // Lọc các ô kho thuộc loại này để render trong Accordion
+                  const unitsForThisType = displayFacilityUnits.filter((u) => u.unitTypeId === type.id);
 
                   return (
-                    <button
+                    <div
                       key={type.id}
-                      type="button"
-                      disabled={isUnlisted}
-                      onClick={() => {
-                        if (!isUnlisted) {
-                          handleSelectType(type);
-                        }
-                      }}
-                      className={`p-4 rounded-xl border-2 text-left transition-all relative flex flex-col justify-between ${
+                      className={`border-2 rounded-2xl transition-all overflow-hidden ${
                         isUnlisted
-                          ? 'opacity-70 cursor-not-allowed border-slate-200 bg-slate-50'
+                          ? 'border-slate-200 bg-slate-50/60 opacity-60'
                           : isSelected
-                          ? 'border-[#008B74] bg-[#e6f7f4] shadow-xs ring-2 ring-[#008B74]/25 cursor-pointer'
-                          : isOutOfSlots
-                          ? 'border-slate-200 bg-slate-50 text-slate-700 cursor-pointer hover:border-slate-300'
-                          : 'border-slate-200 hover:border-emerald-400 bg-white text-slate-900 shadow-2xs cursor-pointer'
+                          ? 'border-[#008B74] bg-white shadow-xs ring-2 ring-[#008B74]/20'
+                          : 'border-slate-200 bg-white hover:border-slate-300 shadow-2xs'
                       }`}
                     >
-                      <div>
-                        {/* Tên loại kho từ CSDL thật & Thể tích */}
-                        <div className="flex items-start justify-between gap-2">
-                          <strong className={`text-xs sm:text-sm font-black block leading-snug ${isSelected ? 'text-[#008B74]' : 'text-slate-900'}`} title={type.name}>
-                            {type.name}
-                          </strong>
-                          <span className={`text-[10px] font-bold font-mono px-1.5 py-0.5 rounded shrink-0 ${isSelected ? 'bg-[#008B74] text-white' : 'bg-slate-100 text-slate-700'}`}>
-                            {type.volumeM3} m³
-                          </span>
-                        </div>
-
-                        {/* Phân nhóm, Kích thước thực tế & Chế độ môi trường */}
-                        <div className="flex items-center gap-1.5 mt-1.5 text-[11px] text-slate-500 font-medium flex-wrap">
-                          <span className="font-bold text-slate-700 font-mono">Size {type.sizeCategory}</span>
-                          <span>•</span>
-                          <span className="font-mono">{type.dimensions}</span>
-                          <span>•</span>
-                          <span className={type.storageType === 'CLIMATE_CONTROLLED' ? 'text-cyan-700 font-bold' : 'text-emerald-700 font-bold'}>
-                            {type.storageType === 'CLIMATE_CONTROLLED' ? '❄️ Máy lạnh' : '📦 Tiêu chuẩn'}
-                          </span>
-                        </div>
-
-                        {/* Đơn giá niêm yết từ CSDL */}
-                        <div className="mt-2.5">
-                          {isUnlisted ? (
-                            <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md inline-block">
-                              Chưa niêm yết giá
+                      {/* Row Header (Clickable Card) */}
+                      <button
+                        type="button"
+                        disabled={isUnlisted}
+                        onClick={() => handleSelectType(type)}
+                        className="w-full p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left cursor-pointer"
+                      >
+                        {/* Cột trái: Tên & Kích thước */}
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-black text-slate-900 text-sm sm:text-base">
+                              {type.name}
                             </span>
+                            <span className="text-[11px] font-bold font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-700">
+                              Size {type.sizeCategory}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-500 font-medium">
+                            {type.dimensions} • Thể tích: <strong className="text-slate-700 font-mono">{type.volumeM3} m³</strong> ({type.areaM2} m²)
+                          </p>
+                        </div>
+
+                        {/* Cột phải: Giá niêm yết, Trạng thái & Nút chọn */}
+                        <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
+                          <div className="text-left sm:text-right">
+                            {isUnlisted ? (
+                              <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">
+                                Chưa niêm yết giá
+                              </span>
+                            ) : (
+                              <div className="text-base sm:text-lg font-black font-mono text-emerald-700">
+                                {formatVND(type.baseMonthlyPrice)}
+                                <span className="text-xs font-normal text-slate-500 font-sans">/tháng</span>
+                              </div>
+                            )}
+
+                            <div className="text-[11px] font-bold mt-0.5">
+                              {slots !== null ? (
+                                slots > 0 ? (
+                                  <span className="inline-flex items-center gap-1 text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                                    Còn {slots} ô trống
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200/60">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+                                    Hết chỗ
+                                  </span>
+                                )
+                              ) : (
+                                <span className="text-slate-400 text-[10px]">Đang kiểm tra...</span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center border transition-transform ${
+                            isSelected
+                              ? 'bg-[#008B74] text-white border-[#008B74]'
+                              : 'bg-slate-100 text-slate-500 border-slate-200'
+                          }`}>
+                            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                          </div>
+                        </div>
+                      </button>
+
+                      {/* Bước 2.3: Accordion Sơ đồ ô kho cụ thể của kích thước này */}
+                      {isExpanded && (
+                        <div className="border-t border-slate-100 bg-slate-50/70 p-4 sm:p-5 space-y-3.5">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <span className="text-xs font-bold text-slate-800">
+                              Chọn vị trí ô kho cụ thể ({type.name}):
+                            </span>
+                            <div className="flex items-center gap-3 text-[11px] text-slate-600 font-semibold flex-wrap">
+                              <span className="flex items-center gap-1">
+                                <span className="w-2.5 h-2.5 rounded bg-emerald-600"></span>
+                                <span>Còn trống</span>
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <span className="w-2.5 h-2.5 rounded bg-[#008B74]"></span>
+                                <span>Đang chọn</span>
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <span className="w-2.5 h-2.5 rounded bg-blue-500"></span>
+                                <span>Giữ chỗ</span>
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <span className="w-2.5 h-2.5 rounded bg-slate-300"></span>
+                                <span>Đã thuê</span>
+                              </span>
+                            </div>
+                          </div>
+
+                          {unitsForThisType.length > 0 ? (
+                            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
+                              {unitsForThisType.map((unit) => {
+                                const isUnitSelected = selectedUnit?.id === unit.id;
+                                const isAvailable = unit.status === 'AVAILABLE';
+                                const isReserved = (unit.status as string) === 'RESERVED' || (unit.status as string) === 'PENDING_PAYMENT';
+
+                                return (
+                                  <button
+                                    key={unit.id}
+                                    type="button"
+                                    disabled={!isAvailable}
+                                    onClick={() => handleSelectUnitOnGrid(unit)}
+                                    className={`p-3 rounded-xl text-center transition-all cursor-pointer border-2 flex flex-col items-center justify-center ${
+                                      isUnitSelected
+                                        ? 'bg-[#008B74] text-white border-[#006e5c] shadow-md ring-2 ring-[#008B74]/20 scale-[1.02]'
+                                        : isAvailable
+                                        ? 'bg-[#ecfdf5] border-[#a7f3d0] text-[#065f46] hover:border-[#10b981] hover:bg-[#d1fae5]'
+                                        : isReserved
+                                        ? 'bg-[#eff6ff] border-[#bfdbfe] text-[#1e40af] cursor-not-allowed opacity-70'
+                                        : 'bg-[#f8fafc] border-[#e2e8f0] text-[#64748b] cursor-not-allowed opacity-60'
+                                    }`}
+                                  >
+                                    <span className="text-xs font-black font-mono block">
+                                      {unit.unitNumber}
+                                    </span>
+                                    <span className={`text-[9px] font-bold mt-1 px-1.5 py-0.5 rounded block ${
+                                      isUnitSelected
+                                        ? 'bg-white/20 text-white'
+                                        : isAvailable
+                                        ? 'bg-emerald-100 text-emerald-800'
+                                        : isReserved
+                                        ? 'bg-blue-100 text-blue-800'
+                                        : 'bg-slate-200 text-slate-600'
+                                    }`}>
+                                      {isUnitSelected ? 'Đang chọn' : isAvailable ? 'Trống' : isReserved ? 'Giữ chỗ' : 'Đã thuê'}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </div>
                           ) : (
-                            <span className={`text-sm block font-black font-mono ${isSelected ? 'text-[#008B74]' : 'text-emerald-700'}`}>
-                              {formatVND(type.baseMonthlyPrice)}/tháng
-                            </span>
+                            <div className="text-center py-4 bg-white rounded-xl border border-dashed border-slate-300 text-xs font-semibold text-slate-600">
+                              Hiện chưa có ô kho cụ thể nào được gán cho loại này.
+                            </div>
                           )}
-                        </div>
-                      </div>
 
-                      {/* Tình trạng ô kho thực tế */}
-                      <div className="mt-3 text-[11px] font-bold">
-                        {isUnlisted ? (
-                          <span className="text-slate-400 italic font-medium">Tạm chưa mở đặt</span>
-                        ) : slots !== null ? (
-                          slots > 0 ? (
-                            <span className="inline-flex items-center gap-1 text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-md">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-                              Còn {slots} ô
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-rose-700 bg-rose-100/80 px-2 py-0.5 rounded-md">
-                              <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
-                              Hết chỗ (0 ô)
-                            </span>
-                          )
-                        ) : (
-                          <span className="text-slate-400 text-[10px]">Đang kiểm tra...</span>
-                        )}
-                      </div>
-                    </button>
+                          <p className="text-[11px] text-slate-500 font-medium italic">
+                            💡 Hệ thống đã tự động gán ô trống khả dụng đầu tiên. Quý khách có thể click chọn ô khác trên sơ đồ để đổi vị trí.
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>
             )}
-
-            {/* Chú thích trạng thái sơ đồ ô kho */}
-            <div className="flex items-center gap-4 text-xs text-slate-700 pt-3.5 border-t border-slate-100 font-semibold flex-wrap">
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded bg-emerald-600 shadow-2xs"></span>
-                <span>Còn trống</span>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded bg-[#008B74] shadow-2xs"></span>
-                <span>Đang chọn</span>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded bg-blue-500 shadow-2xs"></span>
-                <span>Đang giữ chỗ</span>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded bg-slate-300 shadow-2xs"></span>
-                <span>Đã thuê</span>
-              </span>
-            </div>
-
-            {/* SƠ ĐỒ MA TRẬN Ô KHO THỰC TẾ - VIBRANT HIGH CONTRAST (filterUnitTypeId={selectedTypeId}) */}
-            <div className="pt-1">
-              {displayFacilityUnits.filter((u) => {
-                if (selectedTypeId && u.unitTypeId) return u.unitTypeId === selectedTypeId;
-                if (storageType && u.storageType) return u.storageType === storageType;
-                return true;
-              }).length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
-                  {displayFacilityUnits
-                    .filter((u) => {
-                      if (selectedTypeId && u.unitTypeId) return u.unitTypeId === selectedTypeId;
-                      if (storageType && u.storageType) return u.storageType === storageType;
-                      return true;
-                    })
-                    .map((unit) => {
-                      const isSelected = selectedUnit?.id === unit.id;
-                      const isAvailable = unit.status === 'AVAILABLE';
-                      const isReserved = (unit.status as string) === 'RESERVED' || (unit.status as string) === 'PENDING_PAYMENT';
-
-                      return (
-                        <button
-                          key={unit.id}
-                          type="button"
-                          disabled={!isAvailable}
-                          onClick={() => handleSelectUnitOnGrid(unit)}
-                          className={`p-3.5 rounded-xl text-center transition-all cursor-pointer border-2 flex flex-col items-center justify-center ${
-                            isSelected
-                              ? 'bg-[#008B74] text-white border-[#006e5c] shadow-md ring-4 ring-[#008B74]/20 scale-[1.03]'
-                              : isAvailable
-                              ? 'bg-[#ecfdf5] border-[#a7f3d0] text-[#065f46] hover:border-[#10b981] hover:bg-[#d1fae5] hover:shadow-xs'
-                              : isReserved
-                              ? 'bg-[#eff6ff] border-[#bfdbfe] text-[#1e40af] cursor-not-allowed'
-                              : 'bg-[#f8fafc] border-[#e2e8f0] text-[#64748b] cursor-not-allowed'
-                          }`}
-                        >
-                          <span className={`text-xs font-black font-mono block ${isSelected ? 'text-white' : ''}`}>
-                            {unit.unitNumber}
-                          </span>
-                          <span className={`text-[10px] font-bold mt-1 px-2 py-0.5 rounded block ${
-                            isSelected
-                              ? 'bg-white/20 text-white'
-                              : isAvailable
-                              ? 'bg-emerald-100/90 text-emerald-800'
-                              : isReserved
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-slate-200/80 text-slate-600'
-                          }`}>
-                            {isSelected ? 'Đang chọn' : isAvailable ? 'Trống' : isReserved ? 'Giữ chỗ' : 'Đã thuê'}
-                          </span>
-                        </button>
-                      );
-                    })}
-                </div>
-              ) : (
-                <div className="text-center py-6 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-xs font-semibold text-slate-600">
-                  Cơ sở hiện chưa có ô kho thuộc loại này.
-                </div>
-              )}
-            </div>
-
           </div>
 
         </div>
