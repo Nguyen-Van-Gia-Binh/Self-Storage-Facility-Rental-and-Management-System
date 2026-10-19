@@ -74,3 +74,11 @@ export function normalizeDiscountPercent(rawRate?: number | null): number {
   return Math.round(rawRate);
 }
 
+export function findFirstAvailableUnit<T extends { unitTypeId?: string | number; status?: string }>(
+  typeId: string | number,
+  units: T[]
+): T | null {
+  return units.find((u) => String(u.unitTypeId) === String(typeId) && u.status === 'AVAILABLE') || null;
+}
+
+

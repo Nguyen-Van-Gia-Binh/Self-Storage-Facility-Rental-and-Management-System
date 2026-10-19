@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
-import { formatVND, normalizeDiscountPercent } from '../utils/pricing';
+import { formatVND, normalizeDiscountPercent, findFirstAvailableUnit } from '../utils/pricing';
 import { fetchFacilities } from '@/api/facility';
 import { fetchUnitTypes as fetchUnitTypesApi, fetchStorageUnits as fetchStorageUnitsApi } from '@/api/unit';
 import {
@@ -160,6 +160,7 @@ export const UnitPickerPage: React.FC = () => {
 
   const [storageType, setStorageType] = useState<StorageType>('STANDARD');
   const [selectedTypeId, setSelectedTypeId] = useState<string>('');
+  const [expandedTypeId, setExpandedTypeId] = useState<string | null>(initialTypeId || null);
   const [selectedSize, setSelectedSize] = useState<UnitSizeCategory>('S');
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   const [facilityInactiveModalOpen, setFacilityInactiveModalOpen] = useState<boolean>(false);
@@ -513,33 +514,40 @@ export const UnitPickerPage: React.FC = () => {
   }, [displayFacilityUnits, selectedTypeId, storageType, selectedUnitId]);
 
   const handleSelectType = (type: UnitType) => {
+    const isSameType = selectedTypeId === type.id;
     setSelectedTypeId(type.id);
     setSelectedSize(type.sizeCategory);
     setStorageType(type.storageType);
-    if (selectedUnitId) {
-      const current = displayFacilityUnits.find((u) => u.id === selectedUnitId);
-      if (!current || (current.unitTypeId && current.unitTypeId !== type.id)) {
-        setSelectedUnitId(null);
-      }
+    setExpandedTypeId(isSameType && expandedTypeId === type.id ? null : type.id);
+
+    const firstAvail = findFirstAvailableUnit(type.id, displayFacilityUnits);
+    if (firstAvail) {
+      setSelectedUnitId(firstAvail.id);
+    } else {
+      setSelectedUnitId(null);
     }
   };
 
   const handleSelectStorageType = (sType: StorageType) => {
     setStorageType(sType);
-    if (selectedUnitId) {
-      const current = displayFacilityUnits.find((u) => u.id === selectedUnitId);
-      if (!current || current.storageType !== sType) {
-        setSelectedUnitId(null);
-      }
-    }
     const typesForType = unitTypes.filter((t) => t.storageType === sType);
     const firstListed = typesForType.find((t) => t.baseMonthlyPrice > 0);
     if (firstListed) {
       setSelectedTypeId(firstListed.id);
       setSelectedSize(firstListed.sizeCategory);
+      setExpandedTypeId(firstListed.id);
+      const firstAvail = findFirstAvailableUnit(firstListed.id, displayFacilityUnits);
+      setSelectedUnitId(firstAvail ? firstAvail.id : null);
     } else if (typesForType.length > 0) {
       setSelectedTypeId(typesForType[0].id);
       setSelectedSize(typesForType[0].sizeCategory);
+      setExpandedTypeId(typesForType[0].id);
+      const firstAvail = findFirstAvailableUnit(typesForType[0].id, displayFacilityUnits);
+      setSelectedUnitId(firstAvail ? firstAvail.id : null);
+    } else {
+      setSelectedTypeId('');
+      setExpandedTypeId(null);
+      setSelectedUnitId(null);
     }
   };
 
