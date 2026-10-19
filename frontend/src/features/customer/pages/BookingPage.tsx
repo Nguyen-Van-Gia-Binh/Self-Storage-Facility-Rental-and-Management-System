@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Modal } from '@/components/ui/Modal';
-import { formatVND } from '../utils/pricing';
+import { formatVND, normalizeDiscountPercent } from '../utils/pricing';
 import { DigitalMoveInPassModal } from '../components/DigitalMoveInPassModal';
 import { TermsOfServiceModal } from '../components/TermsOfServiceModal';
 import { generateMoveInPass } from '@/api/payment';
@@ -461,7 +461,7 @@ export const BookingPage: React.FC = () => {
         unitPrice: backendPricing.monthlyPrice || baseMonthlyPrice,
         rentalFee: backendPricing.rawRentTotal || baseMonthlyPrice * durationMonths,
         discountAmount: backendPricing.discountAmount || 0,
-        discountPercent: backendPricing.discountPercentage || 0,
+        discountPercent: normalizeDiscountPercent(backendPricing.discountPercentage),
         discountProgramName: backendPricing.discountProgramName || null,
         depositAmount: backendPricing.depositAmount || fallbackDeposit,
         totalDueToday: backendPricing.totalDueToday || (baseMonthlyPrice * durationMonths + fallbackDeposit),

@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { normalizeDiscountPercent } from '../../utils/pricing';
+
 
 export function formatDiscountLabel(name?: string | null, percent?: number): string {
   if (name && percent && percent > 0) {
@@ -12,6 +14,29 @@ export function formatDiscountLabel(name?: string | null, percent?: number): str
   }
   return 'Chiết khấu:';
 }
+
+describe('normalizeDiscountPercent', () => {
+  it('chuyển đổi đúng decimal ratio 0.5 thành 50%', () => {
+    expect(normalizeDiscountPercent(0.5)).toBe(50);
+  });
+
+  it('chuyển đổi đúng decimal ratio 1.0 thành 100%', () => {
+    expect(normalizeDiscountPercent(1.0)).toBe(100);
+  });
+
+  it('chuyển đổi đúng decimal ratio 0.05 thành 5%', () => {
+    expect(normalizeDiscountPercent(0.05)).toBe(5);
+  });
+
+  it('giữ nguyên nếu giá trị đã ở dạng phần trăm (ví dụ 50)', () => {
+    expect(normalizeDiscountPercent(50)).toBe(50);
+  });
+
+  it('trả về 0 khi giá trị null/undefined/0', () => {
+    expect(normalizeDiscountPercent(0)).toBe(0);
+    expect(normalizeDiscountPercent(null)).toBe(0);
+  });
+});
 
 describe('InvoiceDiscountDisplay formatting', () => {
   it('hiển thị đầy đủ tên chương trình và phần trăm giảm giá khi có cả hai', () => {

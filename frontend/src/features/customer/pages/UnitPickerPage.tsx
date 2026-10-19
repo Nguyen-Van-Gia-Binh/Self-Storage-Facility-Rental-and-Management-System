@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
-import { formatVND } from '../utils/pricing';
+import { formatVND, normalizeDiscountPercent } from '../utils/pricing';
 import { fetchFacilities } from '@/api/facility';
 import { fetchUnitTypes as fetchUnitTypesApi, fetchStorageUnits as fetchStorageUnitsApi } from '@/api/unit';
 import {
@@ -601,7 +601,7 @@ export const UnitPickerPage: React.FC = () => {
       return {
         basePrice: serverPricing.monthlyPrice || basePrice,
         grossRent: serverPricing.rawRentTotal || grossRent,
-        discountPercent: serverPricing.discountPercentage || 0,
+        discountPercent: normalizeDiscountPercent(serverPricing.discountPercentage),
         discountAmount: serverPricing.discountAmount || 0,
         discountProgramName: serverPricing.discountProgramName || null,
         netRent: serverPricing.finalRentTotal || (grossRent - (serverPricing.discountAmount || 0)),
