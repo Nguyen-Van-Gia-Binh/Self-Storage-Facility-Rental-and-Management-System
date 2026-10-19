@@ -27,7 +27,5 @@ public interface DiscountProgramRepository extends JpaRepository<DiscountProgram
             @Param("unitTypeId") Long unitTypeId
     );
 
-    Page<DiscountProgram> findAllByOrderByCreatedAtDesc(Pageable pageable);
-
-    Page<DiscountProgram> findAllByIsActiveOrderByCreatedAtDesc(Boolean isActive, Pageable pageable);
+    Page<DiscountProgram> findByIsActive(Boolean isActive, Pageable pageable);
 }

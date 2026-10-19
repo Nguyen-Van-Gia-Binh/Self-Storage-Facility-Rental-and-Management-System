@@ -81,8 +81,8 @@ public class DiscountProgramServiceImpl implements DiscountProgramService {
     @Transactional(readOnly = true)
     public PageResponse<DiscountProgramResponse> getDiscountPrograms(Boolean isActive, Pageable pageable) {
         Page<DiscountProgram> page = isActive != null
-                ? discountProgramRepository.findAllByIsActiveOrderByCreatedAtDesc(isActive, pageable)
-                : discountProgramRepository.findAllByOrderByCreatedAtDesc(pageable);
+                ? discountProgramRepository.findByIsActive(isActive, pageable)
+                : discountProgramRepository.findAll(pageable);
 
         List<DiscountProgramResponse> dtoList = page.getContent().stream()
                 .map(this::mapToResponse)
