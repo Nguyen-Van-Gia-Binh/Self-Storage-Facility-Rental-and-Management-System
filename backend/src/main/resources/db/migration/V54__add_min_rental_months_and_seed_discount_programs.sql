@@ -7,10 +7,9 @@ IF NOT EXISTS (
 )
 BEGIN
     ALTER TABLE discount_program
-    ADD min_rental_months INT NOT NULL CONSTRAINT df_discount_program_min_months DEFAULT 1;
-
-    ALTER TABLE discount_program
-    ADD CONSTRAINT ck_discount_program_min_months CHECK (min_rental_months >= 1);
+    ADD min_rental_months INT NOT NULL
+        CONSTRAINT df_discount_program_min_months DEFAULT 1
+        CONSTRAINT ck_discount_program_min_months CHECK (min_rental_months >= 1);
 END;
 GO
 
