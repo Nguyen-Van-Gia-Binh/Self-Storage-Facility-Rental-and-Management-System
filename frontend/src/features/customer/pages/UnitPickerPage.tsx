@@ -7,14 +7,25 @@ import {
   Loader2, 
   Clock, 
   AlertTriangle,
-  ArrowRight
+  ArrowRight,
+  Sparkles,
+  Plus,
+  Minus,
+  ChevronDown,
+  HelpCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
-import { formatVND } from '../utils/pricing';
+import { formatVND, normalizeDiscountPercent, findFirstAvailableUnit } from '../utils/pricing';
 import { fetchFacilities } from '@/api/facility';
 import { fetchUnitTypes as fetchUnitTypesApi, fetchStorageUnits as fetchStorageUnitsApi } from '@/api/unit';
-import { checkUnitAvailability, getMyReservationsApi, type AvailabilityResponse } from '@/api/reservation';
+import {
+  checkUnitAvailability,
+  getMyReservationsApi,
+  calculateBookingPrice,
+  type AvailabilityResponse,
+  type CalculatePriceResponse,
+} from '@/api/reservation';
 import { useActivePolicy } from '@/hooks/useActivePolicy';
 import { tokenStorage } from '@/utils/tokenStorage';
 import type { FacilityListItem } from '@/types';
@@ -95,7 +106,6 @@ export const UnitPickerPage: React.FC = () => {
     return todayStr;
   });
 
-  const [isCustomDuration, setIsCustomDuration] = useState<boolean>(false);
   const [durationMonths, setDurationMonths] = useState<number>(
     !isNaN(initialMonthsParam) && initialMonthsParam > 0 ? initialMonthsParam : 3
   );
@@ -106,27 +116,16 @@ export const UnitPickerPage: React.FC = () => {
     ? String(depositMultiplier)
     : depositMultiplier.toFixed(1).replace(/\.0$/, '');
 
-  const durationPackages = useMemo(() => {
-    return [
-      { months: 1, label: '1 Tháng' },
-      { months: 2, label: '2 Tháng' },
-      { months: 3, label: '3 Tháng' },
-      { months: 4, label: '4 Tháng' },
-      { months: 5, label: '5 Tháng' },
-      { months: 6, label: '6 Tháng (Ưu đãi -5%)' },
-      { months: 7, label: '7 Tháng' },
-      { months: 8, label: '8 Tháng' },
-      { months: 9, label: '9 Tháng' },
-      { months: 10, label: '10 Tháng' },
-      { months: 11, label: '11 Tháng' },
-      { months: 12, label: '12 Tháng / 1 Năm (Ưu đãi -10%)' },
-      { months: 18, label: '18 Tháng / 1.5 Năm (Ưu đãi -10%)' },
-      { months: 24, label: '24 Tháng / 2 Năm (Ưu đãi -10%)' },
-      { months: 36, label: '36 Tháng / 3 Năm (Ưu đãi -10%)' },
-      { months: 48, label: '48 Tháng / 4 Năm (Ưu đãi -10%)' },
-      { months: 60, label: '60 Tháng / 5 Năm (Ưu đãi -10%)' },
-    ];
-  }, []);
+
+  const quickMilestones = useMemo(() => [
+    { months: 1, label: '1 tháng' },
+    { months: 3, label: '3 tháng' },
+    { months: 6, label: '6 tháng' },
+    { months: 12, label: '1 năm' },
+  ], []);
+
+  const [isCustomMode, setIsCustomMode] = useState<boolean>(![1, 3, 6, 12].includes(durationMonths));
+
 
   // Tính ngày kết thúc dự kiến
   const calculatedEndDate = useMemo(() => {
@@ -145,6 +144,7 @@ export const UnitPickerPage: React.FC = () => {
 
   const [storageType, setStorageType] = useState<StorageType>('STANDARD');
   const [selectedTypeId, setSelectedTypeId] = useState<string>('');
+  const [expandedTypeId, setExpandedTypeId] = useState<string | null>(initialTypeId || null);
   const [selectedSize, setSelectedSize] = useState<UnitSizeCategory>('S');
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   const [facilityInactiveModalOpen, setFacilityInactiveModalOpen] = useState<boolean>(false);
@@ -498,33 +498,40 @@ export const UnitPickerPage: React.FC = () => {
   }, [displayFacilityUnits, selectedTypeId, storageType, selectedUnitId]);
 
   const handleSelectType = (type: UnitType) => {
+    const isSameType = selectedTypeId === type.id;
     setSelectedTypeId(type.id);
     setSelectedSize(type.sizeCategory);
     setStorageType(type.storageType);
-    if (selectedUnitId) {
-      const current = displayFacilityUnits.find((u) => u.id === selectedUnitId);
-      if (!current || (current.unitTypeId && current.unitTypeId !== type.id)) {
-        setSelectedUnitId(null);
-      }
+    setExpandedTypeId(isSameType && expandedTypeId === type.id ? null : type.id);
+
+    const firstAvail = findFirstAvailableUnit(type.id, displayFacilityUnits);
+    if (firstAvail) {
+      setSelectedUnitId(firstAvail.id);
+    } else {
+      setSelectedUnitId(null);
     }
   };
 
   const handleSelectStorageType = (sType: StorageType) => {
     setStorageType(sType);
-    if (selectedUnitId) {
-      const current = displayFacilityUnits.find((u) => u.id === selectedUnitId);
-      if (!current || current.storageType !== sType) {
-        setSelectedUnitId(null);
-      }
-    }
     const typesForType = unitTypes.filter((t) => t.storageType === sType);
     const firstListed = typesForType.find((t) => t.baseMonthlyPrice > 0);
     if (firstListed) {
       setSelectedTypeId(firstListed.id);
       setSelectedSize(firstListed.sizeCategory);
+      setExpandedTypeId(firstListed.id);
+      const firstAvail = findFirstAvailableUnit(firstListed.id, displayFacilityUnits);
+      setSelectedUnitId(firstAvail ? firstAvail.id : null);
     } else if (typesForType.length > 0) {
       setSelectedTypeId(typesForType[0].id);
       setSelectedSize(typesForType[0].sizeCategory);
+      setExpandedTypeId(typesForType[0].id);
+      const firstAvail = findFirstAvailableUnit(typesForType[0].id, displayFacilityUnits);
+      setSelectedUnitId(firstAvail ? firstAvail.id : null);
+    } else {
+      setSelectedTypeId('');
+      setExpandedTypeId(null);
+      setSelectedUnitId(null);
     }
   };
 
@@ -541,35 +548,72 @@ export const UnitPickerPage: React.FC = () => {
     }
   };
 
-  // Tính toán bảng giá minh bạch
+  const [serverPricing, setServerPricing] = useState<CalculatePriceResponse | null>(null);
+
+  useEffect(() => {
+    let isCurrent = true;
+    const fId = parseInt(currentFacility?.id, 10);
+    const utId = currentUnitType ? parseInt(String(currentUnitType.id), 10) : null;
+    if (!fId || !utId || durationMonths <= 0) {
+      setServerPricing(null);
+      return;
+    }
+
+    calculateBookingPrice({
+      facilityId: fId,
+      unitTypeId: utId,
+      months: durationMonths,
+    })
+      .then((data) => {
+        if (isCurrent) {
+          setServerPricing(data);
+        }
+      })
+      .catch((err) => {
+        console.warn('Lỗi tính giá đặt chỗ từ server:', err);
+        if (isCurrent) {
+          setServerPricing(null);
+        }
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [currentFacility?.id, currentUnitType?.id, durationMonths]);
+
+  // Tính toán bảng giá minh bạch từ Backend CSDL (BR-PRI-01, US-BM-03.3)
   const priceCalculation = useMemo(() => {
     const basePrice = (selectedUnit?.monthlyPrice && selectedUnit.monthlyPrice > 0)
       ? selectedUnit.monthlyPrice
       : (currentUnitType?.baseMonthlyPrice ?? 0);
 
     const grossRent = basePrice * durationMonths;
-    let discountPercent = 0;
-    if (durationMonths >= 12) {
-      discountPercent = 10;
-    } else if (durationMonths >= 6) {
-      discountPercent = 5;
-    }
+    const fallbackDeposit = Math.round((basePrice * depositMultiplier) / 1000) * 1000;
 
-    const discountAmount = Math.round((grossRent * discountPercent) / 100);
-    const netRent = grossRent - discountAmount;
-    const depositAmount = Math.round((basePrice * depositMultiplier) / 1000) * 1000;
-    const totalDue = netRent + depositAmount;
+    if (serverPricing) {
+      return {
+        basePrice: serverPricing.monthlyPrice || basePrice,
+        grossRent: serverPricing.rawRentTotal || grossRent,
+        discountPercent: normalizeDiscountPercent(serverPricing.discountPercentage),
+        discountAmount: serverPricing.discountAmount || 0,
+        discountProgramName: serverPricing.discountProgramName || null,
+        netRent: serverPricing.finalRentTotal || (grossRent - (serverPricing.discountAmount || 0)),
+        depositAmount: serverPricing.depositAmount || fallbackDeposit,
+        totalDue: serverPricing.totalDueToday || ((serverPricing.finalRentTotal || grossRent) + fallbackDeposit),
+      };
+    }
 
     return {
       basePrice,
       grossRent,
-      discountPercent,
-      discountAmount,
-      netRent,
-      depositAmount,
-      totalDue,
+      discountPercent: 0,
+      discountAmount: 0,
+      discountProgramName: null,
+      netRent: grossRent,
+      depositAmount: fallbackDeposit,
+      totalDue: grossRent + fallbackDeposit,
     };
-  }, [selectedUnit, currentUnitType, durationMonths, depositMultiplier]);
+  }, [selectedUnit, currentUnitType, durationMonths, depositMultiplier, serverPricing]);
 
   const handleProceedToBooking = async () => {
     const targetUnit = selectedUnit;
@@ -727,16 +771,16 @@ export const UnitPickerPage: React.FC = () => {
         {/* ==================== CỘT TRÁI: 2 THẺ TỐI GIẢN (8 cols) ==================== */}
         <div className="lg:col-span-8 space-y-6">
 
-          {/* 1. THỜI GIAN THUÊ */}
+          {/* 1. THỜI GIAN THUÊ (Rent Duration - Segmented Control) */}
           <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-4">
             <span className="text-xs font-extrabold uppercase tracking-wider text-brand-800 block">
               1. Thời gian thuê
             </span>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1.5">
-                  Ngày bắt đầu vào kho
+                  Ngày bắt đầu lưu kho
                 </label>
                 <input
                   type="date"
@@ -752,69 +796,100 @@ export const UnitPickerPage: React.FC = () => {
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-bold text-slate-700">
-                    Thời hạn thuê
-                  </label>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                  Thời hạn thuê
+                </label>
+
+                {/* Segmented Control phẳng & hiện đại */}
+                <div className="grid grid-cols-5 gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200">
+                  {quickMilestones.map((pkg) => {
+                    const isSelected = !isCustomMode && durationMonths === pkg.months;
+                    return (
+                      <button
+                        key={pkg.months}
+                        type="button"
+                        onClick={() => {
+                          setIsCustomMode(false);
+                          setDurationMonths(pkg.months);
+                        }}
+                        className={`py-2 px-1 text-center rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-white text-brand-800 shadow-xs font-black'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                        }`}
+                      >
+                        {pkg.label}
+                      </button>
+                    );
+                  })}
                   <button
                     type="button"
-                    onClick={() => setIsCustomDuration(!isCustomDuration)}
-                    className="text-[11px] text-brand-600 hover:text-brand-700 font-bold underline cursor-pointer"
+                    onClick={() => setIsCustomMode(true)}
+                    className={`py-2 px-1 text-center rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      isCustomMode
+                        ? 'bg-white text-brand-800 shadow-xs font-black'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                    }`}
                   >
-                    {isCustomDuration ? 'Chọn theo danh mục' : 'Nhập số tháng tùy chỉnh'}
+                    Tùy chỉnh
                   </button>
                 </div>
-                {isCustomDuration ? (
-                  <div className="relative">
-                    <input
-                      type="number"
-                      min={1}
-                      max={120}
-                      value={durationMonths}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value, 10);
-                        setDurationMonths(isNaN(val) || val < 1 ? 1 : val);
-                      }}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 transition-all shadow-2xs"
-                      placeholder="Nhập số tháng thuê (ví dụ: 5, 15, 24...)"
-                    />
-                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">
-                      Tháng
+
+                {/* Stepper chỉ hiện khi isCustomMode */}
+                {isCustomMode && (
+                  <div className="flex items-center justify-between p-2 mt-2 bg-slate-50 border border-slate-200 rounded-xl">
+                    <span className="text-[11px] font-semibold text-slate-600">
+                      Số tháng tùy chỉnh:
                     </span>
+                    <div className="flex items-center">
+                      <button
+                        type="button"
+                        onClick={() => setDurationMonths(Math.max(1, durationMonths - 1))}
+                        disabled={durationMonths <= 1}
+                        className="w-7 h-7 flex items-center justify-center rounded-l border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition-colors cursor-pointer"
+                        title="Giảm 1 tháng"
+                      >
+                        <Minus className="w-3 h-3" />
+                      </button>
+                      <input
+                        type="number"
+                        min={1}
+                        max={120}
+                        value={durationMonths}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          setDurationMonths(isNaN(val) || val < 1 ? 1 : Math.min(120, val));
+                        }}
+                        className="w-14 h-7 text-center border-y border-slate-300 bg-white font-bold text-xs text-slate-900 focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setDurationMonths(Math.min(120, durationMonths + 1))}
+                        disabled={durationMonths >= 120}
+                        className="w-7 h-7 flex items-center justify-center rounded-r border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition-colors cursor-pointer"
+                        title="Tăng 1 tháng"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </button>
+                      <span className="text-xs font-bold text-slate-500 ml-1.5">tháng</span>
+                    </div>
                   </div>
-                ) : (
-                  <select
-                    value={durationMonths}
-                    onChange={(e) => {
-                      const val = Number(e.target.value);
-                      if (val === -1) {
-                        setIsCustomDuration(true);
-                      } else {
-                        setDurationMonths(val);
-                      }
-                    }}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 transition-all shadow-2xs cursor-pointer"
-                  >
-                    {durationPackages.map((pkg) => (
-                      <option key={pkg.months} value={pkg.months}>
-                        {pkg.label}
-                      </option>
-                    ))}
-                    <option value={-1}>✏️ Nhập số tháng tùy chỉnh khác...</option>
-                  </select>
                 )}
-                <p className="text-[11px] text-slate-500 mt-1.5 font-medium">
-                  {durationMonths >= 12
-                    ? '🎉 Giảm 10% tổng tiền thuê cho kỳ từ 12 tháng trở lên'
-                    : durationMonths >= 6
-                    ? '🎉 Giảm 5% tổng tiền thuê cho kỳ từ 6 tháng trở lên'
-                    : '💡 Thanh toán trọn kỳ khi đặt chỗ'}
-                </p>
+
+                {/* Dòng text xanh nhỏ kích thích mua hàng khi có ưu đãi */}
+                {priceCalculation.discountAmount > 0 && (
+                  <p className="text-[11px] font-medium text-emerald-700 mt-2 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>
+                      Tiết kiệm {priceCalculation.discountPercent}%: <strong>{priceCalculation.discountProgramName || 'Chương trình ưu đãi'}</strong> (-{priceCalculation.discountPercent}%)
+                    </span>
+                  </p>
+                )}
               </div>
             </div>
           </div>
 
-          {/* 2. CHỌN LOẠI KHO & KÍCH THƯỚC */}
+          {/* 2. CHỌN LOẠI KHO & KÍCH THƯỚC (Progressive Disclosure) */}
           <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-extrabold uppercase tracking-wider text-brand-800 block">
@@ -823,12 +898,12 @@ export const UnitPickerPage: React.FC = () => {
               {loadingAvailability && (
                 <span className="text-[11px] text-brand-600 flex items-center gap-1 font-bold animate-pulse">
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Đang tải ô trống...</span>
+                  <span>Đang kiểm tra ô trống...</span>
                 </span>
               )}
             </div>
 
-            {/* Môi trường kho tabs - 2 chế độ: Tiêu chuẩn, Máy lạnh */}
+            {/* Bước 2.1: Môi trường kho tabs kèm Tooltip */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <button
                 type="button"
@@ -842,8 +917,13 @@ export const UnitPickerPage: React.FC = () => {
                 <div className="flex items-center gap-2.5">
                   <span className="text-xl">📦</span>
                   <div>
-                    <span className="text-sm font-black text-slate-900 block">Kho Tiêu Chuẩn</span>
-                    <span className="text-[11px] text-slate-500 font-medium">Nhiệt độ phòng ({standardTypesCount} loại)</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm font-black text-slate-900 block">Kho Tiêu Chuẩn</span>
+                      <span className="text-slate-400 hover:text-slate-600 cursor-help" title="Nhiệt độ phòng thoáng khí tự nhiên, phù hợp đồ đạc gia đình, nội thất, hàng hóa thông thường">
+                        <HelpCircle className="w-3.5 h-3.5" />
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-slate-500 font-medium">Nhiệt độ phòng thoáng khí ({standardTypesCount} loại)</span>
                   </div>
                 </div>
                 {storageType === 'STANDARD' && (
@@ -865,7 +945,12 @@ export const UnitPickerPage: React.FC = () => {
                 <div className="flex items-center gap-2.5">
                   <span className="text-xl">❄️</span>
                   <div>
-                    <span className="text-sm font-black text-slate-900 block">Kho Máy Lạnh (24/7)</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm font-black text-slate-900 block">Kho Máy Lạnh (24/7)</span>
+                      <span className="text-slate-400 hover:text-slate-600 cursor-help" title="Kiểm soát 22°C - 25°C và độ ẩm ổn định, chuyên dụng bảo quản tài liệu, đồ gỗ cao cấp, thiết bị điện tử">
+                        <HelpCircle className="w-3.5 h-3.5" />
+                      </span>
+                    </div>
                     <span className="text-[11px] text-slate-500 font-medium">22°C - 25°C & kiểm soát ẩm ({climateTypesCount} loại)</span>
                   </div>
                 </div>
@@ -877,267 +962,305 @@ export const UnitPickerPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Danh sách Loại ô kho theo CSDL thật - High Contrast Showcase */}
+            {/* Bước 2.2: Danh sách Kích thước dạng List Card Rows kèm Accordion Sơ đồ ô kho */}
             {availableTypes.length === 0 ? (
               <div className="p-8 text-center bg-slate-50 border border-dashed border-slate-200 rounded-xl text-slate-500 text-xs sm:text-sm">
                 Hiện tại cơ sở chưa có loại ô kho nào được niêm yết giá chính thức cho danh mục này. Quý khách vui lòng chọn phân loại khác.
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="space-y-3">
                 {availableTypes.map((type) => {
                   const isUnlisted = !type.baseMonthlyPrice || type.baseMonthlyPrice <= 0 || type.priceStatus === 'UNLISTED' || type.priceStatus === 'Chưa niêm yết';
-                  const isSelected = !isUnlisted && (selectedTypeId ? selectedTypeId === type.id : selectedSize === type.sizeCategory);
+                  const isSelected = !isUnlisted && selectedTypeId === type.id;
+                  const isExpanded = isSelected && expandedTypeId === type.id;
                   const avail = availabilityMap[type.id];
                   const slots = avail ? avail.availableSlots : null;
-                  const isOutOfSlots = slots !== null && slots <= 0;
+
+                  // Lọc các ô kho thuộc loại này để render trong Accordion
+                  const unitsForThisType = displayFacilityUnits.filter((u) => u.unitTypeId === type.id);
 
                   return (
-                    <button
+                    <div
                       key={type.id}
-                      type="button"
-                      disabled={isUnlisted}
-                      onClick={() => {
-                        if (!isUnlisted) {
-                          handleSelectType(type);
-                        }
-                      }}
-                      className={`p-4 rounded-xl border-2 text-left transition-all relative flex flex-col justify-between ${
+                      className={`border-2 rounded-2xl transition-all overflow-hidden ${
                         isUnlisted
-                          ? 'opacity-70 cursor-not-allowed border-slate-200 bg-slate-50'
+                          ? 'border-slate-200 bg-slate-50/60 opacity-60'
                           : isSelected
-                          ? 'border-[#008B74] bg-[#e6f7f4] shadow-xs ring-2 ring-[#008B74]/25 cursor-pointer'
-                          : isOutOfSlots
-                          ? 'border-slate-200 bg-slate-50 text-slate-700 cursor-pointer hover:border-slate-300'
-                          : 'border-slate-200 hover:border-emerald-400 bg-white text-slate-900 shadow-2xs cursor-pointer'
+                          ? 'border-[#008B74] bg-white shadow-xs ring-2 ring-[#008B74]/20'
+                          : 'border-slate-200 bg-white hover:border-slate-300 shadow-2xs'
                       }`}
                     >
-                      <div>
-                        {/* Tên loại kho từ CSDL thật & Thể tích */}
-                        <div className="flex items-start justify-between gap-2">
-                          <strong className={`text-xs sm:text-sm font-black block leading-snug ${isSelected ? 'text-[#008B74]' : 'text-slate-900'}`} title={type.name}>
-                            {type.name}
-                          </strong>
-                          <span className={`text-[10px] font-bold font-mono px-1.5 py-0.5 rounded shrink-0 ${isSelected ? 'bg-[#008B74] text-white' : 'bg-slate-100 text-slate-700'}`}>
-                            {type.volumeM3} m³
-                          </span>
-                        </div>
-
-                        {/* Phân nhóm, Kích thước thực tế & Chế độ môi trường */}
-                        <div className="flex items-center gap-1.5 mt-1.5 text-[11px] text-slate-500 font-medium flex-wrap">
-                          <span className="font-bold text-slate-700 font-mono">Size {type.sizeCategory}</span>
-                          <span>•</span>
-                          <span className="font-mono">{type.dimensions}</span>
-                          <span>•</span>
-                          <span className={type.storageType === 'CLIMATE_CONTROLLED' ? 'text-cyan-700 font-bold' : 'text-emerald-700 font-bold'}>
-                            {type.storageType === 'CLIMATE_CONTROLLED' ? '❄️ Máy lạnh' : '📦 Tiêu chuẩn'}
-                          </span>
-                        </div>
-
-                        {/* Đơn giá niêm yết từ CSDL */}
-                        <div className="mt-2.5">
-                          {isUnlisted ? (
-                            <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md inline-block">
-                              Chưa niêm yết giá
+                      {/* Row Header (Clickable Card) */}
+                      <button
+                        type="button"
+                        disabled={isUnlisted}
+                        onClick={() => handleSelectType(type)}
+                        className="w-full p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left cursor-pointer"
+                      >
+                        {/* Cột trái: Tên & Kích thước */}
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-black text-slate-900 text-sm sm:text-base">
+                              {type.name}
                             </span>
+                            <span className="text-[11px] font-bold font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-700">
+                              Size {type.sizeCategory}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-500 font-medium">
+                            {type.dimensions} • Thể tích: <strong className="text-slate-700 font-mono">{type.volumeM3} m³</strong> ({type.areaM2} m²)
+                          </p>
+                        </div>
+
+                        {/* Cột phải: Giá niêm yết, Trạng thái & Nút chọn */}
+                        <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
+                          <div className="text-left sm:text-right">
+                            {isUnlisted ? (
+                              <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">
+                                Chưa niêm yết giá
+                              </span>
+                            ) : (
+                              <div className="text-base sm:text-lg font-black font-mono text-emerald-700">
+                                {formatVND(type.baseMonthlyPrice)}
+                                <span className="text-xs font-normal text-slate-500 font-sans">/tháng</span>
+                              </div>
+                            )}
+
+                            <div className="text-[11px] font-bold mt-0.5">
+                              {slots !== null ? (
+                                slots > 0 ? (
+                                  <span className="inline-flex items-center gap-1 text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                                    Còn {slots} ô trống
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200/60">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+                                    Hết chỗ
+                                  </span>
+                                )
+                              ) : (
+                                <span className="text-slate-400 text-[10px]">Đang kiểm tra...</span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center border transition-transform ${
+                            isSelected
+                              ? 'bg-[#008B74] text-white border-[#008B74]'
+                              : 'bg-slate-100 text-slate-500 border-slate-200'
+                          }`}>
+                            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                          </div>
+                        </div>
+                      </button>
+
+                      {/* Bước 2.3: Accordion Sơ đồ ô kho cụ thể của kích thước này */}
+                      {isExpanded && (
+                        <div className="border-t border-slate-100 bg-slate-50/70 p-4 sm:p-5 space-y-3.5">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <span className="text-xs font-bold text-slate-800">
+                              Chọn vị trí ô kho cụ thể ({type.name}):
+                            </span>
+                            <div className="flex items-center gap-3 text-[11px] text-slate-600 font-semibold flex-wrap">
+                              <span className="flex items-center gap-1">
+                                <span className="w-2.5 h-2.5 rounded bg-emerald-600"></span>
+                                <span>Còn trống</span>
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <span className="w-2.5 h-2.5 rounded bg-[#008B74]"></span>
+                                <span>Đang chọn</span>
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <span className="w-2.5 h-2.5 rounded bg-blue-500"></span>
+                                <span>Giữ chỗ</span>
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <span className="w-2.5 h-2.5 rounded bg-slate-300"></span>
+                                <span>Đã thuê</span>
+                              </span>
+                            </div>
+                          </div>
+
+                          {unitsForThisType.length > 0 ? (
+                            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
+                              {unitsForThisType.map((unit) => {
+                                const isUnitSelected = selectedUnit?.id === unit.id;
+                                const isAvailable = unit.status === 'AVAILABLE';
+                                const isReserved = (unit.status as string) === 'RESERVED' || (unit.status as string) === 'PENDING_PAYMENT';
+
+                                return (
+                                  <button
+                                    key={unit.id}
+                                    type="button"
+                                    disabled={!isAvailable}
+                                    onClick={() => handleSelectUnitOnGrid(unit)}
+                                    className={`p-3 rounded-xl text-center transition-all cursor-pointer border-2 flex flex-col items-center justify-center ${
+                                      isUnitSelected
+                                        ? 'bg-[#008B74] text-white border-[#006e5c] shadow-md ring-2 ring-[#008B74]/20 scale-[1.02]'
+                                        : isAvailable
+                                        ? 'bg-[#ecfdf5] border-[#a7f3d0] text-[#065f46] hover:border-[#10b981] hover:bg-[#d1fae5]'
+                                        : isReserved
+                                        ? 'bg-[#eff6ff] border-[#bfdbfe] text-[#1e40af] cursor-not-allowed opacity-70'
+                                        : 'bg-[#f8fafc] border-[#e2e8f0] text-[#64748b] cursor-not-allowed opacity-60'
+                                    }`}
+                                  >
+                                    <span className="text-xs font-black font-mono block">
+                                      {unit.unitNumber}
+                                    </span>
+                                    <span className={`text-[9px] font-bold mt-1 px-1.5 py-0.5 rounded block ${
+                                      isUnitSelected
+                                        ? 'bg-white/20 text-white'
+                                        : isAvailable
+                                        ? 'bg-emerald-100 text-emerald-800'
+                                        : isReserved
+                                        ? 'bg-blue-100 text-blue-800'
+                                        : 'bg-slate-200 text-slate-600'
+                                    }`}>
+                                      {isUnitSelected ? 'Đang chọn' : isAvailable ? 'Trống' : isReserved ? 'Giữ chỗ' : 'Đã thuê'}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </div>
                           ) : (
-                            <span className={`text-sm block font-black font-mono ${isSelected ? 'text-[#008B74]' : 'text-emerald-700'}`}>
-                              {formatVND(type.baseMonthlyPrice)}/tháng
-                            </span>
+                            <div className="text-center py-4 bg-white rounded-xl border border-dashed border-slate-300 text-xs font-semibold text-slate-600">
+                              Hiện chưa có ô kho cụ thể nào được gán cho loại này.
+                            </div>
                           )}
-                        </div>
-                      </div>
 
-                      {/* Tình trạng ô kho thực tế */}
-                      <div className="mt-3 text-[11px] font-bold">
-                        {isUnlisted ? (
-                          <span className="text-slate-400 italic font-medium">Tạm chưa mở đặt</span>
-                        ) : slots !== null ? (
-                          slots > 0 ? (
-                            <span className="inline-flex items-center gap-1 text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-md">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-                              Còn {slots} ô
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-rose-700 bg-rose-100/80 px-2 py-0.5 rounded-md">
-                              <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
-                              Hết chỗ (0 ô)
-                            </span>
-                          )
-                        ) : (
-                          <span className="text-slate-400 text-[10px]">Đang kiểm tra...</span>
-                        )}
-                      </div>
-                    </button>
+                          <p className="text-[11px] text-slate-500 font-medium italic">
+                            💡 Hệ thống đã tự động gán ô trống khả dụng đầu tiên. Quý khách có thể click chọn ô khác trên sơ đồ để đổi vị trí.
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>
             )}
-
-            {/* Chú thích trạng thái sơ đồ ô kho */}
-            <div className="flex items-center gap-4 text-xs text-slate-700 pt-3.5 border-t border-slate-100 font-semibold flex-wrap">
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded bg-emerald-600 shadow-2xs"></span>
-                <span>Còn trống</span>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded bg-[#008B74] shadow-2xs"></span>
-                <span>Đang chọn</span>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded bg-blue-500 shadow-2xs"></span>
-                <span>Đang giữ chỗ</span>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded bg-slate-300 shadow-2xs"></span>
-                <span>Đã thuê</span>
-              </span>
-            </div>
-
-            {/* SƠ ĐỒ MA TRẬN Ô KHO THỰC TẾ - VIBRANT HIGH CONTRAST (filterUnitTypeId={selectedTypeId}) */}
-            <div className="pt-1">
-              {displayFacilityUnits.filter((u) => {
-                if (selectedTypeId && u.unitTypeId) return u.unitTypeId === selectedTypeId;
-                if (storageType && u.storageType) return u.storageType === storageType;
-                return true;
-              }).length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
-                  {displayFacilityUnits
-                    .filter((u) => {
-                      if (selectedTypeId && u.unitTypeId) return u.unitTypeId === selectedTypeId;
-                      if (storageType && u.storageType) return u.storageType === storageType;
-                      return true;
-                    })
-                    .map((unit) => {
-                      const isSelected = selectedUnit?.id === unit.id;
-                      const isAvailable = unit.status === 'AVAILABLE';
-                      const isReserved = (unit.status as string) === 'RESERVED' || (unit.status as string) === 'PENDING_PAYMENT';
-
-                      return (
-                        <button
-                          key={unit.id}
-                          type="button"
-                          disabled={!isAvailable}
-                          onClick={() => handleSelectUnitOnGrid(unit)}
-                          className={`p-3.5 rounded-xl text-center transition-all cursor-pointer border-2 flex flex-col items-center justify-center ${
-                            isSelected
-                              ? 'bg-[#008B74] text-white border-[#006e5c] shadow-md ring-4 ring-[#008B74]/20 scale-[1.03]'
-                              : isAvailable
-                              ? 'bg-[#ecfdf5] border-[#a7f3d0] text-[#065f46] hover:border-[#10b981] hover:bg-[#d1fae5] hover:shadow-xs'
-                              : isReserved
-                              ? 'bg-[#eff6ff] border-[#bfdbfe] text-[#1e40af] cursor-not-allowed'
-                              : 'bg-[#f8fafc] border-[#e2e8f0] text-[#64748b] cursor-not-allowed'
-                          }`}
-                        >
-                          <span className={`text-xs font-black font-mono block ${isSelected ? 'text-white' : ''}`}>
-                            {unit.unitNumber}
-                          </span>
-                          <span className={`text-[10px] font-bold mt-1 px-2 py-0.5 rounded block ${
-                            isSelected
-                              ? 'bg-white/20 text-white'
-                              : isAvailable
-                              ? 'bg-emerald-100/90 text-emerald-800'
-                              : isReserved
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-slate-200/80 text-slate-600'
-                          }`}>
-                            {isSelected ? 'Đang chọn' : isAvailable ? 'Trống' : isReserved ? 'Giữ chỗ' : 'Đã thuê'}
-                          </span>
-                        </button>
-                      );
-                    })}
-                </div>
-              ) : (
-                <div className="text-center py-6 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-xs font-semibold text-slate-600">
-                  Cơ sở hiện chưa có ô kho thuộc loại này.
-                </div>
-              )}
-            </div>
-
           </div>
 
         </div>
 
-        {/* ==================== CỘT PHẢI: TÓM TẮT ĐẶT CHỖ (STICKY SIDEBAR - 4 cols) ==================== */}
+        {/* ==================== CỘT PHẢI: HÓA ĐƠN TÓM TẮT ĐẶT CHỖ (MINI INVOICE - 4 cols) ==================== */}
         <div className="lg:col-span-4">
-          <div className="bg-white border border-brand-200/90 rounded-2xl p-6 shadow-sm sticky top-24 space-y-4">
-            <h3 className="text-base font-bold text-[#0a1614] pb-3 border-b border-brand-100">
-              Tóm tắt đặt chỗ
-            </h3>
-
-            <div className="space-y-2.5 text-xs text-slate-600">
-              <div className="flex justify-between">
-                <span>Cơ sở:</span>
-                <strong className="text-[#0a1614] text-right">{currentFacility.name}</strong>
+          <div className="bg-white border-2 border-slate-200/90 rounded-2xl p-6 shadow-sm sticky top-24 space-y-4">
+            
+            {/* Invoice Header */}
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-200">
+              <div>
+                <h3 className="text-base font-black text-slate-900 tracking-tight">
+                  Hóa đơn đặt chỗ
+                </h3>
+                <span className="text-[11px] text-slate-500 font-medium">Báo giá tạm tính tự động</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span>Mã ô kho:</span>
-                <strong className={`font-mono px-2 py-0.5 rounded border ${
-                  selectedUnit
-                    ? 'text-brand-700 bg-brand-50 border-brand-200'
-                    : 'text-rose-700 bg-rose-50 border-rose-200'
-                }`}>
-                  {selectedUnit ? selectedUnit.unitNumber : 'Chưa chọn ô'}
-                </strong>
-              </div>
-              <div className="flex justify-between">
-                <span>Loại ô kho:</span>
-                <strong className="text-[#0a1614]">
-                  {storageType === 'CLIMATE_CONTROLLED' ? 'Kho Máy Lạnh' : 'Kho Tiêu Chuẩn'} — Size {selectedSize} ({currentUnitType?.areaM2 || 3} m²)
-                </strong>
-              </div>
-              <div className="flex justify-between">
-                <span>Kỳ thuê:</span>
-                <strong className="text-[#0a1614] text-right">
-                  {formatDateVN(startDate)} → {formatDateVN(calculatedEndDate)} ({durationMonths} tháng)
-                </strong>
-              </div>
-            </div>
-
-            <div className="border-t border-slate-200 pt-3 space-y-2 text-xs text-slate-600">
-              <div className="flex justify-between">
-                <span>Đơn giá:</span>
-                <span className="font-semibold text-[#0a1614]">{formatVND(priceCalculation.basePrice)} / tháng</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Tiền thuê {durationMonths} tháng:</span>
-                <span className="font-semibold text-[#0a1614]">{formatVND(priceCalculation.grossRent)}</span>
-              </div>
-              {priceCalculation.discountAmount > 0 && (
-                <div className="flex justify-between text-emerald-700 font-semibold">
-                  <span>Chiết khấu ({priceCalculation.discountPercent}%):</span>
-                  <span>-{formatVND(priceCalculation.discountAmount)}</span>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <span>Tiền đặt cọc ({depositMultiplierLabel} tháng):</span>
-                <span className="font-semibold text-[#0a1614]">{formatVND(priceCalculation.depositAmount)}</span>
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-dashed border-brand-300 flex items-baseline justify-between">
-              <span className="text-sm font-bold text-[#0a1614]">Tổng thanh toán:</span>
-              <span className="text-xl font-extrabold text-brand-700 font-mono">
-                {formatVND(priceCalculation.totalDue)}
+              <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/60">
+                {selectedUnit ? 'Đã chọn ô' : 'Tự động gán ô'}
               </span>
             </div>
 
+            {/* Thông tin định danh cơ bản */}
+            <div className="space-y-2.5 text-xs text-slate-600">
+              <div className="flex justify-between items-start gap-2">
+                <span className="shrink-0 text-slate-500 font-medium">Cơ sở:</span>
+                <strong className="text-slate-900 text-right font-bold">{currentFacility.name}</strong>
+              </div>
+
+              <div className="flex justify-between items-center gap-2">
+                <span className="shrink-0 text-slate-500 font-medium">Mã ô kho:</span>
+                <strong className={`font-mono text-sm px-2.5 py-0.5 rounded-lg border font-black ${
+                  selectedUnit
+                    ? 'text-brand-800 bg-brand-50 border-brand-300 ring-2 ring-brand-500/10'
+                    : 'text-amber-800 bg-amber-50 border-amber-300'
+                }`}>
+                  {selectedUnit ? selectedUnit.unitNumber : 'Đang chọn ô trống...'}
+                </strong>
+              </div>
+
+              <div className="flex justify-between items-start gap-2">
+                <span className="shrink-0 text-slate-500 font-medium">Loại kho:</span>
+                <strong className="text-slate-900 text-right">
+                  {storageType === 'CLIMATE_CONTROLLED' ? 'Kho Máy Lạnh' : 'Kho Tiêu Chuẩn'} — Size {selectedSize} ({currentUnitType?.areaM2 || 4} m²)
+                </strong>
+              </div>
+
+              <div className="flex justify-between items-start gap-2">
+                <span className="shrink-0 text-slate-500 font-medium">Kỳ thuê:</span>
+                <strong className="text-slate-900 text-right font-medium">
+                  {formatDateVN(startDate)} → {formatDateVN(calculatedEndDate)}
+                  <span className="block font-bold text-brand-800">({durationMonths} tháng)</span>
+                </strong>
+              </div>
+            </div>
+
+            {/* Bảng tính toán (Mạch lạc, minh bạch cho dân kinh tế) */}
+            <div className="border-t border-slate-200 pt-3.5 space-y-2.5 text-xs">
+              <div className="flex justify-between text-slate-600">
+                <span>Đơn giá niêm yết:</span>
+                <span className="font-semibold text-slate-900 font-mono">{formatVND(priceCalculation.basePrice)} / tháng</span>
+              </div>
+
+              <div className="flex justify-between text-slate-600">
+                <span>Số tháng thuê:</span>
+                <span className="font-bold text-slate-900 font-mono">x {durationMonths} tháng</span>
+              </div>
+
+              <div className="flex justify-between text-slate-600">
+                <span>Tạm tính tiền thuê:</span>
+                <span className="font-semibold text-slate-900 font-mono">{formatVND(priceCalculation.grossRent)}</span>
+              </div>
+
+              {priceCalculation.discountAmount > 0 && (
+                <div className="flex justify-between text-emerald-700 font-bold bg-emerald-50/80 px-2.5 py-1.5 rounded-lg border border-emerald-200/60">
+                  <span>
+                    {priceCalculation.discountProgramName
+                      ? `${priceCalculation.discountProgramName}${priceCalculation.discountPercent > 0 ? ` (-${priceCalculation.discountPercent}%)` : ''}:`
+                      : `Chiết khấu (-${priceCalculation.discountPercent}%):`}
+                  </span>
+                  <span className="font-mono text-emerald-800 font-black">-{formatVND(priceCalculation.discountAmount)}</span>
+                </div>
+              )}
+
+              <div className="flex justify-between text-slate-600">
+                <span>Tiền đặt cọc ({depositMultiplierLabel} tháng):</span>
+                <span className="font-semibold text-slate-900 font-mono">{formatVND(priceCalculation.depositAmount)}</span>
+              </div>
+            </div>
+
+            {/* Tổng thanh toán hôm nay - Nổi bật nhất */}
+            <div className="pt-3.5 border-t-2 border-slate-900/10">
+              <div className="flex items-baseline justify-between mb-1">
+                <span className="text-xs font-black uppercase tracking-wider text-slate-900">
+                  Tổng thanh toán hôm nay:
+                </span>
+                <span className="text-2xl font-black text-[#008B74] font-mono tracking-tight">
+                  {formatVND(priceCalculation.totalDue)}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-600 text-right">
+                Đã bao gồm tiền thuê {durationMonths} tháng & tiền cọc hoàn lại
+              </p>
+            </div>
+
+            {/* CTA Button */}
             <Button
               type="button"
               variant="primary"
-              size="md"
+              size="lg"
               onClick={handleProceedToBooking}
-              disabled={isConfirming}
-              className="w-full py-3.5 text-xs sm:text-sm font-bold bg-brand-500 hover:bg-brand-600 text-white rounded-xl shadow-xs transition-all hover:scale-[1.01] flex items-center justify-center gap-2 cursor-pointer mt-2"
+              disabled={isConfirming || !selectedUnit}
+              className="w-full py-4 text-sm sm:text-base font-extrabold bg-[#008B74] hover:bg-[#007461] active:bg-[#005e4f] text-white rounded-xl shadow-md transition-all hover:scale-[1.01] flex items-center justify-center gap-2 cursor-pointer mt-3 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isConfirming ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Đang chuyển tiếp...</span>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Đang khởi tạo đơn...</span>
                 </>
               ) : (
                 <>
                   <span>Điền thông tin và thanh toán</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-5 h-5 stroke-[2.5]" />
                 </>
               )}
             </Button>

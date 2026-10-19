@@ -65,3 +65,20 @@ export function formatVND(amount: number): string {
     maximumFractionDigits: 0,
   }).format(amount);
 }
+
+export function normalizeDiscountPercent(rawRate?: number | null): number {
+  if (!rawRate || rawRate <= 0) return 0;
+  if (rawRate <= 1) {
+    return Math.round(rawRate * 100);
+  }
+  return Math.round(rawRate);
+}
+
+export function findFirstAvailableUnit<T extends { unitTypeId?: string | number; status?: string }>(
+  typeId: string | number,
+  units: T[]
+): T | null {
+  return units.find((u) => String(u.unitTypeId) === String(typeId) && u.status === 'AVAILABLE') || null;
+}
+
+

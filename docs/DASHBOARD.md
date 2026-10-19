@@ -126,6 +126,7 @@
 | `ISS-117` | Trang Chính sách thuê BOM dính lề trái màn hình rộng và các ô input lệch hàng ngang do nhãn dài ngắn khác nhau. | Căn giữa max-w-5xl mx-auto, đồng bộ chiều cao nhãn min-h-[2.5rem] và căn đáy để toàn bộ ô input thẳng hàng ngang tăm tắp. | Bình | `RESOLVED` |
 | `ISS-118` | Thiếu tài liệu bản đồ kỹ thuật mô tả trọn vẹn mọi luồng đi từ UI -> API -> Service -> DB -> Jobs cho toàn bộ dự án. | Hoàn thành tài liệu `docs/WORKFLOWS.md` bao quát toàn bộ 7 luồng nghiệp vụ, luồng hệ thống, 3 cron jobs, state machines và bảng tra cứu code. | Bình | `RESOLVED` |
 | `ISS-119` | Tiền cọc giữ kho tại BookingPage và UnitPickerPage bị hardcode 1 tháng và label không phản ánh hệ số cọc BOM Policy (BR-DEP-01). | Kết nối `useActivePolicy()` lấy `depositMultiplier`, đồng bộ công thức tính cọc `calculateBookingTotal` và hiển thị động nhãn `(N tháng)` thay vì hardcode 1 tháng. | Xuân Nhi | `RESOLVED` |
+| `ISS-120` | BOM chưa có giao diện cấu hình chương trình khuyến mãi (6 tháng -5%, 12 tháng -10%) và Customer bị hardcode chiết khấu. | Thêm cột `min_rental_months` vào `discount_program` (V54), xây dựng REST API CRUD `/discount-programs`, tích hợp Tab Khuyến mãi BOM và kết nối động `calculateBookingPrice` phía Customer. | Bình | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 

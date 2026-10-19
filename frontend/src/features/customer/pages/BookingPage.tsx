@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Modal } from '@/components/ui/Modal';
-import { formatVND } from '../utils/pricing';
+import { formatVND, normalizeDiscountPercent } from '../utils/pricing';
 import { DigitalMoveInPassModal } from '../components/DigitalMoveInPassModal';
 import { TermsOfServiceModal } from '../components/TermsOfServiceModal';
 import { generateMoveInPass } from '@/api/payment';
@@ -461,19 +461,17 @@ export const BookingPage: React.FC = () => {
         unitPrice: backendPricing.monthlyPrice || baseMonthlyPrice,
         rentalFee: backendPricing.rawRentTotal || baseMonthlyPrice * durationMonths,
         discountAmount: backendPricing.discountAmount || 0,
-        discountPercent: backendPricing.discountPercentage || (durationMonths >= 12 ? 10 : durationMonths >= 6 ? 5 : 0),
+        discountPercent: normalizeDiscountPercent(backendPricing.discountPercentage),
+        discountProgramName: backendPricing.discountProgramName || null,
         depositAmount: backendPricing.depositAmount || fallbackDeposit,
         totalDueToday: backendPricing.totalDueToday || (baseMonthlyPrice * durationMonths + fallbackDeposit),
       };
     }
 
     const grossRent = baseMonthlyPrice * durationMonths;
-    let discountPercent = 0;
-    if (durationMonths >= 12) discountPercent = 10;
-    else if (durationMonths >= 6) discountPercent = 5;
-
-    const discountAmount = Math.round((grossRent * discountPercent) / 100);
-    const netRent = grossRent - discountAmount;
+    const discountPercent = 0;
+    const discountAmount = 0;
+    const netRent = grossRent;
     const depositAmount = fallbackDeposit;
     const totalDueToday = netRent + depositAmount;
 
@@ -482,6 +480,7 @@ export const BookingPage: React.FC = () => {
       rentalFee: grossRent,
       discountAmount,
       discountPercent,
+      discountProgramName: null,
       depositAmount,
       totalDueToday,
     };
@@ -1021,7 +1020,11 @@ export const BookingPage: React.FC = () => {
                 </div>
                 {calculation.discountAmount > 0 && (
                   <div className="flex justify-between text-emerald-700 font-semibold">
-                    <span>Chiết khấu ({calculation.discountPercent}%):</span>
+                    <span>
+                      {calculation.discountProgramName
+                        ? `${calculation.discountProgramName}${calculation.discountPercent > 0 ? ` (-${calculation.discountPercent}%)` : ''}:`
+                        : `Chiết khấu (-${calculation.discountPercent}%):`}
+                    </span>
                     <span>-{formatVND(calculation.discountAmount)}</span>
                   </div>
                 )}
@@ -1339,7 +1342,11 @@ export const BookingPage: React.FC = () => {
                   </div>
                   {calculation.discountAmount > 0 && (
                     <div className="flex justify-between text-emerald-700 font-semibold">
-                      <span>Chiết khấu ({calculation.discountPercent}%):</span>
+                      <span>
+                        {calculation.discountProgramName
+                          ? `${calculation.discountProgramName}${calculation.discountPercent > 0 ? ` (-${calculation.discountPercent}%)` : ''}:`
+                          : `Chiết khấu (-${calculation.discountPercent}%):`}
+                      </span>
                       <span>-{formatVND(calculation.discountAmount)}</span>
                     </div>
                   )}

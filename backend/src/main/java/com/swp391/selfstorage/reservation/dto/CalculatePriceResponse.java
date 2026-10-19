@@ -21,6 +21,8 @@ public class CalculatePriceResponse {
     private long totalDueToday;
     private List<SurchargeLineResponse> surcharges = new ArrayList<>();
     private long surchargeTotal;
+    private Long discountProgramId;
+    private String discountProgramName;
 
     public CalculatePriceResponse() {}
 
@@ -78,4 +80,10 @@ public class CalculatePriceResponse {
         }
         this.totalDueToday = this.finalRentTotal + this.depositAmount + this.surchargeTotal;
     }
+
+    public Long getDiscountProgramId() { return discountProgramId; }
+    public void setDiscountProgramId(Long discountProgramId) { this.discountProgramId = discountProgramId; }
+
+    public String getDiscountProgramName() { return discountProgramName; }
+    public void setDiscountProgramName(String discountProgramName) { this.discountProgramName = discountProgramName; }
 }

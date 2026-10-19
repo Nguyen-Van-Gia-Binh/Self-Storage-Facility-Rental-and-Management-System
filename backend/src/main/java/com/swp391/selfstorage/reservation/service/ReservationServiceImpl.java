@@ -71,6 +71,9 @@ public class ReservationServiceImpl implements ReservationService {
     @Autowired(required = false)
     private ReservationHoldExpiryService reservationHoldExpiryService;
 
+    @Autowired(required = false)
+    private com.swp391.selfstorage.policy.service.DiscountProgramService discountProgramService;
+
     public ReservationServiceImpl(ReservationRepository reservationRepository,
                                   StorageUnitRepository storageUnitRepository,
                                   FacilityRepository facilityRepository,
@@ -101,39 +104,44 @@ public class ReservationServiceImpl implements ReservationService {
         BigDecimal multiplier = policy.getDepositMultiplier() != null
                 ? policy.getDepositMultiplier()
                 : BigDecimal.ONE;
-        CalculatePriceResponse response = quote(monthlyPrice, quotedMonths, multiplier);
+
+        long rawRent = Math.max(0, monthlyPrice) * quotedMonths;
+        com.swp391.selfstorage.policy.service.DiscountProgramService.BestDiscountResult bestDiscount =
+                discountProgramService != null
+                        ? discountProgramService.findBestDiscount(request.getFacilityId(), request.getUnitTypeId(), quotedMonths, rawRent, LocalDate.now())
+                        : fallbackDiscount(rawRent, quotedMonths);
+
+        CalculatePriceResponse response = quote(monthlyPrice, quotedMonths, multiplier, bestDiscount);
         applySurcharges(response, request.getFacilityId());
         return response;
     }
 
     /**
-     * Công thức thuê, chiết khấu và cọc. Đơn giá và hệ số cọc do người gọi lấy từ BOM.
+     * Tương thích ngược cho các lời gọi quote cũ
      */
     CalculatePriceResponse quote(long monthlyPrice, int months, BigDecimal depositMultiplier) {
+        long rate = Math.max(0, monthlyPrice);
+        int safeMonths = Math.max(1, months);
+        long rawRent = rate * safeMonths;
+        return quote(monthlyPrice, months, depositMultiplier, fallbackDiscount(rawRent, safeMonths));
+    }
+
+    CalculatePriceResponse quote(long monthlyPrice, int months, BigDecimal depositMultiplier,
+                                 com.swp391.selfstorage.policy.service.DiscountProgramService.BestDiscountResult discount) {
         long rate = Math.max(0, monthlyPrice);
         int safeMonths = Math.max(1, months);
         BigDecimal multiplier = depositMultiplier != null ? depositMultiplier : BigDecimal.ONE;
 
         long rawRent = rate * safeMonths;
-
-        // Chiet khau theo BR-PRI-01: 6 thang -> 5%, 12 thang -> 10%
-        double discountRate = 0.0;
-        if (safeMonths >= 12) {
-            discountRate = 0.10;
-        } else if (safeMonths >= 6) {
-            discountRate = 0.05;
-        }
-
-        // BR-GEN-04: Lam tron den 1.000 VND
-        long discountAmount = Math.round((rawRent * discountRate) / 1000.0) * 1000;
+        double discountRate = discount != null ? discount.discountRate() : 0.0;
+        long discountAmount = discount != null ? discount.discountAmount() : 0L;
         long finalRent = rawRent - discountAmount;
 
-        // BR-DEP-01: Deposit = deposit.multiplier × đơn giá tháng
+        // BR-DEP-01: Deposit = deposit.multiplier × đơn giá tháng (trước giảm giá)
         long deposit = Math.round((rate * multiplier.doubleValue()) / 1000.0) * 1000;
-
         long totalDueToday = finalRent + deposit;
 
-        return new CalculatePriceResponse(
+        CalculatePriceResponse response = new CalculatePriceResponse(
                 rate,
                 safeMonths,
                 rawRent,
@@ -143,6 +151,22 @@ public class ReservationServiceImpl implements ReservationService {
                 deposit,
                 totalDueToday
         );
+        if (discount != null) {
+            response.setDiscountProgramId(discount.programId());
+            response.setDiscountProgramName(discount.programName());
+        }
+        return response;
+    }
+
+    private com.swp391.selfstorage.policy.service.DiscountProgramService.BestDiscountResult fallbackDiscount(long rawRent, int safeMonths) {
+        double discountRate = 0.0;
+        if (safeMonths >= 12) {
+            discountRate = 0.10;
+        } else if (safeMonths >= 6) {
+            discountRate = 0.05;
+        }
+        long discountAmount = Math.round((rawRent * discountRate) / 1000.0) * 1000;
+        return new com.swp391.selfstorage.policy.service.DiscountProgramService.BestDiscountResult(null, null, discountRate, discountAmount);
     }
 
     private void applySurcharges(CalculatePriceResponse response, Long facilityId) {
@@ -267,7 +291,12 @@ public class ReservationServiceImpl implements ReservationService {
         BigDecimal multiplier = policy.getDepositMultiplier() != null
                 ? policy.getDepositMultiplier()
                 : BigDecimal.ONE;
-        CalculatePriceResponse pricing = quote(monthlyPrice, months, multiplier);
+        long rawRent = Math.max(0, monthlyPrice) * months;
+        com.swp391.selfstorage.policy.service.DiscountProgramService.BestDiscountResult bestDiscount =
+                discountProgramService != null
+                        ? discountProgramService.findBestDiscount(request.getFacilityId(), request.getUnitTypeId(), months, rawRent, LocalDate.now())
+                        : fallbackDiscount(rawRent, months);
+        CalculatePriceResponse pricing = quote(monthlyPrice, months, multiplier, bestDiscount);
         applySurcharges(pricing, request.getFacilityId());
 
         // 7. Tao entity Reservation
@@ -287,6 +316,7 @@ public class ReservationServiceImpl implements ReservationService {
 
         reservation.setMonthlyPriceSnapshot(pricing.getMonthlyPrice());
         reservation.setPolicyVersionId(policy.getId());
+        reservation.setDiscountProgramId(pricing.getDiscountProgramId());
         reservation.setDiscountAmount(pricing.getDiscountAmount());
         reservation.setDepositAmount(pricing.getDepositAmount());
         reservation.setTotalRentalFee(pricing.getFinalRentTotal());
