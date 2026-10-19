@@ -4,6 +4,7 @@ import {
   DollarSign,
   Tag,
   ShieldCheck,
+  Percent,
   CheckCircle2,
   AlertCircle,
 } from 'lucide-react';
@@ -18,6 +19,14 @@ import {
   nextScheduledPolicy,
 } from '@/api/pricing';
 import type { PolicyVersionListItem } from '@/api/pricing';
+import {
+  fetchDiscountPrograms,
+  createDiscountProgram,
+  updateDiscountProgram,
+  type DiscountProgramItem,
+  type CreateDiscountProgramPayload,
+  type UpdateDiscountProgramPayload,
+} from '@/api/discount';
 import type {
   FacilityListItem,
   UnitTypeCatalog,
@@ -29,8 +38,10 @@ import { PriceUpdateModal } from '../components/PriceUpdateModal';
 import { SurchargeTable } from '../components/SurchargeTable';
 import { SurchargeModal, type SurchargeModalSubmit } from '../components/SurchargeModal';
 import { PolicySummaryCard } from '../components/PolicySummaryCard';
+import { DiscountProgramTable } from '../components/DiscountProgramTable';
+import { DiscountProgramModal } from '../components/DiscountProgramModal';
 
-type PricingTab = 'PRICING' | 'SURCHARGES' | 'POLICIES';
+type PricingTab = 'PRICING' | 'SURCHARGES' | 'POLICIES' | 'DISCOUNTS';
 
 export const BomPricingManagementPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<PricingTab>('PRICING');
@@ -47,6 +58,12 @@ export const BomPricingManagementPage: React.FC = () => {
   const [policyVersions, setPolicyVersions] = useState<PolicyVersionListItem[]>([]);
   const [scheduledPolicy, setScheduledPolicy] = useState<{ version: string; effectiveDate: string } | null>(null);
   const [isLoadingPolicy, setIsLoadingPolicy] = useState(false);
+
+  const [discountPrograms, setDiscountPrograms] = useState<DiscountProgramItem[]>([]);
+  const [isLoadingDiscounts, setIsLoadingDiscounts] = useState(false);
+  const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false);
+  const [editingDiscount, setEditingDiscount] = useState<DiscountProgramItem | null>(null);
+  const [isSavingDiscount, setIsSavingDiscount] = useState(false);
 
   const [priceModalUnitType, setPriceModalUnitType] = useState<UnitTypeCatalog | null>(null);
   const [isUpdatingPrice, setIsUpdatingPrice] = useState(false);
@@ -147,6 +164,18 @@ export const BomPricingManagementPage: React.FC = () => {
         .catch(() => {
           if (!ignore) setIsLoadingPolicy(false);
         });
+    } else if (activeTab === 'DISCOUNTS') {
+      setIsLoadingDiscounts(true);
+      fetchDiscountPrograms()
+        .then((res) => {
+          if (!ignore) {
+            setDiscountPrograms(res.content || []);
+            setIsLoadingDiscounts(false);
+          }
+        })
+        .catch(() => {
+          if (!ignore) setIsLoadingDiscounts(false);
+        });
     }
 
     return () => {
@@ -219,6 +248,56 @@ export const BomPricingManagementPage: React.FC = () => {
     } catch (err: unknown) {
       const errorObj = err as { message?: string };
       showToast(errorObj.message || 'Không ngừng áp dụng được phụ phí', 'error');
+    }
+  };
+
+  const handleSubmitDiscount = async (
+    payload: CreateDiscountProgramPayload | UpdateDiscountProgramPayload
+  ) => {
+    setIsSavingDiscount(true);
+    try {
+      if (editingDiscount) {
+        await updateDiscountProgram(editingDiscount.id, payload as UpdateDiscountProgramPayload);
+        showToast(`Đã cập nhật chương trình "${payload.name}" thành công!`);
+      } else {
+        await createDiscountProgram(payload as CreateDiscountProgramPayload);
+        showToast(`Đã tạo chương trình ưu đãi "${payload.name}" thành công!`);
+      }
+      setIsDiscountModalOpen(false);
+      setEditingDiscount(null);
+      const res = await fetchDiscountPrograms();
+      setDiscountPrograms(res.content || []);
+    } catch (err: unknown) {
+      const errorObj = err as { message?: string };
+      showToast(errorObj.message || 'Lỗi khi lưu chương trình ưu đãi', 'error');
+    } finally {
+      setIsSavingDiscount(false);
+    }
+  };
+
+  const handleToggleDiscountStatus = async (item: DiscountProgramItem) => {
+    const actionText = item.isActive ? 'Tạm dừng áp dụng' : 'Kích hoạt lại';
+    const confirmed = window.confirm(`${actionText} chương trình "${item.name}"?`);
+    if (!confirmed) return;
+    try {
+      await updateDiscountProgram(item.id, {
+        name: item.name,
+        discountType: item.discountType,
+        discountValue: item.discountValue,
+        minRentalMonths: item.minRentalMonths,
+        startDate: item.startDate,
+        endDate: item.endDate,
+        scopeType: item.scopeType,
+        facilityId: item.facilityId,
+        unitTypeId: item.unitTypeId,
+        isActive: !item.isActive,
+      });
+      showToast(`Đã ${actionText.toLowerCase()} chương trình "${item.name}".`);
+      const res = await fetchDiscountPrograms();
+      setDiscountPrograms(res.content || []);
+    } catch (err: unknown) {
+      const errorObj = err as { message?: string };
+      showToast(errorObj.message || 'Không thay đổi được trạng thái', 'error');
     }
   };
 
@@ -297,6 +376,17 @@ export const BomPricingManagementPage: React.FC = () => {
             <ShieldCheck className="w-4 h-4 text-emerald-500" />
             <span>Chính sách cọc & Quá hạn</span>
           </button>
+          <button
+            onClick={() => setActiveTab('DISCOUNTS')}
+            className={`flex items-center space-x-1.5 px-3 py-2 rounded-lg transition-all ${
+              activeTab === 'DISCOUNTS'
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Percent className="w-4 h-4 text-purple-500" />
+            <span>Khuyến mãi & Giảm giá</span>
+          </button>
         </div>
       </div>
 
@@ -336,6 +426,22 @@ export const BomPricingManagementPage: React.FC = () => {
         />
       )}
 
+      {activeTab === 'DISCOUNTS' && (
+        <DiscountProgramTable
+          programs={discountPrograms}
+          onOpenModal={() => {
+            setEditingDiscount(null);
+            setIsDiscountModalOpen(true);
+          }}
+          onEdit={(item) => {
+            setEditingDiscount(item);
+            setIsDiscountModalOpen(true);
+          }}
+          onToggleStatus={handleToggleDiscountStatus}
+          isLoading={isLoadingDiscounts}
+        />
+      )}
+
       {priceModalUnitType && (
         <PriceUpdateModal
           key={`price-${priceModalUnitType.id}-${priceModalUnitType.pricePerM2 ?? priceModalUnitType.monthlyPrice}`}
@@ -357,6 +463,21 @@ export const BomPricingManagementPage: React.FC = () => {
           editing={editingSurcharge}
           onSubmit={handleSubmitSurcharge}
           isLoading={isSavingSurcharge}
+        />
+      )}
+
+      {isDiscountModalOpen && (
+        <DiscountProgramModal
+          key={editingDiscount ? `edit-discount-${editingDiscount.id}` : 'create-discount-modal'}
+          isOpen={isDiscountModalOpen}
+          onClose={() => {
+            setIsDiscountModalOpen(false);
+            setEditingDiscount(null);
+          }}
+          facilities={facilities}
+          editing={editingDiscount}
+          onSubmit={handleSubmitDiscount}
+          isLoading={isSavingDiscount}
         />
       )}
     </div>
