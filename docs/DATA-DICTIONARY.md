@@ -224,6 +224,7 @@ Chương trình khuyến mãi giảm giá thuê (`US-BM-03.3`).
 | `name` | `NVARCHAR(150)` | Có | | Tên chiến dịch ưu đãi |
 | `discount_type` | `VARCHAR(20)` | Có | `CHECK IN ('PERCENT', 'AMOUNT')` | Loại giảm (% hoặc số tiền cố định) |
 | `discount_value` | `DECIMAL(10,2)` | Có | | Giá trị giảm |
+| `min_rental_months` | `INT` | Có | `DEFAULT 1, CHECK (min_rental_months >= 1)` | Số tháng thuê tối thiểu để được hưởng ưu đãi (Flyway V54) |
 | `start_date` | `DATE` | Có | | Ngày bắt đầu chương trình |
 | `end_date` | `DATE` | Có | `CHECK (end_date >= start_date)` | Ngày kết thúc chương trình |
 | `scope_type` | `VARCHAR(20)` | Có | `CHECK IN ('SYSTEM', 'FACILITY', 'UNIT_TYPE')` | Phạm vi áp dụng |

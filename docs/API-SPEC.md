@@ -1988,6 +1988,114 @@ Tạo phụ phí mới.
 
 ---
 
+### `GET /api/v1/discount-programs`
+
+Lấy danh sách chương trình khuyến mãi / ưu đãi giảm giá — `BM-03`, `US-BM-03.3`.
+
+**Auth:** Mọi vai trò đã đăng nhập (BOM, Customer, Facility Staff/Manager).
+**Query params:**
+- `isActive` (`Boolean`, tùy chọn): Lọc theo trạng thái hoạt động (`true`/`false`).
+- `page` (`int`, mặc định `0`): Trang hiện tại.
+- `size` (`int`, mặc định `20`): Số bản ghi mỗi trang.
+
+**Response `200`:** `PageResponse<DiscountProgramResponse>`.
+
+```json
+{
+  "content": [
+    {
+      "id": 1,
+      "name": "Ưu đãi thuê từ 6 tháng (5%)",
+      "discountType": "PERCENT",
+      "discountValue": 5.0,
+      "minRentalMonths": 6,
+      "startDate": "2026-01-01",
+      "endDate": "2026-12-31",
+      "scopeType": "SYSTEM",
+      "facilityId": null,
+      "facilityName": null,
+      "unitTypeId": null,
+      "unitTypeName": null,
+      "isActive": true,
+      "createdAt": "2026-01-01T00:00:00+07:00",
+      "updatedAt": "2026-01-01T00:00:00+07:00"
+    }
+  ],
+  "page": 0,
+  "size": 20,
+  "totalElements": 1,
+  "totalPages": 1,
+  "last": true
+}
+```
+
+---
+
+### `GET /api/v1/discount-programs/{id}`
+
+Lấy chi tiết một chương trình khuyến mãi theo ID.
+
+**Auth:** Mọi vai trò đã đăng nhập.
+**Response `200`:** `DiscountProgramResponse`.
+
+---
+
+### `POST /api/v1/discount-programs`
+
+Tạo mới chương trình khuyến mãi — `BM-03`, `US-BM-03.3`.
+
+**Auth:** `BUSINESS_OPERATIONS_MANAGER`
+**Request body:**
+
+```json
+{
+  "name": "Ưu đãi thuê từ 6 tháng (5%)",
+  "discountType": "PERCENT",
+  "discountValue": 5.0,
+  "minRentalMonths": 6,
+  "startDate": "2026-01-01",
+  "endDate": "2026-12-31",
+  "scopeType": "SYSTEM",
+  "facilityId": null,
+  "unitTypeId": null
+}
+```
+
+| Trường | Kiểu | Bắt buộc | Ràng buộc / Mô tả |
+| :--- | :--- | :---: | :--- |
+| `name` | `String` | ✓ | Tối đa 150 ký tự |
+| `discountType` | `String` | ✓ | `PERCENT` hoặc `AMOUNT` |
+| `discountValue` | `BigDecimal` | ✓ | Phải > 0. Nếu `PERCENT`, không được vượt quá 100% |
+| `minRentalMonths` | `Integer` | ✓ | Tối thiểu từ 1 tháng trở lên |
+| `startDate` | `LocalDate` | ✓ | Định dạng `YYYY-MM-DD` |
+| `endDate` | `LocalDate` | ✓ | Phải >= `startDate` |
+| `scopeType` | `String` | ✓ | `SYSTEM`, `FACILITY`, hoặc `UNIT_TYPE` |
+| `facilityId` | `Long` | ✗ | Bắt buộc khi `scopeType = FACILITY` |
+| `unitTypeId` | `Long` | ✗ | Bắt buộc khi `scopeType = UNIT_TYPE` |
+
+**Response `201`:** `DiscountProgramResponse`.
+
+---
+
+### `PUT /api/v1/discount-programs/{id}`
+
+Cập nhật chương trình khuyến mãi — `BM-03`, `US-BM-03.3`.
+
+**Auth:** `BUSINESS_OPERATIONS_MANAGER`
+**Request body:** Tương tự `POST`, hỗ trợ thêm trường `isActive` (`Boolean`).
+**Response `200`:** `DiscountProgramResponse`.
+
+---
+
+### `DELETE /api/v1/discount-programs/{id}`
+
+Ngừng kích hoạt chương trình khuyến mãi (Soft delete: chuyển `isActive = false`).
+
+**Auth:** `BUSINESS_OPERATIONS_MANAGER`
+**Response `204`:** No Content.
+
+---
+
 ## 11. Module Support — Yêu cầu hỗ trợ
 
 **Package:** `com.swp391.selfstorage.support`
