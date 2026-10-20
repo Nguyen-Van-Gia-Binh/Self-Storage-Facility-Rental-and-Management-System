@@ -1,0 +1,45 @@
+name: 🔄 Auto Sync Upstream Main
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'  # Tự động đồng bộ mỗi 5 phút một lần
+  workflow_dispatch:        # Cho phép bấm nút "Run workflow" trên GitHub Actions tab để đồng bộ ngay lập tức
+
+permissions:
+  contents: write
+
+jobs:
+  sync-main:
+    name: 📥 Sync with Upstream Repository
+    # Chỉ chạy trên repo fork cá nhân (Tung-pro123), không chạy trên repo gốc của Bình
+    if: github.repository != 'Nguyen-Van-Gia-Binh/Self-Storage-Facility-Rental-and-Management-System'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🔄 Fetch and Merge Upstream Main
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          echo "1. Cấu hình remote upstream..."
+          git remote add upstream https://github.com/Nguyen-Van-Gia-Binh/Self-Storage-Facility-Rental-and-Management-System.git || git remote set-url upstream https://github.com/Nguyen-Van-Gia-Binh/Self-Storage-Facility-Rental-and-Management-System.git
+
+          echo "2. Lấy dữ liệu mới nhất từ repo gốc..."
+          git fetch upstream main
+
+          echo "3. Kiểm tra và gộp commit mới..."
+          git checkout -B main origin/main
+          if git merge-base --is-ancestor upstream/main HEAD; then
+            echo "✅ Fork đã cập nhật mới nhất, không có commit mới từ upstream."
+          else
+            echo "🚀 Phát hiện commit mới từ repo gốc, tiến hành đồng bộ vào main..."
+            git merge upstream/main --ff-only || git merge upstream/main -m "sync: auto-sync latest commits from upstream main"
+            git push origin main
+            echo "🎉 Đã đồng bộ thành công! Webhook sẽ kích hoạt Render và Vercel deploy tự động."
+          fi
