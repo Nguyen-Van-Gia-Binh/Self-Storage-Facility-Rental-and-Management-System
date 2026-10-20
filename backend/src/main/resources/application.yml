@@ -10,19 +10,27 @@ spring:
     name: self-storage-backend
 
   datasource:
-    url: ${DB_URL:jdbc:sqlserver://localhost:1433;databaseName=SelfStorageDB;encrypt=true;trustServerCertificate=true}
-    username: ${DB_USERNAME:sa}
-    password: ${DB_PASSWORD:YourPassword123}
-    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/selfstorage?sslmode=prefer}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 5
+      minimum-idle: 1
+      idle-timeout: 600000
+      max-lifetime: 1800000
 
   jpa:
     hibernate:
       ddl-auto: validate # Sử dụng Flyway để quản lý schema, không cho hibernate tự drop/create
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
     show-sql: true
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.SQLServerDialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
   flyway:
     enabled: true
