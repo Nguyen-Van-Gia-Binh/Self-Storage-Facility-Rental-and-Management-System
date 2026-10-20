@@ -57,9 +57,10 @@ public class FacilityServiceImpl implements FacilityService {
         Page<Facility> page = facilityRepository.findByFilter(keyword, status, pageable);
         Map<Long, java.math.BigDecimal> lowestPriceMap = facilityRepository.findLowestMonthlyPricesGroupedByFacility()
                 .stream()
+                .filter(row -> row != null && row.length >= 2 && row[0] != null)
                 .collect(Collectors.toMap(
                         row -> ((Number) row[0]).longValue(),
-                        row -> (java.math.BigDecimal) row[1],
+                        row -> toBigDecimal(row[1]),
                         (a, b) -> a));
 
         Map<Long, Integer> unitTypeCountMap = facilityRepository.countActiveUnitTypesGroupedByFacility()
@@ -191,9 +192,10 @@ public class FacilityServiceImpl implements FacilityService {
 
         Map<Long, java.math.BigDecimal> lowestPriceMap = facilityRepository.findLowestMonthlyPricesGroupedByFacility()
                 .stream()
+                .filter(row -> row != null && row.length >= 2 && row[0] != null)
                 .collect(Collectors.toMap(
                         row -> ((Number) row[0]).longValue(),
-                        row -> (java.math.BigDecimal) row[1],
+                        row -> toBigDecimal(row[1]),
                         (a, b) -> a));
 
         Map<Long, Integer> unitTypeCountMap = facilityRepository.countActiveUnitTypesGroupedByFacility()
@@ -211,5 +213,12 @@ public class FacilityServiceImpl implements FacilityService {
             }
             return resp;
         }).toList();
+    }
+
+    private static java.math.BigDecimal toBigDecimal(Object val) {
+        if (val == null) return null;
+        if (val instanceof java.math.BigDecimal bd) return bd;
+        if (val instanceof Number num) return java.math.BigDecimal.valueOf(num.longValue());
+        return new java.math.BigDecimal(val.toString());
     }
 }
