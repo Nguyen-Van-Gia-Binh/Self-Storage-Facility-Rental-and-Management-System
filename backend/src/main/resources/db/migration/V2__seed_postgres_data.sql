@@ -96,16 +96,16 @@ INSERT INTO policy_version (
     overdue_daily_rate, overdue_cap_rate, overdue_lock_access_days, overdue_notice_days,
     overdue_termination_days, return_notice_days, return_refund_working_days, return_early_refund_rate,
     access_pin_length, support_urgent_sla_hours, support_auto_close_working_days,
-    rental_buffer_days, daily_overdue_divisor, published_by
+    rental_buffer_days, rental_daily_divisor, published_by
 )
 VALUES (
-    1, 1, '2026-01-01 00:00:00+07', 1.00, 24,
-    3, 48, 0.70, 0.50,
-    '7,3,1', 1, 12, 3,
-    0.05, 0.50, 7, 14,
-    30, 7, 5, 0.80,
-    6, 4, 3,
-    2, 30, 4
+    1, 1, '2026-01-01 00:00:00+07', 1.00, 48,
+    10, 48, 0.50, 0.00,
+    '60,7,3,1', 1, 12, 3,
+    0.10, 0.70, 10, 4,
+    10, 30, 7, 0.00,
+    6, 2, 7,
+    15, 30, 4
 )
 ON CONFLICT (id) DO NOTHING;
 
@@ -120,8 +120,8 @@ VALUES
 (4, 'OVERDUE_LOCK',         'Phí khóa kho / niêm phong quá hạn', 300000, 'PENALTY',        TRUE)
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO extra_fee_version (extra_fee_type_id, name, fee_type, category, amount, effective_from, created_by)
-SELECT id, name, 'FIXED', category, amount, '2026-01-01 00:00:00+07', 4
+INSERT INTO extra_fee_version (extra_fee_type_id, code, name, fee_type, category, amount, is_active, effective_from, created_by)
+SELECT id, code, name, 'FIXED', category, amount, TRUE, '2026-01-01', 4
 FROM extra_fee_type
 ON CONFLICT DO NOTHING;
 
@@ -149,9 +149,9 @@ VALUES
 (1, 2, 'CG-M201', 2, 'Khu B', 'Tầng 2 - Khu B - Gần thang máy',   'AVAILABLE'),
 (1, 2, 'CG-M202', 2, 'Khu B', 'Tầng 2 - Khu B - Cửa rộng',        'AVAILABLE'),
 (1, 2, 'CG-M203', 2, 'Khu B', 'Tầng 2 - Khu B - Hành lang sau',   'AVAILABLE'),
-(1, 2, 'CG-M204', 2, 'Khu B', 'Tầng 2 - Khu B - Lô góc',          'OCCUPIED'),
+(1, 2, 'CG-M204', 2, 'Khu B', 'Tầng 2 - Khu B - Lô góc',          'AVAILABLE'),
 (1, 3, 'CG-L101', 1, 'Khu C', 'Tầng 1 - Khu C - Xe đẩy vào được', 'AVAILABLE'),
-(1, 3, 'CG-L102', 1, 'Khu C', 'Tầng 1 - Khu C - Cạnh dock hàng',  'RESERVED'),
+(1, 3, 'CG-L102', 1, 'Khu C', 'Tầng 1 - Khu C - Cạnh dock hàng',  'AVAILABLE'),
 (1, 4, 'CG-C101', 1, 'Khu D', 'Tầng 1 - Khu D - Kho lạnh chuẩn',  'AVAILABLE'),
 (1, 4, 'CG-C102', 1, 'Khu D', 'Tầng 1 - Khu D - Đang bảo trì',    'MAINTENANCE'),
 
@@ -159,7 +159,7 @@ VALUES
 (2, 1, 'Q7-S101', 1, 'Khu A', 'Tầng 1 - Khu A - Lối đi chính',    'AVAILABLE'),
 (2, 1, 'Q7-S102', 1, 'Khu A', 'Tầng 1 - Khu A - Lô góc',          'AVAILABLE'),
 (2, 2, 'Q7-M201', 2, 'Khu B', 'Tầng 2 - Khu B - Cạnh thang hàng', 'AVAILABLE'),
-(2, 2, 'Q7-M202', 2, 'Khu B', 'Tầng 2 - Khu B - Cửa cuốn',        'OCCUPIED'),
+(2, 2, 'Q7-M202', 2, 'Khu B', 'Tầng 2 - Khu B - Cửa cuốn',        'AVAILABLE'),
 (2, 3, 'Q7-L101', 1, 'Khu C', 'Tầng 1 - Khu C - Kho hàng lớn',    'AVAILABLE'),
 (2, 4, 'Q7-C101', 1, 'Khu D', 'Tầng 1 - Khu D - Kho rượu vang',   'AVAILABLE'),
 
@@ -172,7 +172,7 @@ VALUES
 
 -- FAC-TX (Thanh Xuân)
 (4, 1, 'TX-A101', 1, 'Khu A', 'Tầng 1 - Khu A - Kho nhỏ',         'AVAILABLE'),
-(4, 2, 'TX-A102', 1, 'Khu A', 'Tầng 1 - Khu A - Kho vừa',         'OCCUPIED'),
+(4, 2, 'TX-A102', 1, 'Khu A', 'Tầng 1 - Khu A - Kho vừa',         'AVAILABLE'),
 (4, 3, 'TX-B201', 2, 'Khu B', 'Tầng 2 - Khu B - Kho lớn',         'AVAILABLE'),
 (4, 4, 'TX-C101', 1, 'Khu C', 'Tầng 1 - Khu C - Kho lạnh',        'AVAILABLE')
 ON CONFLICT (facility_id, code) DO NOTHING;
