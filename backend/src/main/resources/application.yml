@@ -16,13 +16,14 @@ spring:
     driver-class-name: org.postgresql.Driver
     hikari:
       connection-timeout: 30000
-      maximum-pool-size: 5
+      maximum-pool-size: 10
       minimum-idle: 5
       idle-timeout: 600000
       max-lifetime: 1800000
       keepalive-time: 30000
 
   jpa:
+    open-in-view: false # Tắt OSIV: trả connection về pool ngay sau khi Service kết thúc
     hibernate:
       ddl-auto: ${DDL_AUTO:none} # Flyway quản lý schema; 'none' giúp khởi động app siêu nhanh ở local, có thể override = validate trên prod
       naming:
@@ -33,6 +34,8 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
         default_batch_fetch_size: 25 # Gom N+1 queries thành batch IN (?, ?, ...), giảm 80% RTT mạng
+        jdbc:
+          batch_size: 25 # Tối ưu hóa ghi/cập nhật dữ liệu hàng loạt
 
   flyway:
     enabled: true
