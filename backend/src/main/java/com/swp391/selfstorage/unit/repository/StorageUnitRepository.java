@@ -30,6 +30,9 @@ public interface StorageUnitRepository extends JpaRepository<StorageUnit, Long> 
 
         long countByFacilityIdAndUnitTypeId(Long facilityId, Long unitTypeId);
 
+        @Query("SELECT su.unitTypeId, COUNT(su) FROM StorageUnit su WHERE su.facilityId = :facilityId GROUP BY su.unitTypeId")
+        List<Object[]> countUnitsGroupedByUnitType(@Param("facilityId") Long facilityId);
+
         long countByUnitTypeIdAndStatusIn(Long unitTypeId, Collection<StorageUnitStatus> statuses);
 
         @Query("""

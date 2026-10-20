@@ -12,6 +12,8 @@ import com.swp391.selfstorage.facility.entity.FacilityStatus;
 import com.swp391.selfstorage.facility.mapper.FacilityMapper;
 import com.swp391.selfstorage.facility.repository.FacilityRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -21,7 +23,9 @@ import com.swp391.selfstorage.auth.service.UserPrincipal;
 import com.swp391.selfstorage.user.repository.UserFacilityAssignmentRepository;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -44,15 +48,33 @@ public class FacilityServiceImpl implements FacilityService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "facilities", key = "(#keyword != null ? #keyword : '') + '-' + (#isActive != null ? #isActive : '') + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public PageResponse<FacilityResponse> getFacilities(String keyword, Boolean isActive, Pageable pageable) {
         FacilityStatus status = null;
         if (isActive != null) {
             status = isActive ? FacilityStatus.ACTIVE : FacilityStatus.INACTIVE;
         }
         Page<Facility> page = facilityRepository.findByFilter(keyword, status, pageable);
+        Map<Long, java.math.BigDecimal> lowestPriceMap = facilityRepository.findLowestMonthlyPricesGroupedByFacility()
+                .stream()
+                .collect(Collectors.toMap(
+                        row -> ((Number) row[0]).longValue(),
+                        row -> (java.math.BigDecimal) row[1],
+                        (a, b) -> a));
+
+        Map<Long, Integer> unitTypeCountMap = facilityRepository.countActiveUnitTypesGroupedByFacility()
+                .stream()
+                .collect(Collectors.toMap(
+                        row -> ((Number) row[0]).longValue(),
+                        row -> ((Number) row[1]).intValue(),
+                        (a, b) -> a));
+
         return PageResponse.from(page.map(facility -> {
             FacilityResponse resp = facilityMapper.toResponse(facility);
-            enrichFacilityMetrics(resp);
+            if (resp != null && resp.getId() != null) {
+                resp.setLowestMonthlyPrice(lowestPriceMap.get(resp.getId()));
+                resp.setActiveUnitTypeCount(unitTypeCountMap.getOrDefault(resp.getId(), 0));
+            }
             return resp;
         }));
     }
@@ -85,6 +107,7 @@ public class FacilityServiceImpl implements FacilityService {
     private static final Pattern FACILITY_CODE_PATTERN = Pattern.compile("^FAC-[A-Z][A-Z0-9]{1,3}$");
 
     @Override
+    @CacheEvict(value = "facilities", allEntries = true)
     public FacilityResponse createFacility(CreateFacilityRequest request) {
         String normalizedCode = request.getCode().trim().toUpperCase();
         if (!FACILITY_CODE_PATTERN.matcher(normalizedCode).matches()) {
@@ -101,6 +124,7 @@ public class FacilityServiceImpl implements FacilityService {
     }
 
     @Override
+    @CacheEvict(value = "facilities", allEntries = true)
     public FacilityResponse updateFacility(Long id, UpdateFacilityRequest request) {
         Facility facility = facilityRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.FACILITY_NOT_FOUND));
@@ -111,6 +135,7 @@ public class FacilityServiceImpl implements FacilityService {
     }
 
     @Override
+    @CacheEvict(value = "facilities", allEntries = true)
     public FacilityResponse updateFacilityStatus(Long id, UpdateFacilityStatusRequest request) {
         Facility facility = facilityRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.FACILITY_NOT_FOUND));
@@ -164,9 +189,26 @@ public class FacilityServiceImpl implements FacilityService {
                     .toList();
         }
 
+        Map<Long, java.math.BigDecimal> lowestPriceMap = facilityRepository.findLowestMonthlyPricesGroupedByFacility()
+                .stream()
+                .collect(Collectors.toMap(
+                        row -> ((Number) row[0]).longValue(),
+                        row -> (java.math.BigDecimal) row[1],
+                        (a, b) -> a));
+
+        Map<Long, Integer> unitTypeCountMap = facilityRepository.countActiveUnitTypesGroupedByFacility()
+                .stream()
+                .collect(Collectors.toMap(
+                        row -> ((Number) row[0]).longValue(),
+                        row -> ((Number) row[1]).intValue(),
+                        (a, b) -> a));
+
         return facilities.stream().map(facility -> {
             FacilityResponse resp = facilityMapper.toResponse(facility);
-            enrichFacilityMetrics(resp);
+            if (resp != null && resp.getId() != null) {
+                resp.setLowestMonthlyPrice(lowestPriceMap.get(resp.getId()));
+                resp.setActiveUnitTypeCount(unitTypeCountMap.getOrDefault(resp.getId(), 0));
+            }
             return resp;
         }).toList();
     }

@@ -50,4 +50,18 @@ public interface FacilityRepository extends JpaRepository<Facility, Long> {
         WHERE facility_id = :facilityId
     """, nativeQuery = true)
     int countActiveUnitTypesByFacilityId(@Param("facilityId") Long facilityId);
+
+    @Query(value = """
+        SELECT facility_id, MIN(monthly_price)
+        FROM facility_unit_type_price
+        GROUP BY facility_id
+    """, nativeQuery = true)
+    java.util.List<Object[]> findLowestMonthlyPricesGroupedByFacility();
+
+    @Query(value = """
+        SELECT facility_id, COUNT(DISTINCT unit_type_id)
+        FROM facility_unit_type_price
+        GROUP BY facility_id
+    """, nativeQuery = true)
+    java.util.List<Object[]> countActiveUnitTypesGroupedByFacility();
 }
