@@ -71,7 +71,7 @@ public class RentalContract {
     @Builder.Default
     private Long policyVersionId = 1L;
 
-    @Column(name = "policy_snapshot", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "policy_snapshot", columnDefinition = "TEXT")
     private String policySnapshot;
 
     @Column(name = "overdue_fee_accrued", nullable = false)

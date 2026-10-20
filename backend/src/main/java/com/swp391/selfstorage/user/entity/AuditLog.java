@@ -30,10 +30,10 @@ public class AuditLog {
     @Column(name = "entity_id", nullable = false)
     private Long entityId;
 
-    @Column(name = "before_value", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "before_value", columnDefinition = "TEXT")
     private String beforeValue;
 
-    @Column(name = "after_value", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "after_value", columnDefinition = "TEXT")
     private String afterValue;
 
     @Column(name = "created_at", nullable = false)

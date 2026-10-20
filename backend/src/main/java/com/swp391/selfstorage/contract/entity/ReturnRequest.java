@@ -48,7 +48,7 @@ public class ReturnRequest {
     @Builder.Default
     private long damageCost = 0;
 
-    @Column(name = "evidence_image_urls", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "evidence_image_urls", columnDefinition = "TEXT")
     private String evidenceImageUrls;
 
     @Column(name = "customer_confirmed", nullable = false)
@@ -58,7 +58,7 @@ public class ReturnRequest {
     @Column(name = "customer_confirmed_at")
     private OffsetDateTime customerConfirmedAt;
 
-    @Column(name = "signature_data", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "signature_data", columnDefinition = "TEXT")
     private String signatureData;
 
     @Column(name = "deposit_refund_amount")
