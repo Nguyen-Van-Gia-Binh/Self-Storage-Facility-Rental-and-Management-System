@@ -127,7 +127,7 @@
 | `ISS-118` | Thiếu tài liệu bản đồ kỹ thuật mô tả trọn vẹn mọi luồng đi từ UI -> API -> Service -> DB -> Jobs cho toàn bộ dự án. | Hoàn thành tài liệu `docs/WORKFLOWS.md` bao quát toàn bộ 7 luồng nghiệp vụ, luồng hệ thống, 3 cron jobs, state machines và bảng tra cứu code. | Bình | `RESOLVED` |
 | `ISS-119` | Tiền cọc giữ kho tại BookingPage và UnitPickerPage bị hardcode 1 tháng và label không phản ánh hệ số cọc BOM Policy (BR-DEP-01). | Kết nối `useActivePolicy()` lấy `depositMultiplier`, đồng bộ công thức tính cọc `calculateBookingTotal` và hiển thị động nhãn `(N tháng)` thay vì hardcode 1 tháng. | Xuân Nhi | `RESOLVED` |
 | `ISS-120` | BOM chưa có giao diện cấu hình chương trình khuyến mãi (6 tháng -5%, 12 tháng -10%) và Customer bị hardcode chiết khấu. | Thêm cột `min_rental_months` vào `discount_program` (V54), xây dựng REST API CRUD `/discount-programs`, tích hợp Tab Khuyến mãi BOM và kết nối động `calculateBookingPrice` phía Customer. | Bình | `RESOLVED` |
-| `ISS-121` | Mã nguồn 4 trang Customer Flow 1 (HomePage, UnitPicker, Booking, MyUnits) bị phình to dạng God Component khó bảo trì. | Tái cấu trúc và module hóa toàn diện 4 trạm thành các Component, Custom Hook và Pure Utils theo Clean Architecture; 50/50 tests pass. | Xuân Nhi | `RESOLVED` |
+| `ISS-121` | Mã nguồn 4 trang Customer Flow 1 (HomePage, UnitPicker, Booking, MyUnits) bị phình to dạng God Component khó bảo trì. | Tái cấu trúc và module hóa toàn diện 4 trạm thành các Component, Custom Hook và Pure Utils theo Clean Architecture; 50/50 tests pass. | Xuân Nhi | `RESOLVED` (#251) |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 
