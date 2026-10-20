@@ -13,6 +13,26 @@ describe('ISS-77: Booking Cancel Reservation Button & Confirmation Modal', () =>
     process.cwd(),
     'src/features/customer/pages/BookingPage.tsx'
   );
+  const bookingModals = path.resolve(
+    process.cwd(),
+    'src/features/customer/components/BookingModals.tsx'
+  );
+  const bookingPaymentHook = path.resolve(
+    process.cwd(),
+    'src/features/customer/hooks/useBookingPayment.ts'
+  );
+  const bookingPaymentStep = path.resolve(
+    process.cwd(),
+    'src/features/customer/components/BookingPaymentStep.tsx'
+  );
+  const getBookingContent = () => {
+    let content = fs.readFileSync(bookingPage, 'utf-8');
+    if (fs.existsSync(bookingModals)) content += '\n' + fs.readFileSync(bookingModals, 'utf-8');
+    if (fs.existsSync(bookingPaymentHook)) content += '\n' + fs.readFileSync(bookingPaymentHook, 'utf-8');
+    if (fs.existsSync(bookingPaymentStep)) content += '\n' + fs.readFileSync(bookingPaymentStep, 'utf-8');
+    return content;
+  };
+
   const reservationApi = path.resolve(
     process.cwd(),
     'src/api/reservation.ts'
@@ -25,7 +45,7 @@ describe('ISS-77: Booking Cancel Reservation Button & Confirmation Modal', () =>
   });
 
   it('BookingPage.tsx không còn nút Sửa lại thông tin ở bước 3, thay bằng nút Hủy giữ chỗ', () => {
-    const content = fs.readFileSync(bookingPage, 'utf-8');
+    const content = getBookingContent();
     // Không còn nút Sửa lại thông tin
     expect(content).not.toMatch(/Sửa lại thông tin/);
     // Có nút Hủy giữ chỗ
@@ -34,7 +54,7 @@ describe('ISS-77: Booking Cancel Reservation Button & Confirmation Modal', () =>
   });
 
   it('BookingPage.tsx có Modal xác nhận hủy giữ chỗ giải phóng ô kho và dọn sạch draft', () => {
-    const content = fs.readFileSync(bookingPage, 'utf-8');
+    const content = getBookingContent();
     expect(content).toMatch(/handleConfirmCancelReservation/);
     expect(content).toMatch(/cancelReservationApi\(/);
     expect(content).toMatch(/localStorage\.removeItem\('smartstorage_pending_booking'\)/);

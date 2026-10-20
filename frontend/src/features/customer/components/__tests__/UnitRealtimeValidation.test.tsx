@@ -13,6 +13,16 @@ describe('ISS-76: Realtime Database Unit Availability Validation on Confirm', ()
     process.cwd(),
     'src/features/customer/pages/UnitPickerPage.tsx'
   );
+  const modalsPath = path.resolve(
+    process.cwd(),
+    'src/features/customer/components/UnitPickerModals.tsx'
+  );
+  const getUnitPickerContent = () => {
+    return fs.existsSync(modalsPath)
+      ? fs.readFileSync(unitPickerPage, 'utf-8') + '\n' + fs.readFileSync(modalsPath, 'utf-8')
+      : fs.readFileSync(unitPickerPage, 'utf-8');
+  };
+
   const unitGrid = path.resolve(
     process.cwd(),
     'src/features/customer/components/UnitGrid.tsx'
@@ -26,14 +36,14 @@ describe('ISS-76: Realtime Database Unit Availability Validation on Confirm', ()
   });
 
   it('UnitPickerPage gọi fetchStorageUnitsApi trong handleProceedToBooking để kiểm tra database thời gian thực', () => {
-    const content = fs.readFileSync(unitPickerPage, 'utf-8');
+    const content = getUnitPickerContent();
     expect(content).toMatch(/handleProceedToBooking\s*=\s*async/);
     expect(content).toMatch(/fetchStorageUnitsApi\(fId,\s*\{\s*startDate,\s*rentalMonths:\s*durationMonths/);
     expect(content).toMatch(/unitUnavailableModal/);
   });
 
   it('UnitPickerPage hiển thị modal cảnh báo khi ô kho bị bảo trì hoặc đã có người khác đặt/thuê', () => {
-    const content = fs.readFileSync(unitPickerPage, 'utf-8');
+    const content = getUnitPickerContent();
     expect(content).toMatch(/Ô kho đang tạm ngừng hoạt động \/ Bảo trì/);
     expect(content).toMatch(/Ô kho đã có người giữ chỗ/);
     expect(content).toMatch(/Ô kho đã có người thuê/);

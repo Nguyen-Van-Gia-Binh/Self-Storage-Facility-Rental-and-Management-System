@@ -81,7 +81,7 @@ Mỗi luồng nghiệp vụ trong hệ thống tuân thủ mô hình phân tần
 [Customer Browser]
        │
        ├─► 1. Xem danh mục cơ sở & ô kho
-       │      Frontend: HomePage.tsx / FacilityCatalogPage (tại CustomerRoutes)
+       │      Frontend: HomePage.tsx (tại CustomerRoutes)
        │      API: GET /api/v1/facilities
        │      Backend: FacilityController.listFacilities() ──► FacilityServiceImpl ──► FacilityRepository
        │
