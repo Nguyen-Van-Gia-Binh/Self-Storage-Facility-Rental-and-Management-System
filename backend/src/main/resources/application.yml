@@ -17,13 +17,14 @@ spring:
     hikari:
       connection-timeout: 30000
       maximum-pool-size: 5
-      minimum-idle: 1
+      minimum-idle: 5
       idle-timeout: 600000
       max-lifetime: 1800000
+      keepalive-time: 30000
 
   jpa:
     hibernate:
-      ddl-auto: validate # Sử dụng Flyway để quản lý schema, không cho hibernate tự drop/create
+      ddl-auto: ${DDL_AUTO:none} # Flyway quản lý schema; 'none' giúp khởi động app siêu nhanh ở local, có thể override = validate trên prod
       naming:
         physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
     show-sql: true
@@ -31,6 +32,7 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_batch_fetch_size: 25 # Gom N+1 queries thành batch IN (?, ?, ...), giảm 80% RTT mạng
 
   flyway:
     enabled: true

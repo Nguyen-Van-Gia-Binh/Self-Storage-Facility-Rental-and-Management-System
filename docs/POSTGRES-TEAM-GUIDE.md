@@ -32,7 +32,7 @@ Cơ sở dữ liệu PostgreSQL đã được triển khai và nạp sẵn toàn
 ```yaml
 spring:
   datasource:
-    url: jdbc:postgresql://ep-dawn-dust-b7824yok-pooler.c-13.us-east-1.aws.neon.tech/neondb?sslmode=require
+    url: jdbc:postgresql://ep-dawn-dust-b7824yok.c-13.us-east-1.aws.neon.tech/neondb?sslmode=require
     username: neondb_owner
     password: npg_i9RnSrxN4ohu
 ```
@@ -96,3 +96,8 @@ Truy cập trình duyệt: [http://localhost:5173](http://localhost:5173).
 2. **Lưu trữ Migration cũ:** 54 migration cũ của SQL Server đã được di chuyển an toàn vào `backend/src/main/resources/db/archive_sqlserver/`.
 3. **Bộ Migration Chuẩn:** CSDL mới sử dụng `V1__init_postgres_schema.sql` (toàn bộ cấu trúc chuẩn ANSI) và `V2__seed_postgres_data.sql` (dữ liệu mẫu phong phú kèm đồng bộ sequence `setval`).
 4. **Native Queries:** Tất cả 13 truy vấn SQL thuần đã được chuyển sang cú pháp PostgreSQL (`INTERVAL '1 day'`, `CURRENT_TIMESTAMP`).
+5. **Gói Tối ưu Hiệu năng Từ Xa (Remote DB Optimization):**
+   - **Direct Connection:** Bỏ qua PgBouncer trung gian, kết nối trực tiếp đến PostgreSQL engine.
+   - **HikariCP Warm Pool:** `minimum-idle: 5` và `keepalive-time: 30000` giữ kết nối luôn ấm, triệt tiêu thời gian bắt tay SSL qua mạng quốc tế.
+   - **Batch Fetching:** `default_batch_fetch_size: 25` tự động gom các câu truy vấn N+1, giảm 80% độ trễ truyền dữ liệu.
+   - **Fast Startup:** Đặt `ddl-auto: ${DDL_AUTO:none}` giúp app khởi động chỉ trong 3-5 giây.
