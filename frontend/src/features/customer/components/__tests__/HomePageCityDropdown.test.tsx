@@ -13,14 +13,23 @@ describe('ISS-113: Custom Dropdown Thành phố trên HomePage (Real DB Data)', 
     process.cwd(),
     'src/features/customer/pages/HomePage.tsx'
   );
+  const homeSearchBarPath = path.resolve(
+    process.cwd(),
+    'src/features/customer/components/HomeSearchBar.tsx'
+  );
+  const getDropdownContent = () => {
+    return fs.existsSync(homeSearchBarPath)
+      ? fs.readFileSync(homeSearchBarPath, 'utf-8')
+      : fs.readFileSync(homePagePath, 'utf-8');
+  };
 
   it('HomePage không sử dụng thẻ select thô sơ mặc định của trình duyệt', () => {
-    const content = fs.readFileSync(homePagePath, 'utf-8');
+    const content = getDropdownContent();
     expect(content).not.toMatch(/<select[\s\S]*?availableCities/);
   });
 
   it('HomePage sử dụng custom dropdown tương tác với state isCityDropdownOpen và ref click outside', () => {
-    const content = fs.readFileSync(homePagePath, 'utf-8');
+    const content = getDropdownContent();
     expect(content).toMatch(/isCityDropdownOpen/);
     expect(content).toMatch(/cityDropdownRef/);
     expect(content).toMatch(/handleClickOutside/);
@@ -33,7 +42,7 @@ describe('ISS-113: Custom Dropdown Thành phố trên HomePage (Real DB Data)', 
   });
 
   it('Custom dropdown panel hỗ trợ ARIA listbox và hiển thị icon check khi được chọn', () => {
-    const content = fs.readFileSync(homePagePath, 'utf-8');
+    const content = getDropdownContent();
     expect(content).toMatch(/role="listbox"/);
     expect(content).toMatch(/role="option"/);
     expect(content).toMatch(/<Check\s/);

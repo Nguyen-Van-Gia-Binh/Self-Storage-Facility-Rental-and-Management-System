@@ -13,6 +13,25 @@ describe('ISS-75: Xử lý Cảnh báo & Điều hướng khi Cơ sở/Ô kho ng
     process.cwd(),
     'src/features/customer/pages/UnitPickerPage.tsx'
   );
+  const modalsPath = path.resolve(
+    process.cwd(),
+    'src/features/customer/components/UnitPickerModals.tsx'
+  );
+  const catalogHook = path.resolve(
+    process.cwd(),
+    'src/features/customer/hooks/useUnitPickerCatalog.ts'
+  );
+  const getUnitPickerContent = () => {
+    let content = fs.readFileSync(unitPickerPage, 'utf-8');
+    if (fs.existsSync(modalsPath)) {
+      content += '\n' + fs.readFileSync(modalsPath, 'utf-8');
+    }
+    if (fs.existsSync(catalogHook)) {
+      content += '\n' + fs.readFileSync(catalogHook, 'utf-8');
+    }
+    return content;
+  };
+
   const bookingPage = path.resolve(
     process.cwd(),
     'src/features/customer/pages/BookingPage.tsx'
@@ -27,7 +46,7 @@ describe('ISS-75: Xử lý Cảnh báo & Điều hướng khi Cơ sở/Ô kho ng
   );
 
   it('UnitPickerPage không còn fallback ngầm sang facList[0] (Thanh Xuân)', () => {
-    const content = fs.readFileSync(unitPickerPage, 'utf-8');
+    const content = getUnitPickerContent();
     expect(content).not.toMatch(/matchedFac\s*=\s*facList\.find\([^)]+\)\s*\|\|\s*facList\[0\]/);
     expect(content).toMatch(/facilityInactiveModalOpen/);
     expect(content).toMatch(/Cơ sở tạm ngừng hoạt động/);

@@ -1,68 +1,30 @@
-import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { Button } from '@/components/ui/Button';
-import { 
-  ArrowLeft, 
-  CheckCircle2, 
-  User, 
-  Clock, 
-  Copy, 
-  ArrowRight, 
-  AlertTriangle, 
-  Loader2, 
-  ExternalLink, 
-  ShieldCheck, 
-  XCircle,
-} from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
-import { Modal } from '@/components/ui/Modal';
-import { formatVND, normalizeDiscountPercent } from '../utils/pricing';
-import { DigitalMoveInPassModal } from '../components/DigitalMoveInPassModal';
-import { TermsOfServiceModal } from '../components/TermsOfServiceModal';
-import { generateMoveInPass } from '@/api/payment';
+import { ArrowLeft } from 'lucide-react';
+import { normalizeDiscountPercent } from '../utils/pricing';
+import { resolveSizeCategory } from '../utils/unitPickerHelpers';
 import { customerApi } from '../api/customerApi';
-import type { CheckoutResponse } from '../api/customerApi';
 import {
   calculateBookingPrice,
   createReservation,
-  cancelReservationApi,
   checkUnitAvailability,
   getReservationById,
   getMyReservationsApi,
   type AvailabilityResponse,
   type CalculatePriceResponse,
 } from '@/api/reservation';
-import type { MoveInPassData } from '@/types';
 import { fetchFacilities } from '@/api/facility';
 import { useActivePolicy } from '@/hooks/useActivePolicy';
 import { fetchUnitTypes as fetchUnitTypesApi, fetchStorageUnits as fetchStorageUnitsApi } from '@/api/unit';
 import { tokenStorage } from '@/utils/tokenStorage';
 import type { FacilityListItem } from '@/types';
-import type { Facility, UnitType, StorageType, UnitSizeCategory } from '../types';
-
-function resolveSizeCategory(codeOrName: string, areaM2?: number): UnitSizeCategory {
-  const upper = codeOrName.toUpperCase();
-  const lower = codeOrName.toLowerCase();
-  if (upper.includes('SMALL') || lower.includes('nhỏ') || (areaM2 != null && areaM2 <= 1.5)) {
-    return 'S';
-  }
-  if (upper.includes('LARGE') || lower.includes('lớn') || (areaM2 != null && areaM2 >= 9)) {
-    return 'L';
-  }
-  if (upper.includes('XL') || (areaM2 != null && areaM2 >= 15)) {
-    return 'XL';
-  }
-  return 'M';
-}
-
-function formatDateVN(dateStr: string): string {
-  if (!dateStr) return '';
-  const parts = dateStr.split('-');
-  if (parts.length === 3) {
-    return `${parts[2]}/${parts[1]}/${parts[0]}`;
-  }
-  return dateStr;
-}
+import type { Facility, UnitType, StorageType } from '../types';
+import { BookingCustomerForm } from '../components/BookingCustomerForm';
+import { BookingPaymentStep } from '../components/BookingPaymentStep';
+import { BookingSummaryCard } from '../components/BookingSummaryCard';
+import { BookingModals } from '../components/BookingModals';
+import { useBookingPayment } from '../hooks/useBookingPayment';
+import { validateBookingCustomerForm, type BookingFormErrors } from '../utils/bookingValidation';
 
 export const BookingPage: React.FC = () => {
   const policy = useActivePolicy();
@@ -78,7 +40,9 @@ export const BookingPage: React.FC = () => {
   const typeId = searchParams.get('type') || searchParams.get('typeId') || '1';
   const unitNumberParam = searchParams.get('unitNumber');
   const unitIdParam = searchParams.get('unit') || searchParams.get('unitId');
+  const reservationIdParam = searchParams.get('reservationId') || searchParams.get('rsvId');
 
+  // 1. Quản lý trạng thái Cơ sở & Loại ô kho
   const [facility, setFacility] = useState<Facility>({
     id: facilityId,
     code: '',
@@ -116,6 +80,7 @@ export const BookingPage: React.FC = () => {
     message: '',
     actionType: 'NAVIGATE_HOME',
   });
+
   const [pendingLimitModal, setPendingLimitModal] = useState<{
     isOpen: boolean;
     pendingReservation: any | null;
@@ -124,6 +89,11 @@ export const BookingPage: React.FC = () => {
     pendingReservation: null,
   });
 
+  const [selectedStorageUnitCode, setSelectedStorageUnitCode] = useState<string>(unitNumberParam || '');
+  const finalUnitNumber = selectedStorageUnitCode || unitNumberParam || unitType.name || 'Ô kho đã chọn';
+  const finalUnitId = unitIdParam || undefined;
+
+  // 2. Tải dữ liệu cơ sở, ô kho & kiểm tra an ninh (ISS-75, ISS-76, ISS-80)
   useEffect(() => {
     let isMounted = true;
     async function loadData() {
@@ -134,7 +104,8 @@ export const BookingPage: React.FC = () => {
           (f: FacilityListItem) => String(f.id) === facilityId || f.code === facilityId
         );
 
-        if (!matched) {
+        const isFacilityInactive = !matched || !matched.isActive;
+        if (isFacilityInactive) {
           setUnavailableModal({
             isOpen: true,
             title: 'Cơ sở lưu trữ tạm ngừng hoạt động',
@@ -171,6 +142,17 @@ export const BookingPage: React.FC = () => {
               (su) => String(su.id) === unitIdParam || su.code === unitNumberParam
             );
           }
+        }
+
+        const isUnitUnavailable = matchedUnit && matchedUnit.status && matchedUnit.status !== 'AVAILABLE';
+        if (isUnitUnavailable) {
+          setUnavailableModal({
+            isOpen: true,
+            title: 'Ô kho không khả dụng',
+            message: 'Ô kho bạn đang chọn hiện không còn khả dụng để đặt chỗ.',
+            actionType: 'NAVIGATE_UNITS',
+          });
+          return;
         }
 
         const effectiveTypeId = matchedUnit?.unitTypeId ? String(matchedUnit.unitTypeId) : typeId;
@@ -238,11 +220,7 @@ export const BookingPage: React.FC = () => {
     return () => { isMounted = false; };
   }, [facilityId, typeId, unitIdParam, unitNumberParam]);
 
-  const [selectedStorageUnitCode, setSelectedStorageUnitCode] = useState<string>(unitNumberParam || '');
-  const finalUnitNumber = selectedStorageUnitCode || unitNumberParam || unitType.name || 'Ô kho đã chọn';
-  const finalUnitId = unitIdParam || undefined;
-
-  // Form State
+  // 3. Quản lý thời gian thuê & ngày bắt đầu
   const monthsParam = parseInt(searchParams.get('months') || '', 10);
   const startDateParam = searchParams.get('startDate');
 
@@ -265,55 +243,6 @@ export const BookingPage: React.FC = () => {
     return todayStr;
   });
 
-  // Auth Guard: Tự động chuyển hướng Login nếu token hết hạn / chưa đăng nhập
-  useEffect(() => {
-    if (!tokenStorage.getAccessToken()) {
-      const currentUrl = `/customer/booking${window.location.search}`;
-      navigate(`/auth/login?redirect=${encodeURIComponent(currentUrl)}`, { replace: true });
-    }
-  }, [navigate]);
-
-  const currentUser = tokenStorage.getUser();
-  const [customerName, setCustomerName] = useState(() => currentUser?.fullName || '');
-  const [customerPhone, setCustomerPhone] = useState(() => (currentUser as any)?.phone || '');
-  const [customerEmail, setCustomerEmail] = useState(() => currentUser?.email || '');
-  const [customerIdCard, setCustomerIdCard] = useState('');
-  const [agreeTerms, setAgreeTerms] = useState(true);
-
-  // Validation Errors
-  const [formErrors, setFormErrors] = useState<{
-    customerName?: string;
-    customerPhone?: string;
-    customerEmail?: string;
-    customerIdCard?: string;
-    agreeTerms?: string;
-  }>({});
-
-  // Stepper & Success State
-  const [currentStep, setCurrentStep] = useState<2 | 3>(2);
-  const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [showPassModal, setShowPassModal] = useState(false);
-  const [showTermsModal, setShowTermsModal] = useState(false);
-  const [createdPass, setCreatedPass] = useState<MoveInPassData | null>(null);
-
-  const reservationIdParam = searchParams.get('reservationId') || searchParams.get('rsvId');
-
-  // Payment States
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [isVerifying, setIsVerifying] = useState<boolean>(false);
-  const [paymentNotice, setPaymentNotice] = useState<string | null>(null);
-  const [bookingError, setBookingError] = useState<string | null>(null);
-  const [checkoutData, setCheckoutData] = useState<CheckoutResponse | null>(null);
-  const [paymentStatus, setPaymentStatus] = useState<'PENDING' | 'SUCCESS' | 'FAILED'>('PENDING');
-  const [createdReservationId, setCreatedReservationId] = useState<number | null>(null);
-  const [createdReservationCode, setCreatedReservationCode] = useState<string>('');
-
-  // Cancel Reservation States
-  const [showCancelModal, setShowCancelModal] = useState<boolean>(false);
-  const [isCancellingReservation, setIsCancellingReservation] = useState<boolean>(false);
-  const [cancelError, setCancelError] = useState<string | null>(null);
-
-  // Calculate End Date
   const endDate = useMemo(() => {
     if (!startDate) return '';
     const [y, m, d] = startDate.split('-').map(Number);
@@ -324,7 +253,156 @@ export const BookingPage: React.FC = () => {
     return `${year}-${month}-${day}`;
   }, [startDate, durationMonths]);
 
-  // Nạp đơn giữ chỗ 48h nếu có reservationId trên URL
+  // 4. Auth Guard: Yêu cầu đăng nhập trước khi hoàn tất đặt chỗ
+  useEffect(() => {
+    if (!tokenStorage.getAccessToken()) {
+      const currentUrl = `/customer/booking${window.location.search}`;
+      navigate(`/auth/login?redirect=${encodeURIComponent(currentUrl)}`, { replace: true });
+    }
+  }, [navigate]);
+
+  // 5. Form state & validation
+  const currentUser = tokenStorage.getUser();
+  const [customerName, setCustomerName] = useState(() => currentUser?.fullName || '');
+  const [customerPhone, setCustomerPhone] = useState(() => (currentUser as any)?.phone || '');
+  const [customerEmail, setCustomerEmail] = useState(() => currentUser?.email || '');
+  const [customerIdCard, setCustomerIdCard] = useState('');
+  const [agreeTerms, setAgreeTerms] = useState(true);
+  const [formErrors, setFormErrors] = useState<BookingFormErrors>({});
+
+  // 6. Stepper: Bước 2 (Thông tin) hoặc Bước 3 (Thanh toán)
+  const [currentStep, setCurrentStep] = useState<2 | 3>(2);
+
+  // 7. Backend Pricing & Sức chứa ô kho
+  const [backendPricing, setBackendPricing] = useState<CalculatePriceResponse | null>(null);
+  const [availability, setAvailability] = useState<AvailabilityResponse | null>(null);
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState<boolean>(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadPrice() {
+      const fId = Number(facilityId);
+      const uId = Number(typeId);
+      if (!Number.isFinite(fId) || fId <= 0 || !Number.isFinite(uId) || uId <= 0 || durationMonths <= 0) {
+        if (isMounted) setBackendPricing(null);
+        return;
+      }
+      try {
+        const res = await calculateBookingPrice({
+          facilityId: fId,
+          unitTypeId: uId,
+          months: durationMonths,
+        });
+        if (isMounted) setBackendPricing(res);
+      } catch (err) {
+        console.warn('Lỗi gọi API tính giá backend:', err);
+      }
+    }
+    loadPrice();
+    return () => { isMounted = false; };
+  }, [facilityId, typeId, durationMonths]);
+
+  useEffect(() => {
+    if (!reservationIdParam) {
+      let isMounted = true;
+      async function loadAvailability() {
+        const fId = Number(facilityId);
+        const uId = Number(typeId);
+        if (!Number.isFinite(fId) || fId <= 0 || !Number.isFinite(uId) || uId <= 0) return;
+        setIsCheckingAvailability(true);
+        try {
+          const res = await checkUnitAvailability(fId, uId, startDate, durationMonths);
+          if (isMounted) setAvailability(res);
+        } catch {
+          if (isMounted) setAvailability(null);
+        } finally {
+          if (isMounted) setIsCheckingAvailability(false);
+        }
+      }
+      loadAvailability();
+      return () => { isMounted = false; };
+    }
+  }, [facilityId, typeId, startDate, durationMonths, reservationIdParam]);
+
+  // 8. Bảng giá minh bạch
+  const calculation = useMemo(() => {
+    const monthlyRate = unitType.baseMonthlyPrice || 0;
+    const rawRent = monthlyRate * durationMonths;
+    const fallbackDeposit = Math.round((monthlyRate * depositMultiplier) / 1000) * 1000;
+
+    if (backendPricing) {
+      return {
+        monthlyRate: backendPricing.monthlyPrice || monthlyRate,
+        rentalFee: backendPricing.rawRentTotal || rawRent,
+        discountPercent: normalizeDiscountPercent(backendPricing.discountPercentage),
+        discountAmount: backendPricing.discountAmount || 0,
+        discountProgramName: backendPricing.discountProgramName || null,
+        finalRentTotal: backendPricing.finalRentTotal || (rawRent - (backendPricing.discountAmount || 0)),
+        depositAmount: backendPricing.depositAmount || fallbackDeposit,
+        totalDueToday: backendPricing.totalDueToday || ((backendPricing.finalRentTotal || rawRent) + fallbackDeposit),
+      };
+    }
+
+    return {
+      monthlyRate,
+      rentalFee: rawRent,
+      discountPercent: 0,
+      discountAmount: 0,
+      discountProgramName: null,
+      finalRentTotal: rawRent,
+      depositAmount: fallbackDeposit,
+      totalDueToday: rawRent + fallbackDeposit,
+    };
+  }, [unitType, durationMonths, depositMultiplier, backendPricing]);
+
+  // 9. Quản lý luồng Thanh toán VietQR & Hủy đơn qua Custom Hook
+  const {
+    isSubmitting,
+    setIsSubmitting,
+    isVerifying,
+    isSimulating,
+    paymentNotice,
+    bookingError,
+    setBookingError,
+    checkoutData,
+    setCheckoutData,
+    paymentStatus,
+    setPaymentStatus,
+    createdReservationId,
+    setCreatedReservationId,
+    setCreatedReservationCode,
+    setReservationHoldExpiresAt,
+    showCancelModal,
+    setShowCancelModal,
+    isCancellingReservation,
+    cancelError,
+    holdExpired,
+    formattedCountdown,
+    redirectCountdown,
+    copiedField,
+    handleCopyText,
+    handleCheckPaymentStatus,
+    handleSimulateTransfer,
+    handleConfirmCancelReservation,
+    showPassModal,
+    setShowPassModal,
+    showTermsModal,
+    setShowTermsModal,
+    createdPass,
+  } = useBookingPayment({
+    currentStep,
+    holdHours,
+    facility,
+    unitType,
+    finalUnitNumber,
+    customerName,
+    customerPhone,
+    customerIdCard,
+    startDate,
+    calculation,
+  });
+
+  // 10. Nạp đơn giữ chỗ 48h nếu có reservationId trên URL (ISS-81)
   useEffect(() => {
     if (!reservationIdParam) return;
     let isMounted = true;
@@ -370,9 +448,9 @@ export const BookingPage: React.FC = () => {
     }
     loadExistingReservation();
     return () => { isMounted = false; };
-  }, [reservationIdParam, navigate]);
+  }, [reservationIdParam, navigate, setCreatedReservationId, setCreatedReservationCode, setReservationHoldExpiresAt, setCheckoutData, setPaymentStatus, setCurrentStep]);
 
-  // Kiểm tra nếu khách hàng đã có đơn giữ chỗ PENDING_PAYMENT khác (BR-RES-02)
+  // 11. Kiểm tra nếu khách hàng đã có đơn giữ chỗ PENDING_PAYMENT khác (BR-RES-02, ISS-99)
   useEffect(() => {
     if (reservationIdParam) return;
     if (!tokenStorage.getAccessToken()) return;
@@ -400,301 +478,7 @@ export const BookingPage: React.FC = () => {
     return () => { isMounted = false; };
   }, [reservationIdParam]);
 
-  // Backend Pricing
-  const [backendPricing, setBackendPricing] = useState<CalculatePriceResponse | null>(null);
-  const [availability, setAvailability] = useState<AvailabilityResponse | null>(null);
-  const [isCheckingAvailability, setIsCheckingAvailability] = useState<boolean>(false);
-
-  useEffect(() => {
-    let isMounted = true;
-    async function loadPrice() {
-      const fId = Number(facilityId);
-      const uId = Number(typeId);
-      if (!Number.isFinite(fId) || fId <= 0 || !Number.isFinite(uId) || uId <= 0 || durationMonths <= 0) {
-        if (isMounted) setBackendPricing(null);
-        return;
-      }
-      try {
-        const res = await calculateBookingPrice({
-          facilityId: fId,
-          unitTypeId: uId,
-          months: durationMonths,
-        });
-        if (isMounted) {
-          setBackendPricing(res);
-        }
-      } catch (err) {
-        console.warn('Lỗi gọi API tính giá backend:', err);
-      }
-    }
-    loadPrice();
-    return () => { isMounted = false; };
-  }, [facilityId, typeId, durationMonths]);
-
-  useEffect(() => {
-    if (reservationIdParam) return;
-    let isMounted = true;
-    async function loadAvailability() {
-      const fId = Number(facilityId);
-      const uId = Number(typeId);
-      if (!Number.isFinite(fId) || fId <= 0 || !Number.isFinite(uId) || uId <= 0) return;
-      setIsCheckingAvailability(true);
-      try {
-        const res = await checkUnitAvailability(fId, uId, startDate, durationMonths);
-        if (isMounted) setAvailability(res);
-      } catch {
-        if (isMounted) setAvailability(null);
-      } finally {
-        if (isMounted) setIsCheckingAvailability(false);
-      }
-    }
-    loadAvailability();
-    return () => { isMounted = false; };
-  }, [reservationIdParam, facilityId, typeId, startDate, durationMonths]);
-
-  // Tính toán bảng giá
-  const calculation = useMemo(() => {
-    const baseMonthlyPrice = unitType.baseMonthlyPrice || 0;
-    const fallbackDeposit = Math.round((baseMonthlyPrice * depositMultiplier) / 1000) * 1000;
-    if (backendPricing) {
-      return {
-        unitPrice: backendPricing.monthlyPrice || baseMonthlyPrice,
-        rentalFee: backendPricing.rawRentTotal || baseMonthlyPrice * durationMonths,
-        discountAmount: backendPricing.discountAmount || 0,
-        discountPercent: normalizeDiscountPercent(backendPricing.discountPercentage),
-        discountProgramName: backendPricing.discountProgramName || null,
-        depositAmount: backendPricing.depositAmount || fallbackDeposit,
-        totalDueToday: backendPricing.totalDueToday || (baseMonthlyPrice * durationMonths + fallbackDeposit),
-      };
-    }
-
-    const grossRent = baseMonthlyPrice * durationMonths;
-    const discountPercent = 0;
-    const discountAmount = 0;
-    const netRent = grossRent;
-    const depositAmount = fallbackDeposit;
-    const totalDueToday = netRent + depositAmount;
-
-    return {
-      unitPrice: baseMonthlyPrice,
-      rentalFee: grossRent,
-      discountAmount,
-      discountPercent,
-      discountProgramName: null,
-      depositAmount,
-      totalDueToday,
-    };
-  }, [backendPricing, unitType.baseMonthlyPrice, durationMonths, depositMultiplier]);
-
-  // Tạo MoveInPass khi đã thanh toán thành công
-  const handleConfirmBookingPayment = useCallback(() => {
-    const pass = generateMoveInPass({
-      reservationId: createdReservationCode || (createdReservationId ? `RSV-${createdReservationId}` : `RES-${finalUnitNumber}`),
-      unitNumber: finalUnitNumber,
-      facilityId: facility.id,
-      facilityName: facility.name,
-      facilityAddress: facility.address,
-      facilityPhone: facility.phone,
-      customerName,
-      customerPhone,
-      customerIdentity: customerIdCard,
-      startDate,
-      checkInWindow: `Giữ chỗ ${holdHours} giờ kể từ lúc đặt cọc`,
-      totalPaid: checkoutData?.amount || calculation?.totalDueToday || 0,
-    });
-    setCreatedPass(pass);
-    setShowPassModal(true);
-  }, [
-    createdReservationId,
-    createdReservationCode,
-    checkoutData?.amount,
-    calculation?.totalDueToday,
-    finalUnitNumber,
-    facility.id,
-    facility.name,
-    facility.address,
-    facility.phone,
-    customerName,
-    customerPhone,
-    customerIdCard,
-    startDate,
-    holdHours,
-  ]);
-
-  // Polling đối soát thanh toán
-  const handleCheckPaymentStatus = async () => {
-    if (!checkoutData?.orderCode) return;
-    setIsVerifying(true);
-    setPaymentNotice(null);
-    try {
-      const res = await customerApi.getPaymentStatus(checkoutData.orderCode);
-      if (res && res.status === 'SUCCESS') {
-        setPaymentStatus('SUCCESS');
-        handleConfirmBookingPayment();
-      } else {
-        setPaymentNotice('Hệ thống chưa ghi nhận thanh toán. Vui lòng quét mã hoặc bấm nút xác nhận chuyển khoản!');
-      }
-    } catch {
-      setPaymentNotice('Lỗi kiểm tra trạng thái thanh toán. Vui lòng thử lại sau.');
-    } finally {
-      setIsVerifying(false);
-    }
-  };
-
-  const [reservationHoldExpiresAt, setReservationHoldExpiresAt] = useState<string | null>(null);
-  const [secondsLeft, setSecondsLeft] = useState<number>(0);
-  const [holdClockReady, setHoldClockReady] = useState(false);
-  const fallbackHoldStarted = useRef(false);
-
-  useEffect(() => {
-    if (currentStep !== 3) return;
-    const tick = () => {
-      if (reservationHoldExpiresAt) {
-        const left = Math.floor((new Date(reservationHoldExpiresAt).getTime() - Date.now()) / 1000);
-        setSecondsLeft(Math.max(0, left));
-        setHoldClockReady(true);
-        return;
-      }
-      if (holdHours <= 0) return;
-      setSecondsLeft((prev) => {
-        if (!fallbackHoldStarted.current) {
-          fallbackHoldStarted.current = true;
-          return holdHours * 3600;
-        }
-        return prev > 0 ? prev - 1 : 0;
-      });
-      setHoldClockReady(true);
-    };
-    tick();
-    const interval = setInterval(tick, 1000);
-    return () => clearInterval(interval);
-  }, [currentStep, reservationHoldExpiresAt, holdHours]);
-
-  const holdExpired = currentStep === 3 && paymentStatus !== 'SUCCESS' && holdClockReady && secondsLeft === 0;
-  const hasPaymentSession = checkoutData != null;
-  const previousHoldElapsed = hasPaymentSession && paymentStatus !== 'SUCCESS' && holdClockReady && secondsLeft === 0;
-
-  const [isSimulating, setIsSimulating] = useState<boolean>(false);
-  const [redirectCountdown, setRedirectCountdown] = useState<number>(3);
-
-  // Hủy giữ chỗ
-  const handleConfirmCancelReservation = async () => {
-    setIsCancellingReservation(true);
-    setCancelError(null);
-    try {
-      if (createdReservationId) {
-        await cancelReservationApi(createdReservationId, 'Khách hàng chủ động hủy giữ chỗ');
-      }
-      try {
-        localStorage.removeItem('smartstorage_pending_booking');
-      } catch {
-        // Bỏ qua
-      }
-      setShowCancelModal(false);
-      navigate(`/customer/units?facility=${facility.id}`, { replace: true });
-    } catch (err: any) {
-      setCancelError(err?.message || 'Không thể hủy đơn đặt chỗ. Vui lòng thử lại.');
-    } finally {
-      setIsCancellingReservation(false);
-    }
-  };
-
-  // Giả lập chuyển tiền Sandbox trực tiếp
-  const handleSimulateTransfer = async () => {
-    if (!checkoutData?.orderCode || holdExpired) return;
-    setIsSimulating(true);
-    setPaymentNotice(null);
-    try {
-      await customerApi.processSandboxTransfer(checkoutData.orderCode, 'TRANSFER_SUCCESS');
-      setPaymentStatus('SUCCESS');
-      handleConfirmBookingPayment();
-    } catch (err: any) {
-      setPaymentNotice(err?.message || 'Không thể xác nhận chuyển tiền Sandbox. Vui lòng thử lại!');
-    } finally {
-      setIsSimulating(false);
-    }
-  };
-
-  // Tự động chuyển tới My Units sau thanh toán thành công
-  useEffect(() => {
-    if (paymentStatus !== 'SUCCESS') return;
-    const timer = setInterval(() => {
-      setRedirectCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          navigate('/customer/my-units');
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [paymentStatus, navigate]);
-
-  // Polling tự động lắng nghe Webhook
-  useEffect(() => {
-    if (currentStep !== 3 || !checkoutData?.orderCode || paymentStatus === 'SUCCESS') return;
-    const pollInterval = setInterval(async () => {
-      try {
-        const res = await customerApi.getPaymentStatus(checkoutData.orderCode);
-        if (res && res.status === 'SUCCESS') {
-          setPaymentStatus('SUCCESS');
-          clearInterval(pollInterval);
-          handleConfirmBookingPayment();
-        }
-      } catch {
-        // Polling retry
-      }
-    }, 2500);
-
-    return () => clearInterval(pollInterval);
-  }, [currentStep, checkoutData?.orderCode, paymentStatus, handleConfirmBookingPayment]);
-
-  const formattedCountdown = useMemo(() => {
-    const hours = Math.floor(secondsLeft / 3600);
-    const minutes = Math.floor((secondsLeft % 3600) / 60);
-    const seconds = secondsLeft % 60;
-    const pad = (n: number) => n.toString().padStart(2, '0');
-    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-  }, [secondsLeft]);
-
-  const validateForm = (): boolean => {
-    const errors: {
-      customerName?: string;
-      customerPhone?: string;
-      customerEmail?: string;
-      customerIdCard?: string;
-      agreeTerms?: string;
-    } = {};
-
-    if (!customerName.trim()) {
-      errors.customerName = 'Vui lòng nhập họ và tên đầy đủ.';
-    }
-
-    const cleanPhone = customerPhone.replace(/\s+/g, '');
-    const phoneRegex = /^(03|05|07|08|09)\d{8}$/;
-    if (!phoneRegex.test(cleanPhone)) {
-      errors.customerPhone = 'Số điện thoại không hợp lệ (10 số).';
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(customerEmail.trim())) {
-      errors.customerEmail = 'Định dạng email không hợp lệ.';
-    }
-
-    const cleanId = customerIdCard.replace(/\s+/g, '');
-    if (cleanId.length < 9 || cleanId.length > 12 || !/^\d+$/.test(cleanId)) {
-      errors.customerIdCard = 'Số CCCD / Hộ chiếu phải gồm 9 đến 12 chữ số.';
-    }
-
-    if (!agreeTerms) {
-      errors.agreeTerms = 'Bạn cần đồng ý với điều khoản dịch vụ để tiếp tục.';
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
+  // 12. Xử lý gửi Form Đặt Chỗ (Tạo đơn reservation & PayOS checkout)
   const handleProceedToPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tokenStorage.getAccessToken() || !tokenStorage.getUser()) {
@@ -703,9 +487,15 @@ export const BookingPage: React.FC = () => {
       return;
     }
 
-    if (!validateForm()) {
-      return;
-    }
+    const errors = validateBookingCustomerForm({
+      customerName,
+      customerPhone,
+      customerEmail,
+      customerIdCard,
+      agreeTerms,
+    });
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
 
     setIsSubmitting(true);
     setBookingError(null);
@@ -794,12 +584,6 @@ export const BookingPage: React.FC = () => {
     }
   };
 
-  const handleCopyText = (text: string, fieldKey: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedField(fieldKey);
-    setTimeout(() => setCopiedField(null), 2000);
-  };
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
       
@@ -835,676 +619,102 @@ export const BookingPage: React.FC = () => {
       {currentStep === 2 ? (
         /* ==================== STEP 2: FORM THÔNG TIN KHÁCH HÀNG ==================== */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
           {/* CỘT TRÁI: FORM (7 cols) */}
           <div className="lg:col-span-7 space-y-5">
-            <form onSubmit={handleProceedToPayment} className="space-y-5">
-              
-              {/* 1. THÔNG TIN KHÁCH HÀNG */}
-              <div className="bg-white border border-brand-200 rounded-2xl p-6 shadow-xs space-y-4">
-                <div className="flex items-center gap-2 pb-2 border-b border-brand-100">
-                  <User className="w-4 h-4 text-brand-600" />
-                  <h2 className="text-xs font-extrabold uppercase tracking-wider text-[#0a1614]">
-                    1. Thông tin người thuê ô kho
-                  </h2>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Họ và tên */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">
-                      Họ và tên <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={customerName}
-                      onChange={(e) => setCustomerName(e.target.value)}
-                      placeholder="Nguyễn Văn A"
-                      className="w-full px-3.5 py-2.5 bg-white border border-brand-200 rounded-xl text-xs sm:text-sm font-semibold text-[#0a1614] focus:outline-none focus:border-brand-500 shadow-xs"
-                    />
-                    {formErrors.customerName && (
-                      <p className="text-[11px] text-rose-600 font-semibold">{formErrors.customerName}</p>
-                    )}
-                  </div>
-
-                  {/* Số điện thoại */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">
-                      Số điện thoại liên hệ <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      value={customerPhone}
-                      onChange={(e) => setCustomerPhone(e.target.value)}
-                      placeholder="0901234567"
-                      className="w-full px-3.5 py-2.5 bg-white border border-brand-200 rounded-xl text-xs sm:text-sm font-semibold text-[#0a1614] focus:outline-none focus:border-brand-500 shadow-xs"
-                    />
-                    {formErrors.customerPhone && (
-                      <p className="text-[11px] text-rose-600 font-semibold">{formErrors.customerPhone}</p>
-                    )}
-                  </div>
-
-                  {/* Email */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">
-                      Email nhận mã PIN & Hợp đồng <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      value={customerEmail}
-                      onChange={(e) => setCustomerEmail(e.target.value)}
-                      placeholder="example@gmail.com"
-                      className="w-full px-3.5 py-2.5 bg-white border border-brand-200 rounded-xl text-xs sm:text-sm font-semibold text-[#0a1614] focus:outline-none focus:border-brand-500 shadow-xs"
-                    />
-                    {formErrors.customerEmail && (
-                      <p className="text-[11px] text-rose-600 font-semibold">{formErrors.customerEmail}</p>
-                    )}
-                  </div>
-
-                  {/* Số CCCD / Hộ chiếu (BẮT BUỘC THEO QUY ĐỊNH NHẬN KHO) */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
-                      <span>Số CCCD / Hộ chiếu (12 số) <span className="text-rose-500">*</span></span>
-                    </label>
-                    <input
-                      type="text"
-                      value={customerIdCard}
-                      onChange={(e) => setCustomerIdCard(e.target.value)}
-                      placeholder="Nhập 12 số CCCD..."
-                      className="w-full px-3.5 py-2.5 bg-white border border-brand-200 rounded-xl text-xs sm:text-sm font-semibold text-[#0a1614] focus:outline-none focus:border-brand-500 shadow-xs"
-                    />
-                    <p className="text-[10px] text-slate-500">Dùng đối chiếu khi nhận bàn giao kho tại cơ sở</p>
-                    {formErrors.customerIdCard && (
-                      <p className="text-[11px] text-rose-600 font-semibold">{formErrors.customerIdCard}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* 2. ĐIỀU KHOẢN DỊCH VỤ & CHÍNH SÁCH */}
-              <div className="bg-white border border-brand-200 rounded-2xl p-6 shadow-xs space-y-3">
-                <h2 className="text-xs font-extrabold uppercase tracking-wider text-[#0a1614] pb-2 border-b border-brand-100">
-                  2. Điều khoản dịch vụ & Chính sách lưu trữ
-                </h2>
-
-                <div className="p-4 bg-brand-50/50 border border-brand-200/70 rounded-xl space-y-2 text-xs text-slate-600">
-                  <p>• <strong>Nhận bàn giao kho:</strong> Quý khách xuất trình CCCD trùng khớp khi đến cơ sở để nhận mã PIN điện tử (hoặc mã QR) và hướng dẫn mở kho.</p>
-                  <p>• <strong>Chính sách giữ chỗ:</strong> Đơn đặt cọc giữ chỗ có hiệu lực trong {holdHours} giờ. Hủy trước ngày bắt đầu được hoàn 100% tiền thuê.</p>
-                  <p>• <strong>Hoàn trả tiền cọc:</strong> Tiền cọc giữ kho ({depositMultiplierLabel} tháng) được hoàn trả 100% ngay khi thanh lý hợp đồng đúng hạn.</p>
-                </div>
-
-                <label className="flex items-start gap-2.5 pt-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={agreeTerms}
-                    onChange={(e) => setAgreeTerms(e.target.checked)}
-                    className="mt-0.5 w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500"
-                  />
-                  <span className="text-xs font-semibold text-[#0a1614]">
-                    Tôi đã đọc, hiểu rõ và đồng ý với Điều khoản sử dụng và Chính sách cọc của SmartStorage.
-                  </span>
-                </label>
-                {formErrors.agreeTerms && (
-                  <p className="text-[11px] text-rose-600 font-semibold">{formErrors.agreeTerms}</p>
-                )}
-              </div>
-
-              {bookingError && (
-                <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 font-semibold">
-                  {bookingError}
-                </div>
-              )}
-
-              {/* NÚT SUBMIT */}
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <Button
-                  type="submit"
-                  variant="primary"
-                  size="md"
-                  disabled={isSubmitting || isCheckingAvailability || (availability !== null && availability.availableSlots <= 0 && !previousHoldElapsed)}
-                  className="px-8 py-3 bg-brand-500 hover:bg-brand-600 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition-all hover:scale-[1.01] flex items-center gap-2 cursor-pointer"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Đang tạo mã thanh toán VietQR...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Tiếp tục: Thanh toán VietQR & Giữ chỗ 48h</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </Button>
-              </div>
-
-            </form>
+            <BookingCustomerForm
+              customerName={customerName}
+              setCustomerName={setCustomerName}
+              customerPhone={customerPhone}
+              setCustomerPhone={setCustomerPhone}
+              customerEmail={customerEmail}
+              setCustomerEmail={setCustomerEmail}
+              customerIdCard={customerIdCard}
+              setCustomerIdCard={setCustomerIdCard}
+              agreeTerms={agreeTerms}
+              setAgreeTerms={setAgreeTerms}
+              formErrors={formErrors}
+              holdHours={holdHours}
+              depositMultiplierLabel={depositMultiplierLabel}
+              bookingError={bookingError}
+              isSubmitting={isSubmitting}
+              isCheckingAvailability={isCheckingAvailability}
+              isButtonDisabled={availability !== null && availability.availableSlots <= 0}
+              onSubmit={handleProceedToPayment}
+            />
           </div>
 
-          {/* CỘT PHẢI: TÓM TẮT ĐƠN ĐẶT CHỖ (5 cols) */}
+          {/* CỘT PHẢI: TÓM TẮT THÔNG TIN ĐƠN ĐẶT (5 cols) */}
           <div className="lg:col-span-5">
-            <div className="bg-white border border-brand-200 rounded-2xl p-6 shadow-sm sticky top-24 space-y-4">
-              <h2 className="text-xs font-extrabold uppercase tracking-wider text-[#0a1614] pb-2 border-b border-brand-100">
-                Tóm tắt đơn đặt chỗ
-              </h2>
-
-              <div className="space-y-2.5 text-xs text-slate-600">
-                <div className="flex justify-between">
-                  <span>Cơ sở:</span>
-                  <strong className="text-[#0a1614] text-right">{facility.name}</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span>Ô kho đã chọn:</span>
-                  <strong className="font-mono text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
-                    {finalUnitNumber}
-                  </strong>
-                </div>
-                <div className="flex justify-between">
-                  <span>Loại kho:</span>
-                  <strong className="text-[#0a1614]">{unitType.name} ({unitType.areaM2} m²)</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span>Thời gian thuê:</span>
-                  <strong className="text-[#0a1614]">{formatDateVN(startDate)} → {formatDateVN(endDate)} ({durationMonths} tháng)</strong>
-                </div>
-              </div>
-
-              <div className="border-t border-brand-100 pt-3 space-y-2 text-xs text-slate-600">
-                <div className="flex justify-between">
-                  <span>Đơn giá niêm yết:</span>
-                  <span>{formatVND(calculation.unitPrice)}/tháng</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Tiền thuê {durationMonths} tháng:</span>
-                  <span className="font-semibold text-[#0a1614]">{formatVND(calculation.rentalFee)}</span>
-                </div>
-                {calculation.discountAmount > 0 && (
-                  <div className="flex justify-between text-emerald-700 font-semibold">
-                    <span>
-                      {calculation.discountProgramName
-                        ? `${calculation.discountProgramName}${calculation.discountPercent > 0 ? ` (-${calculation.discountPercent}%)` : ''}:`
-                        : `Chiết khấu (-${calculation.discountPercent}%):`}
-                    </span>
-                    <span>-{formatVND(calculation.discountAmount)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span>Tiền cọc giữ kho ({depositMultiplierLabel} tháng):</span>
-                  <span className="font-semibold text-[#0a1614]">{formatVND(calculation.depositAmount)}</span>
-                </div>
-              </div>
-
-              <div className="bg-brand-50/80 border border-brand-200 p-4 rounded-xl">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#0a1614]">Tổng thanh toán ban đầu:</span>
-                  <span className="text-lg font-black text-brand-700 font-mono">
-                    {formatVND(calculation.totalDueToday)}
-                  </span>
-                </div>
-                <p className="text-[10px] text-slate-500 mt-1">
-                  * Tiền cọc được hoàn trả 100% khi thanh lý hợp đồng.
-                </p>
-              </div>
-            </div>
+            <BookingSummaryCard
+              facilityName={facility.name}
+              finalUnitNumber={finalUnitNumber}
+              unitTypeName={unitType.name}
+              sizeCategory={unitType.sizeCategory}
+              areaM2={unitType.areaM2}
+              startDate={startDate}
+              endDate={endDate}
+              durationMonths={durationMonths}
+              calculation={calculation}
+              depositMultiplierLabel={depositMultiplierLabel}
+            />
           </div>
-
         </div>
       ) : (
         /* ==================== STEP 3: THANH TOÁN VIETQR & GIỮ CHỖ 48H ==================== */
-        <div className="space-y-6">
-          
-          {/* TOP BANNER */}
-          <div className="bg-white border border-brand-200 rounded-2xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                <CheckCircle2 className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-md">
-                    Đã tạo đơn thành công
-                  </span>
-                  <span className="text-xs font-mono font-bold text-slate-500">
-                    Mã đơn: <strong className="text-[#0a1614]">{checkoutData?.description || `DH${createdReservationId}`}</strong>
-                  </span>
-                </div>
-                <h2 className="text-lg sm:text-xl font-extrabold text-[#0a1614] mt-0.5">
-                  Quét Mã VietQR Chuyển Khoản Nhanh 24/7
-                </h2>
-              </div>
-            </div>
-
-            {/* COUNTDOWN */}
-            <div className="flex items-center gap-3 bg-brand-50/80 border border-brand-200/90 px-4 py-2.5 rounded-xl shrink-0">
-              <Clock className="w-4 h-4 text-brand-600 animate-pulse" />
-              <div className="text-left">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Thời gian giữ chỗ còn lại</div>
-                <div className="text-base font-black text-brand-700 font-mono tracking-tight">{formattedCountdown}</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            
-            {/* CỘT TRÁI: THANH TOÁN (8 cols) */}
-            <div className="lg:col-span-8 space-y-5">
-              
-              <div className="bg-white border border-brand-200 rounded-2xl p-6 shadow-sm space-y-6">
-                
-                {/* WEBHOOK STATUS */}
-                <div className="flex items-center justify-between gap-3 bg-brand-50/70 border border-brand-200/80 px-4 py-3 rounded-xl text-xs">
-                  <div className="flex items-center gap-2.5 text-[#0a1614] font-semibold">
-                    <span className="relative flex h-2.5 w-2.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-brand-500"></span>
-                    </span>
-                    <span>Hệ thống đang tự động lắng nghe Webhook... (Tự động cấp mã mở kho ngay khi chuyển tiền xong)</span>
-                  </div>
-                  {checkoutData?.checkoutUrl && (
-                    <a
-                      href={checkoutData.checkoutUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-brand-600 hover:text-brand-700 font-bold whitespace-nowrap flex items-center gap-1 cursor-pointer"
-                    >
-                      <span>Mở tab mới</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  )}
-                </div>
-
-                {/* QR & BANK DETAILS */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-                  
-                  {/* QR */}
-                  <div className="md:col-span-5 flex flex-col items-center justify-center p-4 bg-slate-50 border border-brand-200/80 rounded-2xl">
-                    <div className="bg-white p-3 rounded-xl shadow-xs border border-slate-200">
-                      {checkoutData?.qrCode ? (
-                        <QRCodeSVG value={checkoutData.qrCode} size={165} level="M" includeMargin={true} />
-                      ) : (
-                        <img
-                          src={`https://img.vietqr.io/image/970422-0888567999-compact2.png?amount=${checkoutData?.amount || calculation?.totalDueToday || 0}&addInfo=${encodeURIComponent(checkoutData?.description || `DH${createdReservationId}`)}&accountName=${encodeURIComponent(checkoutData?.accountName || 'SMARTSTORAGE')}`}
-                          alt="VietQR Code"
-                          className="w-40 h-40 object-contain"
-                        />
-                      )}
-                    </div>
-                    <div className="mt-3 text-center">
-                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0a1614] bg-white px-2.5 py-1 rounded-md border border-slate-200 shadow-xs">
-                        <span className="w-2 h-2 rounded-full bg-blue-600"></span>
-                        VietQR • MB Bank (Napas 247)
-                      </span>
-                      <p className="text-[11px] text-slate-500 mt-1.5">Quét bằng Camera / Zalo / App Ngân hàng</p>
-                    </div>
-                  </div>
-
-                  {/* THÔNG TIN TÀI KHOẢN */}
-                  <div className="md:col-span-7 space-y-3">
-                    
-                    <div className="bg-slate-50/80 border border-brand-200/60 p-3 rounded-xl">
-                      <div className="text-[11px] font-semibold text-slate-500">Ngân hàng thụ hưởng</div>
-                      <div className="text-xs font-bold text-[#0a1614] mt-0.5">MB Bank (Ngân hàng Quân Đội)</div>
-                      <div className="text-[11px] text-slate-500 mt-1">
-                        Chủ tài khoản: <strong className="text-[#0a1614] uppercase">{checkoutData?.accountName || 'CONG TY CP SMARTSTORAGE VIETNAM'}</strong>
-                      </div>
-                    </div>
-
-                    {/* SỐ TÀI KHOẢN */}
-                    <div className="flex items-center justify-between bg-white border border-brand-200 p-3 rounded-xl shadow-xs">
-                      <div>
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Số tài khoản định danh</div>
-                        <div className="text-base font-black text-[#0a1614] font-mono mt-0.5">
-                          {checkoutData?.accountNumber || '0888567999'}
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleCopyText(checkoutData?.accountNumber || '0888567999', 'stk')}
-                        className="px-2.5 py-1.5 text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-lg flex items-center gap-1 transition-all cursor-pointer"
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                        <span>{copiedField === 'stk' ? '✓ Đã chép' : 'Sao chép'}</span>
-                      </button>
-                    </div>
-
-                    {/* SỐ TIỀN */}
-                    <div className="flex items-center justify-between bg-white border border-brand-200 p-3 rounded-xl shadow-xs">
-                      <div>
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Số tiền cần chuyển</div>
-                        <div className="text-lg font-black text-brand-700 font-mono mt-0.5">
-                          {formatVND(checkoutData?.amount || calculation?.totalDueToday || 0)}
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleCopyText(String(checkoutData?.amount || calculation?.totalDueToday || 0), 'amount')}
-                        className="px-2.5 py-1.5 text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-lg flex items-center gap-1 transition-all cursor-pointer"
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                        <span>{copiedField === 'amount' ? '✓ Đã chép' : 'Sao chép'}</span>
-                      </button>
-                    </div>
-
-                    {/* NỘI DUNG CHUYỂN KHOẢN */}
-                    <div className="flex items-center justify-between bg-amber-50/70 border border-amber-300 p-3 rounded-xl shadow-xs">
-                      <div>
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-amber-900 flex items-center gap-1">
-                          <span>Nội dung chuyển khoản (Bắt buộc)</span>
-                          <span className="text-rose-600">*</span>
-                        </div>
-                        <div className="text-base font-black text-amber-950 font-mono mt-0.5">
-                          {checkoutData?.description || `DH${createdReservationId}`}
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleCopyText(checkoutData?.description || `DH${createdReservationId}`, 'desc')}
-                        className="px-2.5 py-1.5 text-xs font-bold text-amber-900 bg-white hover:bg-amber-100 border border-amber-300 rounded-lg flex items-center gap-1 transition-all cursor-pointer"
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                        <span>{copiedField === 'desc' ? '✓ Đã chép' : 'Sao chép'}</span>
-                      </button>
-                    </div>
-
-                  </div>
-
-                </div>
-
-                <div className="pt-4 border-t border-brand-100 flex items-start gap-2.5 text-xs text-slate-500">
-                  <ShieldCheck className="w-4 h-4 text-brand-600 shrink-0 mt-0.5" />
-                  <p><strong>Bảo mật truy cập:</strong> Thẻ nhận kho và mã PIN mở cửa chỉ được cấp ngay sau khi hệ thống ghi nhận thanh toán thành công.</p>
-                </div>
-
-              </div>
-
-              {/* PAYMENT NOTICE ERROR / INFO */}
-              {paymentNotice && (
-                <div className="bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-xl p-3 flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-                  <span>{paymentNotice}</span>
-                </div>
-              )}
-
-              {/* SUCCESS NOTICE */}
-              {paymentStatus === 'SUCCESS' && (
-                <div className="bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs rounded-xl p-3.5 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                    <div>
-                      <div className="font-bold">Thanh toán đã được ghi nhận thành công!</div>
-                      <div className="text-[11px] text-emerald-700">Đang tạo mã PIN và chuyển về Quản lý kho...</div>
-                    </div>
-                  </div>
-                  <div className="px-2.5 py-1 bg-emerald-200/70 text-emerald-900 font-mono font-bold rounded-lg text-xs">
-                    {redirectCountdown}s
-                  </div>
-                </div>
-              )}
-
-              {/* SANDBOX TEST BAR */}
-              <div className="bg-amber-50/50 border border-dashed border-amber-300 rounded-2xl p-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm">🧪</span>
-                    <div>
-                      <div className="text-xs font-bold text-amber-900">Môi trường Thử nghiệm Thanh toán</div>
-                      <div className="text-[11px] text-amber-800/80">Dùng để kiểm thử chuyển khoản nhanh không cần tiền thật</div>
-                    </div>
-                  </div>
-                  
-                  <button
-                    type="button"
-                    onClick={handleSimulateTransfer}
-                    disabled={isSimulating || paymentStatus === 'SUCCESS' || holdExpired}
-                    className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all hover:scale-[1.02] flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-                  >
-                    {isSimulating ? (
-                      <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>Đang xử lý Sandbox...</span>
-                      </>
-                    ) : (
-                      <span>⚡ Giả Lập Chuyển Khoản Thành Công</span>
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* BOTTOM ACTION BUTTONS */}
-              <div className="flex items-center justify-between pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCancelModal(true)}
-                  className="px-4 py-2.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-xl transition-all cursor-pointer"
-                >
-                  ✕ Hủy đơn đặt chỗ
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleCheckPaymentStatus}
-                  disabled={isVerifying || paymentStatus === 'SUCCESS'}
-                  className="px-6 py-2.5 bg-brand-500 hover:bg-brand-600 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition-all hover:scale-[1.02] flex items-center gap-2 cursor-pointer disabled:opacity-50"
-                >
-                  {isVerifying ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Đang kiểm tra...</span>
-                    </>
-                  ) : paymentStatus === 'SUCCESS' ? (
-                    <>
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>Thành công ({redirectCountdown}s)</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Tôi đã chuyển khoản / Lấy vé nhận kho</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
-              </div>
-
-            </div>
-
-            {/* CỘT PHẢI: TÓM TẮT CHI PHÍ (4 cols) */}
-            <div className="lg:col-span-4">
-              <div className="bg-white border border-brand-200 rounded-2xl p-6 shadow-sm sticky top-24 space-y-4">
-                <h2 className="text-xs font-extrabold uppercase tracking-wider text-[#0a1614] pb-2 border-b border-brand-100">
-                  Tóm tắt chi phí thuê
-                </h2>
-
-                <div className="space-y-2.5 text-xs text-slate-600">
-                  <div className="flex justify-between">
-                    <span>Cơ sở:</span>
-                    <strong className="text-[#0a1614] text-right">{facility.name}</strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Ô kho:</span>
-                    <strong className="font-mono text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
-                      {finalUnitNumber}
-                    </strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Loại kho:</span>
-                    <strong className="text-[#0a1614]">{unitType.name} ({unitType.areaM2} m²)</strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Thời hạn thuê:</span>
-                    <strong className="text-[#0a1614]">{durationMonths} tháng</strong>
-                  </div>
-                </div>
-
-                <div className="border-t border-brand-100 pt-3 space-y-2 text-xs text-slate-600">
-                  <div className="flex justify-between">
-                    <span>Tiền thuê {durationMonths} tháng:</span>
-                    <span className="font-semibold text-[#0a1614]">{formatVND(calculation.rentalFee)}</span>
-                  </div>
-                  {calculation.discountAmount > 0 && (
-                    <div className="flex justify-between text-emerald-700 font-semibold">
-                      <span>
-                        {calculation.discountProgramName
-                          ? `${calculation.discountProgramName}${calculation.discountPercent > 0 ? ` (-${calculation.discountPercent}%)` : ''}:`
-                          : `Chiết khấu (-${calculation.discountPercent}%):`}
-                      </span>
-                      <span>-{formatVND(calculation.discountAmount)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span>Tiền cọc giữ kho ({depositMultiplierLabel} tháng):</span>
-                    <span className="font-semibold text-[#0a1614]">{formatVND(calculation.depositAmount)}</span>
-                  </div>
-                </div>
-
-                <div className="bg-brand-50/80 border border-brand-200 p-4 rounded-xl">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-[#0a1614]">Tổng thanh toán:</span>
-                    <span className="text-base font-black text-brand-700 font-mono">
-                      {formatVND(checkoutData?.amount || calculation.totalDueToday)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-        </div>
-      )}
-
-      {/* Modal hủy đặt chỗ */}
-      <Modal isOpen={showCancelModal} onClose={() => setShowCancelModal(false)}>
-        <div className="p-6 max-w-md w-full space-y-4 text-center">
-          <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
-            <XCircle className="w-6 h-6" />
-          </div>
-          <div className="space-y-1.5">
-            <h3 className="text-lg font-bold text-slate-900">Xác nhận hủy đơn đặt chỗ?</h3>
-            <p className="text-xs sm:text-sm text-slate-600">
-              Nếu hủy đơn, ô kho đang giữ chỗ sẽ được giải phóng cho khách hàng khác trên hệ thống.
-            </p>
-          </div>
-          {cancelError && (
-            <p className="text-xs text-rose-600 font-semibold">{cancelError}</p>
-          )}
-          <div className="flex items-center gap-3 pt-2">
-            <Button
-              variant="outline"
-              className="flex-1 justify-center py-2.5 text-xs font-bold"
-              onClick={() => setShowCancelModal(false)}
-            >
-              Giữ lại đơn
-            </Button>
-            <Button
-              variant="primary"
-              className="flex-1 justify-center py-2.5 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white"
-              onClick={handleConfirmCancelReservation}
-              disabled={isCancellingReservation}
-            >
-              {isCancellingReservation ? 'Đang hủy...' : 'Xác nhận hủy'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Digital Move-in Pass Modal */}
-      {showPassModal && createdPass && (
-        <DigitalMoveInPassModal
-          isOpen={showPassModal}
-          onClose={() => setShowPassModal(false)}
-          passData={createdPass}
+        <BookingPaymentStep
+          createdReservationId={createdReservationId}
+          checkoutData={checkoutData}
+          calculation={calculation}
+          formattedCountdown={formattedCountdown}
+          copiedField={copiedField}
+          handleCopyText={handleCopyText}
+          paymentNotice={paymentNotice}
+          paymentStatus={paymentStatus}
+          redirectCountdown={redirectCountdown}
+          isSimulating={isSimulating}
+          holdExpired={holdExpired}
+          handleSimulateTransfer={handleSimulateTransfer}
+          onCancelReservation={() => setShowCancelModal(true)}
+          setShowCancelModal={setShowCancelModal}
+          isVerifying={isVerifying}
+          handleCheckPaymentStatus={handleCheckPaymentStatus}
+          facility={facility}
+          unitType={unitType}
+          finalUnitNumber={finalUnitNumber}
+          durationMonths={durationMonths}
+          depositMultiplierLabel={depositMultiplierLabel}
         />
       )}
 
-      {/* Terms Modal */}
-      <TermsOfServiceModal
-        isOpen={showTermsModal}
-        onClose={() => setShowTermsModal(false)}
-      />
-
-      {/* Modal cảnh báo ô kho / cơ sở */}
-      <Modal
-        isOpen={unavailableModal.isOpen}
-        onClose={() => {
+      {/* CỤM 5 MODALS (HỦY ĐƠN, VÉ VÀO CỔNG, ĐIỀU KHOẢN, CẢNH BÁO) */}
+      <BookingModals
+        showCancelModal={showCancelModal}
+        onCloseCancelModal={() => setShowCancelModal(false)}
+        onConfirmCancelReservation={handleConfirmCancelReservation}
+        isCancellingReservation={isCancellingReservation}
+        cancelError={cancelError}
+        unavailableModal={unavailableModal}
+        onCloseUnavailableModal={() => {
           setUnavailableModal((prev) => ({ ...prev, isOpen: false }));
           navigate(unavailableModal.actionType === 'NAVIGATE_HOME' ? '/customer' : `/customer/units?facility=${facilityId}`);
         }}
-      >
-        <div className="p-6 max-w-md w-full text-center space-y-4">
-          <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto">
-            <AlertTriangle className="w-6 h-6" />
-          </div>
-          <div className="space-y-1.5">
-            <h3 className="text-lg font-bold text-slate-900">{unavailableModal.title}</h3>
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              {unavailableModal.message}
-            </p>
-          </div>
-          <div className="pt-2">
-            <Button
-              variant="primary"
-              className="w-full justify-center py-2.5 text-xs sm:text-sm font-semibold"
-              onClick={() => {
-                setUnavailableModal((prev) => ({ ...prev, isOpen: false }));
-                navigate(unavailableModal.actionType === 'NAVIGATE_HOME' ? '/customer' : `/customer/units?facility=${facilityId}`);
-              }}
-            >
-              Quay lại
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Modal cảnh báo giới hạn 1 đơn giữ chỗ PENDING_PAYMENT */}
-      <Modal
-        isOpen={pendingLimitModal.isOpen}
-        onClose={() => {
+        pendingLimitModal={pendingLimitModal}
+        onClosePendingLimitModal={() => {
           setPendingLimitModal({ isOpen: false, pendingReservation: null });
           navigate(`/customer/units?facility=${facility.id || ''}`);
         }}
-      >
-        <div className="p-6 max-w-md w-full text-center space-y-4">
-          <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto shadow-xs">
-            <AlertTriangle className="w-6 h-6" />
-          </div>
-          <div className="space-y-1.5">
-            <h3 className="text-lg font-bold text-slate-900">Quý khách đang có đơn giữ chỗ</h3>
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              Quý khách vui lòng thanh toán ô kho{' '}
-              <strong className="text-slate-900 font-semibold">
-                {pendingLimitModal.pendingReservation?.storageUnitCode || pendingLimitModal.pendingReservation?.code || 'đang giữ chỗ'}
-              </strong>
-              {pendingLimitModal.pendingReservation?.facilityName ? ` (tại ${pendingLimitModal.pendingReservation.facilityName})` : ''}{' '}
-              trước khi đặt ô kho khác.
-            </p>
-          </div>
-          <div className="pt-2 flex flex-col gap-2">
-            <Button
-              variant="primary"
-              className="w-full justify-center py-2.5 text-xs sm:text-sm font-semibold"
-              onClick={() => {
-                const rsv = pendingLimitModal.pendingReservation;
-                setPendingLimitModal({ isOpen: false, pendingReservation: null });
-                if (rsv) {
-                  navigate(`/customer/booking?facility=${rsv.facilityId}&reservationId=${rsv.id}`);
-                }
-              }}
-            >
-              Thanh toán ô kho đang giữ chỗ
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full justify-center py-2.5 text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-800"
-              onClick={() => {
-                setPendingLimitModal({ isOpen: false, pendingReservation: null });
-                navigate(`/customer/units?facility=${facility.id || ''}`);
-              }}
-            >
-              Quay lại danh sách ô kho
-            </Button>
-          </div>
-        </div>
-      </Modal>
+        onPayPendingReservation={(rsv) => {
+          setPendingLimitModal({ isOpen: false, pendingReservation: null });
+          if (rsv) {
+            navigate(`/customer/booking?facility=${rsv.facilityId}&reservationId=${rsv.id}`);
+          }
+        }}
+        showPassModal={showPassModal}
+        createdPass={createdPass}
+        onClosePassModal={() => setShowPassModal(false)}
+        showTermsModal={showTermsModal}
+        onCloseTermsModal={() => setShowTermsModal(false)}
+      />
 
     </div>
   );

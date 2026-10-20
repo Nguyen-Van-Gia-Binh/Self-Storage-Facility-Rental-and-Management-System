@@ -13,13 +13,31 @@ describe('ISS-99: Limit One Pending Reservation per Customer', () => {
     process.cwd(),
     'src/features/customer/pages/UnitPickerPage.tsx'
   );
+  const modalsPath = path.resolve(
+    process.cwd(),
+    'src/features/customer/components/UnitPickerModals.tsx'
+  );
   const bookingPagePath = path.resolve(
     process.cwd(),
     'src/features/customer/pages/BookingPage.tsx'
   );
+  const bookingModalsPath = path.resolve(
+    process.cwd(),
+    'src/features/customer/components/BookingModals.tsx'
+  );
+  const getUnitPickerContent = () => {
+    return fs.existsSync(modalsPath)
+      ? fs.readFileSync(unitPickerPagePath, 'utf-8') + '\n' + fs.readFileSync(modalsPath, 'utf-8')
+      : fs.readFileSync(unitPickerPagePath, 'utf-8');
+  };
+  const getBookingPageContent = () => {
+    return fs.existsSync(bookingModalsPath)
+      ? fs.readFileSync(bookingPagePath, 'utf-8') + '\n' + fs.readFileSync(bookingModalsPath, 'utf-8')
+      : fs.readFileSync(bookingPagePath, 'utf-8');
+  };
 
   it('UnitPickerPage kiểm tra getMyReservationsApi và mở modal pendingLimitModal khi có đơn giữ chỗ PENDING_PAYMENT', () => {
-    const content = fs.readFileSync(unitPickerPagePath, 'utf-8');
+    const content = getUnitPickerContent();
     expect(content).toMatch(/getMyReservationsApi/);
     expect(content).toMatch(/pendingLimitModal/);
     expect(content).toMatch(/PENDING_PAYMENT/);
@@ -30,7 +48,7 @@ describe('ISS-99: Limit One Pending Reservation per Customer', () => {
   });
 
   it('BookingPage kiểm tra getMyReservationsApi và chặn đặt thêm ô kho khi đang có đơn PENDING_PAYMENT', () => {
-    const content = fs.readFileSync(bookingPagePath, 'utf-8');
+    const content = getBookingPageContent();
     expect(content).toMatch(/getMyReservationsApi/);
     expect(content).toMatch(/pendingLimitModal/);
     expect(content).toMatch(/Quý khách đang có đơn giữ chỗ/);
