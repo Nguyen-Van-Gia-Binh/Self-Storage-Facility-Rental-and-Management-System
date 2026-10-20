@@ -71,8 +71,8 @@ class UnitTypeServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         when(unitTypeRepository.findByFacilityIdAndFilter(eq(1L), eq(true), eq(pageable)))
                 .thenReturn(new PageImpl<>(List.of(unitType), pageable, 1));
-        when(priceRepository.findByFacilityIdAndUnitTypeId(1L, 7L)).thenReturn(Optional.of(facilityPrice));
-        when(storageUnitRepository.countByFacilityIdAndUnitTypeId(1L, 7L)).thenReturn(10L);
+        when(priceRepository.findAllByFacilityId(1L)).thenReturn(List.of(facilityPrice));
+        when(storageUnitRepository.countUnitsGroupedByUnitType(1L)).thenReturn(java.util.Collections.singletonList(new Object[]{7L, 10L}));
 
         PageResponse<UnitTypeResponse> response = unitTypeService.getUnitTypesByFacility(1L, true, pageable);
 

@@ -37,8 +37,8 @@ public interface RentalContractRepository
             "  AND c.id <> :excludeContractId " +
             "  AND c.status IN ('PENDING_CHECK_IN', 'ACTIVE', 'PENDING_RETURN', 'OVERDUE') " +
             "  AND c.start_date < :endDateExclusive " +
-            "  AND DATEADD(DAY, :bufferDays, c.end_date) > :startDate" +
-            ") THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END", nativeQuery = true)
+            "  AND (c.end_date + (:bufferDays * INTERVAL '1 day')) > :startDate" +
+            ") THEN TRUE ELSE FALSE END", nativeQuery = true)
     boolean existsOverlappingContractForUnit(
             @Param("storageUnitId") Long storageUnitId,
             @Param("startDate") LocalDate startDate,
@@ -51,8 +51,8 @@ public interface RentalContractRepository
             "WHERE c.storage_unit_id = :storageUnitId " +
             "  AND c.id <> :excludeContractId " +
             "  AND c.status IN ('PENDING_CHECK_IN', 'ACTIVE', 'PENDING_RETURN', 'OVERDUE') " +
-            "  AND c.start_date < DATEADD(DAY, :bufferDays, :endDateExclusive) " +
-            "  AND DATEADD(DAY, :bufferDays, c.end_date) > :startDate", nativeQuery = true)
+            "  AND c.start_date < (CAST(:endDateExclusive AS DATE) + (:bufferDays * INTERVAL '1 day')) " +
+            "  AND (c.end_date + (:bufferDays * INTERVAL '1 day')) > :startDate", nativeQuery = true)
     List<RentalContract> findOverlappingContractsForUnit(
             @Param("storageUnitId") Long storageUnitId,
             @Param("startDate") LocalDate startDate,

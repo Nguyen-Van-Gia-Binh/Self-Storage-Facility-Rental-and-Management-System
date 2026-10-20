@@ -17,11 +17,15 @@ import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
 import com.swp391.selfstorage.unit.repository.UnitTypeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -47,13 +51,19 @@ public class UnitTypeServiceImpl implements UnitTypeService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "unitTypes", key = "#facilityId + '-' + (#isActive != null ? #isActive : '') + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public PageResponse<UnitTypeResponse> getUnitTypesByFacility(Long facilityId, Boolean isActive, Pageable pageable) {
         Page<UnitType> page = unitTypeRepository.findByFacilityIdAndFilter(facilityId, isActive, pageable);
+
+        Map<Long, Long> priceMap = priceRepository.findAllByFacilityId(facilityId).stream()
+                .collect(Collectors.toMap(FacilityUnitTypePrice::getUnitTypeId, FacilityUnitTypePrice::getMonthlyPrice, (a, b) -> a));
+
+        Map<Long, Long> unitCountMap = storageUnitRepository.countUnitsGroupedByUnitType(facilityId).stream()
+                .collect(Collectors.toMap(row -> ((Number) row[0]).longValue(), row -> ((Number) row[1]).longValue(), (a, b) -> a));
+
         List<UnitTypeResponse> content = page.getContent().stream().map(ut -> {
-            Long price = priceRepository.findByFacilityIdAndUnitTypeId(facilityId, ut.getId())
-                    .map(FacilityUnitTypePrice::getMonthlyPrice)
-                    .orElse(0L);
-            long totalUnits = storageUnitRepository.countByFacilityIdAndUnitTypeId(facilityId, ut.getId());
+            Long price = priceMap.getOrDefault(ut.getId(), 0L);
+            long totalUnits = unitCountMap.getOrDefault(ut.getId(), 0L);
             return finish(ut, facilityId, price, totalUnits);
         }).toList();
 
@@ -75,6 +85,7 @@ public class UnitTypeServiceImpl implements UnitTypeService {
     }
 
     @Override
+    @CacheEvict(value = "unitTypes", allEntries = true)
     public UnitTypeResponse createUnitType(Long facilityId, CreateUnitTypeRequest request) {
         if (unitTypeRepository.existsByCode(request.getCode())) {
             throw new CustomException(ErrorCode.UNIT_TYPE_CODE_ALREADY_EXISTS);
@@ -105,6 +116,7 @@ public class UnitTypeServiceImpl implements UnitTypeService {
     }
 
     @Override
+    @CacheEvict(value = "unitTypes", allEntries = true)
     public UnitTypeResponse updateUnitType(Long facilityId, Long unitTypeId, UpdateUnitTypeRequest request) {
         UnitType ut = unitTypeRepository.findById(unitTypeId)
                 .orElseThrow(() -> new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND));
@@ -153,6 +165,7 @@ public class UnitTypeServiceImpl implements UnitTypeService {
     }
 
     @Override
+    @CacheEvict(value = "unitTypes", allEntries = true)
     public void deactivateUnitType(Long facilityId, Long unitTypeId) {
         UnitType ut = unitTypeRepository.findById(unitTypeId)
                 .orElseThrow(() -> new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND));
@@ -169,6 +182,7 @@ public class UnitTypeServiceImpl implements UnitTypeService {
     }
 
     @Override
+    @CacheEvict(value = "unitTypes", allEntries = true)
     public UnitTypeResponse updateUnitTypeStatus(Long facilityId, Long unitTypeId, boolean isActive) {
         if (!isActive) {
             deactivateUnitType(facilityId, unitTypeId);
