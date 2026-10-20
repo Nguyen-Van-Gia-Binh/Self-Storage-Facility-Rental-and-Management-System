@@ -128,6 +128,7 @@
 | `ISS-119` | Tiền cọc giữ kho tại BookingPage và UnitPickerPage bị hardcode 1 tháng và label không phản ánh hệ số cọc BOM Policy (BR-DEP-01). | Kết nối `useActivePolicy()` lấy `depositMultiplier`, đồng bộ công thức tính cọc `calculateBookingTotal` và hiển thị động nhãn `(N tháng)` thay vì hardcode 1 tháng. | Xuân Nhi | `RESOLVED` |
 | `ISS-120` | BOM chưa có giao diện cấu hình chương trình khuyến mãi (6 tháng -5%, 12 tháng -10%) và Customer bị hardcode chiết khấu. | Thêm cột `min_rental_months` vào `discount_program` (V54), xây dựng REST API CRUD `/discount-programs`, tích hợp Tab Khuyến mãi BOM và kết nối động `calculateBookingPrice` phía Customer. | Bình | `RESOLVED` |
 | `ISS-121` | Mã nguồn 4 trang Customer Flow 1 (HomePage, UnitPicker, Booking, MyUnits) bị phình to dạng God Component khó bảo trì. | Tái cấu trúc và module hóa toàn diện 4 trạm thành các Component, Custom Hook và Pure Utils theo Clean Architecture; 50/50 tests pass. | Xuân Nhi | `RESOLVED` (#251) |
+| `ISS-122` | Hệ thống thiếu bộ đệm phân tán L2 để chia sẻ cache giữa các instances và giảm tải DB. | Bổ sung Spring Data Redis kết nối Upstash TLS Singapore, cài đặt TwoLevelCache L1 Caffeine + L2 Redis với cơ chế tự phục hồi và chịu lỗi cao. | Tùng | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 

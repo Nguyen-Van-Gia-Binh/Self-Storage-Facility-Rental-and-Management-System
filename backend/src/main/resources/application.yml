@@ -9,6 +9,17 @@ spring:
   application:
     name: self-storage-backend
 
+  data:
+    redis:
+      url: ${REDIS_URL:}
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 4
+          min-idle: 0
+          max-wait: 1000ms
+
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/selfstorage?sslmode=prefer}
     username: ${DB_USERNAME:postgres}
