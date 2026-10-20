@@ -32,9 +32,9 @@ Cơ sở dữ liệu PostgreSQL đã được triển khai và nạp sẵn toàn
 ```yaml
 spring:
   datasource:
-    url: jdbc:postgresql://ep-dawn-dust-b7824yok.c-13.us-east-1.aws.neon.tech/neondb?sslmode=require
+    url: jdbc:postgresql://ep-round-rice-b3raiy2r.c-4.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
     username: neondb_owner
-    password: npg_i9RnSrxN4ohu
+    password: npg_gpKMC1tJS5lq
 ```
 
 ---
