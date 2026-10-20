@@ -67,9 +67,9 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
            "WHERE r.storage_unit_id = :storageUnitId " +
            "  AND r.id <> :excludeReservationId " +
            "  AND ((r.status = 'PENDING_PAYMENT' AND r.hold_expires_at > :now) OR r.status = 'CONFIRMED') " +
-           "  AND r.start_date < DATEADD(DAY, :bufferDays, :endDateExclusive) " +
-           "  AND DATEADD(DAY, :bufferDays, r.end_date_exclusive) > :startDate" +
-           ") THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END", nativeQuery = true)
+           "  AND r.start_date < (CAST(:endDateExclusive AS DATE) + (:bufferDays * INTERVAL '1 day')) " +
+           "  AND (r.end_date_exclusive + (:bufferDays * INTERVAL '1 day')) > :startDate" +
+           ") THEN TRUE ELSE FALSE END", nativeQuery = true)
     boolean existsOverlappingReservationForUnit(
             @Param("storageUnitId") Long storageUnitId,
             @Param("startDate") java.time.LocalDate startDate,
@@ -83,8 +83,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
            "WHERE r.storage_unit_id = :storageUnitId " +
            "  AND r.id <> :excludeReservationId " +
            "  AND ((r.status = 'PENDING_PAYMENT' AND r.hold_expires_at > :now) OR r.status = 'CONFIRMED') " +
-           "  AND r.start_date < DATEADD(DAY, :bufferDays, :endDateExclusive) " +
-           "  AND DATEADD(DAY, :bufferDays, r.end_date_exclusive) > :startDate", nativeQuery = true)
+           "  AND r.start_date < (CAST(:endDateExclusive AS DATE) + (:bufferDays * INTERVAL '1 day')) " +
+           "  AND (r.end_date_exclusive + (:bufferDays * INTERVAL '1 day')) > :startDate", nativeQuery = true)
     List<Reservation> findOverlappingReservationsForUnit(
             @Param("storageUnitId") Long storageUnitId,
             @Param("startDate") java.time.LocalDate startDate,

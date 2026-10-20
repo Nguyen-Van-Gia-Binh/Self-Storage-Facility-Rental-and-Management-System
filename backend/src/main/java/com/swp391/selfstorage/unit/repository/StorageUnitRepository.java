@@ -69,10 +69,10 @@ public interface StorageUnitRepository extends JpaRepository<StorageUnit, Long> 
         @Query(value = "SELECT COUNT(*) FROM reservation r " +
                         "WHERE r.facility_id = :facilityId " +
                         "  AND r.unit_type_id = :unitTypeId " +
-                        "  AND (r.status = 'CONFIRMED' OR (r.status = 'PENDING_PAYMENT' AND r.hold_expires_at > SYSDATETIMEOFFSET())) "
+                        "  AND (r.status = 'CONFIRMED' OR (r.status = 'PENDING_PAYMENT' AND r.hold_expires_at > CURRENT_TIMESTAMP)) "
                         +
                         "  AND r.start_date < :endDateExclusive " +
-                        "  AND DATEADD(DAY, :bufferDays, r.end_date_exclusive) > :startDate", nativeQuery = true)
+                        "  AND (r.end_date_exclusive + (:bufferDays * INTERVAL '1 day')) > :startDate", nativeQuery = true)
         long countOverlappingReservations(
                         @Param("facilityId") Long facilityId,
                         @Param("unitTypeId") Long unitTypeId,
@@ -86,7 +86,7 @@ public interface StorageUnitRepository extends JpaRepository<StorageUnit, Long> 
                         "  AND u.unit_type_id = :unitTypeId " +
                         "  AND c.status IN ('PENDING_CHECK_IN', 'ACTIVE', 'PENDING_RETURN', 'OVERDUE') " +
                         "  AND c.start_date < :endDateExclusive " +
-                        "  AND DATEADD(DAY, :bufferDays, c.end_date) > :startDate", nativeQuery = true)
+                        "  AND (c.end_date + (:bufferDays * INTERVAL '1 day')) > :startDate", nativeQuery = true)
         long countOverlappingContracts(
                         @Param("facilityId") Long facilityId,
                         @Param("unitTypeId") Long unitTypeId,
@@ -104,14 +104,14 @@ public interface StorageUnitRepository extends JpaRepository<StorageUnit, Long> 
                         "  AND (" +
                         "    EXISTS (SELECT 1 FROM reservation r " +
                         "            WHERE r.storage_unit_id = u.id " +
-                        "              AND (r.status = 'CONFIRMED' OR (r.status = 'PENDING_PAYMENT' AND r.hold_expires_at > SYSDATETIMEOFFSET())) " +
+                        "              AND (r.status = 'CONFIRMED' OR (r.status = 'PENDING_PAYMENT' AND r.hold_expires_at > CURRENT_TIMESTAMP)) " +
                         "              AND r.start_date < :endDateExclusive " +
-                        "              AND DATEADD(DAY, :bufferDays, r.end_date_exclusive) > :startDate) " +
+                        "              AND (r.end_date_exclusive + (:bufferDays * INTERVAL '1 day')) > :startDate) " +
                         "    OR EXISTS (SELECT 1 FROM rental_contract c " +
                         "            WHERE c.storage_unit_id = u.id " +
                         "              AND c.status IN ('PENDING_CHECK_IN', 'ACTIVE', 'PENDING_RETURN', 'OVERDUE') " +
                         "              AND c.start_date < :endDateExclusive " +
-                        "              AND DATEADD(DAY, :bufferDays, c.end_date) > :startDate)" +
+                        "              AND (c.end_date + (:bufferDays * INTERVAL '1 day')) > :startDate)" +
                         "  )", nativeQuery = true)
         long countBusyUnits(
                         @Param("facilityId") Long facilityId,
@@ -125,7 +125,7 @@ public interface StorageUnitRepository extends JpaRepository<StorageUnit, Long> 
                         "  AND c.storage_unit_id IS NOT NULL " +
                         "  AND c.status IN ('PENDING_CHECK_IN', 'ACTIVE', 'PENDING_RETURN', 'OVERDUE') " +
                         "  AND c.start_date < :endDateExclusive " +
-                        "  AND DATEADD(DAY, :bufferDays, c.end_date) > :startDate", nativeQuery = true)
+                        "  AND (c.end_date + (:bufferDays * INTERVAL '1 day')) > :startDate", nativeQuery = true)
         List<Long> findOccupiedUnitIdsByDateRange(
                         @Param("facilityId") Long facilityId,
                         @Param("startDate") java.time.LocalDate startDate,
@@ -135,9 +135,9 @@ public interface StorageUnitRepository extends JpaRepository<StorageUnit, Long> 
         @Query(value = "SELECT DISTINCT r.storage_unit_id FROM reservation r " +
                         "WHERE r.facility_id = :facilityId " +
                         "  AND r.storage_unit_id IS NOT NULL " +
-                        "  AND (r.status = 'CONFIRMED' OR (r.status = 'PENDING_PAYMENT' AND r.hold_expires_at > SYSDATETIMEOFFSET())) " +
+                        "  AND (r.status = 'CONFIRMED' OR (r.status = 'PENDING_PAYMENT' AND r.hold_expires_at > CURRENT_TIMESTAMP)) " +
                         "  AND r.start_date < :endDateExclusive " +
-                        "  AND DATEADD(DAY, :bufferDays, r.end_date_exclusive) > :startDate", nativeQuery = true)
+                        "  AND (r.end_date_exclusive + (:bufferDays * INTERVAL '1 day')) > :startDate", nativeQuery = true)
         List<Long> findReservedUnitIdsByDateRange(
                         @Param("facilityId") Long facilityId,
                         @Param("startDate") java.time.LocalDate startDate,
