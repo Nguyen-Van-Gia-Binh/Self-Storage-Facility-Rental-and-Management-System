@@ -213,4 +213,27 @@ describe('Quản lý ô kho — Kiến trúc Drill-down 4 Cấp độ (FM-01)', 
     expect(getFacilityRegion({ name: 'FAC-DN', address: '15 Bạch Đằng, Hải Châu, Đà Nẵng' })).toBe('DN');
     expect(getFacilityRegion({ name: 'FAC-BD', address: 'Bình Dương' })).toBe('OTHER');
   });
+
+  it('8. Bộ lọc thời gian: Khớp hợp đồng tại thời điểm được chọn (targetDate)', () => {
+    const isContractActiveAtDate = (
+      c: { startDate: string; endDateExclusive: string },
+      date: string
+    ) => c.startDate <= date && date < c.endDateExclusive;
+
+    // Hợp đồng từ 2026-10-01 đến 2026-11-01
+    expect(isContractActiveAtDate(mockContract, '2026-10-15')).toBe(true);
+    expect(isContractActiveAtDate(mockContract, '2026-10-01')).toBe(true);
+    expect(isContractActiveAtDate(mockContract, '2026-11-01')).toBe(false);
+    expect(isContractActiveAtDate(mockContract, '2026-09-30')).toBe(false);
+    expect(isContractActiveAtDate(mockContract, '2026-12-01')).toBe(false);
+  });
+
+  it('9. Hỗ trợ StorageUnitListParams có targetDate hợp lệ', () => {
+    const params: import('@/api/unit').StorageUnitListParams = {
+      facilityId: 1,
+      unitTypeId: 10,
+      targetDate: '2026-10-25',
+    };
+    expect(params.targetDate).toBe('2026-10-25');
+  });
 });

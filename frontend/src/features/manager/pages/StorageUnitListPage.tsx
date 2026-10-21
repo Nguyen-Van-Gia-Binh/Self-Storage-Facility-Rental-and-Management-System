@@ -1,6 +1,6 @@
 // frontend/src/features/manager/pages/StorageUnitListPage.tsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Plus,
   Search,
@@ -13,6 +13,8 @@ import {
   CheckCircle2,
   TrendingUp,
   Wrench,
+  Calendar,
+  X,
 } from 'lucide-react';
 import { fetchMyAssignedFacilities } from '@/api/facility';
 import {
@@ -48,6 +50,9 @@ const PAGE_SIZE = 10;
 export const StorageUnitListPage: React.FC = () => {
   const { facilityId, typeId } = useParams<{ facilityId: string; typeId: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const dateParam = searchParams.get('date') || '';
+
   const facilityIdNum = Number(facilityId) || 0;
   const typeIdNum = Number(typeId) || 0;
 
@@ -57,7 +62,28 @@ export const StorageUnitListPage: React.FC = () => {
   const [contractsMap, setContractsMap] = useState<Record<number, ManagerContractItem>>({});
   const [statusFilter, setStatusFilter] = useState<UnitStatus | 'ALL'>('ALL');
   const [selectedFloor, setSelectedFloor] = useState<number | 'ALL'>('ALL');
+  const [selectedDate, setSelectedDate] = useState<string>(dateParam);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Đồng bộ selectedDate khi URL query param thay đổi
+  useEffect(() => {
+    if (dateParam !== selectedDate) {
+      setSelectedDate(dateParam);
+    }
+  }, [dateParam]);
+
+  const handleDateChange = (newDate: string) => {
+    setSelectedDate(newDate);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (newDate) {
+        next.set('date', newDate);
+      } else {
+        next.delete('date');
+      }
+      return next;
+    });
+  };
 
   // Sắp xếp cột bảng
   const [sortField, setSortField] = useState<StorageUnitSortField>('code');
@@ -81,11 +107,15 @@ export const StorageUnitListPage: React.FC = () => {
       setError(null);
 
       try {
-        // 1. Tải cơ sở & loại kho
+        // 1. Tải cơ sở, loại kho, ô kho theo ngày và toàn bộ hợp đồng
         const [facList, utRes, suRes, contractsRes] = await Promise.all([
           fetchMyAssignedFacilities(),
           fetchUnitTypes(facilityIdNum, { size: 100 }),
-          fetchStorageUnits(facilityIdNum, { unitTypeId: typeIdNum, size: 200 }),
+          fetchStorageUnits(facilityIdNum, {
+            unitTypeId: typeIdNum,
+            size: 200,
+            targetDate: selectedDate || undefined,
+          }),
           getManagerContracts({ facilityId: facilityIdNum, status: 'ALL' }),
         ]);
 
@@ -98,7 +128,7 @@ export const StorageUnitListPage: React.FC = () => {
 
         setStorageUnits(suRes?.content || []);
 
-        // Ánh xạ hợp đồng còn hiệu lực với từng ô kho
+        // Ánh xạ hợp đồng còn hiệu lực với từng ô kho (động theo selectedDate)
         const activeContracts = (contractsRes || []).filter(
           (c) =>
             c.status === 'ACTIVE' ||
@@ -108,7 +138,16 @@ export const StorageUnitListPage: React.FC = () => {
         );
         const cMap: Record<number, ManagerContractItem> = {};
         activeContracts.forEach((c) => {
-          if (c.storageUnitId) {
+          if (!c.storageUnitId) return;
+
+          if (selectedDate) {
+            const target = selectedDate;
+            const start = c.startDate ? c.startDate.substring(0, 10) : '';
+            const end = c.endDateExclusive ? c.endDateExclusive.substring(0, 10) : '';
+            if (start && end && start <= target && end > target) {
+              cMap[c.storageUnitId] = c;
+            }
+          } else {
             cMap[c.storageUnitId] = c;
           }
         });
@@ -121,7 +160,7 @@ export const StorageUnitListPage: React.FC = () => {
         setRefreshing(false);
       }
     },
-    [facilityIdNum, typeIdNum]
+    [facilityIdNum, typeIdNum, selectedDate]
   );
 
   useEffect(() => {
@@ -131,7 +170,7 @@ export const StorageUnitListPage: React.FC = () => {
   // Reset về trang 1 khi đổi bộ lọc hoặc từ khóa
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, selectedFloor, sortField, sortDirection]);
+  }, [searchTerm, statusFilter, selectedFloor, sortField, sortDirection, selectedDate]);
 
   const handleSubmitUnit = async (data: StorageUnitFormData) => {
     try {
@@ -476,9 +515,39 @@ export const StorageUnitListPage: React.FC = () => {
         </div>
       )}
 
-      {/* Tabs Filter theo Trạng thái & Dropdown Tầng & Ô tìm kiếm */}
+      {/* Banner Chế độ xem theo ngày / Dự phóng tương lai */}
+      {selectedDate && (
+        <div className="bg-amber-50 border border-amber-200/90 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-900 shadow-2xs">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+              <Calendar className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="font-bold">
+                {selectedDate > new Date().toISOString().substring(0, 10)
+                  ? 'Chế độ dự phóng tương lai: '
+                  : 'Chế độ lọc theo ngày: '}
+              </span>
+              <span>
+                Đang hiển thị hiện trạng ô kho và khách thuê tại ngày{' '}
+                <strong className="underline decoration-amber-400 font-mono font-bold">
+                  {selectedDate.split('-').reverse().join('/')}
+                </strong>
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={() => handleDateChange('')}
+            className="px-3 py-1.5 bg-white border border-amber-300 text-amber-800 hover:bg-amber-100 rounded-xl font-semibold transition-colors cursor-pointer shrink-0"
+          >
+            Quay về hôm nay (Thời gian thực)
+          </button>
+        </div>
+      )}
+
+      {/* Tabs Filter theo Trạng thái & Dropdown Tầng & Bộ lọc Ngày & Ô tìm kiếm */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        {/* Left: Status Tabs + Floor Filter */}
+        {/* Left: Status Tabs + Floor Filter + Date Filter */}
         <div className="flex flex-wrap items-center gap-3">
           {/* Status Tabs Bar */}
           <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl overflow-x-auto">
@@ -526,6 +595,36 @@ export const StorageUnitListPage: React.FC = () => {
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Date Picker Filter */}
+          <div className="flex items-center gap-1.5 text-xs text-slate-600 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
+            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+            <span className="font-medium text-slate-500 whitespace-nowrap">Xem ngày:</span>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => handleDateChange(e.target.value)}
+              className="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer"
+            />
+            {selectedDate ? (
+              <button
+                type="button"
+                onClick={() => handleDateChange('')}
+                title="Xóa bộ lọc ngày (về hôm nay)"
+                className="text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => handleDateChange(new Date().toISOString().substring(0, 10))}
+                className="text-[10px] font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 px-1.5 py-0.5 rounded cursor-pointer"
+              >
+                Hôm nay
+              </button>
+            )}
           </div>
         </div>
 
