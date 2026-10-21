@@ -1,6 +1,6 @@
 // frontend/src/features/manager/pages/UnitTypeListPage.tsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Plus,
   Search,
@@ -15,6 +15,8 @@ import {
   Power,
   ArrowRight,
   Sparkles,
+  Calendar,
+  X,
 } from 'lucide-react';
 import { fetchMyAssignedFacilities } from '@/api/facility';
 import {
@@ -63,6 +65,9 @@ const PAGE_SIZE = 12;
 export const UnitTypeListPage: React.FC = () => {
   const { facilityId } = useParams<{ facilityId: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const dateParam = searchParams.get('date') || '';
+
   const facilityIdNum = Number(facilityId) || 0;
 
   const [facility, setFacility] = useState<FacilityListItem | null>(null);
@@ -74,6 +79,7 @@ export const UnitTypeListPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showInactive, setShowInactive] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [selectedDate, setSelectedDate] = useState<string>(dateParam);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -82,6 +88,26 @@ export const UnitTypeListPage: React.FC = () => {
   // Modal State
   const [utModalOpen, setUtModalOpen] = useState(false);
   const [editingType, setEditingType] = useState<UnitTypeResponse | null>(null);
+
+  // Đồng bộ selectedDate khi URL query param thay đổi
+  useEffect(() => {
+    if (dateParam !== selectedDate) {
+      setSelectedDate(dateParam);
+    }
+  }, [dateParam]);
+
+  const handleDateChange = (newDate: string) => {
+    setSelectedDate(newDate);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (newDate) {
+        next.set('date', newDate);
+      } else {
+        next.delete('date');
+      }
+      return next;
+    });
+  };
 
   const loadData = useCallback(
     async (isManual = false) => {
@@ -101,8 +127,11 @@ export const UnitTypeListPage: React.FC = () => {
         const types = utRes?.content || [];
         setUnitTypes(types);
 
-        // 3. Lấy danh sách toàn bộ ô kho của cơ sở để tính mini-stats theo từng loại
-        const suRes = await fetchStorageUnits(facilityIdNum, { size: 500 });
+        // 3. Lấy danh sách toàn bộ ô kho của cơ sở (theo selectedDate) để tính mini-stats theo từng loại
+        const suRes = await fetchStorageUnits(facilityIdNum, {
+          size: 500,
+          targetDate: selectedDate || undefined,
+        });
         const units = suRes?.content || [];
 
         const statsMap: Record<number, UnitTypeBreakdownStats> = {};
@@ -124,7 +153,7 @@ export const UnitTypeListPage: React.FC = () => {
         setRefreshing(false);
       }
     },
-    [facilityIdNum]
+    [facilityIdNum, selectedDate]
   );
 
   useEffect(() => {
@@ -134,7 +163,7 @@ export const UnitTypeListPage: React.FC = () => {
   // Reset về trang 1 khi đổi bộ lọc hoặc từ khóa
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, sortBy, showInactive]);
+  }, [searchTerm, statusFilter, sortBy, showInactive, selectedDate]);
 
   const handleSubmitType = async (data: UnitTypeFormData) => {
     try {
@@ -337,7 +366,37 @@ export const UnitTypeListPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Filter Tabs Trạng thái & Sort Dropdown */}
+      {/* Banner Chế độ xem theo ngày / Dự phóng tương lai */}
+      {selectedDate && (
+        <div className="bg-amber-50 border border-amber-200/90 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-900 shadow-2xs">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+              <Calendar className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="font-bold">
+                {selectedDate > new Date().toISOString().substring(0, 10)
+                  ? 'Chế độ dự phóng tương lai: '
+                  : 'Chế độ lọc theo ngày: '}
+              </span>
+              <span>
+                Đang hiển thị tỷ lệ lấp đầy và số ô trống tại ngày{' '}
+                <strong className="underline decoration-amber-400 font-mono font-bold">
+                  {selectedDate.split('-').reverse().join('/')}
+                </strong>
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={() => handleDateChange('')}
+            className="px-3 py-1.5 bg-white border border-amber-300 text-amber-800 hover:bg-amber-100 rounded-xl font-semibold transition-colors cursor-pointer shrink-0"
+          >
+            Quay về hôm nay (Thời gian thực)
+          </button>
+        </div>
+      )}
+
+      {/* Filter Tabs Trạng thái & Date Picker & Sort Dropdown */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         {/* Status Tabs: [Tất cả] [Còn trống] [Đã lấp đầy] */}
         <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl overflow-x-auto">
@@ -367,8 +426,37 @@ export const UnitTypeListPage: React.FC = () => {
           })}
         </div>
 
-        {/* Right: Layout Switcher + Sort Dropdown */}
+        {/* Right: Date Filter + Layout Switcher + Sort Dropdown */}
         <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto">
+          {/* Date Picker Filter */}
+          <div className="flex items-center gap-1.5 text-xs text-slate-600 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
+            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+            <span className="font-medium text-slate-500 whitespace-nowrap">Xem ngày:</span>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => handleDateChange(e.target.value)}
+              className="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer"
+            />
+            {selectedDate ? (
+              <button
+                type="button"
+                onClick={() => handleDateChange('')}
+                title="Xóa bộ lọc ngày (về hôm nay)"
+                className="text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => handleDateChange(new Date().toISOString().substring(0, 10))}
+                className="text-[10px] font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 px-1.5 py-0.5 rounded cursor-pointer"
+              >
+                Hôm nay
+              </button>
+            )}
+          </div>
           {/* Layout Mode Switcher */}
           <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
             <button
@@ -459,7 +547,13 @@ export const UnitTypeListPage: React.FC = () => {
                   key={type.id}
                   type={type}
                   stats={typeStatsMap[type.id]}
-                  onClick={() => navigate(`/manager/facilities/${facilityIdNum}/unit-types/${type.id}`)}
+                  onClick={() =>
+                    navigate(
+                      `/manager/facilities/${facilityIdNum}/unit-types/${type.id}${
+                        selectedDate ? `?date=${selectedDate}` : ''
+                      }`
+                    )
+                  }
                   onEdit={() => {
                     setEditingType(type);
                     setUtModalOpen(true);
@@ -494,7 +588,13 @@ export const UnitTypeListPage: React.FC = () => {
                       return (
                         <tr
                           key={type.id}
-                          onClick={() => navigate(`/manager/facilities/${facilityIdNum}/unit-types/${type.id}`)}
+                          onClick={() =>
+                            navigate(
+                              `/manager/facilities/${facilityIdNum}/unit-types/${type.id}${
+                                selectedDate ? `?date=${selectedDate}` : ''
+                              }`
+                            )
+                          }
                           className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
                         >
                           <td className="py-3.5 px-4">
