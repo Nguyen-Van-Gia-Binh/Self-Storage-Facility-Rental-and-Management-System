@@ -77,8 +77,11 @@ public class StorageUnitServiceImpl implements StorageUnitService {
     @Transactional(readOnly = true)
     public PageResponse<StorageUnitResponse> getStorageUnitsByFacility(
             Long facilityId, Long unitTypeId, StorageUnitStatus status, Integer floor, String position,
-            java.time.LocalDate startDate, Integer rentalMonths, Pageable pageable) {
-        StorageUnitStatus queryStatus = (startDate != null && rentalMonths != null && rentalMonths > 0) ? null : status;
+            java.time.LocalDate startDate, Integer rentalMonths, java.time.LocalDate targetDate, Pageable pageable) {
+        boolean isTargetDateQuery = targetDate != null;
+        boolean ranged = (startDate != null && rentalMonths != null && rentalMonths > 0) || isTargetDateQuery;
+        StorageUnitStatus queryStatus = ranged ? null : status;
+
         Page<StorageUnit> page;
         if (floor != null || position != null) {
             page = storageUnitRepository.findByFacilityIdAndAdvancedFilters(facilityId, unitTypeId, queryStatus, floor, position, pageable);
@@ -87,24 +90,26 @@ public class StorageUnitServiceImpl implements StorageUnitService {
         }
 
         int bufferDays = 0;
-        boolean ranged = startDate != null && rentalMonths != null && rentalMonths > 0;
         if (ranged) {
             bufferDays = bufferDays();
         }
 
-        List<Long> occupiedUnitIds = ranged
-                ? storageUnitRepository.findOccupiedUnitIdsByDateRange(facilityId, startDate, startDate.plusMonths(rentalMonths), bufferDays)
+        java.time.LocalDate queryStart = isTargetDateQuery ? targetDate : startDate;
+        java.time.LocalDate queryEndExclusive = isTargetDateQuery ? targetDate.plusDays(1) : (startDate != null ? startDate.plusMonths(rentalMonths) : null);
+
+        List<Long> occupiedUnitIds = ranged && queryStart != null && queryEndExclusive != null
+                ? storageUnitRepository.findOccupiedUnitIdsByDateRange(facilityId, queryStart, queryEndExclusive, bufferDays)
                 : List.of();
 
-        List<Long> reservedUnitIds = ranged
-                ? storageUnitRepository.findReservedUnitIdsByDateRange(facilityId, startDate, startDate.plusMonths(rentalMonths), bufferDays)
+        List<Long> reservedUnitIds = ranged && queryStart != null && queryEndExclusive != null
+                ? storageUnitRepository.findReservedUnitIdsByDateRange(facilityId, queryStart, queryEndExclusive, bufferDays)
                 : List.of();
 
         List<StorageUnitResponse> content = page.getContent().stream().map(su -> {
             UnitType ut = unitTypeRepository.findById(su.getUnitTypeId()).orElse(null);
             Long price = resolveMonthlyPrice(facilityId, su.getUnitTypeId());
             StorageUnitResponse res = mapper.toStorageUnitResponse(su, ut, price);
-            if (startDate != null && rentalMonths != null && rentalMonths > 0) {
+            if (ranged) {
                 if (su.getStatus() == StorageUnitStatus.MAINTENANCE || su.getStatus() == StorageUnitStatus.OUT_OF_SERVICE) {
                     res.setStatus(su.getStatus());
                 } else if (occupiedUnitIds.contains(su.getId())) {
