@@ -1,6 +1,8 @@
 // frontend/src/features/manager/components/CloseIncidentModal.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, CheckCircle2, ShieldCheck, FileText } from 'lucide-react';
+import { useScrollLock } from '@/hooks/useScrollLock';
 import type { ManagementSupportTicket } from '../types/staffAssignment';
 
 interface CloseIncidentModalProps {
@@ -26,12 +28,28 @@ export const CloseIncidentModal: React.FC<CloseIncidentModalProps> = ({
     'Đã kiểm tra hoàn tất, thiết bị hoạt động bình thường, khách hàng đã ký xác nhận biên bản.'
   );
 
+  useScrollLock(isOpen);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const fmt = (v: number) => new Intl.NumberFormat('vi-VN').format(v) + ' đ';
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-lg w-full overflow-hidden">
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
@@ -118,6 +136,7 @@ export const CloseIncidentModal: React.FC<CloseIncidentModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

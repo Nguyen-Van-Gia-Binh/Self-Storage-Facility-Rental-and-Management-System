@@ -139,14 +139,44 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
       return;
     }
 
-    // Convert to mock blob/base64 or local object URLs
+    // Nén và chuyển đổi ảnh sang Base64 Data URL để lưu trữ bền vững trong CSDL
     Array.from(files).forEach((file) => {
       if (file.size > 5 * 1024 * 1024) {
         setErrorMsg('Mỗi ảnh dung lượng tối đa 5 MB');
         return;
       }
-      const previewUrl = URL.createObjectURL(file);
-      setAttachments(prev => [...prev, previewUrl]);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const rawData = event.target?.result as string;
+        if (!rawData) return;
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxDim = 1200;
+          let { width, height } = img;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            setAttachments((prev) => [...prev, canvas.toDataURL('image/jpeg', 0.8)]);
+          } else {
+            setAttachments((prev) => [...prev, rawData]);
+          }
+        };
+        img.onerror = () => setAttachments((prev) => [...prev, rawData]);
+        img.src = rawData;
+      };
+      reader.readAsDataURL(file);
       setErrorMsg(null);
     });
   };

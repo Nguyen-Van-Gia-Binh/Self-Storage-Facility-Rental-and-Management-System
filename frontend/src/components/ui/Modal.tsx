@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 interface ModalProps {
   isOpen: boolean;
@@ -16,16 +17,7 @@ export const Modal: React.FC<ModalProps> = ({
   className = '',
   showBackdrop = true,
 }) => {
-  // Lock body scroll when modal is open
-  useEffect(() => {
-    if (isOpen) {
-      const originalOverflow = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = originalOverflow;
-      };
-    }
-  }, [isOpen]);
+  useScrollLock(isOpen);
 
   // Handle Escape key
   useEffect(() => {

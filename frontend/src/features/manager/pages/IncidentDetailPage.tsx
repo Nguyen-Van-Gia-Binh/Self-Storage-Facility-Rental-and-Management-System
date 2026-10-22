@@ -381,7 +381,7 @@ export const IncidentDetailPage: React.FC = () => {
                   <span className="text-xs font-semibold text-slate-700 block mb-2">
                     Hình ảnh hiện trường sau khắc phục ({resolutionImages.length}):
                   </span>
-                  <ImageGallery images={resolutionImages} title="Ảnh sau xử lý" />
+                  <ImageGallery images={resolutionImages} plain />
                 </div>
               )}
             </div>

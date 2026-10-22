@@ -301,6 +301,8 @@ export interface PolicyVersionListItem {
   versionNo: number;
   effectiveDate: string;
   status: PolicyVersionStatus;
+  publishedBy?: number;
+  rawPolicy?: any;
 }
 
 function vietnamCalendarDate(value?: string | null): string {
@@ -315,7 +317,7 @@ function vietnamCalendarDate(value?: string | null): string {
 }
 
 export async function fetchPolicyVersions(): Promise<PolicyVersionListItem[]> {
-  const page = await apiClient<{ content?: Array<{ id?: number; versionNo?: number; effectiveFrom?: string }> }>(
+  const page = await apiClient<{ content?: Array<{ id?: number; versionNo?: number; effectiveFrom?: string; publishedBy?: number }> }>(
     '/policies?page=0&size=50&sort=versionNo,desc'
   );
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
@@ -325,6 +327,8 @@ export async function fetchPolicyVersions(): Promise<PolicyVersionListItem[]> {
       id: item.id ?? 0,
       versionNo: item.versionNo as number,
       effectiveDate: vietnamCalendarDate(item.effectiveFrom),
+      publishedBy: item.publishedBy,
+      rawPolicy: item,
     }));
   const applied = rows
     .filter((row) => row.effectiveDate && row.effectiveDate <= today)
