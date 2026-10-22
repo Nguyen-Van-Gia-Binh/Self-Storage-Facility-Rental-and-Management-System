@@ -392,10 +392,10 @@ export const BomPricingManagementPage: React.FC = () => {
         </div>
       )}
 
-      {/* Header & Tabs Navigation + Sticky Facility Selector */}
-      <div className="bg-white p-4 rounded-xl shadow-xs border border-slate-200/80 flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+      {/* Tầng 1: Header & Tabs Navigation (Điều hướng phân hệ) */}
+      <div className="bg-white p-4 rounded-2xl shadow-xs border border-slate-200/80 flex flex-col xl:flex-row xl:items-center justify-between gap-3">
         <div className="flex items-center space-x-2.5">
-          <div className="p-2 rounded-lg bg-amber-500 text-white shadow-2xs">
+          <div className="p-2 rounded-xl bg-amber-500 text-white shadow-2xs">
             <DollarSign className="w-5 h-5" />
           </div>
           <div>
@@ -408,64 +408,68 @@ export const BomPricingManagementPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Tabs & Facility Selector trên cùng một hàng */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Tabs */}
-          <div className="flex flex-wrap items-center gap-1 bg-slate-100 p-1 rounded-lg text-xs font-semibold">
-            <button
-              onClick={() => setActiveTab('PRICING')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md transition-all cursor-pointer ${
-                activeTab === 'PRICING'
-                  ? 'bg-white text-slate-900 shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <DollarSign className="w-3.5 h-3.5 text-amber-500" />
-              <span>Khung giá thuê ô kho</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('SURCHARGES')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md transition-all cursor-pointer ${
-                activeTab === 'SURCHARGES'
-                  ? 'bg-white text-slate-900 shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Tag className="w-3.5 h-3.5 text-blue-500" />
-              <span>Biểu phí & Phụ thu</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('POLICIES')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md transition-all cursor-pointer ${
-                activeTab === 'POLICIES'
-                  ? 'bg-white text-slate-900 shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-              <span>Chính sách cọc & Quá hạn</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('DISCOUNTS')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md transition-all cursor-pointer ${
-                activeTab === 'DISCOUNTS'
-                  ? 'bg-white text-slate-900 shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Percent className="w-3.5 h-3.5 text-purple-500" />
-              <span>Khuyến mãi & Giảm giá</span>
-            </button>
-          </div>
+        {/* 4 Tabs Điều hướng phân hệ */}
+        <div className="flex flex-wrap items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold">
+          <button
+            onClick={() => setActiveTab('PRICING')}
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+              activeTab === 'PRICING'
+                ? 'bg-white text-slate-900 shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <DollarSign className="w-3.5 h-3.5 text-amber-500" />
+            <span>Khung giá thuê ô kho</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('SURCHARGES')}
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+              activeTab === 'SURCHARGES'
+                ? 'bg-white text-slate-900 shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Tag className="w-3.5 h-3.5 text-blue-500" />
+            <span>Biểu phí & Phụ thu</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('POLICIES')}
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+              activeTab === 'POLICIES'
+                ? 'bg-white text-slate-900 shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+            <span>Chính sách cọc & Quá hạn</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('DISCOUNTS')}
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+              activeTab === 'DISCOUNTS'
+                ? 'bg-white text-slate-900 shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Percent className="w-3.5 h-3.5 text-purple-500" />
+            <span>Khuyến mãi & Giảm giá</span>
+          </button>
+        </div>
+      </div>
 
-          {/* Sticky Facility Selector (Chỉ hiển thị khi ở tab Khung giá thuê ô kho) */}
-          {activeTab === 'PRICING' && (
-            <div className="flex items-center space-x-1.5 bg-slate-50 border border-slate-200/90 px-2.5 py-1 rounded-lg">
-              <Building2 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+      {/* Tầng 2: Context Bar (Bộ lọc không gian - Cơ sở) - Chỉ hiển thị khi ở tab Khung giá thuê */}
+      {activeTab === 'PRICING' && (
+        <div className="bg-slate-50/90 border border-slate-200/80 px-4 py-3 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-2xs animate-fade-in">
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 rounded-lg bg-amber-100/80 text-amber-700">
+              <Building2 className="w-4 h-4 shrink-0" />
+            </div>
+            <span className="text-xs font-semibold text-slate-600">Đang xem bảng giá tại:</span>
+            <div className="relative">
               <select
                 value={selectedFacilityId}
                 onChange={(e) => selectFacility(Number(e.target.value))}
-                className="text-xs font-semibold bg-transparent text-slate-800 outline-none cursor-pointer pr-1"
+                className="text-xs font-bold bg-white border border-slate-300 text-slate-900 rounded-xl px-3 py-1.5 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 cursor-pointer shadow-2xs"
                 title="Chọn cơ sở xem bảng giá"
               >
                 {facilities.map((fac) => (
@@ -475,9 +479,22 @@ export const BomPricingManagementPage: React.FC = () => {
                 ))}
               </select>
             </div>
+          </div>
+          {currentFacility && (
+            <div className="text-xs text-slate-500 flex items-center gap-3 font-medium">
+              <span>Mã CS: <strong className="text-slate-700 font-mono">{currentFacility.code || `#${currentFacility.id}`}</strong></span>
+              <span>·</span>
+              <span>Đang quản lý: <strong className="text-slate-700 font-mono tabular-nums">{unitTypes.length} loại ô kho</strong></span>
+              {currentFacility.address && (
+                <>
+                  <span>·</span>
+                  <span className="text-slate-400 line-clamp-1 max-w-sm">{currentFacility.address}</span>
+                </>
+              )}
+            </div>
           )}
         </div>
-      </div>
+      )}
 
       {/* Main Tab Content */}
       {activeTab === 'PRICING' && (

@@ -5,7 +5,7 @@ import {
   ClipboardCheck,
   Layers, FileText, BarChart3, Wrench, Users,
   Map, DollarSign, TrendingUp, History,
-  UserCog, ShieldCheck, Activity,
+  UserCog, Activity,
 } from 'lucide-react';
 import type { UserRole } from '@/utils/tokenStorage';
 
