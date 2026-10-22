@@ -136,7 +136,7 @@ export const IncidentDetailPanel: React.FC<IncidentDetailPanelProps> = ({ ticket
             </h4>
           </div>
           {initialImages.length > 0 ? (
-            <ImageGallery images={initialImages} title="Ảnh hiện trường ban đầu" />
+            <ImageGallery images={initialImages} plain />
           ) : (
             <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 text-center text-xs text-slate-400">
               Khách hàng không đính kèm hình ảnh ban đầu

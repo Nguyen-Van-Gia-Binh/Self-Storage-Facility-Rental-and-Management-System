@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -124,6 +126,10 @@ public class PricingServiceImpl implements PricingService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "unitTypes", allEntries = true),
+            @CacheEvict(value = "facilities", allEntries = true)
+    })
     public FacilityPriceResponse updatePrice(Long facilityId, Long unitTypeId, UpdatePriceRequest request) {
         Facility facility = facilityRepository.findById(facilityId)
                 .orElseThrow(() -> new CustomException(ErrorCode.FACILITY_NOT_FOUND));

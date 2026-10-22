@@ -5,7 +5,7 @@ import {
   ClipboardCheck,
   Layers, FileText, BarChart3, Wrench, Users,
   Map, DollarSign, TrendingUp, History,
-  UserCog, ShieldCheck, Activity,
+  UserCog, Activity,
 } from 'lucide-react';
 import type { UserRole } from '@/utils/tokenStorage';
 
@@ -62,7 +62,6 @@ export const ROLE_NAVIGATIONS: Record<UserRole, RoleNavigation> = {
     navItems: [
       { label: 'Danh mục cơ sở',      href: '/bom/facilities', icon: Map },
       { label: 'Bảng giá & Phụ phí',  href: '/bom/pricing',    icon: DollarSign },
-      { label: 'Chính sách thuê',     href: '/bom/policies',   icon: ShieldCheck },
       { label: 'Doanh thu & Báo cáo', href: '/bom/revenue',    icon: TrendingUp },
       { label: 'Nhật ký giá & phí',   href: '/bom/price-audit', icon: History },
     ],
