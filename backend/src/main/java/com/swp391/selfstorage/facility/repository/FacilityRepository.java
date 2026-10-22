@@ -40,28 +40,38 @@ public interface FacilityRepository extends JpaRepository<Facility, Long> {
     long countActiveContractsByFacilityId(@Param("facilityId") Long facilityId);
 
     @Query(value = """
-        SELECT CAST(MIN(monthly_price) AS NUMERIC) FROM facility_unit_type_price
-        WHERE facility_id = :facilityId
+        SELECT CAST(MIN(futp.monthly_price) AS NUMERIC) FROM facility_unit_type_price futp
+        JOIN unit_type ut ON ut.id = futp.unit_type_id
+        WHERE futp.facility_id = :facilityId
+          AND futp.monthly_price > 0
+          AND ut.is_active = true
     """, nativeQuery = true)
     java.math.BigDecimal findLowestMonthlyPriceByFacilityId(@Param("facilityId") Long facilityId);
 
     @Query(value = """
-        SELECT COUNT(DISTINCT unit_type_id) FROM facility_unit_type_price
-        WHERE facility_id = :facilityId
+        SELECT COUNT(DISTINCT futp.unit_type_id) FROM facility_unit_type_price futp
+        JOIN unit_type ut ON ut.id = futp.unit_type_id
+        WHERE futp.facility_id = :facilityId
+          AND ut.is_active = true
     """, nativeQuery = true)
     int countActiveUnitTypesByFacilityId(@Param("facilityId") Long facilityId);
 
     @Query(value = """
-        SELECT facility_id, CAST(MIN(monthly_price) AS NUMERIC)
-        FROM facility_unit_type_price
-        GROUP BY facility_id
+        SELECT futp.facility_id, CAST(MIN(futp.monthly_price) AS NUMERIC)
+        FROM facility_unit_type_price futp
+        JOIN unit_type ut ON ut.id = futp.unit_type_id
+        WHERE futp.monthly_price > 0
+          AND ut.is_active = true
+        GROUP BY futp.facility_id
     """, nativeQuery = true)
     java.util.List<Object[]> findLowestMonthlyPricesGroupedByFacility();
 
     @Query(value = """
-        SELECT facility_id, COUNT(DISTINCT unit_type_id)
-        FROM facility_unit_type_price
-        GROUP BY facility_id
+        SELECT futp.facility_id, COUNT(DISTINCT futp.unit_type_id)
+        FROM facility_unit_type_price futp
+        JOIN unit_type ut ON ut.id = futp.unit_type_id
+        WHERE ut.is_active = true
+        GROUP BY futp.facility_id
     """, nativeQuery = true)
     java.util.List<Object[]> countActiveUnitTypesGroupedByFacility();
 }

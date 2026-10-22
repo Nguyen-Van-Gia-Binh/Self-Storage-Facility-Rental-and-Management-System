@@ -6,6 +6,7 @@ import {
   RefreshCw,
   Building2,
   FileSpreadsheet,
+  FilterX,
 } from 'lucide-react';
 import type {
   ReportFilterParams,
@@ -24,9 +25,10 @@ import { tokenStorage } from '@/utils/tokenStorage';
 import { Button } from '@/components/ui/Button';
 import { BomFilterBar } from '../components/BomFilterBar';
 import { BomKpiSummary } from '../components/BomKpiSummary';
-import { RevenueStreamBar } from '../components/RevenueStreamBar';
+import { RevenueStreamDonut } from '../components/RevenueStreamDonut';
 import { OccupancyComparisonChart } from '../components/OccupancyComparisonChart';
 import { FacilityPerformanceTable } from '../components/FacilityPerformanceTable';
+import { FacilityPerformanceDrawer, type FacilityPerformanceData } from '../components/FacilityPerformanceDrawer';
 import { OverdueContractsTable } from '../components/OverdueContractsTable';
 import { ReportExportModal } from '../components/ReportExportModal';
 import { ExecutivePrintReport } from '../components/ExecutivePrintReport';
@@ -67,6 +69,8 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
   const [overdueData, setOverdueData] = useState<OverdueReportResponse | undefined>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(initialOpenExport);
+  const [selectedStream, setSelectedStream] = useState<string | null>(null);
+  const [drawerFacility, setDrawerFacility] = useState<FacilityPerformanceData | null>(null);
   const [printRequested, setPrintRequested] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<string>('');
 
@@ -158,6 +162,27 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
       });
   };
 
+  const handleOpenDetailFromOccupancy = (occ: any) => {
+    const rev = revenueData?.byFacility?.find((r) => r.facilityId === occ.facilityId);
+    setDrawerFacility({
+      facilityId: occ.facilityId,
+      facilityName: occ.facilityName,
+      rentalRevenue: rev?.rentalRevenue || 0,
+      surchargeRevenue: rev?.surchargeRevenue || 0,
+      renewalRevenue: rev?.renewalRevenue || 0,
+      overdueFeeRevenue: rev?.overdueFeeRevenue || 0,
+      totalRevenue: rev?.totalRevenue || 0,
+      depositBalance: rev?.depositBalance || 0,
+      refundAmount: rev?.refundAmount || 0,
+      occupancyRate: occ.occupancyRate,
+      occupiedUnits: occ.occupiedUnits,
+      availableUnits: occ.availableUnits,
+      outOfServiceUnits: occ.outOfServiceUnits || 0,
+      totalUnits: occ.totalUnits,
+      overdueCount: occ.overdueContractsCount || 0,
+    });
+  };
+
   const selectedFacilityName = filters.facilityId
     ? facilities.find((f) => f.id === filters.facilityId)?.name || 'Cơ sở đã chọn'
     : 'Toàn bộ hệ thống (Toàn quốc)';
@@ -220,6 +245,27 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
           isLoading={isLoading}
         />
       </div>
+
+      {/* 1.1 Banner báo hiệu đang xem cơ sở cụ thể (kèm nút Bỏ lọc - UX Best Practice) */}
+      {filters.facilityId && (
+        <div className="bg-brand-50 border border-brand-200/80 rounded-xl p-3 px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-brand-950 no-print shadow-2xs">
+          <div className="flex items-center gap-2">
+            <Building2 className="w-4 h-4 text-brand-600 shrink-0" />
+            <span>
+              Đang xem số liệu thu hẹp của: <strong className="font-semibold text-brand-900">{selectedFacilityName}</strong>
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setFilters((prev) => ({ ...prev, facilityId: undefined }))}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-brand-300 text-brand-700 hover:bg-brand-100 font-semibold transition-colors cursor-pointer self-start sm:self-auto shadow-2xs"
+            title="Quay lại xem báo cáo toàn bộ hệ thống"
+          >
+            <FilterX className="w-3.5 h-3.5" />
+            <span>Bỏ lọc (Xem toàn hệ thống)</span>
+          </button>
+        </div>
+      )}
 
       {/* 2. Dải 4 Thẻ KPI Chiến Lược */}
       <div className="no-print">
@@ -284,34 +330,36 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
         {activeTab === 'REVENUE' && (
           <div className="space-y-6">
             <div className="print-break-inside-avoid">
-              <RevenueStreamBar revenue={revenueData} isLoading={isLoading} />
+              <RevenueStreamDonut
+                revenue={revenueData}
+                selectedStream={selectedStream}
+                onSelectStream={setSelectedStream}
+                isLoading={isLoading}
+              />
             </div>
             <div className="print-break-inside-avoid">
               <FacilityPerformanceTable
                 revenues={revenueData?.byFacility || []}
                 occupancies={occupancyData?.data || []}
                 onSelectFacility={(id) => setFilters((prev) => ({ ...prev, facilityId: id }))}
+                onOpenDetail={(fac) => setDrawerFacility(fac)}
+                highlightedStream={selectedStream}
+                onClearHighlight={() => setSelectedStream(null)}
                 isLoading={isLoading}
               />
             </div>
           </div>
         )}
 
-        {/* Tab 2: Tỷ lệ lấp đầy & Hiện trạng ô kho */}
+        {/* Tab 2: Tỷ lệ lấp đầy & Hiện trạng ô kho (Enterprise UX List View) */}
         {activeTab === 'OCCUPANCY' && (
           <div className="space-y-6">
             <div className="print-break-inside-avoid">
               <OccupancyComparisonChart
                 data={occupancyData?.data || []}
                 isLoading={isLoading}
-              />
-            </div>
-            <div className="print-break-inside-avoid">
-              <FacilityPerformanceTable
-                revenues={revenueData?.byFacility || []}
-                occupancies={occupancyData?.data || []}
                 onSelectFacility={(id) => setFilters((prev) => ({ ...prev, facilityId: id }))}
-                isLoading={isLoading}
+                onOpenDetail={handleOpenDetailFromOccupancy}
               />
             </div>
           </div>
@@ -342,7 +390,15 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
         />
       </div>
 
-      {/* 5. Modal xuất báo cáo (CSV/XLSX/PDF) */}
+      {/* 5. Drawer xem nhanh chi tiết cơ sở (Slide-over) */}
+      <FacilityPerformanceDrawer
+        isOpen={drawerFacility !== null}
+        facility={drawerFacility}
+        onClose={() => setDrawerFacility(null)}
+        onApplyGlobalFilter={(id) => setFilters((prev) => ({ ...prev, facilityId: id }))}
+      />
+
+      {/* 6. Modal xuất báo cáo (CSV/XLSX/PDF) */}
       <ReportExportModal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}

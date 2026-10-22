@@ -111,20 +111,33 @@ export const DiscountProgramTable: React.FC<DiscountProgramTableProps> = ({
                     </td>
                     <td className="py-3.5 px-4 text-xs">
                       {item.scopeType === 'SYSTEM' && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 font-medium">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 font-medium border border-blue-200/80">
                           Toàn hệ thống
                         </span>
                       )}
                       {item.scopeType === 'FACILITY' && (
-                        <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-medium">
-                          <Building2 className="w-3 h-3" />
-                          <span>{item.facilityName || `Cơ sở #${item.facilityId}`}</span>
+                        <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-medium border border-purple-200/80">
+                          <Building2 className="w-3 h-3 text-purple-600" />
+                          <span>
+                            {item.facilityName
+                              ? item.facilityName
+                              : item.facilityId
+                                ? `Cơ sở #${item.facilityId}`
+                                : 'Cơ sở: Chưa xác định'}
+                          </span>
                         </span>
                       )}
                       {item.scopeType === 'UNIT_TYPE' && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-medium">
-                          Loại kho: {item.unitTypeName || `#${item.unitTypeId}`}
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 font-medium border border-amber-200/80">
+                          {item.unitTypeName
+                            ? `Loại kho: ${item.unitTypeName}`
+                            : item.unitTypeId
+                              ? `Loại kho: #${item.unitTypeId}`
+                              : 'Loại kho: Chưa xác định'}
                         </span>
+                      )}
+                      {!['SYSTEM', 'FACILITY', 'UNIT_TYPE'].includes(item.scopeType) && (
+                        <span className="text-slate-400 italic">Chưa xác định</span>
                       )}
                     </td>
                     <td className="py-3.5 px-4 text-center">

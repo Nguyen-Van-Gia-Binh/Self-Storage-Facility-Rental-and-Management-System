@@ -1,12 +1,13 @@
+// frontend/src/features/bom/pages/BomFacilityManagementPage.tsx
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  Building2,
   Plus,
   Search,
   RefreshCw,
   AlertCircle,
   CheckCircle2,
   Warehouse,
+  Download,
 } from 'lucide-react';
 import {
   fetchFacilities,
@@ -21,6 +22,8 @@ import type {
 } from '@/types';
 import { BomFacilityTable } from '../components/BomFacilityTable';
 import { FacilityModal } from '../components/FacilityModal';
+import { FacilityDetailDrawer } from '../components/FacilityDetailDrawer';
+import { exportFacilityCsv } from '../utils/exportFacilityCsv';
 
 export const BomFacilityManagementPage: React.FC = () => {
   const [facilities, setFacilities] = useState<FacilityListItem[]>([]);
@@ -34,6 +37,9 @@ export const BomFacilityManagementPage: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedFacility, setSelectedFacility] = useState<FacilityListItem | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Slide-over Drawer State
+  const [detailFacility, setDetailFacility] = useState<FacilityListItem | null>(null);
 
   // Toast State
   const [toastMessage, setToastMessage] = useState<{
@@ -54,6 +60,11 @@ export const BomFacilityManagementPage: React.FC = () => {
       .then((data) => {
         if (!ignore) {
           setFacilities(data);
+          // Đồng bộ lại detailFacility nếu đang mở xem chi tiết
+          setDetailFacility((prev) => {
+            if (!prev) return null;
+            return data.find((f) => f.id === prev.id) || null;
+          });
           setError(null);
           setIsLoading(false);
         }
@@ -78,6 +89,16 @@ export const BomFacilityManagementPage: React.FC = () => {
     setIsLoading(true);
     setRefreshKey((k) => k + 1);
   };
+
+  // Tính toán KPI số liệu
+  const totalCount = facilities.length;
+  const activeCount = useMemo(
+    () => facilities.filter((f) => f.isActive).length,
+    [facilities]
+  );
+  const inactiveCount = totalCount - activeCount;
+  const activePercentage =
+    totalCount > 0 ? Math.round((activeCount / totalCount) * 100) : 0;
 
   // Lọc theo trạng thái
   const filteredFacilities = useMemo(() => {
@@ -149,7 +170,7 @@ export const BomFacilityManagementPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-fade-in">
+    <div className="space-y-4 max-w-7xl mx-auto pb-12 animate-fade-in">
       {/* Toast Alert */}
       {toastMessage && (
         <div
@@ -168,86 +189,103 @@ export const BomFacilityManagementPage: React.FC = () => {
         </div>
       )}
 
-      {/* Header & Action Button */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+      {/* Header & Inline KPI Summary (Dạng phẳng chuẩn Enterprise) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
         <div>
-          <div className="flex items-center space-x-2.5">
-            <div className="p-2.5 rounded-xl bg-amber-500 text-white">
-              <Building2 className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-900">
-                Quản lý danh sách cơ sở
-              </h1>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Quản lý thông tin, địa chỉ và trạng thái hoạt động mạng lưới cơ sở lưu trữ
-              </p>
-            </div>
-          </div>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+            Quản lý danh sách cơ sở
+          </h1>
+          <p className="text-xs text-slate-500 mt-1">
+            Tổng:{' '}
+            <span className="font-semibold text-slate-700">{totalCount}</span>
+            <span className="mx-2 text-slate-300">|</span>
+            Đang hoạt động:{' '}
+            <span className="font-semibold text-emerald-600">{activeCount}</span>{' '}
+            <span className="text-slate-400">({activePercentage}%)</span>
+            <span className="mx-2 text-slate-300">|</span>
+            Ngừng hoạt động:{' '}
+            <span className="font-semibold text-slate-600">{inactiveCount}</span>
+          </p>
         </div>
 
+        {/* Nút CTA "+ Thêm cơ sở mới" với drop shadow cam và micro-interaction hover */}
         <button
           onClick={handleOpenCreateModal}
-          className="inline-flex items-center justify-center space-x-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all"
+          className="inline-flex items-center justify-center space-x-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white text-sm font-semibold rounded-lg shadow-sm shadow-amber-500/25 hover:shadow-md hover:shadow-amber-500/35 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-150 cursor-pointer self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
           <span>Thêm cơ sở mới</span>
         </button>
       </div>
 
-      {/* Filter & Search Bar */}
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-3">
+      {/* Toolbar "Thả nổi": Search bên trái, Tabs Filter + Export CSV + Refresh bên phải */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200/80 shadow-[0_4px_16px_rgba(0,0,0,0.04)]">
         {/* Search Input */}
         <div className="relative w-full md:w-80">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
           <input
             type="text"
-            placeholder="Tìm theo tên hoặc địa chỉ cơ sở..."
+            placeholder="Tìm tên, mã, hoặc địa chỉ..."
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
-            className="w-full text-sm border border-slate-300 rounded-xl pl-9 pr-3.5 py-2 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100 transition-all"
+            className="w-full text-xs sm:text-sm border border-slate-200 rounded-lg pl-9 pr-3 py-1.5 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all bg-slate-50/50 focus:bg-white"
           />
         </div>
 
-        {/* Filters and Refresh */}
-        <div className="flex items-center space-x-2.5 w-full md:w-auto justify-between md:justify-end">
-          <div className="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-xl text-xs font-medium text-slate-600">
+        {/* Action Group: Tabs, Ghost Button Export CSV, Refresh */}
+        <div className="flex items-center space-x-2 w-full md:w-auto justify-between md:justify-end overflow-x-auto pb-1 md:pb-0">
+          {/* Tabs Filter */}
+          <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-lg text-xs font-medium text-slate-600 shrink-0">
             <button
               onClick={() => setStatusFilter('ALL')}
-              className={`px-3 py-1.5 rounded-lg transition-colors ${
+              className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
                 statusFilter === 'ALL'
-                  ? 'bg-white text-slate-900 shadow-sm font-bold'
+                  ? 'bg-white text-slate-900 shadow-xs font-semibold'
                   : 'hover:text-slate-900'
               }`}
             >
-              Tất cả ({facilities.length})
+              Tất cả ({totalCount})
             </button>
             <button
               onClick={() => setStatusFilter('ACTIVE')}
-              className={`px-3 py-1.5 rounded-lg transition-colors ${
+              className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
                 statusFilter === 'ACTIVE'
-                  ? 'bg-white text-emerald-700 shadow-sm font-bold'
+                  ? 'bg-white text-emerald-700 shadow-xs font-semibold'
                   : 'hover:text-slate-900'
               }`}
             >
-              Đang hoạt động ({facilities.filter((f) => f.isActive).length})
+              Đang HĐ ({activeCount})
             </button>
             <button
               onClick={() => setStatusFilter('INACTIVE')}
-              className={`px-3 py-1.5 rounded-lg transition-colors ${
+              className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
                 statusFilter === 'INACTIVE'
-                  ? 'bg-white text-slate-700 shadow-sm font-bold'
+                  ? 'bg-white text-slate-700 shadow-xs font-semibold'
                   : 'hover:text-slate-900'
               }`}
             >
-              Ngừng hoạt động ({facilities.filter((f) => !f.isActive).length})
+              Ngừng HĐ ({inactiveCount})
             </button>
           </div>
 
+          {/* Export CSV Button (Ghost / Outline Button) */}
           <button
+            type="button"
+            onClick={() => exportFacilityCsv(filteredFacilities)}
+            disabled={filteredFacilities.length === 0}
+            className="inline-flex items-center space-x-1.5 px-3 py-1.5 border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg shadow-xs transition-colors cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Xuất danh sách cơ sở đang xem ra file CSV"
+          >
+            <Download className="w-3.5 h-3.5 text-slate-500" />
+            <span>Xuất CSV</span>
+          </button>
+
+          {/* Refresh Button */}
+          <button
+            type="button"
             onClick={reloadData}
             disabled={isLoading}
-            className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
+            className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors cursor-pointer shrink-0"
             title="Làm mới dữ liệu"
           >
             <RefreshCw
@@ -259,29 +297,29 @@ export const BomFacilityManagementPage: React.FC = () => {
 
       {/* Main Content Area: Loading / Error / Empty / Table */}
       {isLoading && facilities.length === 0 ? (
-        <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center space-y-3">
-          <div className="inline-block p-3 rounded-2xl bg-amber-50 text-amber-500 animate-pulse">
-            <Building2 className="w-8 h-8" />
+        <div className="bg-white p-12 rounded-xl border border-slate-200/80 shadow-[0_4px_16px_rgba(0,0,0,0.04)] text-center space-y-3">
+          <div className="inline-block p-3 rounded-lg bg-amber-50 text-amber-500 animate-pulse">
+            <Warehouse className="w-8 h-8" />
           </div>
           <p className="text-sm font-medium text-slate-600">
             Đang tải dữ liệu danh sách cơ sở...
           </p>
         </div>
       ) : error ? (
-        <div className="bg-rose-50 border border-rose-200 text-rose-700 p-6 rounded-2xl flex items-center justify-between">
+        <div className="bg-rose-50 border border-rose-200 text-rose-700 p-6 rounded-xl flex items-center justify-between shadow-xs">
           <div className="flex items-center space-x-3">
             <AlertCircle className="w-6 h-6 shrink-0" />
             <span className="text-sm font-medium">{error}</span>
           </div>
           <button
             onClick={reloadData}
-            className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold shadow-sm"
+            className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold shadow-xs cursor-pointer"
           >
             Thử lại
           </button>
         </div>
       ) : filteredFacilities.length === 0 ? (
-        <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center space-y-3">
+        <div className="bg-white p-12 rounded-xl border border-slate-200/80 shadow-[0_4px_16px_rgba(0,0,0,0.04)] text-center space-y-3">
           <Warehouse className="w-12 h-12 text-slate-300 mx-auto" />
           <h3 className="text-base font-bold text-slate-700">
             Không tìm thấy cơ sở nào
@@ -293,11 +331,23 @@ export const BomFacilityManagementPage: React.FC = () => {
       ) : (
         <BomFacilityTable
           facilities={filteredFacilities}
+          totalCount={totalCount}
+          onViewDetail={(fac) => setDetailFacility(fac)}
           onEdit={handleOpenEditModal}
           onToggleStatus={handleToggleStatus}
           isLoading={isLoading}
         />
       )}
+
+      {/* Slide-over Drawer Xem Chi Tiết Cơ Sở */}
+      <FacilityDetailDrawer
+        facility={detailFacility}
+        onClose={() => setDetailFacility(null)}
+        onEdit={(fac) => {
+          setDetailFacility(null);
+          handleOpenEditModal(fac);
+        }}
+      />
 
       {/* Modal Add / Edit Facility */}
       {modalOpen && (

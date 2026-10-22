@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Calendar, User, Shield, Tag, ArrowRight, Copy, Check } from 'lucide-react';
+import { useScrollLock } from '@/hooks/useScrollLock';
 import type { AuditLogItem } from '../types/audit';
 
 interface AuditLogDetailModalProps {
@@ -14,6 +16,17 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
   logItem,
 }) => {
   const [copied, setCopied] = React.useState(false);
+
+  useScrollLock(isOpen);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen || !logItem) return null;
 
@@ -59,8 +72,13 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100] overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden border border-gray-100 animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="px-6 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
@@ -172,6 +190,7 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

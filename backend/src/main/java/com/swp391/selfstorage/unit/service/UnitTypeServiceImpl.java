@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -85,7 +86,10 @@ public class UnitTypeServiceImpl implements UnitTypeService {
     }
 
     @Override
-    @CacheEvict(value = "unitTypes", allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(value = "unitTypes", allEntries = true),
+            @CacheEvict(value = "facilities", allEntries = true)
+    })
     public UnitTypeResponse createUnitType(Long facilityId, CreateUnitTypeRequest request) {
         if (unitTypeRepository.existsByCode(request.getCode())) {
             throw new CustomException(ErrorCode.UNIT_TYPE_CODE_ALREADY_EXISTS);
@@ -116,7 +120,10 @@ public class UnitTypeServiceImpl implements UnitTypeService {
     }
 
     @Override
-    @CacheEvict(value = "unitTypes", allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(value = "unitTypes", allEntries = true),
+            @CacheEvict(value = "facilities", allEntries = true)
+    })
     public UnitTypeResponse updateUnitType(Long facilityId, Long unitTypeId, UpdateUnitTypeRequest request) {
         UnitType ut = unitTypeRepository.findById(unitTypeId)
                 .orElseThrow(() -> new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND));
@@ -165,7 +172,10 @@ public class UnitTypeServiceImpl implements UnitTypeService {
     }
 
     @Override
-    @CacheEvict(value = "unitTypes", allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(value = "unitTypes", allEntries = true),
+            @CacheEvict(value = "facilities", allEntries = true)
+    })
     public void deactivateUnitType(Long facilityId, Long unitTypeId) {
         UnitType ut = unitTypeRepository.findById(unitTypeId)
                 .orElseThrow(() -> new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND));
@@ -182,7 +192,10 @@ public class UnitTypeServiceImpl implements UnitTypeService {
     }
 
     @Override
-    @CacheEvict(value = "unitTypes", allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(value = "unitTypes", allEntries = true),
+            @CacheEvict(value = "facilities", allEntries = true)
+    })
     public UnitTypeResponse updateUnitTypeStatus(Long facilityId, Long unitTypeId, boolean isActive) {
         if (!isActive) {
             deactivateUnitType(facilityId, unitTypeId);
