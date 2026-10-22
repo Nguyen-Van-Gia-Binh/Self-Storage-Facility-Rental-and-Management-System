@@ -1,0 +1,26 @@
+name: Notify Tung Fork On Merge
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  notify-fork:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch event to Tung fork
+        run: |
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST \
+            -H "Authorization: token ${{ secrets.TUNG_FORK_DISPATCH_PAT }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Content-Type: application/json" \
+            "https://api.github.com/repos/Tung-pro123/Self-Storage-Facility-Rental-and-Management-System/dispatches" \
+            -d '{"event_type":"upstream-updated"}')
+
+          if [ "$HTTP_STATUS" = "204" ]; then
+            echo "OK: Dispatch sent successfully (HTTP 204). Tung fork will sync immediately."
+          else
+            echo "WARN: Dispatch failed (HTTP $HTTP_STATUS). Fork will auto-sync via 4-minute cron backup."
+          fi

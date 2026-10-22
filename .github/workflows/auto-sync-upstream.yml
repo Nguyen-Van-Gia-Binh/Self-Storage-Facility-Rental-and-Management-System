@@ -1,9 +1,11 @@
 name: 🔄 Auto Sync Upstream Main
 
 on:
+  repository_dispatch:
+    types: [upstream-updated]   # ✨ Trigger NGAY khi upstream bắn tín hiệu (0 độ trễ)
   schedule:
-    - cron: '*/4 * * * *'  # Tự động đồng bộ mỗi 4 phút một lần
-  workflow_dispatch:        # Cho phép bấm nút "Run workflow" trên GitHub Actions tab để đồng bộ ngay lập tức
+    - cron: '*/4 * * * *'       # Backup: tự đồng bộ mỗi 4 phút nếu tín hiệu thất bại
+  workflow_dispatch:             # Cho phép bấm nút thủ công trên GitHub Actions tab
 
 permissions:
   contents: write
