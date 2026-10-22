@@ -130,6 +130,7 @@
 | `ISS-121` | Mã nguồn 4 trang Customer Flow 1 (HomePage, UnitPicker, Booking, MyUnits) bị phình to dạng God Component khó bảo trì. | Tái cấu trúc và module hóa toàn diện 4 trạm thành các Component, Custom Hook và Pure Utils theo Clean Architecture; 50/50 tests pass. | Xuân Nhi | `RESOLVED` (#251) |
 | `ISS-122` | Hệ thống thiếu bộ đệm phân tán L2 để chia sẻ cache giữa các instances và giảm tải DB. | Bổ sung Spring Data Redis kết nối Upstash TLS Singapore, cài đặt TwoLevelCache L1 Caffeine + L2 Redis với cơ chế tự phục hồi và chịu lỗi cao. | Tùng | `RESOLVED` |
 | `ISS-123` | Quản lý ô kho (FM-01) chỉ hiển thị trạng thái thời gian thực, không thể xem tỷ lệ lấp đầy quá khứ/tương lai theo ngày. | Bổ sung tham số `targetDate` ở Backend API, Date Picker + Dự báo Banner ở `UnitTypeListPage` & `StorageUnitListPage`, đồng bộ drill-down `?date=`. | Bình | `RESOLVED` |
+| `ISS-124` | Màn hình BOM Revenue bị lỗi WSOD, thiếu biểu đồ cơ cấu doanh thu, Tab 2 hiển thị bảng thô sơ và Drawer bị trôi nút khi cuộn trang. | Sửa hook order và demo token auth, thêm SVG Donut Chart + Net Cash Flow, tái thiết kế Tab 2 sang Enterprise List View 4 dải màu, bọc Drawer qua React Portal. | Nhật / Bình | `RESOLVED` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 
