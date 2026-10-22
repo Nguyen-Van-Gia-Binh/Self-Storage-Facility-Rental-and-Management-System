@@ -7,6 +7,7 @@ import {
   Percent,
   CheckCircle2,
   AlertCircle,
+  Building2,
 } from 'lucide-react';
 import { fetchFacilities, fetchUnitTypes } from '@/api/facility';
 import {
@@ -34,10 +35,11 @@ import type {
   ActivePolicyInfo,
 } from '@/types';
 import { FacilityPriceTable } from '../components/FacilityPriceTable';
-import { PriceUpdateModal } from '../components/PriceUpdateModal';
+import { PriceUpdateDrawer } from '../components/PriceUpdateDrawer';
 import { SurchargeTable } from '../components/SurchargeTable';
-import { SurchargeModal, type SurchargeModalSubmit } from '../components/SurchargeModal';
+import { SurchargeDrawer, type SurchargeDrawerSubmit } from '../components/SurchargeDrawer';
 import { PolicySummaryCard } from '../components/PolicySummaryCard';
+import { PolicyDrawer } from '../components/PolicyDrawer';
 import { DiscountProgramTable } from '../components/DiscountProgramTable';
 import { DiscountProgramModal } from '../components/DiscountProgramModal';
 
@@ -65,11 +67,19 @@ export const BomPricingManagementPage: React.FC = () => {
   const [editingDiscount, setEditingDiscount] = useState<DiscountProgramItem | null>(null);
   const [isSavingDiscount, setIsSavingDiscount] = useState(false);
 
-  const [priceModalUnitType, setPriceModalUnitType] = useState<UnitTypeCatalog | null>(null);
+  // Drawer Price Update State (Single & Bulk)
+  const [priceDrawerUnitType, setPriceDrawerUnitType] = useState<UnitTypeCatalog | null>(null);
+  const [priceDrawerBulkTargets, setPriceDrawerBulkTargets] = useState<UnitTypeCatalog[]>([]);
   const [isUpdatingPrice, setIsUpdatingPrice] = useState(false);
-  const [isSurchargeModalOpen, setIsSurchargeModalOpen] = useState(false);
+
+  const [isSurchargeDrawerOpen, setIsSurchargeDrawerOpen] = useState(false);
   const [editingSurcharge, setEditingSurcharge] = useState<SurchargeItem | null>(null);
   const [isSavingSurcharge, setIsSavingSurcharge] = useState(false);
+
+  // Policy Drawer State (Publish & View Snapshot)
+  const [isPolicyDrawerOpen, setIsPolicyDrawerOpen] = useState(false);
+  const [policyDrawerMode, setPolicyDrawerMode] = useState<'publish' | 'view'>('publish');
+  const [viewingPolicyVersion, setViewingPolicyVersion] = useState<PolicyVersionListItem | null>(null);
 
   const [toastMessage, setToastMessage] = useState<{
     type: 'success' | 'error';
@@ -110,6 +120,16 @@ export const BomPricingManagementPage: React.FC = () => {
     };
   }, []);
 
+  const refreshUnitTypes = async () => {
+    if (!selectedFacilityId) return;
+    try {
+      const data = await fetchUnitTypes(selectedFacilityId);
+      setUnitTypes(data);
+    } catch {
+      setUnitTypes([]);
+    }
+  };
+
   useEffect(() => {
     if (!selectedFacilityId) return;
     let ignore = false;
@@ -149,13 +169,10 @@ export const BomPricingManagementPage: React.FC = () => {
         });
     } else if (activeTab === 'POLICIES') {
       setIsLoadingPolicy(true);
-      Promise.all([
-        fetchActivePolicy(),
-        fetchPolicyVersions().catch(() => [] as PolicyVersionListItem[]),
-      ])
-        .then(([data, versions]) => {
+      Promise.all([fetchActivePolicy(), fetchPolicyVersions()])
+        .then(([active, versions]) => {
           if (!ignore) {
-            setActivePolicy(data);
+            setActivePolicy(active);
             setPolicyVersions(versions);
             setScheduledPolicy(nextScheduledPolicy(versions));
             setIsLoadingPolicy(false);
@@ -183,24 +200,33 @@ export const BomPricingManagementPage: React.FC = () => {
     };
   }, [activeTab]);
 
-  const handleConfirmPriceUpdate = async (pricePerM2: number, effectiveDate: string) => {
-    if (!priceModalUnitType) return;
+  // Drawer handlers
+  const handleOpenSinglePriceDrawer = (ut: UnitTypeCatalog) => {
+    setPriceDrawerBulkTargets([]);
+    setPriceDrawerUnitType(ut);
+  };
+
+  const handleOpenBulkPriceDrawer = (selected: UnitTypeCatalog[]) => {
+    setPriceDrawerUnitType(null);
+    setPriceDrawerBulkTargets(selected);
+  };
+
+  const handleClosePriceDrawer = () => {
+    setPriceDrawerUnitType(null);
+    setPriceDrawerBulkTargets([]);
+  };
+
+  const handleConfirmSinglePrice = async (
+    unitTypeId: number,
+    pricePerM2: number,
+    effectiveDate: string
+  ) => {
     setIsUpdatingPrice(true);
     try {
-      await updateUnitTypePrice(
-        selectedFacilityId,
-        priceModalUnitType.id,
-        pricePerM2,
-        effectiveDate
-      );
-      const monthly = Math.round((pricePerM2 * (priceModalUnitType.areaM2 || 0)) / 1000) * 1000;
-      showToast(
-        `Đã lưu đơn giá ${pricePerM2.toLocaleString('vi-VN')} ₫/m² cho "${priceModalUnitType.name}". Giá thuê niêm yết ${monthly.toLocaleString('vi-VN')} ₫/tháng, hiệu lực ${effectiveDate}.`
-      );
-      setPriceModalUnitType(null);
-
-      const refreshed = await fetchUnitTypes(selectedFacilityId);
-      setUnitTypes(refreshed);
+      await updateUnitTypePrice(selectedFacilityId, unitTypeId, pricePerM2, effectiveDate);
+      showToast('Đã cập nhật đơn giá loại ô kho thành công!');
+      handleClosePriceDrawer();
+      await refreshUnitTypes();
     } catch (err: unknown) {
       const errorObj = err as { message?: string };
       showToast(errorObj.message || 'Lỗi khi cập nhật giá', 'error');
@@ -209,12 +235,34 @@ export const BomPricingManagementPage: React.FC = () => {
     }
   };
 
-  const closeSurchargeModal = () => {
-    setIsSurchargeModalOpen(false);
+  const handleConfirmBulkPrice = async (
+    updates: { unitTypeId: number; pricePerM2: number }[],
+    effectiveDate: string
+  ) => {
+    setIsUpdatingPrice(true);
+    try {
+      await Promise.all(
+        updates.map((u) =>
+          updateUnitTypePrice(selectedFacilityId, u.unitTypeId, u.pricePerM2, effectiveDate)
+        )
+      );
+      showToast(`Đã cập nhật giá thành công cho ${updates.length} loại ô kho!`);
+      handleClosePriceDrawer();
+      await refreshUnitTypes();
+    } catch (err: unknown) {
+      const errorObj = err as { message?: string };
+      showToast(errorObj.message || 'Lỗi khi cập nhật giá hàng loạt', 'error');
+    } finally {
+      setIsUpdatingPrice(false);
+    }
+  };
+
+  const closeSurchargeDrawer = () => {
+    setIsSurchargeDrawerOpen(false);
     setEditingSurcharge(null);
   };
 
-  const handleSubmitSurcharge = async (data: SurchargeModalSubmit) => {
+  const handleSubmitSurcharge = async (data: SurchargeDrawerSubmit) => {
     setIsSavingSurcharge(true);
     try {
       if (data.mode === 'create') {
@@ -224,7 +272,7 @@ export const BomPricingManagementPage: React.FC = () => {
         await updateSurcharge(editingSurcharge, data.body);
         showToast(`Đã cập nhật phụ phí "${data.body.name}". Lần ghi sau dùng số mới.`);
       }
-      closeSurchargeModal();
+      closeSurchargeDrawer();
       const updated = await fetchSurcharges();
       setSurcharges(updated);
     } catch (err: unknown) {
@@ -235,19 +283,35 @@ export const BomPricingManagementPage: React.FC = () => {
     }
   };
 
-  const handleDeactivateSurcharge = async (item: SurchargeItem) => {
-    const confirmed = window.confirm(
-      `Ngừng áp dụng phụ phí "${item.name}"? Các hợp đồng đã ghi nhận khoản này không đổi.`,
-    );
-    if (!confirmed) return;
+  const handleToggleSurchargeStatus = async (item: SurchargeItem) => {
+    const nextActive = !item.isActive;
+    const actionLabel = nextActive ? 'Kích hoạt' : 'Tạm ngưng';
     try {
-      await updateSurcharge(item, { isActive: false });
-      showToast(`Đã ngừng áp dụng "${item.name}".`);
+      await updateSurcharge(item, { isActive: nextActive });
+      showToast(`Đã ${actionLabel.toLowerCase()} phụ phí "${item.name}".`);
       const updated = await fetchSurcharges();
       setSurcharges(updated);
     } catch (err: unknown) {
       const errorObj = err as { message?: string };
-      showToast(errorObj.message || 'Không ngừng áp dụng được phụ phí', 'error');
+      showToast(errorObj.message || `Không thể ${actionLabel.toLowerCase()} phụ phí`, 'error');
+    }
+  };
+
+  const handleBulkToggleSurchargeStatus = async (
+    items: SurchargeItem[],
+    targetActive: boolean
+  ) => {
+    const actionLabel = targetActive ? 'Kích hoạt' : 'Tạm ngưng';
+    try {
+      await Promise.all(
+        items.map((item) => updateSurcharge(item, { isActive: targetActive }))
+      );
+      showToast(`Đã ${actionLabel.toLowerCase()} thành công ${items.length} phụ phí!`);
+      const updated = await fetchSurcharges();
+      setSurcharges(updated);
+    } catch (err: unknown) {
+      const errorObj = err as { message?: string };
+      showToast(errorObj.message || `Lỗi khi ${actionLabel.toLowerCase()} hàng loạt`, 'error');
     }
   };
 
@@ -309,7 +373,8 @@ export const BomPricingManagementPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-[1600px] mx-auto pb-12 animate-fade-in">
+    <div className="space-y-4 max-w-[1600px] mx-auto pb-12 animate-fade-in">
+      {/* Toast Alert */}
       {toastMessage && (
         <div
           className={`fixed top-5 right-5 z-50 flex items-center space-x-2 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium transition-all ${
@@ -327,76 +392,101 @@ export const BomPricingManagementPage: React.FC = () => {
         </div>
       )}
 
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Header & Tabs Navigation + Sticky Facility Selector */}
+      <div className="bg-white p-4 rounded-xl shadow-xs border border-slate-200/80 flex flex-col xl:flex-row xl:items-center justify-between gap-3">
         <div className="flex items-center space-x-2.5">
-          <div className="p-2.5 rounded-xl bg-amber-500 text-white">
-            <DollarSign className="w-6 h-6" />
+          <div className="p-2 rounded-lg bg-amber-500 text-white shadow-2xs">
+            <DollarSign className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900">
+            <h1 className="text-lg font-bold text-slate-900 tracking-tight">
               Quản lý Bảng giá & Phụ phí
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Thiết lập khung giá thuê ô kho theo m², biểu phí dịch vụ và chính sách tài chính
+            <p className="text-xs text-slate-500">
+              Thiết lập khung giá thuê theo m², biểu phí dịch vụ và chính sách tài chính
             </p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1.5 rounded-xl text-xs font-semibold">
-          <button
-            onClick={() => setActiveTab('PRICING')}
-            className={`flex items-center space-x-1.5 px-3 py-2 rounded-lg transition-all ${
-              activeTab === 'PRICING'
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <DollarSign className="w-4 h-4 text-amber-500" />
-            <span>Khung giá thuê ô kho</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('SURCHARGES')}
-            className={`flex items-center space-x-1.5 px-3 py-2 rounded-lg transition-all ${
-              activeTab === 'SURCHARGES'
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Tag className="w-4 h-4 text-blue-500" />
-            <span>Biểu phí & Phụ thu</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('POLICIES')}
-            className={`flex items-center space-x-1.5 px-3 py-2 rounded-lg transition-all ${
-              activeTab === 'POLICIES'
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <ShieldCheck className="w-4 h-4 text-emerald-500" />
-            <span>Chính sách cọc & Quá hạn</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('DISCOUNTS')}
-            className={`flex items-center space-x-1.5 px-3 py-2 rounded-lg transition-all ${
-              activeTab === 'DISCOUNTS'
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Percent className="w-4 h-4 text-purple-500" />
-            <span>Khuyến mãi & Giảm giá</span>
-          </button>
+        {/* Tabs & Facility Selector trên cùng một hàng */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Tabs */}
+          <div className="flex flex-wrap items-center gap-1 bg-slate-100 p-1 rounded-lg text-xs font-semibold">
+            <button
+              onClick={() => setActiveTab('PRICING')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md transition-all cursor-pointer ${
+                activeTab === 'PRICING'
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <DollarSign className="w-3.5 h-3.5 text-amber-500" />
+              <span>Khung giá thuê ô kho</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('SURCHARGES')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md transition-all cursor-pointer ${
+                activeTab === 'SURCHARGES'
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Tag className="w-3.5 h-3.5 text-blue-500" />
+              <span>Biểu phí & Phụ thu</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('POLICIES')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md transition-all cursor-pointer ${
+                activeTab === 'POLICIES'
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+              <span>Chính sách cọc & Quá hạn</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('DISCOUNTS')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md transition-all cursor-pointer ${
+                activeTab === 'DISCOUNTS'
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Percent className="w-3.5 h-3.5 text-purple-500" />
+              <span>Khuyến mãi & Giảm giá</span>
+            </button>
+          </div>
+
+          {/* Sticky Facility Selector (Chỉ hiển thị khi ở tab Khung giá thuê ô kho) */}
+          {activeTab === 'PRICING' && (
+            <div className="flex items-center space-x-1.5 bg-slate-50 border border-slate-200/90 px-2.5 py-1 rounded-lg">
+              <Building2 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+              <select
+                value={selectedFacilityId}
+                onChange={(e) => selectFacility(Number(e.target.value))}
+                className="text-xs font-semibold bg-transparent text-slate-800 outline-none cursor-pointer pr-1"
+                title="Chọn cơ sở xem bảng giá"
+              >
+                {facilities.map((fac) => (
+                  <option key={fac.id} value={fac.id}>
+                    {fac.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       </div>
 
+      {/* Main Tab Content */}
       {activeTab === 'PRICING' && (
         <FacilityPriceTable
-          facilities={facilities}
-          selectedFacilityId={selectedFacilityId}
-          onSelectFacility={selectFacility}
           unitTypes={unitTypes}
-          onOpenPriceModal={(ut) => setPriceModalUnitType(ut)}
+          facilityName={currentFacility ? currentFacility.name : 'Cơ sở'}
+          selectedFacilityId={selectedFacilityId}
+          onOpenPriceModal={handleOpenSinglePriceDrawer}
+          onOpenBulkPriceModal={handleOpenBulkPriceDrawer}
           isLoading={isLoadingFacilities || isLoadingUnitTypes}
         />
       )}
@@ -406,13 +496,14 @@ export const BomPricingManagementPage: React.FC = () => {
           surcharges={surcharges}
           onOpenModal={() => {
             setEditingSurcharge(null);
-            setIsSurchargeModalOpen(true);
+            setIsSurchargeDrawerOpen(true);
           }}
           onEdit={(item) => {
             setEditingSurcharge(item);
-            setIsSurchargeModalOpen(true);
+            setIsSurchargeDrawerOpen(true);
           }}
-          onDeactivate={handleDeactivateSurcharge}
+          onToggleStatus={handleToggleSurchargeStatus}
+          onBulkToggleStatus={handleBulkToggleSurchargeStatus}
           isLoading={isLoadingSurcharges}
         />
       )}
@@ -423,6 +514,16 @@ export const BomPricingManagementPage: React.FC = () => {
           scheduledPolicy={scheduledPolicy}
           versions={policyVersions}
           isLoading={isLoadingPolicy}
+          onOpenPublishDrawer={() => {
+            setViewingPolicyVersion(null);
+            setPolicyDrawerMode('publish');
+            setIsPolicyDrawerOpen(true);
+          }}
+          onViewVersion={(ver) => {
+            setViewingPolicyVersion(ver);
+            setPolicyDrawerMode('view');
+            setIsPolicyDrawerOpen(true);
+          }}
         />
       )}
 
@@ -442,29 +543,52 @@ export const BomPricingManagementPage: React.FC = () => {
         />
       )}
 
-      {priceModalUnitType && (
-        <PriceUpdateModal
-          key={`price-${priceModalUnitType.id}-${priceModalUnitType.pricePerM2 ?? priceModalUnitType.monthlyPrice}`}
-          isOpen={Boolean(priceModalUnitType)}
-          onClose={() => setPriceModalUnitType(null)}
-          facilityName={currentFacility ? currentFacility.name : 'Cơ sở'}
-          unitType={priceModalUnitType}
-          onConfirm={handleConfirmPriceUpdate}
-          isLoading={isUpdatingPrice}
-        />
-      )}
+      {/* Slide-over Drawer Cập nhật giá (Single & Bulk) */}
+      <PriceUpdateDrawer
+        isOpen={Boolean(priceDrawerUnitType || priceDrawerBulkTargets.length > 0)}
+        onClose={handleClosePriceDrawer}
+        facilityName={currentFacility ? currentFacility.name : 'Cơ sở'}
+        unitType={priceDrawerUnitType}
+        selectedUnitTypes={priceDrawerBulkTargets}
+        onConfirmSingle={handleConfirmSinglePrice}
+        onConfirmBulk={handleConfirmBulkPrice}
+        isLoading={isUpdatingPrice}
+      />
 
-      {isSurchargeModalOpen && (
-        <SurchargeModal
-          key={editingSurcharge ? `edit-surcharge-${editingSurcharge.id}` : 'create-surcharge-modal'}
-          isOpen={isSurchargeModalOpen}
-          onClose={closeSurchargeModal}
-          facilities={facilities}
-          editing={editingSurcharge}
-          onSubmit={handleSubmitSurcharge}
-          isLoading={isSavingSurcharge}
-        />
-      )}
+      <SurchargeDrawer
+        isOpen={isSurchargeDrawerOpen}
+        onClose={closeSurchargeDrawer}
+        facilities={facilities}
+        editing={editingSurcharge}
+        onSubmit={handleSubmitSurcharge}
+        isLoading={isSavingSurcharge}
+      />
+
+      <PolicyDrawer
+        isOpen={isPolicyDrawerOpen}
+        onClose={() => setIsPolicyDrawerOpen(false)}
+        mode={policyDrawerMode}
+        activePolicy={activePolicy}
+        viewingVersion={viewingPolicyVersion}
+        onPublishSuccess={async () => {
+          showToast('Đã ban hành phiên bản chính sách mới thành công!');
+          setIsPolicyDrawerOpen(false);
+          setIsLoadingPolicy(true);
+          try {
+            const [active, versions] = await Promise.all([fetchActivePolicy(), fetchPolicyVersions()]);
+            setActivePolicy(active);
+            setPolicyVersions(versions);
+            setScheduledPolicy(nextScheduledPolicy(versions));
+          } catch {
+            // keep existing state
+          } finally {
+            setIsLoadingPolicy(false);
+          }
+        }}
+        onSwitchToPublishWithSnapshot={() => {
+          setPolicyDrawerMode('publish');
+        }}
+      />
 
       {isDiscountModalOpen && (
         <DiscountProgramModal
