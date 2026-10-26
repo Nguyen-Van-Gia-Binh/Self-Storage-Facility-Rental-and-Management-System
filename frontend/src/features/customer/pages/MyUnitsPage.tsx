@@ -18,6 +18,7 @@ import { MyUnitsTable } from '../components/MyUnitsTable';
 import { MyUnitsModals } from '../components/MyUnitsModals';
 import { useCustomerContracts } from '../hooks/useCustomerContracts';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
+import { cancelContractReturn } from '@/api/customerRentals';
 import type { RentedContract } from '../types';
 
 export const MyUnitsPage: React.FC = () => {
@@ -66,11 +67,30 @@ export const MyUnitsPage: React.FC = () => {
   const [selectedRescheduleContract, setSelectedRescheduleContract] = useState<RentedContract | null>(null);
   const [selectedOverdueContract, setSelectedOverdueContract] = useState<RentedContract | null>(null);
   const [selectedCancelCheckInContract, setSelectedCancelCheckInContract] = useState<RentedContract | null>(null);
+  const [selectedCancelReturnContract, setSelectedCancelReturnContract] = useState<RentedContract | null>(null);
+  const [isCancellingReturn, setIsCancellingReturn] = useState<boolean>(false);
+  const [cancelReturnError, setCancelReturnError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
     setToastMessage({ text, type });
     setTimeout(() => setToastMessage(null), 4000);
+  };
+
+  const handleConfirmCancelReturn = async () => {
+    if (!selectedCancelReturnContract) return;
+    try {
+      setIsCancellingReturn(true);
+      setCancelReturnError(null);
+      await cancelContractReturn(selectedCancelReturnContract.id);
+      showToast('Đã hủy yêu cầu trả kho thành công. Hợp đồng tiếp tục hoạt động.');
+      setSelectedCancelReturnContract(null);
+      await loadContracts();
+    } catch (err: any) {
+      setCancelReturnError(err?.message || 'Không thể hủy yêu cầu trả kho. Vui lòng thử lại.');
+    } finally {
+      setIsCancellingReturn(false);
+    }
   };
 
   // 4. Lọc danh sách hợp đồng theo Tab, Search Query và Date Filter (ISS-106)
@@ -534,14 +554,17 @@ export const MyUnitsPage: React.FC = () => {
           onScheduleReturn={(c) => setSelectedReturnContract(c)}
           onReschedulePeriod={(c) => setSelectedRescheduleContract(c)}
           onOpenOverduePayment={(c) => setSelectedOverdueContract(c)}
-          onCancelReturn={() => loadContracts()}
+          onCancelReturn={(c) => {
+            setCancelReturnError(null);
+            setSelectedCancelReturnContract(c);
+          }}
           onCancelPendingCheckIn={(c) => setSelectedCancelCheckInContract(c)}
           onCancelReservation={(r) => setCancellingReservation(r)}
           renewalNoticeDays={noticeDays > 0 ? noticeDays : undefined}
         />
       )}
 
-      {/* CỤM 8 MODALS TƯƠNG TÁC */}
+      {/* CỤM 9 MODALS TƯƠNG TÁC */}
       <MyUnitsModals
         selectedPinContract={selectedPinContract}
         onClosePinModal={() => setSelectedPinContract(null)}
@@ -585,6 +608,16 @@ export const MyUnitsPage: React.FC = () => {
         onConfirmCancelReservation={handleConfirmCancelReservation}
         isCancelling={isCancelling}
         cancelError={cancelError}
+        selectedCancelReturnContract={selectedCancelReturnContract}
+        onCloseCancelReturnModal={() => {
+          if (!isCancellingReturn) {
+            setSelectedCancelReturnContract(null);
+            setCancelReturnError(null);
+          }
+        }}
+        onConfirmCancelReturn={handleConfirmCancelReturn}
+        isCancellingReturn={isCancellingReturn}
+        cancelReturnError={cancelReturnError}
       />
 
       {/* Toast Notification */}

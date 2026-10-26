@@ -536,7 +536,7 @@ export const BookingPage: React.FC = () => {
     } catch (err: any) {
       console.error('Lỗi khi khởi tạo đơn đặt chỗ hoặc PayOS:', err);
       // Backend mã hóa rõ: khách đang giữ 1 đơn PENDING_PAYMENT khác (BR-RES-02, ISS-99)
-      if (err?.errorCode === 'PENDING_RESERVATION_EXISTS' || err?.errorCode === 'UNIT_NOT_AVAILABLE') {
+      if (err?.errorCode === 'PENDING_RESERVATION_EXISTS') {
         try {
           const myReservations = await getMyReservationsApi();
           const activePending = findActivePendingReservation(myReservations);
@@ -551,6 +551,27 @@ export const BookingPage: React.FC = () => {
           // fallback
         }
       }
+
+      // Ô kho đã có người khác giữ chỗ hoặc không khả dụng (BR-RES-02, ISS-127)
+      if (
+        err?.errorCode === 'UNIT_NOT_AVAILABLE' ||
+        (typeof err?.message === 'string' &&
+          (err.message.includes('giu cho') ||
+            err.message.includes('giữ chỗ') ||
+            err.message.includes('khong con kha dung') ||
+            err.message.includes('không còn khả dụng') ||
+            err.message.includes('UNIT_NOT_AVAILABLE')))
+      ) {
+        setUnavailableModal({
+          isOpen: true,
+          title: 'Ô kho không còn khả dụng',
+          message:
+            'Ô kho bạn chọn hiện đã có khách hàng khác đặt chỗ hoặc đang được thuê trong khoảng thời gian này. Vui lòng quay lại sơ đồ để chọn ô kho khác.',
+          actionType: 'NAVIGATE_UNITS',
+        });
+        return;
+      }
+
       setBookingError(err?.message || 'Không thể tạo đơn đặt chỗ. Vui lòng thử lại!');
     } finally {
       setIsSubmitting(false);
