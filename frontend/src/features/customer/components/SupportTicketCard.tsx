@@ -67,11 +67,9 @@ export const getStatusMeta = (status: SupportStatus) => {
     case 'IN_PROGRESS':
       return { label: 'Đang xử lý', variant: 'warning' as const };
     case 'RESOLVED':
-      return { label: 'Đã xử lý', variant: 'success' as const };
     case 'CLOSED':
-      return { label: 'Đã đóng', variant: 'default' as const };
     case 'AUTO_CLOSED':
-      return { label: 'Tự động đóng', variant: 'default' as const };
+      return { label: 'Đã đóng', variant: 'default' as const };
     default:
       return { label: status, variant: 'default' as const };
   }

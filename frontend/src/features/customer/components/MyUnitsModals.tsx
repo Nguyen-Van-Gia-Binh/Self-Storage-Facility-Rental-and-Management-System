@@ -58,6 +58,13 @@ interface MyUnitsModalsProps {
   onConfirmCancelReservation: () => void;
   isCancelling: boolean;
   cancelError: string | null;
+
+  // 9. Hủy yêu cầu trả kho
+  selectedCancelReturnContract: RentedContract | null;
+  onCloseCancelReturnModal: () => void;
+  onConfirmCancelReturn: () => void;
+  isCancellingReturn: boolean;
+  cancelReturnError: string | null;
 }
 
 export const MyUnitsModals: React.FC<MyUnitsModalsProps> = ({
@@ -91,6 +98,11 @@ export const MyUnitsModals: React.FC<MyUnitsModalsProps> = ({
   onConfirmCancelReservation,
   isCancelling,
   cancelError,
+  selectedCancelReturnContract,
+  onCloseCancelReturnModal,
+  onConfirmCancelReturn,
+  isCancellingReturn,
+  cancelReturnError,
 }) => {
   return (
     <>
@@ -221,6 +233,77 @@ export const MyUnitsModals: React.FC<MyUnitsModalsProps> = ({
                 </>
               ) : (
                 'Xác nhận hủy giữ chỗ'
+              )}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* 9. Modal xác nhận hủy yêu cầu trả kho (ISS-125) */}
+      <Modal
+        isOpen={Boolean(selectedCancelReturnContract)}
+        onClose={onCloseCancelReturnModal}
+        className="max-w-md w-full"
+      >
+        <div className="p-5 sm:p-6 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <RotateCcw className="w-5 h-5 text-amber-600" />
+              Xác nhận hủy yêu cầu trả kho
+            </h3>
+            <button
+              type="button"
+              disabled={isCancellingReturn}
+              onClick={onCloseCancelReturnModal}
+              className="text-slate-400 hover:text-slate-600 font-bold px-1.5 py-0.5 rounded cursor-pointer"
+            >
+              ×
+            </button>
+          </div>
+
+          <p className="text-sm text-slate-600">
+            Bạn có chắc chắn muốn hủy yêu cầu trả kho cho ô kho{' '}
+            <strong className="text-slate-900">
+              {selectedCancelReturnContract?.unitNumber}
+            </strong>
+            ?
+          </p>
+          <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl text-xs text-amber-900 leading-relaxed">
+            Sau khi hủy, hợp đồng sẽ tiếp tục được duy trì hoạt động bình thường. Bạn vẫn có thể tiếp tục sử dụng mã PIN để mở khóa ô kho.
+          </div>
+
+          {cancelReturnError && (
+            <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl font-medium">
+              {cancelReturnError}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onCloseCancelReturnModal}
+              disabled={isCancellingReturn}
+              className="text-slate-700 hover:bg-slate-100"
+            >
+              Đóng
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={onConfirmCancelReturn}
+              disabled={isCancellingReturn}
+              className="bg-amber-600 hover:bg-amber-700 text-white font-semibold"
+            >
+              {isCancellingReturn ? (
+                <>
+                  <RotateCcw className="w-4 h-4 mr-1.5 animate-spin" />
+                  Đang hủy...
+                </>
+              ) : (
+                'Xác nhận hủy yêu cầu'
               )}
             </Button>
           </div>
