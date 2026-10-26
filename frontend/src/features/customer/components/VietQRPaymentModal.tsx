@@ -15,6 +15,11 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
+import {
+  BANK_ACCOUNT_NUMBER,
+  BANK_NAME,
+  ACCOUNT_HOLDER,
+} from '../utils/paymentBankInfo';
 import { useActivePolicy } from '@/hooks/useActivePolicy';
 import {
   createCheckout,
@@ -119,9 +124,9 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
   const transferMemo = paymentType === 'OVERDUE_PENALTY'
     ? `PHAT${contractId || ''} ${unitNumber}`
     : `SMARTSTORAGE ${unitNumber}${idLast4 ? ` ${idLast4}` : ''}`;
-  const bankAccount = checkoutData?.accountNumber || '0888567999';
-  const bankName = 'MB Bank (Ngân hàng Quân Đội)';
-  const accountHolder = checkoutData?.accountName || 'CONG TY CP SMARTSTORAGE VIETNAM';
+  const bankAccount = checkoutData?.accountNumber || BANK_ACCOUNT_NUMBER;
+  const bankName = BANK_NAME;
+  const accountHolder = checkoutData?.accountName || ACCOUNT_HOLDER;
 
   // Khởi tạo PayOS checkout link khi modal mở
   useEffect(() => {
@@ -501,7 +506,7 @@ export const VietQRPaymentModal: React.FC<VietQRPaymentModalProps> = ({
                     <div>
                       <span className="text-[10px] text-slate-400 block">Số tài khoản</span>
                       <span className="font-mono text-sm font-black text-slate-900 tracking-wider">
-                        0888 567 999
+                        {BANK_ACCOUNT_NUMBER}
                       </span>
                     </div>
                     <button

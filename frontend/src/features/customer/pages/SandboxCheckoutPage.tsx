@@ -14,6 +14,11 @@ import {
 } from 'lucide-react';
 import { customerApi } from '../api/customerApi';
 import { formatVND } from '../utils/pricing';
+import {
+  BANK_ACCOUNT_NUMBER,
+  BANK_NAME,
+  ACCOUNT_HOLDER,
+} from '../utils/paymentBankInfo';
 import { tokenStorage } from '@/utils/tokenStorage';
 
 export const SandboxCheckoutPage: React.FC = () => {
@@ -112,9 +117,9 @@ export const SandboxCheckoutPage: React.FC = () => {
 
   const amount = paymentData?.amount || 2600000;
   const description = paymentData?.description || paymentData?.transferContent || `DH${orderCode}`;
-  const bankAccount = paymentData?.bankAccountNumber || '0888567999';
-  const bankName = paymentData?.bankName || 'MB Bank (Quân Đội · Napas247)';
-  const accountHolder = paymentData?.accountName || 'CONG TY CP SMARTSTORAGE VIETNAM';
+  const bankAccount = paymentData?.bankAccountNumber || BANK_ACCOUNT_NUMBER;
+  const bankName = paymentData?.bankName || BANK_NAME;
+  const accountHolder = paymentData?.accountName || ACCOUNT_HOLDER;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-100 to-slate-200 flex flex-col items-center justify-center p-4 sm:p-6">

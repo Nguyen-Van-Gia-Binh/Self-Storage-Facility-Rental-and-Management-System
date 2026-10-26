@@ -6,6 +6,7 @@ import {
   cancelReservationApi,
 } from '@/api/reservation';
 import { generateMoveInPass } from '@/api/payment';
+import { isReservationPaid } from '../utils/reservationStatus';
 import type { MoveInPassData } from '@/types';
 import type { Facility, UnitType } from '../types';
 
@@ -59,9 +60,8 @@ export function useBookingPayment({
   const [redirectCountdown, setRedirectCountdown] = useState<number>(3);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  // 4. Trạng thái vé vào cổng & điều khoản
+  // 4. Trạng thái vé vào cổng
   const [showPassModal, setShowPassModal] = useState<boolean>(false);
-  const [showTermsModal, setShowTermsModal] = useState<boolean>(false);
   const [createdPass, setCreatedPass] = useState<MoveInPassData | null>(null);
 
   // 5. Đồng hồ đếm ngược 48h
@@ -133,7 +133,7 @@ export function useBookingPayment({
     const pollInterval = setInterval(async () => {
       try {
         const rsv = await getReservationById(createdReservationId);
-        if (rsv.status === 'CONFIRMED' || rsv.status === 'PAID' || rsv.status === 'ACTIVE') {
+        if (isReservationPaid(rsv.status)) {
           clearInterval(pollInterval);
           setPaymentStatus('SUCCESS');
           handleConfirmBookingPayment();
@@ -170,7 +170,7 @@ export function useBookingPayment({
 
     try {
       const rsv = await getReservationById(createdReservationId);
-      if (rsv.status === 'CONFIRMED' || rsv.status === 'PAID' || rsv.status === 'ACTIVE') {
+      if (isReservationPaid(rsv.status)) {
         setPaymentStatus('SUCCESS');
         handleConfirmBookingPayment();
       } else {
@@ -219,8 +219,6 @@ export function useBookingPayment({
     setCancelError(null);
     try {
       await cancelReservationApi(createdReservationId);
-      localStorage.removeItem('smartstorage_pending_reservation');
-      localStorage.removeItem('smartstorage_pending_booking');
       setShowCancelModal(false);
       navigate(`/customer/units?facility=${facility.id || ''}`);
     } catch (err: any) {
@@ -263,8 +261,6 @@ export function useBookingPayment({
     handleConfirmCancelReservation,
     showPassModal,
     setShowPassModal,
-    showTermsModal,
-    setShowTermsModal,
     createdPass,
   };
 }

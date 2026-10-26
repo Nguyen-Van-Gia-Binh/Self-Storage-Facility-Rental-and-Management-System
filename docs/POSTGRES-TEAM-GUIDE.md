@@ -79,15 +79,16 @@ Truy cập trình duyệt: [http://localhost:5173](http://localhost:5173).
 
 ---
 
-## 👥 4. Danh sách Tài khoản Kiểm thử (Tất cả mật khẩu: `123456`)
+## 👥 4. Danh sách Tài khoản Kiểm thử (Tất cả mật khẩu: `password123`)
 
-| Phân hệ / Vai trò | Email đăng nhập | Mật khẩu | Mục tiêu kiểm thử đề xuất |
+| Phân hệ / Vai trò | Email đăng nhập | Mật khẩu | Tên người dùng / Ghi chú |
 | :--- | :--- | :--- | :--- |
-| **Storage Customer** | `customer1@gmail.com` | `123456` | Xem hợp đồng đang thuê, duyệt ô kho và thử tạo đơn đặt chỗ mới. |
-| **Facility Staff** | `staff1@gmail.com` | `123456` | Xem nhiệm vụ bàn giao, check-in, kiểm tra ô kho. |
-| **Facility Manager** | `manager1@gmail.com` | `123456` | Quản lý ô kho tại cơ sở Cầu Giấy, duyệt yêu cầu trả kho. |
-| **BOM (Kinh doanh)** | `bom@gmail.com` | `123456` | Xem bảng giá, cấu hình chính sách phí phạt / đặt cọc. |
-| **Admin** | `admin@gmail.com` | `123456` | Quản lý người dùng, xem lịch sử đăng nhập và audit log. |
+| **Storage Customer** | `nhi.customer@gmail.com` | `password123` | Nguyễn Phạm Xuân Nhi (có sẵn hợp đồng đang thuê) |
+| **Storage Customer (Phụ)** | `customer@storage.vn` | `password123` | Nguyễn Văn Khách |
+| **Facility Staff** | `staff.q1@smartstorage.vn` | `password123` | Trần Văn Hùng (Nhân viên ca trực) |
+| **Facility Manager** | `fm.q1@smartstorage.vn` | `password123` | Nguyễn Văn Gia Bình (Quản lý cơ sở Q1/Cầu Giấy) |
+| **BOM (Kinh doanh)** | `bom@smartstorage.vn` | `password123` | Huỳnh Nhật (Cấu hình bảng giá/chính sách) |
+| **Admin** | `admin@smartstorage.vn` | `password123` | Lê Thanh Tùng (Quản trị hệ thống) |
 
 ---
 

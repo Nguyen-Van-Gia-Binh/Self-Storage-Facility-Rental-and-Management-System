@@ -11,6 +11,13 @@ import {
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { formatVND } from '../utils/pricing';
+import {
+  BANK_ACCOUNT_NUMBER,
+  BANK_ACCOUNT_NUMBER_PLAIN,
+  BANK_NAME,
+  ACCOUNT_HOLDER,
+  buildVietQrImageUrl,
+} from '../utils/paymentBankInfo';
 import type { CheckoutResponse } from '../api/customerApi';
 import type { Facility, UnitType } from '../types';
 
@@ -132,7 +139,11 @@ export const BookingPaymentStep: React.FC<BookingPaymentStepProps> = ({
                     <QRCodeSVG value={checkoutData.qrCode} size={165} level="M" includeMargin={true} />
                   ) : (
                     <img
-                      src={`https://img.vietqr.io/image/970422-0888567999-compact2.png?amount=${checkoutData?.amount || calculation?.totalDueToday || 0}&addInfo=${encodeURIComponent(checkoutData?.description || `DH${createdReservationId}`)}&accountName=${encodeURIComponent(checkoutData?.accountName || 'SMARTSTORAGE')}`}
+                      src={buildVietQrImageUrl(
+                        checkoutData?.amount || calculation?.totalDueToday || 0,
+                        checkoutData?.description || `DH${createdReservationId}`,
+                        checkoutData?.accountName || 'SMARTSTORAGE',
+                      )}
                       alt="VietQR Code"
                       className="w-40 h-40 object-contain"
                     />
@@ -151,9 +162,9 @@ export const BookingPaymentStep: React.FC<BookingPaymentStepProps> = ({
               <div className="md:col-span-7 space-y-3">
                 <div className="bg-slate-50/80 border border-brand-200/60 p-3 rounded-xl">
                   <div className="text-[11px] font-semibold text-slate-500">Ngân hàng thụ hưởng</div>
-                  <div className="text-xs font-bold text-[#0a1614] mt-0.5">MB Bank (Ngân hàng Quân Đội)</div>
+                  <div className="text-xs font-bold text-[#0a1614] mt-0.5">{BANK_NAME}</div>
                   <div className="text-[11px] text-slate-500 mt-1">
-                    Chủ tài khoản: <strong className="text-[#0a1614] uppercase">{checkoutData?.accountName || 'CONG TY CP SMARTSTORAGE VIETNAM'}</strong>
+                    Chủ tài khoản: <strong className="text-[#0a1614] uppercase">{checkoutData?.accountName || ACCOUNT_HOLDER}</strong>
                   </div>
                 </div>
 
@@ -162,12 +173,12 @@ export const BookingPaymentStep: React.FC<BookingPaymentStepProps> = ({
                   <div>
                     <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Số tài khoản định danh</div>
                     <div className="text-base font-black text-[#0a1614] font-mono mt-0.5">
-                      {checkoutData?.accountNumber || '0888567999'}
+                      {checkoutData?.accountNumber || BANK_ACCOUNT_NUMBER}
                     </div>
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleCopyText(checkoutData?.accountNumber || '0888567999', 'stk')}
+                    onClick={() => handleCopyText(checkoutData?.accountNumber || BANK_ACCOUNT_NUMBER_PLAIN, 'stk')}
                     className="px-2.5 py-1.5 text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-lg flex items-center gap-1 transition-all cursor-pointer"
                   >
                     <Copy className="w-3.5 h-3.5" />

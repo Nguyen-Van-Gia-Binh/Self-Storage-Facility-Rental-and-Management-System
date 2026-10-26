@@ -131,6 +131,9 @@
 | `ISS-122` | Hệ thống thiếu bộ đệm phân tán L2 để chia sẻ cache giữa các instances và giảm tải DB. | Bổ sung Spring Data Redis kết nối Upstash TLS Singapore, cài đặt TwoLevelCache L1 Caffeine + L2 Redis với cơ chế tự phục hồi và chịu lỗi cao. | Tùng | `RESOLVED` |
 | `ISS-123` | Quản lý ô kho (FM-01) chỉ hiển thị trạng thái thời gian thực, không thể xem tỷ lệ lấp đầy quá khứ/tương lai theo ngày. | Bổ sung tham số `targetDate` ở Backend API, Date Picker + Dự báo Banner ở `UnitTypeListPage` & `StorageUnitListPage`, đồng bộ drill-down `?date=`. | Bình | `RESOLVED` |
 | `ISS-124` | Màn hình BOM Revenue bị lỗi WSOD, thiếu biểu đồ cơ cấu doanh thu, Tab 2 hiển thị bảng thô sơ và Drawer bị trôi nút khi cuộn trang. | Sửa hook order và demo token auth, thêm SVG Donut Chart + Net Cash Flow, tái thiết kế Tab 2 sang Enterprise List View 4 dải màu, bọc Drawer qua React Portal. | Nhật / Bình | `RESOLVED` |
+| `ISS-125` | Nút "Hủy yêu cầu trả kho" trên bảng MyUnitsTable không hoạt động do chưa gọi API Backend, hợp đồng vẫn giữ nguyên PENDING_RETURN. | Bổ sung Modal xác nhận cho Table View, gọi API POST /contracts/{id}/cancel-return và cập nhật tức thì trạng thái sang ACTIVE. | Xuân Nhi | `OPEN` |
+| `ISS-126` | Tab "Đã đóng" hỗ trợ hiển thị cọc cạch 2 nhãn "Đã xử lý" (RESOLVED) và "Đã đóng" (CLOSED) dù đã bãi bỏ bước khách hàng nghiệm thu (ISS-72). | Đồng bộ hiển thị thống nhất 1 nhãn "Đã đóng" cho cả RESOLVED, CLOSED, AUTO_CLOSED trên SupportTicketCard và modal chi tiết. | Xuân Nhi | `OPEN` |
+| `ISS-127` | Lỗi UNIT_NOT_AVAILABLE tại Bước 2 Booking hiển thị banner text không dấu thô sơ thay vì bật Modal cảnh báo ô kho không khả dụng. | Bổ sung trigger mở unavailableModal trong catch handler của BookingPage.tsx kèm nút điều hướng quay lại sơ đồ chọn ô kho. | Xuân Nhi | `OPEN` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 

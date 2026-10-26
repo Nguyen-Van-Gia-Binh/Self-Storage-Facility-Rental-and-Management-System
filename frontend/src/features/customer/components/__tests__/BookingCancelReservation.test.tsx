@@ -53,11 +53,13 @@ describe('ISS-77: Booking Cancel Reservation Button & Confirmation Modal', () =>
     expect(content).toMatch(/setShowCancelModal\(true\)/);
   });
 
-  it('BookingPage.tsx có Modal xác nhận hủy giữ chỗ giải phóng ô kho và dọn sạch draft', () => {
+  it('BookingPage.tsx có Modal xác nhận hủy giữ chỗ giải phóng ô kho', () => {
     const content = getBookingContent();
     expect(content).toMatch(/handleConfirmCancelReservation/);
     expect(content).toMatch(/cancelReservationApi\(/);
-    expect(content).toMatch(/localStorage\.removeItem\('smartstorage_pending_booking'\)/);
+    // ISS-77 cleanup: draft zombie keys (smartstorage_pending_reservation/booking)
+    // không còn code nào ghi trong app → bỏ bước removeItem mồ côi.
+    expect(content).not.toMatch(/localStorage\.removeItem\('smartstorage_pending_booking'\)/);
     expect(content).toMatch(/Xác nhận hủy giữ chỗ/);
     expect(content).toMatch(/Quay lại \(Giữ đơn\)/);
   });
