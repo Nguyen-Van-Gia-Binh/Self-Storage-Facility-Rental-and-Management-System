@@ -3,7 +3,6 @@ import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { AlertTriangle, XCircle } from 'lucide-react';
 import { DigitalMoveInPassModal } from './DigitalMoveInPassModal';
-import { TermsOfServiceModal } from './TermsOfServiceModal';
 import type { MoveInPassData } from '@/types';
 
 interface BookingModalsProps {
@@ -35,10 +34,6 @@ interface BookingModalsProps {
   showPassModal: boolean;
   createdPass: MoveInPassData | null;
   onClosePassModal: () => void;
-
-  // Modal 5: Điều khoản sử dụng
-  showTermsModal: boolean;
-  onCloseTermsModal: () => void;
 }
 
 export const BookingModals: React.FC<BookingModalsProps> = ({
@@ -55,8 +50,6 @@ export const BookingModals: React.FC<BookingModalsProps> = ({
   showPassModal,
   createdPass,
   onClosePassModal,
-  showTermsModal,
-  onCloseTermsModal,
 }) => {
   return (
     <>
@@ -167,9 +160,6 @@ export const BookingModals: React.FC<BookingModalsProps> = ({
           passData={createdPass}
         />
       )}
-
-      {/* 5. Modal điều khoản dịch vụ */}
-      <TermsOfServiceModal isOpen={showTermsModal} onClose={onCloseTermsModal} />
     </>
   );
 };

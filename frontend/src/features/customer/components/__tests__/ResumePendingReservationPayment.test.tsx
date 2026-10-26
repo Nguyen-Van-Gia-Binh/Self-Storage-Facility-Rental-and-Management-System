@@ -48,9 +48,10 @@ describe('ISS-81: Resume Pending Reservation Payment Flow', () => {
     expect(content).toMatch(/if \(reservationIdParam\)/);
   });
 
-  it('BookingPage.tsx xử lý các trạng thái CANCELLED, EXPIRED và chuyển hướng nếu ACTIVE/PAID', () => {
+  it('BookingPage.tsx xử lý các trạng thái đã đóng (CANCELLED/EXPIRED/NO_SHOW) và chuyển hướng nếu đã thanh toán', () => {
     const content = fs.readFileSync(bookingPage, 'utf-8');
-    expect(content).toMatch(/rsv\.status === 'CANCELLED' \|\| rsv\.status === 'EXPIRED'/);
+    expect(content).toMatch(/isReservationClosed\(rsv\.status\)/);
+    expect(content).toMatch(/isReservationPaid\(rsv\.status\)/);
     expect(content).toMatch(/navigate\('\/customer\/my-units'/);
   });
 });

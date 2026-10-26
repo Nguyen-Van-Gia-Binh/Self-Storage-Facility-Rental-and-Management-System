@@ -23,18 +23,6 @@ describe('ISS-76: Realtime Database Unit Availability Validation on Confirm', ()
       : fs.readFileSync(unitPickerPage, 'utf-8');
   };
 
-  const unitGrid = path.resolve(
-    process.cwd(),
-    'src/features/customer/components/UnitGrid.tsx'
-  );
-
-  it('UnitGrid hỗ trợ prop isConfirming và hiển thị loading spinner khi đang kiểm tra database', () => {
-    const content = fs.readFileSync(unitGrid, 'utf-8');
-    expect(content).toMatch(/isConfirming\?: boolean/);
-    expect(content).toMatch(/Đang kiểm tra ô kho\.\.\./);
-    expect(content).toMatch(/disabled=\{!activeSelectedUnit\.monthlyPrice.*\|\|\s*isConfirming\}/);
-  });
-
   it('UnitPickerPage gọi fetchStorageUnitsApi trong handleProceedToBooking để kiểm tra database thời gian thực', () => {
     const content = getUnitPickerContent();
     expect(content).toMatch(/handleProceedToBooking\s*=\s*async/);

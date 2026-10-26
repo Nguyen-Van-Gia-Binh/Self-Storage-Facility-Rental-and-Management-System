@@ -25,6 +25,12 @@ import { BookingSummaryCard } from '../components/BookingSummaryCard';
 import { BookingModals } from '../components/BookingModals';
 import { useBookingPayment } from '../hooks/useBookingPayment';
 import { validateBookingCustomerForm, type BookingFormErrors } from '../utils/bookingValidation';
+import { toPositiveNumber } from '../utils/bookingIdParsers';
+import {
+  isReservationPaid,
+  isReservationClosed,
+  findActivePendingReservation,
+} from '../utils/reservationStatus';
 
 export const BookingPage: React.FC = () => {
   const policy = useActivePolicy();
@@ -386,8 +392,6 @@ export const BookingPage: React.FC = () => {
     handleConfirmCancelReservation,
     showPassModal,
     setShowPassModal,
-    showTermsModal,
-    setShowTermsModal,
     createdPass,
   } = useBookingPayment({
     currentStep,
@@ -411,7 +415,7 @@ export const BookingPage: React.FC = () => {
         const rsv = await getReservationById(reservationIdParam!);
         if (!isMounted) return;
 
-        if (rsv.status === 'CANCELLED' || rsv.status === 'EXPIRED') {
+        if (isReservationClosed(rsv.status)) {
           setUnavailableModal({
             isOpen: true,
             title: 'Đơn giữ chỗ đã hết hạn hoặc bị hủy',
@@ -421,7 +425,7 @@ export const BookingPage: React.FC = () => {
           return;
         }
 
-        if (rsv.status === 'ACTIVE' || rsv.status === 'CONFIRMED' || rsv.status === 'PAID') {
+        if (isReservationPaid(rsv.status) || rsv.status === 'FULFILLED') {
           navigate('/customer/my-units', { replace: true });
           return;
         }
@@ -459,11 +463,7 @@ export const BookingPage: React.FC = () => {
       try {
         const myReservations = await getMyReservationsApi();
         if (!isMounted) return;
-        const activePending = myReservations?.find((r) => {
-          if (r.status !== 'PENDING_PAYMENT') return false;
-          if (!r.holdExpiresAt) return true;
-          return new Date(r.holdExpiresAt).getTime() > Date.now();
-        });
+        const activePending = findActivePendingReservation(myReservations);
         if (activePending) {
           setPendingLimitModal({
             isOpen: true,
@@ -501,32 +501,9 @@ export const BookingPage: React.FC = () => {
     setBookingError(null);
 
     try {
-      let numericFacilityId = 1;
-      if (typeof facility.id === 'number') {
-        numericFacilityId = facility.id;
-      } else if (typeof facility.id === 'string') {
-        const match = facility.id.match(/\d+/);
-        numericFacilityId = match ? parseInt(match[0], 10) : 1;
-      }
-
-      let numericUnitTypeId = 1;
-      if (typeof unitType.id === 'number') {
-        numericUnitTypeId = unitType.id;
-      } else if (typeof unitType.id === 'string') {
-        const match = unitType.id.match(/\d+/);
-        numericUnitTypeId = match ? parseInt(match[0], 10) : 1;
-      }
-
-      let numericUnitId: number | undefined = undefined;
-      if (finalUnitId) {
-        const match = String(finalUnitId).match(/\d+/);
-        if (match) {
-          const parsed = parseInt(match[0], 10);
-          if (!isNaN(parsed) && parsed > 0) {
-            numericUnitId = parsed;
-          }
-        }
-      }
+      const numericFacilityId = toPositiveNumber(facility.id, 1) ?? 1;
+      const numericUnitTypeId = toPositiveNumber(unitType.id, 1) ?? 1;
+      const numericUnitId = toPositiveNumber(finalUnitId);
 
       const rsv = await createReservation({
         facilityId: numericFacilityId,
@@ -558,15 +535,11 @@ export const BookingPage: React.FC = () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {
       console.error('Lỗi khi khởi tạo đơn đặt chỗ hoặc PayOS:', err);
-      const errorMsg = err?.message || '';
-      if (errorMsg.includes('chưa thanh toán') || errorMsg.includes('giữ chỗ') || err?.status === 409) {
+      // Backend mã hóa rõ: khách đang giữ 1 đơn PENDING_PAYMENT khác (BR-RES-02, ISS-99)
+      if (err?.errorCode === 'PENDING_RESERVATION_EXISTS' || err?.errorCode === 'UNIT_NOT_AVAILABLE') {
         try {
           const myReservations = await getMyReservationsApi();
-          const activePending = myReservations?.find((r) => {
-            if (r.status !== 'PENDING_PAYMENT') return false;
-            if (!r.holdExpiresAt) return true;
-            return new Date(r.holdExpiresAt).getTime() > Date.now();
-          });
+          const activePending = findActivePendingReservation(myReservations);
           if (activePending) {
             setPendingLimitModal({
               isOpen: true,
@@ -712,8 +685,6 @@ export const BookingPage: React.FC = () => {
         showPassModal={showPassModal}
         createdPass={createdPass}
         onClosePassModal={() => setShowPassModal(false)}
-        showTermsModal={showTermsModal}
-        onCloseTermsModal={() => setShowTermsModal(false)}
       />
 
     </div>

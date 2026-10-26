@@ -28,6 +28,12 @@ import { QRCodeSVG } from 'qrcode.react';
 import { getCustomerContracts, getRenewalQuote, waitForAppliedRenewal, type RenewalQuote } from '@/api/customerRentals';
 import { customerApi, type CheckoutResponse } from '../api/customerApi';
 import { formatVND } from '../utils/pricing';
+import {
+  BANK_ACCOUNT_NUMBER,
+  BANK_ACCOUNT_NUMBER_PLAIN,
+  BANK_NAME,
+  ACCOUNT_HOLDER,
+} from '../utils/paymentBankInfo';
 import { calculateRenewalPricing, calculateExtendedEndDate } from '../utils/renewalPricing';
 import type { RentedContract, RenewContractResponse } from '../types';
 import { RenewalExpiryBanner } from '../components/RenewalExpiryBanner';
@@ -1083,7 +1089,7 @@ export const RenewalPage: React.FC = () => {
                     <div className="bg-[#f2f9f7] p-3 rounded-lg border border-emerald-100">
                       <span className="text-slate-500 block">Ngân hàng thụ hưởng:</span>
                       <strong className="text-sm text-[#0a1614] font-bold">
-                        MB Bank (Ngân hàng Quân Đội · Napas247)
+                        {BANK_NAME}
                       </strong>
                     </div>
 
@@ -1091,12 +1097,12 @@ export const RenewalPage: React.FC = () => {
                       <div>
                         <span className="text-slate-500 block">Số tài khoản / Virtual Account:</span>
                         <strong className="text-sm text-[#0a1614] font-bold tracking-wider">
-                          {payosCheckout?.accountNumber || '0888 567 999'}
+                          {payosCheckout?.accountNumber || BANK_ACCOUNT_NUMBER}
                         </strong>
                       </div>
                       <button
                         type="button"
-                        onClick={() => handleCopy(payosCheckout?.accountNumber || '0888567999', 'ACCOUNT')}
+                        onClick={() => handleCopy(payosCheckout?.accountNumber || BANK_ACCOUNT_NUMBER_PLAIN, 'ACCOUNT')}
                         className="p-1.5 text-slate-400 hover:text-brand-600 rounded cursor-pointer"
                         title="Sao chép số tài khoản"
                       >
@@ -1107,7 +1113,7 @@ export const RenewalPage: React.FC = () => {
                     <div className="bg-[#f2f9f7] p-3 rounded-lg border border-emerald-100">
                       <span className="text-slate-500 block">Chủ tài khoản:</span>
                       <strong className="text-sm text-[#0a1614] font-bold uppercase">
-                        {payosCheckout?.accountName || 'CONG TY CP SMARTSTORAGE VIET NAM'}
+                        {payosCheckout?.accountName || ACCOUNT_HOLDER}
                       </strong>
                     </div>
 
