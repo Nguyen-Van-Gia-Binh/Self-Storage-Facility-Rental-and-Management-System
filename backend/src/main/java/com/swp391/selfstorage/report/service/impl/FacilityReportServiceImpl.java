@@ -128,15 +128,34 @@ public class FacilityReportServiceImpl implements FacilityReportService {
         long surchargeRevenue = 0L;
         long paidOverdueFee = 0L;
 
-        if (!contractIds.isEmpty()) {
+        if (!contracts.isEmpty()) {
             List<PaymentTransaction> monthlyPayments = new ArrayList<>();
-            for (Long cId : contractIds) {
-                List<PaymentTransaction> pList = paymentTransactionRepository.findByContractId(cId);
+            Set<Long> seenPaymentIds = new HashSet<>();
+            Map<Long, RentalContract> paymentToContractMap = new HashMap<>();
+            ZoneId bizZone = ZoneId.of("Asia/Ho_Chi_Minh");
+
+            for (RentalContract c : contracts) {
+                List<PaymentTransaction> contractPayments = new ArrayList<>();
+                List<PaymentTransaction> pList = paymentTransactionRepository.findByContractId(c.getId());
                 if (pList != null) {
-                    for (PaymentTransaction p : pList) {
-                        if ("SUCCESS".equalsIgnoreCase(p.getStatus()) && p.getCreatedAt() != null) {
-                            if (YearMonth.from(p.getCreatedAt().atZone(ZoneId.systemDefault())).equals(targetMonth)) {
-                                monthlyPayments.add(p);
+                    contractPayments.addAll(pList);
+                }
+                if (c.getReservationId() != null) {
+                    List<PaymentTransaction> rList = paymentTransactionRepository.findByReservationId(c.getReservationId());
+                    if (rList != null) {
+                        contractPayments.addAll(rList);
+                    }
+                }
+
+                for (PaymentTransaction p : contractPayments) {
+                    if (p != null && "SUCCESS".equalsIgnoreCase(p.getStatus()) && p.getCreatedAt() != null) {
+                        if (p.getId() != null && !seenPaymentIds.add(p.getId())) {
+                            continue;
+                        }
+                        if (YearMonth.from(p.getCreatedAt().atZone(bizZone)).equals(targetMonth)) {
+                            monthlyPayments.add(p);
+                            if (p.getId() != null) {
+                                paymentToContractMap.put(p.getId(), c);
                             }
                         }
                     }
@@ -148,7 +167,10 @@ public class FacilityReportServiceImpl implements FacilityReportService {
                         .collect(Collectors.toMap(RentalContract::getId, c -> c, (c1, c2) -> c1));
 
                 for (PaymentTransaction p : monthlyPayments) {
-                    RentalContract c = contractMap.get(p.getContractId());
+                    RentalContract c = (p.getId() != null) ? paymentToContractMap.get(p.getId()) : null;
+                    if (c == null && p.getContractId() != null) {
+                        c = contractMap.get(p.getContractId());
+                    }
                     String txnType = p.getTransactionType() != null ? p.getTransactionType() : "";
                     long amount = p.getAmount() != null ? p.getAmount() : 0L;
 
