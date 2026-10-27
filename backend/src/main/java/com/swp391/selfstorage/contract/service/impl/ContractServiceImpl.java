@@ -33,6 +33,8 @@ import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
 import com.swp391.selfstorage.policy.service.AppliedPriceLookup;
 import com.swp391.selfstorage.policy.service.PolicyNumbers;
 import com.swp391.selfstorage.policy.service.SurchargeAmountCalculator;
+import com.swp391.selfstorage.payment.entity.PaymentTransaction;
+import com.swp391.selfstorage.payment.repository.PaymentTransactionRepository;
 import com.swp391.selfstorage.user.entity.UserRole;
 import com.swp391.selfstorage.user.service.AuditLogService;
 import com.swp391.selfstorage.user.service.UserService;
@@ -93,6 +95,9 @@ public class ContractServiceImpl implements ContractService {
 
         @Autowired(required = false)
         private ExtraFeeTypeRepository extraFeeTypeRepository;
+
+	@Autowired(required = false)
+	private PaymentTransactionRepository paymentTransactionRepository;
 
         @Autowired(required = false)
         private AuditLogService auditLogService;
@@ -378,6 +383,9 @@ public class ContractServiceImpl implements ContractService {
                                         if (req.getStatus() == ReturnRequestStatus.PENDING) {
                                                 displayStatus = ContractStatus.PENDING_RETURN;
                                         }
+                                        if (req.getStatus() == ReturnRequestStatus.PENDING && c.getStatus() != ContractStatus.OVERDUE) {
+                                                displayStatus = ContractStatus.PENDING_RETURN;
+                                        }
                                         if (req.getInspectedAt() != null) {
                                                 isInspected = true;
                                                 damageCost = req.getDamageCost();
@@ -398,7 +406,7 @@ public class ContractServiceImpl implements ContractService {
                                 }
                         }
 
-                        if (c.getStatus() == ContractStatus.PENDING_CHECK_IN && staffDailyAssignmentRepository != null) {
+                        if (assignedStaffId == null && staffDailyAssignmentRepository != null) {
                                 var assignOpt = staffDailyAssignmentRepository.findByReferenceTypeAndReferenceId("CONTRACT", c.getId());
                                 if (assignOpt.isPresent() && assignOpt.get().getStaffId() != null) {
                                         assignedStaffId = assignOpt.get().getStaffId();
@@ -597,9 +605,25 @@ public class ContractServiceImpl implements ContractService {
                         newUnit.setStatus(StorageUnitStatus.RESERVED);
                 } else {
                         newUnit.setStatus(StorageUnitStatus.OCCUPIED);
-                        ticket.setRelocationRequired(Boolean.FALSE);
                 }
                 storageUnitRepository.save(newUnit);
+
+                // Sau khi Quản lý hoàn tất đổi ô kho cho hợp đồng theo phiếu sự cố:
+                // 1. Giải tỏa cờ yêu cầu di dời: relocationRequired = FALSE
+                // 2. Chuyển trạng thái phiếu sang CLOSED vì việc đổi ô kho đã hoàn thành
+                ticket.setRelocationRequired(Boolean.FALSE);
+                ticket.setStatus(SupportStatus.CLOSED);
+                OffsetDateTime now = OffsetDateTime.now();
+                if (ticket.getResolvedAt() == null) {
+                        ticket.setResolvedAt(now);
+                }
+                ticket.setCustomerConfirmedAt(now);
+                ticket.setUpdatedAt(now);
+
+                String oldResolutionNote = ticket.getResolutionNote() != null ? ticket.getResolutionNote() : "";
+                String relocationResolutionInfo = "\n[Quản lý cơ sở đã hoàn tất đổi sang ô kho " + newUnit.getCode()
+                                + ". Sự cố đã được xử lý và đóng.]";
+                ticket.setResolutionNote(oldResolutionNote + relocationResolutionInfo);
 
                 long monthlyPriceSnapshot = contract.getMonthlyPrice();
                 long depositSnapshot = contract.getDepositAmount();
@@ -650,10 +674,10 @@ public class ContractServiceImpl implements ContractService {
                         }
                 }
 
-                LocalDate now = LocalDate.now();
-                LocalDate threshold = now.plusDays(7);
+                LocalDate today = LocalDate.now();
+                LocalDate threshold = today.plusDays(7);
                 boolean nearExp = contract.getStatus() == ContractStatus.ACTIVE
-                                && !contract.getEndDateExclusive().isBefore(now)
+                                && !contract.getEndDateExclusive().isBefore(today)
                                 && !contract.getEndDateExclusive().isAfter(threshold);
 
                 return ContractSummaryResponse.builder()
@@ -1577,6 +1601,25 @@ public class ContractServiceImpl implements ContractService {
                                 "Khong the sinh Access Code, vui long thu lai");
         }
 
+        private void linkPaymentsToContract(Long reservationId, Long contractId) {
+                if (paymentTransactionRepository != null && reservationId != null && contractId != null) {
+                        try {
+                                List<PaymentTransaction> txns = paymentTransactionRepository.findByReservationId(reservationId);
+                                if (txns != null && !txns.isEmpty()) {
+                                        for (PaymentTransaction txn : txns) {
+                                                if (txn.getContractId() == null) {
+                                                        txn.setContractId(contractId);
+                                                        paymentTransactionRepository.save(txn);
+                                                        log.info("Linked PaymentTransaction id={} to Contract id={}", txn.getId(), contractId);
+                                                }
+                                        }
+                                }
+                        } catch (Exception e) {
+                                log.warn("Could not link PaymentTransactions for reservationId={} to contractId={}: {}", reservationId, contractId, e.getMessage());
+                        }
+                }
+        }
+
         private ContractResponse toResponse(RentalContract c) {
                 ContractResponse r = new ContractResponse();
                 r.setId(c.getId());
@@ -1635,8 +1678,11 @@ public class ContractServiceImpl implements ContractService {
                         }
                 }
 
-                if (c.getStatus() == ContractStatus.PENDING_RETURN && returnRequestRepository != null) {
+                if (returnRequestRepository != null && c.getStatus() != ContractStatus.CLOSED && c.getStatus() != ContractStatus.TERMINATED) {
                         returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(c.getId()).ifPresent(req -> {
+                                if (req.getStatus() == ReturnRequestStatus.PENDING && c.getStatus() != ContractStatus.OVERDUE) {
+                                        r.setStatus(ContractStatus.PENDING_RETURN);
+                                }
                                 if (req.getInspectedAt() != null) {
                                         r.setIsInspected(true);
                                         r.setDamageCost(req.getDamageCost());

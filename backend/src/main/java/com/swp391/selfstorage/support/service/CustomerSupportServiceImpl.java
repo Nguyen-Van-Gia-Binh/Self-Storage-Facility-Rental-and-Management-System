@@ -290,6 +290,10 @@ public class CustomerSupportServiceImpl implements CustomerSupportService {
         OffsetDateTime now = OffsetDateTime.now();
 
         if (Boolean.TRUE.equals(request.getSatisfied())) {
+            if (Boolean.TRUE.equals(ticket.getRelocationRequired())) {
+                throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                        "Sự cố có yêu cầu di dời ô kho. Phải hoàn tất đổi ô kho cho khách hàng trước khi đóng sự cố.");
+            }
             ticket.setStatus(SupportStatus.CLOSED);
             ticket.setCustomerConfirmedAt(now);
         } else {

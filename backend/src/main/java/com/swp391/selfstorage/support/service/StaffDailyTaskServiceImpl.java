@@ -6,6 +6,7 @@ import com.swp391.selfstorage.common.exception.ErrorCode;
 import com.swp391.selfstorage.contract.entity.ContractStatus;
 import com.swp391.selfstorage.contract.entity.RentalContract;
 import com.swp391.selfstorage.contract.repository.RentalContractRepository;
+import com.swp391.selfstorage.contract.repository.ReturnRequestRepository;
 import com.swp391.selfstorage.facility.entity.Facility;
 import com.swp391.selfstorage.facility.repository.FacilityRepository;
 import com.swp391.selfstorage.support.dto.*;
@@ -24,6 +25,7 @@ import com.swp391.selfstorage.user.entity.UserRole;
 import com.swp391.selfstorage.user.entity.UserStatus;
 import com.swp391.selfstorage.user.repository.UserFacilityAssignmentRepository;
 import com.swp391.selfstorage.user.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +45,9 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
     private final UserRepository userRepository;
     private final UserFacilityAssignmentRepository userFacilityAssignmentRepository;
     private final PolicyVersionRepository policyVersionRepository;
+
+    @Autowired(required = false)
+    private ReturnRequestRepository returnRequestRepository;
 
     public StaffDailyTaskServiceImpl(
             SupportRequestRepository supportRequestRepository,
@@ -377,7 +382,16 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
     }
 
     private DailyReturnTaskDto toReturnDto(RentalContract c) {
-        boolean completed = c.getStatus() == ContractStatus.RETURNED || c.getReturnDate() != null;
+        boolean isInspected = false;
+        if (returnRequestRepository != null) {
+            var reqOpt = returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(c.getId());
+            if (reqOpt.isPresent() && reqOpt.get().getInspectedAt() != null) {
+                isInspected = true;
+            }
+        }
+        boolean completed = c.getStatus() == ContractStatus.RETURNED
+                || c.getStatus() == ContractStatus.CLOSED
+                || isInspected;
         String status;
         if (completed) {
             status = "COMPLETED";
