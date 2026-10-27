@@ -4,9 +4,9 @@ import type { FacilityListItem } from '@/types';
 
 export interface FacilityShiftStats {
   totalStaff: number;
-  morningStaffCount: number;
-  afternoonStaffCount: number;
-  nightStaffCount: number;
+  morningStaffCount?: number;
+  afternoonStaffCount?: number;
+  nightStaffCount?: number;
 }
 
 interface FacilityShiftSummaryCardProps {
@@ -18,10 +18,7 @@ interface FacilityShiftSummaryCardProps {
 export const FacilityShiftSummaryCard: React.FC<FacilityShiftSummaryCardProps> = ({
   facility,
   stats = {
-    totalStaff: 6,
-    morningStaffCount: 2,
-    afternoonStaffCount: 2,
-    nightStaffCount: 2,
+    totalStaff: 0,
   },
   onViewSchedule,
 }) => {
@@ -55,18 +52,13 @@ export const FacilityShiftSummaryCard: React.FC<FacilityShiftSummaryCardProps> =
 
         {/* Mini-stats: Nhân viên cơ sở */}
         <div className="space-y-2.5 text-xs">
-          <div className="flex items-center justify-between text-slate-700">
-            <span className="flex items-center gap-1.5 text-slate-500">
+          <div className="flex items-center justify-between text-slate-700 bg-slate-50/70 rounded-xl p-3 border border-slate-100">
+            <span className="flex items-center gap-1.5 text-slate-500 font-medium">
               <Users className="w-3.5 h-3.5 text-slate-400" />
               Đội ngũ nhân sự:
             </span>
-            <span className="font-bold text-slate-900">{stats.totalStaff} nhân viên</span>
-          </div>
-
-          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 flex items-center justify-between">
-            <span className="text-[11px] text-slate-500">Phân công thực địa:</span>
-            <span className="text-xs font-semibold text-brand-600 bg-brand-50 border border-brand-200/80 px-2 py-0.5 rounded-lg">
-              Check-in · Trả kho · Sự cố
+            <span className="font-bold text-slate-900 bg-white px-2.5 py-1 rounded-lg border border-slate-200/80 shadow-2xs">
+              {stats.totalStaff} nhân viên
             </span>
           </div>
         </div>

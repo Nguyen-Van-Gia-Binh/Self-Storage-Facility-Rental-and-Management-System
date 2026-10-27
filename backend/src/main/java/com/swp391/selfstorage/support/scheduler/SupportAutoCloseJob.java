@@ -35,6 +35,10 @@ public class SupportAutoCloseJob {
         OffsetDateTime now = OffsetDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
         int closed = 0;
         for (SupportRequest ticket : supportRequestRepository.findByStatus(SupportStatus.RESOLVED)) {
+            // Không tự động đóng phiếu sự cố nếu đang chờ Quản lý đổi ô kho
+            if (Boolean.TRUE.equals(ticket.getRelocationRequired())) {
+                continue;
+            }
             OffsetDateTime due = PolicyNumbers.plusWorkingDays(ticket.getResolvedAt(), workingDays);
             if (due == null || now.isBefore(due)) {
                 continue;

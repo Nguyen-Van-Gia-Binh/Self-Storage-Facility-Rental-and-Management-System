@@ -37,6 +37,7 @@ import { StorageUnitTable } from '../components/StorageUnitTable';
 import type { StorageUnitSortField, SortDirection } from '../components/StorageUnitTable';
 import { StorageUnitFormModal } from '../components/StorageUnitFormModal';
 import { Pagination } from '../components/Pagination';
+import { cleanUnitTypeName } from '../components/UnitTypeCard';
 
 const STATUS_FILTERS: { label: string; value: UnitStatus | 'ALL' }[] = [
   { label: 'Tất cả', value: 'ALL' },
@@ -321,7 +322,7 @@ export const StorageUnitListPage: React.FC = () => {
             icon: Building2,
           },
           {
-            label: unitType?.name || `Loại kho #${typeIdNum}`,
+            label: cleanUnitTypeName(unitType?.name) || `Loại kho #${typeIdNum}`,
             icon: Layers,
           },
         ]}
@@ -336,12 +337,12 @@ export const StorageUnitListPage: React.FC = () => {
             </h1>
             {unitType && (
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200/80">
-                {unitType.name} ({unitType.areaM2} m²)
+                {cleanUnitTypeName(unitType.name)} ({unitType.areaM2} m²)
               </span>
             )}
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Quản lý hiện trạng từng ô kho thuộc loại {unitType?.name || 'kho'}, giám sát người thuê và thời hạn hợp đồng
+            Quản lý hiện trạng từng ô kho thuộc loại {cleanUnitTypeName(unitType?.name) || 'kho'}, giám sát người thuê và thời hạn hợp đồng
           </p>
         </div>
 

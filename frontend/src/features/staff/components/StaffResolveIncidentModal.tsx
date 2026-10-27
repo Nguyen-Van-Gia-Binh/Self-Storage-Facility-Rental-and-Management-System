@@ -225,6 +225,7 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
       await resolveStaffIncident(ticket.ticketId, {
         resolutionNote: fullResolutionNote,
         resolutionAttachmentUrls: attachmentUrls,
+        relocationRequired: needsRelocation,
       });
 
       onSuccess();
@@ -685,21 +686,43 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
                 </label>
               </div>
 
+              {/* CẢNH BÁO QUY TRÌNH KHI CẦN DI DỜI KHO */}
+              {needsRelocation && (
+                <div className="p-3.5 rounded-xl bg-amber-50/90 border border-amber-300 text-xs text-amber-900 flex items-start gap-2.5 shadow-2xs">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <span className="font-bold">Lưu ý về quy trình đổi ô kho:</span>
+                    <p className="text-amber-800 leading-relaxed">
+                      Sự cố này cần di dời ô kho. Sau khi gửi biên bản, phiếu sẽ chuyển cho Quản lý cơ sở thực hiện đổi ô kho. Phiếu chỉ được đóng sau khi Quản lý hoàn tất đổi ô kho cho khách hàng.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* NÚT SUBMIT NGHIỆM THU */}
               <button
                 type="submit"
                 disabled={isSubmitDisabled}
-                className="w-full py-2.5 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`w-full py-2.5 px-4 rounded-xl text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed ${
+                  needsRelocation
+                    ? 'bg-amber-600 hover:bg-amber-700'
+                    : 'bg-teal-600 hover:bg-teal-700'
+                }`}
               >
                 {submitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
                     <span>Đang gửi biên bản...</span>
                   </>
+                ) : needsRelocation ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Xác nhận hiện trường & Yêu cầu Quản lý đổi ô kho</span>
+                  </>
                 ) : (
                   <>
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>Xác nhận hoàn thành & Gửi khách nghiệm thu</span>
+                    <span>Xác nhận hoàn thành & Đóng sự cố</span>
                   </>
                 )}
               </button>

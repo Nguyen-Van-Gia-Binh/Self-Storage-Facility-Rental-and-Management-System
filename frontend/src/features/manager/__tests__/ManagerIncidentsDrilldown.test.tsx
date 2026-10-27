@@ -25,6 +25,8 @@ describe('Xử lý sự cố — Kiến trúc Drill-down 3 Cấp độ (FM-05, S
     facilityName: 'Cơ sở Cầu Giấy',
     address: '123 Cầu Giấy, Hà Nội',
     city: 'Hà Nội',
+    phone: '0901234567',
+    description: 'Cơ sở Cầu Giấy hiện đại',
     total: 5,
     pendingCount: 1,
     inProgressCount: 1,
@@ -90,7 +92,7 @@ describe('Xử lý sự cố — Kiến trúc Drill-down 3 Cấp độ (FM-05, S
   ];
 
   describe('Cấp 1 — Thẻ tổng quan cơ sở (IncidentSummaryCard)', () => {
-    it('hiển thị đầy đủ thông tin cơ sở và các chỉ số mini-stats sự cố', () => {
+    it('hiển thị đầy đủ thông tin cơ sở, địa chỉ, hotline và nút điều hướng xem sự cố', () => {
       const html = cleanHtml(
         renderToString(
           <IncidentSummaryCard data={mockFacilityStats} onSelect={() => {}} />
@@ -100,11 +102,11 @@ describe('Xử lý sự cố — Kiến trúc Drill-down 3 Cấp độ (FM-05, S
       expect(html).toContain('FAC-CG');
       expect(html).toContain('Cơ sở Cầu Giấy');
       expect(html).toContain('123 Cầu Giấy, Hà Nội');
-      expect(html).toContain('5'); // tổng số
-      expect(html).toContain('Chờ nhận:');
-      expect(html).toContain('Đang xử lý:');
-      expect(html).toContain('Đã xử lý:');
+      expect(html).toContain('0901234567');
       expect(html).toContain('Xem danh sách sự cố');
+      // Không hiển thị các con số vụn vặt chờ nhận / đang xử lý trên card Cấp 1 theo chuẩn đồng nhất hệ thống
+      expect(html).not.toContain('Chờ nhận:');
+      expect(html).not.toContain('Đang xử lý:');
     });
   });
 
@@ -131,7 +133,7 @@ describe('Xử lý sự cố — Kiến trúc Drill-down 3 Cấp độ (FM-05, S
       expect(html).toContain('Chi tiết');
     });
 
-    it('hiển thị trạng thái Chưa gán khi sự cố chưa có nhân viên phụ trách', () => {
+    it('hiển thị trạng thái Chưa gán kèm nút Gán nhanh khi sự cố chưa có nhân viên phụ trách', () => {
       const unassignedTicket = { ...mockTicket, assignedStaffId: undefined, assignedStaffName: undefined };
       const html = cleanHtml(
         renderToString(
@@ -145,7 +147,41 @@ describe('Xử lý sự cố — Kiến trúc Drill-down 3 Cấp độ (FM-05, S
         )
       );
 
-      expect(html).toContain('Chưa gán');
+      expect(html).toContain('Chưa gán · Gán nhanh');
+    });
+
+    it('hiển thị nhãn Tồn đọng cho các ticket phát sinh từ các ngày trước chưa xử lý', () => {
+      const backlogTicket = { ...mockTicket, isBacklog: true };
+      const html = cleanHtml(
+        renderToString(
+          <IncidentTable
+            tickets={[backlogTicket]}
+            sortField="createdAt"
+            sortDirection="desc"
+            onSort={() => {}}
+            onViewDetail={() => {}}
+          />
+        )
+      );
+
+      expect(html).toContain('Tồn đọng');
+    });
+
+    it('hiển thị cảnh báo Cần đổi kho khi sự cố yêu cầu di dời kho', () => {
+      const relocationTicket = { ...mockTicket, relocationRequired: true };
+      const html = cleanHtml(
+        renderToString(
+          <IncidentTable
+            tickets={[relocationTicket]}
+            sortField="createdAt"
+            sortDirection="desc"
+            onSort={() => {}}
+            onViewDetail={() => {}}
+          />
+        )
+      );
+
+      expect(html).toContain('Cần đổi kho');
     });
   });
 
@@ -160,6 +196,36 @@ describe('Xử lý sự cố — Kiến trúc Drill-down 3 Cấp độ (FM-05, S
       expect(html).toContain('0923456789');
       expect(html).toContain('Khóa cửa ô kho S-108 bị kẹt cơ');
       expect(html).toContain('Ảnh hiện trường ban đầu');
+    });
+
+    it('IncidentDetailPanel hiển thị nút Đổi kho khi ticket có yêu cầu di dời', () => {
+      const relocationTicket = { ...mockTicket, relocationRequired: true };
+      const html = cleanHtml(
+        renderToString(
+          <IncidentDetailPanel
+            ticket={relocationTicket}
+            onRelocateUnit={() => {}}
+          />
+        )
+      );
+
+      expect(html).toContain('⚠️ Cần chuyển ô kho');
+      expect(html).toContain('Đổi kho');
+    });
+
+    it('IncidentDetailPanel ẩn nút Đổi kho khi ticket không yêu cầu di dời', () => {
+      const normalTicket = { ...mockTicket, relocationRequired: false };
+      const html = cleanHtml(
+        renderToString(
+          <IncidentDetailPanel
+            ticket={normalTicket}
+            onRelocateUnit={() => {}}
+          />
+        )
+      );
+
+      expect(html).toContain('Không');
+      expect(html).not.toContain('Đổi kho');
     });
 
     it('StorageUnitMiniPanel và ContractMiniPanel hiển thị đúng thông tin liên kết', () => {

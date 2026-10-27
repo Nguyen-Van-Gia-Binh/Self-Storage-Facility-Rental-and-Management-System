@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   Printer,
   RefreshCw,
+  ArrowRightLeft,
 } from 'lucide-react';
 import { apiClient } from '@/api/client';
 import {
@@ -15,7 +16,9 @@ import {
   getStaffWorkload,
   assignStaffToTask,
 } from '../api/staffAssignmentApi';
-import { getContractById } from '@/api/contract';
+import { getContractById, getManagerContracts, getManagerContractById } from '@/api/contract';
+import type { ManagerContractItem } from '@/types/contractManager';
+import { ReassignUnitModal } from '../components/ReassignUnitModal';
 import type {
   ManagementSupportTicket,
   StaffWorkloadItem,
@@ -100,6 +103,9 @@ export const IncidentDetailPage: React.FC = () => {
 
   // Modal đóng sự cố
   const [closeModalOpen, setCloseModalOpen] = useState<boolean>(false);
+  // Modal đổi ô kho khẩn cấp
+  const [reassignModalOpen, setReassignModalOpen] = useState<boolean>(false);
+  const [contractForReassign, setContractForReassign] = useState<ManagerContractItem | null>(null);
 
   // Chi tiết hợp đồng & thông tin ô kho từ hợp đồng
   const [contractDetail, setContractDetail] = useState<{
@@ -200,9 +206,80 @@ export const IncidentDetailPage: React.FC = () => {
     }
   };
 
+  // 3. Mở modal đổi ô kho khẩn cấp cho sự cố này
+  const handleOpenReassignModal = async () => {
+    if (!ticket) return;
+    setActionLoading(true);
+    try {
+      let targetContract: ManagerContractItem | null = null;
+      if (ticket.contractId) {
+        try {
+          targetContract = await getManagerContractById(ticket.contractId);
+        } catch {
+          // fallback
+        }
+      }
+
+      if (!targetContract && (ticket.contractId || ticket.contractCode)) {
+        const list = await getManagerContracts({
+          facilityId: ticket.facilityId,
+          keyword: ticket.contractCode || String(ticket.contractId),
+        });
+        targetContract =
+          list.find((c) => c.id === ticket.contractId || c.code === ticket.contractCode) ||
+          list[0] ||
+          null;
+      }
+
+      if (!targetContract && ticket.contractId) {
+        const c = await getContractById(ticket.contractId);
+        targetContract = {
+          id: c.id,
+          code: c.code,
+          customerId: c.customerId,
+          customerName: c.customerName || ticket.customerName,
+          customerPhone: c.customerPhone || ticket.customerPhone,
+          facilityId: c.facilityId || ticket.facilityId,
+          facilityName: c.facilityName || ticket.facilityName,
+          storageUnitId: c.storageUnitId,
+          storageUnitCode: c.storageUnitCode || ticket.storageUnitCode,
+          unitTypeId: c.unitTypeId || 1,
+          unitTypeName: c.unitTypeName || '',
+          startDate: c.startDate,
+          endDateExclusive: c.endDateExclusive,
+          rentalMonths: c.rentalMonths || 1,
+          monthlyPrice: c.monthlyPrice || 0,
+          depositAmount: c.depositAmount || 0,
+          depositBalance: c.depositAmount || 0,
+          status: (c.status as any) || 'ACTIVE',
+          openSupportRequestId: ticket.id,
+        };
+      }
+
+      if (targetContract) {
+        setContractForReassign({
+          ...targetContract,
+          openSupportRequestId: ticket.id,
+        });
+        setReassignModalOpen(true);
+      } else {
+        showToast('Không tìm thấy thông tin hợp đồng liên kết để đổi ô kho.');
+      }
+    } catch (err) {
+      console.error('Lỗi chuẩn bị đổi ô kho:', err);
+      showToast('Không thể mở chức năng đổi ô kho.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   // 4. Đóng sự cố hoàn tất (Close - Nghiệm thu sau khi Staff đã resolve)
   const handleConfirmClose = async (closingNotes: string) => {
     if (!ticket) return;
+    if (ticket.relocationRequired) {
+      showToast('Sự cố có yêu cầu di dời ô kho. Phải hoàn tất đổi ô kho cho khách hàng trước khi đóng sự cố.');
+      return;
+    }
     setActionLoading(true);
     try {
       // Đóng ticket và lưu biên bản
@@ -333,8 +410,45 @@ export const IncidentDetailPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* CỘT TRÁI (2/3) */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Banner Yêu cầu di dời ô kho khẩn cấp */}
+          {ticket.relocationRequired && (
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/90 rounded-2xl p-4 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in duration-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-700 flex items-center justify-center shrink-0 border border-amber-300/40">
+                  <ArrowRightLeft className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-amber-900">
+                      Yêu cầu di dời ô kho khẩn cấp
+                    </h4>
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-200 text-amber-900">
+                      Cần xử lý
+                    </span>
+                  </div>
+                  <p className="text-xs text-amber-800/90 mt-0.5">
+                    Sự cố tại ô kho <strong>{ticket.storageUnitCode}</strong> không thể khắc phục tại chỗ. Vui lòng tiến hành đổi ô kho trống tương đương cho hợp đồng{' '}
+                    <strong>{ticket.contractCode || 'liên kết'}</strong>.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleOpenReassignModal}
+                disabled={actionLoading}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all shrink-0 hover:shadow"
+              >
+                <ArrowRightLeft className="w-4 h-4" />
+                <span>Tiến hành đổi ô kho</span>
+              </button>
+            </div>
+          )}
+
           {/* Panel thông tin sự cố */}
-          <IncidentDetailPanel ticket={ticket} />
+          <IncidentDetailPanel
+            ticket={ticket}
+            onRelocateUnit={handleOpenReassignModal}
+          />
 
           {/* Phần phân công nhân viên phụ trách */}
           <StaffAssignmentSection
@@ -413,6 +527,20 @@ export const IncidentDetailPage: React.FC = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
+              {/* Nút Đổi ô kho (CHỈ HIỂN THỊ KHI TICKET CẦN DI DỜI KHO) */}
+              {ticket.relocationRequired && (
+                <button
+                  type="button"
+                  disabled={actionLoading}
+                  onClick={handleOpenReassignModal}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+                  title="Thực hiện đổi ô kho sang ô trống cùng loại"
+                >
+                  <ArrowRightLeft className="w-3.5 h-3.5" />
+                  <span>Tiến hành đổi ô kho</span>
+                </button>
+              )}
+
               {/* Nút Yêu cầu di dời kho */}
               {(ticket.status === 'IN_PROGRESS' || ticket.status === 'ASSIGNED' || ticket.status === 'NEW') && (
                 <button
@@ -432,17 +560,37 @@ export const IncidentDetailPage: React.FC = () => {
                 </button>
               )}
 
-              {/* Nút Đóng sự cố (Chỉ hiển thị khi Staff đã xử lý xong sang RESOLVED) */}
-              {ticket.status === 'RESOLVED' && (
+              {/* Nút Tiến hành đổi ô kho trực tiếp nếu ticket yêu cầu di dời */}
+              {ticket.relocationRequired && (
                 <button
                   type="button"
                   disabled={actionLoading}
-                  onClick={() => setCloseModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold transition-colors shadow-2xs"
+                  onClick={handleOpenReassignModal}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all shrink-0 hover:shadow cursor-pointer"
                 >
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>🛡️ Xác nhận đóng sự cố</span>
+                  <ArrowRightLeft className="w-4 h-4" />
+                  <span>Tiến hành đổi ô kho</span>
                 </button>
+              )}
+
+              {/* Nút Đóng sự cố (Chỉ hiển thị khi Staff đã xử lý xong sang RESOLVED) */}
+              {ticket.status === 'RESOLVED' && (
+                ticket.relocationRequired ? (
+                  <div className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-50 text-amber-800 border border-amber-200/90 rounded-xl text-xs font-semibold shadow-2xs">
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    <span>Cần hoàn tất đổi ô kho trước khi đóng sự cố</span>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={actionLoading}
+                    onClick={() => setCloseModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold transition-colors shadow-2xs"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>🛡️ Xác nhận đóng sự cố</span>
+                  </button>
+                )
               )}
             </div>
           </div>
@@ -496,6 +644,18 @@ export const IncidentDetailPage: React.FC = () => {
         surchargeAmount={parsedFaultInfo.cost}
         onConfirmClose={handleConfirmClose}
         isSubmitting={actionLoading}
+      />
+
+      {/* Modal đổi ô kho khẩn cấp */}
+      <ReassignUnitModal
+        isOpen={reassignModalOpen}
+        contract={contractForReassign}
+        onClose={() => setReassignModalOpen(false)}
+        onSuccess={(_updatedContract, msg) => {
+          setReassignModalOpen(false);
+          showToast(msg || 'Đổi ô kho thành công');
+          loadTicket();
+        }}
       />
     </div>
   );

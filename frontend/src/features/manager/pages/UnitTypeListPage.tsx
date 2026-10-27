@@ -1,6 +1,6 @@
 // frontend/src/features/manager/pages/UnitTypeListPage.tsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Plus,
   Search,
@@ -15,8 +15,6 @@ import {
   Power,
   ArrowRight,
   Sparkles,
-  Calendar,
-  X,
 } from 'lucide-react';
 import { fetchMyAssignedFacilities } from '@/api/facility';
 import {
@@ -29,35 +27,23 @@ import {
 import type { FacilityListItem } from '@/types';
 import type { UnitTypeResponse, UnitTypeFormData } from '@/types/unit';
 import { Breadcrumb } from '../components/Breadcrumb';
-import { UnitTypeCard } from '../components/UnitTypeCard';
+import { UnitTypeCard, cleanUnitTypeName } from '../components/UnitTypeCard';
 import type { UnitTypeBreakdownStats } from '../components/UnitTypeCard';
 import { UnitTypeFormModal } from '../components/UnitTypeFormModal';
 import { Pagination } from '../components/Pagination';
 import { getUnitTypeTheme } from '../utils/unitTypeTheme';
 
-export type UnitTypeStatusFilter = 'ALL' | 'AVAILABLE' | 'FULL';
-
-const STATUS_TABS: { label: string; value: UnitTypeStatusFilter }[] = [
-  { label: 'Tất cả', value: 'ALL' },
-  { label: 'Còn trống', value: 'AVAILABLE' },
-  { label: 'Đã lấp đầy', value: 'FULL' },
-];
-
 export type UnitTypeSortOption =
   | 'name-asc'
   | 'name-desc'
-  | 'avail-desc'
-  | 'avail-asc'
-  | 'price-asc'
-  | 'price-desc';
+  | 'units-desc'
+  | 'units-asc';
 
 const SORT_OPTIONS: { label: string; value: UnitTypeSortOption }[] = [
   { label: 'Tên loại (A → Z)', value: 'name-asc' },
   { label: 'Tên loại (Z → A)', value: 'name-desc' },
-  { label: 'Số ô trống (Nhiều nhất)', value: 'avail-desc' },
-  { label: 'Số ô trống (Ít nhất)', value: 'avail-asc' },
-  { label: 'Đơn giá (Thấp → Cao)', value: 'price-asc' },
-  { label: 'Đơn giá (Cao → Thấp)', value: 'price-desc' },
+  { label: 'Quy mô số ô (Nhiều nhất)', value: 'units-desc' },
+  { label: 'Quy mô số ô (Ít nhất)', value: 'units-asc' },
 ];
 
 const PAGE_SIZE = 12;
@@ -65,8 +51,6 @@ const PAGE_SIZE = 12;
 export const UnitTypeListPage: React.FC = () => {
   const { facilityId } = useParams<{ facilityId: string }>();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const dateParam = searchParams.get('date') || '';
 
   const facilityIdNum = Number(facilityId) || 0;
 
@@ -74,12 +58,10 @@ export const UnitTypeListPage: React.FC = () => {
   const [unitTypes, setUnitTypes] = useState<UnitTypeResponse[]>([]);
   const [typeStatsMap, setTypeStatsMap] = useState<Record<number, UnitTypeBreakdownStats>>({});
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<UnitTypeStatusFilter>('ALL');
   const [sortBy, setSortBy] = useState<UnitTypeSortOption>('name-asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [showInactive, setShowInactive] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
-  const [selectedDate, setSelectedDate] = useState<string>(dateParam);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -88,26 +70,6 @@ export const UnitTypeListPage: React.FC = () => {
   // Modal State
   const [utModalOpen, setUtModalOpen] = useState(false);
   const [editingType, setEditingType] = useState<UnitTypeResponse | null>(null);
-
-  // Đồng bộ selectedDate khi URL query param thay đổi
-  useEffect(() => {
-    if (dateParam !== selectedDate) {
-      setSelectedDate(dateParam);
-    }
-  }, [dateParam]);
-
-  const handleDateChange = (newDate: string) => {
-    setSelectedDate(newDate);
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (newDate) {
-        next.set('date', newDate);
-      } else {
-        next.delete('date');
-      }
-      return next;
-    });
-  };
 
   const loadData = useCallback(
     async (isManual = false) => {
@@ -127,10 +89,9 @@ export const UnitTypeListPage: React.FC = () => {
         const types = utRes?.content || [];
         setUnitTypes(types);
 
-        // 3. Lấy danh sách toàn bộ ô kho của cơ sở (theo selectedDate) để tính mini-stats theo từng loại
+        // 3. Lấy danh sách toàn bộ ô kho của cơ sở để tính mini-stats theo từng loại
         const suRes = await fetchStorageUnits(facilityIdNum, {
           size: 500,
-          targetDate: selectedDate || undefined,
         });
         const units = suRes?.content || [];
 
@@ -153,7 +114,7 @@ export const UnitTypeListPage: React.FC = () => {
         setRefreshing(false);
       }
     },
-    [facilityIdNum, selectedDate]
+    [facilityIdNum]
   );
 
   useEffect(() => {
@@ -163,7 +124,7 @@ export const UnitTypeListPage: React.FC = () => {
   // Reset về trang 1 khi đổi bộ lọc hoặc từ khóa
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, sortBy, showInactive, selectedDate]);
+  }, [searchTerm, sortBy, showInactive]);
 
   const handleSubmitType = async (data: UnitTypeFormData) => {
     try {
@@ -207,46 +168,12 @@ export const UnitTypeListPage: React.FC = () => {
 
   const isTypeActive = (t: UnitTypeResponse) => t.isActive ?? t.active ?? true;
 
-  // Tính số lượng cho từng status tab
-  const statusCounts = useMemo(() => {
-    const counts: Record<UnitTypeStatusFilter, number> = {
-      ALL: 0,
-      AVAILABLE: 0,
-      FULL: 0,
-    };
-    unitTypes.forEach((t) => {
-      if (!showInactive && !isTypeActive(t)) return;
-      counts.ALL += 1;
-      const stats = typeStatsMap[t.id];
-      const available = stats ? stats.available : 0;
-      const total = stats ? stats.total : (t.totalUnits ?? 0);
-      if (available > 0) {
-        counts.AVAILABLE += 1;
-      }
-      if (total > 0 && available === 0) {
-        counts.FULL += 1;
-      }
-    });
-    return counts;
-  }, [unitTypes, typeStatsMap, showInactive]);
-
   // Lọc và Sắp xếp
   const processedTypes = useMemo(() => {
     // 1. Filter
     const filtered = unitTypes
       .filter((t) => (showInactive ? true : isTypeActive(t)))
       .filter((t) => {
-        const stats = typeStatsMap[t.id];
-        const available = stats ? stats.available : 0;
-        const total = stats ? stats.total : (t.totalUnits ?? 0);
-
-        if (statusFilter === 'AVAILABLE' && available <= 0) {
-          return false;
-        }
-        if (statusFilter === 'FULL' && (total === 0 || available > 0)) {
-          return false;
-        }
-
         if (!searchTerm.trim()) return true;
         const term = searchTerm.toLowerCase();
         return (
@@ -260,29 +187,23 @@ export const UnitTypeListPage: React.FC = () => {
     return filtered.sort((a, b) => {
       const statsA = typeStatsMap[a.id];
       const statsB = typeStatsMap[b.id];
-      const availA = statsA ? statsA.available : 0;
-      const availB = statsB ? statsB.available : 0;
-      const priceA = a.monthlyPrice || 0;
-      const priceB = b.monthlyPrice || 0;
+      const totalA = statsA ? statsA.total : (a.totalUnits ?? 0);
+      const totalB = statsB ? statsB.total : (b.totalUnits ?? 0);
 
       switch (sortBy) {
         case 'name-asc':
           return a.name.localeCompare(b.name, 'vi');
         case 'name-desc':
           return b.name.localeCompare(a.name, 'vi');
-        case 'avail-desc':
-          return availB - availA;
-        case 'avail-asc':
-          return availA - availB;
-        case 'price-asc':
-          return priceA - priceB;
-        case 'price-desc':
-          return priceB - priceA;
+        case 'units-desc':
+          return totalB - totalA;
+        case 'units-asc':
+          return totalA - totalB;
         default:
           return 0;
       }
     });
-  }, [unitTypes, showInactive, typeStatsMap, statusFilter, searchTerm, sortBy]);
+  }, [unitTypes, showInactive, typeStatsMap, searchTerm, sortBy]);
 
   // Phân trang
   const totalPages = Math.ceil(processedTypes.length / PAGE_SIZE) || 1;
@@ -366,97 +287,17 @@ export const UnitTypeListPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Banner Chế độ xem theo ngày / Dự phóng tương lai */}
-      {selectedDate && (
-        <div className="bg-amber-50 border border-amber-200/90 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-900 shadow-2xs">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
-              <Calendar className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="font-bold">
-                {selectedDate > new Date().toISOString().substring(0, 10)
-                  ? 'Chế độ dự phóng tương lai: '
-                  : 'Chế độ lọc theo ngày: '}
-              </span>
-              <span>
-                Đang hiển thị tỷ lệ lấp đầy và số ô trống tại ngày{' '}
-                <strong className="underline decoration-amber-400 font-mono font-bold">
-                  {selectedDate.split('-').reverse().join('/')}
-                </strong>
-              </span>
-            </div>
-          </div>
-          <button
-            onClick={() => handleDateChange('')}
-            className="px-3 py-1.5 bg-white border border-amber-300 text-amber-800 hover:bg-amber-100 rounded-xl font-semibold transition-colors cursor-pointer shrink-0"
-          >
-            Quay về hôm nay (Thời gian thực)
-          </button>
-        </div>
-      )}
-
-      {/* Filter Tabs Trạng thái & Date Picker & Sort Dropdown */}
+      {/* Toolbar: Counter & Layout Switcher & Sort Dropdown */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        {/* Status Tabs: [Tất cả] [Còn trống] [Đã lấp đầy] */}
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl overflow-x-auto">
-          {STATUS_TABS.map((tab) => {
-            const isActive = statusFilter === tab.value;
-            const count = statusCounts[tab.value] || 0;
-            return (
-              <button
-                key={tab.value}
-                onClick={() => setStatusFilter(tab.value)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-                  isActive
-                    ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                }`}
-              >
-                <span>{tab.label}</span>
-                <span
-                  className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                    isActive ? 'bg-brand-100 text-brand-800' : 'bg-slate-200/80 text-slate-600'
-                  }`}
-                >
-                  {count}
-                </span>
-              </button>
-            );
-          })}
+        {/* Left: Tổng số loại ô kho */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200/80">
+            Tổng số: <strong className="text-slate-900">{processedTypes.length}</strong> loại ô kho
+          </span>
         </div>
 
-        {/* Right: Date Filter + Layout Switcher + Sort Dropdown */}
+        {/* Right: Layout Switcher + Sort Dropdown */}
         <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto">
-          {/* Date Picker Filter */}
-          <div className="flex items-center gap-1.5 text-xs text-slate-600 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
-            <Calendar className="w-3.5 h-3.5 text-slate-400" />
-            <span className="font-medium text-slate-500 whitespace-nowrap">Xem ngày:</span>
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => handleDateChange(e.target.value)}
-              className="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer"
-            />
-            {selectedDate ? (
-              <button
-                type="button"
-                onClick={() => handleDateChange('')}
-                title="Xóa bộ lọc ngày (về hôm nay)"
-                className="text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => handleDateChange(new Date().toISOString().substring(0, 10))}
-                className="text-[10px] font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 px-1.5 py-0.5 rounded cursor-pointer"
-              >
-                Hôm nay
-              </button>
-            )}
-          </div>
           {/* Layout Mode Switcher */}
           <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
             <button
@@ -532,8 +373,8 @@ export const UnitTypeListPage: React.FC = () => {
           </div>
           <h3 className="text-sm font-bold text-slate-800">Không tìm thấy loại ô kho nào</h3>
           <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-            {searchTerm || statusFilter !== 'ALL'
-              ? 'Không có loại ô kho nào phù hợp với bộ lọc và từ khóa tìm kiếm.'
+            {searchTerm
+              ? 'Không có loại ô kho nào phù hợp với từ khóa tìm kiếm.'
               : 'Cơ sở này chưa được cấu hình loại ô kho nào. Hãy bấm "+ Thêm loại ô kho" để bắt đầu.'}
           </p>
         </div>
@@ -548,11 +389,7 @@ export const UnitTypeListPage: React.FC = () => {
                   type={type}
                   stats={typeStatsMap[type.id]}
                   onClick={() =>
-                    navigate(
-                      `/manager/facilities/${facilityIdNum}/unit-types/${type.id}${
-                        selectedDate ? `?date=${selectedDate}` : ''
-                      }`
-                    )
+                    navigate(`/manager/facilities/${facilityIdNum}/unit-types/${type.id}`)
                   }
                   onEdit={() => {
                     setEditingType(type);
@@ -573,7 +410,6 @@ export const UnitTypeListPage: React.FC = () => {
                       <th className="py-3.5 px-4">Phân loại & Tiện ích</th>
                       <th className="py-3.5 px-4 text-center">Kích thước (R×S×C)</th>
                       <th className="py-3.5 px-4 text-center">Diện tích</th>
-                      <th className="py-3.5 px-4 text-right">Đơn giá niêm yết</th>
                       <th className="py-3.5 px-4 text-center">Tổng quy mô</th>
                       <th className="py-3.5 px-4 text-center">Trạng thái</th>
                       <th className="py-3.5 px-4 text-right">Thao tác</th>
@@ -589,11 +425,7 @@ export const UnitTypeListPage: React.FC = () => {
                         <tr
                           key={type.id}
                           onClick={() =>
-                            navigate(
-                              `/manager/facilities/${facilityIdNum}/unit-types/${type.id}${
-                                selectedDate ? `?date=${selectedDate}` : ''
-                              }`
-                            )
+                            navigate(`/manager/facilities/${facilityIdNum}/unit-types/${type.id}`)
                           }
                           className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
                         >
@@ -604,7 +436,7 @@ export const UnitTypeListPage: React.FC = () => {
                               </div>
                               <div>
                                 <div className="font-bold text-slate-900 group-hover:text-brand-600 transition-colors">
-                                  {type.name}
+                                  {cleanUnitTypeName(type.name)}
                                 </div>
                                 <span className="text-[10px] font-mono text-slate-500">
                                   {type.code || 'UT-STD'}
@@ -630,17 +462,6 @@ export const UnitTypeListPage: React.FC = () => {
                             <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md text-[11px]">
                               {area} m²
                             </span>
-                          </td>
-                          <td className="py-3.5 px-4 text-right">
-                            {type.monthlyPrice && type.monthlyPrice > 0 ? (
-                              <span className="font-mono font-extrabold text-brand-700">
-                                {new Intl.NumberFormat('vi-VN').format(type.monthlyPrice)} đ/tháng
-                              </span>
-                            ) : (
-                              <span className="inline-block text-[10px] font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded border border-amber-200">
-                                Chờ BOM duyệt
-                              </span>
-                            )}
                           </td>
                           <td className="py-3.5 px-4 text-center font-mono font-bold text-slate-700">
                             {type.totalUnits ?? 0} ô

@@ -262,6 +262,50 @@ class FacilityReportServiceTest {
     }
 
     @Test
+    @DisplayName("AC-3 Bugfix: Giao dịch INITIAL_PAYMENT từ Reservation (contractId ban đầu là null) được nhận diện chính xác theo reservationId")
+    void testGetFacilityOverview_FinancialRevenue_WithPaymentLinkedViaReservationId() {
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(testFacility));
+        when(storageUnitRepository.findByFacilityIdAndFilters(eq(1L), eq(null), eq(null), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        RentalContract c1 = RentalContract.builder()
+                .id(103L)
+                .reservationId(55L)
+                .facilityId(1L)
+                .status(ContractStatus.PENDING_CHECK_IN)
+                .totalRentalFee(500_000L)
+                .depositAmount(500_000L)
+                .depositBalance(500_000L)
+                .startDate(LocalDate.of(2026, 10, 27))
+                .overdueFeeAccrued(0L)
+                .build();
+
+        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(List.of(c1));
+
+        PaymentTransaction pInitial = PaymentTransaction.builder()
+                .id(21L)
+                .reservationId(55L)
+                .contractId(null)
+                .transactionType("INITIAL_PAYMENT")
+                .amount(1_000_000L)
+                .status("SUCCESS")
+                .build();
+        pInitial.setCreatedAt(java.time.Instant.parse("2026-10-27T08:00:00Z"));
+
+        when(paymentTransactionRepository.findByContractId(103L)).thenReturn(Collections.emptyList());
+        when(paymentTransactionRepository.findByReservationId(55L)).thenReturn(List.of(pInitial));
+
+        FacilityOverviewReportResponse response = reportService.getFacilityOverview(1L, "2026-10", facilityManagerPrincipal);
+
+        assertNotNull(response);
+        assertEquals(500_000L, response.getRentalRevenue());
+        assertEquals(0L, response.getCustomerServiceFee());
+        assertEquals(0L, response.getOverduePenaltyFee());
+        assertEquals(500_000L, response.getTotalRevenue());
+        assertEquals(500_000L, response.getDepositBalance());
+    }
+
+    @Test
     @DisplayName("AC-4: Báo cáo rủi ro nợ quá hạn phân bổ chính xác theo 3 nhóm độ tuổi nợ")
     void testGetFacilityOverdueDebt_AgingBrackets() {
         when(facilityRepository.findById(1L)).thenReturn(Optional.of(testFacility));

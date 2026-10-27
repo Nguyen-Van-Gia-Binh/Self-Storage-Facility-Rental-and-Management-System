@@ -112,12 +112,9 @@ export const StaffReturnDetailView: React.FC<StaffReturnDetailViewProps> = ({
   };
 
   const isCompleted = Boolean(
-    task.completed ||
-      task.status === 'COMPLETED' ||
-      task.status === 'INSPECTED' ||
-      task.status === 'RETURNED' ||
-      contract?.isInspected ||
-      contract?.status === 'INSPECTED',
+    contract?.isInspected ||
+      contract?.status === 'INSPECTED' ||
+      contract?.status === 'CLOSED',
   );
 
   return (

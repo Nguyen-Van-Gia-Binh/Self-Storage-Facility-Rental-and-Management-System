@@ -5,6 +5,7 @@ import {
   User,
   FileText,
   Image as ImageIcon,
+  ArrowRightLeft,
 } from 'lucide-react';
 import type { ManagementSupportTicket } from '../types/staffAssignment';
 import { StatusBadge } from './StatusBadge';
@@ -14,9 +15,13 @@ import { ImageGallery } from './ImageGallery';
 interface IncidentDetailPanelProps {
   ticket: ManagementSupportTicket;
   onAddAttachment?: () => void;
+  onRelocateUnit?: () => void;
 }
 
-export const IncidentDetailPanel: React.FC<IncidentDetailPanelProps> = ({ ticket }) => {
+export const IncidentDetailPanel: React.FC<IncidentDetailPanelProps> = ({
+  ticket,
+  onRelocateUnit,
+}) => {
   const formatDate = (isoStr?: string) => {
     if (!isoStr) return '—';
     try {
@@ -73,17 +78,24 @@ export const IncidentDetailPanel: React.FC<IncidentDetailPanelProps> = ({ ticket
                 <span className="text-slate-500">Loại vấn đề:</span>
                 <span className="font-semibold text-slate-800">{ticket.categoryDisplayName}</span>
               </div>
-              <div className="flex justify-between py-1 border-b border-slate-200/60">
-                <span className="text-slate-500">Thời hạn SLA:</span>
-                <span className="font-semibold text-rose-600">
-                  {ticket.slaDueAt ? formatDate(ticket.slaDueAt) : 'Trong vòng 4 giờ'}
-                </span>
-              </div>
-              <div className="flex justify-between py-1">
+              <div className="flex items-center justify-between py-1">
                 <span className="text-slate-500">Yêu cầu di dời kho:</span>
-                <span className={`font-bold ${ticket.relocationRequired ? 'text-amber-600' : 'text-slate-600'}`}>
-                  {ticket.relocationRequired ? '⚠️ Cần chuyển ô kho' : 'Không'}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`font-bold ${ticket.relocationRequired ? 'text-amber-600' : 'text-slate-600'}`}>
+                    {ticket.relocationRequired ? '⚠️ Cần chuyển ô kho' : 'Không'}
+                  </span>
+                  {ticket.relocationRequired && onRelocateUnit && (
+                    <button
+                      type="button"
+                      onClick={onRelocateUnit}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors shadow-2xs"
+                      title="Tiến hành đổi ô kho ngay"
+                    >
+                      <ArrowRightLeft className="w-3 h-3" />
+                      <span>Đổi kho</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -132,7 +144,7 @@ export const IncidentDetailPanel: React.FC<IncidentDetailPanelProps> = ({ ticket
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
               <ImageIcon className="w-3.5 h-3.5 text-slate-400" />
-              Hình ảnh hiện trường lúc báo sự cố ({initialImages.length})
+              Ảnh hiện trường ban đầu ({initialImages.length})
             </h4>
           </div>
           {initialImages.length > 0 ? (

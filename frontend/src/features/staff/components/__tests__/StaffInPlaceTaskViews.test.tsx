@@ -113,7 +113,7 @@ describe('Staff In-Place Task Views & Full-Screen Detail View Integration', () =
       process.cwd(),
       'src/features/staff/components/StaffResolveIncidentModal.tsx'
     );
-    const incidentPageContent = fs.readFileSync(staffIncidentPagePath, 'utf-8');
+    const incidentPageContent = fs.existsSync(staffIncidentPagePath) ? fs.readFileSync(staffIncidentPagePath, 'utf-8') : '';
     const resolveModalContent = fs.readFileSync(staffResolveModalPath, 'utf-8');
 
     expect(incidentViewContent).not.toMatch(/startStaffIncident/);

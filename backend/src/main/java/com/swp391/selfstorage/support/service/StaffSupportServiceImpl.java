@@ -179,8 +179,10 @@ public class StaffSupportServiceImpl implements StaffSupportService {
             }
         }
 
-        // Chỉ cho phép resolve khi ticket ở trạng thái ASSIGNED hoặc IN_PROGRESS
-        if (ticket.getStatus() != SupportStatus.ASSIGNED && ticket.getStatus() != SupportStatus.IN_PROGRESS) {
+        // Cho phép resolve khi ticket ở trạng thái ASSIGNED hoặc IN_PROGRESS (hoặc RESOLVED đối với quản lý muốn đóng ticket)
+        if (ticket.getStatus() != SupportStatus.ASSIGNED
+                && ticket.getStatus() != SupportStatus.IN_PROGRESS
+                && ticket.getStatus() != SupportStatus.RESOLVED) {
             throw new CustomException(ErrorCode.SUPPORT_REQUEST_CANNOT_BE_RESOLVED);
         }
 
@@ -188,12 +190,29 @@ public class StaffSupportServiceImpl implements StaffSupportService {
             throw new CustomException(ErrorCode.VALIDATION_FAILED, "Tối đa 5 ảnh hiện trạng sau sửa chữa");
         }
 
-        ticket.setStatus(SupportStatus.CLOSED);
-        ticket.setResolutionNote(request.getResolutionNote());
+        if (request.getRelocationRequired() != null) {
+            ticket.setRelocationRequired(request.getRelocationRequired());
+        }
+
         OffsetDateTime now = OffsetDateTime.now();
+        ticket.setResolutionNote(request.getResolutionNote());
         ticket.setResolvedAt(now);
-        ticket.setCustomerConfirmedAt(now);
         ticket.setUpdatedAt(now);
+
+        if (Boolean.TRUE.equals(ticket.getRelocationRequired())) {
+            // Sự cố có yêu cầu di dời ô kho:
+            // Phải đợi Quản lý cơ sở thực hiện đổi ô kho thành công (reassignUnit) thì mới được đóng ticket!
+            // Staff giải quyết hiện trường chỉ chuyển trạng thái sang RESOLVED, CẤM đóng ticket khi chưa đổi kho.
+            if ("CLOSED".equalsIgnoreCase(request.getStatus())) {
+                throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                        "Sự cố có yêu cầu di dời ô kho. Phải hoàn tất đổi ô kho cho khách hàng trước khi đóng sự cố.");
+            }
+            ticket.setStatus(SupportStatus.RESOLVED);
+        } else {
+            // Đối với sự cố thông thường (không đổi ô kho): Staff giải quyết xong thì đóng ticket
+            ticket.setStatus(SupportStatus.CLOSED);
+            ticket.setCustomerConfirmedAt(now);
+        }
         supportRequestRepository.save(ticket);
 
         // Lưu ảnh hiện trạng sau xử lý

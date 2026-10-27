@@ -18,12 +18,25 @@ public class ResolveSupportRequest {
     @Schema(description = "Danh sách URL ảnh hiện trạng sau sửa chữa (tối đa 5 ảnh)", example = "[\"https://cdn.example.com/res1.jpg\"]")
     private List<String> resolutionAttachmentUrls;
 
+    @Schema(description = "Trạng thái mong muốn cập nhật (ví dụ: CLOSED)", example = "CLOSED")
+    private String status;
+
+    @Schema(description = "Cập nhật cờ yêu cầu di dời kho (tùy chọn)", example = "true")
+    private Boolean relocationRequired;
+
     public ResolveSupportRequest() {
     }
 
     public ResolveSupportRequest(String resolutionNote, List<String> resolutionAttachmentUrls) {
         this.resolutionNote = resolutionNote;
         this.resolutionAttachmentUrls = resolutionAttachmentUrls;
+    }
+
+    public ResolveSupportRequest(String resolutionNote, List<String> resolutionAttachmentUrls, String status, Boolean relocationRequired) {
+        this.resolutionNote = resolutionNote;
+        this.resolutionAttachmentUrls = resolutionAttachmentUrls;
+        this.status = status;
+        this.relocationRequired = relocationRequired;
     }
 
     public static Builder builder() {
@@ -46,9 +59,27 @@ public class ResolveSupportRequest {
         this.resolutionAttachmentUrls = resolutionAttachmentUrls;
     }
 
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Boolean getRelocationRequired() {
+        return relocationRequired;
+    }
+
+    public void setRelocationRequired(Boolean relocationRequired) {
+        this.relocationRequired = relocationRequired;
+    }
+
     public static class Builder {
         private String resolutionNote;
         private List<String> resolutionAttachmentUrls;
+        private String status;
+        private Boolean relocationRequired;
 
         public Builder resolutionNote(String resolutionNote) {
             this.resolutionNote = resolutionNote;
@@ -60,8 +91,18 @@ public class ResolveSupportRequest {
             return this;
         }
 
+        public Builder status(String status) {
+            this.status = status;
+            return this;
+        }
+
+        public Builder relocationRequired(Boolean relocationRequired) {
+            this.relocationRequired = relocationRequired;
+            return this;
+        }
+
         public ResolveSupportRequest build() {
-            return new ResolveSupportRequest(resolutionNote, resolutionAttachmentUrls);
+            return new ResolveSupportRequest(resolutionNote, resolutionAttachmentUrls, status, relocationRequired);
         }
     }
 }

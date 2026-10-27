@@ -30,6 +30,7 @@ import { Breadcrumb } from '../components/Breadcrumb';
 import { StatusBadge } from '../components/StatusBadge';
 import { MiniFloorPlan } from '../components/MiniFloorPlan';
 import { ReassignUnitModal } from '../components/ReassignUnitModal';
+import { cleanUnitTypeName } from '../components/UnitTypeCard';
 
 const fmt = (p: number) => new Intl.NumberFormat('vi-VN').format(p) + ' đ';
 
@@ -182,7 +183,7 @@ export const StorageUnitDetailPage: React.FC = () => {
             icon: Building2,
           },
           {
-            label: unitType?.name || `Loại kho #${typeIdNum}`,
+            label: cleanUnitTypeName(unitType?.name) || `Loại kho #${typeIdNum}`,
             to: `/manager/facilities/${facilityIdNum}/unit-types/${typeIdNum}`,
             icon: Layers,
           },
@@ -210,7 +211,7 @@ export const StorageUnitDetailPage: React.FC = () => {
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-1 flex items-center gap-2">
-              <span>{unitType?.name || 'Loại kho'}</span>
+              <span>{cleanUnitTypeName(unitType?.name) || 'Loại kho'}</span>
               <span>•</span>
               <span>Diện tích: {unitType?.areaM2 || 0} m²</span>
               <span>•</span>
