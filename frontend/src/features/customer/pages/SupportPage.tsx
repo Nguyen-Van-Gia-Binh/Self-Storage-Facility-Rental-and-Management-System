@@ -14,7 +14,9 @@ import {
   CheckCircle2,
   Lock,
   LogIn,
-  UserPlus
+  UserPlus,
+  Calendar,
+  ChevronDown
 } from 'lucide-react';
 import { tokenStorage } from '@/utils/tokenStorage';
 import type { 
@@ -24,7 +26,7 @@ import type {
   CreateSupportTicketPayload
 } from '../types';
 import { customerApi } from '../api/customerApi';
-import { SupportTicketCard } from '../components/SupportTicketCard';
+import { SupportTicketTable } from '../components/SupportTicketTable';
 import { SupportTicketDetailModal } from '../components/SupportTicketDetailModal';
 import { CreateSupportTicketModal } from '../components/CreateSupportTicketModal';
 
@@ -47,6 +49,10 @@ export const SupportPage: React.FC = () => {
   // Filters
   const [activeTab, setActiveTab] = useState<SupportTabKey>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [dateFilter, setDateFilter] = useState<'ALL' | 'TODAY' | 'LAST_7_DAYS' | 'THIS_MONTH' | 'CUSTOM'>('ALL');
+  const [customFromDate, setCustomFromDate] = useState<string>('');
+  const [customToDate, setCustomToDate] = useState<string>('');
+  const [isDateDropdownOpen, setIsDateDropdownOpen] = useState<boolean>(false);
 
   // Modals state - Khởi tạo mở modal ngay nếu URL có preContractId/preUnitId (và đã login)
   const [isCreateOpen, setIsCreateOpen] = useState<boolean>(() => Boolean(isAuthenticated && (preContractId || preUnitId)));
@@ -209,26 +215,55 @@ export const SupportPage: React.FC = () => {
   };
 
   // Filter logic
-  const filteredTickets = tickets.filter(t => {
-    // Tab filter
-    if (activeTab === 'ACTIVE') {
-      if (!['NEW', 'ASSIGNED', 'IN_PROGRESS'].includes(t.status)) return false;
-    } else if (activeTab === 'CLOSED') {
-      if (!['CLOSED', 'AUTO_CLOSED', 'RESOLVED'].includes(t.status)) return false;
-    }
+  const filteredTickets = tickets
+    .filter(t => {
+      // Tab filter
+      if (activeTab === 'ACTIVE') {
+        if (!['NEW', 'ASSIGNED', 'IN_PROGRESS'].includes(t.status)) return false;
+      } else if (activeTab === 'CLOSED') {
+        if (!['CLOSED', 'AUTO_CLOSED', 'RESOLVED'].includes(t.status)) return false;
+      }
 
-    // Search query
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      const matchCode = t.ticketCode.toLowerCase().includes(q);
-      const matchDesc = t.description.toLowerCase().includes(q);
-      const matchUnit = t.unitNumber?.toLowerCase().includes(q) || false;
-      const matchFacility = t.facilityName.toLowerCase().includes(q);
-      if (!matchCode && !matchDesc && !matchUnit && !matchFacility) return false;
-    }
+      // Search query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchCode = t.ticketCode.toLowerCase().includes(q);
+        const matchDesc = t.description.toLowerCase().includes(q);
+        const matchUnit = t.unitNumber?.toLowerCase().includes(q) || false;
+        const matchFacility = t.facilityName.toLowerCase().includes(q);
+        if (!matchCode && !matchDesc && !matchUnit && !matchFacility) return false;
+      }
 
-    return true;
-  });
+      // Date filter
+      if (dateFilter !== 'ALL') {
+        const ticketTime = new Date(t.createdAt).getTime();
+        const now = new Date();
+        if (dateFilter === 'TODAY') {
+          const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+          const endOfDay = startOfDay + 24 * 60 * 60 * 1000 - 1;
+          if (ticketTime < startOfDay || ticketTime > endOfDay) return false;
+        } else if (dateFilter === 'LAST_7_DAYS') {
+          const sevenDaysAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000;
+          if (ticketTime < sevenDaysAgo) return false;
+        } else if (dateFilter === 'THIS_MONTH') {
+          const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+          const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime();
+          if (ticketTime < startOfMonth || ticketTime >= nextMonth) return false;
+        } else if (dateFilter === 'CUSTOM') {
+          if (customFromDate) {
+            const fromTime = new Date(`${customFromDate}T00:00:00`).getTime();
+            if (ticketTime < fromTime) return false;
+          }
+          if (customToDate) {
+            const toTime = new Date(`${customToDate}T23:59:59`).getTime();
+            if (ticketTime > toTime) return false;
+          }
+        }
+      }
+
+      return true;
+    })
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   // Metrics count
   const countInProgress = tickets.filter(t => ['NEW', 'ASSIGNED', 'IN_PROGRESS'].includes(t.status)).length;
@@ -360,93 +395,241 @@ export const SupportPage: React.FC = () => {
       ) : (
         <>
 
-          {/* Status Tabs (Clean Pills matching MyUnitsPage) */}
-          <div className="flex items-center gap-2 overflow-x-auto text-xs font-semibold border-b border-slate-200/80 pb-3 pt-1">
-            <button
-              type="button"
-              onClick={() => setActiveTab('ALL')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === 'ALL'
-                  ? 'bg-brand-600 text-white font-bold shadow-xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
-              }`}
-            >
-              <span>Tất cả</span>
-              <span
-                className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
-                  activeTab === 'ALL' ? 'bg-white/25 text-white' : 'bg-slate-200/80 text-slate-700'
+          {/* Status Tabs & Date Filter Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-3 pt-1">
+            {/* Status Tabs (Clean Pills matching MyUnitsPage) */}
+            <div className="flex items-center gap-2 overflow-x-auto text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setActiveTab('ALL')}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                  activeTab === 'ALL'
+                    ? 'bg-brand-600 text-white font-bold shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
                 }`}
               >
-                {tickets.length}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab('ACTIVE')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === 'ACTIVE'
-                  ? 'bg-amber-600 text-white font-bold shadow-xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
-              }`}
-            >
-              <span>Đang xử lý</span>
-              {countInProgress > 0 && (
+                <span>Tất cả</span>
                 <span
-                  className={`w-2 h-2 rounded-full ${
-                    activeTab === 'ACTIVE' ? 'bg-white' : 'bg-amber-500 animate-pulse'
+                  className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
+                    activeTab === 'ALL' ? 'bg-white/25 text-white' : 'bg-slate-200/80 text-slate-700'
                   }`}
-                />
-              )}
-              <span
-                className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
-                  activeTab === 'ACTIVE' ? 'bg-white/25 text-white' : 'bg-slate-200/80 text-slate-700'
-                }`}
-              >
-                {countInProgress}
-              </span>
-            </button>
+                >
+                  {tickets.length}
+                </span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab('CLOSED')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === 'CLOSED'
-                  ? 'bg-slate-800 text-white font-bold shadow-xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
-              }`}
-            >
-              <span>Đã đóng</span>
-              <span
-                className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
-                  activeTab === 'CLOSED' ? 'bg-white/25 text-white' : 'bg-slate-200/80 text-slate-700'
+              <button
+                type="button"
+                onClick={() => setActiveTab('ACTIVE')}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                  activeTab === 'ACTIVE'
+                    ? 'bg-amber-600 text-white font-bold shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
                 }`}
               >
-                {countClosed}
-              </span>
-            </button>
+                <span>Đang xử lý</span>
+                {countInProgress > 0 && (
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      activeTab === 'ACTIVE' ? 'bg-white' : 'bg-amber-500 animate-pulse'
+                    }`}
+                  />
+                )}
+                <span
+                  className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
+                    activeTab === 'ACTIVE' ? 'bg-white/25 text-white' : 'bg-slate-200/80 text-slate-700'
+                  }`}
+                >
+                  {countInProgress}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('CLOSED')}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                  activeTab === 'CLOSED'
+                    ? 'bg-slate-800 text-white font-bold shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+                }`}
+              >
+                <span>Đã đóng</span>
+                <span
+                  className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
+                    activeTab === 'CLOSED' ? 'bg-white/25 text-white' : 'bg-slate-200/80 text-slate-700'
+                  }`}
+                >
+                  {countClosed}
+                </span>
+              </button>
+            </div>
+
+            {/* Date Filter Dropdown */}
+            <div className="relative shrink-0 self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={() => setIsDateDropdownOpen(!isDateDropdownOpen)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 h-9 bg-white border rounded-xl text-xs font-semibold transition-colors shadow-xs cursor-pointer ${
+                  dateFilter !== 'ALL' || customFromDate || customToDate
+                    ? 'border-brand-500 text-brand-700 bg-brand-50/40'
+                    : 'border-slate-200/90 text-slate-700 hover:border-slate-300'
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                <span>
+                  {dateFilter === 'ALL'
+                    ? 'Tất cả ngày'
+                    : dateFilter === 'TODAY'
+                    ? 'Hôm nay'
+                    : dateFilter === 'LAST_7_DAYS'
+                    ? '7 ngày gần đây'
+                    : dateFilter === 'THIS_MONTH'
+                    ? 'Trong tháng này'
+                    : customFromDate || customToDate
+                    ? `${customFromDate || '...'} → ${customToDate || '...'}`
+                    : 'Khoảng ngày tùy chọn'}
+                </span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-0.5" />
+              </button>
+
+              {isDateDropdownOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-20"
+                    onClick={() => setIsDateDropdownOpen(false)}
+                  />
+                  <div className="absolute right-0 top-10 w-64 bg-white border border-slate-200 rounded-xl shadow-lg z-30 p-2 space-y-1 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDateFilter('ALL');
+                        setCustomFromDate('');
+                        setCustomToDate('');
+                        setIsDateDropdownOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-colors cursor-pointer ${
+                        dateFilter === 'ALL' && !customFromDate && !customToDate
+                          ? 'bg-brand-50 text-brand-800 font-bold'
+                          : 'hover:bg-slate-50 text-slate-700'
+                      }`}
+                    >
+                      <span>Tất cả ngày</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDateFilter('TODAY');
+                        setCustomFromDate('');
+                        setCustomToDate('');
+                        setIsDateDropdownOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-colors cursor-pointer ${
+                        dateFilter === 'TODAY'
+                          ? 'bg-brand-50 text-brand-800 font-bold'
+                          : 'hover:bg-slate-50 text-slate-700'
+                      }`}
+                    >
+                      <span>Hôm nay</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDateFilter('LAST_7_DAYS');
+                        setCustomFromDate('');
+                        setCustomToDate('');
+                        setIsDateDropdownOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-colors cursor-pointer ${
+                        dateFilter === 'LAST_7_DAYS'
+                          ? 'bg-brand-50 text-brand-800 font-bold'
+                          : 'hover:bg-slate-50 text-slate-700'
+                      }`}
+                    >
+                      <span>7 ngày gần đây</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDateFilter('THIS_MONTH');
+                        setCustomFromDate('');
+                        setCustomToDate('');
+                        setIsDateDropdownOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-colors cursor-pointer ${
+                        dateFilter === 'THIS_MONTH'
+                          ? 'bg-brand-50 text-brand-800 font-bold'
+                          : 'hover:bg-slate-50 text-slate-700'
+                      }`}
+                    >
+                      <span>Trong tháng này</span>
+                    </button>
+
+                    <div className="pt-2 border-t border-slate-100">
+                      <p className="px-1 text-[11px] font-bold text-slate-500 mb-1.5">Tùy chọn khoảng ngày:</p>
+                      <div className="space-y-1.5">
+                        <div>
+                          <label className="text-[10px] text-slate-400 block mb-0.5">Từ ngày</label>
+                          <input
+                            type="date"
+                            value={customFromDate}
+                            onChange={(e) => {
+                              setCustomFromDate(e.target.value);
+                              setDateFilter('CUSTOM');
+                            }}
+                            className="w-full text-xs px-2 py-1 rounded-lg border border-slate-200 focus:outline-none focus:border-brand-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-slate-400 block mb-0.5">Đến ngày</label>
+                          <input
+                            type="date"
+                            value={customToDate}
+                            onChange={(e) => {
+                              setCustomToDate(e.target.value);
+                              setDateFilter('CUSTOM');
+                            }}
+                            className="w-full text-xs px-2 py-1 rounded-lg border border-slate-200 focus:outline-none focus:border-brand-500"
+                          />
+                        </div>
+                      </div>
+                      {(customFromDate || customToDate || dateFilter === 'CUSTOM') && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCustomFromDate('');
+                            setCustomToDate('');
+                            setDateFilter('ALL');
+                          }}
+                          className="mt-2 w-full text-center text-[11px] text-rose-600 hover:text-rose-700 font-medium py-1 cursor-pointer"
+                        >
+                          Xóa khoảng ngày
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
 
-          {/* Ticket Cards List */}
+          {/* Ticket Table */}
           {loading ? (
             <div className="py-16 text-center space-y-3">
               <RotateCw className="w-8 h-8 text-brand-500 animate-spin mx-auto" />
               <p className="text-xs text-slate-500">Đang tải danh sách vé hỗ trợ...</p>
             </div>
           ) : filteredTickets.length > 0 ? (
-            <div className="flex flex-col gap-2">
-              {filteredTickets.map((ticket) => (
-                <SupportTicketCard
-                  key={ticket.id}
-                  ticket={ticket}
-                  onViewDetail={handleViewDetail}
-                  onCancel={(t) => {
-                    setCancelTicketError(null);
-                    setCancellingTicket(t);
-                  }}
-                />
-              ))}
-            </div>
+            <SupportTicketTable
+              tickets={filteredTickets}
+              onViewDetail={handleViewDetail}
+              onCancel={(t) => {
+                setCancelTicketError(null);
+                setCancellingTicket(t);
+              }}
+            />
           ) : (
             <Card className="p-12 text-center bg-white border border-slate-200/90 rounded-2xl space-y-4">
               <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
@@ -457,7 +640,7 @@ export const SupportPage: React.FC = () => {
                   Không có yêu cầu hỗ trợ nào
                 </h3>
                 <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                  {searchQuery || activeTab !== 'ALL'
+                  {searchQuery || activeTab !== 'ALL' || dateFilter !== 'ALL' || customFromDate || customToDate
                     ? 'Không tìm thấy vé nào phù hợp với bộ lọc hiện tại của bạn.'
                     : 'Mọi ô kho của bạn đều đang hoạt động tốt. Khi gặp bất kỳ sự cố nào, hãy nhấn nút bên dưới.'}
                 </p>
@@ -466,13 +649,21 @@ export const SupportPage: React.FC = () => {
                 variant="primary"
                 size="sm"
                 onClick={() => {
-                  setActiveTab('ALL');
-                  setSearchQuery('');
-                  setIsCreateOpen(true);
+                  if (searchQuery || activeTab !== 'ALL' || dateFilter !== 'ALL' || customFromDate || customToDate) {
+                    setActiveTab('ALL');
+                    setSearchQuery('');
+                    setDateFilter('ALL');
+                    setCustomFromDate('');
+                    setCustomToDate('');
+                  } else {
+                    setIsCreateOpen(true);
+                  }
                 }}
                 className="mt-2 text-xs font-bold"
               >
-                Tạo yêu cầu hỗ trợ mới
+                {searchQuery || activeTab !== 'ALL' || dateFilter !== 'ALL' || customFromDate || customToDate
+                  ? 'Xóa bộ lọc'
+                  : 'Tạo yêu cầu hỗ trợ mới'}
               </Button>
             </Card>
           )}

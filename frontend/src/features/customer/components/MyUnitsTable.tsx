@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -18,6 +18,8 @@ import {
   RefreshCw,
   LogOut,
   Undo2,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
 import { formatDateVN } from '../utils/unitPickerHelpers';
@@ -42,6 +44,7 @@ export interface MyUnitsTableProps {
   onCancelPendingCheckIn: (contract: RentedContract) => void;
   onCancelReservation: (reservation: ReservationResponse) => void;
   renewalNoticeDays?: number;
+  pageSize?: number;
 }
 
 export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
@@ -59,16 +62,42 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
   onCancelPendingCheckIn,
   onCancelReservation,
   renewalNoticeDays,
+  pageSize = 7,
 }) => {
   const [activePassContract, setActivePassContract] = useState<RentedContract | null>(null);
   const [revealedPins, setRevealedPins] = useState<Record<string, boolean>>({});
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
 
   const togglePin = (contractId: string) => {
     setRevealedPins((prev) => ({ ...prev, [contractId]: !prev[contractId] }));
   };
 
   const totalItems = contracts.length + pendingReservations.length;
+
+  // Reset trang về 1 khi số lượng bản ghi hoặc bộ lọc thay đổi
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [contracts.length, pendingReservations.length, searchQuery, statusFilter]);
+
+  // Hợp nhất dữ liệu để phân trang nhất quán (Đơn giữ chỗ 48h trước, hợp đồng tiếp theo)
+  type TableItem =
+    | { kind: 'RESERVATION'; data: ReservationResponse }
+    | { kind: 'CONTRACT'; data: RentedContract };
+
+  const allItems: TableItem[] = useMemo(() => {
+    return [
+      ...pendingReservations.map((rsv) => ({ kind: 'RESERVATION' as const, data: rsv })),
+      ...contracts.map((c) => ({ kind: 'CONTRACT' as const, data: c })),
+    ];
+  }, [pendingReservations, contracts]);
+
+  const totalPages = Math.max(1, Math.ceil(allItems.length / pageSize));
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, allItems.length);
+  const paginatedItems = useMemo(() => {
+    return allItems.slice(startIndex, startIndex + pageSize);
+  }, [allItems, startIndex, pageSize]);
 
   if (loading) {
     return (
@@ -132,18 +161,20 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-slate-700">
-            {/* 1. Hàng cho Đơn đang giữ chỗ 48h */}
-            {pendingReservations.map((rsv, idx) => {
-              const bookingUrl = `/customer/booking?reservationId=${rsv.id}&facility=${rsv.facilityId}&type=${rsv.unitTypeId}${
-                rsv.storageUnitId ? `&unitId=${rsv.storageUnitId}` : ''
-              }${
-                rsv.storageUnitCode ? `&unitNumber=${encodeURIComponent(rsv.storageUnitCode)}` : ''
-              }&months=${rsv.rentalMonths}&startDate=${rsv.startDate}`;
+            {paginatedItems.map((item, idx) => {
+              const isLastRows = idx >= paginatedItems.length - 2;
 
-              const isMenuOpen = openMenuId === `rsv-${rsv.id}`;
-              const isLastRows = idx >= totalItems - 2;
+              if (item.kind === 'RESERVATION') {
+                const rsv = item.data;
+                const bookingUrl = `/customer/booking?reservationId=${rsv.id}&facility=${rsv.facilityId}&type=${rsv.unitTypeId}${
+                  rsv.storageUnitId ? `&unitId=${rsv.storageUnitId}` : ''
+                }${
+                  rsv.storageUnitCode ? `&unitNumber=${encodeURIComponent(rsv.storageUnitCode)}` : ''
+                }&months=${rsv.rentalMonths}&startDate=${rsv.startDate}`;
 
-              return (
+                const isMenuOpen = openMenuId === `rsv-${rsv.id}`;
+
+                return (
                 <tr key={`rsv-${rsv.id}`} className="hover:bg-rose-50/30 transition-colors">
                   {/* Cột 1: Ô kho (Chỉ mã ô kho) */}
                   <td className="py-3.5 px-4 whitespace-nowrap font-mono font-extrabold text-sm text-slate-900 tracking-tight">
@@ -244,11 +275,10 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                     </div>
                   </td>
                 </tr>
-              );
-            })}
+                );
+              }
 
-            {/* 2. Hàng cho Hợp đồng thuê kho */}
-            {contracts.map((contract, idx) => {
+              const contract = item.data;
               const daysRemaining = calculateDaysRemaining(contract.endDate);
               const noticeThreshold =
                 (renewalNoticeDays && renewalNoticeDays > 0 ? renewalNoticeDays : 30) + 7;
@@ -269,7 +299,6 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
 
               const isRevealed = Boolean(revealedPins[contract.id]);
               const isMenuOpen = openMenuId === `contract-${contract.id}`;
-              const isLastRows = (pendingReservations.length + idx) >= totalItems - 2;
 
               // Kiểm tra xem hàng có thao tác phụ hay không
               const hasSecondaryActions =
@@ -549,11 +578,59 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                     </div>
                   </td>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination Footer */}
+        {totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 px-1 text-xs text-slate-500">
+            <div>
+              Hiển thị <span className="font-semibold text-slate-800">{startIndex + 1}</span> -{' '}
+              <span className="font-semibold text-slate-800">{endIndex}</span> trên tổng số{' '}
+              <span className="font-semibold text-slate-800">{allItems.length}</span> ô kho
+            </div>
+
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium cursor-pointer"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                <span>Trước</span>
+              </button>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  type="button"
+                  onClick={() => setCurrentPage(page)}
+                  className={`min-w-8 h-8 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                    currentPage === page
+                      ? 'bg-primary text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium cursor-pointer"
+              >
+                <span>Sau</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
 
       {/* Digital Move In Pass Modal */}
       {activePassContract && (

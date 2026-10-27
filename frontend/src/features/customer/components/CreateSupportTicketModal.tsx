@@ -11,7 +11,7 @@ import {
   AlertTriangle, 
   Upload, 
   Trash2, 
-  CheckCircle2, 
+  CheckCircle2,
   Info
 } from 'lucide-react';
 import type { 
@@ -375,29 +375,10 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
             />
           </div>
 
-          {/* 5. Thông tin xử lý */}
-          {selectedCategory === 'LOCK_ACCESS' && (
-            <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200 flex items-start gap-3">
-              <Info className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-              <div>
-                <span className="text-xs font-bold text-blue-900 block">
-                  Gợi ý kiểm tra mã PIN
-                </span>
-                <span className="text-[11px] text-blue-800/80 leading-relaxed block mt-0.5">
-                  Kiểm tra lại mã PIN của bạn trong phần "Kho của tôi" hoặc yêu cầu cấp lại mã mới nếu quên.
-                </span>
-              </div>
-            </div>
-          )}
-
-          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-            <span className="text-xs font-bold text-slate-800 block mb-1">
-              Thời gian tiếp nhận & xử lý
-            </span>
-            <span className="text-[11px] text-slate-600 leading-relaxed block">
-              Quản lý cơ sở sẽ tiếp nhận và đánh giá mức độ khẩn cấp của sự cố để điều phối nhân viên kỹ thuật có mặt hỗ trợ trong thời gian sớm nhất.
-            </span>
-          </div>
+          {/* Thông tin xử lý (ẩn trực quan để modal gọn gàng theo yêu cầu UX) */}
+          <span className="sr-only">
+            Quản lý cơ sở sẽ tiếp nhận và đánh giá mức độ khẩn cấp của sự cố để điều phối nhân viên kỹ thuật có mặt hỗ trợ trong thời gian sớm nhất.
+          </span>
 
           {/* 6. Đính kèm ảnh */}
           <div>
