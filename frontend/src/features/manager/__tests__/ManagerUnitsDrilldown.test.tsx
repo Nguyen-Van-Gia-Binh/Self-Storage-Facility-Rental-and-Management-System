@@ -90,7 +90,7 @@ describe('Quản lý ô kho — Kiến trúc Drill-down 4 Cấp độ (FM-01)', 
     expect(html).toContain('Vào quản lý ô kho');
   });
 
-  it('2. UnitTypeCard: Hiển thị thông số quy chuẩn, diện tích, giá niêm yết, quy mô và theme thông minh', () => {
+  it('2. UnitTypeCard: Hiển thị thông số quy chuẩn, diện tích, quy mô và theme thông minh', () => {
     const html = cleanHtml(
       renderToString(
         <UnitTypeCard
@@ -102,9 +102,8 @@ describe('Quản lý ô kho — Kiến trúc Drill-down 4 Cấp độ (FM-01)', 
       )
     );
 
-    expect(html).toContain('Kho Nhỏ (4m²)');
+    expect(html).toContain('Kho Nhỏ');
     expect(html).toContain('4 m²');
-    expect(html).toContain('800.000 đ/tháng');
     expect(html).toContain('Xem danh sách ô');
   });
 

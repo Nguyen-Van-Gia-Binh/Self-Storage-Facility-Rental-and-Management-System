@@ -313,6 +313,87 @@ export async function completeUnitCleaning(id: number): Promise<void> {
  * =====================================================================
  */
 
+export function mapBackendToManagerContractItem(c: any): ManagerContractItem {
+  let daysRemaining: number | undefined;
+  if (c.endDateExclusive) {
+    try {
+      const parts = String(c.endDateExclusive).split('-');
+      if (parts.length === 3) {
+        const end = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        daysRemaining = Math.round((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      }
+    } catch {
+      daysRemaining = undefined;
+    }
+  }
+
+  let checkInGraceDaysRemaining: number | undefined;
+  if (c.startDate) {
+    try {
+      const parts = String(c.startDate).split('-');
+      if (parts.length === 3) {
+        const start = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        const graceDays = Number(c.checkinGraceDays ?? 10);
+        const deadline = new Date(start.getTime() + graceDays * 24 * 60 * 60 * 1000);
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        checkInGraceDaysRemaining = Math.round((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      }
+    } catch {
+      checkInGraceDaysRemaining = undefined;
+    }
+  }
+
+  const nearExpiration =
+    c.status === 'ACTIVE' &&
+    daysRemaining !== undefined &&
+    daysRemaining >= 0 &&
+    daysRemaining <= 7;
+
+  let overdueDays = c.overdueDays;
+  if (overdueDays === undefined || overdueDays === null) {
+    if (daysRemaining !== undefined && daysRemaining < 0) {
+      overdueDays = Math.abs(daysRemaining);
+    } else if (c.status === 'OVERDUE') {
+      overdueDays = 1;
+    }
+  }
+
+  const accruedOverdueFee = c.accruedOverdueFee ?? c.overdueFeeAccrued ?? 0;
+
+  const isInspected = Boolean(c.isInspected);
+  let mappedStatus = c.status;
+  if (c.status === 'PENDING_RETURN' && isInspected) {
+    mappedStatus = 'INSPECTED';
+  }
+
+  return {
+    ...c,
+    status: mappedStatus,
+    isInspected,
+    inspectionCondition: isInspected ? (c.damageCost > 0 ? 'MINOR_DAMAGE' : 'GOOD') : undefined,
+    damageCost: c.damageCost || 0,
+    damageNotes: c.damageNotes || '',
+    overdueDays,
+    accruedOverdueFee,
+    daysRemaining,
+    checkInGraceDaysRemaining,
+    nearExpiration: c.nearExpiration ?? nearExpiration,
+    assignedStaffId: c.assignedStaffId,
+    assignedStaffName: c.assignedStaffName,
+  };
+}
+
+/**
+ * Lấy chi tiết một hợp đồng cho Manager Contract Detail bằng ID trực tiếp
+ */
+export async function getManagerContractById(id: number): Promise<ManagerContractItem> {
+  const res = await apiClient<ApiResponse<any>>(`/contracts/${id}`);
+  return mapBackendToManagerContractItem(res.data);
+}
+
 /**
  * Lấy danh sách hợp đồng cho Manager Hub (lọc theo cơ sở, trạng thái, từ khóa)
  */
@@ -343,78 +424,7 @@ export async function getManagerContracts(filter?: {
       `/contracts?${params.toString()}`
     );
     const items = res?.data?.content || [];
-    return items.map((c: any) => {
-      let daysRemaining: number | undefined;
-      if (c.endDateExclusive) {
-        try {
-          const parts = String(c.endDateExclusive).split('-');
-          if (parts.length === 3) {
-            const end = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-            const now = new Date();
-            now.setHours(0, 0, 0, 0);
-            daysRemaining = Math.round((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-          }
-        } catch {
-          daysRemaining = undefined;
-        }
-      }
-
-      let checkInGraceDaysRemaining: number | undefined;
-      if (c.startDate) {
-        try {
-          const parts = String(c.startDate).split('-');
-          if (parts.length === 3) {
-            const start = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-            const graceDays = Number(c.checkinGraceDays ?? 10);
-            const deadline = new Date(start.getTime() + graceDays * 24 * 60 * 60 * 1000);
-            const now = new Date();
-            now.setHours(0, 0, 0, 0);
-            checkInGraceDaysRemaining = Math.round((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-          }
-        } catch {
-          checkInGraceDaysRemaining = undefined;
-        }
-      }
-
-      const nearExpiration =
-        c.status === 'ACTIVE' &&
-        daysRemaining !== undefined &&
-        daysRemaining >= 0 &&
-        daysRemaining <= 7;
-
-      let overdueDays = c.overdueDays;
-      if (overdueDays === undefined || overdueDays === null) {
-        if (daysRemaining !== undefined && daysRemaining < 0) {
-          overdueDays = Math.abs(daysRemaining);
-        } else if (c.status === 'OVERDUE') {
-          overdueDays = 1;
-        }
-      }
-
-      const accruedOverdueFee = c.accruedOverdueFee ?? c.overdueFeeAccrued ?? 0;
-
-      const isInspected = Boolean(c.isInspected);
-      let mappedStatus = c.status;
-      if (c.status === 'PENDING_RETURN' && isInspected) {
-        mappedStatus = 'INSPECTED';
-      }
-
-      return {
-        ...c,
-        status: mappedStatus,
-        isInspected,
-        inspectionCondition: isInspected ? (c.damageCost > 0 ? 'MINOR_DAMAGE' : 'GOOD') : undefined,
-        damageCost: c.damageCost || 0,
-        damageNotes: c.damageNotes || '',
-        overdueDays,
-        accruedOverdueFee,
-        daysRemaining,
-        checkInGraceDaysRemaining,
-        nearExpiration: c.nearExpiration ?? nearExpiration,
-        assignedStaffId: c.assignedStaffId,
-        assignedStaffName: c.assignedStaffName,
-      };
-    });
+    return items.map(mapBackendToManagerContractItem);
   } catch (error) {
     console.error('Lỗi gọi API /contracts:', error);
     return [];

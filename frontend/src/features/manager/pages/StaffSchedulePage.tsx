@@ -7,12 +7,12 @@ import {
   Building2,
   RefreshCw,
   AlertCircle,
-  Clock,
   ArrowUpDown,
 } from 'lucide-react';
 import { fetchMyAssignedFacilities } from '@/api/facility';
 import type { FacilityListItem } from '@/types';
-import { FacilityShiftSummaryCard, type FacilityShiftStats } from '../components/FacilityShiftSummaryCard';
+import { FacilityShiftSummaryCard } from '../components/FacilityShiftSummaryCard';
+import { getStaffWorkload } from '../api/staffAssignmentApi';
 import { Pagination } from '../components/Pagination';
 
 export type RegionFilter = 'ALL' | 'HN' | 'HCM' | 'DN' | 'OTHER';
@@ -23,6 +23,8 @@ const CARDS_PER_PAGE = 12;
 export const StaffSchedulePage: React.FC = () => {
   const navigate = useNavigate();
   const [facilities, setFacilities] = useState<FacilityListItem[]>([]);
+  const [facilityStaffMap, setFacilityStaffMap] = useState<Record<number, number>>({});
+  const [totalUniqueStaff, setTotalUniqueStaff] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,6 +40,21 @@ export const StaffSchedulePage: React.FC = () => {
       setError(null);
       const facList = await fetchMyAssignedFacilities();
       setFacilities(facList);
+
+      // Lấy danh sách nhân sự thực tế từ API backend theo từng cơ sở
+      const staffResults = await Promise.all(
+        facList.map((f) => getStaffWorkload(Number(f.id)).catch(() => []))
+      );
+      const staffMap: Record<number, number> = {};
+      const uniqueStaffIds = new Set<number>();
+
+      facList.forEach((f, idx) => {
+        const staff = staffResults[idx] || [];
+        staffMap[Number(f.id)] = staff.length;
+        staff.forEach((s) => uniqueStaffIds.add(s.staffId));
+      });
+      setFacilityStaffMap(staffMap);
+      setTotalUniqueStaff(uniqueStaffIds.size);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Không tải được danh sách cơ sở.');
     } finally {
@@ -71,7 +88,7 @@ export const StaffSchedulePage: React.FC = () => {
 
   // Filter & Search & Sort
   const filteredFacilities = useMemo(() => {
-    let result = facilities.filter((f) => {
+    const result = facilities.filter((f) => {
       const matchSearch =
         searchQuery.trim() === '' ||
         f.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -85,11 +102,16 @@ export const StaffSchedulePage: React.FC = () => {
     result.sort((a, b) => {
       if (sortBy === 'NAME_ASC') return a.name.localeCompare(b.name);
       if (sortBy === 'NAME_DESC') return b.name.localeCompare(a.name);
+      if (sortBy === 'STAFF_DESC') {
+        const countA = facilityStaffMap[Number(a.id)] ?? 0;
+        const countB = facilityStaffMap[Number(b.id)] ?? 0;
+        return countB - countA;
+      }
       return 0;
     });
 
     return result;
-  }, [facilities, searchQuery, regionFilter, sortBy, matchesRegion]);
+  }, [facilities, searchQuery, regionFilter, sortBy, matchesRegion, facilityStaffMap]);
 
   // Reset trang về 1 khi search/filter thay đổi
   useEffect(() => {
@@ -104,23 +126,6 @@ export const StaffSchedulePage: React.FC = () => {
     return filteredFacilities.slice(start, start + CARDS_PER_PAGE);
   }, [filteredFacilities, currentPage]);
 
-  // Mock stats theo từng cơ sở (nếu có id)
-  const getFacilityStats = (fId: number | string): FacilityShiftStats => {
-    const numId = Number(fId) || 1;
-    const baseStaff = 6 + (numId % 5);
-    return {
-      totalStaff: baseStaff,
-      morningStaffCount: Math.ceil(baseStaff * 0.4),
-      afternoonStaffCount: Math.ceil(baseStaff * 0.35),
-      nightStaffCount: Math.max(1, baseStaff - Math.ceil(baseStaff * 0.4) - Math.ceil(baseStaff * 0.35)),
-    };
-  };
-
-  // Tổng KPI toàn hệ thống
-  const totalStaffCount = useMemo(() => {
-    return facilities.reduce((sum, f) => sum + getFacilityStats(f.id).totalStaff, 0);
-  }, [facilities]);
-
   const handleViewSchedule = (facilityId: number) => {
     navigate(`/manager/staff-schedule/facilities/${facilityId}`);
   };
@@ -133,12 +138,12 @@ export const StaffSchedulePage: React.FC = () => {
           Phân công nhân sự & Điều phối công việc
         </h1>
         <p className="text-sm text-slate-500 mt-1">
-          Quản lý lịch ca trực, phân công công việc tiếp nhận check-in, nghiệm thu trả kho và giải quyết sự cố kỹ thuật.
+          Quản lý lịch phân công công việc tiếp nhận check-in, nghiệm thu trả kho và giải quyết sự cố kỹ thuật.
         </p>
       </div>
 
       {/* KPI Cards Thống kê toàn hệ thống */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Card 1: Tổng cơ sở */}
         <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5 flex items-center justify-between hover:border-blue-200 transition-all">
           <div className="space-y-1">
@@ -159,28 +164,13 @@ export const StaffSchedulePage: React.FC = () => {
           <div className="space-y-1">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tổng nhân viên vận hành</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-emerald-600 tracking-tight">{totalStaffCount}</span>
+              <span className="text-3xl font-black text-emerald-600 tracking-tight">{totalUniqueStaff}</span>
               <span className="text-xs font-semibold text-emerald-700">nhân sự</span>
             </div>
-            <p className="text-[11px] text-slate-400">Trực thuộc các cơ sở</p>
+            <p className="text-[11px] text-slate-400">Nhân sự thực tế phụ trách cơ sở</p>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
             <Users className="w-6 h-6" />
-          </div>
-        </div>
-
-        {/* Card 3: Khung ca trực tiêu chuẩn */}
-        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5 flex items-center justify-between hover:border-purple-200 transition-all">
-          <div className="space-y-1">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Khung ca trực tiêu chuẩn</p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-purple-600 tracking-tight">3</span>
-              <span className="text-xs font-semibold text-purple-700">ca / ngày</span>
-            </div>
-            <p className="text-[11px] text-slate-400">Sáng · Chiều · Đêm (24/7)</p>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
-            <Clock className="w-6 h-6" />
           </div>
         </div>
       </div>
@@ -285,7 +275,7 @@ export const StaffSchedulePage: React.FC = () => {
                 <FacilityShiftSummaryCard
                   key={fac.id}
                   facility={fac}
-                  stats={getFacilityStats(fac.id)}
+                  stats={{ totalStaff: facilityStaffMap[Number(fac.id)] ?? 0 }}
                   onViewSchedule={handleViewSchedule}
                 />
               ))}

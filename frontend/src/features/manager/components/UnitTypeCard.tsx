@@ -28,7 +28,6 @@ interface UnitTypeCardProps {
   onToggle: () => void;
 }
 
-const fmt = (p: number) => new Intl.NumberFormat('vi-VN').format(p) + ' đ/tháng';
 
 export const isClimateType = (t: { code?: string; name: string }) => {
   const code = (t.code || '').toUpperCase();
@@ -40,6 +39,11 @@ export const isClimateType = (t: { code?: string; name: string }) => {
     name.includes('điều hòa')
   );
 };
+
+export function cleanUnitTypeName(name?: string): string {
+  if (!name) return '';
+  return name.replace(/\s*\([a-zA-Z\s/-]+\)\s*/g, '').trim();
+}
 
 export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({
   type,
@@ -105,7 +109,7 @@ export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({
         {/* Name & Subtitle */}
         <div className="mt-3.5">
           <h3 className="text-base font-bold text-slate-900 group-hover:text-brand-600 transition-colors line-clamp-1">
-            {type.name}
+            {cleanUnitTypeName(type.name)}
           </h3>
           <p className="text-xs text-slate-500 mt-1 line-clamp-2 min-h-[32px] leading-relaxed">
             {type.description || `Khoang lưu trữ tiêu chuẩn phục vụ nhu cầu lưu trữ chuyên biệt với diện tích ${area} m².`}
@@ -149,29 +153,6 @@ export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({
               {totalUnits} ô
             </p>
           </div>
-        </div>
-
-        {/* Pricing Banner */}
-        <div className="mt-3.5 bg-gradient-to-r from-slate-50 to-brand-50/30 p-3 rounded-xl border border-slate-100 flex items-center justify-between">
-          <div>
-            <span className="text-slate-400 font-medium text-[10px] block">Đơn giá niêm yết</span>
-            {type.monthlyPrice &&
-            type.monthlyPrice > 0 &&
-            type.priceStatus !== 'UNLISTED' &&
-            type.priceStatus !== 'Chưa niêm yết' ? (
-              <p className="font-mono font-extrabold text-brand-700 mt-0.5 text-sm tracking-tight">
-                {fmt(type.monthlyPrice)}
-              </p>
-            ) : (
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80 mt-0.5">
-                Chờ BOM duyệt giá
-              </span>
-            )}
-          </div>
-
-          <span className="text-[11px] font-semibold text-slate-400">
-            / tháng
-          </span>
         </div>
       </div>
 

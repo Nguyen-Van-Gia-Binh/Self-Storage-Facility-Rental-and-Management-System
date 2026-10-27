@@ -57,7 +57,6 @@ describe('Facility Manager - Phân công nhân sự Drill-down (FM-05)', () => {
     expect(html).toContain('FAC-CG');
     expect(html).toContain('SmartStorage Cầu Giấy');
     expect(html).toContain('10 nhân viên');
-    expect(html).toContain('Phân công thực địa');
     expect(html).toContain('Điều phối & Phân công việc');
   });
 

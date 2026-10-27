@@ -18,7 +18,7 @@ import {
   Clock,
   UserPlus,
 } from 'lucide-react';
-import { getManagerContracts } from '@/api/contract';
+import { getManagerContracts, getManagerContractById } from '@/api/contract';
 import type { ManagerContractItem } from '@/types/contractManager';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { StatusBadge } from '../components/StatusBadge';
@@ -61,6 +61,16 @@ export const ContractDetailPage: React.FC = () => {
       setError(null);
 
       try {
+        try {
+          const direct = await getManagerContractById(contractIdNum);
+          if (direct && direct.id) {
+            setContract(direct);
+            return;
+          }
+        } catch (singleErr) {
+          console.warn('Lỗi getManagerContractById, fallback qua danh mục:', singleErr);
+        }
+
         const all = await getManagerContracts({ status: 'ALL' });
         const found = (all || []).find((c) => c.id === contractIdNum) || null;
         if (!found) {

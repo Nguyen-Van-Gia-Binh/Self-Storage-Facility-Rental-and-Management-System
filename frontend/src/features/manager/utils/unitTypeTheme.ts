@@ -196,7 +196,7 @@ export function getUnitTypeTheme(type: {
   if (area >= 2 && area < 6) {
     // Vừa / Gia đình (2m² - <6m²)
     return {
-      categoryLabel: 'Kho Vừa (Gia Đình)',
+      categoryLabel: 'Kho Vừa',
       badgeText: `Đồ dùng sinh hoạt · ${area} m²`,
       icon: Package,
       gradientBg: 'from-emerald-500/15 via-emerald-500/5 to-transparent',
@@ -213,7 +213,7 @@ export function getUnitTypeTheme(type: {
   if (area >= 6 && area < 15) {
     // Lớn / Kinh doanh (6m² - <15m²)
     return {
-      categoryLabel: 'Kho Lớn (Kinh Doanh)',
+      categoryLabel: 'Kho Lớn',
       badgeText: `Hàng thương mại · ${area} m²`,
       icon: Layers,
       gradientBg: 'from-amber-500/15 via-amber-500/5 to-transparent',
