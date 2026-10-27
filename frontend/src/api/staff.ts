@@ -243,17 +243,26 @@ export async function startStaffIncident(ticketId: number): Promise<{ success: b
  */
 export async function resolveStaffIncident(
   ticketId: number,
-  payload: { resolutionNote: string; resolutionAttachmentUrls?: string[] }
+  payload: {
+    resolutionNote: string;
+    resolutionAttachmentUrls?: string[];
+    relocationRequired?: boolean;
+    status?: string;
+  }
 ): Promise<{ success: boolean; message: string }> {
   await apiClient(`/support-requests/${ticketId}/resolve`, {
     method: 'PATCH',
     body: JSON.stringify({
       resolutionNote: payload.resolutionNote,
       resolutionAttachmentUrls: payload.resolutionAttachmentUrls || [],
+      relocationRequired: payload.relocationRequired,
+      status: payload.status,
     }),
   });
   return {
     success: true,
-    message: 'Đã hoàn tất khắc phục sự cố và chuyển biên bản nghiệm thu cho khách hàng',
+    message: payload.relocationRequired
+      ? 'Đã ghi nhận hiện trường và gửi yêu cầu đổi ô kho tới Quản lý cơ sở'
+      : 'Đã hoàn tất khắc phục sự cố và chuyển biên bản nghiệm thu cho khách hàng',
   };
 }
