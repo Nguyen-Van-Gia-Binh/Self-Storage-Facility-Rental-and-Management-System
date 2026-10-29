@@ -22,7 +22,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
-import { formatDateVN } from '../utils/unitPickerHelpers';
+import { formatDateVN, calculateEndDate } from '../utils/unitPickerHelpers';
 import type { RentedContract } from '../types';
 import type { ReservationResponse } from '@/api/reservation';
 import { DigitalMoveInPassModal } from './DigitalMoveInPassModal';
@@ -192,11 +192,8 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                   </td>
 
                   {/* Cột 4: Thời hạn */}
-                  <td className="py-3.5 px-4 whitespace-nowrap">
-                    <div className="space-y-0.5">
-                      <span className="font-medium text-slate-900">{rsv.rentalMonths} tháng</span>
-                      <p className="text-[11px] text-slate-400">Từ {formatDateVN(rsv.startDate)}</p>
-                    </div>
+                  <td className="py-3.5 px-4 whitespace-nowrap font-medium text-slate-800">
+                    {formatDateVN(rsv.startDate)} → {formatDateVN(rsv.endDateExclusive || calculateEndDate(rsv.startDate, rsv.rentalMonths))}
                   </td>
 
                   {/* Cột 5: Mã mở khóa */}

@@ -1,15 +1,15 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { 
-  ArrowLeft, 
-  Sparkles, 
-  Copy, 
-  QrCode, 
+import {
+  ArrowLeft,
+  Sparkles,
+  Copy,
+  QrCode,
   ArrowRight,
-  ShieldCheck, 
+  ShieldCheck,
   Tag,
   Check,
   Building2,
@@ -25,8 +25,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { getCustomerContracts, getRenewalQuote, waitForAppliedRenewal, type RenewalQuote } from '@/api/customerRentals';
-import { customerApi, type CheckoutResponse } from '../api/customerApi';
+import { getCustomerContracts } from '@/api/customerRentals';
 import { formatVND } from '../utils/pricing';
 import {
   BANK_ACCOUNT_NUMBER,
@@ -34,14 +33,15 @@ import {
   BANK_NAME,
   ACCOUNT_HOLDER,
 } from '../utils/paymentBankInfo';
-import { calculateRenewalPricing, calculateExtendedEndDate } from '../utils/renewalPricing';
-import type { RentedContract, RenewContractResponse } from '../types';
+import type { RentedContract } from '../types';
 import { RenewalExpiryBanner } from '../components/RenewalExpiryBanner';
 import { RenewalReceiptModal } from '../components/RenewalReceiptModal';
 import { ScheduleReturnModal } from '../components/ScheduleReturnModal';
 import { tokenStorage } from '@/utils/tokenStorage';
 import { useActivePolicy } from '@/hooks/useActivePolicy';
 import { discountTag, termMonthChoices } from '../utils/policyTerms';
+import { useRenewalPricing } from '../hooks/useRenewalPricing';
+import { useRenewalPayment } from '../hooks/useRenewalPayment';
 
 export const RenewalPage: React.FC = () => {
   const policy = useActivePolicy();
@@ -70,269 +70,7 @@ export const RenewalPage: React.FC = () => {
     return urlStep === '3' ? 3 : 1;
   });
   const [renewalMonths, setRenewalMonths] = useState<number>(3);
-  const [copiedBankInfo, setCopiedBankInfo] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [renewalResult, setRenewalResult] = useState<RenewContractResponse | null>(null);
-  const [confirmedRenewal, setConfirmedRenewal] = useState<{
-    newEndDate: string;
-    renewalMonths: number;
-    totalPaid: number;
-  } | null>(null);
-  const [showReceiptModal, setShowReceiptModal] = useState<boolean>(false);
-  const [countdownSeconds, setCountdownSeconds] = useState<number>(0);
-  const [paymentExpiresAt, setPaymentExpiresAt] = useState<Date | null>(null);
-  const [payosCheckout, setPayosCheckout] = useState<CheckoutResponse | null>(() => {
-    return urlOrderCode ? ({ orderCode: Number(urlOrderCode) } as CheckoutResponse) : null;
-  });
-  const [isLoadingCheckout, setIsLoadingCheckout] = useState<boolean>(false);
-  const [checkoutError, setCheckoutError] = useState<string | null>(null);
-  const [isPaidSuccess, setIsPaidSuccess] = useState<boolean>(false);
-  const [isVerifying, setIsVerifying] = useState<boolean>(false);
-  const [paymentNotice, setPaymentNotice] = useState<string | null>(null);
-  const [renewalQuote, setRenewalQuote] = useState<RenewalQuote | null>(null);
-  const [loadingQuote, setLoadingQuote] = useState<boolean>(false);
-  const [isCapacityConflict, setIsCapacityConflict] = useState<boolean>(false);
-  const [capacityConflictMessage, setCapacityConflictMessage] = useState<string>('');
-  const [showReturnModal, setShowReturnModal] = useState<boolean>(false);
-
-  const [isSandboxing, setIsSandboxing] = useState(false);
-  const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [isCancelling, setIsCancelling] = useState(false);
-
-  // Tải báo giá gia hạn chính thức từ Backend Policy Service (POST /contracts/{id}/renewals/quote)
-  useEffect(() => {
-    if (!contract) return;
-    let isMounted = true;
-    const fetchQuote = async () => {
-      setLoadingQuote(true);
-      setIsCapacityConflict(false);
-      try {
-        const numId = parseInt(contract.id, 10);
-        const rawId = contract.id.replace(/\D/g, '');
-        const refId = !isNaN(numId) && numId > 0 ? numId : (rawId ? parseInt(rawId, 10) : 1);
-        const quote = await getRenewalQuote(refId, renewalMonths);
-        if (isMounted) {
-          setRenewalQuote(quote);
-        }
-      } catch (err: any) {
-        console.warn('Lỗi lấy báo giá gia hạn từ backend:', err);
-        const code = err?.errorCode || err?.data?.errorCode;
-        const msg = err?.message || err?.data?.message || '';
-        if (code === 'CAPACITY_NOT_AVAILABLE' || msg.includes('đặt trước') || msg.includes('CAPACITY_NOT_AVAILABLE')) {
-          if (isMounted) {
-            setIsCapacityConflict(true);
-            setCapacityConflictMessage(msg || 'Ô kho này đã có khách hàng khác đặt trước cho chu kỳ tiếp theo.');
-          }
-        }
-      } finally {
-        if (isMounted) {
-          setLoadingQuote(false);
-        }
-      }
-    };
-
-    fetchQuote();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [contract, renewalMonths]);
-
-  // Khởi tạo link thanh toán PayOS VietQR khi chuyển sang Bước 3
-  useEffect(() => {
-    if (currentStep !== 3 || !contract || payosCheckout?.orderCode) return;
-
-    let isMounted = true;
-    const initPayos = async () => {
-      setIsLoadingCheckout(true);
-      setCheckoutError(null);
-      try {
-        if (contract.status === 'PENDING_RETURN') {
-          throw new Error('Hợp đồng đang ở trạng thái chờ nghiệm thu trả kho. Vui lòng hủy yêu cầu trả kho trước nếu muốn gia hạn.');
-        }
-        if (contract.status === 'OVERDUE') {
-          const fee = contract.overdueFee ?? 0;
-          if (fee > 0) {
-            throw new Error('Hợp đồng đang có nợ phạt quá hạn. Vui lòng thanh toán nợ phạt trước khi gia hạn.');
-          }
-        } else if (contract.status !== 'ACTIVE') {
-          throw new Error(`Hợp đồng đang ở trạng thái "${contract.status}". Chỉ hợp đồng ACTIVE hoặc OVERDUE đã tất toán nợ mới được phép gia hạn.`);
-        }
-
-        const numId = parseInt(contract.id, 10);
-        const refId = !isNaN(numId) && numId > 0 ? numId : 1;
-
-        const checkout = await customerApi.createPaymentCheckout({
-          referenceType: 'CONTRACT_RENEWAL',
-          referenceId: refId,
-          renewalMonths: renewalMonths,
-          description: `GH${refId}T${renewalMonths}`.slice(0, 25),
-        });
-
-        if (isMounted) {
-          setPayosCheckout(checkout);
-        }
-      } catch (err: unknown) {
-        console.warn('Lỗi khởi tạo PayOS cho hợp đồng:', err);
-        const code = (err as any)?.errorCode || (err as any)?.data?.errorCode;
-        const msg =
-          err instanceof Error
-            ? err.message
-            : 'Không thể kết nối cổng thanh toán PayOS. Vui lòng kiểm tra lại kết nối!';
-        if (code === 'CAPACITY_NOT_AVAILABLE' || msg.includes('đặt trước')) {
-          if (isMounted) {
-            setIsCapacityConflict(true);
-            setCapacityConflictMessage(msg);
-          }
-        }
-        if (isMounted) {
-          setCheckoutError(msg);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoadingCheckout(false);
-        }
-      }
-    };
-
-    initPayos();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [currentStep, contract, renewalMonths]);
-
-  // Tính toán ngày kết thúc mới chính xác
-  const newEndDate = useMemo(() => {
-    if (renewalQuote?.newEndDateExclusive) return renewalQuote.newEndDateExclusive;
-    if (!contract) return '';
-    return calculateExtendedEndDate(contract.endDate, renewalMonths);
-  }, [contract, renewalMonths, renewalQuote]);
-
-  // Tính toán chi phí tài chính minh bạch theo BR-REN-03, BR-REN-06, BR-REN-07 & BR-DEP-01
-  const pricing = useMemo(() => {
-    if (!contract) {
-      return {
-        monthlyRent: 0,
-        rawRent: 0,
-        discountRate: 0,
-        discountAmount: 0,
-        netRent: 0,
-        overdueFee: 0,
-        extraDeposit: 0,
-        finalTotal: 0,
-        renewalMonths: 0,
-      };
-    }
-
-    if (renewalQuote) {
-      const rawRent = renewalQuote.monthlyPrice * renewalQuote.renewalMonths;
-      const netRent = renewalQuote.totalRenewalFee;
-      const overdueFee = renewalQuote.overdueFeeSettled || 0;
-      const discountAmount = Math.max(0, rawRent - netRent);
-      const discountRate = rawRent > 0 ? Math.round((discountAmount / rawRent) * 100) : 0;
-      return {
-        monthlyRent: renewalQuote.monthlyPrice,
-        rawRent,
-        discountRate,
-        discountAmount,
-        netRent,
-        overdueFee,
-        extraDeposit: 0, // BR-DEP-01: Cọc được bảo lưu từ hợp đồng gốc
-        finalTotal: netRent + overdueFee,
-        renewalMonths: renewalQuote.renewalMonths,
-      };
-    }
-
-    return calculateRenewalPricing({
-      monthlyRent: contract.monthlyRent,
-      renewalMonths,
-      isOverdue: contract.status === 'OVERDUE',
-      overdueDays: contract.overdueDays,
-      overdueFee: contract.overdueFee,
-    });
-  }, [contract, renewalMonths, renewalQuote]);
-
-  // Đọc hạn mới do backend ghi một lần khi thanh toán thành công (BR-REN-04).
-  const executeRenewalActivation = useCallback(async () => {
-    if (!contract) return;
-    setIsProcessing(true);
-
-    try {
-      const applied = await waitForAppliedRenewal(Number(contract.id), contract.endDate);
-      const refreshedList = await getCustomerContracts();
-      const refreshed = refreshedList.find((item) => item.id === contract.id);
-      const endDate = applied.newEndDate.slice(0, 10);
-      const updatedContract: RentedContract = {
-        ...(refreshed || contract),
-        endDate,
-        status: 'ACTIVE',
-        overdueDays: 0,
-        overdueFee: 0,
-      };
-
-      setContract(updatedContract);
-      setConfirmedRenewal({
-        newEndDate: endDate,
-        renewalMonths: applied.renewalMonths,
-        totalPaid: applied.totalPaid,
-      });
-      setRenewalResult({
-        success: true,
-        contract: updatedContract,
-        receiptNumber: `REN-${applied.id}`,
-        renewedAt: applied.createdAt || new Date().toISOString(),
-        message: `Gia hạn thành công thêm ${applied.renewalMonths} tháng cho ô kho ${updatedContract.unitNumber}. Hạn mới đến ngày ${endDate}.`,
-      });
-      setIsProcessing(false);
-      setShowReceiptModal(true);
-    } catch (err) {
-      console.error('Lỗi khi đọc kết quả gia hạn:', err);
-      setIsProcessing(false);
-      setPaymentNotice('Thanh toán đã ghi nhận nhưng chưa đọc được hạn mới. Vui lòng tải lại trang hợp đồng.');
-    }
-  }, [contract]);
-
-  // Kiểm tra thanh toán chủ động (Nút "Tôi đã hoàn tất chuyển khoản")
-  const handleCheckPaymentAndRenew = async () => {
-    if (!payosCheckout?.orderCode) return;
-    setIsVerifying(true);
-    setPaymentNotice(null);
-    try {
-      const statusRes = await customerApi.getPaymentStatus(payosCheckout.orderCode);
-      if (statusRes.status === 'SUCCESS') {
-        setIsPaidSuccess(true);
-        await executeRenewalActivation();
-      } else {
-        setPaymentNotice('Hệ thống chưa ghi nhận thanh toán. Vui lòng hoàn tất chuyển khoản trước khi xác nhận!');
-      }
-    } catch (err) {
-      console.error('Lỗi kiểm tra đối soát thanh toán gia hạn:', err);
-      setPaymentNotice('Không thể kiểm tra đối soát thanh toán lúc này. Vui lòng thử lại sau.');
-    } finally {
-      setIsVerifying(false);
-    }
-  };
-
-  // Polling tự động kiểm tra trạng thái thanh toán mỗi 2.5 giây khi ở Bước 3
-  useEffect(() => {
-    if (currentStep !== 3 || !payosCheckout?.orderCode || isPaidSuccess) return;
-
-    const interval = setInterval(async () => {
-      try {
-        const statusRes = await customerApi.getPaymentStatus(payosCheckout.orderCode);
-        if (statusRes.status === 'SUCCESS') {
-          clearInterval(interval);
-          setIsPaidSuccess(true);
-          executeRenewalActivation();
-        }
-      } catch {
-        // Tiếp tục polling
-      }
-    }, 2500);
-
-    return () => clearInterval(interval);
-  }, [currentStep, payosCheckout?.orderCode, isPaidSuccess, executeRenewalActivation]);
+  const [showReturnModal, setShowReturnModal] = useState(false);
 
   // Tải thông tin hợp đồng thực tế từ customerRentals API (gồm cả localStorage overrides)
   useEffect(() => {
@@ -354,100 +92,55 @@ export const RenewalPage: React.FC = () => {
     };
   }, [contractId]);
 
-  // Cập nhật paymentExpiresAt khi payosCheckout được khởi tạo
-  useEffect(() => {
-    if (currentStep === 3 && payosCheckout?.orderCode && !paymentExpiresAt) {
-      if (contract?.pendingRenewalExpiresAt) {
-        setPaymentExpiresAt(new Date(contract.pendingRenewalExpiresAt));
-      } else {
-        const hours = holdHours > 0 ? holdHours : 0;
-        if (hours > 0) {
-          setPaymentExpiresAt(new Date(Date.now() + hours * 60 * 60 * 1000));
-        }
-      }
-    }
-  }, [currentStep, payosCheckout, contract, paymentExpiresAt, holdHours]);
+  // Khối tính giá & báo giá gia hạn (fetch quote, conflict, pricing) — BR-REN-03/06/07/04
+  const {
+    loadingQuote,
+    isCapacityConflict,
+    capacityConflictMessage,
+    setCapacityConflict,
+    newEndDate,
+    pricing,
+  } = useRenewalPricing({ contract, renewalMonths });
 
-  // Bộ đếm ngược thời gian thanh toán VietQR (48 giờ)
-  useEffect(() => {
-    if (currentStep !== 3 || !paymentExpiresAt) return;
-    
-    // Khởi tạo ngay lập tức
-    const calcRemaining = () => Math.max(0, Math.floor((paymentExpiresAt.getTime() - Date.now()) / 1000));
-    setCountdownSeconds(calcRemaining());
+  // Khối thanh toán PayOS VietQR (checkout, polling, countdown, sandbox, hủy lệnh, E-Receipt) — BR-REN-04/05
+  const payment = useRenewalPayment({
+    contract,
+    currentStep,
+    renewalMonths,
+    holdHours,
+    urlOrderCode,
+    onCapacityConflict: setCapacityConflict,
+    onRenewalApplied: setContract,
+    onRequestStepReset: () => setCurrentStep(1),
+  });
 
-    const timer = setInterval(() => {
-      setCountdownSeconds(calcRemaining());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [currentStep, paymentExpiresAt]);
-
-  // Format đếm ngược dạng đồng hồ giờ:phút:giây (hh:mm:ss) thay cho chữ
-  const formatCountdown = (secs: number) => {
-    const s = Math.max(0, secs);
-    const hours = Math.floor(s / 3600);
-    const mins = Math.floor((s % 3600) / 60);
-    const remainingSecs = s % 60;
-    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${remainingSecs.toString().padStart(2, '0')}`;
-  };
-
-  const handleSimulateSuccess = async () => {
-    if (!payosCheckout?.orderCode) return;
-    setIsSandboxing(true);
-    try {
-      await customerApi.processSandboxTransfer(payosCheckout.orderCode, 'TRANSFER_SUCCESS');
-      setIsPaidSuccess(true);
-      await executeRenewalActivation();
-    } catch (err) {
-      console.error('Sandbox simulate error:', err);
-    } finally {
-      setIsSandboxing(false);
-    }
-  };
-
-  const handleSimulateCancel = async () => {
-    if (!payosCheckout?.orderCode) return;
-    setIsSandboxing(true);
-    try {
-      await customerApi.processSandboxTransfer(payosCheckout.orderCode, 'CANCEL');
-      navigate('/customer/my-units');
-    } catch (err) {
-      console.error('Sandbox cancel error:', err);
-    } finally {
-      setIsSandboxing(false);
-    }
-  };
-
-  const handleCancelPayment = async () => {
-    if (!payosCheckout?.orderCode) {
-      setCurrentStep(1);
-      return;
-    }
-    setIsCancelling(true);
-    try {
-      await customerApi.processSandboxTransfer(payosCheckout.orderCode, 'CANCEL');
-    } catch (err) {
-      console.error('Cancel payment error:', err);
-    } finally {
-      setIsCancelling(false);
-      setShowCancelDialog(false);
-      setCurrentStep(1);
-      setPayosCheckout(null);
-      setPaymentExpiresAt(null);
-    }
-  };
-
-  const transferContent = useMemo(() => {
-    if (!contract) return 'GIAHAN KHO';
-    const contractCode = contract.contractNumber.replace(/\D/g, '').slice(-6) || contract.id.slice(-6);
-    return `GIAHAN ${contract.unitNumber} ${contractCode}`.toUpperCase();
-  }, [contract]);
-
-  const handleCopy = (text: string, type: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedBankInfo(type);
-    setTimeout(() => setCopiedBankInfo(null), 2000);
-  };
+  const {
+    payosCheckout,
+    isLoadingCheckout,
+    checkoutError,
+    isPaidSuccess,
+    isVerifying,
+    paymentNotice,
+    setPaymentNotice,
+    isSandboxing,
+    isCancelling,
+    showCancelDialog,
+    setShowCancelDialog,
+    countdownSeconds,
+    formatCountdown,
+    isProcessing,
+    renewalResult,
+    confirmedRenewal,
+    showReceiptModal,
+    setShowReceiptModal,
+    handleCheckPaymentAndRenew,
+    handleSimulateSuccess,
+    handleSimulateCancel,
+    handleCancelPayment,
+    transferContent,
+    copiedBankInfo,
+    handleCopy,
+  } = payment;
 
   if (loading) {
     return (
@@ -500,7 +193,7 @@ export const RenewalPage: React.FC = () => {
 
       {/* 3-Step Indicator Bar */}
       <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-xs flex items-center justify-between text-xs sm:text-sm">
-        <div 
+        <div
           onClick={() => {
             if (currentStep === 3) return;
             if (!isRenewalBlocked) setCurrentStep(1);
@@ -509,22 +202,22 @@ export const RenewalPage: React.FC = () => {
           className={`flex items-center gap-2 transition-all ${
             currentStep === 3
               ? 'cursor-not-allowed select-none'
-              : !isRenewalBlocked 
-                ? 'cursor-pointer' 
+              : !isRenewalBlocked
+                ? 'cursor-pointer'
                 : 'cursor-not-allowed opacity-60'
           } ${
-            currentStep === 1 
-              ? 'font-bold text-brand-600' 
-              : currentStep > 1 
-                ? 'font-semibold text-emerald-600' 
+            currentStep === 1
+              ? 'font-bold text-brand-600'
+              : currentStep > 1
+                ? 'font-semibold text-emerald-600'
                 : 'text-slate-400'
           }`}
         >
           <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
-            currentStep === 1 
-              ? 'bg-brand-600 text-white font-bold' 
-              : currentStep > 1 
-                ? 'bg-emerald-100 text-emerald-700 font-bold' 
+            currentStep === 1
+              ? 'bg-brand-600 text-white font-bold'
+              : currentStep > 1
+                ? 'bg-emerald-100 text-emerald-700 font-bold'
                 : 'bg-slate-100 text-slate-400'
           }`}>
             {currentStep > 1 ? <Check className="w-3.5 h-3.5" /> : '1'}
@@ -534,7 +227,7 @@ export const RenewalPage: React.FC = () => {
 
         <div className="h-px bg-slate-200 flex-1 mx-3 hidden sm:block" />
 
-        <div 
+        <div
           onClick={() => {
             if (currentStep === 3) return;
             if (!isRenewalBlocked) setCurrentStep(2);
@@ -543,22 +236,22 @@ export const RenewalPage: React.FC = () => {
           className={`flex items-center gap-2 transition-all ${
             currentStep === 3
               ? 'cursor-not-allowed select-none'
-              : !isRenewalBlocked 
-                ? 'cursor-pointer' 
+              : !isRenewalBlocked
+                ? 'cursor-pointer'
                 : 'cursor-not-allowed opacity-60'
           } ${
-            currentStep === 2 
-              ? 'font-bold text-brand-600' 
-              : currentStep > 2 
-                ? 'font-semibold text-emerald-600' 
+            currentStep === 2
+              ? 'font-bold text-brand-600'
+              : currentStep > 2
+                ? 'font-semibold text-emerald-600'
                 : 'text-slate-400'
           }`}
         >
           <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
-            currentStep === 2 
-              ? 'bg-brand-600 text-white font-bold' 
-              : currentStep > 2 
-                ? 'bg-emerald-100 text-emerald-700 font-bold' 
+            currentStep === 2
+              ? 'bg-brand-600 text-white font-bold'
+              : currentStep > 2
+                ? 'bg-emerald-100 text-emerald-700 font-bold'
                 : 'bg-slate-100 text-slate-400'
           }`}>
             {currentStep > 2 ? <Check className="w-3.5 h-3.5" /> : '2'}
@@ -568,16 +261,16 @@ export const RenewalPage: React.FC = () => {
 
         <div className="h-px bg-slate-200 flex-1 mx-3 hidden sm:block" />
 
-        <div 
+        <div
           className={`flex items-center gap-2 transition-all ${
-            currentStep === 3 
-              ? 'font-bold text-brand-600' 
+            currentStep === 3
+              ? 'font-bold text-brand-600'
               : 'text-slate-400'
           }`}
         >
           <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
-            currentStep === 3 
-              ? 'bg-brand-600 text-white font-bold' 
+            currentStep === 3
+              ? 'bg-brand-600 text-white font-bold'
               : 'bg-slate-100 text-slate-400'
           }`}>
             3

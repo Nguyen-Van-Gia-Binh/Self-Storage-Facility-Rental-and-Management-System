@@ -15,8 +15,8 @@ export interface StorageTypeTabsProps {
 export const StorageTypeTabs: React.FC<StorageTypeTabsProps> = ({
   storageType,
   onSelectStorageType,
-  standardTypesCount,
-  climateTypesCount,
+  standardTypesCount: _standardTypesCount,
+  climateTypesCount: _climateTypesCount,
 }) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -31,18 +31,13 @@ export const StorageTypeTabs: React.FC<StorageTypeTabsProps> = ({
       >
         <div className="flex items-center gap-2.5">
           <span className="text-xl">📦</span>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-sm font-black text-slate-900 block">Kho Tiêu Chuẩn</span>
-              <span
-                className="text-slate-400 hover:text-slate-600 cursor-help"
-                title="Nhiệt độ phòng thoáng khí tự nhiên, phù hợp đồ đạc gia đình, nội thất, hàng hóa thông thường"
-              >
-                <HelpCircle className="w-3.5 h-3.5" />
-              </span>
-            </div>
-            <span className="text-[11px] text-slate-500 font-medium">
-              Nhiệt độ phòng thoáng khí ({standardTypesCount} loại)
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm font-black text-slate-900 block">Kho Tiêu Chuẩn</span>
+            <span
+              className="text-slate-400 hover:text-slate-600 cursor-help"
+              title="Nhiệt độ phòng thoáng khí tự nhiên, phù hợp đồ đạc gia đình, nội thất, hàng hóa thông thường"
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
             </span>
           </div>
         </div>
@@ -64,18 +59,13 @@ export const StorageTypeTabs: React.FC<StorageTypeTabsProps> = ({
       >
         <div className="flex items-center gap-2.5">
           <span className="text-xl">❄️</span>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-sm font-black text-slate-900 block">Kho Máy Lạnh (24/7)</span>
-              <span
-                className="text-slate-400 hover:text-slate-600 cursor-help"
-                title="Kiểm soát 22°C - 25°C và độ ẩm ổn định, chuyên dụng bảo quản tài liệu, đồ gỗ cao cấp, thiết bị điện tử"
-              >
-                <HelpCircle className="w-3.5 h-3.5" />
-              </span>
-            </div>
-            <span className="text-[11px] text-slate-500 font-medium">
-              22°C - 25°C & kiểm soát ẩm ({climateTypesCount} loại)
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm font-black text-slate-900 block">Kho Máy Lạnh (24/7)</span>
+            <span
+              className="text-slate-400 hover:text-slate-600 cursor-help"
+              title="Kiểm soát 22°C - 25°C và độ ẩm ổn định, chuyên dụng bảo quản tài liệu, đồ gỗ cao cấp, thiết bị điện tử"
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
             </span>
           </div>
         </div>
