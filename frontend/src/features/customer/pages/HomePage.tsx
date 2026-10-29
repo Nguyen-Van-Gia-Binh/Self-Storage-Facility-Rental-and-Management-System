@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Loader2, Sparkles, MapPin } from 'lucide-react';
+import { Loader2, MapPin } from 'lucide-react';
 import { useFacilityDirectory } from '../hooks/useFacilityDirectory';
 import { HomeFacilityCard } from '../components/HomeFacilityCard';
 import { HomeSearchBar } from '../components/HomeSearchBar';
@@ -44,21 +44,10 @@ export const HomePage: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-10">
       
       {/* HERO BANNER: INTENTIONAL MINIMALISM */}
-      <div className="text-center max-w-3xl mx-auto space-y-3 pt-2">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-50 border border-brand-200/80 shadow-xs">
-          <Sparkles className="w-3.5 h-3.5 text-brand-600" />
-          <span className="text-xs font-bold text-brand-700 uppercase tracking-wider">
-            Hệ Thống Kho Tự Quản Thông Minh 24/7
-          </span>
-        </div>
-        
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#0a1614] tracking-tight">
-          Chọn Cơ Sở Kho Gần Bạn Nhất
+      <div className="text-center max-w-4xl mx-auto pt-2 pb-1">
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+          Hệ Thống Kho Tự Quản Thông Minh
         </h1>
-        
-        <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl mx-auto font-medium">
-          Hệ thống ô kho tự quản an toàn, kiểm soát ra vào bằng mã PIN điện tử, bảo quản đồ đạc tiêu chuẩn và máy lạnh cao cấp.
-        </p>
       </div>
 
       {/* SEARCH & FILTER BAR COMPONENT */}
