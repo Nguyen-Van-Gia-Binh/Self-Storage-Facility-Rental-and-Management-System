@@ -60,7 +60,7 @@ export const BookingCustomerForm: React.FC<BookingCustomerFormProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Họ và tên */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700">
+            <label className="block text-xs font-bold text-slate-700">
               Họ và tên <span className="text-rose-500">*</span>
             </label>
             <input
@@ -77,7 +77,7 @@ export const BookingCustomerForm: React.FC<BookingCustomerFormProps> = ({
 
           {/* Số điện thoại */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700">
+            <label className="block text-xs font-bold text-slate-700">
               Số điện thoại liên hệ <span className="text-rose-500">*</span>
             </label>
             <input
@@ -94,7 +94,7 @@ export const BookingCustomerForm: React.FC<BookingCustomerFormProps> = ({
 
           {/* Email */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700">
+            <label className="block text-xs font-bold text-slate-700">
               Email nhận mã PIN & Hợp đồng <span className="text-rose-500">*</span>
             </label>
             <input
@@ -111,8 +111,8 @@ export const BookingCustomerForm: React.FC<BookingCustomerFormProps> = ({
 
           {/* Số CCCD / Hộ chiếu */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
-              <span>Số CCCD / Hộ chiếu (12 số) <span className="text-rose-500">*</span></span>
+            <label className="block text-xs font-bold text-slate-700">
+              Số CCCD / Hộ chiếu (12 số) <span className="text-rose-500">*</span>
             </label>
             <input
               type="text"
@@ -121,7 +121,6 @@ export const BookingCustomerForm: React.FC<BookingCustomerFormProps> = ({
               placeholder="Nhập 12 số CCCD..."
               className="w-full px-3.5 py-2.5 bg-white border border-brand-200 rounded-xl text-xs sm:text-sm font-semibold text-[#0a1614] focus:outline-none focus:border-brand-500 shadow-xs"
             />
-            <p className="text-[10px] text-slate-500">Dùng đối chiếu khi nhận bàn giao kho tại cơ sở</p>
             {formErrors.customerIdCard && (
               <p className="text-[11px] text-rose-600 font-semibold">{formErrors.customerIdCard}</p>
             )}

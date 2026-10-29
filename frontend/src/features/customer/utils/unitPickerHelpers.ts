@@ -13,6 +13,20 @@ export function formatDateVN(dateStr: string): string {
 }
 
 /**
+ * Tính ngày kết thúc hợp đồng theo chu kỳ số tháng từ ngày bắt đầu
+ */
+export function calculateEndDate(startDate: string, durationMonths: number): string {
+  if (!startDate) return '';
+  const [y, m, d] = startDate.split('-').map(Number);
+  const date = new Date(y, m - 1 + (durationMonths || 1), d);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+
+/**
  * Nhận diện loại kho máy lạnh (Climate Controlled) chuẩn xác theo mã, tên và mô tả công năng
  */
 export function isClimateUnitType(ut: { code?: string; name?: string; description?: string }): boolean {

@@ -384,39 +384,61 @@ export const BookingPaymentStep: React.FC<BookingPaymentStepProps> = ({
 
         {/* CỘT PHẢI: TÓM TẮT CHI PHÍ (4 COLS) */}
         <div className="lg:col-span-4">
-          <div className="bg-white border border-brand-200 rounded-2xl p-6 shadow-sm sticky top-24 space-y-4">
-            <h2 className="text-xs font-extrabold uppercase tracking-wider text-[#0a1614] pb-2 border-b border-brand-100">
-              Tóm tắt chi phí thuê
-            </h2>
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs sticky top-24 space-y-3">
+            {/* Invoice Header */}
+            <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
+              <h3 className="text-sm font-black text-slate-900 tracking-tight">
+                Hóa đơn đặt chỗ
+              </h3>
+              <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-md border bg-emerald-50 text-emerald-800 border-emerald-200/60">
+                Đã chọn ô
+              </span>
+            </div>
 
-            <div className="space-y-2.5 text-xs text-slate-600">
-              <div className="flex justify-between">
-                <span>Cơ sở:</span>
-                <strong className="text-[#0a1614] text-right">{facility.name}</strong>
+            {/* Thông tin định danh cơ bản */}
+            <div className="space-y-2 text-xs text-slate-600 bg-slate-50/70 p-3 rounded-xl border border-slate-100">
+              <div className="flex justify-between items-center gap-2">
+                <span className="shrink-0 text-slate-500 font-medium">Cơ sở:</span>
+                <span className="text-slate-900 text-right font-bold truncate max-w-[190px]">
+                  {facility.name}
+                </span>
               </div>
-              <div className="flex justify-between">
-                <span>Ô kho:</span>
-                <strong className="font-mono text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
-                  {finalUnitNumber}
-                </strong>
+
+              <div className="flex justify-between items-center gap-2">
+                <span className="shrink-0 text-slate-500 font-medium">Mã ô kho:</span>
+                <div className="flex items-center gap-1.5 font-bold text-slate-900">
+                  <span className="font-mono text-xs px-2 py-0.5 rounded-md border font-black text-brand-800 bg-brand-50 border-brand-300">
+                    {finalUnitNumber}
+                  </span>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span>Loại kho:</span>
-                <strong className="text-[#0a1614]">{unitType.name} ({unitType.areaM2} m²)</strong>
+
+              <div className="flex justify-between items-center gap-2">
+                <span className="shrink-0 text-slate-500 font-medium">Loại kho:</span>
+                <span className="text-slate-900 text-right font-medium">
+                  {unitType.name} (Size {unitType.sizeCategory || ''}{unitType.areaM2 ? ` · ${unitType.areaM2} m²` : ''})
+                </span>
               </div>
-              <div className="flex justify-between">
-                <span>Thời hạn thuê:</span>
-                <strong className="text-[#0a1614]">{durationMonths} tháng</strong>
+
+              <div className="flex justify-between items-center gap-2">
+                <span className="shrink-0 text-slate-500 font-medium">Kỳ thuê:</span>
+                <span className="text-slate-900 text-right font-medium">
+                  {durationMonths} tháng
+                </span>
               </div>
             </div>
 
-            <div className="border-t border-brand-100 pt-3 space-y-2 text-xs text-slate-600">
-              <div className="flex justify-between">
-                <span>Tiền thuê {durationMonths} tháng:</span>
-                <span className="font-semibold text-[#0a1614]">{formatVND(calculation.rentalFee)}</span>
+            {/* Bảng tính toán tiền thuê và tiền cọc */}
+            <div className="pt-1 space-y-2 text-xs">
+              <div className="flex justify-between text-slate-600">
+                <span>Tiền thuê ({durationMonths} tháng):</span>
+                <span className="font-semibold text-slate-900 font-mono">
+                  {formatVND(calculation.rentalFee)}
+                </span>
               </div>
+
               {calculation.discountAmount > 0 && (
-                <div className="flex justify-between text-emerald-700 font-semibold">
+                <div className="flex justify-between text-emerald-700 font-bold bg-emerald-50/80 px-2.5 py-1.5 rounded-lg border border-emerald-200/60">
                   <span>
                     {calculation.discountProgramName
                       ? `${calculation.discountProgramName}${
@@ -426,19 +448,27 @@ export const BookingPaymentStep: React.FC<BookingPaymentStepProps> = ({
                         }:`
                       : `Chiết khấu (-${calculation.discountPercent}%):`}
                   </span>
-                  <span>-{formatVND(calculation.discountAmount)}</span>
+                  <span className="font-mono text-emerald-800 font-black">
+                    -{formatVND(calculation.discountAmount)}
+                  </span>
                 </div>
               )}
-              <div className="flex justify-between">
-                <span>Tiền cọc giữ kho ({depositMultiplierLabel} tháng):</span>
-                <span className="font-semibold text-[#0a1614]">{formatVND(calculation.depositAmount)}</span>
+
+              <div className="flex justify-between text-slate-600">
+                <span>Tiền đặt cọc ({depositMultiplierLabel} tháng):</span>
+                <span className="font-semibold text-slate-900 font-mono">
+                  {formatVND(calculation.depositAmount)}
+                </span>
               </div>
             </div>
 
-            <div className="bg-brand-50/80 border border-brand-200 p-4 rounded-xl">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-[#0a1614]">Tổng thanh toán:</span>
-                <span className="text-base font-black text-brand-700 font-mono">
+            {/* Tổng thanh toán */}
+            <div className="pt-2.5 border-t border-slate-200">
+              <div className="flex items-baseline justify-between">
+                <span className="text-xs font-black uppercase tracking-wider text-slate-900">
+                  Tổng thanh toán:
+                </span>
+                <span className="text-xl font-black text-[#008B74] font-mono tracking-tight">
                   {formatVND(totalAmount)}
                 </span>
               </div>
