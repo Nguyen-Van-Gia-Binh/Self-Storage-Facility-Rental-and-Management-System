@@ -86,6 +86,11 @@ export const UnitTypeAccordionList: React.FC<UnitTypeAccordionListProps> = ({
                 <p className="text-xs text-slate-500 font-medium">
                   {type.dimensions} • Thể tích: <strong className="text-slate-700 font-mono">{type.volumeM3} m³</strong> ({type.areaM2} m²)
                 </p>
+                <p className="text-[11px] text-emerald-800 font-medium pt-0.5">
+                  {type.sizeCategory === 'S' && '💡 Vừa 8–10 thùng carton, 2 vali lớn, quạt & đồ nhỏ'}
+                  {type.sizeCategory === 'M' && '💡 Vừa đồ đạc 1 phòng trọ (nệm, tủ lạnh mini, bàn ghế)'}
+                  {type.sizeCategory === 'L' && '💡 Vừa đồ đạc căn hộ gia đình 1–2 phòng ngủ'}
+                </p>
               </div>
 
               {/* Cột phải: Giá niêm yết, Trạng thái & Nút chọn */}

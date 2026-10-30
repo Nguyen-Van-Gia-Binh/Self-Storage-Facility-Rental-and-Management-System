@@ -308,7 +308,7 @@ export const SupportPage: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200/80 pb-5">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-[#0a1614] tracking-tight">
-            Yêu Cầu Hỗ Trợ & Xử Lý Sự Cố
+            Yêu Cầu Hỗ Trợ
           </h1>
         </div>
 
@@ -316,7 +316,7 @@ export const SupportPage: React.FC = () => {
           {/* Search Box */}
           <div className="relative w-full sm:w-64">
             <Input
-              placeholder="Tìm mã vé, ô kho..."
+              placeholder="Tìm mã vé, ô kho, cơ sở..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="text-xs pl-8 pr-7 py-1.5 h-9 bg-white"
@@ -358,10 +358,11 @@ export const SupportPage: React.FC = () => {
             className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold shadow-xs cursor-pointer h-9 bg-brand-600 hover:bg-brand-700 text-white"
           >
             <Plus className="w-4 h-4" />
-            <span>Báo sự cố mới</span>
+            <span>Gửi yêu cầu trợ giúp</span>
           </Button>
         </div>
       </div>
+
 
       {!isAuthenticated ? (
         /* Card Yêu cầu đăng nhập cho khách vãng lai */

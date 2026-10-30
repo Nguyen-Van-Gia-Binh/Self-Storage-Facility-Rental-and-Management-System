@@ -1,16 +1,17 @@
 import React from 'react';
-import { Check, HelpCircle } from 'lucide-react';
+import { Check } from 'lucide-react';
 import type { StorageType } from '../types';
 
 export interface StorageTypeTabsProps {
-  storageType: StorageType;
+  storageType: StorageType | null;
   onSelectStorageType: (type: StorageType) => void;
   standardTypesCount: number;
   climateTypesCount: number;
 }
 
 /**
- * StorageTypeTabs — Bước 2.1: Tabs chọn môi trường kho (Tiêu Chuẩn vs Máy Lạnh 24/7)
+ * StorageTypeTabs — Bước 2.1: Chọn môi trường kho (Kho Tiêu Chuẩn vs Kho Máy Lạnh)
+ * Khi mới vào trang: cả 2 tab đều ở trạng thái chưa chọn để khách hàng chủ động click.
  */
 export const StorageTypeTabs: React.FC<StorageTypeTabsProps> = ({
   storageType,
@@ -20,6 +21,7 @@ export const StorageTypeTabs: React.FC<StorageTypeTabsProps> = ({
 }) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+      {/* Kho Tiêu Chuẩn */}
       <button
         type="button"
         onClick={() => onSelectStorageType('STANDARD')}
@@ -29,15 +31,12 @@ export const StorageTypeTabs: React.FC<StorageTypeTabsProps> = ({
             : 'border-slate-200 hover:border-slate-300 bg-white'
         }`}
       >
-        <div className="flex items-center gap-2.5">
-          <span className="text-xl">📦</span>
-          <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">📦</span>
+          <div className="space-y-0.5">
             <span className="text-sm font-black text-slate-900 block">Kho Tiêu Chuẩn</span>
-            <span
-              className="text-slate-400 hover:text-slate-600 cursor-help"
-              title="Nhiệt độ phòng thoáng khí tự nhiên, phù hợp đồ đạc gia đình, nội thất, hàng hóa thông thường"
-            >
-              <HelpCircle className="w-3.5 h-3.5" />
+            <span className="text-[11px] text-slate-500 block">
+              Nhiệt độ phòng thoáng khí • Đồ gia dụng, nội thất
             </span>
           </div>
         </div>
@@ -48,6 +47,7 @@ export const StorageTypeTabs: React.FC<StorageTypeTabsProps> = ({
         )}
       </button>
 
+      {/* Kho Máy Lạnh */}
       <button
         type="button"
         onClick={() => onSelectStorageType('CLIMATE_CONTROLLED')}
@@ -57,15 +57,12 @@ export const StorageTypeTabs: React.FC<StorageTypeTabsProps> = ({
             : 'border-slate-200 hover:border-slate-300 bg-white'
         }`}
       >
-        <div className="flex items-center gap-2.5">
-          <span className="text-xl">❄️</span>
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm font-black text-slate-900 block">Kho Máy Lạnh (24/7)</span>
-            <span
-              className="text-slate-400 hover:text-slate-600 cursor-help"
-              title="Kiểm soát 22°C - 25°C và độ ẩm ổn định, chuyên dụng bảo quản tài liệu, đồ gỗ cao cấp, thiết bị điện tử"
-            >
-              <HelpCircle className="w-3.5 h-3.5" />
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">❄️</span>
+          <div className="space-y-0.5">
+            <span className="text-sm font-black text-slate-900 block">Kho Máy Lạnh</span>
+            <span className="text-[11px] text-slate-500 block">
+              Kiểm soát ẩm 22–25°C • Tài liệu, đồ da, điện tử
             </span>
           </div>
         </div>

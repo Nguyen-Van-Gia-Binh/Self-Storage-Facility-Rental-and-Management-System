@@ -34,7 +34,7 @@ export function useUnitPickerCatalog({
   const [availabilityMap, setAvailabilityMap] = useState<Record<string, AvailabilityResponse>>({});
   const [loadingAvailability, setLoadingAvailability] = useState<boolean>(false);
 
-  const [storageType, setStorageType] = useState<StorageType>('STANDARD');
+  const [storageType, setStorageType] = useState<StorageType | null>(null);
   const [selectedTypeId, setSelectedTypeId] = useState<string>('');
   const [expandedTypeId, setExpandedTypeId] = useState<string | null>(initialTypeId || null);
   const [selectedSize, setSelectedSize] = useState<UnitSizeCategory>('S');
@@ -118,11 +118,10 @@ export function useUnitPickerCatalog({
               setStorageType(found.storageType);
             }
           } else {
+            // Khi không truyền initialTypeId từ URL: không auto-select để khách hàng chủ động click chọn loại kho
             const firstListed = mappedUTs.find((ut) => ut.baseMonthlyPrice > 0);
             if (firstListed) {
-              setSelectedTypeId(firstListed.id);
-              setSelectedSize(firstListed.sizeCategory);
-              setStorageType(firstListed.storageType);
+              // Giữ storageType = null để khách hàng tự click chọn Kho Tiêu Chuẩn hay Kho Máy Lạnh
             }
           }
         }
@@ -205,6 +204,7 @@ export function useUnitPickerCatalog({
 
   // 3. Lọc danh sách loại kho đã niêm yết giá theo storageType (ISS-113)
   const availableTypes = useMemo(() => {
+    if (!storageType) return [];
     return unitTypes.filter(
       (t) =>
         t.baseMonthlyPrice > 0 &&
@@ -238,17 +238,14 @@ export function useUnitPickerCatalog({
     [unitTypes]
   );
 
-  // 4. Loại kho đang được chọn
+  // 4. Loại kho đang được chọn (Chỉ xác định khi người dùng đã chọn selectedTypeId)
   const currentUnitType = useMemo(() => {
     if (selectedTypeId) {
       const matchedById = availableTypes.find((t) => t.id === selectedTypeId);
       if (matchedById) return matchedById;
     }
-    const matchedBySize = availableTypes.find((t) => t.sizeCategory === selectedSize);
-    if (matchedBySize) return matchedBySize;
-    const firstListed = availableTypes.find((t) => t.baseMonthlyPrice > 0);
-    return firstListed || availableTypes[0];
-  }, [availableTypes, selectedTypeId, selectedSize]);
+    return undefined;
+  }, [availableTypes, selectedTypeId]);
 
   // 5. Cập nhật trạng thái ô kho trên sơ đồ theo availability
   const displayFacilityUnits = useMemo(() => {
@@ -269,8 +266,9 @@ export function useUnitPickerCatalog({
     });
   }, [facilityUnits, unitTypes, availabilityMap]);
 
-  // 6. Ô kho cụ thể đang được chọn
+  // 6. Ô kho cụ thể đang được chọn (Chỉ chọn khi khách đã chọn loại kho)
   const selectedUnit = useMemo(() => {
+    if (!selectedTypeId) return null;
     if (selectedUnitId) {
       const found = displayFacilityUnits.find((u) => u.id === selectedUnitId);
       if (!found) return null;
@@ -284,6 +282,10 @@ export function useUnitPickerCatalog({
 
   // 7. Tự động chọn ô kho còn trống đầu tiên khi đổi loại kho hoặc tải trang
   useEffect(() => {
+    if (!selectedTypeId) {
+      setSelectedUnitId(null);
+      return;
+    }
     const currentUnitsForType = displayFacilityUnits.filter((u) => {
       if (selectedTypeId && u.unitTypeId) return u.unitTypeId === selectedTypeId;
       if (storageType && u.storageType) return u.storageType === storageType;
@@ -319,25 +321,10 @@ export function useUnitPickerCatalog({
 
   const handleSelectStorageType = (sType: StorageType) => {
     setStorageType(sType);
-    const typesForType = unitTypes.filter((t) => t.storageType === sType);
-    const firstListed = typesForType.find((t) => t.baseMonthlyPrice > 0);
-    if (firstListed) {
-      setSelectedTypeId(firstListed.id);
-      setSelectedSize(firstListed.sizeCategory);
-      setExpandedTypeId(firstListed.id);
-      const firstAvail = findFirstAvailableUnit(firstListed.id, displayFacilityUnits);
-      setSelectedUnitId(firstAvail ? firstAvail.id : null);
-    } else if (typesForType.length > 0) {
-      setSelectedTypeId(typesForType[0].id);
-      setSelectedSize(typesForType[0].sizeCategory);
-      setExpandedTypeId(typesForType[0].id);
-      const firstAvail = findFirstAvailableUnit(typesForType[0].id, displayFacilityUnits);
-      setSelectedUnitId(firstAvail ? firstAvail.id : null);
-    } else {
-      setSelectedTypeId('');
-      setExpandedTypeId(null);
-      setSelectedUnitId(null);
-    }
+    // Khi đổi môi trường kho: reset để khách hàng chủ động chọn kích thước kho mới
+    setSelectedTypeId('');
+    setExpandedTypeId(null);
+    setSelectedUnitId(null);
   };
 
   const handleSelectUnitOnGrid = (unit: StorageUnit) => {

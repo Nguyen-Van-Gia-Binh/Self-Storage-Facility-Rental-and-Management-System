@@ -38,9 +38,9 @@ export const SupportTicketTable: React.FC<SupportTicketTableProps> = ({
           <thead className="bg-slate-50/85 border-b border-slate-200/80 text-slate-500 uppercase tracking-wider text-[11px] font-bold">
             <tr>
               <th className="py-3 px-4">Mã vé</th>
-              <th className="py-3 px-4">Phân loại</th>
+              <th className="py-3 px-4">Vấn đề hỗ trợ</th>
               <th className="py-3 px-4">Ô kho / Cơ sở</th>
-              <th className="py-3 px-4">Nội dung sự cố</th>
+              <th className="py-3 px-4">Nội dung yêu cầu</th>
               <th className="py-3 px-4">Trạng thái</th>
               <th className="py-3 px-4 text-right">Thao tác</th>
             </tr>

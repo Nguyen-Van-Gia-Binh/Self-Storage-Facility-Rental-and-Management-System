@@ -191,7 +191,7 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
     setErrorMsg(null);
 
     if (!description.trim() || description.trim().length < 10) {
-      setErrorMsg('Vui lòng nhập mô tả sự cố chi tiết từ 10 ký tự trở lên để nhân viên nắm rõ thông tin.');
+      setErrorMsg('Vui lòng nhập mô tả chi tiết từ 10 ký tự trở lên để nhân viên nắm rõ thông tin.');
       return;
     }
 
@@ -257,7 +257,7 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
         <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
           <div>
             <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
-              <span>Báo Sự Cố & Gửi Yêu Cầu Hỗ Trợ</span>
+              <span>Gửi Yêu Cầu Trợ Giúp & Hỗ Trợ Kỹ Thuật</span>
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
               Đội ngũ kỹ thuật và nhân viên trực cơ sở sẽ hỗ trợ bạn kịp thời
@@ -309,7 +309,7 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
           {/* 2. Chọn loại sự cố */}
           <div>
             <label className="block text-xs font-bold text-slate-800 uppercase tracking-wide mb-2">
-              2. Phân loại sự cố <span className="text-rose-500">*</span>
+              2. Vấn đề bạn cần hỗ trợ <span className="text-rose-500">*</span>
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {CATEGORIES.map((cat) => {

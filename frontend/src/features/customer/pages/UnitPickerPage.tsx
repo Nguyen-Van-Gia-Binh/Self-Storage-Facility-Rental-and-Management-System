@@ -303,8 +303,20 @@ export const UnitPickerPage: React.FC = () => {
               climateTypesCount={climateTypesCount}
             />
 
+
             {/* Bước 2.2: Danh sách Kích thước dạng List Card Rows kèm Accordion Sơ đồ ô kho */}
-            <UnitTypeAccordionList
+            {!storageType ? (
+              <div className="py-8 px-4 text-center bg-slate-50 border border-dashed border-slate-200 rounded-2xl space-y-1.5">
+                <span className="text-2xl block">📦</span>
+                <p className="text-xs sm:text-sm font-bold text-slate-700">
+                  Vui lòng chọn loại kho bạn cần ở trên
+                </p>
+                <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
+                  Chọn <strong>Kho Tiêu Chuẩn</strong> hoặc <strong>Kho Máy Lạnh</strong> để hệ thống hiển thị danh sách kích thước và các ô kho còn trống.
+                </p>
+              </div>
+            ) : (
+              <UnitTypeAccordionList
               availableTypes={availableTypes}
               selectedTypeId={selectedTypeId}
               expandedTypeId={expandedTypeId}
@@ -314,6 +326,8 @@ export const UnitPickerPage: React.FC = () => {
               onSelectType={handleSelectType}
               onSelectUnitOnGrid={handleSelectUnitOnGrid}
             />
+            )}
+
           </div>
 
         </div>

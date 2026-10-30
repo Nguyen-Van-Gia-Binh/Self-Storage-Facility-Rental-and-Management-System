@@ -252,16 +252,16 @@ export const RegisterPage: React.FC = () => {
           {/* 3 Compact Feature Highlights */}
           <div className="grid grid-cols-3 gap-2.5">
             <div className="p-3 rounded-xl bg-white/[0.08] border border-white/20 text-center backdrop-blur-sm">
-              <span className="block text-xs font-bold text-white">24/7</span>
-              <span className="block text-[10px] text-teal-100/80 mt-0.5">Tự do ra vào</span>
+              <span className="block text-xs font-bold text-white">Linh hoạt</span>
+              <span className="block text-[10px] text-teal-100/80 mt-0.5">Thuê theo tháng</span>
             </div>
             <div className="p-3 rounded-xl bg-white/[0.08] border border-white/20 text-center backdrop-blur-sm">
-              <span className="block text-xs font-bold text-white">Mã PIN IoT</span>
-              <span className="block text-[10px] text-teal-100/80 mt-0.5">Khóa số thông minh</span>
+              <span className="block text-xs font-bold text-white">Mã PIN riêng</span>
+              <span className="block text-[10px] text-teal-100/80 mt-0.5">Khóa điện tử cá nhân</span>
             </div>
             <div className="p-3 rounded-xl bg-white/[0.08] border border-white/20 text-center backdrop-blur-sm">
-              <span className="block text-xs font-bold text-white">100%</span>
-              <span className="block text-[10px] text-teal-100/80 mt-0.5">Kho máy lạnh</span>
+              <span className="block text-xs font-bold text-white">An tâm</span>
+              <span className="block text-[10px] text-teal-100/80 mt-0.5">Riêng tư & Bảo mật</span>
             </div>
           </div>
         </div>
@@ -319,11 +319,11 @@ export const RegisterPage: React.FC = () => {
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
               {step === 'form' ? 'Đăng ký tài khoản mới' : 'Xác thực địa chỉ Email'}
             </h2>
-            <p className="text-xs sm:text-sm text-slate-500">
-              {step === 'form'
-                ? 'Điền thông tin bên dưới để nhận mã xác thực qua email.'
-                : 'Nhập mã OTP 6 số đã được gửi đến email để hoàn tất tạo tài khoản.'}
-            </p>
+            {step === 'otp' && (
+              <p className="text-xs sm:text-sm text-slate-500">
+                Nhập mã OTP 6 số đã được gửi đến email để hoàn tất tạo tài khoản.
+              </p>
+            )}
           </div>
 
           {/* Alerts */}
@@ -392,7 +392,7 @@ export const RegisterPage: React.FC = () => {
                 {/* Phone */}
                 <div className="space-y-1.5">
                   <label className="block text-xs font-semibold text-slate-700">
-                    Số điện thoại <span className="text-slate-400 font-normal">(để nhận mã PIN)</span>
+                    Số điện thoại
                   </label>
                   <div className="relative">
                     <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
