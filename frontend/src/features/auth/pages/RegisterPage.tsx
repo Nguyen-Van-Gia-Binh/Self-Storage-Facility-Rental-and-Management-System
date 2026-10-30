@@ -11,8 +11,6 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-  Sparkles,
-  ShieldCheck,
   Check,
   KeyRound,
   RotateCcw,
@@ -21,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
 import { registerUser, sendRegisterOtp } from '@/api/auth';
+import authHeroImg from '@/assets/images/auth-hero-3d.jpg';
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -200,10 +199,11 @@ export const RegisterPage: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-[#f2f9f7] text-slate-900">
       {/* CỘT TRÁI: Hero Showcase */}
-      <div className="hidden lg:flex lg:w-5/12 relative flex-col justify-between p-12 overflow-hidden bg-gradient-to-br from-[#0c2420] via-[#0f2d28] to-[#0a1614] border-r border-[#1a3832]/60">
-        {/* Decorative Glow Elements */}
-        <div className="absolute -top-32 -left-32 w-96 h-96 bg-brand-500/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="hidden lg:flex lg:w-5/12 relative flex-col justify-between p-12 overflow-hidden bg-gradient-to-br from-[#125449] via-[#1c6e60] to-[#11473e] border-r border-teal-600/30">
+        {/* Decorative Glow Elements - Ánh sáng Aurora tươi tắn, rạng rỡ */}
+        <div className="absolute -top-24 -left-24 w-[420px] h-[420px] bg-brand-300/40 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -right-24 w-[420px] h-[420px] bg-teal-200/35 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-1/2 left-1/3 w-80 h-80 bg-emerald-300/25 rounded-full blur-2xl pointer-events-none" />
 
         {/* Top Header / Logo */}
         <div className="relative z-10">
@@ -216,50 +216,66 @@ export const RegisterPage: React.FC = () => {
           />
         </div>
 
-        {/* Center Benefits */}
-        <div className="relative z-10 my-auto py-8 space-y-7 max-w-md">
+        {/* Center Content: Slogan & 3D SmartStorage Visual Asset */}
+        <div className="relative z-10 my-auto py-6 space-y-6 max-w-md">
           <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-900/60 border border-brand-700/60 text-xs font-medium text-brand-300">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Đặc quyền Khách hàng Thành viên</span>
-            </div>
             <h1 className="text-3xl font-extrabold text-white leading-tight tracking-tight">
-              Tạo tài khoản thuê kho <br />
+              An toàn lưu trữ, <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-emerald-200 to-teal-100">
-                Nhanh chóng & An tâm
+                Linh hoạt vận hành
               </span>
             </h1>
-            <p className="text-sm text-slate-300 leading-relaxed">
-              Trải nghiệm dịch vụ kho tự phục vụ thông minh với quy trình xác thực email an toàn, bảo vệ tài khoản tối đa và quản lý hợp đồng trực tuyến 24/7.
+            <p className="text-sm text-teal-100/90 leading-relaxed">
+              Hệ thống kho tự quản thông minh, truy cập 24/7 và kiểm soát hoàn toàn trên thiết bị của bạn.
             </p>
           </div>
 
-          <div className="space-y-3">
-            <div className="flex items-start gap-3 p-3.5 rounded-xl bg-white/[0.04] border border-white/10 backdrop-blur-md">
-              <div className="w-8 h-8 rounded-lg bg-brand-500/20 text-brand-300 flex items-center justify-center flex-shrink-0 mt-0.5 border border-brand-500/30">
-                <ShieldCheck className="w-4 h-4" />
-              </div>
-              <div>
-                <h4 className="text-xs font-bold text-white">Xác thực Email chống Spam</h4>
-                <p className="text-[11px] text-slate-300 mt-0.5">Mã OTP bảo mật 5 phút gửi trực tiếp đến hộp thư chính chủ.</p>
-              </div>
+          {/* 3D Visual Asset Card: Mô hình SmartStorage bo góc gọn gàng */}
+          <div className="relative rounded-2xl overflow-hidden border border-white/25 bg-white/10 shadow-2xl backdrop-blur-md group">
+            <img
+              src={authHeroImg}
+              alt="Mô hình dịch vụ kho tự quản SmartStorage"
+              className="w-full h-44 sm:h-52 object-cover object-center group-hover:scale-[1.02] transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0e3f37]/85 via-transparent to-transparent pointer-events-none" />
+            <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-xs text-white">
+              <span className="font-semibold flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/20 text-[11px]">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
+                Cơ sở mở cửa 24/7
+              </span>
+              <span className="text-[11px] text-teal-100 bg-teal-900/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-teal-400/30 font-medium">
+                Hệ thống Smart Lock
+              </span>
             </div>
+          </div>
 
-            <div className="flex items-start gap-3 p-3.5 rounded-xl bg-white/[0.04] border border-white/10 backdrop-blur-md">
-              <div className="w-8 h-8 rounded-lg bg-teal-500/20 text-teal-300 flex items-center justify-center flex-shrink-0 mt-0.5 border border-teal-500/30">
-                <Check className="w-4 h-4" />
-              </div>
-              <div>
-                <h4 className="text-xs font-bold text-white">Ra vào tự do với mã PIN riêng</h4>
-                <p className="text-[11px] text-slate-300 mt-0.5">Cửa kho điện tử hoạt động 24/7, tự chủ cất và lấy đồ mọi lúc.</p>
-              </div>
+          {/* 3 Compact Feature Highlights */}
+          <div className="grid grid-cols-3 gap-2.5">
+            <div className="p-3 rounded-xl bg-white/[0.08] border border-white/20 text-center backdrop-blur-sm">
+              <span className="block text-xs font-bold text-white">24/7</span>
+              <span className="block text-[10px] text-teal-100/80 mt-0.5">Tự do ra vào</span>
+            </div>
+            <div className="p-3 rounded-xl bg-white/[0.08] border border-white/20 text-center backdrop-blur-sm">
+              <span className="block text-xs font-bold text-white">Mã PIN IoT</span>
+              <span className="block text-[10px] text-teal-100/80 mt-0.5">Khóa số thông minh</span>
+            </div>
+            <div className="p-3 rounded-xl bg-white/[0.08] border border-white/20 text-center backdrop-blur-sm">
+              <span className="block text-xs font-bold text-white">100%</span>
+              <span className="block text-[10px] text-teal-100/80 mt-0.5">Kho máy lạnh</span>
             </div>
           </div>
         </div>
 
-        {/* Bottom Note */}
-        <div className="relative z-10 text-xs text-slate-400 border-t border-white/10 pt-4">
-          <span>Cam kết bảo mật thông tin khách hàng tuyệt đối theo chuẩn quốc tế.</span>
+        {/* Bottom Note: Liên kết người dùng thân thiện, xóa chi tiết kỹ thuật */}
+        <div className="relative z-10 text-xs text-teal-200/80 flex items-center justify-between border-t border-white/15 pt-4">
+          <div className="flex items-center gap-3 text-[11px]">
+            <a href="#" className="hover:text-white transition-colors">Chính sách bảo mật</a>
+            <span>•</span>
+            <a href="#" className="hover:text-white transition-colors">Điều khoản dịch vụ</a>
+          </div>
+          <span className="text-brand-200 font-semibold text-[11px] flex items-center gap-1.5">
+            Hotline: <strong className="text-white font-bold">1900 8888</strong>
+          </span>
         </div>
       </div>
 
