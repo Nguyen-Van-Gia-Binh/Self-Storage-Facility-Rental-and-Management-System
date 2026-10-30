@@ -20,6 +20,9 @@ import {
   Undo2,
   ChevronLeft,
   ChevronRight,
+  Copy,
+  Check,
+  LifeBuoy,
 } from 'lucide-react';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
 import { formatDateVN, calculateEndDate } from '../utils/unitPickerHelpers';
@@ -66,6 +69,14 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
 }) => {
   const [activePassContract, setActivePassContract] = useState<RentedContract | null>(null);
   const [revealedPins, setRevealedPins] = useState<Record<string, boolean>>({});
+  const [copiedPinId, setCopiedPinId] = useState<string | null>(null);
+
+  const handleCopyPin = (contractId: string, pin: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(pin);
+    setCopiedPinId(contractId);
+    setTimeout(() => setCopiedPinId(null), 2000);
+  };
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
@@ -155,7 +166,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
               <th className="py-3 px-4">Loại kho</th>
               <th className="py-3 px-4">Cơ sở</th>
               <th className="py-3 px-4">Thời hạn</th>
-              <th className="py-3 px-4">Mã mở khóa</th>
+              <th className="py-3 px-4">Mã PIN / Mở kho</th>
               <th className="py-3 px-4">Trạng thái</th>
               <th className="py-3 px-4 text-right">Thao tác</th>
             </tr>
@@ -197,8 +208,8 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                   </td>
 
                   {/* Cột 5: Mã mở khóa */}
-                  <td className="py-3.5 px-4 text-slate-400 text-xs italic whitespace-nowrap">
-                    Chờ thanh toán
+                  <td className="py-3.5 px-4 text-slate-300 text-xs whitespace-nowrap">
+                    —
                   </td>
 
                   {/* Cột 6: Trạng thái */}
@@ -235,7 +246,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                               ? 'bg-slate-100 border-slate-300 text-slate-800'
                               : 'border-slate-200/90 text-slate-500 hover:text-slate-800 hover:bg-slate-50'
                           }`}
-                          title="Thao tác khác"
+                          title="Tùy chọn: Đổi PIN, Báo trả kho, Hỗ trợ..."
                         >
                           <MoreVertical className="w-3.5 h-3.5" />
                         </button>
@@ -305,11 +316,16 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                 (contract.status === 'PENDING_RETURN' && !contract.inspectionDone) ||
                 contract.status === 'OVERDUE';
 
+              const isClosed = contract.status === 'CLOSED' || (contract.status as string) === 'TERMINATED';
+
               return (
                 <tr
                   key={contract.id}
-                  className={`transition-colors ${
-                    contract.status === 'OVERDUE'
+                  onClick={() => onViewDetail(contract)}
+                  className={`transition-colors cursor-pointer ${
+                    isClosed
+                      ? 'bg-slate-50/40 opacity-60 text-slate-400 hover:opacity-85'
+                      : contract.status === 'OVERDUE'
                       ? 'bg-rose-50/20 hover:bg-rose-50/40'
                       : isUrgentExpiring
                       ? 'bg-amber-50/20 hover:bg-amber-50/40'
@@ -318,7 +334,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                 >
                   {/* Cột 1: Ô kho (Chỉ mã số ô kho) */}
                   <td className="py-3.5 px-4 whitespace-nowrap">
-                    <span className="font-extrabold text-sm text-slate-900 tracking-tight font-mono">
+                    <span className={`font-extrabold text-sm tracking-tight font-mono ${isClosed ? "text-slate-400" : "text-slate-900"}`}>
                       {contract.unitNumber}
                     </span>
                   </td>
@@ -339,21 +355,35 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                   </td>
 
                   {/* Cột 5: Mã mở khóa */}
-                  <td className="py-3.5 px-4 whitespace-nowrap">
+                  <td className="py-3.5 px-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     {contract.accessPin ? (
-                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-xs">
-                        <span className="text-slate-400 text-[10px] font-medium">PIN:</span>
+                      <div className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-50 border border-slate-200 text-xs shadow-2xs">
+                        <span className="text-slate-400 text-[10px] font-medium mr-0.5">PIN:</span>
                         <span className="font-mono font-black text-slate-800 tracking-wider">
                           {isRevealed ? contract.accessPin : '••••••'}
                         </span>
                         <button
                           type="button"
                           onClick={() => togglePin(contract.id)}
-                          className="text-slate-400 hover:text-slate-700 p-0.5 cursor-pointer transition-colors"
+                          className="text-slate-400 hover:text-slate-700 p-0.5 cursor-pointer transition-colors ml-0.5"
                           title={isRevealed ? 'Ẩn mã PIN' : 'Hiện mã PIN'}
                         >
                           {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                         </button>
+                        {isRevealed && (
+                          <button
+                            type="button"
+                            onClick={(e) => handleCopyPin(contract.id, contract.accessPin!, e)}
+                            className="text-slate-400 hover:text-brand-600 p-0.5 cursor-pointer transition-colors"
+                            title="Sao chép mã PIN"
+                          >
+                            {copiedPinId === contract.id ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        )}
                       </div>
                     ) : contract.status === 'PENDING_CHECKIN' ||
                       (contract.status as string) === 'PENDING_CHECK_IN' ? (
@@ -361,14 +391,17 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => setActivePassContract(contract)}
-                        className="h-7 text-[11px] px-2.5 font-bold text-brand-700 border-brand-200 bg-brand-50/50 hover:bg-brand-50 whitespace-nowrap shrink-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActivePassContract(contract);
+                        }}
+                        className="h-7 text-[11px] px-2.5 font-bold text-brand-700 border-brand-200 bg-brand-50/50 hover:bg-brand-50 whitespace-nowrap shrink-0 shadow-2xs cursor-pointer"
                       >
                         <QrCode className="w-3.5 h-3.5 mr-1" />
                         Vé nhận kho
                       </Button>
                     ) : (
-                      <span className="text-slate-400 italic text-[11px]">—</span>
+                      <span className="text-slate-300 text-[11px]">—</span>
                     )}
                   </td>
 
@@ -539,7 +572,8 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                                     )}
                                     <button
                                       type="button"
-                                      onClick={() => {
+                                      onClick={(e) => {
+                                        e.stopPropagation();
                                         setOpenMenuId(null);
                                         onScheduleReturn(contract);
                                       }}
@@ -548,6 +582,17 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                                       <LogOut className="w-3.5 h-3.5 text-slate-500" />
                                       <span>Báo trả kho</span>
                                     </button>
+                                    <Link
+                                      to={`/customer/support?contractId=${contract.id}&unitId=${contract.unitId || ''}`}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setOpenMenuId(null);
+                                      }}
+                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-slate-50 text-slate-700 transition-colors cursor-pointer font-medium"
+                                    >
+                                      <LifeBuoy className="w-3.5 h-3.5 text-slate-500" />
+                                      <span>Cần hỗ trợ ô kho</span>
+                                    </Link>
                                   </div>
                                 )}
 

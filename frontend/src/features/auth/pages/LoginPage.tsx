@@ -199,16 +199,16 @@ export const LoginPage: React.FC = () => {
           {/* 3 Compact Feature Highlights */}
           <div className="grid grid-cols-3 gap-2.5">
             <div className="p-3 rounded-xl bg-white/[0.08] border border-white/20 text-center backdrop-blur-sm">
-              <span className="block text-xs font-bold text-white">24/7</span>
-              <span className="block text-[10px] text-teal-100/80 mt-0.5">Tự do ra vào</span>
+              <span className="block text-xs font-bold text-white">Linh hoạt</span>
+              <span className="block text-[10px] text-teal-100/80 mt-0.5">Thuê theo tháng</span>
             </div>
             <div className="p-3 rounded-xl bg-white/[0.08] border border-white/20 text-center backdrop-blur-sm">
-              <span className="block text-xs font-bold text-white">Mã PIN IoT</span>
-              <span className="block text-[10px] text-teal-100/80 mt-0.5">Khóa số thông minh</span>
+              <span className="block text-xs font-bold text-white">Mã PIN riêng</span>
+              <span className="block text-[10px] text-teal-100/80 mt-0.5">Khóa điện tử cá nhân</span>
             </div>
             <div className="p-3 rounded-xl bg-white/[0.08] border border-white/20 text-center backdrop-blur-sm">
-              <span className="block text-xs font-bold text-white">100%</span>
-              <span className="block text-[10px] text-teal-100/80 mt-0.5">Kho máy lạnh</span>
+              <span className="block text-xs font-bold text-white">An tâm</span>
+              <span className="block text-[10px] text-teal-100/80 mt-0.5">Riêng tư & Bảo mật</span>
             </div>
           </div>
         </div>

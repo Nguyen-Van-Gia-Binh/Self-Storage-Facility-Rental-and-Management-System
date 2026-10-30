@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Loader2, ArrowRight } from 'lucide-react';
+import { User, Loader2, ArrowRight, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 export interface BookingCustomerFormProps {
@@ -25,6 +25,7 @@ export interface BookingCustomerFormProps {
 
 /**
  * BookingCustomerForm — Bước 2: Form nhập thông tin khách hàng & Chấp thuận điều khoản dịch vụ
+ * Thiết kế thân thiện, tạo niềm tin với cam kết bảo mật CCCD và 3 thẻ quyền lợi rõ ràng.
  */
 export const BookingCustomerForm: React.FC<BookingCustomerFormProps> = ({
   customerName,
@@ -124,20 +125,54 @@ export const BookingCustomerForm: React.FC<BookingCustomerFormProps> = ({
             {formErrors.customerIdCard && (
               <p className="text-[11px] text-rose-600 font-semibold">{formErrors.customerIdCard}</p>
             )}
+            <p className="text-[11px] text-slate-500 font-medium flex items-center gap-1.5 mt-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-brand-600 shrink-0" />
+              <span>Bảo mật thông tin • Dùng đối chiếu khi đến nhận kho thực tế</span>
+            </p>
           </div>
         </div>
       </div>
 
       {/* 2. ĐIỀU KHOẢN DỊCH VỤ & CHÍNH SÁCH */}
-      <div className="bg-white border border-brand-200 rounded-2xl p-6 shadow-xs space-y-3">
+      <div className="bg-white border border-brand-200 rounded-2xl p-6 shadow-xs space-y-4">
         <h2 className="text-xs font-extrabold uppercase tracking-wider text-[#0a1614] pb-2 border-b border-brand-100">
-          2. Điều khoản dịch vụ & Chính sách lưu trữ
+          2. Điều khoản dịch vụ & Quyền lợi lưu trữ
         </h2>
 
-        <div className="p-4 bg-brand-50/50 border border-brand-200/70 rounded-xl space-y-2 text-xs text-slate-600">
-          <p>• <strong>Nhận bàn giao kho:</strong> Quý khách xuất trình CCCD trùng khớp khi đến cơ sở để nhận mã PIN điện tử (hoặc mã QR) và hướng dẫn mở kho.</p>
-          <p>• <strong>Chính sách giữ chỗ:</strong> Đơn đặt cọc giữ chỗ có hiệu lực trong {holdHours} giờ. Hủy trước ngày bắt đầu được hoàn 100% tiền thuê.</p>
-          <p>• <strong>Hoàn trả tiền cọc:</strong> Tiền cọc giữ kho ({depositMultiplierLabel} tháng) được hoàn trả 100% ngay khi thanh lý hợp đồng đúng hạn.</p>
+        {/* 3 Thẻ quyền lợi an tâm trực quan */}
+        <div className="grid grid-cols-1 gap-2.5 text-xs">
+          {/* Cam kết 1: Hoàn cọc 100% */}
+          <div className="flex items-start gap-3 p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200/60">
+            <span className="text-lg leading-none mt-0.5">🛡️</span>
+            <div className="space-y-0.5">
+              <strong className="text-emerald-950 font-bold block text-xs">Hoàn trả 100% tiền cọc</strong>
+              <span className="text-slate-600 leading-relaxed block">
+                Tiền cọc giữ kho ({depositMultiplierLabel} tháng) được hoàn trả 100% ngay khi bạn thanh lý hợp đồng đúng hạn.
+              </span>
+            </div>
+          </div>
+
+          {/* Cam kết 2: Giữ chỗ 48h linh hoạt */}
+          <div className="flex items-start gap-3 p-3.5 rounded-xl bg-blue-50/70 border border-blue-200/60">
+            <span className="text-lg leading-none mt-0.5">⏱️</span>
+            <div className="space-y-0.5">
+              <strong className="text-blue-950 font-bold block text-xs">Giữ chỗ an tâm trong {holdHours} giờ</strong>
+              <span className="text-slate-600 leading-relaxed block">
+                Đơn đặt cọc có hiệu lực trong {holdHours} giờ. Hủy trước ngày bắt đầu được hoàn 100% tiền thuê.
+              </span>
+            </div>
+          </div>
+
+          {/* Cam kết 3: Nhận bàn giao kho */}
+          <div className="flex items-start gap-3 p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/60">
+            <span className="text-lg leading-none mt-0.5">🔑</span>
+            <div className="space-y-0.5">
+              <strong className="text-amber-950 font-bold block text-xs">Bàn giao minh bạch & an toàn</strong>
+              <span className="text-slate-600 leading-relaxed block">
+                Xuất trình CCCD trùng khớp khi đến cơ sở để nhận mã PIN điện tử (hoặc mã QR) mở kho riêng.
+              </span>
+            </div>
+          </div>
         </div>
 
         <label className="flex items-start gap-2.5 pt-2 cursor-pointer">

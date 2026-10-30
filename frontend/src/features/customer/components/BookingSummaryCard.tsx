@@ -43,7 +43,7 @@ export const BookingSummaryCard: React.FC<BookingSummaryCardProps> = ({
       {/* Invoice Header */}
       <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
         <h3 className="text-sm font-black text-slate-900 tracking-tight">
-          Hóa đơn đặt chỗ
+          Chi tiết đặt kho
         </h3>
         <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-md border bg-emerald-50 text-emerald-800 border-emerald-200/60">
           Đã chọn ô

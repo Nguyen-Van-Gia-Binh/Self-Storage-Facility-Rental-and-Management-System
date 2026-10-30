@@ -82,7 +82,7 @@ export const RentDurationCard: React.FC<RentDurationCardProps> = ({
                   }}
                   className={`py-2 px-1 text-center rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     isSelected
-                      ? 'bg-white text-brand-800 shadow-xs font-black'
+                      ? 'bg-[#008B74] text-white shadow-xs font-black'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                   }`}
                 >
@@ -95,7 +95,7 @@ export const RentDurationCard: React.FC<RentDurationCardProps> = ({
               onClick={() => setIsCustomMode(true)}
               className={`py-2 px-1 text-center rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 isCustomMode
-                  ? 'bg-white text-brand-800 shadow-xs font-black'
+                  ? 'bg-[#008B74] text-white shadow-xs font-black'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
               }`}
             >

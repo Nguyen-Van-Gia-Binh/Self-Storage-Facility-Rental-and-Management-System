@@ -42,7 +42,7 @@ export const getCategoryMeta = (cat: SupportCategory) => {
       };
     case 'BELONGINGS':
       return {
-        label: 'Tài sản',
+        label: 'Tài sản & Xe đẩy',
         icon: Package,
         color: 'bg-blue-50 text-blue-700 border-blue-200',
         iconColor: 'text-blue-600',
@@ -50,7 +50,7 @@ export const getCategoryMeta = (cat: SupportCategory) => {
     case 'OTHER':
     default:
       return {
-        label: 'Khác',
+        label: 'Hỗ trợ khác',
         icon: HelpCircle,
         color: 'bg-slate-100 text-slate-700 border-slate-200',
         iconColor: 'text-slate-600',
