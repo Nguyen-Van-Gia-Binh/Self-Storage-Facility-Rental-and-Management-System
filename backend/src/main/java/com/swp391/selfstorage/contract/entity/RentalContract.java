@@ -26,7 +26,7 @@ public class RentalContract {
     @Column(name = "facility_id", nullable = false)
     private Long facilityId;
 
-    @Column(name = "storage_unit_id", nullable = false)
+    @Column(name = "storage_unit_id")
     private Long storageUnitId;
 
     @Column(name = "unit_type_id")
