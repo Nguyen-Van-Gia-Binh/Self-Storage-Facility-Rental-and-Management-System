@@ -77,6 +77,9 @@ public enum ErrorCode {
     SUPPORT_REQUEST_CANNOT_BE_CANCELLED(HttpStatus.CONFLICT, "Chỉ có thể hủy yêu cầu hỗ trợ khi ở trạng thái Mới"),
     SUPPORT_REQUEST_ALREADY_CLOSED(HttpStatus.CONFLICT, "Yêu cầu hỗ trợ đã kết thúc"),
     SUPPORT_REQUEST_NOT_RESOLVED(HttpStatus.CONFLICT, "Yêu cầu hỗ trợ chưa được xử lý xong để xác nhận"),
+    RESERVATION_NOT_PAID(HttpStatus.CONFLICT, "Đơn đặt chỗ chưa thanh toán"),
+    ASSIGNMENT_WINDOW_CLOSED(HttpStatus.CONFLICT, "Đã tới ngày nhận kho, không còn gán hoặc đổi ô"),
+    UNIT_NOT_YET_ALLOCATED(HttpStatus.CONFLICT, "Hợp đồng chưa được gán ô kho"),
 
     // 422 Unprocessable Entity
     RETURN_NOTICE_TOO_SHORT(HttpStatus.UNPROCESSABLE_ENTITY,

@@ -183,6 +183,8 @@ public class ContractServiceImpl implements ContractService {
 
                 if (contract.getStatus() != ContractStatus.PENDING_CHECK_IN)
                         throw new CustomException(ErrorCode.CONTRACT_NOT_PENDING_CHECKIN);
+                if (contract.getStorageUnitId() == null)
+                        throw new CustomException(ErrorCode.UNIT_NOT_YET_ALLOCATED);
 
                 String pin = generateUniquePin(PolicyNumbers.snapshotInt(contract.getPolicySnapshot(), "accessPinLength", 6));
                 contract.setAccessCode(pin);

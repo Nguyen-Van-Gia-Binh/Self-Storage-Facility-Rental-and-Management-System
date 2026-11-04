@@ -179,6 +179,23 @@ class ContractServiceTest {
     }
 
     @Test
+    @DisplayName("BR-CHK-02: checkIn khi chưa gán ô thì UNIT_NOT_YET_ALLOCATED")
+    void shouldThrow_whenStorageUnitNotAllocated() {
+        RentalContract contract = RentalContract.builder()
+                .id(500L).facilityId(1L).status(ContractStatus.PENDING_CHECK_IN).build();
+        when(contractRepository.findByIdAndFacilityIdIn(500L, List.of(1L))).thenReturn(Optional.of(contract));
+
+        CheckInRequest req = new CheckInRequest();
+        req.setCheckinDate(LocalDate.now());
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> contractService.checkIn(500L, req, 8L, List.of(1L)));
+
+        assertEquals(ErrorCode.UNIT_NOT_YET_ALLOCATED, ex.getErrorCode());
+        verify(contractRepository, never()).save(any());
+    }
+
+    @Test
     @DisplayName("T3.6 Tu choi: rejectHandover -> Contract TERMINATED, Unit MAINTENANCE (BR-CHK-06)")
     void shouldTerminateContractAndMarkMaintenance_whenHandoverRejected() {
         RentalContract contract = RentalContract.builder()

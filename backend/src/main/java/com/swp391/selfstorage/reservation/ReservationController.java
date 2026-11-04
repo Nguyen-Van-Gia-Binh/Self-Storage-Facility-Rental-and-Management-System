@@ -79,6 +79,25 @@ public class ReservationController {
     }
 
     /**
+     * FM gán hoặc đổi ô kho trước ngày nhận (BR-AVL-04).
+     */
+    @PatchMapping("/{id}/assign-unit")
+    @PreAuthorize("hasRole('FACILITY_MANAGER')")
+    @Operation(summary = "FM gán hoặc đổi ô kho cho đơn đã thanh toán")
+    public ResponseEntity<ApiResponse<ReservationResponse>> assignUnit(
+            @PathVariable Long id,
+            @Valid @RequestBody AssignUnitRequest request,
+            @AuthenticationPrincipal UserPrincipal currentUser
+    ) {
+        if (currentUser == null) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED);
+        }
+        ReservationResponse response = reservationService.assignUnit(
+                id, request.getStorageUnitId(), currentUser.getFacilityIds());
+        return ResponseEntity.ok(ApiResponse.success(response, "Gán ô kho thành công"));
+    }
+
+    /**
      * Tra cứu thông tin chi tiết đơn đặt chỗ theo ID hoặc Mã Code.
      */
     @GetMapping("/{identifier}")
