@@ -218,26 +218,26 @@ class ReservationServiceTest {
     }
 
     @Test
-    @DisplayName("BR-RES-02 & BR-AVL-04: Ô kho đã có người giữ chỗ trùng lịch phải bị từ chối")
-    void createReservation_SpecificUnit_OverlappingSlot_ShouldThrow() {
+    @DisplayName("BR-AVL-03: Hết suất hạng kho thì từ chối")
+    void createReservation_NoCapacity_ShouldThrow() {
         when(rentalContractRepository.existsByCustomerIdAndStatus(15L, ContractStatus.OVERDUE)).thenReturn(false);
         when(facilityRepository.findById(1L)).thenReturn(Optional.of(activeFacility));
         when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(activeUnitType));
-        when(storageUnitRepository.findByIdForUpdate(42L)).thenReturn(Optional.of(availableStorageUnit));
-        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any(), eq(15)))
-                .thenReturn(true);
+        when(storageUnitRepository.countExploitableUnits(eq(1L), eq(7L), any())).thenReturn(1L);
+        when(storageUnitRepository.countBusyUnits(eq(1L), eq(7L), any(), any(), eq(15))).thenReturn(1L);
+        when(reservationRepository.countUnassignedOverlappingReservations(eq(1L), eq(7L), any(), any(), any(), eq(15)))
+                .thenReturn(0L);
 
         CreateReservationRequest req = new CreateReservationRequest();
         req.setFacilityId(1L);
         req.setUnitTypeId(7L);
-        req.setStorageUnitId(42L);
         req.setStartDate(LocalDate.now().plusDays(1));
         req.setRentalMonths(3);
 
         CustomException ex = assertThrows(CustomException.class, () ->
                 reservationService.createReservation(req, customerUser)
         );
-        assertEquals(ErrorCode.UNIT_NOT_AVAILABLE, ex.getErrorCode());
+        assertEquals(ErrorCode.CAPACITY_NOT_AVAILABLE, ex.getErrorCode());
     }
 
     @Test
@@ -246,9 +246,10 @@ class ReservationServiceTest {
         when(rentalContractRepository.existsByCustomerIdAndStatus(15L, ContractStatus.OVERDUE)).thenReturn(false);
         when(facilityRepository.findById(1L)).thenReturn(Optional.of(activeFacility));
         when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(activeUnitType));
-        when(storageUnitRepository.findByIdForUpdate(42L)).thenReturn(Optional.of(availableStorageUnit));
-        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any(), eq(15)))
-                .thenReturn(false);
+        when(storageUnitRepository.countExploitableUnits(eq(1L), eq(7L), any())).thenReturn(1L);
+        when(storageUnitRepository.countBusyUnits(eq(1L), eq(7L), any(), any(), eq(15))).thenReturn(0L);
+        when(reservationRepository.countUnassignedOverlappingReservations(eq(1L), eq(7L), any(), any(), any(), eq(15)))
+                .thenReturn(0L);
 
         FacilityUnitTypePrice price = new FacilityUnitTypePrice();
         price.setFacilityId(1L);
@@ -265,13 +266,13 @@ class ReservationServiceTest {
         CreateReservationRequest req = new CreateReservationRequest();
         req.setFacilityId(1L);
         req.setUnitTypeId(7L);
-        req.setStorageUnitId(42L);
         req.setStartDate(LocalDate.now().plusDays(2));
         req.setRentalMonths(3);
 
         ReservationResponse response = reservationService.createReservation(req, customerUser);
 
         assertNotNull(response);
+        assertNull(response.getStorageUnitId());
         assertEquals(1042L, response.getId());
         assertEquals("PENDING_PAYMENT", response.getStatus());
         assertEquals(1500000L, response.getMonthlyPrice());
@@ -288,9 +289,10 @@ class ReservationServiceTest {
         when(rentalContractRepository.existsByCustomerIdAndStatus(15L, ContractStatus.OVERDUE)).thenReturn(false);
         when(facilityRepository.findById(1L)).thenReturn(Optional.of(activeFacility));
         when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(activeUnitType));
-        when(storageUnitRepository.findByIdForUpdate(42L)).thenReturn(Optional.of(availableStorageUnit));
-        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any(), eq(15)))
-                .thenReturn(false);
+        when(storageUnitRepository.countExploitableUnits(eq(1L), eq(7L), any())).thenReturn(1L);
+        when(storageUnitRepository.countBusyUnits(eq(1L), eq(7L), any(), any(), eq(15))).thenReturn(0L);
+        when(reservationRepository.countUnassignedOverlappingReservations(eq(1L), eq(7L), any(), any(), any(), eq(15)))
+                .thenReturn(0L);
 
         FacilityUnitTypePrice price = new FacilityUnitTypePrice();
         price.setFacilityId(1L);
@@ -307,7 +309,6 @@ class ReservationServiceTest {
         CreateReservationRequest req = new CreateReservationRequest();
         req.setFacilityId(1L);
         req.setUnitTypeId(7L);
-        req.setStorageUnitId(42L);
         req.setStartDate(LocalDate.now().plusDays(2));
         req.setRentalMonths(15);
 

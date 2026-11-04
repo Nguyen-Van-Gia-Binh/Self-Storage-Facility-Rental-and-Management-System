@@ -21,7 +21,7 @@ public class CreateReservationRequest {
     @NotNull(message = "Loại ô kho không được để trống")
     private Long unitTypeId;
 
-    private Long storageUnitId; // Ô kho cụ thể khách chọn trên sơ đồ (BR-AVL-04)
+    private Long storageUnitId; // Bo qua. Don giu suat hang kho, FM gan o sau (BR-AVL-04).
 
     @NotNull(message = "Ngày bắt đầu không được để trống")
     @FutureOrPresent(message = "Ngày bắt đầu thuê không được ở trong quá khứ")

@@ -253,38 +253,23 @@ public class ReservationServiceImpl implements ReservationService {
         LocalDate startDate = request.getStartDate() != null ? request.getStartDate() : LocalDate.now();
         LocalDate endDateExclusive = startDate.plusMonths(months);
 
-        // BR-AVL-04: khách phải chọn đúng ô kho vật lý
-        if (request.getStorageUnitId() == null) {
-            throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, "Khach phai chon dung o kho");
-        }
-
         PolicyVersion policy = requireActivePolicy();
         int bufferDays = policy.getRentalBufferDays();
         int holdHours = policy.getReservationHoldHours();
 
-        if (storageUnitRepository == null) {
-            throw new CustomException(ErrorCode.STORAGE_UNIT_NOT_FOUND);
-        }
-        StorageUnit unit = storageUnitRepository.findByIdForUpdate(request.getStorageUnitId())
-                .orElseThrow(() -> new CustomException(ErrorCode.STORAGE_UNIT_NOT_FOUND));
-        if (unit.getFacilityId() != null && !unit.getFacilityId().equals(request.getFacilityId())) {
-            throw new CustomException(ErrorCode.STORAGE_UNIT_NOT_FOUND, "O kho khong thuoc co so hoac loai o kho da chon");
-        }
-        if (unit.getUnitTypeId() != null && !unit.getUnitTypeId().equals(request.getUnitTypeId())) {
-            throw new CustomException(ErrorCode.STORAGE_UNIT_NOT_FOUND, "O kho khong thuoc co so hoac loai o kho da chon");
-        }
-        if (unit.getStatus() == StorageUnitStatus.MAINTENANCE || unit.getStatus() == StorageUnitStatus.OUT_OF_SERVICE) {
-            throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, "O kho dang trong che do bao tri hoac ngung hoat dong");
-        }
-
-        OffsetDateTime now = OffsetDateTime.now();
-        if (reservationRepository != null && reservationRepository.existsOverlappingReservationForUnit(
-                request.getStorageUnitId(), startDate, endDateExclusive, now, bufferDays)) {
-            throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, "O kho nay da co nguoi khac giu cho trong thoi gian da chon");
-        }
-        if (rentalContractRepository != null && rentalContractRepository.existsOverlappingContractForUnit(
-                request.getStorageUnitId(), startDate, endDateExclusive, bufferDays, 0L)) {
-            throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, "O kho nay da co hop dong trong thoi gian da chon, ke ca khoang dem an toan");
+        if (storageUnitRepository != null) {
+            storageUnitRepository.lockExploitableUnitIds(request.getFacilityId(), request.getUnitTypeId());
+            long exploitable = storageUnitRepository.countExploitableUnits(
+                    request.getFacilityId(), request.getUnitTypeId(),
+                    List.of(StorageUnitStatus.MAINTENANCE, StorageUnitStatus.OUT_OF_SERVICE));
+            long busy = storageUnitRepository.countBusyUnits(
+                    request.getFacilityId(), request.getUnitTypeId(), startDate, endDateExclusive, bufferDays);
+            long unassigned = reservationRepository.countUnassignedOverlappingReservations(
+                    request.getFacilityId(), request.getUnitTypeId(), startDate, endDateExclusive,
+                    OffsetDateTime.now(), bufferDays);
+            if (exploitable - busy - unassigned <= 0) {
+                throw new CustomException(ErrorCode.CAPACITY_NOT_AVAILABLE);
+            }
         }
 
         long monthlyPrice = lookupMonthlyPrice(request.getFacilityId(), request.getUnitTypeId());
@@ -308,7 +293,7 @@ public class ReservationServiceImpl implements ReservationService {
         reservation.setCustomerId(customerId);
         reservation.setFacilityId(request.getFacilityId());
         reservation.setUnitTypeId(request.getUnitTypeId());
-        reservation.setStorageUnitId(request.getStorageUnitId());
+        reservation.setStorageUnitId(null);
 
         reservation.setStartDate(request.getStartDate());
         reservation.setRentalMonths(months);
