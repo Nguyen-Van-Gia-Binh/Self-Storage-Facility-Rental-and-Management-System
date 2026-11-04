@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -132,4 +133,18 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     List<Reservation> findByCustomerContactAndFacility(
             @Param("query") String query,
             @Param("facilityId") Long facilityId);
+
+    @Query(value = "SELECT COUNT(*) FROM reservation r " +
+            "WHERE r.facility_id = :facilityId AND r.unit_type_id = :unitTypeId " +
+            "AND r.storage_unit_id IS NULL " +
+            "AND ((r.status = 'PENDING_PAYMENT' AND r.hold_expires_at > :now) OR r.status = 'CONFIRMED') " +
+            "AND r.start_date < :endDateExclusive " +
+            "AND (r.end_date_exclusive + (:bufferDays * INTERVAL '1 day')) > :startDate", nativeQuery = true)
+    long countUnassignedOverlappingReservations(
+            @Param("facilityId") Long facilityId,
+            @Param("unitTypeId") Long unitTypeId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDateExclusive") LocalDate endDateExclusive,
+            @Param("now") OffsetDateTime now,
+            @Param("bufferDays") int bufferDays);
 }
