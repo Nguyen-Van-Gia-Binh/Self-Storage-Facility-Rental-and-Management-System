@@ -294,7 +294,7 @@ class PaymentServiceTest {
                 .transactionType("INITIAL_PAYMENT")
                 .build();
 
-        when(paymentTransactionRepository.findByOrderCode(123456789L)).thenReturn(Optional.of(pendingTxn));
+        when(paymentTransactionRepository.findByOrderCodeForUpdate(123456789L)).thenReturn(Optional.of(pendingTxn));
         when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(i -> i.getArgument(0));
 
         PaymentResponse response = paymentService.processSandboxTransfer(123456789L, "TRANSFER_SUCCESS");
@@ -318,7 +318,7 @@ class PaymentServiceTest {
                 .transactionType("INITIAL_PAYMENT")
                 .build();
 
-        when(paymentTransactionRepository.findByOrderCode(123456789L)).thenReturn(Optional.of(pendingTxn));
+        when(paymentTransactionRepository.findByOrderCodeForUpdate(123456789L)).thenReturn(Optional.of(pendingTxn));
 
         PaymentResponse response = paymentService.processSandboxTransfer(123456789L, "CANCEL");
 
@@ -342,7 +342,7 @@ class PaymentServiceTest {
                 .transactionType("INITIAL_PAYMENT")
                 .build();
 
-        when(paymentTransactionRepository.findByOrderCode(123456789L)).thenReturn(Optional.of(successTxn));
+        when(paymentTransactionRepository.findByOrderCodeForUpdate(123456789L)).thenReturn(Optional.of(successTxn));
 
         PaymentResponse response = paymentService.processSandboxTransfer(123456789L, "TRANSFER_SUCCESS");
 
@@ -451,7 +451,7 @@ class PaymentServiceTest {
         mockContract.setId(80017L);
         mockContract.setOverdueFeeAccrued(250_000L);
 
-        when(paymentTransactionRepository.findByOrderCode(88889999L)).thenReturn(Optional.of(txn));
+        when(paymentTransactionRepository.findByOrderCodeForUpdate(88889999L)).thenReturn(Optional.of(txn));
         when(rentalContractRepository.findById(80017L)).thenReturn(Optional.of(mockContract));
         when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -476,7 +476,7 @@ class PaymentServiceTest {
         contract.setStatus(com.swp391.selfstorage.contract.entity.ContractStatus.OVERDUE);
         contract.setOverdueFeeAccrued(300_000L);
 
-        when(paymentTransactionRepository.findByOrderCode(99991111L)).thenReturn(Optional.of(txn));
+        when(paymentTransactionRepository.findByOrderCodeForUpdate(99991111L)).thenReturn(Optional.of(txn));
         when(rentalContractRepository.findById(80020L)).thenReturn(Optional.of(contract));
         when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -562,7 +562,7 @@ class PaymentServiceTest {
                 .renewalMonths(3)
                 .build();
 
-        when(paymentTransactionRepository.findByOrderCode(555L)).thenReturn(Optional.of(txn));
+        when(paymentTransactionRepository.findByOrderCodeForUpdate(555L)).thenReturn(Optional.of(txn));
         when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(i -> i.getArgument(0));
 
         paymentService.processSandboxTransfer(555L, "TRANSFER_SUCCESS");
@@ -618,7 +618,7 @@ class PaymentServiceTest {
                 .renewalMonths(months)
                 .build();
 
-        when(paymentTransactionRepository.findByOrderCode(700L + months)).thenReturn(Optional.of(txn));
+        when(paymentTransactionRepository.findByOrderCodeForUpdate(700L + months)).thenReturn(Optional.of(txn));
         when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(i -> i.getArgument(0));
 
         paymentService.processSandboxTransfer(700L + months, "TRANSFER_SUCCESS");
@@ -646,7 +646,7 @@ class PaymentServiceTest {
         contract.setId(100L);
         contract.setMonthlyPrice(3_000_000L);
 
-        when(paymentTransactionRepository.findByOrderCode(910L)).thenReturn(Optional.of(txn));
+        when(paymentTransactionRepository.findByOrderCodeForUpdate(910L)).thenReturn(Optional.of(txn));
         when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(i -> i.getArgument(0));
         when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
 
@@ -669,7 +669,7 @@ class PaymentServiceTest {
                 .status("SUCCESS")
                 .transactionType("INITIAL_PAYMENT")
                 .build();
-        when(paymentTransactionRepository.findByOrderCode(123L)).thenReturn(Optional.of(successTxn));
+        when(paymentTransactionRepository.findByOrderCodeForUpdate(123L)).thenReturn(Optional.of(successTxn));
 
         assertTrue(paymentService.completeVnpayPayment(123L, true, 100_000L, "1", "NCB"));
 
@@ -689,7 +689,7 @@ class PaymentServiceTest {
                 .transactionType("INITIAL_PAYMENT")
                 .paymentMethod("SANDBOX_VIETQR")
                 .build();
-        when(paymentTransactionRepository.findByOrderCode(123L)).thenReturn(Optional.of(pending));
+        when(paymentTransactionRepository.findByOrderCodeForUpdate(123L)).thenReturn(Optional.of(pending));
 
         assertFalse(paymentService.completeVnpayPayment(123L, false, 100_000L, "1", "NCB"));
         assertFalse(paymentService.completeVnpayPayment(123L, true, 1L, "1", "NCB"));
@@ -705,7 +705,7 @@ class PaymentServiceTest {
         PaymentTransaction pendingTxn = PaymentTransaction.builder()
                 .id(50L).reservationId(100L).orderCode(123456789L).amount(3_200_000L)
                 .status("PENDING").transactionType("INITIAL_PAYMENT").build();
-        when(paymentTransactionRepository.findByOrderCode(123456789L)).thenReturn(Optional.of(pendingTxn));
+        when(paymentTransactionRepository.findByOrderCodeForUpdate(123456789L)).thenReturn(Optional.of(pendingTxn));
         when(reservationRepository.findById(100L)).thenReturn(Optional.of(mockReservation));
         UserPrincipal other = new UserPrincipal(999L, "a@b.c", "x", "Other",
                 UserRole.STORAGE_CUSTOMER, UserStatus.ACTIVE, List.of(), List.of());

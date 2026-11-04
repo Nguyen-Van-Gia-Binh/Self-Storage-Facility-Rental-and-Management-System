@@ -275,7 +275,7 @@ public class PaymentServiceImpl implements PaymentService {
     @Transactional
     public PaymentResponse processSandboxTransfer(Long orderCode, String action) {
         log.info("Processing Sandbox transfer for orderCode={}, action={}", orderCode, action);
-        PaymentTransaction payment = paymentTransactionRepository.findByOrderCode(orderCode)
+        PaymentTransaction payment = paymentTransactionRepository.findByOrderCodeForUpdate(orderCode)
                 .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND,
                         "Không tìm thấy giao dịch với orderCode=" + orderCode));
         assertPayer(payment.getReservationId(), payment.getContractId());
@@ -312,7 +312,7 @@ public class PaymentServiceImpl implements PaymentService {
     @Transactional
     public boolean completeVnpayPayment(Long orderCode, boolean successCode, Long vnpAmount,
             String providerRef, String bankCode) {
-        PaymentTransaction payment = paymentTransactionRepository.findByOrderCode(orderCode).orElse(null);
+        PaymentTransaction payment = paymentTransactionRepository.findByOrderCodeForUpdate(orderCode).orElse(null);
         if (payment == null) {
             return false;
         }
