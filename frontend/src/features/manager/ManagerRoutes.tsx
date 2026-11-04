@@ -17,6 +17,7 @@ import { IncidentDashboardPage } from './pages/IncidentDashboardPage';
 import { IncidentListPage } from './pages/IncidentListPage';
 import { IncidentDetailPage } from './pages/IncidentDetailPage';
 import { FacilityReportsPage } from './pages/FacilityReportsPage';
+import { AllocationPage } from './pages/AllocationPage';
 
 export const ManagerRoutes: React.FC = () => {
   return (
@@ -25,6 +26,7 @@ export const ManagerRoutes: React.FC = () => {
         <Route index element={<ManagerDashboardPage />} />
 
         {/* 4 Cấp độ Drill-down Quản lý ô kho (FM-01) */}
+        <Route path="allocation" element={<AllocationPage />} />
         <Route path="facilities" element={<FacilityListPage />} />
         <Route path="facilities/:facilityId" element={<UnitTypeListPage />} />
         <Route

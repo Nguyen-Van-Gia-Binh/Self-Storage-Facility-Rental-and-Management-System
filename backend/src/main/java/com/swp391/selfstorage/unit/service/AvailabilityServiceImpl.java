@@ -15,6 +15,7 @@ import com.swp391.selfstorage.policy.service.SurchargeAmountCalculator;
 import com.swp391.selfstorage.unit.entity.FacilityUnitTypePrice;
 import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
 import com.swp391.selfstorage.unit.entity.UnitType;
+import com.swp391.selfstorage.reservation.repository.ReservationRepository;
 import com.swp391.selfstorage.unit.repository.FacilityUnitTypePriceRepository;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
 import com.swp391.selfstorage.unit.repository.UnitTypeRepository;
@@ -34,6 +35,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
     private final UnitTypeRepository unitTypeRepository;
     private final FacilityUnitTypePriceRepository priceRepository;
     private final StorageUnitRepository storageUnitRepository;
+    private final ReservationRepository reservationRepository;
     private final PolicyVersionRepository policyVersionRepository;
 
     @Autowired(required = false)
@@ -47,12 +49,14 @@ public class AvailabilityServiceImpl implements AvailabilityService {
             UnitTypeRepository unitTypeRepository,
             FacilityUnitTypePriceRepository priceRepository,
             StorageUnitRepository storageUnitRepository,
+            ReservationRepository reservationRepository,
             PolicyVersionRepository policyVersionRepository
     ) {
         this.facilityRepository = facilityRepository;
         this.unitTypeRepository = unitTypeRepository;
         this.priceRepository = priceRepository;
         this.storageUnitRepository = storageUnitRepository;
+        this.reservationRepository = reservationRepository;
         this.policyVersionRepository = policyVersionRepository;
     }
 
@@ -116,8 +120,11 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         long busyUnits = storageUnitRepository.countBusyUnits(
                 facilityId, unitTypeId, startDate, endDateExclusive, bufferDays
         );
+        long unassigned = reservationRepository.countUnassignedOverlappingReservations(
+                facilityId, unitTypeId, startDate, endDateExclusive, OffsetDateTime.now(), bufferDays
+        );
 
-        long availableSlots = Math.max(0, exploitableUnits - busyUnits);
+        long availableSlots = Math.max(0, exploitableUnits - busyUnits - unassigned);
 
         return AvailabilityResponse.builder()
                 .facilityId(facilityId)

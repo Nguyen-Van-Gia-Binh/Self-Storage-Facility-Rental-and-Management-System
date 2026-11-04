@@ -1,19 +1,13 @@
 import React from 'react';
-import { ChevronDown } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
-import type { StorageUnit, UnitType } from '../types';
+import type { UnitType } from '../types';
 import type { AvailabilityResponse } from '@/api/reservation';
-import { UnitAccordionGrid } from './UnitAccordionGrid';
 
 interface UnitTypeAccordionListProps {
   availableTypes: UnitType[];
   selectedTypeId: string;
-  expandedTypeId: string | null;
   availabilityMap: Record<string, AvailabilityResponse>;
-  displayFacilityUnits: StorageUnit[];
-  selectedUnit: StorageUnit | null;
   onSelectType: (type: UnitType) => void;
-  onSelectUnitOnGrid: (unit: StorageUnit) => void;
 }
 
 /**
@@ -23,12 +17,8 @@ interface UnitTypeAccordionListProps {
 export const UnitTypeAccordionList: React.FC<UnitTypeAccordionListProps> = ({
   availableTypes,
   selectedTypeId,
-  expandedTypeId,
   availabilityMap,
-  displayFacilityUnits,
-  selectedUnit,
   onSelectType,
-  onSelectUnitOnGrid,
 }) => {
   if (availableTypes.length === 0) {
     return (
@@ -43,12 +33,8 @@ export const UnitTypeAccordionList: React.FC<UnitTypeAccordionListProps> = ({
       {availableTypes.map((type) => {
         const isUnlisted = !type.baseMonthlyPrice || type.baseMonthlyPrice <= 0 || type.priceStatus === 'UNLISTED' || type.priceStatus === 'Chưa niêm yết';
         const isSelected = !isUnlisted && selectedTypeId === type.id;
-        const isExpanded = isSelected && expandedTypeId === type.id;
         const avail = availabilityMap[type.id];
         const slots = avail ? avail.availableSlots : null;
-
-        // Lọc các ô kho thuộc loại này để render trong Accordion
-        const unitsForThisType = displayFacilityUnits.filter((u) => u.unitTypeId === type.id);
 
         return (
           <div
@@ -86,11 +72,6 @@ export const UnitTypeAccordionList: React.FC<UnitTypeAccordionListProps> = ({
                 <p className="text-xs text-slate-500 font-medium">
                   {type.dimensions} • Thể tích: <strong className="text-slate-700 font-mono">{type.volumeM3} m³</strong> ({type.areaM2} m²)
                 </p>
-                <p className="text-[11px] text-emerald-800 font-medium pt-0.5">
-                  {type.sizeCategory === 'S' && '💡 Vừa 8–10 thùng carton, 2 vali lớn, quạt & đồ nhỏ'}
-                  {type.sizeCategory === 'M' && '💡 Vừa đồ đạc 1 phòng trọ (nệm, tủ lạnh mini, bàn ghế)'}
-                  {type.sizeCategory === 'L' && '💡 Vừa đồ đạc căn hộ gia đình 1–2 phòng ngủ'}
-                </p>
               </div>
 
               {/* Cột phải: Giá niêm yết, Trạng thái & Nút chọn */}
@@ -126,25 +107,8 @@ export const UnitTypeAccordionList: React.FC<UnitTypeAccordionListProps> = ({
                   </div>
                 </div>
 
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center border transition-transform ${
-                  isSelected
-                    ? 'bg-[#008B74] text-white border-[#008B74]'
-                    : 'bg-slate-100 text-slate-500 border-slate-200'
-                }`}>
-                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
-                </div>
               </div>
             </button>
-
-            {/* Bước 2.3: Accordion Sơ đồ ô kho cụ thể của kích thước này */}
-            {isExpanded && (
-              <UnitAccordionGrid
-                typeName={type.name}
-                units={unitsForThisType}
-                selectedUnitId={selectedUnit?.id || null}
-                onSelectUnit={onSelectUnitOnGrid}
-              />
-            )}
           </div>
         );
       })}

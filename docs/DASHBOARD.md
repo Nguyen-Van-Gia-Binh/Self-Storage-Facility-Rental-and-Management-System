@@ -17,7 +17,8 @@
 ## 1. 🎯 Trọng tâm hiện tại (Current Focus)
 
 * **Giai đoạn:** Sprint Hoàn thiện Nghiệp vụ & Kiểm thử Tích hợp (Integration & Polish).
-* **Mục tiêu chính:** Đồng bộ đặc tả phân bổ ô kho: khách đặt theo hạng kho, FM gán ô vật lý trước ngày Check-in. Tài liệu nằm trên nhánh `docs/fm-unit-allocation`. Code chưa đổi.
+* **Mục tiêu chính:** Đồng bộ đặc tả phân bổ ô kho: khách đặt theo hạng kho, FM gán ô vật lý trước ngày Check-in. Tài liệu nằm trên nhánh `docs/fm-unit-allocation`. Khách đặt theo hạng; FM gán tại `/manager/allocation`.
+* [Technical Debt] Đã áp dụng Sorted Locking để chống deadlock, nhưng chưa có Integration Test cho case 2 FM đổi ô ngược chiều.
 
 ### Phân công Trách nhiệm (4 Workstreams):
 | Workstream | Người phụ trách | Trọng tâm công việc | Nhánh Git / Trạng thái |

@@ -48,6 +48,7 @@ export const ROLE_NAVIGATIONS: Record<UserRole, RoleNavigation> = {
     navItems: [
       { label: 'Tổng quan cơ sở',    href: '/manager',                  icon: Home },
       { label: 'Quản lý ô kho',      href: '/manager/facilities',       icon: Layers },
+      { label: 'Gán ô kho',          href: '/manager/allocation',       icon: ClipboardCheck },
       { label: 'Giám sát hợp đồng',  href: '/manager/contracts',        icon: FileText },
       { label: 'Phân công nhân sự',  href: '/manager/staff-schedule',   icon: Users },
       { label: 'Xử lý sự cố',        href: '/manager/incidents',        icon: Wrench },

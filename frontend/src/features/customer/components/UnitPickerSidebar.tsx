@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { formatVND } from '../utils/pricing';
 import type { StorageType, UnitSizeCategory, StorageUnit } from '../types';
@@ -7,6 +7,8 @@ import type { StorageType, UnitSizeCategory, StorageUnit } from '../types';
 export interface UnitPickerSidebarProps {
   facilityName: string;
   selectedUnit: StorageUnit | null;
+  unitTypeName?: string;
+  typeFull?: boolean;
   storageType: StorageType | null;
   selectedSize: UnitSizeCategory;
   areaM2?: number;
@@ -37,6 +39,8 @@ export interface UnitPickerSidebarProps {
 export const UnitPickerSidebar: React.FC<UnitPickerSidebarProps> = ({
   facilityName,
   selectedUnit,
+  unitTypeName,
+  typeFull,
   storageType,
   selectedSize,
   areaM2,
@@ -49,7 +53,7 @@ export const UnitPickerSidebar: React.FC<UnitPickerSidebarProps> = ({
   formatDateVN,
   onProceedToBooking,
 }) => {
-  const hasSelected = !!selectedUnit;
+  const hasSelected = !!unitTypeName || !!selectedUnit;
 
   return (
     <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs sticky top-24 space-y-3">
@@ -65,7 +69,7 @@ export const UnitPickerSidebar: React.FC<UnitPickerSidebarProps> = ({
               : 'bg-slate-100 text-slate-500 border-slate-200'
           }`}
         >
-          {hasSelected ? 'Đã chọn ô' : 'Chưa chọn kho'}
+          {hasSelected ? 'Đã chọn hạng' : 'Chưa chọn kho'}
         </span>
       </div>
 
@@ -79,16 +83,10 @@ export const UnitPickerSidebar: React.FC<UnitPickerSidebarProps> = ({
         </div>
 
         <div className="flex justify-between items-center gap-2">
-          <span className="shrink-0 text-slate-500 font-medium">Mã ô kho:</span>
-          <div className="flex items-center gap-1.5 font-bold text-slate-900">
-            {hasSelected ? (
-              <span className="font-mono text-xs px-2 py-0.5 rounded-md border font-black text-brand-800 bg-brand-50 border-brand-300">
-                {selectedUnit.unitNumber}
-              </span>
-            ) : (
-              <span className="text-slate-400 font-mono">--</span>
-            )}
-          </div>
+          <span className="shrink-0 text-slate-500 font-medium">Hạng kho:</span>
+          <span className="text-slate-900 text-right font-bold truncate max-w-[190px]">
+            {unitTypeName || 'Vui lòng chọn loại kho'}
+          </span>
         </div>
 
         <div className="flex justify-between items-center gap-2">
@@ -122,7 +120,7 @@ export const UnitPickerSidebar: React.FC<UnitPickerSidebarProps> = ({
         </div>
 
         {hasSelected && priceCalculation.discountAmount > 0 && (
-          <div className="flex justify-between text-emerald-700 font-bold bg-emerald-50/80 px-2.5 py-1.5 rounded-lg border border-emerald-200/60">
+          <div className="flex justify-between text-emerald-700 font-bold">
             <span>
               {priceCalculation.discountProgramName
                 ? `${priceCalculation.discountProgramName}${
@@ -164,21 +162,18 @@ export const UnitPickerSidebar: React.FC<UnitPickerSidebarProps> = ({
         variant="primary"
         size="md"
         onClick={onProceedToBooking}
-        disabled={isConfirming || !hasSelected}
-        className="w-full py-3 text-xs sm:text-sm font-extrabold bg-[#008B74] hover:bg-[#007461] active:bg-[#005e4f] text-white rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        disabled={isConfirming || !unitTypeName}
+        className="w-full py-3 text-xs sm:text-sm font-extrabold bg-[#008B74] hover:bg-[#007461] active:bg-[#005e4f] text-white rounded-md shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isConfirming ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
             <span>Đang khởi tạo đơn...</span>
           </>
-        ) : !hasSelected ? (
+        ) : !hasSelected || typeFull ? (
           <span>Vui lòng chọn loại kho</span>
         ) : (
-          <>
-            <span>Điền thông tin và thanh toán</span>
-            <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-          </>
+          <span>Điền thông tin và thanh toán</span>
         )}
       </Button>
     </div>

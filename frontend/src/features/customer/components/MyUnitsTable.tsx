@@ -177,10 +177,9 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
 
               if (item.kind === 'RESERVATION') {
                 const rsv = item.data;
+                const awaitingUnit = !rsv.storageUnitId || !rsv.storageUnitCode || rsv.storageUnitCode === 'Chua chon o';
                 const bookingUrl = `/customer/booking?reservationId=${rsv.id}&facility=${rsv.facilityId}&type=${rsv.unitTypeId}${
-                  rsv.storageUnitId ? `&unitId=${rsv.storageUnitId}` : ''
-                }${
-                  rsv.storageUnitCode ? `&unitNumber=${encodeURIComponent(rsv.storageUnitCode)}` : ''
+                  awaitingUnit ? '' : `&unitId=${rsv.storageUnitId}&unitNumber=${encodeURIComponent(rsv.storageUnitCode || '')}`
                 }&months=${rsv.rentalMonths}&startDate=${rsv.startDate}`;
 
                 const isMenuOpen = openMenuId === `rsv-${rsv.id}`;
@@ -188,8 +187,10 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                 return (
                 <tr key={`rsv-${rsv.id}`} className="hover:bg-rose-50/30 transition-colors">
                   {/* Cột 1: Ô kho (Chỉ mã ô kho) */}
-                  <td className="py-3.5 px-4 whitespace-nowrap font-mono font-extrabold text-sm text-slate-900 tracking-tight">
-                    {rsv.storageUnitCode || rsv.code || 'Chưa xếp ô'}
+                  <td className="py-3.5 px-4 text-sm text-slate-900">
+                    {awaitingUnit
+                      ? 'Vị trí kho cụ thể sẽ được Ban quản lý cập nhật trước ngày nhận kho'
+                      : rsv.storageUnitCode}
                   </td>
 
                   {/* Cột 2: Loại kho (Text thuần) */}

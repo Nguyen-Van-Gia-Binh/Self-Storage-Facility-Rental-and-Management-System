@@ -7,6 +7,7 @@ import com.swp391.selfstorage.facility.entity.FacilityStatus;
 import com.swp391.selfstorage.facility.repository.FacilityRepository;
 import com.swp391.selfstorage.policy.entity.PolicyVersion;
 import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
+import com.swp391.selfstorage.reservation.repository.ReservationRepository;
 import com.swp391.selfstorage.unit.dto.AvailabilityResponse;
 import com.swp391.selfstorage.unit.entity.FacilityUnitTypePrice;
 import com.swp391.selfstorage.unit.entity.UnitType;
@@ -44,6 +45,9 @@ class AvailabilityServiceTest {
 
     @Mock
     private StorageUnitRepository storageUnitRepository;
+
+    @Mock
+    private ReservationRepository reservationRepository;
 
     @Mock
     private PolicyVersionRepository policyVersionRepository;
@@ -231,6 +235,24 @@ class AvailabilityServiceTest {
         AvailabilityResponse response = availabilityService.checkAvailability(1L, 7L, startDate, rentalMonths);
 
         assertNotNull(response);
+        assertEquals(0L, response.getAvailableSlots());
+    }
+
+    @Test
+    @DisplayName("Don chua gan o tru vao suc chua cung cong thuc voi luc tao don")
+    void shouldSubtractUnassignedReservationsFromAvailableSlots() {
+        LocalDate startDate = LocalDate.now().plusDays(1);
+
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(activeFacility));
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(activeUnitType));
+        when(priceRepository.findByFacilityIdAndUnitTypeId(1L, 7L)).thenReturn(Optional.of(unitPrice));
+        when(storageUnitRepository.countExploitableUnits(eq(1L), eq(7L), anyCollection())).thenReturn(2L);
+        when(storageUnitRepository.countBusyUnits(eq(1L), eq(7L), any(), any(), eq(15))).thenReturn(0L);
+        when(reservationRepository.countUnassignedOverlappingReservations(
+                eq(1L), eq(7L), any(), any(), any(), eq(15))).thenReturn(2L);
+
+        AvailabilityResponse response = availabilityService.checkAvailability(1L, 7L, startDate, 1);
+
         assertEquals(0L, response.getAvailableSlots());
     }
 }

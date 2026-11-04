@@ -596,7 +596,8 @@ public class ReservationServiceImpl implements ReservationService {
         if (reservation.getStatus() != ReservationStatus.CONFIRMED) {
             throw new CustomException(ErrorCode.RESERVATION_NOT_PAID);
         }
-        if (!LocalDate.now().isBefore(reservation.getStartDate())) {
+        if (reservation.getStorageUnitId() != null
+                && !LocalDate.now().isBefore(reservation.getStartDate())) {
             throw new CustomException(ErrorCode.ASSIGNMENT_WINDOW_CLOSED);
         }
         if (storageUnitId.equals(reservation.getStorageUnitId())) {
@@ -618,8 +619,7 @@ public class ReservationServiceImpl implements ReservationService {
         StorageUnit unit = locked.get(storageUnitId);
         if (!reservation.getFacilityId().equals(unit.getFacilityId())
                 || !reservation.getUnitTypeId().equals(unit.getUnitTypeId())
-                || unit.getStatus() == StorageUnitStatus.MAINTENANCE
-                || unit.getStatus() == StorageUnitStatus.OUT_OF_SERVICE) {
+                || unit.getStatus() != StorageUnitStatus.AVAILABLE) {
             throw new CustomException(ErrorCode.UNIT_ASSIGNMENT_FAILED);
         }
 
@@ -644,9 +644,7 @@ public class ReservationServiceImpl implements ReservationService {
         }
 
         reservation.setStorageUnitId(unit.getId());
-        if (unit.getStatus() != StorageUnitStatus.OCCUPIED) {
-            unit.setStatus(StorageUnitStatus.RESERVED);
-        }
+        unit.setStatus(StorageUnitStatus.RESERVED);
         storageUnitRepository.save(unit);
         rentalContractRepository.findByReservationId(reservation.getId()).ifPresent(contract -> {
             contract.setStorageUnitId(unit.getId());
