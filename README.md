@@ -19,7 +19,7 @@
 
 ## 🌟 Tổng quan Dự án (Project Overview)
 
-**Self-Storage Facility Rental and Management System** là giải pháp phần mềm chuyển đổi số toàn diện cho chuỗi cơ sở lưu trữ cá nhân và doanh nghiệp vừa/nhỏ (Self-Storage). Hệ thống giải quyết trọn vẹn bài toán vận hành chuỗi kho hiện đại: từ **tìm kiếm và đặt kho theo sơ đồ mặt bằng thời gian thực**, **thanh toán trực tuyến VietQR tức thì**, **bàn giao nhận kho bằng biên bản điện tử & khóa số thông minh 24/7**, cho đến **quản lý hợp đồng điện tử**, **gia hạn chống xung đột**, **nghiệm thu trả kho**, **xử lý sự cố kỹ thuật** và **giám sát nợ quá hạn 3 giai đoạn tự động**.
+**Self-Storage Facility Rental and Management System** là giải pháp phần mềm chuyển đổi số toàn diện cho chuỗi cơ sở lưu trữ cá nhân và doanh nghiệp vừa/nhỏ (Self-Storage). Hệ thống giải quyết trọn vẹn bài toán vận hành chuỗi kho hiện đại: từ **tìm kiếm và đặt kho theo hạng kho**, **FM phân bổ ô vật lý trước ngày nhận kho**, **thanh toán trực tuyến VietQR tức thì**, **bàn giao nhận kho bằng biên bản điện tử & khóa số thông minh 24/7**, cho đến **quản lý hợp đồng điện tử**, **gia hạn chống xung đột**, **nghiệm thu trả kho**, **xử lý sự cố kỹ thuật** và **giám sát nợ quá hạn 3 giai đoạn tự động**.
 
 Hệ thống được thiết kế theo kiến trúc phân lớp hướng đối tượng (Layered Architecture), bảo đảm cô lập dữ liệu đa cơ sở (Multi-Facility Data Isolation), đáp ứng nghiêm ngặt 27 mã yêu cầu chức năng trên 5 phân hệ người dùng độc lập.
 
@@ -28,7 +28,7 @@ Hệ thống được thiết kế theo kiến trúc phân lớp hướng đối
 ## 💎 Điểm sáng Nghiệp vụ & Kỹ thuật Vượt trội (Key Innovations)
 
 ### 1. 🔄 Vòng đời thuê kho số hóa 100% (End-to-End Digital Lifecycle)
-* **Sơ đồ kho trực quan 2D theo thời gian thực:** Khách hàng chủ động chọn cơ sở, tầng và vị trí ô kho; hệ thống tự động kiểm tra tính sẵn sàng tức thời tại database (chống đặt trùng).
+* **Đặt theo hạng kho, gán ô muộn:** Khách chọn cơ sở và Unit Type; hệ thống giữ hạn ngạch hạng kho. Sơ đồ mặt bằng nằm ở cổng Facility Manager và Facility Staff để FM gán ô AVAILABLE trước ngày Check-in.
 * **Đệm an toàn 15 ngày gối đầu (15-Day Safety Buffer):** Tự động tính toán khoảng đệm vệ sinh, bảo dưỡng giữa các hợp đồng thuê kế tiếp theo quy tắc `BR-RES-05`.
 * **Thanh toán VietQR động:** Tích hợp sinh mã QR thanh toán chuẩn ngân hàng, đối soát mã đơn hàng tự động và chuyển trạng thái hợp đồng ngay sau khi thanh toán cọc thành công.
 * **Thẻ nhận kho số (Move-in Pass) & Mã PIN 24/7:** Sau khi đặt cọc, khách hàng nhận thẻ số điện tử hiển thị mã QR đến quầy và mã PIN số kích hoạt mở cửa kho 24/7.
@@ -66,7 +66,7 @@ Hệ thống phục vụ **5 nhóm tác nhân** với quyền hạn và giao di�
 | :--- | :--- | :--- | :--- |
 | **Storage Customer** | Khách thuê kho | `/customer/*` | Xem catalog kho, đặt chỗ, thanh toán VietQR, nhận thẻ Move-in Pass, quản lý kho đang thuê, xem hợp đồng online, gia hạn, báo trả kho, gửi ticket hỗ trợ. |
 | **Facility Staff** | Nhân viên cơ sở | `/staff/*` | Kiểm tra đặt chỗ, lễ tân Check-in, lập biên bản bàn giao 4 tiêu chí, kiểm tra nghiệm thu trả kho, xử lý sự cố hiện trường, theo dõi task hàng ngày. |
-| **Facility Manager** | Quản lý cơ sở | `/manager/*` | Quản lý mặt bằng & danh mục ô kho cơ sở, phân công ca trực nhân viên, điều phối sự cố & đổi ô kho, duyệt biên bản trả kho, báo cáo rủi ro quá hạn. |
+| **Facility Manager** | Quản lý cơ sở | `/manager/*` | Quản lý mặt bằng và danh mục ô kho, phân bổ ô vật lý cho đơn đã thanh toán trước ngày Check-in, phân công ca trực, điều phối sự cố và đổi ô, duyệt biên bản trả kho, báo cáo rủi ro quá hạn. |
 | **Business Operations Manager** | Quản lý vận hành kinh doanh | `/bom/*` | Quản lý danh mục toàn bộ cơ sở toàn quốc, thiết lập chính sách cọc & gia hạn, bảng giá thuê & biểu phụ phí, báo cáo doanh thu & tỷ lệ lấp đầy (Usage Rate). |
 | **System Administrator** | Quản trị hệ thống | `/admin/*` | Quản lý tài khoản người dùng, phân quyền vai trò (Role), gán quyền truy cập theo cơ sở (SA-03), theo dõi Audit Logs & lịch sử đăng nhập an ninh. |
 
@@ -111,8 +111,8 @@ Hệ thống phục vụ **5 nhóm tác nhân** với quyền hạn và giao di�
 ```
 
 ### Các Luồng Chính (Flow 1–5)
-* **Flow 1 — Storage Unit Reservation:** Tìm kiếm theo cơ sở, chọn loại ô kho; kiểm tra tính sẵn sàng realtime; giữ chỗ theo đệm 15 ngày; thanh toán cọc & phí thuê N tháng qua VietQR.
-* **Flow 2 — Storage Check-in and Handover:** Khách đến cơ sở xuất trình mã nhận kho; nhân viên dẫn đối soát 4 tiêu chí an toàn; ký biên bản bàn giao điện tử và cấp mã PIN truy cập 24/7.
+* **Flow 1 — Storage Unit Reservation:** Tìm kiếm theo cơ sở, chọn hạng kho (Unit Type); giữ hạn ngạch hạng kho; thanh toán cọc và phí thuê N tháng qua VietQR. FM gán ô vật lý trước ngày Check-in.
+* **Flow 2 — Storage Check-in and Handover:** Khách đến cơ sở nhận đúng ô FM đã gán; nhân viên đối soát 4 tiêu chí an toàn. Nếu ô lỗi, FM đổi ô cùng loại rồi nhân viên bàn giao tiếp. Ký biên bản điện tử và cấp mã PIN truy cập 24/7.
 * **Flow 3 — Rented Storage Unit Management:** Quản lý danh sách ô kho đang thuê; tra cứu hợp đồng điện tử và nhật ký mở cửa IoT; hủy yêu cầu trả kho khi đổi ý (`BR-RET-12`).
 * **Flow 4 — Business Rules, Fee Management & Revenue Monitoring:** BOM cấu hình chính sách tiền cọc động (`depositMultiplier`), bảng giá theo diện tích m², phụ phí đền bù và theo dõi Usage Rate toàn chuỗi.
 * **Flow 5 — Facility Storage and Staff Management:** FM quản lý mặt bằng kho, trạng thái ô kho (`AVAILABLE`, `RESERVED`, `OCCUPIED`, `MAINTENANCE`); phân công nhân viên theo ca trực trên Bảng điều phối hàng ngày.

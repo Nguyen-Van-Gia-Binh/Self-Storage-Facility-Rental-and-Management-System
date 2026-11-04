@@ -258,10 +258,10 @@ Chương trình khuyến mãi giảm giá thuê (`US-BM-03.3`).
 | `deposit_amount` | `BIGINT` | Có | | Số tiền cọc cần đóng |
 | `total_rental_fee`| `BIGINT` | Có | | Tổng tiền thuê các tháng sau giảm giá |
 | `total_payable` | `BIGINT` | Có | | Tổng tiền phải thanh toán ban đầu (= tiền thuê + cọc) |
-| `storage_unit_id`| `BIGINT` | Không | `FK` $\rightarrow$ `storage_unit(id)` | Ô kho vật lý khách chọn, khóa Reserved sau khi trả tiền (`BR-AVL-04`) |
+| `storage_unit_id`| `BIGINT` | Không | `FK` $\rightarrow$ `storage_unit(id)` | Trống khi khách đặt. FM điền trước ngày Check-in (`BR-AVL-04`) |
 | `status` | `VARCHAR(20)` | Có | `DEFAULT 'PENDING_PAYMENT'`, `CHECK IN ('PENDING_PAYMENT', 'CONFIRMED', 'FULFILLED', 'EXPIRED', 'CANCELLED', 'NO_SHOW')` | Trạng thái vòng đời đơn giữ chỗ |
 | `hold_expires_at`| `DATETIMEOFFSET` | Có | | Hạn chót thanh toán giữ chỗ (48h) |
-| `confirmed_at` | `DATETIMEOFFSET` | Không | | Mốc thanh toán thành công và gán kho |
+| `confirmed_at` | `DATETIMEOFFSET` | Không | | Mốc thanh toán thành công; ô vật lý có thể chưa được gán |
 | `fulfilled_at` | `DATETIMEOFFSET` | Không | | Mốc hoàn tất check-in bàn giao kho |
 | `cancelled_at` | `DATETIMEOFFSET` | Không | | Mốc bị hủy (khách hủy hoặc hệ thống hủy) |
 | `created_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Ngày tạo |
@@ -277,7 +277,7 @@ Hợp đồng thuê ô kho chính thức (`Flow 2, 3, 6`, `state-machine-contrac
 | `reservation_id` | `BIGINT` | Có | `FK` $\rightarrow$ `reservation(id)`, `UNIQUE` | Sinh từ đơn Reservation duy nhất (Quan hệ 1:0..1) |
 | `customer_id` | `BIGINT` | Có | `FK` $\rightarrow$ `app_user(id)` | Khách hàng ký hợp đồng |
 | `facility_id` | `BIGINT` | Có | `FK` $\rightarrow$ `facility(id)` | Cơ sở kho |
-| `storage_unit_id`| `BIGINT` | Có | `FK` $\rightarrow$ `storage_unit(id)` | Ô kho thuê cố định (`BR-DEP-06`) |
+| `storage_unit_id`| `BIGINT` | Không | `FK` $\rightarrow$ `storage_unit(id)` | Trống khi `PENDING_CHECK_IN` chưa được FM gán. Bắt buộc có giá trị từ `ACTIVE` (`BR-CHK-04`) |
 | `start_date` | `DATE` | Có | | Ngày bắt đầu tính tiền thuê |
 | `end_date` | `DATE` | Có | | Ngày hết hạn hợp đồng hiện tại |
 | `policy_version_id`| `BIGINT` | Có | `FK` $\rightarrow$ `policy_version(id)` | Snapshot chính sách áp dụng |

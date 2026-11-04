@@ -998,7 +998,7 @@ Hủy đặt chỗ — `BR-RES-04`.
 
 ### `PATCH /api/v1/reservations/{id}/assign-unit`
 
-Facility Manager gán Storage Unit sau khi khách thanh toán — `FM-02`, `BR-AVL-04`.
+Facility Manager gán hoặc đổi Storage Unit cho đơn đã thanh toán, bất kỳ lúc nào trước `startDate` — `FM-02`, `BR-AVL-04`. Chỉ `FACILITY_MANAGER` phụ trách đúng cơ sở của đơn được gọi. Ô được gán phải đang `AVAILABLE` và cùng Unit Type với đơn. Ô vừa được gán chuyển `RESERVED`; nếu đổi ô, ô cũ trở về `AVAILABLE`.
 
 **Auth:** `FACILITY_MANAGER` (của Facility)
 **Request body:**
@@ -1024,8 +1024,9 @@ Facility Manager gán Storage Unit sau khi khách thanh toán — `FM-02`, `BR-A
 
 | Status  | errorCode                  | Điều kiện                                                            |
 | ------- | -------------------------- | ----------------------------------------------------------------------- |
-| `409` | `UNIT_ASSIGNMENT_FAILED` | Unit không hợp lệ hoặc đã bị chiếm đồng thời —`BR-AVL-04` |
+| `409` | `UNIT_ASSIGNMENT_FAILED` | Unit không cùng loại, không `AVAILABLE`, hoặc đã bị chiếm đồng thời — `BR-AVL-04` |
 | `409` | `RESERVATION_NOT_PAID`   | Reservation chưa thanh toán đủ                                      |
+| `409` | `ASSIGNMENT_WINDOW_CLOSED` | Đã tới `startDate`, không còn gán hoặc đổi ô trước Check-in |
 
 ---
 
@@ -1364,6 +1365,7 @@ Nhân viên xác nhận bàn giao kho — `SC-04`, `FS-02`.
 | ------- | -------------------------------- | ------------------------------------------------------ |
 | `404` | `CONTRACT_NOT_FOUND`           | contractId không tồn tại                            |
 | `409` | `CONTRACT_NOT_PENDING_CHECKIN` | Hợp đồng không ở trạng thái`PENDING_CHECK_IN` |
+| `409` | `UNIT_NOT_YET_ALLOCATED` | `storage_unit_id` còn trống — FM chưa phân bổ ô (`BR-CHK-02`) |
 
 ---
 
@@ -2577,6 +2579,8 @@ Toàn bộ `errorCode` do `GlobalExceptionHandler` sinh, **ổn định** để 
 | `CONTRACT_OVERDUE`              | 409 | Hợp đồng đang quá hạn                               |
 | `CONTRACT_TERMINATED`           | 409 | Hợp đồng đã chấm dứt                               |
 | `CONTRACT_NOT_PENDING_CHECKIN`  | 409 | Hợp đồng không ở trạng thái chờ check-in          |
+| `UNIT_NOT_YET_ALLOCATED`        | 409 | Hợp đồng chưa được FM gán ô —`BR-CHK-02`           |
+| `ASSIGNMENT_WINDOW_CLOSED`      | 409 | Đã tới ngày nhận kho, không còn gán hoặc đổi ô     |
 | `RENEWAL_NOT_ALLOWED`           | 409 | Không đủ điều kiện gia hạn —`BR-REN-*`          |
 | `RETURN_NOTICE_TOO_SHORT`       | 422 | Báo trả quá gần ngày trả —`BR-RET-01`            |
 | `INSUFFICIENT_DEPOSIT_BALANCE`  | 409 | Số dư cọc không đủ để khấu trừ                  |

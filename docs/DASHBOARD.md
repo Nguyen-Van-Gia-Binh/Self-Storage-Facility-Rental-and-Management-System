@@ -17,7 +17,7 @@
 ## 1. 🎯 Trọng tâm hiện tại (Current Focus)
 
 * **Giai đoạn:** Sprint Hoàn thiện Nghiệp vụ & Kiểm thử Tích hợp (Integration & Polish).
-* **Mục tiêu chính:** Đồng bộ luồng điều phối nhân sự, kiểm thử e2e các luồng chính (Booking → Check-in → Return), xử lý các điểm nghẽn giao diện và tối ưu hóa hiệu năng.
+* **Mục tiêu chính:** Đồng bộ đặc tả phân bổ ô kho: khách đặt theo hạng kho, FM gán ô vật lý trước ngày Check-in. Tài liệu nằm trên nhánh `docs/fm-unit-allocation`. Code chưa đổi.
 
 ### Phân công Trách nhiệm (4 Workstreams):
 | Workstream | Người phụ trách | Trọng tâm công việc | Nhánh Git / Trạng thái |
@@ -134,6 +134,7 @@
 | `ISS-125` | Nút "Hủy yêu cầu trả kho" trên bảng MyUnitsTable không hoạt động do chưa gọi API Backend, hợp đồng vẫn giữ nguyên PENDING_RETURN. | Bổ sung Modal xác nhận cho Table View, gọi API POST /contracts/{id}/cancel-return và cập nhật tức thì trạng thái sang ACTIVE. | Xuân Nhi | `RESOLVED` |
 | `ISS-126` | Tab "Đã đóng" hỗ trợ hiển thị cọc cạch 2 nhãn "Đã xử lý" (RESOLVED) và "Đã đóng" (CLOSED) dù đã bãi bỏ bước khách hàng nghiệm thu (ISS-72). | Đồng bộ hiển thị thống nhất 1 nhãn "Đã đóng" cho cả RESOLVED, CLOSED, AUTO_CLOSED trên SupportTicketCard và modal chi tiết. | Xuân Nhi | `RESOLVED` |
 | `ISS-127` | Lỗi UNIT_NOT_AVAILABLE tại Bước 2 Booking hiển thị banner text không dấu thô sơ thay vì bật Modal cảnh báo ô kho không khả dụng. | Bổ sung trigger mở unavailableModal trong catch handler của BookingPage.tsx kèm nút điều hướng quay lại sơ đồ chọn ô kho. | Xuân Nhi | `RESOLVED` |
+| `ISS-128` | Khách vẫn chọn ô vật lý; đặc tả mới để FM gán ô trước Check-in. | Đã sửa tài liệu trên `docs/fm-unit-allocation`. Code, migration nullable và màn FM làm sau khi tài liệu được duyệt. | Tùng / Nhật | `OPEN` |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 

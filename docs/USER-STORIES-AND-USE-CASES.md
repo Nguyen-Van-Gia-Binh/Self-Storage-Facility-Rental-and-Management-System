@@ -159,8 +159,8 @@ Bảng thuộc tính đi kèm mỗi story:
 
 ### `US-SC-02.1` — Tạo đặt chỗ ô kho
 
-> **Là** Storage Customer, **tôi muốn** tạo Reservation bằng cách xem sơ đồ cơ sở, chọn ô kho cụ thể, ngày bắt
-> đầu và thời hạn thuê, **để** giữ được đúng ô kho phù hợp cho kỳ thuê của mình.
+> **Là** Storage Customer, **tôi muốn** tạo Reservation bằng cách chọn cơ sở, hạng kho (Unit Type), ngày bắt
+> đầu và thời hạn thuê, **để** giữ được một suất của hạng kho phù hợp cho kỳ thuê của mình.
 
 | Use case                   | Ưu tiên | Story point | Giai đoạn |
 | -------------------------- | --------- | :---------: | :---------: |
@@ -168,9 +168,9 @@ Bảng thuộc tính đi kèm mỗi story:
 
 **Acceptance Criteria**
 
-- **AC-1** — *Given* tôi đã đăng nhập và chọn đủ Facility, ô kho cụ thể trên sơ đồ/danh sách, ngày bắt đầu, số tháng thuê,
-  *when* tôi xác nhận, *then* hệ thống tạo Reservation *Pending Payment* và tạm giữ chính Storage Unit đó
-  cho đúng khoảng thuê theo `BR-RES-02`.
+- **AC-1** — *Given* tôi đã đăng nhập và chọn đủ Facility, Unit Type, ngày bắt đầu, số tháng thuê,
+  *when* tôi xác nhận, *then* hệ thống tạo Reservation *Pending Payment*, giữ một suất hạn ngạch của
+  hạng kho đó và để `storage_unit_id` trống theo `BR-RES-02`.
 - **AC-2** — *Given* Reservation vừa tạo, *when* hệ thống giữ capacity, *then* slot được giữ đúng
   `reservation.hold_hours` (48 giờ) theo `BR-DEP-03`, và thời hạn còn lại được hiển thị dạng đếm
   ngược trên màn hình thanh toán.
@@ -707,7 +707,7 @@ Bảng thuộc tính đi kèm mỗi story:
 
 - **AC-1** — *Given* đơn đặt chỗ đã hợp lệ và khách đã đến tận nơi, *when* tôi dẫn khách kiểm tra ô kho, *then* tôi và khách kiểm tra hiện trạng cửa, khóa, sàn kho và thiết bị đi kèm.
 - **AC-2** — *Given* ô kho sạch sẽ và nguyên vẹn theo `BR-CHK-02` và `UC-F2-03`, *when* tôi tạo biên bản bàn giao, *then* hệ thống ghi nhận mã biên bản, mã ô kho, thời gian bàn giao, tên nhân viên thực hiện và họ tên khách theo `BR-CHK-03`.
-- **AC-3** — *Given* Storage Unit phát sinh lỗi vật lý hoặc khách không đồng ý nhận kho, *when* tôi báo cáo tại màn hình Handover, *then* hệ thống hủy lượt Handover này, chuyển unit sang *Maintenance* và chuyển lệnh cho Facility Manager xử lý hoàn tiền 100% trong 3 ngày làm việc theo `BR-CHK-06`.
+- **AC-3** — *Given* ô đã được FM gán phát sinh lỗi vật lý, *when* tôi báo cáo tại màn hình Handover, *then* ô đó chuyển *Maintenance* và FM chọn một ô *Available* cùng loại để tôi bàn giao tiếp. Chỉ khi hết ô thay thế, hoặc khách từ chối nhận, lượt Handover bị hủy và Facility Manager hoàn tiền 100% trong 3 ngày làm việc theo `BR-CHK-06`.
 - **AC-4** — *Given* ô kho đạt yêu cầu và khách đồng ý nhận kho, *when* khách xác nhận ký số biên bản bàn giao điện tử, *then* biên bản được lưu trữ vĩnh viễn và gửi bản sao PDF về email của khách.
 
 ---
@@ -904,11 +904,11 @@ Bảng thuộc tính đi kèm mỗi story:
 
 ## 9. FM-02 — Phân bổ ô kho cho khách
 
-*Phân bổ ô kho phù hợp cho khách hàng dựa trên loại ô kho, thời hạn thuê và tình trạng còn trống.*
+*FM gán Storage Unit AVAILABLE cùng hạng kho cho đơn đã thanh toán, trước ngày Check-in, và đổi ô khi ô đã gán không dùng được.*
 
-### `US-FM-02.1` — Giám sát đơn đặt chỗ và ô kho khách chọn cho Reservation
+### `US-FM-02.1` — Phân bổ ô kho cho đơn đã thanh toán
 
-> **Là** Facility Manager, **tôi muốn** giám sát các đơn đặt chỗ và ô kho khách đã tự chọn sau Payment, **để** xử lý ngoại lệ mà không tạo Contract thiếu unit.
+> **Là** Facility Manager, **tôi muốn** mở hàng đợi các đơn đã thanh toán chưa có ô, rồi chọn một Storage Unit *Available* cùng loại, **để** gán ô trước ngày Check-in và đổi ô khi cần.
 
 | Use case     | Ưu tiên | Story point | Giai đoạn |
 | ------------ | --------- | :---------: | :---------: |
@@ -916,10 +916,10 @@ Bảng thuộc tính đi kèm mỗi story:
 
 **Acceptance Criteria**
 
-- **AC-1** — *Given* Payment gồm toàn bộ phí thuê N tháng và Deposit thành công (`UC-F1-07`), *when* giao dịch được xác nhận, *then* hệ thống nguyên tử khóa Storage Unit khách đã chọn theo `BR-AVL-04`; Reservation chuyển *Confirmed*.
-- **AC-2** — *Given* unit khách chọn đang *Available*, *when* thanh toán thành công, *then* unit chuyển *Reserved*. *Given* unit đang *Occupied* và kỳ Occupied kết thúc trước ngày bắt đầu kỳ mới, *when* thanh toán thành công, *then* unit **vẫn** *Occupied* (future claim) và màn hình giám sát nêu rõ claim; tôi không phải duyệt thủ công.
-- **AC-3** — *Given* khóa ô kho thất bại do sự cố ngoài dự kiến, *when* tôi xem hàng đợi ngoại lệ, *then* không có Contract thiếu unit, Reservation không được xác nhận và khoản vừa thu được hoàn theo `BR-AVL-05`.
-- **AC-4** — *Given* đặt chỗ thành công, *when* hệ thống lưu dữ liệu, *then* thông báo kèm mã Storage Unit tự động gửi cho khách; nhiệm vụ Handover chỉ xuất hiện khi ngày bắt đầu đã tới và unit đã *Reserved*.
+- **AC-1** — *Given* Reservation đã *Confirmed* và `storage_unit_id` còn trống, *when* tôi mở hàng đợi phân bổ của cơ sở mình phụ trách, *then* tôi thấy đơn theo Unit Type, ngày bắt đầu và số ô *Available* cùng loại.
+- **AC-2** — *Given* tôi chọn một Storage Unit *Available* cùng Unit Type trước ngày Check-in, *when* tôi xác nhận gán, *then* `storage_unit_id` được ghi và ô đó chuyển *Reserved* theo `BR-AVL-04`.
+- **AC-3** — *Given* đơn đã có ô và chưa tới ngày Check-in, *when* tôi chọn ô *Available* khác cùng loại, *then* ô cũ về *Available* và ô mới chuyển *Reserved*.
+- **AC-4** — *Given* `storage_unit_id` còn trống, *when* nhân viên gọi Check-in, *then* hệ thống từ chối với `UNIT_NOT_YET_ALLOCATED` theo `BR-CHK-02`. Nhiệm vụ bàn giao chỉ chạy sau khi ô đã *Reserved*.
 
 ---
 
@@ -1671,7 +1671,7 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 | `US-FS-06.1` | Theo dõi danh sách công việc bàn giao, trả kho và sự cố trong ngày                   | `FS-06`     | Must      |   3   |     P4     |   4   |
 | `US-FM-01.1` | Quản lý danh mục loại ô kho tại cơ sở                                                  | `FM-01`     | Must      |   5   |     P2     |   4   |
 | `US-FM-01.2` | Quản lý danh sách ô kho vật lý, vị trí và trạng thái                                | `FM-01`     | Must      |   5   |     P2     |   4   |
-| `US-FM-02.1` | Giám sát đơn đặt chỗ và ô kho khách chọn cho Reservation                            | `FM-02`     | Must      |   5   |     P3     |   4   |
+| `US-FM-02.1` | Phân bổ ô kho cho đơn đã thanh toán                                                 | `FM-02`     | Must      |   5   |     P3     |   4   |
 | `US-FM-02.2` | Giám sát kích hoạt hợp đồng thuê sau bàn giao                                         | `FM-02`     | Must      |   5   |     P3     |   3   |
 | `US-FM-03.1` | Giám sát danh sách khách hàng và hợp đồng thuê đang hiệu lực                      | `FM-03`     | Must      |   5   |     P4     |   4   |
 | `US-FM-03.2` | Theo dõi tình trạng thanh toán và công nợ của từng hợp đồng                        | `FM-03`     | Must      |   5   |     P4     |   4   |
@@ -1728,13 +1728,13 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 | Mã UC       | Use case                                                                                               | Actor chính     | Actor liên quan                   | Mã yêu cầu                   |
 | ------------ | ------------------------------------------------------------------------------------------------------ | ---------------- | ---------------------------------- | ------------------------------- |
 | `UC-F1-01` | Tìm kiếm và xem danh sách Facility                                                                 | Storage Customer | —                                 | `SC-01`                       |
-| `UC-F1-02` | Xem chi tiết Unit Type, danh sách ô kho và sơ đồ vị trí                                       | Storage Customer | —                                 | `SC-01`                       |
+| `UC-F1-02` | Xem chi tiết Unit Type, kích thước, tiện ích và số chỗ còn trống                     | Storage Customer | —                                 | `SC-01`                       |
 | `UC-F1-03` | Kiểm tra capacity còn trống theo Unit Type và khoảng thuê                                        | Storage Customer | —                                 | `SC-01`                       |
-| `UC-F1-04` | Tạo Reservation — chọn Facility, ô kho cụ thể trên sơ đồ, ngày bắt đầu, thời hạn thuê | Storage Customer | —                                 | `SC-02`                       |
+| `UC-F1-04` | Tạo Reservation — chọn Facility, Unit Type, ngày bắt đầu, thời hạn thuê              | Storage Customer | —                                 | `SC-02`                       |
 | `UC-F1-05` | Ước tính chi phí thuê và tiền Deposit phải trả                                                | Storage Customer | —                                 | `SC-02`, `BM-03`            |
-| `UC-F1-06` | Giữ ô kho cụ thể đã chọn trong 48h khi chờ thanh toán                                         | System           | —                                 | `FM-02`                       |
+| `UC-F1-06` | Giữ hạn ngạch Unit Type trong 48h khi chờ thanh toán; `storage_unit_id` vẫn trống             | System           | —                                 | `FM-02`                       |
 | `UC-F1-07` | Thanh toán Deposit và toàn bộ phí thuê N tháng                                                  | Storage Customer | —                                 | `SC-03`                       |
-| `UC-F1-08` | Khóa chính thức Storage Unit khách đã chọn sau khi thanh toán thành công                     | System           | Storage Customer, Facility Manager | `FM-02`                       |
+| `UC-F1-08` | FM gán Storage Unit *Available* cùng loại cho đơn đã thanh toán, trước ngày Check-in         | Facility Manager | Storage Customer                  | `FM-02`                       |
 | `UC-F1-09` | Nhận lịch hẹn Check-in và xác nhận đặt chỗ thành công                                       | Storage Customer | —                                 | `SC-02`                       |
 | `UC-F1-10` | Hủy Reservation trước ngày bắt đầu thuê                                                        | Storage Customer | Facility Manager                   | `SC-02`, `BM-02`            |
 | `UC-F1-11` | Tự động cho Reservation hết hạn và giải phóng capacity                                         | System           | —                                 | `FM-02`                       |
@@ -1746,13 +1746,13 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 
 *Luồng check-in và bàn giao ô kho.* Tác nhân chính: **Facility Staff** · Liên quan: **Storage Customer**, **Facility Manager**
 
-Activity Diagram: [activity-diagram-flow-2-checkin-handover.drawio](diagrams/activity-diagram-flow-2-checkin-handover.drawio) (lưu trữ cũ: [diagrams/_archive/activity-flow2-checkin-handover.puml](diagrams/_archive/activity-flow2-checkin-handover.puml)) — quy trình đón tiếp (`UC-F2-01`–`02`), kiểm tra ô kho & ký số biên bản (`UC-F2-03`, `UC-F2-05`), kích hoạt tự động (`UC-F2-04`, `UC-F2-06`–`07`), xử lý No-show tự động quá 10 ngày hoặc ô kho hư hỏng hoàn tiền (`UC-F2-08`), phân công ca trực (`UC-F2-09`).
+Activity Diagram: [activity-diagram-flow-2-checkin-handover.drawio](diagrams/activity-diagram-flow-2-checkin-handover.drawio) (lưu trữ cũ: [diagrams/_archive/activity-flow2-checkin-handover.puml](diagrams/_archive/activity-flow2-checkin-handover.puml)) — quy trình đón tiếp (`UC-F2-01`–`02`), kiểm tra ô FM đã gán và ký số biên bản (`UC-F2-03`, `UC-F2-05`), kích hoạt tự động (`UC-F2-04`, `UC-F2-06`–`07`), No-show quá 10 ngày hoặc hết ô thay thế thì hoàn tiền (`UC-F2-08`), phân công ca trực (`UC-F2-09`).
 
 | Mã UC       | Use case                                                            | Actor chính     | Actor liên quan | Mã yêu cầu        |
 | ------------ | ------------------------------------------------------------------- | ---------------- | ---------------- | -------------------- |
 | `UC-F2-01` | Tra cứu Reservation của khách khi khách đến cơ sở           | Facility Staff   | Storage Customer | `FS-01`            |
 | `UC-F2-02` | Xác minh danh tính khách và tình trạng thanh toán            | Facility Staff   | Storage Customer | `FS-01`            |
-| `UC-F2-03` | Bàn giao ô kho và lập biên bản bàn giao điện tử           | Facility Staff   | Storage Customer | `FS-02`            |
+| `UC-F2-03` | Bàn giao ô FM đã gán và lập biên bản; nếu ô lỗi thì FM đổi ô cùng loại rồi bàn giao tiếp | Facility Staff   | Storage Customer, Facility Manager | `FS-02`, `FM-02` |
 | `UC-F2-04` | Cấp mã Access Code / PIN và chìa khóa vật lý (nếu có)      | Facility Staff   | Storage Customer | `FS-02`            |
 | `UC-F2-05` | Khách xác nhận Check-in, nhận ô kho và hoàn tất Reservation | Storage Customer | Facility Staff   | `SC-04`            |
 | `UC-F2-06` | Cập nhật trạng thái Storage Unit sang*Occupied*               | Facility Staff   | —               | `FS-03`            |
@@ -1911,7 +1911,7 @@ một use case tương ứng.
 | `FS-05`     | `UC-F7-03` `UC-F7-05` `UC-F7-06` `UC-F7-08`                                                                  |   4   |
 | `FS-06`     | `UC-F5-05`                                                                                                         |   1   |
 | `FM-01`     | `UC-F5-01` `UC-F5-02` `UC-F5-03`                                                                               |   3   |
-| `FM-02`     | `UC-F1-06` `UC-F1-08` `UC-F1-11` `UC-F1-12` `UC-F2-07` `UC-F2-08`                                        |   6   |
+| `FM-02`     | `UC-F1-06` `UC-F1-08` `UC-F1-11` `UC-F1-12` `UC-F2-03` `UC-F2-07` `UC-F2-08`                             |   7   |
 | `FM-03`     | `UC-F3-10` `UC-F3-11`                                                                                            |   2   |
 | `FM-04`     | `UC-F3-05` `UC-F3-08` `UC-F6-04` `UC-F6-05` `UC-F6-06` `UC-F6-07` `UC-F6-08` `UC-F6-09` `UC-F6-11` |   9   |
 | `FM-05`     | `UC-F2-09` `UC-F5-04` `UC-F7-04`                                                                               |   3   |

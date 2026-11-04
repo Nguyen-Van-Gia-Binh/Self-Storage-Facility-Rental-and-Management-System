@@ -2,6 +2,7 @@
 ## (Architectural Gap Analysis: Transition from Unit-Level Hard Booking to Category Capacity & Late Binding Allocation)
 
 > **Tài liệu:** Báo cáo Rà soát Kiến trúc & Đối chiếu Lệch pha (Gap Analysis Specification)  
+> **Trạng thái nhánh `docs/fm-unit-allocation`:** Đã sửa tài liệu đặc tả cho mô hình khách đặt theo Unit Type và FM gán ô trước Check-in. Chưa sửa code. Chưa đổi `BR-REN-09` (gia hạn ưu tiên), cron tự gán ô, và chính sách bồi thường khi vỡ kho.  
 > **Dự án:** Hệ thống Quản lý và Cho thuê Kho Tự Quản (Self-Storage Facility Rental & Management System)  
 > **Chủ trì kỹ thuật:** Lead Software Architect & Technical Lead  
 > **Giai đoạn:** Giai đoạn 1 — Thẩm định & Rà soát Lệch pha (Phase 1: Architecture Review & Gap Analysis)  

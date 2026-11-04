@@ -46,7 +46,7 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 
 | Mã   | Chức năng                 | Mô tả                                                                                               |
 | ----- | --------------------------- | ----------------------------------------------------------------------------------------------------- |
-| SC-01 | Xem thông tin dịch vụ    | Xem danh sách cơ sở lưu trữ, loại ô kho, kích thước, giá thuê và các ô kho còn trống |
+| SC-01 | Xem thông tin dịch vụ    | Xem danh sách cơ sở lưu trữ, loại ô kho, kích thước, giá thuê và số chỗ còn trống theo hạng kho |
 | SC-02 | Đặt chỗ ô kho           | Đặt chỗ bằng cách chọn cơ sở, loại ô kho, ngày bắt đầu và thời hạn thuê             |
 | SC-03 | Thanh toán                 | Thanh toán Deposit cùng toàn bộ phí thuê N tháng khi đặt chỗ, phí gia hạn hoặc các khoản phụ thu |
 | SC-04 | Check-in nhận kho          | Đến nhận ô kho được cấp theo lịch hẹn đã đặt                                            |
@@ -69,7 +69,7 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 | Mã   | Chức năng                               | Mô tả                                                                                                   |
 | ----- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | FM-01 | Quản lý ô kho tại cơ sở phụ trách | Quản lý loại ô kho, kích thước, vị trí, giá thuê và trạng thái ô kho                       |
-| FM-02 | Phân bổ ô kho cho khách               | Giữ capacity theo Unit Type khi chờ thanh toán và gán Storage Unit cụ thể sau khi thanh toán thành công |
+| FM-02 | Phân bổ ô kho cho khách               | Quản lý hàng đợi đơn đặt chỗ theo Unit Type; FM chủ động gán Storage Unit đang AVAILABLE trước ngày Check-in và có thể đổi ô đến trước ngày đó |
 | FM-03 | Theo dõi khách và hợp đồng          | Giám sát khách đang thuê, hợp đồng thuê, thời hạn thuê và tình trạng thanh toán           |
 | FM-04 | Quản lý quy trình vận hành thuê     | Quản lý bàn giao, trả kho, gia hạn và xử lý quá hạn tại cơ sở                                |
 | FM-05 | Phân công nhân viên                   | Phân công Facility Staff hỗ trợ bàn giao, kiểm tra ô kho hoặc xử lý sự cố                     |
@@ -108,7 +108,7 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 - **Tác nhân chính:** Storage Customer
 - **Tác nhân liên quan:** Facility Manager
 - **Phạm vi liên quan:** `SC-01`, `SC-02`, `SC-03`, `FM-02`
-- **Nội dung dự kiến:** Khách xem cơ sở, sơ đồ và tự chọn ô kho, ngày bắt đầu và thời hạn thuê → xem bảng ước tính chi phí và tiền cọc Deposit → hệ thống giữ ô kho trong 48h → khách thanh toán trực tuyến qua cổng VietQR/thẻ → hệ thống khóa Reserved ô kho và gửi lịch hẹn Check-in.
+- **Nội dung dự kiến:** Khách xem cơ sở, chọn hạng kho (Unit Type), ngày bắt đầu và thời hạn thuê → xem bảng ước tính chi phí và tiền cọc Deposit → hệ thống giữ hạn ngạch hạng kho trong 48h, chưa gán mã ô → khách thanh toán trực tuyến qua cổng VietQR/thẻ → hệ thống xác nhận Confirmed và gửi lịch hẹn Check-in. FM phân bổ một Storage Unit đang AVAILABLE cùng loại trước ngày Check-in.
 
 ### Flow 2 — Storage Check-in and Handover Flow
 
@@ -117,7 +117,7 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 - **Tác nhân chính:** Facility Staff
 - **Tác nhân liên quan:** Storage Customer, Facility Manager
 - **Phạm vi liên quan:** `SC-04`, `FS-01`, `FS-02`, `FS-03`, `FM-02`, `FM-05`
-- **Nội dung dự kiến:** Khách đến theo lịch hẹn → nhân viên tra cứu đặt chỗ → hai bên kiểm tra thực tế ô kho. Nếu ô kho không đạt chuẩn: nhân viên báo sự cố, quản lý đổi kho khác hoặc nếu khách từ chối nhận thì Facility Manager xử lý hoàn tiền trong 3 ngày. Nếu đạt chuẩn: hai bên ký biên bản bàn giao điện tử, nhân viên bàn giao chìa khóa (nếu có) và mã PIN / Access Code (hoàn toàn không dùng thẻ RFID) → Hợp đồng chuyển *Active*, ô kho chuyển *Occupied*.
+- **Nội dung dự kiến:** Khách đến theo lịch hẹn → nhân viên tra cứu đơn Check-in đã được FM gán ô → hai bên kiểm tra thực tế ô kho. Nếu ô phát sinh lỗi, nhân viên báo trên hệ thống để FM đổi sang ô AVAILABLE khác cùng loại, rồi nhân viên bàn giao tiếp. Chỉ khi cơ sở hết ô thay thế hoặc khách từ chối nhận thì Facility Manager hoàn tiền trong 3 ngày. Nếu đạt chuẩn: hai bên ký biên bản bàn giao điện tử, nhân viên bàn giao chìa khóa (nếu có) và mã PIN / Access Code (không dùng thẻ RFID) → Hợp đồng chuyển *Active*, ô kho chuyển *Occupied*.
 
 ### Flow 3 — Rented Storage Unit Management Flow
 
@@ -193,7 +193,7 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 | **Facility**                  | Cơ sở lưu trữ — một địa điểm vật lý chứa nhiều ô kho                       |
 | **Storage Unit**              | Ô kho — đơn vị cho thuê nhỏ nhất, có mã, vị trí và trạng thái riêng       |
 | **Unit Type / Unit Size**     | Loại và kích thước ô kho, quyết định khung giá thuê                            |
-| **Reservation**               | Đặt chỗ theo Facility, Unit Type và khoảng thuê; giữ capacity khi chờ thanh toán, sau thanh toán mới gắn Storage Unit cụ thể và lịch hẹn Check-in |
+| **Reservation**               | Đặt chỗ theo Facility, Unit Type và khoảng thuê; giữ hạn ngạch hạng kho khi chờ thanh toán. Sau thanh toán, `storage_unit_id` vẫn trống cho đến khi FM gán Storage Unit trước ngày Check-in |
 | **Deposit**                   | Tiền cọc khách trả khi đặt chỗ                                                     |
 | **Check-in / Handover**       | Thủ tục khách đến nhận và bàn giao ô kho kèm mã PIN / Access Code hoặc chìa khóa vật lý (không dùng thẻ RFID) |
 | **Access Code**               | Mã số truy cập / PIN cấp cho khách để mở khóa hoặc vào khu vực kho (không dùng thẻ từ) |

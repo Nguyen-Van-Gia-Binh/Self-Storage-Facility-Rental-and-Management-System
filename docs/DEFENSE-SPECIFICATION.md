@@ -147,9 +147,9 @@ flowchart TD
     subgraph System ["Hệ thống (Web & Backend API)"]
         B1["Kiểm tra tình trạng trống (Availability Check)"]
         B2["Tính phí: Đơn giá m² × Diện tích × N tháng"]
-        B3["Tạo Reservation (PENDING_PAYMENT)<br>Ô kho chuyển RESERVED<br>Đặt hạn chót 48h (BR-DEP-03)"]
+        B3["Tạo Reservation (PENDING_PAYMENT)<br>Giữ hạn ngạch hạng kho<br>storage_unit_id = null<br>Đặt hạn chót 48h (BR-DEP-03)"]
         B4["Khởi tạo giao dịch Payment Transaction"]
-        B5["Nhận IPN Callback thành công<br>Tạo RentalContract (PENDING_CHECK_IN)<br>Reservation -> CONFIRMED"]
+        B5["Nhận IPN Callback thành công<br>Tạo RentalContract (PENDING_CHECK_IN, chưa gán ô)<br>Reservation -> CONFIRMED"]
         B_Expire["Cron Job quét quá 48h chưa thanh toán"]
         B_CancelProc["Xử lý Hủy: Kiểm tra mốc 48h trước start_date"]
     end
@@ -175,7 +175,7 @@ flowchart TD
 
     %% Nhánh Hủy & Hết hạn
     B3 -.->|Sau 48h không trả tiền| B_Expire
-    B_Expire -->|Hủy Reservation & Mở lại kho| B1
+    B_Expire -->|Hủy Reservation và nhả hạn ngạch| B1
 
     A_Cancel --> B_CancelProc
     B_CancelProc -->|Hủy trước 48h: Hoàn 100%| A5
@@ -486,12 +486,12 @@ Thực thể trung tâm điều khiển toàn bộ tiến trình pháp lý và t
 ```mermaid
 stateDiagram-v2
     [*] --> DRAFT : Khách hàng khởi tạo đơn đặt chỗ
-    DRAFT --> RESERVED : Giữ chỗ thành công (Tạm khóa ô kho 48h)
-    RESERVED --> PENDING_CHECK_IN : Thanh toán cọc & phí thuê thành công (Flow 1)
+    DRAFT --> RESERVED : Giữ chỗ thành công (giữ hạn ngạch hạng kho 48h, chưa gán ô)
+    RESERVED --> PENDING_CHECK_IN : Thanh toán thành công; chờ FM gán ô (Flow 1)
     RESERVED --> CANCELLED : Quá 48h không thanh toán hoặc khách bấm hủy
 
-    PENDING_CHECK_IN --> ACTIVE : Khách đến cơ sở, đối chiếu CCCD & Bàn giao đạt chuẩn (Flow 2)
-    PENDING_CHECK_IN --> CANCELLED : Khách từ chối nhận kho do lỗi cơ sở (Hoàn 100% tiền)
+    PENDING_CHECK_IN --> ACTIVE : FM đã gán ô; khách đối chiếu CCCD và bàn giao đạt (Flow 2)
+    PENDING_CHECK_IN --> CANCELLED : Hết ô thay thế hoặc khách từ chối nhận (Hoàn 100% tiền)
     PENDING_CHECK_IN --> NO_SHOW : Quá 10 ngày ân hạn không đến nhận kho (Mất cọc)
 
     ACTIVE --> PENDING_RENEWAL : Khách chọn gia hạn thêm N tháng (Chờ thanh toán)
@@ -519,8 +519,8 @@ Quản lý tiến trình đăng ký ban đầu trước khi chính thức chuy�
 
 ```mermaid
 stateDiagram-v2
-    [*] --> PENDING_PAYMENT : Khách chọn ô kho & Bấm Đặt chỗ
-    PENDING_PAYMENT --> CONFIRMED : Thanh toán cọc thành công qua Cổng Sandbox
+    [*] --> PENDING_PAYMENT : Khách chọn hạng kho và bấm Đặt chỗ
+    PENDING_PAYMENT --> CONFIRMED : Thanh toán thành công; chưa gán ô vật lý
     PENDING_PAYMENT --> EXPIRED : Quá thời hạn giữ chỗ 48 giờ (BR-DEP-03)
     PENDING_PAYMENT --> CANCELLED : Khách hàng chủ động hủy lệnh đặt chỗ
 
@@ -541,8 +541,8 @@ Kiểm soát chặt chẽ trạng thái vật lý để chống đặt trùng l�
 ```mermaid
 stateDiagram-v2
     [*] --> AVAILABLE : Ô kho mới tạo hoặc hoàn tất vệ sinh sau trả kho
-    AVAILABLE --> RESERVED : Có khách đặt giữ chỗ thành công (Khóa tạm thời)
-    RESERVED --> AVAILABLE : Đơn đặt chỗ bị hủy hoặc hết hạn 48h thanh toán
+    AVAILABLE --> RESERVED : FM gán ô cho đơn đã thanh toán, trước ngày Check-in
+    RESERVED --> AVAILABLE : FM gỡ gán, hoặc đơn bị hủy trước Check-in
 
     RESERVED --> OCCUPIED : Khách nhận kho thành công (Bắt đầu sử dụng)
     OCCUPIED --> CLEANING : Khách trả kho thành công (Nhân viên bắt đầu dọn)
@@ -1022,15 +1022,15 @@ Bảng sau ánh xạ chi tiết từng **Function / Action** trong **7 Luồng n
 | Fuc (Chức năng / Luồng / Use Case) | Rules (Quy tắc Nghiệp vụ & Ràng buộc Hệ thống) |
 | :--- | :--- |
 | **FLOW 1: ĐẶT CHỖ & THANH TOÁN (RESERVATION & DEPOSIT)** | |
-| **Fuc 1.1: Tìm kiếm & Kiểm tra Khả dụng Ô kho**<br>· Actor: `Customer`<br>· Use Case: `UC-F1-01` .. `UC-F1-04`<br>· Code: `SC-01` | **`BR-AVL-01`**: Một ô kho chỉ khả dụng (`AVAILABLE`) khi không có bất kỳ đơn đặt chỗ nào đang giữ (`RESERVED`) hoặc hợp đồng nào đang hiệu lực (`ACTIVE`, `PENDING_CHECK_IN`, `OVERDUE`) trùng khung ngày thuê.<br>**`BR-AVL-02`**: Sau khi một hợp đồng hết hạn hoặc bị hủy, hệ thống kích hoạt tự động khoảng đệm an toàn `rental.buffer_days = 15 ngày` để làm vệ sinh, kiểm tra kỹ thuật trước khi mở cho lượt thuê kế tiếp.<br>**`BR-RES-01`**: Khách hàng chọn cơ sở, loại kho và thời hạn thuê tính theo tháng nguyên ($N \ge 1$).<br>**`BR-RES-02`**: Ngày bắt đầu thuê (`rental_start_date`) phải lớn hơn hoặc bằng ngày hiện tại (`CURRENT_DATE`) và không vượt quá 30 ngày trong tương lai. |
+| **Fuc 1.1: Tìm kiếm & Kiểm tra Khả dụng Ô kho**<br>· Actor: `Customer`<br>· Use Case: `UC-F1-01` .. `UC-F1-04`<br>· Code: `SC-01` | **`BR-AVL-01`**: Khả dụng khi đặt chỗ là hạn ngạch Unit Type còn suất trên khoảng thuê, không phải một ô vật lý khách tự chọn. Ô vật lý chỉ sang `RESERVED` khi FM gán.<br>**`BR-AVL-02`**: Sau khi một hợp đồng hết hạn hoặc bị hủy, hệ thống kích hoạt tự động khoảng đệm an toàn `rental.buffer_days = 15 ngày` để làm vệ sinh, kiểm tra kỹ thuật trước khi mở cho lượt thuê kế tiếp.<br>**`BR-RES-01`**: Khách hàng chọn cơ sở, loại kho và thời hạn thuê tính theo tháng nguyên ($N \ge 1$).<br>**`BR-RES-02`**: Ngày bắt đầu thuê (`rental_start_date`) phải lớn hơn hoặc bằng ngày hiện tại (`CURRENT_DATE`) và không vượt quá 30 ngày trong tương lai. |
 | **Fuc 1.2: Tính toán Giá thuê & Tiền cọc Deposit**<br>· Actor: `Customer`<br>· Use Case: `UC-F1-05`<br>· Code: `SC-01` | **`BR-GEN-03`**: Chu kỳ thuê tính theo tháng nguyên. Khách hàng bắt buộc **thanh toán trước toàn bộ** tiền thuê $N$ tháng cùng tiền cọc một lần duy nhất lúc đặt chỗ.<br>**`BR-GEN-04`**: Đơn vị tiền tệ chuẩn là **VND**. Mọi dòng chi phí (line item) được làm tròn lên đến **1.000 đ** sau khi áp dụng công thức; tổng thanh toán là tổng các line item đã làm tròn.<br>**`BR-GEN-05`**: Đơn giá thuê 1 tháng tính theo công thức snapshot:<br>$$\text{Giá thuê 1 tháng} = \text{Đơn giá m² (Facility } \times \text{ Unit Type)} \times \text{Diện tích quy chuẩn (m²)}$$<br>**`BR-PRI-01`**: Tổng phí thuê ban đầu: $\text{Rental Amount} = \text{Giá thuê 1 tháng} \times N$.<br>**`BR-DEP-01`**: Tiền cọc Deposit bắt buộc bằng đúng 1 tháng tiền thuê chuẩn: $\text{Deposit} = \text{Giá thuê 1 tháng} \times \text{deposit.multiplier (1.0)}$. |
-| **Fuc 1.3: Khởi tạo Giữ chỗ & Khóa tạm thời 48h**<br>· Actor: `Customer`<br>· Use Case: `UC-F1-06`<br>· Code: `SC-01` | **`BR-DEP-03`**: Sau khi bấm giữ chỗ, hệ thống tạo Reservation ở trạng thái `PENDING_PAYMENT` và khóa ô kho sang `RESERVED` trong tối đa `reservation.hold_hours = 48 giờ`.<br>**`BR-RES-03`**: Nếu quá 48 giờ mà khách hàng chưa hoàn tất thanh toán, hệ thống tự động hủy đơn (`EXPIRED`), giải phóng ô kho về trạng thái `AVAILABLE`. |
+| **Fuc 1.3: Khởi tạo Giữ chỗ & Khóa tạm thời 48h**<br>· Actor: `Customer`<br>· Use Case: `UC-F1-06`<br>· Code: `SC-01` | **`BR-DEP-03`**: Sau khi bấm giữ chỗ, hệ thống tạo Reservation ở trạng thái `PENDING_PAYMENT`, giữ hạn ngạch Unit Type trong `reservation.hold_hours = 48 giờ` và để `storage_unit_id` trống. Không có ô vật lý nào chuyển `RESERVED`.<br>**`BR-RES-03`**: Nếu quá 48 giờ mà khách hàng chưa hoàn tất thanh toán, hệ thống tự động hủy đơn (`EXPIRED`) và nhả hạn ngạch hạng kho. |
 | **Fuc 1.4: Xử lý Thanh toán qua Cổng Sandbox**<br>· Actor: `Customer`<br>· Use Case: `UC-F1-07`, `UC-F1-08`<br>· Code: `SC-01` | **`BR-PAY-01`**: Tổng tiền thanh toán ngay = $\text{Rental Amount} + \text{Deposit Amount}$.<br>**`BR-PAY-02`**: Giao dịch chỉ hợp lệ khi Cổng thanh toán phản hồi mã kết quả thành công qua IPN Webhook an toàn.<br>**`BR-PAY-03`**: Khi thanh toán thành công, hệ thống ghi nhận `PaymentTransaction`, sinh đồng thời bút toán `LedgerEntry`, chuyển `Reservation` sang `CONFIRMED` và tạo `RentalContract` ở trạng thái `PENDING_CHECK_IN`. |
 | **Fuc 1.5: Hủy Đặt chỗ & Xử lý Hoàn tiền cọc**<br>· Actor: `Customer`<br>· Use Case: `UC-F1-10`, `UC-F1-12`<br>· Code: `SC-01` | **`BR-CAN-01`**: Khách hủy trước ngày nhận kho $\ge 48$ giờ (`cancel.full_refund_hours = 48h`): **Hoàn trả 100%** tiền thuê và **100%** tiền cọc Deposit.<br>**`BR-CAN-02`**: Khách hủy trong vòng 48 giờ trước ngày bắt đầu: **Phạt 100% tiền cọc Deposit** (`cancel.late_refund_rate = 0%`); hoàn lại 100% tiền thuê đã trả trước.<br>**`BR-CAN-04`**: Trường hợp khách không đến nhận kho (No-show) quá thời hạn ân hạn 10 ngày (`checkin.grace_days = 10 ngày`): Mất 100% tiền cọc, tiền thuê được hoàn lại sau khi trừ đi chi phí giữ kho 10 ngày tính theo ngày quy ước 30 ngày (`BR-PRI-03`):<br>$$\text{Tiền hoàn No-show} = \text{Tiền thuê đã trả} - \left(\frac{\text{Giá thuê 1 tháng}}{30} \times 10\right)$$ |
 | **FLOW 2: NHẬN KHO & BÀN GIAO (CHECK-IN & HANDOVER)** | |
 | **Fuc 2.1: Đối chiếu Danh tính & Nhận kho**<br>· Actor: `Staff`, `Customer`<br>· Use Case: `UC-F2-01` .. `UC-F2-03`<br>· Code: `FS-01`, `SC-02` | **`BR-CHK-01`**: Khách hàng bắt buộc xuất trình bản gốc CCCD / Hộ chiếu trùng khớp 100% với số giấy tờ đăng ký trên đơn đặt chỗ.<br>**`BR-CHK-02`**: Nhân viên trực dẫn khách đến tận ô kho, kiểm tra khóa điện tử, đèn chiếu sáng, độ sạch sẽ của ô kho trước sự chứng kiến của khách.<br>**`BR-CHK-05`**: Khách hàng được phép đến nhận kho trễ tối đa `checkin.grace_days = 10 ngày` kể từ ngày `rental_start_date`. Trong 10 ngày này, hợp đồng vẫn tính tiền bình thường theo mốc đã ký. |
 | **Fuc 2.2: Ký Biên bản & Cấp Mã PIN Truy cập**<br>· Actor: `Staff`, `Customer`<br>· Use Case: `UC-F2-04`, `UC-F2-06`<br>· Code: `FS-01` | **`BR-CHK-03`**: Biên bản bàn giao (`HandoverRecord`) phải được cả nhân viên và khách xác nhận điện tử trên hệ thống.<br>**`BR-ACC-01`**: Ngay khi biên bản được ký duyệt, hợp đồng chuyển sang `ACTIVE`, hệ thống tự động sinh ngẫu nhiên mã PIN điện tử 6 chữ số an toàn (`AccessCredential`) gửi về email và ứng dụng của khách.<br>**`BR-ACC-03`**: Khách hàng có quyền đổi mã PIN cá nhân bất kỳ lúc nào trên ứng dụng di động / cổng web khách hàng. |
-| **Fuc 2.3: Từ chối Bàn giao do Lỗi Cơ sở**<br>· Actor: `Staff`, `Manager`<br>· Use Case: `UC-F2-07`, `UC-F2-08`<br>· Code: `FS-01`, `FM-02` | **`BR-CHK-06`**: Nếu ô kho bị sự cố kỹ thuật (ẩm mốc, cửa kẹt, hư hỏng) mà cơ sở không có ô kho tương đương thay thế, khách có quyền từ chối nhận kho. Hệ thống **hoàn trả 100% tiền thuê và 100% tiền cọc** trong vòng `checkin.refund_working_days = 3 ngày làm việc`.<br>**`BR-CHK-07`**: Ô kho bị lỗi được chuyển ngay lập tức sang trạng thái `MAINTENANCE` để kỹ thuật xử lý. |
+| **Fuc 2.3: Từ chối Bàn giao do Lỗi Cơ sở**<br>· Actor: `Staff`, `Manager`<br>· Use Case: `UC-F2-07`, `UC-F2-08`<br>· Code: `FS-01`, `FM-02` | **`BR-CHK-06`**: Nếu ô đã gán bị sự cố, Staff báo lỗi và FM đổi sang ô `AVAILABLE` khác cùng loại để bàn giao tiếp. Chỉ khi hết ô thay thế, hoặc khách từ chối nhận, hệ thống **hoàn trả 100% tiền thuê và 100% tiền cọc** trong `checkin.refund_working_days = 3 ngày làm việc`.<br>**`BR-CHK-07`**: Ô kho bị lỗi được chuyển ngay lập tức sang trạng thái `MAINTENANCE` để kỹ thuật xử lý. |
 | **FLOW 3: TRẢ KHO & QUYẾT TOÁN CỌC (RETURN & SETTLEMENT)** | |
 | **Fuc 3.1: Thông báo Trả kho Trực tuyến**<br>· Actor: `Customer`<br>· Use Case: `UC-F3-01` .. `UC-F3-03`<br>· Code: `SC-04` | **`BR-RET-01`**: Khách hàng phải gửi yêu cầu trả kho trước tối thiểu `return.notice_days = 30 ngày` so với ngày kết thúc hợp đồng.<br>**`BR-RET-06`**: Khách hàng có quyền trả kho sớm hơn hạn hợp đồng, nhưng **không được hoàn lại tiền thuê** cho khoảng thời gian chưa sử dụng (`return.early_refund_rate = 0%`). |
 | **Fuc 3.2: Nghiệm thu Hiện trạng Ô kho**<br>· Actor: `Staff`<br>· Use Case: `UC-F3-05`, `UC-F3-06`<br>· Code: `FS-04` | **`BR-RET-03`**: Khách hàng phải dọn sạch toàn bộ tài sản và rác thải ra khỏi ô kho. Nhân viên cơ sở lập biên bản nghiệm thu (`ReturnRequest`), chụp ảnh đính kèm minh chứng hiện trạng.<br>**`BR-ACC-02`**: Mã PIN truy cập bị thu hồi vĩnh viễn (`REVOKED`) ngay khi biên bản nghiệm thu được lập.<br>**`BR-RET-10`**: Ô kho chuyển sang trạng thái `CLEANING` để nhân viên vệ sinh khử khuẩn trước khi đưa về `AVAILABLE`. |
@@ -1041,7 +1041,7 @@ Bảng sau ánh xạ chi tiết từng **Function / Action** trong **7 Luồng n
 | **Fuc 4.3: Báo cáo Thống kê & KPI Hệ thống**<br>· Actor: `BOM`<br>· Use Case: `UC-F4-10`, `UC-F4-11`<br>· Code: `BM-04`, `BM-05` | **`BR-GEN-06`**: Toàn bộ báo cáo tài chính, công suất lấp đầy ô kho (`Occupancy Rate`) và doanh thu được tính theo múi giờ chuẩn Việt Nam `Asia/Ho_Chi_Minh` (UTC+7). Báo cáo tài chính hiển thị số tiền làm tròn đến 1.000 VNĐ. |
 | **FLOW 5: QUẢN LÝ CƠ SỞ, Ô KHO & NHÂN SỰ (FACILITY & STAFF OPERATIONS)** | |
 | **Fuc 5.1: Quản lý Thông tin Cơ sở**<br>· Actor: `BOM`, `FM`<br>· Use Case: `UC-F5-01` .. `UC-F5-03`<br>· Code: `BM-01`, `FM-01` | **`BR-GEN-07`**: Mã định danh cơ sở có dạng `FAC-` cộng viết tắt 2–4 ký tự viết hoa/số (`^FAC-[A-Z][A-Z0-9]{1,3}$`). Giờ hoạt động lưu dạng `HH:mm–HH:mm`. Cơ sở không được phép xóa vật lý (Hard Delete); chỉ được chuyển sang `INACTIVE` khi không còn hợp đồng nào đang chạy. |
-| **Fuc 5.2: Quản lý Ô kho & Chuyển trạng thái Bảo trì**<br>· Actor: `FM`, `Staff`<br>· Use Case: `UC-F5-04` .. `UC-F5-06`<br>· Code: `FM-01`, `FS-05` | **`BR-AVL-03`**: Mã ô kho là duy nhất trong nội bộ từng cơ sở (ví dụ `Q7-A-101`).<br>**`BR-AVL-04`**: Chỉ những ô kho đang ở trạng thái `AVAILABLE` hoặc `OCCUPIED` (có biên bản sự cố) mới được phép chuyển sang `MAINTENANCE`. Nghiêm cấm đưa ô kho đang ở trạng thái `RESERVED` đi bảo trì mà không có sự đồng ý của khách. |
+| **Fuc 5.2: Quản lý Ô kho & Chuyển trạng thái Bảo trì**<br>· Actor: `FM`, `Staff`<br>· Use Case: `UC-F5-04` .. `UC-F5-06`<br>· Code: `FM-01`, `FS-05` | **`BR-AVL-03`**: Mã ô kho là duy nhất trong nội bộ từng cơ sở (ví dụ `Q7-A-101`).<br>Ô đang `AVAILABLE` được chuyển `MAINTENANCE` khi hỏng. Ô `RESERVED` do FM đã gán không đưa đi bảo trì nếu chưa có sự cố ghi nhận; khi có sự cố, FM đổi ô cho đơn theo `BR-CHK-06`. |
 | **Fuc 5.3: Phân công Ca trực & Giám sát Nhân viên**<br>· Actor: `FM`, `Staff`<br>· Use Case: `UC-F5-07` .. `UC-F5-09`<br>· Code: `FM-04`, `FS-07` | **`BR-GEN-07`**: Nhân viên (`Staff`) và Quản lý (`FM`) chỉ có quyền truy cập dữ liệu của các cơ sở được phân công qua bảng `user_facility_assignment`. Không được phân công 1 nhân viên vào 2 ca trực trùng giờ nhau trong cùng một ngày. |
 | **FLOW 6: GIA HẠN HỢP ĐỒNG & XỬ LÝ QUÁ HẠN (RENEWAL & OVERDUE)** | |
 | **Fuc 6.1: Nhắc nhở & Khởi tạo Gia hạn Hợp đồng**<br>· Actor: `Customer`<br>· Use Case: `UC-F6-01` .. `UC-F6-04`<br>· Code: `SC-03` | **`BR-REN-01`**: Hệ thống tự động gửi thông báo nhắc gia hạn bắt đầu từ mốc **trước 60 ngày** (`renewal.reminder_days = 60`) và đếm ngược liên tục 7, 3, 1 ngày trước mốc khóa.<br>**`BR-REN-02`**: Cổng tự gia hạn trực tuyến bị khóa tại mốc **trước 30 ngày** so với ngày hết hạn nếu đã có khách hàng khác đặt trước ô kho đó.<br>**`BR-REN-03`**: Thời gian gia hạn tối thiểu là **1 tháng** (`renewal.min_months = 1`).<br>**`BR-REN-07`**: Thời gian gia hạn tối đa trong một lần là **12 tháng** (`renewal.max_months = 12`). Phí gia hạn áp dụng theo biểu giá đang có hiệu lực tại thời điểm bấm gia hạn. |
