@@ -334,9 +334,6 @@ class PaymentServiceTest {
                 .transactionType("INITIAL_PAYMENT")
                 .build();
 
-        when(paymentTransactionRepository.findByOrderCode(123456789L)).thenReturn(Optional.of(pendingTxn));
-        when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(i -> i.getArgument(0));
-
         Map<String, Object> payload = Map.of(
                 "code", "00",
                 "desc", "Success",
@@ -347,11 +344,12 @@ class PaymentServiceTest {
                 )
         );
 
-        PaymentResponse response = paymentService.processPayOSWebhook(payload);
+        paymentService.processPayOSWebhook(payload);
 
-        assertNotNull(response);
-        assertEquals("SUCCESS", response.getStatus());
-        verify(reservationService).confirmAfterPayment(100L);
+        verify(paymentTransactionRepository, never()).save(any());
+        verify(reservationService, never()).confirmAfterPayment(any());
+        verify(eventPublisher, never()).publishEvent(any());
+        assertEquals("PENDING", pendingTxn.getStatus());
     }
 
     @Test
@@ -473,20 +471,17 @@ class PaymentServiceTest {
         contract.setStatus(com.swp391.selfstorage.contract.entity.ContractStatus.OVERDUE);
         contract.setOverdueFeeAccrued(350_000L);
 
-        when(paymentTransactionRepository.findByOrderCode(77778888L)).thenReturn(Optional.of(txn));
-        when(rentalContractRepository.findById(90002L)).thenReturn(Optional.of(contract));
-        when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(inv -> inv.getArgument(0));
-
         Map<String, Object> payload = Map.of(
                 "code", "00",
                 "data", Map.of("orderCode", 77778888L, "reference", "FT99001")
         );
         paymentService.processPayOSWebhook(payload);
 
-        assertEquals(com.swp391.selfstorage.contract.entity.ContractStatus.OVERDUE, contract.getStatus(),
-                "Hợp đồng PHẢI giữ nguyên OVERDUE qua PayOS Webhook — KHÔNG được chuyển ACTIVE (BR-OVD-08)");
-        assertEquals(0L, contract.getOverdueFeeAccrued(),
-                "Nợ phạt phải được xóa về 0 sau thanh toán PayOS thành công");
+        verify(paymentTransactionRepository, never()).save(any());
+        verify(reservationService, never()).confirmAfterPayment(any());
+        verify(eventPublisher, never()).publishEvent(any());
+        assertEquals("PENDING", txn.getStatus());
+        assertEquals(350_000L, contract.getOverdueFeeAccrued());
     }
 
     @Test
@@ -562,9 +557,6 @@ class PaymentServiceTest {
                 .renewalMonths(3)
                 .build();
 
-        when(paymentTransactionRepository.findByOrderCode(666L)).thenReturn(Optional.of(txn));
-        when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(i -> i.getArgument(0));
-
         Map<String, Object> payload = Map.of(
                 "code", "00",
                 "data", Map.of(
@@ -576,11 +568,10 @@ class PaymentServiceTest {
 
         paymentService.processPayOSWebhook(payload);
 
-        ArgumentCaptor<ContractRenewalPaymentCompletedEvent> event =
-                ArgumentCaptor.forClass(ContractRenewalPaymentCompletedEvent.class);
-        verify(eventPublisher).publishEvent(event.capture());
-        assertEquals(3, event.getValue().renewalMonths());
-        assertEquals(88L, event.getValue().paymentId());
+        verify(paymentTransactionRepository, never()).save(any());
+        verify(reservationService, never()).confirmAfterPayment(any());
+        verify(eventPublisher, never()).publishEvent(any());
+        assertEquals("PENDING", txn.getStatus());
     }
 
     @ParameterizedTest(name = "Sandbox gia hạn {0} tháng bắn đúng {0} tháng, không rút về 1")
@@ -634,5 +625,46 @@ class PaymentServiceTest {
                 ArgumentCaptor.forClass(ContractRenewalPaymentCompletedEvent.class);
         verify(eventPublisher).publishEvent(event.capture());
         assertEquals(6, event.getValue().renewalMonths());
+    }
+
+    @Test
+    @DisplayName("completeVnpayPayment: đã SUCCESS thì không confirm lần nữa")
+    void completeVnpayPayment_AlreadySuccess() {
+        PaymentTransaction successTxn = PaymentTransaction.builder()
+                .id(50L)
+                .reservationId(100L)
+                .orderCode(123L)
+                .amount(1_000L)
+                .status("SUCCESS")
+                .transactionType("INITIAL_PAYMENT")
+                .build();
+        when(paymentTransactionRepository.findByOrderCode(123L)).thenReturn(Optional.of(successTxn));
+
+        assertTrue(paymentService.completeVnpayPayment(123L, true, 100_000L, "1", "NCB"));
+
+        verify(paymentTransactionRepository, never()).save(any());
+        verify(reservationService, never()).confirmAfterPayment(any());
+    }
+
+    @Test
+    @DisplayName("completeVnpayPayment: hủy hoặc lệch tiền thì giữ PENDING")
+    void completeVnpayPayment_KeepsPending() {
+        PaymentTransaction pending = PaymentTransaction.builder()
+                .id(50L)
+                .reservationId(100L)
+                .orderCode(123L)
+                .amount(1_000L)
+                .status("PENDING")
+                .transactionType("INITIAL_PAYMENT")
+                .paymentMethod("SANDBOX_VIETQR")
+                .build();
+        when(paymentTransactionRepository.findByOrderCode(123L)).thenReturn(Optional.of(pending));
+
+        assertFalse(paymentService.completeVnpayPayment(123L, false, 100_000L, "1", "NCB"));
+        assertFalse(paymentService.completeVnpayPayment(123L, true, 1L, "1", "NCB"));
+
+        assertEquals("PENDING", pending.getStatus());
+        verify(paymentTransactionRepository, never()).save(any());
+        verify(reservationService, never()).confirmAfterPayment(any());
     }
 }
