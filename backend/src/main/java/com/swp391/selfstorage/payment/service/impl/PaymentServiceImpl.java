@@ -106,6 +106,7 @@ public class PaymentServiceImpl implements PaymentService {
         if ("RESERVATION".equalsIgnoreCase(request.getReferenceType())) {
             Reservation reservation = reservationRepository.findById(request.getReferenceId())
                     .orElseThrow(() -> new CustomException(ErrorCode.RESERVATION_NOT_FOUND));
+            assertPayer(reservation.getId(), null);
 
             if (reservation.getStatus() == ReservationStatus.FULFILLED) {
                 throw new CustomException(ErrorCode.RESERVATION_ALREADY_FULFILLED);
@@ -135,6 +136,7 @@ public class PaymentServiceImpl implements PaymentService {
             com.swp391.selfstorage.contract.entity.RentalContract contract = rentalContractRepository.findById(request.getReferenceId())
                     .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND,
                             "Không tìm thấy hợp đồng với ID=" + request.getReferenceId()));
+            assertPayer(null, contract.getId());
 
             int months = (request.getRenewalMonths() != null && request.getRenewalMonths() > 0)
                     ? request.getRenewalMonths()
@@ -191,6 +193,7 @@ public class PaymentServiceImpl implements PaymentService {
             com.swp391.selfstorage.contract.entity.RentalContract contract = rentalContractRepository.findById(request.getReferenceId())
                     .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND,
                             "Không tìm thấy hợp đồng với ID=" + request.getReferenceId()));
+            assertPayer(null, contract.getId());
 
             Optional<PaymentTransaction> pendingTxn = paymentTransactionRepository
                     .findTopByContractIdAndTransactionTypeOrderByCreatedAtDesc(contract.getId(), "SETTLEMENT");
@@ -207,6 +210,7 @@ public class PaymentServiceImpl implements PaymentService {
             com.swp391.selfstorage.contract.entity.RentalContract contract = rentalContractRepository.findById(request.getReferenceId())
                     .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND,
                             "Không tìm thấy hợp đồng với ID=" + request.getReferenceId()));
+            assertPayer(null, contract.getId());
 
             if (contract.getOverdueFeeAccrued() <= 0) {
                 throw new CustomException(ErrorCode.VALIDATION_FAILED, "Hợp đồng không có nợ phạt quá hạn cần thanh toán");
@@ -274,6 +278,7 @@ public class PaymentServiceImpl implements PaymentService {
         PaymentTransaction payment = paymentTransactionRepository.findByOrderCode(orderCode)
                 .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND,
                         "Không tìm thấy giao dịch với orderCode=" + orderCode));
+        assertPayer(payment.getReservationId(), payment.getContractId());
 
         if ("SUCCESS".equalsIgnoreCase(payment.getStatus())) {
             log.info("Giao dịch orderCode={} đã ở trạng thái SUCCESS, bỏ qua xử lý lặp", orderCode);
@@ -430,11 +435,37 @@ public class PaymentServiceImpl implements PaymentService {
         return months;
     }
 
+    private void assertPayer(Long reservationId, Long contractId) {
+        // shortcut: không có principal thì bỏ qua để unit test cũ chạy; mọi HTTP đã có JWT thì kiểm tra.
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof com.swp391.selfstorage.auth.service.UserPrincipal user)) {
+            return;
+        }
+        if (user.getRole() != com.swp391.selfstorage.user.entity.UserRole.STORAGE_CUSTOMER) {
+            return;
+        }
+        if (reservationId != null) {
+            Reservation reservation = reservationRepository.findById(reservationId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.RESERVATION_NOT_FOUND));
+            if (!user.getId().equals(reservation.getCustomerId())) {
+                throw new CustomException(ErrorCode.ACCESS_DENIED);
+            }
+        }
+        if (contractId != null) {
+            var contract = rentalContractRepository.findById(contractId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
+            if (!user.getId().equals(contract.getCustomerId())) {
+                throw new CustomException(ErrorCode.ACCESS_DENIED);
+            }
+        }
+    }
+
     @Override
     public PaymentResponse getPaymentByOrderCode(Long orderCode) {
         PaymentTransaction payment = paymentTransactionRepository.findByOrderCode(orderCode)
                 .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND,
                         "Không tìm thấy giao dịch với orderCode=" + orderCode));
+        assertPayer(payment.getReservationId(), payment.getContractId());
         return paymentMapper.toResponse(payment);
     }
 
@@ -452,6 +483,7 @@ public class PaymentServiceImpl implements PaymentService {
         // 1. Kiểm tra đơn đặt chỗ có tồn tại không
         Reservation reservation = reservationRepository.findById(request.getReferenceId())
                 .orElseThrow(() -> new CustomException(ErrorCode.RESERVATION_NOT_FOUND));
+        assertPayer(reservation.getId(), null);
 
         // 2. Kiểm tra trạng thái đơn
         if (reservation.getStatus() == ReservationStatus.FULFILLED) {
@@ -506,6 +538,7 @@ public class PaymentServiceImpl implements PaymentService {
     public PaymentResponse getPaymentById(Long id) {
         PaymentTransaction payment = paymentTransactionRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
+        assertPayer(payment.getReservationId(), payment.getContractId());
         return paymentMapper.toResponse(payment);
     }
 

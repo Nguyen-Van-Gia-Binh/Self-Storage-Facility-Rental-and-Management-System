@@ -162,18 +162,21 @@ public class PaymentController {
     }
 
     @GetMapping("/order/{orderCode}/status")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Kiểm tra trạng thái thanh toán theo mã đơn hàng PayOS (cho Frontend Polling)")
     public ResponseEntity<PaymentResponse> getPaymentByOrderCode(@PathVariable Long orderCode) {
         return ResponseEntity.ok(paymentService.getPaymentByOrderCode(orderCode));
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Xem chi tiết giao dịch thanh toán theo ID")
     public ResponseEntity<PaymentResponse> getPaymentById(@PathVariable Long id) {
         return ResponseEntity.ok(paymentService.getPaymentById(id));
     }
 
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Danh sách phân trang lịch sử thanh toán kèm bộ lọc")
     public ResponseEntity<PageResponse<PaymentResponse>> getPayments(
             @ModelAttribute PaymentFilterRequest filter,

@@ -42,6 +42,11 @@ import com.swp391.selfstorage.reservation.entity.Reservation;
 import com.swp391.selfstorage.reservation.entity.ReservationStatus;
 import com.swp391.selfstorage.reservation.repository.ReservationRepository;
 import com.swp391.selfstorage.reservation.service.ReservationService;
+import com.swp391.selfstorage.auth.service.UserPrincipal;
+import com.swp391.selfstorage.user.entity.UserRole;
+import com.swp391.selfstorage.user.entity.UserStatus;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @ExtendWith(MockitoExtension.class)
 class PaymentServiceTest {
@@ -692,5 +697,27 @@ class PaymentServiceTest {
         assertEquals("PENDING", pending.getStatus());
         verify(paymentTransactionRepository, never()).save(any());
         verify(reservationService, never()).confirmAfterPayment(any());
+    }
+
+    @Test
+    void processSandboxTransfer_OtherCustomer_Denied() {
+        mockReservation.setCustomerId(100L);
+        PaymentTransaction pendingTxn = PaymentTransaction.builder()
+                .id(50L).reservationId(100L).orderCode(123456789L).amount(3_200_000L)
+                .status("PENDING").transactionType("INITIAL_PAYMENT").build();
+        when(paymentTransactionRepository.findByOrderCode(123456789L)).thenReturn(Optional.of(pendingTxn));
+        when(reservationRepository.findById(100L)).thenReturn(Optional.of(mockReservation));
+        UserPrincipal other = new UserPrincipal(999L, "a@b.c", "x", "Other",
+                UserRole.STORAGE_CUSTOMER, UserStatus.ACTIVE, List.of(), List.of());
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(other, null, other.getAuthorities()));
+        try {
+            CustomException ex = assertThrows(CustomException.class,
+                    () -> paymentService.processSandboxTransfer(123456789L, "TRANSFER_SUCCESS"));
+            assertEquals(ErrorCode.ACCESS_DENIED, ex.getErrorCode());
+            verify(reservationService, never()).confirmAfterPayment(any());
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 }
