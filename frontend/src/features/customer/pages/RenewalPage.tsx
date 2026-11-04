@@ -6,8 +6,6 @@ import { Badge } from '@/components/ui/Badge';
 import {
   ArrowLeft,
   Sparkles,
-  Copy,
-  QrCode,
   ArrowRight,
   ShieldCheck,
   Tag,
@@ -19,22 +17,15 @@ import {
   Clock,
   AlertTriangle,
   Loader2,
-  ExternalLink,
   XCircle,
   PlusCircle,
   RotateCcw
 } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
 import { getCustomerContracts } from '@/api/customerRentals';
 import { formatVND } from '../utils/pricing';
-import {
-  BANK_ACCOUNT_NUMBER,
-  BANK_ACCOUNT_NUMBER_PLAIN,
-  BANK_NAME,
-  ACCOUNT_HOLDER,
-} from '../utils/paymentBankInfo';
 import type { RentedContract } from '../types';
 import { RenewalExpiryBanner } from '../components/RenewalExpiryBanner';
+import { VnpayPayLinks } from '../components/VnpayPayLinks';
 import { RenewalReceiptModal } from '../components/RenewalReceiptModal';
 import { ScheduleReturnModal } from '../components/ScheduleReturnModal';
 import { tokenStorage } from '@/utils/tokenStorage';
@@ -137,9 +128,6 @@ export const RenewalPage: React.FC = () => {
     handleSimulateSuccess,
     handleSimulateCancel,
     handleCancelPayment,
-    transferContent,
-    copiedBankInfo,
-    handleCopy,
   } = payment;
 
   if (loading) {
@@ -677,10 +665,10 @@ export const RenewalPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
               <div>
                 <h2 className="text-xl font-bold text-[#0a1614]">
-                  Quét Mã VietQR Hoàn Tất Gia Hạn
+                  Thanh toán VNPay để hoàn tất gia hạn
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Gia hạn hợp đồng #{contract.contractNumber} thêm {renewalMonths} tháng qua cổng VietQR Napas247
+                  Gia hạn hợp đồng #{contract.contractNumber} thêm {renewalMonths} tháng
                 </p>
               </div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold shrink-0">
@@ -726,7 +714,7 @@ export const RenewalPage: React.FC = () => {
             {isPaidSuccess && (
               <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3 text-emerald-800 text-sm font-medium animate-pulse">
                 <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                <span>Thanh toán thành công qua VietQR Napas247! Hệ thống đang tự động kích hoạt hợp đồng gia hạn...</span>
+                <span>Thanh toán thành công. Hệ thống đang kích hoạt hợp đồng gia hạn...</span>
               </div>
             )}
 
@@ -734,7 +722,7 @@ export const RenewalPage: React.FC = () => {
             {isLoadingCheckout ? (
               <div className="py-12 flex flex-col items-center justify-center space-y-3">
                 <Loader2 className="w-8 h-8 text-brand-600 animate-spin" />
-                <p className="text-sm text-slate-600 font-medium">Đang khởi tạo mã VietQR Napas247...</p>
+                <p className="text-sm text-slate-600 font-medium">Đang tạo mã thanh toán...</p>
               </div>
             ) : (
               <>
@@ -745,102 +733,7 @@ export const RenewalPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* 2 Cột QR & Chi tiết tài khoản */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
-                  {/* QR Display */}
-                  <div className="flex flex-col items-center justify-center p-5 bg-slate-50 rounded-xl border border-slate-200/80">
-                    <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col items-center">
-                      <QRCodeSVG
-                        value={payosCheckout?.qrCode || `vietqr://${pricing.finalTotal}/${transferContent}`}
-                        size={180}
-                        level="M"
-                        includeMargin={false}
-                      />
-                      <span className="text-[11px] font-bold text-slate-500 mt-2 flex items-center gap-1">
-                        <QrCode className="w-3.5 h-3.5 text-brand-600" />
-                        VietQR · Napas247 (Tự động nhận diện)
-                      </span>
-                    </div>
-                    <span className="text-xs text-slate-500 mt-2.5 text-center">
-                      Mở ứng dụng ngân hàng bất kỳ để quét mã
-                    </span>
-                    {payosCheckout?.checkoutUrl && (
-                      <a
-                        href={payosCheckout.checkoutUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 underline"
-                      >
-                        <span>Mở cổng thanh toán VietQR Sandbox</span>
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                    )}
-                  </div>
-
-                  {/* Account Details */}
-                  <div className="space-y-3 text-xs">
-                    <div className="bg-[#f2f9f7] p-3 rounded-lg border border-emerald-100">
-                      <span className="text-slate-500 block">Ngân hàng thụ hưởng:</span>
-                      <strong className="text-sm text-[#0a1614] font-bold">
-                        {BANK_NAME}
-                      </strong>
-                    </div>
-
-                    <div className="bg-[#f2f9f7] p-3 rounded-lg border border-emerald-100 flex items-center justify-between">
-                      <div>
-                        <span className="text-slate-500 block">Số tài khoản / Virtual Account:</span>
-                        <strong className="text-sm text-[#0a1614] font-bold tracking-wider">
-                          {payosCheckout?.accountNumber || BANK_ACCOUNT_NUMBER}
-                        </strong>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleCopy(payosCheckout?.accountNumber || BANK_ACCOUNT_NUMBER_PLAIN, 'ACCOUNT')}
-                        className="p-1.5 text-slate-400 hover:text-brand-600 rounded cursor-pointer"
-                        title="Sao chép số tài khoản"
-                      >
-                        <Copy className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    <div className="bg-[#f2f9f7] p-3 rounded-lg border border-emerald-100">
-                      <span className="text-slate-500 block">Chủ tài khoản:</span>
-                      <strong className="text-sm text-[#0a1614] font-bold uppercase">
-                        {payosCheckout?.accountName || ACCOUNT_HOLDER}
-                      </strong>
-                    </div>
-
-                    <div className="bg-[#f2f9f7] p-3 rounded-lg border border-emerald-100">
-                      <span className="text-slate-500 block">Số tiền thanh toán:</span>
-                      <strong className="text-base text-brand-600 font-extrabold">
-                        {formatVND(payosCheckout?.amount || pricing.finalTotal)}
-                      </strong>
-                    </div>
-
-                    <div className="bg-amber-50/70 p-3 rounded-lg border border-amber-200/80 flex items-center justify-between">
-                      <div>
-                        <span className="text-amber-800 font-semibold block">Nội dung chuyển khoản (Bắt buộc):</span>
-                        <strong className="text-sm text-amber-950 font-bold tracking-wider">
-                          {payosCheckout?.description || transferContent}
-                        </strong>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleCopy(payosCheckout?.description || transferContent, 'CONTENT')}
-                        className="p-1.5 text-amber-700 hover:text-amber-900 rounded cursor-pointer"
-                        title="Sao chép nội dung"
-                      >
-                        <Copy className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    {copiedBankInfo && (
-                      <div className="text-center text-emerald-600 font-semibold text-xs py-1">
-                        ✓ Đã sao chép vào bộ nhớ tạm!
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <VnpayPayLinks orderCode={payosCheckout?.orderCode} />
 
                 {/* Thông báo đối soát / chưa thanh toán */}
                 {paymentNotice && (

@@ -77,7 +77,7 @@ describe('RenewalPage Stepper Disabled & Digital Clock', () => {
       </MemoryRouter>
     );
     // Wait for step 3 to render
-    await screen.findByText('Quét Mã VietQR Hoàn Tất Gia Hạn');
+    await screen.findByText('Thanh toán VNPay để hoàn tất gia hạn');
     return utils;
   };
 
@@ -107,13 +107,13 @@ describe('RenewalPage Stepper Disabled & Digital Clock', () => {
     // Click step 1
     if (step1El) fireEvent.click(step1El);
     // Should still be at Step 3
-    expect(screen.getByText('Quét Mã VietQR Hoàn Tất Gia Hạn')).toBeInTheDocument();
+    expect(screen.getByText('Thanh toán VNPay để hoàn tất gia hạn')).toBeInTheDocument();
     expect(screen.queryByText('Tiến Hành Thanh Toán VietQR (Napas247)')).not.toBeInTheDocument();
 
     // Click step 2
     if (step2El) fireEvent.click(step2El);
     // Should still be at Step 3
-    expect(screen.getByText('Quét Mã VietQR Hoàn Tất Gia Hạn')).toBeInTheDocument();
+    expect(screen.getByText('Thanh toán VNPay để hoàn tất gia hạn')).toBeInTheDocument();
     expect(screen.queryByText('Tiến Hành Thanh Toán VietQR (Napas247)')).not.toBeInTheDocument();
   });
 });

@@ -2,8 +2,6 @@ import React from 'react';
 import { 
   CheckCircle2, 
   Clock, 
-  Copy, 
-  ExternalLink, 
   ShieldCheck, 
   AlertTriangle, 
   Loader2, 
@@ -11,16 +9,9 @@ import {
   Sparkles,
   QrCode
 } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
 import { formatVND } from '../utils/pricing';
-import {
-  BANK_ACCOUNT_NUMBER,
-  BANK_ACCOUNT_NUMBER_PLAIN,
-  BANK_NAME,
-  ACCOUNT_HOLDER,
-  buildVietQrImageUrl,
-} from '../utils/paymentBankInfo';
 import type { CheckoutResponse } from '../api/customerApi';
+import { VnpayPayLinks } from './VnpayPayLinks';
 import type { Facility, UnitType } from '../types';
 
 export interface BookingPaymentStepProps {
@@ -28,8 +19,8 @@ export interface BookingPaymentStepProps {
   checkoutData: CheckoutResponse | null;
   calculation: any;
   formattedCountdown: string;
-  copiedField: string | null;
-  handleCopyText: (text: string, fieldKey: string) => void;
+  copiedField?: string | null;
+  handleCopyText?: (text: string, fieldKey: string) => void;
   paymentNotice: string | null;
   paymentStatus: 'IDLE' | 'PENDING' | 'SUCCESS' | 'EXPIRED';
   redirectCountdown: number;
@@ -56,8 +47,6 @@ export const BookingPaymentStep: React.FC<BookingPaymentStepProps> = ({
   checkoutData,
   calculation,
   formattedCountdown,
-  copiedField,
-  handleCopyText,
   paymentNotice,
   paymentStatus,
   redirectCountdown,
@@ -102,7 +91,7 @@ export const BookingPaymentStep: React.FC<BookingPaymentStepProps> = ({
               </span>
             </div>
             <h2 className="text-lg sm:text-xl font-extrabold text-[#0a1614] mt-1">
-              {isSuccess ? 'Xác Nhận Giữ Chỗ & Bàn Giao Ô Kho' : 'Quét Mã VietQR Chuyển Khoản Nhanh'}
+              {isSuccess ? 'Xác Nhận Giữ Chỗ & Bàn Giao Ô Kho' : 'Thanh toán VNPay'}
             </h2>
           </div>
         </div>
@@ -198,119 +187,13 @@ export const BookingPaymentStep: React.FC<BookingPaymentStepProps> = ({
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-brand-500"></span>
                       </span>
-                      <span>Hệ thống tự động lắng nghe Webhook ngân hàng & cấp mã mở kho ngay khi nhận tiền</span>
+                      <span>Hệ thống tự xác nhận khi VNPay báo đã thanh toán</span>
                     </>
                   )}
                 </div>
-                {checkoutData?.checkoutUrl && (
-                  <a
-                    href={checkoutData.checkoutUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-brand-600 hover:text-brand-700 font-bold whitespace-nowrap flex items-center gap-1 cursor-pointer shrink-0"
-                  >
-                    <span>Mở cổng PayOS</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                )}
               </div>
 
-              {/* KHỐI QR VÀ THÔNG TIN TÀI KHOẢN */}
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-                {/* CỘT QR CODE */}
-                <div className="md:col-span-5 flex flex-col items-center justify-center p-4 bg-slate-50 border border-brand-200/80 rounded-2xl">
-                  <div className="bg-white p-3 rounded-xl shadow-xs border border-slate-200">
-                    {checkoutData?.qrCode ? (
-                      <QRCodeSVG value={checkoutData.qrCode} size={165} level="M" includeMargin={true} />
-                    ) : (
-                      <img
-                        src={buildVietQrImageUrl(
-                          totalAmount,
-                          orderDescription,
-                          checkoutData?.accountName || 'SMARTSTORAGE',
-                        )}
-                        alt="VietQR Code"
-                        className="w-40 h-40 object-contain"
-                      />
-                    )}
-                  </div>
-                  <div className="mt-3 text-center">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0a1614] bg-white px-2.5 py-1 rounded-md border border-slate-200 shadow-xs">
-                      <span className="w-2 h-2 rounded-full bg-blue-600"></span>
-                      VietQR • MB Bank (Napas 247)
-                    </span>
-                    <p className="text-[11px] text-slate-500 mt-1.5">Mở App Ngân hàng hoặc ZaloPay để quét</p>
-                  </div>
-                </div>
-
-                {/* CỘT THÔNG TIN CHUYỂN KHOẢN (COPY 1 CHẠM) */}
-                <div className="md:col-span-7 space-y-3">
-                  <div className="bg-slate-50/80 border border-brand-200/60 p-3 rounded-xl">
-                    <div className="text-[11px] font-semibold text-slate-500">Ngân hàng thụ hưởng</div>
-                    <div className="text-xs font-bold text-[#0a1614] mt-0.5">{BANK_NAME}</div>
-                    <div className="text-[11px] text-slate-500 mt-1">
-                      Chủ tài khoản: <strong className="text-[#0a1614] uppercase">{checkoutData?.accountName || ACCOUNT_HOLDER}</strong>
-                    </div>
-                  </div>
-
-                  {/* SỐ TÀI KHOẢN */}
-                  <div className="flex items-center justify-between bg-white border border-brand-200 p-3 rounded-xl shadow-xs">
-                    <div>
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Số tài khoản định danh</div>
-                      <div className="text-base font-black text-[#0a1614] font-mono mt-0.5">
-                        {checkoutData?.accountNumber || BANK_ACCOUNT_NUMBER}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleCopyText(checkoutData?.accountNumber || BANK_ACCOUNT_NUMBER_PLAIN, 'stk')}
-                      className="px-2.5 py-1.5 text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-lg flex items-center gap-1 transition-all cursor-pointer"
-                    >
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>{copiedField === 'stk' ? '✓ Đã chép' : 'Sao chép'}</span>
-                    </button>
-                  </div>
-
-                  {/* SỐ TIỀN */}
-                  <div className="flex items-center justify-between bg-white border border-brand-200 p-3 rounded-xl shadow-xs">
-                    <div>
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Số tiền cần chuyển</div>
-                      <div className="text-lg font-black text-brand-700 font-mono mt-0.5">
-                        {formatVND(totalAmount)}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleCopyText(String(totalAmount), 'amount')}
-                      className="px-2.5 py-1.5 text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-lg flex items-center gap-1 transition-all cursor-pointer"
-                    >
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>{copiedField === 'amount' ? '✓ Đã chép' : 'Sao chép'}</span>
-                    </button>
-                  </div>
-
-                  {/* NỘI DUNG CHUYỂN KHOẢN */}
-                  <div className="flex items-center justify-between bg-amber-50/70 border border-amber-300 p-3 rounded-xl shadow-xs">
-                    <div>
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-amber-900 flex items-center gap-1">
-                        <span>Nội dung chuyển khoản (Bắt buộc)</span>
-                        <span className="text-rose-600">*</span>
-                      </div>
-                      <div className="text-base font-black text-amber-950 font-mono mt-0.5">
-                        {orderDescription}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleCopyText(orderDescription, 'desc')}
-                      className="px-2.5 py-1.5 text-xs font-bold text-amber-900 bg-white hover:bg-amber-100 border border-amber-300 rounded-lg flex items-center gap-1 transition-all cursor-pointer"
-                    >
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>{copiedField === 'desc' ? '✓ Đã chép' : 'Sao chép'}</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <VnpayPayLinks orderCode={checkoutData?.orderCode} />
 
               {/* BẢO MẬT & HƯỚNG DẪN */}
               <div className="pt-4 border-t border-brand-100 flex items-start gap-2.5 text-xs text-slate-500">
@@ -405,12 +288,10 @@ export const BookingPaymentStep: React.FC<BookingPaymentStepProps> = ({
               </div>
 
               <div className="flex justify-between items-center gap-2">
-                <span className="shrink-0 text-slate-500 font-medium">Mã ô kho:</span>
-                <div className="flex items-center gap-1.5 font-bold text-slate-900">
-                  <span className="font-mono text-xs px-2 py-0.5 rounded-md border font-black text-brand-800 bg-brand-50 border-brand-300">
-                    {finalUnitNumber}
-                  </span>
-                </div>
+                <span className="shrink-0 text-slate-500 font-medium">Hạng kho:</span>
+                <span className="text-slate-900 text-right font-bold truncate max-w-[190px]">
+                  {finalUnitNumber}
+                </span>
               </div>
 
               <div className="flex justify-between items-center gap-2">
