@@ -338,7 +338,7 @@ class ReservationCreationTest {
     @Test
     @DisplayName("Khoảng thời gian thuê [start_date, end_date_exclusive) đúng chính xác theo số tháng thuê")
     void shouldCalculateCorrectRentalDateRange() {
-        request.setStartDate(LocalDate.of(2026, 11, 1));
+        request.setStartDate(LocalDate.now().plusDays(2));
         request.setRentalMonths(6);
 
         when(reservationRepository.existsOverlappingReservationForUnit(eq(10L), any(), any(), any(), eq(15))).thenReturn(false);
@@ -346,8 +346,8 @@ class ReservationCreationTest {
 
         ReservationResponse response = service.createReservation(request, testCustomer);
 
-        assertEquals(LocalDate.of(2026, 11, 1), response.getStartDate());
-        assertEquals(LocalDate.of(2027, 5, 1), response.getEndDateExclusive());
+        assertEquals(request.getStartDate(), response.getStartDate());
+        assertEquals(request.getStartDate().plusMonths(6), response.getEndDateExclusive());
         assertEquals(6, response.getRentalMonths());
     }
 

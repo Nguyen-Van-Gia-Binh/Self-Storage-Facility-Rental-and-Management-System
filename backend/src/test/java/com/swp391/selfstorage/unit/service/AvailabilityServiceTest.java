@@ -218,7 +218,7 @@ class AvailabilityServiceTest {
     @Test
     @DisplayName("US-SC-01.3, BR-AVL-01: Đảm bảo availableSlots không bị âm khi nhu cầu trùng lặp vượt quá số kho khả dụng (clamp về 0)")
     void shouldClampAvailableSlotsToZero_whenDemandsExceedExploitableUnits() {
-        LocalDate startDate = LocalDate.of(2026, 11, 1);
+        LocalDate startDate = LocalDate.now().plusDays(1);
         int rentalMonths = 1;
 
         when(facilityRepository.findById(1L)).thenReturn(Optional.of(activeFacility));

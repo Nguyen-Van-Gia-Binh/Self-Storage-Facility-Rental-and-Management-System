@@ -155,11 +155,12 @@ class CustomerSupportServiceTest {
                 .build();
 
         SupportRequest existingLatest = new SupportRequest();
-        existingLatest.setCode("SUP-202610-0009");
+        String monthPrefix = "SUP-" + OffsetDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMM")) + "-";
+        existingLatest.setCode(monthPrefix + "0009");
 
         when(supportRequestRepository.findFirstByCodeStartingWithOrderByCodeDesc(anyString()))
                 .thenReturn(Optional.of(existingLatest));
-        when(supportRequestRepository.existsByCode("SUP-202610-0010")).thenReturn(false);
+        when(supportRequestRepository.existsByCode(monthPrefix + "0010")).thenReturn(false);
         when(supportRequestRepository.save(any(SupportRequest.class))).thenAnswer(invocation -> {
             SupportRequest saved = invocation.getArgument(0);
             saved.setId(809L);
@@ -170,7 +171,7 @@ class CustomerSupportServiceTest {
 
         assertNotNull(response);
         assertEquals(809L, response.getId());
-        assertEquals("SUP-202610-0010", response.getCode());
+        assertEquals(monthPrefix + "0010", response.getCode());
     }
 
     @Test
