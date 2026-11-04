@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -201,6 +202,31 @@ class PaymentServiceTest {
         assertEquals("PENDING", savedTxn.getStatus());
         assertEquals("SANDBOX_VIETQR", savedTxn.getPaymentMethod());
         assertEquals(resp.getOrderCode(), savedTxn.getOrderCode());
+    }
+
+    @Test
+    void createCheckoutLink_ConfirmedReservation_Rejected() {
+        mockReservation.setStatus(ReservationStatus.CONFIRMED);
+        when(reservationRepository.findById(100L)).thenReturn(Optional.of(mockReservation));
+        CheckoutRequest req = CheckoutRequest.builder().referenceType("RESERVATION").referenceId(100L).build();
+
+        CustomException ex = assertThrows(CustomException.class, () -> paymentService.createCheckoutLink(req));
+
+        assertEquals(ErrorCode.INVALID_STATUS_TRANSITION, ex.getErrorCode());
+        verify(paymentTransactionRepository, never()).save(any());
+    }
+
+    @Test
+    void createCheckoutLink_ExistingSuccessPayment_Rejected() {
+        when(reservationRepository.findById(100L)).thenReturn(Optional.of(mockReservation));
+        PaymentTransaction paid = PaymentTransaction.builder()
+                .reservationId(100L).transactionType("INITIAL_PAYMENT").status("SUCCESS").amount(3_200_000L).build();
+        when(paymentTransactionRepository.findByReservationId(100L)).thenReturn(List.of(paid));
+        CheckoutRequest req = CheckoutRequest.builder().referenceType("RESERVATION").referenceId(100L).build();
+
+        CustomException ex = assertThrows(CustomException.class, () -> paymentService.createCheckoutLink(req));
+
+        assertEquals(ErrorCode.INVALID_STATUS_TRANSITION, ex.getErrorCode());
     }
 
     @Test

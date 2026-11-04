@@ -110,10 +110,15 @@ public class PaymentServiceImpl implements PaymentService {
             if (reservation.getStatus() == ReservationStatus.FULFILLED) {
                 throw new CustomException(ErrorCode.RESERVATION_ALREADY_FULFILLED);
             }
-            if (reservation.getStatus() != ReservationStatus.PENDING_PAYMENT
-                    && reservation.getStatus() != ReservationStatus.CONFIRMED) {
+            if (reservation.getStatus() != ReservationStatus.PENDING_PAYMENT) {
                 throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION,
                         "Đơn đặt chỗ không ở trạng thái chờ thanh toán");
+            }
+            boolean alreadyPaid = paymentTransactionRepository.findByReservationId(reservation.getId()).stream()
+                    .anyMatch(t -> "SUCCESS".equalsIgnoreCase(t.getStatus())
+                            && "INITIAL_PAYMENT".equalsIgnoreCase(t.getTransactionType()));
+            if (alreadyPaid) {
+                throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION, "Đơn đặt chỗ đã thanh toán");
             }
             rejectIfHoldElapsed(reservation);
 
@@ -452,10 +457,15 @@ public class PaymentServiceImpl implements PaymentService {
         if (reservation.getStatus() == ReservationStatus.FULFILLED) {
             throw new CustomException(ErrorCode.RESERVATION_ALREADY_FULFILLED);
         }
-        if (reservation.getStatus() != ReservationStatus.PENDING_PAYMENT
-                && reservation.getStatus() != ReservationStatus.CONFIRMED) {
+        if (reservation.getStatus() != ReservationStatus.PENDING_PAYMENT) {
             throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION,
                     "Đơn đặt chỗ không ở trạng thái chờ thanh toán");
+        }
+        boolean alreadyPaid = paymentTransactionRepository.findByReservationId(reservation.getId()).stream()
+                .anyMatch(t -> "SUCCESS".equalsIgnoreCase(t.getStatus())
+                        && "INITIAL_PAYMENT".equalsIgnoreCase(t.getTransactionType()));
+        if (alreadyPaid) {
+            throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION, "Đơn đặt chỗ đã thanh toán");
         }
 
         // 3. Kiểm tra thời gian giữ chỗ theo BR-DEP-03
