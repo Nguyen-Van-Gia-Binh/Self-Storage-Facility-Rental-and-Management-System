@@ -1,12 +1,15 @@
 package com.swp391.selfstorage.payment.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.jupiter.api.DisplayName;
@@ -19,9 +22,12 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.swp391.selfstorage.common.exception.CustomException;
+import com.swp391.selfstorage.common.exception.ErrorCode;
 import com.swp391.selfstorage.payment.dto.CheckoutRequest;
 import com.swp391.selfstorage.payment.dto.CheckoutResponse;
 import com.swp391.selfstorage.payment.dto.PaymentResponse;
+import com.swp391.selfstorage.payment.gateway.VnPayGateway;
 import com.swp391.selfstorage.payment.service.PaymentService;
 
 @WebMvcTest(PaymentController.class)
@@ -36,6 +42,9 @@ class PaymentControllerTest {
 
     @MockBean
     private PaymentService paymentService;
+
+    @MockBean
+    private VnPayGateway vnPayGateway;
 
     @Test
     @DisplayName("POST /payments/checkout - Tạo link thanh toán PayOS VietQR thành công (201 Created)")
@@ -150,5 +159,33 @@ class PaymentControllerTest {
                 .andExpect(jsonPath("$.id").value(10L))
                 .andExpect(jsonPath("$.orderCode").value(123456789L))
                 .andExpect(jsonPath("$.status").value("SUCCESS"));
+    }
+
+    @Test
+    void vnpayReturn_WhenConfirmThrows_RedirectsFailed() throws Exception {
+        when(vnPayGateway.verify(any())).thenReturn(true);
+        when(vnPayGateway.frontendReturnUrl()).thenReturn("http://localhost:5173/payment/checkout");
+        when(paymentService.completeVnpayPayment(eq(1L), eq(true), eq(100L), any(), any()))
+                .thenThrow(new CustomException(ErrorCode.RESERVATION_EXPIRED));
+
+        mockMvc.perform(get("/payments/vnpay/return")
+                        .param("vnp_TxnRef", "1")
+                        .param("vnp_Amount", "100")
+                        .param("vnp_ResponseCode", "00")
+                        .param("vnp_TransactionStatus", "00"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("http://localhost:5173/payment/checkout?result=failed&orderCode=1"));
+    }
+
+    @Test
+    void vnpayPay_WhenAlreadySuccess_RedirectsOk() throws Exception {
+        when(paymentService.getPaymentByOrderCode(1L))
+                .thenReturn(PaymentResponse.builder().status("SUCCESS").amount(100L).build());
+        when(vnPayGateway.frontendReturnUrl()).thenReturn("http://localhost:5173/payment/checkout");
+
+        mockMvc.perform(get("/payments/vnpay/pay/1").param("bankCode", "VNBANK"))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("http://localhost:5173/payment/checkout?result=ok&orderCode=1"));
+        verify(vnPayGateway, never()).buildPayUrl(anyLong(), anyLong(), any(), any(), any());
     }
 }

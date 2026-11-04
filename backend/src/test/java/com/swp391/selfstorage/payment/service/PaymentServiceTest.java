@@ -276,7 +276,7 @@ class PaymentServiceTest {
     }
 
     @Test
-    @DisplayName("processSandboxTransfer: Khách bấm Hủy giao dịch -> Chuyển FAILED")
+    @DisplayName("processSandboxTransfer: Khách bấm Hủy thì giữ PENDING")
     void processSandboxTransfer_Cancel() {
         PaymentTransaction pendingTxn = PaymentTransaction.builder()
                 .id(50L)
@@ -288,13 +288,13 @@ class PaymentServiceTest {
                 .build();
 
         when(paymentTransactionRepository.findByOrderCode(123456789L)).thenReturn(Optional.of(pendingTxn));
-        when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(i -> i.getArgument(0));
 
         PaymentResponse response = paymentService.processSandboxTransfer(123456789L, "CANCEL");
 
         assertNotNull(response);
-        assertEquals("FAILED", response.getStatus());
-        assertEquals("FAILED", pendingTxn.getStatus());
+        assertEquals("PENDING", response.getStatus());
+        assertEquals("PENDING", pendingTxn.getStatus());
+        verify(paymentTransactionRepository, never()).save(any());
         verify(reservationService, never()).confirmAfterPayment(any());
         verify(eventPublisher, never()).publishEvent(any());
     }

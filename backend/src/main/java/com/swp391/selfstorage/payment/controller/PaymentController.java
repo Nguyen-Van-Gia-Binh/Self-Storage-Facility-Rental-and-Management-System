@@ -1,5 +1,10 @@
 package com.swp391.selfstorage.payment.controller;
 
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -12,27 +17,37 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.swp391.selfstorage.common.dto.PageResponse;
+import com.swp391.selfstorage.common.exception.CustomException;
+import com.swp391.selfstorage.common.exception.ErrorCode;
 import com.swp391.selfstorage.payment.dto.CreatePaymentRequest;
 import com.swp391.selfstorage.payment.dto.PaymentFilterRequest;
 import com.swp391.selfstorage.payment.dto.PaymentResponse;
+import com.swp391.selfstorage.payment.gateway.VnPayGateway;
 import com.swp391.selfstorage.payment.service.PaymentService;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestController
 @RequestMapping("/payments")
 @Tag(name = "Payment", description = "Quản lý thanh toán trực tuyến VietQR/PayOS (SC-03)")
 public class PaymentController {
 
     private final PaymentService paymentService;
+    private final VnPayGateway vnPayGateway;
 
-    public PaymentController(PaymentService paymentService) {
+    public PaymentController(PaymentService paymentService, VnPayGateway vnPayGateway) {
         this.paymentService = paymentService;
+        this.vnPayGateway = vnPayGateway;
     }
 
     @PostMapping
@@ -49,6 +64,85 @@ public class PaymentController {
     public ResponseEntity<com.swp391.selfstorage.payment.dto.CheckoutResponse> createCheckout(
             @Valid @RequestBody com.swp391.selfstorage.payment.dto.CheckoutRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(paymentService.createCheckoutLink(request));
+    }
+
+    @GetMapping("/vnpay/pay/{orderCode}")
+    @Operation(summary = "Chuyển tới VNPay sandbox (VNBANK hoặc INTCARD)")
+    public ResponseEntity<Void> vnpayPay(
+            @PathVariable Long orderCode,
+            @RequestParam String bankCode,
+            HttpServletRequest request) {
+        if (!"VNBANK".equals(bankCode) && !"INTCARD".equals(bankCode)) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED, "Chỉ hỗ trợ VNBANK hoặc INTCARD");
+        }
+        PaymentResponse current = paymentService.getPaymentByOrderCode(orderCode);
+        if ("SUCCESS".equalsIgnoreCase(current.getStatus())) {
+            return vnpayRedirect(String.valueOf(orderCode), true);
+        }
+        PaymentResponse pending = paymentService.requirePendingPayment(orderCode);
+        String url = vnPayGateway.buildPayUrl(
+                orderCode,
+                pending.getAmount(),
+                pending.getTransferContent(),
+                bankCode,
+                clientIp(request));
+        return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(url)).build();
+    }
+
+    // shortcut: IPN không tới localhost, xác nhận bằng return URL; bật IPN khi có URL public.
+    @GetMapping("/vnpay/return")
+    @Operation(summary = "VNPay redirect về sau thanh toán. Đối chữ ký trước khi ghi nhận.")
+    public ResponseEntity<Void> vnpayReturn(@RequestParam Map<String, String> params) {
+        String txnRef = params.get("vnp_TxnRef");
+        if (!vnPayGateway.verify(params)) {
+            return vnpayRedirect(txnRef, false);
+        }
+        Long orderCode;
+        Long vnpAmount;
+        try {
+            orderCode = Long.valueOf(txnRef);
+            String amount = params.get("vnp_Amount");
+            vnpAmount = amount == null ? null : Long.valueOf(amount);
+        } catch (NumberFormatException ex) {
+            return vnpayRedirect(txnRef, false);
+        }
+        boolean successCode = "00".equals(params.get("vnp_ResponseCode"))
+                && "00".equals(params.get("vnp_TransactionStatus"));
+        boolean ok;
+        try {
+            ok = paymentService.completeVnpayPayment(
+                    orderCode,
+                    successCode,
+                    vnpAmount,
+                    params.get("vnp_TransactionNo"),
+                    params.get("vnp_BankCode"));
+        } catch (RuntimeException ex) {
+            // shortcut: transaction rollback nên đơn vẫn PENDING; không hoàn tiền VNPay, cần IPN khi có URL public.
+            log.error("VNPay return không ghi được orderCode={}", orderCode, ex);
+            return vnpayRedirect(txnRef, false);
+        }
+        return vnpayRedirect(txnRef, ok);
+    }
+
+    private ResponseEntity<Void> vnpayRedirect(String orderCode, boolean ok) {
+        String base = vnPayGateway.frontendReturnUrl();
+        String query = "result=" + (ok ? "ok" : "failed");
+        if (orderCode != null && !orderCode.isBlank()) {
+            query += "&orderCode=" + URLEncoder.encode(orderCode, StandardCharsets.UTF_8);
+        }
+        String joiner = base.contains("?") ? "&" : "?";
+        return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(base + joiner + query)).build();
+    }
+
+    private static String clientIp(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        String ip = forwarded != null && !forwarded.isBlank()
+                ? forwarded.split(",")[0].trim()
+                : request.getRemoteAddr();
+        if (ip == null || ip.isBlank() || "::1".equals(ip) || "0:0:0:0:0:0:0:1".equals(ip)) {
+            return "127.0.0.1";
+        }
+        return ip;
     }
 
     @PostMapping("/sandbox/process-transfer")

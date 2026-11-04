@@ -276,8 +276,6 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         if ("CANCEL".equalsIgnoreCase(action)) {
-            payment.setStatus("FAILED");
-            payment = paymentTransactionRepository.save(payment);
             return paymentMapper.toResponse(payment);
         }
 
