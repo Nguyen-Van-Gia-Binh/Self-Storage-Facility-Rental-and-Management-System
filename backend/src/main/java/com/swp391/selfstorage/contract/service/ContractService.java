@@ -9,6 +9,7 @@ import java.util.List;
 
 public interface ContractService {
     ContractResponse createFromReservation(Long reservationId);
+    void ensureContractForPaidReservation(Long reservationId);
     ContractResponse getContractById(Long contractId, List<Long> facilityIds);
     CheckInResponse checkIn(Long contractId, CheckInRequest request, Long staffId, List<Long> facilityIds);
     HandoverRejectionResponse rejectHandover(Long contractId, HandoverRejectionRequest request,

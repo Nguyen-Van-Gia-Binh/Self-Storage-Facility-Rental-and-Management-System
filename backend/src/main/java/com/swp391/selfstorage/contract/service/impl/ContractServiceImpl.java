@@ -46,6 +46,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -157,6 +158,12 @@ public class ContractServiceImpl implements ContractService {
                                 .build();
 
                 return toResponse(contractRepository.save(contract));
+        }
+
+        @Override
+        @Transactional(propagation = Propagation.REQUIRES_NEW)
+        public void ensureContractForPaidReservation(Long reservationId) {
+                createFromReservation(reservationId);
         }
 
         @Override
