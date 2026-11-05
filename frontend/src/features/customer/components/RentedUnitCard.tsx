@@ -141,7 +141,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
         if (penaltyFee === 0 && !isGracePeriod) {
           return (
             <Badge variant="warning" className="bg-amber-50 text-amber-800 border-amber-300">
-              Đã trả phạt — Chờ dọn kho
+              Đã tất toán phạt — Chờ dọn kho / trả kho
             </Badge>
           );
         }
@@ -238,6 +238,11 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
             <p className="text-xs text-slate-500">
               {contract.facilityName}
             </p>
+            {contract.status === 'OVERDUE' && penaltyFee === 0 && !isGracePeriod && (
+              <p className="text-[11px] font-medium text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg mt-1 inline-block">
+                Bạn đã hoàn tất nộp phạt quá hạn: Vui lòng dọn kho hoặc gia hạn hợp đồng.
+              </p>
+            )}
           </div>
         </div>
 
@@ -328,14 +333,14 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
           )}
 
           {/* SCHEDULE RETURN / CANCEL RETURN */}
-          {contract.status === 'PENDING_RETURN' ? (
+          {contract.status === 'PENDING_RETURN' && !contract.inspectionDone ? (
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowCancelReturnModal(true)}
               className="text-xs font-semibold text-rose-700 border-rose-200 hover:bg-rose-50 cursor-pointer"
             >
-              Hủy hẹn trả kho
+              Hủy yêu cầu trả kho
             </Button>
           ) : (
             onScheduleReturn &&
@@ -372,17 +377,25 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
           {(contract.status === 'ACTIVE' ||
             contract.status === 'EXPIRING_SOON' ||
             (contract.status === 'OVERDUE' && penaltyFee === 0)) && (
-            <Link to={`/customer/renew/${contract.id}`}>
+            <Link
+              to={
+                contract.hasPendingRenewal && contract.pendingRenewalOrderCode
+                  ? `/customer/renew/${contract.id}?orderCode=${contract.pendingRenewalOrderCode}&step=3`
+                  : `/customer/renew/${contract.id}`
+              }
+            >
               <Button
-                variant={contract.status === 'EXPIRING_SOON' || isExpiringSoon ? 'primary' : 'outline'}
+                variant={contract.status === 'EXPIRING_SOON' || isExpiringSoon || contract.hasPendingRenewal ? 'primary' : 'outline'}
                 size="sm"
                 className={`text-xs font-bold shadow-xs cursor-pointer ${
-                  contract.status === 'EXPIRING_SOON' || isExpiringSoon
+                  contract.hasPendingRenewal
+                    ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                    : contract.status === 'EXPIRING_SOON' || isExpiringSoon
                     ? 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white'
                     : 'text-brand-700 border-brand-200 hover:bg-brand-50'
                 }`}
               >
-                Gia hạn
+                {contract.hasPendingRenewal ? 'Tiếp tục thanh toán' : 'Gia hạn'}
               </Button>
             </Link>
           )}
@@ -478,7 +491,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
             <strong className="text-slate-900">{contract.unitNumber}</strong>?
           </p>
           <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl text-xs text-amber-900">
-            Sau khi hủy, hợp đồng sẽ tiếp tục được duy trì hoạt động bình thường. Bạn vẫn có thể tiếp tục sử dụng mã PIN để mở khóa ô kho.
+            Lịch hẹn nghiệm thu bàn giao ô kho sẽ được bãi bỏ. Hợp đồng sẽ tiếp tục được duy trì hoạt động bình thường. Bạn vẫn có thể tiếp tục sử dụng mã PIN để mở khóa ô kho.
           </div>
 
           {cancelReturnError && (
@@ -494,7 +507,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
               onClick={() => setShowCancelReturnModal(false)}
               disabled={isCancellingReturn}
             >
-              Đóng
+              Quay lại (Giữ lịch trả)
             </Button>
             <Button
               variant="primary"
@@ -503,7 +516,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
               disabled={isCancellingReturn}
               className="bg-rose-600 hover:bg-rose-700 text-white"
             >
-              {isCancellingReturn ? 'Đang hủy...' : 'Xác nhận hủy yêu cầu'}
+              {isCancellingReturn ? 'Đang hủy...' : 'Xác nhận hủy trả kho'}
             </Button>
           </div>
         </div>

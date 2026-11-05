@@ -76,7 +76,7 @@ describe('RenewalPendingTracking', () => {
 
   it('rendersDefaultRenewalButtonWhenNoPendingRenewal', () => {
     renderComponent(defaultContract);
-    const elements = screen.getAllByText('Gia hạn hợp đồng trực tuyến');
+    const elements = screen.getAllByRole('button', { name: /^Gia hạn$/i });
     expect(elements.length).toBeGreaterThan(0);
     expect(screen.queryByText('Tiếp tục thanh toán')).not.toBeInTheDocument();
     expect(screen.queryByText('Chờ thanh toán gia hạn')).not.toBeInTheDocument();
