@@ -260,7 +260,8 @@ Quy trình hỗ trợ linh hoạt 2 nhánh nhận kho theo chuẩn Contactless S
        │
        ├─► 4. Quản lý xem trước quyết toán cọc (Settlement Preview)
        │      API: GET /api/v1/contracts/{id}/settlement-preview
-       │      Công thức: Hoàn cọc = Tiền cọc ban đầu - Phí hư hại (0đ) - Phí dọn dẹp (0đ) - Nợ phạt (0đ) = 100% cọc [BR-RET-04]
+       │      Công thức đúng hạn: Hoàn tiền = Tiền cọc ban đầu - Phí hư hại (0đ) - Phí dọn dẹp (0đ) - Nợ phạt (0đ) = 100% cọc [BR-RET-04]
+       │      Công thức trả sớm: Hoàn tiền = Tiền thuê chưa dùng (100%) + Cọc - Phạt trả sớm (100% cọc) - Hư hại - Phụ phí = Tiền thuê chưa dùng - Hư hại [BR-RET-06]
        │
        ├─► 5. Quản lý phê duyệt hoàn cọc (Approve Settlement)
        │      API: POST /api/v1/contracts/{id}/approve-settlement
@@ -280,6 +281,7 @@ Quy trình hỗ trợ linh hoạt 2 nhánh nhận kho theo chuẩn Contactless S
 | **UNH-RET-02** | **Quyết toán âm (Khấu trừ vượt tiền cọc - Negative Settlement)** | Khách hàng làm hư hại vách ngăn nặng, xả rác bẩn: Chi phí đền bù (DAMAGE) + dọn dẹp (CLEANING) > Tiền cọc ban đầu. | `settlementPreview` trả về số âm (`refundAmount < 0`). Quản lý phê duyệt sẽ sinh khoản thu bổ sung `SETTLEMENT_DEFICIT`. Contract chuyển `PENDING_SETTLEMENT_PAYMENT`. Chỉ chuyển `CLOSED` sau khi khách trả đủ tiền bù. | Quản lý xem bảng cân đối màu đỏ cảnh báo âm tiền. Khách hàng nhận hóa đơn quét mã VietQR thanh toán bù phần chênh lệch. | `BR-RET-04` |
 | **UNH-RET-03** | **Khách đổi ý muốn tiếp tục thuê (Hủy báo trả kho)** | Khách đã bấm báo trả kho nhưng sau đó muốn tiếp tục sử dụng kho (nhân viên chưa bấm bắt đầu nghiệm thu). | Khách gọi `POST /api/v1/customer/contracts/{id}/cancel-return`. Backend kiểm tra nếu chưa nghiệm thu thì chuyển `Contract.status ──► ACTIVE`, xóa task nghiệm thu của nhân viên. | Khách bấm nút "Hủy yêu cầu trả kho" trên `MyUnitsPage.tsx`. Thẻ hợp đồng trở về trạng thái hoạt động bình thường. | `BR-RET-12` |
 | **UNH-RET-04** | **Khách hàng bỏ rơi đồ đạc / Không đến bàn giao trả kho** | Hợp đồng hết hạn, khách không liên lạc được hoặc không dọn dẹp đồ đạc ra khỏi kho. | Quản lý và nhân viên lập biên bản hiện trường đơn phương, chụp ảnh niêm phong đồ, chuyển kho sang `MAINTENANCE` để xử lý tài sản vô chủ, tịch thu 100% tiền cọc. | Manager xem danh sách kho cần xử lý cưỡng chế trên `ContractDashboardPage.tsx`. | `BR-OVD-11` |
+| **UNH-RET-05** | **Khấu trừ Hư hỏng & Phạt Cọc khi Trả kho Sớm (Early Return Settlement)** | Khách hàng báo trả kho trước hạn, có phát sinh hư hại cơ khí hoặc xả rác bẩn tại hiện trường. | Backend tính toán: Hoàn 100% tiền thuê phần chưa dùng (`return.early_refund_rate = 100%`), phạt 100% tiền cọc Deposit (`return.early_penalty_rate = 100%`), trừ chi phí `DAMAGE`/`CLEANING` do Staff lập biên bản. Nếu kết quả âm $\rightarrow$ sinh khoản thu `SETTLEMENT_DEFICIT`. | Frontend hiển thị bảng quyết toán chi tiết: số tiền thuê thừa được hoàn, tiền cọc bị trừ làm phí vi phạm cam kết, và khoản thực nhận sau khi trừ chi phí hư hại. | `BR-RET-06`<br>`BR-RET-04` |
 
 ---
 

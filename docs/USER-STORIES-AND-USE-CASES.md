@@ -207,8 +207,8 @@ Bảng thuộc tính đi kèm mỗi story:
 - **AC-4** — *Given* tôi đổi số tháng thuê, *when* giá trị thay đổi, *then* bảng chi phí được tính
   lại ngay mà không phải tải lại trang.
 - **AC-5** — *Given* tôi đang ở màn hình xác nhận, *when* tôi đọc điều khoản, *then* hệ thống hiển
-  thị rõ quy tắc hoàn tiền khi hủy (`BR-CAN-01`, `BR-CAN-02`) và quy tắc **không hoàn tiền khi trả
-  sớm** (`BR-RET-06`), và tôi phải tích xác nhận đã đọc mới đặt được.
+  thị rõ quy tắc hoàn tiền khi hủy (`BR-CAN-01`, `BR-CAN-02`) và quy tắc **trả kho sớm
+  sớm (hoàn 100% tiền thuê chưa dùng, phạt 100% tiền cọc Deposit và trừ hư hại)** (`BR-RET-06`), và tôi phải tích xác nhận đã đọc mới đặt được.
 - **AC-6** — *Given* bảng giá bị Business Operations Manager thay đổi trong lúc tôi còn đang ở màn
   hình xác nhận, *when* tôi bấm đặt chỗ, *then* hệ thống **từ chối** tạo Reservation theo mức giá cũ,
   hiển thị bảng chi phí đã cập nhật kèm cảnh báo giá vừa thay đổi, và yêu cầu tôi xác nhận lại — tôi
@@ -545,7 +545,7 @@ Bảng thuộc tính đi kèm mỗi story:
   hệ thống cảnh báo Contract sẽ vào *Overdue* theo `BR-RET-10`.
 - **AC-2** — *Given* tôi chọn ngày trả hợp lệ hoặc bấm "Báo trả kho" sau khi dọn xong đồ, *when* tôi xác nhận, *then* hợp đồng chuyển *Pending Return* và yêu cầu được gửi đến Facility Manager để điều phối Facility Staff xuống trực tiếp nghiệm thu ô kho theo `FS-04`. Nếu ngày hẹn sau ngày kết thúc, Contract vẫn chuyển *Overdue* từ D+1 theo `BR-RET-10` dù đang *Pending Return*.
 - **AC-3** — *Given* tôi đăng ký trả kho **sớm** hơn ngày kết thúc hợp đồng, *when* màn hình xác nhận
-  hiển thị, *then* hệ thống nêu rõ phần phí thuê chưa dùng **không được hoàn** theo `BR-RET-06`, và
+  hiển thị, *then* hệ thống nêu rõ phần phí thuê chưa dùng **được hoàn 100% nhưng tiền cọc Deposit bị phạt 100% làm phí vi phạm hợp đồng kèm khấu trừ hư hại hiện trường** theo `BR-RET-06`, và
   tôi phải xác nhận đã đọc.
 - **AC-4** — *Given* tôi đã đăng ký trả kho, *when* tôi xem hợp đồng, *then* tôi thấy số tiền Deposit
   dự kiến được hoàn, kèm ghi chú rằng con số cuối phụ thuộc kết quả kiểm tra hiện trạng theo
@@ -1243,8 +1243,8 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 - **AC-2** — *Given* tôi ban hành phiên bản mới, *when* khách đăng ký Return trên Contract kế thừa
   từ Reservation tạo **sau** thời điểm ban hành, *then* hệ thống áp `BR-RET-01`, `BR-RET-05` và
   `BR-RET-06` của phiên bản đó.
-- **AC-3** — *Given* `return.early_refund_rate` đang là `0%`, *when* phiên bản được ban hành, *then*
-  màn hình đặt chỗ của Storage Customer phải hiển thị quy tắc không hoàn phần thuê chưa dùng, đúng
+- **AC-3** — *Given* `return.early_refund_rate` đang là `100%`, *when* phiên bản được ban hành, *then*
+  màn hình đặt chỗ và chi tiết hợp đồng của Storage Customer hiển thị quy tắc hoàn tiền thuê phần chưa dùng, phạt 100% cọc Deposit và trừ hư hại theo
   `BR-RET-06`.
 - **AC-4** — *Given* tôi nhập `return.notice_days` hoặc `return.refund_working_days` không phải số
   nguyên không âm, hoặc tỷ lệ hoàn ngoài đoạn 0–100%, *when* tôi lưu, *then* hệ thống từ chối.

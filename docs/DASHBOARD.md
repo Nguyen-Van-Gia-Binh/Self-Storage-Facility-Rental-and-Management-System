@@ -137,6 +137,7 @@
 | `ISS-127` | Lỗi UNIT_NOT_AVAILABLE tại Bước 2 Booking hiển thị banner text không dấu thô sơ thay vì bật Modal cảnh báo ô kho không khả dụng. | Bổ sung trigger mở unavailableModal trong catch handler của BookingPage.tsx kèm nút điều hướng quay lại sơ đồ chọn ô kho. | Xuân Nhi | `RESOLVED` |
 | `ISS-128` | Khách vẫn chọn ô vật lý; đặc tả mới để FM gán ô trước Check-in. | Đã sửa tài liệu trên `docs/fm-unit-allocation`. Code, migration nullable và màn FM làm sau khi tài liệu được duyệt. | Tùng / Nhật | `OPEN` |
 | `ISS-129` | Chính sách No-show cũ tự hủy hợp đồng làm thất thoát doanh thu; thiếu Check-in Online & IoT Telemetry. | Chuẩn hóa tài liệu: Check-in Online (Digital Move-In) tích hợp dữ liệu viễn trắc IoT (Nhiệt/Ẩm/Khóa/CCTV), Auto-Activation tại T+10 bảo toàn 100% doanh thu. | Bình | `RESOLVED` (Docs) |
+| `ISS-130` | Trả kho sớm giữ 100% tiền thuê bị xem là điều khoản bất công; thiếu cơ chế trừ phạt cọc và hư hỏng. | Chuẩn hóa BR-RET-06: Hoàn 100% tiền thuê chưa dùng, phạt 100% cọc Deposit vi phạm cam kết, khấu trừ hư hỏng hiện trường. | Bình | `RESOLVED` (Docs) |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 

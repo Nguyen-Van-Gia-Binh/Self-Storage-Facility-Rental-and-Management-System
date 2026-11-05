@@ -187,7 +187,7 @@
 
 # 3. FLOW 3: Rented Storage Unit Management Flow (Quản lý kho đang thuê & Trả kho)
 
-> **Mô tả danh nghĩa:** Khách sử dụng kho bằng mã PIN/QR, gửi yêu cầu trả kho trước tối thiểu 30 ngày (`BR-RET-01`), trả sớm không hoàn tiền thuê thừa (`BR-RET-06`), nhân viên nghiệm thu hiện trạng sạch sẽ không hư hại (`BR-RET-03`), FM quyết toán cọc trừ hư hại/nợ (`BR-RET-04`), hoàn cọc sau 7 ngày làm việc (`BR-RET-05`).
+> **Mô tả danh nghĩa:** Khách sử dụng kho bằng mã PIN/QR, gửi yêu cầu trả kho trước tối thiểu 30 ngày (`BR-RET-01`), trả sớm hoàn 100% tiền thuê thừa sau khi phạt cọc Deposit và trừ hư hại (`BR-RET-06`), nhân viên nghiệm thu hiện trạng sạch sẽ không hư hại (`BR-RET-03`), FM quyết toán hoàn tiền trừ hư hại/nợ (`BR-RET-04`), hoàn tiền sau 7 ngày làm việc (`BR-RET-05`).
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -242,7 +242,12 @@
 
 #### ❓ Câu hỏi 1:
 > *"Quy tắc BR-RET-06 nêu rõ: Khách hàng trả kho trước hạn sẽ KHÔNG ĐƯỢC HOÀN LẠI TIỀN THUÊ cho khoảng thời gian chưa sử dụng (Hoàn 0%). Nếu khách hàng thuê 12 tháng, trả trước 24 triệu, mới ở được 1 tháng có việc đột xuất phải trả kho, công ty nuốt trọn 11 tháng tiền thuê (22 triệu) của họ. Dưới góc độ Luật Bảo vệ Quyền lợi Người tiêu dùng và tính công bằng thương mại, điều khoản này có bị Tòa án tuyên là 'Điều khoản vô hiệu do áp đặt bất lợi quá mức cho người tiêu dùng' hay không? Hệ thống các bạn có cơ chế ngoại lệ nào để Manager duyệt hoàn tiền nhân đạo không?"*
-* **Mục đích sâu xa của giảng viên:** Thử thách khả năng nhìn nhận rủi ro pháp lý và sự linh hoạt của hệ thống. Một phần mềm doanh nghiệp tốt không bao giờ "đóng cứng" một chính sách tàn nhẫn mà luôn phải có cơ chế Phê duyệt Ngoại lệ (Exception Approval Flow) có phân quyền kiểm soát.
+* **Mục đích sâu xa của giảng viên:** Thử thách khả năng nhìn nhận rủi ro pháp lý và sự linh hoạt của hệ thống. Một phần mềm doanh nghiệp tốt không bao giờ "đóng cứng" một chính sách tàn nhẫn mà luôn phải bảo đảm tính công bằng thương mại và tuân thủ Luật Bảo vệ Quyền lợi Người tiêu dùng.
+* **Câu trả lời mẫu xuất sắc đạt điểm tuyệt đối trước Hội đồng:**
+  *"Dạ thưa Thầy, nhóm em đã nhận thức rất rõ rủi ro pháp lý theo Điều 25 Luật Bảo vệ Quyền lợi Người tiêu dùng. Do đó, nhóm đã hoàn thiện quy tắc `BR-RET-06` theo mô hình **Công bằng Thương mại (Win-Win Settlement)**:
+  1. **Bảo vệ quyền lợi khách hàng:** Hệ thống **hoàn trả 100% tiền thuê của các tháng/ngày chưa sử dụng** (`return.early_refund_rate = 100%`), tuyệt đối không giữ trắng tiền dịch vụ chưa cung ứng.
+  2. **Bảo vệ lợi ích doanh nghiệp:** Khách hàng đơn phương chấm dứt hợp đồng sớm sẽ bị **phạt 100% tiền cọc Deposit** (tương đương 1 tháng tiền thuê). Đây là khoản bồi thường thiệt hại ấn định trước (Liquidated Damages) hoàn toàn hợp pháp nhằm bù đắp rủi ro phòng trống và chi phí vệ sinh/tìm khách thuê mới.
+  3. **Bảo toàn tài sản cơ sở:** Nếu Staff nghiệm thu phát hiện hư hỏng (cửa, khóa, vách) hoặc xả rác bẩn do lỗi khách hàng, chi phí sửa chữa theo danh mục niêm yết của BOM sẽ được khấu trừ trực tiếp vào số tiền thuê hoàn lại trước khi chuyển tiền."*
 
 #### ❓ Câu hỏi 2:
 > *"Quy trình hoàn tiền cọc mất 7 ngày làm việc (BR-RET-05). Trong 7 ngày đó, tiền của khách nằm ở đâu? Trên hệ thống phần mềm, ai là người bấm nút chuyển tiền? Hệ thống tự động gọi API Ngân hàng/Cổng thanh toán để chuyển tiền hay kế toán phải ra ngân hàng nộp ủy nhiệm chi thủ công? Giải thích luồng đối soát giữa Kế toán và Phần mềm?"*

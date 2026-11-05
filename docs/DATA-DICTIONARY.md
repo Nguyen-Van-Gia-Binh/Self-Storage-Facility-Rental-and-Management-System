@@ -195,7 +195,7 @@ Chính sách vận hành có phiên bản đầy đủ tại từng thời đi�
 | `overdue_termination_days` | `INT` | Có | | Mốc ngày đơn phương chấm dứt hợp đồng (`D+10` - `BR-OVD-05`) |
 | `return_notice_days` | `INT` | Có | | Số ngày báo trước khi trả kho (`3` ngày - `BR-RET-01`) |
 | `return_refund_working_days` | `INT` | Có | | Số ngày làm việc hoàn tiền cọc (`3` ngày - `BR-RET-05`) |
-| `return_early_refund_rate` | `DECIMAL(5,2)` | Có | | Tỷ lệ hoàn tiền khi trả kho trước hạn (`0.00` = 0% - `BR-RET-06`) |
+| `return_early_refund_rate` | `DECIMAL(5,2)` | Có | | Tỷ lệ hoàn tiền thuê khi trả kho trước hạn (`1.00` = 100% - `BR-RET-06`, sau khi trừ phạt cọc và hư hỏng) |
 | `access_pin_length` | `INT` | Có | `DEFAULT 6` | Độ dài mã PIN bảo mật (`BR-ACC-01`) |
 | `support_urgent_sla_hours` | `INT` | Có | | Cam kết SLA xử lý sự cố khẩn (`4` giờ - `BR-SUP-01`) |
 | `support_auto_close_working_days` | `INT` | Có | | Ngày tự động đóng yêu cầu hỗ trợ (`3` ngày - `BR-SUP-03`) |
