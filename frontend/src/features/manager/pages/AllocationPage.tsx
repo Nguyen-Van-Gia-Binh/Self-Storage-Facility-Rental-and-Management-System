@@ -392,14 +392,30 @@ export const AllocationPage: React.FC = () => {
             {/* Modal Body */}
             <div className="p-6 space-y-4 text-sm">
               {/* Summary banner */}
-              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between">
-                <div>
-                  <div className="text-xs text-slate-500">Đơn đặt / Hạng kho</div>
-                  <div className="font-bold text-slate-900">{selected.code} • {selected.unitTypeName}</div>
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/90 grid grid-cols-1 sm:grid-cols-2 gap-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
+                <div className="pr-0 sm:pr-3">
+                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-1">
+                    Đơn đặt / Hạng kho
+                  </span>
+                  <div className="font-mono font-bold text-slate-900 text-sm">
+                    {selected.code}
+                  </div>
+                  <div className="text-xs text-slate-600 font-medium mt-0.5 line-clamp-1" title={selected.unitTypeName}>
+                    {selected.unitTypeName}
+                  </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-xs text-slate-500">Ô kho được chọn</div>
-                  <div className="font-mono font-bold text-teal-700 text-base">{modalUnit.code} (Tầng {modalUnit.floor})</div>
+                <div className="pt-2.5 sm:pt-0 sm:pl-4">
+                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-1">
+                    Ô kho được chọn
+                  </span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-mono font-black text-teal-700 text-lg">
+                      {modalUnit.code}
+                    </span>
+                    <span className="text-xs font-semibold text-slate-500 bg-slate-200/70 px-2 py-0.5 rounded-md">
+                      Tầng {modalUnit.floor}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -481,7 +497,7 @@ export const AllocationPage: React.FC = () => {
                   >
                     {staffMembers.map((staff) => (
                       <option key={staff.staffId} value={staff.staffId}>
-                        {staff.staffName} ({staff.activeTaskCount} việc đang xử lý)
+                        {staff.staffName}
                       </option>
                     ))}
                   </select>
