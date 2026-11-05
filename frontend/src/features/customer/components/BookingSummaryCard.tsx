@@ -46,7 +46,7 @@ export const BookingSummaryCard: React.FC<BookingSummaryCardProps> = ({
           Chi tiết đặt kho
         </h3>
         <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-md border bg-emerald-50 text-emerald-800 border-emerald-200/60">
-          Đã chọn ô
+          Đã chọn hạng
         </span>
       </div>
 
@@ -60,12 +60,10 @@ export const BookingSummaryCard: React.FC<BookingSummaryCardProps> = ({
         </div>
 
         <div className="flex justify-between items-center gap-2">
-          <span className="shrink-0 text-slate-500 font-medium">Mã ô kho:</span>
-          <div className="flex items-center gap-1.5 font-bold text-slate-900">
-            <span className="font-mono text-xs px-2 py-0.5 rounded-md border font-black text-brand-800 bg-brand-50 border-brand-300">
-              {finalUnitNumber}
-            </span>
-          </div>
+          <span className="shrink-0 text-slate-500 font-medium">Hạng kho:</span>
+          <span className="text-slate-900 text-right font-bold truncate max-w-[190px]">
+            {finalUnitNumber}
+          </span>
         </div>
 
         <div className="flex justify-between items-center gap-2">

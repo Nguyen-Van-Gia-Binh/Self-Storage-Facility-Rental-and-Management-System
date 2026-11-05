@@ -7,6 +7,7 @@ import com.swp391.selfstorage.common.exception.ErrorCode;
 import com.swp391.selfstorage.contract.entity.ContractStatus;
 import com.swp391.selfstorage.contract.entity.RentalContract;
 import com.swp391.selfstorage.contract.repository.RentalContractRepository;
+import com.swp391.selfstorage.contract.service.ContractService;
 import com.swp391.selfstorage.contract.repository.ReturnRequestRepository;
 import com.swp391.selfstorage.facility.entity.Facility;
 import com.swp391.selfstorage.facility.repository.FacilityRepository;
@@ -25,6 +26,7 @@ import com.swp391.selfstorage.policy.entity.PolicyVersion;
 import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
 import com.swp391.selfstorage.policy.service.PolicyNumbers;
 import com.swp391.selfstorage.reservation.entity.Reservation;
+import com.swp391.selfstorage.reservation.entity.ReservationStatus;
 import com.swp391.selfstorage.reservation.repository.ReservationRepository;
 import com.swp391.selfstorage.unit.entity.StorageUnit;
 import com.swp391.selfstorage.unit.entity.UnitType;
@@ -35,6 +37,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -48,6 +52,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 @Transactional(readOnly = true)
 public class CustomerRentalServiceImpl implements CustomerRentalService {
 
@@ -63,6 +68,7 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
     private final UserRepository userRepository;
     private final HandoverRecordRepository handoverRecordRepository;
     private final SupportRequestRepository supportRequestRepository;
+    private final ContractService contractService;
 
     public CustomerRentalServiceImpl(
             RentalContractRepository rentalContractRepository,
@@ -76,7 +82,8 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
             @org.springframework.beans.factory.annotation.Autowired(required = false) PolicyVersionRepository policyVersionRepository,
             @org.springframework.beans.factory.annotation.Autowired(required = false) UserRepository userRepository,
             @org.springframework.beans.factory.annotation.Autowired(required = false) HandoverRecordRepository handoverRecordRepository,
-            @org.springframework.beans.factory.annotation.Autowired(required = false) SupportRequestRepository supportRequestRepository
+            @org.springframework.beans.factory.annotation.Autowired(required = false) SupportRequestRepository supportRequestRepository,
+            ContractService contractService
     ) {
         this.rentalContractRepository = rentalContractRepository;
         this.reservationRepository = reservationRepository;
@@ -90,6 +97,7 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
         this.userRepository = userRepository;
         this.handoverRecordRepository = handoverRecordRepository;
         this.supportRequestRepository = supportRequestRepository;
+        this.contractService = contractService;
     }
 
     private int activeHoldHours() {
@@ -115,6 +123,19 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
         }
 
         Long customerId = currentUser.getId();
+        for (Reservation reservation : reservationRepository.findByCustomerIdOrderByCreatedAtDesc(customerId)) {
+            if (reservation.getStatus() != ReservationStatus.CONFIRMED) {
+                continue;
+            }
+            if (rentalContractRepository.findByReservationId(reservation.getId()).isPresent()) {
+                continue;
+            }
+            try {
+                contractService.ensureContractForPaidReservation(reservation.getId());
+            } catch (RuntimeException ex) {
+                log.warn("Chưa tạo lại được hợp đồng cho reservationId={}", reservation.getId(), ex);
+            }
+        }
         Page<RentalContract> contractPage;
 
         if (statusFilter == null || statusFilter.isBlank() || statusFilter.equalsIgnoreCase("ALL")) {
@@ -282,7 +303,7 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
 
         // Cơ sở
         res.setFacilityId(contract.getFacilityId());
-        if (facilityRepository != null) {
+        if (contract.getFacilityId() != null && facilityRepository != null) {
             facilityRepository.findById(contract.getFacilityId()).ifPresent(f -> {
                 res.setFacilityName(f.getName());
                 res.setFacilityAddress(f.getAddress());
@@ -292,7 +313,7 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
 
         // Ô kho
         res.setStorageUnitId(contract.getStorageUnitId());
-        if (storageUnitRepository != null) {
+        if (contract.getStorageUnitId() != null && storageUnitRepository != null) {
             storageUnitRepository.findById(contract.getStorageUnitId()).ifPresent(u -> {
                 res.setStorageUnitCode(u.getCode());
                 res.setFloor(u.getFloor());
@@ -302,7 +323,7 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
 
         // Loại kho
         res.setUnitTypeId(contract.getUnitTypeId());
-        if (unitTypeRepository != null) {
+        if (contract.getUnitTypeId() != null && unitTypeRepository != null) {
             unitTypeRepository.findById(contract.getUnitTypeId()).ifPresent(ut -> {
                 res.setUnitTypeName(ut.getName());
                 res.setUnitDimensions(String.format("%.1fm x %.1fm x %.1fm",

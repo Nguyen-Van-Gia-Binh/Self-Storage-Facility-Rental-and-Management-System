@@ -5,6 +5,7 @@ import com.swp391.selfstorage.common.dto.PageResponse;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
 import com.swp391.selfstorage.contract.entity.ContractStatus;
+import com.swp391.selfstorage.contract.entity.RentalContract;
 import com.swp391.selfstorage.contract.repository.RentalContractRepository;
 import com.swp391.selfstorage.facility.entity.Facility;
 import com.swp391.selfstorage.facility.entity.FacilityStatus;
@@ -218,26 +219,26 @@ class ReservationServiceTest {
     }
 
     @Test
-    @DisplayName("BR-RES-02 & BR-AVL-04: Ô kho đã có người giữ chỗ trùng lịch phải bị từ chối")
-    void createReservation_SpecificUnit_OverlappingSlot_ShouldThrow() {
+    @DisplayName("BR-AVL-03: Hết suất hạng kho thì từ chối")
+    void createReservation_NoCapacity_ShouldThrow() {
         when(rentalContractRepository.existsByCustomerIdAndStatus(15L, ContractStatus.OVERDUE)).thenReturn(false);
         when(facilityRepository.findById(1L)).thenReturn(Optional.of(activeFacility));
         when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(activeUnitType));
-        when(storageUnitRepository.findByIdForUpdate(42L)).thenReturn(Optional.of(availableStorageUnit));
-        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any(), eq(15)))
-                .thenReturn(true);
+        when(storageUnitRepository.countExploitableUnits(eq(1L), eq(7L), any())).thenReturn(1L);
+        when(storageUnitRepository.countBusyUnits(eq(1L), eq(7L), any(), any(), eq(15))).thenReturn(1L);
+        when(reservationRepository.countUnassignedOverlappingReservations(eq(1L), eq(7L), any(), any(), any(), eq(15)))
+                .thenReturn(0L);
 
         CreateReservationRequest req = new CreateReservationRequest();
         req.setFacilityId(1L);
         req.setUnitTypeId(7L);
-        req.setStorageUnitId(42L);
         req.setStartDate(LocalDate.now().plusDays(1));
         req.setRentalMonths(3);
 
         CustomException ex = assertThrows(CustomException.class, () ->
                 reservationService.createReservation(req, customerUser)
         );
-        assertEquals(ErrorCode.UNIT_NOT_AVAILABLE, ex.getErrorCode());
+        assertEquals(ErrorCode.CAPACITY_NOT_AVAILABLE, ex.getErrorCode());
     }
 
     @Test
@@ -246,9 +247,10 @@ class ReservationServiceTest {
         when(rentalContractRepository.existsByCustomerIdAndStatus(15L, ContractStatus.OVERDUE)).thenReturn(false);
         when(facilityRepository.findById(1L)).thenReturn(Optional.of(activeFacility));
         when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(activeUnitType));
-        when(storageUnitRepository.findByIdForUpdate(42L)).thenReturn(Optional.of(availableStorageUnit));
-        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any(), eq(15)))
-                .thenReturn(false);
+        when(storageUnitRepository.countExploitableUnits(eq(1L), eq(7L), any())).thenReturn(1L);
+        when(storageUnitRepository.countBusyUnits(eq(1L), eq(7L), any(), any(), eq(15))).thenReturn(0L);
+        when(reservationRepository.countUnassignedOverlappingReservations(eq(1L), eq(7L), any(), any(), any(), eq(15)))
+                .thenReturn(0L);
 
         FacilityUnitTypePrice price = new FacilityUnitTypePrice();
         price.setFacilityId(1L);
@@ -265,13 +267,13 @@ class ReservationServiceTest {
         CreateReservationRequest req = new CreateReservationRequest();
         req.setFacilityId(1L);
         req.setUnitTypeId(7L);
-        req.setStorageUnitId(42L);
         req.setStartDate(LocalDate.now().plusDays(2));
         req.setRentalMonths(3);
 
         ReservationResponse response = reservationService.createReservation(req, customerUser);
 
         assertNotNull(response);
+        assertNull(response.getStorageUnitId());
         assertEquals(1042L, response.getId());
         assertEquals("PENDING_PAYMENT", response.getStatus());
         assertEquals(1500000L, response.getMonthlyPrice());
@@ -288,9 +290,10 @@ class ReservationServiceTest {
         when(rentalContractRepository.existsByCustomerIdAndStatus(15L, ContractStatus.OVERDUE)).thenReturn(false);
         when(facilityRepository.findById(1L)).thenReturn(Optional.of(activeFacility));
         when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(activeUnitType));
-        when(storageUnitRepository.findByIdForUpdate(42L)).thenReturn(Optional.of(availableStorageUnit));
-        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any(), eq(15)))
-                .thenReturn(false);
+        when(storageUnitRepository.countExploitableUnits(eq(1L), eq(7L), any())).thenReturn(1L);
+        when(storageUnitRepository.countBusyUnits(eq(1L), eq(7L), any(), any(), eq(15))).thenReturn(0L);
+        when(reservationRepository.countUnassignedOverlappingReservations(eq(1L), eq(7L), any(), any(), any(), eq(15)))
+                .thenReturn(0L);
 
         FacilityUnitTypePrice price = new FacilityUnitTypePrice();
         price.setFacilityId(1L);
@@ -307,7 +310,6 @@ class ReservationServiceTest {
         CreateReservationRequest req = new CreateReservationRequest();
         req.setFacilityId(1L);
         req.setUnitTypeId(7L);
-        req.setStorageUnitId(42L);
         req.setStartDate(LocalDate.now().plusDays(2));
         req.setRentalMonths(15);
 
@@ -445,5 +447,183 @@ class ReservationServiceTest {
         assertNotNull(response);
         assertEquals(1, response.getContent().size());
         assertEquals(15L, response.getContent().get(0).getCustomerId());
+    }
+
+    @Test
+    @DisplayName("BR-AVL-04: FM gán ô AVAILABLE cùng loại cho đơn CONFIRMED")
+    void assignUnit_Success_ShouldReserveUnitAndCopyToContract() {
+        Reservation reservation = confirmedReservation();
+        RentalContract contract = pendingContract();
+        when(reservationRepository.findByIdWithLock(1042L)).thenReturn(Optional.of(reservation));
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(rentalContractRepository.findByReservationId(1042L)).thenReturn(Optional.of(contract));
+
+        ReservationResponse response = reservationService.assignUnit(1042L, 42L, List.of(1L));
+
+        assertEquals(42L, response.getStorageUnitId());
+        assertEquals("U-42", response.getStorageUnitCode());
+        assertEquals(StorageUnitStatus.RESERVED, availableStorageUnit.getStatus());
+        assertEquals(42L, contract.getStorageUnitId());
+    }
+
+    @Test
+    @DisplayName("BR-AVL-04: Gán ô sai Unit Type thì từ chối")
+    void assignUnit_WrongUnitType_ShouldThrow() {
+        availableStorageUnit.setUnitTypeId(99L);
+        when(reservationRepository.findByIdWithLock(1042L)).thenReturn(Optional.of(confirmedReservation()));
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> reservationService.assignUnit(1042L, 42L, List.of(1L)));
+
+        assertEquals(ErrorCode.UNIT_ASSIGNMENT_FAILED, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("BR-AVL-04: Gán ô OCCUPIED thì từ chối")
+    void assignUnit_OccupiedUnit_ShouldThrow() {
+        availableStorageUnit.setStatus(StorageUnitStatus.OCCUPIED);
+        when(reservationRepository.findByIdWithLock(1042L)).thenReturn(Optional.of(confirmedReservation()));
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> reservationService.assignUnit(1042L, 42L, List.of(1L)));
+
+        assertEquals(ErrorCode.UNIT_ASSIGNMENT_FAILED, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("BR-AVL-04: Ô OCCUPIED dù hết kỳ vẫn từ chối, chỉ gán AVAILABLE")
+    void assignUnit_OccupiedUnitFreeLater_ShouldThrow() {
+        availableStorageUnit.setStatus(StorageUnitStatus.OCCUPIED);
+        when(reservationRepository.findByIdWithLock(1042L)).thenReturn(Optional.of(confirmedReservation()));
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> reservationService.assignUnit(1042L, 42L, List.of(1L)));
+
+        assertEquals(ErrorCode.UNIT_ASSIGNMENT_FAILED, ex.getErrorCode());
+        assertEquals(StorageUnitStatus.OCCUPIED, availableStorageUnit.getStatus());
+    }
+
+    @Test
+    @DisplayName("BR-AVL-04: Ô CLEANING thì từ chối")
+    void assignUnit_CleaningUnit_ShouldThrow() {
+        availableStorageUnit.setStatus(StorageUnitStatus.CLEANING);
+        when(reservationRepository.findByIdWithLock(1042L)).thenReturn(Optional.of(confirmedReservation()));
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> reservationService.assignUnit(1042L, 42L, List.of(1L)));
+
+        assertEquals(ErrorCode.UNIT_ASSIGNMENT_FAILED, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("BR-AVL-04: Đổi ô thì ô cũ về AVAILABLE và ô mới sang RESERVED")
+    void assignUnit_Reassign_ShouldReleasePreviousUnit() {
+        Reservation reservation = confirmedReservation();
+        reservation.setStorageUnitId(10L);
+        StorageUnit previous = new StorageUnit();
+        previous.setId(10L);
+        previous.setFacilityId(1L);
+        previous.setUnitTypeId(7L);
+        previous.setStatus(StorageUnitStatus.RESERVED);
+        when(reservationRepository.findByIdWithLock(1042L)).thenReturn(Optional.of(reservation));
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(storageUnitRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(previous));
+        when(rentalContractRepository.findByReservationId(1042L)).thenReturn(Optional.empty());
+
+        ReservationResponse response = reservationService.assignUnit(1042L, 42L, List.of(1L));
+
+        assertEquals(42L, response.getStorageUnitId());
+        assertEquals(StorageUnitStatus.AVAILABLE, previous.getStatus());
+        assertEquals(StorageUnitStatus.RESERVED, availableStorageUnit.getStatus());
+    }
+
+    @Test
+    @DisplayName("BR-AVL-04: Gán lại đúng ô đang giữ thì không đổi trạng thái ô")
+    void assignUnit_SameUnit_ShouldReturnWithoutSavingUnit() {
+        Reservation reservation = confirmedReservation();
+        reservation.setStorageUnitId(42L);
+        when(reservationRepository.findByIdWithLock(1042L)).thenReturn(Optional.of(reservation));
+
+        ReservationResponse response = reservationService.assignUnit(1042L, 42L, List.of(1L));
+
+        assertEquals(42L, response.getStorageUnitId());
+        verify(storageUnitRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("BR-AVL-04: Đơn chưa thanh toán thì không gán ô")
+    void assignUnit_PendingPayment_ShouldThrow() {
+        Reservation reservation = confirmedReservation();
+        reservation.setStatus(ReservationStatus.PENDING_PAYMENT);
+        when(reservationRepository.findByIdWithLock(1042L)).thenReturn(Optional.of(reservation));
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> reservationService.assignUnit(1042L, 42L, List.of(1L)));
+
+        assertEquals(ErrorCode.RESERVATION_NOT_PAID, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("BR-AVL-04: Ngày nhận là hôm nay và chưa có ô thì vẫn gán được")
+    void assignUnit_StartDateToday_Unassigned_ShouldAssign() {
+        Reservation reservation = confirmedReservation();
+        reservation.setStartDate(LocalDate.now());
+        RentalContract contract = pendingContract();
+        when(reservationRepository.findByIdWithLock(1042L)).thenReturn(Optional.of(reservation));
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(rentalContractRepository.findByReservationId(1042L)).thenReturn(Optional.of(contract));
+
+        ReservationResponse response = reservationService.assignUnit(1042L, 42L, List.of(1L));
+
+        assertEquals(42L, response.getStorageUnitId());
+        assertEquals(42L, contract.getStorageUnitId());
+    }
+
+    @Test
+    @DisplayName("BR-AVL-04: Đã có ô và đã tới startDate thì đóng cửa sổ đổi ô")
+    void assignUnit_StartDateToday_AlreadyAssigned_ShouldThrow() {
+        Reservation reservation = confirmedReservation();
+        reservation.setStartDate(LocalDate.now());
+        reservation.setStorageUnitId(10L);
+        when(reservationRepository.findByIdWithLock(1042L)).thenReturn(Optional.of(reservation));
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> reservationService.assignUnit(1042L, 42L, List.of(1L)));
+
+        assertEquals(ErrorCode.ASSIGNMENT_WINDOW_CLOSED, ex.getErrorCode());
+    }
+
+    private Reservation confirmedReservation() {
+        Reservation reservation = new Reservation();
+        reservation.setId(1042L);
+        reservation.setCode("RSV-1042");
+        reservation.setCustomerId(15L);
+        reservation.setFacilityId(1L);
+        reservation.setUnitTypeId(7L);
+        reservation.setStatus(ReservationStatus.CONFIRMED);
+        reservation.setStartDate(LocalDate.now().plusDays(3));
+        reservation.setEndDateExclusive(LocalDate.now().plusDays(3).plusMonths(1));
+        reservation.setHoldExpiresAt(OffsetDateTime.now().plusHours(1));
+        return reservation;
+    }
+
+    private RentalContract pendingContract() {
+        return RentalContract.builder()
+                .id(500L)
+                .code("CTR-500")
+                .reservationId(1042L)
+                .customerId(15L)
+                .facilityId(1L)
+                .unitTypeId(7L)
+                .startDate(LocalDate.now().plusDays(3))
+                .endDateExclusive(LocalDate.now().plusDays(3).plusMonths(1))
+                .rentalMonths(1)
+                .monthlyPrice(1_000_000L)
+                .totalRentalFee(1_000_000L)
+                .depositAmount(1_000_000L)
+                .depositBalance(1_000_000L)
+                .status(ContractStatus.PENDING_CHECK_IN)
+                .policyVersionId(1L)
+                .build();
     }
 }

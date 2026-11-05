@@ -106,14 +106,20 @@ public class PaymentServiceImpl implements PaymentService {
         if ("RESERVATION".equalsIgnoreCase(request.getReferenceType())) {
             Reservation reservation = reservationRepository.findById(request.getReferenceId())
                     .orElseThrow(() -> new CustomException(ErrorCode.RESERVATION_NOT_FOUND));
+            assertPayer(reservation.getId(), null);
 
             if (reservation.getStatus() == ReservationStatus.FULFILLED) {
                 throw new CustomException(ErrorCode.RESERVATION_ALREADY_FULFILLED);
             }
-            if (reservation.getStatus() != ReservationStatus.PENDING_PAYMENT
-                    && reservation.getStatus() != ReservationStatus.CONFIRMED) {
+            if (reservation.getStatus() != ReservationStatus.PENDING_PAYMENT) {
                 throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION,
                         "Đơn đặt chỗ không ở trạng thái chờ thanh toán");
+            }
+            boolean alreadyPaid = paymentTransactionRepository.findByReservationId(reservation.getId()).stream()
+                    .anyMatch(t -> "SUCCESS".equalsIgnoreCase(t.getStatus())
+                            && "INITIAL_PAYMENT".equalsIgnoreCase(t.getTransactionType()));
+            if (alreadyPaid) {
+                throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION, "Đơn đặt chỗ đã thanh toán");
             }
             rejectIfHoldElapsed(reservation);
 
@@ -130,6 +136,7 @@ public class PaymentServiceImpl implements PaymentService {
             com.swp391.selfstorage.contract.entity.RentalContract contract = rentalContractRepository.findById(request.getReferenceId())
                     .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND,
                             "Không tìm thấy hợp đồng với ID=" + request.getReferenceId()));
+            assertPayer(null, contract.getId());
 
             int months = (request.getRenewalMonths() != null && request.getRenewalMonths() > 0)
                     ? request.getRenewalMonths()
@@ -186,6 +193,7 @@ public class PaymentServiceImpl implements PaymentService {
             com.swp391.selfstorage.contract.entity.RentalContract contract = rentalContractRepository.findById(request.getReferenceId())
                     .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND,
                             "Không tìm thấy hợp đồng với ID=" + request.getReferenceId()));
+            assertPayer(null, contract.getId());
 
             Optional<PaymentTransaction> pendingTxn = paymentTransactionRepository
                     .findTopByContractIdAndTransactionTypeOrderByCreatedAtDesc(contract.getId(), "SETTLEMENT");
@@ -202,6 +210,7 @@ public class PaymentServiceImpl implements PaymentService {
             com.swp391.selfstorage.contract.entity.RentalContract contract = rentalContractRepository.findById(request.getReferenceId())
                     .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND,
                             "Không tìm thấy hợp đồng với ID=" + request.getReferenceId()));
+            assertPayer(null, contract.getId());
 
             if (contract.getOverdueFeeAccrued() <= 0) {
                 throw new CustomException(ErrorCode.VALIDATION_FAILED, "Hợp đồng không có nợ phạt quá hạn cần thanh toán");
@@ -266,9 +275,10 @@ public class PaymentServiceImpl implements PaymentService {
     @Transactional
     public PaymentResponse processSandboxTransfer(Long orderCode, String action) {
         log.info("Processing Sandbox transfer for orderCode={}, action={}", orderCode, action);
-        PaymentTransaction payment = paymentTransactionRepository.findByOrderCode(orderCode)
+        PaymentTransaction payment = paymentTransactionRepository.findByOrderCodeForUpdate(orderCode)
                 .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND,
                         "Không tìm thấy giao dịch với orderCode=" + orderCode));
+        assertPayer(payment.getReservationId(), payment.getContractId());
 
         if ("SUCCESS".equalsIgnoreCase(payment.getStatus())) {
             log.info("Giao dịch orderCode={} đã ở trạng thái SUCCESS, bỏ qua xử lý lặp", orderCode);
@@ -276,13 +286,88 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         if ("CANCEL".equalsIgnoreCase(action)) {
-            payment.setStatus("FAILED");
-            payment = paymentTransactionRepository.save(payment);
             return paymentMapper.toResponse(payment);
         }
 
+        return markPaid(payment, "SANDBOX-" + System.currentTimeMillis(), null);
+    }
+
+    @Override
+    public PaymentResponse requirePendingPayment(Long orderCode) {
+        PaymentTransaction payment = paymentTransactionRepository.findByOrderCode(orderCode)
+                .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND,
+                        "Không tìm thấy giao dịch với orderCode=" + orderCode));
+        if (!"PENDING".equalsIgnoreCase(payment.getStatus())) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED, "Đơn thanh toán không còn chờ thanh toán");
+        }
+        if (payment.getAmount() == null || payment.getAmount() <= 0) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED, "Số tiền thanh toán không hợp lệ");
+        }
+        PaymentResponse response = paymentMapper.toResponse(payment);
+        response.setTransferContent(vnpayOrderInfo(payment));
+        return response;
+    }
+
+    @Override
+    @Transactional
+    public boolean completeVnpayPayment(Long orderCode, boolean successCode, Long vnpAmount,
+            String providerRef, String bankCode) {
+        PaymentTransaction payment = paymentTransactionRepository.findByOrderCodeForUpdate(orderCode).orElse(null);
+        if (payment == null) {
+            return false;
+        }
+        if ("SUCCESS".equalsIgnoreCase(payment.getStatus())) {
+            log.info("Giao dịch orderCode={} đã ở trạng thái SUCCESS, bỏ qua xử lý lặp", orderCode);
+            return true;
+        }
+        if (!successCode) {
+            return false;
+        }
+        long expected = payment.getAmount() == null ? -1L : payment.getAmount() * 100L;
+        if (vnpAmount == null || vnpAmount != expected) {
+            log.warn("VNPay lệch số tiền orderCode={} vnpAmount={} expected={}", orderCode, vnpAmount, expected);
+            return false;
+        }
+        String ref = providerRef == null || providerRef.isBlank() ? "VNPAY-" + orderCode : providerRef;
+        if (ref.length() > 100) {
+            ref = ref.substring(0, 100);
+        }
+        markPaid(payment, ref, vnpayMethod(bankCode));
+        return true;
+    }
+
+    private static String vnpayMethod(String bankCode) {
+        String code = bankCode == null ? "" : bankCode.replaceAll("[^A-Za-z0-9]", "");
+        String method = code.isEmpty() ? "VNPAY" : "VNPAY_" + code;
+        return method.length() > 50 ? method.substring(0, 50) : method;
+    }
+
+    private static String vnpayOrderInfo(PaymentTransaction payment) {
+        String info;
+        if (payment.getReservationId() != null) {
+            info = "DH" + payment.getReservationId();
+        } else if ("CONTRACT_RENEWAL".equalsIgnoreCase(payment.getTransactionType()) && payment.getContractId() != null) {
+            info = "GH" + payment.getContractId() + (payment.getRenewalMonths() != null ? "T" + payment.getRenewalMonths() : "");
+        } else if (payment.getContractId() != null) {
+            info = "TT" + payment.getContractId();
+        } else {
+            info = "TT" + payment.getOrderCode();
+        }
+        return info.length() > 255 ? info.substring(0, 255) : info;
+    }
+
+    private PaymentResponse markPaid(PaymentTransaction payment, String providerReference, String paymentMethod) {
+        if ("SUCCESS".equalsIgnoreCase(payment.getStatus())) {
+            log.info("Giao dịch orderCode={} đã ở trạng thái SUCCESS, bỏ qua xử lý lặp", payment.getOrderCode());
+            return paymentMapper.toResponse(payment);
+        }
         payment.setStatus("SUCCESS");
-        payment.setProviderReference("SANDBOX-" + System.currentTimeMillis());
+        if (providerReference != null) {
+            payment.setProviderReference(providerReference);
+        }
+        if (paymentMethod != null && !paymentMethod.isBlank()) {
+            payment.setPaymentMethod(paymentMethod);
+        }
         payment = paymentTransactionRepository.save(payment);
 
         if (payment.getReservationId() != null) {
@@ -299,11 +384,8 @@ public class PaymentServiceImpl implements PaymentService {
             if (payment.getContractId() != null) {
                 rentalContractRepository.findById(payment.getContractId()).ifPresent(c -> {
                     c.setOverdueFeeAccrued(0L);
-                    // BR-OVD-08 (Boost-2 Fix): Sau khi nộp phạt, hợp đồng GIỮ NGUYÊN OVERDUE.
-                    // Hợp đồng đã hết hạn thực sự — không thể chuyển về ACTIVE.
-                    // Việc overdueFeeAccrued=0 mở khóa UI "Báo trả kho" (PENDING_RETURN).
                     rentalContractRepository.save(c);
-                    log.info("Sandbox: Xóa nợ phạt về 0 cho contractId={}, giữ nguyên trạng thái OVERDUE (BR-OVD-08)", c.getId());
+                    log.info("Xóa nợ phạt về 0 cho contractId={}, giữ nguyên trạng thái OVERDUE (BR-OVD-08)", c.getId());
                 });
             }
         }
@@ -312,95 +394,10 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    @Transactional
-    @SuppressWarnings("unchecked")
     public PaymentResponse processPayOSWebhook(Object webhookBody) {
-        log.info("Processing Payment Webhook...");
-        Long orderCode = null;
-        String code = "00";
-        String reference = null;
-
-        if (webhookBody instanceof Map<?, ?> map) {
-            Object codeObj = map.get("code");
-            code = codeObj != null ? String.valueOf(codeObj) : "00";
-            Object dataObj = map.get("data");
-            if (dataObj instanceof Map<?, ?> dataMap) {
-                Object oc = dataMap.get("orderCode");
-                if (oc instanceof Number num) {
-                    orderCode = num.longValue();
-                } else if (oc != null) {
-                    orderCode = Long.parseLong(oc.toString());
-                }
-                Object ref = dataMap.get("reference");
-                if (ref != null) reference = ref.toString();
-            } else {
-                Object oc = map.get("orderCode");
-                if (oc instanceof Number num) {
-                    orderCode = num.longValue();
-                } else if (oc != null) {
-                    orderCode = Long.parseLong(oc.toString());
-                }
-            }
-        }
-
-        if (orderCode == null) {
-            log.info("Nhận webhook ping test hoặc payload không có orderCode. Trả lời HTTP 200 OK.");
-            return PaymentResponse.builder()
-                    .status("SUCCESS")
-                    .build();
-        }
-
-        PaymentTransaction payment = paymentTransactionRepository.findByOrderCode(orderCode)
-                .orElse(null);
-
-        if (payment == null) {
-            log.info("orderCode={} không tồn tại trong hệ thống. Trả lời HTTP 200 OK.", orderCode);
-            return PaymentResponse.builder()
-                    .orderCode(orderCode)
-                    .status("SUCCESS")
-                    .build();
-        }
-
-        if (!"00".equals(code)) {
-            log.warn("Thanh toán không thành công cho orderCode={}: code={}", orderCode, code);
-            payment.setStatus("FAILED");
-            if (reference != null) payment.setProviderReference(reference);
-            payment = paymentTransactionRepository.save(payment);
-            return paymentMapper.toResponse(payment);
-        }
-
-        if ("SUCCESS".equalsIgnoreCase(payment.getStatus())) {
-            log.info("Giao dịch orderCode={} đã ở trạng thái SUCCESS, bỏ qua xử lý lặp", orderCode);
-            return paymentMapper.toResponse(payment);
-        }
-
-        payment.setStatus("SUCCESS");
-        payment.setProviderReference(reference != null ? reference : "SANDBOX-" + System.currentTimeMillis());
-        payment = paymentTransactionRepository.save(payment);
-
-        if (payment.getReservationId() != null) {
-            reservationService.confirmAfterPayment(payment.getReservationId());
-            eventPublisher.publishEvent(new PaymentCompletedEvent(payment.getReservationId(), payment.getId()));
-        } else if (payment.getContractId() != null
-                && "CONTRACT_RENEWAL".equalsIgnoreCase(payment.getTransactionType())) {
-            publishContractRenewalCompleted(payment);
-        } else if ("SETTLEMENT".equalsIgnoreCase(payment.getTransactionType())) {
-            eventPublisher.publishEvent(new com.swp391.selfstorage.payment.event.SettlementDebtPaidEvent(
-                    payment.getContractId(), payment.getId()));
-        } else if ("OVERDUE_PENALTY".equalsIgnoreCase(payment.getTransactionType())
-                || "EXTRA_FEE_PAYMENT".equalsIgnoreCase(payment.getTransactionType())) {
-            if (payment.getContractId() != null) {
-                rentalContractRepository.findById(payment.getContractId()).ifPresent(c -> {
-                    c.setOverdueFeeAccrued(0L);
-                    // BR-OVD-08 (Boost-2 Fix): Giữ nguyên OVERDUE, mở khóa quyền Báo trả kho (PENDING_RETURN).
-                    // Hợp đồng đã hết hạn thực sự — không thể chuyển về ACTIVE qua nộp phạt.
-                    rentalContractRepository.save(c);
-                    log.info("PayOS Webhook: Xóa nợ phạt về 0 cho contractId={}, giữ nguyên trạng thái OVERDUE (BR-OVD-08)", c.getId());
-                });
-            }
-        }
-
-        return paymentMapper.toResponse(payment);
+        // shortcut: webhook không có chữ ký nên bỏ qua; bật lại khi có HMAC PayOS và URL public.
+        log.warn("Bỏ qua webhook PayOS không chữ ký");
+        return PaymentResponse.builder().status("IGNORED").build();
     }
 
     private void publishContractRenewalCompleted(PaymentTransaction payment) {
@@ -438,11 +435,37 @@ public class PaymentServiceImpl implements PaymentService {
         return months;
     }
 
+    private void assertPayer(Long reservationId, Long contractId) {
+        // shortcut: không có principal thì bỏ qua để unit test cũ chạy; mọi HTTP đã có JWT thì kiểm tra.
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof com.swp391.selfstorage.auth.service.UserPrincipal user)) {
+            return;
+        }
+        if (user.getRole() != com.swp391.selfstorage.user.entity.UserRole.STORAGE_CUSTOMER) {
+            return;
+        }
+        if (reservationId != null) {
+            Reservation reservation = reservationRepository.findById(reservationId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.RESERVATION_NOT_FOUND));
+            if (!user.getId().equals(reservation.getCustomerId())) {
+                throw new CustomException(ErrorCode.ACCESS_DENIED);
+            }
+        }
+        if (contractId != null) {
+            var contract = rentalContractRepository.findById(contractId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
+            if (!user.getId().equals(contract.getCustomerId())) {
+                throw new CustomException(ErrorCode.ACCESS_DENIED);
+            }
+        }
+    }
+
     @Override
     public PaymentResponse getPaymentByOrderCode(Long orderCode) {
         PaymentTransaction payment = paymentTransactionRepository.findByOrderCode(orderCode)
                 .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND,
                         "Không tìm thấy giao dịch với orderCode=" + orderCode));
+        assertPayer(payment.getReservationId(), payment.getContractId());
         return paymentMapper.toResponse(payment);
     }
 
@@ -460,15 +483,21 @@ public class PaymentServiceImpl implements PaymentService {
         // 1. Kiểm tra đơn đặt chỗ có tồn tại không
         Reservation reservation = reservationRepository.findById(request.getReferenceId())
                 .orElseThrow(() -> new CustomException(ErrorCode.RESERVATION_NOT_FOUND));
+        assertPayer(reservation.getId(), null);
 
         // 2. Kiểm tra trạng thái đơn
         if (reservation.getStatus() == ReservationStatus.FULFILLED) {
             throw new CustomException(ErrorCode.RESERVATION_ALREADY_FULFILLED);
         }
-        if (reservation.getStatus() != ReservationStatus.PENDING_PAYMENT
-                && reservation.getStatus() != ReservationStatus.CONFIRMED) {
+        if (reservation.getStatus() != ReservationStatus.PENDING_PAYMENT) {
             throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION,
                     "Đơn đặt chỗ không ở trạng thái chờ thanh toán");
+        }
+        boolean alreadyPaid = paymentTransactionRepository.findByReservationId(reservation.getId()).stream()
+                .anyMatch(t -> "SUCCESS".equalsIgnoreCase(t.getStatus())
+                        && "INITIAL_PAYMENT".equalsIgnoreCase(t.getTransactionType()));
+        if (alreadyPaid) {
+            throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION, "Đơn đặt chỗ đã thanh toán");
         }
 
         // 3. Kiểm tra thời gian giữ chỗ theo BR-DEP-03
@@ -509,6 +538,7 @@ public class PaymentServiceImpl implements PaymentService {
     public PaymentResponse getPaymentById(Long id) {
         PaymentTransaction payment = paymentTransactionRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
+        assertPayer(payment.getReservationId(), payment.getContractId());
         return paymentMapper.toResponse(payment);
     }
 

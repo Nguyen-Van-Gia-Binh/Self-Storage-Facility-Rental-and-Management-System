@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { normalizeDiscountPercent } from '../utils/pricing';
 import { resolveSizeCategory } from '../utils/unitPickerHelpers';
@@ -32,6 +32,18 @@ import {
   findActivePendingReservation,
 } from '../utils/reservationStatus';
 
+function readBookingParams(search: string): URLSearchParams {
+  const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
+  if (!params.get('facility') && !params.get('facilityId')) {
+    const redirect = params.get('redirect');
+    if (redirect) {
+      const queryAt = redirect.indexOf('?');
+      if (queryAt >= 0) return readBookingParams(redirect.slice(queryAt));
+    }
+  }
+  return params;
+}
+
 export const BookingPage: React.FC = () => {
   const policy = useActivePolicy();
   const depositMultiplier = policy?.depositMultiplier ?? 1;
@@ -39,14 +51,15 @@ export const BookingPage: React.FC = () => {
     ? String(depositMultiplier)
     : depositMultiplier.toFixed(1).replace(/\.0$/, '');
   const holdHours = policy?.reservationHoldHours ?? 48;
-  const [searchParams] = useSearchParams();
+  const location = useLocation();
   const navigate = useNavigate();
+  const bookingParams = useMemo(() => readBookingParams(location.search), [location.search]);
 
-  const facilityId = searchParams.get('facility') || searchParams.get('facilityId') || '1';
-  const typeId = searchParams.get('type') || searchParams.get('typeId') || '1';
-  const unitNumberParam = searchParams.get('unitNumber');
-  const unitIdParam = searchParams.get('unit') || searchParams.get('unitId');
-  const reservationIdParam = searchParams.get('reservationId') || searchParams.get('rsvId');
+  const facilityId = bookingParams.get('facility') || bookingParams.get('facilityId') || '';
+  const typeId = bookingParams.get('type') || bookingParams.get('typeId') || '';
+  const unitNumberParam = bookingParams.get('unitNumber');
+  const unitIdParam = bookingParams.get('unit') || bookingParams.get('unitId');
+  const reservationIdParam = bookingParams.get('reservationId') || bookingParams.get('rsvId');
 
   // 1. Quản lý trạng thái Cơ sở & Loại ô kho
   const [facility, setFacility] = useState<Facility>({
@@ -95,14 +108,23 @@ export const BookingPage: React.FC = () => {
     pendingReservation: null,
   });
 
-  const [selectedStorageUnitCode, setSelectedStorageUnitCode] = useState<string>(unitNumberParam || '');
-  const finalUnitNumber = selectedStorageUnitCode || unitNumberParam || unitType.name || 'Ô kho đã chọn';
-  const finalUnitId = unitIdParam || undefined;
+  const finalUnitNumber = unitType.name || 'Hạng kho';
 
   // 2. Tải dữ liệu cơ sở, ô kho & kiểm tra an ninh (ISS-75, ISS-76, ISS-80)
   useEffect(() => {
     let isMounted = true;
     async function loadData() {
+      if (!facilityId || !typeId) {
+        if (!reservationIdParam) {
+          setUnavailableModal({
+            isOpen: true,
+            title: 'Hạng kho không khả dụng',
+            message: 'Đường dẫn đặt chỗ không còn cơ sở hoặc hạng kho. Quý khách vui lòng chọn lại.',
+            actionType: 'NAVIGATE_UNITS',
+          });
+        }
+        return;
+      }
       try {
         const facList = await fetchFacilities();
         if (!isMounted) return;
@@ -168,7 +190,7 @@ export const BookingPage: React.FC = () => {
             (ut) => String(ut.id) === effectiveTypeId || ut.code === effectiveTypeId
           ) || utPage.content.find(
             (ut) => String(ut.id) === typeId || ut.code === typeId
-          ) || utPage.content[0];
+          );
 
           if (!foundUT) {
             setUnavailableModal({
@@ -215,20 +237,17 @@ export const BookingPage: React.FC = () => {
           });
         }
 
-        if (matchedUnit?.code) {
-          setSelectedStorageUnitCode(matchedUnit.code);
-        }
       } catch (err) {
         console.error('Lỗi khi tải thông tin cơ sở & loại kho cho trang Booking:', err);
       }
     }
     loadData();
     return () => { isMounted = false; };
-  }, [facilityId, typeId, unitIdParam, unitNumberParam]);
+  }, [facilityId, typeId, unitIdParam, unitNumberParam, reservationIdParam]);
 
   // 3. Quản lý thời gian thuê & ngày bắt đầu
-  const monthsParam = parseInt(searchParams.get('months') || '', 10);
-  const startDateParam = searchParams.get('startDate');
+  const monthsParam = parseInt(bookingParams.get('months') || '', 10);
+  const startDateParam = bookingParams.get('startDate');
 
   const [durationMonths, setDurationMonths] = useState<number>(
     !isNaN(monthsParam) && monthsParam > 0 ? monthsParam : 3
@@ -262,10 +281,10 @@ export const BookingPage: React.FC = () => {
   // 4. Auth Guard: Yêu cầu đăng nhập trước khi hoàn tất đặt chỗ
   useEffect(() => {
     if (!tokenStorage.getAccessToken()) {
-      const currentUrl = `/customer/booking${window.location.search}`;
+      const currentUrl = `/customer/booking${bookingParams.toString() ? `?${bookingParams.toString()}` : ''}`;
       navigate(`/auth/login?redirect=${encodeURIComponent(currentUrl)}`, { replace: true });
     }
-  }, [navigate]);
+  }, [navigate, bookingParams]);
 
   // 5. Form state & validation
   const currentUser = tokenStorage.getUser();
@@ -482,8 +501,17 @@ export const BookingPage: React.FC = () => {
   const handleProceedToPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tokenStorage.getAccessToken() || !tokenStorage.getUser()) {
-      const currentUrl = `/customer/booking${window.location.search}`;
+      const currentUrl = `/customer/booking${bookingParams.toString() ? `?${bookingParams.toString()}` : ''}`;
       navigate(`/auth/login?redirect=${encodeURIComponent(currentUrl)}`);
+      return;
+    }
+    if (!reservationIdParam && (!facilityId || !typeId)) {
+      setUnavailableModal({
+        isOpen: true,
+        title: 'Hạng kho không khả dụng',
+        message: 'Đường dẫn đặt chỗ không còn cơ sở hoặc hạng kho. Quý khách vui lòng chọn lại.',
+        actionType: 'NAVIGATE_UNITS',
+      });
       return;
     }
 
@@ -501,14 +529,21 @@ export const BookingPage: React.FC = () => {
     setBookingError(null);
 
     try {
-      const numericFacilityId = toPositiveNumber(facility.id, 1) ?? 1;
-      const numericUnitTypeId = toPositiveNumber(unitType.id, 1) ?? 1;
-      const numericUnitId = toPositiveNumber(finalUnitId);
+      const numericFacilityId = toPositiveNumber(facility.id);
+      const numericUnitTypeId = toPositiveNumber(unitType.id);
+      if (!numericFacilityId || !numericUnitTypeId) {
+        setUnavailableModal({
+          isOpen: true,
+          title: 'Hạng kho không khả dụng',
+          message: 'Đường dẫn đặt chỗ không còn cơ sở hoặc hạng kho. Quý khách vui lòng chọn lại.',
+          actionType: 'NAVIGATE_UNITS',
+        });
+        return;
+      }
 
       const rsv = await createReservation({
         facilityId: numericFacilityId,
         unitTypeId: numericUnitTypeId,
-        storageUnitId: numericUnitId,
         startDate,
         rentalMonths: durationMonths,
         customerName,
@@ -553,6 +588,16 @@ export const BookingPage: React.FC = () => {
       }
 
       // Ô kho đã có người khác giữ chỗ hoặc không khả dụng (BR-RES-02, ISS-127)
+      if (err?.errorCode === 'CAPACITY_NOT_AVAILABLE') {
+        setUnavailableModal({
+          isOpen: true,
+          title: 'Hết chỗ',
+          message: 'Hạng kho này đã hết chỗ trong kỳ thuê đã chọn. Quý khách vui lòng chọn hạng khác hoặc đổi ngày nhận.',
+          actionType: 'NAVIGATE_UNITS',
+        });
+        return;
+      }
+
       if (
         err?.errorCode === 'UNIT_NOT_AVAILABLE' ||
         (typeof err?.message === 'string' &&
@@ -632,7 +677,7 @@ export const BookingPage: React.FC = () => {
               bookingError={bookingError}
               isSubmitting={isSubmitting}
               isCheckingAvailability={isCheckingAvailability}
-              isButtonDisabled={availability !== null && availability.availableSlots <= 0}
+              isButtonDisabled={!reservationIdParam && (availability == null || availability.availableSlots <= 0)}
               onSubmit={handleProceedToPayment}
             />
           </div>

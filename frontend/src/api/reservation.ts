@@ -2,7 +2,7 @@
  * Reservation API Client — WS1 (SC-01, SC-02, BR-DEP-01, BR-DEP-03, BR-GEN-04)
  * Quản lý tính giá trước, kiểm tra sức chứa và tạo đơn đặt chỗ giữ kho 48h.
  */
-import { apiClient, type ApiResponse } from '@/api/client';
+import { apiClient, type ApiResponse, type PageResponse } from '@/api/client';
 
 export interface CalculatePriceRequest {
   facilityId: number;
@@ -163,6 +163,34 @@ export async function getMyReservationsApi(): Promise<ReservationResponse[]> {
  */
 export async function getReservationById(id: number | string): Promise<ReservationResponse> {
   const res = await apiClient<ApiResponse<ReservationResponse>>(`/reservations/${id}`);
+  return res.data;
+}
+
+export async function listReservations(params: {
+  status?: string;
+  facilityId?: number;
+  size?: number;
+}): Promise<ReservationResponse[]> {
+  const query = new URLSearchParams();
+  if (params.status) query.set('status', params.status);
+  if (params.facilityId != null) query.set('facilityId', String(params.facilityId));
+  query.set('size', String(params.size ?? 100));
+  const res = await apiClient<
+    ApiResponse<PageResponse<ReservationResponse>> | PageResponse<ReservationResponse>
+  >(`/reservations?${query.toString()}`);
+  const wrapped = res as ApiResponse<PageResponse<ReservationResponse>>;
+  const page = wrapped?.data?.content ? wrapped.data : (res as PageResponse<ReservationResponse>);
+  return page.content || [];
+}
+
+export async function assignUnit(reservationId: number, storageUnitId: number): Promise<ReservationResponse> {
+  const res = await apiClient<ApiResponse<ReservationResponse>>(
+    `/reservations/${reservationId}/assign-unit`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ storageUnitId }),
+    }
+  );
   return res.data;
 }
 

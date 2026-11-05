@@ -46,6 +46,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -160,6 +161,12 @@ public class ContractServiceImpl implements ContractService {
         }
 
         @Override
+        @Transactional(propagation = Propagation.REQUIRES_NEW)
+        public void ensureContractForPaidReservation(Long reservationId) {
+                createFromReservation(reservationId);
+        }
+
+        @Override
         @Transactional(readOnly = true)
         public ContractResponse getContractById(Long contractId, List<Long> facilityIds) {
                 Optional<RentalContract> contractOpt = (facilityIds == null || facilityIds.isEmpty())
@@ -183,6 +190,8 @@ public class ContractServiceImpl implements ContractService {
 
                 if (contract.getStatus() != ContractStatus.PENDING_CHECK_IN)
                         throw new CustomException(ErrorCode.CONTRACT_NOT_PENDING_CHECKIN);
+                if (contract.getStorageUnitId() == null)
+                        throw new CustomException(ErrorCode.UNIT_NOT_YET_ALLOCATED);
 
                 String pin = generateUniquePin(PolicyNumbers.snapshotInt(contract.getPolicySnapshot(), "accessPinLength", 6));
                 contract.setAccessCode(pin);

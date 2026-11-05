@@ -64,7 +64,7 @@ describe('ISS-80: Chặn Đặt Chỗ & Khóa Chọn Loại Ô Kho Chưa Niêm Y
 
   it('UnitPickerPage hiển thị unitUnavailableModal khi đơn giá chưa niêm yết', () => {
     const content = getUnitPickerContent();
-    expect(content).toMatch(/if \(listedPrice <= 0\)\s*\{\s*setUnitUnavailableModal\(\{/);
+    expect(content).toMatch(/if \(!currentUnitType\.baseMonthlyPrice \|\| currentUnitType\.baseMonthlyPrice <= 0\)\s*\{\s*setUnitUnavailableModal\(\{/);
     expect(content).toMatch(/Loại ô kho chưa niêm yết giá/);
   });
 

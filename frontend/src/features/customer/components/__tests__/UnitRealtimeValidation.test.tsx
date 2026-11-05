@@ -23,18 +23,18 @@ describe('ISS-76: Realtime Database Unit Availability Validation on Confirm', ()
       : fs.readFileSync(unitPickerPage, 'utf-8');
   };
 
-  it('UnitPickerPage gọi fetchStorageUnitsApi trong handleProceedToBooking để kiểm tra database thời gian thực', () => {
+  it('UnitPickerPage đặt theo hạng kho và không gửi mã ô', () => {
     const content = getUnitPickerContent();
     expect(content).toMatch(/handleProceedToBooking\s*=\s*async/);
-    expect(content).toMatch(/fetchStorageUnitsApi\(fId,\s*\{\s*startDate,\s*rentalMonths:\s*durationMonths/);
-    expect(content).toMatch(/unitUnavailableModal/);
+    expect(content).toMatch(/type:\s*String\(selectedTypeId\)/);
+    expect(content).toMatch(/startDate/);
+    expect(content).toMatch(/months:\s*String\(durationMonths\)/);
+    expect(content).not.toMatch(/unitNumber:\s*targetUnit/);
   });
 
-  it('UnitPickerPage hiển thị modal cảnh báo khi ô kho bị bảo trì hoặc đã có người khác đặt/thuê', () => {
+  it('UnitPickerPage không còn bắt khách chọn ô trên sơ đồ', () => {
     const content = getUnitPickerContent();
-    expect(content).toMatch(/Ô kho đang tạm ngừng hoạt động \/ Bảo trì/);
-    expect(content).toMatch(/Ô kho đã có người giữ chỗ/);
-    expect(content).toMatch(/Ô kho đã có người thuê/);
-    expect(content).toMatch(/Đã hiểu, chọn ô kho khác/);
+    expect(content).not.toMatch(/Vui lòng chọn 1 ô kho/);
+    expect(content).not.toMatch(/onSelectUnitOnGrid/);
   });
 });

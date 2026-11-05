@@ -204,15 +204,13 @@ export function useUnitPickerCatalog({
 
   // 3. Lọc danh sách loại kho đã niêm yết giá theo storageType (ISS-113)
   const availableTypes = useMemo(() => {
-    if (!storageType) return [];
     return unitTypes.filter(
       (t) =>
         t.baseMonthlyPrice > 0 &&
         t.priceStatus !== 'UNLISTED' &&
-        t.priceStatus !== 'Chưa niêm yết' &&
-        t.storageType === storageType
+        t.priceStatus !== 'Chưa niêm yết'
     );
-  }, [unitTypes, storageType]);
+  }, [unitTypes]);
 
   const standardTypesCount = useMemo(
     () =>

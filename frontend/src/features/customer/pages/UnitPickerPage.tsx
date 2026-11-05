@@ -2,14 +2,11 @@ import React, { useState } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, Loader2 } from 'lucide-react';
 import { formatDateVN, resolveSizeCategory, isClimateUnitType, mapApiUnitsToStorageUnits } from '../utils/unitPickerHelpers';
-import { fetchStorageUnits as fetchStorageUnitsApi } from '@/api/unit';
 import { getMyReservationsApi } from '@/api/reservation';
 import { useActivePolicy } from '@/hooks/useActivePolicy';
 import { tokenStorage } from '@/utils/tokenStorage';
-import type { StorageUnit } from '../types';
 import { RentDurationCard } from '../components/RentDurationCard';
 import { UnitPickerSidebar } from '../components/UnitPickerSidebar';
-import { StorageTypeTabs } from '../components/StorageTypeTabs';
 import { UnitPickerModals } from '../components/UnitPickerModals';
 import { UnitTypeAccordionList } from '../components/UnitTypeAccordionList';
 import { useRentalDuration } from '../hooks/useRentalDuration';
@@ -55,23 +52,16 @@ export const UnitPickerPage: React.FC = () => {
   const {
     loading,
     currentFacility,
-    unitTypes,
     availabilityMap,
     loadingAvailability,
     facilityInactiveModalOpen,
     storageType,
     selectedTypeId,
-    expandedTypeId,
     selectedSize,
     availableTypes,
-    standardTypesCount,
-    climateTypesCount,
     currentUnitType,
-    displayFacilityUnits,
     selectedUnit,
     handleSelectType,
-    handleSelectStorageType,
-    handleSelectUnitOnGrid,
   } = useUnitPickerCatalog({
     facilityParam,
     initialTypeId,
@@ -107,36 +97,27 @@ export const UnitPickerPage: React.FC = () => {
   });
   const [isConfirming, setIsConfirming] = useState<boolean>(false);
 
-  // 6. Xử lý đặt chỗ & kiểm tra tính sẵn sàng thời gian thực (ISS-76, ISS-99)
+  const selectedSlots = selectedTypeId ? availabilityMap[selectedTypeId]?.availableSlots : undefined;
+  const typeFull = typeof selectedSlots === 'number' && selectedSlots <= 0;
+
   const handleProceedToBooking = async () => {
-    const targetUnit = selectedUnit;
-    if (!targetUnit) {
-      // Nếu chưa chọn ô kho cụ thể trên sơ đồ, tự động chọn ô kho trống đầu tiên
-      const firstAvailable = displayFacilityUnits.find(
-        (u) =>
-          u.status === 'AVAILABLE' &&
-          u.storageType === storageType &&
-          (!selectedTypeId || u.unitTypeId === selectedTypeId)
-      );
-      if (firstAvailable) {
-        handleProceedToBookingWithUnit(firstAvailable);
-      } else {
-        setUnitUnavailableModal({
-          isOpen: true,
-          title: 'Vui lòng chọn 1 ô kho',
-          message: 'Quý khách vui lòng nhấp chọn một ô kho còn trống trên sơ đồ mặt bằng để tiếp tục đặt chỗ.',
-        });
-      }
+    if (typeFull) {
+      setUnitUnavailableModal({
+        isOpen: true,
+        title: 'Hết chỗ',
+        message: 'Hạng kho này đã hết chỗ trong kỳ thuê đã chọn. Quý khách vui lòng chọn hạng khác hoặc đổi ngày nhận.',
+      });
       return;
     }
-    handleProceedToBookingWithUnit(targetUnit);
-  };
-
-  const handleProceedToBookingWithUnit = async (targetUnit: StorageUnit) => {
-    const listedPrice = (targetUnit.monthlyPrice && targetUnit.monthlyPrice > 0)
-      ? targetUnit.monthlyPrice
-      : (currentUnitType?.baseMonthlyPrice ?? 0);
-    if (listedPrice <= 0) {
+    if (!selectedTypeId || !currentUnitType) {
+      setUnitUnavailableModal({
+        isOpen: true,
+        title: 'Vui lòng chọn loại kho',
+        message: 'Quý khách vui lòng chọn một hạng kho đã niêm yết giá trước khi đặt.',
+      });
+      return;
+    }
+    if (!currentUnitType.baseMonthlyPrice || currentUnitType.baseMonthlyPrice <= 0) {
       setUnitUnavailableModal({
         isOpen: true,
         title: 'Loại ô kho chưa niêm yết giá',
@@ -144,13 +125,10 @@ export const UnitPickerPage: React.FC = () => {
       });
       return;
     }
-
-    const fId = parseInt(currentFacility.id, 10);
-    if (isNaN(fId)) return;
+    if (!currentFacility?.id) return;
 
     setIsConfirming(true);
     try {
-      // 1. Kiểm tra giới hạn 1 đơn giữ chỗ PENDING_PAYMENT (BR-RES-02)
       if (tokenStorage.getAccessToken()) {
         try {
           const myReservations = await getMyReservationsApi();
@@ -172,54 +150,12 @@ export const UnitPickerPage: React.FC = () => {
         }
       }
 
-      // 2. Realtime Database Unit Availability Validation on Confirm (ISS-76)
-      const liveUnitsPage = await fetchStorageUnitsApi(fId, {
-        startDate,
-        rentalMonths: durationMonths,
-        size: 200,
-      });
-      const liveUnits = liveUnitsPage?.content || [];
-      const currentLiveUnit = liveUnits.find((u) => String(u.id) === String(targetUnit.id));
-
-      if (currentLiveUnit) {
-        const liveStatus = (currentLiveUnit.status || 'AVAILABLE').toUpperCase();
-        if (liveStatus === 'MAINTENANCE') {
-          setUnitUnavailableModal({
-            isOpen: true,
-            title: 'Ô kho đang tạm ngừng hoạt động / Bảo trì',
-            message: `Ô kho ${targetUnit.unitNumber} hiện đang được bảo trì hoặc kiểm tra kỹ thuật. Quý khách vui lòng chọn ô kho khác.`,
-          });
-          return;
-        }
-        if (liveStatus === 'RESERVED') {
-          setUnitUnavailableModal({
-            isOpen: true,
-            title: 'Ô kho đã có người giữ chỗ',
-            message: `Ô kho ${targetUnit.unitNumber} vừa được người khác giữ chỗ. Quý khách vui lòng chọn ô kho khác.`,
-          });
-          return;
-        }
-        if (liveStatus === 'OCCUPIED' || liveStatus === 'OVERDUE' || liveStatus === 'LOCKED') {
-          setUnitUnavailableModal({
-            isOpen: true,
-            title: 'Ô kho đã có người thuê',
-            message: `Ô kho ${targetUnit.unitNumber} đã có khách hàng thuê. Quý khách vui lòng chọn ô kho khác còn trống.`,
-          });
-          return;
-        }
-      }
-
-      const typeIdToPass = targetUnit.unitTypeId || (currentUnitType ? currentUnitType.id : (unitTypes[0]?.id || '1'));
-
       const params = new URLSearchParams({
         facility: String(currentFacility.id),
-        type: String(typeIdToPass),
-        unit: String(targetUnit.id),
-        unitNumber: targetUnit.unitNumber,
+        type: String(selectedTypeId),
         startDate,
         months: String(durationMonths),
       });
-
       navigate(`/customer/booking?${params.toString()}`);
     } finally {
       setIsConfirming(false);
@@ -262,7 +198,7 @@ export const UnitPickerPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
         {/* ==================== CỘT TRÁI: 2 THẺ TỐI GIẢN (8 cols) ==================== */}
-        <div className="lg:col-span-8 space-y-6">
+        <div className="lg:col-span-8 w-full space-y-6">
 
           {/* 1. THỜI GIAN THUÊ (RentDurationCard) */}
           <RentDurationCard
@@ -294,39 +230,16 @@ export const UnitPickerPage: React.FC = () => {
                 </span>
               )}
             </div>
+            <p className="text-xs text-slate-500">
+              Vị trí kho cụ thể sẽ được Ban quản lý cập nhật trước ngày nhận kho
+            </p>
 
-            {/* Bước 2.1: Môi trường kho tabs (StorageTypeTabs) */}
-            <StorageTypeTabs
-              storageType={storageType}
-              onSelectStorageType={handleSelectStorageType}
-              standardTypesCount={standardTypesCount}
-              climateTypesCount={climateTypesCount}
-            />
-
-
-            {/* Bước 2.2: Danh sách Kích thước dạng List Card Rows kèm Accordion Sơ đồ ô kho */}
-            {!storageType ? (
-              <div className="py-8 px-4 text-center bg-slate-50 border border-dashed border-slate-200 rounded-2xl space-y-1.5">
-                <span className="text-2xl block">📦</span>
-                <p className="text-xs sm:text-sm font-bold text-slate-700">
-                  Vui lòng chọn loại kho bạn cần ở trên
-                </p>
-                <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
-                  Chọn <strong>Kho Tiêu Chuẩn</strong> hoặc <strong>Kho Máy Lạnh</strong> để hệ thống hiển thị danh sách kích thước và các ô kho còn trống.
-                </p>
-              </div>
-            ) : (
-              <UnitTypeAccordionList
+            <UnitTypeAccordionList
               availableTypes={availableTypes}
               selectedTypeId={selectedTypeId}
-              expandedTypeId={expandedTypeId}
               availabilityMap={availabilityMap}
-              displayFacilityUnits={displayFacilityUnits}
-              selectedUnit={selectedUnit}
               onSelectType={handleSelectType}
-              onSelectUnitOnGrid={handleSelectUnitOnGrid}
             />
-            )}
 
           </div>
 
@@ -337,6 +250,8 @@ export const UnitPickerPage: React.FC = () => {
           <UnitPickerSidebar
             facilityName={currentFacility.name}
             selectedUnit={selectedUnit}
+            unitTypeName={currentUnitType?.name}
+            typeFull={typeFull}
             storageType={storageType}
             selectedSize={selectedSize}
             areaM2={currentUnitType?.areaM2}

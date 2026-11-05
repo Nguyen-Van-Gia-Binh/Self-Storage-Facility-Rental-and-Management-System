@@ -13,6 +13,7 @@ import {
   getAssignedFacilities,
 } from '../api/facilityReportApi';
 import { FacilityReportKpiCards } from '../components/reports/FacilityReportKpiCards';
+import { FacilityRevenueChart } from '../components/reports/FacilityRevenueChart';
 import { FacilityRevenueBreakdown } from '../components/reports/FacilityRevenueBreakdown';
 import { FacilityOverdueDebtRisk } from '../components/reports/FacilityOverdueDebtRisk';
 
@@ -173,6 +174,7 @@ export const FacilityReportsPage: React.FC = () => {
       {overviewData && (
         <>
           <FacilityReportKpiCards data={overviewData} loading={loading} />
+          <FacilityRevenueChart data={overviewData} loading={loading} />
           <FacilityRevenueBreakdown data={overviewData} loading={loading} />
         </>
       )}

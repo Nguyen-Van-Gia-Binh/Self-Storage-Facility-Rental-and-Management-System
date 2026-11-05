@@ -30,6 +30,17 @@ public interface PaymentService {
     PaymentResponse processSandboxTransfer(Long orderCode, String action);
 
     /**
+     * Đơn PENDING dùng để ký URL VNPay. transferContent là vnp_OrderInfo.
+     */
+    PaymentResponse requirePendingPayment(Long orderCode);
+
+    /**
+     * Sau khi chữ ký đã đúng. Đã SUCCESS thì không phát sự kiện lần nữa.
+     * Mã khác 00 hoặc lệch số tiền: giữ PENDING, trả false.
+     */
+    boolean completeVnpayPayment(Long orderCode, boolean successCode, Long vnpAmount, String providerRef, String bankCode);
+
+    /**
      * Xử lý thanh toán cho đơn đặt chỗ hoặc hợp đồng (SC-03, BR-DEP-01, BR-DEP-02).
      */
     PaymentResponse processPayment(CreatePaymentRequest request);

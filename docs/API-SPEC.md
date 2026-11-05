@@ -933,6 +933,7 @@ Tạo đặt chỗ mới — `SC-02`, `BR-RES-01`, `BR-RES-02`, `BR-AVL-03`.
 | `409` | `CAPACITY_NOT_AVAILABLE` | Không còn capacity —`BR-AVL-03`                     |
 | `409` | `CONTRACT_OVERDUE`       | Khách có hợp đồng đang`OVERDUE` — `BR-OVD-09` |
 | `422` | `INVALID_START_DATE`     | startDate trong quá khứ                                |
+| `422` | `START_DATE_TOO_FAR_IN_ADVANCE` | startDate vượt quá 30 ngày so với hôm nay — `BR-RES-01` |
 
 ---
 
@@ -982,9 +983,20 @@ Hủy đặt chỗ — `BR-RES-04`.
   "id": 1042,
   "status": "CANCELLED",
   "cancelledAt": "2026-09-09T10:00:00+07:00",
-  "cancelReason": "Thay đổi kế hoạch"
+  "cancelReason": "Thay đổi kế hoạch",
+  "cancellationTier": "FULL_REFUND_EARLY",
+  "refundRentalAmount": 2400000,
+  "refundDepositAmount": 800000,
+  "refundDepositRate": "100%",
+  "penaltyDepositAmount": 0,
+  "totalRefund": 3200000
 }
 ```
+
+> **Ghi chú về `cancellationTier`:**
+> - `FULL_REFUND_EARLY` (Hủy trước $\ge 7$ ngày): Hoàn 100% tiền thuê + 100% tiền cọc (`BR-CAN-01`).
+> - `MID_REFUND` (Hủy 2–6 ngày): Hoàn 100% tiền thuê + Hoàn 50% tiền cọc, phạt 50% cọc (`BR-CAN-02`).
+> - `LATE_REFUND_PENALTY` (Hủy trong 48h): Hoàn 100% tiền thuê + Phạt 100% tiền cọc (`BR-CAN-03`).
 
 **Lỗi:**
 
@@ -998,7 +1010,7 @@ Hủy đặt chỗ — `BR-RES-04`.
 
 ### `PATCH /api/v1/reservations/{id}/assign-unit`
 
-Facility Manager gán Storage Unit sau khi khách thanh toán — `FM-02`, `BR-AVL-04`.
+Facility Manager gán hoặc đổi Storage Unit cho đơn đã thanh toán, bất kỳ lúc nào trước `startDate` — `FM-02`, `BR-AVL-04`. Chỉ `FACILITY_MANAGER` phụ trách đúng cơ sở của đơn được gọi. Ô được gán phải đang `AVAILABLE` và cùng Unit Type với đơn. Ô vừa được gán chuyển `RESERVED`; nếu đổi ô, ô cũ trở về `AVAILABLE`.
 
 **Auth:** `FACILITY_MANAGER` (của Facility)
 **Request body:**
@@ -1024,8 +1036,9 @@ Facility Manager gán Storage Unit sau khi khách thanh toán — `FM-02`, `BR-A
 
 | Status  | errorCode                  | Điều kiện                                                            |
 | ------- | -------------------------- | ----------------------------------------------------------------------- |
-| `409` | `UNIT_ASSIGNMENT_FAILED` | Unit không hợp lệ hoặc đã bị chiếm đồng thời —`BR-AVL-04` |
+| `409` | `UNIT_ASSIGNMENT_FAILED` | Unit không cùng loại, không `AVAILABLE`, hoặc đã bị chiếm đồng thời — `BR-AVL-04` |
 | `409` | `RESERVATION_NOT_PAID`   | Reservation chưa thanh toán đủ                                      |
+| `409` | `ASSIGNMENT_WINDOW_CLOSED` | Đã tới `startDate`, không còn gán hoặc đổi ô trước Check-in |
 
 ---
 
@@ -1364,6 +1377,7 @@ Nhân viên xác nhận bàn giao kho — `SC-04`, `FS-02`.
 | ------- | -------------------------------- | ------------------------------------------------------ |
 | `404` | `CONTRACT_NOT_FOUND`           | contractId không tồn tại                            |
 | `409` | `CONTRACT_NOT_PENDING_CHECKIN` | Hợp đồng không ở trạng thái`PENDING_CHECK_IN` |
+| `409` | `UNIT_NOT_YET_ALLOCATED` | `storage_unit_id` còn trống — FM chưa phân bổ ô (`BR-CHK-02`) |
 
 ---
 
@@ -1407,22 +1421,22 @@ Nhân viên ghi nhận khách hàng từ chối nhận bàn giao ô kho do sự 
 
 ### `POST /api/v1/contracts/{id}/reschedule-period`
 
-Dời ngày bắt đầu nhận kho trước khi Check-in — `SC-04`, `BR-RES-06`.
+Dời ngày bắt đầu nhận kho trước khi Check-in có tính phí theo ngày — `SC-04`, `BR-RES-06`.
 
-**Auth:** `STORAGE_CUSTOMER` (chính mình), `FACILITY_MANAGER`, `ADMIN`
-**Điều kiện:** Hợp đồng ở trạng thái `PENDING_CHECK_IN`.
+**Auth:** `STORAGE_CUSTOMER` (chính mình), `FACILITY_MANAGER`, `ADMIN`  
+**Điều kiện:** Hợp đồng ở trạng thái `PENDING_CHECK_IN` và gửi yêu cầu trước ngày bắt đầu $\ge 48$ giờ (`reschedule.notice_hours = 48`).
 
 **Request body:**
 
 ```json
 {
-  "newStartDate": "2026-11-01"
+  "newStartDate": "2026-10-04"
 }
 ```
 
 | Trường | Kiểu | Bắt buộc | Mô tả |
 | :--- | :--- | :---: | :--- |
-| `newStartDate` | `string` (date) | ✓ | Ngày bắt đầu mới (`YYYY-MM-DD`), phải từ ngày mai trở đi và khác ngày hiện tại |
+| `newStartDate` | `string` (date) | ✓ | Ngày bắt đầu mới (`YYYY-MM-DD`), tịnh tiến từ 1 đến tối đa 7 ngày so với ngày cũ (`reschedule.max_days = 7`) |
 
 **Response `200`:**
 
@@ -1433,9 +1447,14 @@ Dời ngày bắt đầu nhận kho trước khi Check-in — `SC-04`, `BR-RES-0
   "data": {
     "id": 500,
     "code": "CTR-20261011-1234",
-    "startDate": "2026-11-01",
-    "endDate": "2026-12-01",
-    "rentalMonths": 1,
+    "oldStartDate": "2026-10-01",
+    "startDate": "2026-10-04",
+    "oldEndDate": "2027-01-01",
+    "endDate": "2027-01-04",
+    "rentalMonths": 3,
+    "daysShifted": 3,
+    "rescheduleFee": 80000,
+    "paymentStatus": "COLLECTED",
     "status": "PENDING_CHECK_IN",
     "storageUnitId": 42,
     "storageUnitCode": "Q1-B201"
@@ -1448,6 +1467,8 @@ Dời ngày bắt đầu nhận kho trước khi Check-in — `SC-04`, `BR-RES-0
 | Status | errorCode | Điều kiện |
 | :--- | :--- | :--- |
 | `400` | `VALIDATION_FAILED` | Ngày bắt đầu mới ở quá khứ hoặc trùng ngày hiện tại |
+| `400` | `RESCHEDULE_EXCEEDS_MAX_DAYS` | Số ngày dời vượt quá 7 ngày (`reschedule.max_days = 7`). Bắt buộc Hủy đơn hoặc Check-in Online |
+| `400` | `RESCHEDULE_NOTICE_TOO_LATE` | Yêu cầu gửi trong vòng 48h trước ngày bắt đầu (`reschedule.notice_hours = 48`). Không được dời lịch |
 | `404` | `CONTRACT_NOT_FOUND` | Hợp đồng không tồn tại |
 | `409` | `INVALID_STATUS_TRANSITION` | Hợp đồng không ở trạng thái PENDING_CHECK_IN |
 | `409` | `STORAGE_UNIT_UNAVAILABLE` | Không còn ô kho trống cùng loại trong khoảng ngày mới |
@@ -2577,6 +2598,8 @@ Toàn bộ `errorCode` do `GlobalExceptionHandler` sinh, **ổn định** để 
 | `CONTRACT_OVERDUE`              | 409 | Hợp đồng đang quá hạn                               |
 | `CONTRACT_TERMINATED`           | 409 | Hợp đồng đã chấm dứt                               |
 | `CONTRACT_NOT_PENDING_CHECKIN`  | 409 | Hợp đồng không ở trạng thái chờ check-in          |
+| `UNIT_NOT_YET_ALLOCATED`        | 409 | Hợp đồng chưa được FM gán ô —`BR-CHK-02`           |
+| `ASSIGNMENT_WINDOW_CLOSED`      | 409 | Đã tới ngày nhận kho, không còn gán hoặc đổi ô     |
 | `RENEWAL_NOT_ALLOWED`           | 409 | Không đủ điều kiện gia hạn —`BR-REN-*`          |
 | `RETURN_NOTICE_TOO_SHORT`       | 422 | Báo trả quá gần ngày trả —`BR-RET-01`            |
 | `INSUFFICIENT_DEPOSIT_BALANCE`  | 409 | Số dư cọc không đủ để khấu trừ                  |

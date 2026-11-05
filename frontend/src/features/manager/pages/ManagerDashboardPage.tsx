@@ -1,8 +1,21 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Layers, FileText, Users, ArrowRight, Wrench, BarChart3, Building2 } from 'lucide-react';
+import { Layers, FileText, Users, ArrowRight, Wrench, BarChart3, Building2, ClipboardCheck } from 'lucide-react';
 
 const NAV_CARDS = [
+  {
+    to: '/manager/allocation',
+    icon: ClipboardCheck,
+    color: 'teal',
+    iconBg: 'from-teal-500 to-teal-600',
+    hoverBorder: 'hover:border-teal-400',
+    hoverShadow: 'hover:shadow-teal-100',
+    textColor: 'text-teal-600',
+    label: 'Gán ô kho',
+    subtitle: 'Phân ô cho đơn đã thanh toán',
+    desc: 'Chọn ô trống cùng hạng kho cho khách trước ngày nhận kho.',
+    cta: 'Mở Gán ô kho',
+  },
   {
     to: '/manager/contracts',
     icon: FileText,

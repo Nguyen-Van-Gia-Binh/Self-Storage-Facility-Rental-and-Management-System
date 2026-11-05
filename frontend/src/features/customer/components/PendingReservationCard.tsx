@@ -48,10 +48,9 @@ export const PendingReservationCard: React.FC<PendingReservationCardProps> = ({
     return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
   }, [secondsLeft, isExpired]);
 
+  const awaitingUnit = !reservation.storageUnitId || !reservation.storageUnitCode || reservation.storageUnitCode === 'Chua chon o';
   const bookingUrl = `/customer/booking?reservationId=${reservation.id}&facility=${reservation.facilityId}&type=${reservation.unitTypeId}${
-    reservation.storageUnitId ? `&unitId=${reservation.storageUnitId}` : ''
-  }${
-    reservation.storageUnitCode ? `&unitNumber=${encodeURIComponent(reservation.storageUnitCode)}` : ''
+    awaitingUnit ? '' : `&unitId=${reservation.storageUnitId}&unitNumber=${encodeURIComponent(reservation.storageUnitCode || '')}`
   }&months=${reservation.rentalMonths}&startDate=${reservation.startDate}`;
 
   return (
@@ -64,7 +63,9 @@ export const PendingReservationCard: React.FC<PendingReservationCardProps> = ({
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-extrabold text-slate-900 tracking-tight">
-              Đang giữ chỗ {reservation.storageUnitCode || reservation.unitTypeName || `#${reservation.code}`}
+              {awaitingUnit
+                ? 'Vị trí kho cụ thể sẽ được Ban quản lý cập nhật trước ngày nhận kho'
+                : `Đang giữ chỗ ${reservation.storageUnitCode}`}
             </span>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700">
               {(reservation.unitTypeName || 'Kho tiêu chuẩn').replace(/\s*\([^)]*\)/g, '').trim()}

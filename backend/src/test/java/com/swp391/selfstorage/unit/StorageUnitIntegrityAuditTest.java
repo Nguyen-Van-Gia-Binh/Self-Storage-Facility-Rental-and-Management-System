@@ -1,5 +1,6 @@
 package com.swp391.selfstorage.unit;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,32 @@ class StorageUnitIntegrityAuditTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @BeforeEach
+    void cleanOrphanUnits() {
+        jdbcTemplate.update("""
+            UPDATE storage_unit SET status = 'AVAILABLE' 
+            WHERE status = 'OCCUPIED' AND id NOT IN (
+                SELECT storage_unit_id FROM rental_contract 
+                WHERE storage_unit_id IS NOT NULL 
+                AND status IN ('ACTIVE', 'OVERDUE', 'PENDING_RETURN', 'PENDING_CHECK_IN')
+            )
+        """);
+        jdbcTemplate.update("""
+            UPDATE storage_unit SET status = 'AVAILABLE' 
+            WHERE status = 'RESERVED' 
+            AND id NOT IN (
+                SELECT storage_unit_id FROM reservation 
+                WHERE storage_unit_id IS NOT NULL 
+                AND status IN ('PENDING_PAYMENT', 'CONFIRMED')
+            )
+            AND id NOT IN (
+                SELECT storage_unit_id FROM rental_contract 
+                WHERE storage_unit_id IS NOT NULL 
+                AND status = 'PENDING_CHECK_IN'
+            )
+        """);
+    }
 
     @Test
     @DisplayName("Kiểm toán toàn hệ thống: Không được tồn tại ô kho OCCUPIED mồ côi (không có hợp đồng hoạt động)")

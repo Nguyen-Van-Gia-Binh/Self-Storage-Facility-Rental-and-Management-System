@@ -65,6 +65,11 @@ public interface ReservationService {
     void confirmAfterPayment(Long reservationId);
 
     /**
+     * FM gán hoặc đổi ô cho đơn đã thanh toán, trước ngày nhận kho (BR-AVL-04).
+     */
+    ReservationResponse assignUnit(Long reservationId, Long storageUnitId, List<Long> facilityIds);
+
+    /**
      * T3.5: Tra cứu đặt chỗ khi khách đến check-in — US-FS-01.1.
      * query: mã Reservation (RSV-...), số điện thoại, hoặc CCCD.
      */
