@@ -111,9 +111,9 @@ Hệ thống phục vụ **5 nhóm tác nhân** với quyền hạn và giao di�
 ```
 
 ### Các Luồng Chính (Flow 1–5)
-* **Flow 1 — Storage Unit Reservation:** Tìm kiếm theo cơ sở, chọn hạng kho (Unit Type); giữ hạn ngạch hạng kho; thanh toán cọc và phí thuê N tháng qua VietQR. FM gán ô vật lý trước ngày Check-in.
+* **Flow 1 — Storage Unit Reservation:** Tìm kiếm theo cơ sở, chọn hạng kho (Unit Type); giới hạn đặt trước tối đa 30 ngày (`BR-RES-01`); giữ hạn ngạch hạng kho; thanh toán cọc và phí thuê N tháng qua VietQR. FM gán ô vật lý trước ngày Check-in. Hỗ trợ Dời ngày có phí theo ngày (`BR-RES-06`) và Hủy đặt chỗ 3 tầng phân cấp chuẩn Airbnb (`BR-CAN-01..03`).
 * **Flow 2 — Storage Check-in and Handover:** Khách nhận kho trực tuyến (Check-in Online) hoặc đến cơ sở nhận đúng ô FM đã gán; nhân viên đối soát 4 tiêu chí an toàn. Ký biên bản điện tử và cấp mã PIN truy cập 24/7; hỗ trợ tự động kích hoạt (Auto-Activation) sau 10 ngày nếu khách chưa thao tác để bảo toàn 100% doanh thu.
-* **Flow 3 — Rented Storage Unit Management:** Quản lý danh sách ô kho đang thuê; tra cứu hợp đồng điện tử và nhật ký mở cửa IoT; hủy yêu cầu trả kho khi đổi ý (`BR-RET-12`).
+* **Flow 3 — Rented Storage Unit Management:** Quản lý danh sách ô kho đang thuê; tra cứu hợp đồng điện tử và nhật ký mở cửa IoT; chính sách Trả kho sớm Win-Win hoàn 100% tiền thuê chưa dùng và phạt cọc (`BR-RET-06`); hủy yêu cầu trả kho khi đổi ý (`BR-RET-12`).
 * **Flow 4 — Business Rules, Fee Management & Revenue Monitoring:** BOM cấu hình chính sách tiền cọc động (`depositMultiplier`), bảng giá theo diện tích m², phụ phí đền bù và theo dõi Usage Rate toàn chuỗi.
 * **Flow 5 — Facility Storage and Staff Management:** FM quản lý mặt bằng kho, trạng thái ô kho (`AVAILABLE`, `RESERVED`, `OCCUPIED`, `MAINTENANCE`); phân công nhân viên theo ca trực trên Bảng điều phối hàng ngày.
 
@@ -121,7 +121,7 @@ Hệ thống phục vụ **5 nhóm tác nhân** với quyền hạn và giao di�
 * **Flow 6 — Storage Renewal and Overdue Handling:**
   - *Flow 6.1 (Gia hạn):* Cho phép gia hạn online; kiểm tra trùng lịch đặt trước với Conflict View trực quan (`BR-REN-01..06`).
   - *Flow 6.2 (Xử lý quá hạn):* Tự động chuyển nợ D+1..D+3 (ân hạn), D+4..D+6 (phạt trễ), D+7..D+10 (khóa PIN), >D+10 (thanh lý niêm phong tài sản).
-* **Flow 7 — Support Request and Issue Handling:** Khách báo sự cố trên Portal; FM tiếp nhận và phân công nhân viên ca trực; Staff nghiệm thu hiện trường phân định lỗi; FM điều chuyển ô kho bảo lưu giá và cọc.
+* **Flow 7 — Support Request and Issue Handling:** Khách báo sự cố trên Portal; FM tiếp nhận và phân công nhân viên ca trực; Staff nghiệm thu hiện trường phân định lỗi; FM điều chuyển ô kho bảo lưu giá và cọc; áp dụng trần bồi thường hàng hóa 10M và tùy chọn Gói bảo vệ mở rộng 50M (`BR-SUP-04`).
 
 > 📌 Chi tiết ma trận Use Cases và Đặc tả luồng: **[docs/USER-STORIES-AND-USE-CASES.md](docs/USER-STORIES-AND-USE-CASES.md)**
 

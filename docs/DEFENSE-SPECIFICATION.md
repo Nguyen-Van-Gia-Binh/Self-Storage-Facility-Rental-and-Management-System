@@ -490,9 +490,9 @@ stateDiagram-v2
     RESERVED --> PENDING_CHECK_IN : Thanh toán thành công; chờ FM gán ô (Flow 1)
     RESERVED --> CANCELLED : Quá 48h không thanh toán hoặc khách bấm hủy
 
-    PENDING_CHECK_IN --> ACTIVE : FM đã gán ô; khách đối chiếu CCCD và bàn giao đạt (Flow 2)
+    PENDING_CHECK_IN --> ACTIVE : FM đã gán ô; khách Check-in Online hoặc nhận tại quầy (Flow 2)
+    PENDING_CHECK_IN --> ACTIVE : Quá 10 ngày ân hạn không nhận kho (Auto-Activation T+11, BR-CAN-04)
     PENDING_CHECK_IN --> CANCELLED : Hết ô thay thế hoặc khách từ chối nhận (Hoàn 100% tiền)
-    PENDING_CHECK_IN --> NO_SHOW : Quá 10 ngày ân hạn không đến nhận kho (Mất cọc)
 
     ACTIVE --> PENDING_RENEWAL : Khách chọn gia hạn thêm N tháng (Chờ thanh toán)
     PENDING_RENEWAL --> ACTIVE : Thanh toán kỳ gia hạn thành công (Cộng dồn ngày kết thúc)
@@ -507,7 +507,6 @@ stateDiagram-v2
 
     CLOSED --> [*]
     CANCELLED --> [*]
-    NO_SHOW --> [*]
     TERMINATED_OVERDUE --> [*]
 ```
 
@@ -524,8 +523,8 @@ stateDiagram-v2
     PENDING_PAYMENT --> EXPIRED : Quá thời hạn giữ chỗ 48 giờ (BR-DEP-03)
     PENDING_PAYMENT --> CANCELLED : Khách hàng chủ động hủy lệnh đặt chỗ
 
-    CONFIRMED --> CHECKED_IN : Khách hoàn tất nhận kho tại cơ sở (Chuyển sang Contract ACTIVE)
-    CONFIRMED --> CANCELLED : Khách hủy trước ngày nhận kho (Áp dụng BR-CAN-01 / BR-CAN-02)
+    CONFIRMED --> CHECKED_IN : Khách Check-in Online / tại quầy hoặc Auto-Activation T+11 (Chuyển Contract ACTIVE)
+    CONFIRMED --> CANCELLED : Khách hủy trước ngày bắt đầu (Áp dụng Hủy 3 tầng BR-CAN-01..03)
 
     CHECKED_IN --> [*]
     EXPIRED --> [*]
@@ -1026,7 +1025,7 @@ Bảng sau ánh xạ chi tiết từng **Function / Action** trong **7 Luồng n
 | **Fuc 1.2: Tính toán Giá thuê & Tiền cọc Deposit**<br>· Actor: `Customer`<br>· Use Case: `UC-F1-05`<br>· Code: `SC-01` | **`BR-GEN-03`**: Chu kỳ thuê tính theo tháng nguyên. Khách hàng bắt buộc **thanh toán trước toàn bộ** tiền thuê $N$ tháng cùng tiền cọc một lần duy nhất lúc đặt chỗ.<br>**`BR-GEN-04`**: Đơn vị tiền tệ chuẩn là **VND**. Mọi dòng chi phí (line item) được làm tròn lên đến **1.000 đ** sau khi áp dụng công thức; tổng thanh toán là tổng các line item đã làm tròn.<br>**`BR-GEN-05`**: Đơn giá thuê 1 tháng tính theo công thức snapshot:<br>$$\text{Giá thuê 1 tháng} = \text{Đơn giá m² (Facility } \times \text{ Unit Type)} \times \text{Diện tích quy chuẩn (m²)}$$<br>**`BR-PRI-01`**: Tổng phí thuê ban đầu: $\text{Rental Amount} = \text{Giá thuê 1 tháng} \times N$.<br>**`BR-DEP-01`**: Tiền cọc Deposit bắt buộc bằng đúng 1 tháng tiền thuê chuẩn: $\text{Deposit} = \text{Giá thuê 1 tháng} \times \text{deposit.multiplier (1.0)}$. |
 | **Fuc 1.3: Khởi tạo Giữ chỗ & Khóa tạm thời 48h**<br>· Actor: `Customer`<br>· Use Case: `UC-F1-06`<br>· Code: `SC-01` | **`BR-DEP-03`**: Sau khi bấm giữ chỗ, hệ thống tạo Reservation ở trạng thái `PENDING_PAYMENT`, giữ hạn ngạch Unit Type trong `reservation.hold_hours = 48 giờ` và để `storage_unit_id` trống. Không có ô vật lý nào chuyển `RESERVED`.<br>**`BR-RES-03`**: Nếu quá 48 giờ mà khách hàng chưa hoàn tất thanh toán, hệ thống tự động hủy đơn (`EXPIRED`) và nhả hạn ngạch hạng kho. |
 | **Fuc 1.4: Xử lý Thanh toán qua Cổng Sandbox**<br>· Actor: `Customer`<br>· Use Case: `UC-F1-07`, `UC-F1-08`<br>· Code: `SC-01` | **`BR-PAY-01`**: Tổng tiền thanh toán ngay = $\text{Rental Amount} + \text{Deposit Amount}$.<br>**`BR-PAY-02`**: Giao dịch chỉ hợp lệ khi Cổng thanh toán phản hồi mã kết quả thành công qua IPN Webhook an toàn.<br>**`BR-PAY-03`**: Khi thanh toán thành công, hệ thống ghi nhận `PaymentTransaction`, sinh đồng thời bút toán `LedgerEntry`, chuyển `Reservation` sang `CONFIRMED` và tạo `RentalContract` ở trạng thái `PENDING_CHECK_IN`. |
-| **Fuc 1.5: Hủy Đặt chỗ & Xử lý Hoàn tiền cọc**<br>· Actor: `Customer`<br>· Use Case: `UC-F1-10`, `UC-F1-12`<br>· Code: `SC-01` | **`BR-CAN-01`**: Khách hủy trước ngày nhận kho $\ge 48$ giờ (`cancel.full_refund_hours = 48h`): **Hoàn trả 100%** tiền thuê và **100%** tiền cọc Deposit.<br>**`BR-CAN-02`**: Khách hủy trong vòng 48 giờ trước ngày bắt đầu: **Phạt 100% tiền cọc Deposit** (`cancel.late_refund_rate = 0%`); hoàn lại 100% tiền thuê đã trả trước.<br>**`BR-CAN-04`**: Trường hợp khách không đến nhận kho (No-show) quá thời hạn ân hạn 10 ngày (`checkin.grace_days = 10 ngày`): Mất 100% tiền cọc, tiền thuê được hoàn lại sau khi trừ đi chi phí giữ kho 10 ngày tính theo ngày quy ước 30 ngày (`BR-PRI-03`):<br>$$\text{Tiền hoàn No-show} = \text{Tiền thuê đã trả} - \left(\frac{\text{Giá thuê 1 tháng}}{30} \times 10\right)$$ |
+| **Fuc 1.5: Hủy Đặt chỗ, Dời ngày & Xử lý Hoàn tiền cọc**<br>· Actor: `Customer`<br>· Use Case: `UC-F1-10`, `UC-F1-12`<br>· Code: `SC-01` | **`BR-RES-06` (Dời ngày nhận kho có thu phí)**: Khách được dời ngày bắt đầu tối đa 7 ngày (`reschedule.max_days = 7`), báo trước $\ge 48$h (`reschedule.notice_hours = 48`), phí dời = $\text{Số ngày dời} \times (\text{Giá thuê 1 tháng} / 30)$; cấm dời quá 7 ngày.<br>**`BR-CAN-01` (Hủy sớm $\ge 7$ ngày)**: Hoàn trả **100% tiền thuê** và **100% tiền cọc Deposit** (`cancel.full_refund_days = 7`).<br>**`BR-CAN-02` (Hủy lửng 2–6 ngày)**: Hoàn trả **100% tiền thuê**, phạt **50% tiền cọc Deposit** (hoàn lại 50% cọc, `cancel.mid_refund_days = 2`, `cancel.mid_refund_rate = 50%`).<br>**`BR-CAN-03` (Hủy sát nút $< 48$ giờ)**: Hoàn trả **100% tiền thuê**, phạt **100% tiền cọc Deposit** (`cancel.late_refund_rate = 0%`).<br>**`BR-CAN-04` (Bảo toàn doanh thu qua Auto-Activation)**: Khách không đến nhận kho quá 10 ngày ân hạn (`checkin.grace_days = 10`) và không dời lịch: Hệ thống **tự động kích hoạt hợp đồng sang `ACTIVE`** vào lúc 00:00 ngày $T+11$, tự cấp mã PIN truy cập IoT 24/7 qua Email/SMS để bảo toàn 100% doanh thu gói thuê cho cơ sở. |
 | **FLOW 2: NHẬN KHO & BÀN GIAO (CHECK-IN & HANDOVER)** | |
 | **Fuc 2.1: Đối chiếu Danh tính & Nhận kho**<br>· Actor: `Staff`, `Customer`<br>· Use Case: `UC-F2-01` .. `UC-F2-03`<br>· Code: `FS-01`, `SC-02` | **`BR-CHK-01`**: Khách hàng bắt buộc xuất trình bản gốc CCCD / Hộ chiếu trùng khớp 100% với số giấy tờ đăng ký trên đơn đặt chỗ.<br>**`BR-CHK-02`**: Nhân viên trực dẫn khách đến tận ô kho, kiểm tra khóa điện tử, đèn chiếu sáng, độ sạch sẽ của ô kho trước sự chứng kiến của khách.<br>**`BR-CHK-05`**: Khách hàng được phép đến nhận kho trễ tối đa `checkin.grace_days = 10 ngày` kể từ ngày `rental_start_date`. Trong 10 ngày này, hợp đồng vẫn tính tiền bình thường theo mốc đã ký. |
 | **Fuc 2.2: Ký Biên bản & Cấp Mã PIN Truy cập**<br>· Actor: `Staff`, `Customer`<br>· Use Case: `UC-F2-04`, `UC-F2-06`<br>· Code: `FS-01` | **`BR-CHK-03`**: Biên bản bàn giao (`HandoverRecord`) phải được cả nhân viên và khách xác nhận điện tử trên hệ thống.<br>**`BR-ACC-01`**: Ngay khi biên bản được ký duyệt, hợp đồng chuyển sang `ACTIVE`, hệ thống tự động sinh ngẫu nhiên mã PIN điện tử 6 chữ số an toàn (`AccessCredential`) gửi về email và ứng dụng của khách.<br>**`BR-ACC-03`**: Khách hàng có quyền đổi mã PIN cá nhân bất kỳ lúc nào trên ứng dụng di động / cổng web khách hàng. |
@@ -1052,7 +1051,7 @@ Bảng sau ánh xạ chi tiết từng **Function / Action** trong **7 Luồng n
 | **FLOW 7: HỖ TRỢ KỸ THUẬT & XỬ LÝ SỰ CỐ (SUPPORT & INCIDENT SLA)** | |
 | **Fuc 7.1: Gửi Ticket Yêu cầu Hỗ trợ**<br>· Actor: `Customer`<br>· Use Case: `UC-F7-01` .. `UC-F7-03`<br>· Code: `SC-05` | **`BR-SUP-01`**: Khách hàng được gửi yêu cầu hỗ trợ 24/7 từ ứng dụng di động kèm hình ảnh minh chứng.<br>**`BR-SUP-02`**: Không áp đặt thời hạn cứng 2 giờ; mọi yêu cầu được tiếp nhận và xử lý linh hoạt theo ca trực hoạt động thực tế của từng cơ sở. |
 | **Fuc 7.2: Xử lý Kỹ thuật & Cấp lại Mã PIN**<br>· Actor: `Staff`<br>· Use Case: `UC-F7-04` .. `UC-F7-06`<br>· Code: `FS-06` | **`BR-ACC-04`**: Trường hợp mã PIN bị lỗi do chập cháy thiết bị của cơ sở hoặc khách quên mã lần đầu, nhân viên trực cơ sở cấp lại mã PIN mới hoàn toàn **miễn phí 0 VNĐ**.<br>**`BR-SUP-03`**: Sau khi nhân viên cập nhật `RESOLVED`, nếu khách hàng không phản hồi trong vòng `support.auto_close_working_days = 7 ngày làm việc`, hệ thống tự động đóng ticket (`CLOSED`). |
-| **Fuc 7.3: Đổi Ô kho Khẩn cấp & Đền bù**<br>· Actor: `FM`<br>· Use Case: `UC-F7-07`, `UC-F7-08`<br>· Code: `FM-05` | **`BR-SUP-05`**: Trường hợp ô kho gặp sự cố bất khả kháng (cháy nổ, dột nước nghiêm trọng), Quản lý cơ sở (FM) có quyền điều chuyển khách hàng sang ô kho trống tương đương hoặc nâng cấp miễn phí sang loại kho lớn hơn liền kề.<br>**`BR-SUP-06`**: Mọi chi phí đền bù hoặc miễn giảm phụ phí phải được ghi nhận thành biên bản điện tử và gửi thông báo cho BOM giám sát. |
+| **Fuc 7.3: Đổi Ô kho Khẩn cấp & Đền bù**<br>· Actor: `FM`<br>· Use Case: `UC-F7-07`, `UC-F7-08`<br>· Code: `FM-05` | **`BR-SUP-04` (Hạn mức bồi thường hàng hóa & Gói bảo vệ)**: Giới hạn trách nhiệm bồi thường mặc định tối đa 10.000.000 VNĐ / ô kho đối với thiệt hại do lỗi cơ sở (`support.goods_liability_cap`); cung cấp tùy chọn Gói bảo vệ mở rộng (+50.000 VNĐ/tháng) bồi thường tối đa 50.000.000 VNĐ qua đối tác bảo hiểm; miễn trừ 100% với tài sản thuộc danh mục hàng cấm.<br>**`BR-SUP-05`**: Trường hợp ô kho gặp sự cố bất khả kháng (cháy nổ, dột nước nghiêm trọng), Quản lý cơ sở (FM) có quyền điều chuyển khách hàng sang ô kho trống tương đương hoặc nâng cấp miễn phí sang loại kho lớn hơn liền kề.<br>**`BR-SUP-06`**: Mọi chi phí đền bù hoặc miễn giảm phụ phí phải được ghi nhận thành biên bản điện tử và gửi thông báo cho BOM giám sát. |
 
 ---
 
@@ -1087,6 +1086,9 @@ Toàn bộ các hằng số nghiệp vụ trong hệ thống được định c�
 | `return.refund_working_days` | Số ngày làm việc để quyết toán và hoàn cọc sau nghiệm thu | **7 ngày làm việc** | `BR-RET-05` |
 | `return.early_refund_rate` | Tỷ lệ hoàn tiền thuê thời gian chưa dùng khi trả kho sớm (sau khi phạt cọc Deposit) | **100%** (Hoàn tiền thuê, phạt cọc) | `BR-RET-06` |
 | `support.auto_close_working_days` | Số ngày làm việc chờ khách xác nhận trước khi tự đóng ticket | **7 ngày làm việc** | `BR-SUP-03` |
+| `support.goods_liability_cap` | Hạn mức bồi thường hàng hóa tối đa mặc định khi xảy ra sự cố cơ sở | **10.000.000 VNĐ / ô kho** | `BR-SUP-04` |
+| `insurance.monthly_fee` | Phí dịch vụ gói bảo vệ mở rộng hàng hóa tùy chọn cộng thêm hàng tháng | **50.000 VNĐ / tháng** | `BR-SUP-04` |
+| `insurance.coverage_cap` | Hạn mức bồi thường tối đa khi khách hàng tham gia gói bảo vệ mở rộng | **50.000.000 VNĐ** | `BR-SUP-04` |
 
 ---
 

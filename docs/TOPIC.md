@@ -108,7 +108,7 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 - **Tác nhân chính:** Storage Customer
 - **Tác nhân liên quan:** Facility Manager
 - **Phạm vi liên quan:** `SC-01`, `SC-02`, `SC-03`, `FM-02`
-- **Nội dung dự kiến:** Khách xem cơ sở, chọn hạng kho (Unit Type), ngày bắt đầu và thời hạn thuê → xem bảng ước tính chi phí và tiền cọc Deposit → hệ thống giữ hạn ngạch hạng kho trong 48h, chưa gán mã ô → khách thanh toán trực tuyến qua cổng VietQR/thẻ → hệ thống xác nhận Confirmed và gửi lịch hẹn Check-in. FM phân bổ một Storage Unit đang AVAILABLE cùng loại trước ngày Check-in.
+- **Nội dung dự kiến:** Khách xem cơ sở, chọn hạng kho (Unit Type), ngày bắt đầu (khống chế trong cửa sổ tối đa 30 ngày theo `BR-RES-01`) và thời hạn thuê → xem bảng ước tính chi phí, tiền cọc Deposit và tùy chọn Gói bảo vệ hàng hóa (+50k/tháng) → hệ thống giữ hạn ngạch hạng kho trong 48h, chưa gán mã ô → khách thanh toán trực tuyến qua cổng VietQR/thẻ → hệ thống xác nhận Confirmed và gửi lịch hẹn Check-in. FM phân bổ một Storage Unit đang AVAILABLE cùng loại trước ngày Check-in. Trong giai đoạn chờ nhận kho, khách có thể sử dụng tính năng **Dời ngày có phí theo ngày** (tối đa 7 ngày theo `BR-RES-06`) hoặc **Hủy đặt chỗ theo chính sách 3 tầng** (`BR-CAN-01..03`: hoàn 100% tiền thuê; tiền cọc hoàn 100% nếu hủy sớm $\ge 7$ ngày, phạt 50% nếu hủy 2–6 ngày, phạt 100% nếu hủy dưới 48h).
 
 ### Flow 2 — Storage Check-in and Handover Flow
 
@@ -126,7 +126,7 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 - **Tác nhân chính:** Storage Customer
 - **Tác nhân liên quan:** Facility Manager, Facility Staff
 - **Phạm vi liên quan:** `SC-05`, `FS-03`, `FS-04`, `FM-03`, `FM-04`
-- **Nội dung dự kiến:** Khách theo dõi các ô kho đang thuê, thời hạn và tình trạng thanh toán. **Quy trình trả kho tự động**: Trước ngày hết hạn hợp đồng 1 tháng, nếu khách không thực hiện gia hạn thì hệ thống mặc định coi như không thuê tiếp và tự động chuyển sang tiến trình trả kho khi đến hạn. Hết hạn hợp đồng, nếu muốn tiếp tục thuê khách phải tạo hợp đồng mới. Khách hoàn tất dọn đồ, nhân viên nghiệm thu hiện trạng và quản lý cơ sở quyết toán hoàn Deposit.
+- **Nội dung dự kiến:** Khách theo dõi các ô kho đang thuê, thời hạn và tình trạng thanh toán. **Quy trình trả kho tự động**: Trước ngày hết hạn hợp đồng 1 tháng, nếu khách không thực hiện gia hạn thì hệ thống mặc định coi như không thuê tiếp và tự động chuyển sang tiến trình trả kho khi đến hạn. Hết hạn hợp đồng, nếu muốn tiếp tục thuê khách phải tạo hợp đồng mới. Khách hoàn tất dọn đồ, nhân viên nghiệm thu hiện trạng và quản lý cơ sở quyết toán hoàn Deposit. Khách hàng có quyền **Trả kho sớm (Win-Win)** theo `BR-RET-06`: hệ thống hoàn trả 100% tiền thuê phần thời gian chưa dùng, phạt 100% tiền cọc Deposit do vi phạm thời hạn hợp đồng, và khấu trừ chi phí hư hại vật chất theo biên bản nghiệm thu.
 
 ### Flow 4 — Business Rules, Fee Management, and Revenue Monitoring Flow
 
@@ -168,7 +168,7 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 - **Tác nhân chính:** Storage Customer, Facility Staff
 - **Tác nhân liên quan:** Facility Manager
 - **Phạm vi liên quan:** `SC-06`, `FS-03`, `FS-05`, `FM-05`
-- **Nội dung dự kiến:** Khách gửi yêu cầu hỗ trợ sự cố → Facility Manager tiếp nhận và phân loại yêu cầu → FM phân công công việc cho Facility Staff → Staff xử lý hiện trường → hệ thống thông báo kết quả cho khách và đóng yêu cầu.
+- **Nội dung dự kiến:** Khách gửi yêu cầu hỗ trợ sự cố → Facility Manager tiếp nhận và phân loại yêu cầu → FM phân công công việc cho Facility Staff → Staff xử lý hiện trường → hệ thống thông báo kết quả cho khách và đóng yêu cầu. Về trách nhiệm đền bù thiệt hại hàng hóa (`BR-SUP-04`): hệ thống áp dụng hạn mức trách nhiệm mặc định tối đa 10.000.000 VNĐ / ô kho cho sự cố do lỗi cơ sở; cung cấp tùy chọn Gói bảo vệ mở rộng (+50.000 VNĐ/tháng) bồi thường tới 50.000.000 VNĐ qua đối tác bảo hiểm; miễn trừ 100% đối với hàng cấm (chất cháy nổ, đồ tươi sống, tiền mặt, kim loại quý).
 
 ---
 

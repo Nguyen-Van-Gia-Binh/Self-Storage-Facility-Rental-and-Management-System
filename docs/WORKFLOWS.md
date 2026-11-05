@@ -527,11 +527,11 @@ Hệ thống cấu hình 3 tác vụ tự động chạy nền (Background Sched
               │
               ├─(Thanh toán thành công)─► CONFIRMED
               │                               │
-              │                               ├─(Khách đến nhận kho)──► FULFILLED
+              │                               ├─(Check-in Online / tại quầy)──► FULFILLED
               │                               │
-              │                               ├─(Khách hủy đơn)───────► CANCELLED
+              │                               ├─(Khách hủy theo 3 tầng BR-CAN)► CANCELLED
               │                               │
-              │                               └─(Quá ân hạn không đến)─► NO_SHOW
+              │                               └─(Quá 10 ngày ân hạn - Auto-Act)─► FULFILLED
               ▼
           CANCELLED
 ```
@@ -542,9 +542,9 @@ Hệ thống cấu hình 3 tác vụ tự động chạy nền (Background Sched
   [Đặt chỗ thành công]
            │
            ▼
-   PENDING_CHECK_IN ─────────(Từ chối bàn giao / Không đến)───────► CANCELLED / NO_SHOW
+   PENDING_CHECK_IN ─────────(Từ chối bàn giao hết ô đổi)─────────► CANCELLED (Hoàn 100%)
            │
-      (Check-in đạt)
+      (Check-in đạt / Auto-Activation T+11)
            ▼
         ACTIVE ──────────────(Khởi tạo gia hạn 48h)─────────────► PENDING_RENEWAL
            │                                                              │

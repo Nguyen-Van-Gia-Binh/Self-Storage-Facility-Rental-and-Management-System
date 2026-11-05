@@ -178,10 +178,19 @@ Chính sách vận hành có phiên bản đầy đủ tại từng thời đi�
 | `effective_from` | `DATETIMEOFFSET` | Có | | Mốc thời gian chính thức có hiệu lực |
 | `deposit_multiplier` | `DECIMAL(5,2)` | Có | | Hệ số tiền cọc (vd: `1.00` = 1 tháng tiền thuê - `BR-DEP-01`) |
 | `reservation_hold_hours` | `INT` | Có | | Số giờ giữ chỗ chờ thanh toán (`48` giờ - `BR-RES-02`) |
-| `checkin_grace_days` | `INT` | Có | | Số ngày ân hạn check-in sau ngày bắt đầu (`10` ngày - `BR-CHK-05`) |
-| `cancel_full_refund_hours` | `INT` | Có | | Số giờ hủy trước check-in được hoàn 100% (`48` giờ - `BR-CAN-01`) |
-| `cancel_late_refund_rate` | `DECIMAL(5,2)` | Có | | Tỷ lệ hoàn tiền khi hủy muộn (`0.50` = 50% - `BR-CAN-02`) |
-| `cancel_no_show_refund_rate` | `DECIMAL(5,2)` | Có | | Tỷ lệ hoàn tiền khi khách No-show (`0.00` = 0% - `BR-CAN-04`) |
+| `reservation_max_advance_booking_days` | `INT` | Có | `DEFAULT 30` | Cửa sổ đặt kho trước tối đa (`30` ngày - `BR-RES-01`) |
+| `checkin_grace_days` | `INT` | Có | | Số ngày ân hạn check-in sau ngày bắt đầu (`10` ngày - `BR-CHK-05`, `BR-CAN-04`) |
+| `cancel_full_refund_days` | `INT` | Có | `DEFAULT 7` | Hủy trước ngày bắt đầu $\ge 7$ ngày hoàn 100% cọc + 100% tiền thuê (`BR-CAN-01`) |
+| `cancel_mid_refund_days` | `INT` | Có | `DEFAULT 2` | Mốc ngày bắt đầu khoảng hủy lửng 2–6 ngày (`BR-CAN-02`) |
+| `cancel_mid_refund_rate` | `DECIMAL(5,2)` | Có | `DEFAULT 0.50` | Tỷ lệ hoàn cọc khi hủy lửng (`0.50` = 50% cọc, hoàn 100% tiền thuê - `BR-CAN-02`) |
+| `cancel_late_refund_rate` | `DECIMAL(5,2)` | Có | `DEFAULT 0.00` | Tỷ lệ hoàn cọc khi hủy sát nút $< 48$h (`0.00` = phạt 100% cọc, hoàn 100% tiền thuê - `BR-CAN-03`) |
+| `reschedule_max_days` | `INT` | Có | `DEFAULT 7` | Số ngày được dời ngày nhận kho tối đa (`7` ngày - `BR-RES-06`) |
+| `reschedule_notice_hours` | `INT` | Có | `DEFAULT 48` | Thời hạn tối thiểu trước ngày bắt đầu phải gửi yêu cầu dời lịch (`48` giờ - `BR-RES-06`) |
+| `goods_liability_cap` | `BIGINT` | Có | `DEFAULT 10000000` | Hạn mức bồi thường hàng hóa cơ sở mặc định (`10.000.000` VNĐ / ô kho - `BR-SUP-04`) |
+| `insurance_monthly_fee` | `BIGINT` | Có | `DEFAULT 50000` | Phí dịch vụ Gói bảo vệ mở rộng hàng hóa tùy chọn (`50.000` VNĐ / tháng - `BR-SUP-04`) |
+| `insurance_coverage_cap` | `BIGINT` | Có | `DEFAULT 50000000` | Hạn mức bồi thường tối đa khi tham gia Gói bảo vệ mở rộng (`50.000.000` VNĐ - `BR-SUP-04`) |
+| `cancel_full_refund_hours` | `INT` | Không | | [Deprecated] Đã thay thế bởi chính sách hủy 3 tầng tính theo ngày `cancel_full_refund_days` (`BR-CAN-01`) |
+| `cancel_no_show_refund_rate` | `DECIMAL(5,2)` | Không | | [Deprecated] Đã thay thế bởi cơ chế Auto-Activation (`BR-CAN-04`) bảo toàn 100% doanh thu |
 | `renewal_reminder_days` | `NVARCHAR(50)` | Có | | Chuỗi CSV các ngày nhắc hạn trước khi hết hạn (`"30,7,3,1"`) |
 | `renewal_min_months` | `INT` | Có | | Số tháng gia hạn tối thiểu (`1` tháng) |
 | `renewal_max_months` | `INT` | Có | | Số tháng gia hạn tối đa (`12` tháng) |
@@ -257,9 +266,11 @@ Chương trình khuyến mãi giảm giá thuê (`US-BM-03.3`).
 | `discount_amount`| `BIGINT` | Có | `DEFAULT 0` | Số tiền được giảm giá |
 | `deposit_amount` | `BIGINT` | Có | | Số tiền cọc cần đóng |
 | `total_rental_fee`| `BIGINT` | Có | | Tổng tiền thuê các tháng sau giảm giá |
-| `total_payable` | `BIGINT` | Có | | Tổng tiền phải thanh toán ban đầu (= tiền thuê + cọc) |
+| `total_payable` | `BIGINT` | Có | | Tổng tiền phải thanh toán ban đầu (= tiền thuê + cọc + phí bảo hiểm nếu có) |
+| `has_insurance` | `BIT` | Có | `DEFAULT 0` | Cờ chọn mua Gói bảo vệ mở rộng hàng hóa (+50k/tháng) (`BR-SUP-04`) |
+| `insurance_fee` | `BIGINT` | Có | `DEFAULT 0` | Tổng phí bảo vệ mở rộng các tháng thuê ban đầu (`BR-SUP-04`) |
 | `storage_unit_id`| `BIGINT` | Không | `FK` $\rightarrow$ `storage_unit(id)` | Trống khi khách đặt. FM điền trước ngày Check-in (`BR-AVL-04`) |
-| `status` | `VARCHAR(20)` | Có | `DEFAULT 'PENDING_PAYMENT'`, `CHECK IN ('PENDING_PAYMENT', 'CONFIRMED', 'FULFILLED', 'EXPIRED', 'CANCELLED', 'NO_SHOW')` | Trạng thái vòng đời đơn giữ chỗ |
+| `status` | `VARCHAR(20)` | Có | `DEFAULT 'PENDING_PAYMENT'`, `CHECK IN ('PENDING_PAYMENT', 'CONFIRMED', 'FULFILLED', 'EXPIRED', 'CANCELLED', 'NO_SHOW')` | Trạng thái vòng đời đơn giữ chỗ (Lưu ý: `NO_SHOW` cũ đã được thay thế bằng `FULFILLED` qua Auto-Activation `BR-CAN-04`) |
 | `hold_expires_at`| `DATETIMEOFFSET` | Có | | Hạn chót thanh toán giữ chỗ (48h) |
 | `confirmed_at` | `DATETIMEOFFSET` | Không | | Mốc thanh toán thành công; ô vật lý có thể chưa được gán |
 | `fulfilled_at` | `DATETIMEOFFSET` | Không | | Mốc hoàn tất check-in bàn giao kho |
@@ -283,7 +294,9 @@ Hợp đồng thuê ô kho chính thức (`Flow 2, 3, 6`, `state-machine-contrac
 | `policy_version_id`| `BIGINT` | Có | `FK` $\rightarrow$ `policy_version(id)` | Snapshot chính sách áp dụng |
 | `monthly_price_snapshot`| `BIGINT` | Có | | Đơn giá thuê 1 tháng cố định trong hợp đồng |
 | `deposit_amount` | `BIGINT` | Có | | Tiền cọc đang giữ của hợp đồng |
-| `status` | `VARCHAR(20)` | Có | `DEFAULT 'PENDING_CHECK_IN'`, `CHECK IN ('PENDING_CHECK_IN', 'ACTIVE', 'PENDING_RETURN', 'OVERDUE', 'CANCELLED', 'CLOSED', 'TERMINATED')` | Trạng thái vòng đời hợp đồng |
+| `has_insurance` | `BIT` | Có | `DEFAULT 0` | Cờ đăng ký Gói bảo vệ mở rộng hàng hóa (+50k/tháng) (`BR-SUP-04`) |
+| `insurance_fee` | `BIGINT` | Có | `DEFAULT 0` | Phí bảo vệ mở rộng phát sinh theo hợp đồng (`BR-SUP-04`) |
+| `status` | `VARCHAR(20)` | Có | `DEFAULT 'PENDING_CHECK_IN'`, `CHECK IN ('PENDING_CHECK_IN', 'ACTIVE', 'PENDING_RETURN', 'OVERDUE', 'CANCELLED', 'CLOSED', 'TERMINATED')` | Trạng thái vòng đời hợp đồng (Lưu ý: `NO_SHOW` đã bãi bỏ, quá 10 ngày tự động chuyển `ACTIVE` qua Auto-Activation `BR-CAN-04`) |
 | `overdue_since` | `DATE` | Không | | Mốc ngày bắt đầu rơi vào quá hạn |
 | `overdue_fee_accrued`| `BIGINT` | Có | `DEFAULT 0` | Tổng phí phạt quá hạn đã tích lũy |
 | `activated_at` | `DATETIMEOFFSET` | Không | | Mốc bàn giao kho và kích hoạt hợp đồng |

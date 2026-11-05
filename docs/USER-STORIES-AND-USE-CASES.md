@@ -670,9 +670,9 @@ _Kiểm tra thông tin đặt chỗ của khách khi khách đến nhận ô kho
 
 ---
 
-### `US-FS-01.2` — Xử lý khách đến trễ hoặc lỡ hẹn check-in
+### `US-FS-01.2` — Theo dõi khách đến trễ và đơn được tự động kích hoạt (Auto-Activation)
 
-> **Là** Facility Staff, **tôi muốn** theo dõi khách đến trễ hoặc lỡ hẹn Check-in, **để** hỗ trợ khách trong thời gian grace period và biết kết quả No-show do hệ thống xử lý.
+> **Là** Facility Staff, **tôi muốn** theo dõi khách đến trễ trong thời gian ân hạn hoặc các hợp đồng đã được tự động kích hoạt (Auto-Activation), **để** sẵn sàng hỗ trợ khách cất đồ bất kỳ lúc nào mà không làm thất thoát doanh thu của cơ sở.
 
 | Use case   | Ưu tiên | Story point | Giai đoạn |
 | ---------- | ------- | :---------: | :-------: |
@@ -680,10 +680,10 @@ _Kiểm tra thông tin đặt chỗ của khách khi khách đến nhận ô kho
 
 **Acceptance Criteria**
 
-- **AC-1** — _Given_ khách đến sau khung giờ hẹn trong ngày nhưng trước giờ đóng cửa cơ sở, _when_ tôi mở đơn đặt chỗ, _then_ hệ thống cho phép tiếp tục quy trình bàn giao bình thường và ghi nhận mốc thời gian thực tế.
-- **AC-2** — _Given_ hết ngày hẹn mà khách chưa đến, _when_ tôi rà soát danh sách, _then_ hệ thống hiển thị số ngày còn lại trong `checkin.grace_days` (tối đa 10 ngày); Facility Staff không tự chuyển Reservation thành _No-show_.
-- **AC-3** — _Given_ hết `checkin.grace_days` (10 ngày) mà khách chưa hoàn tất Check-in, _when_ scheduled job chạy lúc 00:00 ngày tiếp theo, _then_ hệ thống tự động chuyển Reservation sang _No-show_, Storage Unit đã phân bổ trở lại _Available_ và tiền được quyết toán theo `BR-CAN-04`, `BR-CHK-05`.
-- **AC-4** — _Given_ khách đến khi đơn đặt chỗ đã quá hạn 10 ngày và bị hệ thống tự động đánh dấu No-show, _when_ tôi tra cứu, _then_ hệ thống hiển thị lý do No-show tự động và tôi hướng dẫn khách thực hiện đặt chỗ mới.
+- **AC-1** — _Given_ khách đến sau khung giờ hẹn trong ngày nhưng trước giờ đóng cửa cơ sở, _when_ tôi mở đơn nhận kho, _then_ hệ thống cho phép tiếp tục quy trình bàn giao bình thường và ghi nhận mốc thời gian thực tế.
+- **AC-2** — _Given_ hết ngày hẹn mà khách chưa đến hoặc chưa Check-in Online, _when_ tôi rà soát danh sách, _then_ hệ thống hiển thị số ngày còn lại trong `checkin.grace_days` (tối đa 10 ngày); cơ sở không hủy đơn và giữ nguyên ô kho đã phân bổ.
+- **AC-3** — _Given_ hết `checkin.grace_days` (10 ngày) mà khách chưa Check-in Online và chưa đến nhận trực tiếp, _when_ scheduled job chạy lúc 00:00 ngày $T+11$, _then_ hệ thống tự động kích hoạt hợp đồng sang _Active_ (`Auto-Activation`), sinh mã PIN/QR điện tử gửi qua Email/SMS cho khách, giữ nguyên ô kho ở trạng thái _Occupied_ và bảo toàn 100% doanh thu theo `BR-CAN-04`, `BR-CHK-05`.
+- **AC-4** — _Given_ khách đến cơ sở cất đồ sau ngày $T+11$ (hợp đồng đã được kích hoạt tự động), _when_ tôi tra cứu thông tin khách hàng, _then_ hệ thống hiển thị hợp đồng đang _Active_ và mã PIN đã cấp; nhân viên hỗ trợ dẫn khách đến đúng ô kho đã bàn giao trên hệ thống.
 
 ---
 
@@ -1155,11 +1155,11 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 
 **Acceptance Criteria**
 
-- **AC-1** — _Given_ tôi mở chính sách Deposit, _when_ trang tải xong, _then_ tôi thấy
-  `deposit.multiplier` và `reservation.hold_hours` đang hiệu lực, kèm ngày ban hành phiên bản.
-- **AC-2** — _Given_ tôi nhập `deposit.multiplier` = `1.0` và `reservation.hold_hours` = `48`, _when_
+- **AC-1** — _Given_ tôi mở chính sách Deposit & Đặt trước, _when_ trang tải xong, _then_ tôi thấy
+  `deposit.multiplier`, `reservation.hold_hours` và `reservation.max_advance_booking_days` (mặc định 30 ngày) đang hiệu lực, kèm ngày ban hành phiên bản.
+- **AC-2** — _Given_ tôi nhập `deposit.multiplier` = `1.0`, `reservation.hold_hours` = `48` và `reservation.max_advance_booking_days` = `30`, _when_
   tôi ban hành phiên bản mới, _then_ Reservation tạo **sau** thời điểm ban hành tính Deposit theo
-  `BR-DEP-01` và giữ capacity theo `BR-RES-02`, `BR-DEP-03`.
+  `BR-DEP-01`, giữ capacity theo `BR-RES-02`, `BR-DEP-03` và chặn chọn ngày vượt quá 30 ngày theo `BR-RES-01`.
 - **AC-3** — _Given_ đã có Reservation _Pending Payment_ hoặc hợp đồng đang hiệu lực, _when_ tôi ban
   hành phiên bản Deposit mới, _then_ các bản ghi cũ **không** bị đổi số tiền cọc hay thời hạn giữ chỗ
   theo `BR-GEN-02`.
@@ -1197,10 +1197,9 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 
 ---
 
-### `US-BM-02.3` — Thiết lập chính sách Cancellation
+### `US-BM-02.3` — Thiết lập chính sách Cancellation & Reschedule
 
-> **Là** Business Operations Manager, **tôi muốn** đặt mốc hoàn 100% và tỷ lệ hoàn khi hủy muộn hoặc
-> no-show, **để** hoàn tiền thống nhất trên toàn hệ thống.
+> **Là** Business Operations Manager, **tôi muốn** cấu hình chính sách hủy 3 tầng, chính sách dời ngày nhận kho có thu phí và cơ chế kích hoạt tự động Auto-Activation, **để** vận hành minh bạch và bảo toàn doanh thu cơ sở.
 
 | Use case   | Ưu tiên | Story point | Giai đoạn |
 | ---------- | ------- | :---------: | :-------: |
@@ -1208,18 +1207,13 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 
 **Acceptance Criteria**
 
-- **AC-1** — _Given_ tôi mở chính sách Cancellation, _when_ trang tải xong, _then_ tôi thấy
-  `cancel.full_refund_hours`, `cancel.late_refund_rate`, `cancel.no_show_refund_rate` và
-  `checkin.grace_days` đang hiệu lực.
+- **AC-1** — _Given_ tôi mở chính sách Cancellation & Reschedule, _when_ trang tải xong, _then_ tôi thấy
+  các tham số đang hiệu lực: Hủy 3 tầng (`cancel.full_refund_days = 7`, `cancel.mid_refund_days = 2`, `cancel.mid_refund_rate = 50%`, `cancel.late_refund_rate = 0%`), Dời ngày (`reschedule.max_days = 7`, `reschedule.notice_hours = 48`) và Ân hạn nhận kho (`checkin.grace_days = 10`).
 - **AC-2** — _Given_ tôi ban hành phiên bản mới, _when_ Storage Customer hủy Reservation tạo **sau**
-  thời điểm ban hành, _then_ số tiền hoàn tính theo `BR-CAN-01` hoặc `BR-CAN-02` của phiên bản đó.
-- **AC-3** — _Given_ Reservation được tạo trước khi ban hành, dù còn _Pending Payment_ hay đã
-  _Confirmed_, _when_ khách hủy, _then_ hệ thống vẫn tính theo snapshot gắn với Reservation đó.
-- **AC-4** — _Given_ tôi nhập tỷ lệ hoàn nhỏ hơn 0% hoặc lớn hơn 100%, hoặc
-  `cancel.full_refund_hours` / `checkin.grace_days` không phải số không âm, _when_ tôi lưu, _then_
-  hệ thống từ chối.
-- **AC-5** — _Given_ `BR-CAN-05` (cơ sở hủy thì hoàn 100%), _when_ tôi xem màn hình, _then_ quy tắc
-  này được nêu là bắt buộc, không có ô nhập tỷ lệ phạt cho trường hợp nhà cung cấp hủy.
+  thời điểm ban hành, _then_ số tiền hoàn tính theo 3 tầng chuẩn Airbnb: hoàn 100% cọc (`BR-CAN-01`), phạt 50% cọc (`BR-CAN-02`), phạt 100% cọc (`BR-CAN-03`); tiền thuê luôn hoàn 100%.
+- **AC-3** — _Given_ Storage Customer thao tác dời ngày nhận kho, _when_ hệ thống xử lý, _then_ áp dụng đúng `reschedule.max_days` và `reschedule.notice_hours` của phiên bản chính sách đã snapshot theo `BR-RES-06`.
+- **AC-4** — _Given_ tôi nhập tỷ lệ hoàn ngoài khoảng 0–100%, hoặc các tham số ngày/giờ không phải số nguyên không âm, _when_ tôi lưu, _then_ hệ thống từ chối.
+- **AC-5** — _Given_ `BR-CAN-04` (Auto-Activation sau 10 ngày ân hạn bảo toàn 100% doanh thu) và `BR-CAN-05` (cơ sở hủy thì hoàn 100%), _when_ tôi xem màn hình, _then_ các quy tắc này được nêu là nguyên tắc bảo vệ doanh thu bắt buộc, không có công tắc tắt.
 
 ---
 
@@ -1321,8 +1315,7 @@ _Khung giá thuê, phụ phí, phí quá hạn, chính sách giảm giá / miễ
 **Acceptance Criteria**
 
 - **AC-1** — _Given_ tôi mở bảng phí, _when_ trang tải xong, _then_ tôi thấy `overdue.daily_rate` và
-  `overdue.cap_rate` dùng cho `BR-OVD-03` và `BR-OVD-04`, cùng danh sách phụ phí có mã, tên, số tiền
-  hoặc cách tính (ví dụ cấp lại khóa cơ).
+  `overdue.cap_rate` dùng cho `BR-OVD-03` và `BR-OVD-04`, hạn mức bồi thường hàng hóa cơ sở `support.goods_liability_cap` (10.000.000 VNĐ), biểu phí Gói bảo vệ mở rộng `insurance.monthly_fee` (50.000 VNĐ/tháng) và quyền lợi tối đa `insurance.coverage_cap` (50.000.000 VNĐ) theo `BR-SUP-04`, cùng danh sách phụ phí có mã, tên, số tiền hoặc cách tính (ví dụ cấp lại khóa cơ).
 - **AC-2** — _Given_ tôi thêm phụ phí "Cấp lại khóa cơ" với số tiền cố định, _when_ tôi lưu,
   _then_ Facility Staff chọn được khoản này khi ghi nhận phụ thu cho hợp đồng, và khách thấy khoản đó
   ở `UC-F3-13`.
