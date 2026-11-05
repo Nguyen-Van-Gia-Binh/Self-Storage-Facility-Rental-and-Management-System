@@ -2,6 +2,8 @@ package com.swp391.selfstorage.contract.service.impl;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -63,6 +65,15 @@ public class RenewalServiceImpl implements RenewalService {
     public RenewalQuoteResponse getRenewalQuote(Long contractId, RenewalRequest request) {
         RentalContract contract = getValidContractForRenewal(contractId);
         int months = request.getRenewalMonths();
+
+        // BR-REN-01: Khóa tự gia hạn khi đã qua mốc T-20 (< 20 ngày trước ngày hết hạn)
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+        if (contract.getEndDateExclusive() != null && contract.getStatus() == ContractStatus.ACTIVE) {
+            long daysUntilEnd = ChronoUnit.DAYS.between(today, contract.getEndDateExclusive());
+            if (daysUntilEnd < 20) {
+                throw new CustomException(ErrorCode.RENEWAL_DEADLINE_PASSED);
+            }
+        }
 
         // 1. Kiểm tra chính sách hiện hành
         PolicyResponse activePolicy = policyService.getActivePolicy();

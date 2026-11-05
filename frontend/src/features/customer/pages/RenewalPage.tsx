@@ -158,7 +158,11 @@ export const RenewalPage: React.FC = () => {
   const isTerminated = contract ? (contract.status === 'TERMINATED' || contract.status === 'CLOSED') : false;
   const isPendingReturn = contract ? contract.status === 'PENDING_RETURN' : false;
   const hasUnpaidOverdue = contract ? (contract.status === 'OVERDUE' && (contract.overdueFee ?? 0) > 0) : false;
-  const isRenewalBlocked = isTerminated || isPendingReturn || hasUnpaidOverdue || isCapacityConflict;
+  const daysRemaining = contract?.endDate
+    ? Math.ceil((new Date(contract.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    : 999;
+  const isPastRenewalDeadline = contract?.status === 'ACTIVE' && daysRemaining < 20;
+  const isRenewalBlocked = isTerminated || isPendingReturn || hasUnpaidOverdue || isCapacityConflict || isPastRenewalDeadline;
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
@@ -175,6 +179,26 @@ export const RenewalPage: React.FC = () => {
           Gia Hạn Hợp Đồng Thuê Kho
         </h1>
       </div>
+
+      {isPastRenewalDeadline && (
+        <div className="p-4 bg-amber-50 border-2 border-amber-300 rounded-xl flex items-start gap-3 text-amber-900 shadow-xs">
+          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="space-y-1 text-xs flex-1">
+            <h4 className="font-bold text-sm text-amber-950">
+              Đã quá thời hạn tự gia hạn Online (trước 20 ngày theo quy chế BR-REN-01)
+            </h4>
+            <p className="leading-relaxed text-amber-800">
+              Hợp đồng của bạn đã bước vào giai đoạn chốt kế hoạch giải phóng ô kho hoặc ưu tiên cho Danh sách chờ (Waitlist). Nút tự gia hạn Online đã tạm thời bị khóa. Quý khách vui lòng liên hệ trực tiếp Quản lý cơ sở để được kiểm tra dung lượng thực tế và xem xét hỗ trợ gia hạn ngoại lệ!
+            </p>
+            <div className="pt-1">
+              <span>Hotline Quản lý cơ sở: </span>
+              <a href="tel:19002026" className="font-bold text-brand-700 underline">
+                1900-2026
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 3-Step Indicator Bar */}
       <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-xs flex items-center justify-between text-xs sm:text-sm">

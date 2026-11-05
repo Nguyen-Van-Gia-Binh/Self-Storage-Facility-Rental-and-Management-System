@@ -83,6 +83,9 @@ bảng chính sách của hệ thống (`BM-02`, `BM-03`).
 | `support.goods_liability_cap`     | Hạn mức bồi thường thiệt hại hàng hóa cơ bản mặc định do lỗi kỹ thuật cơ sở                                                             |              `10.000.000 đ`               | `BR-SUP-04`              |
 | `insurance.monthly_fee`           | Phí Gói Bảo vệ Hàng hóa Mở rộng tùy chọn (Add-on Protection)                                                                            |             `50.000 đ/tháng`              | `BR-SUP-04`              |
 | `insurance.coverage_cap`          | Hạn mức bồi thường hàng hóa khi tham gia Gói Bảo vệ Mở rộng                                                                             |              `50.000.000 đ`               | `BR-SUP-04`              |
+| `booking.spam_daily_cancel_limit` | Giới hạn số lần hủy đơn/bỏ thanh toán tối đa trong 1 ngày trước khi tạm khóa tạo đơn mới                                                |                  `5 lần`                  | `BR-SPAM-01`             |
+| `compensation.emergency_months`   | Số tháng tiền thuê bồi thường khi xảy ra sự cố cháy kho bất khả kháng toàn cơ sở không thể bàn giao ô kho                               |                 `1 tháng`                 | `BR-BMP-03`             |
+| `renewal.cutoff_days`             | Số ngày trước khi hết hạn bắt đầu khóa tính năng tự gia hạn Online trên App (chuyển sang yêu cầu liên hệ Hotline)                       |                 `20 ngày`                 | `BR-REN-01`             |
 | `cancel.full_refund_hours` | Hủy trước ngày bắt đầu bao nhiêu giờ thì hoàn 100% | `48 giờ` | `BR-CAN-01` |
 | `renewal.notice_days` | Mốc bắt đầu chuỗi 10 ngày thông báo gia hạn khẩn cấp cho khách đang thuê | `30 ngày` | `BR-REN-09` |
 | `renewal.deadline_days` | Hạn chót tự gia hạn trực tuyến (sau 10 ngày thông báo); qua mốc T-20 ngày sẽ khóa quyền tự phục vụ, chuyển PENDING_EXPIRATION và kích hoạt Waitlist | `20 ngày` | `BR-REN-09` |

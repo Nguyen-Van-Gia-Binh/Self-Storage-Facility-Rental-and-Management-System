@@ -49,6 +49,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -242,6 +243,16 @@ public class ReservationServiceImpl implements ReservationService {
                 reservationRepository.existsActivePendingByCustomerId(customerId, ReservationStatus.PENDING_PAYMENT, OffsetDateTime.now())) {
             throw new CustomException(ErrorCode.PENDING_RESERVATION_EXISTS,
                     "Quý khách đang có 1 đơn giữ chỗ ô kho chưa thanh toán. Vui lòng thanh toán hoặc hủy đơn cũ trước khi đặt ô kho khác.");
+        }
+
+        // 2.2 Kiem tra BR-SPAM-01: Chặn khách hàng hủy hoặc bỏ thanh toán >= 5 lần trong ngày
+        if (customerId != null && userRepository != null) {
+            userRepository.findById(customerId).ifPresent(user -> {
+                LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+                if (user.getLastCancelDate() != null && user.getLastCancelDate().equals(today) && user.getDailyCancelCount() >= 5) {
+                    throw new CustomException(ErrorCode.BOOKING_SPAM_BLOCKED);
+                }
+            });
         }
 
         // 3. Kiem tra BR-RES-01: Facility va UnitType dang hoat dong
@@ -536,6 +547,20 @@ public class ReservationServiceImpl implements ReservationService {
         reservation.setCancelledAt(now);
         reservation.setCancelReason(reason);
 
+        // Cap nhat bo dem huy don chong Spam Bom hang (BR-SPAM-01)
+        if (reservation.getCustomerId() != null && userRepository != null) {
+            userRepository.findById(reservation.getCustomerId()).ifPresent(user -> {
+                LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+                if (user.getLastCancelDate() != null && user.getLastCancelDate().equals(today)) {
+                    user.setDailyCancelCount(user.getDailyCancelCount() + 1);
+                } else {
+                    user.setLastCancelDate(today);
+                    user.setDailyCancelCount(1);
+                }
+                userRepository.save(user);
+            });
+        }
+
         Reservation saved = reservationRepository.save(reservation);
         return mapToResponse(saved);
     }
@@ -556,6 +581,21 @@ public class ReservationServiceImpl implements ReservationService {
         reservation.setStatus(ReservationStatus.CANCELLED);
         reservation.setCancelledAt(OffsetDateTime.now());
         reservation.setCancelReason("Khach hang huy don qua ma code");
+
+        // Cap nhat bo dem huy don chong Spam Bom hang (BR-SPAM-01)
+        if (reservation.getCustomerId() != null && userRepository != null) {
+            userRepository.findById(reservation.getCustomerId()).ifPresent(user -> {
+                LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+                if (user.getLastCancelDate() != null && user.getLastCancelDate().equals(today)) {
+                    user.setDailyCancelCount(user.getDailyCancelCount() + 1);
+                } else {
+                    user.setLastCancelDate(today);
+                    user.setDailyCancelCount(1);
+                }
+                userRepository.save(user);
+            });
+        }
+
         reservationRepository.save(reservation);
     }
 

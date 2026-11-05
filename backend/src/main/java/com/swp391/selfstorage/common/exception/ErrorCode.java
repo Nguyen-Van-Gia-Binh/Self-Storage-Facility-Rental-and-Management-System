@@ -88,6 +88,10 @@ public enum ErrorCode {
     RETURN_NOTICE_TOO_SHORT(HttpStatus.UNPROCESSABLE_ENTITY,
             "Thời gian hẹn trả kho không hợp lệ"),
     AMOUNT_MISMATCH(HttpStatus.UNPROCESSABLE_ENTITY, "Số tiền không khớp với tổng phải trả"),
+    RENEWAL_DEADLINE_PASSED(HttpStatus.BAD_REQUEST, "Đã quá thời hạn tự gia hạn Online (trước 20 ngày). Vui lòng liên hệ Hotline cơ sở."),
+
+    // 429 Too Many Requests (Anti-Spam)
+    BOOKING_SPAM_BLOCKED(HttpStatus.TOO_MANY_REQUESTS, "Tài khoản của bạn đã bị tạm khóa chức năng đặt kho do hủy hoặc bỏ thanh toán quá 5 lần trong ngày. Vui lòng liên hệ Quản lý cơ sở để được hỗ trợ mở khóa."),
 
     // 500 Internal Server Error
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Đã xảy ra lỗi hệ thống");

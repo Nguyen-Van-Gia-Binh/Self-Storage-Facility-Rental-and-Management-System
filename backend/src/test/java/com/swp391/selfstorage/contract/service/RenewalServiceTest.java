@@ -127,10 +127,10 @@ class RenewalServiceTest {
     }
 
     @Test
-    @DisplayName("Cho phép lấy báo giá gia hạn khi hợp đồng còn dưới 30 ngày (BR-REN-01 & BR-REN-02 mới)")
+    @DisplayName("Cho phép lấy báo giá gia hạn khi hợp đồng còn trong khung T-30 đến T-20 (BR-REN-01)")
     void testGetRenewalQuote_lessThan30Days_success() {
         RentalContract contract = buildContract(ContractStatus.ACTIVE);
-        contract.setEndDateExclusive(LocalDate.now().plusDays(10)); // Còn 10 ngày (< 30 ngày)
+        contract.setEndDateExclusive(LocalDate.now().plusDays(25)); // Còn 25 ngày (nằm trong khung T-30 đến T-20)
         when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
         when(policyService.getActivePolicy()).thenReturn(buildActivePolicy());
         when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any(), anyInt())).thenReturn(false);
@@ -143,6 +143,19 @@ class RenewalServiceTest {
         assertEquals(100L, quote.getContractId());
         assertEquals(1, quote.getRenewalMonths());
         assertEquals(800000L, quote.getTotalAmount());
+    }
+
+    @Test
+    @DisplayName("Ném RENEWAL_DEADLINE_PASSED khi hợp đồng còn dưới 20 ngày tự gia hạn (BR-REN-01)")
+    void testGetRenewalQuote_lessThan20Days_throwsRenewalDeadlinePassed() {
+        RentalContract contract = buildContract(ContractStatus.ACTIVE);
+        contract.setEndDateExclusive(LocalDate.now().plusDays(10)); // Còn 10 ngày (< 20 ngày)
+        when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> renewalService.getRenewalQuote(100L, new RenewalRequest(1)));
+
+        assertEquals(ErrorCode.RENEWAL_DEADLINE_PASSED, ex.getErrorCode());
     }
 
     @Test

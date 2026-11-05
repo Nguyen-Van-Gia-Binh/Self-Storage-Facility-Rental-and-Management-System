@@ -28,6 +28,9 @@ public class ReservationHoldExpiryService {
     @Autowired(required = false)
     private WaitlistRepository waitlistRepository;
 
+    @Autowired(required = false)
+    private com.swp391.selfstorage.user.repository.UserRepository userRepository;
+
     public ReservationHoldExpiryService(ReservationRepository reservationRepository) {
         this.reservationRepository = reservationRepository;
     }
@@ -43,6 +46,7 @@ public class ReservationHoldExpiryService {
         }
         reservation.setStatus(ReservationStatus.EXPIRED);
         reservationRepository.save(reservation);
+        recordSpamCancelForCustomer(reservation.getCustomerId());
 
         // Guardrail 3 (Tech Lead): Chống mồ côi - Hoàn trả Waitlist về PENDING_FOLLOW_UP
         if (waitlistRepository != null) {
@@ -64,6 +68,9 @@ public class ReservationHoldExpiryService {
         }
         if (!elapsed.isEmpty()) {
             reservationRepository.saveAll(elapsed);
+            for (Reservation r : elapsed) {
+                recordSpamCancelForCustomer(r.getCustomerId());
+            }
 
             // Guardrail 3 (Tech Lead): Chống mồ côi - Hoàn trả Waitlist về PENDING_FOLLOW_UP
             if (waitlistRepository != null) {
@@ -83,5 +90,20 @@ public class ReservationHoldExpiryService {
                 && reservation.getStatus() == ReservationStatus.PENDING_PAYMENT
                 && reservation.getHoldExpiresAt() != null
                 && reservation.getHoldExpiresAt().isBefore(OffsetDateTime.now());
+    }
+
+    private void recordSpamCancelForCustomer(Long customerId) {
+        if (customerId != null && userRepository != null) {
+            userRepository.findById(customerId).ifPresent(user -> {
+                java.time.LocalDate today = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
+                if (user.getLastCancelDate() != null && user.getLastCancelDate().equals(today)) {
+                    user.setDailyCancelCount(user.getDailyCancelCount() + 1);
+                } else {
+                    user.setLastCancelDate(today);
+                    user.setDailyCancelCount(1);
+                }
+                userRepository.save(user);
+            });
+        }
     }
 }
