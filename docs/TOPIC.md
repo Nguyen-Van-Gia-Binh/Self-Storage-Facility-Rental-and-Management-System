@@ -49,7 +49,7 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 | SC-01 | Xem thông tin dịch vụ    | Xem danh sách cơ sở lưu trữ, loại ô kho, kích thước, giá thuê và số chỗ còn trống theo hạng kho |
 | SC-02 | Đặt chỗ ô kho           | Đặt chỗ bằng cách chọn cơ sở, loại ô kho, ngày bắt đầu và thời hạn thuê             |
 | SC-03 | Thanh toán                 | Thanh toán Deposit cùng toàn bộ phí thuê N tháng khi đặt chỗ, phí gia hạn hoặc các khoản phụ thu |
-| SC-04 | Check-in nhận kho          | Đến nhận ô kho được cấp theo lịch hẹn đã đặt                                            |
+| SC-04 | Check-in nhận kho          | Nhận ô kho linh hoạt qua Check-in Online trên ứng dụng hoặc đến trực tiếp theo lịch hẹn  |
 | SC-05 | Quản lý ô kho đã thuê | Theo dõi và quản lý một hoặc nhiều ô kho đang thuê                                          |
 | SC-06 | Gửi yêu cầu hỗ trợ     | Báo sự cố liên quan tới ô kho, khóa, mã truy cập, thanh toán hoặc tài sản lưu trữ      |
 
@@ -117,7 +117,7 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 - **Tác nhân chính:** Facility Staff
 - **Tác nhân liên quan:** Storage Customer, Facility Manager
 - **Phạm vi liên quan:** `SC-04`, `FS-01`, `FS-02`, `FS-03`, `FM-02`, `FM-05`
-- **Nội dung dự kiến:** Khách đến theo lịch hẹn → nhân viên tra cứu đơn Check-in đã được FM gán ô → hai bên kiểm tra thực tế ô kho. Nếu ô phát sinh lỗi, nhân viên báo trên hệ thống để FM đổi sang ô AVAILABLE khác cùng loại, rồi nhân viên bàn giao tiếp. Chỉ khi cơ sở hết ô thay thế hoặc khách từ chối nhận thì Facility Manager hoàn tiền trong 3 ngày. Nếu đạt chuẩn: hai bên ký biên bản bàn giao điện tử, nhân viên bàn giao chìa khóa (nếu có) và mã PIN / Access Code (không dùng thẻ RFID) → Hợp đồng chuyển *Active*, ô kho chuyển *Occupied*.
+- **Nội dung dự kiến:** Khách hàng có thể thực hiện **Check-in Online (Digital Move-In)** ngay trên ứng dụng bằng chữ ký điện tử hoặc đến cơ sở nhận trực tiếp theo lịch hẹn. Nhân viên tra cứu đơn Check-in đã được FM gán ô → kiểm tra hiện trường. Nếu ô phát sinh lỗi, nhân viên báo trên hệ thống để FM đổi sang ô AVAILABLE khác cùng loại rồi bàn giao tiếp; chỉ khi cơ sở hết ô thay thế hoặc khách từ chối nhận thì Facility Manager hoàn tiền trong 3 ngày. Khi hoàn tất nghiệm thu (ký số Online hoặc ký tại quầy): hệ thống cấp mã PIN / Access Code 24/7 (không dùng thẻ RFID) → Hợp đồng chuyển *Active*, ô kho chuyển *Occupied*. Nếu khách chưa nhận kho trong 10 ngày ân hạn và không dời lịch, hệ thống áp dụng cơ chế **Auto-Activation** kích hoạt hợp đồng sang *Active* và cấp mã PIN qua Email/SMS để bảo toàn 100% doanh thu gói thuê cho cơ sở.
 
 ### Flow 3 — Rented Storage Unit Management Flow
 

@@ -39,6 +39,7 @@ Qua chuỗi phỏng vấn làm rõ kiến trúc (`/grill-me`), các quyết đ�
 | **DEC-04** | **Xung đột Gia hạn (Renewal)** | **Ưu tiên khách đang thuê (Preemption):** Tự động gỡ gán ô khỏi đơn tương lai, thông báo FM. | Bảo vệ khách hàng trung thành, giảm chi phí dọn dẹp và duy trì dòng tiền ổn định cho doanh nghiệp. |
 | **DEC-05** | **Vòng đời Trạng thái Ô kho** | Khi FM gán: `StorageUnit` $\rightarrow$ `RESERVED`. Khi Check-in đạt: $\rightarrow$ `OCCUPIED`. | Khóa tạm thời ô kho để chuẩn bị vệ sinh; ngăn chặn FM khác hoặc cơ sở gán trùng ô. |
 | **DEC-06** | **Lưới An toàn Tự động (Safety Net)** | Cảnh báo đỏ $T-3$ $\rightarrow$ 00:00 ngày $T$ Auto-assign $\rightarrow$ Auto-upgrade $\rightarrow$ `PENDING_EMERGENCY_RESOLUTION`. | Đảm bảo hệ thống không bao giờ bị nghẽn (dead-end) khi FM bận hoặc quên nhiệm vụ. |
+| **DEC-07** | **Bàn giao Số & Tự động Kích hoạt (Digital Move-In & Auto-Activation)** | Hỗ trợ **Check-in Online** bằng chữ ký số qua ứng dụng hoặc Check-in tại quầy. Nếu khách không Check-in sau 10 ngày ân hạn (`checkin.grace_days`) và không dời lịch, hệ thống tự động kích hoạt **`ACTIVE` (Auto-Activation)** và cấp mã PIN qua Email/SMS (`BR-CAN-04`, `BR-CHK-05`). | Tôn trọng quyền sở hữu của khách hàng (kho đã trả tiền là của khách); tối đa hóa lợi nhuận (Revenue Maximization), bảo toàn 100% doanh thu $N$ tháng cho doanh nghiệp thay vì hủy đơn và phạt cọc tiêu cực. |
 
 ---
 

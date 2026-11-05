@@ -56,10 +56,10 @@ bảng chính sách của hệ thống (`BM-02`, `BM-03`).
 | `reservation.hold_hours` | Thời gian giữ chỗ chờ thanh toán | `48 giờ` | `BR-DEP-03` |
 | `rental.daily_divisor` | Số ngày quy ước của một tháng khi tính phần tiền thuê theo ngày | `30 ngày` | `BR-PRI-03` |
 | `rental.buffer_days` | Khoảng đệm an toàn sau ngày hết hạn hợp đồng trước khi mở ô kho cho lượt thuê kế tiếp | `15 ngày` | `BR-AVL-02` |
-| `checkin.grace_days` | Số ngày được phép check-in trễ kể từ ngày bắt đầu thuê | `10 ngày` | `BR-CAN-04`, `BR-CHK-05` |
+| `checkin.grace_days` | Số ngày ân hạn để khách Check-in Online hoặc đến quầy nhận kho trước khi hệ thống tự động kích hoạt (Auto-Activation) | `10 ngày` | `BR-CAN-04`, `BR-CHK-05` |
 | `cancel.full_refund_hours` | Hủy trước ngày bắt đầu bao nhiêu giờ thì hoàn 100% | `48 giờ` | `BR-CAN-01` |
 | `cancel.late_refund_rate` | Tỷ lệ hoàn Deposit khi hủy muộn (trong vòng 48h) | `0%` | `BR-CAN-02` |
-| `cancel.no_show_refund_rate` | Tỷ lệ hoàn Deposit khi no-show | `0%` | `BR-CAN-04` |
+| `cancel.no_show_refund_rate` | *(Đã thay thế bằng Auto-Activation)* Không hủy ngang đơn đã thanh toán; tự động kích hoạt bảo lưu trọn vẹn quyền sử dụng kho cho khách | `Không áp dụng` | `BR-CAN-04`, `BR-CHK-05` |
 | `renewal.reminder_days` | Các mốc nhắc gia hạn tự động: từ mốc trước 2 tháng (60 ngày) và đếm ngược 7, 3, 1 ngày trước thời điểm khóa gia hạn (mốc trước 1 tháng) | `60 ngày, và 7, 3, 1 ngày trước mốc khóa` | `BR-REN-01` |
 | `renewal.min_months` | Thời hạn gia hạn tối thiểu | `1 tháng` | `BR-REN-03` |
 | `renewal.max_months` | Thời hạn gia hạn tối đa trong một lần | `12 tháng` | `BR-REN-07` |
@@ -149,7 +149,7 @@ kho sớm, xử lý theo § 9.
 | `BR-CAN-01` | Nếu chênh lệch từ timestamp yêu cầu hủy đến 00:00 ngày bắt đầu thuê từ `cancel.full_refund_hours` trở lên → hoàn **100%** Deposit và **100%** phí thuê đã đóng |
 | `BR-CAN-02` | Nếu chênh lệch trên nhỏ hơn `cancel.full_refund_hours` (48 giờ) nhưng yêu cầu vẫn được gửi trước 00:00 ngày bắt đầu thuê → khách hàng **bị phạt 100% tiền cọc Deposit** (`cancel.late_refund_rate` = 0%, không hoàn cọc) và được hoàn **100%** phí thuê đã đóng |
 | `BR-CAN-03` | Reservation *Expired* do quá hạn thanh toán (`BR-DEP-03`) không phát sinh hoàn tiền vì chưa thu tiền |
-| `BR-CAN-04` | Nếu hết `checkin.grace_days` (10 ngày lịch) kể từ ngày bắt đầu thuê mà khách chưa Check-in, tại 00:00 ngày kế tiếp hệ thống tự động chuyển Reservation sang *No-show*: hoàn `cancel.no_show_refund_rate` (0%) Deposit, hoàn phí thuê sau khi trừ số ngày từ ngày bắt đầu đến hết ân hạn theo `BR-PRI-03`; unit được giải phóng |
+| `BR-CAN-04` | **Cơ chế Tự động Kích hoạt Mặc định (Auto-Activation) thay cho hủy No-show:** Khi khách hàng đã thanh toán 100% tiền thuê và Deposit, hệ thống không tự động hủy hợp đồng và không hoàn tiền sau 10 ngày. Trong suốt `checkin.grace_days` (10 ngày lịch), hệ thống gửi thông báo nhắc nhở đa kênh (Email/SMS/App) kèm các lựa chọn: (1) Nhận kho Online (Digital Check-in), (2) Dời ngày nhận kho (`BR-RES-06`), hoặc (3) Hủy tự nguyện (`BR-CAN-08`). Nếu hết 10 ngày mà khách không thao tác bất kỳ lựa chọn nào, đúng 00:00 ngày kế tiếp (T+11), Scheduled job tự động chuyển Contract sang *Active* (Deemed Acceptance) và Storage Unit sang *Occupied*, tự động sinh mã PIN/QR bảo mật gửi qua Email/SMS cho khách hàng. Doanh nghiệp bảo toàn 100% doanh thu gói thuê N tháng và tiền cọc; khách hàng bảo lưu trọn vẹn quyền sử dụng ô kho và có thể đến cất đồ bất kỳ lúc nào trong thời hạn hợp đồng |
 | `BR-CAN-05` | Cơ sở hủy vì lý do từ phía nhà cung cấp (ô kho hư hỏng, cơ sở đóng cửa) → hoàn **100%** mọi khoản, kèm ưu tiên bố trí ô kho tương đương. Không áp dụng tỷ lệ phạt nào (`UC-F1-12`) |
 | `BR-CAN-06` | Tiền hoàn được chuyển về phương thức thanh toán gốc (VietQR / Chuyển khoản ngân hàng) trong `return.refund_working_days` (từ 3 đến 7 ngày làm việc) kể từ khi hủy được ghi nhận; mọi giao dịch hoàn tiền có mã tham chiếu và ledger entry bất biến theo `BR-PAY-06` |
 | `BR-CAN-07` | Mỗi Reservation chỉ hủy được **một lần**; đã hủy thì không khôi phục, khách phải đặt lại từ đầu |
@@ -224,15 +224,15 @@ Ngày quá hạn ký hiệu **D+n**, đếm từ ngày liền sau ngày kết th
 
 ## 10. Check-in & Handover — Bàn giao ô kho
 
-Áp dụng khi khách hàng đến cơ sở để nhận ô kho đã đặt chỗ (`FS-01`, `FS-02`).
+Áp dụng cho quy trình nhận ô kho đã đặt chỗ qua hình thức **Check-in Online (Digital Move-In)** hoặc **Check-in Tại chỗ tại quầy cơ sở** (`FS-01`, `FS-02`, `SC-04`).
 
 | Mã | Quy tắc |
 |----|---------|
-| `BR-CHK-01` | **Xác minh danh tính khi nhận kho:** Khách hàng xuất trình CCCD/Hộ chiếu trùng khớp với thông tin đã đăng ký trên đơn Reservation hoặc giấy ủy quyền hợp lệ được hệ thống ghi nhận (`UC-F2-02`) |
+| `BR-CHK-01` | **Xác minh danh tính khi nhận kho:** Khách hàng xuất trình CCCD/Hộ chiếu trùng khớp với thông tin đã đăng ký trên đơn Reservation hoặc giấy ủy quyền hợp lệ được hệ thống ghi nhận (`UC-F2-02`). Đối với hình thức Check-in Online, khách hàng xác thực qua thông tin tài khoản đã đăng ký hoặc tải ảnh CCCD/Hộ chiếu đối chiếu trực tuyến |
 | `BR-CHK-02` | **Điều kiện tiên quyết để Handover:** Reservation phải *Confirmed*, đã thanh toán đủ toàn bộ phí thuê N tháng và Deposit (`BR-PAY-01`); ô vật lý do FM phân bổ trước ngày Check-in, hoặc do FM đổi tại quầy khi có sự cố, phải thực tế trống, sạch và không hư hại kết cấu (`UC-F2-03`). Check-in bị từ chối khi `storage_unit_id` còn trống |
-| `BR-CHK-03` | **Biên bản bàn giao tại chỗ:** Quá trình bàn giao bắt buộc phải lập biên bản nghiệm thu hiện trạng có chữ ký số/xác nhận điện tử của cả Facility Staff và khách hàng, kèm hình ảnh chụp hiện trạng ô kho trước khi giao mã PIN / chìa khóa (`UC-F2-03`) |
-| `BR-CHK-04` | **Kích hoạt Contract và chuyển trạng thái unit:** Sau khi ký biên bản Handover, Storage Unit đã được FM gán chuyển *Reserved* → *Occupied* (`UC-F2-06`), Contract chuyển *Pending Check-in* → *Active* (`UC-F2-07`). Từ trạng thái *Active*, `storage_unit_id` không được trống. Khoảng thuê vẫn theo ngày bắt đầu và kết thúc đã chốt trong Reservation; Check-in trễ không dời ngày kết thúc |
-| `BR-CHK-05` | **Xử lý No-show khi check-in trễ:** Khách được phép đến nhận kho trễ tối đa `checkin.grace_days` (10 ngày) tính từ ngày bắt đầu thuê. Quá thời hạn này mà khách chưa hoàn tất Check-in, hệ thống tự động đánh dấu Reservation sang *No-show* lúc 00:00 ngày tiếp theo, hủy Contract, giải phóng hạn ngạch và trả ô đã gán về *Available* theo `BR-CAN-04` (`UC-F2-08`) |
+| `BR-CHK-03` | **Biên bản bàn giao linh hoạt (Online E-Sign hoặc Tại chỗ):** Quá trình bàn giao được thực hiện linh hoạt qua 2 hình thức: (1) **Check-in Online (Digital Move-In):** Khách hàng xem ảnh/video hiện trạng ô kho đã được cơ sở chuẩn bị sạch sẽ và thực hiện ký số điện tử (E-Signature) cam kết bàn giao ngay trên ứng dụng; (2) **Check-in Tại chỗ:** Khách hàng đến cơ sở cùng Facility Staff đồng kiểm hiện trường và ký biên bản điện tử tại quầy tiếp tân trước khi nhận mã PIN hoặc chìa khóa cơ (`UC-F2-03`) |
+| `BR-CHK-04` | **Kích hoạt Contract và chuyển trạng thái unit:** Sau khi ký biên bản Handover (Online hoặc Tại chỗ), hoặc khi kích hoạt tự động theo `BR-CHK-05`, Storage Unit đã được FM gán chuyển *Reserved* → *Occupied* (`UC-F2-06`), Contract chuyển *Pending Check-in* → *Active* (`UC-F2-07`). Từ trạng thái *Active*, `storage_unit_id` không được trống. Khoảng thuê vẫn theo ngày bắt đầu và kết thúc đã chốt trong Reservation; nhận kho trễ không dời ngày kết thúc |
+| `BR-CHK-05` | **Xử lý khi khách chưa Check-in (Chuỗi nhắc nhở & Tự động Kích hoạt Auto-Activation):** Khách hàng có thời hạn ân hạn `checkin.grace_days` (10 ngày lịch) kể từ ngày bắt đầu thuê. Trong thời gian này, hệ thống gửi thông báo nhắc nhở đa kênh (Email/SMS) và cung cấp tính năng "Nhận kho Online" hoặc "Dời ngày nhận kho" (`BR-RES-06`). Nếu hết 10 ngày mà khách vẫn chưa hoàn tất nhận kho Online và không đến nhận trực tiếp, hệ thống áp dụng cơ chế Auto-Activation theo `BR-CAN-04`: tự động chuyển Contract sang *Active*, ô kho sang *Occupied*, cấp mã PIN/QR qua Email/SMS, bảo toàn 100% doanh thu cho doanh nghiệp mà không hủy đơn |
 | `BR-CHK-06` | **Xử lý ô kho hư hỏng tại chỗ hoặc từ chối ký:** Nếu ô dự kiến bàn giao bị lỗi, nhân viên báo sự cố; ô đó chuyển *Maintenance*. FM đổi sang một ô *Available* khác cùng loại tại cơ sở để nhân viên bàn giao tiếp, không hủy hợp đồng. Chỉ hủy lượt Handover và hoàn 100% Deposit cùng phí thuê trong `checkin.refund_working_days` (3 ngày làm việc) theo `BR-CAN-05` khi cơ sở đã hết ô thay thế cùng loại, hoặc khi khách từ chối nhận |
 
 ---
@@ -266,7 +266,7 @@ Quy tắc xử lý các yêu cầu hỗ trợ và sự cố phát sinh tại cơ
 ### 13.1. Reservation
 
 `Pending Payment` → `Confirmed` → `Fulfilled`
-Nhánh kết thúc sớm: `Expired` (quá hạn thanh toán, `BR-DEP-03`) · `Cancelled` (`BR-CAN-01/02`) · `No-show` (`BR-CAN-04`)
+Nhánh kết thúc sớm: `Expired` (quá hạn thanh toán, `BR-DEP-03`) · `Cancelled` (`BR-CAN-01/02/08`). (Lưu ý: Khách không thao tác check-in trong 10 ngày được tự động kích hoạt sang `Fulfilled` theo cơ chế Auto-Activation `BR-CAN-04`, không hủy đơn).
 
 *Pending Payment* chỉ giữ capacity. *Confirmed* đã gắn một Storage Unit cụ thể mà khách chọn. *Fulfilled* nghĩa là
 Check-in / Handover đã hoàn tất và Contract đã chuyển *Active*.
@@ -275,7 +275,7 @@ Check-in / Handover đã hoàn tất và Contract đã chuyển *Active*.
 
 | Trạng thái | Ý nghĩa | Chuyển sang |
 |------------|---------|-------------|
-| `Pending Check-in` | Đã thanh toán và tạo Contract, chờ Check-in / Handover | `Active`, `Cancelled` nếu Reservation bị hủy / No-show |
+| `Pending Check-in` | Đã thanh toán và tạo Contract, chờ Check-in Online hoặc Tại chỗ | `Active` (qua Check-in hoặc Auto-Activation `BR-CHK-05`), `Cancelled` nếu khách chủ động hủy |
 | `Active` | Đang thuê, trong thời hạn | `Pending Return`, `Overdue` |
 | `Pending Return` | Đã đăng ký trả kho, chờ kiểm tra | `Closed`, `Overdue` |
 | `Overdue` | Quá hạn, phải nộp phạt để trả kho, không cho gia hạn | `Pending Return` (sau khi đóng nợ phạt), `Terminated` |
@@ -313,7 +313,8 @@ Check-in / Handover đã hoàn tất và Contract đã chuyển *Active*.
 | **Thanh toán khi đặt chỗ** | Phí thuê 3 tháng `800.000 × 3` + Deposit `800.000 × 1.0` | **3.200.000 đ** | `BR-PRI-01`, `BR-PAY-01` |
 | **Hủy ngày 27/09** (trước 48h) | Hoàn 100% phí thuê + 100% Deposit | Hoàn **3.200.000 đ** | `BR-CAN-01` |
 | **Hủy ngày 30/09** (trong 48h) | Phạt 100% Deposit (`cancel.late_refund_rate` = 0%); Hoàn 100% phí thuê `2.400.000 đ` | Hoàn **2.400.000 đ** (mất cọc 800k) | `BR-CAN-02` |
-| **No-show đến hết 10/10** (10 ngày ân hạn nhận kho) | Mất 100% Deposit (`0%`); hoàn phí thuê trừ 10 ngày giữ ô kho `2.400.000 − (800.000 × 10/30)` | Hoàn **2.133.000 đ** | `BR-CAN-04` |
+| **Khách không thao tác đến hết 10/10** (10 ngày ân hạn nhận kho) | Kích hoạt tự động Auto-Activation sang Active: Không hoàn tiền, bảo toàn 100% doanh thu gói thuê (3.200.000 đ); tự động cấp mã PIN cho khách sử dụng kho 24/7 | **Doanh thu 3.200.000 đ** (Giữ trọn vẹn, không phát sinh hoàn tiền) | `BR-CAN-04`, `BR-CHK-05` |
+| **Khách chủ động hủy ngày 05/10** (trong 10 ngày ân hạn) | Mất 100% Deposit (800k); hoàn phí thuê trừ 5 ngày giữ ô kho `2.400.000 − (800.000 × 5/30)` = 2.267.000 đ | Hoàn **2.267.000 đ** | `BR-CAN-08` |
 | **Quá hạn 3 ngày** (tới 03/01/2027) | Ân hạn D+1→D+3 miễn phí phạt; hoàn tất nghiệm thu trả kho nguyên trạng | Phạt **0 đ**, Hoàn đủ Deposit **800.000 đ** | `BR-OVD-02`, `BR-RET-04` |
 | **Quá hạn 5 ngày** (D+5) | Phạt 2 ngày tính phí (D+4, D+5): `800.000 × 10% × 2` | Nợ phạt **160.000 đ** (phải nộp phạt để trả kho) | `BR-OVD-03` |
 | **Quá hạn 7 ngày** (D+7) | Phạt 4 ngày tính phí (D+4..D+7): `800.000 × 10% × 4`; Access Code bị khóa Suspended | Nợ phạt **320.000 đ**; **Khóa mã cửa** | `BR-OVD-03`, `BR-OVD-05` |

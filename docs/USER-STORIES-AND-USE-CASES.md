@@ -400,15 +400,14 @@ Bảng thuộc tính đi kèm mỗi story:
   nhận được thông báo nhắc trước 1 ngày.
 - **AC-3** — *Given* tôi mở chi tiết Reservation, *when* trang hiển thị, *then* có mã đặt chỗ dạng
   QR hoặc mã ngắn để Facility Staff tra cứu nhanh ở `UC-F2-01`.
-- **AC-4** — *Given* tôi đã quá `checkin.grace_days` (10 ngày) mà chưa đến, *when* tôi mở Reservation,
-  *then* hệ thống hiển thị cảnh báo nguy cơ bị đánh No-show và mất Deposit theo `BR-CAN-04`.
+- **AC-4** — *Given* tôi đã bước vào thời gian ân hạn `checkin.grace_days` (10 ngày) mà chưa nhận kho, *when* tôi mở ứng dụng,
+  *then* hệ thống hiển thị thông báo nhắc nhở kèm 3 lựa chọn hành động: "Nhận kho Online ngay", "Dời ngày nhận kho" (`BR-RES-06`), hoặc "Hủy tự nguyện" (`BR-CAN-08`), đồng thời thông báo sau 10 ngày hệ thống sẽ áp dụng cơ chế tự động kích hoạt (Auto-Activation) để bảo lưu kho theo `BR-CAN-04`.
 
 ---
 
-### `US-SC-04.2` — Xác nhận đã nhận ô kho
+### `US-SC-04.2` — Xác nhận nhận ô kho (Check-in Online hoặc Tại chỗ)
 
-> **Là** Storage Customer, **tôi muốn** xác nhận đã nhận ô kho và nhận Access Code, **để** bắt đầu sử
-> dụng và có bằng chứng bàn giao.
+> **Là** Storage Customer, **tôi muốn** thực hiện Check-in Online bằng chữ ký điện tử trên ứng dụng hoặc xác nhận bàn giao tại chỗ tại quầy, **để** nhận Access Code / mã PIN 24/7 và bắt đầu sử dụng ô kho linh hoạt mà không bắt buộc phải gặp nhân viên.
 
 | Use case     | Ưu tiên | Story point | Giai đoạn |
 | ------------ | --------- | :---------: | :---------: |
@@ -416,17 +415,18 @@ Bảng thuộc tính đi kèm mỗi story:
 
 **Acceptance Criteria**
 
-- **AC-1** — *Given* Facility Staff đã lập biên bản bàn giao ở `UC-F2-03`, *when* tôi xác nhận trên
+- **AC-1** — *Given* Facility Staff đã lập biên bản bàn giao tại chỗ ở `UC-F2-03`, *when* tôi xác nhận trên
   ứng dụng, *then* Reservation chuyển sang *Fulfilled* và Contract chuyển từ *Pending Check-in*
   sang *Active*.
-- **AC-2** — *Given* tôi đã xác nhận check-in, *when* hệ thống xử lý xong, *then* Access Code của tôi
-  hiển thị trong ứng dụng và trạng thái ô kho chuyển sang *Occupied* theo `UC-F2-06`.
+- **AC-2** — *Given* tôi đã hoàn tất Check-in (Online hoặc Tại chỗ), *when* hệ thống xử lý xong, *then* Access Code / mã PIN của tôi
+  hiển thị ngay trong ứng dụng và trạng thái ô kho chuyển sang *Occupied* theo `UC-F2-06`.
 - **AC-3** — *Given* tôi đã xác nhận check-in, *when* tôi mở biên bản bàn giao, *then* tôi xem lại
-  được hiện trạng ô kho lúc nhận, kèm ảnh chụp do Facility Staff đính kèm.
-- **AC-4** — *Given* Facility Staff **chưa** lập biên bản bàn giao, *when* tôi cố xác nhận check-in,
-  *then* hệ thống từ chối và nêu rõ đang chờ nhân viên bàn giao.
-- **AC-5** — *Given* tôi không đồng ý với hiện trạng ô kho ghi trong biên bản, *when* tôi từ chối
+  được hiện trạng ô kho lúc nhận, kèm ảnh chụp nghiệm thu sạch sẽ của cơ sở.
+- **AC-4** — *Given* tôi chọn **Check-in Online (Digital Move-In)** trên ứng dụng, *when* ô kho đã được FM phân bổ (`storage_unit_id` khác null), *then* hệ thống hiển thị ảnh nghiệm thu hiện trạng ô kho, thông tin CCCD và cho phép tôi ký số điện tử (E-Sign) vào biên bản bàn giao số.
+- **AC-5** — *Given* tôi ký số thành công trong luồng Check-in Online, *when* hệ thống ghi nhận, *then* Contract lập tức chuyển sang *Active*, ô kho chuyển sang *Occupied*, và hệ thống cấp ngay mã PIN 6 số cùng mã QR mở cửa 24/7 gửi qua Email/SMS (`BR-CHK-03`, `BR-CHK-04`).
+- **AC-6** — *Given* tôi không đồng ý với hiện trạng ô kho ghi trong biên bản, *when* tôi từ chối
   xác nhận, *then* hệ thống mở một Support Request theo Flow 7 và không chuyển hợp đồng sang *Active*.
+- **AC-7** — *Given* tôi không thao tác Check-in Online và cũng không đến cơ sở trong suốt 10 ngày ân hạn, *when* đến 00:00 ngày T+11, *then* hệ thống áp dụng cơ chế tự động kích hoạt (Auto-Activation) chuyển Contract sang *Active*, sinh mã PIN gửi qua Email/SMS theo `BR-CAN-04` để bảo toàn quyền sử dụng kho cho tôi.
 
 ---
 
@@ -1746,7 +1746,7 @@ hệ thống lấy từ [BUSINESS-RULES.md § 2](BUSINESS-RULES.md#2-bảng-tham
 
 *Luồng check-in và bàn giao ô kho.* Tác nhân chính: **Facility Staff** · Liên quan: **Storage Customer**, **Facility Manager**
 
-Activity Diagram: [activity-diagram-flow-2-checkin-handover.drawio](diagrams/activity-diagram-flow-2-checkin-handover.drawio) (lưu trữ cũ: [diagrams/_archive/activity-flow2-checkin-handover.puml](diagrams/_archive/activity-flow2-checkin-handover.puml)) — quy trình đón tiếp (`UC-F2-01`–`02`), kiểm tra ô FM đã gán và ký số biên bản (`UC-F2-03`, `UC-F2-05`), kích hoạt tự động (`UC-F2-04`, `UC-F2-06`–`07`), No-show quá 10 ngày hoặc hết ô thay thế thì hoàn tiền (`UC-F2-08`), phân công ca trực (`UC-F2-09`).
+Activity Diagram: [activity-diagram-flow-2-checkin-handover.drawio](diagrams/activity-diagram-flow-2-checkin-handover.drawio) (lưu trữ cũ: [diagrams/_archive/activity-flow2-checkin-handover.puml](diagrams/_archive/activity-flow2-checkin-handover.puml)) — quy trình bàn giao linh hoạt: Check-in Online (`UC-F2-05`) hoặc đón tiếp tại chỗ (`UC-F2-01`–`02`), kiểm tra ô FM đã gán và ký số biên bản (`UC-F2-03`, `UC-F2-05`), kích hoạt tự động (`UC-F2-04`, `UC-F2-06`–`07`), xử lý ân hạn 10 ngày và Auto-Activation bảo toàn doanh thu (`UC-F2-08`), phân công ca trực (`UC-F2-09`).
 
 | Mã UC       | Use case                                                            | Actor chính     | Actor liên quan | Mã yêu cầu        |
 | ------------ | ------------------------------------------------------------------- | ---------------- | ---------------- | -------------------- |
@@ -1754,10 +1754,10 @@ Activity Diagram: [activity-diagram-flow-2-checkin-handover.drawio](diagrams/act
 | `UC-F2-02` | Xác minh danh tính khách và tình trạng thanh toán            | Facility Staff   | Storage Customer | `FS-01`            |
 | `UC-F2-03` | Bàn giao ô FM đã gán và lập biên bản; nếu ô lỗi thì FM đổi ô cùng loại rồi bàn giao tiếp | Facility Staff   | Storage Customer, Facility Manager | `FS-02`, `FM-02` |
 | `UC-F2-04` | Cấp mã Access Code / PIN và chìa khóa vật lý (nếu có)      | Facility Staff   | Storage Customer | `FS-02`            |
-| `UC-F2-05` | Khách xác nhận Check-in, nhận ô kho và hoàn tất Reservation | Storage Customer | Facility Staff   | `SC-04`            |
+| `UC-F2-05` | Khách xác nhận Check-in (Online qua app hoặc tại quầy), nhận ô kho và hoàn tất Reservation | Storage Customer | Facility Staff   | `SC-04`            |
 | `UC-F2-06` | Cập nhật trạng thái Storage Unit sang*Occupied*               | Facility Staff   | —               | `FS-03`            |
 | `UC-F2-07` | Kích hoạt Contract từ*Pending Check-in* sau bàn giao          | Facility Manager | Facility Staff   | `FM-02`            |
-| `UC-F2-08` | Xử lý khách đến trễ hoặc không đến theo lịch hẹn        | Facility Staff   | Facility Manager | `FS-01`, `FM-02` |
+| `UC-F2-08` | Xử lý khách chưa Check-in: Nhắc nhở đa kênh, dời lịch hoặc Tự động kích hoạt (Auto-Activation) tại T+10 | System | Storage Customer, Facility Manager | `FS-01`, `FM-02`, `SC-04` |
 | `UC-F2-09` | Phân công Facility Staff trực bàn giao trong ngày              | Facility Manager | Facility Staff   | `FM-05`            |
 
 ---

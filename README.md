@@ -112,7 +112,7 @@ Hệ thống phục vụ **5 nhóm tác nhân** với quyền hạn và giao di�
 
 ### Các Luồng Chính (Flow 1–5)
 * **Flow 1 — Storage Unit Reservation:** Tìm kiếm theo cơ sở, chọn hạng kho (Unit Type); giữ hạn ngạch hạng kho; thanh toán cọc và phí thuê N tháng qua VietQR. FM gán ô vật lý trước ngày Check-in.
-* **Flow 2 — Storage Check-in and Handover:** Khách đến cơ sở nhận đúng ô FM đã gán; nhân viên đối soát 4 tiêu chí an toàn. Nếu ô lỗi, FM đổi ô cùng loại rồi nhân viên bàn giao tiếp. Ký biên bản điện tử và cấp mã PIN truy cập 24/7.
+* **Flow 2 — Storage Check-in and Handover:** Khách nhận kho trực tuyến (Check-in Online) hoặc đến cơ sở nhận đúng ô FM đã gán; nhân viên đối soát 4 tiêu chí an toàn. Ký biên bản điện tử và cấp mã PIN truy cập 24/7; hỗ trợ tự động kích hoạt (Auto-Activation) sau 10 ngày nếu khách chưa thao tác để bảo toàn 100% doanh thu.
 * **Flow 3 — Rented Storage Unit Management:** Quản lý danh sách ô kho đang thuê; tra cứu hợp đồng điện tử và nhật ký mở cửa IoT; hủy yêu cầu trả kho khi đổi ý (`BR-RET-12`).
 * **Flow 4 — Business Rules, Fee Management & Revenue Monitoring:** BOM cấu hình chính sách tiền cọc động (`depositMultiplier`), bảng giá theo diện tích m², phụ phí đền bù và theo dõi Usage Rate toàn chuỗi.
 * **Flow 5 — Facility Storage and Staff Management:** FM quản lý mặt bằng kho, trạng thái ô kho (`AVAILABLE`, `RESERVED`, `OCCUPIED`, `MAINTENANCE`); phân công nhân viên theo ca trực trên Bảng điều phối hàng ngày.

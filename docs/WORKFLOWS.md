@@ -154,8 +154,33 @@ Mỗi luồng nghiệp vụ trong hệ thống tuân thủ mô hình phân tần
 * **Diễn viên (Actors):** `Facility Staff` (thực hiện tại quầy), `Storage Customer` (nhận kho), `Facility Manager` (phân công)
 * **Quy tắc nghiệp vụ cốt lõi:** `BR-CHK-01..06`, `BR-ACC-01..03`, `BR-CAN-05`
 
-### 3.1. Happy Path: Nghiệm thu đạt chuẩn & Kích hoạt mã PIN
+### 3.1. Happy Path: Nhận kho Đa kênh (Online Digital Move-In & On-site Handover)
 
+Quy trình hỗ trợ linh hoạt 2 nhánh nhận kho theo chuẩn Contactless Self-Storage hiện đại:
+
+#### Nhánh A: Check-in Online (Digital Move-In trên Customer Portal)
+```
+[Storage Customer — MyUnitsPage.tsx / Mobile Web]
+       │
+       ├─► 1. Khách hàng bấm "Nhận kho Online (E-Check-in)"
+       │      Frontend: MyUnitsPage.tsx ──► DigitalMoveInPassModal.tsx
+       │      API: GET /api/v1/customer/contracts/{id}/move-in-preview
+       │      Backend: Trả về thông tin ô kho đã gán (unitNumber), ảnh hiện trạng nghiệm thu sạch sẽ của cơ sở
+       │
+       ├─► 2. Khách hàng xác thực CCCD & Ký số điện tử (E-Signature)
+       │      Frontend: ESignHandoverModal.tsx (Xem biên bản bàn giao điện tử, vẽ chữ ký số)
+       │      API: POST /api/v1/customer/contracts/{id}/online-check-in
+       │      Backend: CustomerRentalController.onlineCheckIn()
+       │               - Kiểm tra storage_unit_id đã được FM phân bổ [BR-CHK-02]
+       │               - Lưu chữ ký số và biên bản bàn giao số [BR-CHK-03]
+       │               - Contract.status: PENDING_CHECK_IN ──► ACTIVE [BR-CHK-04]
+       │               - StorageUnit.status: RESERVED ──► OCCUPIED [BR-CHK-04]
+       │               - Sinh mã PIN ngẫu nhiên 6 số & mã QR mở khóa 24/7 [BR-ACC-01]
+       │
+       └─► 3. Kích hoạt tức thì: Cấp mã PIN & Hướng dẫn mở cửa 24/7 trên App + Email + SMS
+```
+
+#### Nhánh B: Check-in On-site tại quầy (Với Facility Staff)
 ```
 [Facility Staff Desk — StaffDashboardPage.tsx / StaffCheckInPage.tsx]
        │
@@ -194,7 +219,8 @@ Mỗi luồng nghiệp vụ trong hệ thống tuân thủ mô hình phân tần
 | **UNH-CHK-01** | **Ô đã gán bị lỗi lúc bàn giao** | Hiện trường ô kho bị ẩm dột, kẹt cửa cuốn, bẩn hoặc điện hỏng, không đạt `BR-CHK-02`. | Staff báo lỗi. Ô đó sang `MAINTENANCE`. FM gọi `PATCH /reservations/{id}/assign-unit` (hoặc đổi ô trên hợp đồng) sang ô `AVAILABLE` cùng loại; hợp đồng giữ `PENDING_CHECK_IN` và cập nhật `storage_unit_id`. Chỉ khi hết ô thay thế mới hủy và hoàn 100% cọc cùng phí thuê. | Staff báo lỗi trên màn bàn giao. FM chọn ô khác trên sơ đồ cơ sở. Nhân viên bàn giao tiếp trên ô mới. | `BR-CHK-06`<br>`BR-AVL-04` |
 | **UNH-CHK-02** | **Sai lệch thông tin CCCD / Khách không đủ giấy tờ** | Người đến nhận kho không mang CCCD hoặc thông tin không khớp với người đại diện hợp đồng. | Nhân viên tạm dừng quy trình bàn giao. Hợp đồng giữ nguyên `PENDING_CHECK_IN`. Nhân viên ghi chú vào nhật ký tiếp đón. | Thẻ xác minh hiển thị cảnh báo chưa đạt điều kiện nhận kho. Nút "Tiến hành bàn giao" bị khóa mờ. | `BR-CHK-01` |
 | **UNH-CHK-03** | **Bàn phím số / Khóa IoT bị lỗi sau khi ký biên bản** | Bàn phím số tại cửa ô kho bị liệt nút hoặc không kết nối được mạng sau khi sinh mã PIN. | Nhân viên gọi `POST /api/v1/customer/access/regenerate-pin` để cấp lại mã khác hoặc liên hệ Quản lý cơ sở để kích hoạt quy trình Điều chuyển ô kho khẩn cấp (`Relocation`). | Nhân viên bấm nút "Cấp lại PIN" hoặc "Yêu cầu đổi ô kho" ngay trên màn hình hoàn tất bàn giao. | `BR-ACC-03`<br>`BR-AVL-05` |
-| **UNH-CHK-04** | **Khách đến trễ trong thời hạn ân hạn (Grace Period)** | Khách đến nhận kho sau ngày bắt đầu hợp đồng 1–2 ngày nhưng vẫn trong khoảng ân hạn (`checkinGraceDays`). | Hệ thống vẫn cho phép nhân viên thực hiện check-in bình thường, hợp đồng kích hoạt `ACTIVE`. Thời hạn kết thúc hợp đồng vẫn giữ nguyên theo mốc thỏa thuận ban đầu. | StaffDailyTask vẫn hiển thị task này kèm nhãn cảnh báo: *"Ân hạn nhận kho: Còn X ngày"*. | `BR-CHK-05` |
+| **UNH-CHK-04** | **Khách đến trễ trong thời hạn ân hạn (Grace Period)** | Khách đến nhận kho sau ngày bắt đầu hợp đồng 1–2 ngày nhưng vẫn trong khoảng ân hạn (`checkinGraceDays`). | Hệ thống vẫn cho phép thực hiện Check-in Online hoặc Check-in tại quầy, kích hoạt `ACTIVE`. Thời hạn kết thúc hợp đồng giữ nguyên theo thỏa thuận ban đầu. | Giao diện hiển thị nhãn cảnh báo: *"Ân hạn nhận kho: Còn X ngày"* kèm nút Nhận kho Online hoặc Dời ngày (`BR-RES-06`). | `BR-CHK-05` |
+| **UNH-CHK-05** | **Khách không Check-in Online và không đến quầy quá 10 ngày** | Quá 10 ngày ân hạn (`checkin.grace_days`) mà khách không nhận kho, không dời lịch và không hủy đơn. | Scheduled job `AutoCheckInActivationScheduler` chạy lúc 00:00 ngày T+11: Tự động chuyển Contract sang `ACTIVE`, StorageUnit sang `OCCUPIED`, cấp mã PIN gửi qua Email/SMS (Deemed Acceptance) [BR-CAN-04, BR-CHK-05]. Không hủy đơn và không hoàn tiền, bảo toàn 100% doanh thu cho doanh nghiệp. | Hợp đồng tự động chuyển vào danh sách "Đang hoạt động" trên Customer Portal kèm mã PIN 24/7 để khách sử dụng bất cứ khi nào. | `BR-CAN-04`<br>`BR-CHK-05` |
 
 ---
 
