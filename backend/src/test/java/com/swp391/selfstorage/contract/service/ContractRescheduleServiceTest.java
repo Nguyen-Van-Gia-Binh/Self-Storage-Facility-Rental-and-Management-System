@@ -233,4 +233,37 @@ class ContractRescheduleServiceTest {
                 contractService.rescheduleRentalPeriod(100L, req, 10L));
         assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
     }
+
+    @Test
+    @DisplayName("BR-RES-06: Yêu cầu dời lịch khi còn dưới 48 giờ trước ngày bắt đầu -> Ném lỗi VALIDATION_FAILED")
+    void reschedule_throws_whenUnder48HoursNotice() {
+        // Hợp đồng bắt đầu vào ngày mai (dưới 48h tính từ bây giờ)
+        contract.setStartDate(LocalDate.now().plusDays(1));
+        when(contractRepository.findById(100L)).thenReturn(Optional.of(contract));
+
+        LocalDate newStartDate = contract.getStartDate().plusDays(3);
+        RescheduleRentalPeriodRequest req = new RescheduleRentalPeriodRequest(newStartDate);
+
+        CustomException ex = assertThrows(CustomException.class, () ->
+                contractService.rescheduleRentalPeriod(100L, req, 10L));
+        assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("48 giờ"), "Phải thông báo yêu cầu báo trước ít nhất 48 giờ");
+    }
+
+    @Test
+    @DisplayName("BR-RES-06: Dời quá 7 ngày kể từ ngày bắt đầu hiện tại -> Ném lỗi VALIDATION_FAILED")
+    void reschedule_throws_whenExceeds7Days() {
+        // Hợp đồng bắt đầu cách 4 ngày (đủ 48h)
+        contract.setStartDate(LocalDate.now().plusDays(4));
+        when(contractRepository.findById(100L)).thenReturn(Optional.of(contract));
+
+        // Dời thêm 8 ngày (> 7 ngày)
+        LocalDate newStartDate = contract.getStartDate().plusDays(8);
+        RescheduleRentalPeriodRequest req = new RescheduleRentalPeriodRequest(newStartDate);
+
+        CustomException ex = assertThrows(CustomException.class, () ->
+                contractService.rescheduleRentalPeriod(100L, req, 10L));
+        assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("tối đa 7 ngày"), "Phải thông báo giới hạn tối đa 7 ngày");
+    }
 }

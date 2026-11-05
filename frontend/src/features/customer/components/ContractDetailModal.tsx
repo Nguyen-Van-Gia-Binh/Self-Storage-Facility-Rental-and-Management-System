@@ -583,7 +583,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                 className="flex items-center gap-1.5 px-3 cursor-pointer text-xs font-semibold text-emerald-700 border-emerald-300 hover:bg-emerald-50"
               >
                 <Calendar className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Dời ngày thuê</span>
+                <span>Dời ngày nhận kho</span>
               </Button>
             )}
           </div>

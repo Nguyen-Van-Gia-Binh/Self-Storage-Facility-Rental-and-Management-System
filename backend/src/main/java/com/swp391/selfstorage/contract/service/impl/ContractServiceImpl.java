@@ -1560,6 +1560,20 @@ public class ContractServiceImpl implements ContractService {
                         throw new CustomException(ErrorCode.VALIDATION_FAILED, "Ngày bắt đầu mới phải khác ngày bắt đầu hiện tại");
                 }
 
+                // BR-RES-06: Ràng buộc báo trước tối thiểu 48 giờ
+                if (contract.getStartDate() != null) {
+                        long hoursUntilStart = java.time.Duration.between(java.time.LocalDateTime.now(), contract.getStartDate().atStartOfDay()).toHours();
+                        if (hoursUntilStart < 48) {
+                                throw new CustomException(ErrorCode.VALIDATION_FAILED, "Yêu cầu dời ngày nhận kho phải gửi trước ít nhất 48 giờ");
+                        }
+
+                        // BR-RES-06: Giới hạn dời từ 1 đến tối đa 7 ngày
+                        long diffDays = java.time.temporal.ChronoUnit.DAYS.between(contract.getStartDate(), newStartDate);
+                        if (diffDays > 7 || diffDays < 1) {
+                                throw new CustomException(ErrorCode.VALIDATION_FAILED, "Thời gian dời ngày nhận kho chỉ được phép từ 1 đến tối đa 7 ngày");
+                        }
+                }
+
                 int months = contract.getRentalMonths() > 0 ? contract.getRentalMonths() : 1;
                 LocalDate newEndDate = newStartDate.plusMonths(months);
 

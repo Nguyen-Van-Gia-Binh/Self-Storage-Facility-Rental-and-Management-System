@@ -21,6 +21,8 @@ export interface BookingCustomerFormProps {
   isCheckingAvailability: boolean;
   isButtonDisabled: boolean;
   onSubmit: (e: React.FormEvent) => void;
+  hasExtendedInsurance?: boolean;
+  setHasExtendedInsurance?: (v: boolean) => void;
 }
 
 /**
@@ -46,6 +48,8 @@ export const BookingCustomerForm: React.FC<BookingCustomerFormProps> = ({
   isCheckingAvailability,
   isButtonDisabled,
   onSubmit,
+  hasExtendedInsurance = false,
+  setHasExtendedInsurance,
 }) => {
   return (
     <form onSubmit={onSubmit} className="space-y-5">
@@ -133,10 +137,83 @@ export const BookingCustomerForm: React.FC<BookingCustomerFormProps> = ({
         </div>
       </div>
 
-      {/* 2. ĐIỀU KHOẢN DỊCH VỤ & CHÍNH SÁCH */}
+      {/* 2. GÓI BẢO VỆ TÀI SẢN & HÀNG HÓA */}
+      <div className="bg-white border border-brand-200 rounded-2xl p-6 shadow-xs space-y-4">
+        <div className="flex items-center gap-2 pb-2 border-b border-brand-100">
+          <ShieldCheck className="w-4 h-4 text-brand-600" />
+          <h2 className="text-xs font-extrabold uppercase tracking-wider text-[#0a1614]">
+            2. Gói bảo vệ tài sản & bảo hiểm rủi ro
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          {/* Gói Cơ bản (Miễn phí) */}
+          <label
+            className={`p-4 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
+              !hasExtendedInsurance
+                ? 'border-brand-500 bg-brand-50/20 shadow-xs'
+                : 'border-slate-200 hover:border-slate-300 bg-white'
+            }`}
+          >
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                  <input
+                    type="radio"
+                    name="insurancePlan"
+                    checked={!hasExtendedInsurance}
+                    onChange={() => setHasExtendedInsurance?.(false)}
+                    className="w-4 h-4 text-brand-600 border-slate-300 focus:ring-brand-500 cursor-pointer"
+                  />
+                  <span>Gói Cơ bản (Tiêu chuẩn)</span>
+                </span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">
+                  Miễn phí
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 leading-relaxed pl-5">
+                Mức bảo vệ bồi thường rủi ro tiêu chuẩn tối đa tới <strong>10.000.000 ₫</strong>. Đã tích hợp sẵn cho mọi đơn thuê.
+              </p>
+            </div>
+          </label>
+
+          {/* Gói Toàn diện 50M */}
+          <label
+            className={`p-4 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
+              hasExtendedInsurance
+                ? 'border-emerald-500 bg-emerald-50/30 shadow-xs'
+                : 'border-slate-200 hover:border-slate-300 bg-white'
+            }`}
+          >
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                  <input
+                    type="radio"
+                    name="insurancePlan"
+                    aria-label="Gói Toàn diện 50M"
+                    checked={hasExtendedInsurance}
+                    onChange={() => setHasExtendedInsurance?.(true)}
+                    className="w-4 h-4 text-emerald-600 border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                  />
+                  <span>Gói Toàn diện 50M</span>
+                </span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  +50.000 ₫/tháng
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 leading-relaxed pl-5">
+                Mức bảo vệ nâng cao bồi hoàn rủi ro tối đa tới <strong>50.000.000 ₫</strong>. Khuyên dùng cho hàng giá trị cao, đồ điện tử và tài liệu.
+              </p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      {/* 3. ĐIỀU KHOẢN DỊCH VỤ & CHÍNH SÁCH */}
       <div className="bg-white border border-brand-200 rounded-2xl p-6 shadow-xs space-y-4">
         <h2 className="text-xs font-extrabold uppercase tracking-wider text-[#0a1614] pb-2 border-b border-brand-100">
-          2. Điều khoản dịch vụ & Quyền lợi lưu trữ
+          3. Điều khoản dịch vụ & Quyền lợi lưu trữ
         </h2>
 
         {/* 3 Thẻ quyền lợi an tâm trực quan */}

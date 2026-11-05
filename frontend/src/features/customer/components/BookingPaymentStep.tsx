@@ -33,6 +33,8 @@ export interface BookingPaymentStepProps {
   finalUnitNumber: string;
   durationMonths: number;
   depositMultiplierLabel: string;
+  hasExtendedInsurance?: boolean;
+  insuranceTotal?: number;
 }
 
 /**
@@ -56,10 +58,13 @@ export const BookingPaymentStep: React.FC<BookingPaymentStepProps> = ({
   finalUnitNumber,
   durationMonths,
   depositMultiplierLabel,
+  hasExtendedInsurance = false,
+  insuranceTotal = 0,
 }) => {
   const isSuccess = paymentStatus === 'SUCCESS';
   const orderDescription = checkoutData?.description || `DH${createdReservationId}`;
-  const totalAmount = checkoutData?.amount || calculation?.totalDueToday || 0;
+  const rawTotal = checkoutData?.amount || calculation?.totalDueToday || 0;
+  const totalAmount = rawTotal + (checkoutData?.amount ? 0 : (hasExtendedInsurance ? insuranceTotal : 0));
 
   return (
     <div className="space-y-6">
@@ -305,6 +310,15 @@ export const BookingPaymentStep: React.FC<BookingPaymentStepProps> = ({
                   {formatVND(calculation.depositAmount)}
                 </span>
               </div>
+
+              {hasExtendedInsurance && insuranceTotal > 0 && (
+                <div className="flex justify-between text-emerald-800 font-bold bg-emerald-50/80 px-2.5 py-1.5 rounded-lg border border-emerald-200/60">
+                  <span>Gói bảo vệ toàn diện 50M:</span>
+                  <span className="font-mono text-emerald-800 font-black">
+                    +{formatVND(insuranceTotal)}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Tổng thanh toán */}

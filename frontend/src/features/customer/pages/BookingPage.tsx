@@ -389,6 +389,12 @@ export const BookingPage: React.FC = () => {
     };
   }, [unitType, durationMonths, depositMultiplier, backendPricing]);
 
+  // 8.1 Gói Bảo Vệ Hàng Hóa Mở Rộng 50M (BR-SUP-04)
+  const [hasExtendedInsurance, setHasExtendedInsurance] = useState<boolean>(false);
+  const insuranceTotal = useMemo(() => {
+    return hasExtendedInsurance ? 50000 * durationMonths : 0;
+  }, [hasExtendedInsurance, durationMonths]);
+
   // 9. Quản lý luồng Thanh toán VNPay & Hủy đơn qua Custom Hook
   const {
     isSubmitting,
@@ -690,6 +696,8 @@ export const BookingPage: React.FC = () => {
               isCheckingAvailability={isCheckingAvailability}
               isButtonDisabled={!reservationIdParam && (availability == null || availability.availableSlots <= 0)}
               onSubmit={handleProceedToPayment}
+              hasExtendedInsurance={hasExtendedInsurance}
+              setHasExtendedInsurance={setHasExtendedInsurance}
             />
           </div>
 
@@ -706,6 +714,8 @@ export const BookingPage: React.FC = () => {
               durationMonths={durationMonths}
               calculation={calculation}
               depositMultiplierLabel={depositMultiplierLabel}
+              hasExtendedInsurance={hasExtendedInsurance}
+              insuranceTotal={insuranceTotal}
             />
           </div>
         </div>
@@ -730,6 +740,8 @@ export const BookingPage: React.FC = () => {
           finalUnitNumber={finalUnitNumber}
           durationMonths={durationMonths}
           depositMultiplierLabel={depositMultiplierLabel}
+          hasExtendedInsurance={hasExtendedInsurance}
+          insuranceTotal={insuranceTotal}
         />
       )}
 
