@@ -17,7 +17,7 @@
 ## 1. 🎯 Trọng tâm hiện tại (Current Focus)
 
 * **Giai đoạn:** Sprint Hoàn thiện Nghiệp vụ & Kiểm thử Tích hợp (Integration & Polish).
-* **Mục tiêu chính:** Đồng bộ đặc tả phân bổ ô kho: khách đặt theo hạng kho, FM gán ô vật lý trước ngày Check-in. Tài liệu nằm trên nhánh `docs/fm-unit-allocation`. Khách đặt theo hạng; FM gán tại `/manager/allocation`.
+* **Mục tiêu chính:** Đồng bộ đặc tả phân bổ ô kho: khách đặt theo hạng kho, FM gán ô vật lý trước ngày Check-in. Bổ sung đặc tả Check-in Online (Digital Move-In) tích hợp dữ liệu viễn trắc IoT và cơ chế Auto-Activation tại T+10 bảo toàn 100% doanh thu. Tài liệu nằm trên nhánh `docs/fm-unit-allocation` / `feature/Tx-test-all-features`.
 * [Technical Debt] Đã áp dụng Sorted Locking để chống deadlock, nhưng chưa có Integration Test cho case 2 FM đổi ô ngược chiều.
 
 ### Phân công Trách nhiệm (4 Workstreams):
@@ -136,6 +136,7 @@
 | `ISS-126` | Tab "Đã đóng" hỗ trợ hiển thị cọc cạch 2 nhãn "Đã xử lý" (RESOLVED) và "Đã đóng" (CLOSED) dù đã bãi bỏ bước khách hàng nghiệm thu (ISS-72). | Đồng bộ hiển thị thống nhất 1 nhãn "Đã đóng" cho cả RESOLVED, CLOSED, AUTO_CLOSED trên SupportTicketCard và modal chi tiết. | Xuân Nhi | `RESOLVED` |
 | `ISS-127` | Lỗi UNIT_NOT_AVAILABLE tại Bước 2 Booking hiển thị banner text không dấu thô sơ thay vì bật Modal cảnh báo ô kho không khả dụng. | Bổ sung trigger mở unavailableModal trong catch handler của BookingPage.tsx kèm nút điều hướng quay lại sơ đồ chọn ô kho. | Xuân Nhi | `RESOLVED` |
 | `ISS-128` | Khách vẫn chọn ô vật lý; đặc tả mới để FM gán ô trước Check-in. | Đã sửa tài liệu trên `docs/fm-unit-allocation`. Code, migration nullable và màn FM làm sau khi tài liệu được duyệt. | Tùng / Nhật | `OPEN` |
+| `ISS-129` | Chính sách No-show cũ tự hủy hợp đồng làm thất thoát doanh thu; thiếu Check-in Online & IoT Telemetry. | Chuẩn hóa tài liệu: Check-in Online (Digital Move-In) tích hợp dữ liệu viễn trắc IoT (Nhiệt/Ẩm/Khóa/CCTV), Auto-Activation tại T+10 bảo toàn 100% doanh thu. | Bình | `RESOLVED` (Docs) |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 

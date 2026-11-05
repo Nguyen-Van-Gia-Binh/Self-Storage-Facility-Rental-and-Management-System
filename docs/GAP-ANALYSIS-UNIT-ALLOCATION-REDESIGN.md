@@ -24,6 +24,15 @@ Chuyển đổi sang mô hình **Quản lý Hạn ngạch theo Hạng kho & Phâ
 2. **Phân bổ Ô kho (Pre-Checkin Staging by FM):** Quản lý cơ sở (Facility Manager - FM) là người chủ động phân bổ thủ công một ô kho vật lý cụ thể đang `AVAILABLE` vào hợp đồng của khách trước ngày check-in. FM có quyền linh hoạt điều chỉnh ô kho cho tới trước ngày check-in ($T-1$). Khi FM phân bổ, ô kho chuyển sang `RESERVED`.
 3. **Nhận kho & Bàn giao (On-site Check-in):** Nhân viên tiếp đón khách, mở hợp đồng đã được FM gán sẵn ô kho để cùng khách kiểm tra thực tế. Nếu ô kho phát sinh lỗi đột xuất tại hiện trường, Staff báo cáo lên FM $\rightarrow$ FM thao tác đổi ô kho trên hệ thống sang ô `AVAILABLE` khác cùng loại $\rightarrow$ Staff tiếp tục bàn giao và kích hoạt hợp đồng sang `ACTIVE`, ô kho sang `OCCUPIED`.
 4. **Gia hạn & Đặt trước (Renewal Preemption):** Khách hàng đang thuê tại ô kho có quyền ưu tiên gia hạn (Preemption Right). Các đơn đặt trước tương lai chỉ giữ hạn ngạch số lượng theo Hạng kho. Nếu FM đã lỡ tạm gán ô đang thuê cho đơn tương lai, hệ thống tự động gỡ gán khỏi đơn tương lai đó (đưa về `storage_unit_id = NULL`) và thông báo FM chọn ô khác.
+5. **Nhận kho Linh hoạt (Check-in Online & Auto-Activation) kết hợp IoT Telemetry & Tiền kiểm định của Staff:**
+   - **Tự do Lựa chọn Phương thức Check-in:** Khách hàng không bị bắt buộc phải đến quầy gặp nhân viên vào đúng ngày $T$. Khách có quyền tự do lựa chọn giữa: (1) **Check-in Online (Digital Move-In)** trực tiếp trên ứng dụng web/mobile mọi lúc mọi nơi từ 08:00 ngày bắt đầu hợp đồng, hoặc (2) **Check-in Trực tiếp (On-site)** tại cơ sở trong khung giờ làm việc của nhân viên.
+   - **Phân định Vai trò Nhân viên (Facility Staff) trong Check-in Online:** Thay vì đóng vai trò bàn giấy tiếp đón thủ công, nhân viên cơ sở chuyển dịch sang vai trò **Tiền kiểm định & Bảo chứng chất lượng ô kho (Pre-move-in Inspection)** vào ngày $T-1$: tiến hành vệ sinh sạch sẽ, kiểm tra khóa và cửa ô kho, chụp bộ ảnh hiện trạng thực tế độ nét cao (sàn, vách tường, trần, ổ khóa) và tải lên hệ thống trước 18:00 ngày $T-1$.
+   - **Tích hợp Dữ liệu Viễn trắc IoT (Real-time IoT Telemetry):** Màn hình Biên bản Bàn giao Điện tử (E-Handover) trên ứng dụng của khách tích hợp trực tiếp dữ liệu từ các cảm biến IoT lắp đặt tại cơ sở:
+     - **Cảm biến Môi trường (Environmental Sensors):** Nhiệt độ (°C) và Độ ẩm tương đối (%RH) thời gian thực (đặc biệt quan trọng với Hạng kho Kiểm soát Khí hậu - Climate-Controlled).
+     - **Khóa thông minh (Smart Lock Telemetry):** Trạng thái kết nối (Online/Offline), tình trạng pin (% Battery) và chốt khóa cơ khí.
+     - **Camera Giám sát (CCTV Snapshot):** Ảnh chụp tĩnh thời gian thực từ camera an ninh góc hành lang đối diện cửa ô kho.
+   - **Ký số & Cấp mã truy cập tức thì:** Khách hàng kiểm tra bộ ảnh hiện trạng của Staff và dữ liệu viễn trắc IoT $\rightarrow$ Nhập chữ ký số E-Sign $\rightarrow$ Hợp đồng lập tức chuyển sang `ACTIVE`, hệ thống kích hoạt và gửi mã truy cập cá nhân (Smart Lock PIN) qua SMS/Email để khách có thể chủ động đến dọn đồ vào kho 24/7.
+   - **Bảo toàn Doanh thu & Kích hoạt Tự động ($T+10$):** Nếu khách hàng bận việc không thể check-in online lẫn offline trong 10 ngày ân hạn (`checkin.grace_days = 10`), hệ thống áp dụng nguyên tắc **Deemed Acceptance (Mặc định chấp thuận)**. Hợp đồng tự động kích hoạt `ACTIVE` vào đúng 00:00 ngày $T+11$, mã PIN được phát hành và gửi tới khách, ô kho được bảo lưu độc quyền cho khách 24/7. Doanh nghiệp giữ trọn vẹn 100% doanh thu $N$ tháng tiền thuê và 100% tiền cọc, giải quyết triệt để vấn đề mất doanh thu do chính sách hủy đơn và phạt cọc tiêu cực trước đây.
 
 ---
 
@@ -39,7 +48,8 @@ Qua chuỗi phỏng vấn làm rõ kiến trúc (`/grill-me`), các quyết đ�
 | **DEC-04** | **Xung đột Gia hạn (Renewal)** | **Ưu tiên khách đang thuê (Preemption):** Tự động gỡ gán ô khỏi đơn tương lai, thông báo FM. | Bảo vệ khách hàng trung thành, giảm chi phí dọn dẹp và duy trì dòng tiền ổn định cho doanh nghiệp. |
 | **DEC-05** | **Vòng đời Trạng thái Ô kho** | Khi FM gán: `StorageUnit` $\rightarrow$ `RESERVED`. Khi Check-in đạt: $\rightarrow$ `OCCUPIED`. | Khóa tạm thời ô kho để chuẩn bị vệ sinh; ngăn chặn FM khác hoặc cơ sở gán trùng ô. |
 | **DEC-06** | **Lưới An toàn Tự động (Safety Net)** | Cảnh báo đỏ $T-3$ $\rightarrow$ 00:00 ngày $T$ Auto-assign $\rightarrow$ Auto-upgrade $\rightarrow$ `PENDING_EMERGENCY_RESOLUTION`. | Đảm bảo hệ thống không bao giờ bị nghẽn (dead-end) khi FM bận hoặc quên nhiệm vụ. |
-| **DEC-07** | **Bàn giao Số & Tự động Kích hoạt (Digital Move-In & Auto-Activation)** | Hỗ trợ **Check-in Online** bằng chữ ký số qua ứng dụng hoặc Check-in tại quầy. Nếu khách không Check-in sau 10 ngày ân hạn (`checkin.grace_days`) và không dời lịch, hệ thống tự động kích hoạt **`ACTIVE` (Auto-Activation)** và cấp mã PIN qua Email/SMS (`BR-CAN-04`, `BR-CHK-05`). | Tôn trọng quyền sở hữu của khách hàng (kho đã trả tiền là của khách); tối đa hóa lợi nhuận (Revenue Maximization), bảo toàn 100% doanh thu $N$ tháng cho doanh nghiệp thay vì hủy đơn và phạt cọc tiêu cực. |
+| **DEC-07** | **Bàn giao Số & Tự động Kích hoạt (Digital Move-In & Auto-Activation)** | Hỗ trợ **Check-in Online** bằng chữ ký số qua ứng dụng hoặc Check-in tại quầy. Nếu khách không Check-in sau 10 ngày ân hạn (`checkin.grace_days = 10`) và không dời lịch/hủy đơn, hệ thống tự động kích hoạt **`ACTIVE` (Auto-Activation)** vào 00:00 ngày $T+11$ và cấp mã PIN qua Email/SMS (`BR-CAN-04`, `BR-CHK-05`). | Tôn trọng quyền sở hữu của khách hàng (kho đã trả tiền là quyền sử dụng hợp pháp của khách 24/7); tối đa hóa lợi nhuận (Revenue Maximization), bảo toàn 100% doanh thu $N$ tháng cho doanh nghiệp thay vì tự ý hủy đơn và phạt cọc gây phiền hà. |
+| **DEC-08** | **Tiền kiểm định Staff & Tích hợp IoT Telemetry trên E-Handover** | Staff thực hiện tiền kiểm định cơ sở vật chất và chụp ảnh hiện trạng ô kho vào ngày $T-1$. Màn hình E-Handover tích hợp dữ liệu viễn trắc IoT thực tế (Nhiệt độ, Độ ẩm, Khóa thông minh, Camera an ninh) để khách hàng thẩm định từ xa trước khi ký E-Sign. | Chuyển đổi mô hình vận hành từ "gác cửa thủ công" sang "bảo chứng chất lượng số hóa"; minh bạch 100% điều kiện vật lý của ô kho, triệt tiêu tranh chấp sau nhận kho. |
 
 ---
 
@@ -50,6 +60,10 @@ Qua chuỗi phỏng vấn làm rõ kiến trúc (`/grill-me`), các quyết đ�
 2. **Chuyển `rental_contract.storage_unit_id` sang `NULLABLE`:** Hợp đồng ở trạng thái `PENDING_CHECK_IN` hoàn toàn hợp lệ khi chưa có `storage_unit_id`.
 3. **Cơ chế Đổi ô kho tại chỗ (On-site Unit Swapping):** Thay thế điều khoản cứng nhắc của `BR-CHK-06` (bắt hủy hợp đồng hoàn tiền 3 ngày) bằng quy trình đổi kho cùng loại do FM thao tác.
 4. **Quyền ưu tiên gia hạn (Renewal Preemption):** Khách hàng cũ luôn được bảo lưu ô đang ở, gỡ bỏ nguy cơ bị khách mới cướp chỗ.
+5. **Số hóa Bàn giao & Giám sát Viễn trắc IoT (Contactless Move-In & Smart Telemetry):**
+   - Chuyển quyền quyết định thời điểm dọn đồ sang phía khách hàng: kho đã kích hoạt `ACTIVE` là không gian riêng tư được bảo vệ 24/7.
+   - Nhân viên cơ sở không phải túc trực đón khách thủ công, thay vào đó tập trung vào nghiệp vụ Tiền kiểm định cơ sở vật chất (Pre-move-in Inspection tại $T-1$).
+   - Sử dụng dữ liệu IoT (Cảm biến môi trường, Trạng thái khóa số, Camera hành lang) như một bằng chứng kỹ thuật số minh bạch, đính kèm trực tiếp vào Biên bản bàn giao điện tử.
 
 ### 3.2. Những điều NÊN BỎ / CẦN CẢNH GIÁC (Drop & Guard)
 1. **BỎ Sơ đồ mặt bằng trên Customer Portal:** Khách hàng không cần và không được chọn ô cụ thể trên sơ đồ khi đặt online.
@@ -96,6 +110,9 @@ Quét toàn bộ 7 tài liệu đặc tả nền tảng trong thư mục `docs/`
 | **22** | [**`docs/API-SPEC.md`**](API-SPEC.md)<br>Endpoint `PUT /api/v1/reservations/{id}/assign-unit` | Mô tả: `FM gán Storage Unit sau khi khách thanh toán` | **Chuẩn hóa quy tắc API:** FM gọi endpoint này để gán hoặc đổi `storageUnitId` bất kỳ lúc nào trước `startDate`. Bổ sung kiểm tra quyền RBAC: chỉ `FACILITY_MANAGER` phụ trách cơ sở mới được gọi. | **Trung bình** |
 | **23** | [**`docs/API-SPEC.md`**](API-SPEC.md)<br>Endpoint `POST /api/v1/contracts/{id}/check-in` | Request/Response của Check-in | **Ràng buộc kiểm tra:** API check-in bắt buộc `storage_unit_id` trên Contract phải khác `NULL` (đã được FM gán). Nếu `NULL` trả về mã lỗi `409 UNIT_NOT_YET_ALLOCATED`. | **Trung bình** |
 | **24** | [**`docs/DATA-DICTIONARY.md`**](DATA-DICTIONARY.md)<br>Bảng `rental_contract` (Dòng 280) | `storage_unit_id`: `BIGINT`, **Bắt buộc = Có** (`NOT NULL`) | **ĐIỀU CHỈNH SCHEMA CƠ SỞ DỮ LIỆU:** Sửa thành `storage_unit_id`: `BIGINT`, **Bắt buộc = Không** (`NULLABLE`). Chỉ bắt buộc `NOT NULL` khi hợp đồng chuyển sang trạng thái `ACTIVE`. | **Cao** (Yêu cầu Flyway Migration) |
+| **25** | [**`docs/BUSINESS-RULES.md`**](BUSINESS-RULES.md)<br>§ 6 (`BR-CAN-04`) & § 10 (`BR-CHK-05`) | `Khách không đến nhận kho sau 10 ngày ân hạn (No-Show): Phạt 100% tiền cọc, tự động hủy hợp đồng và hoàn trả tiền thuê các tháng còn lại.` | **BÃI BỎ PHẠT HỦY NO-SHOW & BẢO TOÀN DOANH THU:** Thay bằng quy trình 3 giai đoạn: (1) Nhắc nhở chủ động kèm 3 tùy chọn (Nhận Online, Dời ngày, Hủy đơn); (2) Tự động kích hoạt (Auto-Activation) lúc 00:00 ngày $T+11$ chuyển hợp đồng sang `ACTIVE`, giữ trọn 100% tiền thuê $N$ tháng và tiền cọc; (3) Tự động phát hành mã PIN Smart Lock qua SMS/Email để khách vào kho bất cứ lúc nào 24/7. | **Cực cao** (Bảo toàn doanh thu tối đa) |
+| **26** | [**`docs/WORKFLOWS.md`**](WORKFLOWS.md) & [**`docs/USER-STORIES-AND-USE-CASES.md`**](USER-STORIES-AND-USE-CASES.md)<br>Flow 2, `US-SC-04.2`, `UC-F2-05` | `Chỉ hỗ trợ quy trình bàn giao trực tiếp tại cơ sở: Khách đến gặp Staff, hai bên cùng kiểm tra ô kho vật lý, ký biên bản giấy/tablet tại quầy.` | **BỔ SUNG CHECK-IN ONLINE & IOT TELEMETRY:** Thêm Nhánh A (Digital Move-In): Staff thực hiện tiền kiểm định và tải ảnh hiện trạng tại $T-1$. Màn hình E-Handover hiển thị ảnh thực tế + dữ liệu viễn trắc IoT (Nhiệt độ, Độ ẩm, Khóa thông minh, Camera an ninh). Khách nhập chữ ký số E-Sign $\rightarrow$ Nhận mã PIN truy cập mà không cần gặp Staff. | **Cao** (Số hóa quy trình vận hành) |
+| **27** | [**`docs/API-SPEC.md`**](API-SPEC.md)<br>Endpoints Check-in & Background Job | `Chỉ có endpoint POST /api/v1/contracts/{id}/check-in do Staff gọi sau khi kiểm tra hiện trường tại quầy.` | **BỔ SUNG ENDPOINTS & SCHEDULER MỚI:** Thêm `GET /api/v1/contracts/{id}/handover-details` (trả về ảnh kiểm định của Staff + dữ liệu cảm biến IoT), `POST /api/v1/contracts/{id}/check-in-online` (khách ký E-Sign), và tác vụ nền `AutoCheckInActivationScheduler` quét lúc 00:00 hàng ngày để tự động kích hoạt `ACTIVE` các đơn quá hạn $T+10$. | **Cao** |
 
 ---
 
@@ -111,7 +128,7 @@ flowchart LR
 ```
 
 1. **Bước 1 — Cập nhật Đồng bộ Tài liệu Đặc tả (`docs/`):**
-   * Chỉnh sửa 24 vị trí lệch pha đã nêu trong Bảng đối chiếu ở trên trên 7 file tài liệu.
+   * Chỉnh sửa 27 vị trí lệch pha đã nêu trong Bảng đối chiếu ở trên trên 7 file tài liệu.
 2. **Bước 2 — Migration Cơ sở dữ liệu (Flyway Script):**
    * Tạo script migration `V...__allow_null_storage_unit_for_pending_contracts.sql`:
      ```sql
@@ -122,10 +139,19 @@ flowchart LR
    * `ReservationServiceImpl`: Bỏ tham số `storageUnitId` khi tạo đơn đặt chỗ; chỉ kiểm tra `AvailabilityService` theo `unit_type_id`.
    * `FacilityAllocationController` & `Service`: Cài đặt logic cho FM phân bổ ô kho (`PUT /api/v1/reservations/{id}/assign-unit`), đổi trạng thái ô sang `RESERVED`, cho phép đổi ô trước $T-1$.
    * `RenewalServiceImpl`: Cài đặt logic ưu tiên gia hạn (Preemption Right) — tự động gỡ gán khỏi đơn tương lai nếu trùng ô kho.
-   * `ContractServiceImpl.checkIn()`: Xác thực `storage_unit_id != null` trước khi ký biên bản và kích hoạt `ACTIVE`.
-   * `ScheduledJobs`: Bổ sung tác vụ tự động quét $T-3$ cảnh báo đỏ và 00:00 Auto-assign / Auto-upgrade nếu FM quên.
+   * `ContractServiceImpl`: Cung cấp các endpoint:
+     - `GET /api/v1/contracts/{id}/handover-details`: Trả về hình ảnh tiền kiểm định của Staff + Dữ liệu cảm biến IoT thời gian thực (Nhiệt độ, Độ ẩm, Pin khóa, CCTV snapshot).
+     - `POST /api/v1/contracts/{id}/check-in-online`: Khách ký chữ ký số E-Sign để nhận kho online, kích hoạt `ACTIVE` và cấp PIN Smart Lock.
+     - `POST /api/v1/contracts/{id}/check-in`: Nhân viên bàn giao trực tiếp tại cơ sở.
+   * `ScheduledJobs`: Bổ sung các tác vụ nền:
+     - Quét $T-3$ cảnh báo đỏ và 00:00 ngày $T$ Auto-assign / Auto-upgrade nếu FM quên gán ô.
+     - `AutoCheckInActivationScheduler`: Quét lúc 00:00 ngày $T+11$ để tự động kích hoạt `ACTIVE` (Auto-Activation) cho các hợp đồng chưa check-in sau 10 ngày ân hạn, cấp mã PIN gửi cho khách và bảo toàn 100% doanh thu.
 4. **Bước 4 — Tái cấu trúc Giao diện Frontend (React):**
-   * **Customer Portal:** Chuyển đổi màn hình chọn ô kho (`UnitPickerPage.tsx`) thành màn hình chọn Hạng kho thuần túy (`UnitTypeSelectionPage.tsx`), hiển thị ảnh mẫu 3D, kích thước, tiện ích và số lượng còn trống.
+   * **Customer Portal:**
+     - Chuyển đổi màn hình chọn ô kho (`UnitPickerPage.tsx`) thành màn hình chọn Hạng kho thuần túy (`UnitTypeSelectionPage.tsx`), hiển thị ảnh mẫu 3D, kích thước, tiện ích và số lượng còn trống.
+     - Xây dựng màn hình/dialog **Biên bản Bàn giao Điện tử (Digital Move-In E-Handover)**: hiển thị thư viện ảnh tiền kiểm định thực tế của Staff, bảng chỉ số viễn trắc IoT (Nhiệt độ, Độ ẩm, Pin khóa điện tử, CCTV snapshot), vùng ký số E-Sign và hộp thoại hiển thị mã PIN Smart Lock sau khi kích hoạt thành công.
+   * **Facility Staff Portal:**
+     - Màn hình ca trực hỗ trợ chức năng **"Tiền kiểm định ô kho (Pre-move-in Inspection)"** tại $T-1$: chụp và upload ảnh hiện trạng thực tế lên hệ thống.
    * **Facility Manager Portal:** Xây dựng màn hình **"Bàn làm việc Phân bổ Ô kho (Unit Allocation Workbench)"**: hiển thị danh sách đơn chờ nhận kho kèm sơ đồ mặt bằng trực quan để FM click chọn gán ô nhanh chóng.
 
 ---
