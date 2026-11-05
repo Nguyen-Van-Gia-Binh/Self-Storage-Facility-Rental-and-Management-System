@@ -18,6 +18,7 @@ import com.swp391.selfstorage.unit.repository.FacilityUnitTypePriceRepository;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
 import com.swp391.selfstorage.user.entity.UserRole;
 import com.swp391.selfstorage.user.entity.UserStatus;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -150,6 +151,7 @@ class ReservationCreationTest {
     @Test
     @DisplayName("BR-AVL-04: Đặt trước cho khoảng thời gian tương lai không trùng lịch (Future Claim) -> Thành công")
     void shouldCreateReservation_whenFutureClaimDifferentYear_Success() {
+        ReflectionTestUtils.setField(service, "maxAdvanceDays", 365);
         // Đặt trước cho năm 2027 (15/01/2027 đến 15/01/2028)
         request.setStartDate(LocalDate.of(2027, 1, 15));
         request.setRentalMonths(12);

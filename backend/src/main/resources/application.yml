@@ -85,3 +85,11 @@ payment:
     return-url: ${VNPAY_RETURN_URL:http://localhost:8080/api/v1/payments/vnpay/return}
     frontend-return-url: ${VNPAY_FRONTEND_RETURN:http://localhost:5173/payment/checkout}
 
+# Cấu hình Cửa sổ đặt trước & Danh sách chờ (BR-RES-01, Flow 1)
+booking:
+  max-advance-days: ${BOOKING_MAX_ADVANCE_DAYS:30}
+
+waitlist:
+  max-advance-days: ${WAITLIST_MAX_ADVANCE_DAYS:365}
+
+

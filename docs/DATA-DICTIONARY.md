@@ -417,6 +417,7 @@ Hàng đợi danh sách chờ khi cơ sở hết hạn ngạch loại ô kho —
 | `target_start_date` | `DATE` | Có | | Ngày mong muốn bắt đầu thuê |
 | `rental_months` | `INT` | Có | `DEFAULT 1`, `CHECK (rental_months >= 1)` | Thời hạn dự kiến thuê (tháng) |
 | `status` | `VARCHAR(25)` | Có | `DEFAULT 'WAITING'`, `CHECK IN ('WAITING','CONTACTING','PENDING_FOLLOW_UP','CONVERTED','REJECTED','EXPIRED','CANCELLED')` | Trạng thái vòng đời của đơn chờ trong phễu CRM |
+| `contact_phone` | `VARCHAR(20)` | Không | | Số điện thoại liên hệ trực tiếp cho đơn chờ do khách hàng cung cấp |
 | `assigned_fm_id` | `BIGINT` | Không | `FK` $\rightarrow$ `app_user(id)` | Facility Manager đang giữ quyền tư vấn độc quyền |
 | `last_contacted_at` | `DATETIMEOFFSET` | Không | | Thời điểm FM bấm tư vấn hoặc liên hệ gần nhất |
 | `contact_timeout_at` | `DATETIMEOFFSET` | Không | | Hạn chót khóa độc quyền (NOW + 2 giờ); quá hạn tự động hoàn về WAITING |

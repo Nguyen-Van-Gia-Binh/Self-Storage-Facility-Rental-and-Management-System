@@ -42,6 +42,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,6 +51,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -85,6 +87,9 @@ public class ReservationServiceImpl implements ReservationService {
 
     private final StaffDailyAssignmentRepository staffDailyAssignmentRepository;
     private final UserRepository userRepository;
+
+    @Value("${booking.max-advance-days:30}")
+    private int maxAdvanceDays = 30;
 
     @Autowired
     public ReservationServiceImpl(ReservationRepository reservationRepository,
@@ -275,6 +280,15 @@ public class ReservationServiceImpl implements ReservationService {
         // 4. Kiem tra ngay bat dau khong o qua khu
         if (request.getStartDate() != null && request.getStartDate().isBefore(LocalDate.now())) {
             throw new CustomException(ErrorCode.INVALID_START_DATE);
+        }
+
+        // 4.1 Kiem tra BR-RES-01: Gioi han dat truoc toi da (Advance Booking Window: 30 ngay)
+        if (request.getStartDate() != null) {
+            long daysUntilStart = ChronoUnit.DAYS.between(LocalDate.now(), request.getStartDate());
+            if (daysUntilStart > maxAdvanceDays) {
+                throw new CustomException(ErrorCode.ADVANCE_BOOKING_LIMIT_EXCEEDED,
+                        "Chỉ được phép đặt trước tối đa " + maxAdvanceDays + " ngày. Vui lòng đăng ký Danh sách chờ nếu muốn thuê xa hơn.");
+            }
         }
 
         int months = Math.max(1, request.getRentalMonths());

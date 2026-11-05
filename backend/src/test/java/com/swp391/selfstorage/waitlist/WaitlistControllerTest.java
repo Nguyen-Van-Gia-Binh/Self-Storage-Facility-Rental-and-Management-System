@@ -45,6 +45,7 @@ class WaitlistControllerTest {
                 .unitTypeId(7L)
                 .targetStartDate(LocalDate.now().plusDays(5))
                 .rentalMonths(3)
+                .phoneNumber("0912345678")
                 .build();
 
         WaitlistResponse response = WaitlistResponse.builder()

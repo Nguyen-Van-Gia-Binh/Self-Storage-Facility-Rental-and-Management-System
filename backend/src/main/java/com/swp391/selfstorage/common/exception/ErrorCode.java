@@ -6,6 +6,8 @@ public enum ErrorCode {
     // 400 Bad Request
     VALIDATION_FAILED(HttpStatus.BAD_REQUEST, "Dữ liệu yêu cầu không hợp lệ"),
     INVALID_START_DATE(HttpStatus.BAD_REQUEST, "Ngày bắt đầu thuê không được ở trong quá khứ"),
+    ADVANCE_BOOKING_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "Chỉ được phép đặt trước tối đa 30 ngày. Vui lòng đăng ký Danh sách chờ nếu muốn thuê xa hơn"),
+    CAPACITY_AVAILABLE_SHOULD_BOOK_NOW(HttpStatus.BAD_REQUEST, "Loại kho này hiện vẫn còn chỗ trống trong khoảng thời gian đã chọn. Quý khách vui lòng đặt trực tiếp"),
     INVALID_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "Chuyển trạng thái không hợp lệ"),
     RENEWAL_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "Hợp đồng không đủ điều kiện gia hạn"),
     ROLE_REQUIRES_FACILITY(HttpStatus.BAD_REQUEST,
