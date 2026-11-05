@@ -138,6 +138,7 @@
 | `ISS-128` | Khách vẫn chọn ô vật lý; đặc tả mới để FM gán ô trước Check-in. | Đã sửa tài liệu trên `docs/fm-unit-allocation`. Code, migration nullable và màn FM làm sau khi tài liệu được duyệt. | Tùng / Nhật | `OPEN` |
 | `ISS-129` | Chính sách No-show cũ tự hủy hợp đồng làm thất thoát doanh thu; thiếu Check-in Online & IoT Telemetry. | Chuẩn hóa tài liệu: Check-in Online (Digital Move-In) tích hợp dữ liệu viễn trắc IoT (Nhiệt/Ẩm/Khóa/CCTV), Auto-Activation tại T+10 bảo toàn 100% doanh thu. | Bình | `RESOLVED` (Docs) |
 | `ISS-130` | Trả kho sớm giữ 100% tiền thuê bị xem là điều khoản bất công; thiếu cơ chế trừ phạt cọc và hư hỏng. | Chuẩn hóa BR-RET-06: Hoàn 100% tiền thuê chưa dùng, phạt 100% cọc Deposit vi phạm cam kết, khấu trừ hư hỏng hiện trường. | Bình | `RESOLVED` (Docs) |
+| `ISS-131` | Thiếu quy định hạn mức bồi thường thiệt hại hàng hóa khi cơ sở xảy ra sự cố kỹ thuật hạ tầng (BR-SUP-04). | Chuẩn hóa BR-SUP-04: Hạn mức bồi thường cơ bản mặc định tối đa 10.000.000 đ/ô kho do lỗi kỹ thuật cơ sở; Tùy chọn Gói Bảo vệ Hàng hóa Mở rộng (+50.000 đ/tháng) bảo vệ tới 50.000.000 đ; Miễn trừ tuyệt đối với hàng cấm. | Bình | `RESOLVED` (Docs) |
 
 *(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))*
 

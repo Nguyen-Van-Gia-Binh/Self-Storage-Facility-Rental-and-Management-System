@@ -207,12 +207,13 @@ Bảng thuộc tính đi kèm mỗi story:
 - **AC-4** — *Given* tôi đổi số tháng thuê, *when* giá trị thay đổi, *then* bảng chi phí được tính
   lại ngay mà không phải tải lại trang.
 - **AC-5** — *Given* tôi đang ở màn hình xác nhận, *when* tôi đọc điều khoản, *then* hệ thống hiển
-  thị rõ quy tắc hoàn tiền khi hủy (`BR-CAN-01`, `BR-CAN-02`) và quy tắc **trả kho sớm
-  sớm (hoàn 100% tiền thuê chưa dùng, phạt 100% tiền cọc Deposit và trừ hư hại)** (`BR-RET-06`), và tôi phải tích xác nhận đã đọc mới đặt được.
+  thị rõ quy tắc hoàn tiền khi hủy (`BR-CAN-01`, `BR-CAN-02`) và quy tắc **
+  trả kho sớm (hoàn 100% tiền thuê chưa dùng, phạt 100% tiền cọc Deposit và trừ hư hại)** (`BR-RET-06`), và tôi phải tích xác nhận đã đọc mới đặt được.
 - **AC-6** — *Given* bảng giá bị Business Operations Manager thay đổi trong lúc tôi còn đang ở màn
   hình xác nhận, *when* tôi bấm đặt chỗ, *then* hệ thống **từ chối** tạo Reservation theo mức giá cũ,
   hiển thị bảng chi phí đã cập nhật kèm cảnh báo giá vừa thay đổi, và yêu cầu tôi xác nhận lại — tôi
   không bao giờ bị tính một mức giá khác với mức vừa nhìn thấy.
+- **AC-7** — *Given* tôi ở màn hình chọn dịch vụ gia tăng, *when* tôi tích chọn "Gói Bảo vệ Hàng hóa Mở rộng (+50.000 đ/tháng)", *then* bảng chi phí tự động cộng thêm phí bảo vệ `50.000 × N tháng` và hợp đồng ghi nhận quyền bồi thường hàng hóa lên tới 50.000.000 VNĐ theo `BR-SUP-04`.
 
 ---
 
@@ -608,6 +609,7 @@ Bảng thuộc tính đi kèm mỗi story:
   chặn và chỉ rõ trường còn thiếu.
 - **AC-5** — *Given* yêu cầu được tạo, *when* hệ thống xử lý xong, *then* yêu cầu xuất hiện trong
   hàng đợi tiếp nhận của Facility Staff tại đúng cơ sở đó, theo `UC-F7-03`.
+- **AC-6** — *Given* tôi báo sự cố hư hại tài sản lưu trữ do lỗi kỹ thuật cơ sở, *when* nhân viên nghiệm thu xác nhận lỗi công ty, *then* hệ thống áp dụng hạn mức bồi thường hàng hóa theo `BR-SUP-04` (tối đa 10.000.000 VNĐ cho gói cơ bản hoặc 50.000.000 VNĐ nếu có Gói Bảo vệ Mở rộng).
 
 ---
 
