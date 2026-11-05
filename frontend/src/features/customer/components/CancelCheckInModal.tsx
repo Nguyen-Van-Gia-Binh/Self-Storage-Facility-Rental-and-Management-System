@@ -6,6 +6,7 @@ import type { RentedContract } from '../types';
 import { formatVND } from '../utils/pricing';
 import { cancelReservationApi } from '@/api/reservation';
 import { calculateCancellationRefund } from '../utils/cancellationPolicy';
+import { cancelContractPendingCheckIn } from '@/api/customerRentals';
 
 function formatDateVN(dateStr?: string): string {
   if (!dateStr) return '';
@@ -55,20 +56,34 @@ export const CancelCheckInModal: React.FC<CancelCheckInModalProps> = ({
   ];
 
   const handleConfirmCancel = async () => {
-    if (!contract.reservationId) {
-      setErrorMessage('Không tìm thấy mã đơn đặt chỗ liên kết với hợp đồng này để hủy.');
-      return;
-    }
-
     try {
       setIsSubmitting(true);
       setErrorMessage(null);
 
       const cancelReasonText = reason.trim() || 'Khách hàng hủy nhận kho trên trang Kho của tôi';
-      await cancelReservationApi(contract.reservationId, cancelReasonText);
 
-      onSuccess();
-      onClose();
+      // Ưu tiên hủy trực tiếp theo contractId (chuẩn 1-to-1 cho hợp đồng đang xem)
+      if (contract.id) {
+        try {
+          await cancelContractPendingCheckIn(contract.id, cancelReasonText);
+          onSuccess();
+          onClose();
+          return;
+        } catch (contractErr: any) {
+          // Fallback qua reservationId nếu cần
+          if (!contract.reservationId) {
+            throw contractErr;
+          }
+        }
+      }
+
+      if (contract.reservationId) {
+        await cancelReservationApi(contract.reservationId, cancelReasonText);
+        onSuccess();
+        onClose();
+      } else {
+        setErrorMessage('Không tìm thấy thông tin hợp đồng để thực hiện hủy nhận kho.');
+      }
     } catch (err: any) {
       console.error('Lỗi khi hủy nhận kho:', err);
       setErrorMessage(

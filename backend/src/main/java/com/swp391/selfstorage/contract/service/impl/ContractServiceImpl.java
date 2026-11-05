@@ -56,9 +56,13 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import com.swp391.selfstorage.reservation.dto.CancelReservationRequest;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -1703,6 +1707,130 @@ public class ContractServiceImpl implements ContractService {
                                 contract.getCode(), newStartDate, newEndDate, targetUnitId);
 
                 return toResponse(contract);
+        }
+
+        @Override
+        @Transactional
+        public ContractResponse cancelPendingContract(Long contractId, CancelReservationRequest request, UserPrincipal currentUser) {
+                RentalContract contract = contractRepository.findById(contractId)
+                                .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
+
+                if (currentUser != null && currentUser.getRole() == UserRole.STORAGE_CUSTOMER) {
+                        if (!contract.getCustomerId().equals(currentUser.getId())) {
+                                throw new CustomException(ErrorCode.ACCESS_DENIED, "Bạn không có quyền thao tác trên hợp đồng này");
+                        }
+                }
+
+                if (contract.getStatus() != ContractStatus.PENDING_CHECK_IN) {
+                        throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION,
+                                        "Chỉ có thể hủy nhận kho cho hợp đồng đang ở trạng thái Chờ nhận kho (PENDING_CHECK_IN)");
+                }
+
+                OffsetDateTime now = OffsetDateTime.now();
+                String reason = (request != null && request.getReason() != null && !request.getReason().isBlank())
+                                ? request.getReason()
+                                : "Khách hàng hủy nhận kho trên trang Kho của tôi";
+
+                PolicyVersion cancelPolicy = null;
+                if (contract.getPolicyVersionId() != null && policyVersionRepository != null) {
+                        cancelPolicy = policyVersionRepository.findById(contract.getPolicyVersionId()).orElse(null);
+                }
+
+                int fullRefundHours = cancelPolicy != null && cancelPolicy.getCancelFullRefundHours() != null
+                                ? cancelPolicy.getCancelFullRefundHours()
+                                : 48;
+
+                OffsetDateTime startDateTime = contract.getStartDate() != null
+                                ? contract.getStartDate().atStartOfDay().atOffset(now.getOffset())
+                                : now;
+                long hoursUntilStart = Duration.between(now, startDateTime).toHours();
+
+                boolean isWithinCoolingOff = false;
+                if (contract.getCreatedAt() != null) {
+                        isWithinCoolingOff = Duration.between(contract.getCreatedAt(), now).toHours() <= fullRefundHours;
+                }
+
+                long deposit = contract.getDepositAmount() != null ? contract.getDepositAmount() : 0L;
+                long rentalFee = contract.getTotalRentalFee() != null ? contract.getTotalRentalFee() : 0L;
+                long totalPaid = deposit + rentalFee;
+                long refundAmount;
+
+                if (isWithinCoolingOff || hoursUntilStart >= fullRefundHours) {
+                        // BR-CAN-01: Hoàn 100% trong vòng 48h sau thanh toán hoặc trước nhận kho >= 48h
+                        refundAmount = totalPaid;
+                } else if (now.isBefore(startDateTime)) {
+                        BigDecimal lateRate = cancelPolicy != null ? cancelPolicy.getCancelLateRefundRate() : BigDecimal.ZERO;
+                        refundAmount = rentalFee + PolicyNumbers.share(deposit, lateRate);
+                } else {
+                        int graceDays = cancelPolicy != null && cancelPolicy.getCheckinGraceDays() != null
+                                        ? cancelPolicy.getCheckinGraceDays()
+                                        : 10;
+                        long heldDays = contract.getStartDate() != null
+                                        ? Math.max(0, ChronoUnit.DAYS.between(contract.getStartDate(), now.toLocalDate()))
+                                        : 0;
+                        if (heldDays > graceDays) {
+                                refundAmount = 0L;
+                        } else {
+                                BigDecimal noShowRate = cancelPolicy != null ? cancelPolicy.getCancelNoShowRefundRate() : BigDecimal.ZERO;
+                                long daily = contract.getMonthlyPrice() != null ? (contract.getMonthlyPrice() / 30) : 0L;
+                                long rentCharged = Math.min(rentalFee, daily * heldDays);
+                                refundAmount = Math.max(0, rentalFee - rentCharged) + PolicyNumbers.share(deposit, noShowRate);
+                        }
+                }
+
+                if (refundAmount > 0 && paymentTransactionRepository != null) {
+                        PaymentTransaction refundTxn = PaymentTransaction.builder()
+                                        .contractId(contract.getId())
+                                        .reservationId(contract.getReservationId())
+                                        .amount(refundAmount)
+                                        .transactionType("REFUND")
+                                        .paymentMethod("BANK_TRANSFER")
+                                        .status("PENDING_REFUND")
+                                        .providerReference("REFUND CANCEL: " + reason)
+                                        .orderCode(System.currentTimeMillis())
+                                        .build();
+                        paymentTransactionRepository.save(refundTxn);
+                }
+
+                // Cập nhật trạng thái hợp đồng -> CANCELLED
+                contract.setStatus(ContractStatus.CANCELLED);
+                RentalContract saved = contractRepository.save(contract);
+
+                // Giải phóng ô kho -> AVAILABLE
+                if (contract.getStorageUnitId() != null && storageUnitRepository != null) {
+                        storageUnitRepository.findById(contract.getStorageUnitId()).ifPresent(unit -> {
+                                unit.setStatus(StorageUnitStatus.AVAILABLE);
+                                storageUnitRepository.save(unit);
+                        });
+                }
+
+                // Đồng bộ cập nhật đơn reservation nếu có
+                if (contract.getReservationId() != null && reservationRepository != null) {
+                        reservationRepository.findById(contract.getReservationId()).ifPresent(rsv -> {
+                                rsv.setStatus(ReservationStatus.CANCELLED);
+                                rsv.setCancelledAt(now);
+                                rsv.setCancelReason(reason);
+                                reservationRepository.save(rsv);
+                        });
+                }
+
+                // Cập nhật bộ đếm chống Spam Bom hàng (BR-SPAM-01)
+                if (contract.getCustomerId() != null && userRepository != null) {
+                        userRepository.findById(contract.getCustomerId()).ifPresent(user -> {
+                                LocalDate todayDate = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+                                if (user.getLastCancelDate() != null && user.getLastCancelDate().equals(todayDate)) {
+                                        user.setDailyCancelCount(user.getDailyCancelCount() + 1);
+                                } else {
+                                        user.setLastCancelDate(todayDate);
+                                        user.setDailyCancelCount(1);
+                                }
+                                userRepository.save(user);
+                        });
+                }
+
+                log.info("Khách hàng đã hủy hợp đồng [{}] thành công. Số tiền hoàn lại dự kiến: {} VNĐ",
+                                contract.getCode(), refundAmount);
+                return toResponse(saved);
         }
 
         /** PIN theo độ dài trong snapshot hợp đồng, không ghim 6 số. */

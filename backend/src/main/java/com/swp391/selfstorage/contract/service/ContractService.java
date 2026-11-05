@@ -40,4 +40,7 @@ public interface ContractService {
 
     /** Dời thời gian thuê trước khi nhận kho khi ở trạng thái PENDING_CHECK_IN (BR-RES-06). */
     ContractResponse rescheduleRentalPeriod(Long contractId, com.swp391.selfstorage.contract.dto.RescheduleRentalPeriodRequest request, Long currentUserId);
+
+    /** Hủy nhận kho và hoàn tiền cho hợp đồng đang ở trạng thái PENDING_CHECK_IN (BR-CAN-01). */
+    ContractResponse cancelPendingContract(Long contractId, com.swp391.selfstorage.reservation.dto.CancelReservationRequest request, UserPrincipal currentUser);
 }

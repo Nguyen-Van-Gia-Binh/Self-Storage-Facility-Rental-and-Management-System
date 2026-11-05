@@ -272,6 +272,20 @@ export async function submitReturnNotice(
 }
 
 /**
+ * Hủy nhận kho và hoàn tiền cho hợp đồng đang ở trạng thái PENDING_CHECK_IN (POST /contracts/{id}/cancel)
+ */
+export async function cancelContractPendingCheckIn(
+  contractId: number | string,
+  reason?: string
+): Promise<any> {
+  const res = await apiClient<ApiResponse<any>>(`/contracts/${contractId}/cancel`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  });
+  return res.data;
+}
+
+/**
  * Lấy danh sách tất cả hợp đồng của khách hàng hiện tại (GET /customers/me/rentals)
  * Dữ liệu được lấy trực tiếp từ Backend API - không có mock data
  */

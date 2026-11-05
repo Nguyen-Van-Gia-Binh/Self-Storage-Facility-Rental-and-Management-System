@@ -368,9 +368,9 @@ export const AllocationPage: React.FC = () => {
       {/* 3-in-1 Assignment & Appointment Modal */}
       {modalUnit && selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-100">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-100">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 bg-teal-100 text-teal-700 rounded-xl">
                   <Calendar className="w-5 h-5" />
@@ -390,29 +390,31 @@ export const AllocationPage: React.FC = () => {
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 space-y-4 text-sm">
+            <div className="p-6 space-y-4 text-sm overflow-y-auto flex-1">
               {/* Summary banner */}
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/90 grid grid-cols-1 sm:grid-cols-2 gap-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
-                <div className="pr-0 sm:pr-3">
-                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-1">
-                    Đơn đặt / Hạng kho
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                    Đơn đặt chỗ / Hạng kho
                   </span>
-                  <div className="font-mono font-bold text-slate-900 text-sm">
-                    {selected.code}
-                  </div>
-                  <div className="text-xs text-slate-600 font-medium mt-0.5 line-clamp-1" title={selected.unitTypeName}>
-                    {selected.unitTypeName}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-mono font-bold text-slate-900 text-sm bg-white px-2 py-0.5 rounded border border-slate-200">
+                      {selected.code}
+                    </span>
+                    <span className="text-xs text-slate-700 font-medium" title={selected.unitTypeName}>
+                      {selected.unitTypeName}
+                    </span>
                   </div>
                 </div>
-                <div className="pt-2.5 sm:pt-0 sm:pl-4">
-                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-1">
+                <div className="sm:border-l sm:border-slate-200 sm:pl-4 space-y-1 shrink-0">
+                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
                     Ô kho được chọn
                   </span>
-                  <div className="flex items-baseline gap-2">
-                    <span className="font-mono font-black text-teal-700 text-lg">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-black text-teal-700 text-base bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
                       {modalUnit.code}
                     </span>
-                    <span className="text-xs font-semibold text-slate-500 bg-slate-200/70 px-2 py-0.5 rounded-md">
+                    <span className="text-xs font-semibold text-slate-600 bg-slate-200/80 px-2 py-0.5 rounded-md">
                       Tầng {modalUnit.floor}
                     </span>
                   </div>
@@ -495,18 +497,21 @@ export const AllocationPage: React.FC = () => {
                     value={selectedStaffId ?? ''}
                     onChange={(e) => setSelectedStaffId(Number(e.target.value))}
                   >
-                    {staffMembers.map((staff) => (
-                      <option key={staff.staffId} value={staff.staffId}>
-                        {staff.staffName}
-                      </option>
-                    ))}
+                    {staffMembers.map((staff) => {
+                      const cleanName = (staff.staffName || '').replace(/\s*\(\d+\s*việc[^)]*\)/gi, '').trim();
+                      return (
+                        <option key={staff.staffId} value={staff.staffId}>
+                          {cleanName}
+                        </option>
+                      );
+                    })}
                   </select>
                 )}
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-3 bg-slate-50">
+            <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-3 bg-slate-50 shrink-0">
               <button
                 type="button"
                 onClick={() => setModalUnit(null)}

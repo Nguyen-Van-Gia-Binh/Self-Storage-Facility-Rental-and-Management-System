@@ -451,8 +451,11 @@ public class ReservationServiceImpl implements ReservationService {
         Optional<RentalContract> pendingContractOpt = rentalContractRepository != null
                 ? rentalContractRepository.findByReservationId(reservation.getId())
                 : Optional.empty();
-        boolean hasPendingContract = pendingContractOpt.isPresent()
-                && pendingContractOpt.get().getStatus() == ContractStatus.PENDING_CHECK_IN;
+        List<RentalContract> linkedContracts = rentalContractRepository != null
+                ? rentalContractRepository.findAllByReservationId(reservation.getId())
+                : List.of();
+        boolean hasPendingContract = (pendingContractOpt.isPresent() && pendingContractOpt.get().getStatus() == ContractStatus.PENDING_CHECK_IN)
+                || linkedContracts.stream().anyMatch(c -> c.getStatus() == ContractStatus.PENDING_CHECK_IN);
 
         if (reservation.getStatus() == ReservationStatus.FULFILLED && !hasPendingContract) {
             throw new CustomException(ErrorCode.RESERVATION_ALREADY_FULFILLED, "Đơn đặt chỗ đã nhận kho, không thể hủy");
@@ -529,10 +532,14 @@ public class ReservationServiceImpl implements ReservationService {
             }
 
             // Hủy hợp đồng ở trạng thái PENDING_CHECK_IN nếu có
-            rentalContractRepository.findByReservationId(reservation.getId()).ifPresent(contract -> {
-                contract.setStatus(ContractStatus.TERMINATED);
-                rentalContractRepository.save(contract);
-            });
+            if (rentalContractRepository != null) {
+                rentalContractRepository.findByReservationId(reservation.getId()).ifPresent(contract -> {
+                    if (contract.getStatus() == ContractStatus.PENDING_CHECK_IN) {
+                        contract.setStatus(ContractStatus.TERMINATED);
+                        rentalContractRepository.save(contract);
+                    }
+                });
+            }
         }
 
         // Giải phóng StorageUnit nếu đã được gán
