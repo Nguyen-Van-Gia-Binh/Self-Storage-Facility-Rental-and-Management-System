@@ -79,44 +79,7 @@ class PaymentControllerTest {
                 .andExpect(jsonPath("$.status").value("PENDING"));
     }
 
-    @Test
-    @DisplayName("POST /payments/webhook/payos - Nhận webhook thành công trả về 200 OK")
-    void testHandlePayOSWebhook_Success() throws Exception {
-        String webhookJson = """
-                {
-                    "code": "00",
-                    "desc": "success",
-                    "data": {
-                        "orderCode": 123456789,
-                        "amount": 3200000,
-                        "description": "DH100",
-                        "accountNumber": "0888567999",
-                        "reference": "FT242500001",
-                        "transactionDateTime": "2026-09-24 21:00:00",
-                        "currency": "VND",
-                        "paymentLinkId": "PL123"
-                    },
-                    "signature": "mock_signature_hash"
-                }
-                """;
-
-        when(paymentService.processPayOSWebhook(any())).thenReturn(PaymentResponse.builder()
-                .id(1L)
-                .orderCode(123456789L)
-                .status("SUCCESS")
-                .build());
-
-        mockMvc.perform(post("/payments/webhook/payos")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(webhookJson))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.error").value(0))
-                .andExpect(jsonPath("$.message").value("Success"));
-
-        verify(paymentService).processPayOSWebhook(any());
-    }
-
-    @Test
+@Test
     @DisplayName("GET /payments/order/{orderCode}/status - Tra cứu trạng thái giao dịch theo orderCode (200 OK)")
     void testGetPaymentByOrderCode_Success() throws Exception {
         PaymentResponse response = PaymentResponse.builder()
@@ -137,31 +100,7 @@ class PaymentControllerTest {
                 .andExpect(jsonPath("$.status").value("SUCCESS"));
     }
 
-    @Test
-    @DisplayName("POST /payments/sandbox/process-transfer - Xử lý chuyển tiền Sandbox thành công (200 OK)")
-    void testProcessSandboxTransfer_Success() throws Exception {
-        com.swp391.selfstorage.payment.dto.SandboxTransferRequest request =
-                new com.swp391.selfstorage.payment.dto.SandboxTransferRequest(123456789L, "TRANSFER_SUCCESS");
-
-        PaymentResponse response = PaymentResponse.builder()
-                .id(10L)
-                .orderCode(123456789L)
-                .status("SUCCESS")
-                .amount(3_200_000L)
-                .build();
-
-        when(paymentService.processSandboxTransfer(eq(123456789L), eq("TRANSFER_SUCCESS"))).thenReturn(response);
-
-        mockMvc.perform(post("/payments/sandbox/process-transfer")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(10L))
-                .andExpect(jsonPath("$.orderCode").value(123456789L))
-                .andExpect(jsonPath("$.status").value("SUCCESS"));
-    }
-
-    @Test
+@Test
     void vnpayReturn_WhenConfirmThrows_RedirectsFailed() throws Exception {
         when(vnPayGateway.verify(any())).thenReturn(true);
         when(vnPayGateway.frontendReturnUrl()).thenReturn("http://localhost:5173/payment/checkout");

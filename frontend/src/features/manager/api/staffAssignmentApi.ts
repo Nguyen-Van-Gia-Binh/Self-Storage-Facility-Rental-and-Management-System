@@ -283,7 +283,7 @@ export async function getDailyDispatchTasks(
           assignedStaffName: contract.assignedStaffName,
           referenceId: contract.id,
           referenceCode: contract.code,
-          notes: 'Khách hàng đã đặt cọc VietQR thành công, sẵn sàng nhận kho.',
+          notes: 'Khách hàng đã đặt cọc VNPay thành công, sẵn sàng nhận kho.',
           checkinGraceDays: contract.checkinGraceDays ?? activePolicy?.checkinGraceDays ?? 3,
         });
       });

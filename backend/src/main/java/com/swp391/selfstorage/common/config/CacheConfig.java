@@ -34,10 +34,10 @@ public class CacheConfig {
 
     @Bean
     public CacheManager cacheManager() {
-        // 1. Cấu hình L1 Cache: Caffeine In-Memory (TTL 10 phút, tối đa 500 bản ghi)
+        // 1. Cấu hình L1 Cache: Caffeine In-Memory (TTL 15 phút, tối đa 500 bản ghi)
         CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager("facilities", "unitTypes");
         caffeineCacheManager.setCaffeine(Caffeine.newBuilder()
-                .expireAfterWrite(10, TimeUnit.MINUTES)
+                .expireAfterWrite(15, TimeUnit.MINUTES)
                 .maximumSize(500));
 
         // 2. Cấu hình L2 Cache: Redis Upstash nếu REDIS_URL được cấu hình

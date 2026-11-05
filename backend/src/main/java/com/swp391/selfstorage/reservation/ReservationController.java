@@ -93,8 +93,27 @@ public class ReservationController {
             throw new CustomException(ErrorCode.UNAUTHORIZED);
         }
         ReservationResponse response = reservationService.assignUnit(
-                id, request.getStorageUnitId(), currentUser.getFacilityIds());
-        return ResponseEntity.ok(ApiResponse.success(response, "Gán ô kho thành công"));
+                id, request, currentUser.getId(), currentUser.getFacilityIds());
+        return ResponseEntity.ok(ApiResponse.success(response, "Gán ô kho và phân công nhân viên thành công"));
+    }
+
+    /**
+     * FM điều chuyển/phân công lại nhân viên tiếp đón khi nhân viên cũ có sự cố (FM-05).
+     */
+    @PatchMapping("/{id}/reassign-staff")
+    @PreAuthorize("hasRole('FACILITY_MANAGER')")
+    @Operation(summary = "FM điều chuyển/phân công lại nhân viên tiếp đón")
+    public ResponseEntity<ApiResponse<ReservationResponse>> reassignStaff(
+            @PathVariable Long id,
+            @Valid @RequestBody ReassignStaffRequest request,
+            @AuthenticationPrincipal UserPrincipal currentUser
+    ) {
+        if (currentUser == null) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED);
+        }
+        ReservationResponse response = reservationService.reassignStaff(
+                id, request.getNewStaffId(), request.getReason(), currentUser.getId(), currentUser.getFacilityIds());
+        return ResponseEntity.ok(ApiResponse.success(response, "Điều chuyển nhân viên tiếp đón thành công"));
     }
 
     /**

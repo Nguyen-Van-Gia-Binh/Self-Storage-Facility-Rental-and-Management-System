@@ -10,24 +10,14 @@ import com.swp391.selfstorage.payment.dto.PaymentResponse;
 public interface PaymentService {
 
     /**
-     * Sinh link thanh toán PayOS VietQR động cho đơn đặt chỗ hoặc gia hạn.
+     * Sinh đơn thanh toán VNPay Sandbox động cho đơn đặt chỗ hoặc gia hạn.
      */
     com.swp391.selfstorage.payment.dto.CheckoutResponse createCheckoutLink(com.swp391.selfstorage.payment.dto.CheckoutRequest request);
-
-    /**
-     * Xác thực chữ ký và xử lý Webhook gửi về từ cổng thanh toán.
-     */
-    PaymentResponse processPayOSWebhook(Object webhookBody);
 
     /**
      * Tra cứu giao dịch theo mã đơn hàng (orderCode) phục vụ Polling.
      */
     PaymentResponse getPaymentByOrderCode(Long orderCode);
-
-    /**
-     * Xử lý xác nhận chuyển tiền hoặc hủy thanh toán qua Cổng Sandbox nội bộ (SC-03).
-     */
-    PaymentResponse processSandboxTransfer(Long orderCode, String action);
 
     /**
      * Đơn PENDING dùng để ký URL VNPay. transferContent là vnp_OrderInfo.

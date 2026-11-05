@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 /**
- * ISS-67: BookingPriceSummary & VietQRPaymentModal phải hiển thị hệ số cọc
+ * ISS-67: BookingPriceSummary & BookingPaymentStep phải hiển thị hệ số cọc
  * (depositMultiplier) từ BOM Policy thay vì cứng "1 tháng".
  *
  * Khi BOM cấu hình depositMultiplier = N thì label phải dùng N (không phải "1").
@@ -14,9 +14,9 @@ describe('ISS-67: Hiển thị đúng depositMultiplier từ BOM Policy', () => 
     process.cwd(),
     'src/features/customer/components/BookingPriceSummary.tsx'
   );
-  const vietQrModal = path.resolve(
+  const bookingPaymentStep = path.resolve(
     process.cwd(),
-    'src/features/customer/components/VietQRPaymentModal.tsx'
+    'src/features/customer/components/BookingPaymentStep.tsx'
   );
 
   it('BookingPriceSummary nhận prop depositMultiplier và dùng nó thay vì hard-code "1 tháng"', () => {
@@ -27,11 +27,11 @@ describe('ISS-67: Hiển thị đúng depositMultiplier từ BOM Policy', () => 
     expect(content).not.toMatch(/Tiền cọc \(1 tháng\)/);
   });
 
-  it('VietQRPaymentModal không còn hiển thị "(1 tháng)" cho tiền cọc', () => {
-    const content = fs.readFileSync(vietQrModal, 'utf-8');
+  it('BookingPaymentStep không còn hiển thị "(1 tháng)" cho tiền cọc', () => {
+    const content = fs.readFileSync(bookingPaymentStep, 'utf-8');
     expect(content).not.toMatch(/Tiền cọc bảo đảm \(1 tháng\)/);
-    // Phải dùng depositMultiplier từ policy hoặc prop
-    expect(content).toMatch(/depositMultiplier/);
+    // Phải dùng depositMultiplierLabel
+    expect(content).toMatch(/depositMultiplierLabel/);
   });
 
   it('BookingPage sử dụng policy.depositMultiplier từ useActivePolicy thay vì hard-code "1 tháng"', () => {

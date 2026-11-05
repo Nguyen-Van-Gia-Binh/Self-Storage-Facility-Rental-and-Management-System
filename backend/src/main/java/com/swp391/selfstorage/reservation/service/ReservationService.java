@@ -70,6 +70,16 @@ public interface ReservationService {
     ReservationResponse assignUnit(Long reservationId, Long storageUnitId, List<Long> facilityIds);
 
     /**
+     * FM gán hoặc đổi ô kho, chốt giờ hẹn và phân công nhân viên tiếp đón (DEC-01, FM-05).
+     */
+    ReservationResponse assignUnit(Long reservationId, com.swp391.selfstorage.reservation.dto.AssignUnitRequest request, Long managerId, List<Long> facilityIds);
+
+    /**
+     * FM điều chuyển/phân công lại nhân viên tiếp đón khi nhân viên cũ có sự cố (FM-05).
+     */
+    ReservationResponse reassignStaff(Long reservationId, Long newStaffId, String reason, Long managerId, List<Long> facilityIds);
+
+    /**
      * T3.5: Tra cứu đặt chỗ khi khách đến check-in — US-FS-01.1.
      * query: mã Reservation (RSV-...), số điện thoại, hoặc CCCD.
      */

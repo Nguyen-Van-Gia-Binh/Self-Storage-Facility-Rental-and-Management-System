@@ -93,7 +93,7 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public CheckoutResponse createCheckoutLink(CheckoutRequest request) {
-        log.info("Creating PayOS checkout link for referenceType={}, referenceId={}",
+        log.info("Creating VNPay checkout order for referenceType={}, referenceId={}",
                 request.getReferenceType(), request.getReferenceId());
 
         Long amount;
@@ -271,28 +271,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
 
-    @Override
-    @Transactional
-    public PaymentResponse processSandboxTransfer(Long orderCode, String action) {
-        log.info("Processing Sandbox transfer for orderCode={}, action={}", orderCode, action);
-        PaymentTransaction payment = paymentTransactionRepository.findByOrderCodeForUpdate(orderCode)
-                .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND,
-                        "Không tìm thấy giao dịch với orderCode=" + orderCode));
-        assertPayer(payment.getReservationId(), payment.getContractId());
-
-        if ("SUCCESS".equalsIgnoreCase(payment.getStatus())) {
-            log.info("Giao dịch orderCode={} đã ở trạng thái SUCCESS, bỏ qua xử lý lặp", orderCode);
-            return paymentMapper.toResponse(payment);
-        }
-
-        if ("CANCEL".equalsIgnoreCase(action)) {
-            return paymentMapper.toResponse(payment);
-        }
-
-        return markPaid(payment, "SANDBOX-" + System.currentTimeMillis(), null);
-    }
-
-    @Override
+@Override
     public PaymentResponse requirePendingPayment(Long orderCode) {
         PaymentTransaction payment = paymentTransactionRepository.findByOrderCode(orderCode)
                 .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND,
@@ -393,14 +372,7 @@ public class PaymentServiceImpl implements PaymentService {
         return paymentMapper.toResponse(payment);
     }
 
-    @Override
-    public PaymentResponse processPayOSWebhook(Object webhookBody) {
-        // shortcut: webhook không có chữ ký nên bỏ qua; bật lại khi có HMAC PayOS và URL public.
-        log.warn("Bỏ qua webhook PayOS không chữ ký");
-        return PaymentResponse.builder().status("IGNORED").build();
-    }
-
-    private void publishContractRenewalCompleted(PaymentTransaction payment) {
+private void publishContractRenewalCompleted(PaymentTransaction payment) {
         int months = resolveRenewalMonths(payment);
         eventPublisher.publishEvent(new com.swp391.selfstorage.payment.event.ContractRenewalPaymentCompletedEvent(
                 payment.getContractId(), payment.getId(), months, payment.getAmount()));

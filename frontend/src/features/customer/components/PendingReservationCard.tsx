@@ -104,7 +104,7 @@ export const PendingReservationCard: React.FC<PendingReservationCardProps> = ({
             className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-xs flex items-center gap-1.5 cursor-pointer"
           >
             <CreditCard className="w-3.5 h-3.5" />
-            <span>Tiếp tục thanh toán VietQR</span>
+            <span>Tiếp tục thanh toán VNPay</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Button>
         </Link>

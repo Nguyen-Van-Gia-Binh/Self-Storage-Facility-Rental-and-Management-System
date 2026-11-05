@@ -30,7 +30,13 @@ import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
 import com.swp391.selfstorage.policy.service.AppliedPriceLookup;
 import com.swp391.selfstorage.policy.service.PolicyNumbers;
 import com.swp391.selfstorage.policy.service.SurchargeAmountCalculator;
+import com.swp391.selfstorage.support.entity.AssignmentTaskType;
+import com.swp391.selfstorage.support.entity.StaffDailyAssignment;
+import com.swp391.selfstorage.support.repository.StaffDailyAssignmentRepository;
+import com.swp391.selfstorage.user.entity.AppUser;
 import com.swp391.selfstorage.user.entity.UserRole;
+import com.swp391.selfstorage.user.entity.UserStatus;
+import com.swp391.selfstorage.user.repository.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -76,6 +82,10 @@ public class ReservationServiceImpl implements ReservationService {
     @Autowired(required = false)
     private com.swp391.selfstorage.policy.service.DiscountProgramService discountProgramService;
 
+    private final StaffDailyAssignmentRepository staffDailyAssignmentRepository;
+    private final UserRepository userRepository;
+
+    @Autowired
     public ReservationServiceImpl(ReservationRepository reservationRepository,
                                   StorageUnitRepository storageUnitRepository,
                                   FacilityRepository facilityRepository,
@@ -83,7 +93,9 @@ public class ReservationServiceImpl implements ReservationService {
                                   FacilityUnitTypePriceRepository facilityUnitTypePriceRepository,
                                   RentalContractRepository rentalContractRepository,
                                   PaymentTransactionRepository paymentTransactionRepository,
-                                  PolicyVersionRepository policyVersionRepository) {
+                                  PolicyVersionRepository policyVersionRepository,
+                                  StaffDailyAssignmentRepository staffDailyAssignmentRepository,
+                                  UserRepository userRepository) {
         this.reservationRepository = reservationRepository;
         this.storageUnitRepository = storageUnitRepository;
         this.facilityRepository = facilityRepository;
@@ -92,7 +104,10 @@ public class ReservationServiceImpl implements ReservationService {
         this.rentalContractRepository = rentalContractRepository;
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.policyVersionRepository = policyVersionRepository;
+        this.staffDailyAssignmentRepository = staffDailyAssignmentRepository;
+        this.userRepository = userRepository;
     }
+
 
     @Override
     @Transactional(readOnly = true)
@@ -650,11 +665,111 @@ public class ReservationServiceImpl implements ReservationService {
             contract.setStorageUnitId(unit.getId());
             rentalContractRepository.save(contract);
         });
-        return mapToResponse(reservationRepository.save(reservation));
+        Reservation saved = reservationRepository.save(reservation);
+        return mapToResponse(saved != null ? saved : reservation);
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
+    public ReservationResponse assignUnit(Long reservationId, AssignUnitRequest request, Long managerId, List<Long> facilityIds) {
+        ReservationResponse response = this.assignUnit(reservationId, request.getStorageUnitId(), facilityIds);
+
+        if (request.getStaffId() != null) {
+            if (userRepository != null) {
+                AppUser staff = userRepository.findById(request.getStaffId())
+                        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "Khong tim thay nhan vien"));
+                if (staff.getRole() != UserRole.FACILITY_STAFF || staff.getStatus() != UserStatus.ACTIVE) {
+                    throw new CustomException(ErrorCode.VALIDATION_FAILED, "Nhan vien tiep don phai co vai tro STAFF va dang hoat dong");
+                }
+            }
+
+            RentalContract contract = rentalContractRepository.findByReservationId(reservationId).orElse(null);
+            if (contract != null) {
+                if (request.getScheduledStartTime() != null) {
+                    contract.setScheduledStartTime(request.getScheduledStartTime());
+                }
+                if (request.getScheduledEndTime() != null) {
+                    contract.setScheduledEndTime(request.getScheduledEndTime());
+                }
+                rentalContractRepository.save(contract);
+
+                if (staffDailyAssignmentRepository != null) {
+                    Reservation reservation = reservationRepository.findById(reservationId)
+                            .or(() -> reservationRepository.findByIdWithLock(reservationId))
+                            .orElse(null);
+
+                    Long facilityId = reservation != null ? reservation.getFacilityId() : contract.getFacilityId();
+                    LocalDate defaultDate = reservation != null && reservation.getStartDate() != null
+                            ? reservation.getStartDate()
+                            : (contract.getStartDate() != null ? contract.getStartDate() : LocalDate.now());
+                    LocalDate workDate = request.getScheduledDate() != null ? request.getScheduledDate() : defaultDate;
+
+                    StaffDailyAssignment assignment = staffDailyAssignmentRepository
+                            .findByReferenceTypeAndReferenceId("CONTRACT", contract.getId())
+                            .orElseGet(() -> StaffDailyAssignment.builder()
+                                    .referenceType("CONTRACT")
+                                    .referenceId(contract.getId())
+                                    .facilityId(facilityId)
+                                    .taskType(AssignmentTaskType.HANDOVER)
+                                    .build());
+
+                    assignment.setStaffId(request.getStaffId());
+                    assignment.setAssignedBy(managerId);
+                    assignment.setWorkDate(workDate);
+                    assignment.setFacilityId(facilityId);
+                    assignment.setReferenceType("CONTRACT");
+                    assignment.setReferenceId(contract.getId());
+                    assignment.setTaskType(AssignmentTaskType.HANDOVER);
+                    staffDailyAssignmentRepository.save(assignment);
+                }
+            }
+        }
+
+        return response;
+    }
+
+    @Override
+    @Transactional
+    public ReservationResponse reassignStaff(Long reservationId, Long newStaffId, String reason, Long managerId, List<Long> facilityIds) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESERVATION_NOT_FOUND));
+
+        if (facilityIds == null || !facilityIds.contains(reservation.getFacilityId())) {
+            throw new CustomException(ErrorCode.FACILITY_ACCESS_DENIED);
+        }
+
+        RentalContract contract = rentalContractRepository.findByReservationId(reservationId)
+                .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
+
+        if (userRepository != null) {
+            AppUser newStaff = userRepository.findById(newStaffId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "Khong tim thay nhan vien"));
+            if (newStaff.getRole() != UserRole.FACILITY_STAFF || newStaff.getStatus() != UserStatus.ACTIVE) {
+                throw new CustomException(ErrorCode.VALIDATION_FAILED, "Nhan vien tiep don phai co vai tro STAFF va dang hoat dong");
+            }
+        }
+
+        if (staffDailyAssignmentRepository != null) {
+            StaffDailyAssignment assignment = staffDailyAssignmentRepository
+                    .findByReferenceTypeAndReferenceId("CONTRACT", contract.getId())
+                    .orElseGet(() -> StaffDailyAssignment.builder()
+                            .referenceType("CONTRACT")
+                            .referenceId(contract.getId())
+                            .facilityId(reservation.getFacilityId())
+                            .workDate(contract.getCheckinDate() != null ? contract.getCheckinDate() : reservation.getStartDate())
+                            .taskType(AssignmentTaskType.HANDOVER)
+                            .build());
+
+            assignment.setStaffId(newStaffId);
+            assignment.setAssignedBy(managerId);
+            staffDailyAssignmentRepository.save(assignment);
+        }
+
+        return mapToResponse(reservation);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public ReservationResponse lookupForCheckIn(String query, Long facilityId) {
         if (query != null && query.toUpperCase().startsWith("RSV-")) {
             return reservationRepository.findByCodeAndFacilityId(query, facilityId)

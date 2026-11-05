@@ -183,15 +183,40 @@ export async function listReservations(params: {
   return page.content || [];
 }
 
-export async function assignUnit(reservationId: number, storageUnitId: number): Promise<ReservationResponse> {
+export interface AssignUnitPayload {
+  storageUnitId: number;
+  staffId?: number;
+  scheduledDate?: string;
+  scheduledStartTime?: string;
+  scheduledEndTime?: string;
+}
+
+export async function assignUnit(
+  reservationId: number,
+  payload: number | AssignUnitPayload
+): Promise<ReservationResponse> {
+  const body = typeof payload === 'number' ? { storageUnitId: payload } : payload;
   const res = await apiClient<ApiResponse<ReservationResponse>>(
     `/reservations/${reservationId}/assign-unit`,
     {
       method: 'PATCH',
-      body: JSON.stringify({ storageUnitId }),
+      body: JSON.stringify(body),
     }
   );
   return res.data;
 }
 
-
+export async function reassignStaffApi(
+  reservationId: number,
+  newStaffId: number,
+  reason?: string
+): Promise<ReservationResponse> {
+  const res = await apiClient<ApiResponse<ReservationResponse>>(
+    `/reservations/${reservationId}/reassign-staff`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ newStaffId, reason }),
+    }
+  );
+  return res.data;
+}

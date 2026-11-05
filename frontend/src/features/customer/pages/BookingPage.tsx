@@ -380,12 +380,11 @@ export const BookingPage: React.FC = () => {
     };
   }, [unitType, durationMonths, depositMultiplier, backendPricing]);
 
-  // 9. Quản lý luồng Thanh toán VietQR & Hủy đơn qua Custom Hook
+  // 9. Quản lý luồng Thanh toán VNPay & Hủy đơn qua Custom Hook
   const {
     isSubmitting,
     setIsSubmitting,
     isVerifying,
-    isSimulating,
     paymentNotice,
     bookingError,
     setBookingError,
@@ -401,13 +400,11 @@ export const BookingPage: React.FC = () => {
     setShowCancelModal,
     isCancellingReservation,
     cancelError,
-    holdExpired,
     formattedCountdown,
     redirectCountdown,
     copiedField,
     handleCopyText,
     handleCheckPaymentStatus,
-    handleSimulateTransfer,
     handleConfirmCancelReservation,
     showPassModal,
     setShowPassModal,
@@ -497,7 +494,7 @@ export const BookingPage: React.FC = () => {
     return () => { isMounted = false; };
   }, [reservationIdParam]);
 
-  // 12. Xử lý gửi Form Đặt Chỗ (Tạo đơn reservation & PayOS checkout)
+  // 12. Xử lý gửi Form Đặt Chỗ (Tạo đơn reservation & VNPay checkout)
   const handleProceedToPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tokenStorage.getAccessToken() || !tokenStorage.getUser()) {
@@ -569,7 +566,7 @@ export const BookingPage: React.FC = () => {
       setCurrentStep(3);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {
-      console.error('Lỗi khi khởi tạo đơn đặt chỗ hoặc PayOS:', err);
+      console.error('Lỗi khi khởi tạo đơn đặt chỗ hoặc VNPay:', err);
       // Backend mã hóa rõ: khách đang giữ 1 đơn PENDING_PAYMENT khác (BR-RES-02, ISS-99)
       if (err?.errorCode === 'PENDING_RESERVATION_EXISTS') {
         try {
@@ -637,7 +634,7 @@ export const BookingPage: React.FC = () => {
             <span>Quay lại chọn kho</span>
           </Link>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0a1614] tracking-tight">
-            {currentStep === 2 ? 'Thông Tin Đặt Chỗ' : 'Thanh Toán VietQR'}
+            {currentStep === 2 ? 'Thông Tin Đặt Chỗ' : 'Thanh Toán VNPay'}
           </h1>
         </div>
 
@@ -650,7 +647,7 @@ export const BookingPage: React.FC = () => {
           </span>
           <span className="text-slate-300">→</span>
           <span className={`px-3 py-1 rounded-full ${currentStep === 3 ? 'bg-brand-100 text-[#0a1614] font-bold border border-brand-300' : 'text-slate-400'}`}>
-            3. Thanh toán VietQR (48h)
+            3. Thanh toán VNPay (48h)
           </span>
         </div>
       </div>
@@ -710,9 +707,6 @@ export const BookingPage: React.FC = () => {
           paymentNotice={paymentNotice}
           paymentStatus={paymentStatus}
           redirectCountdown={redirectCountdown}
-          isSimulating={isSimulating}
-          holdExpired={holdExpired}
-          handleSimulateTransfer={handleSimulateTransfer}
           onCancelReservation={() => setShowCancelModal(true)}
           setShowCancelModal={setShowCancelModal}
           isVerifying={isVerifying}

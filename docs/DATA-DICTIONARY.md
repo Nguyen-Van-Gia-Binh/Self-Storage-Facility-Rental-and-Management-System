@@ -117,7 +117,7 @@ Danh mục cơ sở kho tự quản trong chuỗi (`BM-01`).
 | `updated_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Ngày cập nhật |
 
 ### 2.2. Bảng `unit_type`
-Danh mục kích thước quy chuẩn ô kho toàn hệ thống (`FM-01`, `UC-F5-01`).
+Danh mục Kiểu kho chuẩn hóa toàn hệ thống do BOM quản trị Master Data (`BM-01`, `UC-F5-01`).
 
 | Tên cột | Kiểu dữ liệu | Bắt buộc | Ràng buộc / Mặc định | Ý nghĩa & Mô tả nghiệp vụ |
 | :--- | :--- | :---: | :--- | :--- |
@@ -127,6 +127,10 @@ Danh mục kích thước quy chuẩn ô kho toàn hệ thống (`FM-01`, `UC-F5
 | `width_m` | `DECIMAL(10,2)` | Có | | Chiều rộng ô kho (mét) |
 | `length_m` | `DECIMAL(10,2)` | Có | | Chiều dài ô kho (mét) |
 | `height_m` | `DECIMAL(10,2)` | Có | | Chiều cao ô kho (mét) |
+| `max_load_kg_m2` | `INT` | Không | | Tải trọng sàn tối đa (kg/m²) phục vụ khách B2B |
+| `pallet_capacity` | `INT` | Không | | Sức chứa pallet tiêu chuẩn (1.0m × 1.2m) |
+| `environment` | `VARCHAR(20)` | Có | `DEFAULT 'DRY'`, `CHECK IN ('DRY','CHILLED','FREEZER','BONDED','YARD')` | Phân loại môi trường kiểm soát |
+| `features` | `NVARCHAR(500)` | Không | | Tiện ích nổi bật (PCCC tự động, camera 24/7, xe nâng...) |
 | `description` | `NVARCHAR(500)` | Không | | Mô tả công năng lưu trữ phù hợp |
 | `is_active` | `BIT` | Có | `DEFAULT 1` | Cờ trạng thái hoạt động (Soft Delete) |
 | `created_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Ngày tạo |
@@ -291,6 +295,8 @@ Hợp đồng thuê ô kho chính thức (`Flow 2, 3, 6`, `state-machine-contrac
 | `storage_unit_id`| `BIGINT` | Không | `FK` $\rightarrow$ `storage_unit(id)` | Trống khi `PENDING_CHECK_IN` chưa được FM gán. Bắt buộc có giá trị từ `ACTIVE` (`BR-CHK-04`) |
 | `start_date` | `DATE` | Có | | Ngày bắt đầu tính tiền thuê |
 | `end_date` | `DATE` | Có | | Ngày hết hạn hợp đồng hiện tại |
+| `scheduled_start_time` | `TIME` | Không | | Giờ bắt đầu hẹn tiếp đón bàn giao kho (FM chốt) |
+| `scheduled_end_time` | `TIME` | Không | | Giờ kết thúc hẹn tiếp đón bàn giao kho (FM chốt) |
 | `policy_version_id`| `BIGINT` | Có | `FK` $\rightarrow$ `policy_version(id)` | Snapshot chính sách áp dụng |
 | `monthly_price_snapshot`| `BIGINT` | Có | | Đơn giá thuê 1 tháng cố định trong hợp đồng |
 | `deposit_amount` | `BIGINT` | Có | | Tiền cọc đang giữ của hợp đồng |
@@ -395,6 +401,26 @@ Thông tin quyền truy cập mở ô kho (`Flow 2`, `BR-ACC-*`).
 | `suspended_at` | `DATETIMEOFFSET` | Không | | Thời điểm tạm khóa |
 | `revoked_at` | `DATETIMEOFFSET` | Không | | Thời điểm thu hồi quyền vĩnh viễn |
 | `created_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Ngày tạo |
+| `updated_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Ngày cập nhật |
+
+---
+
+### 4.8. Bảng `waitlist`
+Hàng đợi danh sách chờ khi cơ sở hết hạn ngạch loại ô kho (`Flow 1`, `BR-WAT-*`).
+
+| Tên cột | Kiểu dữ liệu | Bắt buộc | Ràng buộc / Mặc định | Ý nghĩa & Mô tả nghiệp vụ |
+| :--- | :--- | :---: | :--- | :--- |
+| `id` | `BIGINT` | Có | `PK`, `IDENTITY(1,1)` | Khóa chính |
+| `customer_id` | `BIGINT` | Có | `FK` $\rightarrow$ `app_user(id)` | Khách hàng đăng ký chờ |
+| `facility_id` | `BIGINT` | Có | `FK` $\rightarrow$ `facility(id)` | Cơ sở đăng ký chờ |
+| `unit_type_id` | `BIGINT` | Có | `FK` $\rightarrow$ `unit_type(id)` | Hạng kho mong muốn thuê |
+| `target_start_date` | `DATE` | Có | | Ngày mong muốn bắt đầu thuê |
+| `rental_months` | `INT` | Có | `DEFAULT 1`, `CHECK (rental_months >= 1)` | Thời hạn dự kiến thuê (tháng) |
+| `status` | `VARCHAR(20)` | Có | `DEFAULT 'WAITING'`, `CHECK IN ('WAITING','OFFERED','CONVERTED','EXPIRED','CANCELLED')` | Trạng thái vòng đời của đơn chờ |
+| `offered_at` | `DATETIMEOFFSET` | Không | | Thời điểm phát hành lời mời nhận kho |
+| `offer_expires_at` | `DATETIMEOFFSET` | Không | | Hạn chót thanh toán đặt cọc (24h đơn lẻ hoặc 4h batch) |
+| `converted_contract_id` | `BIGINT` | Không | `FK` $\rightarrow$ `rental_contract(id)` | Hợp đồng thành công chuyển đổi từ waitlist |
+| `created_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Ngày đăng ký hàng đợi |
 | `updated_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Ngày cập nhật |
 
 ---

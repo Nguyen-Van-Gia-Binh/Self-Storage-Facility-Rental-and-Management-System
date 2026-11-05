@@ -44,4 +44,6 @@ public class ContractResponse {
     private Boolean isInspected;
     private Long damageCost;
     private String damageNotes;
+    private java.time.LocalTime scheduledStartTime;
+    private java.time.LocalTime scheduledEndTime;
 }

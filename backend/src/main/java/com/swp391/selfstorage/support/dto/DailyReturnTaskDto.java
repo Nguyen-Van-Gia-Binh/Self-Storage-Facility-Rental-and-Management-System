@@ -43,6 +43,12 @@ public class DailyReturnTaskDto {
     @Schema(description = "Cờ đánh dấu đã hoàn tất nghiệm thu và trả kho")
     private boolean completed;
 
+    @Schema(description = "Cờ đánh dấu trả kho trễ hạn")
+    private boolean isLate;
+
+    @Schema(description = "Số ngày trả kho trễ hạn")
+    private Integer daysLate;
+
     public DailyReturnTaskDto() {
     }
 
@@ -51,6 +57,16 @@ public class DailyReturnTaskDto {
                               Long storageUnitId, String storageUnitCode,
                               Long facilityId, String facilityName,
                               LocalDate scheduledDate, String status, boolean completed) {
+        this(contractId, contractCode, customerId, customerName, customerPhone,
+                storageUnitId, storageUnitCode, facilityId, facilityName, scheduledDate, status, completed, false, null);
+    }
+
+    public DailyReturnTaskDto(Long contractId, String contractCode, Long customerId,
+                              String customerName, String customerPhone,
+                              Long storageUnitId, String storageUnitCode,
+                              Long facilityId, String facilityName,
+                              LocalDate scheduledDate, String status, boolean completed,
+                              boolean isLate, Integer daysLate) {
         this.contractId = contractId;
         this.contractCode = contractCode;
         this.customerId = customerId;
@@ -63,6 +79,8 @@ public class DailyReturnTaskDto {
         this.scheduledDate = scheduledDate;
         this.status = status;
         this.completed = completed;
+        this.isLate = isLate;
+        this.daysLate = daysLate;
     }
 
     public static Builder builder() {
@@ -165,6 +183,22 @@ public class DailyReturnTaskDto {
         this.completed = completed;
     }
 
+    public boolean isLate() {
+        return isLate;
+    }
+
+    public void setLate(boolean late) {
+        isLate = late;
+    }
+
+    public Integer getDaysLate() {
+        return daysLate;
+    }
+
+    public void setDaysLate(Integer daysLate) {
+        this.daysLate = daysLate;
+    }
+
     public static class Builder {
         private Long contractId;
         private String contractCode;
@@ -178,6 +212,8 @@ public class DailyReturnTaskDto {
         private LocalDate scheduledDate;
         private String status;
         private boolean completed;
+        private boolean isLate;
+        private Integer daysLate;
 
         public Builder contractId(Long contractId) {
             this.contractId = contractId;
@@ -239,9 +275,20 @@ public class DailyReturnTaskDto {
             return this;
         }
 
+        public Builder isLate(boolean isLate) {
+            this.isLate = isLate;
+            return this;
+        }
+
+        public Builder daysLate(Integer daysLate) {
+            this.daysLate = daysLate;
+            return this;
+        }
+
         public DailyReturnTaskDto build() {
             return new DailyReturnTaskDto(contractId, contractCode, customerId, customerName, customerPhone,
-                    storageUnitId, storageUnitCode, facilityId, facilityName, scheduledDate, status, completed);
+                    storageUnitId, storageUnitCode, facilityId, facilityName, scheduledDate, status, completed,
+                    isLate, daysLate);
         }
     }
 }

@@ -175,7 +175,7 @@ export const RenewalReceiptModal: React.FC<RenewalReceiptModalProps> = ({
                 <Receipt className="w-3.5 h-3.5 text-slate-400" />
                 Hình thức thanh toán:
               </span>
-              <span className="font-semibold text-slate-800">VietQR · Napas247</span>
+              <span className="font-semibold text-slate-800">Cổng VNPay Sandbox</span>
             </div>
             <div className="flex items-center justify-between text-slate-600 text-xs">
               <span>Tiền cọc bảo lưu:</span>

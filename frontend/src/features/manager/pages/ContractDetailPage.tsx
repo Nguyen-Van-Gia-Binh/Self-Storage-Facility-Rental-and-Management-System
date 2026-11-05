@@ -488,7 +488,7 @@ export const ContractDetailPage: React.FC = () => {
               <div className="py-2.5 flex items-center justify-between">
                 <div>
                   <span className="font-bold text-slate-800">Thanh toán cọc ban đầu</span>
-                  <p className="text-[11px] text-slate-400">VietQR • {contract.startDate || 'Khởi tạo'}</p>
+                  <p className="text-[11px] text-slate-400">VNPay • {contract.startDate || 'Khởi tạo'}</p>
                 </div>
                 <span className="font-mono font-bold text-emerald-700">
                   +{fmt(contract.depositAmount || 0)}
@@ -500,7 +500,7 @@ export const ContractDetailPage: React.FC = () => {
                   <span className="font-bold text-slate-800">
                     Tiền thuê {contract.rentalMonths} tháng
                   </span>
-                  <p className="text-[11px] text-slate-400">VietQR • {contract.startDate || 'Khởi tạo'}</p>
+                  <p className="text-[11px] text-slate-400">VNPay • {contract.startDate || 'Khởi tạo'}</p>
                 </div>
                 <span className="font-mono font-bold text-brand-600">
                   +{fmt((contract.monthlyPrice || 0) * (contract.rentalMonths || 1))}

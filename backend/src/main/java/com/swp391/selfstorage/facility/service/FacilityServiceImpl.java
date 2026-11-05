@@ -82,6 +82,7 @@ public class FacilityServiceImpl implements FacilityService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "facilities", key = "#id")
     public FacilityResponse getFacilityById(Long id) {
         Facility facility = facilityRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.FACILITY_NOT_FOUND));

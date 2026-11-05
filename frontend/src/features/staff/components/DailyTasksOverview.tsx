@@ -133,6 +133,27 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
     return true;
   });
 
+  // Actionable Inbox (Ponytail): Đưa các nhiệm vụ trễ hẹn cần xử lý gấp lên đầu danh sách
+  const sortedCheckIns = React.useMemo(() => {
+    return [...filteredCheckIns].sort((a, b) => {
+      const aLate = Boolean(a.isLate && !isCheckInDone(a));
+      const bLate = Boolean(b.isLate && !isCheckInDone(b));
+      if (aLate && !bLate) return -1;
+      if (!aLate && bLate) return 1;
+      return 0;
+    });
+  }, [filteredCheckIns]);
+
+  const sortedReturns = React.useMemo(() => {
+    return [...filteredReturns].sort((a, b) => {
+      const aLate = Boolean(a.isLate && !isReturnDone(a));
+      const bLate = Boolean(b.isLate && !isReturnDone(b));
+      if (aLate && !bLate) return -1;
+      if (!aLate && bLate) return 1;
+      return 0;
+    });
+  }, [filteredReturns]);
+
   // Tính tổng số lượng tương ứng với nhóm đang chọn
   const currentPending =
     filterCategory === 'checkin'
@@ -158,6 +179,7 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
   // Render từng thẻ Check-in gọn gàng (chỉ thông tin nhận diện cốt lõi, chi tiết nằm bên trong)
   const renderCheckInItem = (item: DailyCheckInTask) => {
     const isDone = isCheckInDone(item);
+    const isLate = Boolean(item.isLate && !isDone);
     const handleGoToCheckIn = () => {
       setActiveTaskView({ type: 'checkin', task: item });
     };
@@ -169,21 +191,35 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
         className={`px-4 py-3 rounded-xl border transition-all duration-200 flex items-center justify-between gap-3 cursor-pointer ${
           isDone
             ? 'border-emerald-200/70 bg-emerald-50/15 hover:border-emerald-300'
+            : isLate
+            ? 'border-rose-300 bg-rose-50/25 hover:border-rose-400 shadow-xs hover:shadow-sm'
             : 'border-slate-200/90 hover:border-teal-300 bg-white shadow-xs hover:shadow-sm'
         }`}
       >
         <div className="flex items-center gap-3.5 flex-1 min-w-0">
           <div
             className={`px-3 h-10 min-w-[4.75rem] rounded-xl flex items-center justify-center shrink-0 font-mono font-bold text-xs whitespace-nowrap ${
-              isDone ? 'bg-emerald-100 text-emerald-800' : 'bg-teal-50 text-teal-700 border border-teal-200'
+              isDone
+                ? 'bg-emerald-100 text-emerald-800'
+                : isLate
+                ? 'bg-rose-100 text-rose-800 border border-rose-300 font-bold'
+                : 'bg-teal-50 text-teal-700 border border-teal-200'
             }`}
           >
             {item.unitCode}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="font-bold text-slate-900 text-sm truncate">{item.customerName}</p>
+            <div className="flex items-center gap-2">
+              <p className="font-bold text-slate-900 text-sm truncate">{item.customerName}</p>
+              {isLate && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-black bg-rose-100 text-rose-700 border border-rose-300">
+                  <AlertTriangle className="w-3 h-3 text-rose-600" />
+                  Trễ {item.daysLate} ngày
+                </span>
+              )}
+            </div>
             <p className="text-xs text-slate-500 truncate mt-0.5">
-              {item.facilityName || 'Cơ sở phụ trách'}
+              {item.facilityName || 'Cơ sở phụ trách'} • Hẹn tiếp đón: {item.scheduledStartTime && item.scheduledEndTime ? `${item.scheduledStartTime} - ${item.scheduledEndTime}` : item.appointmentTime || ('startDate' in item ? (item as any).startDate : '')}
             </p>
           </div>
         </div>
@@ -197,6 +233,8 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
           className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shrink-0 cursor-pointer ${
             isDone
               ? 'border border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+              : isLate
+              ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-xs'
               : 'bg-teal-600 hover:bg-teal-700 text-white shadow-xs'
           }`}
         >
@@ -210,6 +248,7 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
   // Render từng thẻ Trả kho gọn gàng
   const renderReturnItem = (item: DailyReturnTask) => {
     const isDone = isReturnDone(item);
+    const isLate = Boolean(item.isLate && !isDone);
     const handleGoToReturn = () => {
       setActiveTaskView({ type: 'return', task: item });
     };
@@ -221,21 +260,35 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
         className={`px-4 py-3 rounded-xl border transition-all duration-200 flex items-center justify-between gap-3 cursor-pointer ${
           isDone
             ? 'border-emerald-200/70 bg-emerald-50/15 hover:border-emerald-300'
+            : isLate
+            ? 'border-rose-300 bg-rose-50/25 hover:border-rose-400 shadow-xs hover:shadow-sm'
             : 'border-slate-200/90 hover:border-blue-300 bg-white shadow-xs hover:shadow-sm'
         }`}
       >
         <div className="flex items-center gap-3.5 flex-1 min-w-0">
           <div
             className={`px-3 h-10 min-w-[4.75rem] rounded-xl flex items-center justify-center shrink-0 font-mono font-bold text-xs whitespace-nowrap ${
-              isDone ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-50 text-blue-700 border border-blue-200'
+              isDone
+                ? 'bg-emerald-100 text-emerald-800'
+                : isLate
+                ? 'bg-rose-100 text-rose-800 border border-rose-300 font-bold'
+                : 'bg-blue-50 text-blue-700 border border-blue-200'
             }`}
           >
             {item.unitCode}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="font-bold text-slate-900 text-sm truncate">{item.customerName}</p>
+            <div className="flex items-center gap-2">
+              <p className="font-bold text-slate-900 text-sm truncate">{item.customerName}</p>
+              {isLate && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-black bg-rose-100 text-rose-700 border border-rose-300">
+                  <AlertTriangle className="w-3 h-3 text-rose-600" />
+                  Trễ {item.daysLate} ngày
+                </span>
+              )}
+            </div>
             <p className="text-xs text-slate-500 truncate mt-0.5">
-              {item.facilityName || 'Cơ sở phụ trách'}
+              {item.facilityName || 'Cơ sở phụ trách'} • Trả kho: {item.appointmentTime || ('returnDate' in item ? (item as any).returnDate : '')}
             </p>
           </div>
         </div>
@@ -249,6 +302,8 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
           className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shrink-0 cursor-pointer ${
             isDone
               ? 'border border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+              : isLate
+              ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-xs'
               : 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs'
           }`}
         >
@@ -477,8 +532,8 @@ export const DailyTasksOverview: React.FC<DailyTasksOverviewProps> = ({
             </div>
           ) : (
             <div className="space-y-2.5">
-              {filterCategory === 'checkin' && filteredCheckIns.map(renderCheckInItem)}
-              {filterCategory === 'return' && filteredReturns.map(renderReturnItem)}
+              {filterCategory === 'checkin' && sortedCheckIns.map(renderCheckInItem)}
+              {filterCategory === 'return' && sortedReturns.map(renderReturnItem)}
               {filterCategory === 'incident' && filteredIncidents.map(renderIncidentItem)}
             </div>
           )}

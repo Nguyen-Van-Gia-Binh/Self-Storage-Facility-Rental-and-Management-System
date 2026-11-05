@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { customerApi, type CheckoutResponse } from '../api/customerApi';
+import type { CheckoutResponse } from '../api/customerApi';
 import {
   getReservationById,
   cancelReservationApi,
@@ -39,7 +39,6 @@ export function useBookingPayment({
   // 1. Trạng thái thanh toán & checkout
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
-  const [isSimulating, setIsSimulating] = useState<boolean>(false);
   const [paymentNotice, setPaymentNotice] = useState<string | null>(null);
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [checkoutData, setCheckoutData] = useState<CheckoutResponse | null>(null);
@@ -184,34 +183,6 @@ export function useBookingPayment({
     }
   };
 
-  // 10. Giả lập thanh toán tức thì trên môi trường Sandbox
-  const handleSimulateTransfer = async () => {
-    if (!createdReservationId) return;
-    setIsSimulating(true);
-    setPaymentNotice(null);
-
-    try {
-      if (checkoutData?.orderCode) {
-        await customerApi.processSandboxTransfer(checkoutData.orderCode, 'TRANSFER_SUCCESS');
-      }
-      setPaymentStatus('SUCCESS');
-      handleConfirmBookingPayment();
-
-      let counter = 3;
-      const redirectTimer = setInterval(() => {
-        counter -= 1;
-        setRedirectCountdown(counter);
-        if (counter <= 0) {
-          clearInterval(redirectTimer);
-        }
-      }, 1000);
-    } catch (err: any) {
-      setPaymentNotice(err?.message || 'Giả lập thanh toán không thành công. Vui lòng kiểm tra lại!');
-    } finally {
-      setIsSimulating(false);
-    }
-  };
-
   // 11. Hủy giữ chỗ giải phóng ô kho (ISS-77)
   const handleConfirmCancelReservation = async () => {
     if (!createdReservationId) return;
@@ -233,7 +204,6 @@ export function useBookingPayment({
     isSubmitting,
     setIsSubmitting,
     isVerifying,
-    isSimulating,
     paymentNotice,
     bookingError,
     setBookingError,
@@ -257,7 +227,6 @@ export function useBookingPayment({
     copiedField,
     handleCopyText,
     handleCheckPaymentStatus,
-    handleSimulateTransfer,
     handleConfirmCancelReservation,
     showPassModal,
     setShowPassModal,

@@ -3,6 +3,7 @@ package com.swp391.selfstorage.contract.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 
 @Entity
@@ -63,6 +64,12 @@ public class RentalContract {
 
     @Column(name = "checkin_date")
     private LocalDate checkinDate;
+
+    @Column(name = "scheduled_start_time")
+    private LocalTime scheduledStartTime;
+
+    @Column(name = "scheduled_end_time")
+    private LocalTime scheduledEndTime;
 
     @Column(name = "return_date")
     private LocalDate returnDate;

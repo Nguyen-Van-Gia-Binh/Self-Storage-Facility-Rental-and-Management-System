@@ -26,7 +26,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="/register" element={<RedirectWithQuery to="/auth/register" />} />
         <Route path="/forgot-password" element={<RedirectWithQuery to="/auth/forgot-password" />} />
 
-        {/* Cổng giả lập thanh toán VietQR Sandbox (Mobile-friendly checkout) */}
+        {/* Cổng thanh toán VNPay Sandbox (Checkout Landing Page) */}
         <Route path="/payment/checkout" element={<SandboxCheckoutPage />} />
 
         {/* Trang chủ và Portal Khách hàng (WS1) - Công khai */}

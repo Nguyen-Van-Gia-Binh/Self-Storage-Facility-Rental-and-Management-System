@@ -16,6 +16,8 @@ public interface StaffDailyAssignmentRepository extends JpaRepository<StaffDaily
 
     List<StaffDailyAssignment> findByStaffIdAndWorkDate(Long staffId, LocalDate workDate);
 
+    List<StaffDailyAssignment> findByStaffIdAndWorkDateBetween(Long staffId, LocalDate startDate, LocalDate endDate);
+
     List<StaffDailyAssignment> findByFacilityIdAndWorkDate(Long facilityId, LocalDate workDate);
 
     long countByStaffIdAndWorkDate(Long staffId, LocalDate workDate);
@@ -23,6 +25,8 @@ public interface StaffDailyAssignmentRepository extends JpaRepository<StaffDaily
     long countByStaffIdAndTaskType(Long staffId, AssignmentTaskType taskType);
 
     Optional<StaffDailyAssignment> findByReferenceTypeAndReferenceId(String referenceType, Long referenceId);
+
+    List<StaffDailyAssignment> findByReferenceTypeAndReferenceIdIn(String referenceType, java.util.Collection<Long> referenceIds);
 
     List<StaffDailyAssignment> findAllByReferenceTypeAndReferenceId(String referenceType, Long referenceId);
 }

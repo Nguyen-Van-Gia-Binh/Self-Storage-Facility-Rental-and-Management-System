@@ -357,7 +357,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
 
                   {/* Cột 5: Mã mở khóa */}
                   <td className="py-3.5 px-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                    {contract.accessPin ? (
+                    {contract.accessPin && contract.status !== 'PENDING_CHECKIN' && (contract.status as string) !== 'PENDING_CHECK_IN' ? (
                       <div className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-50 border border-slate-200 text-xs shadow-2xs">
                         <span className="text-slate-400 text-[10px] font-medium mr-0.5">PIN:</span>
                         <span className="font-mono font-black text-slate-800 tracking-wider">

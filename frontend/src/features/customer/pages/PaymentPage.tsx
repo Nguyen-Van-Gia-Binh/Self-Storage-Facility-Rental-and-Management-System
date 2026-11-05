@@ -103,7 +103,7 @@ export const PaymentPage: React.FC = () => {
 
   const transferMemo = `SMARTSTORAGE ${unitNumber}${idLast4 ? ` ${idLast4}` : ''}`;
 
-  // Khởi tạo link PayOS checkout
+  // Khởi tạo link VNPay checkout
   useEffect(() => {
     if (!priceReady) return;
     let isSubscribed = true;
@@ -126,7 +126,7 @@ export const PaymentPage: React.FC = () => {
         }
       })
       .catch((err) => {
-        console.warn('Lỗi khởi tạo PayOS checkout:', err);
+        console.warn('Lỗi khởi tạo VNPay checkout:', err);
       });
 
     return () => {
@@ -263,7 +263,7 @@ export const PaymentPage: React.FC = () => {
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Col: VietQR Payment Box (8 cols) */}
+        {/* Left Col: VNPay Payment Box (8 cols) */}
         <div className="lg:col-span-7 xl:col-span-8 space-y-5">
           {/* 48-Hour Atomic Hold Countdown (BR-DEP-03) */}
           <div className="bg-amber-50 border border-amber-200/90 rounded-2xl p-4 flex items-center justify-between gap-4 shadow-xs">

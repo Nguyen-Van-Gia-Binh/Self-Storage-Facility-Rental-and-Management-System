@@ -151,7 +151,7 @@ export const SettlementApprovalModal: React.FC<SettlementApprovalModalProps> = (
 
             <div className="pt-2 border-t border-purple-200 flex justify-between items-center text-sm font-bold">
               <span className="text-purple-950">
-                {payableAmount > 0 ? 'Khách phải nộp thêm (Thu nợ PayOS):' : 'Thực hoàn trả khách hàng:'}
+                {payableAmount > 0 ? 'Khách phải nộp thêm (Thu nợ VNPay):' : 'Thực hoàn trả khách hàng:'}
               </span>
               <span className={`font-mono text-base ${payableAmount > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
                 {payableAmount > 0 ? `+${payableAmount.toLocaleString('vi-VN')} đ` : `${netRefund.toLocaleString('vi-VN')} đ`}

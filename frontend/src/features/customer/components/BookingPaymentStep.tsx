@@ -7,7 +7,7 @@ import {
   Loader2, 
   ArrowRight,
   Sparkles,
-  QrCode
+  CreditCard
 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
 import type { CheckoutResponse } from '../api/customerApi';
@@ -24,9 +24,6 @@ export interface BookingPaymentStepProps {
   paymentNotice: string | null;
   paymentStatus: 'IDLE' | 'PENDING' | 'SUCCESS' | 'EXPIRED';
   redirectCountdown: number;
-  isSimulating: boolean;
-  holdExpired: boolean;
-  handleSimulateTransfer: () => void;
   onCancelReservation?: () => void;
   setShowCancelModal?: (show: boolean) => void;
   isVerifying: boolean;
@@ -39,7 +36,7 @@ export interface BookingPaymentStepProps {
 }
 
 /**
- * BookingPaymentStep — Bước 3: Thanh toán VietQR & Đếm ngược giữ chỗ 48h (BR-RES-02)
+ * BookingPaymentStep — Bước 3: Thanh toán VNPay & Đếm ngược giữ chỗ 48h (BR-RES-02)
  * Thiết kế chuẩn SaaS hiện đại: Phân định 3 pha (Quét mã -> Đối soát -> Thành công)
  */
 export const BookingPaymentStep: React.FC<BookingPaymentStepProps> = ({
@@ -50,9 +47,6 @@ export const BookingPaymentStep: React.FC<BookingPaymentStepProps> = ({
   paymentNotice,
   paymentStatus,
   redirectCountdown,
-  isSimulating,
-  holdExpired,
-  handleSimulateTransfer,
   onCancelReservation,
   setShowCancelModal,
   isVerifying,
@@ -75,7 +69,7 @@ export const BookingPaymentStep: React.FC<BookingPaymentStepProps> = ({
           <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
             isSuccess ? 'bg-emerald-100 text-emerald-700' : 'bg-brand-50 text-brand-600 border border-brand-200'
           }`}>
-            {isSuccess ? <CheckCircle2 className="w-6 h-6" /> : <QrCode className="w-6 h-6" />}
+            {isSuccess ? <CheckCircle2 className="w-6 h-6" /> : <CreditCard className="w-6 h-6" />}
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -167,7 +161,7 @@ export const BookingPaymentStep: React.FC<BookingPaymentStepProps> = ({
               </div>
             </div>
           ) : (
-            /* ==================== PHA 1 & 2: QUÉT MÃ VIETQR & ĐỐI SOÁT ==================== */
+            /* ==================== PHA 1 & 2: THANH TOÁN VNPAY & ĐỐI SOÁT ==================== */
             <div className="bg-white border border-brand-200 rounded-2xl p-6 shadow-sm space-y-6">
               {/* TRẠNG THÁI LẮNG NGHE WEBHOOK / ĐỐI SOÁT */}
               <div className={`flex items-center justify-between gap-3 px-4 py-3 rounded-xl text-xs border ${
@@ -224,7 +218,7 @@ export const BookingPaymentStep: React.FC<BookingPaymentStepProps> = ({
                     </>
                   ) : (
                     <>
-                      <span>Tôi đã chuyển khoản / Lấy vé nhận kho</span>
+                      <span>Kiểm tra trạng thái thanh toán</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
@@ -233,37 +227,7 @@ export const BookingPaymentStep: React.FC<BookingPaymentStepProps> = ({
             </div>
           )}
 
-          {/* ==================== DEV SANDBOX TESTING BAR (THU GỌN Ở ĐÁY) ==================== */}
-          {!isSuccess && (
-            <div className="bg-slate-50 border border-dashed border-slate-300 rounded-2xl p-3.5 opacity-80 hover:opacity-100 transition-opacity">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs">🧪</span>
-                  <div>
-                    <div className="text-[11px] font-bold text-slate-700">Sandbox Test Bar (Dành cho Kiểm thử & Demo)</div>
-                    <div className="text-[10px] text-slate-500">Giả lập thanh toán tức thì không cần chuyển tiền thật</div>
-                  </div>
-                </div>
-                
-                <button
-                  type="button"
-                  onClick={handleSimulateTransfer}
-                  disabled={isSimulating || holdExpired}
-                  className="px-3 py-1.5 bg-slate-700 hover:bg-slate-800 text-white text-[11px] font-bold rounded-lg shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 shrink-0"
-                >
-                  {isSimulating ? (
-                    <>
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                      <span>Đang gọi Webhook giả lập...</span>
-                    </>
-                  ) : (
-                    <span>⚡ Giả lập chuyển khoản thành công</span>
-                  )}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+          </div>
 
         {/* CỘT PHẢI: TÓM TẮT CHI PHÍ (4 COLS) */}
         <div className="lg:col-span-4">

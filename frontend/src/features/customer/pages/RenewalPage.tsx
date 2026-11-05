@@ -93,7 +93,7 @@ export const RenewalPage: React.FC = () => {
     pricing,
   } = useRenewalPricing({ contract, renewalMonths });
 
-  // Khối thanh toán PayOS VietQR (checkout, polling, countdown, sandbox, hủy lệnh, E-Receipt) — BR-REN-04/05
+  // Khối thanh toán VNPay Sandbox (checkout, polling, countdown, sandbox, hủy lệnh, E-Receipt) — BR-REN-04/05
   const payment = useRenewalPayment({
     contract,
     currentStep,
@@ -106,14 +106,13 @@ export const RenewalPage: React.FC = () => {
   });
 
   const {
-    payosCheckout,
+    checkoutData,
     isLoadingCheckout,
     checkoutError,
     isPaidSuccess,
     isVerifying,
     paymentNotice,
     setPaymentNotice,
-    isSandboxing,
     isCancelling,
     showCancelDialog,
     setShowCancelDialog,
@@ -125,8 +124,6 @@ export const RenewalPage: React.FC = () => {
     showReceiptModal,
     setShowReceiptModal,
     handleCheckPaymentAndRenew,
-    handleSimulateSuccess,
-    handleSimulateCancel,
     handleCancelPayment,
   } = payment;
 
@@ -186,7 +183,7 @@ export const RenewalPage: React.FC = () => {
             if (currentStep === 3) return;
             if (!isRenewalBlocked) setCurrentStep(1);
           }}
-          title={currentStep === 3 ? "Không thể chuyển bước khi đang chờ thanh toán VietQR. Vui lòng chọn 'Hủy lệnh thanh toán' nếu muốn đổi thông tin." : undefined}
+          title={currentStep === 3 ? "Không thể chuyển bước khi đang chờ thanh toán VNPay. Vui lòng chọn 'Hủy lệnh thanh toán' nếu muốn đổi thông tin." : undefined}
           className={`flex items-center gap-2 transition-all ${
             currentStep === 3
               ? 'cursor-not-allowed select-none'
@@ -220,7 +217,7 @@ export const RenewalPage: React.FC = () => {
             if (currentStep === 3) return;
             if (!isRenewalBlocked) setCurrentStep(2);
           }}
-          title={currentStep === 3 ? "Không thể chuyển bước khi đang chờ thanh toán VietQR. Vui lòng chọn 'Hủy lệnh thanh toán' nếu muốn đổi thông tin." : undefined}
+          title={currentStep === 3 ? "Không thể chuyển bước khi đang chờ thanh toán VNPay. Vui lòng chọn 'Hủy lệnh thanh toán' nếu muốn đổi thông tin." : undefined}
           className={`flex items-center gap-2 transition-all ${
             currentStep === 3
               ? 'cursor-not-allowed select-none'
@@ -263,7 +260,7 @@ export const RenewalPage: React.FC = () => {
           }`}>
             3
           </span>
-          <span>3. Thanh toán VietQR</span>
+          <span>3. Thanh toán VNPay</span>
         </div>
       </div>
 
@@ -649,7 +646,7 @@ export const RenewalPage: React.FC = () => {
                   isRenewalBlocked ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
-                <span>{isRenewalBlocked ? 'Gia hạn bị khóa' : 'Tiến Hành Thanh Toán VietQR (Napas247)'}</span>
+                <span>{isRenewalBlocked ? 'Gia hạn bị khóa' : 'Tiến Hành Thanh Toán VNPay'}</span>
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </div>
@@ -680,36 +677,6 @@ export const RenewalPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Sandbox Dev Bar */}
-            {import.meta.env.DEV && (
-              <div className="p-4 rounded-xl bg-slate-50 border-2 border-dashed border-slate-300 space-y-3">
-                <div className="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide">
-                  <span>🧪 Môi trường Thử nghiệm Thanh toán</span>
-                </div>
-                <div className="flex flex-wrap gap-2.5">
-                  <Button
-                    type="button"
-                    size="sm"
-                    disabled={isSandboxing || isPaidSuccess}
-                    onClick={handleSimulateSuccess}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs"
-                  >
-                    {isSandboxing ? 'Đang xử lý...' : '⚡ Giả lập Chuyển khoản Thành công'}
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    disabled={isSandboxing || isPaidSuccess}
-                    onClick={handleSimulateCancel}
-                    className="border-rose-300 text-rose-600 hover:bg-rose-50 font-semibold text-xs"
-                  >
-                    ❌ Giả lập Hủy / Chứng khoản Thất bại
-                  </Button>
-                </div>
-              </div>
-            )}
-
             {/* Trạng thái thành công tự động khi webhook bắn về */}
             {isPaidSuccess && (
               <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3 text-emerald-800 text-sm font-medium animate-pulse">
@@ -733,7 +700,7 @@ export const RenewalPage: React.FC = () => {
                   </div>
                 )}
 
-                <VnpayPayLinks orderCode={payosCheckout?.orderCode} />
+                <VnpayPayLinks orderCode={checkoutData?.orderCode} />
 
                 {/* Thông báo đối soát / chưa thanh toán */}
                 {paymentNotice && (

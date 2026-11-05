@@ -13,4 +13,5 @@ public interface ReturnRequestRepository extends JpaRepository<ReturnRequest, Lo
     Optional<ReturnRequest> findByContractIdAndStatus(Long contractId, ReturnRequestStatus status);
     List<ReturnRequest> findByContractIdOrderByCreatedAtDesc(Long contractId);
     Optional<ReturnRequest> findTopByContractIdOrderByCreatedAtDesc(Long contractId);
+    List<ReturnRequest> findByContractIdInOrderByCreatedAtDesc(java.util.Collection<Long> contractIds);
 }

@@ -59,6 +59,8 @@ class ReservationServiceTest {
     @Mock private RentalContractRepository rentalContractRepository;
     @Mock private com.swp391.selfstorage.payment.repository.PaymentTransactionRepository paymentTransactionRepository;
     @Mock private PolicyVersionRepository policyVersionRepository;
+    @Mock private com.swp391.selfstorage.support.repository.StaffDailyAssignmentRepository staffDailyAssignmentRepository;
+    @Mock private com.swp391.selfstorage.user.repository.UserRepository userRepository;
 
     @InjectMocks
     private ReservationServiceImpl reservationService;
@@ -591,6 +593,95 @@ class ReservationServiceTest {
                 () -> reservationService.assignUnit(1042L, 42L, List.of(1L)));
 
         assertEquals(ErrorCode.ASSIGNMENT_WINDOW_CLOSED, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("Late-binding: Gán ô kèm nhân viên và khung giờ hẹn tiếp đón")
+    void assignUnit_WithStaffAndAppointmentTimes_ShouldCreateDailyAssignmentAndSaveTimes() {
+        Reservation reservation = confirmedReservation();
+        when(reservationRepository.findByIdWithLock(1042L)).thenReturn(Optional.of(reservation));
+        when(storageUnitRepository.findByIdForUpdate(42L)).thenReturn(Optional.of(availableStorageUnit));
+        RentalContract contract = pendingContract();
+        when(rentalContractRepository.findByReservationId(1042L)).thenReturn(Optional.of(contract));
+
+        com.swp391.selfstorage.user.entity.AppUser staffUser = new com.swp391.selfstorage.user.entity.AppUser();
+        staffUser.setId(88L);
+        staffUser.setRole(UserRole.FACILITY_STAFF);
+        staffUser.setStatus(UserStatus.ACTIVE);
+        when(userRepository.findById(88L)).thenReturn(Optional.of(staffUser));
+        when(staffDailyAssignmentRepository.findByReferenceTypeAndReferenceId(eq("CONTRACT"), eq(500L)))
+                .thenReturn(Optional.empty());
+
+        AssignUnitRequest request = AssignUnitRequest.builder()
+                .storageUnitId(42L)
+                .staffId(88L)
+                .scheduledDate(LocalDate.now().plusDays(3))
+                .scheduledStartTime(java.time.LocalTime.of(9, 0))
+                .scheduledEndTime(java.time.LocalTime.of(10, 0))
+                .build();
+
+        ReservationResponse response = reservationService.assignUnit(1042L, request, 99L, List.of(1L));
+
+        assertNotNull(response);
+        assertEquals(42L, response.getStorageUnitId());
+        assertEquals(java.time.LocalTime.of(9, 0), contract.getScheduledStartTime());
+        assertEquals(java.time.LocalTime.of(10, 0), contract.getScheduledEndTime());
+        verify(staffDailyAssignmentRepository).save(argThat(assignment ->
+                assignment.getStaffId().equals(88L)
+                        && assignment.getReferenceId().equals(500L)
+                        && assignment.getAssignedBy().equals(99L)
+        ));
+    }
+
+    @Test
+    @DisplayName("Late-binding: Điều chuyển nhân viên tiếp đón (reassignStaff)")
+    void reassignStaff_ShouldUpdateDailyAssignment() {
+        Reservation reservation = confirmedReservation();
+        when(reservationRepository.findById(1042L)).thenReturn(Optional.of(reservation));
+        RentalContract contract = pendingContract();
+        when(rentalContractRepository.findByReservationId(1042L)).thenReturn(Optional.of(contract));
+
+        com.swp391.selfstorage.user.entity.AppUser newStaff = new com.swp391.selfstorage.user.entity.AppUser();
+        newStaff.setId(89L);
+        newStaff.setRole(UserRole.FACILITY_STAFF);
+        newStaff.setStatus(UserStatus.ACTIVE);
+        when(userRepository.findById(89L)).thenReturn(Optional.of(newStaff));
+
+        com.swp391.selfstorage.support.entity.StaffDailyAssignment existingAssignment = com.swp391.selfstorage.support.entity.StaffDailyAssignment.builder()
+                .id(1L)
+                .staffId(88L)
+                .referenceId(500L)
+                .referenceType("CONTRACT")
+                .taskType(com.swp391.selfstorage.support.entity.AssignmentTaskType.HANDOVER)
+                .build();
+        when(staffDailyAssignmentRepository.findByReferenceTypeAndReferenceId("CONTRACT", 500L))
+                .thenReturn(Optional.of(existingAssignment));
+
+        ReservationResponse response = reservationService.reassignStaff(1042L, 89L, "Staff 88 nghỉ phép", 99L, List.of(1L));
+
+        assertNotNull(response);
+        assertEquals(89L, existingAssignment.getStaffId());
+        verify(staffDailyAssignmentRepository).save(existingAssignment);
+    }
+
+    @Test
+    @DisplayName("Late-binding: Điều chuyển cho nhân viên không có vai trò STAFF thì báo lỗi")
+    void reassignStaff_NonStaffRole_ShouldThrow() {
+        Reservation reservation = confirmedReservation();
+        when(reservationRepository.findById(1042L)).thenReturn(Optional.of(reservation));
+        RentalContract contract = pendingContract();
+        when(rentalContractRepository.findByReservationId(1042L)).thenReturn(Optional.of(contract));
+
+        com.swp391.selfstorage.user.entity.AppUser managerUser = new com.swp391.selfstorage.user.entity.AppUser();
+        managerUser.setId(90L);
+        managerUser.setRole(UserRole.FACILITY_MANAGER);
+        managerUser.setStatus(UserStatus.ACTIVE);
+        when(userRepository.findById(90L)).thenReturn(Optional.of(managerUser));
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> reservationService.reassignStaff(1042L, 90L, "Test", 99L, List.of(1L)));
+
+        assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
     }
 
     private Reservation confirmedReservation() {
