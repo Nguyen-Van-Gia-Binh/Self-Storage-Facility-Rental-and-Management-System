@@ -46,10 +46,13 @@ public enum ErrorCode {
     POLICY_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy phiên bản chính sách"),
     SUPPORT_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy yêu cầu hỗ trợ"),
     DISCOUNT_PROGRAM_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy chương trình khuyến mại"),
+    WAITLIST_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy yêu cầu chờ này"),
 
     // 409 Conflict
     EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "Email đã được sử dụng"),
     USERNAME_ALREADY_EXISTS(HttpStatus.CONFLICT, "Tên đăng nhập đã được sử dụng"),
+    WAITLIST_ALREADY_EXISTS(HttpStatus.CONFLICT, "Bạn đã đăng ký vào danh sách chờ cho loại kho này"),
+    WAITLIST_LOCK_CONFLICT(HttpStatus.CONFLICT, "Khách hàng này đang được nhân viên khác liên hệ hoặc trạng thái đã thay đổi"),
     UNIT_NOT_AVAILABLE(HttpStatus.CONFLICT, "Ô kho không còn khả dụng"),
     FACILITY_CODE_ALREADY_EXISTS(HttpStatus.CONFLICT, "Mã cơ sở đã được sử dụng"),
     FACILITY_HAS_ACTIVE_CONTRACTS(HttpStatus.CONFLICT, "Không thể ngừng hoạt động cơ sở khi còn hợp đồng đang hoạt động"),
