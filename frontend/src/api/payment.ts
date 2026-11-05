@@ -96,8 +96,8 @@ export function storeMoveInPass(pass: MoveInPassData): void {
 }
 
 /**
- * Khởi tạo đơn thanh toán PayOS VietQR tự động (POST /payments/checkout) (SC-03)
- * Sử dụng 100% kết nối thật tới cổng PayOS qua Backend API
+ * Khởi tạo đơn thanh toán VNPay Sandbox tự động (POST /payments/checkout) (SC-03)
+ * Sử dụng 100% kết nối thật tới cổng VNPay Sandbox qua Backend API
  */
 export async function createCheckout(payload: CheckoutPayload): Promise<CheckoutResult> {
   const referenceType =
@@ -126,24 +126,12 @@ export async function createCheckout(payload: CheckoutPayload): Promise<Checkout
 
 /**
  * Kiểm tra trạng thái giao dịch theo orderCode phục vụ Polling tự động (GET /payments/order/{orderCode}/status) (SC-03)
- * Truy vấn trạng thái thực tế từ Backend và PayOS Webhook
+ * Truy vấn trạng thái thực tế từ Backend và VNPay Return Callback
  */
 export async function pollPaymentStatus(orderCode: number): Promise<PaymentStatusResult> {
   return await apiClient<PaymentStatusResult>(`/payments/order/${orderCode}/status`);
 }
 
-/**
- * Xử lý chuyển tiền hoặc hủy giao dịch qua Cổng Sandbox nội bộ (SC-03)
- */
-export async function processSandboxTransfer(
-  orderCode: number,
-  action: 'TRANSFER_SUCCESS' | 'CANCEL' = 'TRANSFER_SUCCESS'
-): Promise<PaymentStatusResult> {
-  return await apiClient<PaymentStatusResult>('/payments/sandbox/process-transfer', {
-    method: 'POST',
-    body: JSON.stringify({ orderCode, action }),
-  });
-}
 
 /**
  * Tạo yêu cầu thanh toán thủ công (POST /api/v1/payments) (SC-03)

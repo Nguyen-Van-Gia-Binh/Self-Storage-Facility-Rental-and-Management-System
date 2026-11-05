@@ -38,7 +38,7 @@ export const ContractTimeline: React.FC<ContractTimelineProps> = ({ contract }) 
       id: 'deposit',
       time: contract.startDate || '—',
       title: 'Thanh toán cọc & Ký hợp đồng điện tử',
-      description: `Tiền cọc: ${new Intl.NumberFormat('vi-VN').format(contract.depositAmount || 0)} đ qua VietQR`,
+      description: `Tiền cọc: ${new Intl.NumberFormat('vi-VN').format(contract.depositAmount || 0)} đ qua VNPay`,
       icon: CreditCard,
       color: 'bg-emerald-100 text-emerald-700',
     },

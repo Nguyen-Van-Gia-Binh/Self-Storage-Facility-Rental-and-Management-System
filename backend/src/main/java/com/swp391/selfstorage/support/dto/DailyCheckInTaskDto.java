@@ -49,6 +49,18 @@ public class DailyCheckInTaskDto {
     @Schema(description = "Số ngày ân hạn nhận kho theo chính sách BOM (BR-CHK-05)")
     private Integer checkinGraceDays;
 
+    @Schema(description = "Cờ đánh dấu khách đến muộn hơn ngày hẹn")
+    private boolean isLate;
+
+    @Schema(description = "Số ngày khách trễ hẹn")
+    private Integer daysLate;
+
+    @Schema(description = "Giờ bắt đầu hẹn tiếp đón")
+    private java.time.LocalTime scheduledStartTime;
+
+    @Schema(description = "Giờ kết thúc hẹn tiếp đón")
+    private java.time.LocalTime scheduledEndTime;
+
     public DailyCheckInTaskDto() {
     }
 
@@ -198,6 +210,18 @@ public class DailyCheckInTaskDto {
     public void setCheckinGraceDays(Integer checkinGraceDays) {
         this.checkinGraceDays = checkinGraceDays;
     }
+
+    public boolean isLate() { return isLate; }
+    public void setLate(boolean late) { isLate = late; }
+
+    public Integer getDaysLate() { return daysLate; }
+    public void setDaysLate(Integer daysLate) { this.daysLate = daysLate; }
+
+    public java.time.LocalTime getScheduledStartTime() { return scheduledStartTime; }
+    public void setScheduledStartTime(java.time.LocalTime scheduledStartTime) { this.scheduledStartTime = scheduledStartTime; }
+
+    public java.time.LocalTime getScheduledEndTime() { return scheduledEndTime; }
+    public void setScheduledEndTime(java.time.LocalTime scheduledEndTime) { this.scheduledEndTime = scheduledEndTime; }
 
     public static class Builder {
         private Long contractId;

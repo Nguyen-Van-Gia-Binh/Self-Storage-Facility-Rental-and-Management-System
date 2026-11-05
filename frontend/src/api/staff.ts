@@ -71,71 +71,14 @@ export async function getStaffDailyTasks(
   const todayStr = getLocalTodayStr();
   const queryDate = date || todayStr;
 
-  const [res, todayRes] = await Promise.all([
-    apiClient<ApiResponse<any>>(
-      `/reports/staff/${staffId}/daily-tasks?date=${queryDate}`
-    ),
-    queryDate !== todayStr
-      ? apiClient<ApiResponse<any>>(
-          `/reports/staff/${staffId}/daily-tasks?date=${todayStr}`
-        ).catch(() => null)
-      : Promise.resolve(null),
-  ]);
-
+  const res = await apiClient<ApiResponse<any>>(
+    `/reports/staff/${staffId}/daily-tasks?date=${queryDate}`
+  );
   const data = res.data;
-  const todayData = todayRes?.data;
 
   const rawList = data?.supportTasks || data?.openSupportRequests || [];
-  const rawCheckInsFromQuery: any[] = data?.checkInTasks || data?.pendingCheckIns || [];
-  const rawReturnsFromQuery: any[] = data?.returnTasks || data?.pendingReturns || [];
-
-  // BR-CHK-05: Hợp đồng chờ nhận kho (PENDING_CHECK_IN) chưa hoàn tất bàn giao sẽ hiển thị xuyên suốt
-  // trong thời gian ân hạn nhận kho (10 ngày tính từ scheduledDate) trước khi bị hủy No-show
-  const mergedCheckInsMap = new Map<string | number, any>();
-  for (const ci of rawCheckInsFromQuery) {
-    const key = ci.contractId ?? ci.reservationId ?? ci.contractCode;
-    const isDone = Boolean(ci.completed || ci.status === 'COMPLETED' || ci.status === 'ACTIVE');
-    const sched = ci.scheduledDate || ci.startDate || queryDate;
-    if (isDone) {
-      if (sched === queryDate) {
-        mergedCheckInsMap.set(key, ci);
-      }
-    } else if (isWithinCheckInGraceWindow(sched, queryDate, ci.checkinGraceDays ?? 10)) {
-      mergedCheckInsMap.set(key, ci);
-    }
-  }
-
-  if (todayData) {
-    const todayCheckIns: any[] = todayData.checkInTasks || todayData.pendingCheckIns || [];
-    for (const ci of todayCheckIns) {
-      const key = ci.contractId ?? ci.reservationId ?? ci.contractCode;
-      const isDone = Boolean(ci.completed || ci.status === 'COMPLETED' || ci.status === 'ACTIVE');
-      const sched = ci.scheduledDate || ci.startDate || todayStr;
-      if (!isDone && !mergedCheckInsMap.has(key) && isWithinCheckInGraceWindow(sched, queryDate, ci.checkinGraceDays ?? 10)) {
-        mergedCheckInsMap.set(key, ci);
-      }
-    }
-  }
-
-  // Các nhiệm vụ trả kho (PENDING_RETURN / OVERDUE) chưa hoàn tất cũng được giữ nguyên cho ca trực tiếp theo
-  const mergedReturnsMap = new Map<string | number, any>();
-  for (const rt of rawReturnsFromQuery) {
-    const key = rt.contractId ?? rt.contractCode;
-    mergedReturnsMap.set(key, rt);
-  }
-  if (todayData && queryDate >= todayStr) {
-    const todayReturns: any[] = todayData.returnTasks || todayData.pendingReturns || [];
-    for (const rt of todayReturns) {
-      const key = rt.contractId ?? rt.contractCode;
-      const isDone = Boolean(rt.completed || rt.status === 'COMPLETED' || rt.status === 'INSPECTED' || rt.status === 'RETURNED');
-      if (!isDone && !mergedReturnsMap.has(key)) {
-        mergedReturnsMap.set(key, rt);
-      }
-    }
-  }
-
-  const rawCheckIns = Array.from(mergedCheckInsMap.values());
-  const rawReturns = Array.from(mergedReturnsMap.values());
+  const rawCheckIns: any[] = data?.checkInTasks || data?.pendingCheckIns || [];
+  const rawReturns: any[] = data?.returnTasks || data?.pendingReturns || [];
 
   return {
     ...data,
@@ -146,10 +89,12 @@ export async function getStaffDailyTasks(
       unitCode: ci.storageUnitCode || ci.unitCode || '---',
       facilityId: ci.facilityId,
       facilityName: ci.facilityName,
-      startDate: ci.scheduledDate || ci.startDate || todayStr,
+      startDate: ci.scheduledDate || ci.startDate || queryDate,
       appointmentTime: ci.appointmentTime || (ci.scheduledDate ? `Ngày ${ci.scheduledDate}` : 'Trong ngày'),
       status: (ci.completed || ci.status === 'COMPLETED' || ci.status === 'ACTIVE') ? 'COMPLETED' : (ci.status || 'PENDING'),
       completed: Boolean(ci.completed || ci.status === 'COMPLETED' || ci.status === 'ACTIVE'),
+      isLate: Boolean(ci.late || ci.isLate),
+      daysLate: ci.daysLate ?? 0,
     })),
     pendingReturns: rawReturns.map((rt: any) => ({
       ...rt,
@@ -162,6 +107,8 @@ export async function getStaffDailyTasks(
       depositAmount: rt.depositAmount ?? 0,
       status: (rt.completed || rt.status === 'COMPLETED' || rt.status === 'INSPECTED' || rt.status === 'RETURNED') ? 'COMPLETED' : (rt.status || 'PENDING_INSPECTION'),
       completed: Boolean(rt.completed || rt.status === 'COMPLETED' || rt.status === 'INSPECTED' || rt.status === 'RETURNED'),
+      isLate: Boolean(rt.late || rt.isLate),
+      daysLate: rt.daysLate ?? 0,
     })),
     openSupportRequests: rawList.map(mapRawSupportTask),
   };

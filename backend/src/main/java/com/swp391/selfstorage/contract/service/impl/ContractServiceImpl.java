@@ -38,6 +38,12 @@ import com.swp391.selfstorage.payment.repository.PaymentTransactionRepository;
 import com.swp391.selfstorage.user.entity.UserRole;
 import com.swp391.selfstorage.user.service.AuditLogService;
 import com.swp391.selfstorage.user.service.UserService;
+import com.swp391.selfstorage.user.entity.AppUser;
+import com.swp391.selfstorage.user.repository.UserRepository;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -84,6 +90,9 @@ public class ContractServiceImpl implements ContractService {
 
         @Autowired(required = false)
         private UserService userService;
+
+        @Autowired(required = false)
+        private UserRepository userRepository;
 
         @Autowired(required = false)
         private StaffDailyAssignmentRepository staffDailyAssignmentRepository;
@@ -306,45 +315,117 @@ public class ContractServiceImpl implements ContractService {
                 };
 
                 Page<RentalContract> page = contractRepository.findAll(spec, pageable);
+                List<RentalContract> contracts = page.getContent();
+                if (contracts.isEmpty()) {
+                        return new PageResponse<>(
+                                        Collections.emptyList(),
+                                        page.getNumber(),
+                                        page.getSize(),
+                                        page.getTotalElements(),
+                                        page.getTotalPages());
+                }
+
                 LocalDate now = LocalDate.now();
                 LocalDate threshold = now.plusDays(7);
                 Map<Long, OverduePreviewRates> overdueRatesByPolicy = new HashMap<>();
-                Map<Long, SupportRequest> relocationTickets = findRelocationTickets(page.getContent());
+                Map<Long, SupportRequest> relocationTickets = findRelocationTickets(contracts);
 
-                List<ContractSummaryResponse> content = page.getContent().stream().map(c -> {
+                // --- BATCH LOOKUP PATTERN (Tránh N+1 và RTT mạng) ---
+                Set<Long> storageUnitIds = contracts.stream().map(RentalContract::getStorageUnitId).filter(Objects::nonNull).collect(Collectors.toSet());
+                Set<Long> unitTypeIds = contracts.stream().map(RentalContract::getUnitTypeId).filter(Objects::nonNull).collect(Collectors.toSet());
+                Set<Long> facilityIdsToLoad = contracts.stream().map(RentalContract::getFacilityId).filter(Objects::nonNull).collect(Collectors.toSet());
+                Set<Long> customerIds = contracts.stream().map(RentalContract::getCustomerId).filter(Objects::nonNull).collect(Collectors.toSet());
+                List<Long> contractIds = contracts.stream().map(RentalContract::getId).filter(Objects::nonNull).toList();
+
+                Map<Long, StorageUnit> storageUnitMap = (storageUnitRepository != null && !storageUnitIds.isEmpty())
+                                ? storageUnitRepository.findAllById(storageUnitIds).stream()
+                                                .collect(Collectors.toMap(StorageUnit::getId, Function.identity(), (a, b) -> a))
+                                : Collections.emptyMap();
+
+                Map<Long, UnitType> unitTypeMap = (unitTypeRepository != null && !unitTypeIds.isEmpty())
+                                ? unitTypeRepository.findAllById(unitTypeIds).stream()
+                                                .collect(Collectors.toMap(UnitType::getId, Function.identity(), (a, b) -> a))
+                                : Collections.emptyMap();
+
+                Map<Long, Facility> facilityMap = (facilityRepository != null && !facilityIdsToLoad.isEmpty())
+                                ? facilityRepository.findAllById(facilityIdsToLoad).stream()
+                                                .collect(Collectors.toMap(Facility::getId, Function.identity(), (a, b) -> a))
+                                : Collections.emptyMap();
+
+                Map<Long, ReturnRequest> latestReturnRequestByContract = new HashMap<>();
+                if (returnRequestRepository != null && !contractIds.isEmpty()) {
+                        List<ReturnRequest> returnRequests = returnRequestRepository.findByContractIdInOrderByCreatedAtDesc(contractIds);
+                        if (returnRequests != null && !returnRequests.isEmpty()) {
+                                for (ReturnRequest req : returnRequests) {
+                                        latestReturnRequestByContract.putIfAbsent(req.getContractId(), req);
+                                }
+                        } else {
+                                for (Long cId : contractIds) {
+                                        returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(cId)
+                                                        .ifPresent(req -> latestReturnRequestByContract.put(cId, req));
+                                }
+                        }
+                }
+
+                Map<Long, StaffDailyAssignment> assignmentByContract = new HashMap<>();
+                if (staffDailyAssignmentRepository != null && !contractIds.isEmpty()) {
+                        List<StaffDailyAssignment> assignments = staffDailyAssignmentRepository
+                                        .findByReferenceTypeAndReferenceIdIn("CONTRACT", contractIds);
+                        if (assignments != null && !assignments.isEmpty()) {
+                                for (StaffDailyAssignment a : assignments) {
+                                        if (a.getReferenceId() != null) {
+                                                assignmentByContract.putIfAbsent(a.getReferenceId(), a);
+                                        }
+                                }
+                        } else {
+                                for (Long cId : contractIds) {
+                                        staffDailyAssignmentRepository.findByReferenceTypeAndReferenceId("CONTRACT", cId)
+                                                        .ifPresent(a -> assignmentByContract.put(cId, a));
+                                }
+                        }
+                }
+
+                Set<Long> userIdsToLoad = new HashSet<>(customerIds);
+                latestReturnRequestByContract.values().forEach(req -> {
+                        if (req.getInspectedBy() != null) userIdsToLoad.add(req.getInspectedBy());
+                });
+                assignmentByContract.values().forEach(assign -> {
+                        if (assign.getStaffId() != null) userIdsToLoad.add(assign.getStaffId());
+                });
+
+                Map<Long, AppUser> userMap = (userRepository != null && !userIdsToLoad.isEmpty())
+                                ? userRepository.findAllById(userIdsToLoad).stream()
+                                                .collect(Collectors.toMap(AppUser::getId, Function.identity(), (a, b) -> a))
+                                : Collections.emptyMap();
+
+                List<ContractSummaryResponse> content = contracts.stream().map(c -> {
                         boolean nearExp = c.getStatus() == ContractStatus.ACTIVE
                                         && !c.getEndDateExclusive().isBefore(now)
                                         && !c.getEndDateExclusive().isAfter(threshold);
 
-                        var storageOpt = (storageUnitRepository != null && c.getStorageUnitId() != null)
-                                        ? storageUnitRepository.findById(c.getStorageUnitId())
-                                        : java.util.Optional.<StorageUnit>empty();
-                        String storageCode = storageOpt.map(StorageUnit::getCode)
-                                        .orElse(c.getStorageUnitId() != null ? "U-" + c.getStorageUnitId() : "Chưa gán");
-                        Integer floor = storageOpt.map(StorageUnit::getFloor).orElse(null);
-                        String position = storageOpt.map(StorageUnit::getPosition).orElse(null);
+                        StorageUnit su = c.getStorageUnitId() != null ? storageUnitMap.get(c.getStorageUnitId()) : null;
+                        String storageCode = su != null ? su.getCode() : (c.getStorageUnitId() != null ? "U-" + c.getStorageUnitId() : "Chưa gán");
+                        Integer floor = su != null ? su.getFloor() : null;
+                        String position = su != null ? su.getPosition() : null;
 
-                        var unitTypeOpt = (unitTypeRepository != null && c.getUnitTypeId() != null)
-                                        ? unitTypeRepository.findById(c.getUnitTypeId())
-                                        : java.util.Optional.<UnitType>empty();
-                        String unitName = unitTypeOpt.map(UnitType::getName).orElse(null);
-                        String unitDimensions = unitTypeOpt.map(ut -> String.format(java.util.Locale.US, "%.1fm x %.1fm x %.1fm",
+                        UnitType ut = c.getUnitTypeId() != null ? unitTypeMap.get(c.getUnitTypeId()) : null;
+                        String unitName = ut != null ? ut.getName() : null;
+                        String unitDimensions = ut != null ? String.format(java.util.Locale.US, "%.1fm x %.1fm x %.1fm",
                                         ut.getWidthM() != null ? ut.getWidthM().doubleValue() : 0.0,
                                         ut.getLengthM() != null ? ut.getLengthM().doubleValue() : 0.0,
-                                        ut.getHeightM() != null ? ut.getHeightM().doubleValue() : 0.0)).orElse(null);
+                                        ut.getHeightM() != null ? ut.getHeightM().doubleValue() : 0.0) : null;
 
-                        var facOpt = (facilityRepository != null && c.getFacilityId() != null)
-                                        ? facilityRepository.findById(c.getFacilityId())
-                                        : java.util.Optional.<Facility>empty();
-                        String facName = facOpt.map(Facility::getName).orElse(null);
-                        String facAddress = facOpt.map(Facility::getAddress).orElse(null);
-                        String facPhone = facOpt.map(Facility::getPhone).orElse(null);
+                        Facility f = c.getFacilityId() != null ? facilityMap.get(c.getFacilityId()) : null;
+                        String facName = f != null ? f.getName() : null;
+                        String facAddress = f != null ? f.getAddress() : null;
+                        String facPhone = f != null ? f.getPhone() : null;
 
-                        String custName = "Khách hàng #" + c.getCustomerId();
-                        String custPhone = "";
-                        String custIdentity = "";
-                        String custEmail = "";
-                        if (userService != null && c.getCustomerId() != null) {
+                        AppUser custUser = c.getCustomerId() != null ? userMap.get(c.getCustomerId()) : null;
+                        String custName = custUser != null ? custUser.getFullName() : "Khách hàng #" + c.getCustomerId();
+                        String custPhone = custUser != null && custUser.getPhone() != null ? custUser.getPhone() : "";
+                        String custIdentity = custUser != null && custUser.getIdentityNumber() != null ? custUser.getIdentityNumber() : "";
+                        String custEmail = custUser != null ? custUser.getEmail() : "";
+                        if (custUser == null && userService != null && c.getCustomerId() != null) {
                                 try {
                                         var userDto = userService.getUserById(c.getCustomerId());
                                         if (userDto != null) {
@@ -383,43 +464,46 @@ public class ContractServiceImpl implements ContractService {
                         String damageNotes = null;
                         LocalDate requestedReturnDate = null;
                         String appointmentSlot = null;
-                        if (returnRequestRepository != null && c.getStatus() != ContractStatus.CLOSED && c.getStatus() != ContractStatus.TERMINATED) {
-                                var reqOpt = returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(c.getId());
-                                if (reqOpt.isPresent()) {
-                                        var req = reqOpt.get();
-                                        requestedReturnDate = req.getRequestedReturnDate();
-                                        appointmentSlot = req.getAppointmentSlot();
-                                        if (req.getStatus() == ReturnRequestStatus.PENDING) {
-                                                displayStatus = ContractStatus.PENDING_RETURN;
-                                        }
-                                        if (req.getStatus() == ReturnRequestStatus.PENDING && c.getStatus() != ContractStatus.OVERDUE) {
-                                                displayStatus = ContractStatus.PENDING_RETURN;
-                                        }
-                                        if (req.getInspectedAt() != null) {
-                                                isInspected = true;
-                                                damageCost = req.getDamageCost();
-                                                damageNotes = req.getConditionNote();
-                                        }
-                                        if (req.getInspectedBy() != null) {
-                                                assignedStaffId = req.getInspectedBy();
-                                                if (userService != null) {
-                                                        try {
-                                                                var staffUser = userService.getUserById(assignedStaffId);
-                                                                if (staffUser != null) {
-                                                                        assignedStaffName = staffUser.getFullName();
-                                                                }
-                                                        } catch (Exception ignored) {
+                        ReturnRequest returnReq = latestReturnRequestByContract.get(c.getId());
+                        if (returnReq != null && c.getStatus() != ContractStatus.CLOSED && c.getStatus() != ContractStatus.TERMINATED) {
+                                requestedReturnDate = returnReq.getRequestedReturnDate();
+                                appointmentSlot = returnReq.getAppointmentSlot();
+                                if (returnReq.getStatus() == ReturnRequestStatus.PENDING) {
+                                        displayStatus = ContractStatus.PENDING_RETURN;
+                                }
+                                if (returnReq.getStatus() == ReturnRequestStatus.PENDING && c.getStatus() != ContractStatus.OVERDUE) {
+                                        displayStatus = ContractStatus.PENDING_RETURN;
+                                }
+                                if (returnReq.getInspectedAt() != null) {
+                                        isInspected = true;
+                                        damageCost = returnReq.getDamageCost();
+                                        damageNotes = returnReq.getConditionNote();
+                                }
+                                if (returnReq.getInspectedBy() != null) {
+                                        assignedStaffId = returnReq.getInspectedBy();
+                                        AppUser staff = userMap.get(assignedStaffId);
+                                        if (staff != null) {
+                                                assignedStaffName = staff.getFullName();
+                                        } else if (userService != null) {
+                                                try {
+                                                        var staffUser = userService.getUserById(assignedStaffId);
+                                                        if (staffUser != null) {
+                                                                assignedStaffName = staffUser.getFullName();
                                                         }
+                                                } catch (Exception ignored) {
                                                 }
                                         }
                                 }
                         }
 
-                        if (assignedStaffId == null && staffDailyAssignmentRepository != null) {
-                                var assignOpt = staffDailyAssignmentRepository.findByReferenceTypeAndReferenceId("CONTRACT", c.getId());
-                                if (assignOpt.isPresent() && assignOpt.get().getStaffId() != null) {
-                                        assignedStaffId = assignOpt.get().getStaffId();
-                                        if (userService != null) {
+                        if (assignedStaffId == null && assignmentByContract.containsKey(c.getId())) {
+                                StaffDailyAssignment assign = assignmentByContract.get(c.getId());
+                                if (assign != null && assign.getStaffId() != null) {
+                                        assignedStaffId = assign.getStaffId();
+                                        AppUser staff = userMap.get(assignedStaffId);
+                                        if (staff != null) {
+                                                assignedStaffName = staff.getFullName();
+                                        } else if (userService != null) {
                                                 try {
                                                         var staffUser = userService.getUserById(assignedStaffId);
                                                         if (staffUser != null) {

@@ -264,6 +264,23 @@ _Đặt chỗ bằng cách chọn cơ sở, loại ô kho, ngày bắt đầu v�
 - **AC-6** — _Given_ tôi đã check-in nhận kho, _when_ tôi mở Reservation đó, _then_ **không** có nút
   hủy — trường hợp này phải đi theo quy trình trả kho ở `US-SC-05.4`.
 
+### `US-SC-02.5` — Đăng ký Danh sách chờ (Waitlist) khi hết kho trống
+
+> **Là** Storage Customer, **tôi muốn** đăng ký vào danh sách chờ khi loại kho tại cơ sở mong muốn đã
+> hết chỗ, **để** được hệ thống tự động thông báo giữ chỗ ưu tiên ngay khi có khách trả kho hoặc không gia hạn.
+
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F1-13` | Should    |      5      |     P3     |
+
+**Acceptance Criteria**
+
+- **AC-1 (Đăng ký miễn phí):** *Given* một loại kho tại cơ sở có công suất khả dụng bằng 0 (`available = 0`), *when* tôi bấm "Đăng ký Danh sách chờ" và chọn ngày mong muốn bắt đầu thuê (`target_start_date`), *then* hệ thống lưu bản ghi hàng đợi miễn phí (0 VNĐ) và xếp tôi theo thứ tự FIFO `BR-WAT-01`.
+- **AC-2 (Nhận thông báo mời giữ chỗ 24h):** *Given* có kho trống và danh sách chờ $\le 5$ người, *when* đến lượt tôi đứng đầu hàng đợi, *then* hệ thống gửi email/SMS thông báo kèm thời hạn giữ chỗ độc quyền 24 giờ để tôi vào thanh toán tiền cọc `BR-WAT-02`.
+- **AC-3 (Batch Offer khi đông người):** *Given* danh sách chờ $> 5$ người, *when* có kho trống, *then* hệ thống gửi thông báo đồng thời cho Top 3 người với thời hạn 4 giờ; ai thanh toán cọc thành công trước sẽ giữ kho `BR-WAT-03`.
+- **AC-4 (Nhắc nhở và Gia hạn T-3):** *Given* đến mốc trước 3 ngày so với `target_start_date` mà chưa có kho, *when* tôi nhận được thông báo nhắc hẹn, *then* tôi có thể bấm link gia hạn thêm 15 ngày hoặc để đơn tự hết hạn khi qua ngày mong muốn `BR-WAT-06`.
+- **AC-5 (Chủ động từ chối):** *Given* tôi nhận được lời mời nhưng không còn nhu cầu, *when* tôi bấm "Từ chối nhận kho", *then* hệ thống lập tức thu hồi lời mời và chuyển ngay cho người kế tiếp trong hàng đợi `BR-WAT-05`.
+
 ---
 
 ## 4. SC-03 — Thanh toán
@@ -1029,6 +1046,22 @@ _Quản lý quy trình bàn giao ô kho, trả kho, gia hạn hợp đồng và 
 - **AC-7** — _Given_ khách thanh toán nợ trước D+10, _when_ giao dịch thành công, _then_ hợp đồng và quyền truy cập được kích hoạt lại; khi đã quá D+10, hợp đồng đã bị chấm dứt vĩnh viễn và khách muốn thuê phải tạo hợp đồng mới theo `BR-OVD-08`.
 - **AC-8** — _Given_ khách hàng đang có hợp đồng quá hạn, _when_ khách cố gắng tạo đơn đặt chỗ mới trên hệ thống, _then_ hệ thống từ chối và cảnh báo yêu cầu tất toán hợp đồng quá hạn theo `BR-OVD-09`.
 
+### `US-FM-04.4` — Gia hạn ngoại lệ (Force Renewal) và Điều chuyển ô kho (Late Binding Bumping)
+
+> **Là** Facility Manager, **tôi muốn** phê duyệt gia hạn ngoại lệ cho khách hàng quá hạn tự phục vụ (T-30 đến T-0) và chủ động điều chuyển ô kho thay thế cho khách mới, **để** bảo vệ doanh thu cơ sở và xử lý linh hoạt các tình huống phát sinh mặt bằng.
+
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F6-02`, `UC-F2-02` | Must      |      5      |     P4     |
+
+**Acceptance Criteria**
+
+- **AC-1 (Force Renewal khi chưa có người cọc):** *Given* khách hàng cũ quá hạn T-30 muốn gia hạn, *when* tôi kiểm tra thấy khách mới trong Waitlist CHƯA thanh toán cọc, *then* hệ thống cho phép tôi bấm "Gia hạn ngoại lệ", thu thêm phí hành chính cố định 200.000 VNĐ (`BR-REN-10`) và tự động hủy lời mời giữ chỗ của khách trong Waitlist.
+- **AC-2 (Khóa tuyệt đối khi khách mới đã cọc):** *Given* khách mới trong Waitlist hoặc đặt trước đã thanh toán cọc thành công, *when* tôi bấm gia hạn ngoại lệ cho khách cũ, *then* hệ thống khóa nút và chặn tuyệt đối, khách cũ bắt buộc phải dọn đồ trả kho trước ngày T-0 (`BR-REN-10`).
+- **AC-3 (Late Binding Bumping):** *Given* ô kho vật lý dự kiến giao cho khách mới gặp sự cố (ẩm dột, hỏng khóa hoặc khách cũ chưa dọn), *when* tôi xử lý trên màn hình phân bổ, *then* hệ thống cho phép tôi đổi sang một ô kho khác cùng Unit Type đang AVAILABLE mà không làm đổi giá thuê hay tiền cọc của khách (`BR-BMP-01`).
+- **AC-4 (Xử lý Cháy kho toàn cơ sở):** *Given* cơ sở không còn ô kho nào cùng loại để thay thế, *when* tôi kích hoạt trạng thái `PENDING_EMERGENCY_RESOLUTION`, *then* khách hàng được quyền chọn đứng Top 1 Waitlist chu kỳ tới hoặc hủy đơn hoàn 100% tiền kèm voucher bồi thường 10%–20% (`BR-BMP-02`).
+- **AC-5 (Đổi hạng kho 2 bước có ân hạn 24h):** *Given* khách muốn nâng hoặc hạ hạng kho, *when* tôi hỗ trợ đổi kho, *then* hệ thống thực hiện quy trình tất toán kho cũ và tạo hợp đồng kho mới, đồng thời cấp 24 giờ ân hạn di chuyển đồ đạc với 2 mã PIN hoạt động song song (`BR-REN-11`, `BR-REN-12`).
+
 ---
 
 ## 12. FM-05 — Phân công nhân viên
@@ -1134,6 +1167,23 @@ _Quản lý toàn bộ cơ sở lưu trữ trong hệ thống._
 - **AC-5** — _Given_ Facility đang _Inactive_, _when_ tôi kích hoạt lại, _then_ trạng thái về _Active_
   và Facility xuất hiện lại trên trang công khai; các ô kho vẫn giữ trạng thái hiện tại, không tự mở
   bán ô đang _Occupied_ hay _Cleaning_.
+
+### `US-BM-01.3` — Quản lý Danh mục Kiểu kho chuẩn hóa toàn hệ thống (Global Unit Type Master Catalog)
+
+> **Là** Business Operations Manager, **tôi muốn** tạo mới, chỉnh sửa thông số và quản lý trạng thái
+> các Kiểu kho (Unit Type) dùng chung cho toàn bộ công ty, **để** chuẩn hóa danh mục sản phẩm lưu trữ,
+> đồng bộ quy cách kích thước và phục vụ báo cáo doanh thu theo SKU toàn quốc.
+
+| Use case     | Ưu tiên | Story point | Giai đoạn |
+| ------------ | --------- | :---------: | :---------: |
+| `UC-F5-01` | Must      |      5      |     P2     |
+
+**Acceptance Criteria**
+
+- **AC-1 (Tạo mới chuẩn SKU):** *Given* tôi đăng nhập vai trò BOM, *when* tôi tạo Kiểu kho mới với các trường: mã SKU (`code`), tên hiển thị (`name`), kích thước Dài $\times$ Rộng $\times$ Cao (`length_m`, `width_m`, `height_m`), tải trọng sàn (`max_load_kg_m2`), sức chứa pallet (`pallet_capacity`), phân loại môi trường (`environment`), tính năng nổi bật (`features`) và mô tả, *then* hệ thống tự động tính diện tích ($m^2$) và thể tích ($m^3$) dạng Read-only theo chuẩn `BR-BOM-01`.
+- **AC-2 (Ràng buộc vô hiệu hóa mềm):** *Given* Kiểu kho đang có Storage Unit hoặc hợp đồng đang chạy, *when* tôi xóa, *then* hệ thống từ chối xóa cứng (Hard Delete) và chỉ cho phép chuyển sang trạng thái `INACTIVE` (`BR-BOM-02`).
+- **AC-3 (Graceful Deactivation):** *Given* tôi chuyển Kiểu kho sang `INACTIVE`, *then* loại kho này lập tức bị ẩn khỏi cổng tìm kiếm & đặt kho của khách mới; các hợp đồng hiện hữu được chạy đến hết hạn nhưng bị KHÓA nút gia hạn tự phục vụ (`BR-BOM-03`, `BR-BOM-04`).
+- **AC-4 (Tự động Out of Service):** *Given* hợp đồng thuộc Kiểu kho `INACTIVE` kết thúc và nghiệm thu trả kho, *then* ô kho vật lý tự động chuyển sang trạng thái `OUT_OF_SERVICE`, FM không thể phân bổ cho ai nữa (`BR-BOM-05`).
 
 ---
 

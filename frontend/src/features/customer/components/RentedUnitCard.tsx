@@ -249,7 +249,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
         {/* RIGHT: PIN PILL & CONTEXTUAL ACTIONS */}
         <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-end lg:self-center">
           {/* ACCESS PIN PILL (FOR ACTIVE/EXPIRING CONTRACTS) */}
-          {contract.accessPin && (
+          {contract.accessPin && contract.status !== 'PENDING_CHECKIN' && (contract.status as string) !== 'PENDING_CHECK_IN' && (
             <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
               <span className="text-slate-400 text-[11px] font-medium">PIN:</span>
               <span className="font-mono font-black text-slate-800 tracking-wider">

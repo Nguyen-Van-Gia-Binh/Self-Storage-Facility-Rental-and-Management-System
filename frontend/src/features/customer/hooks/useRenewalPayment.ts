@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   getCustomerContracts,
   waitForAppliedRenewal,
@@ -24,7 +23,7 @@ interface UseRenewalPaymentParams {
 }
 
 /**
- * Khối thanh toán gia hạn qua PayOS VietQR Napas247 (SC-03, BR-REN-04/05).
+ * Khối thanh toán gia hạn qua VNPay Sandbox Napas247 (SC-03, BR-REN-04/05).
  * - Khởi tạo lệnh thanh toán CONTRACT_RENEWAL khi vào Bước 3
  * - Polling trạng thái mỗi 2.5s, countdown 48h, sandbox dev bar, hủy lệnh
  * - Khi tất toán: đọc hạn mới đã áp dụng (BR-REN-04) → kích hoạt hợp đồng + E-Receipt
@@ -40,10 +39,9 @@ export function useRenewalPayment({
   onRenewalApplied,
   onRequestStepReset,
 }: UseRenewalPaymentParams) {
-  const navigate = useNavigate();
 
   // --- State: lệnh thanh toán & đối soát ---
-  const [payosCheckout, setPayosCheckout] = useState<CheckoutResponse | null>(() => {
+  const [checkoutData, setCheckoutData] = useState<CheckoutResponse | null>(() => {
     return urlOrderCode ? ({ orderCode: Number(urlOrderCode) } as CheckoutResponse) : null;
   });
   const [isLoadingCheckout, setIsLoadingCheckout] = useState(false);
@@ -67,7 +65,6 @@ export function useRenewalPayment({
   const [paymentExpiresAt, setPaymentExpiresAt] = useState<Date | null>(null);
 
   // --- State: sandbox dev + hủy lệnh ---
-  const [isSandboxing, setIsSandboxing] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
 
@@ -114,12 +111,12 @@ export function useRenewalPayment({
     }
   }, [contract, onRenewalApplied]);
 
-  // Khởi tạo link thanh toán PayOS VietQR khi chuyển sang Bước 3
+  // Khởi tạo link thanh toán VNPay Sandbox khi chuyển sang Bước 3
   useEffect(() => {
-    if (currentStep !== 3 || !contract || payosCheckout?.orderCode) return;
+    if (currentStep !== 3 || !contract || checkoutData?.orderCode) return;
 
     let isMounted = true;
-    const initPayos = async () => {
+    const initVnpay = async () => {
       setIsLoadingCheckout(true);
       setCheckoutError(null);
       try {
@@ -146,15 +143,15 @@ export function useRenewalPayment({
         });
 
         if (isMounted) {
-          setPayosCheckout(checkout);
+          setCheckoutData(checkout);
         }
       } catch (err: unknown) {
-        console.warn('Lỗi khởi tạo PayOS cho hợp đồng:', err);
+        console.warn('Lỗi khởi tạo VNPay cho hợp đồng:', err);
         const code = (err as any)?.errorCode || (err as any)?.data?.errorCode;
         const msg =
           err instanceof Error
             ? err.message
-            : 'Không thể kết nối cổng thanh toán PayOS. Vui lòng kiểm tra lại kết nối!';
+            : 'Không thể kết nối cổng thanh toán VNPay. Vui lòng kiểm tra lại kết nối!';
         if (isMounted) {
           if (code === 'CAPACITY_NOT_AVAILABLE' || msg.includes('đặt trước')) {
             onCapacityConflict(msg);
@@ -168,7 +165,7 @@ export function useRenewalPayment({
       }
     };
 
-    initPayos();
+    initVnpay();
 
     return () => {
       isMounted = false;
@@ -178,11 +175,11 @@ export function useRenewalPayment({
 
   // Kiểm tra thanh toán chủ động (Nút "Tôi đã hoàn tất chuyển khoản")
   const handleCheckPaymentAndRenew = async () => {
-    if (!payosCheckout?.orderCode) return;
+    if (!checkoutData?.orderCode) return;
     setIsVerifying(true);
     setPaymentNotice(null);
     try {
-      const statusRes = await customerApi.getPaymentStatus(payosCheckout.orderCode);
+      const statusRes = await customerApi.getPaymentStatus(checkoutData.orderCode);
       if (statusRes.status === 'SUCCESS') {
         setIsPaidSuccess(true);
         await executeRenewalActivation();
@@ -199,11 +196,11 @@ export function useRenewalPayment({
 
   // Polling tự động kiểm tra trạng thái thanh toán mỗi 2.5 giây khi ở Bước 3
   useEffect(() => {
-    if (currentStep !== 3 || !payosCheckout?.orderCode || isPaidSuccess) return;
+    if (currentStep !== 3 || !checkoutData?.orderCode || isPaidSuccess) return;
 
     const interval = setInterval(async () => {
       try {
-        const statusRes = await customerApi.getPaymentStatus(payosCheckout.orderCode);
+        const statusRes = await customerApi.getPaymentStatus(checkoutData.orderCode);
         if (statusRes.status === 'SUCCESS') {
           clearInterval(interval);
           setIsPaidSuccess(true);
@@ -215,11 +212,11 @@ export function useRenewalPayment({
     }, 2500);
 
     return () => clearInterval(interval);
-  }, [currentStep, payosCheckout?.orderCode, isPaidSuccess, executeRenewalActivation]);
+  }, [currentStep, checkoutData?.orderCode, isPaidSuccess, executeRenewalActivation]);
 
-  // Cập nhật paymentExpiresAt khi payosCheckout được khởi tạo
+  // Cập nhật paymentExpiresAt khi checkoutData được khởi tạo
   useEffect(() => {
-    if (currentStep === 3 && payosCheckout?.orderCode && !paymentExpiresAt) {
+    if (currentStep === 3 && checkoutData?.orderCode && !paymentExpiresAt) {
       if (contract?.pendingRenewalExpiresAt) {
         setPaymentExpiresAt(new Date(contract.pendingRenewalExpiresAt));
       } else {
@@ -229,9 +226,9 @@ export function useRenewalPayment({
         }
       }
     }
-  }, [currentStep, payosCheckout, contract, paymentExpiresAt, holdHours]);
+  }, [currentStep, checkoutData, contract, paymentExpiresAt, holdHours]);
 
-  // Bộ đếm ngược thời gian thanh toán VietQR (48 giờ)
+  // Bộ đếm ngược thời gian thanh toán VNPay (48 giờ)
   useEffect(() => {
     if (currentStep !== 3 || !paymentExpiresAt) return;
 
@@ -254,56 +251,17 @@ export function useRenewalPayment({
     return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${remainingSecs.toString().padStart(2, '0')}`;
   };
 
-  // --- Sandbox dev bar ---
-  const handleSimulateSuccess = async () => {
-    if (!payosCheckout?.orderCode) return;
-    setIsSandboxing(true);
-    try {
-      await customerApi.processSandboxTransfer(payosCheckout.orderCode, 'TRANSFER_SUCCESS');
-      setIsPaidSuccess(true);
-      await executeRenewalActivation();
-    } catch (err) {
-      console.error('Sandbox simulate error:', err);
-    } finally {
-      setIsSandboxing(false);
-    }
-  };
-
-  const handleSimulateCancel = async () => {
-    if (!payosCheckout?.orderCode) return;
-    setIsSandboxing(true);
-    try {
-      await customerApi.processSandboxTransfer(payosCheckout.orderCode, 'CANCEL');
-      navigate('/customer/my-units');
-    } catch (err) {
-      console.error('Sandbox cancel error:', err);
-    } finally {
-      setIsSandboxing(false);
-    }
-  };
-
   // --- Hủy lệnh thanh toán: hủy đơn tại cổng rồi reset về Bước 1 ---
-  const handleCancelPayment = async () => {
-    if (!payosCheckout?.orderCode) {
-      resetPaymentOrder();
-      onRequestStepReset();
-      return;
-    }
+  const handleCancelPayment = () => {
     setIsCancelling(true);
-    try {
-      await customerApi.processSandboxTransfer(payosCheckout.orderCode, 'CANCEL');
-    } catch (err) {
-      console.error('Cancel payment error:', err);
-    } finally {
-      setIsCancelling(false);
-      setShowCancelDialog(false);
-      resetPaymentOrder();
-      onRequestStepReset();
-    }
+    setShowCancelDialog(false);
+    resetPaymentOrder();
+    onRequestStepReset();
+    setIsCancelling(false);
   };
 
   const resetPaymentOrder = () => {
-    setPayosCheckout(null);
+    setCheckoutData(null);
     setPaymentExpiresAt(null);
   };
 
@@ -322,14 +280,13 @@ export function useRenewalPayment({
 
   return {
     // Lệnh thanh toán
-    payosCheckout,
+    checkoutData,
     isLoadingCheckout,
     checkoutError,
     isPaidSuccess,
     isVerifying,
     paymentNotice,
     setPaymentNotice,
-    isSandboxing,
     isCancelling,
     showCancelDialog,
     setShowCancelDialog,
@@ -344,8 +301,6 @@ export function useRenewalPayment({
     setShowReceiptModal,
     // Handlers
     handleCheckPaymentAndRenew,
-    handleSimulateSuccess,
-    handleSimulateCancel,
     handleCancelPayment,
     resetPaymentOrder,
     transferContent,

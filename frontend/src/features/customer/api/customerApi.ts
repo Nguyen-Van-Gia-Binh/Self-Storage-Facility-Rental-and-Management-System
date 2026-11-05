@@ -117,7 +117,7 @@ export const customerApi = {
   },
 
   /**
-   * Tạo link thanh toán PayOS VietQR tự động (SC-03)
+   * Tạo link thanh toán VNPay Sandbox tự động (SC-03)
    */
   async createPaymentCheckout(payload: CheckoutRequest): Promise<CheckoutResponse> {
     try {
@@ -127,7 +127,7 @@ export const customerApi = {
       });
       return (res as any)?.data || res;
     } catch (err: any) {
-      throw new Error(err?.message || 'Không thể tạo link thanh toán PayOS');
+      throw new Error(err?.message || 'Không thể tạo link thanh toán VNPay Sandbox');
     }
   },
 
@@ -143,20 +143,6 @@ export const customerApi = {
     }
   },
 
-  /**
-   * Chuyển tiền mô phỏng qua Cổng Sandbox nội bộ
-   */
-  async processSandboxTransfer(orderCode: number, action: 'TRANSFER_SUCCESS' | 'TRANSFER_FAILED' | 'CANCEL' = 'TRANSFER_SUCCESS'): Promise<any> {
-    try {
-      const res = await apiClient<ApiResponse<any> | any>('/payments/sandbox/process-transfer', {
-        method: 'POST',
-        body: JSON.stringify({ orderCode, action }),
-      });
-      return (res as any)?.data || res;
-    } catch (err: any) {
-      throw new Error(err?.message || 'Không thể kết nối cổng thanh toán Sandbox');
-    }
-  },
 
   /**
    * Lấy danh sách hợp đồng kho đang thuê của khách hàng (SC-05)

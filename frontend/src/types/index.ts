@@ -246,6 +246,10 @@ export interface DailyCheckInTask {
   isFullyPaid: boolean;
   status: 'WAITING' | 'ARRIVED' | 'COMPLETED' | 'PENDING' | string;
   completed?: boolean;
+  scheduledStartTime?: string;
+  scheduledEndTime?: string;
+  isLate?: boolean;
+  daysLate?: number;
 }
 
 export interface DailyReturnTask {
@@ -262,6 +266,10 @@ export interface DailyReturnTask {
   depositAmount: number;
   status: 'PENDING_INSPECTION' | 'INSPECTED' | 'WAITING_MANAGER' | 'COMPLETED' | string;
   completed?: boolean;
+  scheduledStartTime?: string;
+  scheduledEndTime?: string;
+  isLate?: boolean;
+  daysLate?: number;
 }
 
 export interface DailyIncidentTask {

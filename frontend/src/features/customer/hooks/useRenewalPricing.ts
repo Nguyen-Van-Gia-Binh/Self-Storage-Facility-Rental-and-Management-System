@@ -21,7 +21,7 @@ export function useRenewalPricing({ contract, renewalMonths }: UseRenewalPricing
   const [isCapacityConflict, setIsCapacityConflict] = useState(false);
   const [capacityConflictMessage, setCapacityConflictMessage] = useState('');
 
-  // Thiết lập Conflict View (dùng cả bởi hook payment khi init PayOS gặp CAPACITY_NOT_AVAILABLE)
+  // Thiết lập Conflict View (dùng cả bởi hook payment khi init VNPay gặp CAPACITY_NOT_AVAILABLE)
   const setCapacityConflict = (message: string) => {
     setIsCapacityConflict(true);
     setCapacityConflictMessage(

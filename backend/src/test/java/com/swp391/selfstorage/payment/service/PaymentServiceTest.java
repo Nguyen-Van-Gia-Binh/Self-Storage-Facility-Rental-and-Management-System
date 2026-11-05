@@ -283,8 +283,8 @@ class PaymentServiceTest {
     }
 
     @Test
-    @DisplayName("processSandboxTransfer: Xác nhận chuyển tiền thành công -> Chuyển SUCCESS, confirm và bắn Event")
-    void processSandboxTransfer_Success() {
+    @DisplayName("completeVnpayPayment: Xác nhận chuyển tiền thành công -> Chuyển SUCCESS, confirm và bắn Event")
+    void completeVnpayPayment_Success() {
         PaymentTransaction pendingTxn = PaymentTransaction.builder()
                 .id(50L)
                 .reservationId(100L)
@@ -297,90 +297,12 @@ class PaymentServiceTest {
         when(paymentTransactionRepository.findByOrderCodeForUpdate(123456789L)).thenReturn(Optional.of(pendingTxn));
         when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(i -> i.getArgument(0));
 
-        PaymentResponse response = paymentService.processSandboxTransfer(123456789L, "TRANSFER_SUCCESS");
+        boolean ok = paymentService.completeVnpayPayment(123456789L, true, 3_200_000L * 100L, "VNPAY-REF", "NCB");
 
-        assertNotNull(response);
-        assertEquals("SUCCESS", response.getStatus());
+        assertTrue(ok);
         assertEquals("SUCCESS", pendingTxn.getStatus());
         verify(reservationService).confirmAfterPayment(100L);
         verify(eventPublisher).publishEvent(any(PaymentCompletedEvent.class));
-    }
-
-    @Test
-    @DisplayName("processSandboxTransfer: Khách bấm Hủy thì giữ PENDING")
-    void processSandboxTransfer_Cancel() {
-        PaymentTransaction pendingTxn = PaymentTransaction.builder()
-                .id(50L)
-                .reservationId(100L)
-                .orderCode(123456789L)
-                .amount(3_200_000L)
-                .status("PENDING")
-                .transactionType("INITIAL_PAYMENT")
-                .build();
-
-        when(paymentTransactionRepository.findByOrderCodeForUpdate(123456789L)).thenReturn(Optional.of(pendingTxn));
-
-        PaymentResponse response = paymentService.processSandboxTransfer(123456789L, "CANCEL");
-
-        assertNotNull(response);
-        assertEquals("PENDING", response.getStatus());
-        assertEquals("PENDING", pendingTxn.getStatus());
-        verify(paymentTransactionRepository, never()).save(any());
-        verify(reservationService, never()).confirmAfterPayment(any());
-        verify(eventPublisher, never()).publishEvent(any());
-    }
-
-    @Test
-    @DisplayName("processSandboxTransfer: Idempotency - Đã SUCCESS thì bỏ qua, không xử lý lại")
-    void processSandboxTransfer_Idempotent() {
-        PaymentTransaction successTxn = PaymentTransaction.builder()
-                .id(50L)
-                .reservationId(100L)
-                .orderCode(123456789L)
-                .amount(3_200_000L)
-                .status("SUCCESS")
-                .transactionType("INITIAL_PAYMENT")
-                .build();
-
-        when(paymentTransactionRepository.findByOrderCodeForUpdate(123456789L)).thenReturn(Optional.of(successTxn));
-
-        PaymentResponse response = paymentService.processSandboxTransfer(123456789L, "TRANSFER_SUCCESS");
-
-        assertNotNull(response);
-        assertEquals("SUCCESS", response.getStatus());
-        verify(paymentTransactionRepository, never()).save(any());
-        verify(reservationService, never()).confirmAfterPayment(any());
-        verify(eventPublisher, never()).publishEvent(any());
-    }
-
-    @Test
-    @DisplayName("processPayOSWebhook: Xử lý Webhook thành công (code=00)")
-    void processPayOSWebhook_Success() {
-        PaymentTransaction pendingTxn = PaymentTransaction.builder()
-                .id(50L)
-                .reservationId(100L)
-                .orderCode(123456789L)
-                .amount(3_200_000L)
-                .status("PENDING")
-                .transactionType("INITIAL_PAYMENT")
-                .build();
-
-        Map<String, Object> payload = Map.of(
-                "code", "00",
-                "desc", "Success",
-                "data", Map.of(
-                        "orderCode", 123456789L,
-                        "amount", 3_200_000L,
-                        "reference", "FT26090001"
-                )
-        );
-
-        paymentService.processPayOSWebhook(payload);
-
-        verify(paymentTransactionRepository, never()).save(any());
-        verify(reservationService, never()).confirmAfterPayment(any());
-        verify(eventPublisher, never()).publishEvent(any());
-        assertEquals("PENDING", pendingTxn.getStatus());
     }
 
     @Test
@@ -436,8 +358,8 @@ class PaymentServiceTest {
     }
 
     @Test
-    @DisplayName("Sandbox OVERDUE_PENALTY thành công: Xóa nợ phạt về 0 cho hợp đồng")
-    void processSandboxTransfer_OverduePenalty_ClearsDebt() {
+    @DisplayName("VNPay OVERDUE_PENALTY thành công: Xóa nợ phạt về 0 cho hợp đồng")
+    void completeVnpayPayment_OverduePenalty_ClearsDebt() {
         PaymentTransaction txn = PaymentTransaction.builder()
                 .id(999L)
                 .orderCode(88889999L)
@@ -455,16 +377,17 @@ class PaymentServiceTest {
         when(rentalContractRepository.findById(80017L)).thenReturn(Optional.of(mockContract));
         when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        PaymentResponse res = paymentService.processSandboxTransfer(88889999L, "TRANSFER_SUCCESS");
+        boolean ok = paymentService.completeVnpayPayment(88889999L, true, 250_000L * 100L, "VNPAY-REF", "NCB");
 
-        assertEquals("SUCCESS", res.getStatus());
+        assertTrue(ok);
+        assertEquals("SUCCESS", txn.getStatus());
         assertEquals(0L, mockContract.getOverdueFeeAccrued());
         verify(rentalContractRepository).save(mockContract);
     }
 
     @Test
-    @DisplayName("OverduePenaltyPaymentService: Hợp đồng OVERDUE KHÔNG chuyển về ACTIVE sau thanh toán phạt Sandbox (BR-OVD-08)")
-    void processSandboxTransfer_OverduePenalty_ContractStaysOverdue() {
+    @DisplayName("OverduePenaltyPaymentService: Hợp đồng OVERDUE KHÔNG chuyển về ACTIVE sau thanh toán phạt VNPay (BR-OVD-08)")
+    void completeVnpayPayment_OverduePenalty_ContractStaysOverdue() {
         PaymentTransaction txn = PaymentTransaction.builder()
                 .id(1001L).orderCode(99991111L).amount(300_000L)
                 .status("PENDING").transactionType("OVERDUE_PENALTY").contractId(80020L)
@@ -480,39 +403,13 @@ class PaymentServiceTest {
         when(rentalContractRepository.findById(80020L)).thenReturn(Optional.of(contract));
         when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        paymentService.processSandboxTransfer(99991111L, "TRANSFER_SUCCESS");
+        boolean ok = paymentService.completeVnpayPayment(99991111L, true, 300_000L * 100L, "VNPAY-REF", "NCB");
 
+        assertTrue(ok);
         assertEquals(com.swp391.selfstorage.contract.entity.ContractStatus.OVERDUE, contract.getStatus(),
                 "Hợp đồng PHẢI giữ nguyên OVERDUE sau khi nộp phạt — KHÔNG được chuyển ACTIVE (BR-OVD-08)");
         assertEquals(0L, contract.getOverdueFeeAccrued(),
                 "Nợ phạt phải được xóa về 0 sau khi thanh toán thành công");
-    }
-
-    @Test
-    @DisplayName("OverduePenaltyPaymentService: Hợp đồng OVERDUE KHÔNG chuyển về ACTIVE sau PayOS Webhook (BR-OVD-08)")
-    void processPayOSWebhook_OverduePenalty_ContractStaysOverdue() {
-        PaymentTransaction txn = PaymentTransaction.builder()
-                .id(1002L).orderCode(77778888L).amount(350_000L)
-                .status("PENDING").transactionType("OVERDUE_PENALTY").contractId(90002L)
-                .build();
-
-        com.swp391.selfstorage.contract.entity.RentalContract contract =
-                new com.swp391.selfstorage.contract.entity.RentalContract();
-        contract.setId(90002L);
-        contract.setStatus(com.swp391.selfstorage.contract.entity.ContractStatus.OVERDUE);
-        contract.setOverdueFeeAccrued(350_000L);
-
-        Map<String, Object> payload = Map.of(
-                "code", "00",
-                "data", Map.of("orderCode", 77778888L, "reference", "FT99001")
-        );
-        paymentService.processPayOSWebhook(payload);
-
-        verify(paymentTransactionRepository, never()).save(any());
-        verify(reservationService, never()).confirmAfterPayment(any());
-        verify(eventPublisher, never()).publishEvent(any());
-        assertEquals("PENDING", txn.getStatus());
-        assertEquals(350_000L, contract.getOverdueFeeAccrued());
     }
 
     @Test
@@ -550,8 +447,8 @@ class PaymentServiceTest {
     }
 
     @Test
-    @DisplayName("Sandbox gia hạn bắn event đúng số tháng đã lưu, không hard-code 1 tháng")
-    void processSandboxTransfer_ContractRenewal_UsesStoredMonths() {
+    @DisplayName("VNPay gia hạn bắn event đúng số tháng đã lưu, không hard-code 1 tháng")
+    void completeVnpayPayment_ContractRenewal_UsesStoredMonths() {
         PaymentTransaction txn = PaymentTransaction.builder()
                 .id(77L)
                 .contractId(100L)
@@ -565,7 +462,7 @@ class PaymentServiceTest {
         when(paymentTransactionRepository.findByOrderCodeForUpdate(555L)).thenReturn(Optional.of(txn));
         when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(i -> i.getArgument(0));
 
-        paymentService.processSandboxTransfer(555L, "TRANSFER_SUCCESS");
+        paymentService.completeVnpayPayment(555L, true, 2_400_000L * 100L, "VNPAY-REF", "NCB");
 
         ArgumentCaptor<ContractRenewalPaymentCompletedEvent> event =
                 ArgumentCaptor.forClass(ContractRenewalPaymentCompletedEvent.class);
@@ -575,39 +472,11 @@ class PaymentServiceTest {
         assertEquals(3, event.getValue().renewalMonths());
     }
 
-    @Test
-    @DisplayName("Webhook gia hạn dùng số tháng đã lưu, bỏ qua chuỗi mô tả PayOS")
-    void processPayOSWebhook_ContractRenewal_IgnoresDescription() {
-        PaymentTransaction txn = PaymentTransaction.builder()
-                .id(88L)
-                .contractId(100L)
-                .orderCode(666L)
-                .amount(2_400_000L)
-                .status("PENDING")
-                .transactionType("CONTRACT_RENEWAL")
-                .renewalMonths(3)
-                .build();
 
-        Map<String, Object> payload = Map.of(
-                "code", "00",
-                "data", Map.of(
-                        "orderCode", 666L,
-                        "description", "THANH TOAN GH100T12",
-                        "reference", "FT1"
-                )
-        );
 
-        paymentService.processPayOSWebhook(payload);
-
-        verify(paymentTransactionRepository, never()).save(any());
-        verify(reservationService, never()).confirmAfterPayment(any());
-        verify(eventPublisher, never()).publishEvent(any());
-        assertEquals("PENDING", txn.getStatus());
-    }
-
-    @ParameterizedTest(name = "Sandbox gia hạn {0} tháng bắn đúng {0} tháng, không rút về 1")
+    @ParameterizedTest(name = "VNPay gia hạn {0} tháng bắn đúng {0} tháng, không rút về 1")
     @ValueSource(ints = {1, 3, 6, 12})
-    void processSandboxTransfer_ContractRenewal_KeepsSelectedMonths(int months) {
+    void completeVnpayPayment_ContractRenewal_KeepsSelectedMonths(int months) {
         PaymentTransaction txn = PaymentTransaction.builder()
                 .id(70L + months)
                 .contractId(100L)
@@ -621,7 +490,7 @@ class PaymentServiceTest {
         when(paymentTransactionRepository.findByOrderCodeForUpdate(700L + months)).thenReturn(Optional.of(txn));
         when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(i -> i.getArgument(0));
 
-        paymentService.processSandboxTransfer(700L + months, "TRANSFER_SUCCESS");
+        paymentService.completeVnpayPayment(700L + months, true, 3_000_000L * months * 100L, "VNPAY-REF", "NCB");
 
         ArgumentCaptor<ContractRenewalPaymentCompletedEvent> event =
                 ArgumentCaptor.forClass(ContractRenewalPaymentCompletedEvent.class);
@@ -650,7 +519,7 @@ class PaymentServiceTest {
         when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(i -> i.getArgument(0));
         when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
 
-        paymentService.processSandboxTransfer(910L, "TRANSFER_SUCCESS");
+        paymentService.completeVnpayPayment(910L, true, 18_000_000L * 100L, "VNPAY-REF", "NCB");
 
         ArgumentCaptor<ContractRenewalPaymentCompletedEvent> event =
                 ArgumentCaptor.forClass(ContractRenewalPaymentCompletedEvent.class);
@@ -699,25 +568,4 @@ class PaymentServiceTest {
         verify(reservationService, never()).confirmAfterPayment(any());
     }
 
-    @Test
-    void processSandboxTransfer_OtherCustomer_Denied() {
-        mockReservation.setCustomerId(100L);
-        PaymentTransaction pendingTxn = PaymentTransaction.builder()
-                .id(50L).reservationId(100L).orderCode(123456789L).amount(3_200_000L)
-                .status("PENDING").transactionType("INITIAL_PAYMENT").build();
-        when(paymentTransactionRepository.findByOrderCodeForUpdate(123456789L)).thenReturn(Optional.of(pendingTxn));
-        when(reservationRepository.findById(100L)).thenReturn(Optional.of(mockReservation));
-        UserPrincipal other = new UserPrincipal(999L, "a@b.c", "x", "Other",
-                UserRole.STORAGE_CUSTOMER, UserStatus.ACTIVE, List.of(), List.of());
-        SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken(other, null, other.getAuthorities()));
-        try {
-            CustomException ex = assertThrows(CustomException.class,
-                    () -> paymentService.processSandboxTransfer(123456789L, "TRANSFER_SUCCESS"));
-            assertEquals(ErrorCode.ACCESS_DENIED, ex.getErrorCode());
-            verify(reservationService, never()).confirmAfterPayment(any());
-        } finally {
-            SecurityContextHolder.clearContext();
-        }
-    }
 }

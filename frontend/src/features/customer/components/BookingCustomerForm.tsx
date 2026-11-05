@@ -209,11 +209,11 @@ export const BookingCustomerForm: React.FC<BookingCustomerFormProps> = ({
           {isSubmitting ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Đang tạo mã thanh toán VietQR...</span>
+              <span>Đang kết nối cổng thanh toán VNPay...</span>
             </>
           ) : (
             <>
-              <span>Tiếp tục: Thanh toán VietQR & Giữ chỗ 48h</span>
+              <span>Tiếp tục: Thanh toán VNPay & Giữ chỗ 48h</span>
               <ArrowRight className="w-4 h-4" />
             </>
           )}

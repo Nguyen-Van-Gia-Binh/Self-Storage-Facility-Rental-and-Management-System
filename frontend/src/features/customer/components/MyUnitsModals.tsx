@@ -8,7 +8,7 @@ import { ContractDetailModal } from './ContractDetailModal';
 import { ReschedulePeriodModal } from './ReschedulePeriodModal';
 import { CancelCheckInModal } from './CancelCheckInModal';
 import { EarlyRenewalReminderModal } from './EarlyRenewalReminderModal';
-import { VietQRPaymentModal } from './VietQRPaymentModal';
+import { OverduePenaltyPaymentModal } from './OverduePenaltyPaymentModal';
 import type { ReservationResponse } from '@/api/reservation';
 import type { RentedContract } from '../types';
 
@@ -157,9 +157,9 @@ export const MyUnitsModals: React.FC<MyUnitsModalsProps> = ({
         reminderDays={reminderDays}
       />
 
-      {/* 7. Modal thanh toán phí quá hạn VietQR */}
+      {/* 7. Modal thanh toán phí quá hạn VNPay */}
       {selectedOverdueContract && (
-        <VietQRPaymentModal
+        <OverduePenaltyPaymentModal
           isOpen={Boolean(selectedOverdueContract)}
           onClose={onCloseOverdueModal}
           onPaymentSuccess={onOverduePaymentSuccess}

@@ -47,7 +47,7 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 | Mã   | Chức năng                 | Mô tả                                                                                               |
 | ----- | --------------------------- | ----------------------------------------------------------------------------------------------------- |
 | SC-01 | Xem thông tin dịch vụ    | Xem danh sách cơ sở lưu trữ, loại ô kho, kích thước, giá thuê và số chỗ còn trống theo hạng kho |
-| SC-02 | Đặt chỗ ô kho           | Đặt chỗ bằng cách chọn cơ sở, loại ô kho, ngày bắt đầu và thời hạn thuê             |
+| SC-02 | Đặt chỗ ô kho & Danh sách chờ | Đặt chỗ bằng cách chọn cơ sở, loại ô kho, ngày bắt đầu và thời hạn thuê; đăng ký Waitlist miễn phí khi hết kho trống |
 | SC-03 | Thanh toán                 | Thanh toán Deposit cùng toàn bộ phí thuê N tháng khi đặt chỗ, phí gia hạn hoặc các khoản phụ thu |
 | SC-04 | Check-in nhận kho          | Nhận ô kho linh hoạt qua Check-in Online trên ứng dụng hoặc đến trực tiếp theo lịch hẹn  |
 | SC-05 | Quản lý ô kho đã thuê | Theo dõi và quản lý một hoặc nhiều ô kho đang thuê                                          |
@@ -68,7 +68,7 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 
 | Mã   | Chức năng                               | Mô tả                                                                                                   |
 | ----- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| FM-01 | Quản lý ô kho tại cơ sở phụ trách | Quản lý loại ô kho, kích thước, vị trí, giá thuê và trạng thái ô kho                       |
+| FM-01 | Quản lý ô kho tại cơ sở phụ trách | Quản lý danh sách ô kho vật lý (Storage Unit), vị trí và trạng thái tại cơ sở; khởi tạo từ danh mục Unit Type của BOM |
 | FM-02 | Phân bổ ô kho cho khách               | Quản lý hàng đợi đơn đặt chỗ theo Unit Type; FM chủ động gán Storage Unit đang AVAILABLE trước ngày Check-in và có thể đổi ô đến trước ngày đó |
 | FM-03 | Theo dõi khách và hợp đồng          | Giám sát khách đang thuê, hợp đồng thuê, thời hạn thuê và tình trạng thanh toán           |
 | FM-04 | Quản lý quy trình vận hành thuê     | Quản lý bàn giao, trả kho, gia hạn và xử lý quá hạn tại cơ sở                                |
@@ -79,7 +79,7 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 
 | Mã   | Chức năng                      | Mô tả                                                                                    |
 | ----- | -------------------------------- | ------------------------------------------------------------------------------------------ |
-| BM-01 | Quản lý danh sách cơ sở     | Quản lý toàn bộ cơ sở lưu trữ trong hệ thống                                     |
+| BM-01 | Quản lý cơ sở & Kiểu kho Master | Quản lý toàn bộ cơ sở và danh mục Kiểu kho chuẩn hóa toàn hệ thống (Global Unit Type Catalog) |
 | BM-02 | Thiết lập chính sách thuê   | Chính sách chung về đặt cọc, gia hạn, hủy, trả kho và xử lý quá hạn          |
 | BM-03 | Quản lý giá và phí          | Khung giá thuê, phụ phí, phí quá hạn, chính sách giảm giá / miễn phí          |
 | BM-04 | Giám sát hiệu quả vận hành | Theo dõi doanh thu, tỷ lệ lấp đầy kho và hiệu quả hoạt động của từng cơ sở |
@@ -103,12 +103,12 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 
 ### Flow 1 — Storage Unit Reservation Flow
 
-*Luồng đặt chỗ ô kho*
+*Luồng đặt chỗ ô kho và hàng đợi danh sách chờ*
 
 - **Tác nhân chính:** Storage Customer
 - **Tác nhân liên quan:** Facility Manager
 - **Phạm vi liên quan:** `SC-01`, `SC-02`, `SC-03`, `FM-02`
-- **Nội dung dự kiến:** Khách xem cơ sở, chọn hạng kho (Unit Type), ngày bắt đầu (khống chế trong cửa sổ tối đa 30 ngày theo `BR-RES-01`) và thời hạn thuê → xem bảng ước tính chi phí, tiền cọc Deposit và tùy chọn Gói bảo vệ hàng hóa (+50k/tháng) → hệ thống giữ hạn ngạch hạng kho trong 48h, chưa gán mã ô → khách thanh toán trực tuyến qua cổng VietQR/thẻ → hệ thống xác nhận Confirmed và gửi lịch hẹn Check-in. FM phân bổ một Storage Unit đang AVAILABLE cùng loại trước ngày Check-in. Trong giai đoạn chờ nhận kho, khách có thể sử dụng tính năng **Dời ngày có phí theo ngày** (tối đa 7 ngày theo `BR-RES-06`) hoặc **Hủy đặt chỗ theo chính sách 3 tầng** (`BR-CAN-01..03`: hoàn 100% tiền thuê; tiền cọc hoàn 100% nếu hủy sớm $\ge 7$ ngày, phạt 50% nếu hủy 2–6 ngày, phạt 100% nếu hủy dưới 48h).
+- **Nội dung dự kiến:** Khách xem cơ sở, chọn hạng kho (Unit Type), ngày bắt đầu (khống chế trong cửa sổ tối đa 30 ngày theo `BR-RES-01`) và thời hạn thuê → xem bảng ước tính chi phí, tiền cọc Deposit và tùy chọn Gói bảo vệ hàng hóa (+50k/tháng) → hệ thống giữ hạn ngạch hạng kho trong 48h, chưa gán mã ô → khách thanh toán trực tuyến qua cổng VietQR/VNPay/thẻ → hệ thống xác nhận Confirmed và gửi lịch hẹn Check-in. FM phân bổ một Storage Unit đang AVAILABLE cùng loại trước ngày Check-in. Trong giai đoạn chờ nhận kho, khách có thể sử dụng tính năng **Dời ngày có phí theo ngày** (tối đa 7 ngày theo `BR-RES-06`) hoặc **Hủy đặt chỗ theo chính sách 3 tầng** (`BR-CAN-01..03`: hoàn 100% tiền thuê; tiền cọc hoàn 100% nếu hủy sớm $\ge 7$ ngày, phạt 50% nếu hủy 2–6 ngày, phạt 100% nếu hủy dưới 48h). **Trường hợp hết kho trống:** Khách hàng đăng ký miễn phí vào **Danh sách chờ (Waitlist)** chọn ngày mong muốn (`target_start_date`). Khi có kho trống, hệ thống kích hoạt lời mời giữ chỗ theo cơ chế Cascade FIFO (giữ chỗ 24h nếu $\le 5$ người) hoặc Batch Offer (mời Top 3, giữ chỗ 4h nếu $> 5$ người, ai thanh toán cọc trước sẽ nhận kho).
 
 ### Flow 2 — Storage Check-in and Handover Flow
 
@@ -142,9 +142,9 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 *Luồng quản lý kho và nhân sự tại cơ sở*
 
 - **Tác nhân chính:** Facility Manager
-- **Tác nhân liên quan:** Facility Staff, System Administrator
-- **Phạm vi liên quan:** `FM-01`, `FM-05`, `FM-06`, `FS-06`, `SA-02`, `SA-03`
-- **Nội dung dự kiến:** FM đăng nhập quản lý danh mục Unit Type và kích thước ô kho → quản lý Storage Unit (mã, vị trí, giá thuê, trạng thái) → phân công Facility Staff theo công việc trong ngày → xem báo cáo cơ sở (trạng thái ô kho, doanh thu, Usage Rate, hợp đồng).
+- **Tác nhân liên quan:** Facility Staff, System Administrator, Business Operations Manager
+- **Phạm vi liên quan:** `FM-01`, `FM-05`, `FM-06`, `FS-06`, `BM-01`, `SA-02`, `SA-03`
+- **Nội dung dự kiến:** BOM quản lý danh mục Kiểu kho chuẩn hóa toàn hệ thống (Master Unit Type Catalog). FM tại cơ sở khởi tạo và quản lý danh sách ô kho vật lý (Storage Unit: mã, vị trí, trạng thái) chọn từ danh mục Unit Type đang ACTIVE của BOM → phân công Facility Staff theo công việc trong ngày → xem báo cáo cơ sở (trạng thái ô kho, doanh thu, Usage Rate, hợp đồng).
 
 ---
 
@@ -152,13 +152,13 @@ Hệ thống phục vụ **5 nhóm người dùng**, với **5 luồng nghiệp 
 
 ### Flow 6 — Storage Renewal and Overdue Handling Flow
 
-*Luồng gia hạn thuê và xử lý quá hạn*
+*Luồng gia hạn thuê, điều chuyển và xử lý quá hạn*
 
 - **Tác nhân chính:** Storage Customer, Facility Manager
 - **Tác nhân liên quan:** Business Operations Manager
 - **Phạm vi liên quan:** `SC-03`, `SC-05`, `FM-03`, `FM-04`, `FM-06`, `BM-02`, `BM-03`
 - **Nội dung dự kiến:** 
-  - **Sub-flow 6.1 (Gia hạn):** Hệ thống tự động gửi nhắc gia hạn từ trước 2 tháng (và đếm ngược 7, 3, 1 ngày trước mốc khóa gia hạn trước 1 tháng). Khách gửi yêu cầu gia hạn trước ngày hết hạn ít nhất 1 tháng → hệ thống kiểm tra tính hợp lệ (ô kho không có ai đặt trước trong tương lai): nếu hợp lệ thì chọn sẵn ô kho, khách chọn số tháng và thanh toán phí gia hạn qua cổng trực tuyến; nếu không hợp lệ hoặc quá mốc 1 tháng thì hệ thống từ chối gia hạn và tự động chuyển sang tiến trình trả kho khi đến hạn.
+  - **Sub-flow 6.1 (Gia hạn & Điều chuyển):** Hệ thống gửi nhắc tự động từ trước 2 tháng (mốc 60, 30, 7, 3, 1 ngày). Khách tự thực hiện gia hạn trực tuyến trước mốc **T-30 ngày**. Quá mốc T-30, hợp đồng chuyển sang `PENDING_EXPIRATION`, nút gia hạn online của khách bị khóa và kho tự động đẩy vào Waitlist. Khách cũ muốn gia hạn muộn (T-30 đến T-0) bắt buộc phải qua FM duyệt `[Gia hạn ngoại lệ]` kèm phí hành chính 200.000 VNĐ, và chỉ được duyệt khi khách chờ trong Waitlist chưa cọc. **Late Binding Bumping:** Nếu khách mới đã cọc mà ô kho dự kiến gặp sự cố, FM điều chuyển sang ô khác cùng loại đang AVAILABLE; nếu cháy kho toàn cơ sở, kích hoạt bồi thường khẩn cấp (Top 1 Waitlist hoặc hoàn 100% cọc + phí thuê và tặng voucher 10-20%). Hệ thống cấm đổi loại kho khi tự gia hạn; đổi hạng kho phải qua FM hỗ trợ quy trình 2 bước và cấp 24h ân hạn chuyển đồ.
   - **Sub-flow 6.2 (Xử lý quá hạn):** Hợp đồng không gia hạn trước 1 tháng sẽ mặc định chuyển sang tiến trình trả kho; đến ngày kết thúc hợp đồng nếu khách chưa dọn đồ sẽ chuyển sang quá hạn (D+1). Từ ngày 1 đến 3 (D+1 → D+3) là giai đoạn ân hạn: hệ thống gửi thông báo nhắc dọn đồ mỗi ngày, chưa tính phí quá hạn và khách truy cập kho bình thường (nếu khách dọn xong trong 3 ngày này thì được hoàn trả 100% tiền cọc). Từ ngày thứ 4 đến ngày thứ 10 (D+4 → D+10), hệ thống tự động tính phí quá hạn 10% tiền cọc mỗi ngày và gửi thông báo nhắc dọn đồ hằng ngày. Quá 10 ngày (D+10): chấm dứt hợp đồng, khóa quyền truy cập, ô kho chuyển sang Cleaning/Maintaining; FM phân công Staff dọn dẹp, toàn bộ đồ đạc của khách được niêm phong chuyển vào kho lưu trữ tổng để FM xử lý thủ công ngoại tuyến (offline). Hệ thống không hỗ trợ tính năng đề xuất miễn giảm phí quá hạn.
 
 ### Flow 7 — Support Request and Issue Handling Flow

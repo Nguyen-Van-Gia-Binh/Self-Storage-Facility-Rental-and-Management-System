@@ -32,7 +32,7 @@ describe('ISS-81: Resume Pending Reservation Payment Flow', () => {
     const content = fs.readFileSync(pendingCard, 'utf-8');
     expect(content).toMatch(/reservationId=\$\{reservation\.id\}/);
     expect(content).toMatch(/unitNumber=/);
-    expect(content).toMatch(/Tiếp tục thanh toán VietQR/);
+    expect(content).toMatch(/Tiếp tục thanh toán VNPay/);
   });
 
   it('BookingPage.tsx tiếp nhận reservationIdParam và loadExistingReservation để chuyển thẳng sang Bước 3', () => {

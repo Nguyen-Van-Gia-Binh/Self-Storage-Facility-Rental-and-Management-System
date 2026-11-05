@@ -139,8 +139,30 @@ class StaffDailyTaskServiceTest {
         RentalContract returnContract = createContract(502L, "CTR-20260901-002", 1020L, 15L, 1L, 101L,
                 today.minusMonths(1), today, ContractStatus.PENDING_RETURN, null, null);
 
-        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(List.of(checkInContract, returnContract));
-        when(staffDailyAssignmentRepository.findByStaffIdAndWorkDate(8L, today)).thenReturn(Collections.emptyList());
+        StaffDailyAssignment checkInAssignment = StaffDailyAssignment.builder()
+                .id(1L)
+                .staffId(8L)
+                .facilityId(1L)
+                .workDate(today)
+                .taskType(AssignmentTaskType.HANDOVER)
+                .referenceType("CONTRACT")
+                .referenceId(501L)
+                .build();
+
+        StaffDailyAssignment returnAssignment = StaffDailyAssignment.builder()
+                .id(2L)
+                .staffId(8L)
+                .facilityId(1L)
+                .workDate(today)
+                .taskType(AssignmentTaskType.RETURN)
+                .referenceType("CONTRACT")
+                .referenceId(502L)
+                .build();
+
+        when(staffDailyAssignmentRepository.findByStaffIdAndWorkDate(8L, today))
+                .thenReturn(List.of(checkInAssignment, returnAssignment));
+        when(rentalContractRepository.findById(501L)).thenReturn(Optional.of(checkInContract));
+        when(rentalContractRepository.findById(502L)).thenReturn(Optional.of(returnContract));
 
         // Support ticket
         SupportRequest ticket = SupportRequest.builder()
@@ -213,7 +235,6 @@ class StaffDailyTaskServiceTest {
         when(userRepository.findById(8L)).thenReturn(Optional.of(sampleStaff));
         when(userFacilityAssignmentRepository.findFacilityIdsByUserId(8L)).thenReturn(List.of(1L));
         when(facilityRepository.findById(1L)).thenReturn(Optional.of(sampleFacility));
-        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(Collections.emptyList());
         when(staffDailyAssignmentRepository.findByStaffIdAndWorkDate(8L, today)).thenReturn(Collections.emptyList());
         when(supportRequestRepository.findAllByAssignedStaffId(8L)).thenReturn(Collections.emptyList());
 
@@ -266,8 +287,16 @@ class StaffDailyTaskServiceTest {
         RentalContract completedContract = createContract(502L, "CTR-002", 1043L, 15L, 1L, 101L,
                 today, today.plusMonths(1), ContractStatus.ACTIVE, today, null);
 
-        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(List.of(pendingContract, completedContract));
-        when(staffDailyAssignmentRepository.findByStaffIdAndWorkDate(8L, today)).thenReturn(Collections.emptyList());
+        StaffDailyAssignment a1 = StaffDailyAssignment.builder()
+                .id(1L).staffId(8L).facilityId(1L).workDate(today).taskType(AssignmentTaskType.HANDOVER)
+                .referenceType("CONTRACT").referenceId(501L).build();
+        StaffDailyAssignment a2 = StaffDailyAssignment.builder()
+                .id(2L).staffId(8L).facilityId(1L).workDate(today).taskType(AssignmentTaskType.HANDOVER)
+                .referenceType("CONTRACT").referenceId(502L).build();
+
+        when(staffDailyAssignmentRepository.findByStaffIdAndWorkDate(8L, today)).thenReturn(List.of(a1, a2));
+        when(rentalContractRepository.findById(501L)).thenReturn(Optional.of(pendingContract));
+        when(rentalContractRepository.findById(502L)).thenReturn(Optional.of(completedContract));
         when(supportRequestRepository.findAllByAssignedStaffId(8L)).thenReturn(Collections.emptyList());
         when(userRepository.findById(15L)).thenReturn(Optional.of(sampleCustomer));
         when(storageUnitRepository.findById(101L)).thenReturn(Optional.of(sampleUnit));
@@ -288,13 +317,12 @@ class StaffDailyTaskServiceTest {
         when(userRepository.findById(8L)).thenReturn(Optional.of(sampleStaff));
         when(userFacilityAssignmentRepository.findFacilityIdsByUserId(8L)).thenReturn(List.of(1L));
         when(facilityRepository.findById(1L)).thenReturn(Optional.of(sampleFacility));
-        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(Collections.emptyList());
-        when(staffDailyAssignmentRepository.findByStaffIdAndWorkDate(any(), any())).thenReturn(Collections.emptyList());
+        when(staffDailyAssignmentRepository.findByStaffIdAndWorkDateBetween(any(), any(), any())).thenReturn(Collections.emptyList());
         when(supportRequestRepository.findAllByAssignedStaffId(8L)).thenReturn(Collections.emptyList());
 
         StaffDailyTasksResponse response = staffDailyTaskService.getDailyTasks(8L, null, false, staffPrincipal);
 
-        assertThat(response.getDate()).isEqualTo(LocalDate.now());
+        assertThat(response.getDate()).isEqualTo(LocalDate.now(StaffDailyTaskServiceImpl.VN_ZONE));
     }
 
     @Test
@@ -319,42 +347,52 @@ class StaffDailyTaskServiceTest {
     }
 
     @Test
-    @DisplayName("BR-CHK-05: Hợp đồng PENDING_CHECK_IN vẫn hiển thị vào các ngày kế tiếp trong thời hạn ân hạn 10 ngày và ẩn khi quá hạn No-show")
+    @DisplayName("BR-CHK-05: Khi xem ca trực hôm nay, các đơn trễ hẹn trong 10 ngày ân hạn vẫn xuất hiện với cờ isLate=true và ẩn khi quá 10 ngày")
     void shouldIncludePendingCheckInDuringGraceDaysWindow_andExcludeAfterGraceExpires() {
-        LocalDate startDate = LocalDate.of(2026, 10, 12);
-        LocalDate nextDay = startDate.plusDays(1);      // 13/10 (còn trong 10 ngày ân hạn)
-        LocalDate lastGraceDay = startDate.plusDays(10); // 22/10 (ngày cuối ân hạn)
-        LocalDate expiredDay = startDate.plusDays(11);   // 23/10 (quá hạn 10 ngày -> No-show)
+        LocalDate today = LocalDate.now(StaffDailyTaskServiceImpl.VN_ZONE);
+        LocalDate oneDayAgo = today.minusDays(1);
+        LocalDate tenDaysAgo = today.minusDays(10);
 
         when(userRepository.findById(8L)).thenReturn(Optional.of(sampleStaff));
         when(userFacilityAssignmentRepository.findFacilityIdsByUserId(8L)).thenReturn(List.of(1L));
         when(facilityRepository.findById(1L)).thenReturn(Optional.of(sampleFacility));
 
-        RentalContract pendingCheckIn = createContract(601L, "CTR-20261012-601", 2001L, 15L, 1L, 101L,
-                startDate, startDate.plusMonths(3), ContractStatus.PENDING_CHECK_IN, null, null);
-        pendingCheckIn.setPolicySnapshot("{\"policyVersionId\":1,\"checkinGraceDays\":10,\"accessPinLength\":6}");
+        RentalContract contract1DayLate = createContract(601L, "CTR-1DAY-LATE", 2001L, 15L, 1L, 101L,
+                oneDayAgo, oneDayAgo.plusMonths(3), ContractStatus.PENDING_CHECK_IN, null, null);
+        contract1DayLate.setPolicySnapshot("{\"policyVersionId\":1,\"checkinGraceDays\":10,\"accessPinLength\":6}");
 
-        RentalContract alreadyCheckedIn = createContract(602L, "CTR-20261012-602", 2002L, 15L, 1L, 101L,
-                startDate, startDate.plusMonths(3), ContractStatus.ACTIVE, startDate, null);
+        RentalContract contract10DaysLate = createContract(602L, "CTR-10DAYS-LATE", 2002L, 15L, 1L, 101L,
+                tenDaysAgo, tenDaysAgo.plusMonths(3), ContractStatus.PENDING_CHECK_IN, null, null);
+        contract10DaysLate.setPolicySnapshot("{\"policyVersionId\":1,\"checkinGraceDays\":10,\"accessPinLength\":6}");
 
-        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(List.of(pendingCheckIn, alreadyCheckedIn));
-        when(staffDailyAssignmentRepository.findByStaffIdAndWorkDate(any(), any())).thenReturn(Collections.emptyList());
-        when(staffDailyAssignmentRepository.findByStaffId(8L)).thenReturn(Collections.emptyList());
+        StaffDailyAssignment a1 = StaffDailyAssignment.builder()
+                .id(1L).staffId(8L).facilityId(1L).workDate(oneDayAgo).taskType(AssignmentTaskType.HANDOVER)
+                .referenceType("CONTRACT").referenceId(601L).build();
+        StaffDailyAssignment a2 = StaffDailyAssignment.builder()
+                .id(2L).staffId(8L).facilityId(1L).workDate(tenDaysAgo).taskType(AssignmentTaskType.HANDOVER)
+                .referenceType("CONTRACT").referenceId(602L).build();
+
+        // 1. Khi xem hôm nay: cả 2 đơn trễ hạn trong vòng 10 ngày đều xuất hiện và được đánh dấu isLate
+        when(staffDailyAssignmentRepository.findByStaffIdAndWorkDateBetween(org.mockito.ArgumentMatchers.eq(8L), any(), org.mockito.ArgumentMatchers.eq(today)))
+                .thenReturn(List.of(a1, a2));
+        when(rentalContractRepository.findById(601L)).thenReturn(Optional.of(contract1DayLate));
+        when(rentalContractRepository.findById(602L)).thenReturn(Optional.of(contract10DaysLate));
         when(supportRequestRepository.findAllByAssignedStaffId(8L)).thenReturn(Collections.emptyList());
         when(userRepository.findById(15L)).thenReturn(Optional.of(sampleCustomer));
         when(storageUnitRepository.findById(101L)).thenReturn(Optional.of(sampleUnit));
 
-        // 1. Qua ngày hôm sau (13/10): Đơn PENDING_CHECK_IN vẫn hiển thị, đơn ACTIVE ngày 12/10 không lặp lại
-        StaffDailyTasksResponse nextDayRes = staffDailyTaskService.getDailyTasks(8L, nextDay, false, staffPrincipal);
-        assertThat(nextDayRes.getCheckInTasks()).hasSize(1);
-        assertThat(nextDayRes.getCheckInTasks().get(0).getContractCode()).isEqualTo("CTR-20261012-601");
+        StaffDailyTasksResponse todayRes = staffDailyTaskService.getDailyTasks(8L, today, false, staffPrincipal);
+        assertThat(todayRes.getCheckInTasks()).hasSize(2);
+        assertThat(todayRes.getCheckInTasks().get(0).isLate()).isTrue();
+        assertThat(todayRes.getCheckInTasks().get(0).getDaysLate()).isEqualTo(1);
+        assertThat(todayRes.getCheckInTasks().get(1).isLate()).isTrue();
+        assertThat(todayRes.getCheckInTasks().get(1).getDaysLate()).isEqualTo(10);
 
-        // 2. Ngày thứ 10 (22/10): Vẫn trong hạn ân hạn nhận kho
-        StaffDailyTasksResponse lastGraceRes = staffDailyTaskService.getDailyTasks(8L, lastGraceDay, false, staffPrincipal);
-        assertThat(lastGraceRes.getCheckInTasks()).hasSize(1);
-
-        // 3. Ngày thứ 11 (23/10): Quá 10 ngày ân hạn -> Không còn hiển thị
-        StaffDailyTasksResponse expiredRes = staffDailyTaskService.getDailyTasks(8L, expiredDay, false, staffPrincipal);
-        assertThat(expiredRes.getCheckInTasks()).isEmpty();
+        // 2. Khi xem một ngày trong quá khứ (không phải hôm nay): Lọc chính xác ngày đó, không kéo việc trễ hạn sang
+        LocalDate pastDate = today.minusDays(5);
+        when(staffDailyAssignmentRepository.findByStaffIdAndWorkDate(8L, pastDate))
+                .thenReturn(Collections.emptyList());
+        StaffDailyTasksResponse pastRes = staffDailyTaskService.getDailyTasks(8L, pastDate, false, staffPrincipal);
+        assertThat(pastRes.getCheckInTasks()).isEmpty();
     }
 }

@@ -39,7 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RestController
 @RequestMapping("/payments")
-@Tag(name = "Payment", description = "Quản lý thanh toán trực tuyến VietQR/PayOS (SC-03)")
+@Tag(name = "Payment", description = "Quản lý thanh toán trực tuyến VNPay Sandbox (SC-03)")
 public class PaymentController {
 
     private final PaymentService paymentService;
@@ -60,7 +60,7 @@ public class PaymentController {
 
     @PostMapping("/checkout")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Khởi tạo link thanh toán PayOS VietQR tự động (SC-03)")
+    @Operation(summary = "Khởi tạo đơn thanh toán VNPay Sandbox tự động (SC-03)")
     public ResponseEntity<com.swp391.selfstorage.payment.dto.CheckoutResponse> createCheckout(
             @Valid @RequestBody com.swp391.selfstorage.payment.dto.CheckoutRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(paymentService.createCheckoutLink(request));
@@ -145,25 +145,11 @@ public class PaymentController {
         return ip;
     }
 
-    @PostMapping("/sandbox/process-transfer")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Xử lý chuyển tiền thanh toán qua Cổng Sandbox nội bộ (SC-03)")
-    public ResponseEntity<PaymentResponse> processSandboxTransfer(
-            @Valid @RequestBody com.swp391.selfstorage.payment.dto.SandboxTransferRequest request) {
-        return ResponseEntity.ok(paymentService.processSandboxTransfer(request.getOrderCode(), request.getAction()));
-    }
 
-
-    @PostMapping("/webhook/payos")
-    @Operation(summary = "Webhook tiếp nhận thông báo thanh toán tự động từ cổng PayOS / Sandbox")
-    public ResponseEntity<java.util.Map<String, Object>> handlePayOSWebhook(@RequestBody Object webhookBody) {
-        paymentService.processPayOSWebhook(webhookBody);
-        return ResponseEntity.ok(java.util.Map.of("error", 0, "message", "Success"));
-    }
 
     @GetMapping("/order/{orderCode}/status")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Kiểm tra trạng thái thanh toán theo mã đơn hàng PayOS (cho Frontend Polling)")
+    @Operation(summary = "Kiểm tra trạng thái thanh toán theo mã đơn hàng VNPay (cho Frontend Polling)")
     public ResponseEntity<PaymentResponse> getPaymentByOrderCode(@PathVariable Long orderCode) {
         return ResponseEntity.ok(paymentService.getPaymentByOrderCode(orderCode));
     }

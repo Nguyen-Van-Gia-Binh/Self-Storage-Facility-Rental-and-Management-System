@@ -51,8 +51,8 @@ describe('RenewalPage Stepper Disabled & Digital Clock', () => {
       accountNumber: '0888567999',
       accountName: 'CONG TY SMARTSTORAGE',
       description: 'GH1T3',
-      qrCode: 'vietqr://mock-qr',
-      checkoutUrl: 'https://sandbox.payos.vn/checkout',
+      qrCode: 'vnpay://mock-payment',
+      checkoutUrl: 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html',
       status: 'PENDING',
     });
     vi.spyOn(customerApi, 'getPaymentStatus').mockResolvedValue({

@@ -44,5 +44,7 @@ public class ContractSummaryResponse {
     private Long openSupportRequestId;
     private LocalDate requestedReturnDate;
     private String appointmentSlot;
+    private java.time.LocalTime scheduledStartTime;
+    private java.time.LocalTime scheduledEndTime;
 }
 

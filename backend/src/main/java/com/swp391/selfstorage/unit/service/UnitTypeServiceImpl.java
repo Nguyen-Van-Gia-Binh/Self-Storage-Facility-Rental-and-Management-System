@@ -73,6 +73,7 @@ public class UnitTypeServiceImpl implements UnitTypeService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "unitTypes", key = "#facilityId + '-' + #unitTypeId")
     public UnitTypeResponse getUnitTypeById(Long facilityId, Long unitTypeId) {
         UnitType ut = unitTypeRepository.findById(unitTypeId)
                 .orElseThrow(() -> new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND));

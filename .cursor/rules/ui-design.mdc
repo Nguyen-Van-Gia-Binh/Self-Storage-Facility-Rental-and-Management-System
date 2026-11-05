@@ -1,0 +1,16 @@
+---
+description: Anti-slop UI rules for SmartStorage frontend. Read docs/DESIGN-RULES.md before writing interface code.
+globs: frontend/**/*.{tsx,css}
+alwaysApply: false
+---
+
+# UI
+
+Before editing interface code, follow `docs/DESIGN-RULES.md`. Tokens stay in `docs/UI-DESIGN-SYSTEM.md`.
+
+- No icon in a colored box. No icon on every heading or list row. Icons only inline on a button or a nav item.
+- No emoji. No New, Pro, or Hot badges. At most one status badge per row, using the unit-status colors already defined.
+- No purple gradient, glass, heavy shadow, blob, or bounce. Cards use `shadow-none`; only floating surfaces (modal, menu, tooltip) use `shadow-sm`. One accent on the screen: `bg-brand-500` for the single primary button.
+- Staff, manager, BOM, and admin screens use a table when a row has more than four fields. Money and counts use `tabular-nums`.
+- Keep Source Sans 3. Do not add a font.
+- If removing an element loses no information and no action, do not add it.

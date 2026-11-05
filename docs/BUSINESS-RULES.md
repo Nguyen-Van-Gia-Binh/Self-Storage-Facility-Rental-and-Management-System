@@ -83,6 +83,17 @@ bảng chính sách của hệ thống (`BM-02`, `BM-03`).
 | `support.goods_liability_cap`     | Hạn mức bồi thường thiệt hại hàng hóa cơ bản mặc định do lỗi kỹ thuật cơ sở                                                             |              `10.000.000 đ`               | `BR-SUP-04`              |
 | `insurance.monthly_fee`           | Phí Gói Bảo vệ Hàng hóa Mở rộng tùy chọn (Add-on Protection)                                                                            |             `50.000 đ/tháng`              | `BR-SUP-04`              |
 | `insurance.coverage_cap`          | Hạn mức bồi thường hàng hóa khi tham gia Gói Bảo vệ Mở rộng                                                                             |              `50.000.000 đ`               | `BR-SUP-04`              |
+| `cancel.full_refund_hours` | Hủy trước ngày bắt đầu bao nhiêu giờ thì hoàn 100% | `48 giờ` | `BR-CAN-01` |
+| `renewal.deadline_days` | Hạn chót tự gia hạn trực tuyến trước ngày hết hạn hợp đồng; quá hạn chuyển sang PENDING_EXPIRATION và kích hoạt Waitlist | `30 ngày` | `BR-REN-09` |
+| `renewal.late_admin_fee` | Phí hành chính cố định khi FM duyệt gia hạn ngoại lệ (Force Renewal) giữa T-30 và T-0 | `200.000 VNĐ` | `BR-REN-10` |
+| `renewal.upgrade_grace_hours` | Thời gian ân hạn di chuyển đồ đạc giữa 2 ô kho khi đổi hạng kho (cấp đồng thời 2 mã PIN) | `24 giờ` | `BR-REN-12` |
+| `waitlist.fee` | Phí đăng ký vào danh sách chờ | `0 VNĐ` | `BR-WAT-01` |
+| `waitlist.hold_hours_single` | Thời gian giữ chỗ khi mời đơn lẻ trong Waitlist (khi hàng đợi $\le 5$ người) | `24 giờ` | `BR-WAT-02` |
+| `waitlist.batch_threshold` | Ngưỡng số lượng người chờ kích hoạt cơ chế mời theo nhóm (Batch Offering) | `5 người` | `BR-WAT-03` |
+| `waitlist.batch_size` | Số lượng khách hàng được gửi lời mời đồng thời trong một lượt Batch Offer | `3 người` | `BR-WAT-03` |
+| `waitlist.hold_hours_batch` | Thời gian giữ chỗ rút ngắn khi kích hoạt Batch Offer (ai thanh toán cọc trước thì thắng) | `4 giờ` | `BR-WAT-03` |
+| `waitlist.extend_days` | Số ngày gia hạn thêm thời gian chờ khi khách bấm link nhắc hẹn T-3 | `15 ngày` | `BR-WAT-06` |
+| `bumping.compensation_rate` | Tỷ lệ voucher bồi thường khi cơ sở hết sạch ô kho cùng loại để bố trí thay thế | `10% – 20%` | `BR-BMP-02` |
 
 ---
 
@@ -169,18 +180,20 @@ kho sớm, xử lý theo § 9.
 
 ## 7. Renewal — Gia hạn
 
-| Mã          | Quy tắc                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `BR-REN-01` | Hệ thống gửi nhắc gia hạn tự động từ **trước 2 tháng (60 ngày)** trước ngày hết hạn và gửi các thông báo nhắc khẩn cấp vào các mốc **30, 7, 3 và 1 ngày** trước khi hết hạn (`UC-F6-01`). Mốc 30 ngày đóng vai trò nhắc nhở chủ động để khách hàng lên kế hoạch gia hạn sớm trước khi ô kho có thể được khách hàng khác đặt giữ chỗ cho chu kỳ tiếp theo                                                                                                                                        |
-| `BR-REN-02` | Gia hạn trực tuyến hợp lệ khi hợp đồng đang _Active_ hoặc _Overdue_ đã tất toán nợ phạt (`overdueFeeAccrued == 0`). Khách hàng có thể gia hạn bất cứ lúc nào (kể cả khi còn dưới 30 ngày) miễn là ô kho chưa bị khách khác đặt trước theo `BR-REN-09`. Khi hợp đồng đang ở trạng thái chờ nghiệm thu trả kho (_Pending Return_), tính năng gia hạn tạm ẩn; khách hàng cần bấm "Hủy yêu cầu trả kho" (`BR-RET-12`) nếu đổi ý muốn tiếp tục thuê                                                  |
-| `BR-REN-03` | Thời hạn gia hạn tối thiểu là `renewal.min_months` (1 tháng), tính theo bội số tháng nguyên                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `BR-REN-04` | Gia hạn được hệ thống **tự động ghi nhận khi thanh toán thành công**, không cần Facility Manager duyệt thủ công. Ngày bắt đầu kỳ mới là ngày liền sau ngày kết thúc kỳ cũ, không phụ thuộc ngày thanh toán                                                                                                                                                                                                                                                                                      |
-| `BR-REN-05` | Giá gia hạn áp theo **bảng giá tại thời điểm gia hạn** (tính theo đơn giá m² × diện tích quy chuẩn), không phải giá của kỳ đầu. Nếu giá tăng, hệ thống phải hiển thị rõ mức chênh lệch trước khi khách xác nhận                                                                                                                                                                                                                                                                                 |
-| `BR-REN-06` | **Gia hạn cho hợp đồng Quá hạn (Overdue):** Hợp đồng quá hạn nếu còn nợ phạt phát sinh (`overdueFeeAccrued > 0`) thì phải thanh toán hết nợ phạt trước khi gia hạn. Khi đã tất toán toàn bộ nợ phạt (`overdueFeeAccrued == 0`), khách hàng được quyền thực hiện gia hạn trực tuyến để tiếp tục kỳ thuê mới trên ô kho hiện tại (với điều kiện ô kho chưa có người khác đặt trước theo `BR-REN-09`)                                                                                              |
-| `BR-REN-07` | Gia hạn không được vượt quá `renewal.max_months` (**12 tháng**) trong một lần thao tác, để tránh khóa giá quá dài                                                                                                                                                                                                                                                                                                                                                                               |
-| `BR-REN-08` | Sau khi gia hạn thành công, ô kho giữ nguyên — hệ thống **không** đổi ô kho cho khách. Muốn đổi ô kho thì phải trả kho rồi đặt hợp đồng mới                                                                                                                                                                                                                                                                                                                                                     |
-| `BR-REN-09` | Trước khi nhận thanh toán Renewal, hệ thống phải kiểm tra Availability cho khoảng gia hạn theo `BR-AVL-01` xem ô kho có bất kỳ ai đặt trước trong tương lai hay không. Nếu bị trùng lịch đặt trước (không còn capacity), yêu cầu gia hạn bị từ chối trước khi thu tiền và hệ thống hiển thị lý do kèm hướng dẫn khách chuẩn bị trả kho khi hết hạn hoặc tạo Reservation đặt ô kho khác                                                                                                          |
-| `BR-REN-10` | Khi khách hàng xác nhận tạo mã thanh toán VietQR gia hạn hợp đồng, hệ thống tạm khóa capacity và giữ chỗ ô kho trong vòng **48 giờ** kể từ khi sinh mã QR (`reservation.hold_hours = 48`). Trong 48 giờ này, hợp đồng mang trạng thái chờ thanh toán (`PENDING_RENEWAL`). Nếu quá 48 giờ mà chưa thanh toán hoặc khách chủ động hủy lệnh, giao dịch chuyển sang `FAILED` và giải phóng capacity. Khi đến hạn hợp đồng mà chưa thanh toán thành công, hợp đồng chuyển _Overdue_ theo `BR-OVD-01` |
+| Mã | Quy tắc |
+|----|---------|
+| `BR-REN-01` | Hệ thống gửi nhắc gia hạn tự động từ **trước 2 tháng (60 ngày)** trước ngày hết hạn và gửi các thông báo nhắc khẩn cấp vào các mốc **30, 7, 3 và 1 ngày** trước khi hết hạn (`UC-F6-01`). Mốc 30 ngày đóng vai trò nhắc nhở chủ động để khách hàng lên kế hoạch gia hạn sớm trước khi ô kho có thể được khách hàng khác đặt giữ chỗ cho chu kỳ tiếp theo |
+| `BR-REN-02` | Gia hạn trực tuyến hợp lệ khi hợp đồng đang *Active* hoặc *Overdue* đã tất toán nợ phạt (`overdueFeeAccrued == 0`) và nằm trong thời hạn tự phục vụ trước mốc **T-30 ngày** (`BR-REN-09`). Khi hợp đồng đang ở trạng thái chờ nghiệm thu trả kho (*Pending Return*), tính năng gia hạn tạm ẩn; khách hàng cần bấm "Hủy yêu cầu trả kho" (`BR-RET-12`) nếu đổi ý muốn tiếp tục thuê |
+| `BR-REN-03` | Thời hạn gia hạn tối thiểu là `renewal.min_months` (1 tháng), tính theo bội số tháng nguyên |
+| `BR-REN-04` | Gia hạn được hệ thống **tự động ghi nhận khi thanh toán thành công**, không cần Facility Manager duyệt thủ công. Ngày bắt đầu kỳ mới là ngày liền sau ngày kết thúc kỳ cũ, không phụ thuộc ngày thanh toán |
+| `BR-REN-05` | Giá gia hạn áp theo **bảng giá tại thời điểm gia hạn** (tính theo đơn giá m² × diện tích quy chuẩn), không phải giá của kỳ đầu. Nếu giá tăng, hệ thống phải hiển thị rõ mức chênh lệch trước khi khách xác nhận |
+| `BR-REN-06` | **Gia hạn cho hợp đồng Quá hạn (Overdue):** Hợp đồng quá hạn nếu còn nợ phạt phát sinh (`overdueFeeAccrued > 0`) thì phải thanh toán hết nợ phạt trước khi gia hạn. Khi đã tất toán toàn bộ nợ phạt (`overdueFeeAccrued == 0`) và ô kho chưa bị khách khác đặt trước, khách hàng được quyền thực hiện gia hạn để tiếp tục kỳ thuê mới |
+| `BR-REN-07` | Gia hạn không được vượt quá `renewal.max_months` (**12 tháng**) trong một lần thao tác, để tránh khóa giá quá dài |
+| `BR-REN-08` | **Cấm Đổi loại kho khi Tự gia hạn:** Khách hàng tự gia hạn trên portal chỉ được gia hạn trên đúng Hạng kho / Ô kho hiện tại. Hệ thống không cho phép tự ý chuyển đổi sang Hạng kho khác trong luồng Self-service. Muốn đổi loại kho, khách hàng phải thực hiện quy trình đổi hạng kho có sự hỗ trợ của FM (`BR-REN-11`) |
+| `BR-REN-09` | **Hạn chót Tự gia hạn (T-30 ngày):** Khách hàng chỉ được tự gia hạn trực tuyến trước mốc T-30 ngày trước ngày hết hạn hợp đồng. Đúng vào mốc T-30, hợp đồng tự động chuyển cờ `pending_expiration = true`, nút Gia hạn trên portal bị khóa (Disabled), và ô kho tự động được kích hoạt để mời khách trong Waitlist (`BR-WAT-02`). Quá mốc T-30, khách muốn gia hạn bắt buộc phải liên hệ FM làm thủ tục gia hạn ngoại lệ (`BR-REN-10`) |
+| `BR-REN-10` | **Gia hạn Ngoại lệ qua FM (Force Renewal):** Trong khoảng thời gian từ T-30 đến T-0, nếu khách cũ muốn gia hạn, FM chỉ được duyệt trên hệ thống KHI VÀ CHỈ KHI đơn của khách mới trong Waitlist CHƯA ĐẶT CỌC. Nếu khách mới đã thanh toán cọc, hệ thống khóa tuyệt đối, chặn không cho Force Renewal. Khi FM thực hiện Force Renewal thành công, hệ thống tự động cộng phí hành chính cố định `renewal.late_admin_fee` (200.000 VNĐ) vào hóa đơn gia hạn |
+| `BR-REN-11` | **Đổi Hạng kho có FM hỗ trợ (FM-assisted Upgrade/Downgrade):** Khách hàng muốn nâng hoặc hạ hạng kho phải liên hệ FM thực hiện quy trình 2 bước: (1) Tất toán hợp đồng kho cũ (nghiệm thu dọn đồ, thanh toán nợ, hoàn cọc kho cũ); (2) Khởi tạo Hợp đồng mới cho Hạng kho mới (áp dụng đơn giá m² hiện hành, thu cọc mới) |
+| `BR-REN-12` | **Thời gian Ân hạn Chuyển đồ (Physical Move Grace Period):** Khi FM phê duyệt yêu cầu đổi hạng kho, hệ thống cấp thời gian ân hạn di chuyển đồ đạc là `renewal.upgrade_grace_hours` (24 giờ). Trong 24 giờ này, hệ thống cấp đồng thời cả 2 mã PIN (ô cũ và ô mới) để khách chuyển tài sản. Sau 24h, mã PIN ô cũ tự động thu hồi |
 
 ---
 
@@ -315,7 +328,42 @@ Check-in / Handover đã hoàn tất và Contract đã chuyển _Active_.
 
 ---
 
-## 14. Ví dụ tính tiền
+## 14. Waitlist — Danh sách chờ khi hết công suất
+
+| Mã | Quy tắc |
+|----|---------|
+| `BR-WAT-01` | **Hàng đợi FIFO miễn phí:** Danh sách chờ được sắp xếp theo thứ tự đăng ký trước phục vụ trước (`created_at ASC`) theo từng cặp `(facility_id, unit_type_id)`. Khách hàng đăng ký hoàn toàn miễn phí (0 VNĐ), chỉ cần tài khoản đã xác thực SĐT/Email |
+| `BR-WAT-02` | **Thời gian giữ chỗ khi mời đơn lẻ (24 giờ):** Khi hàng đợi có $\le 5$ người, khi có kho trống, hệ thống gửi thông báo độc quyền cho người đứng đầu. Khách có đúng `waitlist.hold_hours_single` (24 giờ) để thanh toán cọc giữ chỗ. Quá 24 giờ không thanh toán, lượt mời tự động hết hạn và chuyển cho người kế tiếp |
+| `BR-WAT-03` | **Cơ chế Batch Offer (Waitlist > 5 người):** Khi hàng đợi $> 5$ người, hệ thống tự động gửi lời mời đồng thời cho Top 3 người đầu tiên (`waitlist.batch_size = 3`). Thời gian giữ chỗ rút ngắn còn `waitlist.hold_hours_batch` (4 giờ). Ai thanh toán cọc thành công trước sẽ nhận kho; các lời mời còn lại tự động đóng và quay lại đầu hàng đợi |
+| `BR-WAT-04` | **Fallback Public Available:** Nếu hệ thống đã mời hết danh sách chờ mà không có khách nào đặt cọc, ô kho tự động chuyển sang trạng thái `AVAILABLE` công khai trên website cho toàn bộ khách vãng lai |
+| `BR-WAT-05` | **Chủ động từ chối:** Nếu khách bấm "Từ chối nhận kho" trong thời gian giữ chỗ, hệ thống lập tức thu hồi lời mời và chuyển ngay cho người kế tiếp |
+| `BR-WAT-06` | **Target Date Range & Nhắc hẹn T-3:** Khách đăng ký bắt buộc chọn ngày mong muốn nhận kho (`target_start_date`). Quá ngày này mà không có kho, đơn chuyển sang `EXPIRED`. Trước ngày mong muốn 3 ngày (T-3), hệ thống gửi nhắc nhở và cung cấp link gia hạn thêm `waitlist.extend_days` (15 ngày) |
+
+---
+
+## 15. Bumping & Preemption — Điều chuyển và Bồi thường
+
+| Mã | Quy tắc |
+|----|---------|
+| `BR-BMP-01` | **Late Binding Bumping:** Khách hàng đặt chỗ (Reservation) là đặt mua hạn ngạch Hạng kho (Unit Type Capacity). Khi ô kho vật lý dự kiến bàn giao gặp sự cố hoặc khách cũ chậm dọn đồ, FM có trách nhiệm đổi ô sang ô kho khác cùng Unit Type đang `AVAILABLE` tại cơ sở. Giá thuê và quyền lợi hợp đồng giữ nguyên 100% |
+| `BR-BMP-02` | **Bồi thường khi Cháy kho toàn cơ sở (Exhaustion):** Nếu cơ sở hết sạch ô kho cùng loại để bố trí thay thế, hệ thống chuyển đơn sang `PENDING_EMERGENCY_RESOLUTION`. Khách hàng được quyền chọn: (1) Đứng vị trí Top 1 Waitlist chu kỳ tới, HOẶC (2) Hủy đơn, hoàn 100% tiền cọc + tiền thuê ngay lập tức kèm voucher bồi thường 10%–20% cho lần thuê sau |
+
+---
+
+## 16. Unit Type Master Catalog — Quản lý Kiểu kho cho BOM
+
+| Mã | Quy tắc |
+|----|---------|
+| `BR-BOM-01` | **Global Enterprise Catalog:** BOM là vai trò DUY NHẤT có quyền tạo mới, cập nhật hoặc vô hiệu hóa Kiểu kho (`UnitType`). Danh mục này là Master Data dùng chung toàn quốc (bảng `unit_type` không có `facility_id`) |
+| `BR-BOM-02` | **Soft Delete Constraint:** CẤM xóa cứng một `UnitType` nếu đã có `StorageUnit` hoặc `RentalContract` liên kết. Chỉ được phép chuyển `status = INACTIVE` |
+| `BR-BOM-03` | **Graceful Deactivation:** Khi `UnitType` chuyển sang `INACTIVE`, hệ thống lập tức ẩn khỏi cổng tìm kiếm & đặt kho mới (`AvailabilityService`). Các hợp đồng `ACTIVE` hiện hữu được tiếp tục chạy đến khi hết hạn |
+| `BR-BOM-04` | **Khóa gia hạn với Kiểu kho ngừng kinh doanh:** Khi hợp đồng thuộc loại kho `INACTIVE` đến hạn, hệ thống khóa toàn bộ tính năng gia hạn (cả tự phục vụ lẫn qua FM) và hướng dẫn khách chuyển sang loại kho khác |
+| `BR-BOM-05` | **Tự động Ngừng khai thác ô kho vật lý (Out of Service):** Khi khách trả kho thuộc `UnitType` đã `INACTIVE`, ô kho vật lý tự động chuyển sang trạng thái `OUT_OF_SERVICE`, FM không thể phân bổ cho ai nữa |
+| `BR-FM-01` | **FM chỉ quản lý ô vật lý:** Facility Manager không được tự tạo Kiểu kho. FM chỉ tạo các ô kho vật lý (`StorageUnit`) tại cơ sở phụ trách bằng cách chọn từ danh mục `UnitType` đang `ACTIVE` của BOM |
+
+---
+
+## 17. Ví dụ tính tiền
 
 **Giả thiết:** Unit Type M tại cơ sở Q7, diện tích quy chuẩn **4 m²**, đơn giá diện tích **200.000 đ/m²/tháng** → Đơn giá thuê một tháng = `4 × 200.000 = 800.000 đ/tháng`. Khách thuê **3 tháng**, bắt đầu 01/10/2026, kết thúc 31/12/2026. Tiền cọc Deposit = 1 tháng tiền thuê = **800.000 đ**.
 
@@ -342,23 +390,26 @@ Check-in / Handover đã hoàn tất và Contract đã chuyển _Active_.
 
 ---
 
-## 15. Bản đồ quy tắc × use case
+## 18. Bản đồ quy tắc × use case
 
-| Nhóm quy tắc                         | Use case chịu ảnh hưởng                                                                 | Use case cấu hình                |
-| ------------------------------------ | --------------------------------------------------------------------------------------- | -------------------------------- |
-| **Reservation** `BR-RES-*`           | `UC-F1-03` `UC-F1-04` `UC-F1-06` `UC-F1-09` `UC-F1-11`                                  | `UC-F4-02`                       |
-| **Availability** `BR-AVL-*`          | `UC-F1-03` `UC-F1-04` `UC-F1-06` `UC-F1-08` `UC-F1-11`                                  | —                                |
-| **Pricing** `BR-PRI-*`               | `UC-F1-05` `UC-F1-07` `UC-F3-13`                                                        | `UC-F4-07` `UC-F4-09`            |
-| **Payment** `BR-PAY-*`               | `UC-F1-07` `UC-F1-08` `UC-F6-03` `UC-F3-13`                                             | —                                |
-| **Deposit** `BR-DEP-*`               | `UC-F1-05` `UC-F1-06` `UC-F1-07` `UC-F1-11` `UC-F3-08`                                  | `UC-F4-02`                       |
-| **Cancellation** `BR-CAN-*`          | `UC-F1-10` `UC-F1-12` `UC-F2-08`                                                        | `UC-F4-04`                       |
-| **Renewal** `BR-REN-*`               | `UC-F6-01` `UC-F6-02` `UC-F6-03` `UC-F6-04`                                             | `UC-F4-03` `UC-F4-07`            |
-| **Overdue** `BR-OVD-*`               | `UC-F6-05` `UC-F6-06` `UC-F6-07` `UC-F6-08` `UC-F6-09` `UC-F6-10` `UC-F6-11` `UC-F3-13` | `UC-F4-06` `UC-F4-08`            |
-| **Return** `BR-RET-*`                | `UC-F3-05` `UC-F3-06` `UC-F3-07` `UC-F3-08` `UC-F3-09` `UC-F3-13`                       | `UC-F4-05`                       |
-| **Check-in & Handover** `BR-CHK-*`   | `UC-F2-01` `UC-F2-02` `UC-F2-03` `UC-F2-06` `UC-F2-07` `UC-F2-08`                       | `UC-F4-04`                       |
-| **Access & Security** `BR-ACC-*`     | `UC-F2-04` `UC-F3-07` `UC-F6-07` `UC-F7-05`                                             | `UC-F4-06`                       |
-| **Support & On-site SLA** `BR-SUP-*` | `UC-F7-03` `UC-F7-04` `UC-F7-05` `UC-F7-06` `UC-F7-08`                                  | `UC-F4-09`                       |
-| **Chung** `BR-GEN-*`                 | Toàn bộ                                                                                 | `UC-F4-01` `UC-F4-07` `UC-F4-09` |
+| Nhóm quy tắc | Use case chịu ảnh hưởng | Use case cấu hình |
+|--------------|-------------------------|-------------------|
+| **Reservation** `BR-RES-*` | `UC-F1-03` `UC-F1-04` `UC-F1-06` `UC-F1-09` `UC-F1-11` | `UC-F4-02` |
+| **Availability** `BR-AVL-*` | `UC-F1-03` `UC-F1-04` `UC-F1-06` `UC-F1-08` `UC-F1-11` | — |
+| **Pricing** `BR-PRI-*` | `UC-F1-05` `UC-F1-07` `UC-F3-13` | `UC-F4-07` `UC-F4-09` |
+| **Payment** `BR-PAY-*` | `UC-F1-07` `UC-F1-08` `UC-F6-03` `UC-F3-13` | — |
+| **Deposit** `BR-DEP-*` | `UC-F1-05` `UC-F1-06` `UC-F1-07` `UC-F1-11` `UC-F3-08` | `UC-F4-02` |
+| **Cancellation** `BR-CAN-*` | `UC-F1-10` `UC-F1-12` `UC-F2-08` | `UC-F4-04` |
+| **Renewal** `BR-REN-*` | `UC-F6-01` `UC-F6-02` `UC-F6-03` `UC-F6-04` | `UC-F4-03` `UC-F4-07` |
+| **Overdue** `BR-OVD-*` | `UC-F6-05` `UC-F6-06` `UC-F6-07` `UC-F6-08` `UC-F6-09` `UC-F6-10` `UC-F6-11` `UC-F3-13` | `UC-F4-06` `UC-F4-08` |
+| **Return** `BR-RET-*` | `UC-F3-05` `UC-F3-06` `UC-F3-07` `UC-F3-08` `UC-F3-09` `UC-F3-13` | `UC-F4-05` |
+| **Check-in & Handover** `BR-CHK-*` | `UC-F2-01` `UC-F2-02` `UC-F2-03` `UC-F2-06` `UC-F2-07` `UC-F2-08` | `UC-F4-04` |
+| **Access & Security** `BR-ACC-*` | `UC-F2-04` `UC-F3-07` `UC-F6-07` `UC-F7-05` | `UC-F4-06` |
+| **Support & On-site SLA** `BR-SUP-*` | `UC-F7-03` `UC-F7-04` `UC-F7-05` `UC-F7-06` `UC-F7-08` | `UC-F4-09` |
+| **Waitlist** `BR-WAT-*` | `UC-F1-05` `UC-F1-06` `UC-F1-13` | `UC-F4-02` |
+| **Bumping & Preemption** `BR-BMP-*` | `UC-F2-02` `UC-F2-08` `UC-F6-02` | `UC-F4-04` |
+| **Unit Type Master** `BR-BOM-*` | `UC-F5-01` `UC-F5-02` `UC-F1-03` | `UC-F4-01` |
+| **Chung** `BR-GEN-*` | Toàn bộ | `UC-F4-01` `UC-F4-07` `UC-F4-09` |
 
 > **Quy trình đổi quy tắc:** theo [PLAN.md § 7](PLAN.md#7-rủi-ro-và-đối-sách), business rules phải chốt
 > xong trong Giai đoạn 1. Mọi thay đổi sau đó phải qua họp nhóm, cập nhật tài liệu này trước, rồi mới
