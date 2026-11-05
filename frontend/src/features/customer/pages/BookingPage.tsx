@@ -261,8 +261,17 @@ export const BookingPage: React.FC = () => {
     return `${year}-${month}-${day}`;
   }, []);
 
+  const maxBookingDate = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
   const [startDate, setStartDate] = useState<string>(() => {
-    if (startDateParam && startDateParam >= todayStr) {
+    if (startDateParam && startDateParam >= todayStr && startDateParam <= maxBookingDate) {
       return startDateParam;
     }
     return todayStr;
@@ -521,6 +530,11 @@ export const BookingPage: React.FC = () => {
     });
     setFormErrors(errors);
     if (Object.keys(errors).length > 0) return;
+
+    if (startDate > maxBookingDate) {
+      setBookingError('Chính sách của chúng tôi chỉ cho phép đặt kho trước tối đa 30 ngày. Nếu cần gấp xin hãy liên hệ chúng tôi.');
+      return;
+    }
 
     setIsSubmitting(true);
     setBookingError(null);

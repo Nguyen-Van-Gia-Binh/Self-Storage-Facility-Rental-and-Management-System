@@ -298,7 +298,10 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => onReschedulePeriod(contract)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onReschedulePeriod(contract);
+                  }}
                   className="text-xs font-semibold text-emerald-700 border-emerald-300 hover:bg-emerald-50 cursor-pointer"
                 >
                   <Calendar className="w-3.5 h-3.5 mr-1 text-emerald-600" />
@@ -309,7 +312,10 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => onCancelPendingCheckIn(contract)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCancelPendingCheckIn(contract);
+                  }}
                   className="text-xs font-semibold text-rose-700 border-rose-300 hover:bg-rose-50 cursor-pointer"
                   title="Hủy đơn nhận kho & yêu cầu hoàn tiền"
                 >
