@@ -2,7 +2,7 @@
 
 > **Ngày ban hành:** 05/11/2026  
 > **Người chủ trì phân công (thay Lead Gia Bình):** Lê Thanh Tùng (Backend Lead)  
-> **Áp dụng cho:** Toàn bộ 4 thành viên (Tùng, Nhi, Bình, Nhật)  
+> **Áp dụng cho:** Toàn bộ 4 thành viên (Lê Thanh Tùng, Nguyễn Phạm Xuân Nhi, Nguyễn Văn Gia Bình, Huỳnh Nhật)  
 > **Nhánh nền tảng tích hợp chung:** `feature/Tx-test-all-features`  
 > **Tài liệu tham chiếu:** [`docs/BUSINESS-RULES.md`](BUSINESS-RULES.md) · [`docs/WORKFLOWS.md`](WORKFLOWS.md) · [`docs/GAP-ANALYSIS-UNIT-ALLOCATION-REDESIGN.md`](GAP-ANALYSIS-UNIT-ALLOCATION-REDESIGN.md) · [`docs/DASHBOARD.md`](DASHBOARD.md)
 
@@ -15,7 +15,7 @@
 ```mermaid
 flowchart TD
     Base["Nhánh chung: feature/Tx-test-all-features"] --> BranchTung["Tùng: feature/Tx-auto-activation-and-early-return"]
-    Base --> BranchNhi["Nhi: feature/Tx-booking-cancellation-ui"]
+    Base --> BranchNhi["Nguyễn Phạm Xuân Nhi: feature/Tx-booking-cancellation-ui"]
     Base --> BranchBinh["Bình: feature/Tx-paid-reschedule-and-insurance"]
     Base --> BranchNhat["Nhật: Hoàn thiện FM Allocation Workbench"]
 
@@ -216,7 +216,7 @@ flowchart TD
 * **Nhánh phụ trách chính:** `feature/Tx-test-all-features`
 * **Nhiệm vụ:**
   1. Hoàn thiện nốt phần giao diện **Bàn làm việc Phân bổ Ô kho (Unit Allocation Workbench)** để FM gán ô `AVAILABLE` cho hợp đồng `PENDING_CHECK_IN`.
-  2. Tiếp nhận Pull Request từ Tùng, Nhi, Bình gửi về nhánh `feature/Tx-test-all-features`.
+  2. Tiếp nhận Pull Request từ Tùng, Nguyễn Phạm Xuân Nhi, Bình gửi về nhánh `feature/Tx-test-all-features`.
   3. Chạy kiểm thử tự động trên máy:
      ```powershell
      mvn clean test

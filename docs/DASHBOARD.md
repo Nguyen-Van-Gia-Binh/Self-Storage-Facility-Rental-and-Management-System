@@ -27,7 +27,7 @@
 | Workstream                    | Người phụ trách                 | Trọng tâm công việc                                                                                     | Nhánh Git / Trạng thái                                       |
 | :---------------------------- | :------------------------------ | :------------------------------------------------------------------------------------------------------ | :----------------------------------------------------------- |
 | **WS1: Khách hàng & Cơ sở**   | **Gia Bình**                    | Dời ngày có phí theo ngày (`BR-RES-06`) & Gói bảo vệ mở rộng 50M (`BR-SUP-04`)                           | `feature/Tx-paid-reschedule-and-insurance` (Đang triển khai) |
-| **WS2: Đặt chỗ & Bàn giao**   | **Xuân Nhi**                    | Cửa sổ đặt trước 30 ngày (`BR-RES-01`), Modal Hủy 3 tầng (`BR-CAN-01..03`), E-Handover IoT UI          | `feature/Tx-booking-cancellation-ui` (Đang triển khai)       |
+| **WS2: Đặt chỗ & Bàn giao**   | **Nguyễn Phạm Xuân Nhi**        | Cửa sổ đặt trước 30 ngày (`BR-RES-01`), Modal Hủy 3 tầng (`BR-CAN-01..03`), E-Handover IoT UI          | `[x] Hoàn thành (PR #267)`                                   |
 | **WS3: Tài chính & Tự động**  | **Huỳnh Nhật**                  | Hoàn thiện FM Allocation Workbench & Điều phối kiểm thử / merge vào `main`                              | `feature/Tx-test-all-features` (Chủ trì nhánh tích hợp)      |
 | **WS4: Quản trị & Điều phối** | **Thanh Tùng** *(Chủ trì Task)* | Auto-Activation Scheduler T+11 (`BR-CAN-04`) & Quyết toán Trả kho sớm Win-Win (`BR-RET-06`)            | `feature/Tx-auto-activation-and-early-return` (Đang triển khai) |
 
