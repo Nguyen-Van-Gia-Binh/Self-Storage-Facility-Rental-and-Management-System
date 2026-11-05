@@ -219,6 +219,7 @@ export const UnitPickerPage: React.FC = () => {
             discountPercent={priceCalculation.discountPercent}
             discountProgramName={priceCalculation.discountProgramName}
             formatDateVN={formatDateVN}
+            onOpenWaitlist={() => setIsWaitlistModalOpen(true)}
           />
 
           {/* 2. CHỌN LOẠI KHO & KÍCH THƯỚC (Progressive Disclosure) */}

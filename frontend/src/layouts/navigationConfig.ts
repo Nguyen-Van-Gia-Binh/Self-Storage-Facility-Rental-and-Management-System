@@ -2,7 +2,7 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   Home, Archive,
-  ClipboardCheck,
+  ClipboardCheck, PhoneCall,
   Layers, FileText, BarChart3, Wrench, Users,
   Map, DollarSign, TrendingUp, History,
   UserCog, Activity,
@@ -47,6 +47,7 @@ export const ROLE_NAVIGATIONS: Record<UserRole, RoleNavigation> = {
     badgeColor: 'bg-purple-500',
     navItems: [
       { label: 'Tổng quan cơ sở',    href: '/manager',                  icon: Home },
+      { label: 'Danh sách chờ',      href: '/manager/waitlists',        icon: PhoneCall },
       { label: 'Quản lý ô kho',      href: '/manager/facilities',       icon: Layers },
       { label: 'Gán ô kho',          href: '/manager/allocation',       icon: ClipboardCheck },
       { label: 'Giám sát hợp đồng',  href: '/manager/contracts',        icon: FileText },

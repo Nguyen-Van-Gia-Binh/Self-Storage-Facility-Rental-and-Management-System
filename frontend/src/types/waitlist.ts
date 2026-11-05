@@ -12,6 +12,7 @@ export interface WaitlistResponse {
   customerId: number;
   customerName?: string;
   customerPhone?: string;
+  contactPhone?: string;
   customerEmail?: string;
   facilityId: number;
   facilityName?: string;
@@ -40,6 +41,7 @@ export interface CreateWaitlistRequest {
   unitTypeId: number;
   targetStartDate: string;
   rentalMonths?: number;
+  phoneNumber: string;
   contactNotes?: string;
 }
 

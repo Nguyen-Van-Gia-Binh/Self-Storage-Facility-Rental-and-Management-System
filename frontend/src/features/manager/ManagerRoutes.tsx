@@ -18,12 +18,16 @@ import { IncidentListPage } from './pages/IncidentListPage';
 import { IncidentDetailPage } from './pages/IncidentDetailPage';
 import { FacilityReportsPage } from './pages/FacilityReportsPage';
 import { AllocationPage } from './pages/AllocationPage';
+import { WaitlistInboxPage } from './pages/WaitlistInboxPage';
 
 export const ManagerRoutes: React.FC = () => {
   return (
     <DashboardLayout>
       <Routes>
         <Route index element={<ManagerDashboardPage />} />
+
+        {/* Danh sách chờ (Waitlist CRM - Flow 1, BR-WAT-*) */}
+        <Route path="waitlists" element={<WaitlistInboxPage />} />
 
         {/* 4 Cấp độ Drill-down Quản lý ô kho (FM-01) */}
         <Route path="allocation" element={<AllocationPage />} />

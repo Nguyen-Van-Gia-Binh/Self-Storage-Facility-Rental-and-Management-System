@@ -16,6 +16,7 @@ export interface RentDurationCardProps {
   discountPercent?: number;
   discountProgramName?: string | null;
   formatDateVN: (dateStr: string) => string;
+  onOpenWaitlist?: () => void;
 }
 
 /**
@@ -36,6 +37,7 @@ export const RentDurationCard: React.FC<RentDurationCardProps> = ({
   discountPercent = 0,
   discountProgramName = null,
   formatDateVN,
+  onOpenWaitlist,
 }) => {
   const maxBookingDate = React.useMemo(() => {
     if (maxDate) return maxDate;
@@ -74,10 +76,26 @@ export const RentDurationCard: React.FC<RentDurationCardProps> = ({
                 Dự kiến kết thúc: <strong className="text-slate-800">{formatDateVN(calculatedEndDate)}</strong>
               </span>
             </p>
-            <p className="text-[11px] text-red-600 font-medium leading-relaxed mt-1 flex items-start gap-1">
-              <span>*</span>
-              <span>Chính sách của chúng tôi chỉ cho phép đặt kho trước 30 ngày &rarr; Nếu cần gấp xin hãy liên hệ chúng tôi.</span>
-            </p>
+            <div className="text-[11px] text-slate-500 font-medium leading-relaxed mt-1 flex flex-col gap-1 bg-slate-50 p-2.5 rounded-xl border border-slate-200/70">
+              <span className="text-slate-700">
+                ⚡ <strong>Cửa sổ đặt trước:</strong> Đặt chỗ trực tiếp trong vòng <strong>30 ngày</strong> tới.
+              </span>
+              <span className="text-slate-500">
+                Nếu bạn cần đặt lịch thuê cho tương lai xa hơn (ví dụ: tháng 3/2027),{' '}
+                {onOpenWaitlist ? (
+                  <button
+                    type="button"
+                    onClick={onOpenWaitlist}
+                    className="text-brand-700 font-bold underline hover:text-brand-800 cursor-pointer"
+                  >
+                    Đăng ký Danh sách chờ (Waitlist)
+                  </button>
+                ) : (
+                  <span className="text-brand-700 font-bold">hãy liên hệ Hotline cơ sở</span>
+                )}
+                .
+              </span>
+            </div>
           </div>
         </div>
 
