@@ -437,11 +437,19 @@ public class ReservationServiceImpl implements ReservationService {
             throw new CustomException(ErrorCode.RESERVATION_ALREADY_CANCELLED);
         }
 
-        if (reservation.getStatus() == ReservationStatus.FULFILLED) {
+        Optional<RentalContract> pendingContractOpt = rentalContractRepository != null
+                ? rentalContractRepository.findByReservationId(reservation.getId())
+                : Optional.empty();
+        boolean hasPendingContract = pendingContractOpt.isPresent()
+                && pendingContractOpt.get().getStatus() == ContractStatus.PENDING_CHECK_IN;
+
+        if (reservation.getStatus() == ReservationStatus.FULFILLED && !hasPendingContract) {
             throw new CustomException(ErrorCode.RESERVATION_ALREADY_FULFILLED, "Đơn đặt chỗ đã nhận kho, không thể hủy");
         }
 
-        if (reservation.getStatus() != ReservationStatus.PENDING_PAYMENT && reservation.getStatus() != ReservationStatus.CONFIRMED) {
+        if (reservation.getStatus() != ReservationStatus.PENDING_PAYMENT
+                && reservation.getStatus() != ReservationStatus.CONFIRMED
+                && !hasPendingContract) {
             throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION, "Chi co the huy don dat cho khi o trang thai cho thanh toan hoac da xac nhan chua nhan kho");
         }
 
@@ -452,8 +460,8 @@ public class ReservationServiceImpl implements ReservationService {
 
         boolean isNoShow = false;
 
-        // Xử lý hoàn tiền khi đơn đã thanh toán (CONFIRMED) theo BR-CAN-01 & BR-CAN-02
-        if (reservation.getStatus() == ReservationStatus.CONFIRMED) {
+        // Xử lý hoàn tiền khi đơn đã thanh toán (CONFIRMED hoặc có hợp đồng PENDING_CHECK_IN) theo BR-CAN-01 & BR-CAN-02
+        if (reservation.getStatus() == ReservationStatus.CONFIRMED || hasPendingContract) {
             OffsetDateTime startDateTime = reservation.getStartDate().atStartOfDay().atOffset(now.getOffset());
             long hoursUntilStart = Duration.between(now, startDateTime).toHours();
             PolicyVersion cancelPolicy = policyOf(reservation);
@@ -978,23 +986,30 @@ public class ReservationServiceImpl implements ReservationService {
             unitCode = storageUnitRepository.findById(reservation.getStorageUnitId())
                     .map(StorageUnit::getCode)
                     .orElse(null);
+            storageUnitRepository.findByIdForUpdate(reservation.getStorageUnitId()).ifPresent(u -> {
+                u.setStatus(StorageUnitStatus.OCCUPIED);
+                storageUnitRepository.save(u);
+            });
         }
         response.setStorageUnitCode(unitCode != null ? unitCode : "S-" + reservation.getStorageUnitId());
 
         if (rentalContractRepository != null) {
             rentalContractRepository.findByReservationId(reservationId).ifPresent(contract -> {
-                response.setContractId(contract.getId());
-                response.setContractCode(contract.getCode());
-                response.setContractStatus(contract.getStatus().name());
-
+                contract.setStatus(ContractStatus.ACTIVE);
+                if (contract.getCheckinDate() == null) {
+                    contract.setCheckinDate(LocalDate.now());
+                }
                 String accessCode = contract.getAccessCode();
                 if (accessCode == null || accessCode.isBlank()) {
                     int length = PolicyNumbers.snapshotInt(contract.getPolicySnapshot(), "accessPinLength",
                             PolicyNumbers.pinLength(policyOf(reservation)));
                     accessCode = randomPin(length);
                     contract.setAccessCode(accessCode);
-                    rentalContractRepository.save(contract);
                 }
+                rentalContractRepository.save(contract);
+                response.setContractId(contract.getId());
+                response.setContractCode(contract.getCode());
+                response.setContractStatus(contract.getStatus().name());
                 response.setAccessCode(accessCode);
             });
         }

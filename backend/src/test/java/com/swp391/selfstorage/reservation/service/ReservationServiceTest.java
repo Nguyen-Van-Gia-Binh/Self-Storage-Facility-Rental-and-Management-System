@@ -362,6 +362,41 @@ class ReservationServiceTest {
     }
 
     @Test
+    @DisplayName("Defensive: Cho phép hủy khi reservation FULFILLED nhưng contract vẫn PENDING_CHECK_IN (chưa thực tế check-in)")
+    void cancelReservation_WhenFulfilled_ButContractPendingCheckIn_ShouldAllowCancellationAndRefund() {
+        Reservation r = new Reservation();
+        r.setId(1043L);
+        r.setCustomerId(15L);
+        r.setFacilityId(1L);
+        r.setStatus(ReservationStatus.FULFILLED);
+        r.setStartDate(LocalDate.now().plusDays(5));
+        r.setDepositAmount(1_000_000L);
+        r.setTotalPayable(4_000_000L);
+        r.setStorageUnitId(89L);
+
+        RentalContract contract = new RentalContract();
+        contract.setId(201L);
+        contract.setReservationId(1043L);
+        contract.setStatus(ContractStatus.PENDING_CHECK_IN);
+
+        StorageUnit unit = new StorageUnit();
+        unit.setId(89L);
+        unit.setStatus(StorageUnitStatus.RESERVED);
+
+        when(reservationRepository.findById(1043L)).thenReturn(Optional.of(r));
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(rentalContractRepository.findByReservationId(1043L)).thenReturn(Optional.of(contract));
+        when(storageUnitRepository.findById(89L)).thenReturn(Optional.of(unit));
+
+        CancelReservationRequest cancelReq = new CancelReservationRequest("Hủy trước khi nhận kho");
+        ReservationResponse result = reservationService.cancelReservation(1043L, cancelReq, customerUser);
+
+        assertEquals("CANCELLED", result.getStatus());
+        assertEquals(ContractStatus.TERMINATED, contract.getStatus());
+        assertEquals(StorageUnitStatus.AVAILABLE, unit.getStatus());
+    }
+
+    @Test
     @DisplayName("BR-CAN-01: Hủy đơn CONFIRMED trước >= 48h -> Hoàn 100% tiền thuê + 100% cọc")
     void cancelReservation_Success_WhenConfirmed_Early_FullRefund() {
         Reservation r = new Reservation();
