@@ -82,12 +82,10 @@ public class ReservationServiceImpl implements ReservationService {
     @Autowired(required = false)
     private com.swp391.selfstorage.policy.service.DiscountProgramService discountProgramService;
 
-    @Autowired(required = false)
-    private StaffDailyAssignmentRepository staffDailyAssignmentRepository;
+    private final StaffDailyAssignmentRepository staffDailyAssignmentRepository;
+    private final UserRepository userRepository;
 
-    @Autowired(required = false)
-    private UserRepository userRepository;
-
+    @Autowired
     public ReservationServiceImpl(ReservationRepository reservationRepository,
                                   StorageUnitRepository storageUnitRepository,
                                   FacilityRepository facilityRepository,
@@ -110,23 +108,6 @@ public class ReservationServiceImpl implements ReservationService {
         this.userRepository = userRepository;
     }
 
-    public ReservationServiceImpl(ReservationRepository reservationRepository,
-                                  StorageUnitRepository storageUnitRepository,
-                                  FacilityRepository facilityRepository,
-                                  UnitTypeRepository unitTypeRepository,
-                                  FacilityUnitTypePriceRepository facilityUnitTypePriceRepository,
-                                  RentalContractRepository rentalContractRepository,
-                                  PaymentTransactionRepository paymentTransactionRepository,
-                                  PolicyVersionRepository policyVersionRepository) {
-        this.reservationRepository = reservationRepository;
-        this.storageUnitRepository = storageUnitRepository;
-        this.facilityRepository = facilityRepository;
-        this.unitTypeRepository = unitTypeRepository;
-        this.facilityUnitTypePriceRepository = facilityUnitTypePriceRepository;
-        this.rentalContractRepository = rentalContractRepository;
-        this.paymentTransactionRepository = paymentTransactionRepository;
-        this.policyVersionRepository = policyVersionRepository;
-    }
 
     @Override
     @Transactional(readOnly = true)
