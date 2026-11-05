@@ -1750,8 +1750,8 @@ public class ContractServiceImpl implements ContractService {
                         isWithinCoolingOff = Duration.between(contract.getCreatedAt(), now).toHours() <= fullRefundHours;
                 }
 
-                long deposit = contract.getDepositAmount() != null ? contract.getDepositAmount() : 0L;
-                long rentalFee = contract.getTotalRentalFee() != null ? contract.getTotalRentalFee() : 0L;
+                long deposit = contract.getDepositAmount();
+                long rentalFee = contract.getTotalRentalFee();
                 long totalPaid = deposit + rentalFee;
                 long refundAmount;
 
@@ -1772,7 +1772,7 @@ public class ContractServiceImpl implements ContractService {
                                 refundAmount = 0L;
                         } else {
                                 BigDecimal noShowRate = cancelPolicy != null ? cancelPolicy.getCancelNoShowRefundRate() : BigDecimal.ZERO;
-                                long daily = contract.getMonthlyPrice() != null ? (contract.getMonthlyPrice() / 30) : 0L;
+                                long daily = contract.getMonthlyPrice() / 30;
                                 long rentCharged = Math.min(rentalFee, daily * heldDays);
                                 refundAmount = Math.max(0, rentalFee - rentCharged) + PolicyNumbers.share(deposit, noShowRate);
                         }
