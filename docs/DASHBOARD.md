@@ -17,18 +17,19 @@
 
 ## 1. 🎯 Trọng tâm hiện tại (Current Focus)
 
-- **Giai đoạn:** Sprint Hoàn thiện Nghiệp vụ & Kiểm thử Tích hợp (Integration & Polish).
-- **Mục tiêu chính:** Đồng bộ đặc tả phân bổ ô kho: khách đặt theo hạng kho, FM gán ô vật lý trước ngày Check-in. Bổ sung đặc tả Check-in Online (Digital Move-In) tích hợp dữ liệu viễn trắc IoT và cơ chế Auto-Activation tại T+10 bảo toàn 100% doanh thu. Tài liệu nằm trên nhánh `docs/fm-unit-allocation` / `feature/Tx-test-all-features`.
+- **Giai đoạn:** Sprint Triển khai & Hiện thực hóa 6 Trụ cột Đổi mới (6 Pillars Implementation).
+- **Mục tiêu chính:** Hiện thực hóa mã nguồn cho 6 Trụ cột Đổi mới Nghiệp vụ & Kiến trúc: (1) Check-in Online & Auto-Activation T+11, (2) Trả sớm Win-Win, (3) Bảo vệ hàng hóa 10M & 50M, (4) Cửa sổ đặt trước 30 ngày, (5) Hủy đặt chỗ 3 tầng, (6) Dời ngày có phí theo ngày; kết hợp hoàn thiện FM Allocation Workbench.
+- **Kế hoạch chi tiết & Mã nguồn mẫu:** Xem tại [`docs/TASK-ASSIGNMENT-6-PILLARS.md`](TASK-ASSIGNMENT-6-PILLARS.md).
 - [Technical Debt] Đã áp dụng Sorted Locking để chống deadlock, nhưng chưa có Integration Test cho case 2 FM đổi ô ngược chiều.
 
 ### Phân công Trách nhiệm (4 Workstreams):
 
-| Workstream                    | Người phụ trách | Trọng tâm công việc                                                   | Nhánh Git / Trạng thái               |
-| :---------------------------- | :-------------- | :-------------------------------------------------------------------- | :----------------------------------- |
-| **WS1: Khách hàng & Đặt chỗ** | **Xuân Nhi**    | Hoàn thiện Flow 1 (Booking), Flow 6.1 (Gia hạn), Bộ lọc Catalog       | `main` (Hoàn thành cơ bản)           |
-| **WS2: Cơ sở & Vận hành**     | **Gia Bình**    | Flow 2 (Check-in Desk), Flow 3 (Nghiệm thu Trả kho), Sơ đồ ô kho      | `main` (Đã nối Real API)             |
-| **WS3: Tài chính & Tự động**  | **Huỳnh Nhật**  | Flow 4 (Bảng giá BOM), Flow 6.2 (Phí quá hạn & Thanh toán nợ), VietQR | `main` (Hoàn thành cơ bản)           |
-| **WS4: Quản trị & Điều phối** | **Thanh Tùng**  | Flow 5 (Điều phối nhân viên FM), Flow 7 (Ticket sự cố), Báo cáo       | `main` (Đã merge API điều phối #160) |
+| Workstream                    | Người phụ trách                 | Trọng tâm công việc                                                                                     | Nhánh Git / Trạng thái                                       |
+| :---------------------------- | :------------------------------ | :------------------------------------------------------------------------------------------------------ | :----------------------------------------------------------- |
+| **WS1: Khách hàng & Cơ sở**   | **Gia Bình**                    | Dời ngày có phí theo ngày (`BR-RES-06`) & Gói bảo vệ mở rộng 50M (`BR-SUP-04`)                           | `feature/Tx-paid-reschedule-and-insurance` (Đang triển khai) |
+| **WS2: Đặt chỗ & Bàn giao**   | **Xuân Nhi**                    | Cửa sổ đặt trước 30 ngày (`BR-RES-01`), Modal Hủy 3 tầng (`BR-CAN-01..03`), E-Handover IoT UI          | `feature/Tx-booking-cancellation-ui` (Đang triển khai)       |
+| **WS3: Tài chính & Tự động**  | **Huỳnh Nhật**                  | Hoàn thiện FM Allocation Workbench & Điều phối kiểm thử / merge vào `main`                              | `feature/Tx-test-all-features` (Chủ trì nhánh tích hợp)      |
+| **WS4: Quản trị & Điều phối** | **Thanh Tùng** *(Chủ trì Task)* | Auto-Activation Scheduler T+11 (`BR-CAN-04`) & Quyết toán Trả kho sớm Win-Win (`BR-RET-06`)            | `feature/Tx-auto-activation-and-early-return` (Đang triển khai) |
 
 ---
 
@@ -143,6 +144,10 @@
 | `ISS-131` | Thiếu quy định hạn mức bồi thường thiệt hại hàng hóa khi cơ sở xảy ra sự cố kỹ thuật hạ tầng (BR-SUP-04).                                   | Chuẩn hóa BR-SUP-04: Hạn mức bồi thường cơ bản mặc định tối đa 10.000.000 đ/ô kho do lỗi kỹ thuật cơ sở; Tùy chọn Gói Bảo vệ Hàng hóa Mở rộng (+50.000 đ/tháng) bảo vệ tới 50.000.000 đ; Miễn trừ tuyệt đối với hàng cấm.                                                       |      Bình       | `RESOLVED` (Docs) |
 | `ISS-132` | Thiếu giới hạn đặt trước (nguy cơ găm kho), chính sách hủy chưa phân tầng (BR-CAN-01..03) và dời ngày miễn phí gây thất thu.                 | Chuẩn hóa BR-RES-01 (cửa sổ đặt trước tối đa 30 ngày), BR-CAN-01..03 (hủy 3 tầng: $\ge 7$ ngày hoàn 100% cọc, 2-6 ngày phạt 50% cọc, < 48h phạt 100% cọc) và BR-RES-06 (dời ngày có thu phí theo ngày tối đa 7 ngày, chặn dời xa). |  Tùng / Bình    | `RESOLVED` (Docs) |
 | `ISS-133` | Rà soát toàn diện và đồng bộ 100% 6 Trụ cột Đổi mới Nghiệp vụ & Kiến trúc trên toàn bộ hệ thống tài liệu.                                    | Đồng bộ triệt để 6 tài liệu: DEFENSE-SPECIFICATION (Fuc 1.5, State chart bỏ NO_SHOW), USER-STORIES-AND-USE-CASES (US-FS-01.2, US-BM-02.1/3, US-BM-03.2), WORKFLOWS (§ 11 State machines), DATA-DICTIONARY (policy_version +10 cột, rental_contract/reservation +insurance), DEFENSE-GUIDE-FS-FM (10 ngày grace & Auto-Activation), TOPIC.md và README.md; đảm bảo Zero-Drift. |  Tùng / Bình    | `RESOLVED` (Docs) |
+| `ISS-134` | Cài đặt tác vụ nền Auto-Activation Scheduler lúc T+11 và công thức Trả kho sớm Win-Win (BR-RET-06).                                           | Tạo AutoCheckInActivationScheduler quét lúc 00:00 chuyển hợp đồng sang ACTIVE và sinh PIN; sửa ContractServiceImpl tính hoàn 100% tiền thuê dư và phạt 100% cọc.                                                                                                                |      Tùng       |      `OPEN`       |
+| `ISS-135` | Cài đặt UI khống chế đặt trước 30 ngày, Modal Hủy đặt chỗ 3 tầng phân cấp Airbnb và E-Handover IoT.                                         | Set maxDate <= today + 30 trên DatePicker; cập nhật CancelCheckInModal tính hoàn 3 mốc (>=7d, 2-6d, <48h); bổ sung widget IoT telemetry và ký số vào DigitalMoveInPassModal.                                                                                                  |    Xuân Nhi     |      `OPEN`       |
+| `ISS-136` | Cài đặt API và Modal Dời ngày nhận kho có thu phí theo ngày (BR-RES-06) và Checkbox Gói bảo vệ mở rộng 50M.                                 | Cập nhật hàm rescheduleRentalPeriod (chặn dời quá 7 ngày, báo trước >= 48h, tính phí theo ngày); thêm checkbox Gói bảo vệ (+50k/tháng) trên BookingForm và tổng kết thanh toán.                                                                                               |      Bình       |      `OPEN`       |
+| `ISS-137` | Hoàn thiện giao diện Bàn làm việc Phân bổ Ô kho (Unit Allocation Workbench) cho FM và điều phối merge nhánh.                                  | Hoàn thiện màn FM click gán ô AVAILABLE trước ngày Check-in; tiếp nhận review PR của Tùng, Nhi, Bình vào feature/Tx-test-all-features và kiểm thử toàn hệ thống trước khi đưa vào main.                                                                                          |      Nhật       |      `OPEN`       |
 
 _(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/\_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))_
 
