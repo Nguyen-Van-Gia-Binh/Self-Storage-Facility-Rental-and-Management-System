@@ -21,6 +21,8 @@ export interface BookingSummaryCardProps {
     totalDueToday: number;
   };
   depositMultiplierLabel: string;
+  hasExtendedInsurance?: boolean;
+  insuranceTotal?: number;
 }
 
 /**
@@ -37,6 +39,8 @@ export const BookingSummaryCard: React.FC<BookingSummaryCardProps> = ({
   durationMonths,
   calculation,
   depositMultiplierLabel,
+  hasExtendedInsurance = false,
+  insuranceTotal = 0,
 }) => {
   return (
     <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs sticky top-24 space-y-3">
@@ -113,6 +117,15 @@ export const BookingSummaryCard: React.FC<BookingSummaryCardProps> = ({
             {formatVND(calculation.depositAmount)}
           </span>
         </div>
+
+        {hasExtendedInsurance && insuranceTotal > 0 && (
+          <div className="flex justify-between text-emerald-800 font-bold bg-emerald-50/80 px-2.5 py-1.5 rounded-lg border border-emerald-200/60">
+            <span>Gói bảo vệ toàn diện 50M:</span>
+            <span className="font-mono text-emerald-800 font-black">
+              +{formatVND(insuranceTotal)}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Tổng thanh toán */}
@@ -122,7 +135,7 @@ export const BookingSummaryCard: React.FC<BookingSummaryCardProps> = ({
             Tổng thanh toán:
           </span>
           <span className="text-xl font-black text-[#008B74] font-mono tracking-tight">
-            {formatVND(calculation.totalDueToday)}
+            {formatVND((calculation.totalDueToday || 0) + (hasExtendedInsurance ? insuranceTotal : 0))}
           </span>
         </div>
       </div>

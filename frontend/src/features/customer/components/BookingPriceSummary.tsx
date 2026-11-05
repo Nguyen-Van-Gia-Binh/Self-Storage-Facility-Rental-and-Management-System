@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Card } from '@/components/ui/Card';
-import { Clock, Tag, CheckCircle2 } from 'lucide-react';
+import { Clock, Tag, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
 import { calculateBookingPrice } from '@/api/reservation';
 import type { PricingCalculationResult } from '../utils/pricing';
@@ -18,6 +18,8 @@ export interface BookingPriceSummaryProps {
    * Mặc định 1 để an toàn khi policy chưa sẵn sàng; backend vẫn là nơi tính số tiền cuối cùng.
    */
   depositMultiplier?: number;
+  hasExtendedInsurance?: boolean;
+  insuranceTotal?: number;
 }
 
 export const BookingPriceSummary: React.FC<BookingPriceSummaryProps> = ({
@@ -28,6 +30,8 @@ export const BookingPriceSummary: React.FC<BookingPriceSummaryProps> = ({
   endDate,
   holdHours,
   depositMultiplier = 1,
+  hasExtendedInsurance = false,
+  insuranceTotal = 0,
 }) => {
   const multiplierLabel = Number.isInteger(depositMultiplier)
     ? String(depositMultiplier)
@@ -149,10 +153,20 @@ export const BookingPriceSummary: React.FC<BookingPriceSummaryProps> = ({
           <span className="font-semibold text-slate-800">{formatVND(calculation.depositAmount)}</span>
         </div>
 
+        {hasExtendedInsurance && insuranceTotal > 0 && (
+          <div className="flex justify-between items-center text-emerald-800 bg-emerald-50 px-2.5 py-1.5 rounded-md text-xs font-semibold border border-emerald-200">
+            <span className="flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              Bảo hiểm mở rộng (50M):
+            </span>
+            <span>+{formatVND(insuranceTotal)}</span>
+          </div>
+        )}
+
         <div className="pt-3 border-t-2 border-slate-100 flex justify-between items-baseline">
           <span className="text-sm sm:text-base font-bold text-[#0a1614]">Tổng thanh toán:</span>
           <span className="text-xl font-extrabold text-brand-600">
-            {formatVND(calculation.totalDueToday)}
+            {formatVND(calculation.totalDueToday + (hasExtendedInsurance ? insuranceTotal : 0))}
           </span>
         </div>
       </div>
