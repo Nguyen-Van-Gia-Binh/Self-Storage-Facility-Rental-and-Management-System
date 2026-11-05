@@ -22,6 +22,7 @@ interface UnitPickerModalsProps {
   pendingLimitModal: PendingLimitModalState;
   onClosePendingLimit: () => void;
   onPayPendingReservation: (reservation: any) => void;
+  onOpenWaitlist?: () => void;
 }
 
 /**
@@ -38,6 +39,7 @@ export const UnitPickerModals: React.FC<UnitPickerModalsProps> = ({
   pendingLimitModal,
   onClosePendingLimit,
   onPayPendingReservation,
+  onOpenWaitlist,
 }) => {
   return (
     <>
@@ -78,13 +80,35 @@ export const UnitPickerModals: React.FC<UnitPickerModalsProps> = ({
             </p>
           </div>
           <div className="pt-2">
-            <Button
-              variant="primary"
-              className="w-full justify-center py-2.5 text-xs sm:text-sm font-semibold"
-              onClick={onCloseUnitUnavailable}
-            >
-              Đã hiểu, chọn ô kho khác
-            </Button>
+            {unitUnavailableModal.title === 'Hết chỗ' && onOpenWaitlist ? (
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 justify-center py-2.5 text-xs sm:text-sm font-semibold text-slate-700"
+                  onClick={onCloseUnitUnavailable}
+                >
+                  Chọn hạng kho khác
+                </Button>
+                <Button
+                  variant="primary"
+                  className="flex-1 justify-center py-2.5 text-xs sm:text-sm font-bold bg-brand-600 hover:bg-brand-700 text-white"
+                  onClick={() => {
+                    onCloseUnitUnavailable();
+                    onOpenWaitlist();
+                  }}
+                >
+                  Đăng ký Danh sách chờ
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="primary"
+                className="w-full justify-center py-2.5 text-xs sm:text-sm font-semibold"
+                onClick={onCloseUnitUnavailable}
+              >
+                Đã hiểu, chọn ô kho khác
+              </Button>
+            )}
           </div>
         </div>
       </Modal>

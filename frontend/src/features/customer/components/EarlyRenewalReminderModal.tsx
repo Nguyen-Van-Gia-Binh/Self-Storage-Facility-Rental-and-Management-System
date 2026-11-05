@@ -160,20 +160,31 @@ export const EarlyRenewalReminderModal: React.FC<EarlyRenewalReminderModalProps>
             Để tôi xem sau
           </Button>
 
-          <Link
-            to={`/customer/renew/${contract.id}`}
-            onClick={handleClose}
-            className="w-full sm:w-auto"
-          >
+          {daysUntilCutoff <= 20 ? (
             <Button
-              variant="primary"
+              variant="outline"
               size="sm"
-              className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-orange-500/20 cursor-pointer"
+              disabled
+              className="w-full sm:w-auto px-5 py-2.5 bg-slate-100 text-slate-400 font-bold text-xs cursor-not-allowed"
             >
-              <span>Gia hạn ngay để giữ chỗ</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <span>Đã qua mốc T-20 (Liên hệ Hotline: 1900-2026)</span>
             </Button>
-          </Link>
+          ) : (
+            <Link
+              to={`/customer/renew/${contract.id}`}
+              onClick={handleClose}
+              className="w-full sm:w-auto"
+            >
+              <Button
+                variant="primary"
+                size="sm"
+                className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-orange-500/20 cursor-pointer"
+              >
+                <span>Gia hạn ngay để giữ chỗ</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     </div>,

@@ -46,10 +46,13 @@ public enum ErrorCode {
     POLICY_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy phiên bản chính sách"),
     SUPPORT_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy yêu cầu hỗ trợ"),
     DISCOUNT_PROGRAM_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy chương trình khuyến mại"),
+    WAITLIST_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy yêu cầu chờ này"),
 
     // 409 Conflict
     EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "Email đã được sử dụng"),
     USERNAME_ALREADY_EXISTS(HttpStatus.CONFLICT, "Tên đăng nhập đã được sử dụng"),
+    WAITLIST_ALREADY_EXISTS(HttpStatus.CONFLICT, "Bạn đã đăng ký vào danh sách chờ cho loại kho này"),
+    WAITLIST_LOCK_CONFLICT(HttpStatus.CONFLICT, "Khách hàng này đang được nhân viên khác liên hệ hoặc trạng thái đã thay đổi"),
     UNIT_NOT_AVAILABLE(HttpStatus.CONFLICT, "Ô kho không còn khả dụng"),
     FACILITY_CODE_ALREADY_EXISTS(HttpStatus.CONFLICT, "Mã cơ sở đã được sử dụng"),
     FACILITY_HAS_ACTIVE_CONTRACTS(HttpStatus.CONFLICT, "Không thể ngừng hoạt động cơ sở khi còn hợp đồng đang hoạt động"),
@@ -85,6 +88,10 @@ public enum ErrorCode {
     RETURN_NOTICE_TOO_SHORT(HttpStatus.UNPROCESSABLE_ENTITY,
             "Thời gian hẹn trả kho không hợp lệ"),
     AMOUNT_MISMATCH(HttpStatus.UNPROCESSABLE_ENTITY, "Số tiền không khớp với tổng phải trả"),
+    RENEWAL_DEADLINE_PASSED(HttpStatus.BAD_REQUEST, "Đã quá thời hạn tự gia hạn Online (trước 20 ngày). Vui lòng liên hệ Hotline cơ sở."),
+
+    // 429 Too Many Requests (Anti-Spam)
+    BOOKING_SPAM_BLOCKED(HttpStatus.TOO_MANY_REQUESTS, "Tài khoản của bạn đã bị tạm khóa chức năng đặt kho do hủy hoặc bỏ thanh toán quá 5 lần trong ngày. Vui lòng liên hệ Quản lý cơ sở để được hỗ trợ mở khóa."),
 
     // 500 Internal Server Error
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Đã xảy ra lỗi hệ thống");

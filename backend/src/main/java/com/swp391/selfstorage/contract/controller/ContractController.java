@@ -309,4 +309,18 @@ public class ContractController {
         ContractResponse response = contractService.rescheduleRentalPeriod(id, request, currentUserId);
         return ResponseEntity.ok(ApiResponse.success(response, "Dời thời gian thuê thành công"));
     }
+
+    /**
+     * Hủy nhận kho cho hợp đồng đang ở trạng thái PENDING_CHECK_IN (BR-CAN-01)
+     */
+    @PostMapping("/{id}/cancel")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Hủy nhận kho cho hợp đồng đang ở trạng thái PENDING_CHECK_IN (BR-CAN-01)")
+    public ResponseEntity<ApiResponse<ContractResponse>> cancelPendingContract(
+            @PathVariable Long id,
+            @RequestBody(required = false) com.swp391.selfstorage.reservation.dto.CancelReservationRequest request,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        ContractResponse response = contractService.cancelPendingContract(id, request, currentUser);
+        return ResponseEntity.ok(ApiResponse.success(response, "Hủy nhận kho thành công"));
+    }
 }

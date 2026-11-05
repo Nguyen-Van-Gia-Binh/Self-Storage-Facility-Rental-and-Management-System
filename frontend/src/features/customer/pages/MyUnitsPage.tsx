@@ -532,6 +532,29 @@ export const MyUnitsPage: React.FC = () => {
         </div>
       </div>
 
+      {/* BANNER SỰ CỐ KHẨN CẤP / BẤT KHẢ KHÁNG (BR-BMP-03) */}
+      {contracts.some((c) => (c.status as string) === 'PENDING_EMERGENCY_RESOLUTION') && (
+        <div className="p-4 sm:p-5 bg-amber-50 border-2 border-amber-400 rounded-2xl flex items-start gap-3.5 text-amber-950 shadow-sm">
+          <AlertTriangle className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
+          <div className="space-y-1.5 flex-1">
+            <h4 className="text-sm font-bold text-amber-900">
+              Sự cố bất khả kháng tại cơ sở — Đang khẩn trương điều phối hỗ trợ đền bù
+            </h4>
+            <p className="text-xs leading-relaxed text-amber-800">
+              Cơ sở lưu trữ đang gặp sự cố kỹ thuật khẩn cấp nên tạm thời chưa thể bàn giao ô kho đúng hẹn. Quản lý cơ sở (FM) đang trực tiếp liên hệ quý khách qua số điện thoại đã đăng ký để thống nhất 1 trong 2 phương án hỗ trợ:{' '}
+              <strong>(1) Điều chuyển sang cơ sở lân cận (Công ty tài trợ 100% xe tải vận chuyển)</strong> hoặc{' '}
+              <strong>(2) Hủy hợp đồng, hoàn 100% chi phí đã đóng và bồi thường thêm 1 tháng tiền thuê kho</strong> theo quy định hợp đồng.
+            </p>
+            <div className="pt-1 text-xs flex items-center gap-2">
+              <span className="font-semibold text-amber-900">Hotline hỗ trợ khẩn cấp:</span>
+              <a href="tel:19002026" className="font-black text-brand-700 underline hover:text-brand-800">
+                1900-2026
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* BẢNG QUẢN LÝ HỢP ĐỒNG HỢP NHẤT (SAAS TABLE) */}
       {!isAuthenticated ? (
         <MyUnitsGuestPrompt />

@@ -35,6 +35,12 @@ public class AppUser extends BaseEntity {
     @Column(name = "status", nullable = false, length = 20)
     private UserStatus status = UserStatus.ACTIVE;
 
+    @Column(name = "daily_cancel_count")
+    private Integer dailyCancelCount = 0;
+
+    @Column(name = "last_cancel_date")
+    private java.time.LocalDate lastCancelDate;
+
     public AppUser() {
     }
 
@@ -103,6 +109,22 @@ public class AppUser extends BaseEntity {
 
     public void setStatus(UserStatus status) {
         this.status = status;
+    }
+
+    public Integer getDailyCancelCount() {
+        return dailyCancelCount != null ? dailyCancelCount : 0;
+    }
+
+    public void setDailyCancelCount(Integer dailyCancelCount) {
+        this.dailyCancelCount = dailyCancelCount;
+    }
+
+    public java.time.LocalDate getLastCancelDate() {
+        return lastCancelDate;
+    }
+
+    public void setLastCancelDate(java.time.LocalDate lastCancelDate) {
+        this.lastCancelDate = lastCancelDate;
     }
 
     public boolean isActive() {

@@ -23,6 +23,7 @@ import com.swp391.selfstorage.unit.entity.UnitType;
 import com.swp391.selfstorage.unit.repository.FacilityUnitTypePriceRepository;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
 import com.swp391.selfstorage.unit.repository.UnitTypeRepository;
+import com.swp391.selfstorage.user.entity.AppUser;
 import com.swp391.selfstorage.user.entity.UserRole;
 import com.swp391.selfstorage.user.entity.UserStatus;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,6 +40,7 @@ import org.springframework.data.domain.Pageable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -359,6 +361,41 @@ class ReservationServiceTest {
                 reservationService.cancelReservation(1042L, cancelReq, customerUser)
         );
         assertEquals(ErrorCode.RESERVATION_ALREADY_FULFILLED, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("Defensive: Cho phép hủy khi reservation FULFILLED nhưng contract vẫn PENDING_CHECK_IN (chưa thực tế check-in)")
+    void cancelReservation_WhenFulfilled_ButContractPendingCheckIn_ShouldAllowCancellationAndRefund() {
+        Reservation r = new Reservation();
+        r.setId(1043L);
+        r.setCustomerId(15L);
+        r.setFacilityId(1L);
+        r.setStatus(ReservationStatus.FULFILLED);
+        r.setStartDate(LocalDate.now().plusDays(5));
+        r.setDepositAmount(1_000_000L);
+        r.setTotalPayable(4_000_000L);
+        r.setStorageUnitId(89L);
+
+        RentalContract contract = new RentalContract();
+        contract.setId(201L);
+        contract.setReservationId(1043L);
+        contract.setStatus(ContractStatus.PENDING_CHECK_IN);
+
+        StorageUnit unit = new StorageUnit();
+        unit.setId(89L);
+        unit.setStatus(StorageUnitStatus.RESERVED);
+
+        when(reservationRepository.findById(1043L)).thenReturn(Optional.of(r));
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(rentalContractRepository.findByReservationId(1043L)).thenReturn(Optional.of(contract));
+        when(storageUnitRepository.findById(89L)).thenReturn(Optional.of(unit));
+
+        CancelReservationRequest cancelReq = new CancelReservationRequest("Hủy trước khi nhận kho");
+        ReservationResponse result = reservationService.cancelReservation(1043L, cancelReq, customerUser);
+
+        assertEquals("CANCELLED", result.getStatus());
+        assertEquals(ContractStatus.TERMINATED, contract.getStatus());
+        assertEquals(StorageUnitStatus.AVAILABLE, unit.getStatus());
     }
 
     @Test
@@ -716,5 +753,52 @@ class ReservationServiceTest {
                 .status(ContractStatus.PENDING_CHECK_IN)
                 .policyVersionId(1L)
                 .build();
+    }
+
+    @Test
+    @DisplayName("BR-SPAM-01: Chặn khách tạo đơn mới khi đã hủy quá 5 lần trong ngày (BOOKING_SPAM_BLOCKED)")
+    void createReservation_WhenSpamLimitReached_ShouldThrowBookingSpamBlockedException() {
+        AppUser spamUser = new AppUser();
+        spamUser.setId(15L);
+        spamUser.setLastCancelDate(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")));
+        spamUser.setDailyCancelCount(5);
+        when(userRepository.findById(15L)).thenReturn(Optional.of(spamUser));
+
+        CreateReservationRequest req = new CreateReservationRequest();
+        req.setFacilityId(1L);
+        req.setUnitTypeId(7L);
+        req.setRentalMonths(1);
+
+        CustomException ex = assertThrows(CustomException.class, () ->
+                reservationService.createReservation(req, customerUser)
+        );
+
+        assertEquals(ErrorCode.BOOKING_SPAM_BLOCKED, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("BR-SPAM-01: Tăng dailyCancelCount của user khi hủy đơn đặt chỗ")
+    void cancelReservation_ShouldIncrementDailyCancelCount() {
+        Reservation r = new Reservation();
+        r.setId(1042L);
+        r.setCustomerId(15L);
+        r.setFacilityId(1L);
+        r.setUnitTypeId(7L);
+        r.setStatus(ReservationStatus.PENDING_PAYMENT);
+
+        AppUser user = new AppUser();
+        user.setId(15L);
+        user.setLastCancelDate(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")));
+        user.setDailyCancelCount(2);
+
+        when(reservationRepository.findById(1042L)).thenReturn(Optional.of(r));
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(userRepository.findById(15L)).thenReturn(Optional.of(user));
+
+        CancelReservationRequest cancelReq = new CancelReservationRequest("Đổi ý không thuê");
+        reservationService.cancelReservation(1042L, cancelReq, customerUser);
+
+        assertEquals(3, user.getDailyCancelCount());
+        verify(userRepository).save(user);
     }
 }

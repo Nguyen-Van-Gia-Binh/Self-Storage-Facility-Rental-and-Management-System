@@ -34,6 +34,14 @@ interface BookingModalsProps {
   showPassModal: boolean;
   createdPass: MoveInPassData | null;
   onClosePassModal: () => void;
+
+  // Hỗ trợ Waitlist và Chống Spam Bom hàng
+  onOpenWaitlist?: () => void;
+  spamBlockedModal?: {
+    isOpen: boolean;
+    facilityPhone?: string;
+  };
+  onCloseSpamBlockedModal?: () => void;
 }
 
 export const BookingModals: React.FC<BookingModalsProps> = ({
@@ -50,6 +58,9 @@ export const BookingModals: React.FC<BookingModalsProps> = ({
   showPassModal,
   createdPass,
   onClosePassModal,
+  onOpenWaitlist,
+  spamBlockedModal,
+  onCloseSpamBlockedModal,
 }) => {
   return (
     <>
@@ -101,13 +112,35 @@ export const BookingModals: React.FC<BookingModalsProps> = ({
             </p>
           </div>
           <div className="pt-2">
-            <Button
-              variant="primary"
-              className="w-full justify-center py-2.5 text-xs sm:text-sm font-semibold"
-              onClick={onCloseUnavailableModal}
-            >
-              Quay lại
-            </Button>
+            {unavailableModal.title === 'Hết chỗ' && onOpenWaitlist ? (
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 justify-center py-2.5 text-xs sm:text-sm font-semibold text-slate-700"
+                  onClick={onCloseUnavailableModal}
+                >
+                  Chọn hạng kho khác
+                </Button>
+                <Button
+                  variant="primary"
+                  className="flex-1 justify-center py-2.5 text-xs sm:text-sm font-bold bg-brand-600 hover:bg-brand-700 text-white"
+                  onClick={() => {
+                    onCloseUnavailableModal();
+                    onOpenWaitlist();
+                  }}
+                >
+                  Đăng ký Danh sách chờ
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="primary"
+                className="w-full justify-center py-2.5 text-xs sm:text-sm font-semibold"
+                onClick={onCloseUnavailableModal}
+              >
+                Quay lại
+              </Button>
+            )}
           </div>
         </div>
       </Modal>
@@ -159,6 +192,50 @@ export const BookingModals: React.FC<BookingModalsProps> = ({
           onClose={onClosePassModal}
           passData={createdPass}
         />
+      )}
+
+      {/* 5. Modal cảnh báo bị chặn do Spam Bom hàng (BR-SPAM-01) */}
+      {spamBlockedModal && (
+        <Modal isOpen={spamBlockedModal.isOpen} onClose={onCloseSpamBlockedModal || (() => {})}>
+          <div className="p-6 max-w-md w-full text-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
+              <XCircle className="w-6 h-6" />
+            </div>
+            <div className="space-y-1.5">
+              <h3 className="text-lg font-bold text-slate-900">Tài khoản tạm khóa chức năng đặt kho</h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Bạn đã hủy hoặc bỏ thanh toán quá 5 lần trong ngày hôm nay. Để bảo vệ tính công bằng cho toàn hệ thống, chức năng đặt kho tạm thời bị khóa trong ngày.
+              </p>
+            </div>
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-left text-xs space-y-1">
+              <span className="font-semibold text-amber-900">Liên hệ Quản lý cơ sở (FM) để được hỗ trợ:</span>
+              <div className="flex items-center justify-between text-slate-700 pt-1">
+                <span>Hotline Quản lý:</span>
+                <a
+                  href={`tel:${spamBlockedModal.facilityPhone || '1900-2026'}`}
+                  className="font-bold text-brand-700 hover:underline"
+                >
+                  {spamBlockedModal.facilityPhone || '1900-2026'}
+                </a>
+              </div>
+            </div>
+            <div className="pt-2 flex gap-2">
+              <a
+                href={`tel:${spamBlockedModal.facilityPhone || '1900-2026'}`}
+                className="flex-1 inline-flex items-center justify-center py-2.5 text-xs sm:text-sm font-bold bg-brand-600 hover:bg-brand-700 text-white rounded-lg"
+              >
+                Gọi Hotline Quản lý
+              </a>
+              <Button
+                variant="outline"
+                className="flex-1 justify-center py-2.5 text-xs sm:text-sm font-semibold text-slate-700"
+                onClick={onCloseSpamBlockedModal}
+              >
+                Đã hiểu & Đóng
+              </Button>
+            </div>
+          </div>
+        </Modal>
       )}
     </>
   );

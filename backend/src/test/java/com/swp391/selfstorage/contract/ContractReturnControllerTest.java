@@ -163,4 +163,24 @@ class ContractReturnControllerTest {
                 .andExpect(jsonPath("$.data.contractId").value(500))
                 .andExpect(jsonPath("$.data.status").value("CANCELLED"));
     }
+
+    @Test
+    @DisplayName("POST /contracts/{id}/cancel thành công trả về 200 OK và trạng thái CANCELLED")
+    void testCancelPendingContract_Success() throws Exception {
+        ContractResponse res = new ContractResponse();
+        res.setId(500L);
+        res.setCode("CTR-20261106-9999");
+        res.setStatus(ContractStatus.CANCELLED);
+
+        when(contractService.cancelPendingContract(eq(500L), any(), any()))
+                .thenReturn(res);
+
+        mockMvc.perform(post("/contracts/500/cancel")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"reason\":\"Thay đổi kế hoạch\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.id").value(500))
+                .andExpect(jsonPath("$.data.status").value("CANCELLED"));
+    }
 }

@@ -18,6 +18,7 @@ import java.util.Optional;
 public interface RentalContractRepository
         extends JpaRepository<RentalContract, Long>, JpaSpecificationExecutor<RentalContract> {
     Optional<RentalContract> findByReservationId(Long reservationId);
+    List<RentalContract> findAllByReservationId(Long reservationId);
 
     Optional<RentalContract> findByIdAndFacilityIdIn(Long id, List<Long> facilityIds);
 

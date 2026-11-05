@@ -49,6 +49,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -244,6 +245,16 @@ public class ReservationServiceImpl implements ReservationService {
                     "Quý khách đang có 1 đơn giữ chỗ ô kho chưa thanh toán. Vui lòng thanh toán hoặc hủy đơn cũ trước khi đặt ô kho khác.");
         }
 
+        // 2.2 Kiem tra BR-SPAM-01: Chặn khách hàng hủy hoặc bỏ thanh toán >= 5 lần trong ngày
+        if (customerId != null && userRepository != null) {
+            userRepository.findById(customerId).ifPresent(user -> {
+                LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+                if (user.getLastCancelDate() != null && user.getLastCancelDate().equals(today) && user.getDailyCancelCount() >= 5) {
+                    throw new CustomException(ErrorCode.BOOKING_SPAM_BLOCKED);
+                }
+            });
+        }
+
         // 3. Kiem tra BR-RES-01: Facility va UnitType dang hoat dong
         if (facilityRepository != null) {
             Facility facility = facilityRepository.findById(request.getFacilityId())
@@ -437,11 +448,22 @@ public class ReservationServiceImpl implements ReservationService {
             throw new CustomException(ErrorCode.RESERVATION_ALREADY_CANCELLED);
         }
 
-        if (reservation.getStatus() == ReservationStatus.FULFILLED) {
+        Optional<RentalContract> pendingContractOpt = rentalContractRepository != null
+                ? rentalContractRepository.findByReservationId(reservation.getId())
+                : Optional.empty();
+        List<RentalContract> linkedContracts = rentalContractRepository != null
+                ? rentalContractRepository.findAllByReservationId(reservation.getId())
+                : List.of();
+        boolean hasPendingContract = (pendingContractOpt.isPresent() && pendingContractOpt.get().getStatus() == ContractStatus.PENDING_CHECK_IN)
+                || linkedContracts.stream().anyMatch(c -> c.getStatus() == ContractStatus.PENDING_CHECK_IN);
+
+        if (reservation.getStatus() == ReservationStatus.FULFILLED && !hasPendingContract) {
             throw new CustomException(ErrorCode.RESERVATION_ALREADY_FULFILLED, "Đơn đặt chỗ đã nhận kho, không thể hủy");
         }
 
-        if (reservation.getStatus() != ReservationStatus.PENDING_PAYMENT && reservation.getStatus() != ReservationStatus.CONFIRMED) {
+        if (reservation.getStatus() != ReservationStatus.PENDING_PAYMENT
+                && reservation.getStatus() != ReservationStatus.CONFIRMED
+                && !hasPendingContract) {
             throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION, "Chi co the huy don dat cho khi o trang thai cho thanh toan hoac da xac nhan chua nhan kho");
         }
 
@@ -452,8 +474,8 @@ public class ReservationServiceImpl implements ReservationService {
 
         boolean isNoShow = false;
 
-        // Xử lý hoàn tiền khi đơn đã thanh toán (CONFIRMED) theo BR-CAN-01 & BR-CAN-02
-        if (reservation.getStatus() == ReservationStatus.CONFIRMED) {
+        // Xử lý hoàn tiền khi đơn đã thanh toán (CONFIRMED hoặc có hợp đồng PENDING_CHECK_IN) theo BR-CAN-01 & BR-CAN-02
+        if (reservation.getStatus() == ReservationStatus.CONFIRMED || hasPendingContract) {
             OffsetDateTime startDateTime = reservation.getStartDate().atStartOfDay().atOffset(now.getOffset());
             long hoursUntilStart = Duration.between(now, startDateTime).toHours();
             PolicyVersion cancelPolicy = policyOf(reservation);
@@ -510,10 +532,14 @@ public class ReservationServiceImpl implements ReservationService {
             }
 
             // Hủy hợp đồng ở trạng thái PENDING_CHECK_IN nếu có
-            rentalContractRepository.findByReservationId(reservation.getId()).ifPresent(contract -> {
-                contract.setStatus(ContractStatus.TERMINATED);
-                rentalContractRepository.save(contract);
-            });
+            if (rentalContractRepository != null) {
+                rentalContractRepository.findByReservationId(reservation.getId()).ifPresent(contract -> {
+                    if (contract.getStatus() == ContractStatus.PENDING_CHECK_IN) {
+                        contract.setStatus(ContractStatus.TERMINATED);
+                        rentalContractRepository.save(contract);
+                    }
+                });
+            }
         }
 
         // Giải phóng StorageUnit nếu đã được gán
@@ -527,6 +553,20 @@ public class ReservationServiceImpl implements ReservationService {
         reservation.setStatus(isNoShow ? ReservationStatus.NO_SHOW : ReservationStatus.CANCELLED);
         reservation.setCancelledAt(now);
         reservation.setCancelReason(reason);
+
+        // Cap nhat bo dem huy don chong Spam Bom hang (BR-SPAM-01)
+        if (reservation.getCustomerId() != null && userRepository != null) {
+            userRepository.findById(reservation.getCustomerId()).ifPresent(user -> {
+                LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+                if (user.getLastCancelDate() != null && user.getLastCancelDate().equals(today)) {
+                    user.setDailyCancelCount(user.getDailyCancelCount() + 1);
+                } else {
+                    user.setLastCancelDate(today);
+                    user.setDailyCancelCount(1);
+                }
+                userRepository.save(user);
+            });
+        }
 
         Reservation saved = reservationRepository.save(reservation);
         return mapToResponse(saved);
@@ -548,6 +588,21 @@ public class ReservationServiceImpl implements ReservationService {
         reservation.setStatus(ReservationStatus.CANCELLED);
         reservation.setCancelledAt(OffsetDateTime.now());
         reservation.setCancelReason("Khach hang huy don qua ma code");
+
+        // Cap nhat bo dem huy don chong Spam Bom hang (BR-SPAM-01)
+        if (reservation.getCustomerId() != null && userRepository != null) {
+            userRepository.findById(reservation.getCustomerId()).ifPresent(user -> {
+                LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+                if (user.getLastCancelDate() != null && user.getLastCancelDate().equals(today)) {
+                    user.setDailyCancelCount(user.getDailyCancelCount() + 1);
+                } else {
+                    user.setLastCancelDate(today);
+                    user.setDailyCancelCount(1);
+                }
+                userRepository.save(user);
+            });
+        }
+
         reservationRepository.save(reservation);
     }
 
@@ -978,23 +1033,30 @@ public class ReservationServiceImpl implements ReservationService {
             unitCode = storageUnitRepository.findById(reservation.getStorageUnitId())
                     .map(StorageUnit::getCode)
                     .orElse(null);
+            storageUnitRepository.findByIdForUpdate(reservation.getStorageUnitId()).ifPresent(u -> {
+                u.setStatus(StorageUnitStatus.OCCUPIED);
+                storageUnitRepository.save(u);
+            });
         }
         response.setStorageUnitCode(unitCode != null ? unitCode : "S-" + reservation.getStorageUnitId());
 
         if (rentalContractRepository != null) {
             rentalContractRepository.findByReservationId(reservationId).ifPresent(contract -> {
-                response.setContractId(contract.getId());
-                response.setContractCode(contract.getCode());
-                response.setContractStatus(contract.getStatus().name());
-
+                contract.setStatus(ContractStatus.ACTIVE);
+                if (contract.getCheckinDate() == null) {
+                    contract.setCheckinDate(LocalDate.now());
+                }
                 String accessCode = contract.getAccessCode();
                 if (accessCode == null || accessCode.isBlank()) {
                     int length = PolicyNumbers.snapshotInt(contract.getPolicySnapshot(), "accessPinLength",
                             PolicyNumbers.pinLength(policyOf(reservation)));
                     accessCode = randomPin(length);
                     contract.setAccessCode(accessCode);
-                    rentalContractRepository.save(contract);
                 }
+                rentalContractRepository.save(contract);
+                response.setContractId(contract.getId());
+                response.setContractCode(contract.getCode());
+                response.setContractStatus(contract.getStatus().name());
                 response.setAccessCode(accessCode);
             });
         }

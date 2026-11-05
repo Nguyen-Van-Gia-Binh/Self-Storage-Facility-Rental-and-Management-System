@@ -406,7 +406,7 @@ Thông tin quyền truy cập mở ô kho (`Flow 2`, `BR-ACC-*`).
 ---
 
 ### 4.8. Bảng `waitlist`
-Hàng đợi danh sách chờ khi cơ sở hết hạn ngạch loại ô kho (`Flow 1`, `BR-WAT-*`).
+Hàng đợi danh sách chờ khi cơ sở hết hạn ngạch loại ô kho — Vận hành theo mô hình Telesales CRM (`Flow 1`, `BR-WAT-*`).
 
 | Tên cột | Kiểu dữ liệu | Bắt buộc | Ràng buộc / Mặc định | Ý nghĩa & Mô tả nghiệp vụ |
 | :--- | :--- | :---: | :--- | :--- |
@@ -416,9 +416,12 @@ Hàng đợi danh sách chờ khi cơ sở hết hạn ngạch loại ô kho (`F
 | `unit_type_id` | `BIGINT` | Có | `FK` $\rightarrow$ `unit_type(id)` | Hạng kho mong muốn thuê |
 | `target_start_date` | `DATE` | Có | | Ngày mong muốn bắt đầu thuê |
 | `rental_months` | `INT` | Có | `DEFAULT 1`, `CHECK (rental_months >= 1)` | Thời hạn dự kiến thuê (tháng) |
-| `status` | `VARCHAR(20)` | Có | `DEFAULT 'WAITING'`, `CHECK IN ('WAITING','OFFERED','CONVERTED','EXPIRED','CANCELLED')` | Trạng thái vòng đời của đơn chờ |
-| `offered_at` | `DATETIMEOFFSET` | Không | | Thời điểm phát hành lời mời nhận kho |
-| `offer_expires_at` | `DATETIMEOFFSET` | Không | | Hạn chót thanh toán đặt cọc (24h đơn lẻ hoặc 4h batch) |
+| `status` | `VARCHAR(25)` | Có | `DEFAULT 'WAITING'`, `CHECK IN ('WAITING','CONTACTING','PENDING_FOLLOW_UP','CONVERTED','REJECTED','EXPIRED','CANCELLED')` | Trạng thái vòng đời của đơn chờ trong phễu CRM |
+| `assigned_fm_id` | `BIGINT` | Không | `FK` $\rightarrow$ `app_user(id)` | Facility Manager đang giữ quyền tư vấn độc quyền |
+| `last_contacted_at` | `DATETIMEOFFSET` | Không | | Thời điểm FM bấm tư vấn hoặc liên hệ gần nhất |
+| `contact_timeout_at` | `DATETIMEOFFSET` | Không | | Hạn chót khóa độc quyền (NOW + 2 giờ); quá hạn tự động hoàn về WAITING |
+| `contact_notes` | `NVARCHAR(500)` | Không | | Ghi chú cuộc gọi của FM (lý do từ chối, hẹn giờ gọi lại) |
+| `converted_reservation_id` | `BIGINT` | Không | `FK` $\rightarrow$ `reservation(id)` | Đơn đặt cọc được sinh ra khi khách chốt thuê thành công |
 | `converted_contract_id` | `BIGINT` | Không | `FK` $\rightarrow$ `rental_contract(id)` | Hợp đồng thành công chuyển đổi từ waitlist |
 | `created_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Ngày đăng ký hàng đợi |
 | `updated_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Ngày cập nhật |

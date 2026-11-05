@@ -8,6 +8,7 @@ import { tokenStorage } from '@/utils/tokenStorage';
 import { RentDurationCard } from '../components/RentDurationCard';
 import { UnitPickerSidebar } from '../components/UnitPickerSidebar';
 import { UnitPickerModals } from '../components/UnitPickerModals';
+import { WaitlistRegistrationModal } from '../components/WaitlistRegistrationModal';
 import { UnitTypeAccordionList } from '../components/UnitTypeAccordionList';
 import { useRentalDuration } from '../hooks/useRentalDuration';
 import { useUnitPickerCatalog } from '../hooks/useUnitPickerCatalog';
@@ -96,6 +97,7 @@ export const UnitPickerPage: React.FC = () => {
     isOpen: false,
     pendingReservation: null,
   });
+  const [isWaitlistModalOpen, setIsWaitlistModalOpen] = useState<boolean>(false);
   const [isConfirming, setIsConfirming] = useState<boolean>(false);
 
   const selectedSlots = selectedTypeId ? availabilityMap[selectedTypeId]?.availableSlots : undefined;
@@ -284,7 +286,21 @@ export const UnitPickerPage: React.FC = () => {
             navigate(`/customer/booking?facility=${rsv.facilityId}&reservationId=${rsv.id}`);
           }
         }}
+        onOpenWaitlist={() => setIsWaitlistModalOpen(true)}
       />
+
+      {currentFacility && currentUnitType && (
+        <WaitlistRegistrationModal
+          isOpen={isWaitlistModalOpen}
+          onClose={() => setIsWaitlistModalOpen(false)}
+          facilityId={Number(currentFacility.id)}
+          facilityName={currentFacility.name}
+          unitTypeId={Number(currentUnitType.id)}
+          unitTypeName={currentUnitType.name}
+          initialStartDate={startDate}
+          initialRentalMonths={durationMonths}
+        />
+      )}
 
     </div>
   );

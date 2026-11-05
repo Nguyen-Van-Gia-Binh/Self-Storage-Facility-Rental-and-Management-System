@@ -23,6 +23,7 @@ import { BookingCustomerForm } from '../components/BookingCustomerForm';
 import { BookingPaymentStep } from '../components/BookingPaymentStep';
 import { BookingSummaryCard } from '../components/BookingSummaryCard';
 import { BookingModals } from '../components/BookingModals';
+import { WaitlistRegistrationModal } from '../components/WaitlistRegistrationModal';
 import { useBookingPayment } from '../hooks/useBookingPayment';
 import { validateBookingCustomerForm, type BookingFormErrors } from '../utils/bookingValidation';
 import { toPositiveNumber } from '../utils/bookingIdParsers';
@@ -98,6 +99,14 @@ export const BookingPage: React.FC = () => {
     title: '',
     message: '',
     actionType: 'NAVIGATE_HOME',
+  });
+
+  const [isWaitlistModalOpen, setIsWaitlistModalOpen] = useState<boolean>(false);
+  const [spamBlockedModal, setSpamBlockedModal] = useState<{
+    isOpen: boolean;
+    facilityPhone?: string;
+  }>({
+    isOpen: false,
   });
 
   const [pendingLimitModal, setPendingLimitModal] = useState<{
@@ -604,6 +613,15 @@ export const BookingPage: React.FC = () => {
         }
       }
 
+      // Bị chặn do Spam Bom hàng (BR-SPAM-01)
+      if (err?.errorCode === 'BOOKING_SPAM_BLOCKED') {
+        setSpamBlockedModal({
+          isOpen: true,
+          facilityPhone: facility.phone || '1900-2026',
+        });
+        return;
+      }
+
       // Ô kho đã có người khác giữ chỗ hoặc không khả dụng (BR-RES-02, ISS-127)
       if (err?.errorCode === 'CAPACITY_NOT_AVAILABLE') {
         setUnavailableModal({
@@ -771,7 +789,23 @@ export const BookingPage: React.FC = () => {
         showPassModal={showPassModal}
         createdPass={createdPass}
         onClosePassModal={() => setShowPassModal(false)}
+        onOpenWaitlist={() => setIsWaitlistModalOpen(true)}
+        spamBlockedModal={spamBlockedModal}
+        onCloseSpamBlockedModal={() => setSpamBlockedModal({ isOpen: false })}
       />
+
+      {facility.id && unitType.id && (
+        <WaitlistRegistrationModal
+          isOpen={isWaitlistModalOpen}
+          onClose={() => setIsWaitlistModalOpen(false)}
+          facilityId={Number(facility.id)}
+          facilityName={facility.name}
+          unitTypeId={Number(unitType.id)}
+          unitTypeName={unitType.name}
+          initialStartDate={startDate}
+          initialRentalMonths={durationMonths}
+        />
+      )}
 
     </div>
   );
