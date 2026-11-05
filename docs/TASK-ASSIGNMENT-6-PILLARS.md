@@ -117,7 +117,7 @@ flowchart TD
 
 ---
 
-### 👤 2.2. ĐỖ THỊ XUÂN NHI (Frontend Lead — WS2)
+### 👤 2.2. NGUYỄN PHẠM XUÂN NHI (Frontend Lead — WS2)
 
 * **Tên nhánh bắt buộc:** `feature/Tx-booking-cancellation-ui`
 * **Lệnh khởi tạo nhánh:**

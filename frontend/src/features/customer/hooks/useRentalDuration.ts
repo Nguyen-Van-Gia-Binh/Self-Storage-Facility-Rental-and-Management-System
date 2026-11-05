@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 
 interface UseRentalDurationParams {
   initialStartDateParam?: string | null;
@@ -18,22 +18,53 @@ export function useRentalDuration({
     return `${year}-${month}-${day}`;
   }, []);
 
-  // 2. Ngày bắt đầu thuê (không được nhỏ hơn ngày hôm nay)
-  const [startDate, setStartDate] = useState<string>(() => {
-    if (initialStartDateParam && initialStartDateParam >= todayStr) {
+  // 2. Cửa sổ đặt trước tối đa 30 ngày theo quy tắc BR-RES-01
+  const maxBookingDate = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
+  // 3. Ngày bắt đầu thuê (phải nằm trong khoảng [todayStr, maxBookingDate])
+  const [startDate, setRawStartDate] = useState<string>(() => {
+    if (initialStartDateParam) {
+      if (initialStartDateParam < todayStr) return todayStr;
+      if (initialStartDateParam > maxBookingDate) return maxBookingDate;
       return initialStartDateParam;
     }
     return todayStr;
   });
 
-  // 3. Số tháng thuê (mặc định 3 tháng)
+  const setStartDate = useCallback(
+    (val: string) => {
+      if (!val) {
+        setRawStartDate(todayStr);
+        return;
+      }
+      if (val < todayStr) {
+        setRawStartDate(todayStr);
+        return;
+      }
+      if (val > maxBookingDate) {
+        setRawStartDate(maxBookingDate);
+        return;
+      }
+      setRawStartDate(val);
+    },
+    [todayStr, maxBookingDate]
+  );
+
+  // 4. Số tháng thuê (mặc định 3 tháng)
   const [durationMonths, setDurationMonths] = useState<number>(
     typeof initialMonthsParam === 'number' && !isNaN(initialMonthsParam) && initialMonthsParam > 0
       ? initialMonthsParam
       : 3
   );
 
-  // 4. Các mốc chọn nhanh thời gian thuê phổ biến
+  // 5. Các mốc chọn nhanh thời gian thuê phổ biến
   const quickMilestones = useMemo(
     () => [
       { months: 1, label: '1 tháng' },
@@ -44,12 +75,12 @@ export function useRentalDuration({
     []
   );
 
-  // 5. Trạng thái người dùng tự nhập số tháng tùy chọn (Custom Mode)
+  // 6. Trạng thái người dùng tự nhập số tháng tùy chọn (Custom Mode)
   const [isCustomMode, setIsCustomMode] = useState<boolean>(
     ![1, 3, 6, 12].includes(durationMonths)
   );
 
-  // 6. Tính ngày kết thúc dự kiến tự động
+  // 7. Tính ngày kết thúc dự kiến tự động
   const calculatedEndDate = useMemo(() => {
     if (!startDate) return '';
     const [y, m, d] = startDate.split('-').map(Number);
@@ -62,6 +93,7 @@ export function useRentalDuration({
 
   return {
     todayStr,
+    maxBookingDate,
     startDate,
     setStartDate,
     durationMonths,

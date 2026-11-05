@@ -4,6 +4,7 @@ import { Clock, Minus, Plus, Sparkles } from 'lucide-react';
 export interface RentDurationCardProps {
   startDate: string;
   todayStr: string;
+  maxDate?: string;
   onStartDateChange: (val: string) => void;
   calculatedEndDate: string;
   durationMonths: number;
@@ -23,6 +24,7 @@ export interface RentDurationCardProps {
 export const RentDurationCard: React.FC<RentDurationCardProps> = ({
   startDate,
   todayStr,
+  maxDate,
   onStartDateChange,
   calculatedEndDate,
   durationMonths,
@@ -35,6 +37,16 @@ export const RentDurationCard: React.FC<RentDurationCardProps> = ({
   discountProgramName = null,
   formatDateVN,
 }) => {
+  const maxBookingDate = React.useMemo(() => {
+    if (maxDate) return maxDate;
+    if (!todayStr) return '';
+    const [y, m, d] = todayStr.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    date.setDate(date.getDate() + 30);
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${date.getFullYear()}-${mm}-${dd}`;
+  }, [todayStr, maxDate]);
   return (
     <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-4">
       <span className="text-xs font-extrabold uppercase tracking-wider text-brand-800 block">
@@ -50,16 +62,23 @@ export const RentDurationCard: React.FC<RentDurationCardProps> = ({
           <input
             type="date"
             min={todayStr}
+            max={maxBookingDate}
             value={startDate}
             onChange={(e) => onStartDateChange(e.target.value)}
             className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 transition-all shadow-2xs"
           />
-          <p className="text-[11px] text-slate-500 mt-1.5 flex items-center gap-1 font-medium">
-            <Clock className="w-3.5 h-3.5 text-brand-600 shrink-0" />
-            <span>
-              Dự kiến kết thúc: <strong className="text-slate-800">{formatDateVN(calculatedEndDate)}</strong>
-            </span>
-          </p>
+          <div className="flex flex-col gap-1.5 mt-2">
+            <p className="text-[11px] text-slate-500 flex items-center gap-1 font-medium">
+              <Clock className="w-3.5 h-3.5 text-brand-600 shrink-0" />
+              <span>
+                Dự kiến kết thúc: <strong className="text-slate-800">{formatDateVN(calculatedEndDate)}</strong>
+              </span>
+            </p>
+            <p className="text-[11px] text-red-600 font-medium leading-relaxed mt-1 flex items-start gap-1">
+              <span>*</span>
+              <span>Chính sách của chúng tôi chỉ cho phép đặt kho trước 30 ngày &rarr; Nếu cần gấp xin hãy liên hệ chúng tôi.</span>
+            </p>
+          </div>
         </div>
 
         {/* Chọn thời hạn thuê (Segmented Control + Stepper) */}

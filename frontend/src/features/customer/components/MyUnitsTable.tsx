@@ -268,7 +268,8 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                             >
                               <button
                                 type="button"
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   setOpenMenuId(null);
                                   onCancelReservation(rsv);
                                 }}
@@ -517,7 +518,8 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                                   <div className="py-0.5">
                                     <button
                                       type="button"
-                                      onClick={() => {
+                                      onClick={(e) => {
+                                        e.stopPropagation();
                                         setOpenMenuId(null);
                                         onViewDetail(contract);
                                       }}
@@ -535,7 +537,8 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                                   <div className="py-0.5">
                                     <button
                                       type="button"
-                                      onClick={() => {
+                                      onClick={(e) => {
+                                        e.stopPropagation();
                                         setOpenMenuId(null);
                                         onReschedulePeriod(contract);
                                       }}
@@ -546,7 +549,8 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                                     </button>
                                     <button
                                       type="button"
-                                      onClick={() => {
+                                      onClick={(e) => {
+                                        e.stopPropagation();
                                         setOpenMenuId(null);
                                         onCancelPendingCheckIn(contract);
                                       }}
@@ -564,7 +568,10 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                                     {!isExpiringSoon && (
                                       <Link
                                         to={`/customer/renew/${contract.id}`}
-                                        onClick={() => setOpenMenuId(null)}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setOpenMenuId(null);
+                                        }}
                                         className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-slate-50 text-slate-700 transition-colors cursor-pointer font-medium"
                                       >
                                         <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
@@ -602,7 +609,8 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                                   <div className="py-0.5">
                                     <button
                                       type="button"
-                                      onClick={() => {
+                                      onClick={(e) => {
+                                        e.stopPropagation();
                                         setOpenMenuId(null);
                                         onCancelReturn(contract);
                                       }}

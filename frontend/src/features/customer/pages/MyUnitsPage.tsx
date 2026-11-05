@@ -550,16 +550,35 @@ export const MyUnitsPage: React.FC = () => {
             setCustomToDate('');
           }}
           onViewDetail={(c) => setSelectedDetailContract(c)}
-          onChangePin={(c) => setSelectedPinContract(c)}
-          onScheduleReturn={(c) => setSelectedReturnContract(c)}
-          onReschedulePeriod={(c) => setSelectedRescheduleContract(c)}
-          onOpenOverduePayment={(c) => setSelectedOverdueContract(c)}
+          onChangePin={(c) => {
+            setSelectedDetailContract(null);
+            setSelectedPinContract(c);
+          }}
+          onScheduleReturn={(c) => {
+            setSelectedDetailContract(null);
+            setSelectedReturnContract(c);
+          }}
+          onReschedulePeriod={(c) => {
+            setSelectedDetailContract(null);
+            setSelectedRescheduleContract(c);
+          }}
+          onOpenOverduePayment={(c) => {
+            setSelectedDetailContract(null);
+            setSelectedOverdueContract(c);
+          }}
           onCancelReturn={(c) => {
+            setSelectedDetailContract(null);
             setCancelReturnError(null);
             setSelectedCancelReturnContract(c);
           }}
-          onCancelPendingCheckIn={(c) => setSelectedCancelCheckInContract(c)}
-          onCancelReservation={(r) => setCancellingReservation(r)}
+          onCancelPendingCheckIn={(c) => {
+            setSelectedDetailContract(null);
+            setSelectedCancelCheckInContract(c);
+          }}
+          onCancelReservation={(r) => {
+            setSelectedDetailContract(null);
+            setCancellingReservation(r);
+          }}
           renewalNoticeDays={noticeDays > 0 ? noticeDays : undefined}
         />
       )}

@@ -28,6 +28,7 @@ export const UnitPickerPage: React.FC = () => {
   // 1. Quản lý thời gian thuê dự kiến (Ngày bắt đầu & Số tháng thuê)
   const {
     todayStr,
+    maxBookingDate,
     startDate,
     setStartDate,
     durationMonths,
@@ -204,6 +205,7 @@ export const UnitPickerPage: React.FC = () => {
           <RentDurationCard
             startDate={startDate}
             todayStr={todayStr}
+            maxDate={maxBookingDate}
             onStartDateChange={setStartDate}
             calculatedEndDate={calculatedEndDate}
             durationMonths={durationMonths}
