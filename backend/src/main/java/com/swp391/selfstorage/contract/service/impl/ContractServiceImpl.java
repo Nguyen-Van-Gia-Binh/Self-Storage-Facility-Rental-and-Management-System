@@ -1050,8 +1050,9 @@ public class ContractServiceImpl implements ContractService {
                 }
 
                 long earlyRentRefund = earlyRentRefund(contract, request.getReturnDate());
-                long estimatedRefund = Math.max(0, contract.getDepositBalance() - catalogSum
-                                - contract.getOverdueFeeAccrued()) + earlyRentRefund;
+                long availableBalance = (earlyRentRefund > 0) ? earlyRentRefund : contract.getDepositBalance();
+                long estimatedRefund = Math.max(0, availableBalance - catalogSum
+                                - contract.getOverdueFeeAccrued());
 
                 return ReturnInspectionResponse.builder()
                                 .id(contract.getId())
@@ -1123,7 +1124,10 @@ public class ContractServiceImpl implements ContractService {
 
                 long totalDeduction = damage + overdue + totalUnpaid;
                 long earlyRentRefund = earlyRentRefund(contract, contract.getReturnDate());
-                long net = totalDeduction - deposit - earlyRentRefund;
+                boolean isEarlyReturn = earlyRentRefund > 0;
+                // BR-RET-06: Trả kho sớm phạt 100% cọc. Nguồn hoàn tiền tính từ phần tiền thuê chưa dùng.
+                long availableBalance = isEarlyReturn ? earlyRentRefund : deposit;
+                long net = totalDeduction - availableBalance;
                 long refundAmount = Math.max(0, -net);
                 long payableAmount = Math.max(0, net);
 
@@ -1135,6 +1139,8 @@ public class ContractServiceImpl implements ContractService {
                                 .unpaidExtraCharges(totalUnpaid)
                                 .depositRefundAmount(refundAmount)
                                 .payableAmount(payableAmount)
+                                .earlyRentRefund(earlyRentRefund)
+                                .earlyReturn(isEarlyReturn)
                                 .build();
         }
 
@@ -1176,7 +1182,10 @@ public class ContractServiceImpl implements ContractService {
                 long overdue = contract.getOverdueFeeAccrued();
                 long totalDeduction = damage + overdue + totalUnpaid;
                 long earlyRentRefund = earlyRentRefund(contract, contract.getReturnDate());
-                long net = totalDeduction - deposit - earlyRentRefund;
+                boolean isEarlyReturn = earlyRentRefund > 0;
+                // BR-RET-06: Trả kho sớm phạt 100% cọc. Nguồn hoàn tiền tính từ phần tiền thuê chưa dùng.
+                long availableBalance = isEarlyReturn ? earlyRentRefund : deposit;
+                long net = totalDeduction - availableBalance;
                 long refundAmount = Math.max(0, -net);
                 long payableAmount = Math.max(0, net);
 
@@ -1439,11 +1448,12 @@ public class ContractServiceImpl implements ContractService {
                 if (policyVersionRepository != null && contract.getPolicyVersionId() != null) {
                         policy = policyVersionRepository.findById(contract.getPolicyVersionId()).orElse(null);
                 }
-                if (policy == null || policy.getReturnEarlyRefundRate() == null) {
-                        return 0L;
-                }
                 long unusedDays = java.time.temporal.ChronoUnit.DAYS.between(returnDate, contract.getEndDateExclusive());
                 long unusedRent = PolicyNumbers.dailyRent(contract.getMonthlyPrice(), policy) * unusedDays;
+                if (policy == null || policy.getReturnEarlyRefundRate() == null) {
+                        // BR-RET-06: Hoàn 100% tiền thuê thời gian chưa dùng theo chính sách chuẩn
+                        return unusedRent;
+                }
                 return PolicyNumbers.share(unusedRent, policy.getReturnEarlyRefundRate());
         }
 
