@@ -514,4 +514,92 @@ class ContractReturnServiceTest {
                 assertEquals(800_000L, preview.getDepositRefundAmount());
                 assertEquals(0L, preview.getPayableAmount());
         }
+
+        @Test
+        @DisplayName("BR-RET-06: Trả kho sớm không hư hại -> Phạt 100% cọc, hoàn 100% tiền thuê chưa dùng")
+        void testEarlyReturn_SettlementPreview_ForfeitsDepositAndRefundsUnusedRent() {
+                LocalDate returnDate = LocalDate.of(2026, 11, 10);
+                LocalDate endDateExclusive = LocalDate.of(2026, 12, 10); // 30 ngày chưa dùng
+                RentalContract contract = RentalContract.builder()
+                                .id(601L)
+                                .facilityId(1L)
+                                .monthlyPrice(1_200_000L)
+                                .depositAmount(1_200_000L)
+                                .depositBalance(1_200_000L)
+                                .startDate(LocalDate.of(2026, 10, 10))
+                                .endDateExclusive(endDateExclusive)
+                                .returnDate(returnDate)
+                                .status(ContractStatus.PENDING_RETURN)
+                                .build();
+                ReturnRequest returnReq = ReturnRequest.builder().contractId(601L).damageCost(0L).build();
+
+                when(contractRepository.findByIdAndFacilityIdIn(eq(601L), anyList())).thenReturn(Optional.of(contract));
+                when(returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(601L)).thenReturn(Optional.of(returnReq));
+                when(extraChargeRepository.findByContractIdAndStatus(601L, ExtraChargeStatus.UNPAID)).thenReturn(List.of());
+
+                SettlementPreviewResponse preview = contractService.getSettlementPreview(601L, List.of(1L));
+
+                assertTrue(preview.isEarlyReturn(), "Phải nhận diện là trả kho sớm (BR-RET-06)");
+                assertEquals(1_200_000L, preview.getEarlyRentRefund(), "Tiền thuê chưa dùng là 1.200.000 đ");
+                assertEquals(1_200_000L, preview.getDepositRefundAmount(), "Hoàn 100% tiền thuê chưa dùng, phạt 100% cọc");
+                assertEquals(0L, preview.getPayableAmount());
+        }
+
+        @Test
+        @DisplayName("BR-RET-06: Trả kho sớm có hư hại nhỏ hơn tiền thuê chưa dùng -> Khấu trừ vào tiền thuê hoàn lại")
+        void testEarlyReturn_WithDamageLessThanUnusedRent_DeductsFromUnusedRent() {
+                LocalDate returnDate = LocalDate.of(2026, 11, 10);
+                LocalDate endDateExclusive = LocalDate.of(2026, 12, 10); // 30 ngày = 1.200.000 đ
+                RentalContract contract = RentalContract.builder()
+                                .id(602L)
+                                .facilityId(1L)
+                                .monthlyPrice(1_200_000L)
+                                .depositAmount(1_200_000L)
+                                .depositBalance(1_200_000L)
+                                .startDate(LocalDate.of(2026, 10, 10))
+                                .endDateExclusive(endDateExclusive)
+                                .returnDate(returnDate)
+                                .status(ContractStatus.PENDING_RETURN)
+                                .build();
+                ReturnRequest returnReq = ReturnRequest.builder().contractId(602L).damageCost(300_000L).build();
+
+                when(contractRepository.findByIdAndFacilityIdIn(eq(602L), anyList())).thenReturn(Optional.of(contract));
+                when(returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(602L)).thenReturn(Optional.of(returnReq));
+                when(extraChargeRepository.findByContractIdAndStatus(602L, ExtraChargeStatus.UNPAID)).thenReturn(List.of());
+
+                SettlementPreviewResponse preview = contractService.getSettlementPreview(602L, List.of(1L));
+
+                assertTrue(preview.isEarlyReturn());
+                assertEquals(900_000L, preview.getDepositRefundAmount(), "1.200.000 tiền thuê - 300.000 hư hại = 900.000 đ");
+                assertEquals(0L, preview.getPayableAmount());
+        }
+
+        @Test
+        @DisplayName("BR-RET-06: Trả kho sớm có hư hại vượt quá tiền thuê chưa dùng -> Khách phải nộp bù thâm hụt")
+        void testEarlyReturn_WithDamageExceedingUnusedRent_CustomerPaysDeficit() {
+                LocalDate returnDate = LocalDate.of(2026, 11, 10);
+                LocalDate endDateExclusive = LocalDate.of(2026, 12, 10); // 30 ngày = 1.200.000 đ
+                RentalContract contract = RentalContract.builder()
+                                .id(603L)
+                                .facilityId(1L)
+                                .monthlyPrice(1_200_000L)
+                                .depositAmount(1_200_000L)
+                                .depositBalance(1_200_000L)
+                                .startDate(LocalDate.of(2026, 10, 10))
+                                .endDateExclusive(endDateExclusive)
+                                .returnDate(returnDate)
+                                .status(ContractStatus.PENDING_RETURN)
+                                .build();
+                ReturnRequest returnReq = ReturnRequest.builder().contractId(603L).damageCost(1_700_000L).build();
+
+                when(contractRepository.findByIdAndFacilityIdIn(eq(603L), anyList())).thenReturn(Optional.of(contract));
+                when(returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(603L)).thenReturn(Optional.of(returnReq));
+                when(extraChargeRepository.findByContractIdAndStatus(603L, ExtraChargeStatus.UNPAID)).thenReturn(List.of());
+
+                SettlementPreviewResponse preview = contractService.getSettlementPreview(603L, List.of(1L));
+
+                assertTrue(preview.isEarlyReturn());
+                assertEquals(0L, preview.getDepositRefundAmount());
+                assertEquals(500_000L, preview.getPayableAmount(), "1.700.000 hư hại - 1.200.000 tiền thuê = nộp bù 500.000 đ");
+        }
 }
