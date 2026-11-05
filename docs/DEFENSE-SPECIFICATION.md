@@ -1067,9 +1067,13 @@ Toàn bộ các hằng số nghiệp vụ trong hệ thống được định c�
 | `rental.daily_divisor` | Số ngày quy ước của một tháng khi tính phí thuê lẻ ngày | **30 ngày** | `BR-PRI-03` |
 | `rental.buffer_days` | Khoảng đệm an toàn sau khi hợp đồng kết thúc trước khi mở lại kho | **15 ngày** | `BR-AVL-02` |
 | `checkin.grace_days` | Số ngày khách hàng được phép đến nhận kho trễ | **10 ngày** | `BR-CAN-04`, `BR-CHK-05` |
-| `cancel.full_refund_hours` | Thời hạn tối thiểu trước ngày bắt đầu để được hoàn 100% cọc | **48 giờ** | `BR-CAN-01` |
-| `cancel.late_refund_rate` | Tỷ lệ hoàn cọc khi hủy muộn (trong vòng 48h trước ngày bắt đầu) | **0%** (Mất cọc) | `BR-CAN-02` |
-| `cancel.no_show_refund_rate` | Tỷ lệ hoàn cọc khi khách không đến nhận kho (No-show) | **0%** (Mất cọc) | `BR-CAN-04` |
+| `reservation.max_advance_booking_days` | Số ngày được đặt kho trước tối đa | **30 ngày** | `BR-RES-01` |
+| `cancel.full_refund_days` | Hủy trước ngày bắt đầu bao nhiêu ngày thì hoàn 100% cọc | **7 ngày** | `BR-CAN-01` |
+| `cancel.mid_refund_days` | Thời hạn hủy lửng (từ 2 đến 6 ngày trước ngày bắt đầu) | **2 đến 6 ngày** | `BR-CAN-02` |
+| `cancel.mid_refund_rate` | Tỷ lệ hoàn Deposit khi hủy lửng (phạt 50% cọc) | **50%** | `BR-CAN-02` |
+| `cancel.late_refund_rate` | Tỷ lệ hoàn cọc khi hủy sát nút (trong vòng 48h trước ngày bắt đầu) | **0%** (Mất cọc) | `BR-CAN-03` |
+| `reschedule.max_days` | Số ngày được dời ngày bắt đầu nhận kho tối đa | **7 ngày** | `BR-RES-06` |
+| `reschedule.notice_hours` | Thời hạn tối thiểu trước ngày bắt đầu phải gửi yêu cầu dời lịch | **48 giờ** | `BR-RES-06` |
 | `renewal.reminder_days` | Các mốc gửi email nhắc gia hạn tự động | **60 ngày, và 7, 3, 1 ngày** | `BR-REN-01` |
 | `renewal.min_months` | Thời hạn gia hạn tối thiểu trong 1 lần | **1 tháng** | `BR-REN-03` |
 | `renewal.max_months` | Thời hạn gia hạn tối đa trong 1 lần | **12 tháng** | `BR-REN-07` |
@@ -1103,9 +1107,12 @@ Toàn bộ các hằng số nghiệp vụ trong hệ thống được định c�
 
 | Tình huống Thực tế | Chi tiết Tính toán Nghiệp vụ | Kết quả Xử lý Tài chính | Quy tắc áp dụng |
 | :--- | :--- | :--- | :--- |
-| **Khách hủy đặt chỗ ngày 27/09**<br>(Trước ngày nhận kho $> 48$ giờ) | Hủy hợp lệ theo chính sách ưu đãi.<br>Hoàn 100% tiền thuê (2.400.000 đ) + Hoàn 100% tiền cọc (800.000 đ). | **Hoàn trả 3.200.000 VNĐ**<br>(Không mất phí) | `BR-CAN-01` |
-| **Khách hủy đặt chỗ ngày 30/09**<br>(Sát giờ nhận kho $< 48$ giờ) | Hủy muộn vi phạm thời hạn giữ ô kho.<br>Phạt 100% tiền cọc Deposit (`cancel.late_refund_rate = 0%`).<br>Hoàn lại 100% tiền thuê đã đóng: 2.400.000 đ. | **Hoàn trả 2.400.000 VNĐ**<br>(Mất toàn bộ cọc 800.000 đ) | `BR-CAN-02` |
-| **Khách không đến nhận kho (No-show)**<br>(Quá hạn ân hạn 10 ngày đến 10/10) | Mất 100% tiền cọc Deposit (800.000 đ).<br>Khấu trừ chi phí giữ ô kho 10 ngày theo divisor 30 ngày:<br>$2.400.000 - (800.000 \times 10 / 30) = 2.133.333$ đ.<br>Làm tròn 1.000 đ (`BR-GEN-04`): 2.133.000 đ. | **Hoàn trả 2.133.000 VNĐ**<br>(Mất cọc 800k + trừ 267k tiền giữ kho) | `BR-CAN-04`, `BR-PRI-03` |
+| **Khách hủy đặt chỗ ngày 20/09**<br>(Trước ngày nhận kho $\\ge 7$ ngày) | Hủy sớm hợp lệ theo chính sách ưu đãi.<br>Hoàn 100% tiền thuê (2.400.000 đ) + Hoàn 100% tiền cọc (800.000 đ). | **Hoàn trả 3.200.000 VNĐ**<br>(Không mất phí) | `BR-CAN-01` |
+| **Khách hủy đặt chỗ ngày 26/09**<br>(Trước 5 ngày, trong khoảng 2–6 ngày) | Hủy lửng: phạt 50% tiền cọc (400.000 đ).<br>Hoàn 100% tiền thuê (2.400.000 đ) + Hoàn 50% tiền cọc (400.000 đ). | **Hoàn trả 2.800.000 VNĐ**<br>(Phạt 50% cọc: 400.000 đ) | `BR-CAN-02` |
+| **Khách hủy đặt chỗ ngày 30/09**<br>(Sát giờ nhận kho $< 48$ giờ) | Hủy sát nút vi phạm thời hạn giữ ô kho.<br>Phạt 100% tiền cọc Deposit (`cancel.late_refund_rate = 0%`).<br>Hoàn lại 100% tiền thuê đã đóng: 2.400.000 đ. | **Hoàn trả 2.400.000 VNĐ**<br>(Mất toàn bộ cọc 800.000 đ) | `BR-CAN-03` |
+| **Dời ngày nhận kho 3 ngày**<br>(Từ 01/10 sang 04/10, báo trước $\\ge 48$h) | Phí dời: $3 \\times (800.000 / 30) = 80.000$ đ.<br>Khách đóng phí dời 80.000 đ, HĐ tịnh tiến đến 04/01/2027. | **Đóng thêm 80.000 VNĐ**<br>(Cơ sở không mất doanh thu chờ) | `BR-RES-06` |
+| **Dời ngày nhận kho 7 ngày**<br>(Từ 01/10 sang 08/10, tối đa 7 ngày) | Phí dời: $7 \\times (800.000 / 30) = 187.000$ đ (làm tròn).<br>Khách đóng phí dời 187.000 đ, HĐ tịnh tiến đến 08/01/2027. | **Đóng thêm 187.000 VNĐ**<br>(Giới hạn tối đa 7 ngày) | `BR-RES-06` |
+| **Khách không đến nhận kho đến 10/10**<br>(Hết 10 ngày ân hạn) | Kích hoạt tự động Auto-Activation sang Active: Không hoàn tiền, bảo toàn 100% doanh thu (3.200.000 đ); tự động cấp mã PIN cho khách dùng kho 24/7. | **Doanh thu 3.200.000 VNĐ**<br>(Bảo toàn 100% doanh thu) | `BR-CAN-04`, `BR-CHK-05` |
 | **Quá hạn 3 ngày (Chạm mốc D+3)**<br>(Ngày 03/01/2027) | Nằm trong 3 ngày ân hạn (`overdue.grace_days = 3`).<br>Phí phạt quá hạn = 0 VNĐ.<br>Khách hoàn tất dọn đồ nguyên trạng, bàn giao kho. | **Phạt 0 VNĐ**<br>**Hoàn đủ 100% cọc: 800.000 VNĐ** | `BR-OVD-02`, `BR-RET-04` |
 | **Quá hạn 5 ngày (Chạm mốc D+5)**<br>(Ngày 05/01/2027) | Vượt quá ân hạn 2 ngày tính phạt (D+4, D+5).<br>Tiền phạt: $800.000 \times 10\% \times 2 = 160.000$ VNĐ.<br>Khách hàng nộp phạt để được mở kho dọn đồ. | **Nợ phạt phát sinh: 160.000 VNĐ**<br>Khách nộp phạt 160k để tất toán hợp đồng | `BR-OVD-03` |
 | **Quá hạn 7 ngày (Chạm mốc D+7)**<br>(Ngày 07/01/2027) | Tính phạt 4 ngày (D+4..D+7): $800.000 \times 10\% \times 4 = 320.000$ đ.<br>Chạm mốc ngày D+7: **Khóa mã PIN truy cập (`SUSPENDED`)**.<br>Khách không tự mở cửa được, phải gặp nhân viên đóng phạt. | **Nợ phạt: 320.000 VNĐ**<br>**Khóa mã PIN điện tử** | `BR-OVD-03`, `BR-OVD-05` |
