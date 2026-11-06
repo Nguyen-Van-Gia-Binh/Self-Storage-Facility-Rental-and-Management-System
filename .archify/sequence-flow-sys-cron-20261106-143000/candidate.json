@@ -9,7 +9,7 @@
     "animation": "trace",
     "quality_profile": "showcase",
     "repository": {
-      "url": "https://github.com/Tung-pro123/Self-Storage-Facility-Rental-and-Management-System.git",
+      "url": "https://github.com/Nguyen-Van-Gia-Binh/Self-Storage-Facility-Rental-and-Management-System.git",
       "provider": "github",
       "link_mode": "web",
       "revision": "7b81ffe7c2be1fa5d46f0543b6710f3dc9ed5729"
@@ -203,7 +203,7 @@
       "from": "overdue_service",
       "to": "contract_repo",
       "y": 455,
-      "label": "findCandidateContracts(ACTIVE, OVERDUE, TERMINATED)",
+      "label": "findCandidatesPageable(ACTIVE, OVERDUE, PageRequest.of(page, 100))",
       "variant": "emphasis"
     },
     {
@@ -211,7 +211,7 @@
       "from": "contract_repo",
       "to": "database",
       "y": 485,
-      "label": "SELECT contracts WHERE endDateExclusive <= runDate",
+      "label": "SELECT contracts Pageable 100 (Chống OOM Heap)",
       "variant": "emphasis"
     },
     {
@@ -219,7 +219,7 @@
       "from": "database",
       "to": "overdue_service",
       "y": 515,
-      "label": "Trả danh sách hợp đồng cần kiểm tra quá hạn",
+      "label": "Trả Page<RentalContract> (Loop ngoài KHÔNG mang @Transactional)",
       "variant": "return"
     },
     {
@@ -227,24 +227,23 @@
       "from": "overdue_service",
       "to": "contract_repo",
       "y": 545,
-      "label": "D+1..D+3 Ân hạn: setStatus(OVERDUE), fee=0 (BR-OVD-01)",
-      "variant": "default"
+      "label": "processSingleContract() trong @Transactional(REQUIRES_NEW)",
+      "variant": "security"
     },
     {
       "id": "m14",
       "from": "overdue_service",
       "to": "contract_repo",
       "y": 575,
-      "label": "D+4..D+9 Phạt lũy tiến: fee=min(deposit*rate*days, cap)",
+      "label": "D+4..D+9: Phạt lũy tiến theo ngày (fee = min(deposit*rate*days, cap))",
       "variant": "security"
     },
-
     {
       "id": "m15",
       "from": "overdue_service",
       "to": "contract_repo",
       "y": 625,
-      "label": "Mốc D+7 (BR-OVD-05): setAccessCode(null) - Khóa mã PIN",
+      "label": "D+7: setAccessCode(null) khóa PIN • D+10: TERMINATED & trừ cọc",
       "variant": "security"
     },
     {
@@ -252,8 +251,8 @@
       "from": "overdue_service",
       "to": "contract_repo",
       "y": 655,
-      "label": "Mốc D+10 (BR-OVD-07): setStatus(TERMINATED), trừ cọc",
-      "variant": "security"
+      "label": "try-catch cô lập lỗi: HĐ hỏng ghi log bỏ qua, HĐ khác tiếp tục bình thường",
+      "variant": "default"
     },
     {
       "id": "m17",
@@ -268,7 +267,7 @@
       "from": "overdue_service",
       "to": "contract_repo",
       "y": 715,
-      "label": "Mốc D+15: Hoàn tất bảo trì -> AVAILABLE / RESERVED",
+      "label": "D+15: Hoàn tất bảo trì -> AVAILABLE / RESERVED",
       "variant": "default"
     },
     {
@@ -276,7 +275,7 @@
       "from": "contract_repo",
       "to": "database",
       "y": 745,
-      "label": "COMMIT TRANSACTION (Lưu HĐ, Phí phạt & Ô kho)",
+      "label": "COMMIT độc lập từng HĐ (Bảo vệ HikariCP)",
       "variant": "emphasis"
     },
     {
@@ -314,6 +313,16 @@
         "Mốc D+10: Hợp đồng bị cưỡng chế CHẤM DỨT (TERMINATED), trừ phí phạt vào tiền cọc",
         "Ô kho vật lý chuyển sang MAINTENANCE để nhân viên niêm phong tài sản tồn đọng",
         "Mốc D+15: Tự động hoàn tất bảo trì, chuyển ô kho về AVAILABLE hoặc RESERVED cho khách mới"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Fault-Tolerant Loop & HikariCP Pool Defense (Chuẩn Enterprise)",
+      "items": [
+        "Hàm vòng lặp ngoài TUYỆT ĐỐI KHÔNG CÓ @Transactional để tránh giữ kết nối DB xuyên suốt cả mẻ quét",
+        "Phân trang Pageable(100) ngăn ngừa cạn kiệt bộ nhớ RAM JVM (OOM Heap)",
+        "Từng hợp đồng được bọc trong @Transactional(REQUIRES_NEW) mở-đóng kết nối độc lập",
+        "Khối try-catch độc lập: 1 hợp đồng bị lỗi dữ liệu được ghi log bỏ qua, không làm sập cả mẻ quét"
       ]
     }
   ]

@@ -1,5 +1,5 @@
 import React from 'react';
-import { DollarSign, Layers, FileText, AlertTriangle } from 'lucide-react';
+import { DollarSign, Layers, FileText, AlertTriangle, TrendingUp, ShieldAlert } from 'lucide-react';
 import type { SystemRevenueReport, SystemOccupancyReport, OverdueReportResponse } from '@/types';
 import { formatCurrency, formatPercent } from '@/utils/format';
 
@@ -18,8 +18,8 @@ export const BomKpiSummary: React.FC<BomKpiSummaryProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[1, 2, 3, 4].map((i) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
           <div
             key={i}
             className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm animate-pulse space-y-3"
@@ -35,6 +35,10 @@ export const BomKpiSummary: React.FC<BomKpiSummaryProps> = ({
 
   const totalRev = revenue?.totalRevenue ?? 0;
   const refundAmount = revenue?.totalRefundAmount ?? 0;
+  const netMrr = revenue?.mrr ?? 0;
+  const activeContracts = revenue?.activeContractCount ?? 0;
+  const depositLiability = revenue?.totalDepositLiability ?? 0;
+
   const avgOccupancy = occupancy?.averageOccupancyRate ?? 0;
   const occupiedUnits = occupancy?.occupiedUnitsSystem ?? 0;
   const overdueCount = overdue?.totalOverdueContracts ?? 0;
@@ -77,12 +81,12 @@ export const BomKpiSummary: React.FC<BomKpiSummaryProps> = ({
   const occBadge = getOccupancyBadge(avgOccupancy);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {/* 1. Tổng doanh thu thực thu */}
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* 1. Dòng tiền thực thu (Cash Flow) */}
       <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:border-brand-300 transition-all">
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-            Tổng Doanh Thu Thực Thu
+            Dòng Tiền Thực Thu (Cash)
           </span>
           <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
             <DollarSign className="w-4 h-4" />
@@ -93,12 +97,53 @@ export const BomKpiSummary: React.FC<BomKpiSummaryProps> = ({
             {formatCurrency(totalRev)}
           </div>
           <div className="mt-1.5 text-xs text-slate-500">
-            Đã hoàn {formatCurrency(refundAmount)}
+            Khớp sao kê • Hoàn cọc {formatCurrency(refundAmount)}
           </div>
         </div>
       </div>
 
-      {/* 2. Tỷ lệ lấp đầy toàn quốc */}
+      {/* 2. Doanh thu định kỳ (Net MRR) */}
+      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:border-brand-300 transition-all">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            Doanh Thu Định Kỳ (Net MRR)
+          </span>
+          <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+            <TrendingUp className="w-4 h-4" />
+          </div>
+        </div>
+        <div className="mt-2.5">
+          <div className="text-2xl font-bold font-mono tracking-tight text-indigo-700">
+            {formatCurrency(netMrr)}
+            <span className="text-xs font-normal text-slate-500"> /tháng</span>
+          </div>
+          <div className="mt-1.5 text-xs text-slate-500">
+            Đã trừ chiết khấu • <span className="font-semibold text-slate-700">{activeContracts} HĐ</span> đang thuê
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Tiền cọc đang giữ (Deposit Liability) */}
+      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:border-brand-300 transition-all">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            Tiền Cọc Đang Giữ (Liability)
+          </span>
+          <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+            <ShieldAlert className="w-4 h-4" />
+          </div>
+        </div>
+        <div className="mt-2.5">
+          <div className="text-2xl font-bold font-mono tracking-tight text-slate-900">
+            {formatCurrency(depositLiability)}
+          </div>
+          <div className="mt-1.5 text-xs text-slate-500">
+            Nợ phải trả • Ký quỹ bảo đảm hoàn trả
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Tỷ lệ lấp đầy toàn quốc */}
       <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:border-brand-300 transition-all">
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
@@ -129,11 +174,11 @@ export const BomKpiSummary: React.FC<BomKpiSummaryProps> = ({
         </div>
       </div>
 
-      {/* 3. Quy mô hợp đồng active */}
+      {/* 5. Quy mô hợp đồng active & giữ chỗ */}
       <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:border-brand-300 transition-all">
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-            Ô đang thuê
+            Ô đang thuê & Giữ chỗ
           </span>
           <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
             <FileText className="w-4 h-4" />
@@ -145,13 +190,13 @@ export const BomKpiSummary: React.FC<BomKpiSummaryProps> = ({
           </div>
           <div className="mt-1.5 text-xs text-slate-500">
             <span className="text-sky-600 font-medium">
-              {reservedUnits} ô đang giữ chỗ
+              +{reservedUnits} ô đang giữ chỗ thanh toán
             </span>
           </div>
         </div>
       </div>
 
-      {/* 4. Cảnh báo nợ quá hạn */}
+      {/* 6. Cảnh báo nợ quá hạn */}
       <div
         className={`bg-white rounded-xl border p-5 shadow-sm transition-all ${
           overdueCount > 0 ? 'border-rose-200/80 hover:border-rose-300' : 'border-slate-200/80'

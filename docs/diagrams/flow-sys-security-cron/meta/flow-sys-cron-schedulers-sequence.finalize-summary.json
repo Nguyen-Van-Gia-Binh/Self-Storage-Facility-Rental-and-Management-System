@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "fail",
+  "type": "sequence",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Dev\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\sequence-flow-sys-cron-20261106-143000\\candidate.json",
+    "sha256": "a7fd9108b7dc0a3d2f400934b9490979158fe949c822aab3d450510823b00ce4",
+    "bytes": 9514
+  },
+  "artifact": {
+    "path": "C:\\Dev\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-sys-security-cron\\flow-sys-cron-schedulers-sequence.html",
+    "sha256": "b0c831eb710bacbeaa5e628f3181c524dda56d8a29c239a7bfa2d6782b1f290a",
+    "bytes": 865126
+  },
+  "gates": {
+    "validate": "fail",
+    "deliver": "not-run",
+    "check": "not-run",
+    "browser-check": "not-run"
+  },
+  "failedStage": "validate",
+  "diagnostics": [
+    {
+      "code": "repository-evidence/origin-mismatch",
+      "severity": "error",
+      "message": "Evidence repository origin \"https://github.com/Nguyen-Van-Gia-Binh/Self-Storage-Facility-Rental-and-Management-System.git\" does not match \"https://github.com/Tung-pro123/Self-Storage-Facility-Rental-and-Management-System.git\".",
+      "subject": {
+        "surface": "repository-evidence",
+        "repoRoot": "C:\\Dev\\Self-Storage-Facility-Rental-and-Management-System"
+      },
+      "evidence": {
+        "localOrigin": "https://github.com/Nguyen-Van-Gia-Binh/Self-Storage-Facility-Rental-and-Management-System.git",
+        "authoredRepository": "https://github.com/Tung-pro123/Self-Storage-Facility-Rental-and-Management-System.git"
+      },
+      "supportedFixes": [
+        "use the matching local checkout or correct the authored repository URL"
+      ]
+    }
+  ],
+  "diagnosticSummary": {
+    "total": 1,
+    "shown": 1,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Dev\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-sys-security-cron\\flow-sys-cron-schedulers-sequence.finalize.json",
+    "summaryReceipt": "C:\\Dev\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-sys-security-cron\\flow-sys-cron-schedulers-sequence.finalize-summary.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-06T19:09:25.434Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 805,
+  "browserCheck": {
+    "requested": true,
+    "ran": false
+  },
+  "nextAction": {
+    "action": "edit-in-place",
+    "candidate": "C:\\Dev\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\sequence-flow-sys-cron-20261106-143000\\candidate.json",
+    "constraint": "Preserve unaffected semantics and geometry; apply each diagnostic's supportedFixes, or the fix its message names, and do not replace the whole candidate.",
+    "then": "finalize-once"
+  }
+}

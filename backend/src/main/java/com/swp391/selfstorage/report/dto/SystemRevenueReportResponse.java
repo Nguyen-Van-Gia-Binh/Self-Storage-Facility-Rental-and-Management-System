@@ -18,5 +18,8 @@ public class SystemRevenueReportResponse {
     private long renewalRevenue;
     private long depositBalance;
     private long totalRefundAmount;
+    private Long mrr;
+    private Long activeContractCount;
+    private Long totalDepositLiability;
     private List<FacilityRevenueShareDto> byFacility;
 }

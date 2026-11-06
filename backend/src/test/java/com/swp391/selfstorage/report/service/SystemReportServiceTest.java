@@ -199,6 +199,84 @@ class SystemReportServiceTest {
     }
 
     @Test
+    @DisplayName("Enterprise Flow 4: Tính Net MRR thực tế sau chiết khấu và bóc tách Tiền cọc đang giữ (Deposit Liability)")
+    void testSystemRevenueReport_CalculatesNetMrrAndDepositLiability() {
+        LocalDate from = LocalDate.of(2026, 10, 1);
+        LocalDate to = LocalDate.of(2026, 10, 31);
+        when(facilityRepository.findAll()).thenReturn(List.of(facility1));
+
+        // Hợp đồng 1: Thuê 6 tháng, giá niêm yết 2.000.000/tháng (tổng 12tr), chiết khấu còn 10.800.000đ
+        // Net MRR = 10.800.000 / 6 = 1.800.000đ/tháng (thay vì giá ảo 2.000.000đ)
+        RentalContract contract1 = RentalContract.builder()
+                .id(401L)
+                .facilityId(1L)
+                .status(ContractStatus.ACTIVE)
+                .rentalMonths(6)
+                .monthlyPrice(2_000_000L)
+                .totalRentalFee(10_800_000L)
+                .depositAmount(2_000_000L)
+                .depositBalance(2_000_000L)
+                .build();
+
+        // Hợp đồng 2: Thuê 1 tháng không chiết khấu 1.500.000đ, trạng thái OVERDUE
+        // Không tính vào MRR (vì không ACTIVE), nhưng depositBalance 1.200.000đ vẫn tính vào Deposit Liability
+        RentalContract contract2 = RentalContract.builder()
+                .id(402L)
+                .facilityId(1L)
+                .status(ContractStatus.OVERDUE)
+                .rentalMonths(1)
+                .monthlyPrice(1_500_000L)
+                .totalRentalFee(1_500_000L)
+                .depositAmount(1_500_000L)
+                .depositBalance(1_200_000L)
+                .build();
+
+        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(List.of(contract1, contract2));
+
+        SystemRevenueReportResponse report = systemReportService.getSystemRevenueReport(from, to, null);
+
+        assertNotNull(report);
+        assertEquals(1_800_000L, report.getMrr(), "Net MRR phải tính trên giá thực tế sau chiết khấu");
+        assertEquals(1L, report.getActiveContractCount(), "Chỉ có 1 hợp đồng ACTIVE");
+        assertEquals(3_200_000L, report.getTotalDepositLiability(), "Deposit Liability phải bóc tách tiền cọc đang nắm giữ");
+    }
+
+    @Test
+    @DisplayName("Test Case 3.1 (Chỉ số Dòng tiền - Cash Flow): Chỉ tính giao dịch SUCCESS, không cộng gộp PENDING")
+    void testSystemRevenueReport_CashFlowOnlyIncludesSuccess() {
+        LocalDate from = LocalDate.of(2026, 10, 1);
+        LocalDate to = LocalDate.of(2026, 10, 31);
+        when(facilityRepository.findAll()).thenReturn(List.of(facility1));
+
+        RentalContract contract = RentalContract.builder()
+                .id(501L)
+                .facilityId(1L)
+                .totalRentalFee(5_000_000L)
+                .depositAmount(0L)
+                .build();
+        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(List.of(contract));
+
+        // 1 giao dịch SUCCESS 5 triệu
+        PaymentTransaction successTxn = PaymentTransaction.builder()
+                .contractId(501L).amount(5_000_000L).transactionType("INITIAL_PAYMENT").status("SUCCESS").build();
+        successTxn.setCreatedAt(java.time.Instant.parse("2026-10-05T03:00:00Z"));
+
+        // 1 giao dịch PENDING 2 triệu (đang treo)
+        PaymentTransaction pendingTxn = PaymentTransaction.builder()
+                .contractId(501L).amount(2_000_000L).transactionType("CONTRACT_RENEWAL").status("PENDING").build();
+        pendingTxn.setCreatedAt(java.time.Instant.parse("2026-10-06T03:00:00Z"));
+
+        when(paymentTransactionRepository.findByContractId(501L)).thenReturn(List.of(successTxn, pendingTxn));
+
+        SystemRevenueReportResponse report = systemReportService.getSystemRevenueReport(from, to, null);
+
+        // Kỳ vọng: Dòng tiền thực thu chỉ là 5.000.000đ, không được cộng gộp 2.000.000đ của giao dịch PENDING
+        assertEquals(5_000_000L, report.getTotalRevenue());
+        assertEquals(5_000_000L, report.getRentalRevenue());
+        assertEquals(0L, report.getRenewalRevenue(), "Giao dịch renewal PENDING không được tính vào doanh thu");
+    }
+
+    @Test
     @DisplayName("US-BM-04.1: Gộp INITIAL_PAYMENT gắn reservationId vào doanh thu thuê và cọc")
     void testSystemRevenueReport_IncludesReservationLinkedInitialPayment() {
         LocalDate from = LocalDate.of(2026, 9, 1);

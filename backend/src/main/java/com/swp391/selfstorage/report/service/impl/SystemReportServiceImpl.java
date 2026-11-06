@@ -76,6 +76,9 @@ public class SystemReportServiceImpl implements SystemReportService {
         long totalRenewalRevenue = 0L;
         long totalDeposit = 0L;
         long totalRefund = 0L;
+        long overallMrr = 0L;
+        long overallActiveContracts = 0L;
+        long overallDepositLiability = 0L;
         List<FacilityRevenueShareDto> byFacility = new ArrayList<>();
         ZoneId zone = ZoneId.of("Asia/Ho_Chi_Minh");
 
@@ -171,6 +174,31 @@ public class SystemReportServiceImpl implements SystemReportService {
             }
 
             long facTotalRevenue = facRentalRevenue + facRenewalRevenue + facSurchargeRevenue + facOverdueFeeRevenue;
+
+            // Tính Net MRR (sau chiết khấu) & Deposit Liability (Khoản nợ phải trả)
+            long facMrr = 0L;
+            long facActiveContracts = 0L;
+            long facDepositLiability = 0L;
+
+            for (RentalContract c : contractMap.values()) {
+                if (c.getStatus() == ContractStatus.ACTIVE) {
+                    facActiveContracts++;
+                    long netMonthlyPrice = (c.getRentalMonths() > 0)
+                            ? (c.getTotalRentalFee() / c.getRentalMonths())
+                            : c.getMonthlyPrice();
+                    facMrr += netMonthlyPrice;
+                }
+                if (c.getStatus() == ContractStatus.ACTIVE || c.getStatus() == ContractStatus.OVERDUE) {
+                    if (c.getDepositBalance() > 0) {
+                        facDepositLiability += c.getDepositBalance();
+                    }
+                }
+            }
+
+            overallMrr += facMrr;
+            overallActiveContracts += facActiveContracts;
+            overallDepositLiability += facDepositLiability;
+
             byFacility.add(FacilityRevenueShareDto.builder()
                     .facilityId(facility.getId())
                     .facilityName(facility.getName())
@@ -182,6 +210,9 @@ public class SystemReportServiceImpl implements SystemReportService {
                     .renewalRevenue(facRenewalRevenue)
                     .depositBalance(facDeposit)
                     .refundAmount(facRefund)
+                    .mrr(facMrr)
+                    .activeContractCount(facActiveContracts)
+                    .depositLiability(facDepositLiability)
                     .build());
 
             totalRentalRevenue += facRentalRevenue;
@@ -204,6 +235,9 @@ public class SystemReportServiceImpl implements SystemReportService {
                 .renewalRevenue(totalRenewalRevenue)
                 .depositBalance(totalDeposit)
                 .totalRefundAmount(totalRefund)
+                .mrr(overallMrr)
+                .activeContractCount(overallActiveContracts)
+                .totalDepositLiability(overallDepositLiability)
                 .byFacility(byFacility)
                 .build();
     }

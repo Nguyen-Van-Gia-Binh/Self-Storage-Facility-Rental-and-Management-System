@@ -18,6 +18,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -391,5 +394,73 @@ class OverdueProcessingServiceTest {
 
         assertEquals(StorageUnitStatus.AVAILABLE, unit.getStatus(), "Đã qua 6 ngày (>=5), tự động chuyển sang AVAILABLE");
         verify(storageUnitRepository).save(unit);
+    }
+
+    @Test
+    @DisplayName("Batch Fault-Tolerance: Hợp đồng lỗi không làm gián đoạn các hợp đồng khác trong mẻ quét")
+    void testBatchFaultTolerance_SingleFailureDoesNotHaltBatch() {
+        LocalDate runDate = baseEndDate.plusDays(5); // 2026-10-06 (D+5)
+
+        // Hợp đồng 1: Bị thiếu dữ liệu hoặc lỗi
+        RentalContract faultyContract = RentalContract.builder()
+                .id(991L)
+                .code("CTR-FAIL")
+                .status(ContractStatus.ACTIVE)
+                .endDateExclusive(null) // Gây NullPointerException trong logic xử lý
+                .depositAmount(2_000_000L)
+                .depositBalance(2_000_000L)
+                .build();
+
+        // Hợp đồng 2: Bình thường
+        RentalContract normalContract = RentalContract.builder()
+                .id(992L)
+                .code("CTR-OK")
+                .status(ContractStatus.ACTIVE)
+                .endDateExclusive(baseEndDate)
+                .depositAmount(2_000_000L)
+                .depositBalance(2_000_000L)
+                .overdueFeeAccrued(0L)
+                .build();
+
+        when(rentalContractRepository.findByStatusInAndEndDateExclusiveLessThanEqual(anyList(), eq(runDate)))
+                .thenReturn(List.of(faultyContract, normalContract));
+
+        OverdueProcessingResult result = overdueProcessingService.processOverdueContracts(runDate);
+
+        // HĐ 1 bị lỗi và bỏ qua, HĐ 2 vẫn được xử lý phạt thành công
+        assertEquals(2, result.getTotalScanned(), "Cả 2 HĐ đều được quét");
+        assertEquals(1, result.getPenalizedCount(), "HĐ bình thường vẫn được tính phạt D+5 thành công");
+        assertEquals(ContractStatus.OVERDUE, normalContract.getStatus());
+        assertEquals(400_000L, normalContract.getOverdueFeeAccrued());
+    }
+
+    @Test
+    @DisplayName("Test Case 2.3 (Pagination - Tránh tràn RAM): Quét tuần tự từng lô 100 bản ghi qua nhiều trang")
+    void testMultiPagePagination_ShouldProcessAllPagesWithoutOom() {
+        LocalDate runDate = baseEndDate.plusDays(2); // D+2 (chuyển OVERDUE)
+
+        RentalContract c1 = RentalContract.builder()
+                .id(1L).code("CTR-PAGE0").status(ContractStatus.ACTIVE)
+                .endDateExclusive(baseEndDate).depositAmount(1_000_000L).depositBalance(1_000_000L).build();
+        RentalContract c2 = RentalContract.builder()
+                .id(2L).code("CTR-PAGE1").status(ContractStatus.ACTIVE)
+                .endDateExclusive(baseEndDate).depositAmount(1_000_000L).depositBalance(1_000_000L).build();
+
+        // Trang 0 có 1 item, total 101 items (size=100) -> hasNext() = true (2 trang)
+        Page<RentalContract> page0 = new PageImpl<>(List.of(c1), PageRequest.of(0, 100), 101);
+        // Trang 1 có 1 item, total 101 items (size=100) -> hasNext() = false
+        Page<RentalContract> page1 = new PageImpl<>(List.of(c2), PageRequest.of(1, 100), 101);
+
+        when(rentalContractRepository.findByStatusInAndEndDateExclusiveLessThanEqual(anyList(), eq(runDate), eq(PageRequest.of(0, 100))))
+                .thenReturn(page0);
+        when(rentalContractRepository.findByStatusInAndEndDateExclusiveLessThanEqual(anyList(), eq(runDate), eq(PageRequest.of(1, 100))))
+                .thenReturn(page1);
+
+        OverdueProcessingResult result = overdueProcessingService.processOverdueContracts(runDate);
+
+        assertEquals(2, result.getTotalScanned(), "Cả 2 trang dữ liệu đều được quét lần lượt");
+        assertEquals(2, result.getMarkedOverdueCount(), "Cả 2 hợp đồng đều được chuyển sang OVERDUE");
+        verify(rentalContractRepository).findByStatusInAndEndDateExclusiveLessThanEqual(anyList(), eq(runDate), eq(PageRequest.of(0, 100)));
+        verify(rentalContractRepository).findByStatusInAndEndDateExclusiveLessThanEqual(anyList(), eq(runDate), eq(PageRequest.of(1, 100)));
     }
 }

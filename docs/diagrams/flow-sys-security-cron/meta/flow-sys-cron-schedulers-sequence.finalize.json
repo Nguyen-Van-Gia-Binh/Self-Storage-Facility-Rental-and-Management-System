@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "fail",
+  "type": "sequence",
+  "quality": "showcase",
+  "startedAt": "2026-11-06T19:12:18.001Z",
+  "specification": {
+    "path": "C:\\Dev\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\sequence-flow-sys-cron-20261106-143000\\candidate.json",
+    "sha256": "a7fd9108b7dc0a3d2f400934b9490979158fe949c822aab3d450510823b00ce4",
+    "bytes": 9514
+  },
+  "artifact": {
+    "path": "C:\\Dev\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-sys-security-cron\\flow-sys-cron-schedulers-sequence.html",
+    "sha256": "b0c831eb710bacbeaa5e628f3181c524dda56d8a29c239a7bfa2d6782b1f290a",
+    "bytes": 865126
+  },
+  "stages": {
+    "validate": {
+      "status": "fail",
+      "exitCode": 1,
+      "durationMs": null,
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "C:\\Dev\\Self-Storage-Facility-Rental-and-Management-System\\.agents\\skills\\archify\\bin\\archify.mjs",
+        "deliver",
+        "sequence",
+        "C:\\Dev\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\sequence-flow-sys-cron-20261106-143000\\candidate.json",
+        "C:\\Dev\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-sys-security-cron\\flow-sys-cron-schedulers-sequence.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "C:\\Dev\\Self-Storage-Facility-Rental-and-Management-System",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": false,
+        "command": "deliver",
+        "receiptId": "027298b1-769d-4d5f-9f4a-e342a3d95aa6",
+        "stage": "render",
+        "type": "sequence",
+        "input": "C:\\Dev\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\sequence-flow-sys-cron-20261106-143000\\candidate.json",
+        "output": "C:\\Dev\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-sys-security-cron\\flow-sys-cron-schedulers-sequence.html",
+        "error": "Evidence repository origin \"https://github.com/Nguyen-Van-Gia-Binh/Self-Storage-Facility-Rental-and-Management-System.git\" does not match \"https://github.com/Tung-pro123/Self-Storage-Facility-Rental-and-Management-System.git\".",
+        "diagnostics": [
+          {
+            "code": "repository-evidence/origin-mismatch",
+            "severity": "error",
+            "message": "Evidence repository origin \"https://github.com/Nguyen-Van-Gia-Binh/Self-Storage-Facility-Rental-and-Management-System.git\" does not match \"https://github.com/Tung-pro123/Self-Storage-Facility-Rental-and-Management-System.git\".",
+            "subject": {
+              "surface": "repository-evidence",
+              "repoRoot": "C:\\Dev\\Self-Storage-Facility-Rental-and-Management-System"
+            },
+            "evidence": {
+              "localOrigin": "https://github.com/Nguyen-Van-Gia-Binh/Self-Storage-Facility-Rental-and-Management-System.git",
+              "authoredRepository": "https://github.com/Tung-pro123/Self-Storage-Facility-Rental-and-Management-System.git"
+            },
+            "supportedFixes": [
+              "use the matching local checkout or correct the authored repository URL"
+            ]
+          }
+        ],
+        "provenance": "failed",
+        "update": {
+          "status": "unavailable",
+          "installedVersion": null,
+          "availableVersion": null,
+          "releaseNotes": null,
+          "checkedAt": null,
+          "source": null,
+          "noticeRequired": false,
+          "noticeText": null,
+          "reason": "disabled"
+        }
+      },
+      "execution": "embedded-in-deliver"
+    },
+    "deliver": {
+      "status": "not-run",
+      "execution": "blocked-by-validate"
+    }
+  },
+  "browserCheck": {
+    "requested": true,
+    "ran": false
+  },
+  "diagnostics": [
+    {
+      "code": "repository-evidence/origin-mismatch",
+      "severity": "error",
+      "message": "Evidence repository origin \"https://github.com/Nguyen-Van-Gia-Binh/Self-Storage-Facility-Rental-and-Management-System.git\" does not match \"https://github.com/Tung-pro123/Self-Storage-Facility-Rental-and-Management-System.git\".",
+      "subject": {
+        "surface": "repository-evidence",
+        "repoRoot": "C:\\Dev\\Self-Storage-Facility-Rental-and-Management-System"
+      },
+      "evidence": {
+        "localOrigin": "https://github.com/Nguyen-Van-Gia-Binh/Self-Storage-Facility-Rental-and-Management-System.git",
+        "authoredRepository": "https://github.com/Tung-pro123/Self-Storage-Facility-Rental-and-Management-System.git"
+      },
+      "supportedFixes": [
+        "use the matching local checkout or correct the authored repository URL"
+      ]
+    }
+  ],
+  "evidence": {
+    "receipt": "C:\\Dev\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-sys-security-cron\\flow-sys-cron-schedulers-sequence.finalize.json",
+    "summaryReceipt": "C:\\Dev\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-sys-security-cron\\flow-sys-cron-schedulers-sequence.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "failedStage": "validate",
+  "finishedAt": "2026-11-06T19:12:18.807Z",
+  "durationMs": 805,
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-06T19:09:25.434Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  }
+}
