@@ -671,8 +671,8 @@ Mỗi Worker Subagent sau khi hoàn thành việc vẽ sơ đồ bắt buộc ph
 #### 📊 BÁO CÁO ĐỘ LỆCH MÃ NGUỒN: FLOW 1 — STORAGE UNIT RESERVATION & WAITLIST CRM
 
 - **Người phụ trách (Assignee):** **Nguyễn Phạm Xuân Nhi** (WS1 — Khách hàng & Đặt chỗ)
-- **Sơ đồ HTML Workflow:** `docs/diagrams/flow-1-reservation-workflow.html`
-- **Sơ đồ HTML Sequence:** `docs/diagrams/flow-1-reservation-sequence.html`
+- **Sơ đồ HTML Workflow:** `docs/diagrams/flow-1-reservation/flow-1-reservation-workflow.html`
+- **Sơ đồ HTML Sequence:** `docs/diagrams/flow-1-reservation/flow-1-reservation-sequence.html`
 - **Tình trạng nghiệm thu:** [x] Finalize thành công 4 gates (Exit code 0, showcase profile)
 
 ##### 1. Bảng đối soát thiết kế vs thực tế:
@@ -706,8 +706,8 @@ Mỗi Worker Subagent sau khi hoàn thành việc vẽ sơ đồ bắt buộc ph
 
 - **Người phụ trách (Assignee):** **Nguyễn Văn Gia Bình** (WS2 — Cơ sở, Kho & Vận hành / Technical Lead)
 - **Sơ đồ HTML Standalone:**
-  - Workflow: [flow3-return-settlement-workflow.html](file:///c:/Users/admin/Documents/A_FPT/Tempory_Project/Self-Storage-Facility-Rental-and-Management-System/.archify/workflow-flow3-return-settlement-20261106-110500/flow3-return-settlement-workflow.html)
-  - Sequence: [flow3-return-settlement-sequence.html](file:///c:/Users/admin/Documents/A_FPT/Tempory_Project/Self-Storage-Facility-Rental-and-Management-System/.archify/sequence-flow3-return-settlement-20261106-110500/flow3-return-settlement-sequence.html)
+  - Workflow: [flow3-return-settlement-workflow.html](diagrams/flow-3-return-settlement/flow3-return-settlement-workflow.html)
+  - Sequence: [flow3-return-settlement-sequence.html](diagrams/flow-3-return-settlement/flow3-return-settlement-sequence.html)
 - **Commit Snapshot:** [`aa2e49023f059a4173225f87f7fb325341466ee2`](https://github.com/Nguyen-Van-Gia-Binh/Self-Storage-Facility-Rental-and-Management-System/tree/aa2e49023f059a4173225f87f7fb325341466ee2) (Commit mới nhất trên nhánh chính `main`)
 - **Tình trạng nghiệm thu:** `[x] Finalize thành công 4 gates (validate, deliver, check, browser-check: 100% PASS, Exit code 0) — Đã bật link_mode: "web" cho phép click trực tiếp vào từng dòng code GitHub.`
 
@@ -741,8 +741,8 @@ Mỗi Worker Subagent sau khi hoàn thành việc vẽ sơ đồ bắt buộc ph
 
 - **Người phụ trách (Assignee):** **Huỳnh Nhật** (WS3 — Tài chính, Chính sách & Báo cáo BOM)
 - **Sơ đồ HTML Standalone:**
-  - Sơ đồ Kiến trúc Phân tầng BOM & Quản lý Giá (Architecture): [flow4-bom-policy-architecture.html](file:///e:/SEMESTER%205/SWP/Self-Storage-Facility-Rental-and-Management-System/docs/diagrams/flow4-bom-policy-architecture.html)
-  - Sơ đồ Dòng chảy Dữ liệu Doanh thu & Tỷ lệ Lấp đầy (Dataflow): [flow4-revenue-occupancy-dataflow.html](file:///e:/SEMESTER%205/SWP/Self-Storage-Facility-Rental-and-Management-System/docs/diagrams/flow4-revenue-occupancy-dataflow.html)
+  - Sơ đồ Kiến trúc Phân tầng BOM & Quản lý Giá (Architecture): [flow4-bom-policy-architecture.html](diagrams/flow-4-bom-pricing/flow4-bom-policy-architecture.html)
+  - Sơ đồ Dòng chảy Dữ liệu Doanh thu & Tỷ lệ Lấp đầy (Dataflow): [flow4-revenue-occupancy-dataflow.html](diagrams/flow-4-bom-pricing/flow4-revenue-occupancy-dataflow.html)
 - **Commit Snapshot đối chiếu:** `79ae7fa01f622fe2b4b8280da42be568a6ddf8ce` (Commit mới nhất trên nhánh `main`)
 - **Tình trạng nghiệm thu:** `[x] Finalize thành công 4 gates (validate: PASS, deliver: PASS, check: PASS, browser-check: PASS) — Profile showcase, 0 crossovers, 0 diagnostics, Exit code 0. Toàn bộ 100% các node đều có VERIFIED SOURCE với link_mode: "web" trỏ trực tiếp đến từng dòng mã nguồn thật.`
 
@@ -774,8 +774,8 @@ Mỗi Worker Subagent sau khi hoàn thành việc vẽ sơ đồ bắt buộc ph
 
 - **Người phụ trách (Assignee):** **Lê Thanh Tùng** (WS4 — Quản trị, Điều phối & Backend Lead)
 - **Sơ đồ HTML Archify Standalone:**
-  - Sơ đồ Quy trình Nghiệp vụ (Workflow): [.archify/workflow-flow2-checkin-handover-20261106-121730/flow2-checkin-handover-workflow.html](file:///c:/Users/admin/Documents/A_FPT/Tempory_Project/Self-Storage-Facility-Rental-and-Management-System/.archify/workflow-flow2-checkin-handover-20261106-121730/flow2-checkin-handover-workflow.html)
-  - Sơ đồ Vòng đời Trạng thái (Lifecycle): [.archify/lifecycle-flow2-contract-checkin-20261106-121730/flow2-contract-checkin-lifecycle.html](file:///c:/Users/admin/Documents/A_FPT/Tempory_Project/Self-Storage-Facility-Rental-and-Management-System/.archify/lifecycle-flow2-contract-checkin-20261106-121730/flow2-contract-checkin-lifecycle.html)
+  - Sơ đồ Quy trình Nghiệp vụ (Workflow): [flow2-checkin-handover-workflow.html](diagrams/flow-2-checkin-handover/flow2-checkin-handover-workflow.html)
+  - Sơ đồ Vòng đời Trạng thái (Lifecycle): [flow2-contract-checkin-lifecycle.html](diagrams/flow-2-checkin-handover/flow2-contract-checkin-lifecycle.html)
 - **Tình trạng nghiệm thu:** [x] Finalize thành công 4 gates (`validate: pass`, `deliver: pass`, `check: pass`, `browser-check: pass`) trên profile `showcase`, 0 diagnostics, Exit code 0.
 - **Commit Snapshot đối chiếu:** `aa2e49023f059a4173225f87f7fb325341466ee2`
 
@@ -807,8 +807,8 @@ Mỗi Worker Subagent sau khi hoàn thành việc vẽ sơ đồ bắt buộc ph
 #### 📊 BÁO CÁO ĐỘ LỆCH MÃ NGUỒN: FLOW 6 — RENEWAL & OVERDUE LIFECYCLE
 
 - **Người phụ trách (Assignee):** **Nguyễn Phạm Xuân Nhi** (WS1 — Sub-flow 6.1) & **Nguyễn Văn Gia Bình** (WS2 — Sub-flow 6.2)
-- **Sơ đồ HTML Workflow (6.1):** `docs/diagrams/flow-6-1-renewal-workflow.html`
-- **Sơ đồ HTML Lifecycle (6.2):** `docs/diagrams/flow-6-2-overdue-lifecycle.html`
+- **Sơ đồ HTML Workflow (6.1):** `docs/diagrams/flow-6-renewal-overdue/flow-6-1-renewal-workflow.html`
+- **Sơ đồ HTML Lifecycle (6.2):** `docs/diagrams/flow-6-renewal-overdue/flow-6-2-overdue-lifecycle.html`
 - **Tình trạng nghiệm thu:** [x] Finalize thành công 4 gates (Exit code 0, showcase profile)
 
 ##### 1. Bảng đối soát thiết kế vs thực tế:
@@ -839,8 +839,8 @@ Mỗi Worker Subagent sau khi hoàn thành việc vẽ sơ đồ bắt buộc ph
 #### 📊 BÁO CÁO ĐỘ LỆCH MÃ NGUỒN: FLOW 7 — SUPPORT REQUEST, DAMAGE COMPENSATION & UNIT SWAP
 
 - **Người phụ trách (Assignee):** **Lê Thanh Tùng** (WS4 — Backend Lead, Security & Incident Handling)
-- **Sơ đồ HTML Workflow:** `docs/diagrams/flow7-support-ticket-workflow.html`
-- **Sơ đồ HTML Sequence:** `docs/diagrams/flow7-damage-compensation-sequence.html`
+- **Sơ đồ HTML Workflow:** `docs/diagrams/flow-7-support-incident/flow7-support-ticket-workflow.html`
+- **Sơ đồ HTML Sequence:** `docs/diagrams/flow-7-support-incident/flow7-damage-compensation-sequence.html`
 - **Tình trạng nghiệm thu:** [x] Finalize thành công 4 gates (Exit code 0, showcase profile, 0 diagnostics)
 - **Commit Snapshot đối chiếu:** `346974f7c7ac2b3e2ce0f2625b679eebd936de25`
 
@@ -867,8 +867,8 @@ Mỗi Worker Subagent sau khi hoàn thành việc vẽ sơ đồ bắt buộc ph
 #### 📊 BÁO CÁO ĐỘ LỆCH MÃ NGUỒN: FLOW SYS — AUTHENTICATION, MULTI-FACILITY RBAC & SCHEDULED CRONJOBS
 
 - **Người phụ trách (Assignee):** **Lê Thanh Tùng** (WS4 — Backend Lead, Security & Multi-Facility RBAC) phối hợp cùng **Huỳnh Nhật** (WS3 — Cron Config)
-- **Sơ đồ HTML Kiến trúc Bảo mật (Architecture):** `docs/diagrams/flow-sys-security-architecture.html`
-- **Sơ đồ HTML Trình tự Tác vụ Ngầm (Sequence):** `docs/diagrams/flow-sys-cron-schedulers-sequence.html`
+- **Sơ đồ HTML Kiến trúc Bảo mật (Architecture):** `docs/diagrams/flow-sys-security-cron/flow-sys-security-architecture.html`
+- **Sơ đồ HTML Trình tự Tác vụ Ngầm (Sequence):** `docs/diagrams/flow-sys-security-cron/flow-sys-cron-schedulers-sequence.html`
 - **Tình trạng nghiệm thu:** [x] Finalize thành công 4 gates (Exit code 0, showcase profile, 0 diagnostics)
 - **Commit Snapshot đối chiếu:** `7b81ffe7c2be1fa5d46f0543b6710f3dc9ed5729`
 
