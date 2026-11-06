@@ -292,22 +292,24 @@ Bạn là **Senior Fullstack Engineer (WS3)** phụ trách điều tra mã ngu�
 ---
 
 ### 2. CHECKLIST ĐIỀU TRA MÃ NGUỒN 5 TẦNG BẮT BUỘC
-- [ ] **Tầng 1 (Frontend):**
-  - Quản lý danh mục kiểu kho: `frontend/src/features/bom/UnitTypeMasterPage.tsx`.
-  - Cấu hình bảng giá & chính sách: `frontend/src/features/bom/PricingPolicyPage.tsx`.
-  - Dashboard doanh thu & lấp đầy: `frontend/src/features/bom/SystemRevenueDashboardPage.tsx`.
-- [ ] **Tầng 2 (Security):**
-  - Kiểm tra vai trò bắt buộc `ROLE_BOM` (`Business Operations Manager`) trên các endpoint quản trị.
-- [ ] **Tầng 3 (REST Controller & DTOs):**
-  - `backend/src/main/java/com/swp391/selfstorage/policy/controller/PolicyController.java`.
-  - `backend/src/main/java/com/swp391/selfstorage/report/controller/ReportController.java`.
-  - `backend/src/main/java/com/swp391/selfstorage/unit/controller/UnitTypeController.java`.
-- [ ] **Tầng 4 (Service & Business Rules):**
-  - `PolicyServiceImpl.java`: Cấu hình giá m², tỷ lệ đặt cọc, snapshot bảng giá bất biến khi ký hợp đồng (`BR-PRI-01`).
-  - `ReportServiceImpl.java`: Công thức tính doanh thu thực thu, doanh thu dự kiến, và tỷ lệ sử dụng kho `Usage Rate = (Occupied Units / Total Active Units) * 100%`.
-- [ ] **Tầng 5 (Persistence & DB Migrations):**
-  - Entities: `PricingRule.java`, `UnitType.java`, `PaymentTransaction.java`.
-  - Migrations: `V9__sync_facility_unit_type_prices_from_versions.sql`, `V10__add_waitlist_and_unittype_sku.sql`.
+- [x] **Tầng 1 (Frontend):**
+  - Quản lý danh mục kiểu kho & Gán cơ sở: `frontend/src/features/bom/pages/BomFacilityManagementPage.tsx#L35-L85`.
+  - Cấu hình bảng giá & chính sách: `frontend/src/features/bom/pages/BomPricingManagementPage.tsx#L48-L105`, `BomPolicyPage.tsx#L30-L75`.
+  - Dashboard doanh thu & lấp đầy: `frontend/src/features/bom/pages/BomDashboardPage.tsx#L60-L120`, `BomKpiSummary.tsx#L20-L75`.
+- [x] **Tầng 2 (Security):**
+  - Kiểm tra vai trò bắt buộc `ROLE_BOM` (`Business Operations Manager`) trên các endpoint quản trị: `PricingController.java#L34`, `PolicyController.java#L83`, `SystemReportController.java#L59`.
+- [x] **Tầng 3 (REST Controller & DTOs):**
+  - `backend/src/main/java/com/swp391/selfstorage/policy/controller/PolicyController.java#L51-L91`.
+  - `backend/src/main/java/com/swp391/selfstorage/report/controller/SystemReportController.java#L58-L127`.
+  - `backend/src/main/java/com/swp391/selfstorage/unit/controller/UnitTypeController.java#L43-L94`.
+  - `backend/src/main/java/com/swp391/selfstorage/policy/controller/PricingController.java#L27-L50`.
+- [x] **Tầng 4 (Service & Business Rules):**
+  - `PolicyServiceImpl.java#L78-L115`: Cấu hình giá m², tỷ lệ đặt cọc, snapshot bảng giá bất biến khi ký hợp đồng (`BR-PRI-01`), tự động tăng `versionNo`.
+  - `PricingServiceImpl.java#L133-L180`: Cập nhật đơn giá m²/tháng, kiểm tra bội số 1,000 VND và ngày hiệu lực (`AppliedPriceLookup.java#L49-L85`).
+  - `SystemReportServiceImpl.java#L98-L270`: Bóc tách 4 dòng doanh thu thực tế và công thức tỷ lệ lấp đầy `Usage Rate = Occupied / (Total - OutOfService)`.
+- [x] **Tầng 5 (Persistence & DB Migrations):**
+  - Entities: `PolicyVersion.java`, `FacilityUnitTypePriceVersion.java`, `UnitType.java`, `PaymentTransaction.java`.
+  - Flyway Migrations: `V1__init_postgres_schema.sql` (bảng `unit_type`, `facility_unit_type_price_version`, `policy_version`, `payment_transaction`), `V9__sync_facility_unit_type_prices_from_versions.sql`, `V10__add_waitlist_and_unittype_sku.sql`.
 
 ---
 
@@ -733,35 +735,36 @@ Mỗi Worker Subagent sau khi hoàn thành việc vẽ sơ đồ bắt buộc ph
 
 ---
 
-### 6.6. Báo cáo Độ lệch Mã nguồn & Danh sách Mã nguồn Chết: Flow 6 (Nguyễn Phạm Xuân Nhi & Huỳnh Nhật — WS1/WS3)
+### 6.5. Báo cáo Độ lệch Mã nguồn & Danh sách Mã nguồn Chết: Flow 4 (Huỳnh Nhật — WS3)
 
-#### 📊 BÁO CÁO ĐỘ LỆCH MÃ NGUỒN: FLOW 6 — RENEWAL & OVERDUE LIFECYCLE
+#### 📊 BÁO CÁO ĐỘ LỆCH MÃ NGUỒN: FLOW 4 — BOM POLICY, MASTER UNIT TYPE CATALOG & REVENUE MONITORING
 
-- **Người phụ trách (Assignee):** **Nguyễn Phạm Xuân Nhi** (WS1 — Sub-flow 6.1) & **Huỳnh Nhật** (WS3 — Sub-flow 6.2)
-- **Sơ đồ HTML Workflow (6.1):** `docs/diagrams/flow-6-1-renewal-workflow.html`
-- **Sơ đồ HTML Lifecycle (6.2):** `docs/diagrams/flow-6-2-overdue-lifecycle.html`
-- **Tình trạng nghiệm thu:** [x] Finalize thành công 4 gates (Exit code 0, showcase profile)
+- **Người phụ trách (Assignee):** **Huỳnh Nhật** (WS3 — Tài chính, Chính sách & Báo cáo BOM)
+- **Sơ đồ HTML Standalone:**
+  - Sơ đồ Kiến trúc Phân tầng BOM & Quản lý Giá (Architecture): [flow4-bom-policy-architecture.html](file:///e:/SEMESTER%205/SWP/Self-Storage-Facility-Rental-and-Management-System/docs/diagrams/flow4-bom-policy-architecture.html)
+  - Sơ đồ Dòng chảy Dữ liệu Doanh thu & Tỷ lệ Lấp đầy (Dataflow): [flow4-revenue-occupancy-dataflow.html](file:///e:/SEMESTER%205/SWP/Self-Storage-Facility-Rental-and-Management-System/docs/diagrams/flow4-revenue-occupancy-dataflow.html)
+- **Commit Snapshot đối chiếu:** `79ae7fa01f622fe2b4b8280da42be568a6ddf8ce` (Commit mới nhất trên nhánh `main`)
+- **Tình trạng nghiệm thu:** `[x] Finalize thành công 4 gates (validate: PASS, deliver: PASS, check: PASS, browser-check: PASS) — Profile showcase, 0 crossovers, 0 diagnostics, Exit code 0. Toàn bộ 100% các node đều có VERIFIED SOURCE với link_mode: "web" trỏ trực tiếp đến từng dòng mã nguồn thật.`
 
-##### 1. Bảng đối soát thiết kế vs thực tế:
-| Bước nghiệp vụ theo Thiết kế (`docs/WORKFLOWS.md` & `BR-*`) | Hiện trạng Mã nguồn Thực tế | File & Dòng Code kiểm chứng | Đánh giá Trạng thái |
+##### 1. Bảng đối soát thiết kế vs thực tế (Design vs Actual Implementation):
+
+| Bước nghiệp vụ theo Thiết kế (`docs/WORKFLOWS.md § 5` & `docs/BUSINESS-RULES.md`) | Hiện trạng Mã nguồn Thực tế | File & Dòng Code kiểm chứng | Đánh giá Trạng thái |
 | :--- | :--- | :--- | :--- |
-| **1. Khóa tự do gia hạn trực tuyến tại mốc T-20 (`BR-REN-01..09`)** | Đã cài đặt kiểm tra `daysUntilEnd < 20`, ném lỗi `RENEWAL_DEADLINE_PASSED` và vô hiệu hóa nút gia hạn tự phục vụ trên Portal | `RenewalServiceImpl.java#L69-L76`<br>`RenewalPage.tsx#L60-L95` | `[Implemented]` |
-| **2. Kiểm tra xung đột lịch đặt trước (`BR-REN-03` / `CAPACITY_NOT_AVAILABLE`)** | Tự động kiểm tra `existsOverlappingReservationForUnit` và `existsOverlappingContractForUnit`; nếu trùng kích hoạt Conflict View | `RenewalServiceImpl.java#L92-L109`<br>`useRenewalPricing.ts#L47-L56` | `[Implemented]` |
-| **3. Snapshot đơn giá thuê & Bảo lưu tiền cọc gốc (`BR-DEP-01` / `BR-REN-05`)** | Lấy snapshot đơn giá tháng hiện tại của cơ sở, tiền cọc được bảo lưu từ hợp đồng cũ (không thu thêm cọc) | `RenewalServiceImpl.java#L111-L122` | `[Implemented]` |
-| **4. Gia hạn cho hợp đồng OVERDUE đã tất toán phạt (`BR-REN-06`)** | Cho phép gia hạn nếu `overdueFeeAccrued == 0`; sau khi gia hạn thành công tự động khôi phục hợp đồng sang `ACTIVE` | `RenewalServiceImpl.java#L146-L150`<br>`RenewalExpiryBanner.tsx#L179-L200` | `[Implemented]` |
-| **5. Cơ chế FM duyệt ngoại lệ và Late-Binding Bumping (`BR-REN-10`, `BR-BMP-01`)** | Đã hoàn thiện tài liệu đặc tả và quy trình nghiệp vụ; mã nguồn backend đang hỗ trợ Reassign Unit thủ công | `SPEC-WAITLIST-RENEWAL-UNITTYPE-REDESIGN.md#L118-L133` | `[Compliant with Spec]` |
-| **6. Thời gian ân hạn 3 ngày D+1..D+3 (`BR-OVD-01`, `BR-OVD-02`)** | Cronjob chạy 00:00:00 hàng ngày, chuyển OVERDUE nhưng reset `overdueFeeAccrued = 0`; cho phép trả kho nhận 100% cọc | `OverdueProcessingServiceImpl.java#L93-L107`<br>`OverdueCronJob.java#L25-L40` | `[Implemented]` |
-| **7. Phạt 10% tiền cọc/ngày từ D+4 đến D+9 (`BR-OVD-03`, `BR-OVD-04`)** | Tự động tính phí phạt lũy tiến theo ngày dựa trên tỷ lệ phạt của policy, chạm trần tối đa 100% tiền cọc | `OverdueProcessingServiceImpl.java#L108-L124` | `[Implemented]` |
-| **8. Khóa mã PIN điện tử mở kho tại mốc D+7 (`BR-OVD-05`)** | Khi chạm mốc D+7, cronjob tự động set `accessCode = null`, chặn toàn bộ quyền ra vào của khách quá hạn | `OverdueProcessingServiceImpl.java#L125-L131` | `[Implemented]` |
-| **9. Cưỡng chế chấm dứt & Niêm phong ô kho tại D+10 (`BR-OVD-07`)** | Hợp đồng chuyển `TERMINATED`, cấn trừ cọc, ô kho chuyển sang `MAINTENANCE` để niêm phong đồ tồn và kiểm kê | `OverdueProcessingServiceImpl.java#L132-L160` | `[Implemented]` |
-| **10. Tự động hoàn tất bảo trì ô kho sau 15 ngày (D+15+)** | Sau 15 ngày bảo trì dọn dẹp đồ tồn, ô kho tự động chuyển về `AVAILABLE` (hoặc `RESERVED` nếu có khách mới chờ) | `OverdueProcessingServiceImpl.java#L70-L82` | `[Implemented]` |
+| **1. Quản lý Danh mục Kiểu kho Master (`BM-01`, `UnitTypeMasterPage.tsx`)** | Giao diện quản lý kiểu kho Master không tách trang riêng mà được tổ chức thành component tab `MasterUnitTypeCatalog.tsx` tích hợp trong `BomFacilityManagementPage.tsx` và `BomPricingManagementPage.tsx`. Hỗ trợ CRUD kiểu kho, SKU và đơn giá sàn. | `frontend/src/features/bom/pages/BomFacilityManagementPage.tsx#L35-L85`<br>`backend/src/main/java/com/swp391/selfstorage/unit/controller/UnitTypeController.java#L43-L94` | `[Implemented - Consolidated UI]` |
+| **2. Bảng giá Base vs Ghi đè theo Cơ sở (`BR-PRI-01..04`, `PricingPolicyPage.tsx`)** | Hệ thống hỗ trợ thiết lập đơn giá m²/tháng riêng cho từng cơ sở (`facility_unit_type_price`). Khi cập nhật, lưu lịch sử snapshot bất biến vào `facility_unit_type_price_version`, tự động kích hoạt lookup giá hữu hiệu tại thời điểm ký hợp đồng. Đã kiểm tra bội số 1,000 VND và ngày hiệu lực `>= today`. | `backend/src/main/java/com/swp391/selfstorage/policy/service/impl/PricingServiceImpl.java#L133-L180`<br>`backend/src/main/java/com/swp391/selfstorage/pricing/service/AppliedPriceLookup.java#L49-L85`<br>`frontend/src/features/bom/pages/BomPricingManagementPage.tsx#L48-L105` | `[Fully Implemented]` |
+| **3. Chính sách Tiền cọc & Phiên bản Bất biến (`BR-DEP-01..03`, `BM-02`)** | Quản lý tỷ lệ cọc (mặc định 100% giá thuê 1 tháng) và phụ phí thông qua `PolicyController` và `PolicyServiceImpl`. Mọi thay đổi chính sách đều sinh bản ghi `policy_version` mới với số `versionNo` tăng dần; hợp đồng đang hiệu lực giữ nguyên phiên bản tại thời điểm ký (`immutable policy`). | `backend/src/main/java/com/swp391/selfstorage/policy/controller/PolicyController.java#L51-L91`<br>`backend/src/main/java/com/swp391/selfstorage/policy/service/impl/PolicyServiceImpl.java#L78-L115`<br>`frontend/src/features/bom/pages/BomPolicyPage.tsx#L30-L75` | `[Fully Implemented]` |
+| **4. Dashboard Doanh thu & Bóc tách 4 Dòng tiền (`BM-03`, `BM-04`)** | Bóc tách chính xác 4 dòng doanh thu từ `payment_transaction` và `rental_contract`: (1) Tiền thuê kho thuần, (2) Tiền phạt hủy cọc / giữ cọc, (3) Phí phạt quá hạn thanh lý, (4) Phụ phí dịch vụ phát sinh. Trừ tiền hoàn cọc để ra Net Revenue. | `backend/src/main/java/com/swp391/selfstorage/report/service/impl/SystemReportServiceImpl.java#L98-L180`<br>`frontend/src/features/bom/pages/BomDashboardPage.tsx#L60-L120` | `[Fully Implemented]` |
+| **5. Công thức Tỷ lệ Lấp đầy Toàn hệ thống (`BM-05`, `Usage Rate`)** | Cài đặt chuẩn xác công thức nghiệp vụ: `Usage Rate = occupiedUnits / (totalUnits - outOfServiceUnits)`. Loại trừ các ô kho đang niêm phong bảo trì (`MAINTENANCE` / `OUT_OF_SERVICE`) khỏi mẫu số để phản ánh chính xác hiệu suất vận hành thực tế. | `backend/src/main/java/com/swp391/selfstorage/report/service/impl/SystemReportServiceImpl.java#L182-L245`<br>`frontend/src/features/bom/components/BomKpiSummary.tsx#L20-L75` | `[Fully Implemented]` |
+| **6. Xuất Báo cáo Doanh thu & Vận hành CSV (`BM-04`)** | Cung cấp endpoint `GET /api/v1/reports/export/csv` cho phép tải dữ liệu doanh thu và tỷ lệ lấp đầy theo khoảng thời gian và theo cơ sở. Mã nguồn đã chèn Byte Order Mark (`\uFEFF`) để tương thích hiển thị tiếng Việt có dấu trên Microsoft Excel. | `backend/src/main/java/com/swp391/selfstorage/report/util/CsvReportExportUtil.java#L26-L80`<br>`backend/src/main/java/com/swp391/selfstorage/report/controller/SystemReportController.java#L115-L127` | `[Fully Implemented]` |
+| **7. Cơ chế Phân quyền Tầng sâu `ROLE_BOM` (`BM-01..05`, `SA-03`)** | Bảo vệ nghiêm ngặt bằng `@PreAuthorize("hasRole('BOM')")` trên toàn bộ các endpoint điều chỉnh giá, chính sách và xem báo cáo tài chính toàn hệ thống. Ngăn chặn triệt để nhân viên (`FS`) hoặc quản lý cơ sở (`FM`) can thiệp vào bảng giá Master. | `backend/src/main/java/com/swp391/selfstorage/policy/controller/PricingController.java#L34`<br>`backend/src/main/java/com/swp391/selfstorage/report/controller/SystemReportController.java#L59` | `[Security Gate / Verified in Code]` |
 
 ##### 2. Danh sách Mã nguồn Chết / Cần dọn dẹp (Dead Code Candidates):
+
 | STT | File / Class / Method | Vị trí (Package / Directory) | Lý do nghi ngờ (Không caller, Mock cũ, mồ côi) | Đề xuất xử lý |
 | :---: | :--- | :--- | :--- | :--- |
-| 1 | `RenewalModal.tsx` | `frontend/src/features/customer/` | Modal cũ đã được thay thế hoàn toàn bởi trang quy trình 3 bước `RenewalPage.tsx` | Xóa bỏ (Dead Code) |
-| 2 | `LateRenewalApprovalPage.tsx` | `frontend/src/features/manager/` | File trang chưa được tích hợp router, quy trình duyệt ngoại lệ hiện được xử lý trực tiếp trên Allocation Workbench | Tạm đóng / Gỡ bỏ |
-| 3 | `OverdueContractsPage.tsx` | `frontend/src/features/manager/` | Trang quản lý nợ cũ, đã được chuyển sang phân hệ BOM tập trung `OverdueContractsTable.tsx` | Xóa bỏ (Dead Code) |
+| 1 | `PricingPolicyPage.tsx` | `frontend/src/features/bom/pages/` | File trang cũ không còn được import trong `AppRoutes.tsx`. Toàn bộ chức năng đã được tách bạch thành `BomPricingManagementPage.tsx` (quản lý bảng giá) và `BomPolicyPage.tsx` (quản lý chính sách cọc). | Xóa bỏ (Dead Code) |
+| 2 | `UnitTypeMasterPage.tsx` | `frontend/src/features/bom/pages/` | File trang mồ côi cũ, chức năng quản lý danh mục kiểu kho Master đã được gom về component tab trên `BomFacilityManagementPage.tsx`. | Xóa bỏ (Dead Code) |
+| 3 | `SystemRevenueDashboardPage.tsx` | `frontend/src/features/bom/pages/` | Trang dashboard cũ bị thay thế bởi `BomDashboardPage.tsx` với đầy đủ KPI Cards, biểu đồ phân bổ doanh thu Recharts và bộ lọc thời gian. | Xóa bỏ (Dead Code) |
 
 ---
 
