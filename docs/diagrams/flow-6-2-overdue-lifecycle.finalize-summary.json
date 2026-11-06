@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "lifecycle",
+  "quality": "showcase",
+  "specification": {
+    "path": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\lifecycle-flow6-overdue-20261106-114200\\candidate.json",
+    "sha256": "e2c4050ec97d5a906343680ab417badc4294e213fe610e0719f5309701c8f8ef",
+    "bytes": 8500
+  },
+  "artifact": {
+    "path": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-6-2-overdue-lifecycle.html",
+    "sha256": "acacec98c447ce66a4c230773740be6b4dce704fe867dec2beedf0f9f6b3d642",
+    "bytes": 854472
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-6-2-overdue-lifecycle.finalize.json",
+    "summaryReceipt": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-6-2-overdue-lifecycle.finalize-summary.json",
+    "browserCheckReceipt": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-6-2-overdue-lifecycle.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-06T03:54:51.643Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 6809,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

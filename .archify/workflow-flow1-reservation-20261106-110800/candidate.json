@@ -1,0 +1,570 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Flow 1 — Storage Unit Reservation & Waitlist CRM Workflow",
+    "subtitle": "Khảo sát hiện trạng mã nguồn 5 tầng: UI -> Controllers -> Services (BR-RES, BR-WAT) -> DB & Schedulers",
+    "output": "docs/diagrams/flow-1-reservation-workflow.html",
+    "animation": "trace",
+    "visual_preset": "signal-flow",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Nguyen-Van-Gia-Binh/Self-Storage-Facility-Rental-and-Management-System.git",
+      "provider": "github",
+      "revision": "aa2e49023f059a4173225f87f7fb325341466ee2",
+      "link_mode": "web"
+    }
+  },
+  "lanes": [
+    { "id": "customer", "label": "Storage Customer (Portal UI)" },
+    { "id": "system_svc", "label": "System & Reservation Services" },
+    { "id": "waitlist_crm", "label": "Waitlist & FM Telesales CRM", "variant": "exception" },
+    { "id": "finance_db", "label": "Persistence & Database Layer" }
+  ],
+  "phases": [
+    { "id": "phase_discovery", "label": "Khám phá & Kiểm tra Hạn ngạch", "fromCol": 0, "toCol": 1 },
+    { "id": "phase_booking", "label": "Đặt chỗ & Giữ kho 48h", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "phase_fulfillment", "label": "Thanh toán & Phân bổ Ô kho", "fromCol": 4, "toCol": 5 }
+  ],
+  "mainPath": [
+    "browse_catalog",
+    "check_capacity",
+    "decide_capacity",
+    "booking_form",
+    "create_reservation",
+    "booking_payment_step",
+    "vnpay_payment",
+    "confirm_reservation",
+    "late_binding_allocation",
+    "db_commit",
+    "ready_for_checkin"
+  ],
+  "nodes": [
+    {
+      "id": "browse_catalog",
+      "lane": "customer",
+      "col": 0,
+      "width": 120,
+      "type": "frontend",
+      "label": "Duyệt kho",
+      "sublabel": "UnitPickerPage",
+      "sources": [
+        {
+          "path": "frontend/src/features/customer/pages/UnitPickerPage.tsx",
+          "line": 47,
+          "end_line": 83,
+          "label": "UnitPickerPage lọc loại kho"
+        },
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/unit/controller/StorageUnitController.java",
+          "line": 31,
+          "end_line": 45,
+          "label": "GET /api/v1/units/available"
+        }
+      ]
+    },
+    {
+      "id": "check_capacity",
+      "lane": "system_svc",
+      "col": 0,
+      "width": 125,
+      "type": "backend",
+      "label": "Check Capacity",
+      "sublabel": "AvailabilityService",
+      "tag": "BR-AVL-01..04",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/unit/service/AvailabilityServiceImpl.java",
+          "line": 65,
+          "end_line": 142,
+          "label": "AvailabilityServiceImpl.java"
+        }
+      ]
+    },
+    {
+      "id": "decide_capacity",
+      "lane": "system_svc",
+      "col": 1,
+      "width": 120,
+      "type": "backend",
+      "label": "Còn chỗ trống?",
+      "sublabel": "Capacity slot",
+      "tag": "Đệm 15 ngày",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/unit/service/AvailabilityServiceImpl.java",
+          "line": 115,
+          "end_line": 128,
+          "label": "Capacity slot calculation"
+        }
+      ]
+    },
+    {
+      "id": "branch_waitlist",
+      "lane": "waitlist_crm",
+      "col": 1,
+      "width": 120,
+      "type": "frontend",
+      "label": "Đăng ký Waitlist",
+      "sublabel": "WaitlistModal",
+      "tag": "BR-WAT-01",
+      "sources": [
+        {
+          "path": "frontend/src/features/customer/components/WaitlistRegistrationModal.tsx",
+          "line": 87,
+          "end_line": 130,
+          "label": "Modal đăng ký Waitlist (BR-WAT-01)"
+        },
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/waitlist/WaitlistController.java",
+          "line": 38,
+          "end_line": 50,
+          "label": "POST /api/v1/waitlists"
+        }
+      ]
+    },
+    {
+      "id": "booking_form",
+      "lane": "customer",
+      "col": 2,
+      "width": 120,
+      "type": "frontend",
+      "label": "Form đặt chỗ",
+      "sublabel": "BookingPage",
+      "tag": "BR-RES-01 / SUP-04",
+      "sources": [
+        {
+          "path": "frontend/src/features/customer/pages/BookingPage.tsx",
+          "line": 326,
+          "end_line": 350,
+          "label": "loadPrice() Dynamic Quote (BR-PRI-01)"
+        },
+        {
+          "path": "frontend/src/features/customer/pages/BookingPage.tsx",
+          "line": 522,
+          "end_line": 585,
+          "label": "handleProceedToPayment() Form submit"
+        },
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/reservation/ReservationController.java",
+          "line": 40,
+          "end_line": 50,
+          "label": "POST /calculate-price endpoint"
+        }
+      ]
+    },
+    {
+      "id": "create_reservation",
+      "lane": "system_svc",
+      "col": 2,
+      "width": 125,
+      "type": "backend",
+      "label": "Tạo PENDING",
+      "sublabel": "ReservationService",
+      "tag": "Giữ 48h BR-DEP-03",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/reservation/ReservationController.java",
+          "line": 52,
+          "end_line": 68,
+          "label": "POST /api/v1/reservations (SC-01)"
+        },
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/reservation/service/ReservationServiceImpl.java",
+          "line": 285,
+          "end_line": 340,
+          "label": "createReservation() check 30d window"
+        }
+      ]
+    },
+    {
+      "id": "waitlist_lock",
+      "lane": "waitlist_crm",
+      "col": 2,
+      "width": 120,
+      "type": "backend",
+      "label": "Telesales Khóa 2h",
+      "sublabel": "WaitlistService",
+      "tag": "BR-WAT-02",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/waitlist/service/WaitlistServiceImpl.java",
+          "line": 188,
+          "end_line": 209,
+          "label": "startContacting()"
+        }
+      ]
+    },
+    {
+      "id": "booking_payment_step",
+      "lane": "customer",
+      "col": 3,
+      "width": 120,
+      "type": "frontend",
+      "label": "Chọn phương thức",
+      "sublabel": "PaymentStep",
+      "tag": "VNPay / VietQR",
+      "sources": [
+        {
+          "path": "frontend/src/features/customer/components/BookingPaymentStep.tsx",
+          "line": 98,
+          "end_line": 107,
+          "label": "Đếm ngược giữ kho 48h (BR-RES-02)"
+        },
+        {
+          "path": "frontend/src/features/customer/components/BookingPaymentStep.tsx",
+          "line": 170,
+          "end_line": 201,
+          "label": "Đối soát Webhook & VnpayPayLinks"
+        },
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/payment/service/impl/PaymentServiceImpl.java",
+          "line": 95,
+          "end_line": 150,
+          "label": "createCheckoutLink() SHA-512"
+        }
+      ]
+    },
+    {
+      "id": "cancel_or_reschedule",
+      "lane": "system_svc",
+      "col": 3,
+      "width": 125,
+      "type": "backend",
+      "label": "Dời lịch / Hủy",
+      "sublabel": "Reschedule & Cancel",
+      "tag": "BR-RES-06 / CAN-01",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/reservation/service/ReservationServiceImpl.java",
+          "line": 455,
+          "end_line": 589,
+          "label": "cancelReservation()"
+        }
+      ]
+    },
+    {
+      "id": "convert_waitlist",
+      "lane": "waitlist_crm",
+      "col": 3,
+      "width": 120,
+      "type": "backend",
+      "label": "Chốt cọc 24h",
+      "sublabel": "Convert to reserve",
+      "tag": "BR-WAT-03",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/waitlist/service/WaitlistServiceImpl.java",
+          "line": 210,
+          "end_line": 295,
+          "label": "convertToReservation()"
+        }
+      ]
+    },
+    {
+      "id": "vnpay_payment",
+      "lane": "customer",
+      "col": 4,
+      "width": 120,
+      "type": "cloud",
+      "label": "Thanh toán cọc",
+      "sublabel": "VNPay / VietQR",
+      "tag": "BR-PAY-01",
+      "sources": [
+        {
+          "path": "frontend/src/features/customer/pages/BookingPage.tsx",
+          "line": 680,
+          "end_line": 730,
+          "label": "Vnpay checkout flow"
+        }
+      ]
+    },
+    {
+      "id": "sched_hold_expiry",
+      "lane": "system_svc",
+      "col": 4,
+      "width": 125,
+      "type": "backend",
+      "label": "Quét cọc 48h",
+      "sublabel": "HoldExpiryJob",
+      "tag": "@Scheduled Cron",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/reservation/scheduler/ReservationHoldExpiryJob.java",
+          "line": 19,
+          "end_line": 30,
+          "label": "ReservationHoldExpiryJob.java"
+        }
+      ]
+    },
+    {
+      "id": "sched_lock_expiry",
+      "lane": "waitlist_crm",
+      "col": 4,
+      "width": 120,
+      "type": "backend",
+      "label": "Quét khóa 2h",
+      "sublabel": "LockExpiryJob",
+      "tag": "@Scheduled Cron",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/waitlist/scheduler/WaitlistLockExpiryJob.java",
+          "line": 20,
+          "end_line": 31,
+          "label": "WaitlistLockExpiryJob.java"
+        }
+      ]
+    },
+    {
+      "id": "confirm_reservation",
+      "lane": "system_svc",
+      "col": 5,
+      "width": 125,
+      "type": "backend",
+      "label": "Xác nhận Confirmed",
+      "sublabel": "Confirm payment",
+      "tag": "BR-PAY-02",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/reservation/service/ReservationServiceImpl.java",
+          "line": 634,
+          "end_line": 673,
+          "label": "confirmAfterPayment()"
+        }
+      ]
+    },
+    {
+      "id": "late_binding_allocation",
+      "lane": "waitlist_crm",
+      "col": 5,
+      "width": 120,
+      "type": "backend",
+      "label": "FM Gán ô kho",
+      "sublabel": "FM Unit Assign",
+      "tag": "BR-AVL-04 / FM-02",
+      "sources": [
+        {
+          "path": "frontend/src/features/manager/pages/AllocationPage.tsx",
+          "line": 173,
+          "end_line": 205,
+          "label": "AllocationPage handleConfirmAssignment"
+        },
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/reservation/ReservationController.java",
+          "line": 87,
+          "end_line": 105,
+          "label": "PUT /reservations/{id}/assign-unit"
+        },
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/reservation/service/ReservationServiceImpl.java",
+          "line": 674,
+          "end_line": 799,
+          "label": "assignUnit() Late-binding logic"
+        }
+      ]
+    },
+    {
+      "id": "db_commit",
+      "lane": "finance_db",
+      "col": 5,
+      "width": 120,
+      "type": "database",
+      "label": "Lưu CSDL",
+      "sublabel": "Rental entities",
+      "sources": [
+        {
+          "path": "backend/src/main/resources/db/migration/V1__init_postgres_schema.sql",
+          "line": 275,
+          "end_line": 300,
+          "label": "CREATE TABLE reservation"
+        },
+        {
+          "path": "backend/src/main/resources/db/migration/V1__init_postgres_schema.sql",
+          "line": 322,
+          "end_line": 370,
+          "label": "CREATE TABLE rental_contract"
+        },
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/reservation/entity/Reservation.java",
+          "line": 35,
+          "end_line": 85,
+          "label": "Reservation JPA Entity"
+        }
+      ]
+    },
+    {
+      "id": "ready_for_checkin",
+      "lane": "customer",
+      "col": 5,
+      "width": 120,
+      "type": "frontend",
+      "label": "Sẵn sàng nhận kho",
+      "sublabel": "Pending check-in",
+      "sources": [
+        {
+          "path": "frontend/src/features/customer/components/MyUnitsTable.tsx",
+          "line": 70,
+          "end_line": 85,
+          "label": "Mã PIN & QR Check-in Access"
+        },
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/reservation/service/ReservationServiceImpl.java",
+          "line": 360,
+          "end_line": 390,
+          "label": "Kích hoạt trạng thái CONFIRMED"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_browse_check",
+      "from": "browse_catalog",
+      "to": "check_capacity",
+      "variant": "default"
+    },
+    {
+      "id": "e_check_decide",
+      "from": "check_capacity",
+      "to": "decide_capacity",
+      "variant": "default"
+    },
+    {
+      "id": "e_decide_booking",
+      "from": "decide_capacity",
+      "to": "booking_form",
+      "label": "Còn kho trống",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e_decide_waitlist",
+      "from": "decide_capacity",
+      "to": "branch_waitlist",
+      "label": "Hết kho trống",
+      "variant": "dashed",
+      "role": "branch"
+    },
+    {
+      "id": "e_booking_create",
+      "from": "booking_form",
+      "to": "create_reservation",
+      "label": "Bấm đặt chỗ",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e_create_step",
+      "from": "create_reservation",
+      "to": "booking_payment_step",
+      "label": "Tạo PENDING",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e_step_pay",
+      "from": "booking_payment_step",
+      "to": "vnpay_payment",
+      "label": "Chuyển VNPay",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e_create_cancel",
+      "from": "create_reservation",
+      "to": "cancel_or_reschedule",
+      "label": "Hủy / dời",
+      "variant": "dashed",
+      "role": "branch"
+    },
+    {
+      "id": "e_step_sched",
+      "from": "booking_payment_step",
+      "to": "sched_hold_expiry",
+      "label": "Quá 48h hủy cọc",
+      "variant": "dashed"
+    },
+    {
+      "id": "e_wl_lock",
+      "from": "branch_waitlist",
+      "to": "waitlist_lock",
+      "label": "FM nhận tư vấn",
+      "variant": "default"
+    },
+    {
+      "id": "e_wl_sched",
+      "from": "waitlist_lock",
+      "to": "sched_lock_expiry",
+      "label": "Quá 2h mở khóa",
+      "variant": "dashed"
+    },
+    {
+      "id": "e_wl_convert",
+      "from": "waitlist_lock",
+      "to": "convert_waitlist",
+      "label": "Khách chốt cọc",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e_convert_step",
+      "from": "convert_waitlist",
+      "to": "booking_payment_step",
+      "label": "Cọc 24h VNPay",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e_pay_confirm",
+      "from": "vnpay_payment",
+      "to": "confirm_reservation",
+      "label": "TT thành công",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e_confirm_assign",
+      "from": "confirm_reservation",
+      "to": "late_binding_allocation",
+      "label": "FM gán kho",
+      "variant": "default"
+    },
+    {
+      "id": "e_assign_db",
+      "from": "late_binding_allocation",
+      "to": "db_commit",
+      "label": "Sinh hợp đồng",
+      "variant": "default"
+    },
+    {
+      "id": "e_db_ready",
+      "from": "db_commit",
+      "to": "ready_for_checkin",
+      "label": "Chờ nhận kho",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Chốt chặn 1: Happy Path & Cửa sổ 30 ngày",
+      "items": [
+        "Khách chỉ được đặt ngày nhận kho trong vòng tối đa 30 ngày (BR-RES-01).",
+        "Thu 100% tiền thuê N tháng + 1 tháng cọc Deposit trong 1 giao dịch (BR-PAY-01).",
+        "FM Late-binding: Khách không chọn ô số cụ thể; FM gán ô AVAILABLE trước ngày Check-in (BR-AVL-04)."
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Chốt chặn 2: Ngoại lệ Hết kho & Waitlist CRM",
+      "items": [
+        "Hết kho: Khách đăng ký hàng đợi miễn phí theo FIFO (BR-WAT-01).",
+        "FM mở CRM Inbox tư vấn: Khóa độc quyền 2h tránh gọi trùng (BR-WAT-02).",
+        "Chốt cọc: FM tạo đơn Reservation, khách có 24h thanh toán cọc VNPay (BR-WAT-03)."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Chốt chặn 3: Dời ngày có phí & Hủy 3 tầng",
+      "items": [
+        "Dời ngày (BR-RES-06): Báo trước >= 48h, tối đa dời 7 ngày, tính phí theo ngày.",
+        "Hủy sớm (>= 7d): Hoàn 100% thuê + 100% cọc (BR-CAN-01).",
+        "Hủy lửng (2-6d): Hoàn 100% thuê, phạt 50% cọc (BR-CAN-02).",
+        "Hủy sát nút (< 48h): Hoàn 100% thuê, phạt 100% cọc (BR-CAN-03)."
+      ]
+    }
+  ]
+}

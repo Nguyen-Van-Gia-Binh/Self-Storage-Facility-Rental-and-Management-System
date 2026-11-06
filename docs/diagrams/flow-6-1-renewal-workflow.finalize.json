@@ -1,0 +1,375 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "fail",
+  "type": "workflow",
+  "quality": "showcase",
+  "startedAt": "2026-11-06T04:40:22.614Z",
+  "specification": {
+    "path": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\workflow-flow6-renewal-20261106-114000\\candidate.json",
+    "sha256": "6f9b84c1b81d1a7d6242f834472b8d3f286c5acaccac7fd8ea3e228ed35732db",
+    "bytes": 8879
+  },
+  "artifact": {
+    "path": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-6-1-renewal-workflow.html",
+    "sha256": "a8ffa265ff4cf446dc9a45a3710a216908cb252bd34564bf0e0757dac74a5d89",
+    "bytes": 856205
+  },
+  "stages": {
+    "validate": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": null,
+      "execution": "embedded-in-deliver",
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\.agents\\skills\\archify\\bin\\archify.mjs",
+        "deliver",
+        "workflow",
+        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\workflow-flow6-renewal-20261106-114000\\candidate.json",
+        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-6-1-renewal-workflow.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": true,
+        "command": "validate",
+        "specification": {
+          "sha256": "6f9b84c1b81d1a7d6242f834472b8d3f286c5acaccac7fd8ea3e228ed35732db",
+          "bytes": 8879
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        }
+      }
+    },
+    "deliver": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 1958,
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\.agents\\skills\\archify\\bin\\archify.mjs",
+        "deliver",
+        "workflow",
+        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\workflow-flow6-renewal-20261106-114000\\candidate.json",
+        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-6-1-renewal-workflow.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "receiptId": "d65a949c-e17b-4295-9703-4c0ce4797a5b",
+        "ok": true,
+        "command": "deliver",
+        "type": "workflow",
+        "input": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\workflow-flow6-renewal-20261106-114000\\candidate.json",
+        "output": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-6-1-renewal-workflow.html",
+        "specification": {
+          "sha256": "6f9b84c1b81d1a7d6242f834472b8d3f286c5acaccac7fd8ea3e228ed35732db",
+          "bytes": 8879
+        },
+        "artifact": {
+          "sha256": "a8ffa265ff4cf446dc9a45a3710a216908cb252bd34564bf0e0757dac74a5d89",
+          "bytes": 856205
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        },
+        "evidence": {
+          "verified": true,
+          "repository": "https://github.com/Nguyen-Van-Gia-Binh/Self-Storage-Facility-Rental-and-Management-System",
+          "revision": "aa2e49023f059a4173225f87f7fb325341466ee2",
+          "references": 11
+        },
+        "update": {
+          "status": "unavailable",
+          "installedVersion": null,
+          "availableVersion": null,
+          "releaseNotes": null,
+          "checkedAt": null,
+          "source": null,
+          "noticeRequired": false,
+          "noticeText": null,
+          "reason": "disabled"
+        }
+      }
+    },
+    "check": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 482,
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\.agents\\skills\\archify\\bin\\archify.mjs",
+        "check",
+        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-6-1-renewal-workflow.html",
+        "--require-provenance"
+      ],
+      "receipt": {
+        "ok": true,
+        "file": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-6-1-renewal-workflow.html",
+        "artifact": {
+          "sha256": "a8ffa265ff4cf446dc9a45a3710a216908cb252bd34564bf0e0757dac74a5d89",
+          "bytes": 856205
+        },
+        "checks": [
+          {
+            "name": "single_svg",
+            "ok": true,
+            "details": [
+              "found 1 <svg> block(s)"
+            ]
+          },
+          {
+            "name": "finite_svg",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "orthogonal_arrows",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "label_route_clearance",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_crossings",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_corridors",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "container_border_runs",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "route_rhythm",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "legend_clearance",
+            "ok": true,
+            "details": []
+          }
+        ],
+        "composition": {
+          "schemaVersion": 1,
+          "profile": "showcase",
+          "status": "pass",
+          "summary": {
+            "errors": 0,
+            "warnings": 0
+          },
+          "metrics": {
+            "properCrossings": 0,
+            "resolvedCrossovers": 0,
+            "ambiguousCorridors": 0,
+            "arrowheadCollisions": 0,
+            "containerBorderRuns": 0,
+            "labelRouteClearanceIssues": 0,
+            "labelCanvasOverflowIssues": 0,
+            "minLabelRouteClearance": 9.5,
+            "desktopReadabilityIssues": 0,
+            "viewportHeightIssues": 0,
+            "minProjectedNodeTextPx": 7.380952380952381,
+            "maxBends": 0,
+            "routesOverSuggestedBends": 0,
+            "maxStretch": 1,
+            "routesOverSuggestedStretch": 0,
+            "minSegmentPx": 8,
+            "minInteriorSegmentPx": null,
+            "shortSegmentCount": 3,
+            "shortEndpointSegmentCount": 3,
+            "shortInteriorSegmentCount": 0,
+            "microSegmentCount": 0
+          },
+          "suggestedLimits": {
+            "bendsPerRelationship": 2,
+            "stretch": 1.35,
+            "segmentPx": 16,
+            "microSegmentPx": 8
+          },
+          "routeReview": {
+            "crossings": [],
+            "detours": []
+          },
+          "leadingSpace": {
+            "measured": false,
+            "reviewSuggested": false
+          },
+          "desktopReadability": {
+            "budgetBasis": "legacy-930",
+            "readerContract": "declared-wide-v1",
+            "availableDiagramWidth": 930,
+            "actualBudgetPx": 930,
+            "limit": "legacy",
+            "requestedTargetPx": null,
+            "requestedTargetMet": null,
+            "hardFloorPx": 6,
+            "hardFloorMet": true,
+            "minimumOwner": {
+              "kind": "node",
+              "id": "check_reminder"
+            },
+            "minimumSourceTextPx": 8,
+            "minimumProjectedTextPx": 7.380952380952381,
+            "semanticTextCount": 29
+          },
+          "issues": []
+        },
+        "provenance": "current",
+        "deliveryReceiptId": "d65a949c-e17b-4295-9703-4c0ce4797a5b"
+      }
+    },
+    "browser-check": {
+      "status": "fail",
+      "exitCode": 1,
+      "durationMs": 8669,
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\.agents\\skills\\archify\\bin\\archify.mjs",
+        "browser-check",
+        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-6-1-renewal-workflow.html",
+        "--json",
+        "--require-provenance"
+      ],
+      "execution": "in-process",
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": false,
+        "command": "browser-check",
+        "evidenceKind": "automated-browser",
+        "status": "fail",
+        "visualReview": "not-requested",
+        "provenance": "current",
+        "deliveryReceiptId": "d65a949c-e17b-4295-9703-4c0ce4797a5b",
+        "artifact": {
+          "path": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-6-1-renewal-workflow.html",
+          "sha256": "a8ffa265ff4cf446dc9a45a3710a216908cb252bd34564bf0e0757dac74a5d89",
+          "bytes": 856205
+        },
+        "state": {
+          "detail": "read",
+          "motion": "still"
+        },
+        "chrome": {
+          "status": "available",
+          "executable": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+        },
+        "diagnostics": [
+          {
+            "code": "viewer/temp-cleanup-incomplete",
+            "severity": "error",
+            "message": "Browser cleanup could not safely finish; inspect the reported retained path.",
+            "subject": {
+              "artifact": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-6-1-renewal-workflow.html"
+            },
+            "evidence": {
+              "reason": "Chrome did not exit; retained temporary profile \"C:\\Users\\xuann\\AppData\\Local\\Temp\\archify-visual-check-profile-aYj0SN\".",
+              "retainedDirectory": "C:\\Users\\xuann\\AppData\\Local\\Temp\\archify-visual-check-profile-aYj0SN"
+            },
+            "supportedFixes": [
+              "resolve the reported process or filesystem failure; verify directory ownership before manual cleanup"
+            ]
+          }
+        ],
+        "containment": {
+          "status": "fail",
+          "policy": "fit-or-reader-declared-readable-vertical-scroll",
+          "viewports": []
+        },
+        "themeStates": {
+          "status": "fail",
+          "viewports": []
+        },
+        "readability": {
+          "status": "fail",
+          "minimumProjectedNodeTextPx": 6,
+          "viewports": []
+        },
+        "viewerChrome": {
+          "status": "fail",
+          "viewports": []
+        },
+        "captures": {
+          "status": "not-requested",
+          "screenshots": [],
+          "contactSheet": null
+        },
+        "sidecars": {
+          "receipt": "flow-6-1-renewal-workflow.browser-check.json",
+          "files": []
+        },
+        "error": "Chrome did not exit; retained temporary profile \"C:\\Users\\xuann\\AppData\\Local\\Temp\\archify-visual-check-profile-aYj0SN\"."
+      }
+    }
+  },
+  "browserCheck": {
+    "requested": true,
+    "ran": false
+  },
+  "diagnostics": [
+    {
+      "code": "viewer/temp-cleanup-incomplete",
+      "severity": "error",
+      "message": "Browser cleanup could not safely finish; inspect the reported retained path.",
+      "subject": {
+        "artifact": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-6-1-renewal-workflow.html"
+      },
+      "evidence": {
+        "reason": "Chrome did not exit; retained temporary profile \"C:\\Users\\xuann\\AppData\\Local\\Temp\\archify-visual-check-profile-aYj0SN\".",
+        "retainedDirectory": "C:\\Users\\xuann\\AppData\\Local\\Temp\\archify-visual-check-profile-aYj0SN"
+      },
+      "supportedFixes": [
+        "resolve the reported process or filesystem failure; verify directory ownership before manual cleanup"
+      ]
+    }
+  ],
+  "evidence": {
+    "receipt": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-6-1-renewal-workflow.finalize.json",
+    "summaryReceipt": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-6-1-renewal-workflow.finalize-summary.json",
+    "browserCheckReceipt": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-6-1-renewal-workflow.browser-check.json"
+  },
+  "visualReview": "not-requested",
+  "failedStage": "browser-check",
+  "finishedAt": "2026-11-06T04:40:34.569Z",
+  "durationMs": 11954,
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-06T03:54:51.643Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  }
+}

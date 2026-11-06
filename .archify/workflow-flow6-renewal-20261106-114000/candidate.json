@@ -1,0 +1,359 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Sub-flow 6.1: Storage Renewal & T-20 Late-Binding Bumping Workflow",
+    "subtitle": "Quy trình tự gia hạn online trước T-20, khóa tự phục vụ sau T-20 & FM duyệt ngoại lệ có phí",
+    "output": "docs/diagrams/flow-6-1-renewal-workflow.html",
+    "animation": "trace",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Nguyen-Van-Gia-Binh/Self-Storage-Facility-Rental-and-Management-System.git",
+      "provider": "github",
+      "link_mode": "web",
+      "revision": "aa2e49023f059a4173225f87f7fb325341466ee2"
+    }
+  },
+  "lanes": [
+    {
+      "id": "customer",
+      "label": "Storage Customer (Portal UI)"
+    },
+    {
+      "id": "renewal_svc",
+      "label": "Renewal & Policy Service"
+    },
+    {
+      "id": "manager_fm",
+      "label": "Facility Manager (FM Exception)"
+    },
+    {
+      "id": "payment_db",
+      "label": "VNPay & Rental Persistence"
+    }
+  ],
+  "phases": [
+    {
+      "id": "phase_countdown",
+      "label": "Pha 1: Đếm ngược T-30",
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "phase_validation",
+      "label": "Pha 2: Thẩm định T-20 & Xung đột",
+      "fromCol": 2,
+      "toCol": 3
+    },
+    {
+      "id": "phase_settlement",
+      "label": "Pha 3: Thanh toán & Nối hạn",
+      "fromCol": 4,
+      "toCol": 5
+    }
+  ],
+  "mainPath": [
+    "check_reminder",
+    "self_service_quote",
+    "check_deadline",
+    "check_conflict",
+    "calc_pricing",
+    "vnpay_checkout",
+    "commit_renewal",
+    "restore_active",
+    "receipt_success"
+  ],
+  "nodes": [
+    {
+      "id": "check_reminder",
+      "lane": "customer",
+      "col": 0,
+      "width": 120,
+      "type": "frontend",
+      "label": "Nhận tin T-30",
+      "sublabel": "RenewalExpiryBanner",
+      "tag": "BR-REN-01",
+      "sources": [
+        {
+          "path": "frontend/src/features/customer/components/RenewalExpiryBanner.tsx",
+          "line": 204,
+          "end_line": 231,
+          "label": "Banner nhắc nhở T-30 ngày"
+        }
+      ]
+    },
+    {
+      "id": "self_service_quote",
+      "lane": "customer",
+      "col": 1,
+      "width": 120,
+      "type": "frontend",
+      "label": "Chọn kỳ hạn",
+      "sublabel": "RenewalPage UI",
+      "tag": "1, 3, 6, 12 tháng",
+      "sources": [
+        {
+          "path": "frontend/src/features/customer/pages/RenewalPage.tsx",
+          "line": 60,
+          "end_line": 95,
+          "label": "Chọn số tháng gia hạn"
+        }
+      ]
+    },
+    {
+      "id": "check_deadline",
+      "lane": "renewal_svc",
+      "col": 1,
+      "width": 120,
+      "type": "backend",
+      "label": "Check mốc T-20",
+      "sublabel": "RenewalServiceImpl",
+      "tag": "BR-REN-01 / 09",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/contract/service/impl/RenewalServiceImpl.java",
+          "line": 69,
+          "end_line": 76,
+          "label": "Khóa tự gia hạn khi < 20 ngày"
+        }
+      ]
+    },
+    {
+      "id": "check_conflict",
+      "lane": "renewal_svc",
+      "col": 2,
+      "width": 120,
+      "type": "backend",
+      "label": "Check trùng lịch",
+      "sublabel": "Reservation overlap",
+      "tag": "BR-REN-03",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/contract/service/impl/RenewalServiceImpl.java",
+          "line": 92,
+          "end_line": 109,
+          "label": "existsOverlappingReservationForUnit"
+        }
+      ]
+    },
+    {
+      "id": "fm_exception_review",
+      "lane": "manager_fm",
+      "col": 2,
+      "width": 120,
+      "type": "backend",
+      "label": "FM Duyệt ngoại lệ",
+      "sublabel": "Force Renewal",
+      "tag": "Phụ phí 200k",
+      "sources": [
+        {
+          "path": "docs/SPEC-WAITLIST-RENEWAL-UNITTYPE-REDESIGN.md",
+          "line": 118,
+          "end_line": 123,
+          "label": "Quy trình FM duyệt ngoại lệ T-20 đến T-0"
+        }
+      ]
+    },
+    {
+      "id": "calc_pricing",
+      "lane": "renewal_svc",
+      "col": 3,
+      "width": 120,
+      "type": "backend",
+      "label": "Snapshot báo giá",
+      "sublabel": "getRenewalQuote",
+      "tag": "BR-DEP-01 / REN-05",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/contract/service/impl/RenewalServiceImpl.java",
+          "line": 111,
+          "end_line": 122,
+          "label": "Tính phí thuê & bảo lưu cọc gốc"
+        }
+      ]
+    },
+    {
+      "id": "bumping_reassign",
+      "lane": "manager_fm",
+      "col": 3,
+      "width": 120,
+      "type": "backend",
+      "label": "Late Bumping",
+      "sublabel": "FM Reassign Unit",
+      "tag": "BR-BMP-01",
+      "sources": [
+        {
+          "path": "docs/SPEC-WAITLIST-RENEWAL-UNITTYPE-REDESIGN.md",
+          "line": 124,
+          "end_line": 133,
+          "label": "Đổi ô khác cùng loại đang AVAILABLE"
+        }
+      ]
+    },
+    {
+      "id": "vnpay_checkout",
+      "lane": "customer",
+      "col": 4,
+      "width": 120,
+      "type": "cloud",
+      "label": "Thanh toán cước",
+      "sublabel": "VNPay / VietQR",
+      "tag": "BR-PAY-01",
+      "sources": [
+        {
+          "path": "frontend/src/features/customer/hooks/useRenewalPayment.ts",
+          "line": 95,
+          "end_line": 130,
+          "label": "Khởi tạo thanh toán VNPay Sandbox"
+        }
+      ]
+    },
+    {
+      "id": "commit_renewal",
+      "lane": "payment_db",
+      "col": 4,
+      "width": 120,
+      "type": "database",
+      "label": "Lưu CSDL nối hạn",
+      "sublabel": "processRenewal()",
+      "tag": "SQL Server 2022",
+      "sources": [
+        {
+          "path": "backend/src/main/resources/db/migration/V1__init_postgres_schema.sql",
+          "line": 373,
+          "end_line": 393,
+          "label": "CREATE TABLE contract_renewal"
+        },
+        {
+          "path": "backend/src/main/resources/db/migration/V1__init_postgres_schema.sql",
+          "line": 322,
+          "end_line": 370,
+          "label": "CREATE TABLE rental_contract"
+        },
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/contract/service/impl/RenewalServiceImpl.java",
+          "line": 141,
+          "end_line": 167,
+          "label": "processRenewal() update end_date"
+        }
+      ]
+    },
+    {
+      "id": "restore_active",
+      "lane": "renewal_svc",
+      "col": 5,
+      "width": 120,
+      "type": "backend",
+      "label": "Khôi phục ACTIVE",
+      "sublabel": "Clear Overdue Fee",
+      "tag": "BR-REN-06",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/contract/service/impl/RenewalServiceImpl.java",
+          "line": 146,
+          "end_line": 150,
+          "label": "Khôi phục ACTIVE nếu có nợ quá hạn"
+        }
+      ]
+    },
+    {
+      "id": "receipt_success",
+      "lane": "customer",
+      "col": 5,
+      "width": 120,
+      "type": "frontend",
+      "label": "E-Receipt gia hạn",
+      "sublabel": "RenewalReceiptModal",
+      "tag": "SC-05",
+      "sources": [
+        {
+          "path": "frontend/src/features/customer/components/RenewalReceiptModal.tsx",
+          "line": 1,
+          "end_line": 120,
+          "label": "Modal biên nhận điện tử & mã mới"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_remind_self",
+      "from": "check_reminder",
+      "to": "self_service_quote",
+      "variant": "default"
+    },
+    {
+      "id": "e_self_deadline",
+      "from": "self_service_quote",
+      "to": "check_deadline",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e_deadline_conflict",
+      "from": "check_deadline",
+      "to": "check_conflict",
+      "label": "T >= 20 ngày",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e_deadline_fm",
+      "from": "check_deadline",
+      "to": "fm_exception_review",
+      "label": "T < 20 ngày",
+      "variant": "dashed"
+    },
+    {
+      "id": "e_conflict_calc",
+      "from": "check_conflict",
+      "to": "calc_pricing",
+      "label": "Không trùng",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e_conflict_bump",
+      "from": "check_conflict",
+      "to": "bumping_reassign",
+      "label": "Bị trùng",
+      "variant": "dashed"
+    },
+    {
+      "id": "e_fm_bump",
+      "from": "fm_exception_review",
+      "to": "bumping_reassign",
+      "label": "Duyệt + 200k",
+      "variant": "default"
+    },
+    {
+      "id": "e_bump_calc",
+      "from": "bumping_reassign",
+      "to": "calc_pricing",
+      "label": "Đổi ô xong",
+      "variant": "default"
+    },
+    {
+      "id": "e_calc_pay",
+      "from": "calc_pricing",
+      "to": "vnpay_checkout",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e_pay_commit",
+      "from": "vnpay_checkout",
+      "to": "commit_renewal",
+      "label": "VNPay 200 OK",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e_commit_restore",
+      "from": "commit_renewal",
+      "to": "restore_active",
+      "variant": "default"
+    },
+    {
+      "id": "e_restore_receipt",
+      "from": "restore_active",
+      "to": "receipt_success",
+      "variant": "emphasis"
+    }
+  ]
+}
