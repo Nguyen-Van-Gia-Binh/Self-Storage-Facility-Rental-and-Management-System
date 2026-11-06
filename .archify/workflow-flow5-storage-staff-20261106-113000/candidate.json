@@ -1,0 +1,365 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Flow 5: Facility Storage & Staff Management Workflow",
+    "subtitle": "FM Storage Unit Lifecycle (BOM Catalog Integration) & Staff Daily Task Dispatch with Multi-Facility Boundary",
+    "output": "docs/diagrams/flow5-facility-storage-workflow.html",
+    "animation": "trace",
+    "visual_preset": "signal-flow",
+    "quality_profile": "showcase",
+    "viewBox": [1180, 750],
+    "repository": {
+      "url": "https://github.com/Tung-pro123/Self-Storage-Facility-Rental-and-Management-System.git",
+      "revision": "aa2e49023f059a4173225f87f7fb325341466ee2"
+    }
+  },
+  "lanes": [
+    { "id": "manager", "label": "Facility Manager Portal" },
+    { "id": "exceptions", "label": "Guards & Safety Exceptions", "variant": "exception" },
+    { "id": "backend", "label": "Backend Application Services" },
+    { "id": "staff", "label": "Staff Dispatch & Field Operations" }
+  ],
+  "phases": [
+    { "id": "phase_provisioning", "label": "1. Unit Provisioning (BR-FM-01)", "fromCol": 0, "toCol": 1 },
+    { "id": "phase_dispatch", "label": "2. Daily Task Dispatch (FM-05, FS-06)", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "phase_execution", "label": "3. Field Execution & Verification", "fromCol": 4, "toCol": 5, "variant": "dashed" }
+  ],
+  "groups": [
+    { "id": "grp_unit_mgt", "label": "Unit Provisioning Engine", "lane": "backend", "fromCol": 0, "toCol": 1, "variant": "emphasis" },
+    { "id": "grp_task_dispatch", "label": "Daily Shift Assignment Engine", "lane": "backend", "fromCol": 2, "toCol": 3, "variant": "default" },
+    { "id": "grp_exceptions", "label": "Safety Locks & Integrity Guards", "lane": "exceptions", "fromCol": 0, "toCol": 3, "variant": "security" }
+  ],
+  "mainPath": [
+    "fm_create_unit",
+    "svc_unit",
+    "fm_dispatch",
+    "sec_guard",
+    "svc_assign",
+    "staff_board",
+    "svc_daily_tasks",
+    "staff_execute",
+    "db_sync"
+  ],
+  "nodes": [
+    {
+      "id": "fm_create_unit",
+      "lane": "manager",
+      "col": 0,
+      "width": 132,
+      "type": "frontend",
+      "label": "Create Unit",
+      "sublabel": "Select BOM UnitType",
+      "tag": "StorageUnitList",
+      "sources": [
+        {
+          "path": "frontend/src/features/manager/pages/StorageUnitListPage.tsx",
+          "line": 176,
+          "end_line": 188,
+          "label": "handleSubmitUnit"
+        }
+      ]
+    },
+    {
+      "id": "ex_dup_code",
+      "lane": "exceptions",
+      "col": 0,
+      "width": 132,
+      "type": "security",
+      "label": "Duplicate Code",
+      "sublabel": "409 STORAGE_UNIT_EXISTS",
+      "tag": "BR-FM-01",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/unit/service/StorageUnitServiceImpl.java",
+          "line": 170,
+          "end_line": 173,
+          "label": "existsByFacilityIdAndCode"
+        }
+      ]
+    },
+    {
+      "id": "svc_unit",
+      "lane": "backend",
+      "col": 1,
+      "width": 132,
+      "type": "backend",
+      "label": "Unit Service",
+      "sublabel": "Init as AVAILABLE",
+      "tag": "StorageUnitService",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/unit/service/StorageUnitServiceImpl.java",
+          "line": 166,
+          "end_line": 186,
+          "label": "createStorageUnit"
+        }
+      ]
+    },
+    {
+      "id": "ex_maintenance",
+      "lane": "exceptions",
+      "col": 1,
+      "width": 132,
+      "type": "backend",
+      "label": "Maintenance Mode",
+      "sublabel": "Status MAINTENANCE",
+      "tag": "Quarantine",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/unit/service/StorageUnitServiceImpl.java",
+          "line": 218,
+          "end_line": 237,
+          "label": "updateStorageUnitStatus"
+        }
+      ]
+    },
+    {
+      "id": "fm_dispatch",
+      "lane": "manager",
+      "col": 2,
+      "width": 132,
+      "type": "frontend",
+      "label": "Dispatch Board",
+      "sublabel": "Staff & Daily Tasks",
+      "tag": "FM-05",
+      "sources": [
+        {
+          "path": "frontend/src/features/manager/pages/StaffAssignmentPage.tsx",
+          "line": 127,
+          "end_line": 154,
+          "label": "handleAssignTask"
+        }
+      ]
+    },
+    {
+      "id": "sec_guard",
+      "lane": "exceptions",
+      "col": 2,
+      "width": 132,
+      "type": "security",
+      "label": "Boundary Guard",
+      "sublabel": "canAccessFacility()",
+      "tag": "SA-03 IDOR",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/auth/service/FacilitySecurityService.java",
+          "line": 20,
+          "end_line": 56,
+          "label": "canAccessFacility"
+        }
+      ]
+    },
+    {
+      "id": "svc_assign",
+      "lane": "backend",
+      "col": 3,
+      "width": 132,
+      "type": "backend",
+      "label": "Assignment Service",
+      "sublabel": "Upsert Shift Task",
+      "tag": "StaffAssignment",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/support/service/impl/StaffAssignmentServiceImpl.java",
+          "line": 38,
+          "end_line": 108,
+          "label": "assignStaff"
+        }
+      ]
+    },
+    {
+      "id": "ex_occupied_block",
+      "lane": "exceptions",
+      "col": 3,
+      "width": 132,
+      "type": "security",
+      "label": "Occupied Lock Guard",
+      "sublabel": "400 OCCUPIED_UNIT",
+      "tag": "BR-BOM-02",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/unit/service/StorageUnitServiceImpl.java",
+          "line": 222,
+          "end_line": 225,
+          "label": "OCCUPIED Status Guard"
+        }
+      ]
+    },
+    {
+      "id": "staff_board",
+      "lane": "staff",
+      "col": 4,
+      "width": 132,
+      "type": "frontend",
+      "label": "Staff Shift Board",
+      "sublabel": "Daily Tasks Overview",
+      "tag": "FS-06 UI",
+      "sources": [
+        {
+          "path": "frontend/src/features/staff/components/DailyTasksOverview.tsx",
+          "line": 41,
+          "end_line": 80,
+          "label": "DailyTasksOverview"
+        }
+      ]
+    },
+    {
+      "id": "svc_daily_tasks",
+      "lane": "backend",
+      "col": 4,
+      "width": 132,
+      "type": "backend",
+      "label": "Task Aggregator",
+      "sublabel": "GET /staff/daily-tasks",
+      "tag": "DailyTaskService",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/support/service/StaffDailyTaskServiceImpl.java",
+          "line": 76,
+          "end_line": 90,
+          "label": "getDailyTasks"
+        }
+      ]
+    },
+    {
+      "id": "staff_execute",
+      "lane": "staff",
+      "col": 5,
+      "width": 132,
+      "type": "frontend",
+      "label": "Field Execution",
+      "sublabel": "Handover & Inspect",
+      "tag": "Handover/Return",
+      "sources": [
+        {
+          "path": "frontend/src/features/staff/components/DailyTasksOverview.tsx",
+          "line": 73,
+          "end_line": 80,
+          "label": "Task completion helpers"
+        }
+      ]
+    },
+    {
+      "id": "db_sync",
+      "lane": "backend",
+      "col": 5,
+      "width": 132,
+      "type": "database",
+      "label": "State Finalization",
+      "sublabel": "Sync Contract & Audit",
+      "tag": "Audit & DB",
+      "sources": [
+        {
+          "path": "backend/src/main/resources/db/migration/V1__init_postgres_schema.sql",
+          "line": 629,
+          "end_line": 645,
+          "label": "staff_daily_assignment"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "fm_create_unit",
+      "to": "svc_unit",
+      "label": "POST unit",
+      "variant": "emphasis",
+      "bias": 0.2
+    },
+    {
+      "from": "fm_create_unit",
+      "to": "ex_dup_code",
+      "label": "duplicate code",
+      "variant": "security",
+      "role": "error"
+    },
+    {
+      "from": "svc_unit",
+      "to": "fm_dispatch",
+      "label": "unit ready",
+      "variant": "default",
+      "bias": 0.8
+    },
+    {
+      "from": "svc_unit",
+      "to": "ex_maintenance",
+      "label": "defect detected",
+      "variant": "security",
+      "role": "error"
+    },
+    {
+      "from": "fm_dispatch",
+      "to": "sec_guard",
+      "label": "check boundary",
+      "variant": "security"
+    },
+    {
+      "from": "sec_guard",
+      "to": "svc_assign",
+      "label": "authorized",
+      "variant": "emphasis",
+      "channelY": 310
+    },
+    {
+      "from": "svc_assign",
+      "to": "ex_occupied_block",
+      "label": "block occupied",
+      "variant": "security",
+      "role": "error"
+    },
+    {
+      "from": "svc_assign",
+      "to": "staff_board",
+      "label": "shift assigned",
+      "variant": "emphasis"
+    },
+    {
+      "from": "staff_board",
+      "to": "svc_daily_tasks",
+      "label": "fetch tasks",
+      "variant": "default"
+    },
+    {
+      "from": "svc_daily_tasks",
+      "to": "staff_execute",
+      "label": "render details",
+      "variant": "emphasis"
+    },
+    {
+      "from": "staff_execute",
+      "to": "db_sync",
+      "label": "complete task",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "BOM Master Catalog Authority (BR-FM-01)",
+      "items": [
+        "Facility Manager creates StorageUnit instances by selecting approved UnitType models defined centrally by BOM",
+        "Prevents arbitrary unit sizing or unauthorized pricing definitions at local facility levels",
+        "Enforces storage unit code uniqueness (facility_id + code) with 409 Conflict rejection"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Dynamic Daily Dispatch Engine (FM-05 / FS-06)",
+      "items": [
+        "Replaces rigid static staff assignment with dynamic daily shift assignments in staff_daily_assignment",
+        "Supports 3 key field work types: Handover (Check-in), Return Inspection, and Support Ticket Incident resolution",
+        "Includes instant staff reassign capabilities if an assigned staff member is absent or overwhelmed"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Safety Locks & Integrity Guardrails (BR-BOM-02)",
+      "items": [
+        "Soft Delete Protection: Storage units cannot be inactivated or deleted if status is OCCUPIED or RESERVED",
+        "Immediate Maintenance Quarantine: Damaged or leaking units transition to MAINTENANCE, automatically suppressing check-in allocation",
+        "Strict Multi-Facility Isolation (SA-03): FacilitySecurityService prevents IDOR across distinct facility IDs"
+      ]
+    }
+  ]
+}

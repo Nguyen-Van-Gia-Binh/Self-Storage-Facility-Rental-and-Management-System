@@ -29,7 +29,7 @@
 | **WS1: Khách hàng & Cơ sở**   | **Gia Bình**                    | Dời ngày có phí theo ngày (`BR-RES-06`) & Gói bảo vệ mở rộng 50M (`BR-SUP-04`)                | `feature/Tx-paid-reschedule-and-insurance` (Đang triển khai)    |
 | **WS2: Đặt chỗ & Bàn giao**   | **Nguyễn Phạm Xuân Nhi**        | Cửa sổ đặt trước 30 ngày (`BR-RES-01`), Modal Hủy 3 tầng (`BR-CAN-01..03`), E-Handover IoT UI | `[x] Hoàn thành (PR #267)`                                      |
 | **WS3: Tài chính & Tự động**  | **Huỳnh Nhật**                  | Hoàn thiện FM Allocation Workbench & Điều phối kiểm thử / merge vào `main`                    | `feature/Tx-test-all-features` (Chủ trì nhánh tích hợp)         |
-| **WS4: Quản trị & Điều phối** | **Thanh Tùng** _(Chủ trì Task)_ | Auto-Activation Scheduler T+11 (`BR-CAN-04`) & Quyết toán Trả kho sớm Win-Win (`BR-RET-06`)   | `feature/Tx-auto-activation-and-early-return` (Đang triển khai) |
+| **WS4: Quản trị & Điều phối** | **Thanh Tùng** | Trực quan hóa Flow 5 Archify (Workflow & Hierarchy Tree) và Báo cáo Độ lệch | `docs/Tx-archify-flow5-facility-staff` (Hoàn thành 2 sơ đồ Showcase) |
 
 ---
 
@@ -44,6 +44,7 @@
 | `ISS-140` | Tích hợp giao diện Đăng ký Waitlist khi hết kho, Chặn Spam bom hàng 5 lần/ngày và Banner sự cố khẩn cấp. | Hoàn tất WaitlistRegistrationModal trên BookingPage/UnitPickerPage, Flyway V12 daily_cancel_count, khóa tự gia hạn T-20, test xanh 535/535 backend và build frontend 0 lỗi. | Gia Bình | `RESOLVED` |
 | `ISS-141` | Sửa lỗi 404 API Waitlist, lỗi 409 hủy nhận kho hợp đồng PENDING_CHECK_IN và tinh chỉnh Allocation Modal. | Bỏ double context path /api/v1 tại WaitlistController, thêm POST /contracts/{id}/cancel giải phóng kho & hoàn cọc 100%, tách layout Allocation Modal (PR #271). | Gia Bình | `RESOLVED (PR #271)` |
 | `ISS-142` | Cửa sổ đặt trước 30 ngày (BR-RES-01), Smart Waitlist Modal kèm SĐT & Feasibility Check và kích hoạt FM Waitlist CRM. | Khóa đặt trực tiếp > 30 ngày, mở đăng ký Waitlist cho thuê xa, thêm SĐT bắt buộc & Flyway V13, kích hoạt trang WaitlistInboxPage vào Manager Router. | Gia Bình | `RESOLVED` |
+| `ISS-143` | Trực quan hóa tương tác Flow 5 (Quản lý Ô kho & Phân công Nhân sự) bằng Archify theo chuẩn Showcase Tuần 9. | Khảo sát 5 tầng mã nguồn, hoàn thành 2 sơ đồ interactive HTML (workflow và tree) đạt 4/4 gates kiểm định Archify, lập Báo cáo Độ lệch Flow 5. | Thanh Tùng | `RESOLVED` |
 
 _(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/\_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))_
 

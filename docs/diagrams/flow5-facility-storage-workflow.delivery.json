@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "c3b5454c-25af-4792-85cb-a41abb88a4db",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "D:\\Ki5_Fall_2026\\SWP391\\Mini_Capstone\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\workflow-flow5-storage-staff-20261106-113000\\candidate.json",
+  "output": "D:\\Ki5_Fall_2026\\SWP391\\Mini_Capstone\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow5-facility-storage-workflow.html",
+  "specification": {
+    "sha256": "5de4f74c9326c63cb516928bd4065a4cfc8808e86273f3e2f34f6bf591a202b7",
+    "bytes": 10955
+  },
+  "artifact": {
+    "sha256": "8aaa00912ca28105edc09b486b1ab7ccc4114abe90bea9fa162e22b8cd682005",
+    "bytes": 862279
+  }
+}
