@@ -5,8 +5,8 @@
 > **Phân hệ đối soát:** Flow 5 — Quản lý Ô kho tại Cơ sở & Phân công Nhân sự  
 > **Tài liệu đối chiếu:** `docs/WORKFLOWS.md § 6`, `docs/TOPIC.md § 4 (Flow 5)`, `docs/Week9Task.md § 4.5`, `docs/BUSINESS-RULES.md § 16 (BR-BOM, BR-FM)`  
 > **Sơ đồ HTML Archify đã nghiệm thu:**  
-> 1. `docs/diagrams/flow5-facility-storage-workflow.html` (Interactive Workflow Diagram — Exit Code 0, Showcase)  
-> 2. `docs/diagrams/flow5-facility-hierarchy-tree.html` (Interactive Hierarchy Tree Diagram — Exit Code 0, Showcase)  
+> 1. `docs/diagrams/flow-5-facility-staff/flow5-facility-storage-workflow.html` (Interactive Workflow Diagram — Exit Code 0, Showcase)  
+> 2. `docs/diagrams/flow-5-facility-staff/flow5-facility-hierarchy-tree.html` (Interactive Hierarchy Tree Diagram — Exit Code 0, Showcase)  
 > **Tình trạng nghiệm thu:** [x] Finalize thành công 4 gates (`validate`, `deliver`, `check`, `browser-check`)
 
 ---

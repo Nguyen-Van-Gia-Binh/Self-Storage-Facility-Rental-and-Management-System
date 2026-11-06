@@ -4,8 +4,8 @@
 > **Phân hệ cốt lõi:** **Flow SYS — Authentication, Multi-Facility RBAC Data Boundary & Scheduled Background Cronjobs**  
 > **Người phụ trách (Assignee):** **Lê Thanh Tùng** (WS4 — Backend Lead, Security & Multi-Facility RBAC) phối hợp cùng **Huỳnh Nhật** (WS3 — Cron Config)  
 > **Sơ đồ HTML Standalone hoàn thiện:**  
-> - **Sơ đồ Kiến trúc Bảo mật Tầng sâu & RBAC (Architecture):** [`docs/diagrams/flow-sys-security-architecture.html`](../diagrams/flow-sys-security-architecture.html)  
-> - **Sơ đồ Trình tự Tác vụ Ngầm Tự động (Sequence):** [`docs/diagrams/flow-sys-cron-schedulers-sequence.html`](../diagrams/flow-sys-cron-schedulers-sequence.html)  
+> - **Sơ đồ Kiến trúc Bảo mật Tầng sâu & RBAC (Architecture):** [`docs/diagrams/flow-sys-security-cron/flow-sys-security-architecture.html`](../diagrams/flow-sys-security-cron/flow-sys-security-architecture.html)  
+> - **Sơ đồ Trình tự Tác vụ Ngầm Tự động (Sequence):** [`docs/diagrams/flow-sys-security-cron/flow-sys-cron-schedulers-sequence.html`](../diagrams/flow-sys-security-cron/flow-sys-cron-schedulers-sequence.html)  
 > **Commit Snapshot đối chiếu:** `7b81ffe7c2be1fa5d46f0543b6710f3dc9ed5729`  
 > **Tình trạng nghiệm thu Archify:** `[x] Finalize thành công 4/4 gates (validate, deliver, check, browser-check: 100% PASS, 0 diagnostics, Exit code 0, Profile showcase)`
 

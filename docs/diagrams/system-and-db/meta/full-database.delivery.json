@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "2117847e-bc51-470b-85c3-3e7d184ac615",
+  "status": "current",
+  "command": "deliver",
+  "type": "erd",
+  "input": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\erd-full-database-20261106-090000\\candidate.json",
+  "output": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\erd-full-database-20261106-090000\\full-database.html",
+  "specification": {
+    "sha256": "73cb1d7c3cf540084a7c41b4ed133b524a8a4d35905303a957bfacc0f8921fa0",
+    "bytes": 67975
+  },
+  "artifact": {
+    "sha256": "131bfce90a78eb0d9d79107b346c6003062c7aa308472989580fd6ae418511b1",
+    "bytes": 1109918
+  }
+}

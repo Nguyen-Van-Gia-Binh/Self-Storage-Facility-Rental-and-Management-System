@@ -4,8 +4,8 @@
 > **Luồng nghiệp vụ:** **Flow 7 — Support Request, Damage Compensation & Unit Swap (Yêu cầu Hỗ trợ, Bồi thường Thiệt hại & Điều chuyển Kho)**  
 > **Người phụ trách (Assignee):** **Lê Thanh Tùng** (WS4 — Backend Lead, Security & Incident Handling)  
 > **Sơ đồ HTML Standalone hoàn thiện:**  
-> - **Sơ đồ Quy trình Nghiệp vụ (Workflow):** [`docs/diagrams/flow7-support-ticket-workflow.html`](../diagrams/flow7-support-ticket-workflow.html)  
-> - **Sơ đồ Trình tự Bồi thường & Đổi kho (Sequence):** [`docs/diagrams/flow7-damage-compensation-sequence.html`](../diagrams/flow7-damage-compensation-sequence.html)  
+> - **Sơ đồ Quy trình Nghiệp vụ (Workflow):** [`docs/diagrams/flow-7-support-incident/flow7-support-ticket-workflow.html`](../diagrams/flow-7-support-incident/flow7-support-ticket-workflow.html)  
+> - **Sơ đồ Trình tự Bồi thường & Đổi kho (Sequence):** [`docs/diagrams/flow-7-support-incident/flow7-damage-compensation-sequence.html`](../diagrams/flow-7-support-incident/flow7-damage-compensation-sequence.html)  
 > **Commit Snapshot đối chiếu:** `346974f7c7ac2b3e2ce0f2625b679eebd936de25`  
 > **Tình trạng nghiệm thu Archify:** `[x] Finalize thành công 4/4 gates (validate, deliver, check, browser-check: 100% PASS, 0 diagnostics, Exit code 0, Profile showcase)`
 

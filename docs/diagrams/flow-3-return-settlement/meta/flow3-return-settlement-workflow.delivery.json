@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "a643c85b-8250-4d4f-ad8e-c945229360db",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\workflow-flow3-return-settlement-20261106-110500\\candidate.json",
+  "output": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\workflow-flow3-return-settlement-20261106-110500\\flow3-return-settlement-workflow.html",
+  "specification": {
+    "sha256": "4322ad8c5f47f34401eabe28cc36fe69026544b79f50f97e84de33ccb0f75e9b",
+    "bytes": 17501
+  },
+  "artifact": {
+    "sha256": "c958acde71ca3617f2330b95c4526fdf3ee8c0503ced1323b5aa48c560071734",
+    "bytes": 882098
+  }
+}
