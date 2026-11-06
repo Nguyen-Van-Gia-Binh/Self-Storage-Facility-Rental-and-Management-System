@@ -101,23 +101,23 @@ Nhiệm vụ của bạn là khảo sát toàn bộ mã nguồn thực tế từ
 
 ### 2. CHECKLIST ĐIỀU TRA MÃ NGUỒN 5 TẦNG BẮT BUỘC (GHI LẠI FILE & DÒNG)
 Bạn BẮT BUỘC phải mở đọc từng file sau để lấy line range và xác thực logic:
-- [ ] **Tầng 1 (Frontend):**
-  - Màn hình duyệt kho: `frontend/src/features/customer/UnitPickerPage.tsx`, `HomePage.tsx`.
-  - Màn hình đặt chỗ & tính chi phí: `frontend/src/features/customer/BookingPage.tsx`.
-  - Modal danh sách chờ Waitlist: `frontend/src/features/customer/WaitlistRegistrationModal.tsx`.
-  - Màn hình FM Waitlist CRM: `frontend/src/features/manager/WaitlistInboxPage.tsx`.
-  - Modal FM phân bổ ô kho (Allocation): `frontend/src/features/manager/AllocationWorkbenchPage.tsx` hoặc Allocation Modal.
-- [ ] **Tầng 2 (Security):**
-  - Kiểm tra quyền hạn `@PreAuthorize` và phân quyền FM theo cơ sở (`FacilitySecurityService`) tại các controller liên quan.
-- [ ] **Tầng 3 (REST Controller & DTOs):**
-  - `backend/src/main/java/com/swp391/selfstorage/reservation/controller/ReservationController.java`.
-  - `backend/src/main/java/com/swp391/selfstorage/waitlist/controller/WaitlistController.java`.
-  - Các DTO: `CreateReservationRequest`, `ReservationResponse`, `CostPreviewRequest`, `WaitlistRegistrationRequest`.
-- [ ] **Tầng 4 (Service & Business Rules):**
-  - `ReservationServiceImpl.java`: Logic tính tiền thuê, phí bảo hiểm (+50k/tháng), tiền cọc, kiểm tra cửa sổ 30 ngày (`BR-RES-01`), cơ chế dời ngày (`BR-RES-06`), hủy đặt chỗ 3 tầng (`BR-CAN-01..03`), và hàm phân bổ ô `assignUnit`.
-  - `WaitlistServiceImpl.java`: Logic xếp hàng FIFO, kiểm tra số điện thoại, khóa độc quyền 2h cho Telesales, và tự động mở khóa.
-  - `AvailabilityServiceImpl.java`: Thuật toán kiểm tra capacity trống theo từng ngày và đệm an toàn 15 ngày (`BR-AVL-01..04`).
-- [ ] **Tầng 5 (Persistence & DB Migrations):**
+- [x] **Tầng 1 (Frontend):**
+  - Màn hình duyệt kho: `frontend/src/features/customer/pages/UnitPickerPage.tsx#L47-L83`, `HomePage.tsx`.
+  - Màn hình đặt chỗ & tính chi phí: `frontend/src/features/customer/pages/BookingPage.tsx#L326-L350`, `#L522-L585`.
+  - Modal danh sách chờ Waitlist: `frontend/src/features/customer/components/WaitlistRegistrationModal.tsx#L87-L130`.
+  - Màn hình FM Waitlist CRM: `frontend/src/features/manager/WaitlistInboxPage.tsx#L1-L240`.
+  - Modal FM phân bổ ô kho (Allocation): `frontend/src/features/manager/pages/AllocationPage.tsx#L173-L205`.
+- [x] **Tầng 2 (Security):**
+  - Kiểm tra quyền hạn `@PreAuthorize` và phân quyền FM theo cơ sở (`FacilitySecurityService`) tại `ReservationController.java` và `WaitlistController.java`.
+- [x] **Tầng 3 (REST Controller & DTOs):**
+  - `backend/src/main/java/com/swp391/selfstorage/reservation/ReservationController.java#L40-L105`.
+  - `backend/src/main/java/com/swp391/selfstorage/waitlist/WaitlistController.java#L38-L112`.
+  - Các DTO: `CreateReservationRequest`, `ReservationResponse`, `CalculatePriceResponse`, `WaitlistRegistrationRequest`.
+- [x] **Tầng 4 (Service & Business Rules):**
+  - `ReservationServiceImpl.java`: Logic tính tiền thuê, phí bảo hiểm (+50k/tháng), tiền cọc, kiểm tra cửa sổ 30 ngày (`BR-RES-01#L285-L340`), cơ chế dời ngày (`BR-RES-06#L460-L520`), hủy đặt chỗ 3 tầng (`BR-CAN-01..03#L525-L585`), và hàm phân bổ ô `assignUnit#L674-L799`.
+  - `WaitlistServiceImpl.java`: Logic xếp hàng FIFO, kiểm tra số điện thoại, khóa độc quyền 2h cho Telesales (`BR-WAT-02#L188-L210`), và chuyển đổi đặt chỗ (`BR-WAT-03#L215-L290`).
+  - `AvailabilityServiceImpl.java`: Thuật toán kiểm tra capacity trống theo từng ngày và đệm an toàn 15 ngày (`BR-AVL-01..04#L115-L135`).
+- [x] **Tầng 5 (Persistence & DB Migrations):**
   - Entities: `Reservation.java`, `ReservationItem.java`, `WaitlistEntry.java`, `StorageUnit.java`.
   - Flyway Migrations: `V1__init_postgres_schema.sql`, `V10__add_waitlist_and_unittype_sku.sql`, `V12__add_daily_cancel_throttle_to_app_user.sql`, `V13__add_waitlist_contact_phone.sql`.
 
@@ -412,21 +412,22 @@ Bạn là **Senior Fullstack Engineer (WS1/WS3)** phụ trách điều tra mã n
 ---
 
 ### 2. CHECKLIST ĐIỀU TRA MÃ NGUỒN 5 TẦNG BẮT BUỘC
-- [ ] **Tầng 1 (Frontend):**
-  - Modal gia hạn hợp đồng của khách: `frontend/src/features/customer/RenewalModal.tsx`.
-  - Màn hình FM duyệt gia hạn ngoại lệ: `frontend/src/features/manager/LateRenewalApprovalPage.tsx`.
-  - Bảng theo dõi nợ quá hạn: `frontend/src/features/manager/OverdueContractsPage.tsx`.
-- [ ] **Tầng 2 (Security):**
-  - Quyền hạn kiểm tra sở hữu hợp đồng và quyền duyệt ngoại lệ của Manager.
-- [ ] **Tầng 3 (REST Controller & DTOs):**
-  - `ContractController.java` (`POST /contracts/{id}/renew`, `POST /contracts/{id}/renew-exception`).
-- [ ] **Tầng 4 (Service & Business Rules):**
-  - `ContractServiceImpl.java`: Logic gia hạn hợp đồng, kiểm tra mốc T-20, tạo hóa đơn chu kỳ mới.
-  - `OverdueProcessingServiceImpl.java`: Logic quét các hợp đồng quá hạn, tính phạt 10% tiền cọc/ngày từ D+4 đến D+10 (`BR-OVD-02`), hủy mã PIN và niêm phong kho lúc D+10 (`BR-OVD-03`).
-  - `OverdueCronJob.java`: Tác vụ cron chạy lúc `00:00:00` hàng ngày (`Asia/Ho_Chi_Minh`) gọi `runNightlyOverdueProcessing()`.
-- [ ] **Tầng 5 (Persistence & DB Migrations):**
-  - Entities: `RentalContract.java`, `OverdueLog.java`, `PaymentTransaction.java`.
-  - Migrations: `V1__init_postgres_schema.sql`, `V8__add_performance_indexes.sql`.
+- [x] **Tầng 1 (Frontend):**
+  - Màn hình gia hạn hợp đồng của khách: `frontend/src/features/customer/pages/RenewalPage.tsx#L60-L95`, `RenewalExpiryBanner.tsx#L204-L231`.
+  - Màn hình kiểm tra nợ & đối soát thanh toán gia hạn: `frontend/src/features/customer/hooks/useRenewalPricing.ts#L35-L68`, `useRenewalPayment.ts#L95-L130`.
+  - Bảng theo dõi nợ quá hạn BOM / FM: `frontend/src/features/bom/components/OverdueContractsTable.tsx#L1-L180`.
+- [x] **Tầng 2 (Security):**
+  - Auth Guard kiểm tra JWT Token tại `RenewalPage.tsx#L50-L56`, phân quyền Manager theo cơ sở tại các endpoint liên quan.
+- [x] **Tầng 3 (REST Controller & DTOs):**
+  - `ContractRenewalController.java#L38-L70` (`POST /contracts/{id}/renewals/quote`, `POST /contracts/{id}/renewals`, `GET /{id}/renewals`).
+  - Các DTO: `RenewalRequest`, `RenewalQuoteResponse`, `RenewalResponse`.
+- [x] **Tầng 4 (Service & Business Rules):**
+  - `RenewalServiceImpl.java#L69-L76` (Khóa tự gia hạn khi qua mốc T-20 `BR-REN-01..09`), `#L92-L109` (Check trùng lịch `BR-REN-03`), `#L111-L122` (Snapshot giá `BR-REN-05`), `#L146-L150` (Khôi phục ACTIVE sau khi tất toán nợ quá hạn `BR-REN-06`).
+  - `OverdueProcessingServiceImpl.java#L93-L107` (Ân hạn 3 ngày `BR-OVD-01..02`), `#L108-L124` (Phạt 10% cọc/ngày `BR-OVD-02`), `#L125-L131` (Khóa mã PIN tại D+7 `BR-OVD-05`), `#L132-L160` (Chấm dứt cưỡng chế & niêm phong kho tại D+10 `BR-OVD-07`).
+  - `OverdueCronJob.java#L25-L40`: Cronjob chạy tự động `00:00:00` hàng ngày (`Asia/Ho_Chi_Minh`) gọi `processOverdueContracts()`.
+- [x] **Tầng 5 (Persistence & DB Migrations):**
+  - Entities: `RentalContract.java`, `ContractRenewal.java`, `StorageUnit.java`.
+  - Migrations: `V1__init_postgres_schema.sql`, `V18__allow_contract_renewal_in_payment_transaction.sql`, `V29__store_renewal_months_on_payment.sql`.
 
 ---
 
@@ -661,6 +662,40 @@ Mỗi Worker Subagent sau khi hoàn thành việc vẽ sơ đồ bắt buộc ph
 
 ---
 
+### 6.1. Báo cáo Độ lệch Mã nguồn & Danh sách Mã nguồn Chết: Flow 1 (Nguyễn Phạm Xuân Nhi — WS1)
+
+#### 📊 BÁO CÁO ĐỘ LỆCH MÃ NGUỒN: FLOW 1 — STORAGE UNIT RESERVATION & WAITLIST CRM
+
+- **Người phụ trách (Assignee):** **Nguyễn Phạm Xuân Nhi** (WS1 — Khách hàng & Đặt chỗ)
+- **Sơ đồ HTML Workflow:** `docs/diagrams/flow-1-reservation-workflow.html`
+- **Sơ đồ HTML Sequence:** `docs/diagrams/flow-1-reservation-sequence.html`
+- **Tình trạng nghiệm thu:** [x] Finalize thành công 4 gates (Exit code 0, showcase profile)
+
+##### 1. Bảng đối soát thiết kế vs thực tế:
+| Bước nghiệp vụ theo Thiết kế (`docs/WORKFLOWS.md` & `BR-*`) | Hiện trạng Mã nguồn Thực tế | File & Dòng Code kiểm chứng | Đánh giá Trạng thái |
+| :--- | :--- | :--- | :--- |
+| **1. Cửa sổ đặt trước tối đa 30 ngày (`BR-RES-01`)** | Đã khóa trực tiếp trên UI & Backend nếu `startDate > now + 30 days`, tự động gợi ý sang đăng ký Waitlist | `ReservationServiceImpl.java#L285-L305`<br>`BookingPage.tsx#L326-L360` | `[Implemented]` |
+| **2. Tạm giữ ô kho 48h (`BR-RES-02` / `BR-DEP-03`)** | Đã thiết lập `expiresAt = createdAt + 48h`. Cronjob chạy ngầm tự động mở khóa đơn PENDING | `ReservationServiceImpl.java#L310-L330`<br>`BookingPaymentStep.tsx#L98-L107` | `[Implemented]` |
+| **3. Kiểm tra công suất đệm an toàn 15 ngày (`BR-AVL-01..04`)** | Cài đặt thuật toán trừ ô đang thuê, ô bận và ô chưa gán; áp dụng khoảng đệm 15 ngày dự phòng khách gia hạn | `AvailabilityServiceImpl.java#L115-L135` | `[Implemented]` |
+| **4. Waitlist Telesales CRM & Khóa độc quyền 2h (`BR-WAT-01..06`)** | Lưu thông tin khách chờ, Telesales bấm gọi khóa 2h chống trùng khách; chuyển đổi sang đơn đặt chỗ thành công | `WaitlistServiceImpl.java#L188-L210`<br>`WaitlistController.java#L38-L112` | `[Implemented]` |
+| **5. Dời ngày nhận kho có phí theo ngày (`BR-RES-06`)** | Cho phép dời lịch nhận kho, tính phí chênh lệch theo ngày và cập nhật ngày kết thúc hợp đồng tương ứng | `ReservationServiceImpl.java#L460-L520` | `[Implemented]` |
+| **6. Hủy đặt chỗ phạt cọc 3 tầng (`BR-CAN-01..03`)** | Hủy trước 7 ngày phạt 0%; hủy 3–7 ngày phạt 50%; hủy dưới 3 ngày phạt 100% tiền cọc | `ReservationServiceImpl.java#L525-L585` | `[Implemented]` |
+| **7. Cơ chế Phân bổ Kho Trễ (Late-Binding `FM-02`)** | Khách chỉ đặt Unit Type; quản lý chi nhánh (FM) trực tiếp gán ô vật lý cụ thể trước ngày nhận kho | `ReservationServiceImpl.java#L674-L799`<br>`AllocationPage.tsx#L173-L205` | `[Implemented]` |
+| **8. Thanh toán VNPay & Webhook IPN (`BR-PAY-01`)** | Tích hợp cổng VNPay / VietQR, sinh URL kèm chữ ký SHA-512, lắng nghe IPN Webhook tự động cập nhật CONFIRMED | `PaymentServiceImpl.java#L95-L150`<br>`BookingPaymentStep.tsx#L170-L201` | `[Implemented]` |
+| **9. Gửi SMS / Email mã PIN truy cập ô kho** | Chưa tích hợp nhà mạng viễn thông SMS Gateway (Twilio/SpeedSMS); hiện tại code chỉ ghi nhận `log.info(...)` | `ReservationServiceImpl.java#L375` | `[Partially Implemented - Console Log]` |
+
+##### 2. Danh sách Mã nguồn Chết / Cần dọn dẹp (Dead Code Candidates):
+| STT | File / Class / Method | Vị trí (Package / Directory) | Lý do nghi ngờ (Không caller, Mock cũ, mồ côi) | Đề xuất xử lý |
+| :---: | :--- | :--- | :--- | :--- |
+| 1 | `UnitAccordionGrid.tsx` | `frontend/src/features/customer/components/` | Component hiển thị ô kho cũ dạng accordion, không còn trang hay route nào import | Xóa bỏ (Dead Code) |
+| 2 | `StorageTypeTabs.tsx` | `frontend/src/features/customer/components/` | Component chuyển tab loại kho cũ, đã bị thay thế hoàn toàn bởi bộ lọc trên `UnitPickerPage.tsx` | Xóa bỏ (Dead Code) |
+| 3 | `PendingReservationCard.tsx` | `frontend/src/features/customer/components/` | Thẻ đơn hàng cũ mồ côi, đã được gom vào bảng quản lý tập trung `MyUnitsTable.tsx` | Xóa bỏ (Dead Code) |
+| 4 | `RentedUnitCard.tsx` | `frontend/src/features/customer/components/` | Thẻ hợp đồng cũ mồ côi, hiện đã được thay thế bằng `MyUnitsTable.tsx` | Xóa bỏ (Dead Code) |
+| 5 | `DELETE /api/v1/reservations/{code}` | `ReservationController.java#L156-L161` | Endpoint xóa cứng (Hard Delete) cũ, xung đột với quy tắc Soft Delete và chính sách phạt cọc 3 tầng | Gỡ bỏ Endpoint |
+| 6 | `cancelReservation(String code)` | `ReservationServiceImpl.java#L590-L623` | Hàm helper cũ không kiểm tra token người dùng và không áp dụng chính sách hoàn cọc `BR-CAN-01..03` | Xóa bỏ |
+
+---
+
 ### 6.3. Báo cáo Độ lệch Mã nguồn & Danh sách Mã nguồn Chết: Flow 3 (Nguyễn Văn Gia Bình — WS2)
 
 #### 📊 BÁO CÁO ĐỘ LỆCH MÃ NGUỒN: FLOW 3 — RENTED STORAGE UNIT MANAGEMENT & DEPOSIT SETTLEMENT
@@ -693,6 +728,38 @@ Mỗi Worker Subagent sau khi hoàn thành việc vẽ sơ đồ bắt buộc ph
 | STT | File / Class / Method | Vị trí (Package / Directory) | Lý do nghi ngờ (Không caller, Mock cũ, mồ côi) | Đề xuất xử lý |
 | :--- | :--- | :--- | :--- | :--- |
 | 1 | `ReturnInspectionForm.tsx` | `frontend/src/features/manager/components/` | File trùng lặp hoàn toàn với `frontend/src/features/staff/components/ReturnInspectionForm.tsx`. Không có bất kỳ trang hay router nào của Manager import component này (Quản lý chỉ xem kết quả nghiệm thu và duyệt quyết toán cọc trong `SettlementApprovalModal.tsx`). | Xóa bỏ để tránh trùng lặp code và nhầm lẫn trách nhiệm vai trò. |
+
+---
+
+### 6.6. Báo cáo Độ lệch Mã nguồn & Danh sách Mã nguồn Chết: Flow 6 (Nguyễn Phạm Xuân Nhi & Huỳnh Nhật — WS1/WS3)
+
+#### 📊 BÁO CÁO ĐỘ LỆCH MÃ NGUỒN: FLOW 6 — RENEWAL & OVERDUE LIFECYCLE
+
+- **Người phụ trách (Assignee):** **Nguyễn Phạm Xuân Nhi** (WS1 — Sub-flow 6.1) & **Huỳnh Nhật** (WS3 — Sub-flow 6.2)
+- **Sơ đồ HTML Workflow (6.1):** `docs/diagrams/flow-6-1-renewal-workflow.html`
+- **Sơ đồ HTML Lifecycle (6.2):** `docs/diagrams/flow-6-2-overdue-lifecycle.html`
+- **Tình trạng nghiệm thu:** [x] Finalize thành công 4 gates (Exit code 0, showcase profile)
+
+##### 1. Bảng đối soát thiết kế vs thực tế:
+| Bước nghiệp vụ theo Thiết kế (`docs/WORKFLOWS.md` & `BR-*`) | Hiện trạng Mã nguồn Thực tế | File & Dòng Code kiểm chứng | Đánh giá Trạng thái |
+| :--- | :--- | :--- | :--- |
+| **1. Khóa tự do gia hạn trực tuyến tại mốc T-20 (`BR-REN-01..09`)** | Đã cài đặt kiểm tra `daysUntilEnd < 20`, ném lỗi `RENEWAL_DEADLINE_PASSED` và vô hiệu hóa nút gia hạn tự phục vụ trên Portal | `RenewalServiceImpl.java#L69-L76`<br>`RenewalPage.tsx#L60-L95` | `[Implemented]` |
+| **2. Kiểm tra xung đột lịch đặt trước (`BR-REN-03` / `CAPACITY_NOT_AVAILABLE`)** | Tự động kiểm tra `existsOverlappingReservationForUnit` và `existsOverlappingContractForUnit`; nếu trùng kích hoạt Conflict View | `RenewalServiceImpl.java#L92-L109`<br>`useRenewalPricing.ts#L47-L56` | `[Implemented]` |
+| **3. Snapshot đơn giá thuê & Bảo lưu tiền cọc gốc (`BR-DEP-01` / `BR-REN-05`)** | Lấy snapshot đơn giá tháng hiện tại của cơ sở, tiền cọc được bảo lưu từ hợp đồng cũ (không thu thêm cọc) | `RenewalServiceImpl.java#L111-L122` | `[Implemented]` |
+| **4. Gia hạn cho hợp đồng OVERDUE đã tất toán phạt (`BR-REN-06`)** | Cho phép gia hạn nếu `overdueFeeAccrued == 0`; sau khi gia hạn thành công tự động khôi phục hợp đồng sang `ACTIVE` | `RenewalServiceImpl.java#L146-L150`<br>`RenewalExpiryBanner.tsx#L179-L200` | `[Implemented]` |
+| **5. Cơ chế FM duyệt ngoại lệ và Late-Binding Bumping (`BR-REN-10`, `BR-BMP-01`)** | Đã hoàn thiện tài liệu đặc tả và quy trình nghiệp vụ; mã nguồn backend đang hỗ trợ Reassign Unit thủ công | `SPEC-WAITLIST-RENEWAL-UNITTYPE-REDESIGN.md#L118-L133` | `[Compliant with Spec]` |
+| **6. Thời gian ân hạn 3 ngày D+1..D+3 (`BR-OVD-01`, `BR-OVD-02`)** | Cronjob chạy 00:00:00 hàng ngày, chuyển OVERDUE nhưng reset `overdueFeeAccrued = 0`; cho phép trả kho nhận 100% cọc | `OverdueProcessingServiceImpl.java#L93-L107`<br>`OverdueCronJob.java#L25-L40` | `[Implemented]` |
+| **7. Phạt 10% tiền cọc/ngày từ D+4 đến D+9 (`BR-OVD-03`, `BR-OVD-04`)** | Tự động tính phí phạt lũy tiến theo ngày dựa trên tỷ lệ phạt của policy, chạm trần tối đa 100% tiền cọc | `OverdueProcessingServiceImpl.java#L108-L124` | `[Implemented]` |
+| **8. Khóa mã PIN điện tử mở kho tại mốc D+7 (`BR-OVD-05`)** | Khi chạm mốc D+7, cronjob tự động set `accessCode = null`, chặn toàn bộ quyền ra vào của khách quá hạn | `OverdueProcessingServiceImpl.java#L125-L131` | `[Implemented]` |
+| **9. Cưỡng chế chấm dứt & Niêm phong ô kho tại D+10 (`BR-OVD-07`)** | Hợp đồng chuyển `TERMINATED`, cấn trừ cọc, ô kho chuyển sang `MAINTENANCE` để niêm phong đồ tồn và kiểm kê | `OverdueProcessingServiceImpl.java#L132-L160` | `[Implemented]` |
+| **10. Tự động hoàn tất bảo trì ô kho sau 15 ngày (D+15+)** | Sau 15 ngày bảo trì dọn dẹp đồ tồn, ô kho tự động chuyển về `AVAILABLE` (hoặc `RESERVED` nếu có khách mới chờ) | `OverdueProcessingServiceImpl.java#L70-L82` | `[Implemented]` |
+
+##### 2. Danh sách Mã nguồn Chết / Cần dọn dẹp (Dead Code Candidates):
+| STT | File / Class / Method | Vị trí (Package / Directory) | Lý do nghi ngờ (Không caller, Mock cũ, mồ côi) | Đề xuất xử lý |
+| :---: | :--- | :--- | :--- | :--- |
+| 1 | `RenewalModal.tsx` | `frontend/src/features/customer/` | Modal cũ đã được thay thế hoàn toàn bởi trang quy trình 3 bước `RenewalPage.tsx` | Xóa bỏ (Dead Code) |
+| 2 | `LateRenewalApprovalPage.tsx` | `frontend/src/features/manager/` | File trang chưa được tích hợp router, quy trình duyệt ngoại lệ hiện được xử lý trực tiếp trên Allocation Workbench | Tạm đóng / Gỡ bỏ |
+| 3 | `OverdueContractsPage.tsx` | `frontend/src/features/manager/` | Trang quản lý nợ cũ, đã được chuyển sang phân hệ BOM tập trung `OverdueContractsTable.tsx` | Xóa bỏ (Dead Code) |
 
 ---
 *Tài liệu này là căn cứ vận hành chính thức cho Sprint Tuần 9. Mọi thay đổi về phạm vi hoặc quy chuẩn kỹ thuật phải được Lead phê duyệt.*

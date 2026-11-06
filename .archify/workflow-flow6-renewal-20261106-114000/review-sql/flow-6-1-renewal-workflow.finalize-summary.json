@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "fail",
+  "type": "workflow",
+  "quality": "showcase",
+  "specification": {
+    "path": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\workflow-flow6-renewal-20261106-114000\\candidate.json",
+    "sha256": "a2c3cfbe3ba994ce0fcf74f04f5be1d907e18bc06ba2cb9bb4d230abb9cea206",
+    "bytes": 9293
+  },
+  "artifact": {
+    "path": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-6-1-renewal-workflow.html",
+    "sha256": "d35da2c68058cb5e2a3d034944fe22ade55b1fd19eab7fccb52f3068ae7b52df",
+    "bytes": 856928
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "fail"
+  },
+  "failedStage": "browser-check",
+  "diagnostics": [
+    {
+      "code": "viewer/temp-cleanup-incomplete",
+      "severity": "error",
+      "message": "Browser cleanup could not safely finish; inspect the reported retained path.",
+      "subject": {
+        "artifact": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-6-1-renewal-workflow.html"
+      },
+      "evidence": {
+        "reason": "Chrome did not exit; retained temporary profile \"C:\\Users\\xuann\\AppData\\Local\\Temp\\archify-visual-check-profile-zSwIEU\".",
+        "retainedDirectory": "C:\\Users\\xuann\\AppData\\Local\\Temp\\archify-visual-check-profile-zSwIEU"
+      },
+      "supportedFixes": [
+        "resolve the reported process or filesystem failure; verify directory ownership before manual cleanup"
+      ]
+    }
+  ],
+  "diagnosticSummary": {
+    "total": 1,
+    "shown": 1,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\workflow-flow6-renewal-20261106-114000\\review-sql\\flow-6-1-renewal-workflow.finalize.json",
+    "summaryReceipt": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\workflow-flow6-renewal-20261106-114000\\review-sql\\flow-6-1-renewal-workflow.finalize-summary.json",
+    "browserCheckReceipt": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\workflow-flow6-renewal-20261106-114000\\review-sql\\flow-6-1-renewal-workflow.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-06T03:54:51.643Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 6762,
+  "browserCheck": {
+    "requested": true,
+    "ran": false
+  }
+}

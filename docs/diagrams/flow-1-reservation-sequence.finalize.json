@@ -1,0 +1,999 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "sequence",
+  "quality": "showcase",
+  "startedAt": "2026-11-06T04:31:06.446Z",
+  "specification": {
+    "path": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\sequence-flow1-reservation-20261106-112900\\candidate.json",
+    "sha256": "42bc32f8dff0a3ad71e6ff864777cbe7529fe20d678d384850d5adbd50f30bdb",
+    "bytes": 11053
+  },
+  "artifact": {
+    "path": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation-sequence.html",
+    "sha256": "dcdeec7965cd2f05fd872116a4bb2d99499486ac44f53f213a7fce98aedff7ad",
+    "bytes": 858440
+  },
+  "stages": {
+    "validate": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": null,
+      "execution": "embedded-in-deliver",
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\.agents\\skills\\archify\\bin\\archify.mjs",
+        "deliver",
+        "sequence",
+        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\sequence-flow1-reservation-20261106-112900\\candidate.json",
+        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation-sequence.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": true,
+        "command": "validate",
+        "specification": {
+          "sha256": "42bc32f8dff0a3ad71e6ff864777cbe7529fe20d678d384850d5adbd50f30bdb",
+          "bytes": 11053
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        }
+      }
+    },
+    "deliver": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 1314,
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\.agents\\skills\\archify\\bin\\archify.mjs",
+        "deliver",
+        "sequence",
+        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\sequence-flow1-reservation-20261106-112900\\candidate.json",
+        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation-sequence.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "receiptId": "55666db7-5f85-48fe-a4e5-d09b15124a5e",
+        "ok": true,
+        "command": "deliver",
+        "type": "sequence",
+        "input": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\sequence-flow1-reservation-20261106-112900\\candidate.json",
+        "output": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation-sequence.html",
+        "specification": {
+          "sha256": "42bc32f8dff0a3ad71e6ff864777cbe7529fe20d678d384850d5adbd50f30bdb",
+          "bytes": 11053
+        },
+        "artifact": {
+          "sha256": "dcdeec7965cd2f05fd872116a4bb2d99499486ac44f53f213a7fce98aedff7ad",
+          "bytes": 858440
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        },
+        "evidence": {
+          "verified": true,
+          "repository": "https://github.com/Nguyen-Van-Gia-Binh/Self-Storage-Facility-Rental-and-Management-System",
+          "revision": "aa2e49023f059a4173225f87f7fb325341466ee2",
+          "references": 10
+        },
+        "update": {
+          "status": "unavailable",
+          "installedVersion": null,
+          "availableVersion": null,
+          "releaseNotes": null,
+          "checkedAt": null,
+          "source": null,
+          "noticeRequired": false,
+          "noticeText": null,
+          "reason": "disabled"
+        }
+      }
+    },
+    "check": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 386,
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\.agents\\skills\\archify\\bin\\archify.mjs",
+        "check",
+        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation-sequence.html",
+        "--require-provenance"
+      ],
+      "receipt": {
+        "ok": true,
+        "file": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation-sequence.html",
+        "artifact": {
+          "sha256": "dcdeec7965cd2f05fd872116a4bb2d99499486ac44f53f213a7fce98aedff7ad",
+          "bytes": 858440
+        },
+        "checks": [
+          {
+            "name": "single_svg",
+            "ok": true,
+            "details": [
+              "found 1 <svg> block(s)"
+            ]
+          },
+          {
+            "name": "finite_svg",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "orthogonal_arrows",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "label_route_clearance",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_crossings",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_corridors",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "container_border_runs",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "route_rhythm",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "legend_clearance",
+            "ok": true,
+            "details": []
+          }
+        ],
+        "composition": {
+          "schemaVersion": 1,
+          "profile": "showcase",
+          "status": "pass",
+          "summary": {
+            "errors": 0,
+            "warnings": 0
+          },
+          "metrics": {
+            "properCrossings": 0,
+            "resolvedCrossovers": 0,
+            "ambiguousCorridors": 0,
+            "arrowheadCollisions": 0,
+            "containerBorderRuns": 0,
+            "labelRouteClearanceIssues": 0,
+            "labelCanvasOverflowIssues": 0,
+            "minLabelRouteClearance": 6,
+            "desktopReadabilityIssues": 0,
+            "viewportHeightIssues": 0,
+            "minProjectedNodeTextPx": 6.4,
+            "maxBends": 0,
+            "routesOverSuggestedBends": 0,
+            "maxStretch": 1,
+            "routesOverSuggestedStretch": 0,
+            "minSegmentPx": 127.8,
+            "minInteriorSegmentPx": null,
+            "shortSegmentCount": 0,
+            "shortEndpointSegmentCount": 0,
+            "shortInteriorSegmentCount": 0,
+            "microSegmentCount": 0
+          },
+          "suggestedLimits": {
+            "bendsPerRelationship": 2,
+            "stretch": 1.35,
+            "segmentPx": 16,
+            "microSegmentPx": 8
+          },
+          "routeReview": {
+            "crossings": [],
+            "detours": []
+          },
+          "leadingSpace": {
+            "measured": false,
+            "reviewSuggested": false
+          },
+          "sequenceColumnSpace": {
+            "measured": true,
+            "columnFit": "spread",
+            "participantCount": 6,
+            "occupiedRight": 922.4,
+            "viewBoxLeft": 0,
+            "canvasWidth": 920,
+            "emptyRightPx": 0,
+            "emptyRightRatio": 0,
+            "typicalParticipantWidth": 109,
+            "reviewSuggested": false
+          },
+          "desktopReadability": {
+            "budgetBasis": "legacy-930",
+            "readerContract": "declared-wide-v1",
+            "availableDiagramWidth": 930,
+            "actualBudgetPx": 930,
+            "limit": "legacy",
+            "requestedTargetPx": null,
+            "requestedTargetMet": null,
+            "hardFloorPx": 6,
+            "hardFloorMet": true,
+            "minimumOwner": {
+              "kind": "node",
+              "id": "biz_service"
+            },
+            "minimumSourceTextPx": 6.4,
+            "minimumProjectedTextPx": 6.4,
+            "semanticTextCount": 36
+          },
+          "issues": []
+        },
+        "provenance": "current",
+        "deliveryReceiptId": "55666db7-5f85-48fe-a4e5-d09b15124a5e"
+      }
+    },
+    "browser-check": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 4452,
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\.agents\\skills\\archify\\bin\\archify.mjs",
+        "browser-check",
+        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation-sequence.html",
+        "--json",
+        "--require-provenance"
+      ],
+      "execution": "in-process",
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": true,
+        "command": "browser-check",
+        "evidenceKind": "automated-browser",
+        "status": "pass",
+        "visualReview": "not-requested",
+        "provenance": "current",
+        "deliveryReceiptId": "55666db7-5f85-48fe-a4e5-d09b15124a5e",
+        "artifact": {
+          "path": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation-sequence.html",
+          "sha256": "dcdeec7965cd2f05fd872116a4bb2d99499486ac44f53f213a7fce98aedff7ad",
+          "bytes": 858440
+        },
+        "state": {
+          "detail": "read",
+          "motion": "still"
+        },
+        "chrome": {
+          "status": "available",
+          "executable": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+        },
+        "diagnostics": [],
+        "containment": {
+          "status": "pass",
+          "policy": "fit-or-reader-declared-readable-vertical-scroll",
+          "viewports": [
+            {
+              "width": 1440,
+              "height": 900,
+              "theme": "light",
+              "innerWidth": 1440,
+              "innerHeight": 900,
+              "scrollWidth": 1440,
+              "scrollHeight": 1650,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "width-first",
+              "ok": true,
+              "readerWidth": 1376,
+              "diagramWidth": 1346,
+              "pageComposition": {
+                "bodyPaddingPx": 12,
+                "headerPx": 78,
+                "diagramChromePx": 78,
+                "svgPx": 1482,
+                "cardsPx": 0,
+                "viewBoxHeight": 1013
+              },
+              "viewBoxWidth": 920,
+              "minimumProjectedNodeTextPx": 6.4,
+              "minimumProjectedNonEdgeTextPx": 6.4,
+              "minimumProjectedEdgeTextPx": 11,
+              "minimumProjectedNodeText": "Reservation & Availability",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "biz_service"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1600,
+              "height": 1000,
+              "theme": "light",
+              "innerWidth": 1600,
+              "innerHeight": 1000,
+              "scrollWidth": 1600,
+              "scrollHeight": 1754,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "width-first",
+              "ok": true,
+              "readerWidth": 1536,
+              "diagramWidth": 1380,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 86,
+                "diagramChromePx": 84,
+                "svgPx": 1520,
+                "cardsPx": 0,
+                "viewBoxHeight": 1013
+              },
+              "viewBoxWidth": 920,
+              "minimumProjectedNodeTextPx": 6.4,
+              "minimumProjectedNonEdgeTextPx": 6.4,
+              "minimumProjectedEdgeTextPx": 11,
+              "minimumProjectedNodeText": "Reservation & Availability",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "biz_service"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1920,
+              "height": 1080,
+              "theme": "light",
+              "innerWidth": 1920,
+              "innerHeight": 1080,
+              "scrollWidth": 1920,
+              "scrollHeight": 1754,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "width-first",
+              "ok": true,
+              "readerWidth": 1856,
+              "diagramWidth": 1380,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 86,
+                "diagramChromePx": 84,
+                "svgPx": 1520,
+                "cardsPx": 0,
+                "viewBoxHeight": 1013
+              },
+              "viewBoxWidth": 920,
+              "minimumProjectedNodeTextPx": 6.4,
+              "minimumProjectedNonEdgeTextPx": 6.4,
+              "minimumProjectedEdgeTextPx": 11,
+              "minimumProjectedNodeText": "Reservation & Availability",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "biz_service"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "theme": "light",
+              "innerWidth": 2048,
+              "innerHeight": 1320,
+              "scrollWidth": 2048,
+              "scrollHeight": 1320,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "width-first",
+              "ok": true,
+              "readerWidth": 975,
+              "diagramWidth": 925,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 131,
+                "diagramChromePx": 94,
+                "svgPx": 1019,
+                "cardsPx": 0,
+                "viewBoxHeight": 1013
+              },
+              "viewBoxWidth": 920,
+              "minimumProjectedNodeTextPx": 6.4,
+              "minimumProjectedNonEdgeTextPx": 6.4,
+              "minimumProjectedEdgeTextPx": 11,
+              "minimumProjectedNodeText": "Reservation & Availability",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "biz_service"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 44,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            }
+          ]
+        },
+        "themeStates": {
+          "status": "pass",
+          "viewports": [
+            {
+              "width": 1440,
+              "height": 900,
+              "requestedTheme": "light",
+              "resolvedTheme": "light",
+              "ok": true
+            },
+            {
+              "width": 1600,
+              "height": 1000,
+              "requestedTheme": "light",
+              "resolvedTheme": "light",
+              "ok": true
+            },
+            {
+              "width": 1920,
+              "height": 1080,
+              "requestedTheme": "light",
+              "resolvedTheme": "light",
+              "ok": true
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "requestedTheme": "light",
+              "resolvedTheme": "light",
+              "ok": true
+            },
+            {
+              "width": 1440,
+              "height": 900,
+              "requestedTheme": "dark",
+              "resolvedTheme": "dark",
+              "ok": true
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "requestedTheme": "dark",
+              "resolvedTheme": "dark",
+              "ok": true
+            }
+          ]
+        },
+        "readability": {
+          "status": "pass",
+          "minimumProjectedNodeTextPx": 6,
+          "viewports": [
+            {
+              "width": 1440,
+              "height": 900,
+              "theme": "light",
+              "innerWidth": 1440,
+              "innerHeight": 900,
+              "scrollWidth": 1440,
+              "scrollHeight": 1650,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "width-first",
+              "ok": true,
+              "readerWidth": 1376,
+              "diagramWidth": 1346,
+              "pageComposition": {
+                "bodyPaddingPx": 12,
+                "headerPx": 78,
+                "diagramChromePx": 78,
+                "svgPx": 1482,
+                "cardsPx": 0,
+                "viewBoxHeight": 1013
+              },
+              "viewBoxWidth": 920,
+              "minimumProjectedNodeTextPx": 6.4,
+              "minimumProjectedNonEdgeTextPx": 6.4,
+              "minimumProjectedEdgeTextPx": 11,
+              "minimumProjectedNodeText": "Reservation & Availability",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "biz_service"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1600,
+              "height": 1000,
+              "theme": "light",
+              "innerWidth": 1600,
+              "innerHeight": 1000,
+              "scrollWidth": 1600,
+              "scrollHeight": 1754,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "width-first",
+              "ok": true,
+              "readerWidth": 1536,
+              "diagramWidth": 1380,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 86,
+                "diagramChromePx": 84,
+                "svgPx": 1520,
+                "cardsPx": 0,
+                "viewBoxHeight": 1013
+              },
+              "viewBoxWidth": 920,
+              "minimumProjectedNodeTextPx": 6.4,
+              "minimumProjectedNonEdgeTextPx": 6.4,
+              "minimumProjectedEdgeTextPx": 11,
+              "minimumProjectedNodeText": "Reservation & Availability",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "biz_service"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1920,
+              "height": 1080,
+              "theme": "light",
+              "innerWidth": 1920,
+              "innerHeight": 1080,
+              "scrollWidth": 1920,
+              "scrollHeight": 1754,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "width-first",
+              "ok": true,
+              "readerWidth": 1856,
+              "diagramWidth": 1380,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 86,
+                "diagramChromePx": 84,
+                "svgPx": 1520,
+                "cardsPx": 0,
+                "viewBoxHeight": 1013
+              },
+              "viewBoxWidth": 920,
+              "minimumProjectedNodeTextPx": 6.4,
+              "minimumProjectedNonEdgeTextPx": 6.4,
+              "minimumProjectedEdgeTextPx": 11,
+              "minimumProjectedNodeText": "Reservation & Availability",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "biz_service"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "theme": "light",
+              "innerWidth": 2048,
+              "innerHeight": 1320,
+              "scrollWidth": 2048,
+              "scrollHeight": 1320,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "width-first",
+              "ok": true,
+              "readerWidth": 975,
+              "diagramWidth": 925,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 131,
+                "diagramChromePx": 94,
+                "svgPx": 1019,
+                "cardsPx": 0,
+                "viewBoxHeight": 1013
+              },
+              "viewBoxWidth": 920,
+              "minimumProjectedNodeTextPx": 6.4,
+              "minimumProjectedNonEdgeTextPx": 6.4,
+              "minimumProjectedEdgeTextPx": 11,
+              "minimumProjectedNodeText": "Reservation & Availability",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "biz_service"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 44,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            }
+          ]
+        },
+        "viewerChrome": {
+          "status": "pass",
+          "viewports": [
+            {
+              "width": 1440,
+              "height": 900,
+              "theme": "light",
+              "innerWidth": 1440,
+              "innerHeight": 900,
+              "scrollWidth": 1440,
+              "scrollHeight": 1650,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "width-first",
+              "ok": true,
+              "readerWidth": 1376,
+              "diagramWidth": 1346,
+              "pageComposition": {
+                "bodyPaddingPx": 12,
+                "headerPx": 78,
+                "diagramChromePx": 78,
+                "svgPx": 1482,
+                "cardsPx": 0,
+                "viewBoxHeight": 1013
+              },
+              "viewBoxWidth": 920,
+              "minimumProjectedNodeTextPx": 6.4,
+              "minimumProjectedNonEdgeTextPx": 6.4,
+              "minimumProjectedEdgeTextPx": 11,
+              "minimumProjectedNodeText": "Reservation & Availability",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "biz_service"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1600,
+              "height": 1000,
+              "theme": "light",
+              "innerWidth": 1600,
+              "innerHeight": 1000,
+              "scrollWidth": 1600,
+              "scrollHeight": 1754,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "width-first",
+              "ok": true,
+              "readerWidth": 1536,
+              "diagramWidth": 1380,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 86,
+                "diagramChromePx": 84,
+                "svgPx": 1520,
+                "cardsPx": 0,
+                "viewBoxHeight": 1013
+              },
+              "viewBoxWidth": 920,
+              "minimumProjectedNodeTextPx": 6.4,
+              "minimumProjectedNonEdgeTextPx": 6.4,
+              "minimumProjectedEdgeTextPx": 11,
+              "minimumProjectedNodeText": "Reservation & Availability",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "biz_service"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1920,
+              "height": 1080,
+              "theme": "light",
+              "innerWidth": 1920,
+              "innerHeight": 1080,
+              "scrollWidth": 1920,
+              "scrollHeight": 1754,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "width-first",
+              "ok": true,
+              "readerWidth": 1856,
+              "diagramWidth": 1380,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 86,
+                "diagramChromePx": 84,
+                "svgPx": 1520,
+                "cardsPx": 0,
+                "viewBoxHeight": 1013
+              },
+              "viewBoxWidth": 920,
+              "minimumProjectedNodeTextPx": 6.4,
+              "minimumProjectedNonEdgeTextPx": 6.4,
+              "minimumProjectedEdgeTextPx": 11,
+              "minimumProjectedNodeText": "Reservation & Availability",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "biz_service"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "theme": "light",
+              "innerWidth": 2048,
+              "innerHeight": 1320,
+              "scrollWidth": 2048,
+              "scrollHeight": 1320,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "width-first",
+              "ok": true,
+              "readerWidth": 975,
+              "diagramWidth": 925,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 131,
+                "diagramChromePx": 94,
+                "svgPx": 1019,
+                "cardsPx": 0,
+                "viewBoxHeight": 1013
+              },
+              "viewBoxWidth": 920,
+              "minimumProjectedNodeTextPx": 6.4,
+              "minimumProjectedNonEdgeTextPx": 6.4,
+              "minimumProjectedEdgeTextPx": 11,
+              "minimumProjectedNodeText": "Reservation & Availability",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "biz_service"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 44,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            }
+          ]
+        },
+        "captures": {
+          "status": "not-requested",
+          "screenshots": [],
+          "contactSheet": null
+        },
+        "sidecars": {
+          "receipt": "flow-1-reservation-sequence.browser-check.json",
+          "files": []
+        }
+      }
+    }
+  },
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  },
+  "diagnostics": [],
+  "evidence": {
+    "receipt": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation-sequence.finalize.json",
+    "summaryReceipt": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation-sequence.finalize-summary.json",
+    "browserCheckReceipt": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation-sequence.browser-check.json"
+  },
+  "visualReview": "not-requested",
+  "finishedAt": "2026-11-06T04:31:13.344Z",
+  "durationMs": 6897,
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-06T03:54:51.643Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  }
+}
