@@ -660,4 +660,39 @@ Mỗi Worker Subagent sau khi hoàn thành việc vẽ sơ đồ bắt buộc ph
 ```
 
 ---
+
+### 6.3. Báo cáo Độ lệch Mã nguồn & Danh sách Mã nguồn Chết: Flow 3 (Nguyễn Văn Gia Bình — WS2)
+
+#### 📊 BÁO CÁO ĐỘ LỆCH MÃ NGUỒN: FLOW 3 — RENTED STORAGE UNIT MANAGEMENT & DEPOSIT SETTLEMENT
+
+- **Người phụ trách (Assignee):** **Nguyễn Văn Gia Bình** (WS2 — Cơ sở, Kho & Vận hành / Technical Lead)
+- **Sơ đồ HTML Standalone:**
+  - Workflow: [flow3-return-settlement-workflow.html](file:///c:/Users/admin/Documents/A_FPT/Tempory_Project/Self-Storage-Facility-Rental-and-Management-System/.archify/workflow-flow3-return-settlement-20261106-110500/flow3-return-settlement-workflow.html)
+  - Sequence: [flow3-return-settlement-sequence.html](file:///c:/Users/admin/Documents/A_FPT/Tempory_Project/Self-Storage-Facility-Rental-and-Management-System/.archify/sequence-flow3-return-settlement-20261106-110500/flow3-return-settlement-sequence.html)
+- **Commit Snapshot:** [`aa2e49023f059a4173225f87f7fb325341466ee2`](https://github.com/Nguyen-Van-Gia-Binh/Self-Storage-Facility-Rental-and-Management-System/tree/aa2e49023f059a4173225f87f7fb325341466ee2) (Commit mới nhất trên nhánh chính `main`)
+- **Tình trạng nghiệm thu:** `[x] Finalize thành công 4 gates (validate, deliver, check, browser-check: 100% PASS, Exit code 0) — Đã bật link_mode: "web" cho phép click trực tiếp vào từng dòng code GitHub.`
+
+---
+
+#### 1. Bảng đối soát thiết kế vs thực tế (Design vs Actual Implementation):
+
+| Bước nghiệp vụ theo Thiết kế (`docs/WORKFLOWS.md § 4` & Checklist) | Hiện trạng Mã nguồn Thực tế | File & Dòng Code kiểm chứng | Đánh giá Trạng thái |
+| :--- | :--- | :--- | :--- |
+| **1. Controller & Service Nghiệm thu riêng biệt (`InspectionController`, `InspectionServiceImpl`)** | Không tồn tại controller hay service `inspection` riêng. Toàn bộ logic nghiệm thu trả kho được gộp vào `ContractController` và `ContractServiceImpl` để đảm bảo tính toàn vẹn giao dịch của hợp đồng. | `ContractController.java#L162-L181`<br>`ContractServiceImpl.java#L1060-L1130` | `[Architectural Consolidation]` |
+| **2. Bảng CSDL nghiệm thu `inspection`** | Không có bảng `inspection`. Hệ thống sử dụng bảng `return_request` với các cột nghiệm thu mở rộng (`cleanliness_passed`, `key_card_returned`, `no_structural_damage`, `evidence_image_urls`, `customer_signature_url`, `damage_assessment_fee`). | `V1__init_postgres_schema.sql#L417-L440`<br>`ReturnRequest.java#L15-L85` | `[Schema Divergence]` |
+| **3. Màn hình quản lý quyết toán cọc riêng (`ContractSettlementPage.tsx`)** | Không có trang độc lập. Toàn bộ giao diện quyết toán cọc và phê duyệt được nhúng trực tiếp trong `ContractDetailPage.tsx` thông qua component `SettlementApprovalModal.tsx`. | `ContractDetailPage.tsx#L120-L180`<br>`SettlementApprovalModal.tsx#L45-L130` | `[UI Consolidation]` |
+| **4. Công thức Win-Win Trả kho sớm (`BR-RET-06`)** | Đã cài đặt chuẩn xác: Hoàn 100% tiền thuê ngày chưa dùng (`unusedDays * dailyRent`), phạt tịch thu 100% tiền cọc ban đầu (`depositPenalty = depositAmount`). Tiền net = tổng thiệt hại/nợ - tiền thuê hoàn lại. | `ContractServiceImpl.java#L1455-L1485` | `[Fully Implemented]` |
+| **5. Cơ chế xử lý nợ thâm hụt (`UNH-RET-02`)** | Khi tiền bồi thường hư hại vượt quá tiền hoàn (`netBalance > 0`), hệ thống không đóng hợp đồng ngay mà tạo giao dịch `SETTLEMENT PENDING`. Khách hàng quét mã PayOS VietQR thanh toán đủ thì Webhook mới kích hoạt `SettlementDebtPaidEvent` để chuyển sang `CLOSED`. | `PaymentEventListener.java#L50-L65`<br>`ContractEventListener.java#L45-L75` | `[Fully Implemented]` |
+| **6. Kênh hoàn tiền cọc tự động qua Ngân hàng** | Khi có số dư hoàn trả (`refundableAmount > 0`), hệ thống tạo `PaymentTransaction` với trạng thái `PENDING_REFUND`. Hiện tại chưa tích hợp cổng Payout tự động (VietQR Disburse), nhân viên kế toán chuyển khoản thủ công sau đó cập nhật đối soát. | `PaymentEventListener.java#L35-L48` | `[Console Log / Manual Bank Transfer]` |
+| **7. Hủy yêu cầu trả kho (`UNH-RET-01`)** | Khách hàng hoặc quản lý có thể hủy yêu cầu trả kho nếu khách đổi ý trước ngày nghiệm thu bàn giao. Hợp đồng hoàn nguyên về `ACTIVE`. | `ContractServiceImpl.java#L1035-L1055` | `[Fully Implemented]` |
+
+---
+
+#### 2. Danh sách Mã nguồn Chết / Cần dọn dẹp (Dead Code Candidates):
+
+| STT | File / Class / Method | Vị trí (Package / Directory) | Lý do nghi ngờ (Không caller, Mock cũ, mồ côi) | Đề xuất xử lý |
+| :--- | :--- | :--- | :--- | :--- |
+| 1 | `ReturnInspectionForm.tsx` | `frontend/src/features/manager/components/` | File trùng lặp hoàn toàn với `frontend/src/features/staff/components/ReturnInspectionForm.tsx`. Không có bất kỳ trang hay router nào của Manager import component này (Quản lý chỉ xem kết quả nghiệm thu và duyệt quyết toán cọc trong `SettlementApprovalModal.tsx`). | Xóa bỏ để tránh trùng lặp code và nhầm lẫn trách nhiệm vai trò. |
+
+---
 *Tài liệu này là căn cứ vận hành chính thức cho Sprint Tuần 9. Mọi thay đổi về phạm vi hoặc quy chuẩn kỹ thuật phải được Lead phê duyệt.*
