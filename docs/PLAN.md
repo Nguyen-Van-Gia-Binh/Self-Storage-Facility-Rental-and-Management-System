@@ -53,10 +53,10 @@
          │                           │                          │                      │
          ▼                           ▼                          ▼                      ▼
   [WORKSTREAM 1]              [WORKSTREAM 2]             [WORKSTREAM 3]         [WORKSTREAM 4]
-Khách hàng & Đặt chỗ        Cơ sở, Kho & Vận hành      Tài chính & Quá hạn    Quản trị & Điều phối
-• Flow 1 (Reservation)      • Flow 2 (Check-in)        • Flow 4 (Policy/Fee)  • Flow 5 (Staff Mgmt)
-• Flow 6.1 (Renewal UI)     • Flow 3 (Return/Contract) • Flow 6.2 (Overdue)   • Flow 7 (Support)
-• Customer Portal           • Staff Portal             • Payment & BOM Portal • Manager & Admin Portal
+Khách hàng & Đặt chỗ        Cơ sở, Kho & Vận hành      Tài chính & Doanh thu   Quản trị & Bàn giao
+• Flow 1 (Reservation)      • Flow 6.2 (Overdue)       • Flow 4 (Policy/Fee)  • Flow 2 (Check-in)
+• Flow 6.1 (Renewal UI)     • Flow 3 (Return/Contract) • Cổng thanh toán VietQR• Flow 5 (Staff Mgmt)
+• Customer Portal           • Staff Portal             • Payment & BOM Portal • Flow 7 (Support)
 (Xuân Nhi)                  (Gia Bình)                 (Nhật Huỳnh)           (Thanh Tùng)
 ```
 
@@ -65,9 +65,9 @@ Khách hàng & Đặt chỗ        Cơ sở, Kho & Vận hành      Tài chính 
 | Trục công việc                            | Người phụ trách               | Luồng nghiệp vụ                                                                                                | Phạm vi Backend (`com.swp391.selfstorage.*`) | Phạm vi Frontend (`src/features/*`)                                             | Bảng CSDL làm chủ                                              |
 | -------------------------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
 | **WS1: Khách hàng & Đặt chỗ**     | **Nguyễn Phạm Xuân Nhi** | **Flow 1** (Đặt chỗ kho)<br>**Flow 6.1** (Gia hạn trực tuyến)<br>Public Catalog                         | `reservation` (query unit/facility)            | `customer` (Interactive Unit Picker, Catalog, Booking, My Units)                   | `reservation`, `reservation_item`                                   |
-| **WS2: Cơ sở & Vận hành**          | **Nguyễn Văn Gia Bình**            | **Flow 2** (Check-in & Bàn giao)<br>**Flow 3** (Quản lý kho & Trả kho)<br>Vòng đời Hợp đồng         | `facility`, `unit`, `contract`                      | `staff` (Check-in Desk, Handover e-Form, Return Inspection, Unit Status)           | `facility`, `unit_type`, `storage_unit`, `rental_contract`, `inspection`    |
-| **WS3: Tài chính & Tự động hóa** | **Huỳnh Nhật**            | **Flow 4** (Chính sách & Bảng giá BOM)<br>**Flow 6.2** (Xử lý quá hạn & Cronjob)<br>Cổng thanh toán | `payment`, `policy`, `scheduler` (cron jobs)        | `bom`, `payment` (QR Popup Modal, Pricing config, System Revenue)                     | `payment_transaction`, `pricing_rule`, `overdue_log`                  |
-| **WS4: Quản trị & Điều phối**     | **Lê Thanh Tùng**                   | **Flow 5** (Điều phối nhân sự FM)<br>**Flow 7** (Xử lý sự cố & Ticket)<br>Identity & Access          | `auth`, `user`, `support`, `report`                     | `manager`, `admin`, `auth` (Login, RBAC, Assign Staff, Incident Board, Facility Report) | `app_user`, `user_facility_assignment`, `support_request`, `activity_log` |
+| **WS2: Cơ sở & Vận hành**          | **Nguyễn Văn Gia Bình**            | **Flow 6.2** (Xử lý quá hạn & Cronjob)<br>**Flow 3** (Quản lý kho & Trả kho)<br>Vòng đời Hợp đồng         | `facility`, `unit`, `contract`                      | `staff` (Quản lý nợ quá hạn, Handover e-Form, Return Inspection, Unit Status)       | `facility`, `unit_type`, `storage_unit`, `rental_contract`, `overdue_log`    |
+| **WS3: Tài chính & Tự động hóa** | **Huỳnh Nhật**            | **Flow 4** (Chính sách & Bảng giá BOM)<br>Cổng thanh toán & Doanh thu toàn hệ thống | `payment`, `policy`, `scheduler` (cron jobs)        | `bom`, `payment` (QR Popup Modal, Pricing config, System Revenue)                     | `payment_transaction`, `pricing_rule`                                 |
+| **WS4: Quản trị & Điều phối**     | **Lê Thanh Tùng**                   | **Flow 2** (Check-in & Bàn giao)<br>**Flow 5** (Điều phối nhân sự FM)<br>**Flow 7** (Xử lý sự cố & Ticket)<br>Identity & Access          | `auth`, `user`, `support`, `report`, `contract`          | `staff` (Check-in Desk), `manager`, `admin`, `auth` (Login, RBAC, Assign Staff, Incident Board, Facility Report) | `app_user`, `user_facility_assignment`, `support_request`, `activity_log`, `inspection` |
 
 ---
 

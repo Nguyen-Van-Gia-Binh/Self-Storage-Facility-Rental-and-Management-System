@@ -297,9 +297,9 @@ Dự án được xây dựng bởi **Nhóm 4 thành viên (SWP391 — FPT Unive
 
 | Thành viên | Vai trò Kỹ thuật | Trục công việc (Workstream) | Trách nhiệm chính |
 | :--- | :--- | :--- | :--- |
-| **Nguyễn Văn Gia Bình** | **Technical Lead / Fullstack** | **WS2: Cơ sở & Vận hành** | Kiến trúc hệ thống, Quản lý kho & sơ đồ mặt bằng, Check-in Desk, Nghiệm thu trả kho & Tất toán cọc, Điều phối chung. |
-| **Lê Thanh Tùng** | **Backend Lead / Core Domain** | **WS4: Quản trị & Điều phối** | Quản lý hợp đồng thuê kho, Bàn phân công nhân viên FM, Luồng tiếp nhận & Nghiệm thu sự cố (Flow 7), Điều chuyển ô kho. |
-| **Huỳnh Nhật** | **Backend / Money & Platform** | **WS3: Tài chính & Tự động** | Tích hợp cổng thanh toán VietQR, Quản lý chính sách BOM, Xử lý tính phạt nợ quá hạn (Flow 6.2), Hệ thống báo cáo tài chính. |
+| **Nguyễn Văn Gia Bình** | **Technical Lead / Fullstack** | **WS2: Cơ sở & Vận hành** | Kiến trúc hệ thống, Quản lý kho & sơ đồ mặt bằng, Xử lý tính phạt nợ quá hạn (Flow 6.2), Nghiệm thu trả kho & Tất toán cọc, Điều phối chung. |
+| **Lê Thanh Tùng** | **Backend Lead / Core Domain** | **WS4: Quản trị & Điều phối** | Quản lý hợp đồng thuê kho, Lễ tân Check-in & Bàn giao kho (Flow 2), Bàn phân công nhân viên FM, Luồng tiếp nhận & Nghiệm thu sự cố (Flow 7), Điều chuyển ô kho. |
+| **Huỳnh Nhật** | **Backend / Money & Platform** | **WS3: Tài chính & Tự động** | Tích hợp cổng thanh toán VietQR, Quản lý chính sách BOM, Hệ thống báo cáo tài chính & Doanh thu toàn hệ thống. |
 | **Nguyễn Phạm Xuân Nhi** | **Frontend Lead / UX Designer** | **WS1: Khách hàng & Đặt chỗ**| Thiết kế UI Design System, Portal khách hàng, Quy trình Booking kho realtime, Luồng gia hạn trực tuyến (Flow 6.1). |
 
 ---
