@@ -1,0 +1,404 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Flow 4 — BOM Revenue & Space Occupancy Data Pipeline Flow",
+    "subtitle": "Dòng chảy dữ liệu thống kê từ Hợp đồng & Thanh toán -> Tổng hợp Doanh thu & Tỷ lệ lấp đầy (Usage Rate) toàn hệ thống",
+    "output": "docs/diagrams/flow4-revenue-occupancy-dataflow.html",
+    "viewBox": [1080, 520],
+    "animation": "trace",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Nguyen-Van-Gia-Binh/Self-Storage-Facility-Rental-and-Management-System.git",
+      "provider": "github",
+      "link_mode": "web",
+      "revision": "79ae7fa01f622fe2b4b8280da42be568a6ddf8ce"
+    }
+  },
+  "stages": [
+    { "label": "Giao dịch Nguồn" },
+    { "label": "Thu nạp & Lọc" },
+    { "label": "Tính toán Chỉ số" },
+    { "label": "Kho Dữ liệu Báo cáo" },
+    { "label": "Trực quan hóa BOM" }
+  ],
+  "nodes": [
+    {
+      "id": "src_payment_tx",
+      "type": "database",
+      "label": "PaymentTransaction",
+      "sublabel": "Nhật ký thanh toán",
+      "stage": 0,
+      "row": 0,
+      "tag": "SUCCESS/REFUND",
+      "sources": [
+        {
+          "path": "backend/src/main/resources/db/migration/V1__init_postgres_schema.sql",
+          "line": 538,
+          "end_line": 570,
+          "label": "CREATE TABLE payment_transaction"
+        },
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/payment/entity/PaymentTransaction.java",
+          "line": 20,
+          "end_line": 58,
+          "label": "PaymentTransaction JPA Entity"
+        }
+      ]
+    },
+    {
+      "id": "src_contract",
+      "type": "database",
+      "label": "RentalContract",
+      "sublabel": "Hợp đồng & Tiền cọc",
+      "stage": 0,
+      "row": 1,
+      "tag": "ACTIVE / OVERDUE",
+      "sources": [
+        {
+          "path": "backend/src/main/resources/db/migration/V1__init_postgres_schema.sql",
+          "line": 322,
+          "end_line": 370,
+          "label": "CREATE TABLE rental_contract"
+        },
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/contract/entity/RentalContract.java",
+          "line": 35,
+          "end_line": 85,
+          "label": "RentalContract JPA Entity"
+        }
+      ]
+    },
+    {
+      "id": "src_unit",
+      "type": "database",
+      "label": "StorageUnit",
+      "sublabel": "Kho vật lý & Status",
+      "stage": 0,
+      "row": 2,
+      "tag": "OCCUPIED/AVAILABLE",
+      "sources": [
+        {
+          "path": "backend/src/main/resources/db/migration/V1__init_postgres_schema.sql",
+          "line": 140,
+          "end_line": 170,
+          "label": "CREATE TABLE storage_unit"
+        },
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/unit/entity/StorageUnit.java",
+          "line": 25,
+          "end_line": 65,
+          "label": "StorageUnit JPA Entity"
+        }
+      ]
+    },
+    {
+      "id": "ingest_revenue_filter",
+      "type": "backend",
+      "label": "Revenue Gate",
+      "sublabel": "Filter Ngày & Cơ sở",
+      "stage": 1,
+      "row": 0,
+      "tag": "parseFacilityId",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/report/controller/SystemReportController.java",
+          "line": 42,
+          "end_line": 71,
+          "label": "GET /reports/system/revenue"
+        }
+      ]
+    },
+    {
+      "id": "ingest_occupancy_filter",
+      "type": "backend",
+      "label": "Occupancy Gate",
+      "sublabel": "Scope Cơ sở & Kho",
+      "stage": 1,
+      "row": 2,
+      "tag": "Facility Scope",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/report/controller/SystemReportController.java",
+          "line": 73,
+          "end_line": 84,
+          "label": "GET /reports/system/occupancy"
+        }
+      ]
+    },
+    {
+      "id": "calc_revenue_streams",
+      "type": "backend",
+      "label": "Revenue Streams",
+      "sublabel": "Phân bổ 4 dòng tiền",
+      "stage": 2,
+      "row": 0,
+      "tag": "US-BM-04.1",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/report/service/impl/SystemReportServiceImpl.java",
+          "line": 98,
+          "end_line": 170,
+          "label": "facRentalRevenue & facRenewalRevenue"
+        }
+      ]
+    },
+    {
+      "id": "calc_usage_rate",
+      "type": "backend",
+      "label": "Usage Rate Engine",
+      "sublabel": "Công thức lấp đầy",
+      "stage": 2,
+      "row": 2,
+      "tag": "BR-AVL-01",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/report/service/impl/SystemReportServiceImpl.java",
+          "line": 249,
+          "end_line": 270,
+          "label": "occupancyRate = occupied / exploitable"
+        }
+      ]
+    },
+    {
+      "id": "dto_revenue_report",
+      "type": "database",
+      "label": "RevenueReport DTO",
+      "sublabel": "Tổng hợp theo cơ sở",
+      "stage": 3,
+      "row": 0,
+      "tag": "SystemRevenueDTO",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/report/dto/SystemRevenueReportResponse.java",
+          "line": 1,
+          "end_line": 22,
+          "label": "SystemRevenueReportResponse.java"
+        }
+      ]
+    },
+    {
+      "id": "csv_export_service",
+      "type": "backend",
+      "label": "CsvReportExport",
+      "sublabel": "Xuất Excel / CSV",
+      "stage": 3,
+      "row": 1,
+      "tag": "BM-05 Export",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/report/util/CsvReportExportUtil.java",
+          "line": 26,
+          "end_line": 80,
+          "label": "exportRevenueReport() with UTF-8 BOM"
+        }
+      ]
+    },
+    {
+      "id": "dto_occupancy_report",
+      "type": "database",
+      "label": "OccupancyReport DTO",
+      "sublabel": "Bóc tách 6 trạng thái",
+      "stage": 3,
+      "row": 2,
+      "tag": "OccupancyDTO",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/report/dto/SystemOccupancyReportResponse.java",
+          "line": 1,
+          "end_line": 17,
+          "label": "SystemOccupancyReportResponse.java"
+        }
+      ]
+    },
+    {
+      "id": "ui_kpi_summary",
+      "type": "frontend",
+      "label": "BomKpiSummary",
+      "sublabel": "Thẻ KPI Doanh thu",
+      "stage": 4,
+      "row": 0,
+      "tag": "Metric Cards",
+      "sources": [
+        {
+          "path": "frontend/src/features/bom/components/BomKpiSummary.tsx",
+          "line": 20,
+          "end_line": 75,
+          "label": "BomKpiSummary.tsx"
+        }
+      ]
+    },
+    {
+      "id": "ui_revenue_charts",
+      "type": "frontend",
+      "label": "RevenueCharts",
+      "sublabel": "Donut & Performance",
+      "stage": 4,
+      "row": 1,
+      "tag": "Donut & Table",
+      "sources": [
+        {
+          "path": "frontend/src/features/bom/components/RevenueStreamDonut.tsx",
+          "line": 25,
+          "end_line": 85,
+          "label": "RevenueStreamDonut.tsx"
+        }
+      ]
+    },
+    {
+      "id": "ui_occupancy_chart",
+      "type": "frontend",
+      "label": "OccupancyChart",
+      "sublabel": "Thứ hạng lấp đầy",
+      "stage": 4,
+      "row": 2,
+      "tag": "Ranked Bar",
+      "sources": [
+        {
+          "path": "frontend/src/features/bom/components/OccupancyComparisonChart.tsx",
+          "line": 25,
+          "end_line": 85,
+          "label": "OccupancyComparisonChart.tsx"
+        }
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "id": "flow_pay_ingest",
+      "from": "src_payment_tx",
+      "to": "ingest_revenue_filter",
+      "label": "Lọc giao dịch theo kỳ",
+      "classification": "payment facts",
+      "route": "straight",
+      "variant": "emphasis"
+    },
+    {
+      "id": "flow_contract_ingest",
+      "from": "src_contract",
+      "to": "ingest_revenue_filter",
+      "label": "Map hợp đồng & cọc",
+      "classification": "contract facts",
+      "variant": "default"
+    },
+    {
+      "id": "flow_unit_ingest",
+      "from": "src_unit",
+      "to": "ingest_occupancy_filter",
+      "label": "Trạng thái ô vật lý",
+      "classification": "inventory state",
+      "route": "straight",
+      "variant": "emphasis"
+    },
+    {
+      "id": "flow_revenue_calc",
+      "from": "ingest_revenue_filter",
+      "to": "calc_revenue_streams",
+      "label": "Bóc tách 4 dòng tiền",
+      "classification": "revenue logic",
+      "route": "straight",
+      "variant": "emphasis"
+    },
+    {
+      "id": "flow_occupancy_calc",
+      "from": "ingest_occupancy_filter",
+      "to": "calc_usage_rate",
+      "label": "Trừ OutOfService",
+      "classification": "formula BR-AVL",
+      "route": "straight",
+      "variant": "emphasis"
+    },
+    {
+      "id": "flow_revenue_dto",
+      "from": "calc_revenue_streams",
+      "to": "dto_revenue_report",
+      "label": "Tổng hợp SystemRevenue",
+      "classification": "aggregated DTO",
+      "route": "straight",
+      "variant": "emphasis"
+    },
+    {
+      "id": "flow_revenue_export",
+      "from": "calc_revenue_streams",
+      "to": "csv_export_service",
+      "label": "Xuất CSV Doanh thu",
+      "classification": "export payload",
+      "variant": "dashed"
+    },
+    {
+      "id": "flow_occupancy_dto",
+      "from": "calc_usage_rate",
+      "to": "dto_occupancy_report",
+      "label": "Thứ hạng lấp đầy",
+      "classification": "ranking DTO",
+      "route": "straight",
+      "variant": "emphasis"
+    },
+    {
+      "id": "flow_occupancy_export",
+      "from": "calc_usage_rate",
+      "to": "csv_export_service",
+      "label": "Xuất CSV Lấp đầy",
+      "classification": "export payload",
+      "variant": "dashed"
+    },
+    {
+      "id": "flow_dto_kpi",
+      "from": "dto_revenue_report",
+      "to": "ui_kpi_summary",
+      "label": "Tổng thu KPI",
+      "classification": "REST JSON",
+      "route": "straight",
+      "labelDy": -14,
+      "variant": "emphasis"
+    },
+    {
+      "id": "flow_dto_donut",
+      "from": "dto_revenue_report",
+      "to": "ui_revenue_charts",
+      "label": "Cơ cấu dòng tiền",
+      "classification": "REST JSON",
+      "labelDy": 14,
+      "variant": "emphasis"
+    },
+    {
+      "id": "flow_dto_occupancy",
+      "from": "dto_occupancy_report",
+      "to": "ui_occupancy_chart",
+      "label": "Xếp hạng cơ sở",
+      "classification": "REST JSON",
+      "route": "straight",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Bóc tách 4 Dòng tiền Doanh thu Thực tế (US-BM-04.1)",
+      "items": [
+        "Tiền thuê ban đầu (Rental): Tách từ INITIAL_PAYMENT theo rentCap = contract.totalRentalFee",
+        "Tiền gia hạn (Renewal): Ghi nhận từ CONTRACT_RENEWAL & RENEWAL_PAYMENT",
+        "Phụ phí & Bồi thường (Surcharge): Tách từ SETTLEMENT & EXTRA_FEE_PAYMENT",
+        "Phạt quá hạn (Overdue Fee): Tách từ OVERDUE_PENALTY; Hoàn tiền (REFUND) trừ trực tiếp khỏi tổng thu"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Công thức Tỷ lệ Lấp đầy Kho Thực dụng (US-BM-04.2 & BR-AVL-01)",
+      "items": [
+        "Số ô kho thực dụng: exploitableUnits = totalUnits - outOfServiceUnits",
+        "Tỷ lệ lấp đầy: occupancyRate = (occupiedUnits / exploitableUnits) * 100%",
+        "Tự động sắp xếp các cơ sở theo thứ hạng occupancyRate giảm dần để BOM tối ưu chính sách giá"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Trích xuất Báo cáo Đối soát CSV/Excel (BM-05 & US-BM-05.1)",
+      "items": [
+        "Tiện ích CsvReportExportUtil chèn ký tự UTF-8 BOM (\\uFEFF) giúp Microsoft Excel hiển thị tiếng Việt không bị lỗi font",
+        "Hỗ trợ xuất linh hoạt theo kỳ ngày, theo cơ sở hoặc toàn bộ chuỗi hệ thống",
+        "Bảo mật quyền trích xuất: Chỉ tài khoản có vai trò BOM hoặc SYSTEM_ADMINISTRATOR mới được phép gọi endpoint /export"
+      ]
+    }
+  ]
+}
