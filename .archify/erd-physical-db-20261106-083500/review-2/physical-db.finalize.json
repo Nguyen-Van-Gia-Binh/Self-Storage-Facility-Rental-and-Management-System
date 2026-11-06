@@ -1,0 +1,2248 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "erd",
+  "quality": "standard",
+  "startedAt": "2026-11-06T01:50:14.621Z",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\erd-physical-db-20261106-083500\\candidate.json",
+    "sha256": "e29016d59ff9609252b88d3359195061cdf666dcaec6dda7ec16358d9d4ba20d",
+    "bytes": 33292
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\erd-physical-db-20261106-083500\\physical-db.html",
+    "sha256": "b322d6c23a31498b28ea7f7b2b66ec73a56e13e145cba3f74922c8b01725e1b1",
+    "bytes": 970286
+  },
+  "stages": {
+    "validate": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": null,
+      "execution": "embedded-in-deliver",
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.agents\\skills\\archify\\bin\\archify.mjs",
+        "deliver",
+        "erd",
+        "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\erd-physical-db-20261106-083500\\candidate.json",
+        "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\erd-physical-db-20261106-083500\\physical-db.html",
+        "--quality",
+        "standard",
+        "--repo-root",
+        "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": true,
+        "command": "validate",
+        "specification": {
+          "sha256": "e29016d59ff9609252b88d3359195061cdf666dcaec6dda7ec16358d9d4ba20d",
+          "bytes": 33292
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "standard",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 16,
+          "compositionIssues": [
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "storage_unit_facility",
+                "from": "storage_unit",
+                "to": "facility",
+                "label": "located at",
+                "collectionIndex": 0,
+                "artifactIndex": 1
+              },
+              "otherRelationship": {
+                "id": "policy_published_by",
+                "from": "policy_version",
+                "to": "app_user",
+                "label": "published by",
+                "collectionIndex": 4,
+                "artifactIndex": 5
+              },
+              "point": [
+                342,
+                384
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "storage_unit_facility",
+                "from": "storage_unit",
+                "to": "facility",
+                "label": "located at",
+                "collectionIndex": 0,
+                "artifactIndex": 1
+              },
+              "otherRelationship": {
+                "id": "reservation_customer",
+                "from": "reservation",
+                "to": "app_user",
+                "label": "reserved by",
+                "collectionIndex": 11,
+                "artifactIndex": 12
+              },
+              "point": [
+                342,
+                289
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "price_unit_type",
+                "from": "facility_unit_type_price",
+                "to": "unit_type",
+                "label": "rate for",
+                "collectionIndex": 3,
+                "artifactIndex": 4
+              },
+              "otherRelationship": {
+                "id": "policy_published_by",
+                "from": "policy_version",
+                "to": "app_user",
+                "label": "published by",
+                "collectionIndex": 4,
+                "artifactIndex": 5
+              },
+              "point": [
+                702,
+                384
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "price_unit_type",
+                "from": "facility_unit_type_price",
+                "to": "unit_type",
+                "label": "rate for",
+                "collectionIndex": 3,
+                "artifactIndex": 4
+              },
+              "otherRelationship": {
+                "id": "reservation_customer",
+                "from": "reservation",
+                "to": "app_user",
+                "label": "reserved by",
+                "collectionIndex": 11,
+                "artifactIndex": 12
+              },
+              "point": [
+                702,
+                289
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "price_unit_type",
+                "from": "facility_unit_type_price",
+                "to": "unit_type",
+                "label": "rate for",
+                "collectionIndex": 3,
+                "artifactIndex": 4
+              },
+              "otherRelationship": {
+                "id": "reservation_facility",
+                "from": "reservation",
+                "to": "facility",
+                "label": "facility target",
+                "collectionIndex": 12,
+                "artifactIndex": 13
+              },
+              "point": [
+                702,
+                229
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "policy_published_by",
+                "from": "policy_version",
+                "to": "app_user",
+                "label": "published by",
+                "collectionIndex": 4,
+                "artifactIndex": 5
+              },
+              "otherRelationship": {
+                "id": "waitlist_unit_type",
+                "from": "waitlist",
+                "to": "unit_type",
+                "label": "desired type",
+                "collectionIndex": 7,
+                "artifactIndex": 8
+              },
+              "point": [
+                908,
+                434
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "policy_published_by",
+                "from": "policy_version",
+                "to": "app_user",
+                "label": "published by",
+                "collectionIndex": 4,
+                "artifactIndex": 5
+              },
+              "otherRelationship": {
+                "id": "reservation_unit_type",
+                "from": "reservation",
+                "to": "unit_type",
+                "label": "selected type",
+                "collectionIndex": 13,
+                "artifactIndex": 14
+              },
+              "point": [
+                908,
+                428
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "policy_published_by",
+                "from": "policy_version",
+                "to": "app_user",
+                "label": "published by",
+                "collectionIndex": 4,
+                "artifactIndex": 5
+              },
+              "otherRelationship": {
+                "id": "contract_facility",
+                "from": "rental_contract",
+                "to": "facility",
+                "label": "facility",
+                "collectionIndex": 18,
+                "artifactIndex": 19
+              },
+              "point": [
+                347,
+                384
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "waitlist_customer",
+                "from": "waitlist",
+                "to": "app_user",
+                "label": "registered by",
+                "collectionIndex": 5,
+                "artifactIndex": 6
+              },
+              "otherRelationship": {
+                "id": "reservation_facility",
+                "from": "reservation",
+                "to": "facility",
+                "label": "facility target",
+                "collectionIndex": 12,
+                "artifactIndex": 13
+              },
+              "point": [
+                1081,
+                240
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "waitlist_unit_type",
+                "from": "waitlist",
+                "to": "unit_type",
+                "label": "desired type",
+                "collectionIndex": 7,
+                "artifactIndex": 8
+              },
+              "otherRelationship": {
+                "id": "reservation_customer",
+                "from": "reservation",
+                "to": "app_user",
+                "label": "reserved by",
+                "collectionIndex": 11,
+                "artifactIndex": 12
+              },
+              "point": [
+                1081,
+                434
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "waitlist_unit_type",
+                "from": "waitlist",
+                "to": "unit_type",
+                "label": "desired type",
+                "collectionIndex": 7,
+                "artifactIndex": 8
+              },
+              "otherRelationship": {
+                "id": "reservation_facility",
+                "from": "reservation",
+                "to": "facility",
+                "label": "facility target",
+                "collectionIndex": 12,
+                "artifactIndex": 13
+              },
+              "point": [
+                1081,
+                434
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "waitlist_contract",
+                "from": "waitlist",
+                "to": "rental_contract",
+                "label": "converted contract",
+                "collectionIndex": 10,
+                "artifactIndex": 11
+              },
+              "otherRelationship": {
+                "id": "payment_reservation",
+                "from": "payment_transaction",
+                "to": "reservation",
+                "label": "deposit payment",
+                "collectionIndex": 24,
+                "artifactIndex": 25
+              },
+              "point": [
+                1552,
+                710
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "reservation_customer",
+                "from": "reservation",
+                "to": "app_user",
+                "label": "reserved by",
+                "collectionIndex": 11,
+                "artifactIndex": 12
+              },
+              "otherRelationship": {
+                "id": "contract_facility",
+                "from": "rental_contract",
+                "to": "facility",
+                "label": "facility",
+                "collectionIndex": 18,
+                "artifactIndex": 19
+              },
+              "point": [
+                347,
+                289
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "reservation_unit",
+                "from": "reservation",
+                "to": "storage_unit",
+                "label": "assigned unit",
+                "collectionIndex": 15,
+                "artifactIndex": 16
+              },
+              "otherRelationship": {
+                "id": "contract_unit_type",
+                "from": "rental_contract",
+                "to": "unit_type",
+                "label": "unit category",
+                "collectionIndex": 20,
+                "artifactIndex": 21
+              },
+              "point": [
+                650,
+                1190
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "reservation_unit",
+                "from": "reservation",
+                "to": "storage_unit",
+                "label": "assigned unit",
+                "collectionIndex": 15,
+                "artifactIndex": 16
+              },
+              "otherRelationship": {
+                "id": "contract_policy",
+                "from": "rental_contract",
+                "to": "policy_version",
+                "label": "applied policy",
+                "collectionIndex": 21,
+                "artifactIndex": 22
+              },
+              "point": [
+                1081.7,
+                762
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/desktop-readability",
+              "nodeId": "app_user",
+              "owner": {
+                "kind": "node",
+                "id": "app_user"
+              },
+              "viewportWidth": 1440,
+              "viewportHeight": 900,
+              "availableDiagramWidth": 930,
+              "budgetBasis": "legacy-930",
+              "readerContract": "declared-wide-v1",
+              "requestedTargetPx": 7.5,
+              "requestedTargetMet": false,
+              "budgetLimit": "legacy",
+              "viewBoxWidth": 1977,
+              "scale": 0.47040971168437024,
+              "text": "PK",
+              "detail": "context",
+              "sourceFontPx": 9,
+              "projectedFontPx": 4.2336874051593325,
+              "minimumProjectedFontPx": 6
+            }
+          ]
+        }
+      }
+    },
+    "deliver": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 1913,
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.agents\\skills\\archify\\bin\\archify.mjs",
+        "deliver",
+        "erd",
+        "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\erd-physical-db-20261106-083500\\candidate.json",
+        "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\erd-physical-db-20261106-083500\\physical-db.html",
+        "--quality",
+        "standard",
+        "--repo-root",
+        "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "receiptId": "e0e6f0b2-b7db-443c-908b-18111cf371ae",
+        "ok": true,
+        "command": "deliver",
+        "type": "erd",
+        "input": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\erd-physical-db-20261106-083500\\candidate.json",
+        "output": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\erd-physical-db-20261106-083500\\physical-db.html",
+        "specification": {
+          "sha256": "e29016d59ff9609252b88d3359195061cdf666dcaec6dda7ec16358d9d4ba20d",
+          "bytes": 33292
+        },
+        "artifact": {
+          "sha256": "b322d6c23a31498b28ea7f7b2b66ec73a56e13e145cba3f74922c8b01725e1b1",
+          "bytes": 970286
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "standard",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 16,
+          "compositionIssues": [
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "storage_unit_facility",
+                "from": "storage_unit",
+                "to": "facility",
+                "label": "located at",
+                "collectionIndex": 0,
+                "artifactIndex": 1
+              },
+              "otherRelationship": {
+                "id": "policy_published_by",
+                "from": "policy_version",
+                "to": "app_user",
+                "label": "published by",
+                "collectionIndex": 4,
+                "artifactIndex": 5
+              },
+              "point": [
+                342,
+                384
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "storage_unit_facility",
+                "from": "storage_unit",
+                "to": "facility",
+                "label": "located at",
+                "collectionIndex": 0,
+                "artifactIndex": 1
+              },
+              "otherRelationship": {
+                "id": "reservation_customer",
+                "from": "reservation",
+                "to": "app_user",
+                "label": "reserved by",
+                "collectionIndex": 11,
+                "artifactIndex": 12
+              },
+              "point": [
+                342,
+                289
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "price_unit_type",
+                "from": "facility_unit_type_price",
+                "to": "unit_type",
+                "label": "rate for",
+                "collectionIndex": 3,
+                "artifactIndex": 4
+              },
+              "otherRelationship": {
+                "id": "policy_published_by",
+                "from": "policy_version",
+                "to": "app_user",
+                "label": "published by",
+                "collectionIndex": 4,
+                "artifactIndex": 5
+              },
+              "point": [
+                702,
+                384
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "price_unit_type",
+                "from": "facility_unit_type_price",
+                "to": "unit_type",
+                "label": "rate for",
+                "collectionIndex": 3,
+                "artifactIndex": 4
+              },
+              "otherRelationship": {
+                "id": "reservation_customer",
+                "from": "reservation",
+                "to": "app_user",
+                "label": "reserved by",
+                "collectionIndex": 11,
+                "artifactIndex": 12
+              },
+              "point": [
+                702,
+                289
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "price_unit_type",
+                "from": "facility_unit_type_price",
+                "to": "unit_type",
+                "label": "rate for",
+                "collectionIndex": 3,
+                "artifactIndex": 4
+              },
+              "otherRelationship": {
+                "id": "reservation_facility",
+                "from": "reservation",
+                "to": "facility",
+                "label": "facility target",
+                "collectionIndex": 12,
+                "artifactIndex": 13
+              },
+              "point": [
+                702,
+                229
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "policy_published_by",
+                "from": "policy_version",
+                "to": "app_user",
+                "label": "published by",
+                "collectionIndex": 4,
+                "artifactIndex": 5
+              },
+              "otherRelationship": {
+                "id": "waitlist_unit_type",
+                "from": "waitlist",
+                "to": "unit_type",
+                "label": "desired type",
+                "collectionIndex": 7,
+                "artifactIndex": 8
+              },
+              "point": [
+                908,
+                434
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "policy_published_by",
+                "from": "policy_version",
+                "to": "app_user",
+                "label": "published by",
+                "collectionIndex": 4,
+                "artifactIndex": 5
+              },
+              "otherRelationship": {
+                "id": "reservation_unit_type",
+                "from": "reservation",
+                "to": "unit_type",
+                "label": "selected type",
+                "collectionIndex": 13,
+                "artifactIndex": 14
+              },
+              "point": [
+                908,
+                428
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "policy_published_by",
+                "from": "policy_version",
+                "to": "app_user",
+                "label": "published by",
+                "collectionIndex": 4,
+                "artifactIndex": 5
+              },
+              "otherRelationship": {
+                "id": "contract_facility",
+                "from": "rental_contract",
+                "to": "facility",
+                "label": "facility",
+                "collectionIndex": 18,
+                "artifactIndex": 19
+              },
+              "point": [
+                347,
+                384
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "waitlist_customer",
+                "from": "waitlist",
+                "to": "app_user",
+                "label": "registered by",
+                "collectionIndex": 5,
+                "artifactIndex": 6
+              },
+              "otherRelationship": {
+                "id": "reservation_facility",
+                "from": "reservation",
+                "to": "facility",
+                "label": "facility target",
+                "collectionIndex": 12,
+                "artifactIndex": 13
+              },
+              "point": [
+                1081,
+                240
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "waitlist_unit_type",
+                "from": "waitlist",
+                "to": "unit_type",
+                "label": "desired type",
+                "collectionIndex": 7,
+                "artifactIndex": 8
+              },
+              "otherRelationship": {
+                "id": "reservation_customer",
+                "from": "reservation",
+                "to": "app_user",
+                "label": "reserved by",
+                "collectionIndex": 11,
+                "artifactIndex": 12
+              },
+              "point": [
+                1081,
+                434
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "waitlist_unit_type",
+                "from": "waitlist",
+                "to": "unit_type",
+                "label": "desired type",
+                "collectionIndex": 7,
+                "artifactIndex": 8
+              },
+              "otherRelationship": {
+                "id": "reservation_facility",
+                "from": "reservation",
+                "to": "facility",
+                "label": "facility target",
+                "collectionIndex": 12,
+                "artifactIndex": 13
+              },
+              "point": [
+                1081,
+                434
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "waitlist_contract",
+                "from": "waitlist",
+                "to": "rental_contract",
+                "label": "converted contract",
+                "collectionIndex": 10,
+                "artifactIndex": 11
+              },
+              "otherRelationship": {
+                "id": "payment_reservation",
+                "from": "payment_transaction",
+                "to": "reservation",
+                "label": "deposit payment",
+                "collectionIndex": 24,
+                "artifactIndex": 25
+              },
+              "point": [
+                1552,
+                710
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "reservation_customer",
+                "from": "reservation",
+                "to": "app_user",
+                "label": "reserved by",
+                "collectionIndex": 11,
+                "artifactIndex": 12
+              },
+              "otherRelationship": {
+                "id": "contract_facility",
+                "from": "rental_contract",
+                "to": "facility",
+                "label": "facility",
+                "collectionIndex": 18,
+                "artifactIndex": 19
+              },
+              "point": [
+                347,
+                289
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "reservation_unit",
+                "from": "reservation",
+                "to": "storage_unit",
+                "label": "assigned unit",
+                "collectionIndex": 15,
+                "artifactIndex": 16
+              },
+              "otherRelationship": {
+                "id": "contract_unit_type",
+                "from": "rental_contract",
+                "to": "unit_type",
+                "label": "unit category",
+                "collectionIndex": 20,
+                "artifactIndex": 21
+              },
+              "point": [
+                650,
+                1190
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "reservation_unit",
+                "from": "reservation",
+                "to": "storage_unit",
+                "label": "assigned unit",
+                "collectionIndex": 15,
+                "artifactIndex": 16
+              },
+              "otherRelationship": {
+                "id": "contract_policy",
+                "from": "rental_contract",
+                "to": "policy_version",
+                "label": "applied policy",
+                "collectionIndex": 21,
+                "artifactIndex": 22
+              },
+              "point": [
+                1081.7,
+                762
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/desktop-readability",
+              "nodeId": "app_user",
+              "owner": {
+                "kind": "node",
+                "id": "app_user"
+              },
+              "viewportWidth": 1440,
+              "viewportHeight": 900,
+              "availableDiagramWidth": 930,
+              "budgetBasis": "legacy-930",
+              "readerContract": "declared-wide-v1",
+              "requestedTargetPx": 7.5,
+              "requestedTargetMet": false,
+              "budgetLimit": "legacy",
+              "viewBoxWidth": 1977,
+              "scale": 0.47040971168437024,
+              "text": "PK",
+              "detail": "context",
+              "sourceFontPx": 9,
+              "projectedFontPx": 4.2336874051593325,
+              "minimumProjectedFontPx": 6
+            }
+          ]
+        },
+        "evidence": {
+          "verified": true,
+          "repository": "https://github.com/Nguyen-Van-Gia-Binh/Self-Storage-Facility-Rental-and-Management-System",
+          "revision": "4300f9ba258363f2dae4a5ea263f169236315323",
+          "references": 19
+        },
+        "update": {
+          "status": "unavailable",
+          "installedVersion": null,
+          "availableVersion": null,
+          "releaseNotes": null,
+          "checkedAt": null,
+          "source": null,
+          "noticeRequired": false,
+          "noticeText": null,
+          "reason": "disabled"
+        }
+      }
+    },
+    "check": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 504,
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.agents\\skills\\archify\\bin\\archify.mjs",
+        "check",
+        "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\erd-physical-db-20261106-083500\\physical-db.html",
+        "--require-provenance"
+      ],
+      "receipt": {
+        "ok": true,
+        "file": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\erd-physical-db-20261106-083500\\physical-db.html",
+        "artifact": {
+          "sha256": "b322d6c23a31498b28ea7f7b2b66ec73a56e13e145cba3f74922c8b01725e1b1",
+          "bytes": 970286
+        },
+        "checks": [
+          {
+            "name": "single_svg",
+            "ok": true,
+            "details": [
+              "found 1 <svg> block(s)"
+            ]
+          },
+          {
+            "name": "finite_svg",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "orthogonal_arrows",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "label_route_clearance",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_crossings",
+            "ok": true,
+            "details": [
+              "[composition/proper-crossing] standard relationship id \"storage_unit_facility\" (\"storage_unit\" -> \"facility\") crosses relationship id \"policy_published_by\" (\"policy_version\" -> \"app_user\") at [342, 384]",
+              "[composition/proper-crossing] standard relationship id \"storage_unit_facility\" (\"storage_unit\" -> \"facility\") crosses relationship id \"reservation_customer\" (\"reservation\" -> \"app_user\") at [342, 289]",
+              "[composition/proper-crossing] standard relationship id \"price_unit_type\" (\"facility_unit_type_price\" -> \"unit_type\") crosses relationship id \"policy_published_by\" (\"policy_version\" -> \"app_user\") at [702, 384]",
+              "[composition/proper-crossing] standard relationship id \"price_unit_type\" (\"facility_unit_type_price\" -> \"unit_type\") crosses relationship id \"reservation_customer\" (\"reservation\" -> \"app_user\") at [702, 289]",
+              "[composition/proper-crossing] standard relationship id \"price_unit_type\" (\"facility_unit_type_price\" -> \"unit_type\") crosses relationship id \"reservation_facility\" (\"reservation\" -> \"facility\") at [702, 229]",
+              "[composition/proper-crossing] standard relationship id \"policy_published_by\" (\"policy_version\" -> \"app_user\") crosses relationship id \"waitlist_unit_type\" (\"waitlist\" -> \"unit_type\") at [908, 434]",
+              "[composition/proper-crossing] standard relationship id \"policy_published_by\" (\"policy_version\" -> \"app_user\") crosses relationship id \"reservation_unit_type\" (\"reservation\" -> \"unit_type\") at [908, 428]",
+              "[composition/proper-crossing] standard relationship id \"policy_published_by\" (\"policy_version\" -> \"app_user\") crosses relationship id \"contract_facility\" (\"rental_contract\" -> \"facility\") at [347, 384]",
+              "[composition/proper-crossing] standard relationship id \"waitlist_customer\" (\"waitlist\" -> \"app_user\") crosses relationship id \"reservation_facility\" (\"reservation\" -> \"facility\") at [1081, 240]",
+              "[composition/proper-crossing] standard relationship id \"waitlist_unit_type\" (\"waitlist\" -> \"unit_type\") crosses relationship id \"reservation_customer\" (\"reservation\" -> \"app_user\") at [1081, 434]",
+              "[composition/proper-crossing] standard relationship id \"waitlist_unit_type\" (\"waitlist\" -> \"unit_type\") crosses relationship id \"reservation_facility\" (\"reservation\" -> \"facility\") at [1081, 434]",
+              "[composition/proper-crossing] standard relationship id \"waitlist_contract\" (\"waitlist\" -> \"rental_contract\") crosses relationship id \"payment_reservation\" (\"payment_transaction\" -> \"reservation\") at [1552, 710]",
+              "[composition/proper-crossing] standard relationship id \"reservation_customer\" (\"reservation\" -> \"app_user\") crosses relationship id \"contract_facility\" (\"rental_contract\" -> \"facility\") at [347, 289]",
+              "[composition/proper-crossing] standard relationship id \"reservation_unit\" (\"reservation\" -> \"storage_unit\") crosses relationship id \"contract_unit_type\" (\"rental_contract\" -> \"unit_type\") at [650, 1190]",
+              "[composition/proper-crossing] standard relationship id \"reservation_unit\" (\"reservation\" -> \"storage_unit\") crosses relationship id \"contract_policy\" (\"rental_contract\" -> \"policy_version\") at [1081.7, 762]"
+            ]
+          },
+          {
+            "name": "relationship_corridors",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "container_border_runs",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "route_rhythm",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "legend_clearance",
+            "ok": true,
+            "details": []
+          }
+        ],
+        "composition": {
+          "schemaVersion": 1,
+          "profile": "standard",
+          "status": "pass",
+          "summary": {
+            "errors": 0,
+            "warnings": 16
+          },
+          "metrics": {
+            "properCrossings": 15,
+            "resolvedCrossovers": 0,
+            "ambiguousCorridors": 0,
+            "arrowheadCollisions": 0,
+            "containerBorderRuns": 0,
+            "labelRouteClearanceIssues": 0,
+            "labelCanvasOverflowIssues": 0,
+            "minLabelRouteClearance": 4,
+            "desktopReadabilityIssues": 1,
+            "viewportHeightIssues": 0,
+            "minProjectedNodeTextPx": 4.2336874051593325,
+            "maxBends": 4,
+            "routesOverSuggestedBends": 6,
+            "maxStretch": 1.37,
+            "routesOverSuggestedStretch": 1,
+            "minSegmentPx": 16,
+            "minInteriorSegmentPx": 59,
+            "shortSegmentCount": 0,
+            "shortEndpointSegmentCount": 0,
+            "shortInteriorSegmentCount": 0,
+            "microSegmentCount": 0
+          },
+          "suggestedLimits": {
+            "bendsPerRelationship": 2,
+            "stretch": 1.35,
+            "segmentPx": 16,
+            "microSegmentPx": 8
+          },
+          "routeReview": {
+            "crossings": [],
+            "detours": [
+              {
+                "relationship": {
+                  "id": "waitlist_customer",
+                  "from": "waitlist",
+                  "to": "app_user",
+                  "label": "registered by",
+                  "collectionIndex": 5,
+                  "artifactIndex": 6
+                },
+                "bends": 4,
+                "stretch": 1.227
+              },
+              {
+                "relationship": {
+                  "id": "waitlist_facility",
+                  "from": "waitlist",
+                  "to": "facility",
+                  "label": "facility target",
+                  "collectionIndex": 6,
+                  "artifactIndex": 7
+                },
+                "bends": 4,
+                "stretch": 1.37
+              },
+              {
+                "relationship": {
+                  "id": "waitlist_assigned_fm",
+                  "from": "waitlist",
+                  "to": "app_user",
+                  "label": "assigned FM",
+                  "collectionIndex": 8,
+                  "artifactIndex": 9
+                },
+                "bends": 4,
+                "stretch": 1.179
+              },
+              {
+                "relationship": {
+                  "id": "waitlist_contract",
+                  "from": "waitlist",
+                  "to": "rental_contract",
+                  "label": "converted contract",
+                  "collectionIndex": 10,
+                  "artifactIndex": 11
+                },
+                "bends": 3,
+                "stretch": 1.047,
+                "directCorridorBlockers": [
+                  {
+                    "id": "reservation",
+                    "label": "reservation",
+                    "box": [
+                      1233,
+                      452,
+                      280,
+                      516
+                    ]
+                  }
+                ]
+              },
+              {
+                "relationship": {
+                  "id": "reservation_customer",
+                  "from": "reservation",
+                  "to": "app_user",
+                  "label": "reserved by",
+                  "collectionIndex": 11,
+                  "artifactIndex": 12
+                },
+                "bends": 4,
+                "stretch": 1
+              },
+              {
+                "relationship": {
+                  "id": "reservation_facility",
+                  "from": "reservation",
+                  "to": "facility",
+                  "label": "facility target",
+                  "collectionIndex": 12,
+                  "artifactIndex": 13
+                },
+                "bends": 4,
+                "stretch": 1
+              }
+            ]
+          },
+          "leadingSpace": {
+            "measured": false,
+            "reviewSuggested": false
+          },
+          "desktopReadability": {
+            "budgetBasis": "legacy-930",
+            "readerContract": "declared-wide-v1",
+            "availableDiagramWidth": 930,
+            "actualBudgetPx": 930,
+            "limit": "legacy",
+            "requestedTargetPx": 7.5,
+            "requestedTargetMet": false,
+            "hardFloorPx": 6,
+            "hardFloorMet": false,
+            "minimumOwner": {
+              "kind": "node",
+              "id": "app_user"
+            },
+            "minimumSourceTextPx": 9,
+            "minimumProjectedTextPx": 4.2336874051593325,
+            "semanticTextCount": 438
+          },
+          "issues": [
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "storage_unit_facility",
+                "from": "storage_unit",
+                "to": "facility",
+                "label": "located at",
+                "collectionIndex": 0,
+                "artifactIndex": 1
+              },
+              "otherRelationship": {
+                "id": "policy_published_by",
+                "from": "policy_version",
+                "to": "app_user",
+                "label": "published by",
+                "collectionIndex": 4,
+                "artifactIndex": 5
+              },
+              "point": [
+                342,
+                384
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "storage_unit_facility",
+                "from": "storage_unit",
+                "to": "facility",
+                "label": "located at",
+                "collectionIndex": 0,
+                "artifactIndex": 1
+              },
+              "otherRelationship": {
+                "id": "reservation_customer",
+                "from": "reservation",
+                "to": "app_user",
+                "label": "reserved by",
+                "collectionIndex": 11,
+                "artifactIndex": 12
+              },
+              "point": [
+                342,
+                289
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "price_unit_type",
+                "from": "facility_unit_type_price",
+                "to": "unit_type",
+                "label": "rate for",
+                "collectionIndex": 3,
+                "artifactIndex": 4
+              },
+              "otherRelationship": {
+                "id": "policy_published_by",
+                "from": "policy_version",
+                "to": "app_user",
+                "label": "published by",
+                "collectionIndex": 4,
+                "artifactIndex": 5
+              },
+              "point": [
+                702,
+                384
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "price_unit_type",
+                "from": "facility_unit_type_price",
+                "to": "unit_type",
+                "label": "rate for",
+                "collectionIndex": 3,
+                "artifactIndex": 4
+              },
+              "otherRelationship": {
+                "id": "reservation_customer",
+                "from": "reservation",
+                "to": "app_user",
+                "label": "reserved by",
+                "collectionIndex": 11,
+                "artifactIndex": 12
+              },
+              "point": [
+                702,
+                289
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "price_unit_type",
+                "from": "facility_unit_type_price",
+                "to": "unit_type",
+                "label": "rate for",
+                "collectionIndex": 3,
+                "artifactIndex": 4
+              },
+              "otherRelationship": {
+                "id": "reservation_facility",
+                "from": "reservation",
+                "to": "facility",
+                "label": "facility target",
+                "collectionIndex": 12,
+                "artifactIndex": 13
+              },
+              "point": [
+                702,
+                229
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "policy_published_by",
+                "from": "policy_version",
+                "to": "app_user",
+                "label": "published by",
+                "collectionIndex": 4,
+                "artifactIndex": 5
+              },
+              "otherRelationship": {
+                "id": "waitlist_unit_type",
+                "from": "waitlist",
+                "to": "unit_type",
+                "label": "desired type",
+                "collectionIndex": 7,
+                "artifactIndex": 8
+              },
+              "point": [
+                908,
+                434
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "policy_published_by",
+                "from": "policy_version",
+                "to": "app_user",
+                "label": "published by",
+                "collectionIndex": 4,
+                "artifactIndex": 5
+              },
+              "otherRelationship": {
+                "id": "reservation_unit_type",
+                "from": "reservation",
+                "to": "unit_type",
+                "label": "selected type",
+                "collectionIndex": 13,
+                "artifactIndex": 14
+              },
+              "point": [
+                908,
+                428
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "policy_published_by",
+                "from": "policy_version",
+                "to": "app_user",
+                "label": "published by",
+                "collectionIndex": 4,
+                "artifactIndex": 5
+              },
+              "otherRelationship": {
+                "id": "contract_facility",
+                "from": "rental_contract",
+                "to": "facility",
+                "label": "facility",
+                "collectionIndex": 18,
+                "artifactIndex": 19
+              },
+              "point": [
+                347,
+                384
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "waitlist_customer",
+                "from": "waitlist",
+                "to": "app_user",
+                "label": "registered by",
+                "collectionIndex": 5,
+                "artifactIndex": 6
+              },
+              "otherRelationship": {
+                "id": "reservation_facility",
+                "from": "reservation",
+                "to": "facility",
+                "label": "facility target",
+                "collectionIndex": 12,
+                "artifactIndex": 13
+              },
+              "point": [
+                1081,
+                240
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "waitlist_unit_type",
+                "from": "waitlist",
+                "to": "unit_type",
+                "label": "desired type",
+                "collectionIndex": 7,
+                "artifactIndex": 8
+              },
+              "otherRelationship": {
+                "id": "reservation_customer",
+                "from": "reservation",
+                "to": "app_user",
+                "label": "reserved by",
+                "collectionIndex": 11,
+                "artifactIndex": 12
+              },
+              "point": [
+                1081,
+                434
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "waitlist_unit_type",
+                "from": "waitlist",
+                "to": "unit_type",
+                "label": "desired type",
+                "collectionIndex": 7,
+                "artifactIndex": 8
+              },
+              "otherRelationship": {
+                "id": "reservation_facility",
+                "from": "reservation",
+                "to": "facility",
+                "label": "facility target",
+                "collectionIndex": 12,
+                "artifactIndex": 13
+              },
+              "point": [
+                1081,
+                434
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "waitlist_contract",
+                "from": "waitlist",
+                "to": "rental_contract",
+                "label": "converted contract",
+                "collectionIndex": 10,
+                "artifactIndex": 11
+              },
+              "otherRelationship": {
+                "id": "payment_reservation",
+                "from": "payment_transaction",
+                "to": "reservation",
+                "label": "deposit payment",
+                "collectionIndex": 24,
+                "artifactIndex": 25
+              },
+              "point": [
+                1552,
+                710
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "reservation_customer",
+                "from": "reservation",
+                "to": "app_user",
+                "label": "reserved by",
+                "collectionIndex": 11,
+                "artifactIndex": 12
+              },
+              "otherRelationship": {
+                "id": "contract_facility",
+                "from": "rental_contract",
+                "to": "facility",
+                "label": "facility",
+                "collectionIndex": 18,
+                "artifactIndex": 19
+              },
+              "point": [
+                347,
+                289
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "reservation_unit",
+                "from": "reservation",
+                "to": "storage_unit",
+                "label": "assigned unit",
+                "collectionIndex": 15,
+                "artifactIndex": 16
+              },
+              "otherRelationship": {
+                "id": "contract_unit_type",
+                "from": "rental_contract",
+                "to": "unit_type",
+                "label": "unit category",
+                "collectionIndex": 20,
+                "artifactIndex": 21
+              },
+              "point": [
+                650,
+                1190
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/proper-crossing",
+              "relationship": {
+                "id": "reservation_unit",
+                "from": "reservation",
+                "to": "storage_unit",
+                "label": "assigned unit",
+                "collectionIndex": 15,
+                "artifactIndex": 16
+              },
+              "otherRelationship": {
+                "id": "contract_policy",
+                "from": "rental_contract",
+                "to": "policy_version",
+                "label": "applied policy",
+                "collectionIndex": 21,
+                "artifactIndex": 22
+              },
+              "point": [
+                1081.7,
+                762
+              ]
+            },
+            {
+              "severity": "warning",
+              "code": "composition/desktop-readability",
+              "nodeId": "app_user",
+              "owner": {
+                "kind": "node",
+                "id": "app_user"
+              },
+              "viewportWidth": 1440,
+              "viewportHeight": 900,
+              "availableDiagramWidth": 930,
+              "budgetBasis": "legacy-930",
+              "readerContract": "declared-wide-v1",
+              "requestedTargetPx": 7.5,
+              "requestedTargetMet": false,
+              "budgetLimit": "legacy",
+              "viewBoxWidth": 1977,
+              "scale": 0.47040971168437024,
+              "text": "PK",
+              "detail": "context",
+              "sourceFontPx": 9,
+              "projectedFontPx": 4.2336874051593325,
+              "minimumProjectedFontPx": 6
+            }
+          ]
+        },
+        "provenance": "current",
+        "deliveryReceiptId": "e0e6f0b2-b7db-443c-908b-18111cf371ae"
+      }
+    },
+    "browser-check": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 27289,
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.agents\\skills\\archify\\bin\\archify.mjs",
+        "browser-check",
+        "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\erd-physical-db-20261106-083500\\physical-db.html",
+        "--json",
+        "--require-provenance",
+        "--out-dir",
+        "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\erd-physical-db-20261106-083500\\review-2"
+      ],
+      "execution": "in-process",
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": true,
+        "command": "browser-check",
+        "evidenceKind": "automated-browser",
+        "status": "pass",
+        "visualReview": "not-requested",
+        "provenance": "current",
+        "deliveryReceiptId": "e0e6f0b2-b7db-443c-908b-18111cf371ae",
+        "artifact": {
+          "path": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\erd-physical-db-20261106-083500\\physical-db.html",
+          "sha256": "b322d6c23a31498b28ea7f7b2b66ec73a56e13e145cba3f74922c8b01725e1b1",
+          "bytes": 970286
+        },
+        "state": {
+          "detail": "read",
+          "motion": "still"
+        },
+        "chrome": {
+          "status": "available",
+          "executable": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+        },
+        "diagnostics": [],
+        "containment": {
+          "status": "pass",
+          "policy": "fit-or-reader-declared-readable-vertical-scroll",
+          "viewports": [
+            {
+              "width": 1440,
+              "height": 900,
+              "theme": "light",
+              "innerWidth": 1440,
+              "innerHeight": 900,
+              "scrollWidth": 1440,
+              "scrollHeight": 1579,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1376,
+              "diagramWidth": 1346,
+              "pageComposition": {
+                "bodyPaddingPx": 12,
+                "headerPx": 52,
+                "diagramChromePx": 78,
+                "svgPx": 1437,
+                "cardsPx": 0,
+                "viewBoxHeight": 2110
+              },
+              "viewBoxWidth": 1977,
+              "minimumProjectedNodeTextPx": 6.127465857359636,
+              "minimumProjectedNonEdgeTextPx": 6.127465857359636,
+              "minimumProjectedEdgeTextPx": 6.127465857359636,
+              "minimumProjectedNodeText": "PK",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "app_user"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1600,
+              "height": 1000,
+              "theme": "light",
+              "innerWidth": 1600,
+              "innerHeight": 1000,
+              "scrollWidth": 1600,
+              "scrollHeight": 1816,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1536,
+              "diagramWidth": 1506,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 60,
+                "diagramChromePx": 84,
+                "svgPx": 1607,
+                "cardsPx": 0,
+                "viewBoxHeight": 2110
+              },
+              "viewBoxWidth": 1977,
+              "minimumProjectedNodeTextPx": 6.855842185128983,
+              "minimumProjectedNonEdgeTextPx": 6.855842185128983,
+              "minimumProjectedEdgeTextPx": 6.855842185128983,
+              "minimumProjectedNodeText": "PK",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "app_user"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1920,
+              "height": 1080,
+              "theme": "light",
+              "innerWidth": 1920,
+              "innerHeight": 1080,
+              "scrollWidth": 1920,
+              "scrollHeight": 1967,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1678,
+              "diagramWidth": 1648,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 60,
+                "diagramChromePx": 84,
+                "svgPx": 1759,
+                "cardsPx": 0,
+                "viewBoxHeight": 2110
+              },
+              "viewBoxWidth": 1977,
+              "minimumProjectedNodeTextPx": 7.502276176024279,
+              "minimumProjectedNonEdgeTextPx": 7.502276176024279,
+              "minimumProjectedEdgeTextPx": 7.502276176024279,
+              "minimumProjectedNodeText": "PK",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "app_user"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "theme": "light",
+              "innerWidth": 2048,
+              "innerHeight": 1320,
+              "scrollWidth": 2048,
+              "scrollHeight": 1985,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1698,
+              "diagramWidth": 1648,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 68,
+                "diagramChromePx": 94,
+                "svgPx": 1759,
+                "cardsPx": 0,
+                "viewBoxHeight": 2110
+              },
+              "viewBoxWidth": 1977,
+              "minimumProjectedNodeTextPx": 7.502276176024279,
+              "minimumProjectedNonEdgeTextPx": 7.502276176024279,
+              "minimumProjectedEdgeTextPx": 7.502276176024279,
+              "minimumProjectedNodeText": "PK",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "app_user"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 44,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            }
+          ]
+        },
+        "themeStates": {
+          "status": "pass",
+          "viewports": [
+            {
+              "width": 1440,
+              "height": 900,
+              "requestedTheme": "light",
+              "resolvedTheme": "light",
+              "ok": true
+            },
+            {
+              "width": 1600,
+              "height": 1000,
+              "requestedTheme": "light",
+              "resolvedTheme": "light",
+              "ok": true
+            },
+            {
+              "width": 1920,
+              "height": 1080,
+              "requestedTheme": "light",
+              "resolvedTheme": "light",
+              "ok": true
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "requestedTheme": "light",
+              "resolvedTheme": "light",
+              "ok": true
+            },
+            {
+              "width": 1440,
+              "height": 900,
+              "requestedTheme": "dark",
+              "resolvedTheme": "dark",
+              "ok": true
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "requestedTheme": "dark",
+              "resolvedTheme": "dark",
+              "ok": true
+            }
+          ]
+        },
+        "readability": {
+          "status": "pass",
+          "minimumProjectedNodeTextPx": 6,
+          "viewports": [
+            {
+              "width": 1440,
+              "height": 900,
+              "theme": "light",
+              "innerWidth": 1440,
+              "innerHeight": 900,
+              "scrollWidth": 1440,
+              "scrollHeight": 1579,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1376,
+              "diagramWidth": 1346,
+              "pageComposition": {
+                "bodyPaddingPx": 12,
+                "headerPx": 52,
+                "diagramChromePx": 78,
+                "svgPx": 1437,
+                "cardsPx": 0,
+                "viewBoxHeight": 2110
+              },
+              "viewBoxWidth": 1977,
+              "minimumProjectedNodeTextPx": 6.127465857359636,
+              "minimumProjectedNonEdgeTextPx": 6.127465857359636,
+              "minimumProjectedEdgeTextPx": 6.127465857359636,
+              "minimumProjectedNodeText": "PK",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "app_user"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1600,
+              "height": 1000,
+              "theme": "light",
+              "innerWidth": 1600,
+              "innerHeight": 1000,
+              "scrollWidth": 1600,
+              "scrollHeight": 1816,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1536,
+              "diagramWidth": 1506,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 60,
+                "diagramChromePx": 84,
+                "svgPx": 1607,
+                "cardsPx": 0,
+                "viewBoxHeight": 2110
+              },
+              "viewBoxWidth": 1977,
+              "minimumProjectedNodeTextPx": 6.855842185128983,
+              "minimumProjectedNonEdgeTextPx": 6.855842185128983,
+              "minimumProjectedEdgeTextPx": 6.855842185128983,
+              "minimumProjectedNodeText": "PK",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "app_user"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1920,
+              "height": 1080,
+              "theme": "light",
+              "innerWidth": 1920,
+              "innerHeight": 1080,
+              "scrollWidth": 1920,
+              "scrollHeight": 1967,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1678,
+              "diagramWidth": 1648,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 60,
+                "diagramChromePx": 84,
+                "svgPx": 1759,
+                "cardsPx": 0,
+                "viewBoxHeight": 2110
+              },
+              "viewBoxWidth": 1977,
+              "minimumProjectedNodeTextPx": 7.502276176024279,
+              "minimumProjectedNonEdgeTextPx": 7.502276176024279,
+              "minimumProjectedEdgeTextPx": 7.502276176024279,
+              "minimumProjectedNodeText": "PK",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "app_user"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "theme": "light",
+              "innerWidth": 2048,
+              "innerHeight": 1320,
+              "scrollWidth": 2048,
+              "scrollHeight": 1985,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1698,
+              "diagramWidth": 1648,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 68,
+                "diagramChromePx": 94,
+                "svgPx": 1759,
+                "cardsPx": 0,
+                "viewBoxHeight": 2110
+              },
+              "viewBoxWidth": 1977,
+              "minimumProjectedNodeTextPx": 7.502276176024279,
+              "minimumProjectedNonEdgeTextPx": 7.502276176024279,
+              "minimumProjectedEdgeTextPx": 7.502276176024279,
+              "minimumProjectedNodeText": "PK",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "app_user"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 44,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            }
+          ]
+        },
+        "viewerChrome": {
+          "status": "pass",
+          "viewports": [
+            {
+              "width": 1440,
+              "height": 900,
+              "theme": "light",
+              "innerWidth": 1440,
+              "innerHeight": 900,
+              "scrollWidth": 1440,
+              "scrollHeight": 1579,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1376,
+              "diagramWidth": 1346,
+              "pageComposition": {
+                "bodyPaddingPx": 12,
+                "headerPx": 52,
+                "diagramChromePx": 78,
+                "svgPx": 1437,
+                "cardsPx": 0,
+                "viewBoxHeight": 2110
+              },
+              "viewBoxWidth": 1977,
+              "minimumProjectedNodeTextPx": 6.127465857359636,
+              "minimumProjectedNonEdgeTextPx": 6.127465857359636,
+              "minimumProjectedEdgeTextPx": 6.127465857359636,
+              "minimumProjectedNodeText": "PK",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "app_user"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1600,
+              "height": 1000,
+              "theme": "light",
+              "innerWidth": 1600,
+              "innerHeight": 1000,
+              "scrollWidth": 1600,
+              "scrollHeight": 1816,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1536,
+              "diagramWidth": 1506,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 60,
+                "diagramChromePx": 84,
+                "svgPx": 1607,
+                "cardsPx": 0,
+                "viewBoxHeight": 2110
+              },
+              "viewBoxWidth": 1977,
+              "minimumProjectedNodeTextPx": 6.855842185128983,
+              "minimumProjectedNonEdgeTextPx": 6.855842185128983,
+              "minimumProjectedEdgeTextPx": 6.855842185128983,
+              "minimumProjectedNodeText": "PK",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "app_user"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1920,
+              "height": 1080,
+              "theme": "light",
+              "innerWidth": 1920,
+              "innerHeight": 1080,
+              "scrollWidth": 1920,
+              "scrollHeight": 1967,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1678,
+              "diagramWidth": 1648,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 60,
+                "diagramChromePx": 84,
+                "svgPx": 1759,
+                "cardsPx": 0,
+                "viewBoxHeight": 2110
+              },
+              "viewBoxWidth": 1977,
+              "minimumProjectedNodeTextPx": 7.502276176024279,
+              "minimumProjectedNonEdgeTextPx": 7.502276176024279,
+              "minimumProjectedEdgeTextPx": 7.502276176024279,
+              "minimumProjectedNodeText": "PK",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "app_user"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "theme": "light",
+              "innerWidth": 2048,
+              "innerHeight": 1320,
+              "scrollWidth": 2048,
+              "scrollHeight": 1985,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1698,
+              "diagramWidth": 1648,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 68,
+                "diagramChromePx": 94,
+                "svgPx": 1759,
+                "cardsPx": 0,
+                "viewBoxHeight": 2110
+              },
+              "viewBoxWidth": 1977,
+              "minimumProjectedNodeTextPx": 7.502276176024279,
+              "minimumProjectedNonEdgeTextPx": 7.502276176024279,
+              "minimumProjectedEdgeTextPx": 7.502276176024279,
+              "minimumProjectedNodeText": "PK",
+              "minimumProjectedNodeTextDetail": "context",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "node",
+                "id": "app_user"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 44,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            }
+          ]
+        },
+        "captures": {
+          "status": "not-requested",
+          "screenshots": [],
+          "contactSheet": null
+        },
+        "sidecars": {
+          "directory": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\erd-physical-db-20261106-083500\\review-2",
+          "receipt": "physical-db.browser-check.json",
+          "files": []
+        }
+      }
+    }
+  },
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  },
+  "diagnostics": [],
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\erd-physical-db-20261106-083500\\review-2\\physical-db.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\erd-physical-db-20261106-083500\\review-2\\physical-db.finalize-summary.json",
+    "browserCheckReceipt": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\erd-physical-db-20261106-083500\\review-2\\physical-db.browser-check.json"
+  },
+  "visualReview": "not-requested",
+  "finishedAt": "2026-11-06T01:50:48.364Z",
+  "durationMs": 33743,
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-06T01:36:41.371Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  }
+}

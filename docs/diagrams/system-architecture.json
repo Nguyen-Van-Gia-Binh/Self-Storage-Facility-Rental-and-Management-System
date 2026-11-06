@@ -1,0 +1,199 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Self-Storage Management System Architecture",
+    "output": "system-architecture.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "customer",
+      "type": "external",
+      "label": "Storage Customer",
+      "sublabel": "Web Client (Rental Portal)",
+      "pos": [40, 180],
+      "size": [150, 64]
+    },
+    {
+      "id": "ops_staff",
+      "type": "external",
+      "label": "Staff & Managers",
+      "sublabel": "Desk / Ops Dashboard",
+      "pos": [40, 360],
+      "size": [150, 64]
+    },
+    {
+      "id": "fe_app",
+      "type": "backend",
+      "label": "React 18 SPA",
+      "sublabel": "Vite + TypeScript + Tailwind",
+      "tag": "Port :5173",
+      "pos": [260, 260],
+      "size": [160, 80]
+    },
+    {
+      "id": "spring_sec",
+      "type": "security",
+      "label": "Spring Security 6",
+      "sublabel": "JWT Filter & AuthProvider",
+      "tag": "Stateless RBAC",
+      "pos": [490, 180],
+      "size": [160, 64]
+    },
+    {
+      "id": "api_ctrl",
+      "type": "backend",
+      "label": "REST Controllers",
+      "sublabel": "/api/v1/* Endpoints",
+      "pos": [490, 300],
+      "size": [160, 64]
+    },
+    {
+      "id": "schedulers",
+      "type": "backend",
+      "label": "Scheduled Jobs",
+      "sublabel": "@Scheduled Overdue & Expiry",
+      "pos": [490, 420],
+      "size": [160, 64]
+    },
+    {
+      "id": "service_core",
+      "type": "backend",
+      "label": "Service Layer",
+      "sublabel": "Contract, Unit, Payment, Policy",
+      "pos": [700, 300],
+      "size": [160, 74]
+    },
+    {
+      "id": "vnpay",
+      "type": "cloud",
+      "label": "VNPay / MoMo Gateway",
+      "sublabel": "Online Deposit & Rent",
+      "tag": "Webhook & Redirect",
+      "pos": [700, 40],
+      "size": [160, 64]
+    },
+    {
+      "id": "flyway",
+      "type": "database",
+      "label": "Flyway Migration",
+      "sublabel": "Schema Versioning (V1..V4)",
+      "pos": [960, 170],
+      "size": [160, 64]
+    },
+    {
+      "id": "sqlserver",
+      "type": "database",
+      "label": "SQL Server 2022",
+      "sublabel": "RentalDB :1433",
+      "tag": "ACID Transactions",
+      "pos": [960, 330],
+      "size": [160, 80]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Spring Boot 3 Application (Java 17 LTS)",
+      "wraps": ["spring_sec", "api_ctrl", "service_core", "schedulers"]
+    },
+    {
+      "kind": "region",
+      "label": "Persistence & Database Tier",
+      "wraps": ["flyway", "sqlserver"]
+    }
+  ],
+  "connections": [
+    {
+      "id": "cust-to-fe",
+      "from": "customer",
+      "to": "fe_app",
+      "label": "HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "ops-to-fe",
+      "from": "ops_staff",
+      "to": "fe_app",
+      "label": "HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "fe-to-sec",
+      "from": "fe_app",
+      "to": "spring_sec",
+      "label": "Bearer Token",
+      "variant": "security"
+    },
+    {
+      "id": "fe-to-api",
+      "from": "fe_app",
+      "to": "api_ctrl",
+      "label": "REST API"
+    },
+    {
+      "id": "api-to-service",
+      "from": "api_ctrl",
+      "to": "service_core",
+      "label": "DTO / Invocation"
+    },
+    {
+      "id": "sched-to-service",
+      "from": "schedulers",
+      "to": "service_core",
+      "label": "Auto Scan"
+    },
+    {
+      "id": "service-to-vnpay",
+      "from": "service_core",
+      "to": "vnpay",
+      "label": "Pay URL & IPN",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "service-to-db",
+      "from": "service_core",
+      "to": "sqlserver",
+      "label": "Spring Data JPA"
+    },
+    {
+      "id": "flyway-to-db",
+      "from": "flyway",
+      "to": "sqlserver",
+      "label": "Run Migrations",
+      "fromSide": "bottom",
+      "toSide": "top"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Frontend Presentation",
+      "items": [
+        "React 18 Single Page Application với TypeScript & Tailwind CSS",
+        "Phân quyền 5 vai trò người dùng (Customer, Staff, Manager, BOM, Admin)",
+        "Axios interceptor tự động đính kèm JWT Bearer Token"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Backend Business Core",
+      "items": [
+        "Spring Boot 3 (Java 17 LTS) kiến trúc phân tầng chuẩn mực",
+        "Spring Security 6 stateless xác thực JWT token",
+        "Scheduled background tasks quét ô kho quá hạn & đặt cọc hết hạn"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Database & Integration",
+      "items": [
+        "SQL Server 2022 quản lý schema tự động bằng Flyway migrations",
+        "Tích hợp cổng thanh toán VNPay / MoMo xử lý đặt cọc & tiền thuê",
+        "Soft delete & đảm bảo toàn vẹn dữ liệu hợp đồng"
+      ]
+    }
+  ]
+}

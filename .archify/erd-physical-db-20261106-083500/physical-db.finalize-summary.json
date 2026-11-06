@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "fail",
+  "type": "erd",
+  "quality": "standard",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\erd-physical-db-20261106-083500\\candidate.json",
+    "sha256": "e29016d59ff9609252b88d3359195061cdf666dcaec6dda7ec16358d9d4ba20d",
+    "bytes": 33292
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\erd-physical-db-20261106-083500\\physical-db.html",
+    "sha256": "b322d6c23a31498b28ea7f7b2b66ec73a56e13e145cba3f74922c8b01725e1b1",
+    "bytes": 970286
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "fail"
+  },
+  "failedStage": "browser-check",
+  "diagnostics": [
+    {
+      "code": "viewer/evidence-path-conflict",
+      "severity": "error",
+      "message": "browser-check will not replace the existing unowned evidence path \"C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\erd-physical-db-20261106-083500\\physical-db.browser-check.json\".",
+      "subject": {
+        "artifact": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\erd-physical-db-20261106-083500\\physical-db.html",
+        "evidencePath": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\erd-physical-db-20261106-083500\\physical-db.browser-check.json"
+      },
+      "evidence": {
+        "reason": {
+          "code": "ownership-artifact-mismatch"
+        }
+      },
+      "supportedFixes": [
+        "move the conflicting file aside, or choose a separate --out-dir, then rerun browser-check"
+      ]
+    }
+  ],
+  "diagnosticSummary": {
+    "total": 1,
+    "shown": 1,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\erd-physical-db-20261106-083500\\physical-db.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\erd-physical-db-20261106-083500\\physical-db.finalize-summary.json",
+    "browserCheckReceipt": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\erd-physical-db-20261106-083500\\physical-db.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-06T01:36:41.371Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 3161,
+  "browserCheck": {
+    "requested": true,
+    "ran": false
+  }
+}
