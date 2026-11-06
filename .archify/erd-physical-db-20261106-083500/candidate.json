@@ -1,0 +1,1367 @@
+{
+  "schema_version": 1,
+  "diagram_type": "erd",
+  "meta": {
+    "title": "Self-Storage Facility Physical Database Schema (V1-V13)",
+    "locale": "en",
+    "output": ".archify/erd-physical-db-20261106-083500/physical-db.html",
+    "quality_profile": "standard",
+    "repository": {
+      "url": "https://github.com/Nguyen-Van-Gia-Binh/Self-Storage-Facility-Rental-and-Management-System.git",
+      "provider": "github",
+      "link_mode": "web",
+      "revision": "4300f9ba258363f2dae4a5ea263f169236315323"
+    },
+    "views": [
+      {
+        "id": "identity-catalog",
+        "label": "Master data & Catalog",
+        "focus": [
+          "app_user",
+          "facility",
+          "unit_type",
+          "storage_unit"
+        ],
+        "note": "User accounts with anti-spam throttle and physical storage hierarchy with SKU attributes."
+      },
+      {
+        "id": "pricing-policy",
+        "label": "Pricing & Policies",
+        "focus": [
+          "facility_unit_type_price",
+          "policy_version",
+          "facility",
+          "unit_type"
+        ],
+        "note": "Unit type pricing matrix synchronized with policy parameter versions."
+      },
+      {
+        "id": "rental-lifecycle",
+        "label": "Core Rental Lifecycle",
+        "focus": [
+          "waitlist",
+          "reservation",
+          "rental_contract",
+          "handover_record",
+          "storage_unit"
+        ],
+        "note": "Complete customer journey: Telesales CRM waitlist, reservation hold, contract activation, and physical unit handover."
+      },
+      {
+        "id": "billing-payment",
+        "label": "Billing & Payments",
+        "focus": [
+          "payment_transaction",
+          "reservation",
+          "rental_contract"
+        ],
+        "note": "Payment capture and transactions for initial deposits, recurring rents, and refund records."
+      }
+    ]
+  },
+  "layout": {
+    "mode": "grid",
+    "gapX": 64,
+    "gapY": 36
+  },
+  "entities": [
+    {
+      "id": "app_user",
+      "label": "app_user",
+      "tag": "identity",
+      "row": 0,
+      "col": 0,
+      "width": 270,
+      "sources": [
+        {
+          "path": "backend/src/main/resources/db/migration/V1__init_postgres_schema.sql",
+          "line": 9,
+          "end_line": 25,
+          "label": "CREATE TABLE app_user"
+        },
+        {
+          "path": "backend/src/main/resources/db/migration/V12__add_daily_cancel_throttle_to_app_user.sql",
+          "line": 5,
+          "end_line": 6,
+          "label": "ADD COLUMN cancel throttle"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "pk"
+        },
+        {
+          "name": "email",
+          "type": "varchar(255)",
+          "key": "uk"
+        },
+        {
+          "name": "password_hash",
+          "type": "varchar(255)"
+        },
+        {
+          "name": "full_name",
+          "type": "varchar(150)"
+        },
+        {
+          "name": "phone",
+          "type": "varchar(20)"
+        },
+        {
+          "name": "identity_number",
+          "type": "varchar(20)"
+        },
+        {
+          "name": "role",
+          "type": "varchar(30)"
+        },
+        {
+          "name": "status",
+          "type": "varchar(20)"
+        },
+        {
+          "name": "daily_cancel_count",
+          "type": "int"
+        },
+        {
+          "name": "last_cancel_date",
+          "type": "date"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz"
+        }
+      ]
+    },
+    {
+      "id": "facility",
+      "label": "facility",
+      "tag": "catalog",
+      "row": 0,
+      "col": 1,
+      "width": 250,
+      "sources": [
+        {
+          "path": "backend/src/main/resources/db/migration/V1__init_postgres_schema.sql",
+          "line": 27,
+          "end_line": 40,
+          "label": "CREATE TABLE facility"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "pk"
+        },
+        {
+          "name": "code",
+          "type": "varchar(20)",
+          "key": "uk"
+        },
+        {
+          "name": "name",
+          "type": "varchar(150)"
+        },
+        {
+          "name": "address",
+          "type": "varchar(255)"
+        },
+        {
+          "name": "phone",
+          "type": "varchar(20)"
+        },
+        {
+          "name": "description",
+          "type": "varchar(2000)"
+        },
+        {
+          "name": "opening_hours",
+          "type": "varchar(50)"
+        },
+        {
+          "name": "status",
+          "type": "varchar(20)"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz"
+        }
+      ]
+    },
+    {
+      "id": "unit_type",
+      "label": "unit_type",
+      "tag": "catalog",
+      "row": 1,
+      "col": 1,
+      "width": 260,
+      "sources": [
+        {
+          "path": "backend/src/main/resources/db/migration/V1__init_postgres_schema.sql",
+          "line": 107,
+          "end_line": 119,
+          "label": "CREATE TABLE unit_type"
+        },
+        {
+          "path": "backend/src/main/resources/db/migration/V10__add_waitlist_and_unittype_sku.sql",
+          "line": 5,
+          "end_line": 8,
+          "label": "ADD COLUMN sku attributes"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "pk"
+        },
+        {
+          "name": "code",
+          "type": "varchar(20)",
+          "key": "uk"
+        },
+        {
+          "name": "name",
+          "type": "varchar(100)"
+        },
+        {
+          "name": "width_m",
+          "type": "decimal(10,2)"
+        },
+        {
+          "name": "length_m",
+          "type": "decimal(10,2)"
+        },
+        {
+          "name": "height_m",
+          "type": "decimal(10,2)"
+        },
+        {
+          "name": "description",
+          "type": "varchar(500)"
+        },
+        {
+          "name": "pallet_capacity",
+          "type": "int"
+        },
+        {
+          "name": "max_load_kg_m2",
+          "type": "int"
+        },
+        {
+          "name": "environment",
+          "type": "varchar(30)"
+        },
+        {
+          "name": "features",
+          "type": "varchar(500)"
+        },
+        {
+          "name": "is_active",
+          "type": "boolean"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz"
+        }
+      ]
+    },
+    {
+      "id": "storage_unit",
+      "label": "storage_unit",
+      "tag": "catalog",
+      "row": 2,
+      "col": 1,
+      "width": 260,
+      "sources": [
+        {
+          "path": "backend/src/main/resources/db/migration/V1__init_postgres_schema.sql",
+          "line": 153,
+          "end_line": 171,
+          "label": "CREATE TABLE storage_unit"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "pk"
+        },
+        {
+          "name": "facility_id",
+          "type": "bigint",
+          "key": "fk",
+          "references": "facility.id"
+        },
+        {
+          "name": "unit_type_id",
+          "type": "bigint",
+          "key": "fk",
+          "references": "unit_type.id"
+        },
+        {
+          "name": "code",
+          "type": "varchar(30)"
+        },
+        {
+          "name": "floor",
+          "type": "int"
+        },
+        {
+          "name": "position",
+          "type": "varchar(50)"
+        },
+        {
+          "name": "location_note",
+          "type": "varchar(255)"
+        },
+        {
+          "name": "status",
+          "type": "varchar(20)"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz"
+        }
+      ]
+    },
+    {
+      "id": "facility_unit_type_price",
+      "label": "facility_unit_type_price",
+      "tag": "pricing",
+      "row": 0,
+      "col": 2,
+      "width": 260,
+      "sources": [
+        {
+          "path": "backend/src/main/resources/db/migration/V1__init_postgres_schema.sql",
+          "line": 121,
+          "end_line": 136,
+          "label": "CREATE TABLE facility_unit_type_price"
+        },
+        {
+          "path": "backend/src/main/resources/db/migration/V9__sync_facility_unit_type_prices_from_versions.sql",
+          "line": 9,
+          "end_line": 12,
+          "label": "UPDATE monthly_price sync"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "pk"
+        },
+        {
+          "name": "facility_id",
+          "type": "bigint",
+          "key": "fk",
+          "references": "facility.id"
+        },
+        {
+          "name": "unit_type_id",
+          "type": "bigint",
+          "key": "fk",
+          "references": "unit_type.id"
+        },
+        {
+          "name": "monthly_price",
+          "type": "bigint"
+        },
+        {
+          "name": "price_per_m2",
+          "type": "bigint"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz"
+        }
+      ]
+    },
+    {
+      "id": "policy_version",
+      "label": "policy_version",
+      "tag": "pricing",
+      "row": 1,
+      "col": 2,
+      "width": 320,
+      "sources": [
+        {
+          "path": "backend/src/main/resources/db/migration/V1__init_postgres_schema.sql",
+          "line": 174,
+          "end_line": 206,
+          "label": "CREATE TABLE policy_version"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "pk"
+        },
+        {
+          "name": "version_no",
+          "type": "int",
+          "key": "uk"
+        },
+        {
+          "name": "effective_from",
+          "type": "timestamptz"
+        },
+        {
+          "name": "deposit_multiplier",
+          "type": "decimal(5,2)"
+        },
+        {
+          "name": "reservation_hold_hours",
+          "type": "int"
+        },
+        {
+          "name": "checkin_grace_days",
+          "type": "int"
+        },
+        {
+          "name": "cancel_full_refund_hours",
+          "type": "int"
+        },
+        {
+          "name": "cancel_late_refund_rate",
+          "type": "decimal(5,2)"
+        },
+        {
+          "name": "cancel_no_show_refund_rate",
+          "type": "decimal(5,2)"
+        },
+        {
+          "name": "renewal_reminder_days",
+          "type": "varchar(50)"
+        },
+        {
+          "name": "renewal_min_months",
+          "type": "int"
+        },
+        {
+          "name": "renewal_max_months",
+          "type": "int"
+        },
+        {
+          "name": "overdue_grace_days",
+          "type": "int"
+        },
+        {
+          "name": "overdue_daily_rate",
+          "type": "decimal(5,2)"
+        },
+        {
+          "name": "overdue_cap_rate",
+          "type": "decimal(5,2)"
+        },
+        {
+          "name": "overdue_lock_access_days",
+          "type": "int"
+        },
+        {
+          "name": "overdue_notice_days",
+          "type": "int"
+        },
+        {
+          "name": "overdue_termination_days",
+          "type": "int"
+        },
+        {
+          "name": "return_notice_days",
+          "type": "int"
+        },
+        {
+          "name": "return_refund_working_days",
+          "type": "int"
+        },
+        {
+          "name": "return_early_refund_rate",
+          "type": "decimal(5,2)"
+        },
+        {
+          "name": "access_pin_length",
+          "type": "int"
+        },
+        {
+          "name": "support_urgent_sla_hours",
+          "type": "int"
+        },
+        {
+          "name": "support_auto_close_working_days",
+          "type": "int"
+        },
+        {
+          "name": "rental_buffer_days",
+          "type": "int"
+        },
+        {
+          "name": "rental_daily_divisor",
+          "type": "int"
+        },
+        {
+          "name": "published_by",
+          "type": "bigint",
+          "key": "fk",
+          "references": "app_user.id"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz"
+        }
+      ]
+    },
+    {
+      "id": "waitlist",
+      "label": "waitlist",
+      "tag": "rental_core",
+      "row": 0,
+      "col": 3,
+      "width": 310,
+      "sources": [
+        {
+          "path": "backend/src/main/resources/db/migration/V10__add_waitlist_and_unittype_sku.sql",
+          "line": 11,
+          "end_line": 36,
+          "label": "CREATE TABLE waitlist"
+        },
+        {
+          "path": "backend/src/main/resources/db/migration/V13__add_waitlist_contact_phone.sql",
+          "line": 4,
+          "end_line": 4,
+          "label": "ADD COLUMN contact_phone"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "pk"
+        },
+        {
+          "name": "customer_id",
+          "type": "bigint",
+          "key": "fk",
+          "references": "app_user.id"
+        },
+        {
+          "name": "facility_id",
+          "type": "bigint",
+          "key": "fk",
+          "references": "facility.id"
+        },
+        {
+          "name": "unit_type_id",
+          "type": "bigint",
+          "key": "fk",
+          "references": "unit_type.id"
+        },
+        {
+          "name": "contact_phone",
+          "type": "varchar(20)"
+        },
+        {
+          "name": "target_start_date",
+          "type": "date"
+        },
+        {
+          "name": "rental_months",
+          "type": "int"
+        },
+        {
+          "name": "status",
+          "type": "varchar(25)"
+        },
+        {
+          "name": "assigned_fm_id",
+          "type": "bigint",
+          "key": "fk",
+          "references": "app_user.id"
+        },
+        {
+          "name": "last_contacted_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "contact_timeout_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "contact_notes",
+          "type": "varchar(500)"
+        },
+        {
+          "name": "converted_reservation_id",
+          "type": "bigint",
+          "key": "fk",
+          "references": "reservation.id"
+        },
+        {
+          "name": "converted_contract_id",
+          "type": "bigint",
+          "key": "fk",
+          "references": "rental_contract.id"
+        },
+        {
+          "name": "version",
+          "type": "bigint"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz"
+        }
+      ]
+    },
+    {
+      "id": "reservation",
+      "label": "reservation",
+      "tag": "rental_core",
+      "row": 1,
+      "col": 3,
+      "width": 280,
+      "sources": [
+        {
+          "path": "backend/src/main/resources/db/migration/V1__init_postgres_schema.sql",
+          "line": 275,
+          "end_line": 316,
+          "label": "CREATE TABLE reservation"
+        },
+        {
+          "path": "backend/src/main/resources/db/migration/V11__sync_pending_checkin_reservation_status.sql",
+          "line": 8,
+          "end_line": 15,
+          "label": "UPDATE status sync"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "pk"
+        },
+        {
+          "name": "code",
+          "type": "varchar(30)",
+          "key": "uk"
+        },
+        {
+          "name": "customer_id",
+          "type": "bigint",
+          "key": "fk",
+          "references": "app_user.id"
+        },
+        {
+          "name": "facility_id",
+          "type": "bigint",
+          "key": "fk",
+          "references": "facility.id"
+        },
+        {
+          "name": "unit_type_id",
+          "type": "bigint",
+          "key": "fk",
+          "references": "unit_type.id"
+        },
+        {
+          "name": "start_date",
+          "type": "date"
+        },
+        {
+          "name": "rental_months",
+          "type": "int"
+        },
+        {
+          "name": "end_date_exclusive",
+          "type": "date"
+        },
+        {
+          "name": "monthly_price_snapshot",
+          "type": "bigint"
+        },
+        {
+          "name": "policy_version_id",
+          "type": "bigint",
+          "key": "fk",
+          "references": "policy_version.id"
+        },
+        {
+          "name": "discount_program_id",
+          "type": "bigint"
+        },
+        {
+          "name": "discount_amount",
+          "type": "bigint"
+        },
+        {
+          "name": "deposit_amount",
+          "type": "bigint"
+        },
+        {
+          "name": "total_rental_fee",
+          "type": "bigint"
+        },
+        {
+          "name": "total_payable",
+          "type": "bigint"
+        },
+        {
+          "name": "storage_unit_id",
+          "type": "bigint",
+          "key": "fk",
+          "references": "storage_unit.id"
+        },
+        {
+          "name": "status",
+          "type": "varchar(20)"
+        },
+        {
+          "name": "cancel_reason",
+          "type": "varchar(500)"
+        },
+        {
+          "name": "hold_expires_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "confirmed_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "fulfilled_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "cancelled_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz"
+        }
+      ]
+    },
+    {
+      "id": "rental_contract",
+      "label": "rental_contract",
+      "tag": "rental_core",
+      "row": 2,
+      "col": 3,
+      "width": 320,
+      "sources": [
+        {
+          "path": "backend/src/main/resources/db/migration/V1__init_postgres_schema.sql",
+          "line": 322,
+          "end_line": 368,
+          "label": "CREATE TABLE rental_contract"
+        },
+        {
+          "path": "backend/src/main/resources/db/migration/V6__allow_null_storage_unit_on_pending_contract.sql",
+          "line": 1,
+          "end_line": 1,
+          "label": "DROP NOT NULL storage_unit_id"
+        },
+        {
+          "path": "backend/src/main/resources/db/migration/V7__add_scheduled_checkin_times_to_rental_contract.sql",
+          "line": 1,
+          "end_line": 2,
+          "label": "ADD COLUMN scheduled checkin times"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "pk"
+        },
+        {
+          "name": "code",
+          "type": "varchar(30)",
+          "key": "uk"
+        },
+        {
+          "name": "reservation_id",
+          "type": "bigint",
+          "key": [
+            "fk",
+            "uk"
+          ],
+          "references": "reservation.id"
+        },
+        {
+          "name": "customer_id",
+          "type": "bigint",
+          "key": "fk",
+          "references": "app_user.id"
+        },
+        {
+          "name": "facility_id",
+          "type": "bigint",
+          "key": "fk",
+          "references": "facility.id"
+        },
+        {
+          "name": "storage_unit_id",
+          "type": "bigint",
+          "key": "fk",
+          "references": "storage_unit.id"
+        },
+        {
+          "name": "unit_type_id",
+          "type": "bigint",
+          "key": "fk",
+          "references": "unit_type.id"
+        },
+        {
+          "name": "start_date",
+          "type": "date"
+        },
+        {
+          "name": "end_date",
+          "type": "date"
+        },
+        {
+          "name": "scheduled_start_time",
+          "type": "time"
+        },
+        {
+          "name": "scheduled_end_time",
+          "type": "time"
+        },
+        {
+          "name": "rental_months",
+          "type": "int"
+        },
+        {
+          "name": "monthly_price_snapshot",
+          "type": "bigint"
+        },
+        {
+          "name": "total_rental_fee",
+          "type": "bigint"
+        },
+        {
+          "name": "deposit_amount",
+          "type": "bigint"
+        },
+        {
+          "name": "deposit_balance",
+          "type": "bigint"
+        },
+        {
+          "name": "access_code",
+          "type": "varchar(10)"
+        },
+        {
+          "name": "status",
+          "type": "varchar(30)"
+        },
+        {
+          "name": "checkin_date",
+          "type": "date"
+        },
+        {
+          "name": "return_date",
+          "type": "date"
+        },
+        {
+          "name": "policy_version_id",
+          "type": "bigint",
+          "key": "fk",
+          "references": "policy_version.id"
+        },
+        {
+          "name": "policy_snapshot",
+          "type": "text"
+        },
+        {
+          "name": "overdue_since",
+          "type": "date"
+        },
+        {
+          "name": "overdue_fee_accrued",
+          "type": "bigint"
+        },
+        {
+          "name": "closed_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "activated_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "terminated_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "relocation_support_request_id",
+          "type": "bigint"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz"
+        }
+      ]
+    },
+    {
+      "id": "handover_record",
+      "label": "handover_record",
+      "tag": "rental_core",
+      "row": 3,
+      "col": 3,
+      "width": 300,
+      "sources": [
+        {
+          "path": "backend/src/main/resources/db/migration/V1__init_postgres_schema.sql",
+          "line": 394,
+          "end_line": 415,
+          "label": "CREATE TABLE handover_record"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "pk"
+        },
+        {
+          "name": "contract_id",
+          "type": "bigint",
+          "key": [
+            "fk",
+            "uk"
+          ],
+          "references": "rental_contract.id"
+        },
+        {
+          "name": "staff_id",
+          "type": "bigint",
+          "key": "fk",
+          "references": "app_user.id"
+        },
+        {
+          "name": "condition_note",
+          "type": "varchar(1000)"
+        },
+        {
+          "name": "customer_signed_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "staff_signed_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "status",
+          "type": "varchar(20)"
+        },
+        {
+          "name": "handover_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "customer_confirmed",
+          "type": "boolean"
+        },
+        {
+          "name": "customer_confirmed_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "rejected",
+          "type": "boolean"
+        },
+        {
+          "name": "rejection_reason",
+          "type": "varchar(500)"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz"
+        }
+      ]
+    },
+    {
+      "id": "payment_transaction",
+      "label": "payment_transaction",
+      "tag": "billing",
+      "row": 1,
+      "col": 4,
+      "width": 270,
+      "sources": [
+        {
+          "path": "backend/src/main/resources/db/migration/V1__init_postgres_schema.sql",
+          "line": 538,
+          "end_line": 562,
+          "label": "CREATE TABLE payment_transaction"
+        },
+        {
+          "path": "backend/src/main/resources/db/migration/V3__allow_pending_refund_status.sql",
+          "line": 7,
+          "end_line": 11,
+          "label": "ADD STATUS PENDING_REFUND"
+        }
+      ],
+      "attributes": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "pk"
+        },
+        {
+          "name": "reservation_id",
+          "type": "bigint",
+          "key": "fk",
+          "references": "reservation.id"
+        },
+        {
+          "name": "contract_id",
+          "type": "bigint",
+          "key": "fk",
+          "references": "rental_contract.id"
+        },
+        {
+          "name": "transaction_type",
+          "type": "varchar(30)"
+        },
+        {
+          "name": "amount",
+          "type": "bigint"
+        },
+        {
+          "name": "order_code",
+          "type": "bigint"
+        },
+        {
+          "name": "renewal_months",
+          "type": "int"
+        },
+        {
+          "name": "target_contract_id",
+          "type": "bigint"
+        },
+        {
+          "name": "status",
+          "type": "varchar(20)"
+        },
+        {
+          "name": "payment_method",
+          "type": "varchar(50)"
+        },
+        {
+          "name": "provider_reference",
+          "type": "varchar(100)"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "storage_unit_facility",
+      "from": "storage_unit",
+      "to": "facility",
+      "label": "located at",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "storage_unit_unit_type",
+      "from": "storage_unit",
+      "to": "unit_type",
+      "label": "classified as",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "price_facility",
+      "from": "facility_unit_type_price",
+      "to": "facility",
+      "label": "priced for",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "price_unit_type",
+      "from": "facility_unit_type_price",
+      "to": "unit_type",
+      "label": "rate for",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "policy_published_by",
+      "from": "policy_version",
+      "to": "app_user",
+      "label": "published by",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "waitlist_customer",
+      "from": "waitlist",
+      "to": "app_user",
+      "label": "registered by",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "waitlist_facility",
+      "from": "waitlist",
+      "to": "facility",
+      "label": "facility target",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "waitlist_unit_type",
+      "from": "waitlist",
+      "to": "unit_type",
+      "label": "desired type",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "waitlist_assigned_fm",
+      "from": "waitlist",
+      "to": "app_user",
+      "label": "assigned FM",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one",
+      "identifying": false,
+      "variant": "dashed"
+    },
+    {
+      "id": "waitlist_reservation",
+      "from": "waitlist",
+      "to": "reservation",
+      "label": "converted reservation",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one",
+      "identifying": false,
+      "variant": "dashed"
+    },
+    {
+      "id": "waitlist_contract",
+      "from": "waitlist",
+      "to": "rental_contract",
+      "label": "converted contract",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one",
+      "identifying": false,
+      "variant": "dashed"
+    },
+    {
+      "id": "reservation_customer",
+      "from": "reservation",
+      "to": "app_user",
+      "label": "reserved by",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "reservation_facility",
+      "from": "reservation",
+      "to": "facility",
+      "label": "facility target",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "reservation_unit_type",
+      "from": "reservation",
+      "to": "unit_type",
+      "label": "selected type",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "reservation_policy",
+      "from": "reservation",
+      "to": "policy_version",
+      "label": "governed by",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "reservation_unit",
+      "from": "reservation",
+      "to": "storage_unit",
+      "label": "assigned unit",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one",
+      "identifying": false,
+      "variant": "dashed"
+    },
+    {
+      "id": "contract_reservation",
+      "from": "rental_contract",
+      "to": "reservation",
+      "label": "originated from",
+      "fromCardinality": "one",
+      "toCardinality": "one"
+    },
+    {
+      "id": "contract_customer",
+      "from": "rental_contract",
+      "to": "app_user",
+      "label": "customer",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "contract_facility",
+      "from": "rental_contract",
+      "to": "facility",
+      "label": "facility",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "contract_unit",
+      "from": "rental_contract",
+      "to": "storage_unit",
+      "label": "rents unit",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one",
+      "identifying": false,
+      "variant": "dashed"
+    },
+    {
+      "id": "contract_unit_type",
+      "from": "rental_contract",
+      "to": "unit_type",
+      "label": "unit category",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one",
+      "identifying": false,
+      "variant": "dashed"
+    },
+    {
+      "id": "contract_policy",
+      "from": "rental_contract",
+      "to": "policy_version",
+      "label": "applied policy",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "handover_contract",
+      "from": "handover_record",
+      "to": "rental_contract",
+      "label": "check-in for",
+      "fromCardinality": "one",
+      "toCardinality": "one"
+    },
+    {
+      "id": "handover_staff",
+      "from": "handover_record",
+      "to": "app_user",
+      "label": "staff inspector",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "payment_reservation",
+      "from": "payment_transaction",
+      "to": "reservation",
+      "label": "deposit payment",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one",
+      "identifying": false,
+      "variant": "dashed"
+    },
+    {
+      "id": "payment_contract",
+      "from": "payment_transaction",
+      "to": "rental_contract",
+      "label": "rent payment",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one",
+      "identifying": false,
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "3NF Physical Schema & V1-V13 Migrations",
+      "items": [
+        "V1 Baseline: 10 core tables with surrogate BIGINT primary keys and unique business keys (email, code, version_no).",
+        "V6 & V7: rental_contract relaxes storage_unit_id to nullable for PENDING check-in state, adding scheduled_start_time and scheduled_end_time.",
+        "V10 & V13: Telesales CRM waitlist table added with direct contact_phone and conversion foreign keys to reservation and rental_contract; unit_type enriched with SKU dimensions (pallet_capacity, max_load_kg_m2, environment, features).",
+        "V12: app_user protected with anti-spam throttle columns (daily_cancel_count, last_cancel_date per BR-SPAM-01)."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Relationship Cardinality & Optionality",
+      "items": [
+        "Strict 1:1 business constraints: rental_contract enforces uq_reservation_id, and handover_record enforces uq_contract_id.",
+        "Deferred & Optional Foreign Keys (drawn dashed): storage_unit_id on reservation and contract is optional prior to unit assignment; waitlist conversion links (converted_reservation_id, converted_contract_id) are nullable.",
+        "Payment Dual Polymorphism: payment_transaction conditionally links to reservation_id (initial deposit) or contract_id (recurring/overdue/refunds)."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Domain Bands & Flow Architecture",
+      "items": [
+        "identity: Centralized account security, roles, and anti-spam quota enforcement.",
+        "catalog: Physical facilities, expanded SKU specifications, and storage unit inventory.",
+        "pricing: Dynamic pricing matrix (facility_unit_type_price) synced with policy versions.",
+        "rental_core & billing: End-to-end customer journey from waitlist interest through booking, check-in handover, and financial settlement."
+      ]
+    }
+  ]
+}
