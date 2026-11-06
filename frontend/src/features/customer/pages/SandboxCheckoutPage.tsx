@@ -25,6 +25,7 @@ export const SandboxCheckoutPage: React.FC = () => {
   }, [navigate]);
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isReconciling, setIsReconciling] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [paymentData, setPaymentData] = useState<any>(null);
 
@@ -45,9 +46,13 @@ export const SandboxCheckoutPage: React.FC = () => {
           if (!isMounted) return;
           setPaymentData(res);
           // Lớp 2 (Immediate Fallback): Nếu giao dịch đang PENDING, tự động polling mỗi 3s (tối đa 5 lần)
-          if (res?.status === 'PENDING' && pollCount < 5 && result !== 'failed') {
-            pollCount++;
-            timeoutId = setTimeout(checkStatus, 3000);
+          if (res?.status === 'PENDING' && result !== 'failed') {
+            if (pollCount < 5) {
+              pollCount++;
+              timeoutId = setTimeout(checkStatus, 3000);
+            } else {
+              setIsReconciling(true);
+            }
           }
         })
         .catch((err: any) => {
@@ -104,6 +109,31 @@ export const SandboxCheckoutPage: React.FC = () => {
         ) : (
           <div className="space-y-4">
             {failed && <p className="text-sm text-rose-700">{FAILED_TEXT}</p>}
+            {isReconciling && (
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
+                <div className="flex items-center gap-2 text-amber-800 font-semibold text-sm">
+                  <Loader2 className="w-4 h-4 animate-spin text-amber-600 shrink-0" />
+                  <span>Giao dịch đang được hệ thống đối soát</span>
+                </div>
+                <p className="text-xs text-amber-700 leading-relaxed">
+                  Nếu tài khoản của bạn đã bị trừ tiền, vui lòng không đóng trang này hoặc kiểm tra lại sau ít phút. Tác vụ ngầm đối soát tự động sẽ cập nhật trong vòng 15 phút.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full mt-2 text-xs"
+                  onClick={() => {
+                    if (!orderCode) return;
+                    setIsLoading(true);
+                    customerApi.getPaymentStatus(orderCode)
+                      .then((res) => setPaymentData(res))
+                      .finally(() => setIsLoading(false));
+                  }}
+                >
+                  Kiểm tra lại ngay
+                </Button>
+              </div>
+            )}
             <VnpayPayLinks orderCode={orderCode} />
           </div>
         )}
