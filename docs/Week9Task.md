@@ -830,4 +830,32 @@ Mỗi Worker Subagent sau khi hoàn thành việc vẽ sơ đồ bắt buộc ph
 | 3 | `OverdueContractsPage.tsx` | `frontend/src/features/manager/` | Trang quản lý nợ cũ, đã được chuyển sang phân hệ BOM tập trung `OverdueContractsTable.tsx` | Xóa bỏ (Dead Code) |
 
 ---
+
+### 6.7. Báo cáo Độ lệch Mã nguồn & Danh sách Mã nguồn Chết: Flow 7 (Lê Thanh Tùng — WS4)
+
+#### 📊 BÁO CÁO ĐỘ LỆCH MÃ NGUỒN: FLOW 7 — SUPPORT REQUEST, DAMAGE COMPENSATION & UNIT SWAP
+
+- **Người phụ trách (Assignee):** **Lê Thanh Tùng** (WS4 — Backend Lead, Security & Incident Handling)
+- **Sơ đồ HTML Workflow:** `docs/diagrams/flow7-support-ticket-workflow.html`
+- **Sơ đồ HTML Sequence:** `docs/diagrams/flow7-damage-compensation-sequence.html`
+- **Tình trạng nghiệm thu:** [x] Finalize thành công 4 gates (Exit code 0, showcase profile, 0 diagnostics)
+- **Commit Snapshot đối chiếu:** `346974f7c7ac2b3e2ce0f2625b679eebd936de25`
+
+##### 1. Bảng đối soát thiết kế vs thực tế:
+| Bước nghiệp vụ theo Thiết kế (`docs/WORKFLOWS.md § 8` & `BR-SUP`) | Hiện trạng Mã nguồn Thực tế | File & Dòng Code kiểm chứng | Đánh giá Trạng thái |
+| :--- | :--- | :--- | :--- |
+| **1. Cam kết SLA cứng 2 giờ/24 giờ & Đồng hồ đếm ngược (`BR-SUP-01`)** | Đã bãi bỏ theo quyết định nghiệp vụ mới nhất. Hệ thống chuyển sang xử lý linh hoạt theo ca trực cơ sở; trường `slaDueAt` để null, `isUrgent` do khách chọn. | `CustomerSupportServiceImpl.java#L110-L114`<br>`SupportPage.tsx#L50-L75` | `[Business Policy Drift / Verified in Code]` |
+| **2. Khóa an toàn Điều chuyển Kho Khẩn cấp (`BR-SUP-05`)** | Đã cài đặt Safety Lock: Khi nhân viên khảo sát phát hiện thấm dột/hư hại kết cấu, bật `relocationRequired = true`. Hệ thống CẤM đóng ticket ở trạng thái `CLOSED` khi chưa hoàn tất đổi kho (`reassignUnit`). | `StaffSupportServiceImpl.java#L148-L168`<br>`StaffSupportServiceImpl.java#L202-L210` | `[Fully Implemented / Security Gate]` |
+| **3. Phân định Trách nhiệm & Tính Phụ phí Sửa chữa (`BR-SUP-02`)** | Khảo sát hiện trường xác định nguyên nhân: Lỗi cơ sở sửa miễn phí 100%. Lỗi do khách thuê ghi nhận phụ phí sửa chữa vào hóa đơn kỳ sau. | `StaffSupportServiceImpl.java#L171-L215`<br>`StaffIncidentDetailView.tsx#L50-L85` | `[Fully Implemented]` |
+| **4. Hạn mức Bảo hiểm Hàng hóa & Miễn trừ Hàng cấm (`BR-SUP-04`)** | Gói Tiêu chuẩn bồi thường tối đa 10,000,000 VNĐ; Gói Mở rộng nâng trần lên 50,000,000 VNĐ. Khách khai báo hàng cấm (tiền mặt, kim khí quý, chất cháy nổ) miễn trừ trách nhiệm 100% (0đ). | `CustomerSupportServiceImpl.java#L126-L131`<br>`StaffSupportController.java#L75-L85` | `[Compliant with Policy / Manual Approval]` |
+| **5. Cronjob Tự động Đóng sau 48h (`SupportAutoCloseJob`)** | Cronjob chạy ngầm hàng đêm lúc 00:30 UTC+7: Tự động quét các phiếu RESOLVED quá 48h sang CLOSED. Ràng buộc an toàn: Chỉ đóng khi `relocation_required = false`. | `SupportAutoCloseJob.java#L27-L55` | `[Fully Implemented Background Job]` |
+| **6. CSDL Bằng chứng Nghiệm thu Sự cố Đa hình (`support_attachment`)** | Cấu trúc đa hình `support_attachment` với `entity_type = 'SUPPORT_REQUEST'` (ảnh khách gửi) và `'SUPPORT_RESOLUTION'` (ảnh nhân viên nghiệm thu sau sửa, tối đa 5 ảnh). | `StaffSupportServiceImpl.java#L218-L230`<br>`V1__init_postgres_schema.sql#L645-L655` | `[Polymorphic Architecture Consolidation]` |
+
+##### 2. Danh sách Mã nguồn Chết / Cần dọn dẹp (Dead Code Candidates):
+| STT | File / Component | Vị trí (Package / Directory) | Lý do phát hiện | Đề xuất giải pháp |
+| :---: | :--- | :--- | :--- | :--- |
+| 1 | `IncidentManagementPage.tsx` | `frontend/src/features/manager/pages/` | Trang quản lý gộp cũ không có router import, đã được thay thế bởi luồng Drill-down (`IncidentDashboardPage` -> `IncidentListPage` -> `IncidentDetailPage`) | Xóa bỏ (Dead Code) |
+| 2 | `CloseIncidentModal.tsx` | `frontend/src/features/manager/components/` | Modal đóng sự cố cũ mồ côi, chức năng đã tích hợp vào `IncidentDetailPage.tsx` và `StaffIncidentDetailView.tsx` | Xóa bỏ (Dead Code) |
+
+---
 *Tài liệu này là căn cứ vận hành chính thức cho Sprint Tuần 9. Mọi thay đổi về phạm vi hoặc quy chuẩn kỹ thuật phải được Lead phê duyệt.*

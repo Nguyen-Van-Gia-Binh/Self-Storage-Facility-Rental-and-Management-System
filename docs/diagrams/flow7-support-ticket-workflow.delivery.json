@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "ec346fa0-7706-42a1-a653-d8cb999b203c",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "D:\\Ki5_Fall_2026\\SWP391\\Mini_Capstone\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\workflow-flow7-support-20261106-133000\\candidate.json",
+  "output": "D:\\Ki5_Fall_2026\\SWP391\\Mini_Capstone\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow7-support-ticket-workflow.html",
+  "specification": {
+    "sha256": "898a3c39d8620139c8ad7d1ef7832cc4ba4b61cd91a29aeefcb1b2ea931a35ab",
+    "bytes": 13279
+  },
+  "artifact": {
+    "sha256": "4038d709cbf228108e1c887f986965438fd53bf617ab45ddaac599ccd65d9290",
+    "bytes": 866532
+  }
+}
