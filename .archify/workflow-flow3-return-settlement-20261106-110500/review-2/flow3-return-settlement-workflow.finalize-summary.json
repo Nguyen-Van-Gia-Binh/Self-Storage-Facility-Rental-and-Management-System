@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "workflow",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\workflow-flow3-return-settlement-20261106-110500\\candidate.json",
+    "sha256": "ef3d689db8c6a74e22c54cbaf1770fd3ec004c5567836ace7628c38e2db47a18",
+    "bytes": 17501
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\workflow-flow3-return-settlement-20261106-110500\\flow3-return-settlement-workflow.html",
+    "sha256": "e16e9c9f701258990ce7cac37a5c64bf8316e3fc9fa1d487326f24fb69248fbb",
+    "bytes": 882098
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\workflow-flow3-return-settlement-20261106-110500\\review-2\\flow3-return-settlement-workflow.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\workflow-flow3-return-settlement-20261106-110500\\review-2\\flow3-return-settlement-workflow.finalize-summary.json",
+    "browserCheckReceipt": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\workflow-flow3-return-settlement-20261106-110500\\review-2\\flow3-return-settlement-workflow.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-06T01:36:41.371Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 3665,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}
