@@ -7,8 +7,8 @@
   "quality": "showcase",
   "specification": {
     "path": "D:\\Ki5_Fall_2026\\SWP391\\Mini_Capstone\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\workflow-flow5-storage-staff-20261106-113000\\candidate.json",
-    "sha256": "21984e623379937059540f3f2878a7bfdd9a6466c11386ea7833c6a4f0071940",
-    "bytes": 10591
+    "sha256": "5de4f74c9326c63cb516928bd4065a4cfc8808e86273f3e2f34f6bf591a202b7",
+    "bytes": 10955
   },
   "artifact": {
     "path": "D:\\Ki5_Fall_2026\\SWP391\\Mini_Capstone\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow5-facility-storage-workflow.html",
@@ -43,7 +43,7 @@
     "noticeText": null
   },
   "visualReview": "not-requested",
-  "durationMs": 11651,
+  "durationMs": 9567,
   "browserCheck": {
     "requested": true,
     "ran": true

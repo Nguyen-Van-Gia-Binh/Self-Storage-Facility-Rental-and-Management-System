@@ -5,11 +5,11 @@
   "status": "pass",
   "type": "tree",
   "quality": "showcase",
-  "startedAt": "2026-11-06T04:25:13.272Z",
+  "startedAt": "2026-11-06T06:02:45.656Z",
   "specification": {
     "path": "D:\\Ki5_Fall_2026\\SWP391\\Mini_Capstone\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\tree-flow5-facility-hierarchy-20261106-113000\\candidate.json",
-    "sha256": "bab0e40b6fc95eee71ae87e2d747205419c69a26f2a1d5ca626302b79b687d2a",
-    "bytes": 9242
+    "sha256": "0a3bdd0906e361335499471399c4791fb4ece198d38b58a45142077d9d973106",
+    "bytes": 9535
   },
   "artifact": {
     "path": "D:\\Ki5_Fall_2026\\SWP391\\Mini_Capstone\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow5-facility-hierarchy-tree.html",
@@ -40,8 +40,8 @@
         "ok": true,
         "command": "validate",
         "specification": {
-          "sha256": "bab0e40b6fc95eee71ae87e2d747205419c69a26f2a1d5ca626302b79b687d2a",
-          "bytes": 9242
+          "sha256": "0a3bdd0906e361335499471399c4791fb4ece198d38b58a45142077d9d973106",
+          "bytes": 9535
         },
         "validation": {
           "checksPassed": 9,
@@ -56,7 +56,7 @@
     "deliver": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 798,
+      "durationMs": 851,
       "command": [
         "C:\\Program Files\\nodejs\\node.exe",
         "D:\\Ki5_Fall_2026\\SWP391\\Mini_Capstone\\Self-Storage-Facility-Rental-and-Management-System\\.agents\\skills\\archify\\bin\\archify.mjs",
@@ -72,15 +72,15 @@
       ],
       "receipt": {
         "schemaVersion": 1,
-        "receiptId": "ea35e811-255a-470f-a1ec-61eb7928f7a3",
+        "receiptId": "77bcc408-0469-4eb7-a043-ec725ce3fc94",
         "ok": true,
         "command": "deliver",
         "type": "tree",
         "input": "D:\\Ki5_Fall_2026\\SWP391\\Mini_Capstone\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\tree-flow5-facility-hierarchy-20261106-113000\\candidate.json",
         "output": "D:\\Ki5_Fall_2026\\SWP391\\Mini_Capstone\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow5-facility-hierarchy-tree.html",
         "specification": {
-          "sha256": "bab0e40b6fc95eee71ae87e2d747205419c69a26f2a1d5ca626302b79b687d2a",
-          "bytes": 9242
+          "sha256": "0a3bdd0906e361335499471399c4791fb4ece198d38b58a45142077d9d973106",
+          "bytes": 9535
         },
         "artifact": {
           "sha256": "ddc3488ae9f12fb755372ec4d423577a9cdeec6fcdc1a64a90d28565ed4b585a",
@@ -116,7 +116,7 @@
     "check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 398,
+      "durationMs": 296,
       "command": [
         "C:\\Program Files\\nodejs\\node.exe",
         "D:\\Ki5_Fall_2026\\SWP391\\Mini_Capstone\\Self-Storage-Facility-Rental-and-Management-System\\.agents\\skills\\archify\\bin\\archify.mjs",
@@ -251,13 +251,13 @@
           "issues": []
         },
         "provenance": "current",
-        "deliveryReceiptId": "ea35e811-255a-470f-a1ec-61eb7928f7a3"
+        "deliveryReceiptId": "77bcc408-0469-4eb7-a043-ec725ce3fc94"
       }
     },
     "browser-check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 3152,
+      "durationMs": 3920,
       "command": [
         "C:\\Program Files\\nodejs\\node.exe",
         "D:\\Ki5_Fall_2026\\SWP391\\Mini_Capstone\\Self-Storage-Facility-Rental-and-Management-System\\.agents\\skills\\archify\\bin\\archify.mjs",
@@ -275,7 +275,7 @@
         "status": "pass",
         "visualReview": "not-requested",
         "provenance": "current",
-        "deliveryReceiptId": "ea35e811-255a-470f-a1ec-61eb7928f7a3",
+        "deliveryReceiptId": "77bcc408-0469-4eb7-a043-ec725ce3fc94",
         "artifact": {
           "path": "D:\\Ki5_Fall_2026\\SWP391\\Mini_Capstone\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow5-facility-hierarchy-tree.html",
           "sha256": "ddc3488ae9f12fb755372ec4d423577a9cdeec6fcdc1a64a90d28565ed4b585a",
@@ -977,8 +977,8 @@
     "browserCheckReceipt": "D:\\Ki5_Fall_2026\\SWP391\\Mini_Capstone\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow5-facility-hierarchy-tree.browser-check.json"
   },
   "visualReview": "not-requested",
-  "finishedAt": "2026-11-06T04:25:18.169Z",
-  "durationMs": 4897,
+  "finishedAt": "2026-11-06T06:02:51.406Z",
+  "durationMs": 5749,
   "update": {
     "status": "current",
     "installedVersion": "3.2.0",
