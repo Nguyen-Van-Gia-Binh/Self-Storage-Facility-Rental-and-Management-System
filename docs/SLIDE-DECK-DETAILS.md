@@ -43,14 +43,14 @@
 * **Phụ đề:** Hệ thống Nền tảng Quản lý & Cho thuê Kho Lưu trữ Tự phục vụ Thông minh
 * **Thông tin đồ án:** Chuyên ngành Kỹ thuật Phần mềm (SE) — SWP391 — FPT University (Fall 2026)
 * **Đội ngũ phát triển (4 Workstreams độc lập):**
-  * **Nguyễn Văn Gia Bình:** Technical Lead / Cơ sở, Kho & Vận hành (Check-in 4 tiêu chí, Vòng đời Hợp đồng, Trả kho & Hoàn cọc).
+  * **Nguyễn Văn Gia Bình:** Technical Lead / Cơ sở, Kho & Vận hành (Xử lý quá hạn & Cronjob Flow 6.2, Vòng đời Hợp đồng, Trả kho & Hoàn cọc).
   * **Nguyễn Phạm Xuân Nhi:** Khách hàng & Đặt chỗ (Sơ đồ mặt bằng 2D, Đặt cọc giữ capacity, Cổng My Units & Gia hạn).
-  * **Huỳnh Nhật:** Tài chính & Tự động hóa (Bảng giá BOM, Biểu phụ phí, Schedulers quá hạn D+1..D+10, Cổng VietQR).
-  * **Lê Thanh Tùng:** Quản trị & Điều phối (Phân công ca trực FM, Xử lý sự cố 2 nhánh & Đổi kho, Phân quyền cô lập SA-03).
+  * **Huỳnh Nhật:** Tài chính & Tự động hóa (Bảng giá BOM, Biểu phụ phí, Báo cáo doanh thu toàn hệ thống, Cổng VietQR).
+  * **Lê Thanh Tùng:** Quản trị & Điều phối (Lễ tân Check-in & Bàn giao kho Flow 2, Phân công ca trực FM, Xử lý sự cố 2 nhánh & Đổi kho, Phân quyền cô lập SA-03).
 
 ### 🎙️ Lời thoại thuyết trình (Speaker Notes):
 > *"Kính thưa quý thầy cô trong Hội đồng giám khảo, em xin đại diện nhóm trình bày đồ án tốt nghiệp chuyên ngành SWP391 với đề tài: **Hệ thống Quản lý và Cho thuê Kho Lưu trữ Tự phục vụ Thông minh (Self-Storage Facility Rental and Management System)**.  
-> Đội ngũ phát triển gồm 4 thành viên, vận hành theo mô hình Feature-Driven Development với 4 Trục công việc độc lập: Bạn Gia Bình làm Tech Lead phụ trách vận hành và hợp đồng; Bạn Xuân Nhi phụ trách phân hệ khách hàng và đặt chỗ; Bạn Huỳnh Nhật phụ trách tài chính và tự động hóa; và Em là Thanh Tùng phụ trách quản trị điều phối và an ninh hệ thống."*
+> Đội ngũ phát triển gồm 4 thành viên, vận hành theo mô hình Feature-Driven Development với 4 Trục công việc độc lập: Bạn Gia Bình làm Tech Lead phụ trách vận hành và xử lý quá hạn; Bạn Xuân Nhi phụ trách phân hệ khách hàng và đặt chỗ; Bạn Huỳnh Nhật phụ trách tài chính và báo cáo doanh thu; và Em là Thanh Tùng phụ trách quản trị điều phối, check-in bàn giao và an ninh hệ thống."*
 
 ---
 

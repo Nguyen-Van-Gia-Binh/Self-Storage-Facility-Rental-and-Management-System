@@ -24,10 +24,10 @@
 - **Tên đề tài (Tiếng Việt):** Hệ thống Nền tảng Quản lý & Cho thuê Kho Lưu trữ Tự phục vụ Thông minh
 - **Môn học:** SWP391 — Đồ án Kỹ thuật Phần mềm (Chuyên ngành SE, Đại học FPT TP.HCM, Fall 2026)
 - **Quy mô dự án:** 10 tuần phát triển qua 5 giai đoạn (P1 → P5), 4 thành viên Fullstack theo mô hình **Vertical Slice / Feature-Driven Development (4 Workstreams độc lập)**:
-  1. **Nguyễn Văn Gia Bình** (Technical Lead / Workstream 2): Phụ trách **Cơ sở, Kho & Vận hành** (Flow 2: Lễ tân Check-in & Bàn giao 4 tiêu chí; Flow 3: Quản lý vòng đời hợp đồng, Nghiệm thu trả kho & Hoàn cọc).
+  1. **Nguyễn Văn Gia Bình** (Technical Lead / Workstream 2): Phụ trách **Cơ sở, Kho & Vận hành** (Flow 6.2: Schedulers tự động tính phạt nợ quá hạn 3 giai đoạn; Flow 3: Quản lý vòng đời hợp đồng, Nghiệm thu trả kho & Hoàn cọc).
   2. **Nguyễn Phạm Xuân Nhi** (Workstream 1): Phụ trách **Khách hàng & Đặt chỗ** (Flow 1: Sơ đồ mặt bằng 2D trực quan, Đặt chỗ kho giữ capacity; Flow 6.1: Cổng khách hàng My Units & Gia hạn trực tuyến).
-  3. **Huỳnh Nhật** (Workstream 3): Phụ trách **Tài chính & Tự động hóa** (Flow 4: Bảng giá động BOM, Biểu phụ phí dịch vụ, Báo cáo doanh thu toàn hệ thống; Flow 6.2: Schedulers tự động tính phạt nợ quá hạn 3 giai đoạn).
-  4. **Lê Thanh Tùng** (Workstream 4): Phụ trách **Quản trị & Điều phối** (Flow 5: Điều phối ca trực nhân sự FM; Flow 7: Trung tâm xử lý sự cố kỹ thuật 2 nhánh; Identity & Phân quyền bảo mật cô lập đa cơ sở SA-03).
+  3. **Huỳnh Nhật** (Workstream 3): Phụ trách **Tài chính & Tự động hóa** (Flow 4: Bảng giá động BOM, Biểu phụ phí dịch vụ, Báo cáo doanh thu toàn hệ thống).
+  4. **Lê Thanh Tùng** (Workstream 4): Phụ trách **Quản trị & Điều phối** (Flow 2: Lễ tân Check-in & Bàn giao 4 tiêu chí; Flow 5: Điều phối ca trực nhân sự FM; Flow 7: Trung tâm xử lý sự cố kỹ thuật 2 nhánh; Identity & Phân quyền bảo mật cô lập đa cơ sở SA-03).
 
 ---
 
@@ -196,10 +196,10 @@ QUY ĐỊNH BẮT BUỘC TỪ GIẢNG VIÊN:
 
 DƯỚI ĐÂY LÀ TOÀN BỘ NGỮ CẢNH DỰ ÁN CỦA CHÚNG TÔI:
 1. ĐỘI NGŨ PHÁT TRIỂN (4 thành viên Fullstack theo mô hình Vertical Bounded Context):
-   - Nguyễn Văn Gia Bình (Tech Lead / Workstream 2): Phụ trách Cơ sở, Kho & Vận hành (Check-in 4 tiêu chí, Vòng đời Hợp đồng, Trả kho & Hoàn cọc).
+   - Nguyễn Văn Gia Bình (Tech Lead / Workstream 2): Phụ trách Cơ sở, Kho & Vận hành (Xử lý quá hạn & Cronjob Flow 6.2, Vòng đời Hợp đồng, Trả kho & Hoàn cọc).
    - Nguyễn Phạm Xuân Nhi (Workstream 1): Phụ trách Khách hàng & Đặt chỗ (Sơ đồ 2D trực quan, Đặt cọc giữ capacity, Cổng My Units, Gia hạn).
-   - Huỳnh Nhật (Workstream 3): Phụ trách Tài chính & Tự động hóa (Bảng giá BOM, Biểu phí, Schedulers quá hạn D+1..D+10, Cổng thanh toán VietQR).
-   - Lê Thanh Tùng (Workstream 4): Phụ trách Quản trị & Điều phối (Phân công ca trực FM, Xử lý sự cố 2 nhánh & Đổi kho, Phân quyền bảo mật cô lập đa cơ sở SA-03).
+   - Huỳnh Nhật (Workstream 3): Phụ trách Tài chính & Tự động hóa (Bảng giá BOM, Biểu phí, Báo cáo doanh thu, Cổng thanh toán VietQR).
+   - Lê Thanh Tùng (Workstream 4): Phụ trách Quản trị & Điều phối (Check-in 4 tiêu chí & Auto-Activation Flow 2, Phân công ca trực FM, Xử lý sự cố 2 nhánh & Đổi kho, Phân quyền bảo mật cô lập đa cơ sở SA-03).
 
 2. BỐI CẢNH & VẤN ĐỀ (Slide 2 - WHY & Context):
    - Bối cảnh: Đô thị hóa, căn hộ chung cư 50-70m² quá tải đồ đạc; Thương mại điện tử SME/Startup cần kho trung chuyển mini linh hoạt 1-20m².

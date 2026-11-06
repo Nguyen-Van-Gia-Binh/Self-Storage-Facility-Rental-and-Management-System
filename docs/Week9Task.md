@@ -14,11 +14,11 @@
 3. [Bộ 5 Chốt Chặn Chống Bẫy Thực Chiến (Anti-Traps Guardrails)](#3-bộ-5-chốt-chặn-chống-bẫy-thực-chiến-anti-traps-guardrails)
 4. [Trọn bộ Sub-prompts Giao việc cho 7 Luồng Nghiệp vụ & Flow SYS](#4-trọn-bộ-sub-prompts-giao-việc-cho-7-luồng-nghiệp-vụ--flow-sys)
    - 4.1. [Sub-prompt Flow 1: Storage Unit Reservation & Waitlist CRM (Xuân Nhi — WS1)](#41-sub-prompt-flow-1-storage-unit-reservation--waitlist-crm-xuân-nhi--ws1)
-   - 4.2. [Sub-prompt Flow 2: Check-in, Handover & Auto-Activation (Gia Bình — WS2)](#42-sub-prompt-flow-2-check-in-handover--auto-activation-gia-bình--ws2)
+   - 4.2. [Sub-prompt Flow 2: Check-in, Handover & Auto-Activation (Lê Thanh Tùng — WS4)](#42-sub-prompt-flow-2-check-in-handover--auto-activation-lê-thanh-tùng--ws4)
    - 4.3. [Sub-prompt Flow 3: Rented Unit Management, Win-Win Early Return & Settlement (Gia Bình — WS2)](#43-sub-prompt-flow-3-rented-unit-management-win-win-early-return--settlement-gia-bình--ws2)
    - 4.4. [Sub-prompt Flow 4: BOM Policy, Master Unit Type Catalog & Revenue Monitoring (Huỳnh Nhật — WS3)](#44-sub-prompt-flow-4-bom-policy-master-unit-type-catalog--revenue-monitoring-huỳnh-nhật--ws3)
    - 4.5. [Sub-prompt Flow 5: Facility Storage Allocation & Staff Dispatching (Lê Thanh Tùng — WS4)](#45-sub-prompt-flow-5-facility-storage-allocation--staff-dispatching-lê-thanh-tùng--ws4)
-   - 4.6. [Sub-prompt Flow 6: Renewal T-20 & Overdue Lifecycle (Xuân Nhi — WS1 & Huỳnh Nhật — WS3)](#46-sub-prompt-flow-6-renewal-t-20--overdue-lifecycle-xuân-nhi--ws1--huỳnh-nhật--ws3)
+   - 4.6. [Sub-prompt Flow 6: Renewal T-20 & Overdue Lifecycle (Xuân Nhi — WS1 & Gia Bình — WS2)](#46-sub-prompt-flow-6-renewal-t-20--overdue-lifecycle-xuân-nhi--ws1--gia-bình--ws2)
    - 4.7. [Sub-prompt Flow 7: Support Ticket, Damage Compensation & Unit Swap (Lê Thanh Tùng — WS4)](#47-sub-prompt-flow-7-support-ticket-damage-compensation--unit-swap-lê-thanh-tùng--ws4)
    - 4.8. [Sub-prompt Flow SYS: Authentication, RBAC Multi-Facility & Cron Tasks (Lê Thanh Tùng — WS4 & Huỳnh Nhật — WS3)](#48-sub-prompt-flow-sys-authentication-rbac-multi-facility--cron-tasks-lê-thanh-tùng--ws4--huỳnh-nhật--ws3)
 5. [Quy chuẩn Thực thi Kỹ thuật & Khắc phục Lỗi với Archify CLI](#5-quy-chuẩn-thực-thi-kỹ-thuật--khắc-phục-lỗi-với-archify-cli)
@@ -47,12 +47,12 @@ Quy ước vai trò RACI:
 | Phân hệ / Luồng Nghiệp vụ | Mã Flow | Nguyễn Phạm Xuân Nhi<br>**(WS1: Khách hàng & Đặt chỗ)** | Nguyễn Văn Gia Bình<br>**(WS2: Cơ sở & Vận hành / Tech Lead)** | Huỳnh Nhật<br>**(WS3: Tài chính & Tự động)** | Lê Thanh Tùng<br>**(WS4: Quản trị & Điều phối / Backend Lead)** |
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | **Storage Unit Reservation & Waitlist CRM** | **Flow 1** | **R / A** | C *(FM Allocation)* | C *(VNPay/Cọc)* | I |
-| **Check-in, Handover & Auto-Activation** | **Flow 2** | C *(E-Handover UI)* | **R / A** | I | C *(Auto-Activation Scheduler)* |
+| **Check-in, Handover & Auto-Activation** | **Flow 2** | C *(E-Handover UI)* | C *(Bàn giao kho & Vận hành)* | I | **R / A** |
 | **Rented Unit Mgmt, Win-Win Early Return** | **Flow 3** | C *(My Units UI)* | **R / A** | C *(Refund/Deposit)* | I |
 | **BOM Policy, Master Unit Type & Revenue** | **Flow 4** | I | C *(Facility Prices)* | **R / A** | C *(System Auditing)* |
 | **Facility Storage & Staff Dispatching** | **Flow 5** | I | C *(Unit Status)* | I | **R / A** |
 | **Storage Renewal UI (Tự gia hạn online)** | **Flow 6.1** | **R / A** | C *(Late Exception)* | C *(Payment)* | I |
-| **Overdue Lifecycle & Cronjob (D+1..D+10)** | **Flow 6.2** | I | C *(Kho niêm phong)* | **R / A** | C *(Khóa Access Code)* |
+| **Overdue Lifecycle & Cronjob (D+1..D+10)** | **Flow 6.2** | I | **R / A** | C *(Biểu phí & Cấn trừ nợ)* | C *(Khóa Access Code)* |
 | **Support Request, Damage & Unit Swap** | **Flow 7** | C *(Ticket UI)* | C *(Staff on-site)* | I | **R / A** |
 | **JWT Security, RBAC Multi-Facility & Cron** | **Flow SYS** | C *(Protected Route)* | C *(Facility Security)* | C *(Cron Config)* | **R / A** |
 
@@ -152,16 +152,16 @@ Bạn BẮT BUỘC phải mở đọc từng file sau để lấy line range và
 
 ---
 
-### 4.2. Sub-prompt Flow 2: Check-in, Handover & Auto-Activation (Gia Bình — WS2)
+### 4.2. Sub-prompt Flow 2: Check-in, Handover & Auto-Activation (Lê Thanh Tùng — WS4)
 
 ```markdown
-> **Người phụ trách chính (Assignee):** **Nguyễn Văn Gia Bình** (WS2 — Cơ sở, Kho & Vận hành / Technical Lead)  
+> **Người phụ trách chính (Assignee):** **Lê Thanh Tùng** (WS4 — Quản trị, Điều phối & Backend Lead)  
 > **Phạm vi mã nguồn làm chủ:**  
 > - **Backend Package:** `com.swp391.selfstorage.facility.*`, `com.swp391.selfstorage.unit.*`, `com.swp391.selfstorage.contract.*`  
 > - **Frontend Feature:** `frontend/src/features/staff/*` (Check-in Desk, Handover Form, Unit Status)  
 > - **Bảng CSDL cốt lõi:** `facility`, `storage_unit`, `rental_contract`, `inspection`
 
-Bạn là **Senior Fullstack Engineer & Tech Lead (WS2)** phụ trách điều tra mã nguồn thực tế của **Flow 2: Storage Check-in and Handover Flow (Nhận kho, Bàn giao & Tự động kích hoạt)**.
+Bạn là **Senior Fullstack & Backend Lead (WS4)** phụ trách điều tra mã nguồn thực tế của **Flow 2: Storage Check-in and Handover Flow (Nhận kho, Bàn giao & Tự động kích hoạt)**.
 Nhiệm vụ của bạn là đối soát mã nguồn thực tế và sinh sơ đồ kỹ thuật bằng skill `/archify`.
 
 ---
@@ -389,18 +389,18 @@ Bạn là **Senior Fullstack & Backend Lead (WS4)** phụ trách điều tra mã
 
 ---
 
-### 4.6. Sub-prompt Flow 6: Renewal T-20 & Overdue Lifecycle (Xuân Nhi — WS1 & Huỳnh Nhật — WS3)
+### 4.6. Sub-prompt Flow 6: Renewal T-20 & Overdue Lifecycle (Xuân Nhi — WS1 & Gia Bình — WS2)
 
 ```markdown
 > **Người phụ trách chính (Assignee):**  
 > - **Sub-flow 6.1 (Gia hạn trực tuyến):** **Nguyễn Phạm Xuân Nhi** (WS1 — Khách hàng & Đặt chỗ)  
-> - **Sub-flow 6.2 (Xử lý Quá hạn & Cronjob):** **Huỳnh Nhật** (WS3 — Tài chính & Tự động hóa)  
+> - **Sub-flow 6.2 (Xử lý Quá hạn & Cronjob):** **Nguyễn Văn Gia Bình** (WS2 — Cơ sở, Kho & Vận hành / Technical Lead)  
 > **Phạm vi mã nguồn làm chủ:**  
 > - **Backend Package:** `com.swp391.selfstorage.contract.*` (Renewal), `com.swp391.selfstorage.policy.scheduler.*`, `com.swp391.selfstorage.policy.service.*`  
 > - **Frontend Feature:** `frontend/src/features/customer/RenewalModal.tsx`, `frontend/src/features/manager/OverdueContractsPage.tsx`  
 > - **Bảng CSDL cốt lõi:** `rental_contract`, `overdue_log`, `payment_transaction`
 
-Bạn là **Senior Fullstack Engineer (WS1/WS3)** phụ trách điều tra mã nguồn thực tế của **Flow 6: Storage Renewal and Overdue Handling Flow (Gia hạn Hợp đồng & Xử lý Quá hạn)**.
+Bạn là **Senior Fullstack Engineer (WS1/WS2)** phụ trách điều tra mã nguồn thực tế của **Flow 6: Storage Renewal and Overdue Handling Flow (Gia hạn Hợp đồng & Xử lý Quá hạn)**.
 
 ---
 
@@ -768,11 +768,11 @@ Mỗi Worker Subagent sau khi hoàn thành việc vẽ sơ đồ bắt buộc ph
 
 ---
 
-### 6.4. Báo cáo Độ lệch Mã nguồn & Danh sách Mã nguồn Chết: Flow 2 (Nguyễn Văn Gia Bình — WS2)
+### 6.4. Báo cáo Độ lệch Mã nguồn & Danh sách Mã nguồn Chết: Flow 2 (Lê Thanh Tùng — WS4)
 
 #### 📊 BÁO CÁO ĐỘ LỆCH MÃ NGUỒN: FLOW 2 — STORAGE CHECK-IN AND HANDOVER FLOW
 
-- **Người phụ trách (Assignee):** **Nguyễn Văn Gia Bình** (WS2 — Cơ sở, Kho & Vận hành / Technical Lead)
+- **Người phụ trách (Assignee):** **Lê Thanh Tùng** (WS4 — Quản trị, Điều phối & Backend Lead)
 - **Sơ đồ HTML Archify Standalone:**
   - Sơ đồ Quy trình Nghiệp vụ (Workflow): [.archify/workflow-flow2-checkin-handover-20261106-121730/flow2-checkin-handover-workflow.html](file:///c:/Users/admin/Documents/A_FPT/Tempory_Project/Self-Storage-Facility-Rental-and-Management-System/.archify/workflow-flow2-checkin-handover-20261106-121730/flow2-checkin-handover-workflow.html)
   - Sơ đồ Vòng đời Trạng thái (Lifecycle): [.archify/lifecycle-flow2-contract-checkin-20261106-121730/flow2-contract-checkin-lifecycle.html](file:///c:/Users/admin/Documents/A_FPT/Tempory_Project/Self-Storage-Facility-Rental-and-Management-System/.archify/lifecycle-flow2-contract-checkin-20261106-121730/flow2-contract-checkin-lifecycle.html)
@@ -802,11 +802,11 @@ Mỗi Worker Subagent sau khi hoàn thành việc vẽ sơ đồ bắt buộc ph
 
 ---
 
-### 6.6. Báo cáo Độ lệch Mã nguồn & Danh sách Mã nguồn Chết: Flow 6 (Nguyễn Phạm Xuân Nhi & Huỳnh Nhật — WS1/WS3)
+### 6.6. Báo cáo Độ lệch Mã nguồn & Danh sách Mã nguồn Chết: Flow 6 (Nguyễn Phạm Xuân Nhi & Nguyễn Văn Gia Bình — WS1/WS2)
 
 #### 📊 BÁO CÁO ĐỘ LỆCH MÃ NGUỒN: FLOW 6 — RENEWAL & OVERDUE LIFECYCLE
 
-- **Người phụ trách (Assignee):** **Nguyễn Phạm Xuân Nhi** (WS1 — Sub-flow 6.1) & **Huỳnh Nhật** (WS3 — Sub-flow 6.2)
+- **Người phụ trách (Assignee):** **Nguyễn Phạm Xuân Nhi** (WS1 — Sub-flow 6.1) & **Nguyễn Văn Gia Bình** (WS2 — Sub-flow 6.2)
 - **Sơ đồ HTML Workflow (6.1):** `docs/diagrams/flow-6-1-renewal-workflow.html`
 - **Sơ đồ HTML Lifecycle (6.2):** `docs/diagrams/flow-6-2-overdue-lifecycle.html`
 - **Tình trạng nghiệm thu:** [x] Finalize thành công 4 gates (Exit code 0, showcase profile)
