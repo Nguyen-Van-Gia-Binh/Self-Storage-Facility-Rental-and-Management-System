@@ -1,0 +1,645 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" height="7342px" preserveAspectRatio="none" style="width:1812px;height:7342px;" version="1.1" viewBox="0 0 1812 7342" width="1812px" zoomAndPan="magnify"><defs/><g><!--MD5=[83d55b876a70150b45f21962d53ef598]
+cluster Self-Storage Facility Rental and Management System--><rect fill="#FAFAFA" height="5345" style="stroke:#90A4AE;stroke-width:1.5;" width="1591" x="215" y="1296"/><text fill="#000000" font-family="Segoe UI" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="295" x="863" y="1310.9492">Self-Storage Facility Rental and Management System</text><!--MD5=[439cb04c2d65b9574505cbb59adf3688]
+cluster Flow 1 — Storage Unit Reservation--><rect fill="#FAFAFA" height="469" style="stroke:#90A4AE;stroke-width:1.5;" width="1119" x="249.5" y="1296"/><text fill="#000000" font-family="Segoe UI" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="195" x="711.5" y="1310.9492">Flow 1 — Storage Unit Reservation</text><!--MD5=[82f24002e8f9e5849ff88d7d46af7dfc]
+cluster Flow 2 — Check-in and Handover--><rect fill="#FAFAFA" height="493" style="stroke:#90A4AE;stroke-width:1.5;" width="1133.5" x="264.5" y="1789"/><text fill="#000000" font-family="Segoe UI" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="184" x="739.25" y="1803.9492">Flow 2 — Check-in and Handover</text><!--MD5=[b3ef0de3246b4adbee264aebf264634d]
+cluster Flow 3 — Rented Storage Unit Management--><rect fill="#FAFAFA" height="661" style="stroke:#90A4AE;stroke-width:1.5;" width="1539.5" x="242.5" y="2306"/><text fill="#000000" font-family="Segoe UI" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="246" x="889.25" y="2320.9492">Flow 3 — Rented Storage Unit Management</text><!--MD5=[295ace01e4ec7e6829f4557f7c5f648f]
+cluster Flow 4 — Business Rules, Fees and Revenue--><rect fill="#FAFAFA" height="1080" style="stroke:#90A4AE;stroke-width:1.5;" width="322" x="240.5" y="2991"/><text fill="#000000" font-family="Segoe UI" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="241" x="281" y="3005.9492">Flow 4 — Business Rules, Fees and Revenue</text><!--MD5=[5f02a8fea288df79cbddce32ce5b81a9]
+cluster Flow 5 — Facility Storage and Staff Management--><rect fill="#FAFAFA" height="741" style="stroke:#90A4AE;stroke-width:1.5;" width="325" x="239" y="5876"/><text fill="#000000" font-family="Segoe UI" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="270" x="266.5" y="5890.9492">Flow 5 — Facility Storage and Staff Management</text><!--MD5=[06c8fc3f0b231385f273a94660da9658]
+cluster Flow 6 — Renewal and Overdue Handling--><rect fill="#FAFAFA" height="862" style="stroke:#90A4AE;stroke-width:1.5;" width="682.5" x="246.5" y="4095"/><text fill="#000000" font-family="Segoe UI" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="229" x="473.25" y="4109.9492">Flow 6 — Renewal and Overdue Handling</text><!--MD5=[605fbd8a8458da6b716a3c65ec0267e3]
+cluster Flow 7 — Support Request and Issue Handling--><rect fill="#FAFAFA" height="568" style="stroke:#90A4AE;stroke-width:1.5;" width="709" x="250.5" y="4981"/><text fill="#000000" font-family="Segoe UI" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="254" x="478" y="4995.9492">Flow 7 — Support Request and Issue Handling</text><!--MD5=[b2f3d8e7c7a1374320b15f506b5a73ea]
+cluster Nền tảng--><rect fill="#FAFAFA" height="279" style="stroke:#90A4AE;stroke-width:1.5;" width="276" x="263.5" y="5573"/><text fill="#000000" font-family="Segoe UI" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="51" x="376" y="5587.9492">Nền tảng</text><ellipse cx="401.5501" cy="1351.01" fill="#E3F2FD" rx="130.5501" ry="28.51" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.5501" y="1345.9983">UC-F1-01</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="187" x="308.0501" y="1361.9592">Tìm kiếm và xem danh sách Facility</text><ellipse cx="401.5828" cy="1444.1166" fill="#E3F2FD" rx="136.0828" ry="29.6166" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.5828" y="1439.1048">UC-F1-02</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="201" x="301.0828" y="1455.0658">Xem Unit Type, kích thước và giá thuê</text><ellipse cx="814.3234" cy="1633.0722" fill="#E3F2FD" rx="104.8234" ry="25.5722" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="789.3234" y="1628.0605">UC-F1-03</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="132" x="748.3234" y="1644.0214">Kiểm tra ô kho còn trống</text><ellipse cx="401.3823" cy="1723.0722" fill="#E3F2FD" rx="70.8823" ry="25.5722" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.3823" y="1718.0605">UC-F1-04</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="84" x="359.3823" y="1734.0214">Tạo Reservation</text><ellipse cx="814.6608" cy="1450.1322" fill="#E3F2FD" rx="123.6608" ry="27.1322" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="789.6608" y="1445.1204">UC-F1-05</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="169" x="730.1608" y="1461.0814">Ước tính chi phí thuê và Deposit</text><ellipse cx="814.2523" cy="1719.0722" fill="#E3F2FD" rx="97.7523" ry="25.5722" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="789.2523" y="1714.0605">UC-F1-06</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="122" x="753.2523" y="1730.0214">Giữ chỗ ô kho tạm thời</text><ellipse cx="814.2862" cy="1541.8572" fill="#E3F2FD" rx="137.2862" ry="29.8572" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="789.2862" y="1536.8455">UC-F1-07</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="204" x="712.2862" y="1552.8065">Thanh toán Deposit và phí thuê kỳ đầu</text><ellipse cx="1230.2973" cy="1674.7595" fill="#E3F2FD" rx="121.7973" ry="26.7595" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="1205.2973" y="1669.7477">UC-F1-08</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="164" x="1148.2973" y="1685.7087">Phân bổ ô kho cho Reservation</text><ellipse cx="401.3736" cy="1637.0722" fill="#E3F2FD" rx="99.8736" ry="25.5722" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.3736" y="1632.0605">UC-F1-09</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="125" x="338.8736" y="1648.0214">Nhận lịch hẹn Check-in</text><ellipse cx="401.2965" cy="1534.0722" fill="#E3F2FD" rx="72.2965" ry="25.5722" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.2965" y="1529.0605">UC-F1-10</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="86" x="358.2965" y="1545.0214">Hủy Reservation</text><ellipse cx="814.7247" cy="1355.2449" fill="#E3F2FD" rx="151.7247" ry="32.7449" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="789.7247" y="1350.2332">UC-F1-11</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="239" x="695.2247" y="1366.1942">Tự động hủy Reservation quá hạn thanh toán</text><ellipse cx="814.724" cy="2049.0448" fill="#E3F2FD" rx="128.224" ry="28.0448" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="789.724" y="2044.0331">UC-F2-01</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="181" x="724.224" y="2059.994">Tra cứu Reservation khi khách đến</text><ellipse cx="814.5409" cy="2144.9082" fill="#E3F2FD" rx="150.0409" ry="32.4082" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="789.5409" y="2139.8965">UC-F2-02</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="235" x="697.0409" y="2155.8574">Xác minh danh tính và tình trạng thanh toán</text><ellipse cx="401.5584" cy="1921.1117" fill="#E3F2FD" rx="121.0584" ry="26.6117" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.5584" y="1916.1">UC-F2-03</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="162" x="320.5584" y="1932.0609">Bàn giao ô kho và lập biên bản</text><ellipse cx="814.5399" cy="1849.908" fill="#E3F2FD" rx="122.5399" ry="26.908" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="789.5399" y="1844.8963">UC-F2-04</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="166" x="731.5399" y="1860.8572">Cấp Access Code / Access Card</text><ellipse cx="814.4274" cy="2239.1855" fill="#E3F2FD" rx="121.4274" ry="26.6855" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="789.4274" y="2234.1738">UC-F2-05</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="163" x="732.9274" y="2250.1347">Xác nhận Check-in nhận ô kho</text><ellipse cx="1230.7247" cy="1950.2449" fill="#E3F2FD" rx="151.7247" ry="32.7449" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="1205.7247" y="1945.2332">UC-F2-06</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="239" x="1111.2247" y="1961.1942">Cập nhật trạng thái ô kho sang đang sử dụng</text><ellipse cx="401.3234" cy="2153.0722" fill="#E3F2FD" rx="104.8234" ry="25.5722" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.3234" y="2148.0605">UC-F2-07</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="132" x="335.3234" y="2164.0214">Kích hoạt hợp đồng thuê</text><ellipse cx="814.7237" cy="1941.2447" fill="#E3F2FD" rx="131.7237" ry="28.7447" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="789.7237" y="1936.233">UC-F2-08</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="190" x="719.7237" y="1952.194">Xử lý khách đến trễ hoặc không đến</text><ellipse cx="401.7284" cy="2240.2457" fill="#E3F2FD" rx="119.2284" ry="26.2457" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.7284" y="2235.234">UC-F2-09</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="157" x="323.2284" y="2251.1949">Phân công Staff trực bàn giao</text><ellipse cx="401.4127" cy="2367.7825" fill="#E3F2FD" rx="124.4127" ry="27.2825" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.4127" y="2362.7708">UC-F3-01</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="171" x="315.9127" y="2378.7318">Xem danh sách ô kho đang thuê</text><ellipse cx="401.5098" cy="2459.902" fill="#E3F2FD" rx="132.5098" ry="28.902" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.5098" y="2454.8902">UC-F3-02</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="192" x="305.5098" y="2470.8512">Xem hợp đồng và lịch sử thanh toán</text><ellipse cx="401.5501" cy="2553.01" fill="#E3F2FD" rx="130.5501" ry="28.51" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.5501" y="2547.9983">UC-F3-03</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="187" x="308.0501" y="2563.9592">Cập nhật liên hệ và người ủy quyền</text><ellipse cx="401.724" cy="2645.0448" fill="#E3F2FD" rx="128.224" ry="28.0448" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.724" y="2640.0331">UC-F3-04</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="181" x="311.224" y="2655.994">Xem lịch sử ra vào và Access Code</text><ellipse cx="401.7021" cy="2734.0722" fill="#E3F2FD" rx="102.7021" ry="25.5722" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.7021" y="2729.0605">UC-F3-05</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="129" x="337.2021" y="2745.0214">Đăng ký trả kho (Return)</text><ellipse cx="814.427" cy="2430.0854" fill="#E3F2FD" rx="125.927" ry="27.5854" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="789.427" y="2425.0737">UC-F3-06</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="175" x="726.927" y="2441.0346">Xác nhận hiện trạng ô kho khi trả</text><ellipse cx="1230.5389" cy="2379.9078" fill="#E3F2FD" rx="145.0389" ry="31.4078" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="1205.5389" y="2374.8961">UC-F3-07</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="223" x="1119.0389" y="2390.857">Thu hồi Access Card, vô hiệu Access Code</text><ellipse cx="1230.43" cy="2480.0722" fill="#E3F2FD" rx="115.43" ry="25.5722" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="1205.43" y="2475.0605">UC-F3-08</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="147" x="1156.93" y="2491.0214">Quyết toán và hoàn Deposit</text><ellipse cx="1631.5098" cy="2479.902" fill="#E3F2FD" rx="132.5098" ry="28.902" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="1606.5098" y="2474.8902">UC-F3-09</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="192" x="1535.5098" y="2490.8512">Cập nhật trạng thái ô kho sau khi trả</text><ellipse cx="401.4878" cy="2823.7976" fill="#E3F2FD" rx="134.4878" ry="29.2976" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.4878" y="2818.7858">UC-F3-10</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="197" x="302.9878" y="2834.7468">Theo dõi khách và hợp đồng hiệu lực</text><ellipse cx="401.4778" cy="2919.9956" fill="#E3F2FD" rx="142.9778" ry="30.9956" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.4778" y="2914.9838">UC-F3-11</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="218" x="292.4778" y="2930.9448">Theo dõi tình trạng thanh toán hợp đồng</text><ellipse cx="1631.4878" cy="2369.7976" fill="#E3F2FD" rx="134.4878" ry="29.2976" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="1606.4878" y="2364.7858">UC-F3-12</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="197" x="1532.9878" y="2380.7468">Đánh dấu ô kho cần kiểm tra / bảo trì</text><ellipse cx="401.566" cy="3137.0722" fill="#E3F2FD" rx="109.066" ry="25.5722" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.566" y="3132.0605">UC-F4-01</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="138" x="332.566" y="3148.0214">Quản lý danh sách Facility</text><ellipse cx="401.3536" cy="3311.1707" fill="#E3F2FD" rx="116.3536" ry="25.6707" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.3536" y="3306.159">UC-F4-02</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="149" x="326.8536" y="3322.1199">Thiết lập chính sách Deposit</text><ellipse cx="401.2826" cy="3223.9565" fill="#E3F2FD" rx="117.7826" ry="25.9565" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.2826" y="3218.9448">UC-F4-03</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="153" x="324.7826" y="3234.9057">Thiết lập chính sách Renewal</text><ellipse cx="401.427" cy="3489.0854" fill="#E3F2FD" rx="125.927" ry="27.5854" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.427" y="3484.0737">UC-F4-04</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="175" x="313.927" y="3500.0346">Thiết lập chính sách Cancellation</text><ellipse cx="401.3087" cy="3665.0722" fill="#E3F2FD" rx="113.3087" ry="25.5722" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.3087" y="3660.0605">UC-F4-05</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="144" x="329.3087" y="3676.0214">Thiết lập chính sách Return</text><ellipse cx="401.6425" cy="3838.0285" fill="#E3F2FD" rx="118.1425" ry="26.0285" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.6425" y="3833.0168">UC-F4-06</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="154" x="324.6425" y="3848.9777">Thiết lập chính sách Overdue</text><ellipse cx="401.6665" cy="3051.0722" fill="#E3F2FD" rx="99.1665" ry="25.5722" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.6665" y="3046.0605">UC-F4-07</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="124" x="339.6665" y="3062.0214">Quản lý khung giá thuê</text><ellipse cx="401.5399" cy="3398.908" fill="#E3F2FD" rx="122.5399" ry="26.908" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.5399" y="3393.8963">UC-F4-08</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="166" x="318.5399" y="3409.8572">Quản lý phụ phí và phí quá hạn</text><ellipse cx="401.5034" cy="3578.1007" fill="#E3F2FD" rx="118.5034" ry="26.1007" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.5034" y="3573.089">UC-F4-09</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="155" x="324.0034" y="3589.0499">Quản lý giảm giá và miễn phí</text><ellipse cx="401.5244" cy="3751.0722" fill="#E3F2FD" rx="85.0244" ry="25.5722" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.5244" y="3746.0605">UC-F4-10</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="104" x="349.5244" y="3762.0214">Giám sát doanh thu</text><ellipse cx="401.5389" cy="3930.9078" fill="#E3F2FD" rx="145.0389" ry="31.4078" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.5389" y="3925.8961">UC-F4-11</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="223" x="290.0389" y="3941.857">Giám sát Usage Rate và hiệu quả vận hành</text><ellipse cx="401.5501" cy="4026.01" fill="#E3F2FD" rx="130.5501" ry="28.51" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.5501" y="4020.9983">UC-F4-12</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="187" x="308.0501" y="4036.9592">Xem và xuất báo cáo toàn hệ thống</text><ellipse cx="401.6608" cy="6036.1322" fill="#E3F2FD" rx="123.6608" ry="27.1322" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.6608" y="6031.1204">UC-F5-01</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="169" x="317.1608" y="6047.0814">Quản lý Unit Type và kích thước</text><ellipse cx="401.5599" cy="6124.0722" fill="#E3F2FD" rx="88.5599" ry="25.5722" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.5599" y="6119.0605">UC-F5-02</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="109" x="347.0599" y="6135.0214">Quản lý Storage Unit</text><ellipse cx="401.6097" cy="6213.1219" fill="#E3F2FD" rx="128.6097" ry="28.1219" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.6097" y="6208.1102">UC-F5-03</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="182" x="310.6097" y="6224.0712">Cập nhật trạng thái ô kho tại cơ sở</text><ellipse cx="401.2822" cy="6308.1564" fill="#E3F2FD" rx="146.2822" ry="31.6564" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.2822" y="6303.1447">UC-F5-04</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="226" x="288.2822" y="6319.1057">Phân công Staff theo công việc trong ngày</text><ellipse cx="401.6977" cy="5942.2395" fill="#E3F2FD" rx="146.6977" ry="31.7395" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.6977" y="5937.2278">UC-F5-05</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="227" x="288.1977" y="5953.1888">Xem công việc hằng ngày được phân công</text><ellipse cx="401.696" cy="6400.0722" fill="#E3F2FD" rx="82.196" ry="25.5722" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.696" y="6395.0605">UC-F5-06</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="100" x="351.696" y="6411.0214">Xem báo cáo cơ sở</text><ellipse cx="401.5158" cy="6486.0722" fill="#E3F2FD" rx="114.0158" ry="25.5722" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.5158" y="6481.0605">UC-F5-07</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="145" x="329.0158" y="6497.0214">Gán vai trò cho người dùng</text><ellipse cx="401.6608" cy="6574.1322" fill="#E3F2FD" rx="123.6608" ry="27.1322" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.6608" y="6569.1204">UC-F5-08</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="169" x="317.1608" y="6585.0814">Cấu hình quyền truy cập dữ liệu</text><ellipse cx="401.2731" cy="4155.0722" fill="#E3F2FD" rx="109.7731" ry="25.5722" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.2731" y="4150.0605">UC-F6-01</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="139" x="331.7731" y="4166.0214">Nhận thông báo nhắc hạn</text><ellipse cx="401.2731" cy="4241.0722" fill="#E3F2FD" rx="109.7731" ry="25.5722" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.2731" y="4236.0605">UC-F6-02</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="139" x="331.7731" y="4252.0214">Yêu cầu gia hạn hợp đồng</text><ellipse cx="814.4594" cy="4241.0722" fill="#E3F2FD" rx="98.4594" ry="25.5722" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="789.4594" y="4236.0605">UC-F6-03</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="123" x="752.9594" y="4252.0214">Thanh toán phí gia hạn</text><ellipse cx="401.566" cy="4517.0722" fill="#E3F2FD" rx="109.066" ry="25.5722" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.566" y="4512.0605">UC-F6-04</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="138" x="332.566" y="4528.0214">Duyệt và ghi nhận gia hạn</text><ellipse cx="401.5659" cy="4327.8132" fill="#E3F2FD" rx="117.0659" ry="25.8132" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.5659" y="4322.8015">UC-F6-05</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="151" x="326.0659" y="4338.7624">Phát hiện hợp đồng quá hạn</text><ellipse cx="401.5452" cy="4431.0722" fill="#E3F2FD" rx="97.0452" ry="25.5722" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.5452" y="4426.0605">UC-F6-06</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="121" x="341.0452" y="4442.0214">Tính và áp phí quá hạn</text><ellipse cx="401.4406" cy="4692.0881" fill="#E3F2FD" rx="130.9406" ry="28.5881" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.4406" y="4687.0764">UC-F6-07</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="188" x="307.4406" y="4703.0373">Khóa quyền truy cập ô kho quá hạn</text><ellipse cx="401.2716" cy="4800.8543" fill="#E3F2FD" rx="129.7716" ry="28.3543" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.2716" y="4795.8426">UC-F6-08</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="185" x="308.7716" y="4811.8035">Gửi thông báo chấm dứt hợp đồng</text><ellipse cx="401.3999" cy="4911.18" fill="#E3F2FD" rx="138.8999" ry="30.18" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.3999" y="4906.1683">UC-F6-09</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="208" x="297.3999" y="4922.1292">Chấm dứt hợp đồng và xử lý tài sản tồn</text><ellipse cx="401.4991" cy="4603.0998" fill="#E3F2FD" rx="115.9991" ry="25.5998" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.4991" y="4598.0881">UC-F6-10</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="148" x="327.4991" y="4614.049">Theo dõi hợp đồng quá hạn</text><ellipse cx="401.5746" cy="5416.0722" fill="#E3F2FD" rx="80.0746" ry="25.5722" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.5746" y="5411.0605">UC-F7-01</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="97" x="353.0746" y="5427.0214">Gửi yêu cầu hỗ trợ</text><ellipse cx="401.339" cy="5504.9678" fill="#E3F2FD" rx="127.839" ry="27.9678" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.339" y="5499.9561">UC-F7-02</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="180" x="311.339" y="5515.917">Theo dõi trạng thái yêu cầu hỗ trợ</text><ellipse cx="401.2973" cy="5327.7595" fill="#E3F2FD" rx="121.7973" ry="26.7595" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.2973" y="5322.7477">UC-F7-03</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="164" x="319.2973" y="5338.7087">Tiếp nhận và phân loại yêu cầu</text><ellipse cx="814.3944" cy="5373.0722" fill="#E3F2FD" rx="111.8944" ry="25.5722" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="789.3944" y="5368.0605">UC-F7-04</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="142" x="743.3944" y="5384.0214">Phân công Staff xử lý sự cố</text><ellipse cx="401.3855" cy="5149.8771" fill="#E3F2FD" rx="134.8855" ry="29.3771" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.3855" y="5144.8654">UC-F7-05</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="198" x="302.3855" y="5160.8263">Xử lý mất chìa khóa / lỗi Access Code</text><ellipse cx="401.4574" cy="5041.8915" fill="#E3F2FD" rx="119.9574" ry="26.3915" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.4574" y="5036.8798">UC-F7-06</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="159" x="321.9574" y="5052.8407">Xử lý ô kho hư hỏng và bảo trì</text><ellipse cx="814.4962" cy="5195.1992" fill="#E3F2FD" rx="128.9962" ry="28.1992" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="789.4962" y="5190.1875">UC-F7-07</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="183" x="722.9962" y="5206.1485">Cập nhật trạng thái ô kho sau xử lý</text><ellipse cx="401.3528" cy="5240.0722" fill="#E3F2FD" rx="87.8528" ry="25.5722" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="50" x="376.3528" y="5235.0605">UC-F7-08</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="108" x="347.3528" y="5251.0214">Đóng yêu cầu hỗ trợ</text><ellipse cx="401.2973" cy="5633.7595" fill="#E3F2FD" rx="121.7973" ry="26.7595" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="57" x="372.7973" y="5628.7477">UC-SYS-01</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="164" x="319.2973" y="5644.7087">Đăng ký, đăng nhập, đăng xuất</text><ellipse cx="401.5924" cy="5722.8185" fill="#E3F2FD" rx="119.5924" ry="26.3185" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="57" x="373.0924" y="5717.8068">UC-SYS-02</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="158" x="322.5924" y="5733.7677">Quản lý tài khoản người dùng</text><ellipse cx="401.43" cy="5810.0722" fill="#E3F2FD" rx="115.43" ry="25.5722" style="stroke:#1565C0;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="57" x="372.93" y="5805.0605">UC-SYS-03</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="147" x="327.93" y="5821.0214">Theo dõi nhật ký hoạt động</text><!--MD5=[8b944653c655024075d894af29a33c78]
+entity SC--><ellipse cx="63" cy="1693.5" fill="#FFF3E0" rx="8" ry="8" style="stroke:#E65100;stroke-width:1.5;"/><path d="M63,1701.5 L63,1728.5 M50,1709.5 L76,1709.5 M63,1728.5 L50,1743.5 M63,1728.5 L76,1743.5 " fill="none" style="stroke:#E65100;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="95" x="15.5" y="1758.9492">Storage Customer</text><!--MD5=[02b0da7e54b74cbea8f6462e138178e8]
+entity FS--><ellipse cx="63" cy="733.5" fill="#FFF3E0" rx="8" ry="8" style="stroke:#E65100;stroke-width:1.5;"/><path d="M63,741.5 L63,768.5 M50,749.5 L76,749.5 M63,768.5 L50,783.5 M63,768.5 L76,783.5 " fill="none" style="stroke:#E65100;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="64" x="31" y="798.9492">Facility Staff</text><!--MD5=[a89ee74bb4979dbed373b93afc1c36e4]
+entity FM--><ellipse cx="63" cy="5410.5" fill="#FFF3E0" rx="8" ry="8" style="stroke:#E65100;stroke-width:1.5;"/><path d="M63,5418.5 L63,5445.5 M50,5426.5 L76,5426.5 M63,5445.5 L50,5460.5 M63,5445.5 L76,5460.5 " fill="none" style="stroke:#E65100;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="87" x="19.5" y="5475.9492">Facility Manager</text><!--MD5=[8543611870b6d5ae14a2aa1ddb7b63fd]
+entity BM--><ellipse cx="63" cy="4685.5" fill="#FFF3E0" rx="8" ry="8" style="stroke:#E65100;stroke-width:1.5;"/><path d="M63,4693.5 L63,4720.5 M50,4701.5 L76,4701.5 M63,4720.5 L50,4735.5 M63,4720.5 L76,4735.5 " fill="none" style="stroke:#E65100;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="45" x="9" y="4750.9492">Business</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="108" x="9" y="4766.9102">Operations Manager</text><!--MD5=[2e196586b73320830e6bcb7e3200d727]
+entity SA--><ellipse cx="63" cy="6797.5" fill="#FFF3E0" rx="8" ry="8" style="stroke:#E65100;stroke-width:1.5;"/><path d="M63,6805.5 L63,6832.5 M50,6813.5 L76,6813.5 M63,6832.5 L50,6847.5 M63,6832.5 L76,6847.5 " fill="none" style="stroke:#E65100;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="114" x="6" y="6862.9492">System Administrator</text><!--MD5=[fa92c0c292cdeae80e2f3763d35ba241]
+entity SYS--><ellipse cx="63" cy="4992.5" fill="#FFF3E0" rx="8" ry="8" style="stroke:#E65100;stroke-width:1.5;"/><path d="M63,5000.5 L63,5027.5 M50,5008.5 L76,5008.5 M63,5027.5 L50,5042.5 M63,5027.5 L76,5042.5 " fill="none" style="stroke:#E65100;stroke-width:1.5;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="38" x="22" y="5057.9492">System</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="82" x="22" y="5073.9102">(scheduled job)</text><path d="M315.5,6 L315.5,79.8438 L487.5,79.8438 L487.5,16 L477.5,6 L315.5,6 " fill="#FBFB77" style="stroke:#A80036;stroke-width:1.0;"/><path d="M477.5,6 L477.5,16 L487.5,16 L477.5,6 " fill="#FBFB77" style="stroke:#A80036;stroke-width:1.0;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="129" x="321.5" y="23.9492">Mọi use case còn lại đều</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="114" x="321.5" y="39.9102">«include» UC-SYS-01.</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="151" x="321.5" y="55.8711">Các đường nối được lược bỏ</text><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="87" x="321.5" y="71.832">để sơ đồ dễ đọc.</text><!--MD5=[583d8c4dc13760f8e23d4eb203c3213d]
+link SC to UCF101--><path d="M68.72,1684 C79.44,1613.93 112.5,1467.49 207,1397 C227.69,1381.56 252.8,1371.22 277.99,1364.31 " fill="none" id="SC-to-UCF101" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="283.02,1362.97,273.2938,1361.4204,278.1884,1364.2565,275.3523,1369.1511,283.02,1362.97" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[e6bc49f63b0730072a8c5157615ec3f7]
+link SC to UCF102--><path d="M77.26,1683.98 C97.06,1631.77 139.44,1540.09 207,1491 C227.32,1476.23 251.69,1466.06 276.18,1459.07 " fill="none" id="SC-to-UCF102" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="281.08,1457.71,271.3373,1456.2677,276.2628,1459.0497,273.4808,1463.9752,281.08,1457.71" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[1397a21de59edf0fff3fd233d7f2ff08]
+link SC to UCF103--><path d="M65.31,1683.85 C69.37,1595.93 85.68,1377.26 150,1208 C164.54,1169.73 182.49,1167.46 199,1130 C204.39,1117.76 196.36,1109.1 207,1101 C336.06,1002.72 446.28,998.48 572,1101 C676.43,1186.16 608.98,1265.4 633,1398 C640.66,1440.28 634.63,1556.73 663,1589 C676.34,1604.17 694.59,1614.25 713.79,1620.9 " fill="none" id="SC-to-UCF103" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="718.68,1622.52,711.3948,1615.8924,713.9337,1620.9474,708.8787,1623.4864,718.68,1622.52" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[83f55656b04b3044e74b7c315279aa86]
+link SC to UCF104--><path d="M110.79,1723 C166.32,1723 259.64,1723 325.34,1723 " fill="none" id="SC-to-UCF104" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="330.41,1723,321.41,1719,325.41,1723,321.41,1727,330.41,1723" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[a9dd9397eec12f003283a75e69cae8d9]
+link SC to UCF105--><path d="M65.09,1683.91 C69.85,1548.67 93.98,1105.24 207,1038 C369.71,941.19 495.86,909.45 633,1040 C691.95,1096.11 611.75,1341.77 663,1405 C673.58,1418.05 687.79,1427.43 703.27,1434.15 " fill="none" id="SC-to-UCF105" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="708.11,1436.15,701.3109,1429.0245,703.4866,1434.2463,698.2649,1436.422,708.11,1436.15" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[1b3b9f02fb1da88d792cfa9bdc5f8b17]
+link SC to UCF107--><path d="M65.44,1683.73 C69.75,1596.57 86.5,1381.53 150,1215 C164.59,1176.75 183.44,1174.87 199,1137 C205.23,1121.84 194.21,1111.25 207,1101 C333.54,999.49 445.01,1000.05 572,1101 C607.09,1128.89 632.62,1461.04 663,1494 C673.69,1505.59 687.17,1514.4 701.65,1521.09 " fill="none" id="SC-to-UCF107" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="706.59,1523.28,699.986,1515.9733,702.0198,1521.252,696.7411,1523.2857,706.59,1523.28" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[374a11e197cbdab46db4bc6e4d34ff08]
+link SC to UCF109--><path d="M110.86,1708.8 C123.56,1704.96 137.3,1700.81 150,1697 C175.32,1689.4 181.41,1686.65 207,1680 C243.19,1670.59 283.52,1661.43 317.95,1653.99 " fill="none" id="SC-to-UCF109" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="322.99,1652.9,313.3476,1650.8938,318.1031,1653.9574,315.0395,1658.7129,322.99,1652.9" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[2f8fc52c8278fe23ae9a5e1f37847703]
+link SC to UCF110--><path d="M98.42,1683.9 C125.42,1655.39 165.3,1617.73 207,1594 C245.91,1571.86 293.96,1556.9 332.45,1547.46 " fill="none" id="SC-to-UCF110" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="337.57,1546.22,327.8842,1544.4351,332.7086,1547.389,329.7547,1552.2134,337.57,1546.22" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[74a53ea995b237085f01037de07e9ab3]
+link SC to UCF205--><path d="M65.82,1683.9 C71.31,1582.98 91.16,1317.37 150,1256 C199.62,1204.24 407.15,1086.6 572,1243 C584.27,1254.64 574.6,1378.97 580,1395 C593.37,1434.72 619.85,1433.2 633,1473 C658.19,1549.23 613.52,2131.76 663,2195 C673.34,2208.21 687.42,2217.61 702.84,2224.27 " fill="none" id="SC-to-UCF205" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="707.67,2226.25,700.8632,2219.1319,703.0445,2224.3513,697.8252,2226.5327,707.67,2226.25" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[722507ffa157d2aab1afdb9a282c34b3]
+link SC to UCF301--><path d="M73.82,1762.34 C105.43,1888.79 202.67,2276.88 207,2282 C233.34,2313.17 273.22,2333.48 309.95,2346.49 " fill="none" id="SC-to-UCF301" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="314.88,2348.2,307.6912,2341.4679,310.1569,2346.5591,305.0657,2349.0248,314.88,2348.2" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[d3f324b067a28d812250ba913441e1fa]
+link SC to UCF302--><path d="M66.18,1762.3 C74.43,1895.32 108.42,2325.26 207,2413 C225.7,2429.64 249.31,2440.63 273.55,2447.83 " fill="none" id="SC-to-UCF302" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="278.4,2449.22,270.8626,2442.8807,273.5962,2447.8332,268.6437,2450.5668,278.4,2449.22" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[fea61c2dbe4a1fee8c552a1149e46d0b]
+link SC to UCF303--><path d="M63.58,1762.38 C63.58,1869.14 71.09,2171.84 150,2407 C166.15,2455.13 166.38,2475.54 207,2506 C227.87,2521.65 253.26,2532.16 278.68,2539.19 " fill="none" id="SC-to-UCF303" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="283.76,2540.56,276.0923,2534.3789,278.9284,2539.2735,274.0338,2542.1096,283.76,2540.56" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[0911d83d972fa199b76d3d17c91418a6]
+link SC to UCF304--><path d="M66.01,1762.26 C73.45,1900.88 101.58,2366.54 150,2507 C165.68,2552.47 167.99,2570.86 207,2599 C228.47,2614.48 254.42,2624.81 280.25,2631.69 " fill="none" id="SC-to-UCF304" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="285.42,2633.02,277.6968,2626.9083,280.5769,2631.7771,275.7082,2634.6572,285.42,2633.02" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[1d65f6cb29cba71c43d03d9e19bbd407]
+link SC to UCF305--><path d="M65.4,1762.02 C71.11,1910.83 94.98,2442.26 150,2601 C165.38,2645.38 168.56,2663 207,2690 C233.49,2708.61 266.61,2719.48 297.92,2725.8 " fill="none" id="SC-to-UCF305" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="302.92,2726.77,294.8538,2721.1188,298.0127,2725.8114,293.3201,2728.9704,302.92,2726.77" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[bb889de1fc9df049248eaef7ddccb73f]
+link SC to UCF601--><path d="M66.95,1762.14 C82.76,1972.98 158.22,2995.09 199,3832 C199.65,3845.27 199.53,4060.01 207,4071 C230.36,4105.34 271,4125.74 309.02,4137.81 " fill="none" id="SC-to-UCF601" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="314.12,4139.39,306.6984,4132.9154,309.342,4137.9166,304.3409,4140.5602,314.12,4139.39" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[ace1bfccc71e809c8bd5063090c4f88d]
+link SC to UCF602--><path d="M64.54,1762.1 C68.45,2033.24 93.71,3628.61 150,3836 C162.14,3880.71 187.11,3883.22 199,3928 C202.85,3942.5 197.44,4186.43 207,4198 C226.59,4221.69 256.07,4234.08 286.15,4240.18 " fill="none" id="SC-to-UCF602" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="291.38,4241.18,283.2792,4235.5785,286.4669,4240.2517,281.7938,4243.4394,291.38,4241.18" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[796dd31aedb2adb34e29ce63137f6a12]
+link SC to UCF603--><path d="M70.81,1683.92 C88.49,1587.86 139.25,1345.17 207,1306 C277.22,1265.4 513.32,1250 572,1306 C585.76,1319.13 571.52,1459.97 580,1477 C593.66,1504.4 619.7,1493.42 633,1521 C667.9,1593.37 657.45,2886.84 663,2967 C697.53,3465.51 787.14,4068.79 808.76,4210.28 " fill="none" id="SC-to-UCF603" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="809.56,4215.51,812.1512,4206.0081,808.8029,4210.5676,804.2434,4207.2194,809.56,4215.51" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[a56b3b9e7c2f5f8fc3c57306707a10af]
+link SC to UCF701--><path d="M64.1,1762.2 C65.01,2041.12 73.62,3720.23 150,3932 C162.15,3965.7 187.4,3962.1 199,3996 C205.19,4014.08 195.03,5357.1 207,5372 C232.91,5404.26 277.1,5415.94 316.71,5419.24 " fill="none" id="SC-to-UCF701" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="322.02,5419.64,313.342,5414.9824,317.0338,5419.2685,312.7477,5422.9603,322.02,5419.64" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[4820289fa36da5f14de8d52b5f003e9e]
+link SC to UCF702--><path d="M64.44,1762.04 C67.11,1982.55 83.47,3094.55 150,4000 C164.68,4199.76 187.3,4248.04 199,4448 C199.82,4462.02 198.25,5448.02 207,5459 C222.93,5479 245.84,5491.28 270.36,5498.63 " fill="none" id="SC-to-UCF702" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="275.28,5500.04,267.7376,5493.7066,270.4751,5498.657,265.5247,5501.3945,275.28,5500.04" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[1eeea4bc66315f26ebfb913fbcd6fd9c]
+link FS to UCF201--><path d="M95.21,765.71 C124.95,769.77 169.45,779.88 199,805 C205.06,810.15 200.64,816.22 207,821 C338.86,920.07 465.11,762.39 572,888 C585.83,904.25 570.73,1252.78 580,1272 C593.3,1299.57 619.37,1288.58 633,1316 C666.22,1382.83 620.1,1925.93 663,1987 C676.06,2005.59 695.77,2018.63 716.66,2027.75 " fill="none" id="FS-to-UCF201" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="721.41,2029.76,714.6675,2022.5809,716.8018,2027.8197,711.5631,2029.954,721.41,2029.76" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[1cf772c4123588a14c9bfb4af95d527a]
+link FS to UCF202--><path d="M95.03,778.25 C130.65,796.39 185.88,826.64 199,846 C210.65,863.17 196.35,874.19 207,892 C312.81,1068.85 476.34,995.45 572,1178 C585.95,1204.62 571.58,1284.15 580,1313 C593.55,1359.41 619.81,1361.48 633,1408 C653.81,1481.4 617.2,2032.98 663,2094 C671.63,2105.49 682.98,2114.42 695.59,2121.35 " fill="none" id="FS-to-UCF202" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="700.28,2123.82,694.1756,2116.091,695.8545,2121.493,690.4525,2123.1719,700.28,2123.82" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[09c28eefe162a0270440482857a5b8e8]
+link FS to UCF203--><path d="M95.33,792.39 C111.58,807.57 131.79,826.35 150,843 C171.61,862.74 186.96,860.32 199,887 C219.07,931.46 185.75,1721.09 207,1765 C235.77,1824.45 299.31,1868.58 345.76,1894.45 " fill="none" id="FS-to-UCF203" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="350.2,1896.9,344.2447,1889.0556,345.8198,1894.4888,340.3867,1896.0639,350.2,1896.9" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[50f87860aa41b705d8627eada10f7746]
+link FS to UCF204--><path d="M72.91,723.89 C83.91,685.74 106.73,629.79 150,604 C311.11,507.97 438.25,472.51 572,604 C581.29,613.13 576.1,1060.57 580,1073 C592.66,1113.34 619.7,1111.86 633,1152 C654.45,1216.73 627.19,1706.96 663,1765 C680.27,1793 710.36,1812.6 739.11,1825.87 " fill="none" id="FS-to-UCF204" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="743.71,1827.95,737.1528,1820.6013,739.1528,1825.8928,733.8613,1827.8929,743.71,1827.95" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[6bfca541db1c9ef530884c9fa17b48c8]
+link FS to UCF206--><path d="M65.49,723.7 C70.12,625.05 87.97,371.15 150,320 C227.07,256.45 977.64,250.1 1049,320 C1106.36,376.18 1051.33,1689.62 1079,1765 C1101.17,1825.38 1151.85,1880.6 1188.27,1914.69 " fill="none" id="FS-to-UCF206" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="1192.2,1918.33,1188.3321,1909.2724,1188.5381,1914.9256,1182.885,1915.1315,1192.2,1918.33" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[452604f378679949972b42debaaec084]
+link FS to UCF208--><path d="M95.01,754.2 C185.07,730.75 448.14,677.61 572,817 C584.66,831.25 575.7,1141.43 580,1160 C592.7,1214.83 619.61,1220.34 633,1275 C649.38,1341.88 620.88,1839.53 663,1894 C672.86,1906.75 686.16,1916.13 700.78,1923 " fill="none" id="FS-to-UCF208" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="705.36,1925.05,698.7836,1917.7185,700.7975,1923.0047,695.5112,1925.0185,705.36,1925.05" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[47021e7252298d6abde5b2517513a629]
+link FS to UCF306--><path d="M90.65,723.76 C105.66,705.24 126.18,685.03 150,675 C236.43,638.61 505.13,609.25 572,675 C590.78,693.46 568.61,1125.25 580,1149 C593.24,1176.6 619.61,1165.47 633,1193 C685.95,1301.85 614.68,2171.02 663,2282 C684.93,2332.37 732.78,2374.49 768.68,2400.76 " fill="none" id="FS-to-UCF306" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="772.99,2403.89,768.0479,2395.3709,768.9408,2400.9568,763.3548,2401.8496,772.99,2403.89" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[d3aab852312b7a72b1c9e58b2567742e]
+link FS to UCF307--><path d="M95.41,767.56 C241.73,790.78 857.48,910.58 1049,1306 C1096.29,1403.64 1025.83,2187.42 1079,2282 C1095.82,2311.93 1126.02,2334.24 1154.97,2349.95 " fill="none" id="FS-to-UCF307" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="1159.6,2352.42,1153.5255,2344.6675,1155.1835,2350.076,1149.7751,2351.7339,1159.6,2352.42" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[64c4bb48ccd4c1d3e2d384248860299e]
+link FS to UCF309--><path d="M66.75,723.94 C74.83,617.34 101.05,323.95 150,242 C212.27,137.77 279.08,133 400.5,133 C400.5,133 400.5,133 1023.5,133 C1571.85,133 1297.88,768.41 1406,1306 C1454.84,1548.85 1355.95,2213.36 1497,2417 C1508.5,2433.6 1525.58,2445.96 1543.7,2455.1 " fill="none" id="FS-to-UCF309" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="1548.33,2457.36,1541.982,2449.8298,1543.8325,2455.1755,1538.4868,2457.0259,1548.33,2457.36" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[0d1c875302c9d7ca4a1a7dc8dacafec1]
+link FS to UCF312--><path d="M66.44,723.64 C73.45,621.96 96.66,353.67 150,285 C186.17,238.44 296.2,204 400.5,204 C400.5,204 400.5,204 1231.5,204 C1457.8,204 1606.77,2056.31 1627.91,2335.06 " fill="none" id="FS-to-UCF312" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="1628.3,2340.2,1631.6203,2330.9277,1627.9285,2335.2138,1623.6424,2331.522,1628.3,2340.2" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[fff404510e27abeef2607af5f76bc487]
+link FS to UCF505--><path d="M66.9,802.14 C76.09,927.65 104.88,1331.38 120,1666 C175.84,2901.68 177.92,3211.24 199,4448 C199.17,4457.75 201.73,5843.79 207,5852 C227.03,5883.2 260.97,5903.77 294.88,5917.24 " fill="none" id="FS-to-UCF505" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="299.88,5919.17,292.9273,5912.1944,295.2162,5917.3674,290.0432,5919.6564,299.88,5919.17" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[69390df3ba0eddf063d78fe7d214559e]
+link FS to UCF703--><path d="M71.45,802.06 C82.46,852.65 106.58,942.01 150,1007 C166.26,1031.34 187.05,1024.28 199,1051 C211,1077.83 188.7,5260 207,5283 C223.93,5304.28 248.79,5316.72 275.08,5323.75 " fill="none" id="FS-to-UCF703" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="280.01,5325,272.2699,5318.9097,275.1635,5323.7705,270.3027,5326.6641,280.01,5325" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[5bcfc78429007c9fa8f0e3e9b228ab2c]
+link FS to UCF705--><path d="M80.14,802.27 C95.3,836.58 120.09,886.74 150,925 C168.03,948.06 187.05,942.28 199,969 C210.67,995.1 190.23,5062.84 207,5086 C224.11,5109.64 250.29,5124.69 277.9,5134.23 " fill="none" id="FS-to-UCF705" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="282.71,5135.83,275.4428,5129.1826,277.968,5134.2446,272.9061,5136.7698,282.71,5135.83" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[0700cab8310796d776c6cb51e59c90ca]
+link FS to UCF706--><path d="M88.68,802.24 C104.86,826.76 127.18,858.42 150,884 C169.49,905.84 187.05,901.28 199,928 C210.42,953.54 191.68,4933.59 207,4957 C228.97,4990.57 267.47,5010.97 304.37,5023.33 " fill="none" id="FS-to-UCF706" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="309.33,5024.94,302.003,5018.3586,304.5739,5023.3975,299.535,5025.9683,309.33,5024.94" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[c263a0e23f6547b128c9bc8ae0a8ceb1]
+link FS to UCF707--><path d="M95.19,740.96 C123.34,724.01 165.36,706.1 199,723 C271.17,759.24 607.29,1229.45 633,1306 C697.59,1498.28 605.77,4762.4 663,4957 C687.19,5039.24 748.85,5120.47 785.3,5163.5 " fill="none" id="FS-to-UCF707" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="788.75,5167.54,785.9504,5158.0974,785.5043,5163.7367,779.8651,5163.2906,788.75,5167.54" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[1919b4a67173b49bec2d47164133a380]
+link FS to UCF708--><path d="M74.97,802.23 C88.19,845.12 113.31,914.6 150,966 C167,989.82 187.05,983.28 199,1010 C210.87,1036.54 188.78,5174.34 207,5197 C231.24,5227.16 271.52,5239.12 309.08,5243.05 " fill="none" id="FS-to-UCF708" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="314.12,5243.53,305.5378,5238.6982,309.1423,5243.058,304.7826,5246.6625,314.12,5243.53" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[7bf2fdba3499a3247f6a55d17342cb02]
+link FM to UCF108--><path d="M64.24,5479.08 C65.75,5657.67 76.41,6396.72 150,6614 C211.43,6795.38 402.58,6790.27 572,6701 C709.99,6628.28 756.94,6788.95 967.5,5549 C1159.72,4417.08 1016.05,4114.65 1049,2967 C1050.85,2902.56 1051.64,1865.37 1079,1807 C1100.19,1761.79 1144.99,1725.75 1180.23,1702.83 " fill="none" id="FM-to-UCF108" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="1184.48,1700.1,1174.7441,1701.5871,1180.2699,1702.7973,1179.0597,1708.3232,1184.48,1700.1" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[ec303c47d2896a2ec07de6c0fc16c464]
+link FM to UCF207--><path d="M69.73,5400.75 C80.21,5334.73 105.6,5198.09 150,5090 C166.13,5050.73 187.65,5048.91 199,5008 C204.22,4989.18 194.76,2211.21 207,2196 C227.48,2170.55 259.37,2158.06 291.4,2152.42 " fill="none" id="FM-to-UCF207" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="296.54,2151.57,287.0083,2149.0906,291.6069,2152.385,288.3124,2156.9836,296.54,2151.57" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[7f36fc063d2921e8ed85bfc98e7338cd]
+link FM to UCF209--><path d="M75.75,5400.61 C91.5,5348.57 120.88,5254.22 150,5175 C169.73,5121.31 187.82,5112.09 199,5056 C202.71,5037.39 196.57,2339.85 207,2324 C229.01,2290.55 267.52,2270.35 304.42,2258.18 " fill="none" id="FM-to-UCF209" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="309.38,2256.59,299.5887,2255.5265,304.6184,2258.1154,302.0294,2263.1451,309.38,2256.59" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[7ae05743ad3652c3c96312b1872d4ab4]
+link FM to UCF308--><path d="M63.68,5479.33 C62.35,5686.98 61.07,6649.91 150,6744 C200.68,6797.62 439.05,7335.72 1049,6751 C1211.73,6595 1228.16,2887.14 1229.41,2510.75 " fill="none" id="FM-to-UCF308" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="1229.43,2505.7,1225.4043,2514.6885,1229.4157,2510.7,1233.4043,2514.7114,1229.43,2505.7" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[aa6ae3d9b215f1155410ab95bdc44744]
+link FM to UCF310--><path d="M73,5400.89 C85.1,5353.97 109.85,5274.33 150,5216 C166.6,5191.89 187.03,5198.71 199,5172 C212.07,5142.83 187.2,2896.09 207,2871 C221.89,2852.12 242.98,2840.03 265.79,2832.44 " fill="none" id="FM-to-UCF310" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="270.68,2830.88,260.8917,2829.7899,265.9142,2832.3925,263.3116,2837.4151,270.68,2830.88" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[46842f31b0dfccb6fa83c47c7956a6bf]
+link FM to UCF311--><path d="M77.21,5400.75 C91.43,5361.91 116.6,5301.94 150,5257 C167.46,5233.51 187.03,5239.71 199,5213 C211.52,5185.06 190.44,3034.74 207,3009 C227.16,2977.65 261.45,2957.2 295.6,2943.91 " fill="none" id="FM-to-UCF311" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="300.64,2942,290.8065,2941.451,295.9648,2943.7728,293.643,2948.9312,300.64,2942" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[7d5809661c22c9092996477e9721136b]
+link FM to UCF501--><path d="M81.73,5479.11 C112.09,5548.23 173.27,5697.23 199,5830 C202.41,5847.58 195.52,5977.25 207,5991 C224.05,6011.41 248.39,6023.61 274.07,6030.69 " fill="none" id="FM-to-UCF501" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="279.22,6032.04,271.5352,6025.8801,274.3848,6030.7668,269.4981,6033.6164,279.22,6032.04" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[2b60c3b60ddac77af0c6c555a15a9943]
+link FM to UCF502--><path d="M69.15,5479.23 C79.33,5551.15 105.03,5708.25 150,5834 C166.13,5879.1 186.56,5883.74 199,5930 C203.33,5946.12 196.24,6067.24 207,6080 C231.55,6109.13 270.98,6121.3 307.87,6125.73 " fill="none" id="FM-to-UCF502" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="313.29,6126.33,304.7774,6121.3767,308.3195,6125.7872,303.909,6129.3294,313.29,6126.33" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[992d79d6737a1d83b83498474b4f76a5]
+link FM to UCF503--><path d="M68.99,5479.11 C80.12,5563.12 109.2,5766.75 150,5934 C167.12,6004.19 184.35,6018.25 199,6089 C202.53,6106.06 195.51,6153.9 207,6167 C223.75,6186.11 246.86,6198.03 271.29,6205.32 " fill="none" id="FM-to-UCF503" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="276.2,6206.72,268.6402,6200.4073,271.3913,6205.3502,266.4485,6208.1013,276.2,6206.72" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[ecbdb0d6dcbf071153dc41e02e5ce154]
+link FM to UCF504--><path d="M64.82,5479.1 C68.77,5627.22 90.88,6150.79 207,6258 C223.71,6273.43 244.55,6284.23 266.3,6291.77 " fill="none" id="FM-to-UCF504" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="271.25,6293.42,263.9828,6286.7726,266.508,6291.8346,261.4461,6294.3598,271.25,6293.42" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[f7f2e4680ec0bedc8fbe12f024fce9c9]
+link FM to UCF506--><path d="M66.21,5479.42 C74.46,5620.84 105.23,6102.07 150,6249 C165.82,6300.92 163.86,6324.07 207,6357 C237.51,6380.28 278.15,6391.44 314.32,6396.62 " fill="none" id="FM-to-UCF506" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="319.62,6397.34,311.2383,6392.1682,314.6652,6396.6689,310.1646,6400.0958,319.62,6397.34" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[fe3c939f46dcbdd0f0e892c66139f7cb]
+link FM to UCF604--><path d="M83.61,5400.9 C99.46,5371.18 123.43,5330.07 150,5298 C168.67,5275.46 186.92,5280.66 199,5254 C206.95,5236.44 194.85,4574.97 207,4560 C226.71,4535.71 256.82,4523.25 287.45,4517.28 " fill="none" id="FM-to-UCF604" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="292.37,4516.38,282.7967,4514.0667,287.4518,4517.2807,284.2378,4521.9359,292.37,4516.38" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[833bcd2dc461164ea940c7d9295ddc29]
+link FM to UCF607--><path d="M106.62,5410.03 C144.2,5383.15 193.8,5346.38 199,5336 C213.45,5307.13 187.85,4780.99 207,4755 C224.68,4731 251.72,4715.98 280.04,4706.62 " fill="none" id="FM-to-UCF607" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="284.96,4705.05,275.1717,4703.9599,280.1942,4706.5625,277.5916,4711.5851,284.96,4705.05" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[67cfdd73d8d3a1b5806b70d98ca47424]
+link FM to UCF608--><path d="M106.63,5432.49 C138.01,5424.5 178.61,5408.47 199,5377 C214.53,5353.03 189.99,4885.94 207,4863 C224.63,4839.23 251.49,4824.38 279.63,4815.16 " fill="none" id="FM-to-UCF608" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="284.52,4813.61,274.7337,4812.5016,279.7514,4815.1136,277.1395,4820.1313,284.52,4813.61" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[06e5ab87f8ba530ffd5214f7f3029556]
+link FM to UCF609--><path d="M106.69,5445.92 C137.24,5447.52 176.76,5443.66 199,5418 C214.25,5400.41 194.21,5018.45 207,4999 C227.72,4967.47 262.75,4947.1 297.35,4933.99 " fill="none" id="FM-to-UCF609" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="302.45,4932.1,292.6208,4931.4787,297.7619,4933.8384,295.4022,4938.9796,302.45,4932.1" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[9e37f6675986d6611a1c8cfa3f3a76d8]
+link FM to UCF610--><path d="M95.5,5400.56 C111.29,5381.45 131.04,5358.47 150,5339 C170.42,5318.03 186.91,5321.66 199,5295 C206.45,5278.58 195.63,4659.99 207,4646 C225.2,4623.59 252.26,4611.25 280.41,4604.79 " fill="none" id="FM-to-UCF610" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="285.3,4603.72,275.6533,4601.7348,280.4154,4604.7881,277.3622,4609.5502,285.3,4603.72" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[66fc8fbbe6eb53f9ad7db927ee855da4]
+link FM to UCF704--><path d="M65.58,5479.07 C73.94,5674.98 115.95,6543.81 207,6617 C333.44,6718.63 446.84,6720.2 572,6617 C767.2,6456.05 806.58,5580.22 812.57,5403.92 " fill="none" id="FM-to-UCF704" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="812.75,5398.67,808.444,5407.5277,812.5787,5403.6671,816.4393,5407.8018,812.75,5398.67" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[562bfbfe799ab3d69393ba863e128111]
+link BM to UCF401--><path d="M83.51,4675.77 C98.82,4641.73 122.16,4595.7 150,4560 C168,4536.92 187,4542.69 199,4516 C206.61,4499.07 195.35,3194.44 207,3180 C226.7,3155.6 256.89,3143.12 287.61,3137.17 " fill="none" id="BM-to-UCF401" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="292.54,3136.27,282.9679,3133.9518,287.6213,3137.1682,284.405,3141.8217,292.54,3136.27" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[a85833ab66ef9b5b8a2b16d7e4fe3ca1]
+link BM to UCF402--><path d="M113.83,4675.68 C125.64,4664.58 138.22,4652.83 150,4642 C171.54,4622.19 186.99,4624.69 199,4598 C206.09,4582.24 196.15,3367.44 207,3354 C225.01,3331.69 251.8,3319.35 279.73,3312.85 " fill="none" id="BM-to-UCF402" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="284.96,3311.7,275.3121,3309.7207,280.0761,3312.771,277.0257,3317.535,284.96,3311.7" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[90ea0d8d9b0f63d195d2cf4a10c8adb9]
+link BM to UCF403--><path d="M93.54,4675.97 C109.15,4652.5 129.34,4624.24 150,4601 C169.44,4579.12 186.99,4583.69 199,4557 C206.34,4540.67 195.79,3281.96 207,3268 C224.72,3245.94 250.99,3233.5 278.5,3226.79 " fill="none" id="BM-to-UCF403" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="283.65,3225.6,273.9794,3223.7345,278.779,3226.7285,275.785,3231.528,283.65,3225.6" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[76e25eeb4055273d3cee96554027f53b]
+link BM to UCF404--><path d="M117.16,4720.56 C146.32,4716.19 180.26,4705.45 199,4680 C217.88,4654.36 187.12,3558.86 207,3534 C223.21,3513.73 246.6,3501.49 271.56,3494.31 " fill="none" id="BM-to-UCF404" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="276.57,3492.94,266.8313,3491.4709,271.7492,3494.2664,268.9536,3499.1843,276.57,3492.94" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[24ca9ee44801bce00ff896f673507534]
+link BM to UCF405--><path d="M117.2,4760.23 C144.92,4774.75 177.44,4783.39 199,4762 C219.78,4741.37 188.59,3730.77 207,3708 C225.66,3684.91 253.72,3672.5 282.72,3666.2 " fill="none" id="BM-to-UCF405" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="287.76,3665.16,278.1419,3663.0404,282.861,3666.1598,279.7416,3670.8789,287.76,3665.16" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[eb5d78debc9fd512b1c8678ea5d2d478]
+link BM to UCF406--><path d="M88.07,4770.12 C115.6,4818.24 161.68,4881.01 199,4844 C217.97,4825.18 190.24,3902.82 207,3882 C224.74,3859.96 251.02,3847.53 278.53,3840.81 " fill="none" id="BM-to-UCF406" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="283.68,3839.63,274.0094,3837.7645,278.809,3840.7585,275.815,3845.558,283.68,3839.63" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[a062fb3a953c28d349452f54a20d3fbf]
+link BM to UCF407--><path d="M77.32,4675.87 C91.04,4632.49 115.32,4567.67 150,4519 C166.98,4495.16 187,4501.69 199,4475 C206.86,4457.5 194.95,3108.93 207,3094 C228.83,3066.94 263.57,3054.54 297.63,3049.45 " fill="none" id="BM-to-UCF407" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="302.65,3048.75,293.178,3046.0515,297.6994,3049.4511,294.2998,3053.9725,302.65,3048.75" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[367676994225b342551cd8ebf0c15032]
+link BM to UCF408--><path d="M117.31,4696.7 C150.91,4678.9 189.66,4655.68 199,4639 C215.22,4610.03 186.27,3469.92 207,3444 C223.88,3422.89 248.56,3410.48 274.68,3403.44 " fill="none" id="BM-to-UCF408" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="279.58,3402.18,269.8682,3400.5428,274.7369,3403.4229,271.8568,3408.2917,279.58,3402.18" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[a5916915df6f5b6d5e2e28d4666501ab]
+link BM to UCF409--><path d="M117.32,4738.25 C145.43,4742.77 178.28,4741.88 199,4721 C220.51,4699.33 187.87,3645.79 207,3622 C224.63,3600.07 250.71,3587.66 278.04,3580.92 " fill="none" id="BM-to-UCF409" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="283.16,3579.72,273.4831,3577.8877,278.2929,3580.8652,275.3154,3585.675,283.16,3579.72" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[8bdfab8122af98082b68a401c38adf62]
+link BM to UCF410--><path d="M101.72,4770.13 C130.82,4801.05 170.76,4831.01 199,4803 C218.9,4783.26 189.38,3815.79 207,3794 C231.96,3763.14 273.69,3751.36 312.03,3747.73 " fill="none" id="BM-to-UCF410" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="317.17,3747.29,307.8605,3744.0755,312.1884,3747.7182,308.5456,3752.0461,317.17,3747.29" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[9d27e101e575010f06b56bf85de5825f]
+link BM to UCF411--><path d="M80.46,4770.15 C104.73,4833 152.33,4931.26 199,4885 C216.85,4867.3 191.47,3999.77 207,3980 C220.48,3962.84 239.02,3951.16 259.34,3943.3 " fill="none" id="BM-to-UCF411" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="264.26,3941.48,254.4325,3940.8324,259.5673,3943.2059,257.1939,3948.3407,264.26,3941.48" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[cd1bff24260b484dbe316d1d00178cc8]
+link BM to UCF412--><path d="M75.55,4770.21 C96.16,4846.26 142.46,4981.99 199,4926 C215.05,4910.11 194.64,4131.9 207,4113 C228.32,4080.4 265.04,4059.88 300.81,4047.04 " fill="none" id="BM-to-UCF412" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="305.62,4045.35,295.8036,4044.5517,300.9014,4047.0037,298.4494,4052.1015,305.62,4045.35" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[3d23d3cb2776dae6a7ecc801721f0b8c]
+link SA to UCF507--><path d="M120.14,6843.02 C147.48,6847.16 178.75,6845.86 199,6826 C210.78,6814.44 196.5,6541.73 207,6529 C225.73,6506.28 253.55,6493.95 282.29,6487.59 " fill="none" id="SA-to-UCF507" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="287.29,6486.55,277.6648,6484.4629,282.3944,6487.5663,279.291,6492.2959,287.29,6486.55" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[024d66631cff94aac6401c144baa4543]
+link SA to UCF508--><path d="M120.1,6862.39 C145.13,6873.51 174.44,6879.91 199,6867 C305.77,6810.84 366.95,6669.7 389.92,6606.03 " fill="none" id="SA-to-UCF508" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="391.64,6601.22,384.8625,6608.366,389.9692,6605.9326,392.4026,6611.0393,391.64,6601.22" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[34723305e548e05d2a394a7764a95d2d]
+link SA to UCS02--><path d="M64.72,6787.62 C67.66,6662.38 82.12,6262.48 150,5940 C166.68,5860.78 147.11,5821.47 207,5767 C227.27,5748.56 253.63,5737.33 280.34,5730.61 " fill="none" id="SA-to-UCS02" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="285.32,5729.41,275.633,5727.6316,280.4594,5730.5823,277.5087,5735.4086,285.32,5729.41" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[8969d1d20cefa7c636d87ee2e05d05d5]
+link SA to UCS03--><path d="M65.08,6787.76 C70.17,6629.21 96.39,6037.5 207,5894 C232.25,5861.24 272.88,5841.04 310.4,5828.69 " fill="none" id="SA-to-UCS03" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="315.43,5827.07,305.6387,5826.0065,310.6684,5828.5954,308.0794,5833.6251,315.43,5827.07" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[68025b3ec63cb691a9505afeb6dd41a6]
+link SYS to UCF106--><path d="M79.61,4982.98 C109.93,4888.95 175.8,4670.49 199,4481 C200.34,4470.05 199.19,1312.79 207,1305 C321.85,1190.43 452.85,1194.91 572,1305 C588.54,1320.28 572.84,1384.65 580,1406 C593.92,1447.49 617.43,1448.09 633,1489 C662.94,1567.67 607.13,1613.04 663,1676 C677.19,1691.99 696.88,1702.22 717.34,1708.71 " fill="none" id="SYS-to-UCF106" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="722.28,1710.2,714.8177,1703.7723,717.4928,1708.7567,712.5085,1711.4318,722.28,1710.2" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[122238d05d8f42d0eae594a7d7484b07]
+link SYS to UCF111--><path d="M77.93,4982.56 C91.5,4933.95 111.3,4855.94 120,4787 C144.69,4591.27 110.87,1409.28 207,1237 C313.21,1046.65 447.58,879.4 633,994 C750,1066.31 793.7,1239.97 807.72,1317.04 " fill="none" id="SYS-to-UCF111" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="808.68,1322.42,811.0202,1312.8532,807.7931,1317.4993,803.1471,1314.2722,808.68,1322.42" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[a9b03f4af75797ec1f909a653327148b]
+link SYS to UCF605--><path d="M104.23,5038.16 C134.94,5041.81 175.8,5040.59 199,5015 C210.7,5002.09 196.58,4401.95 207,4388 C226.18,4362.32 256.22,4347.32 286.96,4338.65 " fill="none" id="SYS-to-UCF605" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="291.9,4337.31,282.1696,4335.7873,287.0719,4338.6099,284.2494,4343.5122,291.9,4337.31" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[0ee4f8ea43321e5a5a4fb7b9eb50b581]
+link SYS to UCF606--><path d="M104.12,5069.56 C133.56,5093.87 172.81,5115.85 199,5090 C211.18,5077.98 196.21,4487.28 207,4474 C229.34,4446.51 265.01,4434.18 299.66,4429.25 " fill="none" id="SYS-to-UCF606" style="stroke:#37474F;stroke-width:1.0;"/><polygon fill="#37474F" points="304.77,4428.58,295.3224,4425.7974,299.8134,4429.2371,296.3737,4433.728,304.77,4428.58" style="stroke:#37474F;stroke-width:1.0;"/><!--MD5=[153b1e1a0959dc24c18d3b63b96c1725]
+link UCF104 to UCF103--><path d="M462.7,1709.82 C533.5,1694.31 651.41,1668.49 730.76,1651.12 " fill="none" id="UCF104-to-UCF103" style="stroke:#37474F;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#37474F" points="735.93,1649.98,726.2821,1648.0007,731.0461,1651.051,727.9957,1655.815,735.93,1649.98" style="stroke:#37474F;stroke-width:1.0;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="51" x="581" y="1669.9492">«include»</text><!--MD5=[c1332dee7d9e3f7d3e3b9ab0a1f6f010]
+link UCF104 to UCF105--><path d="M472.73,1723.36 C507.87,1719.59 547.93,1708.55 572,1680 C586.65,1662.61 570.55,1598.68 580,1578 C601.82,1530.27 617.93,1520.89 663,1494 C679.92,1483.91 699.3,1476 718.4,1469.86 " fill="none" id="UCF104-to-UCF105" style="stroke:#37474F;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#37474F" points="723.24,1468.33,713.4547,1467.2132,718.4701,1469.8295,715.8539,1474.845,723.24,1468.33" style="stroke:#37474F;stroke-width:1.0;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="51" x="581" y="1510.9492">«include»</text><!--MD5=[17ee1d832cc416cc89a949858e305e10]
+link UCF104 to UCF106--><path d="M472.69,1722.32 C538.18,1721.68 636.67,1720.72 710.96,1720 " fill="none" id="UCF104-to-UCF106" style="stroke:#37474F;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#37474F" points="716.27,1719.94,707.236,1716.0173,711.2702,1719.9829,707.3046,1724.017,716.27,1719.94" style="stroke:#37474F;stroke-width:1.0;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="51" x="581" y="1717.9492">«include»</text><!--MD5=[b7548659cb40533fe0c58e5158c6ebe5]
+link UCF107 to UCF108--><path d="M893.64,1566.55 C917.38,1574.04 943.52,1582.32 967.5,1590 C1031.25,1610.41 1103.62,1633.91 1156.12,1651.02 " fill="none" id="UCF107-to-UCF108" style="stroke:#37474F;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#37474F" points="1161.14,1652.66,1153.8188,1646.0721,1156.3853,1651.1133,1151.3441,1653.6797,1161.14,1652.66" style="stroke:#37474F;stroke-width:1.0;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="51" x="997" y="1598.9492">«include»</text><!--MD5=[34000c54a118df52904f11bec7ff802e]
+link UCF109 to UCF107--><path d="M490.93,1625.44 C534.07,1619.03 586.55,1610.1 633,1599 C638.27,1597.74 686.06,1582.64 731.13,1568.29 " fill="none" id="UCF109-to-UCF107" style="stroke:#37474F;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#37474F" points="736.05,1566.73,726.2607,1565.6483,731.2856,1568.2466,728.6873,1573.2714,736.05,1566.73" style="stroke:#37474F;stroke-width:1.0;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="51" x="581" y="1595.9492">«include»</text><!--MD5=[9e17334f58e5581279a4244f4274df1f]
+link UCF203 to UCF201--><path d="M472.22,1942.71 C545.05,1965.4 659.08,2000.91 735.02,2024.56 " fill="none" id="UCF203-to-UCF201" style="stroke:#37474F;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#37474F" points="739.97,2026.1,732.5661,2019.6052,735.1961,2024.6135,730.1877,2027.2435,739.97,2026.1" style="stroke:#37474F;stroke-width:1.0;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="51" x="581" y="1974.9492">«include»</text><!--MD5=[d30688c3522ac548d02ab692b4bcfa43]
+link UCF203 to UCF202--><path d="M434.95,1946.6 C482.65,1983.27 575.53,2051.04 663,2094 C680.69,2102.69 700.23,2110.5 719.21,2117.24 " fill="none" id="UCF203-to-UCF202" style="stroke:#37474F;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#37474F" points="724.02,2118.94,716.8558,2112.1817,719.3029,2117.2819,714.2028,2119.729,724.02,2118.94" style="stroke:#37474F;stroke-width:1.0;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="51" x="581" y="2044.9492">«include»</text><!--MD5=[737fb89ad2ca7af8f6169a70ce79b9bc]
+link UCF203 to UCF204--><path d="M497.05,1904.67 C561.5,1893.53 646.75,1878.8 712.53,1867.44 " fill="none" id="UCF203-to-UCF204" style="stroke:#37474F;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#37474F" points="717.63,1866.56,708.0777,1864.1612,712.7039,1867.4167,709.4485,1872.0429,717.63,1866.56" style="stroke:#37474F;stroke-width:1.0;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="51" x="581" y="1878.9492">«include»</text><!--MD5=[e6b68c7c2702730f8701980f0585f48a]
+link UCF205 to UCF206--><path d="M903.96,2220.96 C925.56,2214.54 948.03,2206.06 967.5,2195 C1065.65,2139.22 1156.17,2039.59 1200.65,1986.18 " fill="none" id="UCF205-to-UCF206" style="stroke:#37474F;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#37474F" points="1204.03,1982.1,1195.2146,1986.492,1200.846,1985.9551,1201.3828,1991.5864,1204.03,1982.1" style="stroke:#37474F;stroke-width:1.0;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="51" x="997" y="2136.9492">«include»</text><!--MD5=[cc63a1dd90c97d382bbca45719e63363]
+link UCF207 to UCF205--><path d="M481.74,2169.58 C550.2,2183.9 649.17,2204.61 721.18,2219.68 " fill="none" id="UCF207-to-UCF205" style="stroke:#37474F;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#37474F" points="726.32,2220.76,718.3337,2214.9964,721.4266,2219.7328,716.6902,2222.8258,726.32,2220.76" style="stroke:#37474F;stroke-width:1.0;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="51" x="581" y="2187.9492">«include»</text><!--MD5=[9c3fd8277365867d722b23369c896126]
+link UCF305 to UCF306--><path d="M490.31,2721.14 C517.78,2714.57 547.33,2704.72 572,2690 C672.02,2630.3 756.03,2516.96 793.12,2461.78 " fill="none" id="UCF305-to-UCF306" style="stroke:#37474F;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#37474F" points="795.92,2457.58,787.5995,2462.8497,793.1465,2461.7403,794.2559,2467.2873,795.92,2457.58" style="stroke:#37474F;stroke-width:1.0;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="51" x="581" y="2648.9492">«include»</text><!--MD5=[fc9ce222bbfcb018f0ca1f938cb827dd]
+link UCF306 to UCF307--><path d="M925.09,2416.76 C978.22,2410.35 1042.45,2402.59 1098.19,2395.86 " fill="none" id="UCF306-to-UCF307" style="stroke:#37474F;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#37474F" points="1103.21,2395.25,1093.7956,2392.3572,1098.246,2395.8491,1094.7541,2400.2996,1103.21,2395.25" style="stroke:#37474F;stroke-width:1.0;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="51" x="997" y="2399.9492">«include»</text><!--MD5=[2e7c8d07d688fc626423f96c3ca1c87b]
+link UCF306 to UCF308--><path d="M925.09,2443.23 C986.6,2450.66 1062.98,2459.89 1123.84,2467.24 " fill="none" id="UCF306-to-UCF308" style="stroke:#37474F;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#37474F" points="1128.94,2467.85,1120.4859,2462.7975,1123.9762,2467.2492,1119.5246,2470.7396,1128.94,2467.85" style="stroke:#37474F;stroke-width:1.0;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="51" x="997" y="2449.9492">«include»</text><!--MD5=[1ee48abf08bc6647893d2ddd39c51c94]
+link UCF308 to UCF309--><path d="M1346.1,2480 C1392.09,2480 1445.48,2480 1493.49,2480 " fill="none" id="UCF308-to-UCF309" style="stroke:#37474F;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#37474F" points="1498.71,2480,1489.71,2476,1493.71,2480,1489.71,2484,1498.71,2480" style="stroke:#37474F;stroke-width:1.0;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="51" x="1415" y="2476.9492">«include»</text><!--MD5=[6916744a712f60bf8ca965d9b1a03d21]
+link UCF602 to UCF603--><path d="M511.56,4241 C573.32,4241 650.11,4241 710.79,4241 " fill="none" id="UCF602-to-UCF603" style="stroke:#37474F;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#37474F" points="715.87,4241,706.87,4237,710.87,4241,706.87,4245,715.87,4241" style="stroke:#37474F;stroke-width:1.0;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="51" x="581" y="4237.9492">«include»</text><!--MD5=[1a59b0ebc16ef75e08961bdaef9c27c9]
+link UCF604 to UCF603--><path d="M493.33,4503.08 C519.78,4496.65 547.99,4487.36 572,4474 C667.81,4420.66 753.27,4319.81 791.82,4270.14 " fill="none" id="UCF604-to-UCF603" style="stroke:#37474F;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#37474F" points="794.96,4266.08,786.2923,4270.7567,791.9032,4270.0367,792.6231,4275.6476,794.96,4266.08" style="stroke:#37474F;stroke-width:1.0;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="51" x="581" y="4430.9492">«include»</text><!--MD5=[93e6ef60bb7abf8c139e2b2b3898ae1d]
+link UCF703 to UCF704--><path d="M511.29,5339.91 C572.24,5346.58 647.9,5354.87 708.27,5361.48 " fill="none" id="UCF703-to-UCF704" style="stroke:#37474F;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#37474F" points="713.32,5362.03,704.8074,5357.0767,708.3495,5361.4872,703.939,5365.0294,713.32,5362.03" style="stroke:#37474F;stroke-width:1.0;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="51" x="581" y="5344.9492">«include»</text><!--MD5=[6473149a2c1a74a540f48efae611337f]
+link UCF708 to UCF707--><path d="M484.19,5231.05 C544.08,5224.5 626.34,5215.49 693.66,5208.12 " fill="none" id="UCF708-to-UCF707" style="stroke:#37474F;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#37474F" points="698.89,5207.55,689.509,5204.5506,693.9195,5208.0928,690.3774,5212.5033,698.89,5207.55" style="stroke:#37474F;stroke-width:1.0;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="51" x="581" y="5211.9492">«include»</text><!--MD5=[cb674e2a40112ff36b69bbe12fec196b]
+link UCF110 to UCF109--><path d="M401.5,1559.75 C401.5,1573.77 401.5,1591.21 401.5,1605.97 " fill="none" id="UCF110-to-UCF109" style="stroke:#37474F;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#37474F" points="401.5,1611.27,405.5,1602.27,401.5,1606.27,397.5,1602.27,401.5,1611.27" style="stroke:#37474F;stroke-width:1.0;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="47" x="366.5" y="1590.9492">«extend»</text><!--MD5=[4802fe7902229ce742501474c9d3f0f3]
+link UCF111 to UCF106--><path d="M807.35,1322.53 C784.8,1226.03 711.04,953.46 616,1048.5 C566.56,1097.94 618.74,1621.88 663,1676 C676.54,1692.55 695.95,1703.01 716.38,1709.54 " fill="none" id="UCF111-to-UCF106" style="stroke:#37474F;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#37474F" points="721.31,1711.04,713.8653,1704.592,716.5268,1709.5836,711.5351,1712.2451,721.31,1711.04" style="stroke:#37474F;stroke-width:1.0;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="47" x="583" y="1062.4492">«extend»</text><!--MD5=[92c89c119ae583a3116877e2aa586fad]
+link UCF208 to UCF201--><path d="M814.5,1969.7 C814.5,1983.82 814.5,2000.91 814.5,2015.61 " fill="none" id="UCF208-to-UCF201" style="stroke:#37474F;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#37474F" points="814.5,2020.9,818.5,2011.9,814.5,2015.9,810.5,2011.9,814.5,2020.9" style="stroke:#37474F;stroke-width:1.0;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="47" x="779.5" y="2000.6992">«extend»</text><!--MD5=[0454935ca64ffa734d052d368247cdbf]
+link UCF606 to UCF605--><path d="M401.5,4405.27 C401.5,4391.37 401.5,4374.09 401.5,4359.4 " fill="none" id="UCF606-to-UCF605" style="stroke:#37474F;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#37474F" points="401.5,4354.11,397.5,4363.11,401.5,4359.11,405.5,4363.11,401.5,4354.11" style="stroke:#37474F;stroke-width:1.0;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="47" x="366.5" y="4385.1992">«extend»</text><!--MD5=[a88fe2e8bfcbb9224590c5a54093c759]
+link UCF607 to UCF606--><path d="M273.91,4685.27 C248.47,4678.04 224.3,4665.9 207,4646 C151.55,4582.21 134.94,4519.76 191,4456.5 C221.03,4422.61 270.8,4415.4 314.41,4417.06 " fill="none" id="UCF607-to-UCF606" style="stroke:#37474F;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#37474F" points="319.43,4417.29,310.6226,4412.882,314.4352,4417.061,310.2563,4420.8736,319.43,4417.29" style="stroke:#37474F;stroke-width:1.0;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="47" x="151" y="4470.4492">«extend»</text><!--MD5=[1e749c539773fb2e639c35afa70b416f]
+link UCF608 to UCF607--><path d="M401.5,4772.36 C401.5,4758.2 401.5,4741.02 401.5,4726.18 " fill="none" id="UCF608-to-UCF607" style="stroke:#37474F;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#37474F" points="401.5,4720.82,397.5,4729.82,401.5,4725.82,405.5,4729.82,401.5,4720.82" style="stroke:#37474F;stroke-width:1.0;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="47" x="366.5" y="4751.9492">«extend»</text><!--MD5=[b8a41412392a071ffe45faaefc1db354]
+link UCF609 to UCF608--><path d="M401.5,4880.94 C401.5,4866.66 401.5,4849.54 401.5,4834.81 " fill="none" id="UCF609-to-UCF608" style="stroke:#37474F;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#37474F" points="401.5,4829.51,397.5,4838.51,401.5,4834.51,405.5,4838.51,401.5,4829.51" style="stroke:#37474F;stroke-width:1.0;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="47" x="366.5" y="4860.6992">«extend»</text><!--MD5=[a27e02fb37e2ef1df74834f53f615baf]
+link UCF312 to UCF309--><path d="M1631.5,2399.71 C1631.5,2413.84 1631.5,2430.81 1631.5,2445.51 " fill="none" id="UCF312-to-UCF309" style="stroke:#37474F;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#37474F" points="1631.5,2450.81,1635.5,2441.81,1631.5,2445.81,1627.5,2441.81,1631.5,2450.81" style="stroke:#37474F;stroke-width:1.0;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="47" x="1596.5" y="2430.6992">«extend»</text><!--MD5=[8c39d421e55dab2455a6c94b8dfa88e2]
+link UCF706 to UCF705--><path d="M401.5,5068.52 C401.5,5082.66 401.5,5100.23 401.5,5115.43 " fill="none" id="UCF706-to-UCF705" style="stroke:#37474F;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#37474F" points="401.5,5120.49,405.5,5111.49,401.5,5115.49,397.5,5111.49,401.5,5120.49" style="stroke:#37474F;stroke-width:1.0;"/><text fill="#000000" font-family="Segoe UI" font-size="12" lengthAdjust="spacing" textLength="47" x="366.5" y="5099.9492">«extend»</text><!--MD5=[0560f8729439ba514c84e8a260022d6f]
+link UCS01 to GMN189--><path d="M302.91,5617.93 C252.11,5604.11 194.48,5578.57 163.5,5531.5 C122.22,5468.77 121.46,186.73 163.5,124.5 C196.69,75.37 261.6,55.43 315.26,47.53 " fill="none" id="UCS01-GMN189" style="stroke:#37474F;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><!--MD5=[810e541dfeae969c205e79ea70096b46]
+@startuml use-case-diagram
+' =====================================================================
+'  Self-Storage Facility Rental and Management System
+'  Use Case Diagram tong - 5 actor, 7 flow, 73 use case
+'
+'  Nguon: docs/USE-CASES.md (danh sach use case la ban goc, so hoa o day
+'  phai khop voi bang trong tai lieu do).
+'  Xuat anh: VS Code + extension PlantUML -> PlantUML: Export Current Diagram
+' =====================================================================
+
+left to right direction
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam actor {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+}
+skinparam usecase {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+  ArrowColor #37474F
+}
+skinparam package {
+  BackgroundColor #FAFAFA
+  BorderColor #90A4AE
+  FontStyle bold
+}
+
+actor "Storage Customer" as SC
+actor "Facility Staff" as FS
+actor "Facility Manager" as FM
+actor "Business\nOperations Manager" as BM
+actor "System Administrator" as SA
+actor "System\n(scheduled job)" as SYS
+
+rectangle "Self-Storage Facility Rental and Management System" {
+
+  package "Flow 1 — Storage Unit Reservation" {
+    usecase "UC-F1-01\nTìm kiếm và xem danh sách Facility" as UCF101
+    usecase "UC-F1-02\nXem Unit Type, kích thước và giá thuê" as UCF102
+    usecase "UC-F1-03\nKiểm tra ô kho còn trống" as UCF103
+    usecase "UC-F1-04\nTạo Reservation" as UCF104
+    usecase "UC-F1-05\nƯớc tính chi phí thuê và Deposit" as UCF105
+    usecase "UC-F1-06\nGiữ chỗ ô kho tạm thời" as UCF106
+    usecase "UC-F1-07\nThanh toán Deposit và phí thuê kỳ đầu" as UCF107
+    usecase "UC-F1-08\nPhân bổ ô kho cho Reservation" as UCF108
+    usecase "UC-F1-09\nNhận lịch hẹn Check-in" as UCF109
+    usecase "UC-F1-10\nHủy Reservation" as UCF110
+    usecase "UC-F1-11\nTự động hủy Reservation quá hạn thanh toán" as UCF111
+  }
+
+  package "Flow 2 — Check-in and Handover" {
+    usecase "UC-F2-01\nTra cứu Reservation khi khách đến" as UCF201
+    usecase "UC-F2-02\nXác minh danh tính và tình trạng thanh toán" as UCF202
+    usecase "UC-F2-03\nBàn giao ô kho và lập biên bản" as UCF203
+    usecase "UC-F2-04\nCấp Access Code / Access Card" as UCF204
+    usecase "UC-F2-05\nXác nhận Check-in nhận ô kho" as UCF205
+    usecase "UC-F2-06\nCập nhật trạng thái ô kho sang đang sử dụng" as UCF206
+    usecase "UC-F2-07\nKích hoạt hợp đồng thuê" as UCF207
+    usecase "UC-F2-08\nXử lý khách đến trễ hoặc không đến" as UCF208
+    usecase "UC-F2-09\nPhân công Staff trực bàn giao" as UCF209
+  }
+
+  package "Flow 3 — Rented Storage Unit Management" {
+    usecase "UC-F3-01\nXem danh sách ô kho đang thuê" as UCF301
+    usecase "UC-F3-02\nXem hợp đồng và lịch sử thanh toán" as UCF302
+    usecase "UC-F3-03\nCập nhật liên hệ và người ủy quyền" as UCF303
+    usecase "UC-F3-04\nXem lịch sử ra vào và Access Code" as UCF304
+    usecase "UC-F3-05\nĐăng ký trả kho (Return)" as UCF305
+    usecase "UC-F3-06\nXác nhận hiện trạng ô kho khi trả" as UCF306
+    usecase "UC-F3-07\nThu hồi Access Card, vô hiệu Access Code" as UCF307
+    usecase "UC-F3-08\nQuyết toán và hoàn Deposit" as UCF308
+    usecase "UC-F3-09\nCập nhật trạng thái ô kho sau khi trả" as UCF309
+    usecase "UC-F3-10\nTheo dõi khách và hợp đồng hiệu lực" as UCF310
+    usecase "UC-F3-11\nTheo dõi tình trạng thanh toán hợp đồng" as UCF311
+    usecase "UC-F3-12\nĐánh dấu ô kho cần kiểm tra / bảo trì" as UCF312
+  }
+
+  package "Flow 4 — Business Rules, Fees and Revenue" {
+    usecase "UC-F4-01\nQuản lý danh sách Facility" as UCF401
+    usecase "UC-F4-02\nThiết lập chính sách Deposit" as UCF402
+    usecase "UC-F4-03\nThiết lập chính sách Renewal" as UCF403
+    usecase "UC-F4-04\nThiết lập chính sách Cancellation" as UCF404
+    usecase "UC-F4-05\nThiết lập chính sách Return" as UCF405
+    usecase "UC-F4-06\nThiết lập chính sách Overdue" as UCF406
+    usecase "UC-F4-07\nQuản lý khung giá thuê" as UCF407
+    usecase "UC-F4-08\nQuản lý phụ phí và phí quá hạn" as UCF408
+    usecase "UC-F4-09\nQuản lý giảm giá và miễn phí" as UCF409
+    usecase "UC-F4-10\nGiám sát doanh thu" as UCF410
+    usecase "UC-F4-11\nGiám sát Usage Rate và hiệu quả vận hành" as UCF411
+    usecase "UC-F4-12\nXem và xuất báo cáo toàn hệ thống" as UCF412
+  }
+
+  package "Flow 5 — Facility Storage and Staff Management" {
+    usecase "UC-F5-01\nQuản lý Unit Type và kích thước" as UCF501
+    usecase "UC-F5-02\nQuản lý Storage Unit" as UCF502
+    usecase "UC-F5-03\nCập nhật trạng thái ô kho tại cơ sở" as UCF503
+    usecase "UC-F5-04\nPhân công Staff theo công việc trong ngày" as UCF504
+    usecase "UC-F5-05\nXem công việc hằng ngày được phân công" as UCF505
+    usecase "UC-F5-06\nXem báo cáo cơ sở" as UCF506
+    usecase "UC-F5-07\nGán vai trò cho người dùng" as UCF507
+    usecase "UC-F5-08\nCấu hình quyền truy cập dữ liệu" as UCF508
+  }
+
+  package "Flow 6 — Renewal and Overdue Handling" {
+    usecase "UC-F6-01\nNhận thông báo nhắc hạn" as UCF601
+    usecase "UC-F6-02\nYêu cầu gia hạn hợp đồng" as UCF602
+    usecase "UC-F6-03\nThanh toán phí gia hạn" as UCF603
+    usecase "UC-F6-04\nDuyệt và ghi nhận gia hạn" as UCF604
+    usecase "UC-F6-05\nPhát hiện hợp đồng quá hạn" as UCF605
+    usecase "UC-F6-06\nTính và áp phí quá hạn" as UCF606
+    usecase "UC-F6-07\nKhóa quyền truy cập ô kho quá hạn" as UCF607
+    usecase "UC-F6-08\nGửi thông báo chấm dứt hợp đồng" as UCF608
+    usecase "UC-F6-09\nChấm dứt hợp đồng và xử lý tài sản tồn" as UCF609
+    usecase "UC-F6-10\nTheo dõi hợp đồng quá hạn" as UCF610
+  }
+
+  package "Flow 7 — Support Request and Issue Handling" {
+    usecase "UC-F7-01\nGửi yêu cầu hỗ trợ" as UCF701
+    usecase "UC-F7-02\nTheo dõi trạng thái yêu cầu hỗ trợ" as UCF702
+    usecase "UC-F7-03\nTiếp nhận và phân loại yêu cầu" as UCF703
+    usecase "UC-F7-04\nPhân công Staff xử lý sự cố" as UCF704
+    usecase "UC-F7-05\nXử lý mất chìa khóa / lỗi Access Code" as UCF705
+    usecase "UC-F7-06\nXử lý ô kho hư hỏng và bảo trì" as UCF706
+    usecase "UC-F7-07\nCập nhật trạng thái ô kho sau xử lý" as UCF707
+    usecase "UC-F7-08\nĐóng yêu cầu hỗ trợ" as UCF708
+  }
+
+  package "Nền tảng" {
+    usecase "UC-SYS-01\nĐăng ký, đăng nhập, đăng xuất" as UCS01
+    usecase "UC-SYS-02\nQuản lý tài khoản người dùng" as UCS02
+    usecase "UC-SYS-03\nTheo dõi nhật ký hoạt động" as UCS03
+  }
+}
+
+' - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+'  Storage Customer
+' - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+SC - -> UCF101
+SC - -> UCF102
+SC - -> UCF103
+SC - -> UCF104
+SC - -> UCF105
+SC - -> UCF107
+SC - -> UCF109
+SC - -> UCF110
+SC - -> UCF205
+SC - -> UCF301
+SC - -> UCF302
+SC - -> UCF303
+SC - -> UCF304
+SC - -> UCF305
+SC - -> UCF601
+SC - -> UCF602
+SC - -> UCF603
+SC - -> UCF701
+SC - -> UCF702
+
+' - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+'  Facility Staff
+' - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+FS - -> UCF201
+FS - -> UCF202
+FS - -> UCF203
+FS - -> UCF204
+FS - -> UCF206
+FS - -> UCF208
+FS - -> UCF306
+FS - -> UCF307
+FS - -> UCF309
+FS - -> UCF312
+FS - -> UCF505
+FS - -> UCF703
+FS - -> UCF705
+FS - -> UCF706
+FS - -> UCF707
+FS - -> UCF708
+
+' - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+'  Facility Manager
+' - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+FM - -> UCF108
+FM - -> UCF207
+FM - -> UCF209
+FM - -> UCF308
+FM - -> UCF310
+FM - -> UCF311
+FM - -> UCF501
+FM - -> UCF502
+FM - -> UCF503
+FM - -> UCF504
+FM - -> UCF506
+FM - -> UCF604
+FM - -> UCF607
+FM - -> UCF608
+FM - -> UCF609
+FM - -> UCF610
+FM - -> UCF704
+
+' - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+'  Business Operations Manager
+' - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+BM - -> UCF401
+BM - -> UCF402
+BM - -> UCF403
+BM - -> UCF404
+BM - -> UCF405
+BM - -> UCF406
+BM - -> UCF407
+BM - -> UCF408
+BM - -> UCF409
+BM - -> UCF410
+BM - -> UCF411
+BM - -> UCF412
+
+' - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+'  System Administrator
+' - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+SA - -> UCF507
+SA - -> UCF508
+SA - -> UCS02
+SA - -> UCS03
+
+' - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+'  System (scheduled job)
+' - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+SYS - -> UCF106
+SYS - -> UCF111
+SYS - -> UCF605
+SYS - -> UCF606
+
+' - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+'  Quan he include / extend
+' - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+UCF104 ..> UCF103 : <<include>>
+UCF104 ..> UCF105 : <<include>>
+UCF104 ..> UCF106 : <<include>>
+UCF107 ..> UCF108 : <<include>>
+UCF109 ..> UCF107 : <<include>>
+UCF203 ..> UCF201 : <<include>>
+UCF203 ..> UCF202 : <<include>>
+UCF203 ..> UCF204 : <<include>>
+UCF205 ..> UCF206 : <<include>>
+UCF207 ..> UCF205 : <<include>>
+UCF305 ..> UCF306 : <<include>>
+UCF306 ..> UCF307 : <<include>>
+UCF306 ..> UCF308 : <<include>>
+UCF308 ..> UCF309 : <<include>>
+UCF602 ..> UCF603 : <<include>>
+UCF604 ..> UCF603 : <<include>>
+UCF703 ..> UCF704 : <<include>>
+UCF708 ..> UCF707 : <<include>>
+
+UCF110 .> UCF109 : <<extend>>
+UCF111 .> UCF106 : <<extend>>
+UCF208 .> UCF201 : <<extend>>
+UCF606 .> UCF605 : <<extend>>
+UCF607 .> UCF606 : <<extend>>
+UCF608 .> UCF607 : <<extend>>
+UCF609 .> UCF608 : <<extend>>
+UCF312 .> UCF309 : <<extend>>
+UCF706 .> UCF705 : <<extend>>
+
+note bottom of UCS01
+  Mọi use case còn lại đều
+  <<include>> UC-SYS-01.
+  Các đường nối được lược bỏ
+  để sơ đồ dễ đọc.
+end note
+
+@enduml
+
+@startuml use-case-diagram
+
+left to right direction
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam actor {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+}
+skinparam usecase {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+  ArrowColor #37474F
+}
+skinparam package {
+  BackgroundColor #FAFAFA
+  BorderColor #90A4AE
+  FontStyle bold
+}
+
+actor "Storage Customer" as SC
+actor "Facility Staff" as FS
+actor "Facility Manager" as FM
+actor "Business\nOperations Manager" as BM
+actor "System Administrator" as SA
+actor "System\n(scheduled job)" as SYS
+
+rectangle "Self-Storage Facility Rental and Management System" {
+
+  package "Flow 1 — Storage Unit Reservation" {
+    usecase "UC-F1-01\nTìm kiếm và xem danh sách Facility" as UCF101
+    usecase "UC-F1-02\nXem Unit Type, kích thước và giá thuê" as UCF102
+    usecase "UC-F1-03\nKiểm tra ô kho còn trống" as UCF103
+    usecase "UC-F1-04\nTạo Reservation" as UCF104
+    usecase "UC-F1-05\nƯớc tính chi phí thuê và Deposit" as UCF105
+    usecase "UC-F1-06\nGiữ chỗ ô kho tạm thời" as UCF106
+    usecase "UC-F1-07\nThanh toán Deposit và phí thuê kỳ đầu" as UCF107
+    usecase "UC-F1-08\nPhân bổ ô kho cho Reservation" as UCF108
+    usecase "UC-F1-09\nNhận lịch hẹn Check-in" as UCF109
+    usecase "UC-F1-10\nHủy Reservation" as UCF110
+    usecase "UC-F1-11\nTự động hủy Reservation quá hạn thanh toán" as UCF111
+  }
+
+  package "Flow 2 — Check-in and Handover" {
+    usecase "UC-F2-01\nTra cứu Reservation khi khách đến" as UCF201
+    usecase "UC-F2-02\nXác minh danh tính và tình trạng thanh toán" as UCF202
+    usecase "UC-F2-03\nBàn giao ô kho và lập biên bản" as UCF203
+    usecase "UC-F2-04\nCấp Access Code / Access Card" as UCF204
+    usecase "UC-F2-05\nXác nhận Check-in nhận ô kho" as UCF205
+    usecase "UC-F2-06\nCập nhật trạng thái ô kho sang đang sử dụng" as UCF206
+    usecase "UC-F2-07\nKích hoạt hợp đồng thuê" as UCF207
+    usecase "UC-F2-08\nXử lý khách đến trễ hoặc không đến" as UCF208
+    usecase "UC-F2-09\nPhân công Staff trực bàn giao" as UCF209
+  }
+
+  package "Flow 3 — Rented Storage Unit Management" {
+    usecase "UC-F3-01\nXem danh sách ô kho đang thuê" as UCF301
+    usecase "UC-F3-02\nXem hợp đồng và lịch sử thanh toán" as UCF302
+    usecase "UC-F3-03\nCập nhật liên hệ và người ủy quyền" as UCF303
+    usecase "UC-F3-04\nXem lịch sử ra vào và Access Code" as UCF304
+    usecase "UC-F3-05\nĐăng ký trả kho (Return)" as UCF305
+    usecase "UC-F3-06\nXác nhận hiện trạng ô kho khi trả" as UCF306
+    usecase "UC-F3-07\nThu hồi Access Card, vô hiệu Access Code" as UCF307
+    usecase "UC-F3-08\nQuyết toán và hoàn Deposit" as UCF308
+    usecase "UC-F3-09\nCập nhật trạng thái ô kho sau khi trả" as UCF309
+    usecase "UC-F3-10\nTheo dõi khách và hợp đồng hiệu lực" as UCF310
+    usecase "UC-F3-11\nTheo dõi tình trạng thanh toán hợp đồng" as UCF311
+    usecase "UC-F3-12\nĐánh dấu ô kho cần kiểm tra / bảo trì" as UCF312
+  }
+
+  package "Flow 4 — Business Rules, Fees and Revenue" {
+    usecase "UC-F4-01\nQuản lý danh sách Facility" as UCF401
+    usecase "UC-F4-02\nThiết lập chính sách Deposit" as UCF402
+    usecase "UC-F4-03\nThiết lập chính sách Renewal" as UCF403
+    usecase "UC-F4-04\nThiết lập chính sách Cancellation" as UCF404
+    usecase "UC-F4-05\nThiết lập chính sách Return" as UCF405
+    usecase "UC-F4-06\nThiết lập chính sách Overdue" as UCF406
+    usecase "UC-F4-07\nQuản lý khung giá thuê" as UCF407
+    usecase "UC-F4-08\nQuản lý phụ phí và phí quá hạn" as UCF408
+    usecase "UC-F4-09\nQuản lý giảm giá và miễn phí" as UCF409
+    usecase "UC-F4-10\nGiám sát doanh thu" as UCF410
+    usecase "UC-F4-11\nGiám sát Usage Rate và hiệu quả vận hành" as UCF411
+    usecase "UC-F4-12\nXem và xuất báo cáo toàn hệ thống" as UCF412
+  }
+
+  package "Flow 5 — Facility Storage and Staff Management" {
+    usecase "UC-F5-01\nQuản lý Unit Type và kích thước" as UCF501
+    usecase "UC-F5-02\nQuản lý Storage Unit" as UCF502
+    usecase "UC-F5-03\nCập nhật trạng thái ô kho tại cơ sở" as UCF503
+    usecase "UC-F5-04\nPhân công Staff theo công việc trong ngày" as UCF504
+    usecase "UC-F5-05\nXem công việc hằng ngày được phân công" as UCF505
+    usecase "UC-F5-06\nXem báo cáo cơ sở" as UCF506
+    usecase "UC-F5-07\nGán vai trò cho người dùng" as UCF507
+    usecase "UC-F5-08\nCấu hình quyền truy cập dữ liệu" as UCF508
+  }
+
+  package "Flow 6 — Renewal and Overdue Handling" {
+    usecase "UC-F6-01\nNhận thông báo nhắc hạn" as UCF601
+    usecase "UC-F6-02\nYêu cầu gia hạn hợp đồng" as UCF602
+    usecase "UC-F6-03\nThanh toán phí gia hạn" as UCF603
+    usecase "UC-F6-04\nDuyệt và ghi nhận gia hạn" as UCF604
+    usecase "UC-F6-05\nPhát hiện hợp đồng quá hạn" as UCF605
+    usecase "UC-F6-06\nTính và áp phí quá hạn" as UCF606
+    usecase "UC-F6-07\nKhóa quyền truy cập ô kho quá hạn" as UCF607
+    usecase "UC-F6-08\nGửi thông báo chấm dứt hợp đồng" as UCF608
+    usecase "UC-F6-09\nChấm dứt hợp đồng và xử lý tài sản tồn" as UCF609
+    usecase "UC-F6-10\nTheo dõi hợp đồng quá hạn" as UCF610
+  }
+
+  package "Flow 7 — Support Request and Issue Handling" {
+    usecase "UC-F7-01\nGửi yêu cầu hỗ trợ" as UCF701
+    usecase "UC-F7-02\nTheo dõi trạng thái yêu cầu hỗ trợ" as UCF702
+    usecase "UC-F7-03\nTiếp nhận và phân loại yêu cầu" as UCF703
+    usecase "UC-F7-04\nPhân công Staff xử lý sự cố" as UCF704
+    usecase "UC-F7-05\nXử lý mất chìa khóa / lỗi Access Code" as UCF705
+    usecase "UC-F7-06\nXử lý ô kho hư hỏng và bảo trì" as UCF706
+    usecase "UC-F7-07\nCập nhật trạng thái ô kho sau xử lý" as UCF707
+    usecase "UC-F7-08\nĐóng yêu cầu hỗ trợ" as UCF708
+  }
+
+  package "Nền tảng" {
+    usecase "UC-SYS-01\nĐăng ký, đăng nhập, đăng xuất" as UCS01
+    usecase "UC-SYS-02\nQuản lý tài khoản người dùng" as UCS02
+    usecase "UC-SYS-03\nTheo dõi nhật ký hoạt động" as UCS03
+  }
+}
+
+SC - -> UCF101
+SC - -> UCF102
+SC - -> UCF103
+SC - -> UCF104
+SC - -> UCF105
+SC - -> UCF107
+SC - -> UCF109
+SC - -> UCF110
+SC - -> UCF205
+SC - -> UCF301
+SC - -> UCF302
+SC - -> UCF303
+SC - -> UCF304
+SC - -> UCF305
+SC - -> UCF601
+SC - -> UCF602
+SC - -> UCF603
+SC - -> UCF701
+SC - -> UCF702
+
+FS - -> UCF201
+FS - -> UCF202
+FS - -> UCF203
+FS - -> UCF204
+FS - -> UCF206
+FS - -> UCF208
+FS - -> UCF306
+FS - -> UCF307
+FS - -> UCF309
+FS - -> UCF312
+FS - -> UCF505
+FS - -> UCF703
+FS - -> UCF705
+FS - -> UCF706
+FS - -> UCF707
+FS - -> UCF708
+
+FM - -> UCF108
+FM - -> UCF207
+FM - -> UCF209
+FM - -> UCF308
+FM - -> UCF310
+FM - -> UCF311
+FM - -> UCF501
+FM - -> UCF502
+FM - -> UCF503
+FM - -> UCF504
+FM - -> UCF506
+FM - -> UCF604
+FM - -> UCF607
+FM - -> UCF608
+FM - -> UCF609
+FM - -> UCF610
+FM - -> UCF704
+
+BM - -> UCF401
+BM - -> UCF402
+BM - -> UCF403
+BM - -> UCF404
+BM - -> UCF405
+BM - -> UCF406
+BM - -> UCF407
+BM - -> UCF408
+BM - -> UCF409
+BM - -> UCF410
+BM - -> UCF411
+BM - -> UCF412
+
+SA - -> UCF507
+SA - -> UCF508
+SA - -> UCS02
+SA - -> UCS03
+
+SYS - -> UCF106
+SYS - -> UCF111
+SYS - -> UCF605
+SYS - -> UCF606
+
+UCF104 ..> UCF103 : <<include>>
+UCF104 ..> UCF105 : <<include>>
+UCF104 ..> UCF106 : <<include>>
+UCF107 ..> UCF108 : <<include>>
+UCF109 ..> UCF107 : <<include>>
+UCF203 ..> UCF201 : <<include>>
+UCF203 ..> UCF202 : <<include>>
+UCF203 ..> UCF204 : <<include>>
+UCF205 ..> UCF206 : <<include>>
+UCF207 ..> UCF205 : <<include>>
+UCF305 ..> UCF306 : <<include>>
+UCF306 ..> UCF307 : <<include>>
+UCF306 ..> UCF308 : <<include>>
+UCF308 ..> UCF309 : <<include>>
+UCF602 ..> UCF603 : <<include>>
+UCF604 ..> UCF603 : <<include>>
+UCF703 ..> UCF704 : <<include>>
+UCF708 ..> UCF707 : <<include>>
+
+UCF110 .> UCF109 : <<extend>>
+UCF111 .> UCF106 : <<extend>>
+UCF208 .> UCF201 : <<extend>>
+UCF606 .> UCF605 : <<extend>>
+UCF607 .> UCF606 : <<extend>>
+UCF608 .> UCF607 : <<extend>>
+UCF609 .> UCF608 : <<extend>>
+UCF312 .> UCF309 : <<extend>>
+UCF706 .> UCF705 : <<extend>>
+
+note bottom of UCS01
+  Mọi use case còn lại đều
+  <<include>> UC-SYS-01.
+  Các đường nối được lược bỏ
+  để sơ đồ dễ đọc.
+end note
+
+@enduml
+
+PlantUML version 1.2021.00(Sun Jan 10 17:25:05 GMT+07:00 2021)
+(MIT source distribution)
+Java Runtime: Java(TM) SE Runtime Environment
+JVM: Java HotSpot(TM) 64-Bit Server VM
+Default Encoding: UTF-8
+Language: en
+Country: US
+--></g></svg>
