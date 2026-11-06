@@ -242,6 +242,41 @@ class SystemReportServiceTest {
     }
 
     @Test
+    @DisplayName("Test Case 3.1 (Chỉ số Dòng tiền - Cash Flow): Chỉ tính giao dịch SUCCESS, không cộng gộp PENDING")
+    void testSystemRevenueReport_CashFlowOnlyIncludesSuccess() {
+        LocalDate from = LocalDate.of(2026, 10, 1);
+        LocalDate to = LocalDate.of(2026, 10, 31);
+        when(facilityRepository.findAll()).thenReturn(List.of(facility1));
+
+        RentalContract contract = RentalContract.builder()
+                .id(501L)
+                .facilityId(1L)
+                .totalRentalFee(5_000_000L)
+                .depositAmount(0L)
+                .build();
+        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(List.of(contract));
+
+        // 1 giao dịch SUCCESS 5 triệu
+        PaymentTransaction successTxn = PaymentTransaction.builder()
+                .contractId(501L).amount(5_000_000L).transactionType("INITIAL_PAYMENT").status("SUCCESS").build();
+        successTxn.setCreatedAt(java.time.Instant.parse("2026-10-05T03:00:00Z"));
+
+        // 1 giao dịch PENDING 2 triệu (đang treo)
+        PaymentTransaction pendingTxn = PaymentTransaction.builder()
+                .contractId(501L).amount(2_000_000L).transactionType("CONTRACT_RENEWAL").status("PENDING").build();
+        pendingTxn.setCreatedAt(java.time.Instant.parse("2026-10-06T03:00:00Z"));
+
+        when(paymentTransactionRepository.findByContractId(501L)).thenReturn(List.of(successTxn, pendingTxn));
+
+        SystemRevenueReportResponse report = systemReportService.getSystemRevenueReport(from, to, null);
+
+        // Kỳ vọng: Dòng tiền thực thu chỉ là 5.000.000đ, không được cộng gộp 2.000.000đ của giao dịch PENDING
+        assertEquals(5_000_000L, report.getTotalRevenue());
+        assertEquals(5_000_000L, report.getRentalRevenue());
+        assertEquals(0L, report.getRenewalRevenue(), "Giao dịch renewal PENDING không được tính vào doanh thu");
+    }
+
+    @Test
     @DisplayName("US-BM-04.1: Gộp INITIAL_PAYMENT gắn reservationId vào doanh thu thuê và cọc")
     void testSystemRevenueReport_IncludesReservationLinkedInitialPayment() {
         LocalDate from = LocalDate.of(2026, 9, 1);

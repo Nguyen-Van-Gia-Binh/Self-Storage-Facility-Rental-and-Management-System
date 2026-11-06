@@ -47,3 +47,4 @@ public class VnPayQueryResult {
         return "01".equals(transactionStatus);
     }
 }
+

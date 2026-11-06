@@ -206,4 +206,44 @@ class PaymentReconciliationSchedulerTest {
         assertEquals("PENDING", txn.getStatus(), "Phải giữ PENDING khi kết nối mạng lỗi");
         verify(paymentTransactionRepository, never()).save(txn);
     }
+
+    @Test
+    @DisplayName("Test Case 1.4 (Idempotency): Webhook IPN xử lý cùng lúc với Cronjob -> Lock hàng kiểm tra trạng thái và bỏ qua lặp")
+    void whenConcurrentWebhookArrives_thenSchedulerLocksAndSkipsDuplicateProcessing() {
+        when(vnPayGateway.configured()).thenReturn(true);
+
+        // Lúc Scheduler quét ban đầu, txn vẫn là PENDING
+        Instant tenMinsAgo = Instant.now().minus(10, ChronoUnit.MINUTES);
+        PaymentTransaction txnInList = PaymentTransaction.builder()
+                .id(5L)
+                .orderCode(1005L)
+                .status("PENDING")
+                .amount(2_000_000L)
+                .build();
+        txnInList.setCreatedAt(tenMinsAgo);
+
+        when(paymentTransactionRepository.findByStatusOrderByCreatedAtAsc("PENDING"))
+                .thenReturn(List.of(txnInList));
+
+        // Nhưng khi Scheduler đạt được Pessimistic Lock qua findByOrderCodeForUpdate,
+        // Webhook IPN ở thread khác vừa commit xong và status đã chuyển thành SUCCESS
+        PaymentTransaction txnAfterLock = PaymentTransaction.builder()
+                .id(5L)
+                .orderCode(1005L)
+                .status("SUCCESS")
+                .amount(2_000_000L)
+                .build();
+        txnAfterLock.setCreatedAt(tenMinsAgo);
+
+        when(paymentTransactionRepository.findByOrderCodeForUpdate(1005L))
+                .thenReturn(Optional.of(txnAfterLock));
+
+        int processed = scheduler.reconcilePendingPayments();
+
+        // Kỳ vọng: Scheduler phát hiện đã SUCCESS nên bỏ qua ngay lập tức
+        assertEquals(0, processed, "Không được xử lý lại đơn đã SUCCESS do Webhook xử lý trước");
+        verify(vnPayGateway, never()).queryDr(anyLong(), any());
+        verify(paymentService, never()).completeVnpayPayment(anyLong(), anyBoolean(), anyLong(), anyString(), anyString());
+        verify(paymentTransactionRepository, never()).save(any());
+    }
 }
