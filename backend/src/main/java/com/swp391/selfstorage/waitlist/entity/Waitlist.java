@@ -49,6 +49,9 @@ public class Waitlist extends BaseEntity {
     @Builder.Default
     private WaitlistStatus status = WaitlistStatus.WAITING;
 
+    @Column(name = "contact_phone", length = 20)
+    private String contactPhone;
+
     @Column(name = "assigned_fm_id")
     private Long assignedFmId;
 

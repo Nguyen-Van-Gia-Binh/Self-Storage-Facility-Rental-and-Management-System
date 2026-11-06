@@ -8,6 +8,8 @@ export interface UserSession {
   email: string;
   fullName: string;
   role: UserRole;
+  phone?: string;
+  phoneNumber?: string;
   facilityId?: number;
 }
 

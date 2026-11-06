@@ -18,6 +18,7 @@ import com.swp391.selfstorage.unit.repository.FacilityUnitTypePriceRepository;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
 import com.swp391.selfstorage.user.entity.UserRole;
 import com.swp391.selfstorage.user.entity.UserStatus;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -44,12 +45,18 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class ReservationCreationTest {
 
-    @Mock private ReservationRepository reservationRepository;
-    @Mock private StorageUnitRepository storageUnitRepository;
-    @Mock private RentalContractRepository rentalContractRepository;
-    @Mock private FacilityUnitTypePriceRepository facilityUnitTypePriceRepository;
-    @Mock private PolicyVersionRepository policyVersionRepository;
-    @InjectMocks private ReservationServiceImpl service;
+    @Mock
+    private ReservationRepository reservationRepository;
+    @Mock
+    private StorageUnitRepository storageUnitRepository;
+    @Mock
+    private RentalContractRepository rentalContractRepository;
+    @Mock
+    private FacilityUnitTypePriceRepository facilityUnitTypePriceRepository;
+    @Mock
+    private PolicyVersionRepository policyVersionRepository;
+    @InjectMocks
+    private ReservationServiceImpl service;
 
     private CreateReservationRequest request;
     private UserPrincipal testCustomer;
@@ -58,8 +65,7 @@ class ReservationCreationTest {
     void setUp() {
         testCustomer = new UserPrincipal(
                 1L, "nguyenvana@example.com", "password", "Nguyễn Văn A",
-                UserRole.STORAGE_CUSTOMER, UserStatus.ACTIVE, Collections.emptyList(), Collections.emptyList()
-        );
+                UserRole.STORAGE_CUSTOMER, UserStatus.ACTIVE, Collections.emptyList(), Collections.emptyList());
 
         request = new CreateReservationRequest();
         request.setFacilityId(1L);
@@ -87,17 +93,24 @@ class ReservationCreationTest {
                 .renewalMinMonths(1)
                 .renewalMaxMonths(12)
                 .build();
-        lenient().when(policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any()))
+        lenient()
+                .when(policyVersionRepository
+                        .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any()))
                 .thenReturn(Optional.of(policy));
 
         FacilityUnitTypePrice price = new FacilityUnitTypePrice();
         price.setMonthlyPrice(1200000L);
-        lenient().when(facilityUnitTypePriceRepository.findByFacilityIdAndUnitTypeId(1L, 2L)).thenReturn(Optional.of(price));
-        lenient().when(rentalContractRepository.existsOverlappingContractForUnit(eq(10L), any(), any(), anyInt(), eq(0L)))
+        lenient().when(facilityUnitTypePriceRepository.findByFacilityIdAndUnitTypeId(1L, 2L))
+                .thenReturn(Optional.of(price));
+        lenient()
+                .when(rentalContractRepository.existsOverlappingContractForUnit(eq(10L), any(), any(), anyInt(),
+                        eq(0L)))
                 .thenReturn(false);
         lenient().when(storageUnitRepository.countExploitableUnits(eq(1L), eq(2L), any())).thenReturn(1L);
         lenient().when(storageUnitRepository.countBusyUnits(eq(1L), eq(2L), any(), any(), eq(15))).thenReturn(0L);
-        lenient().when(reservationRepository.countUnassignedOverlappingReservations(eq(1L), eq(2L), any(), any(), any(), eq(15)))
+        lenient()
+                .when(reservationRepository.countUnassignedOverlappingReservations(eq(1L), eq(2L), any(), any(), any(),
+                        eq(15)))
                 .thenReturn(0L);
         lenient().when(reservationRepository.existsActivePendingByCustomerId(any(), any(), any()))
                 .thenReturn(false);
@@ -150,6 +163,7 @@ class ReservationCreationTest {
     @Test
     @DisplayName("BR-AVL-04: Đặt trước cho khoảng thời gian tương lai không trùng lịch (Future Claim) -> Thành công")
     void shouldCreateReservation_whenFutureClaimDifferentYear_Success() {
+        ReflectionTestUtils.setField(service, "maxAdvanceDays", 365);
         // Đặt trước cho năm 2027 (15/01/2027 đến 15/01/2028)
         request.setStartDate(LocalDate.of(2027, 1, 15));
         request.setRentalMonths(12);
@@ -199,7 +213,8 @@ class ReservationCreationTest {
         when(storageUnitRepository.countExploitableUnits(eq(1L), eq(2L), any())).thenReturn(1L);
         when(storageUnitRepository.countBusyUnits(eq(1L), eq(2L), any(), any(), eq(15))).thenReturn(1L);
 
-        CustomException exception = assertThrows(CustomException.class, () -> service.createReservation(request, testCustomer));
+        CustomException exception = assertThrows(CustomException.class,
+                () -> service.createReservation(request, testCustomer));
 
         assertEquals(ErrorCode.CAPACITY_NOT_AVAILABLE, exception.getErrorCode());
         verify(reservationRepository, never()).save(any());
@@ -210,7 +225,8 @@ class ReservationCreationTest {
     void shouldThrowInvalidStartDate_whenStartDateIsInThePast() {
         request.setStartDate(LocalDate.now().minusDays(1));
 
-        CustomException exception = assertThrows(CustomException.class, () -> service.createReservation(request, testCustomer));
+        CustomException exception = assertThrows(CustomException.class,
+                () -> service.createReservation(request, testCustomer));
 
         assertEquals(ErrorCode.INVALID_START_DATE, exception.getErrorCode());
         verify(reservationRepository, never()).save(any());
@@ -239,7 +255,8 @@ class ReservationCreationTest {
     void shouldRejectReservation_whenContractOverlapsWithinBuffer() {
         when(storageUnitRepository.countBusyUnits(eq(1L), eq(2L), any(), any(), eq(15))).thenReturn(1L);
 
-        CustomException exception = assertThrows(CustomException.class, () -> service.createReservation(request, testCustomer));
+        CustomException exception = assertThrows(CustomException.class,
+                () -> service.createReservation(request, testCustomer));
 
         assertEquals(ErrorCode.CAPACITY_NOT_AVAILABLE, exception.getErrorCode());
         verify(reservationRepository, never()).save(any());
@@ -250,7 +267,8 @@ class ReservationCreationTest {
     void shouldRejectReservation_whenPriceIsMissing() {
         when(facilityUnitTypePriceRepository.findByFacilityIdAndUnitTypeId(1L, 2L)).thenReturn(Optional.empty());
 
-        CustomException exception = assertThrows(CustomException.class, () -> service.createReservation(request, testCustomer));
+        CustomException exception = assertThrows(CustomException.class,
+                () -> service.createReservation(request, testCustomer));
 
         assertEquals(ErrorCode.UNIT_TYPE_NOT_FOUND, exception.getErrorCode());
         verify(reservationRepository, never()).save(any());
@@ -293,10 +311,12 @@ class ReservationCreationTest {
     @Test
     @DisplayName("Ném ngoại lệ PENDING_RESERVATION_EXISTS khi khách hàng đã có đơn giữ chỗ chưa thanh toán")
     void shouldThrowPendingReservationExists_whenCustomerAlreadyHasActivePendingReservation() {
-        when(reservationRepository.existsActivePendingByCustomerId(eq(testCustomer.getId()), eq(ReservationStatus.PENDING_PAYMENT), any(OffsetDateTime.class)))
+        when(reservationRepository.existsActivePendingByCustomerId(eq(testCustomer.getId()),
+                eq(ReservationStatus.PENDING_PAYMENT), any(OffsetDateTime.class)))
                 .thenReturn(true);
 
-        CustomException exception = assertThrows(CustomException.class, () -> service.createReservation(request, testCustomer));
+        CustomException exception = assertThrows(CustomException.class,
+                () -> service.createReservation(request, testCustomer));
         assertEquals(ErrorCode.PENDING_RESERVATION_EXISTS, exception.getErrorCode());
         assertTrue(exception.getMessage().contains("thanh toán"));
     }

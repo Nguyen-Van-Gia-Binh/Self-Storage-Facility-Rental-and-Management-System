@@ -75,7 +75,7 @@ export const WaitlistInboxPage: React.FC = () => {
     try {
       setLoading(true);
       const data = await fetchFacilityWaitlists(facilityId);
-      setWaitlists(data);
+      setWaitlists(Array.isArray(data) ? data : []);
     } catch (err: any) {
       showToast(err.message || 'Lỗi tải danh sách chờ', 'error');
     } finally {
@@ -93,16 +93,18 @@ export const WaitlistInboxPage: React.FC = () => {
   useEffect(() => {
     const timer = setInterval(() => {
       setWaitlists((prev) =>
-        prev.map((item) => {
-          if (item.status === 'CONTACTING' && item.contactTimeoutAt) {
-            const diff = Math.max(
-              0,
-              Math.floor((new Date(item.contactTimeoutAt).getTime() - Date.now()) / 1000)
-            );
-            return { ...item, remainingTimeoutSeconds: diff };
-          }
-          return item;
-        })
+        Array.isArray(prev)
+          ? prev.map((item) => {
+              if (item.status === 'CONTACTING' && item.contactTimeoutAt) {
+                const diff = Math.max(
+                  0,
+                  Math.floor((new Date(item.contactTimeoutAt).getTime() - Date.now()) / 1000)
+                );
+                return { ...item, remainingTimeoutSeconds: diff };
+              }
+              return item;
+            })
+          : []
       );
     }, 1000);
     return () => clearInterval(timer);
@@ -192,7 +194,8 @@ export const WaitlistInboxPage: React.FC = () => {
   };
 
   // Filtered waitlists
-  const filteredWaitlists = waitlists.filter((item) => {
+  const safeWaitlists = Array.isArray(waitlists) ? waitlists : [];
+  const filteredWaitlists = safeWaitlists.filter((item) => {
     const matchesStatus =
       statusFilter === 'ALL' || item.status === statusFilter;
     const matchesSearch =
@@ -200,14 +203,14 @@ export const WaitlistInboxPage: React.FC = () => {
       (item.customerName && item.customerName.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (item.customerPhone && item.customerPhone.includes(searchTerm)) ||
       (item.unitTypeName && item.unitTypeName.toLowerCase().includes(searchTerm.toLowerCase()));
-    return matchesStatus && matchesSearch;
+    return Boolean(matchesStatus && matchesSearch);
   });
 
   // KPI stats
-  const countWaiting = waitlists.filter((w) => w.status === 'WAITING').length;
-  const countContacting = waitlists.filter((w) => w.status === 'CONTACTING').length;
-  const countFollowUp = waitlists.filter((w) => w.status === 'PENDING_FOLLOW_UP').length;
-  const countConverted = waitlists.filter((w) => w.status === 'CONVERTED').length;
+  const countWaiting = safeWaitlists.filter((w) => w.status === 'WAITING').length;
+  const countContacting = safeWaitlists.filter((w) => w.status === 'CONTACTING').length;
+  const countFollowUp = safeWaitlists.filter((w) => w.status === 'PENDING_FOLLOW_UP').length;
+  const countConverted = safeWaitlists.filter((w) => w.status === 'CONVERTED').length;
 
   const formatSeconds = (secs?: number) => {
     if (!secs || secs <= 0) return '00:00:00';
@@ -247,11 +250,15 @@ export const WaitlistInboxPage: React.FC = () => {
             value={selectedFacilityId ?? ''}
             onChange={(e) => setSelectedFacilityId(Number(e.target.value))}
           >
-            {facilities.map((fac) => (
-              <option key={fac.id} value={fac.id}>
-                {fac.name}
-              </option>
-            ))}
+            {facilities.length === 0 ? (
+              <option value="">Chưa có cơ sở phân công</option>
+            ) : (
+              facilities.map((fac) => (
+                <option key={fac.id} value={fac.id}>
+                  {fac.name}
+                </option>
+              ))
+            )}
           </select>
           <button
             onClick={() => selectedFacilityId && loadWaitlists(selectedFacilityId)}

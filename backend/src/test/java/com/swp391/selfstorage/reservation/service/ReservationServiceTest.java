@@ -223,6 +223,25 @@ class ReservationServiceTest {
     }
 
     @Test
+    @DisplayName("createReservation ném ADVANCE_BOOKING_LIMIT_EXCEEDED khi startDate vượt quá 30 ngày")
+    void createReservation_StartDateExceeds30Days_ShouldThrow() {
+        when(rentalContractRepository.existsByCustomerIdAndStatus(15L, ContractStatus.OVERDUE)).thenReturn(false);
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(activeFacility));
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(activeUnitType));
+
+        CreateReservationRequest req = new CreateReservationRequest();
+        req.setFacilityId(1L);
+        req.setUnitTypeId(7L);
+        req.setStartDate(LocalDate.now().plusDays(31));
+        req.setRentalMonths(3);
+
+        CustomException ex = assertThrows(CustomException.class, () ->
+                reservationService.createReservation(req, customerUser)
+        );
+        assertEquals(ErrorCode.ADVANCE_BOOKING_LIMIT_EXCEEDED, ex.getErrorCode());
+    }
+
+    @Test
     @DisplayName("BR-AVL-03: Hết suất hạng kho thì từ chối")
     void createReservation_NoCapacity_ShouldThrow() {
         when(rentalContractRepository.existsByCustomerIdAndStatus(15L, ContractStatus.OVERDUE)).thenReturn(false);

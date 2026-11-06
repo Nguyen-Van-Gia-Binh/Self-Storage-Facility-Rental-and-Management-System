@@ -107,19 +107,25 @@ class WaitlistServiceTest {
     }
 
     @Test
-    @DisplayName("registerWaitlist: Đăng ký hàng đợi thành công khi hợp lệ")
+    @DisplayName("registerWaitlist: Đăng ký hàng đợi thành công khi hết chỗ trong 30 ngày")
     void registerWaitlist_Success() {
         CreateWaitlistRequest request = CreateWaitlistRequest.builder()
                 .facilityId(1L)
                 .unitTypeId(5L)
                 .targetStartDate(LocalDate.now().plusDays(5))
                 .rentalMonths(2)
+                .phoneNumber("0912345678")
                 .build();
 
         when(facilityRepository.findById(1L)).thenReturn(Optional.of(activeFacility));
         when(unitTypeRepository.findById(5L)).thenReturn(Optional.of(activeUnitType));
         when(waitlistRepository.existsByCustomerIdAndFacilityIdAndUnitTypeIdAndStatusIn(anyLong(), anyLong(), anyLong(), any()))
                 .thenReturn(false);
+
+        // Giả lập kho đã hết chỗ (exploitable = 5, busy = 5 -> available = 0)
+        when(storageUnitRepository.countExploitableUnits(eq(1L), eq(5L), any())).thenReturn(5L);
+        when(storageUnitRepository.countBusyUnits(eq(1L), eq(5L), any(), any(), anyInt())).thenReturn(5L);
+        when(reservationRepository.countUnassignedOverlappingReservations(eq(1L), eq(5L), any(), any(), any(), anyInt())).thenReturn(0L);
 
         Waitlist savedWaitlist = Waitlist.builder()
                 .customerId(10L)
@@ -128,6 +134,7 @@ class WaitlistServiceTest {
                 .targetStartDate(LocalDate.now().plusDays(5))
                 .rentalMonths(2)
                 .status(WaitlistStatus.WAITING)
+                .contactPhone("0912345678")
                 .build();
         savedWaitlist.setId(99L);
 
@@ -138,7 +145,34 @@ class WaitlistServiceTest {
         assertNotNull(response);
         assertEquals(99L, response.getId());
         assertEquals(WaitlistStatus.WAITING, response.getStatus());
+        assertEquals("0912345678", response.getCustomerPhone());
         verify(waitlistRepository, times(1)).save(any(Waitlist.class));
+    }
+
+    @Test
+    @DisplayName("registerWaitlist: Từ chối vào Waitlist nếu trong 30 ngày vẫn còn ô kho trống (khuyên đặt trực tiếp)")
+    void registerWaitlist_CapacityAvailable_ThrowsException() {
+        CreateWaitlistRequest request = CreateWaitlistRequest.builder()
+                .facilityId(1L)
+                .unitTypeId(5L)
+                .targetStartDate(LocalDate.now().plusDays(5))
+                .rentalMonths(2)
+                .phoneNumber("0912345678")
+                .build();
+
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(activeFacility));
+        when(unitTypeRepository.findById(5L)).thenReturn(Optional.of(activeUnitType));
+        when(waitlistRepository.existsByCustomerIdAndFacilityIdAndUnitTypeIdAndStatusIn(anyLong(), anyLong(), anyLong(), any()))
+                .thenReturn(false);
+
+        // Giả lập kho còn chỗ (exploitable = 5, busy = 2 -> available = 3)
+        when(storageUnitRepository.countExploitableUnits(eq(1L), eq(5L), any())).thenReturn(5L);
+        when(storageUnitRepository.countBusyUnits(eq(1L), eq(5L), any(), any(), anyInt())).thenReturn(2L);
+        when(reservationRepository.countUnassignedOverlappingReservations(eq(1L), eq(5L), any(), any(), any(), anyInt())).thenReturn(0L);
+
+        CustomException ex = assertThrows(CustomException.class, () ->
+                waitlistService.registerWaitlist(request, customerUser));
+        assertEquals(ErrorCode.CAPACITY_AVAILABLE_SHOULD_BOOK_NOW, ex.getErrorCode());
     }
 
     @Test
@@ -149,6 +183,7 @@ class WaitlistServiceTest {
                 .unitTypeId(5L)
                 .targetStartDate(LocalDate.now().plusDays(5))
                 .rentalMonths(2)
+                .phoneNumber("0912345678")
                 .build();
 
         when(facilityRepository.findById(1L)).thenReturn(Optional.of(activeFacility));

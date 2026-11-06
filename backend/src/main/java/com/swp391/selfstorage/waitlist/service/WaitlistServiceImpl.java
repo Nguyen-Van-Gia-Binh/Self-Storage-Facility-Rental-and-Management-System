@@ -40,6 +40,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -102,6 +103,26 @@ public class WaitlistServiceImpl implements WaitlistService {
         int rentalMonths = Math.max(1, request.getRentalMonths());
         LocalDate targetStartDate = request.getTargetStartDate() != null ? request.getTargetStartDate() : LocalDate.now();
 
+        // Kiểm tra nếu trong 30 ngày tới mà hạng kho vẫn còn capacity trống -> hướng dẫn đặt trực tiếp
+        if (ChronoUnit.DAYS.between(LocalDate.now(), targetStartDate) <= 30 && storageUnitRepository != null) {
+            PolicyVersion policy = policyVersionRepository
+                    .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(OffsetDateTime.now(ZoneOffset.UTC))
+                    .orElse(null);
+            int bufferDays = (policy != null && policy.getRentalBufferDays() != null) ? policy.getRentalBufferDays() : 15;
+            LocalDate endDateExclusive = targetStartDate.plusMonths(rentalMonths);
+            long exploitable = storageUnitRepository.countExploitableUnits(
+                    request.getFacilityId(), request.getUnitTypeId(),
+                    Arrays.asList(StorageUnitStatus.MAINTENANCE, StorageUnitStatus.OUT_OF_SERVICE));
+            long busy = storageUnitRepository.countBusyUnits(
+                    request.getFacilityId(), request.getUnitTypeId(), targetStartDate, endDateExclusive, bufferDays);
+            long unassigned = reservationRepository.countUnassignedOverlappingReservations(
+                    request.getFacilityId(), request.getUnitTypeId(), targetStartDate, endDateExclusive, OffsetDateTime.now(ZoneOffset.UTC), bufferDays);
+            long available = Math.max(0, exploitable - busy - unassigned);
+            if (available > 0) {
+                throw new CustomException(ErrorCode.CAPACITY_AVAILABLE_SHOULD_BOOK_NOW);
+            }
+        }
+
         Waitlist waitlist = Waitlist.builder()
                 .customerId(customerId)
                 .facilityId(request.getFacilityId())
@@ -109,10 +130,12 @@ public class WaitlistServiceImpl implements WaitlistService {
                 .targetStartDate(targetStartDate)
                 .rentalMonths(rentalMonths)
                 .status(WaitlistStatus.WAITING)
+                .contactPhone(request.getPhoneNumber())
+                .contactNotes(request.getContactNotes())
                 .build();
 
         Waitlist saved = waitlistRepository.save(waitlist);
-        return mapToResponse(saved, null, null, null);
+        return enrichResponses(Collections.singletonList(saved)).get(0);
     }
 
     @Override
@@ -408,11 +431,14 @@ public class WaitlistServiceImpl implements WaitlistService {
                 remainingSecs = Math.max(0, Duration.between(now, w.getContactTimeoutAt()).getSeconds());
             }
 
+            String effectivePhone = w.getContactPhone() != null ? w.getContactPhone() : (customer != null ? customer.getPhone() : null);
+
             return WaitlistResponse.builder()
                     .id(w.getId())
                     .customerId(w.getCustomerId())
                     .customerName(customer != null ? customer.getFullName() : null)
-                    .customerPhone(customer != null ? customer.getPhone() : null)
+                    .customerPhone(effectivePhone)
+                    .contactPhone(w.getContactPhone())
                     .customerEmail(customer != null ? customer.getEmail() : null)
                     .facilityId(w.getFacilityId())
                     .facilityName(facility != null ? facility.getName() : null)
@@ -439,11 +465,13 @@ public class WaitlistServiceImpl implements WaitlistService {
     }
 
     private WaitlistResponse mapToResponse(Waitlist w, AppUser customer, Facility facility, UnitType unitType) {
+        String effectivePhone = w.getContactPhone() != null ? w.getContactPhone() : (customer != null ? customer.getPhone() : null);
         return WaitlistResponse.builder()
                 .id(w.getId())
                 .customerId(w.getCustomerId())
                 .customerName(customer != null ? customer.getFullName() : null)
-                .customerPhone(customer != null ? customer.getPhone() : null)
+                .customerPhone(effectivePhone)
+                .contactPhone(w.getContactPhone())
                 .customerEmail(customer != null ? customer.getEmail() : null)
                 .facilityId(w.getFacilityId())
                 .facilityName(facility != null ? facility.getName() : null)
