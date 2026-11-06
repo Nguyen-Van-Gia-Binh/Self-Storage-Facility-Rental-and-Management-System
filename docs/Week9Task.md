@@ -662,6 +662,8 @@ Mỗi Worker Subagent sau khi hoàn thành việc vẽ sơ đồ bắt buộc ph
 
 ---
 
+---
+
 ### 6.1. Báo cáo Độ lệch Mã nguồn & Danh sách Mã nguồn Chết: Flow 1 (Nguyễn Phạm Xuân Nhi — WS1)
 
 #### 📊 BÁO CÁO ĐỘ LỆCH MÃ NGUỒN: FLOW 1 — STORAGE UNIT RESERVATION & WAITLIST CRM
@@ -728,6 +730,72 @@ Mỗi Worker Subagent sau khi hoàn thành việc vẽ sơ đồ bắt buộc ph
 | STT | File / Class / Method | Vị trí (Package / Directory) | Lý do nghi ngờ (Không caller, Mock cũ, mồ côi) | Đề xuất xử lý |
 | :--- | :--- | :--- | :--- | :--- |
 | 1 | `ReturnInspectionForm.tsx` | `frontend/src/features/manager/components/` | File trùng lặp hoàn toàn với `frontend/src/features/staff/components/ReturnInspectionForm.tsx`. Không có bất kỳ trang hay router nào của Manager import component này (Quản lý chỉ xem kết quả nghiệm thu và duyệt quyết toán cọc trong `SettlementApprovalModal.tsx`). | Xóa bỏ để tránh trùng lặp code và nhầm lẫn trách nhiệm vai trò. |
+
+---
+
+### 6.6. Báo cáo Độ lệch Mã nguồn & Danh sách Mã nguồn Chết: Flow 6 (Nguyễn Phạm Xuân Nhi & Huỳnh Nhật — WS1/WS3)
+
+#### 📊 BÁO CÁO ĐỘ LỆCH MÃ NGUỒN: FLOW 6 — RENEWAL & OVERDUE LIFECYCLE
+
+- **Người phụ trách (Assignee):** **Nguyễn Phạm Xuân Nhi** (WS1 — Sub-flow 6.1) & **Huỳnh Nhật** (WS3 — Sub-flow 6.2)
+- **Sơ đồ HTML Workflow (6.1):** `docs/diagrams/flow-6-1-renewal-workflow.html`
+- **Sơ đồ HTML Lifecycle (6.2):** `docs/diagrams/flow-6-2-overdue-lifecycle.html`
+- **Tình trạng nghiệm thu:** [x] Finalize thành công 4 gates (Exit code 0, showcase profile)
+
+##### 1. Bảng đối soát thiết kế vs thực tế:
+| Bước nghiệp vụ theo Thiết kế (`docs/WORKFLOWS.md` & `BR-*`) | Hiện trạng Mã nguồn Thực tế | File & Dòng Code kiểm chứng | Đánh giá Trạng thái |
+| :--- | :--- | :--- | :--- |
+| **1. Khóa tự do gia hạn trực tuyến tại mốc T-20 (`BR-REN-01..09`)** | Đã cài đặt kiểm tra `daysUntilEnd < 20`, ném lỗi `RENEWAL_DEADLINE_PASSED` và vô hiệu hóa nút gia hạn tự phục vụ trên Portal | `RenewalServiceImpl.java#L69-L76`<br>`RenewalPage.tsx#L60-L95` | `[Implemented]` |
+| **2. Kiểm tra xung đột lịch đặt trước (`BR-REN-03` / `CAPACITY_NOT_AVAILABLE`)** | Tự động kiểm tra `existsOverlappingReservationForUnit` và `existsOverlappingContractForUnit`; nếu trùng kích hoạt Conflict View | `RenewalServiceImpl.java#L92-L109`<br>`useRenewalPricing.ts#L47-L56` | `[Implemented]` |
+| **3. Snapshot đơn giá thuê & Bảo lưu tiền cọc gốc (`BR-DEP-01` / `BR-REN-05`)** | Lấy snapshot đơn giá tháng hiện tại của cơ sở, tiền cọc được bảo lưu từ hợp đồng cũ (không thu thêm cọc) | `RenewalServiceImpl.java#L111-L122` | `[Implemented]` |
+| **4. Gia hạn cho hợp đồng OVERDUE đã tất toán phạt (`BR-REN-06`)** | Cho phép gia hạn nếu `overdueFeeAccrued == 0`; sau khi gia hạn thành công tự động khôi phục hợp đồng sang `ACTIVE` | `RenewalServiceImpl.java#L146-L150`<br>`RenewalExpiryBanner.tsx#L179-L200` | `[Implemented]` |
+| **5. Cơ chế FM duyệt ngoại lệ và Late-Binding Bumping (`BR-REN-10`, `BR-BMP-01`)** | Đã hoàn thiện tài liệu đặc tả và quy trình nghiệp vụ; mã nguồn backend đang hỗ trợ Reassign Unit thủ công | `SPEC-WAITLIST-RENEWAL-UNITTYPE-REDESIGN.md#L118-L133` | `[Compliant with Spec]` |
+| **6. Thời gian ân hạn 3 ngày D+1..D+3 (`BR-OVD-01`, `BR-OVD-02`)** | Cronjob chạy 00:00:00 hàng ngày, chuyển OVERDUE nhưng reset `overdueFeeAccrued = 0`; cho phép trả kho nhận 100% cọc | `OverdueProcessingServiceImpl.java#L93-L107`<br>`OverdueCronJob.java#L25-L40` | `[Implemented]` |
+| **7. Phạt 10% tiền cọc/ngày từ D+4 đến D+9 (`BR-OVD-03`, `BR-OVD-04`)** | Tự động tính phí phạt lũy tiến theo ngày dựa trên tỷ lệ phạt của policy, chạm trần tối đa 100% tiền cọc | `OverdueProcessingServiceImpl.java#L108-L124` | `[Implemented]` |
+| **8. Khóa mã PIN điện tử mở kho tại mốc D+7 (`BR-OVD-05`)** | Khi chạm mốc D+7, cronjob tự động set `accessCode = null`, chặn toàn bộ quyền ra vào của khách quá hạn | `OverdueProcessingServiceImpl.java#L125-L131` | `[Implemented]` |
+| **9. Cưỡng chế chấm dứt & Niêm phong ô kho tại D+10 (`BR-OVD-07`)** | Hợp đồng chuyển `TERMINATED`, cấn trừ cọc, ô kho chuyển sang `MAINTENANCE` để niêm phong đồ tồn và kiểm kê | `OverdueProcessingServiceImpl.java#L132-L160` | `[Implemented]` |
+| **10. Tự động hoàn tất bảo trì ô kho sau 15 ngày (D+15+)** | Sau 15 ngày bảo trì dọn dẹp đồ tồn, ô kho tự động chuyển về `AVAILABLE` (hoặc `RESERVED` nếu có khách mới chờ) | `OverdueProcessingServiceImpl.java#L70-L82` | `[Implemented]` |
+
+##### 2. Danh sách Mã nguồn Chết / Cần dọn dẹp (Dead Code Candidates):
+| STT | File / Class / Method | Vị trí (Package / Directory) | Lý do nghi ngờ (Không caller, Mock cũ, mồ côi) | Đề xuất xử lý |
+| :---: | :--- | :--- | :--- | :--- |
+| 1 | `RenewalModal.tsx` | `frontend/src/features/customer/` | Modal cũ đã được thay thế hoàn toàn bởi trang quy trình 3 bước `RenewalPage.tsx` | Xóa bỏ (Dead Code) |
+| 2 | `LateRenewalApprovalPage.tsx` | `frontend/src/features/manager/` | File trang chưa được tích hợp router, quy trình duyệt ngoại lệ hiện được xử lý trực tiếp trên Allocation Workbench | Tạm đóng / Gỡ bỏ |
+| 3 | `OverdueContractsPage.tsx` | `frontend/src/features/manager/` | Trang quản lý nợ cũ, đã được chuyển sang phân hệ BOM tập trung `OverdueContractsTable.tsx` | Xóa bỏ (Dead Code) |
+
+---
+
+### 6.4. Báo cáo Độ lệch Mã nguồn & Danh sách Mã nguồn Chết: Flow 2 (Nguyễn Văn Gia Bình — WS2)
+
+#### 📊 BÁO CÁO ĐỘ LỆCH MÃ NGUỒN: FLOW 2 — STORAGE CHECK-IN AND HANDOVER FLOW
+
+- **Người phụ trách (Assignee):** **Nguyễn Văn Gia Bình** (WS2 — Cơ sở, Kho & Vận hành / Technical Lead)
+- **Sơ đồ HTML Archify Standalone:**
+  - Sơ đồ Quy trình Nghiệp vụ (Workflow): [.archify/workflow-flow2-checkin-handover-20261106-121730/flow2-checkin-handover-workflow.html](file:///c:/Users/admin/Documents/A_FPT/Tempory_Project/Self-Storage-Facility-Rental-and-Management-System/.archify/workflow-flow2-checkin-handover-20261106-121730/flow2-checkin-handover-workflow.html)
+  - Sơ đồ Vòng đời Trạng thái (Lifecycle): [.archify/lifecycle-flow2-contract-checkin-20261106-121730/flow2-contract-checkin-lifecycle.html](file:///c:/Users/admin/Documents/A_FPT/Tempory_Project/Self-Storage-Facility-Rental-and-Management-System/.archify/lifecycle-flow2-contract-checkin-20261106-121730/flow2-contract-checkin-lifecycle.html)
+- **Tình trạng nghiệm thu:** [x] Finalize thành công 4 gates (`validate: pass`, `deliver: pass`, `check: pass`, `browser-check: pass`) trên profile `showcase`, 0 diagnostics, Exit code 0.
+- **Commit Snapshot đối chiếu:** `aa2e49023f059a4173225f87f7fb325341466ee2`
+
+##### 1. Bảng đối soát thiết kế vs thực tế:
+
+| Bước nghiệp vụ theo Thiết kế (`docs/WORKFLOWS.md § 3`) | Hiện trạng Mã nguồn Thực tế | File & Dòng Code kiểm chứng | Đánh giá Trạng thái |
+| :--- | :--- | :--- | :--- |
+| **1. Bàn làm việc Bàn giao Nhân viên (`FS-01`, `FS-02`)** | Thiết kế ghi `CheckInDeskPage.tsx`, thực tế tổ chức hợp nhất thành `StaffCheckInPage.tsx` tích hợp component `CustomerVerificationCard`, `HandoverInspectionForm`, `EvidencePhotoCapture`, và `SignaturePad`. | `frontend/src/features/staff/pages/StaffCheckInPage.tsx#L35-L330`<br>`frontend/src/features/staff/components/CustomerVerificationCard.tsx#L1-L85` | `[Implemented - Consolidated UI]` |
+| **2. Thẻ nhận kho Online Khách hàng (`SC-04`)** | Thiết kế ghi `DigitalCheckInPage.tsx`, thực tế tối ưu trải nghiệm dưới dạng modal `DigitalMoveInPassModal.tsx` hiển thị mã QR hợp đồng, sơ đồ chỉ dẫn, mã kho và hotline ngay sau thanh toán hoặc từ `MyUnitsPage.tsx`. | `frontend/src/features/customer/components/DigitalMoveInPassModal.tsx#L38-L225` | `[Implemented - Modal UX]` |
+| **3. Bản ghi Biên bản Bàn giao & Entity (`BR-CHK-02`, `FS-02`)** | Không tách riêng `InspectionController`/`InspectionServiceImpl`. Biên bản bàn giao được mô hình hóa qua entity `HandoverRecord`, xử lý đồng bộ transactional trong `ContractController.checkIn()` và `ContractServiceImpl.checkIn()`. | `backend/src/main/java/com/swp391/selfstorage/contract/entity/HandoverRecord.java#L9-L53`<br>`backend/src/main/java/com/swp391/selfstorage/contract/service/impl/ContractServiceImpl.java#L194-L242` | `[Architectural Simplification - Compliant]` |
+| **4. Kiểm tra Hiện trường 4 Tiêu chí (`BR-CHK-02`)** | Cài đặt đầy đủ 4 tiêu chí bắt buộc: Vệ sinh sạch sẽ, cửa cuốn trơn tru, tường vách kiên cố, khóa thông minh hoạt động. Khách và nhân viên phải tích chọn đủ 4 điểm mới mở khóa khung ký số. | `frontend/src/features/staff/components/HandoverInspectionForm.tsx#L22-L56`<br>`frontend/src/features/staff/components/SignaturePad.tsx#L1-L60` | `[Fully Implemented]` |
+| **5. Xử lý Ô hỏng Hiện trường & Đổi ô (`BR-CHK-03`, `FM-02`, `FS-03`)** | Nhân viên từ chối bàn giao qua `/handover-rejection` (ô chuyển `MAINTENANCE`, hợp đồng `TERMINATED`, hoàn tiền 100% trong 3 ngày). Nếu còn ô trống cùng loại, Quản lý (FM) thực hiện đổi ô ngoại lệ qua `/reassign-unit`. | `backend/src/main/java/com/swp391/selfstorage/contract/controller/ContractController.java#L134-L160`<br>`backend/src/main/java/com/swp391/selfstorage/contract/service/impl/ContractServiceImpl.java#L245-L281`, `L628-L730` | `[Fully Implemented]` |
+| **6. Tự động Kích hoạt T+11 & Khách không đến (`BR-CAN-04`, `BR-CHK-05`)** | Tác vụ nền `AutoCheckInActivationScheduler` chạy lúc 00:00 hằng ngày: sau 10 ngày ân hạn (`cutoffDate = LocalDate.now().minusDays(10)`), tự kích hoạt hợp đồng sang `ACTIVE`, ô sang `OCCUPIED`, giữ 100% doanh thu. Mã PIN tự sinh nhưng hiện mới ghi log console `[Console Log / Mock Stub]`. | `backend/src/main/java/com/swp391/selfstorage/contract/scheduler/AutoCheckInActivationScheduler.java#L36-L78` | `[Implemented - Notification Mocked]` |
+| **7. Dời lịch nhận kho & Hủy hợp đồng (`BR-CAN-01..04`, `BR-RES-06`)** | Cho phép khách hàng dời ngày bắt đầu thuê trước 48h (tối đa 1-7 ngày) qua `/reschedule-period`. Cho phép hủy nhận kho trước hạn qua `/cancel` với chính sách hoàn tiền 3 tầng, trả ô kho về trạng thái `AVAILABLE`. | `backend/src/main/java/com/swp391/selfstorage/contract/service/impl/ContractServiceImpl.java#L1553-L1610`, `L1713-L1820`<br>`frontend/src/features/customer/components/CancelCheckInModal.tsx#L28-L75` | `[Fully Implemented]` |
+
+##### 2. Danh sách Mã nguồn Chết / Cần dọn dẹp (Dead Code Candidates):
+
+| STT | File / Class / Method | Vị trí (Package / Directory) | Hiện trạng kiểm tra & Caller Call-sites | Đề xuất xử lý |
+| :--- | :--- | :--- | :--- | :--- |
+| 1 | `AccessCodePinModal.tsx` | `frontend/src/features/staff/components/` | Component modal hiển thị mã PIN 6 số cho nhân viên xem và hỗ trợ khách hàng đọc lại mã tại quầy. Đã được import và sử dụng trong `StaffCheckInPage.tsx`. | **Giữ lại & Sử dụng tốt** (Không phải dead code). |
+| 2 | `CustomerVerificationCard.tsx` | `frontend/src/features/staff/components/` | Thẻ kiểm tra danh tính khách hàng (họ tên, CCCD, số điện thoại, mã hợp đồng). Được tích hợp trực tiếp vào `StaffCheckInPage.tsx`. | **Giữ lại & Sử dụng tốt** (Không phải dead code). |
+| 3 | `HandoverRejectionModal.tsx` | `frontend/src/features/staff/components/` | Modal lý do từ chối bàn giao khi phát hiện lỗi vật lý ô kho. Gọi trực tiếp API `POST /contracts/{id}/handover-rejection`. | **Giữ lại & Sử dụng tốt** (Không phải dead code). |
+| 4 | `Notification Stubs` trong `AutoCheckInActivationScheduler.java#L65` | `backend/.../contract/scheduler/` | Tác vụ tự động kích hoạt T+11 sinh mã PIN nhưng chưa có kết nối SMS Provider (Twilio/eSMS), chỉ ghi `log.info(...)`. | **Cần tích hợp thật** khi sang giai đoạn sản xuất (Production). |
 
 ---
 
