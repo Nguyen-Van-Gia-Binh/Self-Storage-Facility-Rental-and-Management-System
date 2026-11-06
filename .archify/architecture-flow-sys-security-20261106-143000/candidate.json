@@ -1,0 +1,349 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Flow SYS: Deep Defense Security & Multi-Facility RBAC Architecture",
+    "subtitle": "HTTP Request Filter Pipeline, SecurityContext, Method Security, Data Boundary Guard & Audit Vault",
+    "output": "docs/diagrams/flow-sys-security-architecture.html",
+    "visual_preset": "blueprint",
+    "animation": "trace",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Tung-pro123/Self-Storage-Facility-Rental-and-Management-System.git",
+      "provider": "github",
+      "link_mode": "web",
+      "revision": "7b81ffe7c2be1fa5d46f0543b6710f3dc9ed5729"
+    }
+  },
+  "components": [
+    {
+      "id": "client_browser",
+      "type": "external",
+      "label": "Web Client Browser",
+      "sublabel": "React 18 SPA (Vite)",
+      "pos": [80, 160],
+      "size": [140, 64],
+      "tag": "SPA Client",
+      "sources": [
+        { "path": "frontend/src/utils/tokenStorage.ts", "line": 1, "end_line": 20, "label": "UserSession types" }
+      ]
+    },
+    {
+      "id": "route_guard",
+      "type": "frontend",
+      "label": "ProtectedRoute",
+      "sublabel": "Client Route Guard",
+      "pos": [80, 280],
+      "size": [140, 64],
+      "tag": "React Router",
+      "sources": [
+        { "path": "frontend/src/components/auth/ProtectedRoute.tsx", "line": 11, "end_line": 38, "label": "Route Protection" }
+      ]
+    },
+    {
+      "id": "token_storage",
+      "type": "frontend",
+      "label": "tokenStorage",
+      "sublabel": "JWT & Session Cache",
+      "pos": [80, 400],
+      "size": [140, 64],
+      "tag": "LocalStorage",
+      "sources": [
+        { "path": "frontend/src/utils/tokenStorage.ts", "line": 90, "end_line": 150, "label": "Token & Session Storage" }
+      ]
+    },
+    {
+      "id": "security_config",
+      "type": "security",
+      "label": "SecurityConfig",
+      "sublabel": "Filter Chain & CORS",
+      "pos": [310, 160],
+      "size": [150, 64],
+      "tag": "@EnableWebSecurity",
+      "sources": [
+        { "path": "backend/src/main/java/com/swp391/selfstorage/common/config/SecurityConfig.java", "line": 20, "end_line": 77, "label": "Security Filter Chain" }
+      ]
+    },
+    {
+      "id": "jwt_filter",
+      "type": "security",
+      "label": "JwtAuthFilter",
+      "sublabel": "OncePerRequestFilter",
+      "pos": [310, 280],
+      "size": [150, 64],
+      "tag": "Stateless Filter",
+      "sources": [
+        { "path": "backend/src/main/java/com/swp391/selfstorage/auth/jwt/JwtAuthenticationFilter.java", "line": 32, "end_line": 57, "label": "Token Extraction" }
+      ]
+    },
+    {
+      "id": "jwt_provider",
+      "type": "security",
+      "label": "JwtTokenProvider",
+      "sublabel": "HMAC-SHA Key & Claims",
+      "pos": [310, 400],
+      "size": [150, 64],
+      "tag": "io.jsonwebtoken",
+      "sources": [
+        { "path": "backend/src/main/java/com/swp391/selfstorage/auth/jwt/JwtTokenProvider.java", "line": 45, "end_line": 59, "label": "Access Token Builder" }
+      ]
+    },
+    {
+      "id": "security_context",
+      "type": "security",
+      "label": "SecurityContext",
+      "sublabel": "UserPrincipal Holder",
+      "pos": [550, 160],
+      "size": [150, 64],
+      "tag": "ThreadLocal",
+      "sources": [
+        { "path": "backend/src/main/java/com/swp391/selfstorage/auth/service/UserPrincipal.java", "line": 15, "end_line": 45, "label": "UserPrincipal Model" }
+      ]
+    },
+    {
+      "id": "rest_controller",
+      "type": "backend",
+      "label": "REST Controller",
+      "sublabel": "@PreAuthorize Security",
+      "pos": [550, 280],
+      "size": [150, 64],
+      "tag": "API Gateway Entry",
+      "sources": [
+        { "path": "backend/src/main/java/com/swp391/selfstorage/common/config/SecurityConfig.java", "line": 22, "end_line": 23, "label": "EnableMethodSecurity" }
+      ]
+    },
+    {
+      "id": "custom_user_details",
+      "type": "security",
+      "label": "CustomUserDetails",
+      "sublabel": "User & Authorities",
+      "pos": [550, 400],
+      "size": [150, 64],
+      "tag": "Service",
+      "sources": [
+        { "path": "backend/src/main/java/com/swp391/selfstorage/auth/service/CustomUserDetailsService.java", "line": 15, "end_line": 35, "label": "Load User Details" }
+      ]
+    },
+    {
+      "id": "facility_guard",
+      "type": "security",
+      "label": "FacilitySecurity",
+      "sublabel": "Multi-Facility RBAC (SA-03)",
+      "pos": [790, 160],
+      "size": [155, 64],
+      "tag": "SpEL @facilitySecurity",
+      "sources": [
+        { "path": "backend/src/main/java/com/swp391/selfstorage/auth/service/FacilitySecurityService.java", "line": 18, "end_line": 56, "label": "canAccessFacility Guard" }
+      ]
+    },
+    {
+      "id": "business_service",
+      "type": "backend",
+      "label": "Domain Services",
+      "sublabel": "Transaction Boundary",
+      "pos": [790, 280],
+      "size": [155, 64],
+      "tag": "@Transactional",
+      "sources": [
+        { "path": "backend/src/main/java/com/swp391/selfstorage/contract/service/impl/ContractServiceImpl.java", "line": 40, "end_line": 80, "label": "Contract Operations" }
+      ]
+    },
+    {
+      "id": "audit_logger",
+      "type": "database",
+      "label": "Audit Vault",
+      "sublabel": "AuditLog & LoginHistory",
+      "pos": [790, 400],
+      "size": [155, 64],
+      "tag": "Compliance",
+      "sources": [
+        { "path": "backend/src/main/java/com/swp391/selfstorage/user/entity/AuditLog.java", "line": 15, "end_line": 48, "label": "Audit Entity Schema" }
+      ]
+    },
+    {
+      "id": "facility_assignment",
+      "type": "database",
+      "label": "FacilityAssignment",
+      "sublabel": "User-Facility Mapping",
+      "pos": [1120, 160],
+      "size": [150, 64],
+      "tag": "RBAC ACL",
+      "sources": [
+        { "path": "backend/src/main/java/com/swp391/selfstorage/user/entity/UserFacilityAssignment.java", "line": 13, "end_line": 35, "label": "Assignment Mapping" }
+      ]
+    },
+    {
+      "id": "postgres_db",
+      "type": "database",
+      "label": "PostgreSQL 15",
+      "sublabel": "Primary Relational DB",
+      "pos": [1120, 280],
+      "size": [150, 64],
+      "tag": ":5432 Primary",
+      "sources": [
+        { "path": "backend/src/main/resources/db/migration/V1__init_postgres_schema.sql", "line": 1, "end_line": 50, "label": "DDL Initial Schema" }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Client Tier (React 18 SPA)",
+      "wraps": ["client_browser", "route_guard", "token_storage"],
+      "pad": 18
+    },
+    {
+      "kind": "security-group",
+      "label": "Spring Security Filter Chain",
+      "wraps": ["security_config", "jwt_filter", "jwt_provider"],
+      "pad": 18
+    },
+    {
+      "kind": "security-group",
+      "label": "Auth Context & Controller Gate",
+      "wraps": ["security_context", "rest_controller", "custom_user_details"],
+      "pad": 18
+    },
+    {
+      "kind": "security-group",
+      "label": "Multi-Facility RBAC (SA-03)",
+      "wraps": ["facility_guard", "business_service", "audit_logger"],
+      "pad": 18
+    },
+    {
+      "kind": "security-group",
+      "label": "Database Persistence Vault",
+      "wraps": ["facility_assignment", "postgres_db"],
+      "pad": 18
+    }
+  ],
+  "connections": [
+    {
+      "id": "conn_client_guard",
+      "from": "client_browser",
+      "to": "route_guard",
+      "label": "Navigate Route",
+      "variant": "emphasis"
+    },
+    {
+      "id": "conn_guard_storage",
+      "from": "route_guard",
+      "to": "token_storage",
+      "label": "isAuthenticated() & hasRole()",
+      "variant": "default"
+    },
+    {
+      "id": "conn_client_filter",
+      "from": "client_browser",
+      "to": "jwt_filter",
+      "label": "HTTPS Request + Bearer JWT",
+      "variant": "emphasis"
+    },
+    {
+      "id": "conn_config_filter",
+      "from": "security_config",
+      "to": "jwt_filter",
+      "label": "addFilterBefore()",
+      "variant": "default"
+    },
+    {
+      "id": "conn_filter_provider",
+      "from": "jwt_filter",
+      "to": "jwt_provider",
+      "label": "validateToken(jwt)",
+      "variant": "security"
+    },
+    {
+      "id": "conn_filter_userdetails",
+      "from": "jwt_filter",
+      "to": "custom_user_details",
+      "label": "loadUserByUsername()",
+      "variant": "default"
+    },
+    {
+      "id": "conn_filter_context",
+      "from": "jwt_filter",
+      "to": "security_context",
+      "label": "setAuthentication(UserPrincipal)",
+      "variant": "security"
+    },
+    {
+      "id": "conn_context_controller",
+      "from": "security_context",
+      "to": "rest_controller",
+      "label": "Resolve Principal & Roles",
+      "variant": "emphasis"
+    },
+    {
+      "id": "conn_controller_guard",
+      "from": "rest_controller",
+      "to": "facility_guard",
+      "label": "@PreAuthorize canAccessFacility(#id)",
+      "variant": "security"
+    },
+    {
+      "id": "conn_guard_assignment",
+      "from": "facility_guard",
+      "to": "facility_assignment",
+      "label": "Verify user_facility_assignment",
+      "variant": "security"
+    },
+    {
+      "id": "conn_controller_service",
+      "from": "rest_controller",
+      "to": "business_service",
+      "label": "Execute Business Logic",
+      "variant": "emphasis"
+    },
+    {
+      "id": "conn_service_audit",
+      "from": "business_service",
+      "to": "audit_logger",
+      "label": "Log before/after values",
+      "variant": "dashed"
+    },
+    {
+      "id": "conn_service_db",
+      "from": "business_service",
+      "to": "postgres_db",
+      "label": "Transactional SQL CRUD",
+      "variant": "emphasis"
+    },
+    {
+      "id": "conn_audit_db",
+      "from": "audit_logger",
+      "to": "postgres_db",
+      "label": "Append immutable log",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Defense-in-Depth Pipeline",
+      "items": [
+        "Tầng 1: Route Guard ngăn chặn truy cập trái phép phía Frontend trước khi gửi HTTP request",
+        "Tầng 2: JwtAuthenticationFilter giải mã và xác thực Bearer token stateless",
+        "Tầng 3: Method Security (@PreAuthorize) chặn đứng lời gọi hàm nếu sai Role"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Multi-Facility RBAC (SA-03 & BR-GEN-07)",
+      "items": [
+        "ADMIN và BOM sở hữu quyền toàn cục trên tất cả các cơ sở kho (isGlobalManagerOrAdmin)",
+        "FACILITY_MANAGER và FACILITY_STAFF bị giới hạn nghiêm ngặt theo bảng user_facility_assignment",
+        "Ngăn chặn triệt để lỗ hổng tráo ID cơ sở (IDOR) bằng SpEL canAccessFacility(#facilityId)"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Audit Vault & Compliance Evidence",
+      "items": [
+        "Bảng audit_log ghi nhận dấu vết toàn bộ hành vi CRUD nhạy cảm kèm before_value / after_value",
+        "LoginHistory lưu vết địa chỉ IP, User-Agent và thời điểm đăng nhập thành công/thất bại",
+        "Thời gian toàn hệ thống chuẩn hóa theo UTC+7 (Asia/Ho_Chi_Minh) theo quy tắc BR-GEN-06"
+      ]
+    }
+  ]
+}

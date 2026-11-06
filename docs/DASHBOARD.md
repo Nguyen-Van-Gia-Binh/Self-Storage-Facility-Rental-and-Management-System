@@ -29,7 +29,7 @@
 | **WS1: Khách hàng & Cơ sở**   | **Gia Bình**                    | Dời ngày có phí theo ngày (`BR-RES-06`) & Gói bảo vệ mở rộng 50M (`BR-SUP-04`)                | `feature/Tx-paid-reschedule-and-insurance` (Đang triển khai)    |
 | **WS2: Đặt chỗ & Bàn giao**   | **Nguyễn Phạm Xuân Nhi**        | Cửa sổ đặt trước 30 ngày (`BR-RES-01`), Modal Hủy 3 tầng (`BR-CAN-01..03`), E-Handover IoT UI | `[x] Hoàn thành (PR #267)`                                      |
 | **WS3: Tài chính & Tự động**  | **Huỳnh Nhật**                  | Hoàn thiện FM Allocation Workbench & Điều phối kiểm thử / merge vào `main`                    | `feature/Tx-test-all-features` (Chủ trì nhánh tích hợp)         |
-| **WS4: Quản trị & Điều phối** | **Thanh Tùng** | Trực quan hóa Flow 5 Archify (Workflow & Hierarchy Tree) và Báo cáo Độ lệch | `docs/Tx-archify-flow5-facility-staff` (Hoàn thành 2 sơ đồ Showcase) |
+| **WS4: Quản trị & Điều phối** | **Thanh Tùng** | Trực quan hóa Flow SYS: Bảo mật tầng sâu, Multi-Facility RBAC & Cronjobs ngầm | `docs/Tx-archify-flow-sys-security-cron` (Hoàn thành toàn bộ luồng Tuần 9) |
 
 ---
 
@@ -46,6 +46,7 @@
 | `ISS-142` | Cửa sổ đặt trước 30 ngày (BR-RES-01), Smart Waitlist Modal kèm SĐT & Feasibility Check và kích hoạt FM Waitlist CRM. | Khóa đặt trực tiếp > 30 ngày, mở đăng ký Waitlist cho thuê xa, thêm SĐT bắt buộc & Flyway V13, kích hoạt trang WaitlistInboxPage vào Manager Router. | Gia Bình | `RESOLVED` |
 | `ISS-143` | Trực quan hóa tương tác Flow 5 (Quản lý Ô kho & Phân công Nhân sự) bằng Archify theo chuẩn Showcase Tuần 9. | Khảo sát 5 tầng mã nguồn, hoàn thành 2 sơ đồ interactive HTML (workflow và tree) đạt 4/4 gates kiểm định Archify, lập Báo cáo Độ lệch Flow 5. | Thanh Tùng | `RESOLVED` |
 | `ISS-144` | Trực quan hóa Archify Flow 7: Xử lý sự cố, bồi thường hàng hóa (BR-SUP-04) và khóa di dời khẩn cấp (BR-SUP-05). | Hoàn thành sơ đồ Workflow và Sequence đạt chuẩn Showcase 0 lỗi; phát hiện dead code IncidentManagementPage; đối soát bãi bỏ SLA cứng BR-SUP-01. | Thanh Tùng | `RESOLVED` |
+| `ISS-145` | Trực quan hóa Archify Flow SYS: Bảo mật tầng sâu 5 lớp, Multi-Facility RBAC (SA-03) và Cronjobs ngầm hằng đêm (BR-OVD). | Hoàn thành 2 sơ đồ Architecture & Sequence Showcase 0 lỗi; lập Báo cáo Độ lệch xác nhận quản lý phiên qua tokenStorage và D+1..D+15 policy. | Thanh Tùng | `RESOLVED` |
 
 _(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/\_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))_
 

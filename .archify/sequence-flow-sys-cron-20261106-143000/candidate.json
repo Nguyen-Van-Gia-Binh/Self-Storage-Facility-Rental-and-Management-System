@@ -1,0 +1,320 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Flow SYS: Automated Background Schedulers & Nightly Cron Execution Sequence",
+    "subtitle": "Auto-Activation T+11 (BR-CAN-04) & Nightly Overdue Penalty Sweep at 00:00:00 UTC+7 (BR-OVD-01..05)",
+    "output": "docs/diagrams/flow-sys-cron-schedulers-sequence.html",
+    "column_fit": "spread",
+    "animation": "trace",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Tung-pro123/Self-Storage-Facility-Rental-and-Management-System.git",
+      "provider": "github",
+      "link_mode": "web",
+      "revision": "7b81ffe7c2be1fa5d46f0543b6710f3dc9ed5729"
+    }
+  },
+  "participants": [
+    {
+      "id": "scheduler_engine",
+      "type": "cloud",
+      "label": "Spring TaskScheduler",
+      "sublabel": "@EnableScheduling",
+      "icon": "clock",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/common/config/SchedulerConfig.java",
+          "line": 6,
+          "end_line": 10,
+          "label": "SchedulerConfig"
+        }
+      ]
+    },
+    {
+      "id": "activation_cron",
+      "type": "backend",
+      "label": "AutoCheckInCron",
+      "sublabel": "ActivationScheduler",
+      "icon": "backend",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/contract/scheduler/AutoCheckInActivationScheduler.java",
+          "line": 30,
+          "end_line": 75,
+          "label": "AutoCheckInActivationScheduler"
+        }
+      ]
+    },
+    {
+      "id": "overdue_cron",
+      "type": "backend",
+      "label": "OverdueCronJob",
+      "sublabel": "Nightly Cron (UTC+7)",
+      "icon": "backend",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/policy/scheduler/OverdueCronJob.java",
+          "line": 16,
+          "end_line": 41,
+          "label": "OverdueCronJob"
+        }
+      ]
+    },
+    {
+      "id": "overdue_service",
+      "type": "backend",
+      "label": "OverdueService",
+      "sublabel": "ProcessingServiceImpl",
+      "icon": "backend",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/policy/service/impl/OverdueProcessingServiceImpl.java",
+          "line": 40,
+          "end_line": 160,
+          "label": "OverdueProcessingServiceImpl"
+        }
+      ]
+    },
+    {
+      "id": "contract_repo",
+      "type": "database",
+      "label": "Contract & Unit Repo",
+      "sublabel": "Spring Data JPA",
+      "icon": "database",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/contract/repository/RentalContractRepository.java",
+          "line": 20,
+          "end_line": 45,
+          "label": "RentalContractRepository"
+        }
+      ]
+    },
+    {
+      "id": "database",
+      "type": "database",
+      "label": "PostgreSQL 15",
+      "sublabel": "Primary Relational DB",
+      "icon": "database",
+      "sources": [
+        {
+          "path": "backend/src/main/resources/db/migration/V1__init_postgres_schema.sql",
+          "line": 1,
+          "end_line": 60,
+          "label": "DDL Initial Schema"
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "from": 145,
+      "to": 365,
+      "label": "Pha 1: Tự động kích hoạt hợp đồng T+11 (BR-CAN-04 & BR-CHK-05)"
+    },
+    {
+      "from": 375,
+      "to": 595,
+      "label": "Pha 2: Quét quá hạn hằng đêm lúc 00:00:00 UTC+7 (BR-OVD-01..04)"
+    },
+    {
+      "from": 605,
+      "to": 795,
+      "label": "Pha 3: Khóa mã PIN tại D+7 (BR-OVD-05) & Chấm dứt cưỡng chế tại D+10 (BR-OVD-07)"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m1",
+      "from": "scheduler_engine",
+      "to": "activation_cron",
+      "y": 165,
+      "label": "Trigger daily cron @Scheduled(\"0 0 0 * * ?\")",
+      "variant": "default"
+    },
+    {
+      "id": "m2",
+      "from": "activation_cron",
+      "to": "contract_repo",
+      "y": 195,
+      "label": "findByStatus(PENDING_CHECK_IN)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m3",
+      "from": "contract_repo",
+      "to": "database",
+      "y": 225,
+      "label": "SELECT contracts (PENDING_CHECK_IN)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m4",
+      "from": "database",
+      "to": "contract_repo",
+      "y": 255,
+      "label": "Trả về danh sách hợp đồng chờ nhận kho",
+      "variant": "return"
+    },
+    {
+      "id": "m5",
+      "from": "contract_repo",
+      "to": "activation_cron",
+      "y": 285,
+      "label": "Kiểm tra cutoffDate = today - 10 ngày (T+11)",
+      "variant": "return"
+    },
+    {
+      "id": "m6",
+      "from": "activation_cron",
+      "to": "contract_repo",
+      "y": 315,
+      "label": "Kích hoạt T+11: set ACTIVE, PIN 6 số, unit OCCUPIED",
+      "variant": "security"
+    },
+    {
+      "id": "m7",
+      "from": "contract_repo",
+      "to": "database",
+      "y": 345,
+      "label": "UPDATE rental_contract, storage_unit, reservation",
+      "variant": "emphasis"
+    },
+
+    {
+      "id": "m8",
+      "from": "scheduler_engine",
+      "to": "overdue_cron",
+      "y": 395,
+      "label": "Trigger nightly cron @Scheduled (Asia/Ho_Chi_Minh)",
+      "variant": "default"
+    },
+    {
+      "id": "m9",
+      "from": "overdue_cron",
+      "to": "overdue_service",
+      "y": 425,
+      "label": "processOverdueContracts(runDate=today)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m10",
+      "from": "overdue_service",
+      "to": "contract_repo",
+      "y": 455,
+      "label": "findCandidateContracts(ACTIVE, OVERDUE, TERMINATED)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m11",
+      "from": "contract_repo",
+      "to": "database",
+      "y": 485,
+      "label": "SELECT contracts WHERE endDateExclusive <= runDate",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m12",
+      "from": "database",
+      "to": "overdue_service",
+      "y": 515,
+      "label": "Trả danh sách hợp đồng cần kiểm tra quá hạn",
+      "variant": "return"
+    },
+    {
+      "id": "m13",
+      "from": "overdue_service",
+      "to": "contract_repo",
+      "y": 545,
+      "label": "D+1..D+3 Ân hạn: setStatus(OVERDUE), fee=0 (BR-OVD-01)",
+      "variant": "default"
+    },
+    {
+      "id": "m14",
+      "from": "overdue_service",
+      "to": "contract_repo",
+      "y": 575,
+      "label": "D+4..D+9 Phạt lũy tiến: fee=min(deposit*rate*days, cap)",
+      "variant": "security"
+    },
+
+    {
+      "id": "m15",
+      "from": "overdue_service",
+      "to": "contract_repo",
+      "y": 625,
+      "label": "Mốc D+7 (BR-OVD-05): setAccessCode(null) - Khóa mã PIN",
+      "variant": "security"
+    },
+    {
+      "id": "m16",
+      "from": "overdue_service",
+      "to": "contract_repo",
+      "y": 655,
+      "label": "Mốc D+10 (BR-OVD-07): setStatus(TERMINATED), trừ cọc",
+      "variant": "security"
+    },
+    {
+      "id": "m17",
+      "from": "overdue_service",
+      "to": "contract_repo",
+      "y": 685,
+      "label": "Chuyển StorageUnit sang MAINTENANCE niêm phong đồ",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m18",
+      "from": "overdue_service",
+      "to": "contract_repo",
+      "y": 715,
+      "label": "Mốc D+15: Hoàn tất bảo trì -> AVAILABLE / RESERVED",
+      "variant": "default"
+    },
+    {
+      "id": "m19",
+      "from": "contract_repo",
+      "to": "database",
+      "y": 745,
+      "label": "COMMIT TRANSACTION (Lưu HĐ, Phí phạt & Ô kho)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m20",
+      "from": "overdue_service",
+      "to": "overdue_cron",
+      "y": 775,
+      "label": "OverdueProcessingResult (scanned, penal, term, fee)",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Auto-Activation Logic (BR-CAN-04)",
+      "items": [
+        "Hợp đồng PENDING_CHECK_IN quá hạn 10 ngày nhận kho tự động chuyển sang ACTIVE lúc T+11",
+        "Tự động sinh mã PIN điện tử 6 chữ số nếu khách hàng chưa tạo mã trực tiếp",
+        "Đổi trạng thái ô kho vật lý sang OCCUPIED và hoàn tất giữ chỗ (FULFILLED)"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Overdue Penalty Policy (BR-OVD-01..05)",
+      "items": [
+        "Mốc D+1..D+3: Ân hạn quá hạn, chưa áp dụng tiền phạt (overdueFeeAccrued = 0)",
+        "Mốc D+4..D+9: Tính phạt lũy tiến theo ngày dựa trên biểu phí policy gắn trên hợp đồng (tối đa trần capRate)",
+        "Mốc D+7: Tự động thu hồi mã PIN (setAccessCode=null) vô hiệu hóa quyền mở cửa ô kho vật lý"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Termination & Maintenance (BR-OVD-07)",
+      "items": [
+        "Mốc D+10: Hợp đồng bị cưỡng chế CHẤM DỨT (TERMINATED), trừ phí phạt vào tiền cọc",
+        "Ô kho vật lý chuyển sang MAINTENANCE để nhân viên niêm phong tài sản tồn đọng",
+        "Mốc D+15: Tự động hoàn tất bảo trì, chuyển ô kho về AVAILABLE hoặc RESERVED cho khách mới"
+      ]
+    }
+  ]
+}
