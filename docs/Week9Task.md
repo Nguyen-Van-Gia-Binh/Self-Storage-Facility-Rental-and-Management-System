@@ -858,4 +858,32 @@ Mỗi Worker Subagent sau khi hoàn thành việc vẽ sơ đồ bắt buộc ph
 | 2 | `CloseIncidentModal.tsx` | `frontend/src/features/manager/components/` | Modal đóng sự cố cũ mồ côi, chức năng đã tích hợp vào `IncidentDetailPage.tsx` và `StaffIncidentDetailView.tsx` | Xóa bỏ (Dead Code) |
 
 ---
+
+### 6.8. Báo cáo Độ lệch Mã nguồn & Danh sách Mã nguồn Chết: Flow SYS (Lê Thanh Tùng & Huỳnh Nhật — WS4/WS3)
+
+#### 📊 BÁO CÁO ĐỘ LỆCH MÃ NGUỒN: FLOW SYS — AUTHENTICATION, MULTI-FACILITY RBAC & SCHEDULED CRONJOBS
+
+- **Người phụ trách (Assignee):** **Lê Thanh Tùng** (WS4 — Backend Lead, Security & Multi-Facility RBAC) phối hợp cùng **Huỳnh Nhật** (WS3 — Cron Config)
+- **Sơ đồ HTML Kiến trúc Bảo mật (Architecture):** `docs/diagrams/flow-sys-security-architecture.html`
+- **Sơ đồ HTML Trình tự Tác vụ Ngầm (Sequence):** `docs/diagrams/flow-sys-cron-schedulers-sequence.html`
+- **Tình trạng nghiệm thu:** [x] Finalize thành công 4 gates (Exit code 0, showcase profile, 0 diagnostics)
+- **Commit Snapshot đối chiếu:** `7b81ffe7c2be1fa5d46f0543b6710f3dc9ed5729`
+
+##### 1. Bảng đối soát thiết kế vs thực tế:
+| Khía cạnh Bảo mật & Cron theo Thiết kế | Hiện trạng Mã nguồn Thực tế | File & Dòng Code kiểm chứng | Đánh giá Trạng thái |
+| :--- | :--- | :--- | :--- |
+| **1. Quản lý Phiên Đăng nhập & Token Client (`SA-01`)** | Không sử dụng `AuthContext.tsx`. Hệ thống quản lý tập trung qua singleton `tokenStorage` lưu trữ JWT và `UserSession` trong `localStorage`, tự động dọn dẹp khi token hết hạn; `ProtectedRoute.tsx` phụ trách phân quyền route. | `tokenStorage.ts#L90-L150`<br>`ProtectedRoute.tsx#L11-L38` | `[Architecture Refinement / Zero-Drift]` |
+| **2. Bộ lọc Xác thực Tầng sâu (Spring Security Filter Chain)** | Mô hình Stateless Session với `JwtAuthenticationFilter` kế thừa `OncePerRequestFilter`, chèn trước `UsernamePasswordAuthenticationFilter`. Trích xuất Bearer token, giải mã Claims qua `JwtTokenProvider` và thiết lập `UserPrincipal`. | `SecurityConfig.java#L47-L77`<br>`JwtAuthenticationFilter.java#L32-L57`<br>`JwtTokenProvider.java#L45-L59` | `[Fully Implemented / Production Ready]` |
+| **3. Multi-Facility RBAC & Chống Lỗ hổng IDOR (`SA-03`, `BR-GEN-07`)** | Dịch vụ `FacilitySecurityService` bảo vệ ranh giới cơ sở: ADMIN/BOM có quyền toàn cục; Quản lý/Nhân viên cơ sở bắt buộc đối soát `facilityIds` từ bảng `user_facility_assignment`. Chặn IDOR qua `@PreAuthorize("@facilitySecurity.canAccessFacility(#id)")`. | `FacilitySecurityService.java#L18-L56`<br>`UserPrincipal.java#L22-L35`<br>`UserFacilityAssignment.java#L13-L35` | `[Security Gate / Verified in Code]` |
+| **4. Tự động Kích hoạt Hợp đồng T+11 (`BR-CAN-04`, `BR-CHK-05`)** | Tác vụ ngầm `AutoCheckInActivationScheduler` chạy lúc 00:00:00 hằng ngày: Sau 10 ngày ân hạn nhận kho, tự kích hoạt hợp đồng sang `ACTIVE`, tự sinh mã PIN 6 số nếu chưa có, chuyển ô kho sang `OCCUPIED` và giữ chỗ sang `FULFILLED`. | `AutoCheckInActivationScheduler.java#L36-L75` | `[Fully Implemented Background Job]` |
+| **5. Quét Phạt Quá Hạn Hằng Đêm 00:00:00 UTC+7 (`BR-OVD-01..05`)** | Tác vụ ngầm `OverdueCronJob` chạy lúc 00:00:00 hằng đêm (múi giờ `Asia/Ho_Chi_Minh`): D+1..D+3 ân hạn (phạt=0); D+4..D+9 phạt lũy tiến theo ngày; D+7 thu hồi mã PIN (`setAccessCode(null)`); D+10 cưỡng chế chấm dứt (`TERMINATED`), chuyển kho sang `MAINTENANCE`; D+15 tự động hoàn tất bảo trì. | `OverdueCronJob.java#L24-L41`<br>`OverdueProcessingServiceImpl.java#L40-L160` | `[Fully Implemented / Multi-tier Policy]` |
+| **6. Kho Lưu trữ Nhật ký Kiểm toán (Audit Vault & LoginHistory)** | Tách bạch 2 bảng: `audit_log` lưu vết các hành vi CRUD nhạy cảm kèm `before_value` / `after_value`; `login_history` lưu vết lịch sử đăng nhập, địa chỉ IP, User-Agent và trạng thái đăng nhập. | `AuditLog.java#L15-L48`<br>`LoginHistory.java#L1-L40`<br>`V1__init_postgres_schema.sql` | `[Fully Implemented / Compliance]` |
+
+##### 2. Danh sách Mã nguồn Chết / Khuyến nghị Tinh gọn (Dead Code & Optimization):
+| STT | File / Component | Vị trí (Package / Directory) | Lý do phát hiện | Đề xuất giải pháp |
+| :---: | :--- | :--- | :--- | :--- |
+| 1 | `AuthContext.tsx` | `frontend/src/context/` | Không tồn tại trong code thực tế; ứng dụng quản lý phiên qua `tokenStorage` mượt mà, không gây re-render | Giữ nguyên kiến trúc hiện tại, cập nhật docs |
+| 2 | Whitelist `.anyRequest().permitAll()` | `SecurityConfig.java#L68` | Dành cho giai đoạn dev phân chia nhiều Workstream; các hàm đã được `@PreAuthorize` bảo vệ | Đổi thành `.anyRequest().authenticated()` khi lên Production |
+
+---
 *Tài liệu này là căn cứ vận hành chính thức cho Sprint Tuần 9. Mọi thay đổi về phạm vi hoặc quy chuẩn kỹ thuật phải được Lead phê duyệt.*
