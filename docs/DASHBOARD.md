@@ -51,7 +51,7 @@
 | `ISS-145` | Trực quan hóa Archify Flow SYS: Bảo mật tầng sâu 5 lớp, Multi-Facility RBAC (SA-03) và Cronjobs ngầm hằng đêm (BR-OVD). | Hoàn thành 2 sơ đồ Architecture & Sequence Showcase 0 lỗi; lập Báo cáo Độ lệch xác nhận quản lý phiên qua tokenStorage và D+1..D+15 policy. | Thanh Tùng | `RESOLVED` |
 | `ISS-146` | Kiểm thử E2E Flow 1 (Reservation & Waitlist CRM) và Flow 6.1 (Gia hạn online). | Thiết kế test cases E2E đặt kho real-time, modal Waitlist khi hết chỗ và luồng gia hạn trực tuyến; rà soát xử lý lỗi thanh toán VietQR. | Xuân Nhi | `OPEN` |
 | `ISS-147` | Kiểm thử tích hợp Flow 3 (Trả sớm Win-Win) và Flow 6.2 (Cronjob Quá hạn D+1..D+10). | Viết Integration test kịch bản nghiệm thu hoàn cọc trả kho sớm Win-Win và kiểm thử cronjob tính phạt quá hạn lũy tiến D+4..D+10. | Gia Bình | `OPEN` |
-| `ISS-148` | Kiểm thử Flow 4 (BOM Pricing & Revenue) và Đối soát Webhook VietQR tự động. | Viết WebMvcTest kiểm thử cấu hình giá BOM, đối soát webhook thanh toán VietQR bất đồng bộ và kiểm chứng thuật toán tỷ lệ lấp đầy cơ sở. | Nhật | `OPEN` |
+| `ISS-148` | Nâng cấp VNPay 3 lớp phòng thủ, QueryDR đối soát tự động, Net MRR, Quỹ ký cược & Cronjob quét quá hạn độc lập. | Hoàn tất QueryDR 15p, Webhook, Net MRR, Escrow Deposit Liability, Chunked Overdue Cronjob, 553/553 tests xanh, FE build 0 lỗi. | Nhật | `RESOLVED` |
 | `ISS-149` | Kiểm thử bảo mật Flow SYS (Multi-Facility RBAC), Flow 2 (Check-in) & Flow 7 (Incident). | Kiểm thử bảo mật đa cơ sở chống IDOR (@facilitySecurity), xác thực biên bản bàn giao Check-in 4 tiêu chí và quy trình bồi thường sự cố. | Thanh Tùng | `OPEN` |
 
 _(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/\_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))_
@@ -65,12 +65,12 @@ _(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây
 | **Catalog, Đặt chỗ & Waitlist CRM** | **Flow 1** | Xuân Nhi (WS1) | ✅ Sẵn sàng | ✅ Sẵn sàng | 🔄 Đang QA | Thiết kế test case đặt kho, Waitlist CRM & thanh toán cọc VietQR |
 | **Bàn giao kho & Auto-Activation** | **Flow 2** | Thanh Tùng (WS4) | ✅ Sẵn sàng | ✅ Sẵn sàng | 🔄 Đang QA | Thiết kế test case ký biên bản Check-in 4 tiêu chí & cấp PIN 24/7 |
 | **Quản lý kho đang thuê & Trả sớm** | **Flow 3** | Gia Bình (WS2) | ✅ Sẵn sàng | ✅ Sẵn sàng | 🔄 Đang QA | Kiểm thử kịch bản nghiệm thu hoàn cọc trả sớm Win-Win |
-| **Bảng giá BOM & Tỷ lệ lấp đầy** | **Flow 4** | Huỳnh Nhật (WS3) | ✅ Sẵn sàng | ✅ Sẵn sàng | 🔄 Đang QA | Kiểm thử cấu hình bảng giá BOM, báo cáo doanh thu & lấp đầy |
+| **Bảng giá BOM & Tỷ lệ lấp đầy** | **Flow 4** | Huỳnh Nhật (WS3) | ✅ Sẵn sàng | ✅ Sẵn sàng | ✅ Đã kiểm thử | Hoàn tất Net MRR, Quỹ ký cược Escrow, và Báo cáo CSV/KPI Enterprise |
 | **Quản lý ô kho & Phân công nhân sự** | **Flow 5** | Thanh Tùng (WS4) | ✅ Sẵn sàng | ✅ Sẵn sàng | 🔄 Đang QA | Kiểm thử gán ô kho và điều phối nhân viên theo ca trực cơ sở |
 | **Tự gia hạn thuê online** | **Flow 6.1** | Xuân Nhi (WS1) | ✅ Sẵn sàng | ✅ Sẵn sàng | 🔄 Đang QA | Kiểm thử tự gia hạn online và đồng bộ ngày hết hạn hợp đồng |
 | **Cronjob Quá hạn & Khóa mã** | **Flow 6.2** | Gia Bình (WS2) | ✅ Sẵn sàng | ✅ Sẵn sàng | 🔄 Đang QA | Kiểm thử tự động tính phạt D+4 và khóa mã PIN D+7 qua cronjob |
 | **Xử lý sự cố & Bồi thường thiệt hại** | **Flow 7** | Thanh Tùng (WS4) | ✅ Sẵn sàng | ✅ Sẵn sàng | 🔄 Đang QA | Kiểm thử quy trình bồi thường thiệt hại và điều chuyển ô kho sự cố |
-| **Bảo mật JWT RBAC & Tác vụ ngầm** | **Flow SYS** | Tùng (WS4) & Nhật (WS3) | ✅ Sẵn sàng | ✅ Sẵn sàng | 🔄 Đang QA | Kiểm thử phân quyền 5 lớp RBAC, chống IDOR đa cơ sở & cronjobs |
+| **Bảo mật JWT RBAC & Tác vụ ngầm** | **Flow SYS** | Tùng (WS4) & Nhật (WS3) | ✅ Sẵn sàng | ✅ Sẵn sàng | 🔄 Đang QA | Đã hoàn tất Cronjob quá hạn độc lập và VNPay 3 lớp QueryDR (WS3) |
 
 ---
 

@@ -13,6 +13,9 @@ export interface FacilityRevenueBreakdown {
   renewalRevenue: number;
   depositBalance: number;
   refundAmount: number;
+  mrr?: number;
+  activeContractCount?: number;
+  depositLiability?: number;
 }
 
 export interface SystemRevenueReport {
@@ -25,6 +28,9 @@ export interface SystemRevenueReport {
   renewalRevenue: number;
   depositBalance: number;
   totalRefundAmount: number;
+  mrr?: number;
+  activeContractCount?: number;
+  totalDepositLiability?: number;
   byFacility: FacilityRevenueBreakdown[];
 }
 

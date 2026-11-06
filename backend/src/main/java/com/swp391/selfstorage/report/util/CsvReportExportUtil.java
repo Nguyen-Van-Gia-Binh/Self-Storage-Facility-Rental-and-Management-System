@@ -41,7 +41,14 @@ public class CsvReportExportUtil {
         sb.append("Doanh thu phạt quá hạn,").append(report.getOverdueFeeRevenue()).append("\n");
         sb.append("Doanh thu gia hạn,").append(report.getRenewalRevenue()).append("\n");
         sb.append("Tiền cọc đã thu,").append(report.getDepositBalance()).append("\n");
-        sb.append("Tiền đã hoàn,").append(report.getTotalRefundAmount()).append("\n\n");
+        sb.append("Tiền đã hoàn,").append(report.getTotalRefundAmount()).append("\n");
+        if (report.getMrr() != null) {
+            sb.append("Doanh thu định kỳ (Net MRR),").append(report.getMrr()).append("\n");
+        }
+        if (report.getTotalDepositLiability() != null) {
+            sb.append("Tiền cọc đang giữ (Nợ phải trả),").append(report.getTotalDepositLiability()).append("\n");
+        }
+        sb.append("\n");
 
         // 3. Detail by Facility
         sb.append("PHÂN BỔ THEO CƠ SỞ\n");

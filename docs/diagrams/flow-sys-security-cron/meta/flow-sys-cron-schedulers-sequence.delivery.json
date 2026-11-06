@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "c501504d-d1da-4a88-8caf-446bbddc4ee2",
+  "status": "current",
+  "command": "deliver",
+  "type": "sequence",
+  "input": "C:\\Dev\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\sequence-flow-sys-cron-20261106-143000\\candidate.json",
+  "output": "C:\\Dev\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-sys-security-cron\\flow-sys-cron-schedulers-sequence.html",
+  "specification": {
+    "sha256": "fe7598bff4b327216a2a19f9f966bd5a53ddd2ed02ca91ef75b5336ed378f77e",
+    "bytes": 10246
+  },
+  "artifact": {
+    "sha256": "e9d8dc703ee69832c3ebd898b4685e61da4811861284482fd4055ec400a47121",
+    "bytes": 851314
+  }
+}

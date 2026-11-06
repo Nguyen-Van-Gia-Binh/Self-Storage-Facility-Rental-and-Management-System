@@ -129,17 +129,17 @@
     {
       "id": "calc_revenue_streams",
       "type": "backend",
-      "label": "Revenue Streams",
-      "sublabel": "Phân bổ 4 dòng tiền",
+      "label": "Revenue Engine",
+      "sublabel": "Cash, MRR & Cọc",
       "stage": 2,
       "row": 0,
-      "tag": "US-BM-04.1",
+      "tag": "US-BM-04.1 & MRR",
       "sources": [
         {
           "path": "backend/src/main/java/com/swp391/selfstorage/report/service/impl/SystemReportServiceImpl.java",
           "line": 98,
-          "end_line": 170,
-          "label": "facRentalRevenue & facRenewalRevenue"
+          "end_line": 195,
+          "label": "facRentalRevenue, Net MRR & Deposit Liability"
         }
       ]
     },
@@ -277,7 +277,7 @@
       "id": "flow_contract_ingest",
       "from": "src_contract",
       "to": "ingest_revenue_filter",
-      "label": "Map hợp đồng & cọc",
+      "label": "Map hợp đồng, cọc & MRR",
       "classification": "contract facts",
       "variant": "default"
     },
@@ -294,7 +294,7 @@
       "id": "flow_revenue_calc",
       "from": "ingest_revenue_filter",
       "to": "calc_revenue_streams",
-      "label": "Bóc tách 4 dòng tiền",
+      "label": "Cash, Net MRR & Escrow Cọc",
       "classification": "revenue logic",
       "route": "straight",
       "variant": "emphasis"
@@ -392,12 +392,22 @@
       ]
     },
     {
+      "dot": "amber",
+      "title": "Kế toán Tiền Cọc Escrow & Net MRR Chuẩn Doanh Nghiệp (Flow 4 & 6.2)",
+      "items": [
+        "Tiền cọc (Deposit) là Nợ phải trả (Liability) bảo đảm hoàn trả, không gộp vào doanh thu thực thu",
+        "Deposit Liability = Cọc đã thu - Cọc hoàn trả - Cọc phạt vi phạm (chuyển sang doanh thu)",
+        "Tại D+4..D+10: Tiền phạt quá hạn được khấu trừ từ cọc và chuyển hóa thành Doanh thu phạt (Overdue Penalty)",
+        "Net MRR = SUM(totalRentalFee / rentalMonths) của các HĐ ACTIVE: Phản ánh đúng doanh thu thực tế sau chiết khấu"
+      ]
+    },
+    {
       "dot": "rose",
       "title": "Trích xuất Báo cáo Đối soát CSV/Excel (BM-05 & US-BM-05.1)",
       "items": [
-        "Tiện ích CsvReportExportUtil chèn ký tự UTF-8 BOM (\\uFEFF) giúp Microsoft Excel hiển thị tiếng Việt không bị lỗi font",
-        "Hỗ trợ xuất linh hoạt theo kỳ ngày, theo cơ sở hoặc toàn bộ chuỗi hệ thống",
-        "Bảo mật quyền trích xuất: Chỉ tài khoản có vai trò BOM hoặc SYSTEM_ADMINISTRATOR mới được phép gọi endpoint /export"
+        "Tiện ích CsvReportExportUtil chèn ký tự UTF-8 BOM (\\uFEFF) giúp Microsoft Excel hiển thị tiếng Việt chuẩn UTF-8",
+        "Báo cáo xuất đầy đủ cả Cash Flow, Net MRR và Khoản nợ ký cược bảo đảm (Deposit Liability)",
+        "Bảo mật quyền trích xuất: Chỉ tài khoản có vai trò BOM hoặc SYSTEM_ADMINISTRATOR mới được phép gọi /export"
       ]
     }
   ]

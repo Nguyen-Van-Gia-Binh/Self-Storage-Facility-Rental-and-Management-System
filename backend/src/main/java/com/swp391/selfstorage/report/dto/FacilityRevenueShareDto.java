@@ -18,4 +18,7 @@ public class FacilityRevenueShareDto {
     private long renewalRevenue;
     private long depositBalance;
     private long refundAmount;
+    private Long mrr;
+    private Long activeContractCount;
+    private Long depositLiability;
 }

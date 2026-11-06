@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "fail",
+  "type": "dataflow",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Dev\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\dataflow-flow4-revenue-occupancy-20261106-163500\\candidate.json",
+    "sha256": "ea13affbee96c080796fcd6bc6ed5b374f2aa44129de68903b5628a2dcc0e49a",
+    "bytes": 13325
+  },
+  "artifact": {
+    "path": "C:\\Dev\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-4-bom-pricing\\flow4-revenue-occupancy-dataflow.html",
+    "sha256": "7b605a07345938d95726f15889987113a131fc292595cef84a28ad11e6e265fa",
+    "bytes": 860979
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "fail"
+  },
+  "failedStage": "browser-check",
+  "diagnostics": [
+    {
+      "code": "viewer/evidence-path-conflict",
+      "severity": "error",
+      "message": "browser-check will not replace the existing unowned evidence path \"C:\\Dev\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-4-bom-pricing\\flow4-revenue-occupancy-dataflow.browser-check.json\".",
+      "subject": {
+        "artifact": "C:\\Dev\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-4-bom-pricing\\flow4-revenue-occupancy-dataflow.html",
+        "evidencePath": "C:\\Dev\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-4-bom-pricing\\flow4-revenue-occupancy-dataflow.browser-check.json"
+      },
+      "evidence": {
+        "reason": {
+          "code": "ownership-artifact-mismatch"
+        }
+      },
+      "supportedFixes": [
+        "move the conflicting file aside, or choose a separate --out-dir, then rerun browser-check"
+      ]
+    }
+  ],
+  "diagnosticSummary": {
+    "total": 1,
+    "shown": 1,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Dev\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-4-bom-pricing\\flow4-revenue-occupancy-dataflow.finalize.json",
+    "summaryReceipt": "C:\\Dev\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-4-bom-pricing\\flow4-revenue-occupancy-dataflow.finalize-summary.json",
+    "browserCheckReceipt": "C:\\Dev\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-4-bom-pricing\\flow4-revenue-occupancy-dataflow.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-06T19:09:25.434Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 1940,
+  "browserCheck": {
+    "requested": true,
+    "ran": false
+  }
+}

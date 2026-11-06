@@ -34,11 +34,38 @@ export const SandboxCheckoutPage: React.FC = () => {
       setIsLoading(false);
       return;
     }
-    customerApi.getPaymentStatus(orderCode)
-      .then((res) => setPaymentData(res))
-      .catch((err: any) => setErrorMsg(err?.message || 'Không thể tải thông tin thanh toán.'))
-      .finally(() => setIsLoading(false));
-  }, [orderCode]);
+
+    let pollCount = 0;
+    let timeoutId: any = null;
+    let isMounted = true;
+
+    const checkStatus = () => {
+      customerApi.getPaymentStatus(orderCode)
+        .then((res) => {
+          if (!isMounted) return;
+          setPaymentData(res);
+          // Lớp 2 (Immediate Fallback): Nếu giao dịch đang PENDING, tự động polling mỗi 3s (tối đa 5 lần)
+          if (res?.status === 'PENDING' && pollCount < 5 && result !== 'failed') {
+            pollCount++;
+            timeoutId = setTimeout(checkStatus, 3000);
+          }
+        })
+        .catch((err: any) => {
+          if (!isMounted) return;
+          setErrorMsg(err?.message || 'Không thể tải thông tin thanh toán.');
+        })
+        .finally(() => {
+          if (isMounted) setIsLoading(false);
+        });
+    };
+
+    checkStatus();
+
+    return () => {
+      isMounted = false;
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [orderCode, result]);
 
   const paid = paymentData?.status === 'SUCCESS';
   const failed = !paid && result === 'failed';

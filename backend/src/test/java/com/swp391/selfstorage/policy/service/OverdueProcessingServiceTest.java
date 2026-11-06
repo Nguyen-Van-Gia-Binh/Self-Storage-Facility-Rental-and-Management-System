@@ -392,4 +392,42 @@ class OverdueProcessingServiceTest {
         assertEquals(StorageUnitStatus.AVAILABLE, unit.getStatus(), "Đã qua 6 ngày (>=5), tự động chuyển sang AVAILABLE");
         verify(storageUnitRepository).save(unit);
     }
+
+    @Test
+    @DisplayName("Batch Fault-Tolerance: Hợp đồng lỗi không làm gián đoạn các hợp đồng khác trong mẻ quét")
+    void testBatchFaultTolerance_SingleFailureDoesNotHaltBatch() {
+        LocalDate runDate = baseEndDate.plusDays(5); // 2026-10-06 (D+5)
+
+        // Hợp đồng 1: Bị thiếu dữ liệu hoặc lỗi
+        RentalContract faultyContract = RentalContract.builder()
+                .id(991L)
+                .code("CTR-FAIL")
+                .status(ContractStatus.ACTIVE)
+                .endDateExclusive(null) // Gây NullPointerException trong logic xử lý
+                .depositAmount(2_000_000L)
+                .depositBalance(2_000_000L)
+                .build();
+
+        // Hợp đồng 2: Bình thường
+        RentalContract normalContract = RentalContract.builder()
+                .id(992L)
+                .code("CTR-OK")
+                .status(ContractStatus.ACTIVE)
+                .endDateExclusive(baseEndDate)
+                .depositAmount(2_000_000L)
+                .depositBalance(2_000_000L)
+                .overdueFeeAccrued(0L)
+                .build();
+
+        when(rentalContractRepository.findByStatusInAndEndDateExclusiveLessThanEqual(anyList(), eq(runDate)))
+                .thenReturn(List.of(faultyContract, normalContract));
+
+        OverdueProcessingResult result = overdueProcessingService.processOverdueContracts(runDate);
+
+        // HĐ 1 bị lỗi và bỏ qua, HĐ 2 vẫn được xử lý phạt thành công
+        assertEquals(2, result.getTotalScanned(), "Cả 2 HĐ đều được quét");
+        assertEquals(1, result.getPenalizedCount(), "HĐ bình thường vẫn được tính phạt D+5 thành công");
+        assertEquals(ContractStatus.OVERDUE, normalContract.getStatus());
+        assertEquals(400_000L, normalContract.getOverdueFeeAccrued());
+    }
 }

@@ -28,5 +28,7 @@ public interface PaymentTransactionRepository
     @Query("select p from PaymentTransaction p where p.orderCode = :orderCode")
     Optional<PaymentTransaction> findByOrderCodeForUpdate(@Param("orderCode") Long orderCode);
 
+    List<PaymentTransaction> findByStatusOrderByCreatedAtAsc(String status);
+
     Optional<PaymentTransaction> findTopByContractIdAndTransactionTypeOrderByCreatedAtDesc(Long contractId, String transactionType);
 }
