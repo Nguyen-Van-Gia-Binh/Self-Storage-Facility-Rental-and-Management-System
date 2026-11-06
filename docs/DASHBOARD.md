@@ -45,6 +45,7 @@
 | `ISS-141` | Sửa lỗi 404 API Waitlist, lỗi 409 hủy nhận kho hợp đồng PENDING_CHECK_IN và tinh chỉnh Allocation Modal. | Bỏ double context path /api/v1 tại WaitlistController, thêm POST /contracts/{id}/cancel giải phóng kho & hoàn cọc 100%, tách layout Allocation Modal (PR #271). | Gia Bình | `RESOLVED (PR #271)` |
 | `ISS-142` | Cửa sổ đặt trước 30 ngày (BR-RES-01), Smart Waitlist Modal kèm SĐT & Feasibility Check và kích hoạt FM Waitlist CRM. | Khóa đặt trực tiếp > 30 ngày, mở đăng ký Waitlist cho thuê xa, thêm SĐT bắt buộc & Flyway V13, kích hoạt trang WaitlistInboxPage vào Manager Router. | Gia Bình | `RESOLVED` |
 | `ISS-143` | Trực quan hóa tương tác Flow 5 (Quản lý Ô kho & Phân công Nhân sự) bằng Archify theo chuẩn Showcase Tuần 9. | Khảo sát 5 tầng mã nguồn, hoàn thành 2 sơ đồ interactive HTML (workflow và tree) đạt 4/4 gates kiểm định Archify, lập Báo cáo Độ lệch Flow 5. | Thanh Tùng | `RESOLVED` |
+| `ISS-144` | Trực quan hóa Archify Flow 7: Xử lý sự cố, bồi thường hàng hóa (BR-SUP-04) và khóa di dời khẩn cấp (BR-SUP-05). | Hoàn thành sơ đồ Workflow và Sequence đạt chuẩn Showcase 0 lỗi; phát hiện dead code IncidentManagementPage; đối soát bãi bỏ SLA cứng BR-SUP-01. | Thanh Tùng | `RESOLVED` |
 
 _(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/\_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))_
 
