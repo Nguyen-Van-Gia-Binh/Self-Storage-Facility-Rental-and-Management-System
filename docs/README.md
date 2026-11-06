@@ -64,7 +64,7 @@ Toàn bộ hệ thống tài liệu phục vụ bảo vệ đồ án và vận h
 | [**`docs/BUSINESS-RULES.md`**](BUSINESS-RULES.md) | **Quy tắc nghiệp vụ chi tiết** | • Mã hóa quy tắc: `BR-DEP-*` (Cọc), `BR-PRI-*` (Giá), `BR-OVD-*` (Quá hạn), `BR-RET-*` (Nghiệm thu hoàn cọc)<br>• Bảng tham số tài chính cố định (Parameter Table) |
 | [**`docs/DEFENSE-SPECIFICATION.md`**](DEFENSE-SPECIFICATION.md) | **Hồ sơ Đặc tả Bảo vệ Đồ án** | • Sơ đồ Swimlane liên làn khép kín từng luồng<br>• Biểu đồ máy trạng thái (Statechart: Contract, Reservation, Unit, PIN, Ticket)<br>• Ma trận `| Func | Rules |` và ví dụ tính toán tài chính thực tế |
 | [**`docs/DEFENSE-EXAMINATION-CRITIQUE.md`**](DEFENSE-EXAMINATION-CRITIQUE.md) | **Cẩm nang Phản biện & Câu hỏi Sát thủ Hội đồng** | • Đánh giá độc lập 7 luồng theo 4 lăng kính: Edge Cases, Pháp lý/Dòng tiền, Concurrency, Câu hỏi sát thủ của Giảng viên Phản biện Trưởng |
-| [**`docs/GAP-ANALYSIS-UNIT-ALLOCATION-REDESIGN.md`**](GAP-ANALYSIS-UNIT-ALLOCATION-REDESIGN.md) | **Báo cáo Rà soát Tái cấu trúc Phân bổ Ô kho** | • Bảng đối chiếu lệch pha 24 mục chi tiết As-Is vs To-Be trên 7 tài liệu đặc tả, CSDL và API |
+| [**`docs/_archive/GAP-ANALYSIS-UNIT-ALLOCATION-REDESIGN.md`**](_archive/GAP-ANALYSIS-UNIT-ALLOCATION-REDESIGN.md) | **Báo cáo Rà soát Tái cấu trúc Phân bổ Ô kho (Lưu trữ)** | • Bảng đối chiếu lệch pha 24 mục chi tiết As-Is vs To-Be trên 7 tài liệu đặc tả, CSDL và API |
 
 ---
 

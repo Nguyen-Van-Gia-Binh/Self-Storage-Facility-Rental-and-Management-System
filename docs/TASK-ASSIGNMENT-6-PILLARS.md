@@ -4,7 +4,7 @@
 > **Người chủ trì phân công (thay Lead Gia Bình):** Lê Thanh Tùng (Backend Lead)  
 > **Áp dụng cho:** Toàn bộ 4 thành viên (Lê Thanh Tùng, Nguyễn Phạm Xuân Nhi, Nguyễn Văn Gia Bình, Huỳnh Nhật)  
 > **Nhánh nền tảng tích hợp chung:** `feature/Tx-test-all-features`  
-> **Tài liệu tham chiếu:** [`docs/BUSINESS-RULES.md`](BUSINESS-RULES.md) · [`docs/WORKFLOWS.md`](WORKFLOWS.md) · [`docs/GAP-ANALYSIS-UNIT-ALLOCATION-REDESIGN.md`](GAP-ANALYSIS-UNIT-ALLOCATION-REDESIGN.md) · [`docs/DASHBOARD.md`](DASHBOARD.md)
+> **Tài liệu tham chiếu:** [`docs/BUSINESS-RULES.md`](BUSINESS-RULES.md) · [`docs/WORKFLOWS.md`](WORKFLOWS.md) · [`docs/_archive/GAP-ANALYSIS-UNIT-ALLOCATION-REDESIGN.md`](_archive/GAP-ANALYSIS-UNIT-ALLOCATION-REDESIGN.md) · [`docs/DASHBOARD.md`](DASHBOARD.md)
 
 ---
 
