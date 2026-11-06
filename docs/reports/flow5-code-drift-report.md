@@ -39,3 +39,4 @@
 
 1. **Tính Toàn vẹn & Sẵn sàng Triển khai:** Luồng Flow 5 đã phản ánh trung thực 100% hiện trạng mã nguồn Java Spring Boot và React TypeScript. Hai sơ đồ Archify (`flow5-facility-storage-workflow.html` và `flow5-facility-hierarchy-tree.html`) đã đạt chuẩn **Showcase** và vượt qua toàn bộ 4 cổng kiểm định nghiêm ngặt.
 2. **Tuân thủ Tuyệt đối Quy tắc Nghiệp vụ:** Toàn bộ các chốt chặn `BR-FM-01` (chọn UnitType từ BOM), `BR-BOM-02` (chặn xóa ô đang thuê), và `SA-03` (cách ly phân quyền đa cơ sở) đều đã được kiểm chứng bằng dòng code thực tế, không có tình trạng "vẽ chay" hay giả định Happy-Path-Only.
+
