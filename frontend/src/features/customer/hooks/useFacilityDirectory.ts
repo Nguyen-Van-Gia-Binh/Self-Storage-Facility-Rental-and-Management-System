@@ -31,12 +31,25 @@ export const FACILITY_IMAGES = [
  * Trích xuất Tỉnh/Thành phố từ địa chỉ
  */
 export function parseCity(address: string): string {
-  if (!address) return 'TP. Hồ Chí Minh';
+  if (!address) return 'Khác';
   if (address.includes('Hà Nội')) return 'Hà Nội';
-  if (address.includes('TP.HCM') || address.includes('Hồ Chí Minh')) return 'TP. Hồ Chí Minh';
+  if (address.includes('TP.HCM') || address.includes('Hồ Chí Minh') || address.includes('Sài Gòn')) return 'TP. Hồ Chí Minh';
   if (address.includes('Đà Nẵng')) return 'Đà Nẵng';
   if (address.includes('Bình Dương')) return 'Bình Dương';
-  return 'TP. Hồ Chí Minh';
+  if (address.includes('Cần Thơ')) return 'Cần Thơ';
+  if (address.includes('Hải Phòng')) return 'Hải Phòng';
+  if (address.includes('Bắc Ninh')) return 'Bắc Ninh';
+  if (address.includes('Khánh Hòa') || address.includes('Nha Trang')) return 'Khánh Hòa';
+  if (address.includes('Nghệ An') || address.includes('Vinh')) return 'Nghệ An';
+
+  // Fallback linh hoạt: Lấy cụm sau dấu phẩy cuối cùng nếu có
+  const parts = address.split(',').map((p) => p.trim());
+  if (parts.length > 1) {
+    const lastPart = parts[parts.length - 1].replace(/^(Tỉnh|TP\.|Thành phố)\s+/i, '').trim();
+    if (lastPart) return lastPart;
+  }
+
+  return 'Khác';
 }
 
 /**
@@ -44,7 +57,7 @@ export function parseCity(address: string): string {
  */
 export function parseDistrict(address: string): string {
   if (!address) return 'Khu vực trung tâm';
-  const match = address.match(/(Quận\s[\wÀ-ỹ0-9]+|Huyện\s[\wÀ-ỹ0-9]+|TP\.\s[\wÀ-ỹ0-9]+|Cầu Giấy|Đống Đa|Thanh Xuân|Hai Bà Trưng|Hải Châu|Bình Thạnh|Thủ Đức)/u);
+  const match = address.match(/(Quận\s[\wÀ-ỹ0-9]+|Huyện\s[\wÀ-ỹ0-9]+|TP\.\s[\wÀ-ỹ0-9]+|Thị xã\s[\wÀ-ỹ0-9]+|Cầu Giấy|Đống Đa|Thanh Xuân|Hai Bà Trưng|Hải Châu|Bình Thạnh|Thủ Đức|Ninh Kiều|Hải An|Yên Phong|Vĩnh Nguyên|Dĩ An)/u);
   return match ? match[0] : 'Khu vực trung tâm';
 }
 

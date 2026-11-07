@@ -161,7 +161,7 @@ export const WaitlistRegistrationModal: React.FC<WaitlistRegistrationModalProps>
               </div>
               <div>
                 <h3 className="text-lg font-bold text-slate-900">Đăng ký Danh sách chờ (Waitlist)</h3>
-                <p className="text-xs text-slate-500">Nhận thông báo và giữ chỗ ưu tiên ngay khi có kho trống</p>
+                <p className="text-xs text-slate-500">Dành cho kho đang hết chỗ hoặc khách hàng, doanh nghiệp muốn đặt trước dài hạn</p>
               </div>
             </div>
 
@@ -207,8 +207,8 @@ export const WaitlistRegistrationModal: React.FC<WaitlistRegistrationModalProps>
               <div className="p-3 bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-xs flex items-start gap-2">
                 <Info className="w-4 h-4 shrink-0 mt-0.5 text-slate-500" />
                 <div>
-                  <strong className="block font-semibold">Đăng ký lịch thuê trước</strong>
-                  <span>FM cơ sở sẽ ghi nhận nhu cầu của bạn vào hệ thống CRM và chủ động liên hệ trước ngày nhận kho.</span>
+                  <strong className="block font-semibold">Đăng ký lịch thuê trước cho tương lai</strong>
+                  <span>Hệ thống CRM sẽ ghi nhận nhu cầu của bạn/doanh nghiệp để Quản lý cơ sở (FM) liên hệ tư vấn và giữ chỗ sớm nhất.</span>
                 </div>
               </div>
             )}
@@ -272,7 +272,7 @@ export const WaitlistRegistrationModal: React.FC<WaitlistRegistrationModalProps>
                   rows={2}
                   value={contactNotes}
                   onChange={(e) => setContactNotes(e.target.value)}
-                  placeholder="Ví dụ: Cần kho khô ráo gửi đồ gia đình, có thể nhận sớm hơn..."
+                  placeholder="Ví dụ: Công ty TNHH ABC cần thuê lưu trữ hồ sơ, hoặc nhận kho sớm hơn..."
                   className="w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none resize-none"
                 />
               </div>

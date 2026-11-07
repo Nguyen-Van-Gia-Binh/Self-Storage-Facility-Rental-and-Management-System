@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
 import {
   FileText,
   Calendar,
   KeyRound,
   ShieldCheck,
-  History,
   CheckCircle2,
   Copy,
   Check,
@@ -41,7 +39,6 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
   onChangePin,
   onReschedulePeriod,
 }) => {
-  const [activeTab, setActiveTab] = useState<'DETAILS' | 'LOGS'>('DETAILS');
   const [detail, setDetail] = useState<CustomerRentalDetail | null>(null);
   const [copiedContractNum, setCopiedContractNum] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -71,7 +68,6 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
     setTimeout(() => {
       onClose();
       setIsClosing(false);
-      setActiveTab('DETAILS');
     }, 180);
   };
 
@@ -125,44 +121,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
   const relocationCode = detail?.relocationSupportRequestCode || contract.relocationSupportRequestCode || 'SUP-202610-0001';
   const relocationReason = detail?.relocationReason || contract.relocationReason || 'Di dời kho đạt chuẩn kỹ thuật theo sự cố hỗ trợ';
 
-  const getStatusBadge = () => {
-    switch (contract.status) {
-      case 'ACTIVE':
-        return <Badge variant="available">Đang hoạt động 24/7</Badge>;
-      case 'PENDING_CHECKIN':
-      case 'PENDING_CHECK_IN' as any:
-        return <Badge variant="reserved">Chờ đối chiếu CCCD tại quầy</Badge>;
-      case 'EXPIRING_SOON':
-        return <Badge variant="warning">Sắp hết hạn</Badge>;
-      case 'OVERDUE': {
-        const overdueDays =
-          contract.overdueDays !== undefined && contract.overdueDays > 0
-            ? contract.overdueDays
-            : 1;
-        const isGracePeriod = overdueDays <= 3;
-        if (contract.overdueFee === 0 && !isGracePeriod) {
-          return (
-            <Badge variant="warning" className="bg-amber-50 text-amber-800 border-amber-300">
-              Đã tất toán phạt — Chờ dọn kho / trả kho
-            </Badge>
-          );
-        }
-        return (
-          <Badge variant={isGracePeriod ? 'warning' : 'overdue'}>
-            {isGracePeriod ? `Ân hạn D+${overdueDays}` : `Quá hạn D+${overdueDays}`}
-          </Badge>
-        );
-      }
-      case 'PENDING_RETURN':
-        return <Badge variant="warning">Đang chờ trả kho</Badge>;
-      case 'CLOSED':
-        return <Badge variant="default">Đã kết thúc</Badge>;
-      case 'TERMINATED':
-        return <Badge variant="danger">Đã chấm dứt</Badge>;
-      default:
-        return <Badge variant="default">{contract.status}</Badge>;
-    }
-  };
+
 
   return createPortal(
     <>
@@ -190,63 +149,40 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8 sm:pr-0">
             <div>
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-bold bg-white/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider text-emerald-100 mb-1">
+              <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-200 mb-1">
                 <FileText className="w-3.5 h-3.5 text-amber-300" />
                 HỢP ĐỒNG THUÊ Ô KHO THÔNG MINH & BIÊN BẢN BÀN GIAO ĐIỆN TỬ
-              </span>
+              </p>
               <h3 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2 mt-0.5">
                 Ô kho {effectiveUnitNumber}
               </h3>
             </div>
             <div className="flex sm:flex-col items-start sm:items-end gap-1.5">
-              {getStatusBadge()}
-              <div className="flex items-center gap-1.5 text-[11px] font-mono text-emerald-100 bg-white/10 px-2 py-0.5 rounded">
-                <span>{effectiveContractNumber}</span>
+              <div className="flex items-center gap-1.5 text-xs font-mono text-emerald-100">
+                <span>Số HĐ: <strong className="text-white font-bold">{effectiveContractNumber}</strong></span>
                 <button
                   type="button"
                   onClick={() => handleCopy(effectiveContractNumber)}
-                  className="hover:text-white cursor-pointer"
+                  className="hover:text-white cursor-pointer ml-1 p-0.5 transition-colors"
                   title="Sao chép số hợp đồng"
                 >
-                  {copiedContractNum ? <Check className="w-3 h-3 text-amber-300" /> : <Copy className="w-3 h-3" />}
+                  {copiedContractNum ? <Check className="w-3.5 h-3.5 text-amber-300" /> : <Copy className="w-3.5 h-3.5 text-emerald-300" />}
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Navigation Tabs */}
+        {/* Subheader */}
         <div className="flex items-center border-b border-slate-200 px-5 pt-3 bg-slate-50/50 gap-4 text-xs font-bold">
-          <button
-            type="button"
-            onClick={() => setActiveTab('DETAILS')}
-            className={`pb-3 px-1 border-b-2 transition-colors flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'DETAILS'
-                ? 'border-brand-600 text-brand-700'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
+          <div className="pb-3 px-1 border-b-2 border-brand-600 text-brand-700 flex items-center gap-1.5">
             <FileText className="w-4 h-4" />
             <span>Văn bản hợp đồng & Biên bản bàn giao</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('LOGS')}
-            className={`pb-3 px-1 border-b-2 transition-colors flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'LOGS'
-                ? 'border-brand-600 text-brand-700'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <History className="w-4 h-4" />
-            <span>Lịch sử ra vào ô kho</span>
-          </button>
+          </div>
         </div>
 
         {/* Modal Content */}
         <div className="p-5 sm:p-6 max-h-[72vh] overflow-y-auto space-y-4">
-          {activeTab === 'DETAILS' ? (
             <div className="space-y-4 text-xs">
               {/* Banner Phụ lục điều chuyển ô kho do sự cố kỹ thuật (nếu có) */}
               {relocationId && (
@@ -514,18 +450,6 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                 </div>
               </div>
             </div>
-          ) : (
-            /* Tab 2: Lịch sử ra vào ô kho */
-            <div className="py-14 px-4 text-center bg-slate-50/70 rounded-2xl border border-dashed border-slate-200 my-2">
-              <div className="w-12 h-12 mx-auto rounded-full bg-emerald-50 text-brand-600 border border-emerald-100 flex items-center justify-center mb-3">
-                <History className="w-6 h-6" />
-              </div>
-              <h4 className="text-sm font-bold text-slate-800">Tính năng đang được phát triển</h4>
-              <p className="text-xs text-slate-500 mt-1.5 max-w-sm mx-auto leading-relaxed">
-                Hệ thống ghi nhận nhật ký cảm biến và lịch sử ra vào ô kho thông minh đang được nâng cấp và sẽ sớm ra mắt trong bản cập nhật tới.
-              </p>
-            </div>
-          )}
         </div>
 
         {/* Footer với nút In hợp đồng, Đổi PIN, Báo trả kho và Đóng */}

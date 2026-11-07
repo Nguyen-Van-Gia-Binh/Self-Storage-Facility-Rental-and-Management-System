@@ -66,7 +66,7 @@ describe('OverdueClearedAudit: Trạng thái & Cảnh báo Thẻ ô kho sau khi 
     expect(returnBtn).toBeInTheDocument();
   });
 
-  it('ContractDetailModal hiển thị badge Đã tất toán phạt khi overdueFee = 0', () => {
+  it('ContractDetailModal hiển thị tiêu đề văn bản hợp đồng khi mở', () => {
     render(
       <ContractDetailModal
         isOpen={true}
@@ -75,7 +75,7 @@ describe('OverdueClearedAudit: Trạng thái & Cảnh báo Thẻ ô kho sau khi 
       />
     );
 
-    expect(screen.getByText('Đã tất toán phạt — Chờ dọn kho / trả kho')).toBeInTheDocument();
+    expect(screen.getByText(/Văn bản hợp đồng & Biên bản bàn giao/i)).toBeInTheDocument();
     expect(screen.queryByText('Quá hạn thanh toán')).not.toBeInTheDocument();
   });
 });

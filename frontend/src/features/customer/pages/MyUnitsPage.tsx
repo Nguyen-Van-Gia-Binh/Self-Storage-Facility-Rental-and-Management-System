@@ -662,11 +662,6 @@ export const MyUnitsPage: React.FC = () => {
         cancelReturnError={cancelReturnError}
       />
 
-      {/* SLA Hoàn cọc thông báo */}
-      <div className="mt-8 p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between text-xs text-slate-500">
-        <span>Tiền cọc Deposit được hoàn trả an toàn trong vòng <strong className="text-slate-700">7 ngày làm việc</strong> sau khi hoàn tất nghiệm thu trả kho không hư hại (BR-RET-07).</span>
-      </div>
-
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-5 duration-300">
