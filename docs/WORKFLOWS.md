@@ -186,6 +186,8 @@ Quy trình hỗ trợ linh hoạt 2 nhánh nhận kho theo chuẩn Contactless S
 
 #### Nhánh B: Check-in On-site tại quầy (Với Facility Staff)
 
+> **Quy tắc phân công & Bàn giao (BR-CHK-02):** Trong giai đoạn chuẩn bị (`PENDING_CHECK_IN`), Quản lý cơ sở (FM) có thể thực hiện **Gán ô kho cụ thể** (`assignUnit`) trước hoặc **Phân công nhân viên tiếp đón** (`assignCheckInStaff`) trước tùy ý. Tuy nhiên, tại thời điểm tiếp đón khách tại quầy (**Check-in Gate**), hệ thống bắt buộc phải có đủ cả hai: Ô kho vật lý cụ thể và Nhân viên tiếp đón đại diện cơ sở!
+
 ```
 [Facility Staff Desk — StaffDashboardPage.tsx / StaffCheckInPage.tsx]
        │

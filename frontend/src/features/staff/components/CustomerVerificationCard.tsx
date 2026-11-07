@@ -42,14 +42,20 @@ export const CustomerVerificationCard: React.FC<CustomerVerificationCardProps> =
       <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 space-y-2.5 text-xs">
         <div className="flex items-center justify-between">
           <span className="text-slate-500">Ô kho bàn giao:</span>
-          <span className="font-mono font-bold text-teal-700 bg-teal-50 border border-teal-200 px-2.5 py-0.5 rounded-md text-sm">
-            {contract.storageUnitCode}
-          </span>
+          {contract.storageUnitId && contract.storageUnitCode && contract.storageUnitCode !== 'Chưa chọn ô' ? (
+            <span className="font-mono font-bold text-teal-700 bg-teal-50 border border-teal-200 px-2.5 py-0.5 rounded-md text-sm">
+              {contract.storageUnitCode}
+            </span>
+          ) : (
+            <span className="font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md text-xs">
+              ⚠️ Chưa phân bổ ô kho
+            </span>
+          )}
         </div>
         <div className="flex items-center justify-between">
           <span className="text-slate-500">Vị trí & Tầng:</span>
           <span className="font-semibold text-slate-800">
-            Tầng {contract.floor} · {contract.position}
+            {contract.floor ? `Tầng ${contract.floor} · ${contract.position || ''}` : 'Chưa xác định vị trí'}
           </span>
         </div>
         <div className="flex items-center justify-between gap-2">

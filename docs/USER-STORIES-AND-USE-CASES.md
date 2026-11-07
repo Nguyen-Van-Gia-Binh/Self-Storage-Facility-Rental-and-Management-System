@@ -1099,7 +1099,8 @@ _Phân công Facility Staff hỗ trợ bàn giao, kiểm tra ô kho hoặc xử 
 - **AC-1** — _Given_ danh sách các lượt hẹn check-in và yêu cầu trả kho (`PENDING_RETURN`) trong ngày, _when_ tôi chọn nhiệm vụ và chọn nhân viên trực từ danh sách Staff của cơ sở, _then_ hệ thống cập nhật nhân viên phụ trách qua API `PATCH /contracts/{id}/assign-return` và nhiệm vụ xuất hiện ngay trên màn hình ca trực của nhân viên được gán (`US-FS-06.1`, `US-FS-04.1`).
 - **AC-2** — _Given_ có một sự cố hỏng hóc do khách báo về (`US-SC-06.1`), _when_ tôi tiếp nhận, _then_ tôi phân công nhân viên đang trực ca phụ trách xử lý trực tiếp (`UC-F7-04`) mà không áp đặt phân loại khẩn cấp hay đồng hồ đếm ngược SLA theo `BR-SUP-01`.
 - **AC-3** — _Given_ một nhân viên đang có quá nhiều nhiệm vụ tồn đọng hoặc báo nghỉ phép, _when_ tôi mở danh sách phân công, _then_ hệ thống hiển thị số lượng task đang gán của từng nhân viên để tôi phân bổ đồng đều.
-- **AC-4** — _Given_ tôi muốn điều chuyển nhiệm vụ từ nhân viên A sang nhân viên B, _when_ tôi cập nhật người phụ trách, _then_ hệ thống gửi thông báo thay đổi phân công đến cả hai nhân viên.
+- [x] **AC-4** — _Given_ tôi muốn điều chuyển nhiệm vụ từ nhân viên A sang nhân viên B, _when_ tôi cập nhật người phụ trách, _then_ hệ thống gửi thông báo thay đổi phân công đến cả hai nhân viên.
+- **AC-5** — _Given_ một hợp đồng ở trạng thái _Pending Check-in_, _when_ tôi chuẩn bị tiếp đón, _then_ tôi có thể gán ô kho cụ thể (`assignUnit`) hoặc phân công nhân viên tiếp đón (`assignStaff`) theo thứ tự bất kỳ mà không bị hệ thống ép buộc tuần tự; tuy nhiên thủ tục bàn giao tại quầy bắt buộc phải có đủ ô kho và nhân viên theo `BR-CHK-02`.
 
 ---
 
