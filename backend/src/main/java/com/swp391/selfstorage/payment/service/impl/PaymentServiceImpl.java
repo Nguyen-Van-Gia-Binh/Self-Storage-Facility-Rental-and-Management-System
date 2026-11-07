@@ -1,5 +1,7 @@
 package com.swp391.selfstorage.payment.service.impl;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.swp391.selfstorage.common.dto.PageResponse;
@@ -37,8 +40,10 @@ import com.swp391.selfstorage.reservation.service.ReservationService;
 import jakarta.persistence.criteria.Predicate;
 import java.util.Map;
 import com.swp391.selfstorage.payment.gateway.PaymentGateway;
+import com.swp391.selfstorage.payment.gateway.VnPayGateway;
 import com.swp391.selfstorage.payment.gateway.dto.PaymentCheckoutCommand;
 import com.swp391.selfstorage.payment.gateway.dto.PaymentCheckoutResult;
+import com.swp391.selfstorage.payment.gateway.dto.VnPayQueryResult;
 
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
@@ -59,6 +64,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentMapper paymentMapper;
     private final PaymentGateway paymentGateway;
     private final PolicyVersionRepository policyVersionRepository;
+    private final VnPayGateway vnPayGateway;
 
     @Autowired(required = false)
     private ReservationHoldExpiryService reservationHoldExpiryService;
@@ -536,5 +542,62 @@ private void publishContractRenewalCompleted(PaymentTransaction payment) {
 
         Page<PaymentTransaction> page = paymentTransactionRepository.findAll(spec, pageable);
         return PageResponse.from(page.map(paymentMapper::toResponse));
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
+    public boolean reconcileSingleOrder(Long orderCode) {
+        PaymentTransaction txn = paymentTransactionRepository.findByOrderCodeForUpdate(orderCode).orElse(null);
+        if (txn == null || !"PENDING".equalsIgnoreCase(txn.getStatus())) {
+            return false;
+        }
+
+        Instant createdAt = txn.getCreatedAt();
+        if (createdAt == null) {
+            return false;
+        }
+
+        Duration age = Duration.between(createdAt, Instant.now());
+        if (age.toMinutes() < 5) {
+            return false;
+        }
+
+        VnPayQueryResult qr = vnPayGateway.queryDr(txn.getOrderCode(), createdAt);
+
+        if (qr.isSuccess()) {
+            log.info("[RECONCILIATION] VNPay SUCCESS cho orderCode={}, kích hoạt hoàn tất đơn", orderCode);
+            return completeVnpayPayment(
+                    orderCode,
+                    true,
+                    qr.getAmount(),
+                    qr.getTransactionNo(),
+                    qr.getBankCode());
+        }
+
+        if (qr.isNotFound() || qr.isFailed()) {
+            log.warn("[RECONCILIATION] VNPay xác nhận NOT_FOUND/FAILED cho orderCode={} -> Chuyển EXPIRED", orderCode);
+            expireReconciledTransaction(txn);
+            return true;
+        }
+
+        // VNPay trả lỗi 99 hoặc lỗi mạng: Hard Timeout nếu >= 48h
+        if (age.toHours() >= 48) {
+            log.warn("[RECONCILIATION] Đơn orderCode={} đã quá 48h và VNPay trả lỗi ({}) -> Chuyển EXPIRED",
+                    orderCode, qr.getResponseCode());
+            expireReconciledTransaction(txn);
+            return true;
+        }
+
+        log.info("[RECONCILIATION] Đơn orderCode={} gặp lỗi ({}), giữ PENDING để tiếp tục đối soát",
+                orderCode, qr.getResponseCode());
+        return false;
+    }
+
+    private void expireReconciledTransaction(PaymentTransaction txn) {
+        txn.setStatus("EXPIRED");
+        paymentTransactionRepository.save(txn);
+        if (txn.getReservationId() != null && reservationHoldExpiryService != null) {
+            reservationHoldExpiryService.expireIfElapsed(txn.getReservationId());
+        }
     }
 }

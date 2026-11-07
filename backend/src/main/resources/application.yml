@@ -94,4 +94,11 @@ booking:
 waitlist:
   max-advance-days: ${WAITLIST_MAX_ADVANCE_DAYS:365}
 
+app:
+  cron:
+    payment-reconciliation:
+      enabled: ${CRON_PAYMENT_RECONCILIATION_ENABLED:true}
+      cron-expression: ${CRON_PAYMENT_RECONCILIATION:0 */15 * * * ?}
+
+
 

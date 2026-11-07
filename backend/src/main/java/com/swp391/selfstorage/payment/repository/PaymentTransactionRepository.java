@@ -3,6 +3,7 @@ package com.swp391.selfstorage.payment.repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
@@ -29,6 +30,8 @@ public interface PaymentTransactionRepository
     Optional<PaymentTransaction> findByOrderCodeForUpdate(@Param("orderCode") Long orderCode);
 
     List<PaymentTransaction> findByStatusOrderByCreatedAtAsc(String status);
+
+    List<PaymentTransaction> findByStatusOrderByCreatedAtAsc(String status, Pageable pageable);
 
     Optional<PaymentTransaction> findTopByContractIdAndTransactionTypeOrderByCreatedAtDesc(Long contractId, String transactionType);
 }

@@ -106,10 +106,6 @@ public class VnPayGateway {
         return configured() && verifyParams(hashSecret, params);
     }
 
-    public VnPayQueryResult queryDr(long orderCode) {
-        return queryDr(orderCode, null);
-    }
-
     public VnPayQueryResult queryDr(long orderCode, Instant createdAt) {
         if (!configured()) {
             log.warn("VNPay chưa được cấu hình, bỏ qua queryDr cho orderCode={}", orderCode);
