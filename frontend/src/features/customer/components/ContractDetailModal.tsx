@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
 import {
   FileText,
   Calendar,
   KeyRound,
   ShieldCheck,
   CheckCircle2,
-  Copy,
-  Check,
   X,
   CreditCard,
   Building2,
@@ -42,7 +39,6 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
   onReschedulePeriod,
 }) => {
   const [detail, setDetail] = useState<CustomerRentalDetail | null>(null);
-  const [copiedContractNum, setCopiedContractNum] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
 
   useEffect(() => {
@@ -71,12 +67,6 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
       onClose();
       setIsClosing(false);
     }, 180);
-  };
-
-  const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedContractNum(true);
-    setTimeout(() => setCopiedContractNum(false), 2000);
   };
 
   const handlePrint = () => {
@@ -133,56 +123,6 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
   const relocationCode = detail?.relocationSupportRequestCode || contract.relocationSupportRequestCode || 'SUP-202610-0001';
   const relocationReason = detail?.relocationReason || contract.relocationReason || 'Di dời kho đạt chuẩn kỹ thuật theo sự cố hỗ trợ';
 
-  const getStatusBadge = () => {
-    switch (contract.status) {
-      case 'ACTIVE':
-        return <Badge variant="available">Đang hoạt động 24/7</Badge>;
-      case 'PENDING_CHECKIN':
-      case 'PENDING_CHECK_IN' as any:
-        if (contract.relocationEligible || detail?.relocationEligible) {
-          return (
-            <Badge variant="warning" className="bg-amber-100 text-amber-900 border-amber-300 font-bold">
-              Chờ gán lại ô kho
-            </Badge>
-          );
-        }
-        return <Badge variant="reserved">Chờ đối chiếu CCCD tại quầy</Badge>;
-      case 'EXPIRING_SOON':
-        return <Badge variant="warning">Sắp hết hạn</Badge>;
-      case 'OVERDUE': {
-        const overdueDays =
-          contract.overdueDays !== undefined && contract.overdueDays > 0
-            ? contract.overdueDays
-            : 1;
-        const isGracePeriod = overdueDays <= 3;
-        if (contract.overdueFee === 0 && !isGracePeriod) {
-          return (
-            <Badge variant="warning" className="bg-amber-50 text-amber-800 border-amber-300">
-              Đã tất toán phạt — Chờ dọn kho / trả kho
-            </Badge>
-          );
-        }
-        return (
-          <Badge variant={isGracePeriod ? 'warning' : 'overdue'}>
-            {isGracePeriod ? `Ân hạn D+${overdueDays}` : `Quá hạn D+${overdueDays}`}
-          </Badge>
-        );
-      }
-      case 'PENDING_RETURN':
-        return <Badge variant="warning">Đang chờ trả kho</Badge>;
-      case 'CLOSED':
-        return <Badge variant="default">Đã kết thúc</Badge>;
-      case 'TERMINATED':
-        return (
-          <Badge variant="danger" className="bg-rose-100 text-rose-800 border-rose-300 font-bold">
-            Hủy do sự cố bàn giao (Chờ hoàn cọc)
-          </Badge>
-        );
-      default:
-        return <Badge variant="default">{contract.status}</Badge>;
-    }
-  };
-
   return createPortal(
     <>
       <div
@@ -197,7 +137,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
         }`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header Thông tin hợp đồng & Trạng thái */}
+        {/* Header Thông tin hợp đồng */}
         <div className="bg-gradient-to-r from-[#0a483c] via-[#0d6050] to-[#14937a] p-5 text-white relative">
           <button
             type="button"
@@ -207,30 +147,14 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
             <X className="w-5 h-5" />
           </button>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8 sm:pr-0">
-            <div>
-              <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-200 mb-1">
-                <FileText className="w-3.5 h-3.5 text-amber-300" />
-                HỢP ĐỒNG THUÊ Ô KHO THÔNG MINH & BIÊN BẢN BÀN GIAO ĐIỆN TỬ
-              </p>
-              <h3 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2 mt-0.5">
-                Ô kho {effectiveUnitNumber}
-              </h3>
-            </div>
-            <div className="flex sm:flex-col items-start sm:items-end gap-1.5">
-              {getStatusBadge()}
-              <div className="flex items-center gap-1.5 text-xs font-mono text-emerald-100">
-                <span>Số HĐ: <strong className="text-white font-bold">{effectiveContractNumber}</strong></span>
-                <button
-                  type="button"
-                  onClick={() => handleCopy(effectiveContractNumber)}
-                  className="hover:text-white cursor-pointer ml-1 p-0.5 transition-colors"
-                  title="Sao chép số hợp đồng"
-                >
-                  {copiedContractNum ? <Check className="w-3.5 h-3.5 text-amber-300" /> : <Copy className="w-3.5 h-3.5 text-emerald-300" />}
-                </button>
-              </div>
-            </div>
+          <div className="pr-10">
+            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-200 mb-1">
+              <FileText className="w-3.5 h-3.5 text-amber-300" />
+              HỢP ĐỒNG THUÊ Ô KHO THÔNG MINH & BIÊN BẢN BÀN GIAO ĐIỆN TỬ
+            </p>
+            <h3 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2 mt-0.5">
+              Ô kho {effectiveUnitNumber}
+            </h3>
           </div>
         </div>
 
@@ -302,7 +226,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                       <span>HỢP ĐỒNG ĐÃ DỪNG THỦ TỤC NHẬN KHO DO SỰ CỐ KỸ THUẬT</span>
                     </div>
                     <span className="text-[11px] font-mono font-bold bg-rose-200 text-rose-900 px-2 py-0.5 rounded">
-                      Chờ hoàn tiền 100%
+                      Hủy do sự cố bàn giao (Chờ hoàn cọc)
                     </span>
                   </div>
                   <p className="text-xs text-rose-900 leading-relaxed">
@@ -366,7 +290,11 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1">
+                  <div>
+                    <span className="text-slate-400 block text-[11px]">Số hợp đồng:</span>
+                    <span className="font-mono font-bold text-slate-800">{effectiveContractNumber}</span>
+                  </div>
                   <div>
                     <span className="text-slate-400 block text-[11px]">Ngày bắt đầu thuê:</span>
                     <span className="font-bold text-slate-800">{contract.startDate}</span>

@@ -6,9 +6,9 @@
   "status": "pass",
   "visualReview": "not-requested",
   "provenance": "current",
-  "deliveryReceiptId": "55666db7-5f85-48fe-a4e5-d09b15124a5e",
+  "deliveryReceiptId": "1f2eceeb-eabf-48e7-bc26-5ee3ecd13fe9",
   "artifact": {
-    "path": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation-sequence.html",
+    "path": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation\\flow-1-reservation-sequence.html",
     "sha256": "dcdeec7965cd2f05fd872116a4bb2d99499486ac44f53f213a7fce98aedff7ad",
     "bytes": 858440
   },
