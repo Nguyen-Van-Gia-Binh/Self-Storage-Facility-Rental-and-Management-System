@@ -106,4 +106,20 @@ public final class PolicyNumbers {
         }
         return cursor.atTime(start.toLocalTime()).atOffset(start.getOffset());
     }
+
+    public static OffsetDateTime minusWorkingDays(OffsetDateTime start, int workingDays) {
+        if (start == null) {
+            return null;
+        }
+        int remaining = Math.max(0, workingDays);
+        LocalDate cursor = start.toLocalDate();
+        while (remaining > 0) {
+            cursor = cursor.minusDays(1);
+            DayOfWeek day = cursor.getDayOfWeek();
+            if (day != DayOfWeek.SATURDAY && day != DayOfWeek.SUNDAY) {
+                remaining--;
+            }
+        }
+        return cursor.atTime(start.toLocalTime()).atOffset(start.getOffset());
+    }
 }

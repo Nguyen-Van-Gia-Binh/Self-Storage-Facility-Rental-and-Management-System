@@ -62,10 +62,13 @@ public class SecurityConfig {
                                 "/auth/**",
                                 "/public/**",
                                 "/facilities/**",
-                                "/payments/webhook/**"
+                                "/payments/webhook/**",
+                                "/policies/active",
+                                "/policies",
+                                "/policies/{id}"
                         ).permitAll()
-                        // Các request khác cho phép trong giai đoạn phát triển, bảo vệ qua @PreAuthorize
-                        .anyRequest().permitAll()
+                        // Mọi request nghiệp vụ khác bắt buộc phải được xác thực danh tính JWT
+                        .anyRequest().authenticated()
                 );
 
         JwtAuthenticationFilter jwtAuthenticationFilter = jwtAuthenticationFilterProvider.getIfAvailable();

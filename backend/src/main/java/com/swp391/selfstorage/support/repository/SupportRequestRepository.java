@@ -92,4 +92,18 @@ public interface SupportRequestRepository extends JpaRepository<SupportRequest, 
             @org.springframework.data.repository.query.Param("assignedStaffId") Long assignedStaffId,
             Pageable pageable
     );
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query(
+            "UPDATE SupportRequest s SET s.status = :closedStatus, s.autoClosedAt = :now, s.updatedAt = :now " +
+            "WHERE s.status = :resolvedStatus " +
+            "AND (s.relocationRequired IS NULL OR s.relocationRequired = false) " +
+            "AND s.resolvedAt <= :threshold"
+    )
+    int bulkAutoCloseResolvedTickets(
+            @org.springframework.data.repository.query.Param("closedStatus") SupportStatus closedStatus,
+            @org.springframework.data.repository.query.Param("resolvedStatus") SupportStatus resolvedStatus,
+            @org.springframework.data.repository.query.Param("now") java.time.OffsetDateTime now,
+            @org.springframework.data.repository.query.Param("threshold") java.time.OffsetDateTime threshold
+    );
 }
