@@ -60,6 +60,7 @@
 | `ISS-154` | Vòng lặp đối soát VNPay vô tận (mã 99), thiếu Index CSDL và bẫy Long Transaction khi gọi QueryDR trong lock DB.             | Thêm Hard Timeout 48h, Flyway V19 Index, tách HTTP I/O khỏi Tx, chuẩn hóa Enum, 574 tests xanh, FE build 0 lỗi.                             |    Nhật    |      `RESOLVED`      |
 | `ISS-155` | Đồng bộ luồng xử lý sự cố tiếp đón Check-in: Phân nhánh Đổi ô kho 2D vs Hủy hoàn cọc 100%, đồng bộ trạng thái Chờ gán lại và giải mã thông tin khách hàng trên hàng đợi FM. | Hoàn tất phân nhánh rejectHandover (RELOCATE / CANCEL), upsert HandoverRecord, hàng đợi gán lại FM 2D, badge Chờ gán lại ô kho, test xanh 100%, FE build 0 lỗi. |  Gia Bình  |      `RESOLVED`      |
 | `ISS-156` | Tối ưu hóa hiệu năng và bảo mật Flow 7 & Flow SYS: Double-Gate SecurityConfig (.authenticated), JPQL Bulk Update SupportAutoCloseJob, Flyway V20 Index và Deprecated slaDueAt. | Khóa chặt SecurityConfig (.authenticated), bulk update SupportAutoCloseJob 1 câu SQL, Flyway V20 idx_support_request_status_resolved_at, 77/77 tests xanh, FE build 0 lỗi. | Thanh Tùng |      `RESOLVED`      |
+| `E2E-WS2-01` | Hoàn tất thiết lập Playwright E2E Multi-Actor cho Flow 3 (BR-RET-05 Win-Win) và đóng gói trọn bộ vũ khí thuyết trình live demo. | Xây dựng test suite 3 context độc lập, dataset DDT quyết toán cọc và đóng gói vũ khí live demo (`3791b88`). | Gia Bình | `VERIFIED` |
 
 _(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/\_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))_
 
@@ -71,7 +72,7 @@ _(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây
 | :------------------------------------- | :----------: | :---------------------: | :---------: | :---------: | :--------------------: | :------------------------------------------------------------------ |
 | **Catalog, Đặt chỗ & Waitlist CRM**    |  **Flow 1**  |     Xuân Nhi (WS1)      | ✅ Sẵn sàng | ✅ Sẵn sàng |     ✅ Đã kiểm thử     | Hoàn thành E2E test đặt kho, Waitlist CRM & Check-in online 24/7    |
 | **Bàn giao kho & Auto-Activation**     |  **Flow 2**  |    Thanh Tùng (WS4)     | ✅ Sẵn sàng | ✅ Sẵn sàng |       🔄 Đang QA       | Thiết kế test case ký biên bản Check-in 4 tiêu chí & cấp PIN 24/7   |
-| **Quản lý kho đang thuê & Trả sớm**    |  **Flow 3**  |     Gia Bình (WS2)      | ✅ Sẵn sàng | ✅ Sẵn sàng |       🔄 Đang QA       | Kiểm thử kịch bản nghiệm thu hoàn cọc trả sớm Win-Win               |
+| **Quản lý kho đang thuê & Trả sớm**    |  **Flow 3**  |     Gia Bình (WS2)      | ✅ Sẵn sàng | ✅ Sẵn sàng | ✅ Đã kiểm chứng (Playwright E2E) | Hoàn tất kịch bản nghiệm thu hoàn cọc trả sớm Win-Win Multi-Actor |
 | **Bảng giá BOM & Tỷ lệ lấp đầy**       |  **Flow 4**  |    Huỳnh Nhật (WS3)     | ✅ Sẵn sàng | ✅ Sẵn sàng |     ✅ Đã kiểm thử     | Hoàn tất Net MRR, Quỹ ký cược Escrow, và Báo cáo CSV/KPI Enterprise |
 | **Quản lý ô kho & Phân công nhân sự**  |  **Flow 5**  |    Thanh Tùng (WS4)     | ✅ Sẵn sàng | ✅ Sẵn sàng |       🔄 Đang QA       | Kiểm thử gán ô kho và điều phối nhân viên theo ca trực cơ sở        |
 | **Tự gia hạn thuê online**             | **Flow 6.1** |     Xuân Nhi (WS1)      | ✅ Sẵn sàng | ✅ Sẵn sàng |     ✅ Đã kiểm thử     | Hoàn thành E2E test tự gia hạn online, xử lý xung đột capacity chu kỳ sau |
