@@ -516,13 +516,20 @@ Phiếu yêu cầu khiếu nại, sự cố kỹ thuật của khách hàng (`Fl
 | `description` | `NVARCHAR(1000)`| Có | | Chi tiết vấn đề khách gặp phải |
 | `status` | `VARCHAR(20)` | Có | `DEFAULT 'NEW'`, `CHECK IN ('NEW', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', 'AUTO_CLOSED')` | Trạng thái xử lý phiếu hỗ trợ |
 | `assigned_staff_id`| `BIGINT` | Không | `FK` $\rightarrow$ `app_user(id)` | Nhân viên kỹ thuật được giao xử lý |
-| `sla_due_at` | `DATETIMEOFFSET`| Không | | Hạn chót cam kết giải quyết theo SLA |
+| `sla_due_at` | `DATETIMEOFFSET`| Không | *(Deprecated)* | Hạn chót cam kết giải quyết (Đã bãi bỏ theo BR-SUP-01; giữ cột để tương thích ngược) |
 | `resolved_at` | `DATETIMEOFFSET`| Không | | Mốc thời gian xử lý xong |
 | `resolution_note`| `NVARCHAR(1000)`| Không | | Ghi nhận kết quả khắc phục sự cố |
 | `customer_confirmed_at`| `DATETIMEOFFSET`| Không | | Mốc khách hàng xác nhận hài lòng |
-| `auto_closed_at` | `DATETIMEOFFSET`| Không | | Mốc tự động đóng sau 3 ngày không phản hồi |
+| `auto_closed_at` | `DATETIMEOFFSET`| Không | | Mốc tự động đóng sau số ngày làm việc cấu hình |
+| `relocation_required` | `BOOLEAN` | Có | `DEFAULT FALSE` | Cờ đánh dấu yêu cầu đổi ô kho khẩn cấp do hư hỏng nặng (BR-SUP-05) |
+| `customer_notice` | `NVARCHAR(500)` | Không | | Thông báo hệ thống gửi khách hàng khi đổi kho hoặc xử lý sự cố |
 | `created_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Mốc tiếp nhận yêu cầu |
 | `updated_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Mốc cập nhật tiến độ |
+
+*Chỉ mục bổ sung (Index Optimization):*
+- `ix_support_request_customer_id`: Tăng tốc tra cứu lịch sử sự cố theo khách hàng.
+- `ix_support_request_status`: Lọc danh sách ticket theo trạng thái trên dashboard quản lý.
+- `idx_support_request_status_resolved_at` *(V20)*: Composite Index trên `(status, resolved_at)` tối ưu hóa truy vấn quét và cập nhật tự động đóng theo lô của `SupportAutoCloseJob`.
 
 ### 6.2. Bảng `staff_daily_assignment`
 Phân công nhiệm vụ thực địa hàng ngày cho nhân viên cơ sở (`FM-05`, `UC-F2-09`, `UC-F5-04`).

@@ -41,6 +41,10 @@ public class SupportRequest {
     @Column(name = "assigned_staff_id")
     private Long assignedStaffId;
 
+    /**
+     * @deprecated Nghiệp vụ SLA cứng đã bãi bỏ (BR-SUP-01 - 01/10/2026). Giữ cột để tương thích ngược.
+     */
+    @Deprecated
     @Column(name = "sla_due_at")
     private OffsetDateTime slaDueAt;
 

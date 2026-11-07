@@ -59,6 +59,7 @@
 | `ISS-153` | Chuẩn hóa giao diện Flow 1, bản in hợp đồng pháp lý (NĐ 30/2020), phân trang màu thương hiệu và tối ưu UX gia hạn.         | Bỏ đường kẻ web trên bản in hợp đồng, sửa nút phân trang bg-brand-600, rút gọn cảnh báo gia hạn, test xanh 100%, FE build 0 lỗi.            |  Xuân Nhi  |      `RESOLVED`      |
 | `ISS-154` | Vòng lặp đối soát VNPay vô tận (mã 99), thiếu Index CSDL và bẫy Long Transaction khi gọi QueryDR trong lock DB.             | Thêm Hard Timeout 48h, Flyway V19 Index, tách HTTP I/O khỏi Tx, chuẩn hóa Enum, 574 tests xanh, FE build 0 lỗi.                             |    Nhật    |      `RESOLVED`      |
 | `ISS-155` | Đồng bộ luồng xử lý sự cố tiếp đón Check-in: Phân nhánh Đổi ô kho 2D vs Hủy hoàn cọc 100%, đồng bộ trạng thái Chờ gán lại và giải mã thông tin khách hàng trên hàng đợi FM. | Hoàn tất phân nhánh rejectHandover (RELOCATE / CANCEL), upsert HandoverRecord, hàng đợi gán lại FM 2D, badge Chờ gán lại ô kho, test xanh 100%, FE build 0 lỗi. |  Gia Bình  |      `RESOLVED`      |
+| `ISS-156` | Tối ưu hóa hiệu năng và bảo mật Flow 7 & Flow SYS: Double-Gate SecurityConfig (.authenticated), JPQL Bulk Update SupportAutoCloseJob, Flyway V20 Index và Deprecated slaDueAt. | Khóa chặt SecurityConfig (.authenticated), bulk update SupportAutoCloseJob 1 câu SQL, Flyway V20 idx_support_request_status_resolved_at, 77/77 tests xanh, FE build 0 lỗi. | Thanh Tùng |      `RESOLVED`      |
 
 _(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/\_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))_
 
