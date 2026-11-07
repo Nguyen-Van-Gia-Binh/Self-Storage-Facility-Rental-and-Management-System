@@ -461,6 +461,7 @@ _Đến nhận ô kho được cấp theo lịch hẹn đã đặt._
 - **AC-3** — _Given_ tôi thanh toán phí dời ngày thành công và hạng kho còn hạn ngạch trống, _when_ giao dịch hoàn tất, _then_ ngày bắt đầu và ngày kết thúc hợp đồng tịnh tiến thêm $N$ ngày (`newEndDate = oldEndDate + N`), thời lượng thuê $M$ tháng được bảo toàn 100%.
 - **AC-4** — _Given_ tôi muốn dời quá 7 ngày (như dời sang tháng sau), _when_ tôi thao tác, _then_ hệ thống từ chối dời ngày và hướng dẫn tôi thực hiện Hủy đơn theo `US-SC-02.4` hoặc thực hiện Nhận kho Online theo `US-SC-04.2`.
 - **AC-5** — _Given_ thời gian tới ngày bắt đầu thuê nhỏ hơn 48 giờ ($< 48$h), _when_ tôi mở hợp đồng, _then_ nút "Dời ngày nhận kho" bị vô hiệu hóa và hệ thống thông báo chỉ có thể Nhận kho Online hoặc Hủy đơn chịu phạt cọc.
+- **AC-6** — _Given_ tôi đã thực hiện dời ngày nhận kho thành công 1 lần, _when_ tôi xem lại hợp đồng trên Portal, _then_ nút "Dời ngày nhận kho" bị khóa vĩnh viễn (disabled) kèm ghi chú "Mỗi hợp đồng chỉ được phép dời lịch nhận kho tối đa 1 lần duy nhất" theo `BR-RES-06`.
 
 ---
 

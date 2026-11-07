@@ -6,11 +6,11 @@
   "status": "pass",
   "visualReview": "not-requested",
   "provenance": "current",
-  "deliveryReceiptId": "206b207e-5efc-43ef-86f6-74648114bd7e",
+  "deliveryReceiptId": "7b074e31-9746-48fe-8375-79acead3e3b4",
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\workflow-flow2-checkin-handover-20261106-121730\\flow2-checkin-handover-workflow.html",
-    "sha256": "687ef2028b87982c0ca4ff2370186561741131642c1e4c44554997cb1c89c773",
-    "bytes": 877254
+    "path": "D:\\Ki5_Fall_2026\\SWP391\\Mini_Capstone\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\workflow-flow2-checkin-handover-20261106-121730\\flow2-checkin-handover-workflow.html",
+    "sha256": "143d4b1ef1ad0e95bb81a9ebfaac520b2d7f799eebae90b539d41f78b8e433d0",
+    "bytes": 878004
   },
   "state": {
     "detail": "read",

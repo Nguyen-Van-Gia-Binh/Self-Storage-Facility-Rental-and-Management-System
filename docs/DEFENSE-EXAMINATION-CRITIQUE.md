@@ -150,6 +150,13 @@
    - _Kịch bản:_ Người ký hợp đồng điện tử là anh Nam (đang công tác nước ngoài), nhưng người mang đồ đến nhận kho lại là bác tài xế xe tải chở hàng thuê. Bác tài xế không có CCCD của anh Nam, chỉ có tin nhắn Zalo chuyển tiếp mã đơn.
    - _Lỗ hổng:_ Nếu nhân viên từ chối: Bác tài xế và xe tải 5 tấn bị mắc kẹt tại bãi xe cơ sở, phát sinh chi phí phạt giờ đỗ xe hàng triệu đồng, khách chửi bới. Nếu nhân viên đồng ý bàn giao: Sau này anh Nam phủ nhận, tố cáo nhân viên tự ý giao quyền mở kho chứa hàng giá trị cho người lạ.
    - _Ý đồ giảng viên muốn xoáy vào:_ **"Quy trình Check-in trên phần mềm có tính năng Ủy quyền nhận kho số (Digital Proxy Authorization) với xác thực OTP/eKYC của chính chủ hay hoàn toàn phó mặc cho nhân viên trực tự cảm tính quyết định?"**
+4. **Rủi ro Quản lý cơ sở (FM) quên gán ô kho tới ngày nhận kho (The Forgotten Unit Allocation Dilemma):**
+   - _Kịch bản bắt bẻ của Giảng viên:_ Khách đặt kho và thanh toán xong thì `storage_unit_id` đang để trống, phụ thuộc vào FM gán tay. Vậy nếu FM bị ốm, nghỉ phép hoặc quên không gán, tới ngày khách mang đồ tới kho thì sao? Dữ liệu có bị biến mất không? Khách có bị đuổi về không?
+   - _Ý đồ giảng viên muốn xoáy vào:_ **"Hệ thống của các bạn có cơ chế Fail-safe nào để không bị 'nghẽn cổ chai' do phụ thuộc vào con người hay không?"**
+   - _Câu trả lời đạt điểm 10 phản biện:_
+     - **Về tính toàn vẹn dữ liệu:** Dữ liệu hợp đồng và giao dịch thanh toán tuyệt đối KHÔNG bao giờ biến mất; tiền cọc và tiền thuê được bảo toàn 100%, suất hạn ngạch (capacity slot) của loại kho đó vẫn được giữ nguyên cho khách.
+     - **Về xử lý hiện trường tại quầy (SOP):** Nếu khách đến quầy, nhân viên tiếp đón (Staff) thấy hợp đồng chưa gán ô sẽ lập tức báo FM (hoặc liên hệ Quản lý ca trực) để bấm chọn gán 1 ô trống cùng loại mất đúng **5 giây**, không làm gián đoạn việc nhận kho.
+     - **Về Lưới an toàn tự động (Safety Net Auto-Assign — `BR-AVL-06`, `DEC-06`):** Nhóm đã thiết kế kiến trúc bảo hộ 2 tầng: (1) Cảnh báo đỏ tại $T-3$ trên Dashboard của FM; (2) Đúng 00:00 ngày $T$, Scheduled Job tự động quét và kích hoạt **Auto-Assign** tự động gán 1 ô `AVAILABLE` cùng loại cho hợp đồng, hoặc **Auto-Upgrade miễn phí** lên ô hạng cao hơn nếu hết ô cùng loại. Vì vậy khách hàng luôn đảm bảo có ô kho sẵn sàng khi Check-in!
 
 ---
 
