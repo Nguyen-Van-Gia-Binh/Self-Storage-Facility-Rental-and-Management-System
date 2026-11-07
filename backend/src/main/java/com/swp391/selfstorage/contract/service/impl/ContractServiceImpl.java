@@ -260,29 +260,76 @@ public class ContractServiceImpl implements ContractService {
                 if (contract.getStatus() != ContractStatus.PENDING_CHECK_IN)
                         throw new CustomException(ErrorCode.CONTRACT_NOT_PENDING_CHECKIN);
 
-                if (contract.getStorageUnitId() != null) {
-                        storageUnitRepository.findByIdForUpdate(contract.getStorageUnitId()).ifPresent(unit -> {
+                Long oldUnitId = contract.getStorageUnitId();
+                if (oldUnitId != null) {
+                        storageUnitRepository.findByIdForUpdate(oldUnitId).ifPresent(unit -> {
                                 unit.setStatus(StorageUnitStatus.MAINTENANCE);
                                 storageUnitRepository.save(unit);
                         });
                 }
 
-                contract.setStatus(ContractStatus.TERMINATED);
-                contractRepository.save(contract);
+                String action = (request != null && request.getRejectionAction() != null && !request.getRejectionAction().isBlank())
+                                ? request.getRejectionAction().toUpperCase().trim()
+                                : "TERMINATE_REFUND";
 
-                handoverRecordRepository.save(HandoverRecord.builder()
-                                .contractId(contractId)
-                                .staffId(staffId)
-                                .handoverAt(OffsetDateTime.now())
-                                .rejected(true)
-                                .rejectionReason(request.getRejectionReason())
-                                .conditionNote(request.getReportedDefects())
-                                .customerConfirmed(false)
-                                .build());
+                boolean isRelocate = "RELOCATE".equals(action);
 
-                return new HandoverRejectionResponse(contractId, ContractStatus.TERMINATED,
-                                StorageUnitStatus.MAINTENANCE,
-                                "Da ghi nhan tu choi. FM se xu ly hoan tien trong 3 ngay lam viec.");
+                if (isRelocate) {
+                        // NHÁNH 1: KHÁCH ĐỒNG Ý ĐỔI Ô KHO
+                        // Giữ nguyên trạng thái PENDING_CHECK_IN để khách tiếp tục thuê
+                        // Tự động tạo Ticket Sự Cố (SupportRequest) có relocationRequired = true
+                        if (supportRequestRepository != null) {
+                                SupportRequest ticket = new SupportRequest();
+                                ticket.setCode("INC-HD-" + contract.getId() + "-" + (System.currentTimeMillis() % 100000));
+                                ticket.setContractId(contract.getId());
+                                ticket.setStorageUnitId(oldUnitId);
+                                ticket.setCustomerId(contract.getCustomerId());
+                                ticket.setCategory(SupportCategory.UNIT_DAMAGE);
+                                String detail = (request.getReportedDefects() != null && !request.getReportedDefects().isBlank())
+                                                ? request.getReportedDefects()
+                                                : request.getRejectionReason();
+                                ticket.setDescription("Sự cố bàn giao tiếp đón: " + request.getRejectionReason() + " (" + detail + ")");
+                                ticket.setStatus(SupportStatus.NEW);
+                                ticket.setRelocationRequired(Boolean.TRUE);
+                                ticket.setAssignedStaffId(staffId);
+                                ticket.setCreatedAt(OffsetDateTime.now());
+                                ticket.setUpdatedAt(OffsetDateTime.now());
+                                supportRequestRepository.save(ticket);
+                        }
+
+                        handoverRecordRepository.save(HandoverRecord.builder()
+                                        .contractId(contractId)
+                                        .staffId(staffId)
+                                        .handoverAt(OffsetDateTime.now())
+                                        .rejected(true)
+                                        .rejectionReason(request.getRejectionReason())
+                                        .conditionNote(request.getReportedDefects())
+                                        .customerConfirmed(false)
+                                        .build());
+
+                        return new HandoverRejectionResponse(contractId, ContractStatus.PENDING_CHECK_IN,
+                                        StorageUnitStatus.MAINTENANCE,
+                                        "Đã ghi nhận sự cố ô kho. Hợp đồng đang chờ Quản lý (FM) phân bổ ô kho mới trên sơ đồ 2D.");
+                } else {
+                        // NHÁNH 2: KHÁCH HỦY THUÊ & HOÀN TIỀN 100%
+                        contract.setStatus(ContractStatus.TERMINATED);
+                        contract.setEndDateExclusive(LocalDate.now()); // Ngày kết thúc chính là ngày check-in!
+                        contractRepository.save(contract);
+
+                        handoverRecordRepository.save(HandoverRecord.builder()
+                                        .contractId(contractId)
+                                        .staffId(staffId)
+                                        .handoverAt(OffsetDateTime.now())
+                                        .rejected(true)
+                                        .rejectionReason(request.getRejectionReason())
+                                        .conditionNote(request.getReportedDefects())
+                                        .customerConfirmed(false)
+                                        .build());
+
+                        return new HandoverRejectionResponse(contractId, ContractStatus.TERMINATED,
+                                        StorageUnitStatus.MAINTENANCE,
+                                        "Đã ghi nhận từ chối nhận kho. FM sẽ xử lý hoàn tiền 100% trong 3 ngày làm việc.");
+                }
         }
 
         // ==========================================
@@ -643,28 +690,43 @@ public class ContractServiceImpl implements ContractService {
                                 .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
 
                 if (contract.getStatus() != ContractStatus.PENDING_CHECK_IN && contract.getStatus() != ContractStatus.ACTIVE) {
-                        throw new CustomException(ErrorCode.VALIDATION_FAILED,
-                                        "Chỉ có thể đổi ô kho cho hợp đồng đang chờ nhận kho hoặc đang hoạt động.");
+                        if (contract.getStatus() == ContractStatus.TERMINATED && Boolean.TRUE.equals(request.getCustomerConsent())) {
+                                contract.setStatus(ContractStatus.PENDING_CHECK_IN);
+                        } else {
+                                throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                                                "Chỉ có thể đổi ô kho cho hợp đồng đang chờ nhận kho hoặc đang hoạt động.");
+                        }
                 }
 
-                if (request.getSupportRequestId() == null) {
-                        throw new CustomException(ErrorCode.VALIDATION_FAILED,
-                                        "Đổi ô chỉ thực hiện khi có phiếu hư hỏng ô kho đang mở.");
+                SupportRequest ticket = null;
+                if (request.getSupportRequestId() != null && supportRequestRepository != null) {
+                        ticket = supportRequestRepository.findById(request.getSupportRequestId()).orElse(null);
                 }
-                if (supportRequestRepository == null) {
-                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Không xác minh được phiếu sự cố.");
+                if (ticket == null && supportRequestRepository != null) {
+                        ticket = supportRequestRepository.findTopByContractIdOrderByCreatedAtDesc(contractId).orElse(null);
+                }
+                if (ticket == null && contract.getStorageUnitId() != null && supportRequestRepository != null) {
+                        ticket = supportRequestRepository.findByStorageUnitIdInAndStatusIn(
+                                        List.of(contract.getStorageUnitId()), RELOCATION_TICKET_STATUSES).stream().findFirst().orElse(null);
+                }
+                if (ticket == null) {
+                        ticket = new SupportRequest();
+                        ticket.setCode("INC-REASSIGN-" + contract.getId() + "-" + (System.currentTimeMillis() % 100000));
+                        ticket.setContractId(contract.getId());
+                        ticket.setStorageUnitId(contract.getStorageUnitId());
+                        ticket.setCustomerId(contract.getCustomerId());
+                        ticket.setCategory(SupportCategory.UNIT_DAMAGE);
+                        ticket.setDescription("Đổi ô kho sự cố cho hợp đồng " + contract.getCode() + ": " + request.getReason());
+                        ticket.setStatus(SupportStatus.CLOSED);
+                        ticket.setRelocationRequired(Boolean.FALSE);
+                        ticket.setAssignedStaffId(managerId);
+                        ticket.setCreatedAt(OffsetDateTime.now());
+                        ticket.setUpdatedAt(OffsetDateTime.now());
+                        if (supportRequestRepository != null) {
+                                ticket = supportRequestRepository.save(ticket);
+                        }
                 }
 
-                SupportRequest ticket = supportRequestRepository.findById(request.getSupportRequestId())
-                                .orElseThrow(() -> new CustomException(ErrorCode.VALIDATION_FAILED,
-                                                "Không tìm thấy phiếu sự cố."));
-                if (!RELOCATION_TICKET_STATUSES.contains(ticket.getStatus())) {
-                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Phiếu sự cố không hợp lệ.");
-                }
-                if (!ticketMatchesCurrentUnit(ticket, contract)) {
-                        throw new CustomException(ErrorCode.VALIDATION_FAILED,
-                                        "Phiếu sự cố không gắn với ô kho hiện tại của hợp đồng.");
-                }
                 if (contract.getStatus() == ContractStatus.PENDING_CHECK_IN
                                 && !Boolean.TRUE.equals(request.getCustomerConsent())) {
                         throw new CustomException(ErrorCode.VALIDATION_FAILED,
@@ -736,6 +798,13 @@ public class ContractServiceImpl implements ContractService {
                 contract.setMonthlyPrice(monthlyPriceSnapshot);
                 contract.setDepositAmount(depositSnapshot);
                 contractRepository.save(contract);
+
+                if (contract.getReservationId() != null && reservationRepository != null) {
+                        reservationRepository.findById(contract.getReservationId()).ifPresent(rsv -> {
+                                rsv.setStorageUnitId(newUnit.getId());
+                                reservationRepository.save(rsv);
+                        });
+                }
 
                 String notice = "Cơ sở đã đổi ô kho từ " + oldCode + " sang " + newUnit.getCode()
                                 + ". Giá thuê và tiền cọc giữ nguyên.";

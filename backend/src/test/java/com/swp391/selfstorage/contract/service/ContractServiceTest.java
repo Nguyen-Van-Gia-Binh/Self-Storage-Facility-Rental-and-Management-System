@@ -211,6 +211,7 @@ class ContractServiceTest {
 
         HandoverRejectionRequest req = new HandoverRejectionRequest();
         req.setRejectionReason("Cua khoa hong");
+        req.setRejectionAction("TERMINATE_REFUND");
 
         HandoverRejectionResponse response = contractService.rejectHandover(500L, req, 8L, List.of(1L));
 
@@ -218,6 +219,39 @@ class ContractServiceTest {
         assertEquals(StorageUnitStatus.MAINTENANCE, response.getStorageUnitStatus());
         assertEquals(ContractStatus.TERMINATED, contract.getStatus());
         assertEquals(StorageUnitStatus.MAINTENANCE, unit.getStatus());
+        assertEquals(LocalDate.now(), contract.getEndDateExclusive());
+    }
+
+    @Test
+    @DisplayName("Nghiep vu moi: rejectHandover voi RELOCATE -> Contract giu PENDING_CHECK_IN, Unit MAINTENANCE, tao SupportRequest")
+    void shouldKeepPendingCheckInAndCreateTicket_whenHandoverRejectedWithRelocate() {
+        RentalContract contract = RentalContract.builder()
+                .id(501L).facilityId(1L).storageUnitId(42L).customerId(10L)
+                .status(ContractStatus.PENDING_CHECK_IN).build();
+        StorageUnit unit = StorageUnit.builder().id(42L).status(StorageUnitStatus.RESERVED).build();
+
+        when(contractRepository.findByIdAndFacilityIdIn(501L, List.of(1L))).thenReturn(Optional.of(contract));
+        when(storageUnitRepository.findByIdForUpdate(42L)).thenReturn(Optional.of(unit));
+        when(storageUnitRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(handoverRecordRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(supportRequestRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        HandoverRejectionRequest req = new HandoverRejectionRequest();
+        req.setRejectionReason("O kho bi dot nuoc");
+        req.setReportedDefects("Nuoc nho giot tren noc");
+        req.setRejectionAction("RELOCATE");
+
+        HandoverRejectionResponse response = contractService.rejectHandover(501L, req, 8L, List.of(1L));
+
+        assertEquals(ContractStatus.PENDING_CHECK_IN, response.getContractStatus());
+        assertEquals(StorageUnitStatus.MAINTENANCE, response.getStorageUnitStatus());
+        assertEquals(ContractStatus.PENDING_CHECK_IN, contract.getStatus());
+        assertEquals(StorageUnitStatus.MAINTENANCE, unit.getStatus());
+        verify(supportRequestRepository).save(argThat(t ->
+                t.getContractId().equals(501L)
+                && t.getCategory() == SupportCategory.UNIT_DAMAGE
+                && Boolean.TRUE.equals(t.getRelocationRequired())
+        ));
     }
 
     @Test

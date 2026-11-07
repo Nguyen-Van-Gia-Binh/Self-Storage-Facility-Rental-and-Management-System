@@ -38,6 +38,8 @@ public interface SupportRequestRepository extends JpaRepository<SupportRequest, 
     List<SupportRequest> findByContractIdInAndStatusIn(
             Collection<Long> contractIds, Collection<SupportStatus> statuses);
 
+    Optional<SupportRequest> findTopByContractIdOrderByCreatedAtDesc(Long contractId);
+
     List<SupportRequest> findByStorageUnitIdInAndStatusIn(
             Collection<Long> storageUnitIds, Collection<SupportStatus> statuses);
 
