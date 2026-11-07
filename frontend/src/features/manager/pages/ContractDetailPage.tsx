@@ -193,7 +193,7 @@ export const ContractDetailPage: React.FC = () => {
               <h1 className="text-2xl font-mono font-black text-slate-900 tracking-tight">
                 {contract.code}
               </h1>
-              <StatusBadge status={contract.status} size="md" />
+              <StatusBadge status={canRelocate && isPendingCheckIn ? 'RELOCATION_PENDING' : contract.status} size="md" />
               <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                 {contract.facilityName}
               </span>
@@ -201,7 +201,16 @@ export const ContractDetailPage: React.FC = () => {
             <p className="text-xs text-slate-500 mt-1 flex items-center gap-2">
               <span>Khách thuê: <strong>{contract.customerName}</strong></span>
               <span>•</span>
-              <span>Ô kho: <strong className="font-mono">{contract.storageUnitCode}</strong></span>
+              <span>
+                Ô kho:{' '}
+                {canRelocate && isPendingCheckIn ? (
+                  <strong className="font-mono text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-300">
+                    Chờ cấp ô mới
+                  </strong>
+                ) : (
+                  <strong className="font-mono">{contract.storageUnitCode || 'Chưa gán'}</strong>
+                )}
+              </span>
               <span>•</span>
               <span>Thời hạn: {contract.startDate} → {contract.endDateExclusive}</span>
             </p>
@@ -422,7 +431,7 @@ export const ContractDetailPage: React.FC = () => {
 
               <div className="flex items-center justify-between">
                 <span className="text-slate-500 font-medium">Trạng thái hợp đồng:</span>
-                <StatusBadge status={contract.status} size="sm" />
+                <StatusBadge status={canRelocate && isPendingCheckIn ? 'RELOCATION_PENDING' : contract.status} size="sm" />
               </div>
 
               <div className="flex items-center justify-between">
@@ -474,15 +483,22 @@ export const ContractDetailPage: React.FC = () => {
             <div className="space-y-3 text-xs">
               <div className="flex items-center justify-between">
                 <span className="text-slate-500 font-medium">Mã ô kho:</span>
-                <span className="font-mono font-bold text-brand-600 text-sm">
-                  {contract.storageUnitCode || `Ô #${contract.storageUnitId}`}
-                </span>
+                {canRelocate && isPendingCheckIn ? (
+                  <span className="font-mono font-bold text-amber-800 bg-amber-50 border border-amber-300 px-2 py-0.5 rounded text-xs">
+                    Chờ cấp ô mới (Sự cố bàn giao)
+                  </span>
+                ) : (
+                  <span className="font-mono font-bold text-brand-600 text-sm">
+                    {contract.storageUnitCode || `Ô #${contract.storageUnitId}`}
+                  </span>
+                )}
               </div>
 
               <div className="flex items-center justify-between">
                 <span className="text-slate-500 font-medium">Loại ô kho:</span>
                 <span className="font-semibold text-slate-800">
                   {contract.unitTypeName || 'Kho tiêu chuẩn'}
+                  {canRelocate && isPendingCheckIn ? ' (Đang điều phối đổi ô kho)' : ''}
                 </span>
               </div>
 
@@ -493,18 +509,29 @@ export const ContractDetailPage: React.FC = () => {
 
               <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                 <span className="text-slate-500 font-medium">Xem trên Sơ đồ ô kho:</span>
-                <button
-                  type="button"
-                  onClick={() =>
-                    navigate(
-                      `/manager/facilities/${contract.facilityId}/unit-types/${contract.unitTypeId}/units/${contract.storageUnitId}?contractId=${contract.id}`
-                    )
-                  }
-                  className="inline-flex items-center gap-1 font-bold text-brand-600 hover:text-brand-700 hover:underline cursor-pointer"
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  <span>Đi tới ô kho {contract.storageUnitCode}</span>
-                </button>
+                {canRelocate && isPendingCheckIn ? (
+                  <button
+                    type="button"
+                    onClick={() => setFloorPlanOpen(true)}
+                    className="inline-flex items-center gap-1 font-bold text-amber-700 hover:text-amber-800 hover:underline cursor-pointer"
+                  >
+                    <Repeat className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Chọn ô mới trên Sơ đồ 2D</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate(
+                        `/manager/facilities/${contract.facilityId}/unit-types/${contract.unitTypeId}/units/${contract.storageUnitId}?contractId=${contract.id}`
+                      )
+                    }
+                    className="inline-flex items-center gap-1 font-bold text-brand-600 hover:text-brand-700 hover:underline cursor-pointer"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>Đi tới ô kho {contract.storageUnitCode}</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>

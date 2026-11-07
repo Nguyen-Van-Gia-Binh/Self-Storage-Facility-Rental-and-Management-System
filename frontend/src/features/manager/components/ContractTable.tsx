@@ -9,6 +9,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  AlertTriangle,
 } from 'lucide-react';
 import type { ManagerContractItem } from '@/types/contractManager';
 import { StatusBadge } from './StatusBadge';
@@ -171,13 +172,27 @@ export const ContractTable: React.FC<ContractTableProps> = ({
 
                   {/* Ô kho */}
                   <td className="py-3.5 px-4">
-                    <div className="font-mono font-bold text-slate-900 flex items-center gap-1.5">
-                      <Box className="w-3 h-3 text-slate-400" />
-                      <span>{c.storageUnitCode || `Ô #${c.storageUnitId}`}</span>
-                    </div>
-                    <div className="text-[11px] text-slate-500">
-                      {c.unitTypeName || 'Kho tiêu chuẩn'}
-                    </div>
+                    {c.status === 'RELOCATION_PENDING' || (c.relocationEligible && c.status === 'PENDING_CHECK_IN') || !c.storageUnitCode ? (
+                      <div className="flex flex-col gap-1">
+                        <span className="inline-flex items-center gap-1 font-mono font-bold text-amber-800 bg-amber-50 border border-amber-300 px-2 py-0.5 rounded text-xs w-fit">
+                          <AlertTriangle className="w-3 h-3 text-amber-600 animate-pulse" />
+                          Chờ cấp ô mới
+                        </span>
+                        <div className="text-[11px] text-amber-700">
+                          {c.unitTypeName || 'Kho tiêu chuẩn'} • Chờ phân bổ lại
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="font-mono font-bold text-slate-900 flex items-center gap-1.5">
+                          <Box className="w-3 h-3 text-slate-400" />
+                          <span>{c.storageUnitCode}</span>
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          {c.unitTypeName || 'Kho tiêu chuẩn'}
+                        </div>
+                      </>
+                    )}
                   </td>
 
                   {/* Trạng thái */}

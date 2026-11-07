@@ -74,6 +74,16 @@ const STATUS_CONFIG: Record<string, { label: string; className: string; dotColor
     className: 'bg-blue-50 text-blue-700 border-blue-200/80',
     dotColor: 'bg-blue-500',
   },
+  RELOCATION_PENDING: {
+    label: '🟠 Chờ gán lại ô kho',
+    className: 'bg-amber-50 text-amber-800 border-amber-300 font-semibold',
+    dotColor: 'bg-amber-500 animate-pulse',
+  },
+  AWAITING_RELOCATION: {
+    label: '🟠 Chờ gán lại ô kho',
+    className: 'bg-amber-50 text-amber-800 border-amber-300 font-semibold',
+    dotColor: 'bg-amber-500 animate-pulse',
+  },
   CANCELLED: {
     label: '❌ Đã hủy',
     className: 'bg-slate-100 text-slate-500 border-slate-200',

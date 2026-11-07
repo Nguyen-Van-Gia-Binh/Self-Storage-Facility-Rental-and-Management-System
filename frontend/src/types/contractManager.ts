@@ -6,6 +6,8 @@
 export type ManagerContractStatus =
   | 'ACTIVE'
   | 'PENDING_CHECK_IN'
+  | 'RELOCATION_PENDING'
+  | 'AWAITING_RELOCATION'
   | 'PENDING_RETURN'
   | 'NOTICE_SUBMITTED'
   | 'INSPECTED'

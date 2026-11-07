@@ -419,9 +419,15 @@ export const ContractsHubPage: React.FC = () => {
                       {/* Ô kho */}
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-1.5">
-                          <span className="font-mono font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200">
-                            {contract.storageUnitCode}
-                          </span>
+                          {contract.relocationEligible || !contract.storageUnitCode ? (
+                            <span className="font-mono font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-300 text-xs">
+                              Chờ cấp ô mới
+                            </span>
+                          ) : (
+                            <span className="font-mono font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200">
+                              {contract.storageUnitCode}
+                            </span>
+                          )}
                           <span className="text-[11px] text-slate-500 truncate max-w-[140px]">
                             {contract.unitTypeName}
                           </span>

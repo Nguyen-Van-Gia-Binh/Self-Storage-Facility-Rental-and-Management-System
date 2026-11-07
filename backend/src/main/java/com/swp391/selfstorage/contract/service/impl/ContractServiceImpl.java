@@ -486,7 +486,12 @@ public class ContractServiceImpl implements ContractService {
                                         && !c.getEndDateExclusive().isAfter(threshold);
 
                         StorageUnit su = c.getStorageUnitId() != null ? storageUnitMap.get(c.getStorageUnitId()) : null;
-                        String storageCode = su != null ? su.getCode() : (c.getStorageUnitId() != null ? "U-" + c.getStorageUnitId() : "Chưa gán");
+                        boolean isRelocating = relocationTickets.get(c.getId()) != null
+                                        || (su != null && su.getStatus() == StorageUnitStatus.MAINTENANCE
+                                                        && (c.getStatus() == ContractStatus.PENDING_CHECK_IN || c.getStatus() == ContractStatus.ACTIVE || c.getStatus() == ContractStatus.TERMINATED));
+                        String storageCode = (isRelocating && (c.getStatus() == ContractStatus.PENDING_CHECK_IN || c.getStatus() == ContractStatus.TERMINATED))
+                                        ? null
+                                        : (su != null ? su.getCode() : (c.getStorageUnitId() != null ? "U-" + c.getStorageUnitId() : "Chưa gán"));
                         Integer floor = su != null ? su.getFloor() : null;
                         String position = su != null ? su.getPosition() : null;
 
@@ -632,7 +637,7 @@ public class ContractServiceImpl implements ContractService {
                                         .isInspected(isInspected)
                                         .damageCost(damageCost)
                                         .damageNotes(damageNotes)
-                                        .relocationEligible(relocationTickets.get(c.getId()) != null)
+                                        .relocationEligible(isRelocating)
                                         .openSupportRequestId(relocationTickets.containsKey(c.getId())
                                                         ? relocationTickets.get(c.getId()).getId()
                                                         : null)
@@ -2190,6 +2195,11 @@ public class ContractServiceImpl implements ContractService {
                                         r.setRelocationEligible(true);
                                 }
                         });
+                }
+
+                if (Boolean.TRUE.equals(r.getRelocationEligible())
+                                && (c.getStatus() == ContractStatus.PENDING_CHECK_IN || c.getStatus() == ContractStatus.TERMINATED)) {
+                        r.setStorageUnitCode(null);
                 }
 
                 return r;

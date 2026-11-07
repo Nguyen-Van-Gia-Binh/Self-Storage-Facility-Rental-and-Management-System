@@ -106,6 +106,7 @@ export const ContractListPage: React.FC = () => {
       (c) =>
         c.status === 'PENDING_RETURN' ||
         c.status === 'PENDING_CHECK_IN' ||
+        c.status === 'RELOCATION_PENDING' ||
         (c.status as string) === 'INSPECTED'
     ).length;
     const overdue = contracts.filter(
@@ -129,6 +130,9 @@ export const ContractListPage: React.FC = () => {
       if (counts[c.status as ContractTabFilter] !== undefined) {
         counts[c.status as ContractTabFilter] += 1;
       }
+      if (c.status === 'RELOCATION_PENDING') {
+        counts.PENDING_CHECK_IN += 1;
+      }
     });
     return counts;
   }, [contracts]);
@@ -148,6 +152,9 @@ export const ContractListPage: React.FC = () => {
     const filtered = contracts
       .filter((c) => {
         if (statusFilter === 'ALL') return true;
+        if (statusFilter === 'PENDING_CHECK_IN') {
+          return c.status === 'PENDING_CHECK_IN' || c.status === 'RELOCATION_PENDING';
+        }
         return c.status === statusFilter;
       })
       .filter((c) => {
