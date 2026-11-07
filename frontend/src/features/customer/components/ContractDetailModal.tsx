@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
 import {
   FileText,
   Calendar,
@@ -16,6 +17,7 @@ import {
   CheckSquare,
   Circle,
   Clock,
+  AlertTriangle,
 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
 import { getMyRentalDetail, type CustomerRentalDetail } from '@/api/customerRentals';
@@ -82,7 +84,11 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
   };
 
   const effectiveContractNumber = detail?.contractCode || contract.contractNumber;
-  const effectiveUnitNumber = detail?.unitCode || contract.unitNumber;
+  const isRelocating = Boolean(contract.relocationEligible || detail?.relocationEligible);
+  const rawUnitNumber = detail?.unitCode || contract.unitNumber;
+  const effectiveUnitNumber = isRelocating && (contract.status === 'PENDING_CHECKIN' || (contract.status as string) === 'PENDING_CHECK_IN')
+    ? 'Chờ cấp ô mới'
+    : rawUnitNumber || 'Chưa gán';
   const effectiveFacilityName = detail?.facilityName || contract.facilityName;
   const effectiveFacilityAddress = detail?.facilityAddress || 'Cơ sở trực thuộc Hệ thống Self-Storage';
   const effectiveFacilityPhone = detail?.facilityPhone || '1900 8888';
@@ -101,27 +107,81 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
 
   const isHandoverCompleted =
     !isPendingCheckin &&
+    contract.status !== 'TERMINATED' &&
     (contract.status === 'ACTIVE' ||
       contract.status === 'OVERDUE' ||
       contract.status === 'PENDING_RETURN' ||
       contract.status === 'CLOSED' ||
-      contract.status === 'TERMINATED' ||
       Boolean(detail?.checkinDate || contract.checkinDate || detail?.customerConfirmedAt));
 
   const effectiveCheckinDate = isHandoverCompleted
     ? (detail?.checkinDate || contract.checkinDate || contract.startDate)
-    : 'Chưa thực hiện (Chờ làm thủ tục nhận kho tại quầy)';
+    : contract.status === 'TERMINATED'
+      ? 'Không nhận kho (Đã hủy hợp đồng do sự cố)'
+      : 'Chưa thực hiện (Chờ làm thủ tục nhận kho tại quầy)';
   const effectiveHandoverStaff = isHandoverCompleted
     ? (detail?.handoverStaffName || contract.handoverStaffName || 'Nhân viên lễ tân cơ sở')
     : 'Chờ phân công tiếp đón tại quầy';
   const effectiveHandoverNote = isHandoverCompleted
     ? (detail?.handoverConditionNote || contract.handoverConditionNote || 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao')
-    : 'Đang chờ khách hàng xuất trình CCCD và mã e-Pass tại quầy lễ tân để tiến hành nghiệm thu thực địa.';
+    : contract.status === 'TERMINATED'
+      ? (detail?.handoverConditionNote || contract.handoverConditionNote || 'Không đạt chuẩn nhận kho do phát sinh sự cố hư hỏng tại chỗ')
+      : contract.relocationEligible
+        ? 'Ô kho phát sinh sự cố lúc tiếp đón. Cơ sở đang phân bổ lại ô kho mới cùng loại cho quý khách.'
+        : 'Đang chờ khách hàng xuất trình CCCD và mã e-Pass tại quầy lễ tân để tiến hành nghiệm thu thực địa.';
   const relocationId = detail?.relocationSupportRequestId || contract.relocationSupportRequestId;
   const relocationCode = detail?.relocationSupportRequestCode || contract.relocationSupportRequestCode || 'SUP-202610-0001';
   const relocationReason = detail?.relocationReason || contract.relocationReason || 'Di dời kho đạt chuẩn kỹ thuật theo sự cố hỗ trợ';
 
-
+  const getStatusBadge = () => {
+    switch (contract.status) {
+      case 'ACTIVE':
+        return <Badge variant="available">Đang hoạt động 24/7</Badge>;
+      case 'PENDING_CHECKIN':
+      case 'PENDING_CHECK_IN' as any:
+        if (contract.relocationEligible || detail?.relocationEligible) {
+          return (
+            <Badge variant="warning" className="bg-amber-100 text-amber-900 border-amber-300 font-bold">
+              Chờ gán lại ô kho
+            </Badge>
+          );
+        }
+        return <Badge variant="reserved">Chờ đối chiếu CCCD tại quầy</Badge>;
+      case 'EXPIRING_SOON':
+        return <Badge variant="warning">Sắp hết hạn</Badge>;
+      case 'OVERDUE': {
+        const overdueDays =
+          contract.overdueDays !== undefined && contract.overdueDays > 0
+            ? contract.overdueDays
+            : 1;
+        const isGracePeriod = overdueDays <= 3;
+        if (contract.overdueFee === 0 && !isGracePeriod) {
+          return (
+            <Badge variant="warning" className="bg-amber-50 text-amber-800 border-amber-300">
+              Đã tất toán phạt — Chờ dọn kho / trả kho
+            </Badge>
+          );
+        }
+        return (
+          <Badge variant={isGracePeriod ? 'warning' : 'overdue'}>
+            {isGracePeriod ? `Ân hạn D+${overdueDays}` : `Quá hạn D+${overdueDays}`}
+          </Badge>
+        );
+      }
+      case 'PENDING_RETURN':
+        return <Badge variant="warning">Đang chờ trả kho</Badge>;
+      case 'CLOSED':
+        return <Badge variant="default">Đã kết thúc</Badge>;
+      case 'TERMINATED':
+        return (
+          <Badge variant="danger" className="bg-rose-100 text-rose-800 border-rose-300 font-bold">
+            Hủy do sự cố bàn giao (Chờ hoàn cọc)
+          </Badge>
+        );
+      default:
+        return <Badge variant="default">{contract.status}</Badge>;
+    }
+  };
 
   return createPortal(
     <>
@@ -158,6 +218,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
               </h3>
             </div>
             <div className="flex sm:flex-col items-start sm:items-end gap-1.5">
+              {getStatusBadge()}
               <div className="flex items-center gap-1.5 text-xs font-mono text-emerald-100">
                 <span>Số HĐ: <strong className="text-white font-bold">{effectiveContractNumber}</strong></span>
                 <button
@@ -205,6 +266,48 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                       Bảo lưu toàn bộ quyền lợi khách hàng: Đơn giá thuê ({formatVND(detail?.monthlyPrice || contract.monthlyRent)}/tháng) và tiền cọc bảo đảm ban đầu ({formatVND(detail?.depositAmount || contract.depositHeld)}) được giữ nguyên vẹn.
                     </span>
                   </div>
+                </div>
+              )}
+
+              {/* Banner Chờ phân bổ lại ô kho mới khi phát hiện sự cố tiếp đón */}
+              {Boolean(contract.relocationEligible || detail?.relocationEligible) && !relocationId && (
+                <div className="p-4 rounded-xl bg-amber-50/90 border-2 border-amber-300 space-y-2 animate-in fade-in duration-200 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-amber-900 font-extrabold text-xs uppercase tracking-wide">
+                      <Clock className="w-4 h-4 text-amber-600 flex-shrink-0 animate-pulse" />
+                      <span>ĐANG SẮP XẾP ĐỔI Ô KHO DO PHÁT HIỆN SỰ CỐ TẠI HIỆN TRƯỜNG</span>
+                    </div>
+                    <span className="text-[11px] font-mono font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded">
+                      Chờ gán ô mới
+                    </span>
+                  </div>
+                  <p className="text-xs text-amber-900 leading-relaxed">
+                    Ô kho ban đầu ({effectiveUnitNumber}) phát sinh sự cố lúc tiếp đón. Quản lý cơ sở đang phân bổ ô kho mới đạt chuẩn cùng loại cho quý khách.
+                  </p>
+                  <div className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                    <span>
+                      Bảo lưu 100% quyền lợi: Đơn vị tính và số tiền cọc đã thanh toán được giữ nguyên vẹn.
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Banner Hợp đồng hủy nhận do sự cố bàn giao */}
+              {contract.status === 'TERMINATED' && (
+                <div className="p-4 rounded-xl bg-rose-50 border-2 border-rose-300 space-y-2 animate-in fade-in duration-200 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-rose-900 font-extrabold text-xs uppercase tracking-wide">
+                      <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                      <span>HỢP ĐỒNG ĐÃ DỪNG THỦ TỤC NHẬN KHO DO SỰ CỐ KỸ THUẬT</span>
+                    </div>
+                    <span className="text-[11px] font-mono font-bold bg-rose-200 text-rose-900 px-2 py-0.5 rounded">
+                      Chờ hoàn tiền 100%
+                    </span>
+                  </div>
+                  <p className="text-xs text-rose-900 leading-relaxed">
+                    Khách hàng từ chối nhận kho do phát hiện sự cố vật lý không đạt chuẩn. Hợp đồng đã dừng hiệu lực để hoàn tất thủ tục quyết toán hoàn trả 100% chi phí cho khách hàng.
+                  </p>
                 </div>
               )}
 
@@ -320,21 +423,38 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                   </h4>
                   {isPendingCheckin && (
                     <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                      Chờ nghiệm thu tại quầy
+                      {contract.relocationEligible || detail?.relocationEligible ? 'Chờ đổi ô kho' : 'Chờ nghiệm thu tại quầy'}
+                    </span>
+                  )}
+                  {contract.status === 'TERMINATED' && (
+                    <span className="text-[10px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                      Từ chối nhận kho do sự cố
                     </span>
                   )}
                 </div>
 
                 {isPendingCheckin && (
-                  <div className="p-3 bg-amber-50/70 rounded-lg border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5">
-                    <Clock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                    <div className="space-y-1">
-                      <p className="font-semibold text-amber-900">Ô kho đang ở trạng thái Chờ nhận kho</p>
-                      <p className="text-[11px] text-amber-800 leading-relaxed">
-                        Quý khách vui lòng xuất trình CCCD và thẻ nhận kho điện tử tại quầy lễ tân cơ sở. Nhân viên trực sẽ hướng dẫn kiểm tra 4 tiêu chí nghiệm thu thực địa và cùng quý khách xác nhận bàn giao.
-                      </p>
+                  (contract.relocationEligible || detail?.relocationEligible) ? (
+                    <div className="p-3 bg-amber-50/70 rounded-lg border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5">
+                      <Clock className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5 animate-pulse" />
+                      <div className="space-y-1">
+                        <p className="font-semibold text-amber-900">Đang điều phối đổi ô kho tại chỗ</p>
+                        <p className="text-[11px] text-amber-800 leading-relaxed">
+                          Ô kho ban đầu phát sinh sự cố kỹ thuật lúc tiếp đón. Nhân viên lễ tân đang liên hệ Quản lý cơ sở để bố trí đổi sang ô kho đạt chuẩn khác cùng loại cho quý khách.
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="p-3 bg-amber-50/70 rounded-lg border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5">
+                      <Clock className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                      <div className="space-y-1">
+                        <p className="font-semibold text-amber-900">Ô kho đang ở trạng thái Chờ nhận kho</p>
+                        <p className="text-[11px] text-amber-800 leading-relaxed">
+                          Quý khách vui lòng xuất trình CCCD và thẻ nhận kho điện tử tại quầy lễ tân cơ sở. Nhân viên trực sẽ hướng dẫn kiểm tra 4 tiêu chí nghiệm thu thực địa và cùng quý khách xác nhận bàn giao.
+                        </p>
+                      </div>
+                    </div>
+                  )
                 )}
 
                 <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-2 text-[11px]">
@@ -374,6 +494,26 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                         <div className="flex items-center gap-1.5">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                           <span>Khóa điện tử IoT đã sẵn sàng, cấp mã PIN mở cửa 24/7</span>
+                        </div>
+                      </div>
+                    ) : contract.status === 'TERMINATED' ? (
+                      <div className="p-3 bg-rose-50/70 border border-rose-200 rounded-lg text-rose-900 text-xs flex items-start gap-2">
+                        <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-bold text-rose-800">Biên bản ghi nhận sự cố bàn giao tại hiện trường:</p>
+                          <p className="text-[11px] text-rose-700 mt-0.5 leading-relaxed">
+                            Ô kho không đạt chuẩn nghiệm thu do phát sinh khiếm khuyết vật lý / sự cố kỹ thuật. Hợp đồng đã dừng thủ tục nhận kho để xử lý hoàn cọc và tiền thuê cho quý khách.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (contract.relocationEligible || detail?.relocationEligible) ? (
+                      <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-lg text-amber-900 text-xs flex items-start gap-2">
+                        <Clock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5 animate-pulse" />
+                        <div>
+                          <p className="font-bold text-amber-800">Đang điều phối đổi ô kho tại chỗ:</p>
+                          <p className="text-[11px] text-amber-700 mt-0.5 leading-relaxed">
+                            Phát hiện sự cố kỹ thuật tại ô kho ban đầu. Nhân viên tiếp đón đang phối hợp Quản lý cơ sở để đổi sang ô kho đạt chuẩn khác cùng loại cho quý khách.
+                          </p>
                         </div>
                       </div>
                     ) : (
@@ -418,6 +558,20 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                         </div>
                         <p className="font-semibold text-slate-700 text-[11px]">{effectiveHandoverStaff}</p>
                       </>
+                    ) : contract.status === 'TERMINATED' ? (
+                      <>
+                        <div className="my-3 py-1 px-2 inline-block border border-dashed border-rose-300 bg-rose-50 rounded text-[11px] font-bold text-rose-700">
+                          HỦY NHẬN DO SỰ CỐ
+                        </div>
+                        <p className="font-semibold text-slate-600 text-[11px]">{effectiveHandoverStaff}</p>
+                      </>
+                    ) : (contract.relocationEligible || detail?.relocationEligible) ? (
+                      <>
+                        <div className="my-3 py-1 px-2 inline-block border border-dashed border-amber-300 bg-amber-50 rounded text-[11px] font-bold text-amber-700">
+                          ĐANG ĐỢI ĐỔI Ô MỚI
+                        </div>
+                        <p className="font-semibold text-slate-600 text-[11px]">{effectiveHandoverStaff}</p>
+                      </>
                     ) : (
                       <>
                         <div className="my-3 py-1 px-2 inline-block border border-dashed border-slate-300 bg-slate-100 rounded text-[11px] font-bold text-slate-500">
@@ -435,6 +589,20 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                       <>
                         <div className="my-3 py-1 px-2 inline-block border border-dashed border-emerald-400 bg-emerald-50/60 rounded text-[11px] font-bold text-emerald-800">
                           ✓ ĐÃ XÁC NHẬN BÀN GIAO
+                        </div>
+                        <p className="font-semibold text-slate-700 text-[11px]">{effectiveCustomerName}</p>
+                      </>
+                    ) : contract.status === 'TERMINATED' ? (
+                      <>
+                        <div className="my-3 py-1 px-2 inline-block border border-dashed border-rose-300 bg-rose-50 rounded text-[11px] font-bold text-rose-700">
+                          ĐÃ TỪ CHỐI NHẬN KHO
+                        </div>
+                        <p className="font-semibold text-slate-700 text-[11px]">{effectiveCustomerName}</p>
+                      </>
+                    ) : (contract.relocationEligible || detail?.relocationEligible) ? (
+                      <>
+                        <div className="my-3 py-1 px-2 inline-block border border-dashed border-amber-300 bg-amber-50 rounded text-[11px] font-bold text-amber-700">
+                          CHỜ BÀN GIAO Ô MỚI
                         </div>
                         <p className="font-semibold text-slate-700 text-[11px]">{effectiveCustomerName}</p>
                       </>

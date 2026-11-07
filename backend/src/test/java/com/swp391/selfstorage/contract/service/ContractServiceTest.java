@@ -48,9 +48,13 @@ class ContractServiceTest {
     @Mock
     private ReturnRequestRepository returnRequestRepository;
     @Mock
+    private ContractExtraChargeRepository extraChargeRepository;
+    @Mock
     private com.swp391.selfstorage.support.repository.StaffDailyAssignmentRepository staffDailyAssignmentRepository;
     @Mock
     private SupportRequestRepository supportRequestRepository;
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
     @InjectMocks
     private ContractServiceImpl contractService;
 
@@ -207,10 +211,12 @@ class ContractServiceTest {
         when(storageUnitRepository.findByIdForUpdate(42L)).thenReturn(Optional.of(unit));
         when(contractRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(storageUnitRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(handoverRecordRepository.findByContractId(500L)).thenReturn(Optional.empty());
         when(handoverRecordRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         HandoverRejectionRequest req = new HandoverRejectionRequest();
         req.setRejectionReason("Cua khoa hong");
+        req.setRejectionAction("TERMINATE_REFUND");
 
         HandoverRejectionResponse response = contractService.rejectHandover(500L, req, 8L, List.of(1L));
 
@@ -218,6 +224,86 @@ class ContractServiceTest {
         assertEquals(StorageUnitStatus.MAINTENANCE, response.getStorageUnitStatus());
         assertEquals(ContractStatus.TERMINATED, contract.getStatus());
         assertEquals(StorageUnitStatus.MAINTENANCE, unit.getStatus());
+        assertEquals(LocalDate.now(), contract.getEndDateExclusive());
+    }
+
+    @Test
+    @DisplayName("Nghiep vu moi: rejectHandover voi RELOCATE -> Contract giu PENDING_CHECK_IN, Unit MAINTENANCE, tao SupportRequest")
+    void shouldKeepPendingCheckInAndCreateTicket_whenHandoverRejectedWithRelocate() {
+        RentalContract contract = RentalContract.builder()
+                .id(501L).facilityId(1L).storageUnitId(42L).customerId(10L)
+                .status(ContractStatus.PENDING_CHECK_IN).build();
+        StorageUnit unit = StorageUnit.builder().id(42L).status(StorageUnitStatus.RESERVED).build();
+
+        when(contractRepository.findByIdAndFacilityIdIn(501L, List.of(1L))).thenReturn(Optional.of(contract));
+        when(storageUnitRepository.findByIdForUpdate(42L)).thenReturn(Optional.of(unit));
+        when(storageUnitRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(handoverRecordRepository.findByContractId(501L)).thenReturn(Optional.empty());
+        when(handoverRecordRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(supportRequestRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        HandoverRejectionRequest req = new HandoverRejectionRequest();
+        req.setRejectionReason("O kho bi dot nuoc");
+        req.setReportedDefects("Nuoc nho giot tren noc");
+        req.setRejectionAction("RELOCATE");
+
+        HandoverRejectionResponse response = contractService.rejectHandover(501L, req, 8L, List.of(1L));
+
+        assertEquals(ContractStatus.PENDING_CHECK_IN, response.getContractStatus());
+        assertEquals(StorageUnitStatus.MAINTENANCE, response.getStorageUnitStatus());
+        assertEquals(ContractStatus.PENDING_CHECK_IN, contract.getStatus());
+        assertEquals(StorageUnitStatus.MAINTENANCE, unit.getStatus());
+        verify(supportRequestRepository).save(argThat(t ->
+                t.getContractId().equals(501L)
+                && t.getCategory() == SupportCategory.UNIT_DAMAGE
+                && Boolean.TRUE.equals(t.getRelocationRequired())
+        ));
+    }
+
+    @Test
+    @DisplayName("Bug fix uq_handover_record_contract_id: rejectHandover khi da co HandoverRecord -> phai UPDATE khong INSERT moi")
+    void shouldUpdateExistingHandoverRecord_whenRejectHandoverCalledOnContractWithExistingRecord() {
+        // Arrange: hop dong PENDING_CHECK_IN + da co handover_record truoc do (tu lan check-in truoc)
+        RentalContract contract = RentalContract.builder()
+                .id(502L).facilityId(1L).storageUnitId(42L).customerId(10L)
+                .status(ContractStatus.PENDING_CHECK_IN).build();
+        StorageUnit unit = StorageUnit.builder().id(42L).status(StorageUnitStatus.RESERVED).build();
+
+        // Record cu da ton tai (simulate duplicate key scenario)
+        HandoverRecord existingRecord = HandoverRecord.builder()
+                .id(99L).contractId(502L).staffId(7L)
+                .handoverAt(OffsetDateTime.now().minusHours(1))
+                .rejected(false).customerConfirmed(false).build();
+
+        when(contractRepository.findByIdAndFacilityIdIn(502L, List.of(1L))).thenReturn(Optional.of(contract));
+        when(storageUnitRepository.findByIdForUpdate(42L)).thenReturn(Optional.of(unit));
+        when(storageUnitRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        // findByContractId tra ve record cu -> phai UPDATE chu khong INSERT moi
+        when(handoverRecordRepository.findByContractId(502L)).thenReturn(Optional.of(existingRecord));
+        when(handoverRecordRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(supportRequestRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        HandoverRejectionRequest req = new HandoverRejectionRequest();
+        req.setRejectionReason("O kho bi dot nuoc lan 2");
+        req.setReportedDefects("Nuoc van chay");
+        req.setRejectionAction("RELOCATE");
+
+        // Act
+        HandoverRejectionResponse response = contractService.rejectHandover(502L, req, 8L, List.of(1L));
+
+        // Assert: response dung trang thai
+        assertEquals(ContractStatus.PENDING_CHECK_IN, response.getContractStatus());
+        assertEquals(StorageUnitStatus.MAINTENANCE, response.getStorageUnitStatus());
+
+        // Assert: save duoc goi voi CUNG record co id=99 (UPDATE, khong INSERT record moi)
+        verify(handoverRecordRepository).save(argThat(r ->
+                r.getId() != null && r.getId() == 99L
+                && r.isRejected()
+                && "O kho bi dot nuoc lan 2".equals(r.getRejectionReason())
+        ));
+
+        // Assert: findByContractId phai duoc goi
+        verify(handoverRecordRepository).findByContractId(502L);
     }
 
     @Test
@@ -535,5 +621,118 @@ class ContractServiceTest {
         assertEquals(400_000L, res.getAccruedOverdueFee());
         verify(policyVersionRepository, never())
                 .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any());
+    }
+
+    @Test
+    @DisplayName("Nhánh 2: getSettlementPreview & approveSettlement cho hợp đồng TERMINATED do từ chối bàn giao -> hoàn 100% (cọc + tiền thuê)")
+    void shouldPreviewAndApproveSettlement_whenContractTerminatedAtCheckIn() {
+        RentalContract contract = RentalContract.builder()
+                .id(888L).code("CTR-888").facilityId(1L).customerId(10L).storageUnitId(42L).unitTypeId(7L)
+                .status(ContractStatus.TERMINATED)
+                .startDate(LocalDate.now())
+                .endDateExclusive(LocalDate.now())
+                .rentalMonths(1)
+                .monthlyPrice(500_000L)
+                .depositAmount(500_000L)
+                .depositBalance(500_000L)
+                .build();
+
+        ReturnRequest returnReq = ReturnRequest.builder()
+                .id(999L)
+                .contractId(888L)
+                .requestedReturnDate(LocalDate.now())
+                .status(ReturnRequestStatus.PENDING)
+                .inspectedAt(OffsetDateTime.now())
+                .inspectedBy(5L)
+                .damageCost(0L)
+                .build();
+
+        when(contractRepository.findByIdAndFacilityIdIn(888L, List.of(1L))).thenReturn(Optional.of(contract));
+        when(contractRepository.save(any(RentalContract.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(888L)).thenReturn(Optional.of(returnReq));
+        when(returnRequestRepository.save(any(ReturnRequest.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(extraChargeRepository.findByContractIdAndStatus(888L, ExtraChargeStatus.UNPAID)).thenReturn(List.of());
+
+        // 1. Preview
+        SettlementPreviewResponse preview = contractService.getSettlementPreview(888L, List.of(1L));
+        assertNotNull(preview);
+        assertEquals(500_000L, preview.getDepositAmount());
+        assertEquals(1_000_000L, preview.getDepositRefundAmount()); // 100% = cọc 500k + thuê 500k
+        assertEquals(0L, preview.getPayableAmount());
+
+        // 2. Approve Settlement
+        SettlementApprovalRequest req = SettlementApprovalRequest.builder()
+                .approvedNotes("Duyệt hoàn trả 100% do sự cố dột kho lúc bàn giao")
+                .build();
+        SettlementApprovalResponse approval = contractService.approveSettlement(888L, req, 1L, List.of(1L));
+        assertNotNull(approval);
+        assertEquals(ContractStatus.CLOSED, contract.getStatus());
+        assertEquals(1_000_000L, approval.getDepositRefundAmount());
+        assertEquals(0L, approval.getPayableAmount());
+    }
+
+    @Test
+    @DisplayName("Sự cố bàn giao: Khi action=RELOCATE hoặc null -> Hợp đồng giữ PENDING_CHECK_IN và ô cũ chuyển MAINTENANCE")
+    void shouldKeepPendingCheckIn_whenRejectionActionIsRelocate() {
+        RentalContract contract = RentalContract.builder()
+                .id(777L).code("CTR-777").facilityId(1L).customerId(10L).storageUnitId(42L).unitTypeId(7L)
+                .status(ContractStatus.PENDING_CHECK_IN).startDate(LocalDate.now()).rentalMonths(1)
+                .build();
+        StorageUnit oldUnit = StorageUnit.builder().id(42L).code("U-42").facilityId(1L).status(StorageUnitStatus.RESERVED).build();
+
+        when(contractRepository.findByIdAndFacilityIdIn(777L, List.of(1L))).thenReturn(Optional.of(contract));
+        when(contractRepository.save(any(RentalContract.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(storageUnitRepository.findByIdForUpdate(42L)).thenReturn(Optional.of(oldUnit));
+        when(storageUnitRepository.save(any(StorageUnit.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(handoverRecordRepository.findByContractId(777L)).thenReturn(Optional.empty());
+        when(handoverRecordRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(supportRequestRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        HandoverRejectionRequest req = HandoverRejectionRequest.builder()
+                .rejectionReason("Ô kho bị dột trần")
+                .reportedDefects("Nước nhỏ giọt nhiều")
+                .rejectionAction("RELOCATE")
+                .build();
+
+        HandoverRejectionResponse res = contractService.rejectHandover(777L, req, 5L, List.of(1L));
+
+        assertNotNull(res);
+        assertEquals(ContractStatus.PENDING_CHECK_IN, contract.getStatus());
+        assertEquals(StorageUnitStatus.MAINTENANCE, oldUnit.getStatus());
+    }
+
+    @Test
+    @DisplayName("Khôi phục hợp đồng: Reassign unit cho hợp đồng từng bị TERMINATED -> chuyển về PENDING_CHECK_IN và phục hồi endDateExclusive")
+    void shouldRestorePendingCheckInAndEndDate_whenReassigningTerminatedContract() {
+        LocalDate start = LocalDate.now();
+        RentalContract contract = RentalContract.builder()
+                .id(999L).code("CTR-999").facilityId(1L).customerId(10L).storageUnitId(42L).unitTypeId(7L)
+                .status(ContractStatus.TERMINATED)
+                .startDate(start)
+                .endDateExclusive(start) // Bị cắt ngắn khi terminate
+                .rentalMonths(2)
+                .build();
+
+        StorageUnit oldUnit = StorageUnit.builder().id(42L).facilityId(1L).code("U-42").unitTypeId(7L).status(StorageUnitStatus.MAINTENANCE).build();
+        StorageUnit newUnit = StorageUnit.builder().id(43L).facilityId(1L).code("U-43").unitTypeId(7L).status(StorageUnitStatus.AVAILABLE).build();
+
+        when(contractRepository.findByIdAndFacilityIdIn(999L, List.of(1L))).thenReturn(Optional.of(contract));
+        when(contractRepository.save(any(RentalContract.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(oldUnit));
+        when(storageUnitRepository.findById(43L)).thenReturn(Optional.of(newUnit));
+        when(storageUnitRepository.save(any(StorageUnit.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ReassignUnitRequest req = ReassignUnitRequest.builder()
+                .newStorageUnitId(43L)
+                .reason("Khách đồng ý đổi sang ô U-43")
+                .customerConsent(true)
+                .build();
+
+        ContractSummaryResponse summary = contractService.reassignUnit(999L, req, 1L, List.of(1L));
+
+        assertNotNull(summary);
+        assertEquals(ContractStatus.PENDING_CHECK_IN, contract.getStatus());
+        assertEquals(start.plusMonths(2), contract.getEndDateExclusive());
+        assertEquals(StorageUnitStatus.RESERVED, newUnit.getStatus());
     }
 }

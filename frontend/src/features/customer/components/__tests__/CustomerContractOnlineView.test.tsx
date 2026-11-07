@@ -12,6 +12,67 @@ import type { RentedContract } from '../../types';
 vi.mock('@/api/customerRentals', () => ({
   getContractAccessLogs: vi.fn().mockResolvedValue([]),
   getMyRentalDetail: vi.fn().mockImplementation((id: number) => {
+    if (id === 888) {
+      return Promise.resolve({
+        id: 888,
+        contractCode: 'CTR-202610-001',
+        facilityName: 'Kho Tự Quản Tân Thuận',
+        facilityAddress: '123 Nguyễn Thị Thập, Quận 7',
+        facilityPhone: '0281234567',
+        unitCode: 'U-102',
+        unitTypeName: 'Kho Tiêu Chuẩn S',
+        floor: 1,
+        position: 'Khu A',
+        unitDimensions: '1.5m x 2.0m x 2.5m',
+        startDate: '2026-10-01',
+        endDateExclusive: '2026-11-01',
+        status: 'PENDING_CHECK_IN',
+        monthlyPrice: 1500000,
+        depositAmount: 1500000,
+        depositBalance: 1500000,
+        totalRentalFee: 1500000,
+        overdueFeeAccrued: 0,
+        checkinDate: null,
+        customerName: 'Nguyễn Văn Khách',
+        customerPhone: '0987654321',
+        customerEmail: 'khach@example.com',
+        customerIdentityNumber: '079201001234',
+        handoverStaffName: null,
+        handoverConditionNote: null,
+        customerConfirmedAt: null,
+        relocationEligible: true,
+      });
+    }
+    if (id === 777) {
+      return Promise.resolve({
+        id: 777,
+        contractCode: 'CTR-202610-001',
+        facilityName: 'Kho Tự Quản Tân Thuận',
+        facilityAddress: '123 Nguyễn Thị Thập, Quận 7',
+        facilityPhone: '0281234567',
+        unitCode: 'U-102',
+        unitTypeName: 'Kho Tiêu Chuẩn S',
+        floor: 1,
+        position: 'Khu A',
+        unitDimensions: '1.5m x 2.0m x 2.5m',
+        startDate: '2026-10-01',
+        endDateExclusive: '2026-11-01',
+        status: 'TERMINATED',
+        monthlyPrice: 1500000,
+        depositAmount: 1500000,
+        depositBalance: 1500000,
+        totalRentalFee: 1500000,
+        overdueFeeAccrued: 0,
+        checkinDate: null,
+        customerName: 'Nguyễn Văn Khách',
+        customerPhone: '0987654321',
+        customerEmail: 'khach@example.com',
+        customerIdentityNumber: '079201001234',
+        handoverStaffName: 'Lễ tân trực quầy',
+        handoverConditionNote: 'Mái dột nước ngập góc kho',
+        customerConfirmedAt: null,
+      });
+    }
     return Promise.resolve({
       id: id,
       contractCode: 'CTR-202610-001',
@@ -161,5 +222,83 @@ describe('Customer Portal - Xem Hợp đồng điện tử & Biên bản bàn gi
     // Không được hiển thị đã ký số bàn giao
     expect(screen.queryByText(/✓ ĐÃ KÝ SỐ ĐIỆN TỬ/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/✓ ĐÃ XÁC NHẬN BÀN GIAO/i)).not.toBeInTheDocument();
+  });
+
+  it('RentedUnitCard và ContractDetailModal khi PENDING_CHECKIN có relocationEligible hiển thị "Đang sắp xếp đổi ô kho"', async () => {
+    const relocatingContract: RentedContract = {
+      ...sampleContract,
+      id: '888',
+      status: 'PENDING_CHECKIN',
+      relocationEligible: true,
+      checkinDate: undefined,
+      handoverStaffName: undefined,
+      handoverConditionNote: undefined,
+      relocationSupportRequestId: undefined,
+    } as any;
+
+    // 1. Kiểm tra trên RentedUnitCard
+    const { unmount } = render(
+      <BrowserRouter>
+        <RentedUnitCard contract={relocatingContract} />
+      </BrowserRouter>
+    );
+    expect(screen.getByText(/Đang sắp xếp đổi ô kho/i)).toBeInTheDocument();
+    unmount();
+
+    // 2. Kiểm tra trên ContractDetailModal
+    const { unmount: unmountModal } = render(
+      <ContractDetailModal
+        isOpen={true}
+        onClose={vi.fn()}
+        contract={relocatingContract}
+      />
+    );
+
+    // Huy hiệu và banner đang sắp xếp đổi ô
+    const relocatingBadges = await screen.findAllByText(/Đang sắp xếp đổi ô kho/i);
+    expect(relocatingBadges.length).toBeGreaterThanOrEqual(1);
+    expect(await screen.findByText(/ĐANG SẮP XẾP ĐỔI Ô KHO DO PHÁT HIỆN SỰ CỐ TẠI HIỆN TRƯỜNG/i)).toBeInTheDocument();
+    const relocateNotes = await screen.findAllByText(/Đang điều phối đổi ô kho tại chỗ/i);
+    expect(relocateNotes.length).toBeGreaterThanOrEqual(1);
+
+    // Chữ ký hiển thị chờ đổi ô mới (có ở cả modal view và print document)
+    expect(screen.getAllByText(/ĐANG ĐỢI ĐỔI Ô MỚI/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/CHỜ BÀN GIAO Ô MỚI/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText(/✓ ĐÃ KÝ SỐ ĐIỆN TỬ/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/✓ ĐÃ XÁC NHẬN BÀN GIAO/i)).not.toBeInTheDocument();
+    unmountModal();
+  });
+
+  it('ContractDetailModal khi TERMINATED hiển thị biên bản sự cố, không hiển thị nghiệm thu thành công', async () => {
+    const terminatedContract: RentedContract = {
+      ...sampleContract,
+      id: '777',
+      status: 'TERMINATED',
+      checkinDate: undefined,
+      handoverStaffName: 'Lễ tân trực quầy',
+      handoverConditionNote: 'Mái dột nước ngập góc kho',
+      relocationSupportRequestId: undefined,
+    };
+
+    const { unmount } = render(
+      <ContractDetailModal
+        isOpen={true}
+        onClose={vi.fn()}
+        contract={terminatedContract}
+      />
+    );
+
+    // Huy hiệu và banner dừng do sự cố
+    expect(await screen.findByText(/Hủy do sự cố bàn giao \(Chờ hoàn cọc\)/i)).toBeInTheDocument();
+    expect(await screen.findByText(/HỢP ĐỒNG ĐÃ DỪNG THỦ TỤC NHẬN KHO DO SỰ CỐ KỸ THUẬT/i)).toBeInTheDocument();
+    const incidentReports = await screen.findAllByText(/Biên bản ghi nhận sự cố bàn giao tại hiện trường/i);
+    expect(incidentReports.length).toBeGreaterThanOrEqual(1);
+
+    // Chữ ký từ chối / hủy nhận do hư hỏng (có ở cả modal view và print document)
+    expect(screen.getAllByText(/HỦY NHẬN DO SỰ CỐ/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/ĐÃ TỪ CHỐI NHẬN KHO/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText(/✓ ĐÃ KÝ SỐ ĐIỆN TỬ/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/✓ ĐÃ XÁC NHẬN BÀN GIAO/i)).not.toBeInTheDocument();
+    unmount();
   });
 });

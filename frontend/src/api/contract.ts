@@ -91,6 +91,8 @@ export function mapBackendSummaryToCheckInContract(item: any): CheckInContract {
     accessCode: item.accessCode || undefined,
     assignedStaffId: item.assignedStaffId,
     assignedStaffName: item.assignedStaffName,
+    relocationEligible: item.relocationEligible === true,
+    isAwaitingRelocation: item.relocationEligible === true,
   };
 }
 
@@ -364,14 +366,22 @@ export function mapBackendToManagerContractItem(c: any): ManagerContractItem {
   const accruedOverdueFee = c.accruedOverdueFee ?? c.overdueFeeAccrued ?? 0;
 
   const isInspected = Boolean(c.isInspected);
+  const isAwaitingRelocation = Boolean(c.relocationEligible) && (c.status === 'PENDING_CHECK_IN' || c.status === 'RELOCATION_PENDING');
   let mappedStatus = c.status;
   if (c.status === 'PENDING_RETURN' && isInspected) {
     mappedStatus = 'INSPECTED';
+  } else if (isAwaitingRelocation) {
+    mappedStatus = 'RELOCATION_PENDING';
   }
+
+  const displayStorageUnitCode = isAwaitingRelocation ? '' : (c.storageUnitCode || '');
 
   return {
     ...c,
     status: mappedStatus,
+    storageUnitCode: displayStorageUnitCode,
+    relocationEligible: isAwaitingRelocation || Boolean(c.relocationEligible),
+    isAwaitingRelocation,
     isInspected,
     inspectionCondition: isInspected ? (c.damageCost > 0 ? 'MINOR_DAMAGE' : 'GOOD') : undefined,
     damageCost: c.damageCost || 0,

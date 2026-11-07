@@ -114,6 +114,7 @@ class ReservationServiceTest {
         lenient().when(storageUnitRepository.findByIdForUpdate(42L)).thenReturn(Optional.of(availableStorageUnit));
         lenient().when(rentalContractRepository.existsOverlappingContractForUnit(eq(42L), any(), any(), anyInt(), eq(0L)))
                 .thenReturn(false);
+        lenient().when(userRepository.findById(any())).thenReturn(Optional.empty());
     }
 
     @Test
@@ -772,6 +773,27 @@ class ReservationServiceTest {
                 .status(ContractStatus.PENDING_CHECK_IN)
                 .policyVersionId(1L)
                 .build();
+    }
+
+    @Test
+    @DisplayName("ReservationResponse: Ánh xạ đầy đủ thông tin khách hàng (customerName, customerPhone, customerEmail)")
+    void mapToResponse_ShouldIncludeCustomerDetails() {
+        Reservation reservation = confirmedReservation();
+        when(reservationRepository.findById(1042L)).thenReturn(Optional.of(reservation));
+
+        com.swp391.selfstorage.user.entity.AppUser customer = new com.swp391.selfstorage.user.entity.AppUser();
+        customer.setId(15L);
+        customer.setFullName("Nguyễn Văn Gia Bình");
+        customer.setPhone("0901234567");
+        customer.setEmail("binh.nguyen@example.com");
+        when(userRepository.findById(15L)).thenReturn(Optional.of(customer));
+
+        ReservationResponse response = reservationService.getReservationById(1042L, null);
+
+        assertNotNull(response);
+        assertEquals("Nguyễn Văn Gia Bình", response.getCustomerName());
+        assertEquals("0901234567", response.getCustomerPhone());
+        assertEquals("binh.nguyen@example.com", response.getCustomerEmail());
     }
 
     @Test

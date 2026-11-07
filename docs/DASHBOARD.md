@@ -58,6 +58,7 @@
 | `ISS-152` | Tích hợp bộ lọc trạng thái Hiện tại & Tương lai cho Sơ đồ 2D mặt bằng và Chi tiết ô kho phục vụ FM sắp xếp công việc.      | Bổ sung Horizon Filter (Sắp đón 7d, Sắp trả 14d, Timeline Simulator), dọn sạch sơ đồ thừa ở chi tiết ô kho, test xanh 100%, FE build 0 lỗi. |  Gia Bình  |      `RESOLVED`      |
 | `ISS-153` | Chuẩn hóa giao diện Flow 1, bản in hợp đồng pháp lý (NĐ 30/2020), phân trang màu thương hiệu và tối ưu UX gia hạn.         | Bỏ đường kẻ web trên bản in hợp đồng, sửa nút phân trang bg-brand-600, rút gọn cảnh báo gia hạn, test xanh 100%, FE build 0 lỗi.            |  Xuân Nhi  |      `RESOLVED`      |
 | `ISS-154` | Vòng lặp đối soát VNPay vô tận (mã 99), thiếu Index CSDL và bẫy Long Transaction khi gọi QueryDR trong lock DB.             | Thêm Hard Timeout 48h, Flyway V19 Index, tách HTTP I/O khỏi Tx, chuẩn hóa Enum, 574 tests xanh, FE build 0 lỗi.                             |    Nhật    |      `RESOLVED`      |
+| `ISS-155` | Đồng bộ luồng xử lý sự cố tiếp đón Check-in: Phân nhánh Đổi ô kho 2D vs Hủy hoàn cọc 100%, đồng bộ trạng thái Chờ gán lại và giải mã thông tin khách hàng trên hàng đợi FM. | Hoàn tất phân nhánh rejectHandover (RELOCATE / CANCEL), upsert HandoverRecord, hàng đợi gán lại FM 2D, badge Chờ gán lại ô kho, test xanh 100%, FE build 0 lỗi. |  Gia Bình  |      `RESOLVED`      |
 
 _(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/\_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))_
 

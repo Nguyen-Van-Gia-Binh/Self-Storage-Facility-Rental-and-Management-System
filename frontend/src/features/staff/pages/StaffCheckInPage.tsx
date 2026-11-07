@@ -8,6 +8,7 @@ import {
   AlertCircle,
   HelpCircle,
   ArrowLeft,
+  MapPin,
 } from 'lucide-react';
 import type { CheckInContract, CheckInSubmitRequest, HandoverRejectRequest } from '../../../types';
 import { getPendingContracts, checkInContract, rejectHandoverContract } from '../../../api/contract';
@@ -17,7 +18,7 @@ import { CheckInQueueList } from '../components/CheckInQueueList';
 import { CustomerVerificationCard } from '../components/CustomerVerificationCard';
 import { HandoverInspectionForm } from '../components/HandoverInspectionForm';
 import { AccessCodePinModal } from '../components/AccessCodePinModal';
-import { HandoverRejectionModal } from '../components/HandoverRejectionModal';
+import { HandoverRejectionModal, type HandoverRejectionAction } from '../components/HandoverRejectionModal';
 import { FacilityFloorPlanMapModal } from '@/features/manager/components/FacilityFloorPlanMapModal';
 
 export const StaffCheckInPage: React.FC = () => {
@@ -98,7 +99,27 @@ export const StaffCheckInPage: React.FC = () => {
             return myTask || data[0];
           }
           const exists = data.find((c) => c.id === prev.id);
-          return exists || data[0];
+          if (exists) {
+            if (prev.isAwaitingRelocation) {
+              // Nếu ô kho đã được FM đổi sang ô mới khác ô lỗi cũ
+              if (prev.originalDefectiveUnitCode && exists.storageUnitCode !== prev.originalDefectiveUnitCode) {
+                showToast('success', `🎉 Quản lý cơ sở đã đổi sang ô mới ${exists.storageUnitCode} cho khách hàng ${exists.customerName}!`);
+                return {
+                  ...exists,
+                  isAwaitingRelocation: false,
+                  originalDefectiveUnitCode: undefined,
+                };
+              }
+              return {
+                ...exists,
+                isAwaitingRelocation: true,
+                originalDefectiveUnitCode: prev.originalDefectiveUnitCode,
+                appointmentTime: 'Đang đợi Quản lý (FM) đổi ô kho...',
+              };
+            }
+            return exists;
+          }
+          return data[0];
         });
       } else {
         setSelectedContract(null);
@@ -127,6 +148,15 @@ export const StaffCheckInPage: React.FC = () => {
     loadContracts();
   }, [loadContracts]);
 
+  // Tự động làm mới mỗi 4 giây khi đang đợi Quản lý đổi ô kho
+  useEffect(() => {
+    if (!selectedContract?.isAwaitingRelocation) return;
+    const interval = setInterval(() => {
+      loadContracts();
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [selectedContract?.isAwaitingRelocation, loadContracts]);
+
   // Xử lý nộp biên bản bàn giao & kích hoạt PIN (Happy Path)
   const handleHandoverSubmit = async (request: CheckInSubmitRequest) => {
     if (!selectedContract) return;
@@ -142,7 +172,7 @@ export const StaffCheckInPage: React.FC = () => {
       setContracts((prev) =>
         prev.map((c) =>
           c.id === selectedContract.id
-            ? { ...c, status: 'ACTIVE', appointmentTime: 'Đã hoàn tất bàn giao' }
+            ? { ...c, status: 'ACTIVE', appointmentTime: 'Đã hoàn tất bàn giao', isAwaitingRelocation: false }
             : c
         )
       );
@@ -152,6 +182,7 @@ export const StaffCheckInPage: React.FC = () => {
               ...prev,
               status: 'ACTIVE',
               appointmentTime: 'Đã hoàn tất bàn giao',
+              isAwaitingRelocation: false,
             }
           : null
       );
@@ -163,8 +194,12 @@ export const StaffCheckInPage: React.FC = () => {
     }
   };
 
-  // Xử lý từ chối nhận kho / Báo hỏng
-  const handleRejectionConfirm = async (reason: string, reportedDefects: string) => {
+  // Xử lý từ chối nhận kho / Báo hỏng (2 nhánh: RELOCATE hoặc TERMINATE_REFUND)
+  const handleRejectionConfirm = async (
+    reason: string,
+    reportedDefects: string,
+    action: HandoverRejectionAction
+  ) => {
     if (!selectedContract) return;
 
     setIsSubmitting(true);
@@ -172,31 +207,58 @@ export const StaffCheckInPage: React.FC = () => {
       const req: HandoverRejectRequest = {
         rejectionReason: reason,
         reportedDefects,
+        rejectionAction: action,
       };
       await rejectHandoverContract(selectedContract.id, req, staffId);
       setIsRejectionModalOpen(false);
-      showToast('error', `Đã khóa ô kho ${selectedContract.storageUnitCode} sang trạng thái Bảo trì và hủy lượt bàn giao.`);
 
-      // Cập nhật lại danh sách trên UI
-      setContracts((prev) =>
-        prev.map((c) =>
-          c.id === selectedContract.id
-            ? { ...c, status: 'TERMINATED', appointmentTime: 'Đã từ chối nhận (Bảo trì)' }
-            : c
-        )
-      );
-      setSelectedContract((prev) =>
-        prev
-          ? {
-              ...prev,
-              status: 'TERMINATED',
-              appointmentTime: 'Đã từ chối nhận (Bảo trì)',
-            }
-          : null
-      );
+      if (action === 'RELOCATE') {
+        const defectiveCode = selectedContract.storageUnitCode;
+        showToast(
+          'success',
+          `Đã ghi nhận sự cố ô ${defectiveCode} (Khóa bảo trì). Đang chờ Quản lý cơ sở đổi ô mới trên sơ đồ 2D...`
+        );
+
+        const waitingContract: CheckInContract = {
+          ...selectedContract,
+          status: 'PENDING_CHECK_IN',
+          appointmentTime: 'Đang đợi Quản lý (FM) đổi ô kho...',
+          isAwaitingRelocation: true,
+          originalDefectiveUnitCode: defectiveCode,
+        };
+
+        setContracts((prev) =>
+          prev.map((c) => (c.id === selectedContract.id ? waitingContract : c))
+        );
+        setSelectedContract(waitingContract);
+      } else {
+        showToast(
+          'error',
+          `Đã khóa ô kho ${selectedContract.storageUnitCode} sang trạng thái Bảo trì và hủy hợp đồng để hoàn tiền 100%.`
+        );
+
+        // Cập nhật lại danh sách trên UI
+        setContracts((prev) =>
+          prev.map((c) =>
+            c.id === selectedContract.id
+              ? { ...c, status: 'TERMINATED', appointmentTime: 'Đã hủy do sự cố (Hoàn tiền 100%)', isAwaitingRelocation: false }
+              : c
+          )
+        );
+        setSelectedContract((prev) =>
+          prev
+            ? {
+                ...prev,
+                status: 'TERMINATED',
+                appointmentTime: 'Đã hủy do sự cố (Hoàn tiền 100%)',
+                isAwaitingRelocation: false,
+              }
+            : null
+        );
+      }
     } catch (error) {
       console.error('Lỗi khi từ chối bàn giao:', error);
-      showToast('error', 'Lỗi khi ghi nhận từ chối bàn giao.');
+      showToast('error', 'Lỗi khi ghi nhận xử lý sự cố bàn giao.');
     } finally {
       setIsSubmitting(false);
     }
@@ -352,8 +414,66 @@ export const StaffCheckInPage: React.FC = () => {
                     LƯỢT BÀN GIAO ĐÃ BỊ HỦY BỎ DO PHÁT SINH SỰ CỐ
                   </h3>
                   <p className="text-xs text-red-800 max-w-md mx-auto leading-relaxed">
-                    Ô kho <strong className="font-mono text-red-950">{selectedContract.storageUnitCode}</strong> đã được chuyển sang trạng thái <strong>Bảo trì</strong>. Lệnh hoàn tiền 100% đã được gửi sang Quản lý cơ sở để hoàn tất trong 3 ngày làm việc theo quy định bồi hoàn của cơ sở.
+                    Ô kho <strong className="font-mono text-red-950">{selectedContract.storageUnitCode}</strong> đã được chuyển sang trạng thái <strong>Bảo trì</strong>. Lệnh hoàn tiền 100% đã được gửi sang Quản lý cơ sở để phê duyệt và hoàn tất theo quy định bồi hoàn của cơ sở.
                   </p>
+                </div>
+              ) : selectedContract.isAwaitingRelocation ? (
+                /* Bàn tiếp đón: Chờ Quản lý (FM) đổi ô kho trên sơ đồ 2D */
+                <div className="bg-gradient-to-b from-amber-50 to-orange-50/40 rounded-2xl border-2 border-amber-300 p-6 sm:p-8 text-center space-y-4 shadow-sm animate-in fade-in zoom-in-95 duration-200">
+                  <div className="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-700 mx-auto border border-amber-200 shadow-2xs">
+                    <RefreshCw className="w-7 h-7 animate-spin text-amber-600" />
+                  </div>
+                  <div>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-200/80 text-amber-900 rounded-full text-xs font-bold mb-2">
+                      <span className="w-2 h-2 rounded-full bg-amber-600 animate-ping" />
+                      <span>ĐANG CHỜ QUẢN LÝ (FM) ĐỔI Ô KHO</span>
+                    </div>
+                    <h3 className="text-base sm:text-lg font-bold text-amber-950">
+                      Khách hàng đã đồng ý đổi sang ô kho khác
+                    </h3>
+                    <p className="text-xs text-amber-800 max-w-lg mx-auto leading-relaxed mt-1">
+                      Ô kho ban đầu <strong className="font-mono text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">{selectedContract.originalDefectiveUnitCode || selectedContract.storageUnitCode}</strong> đã được khóa bảo trì do sự cố. Hệ thống đang đợi Quản lý cơ sở (FM) vào <strong>Quản lý hợp đồng</strong> để lựa chọn ô kho trống mới tương đương trên sơ đồ 2D cho khách <strong className="text-slate-900">{selectedContract.customerName}</strong>.
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 bg-white/90 rounded-xl border border-amber-200 text-xs text-slate-700 max-w-md mx-auto space-y-1.5 shadow-2xs">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500 font-medium">Mã hợp đồng:</span>
+                      <span className="font-mono font-bold text-slate-800">{selectedContract.code}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500 font-medium">Hạng kho:</span>
+                      <span className="font-semibold text-slate-800">{selectedContract.unitTypeName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500 font-medium">Tự động đồng bộ:</span>
+                      <span className="text-emerald-700 font-bold flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        Tự động kiểm tra mỗi 4 giây
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => loadContracts()}
+                      disabled={isLoading}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                      <span>Kiểm tra & Làm mới ngay (F5)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setFloorPlanOpen(true)}
+                      className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold shadow-2xs transition-colors cursor-pointer"
+                    >
+                      <MapPin className="w-4 h-4 text-slate-500" />
+                      <span>Xem mặt bằng 2D cơ sở</span>
+                    </button>
+                  </div>
                 </div>
               ) : (
                 /* Form kiểm tra hiện trạng và ký số (PENDING_CHECK_IN) */

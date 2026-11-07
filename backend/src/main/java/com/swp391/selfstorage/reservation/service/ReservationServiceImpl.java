@@ -892,6 +892,13 @@ public class ReservationServiceImpl implements ReservationService {
         res.setId(r.getId());
         res.setCode(r.getCode());
         res.setCustomerId(r.getCustomerId());
+        if (r.getCustomerId() != null && userRepository != null) {
+            userRepository.findById(r.getCustomerId()).ifPresent(user -> {
+                res.setCustomerName(user.getFullName());
+                res.setCustomerPhone(user.getPhone());
+                res.setCustomerEmail(user.getEmail());
+            });
+        }
         res.setFacilityId(r.getFacilityId());
         res.setFacilityName(facilityName);
         res.setUnitTypeId(r.getUnitTypeId());

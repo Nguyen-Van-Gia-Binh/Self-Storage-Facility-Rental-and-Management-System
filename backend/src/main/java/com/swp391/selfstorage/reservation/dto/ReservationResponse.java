@@ -30,6 +30,9 @@ public class ReservationResponse {
 
     private String status;
     private Long customerId;
+    private String customerName;
+    private String customerPhone;
+    private String customerEmail;
     private OffsetDateTime holdExpiresAt;
     private Instant createdAt;
     private OffsetDateTime confirmedAt;
@@ -112,6 +115,15 @@ public class ReservationResponse {
 
     public Long getCustomerId() { return customerId; }
     public void setCustomerId(Long customerId) { this.customerId = customerId; }
+
+    public String getCustomerName() { return customerName; }
+    public void setCustomerName(String customerName) { this.customerName = customerName; }
+
+    public String getCustomerPhone() { return customerPhone; }
+    public void setCustomerPhone(String customerPhone) { this.customerPhone = customerPhone; }
+
+    public String getCustomerEmail() { return customerEmail; }
+    public void setCustomerEmail(String customerEmail) { this.customerEmail = customerEmail; }
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }

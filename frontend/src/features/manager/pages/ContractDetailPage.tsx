@@ -20,8 +20,9 @@ import {
   UserCheck,
   MapPin,
 } from 'lucide-react';
-import { getManagerContracts, getManagerContractById } from '@/api/contract';
+import { getManagerContracts, getManagerContractById, reassignStorageUnit } from '@/api/contract';
 import type { ManagerContractItem } from '@/types/contractManager';
+import type { StorageUnitResponse } from '@/types/unit';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { StatusBadge } from '../components/StatusBadge';
 import { OverdueAlertBanner } from '../components/OverdueAlertBanner';
@@ -129,13 +130,40 @@ export const ContractDetailPage: React.FC = () => {
   const isOverdue = contract.status === 'OVERDUE';
   const isActive = contract.status === 'ACTIVE';
   const isPendingCheckIn = contract.status === 'PENDING_CHECK_IN' || (contract.status as string) === 'PENDING_CHECKIN';
-  const canRelocate = Boolean(contract.relocationEligible) && (isActive || contract.status === 'PENDING_CHECK_IN');
   const isPendingReturn =
     contract.status === 'PENDING_RETURN' || (contract.status as string) === 'INSPECTED';
   const isInspected =
     Boolean(contract.isInspected) || (contract.status as string) === 'INSPECTED';
-  // Chỉ cho phép duyệt quyết toán khi nhân viên ĐÃ lập biên bản nghiệm thu (BR-RET-02)
-  const isSettlementReady = isInspected;
+  const isTerminated = contract.status === 'TERMINATED';
+  const canRelocate =
+    !isTerminated &&
+    Boolean(contract.relocationEligible) &&
+    (isActive || isPendingCheckIn);
+  // Cho phép duyệt quyết toán khi nhân viên ĐÃ nghiệm thu hoặc hợp đồng bị Hủy do sự cố lúc bàn giao
+  const isSettlementReady = (isInspected || isTerminated) && contract.status !== 'CLOSED';
+
+  const handleFloorPlanReassign = async (unit: StorageUnitResponse) => {
+    if (!contract) return;
+    try {
+      setRefreshing(true);
+      await reassignStorageUnit({
+        contractId: contract.id,
+        currentUnitId: contract.storageUnitId,
+        newUnitId: unit.id,
+        newUnitCode: unit.code,
+        reason: 'Đổi ô kho do phát hiện sự cố lúc bàn giao tiếp đón',
+        supportRequestId: contract.openSupportRequestId ?? undefined,
+        customerConsent: true,
+      });
+      setFloorPlanOpen(false);
+      loadData(true);
+    } catch (err: unknown) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'Lỗi khi đổi ô kho.');
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   return (
     <div className="space-y-6 pb-12">
@@ -165,7 +193,7 @@ export const ContractDetailPage: React.FC = () => {
               <h1 className="text-2xl font-mono font-black text-slate-900 tracking-tight">
                 {contract.code}
               </h1>
-              <StatusBadge status={contract.status} size="md" />
+              <StatusBadge status={canRelocate && isPendingCheckIn ? 'RELOCATION_PENDING' : contract.status} size="md" />
               <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                 {contract.facilityName}
               </span>
@@ -173,7 +201,16 @@ export const ContractDetailPage: React.FC = () => {
             <p className="text-xs text-slate-500 mt-1 flex items-center gap-2">
               <span>Khách thuê: <strong>{contract.customerName}</strong></span>
               <span>•</span>
-              <span>Ô kho: <strong className="font-mono">{contract.storageUnitCode}</strong></span>
+              <span>
+                Ô kho:{' '}
+                {canRelocate && isPendingCheckIn ? (
+                  <strong className="font-mono text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-300">
+                    Chờ cấp ô mới
+                  </strong>
+                ) : (
+                  <strong className="font-mono">{contract.storageUnitCode || 'Chưa gán'}</strong>
+                )}
+              </span>
               <span>•</span>
               <span>Thời hạn: {contract.startDate} → {contract.endDateExclusive}</span>
             </p>
@@ -221,30 +258,76 @@ export const ContractDetailPage: React.FC = () => {
         <div className="bg-amber-50/90 border border-amber-300 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-900 shadow-2xs">
           <div className="flex items-start gap-3">
             <div className="p-2 rounded-xl bg-amber-100 text-amber-700 shrink-0 mt-0.5">
-              <AlertCircle className="w-5 h-5" />
+              <AlertCircle className="w-5 h-5 text-amber-600" />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-amber-900">
-                Ô kho phát sinh sự cố — Nhân viên hiện trường đã đề xuất di dời khẩn cấp
+              <h4 className="text-sm font-bold text-amber-950">
+                {isPendingCheckIn
+                  ? 'Yêu cầu Đổi ô kho — Phát hiện sự cố lúc bàn giao tiếp đón'
+                  : 'Ô kho phát sinh sự cố — Nhân viên hiện trường đã đề xuất di dời khẩn cấp'}
               </h4>
-              <p className="text-xs text-amber-700 mt-0.5">
-                Ô kho <span className="font-mono font-bold text-amber-900">{contract.storageUnitCode}</span> gặp sự cố kỹ thuật. Bạn có thể tiến hành đổi sang ô kho trống cùng loại cho khách hàng.
+              <p className="text-xs text-amber-800 mt-0.5">
+                {isPendingCheckIn
+                  ? `Ô kho ${contract.storageUnitCode} phát sinh sự cố và đã bị khóa bảo trì. Khách hàng đã đồng ý đổi sang ô khác cùng loại. Quản lý cần chọn ô mới trên sơ đồ 2D để nhân viên tiếp tục bàn giao cho khách.`
+                  : `Ô kho ${contract.storageUnitCode} gặp sự cố kỹ thuật. Bạn có thể tiến hành đổi sang ô kho trống cùng loại cho khách hàng.`}
               </p>
             </div>
           </div>
           <button
             type="button"
-            onClick={() => setReassignModalOpen(true)}
+            onClick={() => setFloorPlanOpen(true)}
             className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs shrink-0 cursor-pointer flex items-center justify-center gap-1.5"
           >
             <Repeat className="w-4 h-4" />
-            <span>Tiến hành Đổi ô kho</span>
+            <span>Tiến hành Đổi ô kho (Sơ đồ 2D)</span>
           </button>
         </div>
       )}
 
+      {/* Banner Hợp đồng Chấm dứt do sự cố bàn giao */}
+      {isTerminated && (
+        <div className="bg-rose-50/90 border border-rose-300 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-rose-950 shadow-2xs">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-xl bg-rose-100 text-rose-700 shrink-0 mt-0.5">
+              <AlertCircle className="w-5 h-5 text-rose-600" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-bold text-rose-950">
+                  Hợp đồng đã chấm dứt do sự cố bàn giao / khách từ chối nhận
+                </h4>
+                <span className="text-[10px] font-bold bg-rose-200/80 text-rose-900 px-2 py-0.5 rounded-full">
+                  Chờ hoàn tiền 100%
+                </span>
+              </div>
+              <p className="text-xs text-rose-800 mt-0.5">
+                Ô kho <span className="font-mono font-bold text-rose-950">{contract.storageUnitCode}</span> phát sinh sự cố và đã bị khóa bảo trì. Ngày kết thúc thuê chốt tại ngày check-in: <strong className="font-mono">{contract.endDateExclusive || contract.startDate}</strong>. Quản lý cơ sở có thể duyệt quyết toán để hoàn tiền 100% cho khách, hoặc đổi sang ô kho mới để khôi phục hợp đồng tiếp tục phục vụ khách.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setFloorPlanOpen(true)}
+              className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs shrink-0 cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <Repeat className="w-4 h-4" />
+              <span>Đổi ô kho mới (Sơ đồ 2D)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSettlementModalOpen(true)}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs shrink-0 cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Duyệt quyết toán & Hoàn tiền 100%</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Banner Tiếp đón nhận kho (BR-CHK-01..05, FM-05) */}
-      {isPendingCheckIn && (
+      {isPendingCheckIn && !canRelocate && !isTerminated && (
         <div className="bg-sky-50/90 border border-sky-300 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sky-950 shadow-2xs">
           <div className="flex items-start gap-3">
             <div className="p-2 rounded-xl bg-sky-100 text-sky-700 shrink-0 mt-0.5">
@@ -348,7 +431,7 @@ export const ContractDetailPage: React.FC = () => {
 
               <div className="flex items-center justify-between">
                 <span className="text-slate-500 font-medium">Trạng thái hợp đồng:</span>
-                <StatusBadge status={contract.status} size="sm" />
+                <StatusBadge status={canRelocate && isPendingCheckIn ? 'RELOCATION_PENDING' : contract.status} size="sm" />
               </div>
 
               <div className="flex items-center justify-between">
@@ -400,15 +483,22 @@ export const ContractDetailPage: React.FC = () => {
             <div className="space-y-3 text-xs">
               <div className="flex items-center justify-between">
                 <span className="text-slate-500 font-medium">Mã ô kho:</span>
-                <span className="font-mono font-bold text-brand-600 text-sm">
-                  {contract.storageUnitCode || `Ô #${contract.storageUnitId}`}
-                </span>
+                {canRelocate && isPendingCheckIn ? (
+                  <span className="font-mono font-bold text-amber-800 bg-amber-50 border border-amber-300 px-2 py-0.5 rounded text-xs">
+                    Chờ cấp ô mới (Sự cố bàn giao)
+                  </span>
+                ) : (
+                  <span className="font-mono font-bold text-brand-600 text-sm">
+                    {contract.storageUnitCode || `Ô #${contract.storageUnitId}`}
+                  </span>
+                )}
               </div>
 
               <div className="flex items-center justify-between">
                 <span className="text-slate-500 font-medium">Loại ô kho:</span>
                 <span className="font-semibold text-slate-800">
                   {contract.unitTypeName || 'Kho tiêu chuẩn'}
+                  {canRelocate && isPendingCheckIn ? ' (Đang điều phối đổi ô kho)' : ''}
                 </span>
               </div>
 
@@ -419,18 +509,29 @@ export const ContractDetailPage: React.FC = () => {
 
               <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                 <span className="text-slate-500 font-medium">Xem trên Sơ đồ ô kho:</span>
-                <button
-                  type="button"
-                  onClick={() =>
-                    navigate(
-                      `/manager/facilities/${contract.facilityId}/unit-types/${contract.unitTypeId}/units/${contract.storageUnitId}?contractId=${contract.id}`
-                    )
-                  }
-                  className="inline-flex items-center gap-1 font-bold text-brand-600 hover:text-brand-700 hover:underline cursor-pointer"
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  <span>Đi tới ô kho {contract.storageUnitCode}</span>
-                </button>
+                {canRelocate && isPendingCheckIn ? (
+                  <button
+                    type="button"
+                    onClick={() => setFloorPlanOpen(true)}
+                    className="inline-flex items-center gap-1 font-bold text-amber-700 hover:text-amber-800 hover:underline cursor-pointer"
+                  >
+                    <Repeat className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Chọn ô mới trên Sơ đồ 2D</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate(
+                        `/manager/facilities/${contract.facilityId}/unit-types/${contract.unitTypeId}/units/${contract.storageUnitId}?contractId=${contract.id}`
+                      )
+                    }
+                    className="inline-flex items-center gap-1 font-bold text-brand-600 hover:text-brand-700 hover:underline cursor-pointer"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>Đi tới ô kho {contract.storageUnitCode}</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -673,6 +774,9 @@ export const ContractDetailPage: React.FC = () => {
           facilityId={contract.facilityId}
           facilityName={contract.facilityName}
           highlightUnitId={contract.storageUnitId}
+          allowedUnitTypeId={canRelocate ? contract.unitTypeId : undefined}
+          targetUnitTypeName={canRelocate ? contract.unitTypeName : undefined}
+          onSelectUnit={canRelocate ? handleFloorPlanReassign : undefined}
         />
       )}
     </div>

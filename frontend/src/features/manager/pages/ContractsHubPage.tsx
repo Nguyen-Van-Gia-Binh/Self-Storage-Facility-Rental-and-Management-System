@@ -15,17 +15,22 @@ import {
   CheckCircle2,
   Users,
   UserPlus,
+  XCircle,
+  MapPin,
+  Repeat,
 } from 'lucide-react';
 import type { ManagerContractItem, ContractKpiData } from '@/types/contractManager';
-import { getManagerContracts, getManagerKpiData } from '@/api/contract';
+import { getManagerContracts, getManagerKpiData, reassignStorageUnit } from '@/api/contract';
 import { fetchMyAssignedFacilities } from '@/api/facility';
+import type { StorageUnitResponse } from '@/types/unit';
 import { ContractKpiCards } from '../components/ContractKpiCards';
 import { ReassignUnitModal } from '../components/ReassignUnitModal';
+import { FacilityFloorPlanMapModal } from '../components/FacilityFloorPlanMapModal';
 import { ContractFinancialModal } from '../components/ContractFinancialModal';
 import { SettlementApprovalModal } from '../components/SettlementApprovalModal';
 import { useActivePolicy } from '@/hooks/useActivePolicy';
 
-type TabKey = 'ACTIVE' | 'PENDING_CHECK_IN' | 'RETURN' | 'OVERDUE';
+type TabKey = 'ACTIVE' | 'PENDING_CHECK_IN' | 'RETURN' | 'OVERDUE' | 'TERMINATED';
 
 export const ContractsHubPage: React.FC = () => {
   const policy = useActivePolicy();
@@ -60,6 +65,7 @@ export const ContractsHubPage: React.FC = () => {
   const [settlementModalOpen, setSettlementModalOpen] = useState<boolean>(false);
   const [selectedForSettlement, setSelectedForSettlement] = useState<ManagerContractItem | null>(null);
 
+  const [floorPlanReassignContract, setFloorPlanReassignContract] = useState<ManagerContractItem | null>(null);
 
   const [reloadKey, setReloadKey] = useState<number>(0);
 
@@ -133,10 +139,36 @@ export const ContractsHubPage: React.FC = () => {
         );
       case 'OVERDUE':
         return contracts.filter((c) => c.status === 'OVERDUE');
+      case 'TERMINATED':
+        return contracts.filter((c) => c.status === 'TERMINATED' || c.status === 'CLOSED');
       default:
         return contracts;
     }
   }, [contracts, activeTab]);
+
+  const handleFloorPlanReassignSelect = async (unit: StorageUnitResponse) => {
+    if (!floorPlanReassignContract) return;
+    try {
+      setLoading(true);
+      const res = await reassignStorageUnit({
+        contractId: floorPlanReassignContract.id,
+        currentUnitId: floorPlanReassignContract.storageUnitId,
+        newUnitId: unit.id,
+        newUnitCode: unit.code,
+        reason: 'Đổi ô kho do phát hiện sự cố lúc bàn giao tiếp đón',
+        supportRequestId: floorPlanReassignContract.openSupportRequestId ?? undefined,
+        customerConsent: true,
+      });
+      showToast(res.message || `Đã đổi thành công sang ô ${unit.code} cho hợp đồng ${floorPlanReassignContract.code}!`);
+      setFloorPlanReassignContract(null);
+      setReloadKey((k) => k + 1);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Lỗi khi đổi ô kho';
+      showToast(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleReassignSuccess = (updatedContract: ManagerContractItem, message: string) => {
     showToast(message);
@@ -313,6 +345,21 @@ export const ContractsHubPage: React.FC = () => {
               {kpiData.overdueCount}
             </span>
           </button>
+
+          <button
+            onClick={() => setActiveTab('TERMINATED')}
+            className={`py-3 px-4 border-b-2 flex items-center gap-2 whitespace-nowrap transition-colors ${
+              activeTab === 'TERMINATED'
+                ? 'border-rose-600 text-rose-700'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <XCircle className="w-4 h-4" />
+            <span>5. Đã chấm dứt / Hủy</span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] bg-rose-100 text-rose-800 font-bold">
+              {contracts.filter((c) => c.status === 'TERMINATED' || c.status === 'CLOSED').length}
+            </span>
+          </button>
         </div>
 
         {/* Tab Table Content */}
@@ -372,9 +419,15 @@ export const ContractsHubPage: React.FC = () => {
                       {/* Ô kho */}
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-1.5">
-                          <span className="font-mono font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200">
-                            {contract.storageUnitCode}
-                          </span>
+                          {contract.relocationEligible || !contract.storageUnitCode ? (
+                            <span className="font-mono font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-300 text-xs">
+                              Chờ cấp ô mới
+                            </span>
+                          ) : (
+                            <span className="font-mono font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200">
+                              {contract.storageUnitCode}
+                            </span>
+                          )}
                           <span className="text-[11px] text-slate-500 truncate max-w-[140px]">
                             {contract.unitTypeName}
                           </span>
@@ -430,6 +483,14 @@ export const ContractsHubPage: React.FC = () => {
 
                         {activeTab === 'PENDING_CHECK_IN' && (
                           <div>
+                            {contract.relocationEligible && (
+                              <div className="mb-1">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                                  <AlertTriangle className="w-3 h-3 text-amber-600" />
+                                  Sự cố ô hỏng — Chờ đổi ô
+                                </span>
+                              </div>
+                            )}
                             {contract.checkInGraceDaysRemaining !== undefined ? (
                               contract.checkInGraceDaysRemaining >= 0 ? (
                                 <span
@@ -548,6 +609,23 @@ export const ContractsHubPage: React.FC = () => {
                             )}
                           </div>
                         )}
+
+                        {activeTab === 'TERMINATED' && (
+                          <div className="space-y-1">
+                            <span
+                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                                contract.status === 'CLOSED'
+                                  ? 'bg-slate-100 text-slate-700 border border-slate-300'
+                                  : 'bg-rose-100 text-rose-800 border border-rose-300'
+                              }`}
+                            >
+                              {contract.status === 'CLOSED' ? 'Đã tất toán & Đóng hợp đồng' : 'Đã chấm dứt • Chờ hoàn tiền 100%'}
+                            </span>
+                            <span className="block text-[10px] text-slate-500">
+                              Ngày kết thúc: <strong className="font-mono text-slate-700">{contract.endDateExclusive || contract.startDate}</strong>
+                            </span>
+                          </div>
+                        )}
                       </td>
 
                       {/* Thao tác */}
@@ -568,14 +646,13 @@ export const ContractsHubPage: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => {
-                                setSelectedForReassign(contract);
-                                setReassignModalOpen(true);
+                                setFloorPlanReassignContract(contract);
                               }}
-                              className="px-2.5 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors inline-flex items-center gap-1"
-                              title="Đổi ô cùng loại khi ô đã chọn có phiếu hư hỏng đang mở"
+                              className="px-2.5 py-1.5 text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-lg transition-colors inline-flex items-center gap-1 shadow-2xs cursor-pointer"
+                              title="Mở sơ đồ mặt bằng 2D để trực tiếp chọn ô kho trống thay thế"
                             >
-                              <RefreshCw className="w-3 h-3" />
-                              Đổi ô kho
+                              <MapPin className="w-3 h-3 text-amber-600" />
+                              <span>Đổi ô kho (Sơ đồ 2D)</span>
                             </button>
                             )}
                           </>
@@ -625,6 +702,43 @@ export const ContractsHubPage: React.FC = () => {
                           </button>
                         )}
 
+                        {/* Thao tác Tab 5: Đã chấm dứt / Hủy */}
+                        {activeTab === 'TERMINATED' && (
+                          <>
+                            {contract.status === 'TERMINATED' && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => setFloorPlanReassignContract(contract)}
+                                  className="px-2.5 py-1.5 text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-lg transition-colors inline-flex items-center gap-1 shadow-2xs cursor-pointer"
+                                  title="Đổi ô kho mới trên sơ đồ 2D và khôi phục hợp đồng cho khách"
+                                >
+                                  <Repeat className="w-3 h-3 text-amber-600" />
+                                  <span>Đổi ô kho (2D)</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedForSettlement(contract);
+                                    setSettlementModalOpen(true);
+                                  }}
+                                  className="px-2.5 py-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition-colors inline-flex items-center gap-1 shadow-2xs cursor-pointer"
+                                  title="Duyệt quyết toán và xuất lệnh hoàn trả 100% (cọc + tiền thuê) cho khách hàng"
+                                >
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                  <span>Duyệt hoàn tiền 100%</span>
+                                </button>
+                              </>
+                            )}
+                            <Link
+                              to={`/manager/contracts/${contract.id}`}
+                              className="px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors inline-flex items-center gap-1"
+                            >
+                              Chi tiết
+                            </Link>
+                          </>
+                        )}
+
                         {/* Nút Xem chi tiết công nợ tài chính */}
                         <button
                           type="button"
@@ -648,6 +762,19 @@ export const ContractsHubPage: React.FC = () => {
       </div>
 
       {/* Modals */}
+      {floorPlanReassignContract && (
+        <FacilityFloorPlanMapModal
+          isOpen={!!floorPlanReassignContract}
+          onClose={() => setFloorPlanReassignContract(null)}
+          facilityId={floorPlanReassignContract.facilityId}
+          facilityName={floorPlanReassignContract.facilityName}
+          highlightUnitId={floorPlanReassignContract.storageUnitId}
+          allowedUnitTypeId={floorPlanReassignContract.unitTypeId}
+          targetUnitTypeName={floorPlanReassignContract.unitTypeName}
+          onSelectUnit={handleFloorPlanReassignSelect}
+        />
+      )}
+
       <ReassignUnitModal
         isOpen={reassignModalOpen}
         contract={selectedForReassign}

@@ -37,13 +37,22 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
     criteria.dryWallsFloor &&
     criteria.smartLockReady;
 
+  const isAwaitingRelocation = Boolean(
+    contract.relocationEligible ||
+    contract.isAwaitingRelocation ||
+    !contract.storageUnitCode ||
+    contract.storageUnitCode === 'Chờ gán lại ô kho'
+  );
+
   const hasAllocatedUnit = Boolean(
+    !isAwaitingRelocation &&
     contract.storageUnitId &&
     contract.storageUnitCode &&
     contract.storageUnitCode !== 'Chưa chọn ô'
   );
 
   const canSubmit =
+    !isAwaitingRelocation &&
     hasAllocatedUnit &&
     allCriteriaPassed &&
     customerConfirmed &&
@@ -101,15 +110,27 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
         </button>
       </div>
 
-      {/* Cảnh báo chưa phân bổ ô kho */}
-      {!hasAllocatedUnit && (
+      {/* Cảnh báo sự cố đang chờ FM phân bổ ô mới trên 2D */}
+      {isAwaitingRelocation ? (
+        <div className="p-4 bg-amber-50 border border-amber-300 rounded-2xl flex items-start gap-3 text-xs text-amber-900 font-medium shadow-xs animate-in fade-in">
+          <AlertOctagon className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <h4 className="font-bold text-sm text-amber-950">
+              Ô kho phát sinh sự cố — Tạm dừng thủ tục bàn giao
+            </h4>
+            <p className="text-amber-800 leading-relaxed">
+              Khách hàng đã báo sự cố hư hỏng và yêu cầu đổi ô kho mới. Hồ sơ đã được chuyển tiếp đến <strong>Quản lý cơ sở (FM)</strong> để phân bổ ô kho thay thế trên sơ đồ mặt bằng 2D. Sau khi Quản lý cơ sở cấp ô mới xong, màn hình sẽ tự động cập nhật để bạn tiếp tục bàn giao cho khách.
+            </p>
+          </div>
+        </div>
+      ) : !hasAllocatedUnit ? (
         <div className="p-3.5 bg-amber-50 border border-amber-300 rounded-xl flex items-center gap-2.5 text-xs text-amber-900 font-medium shadow-xs">
           <AlertOctagon className="w-4 h-4 text-amber-600 shrink-0" />
           <span>
             Hợp đồng chưa được Quản lý cơ sở phân bổ ô kho cụ thể. Vui lòng liên hệ Quản lý cơ sở gán ô kho trước khi tiến hành nghiệm thu bàn giao theo quy định <strong>BR-CHK-02</strong>.
           </span>
         </div>
-      )}
+      ) : null}
 
       {/* 4 Tiêu chí kiểm tra hiện trạng */}
       <div className="space-y-2.5">
@@ -255,15 +276,22 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
       {/* Thanh nút thao tác */}
       <div className="bg-slate-50/80 -mx-5 -mb-5 p-4 rounded-b-2xl border-t border-slate-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         {/* Nút báo sự cố ngoại lệ */}
-        <button
-          type="button"
-          onClick={onOpenRejectionModal}
-          disabled={isSubmitting}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all cursor-pointer shrink-0"
-        >
-          <AlertOctagon className="w-4 h-4 shrink-0" />
-          <span>Báo hỏng / Khách từ chối nhận</span>
-        </button>
+        {isAwaitingRelocation ? (
+          <span className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-amber-800 bg-amber-100/70 border border-amber-200 rounded-xl">
+            <AlertOctagon className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>Đã ghi nhận sự cố & chờ Quản lý đổi ô kho</span>
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={onOpenRejectionModal}
+            disabled={isSubmitting}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all cursor-pointer shrink-0"
+          >
+            <AlertOctagon className="w-4 h-4 shrink-0" />
+            <span>Báo hỏng / Khách từ chối nhận</span>
+          </button>
+        )}
 
         {/* Nút xác nhận chính */}
         <Button
