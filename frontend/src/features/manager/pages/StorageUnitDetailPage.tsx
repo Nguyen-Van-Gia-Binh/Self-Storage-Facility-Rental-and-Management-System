@@ -694,42 +694,23 @@ export const StorageUnitDetailPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Date Input & Quick Buttons */}
-              <div className="flex flex-wrap items-center gap-2">
+              {/* Date Input */}
+              <div className="flex items-center gap-2">
                 <input
                   type="date"
                   value={simulatedDate}
                   onChange={(e) => setSimulatedDate(e.target.value)}
                   className="px-3 py-1.5 bg-white border border-purple-300 rounded-xl text-xs font-mono font-bold text-purple-950 outline-none shadow-2xs cursor-pointer focus:ring-2 focus:ring-purple-400"
                 />
-                <button
-                  type="button"
-                  onClick={() => setSimulatedDate(addDaysToStr(todayStr, 7))}
-                  className="px-2.5 py-1 bg-white hover:bg-purple-100 text-purple-800 text-xs font-semibold rounded-lg border border-purple-200 cursor-pointer shadow-2xs"
-                >
-                  +7 ngày
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSimulatedDate(addDaysToStr(todayStr, 14))}
-                  className="px-2.5 py-1 bg-white hover:bg-purple-100 text-purple-800 text-xs font-semibold rounded-lg border border-purple-200 cursor-pointer shadow-2xs"
-                >
-                  +14 ngày
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSimulatedDate(addDaysToStr(todayStr, 30))}
-                  className="px-2.5 py-1 bg-white hover:bg-purple-100 text-purple-800 text-xs font-semibold rounded-lg border border-purple-200 cursor-pointer shadow-2xs"
-                >
-                  +30 ngày
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSimulatedDate(addDaysToStr(todayStr, 60))}
-                  className="px-2.5 py-1 bg-white hover:bg-purple-100 text-purple-800 text-xs font-semibold rounded-lg border border-purple-200 cursor-pointer shadow-2xs"
-                >
-                  +60 ngày
-                </button>
+                {simulatedDate !== todayStr && (
+                  <button
+                    type="button"
+                    onClick={() => setSimulatedDate(todayStr)}
+                    className="px-2.5 py-1.5 bg-white hover:bg-purple-100 text-purple-800 text-xs font-semibold rounded-xl border border-purple-200 cursor-pointer shadow-2xs transition-colors"
+                  >
+                    Hôm nay
+                  </button>
+                )}
               </div>
             </div>
 

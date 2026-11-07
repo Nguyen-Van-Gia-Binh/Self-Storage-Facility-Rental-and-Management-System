@@ -52,23 +52,6 @@ const STATUS_FILTERS: { label: string; value: UnitStatus | 'ALL' }[] = [
 
 const PAGE_SIZE = 10;
 
-const getTodayStr = (): string => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-
-const addDaysToStr = (baseDateStr: string, days: number): string => {
-  const d = new Date(baseDateStr);
-  d.setDate(d.getDate() + days);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-
 const formatVnDate = (dateStr?: string): string => {
   if (!dateStr) return '';
   const clean = dateStr.substring(0, 10);
@@ -80,7 +63,6 @@ const formatVnDate = (dateStr?: string): string => {
 };
 
 export const StorageUnitListPage: React.FC = () => {
-  const todayStr = useMemo(() => getTodayStr(), []);
   const { facilityId, typeId } = useParams<{ facilityId: string; typeId: string }>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -428,49 +410,17 @@ export const StorageUnitListPage: React.FC = () => {
               onChange={(e) => handleDateRangeChange(startDate, e.target.value)}
               className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-800 outline-none focus:ring-2 focus:ring-brand-400 cursor-pointer shadow-2xs"
             />
-            <div className="flex items-center gap-1">
+            {(startDate || endDate) && (
               <button
                 type="button"
-                onClick={() => {
-                  const s = startDate || todayStr;
-                  handleDateRangeChange(s, addDaysToStr(s, 7));
-                }}
-                className="px-2 py-0.5 rounded bg-white hover:bg-slate-100 text-slate-700 font-semibold border border-slate-200 cursor-pointer text-[11px]"
+                onClick={() => handleDateRangeChange('', '')}
+                className="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold border border-rose-200 cursor-pointer text-xs flex items-center gap-1 transition-colors"
+                title="Quay lại hôm nay (thời gian thực)"
               >
-                +7d
+                <X className="w-3.5 h-3.5" />
+                <span>Hôm nay</span>
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const s = startDate || todayStr;
-                  handleDateRangeChange(s, addDaysToStr(s, 30));
-                }}
-                className="px-2 py-0.5 rounded bg-white hover:bg-slate-100 text-slate-700 font-semibold border border-slate-200 cursor-pointer text-[11px]"
-              >
-                +30d
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const s = startDate || todayStr;
-                  handleDateRangeChange(s, addDaysToStr(s, 90));
-                }}
-                className="px-2 py-0.5 rounded bg-white hover:bg-slate-100 text-slate-700 font-semibold border border-slate-200 cursor-pointer text-[11px]"
-              >
-                +90d
-              </button>
-              {(startDate || endDate) && (
-                <button
-                  type="button"
-                  onClick={() => handleDateRangeChange('', '')}
-                  className="px-2 py-0.5 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold border border-rose-200 cursor-pointer text-[11px] flex items-center gap-0.5"
-                  title="Quay lại hôm nay (thời gian thực)"
-                >
-                  <X className="w-3 h-3" />
-                  <span>Hôm nay</span>
-                </button>
-              )}
-            </div>
+            )}
           </div>
 
           {/* Bộ chuyển đổi chế độ xem: Sơ đồ 2D vs Bảng danh sách */}
