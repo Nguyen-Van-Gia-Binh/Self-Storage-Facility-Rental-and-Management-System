@@ -114,6 +114,8 @@ export function getUnitTypeTheme(type: {
   // 1. Kiểm tra từ khóa đặc thù (Semantic Keyword Matches)
   if (
     code.includes('CLIMATE') ||
+    code.includes('-AC-') ||
+    code.startsWith('UT-AC') ||
     name.includes('lạnh') ||
     name.includes('máy lạnh') ||
     name.includes('điều hòa')

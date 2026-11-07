@@ -41,7 +41,7 @@ export const UnitPickerSidebar: React.FC<UnitPickerSidebarProps> = ({
   selectedUnit,
   unitTypeName,
   typeFull,
-  storageType,
+  storageType: _storageType,
   selectedSize,
   areaM2,
   startDate,
@@ -90,10 +90,10 @@ export const UnitPickerSidebar: React.FC<UnitPickerSidebarProps> = ({
         </div>
 
         <div className="flex justify-between items-center gap-2">
-          <span className="shrink-0 text-slate-500 font-medium">Loại kho:</span>
+          <span className="shrink-0 text-slate-500 font-medium">Quy cách:</span>
           <span className="text-slate-900 text-right font-medium">
             {hasSelected ? (
-              `${storageType === 'CLIMATE_CONTROLLED' ? 'Kho Máy Lạnh' : 'Kho Tiêu Chuẩn'} (Size ${selectedSize}${areaM2 ? ` · ${areaM2} m²` : ''})`
+              `Size ${selectedSize}${areaM2 ? ` · ${areaM2} m²` : ''}`
             ) : (
               <span className="text-slate-400">Vui lòng chọn loại kho</span>
             )}

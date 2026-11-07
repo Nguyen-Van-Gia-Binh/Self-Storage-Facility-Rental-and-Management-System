@@ -24,6 +24,7 @@ export interface StorageUnitListParams {
   position?: string;
   startDate?: string;
   rentalMonths?: number;
+  endDate?: string;
   targetDate?: string;
 }
 

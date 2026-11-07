@@ -52,6 +52,8 @@ export interface BackendRentalSummary {
   pendingRenewalMonths?: number;
   pendingRenewalAmount?: number;
   pendingRenewalExpiresAt?: string;
+  rescheduleCount?: number;
+  rescheduledAt?: string;
   createdAt?: string;
 }
 
@@ -160,6 +162,8 @@ export function mapBackendRentalToContract(item: BackendRentalSummary): RentedCo
     reservationId: item.reservationId,
     reservationCode: item.reservationCode,
     rentalMonths: item.rentalMonths,
+    rescheduleCount: item.rescheduleCount,
+    rescheduledAt: item.rescheduledAt,
     createdAt: item.createdAt ? String(item.createdAt) : undefined,
   };
 }

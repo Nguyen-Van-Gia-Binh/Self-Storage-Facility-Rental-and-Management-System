@@ -22,6 +22,9 @@ public class CreateUnitTypeRequest {
     @Size(max = 500, message = "Mô tả không được vượt quá 500 ký tự")
     private String description;
 
+    @Size(max = 30, message = "Môi trường lưu trữ không được vượt quá 30 ký tự")
+    private String environment;
+
     @NotNull(message = "Chiều rộng không được để trống")
     @DecimalMin(value = "0.1", message = "Chiều rộng phải từ 0.1m trở lên")
     @DecimalMax(value = "999.99", message = "Chiều rộng tối đa 999.99m")

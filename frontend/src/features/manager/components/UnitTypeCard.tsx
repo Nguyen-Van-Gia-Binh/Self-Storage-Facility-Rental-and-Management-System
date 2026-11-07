@@ -24,8 +24,9 @@ interface UnitTypeCardProps {
   isSelected?: boolean;
   stats?: UnitTypeBreakdownStats;
   onClick: () => void;
-  onEdit: () => void;
-  onToggle: () => void;
+  onEdit?: () => void;
+  onToggle?: () => void;
+  canManage?: boolean;
 }
 
 
@@ -34,6 +35,7 @@ export const isClimateType = (t: { code?: string; name: string }) => {
   const name = t.name.toLowerCase();
   return (
     code.includes('CLIMATE') ||
+    code.includes('AC') ||
     name.includes('lạnh') ||
     name.includes('máy lạnh') ||
     name.includes('điều hòa')
@@ -51,6 +53,7 @@ export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({
   onClick,
   onEdit,
   onToggle,
+  canManage = false,
 }) => {
   const isTypeActive = type.isActive ?? type.active ?? true;
   const theme = getUnitTypeTheme(type);
@@ -158,36 +161,42 @@ export const UnitTypeCard: React.FC<UnitTypeCardProps> = ({
 
       {/* Bottom Action Footer */}
       <div className="relative px-5 py-3.5 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit();
-            }}
-            className="text-xs font-semibold text-slate-600 hover:text-brand-700 hover:bg-white px-2.5 py-1.5 rounded-lg border border-slate-200/80 transition-colors flex items-center gap-1 cursor-pointer shadow-2xs"
-            title="Chỉnh sửa loại kho"
-          >
-            <Edit2 className="w-3 h-3" />
-            Sửa
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggle();
-            }}
-            className={`text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition-colors flex items-center gap-1 cursor-pointer shadow-2xs ${
-              isTypeActive
-                ? 'text-rose-600 hover:bg-white border-rose-200 hover:border-rose-300'
-                : 'text-emerald-700 hover:bg-white border-emerald-200 hover:border-emerald-300'
-            }`}
-            title={isTypeActive ? 'Vô hiệu hóa loại ô kho' : 'Kích hoạt loại ô kho'}
-          >
-            <Power className="w-3 h-3" />
-            {isTypeActive ? 'Tắt' : 'Bật'}
-          </button>
-        </div>
+        {canManage && onEdit && onToggle ? (
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+              className="text-xs font-semibold text-slate-600 hover:text-brand-700 hover:bg-white px-2.5 py-1.5 rounded-lg border border-slate-200/80 transition-colors flex items-center gap-1 cursor-pointer shadow-2xs"
+              title="Chỉnh sửa loại kho"
+            >
+              <Edit2 className="w-3 h-3" />
+              Sửa
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggle();
+              }}
+              className={`text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition-colors flex items-center gap-1 cursor-pointer shadow-2xs ${
+                isTypeActive
+                  ? 'text-rose-600 hover:bg-white border-rose-200 hover:border-rose-300'
+                  : 'text-emerald-700 hover:bg-white border-emerald-200 hover:border-emerald-300'
+              }`}
+              title={isTypeActive ? 'Vô hiệu hóa loại ô kho' : 'Kích hoạt loại ô kho'}
+            >
+              <Power className="w-3 h-3" />
+              {isTypeActive ? 'Tắt' : 'Bật'}
+            </button>
+          </div>
+        ) : (
+          <span className="text-[11px] font-medium text-slate-500">
+            {totalUnits > 0 ? `${totalUnits} ô kho vật lý tại cơ sở` : 'Chưa có ô vật lý'}
+          </span>
+        )}
 
         <div className="flex items-center gap-1 text-xs font-bold text-brand-600 group-hover:text-brand-700">
           <span>Xem danh sách ô</span>

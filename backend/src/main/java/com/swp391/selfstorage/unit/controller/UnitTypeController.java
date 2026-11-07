@@ -7,6 +7,7 @@ import com.swp391.selfstorage.unit.dto.UnitTypeResponse;
 import com.swp391.selfstorage.unit.dto.UpdateUnitTypeRequest;
 import com.swp391.selfstorage.unit.service.UnitTypeService;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -58,6 +59,7 @@ public class UnitTypeController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('BUSINESS_OPERATIONS_MANAGER', 'SYSTEM_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<UnitTypeResponse>> createUnitType(
             @PathVariable Long facilityId,
             @Valid @RequestBody CreateUnitTypeRequest request) {
@@ -67,6 +69,7 @@ public class UnitTypeController {
     }
 
     @PutMapping("/{unitTypeId}")
+    @PreAuthorize("hasAnyRole('BUSINESS_OPERATIONS_MANAGER', 'SYSTEM_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<UnitTypeResponse>> updateUnitType(
             @PathVariable Long facilityId,
             @PathVariable Long unitTypeId,
@@ -76,6 +79,7 @@ public class UnitTypeController {
     }
 
     @DeleteMapping("/{unitTypeId}")
+    @PreAuthorize("hasAnyRole('BUSINESS_OPERATIONS_MANAGER', 'SYSTEM_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<Void>> deactivateUnitType(
             @PathVariable Long facilityId,
             @PathVariable Long unitTypeId) {
@@ -84,6 +88,7 @@ public class UnitTypeController {
     }
 
     @PatchMapping("/{unitTypeId}/status")
+    @PreAuthorize("hasAnyRole('BUSINESS_OPERATIONS_MANAGER', 'SYSTEM_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<UnitTypeResponse>> toggleUnitTypeStatus(
             @PathVariable Long facilityId,
             @PathVariable Long unitTypeId,

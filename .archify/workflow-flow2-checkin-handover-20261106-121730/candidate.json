@@ -6,8 +6,8 @@
     "quality_profile": "showcase",
     "output": ".archify/workflow-flow2-checkin-handover-20261106-121730/flow2-checkin-handover-workflow.html",
     "repository": {
-      "url": "https://github.com/Nguyen-Van-Gia-Binh/Self-Storage-Facility-Rental-and-Management-System.git",
-      "revision": "aa2e49023f059a4173225f87f7fb325341466ee2",
+      "url": "https://github.com/Tung-pro123/Self-Storage-Facility-Rental-and-Management-System.git",
+      "revision": "ee94c1c70a12de9163038eb62e37fe70316266d8",
       "link_mode": "web"
     }
   },
@@ -386,8 +386,8 @@
       "variant": "security"
     },
     {
-      "id": "edge_security_to_cancel",
-      "from": "node_security_check",
+      "id": "edge_customer_cancel",
+      "from": "node_customer_pass",
       "to": "node_cancel_intake",
       "label": "Khách hủy nhận",
       "variant": "security",
@@ -434,6 +434,14 @@
       "from": "node_defect_rejection",
       "to": "node_fm_unit_swap",
       "label": "FM đổi ô trống",
+      "variant": "emphasis",
+      "role": "branch"
+    },
+    {
+      "id": "edge_swap_to_save",
+      "from": "node_fm_unit_swap",
+      "to": "node_save_handover",
+      "label": "Ký nhận ô mới",
       "variant": "emphasis",
       "role": "branch"
     },

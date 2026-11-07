@@ -1,13 +1,14 @@
 import React from 'react';
-import { ShieldCheck, Calendar, CreditCard, AlertCircle, Phone, User, KeyRound, ArrowLeft } from 'lucide-react';
+import { ShieldCheck, Calendar, CreditCard, AlertCircle, Phone, User, KeyRound, ArrowLeft, MapPin } from 'lucide-react';
 import type { CheckInContract } from '../../../types';
 
 export interface CustomerVerificationCardProps {
   contract: CheckInContract;
   onBack?: () => void;
+  onOpenFloorPlan?: () => void;
 }
 
-export const CustomerVerificationCard: React.FC<CustomerVerificationCardProps> = ({ contract, onBack }) => {
+export const CustomerVerificationCard: React.FC<CustomerVerificationCardProps> = ({ contract, onBack, onOpenFloorPlan }) => {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
   };
@@ -41,14 +42,20 @@ export const CustomerVerificationCard: React.FC<CustomerVerificationCardProps> =
       <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 space-y-2.5 text-xs">
         <div className="flex items-center justify-between">
           <span className="text-slate-500">Ô kho bàn giao:</span>
-          <span className="font-mono font-bold text-teal-700 bg-teal-50 border border-teal-200 px-2.5 py-0.5 rounded-md text-sm">
-            {contract.storageUnitCode}
-          </span>
+          {contract.storageUnitId && contract.storageUnitCode && contract.storageUnitCode !== 'Chưa chọn ô' ? (
+            <span className="font-mono font-bold text-teal-700 bg-teal-50 border border-teal-200 px-2.5 py-0.5 rounded-md text-sm">
+              {contract.storageUnitCode}
+            </span>
+          ) : (
+            <span className="font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md text-xs">
+              ⚠️ Chưa phân bổ ô kho
+            </span>
+          )}
         </div>
         <div className="flex items-center justify-between">
           <span className="text-slate-500">Vị trí & Tầng:</span>
           <span className="font-semibold text-slate-800">
-            Tầng {contract.floor} · {contract.position}
+            {contract.floor ? `Tầng ${contract.floor} · ${contract.position || ''}` : 'Chưa xác định vị trí'}
           </span>
         </div>
         <div className="flex items-center justify-between gap-2">
@@ -71,6 +78,19 @@ export const CustomerVerificationCard: React.FC<CustomerVerificationCardProps> =
             {contract.facilityName}
           </span>
         </div>
+
+        {onOpenFloorPlan && (
+          <div className="pt-2 border-t border-slate-200/80 flex justify-end">
+            <button
+              type="button"
+              onClick={onOpenFloorPlan}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 hover:text-teal-800 bg-teal-50 hover:bg-teal-100 px-3 py-1.5 rounded-lg border border-teal-200 transition-colors cursor-pointer shadow-2xs"
+            >
+              <MapPin className="w-3.5 h-3.5 text-teal-600" />
+              <span>Xem vị trí ô trên Sơ đồ 2D</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 2. Xác minh khách hàng & CCCD */}

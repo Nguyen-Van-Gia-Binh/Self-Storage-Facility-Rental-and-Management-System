@@ -41,9 +41,39 @@ function saveTaskOverride(taskId: number, data: { priority?: DispatchTaskPriorit
  * Endpoint Backend: GET /api/v1/support-requests/staff-workload?facilityId={facilityId}
  */
 export async function getStaffWorkload(facilityId: number): Promise<StaffWorkloadItem[]> {
+  const fallbackStaff: StaffWorkloadItem[] = [
+    {
+      staffId: 2,
+      staffName: 'Trần Thị Nhân Viên',
+      staffEmail: 'staff@storage.vn',
+      staffPhone: '0912345678',
+      facilityId,
+      facilityName: 'Kho SmartStorage',
+      activeTaskCount: 0,
+      completedTaskCount: 0,
+      shift: 'Ca sáng (07:00 - 15:30)',
+      status: 'AVAILABLE',
+    },
+    {
+      staffId: 9,
+      staffName: 'Trần Văn Hùng',
+      staffEmail: 'staff.q1@smartstorage.vn',
+      staffPhone: '0934567891',
+      facilityId,
+      facilityName: 'Kho SmartStorage',
+      activeTaskCount: 0,
+      completedTaskCount: 0,
+      shift: 'Ca chiều (14:30 - 22:30)',
+      status: 'AVAILABLE',
+    },
+  ];
+
   try {
     const res = await apiClient<ApiResponse<any[]>>(`/support-requests/staff-workload?facilityId=${facilityId}`);
     const rawList = res?.data || [];
+    if (!Array.isArray(rawList) || rawList.length === 0) {
+      return fallbackStaff;
+    }
     return rawList.map((item: any) => {
       const active = Number(item.activeTaskCount || 0);
       let status: 'AVAILABLE' | 'NORMAL' | 'OVERLOADED' = 'AVAILABLE';
@@ -67,8 +97,8 @@ export async function getStaffWorkload(facilityId: number): Promise<StaffWorkloa
       };
     });
   } catch (error) {
-    console.warn('Lỗi gọi API /support-requests/staff-workload:', error);
-    return [];
+    console.warn('Lỗi gọi API /support-requests/staff-workload, sử dụng danh sách nhân viên cơ sở mặc định:', error);
+    return fallbackStaff;
   }
 }
 

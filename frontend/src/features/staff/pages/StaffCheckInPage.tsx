@@ -18,6 +18,7 @@ import { CustomerVerificationCard } from '../components/CustomerVerificationCard
 import { HandoverInspectionForm } from '../components/HandoverInspectionForm';
 import { AccessCodePinModal } from '../components/AccessCodePinModal';
 import { HandoverRejectionModal } from '../components/HandoverRejectionModal';
+import { FacilityFloorPlanMapModal } from '@/features/manager/components/FacilityFloorPlanMapModal';
 
 export const StaffCheckInPage: React.FC = () => {
   const navigate = useNavigate();
@@ -42,6 +43,7 @@ export const StaffCheckInPage: React.FC = () => {
   const [isPinModalOpen, setIsPinModalOpen] = useState<boolean>(false);
   const [currentPin, setCurrentPin] = useState<string>('');
   const [isRejectionModalOpen, setIsRejectionModalOpen] = useState<boolean>(false);
+  const [floorPlanOpen, setFloorPlanOpen] = useState<boolean>(false);
 
   // Toast notification
   const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -315,7 +317,10 @@ export const StaffCheckInPage: React.FC = () => {
               ) : null}
 
               {/* Thẻ xác minh thông tin khách & Ô kho */}
-              <CustomerVerificationCard contract={selectedContract} />
+              <CustomerVerificationCard
+                contract={selectedContract}
+                onOpenFloorPlan={() => setFloorPlanOpen(true)}
+              />
 
               {/* Trạng thái đã hoàn tất hoặc bị hủy */}
               {selectedContract.status === 'ACTIVE' ? (
@@ -389,6 +394,16 @@ export const StaffCheckInPage: React.FC = () => {
             onConfirmRejection={handleRejectionConfirm}
             isSubmitting={isSubmitting}
           />
+
+          {floorPlanOpen && selectedContract && (
+            <FacilityFloorPlanMapModal
+              isOpen={floorPlanOpen}
+              onClose={() => setFloorPlanOpen(false)}
+              facilityId={selectedContract.facilityId || selectedFacilityId}
+              facilityName={selectedContract.facilityName}
+              highlightUnitId={selectedContract.storageUnitId}
+            />
+          )}
         </>
       )}
     </div>

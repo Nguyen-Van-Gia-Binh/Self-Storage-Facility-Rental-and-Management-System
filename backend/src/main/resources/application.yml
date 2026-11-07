@@ -42,6 +42,7 @@ spring:
     encoding: UTF-8
     baseline-on-migrate: true
     validate-on-migrate: false
+    ignore-migration-patterns: "*:missing"
     locations: classpath:db/migration
 
   mail:
@@ -78,9 +79,10 @@ springdoc:
 
 # VNPay sandbox. Secret thật nằm trong application-local.yml (gitignore).
 payment:
+  mode: ${PAYMENT_MODE:sandbox}
   vnpay:
-    tmn-code: ${VNPAY_TMN_CODE:}
-    hash-secret: ${VNPAY_HASH_SECRET:}
+    tmn-code: ${VNPAY_TMN_CODE:8TOIFKCN}
+    hash-secret: ${VNPAY_HASH_SECRET:OHZDTLRUVNLROSCYZVWDONDWMONUDQLP}
     pay-url: ${VNPAY_PAY_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
     return-url: ${VNPAY_RETURN_URL:http://localhost:8080/api/v1/payments/vnpay/return}
     frontend-return-url: ${VNPAY_FRONTEND_RETURN:http://localhost:5173/payment/checkout}

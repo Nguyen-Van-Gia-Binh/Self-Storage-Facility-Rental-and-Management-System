@@ -17,6 +17,8 @@ import {
   CheckCircle2,
   Clock,
   UserPlus,
+  UserCheck,
+  MapPin,
 } from 'lucide-react';
 import { getManagerContracts, getManagerContractById } from '@/api/contract';
 import type { ManagerContractItem } from '@/types/contractManager';
@@ -27,6 +29,7 @@ import { CustomerInfoPanel } from '../components/CustomerInfoPanel';
 import { PaymentInfoPanel } from '../components/PaymentInfoPanel';
 import { ContractTimeline } from '../components/ContractTimeline';
 import { ReassignUnitModal } from '../components/ReassignUnitModal';
+import { FacilityFloorPlanMapModal } from '../components/FacilityFloorPlanMapModal';
 import { ContractFinancialModal } from '../components/ContractFinancialModal';
 import { SettlementApprovalModal } from '../components/SettlementApprovalModal';
 import { ContractDetailModal } from '@/features/customer/components/ContractDetailModal';
@@ -52,6 +55,7 @@ export const ContractDetailPage: React.FC = () => {
   const [financialModalOpen, setFinancialModalOpen] = useState(false);
   const [settlementModalOpen, setSettlementModalOpen] = useState(false);
   const [eContractModalOpen, setEContractModalOpen] = useState(false);
+  const [floorPlanOpen, setFloorPlanOpen] = useState(false);
 
   const loadData = useCallback(
     async (isManual = false) => {
@@ -124,6 +128,7 @@ export const ContractDetailPage: React.FC = () => {
 
   const isOverdue = contract.status === 'OVERDUE';
   const isActive = contract.status === 'ACTIVE';
+  const isPendingCheckIn = contract.status === 'PENDING_CHECK_IN' || (contract.status as string) === 'PENDING_CHECKIN';
   const canRelocate = Boolean(contract.relocationEligible) && (isActive || contract.status === 'PENDING_CHECK_IN');
   const isPendingReturn =
     contract.status === 'PENDING_RETURN' || (contract.status as string) === 'INSPECTED';
@@ -235,6 +240,52 @@ export const ContractDetailPage: React.FC = () => {
             <Repeat className="w-4 h-4" />
             <span>Tiến hành Đổi ô kho</span>
           </button>
+        </div>
+      )}
+
+      {/* Banner Tiếp đón nhận kho (BR-CHK-01..05, FM-05) */}
+      {isPendingCheckIn && (
+        <div className="bg-sky-50/90 border border-sky-300 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sky-950 shadow-2xs">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-xl bg-sky-100 text-sky-700 shrink-0 mt-0.5">
+              <UserCheck className="w-5 h-5 text-sky-700" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-bold text-sky-950">
+                  {contract.assignedStaffId
+                    ? `Đã phân công nhân viên tiếp đón: ${contract.assignedStaffName || 'Nhân viên phụ trách'}`
+                    : 'Hợp đồng chờ nhận kho — Chưa phân công nhân viên tiếp đón'}
+                </h4>
+                <span className="text-[10px] font-bold bg-sky-200/80 text-sky-900 px-2 py-0.5 rounded-full">
+                  Tiếp đón Check-in
+                </span>
+              </div>
+              <p className="text-xs text-sky-800 mt-0.5">
+                {contract.assignedStaffId
+                  ? `Nhân viên trực ca sẽ tiếp đón khách hàng, dẫn khách đi kiểm tra hiện trường ô kho ${contract.storageUnitCode} và hỗ trợ ký biên bản bàn giao số.`
+                  : `Khách hàng đã thanh toán cọc thành công và sẵn sàng nhận kho. Bạn cần phân công nhân viên ca trực tiếp đón hoặc kiểm tra vị trí ô trên sơ đồ 2D.`}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setFloorPlanOpen(true)}
+              className="px-3.5 py-2 bg-white hover:bg-sky-100 text-sky-900 border border-sky-300 text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+            >
+              <MapPin className="w-4 h-4 text-sky-600" />
+              <span>Sơ đồ 2D</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate(`/manager/staff-schedule/facilities/${contract.facilityId}`)}
+              className="px-3.5 py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>{contract.assignedStaffId ? 'Điều chuyển nhân viên' : 'Phân công ngay'}</span>
+            </button>
+          </div>
         </div>
       )}
 
@@ -612,6 +663,16 @@ export const ContractDetailPage: React.FC = () => {
             customerIdentityNumber: contract.customerIdentityNumber,
           }}
           onClose={() => setEContractModalOpen(false)}
+        />
+      )}
+
+      {floorPlanOpen && (
+        <FacilityFloorPlanMapModal
+          isOpen={floorPlanOpen}
+          onClose={() => setFloorPlanOpen(false)}
+          facilityId={contract.facilityId}
+          facilityName={contract.facilityName}
+          highlightUnitId={contract.storageUnitId}
         />
       )}
     </div>

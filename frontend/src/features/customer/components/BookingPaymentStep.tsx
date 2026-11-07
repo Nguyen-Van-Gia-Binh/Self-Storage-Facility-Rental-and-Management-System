@@ -144,8 +144,8 @@ export const BookingPaymentStep: React.FC<BookingPaymentStepProps> = ({
                   <span className="font-mono font-bold text-slate-900">{orderDescription}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Ô kho được gán:</span>
-                  <span className="font-mono font-bold text-brand-700">{finalUnitNumber}</span>
+                  <span className="text-slate-500">Hạng kho đã đặt:</span>
+                  <span className="font-mono font-bold text-brand-700">{unitType.name || finalUnitNumber}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Số tiền đã chuyển:</span>
@@ -259,14 +259,14 @@ export const BookingPaymentStep: React.FC<BookingPaymentStepProps> = ({
               <div className="flex justify-between items-center gap-2">
                 <span className="shrink-0 text-slate-500 font-medium">Hạng kho:</span>
                 <span className="text-slate-900 text-right font-bold truncate max-w-[190px]">
-                  {finalUnitNumber}
+                  {unitType.name || finalUnitNumber}
                 </span>
               </div>
 
               <div className="flex justify-between items-center gap-2">
-                <span className="shrink-0 text-slate-500 font-medium">Loại kho:</span>
+                <span className="shrink-0 text-slate-500 font-medium">Quy cách:</span>
                 <span className="text-slate-900 text-right font-medium">
-                  {unitType.name} (Size {unitType.sizeCategory || ''}{unitType.areaM2 ? ` · ${unitType.areaM2} m²` : ''})
+                  Size {unitType.sizeCategory || 'S'}{unitType.dimensions ? ` (${unitType.dimensions})` : unitType.areaM2 ? ` (${unitType.areaM2} m²)` : ''}
                 </span>
               </div>
 

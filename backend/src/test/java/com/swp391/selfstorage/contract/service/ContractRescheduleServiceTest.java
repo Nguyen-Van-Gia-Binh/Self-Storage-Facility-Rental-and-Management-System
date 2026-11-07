@@ -139,6 +139,8 @@ class ContractRescheduleServiceTest {
         assertEquals(201L, response.getStorageUnitId());
         assertEquals(newStartDate, reservation.getStartDate());
         assertEquals(newStartDate.plusMonths(1), reservation.getEndDateExclusive());
+        assertEquals(1, contract.getRescheduleCount());
+        assertNotNull(contract.getRescheduledAt());
     }
 
     @Test
@@ -265,5 +267,20 @@ class ContractRescheduleServiceTest {
                 contractService.rescheduleRentalPeriod(100L, req, 10L));
         assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
         assertTrue(ex.getMessage().contains("tối đa 7 ngày"), "Phải thông báo giới hạn tối đa 7 ngày");
+    }
+
+    @Test
+    @DisplayName("BR-RES-06: Dời lịch lần 2 (đã dời 1 lần trước đó) -> Ném lỗi VALIDATION_FAILED tối đa 1 lần duy nhất")
+    void reschedule_throws_whenAlreadyRescheduledOnce() {
+        contract.setRescheduleCount(1);
+        when(contractRepository.findById(100L)).thenReturn(Optional.of(contract));
+
+        LocalDate newStartDate = contract.getStartDate().plusDays(2);
+        RescheduleRentalPeriodRequest req = new RescheduleRentalPeriodRequest(newStartDate);
+
+        CustomException ex = assertThrows(CustomException.class, () ->
+                contractService.rescheduleRentalPeriod(100L, req, 10L));
+        assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("tối đa 1 lần duy nhất"), "Phải thông báo chỉ được dời tối đa 1 lần");
     }
 }

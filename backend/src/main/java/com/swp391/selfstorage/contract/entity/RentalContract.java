@@ -97,6 +97,13 @@ public class RentalContract {
     @Column(name = "relocation_support_request_id")
     private Long relocationSupportRequestId;
 
+    @Column(name = "reschedule_count", nullable = false)
+    @Builder.Default
+    private int rescheduleCount = 0;
+
+    @Column(name = "rescheduled_at")
+    private OffsetDateTime rescheduledAt;
+
     @PrePersist
     protected void onCreate() {
         if (createdAt == null) createdAt = OffsetDateTime.now();
@@ -183,4 +190,10 @@ public class RentalContract {
 
     public Long getRelocationSupportRequestId() { return relocationSupportRequestId; }
     public void setRelocationSupportRequestId(Long relocationSupportRequestId) { this.relocationSupportRequestId = relocationSupportRequestId; }
+
+    public int getRescheduleCount() { return rescheduleCount; }
+    public void setRescheduleCount(int rescheduleCount) { this.rescheduleCount = rescheduleCount; }
+
+    public OffsetDateTime getRescheduledAt() { return rescheduledAt; }
+    public void setRescheduledAt(OffsetDateTime rescheduledAt) { this.rescheduledAt = rescheduledAt; }
 }

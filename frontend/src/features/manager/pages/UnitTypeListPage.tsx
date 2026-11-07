@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Plus,
   Search,
   RefreshCw,
   AlertCircle,
@@ -11,8 +10,6 @@ import {
   ArrowUpDown,
   LayoutGrid,
   Table2,
-  Edit2,
-  Power,
   ArrowRight,
   Sparkles,
 } from 'lucide-react';
@@ -20,16 +17,12 @@ import { fetchMyAssignedFacilities } from '@/api/facility';
 import {
   fetchUnitTypes,
   fetchStorageUnits,
-  createUnitType,
-  updateUnitType,
-  toggleUnitTypeStatus,
 } from '@/api/unit';
 import type { FacilityListItem } from '@/types';
-import type { UnitTypeResponse, UnitTypeFormData } from '@/types/unit';
+import type { UnitTypeResponse } from '@/types/unit';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { UnitTypeCard, cleanUnitTypeName } from '../components/UnitTypeCard';
 import type { UnitTypeBreakdownStats } from '../components/UnitTypeCard';
-import { UnitTypeFormModal } from '../components/UnitTypeFormModal';
 import { Pagination } from '../components/Pagination';
 import { getUnitTypeTheme } from '../utils/unitTypeTheme';
 
@@ -66,10 +59,6 @@ export const UnitTypeListPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Modal State
-  const [utModalOpen, setUtModalOpen] = useState(false);
-  const [editingType, setEditingType] = useState<UnitTypeResponse | null>(null);
 
   const loadData = useCallback(
     async (isManual = false) => {
@@ -125,46 +114,6 @@ export const UnitTypeListPage: React.FC = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, sortBy, showInactive]);
-
-  const handleSubmitType = async (data: UnitTypeFormData) => {
-    try {
-      if (!data.code) {
-        const isClimate =
-          (data.name || '').toLowerCase().includes('lạnh') ||
-          (data.name || '').toLowerCase().includes('máy lạnh') ||
-          (data.description || '').toLowerCase().includes('điều hòa') ||
-          (data.description || '').toLowerCase().includes('máy lạnh') ||
-          (data.description || '').toLowerCase().includes('độ ẩm');
-        const prefix = isClimate ? 'UT-CLI-' : 'UT-';
-        data.code = prefix + Date.now().toString().slice(-6);
-      }
-      if (editingType) {
-        await updateUnitType(facilityIdNum, editingType.id, data);
-      } else {
-        await createUnitType(facilityIdNum, data);
-      }
-      setUtModalOpen(false);
-      setEditingType(null);
-      await loadData(true);
-    } catch (err: any) {
-      console.error(err);
-      const apiMsg = err?.response?.data?.message;
-      const msg = apiMsg || (err instanceof Error ? err.message : 'Lưu loại ô kho thất bại.');
-      setError(msg);
-      throw new Error(msg);
-    }
-  };
-
-  const handleToggleType = async (type: UnitTypeResponse) => {
-    try {
-      const isActive = type.isActive ?? type.active ?? true;
-      await toggleUnitTypeStatus(facilityIdNum, type.id, !isActive);
-      await loadData(true);
-    } catch (err: unknown) {
-      console.error(err);
-      setError(err instanceof Error ? err.message : 'Không thể thay đổi trạng thái loại ô kho.');
-    }
-  };
 
   const isTypeActive = (t: UnitTypeResponse) => t.isActive ?? t.active ?? true;
 
@@ -238,7 +187,7 @@ export const UnitTypeListPage: React.FC = () => {
             )}
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Chọn một loại ô kho để xem danh sách các ô kho vật lý hoặc cấu hình bảng thông số kỹ thuật
+            Chọn một loại ô kho để xem và quản lý danh sách các ô kho vật lý tại cơ sở
           </p>
         </div>
 
@@ -274,16 +223,10 @@ export const UnitTypeListPage: React.FC = () => {
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
           </button>
 
-          <button
-            onClick={() => {
-              setEditingType(null);
-              setUtModalOpen(true);
-            }}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-sm transition-all cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Thêm loại ô kho</span>
-          </button>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-semibold border border-slate-200">
+            <span className="w-2 h-2 rounded-full bg-brand-500"></span>
+            <span>Master Catalog do BOM ban hành (Chỉ đọc)</span>
+          </div>
         </div>
       </div>
 
@@ -391,11 +334,6 @@ export const UnitTypeListPage: React.FC = () => {
                   onClick={() =>
                     navigate(`/manager/facilities/${facilityIdNum}/unit-types/${type.id}`)
                   }
-                  onEdit={() => {
-                    setEditingType(type);
-                    setUtModalOpen(true);
-                  }}
-                  onToggle={() => handleToggleType(type)}
                 />
               ))}
             </div>
@@ -478,39 +416,15 @@ export const UnitTypeListPage: React.FC = () => {
                             )}
                           </td>
                           <td className="py-3.5 px-4 text-right">
-                            <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setEditingType(type);
-                                  setUtModalOpen(true);
-                                }}
-                                className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:text-brand-700 hover:bg-slate-100 transition-colors cursor-pointer"
-                                title="Chỉnh sửa loại kho"
-                              >
-                                <Edit2 className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleToggleType(type)}
-                                className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
-                                  isTypeActive
-                                    ? 'border-rose-200 text-rose-600 hover:bg-rose-50'
-                                    : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'
-                                }`}
-                                title={isTypeActive ? 'Tắt' : 'Bật'}
-                              >
-                                <Power className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => navigate(`/manager/facilities/${facilityIdNum}/unit-types/${type.id}`)}
-                                className="p-1.5 rounded-lg border border-brand-200 text-brand-600 hover:bg-brand-50 transition-colors cursor-pointer"
-                                title="Vào xem danh sách ô kho"
-                              >
-                                <ArrowRight className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/manager/facilities/${facilityIdNum}/unit-types/${type.id}`)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-brand-200 text-brand-600 hover:bg-brand-50 transition-colors cursor-pointer text-xs font-semibold"
+                              title="Vào xem danh sách ô kho"
+                            >
+                              <span>Quản lý ô</span>
+                              <ArrowRight className="w-3.5 h-3.5" />
+                            </button>
                           </td>
                         </tr>
                       );
@@ -533,17 +447,6 @@ export const UnitTypeListPage: React.FC = () => {
           />
         </div>
       )}
-
-      {/* Modal Thêm / Sửa Loại kho */}
-      <UnitTypeFormModal
-        isOpen={utModalOpen}
-        initialData={editingType}
-        onClose={() => {
-          setUtModalOpen(false);
-          setEditingType(null);
-        }}
-        onSubmit={handleSubmitType}
-      />
     </div>
   );
 };

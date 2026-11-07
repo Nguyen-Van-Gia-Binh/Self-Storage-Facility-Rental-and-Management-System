@@ -537,15 +537,31 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                                   <div className="py-0.5">
                                     <button
                                       type="button"
+                                      disabled={(contract.rescheduleCount ?? 0) >= 1}
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        setOpenMenuId(null);
-                                        onReschedulePeriod(contract);
+                                        if ((contract.rescheduleCount ?? 0) < 1) {
+                                          setOpenMenuId(null);
+                                          onReschedulePeriod(contract);
+                                        }
                                       }}
-                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-slate-50 text-slate-700 transition-colors cursor-pointer font-medium"
+                                      title={
+                                        (contract.rescheduleCount ?? 0) >= 1
+                                          ? 'Mỗi hợp đồng chỉ được phép dời lịch nhận kho tối đa 1 lần duy nhất (BR-RES-06)'
+                                          : 'Dời ngày nhận kho'
+                                      }
+                                      className={`w-full flex items-center gap-2 px-3 py-1.5 text-left transition-colors font-medium ${
+                                        (contract.rescheduleCount ?? 0) >= 1
+                                          ? 'opacity-50 cursor-not-allowed text-slate-400 bg-slate-50'
+                                          : 'hover:bg-slate-50 text-slate-700 cursor-pointer'
+                                      }`}
                                     >
                                       <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                                      <span>Dời ngày nhận kho</span>
+                                      <span>
+                                        {(contract.rescheduleCount ?? 0) >= 1
+                                          ? 'Đã dời lịch (1/1)'
+                                          : 'Dời ngày nhận kho'}
+                                      </span>
                                     </button>
                                     <button
                                       type="button"

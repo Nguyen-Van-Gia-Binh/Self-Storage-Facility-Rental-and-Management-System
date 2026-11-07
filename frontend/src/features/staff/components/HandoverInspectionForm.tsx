@@ -37,7 +37,14 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
     criteria.dryWallsFloor &&
     criteria.smartLockReady;
 
+  const hasAllocatedUnit = Boolean(
+    contract.storageUnitId &&
+    contract.storageUnitCode &&
+    contract.storageUnitCode !== 'Chưa chọn ô'
+  );
+
   const canSubmit =
+    hasAllocatedUnit &&
     allCriteriaPassed &&
     customerConfirmed &&
     !!signatureDataUrl &&
@@ -93,6 +100,16 @@ export const HandoverInspectionForm: React.FC<HandoverInspectionFormProps> = ({
           Chọn tất cả đạt chuẩn (4/4)
         </button>
       </div>
+
+      {/* Cảnh báo chưa phân bổ ô kho */}
+      {!hasAllocatedUnit && (
+        <div className="p-3.5 bg-amber-50 border border-amber-300 rounded-xl flex items-center gap-2.5 text-xs text-amber-900 font-medium shadow-xs">
+          <AlertOctagon className="w-4 h-4 text-amber-600 shrink-0" />
+          <span>
+            Hợp đồng chưa được Quản lý cơ sở phân bổ ô kho cụ thể. Vui lòng liên hệ Quản lý cơ sở gán ô kho trước khi tiến hành nghiệm thu bàn giao theo quy định <strong>BR-CHK-02</strong>.
+          </span>
+        </div>
+      )}
 
       {/* 4 Tiêu chí kiểm tra hiện trạng */}
       <div className="space-y-2.5">

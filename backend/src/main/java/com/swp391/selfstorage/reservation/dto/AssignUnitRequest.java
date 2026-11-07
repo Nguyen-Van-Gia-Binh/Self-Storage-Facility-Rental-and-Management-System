@@ -23,10 +23,8 @@ public class AssignUnitRequest {
 
     private LocalDate scheduledDate; // Nếu null -> Fallback về startDate của đơn
 
-    @NotNull(message = "Vui lòng chọn giờ bắt đầu tiếp đón")
     private LocalTime scheduledStartTime;
 
-    @NotNull(message = "Vui lòng chọn giờ kết thúc tiếp đón")
     private LocalTime scheduledEndTime;
 
     private String notes;

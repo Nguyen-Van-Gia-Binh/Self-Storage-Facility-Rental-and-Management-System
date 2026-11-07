@@ -22,6 +22,7 @@ public class UnitMapper {
                 .heightM(ut.getHeightM())
                 .areaM2(ut.getAreaM2())
                 .volumeM3(ut.getVolumeM3())
+                .environment(ut.getEnvironment())
                 .monthlyPrice(monthlyPrice)
                 .totalUnits(totalUnits != null ? totalUnits : 0L)
                 .isActive(ut.isActive())
