@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { AlertCircle, Calendar, Check, Clock, User, X } from 'lucide-react';
+import { AlertCircle, Calendar, Check, Clock, MapPin, User, X } from 'lucide-react';
 import { fetchMyAssignedFacilities } from '@/api/facility';
 import { assignUnit, listReservations, type ReservationResponse } from '@/api/reservation';
 import { fetchStorageUnits } from '@/api/unit';
@@ -8,6 +8,7 @@ import type { StaffWorkloadItem } from '@/features/manager/types/staffAssignment
 import { Badge } from '@/components/ui/Badge';
 import type { FacilityListItem } from '@/types';
 import type { StorageUnitResponse, UnitStatus } from '@/types/unit';
+import { FacilityFloorPlanMapModal } from '../components/FacilityFloorPlanMapModal';
 
 const ASSIGNABLE: UnitStatus[] = ['AVAILABLE'];
 
@@ -61,6 +62,7 @@ export const AllocationPage: React.FC = () => {
 
   // Modal State for 3-in-1 Assignment
   const [modalUnit, setModalUnit] = useState<StorageUnitResponse | null>(null);
+  const [isFloorPlanOpen, setIsFloorPlanOpen] = useState(false);
   const [selectedStaffId, setSelectedStaffId] = useState<number | null>(null);
   const [scheduledDate, setScheduledDate] = useState<string>('');
   const [scheduledStartTime, setScheduledStartTime] = useState<string>('09:00');
@@ -303,15 +305,28 @@ export const AllocationPage: React.FC = () => {
 
         {/* Table 2: Available Units */}
         <section className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50 gap-2">
             <span className="font-semibold text-sm text-slate-800">
-              Ô kho phù hợp hạng kho ({units.filter((u) => ASSIGNABLE.includes(u.status)).length} ô trống)
+              Ô kho phù hợp ({units.filter((u) => ASSIGNABLE.includes(u.status)).length} ô trống)
             </span>
-            {selected && (
-              <span className="text-xs text-teal-700 font-medium">
-                Đang chọn: {selected.code}
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {facilityId && (
+                <button
+                  type="button"
+                  onClick={() => setIsFloorPlanOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-300 rounded-lg text-xs font-bold transition cursor-pointer shadow-2xs"
+                  title="Mở sơ đồ mặt bằng 2D phân tầng để chọn ô trực quan"
+                >
+                  <MapPin className="w-3.5 h-3.5 text-teal-600" />
+                  <span>Sơ đồ 2D</span>
+                </button>
+              )}
+              {selected && (
+                <span className="text-xs text-teal-700 font-medium">
+                  Đang chọn: {selected.code}
+                </span>
+              )}
+            </div>
           </div>
           <table className="w-full text-sm">
             <thead className="bg-slate-50 text-left text-slate-500 border-b border-slate-100">
@@ -538,6 +553,20 @@ export const AllocationPage: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+      {/* Modal Sơ đồ 2D mặt bằng tương tác */}
+      {facilityId && (
+        <FacilityFloorPlanMapModal
+          isOpen={isFloorPlanOpen}
+          onClose={() => setIsFloorPlanOpen(false)}
+          facilityId={facilityId}
+          facilityName={facilities.find((f) => f.id === facilityId)?.name}
+          allowedUnitTypeId={selected?.unitTypeId}
+          onSelectUnit={(unit) => {
+            setIsFloorPlanOpen(false);
+            openAssignModal(unit);
+          }}
+        />
       )}
     </div>
   );

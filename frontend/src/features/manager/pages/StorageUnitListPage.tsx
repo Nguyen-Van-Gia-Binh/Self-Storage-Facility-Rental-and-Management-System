@@ -14,6 +14,7 @@ import {
   TrendingUp,
   Wrench,
   Calendar,
+  MapPin,
   X,
 } from 'lucide-react';
 import { fetchMyAssignedFacilities } from '@/api/facility';
@@ -33,6 +34,7 @@ import type {
 } from '@/types/unit';
 import type { ManagerContractItem } from '@/types/contractManager';
 import { Breadcrumb } from '../components/Breadcrumb';
+import { FacilityFloorPlanMapModal } from '../components/FacilityFloorPlanMapModal';
 import { StorageUnitTable } from '../components/StorageUnitTable';
 import type { StorageUnitSortField, SortDirection } from '../components/StorageUnitTable';
 import { StorageUnitFormModal } from '../components/StorageUnitFormModal';
@@ -99,6 +101,7 @@ export const StorageUnitListPage: React.FC = () => {
 
   // Modal thêm ô kho
   const [suModalOpen, setSuModalOpen] = useState(false);
+  const [floorPlanOpen, setFloorPlanOpen] = useState(false);
 
   const loadData = useCallback(
     async (isManual = false) => {
@@ -347,7 +350,17 @@ export const StorageUnitListPage: React.FC = () => {
         </div>
 
         {/* Action button */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setFloorPlanOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-300 rounded-xl text-xs font-bold shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+            title="Xem sơ đồ 2D mặt bằng các tầng cơ sở"
+          >
+            <MapPin className="w-4 h-4 text-teal-600" />
+            <span>Sơ đồ 2D mặt bằng</span>
+          </button>
+
           <button
             onClick={() => loadData(true)}
             disabled={refreshing}
@@ -685,6 +698,17 @@ export const StorageUnitListPage: React.FC = () => {
         onClose={() => setSuModalOpen(false)}
         onSubmit={handleSubmitUnit}
       />
+
+      {/* Modal Sơ đồ 2D mặt bằng các tầng */}
+      {facilityIdNum > 0 && (
+        <FacilityFloorPlanMapModal
+          isOpen={floorPlanOpen}
+          onClose={() => setFloorPlanOpen(false)}
+          facilityId={facilityIdNum}
+          facilityName={facility?.name}
+          allowedUnitTypeId={typeIdNum > 0 ? typeIdNum : undefined}
+        />
+      )}
     </div>
   );
 };
