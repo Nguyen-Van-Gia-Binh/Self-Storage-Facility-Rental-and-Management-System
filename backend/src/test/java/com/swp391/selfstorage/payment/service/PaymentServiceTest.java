@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -33,14 +35,17 @@ import com.swp391.selfstorage.payment.entity.PaymentTransaction;
 import com.swp391.selfstorage.payment.event.ContractRenewalPaymentCompletedEvent;
 import com.swp391.selfstorage.payment.event.PaymentCompletedEvent;
 import com.swp391.selfstorage.payment.gateway.PaymentGateway;
+import com.swp391.selfstorage.payment.gateway.VnPayGateway;
 import com.swp391.selfstorage.payment.gateway.dto.PaymentCheckoutCommand;
 import com.swp391.selfstorage.payment.gateway.dto.PaymentCheckoutResult;
+import com.swp391.selfstorage.payment.gateway.dto.VnPayQueryResult;
 import com.swp391.selfstorage.payment.mapper.PaymentMapper;
 import com.swp391.selfstorage.payment.repository.PaymentTransactionRepository;
 import com.swp391.selfstorage.payment.service.impl.PaymentServiceImpl;
 import com.swp391.selfstorage.reservation.entity.Reservation;
 import com.swp391.selfstorage.reservation.entity.ReservationStatus;
 import com.swp391.selfstorage.reservation.repository.ReservationRepository;
+import com.swp391.selfstorage.reservation.service.ReservationHoldExpiryService;
 import com.swp391.selfstorage.reservation.service.ReservationService;
 import com.swp391.selfstorage.auth.service.UserPrincipal;
 import com.swp391.selfstorage.user.entity.UserRole;
@@ -71,6 +76,12 @@ class PaymentServiceTest {
 
     @Mock
     private PaymentGateway paymentGateway;
+
+    @Mock
+    private VnPayGateway vnPayGateway;
+
+    @Mock
+    private ReservationHoldExpiryService reservationHoldExpiryService;
 
     @Mock
     private com.swp391.selfstorage.policy.repository.PolicyVersionRepository policyVersionRepository;
@@ -568,4 +579,151 @@ class PaymentServiceTest {
         verify(reservationService, never()).confirmAfterPayment(any());
     }
 
+    @Test
+    @DisplayName("reconcileSingleOrder: dưới 5 phút thì bỏ qua để nhường Webhook IPN")
+    void reconcileSingleOrder_YoungerThan5m_ReturnsFalse() {
+        PaymentTransaction pending = PaymentTransaction.builder()
+                .id(1L)
+                .orderCode(1001L)
+                .status("PENDING")
+                .build();
+        pending.setCreatedAt(Instant.now().minus(2, ChronoUnit.MINUTES));
+        when(paymentTransactionRepository.findByOrderCode(1001L)).thenReturn(Optional.of(pending));
+
+        assertFalse(paymentService.reconcileSingleOrder(1001L));
+        verify(vnPayGateway, never()).queryDr(anyLong(), any());
+    }
+
+    @Test
+    @DisplayName("reconcileSingleOrder: VNPay báo 00 (SUCCESS) -> kích hoạt đơn hoàn tất")
+    void reconcileSingleOrder_Success_CompletesPayment() {
+        PaymentTransaction pending = PaymentTransaction.builder()
+                .id(1L)
+                .orderCode(1001L)
+                .amount(2_000_000L)
+                .status("PENDING")
+                .build();
+        pending.setCreatedAt(Instant.now().minus(10, ChronoUnit.MINUTES));
+        when(paymentTransactionRepository.findByOrderCode(1001L)).thenReturn(Optional.of(pending));
+        when(paymentTransactionRepository.findByOrderCodeForUpdate(1001L)).thenReturn(Optional.of(pending));
+        when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        VnPayQueryResult successQr = VnPayQueryResult.builder()
+                .responseCode("00")
+                .transactionStatus("00")
+                .amount(200_000_000L)
+                .transactionNo("TXN123")
+                .bankCode("NCB")
+                .build();
+        when(vnPayGateway.queryDr(eq(1001L), any(Instant.class))).thenReturn(successQr);
+
+        assertTrue(paymentService.reconcileSingleOrder(1001L));
+    }
+
+    @Test
+    @DisplayName("reconcileSingleOrder: VNPay báo 91 (NOT_FOUND) -> chuyển EXPIRED và nhả giữ chỗ")
+    void reconcileSingleOrder_NotFound_Expires() {
+        org.springframework.test.util.ReflectionTestUtils.setField(paymentService, "reservationHoldExpiryService", reservationHoldExpiryService);
+        PaymentTransaction pending = PaymentTransaction.builder()
+                .id(1L)
+                .orderCode(1001L)
+                .status("PENDING")
+                .reservationId(50L)
+                .build();
+        pending.setCreatedAt(Instant.now().minus(10, ChronoUnit.MINUTES));
+        when(paymentTransactionRepository.findByOrderCode(1001L)).thenReturn(Optional.of(pending));
+        when(paymentTransactionRepository.findByOrderCodeForUpdate(1001L)).thenReturn(Optional.of(pending));
+
+        VnPayQueryResult notFoundQr = VnPayQueryResult.builder()
+                .responseCode("91")
+                .transactionStatus("91")
+                .build();
+        when(vnPayGateway.queryDr(eq(1001L), any(Instant.class))).thenReturn(notFoundQr);
+
+        assertTrue(paymentService.reconcileSingleOrder(1001L));
+        assertEquals("EXPIRED", pending.getStatus());
+        verify(paymentTransactionRepository).save(pending);
+        verify(reservationHoldExpiryService).expireIfElapsed(50L);
+    }
+
+    @Test
+    @DisplayName("reconcileSingleOrder: VNPay lỗi 99 nhưng đã >= 48h (Hard Timeout) -> chuyển EXPIRED")
+    void reconcileSingleOrder_OlderThan48hAndError99_ExpiresHardTimeout() {
+        org.springframework.test.util.ReflectionTestUtils.setField(paymentService, "reservationHoldExpiryService", reservationHoldExpiryService);
+        PaymentTransaction pending = PaymentTransaction.builder()
+                .id(1L)
+                .orderCode(1001L)
+                .status("PENDING")
+                .reservationId(60L)
+                .build();
+        pending.setCreatedAt(Instant.now().minus(50, ChronoUnit.HOURS));
+        when(paymentTransactionRepository.findByOrderCode(1001L)).thenReturn(Optional.of(pending));
+        when(paymentTransactionRepository.findByOrderCodeForUpdate(1001L)).thenReturn(Optional.of(pending));
+
+        VnPayQueryResult errorQr = VnPayQueryResult.builder()
+                .responseCode("99")
+                .transactionStatus("ERROR")
+                .build();
+        when(vnPayGateway.queryDr(eq(1001L), any(Instant.class))).thenReturn(errorQr);
+
+        assertTrue(paymentService.reconcileSingleOrder(1001L));
+        assertEquals("EXPIRED", pending.getStatus());
+        verify(paymentTransactionRepository).save(pending);
+        verify(reservationHoldExpiryService).expireIfElapsed(60L);
+    }
+
+    @Test
+    @DisplayName("reconcileSingleOrder: VNPay lỗi 99 và < 48h -> giữ PENDING cho lần sau")
+    void reconcileSingleOrder_YoungerThan48hAndError99_KeepsPending() {
+        PaymentTransaction pending = PaymentTransaction.builder()
+                .id(1L)
+                .orderCode(1001L)
+                .status("PENDING")
+                .build();
+        pending.setCreatedAt(Instant.now().minus(20, ChronoUnit.HOURS));
+        when(paymentTransactionRepository.findByOrderCode(1001L)).thenReturn(Optional.of(pending));
+        when(paymentTransactionRepository.findByOrderCodeForUpdate(1001L)).thenReturn(Optional.of(pending));
+
+        VnPayQueryResult errorQr = VnPayQueryResult.builder()
+                .responseCode("99")
+                .transactionStatus("ERROR")
+                .build();
+        when(vnPayGateway.queryDr(eq(1001L), any(Instant.class))).thenReturn(errorQr);
+
+        assertFalse(paymentService.reconcileSingleOrder(1001L));
+        assertEquals("PENDING", pending.getStatus());
+        verify(paymentTransactionRepository, never()).save(pending);
+    }
+
+    @Test
+    @DisplayName("reconcileSingleOrder (Guardrail Idempotency): Webhook IPN commit SUCCESS trong lúc chờ mạng -> Lock và bỏ qua lặp")
+    void reconcileSingleOrder_ConcurrentWebhookSuccess_SkipsProcessing() {
+        PaymentTransaction pendingBeforeNetwork = PaymentTransaction.builder()
+                .id(1L)
+                .orderCode(1001L)
+                .status("PENDING")
+                .build();
+        pendingBeforeNetwork.setCreatedAt(Instant.now().minus(10, ChronoUnit.MINUTES));
+        when(paymentTransactionRepository.findByOrderCode(1001L)).thenReturn(Optional.of(pendingBeforeNetwork));
+
+        VnPayQueryResult successQr = VnPayQueryResult.builder()
+                .responseCode("00")
+                .transactionStatus("00")
+                .amount(200_000_000L)
+                .transactionNo("TXN123")
+                .bankCode("NCB")
+                .build();
+        when(vnPayGateway.queryDr(eq(1001L), any(Instant.class))).thenReturn(successQr);
+
+        // Nhưng khi acquire lock findByOrderCodeForUpdate, status đã là SUCCESS do Webhook IPN vừa commit xong
+        PaymentTransaction updatedByWebhook = PaymentTransaction.builder()
+                .id(1L)
+                .orderCode(1001L)
+                .status("SUCCESS")
+                .build();
+        when(paymentTransactionRepository.findByOrderCodeForUpdate(1001L)).thenReturn(Optional.of(updatedByWebhook));
+
+        assertFalse(paymentService.reconcileSingleOrder(1001L), "Phải bỏ qua khi đơn đã được Webhook xử lý");
+        verify(paymentTransactionRepository, never()).save(any());
+    }
 }

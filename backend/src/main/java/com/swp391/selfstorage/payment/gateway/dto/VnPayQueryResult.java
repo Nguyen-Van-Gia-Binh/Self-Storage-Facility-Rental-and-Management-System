@@ -1,5 +1,7 @@
 package com.swp391.selfstorage.payment.gateway.dto;
 
+import com.swp391.selfstorage.payment.constant.VnPayResponseCode;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -23,28 +25,28 @@ public class VnPayQueryResult {
      * Giao dịch đã thanh toán thành công (Mã phản hồi 00 và trạng thái giao dịch 00).
      */
     public boolean isSuccess() {
-        return "00".equals(responseCode) && "00".equals(transactionStatus);
+        return VnPayResponseCode.SUCCESS.equals(responseCode) && VnPayResponseCode.SUCCESS.equals(transactionStatus);
     }
 
     /**
      * VNPay xác nhận không tìm thấy giao dịch (Mã 91).
      */
     public boolean isNotFound() {
-        return "91".equals(responseCode) || "91".equals(transactionStatus);
+        return VnPayResponseCode.NOT_FOUND.equals(responseCode) || VnPayResponseCode.NOT_FOUND.equals(transactionStatus);
     }
 
     /**
      * Giao dịch bị lỗi / thất bại trên cổng VNPay (Mã 02).
      */
     public boolean isFailed() {
-        return "02".equals(transactionStatus);
+        return VnPayResponseCode.FAILED.equals(transactionStatus);
     }
 
     /**
      * Giao dịch đang chờ thanh toán / đang xử lý trên cổng VNPay (Mã 01).
      */
     public boolean isPending() {
-        return "01".equals(transactionStatus);
+        return VnPayResponseCode.PENDING.equals(transactionStatus);
     }
 }
 

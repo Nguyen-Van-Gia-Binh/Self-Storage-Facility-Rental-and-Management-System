@@ -44,4 +44,11 @@ public interface PaymentService {
      * Tra cứu danh sách phân trang lịch sử thanh toán kèm bộ lọc.
      */
     PageResponse<PaymentResponse> getPayments(PaymentFilterRequest filter, Pageable pageable);
+
+    /**
+     * Đối soát độc lập một giao dịch theo mã đơn orderCode trong Transaction mới (REQUIRES_NEW).
+     * Áp dụng Khóa Pessimistic Write ngăn Race Condition với Webhook IPN,
+     * Hard Timeout 48h tự động chuyển EXPIRED đối với lỗi 99/mạng.
+     */
+    boolean reconcileSingleOrder(Long orderCode);
 }

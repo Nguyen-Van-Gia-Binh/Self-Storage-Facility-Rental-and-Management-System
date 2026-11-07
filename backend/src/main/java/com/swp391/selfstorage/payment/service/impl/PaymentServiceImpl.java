@@ -1,5 +1,7 @@
 package com.swp391.selfstorage.payment.service.impl;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.swp391.selfstorage.common.dto.PageResponse;
@@ -36,9 +39,15 @@ import com.swp391.selfstorage.reservation.service.ReservationService;
 
 import jakarta.persistence.criteria.Predicate;
 import java.util.Map;
+import com.swp391.selfstorage.payment.constant.PaymentStatus;
+import com.swp391.selfstorage.payment.constant.PaymentTransactionType;
+import com.swp391.selfstorage.payment.constant.VnPayResponseCode;
 import com.swp391.selfstorage.payment.gateway.PaymentGateway;
+import com.swp391.selfstorage.payment.gateway.VnPayGateway;
 import com.swp391.selfstorage.payment.gateway.dto.PaymentCheckoutCommand;
 import com.swp391.selfstorage.payment.gateway.dto.PaymentCheckoutResult;
+import com.swp391.selfstorage.payment.gateway.dto.VnPayQueryResult;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
@@ -59,9 +68,13 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentMapper paymentMapper;
     private final PaymentGateway paymentGateway;
     private final PolicyVersionRepository policyVersionRepository;
+    private final VnPayGateway vnPayGateway;
 
     @Autowired(required = false)
     private ReservationHoldExpiryService reservationHoldExpiryService;
+
+    @Autowired(required = false)
+    private TransactionTemplate transactionTemplate;
 
     private void rejectIfHoldElapsed(Reservation reservation) {
         if (reservation.getHoldExpiresAt() == null
@@ -536,5 +549,86 @@ private void publishContractRenewalCompleted(PaymentTransaction payment) {
 
         Page<PaymentTransaction> page = paymentTransactionRepository.findAll(spec, pageable);
         return PageResponse.from(page.map(paymentMapper::toResponse));
+    }
+
+    @Override
+    public boolean reconcileSingleOrder(Long orderCode) {
+        // 1. Đọc nhanh thông tin không khóa DB để kiểm tra sơ bộ
+        PaymentTransaction txn = paymentTransactionRepository.findByOrderCode(orderCode).orElse(null);
+        if (txn == null || !PaymentStatus.PENDING.name().equalsIgnoreCase(txn.getStatus())) {
+            return false;
+        }
+
+        Instant createdAt = txn.getCreatedAt();
+        if (createdAt == null) {
+            return false;
+        }
+
+        Duration age = Duration.between(createdAt, Instant.now());
+        if (age.toMinutes() < 5) {
+            // Đơn mới tạo dưới 5 phút: Nhường khách hàng thanh toán và Webhook IPN xử lý
+            return false;
+        }
+
+        // 2. Network I/O HOÀN TOÀN NGOÀI TRANSACTION: Không giữ bất kỳ DB connection hay row lock nào
+        VnPayQueryResult qr = vnPayGateway.queryDr(txn.getOrderCode(), createdAt);
+
+        // 3. Mở Transaction chớp nhoáng (~2ms) để lock dòng và cập nhật CSDL an toàn
+        return executeInNewTransaction(() -> applyReconciliationResult(orderCode, qr, age));
+    }
+
+    private boolean applyReconciliationResult(Long orderCode, VnPayQueryResult qr, Duration age) {
+        PaymentTransaction lockedTxn = paymentTransactionRepository.findByOrderCodeForUpdate(orderCode).orElse(null);
+        // Idempotency check: Nếu Webhook IPN hoặc thread khác đã cập nhật đơn trước đó trong lúc chờ mạng
+        if (lockedTxn == null || !PaymentStatus.PENDING.name().equalsIgnoreCase(lockedTxn.getStatus())) {
+            log.info("[RECONCILIATION] Đơn orderCode={} đã được cập nhật trước bởi tiến trình khác (status={}), bỏ qua lặp.",
+                    orderCode, lockedTxn == null ? "NULL" : lockedTxn.getStatus());
+            return false;
+        }
+
+        if (qr.isSuccess()) {
+            log.info("[RECONCILIATION] VNPay SUCCESS cho orderCode={}, kích hoạt hoàn tất đơn", orderCode);
+            return completeVnpayPayment(
+                    orderCode,
+                    true,
+                    qr.getAmount(),
+                    qr.getTransactionNo(),
+                    qr.getBankCode());
+        }
+
+        if (qr.isNotFound() || qr.isFailed()) {
+            log.warn("[RECONCILIATION] VNPay xác nhận NOT_FOUND/FAILED cho orderCode={} -> Chuyển EXPIRED", orderCode);
+            expireReconciledTransaction(lockedTxn);
+            return true;
+        }
+
+        // VNPay trả lỗi 99 hoặc lỗi mạng: Hard Timeout nếu >= 48h
+        if (age.toHours() >= 48) {
+            log.warn("[RECONCILIATION] Đơn orderCode={} đã quá 48h và VNPay trả lỗi ({}) -> Chuyển EXPIRED",
+                    orderCode, qr.getResponseCode());
+            expireReconciledTransaction(lockedTxn);
+            return true;
+        }
+
+        log.info("[RECONCILIATION] Đơn orderCode={} gặp lỗi ({}), giữ PENDING để tiếp tục đối soát",
+                orderCode, qr.getResponseCode());
+        return false;
+    }
+
+    private boolean executeInNewTransaction(java.util.function.Supplier<Boolean> action) {
+        if (transactionTemplate != null) {
+            transactionTemplate.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+            Boolean result = transactionTemplate.execute(status -> action.get());
+            return Boolean.TRUE.equals(result);
+        }
+        return action.get();
+    }
+
+    private void expireReconciledTransaction(PaymentTransaction txn) {
+        txn.setStatus(PaymentStatus.EXPIRED.name());
+        paymentTransactionRepository.save(txn);
+        if (txn.getReservationId() != null && reservationHoldExpiryService != null) {
+            reservationHoldExpiryService.expireIfElapsed(txn.getReservationId());
+        }
     }
 }

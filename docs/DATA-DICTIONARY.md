@@ -434,7 +434,8 @@ Hàng đợi danh sách chờ khi cơ sở hết hạn ngạch loại ô kho —
 ## 5. Phân hệ Thanh toán & Sổ cái Tài chính
 
 ### 5.1. Bảng `payment_transaction`
-Giao dịch thanh toán cổng điện tử (`Flow 1, 3, 6`, `BR-PAY-*`).
+Giao dịch thanh toán cổng điện tử (`Flow 1, 3, 6`, `BR-PAY-*`).  
+*Chỉ mục tối ưu:* `ix_payment_transaction_reservation_id`, `ix_payment_transaction_contract_id`, `idx_payment_transaction_order_code` (`UNIQUE`), `idx_payment_transaction_status_created_at`.
 
 | Tên cột | Kiểu dữ liệu | Bắt buộc | Ràng buộc / Mặc định | Ý nghĩa & Mô tả nghiệp vụ |
 | :--- | :--- | :---: | :--- | :--- |
