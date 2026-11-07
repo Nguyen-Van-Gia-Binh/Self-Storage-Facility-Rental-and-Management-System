@@ -53,6 +53,7 @@
 | `ISS-147` | Kiểm thử tích hợp Flow 3 (Trả sớm Win-Win) và Flow 6.2 (Cronjob Quá hạn D+1..D+10).                                       | Viết Integration test kịch bản nghiệm thu hoàn cọc trả kho sớm Win-Win và kiểm thử cronjob tính phạt quá hạn lũy tiến D+4..D+10.            |  Gia Bình  |        `OPEN`        |
 | `ISS-148` | Nâng cấp VNPay 3 lớp phòng thủ, QueryDR đối soát tự động, Net MRR, Quỹ ký cược & Cronjob quét quá hạn độc lập.            | Hoàn tất QueryDR 15p, Webhook, Net MRR, Escrow Deposit Liability, Chunked Overdue Cronjob, 553/553 tests xanh, FE build 0 lỗi.              |    Nhật    |      `RESOLVED`      |
 | `ISS-149` | Kiểm thử bảo mật Flow SYS (Multi-Facility RBAC), Flow 2 (Check-in) & Flow 7 (Incident).                                   | Kiểm thử bảo mật đa cơ sở chống IDOR (@facilitySecurity), xác thực biên bản bàn giao Check-in 4 tiêu chí và quy trình bồi thường sự cố.     | Thanh Tùng |        `OPEN`        |
+| `ISS-150` | Nâng cấp sơ đồ 2D mặt bằng trực quan (FacilityFloorPlanMapModal) có cầu thang chuyển tầng & bảo mật phân công đa cơ sở.    | Thêm ràng buộc STAFF_NOT_IN_FACILITY, sơ đồ 2D 6 màu, click Cầu thang chuyển tầng, test xanh 100%, FE build 0 lỗi.                         |  Gia Bình  |      `RESOLVED`      |
 
 _(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/\_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))_
 
