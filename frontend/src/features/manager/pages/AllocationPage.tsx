@@ -1,25 +1,24 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { AlertCircle, Calendar, Check, Clock, MapPin, User, X } from 'lucide-react';
+import {
+  AlertCircle,
+  Building2,
+  Calendar,
+  Check,
+  CheckCircle2,
+  Layers,
+  MapPin,
+  RefreshCw,
+  User,
+  X,
+} from 'lucide-react';
 import { fetchMyAssignedFacilities } from '@/api/facility';
 import { assignUnit, listReservations, type ReservationResponse } from '@/api/reservation';
-import { fetchStorageUnits } from '@/api/unit';
 import { getStaffWorkload } from '@/features/manager/api/staffAssignmentApi';
 import type { StaffWorkloadItem } from '@/features/manager/types/staffAssignment';
 import { Badge } from '@/components/ui/Badge';
 import type { FacilityListItem } from '@/types';
-import type { StorageUnitResponse, UnitStatus } from '@/types/unit';
+import type { StorageUnitResponse } from '@/types/unit';
 import { FacilityFloorPlanMapModal } from '../components/FacilityFloorPlanMapModal';
-
-const ASSIGNABLE: UnitStatus[] = ['AVAILABLE'];
-
-const QUICK_SLOTS = [
-  { label: '08:00 - 09:00', start: '08:00', end: '09:00' },
-  { label: '09:00 - 10:00', start: '09:00', end: '10:00' },
-  { label: '10:00 - 11:00', start: '10:00', end: '11:00' },
-  { label: '14:00 - 15:00', start: '14:00', end: '15:00' },
-  { label: '15:00 - 16:00', start: '15:00', end: '16:00' },
-  { label: '16:00 - 17:00', start: '16:00', end: '17:00' },
-];
 
 function daysUntil(isoDate: string): number {
   const today = new Date();
@@ -28,24 +27,16 @@ function daysUntil(isoDate: string): number {
   return Math.round((start.getTime() - today.getTime()) / 86_400_000);
 }
 
-function formatDate(isoDate: string): string {
-  const [year, month, day] = isoDate.split('-');
-  if (!year || !month || !day) return isoDate;
-  return `${day}/${month}/${year}`;
+function formatDate(isoDate?: string | null): string {
+  if (!isoDate) return 'Chưa xác định';
+  const parts = isoDate.split('T')[0].split('-');
+  if (parts.length < 3) return isoDate;
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
 }
 
-function statusVariant(status: string): 'available' | 'reserved' | 'occupied' | 'default' {
-  if (status === 'AVAILABLE') return 'available';
-  if (status === 'RESERVED') return 'reserved';
-  if (status === 'OCCUPIED') return 'occupied';
-  return 'default';
-}
-
-function statusLabel(status: string): string {
-  if (status === 'AVAILABLE') return 'Trống';
-  if (status === 'RESERVED') return 'Đã giữ';
-  if (status === 'OCCUPIED') return 'Đang thuê';
-  return status;
+function cleanUnitTypeName(name?: string | null): string {
+  if (!name) return '';
+  return name.replace(/\s*\([^)]*\)/gi, '').trim();
 }
 
 export const AllocationPage: React.FC = () => {
@@ -53,67 +44,70 @@ export const AllocationPage: React.FC = () => {
   const [facilityId, setFacilityId] = useState<number | null>(null);
   const [queue, setQueue] = useState<ReservationResponse[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [units, setUnits] = useState<StorageUnitResponse[]>([]);
+  const [activeReservation, setActiveReservation] = useState<ReservationResponse | null>(null);
   const [staffMembers, setStaffMembers] = useState<StaffWorkloadItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [unitsLoading, setUnitsLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [assigningUnitId, setAssigningUnitId] = useState<number | null>(null);
   const [toast, setToast] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
-  // Modal State for 3-in-1 Assignment
-  const [modalUnit, setModalUnit] = useState<StorageUnitResponse | null>(null);
+  // Modal State for 2D Floor Plan & Assignment Form
   const [isFloorPlanOpen, setIsFloorPlanOpen] = useState(false);
+  const [modalUnit, setModalUnit] = useState<StorageUnitResponse | null>(null);
   const [selectedStaffId, setSelectedStaffId] = useState<number | null>(null);
-  const [scheduledDate, setScheduledDate] = useState<string>('');
-  const [scheduledStartTime, setScheduledStartTime] = useState<string>('09:00');
-  const [scheduledEndTime, setScheduledEndTime] = useState<string>('10:00');
+  const [staffError, setStaffError] = useState<string | null>(null);
 
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
     setToast({ text, type });
     window.setTimeout(() => setToast(null), 4000);
   };
 
-  const loadQueue = useCallback(async (id: number) => {
-    const rows = await listReservations({ status: 'CONFIRMED', facilityId: id, size: 100 });
-    const pending = rows
-      .filter((row) => row.storageUnitId == null)
-      .sort((a, b) => a.startDate.localeCompare(b.startDate));
-    setQueue(pending);
-    setSelectedId((current) => {
-      if (current != null && pending.some((row) => row.id === current)) return current;
-      return pending[0]?.id ?? null;
-    });
-    return pending;
-  }, []);
-
-  const loadUnits = useCallback(async (id: number, unitTypeId: number) => {
-    const page = await fetchStorageUnits(id, { unitTypeId, size: 200 });
-    setUnits(page?.content || []);
+  const loadQueue = useCallback(async (id: number, isManual = false) => {
+    if (isManual) setRefreshing(true);
+    else setLoading(true);
+    try {
+      const rows = await listReservations({ status: 'CONFIRMED', facilityId: id, size: 100 });
+      const pending = rows
+        .filter((row) => row.storageUnitId == null)
+        .sort((a, b) => a.startDate.localeCompare(b.startDate));
+      setQueue(pending);
+      setSelectedId((current) => {
+        if (current != null && pending.some((row) => row.id === current)) return current;
+        return pending[0]?.id ?? null;
+      });
+      return pending;
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
 
   const loadStaff = useCallback(async (id: number) => {
     try {
       const list = await getStaffWorkload(id);
-      setStaffMembers(list);
+      setStaffMembers(list || []);
     } catch {
       setStaffMembers([]);
     }
   }, []);
 
+  // 1. Tải danh sách cơ sở phân công cho FM
   useEffect(() => {
     let active = true;
     (async () => {
-      setLoading(true);
       try {
         const list = await fetchMyAssignedFacilities();
         if (!active) return;
-        setFacilities(list);
-        setFacilityId(list[0]?.id ?? null);
+        setFacilities(list || []);
+        if (list && list.length > 0) {
+          const saved = localStorage.getItem('manager_selected_facility_id');
+          const targetId = saved && Number(saved) > 0 ? Number(saved) : list[0].id;
+          const found = list.find((f) => f.id === targetId) ? targetId : list[0].id;
+          setFacilityId(found);
+        }
       } catch (err) {
         if (!active) return;
-        showToast(err instanceof Error ? err.message : 'Không tải được cơ sở', 'error');
-      } finally {
-        if (active) setLoading(false);
+        showToast(err instanceof Error ? err.message : 'Không tải được danh mục cơ sở', 'error');
       }
     })();
     return () => {
@@ -121,6 +115,7 @@ export const AllocationPage: React.FC = () => {
     };
   }, []);
 
+  // 2. Khi đổi cơ sở: Tải hàng đợi cần gán ô và danh sách nhân viên cơ sở
   useEffect(() => {
     if (facilityId == null) return;
     let active = true;
@@ -138,75 +133,62 @@ export const AllocationPage: React.FC = () => {
     };
   }, [facilityId, loadQueue, loadStaff]);
 
-  const selected = queue.find((row) => row.id === selectedId) ?? null;
+  const selected = activeReservation || (queue.find((row) => row.id === selectedId) ?? null);
 
-  useEffect(() => {
-    if (facilityId == null || selected == null) {
-      setUnits([]);
-      return;
-    }
-    let active = true;
-    setUnitsLoading(true);
-    (async () => {
-      try {
-        await loadUnits(facilityId, selected.unitTypeId);
-      } catch (err) {
-        if (!active) return;
-        setUnits([]);
-        showToast(err instanceof Error ? err.message : 'Không tải được ô kho', 'error');
-      } finally {
-        if (active) setUnitsLoading(false);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, [facilityId, selected, loadUnits]);
+  // Mở sơ đồ 2D cho đơn cụ thể
+  const handleOpenFloorPlan = (row: ReservationResponse) => {
+    setSelectedId(row.id);
+    setActiveReservation(row);
+    setIsFloorPlanOpen(true);
+  };
 
+  // Mở form xác nhận sau khi chọn ô cụ thể trên sơ đồ 2D
   const openAssignModal = (unit: StorageUnitResponse) => {
-    if (!selected) return;
     setModalUnit(unit);
-    setScheduledDate(selected.startDate || new Date().toISOString().slice(0, 10));
-    setScheduledStartTime('09:00');
-    setScheduledEndTime('10:00');
-    setSelectedStaffId(staffMembers[0]?.staffId ?? null);
+    setSelectedStaffId(null); // Bắt buộc người dùng phải chủ động chọn nhân viên
+    setStaffError(null);
   };
 
   const handleConfirmAssignment = async () => {
     if (!selected || !modalUnit || assigningUnitId != null) return;
+
     if (!selectedStaffId) {
-      showToast('Vui lòng chọn nhân viên trực tiếp đón khách', 'error');
+      setStaffError('Vui lòng chọn nhân viên tiếp đón khách bàn giao kho.');
+      showToast('Vui lòng chọn nhân viên phụ trách tiếp đón', 'error');
       return;
     }
+
     setAssigningUnitId(modalUnit.id);
+    setStaffError(null);
+
     try {
       await assignUnit(selected.id, {
         storageUnitId: modalUnit.id,
         staffId: selectedStaffId,
-        scheduledDate,
-        scheduledStartTime,
-        scheduledEndTime,
+        scheduledDate: selected.startDate,
       });
-      showToast(`Đã gán ô ${modalUnit.code} và lên lịch đón tiếp thành công!`);
+
+      showToast(`Đã gán ô ${modalUnit.code} và phân công nhân viên tiếp đón thành công!`);
       setModalUnit(null);
+
       if (facilityId != null) {
-        const pending = await loadQueue(facilityId);
-        const next = pending.find((row) => row.id === selected.id) ?? pending[0];
-        if (next) await loadUnits(facilityId, next.unitTypeId);
-        else setUnits([]);
+        await loadQueue(facilityId, true);
       }
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Gán ô thất bại', 'error');
+      showToast(err instanceof Error ? err.message : 'Gán ô kho thất bại', 'error');
     } finally {
       setAssigningUnitId(null);
     }
   };
 
+  const selectedFacility = facilities.find((f) => f.id === facilityId);
+
   return (
     <div className="space-y-4">
+      {/* Toast thông báo */}
       {toast && (
         <div
-          className={`fixed top-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl border text-sm font-semibold ${
+          className={`fixed top-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl border text-sm font-semibold transition-all ${
             toast.type === 'success'
               ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
               : 'bg-rose-50 text-rose-800 border-rose-200'
@@ -221,212 +203,248 @@ export const AllocationPage: React.FC = () => {
         </div>
       )}
 
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900">Phân bổ ô kho & Lên lịch tiếp đón</h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Gán ô kho vật lý, chỉ định nhân viên trực và chốt giờ hẹn bàn giao cho khách
-          </p>
+      {/* Header bar gọn gàng, hiện đại */}
+      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-700 border border-brand-200/80 flex items-center justify-center shrink-0">
+            <Building2 className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
+                Nhiệm vụ Gán ô kho
+              </h1>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200/80">
+                {queue.length} đơn chờ xử lý
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Chọn đơn đặt chỗ để mở sơ đồ mặt bằng 2D, chọn ô kho vật lý phù hợp và phân công nhân viên tiếp đón
+            </p>
+          </div>
         </div>
-        {facilities.length > 1 && (
-          <select
-            className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white shadow-sm font-medium"
-            value={facilityId ?? ''}
-            onChange={(event) => setFacilityId(Number(event.target.value))}
+
+        <div className="flex items-center gap-2.5 shrink-0">
+          {facilities.length > 1 && (
+            <select
+              className="border border-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm bg-white shadow-2xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
+              value={facilityId ?? ''}
+              onChange={(e) => {
+                const newId = Number(e.target.value);
+                setFacilityId(newId);
+                localStorage.setItem('manager_selected_facility_id', String(newId));
+              }}
+            >
+              {facilities.map((fac) => (
+                <option key={fac.id} value={fac.id}>
+                  {fac.name}
+                </option>
+              ))}
+            </select>
+          )}
+
+          <button
+            type="button"
+            onClick={() => facilityId && loadQueue(facilityId, true)}
+            disabled={refreshing}
+            className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors cursor-pointer shrink-0"
+            title="Làm mới danh sách"
           >
-            {facilities.map((facility) => (
-              <option key={facility.id} value={facility.id}>
-                {facility.name}
-              </option>
-            ))}
-          </select>
-        )}
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Table 1: Pending Queue */}
-        <section className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-            <span className="font-semibold text-sm text-slate-800">
-              Danh sách chờ phân bổ ({queue.length})
+      {/* Danh sách nhiệm vụ gán ô kho từ trên xuống (Full-width Vertical Task List) */}
+      <section className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs">
+        <div className="px-4 py-3.5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2 bg-slate-50/70">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-sm text-slate-800">
+              Danh sách đơn đặt chỗ chờ gán ô
             </span>
-            <span className="text-xs text-slate-500">Late-binding JIT Allocation</span>
+            <span className="text-xs text-slate-500 font-medium font-mono">
+              ({queue.length} đơn)
+            </span>
           </div>
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-slate-500 border-b border-slate-100">
+          <span className="text-xs text-slate-500">
+            Cơ sở: <strong className="text-slate-800 font-semibold">{selectedFacility?.name || '---'}</strong>
+          </span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-slate-50/90 text-slate-600 text-xs font-semibold border-b border-slate-100 uppercase tracking-wider">
               <tr>
-                <th className="px-3 py-2 font-medium">Đơn</th>
-                <th className="px-3 py-2 font-medium">Hạng kho</th>
-                <th className="px-3 py-2 font-medium">Ngày nhận</th>
-                <th className="px-3 py-2 font-medium">Trạng thái</th>
+                <th className="px-4 py-3">Mã đơn</th>
+                <th className="px-4 py-3">Hạng kho khách đặt</th>
+                <th className="px-4 py-3">Ngày nhận kho (Khách book)</th>
+                <th className="px-4 py-3">Thời hạn thuê</th>
+                <th className="px-4 py-3">Trạng thái</th>
+                <th className="px-4 py-3 text-right">Thao tác</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="px-3 py-6 text-slate-500 text-center">
-                    Đang tải...
+                  <td colSpan={6} className="px-4 py-12 text-slate-500 text-center">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <RefreshCw className="w-5 h-5 animate-spin text-brand-600" />
+                      <span className="text-xs font-medium">Đang tải danh sách nhiệm vụ gán ô...</span>
+                    </div>
                   </td>
                 </tr>
               ) : queue.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-3 py-6 text-slate-600 text-center">
-                    Không có đơn nào cần gán ô
+                  <td colSpan={6} className="px-4 py-14 text-center">
+                    <div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
+                      <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                        <CheckCircle2 className="w-6 h-6" />
+                      </div>
+                      <h4 className="text-sm font-bold text-slate-800 mt-1">Không có đơn nào chờ gán ô</h4>
+                      <p className="text-xs text-slate-500">
+                        Toàn bộ đơn đặt chỗ tại cơ sở {selectedFacility?.name} đã được phân bổ ô kho và chỉ định nhân viên hoàn tất.
+                      </p>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 queue.map((row) => {
                   const urgent = daysUntil(row.startDate) < 3;
-                  const isSelected = row.id === selectedId;
                   return (
                     <tr
                       key={row.id}
-                      className={`border-t border-slate-100 cursor-pointer transition-colors ${
-                        isSelected ? 'bg-teal-50 border-teal-300 font-medium' : 'hover:bg-slate-50'
-                      }`}
-                      onClick={() => setSelectedId(row.id)}
+                      className="hover:bg-slate-50/80 transition-colors group"
                     >
-                      <td className="px-3 py-2 font-mono text-slate-900">{row.code}</td>
-                      <td className="px-3 py-2">{row.unitTypeName || row.unitTypeId}</td>
-                      <td className={`px-3 py-2 ${urgent ? 'text-rose-600 font-semibold' : 'text-slate-600'}`}>
-                        {formatDate(row.startDate)}
-                        {urgent && <span className="ml-1 text-[10px] bg-rose-100 text-rose-700 px-1 py-0.5 rounded">Gấp</span>}
+                      {/* Cột 1: Mã đơn */}
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200/80 text-xs">
+                            {row.code}
+                          </span>
+                        </div>
                       </td>
-                      <td className="px-3 py-2">
-                        <Badge variant="warning">Chờ gán ô</Badge>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </section>
 
-        {/* Table 2: Available Units */}
-        <section className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50 gap-2">
-            <span className="font-semibold text-sm text-slate-800">
-              Ô kho phù hợp ({units.filter((u) => ASSIGNABLE.includes(u.status)).length} ô trống)
-            </span>
-            <div className="flex items-center gap-2">
-              {facilityId && (
-                <button
-                  type="button"
-                  onClick={() => setIsFloorPlanOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-300 rounded-lg text-xs font-bold transition cursor-pointer shadow-2xs"
-                  title="Mở sơ đồ mặt bằng 2D phân tầng để chọn ô trực quan"
-                >
-                  <MapPin className="w-3.5 h-3.5 text-teal-600" />
-                  <span>Sơ đồ 2D</span>
-                </button>
-              )}
-              {selected && (
-                <span className="text-xs text-teal-700 font-medium">
-                  Đang chọn: {selected.code}
-                </span>
-              )}
-            </div>
-          </div>
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-slate-500 border-b border-slate-100">
-              <tr>
-                <th className="px-3 py-2 font-medium">Ô kho</th>
-                <th className="px-3 py-2 font-medium">Tầng</th>
-                <th className="px-3 py-2 font-medium">Trạng thái</th>
-                <th className="px-3 py-2 font-medium text-right">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {unitsLoading ? (
-                <tr>
-                  <td colSpan={4} className="px-3 py-6 text-slate-500 text-center">
-                    Đang tải danh sách ô kho...
-                  </td>
-                </tr>
-              ) : units.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="px-3 py-6 text-slate-600 text-center">
-                    Không có ô kho nào phù hợp
-                  </td>
-                </tr>
-              ) : (
-                units.map((unit) => {
-                  const clickable = ASSIGNABLE.includes(unit.status) && selected != null;
-                  return (
-                    <tr key={unit.id} className="border-t border-slate-100 hover:bg-slate-50/70">
-                      <td className="px-3 py-2 font-mono font-semibold text-slate-900">{unit.code}</td>
-                      <td className="px-3 py-2 text-slate-600">Tầng {unit.floor}</td>
-                      <td className="px-3 py-2">
-                        <Badge variant={statusVariant(unit.status)}>{statusLabel(unit.status)}</Badge>
+                      {/* Cột 2: Hạng kho */}
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center gap-1.5 font-medium text-slate-800">
+                          <Layers className="w-4 h-4 text-brand-600 shrink-0" />
+                          <span>{cleanUnitTypeName(row.unitTypeName) || `Loại kho #${row.unitTypeId}`}</span>
+                        </div>
                       </td>
-                      <td className="px-3 py-2 text-right">
-                        {clickable && (
-                          <button
-                            type="button"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors cursor-pointer"
-                            onClick={() => openAssignModal(unit)}
-                          >
-                            Phân bổ & Hẹn giờ
-                          </button>
+
+                      {/* Cột 3: Ngày hẹn nhận kho */}
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center gap-2">
+                          <span className={`font-mono text-xs font-bold ${urgent ? 'text-rose-600' : 'text-slate-700'}`}>
+                            {formatDate(row.startDate)}
+                          </span>
+                          {urgent && (
+                            <span className="text-[10px] bg-rose-50 border border-rose-200 text-rose-700 px-2 py-0.5 rounded-full font-bold">
+                              Gấp ({daysUntil(row.startDate) <= 0 ? 'Hôm nay' : `${daysUntil(row.startDate)} ngày`})
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Cột 4: Thời hạn thuê */}
+                      <td className="px-4 py-3.5 text-xs text-slate-600 font-medium">
+                        {row.rentalMonths} tháng
+                        {row.endDateExclusive && (
+                          <span className="text-slate-400 block text-[11px]">
+                            Đến {formatDate(row.endDateExclusive)}
+                          </span>
                         )}
                       </td>
+
+                      {/* Cột 5: Trạng thái */}
+                      <td className="px-4 py-3.5">
+                        <Badge variant="warning">Chờ gán ô</Badge>
+                      </td>
+
+                      {/* Cột 6: Nút hành động mở Sơ đồ 2D */}
+                      <td className="px-4 py-3.5 text-right">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenFloorPlan(row)}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-sm transition-all cursor-pointer"
+                        >
+                          <MapPin className="w-3.5 h-3.5 text-white" />
+                          <span>Gán ô kho (Sơ đồ 2D)</span>
+                        </button>
+                      </td>
                     </tr>
                   );
                 })
               )}
             </tbody>
           </table>
-        </section>
-      </div>
+        </div>
+      </section>
 
-      {/* 3-in-1 Assignment & Appointment Modal */}
+      {/* Sơ đồ Mặt bằng 2D tương tác: FM bấm vào để trực quan chọn vị trí ô kho */}
+      {facilityId && isFloorPlanOpen && selected && (
+        <FacilityFloorPlanMapModal
+          isOpen={isFloorPlanOpen}
+          onClose={() => setIsFloorPlanOpen(false)}
+          facilityId={facilityId}
+          facilityName={selectedFacility?.name}
+          allowedUnitTypeId={selected.unitTypeId}
+          targetUnitTypeName={cleanUnitTypeName(selected.unitTypeName)}
+          onSelectUnit={(unit) => {
+            setIsFloorPlanOpen(false);
+            openAssignModal(unit);
+          }}
+        />
+      )}
+
+      {/* Form Modal xác nhận gán ô kho & Chỉ định nhân viên tiếp đón */}
       {modalUnit && selected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full flex flex-col overflow-hidden border border-slate-100">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-teal-100 text-teal-700 rounded-xl">
-                  <Calendar className="w-5 h-5" />
+                <div className="p-2 bg-brand-50 text-brand-700 rounded-xl border border-brand-200/80">
+                  <MapPin className="w-5 h-5 text-brand-600" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900 text-base">Phân bổ ô kho & Lên lịch tiếp đón</h3>
-                  <p className="text-xs text-slate-500">Chốt lịch và giao quyền tiếp đón cho nhân viên cơ sở</p>
+                  <h3 className="font-bold text-slate-900 text-base">Xác nhận phân bổ ô kho</h3>
+                  <p className="text-xs text-slate-500">Chỉ định ô vật lý và phân công nhân viên cơ sở phụ trách tiếp đón</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setModalUnit(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 space-y-4 text-sm overflow-y-auto flex-1">
-              {/* Summary banner */}
-              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="p-5 sm:p-6 space-y-4 text-sm">
+              {/* Thẻ tóm tắt thông tin đơn và ô được chọn */}
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-1">
-                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                     Đơn đặt chỗ / Hạng kho
                   </span>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-mono font-bold text-slate-900 text-sm bg-white px-2 py-0.5 rounded border border-slate-200">
+                    <span className="font-mono font-bold text-slate-900 text-xs bg-white px-2.5 py-1 rounded-lg border border-slate-200">
                       {selected.code}
                     </span>
-                    <span className="text-xs text-slate-700 font-medium" title={selected.unitTypeName}>
-                      {selected.unitTypeName}
+                    <span className="text-xs text-slate-700 font-semibold">
+                      {cleanUnitTypeName(selected.unitTypeName)}
                     </span>
                   </div>
                 </div>
+
                 <div className="sm:border-l sm:border-slate-200 sm:pl-4 space-y-1 shrink-0">
-                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
-                    Ô kho được chọn
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                    Ô kho được chọn (2D)
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className="font-mono font-black text-teal-700 text-base bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
+                    <span className="font-mono font-bold text-brand-700 text-sm bg-brand-50 px-2.5 py-1 rounded-lg border border-brand-200">
                       {modalUnit.code}
                     </span>
                     <span className="text-xs font-semibold text-slate-600 bg-slate-200/80 px-2 py-0.5 rounded-md">
@@ -436,101 +454,75 @@ export const AllocationPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Scheduled Date */}
+              {/* Ngày hẹn nhận kho: Tự động lấy ngày khách book */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                  Ngày hẹn nhận kho
+                <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-brand-600" />
+                  <span>Ngày hẹn nhận kho</span>
                 </label>
-                <input
-                  type="date"
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none"
-                  value={scheduledDate}
-                  onChange={(e) => setScheduledDate(e.target.value)}
-                />
+                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-800">
+                  <span className="font-mono font-bold text-sm text-slate-900">
+                    {formatDate(selected.startDate)}
+                  </span>
+                  <span className="text-xs text-slate-500 font-medium">
+                    (Theo ngày khách đặt chỗ nhận kho)
+                  </span>
+                </div>
               </div>
 
-              {/* Time Slots */}
+              {/* Dropdown nhân viên tiếp đón (BẮT BUỘC) */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-slate-500" />
-                  Khung giờ đón tiếp khách
+                <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-brand-600" />
+                    <span>Nhân viên cơ sở tiếp đón khách <span className="text-rose-600">*</span></span>
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-normal">Bắt buộc</span>
                 </label>
-                {/* Quick slot pills */}
-                <div className="grid grid-cols-3 gap-2 mb-2">
-                  {QUICK_SLOTS.map((slot) => {
-                    const isSelected = scheduledStartTime === slot.start && scheduledEndTime === slot.end;
+
+                <select
+                  className={`w-full border rounded-xl px-3.5 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 cursor-pointer font-medium transition-all ${
+                    staffError
+                      ? 'border-rose-400 ring-2 ring-rose-100 text-rose-900'
+                      : 'border-slate-300 focus:ring-brand-500 focus:border-brand-500 text-slate-900'
+                  }`}
+                  value={selectedStaffId ?? ''}
+                  onChange={(e) => {
+                    const val = e.target.value ? Number(e.target.value) : null;
+                    setSelectedStaffId(val);
+                    if (val) setStaffError(null);
+                  }}
+                >
+                  <option value="">-- Chọn nhân viên tiếp đón (Bắt buộc) --</option>
+                  {staffMembers.map((staff) => {
+                    const cleanName = (staff.staffName || '').replace(/\s*\(\d+\s*việc[^)]*\)/gi, '').trim();
                     return (
-                      <button
-                        key={slot.label}
-                        type="button"
-                        onClick={() => {
-                          setScheduledStartTime(slot.start);
-                          setScheduledEndTime(slot.end);
-                        }}
-                        className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border text-center transition-all ${
-                          isSelected
-                            ? 'bg-teal-50 border-teal-500 text-teal-700 font-bold shadow-sm'
-                            : 'border-slate-200 hover:bg-slate-50 text-slate-700'
-                        }`}
-                      >
-                        {slot.label}
-                      </button>
+                      <option key={staff.staffId} value={staff.staffId}>
+                        {cleanName} ({staff.staffPhone || staff.staffEmail})
+                      </option>
                     );
                   })}
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="time"
-                    className="flex-1 border border-slate-300 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none"
-                    value={scheduledStartTime}
-                    onChange={(e) => setScheduledStartTime(e.target.value)}
-                  />
-                  <span className="text-slate-400 text-xs">đến</span>
-                  <input
-                    type="time"
-                    className="flex-1 border border-slate-300 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none"
-                    value={scheduledEndTime}
-                    onChange={(e) => setScheduledEndTime(e.target.value)}
-                  />
-                </div>
-              </div>
+                </select>
 
-              {/* Assigned Staff */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
-                  <User className="w-3.5 h-3.5 text-slate-500" />
-                  Nhân viên cơ sở phụ trách tiếp đón
-                </label>
-                {staffMembers.length === 0 ? (
-                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-xs">
-                    Chưa có nhân viên nào trong cơ sở này. Vui lòng phân công ca trực trước.
-                  </div>
+                {staffError ? (
+                  <p className="text-xs text-rose-600 mt-1 font-semibold flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{staffError}</span>
+                  </p>
                 ) : (
-                  <select
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-teal-500 focus:outline-none"
-                    value={selectedStaffId ?? ''}
-                    onChange={(e) => setSelectedStaffId(Number(e.target.value))}
-                  >
-                    {staffMembers.map((staff) => {
-                      const cleanName = (staff.staffName || '').replace(/\s*\(\d+\s*việc[^)]*\)/gi, '').trim();
-                      return (
-                        <option key={staff.staffId} value={staff.staffId}>
-                          {cleanName}
-                        </option>
-                      );
-                    })}
-                  </select>
+                  <p className="text-[11px] text-slate-500 mt-1.5">
+                    💡 <em>Lưu ý: Bắt buộc chọn nhân viên phụ trách nhận kho. Sau này nếu muốn đổi ca trực, bạn có thể sang mục <strong>Phân công nhân sự</strong> để điều chuyển.</em>
+                  </p>
                 )}
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-3 bg-slate-50 shrink-0">
+            <div className="px-5 py-4 border-t border-slate-100 flex items-center justify-end gap-3 bg-slate-50/80">
               <button
                 type="button"
                 onClick={() => setModalUnit(null)}
-                className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-200 text-sm font-semibold transition-colors"
+                className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-200 text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
                 disabled={assigningUnitId != null}
               >
                 Hủy bỏ
@@ -539,34 +531,20 @@ export const AllocationPage: React.FC = () => {
                 type="button"
                 onClick={handleConfirmAssignment}
                 disabled={assigningUnitId != null || !selectedStaffId}
-                className="inline-flex items-center gap-2 px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-lg disabled:opacity-50 transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs hover:shadow-sm disabled:opacity-50 transition-all cursor-pointer"
               >
                 {assigningUnitId != null ? (
                   <>
                     <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Đang lưu...
+                    <span>Đang lưu...</span>
                   </>
                 ) : (
-                  'Xác nhận phân bổ & Lên lịch'
+                  <span>Xác nhận phân bổ ô kho</span>
                 )}
               </button>
             </div>
           </div>
         </div>
-      )}
-      {/* Modal Sơ đồ 2D mặt bằng tương tác */}
-      {facilityId && (
-        <FacilityFloorPlanMapModal
-          isOpen={isFloorPlanOpen}
-          onClose={() => setIsFloorPlanOpen(false)}
-          facilityId={facilityId}
-          facilityName={facilities.find((f) => f.id === facilityId)?.name}
-          allowedUnitTypeId={selected?.unitTypeId}
-          onSelectUnit={(unit) => {
-            setIsFloorPlanOpen(false);
-            openAssignModal(unit);
-          }}
-        />
       )}
     </div>
   );
