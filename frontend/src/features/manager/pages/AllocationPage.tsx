@@ -192,6 +192,8 @@ export const AllocationPage: React.FC = () => {
         storageUnitId: modalUnit.id,
         staffId: selectedStaffId,
         scheduledDate: selected.startDate,
+        scheduledStartTime: '08:00',
+        scheduledEndTime: '17:00',
       });
 
       showToast(`Đã gán ô ${modalUnit.code} và phân công nhân viên tiếp đón thành công!`);
