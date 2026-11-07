@@ -42,6 +42,7 @@ spring:
     encoding: UTF-8
     baseline-on-migrate: true
     validate-on-migrate: false
+    ignore-migration-patterns: "*:missing"
     locations: classpath:db/migration
 
   mail:
