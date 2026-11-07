@@ -13,8 +13,8 @@ import {
   ShieldAlert,
   Sparkles,
 } from 'lucide-react';
-import type { StorageUnitResponse } from '@/types/unit';
-import { fetchStorageUnits } from '@/api/unit';
+import type { StorageUnitResponse, UnitTypeResponse } from '@/types/unit';
+import { fetchStorageUnits, fetchUnitTypes } from '@/api/unit';
 
 export interface FacilityFloorPlanMapModalProps {
   isOpen: boolean;
@@ -40,11 +40,28 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
   initialUnits,
 }) => {
   const [units, setUnits] = useState<StorageUnitResponse[]>(initialUnits || []);
+  const [unitTypes, setUnitTypes] = useState<UnitTypeResponse[]>([]);
   const [loading, setLoading] = useState<boolean>(!initialUnits);
   const [error, setError] = useState<string | null>(null);
   const [currentFloor, setCurrentFloor] = useState<number>(1);
   const [selectedUnit, setSelectedUnit] = useState<StorageUnitResponse | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+
+  // Nạp danh mục các loại kho của cơ sở để xác định môi trường & diện tích
+  useEffect(() => {
+    if (!isOpen || !facilityId) return;
+    let active = true;
+    fetchUnitTypes(facilityId, { size: 100 })
+      .then((res) => {
+        if (active) {
+          setUnitTypes(res.content || []);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [isOpen, facilityId]);
 
   // Tải dữ liệu các ô kho của cơ sở
   useEffect(() => {
@@ -133,7 +150,87 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
 
   const isPickerMode = Boolean(onSelectUnit);
 
-  const getStatusColor = (status: string, isHighlighted: boolean, isSelected: boolean, isSelectable: boolean) => {
+  // Đếm số ô khả dụng cùng loại ban đầu của hợp đồng/đơn đặt chỗ
+  const sameTypeAvailableCount = useMemo(() => {
+    if (!allowedUnitTypeId) return 0;
+    return units.filter((u) => u.unitTypeId === allowedUnitTypeId && u.status === 'AVAILABLE').length;
+  }, [units, allowedUnitTypeId]);
+
+  // Thông tin loại ô kho ban đầu
+  const targetUnitType = useMemo(() => {
+    if (!allowedUnitTypeId) return null;
+    return unitTypes.find((ut) => ut.id === allowedUnitTypeId) || null;
+  }, [unitTypes, allowedUnitTypeId]);
+
+  // Môi trường lưu trữ yêu cầu (STANDARD hoặc CLIMATE_CONTROLLED)
+  const targetEnvironment = useMemo(() => {
+    if (targetUnitType?.environment) return targetUnitType.environment.toUpperCase();
+    if (targetUnitTypeName?.toLowerCase().includes('máy lạnh') || targetUnitTypeName?.toLowerCase().includes('ac')) {
+      return 'CLIMATE_CONTROLLED';
+    }
+    return 'STANDARD';
+  }, [targetUnitType, targetUnitTypeName]);
+
+  // Diện tích kho ban đầu (m²)
+  const targetArea = useMemo(() => {
+    if (targetUnitType?.areaM2) return Number(targetUnitType.areaM2);
+    if (targetUnitType?.widthM && targetUnitType?.depthM) {
+      return Number(targetUnitType.widthM) * Number(targetUnitType.depthM);
+    }
+    const name = (targetUnitTypeName || targetUnitType?.name || '').toUpperCase();
+    if (name.includes('XL')) return 15;
+    if (name.includes('XS')) return 1;
+    if (name.includes(' S') || name.endsWith('S') || name.includes('-S')) return 3;
+    if (name.includes(' M') || name.endsWith('M') || name.includes('-M')) return 6;
+    if (name.includes(' L') || name.endsWith('L') || name.includes('-L')) return 10;
+    return 0;
+  }, [targetUnitType, targetUnitTypeName]);
+
+  // Kích hoạt Chế độ Đền bù Nâng hạng khi ở chế độ Picker, có yêu cầu loại ô và cơ sở đã hết sạch ô cùng loại
+  const isUpgradeCompensationMode = Boolean(
+    isPickerMode && allowedUnitTypeId && sameTypeAvailableCount === 0
+  );
+
+  // Kiểm tra một ô kho có phải là ô Nâng hạng đền bù hợp lệ (cùng môi trường, diện tích lớn hơn)
+  const checkIsUpgradeUnit = (unit: StorageUnitResponse): boolean => {
+    if (!isUpgradeCompensationMode) return false;
+    if (unit.status !== 'AVAILABLE') return false;
+    if (unit.unitTypeId === allowedUnitTypeId) return false;
+
+    const uType = unitTypes.find((ut) => ut.id === unit.unitTypeId);
+    const uEnv = (
+      uType?.environment ||
+      (unit.unitTypeCode?.includes('AC') || unit.unitTypeName?.toLowerCase().includes('máy lạnh')
+        ? 'CLIMATE_CONTROLLED'
+        : 'STANDARD')
+    ).toUpperCase();
+
+    if (uEnv !== targetEnvironment) return false;
+
+    let uArea = 0;
+    if (uType?.areaM2) {
+      uArea = Number(uType.areaM2);
+    } else if (uType?.widthM && uType?.depthM) {
+      uArea = Number(uType.widthM) * Number(uType.depthM);
+    } else {
+      const name = (unit.unitTypeName || uType?.name || unit.unitTypeCode || '').toUpperCase();
+      if (name.includes('XL')) uArea = 15;
+      else if (name.includes('XS')) uArea = 1;
+      else if (name.includes(' S') || name.endsWith('S') || name.includes('-S')) uArea = 3;
+      else if (name.includes(' M') || name.endsWith('M') || name.includes('-M')) uArea = 6;
+      else if (name.includes(' L') || name.endsWith('L') || name.includes('-L')) uArea = 10;
+    }
+
+    return uArea > targetArea;
+  };
+
+  const getStatusColor = (
+    status: string,
+    isHighlighted: boolean,
+    isSelected: boolean,
+    isSelectable: boolean,
+    isUpgrade?: boolean
+  ) => {
     if (isHighlighted) {
       return 'bg-brand-600 text-white border-brand-500 ring-4 ring-brand-500/50 shadow-md scale-105 z-20 font-extrabold animate-pulse';
     }
@@ -143,6 +240,11 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
 
     if (isPickerMode && !isSelectable) {
       return 'bg-slate-100/80 text-slate-400 border-slate-200/80 opacity-40 cursor-not-allowed';
+    }
+
+    // Màu vàng hổ phách nổi bật riêng biệt cho ô Nâng hạng đền bù khi hết ô cùng loại
+    if (isPickerMode && isSelectable && isUpgrade) {
+      return 'bg-amber-50 text-amber-950 border-amber-400 ring-2 ring-amber-400/50 hover:bg-amber-100 hover:border-amber-500 shadow-xs cursor-pointer font-semibold';
     }
 
     switch (status) {
@@ -199,7 +301,9 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
                 {isPickerMode
-                  ? targetUnitTypeName
+                  ? isUpgradeCompensationMode
+                    ? `Cơ sở hết ô cùng loại. Click vào ô màu vàng hổ phách để nâng hạng đền bù.`
+                    : targetUnitTypeName
                     ? `Click vào ô trống màu xanh lá thuộc hạng kho [${targetUnitTypeName}] để phân bổ.`
                     : 'Click vào ô trống màu xanh lá để phân bổ cho hợp đồng.'
                   : 'Sơ đồ định vị không gian thực địa, phân tầng và trạng thái trực quan các ô kho.'}
@@ -214,6 +318,24 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Banner Chế độ Đền bù Nâng hạng khi hết ô cùng loại */}
+        {isUpgradeCompensationMode && (
+          <div className="mx-4 sm:mx-5 mt-3 p-3.5 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border border-amber-300 rounded-2xl flex items-start gap-3 shadow-2xs animate-in fade-in duration-200">
+            <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+              <Sparkles className="w-4 h-4 text-white" />
+            </div>
+            <div className="text-xs text-amber-950 leading-relaxed">
+              <div className="font-bold text-sm text-amber-900 flex items-center gap-2 mb-0.5">
+                <span>Chế độ Đền bù Nâng hạng đã kích hoạt</span>
+                <span className="text-[10px] bg-rose-100 text-rose-800 px-2 py-0.2 rounded-full border border-rose-300 font-bold uppercase tracking-tight">
+                  Hết ô cùng loại ({targetUnitTypeName || targetUnitType?.name || 'Size ban đầu'})
+                </span>
+              </div>
+              Cơ sở hiện đã hết ô trống cùng loại. Bạn có thể chọn các ô màu <strong className="text-amber-900">vàng hổ phách (kích thước lớn hơn cùng môi trường)</strong> để nâng hạng đền bù cho khách hàng. Hệ thống bảo lưu nguyên vẹn giá thuê và tiền cọc theo hợp đồng ban đầu.
+            </div>
+          </div>
+        )}
 
         {/* Thanh Điều hướng Tầng & Bộ lọc */}
         <div className="px-4 sm:px-5 py-3 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-white">
@@ -339,7 +461,8 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
                       {filteredFloorUnits.map((unit) => {
                         const isHighlighted = unit.id === highlightUnitId;
                         const isSelected = selectedUnit?.id === unit.id;
-                        const matchesType = !allowedUnitTypeId || unit.unitTypeId === allowedUnitTypeId;
+                        const isUpgrade = checkIsUpgradeUnit(unit);
+                        const matchesType = !allowedUnitTypeId || unit.unitTypeId === allowedUnitTypeId || isUpgrade;
                         const isSelectable = isPickerMode && unit.status === 'AVAILABLE' && matchesType;
 
                         return (
@@ -356,9 +479,12 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
                               unit.status,
                               isHighlighted,
                               isSelected,
-                              isSelectable
+                              isSelectable,
+                              isUpgrade
                             )}`}
-                            title={`Ô ${unit.code} — ${getStatusLabel(unit.status)} (${unit.unitTypeName || 'Hạng tiêu chuẩn'})`}
+                            title={`Ô ${unit.code} — ${getStatusLabel(unit.status)} (${unit.unitTypeName || 'Hạng tiêu chuẩn'}) ${
+                              isUpgrade ? '[Nâng hạng đền bù]' : ''
+                            }`}
                           >
                             {/* Badges đặc biệt */}
                             {isHighlighted && (
@@ -369,6 +495,12 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
                             {isSelected && !isHighlighted && (
                               <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-emerald-700 text-white text-[9px] font-bold px-1.5 py-0.2 rounded-full whitespace-nowrap shadow-xs">
                                 Đã chọn
+                              </span>
+                            )}
+                            {isUpgrade && isSelectable && !isSelected && !isHighlighted && (
+                              <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-amber-600 text-white text-[9px] font-bold px-1.5 py-0.2 rounded-full whitespace-nowrap shadow-xs flex items-center gap-0.5 border border-amber-400">
+                                <Sparkles className="w-2.5 h-2.5 text-amber-200" />
+                                Nâng hạng
                               </span>
                             )}
 
@@ -407,12 +539,14 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
                         </h4>
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                           selectedUnit.status === 'AVAILABLE'
-                            ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                            ? checkIsUpgradeUnit(selectedUnit)
+                              ? 'bg-amber-100 text-amber-900 border-amber-300 font-bold'
+                              : 'bg-emerald-50 text-emerald-800 border-emerald-300'
                             : selectedUnit.status === 'MAINTENANCE'
                             ? 'bg-rose-50 text-rose-800 border-rose-300'
                             : 'bg-slate-100 text-slate-700 border-slate-200'
                         }`}>
-                          {getStatusLabel(selectedUnit.status)}
+                          {checkIsUpgradeUnit(selectedUnit) ? '✨ Nâng hạng đền bù' : getStatusLabel(selectedUnit.status)}
                         </span>
                       </div>
                       <p className="text-xs text-slate-500 mt-0.5">
@@ -425,7 +559,22 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
                   {isPickerMode && (
                     <div>
                       {selectedUnit.status === 'AVAILABLE' ? (
-                        (!allowedUnitTypeId || selectedUnit.unitTypeId === allowedUnitTypeId) ? (
+                        checkIsUpgradeUnit(selectedUnit) ? (
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                            <span className="text-xs text-amber-900 bg-amber-100 px-3 py-1.5 rounded-xl border border-amber-300 font-semibold flex items-center gap-1.5 shadow-2xs">
+                              <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                              <span>Nâng hạng đền bù (Khách giữ nguyên giá)</span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => onSelectUnit && onSelectUnit(selectedUnit)}
+                              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer flex items-center gap-1.5 w-full sm:w-auto justify-center"
+                            >
+                              <Sparkles className="w-4 h-4 text-amber-200" />
+                              <span>Xác nhận nâng hạng sang ô {selectedUnit.code}</span>
+                            </button>
+                          </div>
+                        ) : (!allowedUnitTypeId || selectedUnit.unitTypeId === allowedUnitTypeId) ? (
                           <button
                             type="button"
                             onClick={() => onSelectUnit && onSelectUnit(selectedUnit)}
@@ -462,6 +611,12 @@ export const FacilityFloorPlanMapModal: React.FC<FacilityFloorPlanMapModalProps>
             <div className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-md bg-emerald-500 shadow-2xs" />
               <span>Trống khả dụng</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-md bg-amber-400 border border-amber-500 shadow-2xs" />
+              <span className="font-semibold text-amber-900 flex items-center gap-0.5">
+                <Sparkles className="w-2.5 h-2.5 text-amber-600 inline" /> Nâng hạng đền bù
+              </span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-md bg-sky-500 shadow-2xs" />

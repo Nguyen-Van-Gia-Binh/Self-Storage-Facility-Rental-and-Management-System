@@ -488,15 +488,34 @@ export async function getAvailableUnitsForReassign(
       `/facilities/${facilityId}/storage-units?unitTypeId=${unitTypeId}&status=AVAILABLE&size=50`
     );
     const items = res?.content || (res as any)?.data?.content || [];
-    return items.map((u: any) => ({
-      id: u.id,
-      code: u.code,
-      unitTypeId: u.unitTypeId,
-      unitTypeName: u.unitTypeName,
-      floor: u.floor,
-      position: u.position,
-      status: u.status,
-    }));
+    if (items.length > 0) {
+      return items.map((u: any) => ({
+        id: u.id,
+        code: u.code,
+        unitTypeId: u.unitTypeId,
+        unitTypeName: u.unitTypeName,
+        floor: u.floor,
+        position: u.position,
+        status: u.status,
+      }));
+    }
+
+    // Khi cơ sở hết ô trống cùng loại, nạp danh sách các ô trống để hỗ trợ nâng hạng đền bù
+    const allRes = await apiClient<PageResponse<any>>(
+      `/facilities/${facilityId}/storage-units?status=AVAILABLE&size=100`
+    );
+    const allUnits = allRes?.content || (allRes as any)?.data?.content || [];
+    return allUnits
+      .filter((u: any) => u.unitTypeId !== unitTypeId)
+      .map((u: any) => ({
+        id: u.id,
+        code: u.code,
+        unitTypeId: u.unitTypeId,
+        unitTypeName: `✨ Nâng hạng: ${u.unitTypeName || u.code}`,
+        floor: u.floor,
+        position: u.position,
+        status: u.status,
+      }));
   } catch (error) {
     console.error('Lỗi tải danh sách ô kho trống thay thế:', error);
     return [];

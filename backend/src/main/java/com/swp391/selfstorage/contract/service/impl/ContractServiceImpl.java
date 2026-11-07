@@ -785,10 +785,7 @@ public class ContractServiceImpl implements ContractService {
                 if (!newUnit.getFacilityId().equals(contract.getFacilityId())) {
                         throw new CustomException(ErrorCode.VALIDATION_FAILED, "Ô kho mới phải thuộc cùng cơ sở với hợp đồng.");
                 }
-                if (contract.getUnitTypeId() == null || newUnit.getUnitTypeId() == null
-                                || !contract.getUnitTypeId().equals(newUnit.getUnitTypeId())) {
-                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Chỉ được đổi sang ô cùng Unit Type.");
-                }
+
                 if (newUnit.getStatus() != StorageUnitStatus.AVAILABLE) {
                         throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, "Ô kho mới hiện không có sẵn (trạng thái: " + newUnit.getStatus() + ").");
                 }
@@ -797,6 +794,57 @@ public class ContractServiceImpl implements ContractService {
                 StorageUnit oldUnit = storageUnitRepository.findById(oldUnitId)
                                 .orElseThrow(() -> new CustomException(ErrorCode.STORAGE_UNIT_NOT_FOUND, "Không tìm thấy ô kho hiện tại."));
                 String oldCode = oldUnit.getCode() != null ? oldUnit.getCode() : ("U-" + oldUnitId);
+
+                if (contract.getUnitTypeId() == null && oldUnit.getUnitTypeId() != null) {
+                        contract.setUnitTypeId(oldUnit.getUnitTypeId());
+                }
+
+                boolean isSameType = contract.getUnitTypeId() != null && contract.getUnitTypeId().equals(newUnit.getUnitTypeId());
+                boolean isUpgradeCompensation = false;
+                UnitType newType = null;
+
+                if (!isSameType) {
+                        if (contract.getUnitTypeId() == null || newUnit.getUnitTypeId() == null) {
+                                throw new CustomException(ErrorCode.VALIDATION_FAILED, "Thông tin loại ô kho không hợp lệ.");
+                        }
+
+                        UnitType oldType = unitTypeRepository.findById(contract.getUnitTypeId())
+                                        .orElseThrow(() -> new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND, "Không tìm thấy loại ô kho hiện tại."));
+                        newType = unitTypeRepository.findById(newUnit.getUnitTypeId())
+                                        .orElseThrow(() -> new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND, "Không tìm thấy loại ô kho mới."));
+
+                        long availableSameType = storageUnitRepository.countByFacilityIdAndUnitTypeIdAndStatus(
+                                        contract.getFacilityId(), contract.getUnitTypeId(), StorageUnitStatus.AVAILABLE);
+
+                        if (availableSameType > 0) {
+                                throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                                                "Cơ sở vẫn còn " + availableSameType + " ô kho trống cùng loại (" + oldType.getName() + "). Vui lòng chọn ô cùng loại cho khách hàng.");
+                        }
+
+                        // So sánh môi trường lưu trữ (phải cùng STANDARD hoặc CLIMATE_CONTROLLED)
+                        String oldEnv = oldType.getEnvironment() != null ? oldType.getEnvironment().trim().toUpperCase() : "STANDARD";
+                        String newEnv = newType.getEnvironment() != null ? newType.getEnvironment().trim().toUpperCase() : "STANDARD";
+                        if (!oldEnv.equals(newEnv)) {
+                                throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                                                "Chỉ được nâng hạng đền bù sang ô cùng môi trường lưu trữ (" + oldEnv + ").");
+                        }
+
+                        // So sánh diện tích (newArea > oldArea)
+                        BigDecimal oldArea = (oldType.getWidthM() != null && oldType.getLengthM() != null)
+                                        ? oldType.getWidthM().multiply(oldType.getLengthM())
+                                        : BigDecimal.ZERO;
+                        BigDecimal newArea = (newType.getWidthM() != null && newType.getLengthM() != null)
+                                        ? newType.getWidthM().multiply(newType.getLengthM())
+                                        : BigDecimal.ZERO;
+
+                        if (newArea.compareTo(oldArea) <= 0) {
+                                throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                                                "Khi hết ô cùng loại, chỉ được đổi sang ô có kích thước lớn hơn để nâng hạng đền bù cho khách (Diện tích mới: "
+                                                                + newArea + " m² phải lớn hơn diện tích cũ: " + oldArea + " m²).");
+                        }
+
+                        isUpgradeCompensation = true;
+                }
 
                 if (ticket != null && ticket.getStorageUnitId() == null) {
                         ticket.setStorageUnitId(oldUnitId);
@@ -824,13 +872,18 @@ public class ContractServiceImpl implements ContractService {
                 ticket.setUpdatedAt(now);
 
                 String oldResolutionNote = ticket.getResolutionNote() != null ? ticket.getResolutionNote() : "";
-                String relocationResolutionInfo = "\n[Quản lý cơ sở đã hoàn tất đổi sang ô kho " + newUnit.getCode()
-                                + ". Sự cố đã được xử lý và đóng.]";
+                String relocationResolutionInfo = isUpgradeCompensation
+                                ? "\n[Quản lý cơ sở đã nâng hạng đền bù sang ô kho " + newUnit.getCode()
+                                                + (newType != null ? " (" + newType.getName() + ")" : "")
+                                                + " do hết ô cùng loại. Sự cố đã được xử lý và đóng.]"
+                                : "\n[Quản lý cơ sở đã hoàn tất đổi sang ô kho " + newUnit.getCode()
+                                                + ". Sự cố đã được xử lý và đóng.]";
                 ticket.setResolutionNote(oldResolutionNote + relocationResolutionInfo);
 
                 long monthlyPriceSnapshot = contract.getMonthlyPrice();
                 long depositSnapshot = contract.getDepositAmount();
                 contract.setStorageUnitId(newUnit.getId());
+                contract.setUnitTypeId(newUnit.getUnitTypeId());
                 contract.setRelocationSupportRequestId(ticket.getId());
                 contract.setMonthlyPrice(monthlyPriceSnapshot);
                 contract.setDepositAmount(depositSnapshot);
@@ -839,12 +892,17 @@ public class ContractServiceImpl implements ContractService {
                 if (contract.getReservationId() != null && reservationRepository != null) {
                         reservationRepository.findById(contract.getReservationId()).ifPresent(rsv -> {
                                 rsv.setStorageUnitId(newUnit.getId());
+                                rsv.setUnitTypeId(newUnit.getUnitTypeId());
                                 reservationRepository.save(rsv);
                         });
                 }
 
-                String notice = "Cơ sở đã đổi ô kho từ " + oldCode + " sang " + newUnit.getCode()
-                                + ". Giá thuê và tiền cọc giữ nguyên.";
+                String notice = isUpgradeCompensation
+                                ? "Cơ sở đã nâng hạng đền bù đổi ô kho từ " + oldCode + " sang " + newUnit.getCode()
+                                                + (newType != null ? " (" + newType.getName() + ")" : "")
+                                                + " do hết ô cùng loại. Giá thuê và tiền cọc giữ nguyên."
+                                : "Cơ sở đã đổi ô kho từ " + oldCode + " sang " + newUnit.getCode()
+                                                + ". Giá thuê và tiền cọc giữ nguyên.";
                 if (notice.length() > 500) {
                         notice = notice.substring(0, 500);
                 }
