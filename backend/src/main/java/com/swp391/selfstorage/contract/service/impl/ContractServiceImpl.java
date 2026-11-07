@@ -1574,10 +1574,17 @@ public class ContractServiceImpl implements ContractService {
                                         "Chỉ được dời lịch khi hợp đồng đang ở trạng thái Chờ nhận kho (PENDING_CHECK_IN)");
                 }
 
+                // BR-RES-06: Giới hạn tối đa 1 lần dời lịch duy nhất trên mỗi hợp đồng
+                if (contract.getRescheduleCount() >= 1) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                                        "Mỗi hợp đồng chỉ được phép dời ngày nhận kho tối đa 1 lần duy nhất (BR-RES-06)");
+                }
+
                 if (newStartDate.equals(contract.getStartDate())) {
                         throw new CustomException(ErrorCode.VALIDATION_FAILED, "Ngày bắt đầu mới phải khác ngày bắt đầu hiện tại");
                 }
 
+                long diffDays = 0;
                 // BR-RES-06: Ràng buộc báo trước tối thiểu 48 giờ
                 if (contract.getStartDate() != null) {
                         long hoursUntilStart = java.time.Duration.between(java.time.LocalDateTime.now(), contract.getStartDate().atStartOfDay()).toHours();
@@ -1586,7 +1593,7 @@ public class ContractServiceImpl implements ContractService {
                         }
 
                         // BR-RES-06: Giới hạn dời từ 1 đến tối đa 7 ngày
-                        long diffDays = java.time.temporal.ChronoUnit.DAYS.between(contract.getStartDate(), newStartDate);
+                        diffDays = java.time.temporal.ChronoUnit.DAYS.between(contract.getStartDate(), newStartDate);
                         if (diffDays > 7 || diffDays < 1) {
                                 throw new CustomException(ErrorCode.VALIDATION_FAILED, "Thời gian dời ngày nhận kho chỉ được phép từ 1 đến tối đa 7 ngày");
                         }
@@ -1691,6 +1698,8 @@ public class ContractServiceImpl implements ContractService {
                 if (targetUnitId != null) {
                         contract.setStorageUnitId(targetUnitId);
                 }
+                contract.setRescheduleCount(contract.getRescheduleCount() + 1);
+                contract.setRescheduledAt(OffsetDateTime.now());
                 contractRepository.save(contract);
 
                 // Đồng bộ sang Reservation
@@ -1707,8 +1716,11 @@ public class ContractServiceImpl implements ContractService {
                         }
                 }
 
-                log.info("Dời thời gian hợp đồng [{}] thành công sang: {} -> {}, ô kho: {}",
-                                contract.getCode(), newStartDate, newEndDate, targetUnitId);
+                long dailyRate = contract.getMonthlyPrice() / 30;
+                long rescheduleFee = diffDays * dailyRate;
+
+                log.info("Dời thời gian hợp đồng [{}] thành công sang: {} -> {}, ô kho: {}, phí dời ngày: {} đ, lần dời: {}",
+                                contract.getCode(), newStartDate, newEndDate, targetUnitId, rescheduleFee, contract.getRescheduleCount());
 
                 return toResponse(contract);
         }
@@ -1740,10 +1752,8 @@ public class ContractServiceImpl implements ContractService {
                         cancelPolicy = policyVersionRepository.findById(contract.getPolicyVersionId()).orElse(null);
                 }
 
-                int fullRefundHours = cancelPolicy != null && cancelPolicy.getCancelFullRefundHours() != null
-                                ? cancelPolicy.getCancelFullRefundHours()
-                                : 48;
-
+                // BR-CAN-01: Cooling-off trong vòng 48h sau thanh toán luôn hoàn 100%
+                int coolingOffHours = 48;
                 OffsetDateTime startDateTime = contract.getStartDate() != null
                                 ? contract.getStartDate().atStartOfDay().atOffset(now.getOffset())
                                 : now;
@@ -1751,7 +1761,7 @@ public class ContractServiceImpl implements ContractService {
 
                 boolean isWithinCoolingOff = false;
                 if (contract.getCreatedAt() != null) {
-                        isWithinCoolingOff = Duration.between(contract.getCreatedAt(), now).toHours() <= fullRefundHours;
+                        isWithinCoolingOff = Duration.between(contract.getCreatedAt(), now).toHours() <= coolingOffHours;
                 }
 
                 long deposit = contract.getDepositAmount();
@@ -1759,13 +1769,21 @@ public class ContractServiceImpl implements ContractService {
                 long totalPaid = deposit + rentalFee;
                 long refundAmount;
 
-                if (isWithinCoolingOff || hoursUntilStart >= fullRefundHours) {
-                        // BR-CAN-01: Hoàn 100% trong vòng 48h sau thanh toán hoặc trước nhận kho >= 48h
+                // BR-CAN-01: Hủy sớm >= 7 ngày (>= 168 giờ) hoặc trong 48h sau thanh toán -> Hoàn 100% cọc + 100% tiền thuê
+                if (isWithinCoolingOff || hoursUntilStart >= 168) {
                         refundAmount = totalPaid;
-                } else if (now.isBefore(startDateTime)) {
-                        BigDecimal lateRate = cancelPolicy != null ? cancelPolicy.getCancelLateRefundRate() : BigDecimal.ZERO;
-                        refundAmount = rentalFee + PolicyNumbers.share(deposit, lateRate);
-                } else {
+                }
+                // BR-CAN-02: Hủy lửng từ 2 đến 6 ngày trước ngày bắt đầu (48h <= hoursUntilStart < 168h) -> Phạt 50% cọc, hoàn 50% cọc + 100% tiền thuê
+                else if (hoursUntilStart >= 48) {
+                        long depositRefund = Math.round(deposit * 0.50);
+                        refundAmount = rentalFee + depositRefund;
+                }
+                // BR-CAN-03: Hủy sát nút dưới 48 giờ trước ngày bắt đầu -> Phạt 100% cọc, hoàn 100% tiền thuê
+                else if (now.isBefore(startDateTime)) {
+                        refundAmount = rentalFee;
+                }
+                // BR-CAN-08: Hủy trong thời gian ân hạn nhận kho (sau ngày bắt đầu) -> Phạt 100% cọc, hoàn tiền thuê trừ số ngày đã chiếm giữ
+                else {
                         int graceDays = cancelPolicy != null && cancelPolicy.getCheckinGraceDays() != null
                                         ? cancelPolicy.getCheckinGraceDays()
                                         : 10;
@@ -1773,12 +1791,11 @@ public class ContractServiceImpl implements ContractService {
                                         ? Math.max(0, ChronoUnit.DAYS.between(contract.getStartDate(), now.toLocalDate()))
                                         : 0;
                         if (heldDays > graceDays) {
-                                refundAmount = 0L;
+                                refundAmount = 0L; // Quá 10 ngày áp dụng Auto-Activation BR-CAN-04, không hủy hoàn tiền
                         } else {
-                                BigDecimal noShowRate = cancelPolicy != null ? cancelPolicy.getCancelNoShowRefundRate() : BigDecimal.ZERO;
                                 long daily = contract.getMonthlyPrice() / 30;
                                 long rentCharged = Math.min(rentalFee, daily * heldDays);
-                                refundAmount = Math.max(0, rentalFee - rentCharged) + PolicyNumbers.share(deposit, noShowRate);
+                                refundAmount = Math.max(0, rentalFee - rentCharged);
                         }
                 }
 
