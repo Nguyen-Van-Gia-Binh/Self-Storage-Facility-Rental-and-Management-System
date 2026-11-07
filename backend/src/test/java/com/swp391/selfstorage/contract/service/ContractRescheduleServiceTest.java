@@ -283,4 +283,32 @@ class ContractRescheduleServiceTest {
         assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
         assertTrue(ex.getMessage().contains("tối đa 1 lần duy nhất"), "Phải thông báo chỉ được dời tối đa 1 lần");
     }
+
+    @Test
+    @DisplayName("BUGFIX: Hợp đồng ban đầu chưa gán ô kho (chờ FM phân bổ) -> Khi dời ngày không được tự động gán ô kho")
+    void reschedule_preservesNullStorageUnit_whenInitiallyUnassigned() {
+        contract.setStorageUnitId(null);
+        reservation.setStorageUnitId(null);
+
+        LocalDate newStartDate = contract.getStartDate().plusDays(3);
+        RescheduleRentalPeriodRequest req = new RescheduleRentalPeriodRequest(newStartDate);
+
+        when(contractRepository.findById(100L)).thenReturn(Optional.of(contract));
+        when(storageUnitRepository.countBusyUnits(eq(1L), eq(2L), eq(newStartDate), any(), anyInt()))
+                .thenReturn(2L);
+        when(storageUnitRepository.countExploitableUnits(eq(1L), eq(2L), anyList()))
+                .thenReturn(5L);
+        when(reservationRepository.findById(500L)).thenReturn(Optional.of(reservation));
+        when(contractRepository.save(any(RentalContract.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ContractResponse response = contractService.rescheduleRentalPeriod(100L, req, 10L);
+
+        assertNotNull(response);
+        assertEquals(newStartDate, response.getStartDate());
+        assertEquals(newStartDate.plusMonths(1), response.getEndDateExclusive());
+        assertNull(response.getStorageUnitId(), "Hợp đồng chưa gán kho thì sau khi dời ngày vẫn phải giữ nguyên null!");
+        assertNull(contract.getStorageUnitId(), "Entity hợp đồng không được tự gán ô kho!");
+        assertNull(reservation.getStorageUnitId(), "Reservation không được tự gán ô kho!");
+        assertEquals(1, contract.getRescheduleCount());
+    }
 }

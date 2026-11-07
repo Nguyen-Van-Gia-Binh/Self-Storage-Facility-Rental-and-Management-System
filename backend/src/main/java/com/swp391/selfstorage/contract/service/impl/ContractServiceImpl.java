@@ -1852,86 +1852,103 @@ public class ContractServiceImpl implements ContractService {
                 Long reservationId = contract.getReservationId();
                 long excludeReservationId = reservationId != null ? reservationId : 0L;
 
-                StorageUnit currentUnit = currentUnitId != null
-                                ? storageUnitRepository.findById(currentUnitId).orElse(null)
-                                : null;
+                Long targetUnitId = null;
 
-                UnitConflictCheckResult currentUnitCheck = evaluateUnitAvailability(
-                                currentUnit, newStartDate, newEndDate, bufferDays, contract.getId(), excludeReservationId, now);
-
-                Long targetUnitId = currentUnitId;
-
-                if (!currentUnitCheck.available()) {
-                        // Tìm các ô kho khác cùng loại tại cơ sở (kể cả ô đang có khách nhưng sẽ hết hạn trước newStartDate)
-                        List<StorageUnit> candidateUnits = storageUnitRepository.findByFacilityId(facilityId)
-                                        .stream()
-                                        .filter(u -> Objects.equals(u.getUnitTypeId(), unitTypeId))
-                                        .filter(u -> !Objects.equals(u.getId(), currentUnitId))
-                                        .toList();
-
-                        StorageUnit availableUnit = null;
-                        List<String> candidateReasons = new ArrayList<>();
-
-                        for (StorageUnit candidate : candidateUnits) {
-                                UnitConflictCheckResult candCheck = evaluateUnitAvailability(
-                                                candidate, newStartDate, newEndDate, bufferDays, contract.getId(), excludeReservationId, now);
-                                if (candCheck.available()) {
-                                        availableUnit = candidate;
-                                        break;
-                                } else {
-                                        candidateReasons.add("Ô " + candidate.getCode() + ": " + candCheck.reason());
-                                }
-                        }
-
-                        if (availableUnit == null) {
-                                String currentUnitCode = currentUnit != null ? currentUnit.getCode() : ("U-" + currentUnitId);
+                if (currentUnitId == null) {
+                        // Hợp đồng chưa được phân bổ ô kho cụ thể (đang chờ Quản lý cơ sở phân bổ).
+                        // Chỉ kiểm tra công suất tổng thể của cơ sở cho loại kho này trong khoảng ngày mới.
+                        long busyUnits = storageUnitRepository.countBusyUnits(facilityId, unitTypeId, newStartDate, newEndDate, bufferDays);
+                        long exploitableUnits = storageUnitRepository.countExploitableUnits(
+                                        facilityId, unitTypeId, List.of(StorageUnitStatus.MAINTENANCE, StorageUnitStatus.OUT_OF_SERVICE));
+                        if (busyUnits >= exploitableUnits) {
                                 String unitTypeName = unitTypeRepository != null && unitTypeId != null
                                                 ? unitTypeRepository.findById(unitTypeId).map(UnitType::getName).orElse("Kho tiêu chuẩn")
                                                 : "Kho tiêu chuẩn";
                                 String facilityName = facilityRepository != null && facilityId != null
                                                 ? facilityRepository.findById(facilityId).map(Facility::getName).orElse("Cơ sở")
                                                 : "Cơ sở";
+                                throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE,
+                                                String.format("Cơ sở '%s' không còn đủ công suất trống cho loại kho '%s' trong khoảng thời gian mới (%s đến %s). Vui lòng chọn ngày khác!",
+                                                                facilityName, unitTypeName, newStartDate, newEndDate));
+                        }
+                        targetUnitId = null;
+                } else {
+                        StorageUnit currentUnit = storageUnitRepository.findById(currentUnitId).orElse(null);
+                        UnitConflictCheckResult currentUnitCheck = evaluateUnitAvailability(
+                                        currentUnit, newStartDate, newEndDate, bufferDays, contract.getId(), excludeReservationId, now);
 
-                                StringBuilder sb = new StringBuilder();
-                                sb.append(String.format("Ô kho hiện tại [%s] không khả dụng trong khung ngày mới (%s đến %s) do: %s.\n\n",
-                                                currentUnitCode, newStartDate, newEndDate, currentUnitCheck.reason()));
+                        if (currentUnitCheck.available()) {
+                                targetUnitId = currentUnitId;
+                        } else {
+                                // Tìm các ô kho khác cùng loại tại cơ sở (kể cả ô đang có khách nhưng sẽ hết hạn trước newStartDate)
+                                List<StorageUnit> candidateUnits = storageUnitRepository.findByFacilityId(facilityId)
+                                                .stream()
+                                                .filter(u -> Objects.equals(u.getUnitTypeId(), unitTypeId))
+                                                .filter(u -> !Objects.equals(u.getId(), currentUnitId))
+                                                .toList();
 
-                                if (candidateUnits.isEmpty()) {
-                                        sb.append(String.format("Tại cơ sở '%s' không còn ô kho nào khác thuộc loại '%s'.\n", facilityName, unitTypeName));
-                                } else {
-                                        sb.append(String.format("Hệ thống đã tự động kiểm tra các ô kho cùng loại '%s' tại cơ sở '%s' nhưng không thể bố trí:\n",
-                                                        unitTypeName, facilityName));
-                                        for (String r : candidateReasons) {
-                                                sb.append("• ").append(r).append("\n");
+                                StorageUnit availableUnit = null;
+                                List<String> candidateReasons = new ArrayList<>();
+
+                                for (StorageUnit candidate : candidateUnits) {
+                                        UnitConflictCheckResult candCheck = evaluateUnitAvailability(
+                                                        candidate, newStartDate, newEndDate, bufferDays, contract.getId(), excludeReservationId, now);
+                                        if (candCheck.available()) {
+                                                availableUnit = candidate;
+                                                break;
+                                        } else {
+                                                candidateReasons.add("Ô " + candidate.getCode() + ": " + candCheck.reason());
                                         }
                                 }
-                                sb.append("\nVui lòng chọn một ngày nhận kho khác phù hợp hơn!");
 
-                                throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, sb.toString());
-                        }
+                                if (availableUnit == null) {
+                                        String currentUnitCode = currentUnit != null ? currentUnit.getCode() : ("U-" + currentUnitId);
+                                        String unitTypeName = unitTypeRepository != null && unitTypeId != null
+                                                        ? unitTypeRepository.findById(unitTypeId).map(UnitType::getName).orElse("Kho tiêu chuẩn")
+                                                        : "Kho tiêu chuẩn";
+                                        String facilityName = facilityRepository != null && facilityId != null
+                                                        ? facilityRepository.findById(facilityId).map(Facility::getName).orElse("Cơ sở")
+                                                        : "Cơ sở";
 
-                        targetUnitId = availableUnit.getId();
+                                        StringBuilder sb = new StringBuilder();
+                                        sb.append(String.format("Ô kho hiện tại [%s] không khả dụng trong khung ngày mới (%s đến %s) do: %s.\n\n",
+                                                        currentUnitCode, newStartDate, newEndDate, currentUnitCheck.reason()));
 
-                        // Cập nhật ô kho cũ nếu không còn ai giữ
-                        if (currentUnit != null) {
-                                boolean stillReserved = reservationRepository.existsByStorageUnitIdAndStatusIn(
-                                                currentUnit.getId(), List.of(ReservationStatus.CONFIRMED, ReservationStatus.PENDING_PAYMENT));
-                                if (!stillReserved) {
-                                        currentUnit.setStatus(StorageUnitStatus.AVAILABLE);
-                                        storageUnitRepository.save(currentUnit);
+                                        if (candidateUnits.isEmpty()) {
+                                                sb.append(String.format("Tại cơ sở '%s' không còn ô kho nào khác thuộc loại '%s'.\n", facilityName, unitTypeName));
+                                        } else {
+                                                sb.append(String.format("Hệ thống đã tự động kiểm tra các ô kho cùng loại '%s' tại cơ sở '%s' nhưng không thể bố trí:\n",
+                                                                unitTypeName, facilityName));
+                                                for (String r : candidateReasons) {
+                                                        sb.append("• ").append(r).append("\n");
+                                                }
+                                        }
+                                        sb.append("\nVui lòng chọn một ngày nhận kho khác phù hợp hơn!");
+
+                                        throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, sb.toString());
                                 }
-                        }
 
-                        // Đổi trạng thái ô kho mới sang RESERVED
-                        availableUnit.setStatus(StorageUnitStatus.RESERVED);
-                        storageUnitRepository.save(availableUnit);
+                                targetUnitId = availableUnit.getId();
+
+                                // Cập nhật ô kho cũ nếu không còn ai giữ
+                                if (currentUnit != null) {
+                                        boolean stillReserved = reservationRepository.existsByStorageUnitIdAndStatusIn(
+                                                        currentUnit.getId(), List.of(ReservationStatus.CONFIRMED, ReservationStatus.PENDING_PAYMENT));
+                                        if (!stillReserved) {
+                                                currentUnit.setStatus(StorageUnitStatus.AVAILABLE);
+                                                storageUnitRepository.save(currentUnit);
+                                        }
+                                }
+
+                                // Đổi trạng thái ô kho mới sang RESERVED
+                                availableUnit.setStatus(StorageUnitStatus.RESERVED);
+                                storageUnitRepository.save(availableUnit);
+                        }
                 }
 
                 contract.setStartDate(newStartDate);
                 contract.setEndDateExclusive(newEndDate);
-                if (targetUnitId != null) {
-                        contract.setStorageUnitId(targetUnitId);
-                }
+                contract.setStorageUnitId(targetUnitId);
                 contract.setRescheduleCount(contract.getRescheduleCount() + 1);
                 contract.setRescheduledAt(OffsetDateTime.now());
                 contractRepository.save(contract);
@@ -1943,9 +1960,7 @@ public class ContractServiceImpl implements ContractService {
                                 Reservation rsv = rsvOpt.get();
                                 rsv.setStartDate(newStartDate);
                                 rsv.setEndDateExclusive(newEndDate);
-                                if (targetUnitId != null) {
-                                        rsv.setStorageUnitId(targetUnitId);
-                                }
+                                rsv.setStorageUnitId(targetUnitId);
                                 reservationRepository.save(rsv);
                         }
                 }

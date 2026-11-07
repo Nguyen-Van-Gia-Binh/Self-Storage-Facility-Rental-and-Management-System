@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { CreditCard, Landmark, ExternalLink, Info } from 'lucide-react';
+import { CreditCard, Landmark, ExternalLink, Info, Zap } from 'lucide-react';
+import { apiClient } from '@/api/client';
 
 const apiBase = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
@@ -14,6 +15,7 @@ export interface VnpayPayLinksProps {
 
 export function VnpayPayLinks({ orderCode, className = '' }: VnpayPayLinksProps) {
   const [redirectingBank, setRedirectingBank] = useState<'VNBANK' | 'INTCARD' | null>(null);
+  const [isMocking, setIsMocking] = useState(false);
 
   if (!orderCode) {
     return (
@@ -28,6 +30,20 @@ export function VnpayPayLinks({ orderCode, className = '' }: VnpayPayLinksProps)
     window.location.href = vnpayPayHref(orderCode, bankCode);
   };
 
+  const handleMockPay = async () => {
+    try {
+      setIsMocking(true);
+      await apiClient<any>(`/payments/vnpay/mock-complete/${orderCode}`, {
+        method: 'POST',
+      });
+      window.location.href = `/payment/checkout?orderCode=${orderCode}&result=ok`;
+    } catch (err: any) {
+      alert(err?.message || 'Lỗi khi giả lập thanh toán');
+    } finally {
+      setIsMocking(false);
+    }
+  };
+
   return (
     <div className={`space-y-4 ${className}`}>
       <div className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-wider">
@@ -40,7 +56,7 @@ export function VnpayPayLinks({ orderCode, className = '' }: VnpayPayLinksProps)
         <button
           type="button"
           onClick={() => handleRedirect('VNBANK')}
-          disabled={redirectingBank !== null}
+          disabled={redirectingBank !== null || isMocking}
           className="group relative p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-50/40 hover:bg-emerald-50 hover:border-emerald-600 transition-all text-left flex flex-col justify-between shadow-xs hover:shadow-md cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <div className="flex items-start justify-between gap-2">
@@ -73,7 +89,7 @@ export function VnpayPayLinks({ orderCode, className = '' }: VnpayPayLinksProps)
         <button
           type="button"
           onClick={() => handleRedirect('INTCARD')}
-          disabled={redirectingBank !== null}
+          disabled={redirectingBank !== null || isMocking}
           className="group relative p-4 rounded-2xl border border-slate-300 bg-white hover:border-slate-400 hover:bg-slate-50/80 transition-all text-left flex flex-col justify-between shadow-xs hover:shadow-md cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <div className="flex items-start justify-between gap-2">
@@ -101,6 +117,36 @@ export function VnpayPayLinks({ orderCode, className = '' }: VnpayPayLinksProps)
             </div>
           )}
         </button>
+
+        {/* Nút 3: Giả lập thanh toán nhanh (Dev/Demo Mock) */}
+        <div className="col-span-1 sm:col-span-2">
+          <button
+            type="button"
+            onClick={handleMockPay}
+            disabled={isMocking || redirectingBank !== null}
+            className="w-full p-3.5 rounded-2xl border-2 border-dashed border-amber-400 bg-amber-50/60 hover:bg-amber-100/70 hover:border-amber-500 transition-all text-left flex items-center justify-between shadow-2xs hover:shadow-xs cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+                <Zap className="w-5 h-5 fill-current" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                  <span>⚡ Giả lập thanh toán nhanh (Dành cho Kiểm thử / Demo)</span>
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-200 text-amber-900">Instant Mock</span>
+                </h4>
+                <p className="text-[11px] text-amber-800 mt-0.5">
+                  Xác nhận giao dịch thành công ngay lập tức không cần chuyển hướng sang website VNPay hay nhập mã thẻ NCB.
+                </p>
+              </div>
+            </div>
+            {isMocking ? (
+              <span className="text-xs font-bold text-amber-800 animate-pulse shrink-0 ml-2">Đang xử lý...</span>
+            ) : (
+              <span className="text-xs font-bold text-amber-700 group-hover:translate-x-0.5 transition-transform shrink-0 ml-2">Thanh toán ngay →</span>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Thông tin hỗ trợ test VNPay Sandbox */}
