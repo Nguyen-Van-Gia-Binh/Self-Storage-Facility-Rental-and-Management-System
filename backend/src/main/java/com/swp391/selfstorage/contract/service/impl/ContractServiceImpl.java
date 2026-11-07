@@ -39,6 +39,8 @@ import com.swp391.selfstorage.user.entity.UserRole;
 import com.swp391.selfstorage.user.service.AuditLogService;
 import com.swp391.selfstorage.user.service.UserService;
 import com.swp391.selfstorage.user.entity.AppUser;
+import com.swp391.selfstorage.user.entity.UserStatus;
+import com.swp391.selfstorage.user.repository.UserFacilityAssignmentRepository;
 import com.swp391.selfstorage.user.repository.UserRepository;
 import java.util.Collections;
 import java.util.HashSet;
@@ -97,6 +99,9 @@ public class ContractServiceImpl implements ContractService {
 
         @Autowired(required = false)
         private UserRepository userRepository;
+
+        @Autowired(required = false)
+        private UserFacilityAssignmentRepository userFacilityAssignmentRepository;
 
         @Autowired(required = false)
         private StaffDailyAssignmentRepository staffDailyAssignmentRepository;
@@ -1335,6 +1340,22 @@ public class ContractServiceImpl implements ContractService {
                         throw new CustomException(ErrorCode.CONTRACT_NOT_PENDING_RETURN);
                 }
 
+                if (request.getStaffId() != null) {
+                        if (userRepository != null) {
+                                AppUser staff = userRepository.findById(request.getStaffId())
+                                                .orElseThrow(() -> new CustomException(ErrorCode.STAFF_NOT_FOUND));
+                                if (staff.getStatus() != UserStatus.ACTIVE) {
+                                        throw new CustomException(ErrorCode.STAFF_NOT_ACTIVE);
+                                }
+                        }
+                        if (userFacilityAssignmentRepository != null) {
+                                boolean assigned = userFacilityAssignmentRepository.existsByUserIdAndFacilityId(request.getStaffId(), contract.getFacilityId());
+                                if (!assigned) {
+                                        throw new CustomException(ErrorCode.STAFF_NOT_IN_FACILITY);
+                                }
+                        }
+                }
+
                 ReturnRequest returnRequest = returnRequestRepository
                                 .findTopByContractIdOrderByCreatedAtDesc(contractId)
                                 .orElseGet(() -> ReturnRequest.builder()
@@ -1365,6 +1386,22 @@ public class ContractServiceImpl implements ContractService {
 
                 if (contract.getStatus() != ContractStatus.PENDING_CHECK_IN) {
                         throw new CustomException(ErrorCode.CONTRACT_NOT_PENDING_CHECKIN, "Hợp đồng không ở trạng thái chờ nhận kho");
+                }
+
+                if (request.getStaffId() != null) {
+                        if (userRepository != null) {
+                                AppUser staff = userRepository.findById(request.getStaffId())
+                                                .orElseThrow(() -> new CustomException(ErrorCode.STAFF_NOT_FOUND));
+                                if (staff.getStatus() != UserStatus.ACTIVE) {
+                                        throw new CustomException(ErrorCode.STAFF_NOT_ACTIVE);
+                                }
+                        }
+                        if (userFacilityAssignmentRepository != null) {
+                                boolean assigned = userFacilityAssignmentRepository.existsByUserIdAndFacilityId(request.getStaffId(), contract.getFacilityId());
+                                if (!assigned) {
+                                        throw new CustomException(ErrorCode.STAFF_NOT_IN_FACILITY);
+                                }
+                        }
                 }
 
                 if (staffDailyAssignmentRepository != null) {

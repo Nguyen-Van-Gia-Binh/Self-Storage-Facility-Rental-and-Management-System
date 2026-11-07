@@ -33,6 +33,7 @@ public class StaffAssignmentServiceImpl implements StaffAssignmentService {
     private final StaffDailyAssignmentRepository staffDailyAssignmentRepository;
     private final StaffSupportService staffSupportService;
     private final com.swp391.selfstorage.contract.repository.ReturnRequestRepository returnRequestRepository;
+    private final com.swp391.selfstorage.user.repository.UserFacilityAssignmentRepository userFacilityAssignmentRepository;
 
     @Override
     @Transactional
@@ -44,6 +45,10 @@ public class StaffAssignmentServiceImpl implements StaffAssignmentService {
 
         AppUser staff = userRepository.findById(staffId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "Không tìm thấy nhân viên với ID: " + staffId));
+
+        if (staff.getStatus() != com.swp391.selfstorage.user.entity.UserStatus.ACTIVE) {
+            throw new CustomException(ErrorCode.STAFF_NOT_ACTIVE);
+        }
 
         Long assignedBy = currentUser != null ? currentUser.getId() : 1L;
         String taskTypeStr = request.getTaskType() != null ? request.getTaskType().toUpperCase() : "GENERAL";
@@ -103,6 +108,13 @@ public class StaffAssignmentServiceImpl implements StaffAssignmentService {
                 } catch (Exception ex) {
                     log.warn("Gọi staffSupportService.assignStaff thất bại cho ticket #{}: {}", rawTaskId, ex.getMessage());
                 }
+            }
+        }
+
+        if (userFacilityAssignmentRepository != null && targetFacilityId != null && targetFacilityId > 0) {
+            boolean assignedToFacility = userFacilityAssignmentRepository.existsByUserIdAndFacilityId(staffId, targetFacilityId);
+            if (!assignedToFacility) {
+                throw new CustomException(ErrorCode.STAFF_NOT_IN_FACILITY);
             }
         }
 
