@@ -113,6 +113,13 @@ export const StorageUnitFloorPlanView: React.FC<StorageUnitFloorPlanViewProps> =
 
   const activeSimulatedDate = selectedDate || localSimulatedDate;
 
+  // Đồng bộ chế độ xem tương lai khi selectedDate được kích hoạt từ bên ngoài
+  React.useEffect(() => {
+    if (selectedDate) {
+      setHorizonFilter('FUTURE_DATE');
+    }
+  }, [selectedDate]);
+
   const handleSimulatedDateChange = (newDate: string) => {
     setLocalSimulatedDate(newDate);
     if (onDateChange) {
@@ -350,18 +357,13 @@ export const StorageUnitFloorPlanView: React.FC<StorageUnitFloorPlanViewProps> =
           <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-700 border border-brand-200/80 flex items-center justify-center shrink-0">
             <MapPin className="w-5 h-5" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-slate-900 tracking-tight">
-                Sơ đồ Mặt bằng 2D — {facilityName}
-              </h3>
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-200 font-mono">
-                {currentUnitTypeName}
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Định vị không gian thực địa, phân bổ tầng và trực quan hóa trạng thái từng ô kho hiện tại & tương lai
-            </p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="text-base font-bold text-slate-900 tracking-tight">
+              Sơ đồ Mặt bằng 2D — {facilityName}
+            </h3>
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-200 font-mono">
+              {currentUnitTypeName}
+            </span>
           </div>
         </div>
 
@@ -669,35 +671,6 @@ export const StorageUnitFloorPlanView: React.FC<StorageUnitFloorPlanViewProps> =
               <div className="mt-3 pt-3 border-t border-indigo-200/80 flex items-center justify-between text-xs font-bold text-indigo-900">
                 <span>Chuyển sang Tầng {nextFloorForStaircase}</span>
                 <ArrowRight className="w-4 h-4 text-indigo-600 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </div>
-
-            {/* Bảng chú giải trạng thái màu sắc & Nghiệp vụ */}
-            <div className="mt-3 bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs space-y-2.5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
-                Chú giải trạng thái & Kế hoạch
-              </span>
-              <div className="grid grid-cols-2 gap-2 text-[11px]">
-                <div className="flex items-center gap-1.5 font-medium text-emerald-800">
-                  <span className="w-3 h-3 rounded-md bg-emerald-400 border border-emerald-500 shrink-0" />
-                  <span>Trống ({floorUnits.filter((u) => u.status === 'AVAILABLE').length})</span>
-                </div>
-                <div className="flex items-center gap-1.5 font-medium text-indigo-800">
-                  <span className="w-3 h-3 rounded-md bg-indigo-300 border border-indigo-400 shrink-0" />
-                  <span>Đang thuê ({floorUnits.filter((u) => u.status === 'OCCUPIED').length})</span>
-                </div>
-                <div className="flex items-center gap-1.5 font-medium text-sky-800">
-                  <span className="w-3 h-3 rounded-md bg-sky-300 border border-sky-400 shrink-0" />
-                  <span>Sắp đón ({countsByHorizon.checkinCount})</span>
-                </div>
-                <div className="flex items-center gap-1.5 font-medium text-amber-800">
-                  <span className="w-3 h-3 rounded-md bg-amber-300 border border-amber-400 shrink-0" />
-                  <span>Sắp trả ({countsByHorizon.checkoutCount})</span>
-                </div>
-                <div className="flex items-center gap-1.5 font-medium text-rose-800 col-span-2">
-                  <span className="w-3 h-3 rounded-md bg-rose-300 border border-rose-400 shrink-0" />
-                  <span>Bảo trì ({floorUnits.filter((u) => u.status === 'MAINTENANCE').length})</span>
-                </div>
               </div>
             </div>
           </div>

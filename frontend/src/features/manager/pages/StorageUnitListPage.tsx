@@ -14,6 +14,7 @@ import {
   TrendingUp,
   Wrench,
   Calendar,
+  CalendarClock,
   MapPin,
   X,
   Table2,
@@ -52,7 +53,25 @@ const STATUS_FILTERS: { label: string; value: UnitStatus | 'ALL' }[] = [
 
 const PAGE_SIZE = 10;
 
+const getTodayStr = (): string => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const addDaysToStr = (baseDateStr: string, days: number): string => {
+  const d = new Date(baseDateStr);
+  d.setDate(d.getDate() + days);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export const StorageUnitListPage: React.FC = () => {
+  const todayStr = useMemo(() => getTodayStr(), []);
   const { facilityId, typeId } = useParams<{ facilityId: string; typeId: string }>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -362,6 +381,52 @@ export const StorageUnitListPage: React.FC = () => {
 
         {/* Action button */}
         <div className="flex flex-wrap items-center gap-2.5">
+          {/* Bộ điều khiển Xem trong tương lai & Chọn ngày */}
+          <div className="flex items-center gap-1.5 p-1 bg-purple-50/90 border border-purple-200/90 rounded-xl text-xs shadow-2xs">
+            <CalendarClock className="w-4 h-4 text-purple-700 ml-1 shrink-0" />
+            <span className="font-bold text-purple-950 text-xs hidden sm:inline">Dự phóng:</span>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => handleDateChange(e.target.value)}
+              className="px-2 py-1 bg-white border border-purple-200 rounded-lg text-xs font-mono font-bold text-purple-950 outline-none focus:ring-2 focus:ring-purple-400 cursor-pointer shadow-2xs"
+            />
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => handleDateChange(addDaysToStr(todayStr, 7))}
+                className="px-2 py-0.5 rounded bg-white hover:bg-purple-100 text-purple-800 font-semibold border border-purple-200 cursor-pointer text-[11px]"
+              >
+                +7d
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDateChange(addDaysToStr(todayStr, 14))}
+                className="px-2 py-0.5 rounded bg-white hover:bg-purple-100 text-purple-800 font-semibold border border-purple-200 cursor-pointer text-[11px]"
+              >
+                +14d
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDateChange(addDaysToStr(todayStr, 30))}
+                className="px-2 py-0.5 rounded bg-white hover:bg-purple-100 text-purple-800 font-semibold border border-purple-200 cursor-pointer text-[11px]"
+              >
+                +30d
+              </button>
+              {selectedDate && (
+                <button
+                  type="button"
+                  onClick={() => handleDateChange('')}
+                  className="px-2 py-0.5 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold border border-rose-200 cursor-pointer text-[11px] flex items-center gap-0.5"
+                  title="Quay lại hôm nay (thời gian thực)"
+                >
+                  <X className="w-3 h-3" />
+                  <span>Hôm nay</span>
+                </button>
+              )}
+            </div>
+          </div>
+
           {/* Bộ chuyển đổi chế độ xem: Sơ đồ 2D vs Bảng danh sách */}
           <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
             <button
@@ -409,142 +474,144 @@ export const StorageUnitListPage: React.FC = () => {
         </div>
       </div>
 
-      {/* KPI Summary Bar: Đưa thông tin Trống / Đang thuê / Bảo trì / Lấp đầy từ cấp ngoài vào cấp trong */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
-        {/* 1. Tổng số ô */}
-        <div
-          onClick={() => setStatusFilter('ALL')}
-          className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer bg-white shadow-2xs hover:shadow-sm ${
-            statusFilter === 'ALL'
-              ? 'border-brand-500 ring-2 ring-brand-500/20 bg-brand-50/20'
-              : 'border-slate-200 hover:border-slate-300'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-500">Tổng ô kho</span>
-            <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600">
-              <Layers className="w-3.5 h-3.5" />
+      {/* KPI Summary Bar: Chỉ hiển thị trong chế độ Bảng danh sách để tránh trùng lặp thông tin với Sơ đồ 2D */}
+      {viewMode === 'table' && (
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
+          {/* 1. Tổng số ô */}
+          <div
+            onClick={() => setStatusFilter('ALL')}
+            className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer bg-white shadow-2xs hover:shadow-sm ${
+              statusFilter === 'ALL'
+                ? 'border-brand-500 ring-2 ring-brand-500/20 bg-brand-50/20'
+                : 'border-slate-200 hover:border-slate-300'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-slate-500">Tổng ô kho</span>
+              <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600">
+                <Layers className="w-3.5 h-3.5" />
+              </div>
             </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-1">
-            <span className="text-xl font-bold font-mono text-slate-900">{statsOverview.total}</span>
-            <span className="text-xs text-slate-400">ô</span>
-          </div>
-          <span className="text-[10px] text-slate-400 mt-1 block">Quy mô hiện tại</span>
-        </div>
-
-        {/* 2. Ô còn trống */}
-        <div
-          onClick={() => setStatusFilter('AVAILABLE')}
-          className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer bg-white shadow-2xs hover:shadow-sm ${
-            statusFilter === 'AVAILABLE'
-              ? 'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/30'
-              : 'border-emerald-200/80 hover:border-emerald-300'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-emerald-700">Ô còn trống</span>
-            <div className="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-200/80 flex items-center justify-center text-emerald-600">
-              <CheckCircle2 className="w-3.5 h-3.5" />
+            <div className="mt-2 flex items-baseline gap-1">
+              <span className="text-xl font-bold font-mono text-slate-900">{statsOverview.total}</span>
+              <span className="text-xs text-slate-400">ô</span>
             </div>
+            <span className="text-[10px] text-slate-400 mt-1 block">Quy mô hiện tại</span>
           </div>
-          <div className="mt-2 flex items-baseline gap-1">
-            <span className="text-xl font-bold font-mono text-emerald-700">{statsOverview.available}</span>
-            <span className="text-xs text-emerald-600">ô</span>
-          </div>
-          <span className="text-[10px] text-emerald-600 font-medium mt-1 block">Sẵn sàng nhận khách</span>
-        </div>
 
-        {/* 3. Đang cho thuê */}
-        <div
-          onClick={() => setStatusFilter('OCCUPIED')}
-          className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer bg-white shadow-2xs hover:shadow-sm ${
-            statusFilter === 'OCCUPIED'
-              ? 'border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/30'
-              : 'border-amber-200/80 hover:border-amber-300'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-amber-700">Đang thuê</span>
-            <div className="w-7 h-7 rounded-lg bg-amber-50 border border-amber-200/80 flex items-center justify-center text-amber-600">
-              <AlertTriangle className="w-3.5 h-3.5" />
+          {/* 2. Ô còn trống */}
+          <div
+            onClick={() => setStatusFilter('AVAILABLE')}
+            className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer bg-white shadow-2xs hover:shadow-sm ${
+              statusFilter === 'AVAILABLE'
+                ? 'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/30'
+                : 'border-emerald-200/80 hover:border-emerald-300'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-emerald-700">Ô còn trống</span>
+              <div className="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-200/80 flex items-center justify-center text-emerald-600">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+              </div>
             </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-1">
-            <span className="text-xl font-bold font-mono text-amber-700">{statsOverview.occupied}</span>
-            <span className="text-xs text-amber-600">ô</span>
-          </div>
-          <span className="text-[10px] text-amber-600 font-medium mt-1 block">Hợp đồng hiệu lực</span>
-        </div>
-
-        {/* 4. Đang bảo trì */}
-        <div
-          onClick={() => setStatusFilter('MAINTENANCE')}
-          className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer bg-white shadow-2xs hover:shadow-sm ${
-            statusFilter === 'MAINTENANCE'
-              ? 'border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/30'
-              : 'border-rose-200/80 hover:border-rose-300'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-rose-700">Đang bảo trì</span>
-            <div className="w-7 h-7 rounded-lg bg-rose-50 border border-rose-200/80 flex items-center justify-center text-rose-600">
-              <Wrench className="w-3.5 h-3.5" />
+            <div className="mt-2 flex items-baseline gap-1">
+              <span className="text-xl font-bold font-mono text-emerald-700">{statsOverview.available}</span>
+              <span className="text-xs text-emerald-600">ô</span>
             </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-1">
-            <span className="text-xl font-bold font-mono text-rose-700">{statsOverview.maintenance}</span>
-            <span className="text-xs text-rose-600">ô</span>
-          </div>
-          <span className="text-[10px] text-rose-600 font-medium mt-1 block">Tạm ngưng khai thác</span>
-        </div>
-
-        {/* 5. Tỷ lệ lấp đầy */}
-        <div className="col-span-2 md:col-span-4 lg:col-span-1 p-4 rounded-2xl border border-slate-200/90 bg-gradient-to-br from-white to-slate-50 shadow-2xs flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-700 flex items-center gap-1">
-              <TrendingUp className="w-3.5 h-3.5 text-slate-400" />
-              Tỷ lệ lấp đầy
-            </span>
-            <span
-              className={`text-xs font-mono font-bold ${
-                statsOverview.isFull
-                  ? 'text-rose-600'
-                  : statsOverview.isNearFull
-                  ? 'text-amber-600'
-                  : 'text-emerald-600'
-              }`}
-            >
-              {statsOverview.occupancyRate.toFixed(0)}%
-            </span>
+            <span className="text-[10px] text-emerald-600 font-medium mt-1 block">Sẵn sàng nhận khách</span>
           </div>
 
-          <div className="my-2.5">
-            <div className="w-full bg-slate-200/80 rounded-full h-2 overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ${
+          {/* 3. Đang cho thuê */}
+          <div
+            onClick={() => setStatusFilter('OCCUPIED')}
+            className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer bg-white shadow-2xs hover:shadow-sm ${
+              statusFilter === 'OCCUPIED'
+                ? 'border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/30'
+                : 'border-amber-200/80 hover:border-amber-300'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-amber-700">Đang thuê</span>
+              <div className="w-7 h-7 rounded-lg bg-amber-50 border border-amber-200/80 flex items-center justify-center text-amber-600">
+                <AlertTriangle className="w-3.5 h-3.5" />
+              </div>
+            </div>
+            <div className="mt-2 flex items-baseline gap-1">
+              <span className="text-xl font-bold font-mono text-amber-700">{statsOverview.occupied}</span>
+              <span className="text-xs text-amber-600">ô</span>
+            </div>
+            <span className="text-[10px] text-amber-600 font-medium mt-1 block">Hợp đồng hiệu lực</span>
+          </div>
+
+          {/* 4. Đang bảo trì */}
+          <div
+            onClick={() => setStatusFilter('MAINTENANCE')}
+            className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer bg-white shadow-2xs hover:shadow-sm ${
+              statusFilter === 'MAINTENANCE'
+                ? 'border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/30'
+                : 'border-rose-200/80 hover:border-rose-300'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-rose-700">Đang bảo trì</span>
+              <div className="w-7 h-7 rounded-lg bg-rose-50 border border-rose-200/80 flex items-center justify-center text-rose-600">
+                <Wrench className="w-3.5 h-3.5" />
+              </div>
+            </div>
+            <div className="mt-2 flex items-baseline gap-1">
+              <span className="text-xl font-bold font-mono text-rose-700">{statsOverview.maintenance}</span>
+              <span className="text-xs text-rose-600">ô</span>
+            </div>
+            <span className="text-[10px] text-rose-600 font-medium mt-1 block">Tạm ngưng khai thác</span>
+          </div>
+
+          {/* 5. Tỷ lệ lấp đầy */}
+          <div className="col-span-2 md:col-span-4 lg:col-span-1 p-4 rounded-2xl border border-slate-200/90 bg-gradient-to-br from-white to-slate-50 shadow-2xs flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-slate-700 flex items-center gap-1">
+                <TrendingUp className="w-3.5 h-3.5 text-slate-400" />
+                Tỷ lệ lấp đầy
+              </span>
+              <span
+                className={`text-xs font-mono font-bold ${
                   statsOverview.isFull
-                    ? 'bg-rose-500'
+                    ? 'text-rose-600'
                     : statsOverview.isNearFull
-                    ? 'bg-amber-500'
-                    : 'bg-emerald-500'
+                    ? 'text-amber-600'
+                    : 'text-emerald-600'
                 }`}
-                style={{ width: `${Math.min(100, Math.max(0, statsOverview.occupancyRate))}%` }}
-              />
+              >
+                {statsOverview.occupancyRate.toFixed(0)}%
+              </span>
             </div>
-          </div>
 
-          <span className="text-[10px] text-slate-400">
-            {statsOverview.isFull
-              ? 'Đã kín chỗ 100%'
-              : statsOverview.isNearFull
-              ? 'Sắp lấp đầy (≥75%)'
-              : statsOverview.available > 0
-              ? `Còn ${statsOverview.available} ô sẵn sàng`
-              : '0 ô trống khả dụng'}
-          </span>
+            <div className="my-2.5">
+              <div className="w-full bg-slate-200/80 rounded-full h-2 overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    statsOverview.isFull
+                      ? 'bg-rose-500'
+                      : statsOverview.isNearFull
+                      ? 'bg-amber-500'
+                      : 'bg-emerald-500'
+                  }`}
+                  style={{ width: `${Math.min(100, Math.max(0, statsOverview.occupancyRate))}%` }}
+                />
+              </div>
+            </div>
+
+            <span className="text-[10px] text-slate-400">
+              {statsOverview.isFull
+                ? 'Đã kín chỗ 100%'
+                : statsOverview.isNearFull
+                ? 'Sắp lấp đầy (≥75%)'
+                : statsOverview.available > 0
+                ? `Còn ${statsOverview.available} ô sẵn sàng`
+                : '0 ô trống khả dụng'}
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
       {error && (
         <div className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-2xl p-4 flex items-center justify-between shadow-2xs">
@@ -558,6 +625,32 @@ export const StorageUnitListPage: React.FC = () => {
         </div>
       )}
 
+      {/* Banner Chế độ xem theo ngày / Dự phóng tương lai: Hiển thị chung cho cả Sơ đồ 2D lẫn Bảng */}
+      {selectedDate && (
+        <div className="bg-purple-50 border border-purple-200/90 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-purple-900 shadow-2xs">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+              <CalendarClock className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="font-bold">Chế độ xem dự phóng tương lai: </span>
+              <span>
+                Đang hiển thị hiện trạng ô kho và khách thuê tại ngày{' '}
+                <strong className="underline decoration-purple-400 font-mono font-bold">
+                  {selectedDate.split('-').reverse().join('/')}
+                </strong>
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={() => handleDateChange('')}
+            className="px-3 py-1.5 bg-white border border-purple-300 text-purple-800 hover:bg-purple-100 rounded-xl font-semibold transition-colors cursor-pointer shrink-0"
+          >
+            Quay về hôm nay (Thời gian thực)
+          </button>
+        </div>
+      )}
+
       {/* Nội dung chính: Sơ đồ 2D mặt bằng vs Bảng danh sách chi tiết */}
       {viewMode === 'floorplan' ? (
         <StorageUnitFloorPlanView
@@ -566,6 +659,8 @@ export const StorageUnitListPage: React.FC = () => {
           currentUnitTypeId={typeIdNum}
           currentUnitTypeName={cleanUnitTypeName(unitType?.name) || 'Loại kho'}
           facilityName={facility?.name}
+          selectedDate={selectedDate}
+          onDateChange={handleDateChange}
           onSelectUnit={(unit) =>
             navigate(
               `/manager/facilities/${facilityIdNum}/unit-types/${unit.unitTypeId || typeIdNum}/units/${unit.id}`
@@ -575,35 +670,6 @@ export const StorageUnitListPage: React.FC = () => {
         />
       ) : (
         <>
-          {/* Banner Chế độ xem theo ngày / Dự phóng tương lai */}
-          {selectedDate && (
-            <div className="bg-amber-50 border border-amber-200/90 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-900 shadow-2xs">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
-                  <Calendar className="w-4 h-4" />
-                </div>
-                <div>
-                  <span className="font-bold">
-                    {selectedDate > new Date().toISOString().substring(0, 10)
-                      ? 'Chế độ dự phóng tương lai: '
-                      : 'Chế độ lọc theo ngày: '}
-                  </span>
-                  <span>
-                    Đang hiển thị hiện trạng ô kho và khách thuê tại ngày{' '}
-                    <strong className="underline decoration-amber-400 font-mono font-bold">
-                      {selectedDate.split('-').reverse().join('/')}
-                    </strong>
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={() => handleDateChange('')}
-                className="px-3 py-1.5 bg-white border border-amber-300 text-amber-800 hover:bg-amber-100 rounded-xl font-semibold transition-colors cursor-pointer shrink-0"
-              >
-                Quay về hôm nay (Thời gian thực)
-              </button>
-            </div>
-          )}
 
           {/* Tabs Filter theo Trạng thái & Dropdown Tầng & Bộ lọc Ngày & Ô tìm kiếm */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
