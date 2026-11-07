@@ -6,7 +6,9 @@ import {
   Check,
   CheckCircle2,
   Layers,
+  Mail,
   MapPin,
+  Phone,
   RefreshCw,
   User,
   X,
@@ -275,7 +277,7 @@ export const AllocationPage: React.FC = () => {
           <table className="w-full text-sm text-left">
             <thead className="bg-slate-50/90 text-slate-600 text-xs font-semibold border-b border-slate-100 uppercase tracking-wider">
               <tr>
-                <th className="px-4 py-3">Mã đơn</th>
+                <th className="px-4 py-3">Mã đơn & Khách hàng</th>
                 <th className="px-4 py-3">Hạng kho khách đặt</th>
                 <th className="px-4 py-3">Ngày nhận kho (Khách book)</th>
                 <th className="px-4 py-3">Thời hạn thuê</th>
@@ -315,12 +317,21 @@ export const AllocationPage: React.FC = () => {
                       key={row.id}
                       className="hover:bg-slate-50/80 transition-colors group"
                     >
-                      {/* Cột 1: Mã đơn */}
+                      {/* Cột 1: Mã đơn & Khách hàng */}
                       <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200/80 text-xs">
+                        <div className="flex flex-col gap-1">
+                          <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200/80 text-xs w-fit">
                             {row.code}
                           </span>
+                          <div className="flex items-center gap-1.5 text-xs text-slate-700 font-semibold mt-0.5">
+                            <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <span>{row.customerName || `Khách hàng #${row.customerId || '---'}`}</span>
+                          </div>
+                          {row.customerPhone && (
+                            <span className="text-[11px] text-slate-500 font-mono">
+                              {row.customerPhone}
+                            </span>
+                          )}
                         </div>
                       </td>
 
@@ -423,6 +434,38 @@ export const AllocationPage: React.FC = () => {
 
             {/* Modal Body */}
             <div className="p-5 sm:p-6 space-y-4 text-sm">
+              {/* Thông tin khách hàng */}
+              <div className="p-3.5 bg-sky-50/70 rounded-2xl border border-sky-100/90 flex flex-col gap-2">
+                <span className="text-[11px] font-bold text-sky-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-sky-600" />
+                  <span>Thông tin khách hàng</span>
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="text-slate-500 block text-[11px]">Họ và tên:</span>
+                    <strong className="text-slate-900 text-sm font-semibold">
+                      {selected.customerName || `Khách hàng #${selected.customerId || '---'}`}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-[11px]">Số điện thoại:</span>
+                    <div className="flex items-center gap-1 text-slate-800 font-medium">
+                      <Phone className="w-3.5 h-3.5 text-slate-400" />
+                      <span>{selected.customerPhone || 'Chưa cập nhật'}</span>
+                    </div>
+                  </div>
+                  {selected.customerEmail && (
+                    <div className="sm:col-span-2">
+                      <span className="text-slate-500 block text-[11px]">Email liên hệ:</span>
+                      <div className="flex items-center gap-1 text-slate-800 font-medium">
+                        <Mail className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{selected.customerEmail}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Thẻ tóm tắt thông tin đơn và ô được chọn */}
               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-1">
