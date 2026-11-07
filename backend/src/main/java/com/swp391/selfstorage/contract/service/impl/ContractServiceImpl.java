@@ -316,6 +316,23 @@ public class ContractServiceImpl implements ContractService {
                         contract.setEndDateExclusive(LocalDate.now()); // Ngày kết thúc chính là ngày check-in!
                         contractRepository.save(contract);
 
+                        if (returnRequestRepository != null) {
+                                returnRequestRepository.save(ReturnRequest.builder()
+                                                .contractId(contractId)
+                                                .requestedReturnDate(LocalDate.now())
+                                                .status(ReturnRequestStatus.PENDING)
+                                                .isIntact(false)
+                                                .conditionNote("Hủy nhận kho do sự cố mặt bằng: " + request.getRejectionReason()
+                                                                + (request.getReportedDefects() != null && !request.getReportedDefects().isBlank()
+                                                                                ? " — " + request.getReportedDefects()
+                                                                                : ""))
+                                                .inspectedAt(OffsetDateTime.now())
+                                                .inspectedBy(staffId)
+                                                .damageCost(0L)
+                                                .depositRefundAmount(contract.getDepositAmount())
+                                                .build());
+                        }
+
                         handoverRecordRepository.save(HandoverRecord.builder()
                                         .contractId(contractId)
                                         .staffId(staffId)
@@ -1193,6 +1210,23 @@ public class ContractServiceImpl implements ContractService {
                 RentalContract contract = contractOpt
                                 .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
 
+                if (contract.getStatus() == ContractStatus.TERMINATED) {
+                        long rentAmount = contract.getMonthlyPrice() * Math.max(1, contract.getRentalMonths());
+                        long deposit = contract.getDepositAmount();
+                        long totalPaid = rentAmount + deposit;
+                        return SettlementPreviewResponse.builder()
+                                        .contractId(contract.getId())
+                                        .depositAmount(deposit)
+                                        .damageCost(0L)
+                                        .overdueFee(0L)
+                                        .unpaidExtraCharges(0L)
+                                        .depositRefundAmount(totalPaid)
+                                        .payableAmount(0L)
+                                        .earlyRentRefund(rentAmount)
+                                        .earlyReturn(false)
+                                        .build();
+                }
+
                 ReturnRequest returnReq = returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(contractId)
                                 .orElse(ReturnRequest.builder().damageCost(0).build());
 
@@ -1238,12 +1272,28 @@ public class ContractServiceImpl implements ContractService {
                                 .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
 
                 if (contract.getStatus() != ContractStatus.PENDING_RETURN
-                                && contract.getStatus() != ContractStatus.OVERDUE) {
+                                && contract.getStatus() != ContractStatus.OVERDUE
+                                && contract.getStatus() != ContractStatus.TERMINATED) {
                         throw new CustomException(ErrorCode.CONTRACT_NOT_PENDING_RETURN);
                 }
 
                 ReturnRequest returnReq = returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(contractId)
-                                .orElseThrow(() -> new CustomException(ErrorCode.RETURN_REQUEST_NOT_FOUND));
+                                .orElseGet(() -> ReturnRequest.builder()
+                                                .contractId(contractId)
+                                                .requestedReturnDate(LocalDate.now())
+                                                .status(ReturnRequestStatus.PENDING)
+                                                .inspectedAt(OffsetDateTime.now())
+                                                .inspectedBy(managerId)
+                                                .damageCost(0L)
+                                                .depositRefundAmount(contract.getDepositAmount())
+                                                .build());
+
+                if (contract.getStatus() == ContractStatus.TERMINATED) {
+                        long rentAmount = contract.getMonthlyPrice() * Math.max(1, contract.getRentalMonths());
+                        long depositAmount = contract.getDepositAmount();
+                        long totalRefund = rentAmount + depositAmount;
+                        return closeSettledContract(contract, returnReq, managerId, totalRefund, 0L);
+                }
 
                 if (returnReq.getInspectedAt() == null) {
                         throw new CustomException(ErrorCode.VALIDATION_FAILED,
@@ -2106,6 +2156,27 @@ public class ContractServiceImpl implements ContractService {
                 } else {
                         r.setAccruedOverdueFee(c.getOverdueFeeAccrued());
                 }
+
+                if (supportRequestRepository != null) {
+                        supportRequestRepository.findTopByContractIdOrderByCreatedAtDesc(c.getId()).ifPresent(ticket -> {
+                                if (Boolean.TRUE.equals(ticket.getRelocationRequired())
+                                                && ticket.getStatus() != com.swp391.selfstorage.support.entity.SupportStatus.RESOLVED
+                                                && ticket.getStatus() != com.swp391.selfstorage.support.entity.SupportStatus.CLOSED
+                                                && ticket.getStatus() != com.swp391.selfstorage.support.entity.SupportStatus.AUTO_CLOSED) {
+                                        r.setRelocationEligible(true);
+                                        r.setOpenSupportRequestId(ticket.getId());
+                                }
+                        });
+                }
+                if ((r.getRelocationEligible() == null || !r.getRelocationEligible()) && c.getStorageUnitId() != null && storageUnitRepository != null) {
+                        storageUnitRepository.findById(c.getStorageUnitId()).ifPresent(su -> {
+                                if (su.getStatus() == StorageUnitStatus.MAINTENANCE
+                                                && (c.getStatus() == ContractStatus.PENDING_CHECK_IN || c.getStatus() == ContractStatus.ACTIVE || c.getStatus() == ContractStatus.TERMINATED)) {
+                                        r.setRelocationEligible(true);
+                                }
+                        });
+                }
+
                 return r;
         }
 

@@ -48,4 +48,6 @@ public class ContractResponse {
     private java.time.LocalTime scheduledEndTime;
     private Integer rescheduleCount;
     private java.time.OffsetDateTime rescheduledAt;
+    private Boolean relocationEligible;
+    private Long openSupportRequestId;
 }

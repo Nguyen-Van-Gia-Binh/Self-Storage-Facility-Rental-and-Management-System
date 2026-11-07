@@ -133,6 +133,8 @@ export interface CheckInContract {
   accessCode?: string;
   assignedStaffId?: number;
   assignedStaffName?: string;
+  isAwaitingRelocation?: boolean;
+  originalDefectiveUnitCode?: string;
 }
 
 export interface CheckInSubmitRequest {
@@ -160,12 +162,14 @@ export interface CheckInSubmitResponse {
 export interface HandoverRejectRequest {
   rejectionReason: string;
   reportedDefects?: string;
+  rejectionAction?: 'RELOCATE' | 'TERMINATE_REFUND';
 }
 
 export interface HandoverRejectResponse {
   contractId: number;
-  status: 'TERMINATED';
-  storageUnitStatus: 'MAINTENANCE';
+  contractStatus?: string;
+  status?: string;
+  storageUnitStatus: string;
   message: string;
 }
 

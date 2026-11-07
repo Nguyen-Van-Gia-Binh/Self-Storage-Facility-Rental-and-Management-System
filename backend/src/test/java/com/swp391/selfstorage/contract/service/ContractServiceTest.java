@@ -48,9 +48,13 @@ class ContractServiceTest {
     @Mock
     private ReturnRequestRepository returnRequestRepository;
     @Mock
+    private ContractExtraChargeRepository extraChargeRepository;
+    @Mock
     private com.swp391.selfstorage.support.repository.StaffDailyAssignmentRepository staffDailyAssignmentRepository;
     @Mock
     private SupportRequestRepository supportRequestRepository;
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
     @InjectMocks
     private ContractServiceImpl contractService;
 
@@ -569,5 +573,53 @@ class ContractServiceTest {
         assertEquals(400_000L, res.getAccruedOverdueFee());
         verify(policyVersionRepository, never())
                 .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any());
+    }
+
+    @Test
+    @DisplayName("Nhánh 2: getSettlementPreview & approveSettlement cho hợp đồng TERMINATED do từ chối bàn giao -> hoàn 100% (cọc + tiền thuê)")
+    void shouldPreviewAndApproveSettlement_whenContractTerminatedAtCheckIn() {
+        RentalContract contract = RentalContract.builder()
+                .id(888L).code("CTR-888").facilityId(1L).customerId(10L).storageUnitId(42L).unitTypeId(7L)
+                .status(ContractStatus.TERMINATED)
+                .startDate(LocalDate.now())
+                .endDateExclusive(LocalDate.now())
+                .rentalMonths(1)
+                .monthlyPrice(500_000L)
+                .depositAmount(500_000L)
+                .depositBalance(500_000L)
+                .build();
+
+        ReturnRequest returnReq = ReturnRequest.builder()
+                .id(999L)
+                .contractId(888L)
+                .requestedReturnDate(LocalDate.now())
+                .status(ReturnRequestStatus.PENDING)
+                .inspectedAt(OffsetDateTime.now())
+                .inspectedBy(5L)
+                .damageCost(0L)
+                .build();
+
+        when(contractRepository.findByIdAndFacilityIdIn(888L, List.of(1L))).thenReturn(Optional.of(contract));
+        when(contractRepository.save(any(RentalContract.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(888L)).thenReturn(Optional.of(returnReq));
+        when(returnRequestRepository.save(any(ReturnRequest.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(extraChargeRepository.findByContractIdAndStatus(888L, ExtraChargeStatus.UNPAID)).thenReturn(List.of());
+
+        // 1. Preview
+        SettlementPreviewResponse preview = contractService.getSettlementPreview(888L, List.of(1L));
+        assertNotNull(preview);
+        assertEquals(500_000L, preview.getDepositAmount());
+        assertEquals(1_000_000L, preview.getDepositRefundAmount()); // 100% = cọc 500k + thuê 500k
+        assertEquals(0L, preview.getPayableAmount());
+
+        // 2. Approve Settlement
+        SettlementApprovalRequest req = SettlementApprovalRequest.builder()
+                .approvedNotes("Duyệt hoàn trả 100% do sự cố dột kho lúc bàn giao")
+                .build();
+        SettlementApprovalResponse approval = contractService.approveSettlement(888L, req, 1L, List.of(1L));
+        assertNotNull(approval);
+        assertEquals(ContractStatus.CLOSED, contract.getStatus());
+        assertEquals(1_000_000L, approval.getDepositRefundAmount());
+        assertEquals(0L, approval.getPayableAmount());
     }
 }
