@@ -227,15 +227,17 @@ public class ContractServiceImpl implements ContractService {
                 String conditionText = (request.getConditionNote() != null && !request.getConditionNote().isBlank())
                                 ? request.getConditionNote()
                                 : request.getNotes();
-                handoverRecordRepository.save(HandoverRecord.builder()
-                                .contractId(contractId)
-                                .staffId(staffId)
-                                .handoverAt(OffsetDateTime.now())
-                                .conditionNote(conditionText)
-                                .customerConfirmed(true)
-                                .customerConfirmedAt(OffsetDateTime.now())
-                                .rejected(false)
-                                .build());
+                // Upsert: Cập nhật nếu đã có record trước đó (ví dụ từ chối nhận kho trước khi đổi ô)
+                HandoverRecord checkinRecord = handoverRecordRepository.findByContractId(contractId)
+                                .orElse(HandoverRecord.builder().contractId(contractId).build());
+                checkinRecord.setStaffId(staffId);
+                checkinRecord.setHandoverAt(OffsetDateTime.now());
+                checkinRecord.setConditionNote(conditionText);
+                checkinRecord.setCustomerConfirmed(true);
+                checkinRecord.setCustomerConfirmedAt(OffsetDateTime.now());
+                checkinRecord.setRejected(false);
+                checkinRecord.setRejectionReason(null);
+                handoverRecordRepository.save(checkinRecord);
 
                 reservationRepository.findById(contract.getReservationId()).ifPresent(rsv -> {
                         rsv.setStatus(ReservationStatus.FULFILLED);
