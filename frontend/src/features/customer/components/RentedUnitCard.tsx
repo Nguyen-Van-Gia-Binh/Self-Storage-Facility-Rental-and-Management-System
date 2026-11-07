@@ -298,14 +298,26 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
+                  disabled={(contract.rescheduleCount ?? 0) >= 1}
                   onClick={(e) => {
                     e.stopPropagation();
-                    onReschedulePeriod(contract);
+                    if ((contract.rescheduleCount ?? 0) < 1) {
+                      onReschedulePeriod(contract);
+                    }
                   }}
-                  className="text-xs font-semibold text-emerald-700 border-emerald-300 hover:bg-emerald-50 cursor-pointer"
+                  title={
+                    (contract.rescheduleCount ?? 0) >= 1
+                      ? 'Mỗi hợp đồng chỉ được phép dời lịch nhận kho tối đa 1 lần duy nhất (BR-RES-06)'
+                      : 'Yêu cầu dời ngày bắt đầu nhận kho (trước ít nhất 48h)'
+                  }
+                  className={`text-xs font-semibold ${
+                    (contract.rescheduleCount ?? 0) >= 1
+                      ? 'opacity-50 cursor-not-allowed bg-slate-100 text-slate-400 border-slate-200'
+                      : 'text-emerald-700 border-emerald-300 hover:bg-emerald-50 cursor-pointer'
+                  }`}
                 >
                   <Calendar className="w-3.5 h-3.5 mr-1 text-emerald-600" />
-                  Dời ngày
+                  {(contract.rescheduleCount ?? 0) >= 1 ? 'Đã dời lịch (1/1)' : 'Dời ngày'}
                 </Button>
               )}
               {onCancelPendingCheckIn && (

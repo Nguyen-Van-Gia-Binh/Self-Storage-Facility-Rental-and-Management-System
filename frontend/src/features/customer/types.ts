@@ -134,6 +134,8 @@ export interface RentedContract {
   relocationSupportRequestId?: number;
   relocationSupportRequestCode?: string;
   relocationReason?: string;
+  rescheduleCount?: number;
+  rescheduledAt?: string;
   createdAt?: string;
 }
 
