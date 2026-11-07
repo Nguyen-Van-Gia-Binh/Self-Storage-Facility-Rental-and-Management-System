@@ -44,7 +44,7 @@ class StorageUnitControllerTest {
                 .isActive(true)
                 .build();
 
-        when(storageUnitService.getStorageUnitsByFacility(eq(1L), any(), any(), any(), any(), any(), any(), any(), any()))
+        when(storageUnitService.getStorageUnitsByFacility(eq(1L), any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(new PageResponse<>(List.of(unit), 0, 20, 1, 1));
 
         mockMvc.perform(get("/facilities/1/storage-units"))
@@ -63,12 +63,33 @@ class StorageUnitControllerTest {
                 .build();
 
         when(storageUnitService.getStorageUnitsByFacility(
-                eq(1L), any(), any(), any(), any(), eq(java.time.LocalDate.of(2027, 1, 1)), eq(6), any(), any()))
+                eq(1L), any(), any(), any(), any(), eq(java.time.LocalDate.of(2027, 1, 1)), eq(6), any(), any(), any()))
                 .thenReturn(new PageResponse<>(List.of(unit), 0, 20, 1, 1));
 
         mockMvc.perform(get("/facilities/1/storage-units")
                         .param("startDate", "2027-01-01")
                         .param("rentalMonths", "6"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].code").value("S-101"))
+                .andExpect(jsonPath("$.content[0].status").value("AVAILABLE"));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/facilities/{facilityId}/storage-units với khoảng thời gian startDate và endDate")
+    void testGetStorageUnitsWithCustomDateRange() throws Exception {
+        StorageUnitResponse unit = StorageUnitResponse.builder()
+                .id(42L)
+                .code("S-101")
+                .status(StorageUnitStatus.AVAILABLE)
+                .build();
+
+        when(storageUnitService.getStorageUnitsByFacility(
+                eq(1L), any(), any(), any(), any(), eq(java.time.LocalDate.of(2026, 11, 7)), any(), eq(java.time.LocalDate.of(2026, 12, 7)), any(), any()))
+                .thenReturn(new PageResponse<>(List.of(unit), 0, 20, 1, 1));
+
+        mockMvc.perform(get("/facilities/1/storage-units")
+                        .param("startDate", "2026-11-07")
+                        .param("endDate", "2026-12-07"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].code").value("S-101"))
                 .andExpect(jsonPath("$.content[0].status").value("AVAILABLE"));
@@ -84,7 +105,7 @@ class StorageUnitControllerTest {
                 .build();
 
         when(storageUnitService.getStorageUnitsByFacility(
-                eq(1L), any(), any(), any(), any(), any(), any(), eq(java.time.LocalDate.of(2026, 11, 20)), any()))
+                eq(1L), any(), any(), any(), any(), any(), any(), any(), eq(java.time.LocalDate.of(2026, 11, 20)), any()))
                 .thenReturn(new PageResponse<>(List.of(unit), 0, 20, 1, 1));
 
         mockMvc.perform(get("/facilities/1/storage-units")

@@ -182,7 +182,7 @@ export const StorageUnitDetailPage: React.FC = () => {
     }
   };
 
-  // Tính toán dự phóng tương lai cho ô kho này theo simulatedDate
+  // Tính toán trạng thái ô kho này theo simulatedDate
   const projectedFutureInfo = useMemo(() => {
     if (!unit) return { status: 'AVAILABLE', label: 'Trống', note: '' };
 
@@ -381,7 +381,7 @@ export const StorageUnitDetailPage: React.FC = () => {
             }`}
           >
             <CalendarClock className="w-3.5 h-3.5 text-purple-600" />
-            <span>Kế hoạch & Dự phóng tương lai</span>
+            <span>Kế hoạch & Lịch vận hành tương lai</span>
             {daysUntilExpiry !== null && daysUntilExpiry <= 14 && (
               <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 font-mono font-bold">
                 Trả sau {daysUntilExpiry}d
@@ -674,7 +674,7 @@ export const StorageUnitDetailPage: React.FC = () => {
         </div>
       )}
 
-      {/* NỘI DUNG 2: GÓC NHÌN KẾ HOẠCH & DỰ PHÓNG TƯƠNG LAI (WORK SCHEDULE PERSPECTIVE) */}
+      {/* NỘI DUNG 2: GÓC NHÌN KẾ HOẠCH & LỊCH TRÌNH TƯƠNG LAI (WORK SCHEDULE PERSPECTIVE) */}
       {viewPerspective === 'TIMELINE' && (
         <div className="space-y-6 animate-in fade-in duration-150">
           {/* Thanh Mô phỏng Ngày tương lai (Timeline Simulator) */}
@@ -686,10 +686,10 @@ export const StorageUnitDetailPage: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-purple-950">
-                    Mô phỏng Trạng thái Ô kho theo Ngày tương lai
+                    Kiểm tra Trạng thái Ô kho theo Ngày tương lai
                   </h3>
                   <p className="text-xs text-purple-700">
-                    Dự báo chính xác tình trạng buồng kho tại bất kỳ mốc thời gian nào trong tương lai
+                    Theo dõi chính xác tình trạng buồng kho tại bất kỳ mốc thời gian nào
                   </p>
                 </div>
               </div>
@@ -733,7 +733,7 @@ export const StorageUnitDetailPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Hộp Kết quả Dự phóng */}
+            {/* Hộp Kết quả Kiểm tra Trạng thái */}
             <div className="p-4 bg-white rounded-xl border border-purple-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
               <div className="flex items-center gap-3">
                 <span className={`w-3.5 h-3.5 rounded-full ${

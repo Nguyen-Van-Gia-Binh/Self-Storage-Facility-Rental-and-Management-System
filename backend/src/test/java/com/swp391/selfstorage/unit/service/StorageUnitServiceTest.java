@@ -410,4 +410,27 @@ class StorageUnitServiceTest {
         assertEquals(1, response.getContent().size());
         assertEquals(StorageUnitStatus.OCCUPIED, response.getContent().get(0).getStatus());
     }
+
+    @Test
+    @DisplayName("US-FM-01: Lấy danh sách ô kho với khoảng thời gian startDate và endDate tính toán trạng thái OCCUPIED")
+    void shouldReturnUnitsWithDynamicStatus_whenCustomDateRangeProvided() {
+        Pageable pageable = PageRequest.of(0, 10);
+        java.time.LocalDate startDate = java.time.LocalDate.of(2026, 11, 7);
+        java.time.LocalDate endDate = java.time.LocalDate.of(2026, 12, 7);
+
+        when(storageUnitRepository.findByFacilityIdAndFilters(eq(1L), eq(7L), isNull(), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(storageUnit), pageable, 1));
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(unitType));
+        when(storageUnitRepository.findOccupiedUnitIdsByDateRange(eq(1L), eq(startDate), eq(endDate), anyInt()))
+                .thenReturn(List.of(42L));
+        when(storageUnitRepository.findReservedUnitIdsByDateRange(eq(1L), eq(startDate), eq(endDate), anyInt()))
+                .thenReturn(List.of());
+
+        PageResponse<StorageUnitResponse> response = storageUnitService.getStorageUnitsByFacility(
+                1L, 7L, null, null, null, startDate, null, endDate, null, pageable);
+
+        assertNotNull(response);
+        assertEquals(1, response.getContent().size());
+        assertEquals(StorageUnitStatus.OCCUPIED, response.getContent().get(0).getStatus());
+    }
 }

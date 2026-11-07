@@ -78,8 +78,17 @@ public class StorageUnitServiceImpl implements StorageUnitService {
     public PageResponse<StorageUnitResponse> getStorageUnitsByFacility(
             Long facilityId, Long unitTypeId, StorageUnitStatus status, Integer floor, String position,
             java.time.LocalDate startDate, Integer rentalMonths, java.time.LocalDate targetDate, Pageable pageable) {
+        return getStorageUnitsByFacility(facilityId, unitTypeId, status, floor, position, startDate, rentalMonths, null, targetDate, pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<StorageUnitResponse> getStorageUnitsByFacility(
+            Long facilityId, Long unitTypeId, StorageUnitStatus status, Integer floor, String position,
+            java.time.LocalDate startDate, Integer rentalMonths, java.time.LocalDate endDate, java.time.LocalDate targetDate, Pageable pageable) {
         boolean isTargetDateQuery = targetDate != null;
-        boolean ranged = (startDate != null && rentalMonths != null && rentalMonths > 0) || isTargetDateQuery;
+        boolean isDateRangeQuery = startDate != null && endDate != null;
+        boolean ranged = (startDate != null && rentalMonths != null && rentalMonths > 0) || isTargetDateQuery || isDateRangeQuery;
         StorageUnitStatus queryStatus = ranged ? null : status;
 
         Page<StorageUnit> page;
@@ -95,7 +104,16 @@ public class StorageUnitServiceImpl implements StorageUnitService {
         }
 
         java.time.LocalDate queryStart = isTargetDateQuery ? targetDate : startDate;
-        java.time.LocalDate queryEndExclusive = isTargetDateQuery ? targetDate.plusDays(1) : (startDate != null ? startDate.plusMonths(rentalMonths) : null);
+        java.time.LocalDate queryEndExclusive;
+        if (isTargetDateQuery) {
+            queryEndExclusive = targetDate.plusDays(1);
+        } else if (isDateRangeQuery) {
+            queryEndExclusive = endDate;
+        } else if (startDate != null && rentalMonths != null) {
+            queryEndExclusive = startDate.plusMonths(rentalMonths);
+        } else {
+            queryEndExclusive = null;
+        }
 
         List<Long> occupiedUnitIds = ranged && queryStart != null && queryEndExclusive != null
                 ? storageUnitRepository.findOccupiedUnitIdsByDateRange(facilityId, queryStart, queryEndExclusive, bufferDays)

@@ -11,26 +11,10 @@ import {
   Calendar,
   ExternalLink,
   Building2,
-  Clock,
   CheckCircle2,
-  AlertTriangle,
-  CalendarClock,
-  DoorOpen,
-  PackageCheck,
-  SlidersHorizontal,
 } from 'lucide-react';
 import type { StorageUnitResponse, UnitStatus } from '@/types/unit';
 import type { ManagerContractItem } from '@/types/contractManager';
-
-export type FloorPlanHorizonFilter =
-  | 'ALL'
-  | 'AVAILABLE'
-  | 'OCCUPIED'
-  | 'UPCOMING_CHECKIN'
-  | 'UPCOMING_CHECKOUT'
-  | 'OVERDUE'
-  | 'MAINTENANCE'
-  | 'FUTURE_DATE';
 
 export interface StorageUnitFloorPlanViewProps {
   units: StorageUnitResponse[];
@@ -38,8 +22,9 @@ export interface StorageUnitFloorPlanViewProps {
   currentUnitTypeId?: number;
   currentUnitTypeName?: string;
   facilityName?: string;
-  selectedDate?: string;
-  onDateChange?: (date: string) => void;
+  startDate?: string;
+  endDate?: string;
+  onDateRangeChange?: (start: string, end: string) => void;
   onSelectUnit?: (unit: StorageUnitResponse) => void;
   onStatusChange?: (unit: StorageUnitResponse, status: UnitStatus) => Promise<void> | void;
 }
@@ -53,15 +38,6 @@ const getTodayStr = (): string => {
   return `${year}-${month}-${day}`;
 };
 
-const addDaysToStr = (baseDateStr: string, days: number): string => {
-  const d = new Date(baseDateStr);
-  d.setDate(d.getDate() + days);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-
 const formatVnDate = (dateStr?: string): string => {
   if (!dateStr) return '';
   const clean = dateStr.substring(0, 10);
@@ -72,60 +48,22 @@ const formatVnDate = (dateStr?: string): string => {
   return dateStr;
 };
 
-const formatVnDayMonth = (dateStr?: string): string => {
-  if (!dateStr) return '';
-  const clean = dateStr.substring(0, 10);
-  const parts = clean.split('-');
-  if (parts.length === 3) {
-    return `${parts[2]}/${parts[1]}`;
-  }
-  return dateStr;
-};
-
-const getDaysDiff = (targetDateStr: string, baseDateStr: string): number => {
-  const d1 = new Date(targetDateStr.substring(0, 10)).getTime();
-  const d2 = new Date(baseDateStr.substring(0, 10)).getTime();
-  return Math.round((d1 - d2) / (1000 * 3600 * 24));
-};
-
 export const StorageUnitFloorPlanView: React.FC<StorageUnitFloorPlanViewProps> = ({
   units,
   contractsMap = {},
   currentUnitTypeId,
   currentUnitTypeName = 'Loại ô kho',
   facilityName = 'Cơ sở lưu trữ',
-  selectedDate,
-  onDateChange,
+  startDate,
+  endDate,
   onSelectUnit,
   onStatusChange,
 }) => {
   const todayStr = useMemo(() => getTodayStr(), []);
   const [currentFloor, setCurrentFloor] = useState<number>(1);
   const [selectedUnit, setSelectedUnit] = useState<StorageUnitResponse | null>(null);
-  const [horizonFilter, setHorizonFilter] = useState<FloorPlanHorizonFilter>('ALL');
   const [filterThisTypeOnly, setFilterThisTypeOnly] = useState<boolean>(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
-
-  // Ngày mô phỏng tương lai (Timeline Simulator)
-  const [localSimulatedDate, setLocalSimulatedDate] = useState<string>(
-    selectedDate || addDaysToStr(todayStr, 30)
-  );
-
-  const activeSimulatedDate = selectedDate || localSimulatedDate;
-
-  // Đồng bộ chế độ xem tương lai khi selectedDate được kích hoạt từ bên ngoài
-  React.useEffect(() => {
-    if (selectedDate) {
-      setHorizonFilter('FUTURE_DATE');
-    }
-  }, [selectedDate]);
-
-  const handleSimulatedDateChange = (newDate: string) => {
-    setLocalSimulatedDate(newDate);
-    if (onDateChange) {
-      onDateChange(newDate);
-    }
-  };
 
   // Danh sách các tầng thực tế có ô kho trong dữ liệu
   const availableFloors = useMemo(() => {
@@ -149,112 +87,67 @@ export const StorageUnitFloorPlanView: React.FC<StorageUnitFloorPlanViewProps> =
     return units.filter((u) => (u.floor ?? 1) === currentFloor);
   }, [units, currentFloor]);
 
-  // Tính toán chỉ số công việc hiện tại & tương lai cho từng ô kho
+  // Tính toán trạng thái ô kho theo khoảng thời gian [startDate, endDate] hoặc thời gian thực
   const getUnitOperationalMeta = (unit: StorageUnitResponse) => {
     const contract = contractsMap[unit.id];
-    const in7Days = addDaysToStr(todayStr, 7);
-    const in14Days = addDaysToStr(todayStr, 14);
-
-    const isUpcomingCheckin =
-      Boolean(contract?.status === 'PENDING_CHECK_IN') ||
-      Boolean(contract?.startDate && contract.startDate >= todayStr && contract.startDate <= in7Days) ||
-      unit.status === 'RESERVED';
-
-    const isUpcomingCheckout =
-      Boolean(contract?.status === 'PENDING_RETURN') ||
-      Boolean(contract?.endDateExclusive && contract.endDateExclusive >= todayStr && contract.endDateExclusive <= in14Days);
-
-    const isOverdue = Boolean(contract?.status === 'OVERDUE');
-
-    // Dự phóng tương lai theo activeSimulatedDate
-    let futureStatus: UnitStatus = unit.status;
-    let futureNote = '';
+    let isOccupied = false;
+    let note = '';
 
     if (unit.status === 'MAINTENANCE') {
-      futureStatus = 'MAINTENANCE';
-      futureNote = 'Bảo trì kỹ thuật';
-    } else if (contract) {
+      return {
+        contract,
+        status: 'MAINTENANCE' as UnitStatus,
+        statusLabel: 'Bảo trì',
+        note: 'Bảo trì kỹ thuật',
+      };
+    }
+
+    if (contract) {
       const cStart = contract.startDate ? contract.startDate.substring(0, 10) : '';
       const cEnd = contract.endDateExclusive ? contract.endDateExclusive.substring(0, 10) : '';
 
-      if (cStart && cEnd && cStart <= activeSimulatedDate && cEnd > activeSimulatedDate) {
-        futureStatus = 'OCCUPIED';
-        futureNote = `Khách ${contract.customerName} đang thuê`;
-      } else if (cEnd && cEnd <= activeSimulatedDate) {
-        futureStatus = 'AVAILABLE';
-        futureNote = `HĐ kết thúc ngày ${formatVnDate(cEnd)}, sẵn sàng đón khách mới`;
+      if (startDate && endDate) {
+        // Giao cắt: cStart < endDate && cEnd > startDate
+        isOccupied = Boolean(cStart && cEnd && cStart < endDate && cEnd > startDate);
+        if (isOccupied) {
+          note = `Khách ${contract.customerName} thuê đến ${formatVnDate(cEnd)}`;
+        } else {
+          note = `Trống trong khoảng ${formatVnDate(startDate)} - ${formatVnDate(endDate)}`;
+        }
+      } else if (startDate) {
+        isOccupied = Boolean(cEnd && cEnd > startDate);
+        if (isOccupied) {
+          note = `Khách ${contract.customerName} thuê đến ${formatVnDate(cEnd)}`;
+        }
+      } else {
+        isOccupied = unit.status === 'OCCUPIED' || Boolean(cStart && cEnd && cStart <= todayStr && cEnd > todayStr);
+        if (isOccupied) {
+          note = `Khách ${contract.customerName} đang thuê`;
+        }
       }
     }
 
+    const computedStatus: UnitStatus = isOccupied
+      ? 'OCCUPIED'
+      : (unit.status === 'RESERVED' ? 'RESERVED' : 'AVAILABLE');
+
     return {
       contract,
-      isUpcomingCheckin,
-      isUpcomingCheckout,
-      isOverdue,
-      futureStatus,
-      futureNote,
+      status: computedStatus,
+      statusLabel: computedStatus === 'OCCUPIED' ? 'Đang thuê' : (computedStatus === 'RESERVED' ? 'Chờ nhận kho' : 'Trống'),
+      note: note || (computedStatus === 'AVAILABLE' ? 'Sẵn sàng đón khách' : ''),
     };
   };
 
-  // Đếm số lượng ô kho trên tầng hiện tại theo từng loại filter để hiển thị badge
-  const countsByHorizon = useMemo(() => {
-    let availableCount = 0;
-    let occupiedCount = 0;
-    let checkinCount = 0;
-    let checkoutCount = 0;
-    let overdueCount = 0;
-    let maintenanceCount = 0;
-
-    floorUnits.forEach((u) => {
-      const meta = getUnitOperationalMeta(u);
-      if (u.status === 'AVAILABLE') availableCount++;
-      if (u.status === 'OCCUPIED') occupiedCount++;
-      if (u.status === 'MAINTENANCE') maintenanceCount++;
-      if (meta.isUpcomingCheckin) checkinCount++;
-      if (meta.isUpcomingCheckout) checkoutCount++;
-      if (meta.isOverdue) overdueCount++;
-    });
-
-    return {
-      availableCount,
-      occupiedCount,
-      checkinCount,
-      checkoutCount,
-      overdueCount,
-      maintenanceCount,
-    };
-  }, [floorUnits, contractsMap, todayStr]);
-
-  // Lọc theo loại kho hiện tại & Horizon filter (Hiện tại vs Tương lai)
+  // Lọc theo loại kho hiện tại (nếu bật checkbox)
   const filteredFloorUnits = useMemo(() => {
     return floorUnits.filter((u) => {
-      const matchType = !filterThisTypeOnly || u.unitTypeId === currentUnitTypeId;
-      if (!matchType) return false;
-
-      const meta = getUnitOperationalMeta(u);
-
-      switch (horizonFilter) {
-        case 'ALL':
-          return true;
-        case 'AVAILABLE':
-          return u.status === 'AVAILABLE';
-        case 'OCCUPIED':
-          return u.status === 'OCCUPIED';
-        case 'UPCOMING_CHECKIN':
-          return meta.isUpcomingCheckin;
-        case 'UPCOMING_CHECKOUT':
-          return meta.isUpcomingCheckout;
-        case 'OVERDUE':
-          return meta.isOverdue;
-        case 'MAINTENANCE':
-          return u.status === 'MAINTENANCE';
-        case 'FUTURE_DATE':
-          return true;
-        default:
-          return true;
+      if (filterThisTypeOnly && currentUnitTypeId) {
+        return u.unitTypeId === currentUnitTypeId;
       }
+      return true;
     });
-  }, [floorUnits, filterThisTypeOnly, currentUnitTypeId, horizonFilter, contractsMap, todayStr, activeSimulatedDate]);
+  }, [floorUnits, filterThisTypeOnly, currentUnitTypeId]);
 
   // Xác định tầng kế tiếp khi click vào Cầu thang tương tác
   const nextFloorForStaircase = useMemo(() => {
@@ -278,59 +171,17 @@ export const StorageUnitFloorPlanView: React.FC<StorageUnitFloorPlanViewProps> =
     const borderStyle = isThisType ? 'border-2 ring-1 ring-brand-500/30' : 'border opacity-95';
     const meta = getUnitOperationalMeta(unit);
 
-    // Chế độ mô phỏng tương lai
-    if (horizonFilter === 'FUTURE_DATE') {
-      if (meta.futureStatus === 'AVAILABLE') {
-        return `bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100 ${borderStyle}`;
-      }
-      if (meta.futureStatus === 'OCCUPIED') {
-        return `bg-indigo-50 text-indigo-800 border-indigo-300 hover:bg-indigo-100 ${borderStyle}`;
-      }
-      if (meta.futureStatus === 'MAINTENANCE') {
-        return `bg-rose-50 text-rose-800 border-rose-300 hover:bg-rose-100 ${borderStyle}`;
-      }
-    }
-
-    // Chế độ lọc nghiệp vụ nổi bật
-    if (horizonFilter === 'UPCOMING_CHECKOUT' || meta.isUpcomingCheckout) {
-      if (meta.isUpcomingCheckout) {
-        return `bg-amber-50 text-amber-900 border-amber-300 ring-2 ring-amber-400/50 hover:bg-amber-100 ${borderStyle}`;
-      }
-    }
-
-    if (horizonFilter === 'UPCOMING_CHECKIN' || meta.isUpcomingCheckin) {
-      if (meta.isUpcomingCheckin) {
-        return `bg-sky-50 text-sky-900 border-sky-300 ring-2 ring-sky-400/50 hover:bg-sky-100 ${borderStyle}`;
-      }
-    }
-
-    if (horizonFilter === 'OVERDUE' || meta.isOverdue) {
-      if (meta.isOverdue) {
-        return `bg-rose-100 text-rose-900 border-rose-400 ring-2 ring-rose-500/50 hover:bg-rose-200 ${borderStyle}`;
-      }
-    }
-
-    switch (unit.status) {
+    switch (meta.status) {
       case 'AVAILABLE':
         return `bg-emerald-50/90 text-emerald-800 border-emerald-300 hover:bg-emerald-100 hover:border-emerald-500 ${borderStyle}`;
-      case 'RESERVED':
-        return `bg-sky-50 text-sky-800 border-sky-300 hover:bg-sky-100 ${borderStyle}`;
       case 'OCCUPIED':
         return `bg-indigo-50/90 text-indigo-800 border-indigo-200 hover:bg-indigo-100 ${borderStyle}`;
       case 'MAINTENANCE':
         return `bg-rose-50 text-rose-800 border-rose-300 hover:bg-rose-100 ${borderStyle}`;
+      case 'RESERVED':
+        return `bg-sky-50 text-sky-800 border-sky-300 hover:bg-sky-100 ${borderStyle}`;
       default:
         return `bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200 ${borderStyle}`;
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'AVAILABLE': return 'Trống';
-      case 'RESERVED': return 'Chờ nhận kho';
-      case 'OCCUPIED': return 'Đang thuê';
-      case 'MAINTENANCE': return 'Bảo trì';
-      default: return status;
     }
   };
 
@@ -364,6 +215,12 @@ export const StorageUnitFloorPlanView: React.FC<StorageUnitFloorPlanViewProps> =
             <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-200 font-mono">
               {currentUnitTypeName}
             </span>
+            {startDate && endDate && (
+              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-brand-100 text-brand-800 border border-brand-300 font-mono flex items-center gap-1">
+                <Calendar className="w-3 h-3 text-brand-600" />
+                {formatVnDate(startDate)} → {formatVnDate(endDate)}
+              </span>
+            )}
           </div>
         </div>
 
@@ -410,231 +267,8 @@ export const StorageUnitFloorPlanView: React.FC<StorageUnitFloorPlanViewProps> =
         </div>
       </div>
 
-      {/* 2. Thanh Bộ Lọc Kế Hoạch Nghiệp Vụ Hiện Tại & Tương Lai (Operational Filters) */}
-      <div className="px-4 py-3 bg-white border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 w-full lg:w-auto">
-          <div className="flex items-center gap-1 text-slate-500 text-xs font-bold mr-1 shrink-0">
-            <SlidersHorizontal className="w-3.5 h-3.5 text-brand-600" />
-            <span>Góc nhìn:</span>
-          </div>
-
-          {/* Preset Buttons Hiện tại */}
-          <button
-            type="button"
-            onClick={() => setHorizonFilter('ALL')}
-            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              horizonFilter === 'ALL'
-                ? 'bg-slate-900 text-white shadow-2xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            <span>Tất cả</span>
-            <span className="text-[10px] opacity-75">({floorUnits.length})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setHorizonFilter('AVAILABLE')}
-            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              horizonFilter === 'AVAILABLE'
-                ? 'bg-emerald-600 text-white shadow-2xs'
-                : 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100'
-            }`}
-          >
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            <span>Trống</span>
-            <span className="text-[10px] opacity-80">({countsByHorizon.availableCount})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setHorizonFilter('OCCUPIED')}
-            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              horizonFilter === 'OCCUPIED'
-                ? 'bg-indigo-600 text-white shadow-2xs'
-                : 'bg-indigo-50 text-indigo-800 border border-indigo-200 hover:bg-indigo-100'
-            }`}
-          >
-            <span className="w-2 h-2 rounded-full bg-indigo-400" />
-            <span>Đang thuê</span>
-            <span className="text-[10px] opacity-80">({countsByHorizon.occupiedCount})</span>
-          </button>
-
-          {/* Bộ lọc Kế hoạch Tương lai: Sắp đón khách 7 ngày */}
-          <button
-            type="button"
-            onClick={() => setHorizonFilter('UPCOMING_CHECKIN')}
-            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              horizonFilter === 'UPCOMING_CHECKIN'
-                ? 'bg-sky-600 text-white shadow-2xs ring-2 ring-sky-400'
-                : 'bg-sky-50 text-sky-800 border border-sky-300 hover:bg-sky-100'
-            }`}
-            title="Các ô kho có khách sắp nhận kho trong 7 ngày tới"
-          >
-            <PackageCheck className="w-3.5 h-3.5" />
-            <span>Sắp đón khách (7d)</span>
-            <span className={`text-[10px] px-1 rounded-full ${
-              horizonFilter === 'UPCOMING_CHECKIN' ? 'bg-white/20' : 'bg-sky-200/80 text-sky-900'
-            }`}>
-              {countsByHorizon.checkinCount}
-            </span>
-          </button>
-
-          {/* Bộ lọc Kế hoạch Tương lai: Sắp trả kho 14 ngày */}
-          <button
-            type="button"
-            onClick={() => setHorizonFilter('UPCOMING_CHECKOUT')}
-            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              horizonFilter === 'UPCOMING_CHECKOUT'
-                ? 'bg-amber-600 text-white shadow-2xs ring-2 ring-amber-400'
-                : 'bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100'
-            }`}
-            title="Các ô kho có hợp đồng hết hạn trong 14 ngày tới cần lên lịch nghiệm thu & hoàn cọc"
-          >
-            <DoorOpen className="w-3.5 h-3.5" />
-            <span>Sắp trả kho (14d)</span>
-            <span className={`text-[10px] px-1 rounded-full ${
-              horizonFilter === 'UPCOMING_CHECKOUT' ? 'bg-white/20' : 'bg-amber-200/80 text-amber-900'
-            }`}>
-              {countsByHorizon.checkoutCount}
-            </span>
-          </button>
-
-          {/* Quá hạn */}
-          {countsByHorizon.overdueCount > 0 && (
-            <button
-              type="button"
-              onClick={() => setHorizonFilter('OVERDUE')}
-              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
-                horizonFilter === 'OVERDUE'
-                  ? 'bg-rose-600 text-white shadow-2xs ring-2 ring-rose-400 animate-pulse'
-                  : 'bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100'
-              }`}
-            >
-              <AlertTriangle className="w-3.5 h-3.5" />
-              <span>Quá hạn</span>
-              <span className="text-[10px] px-1 rounded-full bg-rose-200/80 text-rose-900">
-                {countsByHorizon.overdueCount}
-              </span>
-            </button>
-          )}
-
-          {/* Bảo trì */}
-          <button
-            type="button"
-            onClick={() => setHorizonFilter('MAINTENANCE')}
-            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              horizonFilter === 'MAINTENANCE'
-                ? 'bg-rose-700 text-white shadow-2xs'
-                : 'bg-rose-50 text-rose-800 border border-rose-200 hover:bg-rose-100'
-            }`}
-          >
-            <Wrench className="w-3.5 h-3.5" />
-            <span>Bảo trì</span>
-            <span className="text-[10px] opacity-80">({countsByHorizon.maintenanceCount})</span>
-          </button>
-
-          {/* Chế độ Dự phóng ngày tương lai */}
-          <button
-            type="button"
-            onClick={() => setHorizonFilter('FUTURE_DATE')}
-            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              horizonFilter === 'FUTURE_DATE'
-                ? 'bg-purple-600 text-white shadow-2xs ring-2 ring-purple-400'
-                : 'bg-purple-50 text-purple-800 border border-purple-200 hover:bg-purple-100'
-            }`}
-          >
-            <CalendarClock className="w-3.5 h-3.5" />
-            <span>Dự phóng tương lai</span>
-          </button>
-        </div>
-
-        {/* Thanh điều khiển Mô phỏng Ngày tương lai khi chọn FUTURE_DATE */}
-        {horizonFilter === 'FUTURE_DATE' && (
-          <div className="w-full lg:w-auto p-2 rounded-xl bg-purple-50 border border-purple-200 flex flex-wrap items-center gap-2 text-xs animate-in fade-in duration-200">
-            <span className="font-bold text-purple-900 flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5 text-purple-600" />
-              Ngày dự phóng:
-            </span>
-            <input
-              type="date"
-              value={activeSimulatedDate}
-              onChange={(e) => handleSimulatedDateChange(e.target.value)}
-              className="px-2.5 py-1 bg-white border border-purple-300 rounded-lg text-xs font-mono font-bold text-slate-800 outline-none focus:ring-2 focus:ring-purple-400 cursor-pointer shadow-2xs"
-            />
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => handleSimulatedDateChange(addDaysToStr(todayStr, 7))}
-                className="px-2 py-0.5 rounded bg-white hover:bg-purple-100 text-purple-800 font-semibold border border-purple-200 cursor-pointer text-[11px]"
-              >
-                +7 ngày
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSimulatedDateChange(addDaysToStr(todayStr, 14))}
-                className="px-2 py-0.5 rounded bg-white hover:bg-purple-100 text-purple-800 font-semibold border border-purple-200 cursor-pointer text-[11px]"
-              >
-                +14 ngày
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSimulatedDateChange(addDaysToStr(todayStr, 30))}
-                className="px-2 py-0.5 rounded bg-white hover:bg-purple-100 text-purple-800 font-semibold border border-purple-200 cursor-pointer text-[11px]"
-              >
-                +30 ngày
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSimulatedDateChange(addDaysToStr(todayStr, 60))}
-                className="px-2 py-0.5 rounded bg-white hover:bg-purple-100 text-purple-800 font-semibold border border-purple-200 cursor-pointer text-[11px]"
-              >
-                +60 ngày
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* 3. Main Floor Plan Canvas */}
+      {/* 2. Main Floor Plan Canvas */}
       <div className="p-4 sm:p-6 bg-slate-50/50 space-y-4">
-        {/* Banner thông báo khi đang lọc tương lai */}
-        {horizonFilter === 'UPCOMING_CHECKOUT' && (
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <DoorOpen className="w-4 h-4 text-amber-600 shrink-0" />
-              <span>
-                <strong>Kế hoạch Trả kho 14 ngày tới:</strong> Hiển thị các ô kho cần liên hệ khách hàng hẹn giờ nghiệm thu phòng (Inspection) và đối soát hoàn trả cọc (BR-DEP-04).
-              </span>
-            </div>
-            <span className="font-mono font-bold text-amber-800">{countsByHorizon.checkoutCount} ô kho</span>
-          </div>
-        )}
-
-        {horizonFilter === 'UPCOMING_CHECKIN' && (
-          <div className="p-3 bg-sky-50 border border-sky-200 rounded-xl text-xs text-sky-900 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <PackageCheck className="w-4 h-4 text-sky-600 shrink-0" />
-              <span>
-                <strong>Kế hoạch Đón khách 7 ngày tới:</strong> Hiển thị các ô kho cần kiểm tra vệ sinh sạch sẽ, kích hoạt mã PIN điện tử/thẻ từ và chuẩn bị bàn giao.
-              </span>
-            </div>
-            <span className="font-mono font-bold text-sky-800">{countsByHorizon.checkinCount} ô kho</span>
-          </div>
-        )}
-
-        {horizonFilter === 'FUTURE_DATE' && (
-          <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-900 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CalendarClock className="w-4 h-4 text-purple-600 shrink-0" />
-              <span>
-                <strong>Mô phỏng mặt bằng ngày {formatVnDate(activeSimulatedDate)}:</strong> Dự phóng các ô kho sẽ tự động chuyển sang trạng thái Trống sau khi hợp đồng cũ đáo hạn hoặc có khách mới.
-              </span>
-            </div>
-            <span className="font-bold text-purple-800">Dự phóng thực tế</span>
-          </div>
-        )}
-
         {/* Layout: Cột Cầu thang tương tác + Ma trận Lưới Ô kho */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
           {/* CỘT CẦU THANG BỘ & THANG MÁY TƯƠNG TÁC (3 COLS) */}
@@ -708,12 +342,12 @@ export const StorageUnitFloorPlanView: React.FC<StorageUnitFloorPlanViewProps> =
                       key={unit.id}
                       data-testid={`unit-tile-${unit.code}`}
                       onClick={() => setSelectedUnit(unit)}
-                      className={`relative p-3 rounded-xl text-center transition-all cursor-pointer flex flex-col items-center justify-between min-h-[88px] ${getStatusColor(
+                      className={`relative p-3 rounded-xl text-center transition-all cursor-pointer flex flex-col items-center justify-between min-h-[92px] ${getStatusColor(
                         unit,
                         isThisType,
                         isSelected
                       )}`}
-                      title={`Ô ${unit.code} — ${getStatusLabel(unit.status)} (${unit.unitTypeName || 'Hạng kho'})`}
+                      title={`Ô ${unit.code} — ${meta.statusLabel} (${unit.unitTypeName || 'Hạng kho'})`}
                     >
                       {/* Badge Ô thuộc hạng kho đang chọn */}
                       {isThisType && !isSelected && (
@@ -738,34 +372,18 @@ export const StorageUnitFloorPlanView: React.FC<StorageUnitFloorPlanViewProps> =
                         </span>
                       </div>
 
-                      {/* Hiển thị Nhãn Nghiệp vụ động: Sắp trả kho / Sắp đón khách / Dự kiến tương lai */}
-                      {horizonFilter === 'FUTURE_DATE' ? (
-                        <span className={`text-[9px] font-bold mt-1.5 px-2 py-0.5 rounded-md uppercase tracking-tight ${
-                          meta.futureStatus === 'AVAILABLE'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : meta.futureStatus === 'OCCUPIED'
-                            ? 'bg-indigo-100 text-indigo-800'
-                            : 'bg-rose-100 text-rose-800'
-                        }`}>
-                          {meta.futureStatus === 'AVAILABLE' ? 'Sẽ trống' : meta.futureStatus === 'OCCUPIED' ? 'Đang thuê' : 'Bảo trì'}
-                        </span>
-                      ) : meta.isUpcomingCheckout ? (
-                        <span className="text-[9px] font-bold mt-1 px-1.5 py-0.5 rounded-md bg-amber-200/90 text-amber-900 border border-amber-300 truncate max-w-full">
-                          Trả: {formatVnDayMonth(meta.contract?.endDateExclusive)}
-                        </span>
-                      ) : meta.isUpcomingCheckin ? (
-                        <span className="text-[9px] font-bold mt-1 px-1.5 py-0.5 rounded-md bg-sky-200/90 text-sky-900 border border-sky-300 truncate max-w-full">
-                          Đón: {formatVnDayMonth(meta.contract?.startDate)}
-                        </span>
-                      ) : meta.isOverdue ? (
-                        <span className="text-[9px] font-bold mt-1 px-1.5 py-0.5 rounded-md bg-rose-200 text-rose-900 border border-rose-300 animate-pulse">
-                          Quá hạn
-                        </span>
-                      ) : (
-                        <span className="text-[9px] font-bold mt-1.5 px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 uppercase tracking-tight">
-                          {getStatusLabel(unit.status)}
-                        </span>
-                      )}
+                      {/* Hiển thị Nhãn trạng thái */}
+                      <span className={`text-[9px] font-bold mt-1.5 px-2 py-0.5 rounded-md uppercase tracking-tight ${
+                        meta.status === 'AVAILABLE'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : meta.status === 'OCCUPIED'
+                          ? 'bg-indigo-100 text-indigo-800'
+                          : meta.status === 'MAINTENANCE'
+                          ? 'bg-rose-100 text-rose-800'
+                          : 'bg-sky-100 text-sky-800'
+                      }`}>
+                        {meta.statusLabel}
+                      </span>
                     </div>
                   );
                 })}
@@ -774,29 +392,32 @@ export const StorageUnitFloorPlanView: React.FC<StorageUnitFloorPlanViewProps> =
           </div>
         </div>
 
-        {/* 4. Panel Chi tiết Ô kho & Hộp Điều Phối Công Việc FM (Work Dispatch) */}
+        {/* 3. Panel Chi tiết Ô kho đang chọn (Selected Unit Inspector Drawer) */}
         {selectedUnit && selectedUnitMeta && (
-          <div className="p-4 sm:p-5 bg-white border border-slate-200/90 rounded-2xl shadow-xs space-y-3.5 animate-in fade-in duration-150">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-start gap-3.5">
-                <div className="w-11 h-11 rounded-xl bg-brand-50 text-brand-700 border border-brand-200 flex items-center justify-center shrink-0 shadow-2xs">
-                  <MapPin className="w-6 h-6" />
+          <div
+            data-testid="selected-unit-inspector-drawer"
+            className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-300 shadow-md space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-200"
+          >
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-slate-900 text-white font-mono font-extrabold text-sm flex items-center justify-center shrink-0">
+                  {selectedUnit.code}
                 </div>
-                <div className="space-y-1">
+                <div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h4 className="text-base font-extrabold text-slate-900 font-mono">
-                      Ô Kho {selectedUnit.code}
+                    <h4 className="text-sm font-bold text-slate-900">
+                      Ô kho {selectedUnit.code}
                     </h4>
                     <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
-                      selectedUnit.status === 'AVAILABLE'
+                      selectedUnitMeta.status === 'AVAILABLE'
                         ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                        : selectedUnit.status === 'OCCUPIED'
+                        : selectedUnitMeta.status === 'OCCUPIED'
                         ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                        : selectedUnit.status === 'MAINTENANCE'
+                        : selectedUnitMeta.status === 'MAINTENANCE'
                         ? 'bg-rose-50 text-rose-700 border-rose-200'
                         : 'bg-sky-50 text-sky-700 border-sky-200'
                     }`}>
-                      {getStatusLabel(selectedUnit.status)}
+                      {selectedUnitMeta.statusLabel}
                     </span>
                     {selectedUnit.unitTypeId === currentUnitTypeId && (
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-200">
@@ -804,7 +425,7 @@ export const StorageUnitFloorPlanView: React.FC<StorageUnitFloorPlanViewProps> =
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-slate-600">
+                  <p className="text-xs text-slate-600 mt-0.5">
                     {selectedUnit.unitTypeName || 'Hạng chuẩn'} • Tầng {selectedUnit.floor} • {selectedUnit.locationNote || selectedUnit.position || 'Vị trí tiêu chuẩn'}
                   </p>
 
@@ -830,7 +451,7 @@ export const StorageUnitFloorPlanView: React.FC<StorageUnitFloorPlanViewProps> =
                 {onStatusChange && (
                   <button
                     type="button"
-                    disabled={isUpdatingStatus || selectedUnit.status === 'OCCUPIED' || selectedUnit.status === 'RESERVED'}
+                    disabled={isUpdatingStatus || selectedUnitMeta.status === 'OCCUPIED' || selectedUnitMeta.status === 'RESERVED'}
                     onClick={handleToggleMaintenance}
                     className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
                       selectedUnit.status === 'MAINTENANCE'
@@ -838,7 +459,7 @@ export const StorageUnitFloorPlanView: React.FC<StorageUnitFloorPlanViewProps> =
                         : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200'
                     }`}
                     title={
-                      selectedUnit.status === 'OCCUPIED' || selectedUnit.status === 'RESERVED'
+                      selectedUnitMeta.status === 'OCCUPIED' || selectedUnitMeta.status === 'RESERVED'
                         ? 'Ô kho đang có khách thuê/giữ chỗ — không thể đổi trạng thái'
                         : undefined
                     }
@@ -861,58 +482,22 @@ export const StorageUnitFloorPlanView: React.FC<StorageUnitFloorPlanViewProps> =
               </div>
             </div>
 
-            {/* HỘP ĐIỀU PHỐI CÔNG VIỆC FM (WORK DISPATCH ADVISORY) */}
+            {/* Thông tin trạng thái chi tiết */}
             <div className="pt-2 border-t border-slate-100">
-              {selectedUnitMeta.isUpcomingCheckout && selectedContract ? (
-                <div className="p-3 bg-amber-50/90 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-start gap-2.5">
-                  <DoorOpen className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold block text-amber-950">
-                      Sắp đến hạn trả kho ({formatVnDate(selectedContract.endDateExclusive)} — còn {Math.max(0, getDaysDiff(selectedContract.endDateExclusive, todayStr))} ngày):
-                    </span>
-                    <p className="mt-0.5 text-amber-800 leading-relaxed">
-                      FM cần liên hệ khách hàng hẹn giờ bàn giao, lên lịch kiểm tra buồng kho (Inspection), nghiệm thu hiện trạng tài sản và đối soát trừ phí dịch vụ / hoàn trả tiền cọc theo quy định BR-DEP-04.
-                    </p>
-                  </div>
-                </div>
-              ) : selectedUnitMeta.isUpcomingCheckin && selectedContract ? (
-                <div className="p-3 bg-sky-50/90 border border-sky-200 rounded-xl text-xs text-sky-900 flex items-start gap-2.5">
-                  <PackageCheck className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold block text-sky-950">
-                      Chuẩn bị đón khách mới ({formatVnDate(selectedContract.startDate)}):
-                    </span>
-                    <p className="mt-0.5 text-sky-800 leading-relaxed">
-                      FM cần kiểm tra vệ sinh sạch sẽ buồng kho {selectedUnit.code}, kiểm tra hoạt động mã PIN điện tử/thẻ từ và chuẩn bị sẵn biên bản bàn giao để tiếp đón khách hàng.
-                    </p>
-                  </div>
-                </div>
-              ) : selectedUnitMeta.isOverdue && selectedContract ? (
-                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900 flex items-start gap-2.5">
-                  <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold block text-rose-950">
-                      Cảnh báo: Hợp đồng quá hạn thanh toán ({Math.abs(getDaysDiff(selectedContract.endDateExclusive, todayStr))} ngày):
-                    </span>
-                    <p className="mt-0.5 text-rose-800 leading-relaxed">
-                      Cần tạm khóa quyền truy cập mã PIN (BR-OVD-01), thông báo cho khách tất toán tiền nợ hoặc phối hợp lập biên bản xử lý tài sản niêm phong theo quy trình.
-                    </p>
-                  </div>
-                </div>
-              ) : horizonFilter === 'FUTURE_DATE' ? (
-                <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-900 flex items-start gap-2.5">
-                  <CalendarClock className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
+              {startDate && endDate ? (
+                <div className="p-3 bg-purple-50/80 border border-purple-200 rounded-xl text-xs text-purple-900 flex items-start gap-2.5">
+                  <Calendar className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
                   <div>
                     <span className="font-bold block text-purple-950">
-                      Dự phóng tại ngày {formatVnDate(activeSimulatedDate)}:
+                      Khoảng thời gian {formatVnDate(startDate)} → {formatVnDate(endDate)}:
                     </span>
                     <p className="mt-0.5 text-purple-800 leading-relaxed">
-                      Trạng thái dự kiến: <strong>{getStatusLabel(selectedUnitMeta.futureStatus)}</strong>
-                      {selectedUnitMeta.futureNote ? ` — ${selectedUnitMeta.futureNote}` : ''}.
+                      Tình trạng: <strong>{selectedUnitMeta.statusLabel}</strong>
+                      {selectedUnitMeta.note ? ` — ${selectedUnitMeta.note}` : ''}.
                     </p>
                   </div>
                 </div>
-              ) : selectedUnit.status === 'AVAILABLE' ? (
+              ) : selectedUnitMeta.status === 'AVAILABLE' ? (
                 <div className="p-3 bg-emerald-50/70 border border-emerald-200/80 rounded-xl text-xs text-emerald-900 flex items-start gap-2.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                   <div>
@@ -920,23 +505,11 @@ export const StorageUnitFloorPlanView: React.FC<StorageUnitFloorPlanViewProps> =
                       Ô kho đang trống & sẵn sàng hoạt động:
                     </span>
                     <p className="mt-0.5 text-emerald-800 leading-relaxed">
-                      Ô kho đã được kiểm tra đạt chuẩn an toàn, PCCC và sẵn sàng tiếp nhận yêu cầu đặt chỗ hoặc cho thuê mới ngay hôm nay.
+                      Chưa có hợp đồng thuê phát sinh. Sẵn sàng gán cho khách hàng đặt mới.
                     </p>
                   </div>
                 </div>
-              ) : (
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 flex items-start gap-2.5">
-                  <Clock className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold block text-slate-900">
-                      Tình trạng vận hành tiêu chuẩn:
-                    </span>
-                    <p className="mt-0.5 text-slate-600 leading-relaxed">
-                      Hệ thống giám sát định kỳ 24/7. Mọi sự cố phát sinh sẽ được ghi nhận và đồng bộ trực tiếp lên bảng điều hành trung tâm.
-                    </p>
-                  </div>
-                </div>
-              )}
+              ) : null}
             </div>
           </div>
         )}

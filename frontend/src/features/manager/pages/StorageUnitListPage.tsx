@@ -14,7 +14,6 @@ import {
   TrendingUp,
   Wrench,
   Calendar,
-  CalendarClock,
   MapPin,
   X,
   Table2,
@@ -70,12 +69,23 @@ const addDaysToStr = (baseDateStr: string, days: number): string => {
   return `${year}-${month}-${day}`;
 };
 
+const formatVnDate = (dateStr?: string): string => {
+  if (!dateStr) return '';
+  const clean = dateStr.substring(0, 10);
+  const parts = clean.split('-');
+  if (parts.length === 3) {
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  return dateStr;
+};
+
 export const StorageUnitListPage: React.FC = () => {
   const todayStr = useMemo(() => getTodayStr(), []);
   const { facilityId, typeId } = useParams<{ facilityId: string; typeId: string }>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const dateParam = searchParams.get('date') || '';
+  const startDateParam = searchParams.get('startDate') || searchParams.get('date') || '';
+  const endDateParam = searchParams.get('endDate') || '';
 
   const facilityIdNum = Number(facilityId) || 0;
   const typeIdNum = Number(typeId) || 0;
@@ -86,25 +96,39 @@ export const StorageUnitListPage: React.FC = () => {
   const [contractsMap, setContractsMap] = useState<Record<number, ManagerContractItem>>({});
   const [statusFilter, setStatusFilter] = useState<UnitStatus | 'ALL'>('ALL');
   const [selectedFloor, setSelectedFloor] = useState<number | 'ALL'>('ALL');
-  const [selectedDate, setSelectedDate] = useState<string>(dateParam);
+  const [startDate, setStartDate] = useState<string>(startDateParam);
+  const [endDate, setEndDate] = useState<string>(endDateParam);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Đồng bộ selectedDate khi URL query param thay đổi
+  // Đồng bộ startDate và endDate khi URL query param thay đổi
   useEffect(() => {
-    if (dateParam !== selectedDate) {
-      setSelectedDate(dateParam);
+    if (startDateParam !== startDate) {
+      setStartDate(startDateParam);
     }
-  }, [dateParam]);
+  }, [startDateParam]);
 
-  const handleDateChange = (newDate: string) => {
-    setSelectedDate(newDate);
+  useEffect(() => {
+    if (endDateParam !== endDate) {
+      setEndDate(endDateParam);
+    }
+  }, [endDateParam]);
+
+  const handleDateRangeChange = (newStart: string, newEnd: string) => {
+    setStartDate(newStart);
+    setEndDate(newEnd);
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
-      if (newDate) {
-        next.set('date', newDate);
+      if (newStart) {
+        next.set('startDate', newStart);
       } else {
-        next.delete('date');
+        next.delete('startDate');
       }
+      if (newEnd) {
+        next.set('endDate', newEnd);
+      } else {
+        next.delete('endDate');
+      }
+      next.delete('date');
       return next;
     });
   };
@@ -136,18 +160,20 @@ export const StorageUnitListPage: React.FC = () => {
       setError(null);
 
       try {
-        // 1. Tải cơ sở, loại kho, ô kho theo ngày và toàn bộ hợp đồng
+        // 1. Tải cơ sở, loại kho, ô kho theo khoảng thời gian và toàn bộ hợp đồng
         const [facList, utRes, suRes, allSuRes, contractsRes] = await Promise.all([
           fetchMyAssignedFacilities(),
           fetchUnitTypes(facilityIdNum, { size: 100 }),
           fetchStorageUnits(facilityIdNum, {
             unitTypeId: typeIdNum,
             size: 200,
-            targetDate: selectedDate || undefined,
+            startDate: startDate || undefined,
+            endDate: endDate || undefined,
           }),
           fetchStorageUnits(facilityIdNum, {
             size: 500,
-            targetDate: selectedDate || undefined,
+            startDate: startDate || undefined,
+            endDate: endDate || undefined,
           }),
           getManagerContracts({ facilityId: facilityIdNum, status: 'ALL' }),
         ]);
@@ -162,7 +188,7 @@ export const StorageUnitListPage: React.FC = () => {
         setStorageUnits(suRes?.content || []);
         setAllFacilityUnits(allSuRes?.content || suRes?.content || []);
 
-        // Ánh xạ hợp đồng còn hiệu lực với từng ô kho (động theo selectedDate)
+        // Ánh xạ hợp đồng còn hiệu lực với từng ô kho (động theo khoảng thời gian)
         const activeContracts = (contractsRes || []).filter(
           (c) =>
             c.status === 'ACTIVE' ||
@@ -174,11 +200,15 @@ export const StorageUnitListPage: React.FC = () => {
         activeContracts.forEach((c) => {
           if (!c.storageUnitId) return;
 
-          if (selectedDate) {
-            const target = selectedDate;
+          if (startDate && endDate) {
             const start = c.startDate ? c.startDate.substring(0, 10) : '';
             const end = c.endDateExclusive ? c.endDateExclusive.substring(0, 10) : '';
-            if (start && end && start <= target && end > target) {
+            if (start && end && start < endDate && end > startDate) {
+              cMap[c.storageUnitId] = c;
+            }
+          } else if (startDate) {
+            const end = c.endDateExclusive ? c.endDateExclusive.substring(0, 10) : '';
+            if (end && end > startDate) {
               cMap[c.storageUnitId] = c;
             }
           } else {
@@ -194,7 +224,7 @@ export const StorageUnitListPage: React.FC = () => {
         setRefreshing(false);
       }
     },
-    [facilityIdNum, typeIdNum, selectedDate]
+    [facilityIdNum, typeIdNum, startDate, endDate]
   );
 
   useEffect(() => {
@@ -204,7 +234,7 @@ export const StorageUnitListPage: React.FC = () => {
   // Reset về trang 1 khi đổi bộ lọc hoặc từ khóa
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, selectedFloor, sortField, sortDirection, selectedDate]);
+  }, [searchTerm, statusFilter, selectedFloor, sortField, sortDirection, startDate, endDate]);
 
   const handleSubmitUnit = async (data: StorageUnitFormData) => {
     try {
@@ -381,42 +411,58 @@ export const StorageUnitListPage: React.FC = () => {
 
         {/* Action button */}
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* Bộ điều khiển Xem trong tương lai & Chọn ngày */}
-          <div className="flex items-center gap-1.5 p-1 bg-purple-50/90 border border-purple-200/90 rounded-xl text-xs shadow-2xs">
-            <CalendarClock className="w-4 h-4 text-purple-700 ml-1 shrink-0" />
-            <span className="font-bold text-purple-950 text-xs hidden sm:inline">Dự phóng:</span>
+          {/* Bộ điều khiển Kiểm tra theo khoảng thời gian: Từ ngày ... Đến ngày ... */}
+          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-50 border border-slate-200/90 rounded-xl text-xs shadow-2xs">
+            <Calendar className="w-4 h-4 text-brand-600 ml-1 shrink-0" />
+            <span className="font-bold text-slate-700 text-xs hidden sm:inline">Từ ngày:</span>
             <input
               type="date"
-              value={selectedDate}
-              onChange={(e) => handleDateChange(e.target.value)}
-              className="px-2 py-1 bg-white border border-purple-200 rounded-lg text-xs font-mono font-bold text-purple-950 outline-none focus:ring-2 focus:ring-purple-400 cursor-pointer shadow-2xs"
+              value={startDate}
+              onChange={(e) => handleDateRangeChange(e.target.value, endDate)}
+              className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-800 outline-none focus:ring-2 focus:ring-brand-400 cursor-pointer shadow-2xs"
+            />
+            <span className="font-bold text-slate-700 text-xs hidden sm:inline">Đến ngày:</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => handleDateRangeChange(startDate, e.target.value)}
+              className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-800 outline-none focus:ring-2 focus:ring-brand-400 cursor-pointer shadow-2xs"
             />
             <div className="flex items-center gap-1">
               <button
                 type="button"
-                onClick={() => handleDateChange(addDaysToStr(todayStr, 7))}
-                className="px-2 py-0.5 rounded bg-white hover:bg-purple-100 text-purple-800 font-semibold border border-purple-200 cursor-pointer text-[11px]"
+                onClick={() => {
+                  const s = startDate || todayStr;
+                  handleDateRangeChange(s, addDaysToStr(s, 7));
+                }}
+                className="px-2 py-0.5 rounded bg-white hover:bg-slate-100 text-slate-700 font-semibold border border-slate-200 cursor-pointer text-[11px]"
               >
                 +7d
               </button>
               <button
                 type="button"
-                onClick={() => handleDateChange(addDaysToStr(todayStr, 14))}
-                className="px-2 py-0.5 rounded bg-white hover:bg-purple-100 text-purple-800 font-semibold border border-purple-200 cursor-pointer text-[11px]"
-              >
-                +14d
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDateChange(addDaysToStr(todayStr, 30))}
-                className="px-2 py-0.5 rounded bg-white hover:bg-purple-100 text-purple-800 font-semibold border border-purple-200 cursor-pointer text-[11px]"
+                onClick={() => {
+                  const s = startDate || todayStr;
+                  handleDateRangeChange(s, addDaysToStr(s, 30));
+                }}
+                className="px-2 py-0.5 rounded bg-white hover:bg-slate-100 text-slate-700 font-semibold border border-slate-200 cursor-pointer text-[11px]"
               >
                 +30d
               </button>
-              {selectedDate && (
+              <button
+                type="button"
+                onClick={() => {
+                  const s = startDate || todayStr;
+                  handleDateRangeChange(s, addDaysToStr(s, 90));
+                }}
+                className="px-2 py-0.5 rounded bg-white hover:bg-slate-100 text-slate-700 font-semibold border border-slate-200 cursor-pointer text-[11px]"
+              >
+                +90d
+              </button>
+              {(startDate || endDate) && (
                 <button
                   type="button"
-                  onClick={() => handleDateChange('')}
+                  onClick={() => handleDateRangeChange('', '')}
                   className="px-2 py-0.5 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold border border-rose-200 cursor-pointer text-[11px] flex items-center gap-0.5"
                   title="Quay lại hôm nay (thời gian thực)"
                 >
@@ -625,26 +671,30 @@ export const StorageUnitListPage: React.FC = () => {
         </div>
       )}
 
-      {/* Banner Chế độ xem theo ngày / Dự phóng tương lai: Hiển thị chung cho cả Sơ đồ 2D lẫn Bảng */}
-      {selectedDate && (
-        <div className="bg-purple-50 border border-purple-200/90 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-purple-900 shadow-2xs">
+      {/* Banner Khoảng thời gian kiểm tra: Hiển thị chung cho cả Sơ đồ 2D lẫn Bảng khi có chọn khoảng thời gian */}
+      {(startDate || endDate) && (
+        <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-800 shadow-2xs">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
-              <CalendarClock className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-xl bg-brand-50 text-brand-700 border border-brand-200 flex items-center justify-center shrink-0">
+              <Calendar className="w-4 h-4" />
             </div>
             <div>
-              <span className="font-bold">Chế độ xem dự phóng tương lai: </span>
+              <span className="font-bold text-slate-900">Khoảng thời gian kiểm tra: </span>
               <span>
-                Đang hiển thị hiện trạng ô kho và khách thuê tại ngày{' '}
-                <strong className="underline decoration-purple-400 font-mono font-bold">
-                  {selectedDate.split('-').reverse().join('/')}
+                Đang kiểm tra hiện trạng buồng kho từ ngày{' '}
+                <strong className="underline decoration-brand-400 font-mono font-bold text-brand-700">
+                  {formatVnDate(startDate) || 'Hiện tại'}
+                </strong>{' '}
+                đến ngày{' '}
+                <strong className="underline decoration-brand-400 font-mono font-bold text-brand-700">
+                  {formatVnDate(endDate) || 'Không giới hạn'}
                 </strong>
               </span>
             </div>
           </div>
           <button
-            onClick={() => handleDateChange('')}
-            className="px-3 py-1.5 bg-white border border-purple-300 text-purple-800 hover:bg-purple-100 rounded-xl font-semibold transition-colors cursor-pointer shrink-0"
+            onClick={() => handleDateRangeChange('', '')}
+            className="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 rounded-xl font-semibold transition-colors cursor-pointer shrink-0"
           >
             Quay về hôm nay (Thời gian thực)
           </button>
@@ -659,8 +709,9 @@ export const StorageUnitListPage: React.FC = () => {
           currentUnitTypeId={typeIdNum}
           currentUnitTypeName={cleanUnitTypeName(unitType?.name) || 'Loại kho'}
           facilityName={facility?.name}
-          selectedDate={selectedDate}
-          onDateChange={handleDateChange}
+          startDate={startDate}
+          endDate={endDate}
+          onDateRangeChange={handleDateRangeChange}
           onSelectUnit={(unit) =>
             navigate(
               `/manager/facilities/${facilityIdNum}/unit-types/${unit.unitTypeId || typeIdNum}/units/${unit.id}`
@@ -721,36 +772,6 @@ export const StorageUnitListPage: React.FC = () => {
                     </option>
                   ))}
                 </select>
-              </div>
-
-              {/* Date Picker Filter */}
-              <div className="flex items-center gap-1.5 text-xs text-slate-600 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <span className="font-medium text-slate-500 whitespace-nowrap">Xem ngày:</span>
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => handleDateChange(e.target.value)}
-                  className="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer"
-                />
-                {selectedDate ? (
-                  <button
-                    type="button"
-                    onClick={() => handleDateChange('')}
-                    title="Xóa bộ lọc ngày (về hôm nay)"
-                    className="text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => handleDateChange(new Date().toISOString().substring(0, 10))}
-                    className="text-[10px] font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 px-1.5 py-0.5 rounded cursor-pointer"
-                  >
-                    Hôm nay
-                  </button>
-                )}
               </div>
             </div>
 

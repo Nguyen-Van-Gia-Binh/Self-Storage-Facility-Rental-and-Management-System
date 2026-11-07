@@ -14,9 +14,12 @@ public interface StorageUnitService {
     PageResponse<StorageUnitResponse> getStorageUnitsByFacility(Long facilityId, Long unitTypeId, StorageUnitStatus status, Pageable pageable);
     PageResponse<StorageUnitResponse> getStorageUnitsByFacility(Long facilityId, Long unitTypeId, StorageUnitStatus status, Integer floor, String position, Pageable pageable);
     default PageResponse<StorageUnitResponse> getStorageUnitsByFacility(Long facilityId, Long unitTypeId, StorageUnitStatus status, Integer floor, String position, java.time.LocalDate startDate, Integer rentalMonths, Pageable pageable) {
-        return getStorageUnitsByFacility(facilityId, unitTypeId, status, floor, position, startDate, rentalMonths, null, pageable);
+        return getStorageUnitsByFacility(facilityId, unitTypeId, status, floor, position, startDate, rentalMonths, null, null, pageable);
     }
-    PageResponse<StorageUnitResponse> getStorageUnitsByFacility(Long facilityId, Long unitTypeId, StorageUnitStatus status, Integer floor, String position, java.time.LocalDate startDate, Integer rentalMonths, java.time.LocalDate targetDate, Pageable pageable);
+    default PageResponse<StorageUnitResponse> getStorageUnitsByFacility(Long facilityId, Long unitTypeId, StorageUnitStatus status, Integer floor, String position, java.time.LocalDate startDate, Integer rentalMonths, java.time.LocalDate targetDate, Pageable pageable) {
+        return getStorageUnitsByFacility(facilityId, unitTypeId, status, floor, position, startDate, rentalMonths, null, targetDate, pageable);
+    }
+    PageResponse<StorageUnitResponse> getStorageUnitsByFacility(Long facilityId, Long unitTypeId, StorageUnitStatus status, Integer floor, String position, java.time.LocalDate startDate, Integer rentalMonths, java.time.LocalDate endDate, java.time.LocalDate targetDate, Pageable pageable);
     StorageUnitResponse getStorageUnitById(Long facilityId, Long unitId);
     StorageUnitResponse createStorageUnit(Long facilityId, CreateStorageUnitRequest request);
     List<StorageUnitResponse> batchCreateStorageUnits(Long facilityId, BatchCreateStorageUnitsRequest request);

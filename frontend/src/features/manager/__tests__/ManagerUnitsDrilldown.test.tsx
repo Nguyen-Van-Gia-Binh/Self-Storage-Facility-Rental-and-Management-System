@@ -225,16 +225,17 @@ describe('Quản lý ô kho — Kiến trúc Drill-down 4 Cấp độ (FM-01)', 
     expect(isContractActiveAtDate(mockContract, '2026-12-01')).toBe(false);
   });
 
-  it('9. Hỗ trợ StorageUnitListParams có targetDate hợp lệ', () => {
+  it('9. Hỗ trợ StorageUnitListParams có startDate và endDate hợp lệ', () => {
     const params: import('@/api/unit').StorageUnitListParams = {
-      facilityId: 1,
       unitTypeId: 10,
-      targetDate: '2026-10-25',
+      startDate: '2026-11-07',
+      endDate: '2026-12-07',
     };
-    expect(params.targetDate).toBe('2026-10-25');
+    expect(params.startDate).toBe('2026-11-07');
+    expect(params.endDate).toBe('2026-12-07');
   });
 
-  it('10. StorageUnitFloorPlanView: Hiển thị bộ lọc kế hoạch hiện tại & tương lai (Sắp đón khách, Sắp trả kho, Dự phóng)', () => {
+  it('10. StorageUnitFloorPlanView: Hiển thị sơ đồ mặt bằng 2D và phản ánh trạng thái theo khoảng thời gian', () => {
     const surrounding = [
       mockStorageUnit,
       { ...mockStorageUnit, id: 102, code: 'CG-S102', status: 'AVAILABLE' as const },
@@ -246,14 +247,15 @@ describe('Quản lý ô kho — Kiến trúc Drill-down 4 Cấp độ (FM-01)', 
           units={surrounding}
           contractsMap={{ 101: mockContract }}
           facilityName="Cơ sở Cầu Giấy"
+          startDate="2026-11-07"
+          endDate="2026-12-07"
         />
       )
     );
 
-    expect(html).toContain('Sắp đón khách (7d)');
-    expect(html).toContain('Sắp trả kho (14d)');
-    expect(html).toContain('Dự phóng tương lai');
-    expect(html).toContain('Góc nhìn:');
+    expect(html).toContain('Sơ đồ Mặt bằng 2D');
     expect(html).toContain('Cơ sở Cầu Giấy');
+    expect(html).toContain('CG-S101');
+    expect(html).toContain('CG-S102');
   });
 });
