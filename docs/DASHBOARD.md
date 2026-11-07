@@ -56,6 +56,7 @@
 | `ISS-150` | Nâng cấp sơ đồ 2D mặt bằng trực quan (FacilityFloorPlanMapModal) có cầu thang chuyển tầng & bảo mật phân công đa cơ sở.    | Thêm ràng buộc STAFF_NOT_IN_FACILITY, sơ đồ 2D 6 màu, click Cầu thang chuyển tầng, test xanh 100%, FE build 0 lỗi.                         |  Gia Bình  |      `RESOLVED`      |
 | `ISS-151` | Chuẩn hóa danh mục Hạng kho Self-Storage (2 môi trường Tiêu Chuẩn/Máy Lạnh, 5 Size XS..XL), chuyển quyền Master cho BOM.   | Thêm Flyway V16, dọn sạch kho logistics cũ, phân quyền BOM quản trị Master Type, FM chỉ đọc, FE modal 2 môi trường, test xanh 100%.         |  Gia Bình  |      `RESOLVED`      |
 | `ISS-152` | Tích hợp bộ lọc trạng thái Hiện tại & Tương lai cho Sơ đồ 2D mặt bằng và Chi tiết ô kho phục vụ FM sắp xếp công việc.      | Bổ sung Horizon Filter (Sắp đón 7d, Sắp trả 14d, Timeline Simulator), dọn sạch sơ đồ thừa ở chi tiết ô kho, test xanh 100%, FE build 0 lỗi. |  Gia Bình  |      `RESOLVED`      |
+| `ISS-153` | Chuẩn hóa giao diện Flow 1, bản in hợp đồng pháp lý (NĐ 30/2020), phân trang màu thương hiệu và tối ưu UX gia hạn.         | Bỏ đường kẻ web trên bản in hợp đồng, sửa nút phân trang bg-brand-600, rút gọn cảnh báo gia hạn, test xanh 100%, FE build 0 lỗi.            |  Xuân Nhi  |      `RESOLVED`      |
 
 _(Lịch sử thảo luận chi tiết của các vấn đề cũ trước đây được lưu tại [docs/\_archive/OPEN-ISSUES-LEGACY.md](_archive/OPEN-ISSUES-LEGACY.md))_
 
