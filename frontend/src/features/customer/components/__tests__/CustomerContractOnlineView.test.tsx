@@ -180,11 +180,8 @@ describe('Customer Portal - Xem Hợp đồng điện tử & Biên bản bàn gi
     const noteElements = await screen.findAllByText(/Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao/i);
     expect(noteElements.length).toBeGreaterThanOrEqual(1);
 
-    // Banner Phụ lục điều chuyển ô kho do sự cố kỹ thuật (BR-AVL-05, BR-SUP-02)
-    expect(await screen.findByText(/PHỤ LỤC ĐIỀU CHUYỂN Ô KHO/i)).toBeInTheDocument();
-    const relocationElements = await screen.findAllByText(/SUP-202610-0001/i);
-    expect(relocationElements.length).toBeGreaterThanOrEqual(1);
-    expect(await screen.findByText(/Bảo lưu toàn bộ quyền lợi khách hàng/i)).toBeInTheDocument();
+    // Khi đã đổi ô xong, không hiển thị banner phụ lục sự cố gây rối mắt
+    expect(screen.queryByText(/PHỤ LỤC ĐIỀU CHUYỂN Ô KHO/i)).toBeNull();
 
     // Nút in hợp đồng
     expect(screen.getByRole('button', { name: /In hợp đồng/i })).toBeInTheDocument();

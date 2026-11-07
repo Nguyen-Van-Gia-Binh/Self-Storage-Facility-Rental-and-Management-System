@@ -6,7 +6,6 @@ import {
   FileText,
   Calendar,
   KeyRound,
-  ShieldCheck,
   CheckCircle2,
   Copy,
   Check,
@@ -129,9 +128,6 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
       : contract.relocationEligible
         ? 'Ô kho phát sinh sự cố lúc tiếp đón. Cơ sở đang phân bổ lại ô kho mới cùng loại cho quý khách.'
         : 'Đang chờ khách hàng xuất trình CCCD và mã e-Pass tại quầy lễ tân để tiến hành nghiệm thu thực địa.';
-  const relocationId = detail?.relocationSupportRequestId || contract.relocationSupportRequestId;
-  const relocationCode = detail?.relocationSupportRequestCode || contract.relocationSupportRequestCode || 'SUP-202610-0001';
-  const relocationReason = detail?.relocationReason || contract.relocationReason || 'Di dời kho đạt chuẩn kỹ thuật theo sự cố hỗ trợ';
 
   const getStatusBadge = () => {
     switch (contract.status) {
@@ -245,32 +241,8 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
         {/* Modal Content */}
         <div className="p-5 sm:p-6 max-h-[72vh] overflow-y-auto space-y-4">
             <div className="space-y-4 text-xs">
-              {/* Banner Phụ lục điều chuyển ô kho do sự cố kỹ thuật (nếu có) */}
-              {relocationId && (
-                <div className="p-4 rounded-xl bg-amber-50/90 border-2 border-amber-300 space-y-2 animate-in fade-in duration-200 shadow-xs">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-amber-900 font-extrabold text-xs uppercase tracking-wide">
-                      <ShieldCheck className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                      <span>PHỤ LỤC ĐIỀU CHUYỂN Ô KHO (SỰ CỐ KỸ THUẬT)</span>
-                    </div>
-                    <span className="text-[11px] font-mono font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded">
-                      {relocationCode}
-                    </span>
-                  </div>
-                  <p className="text-xs text-amber-900 leading-relaxed">
-                    Ô kho đã được Ban Quản lý cơ sở điều chuyển từ ô ban đầu sang <strong>Ô KHO MỚI: {effectiveUnitNumber}</strong> theo Phiếu xử lý sự cố số <strong>{relocationCode}</strong> ({relocationReason}).
-                  </p>
-                  <div className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                    <span>
-                      Bảo lưu toàn bộ quyền lợi khách hàng: Đơn giá thuê ({formatVND(detail?.monthlyPrice || contract.monthlyRent)}/tháng) và tiền cọc bảo đảm ban đầu ({formatVND(detail?.depositAmount || contract.depositHeld)}) được giữ nguyên vẹn.
-                    </span>
-                  </div>
-                </div>
-              )}
-
               {/* Banner Chờ phân bổ lại ô kho mới khi phát hiện sự cố tiếp đón */}
-              {Boolean(contract.relocationEligible || detail?.relocationEligible) && !relocationId && (
+              {Boolean(contract.relocationEligible || detail?.relocationEligible) && (
                 <div className="p-4 rounded-xl bg-amber-50/90 border-2 border-amber-300 space-y-2 animate-in fade-in duration-200 shadow-xs">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-amber-900 font-extrabold text-xs uppercase tracking-wide">
@@ -282,7 +254,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                     </span>
                   </div>
                   <p className="text-xs text-amber-900 leading-relaxed">
-                    Ô kho ban đầu ({effectiveUnitNumber}) phát sinh sự cố lúc tiếp đón. Quản lý cơ sở đang phân bổ ô kho mới đạt chuẩn cùng loại cho quý khách.
+                    Ô kho ban đầu phát sinh sự cố lúc tiếp đón. Quản lý cơ sở đang phân bổ ô kho mới đạt chuẩn cùng loại cho quý khách.
                   </p>
                   <div className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 flex items-center gap-1.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
