@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, RefreshCw, AlertCircle, CheckCircle, ArrowRight } from 'lucide-react';
+import { X, RefreshCw, AlertCircle, CheckCircle, ArrowRight, MapPin } from 'lucide-react';
 import type { ManagerContractItem, AvailableUnitOption } from '@/types/contractManager';
 import { getAvailableUnitsForReassign, reassignStorageUnit } from '@/api/contract';
+import { FacilityFloorPlanMapModal } from './FacilityFloorPlanMapModal';
 
 interface ReassignUnitModalProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export const ReassignUnitModal: React.FC<ReassignUnitModalProps> = ({
   const [fetchingUnits, setFetchingUnits] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [customerConsent, setCustomerConsent] = useState(false);
+  const [floorPlanOpen, setFloorPlanOpen] = useState(false);
 
   const needsConsent = contract?.status === 'PENDING_CHECK_IN';
 
@@ -170,9 +172,19 @@ export const ReassignUnitModal: React.FC<ReassignUnitModalProps> = ({
 
           {/* Chọn ô kho trống cùng loại */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-2">
-              1. Chọn ô kho trống thay thế cùng loại ({availableUnits.length} ô khả dụng)
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600">
+                1. Chọn ô kho trống thay thế cùng loại ({availableUnits.length} ô khả dụng)
+              </label>
+              <button
+                type="button"
+                onClick={() => setFloorPlanOpen(true)}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 px-2.5 py-1 rounded-lg border border-brand-200 transition-colors cursor-pointer"
+              >
+                <MapPin className="w-3.5 h-3.5" />
+                <span>Chọn trên Sơ đồ 2D</span>
+              </button>
+            </div>
 
             {fetchingUnits ? (
               <div className="p-6 text-center text-slate-400 text-xs animate-pulse">
@@ -299,6 +311,22 @@ export const ReassignUnitModal: React.FC<ReassignUnitModalProps> = ({
           </button>
         </div>
       </div>
+
+      {floorPlanOpen && (
+        <FacilityFloorPlanMapModal
+          isOpen={floorPlanOpen}
+          onClose={() => setFloorPlanOpen(false)}
+          facilityId={contract.facilityId}
+          facilityName={contract.facilityName}
+          allowedUnitTypeId={contract.unitTypeId}
+          targetUnitTypeName={contract.unitTypeName}
+          highlightUnitId={contract.storageUnitId}
+          onSelectUnit={(unit) => {
+            setSelectedUnitId(unit.id);
+            setFloorPlanOpen(false);
+          }}
+        />
+      )}
     </div>,
     document.body
   );
