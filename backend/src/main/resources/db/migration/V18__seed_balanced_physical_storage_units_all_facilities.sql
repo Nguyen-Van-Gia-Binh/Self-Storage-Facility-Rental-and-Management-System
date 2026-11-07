@@ -1,10 +1,92 @@
 -- ============================================================================
 -- V18__seed_balanced_physical_storage_units_all_facilities.sql
 -- Chuẩn hóa và phủ kín ô kho vật lý (storage_unit) đa tầng cho toàn bộ 15 cơ sở
+-- 0. Đảm bảo toàn bộ 7 cơ sở mở rộng (ID 9 -> 15) tồn tại đầy đủ trong hệ thống
 -- 1. Chuyển các ô kho TX- bị seed nhầm tại Cơ sở 2 về đúng Cơ sở 4 (Thanh Xuân)
 -- 2. Bổ sung các loại ô kho còn thiếu cho Cơ sở 2 (Quận 7) và Cơ sở 5 (Quận 1)
 -- 3. Phủ kín ô kho thực tế đa tầng (Tầng 1, 2, 3) cho tất cả các cơ sở 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
 -- ============================================================================
+
+-- 0. Đảm bảo toàn bộ 7 cơ sở mở rộng (ID 9 -> 15) tồn tại đầy đủ và chuẩn hóa thông tin
+INSERT INTO facility (id, code, name, address, phone, description, opening_hours, status)
+VALUES
+(9,  'FAC-HP', 'Cơ sở Cảng Đình Vũ - Hải Phòng', 'Khu kinh tế Đình Vũ, Phường Đông Hải 2, Quận Hải An, Hải Phòng',            '0225-388-9999', 'Cơ sở kho tự quản logistics trọng điểm cửa ngõ cảng biển Hải Phòng. Diện tích bãi lớn, container ra vào 24/7, tiêu chuẩn an toàn PCCC quốc tế.', '00:00–24:00 (24/7)', 'ACTIVE'),
+(10, 'FAC-BN', 'Cơ sở Yên Phong - Bắc Ninh',     'Khu công nghiệp Yên Phong 1, Xã Yên Trung, Huyện Yên Phong, Bắc Ninh',     '0222-389-8888', 'Cơ sở kho bãi thông minh phục vụ chuỗi cung ứng linh kiện điện tử và cư dân khu công nghiệp công nghệ cao Bắc Ninh.', '06:00–22:00', 'ACTIVE'),
+(11, 'FAC-DN', 'Cơ sở Hải Châu - Đà Nẵng',        'Số 120 Nguyễn Văn Linh, Phường Nam Dương, Quận Hải Châu, TP. Đà Nẵng',    '0236-382-7777', 'Vị trí trung tâm thành phố Đà Nẵng, kết nối sân bay quốc tế và trục tài chính. Hệ thống điều hòa nhiệt ẩm 24/7 hiện đại bậc nhất miền Trung.', '06:00–22:00', 'ACTIVE'),
+(12, 'FAC-KH', 'Cơ sở Nha Trang - Khánh Hòa',     'Số 28 Trần Phú, Phường Vĩnh Nguyên, TP. Nha Trang, Khánh Hòa',             '0258-381-6666', 'Cơ sở kho mini tiện ích phục vụ khách du lịch, hộ kinh doanh dịch vụ biển đảo và cư dân đô thị Nha Trang.', '06:00–23:00', 'ACTIVE'),
+(13, 'FAC-NA', 'Cơ sở TP. Vinh - Nghệ An',        'Số 88 Lê Lợi, Phường Lê Lợi, TP. Vinh, Nghệ An',                          '0238-384-5555', 'Cơ sở kho tự quản trung tâm vùng Bắc Trung Bộ, giao thông liên tỉnh thuận tiện, camera AI an ninh giám sát 24/7.', '06:00–22:00', 'ACTIVE'),
+(14, 'FAC-BD', 'Cơ sở Dĩ An - Bình Dương',        'Số 65 Quốc lộ 1K, Phường Đông Hòa, TP. Dĩ An, Bình Dương',                 '0274-378-4444', 'Cơ sở kho tự quản giáp ranh TP. Thủ Đức và TP. Dĩ An. Phù hợp lưu trữ hàng hóa thương mại điện tử và đồ gia đình các khu đô thị mới.', '00:00–24:00 (24/7)', 'ACTIVE'),
+(15, 'FAC-CT', 'Cơ sở Ninh Kiều - Cần Thơ',       'Số 150 Đường 30 Tháng 4, Phường Xuân Khánh, Quận Ninh Kiều, TP. Cần Thơ', '0292-383-3333', 'Trung tâm tự quản Tây Nam Bộ, bến bốc dỡ hàng hóa thuận tiện, hệ thống kiểm soát nhiệt ẩm chuyên dụng cho nông sản cao cấp và tài liệu.', '06:00–22:00', 'ACTIVE')
+ON CONFLICT (id) DO UPDATE SET
+    code = EXCLUDED.code,
+    name = EXCLUDED.name,
+    address = EXCLUDED.address,
+    phone = EXCLUDED.phone,
+    description = EXCLUDED.description,
+    opening_hours = EXCLUDED.opening_hours,
+    status = EXCLUDED.status;
+
+-- Cập nhật sequence cho facility
+SELECT setval(pg_get_serial_sequence('facility', 'id'), COALESCE((SELECT MAX(id) FROM facility), 15));
+
+-- Phân quyền cơ sở 9 -> 15 cho các tài khoản quản lý và nhân viên mẫu
+INSERT INTO user_facility_assignment (user_id, facility_id)
+SELECT u.id, f.id FROM app_user u, facility f
+WHERE (u.email IN ('manager@storage.vn', 'fm.q1@smartstorage.vn', 'staff@storage.vn', 'staff.q1@smartstorage.vn'))
+  AND f.id BETWEEN 9 AND 15
+ON CONFLICT (user_id, facility_id) DO NOTHING;
+
+-- Đồng bộ bảng giá niêm yết chuẩn cho các cơ sở mở rộng 9 -> 15
+WITH standard_prices (code, monthly_price, price_per_m2) AS (
+    VALUES
+    ('UT-STD-XS',  350000, 350000),
+    ('UT-STD-S',   750000, 250000),
+    ('UT-STD-M',  1500000, 250000),
+    ('UT-STD-L',  2400000, 240000),
+    ('UT-STD-XL', 3500000, 233333),
+    ('UT-AC-XS',   500000, 500000),
+    ('UT-AC-S',   1100000, 366666),
+    ('UT-AC-M',   2100000, 350000),
+    ('UT-AC-L',   3400000, 340000),
+    ('UT-AC-XL',  4800000, 320000)
+)
+INSERT INTO facility_unit_type_price (facility_id, unit_type_id, monthly_price, price_per_m2)
+SELECT f.id, ut.id, sp.monthly_price, sp.price_per_m2
+FROM facility f
+CROSS JOIN standard_prices sp
+JOIN unit_type ut ON ut.code = sp.code
+WHERE f.id BETWEEN 9 AND 15
+ON CONFLICT (facility_id, unit_type_id)
+DO UPDATE SET
+    monthly_price = EXCLUDED.monthly_price,
+    price_per_m2  = EXCLUDED.price_per_m2;
+
+WITH standard_prices (code, monthly_price, price_per_m2) AS (
+    VALUES
+    ('UT-STD-XS',  350000, 350000),
+    ('UT-STD-S',   750000, 250000),
+    ('UT-STD-M',  1500000, 250000),
+    ('UT-STD-L',  2400000, 240000),
+    ('UT-STD-XL', 3500000, 233333),
+    ('UT-AC-XS',   500000, 500000),
+    ('UT-AC-S',   1100000, 366666),
+    ('UT-AC-M',   2100000, 350000),
+    ('UT-AC-L',   3400000, 340000),
+    ('UT-AC-XL',  4800000, 320000)
+)
+INSERT INTO facility_unit_type_price_version (
+    facility_id, unit_type_id, monthly_price, price_per_m2, effective_from, effective_to, created_by
+)
+SELECT f.id, ut.id, sp.monthly_price, sp.price_per_m2, '2026-01-01 00:00:00+07', NULL,
+       COALESCE((SELECT id FROM app_user WHERE email = 'manager@storage.vn' LIMIT 1), 4)
+FROM facility f
+CROSS JOIN standard_prices sp
+JOIN unit_type ut ON ut.code = sp.code
+WHERE f.id BETWEEN 9 AND 15
+  AND NOT EXISTS (
+      SELECT 1 FROM facility_unit_type_price_version v
+      WHERE v.facility_id = f.id AND v.unit_type_id = ut.id
+  );
 
 -- 1. Chuyển ô kho TX- từ Cơ sở 2 (Quận 7) sang Cơ sở 4 (Thanh Xuân - Hà Nội)
 UPDATE storage_unit SET facility_id = 4 WHERE facility_id = 2 AND code LIKE 'TX-%';
