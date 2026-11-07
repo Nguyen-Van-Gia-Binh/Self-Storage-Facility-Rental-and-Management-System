@@ -5,14 +5,14 @@
   "status": "pass",
   "type": "sequence",
   "quality": "showcase",
-  "startedAt": "2026-11-06T04:31:06.446Z",
+  "startedAt": "2026-11-07T17:23:42.202Z",
   "specification": {
     "path": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\sequence-flow1-reservation-20261106-112900\\candidate.json",
-    "sha256": "42bc32f8dff0a3ad71e6ff864777cbe7529fe20d678d384850d5adbd50f30bdb",
-    "bytes": 11053
+    "sha256": "1b3a3f050a7e48d6270a0e7cdd0bcce3bbdccdd13c77567132a009082d2680b9",
+    "bytes": 11272
   },
   "artifact": {
-    "path": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation-sequence.html",
+    "path": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation\\flow-1-reservation-sequence.html",
     "sha256": "dcdeec7965cd2f05fd872116a4bb2d99499486ac44f53f213a7fce98aedff7ad",
     "bytes": 858440
   },
@@ -28,7 +28,7 @@
         "deliver",
         "sequence",
         "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\sequence-flow1-reservation-20261106-112900\\candidate.json",
-        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation-sequence.html",
+        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation\\flow-1-reservation-sequence.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -40,8 +40,8 @@
         "ok": true,
         "command": "validate",
         "specification": {
-          "sha256": "42bc32f8dff0a3ad71e6ff864777cbe7529fe20d678d384850d5adbd50f30bdb",
-          "bytes": 11053
+          "sha256": "1b3a3f050a7e48d6270a0e7cdd0bcce3bbdccdd13c77567132a009082d2680b9",
+          "bytes": 11272
         },
         "validation": {
           "checksPassed": 9,
@@ -56,14 +56,14 @@
     "deliver": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 1314,
+      "durationMs": 833,
       "command": [
         "C:\\Program Files\\nodejs\\node.exe",
         "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\.agents\\skills\\archify\\bin\\archify.mjs",
         "deliver",
         "sequence",
         "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\sequence-flow1-reservation-20261106-112900\\candidate.json",
-        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation-sequence.html",
+        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation\\flow-1-reservation-sequence.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -72,15 +72,15 @@
       ],
       "receipt": {
         "schemaVersion": 1,
-        "receiptId": "55666db7-5f85-48fe-a4e5-d09b15124a5e",
+        "receiptId": "1f2eceeb-eabf-48e7-bc26-5ee3ecd13fe9",
         "ok": true,
         "command": "deliver",
         "type": "sequence",
         "input": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\sequence-flow1-reservation-20261106-112900\\candidate.json",
-        "output": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation-sequence.html",
+        "output": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation\\flow-1-reservation-sequence.html",
         "specification": {
-          "sha256": "42bc32f8dff0a3ad71e6ff864777cbe7529fe20d678d384850d5adbd50f30bdb",
-          "bytes": 11053
+          "sha256": "1b3a3f050a7e48d6270a0e7cdd0bcce3bbdccdd13c77567132a009082d2680b9",
+          "bytes": 11272
         },
         "artifact": {
           "sha256": "dcdeec7965cd2f05fd872116a4bb2d99499486ac44f53f213a7fce98aedff7ad",
@@ -116,17 +116,17 @@
     "check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 386,
+      "durationMs": 310,
       "command": [
         "C:\\Program Files\\nodejs\\node.exe",
         "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\.agents\\skills\\archify\\bin\\archify.mjs",
         "check",
-        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation-sequence.html",
+        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation\\flow-1-reservation-sequence.html",
         "--require-provenance"
       ],
       "receipt": {
         "ok": true,
-        "file": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation-sequence.html",
+        "file": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation\\flow-1-reservation-sequence.html",
         "artifact": {
           "sha256": "dcdeec7965cd2f05fd872116a4bb2d99499486ac44f53f213a7fce98aedff7ad",
           "bytes": 858440
@@ -258,18 +258,18 @@
           "issues": []
         },
         "provenance": "current",
-        "deliveryReceiptId": "55666db7-5f85-48fe-a4e5-d09b15124a5e"
+        "deliveryReceiptId": "1f2eceeb-eabf-48e7-bc26-5ee3ecd13fe9"
       }
     },
     "browser-check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 4452,
+      "durationMs": 2757,
       "command": [
         "C:\\Program Files\\nodejs\\node.exe",
         "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\.agents\\skills\\archify\\bin\\archify.mjs",
         "browser-check",
-        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation-sequence.html",
+        "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation\\flow-1-reservation-sequence.html",
         "--json",
         "--require-provenance"
       ],
@@ -282,9 +282,9 @@
         "status": "pass",
         "visualReview": "not-requested",
         "provenance": "current",
-        "deliveryReceiptId": "55666db7-5f85-48fe-a4e5-d09b15124a5e",
+        "deliveryReceiptId": "1f2eceeb-eabf-48e7-bc26-5ee3ecd13fe9",
         "artifact": {
-          "path": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation-sequence.html",
+          "path": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation\\flow-1-reservation-sequence.html",
           "sha256": "dcdeec7965cd2f05fd872116a4bb2d99499486ac44f53f213a7fce98aedff7ad",
           "bytes": 858440
         },
@@ -979,19 +979,19 @@
   },
   "diagnostics": [],
   "evidence": {
-    "receipt": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation-sequence.finalize.json",
-    "summaryReceipt": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation-sequence.finalize-summary.json",
-    "browserCheckReceipt": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation-sequence.browser-check.json"
+    "receipt": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation\\flow-1-reservation-sequence.finalize.json",
+    "summaryReceipt": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation\\flow-1-reservation-sequence.finalize-summary.json",
+    "browserCheckReceipt": "E:\\SEMESTER 5\\SWP\\Self-Storage-Facility-Rental-and-Management-System\\docs\\diagrams\\flow-1-reservation\\flow-1-reservation-sequence.browser-check.json"
   },
   "visualReview": "not-requested",
-  "finishedAt": "2026-11-06T04:31:13.344Z",
-  "durationMs": 6897,
+  "finishedAt": "2026-11-07T17:23:46.722Z",
+  "durationMs": 4520,
   "update": {
     "status": "current",
     "installedVersion": "3.2.0",
     "availableVersion": "3.2.0",
     "releaseNotes": null,
-    "checkedAt": "2026-11-06T03:54:51.643Z",
+    "checkedAt": "2026-11-07T17:23:32.601Z",
     "source": "cache",
     "noticeRequired": false,
     "noticeText": null

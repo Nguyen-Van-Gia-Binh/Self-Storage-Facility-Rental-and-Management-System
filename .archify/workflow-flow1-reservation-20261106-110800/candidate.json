@@ -11,7 +11,7 @@
     "repository": {
       "url": "https://github.com/Nguyen-Van-Gia-Binh/Self-Storage-Facility-Rental-and-Management-System.git",
       "provider": "github",
-      "revision": "aa2e49023f059a4173225f87f7fb325341466ee2",
+      "revision": "01163db51f573389e2d4e7920615c58314daf0e4",
       "link_mode": "web"
     }
   },
@@ -403,15 +403,21 @@
       "sources": [
         {
           "path": "frontend/src/features/customer/components/MyUnitsTable.tsx",
-          "line": 70,
-          "end_line": 85,
-          "label": "Mã PIN & QR Check-in Access"
+          "line": 466,
+          "end_line": 485,
+          "label": "Mã PIN & Nút Check-in online khi đã gán ô"
         },
         {
-          "path": "backend/src/main/java/com/swp391/selfstorage/reservation/service/ReservationServiceImpl.java",
-          "line": 360,
-          "end_line": 390,
-          "label": "Kích hoạt trạng thái CONFIRMED"
+          "path": "frontend/src/features/customer/utils/unitAssignment.ts",
+          "line": 5,
+          "end_line": 21,
+          "label": "isStorageUnitAssigned kiểm tra ô kho vật lý"
+        },
+        {
+          "path": "frontend/src/features/customer/components/DigitalMoveInPassModal.tsx",
+          "line": 182,
+          "end_line": 276,
+          "label": "Ký số E-Handover & Cảm biến IoT 24/7"
         }
       ]
     }
