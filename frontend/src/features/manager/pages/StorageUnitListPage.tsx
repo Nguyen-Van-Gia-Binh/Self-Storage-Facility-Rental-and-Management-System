@@ -374,99 +374,121 @@ export const StorageUnitListPage: React.FC = () => {
       />
 
       {/* Header bar */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-              Danh sách Ô kho vật lý
-            </h1>
-            {unitType && (
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200/80">
-                {cleanUnitTypeName(unitType.name)} ({unitType.areaM2} m²)
-              </span>
-            )}
+      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+        {/* Tầng 1: Tiêu đề & Các thao tác chính (Sơ đồ / Bảng, Làm mới, Thêm ô kho) */}
+        <div className="p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-700 border border-brand-200/80 flex items-center justify-center shrink-0">
+              <Building2 className="w-5 h-5" />
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
+                Danh sách Ô kho vật lý
+              </h1>
+              {unitType && (
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200/80">
+                  {cleanUnitTypeName(unitType.name)} ({unitType.areaM2} m²)
+                </span>
+              )}
+            </div>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Quản lý hiện trạng từng ô kho thuộc loại {cleanUnitTypeName(unitType?.name) || 'kho'}, giám sát người thuê và thời hạn hợp đồng
-          </p>
+
+          <div className="flex items-center gap-2.5 shrink-0">
+            {/* Bộ chuyển đổi chế độ xem: Sơ đồ 2D vs Bảng danh sách */}
+            <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
+              <button
+                type="button"
+                onClick={() => setViewMode('floorplan')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  viewMode === 'floorplan'
+                    ? 'bg-white text-slate-900 shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <MapPin className={`w-3.5 h-3.5 ${viewMode === 'floorplan' ? 'text-teal-600' : 'text-slate-400'}`} />
+                <span>Sơ đồ 2D</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('table')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  viewMode === 'table'
+                    ? 'bg-white text-slate-900 shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Table2 className={`w-3.5 h-3.5 ${viewMode === 'table' ? 'text-brand-600' : 'text-slate-400'}`} />
+                <span>Bảng danh sách</span>
+              </button>
+            </div>
+
+            {/* Nút Làm mới */}
+            <button
+              onClick={() => loadData(true)}
+              disabled={refreshing}
+              className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors cursor-pointer shrink-0"
+              title="Làm mới"
+            >
+              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            </button>
+
+            {/* Nút Thêm ô kho vật lý */}
+            <button
+              onClick={() => setSuModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-sm transition-all cursor-pointer shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Thêm ô kho vật lý</span>
+            </button>
+          </div>
         </div>
 
-        {/* Action button */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* Bộ điều khiển Kiểm tra theo khoảng thời gian: Từ ngày ... Đến ngày ... */}
-          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-50 border border-slate-200/90 rounded-xl text-xs shadow-2xs">
-            <Calendar className="w-4 h-4 text-brand-600 ml-1 shrink-0" />
-            <span className="font-bold text-slate-700 text-xs hidden sm:inline">Từ ngày:</span>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => handleDateRangeChange(e.target.value, endDate)}
-              className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-800 outline-none focus:ring-2 focus:ring-brand-400 cursor-pointer shadow-2xs"
-            />
-            <span className="font-bold text-slate-700 text-xs hidden sm:inline">Đến ngày:</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => handleDateRangeChange(startDate, e.target.value)}
-              className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-800 outline-none focus:ring-2 focus:ring-brand-400 cursor-pointer shadow-2xs"
-            />
+        {/* Tầng 2: Thanh lọc khoảng thời gian kiểm tra buồng kho */}
+        <div className="px-4 py-3 bg-slate-50/70 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="font-bold text-slate-700 flex items-center gap-1.5">
+              <Calendar className="w-4 h-4 text-brand-600" />
+              Khoảng thời gian:
+            </span>
+            <div className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-1 rounded-xl shadow-2xs">
+              <span className="text-slate-500 font-medium text-xs">Từ ngày:</span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => handleDateRangeChange(e.target.value, endDate)}
+                className="bg-transparent font-mono font-bold text-slate-800 outline-none cursor-pointer"
+              />
+              <span className="text-slate-300">|</span>
+              <span className="text-slate-500 font-medium text-xs">Đến ngày:</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => handleDateRangeChange(startDate, e.target.value)}
+                className="bg-transparent font-mono font-bold text-slate-800 outline-none cursor-pointer"
+              />
+            </div>
             {(startDate || endDate) && (
               <button
                 type="button"
                 onClick={() => handleDateRangeChange('', '')}
-                className="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold border border-rose-200 cursor-pointer text-xs flex items-center gap-1 transition-colors"
+                className="px-2.5 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold border border-rose-200 cursor-pointer text-xs flex items-center gap-1 transition-colors"
                 title="Quay lại hôm nay (thời gian thực)"
               >
                 <X className="w-3.5 h-3.5" />
-                <span>Hôm nay</span>
+                <span>Xem hôm nay</span>
               </button>
             )}
           </div>
 
-          {/* Bộ chuyển đổi chế độ xem: Sơ đồ 2D vs Bảng danh sách */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
-            <button
-              type="button"
-              onClick={() => setViewMode('floorplan')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                viewMode === 'floorplan'
-                  ? 'bg-white text-slate-900 shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <MapPin className={`w-3.5 h-3.5 ${viewMode === 'floorplan' ? 'text-teal-600' : 'text-slate-400'}`} />
-              <span>Sơ đồ 2D</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('table')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                viewMode === 'table'
-                  ? 'bg-white text-slate-900 shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Table2 className={`w-3.5 h-3.5 ${viewMode === 'table' ? 'text-brand-600' : 'text-slate-400'}`} />
-              <span>Bảng danh sách</span>
-            </button>
+          <div className="text-xs text-slate-500">
+            {startDate && endDate ? (
+              <span>
+                Đang kiểm tra từ <strong className="font-mono text-brand-700 font-bold">{formatVnDate(startDate)}</strong> đến <strong className="font-mono text-brand-700 font-bold">{formatVnDate(endDate)}</strong>
+              </span>
+            ) : (
+              <span>Hiển thị hiện trạng theo thời gian thực (Hôm nay)</span>
+            )}
           </div>
-
-          <button
-            onClick={() => loadData(true)}
-            disabled={refreshing}
-            className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors cursor-pointer shrink-0"
-            title="Làm mới"
-          >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-          </button>
-
-          <button
-            onClick={() => setSuModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-sm transition-all cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Thêm ô kho vật lý</span>
-          </button>
         </div>
       </div>
 
@@ -621,35 +643,7 @@ export const StorageUnitListPage: React.FC = () => {
         </div>
       )}
 
-      {/* Banner Khoảng thời gian kiểm tra: Hiển thị chung cho cả Sơ đồ 2D lẫn Bảng khi có chọn khoảng thời gian */}
-      {(startDate || endDate) && (
-        <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-800 shadow-2xs">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-brand-50 text-brand-700 border border-brand-200 flex items-center justify-center shrink-0">
-              <Calendar className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="font-bold text-slate-900">Khoảng thời gian kiểm tra: </span>
-              <span>
-                Đang kiểm tra hiện trạng buồng kho từ ngày{' '}
-                <strong className="underline decoration-brand-400 font-mono font-bold text-brand-700">
-                  {formatVnDate(startDate) || 'Hiện tại'}
-                </strong>{' '}
-                đến ngày{' '}
-                <strong className="underline decoration-brand-400 font-mono font-bold text-brand-700">
-                  {formatVnDate(endDate) || 'Không giới hạn'}
-                </strong>
-              </span>
-            </div>
-          </div>
-          <button
-            onClick={() => handleDateRangeChange('', '')}
-            className="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 rounded-xl font-semibold transition-colors cursor-pointer shrink-0"
-          >
-            Quay về hôm nay (Thời gian thực)
-          </button>
-        </div>
-      )}
+
 
       {/* Nội dung chính: Sơ đồ 2D mặt bằng vs Bảng danh sách chi tiết */}
       {viewMode === 'floorplan' ? (
