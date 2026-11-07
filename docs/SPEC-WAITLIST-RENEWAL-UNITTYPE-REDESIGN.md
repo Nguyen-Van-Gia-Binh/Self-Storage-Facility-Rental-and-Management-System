@@ -182,12 +182,9 @@ Một `UnitType` chuẩn doanh nghiệp bao gồm 3 nhóm thông tin:
    * `max_load_kg_m2` (Tải trọng sàn): Khả năng chịu lực tối đa của sàn (kg/$m^2$), phục vụ khách hàng doanh nghiệp B2B chứa hàng nặng.
    * `pallet_capacity` (Sức chứa Pallet): Số pallet tiêu chuẩn (1.0m $\times$ 1.2m) có thể xếp được.
 3. **Nhóm 3 — Môi trường lưu trữ & Tiện ích:**
-   * `environment` (Môi trường kiểm soát): Enum bắt buộc:
-     * `DRY`: Kho khô tiêu chuẩn (Quần áo, đồ gia đình, tài liệu).
-     * `CHILLED`: Kho mát ($10^\circ\text{C} - 15^\circ\text{C}$, nông sản, mỹ phẩm, dược phẩm).
-     * `FREEZER`: Kho đông ($-18^\circ\text{C}$, thực phẩm cấp đông).
-     * `BONDED`: Kho ngoại quan (Hàng hóa chờ thủ tục hải quan).
-     * `YARD`: Bãi lưu kho ngoài trời (Xe cộ, container, sắt thép).
+   * `environment` (Môi trường kiểm soát Self-Storage): Enum bắt buộc do BOM ban hành:
+     * `STANDARD`: Kho tiêu chuẩn (Nhiệt độ phòng tự nhiên, thông thoáng, PCCC chuẩn).
+     * `CLIMATE_CONTROLLED`: Kho máy lạnh (Điều hòa $20^\circ\text{C} - 25^\circ\text{C}$ & kiểm soát ẩm 24/7 cho đồ da, rượu vang, thiết bị điện tử, dược mỹ phẩm).
    * `features` (Đặc tính nổi bật): Danh sách cờ tiện ích (PCCC tự động, camera 24/7, xe nâng hỗ trợ, cửa cuốn cơ/điện).
 
 ---

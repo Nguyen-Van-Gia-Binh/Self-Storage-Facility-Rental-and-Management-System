@@ -1,27 +1,26 @@
 // frontend/src/features/manager/pages/UnitCatalogPage.tsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { UnitTypeCard } from '../components/UnitTypeCard';
-import { UnitTypeFormModal } from '../components/UnitTypeFormModal';
+import { useNavigate } from 'react-router-dom';
+import { UnitTypeCard, cleanUnitTypeName } from '../components/UnitTypeCard';
 import { StorageUnitFormModal } from '../components/StorageUnitFormModal';
+import { StorageUnitFloorPlanView } from '../components/StorageUnitFloorPlanView';
 import { StatusBadge } from '../components/StatusBadge';
-import { Plus, Building2, Layers, Box, Wrench, CheckCircle2, AlertCircle, Snowflake, Package } from 'lucide-react';
+import { Plus, Building2, Layers, Box, Wrench, CheckCircle2, AlertCircle, Snowflake, Package, MapPin, Table2 } from 'lucide-react';
 import type {
   UnitTypeResponse,
   StorageUnitResponse,
-  UnitTypeFormData,
   StorageUnitFormData,
   UnitStatus,
 } from '@/types/unit';
+import type { ManagerContractItem } from '@/types/contractManager';
 import {
   fetchUnitTypes,
   fetchStorageUnits,
-  createUnitType,
-  updateUnitType,
-  toggleUnitTypeStatus,
   createStorageUnit,
   updateStorageUnitStatus,
 } from '@/api/unit';
 import { fetchMyAssignedFacilities } from '@/api/facility';
+import { getManagerContracts } from '@/api/contract';
 import type { FacilityListItem } from '@/types';
 
 const STATUS_FILTERS: { label: string; value: UnitStatus | 'ALL' }[] = [
@@ -33,17 +32,19 @@ const STATUS_FILTERS: { label: string; value: UnitStatus | 'ALL' }[] = [
 ];
 
 export const UnitCatalogPage: React.FC = () => {
+  const navigate = useNavigate();
   const [facilities, setFacilities] = useState<FacilityListItem[]>([]);
   const [facilityId, setFacilityId] = useState<number>(1);
   const [unitTypes, setUnitTypes] = useState<UnitTypeResponse[]>([]);
   const [storageUnits, setStorageUnits] = useState<StorageUnitResponse[]>([]);
+  const [allFacilityUnits, setAllFacilityUnits] = useState<StorageUnitResponse[]>([]);
+  const [contractsMap, setContractsMap] = useState<Record<number, ManagerContractItem>>({});
   const [selectedTypeId, setSelectedTypeId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<UnitStatus | 'ALL'>('ALL');
+  const [viewMode, setViewMode] = useState<'floorplan' | 'table'>('floorplan');
   const [showInactive, setShowInactive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [utModalOpen, setUtModalOpen] = useState(false);
-  const [editingType, setEditingType] = useState<UnitTypeResponse | null>(null);
   const [suModalOpen, setSuModalOpen] = useState(false);
 
   // Tải danh sách cơ sở phân công cho FM
@@ -60,22 +61,40 @@ export const UnitCatalogPage: React.FC = () => {
       });
   }, []);
 
-  const refreshUnitTypes = useCallback(async () => {
+  const refreshAllUnits = useCallback(async () => {
     try {
-      const res = await fetchUnitTypes(facilityId, { size: 50 });
-      if (res?.content && res.content.length > 0) {
-        setUnitTypes(res.content);
-        setSelectedTypeId((prev) => (res.content.some((t) => t.id === prev) ? prev : res.content[0].id));
-      } else {
-        setUnitTypes([]);
-        setSelectedTypeId(null);
-      }
+      const res = await fetchStorageUnits(facilityId, { size: 500 });
+      setAllFacilityUnits(res?.content || []);
     } catch (err) {
-      console.error('Lỗi khi tải danh sách loại ô kho:', err);
-      setUnitTypes([]);
-      setSelectedTypeId(null);
-      setError('Không thể tải danh sách loại ô kho từ máy chủ.');
+      console.warn('Không thể tải toàn bộ ô kho:', err);
     }
+  }, [facilityId]);
+
+  useEffect(() => {
+    refreshAllUnits();
+  }, [refreshAllUnits]);
+
+  // Tải danh sách hợp đồng cơ sở để hỗ trợ sơ đồ 2D và kế hoạch công việc
+  useEffect(() => {
+    let active = true;
+    getManagerContracts({ facilityId, status: 'ALL' })
+      .then((contracts) => {
+        if (!active) return;
+        const cMap: Record<number, ManagerContractItem> = {};
+        (contracts || []).forEach((c) => {
+          if (c.storageUnitId) {
+            cMap[c.storageUnitId] = c;
+          }
+        });
+        setContractsMap(cMap);
+      })
+      .catch((err) => {
+        console.warn('Không thể tải hợp đồng cơ sở:', err);
+        if (active) setContractsMap({});
+      });
+    return () => {
+      active = false;
+    };
   }, [facilityId]);
 
   const refreshStorageUnits = useCallback(async () => {
@@ -161,40 +180,10 @@ export const UnitCatalogPage: React.FC = () => {
       ? storageUnits
       : storageUnits.filter((u) => u.status === statusFilter);
 
-  const handleSubmitType = async (data: UnitTypeFormData) => {
-    try {
-      if (!data.code) {
-        data.code = 'UT-' + Date.now().toString().slice(-6);
-      }
-      if (editingType) {
-        await updateUnitType(facilityId, editingType.id, data);
-      } else {
-        await createUnitType(facilityId, data);
-      }
-      await refreshUnitTypes();
-    } catch (err: any) {
-      console.error(err);
-      const apiMsg = err?.response?.data?.message;
-      const msg = apiMsg || (err instanceof Error ? err.message : 'Lưu loại ô kho thất bại. Vui lòng kiểm tra lại.');
-      setError(msg);
-      throw new Error(msg);
-    }
-  };
-
-  const handleToggleType = async (type: UnitTypeResponse) => {
-    try {
-      await toggleUnitTypeStatus(facilityId, type.id, !isTypeActive(type));
-      await refreshUnitTypes();
-    } catch (err: unknown) {
-      console.error(err);
-      setError(err instanceof Error ? err.message : 'Không thể thay đổi trạng thái loại ô kho.');
-    }
-  };
-
   const handleSubmitUnit = async (data: StorageUnitFormData) => {
     try {
       await createStorageUnit(facilityId, data);
-      await refreshStorageUnits();
+      await Promise.all([refreshStorageUnits(), refreshAllUnits()]);
     } catch (err: unknown) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'Tạo ô kho mới thất bại.');
@@ -204,7 +193,7 @@ export const UnitCatalogPage: React.FC = () => {
   const handleChangeUnitStatus = async (unit: StorageUnitResponse, status: UnitStatus) => {
     try {
       await updateStorageUnitStatus(facilityId, unit.id, status);
-      await refreshStorageUnits();
+      await Promise.all([refreshStorageUnits(), refreshAllUnits()]);
     } catch (err: unknown) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'Cập nhật trạng thái ô kho thất bại.');
@@ -261,18 +250,6 @@ export const UnitCatalogPage: React.FC = () => {
               </select>
             </div>
           )}
-
-          <button
-            id="btn-add-unit-type"
-            onClick={() => {
-              setEditingType(null);
-              setUtModalOpen(true);
-            }}
-            className="flex items-center gap-1.5 px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold rounded-xl transition-all shadow-xs shrink-0 cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            Thêm loại ô kho
-          </button>
         </div>
       </div>
 
@@ -314,7 +291,7 @@ export const UnitCatalogPage: React.FC = () => {
               <div className="text-center py-12 px-4">
                 <Box className="w-10 h-10 text-slate-300 mx-auto mb-2" />
                 <p className="text-xs font-semibold text-slate-600">Chưa có loại ô kho nào</p>
-                <p className="text-[11px] text-slate-400 mt-1">Bấm "+ Thêm loại ô kho" để bắt đầu cấu hình</p>
+                <p className="text-[11px] text-slate-400 mt-1">Danh mục do Ban Giám Đốc (BOM) định nghĩa và ban hành</p>
               </div>
             ) : (
               visibleTypes.map((type) => (
@@ -326,11 +303,6 @@ export const UnitCatalogPage: React.FC = () => {
                     setSelectedTypeId(type.id);
                     setStatusFilter('ALL');
                   }}
-                  onEdit={() => {
-                    setEditingType(type);
-                    setUtModalOpen(true);
-                  }}
-                  onToggle={() => handleToggleType(type)}
                 />
               ))
             )}
@@ -394,150 +366,190 @@ export const UnitCatalogPage: React.FC = () => {
                   </div>
                 </div>
 
-                <button
-                  id="btn-add-storage-unit"
-                  onClick={() => setSuModalOpen(true)}
-                  disabled={!isTypeActive(selectedType)}
-                  title={!isTypeActive(selectedType) ? 'Loại ô kho đang vô hiệu — không thể thêm ô kho mới' : undefined}
-                  className="flex items-center gap-1.5 px-3.5 py-2 bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 text-xs font-bold rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs shrink-0 cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Thêm ô kho vật lý
-                </button>
-              </div>
-
-              {/* Status Filter Tabs */}
-              <div className="flex items-center gap-2 px-5 py-3 border-b border-slate-100 overflow-x-auto bg-white">
-                {STATUS_FILTERS.map((f) => {
-                  const count = f.value === 'ALL'
-                    ? storageUnits.length
-                    : storageUnits.filter((u) => u.status === f.value).length;
-                  const isSelected = statusFilter === f.value;
-                  return (
+                <div className="flex items-center gap-2.5 shrink-0">
+                  <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200">
                     <button
-                      key={f.value}
-                      onClick={() => setStatusFilter(f.value)}
-                      className={`shrink-0 text-xs font-bold px-3.5 py-1.5 rounded-full border transition-all cursor-pointer flex items-center gap-1.5 ${
-                        isSelected
-                          ? 'bg-brand-500 border-brand-500 text-white shadow-2xs'
-                          : 'border-slate-200 bg-white text-slate-600 hover:border-brand-300 hover:bg-slate-50'
+                      type="button"
+                      onClick={() => setViewMode('floorplan')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        viewMode === 'floorplan'
+                          ? 'bg-white text-brand-600 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
-                      <span>{f.label}</span>
-                      <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
-                        isSelected ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
-                      }`}>
-                        {count}
-                      </span>
+                      <MapPin className="w-3.5 h-3.5" />
+                      <span>Sơ đồ 2D</span>
                     </button>
-                  );
-                })}
-              </div>
-
-              {/* Storage Units Table */}
-              <div className="overflow-x-auto min-h-[300px]">
-                {filteredUnits.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center p-12 text-center">
-                    <Box className="w-10 h-10 text-slate-300 mb-2" />
-                    <p className="text-xs font-semibold text-slate-600">Không có ô kho nào khớp với bộ lọc</p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">Chọn bộ lọc khác hoặc thêm ô kho mới</p>
+                    <button
+                      type="button"
+                      onClick={() => setViewMode('table')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        viewMode === 'table'
+                          ? 'bg-white text-brand-600 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <Table2 className="w-3.5 h-3.5" />
+                      <span>Danh sách</span>
+                    </button>
                   </div>
-                ) : (
-                  <table className="w-full text-sm text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-slate-100 bg-slate-50/70 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                        <th className="px-5 py-3">Mã ô kho</th>
-                        <th className="px-5 py-3">Tầng</th>
-                        <th className="px-5 py-3">Khu vực / Dãy</th>
-                        <th className="px-5 py-3">Trạng thái</th>
-                        <th className="px-5 py-3 text-right">Thao tác</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {filteredUnits.map((unit) => (
-                        <tr
-                          key={unit.id}
-                          className="hover:bg-slate-50/80 transition-colors"
-                        >
-                          <td className="px-5 py-3.5 font-mono font-bold text-slate-900 text-sm">
-                            <div className="flex items-center gap-2">
-                              <span>{unit.code}</span>
-                              {(selectedType.code?.toUpperCase().includes('CLIMATE') ||
-                                selectedType.name.toLowerCase().includes('lạnh') ||
-                                selectedType.name.toLowerCase().includes('máy lạnh') ||
-                                selectedType.name.toLowerCase().includes('điều hòa')) && (
-                                <span title="Kho máy lạnh điều hòa nhiệt độ ổn định" className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-sans font-bold text-cyan-700 bg-cyan-50 rounded border border-cyan-200/80">
-                                  <Snowflake className="w-2.5 h-2.5 text-cyan-600" />
-                                  Máy lạnh
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-5 py-3.5 text-xs text-slate-600 font-medium">
-                            Tầng {unit.floor}
-                          </td>
-                          <td className="px-5 py-3.5 font-mono text-xs text-slate-600 font-semibold">
-                            {unit.position}
-                          </td>
-                          <td className="px-5 py-3.5">
-                            <StatusBadge status={unit.status} />
-                          </td>
-                          <td className="px-5 py-3.5 text-right">
-                            {unit.status === 'AVAILABLE' && (
-                              <button
-                                onClick={() => handleChangeUnitStatus(unit, 'MAINTENANCE')}
-                                className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
-                                title="Chuyển ô kho sang diện bảo trì"
-                              >
-                                <Wrench className="w-3 h-3" />
-                                Chuyển bảo trì
-                              </button>
-                            )}
-                            {unit.status === 'MAINTENANCE' && (
-                              <button
-                                onClick={() => handleChangeUnitStatus(unit, 'AVAILABLE')}
-                                className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
-                                title="Đã sửa xong, đưa ô kho trở lại sử dụng"
-                              >
-                                <CheckCircle2 className="w-3 h-3" />
-                                Hoàn thành bảo trì
-                              </button>
-                            )}
-                            {unit.status !== 'AVAILABLE' && unit.status !== 'MAINTENANCE' && (
-                              <span className="text-xs text-slate-400 italic">Đang hoạt động</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
+
+                  <button
+                    id="btn-add-storage-unit"
+                    onClick={() => setSuModalOpen(true)}
+                    disabled={!isTypeActive(selectedType)}
+                    title={!isTypeActive(selectedType) ? 'Loại ô kho đang vô hiệu — không thể thêm ô kho mới' : undefined}
+                    className="flex items-center gap-1.5 px-3.5 py-2 bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 text-xs font-bold rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs shrink-0 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Thêm ô kho vật lý
+                  </button>
+                </div>
               </div>
 
-              {/* Table Footer */}
-              <div className="px-5 py-3 border-t border-slate-100 text-xs font-semibold text-slate-500 bg-slate-50/50 flex items-center justify-between">
-                <span>
-                  Hiển thị <strong className="text-slate-800 font-bold">{filteredUnits.length}</strong> / {storageUnits.length} ô kho vật lý
-                </span>
-                <span className="text-[11px] text-slate-400">
-                  Cơ sở ID: {facilityId}
-                </span>
-              </div>
+              {viewMode === 'floorplan' ? (
+                <div className="p-4 sm:p-5">
+                  <StorageUnitFloorPlanView
+                    units={allFacilityUnits.length > 0 ? allFacilityUnits : storageUnits}
+                    contractsMap={contractsMap}
+                    currentUnitTypeId={selectedTypeId ?? undefined}
+                    currentUnitTypeName={cleanUnitTypeName(selectedType?.name) || 'Loại kho'}
+                    facilityName={facilities.find((f) => f.id === facilityId)?.name}
+                    onSelectUnit={(unit) =>
+                      navigate(
+                        `/manager/facilities/${facilityId}/unit-types/${unit.unitTypeId || selectedTypeId}/units/${unit.id}`
+                      )
+                    }
+                    onStatusChange={handleChangeUnitStatus}
+                  />
+                </div>
+              ) : (
+                <>
+                  {/* Status Filter Tabs */}
+                  <div className="flex items-center gap-2 px-5 py-3 border-b border-slate-100 overflow-x-auto bg-white">
+                    {STATUS_FILTERS.map((f) => {
+                      const count = f.value === 'ALL'
+                        ? storageUnits.length
+                        : storageUnits.filter((u) => u.status === f.value).length;
+                      const isSelected = statusFilter === f.value;
+                      return (
+                        <button
+                          key={f.value}
+                          onClick={() => setStatusFilter(f.value)}
+                          className={`shrink-0 text-xs font-bold px-3.5 py-1.5 rounded-full border transition-all cursor-pointer flex items-center gap-1.5 ${
+                            isSelected
+                              ? 'bg-brand-500 border-brand-500 text-white shadow-2xs'
+                              : 'border-slate-200 bg-white text-slate-600 hover:border-brand-300 hover:bg-slate-50'
+                          }`}
+                        >
+                          <span>{f.label}</span>
+                          <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+                            isSelected ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                          }`}>
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Storage Units Table */}
+                  <div className="overflow-x-auto min-h-[300px]">
+                    {filteredUnits.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center p-12 text-center">
+                        <Box className="w-10 h-10 text-slate-300 mb-2" />
+                        <p className="text-xs font-semibold text-slate-600">Không có ô kho nào khớp với bộ lọc</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">Chọn bộ lọc khác hoặc thêm ô kho mới</p>
+                      </div>
+                    ) : (
+                      <table className="w-full text-sm text-left border-collapse">
+                        <thead>
+                          <tr className="border-b border-slate-100 bg-slate-50/70 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                            <th className="px-5 py-3">Mã ô kho</th>
+                            <th className="px-5 py-3">Tầng</th>
+                            <th className="px-5 py-3">Khu vực / Dãy</th>
+                            <th className="px-5 py-3">Trạng thái</th>
+                            <th className="px-5 py-3 text-right">Thao tác</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {filteredUnits.map((unit) => (
+                            <tr
+                              key={unit.id}
+                              className="hover:bg-slate-50/80 transition-colors"
+                            >
+                              <td className="px-5 py-3.5 font-mono font-bold text-slate-900 text-sm">
+                                <div className="flex items-center gap-2">
+                                  <span>{unit.code}</span>
+                                  {(selectedType.code?.toUpperCase().includes('CLIMATE') ||
+                                    selectedType.name.toLowerCase().includes('lạnh') ||
+                                    selectedType.name.toLowerCase().includes('máy lạnh') ||
+                                    selectedType.name.toLowerCase().includes('điều hòa')) && (
+                                    <span title="Kho máy lạnh điều hòa nhiệt độ ổn định" className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-sans font-bold text-cyan-700 bg-cyan-50 rounded border border-cyan-200/80">
+                                      <Snowflake className="w-2.5 h-2.5 text-cyan-600" />
+                                      Máy lạnh
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-5 py-3.5 text-xs text-slate-600 font-medium">
+                                Tầng {unit.floor}
+                              </td>
+                              <td className="px-5 py-3.5 font-mono text-xs text-slate-600 font-semibold">
+                                {unit.position}
+                              </td>
+                              <td className="px-5 py-3.5">
+                                <StatusBadge status={unit.status} />
+                              </td>
+                              <td className="px-5 py-3.5 text-right">
+                                {unit.status === 'AVAILABLE' && (
+                                  <button
+                                    onClick={() => handleChangeUnitStatus(unit, 'MAINTENANCE')}
+                                    className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                                    title="Chuyển ô kho sang diện bảo trì"
+                                  >
+                                    <Wrench className="w-3 h-3" />
+                                    Chuyển bảo trì
+                                  </button>
+                                )}
+                                {unit.status === 'MAINTENANCE' && (
+                                  <button
+                                    onClick={() => handleChangeUnitStatus(unit, 'AVAILABLE')}
+                                    className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                                    title="Đã sửa xong, đưa ô kho trở lại sử dụng"
+                                  >
+                                    <CheckCircle2 className="w-3 h-3" />
+                                    Hoàn thành bảo trì
+                                  </button>
+                                )}
+                                {unit.status !== 'AVAILABLE' && unit.status !== 'MAINTENANCE' && (
+                                  <span className="text-xs text-slate-400 italic">Đang hoạt động</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+
+                  {/* Table Footer */}
+                  <div className="px-5 py-3 border-t border-slate-100 text-xs font-semibold text-slate-500 bg-slate-50/50 flex items-center justify-between">
+                    <span>
+                      Hiển thị <strong className="text-slate-800 font-bold">{filteredUnits.length}</strong> / {storageUnits.length} ô kho vật lý
+                    </span>
+                    <span className="text-[11px] text-slate-400">
+                      Cơ sở ID: {facilityId}
+                    </span>
+                  </div>
+                </>
+              )}
             </>
           )}
         </main>
       </div>
 
       {/* Modals */}
-      <UnitTypeFormModal
-        isOpen={utModalOpen}
-        onClose={() => {
-          setUtModalOpen(false);
-          setEditingType(null);
-        }}
-        onSubmit={handleSubmitType}
-        initialData={editingType}
-      />
       <StorageUnitFormModal
         isOpen={suModalOpen}
         onClose={() => setSuModalOpen(false)}

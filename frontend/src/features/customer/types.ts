@@ -14,7 +14,7 @@ export type UnitStatus =
   | 'LOCKED';
 
 // Phân nhóm kích thước kho theo wireframe SCR-SC-01B
-export type UnitSizeCategory = 'S' | 'M' | 'L' | 'XL';
+export type UnitSizeCategory = 'XS' | 'S' | 'M' | 'L' | 'XL';
 
 // Chế độ kho: Tiêu chuẩn hoặc Máy lạnh
 export type StorageType = 'STANDARD' | 'CLIMATE_CONTROLLED';

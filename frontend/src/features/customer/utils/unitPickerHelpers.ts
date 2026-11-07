@@ -45,19 +45,47 @@ export function isClimateUnitType(ut: { code?: string; name?: string; descriptio
 }
 
 /**
- * Xác định nhóm kích thước chuẩn (S, M, L, XL) từ mã, tên loại kho và diện tích
+ * Xác định nhóm kích thước chuẩn (XS, S, M, L, XL) từ mã, tên loại kho và diện tích
  */
 export function resolveSizeCategory(codeOrName: string, areaM2?: number): UnitSizeCategory {
-  const upper = codeOrName.toUpperCase();
-  const lower = codeOrName.toLowerCase();
-  if (upper.includes('SMALL') || lower.includes('nhỏ') || (areaM2 != null && areaM2 <= 1.5)) {
-    return 'S';
+  const upper = (codeOrName || '').toUpperCase();
+  const lower = (codeOrName || '').toLowerCase();
+
+  if (upper.includes('XS') || (areaM2 != null && areaM2 > 0 && areaM2 <= 1.5)) {
+    return 'XS';
   }
-  if (upper.includes('LARGE') || lower.includes('lớn') || (areaM2 != null && areaM2 >= 9)) {
+  if (upper.includes('XL') || (areaM2 != null && areaM2 > 12.0)) {
+    return 'XL';
+  }
+  if (
+    upper.includes('-L') ||
+    upper.includes(' L') ||
+    upper.endsWith(' L') ||
+    upper.includes('LARGE') ||
+    lower.includes('lớn') ||
+    (areaM2 != null && areaM2 > 7.0 && areaM2 <= 12.0)
+  ) {
     return 'L';
   }
-  if (upper.includes('XL') || (areaM2 != null && areaM2 >= 15)) {
-    return 'XL';
+  if (
+    upper.includes('-M') ||
+    upper.includes(' M') ||
+    upper.endsWith(' M') ||
+    upper.includes('MEDIUM') ||
+    lower.includes('vừa') ||
+    (areaM2 != null && areaM2 > 3.5 && areaM2 <= 7.0)
+  ) {
+    return 'M';
+  }
+  if (
+    upper.includes('-S') ||
+    upper.includes(' S') ||
+    upper.endsWith(' S') ||
+    upper.includes('SMALL') ||
+    lower.includes('nhỏ') ||
+    (areaM2 != null && areaM2 <= 3.5)
+  ) {
+    return 'S';
   }
   return 'M';
 }

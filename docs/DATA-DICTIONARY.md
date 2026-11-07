@@ -129,7 +129,7 @@ Danh mục Kiểu kho chuẩn hóa toàn hệ thống do BOM quản trị Master
 | `height_m` | `DECIMAL(10,2)` | Có | | Chiều cao ô kho (mét) |
 | `max_load_kg_m2` | `INT` | Không | | Tải trọng sàn tối đa (kg/m²) phục vụ khách B2B |
 | `pallet_capacity` | `INT` | Không | | Sức chứa pallet tiêu chuẩn (1.0m × 1.2m) |
-| `environment` | `VARCHAR(20)` | Có | `DEFAULT 'DRY'`, `CHECK IN ('DRY','CHILLED','FREEZER','BONDED','YARD')` | Phân loại môi trường kiểm soát |
+| `environment` | `VARCHAR(30)` | Có | `DEFAULT 'STANDARD'`, `CHECK IN ('STANDARD', 'CLIMATE_CONTROLLED')` | Phân loại môi trường Self-Storage do BOM ban hành: `STANDARD` (Kho Tiêu Chuẩn - khô thoáng, nhiệt độ thường) hoặc `CLIMATE_CONTROLLED` (Kho Máy Lạnh - điều hòa 20–25°C, hút ẩm 24/7) |
 | `features` | `NVARCHAR(500)` | Không | | Tiện ích nổi bật (PCCC tự động, camera 24/7, xe nâng...) |
 | `description` | `NVARCHAR(500)` | Không | | Mô tả công năng lưu trữ phù hợp |
 | `is_active` | `BIT` | Có | `DEFAULT 1` | Cờ trạng thái hoạt động (Soft Delete) |

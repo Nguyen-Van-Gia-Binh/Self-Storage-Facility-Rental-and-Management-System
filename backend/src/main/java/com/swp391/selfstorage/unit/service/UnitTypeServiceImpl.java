@@ -96,6 +96,17 @@ public class UnitTypeServiceImpl implements UnitTypeService {
             throw new CustomException(ErrorCode.UNIT_TYPE_CODE_ALREADY_EXISTS);
         }
 
+        String env = request.getEnvironment();
+        if (env == null || env.isBlank()) {
+            String nameLower = request.getName() != null ? request.getName().toLowerCase() : "";
+            String codeUpper = request.getCode() != null ? request.getCode().toUpperCase() : "";
+            if (nameLower.contains("lạnh") || nameLower.contains("điều hòa") || codeUpper.contains("AC") || codeUpper.contains("CLIMATE")) {
+                env = "CLIMATE_CONTROLLED";
+            } else {
+                env = "STANDARD";
+            }
+        }
+
         UnitType unitType = UnitType.builder()
                 .code(request.getCode())
                 .name(request.getName())
@@ -103,6 +114,7 @@ public class UnitTypeServiceImpl implements UnitTypeService {
                 .widthM(request.getWidthM())
                 .lengthM(request.getDepthM())
                 .heightM(request.getHeightM())
+                .environment(env)
                 .isActive(true)
                 .build();
 
@@ -134,6 +146,9 @@ public class UnitTypeServiceImpl implements UnitTypeService {
         ut.setWidthM(request.getWidthM());
         ut.setLengthM(request.getDepthM());
         ut.setHeightM(request.getHeightM());
+        if (request.getEnvironment() != null && !request.getEnvironment().isBlank()) {
+            ut.setEnvironment(request.getEnvironment());
+        }
         if (request.getIsActive() != null) {
             ut.setActive(request.getIsActive());
         }

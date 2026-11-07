@@ -6,7 +6,7 @@ import { Breadcrumb } from '../components/Breadcrumb';
 import { FacilityCard } from '../components/FacilityCard';
 import { UnitTypeCard } from '../components/UnitTypeCard';
 import { StorageUnitTable } from '../components/StorageUnitTable';
-import { MiniFloorPlan } from '../components/MiniFloorPlan';
+import { StorageUnitFloorPlanView } from '../components/StorageUnitFloorPlanView';
 import { Pagination } from '../components/Pagination';
 import { getFacilityRegion } from '../pages/FacilityListPage';
 import type { FacilityListItem } from '@/types';
@@ -130,7 +130,7 @@ describe('Quản lý ô kho — Kiến trúc Drill-down 4 Cấp độ (FM-01)', 
     expect(html).toContain('Chi tiết');
   });
 
-  it('4. Cấp 4 (MiniFloorPlan): Làm nổi bật ô đang xem trên sơ đồ mặt bằng tầng', () => {
+  it('4. Cấp 4 (StorageUnitFloorPlanView): Hiển thị sơ đồ mặt bằng 2D đa tầng', () => {
     const surrounding = [
       mockStorageUnit,
       { ...mockStorageUnit, id: 102, code: 'CG-S102', status: 'AVAILABLE' as const },
@@ -139,15 +139,13 @@ describe('Quản lý ô kho — Kiến trúc Drill-down 4 Cấp độ (FM-01)', 
 
     const html = cleanHtml(
       renderToString(
-        <MiniFloorPlan currentUnit={mockStorageUnit} surroundingUnits={surrounding} />
+        <StorageUnitFloorPlanView units={surrounding} />
       )
     );
 
-    expect(html).toContain('Sơ đồ mặt bằng Tầng 1');
+    expect(html).toContain('Tầng 1');
     expect(html).toContain('CG-S101');
     expect(html).toContain('CG-S102');
-    expect(html).toContain('CG-S103');
-    expect(html).toContain('Đang chọn');
   });
 
   it('5. Breadcrumb: Thể hiện chính xác chuỗi điều hướng xuyên suốt 4 cấp độ', () => {
@@ -234,5 +232,28 @@ describe('Quản lý ô kho — Kiến trúc Drill-down 4 Cấp độ (FM-01)', 
       targetDate: '2026-10-25',
     };
     expect(params.targetDate).toBe('2026-10-25');
+  });
+
+  it('10. StorageUnitFloorPlanView: Hiển thị bộ lọc kế hoạch hiện tại & tương lai (Sắp đón khách, Sắp trả kho, Dự phóng)', () => {
+    const surrounding = [
+      mockStorageUnit,
+      { ...mockStorageUnit, id: 102, code: 'CG-S102', status: 'AVAILABLE' as const },
+    ];
+
+    const html = cleanHtml(
+      renderToString(
+        <StorageUnitFloorPlanView
+          units={surrounding}
+          contractsMap={{ 101: mockContract }}
+          facilityName="Cơ sở Cầu Giấy"
+        />
+      )
+    );
+
+    expect(html).toContain('Sắp đón khách (7d)');
+    expect(html).toContain('Sắp trả kho (14d)');
+    expect(html).toContain('Dự phóng tương lai');
+    expect(html).toContain('Góc nhìn:');
+    expect(html).toContain('Cơ sở Cầu Giấy');
   });
 });

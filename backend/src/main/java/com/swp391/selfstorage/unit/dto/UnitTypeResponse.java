@@ -20,6 +20,7 @@ public class UnitTypeResponse {
     private BigDecimal heightM;
     private BigDecimal areaM2;
     private BigDecimal volumeM3;
+    private String environment;
     private Long monthlyPrice;
     private Long totalUnits;
 

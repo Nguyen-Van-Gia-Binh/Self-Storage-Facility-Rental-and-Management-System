@@ -45,6 +45,7 @@ export interface UnitTypeFormData {
   depthM: number;
   heightM: number;
   monthlyPrice: number;
+  environment?: 'STANDARD' | 'CLIMATE_CONTROLLED';
 }
 
 export interface StorageUnitFormData {

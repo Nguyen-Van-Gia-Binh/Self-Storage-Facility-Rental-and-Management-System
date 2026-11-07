@@ -16,6 +16,7 @@ import {
   Calendar,
   MapPin,
   X,
+  Table2,
 } from 'lucide-react';
 import { fetchMyAssignedFacilities } from '@/api/facility';
 import {
@@ -35,6 +36,7 @@ import type {
 import type { ManagerContractItem } from '@/types/contractManager';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { FacilityFloorPlanMapModal } from '../components/FacilityFloorPlanMapModal';
+import { StorageUnitFloorPlanView } from '../components/StorageUnitFloorPlanView';
 import { StorageUnitTable } from '../components/StorageUnitTable';
 import type { StorageUnitSortField, SortDirection } from '../components/StorageUnitTable';
 import { StorageUnitFormModal } from '../components/StorageUnitFormModal';
@@ -95,6 +97,10 @@ export const StorageUnitListPage: React.FC = () => {
   // Phân trang
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Chế độ xem: Sơ đồ 2D mặt bằng (mặc định) vs Bảng danh sách
+  const [viewMode, setViewMode] = useState<'floorplan' | 'table'>('floorplan');
+  const [allFacilityUnits, setAllFacilityUnits] = useState<StorageUnitResponse[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -112,12 +118,16 @@ export const StorageUnitListPage: React.FC = () => {
 
       try {
         // 1. Tải cơ sở, loại kho, ô kho theo ngày và toàn bộ hợp đồng
-        const [facList, utRes, suRes, contractsRes] = await Promise.all([
+        const [facList, utRes, suRes, allSuRes, contractsRes] = await Promise.all([
           fetchMyAssignedFacilities(),
           fetchUnitTypes(facilityIdNum, { size: 100 }),
           fetchStorageUnits(facilityIdNum, {
             unitTypeId: typeIdNum,
             size: 200,
+            targetDate: selectedDate || undefined,
+          }),
+          fetchStorageUnits(facilityIdNum, {
+            size: 500,
             targetDate: selectedDate || undefined,
           }),
           getManagerContracts({ facilityId: facilityIdNum, status: 'ALL' }),
@@ -131,6 +141,7 @@ export const StorageUnitListPage: React.FC = () => {
         setUnitType(currentType);
 
         setStorageUnits(suRes?.content || []);
+        setAllFacilityUnits(allSuRes?.content || suRes?.content || []);
 
         // Ánh xạ hợp đồng còn hiệu lực với từng ô kho (động theo selectedDate)
         const activeContracts = (contractsRes || []).filter(
@@ -350,16 +361,34 @@ export const StorageUnitListPage: React.FC = () => {
         </div>
 
         {/* Action button */}
-        <div className="flex items-center gap-2.5">
-          <button
-            type="button"
-            onClick={() => setFloorPlanOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-300 rounded-xl text-xs font-bold shadow-2xs hover:shadow-xs transition-all cursor-pointer"
-            title="Xem sơ đồ 2D mặt bằng các tầng cơ sở"
-          >
-            <MapPin className="w-4 h-4 text-teal-600" />
-            <span>Sơ đồ 2D mặt bằng</span>
-          </button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Bộ chuyển đổi chế độ xem: Sơ đồ 2D vs Bảng danh sách */}
+          <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
+            <button
+              type="button"
+              onClick={() => setViewMode('floorplan')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                viewMode === 'floorplan'
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <MapPin className={`w-3.5 h-3.5 ${viewMode === 'floorplan' ? 'text-teal-600' : 'text-slate-400'}`} />
+              <span>Sơ đồ 2D</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('table')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                viewMode === 'table'
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Table2 className={`w-3.5 h-3.5 ${viewMode === 'table' ? 'text-brand-600' : 'text-slate-400'}`} />
+              <span>Bảng danh sách</span>
+            </button>
+          </div>
 
           <button
             onClick={() => loadData(true)}
@@ -529,165 +558,184 @@ export const StorageUnitListPage: React.FC = () => {
         </div>
       )}
 
-      {/* Banner Chế độ xem theo ngày / Dự phóng tương lai */}
-      {selectedDate && (
-        <div className="bg-amber-50 border border-amber-200/90 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-900 shadow-2xs">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
-              <Calendar className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="font-bold">
-                {selectedDate > new Date().toISOString().substring(0, 10)
-                  ? 'Chế độ dự phóng tương lai: '
-                  : 'Chế độ lọc theo ngày: '}
-              </span>
-              <span>
-                Đang hiển thị hiện trạng ô kho và khách thuê tại ngày{' '}
-                <strong className="underline decoration-amber-400 font-mono font-bold">
-                  {selectedDate.split('-').reverse().join('/')}
-                </strong>
-              </span>
-            </div>
-          </div>
-          <button
-            onClick={() => handleDateChange('')}
-            className="px-3 py-1.5 bg-white border border-amber-300 text-amber-800 hover:bg-amber-100 rounded-xl font-semibold transition-colors cursor-pointer shrink-0"
-          >
-            Quay về hôm nay (Thời gian thực)
-          </button>
-        </div>
-      )}
-
-      {/* Tabs Filter theo Trạng thái & Dropdown Tầng & Bộ lọc Ngày & Ô tìm kiếm */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        {/* Left: Status Tabs + Floor Filter + Date Filter */}
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Status Tabs Bar */}
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl overflow-x-auto">
-            {STATUS_FILTERS.map((tab) => {
-              const isActive = statusFilter === tab.value;
-              const count = filterCounts[tab.value] || 0;
-              return (
-                <button
-                  key={tab.value}
-                  onClick={() => setStatusFilter(tab.value)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-                    isActive
-                      ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                  }`}
-                >
-                  <span>{tab.label}</span>
-                  <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                      isActive ? 'bg-brand-100 text-brand-800' : 'bg-slate-200/80 text-slate-600'
-                    }`}
-                  >
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Floor Dropdown Filter */}
-          <div className="flex items-center gap-1.5 text-xs text-slate-600 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
-            <Filter className="w-3.5 h-3.5 text-slate-400" />
-            <span className="font-medium text-slate-500 whitespace-nowrap">Tầng:</span>
-            <select
-              value={selectedFloor}
-              onChange={(e) =>
-                setSelectedFloor(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))
-              }
-              className="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer"
-            >
-              <option value="ALL">Tất cả các tầng</option>
-              {availableFloors.map((fl) => (
-                <option key={fl} value={fl}>
-                  Tầng {fl}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Date Picker Filter */}
-          <div className="flex items-center gap-1.5 text-xs text-slate-600 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
-            <Calendar className="w-3.5 h-3.5 text-slate-400" />
-            <span className="font-medium text-slate-500 whitespace-nowrap">Xem ngày:</span>
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => handleDateChange(e.target.value)}
-              className="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer"
-            />
-            {selectedDate ? (
-              <button
-                type="button"
-                onClick={() => handleDateChange('')}
-                title="Xóa bộ lọc ngày (về hôm nay)"
-                className="text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => handleDateChange(new Date().toISOString().substring(0, 10))}
-                className="text-[10px] font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 px-1.5 py-0.5 rounded cursor-pointer"
-              >
-                Hôm nay
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Input Tìm kiếm nhanh ô kho */}
-        <div className="relative min-w-[260px]">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Tìm mã ô, vị trí, khách thuê..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 shadow-2xs"
-          />
-        </div>
-      </div>
-
-      {/* Table Danh sách Ô kho & Phân trang */}
-      {loading ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center space-y-3">
-          <div className="h-6 w-48 bg-slate-200 rounded-lg animate-pulse mx-auto" />
-          <div className="h-4 w-72 bg-slate-100 rounded-lg animate-pulse mx-auto" />
-        </div>
+      {/* Nội dung chính: Sơ đồ 2D mặt bằng vs Bảng danh sách chi tiết */}
+      {viewMode === 'floorplan' ? (
+        <StorageUnitFloorPlanView
+          units={allFacilityUnits.length > 0 ? allFacilityUnits : storageUnits}
+          contractsMap={contractsMap}
+          currentUnitTypeId={typeIdNum}
+          currentUnitTypeName={cleanUnitTypeName(unitType?.name) || 'Loại kho'}
+          facilityName={facility?.name}
+          onSelectUnit={(unit) =>
+            navigate(
+              `/manager/facilities/${facilityIdNum}/unit-types/${unit.unitTypeId || typeIdNum}/units/${unit.id}`
+            )
+          }
+          onStatusChange={handleStatusChange}
+        />
       ) : (
-        <div className="space-y-4">
-          <StorageUnitTable
-            units={paginatedUnits}
-            contractsMap={contractsMap}
-            onSelectUnit={(unit) =>
-              navigate(
-                `/manager/facilities/${facilityIdNum}/unit-types/${typeIdNum}/units/${unit.id}`
-              )
-            }
-            onStatusChange={handleStatusChange}
-            sortField={sortField}
-            sortDirection={sortDirection}
-            onSort={handleSort}
-          />
+        <>
+          {/* Banner Chế độ xem theo ngày / Dự phóng tương lai */}
+          {selectedDate && (
+            <div className="bg-amber-50 border border-amber-200/90 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-900 shadow-2xs">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                  <Calendar className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="font-bold">
+                    {selectedDate > new Date().toISOString().substring(0, 10)
+                      ? 'Chế độ dự phóng tương lai: '
+                      : 'Chế độ lọc theo ngày: '}
+                  </span>
+                  <span>
+                    Đang hiển thị hiện trạng ô kho và khách thuê tại ngày{' '}
+                    <strong className="underline decoration-amber-400 font-mono font-bold">
+                      {selectedDate.split('-').reverse().join('/')}
+                    </strong>
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => handleDateChange('')}
+                className="px-3 py-1.5 bg-white border border-amber-300 text-amber-800 hover:bg-amber-100 rounded-xl font-semibold transition-colors cursor-pointer shrink-0"
+              >
+                Quay về hôm nay (Thời gian thực)
+              </button>
+            </div>
+          )}
 
-          {/* Phân trang: Threshold > 10 items */}
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={processedUnits.length}
-            pageSize={PAGE_SIZE}
-            threshold={10}
-            itemName="ô kho"
-            onPageChange={(page) => setCurrentPage(page)}
-          />
-        </div>
+          {/* Tabs Filter theo Trạng thái & Dropdown Tầng & Bộ lọc Ngày & Ô tìm kiếm */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            {/* Left: Status Tabs + Floor Filter + Date Filter */}
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Status Tabs Bar */}
+              <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl overflow-x-auto">
+                {STATUS_FILTERS.map((tab) => {
+                  const isActive = statusFilter === tab.value;
+                  const count = filterCounts[tab.value] || 0;
+                  return (
+                    <button
+                      key={tab.value}
+                      onClick={() => setStatusFilter(tab.value)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+                        isActive
+                          ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                      }`}
+                    >
+                      <span>{tab.label}</span>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                          isActive ? 'bg-brand-100 text-brand-800' : 'bg-slate-200/80 text-slate-600'
+                        }`}
+                      >
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Floor Dropdown Filter */}
+              <div className="flex items-center gap-1.5 text-xs text-slate-600 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
+                <Filter className="w-3.5 h-3.5 text-slate-400" />
+                <span className="font-medium text-slate-500 whitespace-nowrap">Tầng:</span>
+                <select
+                  value={selectedFloor}
+                  onChange={(e) =>
+                    setSelectedFloor(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))
+                  }
+                  className="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer"
+                >
+                  <option value="ALL">Tất cả các tầng</option>
+                  {availableFloors.map((fl) => (
+                    <option key={fl} value={fl}>
+                      Tầng {fl}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Date Picker Filter */}
+              <div className="flex items-center gap-1.5 text-xs text-slate-600 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
+                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                <span className="font-medium text-slate-500 whitespace-nowrap">Xem ngày:</span>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => handleDateChange(e.target.value)}
+                  className="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer"
+                />
+                {selectedDate ? (
+                  <button
+                    type="button"
+                    onClick={() => handleDateChange('')}
+                    title="Xóa bộ lọc ngày (về hôm nay)"
+                    className="text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleDateChange(new Date().toISOString().substring(0, 10))}
+                    className="text-[10px] font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 px-1.5 py-0.5 rounded cursor-pointer"
+                  >
+                    Hôm nay
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Input Tìm kiếm nhanh ô kho */}
+            <div className="relative min-w-[260px]">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Tìm mã ô, vị trí, khách thuê..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 shadow-2xs"
+              />
+            </div>
+          </div>
+
+          {/* Table Danh sách Ô kho & Phân trang */}
+          {loading ? (
+            <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center space-y-3">
+              <div className="h-6 w-48 bg-slate-200 rounded-lg animate-pulse mx-auto" />
+              <div className="h-4 w-72 bg-slate-100 rounded-lg animate-pulse mx-auto" />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <StorageUnitTable
+                units={paginatedUnits}
+                contractsMap={contractsMap}
+                onSelectUnit={(unit) =>
+                  navigate(
+                    `/manager/facilities/${facilityIdNum}/unit-types/${typeIdNum}/units/${unit.id}`
+                  )
+                }
+                onStatusChange={handleStatusChange}
+                sortField={sortField}
+                sortDirection={sortDirection}
+                onSort={handleSort}
+              />
+
+              {/* Phân trang: Threshold > 10 items */}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={processedUnits.length}
+                pageSize={PAGE_SIZE}
+                threshold={10}
+                itemName="ô kho"
+                onPageChange={(page) => setCurrentPage(page)}
+              />
+            </div>
+          )}
+        </>
       )}
 
       {/* Modal Thêm ô kho vật lý */}

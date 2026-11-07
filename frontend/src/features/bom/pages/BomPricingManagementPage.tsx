@@ -8,8 +8,12 @@ import {
   CheckCircle2,
   AlertCircle,
   Building2,
+  Plus,
 } from 'lucide-react';
 import { fetchFacilities, fetchUnitTypes } from '@/api/facility';
+import { createUnitType } from '@/api/unit';
+import type { UnitTypeFormData } from '@/types/unit';
+import { UnitTypeFormModal } from '../components/UnitTypeFormModal';
 import {
   updateUnitTypePrice,
   fetchSurcharges,
@@ -71,6 +75,7 @@ export const BomPricingManagementPage: React.FC = () => {
   const [priceDrawerUnitType, setPriceDrawerUnitType] = useState<UnitTypeCatalog | null>(null);
   const [priceDrawerBulkTargets, setPriceDrawerBulkTargets] = useState<UnitTypeCatalog[]>([]);
   const [isUpdatingPrice, setIsUpdatingPrice] = useState(false);
+  const [isUnitTypeModalOpen, setIsUnitTypeModalOpen] = useState(false);
 
   const [isSurchargeDrawerOpen, setIsSurchargeDrawerOpen] = useState(false);
   const [editingSurcharge, setEditingSurcharge] = useState<SurchargeItem | null>(null);
@@ -254,6 +259,25 @@ export const BomPricingManagementPage: React.FC = () => {
       showToast(errorObj.message || 'Lỗi khi cập nhật giá hàng loạt', 'error');
     } finally {
       setIsUpdatingPrice(false);
+    }
+  };
+
+  const handleCreateUnitType = async (data: UnitTypeFormData) => {
+    try {
+      if (!data.code) {
+        const isClimate = data.environment === 'CLIMATE_CONTROLLED';
+        const prefix = isClimate ? 'UT-AC-' : 'UT-STD-';
+        data.code = prefix + Date.now().toString().slice(-4);
+      }
+      await createUnitType(selectedFacilityId, data);
+      showToast(`Đã định nghĩa loại ô kho "${data.name}" thành công!`);
+      setIsUnitTypeModalOpen(false);
+      await refreshUnitTypes();
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
+      const msg = errorObj?.response?.data?.message || errorObj?.message || 'Không thể tạo loại ô kho';
+      showToast(msg, 'error');
+      throw new Error(msg);
     }
   };
 
@@ -479,6 +503,14 @@ export const BomPricingManagementPage: React.FC = () => {
                 ))}
               </select>
             </div>
+            <button
+              type="button"
+              onClick={() => setIsUnitTypeModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-sm transition-all cursor-pointer shrink-0 ml-1"
+            >
+              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>Thêm loại kho mới</span>
+            </button>
           </div>
           {currentFacility && (
             <div className="text-xs text-slate-500 flex items-center gap-3 font-medium">
@@ -619,6 +651,14 @@ export const BomPricingManagementPage: React.FC = () => {
           editing={editingDiscount}
           onSubmit={handleSubmitDiscount}
           isLoading={isSavingDiscount}
+        />
+      )}
+
+      {isUnitTypeModalOpen && (
+        <UnitTypeFormModal
+          isOpen={isUnitTypeModalOpen}
+          onClose={() => setIsUnitTypeModalOpen(false)}
+          onSubmit={handleCreateUnitType}
         />
       )}
     </div>

@@ -66,14 +66,14 @@ export const BookingSummaryCard: React.FC<BookingSummaryCardProps> = ({
         <div className="flex justify-between items-center gap-2">
           <span className="shrink-0 text-slate-500 font-medium">Hạng kho:</span>
           <span className="text-slate-900 text-right font-bold truncate max-w-[190px]">
-            {finalUnitNumber}
+            {unitTypeName || finalUnitNumber}
           </span>
         </div>
 
         <div className="flex justify-between items-center gap-2">
-          <span className="shrink-0 text-slate-500 font-medium">Loại kho:</span>
+          <span className="shrink-0 text-slate-500 font-medium">Quy cách:</span>
           <span className="text-slate-900 text-right font-medium">
-            {unitTypeName} (Size {sizeCategory}{areaM2 ? ` · ${areaM2} m²` : ''})
+            Size {sizeCategory}{areaM2 ? ` · ${areaM2} m²` : ''}
           </span>
         </div>
 
