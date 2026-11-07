@@ -228,4 +228,28 @@ describe('AllocationPage Component (Gán ô kho)', () => {
       });
     });
   });
+
+  it('4. Tự động giải mã tên khách hàng (VD: ID 10 -> Nguyễn Phạm Xuân Nhi) khi backend chưa trả customerName', async () => {
+    vi.mocked(reservationApi.listReservations).mockResolvedValue([
+      {
+        id: 102,
+        code: 'RSV-20261107-4192',
+        facilityId: 2,
+        customerId: 10,
+        unitTypeId: 5,
+        unitTypeName: 'Kho Tiêu Chuẩn S',
+        startDate: '2026-11-07',
+        rentalMonths: 1,
+        status: 'CONFIRMED',
+      } as unknown as ReservationResponse,
+    ]);
+
+    render(<AllocationPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('RSV-20261107-4192')).toBeDefined();
+      expect(screen.getByText('Nguyễn Phạm Xuân Nhi')).toBeDefined();
+      expect(screen.getByText('0967890123')).toBeDefined();
+    });
+  });
 });
