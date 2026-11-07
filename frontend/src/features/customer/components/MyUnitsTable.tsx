@@ -22,7 +22,6 @@ import {
   ChevronRight,
   Copy,
   Check,
-  LifeBuoy,
 } from 'lucide-react';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
 import { formatDateVN, calculateEndDate } from '../utils/unitPickerHelpers';
@@ -187,10 +186,10 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                 return (
                 <tr key={`rsv-${rsv.id}`} className="hover:bg-rose-50/30 transition-colors">
                   {/* Cột 1: Ô kho (Chỉ mã ô kho) */}
-                  <td className="py-3.5 px-4 text-sm text-slate-900">
-                    {awaitingUnit
-                      ? 'Vị trí kho cụ thể sẽ được Ban quản lý cập nhật trước ngày nhận kho'
-                      : rsv.storageUnitCode}
+                  <td className="py-3.5 px-4 whitespace-nowrap">
+                    <span className="font-extrabold text-sm tracking-tight font-mono text-slate-900">
+                      {awaitingUnit ? 'Chưa gán ô' : rsv.storageUnitCode}
+                    </span>
                   </td>
 
                   {/* Cột 2: Loại kho (Text thuần) */}
@@ -222,9 +221,9 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                   </td>
 
                   {/* Cột 7: Thao tác */}
-                  <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                  <td className="py-3.5 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
-                      <Link to={bookingUrl} className="shrink-0">
+                      <Link to={bookingUrl} className="shrink-0" onClick={(e) => e.stopPropagation()}>
                         <Button
                           variant="primary"
                           size="sm"
@@ -323,10 +322,9 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
               return (
                 <tr
                   key={contract.id}
-                  onClick={() => onViewDetail(contract)}
-                  className={`transition-colors cursor-pointer ${
+                  className={`transition-colors ${
                     isClosed
-                      ? 'bg-slate-50/40 opacity-60 text-slate-400 hover:opacity-85'
+                      ? 'bg-slate-50/40 opacity-60 text-slate-400'
                       : contract.status === 'OVERDUE'
                       ? 'bg-rose-50/20 hover:bg-rose-50/40'
                       : isUrgentExpiring
@@ -336,9 +334,16 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                 >
                   {/* Cột 1: Ô kho (Chỉ mã số ô kho) */}
                   <td className="py-3.5 px-4 whitespace-nowrap">
-                    <span className={`font-extrabold text-sm tracking-tight font-mono ${isClosed ? "text-slate-400" : "text-slate-900"}`}>
+                    <button
+                      type="button"
+                      onClick={() => onViewDetail(contract)}
+                      className={`font-extrabold text-sm tracking-tight font-mono text-left transition-colors cursor-pointer ${
+                        isClosed ? "text-slate-400 hover:text-slate-600" : "text-slate-900 hover:text-brand-700 hover:underline"
+                      }`}
+                      title="Xem chi tiết hợp đồng"
+                    >
                       {contract.unitNumber}
-                    </span>
+                    </button>
                   </td>
 
                   {/* Cột 2: Loại kho (Text thuần, không label) */}
@@ -437,7 +442,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                   </td>
 
                   {/* Cột 7: Thao tác (Gọn gàng: Nút chính + menu •••) */}
-                  <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                  <td className="py-3.5 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
                       {/* 1. Nút hành động chính */}
                       {contract.status === 'OVERDUE' && penaltyFee > 0 ? (
@@ -445,14 +450,21 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                           type="button"
                           variant="danger"
                           size="sm"
-                          onClick={() => onOpenOverduePayment(contract)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenOverduePayment(contract);
+                          }}
                           className="h-7 text-xs px-2.5 font-bold bg-rose-600 hover:bg-rose-700 text-white cursor-pointer whitespace-nowrap shrink-0 shadow-xs"
                         >
                           <CreditCard className="w-3.5 h-3.5 mr-1" />
                           Nộp phạt
                         </Button>
                       ) : contract.status === 'ACTIVE' && isExpiringSoon ? (
-                        <Link to={`/customer/renew/${contract.id}`} className="shrink-0">
+                        <Link
+                          to={`/customer/renew/${contract.id}`}
+                          className="shrink-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <Button
                             variant="primary"
                             size="sm"
@@ -471,7 +483,10 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => onViewDetail(contract)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onViewDetail(contract);
+                          }}
                           className="h-7 text-xs px-2.5 font-semibold text-slate-700 border-slate-200/90 hover:bg-slate-100 cursor-pointer whitespace-nowrap shrink-0"
                           title="Xem chi tiết hợp đồng"
                         >
@@ -606,17 +621,6 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                                       <LogOut className="w-3.5 h-3.5 text-slate-500" />
                                       <span>Báo trả kho</span>
                                     </button>
-                                    <Link
-                                      to={`/customer/support?contractId=${contract.id}&unitId=${contract.unitId || ''}`}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setOpenMenuId(null);
-                                      }}
-                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-slate-50 text-slate-700 transition-colors cursor-pointer font-medium"
-                                    >
-                                      <LifeBuoy className="w-3.5 h-3.5 text-slate-500" />
-                                      <span>Cần hỗ trợ ô kho</span>
-                                    </Link>
                                   </div>
                                 )}
 
@@ -660,12 +664,12 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
               <span className="font-semibold text-slate-800">{allItems.length}</span> ô kho
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium cursor-pointer"
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-semibold cursor-pointer shadow-2xs"
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
                 <span>Trước</span>
@@ -676,10 +680,10 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                   key={page}
                   type="button"
                   onClick={() => setCurrentPage(page)}
-                  className={`min-w-8 h-8 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                  className={`w-8 h-8 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     currentPage === page
-                      ? 'bg-primary text-white shadow-xs'
-                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                      ? 'bg-brand-600 text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
                   }`}
                 >
                   {page}
@@ -690,7 +694,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                 type="button"
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium cursor-pointer"
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-semibold cursor-pointer shadow-2xs"
               >
                 <span>Sau</span>
                 <ChevronRight className="w-3.5 h-3.5" />

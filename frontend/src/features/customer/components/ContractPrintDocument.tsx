@@ -85,39 +85,29 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
       className="contract-print-document font-serif text-[12.5px] leading-relaxed text-slate-900 bg-white p-6 max-w-[210mm] mx-auto print:p-0 print:m-0"
       style={{ fontFamily: "'Times New Roman', Times, serif" }}
     >
-      {/* 1. Header văn bản hành chính Việt Nam */}
-      <div className="grid grid-cols-2 gap-4 pb-4 border-b-2 border-slate-900 mb-4">
-        {/* Cột trái: Thương hiệu đơn vị */}
-        <div>
-          <div className="font-bold text-[14px] uppercase tracking-wider text-slate-900">
-            SMARTSTORAGE VIỆT NAM
-          </div>
-          <div className="text-[11px] text-slate-700 italic">
-            Hệ thống kho tự quản thông minh 24/7
-          </div>
-          <div className="text-[11px] text-slate-800 mt-1 font-semibold">
-            {effectiveFacilityName}
-          </div>
-          <div className="text-[10.5px] text-slate-600 leading-tight">
-            Đ/c: {effectiveFacilityAddress}
-          </div>
-          <div className="text-[10.5px] text-slate-600">
-            Hotline: <strong>{effectiveFacilityPhone}</strong> · Web: www.smartstorage.vn
-          </div>
+      {/* 1. Quốc hiệu & Tiêu ngữ chuẩn văn bản pháp lý Việt Nam đặt trên cùng chính giữa */}
+      <div className="text-center mb-3">
+        <div className="font-bold text-[13px] uppercase tracking-wide text-slate-950">
+          CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
         </div>
+        <div className="font-bold text-[12px] text-slate-950 mt-0.5">
+          Độc lập - Tự do - Hạnh phúc
+        </div>
+        <div className="w-36 mx-auto border-b border-slate-800 my-1.5" />
+        <div className="text-[11px] italic text-slate-600">
+          {effectiveFacilityAddress.includes('Hà Nội') ? 'Hà Nội' : 'TP. Hồ Chí Minh'}, ngày {printDay} tháng {printMonth} năm {printYear}
+        </div>
+      </div>
 
-        {/* Cột phải: Quốc hiệu & Tiêu ngữ */}
-        <div className="text-center">
-          <div className="font-bold text-[12.5px] uppercase tracking-wide">
-            CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
-          </div>
-          <div className="font-bold text-[12px] underline decoration-slate-800 underline-offset-4">
-            Độc lập - Tự do - Hạnh phúc
-          </div>
-          <div className="text-[11px] text-slate-500 my-0.5">---------------o0o---------------</div>
-          <div className="text-[11px] italic text-slate-700">
-            TP. Hồ Chí Minh, ngày {printDay} tháng {printMonth} năm {printYear}
-          </div>
+      {/* Thông tin đơn vị SmartStorage */}
+      <div className="flex justify-between items-center text-[11px] text-slate-700 mb-3">
+        <div>
+          <span className="font-bold uppercase tracking-wider text-slate-900 text-[12px]">SMARTSTORAGE VIỆT NAM</span>
+          <span className="mx-1.5 text-slate-400">·</span>
+          <span className="italic">{effectiveFacilityName}</span>
+        </div>
+        <div className="text-[10.5px] text-slate-500">
+          Hotline: <strong className="text-slate-700">{effectiveFacilityPhone}</strong> · www.smartstorage.vn
         </div>
       </div>
 
@@ -136,12 +126,10 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
         </p>
       </div>
 
-      {/* 3. Căn cứ pháp lý */}
-      <div className="text-[11px] italic text-slate-700 space-y-0.5 mb-3 pl-2 border-l border-slate-300">
+      {/* 3. Căn cứ pháp lý tinh gọn */}
+      <div className="text-[11px] italic text-slate-700 space-y-0.5 mb-3">
         <p>• Căn cứ Bộ luật Dân sự số 91/2015/QH13 được Quốc hội ban hành ngày 24/11/2015;</p>
-        <p>• Căn cứ Luật Thương mại số 36/2005/QH11 và Luật Kinh doanh Bất động sản số 29/2023/QH15;</p>
         <p>• Căn cứ Luật Giao dịch Điện tử số 20/2023/QH15 có hiệu lực thi hành;</p>
-        <p>• Căn cứ Quy chế vận hành và Biểu phí dịch vụ của Hệ thống Cho thuê kho tự quản SmartStorage;</p>
         <p>• Căn cứ nhu cầu và sự thỏa thuận hoàn toàn tự nguyện giữa các bên tham gia.</p>
       </div>
 
@@ -149,79 +137,74 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
 
       {/* ĐIỀU 1: CÁC BÊN THAM GIA HỢP ĐỒNG */}
       <section className="mb-3 break-inside-avoid">
-        <h2 className="font-bold text-[12.5px] uppercase border-b border-slate-400 pb-0.5 mb-1.5">
+        <h2 className="font-bold text-[12.5px] uppercase mb-2">
           ĐIỀU 1: CÁC BÊN THAM GIA HỢP ĐỒNG
         </h2>
 
-        <div className="grid grid-cols-2 gap-3 text-[11.5px]">
+        <div className="grid grid-cols-2 gap-6 text-[11.5px] leading-relaxed">
           {/* Bên A */}
-          <div className="border border-slate-300 p-2.5 rounded bg-slate-50/50">
-            <div className="font-bold uppercase text-slate-900 mb-1">
+          <div>
+            <div className="font-bold uppercase text-slate-950 mb-1">
               BÊN CHO THUÊ (BÊN A):
             </div>
-            <p><strong>Cơ sở quản lý:</strong> {effectiveFacilityName}</p>
-            <p><strong>Địa chỉ cơ sở:</strong> {effectiveFacilityAddress}</p>
-            <p><strong>Hotline cơ sở:</strong> {effectiveFacilityPhone}</p>
-            <p><strong>Đại diện tiếp nhận:</strong> {effectiveHandoverStaff}</p>
+            <p>• <strong>Cơ sở quản lý:</strong> {effectiveFacilityName}</p>
+            <p>• <strong>Địa chỉ cơ sở:</strong> {effectiveFacilityAddress}</p>
+            <p>• <strong>Hotline cơ sở:</strong> {effectiveFacilityPhone}</p>
+            <p>• <strong>Đại diện tiếp nhận:</strong> {effectiveHandoverStaff}</p>
           </div>
 
           {/* Bên B */}
-          <div className="border border-slate-300 p-2.5 rounded bg-slate-50/50">
-            <div className="font-bold uppercase text-slate-900 mb-1">
+          <div>
+            <div className="font-bold uppercase text-slate-950 mb-1">
               BÊN THUÊ KHO (BÊN B):
             </div>
-            <p><strong>Họ và tên khách hàng:</strong> {effectiveCustomerName}</p>
-            <p><strong>Số CMND / CCCD:</strong> <span className="font-mono font-bold">{effectiveCustomerIdentity}</span></p>
-            <p><strong>Số điện thoại:</strong> {effectiveCustomerPhone}</p>
-            <p><strong>Thư điện tử:</strong> {effectiveCustomerEmail}</p>
+            <p>• <strong>Họ và tên khách hàng:</strong> {effectiveCustomerName}</p>
+            <p>• <strong>Số CMND / CCCD:</strong> <span className="font-mono font-bold">{effectiveCustomerIdentity}</span></p>
+            <p>• <strong>Số điện thoại:</strong> {effectiveCustomerPhone}</p>
+            <p>• <strong>Thư điện tử:</strong> {effectiveCustomerEmail}</p>
           </div>
         </div>
       </section>
 
       {/* ĐIỀU 2: ĐỐI TƯỢNG VÀ THỜI HẠN THUÊ KHO */}
       <section className="mb-3 break-inside-avoid">
-        <h2 className="font-bold text-[12.5px] uppercase border-b border-slate-400 pb-0.5 mb-1.5">
+        <h2 className="font-bold text-[12.5px] uppercase mb-2">
           ĐIỀU 2: ĐỐI TƯỢNG VÀ THỜI HẠN THUÊ KHO
         </h2>
 
-        <table className="w-full border-collapse border border-slate-400 text-[11px] mb-2">
+        <table className="w-full border-collapse border border-slate-600 text-[11px] mb-2">
           <tbody>
-            <tr className="bg-slate-100 font-semibold">
-              <td className="border border-slate-400 px-2 py-1 w-1/4">Mã ô kho</td>
-              <td className="border border-slate-400 px-2 py-1 w-1/4">Loại ô kho</td>
-              <td className="border border-slate-400 px-2 py-1 w-1/4">Kích thước (D x R x C)</td>
-              <td className="border border-slate-400 px-2 py-1 w-1/4">Vị trí vật lý</td>
+            <tr className="font-bold border-b border-slate-600">
+              <td className="border border-slate-600 px-2 py-1 w-1/4">Mã ô kho</td>
+              <td className="border border-slate-600 px-2 py-1 w-1/4">Loại ô kho</td>
+              <td className="border border-slate-600 px-2 py-1 w-1/4">Kích thước (D x R x C)</td>
+              <td className="border border-slate-600 px-2 py-1 w-1/4">Vị trí vật lý</td>
             </tr>
             <tr>
-              <td className="border border-slate-400 px-2 py-1.5 font-bold font-mono text-[12px]">
+              <td className="border border-slate-600 px-2 py-1.5 font-bold font-mono text-[12px]">
                 {effectiveUnitNumber}
               </td>
-              <td className="border border-slate-400 px-2 py-1.5">{effectiveUnitTypeName}</td>
-              <td className="border border-slate-400 px-2 py-1.5">{effectiveDimensions}</td>
-              <td className="border border-slate-400 px-2 py-1.5">Tầng {effectiveFloor} ({effectivePosition})</td>
+              <td className="border border-slate-600 px-2 py-1.5">{effectiveUnitTypeName}</td>
+              <td className="border border-slate-600 px-2 py-1.5">{effectiveDimensions}</td>
+              <td className="border border-slate-600 px-2 py-1.5">Tầng {effectiveFloor} ({effectivePosition})</td>
             </tr>
           </tbody>
         </table>
 
-        <div className="grid grid-cols-2 gap-2 text-[11.5px] bg-slate-50/60 p-2 border border-slate-200 rounded">
-          <div>
-            <strong>Ngày bắt đầu thuê:</strong> {effectiveStartDate}
-          </div>
-          <div>
-            <strong>Ngày kết thúc hợp đồng:</strong> {effectiveEndDate}
-          </div>
+        <div className="text-[11.5px] my-2 leading-relaxed">
+          <p>• <strong>Thời hạn thuê ô kho:</strong> Bắt đầu từ ngày <strong>{effectiveStartDate}</strong> đến ngày <strong>{effectiveEndDate}</strong>.</p>
         </div>
 
         {relocationCode && (
-          <div className="mt-1.5 p-2 bg-amber-50 border border-amber-300 rounded text-[11px] text-amber-950">
-            <strong>Phụ lục điều chuyển kỹ thuật ({relocationCode}):</strong> Ô kho được điều chuyển từ ô ban đầu sang <strong>{effectiveUnitNumber}</strong> ({relocationReason}). Toàn bộ đơn giá thuê và tiền cọc bảo đảm được giữ nguyên vẹn.
+          <div className="mt-1.5 text-[11px] text-slate-800 italic">
+            <strong>* Phụ lục điều chuyển kỹ thuật ({relocationCode}):</strong> Ô kho được điều chuyển từ ô ban đầu sang <strong>{effectiveUnitNumber}</strong> ({relocationReason}). Toàn bộ đơn giá thuê và tiền cọc bảo đảm được giữ nguyên vẹn.
           </div>
         )}
       </section>
 
       {/* ĐIỀU 3: GIÁ THUÊ, TIỀN CỌC BẢO ĐẢM VÀ QUY CHẾ THANH TOÁN */}
       <section className="mb-3 break-inside-avoid">
-        <h2 className="font-bold text-[12.5px] uppercase border-b border-slate-400 pb-0.5 mb-1.5">
+        <h2 className="font-bold text-[12.5px] uppercase mb-2">
           ĐIỀU 3: GIÁ THUÊ, TIỀN CỌC BẢO ĐẢM VÀ QUY CHẾ THANH TOÁN
         </h2>
 
@@ -248,7 +231,7 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
 
       {/* ĐIỀU 4: BIÊN BẢN BÀN GIAO & NGHIỆM THU HIỆN TRƯỜNG */}
       <section className="mb-3 break-inside-avoid">
-        <h2 className="font-bold text-[12.5px] uppercase border-b border-slate-400 pb-0.5 mb-1.5 flex justify-between items-center">
+        <h2 className="font-bold text-[12.5px] uppercase mb-2 flex justify-between items-center">
           <span>ĐIỀU 4: BIÊN BẢN BÀN GIAO & NGHIỆM THU HIỆN TRƯỜNG</span>
           {isPendingCheckin && (
             <span className="text-[10px] font-normal italic text-slate-600 lowercase tracking-normal">
@@ -257,55 +240,54 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
           )}
         </h2>
 
-        <div className="text-[11px] mb-1.5 flex justify-between bg-slate-50 p-1.5 border border-slate-200 rounded">
-          <span>Thời điểm hoàn tất bàn giao: <strong>{effectiveCheckinDate}</strong></span>
-          <span>Nhân viên đón tiếp & lập biên bản: <strong>{effectiveHandoverStaff}</strong></span>
+        <div className="text-[11.5px] mb-2 leading-relaxed">
+          <p>• Thời điểm hoàn tất bàn giao: <strong>{effectiveCheckinDate}</strong> &nbsp;|&nbsp; Nhân viên đón tiếp & lập biên bản: <strong>{effectiveHandoverStaff}</strong></p>
         </div>
 
-        <div className="border border-slate-300 p-2 rounded bg-white text-[11px]">
-          <p className="font-bold mb-1 text-slate-800">
+        <div className="text-[11.5px] space-y-1 mb-2">
+          <p className="font-semibold text-slate-900 mb-1">
             Kết quả kiểm tra 4 tiêu chí nghiệm thu vật lý bàn giao tại chỗ:
           </p>
           {isHandoverCompleted ? (
-            <div className="grid grid-cols-2 gap-1 text-slate-800 font-medium">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-slate-900">
               <div className="flex items-center gap-1.5">
-                <span className="text-emerald-700 font-bold">[✓]</span>
+                <span className="font-bold text-slate-950">[✓]</span>
                 <span>Mặt bằng kho sạch sẽ, thông thoáng, không vật cản</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-emerald-700 font-bold">[✓]</span>
+                <span className="font-bold text-slate-950">[✓]</span>
                 <span>Cửa cuốn & cơ cấu khóa vận hành an toàn, trơn tru</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-emerald-700 font-bold">[✓]</span>
+                <span className="font-bold text-slate-950">[✓]</span>
                 <span>Sàn tường khô ráo, phòng chống ẩm mốc & PCCC đạt chuẩn</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-emerald-700 font-bold">[✓]</span>
+                <span className="font-bold text-slate-950">[✓]</span>
                 <span>Khóa điện tử thông minh đã sẵn sàng, cấp mã PIN mở cửa 24/7</span>
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-1 text-slate-600 font-medium">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-slate-600">
               <div className="flex items-center gap-1.5">
-                <span className="text-slate-400 font-bold">[  ]</span>
+                <span className="font-bold text-slate-400">[  ]</span>
                 <span>Mặt bằng kho sạch sẽ, thông thoáng (Chờ kiểm tra hiện trường)</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-slate-400 font-bold">[  ]</span>
+                <span className="font-bold text-slate-400">[  ]</span>
                 <span>Cửa cuốn & cơ cấu khóa (Chờ kiểm tra hiện trường)</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-slate-400 font-bold">[  ]</span>
+                <span className="font-bold text-slate-400">[  ]</span>
                 <span>Sàn tường & PCCC đạt chuẩn (Chờ kiểm tra hiện trường)</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-slate-400 font-bold">[  ]</span>
+                <span className="font-bold text-slate-400">[  ]</span>
                 <span>Khóa điện tử & mã PIN (Chờ kích hoạt tại quầy)</span>
               </div>
             </div>
           )}
-          <p className="mt-1.5 pt-1 border-t border-slate-200 text-slate-700 italic">
+          <p className="mt-1.5 text-slate-700 italic">
             Ghi chú hiện trường: <strong>{effectiveHandoverNote}</strong>
           </p>
         </div>
@@ -313,7 +295,7 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
 
       {/* ĐIỀU 5: NỘI QUY AN TOÀN, AN NINH & QUYỀN TRUY CẬP */}
       <section className="mb-3 break-inside-avoid">
-        <h2 className="font-bold text-[12.5px] uppercase border-b border-slate-400 pb-0.5 mb-1.5">
+        <h2 className="font-bold text-[12.5px] uppercase mb-2">
           ĐIỀU 5: NỘI QUY AN TOÀN, AN NINH & QUYỀN TRUY CẬP
         </h2>
         <ul className="list-disc pl-5 text-[11px] text-slate-700 space-y-0.5">
@@ -325,7 +307,7 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
 
       {/* ĐIỀU 6: HIỆU LỰC HỢP ĐỒNG & CHỮ KÝ XÁC NHẬN ĐIỆN TỬ */}
       <section className="mb-4 break-inside-avoid">
-        <h2 className="font-bold text-[12.5px] uppercase border-b border-slate-400 pb-0.5 mb-2">
+        <h2 className="font-bold text-[12.5px] uppercase mb-2">
           ĐIỀU 6: HIỆU LỰC HỢP ĐỒNG & CHỮ KÝ XÁC NHẬN ĐIỆN TỬ
         </h2>
         <p className="text-[11px] mb-3 text-slate-700">
@@ -333,61 +315,61 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
         </p>
 
         {/* Khối chữ ký số */}
-        <div className="grid grid-cols-2 gap-4 text-center">
+        <div className="grid grid-cols-2 gap-6 text-center mt-4">
           {/* Bên A */}
-          <div className="border border-slate-300 p-3 rounded bg-slate-50/50">
-            <div className="font-bold uppercase text-[12px] text-slate-900">
+          <div>
+            <div className="font-bold uppercase text-[12px] text-slate-950">
               ĐẠI DIỆN BÊN CHO THUÊ (BÊN A)
             </div>
-            <div className="text-[10.5px] text-slate-500 mb-2">Ban Quản lý cơ sở</div>
+            <div className="text-[10.5px] text-slate-500 italic mb-1">Ban Quản lý cơ sở</div>
             {isHandoverCompleted ? (
-              <>
-                <div className="my-2 py-1.5 px-3 inline-block border-2 border-emerald-600 bg-emerald-50 rounded text-[11px] font-bold text-emerald-800 tracking-wider">
+              <div className="my-2">
+                <div className="py-1 px-3 inline-block border border-emerald-700 bg-emerald-50/50 text-[11px] font-bold text-emerald-800 tracking-wider">
                   ✓ ĐÃ KÝ SỐ ĐIỆN TỬ
                 </div>
-                <div className="text-[10px] text-slate-500">Thời gian ký: {effectiveCheckinDate}</div>
-                <div className="font-semibold text-[11.5px] text-slate-800 mt-1">{effectiveHandoverStaff}</div>
-              </>
+                <div className="text-[10px] text-slate-500 italic mt-0.5">Thời gian ký: {effectiveCheckinDate}</div>
+                <div className="font-bold text-[11.5px] text-slate-900 mt-2">{effectiveHandoverStaff}</div>
+              </div>
             ) : (
-              <>
-                <div className="my-2 py-1.5 px-3 inline-block border-2 border-dashed border-slate-400 bg-slate-100 rounded text-[11px] font-bold text-slate-600 tracking-wider">
+              <div className="my-2">
+                <div className="py-1 px-3 inline-block border border-dashed border-slate-400 text-[11px] font-semibold text-slate-600 tracking-wider">
                   CHỜ KÝ BÀN GIAO TẠI QUẦY
                 </div>
-                <div className="text-[10px] text-slate-500 italic">Ký số khi tiếp đón thực tế</div>
-                <div className="font-semibold text-[11.5px] text-slate-500 mt-1">Đại diện tiếp đón cơ sở</div>
-              </>
+                <div className="text-[10px] text-slate-400 italic mt-0.5">Ký số khi tiếp đón thực tế</div>
+                <div className="font-semibold text-[11.5px] text-slate-500 mt-2">Đại diện tiếp đón cơ sở</div>
+              </div>
             )}
           </div>
 
           {/* Bên B */}
-          <div className="border border-slate-300 p-3 rounded bg-slate-50/50">
-            <div className="font-bold uppercase text-[12px] text-slate-900">
+          <div>
+            <div className="font-bold uppercase text-[12px] text-slate-950">
               ĐẠI DIỆN BÊN THUÊ KHO (BÊN B)
             </div>
-            <div className="text-[10.5px] text-slate-500 mb-2">Khách hàng xác nhận</div>
+            <div className="text-[10.5px] text-slate-500 italic mb-1">Khách hàng xác nhận</div>
             {isHandoverCompleted ? (
-              <>
-                <div className="my-2 py-1.5 px-3 inline-block border-2 border-emerald-600 bg-emerald-50 rounded text-[11px] font-bold text-emerald-800 tracking-wider">
+              <div className="my-2">
+                <div className="py-1 px-3 inline-block border border-emerald-700 bg-emerald-50/50 text-[11px] font-bold text-emerald-800 tracking-wider">
                   ✓ ĐÃ XÁC NHẬN BÀN GIAO
                 </div>
-                <div className="text-[10px] text-slate-500">Thời gian ký: {effectiveCheckinDate}</div>
-                <div className="font-semibold text-[11.5px] text-slate-800 mt-1">{effectiveCustomerName}</div>
-              </>
+                <div className="text-[10px] text-slate-500 italic mt-0.5">Thời gian ký: {effectiveCheckinDate}</div>
+                <div className="font-bold text-[11.5px] text-slate-900 mt-2">{effectiveCustomerName}</div>
+              </div>
             ) : (
-              <>
-                <div className="my-2 py-1.5 px-3 inline-block border-2 border-dashed border-slate-400 bg-slate-100 rounded text-[11px] font-bold text-slate-600 tracking-wider">
+              <div className="my-2">
+                <div className="py-1 px-3 inline-block border border-dashed border-slate-400 text-[11px] font-semibold text-slate-600 tracking-wider">
                   CHỜ XÁC NHẬN KHI NHẬN KHO
                 </div>
-                <div className="text-[10px] text-slate-500 italic">Xác nhận tại quầy sau khi nghiệm thu</div>
-                <div className="font-semibold text-[11.5px] text-slate-800 mt-1">{effectiveCustomerName}</div>
-              </>
+                <div className="text-[10px] text-slate-400 italic mt-0.5">Xác nhận tại quầy sau khi nghiệm thu</div>
+                <div className="font-semibold text-[11.5px] text-slate-500 mt-2">{effectiveCustomerName}</div>
+              </div>
             )}
           </div>
         </div>
       </section>
 
       {/* 4. Footer xác thực hệ thống & QR Code */}
-      <div className="pt-3 border-t border-slate-300 flex items-center justify-between text-[10px] text-slate-500 break-inside-avoid">
+      <div className="pt-4 mt-6 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-500 break-inside-avoid">
         <div>
           <p>Hệ thống Quản lý & Cho thuê kho tự quản thông minh (SmartStorage System).</p>
           <p>Mã kiểm tra tính toàn vẹn văn bản: <strong className="font-mono">{effectiveContractNumber}</strong></p>
@@ -399,7 +381,7 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
             value={qrPayload}
             size={52}
             level="M"
-            className="border border-slate-200 p-0.5 rounded bg-white"
+            className="border border-slate-200 p-0.5 bg-white"
           />
           <div className="text-[9.5px] text-slate-400 max-w-[120px] leading-tight text-right">
             Quét QR để đối chiếu tính xác thực hợp đồng điện tử

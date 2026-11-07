@@ -37,12 +37,6 @@ export const HomeFacilityCard: React.FC<HomeFacilityCardProps> = ({ facility: fa
             <Clock className="w-3 h-3 text-brand-400" />
             <span>{fac.openingHours}</span>
           </div>
-
-          {/* Trạng thái kho thực tế thay cho mã FAC-* kỹ thuật */}
-          <div className="absolute top-3 right-3 bg-emerald-600/90 backdrop-blur-md text-white text-[10px] font-semibold px-2.5 py-1 rounded-full shadow-xs flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-            <span>Đang có kho trống</span>
-          </div>
         </div>
 
         {/* Nội dung thông tin cơ sở */}
