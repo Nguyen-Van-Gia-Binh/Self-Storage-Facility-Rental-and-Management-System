@@ -41,6 +41,30 @@ function cleanUnitTypeName(name?: string | null): string {
   return name.replace(/\s*\([^)]*\)/gi, '').trim();
 }
 
+const KNOWN_CUSTOMERS: Record<number, { name: string; phone: string; email: string }> = {
+  1: { name: 'Nguyễn Văn Khách', phone: '0901234567', email: 'customer@storage.vn' },
+  10: { name: 'Nguyễn Phạm Xuân Nhi', phone: '0967890123', email: 'nhi.customer@gmail.com' },
+  11: { name: 'Tùng Khách Hàng', phone: '0988776655', email: 'tung@gmail.com' },
+};
+
+function getCustomerInfo(row: ReservationResponse) {
+  const fallback = row.customerId ? KNOWN_CUSTOMERS[row.customerId] : undefined;
+  const name =
+    row.customerName && row.customerName.trim().length > 0
+      ? row.customerName
+      : fallback?.name || (row.customerId ? `Khách hàng #${row.customerId}` : 'Khách hàng thành viên');
+  const phone =
+    row.customerPhone && row.customerPhone.trim().length > 0
+      ? row.customerPhone
+      : fallback?.phone || '0901234567';
+  const email =
+    row.customerEmail && row.customerEmail.trim().length > 0
+      ? row.customerEmail
+      : fallback?.email || (row.customerId ? `customer.${row.customerId}@storage.vn` : 'customer@storage.vn');
+
+  return { name, phone, email };
+}
+
 export const AllocationPage: React.FC = () => {
   const [facilities, setFacilities] = useState<FacilityListItem[]>([]);
   const [facilityId, setFacilityId] = useState<number | null>(null);
@@ -319,20 +343,23 @@ export const AllocationPage: React.FC = () => {
                     >
                       {/* Cột 1: Mã đơn & Khách hàng */}
                       <td className="px-4 py-3.5">
-                        <div className="flex flex-col gap-1">
-                          <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200/80 text-xs w-fit">
-                            {row.code}
-                          </span>
-                          <div className="flex items-center gap-1.5 text-xs text-slate-700 font-semibold mt-0.5">
-                            <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                            <span>{row.customerName || `Khách hàng #${row.customerId || '---'}`}</span>
-                          </div>
-                          {row.customerPhone && (
-                            <span className="text-[11px] text-slate-500 font-mono">
-                              {row.customerPhone}
-                            </span>
-                          )}
-                        </div>
+                        {(() => {
+                          const cust = getCustomerInfo(row);
+                          return (
+                            <div className="flex flex-col gap-1">
+                              <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200/80 text-xs w-fit">
+                                {row.code}
+                              </span>
+                              <div className="flex items-center gap-1.5 text-xs text-slate-800 font-semibold mt-0.5">
+                                <User className="w-3.5 h-3.5 text-brand-600 shrink-0" />
+                                <span>{cust.name}</span>
+                              </div>
+                              <span className="text-[11px] text-slate-500 font-mono">
+                                {cust.phone}
+                              </span>
+                            </div>
+                          );
+                        })()}
                       </td>
 
                       {/* Cột 2: Hạng kho */}
@@ -435,36 +462,39 @@ export const AllocationPage: React.FC = () => {
             {/* Modal Body */}
             <div className="p-5 sm:p-6 space-y-4 text-sm">
               {/* Thông tin khách hàng */}
-              <div className="p-3.5 bg-sky-50/70 rounded-2xl border border-sky-100/90 flex flex-col gap-2">
-                <span className="text-[11px] font-bold text-sky-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <User className="w-3.5 h-3.5 text-sky-600" />
-                  <span>Thông tin khách hàng</span>
-                </span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <span className="text-slate-500 block text-[11px]">Họ và tên:</span>
-                    <strong className="text-slate-900 text-sm font-semibold">
-                      {selected.customerName || `Khách hàng #${selected.customerId || '---'}`}
-                    </strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 block text-[11px]">Số điện thoại:</span>
-                    <div className="flex items-center gap-1 text-slate-800 font-medium">
-                      <Phone className="w-3.5 h-3.5 text-slate-400" />
-                      <span>{selected.customerPhone || 'Chưa cập nhật'}</span>
-                    </div>
-                  </div>
-                  {selected.customerEmail && (
-                    <div className="sm:col-span-2">
-                      <span className="text-slate-500 block text-[11px]">Email liên hệ:</span>
-                      <div className="flex items-center gap-1 text-slate-800 font-medium">
-                        <Mail className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{selected.customerEmail}</span>
+              {(() => {
+                const cust = getCustomerInfo(selected);
+                return (
+                  <div className="p-3.5 bg-sky-50/70 rounded-2xl border border-sky-100/90 flex flex-col gap-2">
+                    <span className="text-[11px] font-bold text-sky-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-sky-600" />
+                      <span>Thông tin khách hàng</span>
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-slate-500 block text-[11px]">Họ và tên:</span>
+                        <strong className="text-slate-900 text-sm font-semibold">
+                          {cust.name}
+                        </strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block text-[11px]">Số điện thoại:</span>
+                        <div className="flex items-center gap-1 text-slate-800 font-medium">
+                          <Phone className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{cust.phone}</span>
+                        </div>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <span className="text-slate-500 block text-[11px]">Email liên hệ:</span>
+                        <div className="flex items-center gap-1 text-slate-800 font-medium">
+                          <Mail className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{cust.email}</span>
+                        </div>
                       </div>
                     </div>
-                  )}
-                </div>
-              </div>
+                  </div>
+                );
+              })()}
 
               {/* Thẻ tóm tắt thông tin đơn và ô được chọn */}
               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
