@@ -588,7 +588,7 @@ class PaymentServiceTest {
                 .status("PENDING")
                 .build();
         pending.setCreatedAt(Instant.now().minus(2, ChronoUnit.MINUTES));
-        when(paymentTransactionRepository.findByOrderCodeForUpdate(1001L)).thenReturn(Optional.of(pending));
+        when(paymentTransactionRepository.findByOrderCode(1001L)).thenReturn(Optional.of(pending));
 
         assertFalse(paymentService.reconcileSingleOrder(1001L));
         verify(vnPayGateway, never()).queryDr(anyLong(), any());
@@ -604,6 +604,7 @@ class PaymentServiceTest {
                 .status("PENDING")
                 .build();
         pending.setCreatedAt(Instant.now().minus(10, ChronoUnit.MINUTES));
+        when(paymentTransactionRepository.findByOrderCode(1001L)).thenReturn(Optional.of(pending));
         when(paymentTransactionRepository.findByOrderCodeForUpdate(1001L)).thenReturn(Optional.of(pending));
         when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -630,6 +631,7 @@ class PaymentServiceTest {
                 .reservationId(50L)
                 .build();
         pending.setCreatedAt(Instant.now().minus(10, ChronoUnit.MINUTES));
+        when(paymentTransactionRepository.findByOrderCode(1001L)).thenReturn(Optional.of(pending));
         when(paymentTransactionRepository.findByOrderCodeForUpdate(1001L)).thenReturn(Optional.of(pending));
 
         VnPayQueryResult notFoundQr = VnPayQueryResult.builder()
@@ -655,6 +657,7 @@ class PaymentServiceTest {
                 .reservationId(60L)
                 .build();
         pending.setCreatedAt(Instant.now().minus(50, ChronoUnit.HOURS));
+        when(paymentTransactionRepository.findByOrderCode(1001L)).thenReturn(Optional.of(pending));
         when(paymentTransactionRepository.findByOrderCodeForUpdate(1001L)).thenReturn(Optional.of(pending));
 
         VnPayQueryResult errorQr = VnPayQueryResult.builder()
@@ -678,6 +681,7 @@ class PaymentServiceTest {
                 .status("PENDING")
                 .build();
         pending.setCreatedAt(Instant.now().minus(20, ChronoUnit.HOURS));
+        when(paymentTransactionRepository.findByOrderCode(1001L)).thenReturn(Optional.of(pending));
         when(paymentTransactionRepository.findByOrderCodeForUpdate(1001L)).thenReturn(Optional.of(pending));
 
         VnPayQueryResult errorQr = VnPayQueryResult.builder()
@@ -689,5 +693,37 @@ class PaymentServiceTest {
         assertFalse(paymentService.reconcileSingleOrder(1001L));
         assertEquals("PENDING", pending.getStatus());
         verify(paymentTransactionRepository, never()).save(pending);
+    }
+
+    @Test
+    @DisplayName("reconcileSingleOrder (Guardrail Idempotency): Webhook IPN commit SUCCESS trong lúc chờ mạng -> Lock và bỏ qua lặp")
+    void reconcileSingleOrder_ConcurrentWebhookSuccess_SkipsProcessing() {
+        PaymentTransaction pendingBeforeNetwork = PaymentTransaction.builder()
+                .id(1L)
+                .orderCode(1001L)
+                .status("PENDING")
+                .build();
+        pendingBeforeNetwork.setCreatedAt(Instant.now().minus(10, ChronoUnit.MINUTES));
+        when(paymentTransactionRepository.findByOrderCode(1001L)).thenReturn(Optional.of(pendingBeforeNetwork));
+
+        VnPayQueryResult successQr = VnPayQueryResult.builder()
+                .responseCode("00")
+                .transactionStatus("00")
+                .amount(200_000_000L)
+                .transactionNo("TXN123")
+                .bankCode("NCB")
+                .build();
+        when(vnPayGateway.queryDr(eq(1001L), any(Instant.class))).thenReturn(successQr);
+
+        // Nhưng khi acquire lock findByOrderCodeForUpdate, status đã là SUCCESS do Webhook IPN vừa commit xong
+        PaymentTransaction updatedByWebhook = PaymentTransaction.builder()
+                .id(1L)
+                .orderCode(1001L)
+                .status("SUCCESS")
+                .build();
+        when(paymentTransactionRepository.findByOrderCodeForUpdate(1001L)).thenReturn(Optional.of(updatedByWebhook));
+
+        assertFalse(paymentService.reconcileSingleOrder(1001L), "Phải bỏ qua khi đơn đã được Webhook xử lý");
+        verify(paymentTransactionRepository, never()).save(any());
     }
 }
