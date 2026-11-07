@@ -134,6 +134,13 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
         return <Badge variant="available">Đang hoạt động</Badge>;
       case 'PENDING_CHECKIN':
       case 'PENDING_CHECK_IN' as any:
+        if ((contract as any).relocationEligible) {
+          return (
+            <Badge variant="warning" className="bg-amber-100 text-amber-900 border-amber-300 font-bold">
+              Đang sắp xếp đổi ô kho
+            </Badge>
+          );
+        }
         return <Badge variant="reserved">Chờ nhận kho</Badge>;
       case 'EXPIRING_SOON':
         return <Badge variant="warning">Sắp hết hạn</Badge>;
@@ -160,8 +167,13 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
         }
         return <Badge variant="warning">Chờ nghiệm thu</Badge>;
       case 'CLOSED':
-      case 'TERMINATED' as any:
         return <Badge variant="default">Đã kết thúc</Badge>;
+      case 'TERMINATED' as any:
+        return (
+          <Badge variant="danger" className="bg-rose-100 text-rose-800 border-rose-300 font-bold">
+            Hủy do sự cố bàn giao
+          </Badge>
+        );
       default:
         return <Badge variant="default">{contract.status}</Badge>;
     }

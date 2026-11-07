@@ -270,13 +270,16 @@ public class ContractServiceImpl implements ContractService {
 
                 String action = (request != null && request.getRejectionAction() != null && !request.getRejectionAction().isBlank())
                                 ? request.getRejectionAction().toUpperCase().trim()
-                                : "TERMINATE_REFUND";
+                                : "RELOCATE";
 
                 boolean isRelocate = "RELOCATE".equals(action);
 
                 if (isRelocate) {
                         // NHÁNH 1: KHÁCH ĐỒNG Ý ĐỔI Ô KHO
                         // Giữ nguyên trạng thái PENDING_CHECK_IN để khách tiếp tục thuê
+                        contract.setStatus(ContractStatus.PENDING_CHECK_IN);
+                        contractRepository.save(contract);
+
                         // Tự động tạo Ticket Sự Cố (SupportRequest) có relocationRequired = true
                         if (supportRequestRepository != null) {
                                 SupportRequest ticket = new SupportRequest();
@@ -709,6 +712,9 @@ public class ContractServiceImpl implements ContractService {
                 if (contract.getStatus() != ContractStatus.PENDING_CHECK_IN && contract.getStatus() != ContractStatus.ACTIVE) {
                         if (contract.getStatus() == ContractStatus.TERMINATED && Boolean.TRUE.equals(request.getCustomerConsent())) {
                                 contract.setStatus(ContractStatus.PENDING_CHECK_IN);
+                                if (contract.getStartDate() != null && contract.getRentalMonths() > 0) {
+                                        contract.setEndDateExclusive(contract.getStartDate().plusMonths(contract.getRentalMonths()));
+                                }
                         } else {
                                 throw new CustomException(ErrorCode.VALIDATION_FAILED,
                                                 "Chỉ có thể đổi ô kho cho hợp đồng đang chờ nhận kho hoặc đang hoạt động.");
@@ -740,7 +746,10 @@ public class ContractServiceImpl implements ContractService {
                         ticket.setCreatedAt(OffsetDateTime.now());
                         ticket.setUpdatedAt(OffsetDateTime.now());
                         if (supportRequestRepository != null) {
-                                ticket = supportRequestRepository.save(ticket);
+                                SupportRequest saved = supportRequestRepository.save(ticket);
+                                if (saved != null) {
+                                        ticket = saved;
+                                }
                         }
                 }
 
@@ -778,7 +787,7 @@ public class ContractServiceImpl implements ContractService {
                                 .orElseThrow(() -> new CustomException(ErrorCode.STORAGE_UNIT_NOT_FOUND, "Không tìm thấy ô kho hiện tại."));
                 String oldCode = oldUnit.getCode() != null ? oldUnit.getCode() : ("U-" + oldUnitId);
 
-                if (ticket.getStorageUnitId() == null) {
+                if (ticket != null && ticket.getStorageUnitId() == null) {
                         ticket.setStorageUnitId(oldUnitId);
                 }
                 oldUnit.setStatus(StorageUnitStatus.MAINTENANCE);

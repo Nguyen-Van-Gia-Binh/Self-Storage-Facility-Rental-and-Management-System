@@ -622,4 +622,66 @@ class ContractServiceTest {
         assertEquals(1_000_000L, approval.getDepositRefundAmount());
         assertEquals(0L, approval.getPayableAmount());
     }
+
+    @Test
+    @DisplayName("Sự cố bàn giao: Khi action=RELOCATE hoặc null -> Hợp đồng giữ PENDING_CHECK_IN và ô cũ chuyển MAINTENANCE")
+    void shouldKeepPendingCheckIn_whenRejectionActionIsRelocate() {
+        RentalContract contract = RentalContract.builder()
+                .id(777L).code("CTR-777").facilityId(1L).customerId(10L).storageUnitId(42L).unitTypeId(7L)
+                .status(ContractStatus.PENDING_CHECK_IN).startDate(LocalDate.now()).rentalMonths(1)
+                .build();
+        StorageUnit oldUnit = StorageUnit.builder().id(42L).code("U-42").facilityId(1L).status(StorageUnitStatus.RESERVED).build();
+
+        when(contractRepository.findByIdAndFacilityIdIn(777L, List.of(1L))).thenReturn(Optional.of(contract));
+        when(contractRepository.save(any(RentalContract.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(storageUnitRepository.findByIdForUpdate(42L)).thenReturn(Optional.of(oldUnit));
+        when(storageUnitRepository.save(any(StorageUnit.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        HandoverRejectionRequest req = HandoverRejectionRequest.builder()
+                .rejectionReason("Ô kho bị dột trần")
+                .reportedDefects("Nước nhỏ giọt nhiều")
+                .rejectionAction("RELOCATE")
+                .build();
+
+        HandoverRejectionResponse res = contractService.rejectHandover(777L, req, 5L, List.of(1L));
+
+        assertNotNull(res);
+        assertEquals(ContractStatus.PENDING_CHECK_IN, contract.getStatus());
+        assertEquals(StorageUnitStatus.MAINTENANCE, oldUnit.getStatus());
+    }
+
+    @Test
+    @DisplayName("Khôi phục hợp đồng: Reassign unit cho hợp đồng từng bị TERMINATED -> chuyển về PENDING_CHECK_IN và phục hồi endDateExclusive")
+    void shouldRestorePendingCheckInAndEndDate_whenReassigningTerminatedContract() {
+        LocalDate start = LocalDate.now();
+        RentalContract contract = RentalContract.builder()
+                .id(999L).code("CTR-999").facilityId(1L).customerId(10L).storageUnitId(42L).unitTypeId(7L)
+                .status(ContractStatus.TERMINATED)
+                .startDate(start)
+                .endDateExclusive(start) // Bị cắt ngắn khi terminate
+                .rentalMonths(2)
+                .build();
+
+        StorageUnit oldUnit = StorageUnit.builder().id(42L).facilityId(1L).code("U-42").unitTypeId(7L).status(StorageUnitStatus.MAINTENANCE).build();
+        StorageUnit newUnit = StorageUnit.builder().id(43L).facilityId(1L).code("U-43").unitTypeId(7L).status(StorageUnitStatus.AVAILABLE).build();
+
+        when(contractRepository.findByIdAndFacilityIdIn(999L, List.of(1L))).thenReturn(Optional.of(contract));
+        when(contractRepository.save(any(RentalContract.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(oldUnit));
+        when(storageUnitRepository.findById(43L)).thenReturn(Optional.of(newUnit));
+        when(storageUnitRepository.save(any(StorageUnit.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ReassignUnitRequest req = ReassignUnitRequest.builder()
+                .newStorageUnitId(43L)
+                .reason("Khách đồng ý đổi sang ô U-43")
+                .customerConsent(true)
+                .build();
+
+        ContractSummaryResponse summary = contractService.reassignUnit(999L, req, 1L, List.of(1L));
+
+        assertNotNull(summary);
+        assertEquals(ContractStatus.PENDING_CHECK_IN, contract.getStatus());
+        assertEquals(start.plusMonths(2), contract.getEndDateExclusive());
+        assertEquals(StorageUnitStatus.RESERVED, newUnit.getStatus());
+    }
 }

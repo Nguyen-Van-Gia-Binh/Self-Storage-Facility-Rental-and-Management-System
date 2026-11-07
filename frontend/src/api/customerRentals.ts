@@ -54,6 +54,7 @@ export interface BackendRentalSummary {
   pendingRenewalExpiresAt?: string;
   rescheduleCount?: number;
   rescheduledAt?: string;
+  relocationEligible?: boolean;
   createdAt?: string;
 }
 
@@ -91,6 +92,7 @@ export interface CustomerRentalDetail extends CustomerRentalSummary {
   relocationSupportRequestId?: number;
   relocationSupportRequestCode?: string;
   relocationReason?: string;
+  relocationEligible?: boolean;
 }
 
 export interface RenewalQuote {

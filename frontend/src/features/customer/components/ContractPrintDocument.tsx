@@ -41,16 +41,18 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
 
   const isHandoverCompleted =
     !isPendingCheckin &&
+    contract.status !== 'TERMINATED' &&
     (contract.status === 'ACTIVE' ||
       contract.status === 'OVERDUE' ||
       contract.status === 'PENDING_RETURN' ||
       contract.status === 'CLOSED' ||
-      contract.status === 'TERMINATED' ||
       Boolean(detail?.checkinDate || contract.checkinDate || detail?.customerConfirmedAt));
 
   const effectiveCheckinDate = isHandoverCompleted
     ? (detail?.checkinDate || contract.checkinDate || effectiveStartDate)
-    : 'Chưa thực hiện (Chờ làm thủ tục nhận kho tại quầy)';
+    : contract.status === 'TERMINATED'
+      ? 'Không nhận kho (Đã hủy hợp đồng do sự cố)'
+      : 'Chưa thực hiện (Chờ làm thủ tục nhận kho tại quầy)';
   const effectiveHandoverStaff = isHandoverCompleted
     ? (detail?.handoverStaffName || contract.handoverStaffName || 'Nhân viên lễ tân cơ sở')
     : 'Chờ phân công tiếp đón tại quầy';
@@ -58,7 +60,11 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
     ? (detail?.handoverConditionNote ||
       contract.handoverConditionNote ||
       'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao')
-    : 'Đang chờ khách hàng xuất trình CCCD và mã e-Pass tại quầy lễ tân để tiến hành nghiệm thu thực địa.';
+    : contract.status === 'TERMINATED'
+      ? (detail?.handoverConditionNote || contract.handoverConditionNote || 'Không đạt chuẩn nhận kho do phát sinh sự cố hư hỏng tại chỗ')
+      : (contract.relocationEligible || detail?.relocationEligible)
+        ? 'Ô kho phát sinh sự cố lúc tiếp đón. Cơ sở đang phân bổ lại ô kho mới cùng loại cho quý khách.'
+        : 'Đang chờ khách hàng xuất trình CCCD và mã e-Pass tại quầy lễ tân để tiến hành nghiệm thu thực địa.';
 
   const relocationCode = detail?.relocationSupportRequestCode || contract.relocationSupportRequestCode;
   const relocationReason = detail?.relocationReason || contract.relocationReason;
@@ -267,6 +273,16 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
                 <span>Khóa điện tử thông minh đã sẵn sàng, cấp mã PIN mở cửa 24/7</span>
               </div>
             </div>
+          ) : contract.status === 'TERMINATED' ? (
+            <div className="p-2.5 bg-rose-50 border border-rose-200 rounded text-rose-900 text-[11px] leading-relaxed">
+              <span className="font-bold">Biên bản ghi nhận sự cố bàn giao tại hiện trường: </span>
+              <span>Ô kho không đạt điều kiện bàn giao do phát sinh sự cố kỹ thuật / hư hỏng vật lý. Hợp đồng đã dừng thực hiện để hoàn trả 100% chi phí cho khách hàng.</span>
+            </div>
+          ) : (contract.relocationEligible || detail?.relocationEligible) ? (
+            <div className="p-2.5 bg-amber-50 border border-amber-200 rounded text-amber-900 text-[11px] leading-relaxed">
+              <span className="font-bold">Đang điều phối đổi ô kho tại chỗ: </span>
+              <span>Phát hiện sự cố kỹ thuật tại ô kho ban đầu. Đang tiến hành đổi sang ô kho đạt chuẩn khác cùng loại cho quý khách.</span>
+            </div>
           ) : (
             <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-slate-600">
               <div className="flex items-center gap-1.5">
@@ -323,13 +339,29 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
             </div>
             <div className="text-[10.5px] text-slate-500 italic mb-1">Ban Quản lý cơ sở</div>
             {isHandoverCompleted ? (
-              <div className="my-2">
-                <div className="py-1 px-3 inline-block border border-emerald-700 bg-emerald-50/50 text-[11px] font-bold text-emerald-800 tracking-wider">
+              <>
+                <div className="my-2 py-1 px-3 inline-block border border-emerald-700 bg-emerald-50/50 text-[11px] font-bold text-emerald-800 tracking-wider">
                   ✓ ĐÃ KÝ SỐ ĐIỆN TỬ
                 </div>
-                <div className="text-[10px] text-slate-500 italic mt-0.5">Thời gian ký: {effectiveCheckinDate}</div>
-                <div className="font-bold text-[11.5px] text-slate-900 mt-2">{effectiveHandoverStaff}</div>
-              </div>
+                <div className="text-[10px] text-slate-500">Thời gian ký: {effectiveCheckinDate}</div>
+                <div className="font-semibold text-[11.5px] text-slate-800 mt-1">{effectiveHandoverStaff}</div>
+              </>
+            ) : contract.status === 'TERMINATED' ? (
+              <>
+                <div className="my-2 py-1.5 px-3 inline-block border-2 border-dashed border-rose-400 bg-rose-50 rounded text-[11px] font-bold text-rose-700 tracking-wider">
+                  HỦY NHẬN DO SỰ CỐ
+                </div>
+                <div className="text-[10px] text-slate-500 italic">Dừng hợp đồng tại quầy</div>
+                <div className="font-semibold text-[11.5px] text-slate-700 mt-1">{effectiveHandoverStaff}</div>
+              </>
+            ) : (contract.relocationEligible || detail?.relocationEligible) ? (
+              <>
+                <div className="my-2 py-1.5 px-3 inline-block border-2 border-dashed border-amber-400 bg-amber-50 rounded text-[11px] font-bold text-amber-800 tracking-wider">
+                  ĐANG ĐỢI ĐỔI Ô MỚI
+                </div>
+                <div className="text-[10px] text-slate-500 italic">Điều chuyển ô kho mới</div>
+                <div className="font-semibold text-[11.5px] text-slate-700 mt-1">{effectiveHandoverStaff}</div>
+              </>
             ) : (
               <div className="my-2">
                 <div className="py-1 px-3 inline-block border border-dashed border-slate-400 text-[11px] font-semibold text-slate-600 tracking-wider">
@@ -348,13 +380,29 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
             </div>
             <div className="text-[10.5px] text-slate-500 italic mb-1">Khách hàng xác nhận</div>
             {isHandoverCompleted ? (
-              <div className="my-2">
-                <div className="py-1 px-3 inline-block border border-emerald-700 bg-emerald-50/50 text-[11px] font-bold text-emerald-800 tracking-wider">
+              <>
+                <div className="my-2 py-1 px-3 inline-block border border-emerald-700 bg-emerald-50/50 text-[11px] font-bold text-emerald-800 tracking-wider">
                   ✓ ĐÃ XÁC NHẬN BÀN GIAO
                 </div>
-                <div className="text-[10px] text-slate-500 italic mt-0.5">Thời gian ký: {effectiveCheckinDate}</div>
-                <div className="font-bold text-[11.5px] text-slate-900 mt-2">{effectiveCustomerName}</div>
-              </div>
+                <div className="text-[10px] text-slate-500">Thời gian ký: {effectiveCheckinDate}</div>
+                <div className="font-semibold text-[11.5px] text-slate-800 mt-1">{effectiveCustomerName}</div>
+              </>
+            ) : contract.status === 'TERMINATED' ? (
+              <>
+                <div className="my-2 py-1.5 px-3 inline-block border-2 border-dashed border-rose-400 bg-rose-50 rounded text-[11px] font-bold text-rose-700 tracking-wider">
+                  TỪ CHỐI NHẬN DO HƯ HỎNG
+                </div>
+                <div className="text-[10px] text-slate-500 italic">Xác nhận sự cố hiện trường</div>
+                <div className="font-semibold text-[11.5px] text-slate-700 mt-1">{effectiveCustomerName}</div>
+              </>
+            ) : (contract.relocationEligible || detail?.relocationEligible) ? (
+              <>
+                <div className="my-2 py-1.5 px-3 inline-block border-2 border-dashed border-amber-400 bg-amber-50 rounded text-[11px] font-bold text-amber-800 tracking-wider">
+                  CHỜ BÀN GIAO Ô MỚI
+                </div>
+                <div className="text-[10px] text-slate-500 italic">Chờ nhận ô kho thay thế</div>
+                <div className="font-semibold text-[11.5px] text-slate-700 mt-1">{effectiveCustomerName}</div>
+              </>
             ) : (
               <div className="my-2">
                 <div className="py-1 px-3 inline-block border border-dashed border-slate-400 text-[11px] font-semibold text-slate-600 tracking-wider">

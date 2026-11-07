@@ -136,6 +136,7 @@ export interface RentedContract {
   relocationReason?: string;
   rescheduleCount?: number;
   rescheduledAt?: string;
+  relocationEligible?: boolean;
   createdAt?: string;
 }
 

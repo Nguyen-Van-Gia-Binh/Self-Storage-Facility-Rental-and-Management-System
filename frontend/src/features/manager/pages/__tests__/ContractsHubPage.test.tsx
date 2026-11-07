@@ -43,4 +43,12 @@ describe('ContractsHubPage & ContractDetailPage Handover Defect & Relocation Int
     expect(content).toMatch(/Duyệt quyết toán & Hoàn tiền 100%/);
     expect(content).toMatch(/allowedUnitTypeId=\{canRelocate \? contract\.unitTypeId : undefined\}/);
   });
+
+  it('ContractDetailPage đảm bảo Banner Vàng và Banner Đỏ loại trừ lẫn nhau (Mutually Exclusive)', () => {
+    const content = fs.readFileSync(detailPagePath, 'utf-8');
+    // canRelocate bắt buộc phải có !isTerminated
+    expect(content).toMatch(/const canRelocate =\s*!isTerminated &&/);
+    // Banner tiếp đón thông thường bị ẩn khi có sự cố đổi ô hoặc terminate
+    expect(content).toMatch(/isPendingCheckIn && !canRelocate && !isTerminated/);
+  });
 });

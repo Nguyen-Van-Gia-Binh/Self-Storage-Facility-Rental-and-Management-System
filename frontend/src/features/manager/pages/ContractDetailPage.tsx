@@ -136,7 +136,9 @@ export const ContractDetailPage: React.FC = () => {
     Boolean(contract.isInspected) || (contract.status as string) === 'INSPECTED';
   const isTerminated = contract.status === 'TERMINATED';
   const canRelocate =
-    (Boolean(contract.relocationEligible) && (isActive || isPendingCheckIn)) || isTerminated;
+    !isTerminated &&
+    Boolean(contract.relocationEligible) &&
+    (isActive || isPendingCheckIn);
   // Cho phép duyệt quyết toán khi nhân viên ĐÃ nghiệm thu hoặc hợp đồng bị Hủy do sự cố lúc bàn giao
   const isSettlementReady = (isInspected || isTerminated) && contract.status !== 'CLOSED';
 
@@ -247,14 +249,18 @@ export const ContractDetailPage: React.FC = () => {
         <div className="bg-amber-50/90 border border-amber-300 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-900 shadow-2xs">
           <div className="flex items-start gap-3">
             <div className="p-2 rounded-xl bg-amber-100 text-amber-700 shrink-0 mt-0.5">
-              <AlertCircle className="w-5 h-5" />
+              <AlertCircle className="w-5 h-5 text-amber-600" />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-amber-900">
-                Ô kho phát sinh sự cố — Nhân viên hiện trường đã đề xuất di dời khẩn cấp
+              <h4 className="text-sm font-bold text-amber-950">
+                {isPendingCheckIn
+                  ? 'Yêu cầu Đổi ô kho — Phát hiện sự cố lúc bàn giao tiếp đón'
+                  : 'Ô kho phát sinh sự cố — Nhân viên hiện trường đã đề xuất di dời khẩn cấp'}
               </h4>
-              <p className="text-xs text-amber-700 mt-0.5">
-                Ô kho <span className="font-mono font-bold text-amber-900">{contract.storageUnitCode}</span> gặp sự cố kỹ thuật. Bạn có thể tiến hành đổi sang ô kho trống cùng loại cho khách hàng.
+              <p className="text-xs text-amber-800 mt-0.5">
+                {isPendingCheckIn
+                  ? `Ô kho ${contract.storageUnitCode} phát sinh sự cố và đã bị khóa bảo trì. Khách hàng đã đồng ý đổi sang ô khác cùng loại. Quản lý cần chọn ô mới trên sơ đồ 2D để nhân viên tiếp tục bàn giao cho khách.`
+                  : `Ô kho ${contract.storageUnitCode} gặp sự cố kỹ thuật. Bạn có thể tiến hành đổi sang ô kho trống cùng loại cho khách hàng.`}
               </p>
             </div>
           </div>
@@ -312,7 +318,7 @@ export const ContractDetailPage: React.FC = () => {
       )}
 
       {/* Banner Tiếp đón nhận kho (BR-CHK-01..05, FM-05) */}
-      {isPendingCheckIn && (
+      {isPendingCheckIn && !canRelocate && !isTerminated && (
         <div className="bg-sky-50/90 border border-sky-300 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sky-950 shadow-2xs">
           <div className="flex items-start gap-3">
             <div className="p-2 rounded-xl bg-sky-100 text-sky-700 shrink-0 mt-0.5">
