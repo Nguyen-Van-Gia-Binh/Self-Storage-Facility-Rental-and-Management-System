@@ -1,0 +1,36 @@
+[
+  {
+    "scenarioId": "TC-F3-01",
+    "name": "Khách trả kho sớm - Kho nguyên vẹn (Hoàn 100% cọc)",
+    "contractCode": "CTR-2026-001",
+    "unitCode": "Q9-L1-008",
+    "depositAmount": 2000000,
+    "damageFee": 0,
+    "expectedRefund": 2000000,
+    "expectedStatus": "COMPLETED",
+    "damageCompensationInvoice": false
+  },
+  {
+    "scenarioId": "TC-F3-02",
+    "name": "Nghiệm thu phát hiện hỏng cửa & mất chìa (Khấu trừ cọc)",
+    "contractCode": "CTR-2026-002",
+    "unitCode": "CG-L2-015",
+    "depositAmount": 3000000,
+    "damageFee": 800000,
+    "expectedRefund": 2200000,
+    "expectedStatus": "COMPLETED",
+    "damageCompensationInvoice": false
+  },
+  {
+    "scenarioId": "TC-F3-03",
+    "name": "Thiệt hại sập vách vượt quá cọc (Thu thêm hóa đơn phụ thu)",
+    "contractCode": "CTR-2026-003",
+    "unitCode": "BT-L3-010",
+    "depositAmount": 1500000,
+    "damageFee": 2500000,
+    "expectedRefund": 0,
+    "expectedStatus": "PENDING_COMPENSATION_PAYMENT",
+    "damageCompensationInvoice": true,
+    "additionalCharge": 1000000
+  }
+]
