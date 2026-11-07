@@ -17,9 +17,11 @@ import {
   Clock,
   Calendar,
   XCircle,
+  KeyRound,
 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
+import { isStorageUnitAssigned } from '../utils/unitAssignment';
 import type { RentedContract } from '../types';
 import { DigitalMoveInPassModal } from './DigitalMoveInPassModal';
 import { tokenStorage } from '@/utils/tokenStorage';
@@ -51,6 +53,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
   const [copiedPin, setCopiedPin] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
   const [showPassModal, setShowPassModal] = useState(false);
+  const [passMode, setPassMode] = useState<'pass' | 'checkin'>('pass');
   const [isClosingModal, setIsClosingModal] = useState(false);
   const [isCancellingReturn, setIsCancellingReturn] = useState(false);
   const [showCancelReturnModal, setShowCancelReturnModal] = useState(false);
@@ -93,6 +96,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
 
   const handleOpenModal = () => {
     if (contract.status === 'PENDING_CHECKIN' || (contract.status as string) === 'PENDING_CHECK_IN') {
+      setPassMode('pass');
       setShowPassModal(true);
       return;
     }
@@ -300,12 +304,31 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleOpenModal}
-                className="text-xs font-bold text-sky-700 border-sky-300 hover:bg-sky-50 cursor-pointer"
+                onClick={() => {
+                  setPassMode('pass');
+                  setShowPassModal(true);
+                }}
+                className="text-xs font-bold text-slate-700 border-slate-300 hover:bg-slate-50 cursor-pointer"
+                title="Xem mã QR và thông tin vé nhận kho"
               >
-                <QrCode className="w-3.5 h-3.5 mr-1" />
-                e-Pass nhận kho
+                <QrCode className="w-3.5 h-3.5 mr-1 text-slate-500" />
+                Vé nhận kho
               </Button>
+              {isStorageUnitAssigned(contract.unitNumber) && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    setPassMode('checkin');
+                    setShowPassModal(true);
+                  }}
+                  className="text-xs font-bold bg-[#0d6050] hover:bg-[#12836d] text-white cursor-pointer shadow-xs"
+                  title="Tự làm thủ tục ký số nhận bàn giao & kích hoạt mã PIN mở kho 24/7"
+                >
+                  <KeyRound className="w-3.5 h-3.5 mr-1 text-amber-300" />
+                  Check-in online
+                </Button>
+              )}
               {onReschedulePeriod && (
                 <Button
                   variant="outline"
@@ -492,6 +515,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
       <DigitalMoveInPassModal
         isOpen={showPassModal}
         onClose={() => setShowPassModal(false)}
+        initialMode={passMode}
         passData={moveInPassData}
       />
 

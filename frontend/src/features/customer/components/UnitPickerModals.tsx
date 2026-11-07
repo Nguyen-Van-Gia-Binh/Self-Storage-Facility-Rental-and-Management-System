@@ -2,6 +2,7 @@ import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import { isStorageUnitAssigned } from '../utils/unitAssignment';
 
 export interface UnitUnavailableModalState {
   isOpen: boolean;
@@ -124,7 +125,11 @@ export const UnitPickerModals: React.FC<UnitPickerModalsProps> = ({
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
               Quý khách vui lòng thanh toán ô kho{' '}
               <strong className="text-slate-900 font-semibold">
-                {pendingLimitModal.pendingReservation?.storageUnitCode || pendingLimitModal.pendingReservation?.code || ''}
+                {isStorageUnitAssigned(pendingLimitModal.pendingReservation?.storageUnitCode)
+                  ? pendingLimitModal.pendingReservation.storageUnitCode
+                  : pendingLimitModal.pendingReservation?.unitTypeName ||
+                    pendingLimitModal.pendingReservation?.code ||
+                    'đang giữ chỗ'}
               </strong>
               {pendingLimitModal.pendingReservation?.facilityName ? ` (tại ${pendingLimitModal.pendingReservation.facilityName})` : ''}{' '}
               trước khi đặt ô kho khác.
