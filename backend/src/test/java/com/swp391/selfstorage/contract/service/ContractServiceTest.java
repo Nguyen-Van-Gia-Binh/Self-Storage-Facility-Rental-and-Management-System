@@ -211,6 +211,7 @@ class ContractServiceTest {
         when(storageUnitRepository.findByIdForUpdate(42L)).thenReturn(Optional.of(unit));
         when(contractRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(storageUnitRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(handoverRecordRepository.findByContractId(500L)).thenReturn(Optional.empty());
         when(handoverRecordRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         HandoverRejectionRequest req = new HandoverRejectionRequest();
@@ -237,6 +238,7 @@ class ContractServiceTest {
         when(contractRepository.findByIdAndFacilityIdIn(501L, List.of(1L))).thenReturn(Optional.of(contract));
         when(storageUnitRepository.findByIdForUpdate(42L)).thenReturn(Optional.of(unit));
         when(storageUnitRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(handoverRecordRepository.findByContractId(501L)).thenReturn(Optional.empty());
         when(handoverRecordRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(supportRequestRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -256,6 +258,52 @@ class ContractServiceTest {
                 && t.getCategory() == SupportCategory.UNIT_DAMAGE
                 && Boolean.TRUE.equals(t.getRelocationRequired())
         ));
+    }
+
+    @Test
+    @DisplayName("Bug fix uq_handover_record_contract_id: rejectHandover khi da co HandoverRecord -> phai UPDATE khong INSERT moi")
+    void shouldUpdateExistingHandoverRecord_whenRejectHandoverCalledOnContractWithExistingRecord() {
+        // Arrange: hop dong PENDING_CHECK_IN + da co handover_record truoc do (tu lan check-in truoc)
+        RentalContract contract = RentalContract.builder()
+                .id(502L).facilityId(1L).storageUnitId(42L).customerId(10L)
+                .status(ContractStatus.PENDING_CHECK_IN).build();
+        StorageUnit unit = StorageUnit.builder().id(42L).status(StorageUnitStatus.RESERVED).build();
+
+        // Record cu da ton tai (simulate duplicate key scenario)
+        HandoverRecord existingRecord = HandoverRecord.builder()
+                .id(99L).contractId(502L).staffId(7L)
+                .handoverAt(OffsetDateTime.now().minusHours(1))
+                .rejected(false).customerConfirmed(false).build();
+
+        when(contractRepository.findByIdAndFacilityIdIn(502L, List.of(1L))).thenReturn(Optional.of(contract));
+        when(storageUnitRepository.findByIdForUpdate(42L)).thenReturn(Optional.of(unit));
+        when(storageUnitRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        // findByContractId tra ve record cu -> phai UPDATE chu khong INSERT moi
+        when(handoverRecordRepository.findByContractId(502L)).thenReturn(Optional.of(existingRecord));
+        when(handoverRecordRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(supportRequestRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        HandoverRejectionRequest req = new HandoverRejectionRequest();
+        req.setRejectionReason("O kho bi dot nuoc lan 2");
+        req.setReportedDefects("Nuoc van chay");
+        req.setRejectionAction("RELOCATE");
+
+        // Act
+        HandoverRejectionResponse response = contractService.rejectHandover(502L, req, 8L, List.of(1L));
+
+        // Assert: response dung trang thai
+        assertEquals(ContractStatus.PENDING_CHECK_IN, response.getContractStatus());
+        assertEquals(StorageUnitStatus.MAINTENANCE, response.getStorageUnitStatus());
+
+        // Assert: save duoc goi voi CUNG record co id=99 (UPDATE, khong INSERT record moi)
+        verify(handoverRecordRepository).save(argThat(r ->
+                r.getId() != null && r.getId() == 99L
+                && r.isRejected()
+                && "O kho bi dot nuoc lan 2".equals(r.getRejectionReason())
+        ));
+
+        // Assert: findByContractId phai duoc goi
+        verify(handoverRecordRepository).findByContractId(502L);
     }
 
     @Test
@@ -636,6 +684,9 @@ class ContractServiceTest {
         when(contractRepository.save(any(RentalContract.class))).thenAnswer(inv -> inv.getArgument(0));
         when(storageUnitRepository.findByIdForUpdate(42L)).thenReturn(Optional.of(oldUnit));
         when(storageUnitRepository.save(any(StorageUnit.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(handoverRecordRepository.findByContractId(777L)).thenReturn(Optional.empty());
+        when(handoverRecordRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(supportRequestRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         HandoverRejectionRequest req = HandoverRejectionRequest.builder()
                 .rejectionReason("Ô kho bị dột trần")

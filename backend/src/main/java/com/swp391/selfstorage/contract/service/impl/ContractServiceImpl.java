@@ -300,15 +300,17 @@ public class ContractServiceImpl implements ContractService {
                                 supportRequestRepository.save(ticket);
                         }
 
-                        handoverRecordRepository.save(HandoverRecord.builder()
-                                        .contractId(contractId)
-                                        .staffId(staffId)
-                                        .handoverAt(OffsetDateTime.now())
-                                        .rejected(true)
-                                        .rejectionReason(request.getRejectionReason())
-                                        .conditionNote(request.getReportedDefects())
-                                        .customerConfirmed(false)
-                                        .build());
+                        // Upsert: cập nhật record cũ nếu đã tồn tại, tránh vi phạm uq_handover_record_contract_id
+                        HandoverRecord relocateRecord = handoverRecordRepository.findByContractId(contractId)
+                                        .orElse(HandoverRecord.builder().contractId(contractId).build());
+                        relocateRecord.setStaffId(staffId);
+                        relocateRecord.setHandoverAt(OffsetDateTime.now());
+                        relocateRecord.setRejected(true);
+                        relocateRecord.setRejectionReason(request.getRejectionReason());
+                        relocateRecord.setConditionNote(request.getReportedDefects());
+                        relocateRecord.setCustomerConfirmed(false);
+                        relocateRecord.setCustomerConfirmedAt(null);
+                        handoverRecordRepository.save(relocateRecord);
 
                         return new HandoverRejectionResponse(contractId, ContractStatus.PENDING_CHECK_IN,
                                         StorageUnitStatus.MAINTENANCE,
@@ -336,15 +338,17 @@ public class ContractServiceImpl implements ContractService {
                                                 .build());
                         }
 
-                        handoverRecordRepository.save(HandoverRecord.builder()
-                                        .contractId(contractId)
-                                        .staffId(staffId)
-                                        .handoverAt(OffsetDateTime.now())
-                                        .rejected(true)
-                                        .rejectionReason(request.getRejectionReason())
-                                        .conditionNote(request.getReportedDefects())
-                                        .customerConfirmed(false)
-                                        .build());
+                        // Upsert: cập nhật record cũ nếu đã tồn tại, tránh vi phạm uq_handover_record_contract_id
+                        HandoverRecord cancelRecord = handoverRecordRepository.findByContractId(contractId)
+                                        .orElse(HandoverRecord.builder().contractId(contractId).build());
+                        cancelRecord.setStaffId(staffId);
+                        cancelRecord.setHandoverAt(OffsetDateTime.now());
+                        cancelRecord.setRejected(true);
+                        cancelRecord.setRejectionReason(request.getRejectionReason());
+                        cancelRecord.setConditionNote(request.getReportedDefects());
+                        cancelRecord.setCustomerConfirmed(false);
+                        cancelRecord.setCustomerConfirmedAt(null);
+                        handoverRecordRepository.save(cancelRecord);
 
                         return new HandoverRejectionResponse(contractId, ContractStatus.TERMINATED,
                                         StorageUnitStatus.MAINTENANCE,
