@@ -3,6 +3,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { AlertTriangle, XCircle } from 'lucide-react';
 import { DigitalMoveInPassModal } from './DigitalMoveInPassModal';
+import { isStorageUnitAssigned } from '../utils/unitAssignment';
 import type { MoveInPassData } from '@/types';
 
 interface BookingModalsProps {
@@ -156,9 +157,11 @@ export const BookingModals: React.FC<BookingModalsProps> = ({
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
               Quý khách vui lòng thanh toán ô kho{' '}
               <strong className="text-slate-900 font-semibold">
-                {pendingLimitModal.pendingReservation?.storageUnitCode ||
-                  pendingLimitModal.pendingReservation?.code ||
-                  'đang giữ chỗ'}
+                {isStorageUnitAssigned(pendingLimitModal.pendingReservation?.storageUnitCode)
+                  ? pendingLimitModal.pendingReservation.storageUnitCode
+                  : pendingLimitModal.pendingReservation?.unitTypeName ||
+                    pendingLimitModal.pendingReservation?.code ||
+                    'đang giữ chỗ'}
               </strong>
               {pendingLimitModal.pendingReservation?.facilityName
                 ? ` (tại ${pendingLimitModal.pendingReservation.facilityName})`

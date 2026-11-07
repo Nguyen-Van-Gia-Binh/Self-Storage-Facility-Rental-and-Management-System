@@ -22,9 +22,11 @@ import {
   ChevronRight,
   Copy,
   Check,
+  KeyRound,
 } from 'lucide-react';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
 import { formatDateVN, calculateEndDate } from '../utils/unitPickerHelpers';
+import { isStorageUnitAssigned } from '../utils/unitAssignment';
 import type { RentedContract } from '../types';
 import type { ReservationResponse } from '@/api/reservation';
 import { DigitalMoveInPassModal } from './DigitalMoveInPassModal';
@@ -67,6 +69,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
   pageSize = 7,
 }) => {
   const [activePassContract, setActivePassContract] = useState<RentedContract | null>(null);
+  const [activePassMode, setActivePassMode] = useState<'pass' | 'checkin'>('pass');
   const [revealedPins, setRevealedPins] = useState<Record<string, boolean>>({});
   const [copiedPinId, setCopiedPinId] = useState<string | null>(null);
 
@@ -161,8 +164,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
         <table className="w-full text-left text-xs border-collapse">
           <thead className="bg-slate-50/85 border-b border-slate-200/80 text-slate-500 uppercase tracking-wider text-[11px] font-bold">
             <tr>
-              <th className="py-3 px-4">Ô kho</th>
-              <th className="py-3 px-4">Loại kho</th>
+              <th className="py-3 px-4">Ô</th>
               <th className="py-3 px-4">Cơ sở</th>
               <th className="py-3 px-4">Thời hạn</th>
               <th className="py-3 px-4">Mã PIN / Mở kho</th>
@@ -185,21 +187,24 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
 
                 return (
                 <tr key={`rsv-${rsv.id}`} className="hover:bg-rose-50/30 transition-colors">
-                  {/* Cột 1: Ô kho (Chỉ mã ô kho) */}
-                  <td className="py-3.5 px-4 whitespace-nowrap">
-                    <span className="font-extrabold text-sm tracking-tight font-mono text-slate-900">
-                      {awaitingUnit ? 'Chưa gán ô' : rsv.storageUnitCode}
-                    </span>
+                  {/* Cột 1: Ô & Loại ô (Gộp 2 dòng) */}
+                  <td className="py-3 px-4 whitespace-nowrap">
+                    <div className="flex flex-col">
+                      <span className="font-extrabold text-sm tracking-tight font-mono text-slate-900">
+                        {awaitingUnit ? 'Chưa gán' : rsv.storageUnitCode}
+                      </span>
+                      <span className="text-[11px] font-medium text-slate-500">
+                        {(rsv.unitTypeName || 'Tiêu chuẩn')
+                          .replace(/^Kho\s+/i, '')
+                          .replace(/\s*\([^)]*\)/g, '')
+                          .trim()}
+                      </span>
+                    </div>
                   </td>
 
-                  {/* Cột 2: Loại kho (Text thuần) */}
-                  <td className="py-3.5 px-4 whitespace-nowrap text-xs font-medium text-slate-600">
-                    {(rsv.unitTypeName || 'Kho tiêu chuẩn').replace(/\s*\([^)]*\)/g, '').trim()}
-                  </td>
-
-                  {/* Cột 3: Cơ sở */}
-                  <td className="py-3.5 px-4 font-medium text-slate-800 whitespace-nowrap">
-                    {rsv.facilityName || 'Cơ sở lưu trữ'}
+                  {/* Cột 2: Cơ sở (Bỏ chữ Cơ sở thừa) */}
+                  <td className="py-3 px-4 font-medium text-slate-800 whitespace-nowrap">
+                    {(rsv.facilityName || 'SmartStorage').replace(/^Cơ sở\s+/i, '')}
                   </td>
 
                   {/* Cột 4: Thời hạn */}
@@ -332,34 +337,37 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                       : 'hover:bg-slate-50/70'
                   }`}
                 >
-                  {/* Cột 1: Ô kho (Chỉ mã số ô kho) */}
-                  <td className="py-3.5 px-4 whitespace-nowrap">
-                    {contract.relocationEligible || !contract.unitNumber || contract.unitNumber === 'Chưa gán' || contract.unitNumber === 'Chờ gán lại ô kho' ? (
-                      <span className="font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded text-xs font-mono">
-                        Chưa gán ô kho
+                  {/* Cột 1: Ô & Loại ô (Gộp 2 dòng) */}
+                  <td className="py-3 px-4 whitespace-nowrap">
+                    <div className="flex flex-col">
+                      {contract.relocationEligible || !isStorageUnitAssigned(contract.unitNumber) ? (
+                        <span className="font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded text-xs font-mono self-start">
+                          Chưa gán ô kho
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => onViewDetail(contract)}
+                          className={`font-extrabold text-sm tracking-tight font-mono text-left transition-colors cursor-pointer ${
+                            isClosed ? "text-slate-400 hover:text-slate-600" : "text-slate-900 hover:text-brand-700 hover:underline"
+                          }`}
+                          title="Xem chi tiết hợp đồng"
+                        >
+                          {contract.unitNumber}
+                        </button>
+                      )}
+                      <span className="text-[11px] font-medium text-slate-500">
+                        {(contract.unitTypeName || 'Tiêu chuẩn')
+                          .replace(/^Kho\s+/i, '')
+                          .replace(/\s*\([^)]*\)/g, '')
+                          .trim()}
                       </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => onViewDetail(contract)}
-                        className={`font-extrabold text-sm tracking-tight font-mono text-left transition-colors cursor-pointer ${
-                          isClosed ? "text-slate-400 hover:text-slate-600" : "text-slate-900 hover:text-brand-700 hover:underline"
-                        }`}
-                        title="Xem chi tiết hợp đồng"
-                      >
-                        {contract.unitNumber}
-                      </button>
-                    )}
+                    </div>
                   </td>
 
-                  {/* Cột 2: Loại kho (Text thuần, không label) */}
-                  <td className="py-3.5 px-4 whitespace-nowrap text-xs font-medium text-slate-600">
-                    {(contract.unitTypeName || 'Kho tiêu chuẩn').replace(/\s*\([^)]*\)/g, '').trim()}
-                  </td>
-
-                  {/* Cột 3: Cơ sở */}
-                  <td className="py-3.5 px-4 font-medium text-slate-800 whitespace-nowrap">
-                    {contract.facilityName}
+                  {/* Cột 2: Cơ sở (Bỏ chữ Cơ sở thừa) */}
+                  <td className="py-3 px-4 font-medium text-slate-800 whitespace-nowrap">
+                    {contract.facilityName.replace(/^Cơ sở\s+/i, '')}
                   </td>
 
                   {/* Cột 4: Thời hạn thuê */}
@@ -404,19 +412,40 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                       </span>
                     ) : contract.status === 'PENDING_CHECKIN' ||
                       (contract.status as string) === 'PENDING_CHECK_IN' ? (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActivePassContract(contract);
-                        }}
-                        className="h-7 text-[11px] px-2.5 font-bold text-brand-700 border-brand-200 bg-brand-50/50 hover:bg-brand-50 whitespace-nowrap shrink-0 shadow-2xs cursor-pointer"
-                      >
-                        <QrCode className="w-3.5 h-3.5 mr-1" />
-                        Vé nhận kho
-                      </Button>
+                      <div className="inline-flex items-center gap-1.5">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActivePassMode('pass');
+                            setActivePassContract(contract);
+                          }}
+                          className="h-7 text-[11px] px-2.5 font-bold text-slate-700 border-slate-200/90 bg-white hover:bg-slate-50 whitespace-nowrap shrink-0 shadow-2xs cursor-pointer"
+                          title="Xem mã QR và thông tin vé nhận kho"
+                        >
+                          <QrCode className="w-3.5 h-3.5 mr-1 text-slate-500" />
+                          Vé nhận kho
+                        </Button>
+                        {isStorageUnitAssigned(contract.unitNumber) && (
+                          <Button
+                            type="button"
+                            variant="primary"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActivePassMode('checkin');
+                              setActivePassContract(contract);
+                            }}
+                            className="h-7 text-[11px] px-2.5 font-bold bg-[#0d6050] hover:bg-[#12836d] text-white whitespace-nowrap shrink-0 shadow-2xs cursor-pointer"
+                            title="Tự làm thủ tục ký số nhận bàn giao & kích hoạt mã PIN mở kho 24/7"
+                          >
+                            <KeyRound className="w-3.5 h-3.5 mr-1 text-amber-300" />
+                            Check-in online
+                          </Button>
+                        )}
+                      </div>
                     ) : (
                       <span className="text-slate-300 text-[11px]">—</span>
                     )}
@@ -564,6 +593,21 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                                 {(contract.status === 'PENDING_CHECKIN' ||
                                   (contract.status as string) === 'PENDING_CHECK_IN') && (
                                   <div className="py-0.5">
+                                    {isStorageUnitAssigned(contract.unitNumber) && (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setOpenMenuId(null);
+                                          setActivePassMode('checkin');
+                                          setActivePassContract(contract);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-emerald-50 text-[#0d6050] transition-colors cursor-pointer font-bold"
+                                      >
+                                        <KeyRound className="w-3.5 h-3.5 text-emerald-600" />
+                                        <span>Check-in online (24/7)</span>
+                                      </button>
+                                    )}
                                     <button
                                       type="button"
                                       disabled={(contract.rescheduleCount ?? 0) >= 1}
@@ -722,6 +766,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
         <DigitalMoveInPassModal
           isOpen={Boolean(activePassContract)}
           onClose={() => setActivePassContract(null)}
+          initialMode={activePassMode}
           passData={{
             passCode: `PASS-${activePassContract.contractNumber}`,
             reservationId: activePassContract.contractNumber,
