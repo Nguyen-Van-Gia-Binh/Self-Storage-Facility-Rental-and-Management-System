@@ -60,6 +60,10 @@ export interface ReservationResponse {
   totalRentalFee: number;
   totalPayable: number;
   status: string;
+  customerId?: number;
+  customerName?: string;
+  customerPhone?: string;
+  customerEmail?: string;
   holdExpiresAt: string;
   vietQrPayload?: string;
   bankAccountNumber?: string;

@@ -85,6 +85,9 @@ const mockReservations: ReservationResponse[] = [
     totalRentalFee: 6300000,
     status: 'CONFIRMED',
     storageUnitId: undefined,
+    customerName: 'Nguyễn Văn Gia Bình',
+    customerPhone: '0901234567',
+    customerEmail: 'binh.nguyen@example.com',
   } as unknown as ReservationResponse,
 ];
 
@@ -128,13 +131,15 @@ describe('AllocationPage Component (Gán ô kho)', () => {
     } as ReservationResponse);
   });
 
-  it('1. Hiển thị danh sách nhiệm vụ gán ô kho từ trên xuống với đầy đủ thông tin đơn', async () => {
+  it('1. Hiển thị danh sách nhiệm vụ gán ô kho từ trên xuống với đầy đủ thông tin đơn & khách hàng', async () => {
     render(<AllocationPage />);
 
     await waitFor(() => {
       expect(screen.getByText('Nhiệm vụ Gán ô kho')).toBeDefined();
       expect(screen.getByText('1 đơn chờ xử lý')).toBeDefined();
       expect(screen.getByText('RES-20261107-001')).toBeDefined();
+      expect(screen.getByText('Nguyễn Văn Gia Bình')).toBeDefined();
+      expect(screen.getByText('0901234567')).toBeDefined();
       expect(screen.getByText('Kho Máy Lạnh M')).toBeDefined();
       expect(screen.getByText('15/11/2026')).toBeDefined();
       expect(screen.getByText('Gán ô kho (Sơ đồ 2D)')).toBeDefined();
@@ -183,6 +188,12 @@ describe('AllocationPage Component (Gán ô kho)', () => {
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: /Xác nhận phân bổ ô kho/i })).toBeDefined();
     });
+
+    // Kiểm tra thông tin khách hàng được hiển thị rõ ràng trên form modal
+    expect(screen.getByText('Thông tin khách hàng')).toBeDefined();
+    expect(screen.getAllByText('Nguyễn Văn Gia Bình').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('0901234567').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('binh.nguyen@example.com')).toBeDefined();
 
     // Kiểm tra ngày hẹn nhận kho đúng theo ngày khách book
     expect(screen.getAllByText('15/11/2026').length).toBeGreaterThanOrEqual(1);
