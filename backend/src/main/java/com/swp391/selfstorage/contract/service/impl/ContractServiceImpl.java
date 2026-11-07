@@ -560,6 +560,8 @@ public class ContractServiceImpl implements ContractService {
                                                         : null)
                                         .requestedReturnDate(requestedReturnDate)
                                         .appointmentSlot(appointmentSlot)
+                                        .rescheduleCount(c.getRescheduleCount())
+                                        .rescheduledAt(c.getRescheduledAt())
                                         .build();
                 }).toList();
 
@@ -802,6 +804,8 @@ public class ContractServiceImpl implements ContractService {
                                 .nearExpiration(nearExp)
                                 .relocationEligible(false)
                                 .openSupportRequestId(null)
+                                .rescheduleCount(contract.getRescheduleCount())
+                                .rescheduledAt(contract.getRescheduledAt())
                                 .build();
         }
 
@@ -1886,6 +1890,8 @@ public class ContractServiceImpl implements ContractService {
                 r.setStatus(c.getStatus());
                 r.setCheckinDate(c.getCheckinDate());
                 r.setReturnDate(c.getReturnDate());
+                r.setRescheduleCount(c.getRescheduleCount());
+                r.setRescheduledAt(c.getRescheduledAt());
 
                 if (storageUnitRepository != null && c.getStorageUnitId() != null) {
                         storageUnitRepository.findById(c.getStorageUnitId()).ifPresent(su -> {

@@ -46,4 +46,6 @@ public class ContractResponse {
     private String damageNotes;
     private java.time.LocalTime scheduledStartTime;
     private java.time.LocalTime scheduledEndTime;
+    private Integer rescheduleCount;
+    private java.time.OffsetDateTime rescheduledAt;
 }

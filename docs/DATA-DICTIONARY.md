@@ -310,6 +310,8 @@ Hợp đồng thuê ô kho chính thức (`Flow 2, 3, 6`, `state-machine-contrac
 | `terminated_at` | `DATETIMEOFFSET` | Không | | Mốc đơn phương chấm dứt hợp đồng do quá hạn 60 ngày |
 | `created_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Ngày tạo hợp đồng |
 | `updated_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Ngày cập nhật |
+| `reschedule_count` | `INT` | Có | `DEFAULT 0` | Số lần dời ngày nhận kho đã thực hiện (tối đa 1 lần duy nhất theo `BR-RES-06`) |
+| `rescheduled_at` | `DATETIMEOFFSET` | Không | | Mốc thời gian khách hàng thực hiện dời ngày nhận kho gần nhất (`BR-RES-06`) |
 
 ### 4.3. Bảng `contract_renewal`
 Lịch sử các lần gia hạn hợp đồng thuê kho (`BR-REN-*`).

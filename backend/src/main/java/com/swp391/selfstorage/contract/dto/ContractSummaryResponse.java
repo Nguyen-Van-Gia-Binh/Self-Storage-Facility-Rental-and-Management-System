@@ -46,5 +46,7 @@ public class ContractSummaryResponse {
     private String appointmentSlot;
     private java.time.LocalTime scheduledStartTime;
     private java.time.LocalTime scheduledEndTime;
+    private Integer rescheduleCount;
+    private java.time.OffsetDateTime rescheduledAt;
 }
 
