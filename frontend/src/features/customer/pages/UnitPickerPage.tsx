@@ -7,6 +7,7 @@ import { useActivePolicy } from '@/hooks/useActivePolicy';
 import { tokenStorage } from '@/utils/tokenStorage';
 import { RentDurationCard } from '../components/RentDurationCard';
 import { UnitPickerSidebar } from '../components/UnitPickerSidebar';
+import { StorageTypeTabs } from '../components/StorageTypeTabs';
 import { UnitPickerModals } from '../components/UnitPickerModals';
 import { WaitlistRegistrationModal } from '../components/WaitlistRegistrationModal';
 import { UnitTypeAccordionList } from '../components/UnitTypeAccordionList';
@@ -64,6 +65,9 @@ export const UnitPickerPage: React.FC = () => {
     currentUnitType,
     selectedUnit,
     handleSelectType,
+    handleSelectStorageType,
+    standardTypesCount,
+    climateTypesCount,
   } = useUnitPickerCatalog({
     facilityParam,
     initialTypeId,
@@ -235,16 +239,34 @@ export const UnitPickerPage: React.FC = () => {
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-500">
-              Vị trí kho cụ thể sẽ được Ban quản lý cập nhật trước ngày nhận kho
-            </p>
 
-            <UnitTypeAccordionList
-              availableTypes={availableTypes}
-              selectedTypeId={selectedTypeId}
-              availabilityMap={availabilityMap}
-              onSelectType={handleSelectType}
+            {/* Bước 2.1: Môi trường kho tabs (Kho Tiêu Chuẩn vs Kho Máy Lạnh) */}
+            <StorageTypeTabs
+              storageType={storageType}
+              onSelectStorageType={handleSelectStorageType}
+              standardTypesCount={standardTypesCount}
+              climateTypesCount={climateTypesCount}
             />
+
+            {/* Bước 2.2: Danh sách Kích thước theo loại kho đã chọn */}
+            {!storageType ? (
+              <div className="py-8 px-4 text-center bg-slate-50 border border-dashed border-slate-200 rounded-2xl space-y-1.5">
+                <span className="text-2xl block">📦</span>
+                <p className="text-xs sm:text-sm font-bold text-slate-700">
+                  Vui lòng chọn loại kho bạn cần ở trên
+                </p>
+                <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
+                  Chọn <strong>Kho Tiêu Chuẩn</strong> hoặc <strong>Kho Máy Lạnh</strong> để xem danh sách kích thước và số lượng ô kho còn trống.
+                </p>
+              </div>
+            ) : (
+              <UnitTypeAccordionList
+                availableTypes={availableTypes}
+                selectedTypeId={selectedTypeId}
+                availabilityMap={availabilityMap}
+                onSelectType={handleSelectType}
+              />
+            )}
 
           </div>
 

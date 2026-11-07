@@ -140,7 +140,7 @@ export const OverduePenaltyPaymentModal: React.FC<OverduePenaltyPaymentModalProp
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
     >
       <div
         className={`bg-white rounded-3xl shadow-2xl border border-slate-200/80 w-full max-w-lg overflow-hidden transition-all duration-200 ${

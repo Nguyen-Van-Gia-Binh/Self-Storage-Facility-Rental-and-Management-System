@@ -87,7 +87,6 @@ export const RenewalPage: React.FC = () => {
   const {
     loadingQuote,
     isCapacityConflict,
-    capacityConflictMessage,
     setCapacityConflict,
     newEndDate,
     pricing,
@@ -305,11 +304,6 @@ export const RenewalPage: React.FC = () => {
             <h2 className="text-xl sm:text-2xl font-black text-[#0a1614]">
               Ô kho {contract.unitNumber} đã có người đặt trước cho kỳ tiếp theo
             </h2>
-            {capacityConflictMessage && (
-              <p className="text-xs text-amber-800 bg-amber-50 p-2.5 rounded-lg border border-amber-200 max-w-lg mx-auto">
-                {capacityConflictMessage}
-              </p>
-            )}
             <p className="text-sm text-slate-600 max-w-lg mx-auto leading-relaxed">
               Rất tiếc, khoảng thời gian tiếp theo của ô kho này đã được một khách hàng khác đặt chỗ trước. Bạn không thể tiếp tục gia hạn trên ô kho này.
             </p>

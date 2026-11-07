@@ -208,9 +208,10 @@ export function useUnitPickerCatalog({
       (t) =>
         t.baseMonthlyPrice > 0 &&
         t.priceStatus !== 'UNLISTED' &&
-        t.priceStatus !== 'Chưa niêm yết'
+        t.priceStatus !== 'Chưa niêm yết' &&
+        (!storageType || t.storageType === storageType)
     );
-  }, [unitTypes]);
+  }, [unitTypes, storageType]);
 
   const standardTypesCount = useMemo(
     () =>
