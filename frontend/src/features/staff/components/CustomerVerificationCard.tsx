@@ -9,6 +9,13 @@ export interface CustomerVerificationCardProps {
 }
 
 export const CustomerVerificationCard: React.FC<CustomerVerificationCardProps> = ({ contract, onBack, onOpenFloorPlan }) => {
+  const isRelocating = Boolean(
+    contract.relocationEligible ||
+    contract.isAwaitingRelocation ||
+    !contract.storageUnitCode ||
+    contract.storageUnitCode === 'Chờ gán lại ô kho'
+  );
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
   };
@@ -42,7 +49,11 @@ export const CustomerVerificationCard: React.FC<CustomerVerificationCardProps> =
       <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 space-y-2.5 text-xs">
         <div className="flex items-center justify-between">
           <span className="text-slate-500">Ô kho bàn giao:</span>
-          {contract.storageUnitId && contract.storageUnitCode && contract.storageUnitCode !== 'Chưa chọn ô' ? (
+          {isRelocating ? (
+            <span className="font-semibold text-amber-800 bg-amber-50 border border-amber-300 px-2 py-0.5 rounded-md text-xs">
+              ⚠️ Đang chờ FM phân bổ ô mới
+            </span>
+          ) : contract.storageUnitId && contract.storageUnitCode && contract.storageUnitCode !== 'Chưa chọn ô' ? (
             <span className="font-mono font-bold text-teal-700 bg-teal-50 border border-teal-200 px-2.5 py-0.5 rounded-md text-sm">
               {contract.storageUnitCode}
             </span>
@@ -55,7 +66,11 @@ export const CustomerVerificationCard: React.FC<CustomerVerificationCardProps> =
         <div className="flex items-center justify-between">
           <span className="text-slate-500">Vị trí & Tầng:</span>
           <span className="font-semibold text-slate-800">
-            {contract.floor ? `Tầng ${contract.floor} · ${contract.position || ''}` : 'Chưa xác định vị trí'}
+            {isRelocating
+              ? 'Chờ cấp ô mới'
+              : contract.floor
+              ? `Tầng ${contract.floor} · ${contract.position || ''}`
+              : 'Chưa xác định vị trí'}
           </span>
         </div>
         <div className="flex items-center justify-between gap-2">
@@ -79,7 +94,7 @@ export const CustomerVerificationCard: React.FC<CustomerVerificationCardProps> =
           </span>
         </div>
 
-        {onOpenFloorPlan && (
+        {onOpenFloorPlan && !isRelocating && (
           <div className="pt-2 border-t border-slate-200/80 flex justify-end">
             <button
               type="button"

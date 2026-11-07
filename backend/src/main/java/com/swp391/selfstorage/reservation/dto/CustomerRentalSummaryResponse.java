@@ -63,6 +63,9 @@ public class CustomerRentalSummaryResponse {
     private String pendingRenewalExpiresAt;
     private java.time.OffsetDateTime createdAt;
 
+    // Trạng thái chờ đổi ô kho do sự cố tiếp đón bàn giao
+    private Boolean relocationEligible;
+
     public CustomerRentalSummaryResponse() {}
 
     // Getters and Setters
@@ -177,4 +180,7 @@ public class CustomerRentalSummaryResponse {
 
     public java.time.OffsetDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(java.time.OffsetDateTime createdAt) { this.createdAt = createdAt; }
+
+    public Boolean getRelocationEligible() { return relocationEligible; }
+    public void setRelocationEligible(Boolean relocationEligible) { this.relocationEligible = relocationEligible; }
 }

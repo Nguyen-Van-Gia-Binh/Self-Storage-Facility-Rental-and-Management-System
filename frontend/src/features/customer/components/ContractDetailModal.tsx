@@ -84,7 +84,11 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
   };
 
   const effectiveContractNumber = detail?.contractCode || contract.contractNumber;
-  const effectiveUnitNumber = detail?.unitCode || contract.unitNumber;
+  const isRelocating = Boolean(contract.relocationEligible || detail?.relocationEligible);
+  const rawUnitNumber = detail?.unitCode || contract.unitNumber;
+  const effectiveUnitNumber = isRelocating && (contract.status === 'PENDING_CHECKIN' || (contract.status as string) === 'PENDING_CHECK_IN')
+    ? 'Chờ cấp ô mới'
+    : rawUnitNumber || 'Chưa gán';
   const effectiveFacilityName = detail?.facilityName || contract.facilityName;
   const effectiveFacilityAddress = detail?.facilityAddress || 'Cơ sở trực thuộc Hệ thống Self-Storage';
   const effectiveFacilityPhone = detail?.facilityPhone || '1900 8888';
@@ -138,7 +142,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
         if (contract.relocationEligible || detail?.relocationEligible) {
           return (
             <Badge variant="warning" className="bg-amber-100 text-amber-900 border-amber-300 font-bold">
-              Đang sắp xếp đổi ô kho
+              Chờ gán lại ô kho
             </Badge>
           );
         }

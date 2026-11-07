@@ -91,6 +91,8 @@ export function mapBackendSummaryToCheckInContract(item: any): CheckInContract {
     accessCode: item.accessCode || undefined,
     assignedStaffId: item.assignedStaffId,
     assignedStaffName: item.assignedStaffName,
+    relocationEligible: item.relocationEligible === true,
+    isAwaitingRelocation: item.relocationEligible === true,
   };
 }
 

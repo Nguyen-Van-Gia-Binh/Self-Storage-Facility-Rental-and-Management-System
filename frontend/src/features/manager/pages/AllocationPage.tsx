@@ -14,7 +14,8 @@ import {
   X,
 } from 'lucide-react';
 import { fetchMyAssignedFacilities } from '@/api/facility';
-import { assignUnit, listReservations, type ReservationResponse } from '@/api/reservation';
+import { assignUnit, listReservations, reassignStaffApi, type ReservationResponse } from '@/api/reservation';
+import { getManagerContracts, reassignStorageUnit } from '@/api/contract';
 import { getStaffWorkload } from '@/features/manager/api/staffAssignmentApi';
 import type { StaffWorkloadItem } from '@/features/manager/types/staffAssignment';
 import { Badge } from '@/components/ui/Badge';
@@ -47,6 +48,27 @@ const KNOWN_CUSTOMERS: Record<number, { name: string; phone: string; email: stri
   11: { name: 'Tùng Khách Hàng', phone: '0988776655', email: 'tung@gmail.com' },
 };
 
+export interface AllocationQueueItem {
+  id: string; // unique key: "rsv-123" hoặc "ctr-456"
+  kind: 'RESERVATION' | 'CONTRACT_RELOCATION';
+  rawId: number;
+  contractId?: number;
+  reservationId?: number;
+  code: string;
+  customerId?: number;
+  customerName: string;
+  customerPhone: string;
+  customerEmail: string;
+  unitTypeId: number;
+  unitTypeName: string;
+  startDate: string;
+  rentalMonths: number;
+  endDateExclusive?: string;
+  storageUnitId?: number;
+  originalDefectiveUnitCode?: string;
+  assignedStaffId?: number;
+}
+
 function getCustomerInfo(row: ReservationResponse) {
   const fallback = row.customerId ? KNOWN_CUSTOMERS[row.customerId] : undefined;
   const name =
@@ -68,9 +90,9 @@ function getCustomerInfo(row: ReservationResponse) {
 export const AllocationPage: React.FC = () => {
   const [facilities, setFacilities] = useState<FacilityListItem[]>([]);
   const [facilityId, setFacilityId] = useState<number | null>(null);
-  const [queue, setQueue] = useState<ReservationResponse[]>([]);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [activeReservation, setActiveReservation] = useState<ReservationResponse | null>(null);
+  const [queue, setQueue] = useState<AllocationQueueItem[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [activeItem, setActiveItem] = useState<AllocationQueueItem | null>(null);
   const [staffMembers, setStaffMembers] = useState<StaffWorkloadItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -92,16 +114,68 @@ export const AllocationPage: React.FC = () => {
     if (isManual) setRefreshing(true);
     else setLoading(true);
     try {
-      const rows = await listReservations({ status: 'CONFIRMED', facilityId: id, size: 100 });
-      const pending = rows
+      // 1. Đơn đặt chỗ mới cần gán ô lần đầu (RESERVATION)
+      const rsvRows = await listReservations({ status: 'CONFIRMED', facilityId: id, size: 100 });
+      const pendingRsv: AllocationQueueItem[] = rsvRows
         .filter((row) => row.storageUnitId == null)
-        .sort((a, b) => a.startDate.localeCompare(b.startDate));
-      setQueue(pending);
+        .map((row) => {
+          const cust = getCustomerInfo(row);
+          return {
+            id: `rsv-${row.id}`,
+            kind: 'RESERVATION',
+            rawId: row.id,
+            reservationId: row.id,
+            code: row.code,
+            customerId: row.customerId,
+            customerName: cust.name,
+            customerPhone: cust.phone,
+            customerEmail: cust.email,
+            unitTypeId: row.unitTypeId,
+            unitTypeName: row.unitTypeName || '',
+            startDate: row.startDate,
+            rentalMonths: row.rentalMonths,
+            endDateExclusive: row.endDateExclusive,
+            assignedStaffId: undefined,
+          };
+        });
+
+      // 2. Hợp đồng chờ đổi ô kho do sự cố lúc bàn giao (CONTRACT_RELOCATION)
+      let relocationContracts: AllocationQueueItem[] = [];
+      try {
+        const contracts = await getManagerContracts({ facilityId: id, status: 'PENDING_CHECK_IN' });
+        relocationContracts = contracts
+          .filter((c) => Boolean(c.relocationEligible) || c.storageUnitCode === 'Chưa gán' || c.storageUnitCode === 'Chờ gán lại ô kho')
+          .map((c) => ({
+            id: `ctr-${c.id}`,
+            kind: 'CONTRACT_RELOCATION',
+            rawId: c.id,
+            contractId: c.id,
+            reservationId: c.reservationId,
+            code: c.code,
+            customerId: c.customerId,
+            customerName: c.customerName || (c.customerId ? `Khách hàng #${c.customerId}` : 'Khách hàng'),
+            customerPhone: c.customerPhone || '0901234567',
+            customerEmail: c.customerEmail || 'customer@storage.vn',
+            unitTypeId: c.unitTypeId,
+            unitTypeName: c.unitTypeName || '',
+            startDate: c.startDate || new Date().toISOString().split('T')[0],
+            rentalMonths: c.rentalMonths || 1,
+            endDateExclusive: c.endDateExclusive,
+            storageUnitId: c.storageUnitId,
+            originalDefectiveUnitCode: c.storageUnitCode,
+            assignedStaffId: c.assignedStaffId,
+          }));
+      } catch (err) {
+        console.warn('Lỗi khi nạp hợp đồng chờ đổi ô:', err);
+      }
+
+      const merged = [...pendingRsv, ...relocationContracts].sort((a, b) => a.startDate.localeCompare(b.startDate));
+      setQueue(merged);
       setSelectedId((current) => {
-        if (current != null && pending.some((row) => row.id === current)) return current;
-        return pending[0]?.id ?? null;
+        if (current != null && merged.some((row) => row.id === current)) return current;
+        return merged[0]?.id ?? null;
       });
-      return pending;
+      return merged;
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -159,26 +233,27 @@ export const AllocationPage: React.FC = () => {
     };
   }, [facilityId, loadQueue, loadStaff]);
 
-  const selected = activeReservation || (queue.find((row) => row.id === selectedId) ?? null);
+  const selected = activeItem || (queue.find((row) => row.id === selectedId) ?? null);
 
   // Mở sơ đồ 2D cho đơn cụ thể
-  const handleOpenFloorPlan = (row: ReservationResponse) => {
+  const handleOpenFloorPlan = (row: AllocationQueueItem) => {
     setSelectedId(row.id);
-    setActiveReservation(row);
+    setActiveItem(row);
     setIsFloorPlanOpen(true);
   };
 
   // Mở form xác nhận sau khi chọn ô cụ thể trên sơ đồ 2D
   const openAssignModal = (unit: StorageUnitResponse) => {
     setModalUnit(unit);
-    setSelectedStaffId(null); // Bắt buộc người dùng phải chủ động chọn nhân viên
+    // Nếu là đổi ô cho hợp đồng thì ưu tiên giữ lại nhân viên đã được gán trước đó
+    setSelectedStaffId(selected?.assignedStaffId ?? null);
     setStaffError(null);
   };
 
   const handleConfirmAssignment = async () => {
     if (!selected || !modalUnit || assigningUnitId != null) return;
 
-    if (!selectedStaffId) {
+    if (!selectedStaffId && selected.kind === 'RESERVATION') {
       setStaffError('Vui lòng chọn nhân viên tiếp đón khách bàn giao kho.');
       showToast('Vui lòng chọn nhân viên phụ trách tiếp đón', 'error');
       return;
@@ -188,15 +263,44 @@ export const AllocationPage: React.FC = () => {
     setStaffError(null);
 
     try {
-      await assignUnit(selected.id, {
-        storageUnitId: modalUnit.id,
-        staffId: selectedStaffId,
-        scheduledDate: selected.startDate,
-        scheduledStartTime: '08:00',
-        scheduledEndTime: '17:00',
-      });
+      if (selected.kind === 'CONTRACT_RELOCATION') {
+        // Đổi ô kho cho hợp đồng ngoại lệ theo SCR-FM-02.2
+        await reassignStorageUnit({
+          contractId: selected.contractId || selected.rawId,
+          currentUnitId: selected.storageUnitId || 0,
+          newUnitId: modalUnit.id,
+          newUnitCode: modalUnit.code,
+          reason: 'Phân bổ lại ô kho sau sự cố tiếp đón bàn giao',
+          customerConsent: true,
+        });
 
-      showToast(`Đã gán ô ${modalUnit.code} và phân công nhân viên tiếp đón thành công!`);
+        // Nếu người quản lý chọn/đổi nhân viên tiếp đón khác
+        if (selectedStaffId && selected.reservationId) {
+          try {
+            await reassignStaffApi(
+              selected.reservationId,
+              selectedStaffId,
+              'Chỉ định nhân viên tiếp đón sau khi đổi ô kho'
+            );
+          } catch {
+            // Không chặn nếu cập nhật ca tiếp đón thất bại nhẹ
+          }
+        }
+
+        showToast(`Đã gán lại ô ${modalUnit.code} cho hợp đồng ${selected.code} thành công!`);
+      } else {
+        // Gán ô lần đầu cho đơn đặt chỗ mới
+        await assignUnit(selected.rawId, {
+          storageUnitId: modalUnit.id,
+          staffId: selectedStaffId!,
+          scheduledDate: selected.startDate,
+          scheduledStartTime: '08:00',
+          scheduledEndTime: '17:00',
+        });
+
+        showToast(`Đã gán ô ${modalUnit.code} và phân công nhân viên tiếp đón thành công!`);
+      }
+
       setModalUnit(null);
 
       if (facilityId != null) {
@@ -345,23 +449,25 @@ export const AllocationPage: React.FC = () => {
                     >
                       {/* Cột 1: Mã đơn & Khách hàng */}
                       <td className="px-4 py-3.5">
-                        {(() => {
-                          const cust = getCustomerInfo(row);
-                          return (
-                            <div className="flex flex-col gap-1">
-                              <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200/80 text-xs w-fit">
-                                {row.code}
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200/80 text-xs w-fit">
+                              {row.code}
+                            </span>
+                            {row.kind === 'CONTRACT_RELOCATION' && (
+                              <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+                                Sự cố bàn giao
                               </span>
-                              <div className="flex items-center gap-1.5 text-xs text-slate-800 font-semibold mt-0.5">
-                                <User className="w-3.5 h-3.5 text-brand-600 shrink-0" />
-                                <span>{cust.name}</span>
-                              </div>
-                              <span className="text-[11px] text-slate-500 font-mono">
-                                {cust.phone}
-                              </span>
-                            </div>
-                          );
-                        })()}
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1.5 text-xs text-slate-800 font-semibold mt-0.5">
+                            <User className="w-3.5 h-3.5 text-brand-600 shrink-0" />
+                            <span>{row.customerName}</span>
+                          </div>
+                          <span className="text-[11px] text-slate-500 font-mono">
+                            {row.customerPhone}
+                          </span>
+                        </div>
                       </td>
 
                       {/* Cột 2: Hạng kho */}
@@ -398,7 +504,14 @@ export const AllocationPage: React.FC = () => {
 
                       {/* Cột 5: Trạng thái */}
                       <td className="px-4 py-3.5">
-                        <Badge variant="warning">Chờ gán ô</Badge>
+                        {row.kind === 'CONTRACT_RELOCATION' ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-pulse" />
+                            Gán lại ô kho
+                          </span>
+                        ) : (
+                          <Badge variant="warning">Chờ gán ô</Badge>
+                        )}
                       </td>
 
                       {/* Cột 6: Nút hành động mở Sơ đồ 2D */}
@@ -406,10 +519,14 @@ export const AllocationPage: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => handleOpenFloorPlan(row)}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-sm transition-all cursor-pointer"
+                          className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold shadow-xs hover:shadow-sm transition-all cursor-pointer ${
+                            row.kind === 'CONTRACT_RELOCATION'
+                              ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                              : 'bg-brand-600 hover:bg-brand-700 text-white'
+                          }`}
                         >
                           <MapPin className="w-3.5 h-3.5 text-white" />
-                          <span>Gán ô kho (Sơ đồ 2D)</span>
+                          <span>{row.kind === 'CONTRACT_RELOCATION' ? 'Đổi ô kho (Sơ đồ 2D)' : 'Gán ô kho (Sơ đồ 2D)'}</span>
                         </button>
                       </td>
                     </tr>
@@ -448,8 +565,14 @@ export const AllocationPage: React.FC = () => {
                   <MapPin className="w-5 h-5 text-brand-600" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900 text-base">Xác nhận phân bổ ô kho</h3>
-                  <p className="text-xs text-slate-500">Chỉ định ô vật lý và phân công nhân viên cơ sở phụ trách tiếp đón</p>
+                  <h3 className="font-bold text-slate-900 text-base">
+                    {selected.kind === 'CONTRACT_RELOCATION' ? 'Xác nhận phân bổ lại ô kho (Đổi ô sự cố)' : 'Xác nhận phân bổ ô kho'}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {selected.kind === 'CONTRACT_RELOCATION'
+                      ? 'Chỉ định ô vật lý mới trên sơ đồ 2D để nhân viên tiếp tục bàn giao cho khách'
+                      : 'Chỉ định ô vật lý và phân công nhân viên cơ sở phụ trách tiếp đón'}
+                  </p>
                 </div>
               </div>
               <button
@@ -464,45 +587,40 @@ export const AllocationPage: React.FC = () => {
             {/* Modal Body */}
             <div className="p-5 sm:p-6 space-y-4 text-sm">
               {/* Thông tin khách hàng */}
-              {(() => {
-                const cust = getCustomerInfo(selected);
-                return (
-                  <div className="p-3.5 bg-sky-50/70 rounded-2xl border border-sky-100/90 flex flex-col gap-2">
-                    <span className="text-[11px] font-bold text-sky-800 uppercase tracking-wider flex items-center gap-1.5">
-                      <User className="w-3.5 h-3.5 text-sky-600" />
-                      <span>Thông tin khách hàng</span>
-                    </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                      <div>
-                        <span className="text-slate-500 block text-[11px]">Họ và tên:</span>
-                        <strong className="text-slate-900 text-sm font-semibold">
-                          {cust.name}
-                        </strong>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 block text-[11px]">Số điện thoại:</span>
-                        <div className="flex items-center gap-1 text-slate-800 font-medium">
-                          <Phone className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{cust.phone}</span>
-                        </div>
-                      </div>
-                      <div className="sm:col-span-2">
-                        <span className="text-slate-500 block text-[11px]">Email liên hệ:</span>
-                        <div className="flex items-center gap-1 text-slate-800 font-medium">
-                          <Mail className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{cust.email}</span>
-                        </div>
-                      </div>
+              <div className="p-3.5 bg-sky-50/70 rounded-2xl border border-sky-100/90 flex flex-col gap-2">
+                <span className="text-[11px] font-bold text-sky-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-sky-600" />
+                  <span>Thông tin khách hàng</span>
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="text-slate-500 block text-[11px]">Họ và tên:</span>
+                    <strong className="text-slate-900 text-sm font-semibold">
+                      {selected.customerName}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-[11px]">Số điện thoại:</span>
+                    <div className="flex items-center gap-1 text-slate-800 font-medium">
+                      <Phone className="w-3.5 h-3.5 text-slate-400" />
+                      <span>{selected.customerPhone}</span>
                     </div>
                   </div>
-                );
-              })()}
+                  <div className="sm:col-span-2">
+                    <span className="text-slate-500 block text-[11px]">Email liên hệ:</span>
+                    <div className="flex items-center gap-1 text-slate-800 font-medium">
+                      <Mail className="w-3.5 h-3.5 text-slate-400" />
+                      <span>{selected.customerEmail}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               {/* Thẻ tóm tắt thông tin đơn và ô được chọn */}
               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-1">
                   <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                    Đơn đặt chỗ / Hạng kho
+                    {selected.kind === 'CONTRACT_RELOCATION' ? 'Hợp đồng cần đổi ô' : 'Đơn đặt chỗ'} / Hạng kho
                   </span>
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-mono font-bold text-slate-900 text-xs bg-white px-2.5 py-1 rounded-lg border border-slate-200">
@@ -529,30 +647,32 @@ export const AllocationPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Ngày hẹn nhận kho: Tự động lấy ngày khách book */}
+              {/* Ngày hẹn nhận kho / bắt đầu hợp đồng */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-brand-600" />
-                  <span>Ngày hẹn nhận kho</span>
+                  <span>{selected.kind === 'CONTRACT_RELOCATION' ? 'Ngày bắt đầu hợp đồng' : 'Ngày hẹn nhận kho'}</span>
                 </label>
                 <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-800">
                   <span className="font-mono font-bold text-sm text-slate-900">
                     {formatDate(selected.startDate)}
                   </span>
                   <span className="text-xs text-slate-500 font-medium">
-                    (Theo ngày khách đặt chỗ nhận kho)
+                    {selected.kind === 'CONTRACT_RELOCATION' ? '(Thời hạn thuê được bảo lưu)' : '(Theo ngày khách đặt chỗ nhận kho)'}
                   </span>
                 </div>
               </div>
 
-              {/* Dropdown nhân viên tiếp đón (BẮT BUỘC) */}
+              {/* Dropdown nhân viên tiếp đón */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
                     <User className="w-3.5 h-3.5 text-brand-600" />
-                    <span>Nhân viên cơ sở tiếp đón khách <span className="text-rose-600">*</span></span>
+                    <span>Nhân viên cơ sở tiếp đón khách {selected.kind === 'RESERVATION' && <span className="text-rose-600">*</span>}</span>
                   </span>
-                  <span className="text-[11px] text-slate-400 font-normal">Bắt buộc</span>
+                  <span className="text-[11px] text-slate-400 font-normal">
+                    {selected.kind === 'RESERVATION' ? 'Bắt buộc' : 'Tùy chọn'}
+                  </span>
                 </label>
 
                 <select
@@ -568,7 +688,7 @@ export const AllocationPage: React.FC = () => {
                     if (val) setStaffError(null);
                   }}
                 >
-                  <option value="">-- Chọn nhân viên tiếp đón (Bắt buộc) --</option>
+                  <option value="">-- {selected.kind === 'CONTRACT_RELOCATION' ? 'Giữ nguyên nhân viên hiện tại hoặc chỉ định mới' : 'Chọn nhân viên tiếp đón (Bắt buộc)'} --</option>
                   {staffMembers.map((staff) => {
                     const cleanName = (staff.staffName || '').replace(/\s*\(\d+\s*việc[^)]*\)/gi, '').trim();
                     return (
@@ -586,7 +706,7 @@ export const AllocationPage: React.FC = () => {
                   </p>
                 ) : (
                   <p className="text-[11px] text-slate-500 mt-1.5">
-                    💡 <em>Lưu ý: Bắt buộc chọn nhân viên phụ trách nhận kho. Sau này nếu muốn đổi ca trực, bạn có thể sang mục <strong>Phân công nhân sự</strong> để điều chuyển.</em>
+                    💡 <em>Lưu ý: {selected.kind === 'CONTRACT_RELOCATION' ? 'Sau khi đổi ô kho mới thành công, nhân viên tại quầy sẽ thấy ô mới và tiến hành bàn giao ngay.' : 'Bắt buộc chọn nhân viên phụ trách nhận kho để hệ thống tạo lịch trực.'}</em>
                   </p>
                 )}
               </div>
@@ -605,14 +725,20 @@ export const AllocationPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleConfirmAssignment}
-                disabled={assigningUnitId != null || !selectedStaffId}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs hover:shadow-sm disabled:opacity-50 transition-all cursor-pointer"
+                disabled={assigningUnitId != null || (!selectedStaffId && selected.kind === 'RESERVATION')}
+                className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-xs hover:shadow-sm disabled:opacity-50 transition-all cursor-pointer ${
+                  selected.kind === 'CONTRACT_RELOCATION'
+                    ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                    : 'bg-brand-600 hover:bg-brand-700 text-white'
+                }`}
               >
                 {assigningUnitId != null ? (
                   <>
                     <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     <span>Đang lưu...</span>
                   </>
+                ) : selected.kind === 'CONTRACT_RELOCATION' ? (
+                  <span>Xác nhận đổi ô kho mới</span>
                 ) : (
                   <span>Xác nhận phân bổ ô kho</span>
                 )}

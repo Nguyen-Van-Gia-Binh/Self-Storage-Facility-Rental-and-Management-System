@@ -34,4 +34,11 @@ describe('ISS-84: HandoverInspectionForm Action Footer Clean Scroll Fix', () => 
     expect(content).not.toMatch(/Cần có chữ ký xác nhận của khách/);
     expect(content).toMatch(/sm:flex-row items-stretch sm:items-center justify-between/);
   });
+
+  it('Khi ô kho có sự cố và chờ đổi (relocationEligible / isAwaitingRelocation), hiển thị banner cảnh báo và khóa bàn giao', () => {
+    const content = fs.readFileSync(handoverInspectionFormPath, 'utf-8');
+    expect(content).toMatch(/Ô kho phát sinh sự cố — Tạm dừng thủ tục bàn giao/);
+    expect(content).toMatch(/Đã ghi nhận sự cố & chờ Quản lý đổi ô kho/);
+    expect(content).toMatch(/!isAwaitingRelocation/);
+  });
 });

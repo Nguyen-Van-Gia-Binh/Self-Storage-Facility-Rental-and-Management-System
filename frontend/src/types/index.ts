@@ -133,6 +133,7 @@ export interface CheckInContract {
   accessCode?: string;
   assignedStaffId?: number;
   assignedStaffName?: string;
+  relocationEligible?: boolean;
   isAwaitingRelocation?: boolean;
   originalDefectiveUnitCode?: string;
 }

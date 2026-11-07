@@ -10,7 +10,7 @@ import { useCurrentUser } from '@/utils/useCurrentUser';
 import { CustomerVerificationCard } from './CustomerVerificationCard';
 import { HandoverInspectionForm } from './HandoverInspectionForm';
 import { AccessCodePinModal } from './AccessCodePinModal';
-import { HandoverRejectionModal } from './HandoverRejectionModal';
+import { HandoverRejectionModal, type HandoverRejectionAction } from './HandoverRejectionModal';
 
 export interface StaffCheckInDetailViewProps {
   task: DailyCheckInTask;
@@ -85,6 +85,35 @@ export const StaffCheckInDetailView: React.FC<StaffCheckInDetailViewProps> = ({
     loadContractDetail();
   }, [loadContractDetail]);
 
+  const isAwaitingRelocation = Boolean(contract?.relocationEligible || contract?.isAwaitingRelocation);
+
+  // Tự động làm mới khi chờ Quản lý cơ sở (FM) đổi ô kho trên sơ đồ 2D
+  useEffect(() => {
+    if (!isAwaitingRelocation || !contract?.id) return;
+    const interval = setInterval(async () => {
+      try {
+        const detail = await getContractById(contract.id);
+        if (
+          detail &&
+          !detail.relocationEligible &&
+          detail.storageUnitCode &&
+          detail.storageUnitCode !== 'Chờ gán lại ô kho' &&
+          detail.storageUnitCode !== contract.originalDefectiveUnitCode
+        ) {
+          setContract({
+            ...detail,
+            isAwaitingRelocation: false,
+            relocationEligible: false,
+          });
+          showToast('success', `🎉 Quản lý cơ sở đã cấp ô mới ${detail.storageUnitCode}! Bạn có thể tiếp tục bàn giao kho.`);
+        }
+      } catch (err) {
+        console.debug('Polling check-in contract:', err);
+      }
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [isAwaitingRelocation, contract?.id, contract?.originalDefectiveUnitCode]);
+
   // Nộp biên bản nghiệm thu bàn giao & kích hoạt mã PIN
   const handleHandoverSubmit = async (request: CheckInSubmitRequest) => {
     if (!contract) return;
@@ -110,19 +139,42 @@ export const StaffCheckInDetailView: React.FC<StaffCheckInDetailViewProps> = ({
   };
 
   // Từ chối nhận bàn giao / Báo hỏng
-  const handleRejectionConfirm = async (reason: string, reportedDefects: string) => {
+  const handleRejectionConfirm = async (
+    reason: string,
+    reportedDefects: string,
+    action: HandoverRejectionAction = 'RELOCATE'
+  ) => {
     if (!contract) return;
     setIsSubmitting(true);
     try {
       const req: HandoverRejectRequest = {
         rejectionReason: reason,
         reportedDefects,
+        rejectionAction: action,
       };
       await rejectHandoverContract(contract.id, req, staffId);
       setIsRejectionModalOpen(false);
-      showToast('error', `Đã khóa ô kho ${contract.storageUnitCode} sang bảo trì và hủy lượt bàn giao.`);
 
-      setContract((prev) => (prev ? { ...prev, status: 'TERMINATED', appointmentTime: 'Đã từ chối nhận' } : null));
+      if (action === 'RELOCATE') {
+        const defectiveUnitCode = contract.storageUnitCode;
+        showToast('success', `Đã ghi nhận sự cố ô ${defectiveUnitCode}. Đang chờ Quản lý cơ sở đổi ô mới trên 2D...`);
+        setContract((prev) =>
+          prev
+            ? {
+                ...prev,
+                status: 'PENDING_CHECK_IN',
+                relocationEligible: true,
+                isAwaitingRelocation: true,
+                originalDefectiveUnitCode: defectiveUnitCode,
+                storageUnitCode: 'Chờ gán lại ô kho',
+                appointmentTime: 'Đang đợi Quản lý (FM) đổi ô kho...',
+              }
+            : null
+        );
+      } else {
+        showToast('error', `Đã khóa ô kho ${contract.storageUnitCode} sang bảo trì và lập hồ sơ hoàn tiền 100%.`);
+        setContract((prev) => (prev ? { ...prev, status: 'TERMINATED', appointmentTime: 'Đã từ chối nhận' } : null));
+      }
       onSuccess();
     } catch (error) {
       console.error('Lỗi khi ghi nhận từ chối bàn giao:', error);

@@ -532,5 +532,49 @@ class CustomerRentalServiceTest {
         assertEquals("SUP-202610-0001", detail.getRelocationSupportRequestCode());
         assertEquals("Di dời kho do lỗi tường thấm dột", detail.getRelocationReason());
     }
+
+    @Test
+    @DisplayName("Sự cố bàn giao: Khi hợp đồng PENDING_CHECK_IN có phiếu di dời -> relocationEligible = true và xóa mã ô cũ")
+    void testGetMyRentals_WhenContractPendingRelocation_ClearsStorageUnitCodeAndSetsRelocationEligible() {
+        RentalContract contract = new RentalContract();
+        contract.setId(601L);
+        contract.setCode("CTR-202611-601");
+        contract.setCustomerId(15L);
+        contract.setFacilityId(1L);
+        contract.setStorageUnitId(42L);
+        contract.setUnitTypeId(1L);
+        contract.setStatus(ContractStatus.PENDING_CHECK_IN);
+        contract.setStartDate(LocalDate.now());
+        contract.setEndDateExclusive(LocalDate.now().plusMonths(1));
+        contract.setMonthlyPrice(500_000L);
+        contract.setDepositAmount(500_000L);
+
+        when(rentalContractRepository.findByCustomerIdAndStatusNot(eq(15L), eq(ContractStatus.CANCELLED), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(contract)));
+
+        StorageUnit unit = new StorageUnit();
+        unit.setId(42L);
+        unit.setCode("TX-A101");
+        unit.setStatus(StorageUnitStatus.MAINTENANCE);
+        when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(unit));
+
+        com.swp391.selfstorage.support.entity.SupportRequest ticket = com.swp391.selfstorage.support.entity.SupportRequest.builder()
+                .id(901L)
+                .contractId(601L)
+                .relocationRequired(Boolean.TRUE)
+                .status(com.swp391.selfstorage.support.entity.SupportStatus.NEW)
+                .build();
+        when(supportRequestRepository.findTopByContractIdOrderByCreatedAtDesc(601L))
+                .thenReturn(Optional.of(ticket));
+
+        PageResponse<CustomerRentalSummaryResponse> response = customerRentalService.getMyRentals(
+                customerUser, null, PageRequest.of(0, 10));
+
+        assertNotNull(response);
+        assertEquals(1, response.getContent().size());
+        CustomerRentalSummaryResponse item = response.getContent().get(0);
+        assertTrue(Boolean.TRUE.equals(item.getRelocationEligible()));
+        assertNull(item.getStorageUnitCode(), "Mã ô kho cũ phải được ẩn/xóa để tránh nhầm lẫn khi đang chờ đổi ô");
+    }
 }
 

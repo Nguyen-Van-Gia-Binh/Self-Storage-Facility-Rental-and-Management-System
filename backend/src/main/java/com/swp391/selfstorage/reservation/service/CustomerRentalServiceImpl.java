@@ -29,9 +29,11 @@ import com.swp391.selfstorage.reservation.entity.Reservation;
 import com.swp391.selfstorage.reservation.entity.ReservationStatus;
 import com.swp391.selfstorage.reservation.repository.ReservationRepository;
 import com.swp391.selfstorage.unit.entity.StorageUnit;
+import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
 import com.swp391.selfstorage.unit.entity.UnitType;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
 import com.swp391.selfstorage.unit.repository.UnitTypeRepository;
+import com.swp391.selfstorage.support.entity.SupportStatus;
 import com.swp391.selfstorage.user.entity.UserRole;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -311,11 +313,34 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
             });
         }
 
+        // Kiểm tra xem hợp đồng có đang chờ Quản lý cơ sở đổi ô kho (do sự cố bàn giao) không
+        boolean isRelocating = false;
+        if (supportRequestRepository != null) {
+            isRelocating = supportRequestRepository.findTopByContractIdOrderByCreatedAtDesc(contract.getId())
+                    .map(t -> Boolean.TRUE.equals(t.getRelocationRequired())
+                            && t.getStatus() != SupportStatus.RESOLVED
+                            && t.getStatus() != SupportStatus.CLOSED
+                            && t.getStatus() != SupportStatus.AUTO_CLOSED)
+                    .orElse(false);
+        }
+        if (!isRelocating && contract.getStorageUnitId() != null && storageUnitRepository != null) {
+            isRelocating = storageUnitRepository.findById(contract.getStorageUnitId())
+                    .map(su -> su.getStatus() == StorageUnitStatus.MAINTENANCE
+                            && (contract.getStatus() == ContractStatus.PENDING_CHECK_IN || contract.getStatus() == ContractStatus.ACTIVE || contract.getStatus() == ContractStatus.TERMINATED))
+                    .orElse(false);
+        }
+        res.setRelocationEligible(isRelocating);
+        final boolean effectivelyRelocating = isRelocating;
+
         // Ô kho
         res.setStorageUnitId(contract.getStorageUnitId());
         if (contract.getStorageUnitId() != null && storageUnitRepository != null) {
             storageUnitRepository.findById(contract.getStorageUnitId()).ifPresent(u -> {
-                res.setStorageUnitCode(u.getCode());
+                if (effectivelyRelocating && (contract.getStatus() == ContractStatus.PENDING_CHECK_IN || contract.getStatus() == ContractStatus.TERMINATED)) {
+                    res.setStorageUnitCode(null);
+                } else {
+                    res.setStorageUnitCode(u.getCode());
+                }
                 res.setFloor(u.getFloor());
                 res.setPosition(u.getPosition());
             });

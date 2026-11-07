@@ -334,16 +334,22 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                 >
                   {/* Cột 1: Ô kho (Chỉ mã số ô kho) */}
                   <td className="py-3.5 px-4 whitespace-nowrap">
-                    <button
-                      type="button"
-                      onClick={() => onViewDetail(contract)}
-                      className={`font-extrabold text-sm tracking-tight font-mono text-left transition-colors cursor-pointer ${
-                        isClosed ? "text-slate-400 hover:text-slate-600" : "text-slate-900 hover:text-brand-700 hover:underline"
-                      }`}
-                      title="Xem chi tiết hợp đồng"
-                    >
-                      {contract.unitNumber}
-                    </button>
+                    {contract.relocationEligible || !contract.unitNumber || contract.unitNumber === 'Chưa gán' || contract.unitNumber === 'Chờ gán lại ô kho' ? (
+                      <span className="font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded text-xs font-mono">
+                        Chưa gán ô kho
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => onViewDetail(contract)}
+                        className={`font-extrabold text-sm tracking-tight font-mono text-left transition-colors cursor-pointer ${
+                          isClosed ? "text-slate-400 hover:text-slate-600" : "text-slate-900 hover:text-brand-700 hover:underline"
+                        }`}
+                        title="Xem chi tiết hợp đồng"
+                      >
+                        {contract.unitNumber}
+                      </button>
+                    )}
                   </td>
 
                   {/* Cột 2: Loại kho (Text thuần, không label) */}
@@ -392,6 +398,10 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                           </button>
                         )}
                       </div>
+                    ) : contract.relocationEligible ? (
+                      <span className="text-amber-700 text-xs font-semibold bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200">
+                        Đang đổi ô kho
+                      </span>
                     ) : contract.status === 'PENDING_CHECKIN' ||
                       (contract.status as string) === 'PENDING_CHECK_IN' ? (
                       <Button
@@ -426,6 +436,10 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                     ) : contract.status === 'OVERDUE' ? (
                       <Badge variant={isGracePeriod ? 'warning' : 'overdue'}>
                         {isGracePeriod ? `Ân hạn D+${overdueDays}` : `Quá hạn D+${overdueDays}`}
+                      </Badge>
+                    ) : contract.relocationEligible ? (
+                      <Badge variant="warning" className="bg-amber-100 text-amber-900 border-amber-300 font-bold">
+                        Chờ gán lại ô kho
                       </Badge>
                     ) : contract.status === 'PENDING_CHECKIN' ||
                       (contract.status as string) === 'PENDING_CHECK_IN' ? (
