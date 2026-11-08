@@ -36,6 +36,9 @@ function normalizeRevenueReport(raw: {
   renewalRevenue?: unknown;
   depositBalance?: unknown;
   totalRefundAmount?: unknown;
+  mrr?: unknown;
+  activeContractCount?: unknown;
+  totalDepositLiability?: unknown;
   byFacility?: Array<Record<string, unknown>>;
 }): SystemRevenueReport {
   const facilities = Array.isArray(raw?.byFacility) ? raw.byFacility : [];
@@ -49,6 +52,9 @@ function normalizeRevenueReport(raw: {
     renewalRevenue: asMoney(raw?.renewalRevenue),
     depositBalance: asMoney(raw?.depositBalance),
     totalRefundAmount: asMoney(raw?.totalRefundAmount),
+    mrr: asMoney(raw?.mrr),
+    activeContractCount: Number(raw?.activeContractCount) || 0,
+    totalDepositLiability: asMoney(raw?.totalDepositLiability),
     byFacility: facilities.map((facility) => {
       const rentalRevenue = asMoney(facility.rentalRevenue);
       const surchargeRevenue = asMoney(facility.surchargeRevenue);
@@ -66,6 +72,9 @@ function normalizeRevenueReport(raw: {
         renewalRevenue,
         depositBalance: asMoney(facility.depositBalance),
         refundAmount: asMoney(facility.refundAmount),
+        mrr: asMoney(facility.mrr),
+        activeContractCount: Number(facility.activeContractCount) || 0,
+        depositLiability: asMoney(facility.depositLiability),
       };
     }),
   };
