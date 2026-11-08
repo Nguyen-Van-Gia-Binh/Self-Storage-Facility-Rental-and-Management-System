@@ -288,3 +288,4 @@ export const RevenueTrendCharts: React.FC<RevenueTrendChartsProps> = ({
     </div>
   );
 };
+

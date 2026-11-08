@@ -108,3 +108,4 @@ describe('RevenueTrendCharts - Tier 2 Trends Over Time', () => {
     expect(screen.getByText(/Chưa có đủ dữ liệu xu hướng/i)).toBeInTheDocument();
   });
 });
+

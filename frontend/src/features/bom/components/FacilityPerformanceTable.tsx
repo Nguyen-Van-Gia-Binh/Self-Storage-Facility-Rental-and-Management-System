@@ -1,14 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import {
-  Building2,
-  TrendingUp,
   Search,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  Eye,
   X,
-  ExternalLink,
+  ChevronRight,
 } from 'lucide-react';
 import type { FacilityRevenueBreakdown, FacilityOccupancyItem } from '@/types';
 import { formatCurrency, formatPercent } from '@/utils/format';
@@ -196,33 +193,28 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
     <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden space-y-0">
       {/* Header Bảng & Thanh công cụ Search + Filter State */}
       <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-            <TrendingUp className="w-4 h-4" />
+        <div>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
+              Ma Trận Doanh Thu & Hiệu Quả Từng Cơ Sở
+            </h3>
+            {isAnyStreamHighlighted && (
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-medium">
+                <span>Lọc chéo cột: <strong>{highlightedStream}</strong></span>
+                <button
+                  type="button"
+                  onClick={onClearHighlight}
+                  className="hover:text-indigo-900 ml-0.5 cursor-pointer"
+                  title="Bỏ lọc chéo cột"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
-                Ma Trận Doanh Thu & Hiệu Quả Từng Cơ Sở
-              </h3>
-              {isAnyStreamHighlighted && (
-                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-medium">
-                  <span>Lọc chéo cột: <strong>{highlightedStream}</strong></span>
-                  <button
-                    type="button"
-                    onClick={onClearHighlight}
-                    className="hover:text-indigo-900 ml-0.5"
-                    title="Bỏ lọc chéo cột"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              )}
-            </div>
-            <p className="text-xs text-slate-500">
-              Định dạng số Tabular Nums chuẩn doanh nghiệp. Bấm vào tên cơ sở để lọc toàn trang, hoặc bấm [Xem chi tiết] để xem nhanh.
-            </p>
-          </div>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Bấm vào tên cơ sở để lọc toàn trang, hoặc bấm [Xem] để mở rộng phân tích chi tiết.
+          </p>
         </div>
 
         {/* Thanh tìm kiếm cơ sở */}
@@ -253,27 +245,27 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
       <div className="overflow-x-auto max-h-[560px]">
         <table className="w-full text-left text-xs border-collapse">
           {/* TẦNG 1 & TẦNG 2 CỦA THEAD (SUPER-HEADERS) */}
-          <thead className="sticky top-0 z-20 bg-slate-50 shadow-sm border-b border-slate-200">
+          <thead className="sticky top-0 z-20 bg-slate-50 shadow-xs border-b border-slate-200">
             {/* Tầng 1: Super Header Nhóm */}
             <tr className="border-b border-slate-200/80 text-[11px] font-bold tracking-wider uppercase text-slate-500 bg-slate-100/70">
-              <th scope="col" className="py-2 px-4 border-r border-slate-200/60">
+              <th scope="col" className="py-2.5 px-4">
                 Thông tin cơ sở
               </th>
               <th
                 scope="col"
                 colSpan={4}
-                className="py-2 px-3 text-center border-r border-slate-200/60 text-slate-700 bg-slate-100"
+                className="py-2.5 px-3 text-center text-slate-700 bg-slate-100"
               >
                 Cơ cấu dòng tiền (₫)
               </th>
               <th
                 scope="col"
                 colSpan={2}
-                className="py-2 px-3 text-center border-r border-slate-200/60 text-slate-700"
+                className="py-2.5 px-3 text-center text-slate-700"
               >
                 Hiệu suất vận hành
               </th>
-              <th scope="col" className="py-2 px-3 text-center">
+              <th scope="col" className="py-2.5 px-3 text-center">
                 Thao tác
               </th>
             </tr>
@@ -284,7 +276,7 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
               <th
                 scope="col"
                 onClick={() => handleSort('facilityName')}
-                className="py-2.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors border-r border-slate-200/60"
+                className="py-2.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors"
               >
                 <span className="flex items-center gap-1">
                   Cơ sở lưu kho {renderSortIcon('facilityName')}
@@ -334,7 +326,7 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
               <th
                 scope="col"
                 onClick={() => handleSort('totalRevenue')}
-                className="py-2.5 px-3 text-right cursor-pointer hover:bg-slate-100 transition-colors border-r border-slate-200/60 bg-slate-50/80"
+                className="py-2.5 px-3 text-right cursor-pointer hover:bg-slate-100 transition-colors bg-slate-50/80"
               >
                 <span className="flex items-center justify-end gap-1">
                   Tổng thực thu {renderSortIcon('totalRevenue')}
@@ -355,7 +347,7 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
               {/* 7. Ô trống / Tổng */}
               <th
                 scope="col"
-                className="py-2.5 px-3 text-center border-r border-slate-200/60 font-semibold text-slate-600"
+                className="py-2.5 px-3 text-center font-semibold text-slate-600"
               >
                 Ô trống / Khai thác
               </th>
@@ -385,24 +377,20 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
                     key={row.facilityId}
                     className="hover:bg-slate-50/80 transition-colors group"
                   >
-                    {/* Cột 1: Thông tin cơ sở (Clickable link để lọc toàn trang) */}
-                    <td className="py-3 px-4 border-r border-slate-100">
-                      <div className="flex items-center gap-2.5">
-                        <Building2 className="w-4 h-4 text-slate-400 group-hover:text-brand-600 shrink-0 transition-colors" />
-                        <div>
-                          <button
-                            type="button"
-                            onClick={() => onSelectFacility && onSelectFacility(row.facilityId)}
-                            className="font-bold text-slate-900 group-hover:text-brand-600 hover:underline text-left cursor-pointer transition-colors flex items-center gap-1"
-                            title="Click để lọc toàn bộ báo cáo Dashboard theo cơ sở này"
-                          >
-                            <span>{row.facilityName}</span>
-                            <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 text-brand-500 transition-opacity" />
-                          </button>
-                          <div className="text-[11px] text-slate-400 font-mono">
-                            Mã cơ sở: #{row.facilityId}
-                          </div>
-                        </div>
+                    {/* Cột 1: Thông tin cơ sở */}
+                    <td className="py-3 px-4">
+                      <div className="flex flex-col">
+                        <button
+                          type="button"
+                          onClick={() => onSelectFacility && onSelectFacility(row.facilityId)}
+                          className="font-semibold text-slate-900 group-hover:text-brand-600 hover:underline text-left cursor-pointer transition-colors"
+                          title="Click để lọc toàn bộ báo cáo Dashboard theo cơ sở này"
+                        >
+                          {row.facilityName}
+                        </button>
+                        <span className="text-xs text-slate-400 font-mono">
+                          ID: #{row.facilityId}
+                        </span>
                       </div>
                     </td>
 
@@ -440,39 +428,37 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
                     </td>
 
                     {/* Cột 5: Tổng thực thu */}
-                    <td className="py-3 px-3 text-right font-mono tabular-nums font-bold text-slate-900 text-sm border-r border-slate-100 bg-slate-50/30">
+                    <td className="py-3 px-3 text-right font-mono tabular-nums font-bold text-slate-900 text-sm bg-slate-50/30">
                       {formatCurrency(row.totalRevenue)}
                     </td>
 
-                    {/* Cột 6: Tỷ lệ lấp đầy */}
-                    <td className="py-3 px-3 text-center">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full font-mono font-semibold text-[11px] border ${
-                          rateUnknown
-                            ? 'bg-slate-50 text-slate-500 border-slate-200'
-                            : row.occupancyRate >= 0.8
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            : row.occupancyRate >= 0.5
-                            ? 'bg-sky-50 text-sky-700 border-sky-200'
-                            : 'bg-amber-50 text-amber-700 border-amber-200'
-                        }`}
-                      >
-                        {rateUnknown ? 'N/A' : formatPercent(row.occupancyRate)}
-                      </span>
+                    {/* Cột 6: Tỷ lệ lấp đầy (Semantic text colors) */}
+                    <td className="py-3 px-3 text-center font-mono tabular-nums text-xs">
+                      {rateUnknown ? (
+                        <span className="text-slate-400 font-normal">N/A</span>
+                      ) : (
+                        <span
+                          className={
+                            row.occupancyRate < 0.3
+                              ? 'text-rose-600 font-bold'
+                              : row.occupancyRate <= 0.7
+                              ? 'text-amber-600 font-bold'
+                              : 'text-emerald-600 font-bold'
+                          }
+                        >
+                          {formatPercent(row.occupancyRate)}
+                        </span>
+                      )}
                     </td>
 
                     {/* Cột 7: Ô trống / Tổng */}
-                    <td className="py-3 px-3 text-center font-mono tabular-nums text-slate-600 border-r border-slate-100">
+                    <td className="py-3 px-3 text-center font-mono tabular-nums text-xs text-slate-500">
                       {exploitableUnits === 0 ? (
                         <span className="text-slate-400">N/A</span>
                       ) : (
-                        <>
-                          <span className="text-emerald-600 font-semibold">
-                            {row.availableUnits}
-                          </span>
-                          <span className="text-slate-400"> / </span>
-                          <span>{exploitableUnits} ô</span>
-                        </>
+                        <span>
+                          {row.availableUnits} / {exploitableUnits} ô
+                        </span>
                       )}
                     </td>
 
@@ -481,11 +467,12 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
                       <button
                         type="button"
                         onClick={() => onOpenDetail && onOpenDetail(row)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-slate-600 hover:text-brand-700 bg-slate-100 hover:bg-brand-50 transition-all border border-slate-200/80 cursor-pointer shadow-2xs"
-                        title="Xem nhanh bóc tách nguồn thu & ô kho trong Drawer"
+                        aria-label="Chi tiết"
+                        className="inline-flex items-center gap-0.5 text-xs font-semibold text-slate-500 hover:text-brand-600 transition-colors p-1 cursor-pointer"
+                        title="Chi tiết"
                       >
-                        <Eye className="w-3.5 h-3.5 text-slate-500" />
-                        <span>Chi tiết</span>
+                        <span>[Xem]</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
                       </button>
                     </td>
                   </tr>
@@ -494,10 +481,10 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
             )}
           </tbody>
 
-          {/* DÒNG TỔNG CỘNG TOÀN HỆ THỐNG (STICKY FOOTER NỔI BẬT) */}
-          <tfoot className="sticky bottom-0 z-20 bg-slate-100/95 font-bold border-t-2 border-slate-400 text-slate-900 shadow-lg backdrop-blur-xs">
-            <tr>
-              <td className="py-3 px-4 text-xs uppercase tracking-wide border-r border-slate-300">
+          {/* DÒNG TỔNG CỘNG TOÀN HỆ THỐNG (STICKY FOOTER NỔI BẬT KHÔNG BỊ ĐÈ) */}
+          <tfoot className="sticky bottom-0 z-10 font-bold border-t-2 border-slate-300 text-slate-900 shadow-sm">
+            <tr className="bg-slate-100">
+              <td className="bg-slate-100 py-3 px-4 text-xs uppercase tracking-wide">
                 <div className="flex items-center gap-2">
                   <span>TỔNG CỘNG TOÀN HỆ THỐNG</span>
                   <span className="text-[10px] font-mono font-normal text-slate-500 bg-slate-200/80 px-1.5 py-0.5 rounded">
@@ -505,27 +492,41 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
                   </span>
                 </div>
               </td>
-              <td className="py-3 px-3 text-right font-mono tabular-nums text-slate-900">
+              <td className="bg-slate-100 py-3 px-3 text-right font-mono tabular-nums text-slate-900">
                 {formatCurrency(totalRental)}
               </td>
-              <td className="py-3 px-3 text-right font-mono tabular-nums text-slate-900">
+              <td className="bg-slate-100 py-3 px-3 text-right font-mono tabular-nums text-slate-900">
                 {formatCurrency(totalSurchargesAndRenewals)}
               </td>
-              <td className="py-3 px-3 text-right font-mono tabular-nums text-rose-600">
+              <td className="bg-slate-100 py-3 px-3 text-right font-mono tabular-nums text-rose-600">
                 {formatCurrency(totalOverdueFees)}
               </td>
-              <td className="py-3 px-3 text-right font-mono tabular-nums text-brand-600 text-sm border-r border-slate-300">
+              <td className="bg-slate-100 py-3 px-3 text-right font-mono tabular-nums text-brand-600 text-sm">
                 {formatCurrency(grandTotalRevenue)}
               </td>
-              <td className="py-3 px-3 text-center font-mono tabular-nums text-slate-900">
-                {averageOccupancy == null ? 'N/A' : formatPercent(averageOccupancy)}
+              <td className="bg-slate-100 py-3 px-3 text-center font-mono tabular-nums text-xs">
+                {averageOccupancy == null ? (
+                  <span className="text-slate-400 font-normal">N/A</span>
+                ) : (
+                  <span
+                    className={
+                      averageOccupancy < 0.3
+                        ? 'text-rose-600 font-bold'
+                        : averageOccupancy <= 0.7
+                        ? 'text-amber-600 font-bold'
+                        : 'text-emerald-600 font-bold'
+                    }
+                  >
+                    {formatPercent(averageOccupancy)}
+                  </span>
+                )}
               </td>
-              <td className="py-3 px-3 text-center font-mono tabular-nums text-slate-900 border-r border-slate-300">
+              <td className="bg-slate-100 py-3 px-3 text-center font-mono tabular-nums text-xs text-slate-600">
                 {totalExploitable === 0
                   ? 'N/A'
                   : `${totalAvailable} trống / ${totalExploitable} ô`}
               </td>
-              <td className="py-3 px-3 text-center text-slate-400 text-[11px]">
+              <td className="bg-slate-100 py-3 px-3 text-center text-slate-400 text-[11px]">
                 Toàn quốc
               </td>
             </tr>

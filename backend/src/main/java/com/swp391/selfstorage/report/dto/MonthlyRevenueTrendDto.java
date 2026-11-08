@@ -24,3 +24,4 @@ public class MonthlyRevenueTrendDto {
     private long cashFlow;           // Dòng tiền thực thu trong tháng
     private long mrr;                // Doanh thu định kỳ (Net MRR) từ các HĐ ACTIVE
 }
+
