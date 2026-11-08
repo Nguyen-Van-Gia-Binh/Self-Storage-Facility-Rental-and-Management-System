@@ -10,6 +10,7 @@ import com.swp391.selfstorage.contract.service.ContractService;
 import com.swp391.selfstorage.policy.dto.OverdueProcessingResult;
 import com.swp391.selfstorage.policy.entity.ExtraFeeType;
 import com.swp391.selfstorage.policy.repository.ExtraFeeTypeRepository;
+import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
 import com.swp391.selfstorage.policy.service.OverdueProcessingService;
 import com.swp391.selfstorage.unit.entity.StorageUnit;
 import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
@@ -24,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.swp391.selfstorage.reservation.entity.Reservation;
 import com.swp391.selfstorage.reservation.entity.ReservationStatus;
 import com.swp391.selfstorage.reservation.repository.ReservationRepository;
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 import java.time.LocalDate;
@@ -55,12 +57,25 @@ class OverdueAndRefundIntegrationTest {
     @Autowired
     private ExtraFeeTypeRepository extraFeeTypeRepository;
 
+    @Autowired
+    private PolicyVersionRepository policyVersionRepository;
+
     private StorageUnit testUnit;
     private LocalDate baseEndDate;
 
     @BeforeEach
     void setUp() {
         baseEndDate = LocalDate.of(2026, 10, 1);
+
+        policyVersionRepository.findById(1L).ifPresent(policy -> {
+            policy.setOverdueGraceDays(3);
+            policy.setOverdueDailyRate(BigDecimal.valueOf(0.10));
+            policy.setOverdueCapRate(BigDecimal.valueOf(0.55));
+            policy.setOverdueLockAccessDays(1);
+            policy.setOverdueTerminationDays(7);
+            policy.setRentalBufferDays(8);
+            policyVersionRepository.save(policy);
+        });
 
         // Tạo ô kho mẫu trong DB thật
         testUnit = StorageUnit.builder()
@@ -132,19 +147,20 @@ class OverdueAndRefundIntegrationTest {
     }
 
     @Test
-    @DisplayName("Kịch bản 1: Trả kho trong ân hạn (D+2) -> Cronjob không phạt -> Quyết toán hoàn 100% tiền cọc (BR-OVD-02, BR-RET-04)")
-    void testGracePeriodReturn_ShouldRefundFullDeposit() {
+    @DisplayName("Kịch bản 1: Trả kho tại D+2 (Giai đoạn 1: 5% cọc/ngày) -> Phí lưu kho 10% cọc (200k) -> Quyết toán cấn trừ hoàn 90% tiền cọc (1.800.000đ)")
+    void testStage1Return_ShouldDeduct10PercentAndRefundRemainingDeposit() {
         RentalContract contract = createAndSaveContract(baseEndDate, 2_000_000L);
-        LocalDate returnDate = baseEndDate.plusDays(2); // D+2 (trong ân hạn 3 ngày)
+        LocalDate returnDate = baseEndDate.plusDays(2); // D+2 (2 ngày * 5% = 10% = 200.000đ)
 
         // 1. Cronjob quét qua đêm D+2
         OverdueProcessingResult cronResult = overdueProcessingService.processOverdueContracts(returnDate);
         assertTrue(cronResult.getTotalScanned() >= 1);
 
-        // Hợp đồng được chuyển sang OVERDUE nhưng chưa tính phí phạt
+        // Hợp đồng chuyển sang OVERDUE, khóa PIN và thu 10% cọc (200.000đ)
         RentalContract updatedContract = rentalContractRepository.findById(contract.getId()).orElseThrow();
         assertEquals(ContractStatus.OVERDUE, updatedContract.getStatus());
-        assertEquals(0L, updatedContract.getOverdueFeeAccrued());
+        assertEquals(200_000L, updatedContract.getOverdueFeeAccrued());
+        assertNull(updatedContract.getAccessCode());
 
         // 2. Khách trả kho và Staff nghiệm thu không có hư hỏng
         ReturnInspectionRequest inspectionReq = ReturnInspectionRequest.builder()
@@ -159,31 +175,31 @@ class OverdueAndRefundIntegrationTest {
         ReturnInspectionResponse inspectionRes = contractService.submitReturnInspection(
                 updatedContract.getId(), inspectionReq, 1L, List.of(1L));
 
-        assertEquals(2_000_000L, inspectionRes.getEstimatedDepositRefund());
-        assertEquals(0L, inspectionRes.getOverdueFee());
+        assertEquals(1_800_000L, inspectionRes.getEstimatedDepositRefund());
+        assertEquals(200_000L, inspectionRes.getOverdueFee());
 
         // 3. Xem trước quyết toán (Settlement Preview)
         SettlementPreviewResponse settlement = contractService.getSettlementPreview(updatedContract.getId(),
                 List.of(1L));
         assertEquals(2_000_000L, settlement.getDepositAmount());
-        assertEquals(0L, settlement.getOverdueFee());
+        assertEquals(200_000L, settlement.getOverdueFee());
         assertEquals(0L, settlement.getDamageCost());
-        assertEquals(2_000_000L, settlement.getDepositRefundAmount()); // Hoàn 100% cọc!
+        assertEquals(1_800_000L, settlement.getDepositRefundAmount()); // Hoàn 90% cọc (1.800.000đ)
         assertEquals(0L, settlement.getPayableAmount());
     }
 
     @Test
-    @DisplayName("Kịch bản 2: Trả kho tại D+5 -> Cronjob phạt 2 ngày (20%) + Hư hỏng 100k -> Quyết toán cấn trừ chuẩn xác")
+    @DisplayName("Kịch bản 2: Trả kho tại D+5 -> Lũy kế 35% cọc (15% + 20% = 700k) + Hư hỏng 100k -> Quyết toán cấn trừ chuẩn xác")
     void testLateReturnWithDamage_ShouldDeductBothOverdueAndDamage() {
         RentalContract contract = createAndSaveContract(baseEndDate, 2_000_000L);
-        LocalDate returnDate = baseEndDate.plusDays(5); // D+5 (Quá hạn 5 ngày -> phạt 2 ngày = 20% cọc = 400k)
+        LocalDate returnDate = baseEndDate.plusDays(5); // D+5 (15% + 20% = 35% cọc = 700k)
 
         // 1. Cronjob quét ngày D+5
         overdueProcessingService.processOverdueContracts(returnDate);
 
         RentalContract updatedContract = rentalContractRepository.findById(contract.getId()).orElseThrow();
         assertEquals(ContractStatus.OVERDUE, updatedContract.getStatus());
-        assertEquals(400_000L, updatedContract.getOverdueFeeAccrued());
+        assertEquals(700_000L, updatedContract.getOverdueFeeAccrued());
 
         // 2. Staff nghiệm thu phát hiện hư hỏng cửa 100.000 đ
         ReturnInspectionRequest inspectionReq = ReturnInspectionRequest.builder()
@@ -198,70 +214,68 @@ class OverdueAndRefundIntegrationTest {
 
         contractService.submitReturnInspection(updatedContract.getId(), inspectionReq, 1L, List.of(1L));
 
-        // 3. Xem trước quyết toán: 2.000.000 cọc - 400.000 phạt - 100.000 hư hỏng =
-        // 1.500.000 đ hoàn
+        // 3. Xem trước quyết toán: 2.000.000 cọc - 700.000 phạt - 100.000 hư hỏng = 1.200.000 đ hoàn
         SettlementPreviewResponse settlement = contractService.getSettlementPreview(updatedContract.getId(),
                 List.of(1L));
         assertEquals(2_000_000L, settlement.getDepositAmount());
-        assertEquals(400_000L, settlement.getOverdueFee());
+        assertEquals(700_000L, settlement.getOverdueFee());
         assertEquals(0L, settlement.getDamageCost());
         assertEquals(100_000L, settlement.getUnpaidExtraCharges());
-        assertEquals(1_500_000L, settlement.getDepositRefundAmount());
+        assertEquals(1_200_000L, settlement.getDepositRefundAmount());
         assertEquals(0L, settlement.getPayableAmount());
     }
 
     @Test
-    @DisplayName("Kịch bản 3: Cưỡng chế tại D+10 -> Cronjob chốt trần 70% cọc, khóa mã, TERMINATED, ô kho MAINTENANCE")
-    void testForcedTermination_AtD10_ShouldEnforceSystemRules() {
+    @DisplayName("Kịch bản 3: Cưỡng chế tại D+7 -> Khấu trừ 100% cọc (55% quá hạn + 45% niêm phong Kho Tổng -> depositBalance = 0), TERMINATED, ô kho MAINTENANCE")
+    void testForcedTermination_AtD7_ShouldEnforceSystemRules() {
         RentalContract contract = createAndSaveContract(baseEndDate, 2_000_000L);
-        LocalDate runDate = baseEndDate.plusDays(10); // D+10
+        LocalDate runDate = baseEndDate.plusDays(7); // D+7
 
-        // 1. Cronjob quét ngày D+10
+        // 1. Cronjob quét ngày D+7
         overdueProcessingService.processOverdueContracts(runDate);
 
         // 2. Kiểm tra CSDL thực tế
         RentalContract terminatedContract = rentalContractRepository.findById(contract.getId()).orElseThrow();
         assertEquals(ContractStatus.TERMINATED, terminatedContract.getStatus());
-        assertEquals(1_400_000L, terminatedContract.getOverdueFeeAccrued()); // Trần 70% của 2tr
-        assertEquals(600_000L, terminatedContract.getDepositBalance()); // Cọc còn lại: 2tr - 1.4tr
+        assertEquals(1_100_000L, terminatedContract.getOverdueFeeAccrued()); // Trần 55% của 2tr (15% + 40%)
+        assertEquals(0L, terminatedContract.getDepositBalance()); // Khấu trừ nốt 45% phí niêm phong Kho Tổng -> 0đ
         assertNull(terminatedContract.getAccessCode()); // Khóa mã mở cửa
 
-        // Ô kho vật lý chuyển sang MAINTENANCE để nhân viên thu dọn & bảo trì
+        // Ô kho vật lý chuyển sang MAINTENANCE (1 ngày) để nhân viên niêm phong về Kho Tổng & vệ sinh
         StorageUnit unitInDb = storageUnitRepository.findById(testUnit.getId()).orElseThrow();
         assertEquals(StorageUnitStatus.MAINTENANCE, unitInDb.getStatus());
     }
 
     @Test
-    @DisplayName("Kịch bản 3.1: Tại D+15 -> Tự động giải phóng ô kho MAINTENANCE về AVAILABLE khi hết thời gian bảo trì")
-    void testAutoReleaseUnit_AtD15_ShouldReleaseToAvailable() {
+    @DisplayName("Kịch bản 3.1: Tại D+8 -> Tự động giải phóng ô kho MAINTENANCE về AVAILABLE sau 1 ngày dọn dẹp")
+    void testAutoReleaseUnit_AtD8_ShouldReleaseToAvailable() {
         RentalContract contract = createAndSaveContract(baseEndDate, 2_000_000L);
-        LocalDate d10Date = baseEndDate.plusDays(10); // D+10
-        overdueProcessingService.processOverdueContracts(d10Date);
+        LocalDate d7Date = baseEndDate.plusDays(7); // D+7
+        overdueProcessingService.processOverdueContracts(d7Date);
 
-        // Ô kho đang MAINTENANCE
-        StorageUnit unitAtD10 = storageUnitRepository.findById(testUnit.getId()).orElseThrow();
-        assertEquals(StorageUnitStatus.MAINTENANCE, unitAtD10.getStatus());
+        // Ô kho đang MAINTENANCE tại D+7
+        StorageUnit unitAtD7 = storageUnitRepository.findById(testUnit.getId()).orElseThrow();
+        assertEquals(StorageUnitStatus.MAINTENANCE, unitAtD7.getStatus());
 
-        // Chạy tiếp tại D+15
-        LocalDate d15Date = baseEndDate.plusDays(15); // D+15
-        overdueProcessingService.processOverdueContracts(d15Date);
+        // Chạy tiếp tại D+8
+        LocalDate d8Date = baseEndDate.plusDays(8); // D+8
+        overdueProcessingService.processOverdueContracts(d8Date);
 
-        // Ô kho tự động chuyển sang AVAILABLE
-        StorageUnit unitAtD15 = storageUnitRepository.findById(testUnit.getId()).orElseThrow();
-        assertEquals(StorageUnitStatus.AVAILABLE, unitAtD15.getStatus());
+        // Ô kho tự động chuyển sang AVAILABLE tại D+8
+        StorageUnit unitAtD8 = storageUnitRepository.findById(testUnit.getId()).orElseThrow();
+        assertEquals(StorageUnitStatus.AVAILABLE, unitAtD8.getStatus());
     }
 
     @Test
     @DisplayName("Kịch bản 4: Hư hỏng + Phạt quá hạn vượt tiền cọc -> Tiền hoàn = 0, phát sinh số tiền phải nộp thêm")
     void testExcessiveDeductions_ShouldRequirePayableAmount() {
         RentalContract contract = createAndSaveContract(baseEndDate, 1_000_000L); // Cọc 1 triệu
-        LocalDate returnDate = baseEndDate.plusDays(5); // Phạt 2 ngày = 20% của 1tr = 200k
+        LocalDate returnDate = baseEndDate.plusDays(5); // Lũy kế 35% của 1tr = 350k
 
-        // 1. Cronjob quét phạt 200.000 đ
+        // 1. Cronjob quét phạt 350.000 đ
         overdueProcessingService.processOverdueContracts(returnDate);
 
-        // 2. Staff nghiệm thu phát sinh hư hỏng nặng kết cấu 1.500.000 đ (vượt cả tiền
-        // cọc)
+        // 2. Staff nghiệm thu phát sinh hư hỏng nặng kết cấu 1.500.000 đ (vượt cả tiền cọc)
         ReturnInspectionRequest inspectionReq = ReturnInspectionRequest.builder()
                 .returnDate(returnDate)
                 .condition("MAJOR_DAMAGE")
@@ -275,14 +289,14 @@ class OverdueAndRefundIntegrationTest {
         contractService.submitReturnInspection(contract.getId(), inspectionReq, 1L, List.of(1L));
 
         // 3. Quyết toán:
-        // Tổng khấu trừ = 200.000 (phạt) + 1.500.000 (hư hỏng) = 1.700.000 đ
-        // Tiền cọc = 1.000.000 đ -> Tiền hoàn = 0, Khách phải đóng thêm = 700.000 đ
+        // Tổng khấu trừ = 350.000 (phạt) + 1.500.000 (hư hỏng) = 1.850.000 đ
+        // Tiền cọc = 1.000.000 đ -> Tiền hoàn = 0, Khách phải đóng thêm = 850.000 đ
         SettlementPreviewResponse settlement = contractService.getSettlementPreview(contract.getId(), List.of(1L));
         assertEquals(1_000_000L, settlement.getDepositAmount());
-        assertEquals(200_000L, settlement.getOverdueFee());
+        assertEquals(350_000L, settlement.getOverdueFee());
         assertEquals(0L, settlement.getDamageCost());
         assertEquals(1_500_000L, settlement.getUnpaidExtraCharges());
         assertEquals(0L, settlement.getDepositRefundAmount());
-        assertEquals(700_000L, settlement.getPayableAmount()); // BR-RET-04: Kết quả âm, khách nộp bổ sung
+        assertEquals(850_000L, settlement.getPayableAmount()); // BR-RET-04: Kết quả âm, khách nộp bổ sung
     }
 }

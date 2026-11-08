@@ -38,6 +38,8 @@ export interface ManagerContractItem {
   position?: string;
   startDate: string;
   endDateExclusive: string;
+  checkinDate?: string;
+  returnDate?: string;
   rentalMonths: number;
   monthlyPrice: number;
   depositAmount: number;

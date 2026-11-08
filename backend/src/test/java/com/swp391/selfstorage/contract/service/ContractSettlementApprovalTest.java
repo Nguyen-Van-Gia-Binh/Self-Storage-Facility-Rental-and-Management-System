@@ -188,7 +188,7 @@ class ContractSettlementApprovalTest {
         }
 
         @Test
-        @DisplayName("BR-OVD-07: getSettlementPreview & approveSettlement không hoàn tiền thuê khi TERMINATED do quá hạn sau check-in")
+        @DisplayName("BR-OVD-07, BR-OVD-11: TERMINATED do quá hạn D+7 (sau 30 ngày thanh lý ngoại tuyến, chi phí phát sinh = 0đ) -> đóng CLOSED ngay, hoàn 0đ")
         void testSettlement_TerminatedAfterCheckIn_OverdueTermination_NoRentRefund() {
                 RentalContract contract = RentalContract.builder()
                                 .id(602L)
@@ -198,8 +198,8 @@ class ContractSettlementApprovalTest {
                                 .monthlyPrice(1_000_000L)
                                 .rentalMonths(2)
                                 .depositAmount(1_000_000L)
-                                .depositBalance(300_000L)
-                                .overdueFeeAccrued(700_000L)
+                                .depositBalance(0L)
+                                .overdueFeeAccrued(550_000L)
                                 .checkinDate(LocalDate.now().minusMonths(2))
                                 .status(ContractStatus.TERMINATED)
                                 .build();
@@ -220,17 +220,76 @@ class ContractSettlementApprovalTest {
                 SettlementPreviewResponse preview = contractService.getSettlementPreview(602L, List.of(1L));
                 assertNotNull(preview);
                 assertEquals(0L, preview.getEarlyRentRefund());
-                assertEquals(300_000L, preview.getDepositRefundAmount());
+                assertEquals(0L, preview.getDepositRefundAmount());
                 assertEquals(0L, preview.getPayableAmount());
 
-                StorageUnit unit = StorageUnit.builder().id(42L).status(StorageUnitStatus.OCCUPIED).build();
+                StorageUnit unit = StorageUnit.builder().id(42L).status(StorageUnitStatus.AVAILABLE).build();
                 when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(unit));
                 when(returnRequestRepository.save(any(ReturnRequest.class))).thenAnswer(i -> i.getArgument(0));
 
                 SettlementApprovalResponse approval = contractService.approveSettlement(602L,
-                                SettlementApprovalRequest.builder().build(), 99L, List.of(1L));
-                assertEquals(300_000L, approval.getDepositRefundAmount());
+                                SettlementApprovalRequest.builder()
+                                                .adjustedDamageCost(0L)
+                                                .approvedNotes("Khách bỏ hàng quá 30 ngày tại Kho Tổng, đã thanh lý ngoại tuyến và chốt hợp đồng")
+                                                .build(),
+                                99L, List.of(1L));
+                assertEquals(0L, approval.getDepositRefundAmount());
                 assertEquals(0L, approval.getPayableAmount());
                 assertEquals(ContractStatus.CLOSED, contract.getStatus());
+        }
+
+        @Test
+        @DisplayName("BR-OVD-11: TERMINATED do quá hạn D+7 (Khách đến Kho Tổng chuộc đồ trong 30 ngày, FM nhập thêm chi phí lưu Kho Tổng 300k) -> sinh payableAmount 300k -> đóng CLOSED sau khi thanh toán")
+        void testSettlement_TerminatedAfterCheckIn_WithCentralWarehouseStorageFee_RequiresPaymentThenCloses() {
+                RentalContract contract = RentalContract.builder()
+                                .id(603L)
+                                .customerId(15L)
+                                .facilityId(1L)
+                                .storageUnitId(42L)
+                                .monthlyPrice(1_000_000L)
+                                .rentalMonths(2)
+                                .depositAmount(1_000_000L)
+                                .depositBalance(0L) // Đã khấu trừ 100% cọc (55% quá hạn + 45% niêm phong Kho Tổng)
+                                .overdueFeeAccrued(550_000L)
+                                .checkinDate(LocalDate.now().minusMonths(2))
+                                .status(ContractStatus.TERMINATED)
+                                .build();
+
+                ReturnRequest returnReq = ReturnRequest.builder()
+                                .id(23L)
+                                .contractId(603L)
+                                .damageCost(0L)
+                                .inspectedAt(OffsetDateTime.now())
+                                .build();
+
+                when(contractRepository.findByIdAndFacilityIdIn(eq(603L), anyList())).thenReturn(Optional.of(contract));
+                when(contractRepository.findById(603L)).thenReturn(Optional.of(contract));
+                when(returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(603L))
+                                .thenReturn(Optional.of(returnReq));
+                when(extraChargeRepository.findByContractIdAndStatus(603L, ExtraChargeStatus.UNPAID))
+                                .thenReturn(List.of());
+                when(returnRequestRepository.save(any(ReturnRequest.class))).thenAnswer(i -> i.getArgument(0));
+
+                // 1. FM bấm "+ Thêm chi phí phát sinh" nhập 300.000đ phí lưu Kho Tổng 10 ngày
+                SettlementApprovalResponse approval = contractService.approveSettlement(603L,
+                                SettlementApprovalRequest.builder()
+                                                .adjustedDamageCost(300_000L)
+                                                .approvedNotes("Phí lưu giữ bảo quản tại Kho Tổng 10 ngày (30.000đ/ngày)")
+                                                .build(),
+                                99L, List.of(1L));
+
+                assertEquals(0L, approval.getDepositRefundAmount());
+                assertEquals(300_000L, approval.getPayableAmount());
+                assertEquals(300_000L, returnReq.getDamageCost());
+                assertEquals(ContractStatus.TERMINATED, contract.getStatus()); // Chờ khách nộp bù 300k
+                verify(eventPublisher).publishEvent(any(ContractSettledEvent.class));
+
+                // 2. Khách thanh toán 300k qua VNPay/VietQR (SETTLEMENT) -> đóng hợp đồng sang CLOSED
+                StorageUnit unit = StorageUnit.builder().id(42L).status(StorageUnitStatus.AVAILABLE).build();
+                when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(unit));
+
+                contractService.closeContractAfterSettlementPayment(603L);
+                assertEquals(ContractStatus.CLOSED, contract.getStatus());
+                assertNotNull(contract.getClosedAt());
         }
 }

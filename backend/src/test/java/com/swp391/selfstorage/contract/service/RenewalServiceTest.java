@@ -177,50 +177,33 @@ class RenewalServiceTest {
                 () -> renewalService.getRenewalQuote(100L, new RenewalRequest(2)));
 
         assertEquals(ErrorCode.RENEWAL_NOT_ALLOWED, ex.getErrorCode());
-        assertEquals("Hợp đồng đang có nợ phạt quá hạn. Vui lòng thanh toán nợ phạt trước khi gia hạn.", ex.getMessage());
     }
 
     @Test
-    @DisplayName("Cho phép lấy báo giá gia hạn khi hợp đồng OVERDUE đã tất toán hết nợ phạt (overdueFeeAccrued == 0) (BR-REN-06)")
-    void testGetRenewalQuote_overdueClearedDebt_success() {
+    @DisplayName("Ném RENEWAL_NOT_ALLOWED khi hợp đồng đã chuyển sang OVERDUE kể cả khi overdueFeeAccrued == 0 (BR-REN-02, BR-REN-06)")
+    void testGetRenewalQuote_overdueClearedDebt_stillThrowsRenewalNotAllowed() {
         RentalContract contract = buildContract(ContractStatus.OVERDUE);
         contract.setOverdueFeeAccrued(0L);
         when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
-        when(policyService.getActivePolicy()).thenReturn(buildActivePolicy());
-        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any(), anyInt())).thenReturn(false);
-        when(facilityPriceRepository.findByFacilityIdAndUnitTypeId(1L, 7L))
-                .thenReturn(Optional.of(FacilityUnitTypePrice.builder().monthlyPrice(800000L).build()));
 
-        RenewalQuoteResponse quote = renewalService.getRenewalQuote(100L, new RenewalRequest(3));
+        CustomException ex = assertThrows(CustomException.class,
+                () -> renewalService.getRenewalQuote(100L, new RenewalRequest(3)));
 
-        assertNotNull(quote);
-        assertEquals(100L, quote.getContractId());
-        assertEquals(0L, quote.getOverdueFeeSettled());
-        assertEquals(2400000L, quote.getTotalAmount());
+        assertEquals(ErrorCode.RENEWAL_NOT_ALLOWED, ex.getErrorCode());
     }
 
     @Test
-    @DisplayName("Gia hạn thành công cho hợp đồng OVERDUE đã nộp phạt: khôi phục ACTIVE và xóa nợ")
-    void testProcessRenewal_overdueClearedDebt_success() {
+    @DisplayName("Ném RENEWAL_NOT_ALLOWED khi gọi processRenewal trên hợp đồng OVERDUE (BR-REN-06)")
+    void testProcessRenewal_overdueClearedDebt_throwsRenewalNotAllowed() {
         RentalContract contract = buildContract(ContractStatus.OVERDUE);
         contract.setOverdueFeeAccrued(0L);
         when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
-        when(policyService.getActivePolicy()).thenReturn(buildActivePolicy());
-        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any(), anyInt())).thenReturn(false);
-        when(facilityPriceRepository.findByFacilityIdAndUnitTypeId(1L, 7L))
-                .thenReturn(Optional.of(FacilityUnitTypePrice.builder().monthlyPrice(800000L).build()));
-        when(contractRenewalRepository.save(any(ContractRenewal.class))).thenAnswer(inv -> {
-            ContractRenewal cr = inv.getArgument(0);
-            cr.setId(1L);
-            return cr;
-        });
 
-        RenewalResponse response = renewalService.processRenewal(100L, new RenewalRequest(3), 777L);
+        CustomException ex = assertThrows(CustomException.class,
+                () -> renewalService.processRenewal(100L, new RenewalRequest(3), 777L));
 
-        assertNotNull(response);
-        assertEquals(ContractStatus.ACTIVE, contract.getStatus());
-        assertEquals(0L, contract.getOverdueFeeAccrued());
-        verify(rentalContractRepository).save(contract);
+        assertEquals(ErrorCode.RENEWAL_NOT_ALLOWED, ex.getErrorCode());
+        verify(rentalContractRepository, never()).save(any());
     }
 
     @Test

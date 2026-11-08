@@ -208,6 +208,8 @@ export interface SettlementPreviewData {
   unpaidExtraCharges: number;
   depositRefundAmount: number;
   payableAmount: number;
+  earlyRentRefund?: number;
+  earlyReturn?: boolean;
 }
 
 export interface ReturnContractDetail {

@@ -125,9 +125,9 @@ public class PolicyServiceImpl implements PolicyService {
         Integer grace = request.getOverdueGraceDays();
         Integer lock = request.getOverdueLockAccessDays();
         Integer termination = request.getOverdueTerminationDays();
-        if (grace == null || lock == null || termination == null || !(grace < lock && lock <= termination)) {
+        if (grace == null || lock == null || termination == null || !(grace < termination && lock >= 1 && lock <= termination)) {
             throw new CustomException(ErrorCode.VALIDATION_FAILED,
-                    "Ân hạn phải nhỏ hơn mốc khóa truy cập, và mốc khóa không được sau ngày chấm dứt");
+                    "Giai đoạn 1 phải nhỏ hơn ngày chấm dứt, và mốc khóa truy cập phải nằm trong khoảng từ ngày 1 đến ngày chấm dứt");
         }
         request.setOverdueNoticeDays(grace + 1);
     }

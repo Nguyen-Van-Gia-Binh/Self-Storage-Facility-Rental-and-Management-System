@@ -43,7 +43,7 @@ public class PolicyVersion {
     /** BR-AVL-02: khoảng đệm sau ngày kết thúc loại trừ trước khi ô kho nhận lượt thuê kế tiếp. */
     @Column(name = "rental_buffer_days", nullable = false)
     @Builder.Default
-    private Integer rentalBufferDays = 15;
+    private Integer rentalBufferDays = 8;
 
     /** BR-PRI-03: số ngày quy ước của một tháng khi quy đổi tiền thuê theo ngày. */
     @Column(name = "rental_daily_divisor", nullable = false)

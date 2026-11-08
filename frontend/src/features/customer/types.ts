@@ -110,6 +110,7 @@ export interface RentedContract {
   status: 'ACTIVE' | 'PENDING_CHECKIN' | 'EXPIRING_SOON' | 'OVERDUE' | 'PENDING_RETURN' | 'CLOSED' | 'TERMINATED';
   overdueDays?: number;
   overdueFee?: number;
+  totalOutstandingDebt?: number;
   scheduledReturnDate?: string;
   inspectionDone?: boolean;
   hasPendingRenewal?: boolean;

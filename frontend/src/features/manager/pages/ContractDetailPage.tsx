@@ -135,11 +135,16 @@ export const ContractDetailPage: React.FC = () => {
   const isInspected =
     Boolean(contract.isInspected) || (contract.status as string) === 'INSPECTED';
   const isTerminated = contract.status === 'TERMINATED';
+  const isOverdueTerminated =
+    isTerminated &&
+    (Boolean(contract.checkinDate) ||
+      (contract.overdueDays ?? 0) > 0 ||
+      contract.depositBalance === 0);
   const canRelocate =
     !isTerminated &&
     Boolean(contract.relocationEligible) &&
     (isActive || isPendingCheckIn);
-  // Cho phép duyệt quyết toán khi nhân viên ĐÃ nghiệm thu hoặc hợp đồng bị Hủy do sự cố lúc bàn giao
+  // Cho phép duyệt quyết toán khi nhân viên ĐÃ nghiệm thu hoặc hợp đồng ở trạng thái TERMINATED
   const isSettlementReady = (isInspected || isTerminated) && contract.status !== 'CLOSED';
 
   const handleFloorPlanReassign = async (unit: StorageUnitResponse) => {
@@ -284,43 +289,89 @@ export const ContractDetailPage: React.FC = () => {
         </div>
       )}
 
-      {/* Banner Hợp đồng Chấm dứt do sự cố bàn giao */}
+      {/* Banner Hợp đồng Chấm dứt (do Cưỡng chế quá hạn D+7 hoặc do Sự cố bàn giao) */}
       {isTerminated && (
-        <div className="bg-rose-50/90 border border-rose-300 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-rose-950 shadow-2xs">
+        <div
+          className={`${
+            isOverdueTerminated
+              ? 'bg-purple-50/90 border-purple-300 text-purple-950'
+              : 'bg-rose-50/90 border-rose-300 text-rose-950'
+          } border rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs`}
+        >
           <div className="flex items-start gap-3">
-            <div className="p-2 rounded-xl bg-rose-100 text-rose-700 shrink-0 mt-0.5">
-              <AlertCircle className="w-5 h-5 text-rose-600" />
+            <div
+              className={`p-2 rounded-xl shrink-0 mt-0.5 ${
+                isOverdueTerminated ? 'bg-purple-100 text-purple-700' : 'bg-rose-100 text-rose-700'
+              }`}
+            >
+              <AlertCircle
+                className={`w-5 h-5 ${isOverdueTerminated ? 'text-purple-600' : 'text-rose-600'}`}
+              />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h4 className="text-sm font-bold text-rose-950">
-                  Hợp đồng đã chấm dứt do sự cố bàn giao / khách từ chối nhận
+              <div className="flex items-center gap-2 flex-wrap">
+                <h4
+                  className={`text-sm font-bold ${
+                    isOverdueTerminated ? 'text-purple-950' : 'text-rose-950'
+                  }`}
+                >
+                  {isOverdueTerminated
+                    ? 'Hợp đồng đã cưỡng chế chấm dứt & Niêm phong hàng về Kho Tổng (Mốc D+7)'
+                    : 'Hợp đồng đã chấm dứt do sự cố bàn giao / khách từ chối nhận'}
                 </h4>
-                <span className="text-[10px] font-bold bg-rose-200/80 text-rose-900 px-2 py-0.5 rounded-full">
-                  Chờ hoàn tiền 100%
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    isOverdueTerminated
+                      ? 'bg-purple-200/80 text-purple-900'
+                      : 'bg-rose-200/80 text-rose-900'
+                  }`}
+                >
+                  {isOverdueTerminated
+                    ? 'Đã khấu trừ 100% cọc • Lưu Kho Tổng tối đa 30 ngày'
+                    : 'Chờ hoàn tiền 100%'}
                 </span>
               </div>
-              <p className="text-xs text-rose-800 mt-0.5">
-                Ô kho <span className="font-mono font-bold text-rose-950">{contract.storageUnitCode}</span> phát sinh sự cố và đã bị khóa bảo trì. Ngày kết thúc thuê chốt tại ngày check-in: <strong className="font-mono">{contract.endDateExclusive || contract.startDate}</strong>. Quản lý cơ sở có thể duyệt quyết toán để hoàn tiền 100% cho khách, hoặc đổi sang ô kho mới để khôi phục hợp đồng tiếp tục phục vụ khách.
+              <p
+                className={`text-xs mt-0.5 ${
+                  isOverdueTerminated ? 'text-purple-900' : 'text-rose-800'
+                }`}
+              >
+                {isOverdueTerminated ? (
+                  <>
+                    Ô kho <span className="font-mono font-bold">{contract.storageUnitCode}</span> đã quá hạn chạm mốc{' '}
+                    <strong>D+7</strong>. Hệ thống đã khấu trừ <strong>100% tiền cọc</strong> (15% phí lưu kho D+1..D+3 + 40% phạt quá hạn D+4..D+7 + 45% phí niêm phong & vận chuyển về Kho Tổng) và giải phóng ô kho từ ngày <strong>D+8</strong>. Quản lý cơ sở có thể bấm <strong>Quyết toán Kho Tổng</strong> để thêm chi phí lưu Kho Tổng (nếu khách đến chuộc đồ trong 30 ngày) hoặc xác nhận thanh lý ngoại tuyến (nếu khách bỏ hàng sau 30 ngày) để đóng hợp đồng.
+                  </>
+                ) : (
+                  <>
+                    Ô kho <span className="font-mono font-bold text-rose-950">{contract.storageUnitCode}</span> phát sinh sự cố và đã bị khóa bảo trì. Ngày kết thúc thuê chốt tại ngày check-in:{' '}
+                    <strong className="font-mono">{contract.endDateExclusive || contract.startDate}</strong>. Quản lý cơ sở có thể duyệt quyết toán để hoàn tiền 100% cho khách, hoặc đổi sang ô kho mới để khôi phục hợp đồng tiếp tục phục vụ khách.
+                  </>
+                )}
               </p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => setFloorPlanOpen(true)}
-              className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs shrink-0 cursor-pointer flex items-center justify-center gap-1.5"
-            >
-              <Repeat className="w-4 h-4" />
-              <span>Đổi ô kho mới (Sơ đồ 2D)</span>
-            </button>
+            {!isOverdueTerminated && (
+              <button
+                type="button"
+                onClick={() => setFloorPlanOpen(true)}
+                className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs shrink-0 cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <Repeat className="w-4 h-4" />
+                <span>Đổi ô kho mới (Sơ đồ 2D)</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setSettlementModalOpen(true)}
               className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs shrink-0 cursor-pointer flex items-center justify-center gap-1.5"
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>Duyệt quyết toán & Hoàn tiền 100%</span>
+              <span>
+                {isOverdueTerminated
+                  ? 'Quyết toán Kho Tổng & Đóng HĐ'
+                  : 'Duyệt quyết toán & Hoàn tiền 100%'}
+              </span>
             </button>
           </div>
         </div>
@@ -601,7 +652,7 @@ export const ContractDetailPage: React.FC = () => {
             </div>
           )}
 
-          {/* Duyệt quyết toán hoàn cọc (CHỈ KHI ĐÃ ĐƯỢC NGHIỆM THU - BR-RET-02) */}
+          {/* Duyệt quyết toán hoàn cọc (CHỈ KHI ĐÃ ĐƯỢC NGHIỆM THU HOẶC TERMINATED - BR-RET-02, BR-OVD-11) */}
           {isSettlementReady && (
             <button
               type="button"
@@ -609,7 +660,11 @@ export const ContractDetailPage: React.FC = () => {
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>Duyệt quyết toán & Hoàn cọc</span>
+              <span>
+                {isOverdueTerminated
+                  ? 'Quyết toán Kho Tổng & Đóng HĐ'
+                  : 'Duyệt quyết toán & Hoàn cọc'}
+              </span>
             </button>
           )}
         </div>

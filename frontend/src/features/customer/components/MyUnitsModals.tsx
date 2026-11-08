@@ -157,7 +157,7 @@ export const MyUnitsModals: React.FC<MyUnitsModalsProps> = ({
         reminderDays={reminderDays}
       />
 
-      {/* 7. Modal thanh toán phí quá hạn VNPay */}
+      {/* 7. Modal thanh toán phí quá hạn hoặc công nợ quyết toán VNPay */}
       {selectedOverdueContract && (
         <OverduePenaltyPaymentModal
           isOpen={Boolean(selectedOverdueContract)}
@@ -165,9 +165,19 @@ export const MyUnitsModals: React.FC<MyUnitsModalsProps> = ({
           onPaymentSuccess={onOverduePaymentSuccess}
           unitNumber={selectedOverdueContract.unitNumber}
           facilityName={selectedOverdueContract.facilityName}
-          totalAmount={selectedOverdueContract.overdueFee || 0}
+          totalAmount={
+            selectedOverdueContract.status === 'TERMINATED' ||
+            selectedOverdueContract.status === 'PENDING_RETURN'
+              ? selectedOverdueContract.totalOutstandingDebt || selectedOverdueContract.overdueFee || 0
+              : selectedOverdueContract.overdueFee || 0
+          }
           contractId={Number(selectedOverdueContract.id)}
-          paymentType="OVERDUE_PENALTY"
+          paymentType={
+            selectedOverdueContract.status === 'TERMINATED' ||
+            selectedOverdueContract.status === 'PENDING_RETURN'
+              ? 'SETTLEMENT'
+              : 'OVERDUE_PENALTY'
+          }
         />
       )}
 
