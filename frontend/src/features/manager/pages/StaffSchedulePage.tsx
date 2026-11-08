@@ -132,14 +132,11 @@ export const StaffSchedulePage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Tiêu đề & Giới thiệu */}
+      {/* Tiêu đề */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">
           Phân công nhân sự & Điều phối công việc
         </h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Quản lý lịch phân công công việc tiếp nhận check-in, nghiệm thu trả kho và giải quyết sự cố kỹ thuật.
-        </p>
       </div>
 
       {/* KPI Cards Thống kê toàn hệ thống */}

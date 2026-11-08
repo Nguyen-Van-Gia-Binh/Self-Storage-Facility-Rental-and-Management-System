@@ -173,6 +173,41 @@ class ContractServiceTest {
     }
 
     @Test
+    @DisplayName("SCR-FS-01: Khách hàng Check-in online 24/7 khi chưa có staff trực -> HandoverRecord lưu thành công với staffId null")
+    void shouldCheckInOnline_byCustomer_withoutAssignedStaff() {
+        RentalContract contract = RentalContract.builder()
+                .id(501L).customerId(99L).reservationId(1043L).facilityId(1L).storageUnitId(43L)
+                .status(ContractStatus.PENDING_CHECK_IN)
+                .startDate(LocalDate.of(2026, 10, 1)).build();
+        StorageUnit unit = StorageUnit.builder().id(43L).facilityId(1L)
+                .status(StorageUnitStatus.RESERVED).build();
+        Reservation rsv = new Reservation();
+        rsv.setId(1043L);
+        rsv.setStatus(ReservationStatus.CONFIRMED);
+
+        when(contractRepository.findById(501L)).thenReturn(Optional.of(contract));
+        when(storageUnitRepository.findByIdForUpdate(43L)).thenReturn(Optional.of(unit));
+        when(reservationRepository.findById(1043L)).thenReturn(Optional.of(rsv));
+        when(contractRepository.existsByAccessCode(any())).thenReturn(false);
+        when(contractRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(storageUnitRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(reservationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(handoverRecordRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        CheckInRequest req = new CheckInRequest();
+        req.setCheckinDate(LocalDate.of(2026, 10, 1));
+        req.setCustomerConfirmed(true);
+        req.setConditionNote("Khách hàng check-in online 24/7 và ký số điện tử: Lê Thanh Tùng");
+
+        CheckInResponse response = contractService.checkIn(501L, req, 99L, List.of());
+
+        assertEquals(ContractStatus.ACTIVE, response.getStatus());
+        assertTrue(response.getAccessCode().matches("\\d{6}"));
+        assertEquals(StorageUnitStatus.OCCUPIED, unit.getStatus());
+        assertEquals(ReservationStatus.FULFILLED, rsv.getStatus());
+    }
+
+    @Test
     @DisplayName("T3.6: checkIn Contract khong PENDING_CHECK_IN -> nem CONTRACT_NOT_PENDING_CHECKIN")
     void shouldThrow_whenContractNotPendingCheckIn() {
         RentalContract active = RentalContract.builder()

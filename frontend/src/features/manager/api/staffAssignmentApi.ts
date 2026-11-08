@@ -234,6 +234,48 @@ export async function getSupportRequestDetail(id: number): Promise<ManagementSup
 }
 
 /**
+ * Trích xuất ngày tạo đơn / phiếu yêu cầu (YYYY-MM-DD) từ chuỗi thời gian ISO hoặc mã phiếu (CTR-YYYYMMDD-..., RSV-YYYYMMDD-..., SR-YYYYMMDD-...)
+ */
+export function extractCreatedDate(dateOrIso?: string | null, code?: string | null): string {
+  if (dateOrIso && typeof dateOrIso === 'string') {
+    const trimmed = dateOrIso.trim();
+    const isoMatch = trimmed.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (isoMatch) {
+      return isoMatch[1];
+    }
+  }
+  if (code && typeof code === 'string') {
+    const codeMatch = code.match(/(?:CTR|RSV|RES|SR|SUP|TICKET|INC)-(\d{4})(\d{2})(\d{2})/i);
+    if (codeMatch) {
+      return `${codeMatch[1]}-${codeMatch[2]}-${codeMatch[3]}`;
+    }
+  }
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
+/**
+ * Lọc nhiệm vụ điều phối theo ngày đang chọn (selectedDate):
+ * - Hiển thị nhiệm vụ được tạo đúng vào ngày selectedDate (scheduledDate === selectedDate)
+ * - Hiển thị các nhiệm vụ được tạo trong quá khứ (scheduledDate < selectedDate) nhưng chưa được thực hiện hoàn tất
+ */
+export function filterDispatchTasksByDate(
+  tasks: DailyDispatchTaskItem[],
+  selectedDate: string
+): DailyDispatchTaskItem[] {
+  if (!selectedDate) return tasks;
+  return tasks.filter((t) => {
+    if (!t.scheduledDate) return true;
+    if (t.scheduledDate === selectedDate) return true;
+    const isCompleted = t.status === 'COMPLETED' || t.status === 'RESOLVED';
+    if (t.scheduledDate < selectedDate && !isCompleted) {
+      return true;
+    }
+    return false;
+  });
+}
+
+/**
  * 4. Lấy danh sách nhiệm vụ thực địa cần điều phối trong ngày (SCR-FM-03)
  * Hợp nhất từ 3 nguồn Real API backend:
  * - INCIDENT: Phiếu sự cố kỹ thuật từ support_request
@@ -254,7 +296,7 @@ export async function getDailyDispatchTasks(
       fetchActivePolicy().catch(() => null),
     ]);
 
-    // 1. Map các sự cố kỹ thuật (INCIDENT)
+    // 1. Map các sự cố kỹ thuật (INCIDENT) - lọc theo ngày tạo phiếu yêu cầu (createdAt)
     incidents.forEach((ticket) => {
       if ((ticket.status as string) === 'CANCELLED') return;
 
@@ -263,6 +305,7 @@ export async function getDailyDispatchTasks(
       else if (ticket.status === 'IN_PROGRESS') dispatchStatus = 'IN_PROGRESS';
       else if (ticket.status === 'RESOLVED') dispatchStatus = 'RESOLVED';
       else if (ticket.status === 'CLOSED' || (ticket.status as string) === 'AUTO_CLOSED') dispatchStatus = 'COMPLETED';
+      else if (ticket.assignedStaffId || ticket.assignedStaffName) dispatchStatus = 'ASSIGNED';
 
       tasks.push({
         id: ticket.id,
@@ -273,7 +316,7 @@ export async function getDailyDispatchTasks(
         unitCode: ticket.storageUnitCode,
         customerName: ticket.customerName,
         customerPhone: ticket.customerPhone,
-        scheduledDate: ticket.createdAt ? ticket.createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
+        scheduledDate: extractCreatedDate(ticket.createdAt, ticket.code),
         scheduledTime: ticket.createdAt ? ticket.createdAt.substring(11, 16) : 'Hôm nay',
         slaDeadline: ticket.slaDueAt,
         priority: ticket.isUrgent ? 'URGENT' : 'NORMAL',
@@ -287,7 +330,7 @@ export async function getDailyDispatchTasks(
       });
     });
 
-    // 2. Map các hợp đồng chờ tiếp đón nhận kho (CHECK_IN)
+    // 2. Map các hợp đồng chờ tiếp đón nhận kho (CHECK_IN) - lọc theo ngày tạo đơn/hợp đồng (createdAt)
     if (Array.isArray(pendingCheckIns)) {
       pendingCheckIns.forEach((contract: any) => {
         let dispatchStatus: DailyDispatchTaskItem['status'] = 'UNASSIGNED';
@@ -301,10 +344,10 @@ export async function getDailyDispatchTasks(
           title: `Tiếp đón bàn giao kho cho hợp đồng ${contract.code}`,
           facilityId: contract.facilityId || facilityId,
           facilityName: contract.facilityName || 'Kho SmartStorage',
-          unitCode: contract.storageUnitCode || `U-${contract.storageUnitId || contract.id}`,
+          unitCode: contract.storageUnitCode || 'Chưa gán',
           customerName: contract.customerName || 'Khách hàng',
           customerPhone: contract.customerPhone || 'Chưa cập nhật',
-          scheduledDate: contract.startDate || new Date().toISOString().split('T')[0],
+          scheduledDate: extractCreatedDate(contract.createdAt, contract.code),
           scheduledTime: '09:00 - 11:30',
           priority: 'NORMAL',
           isUrgent: false,
@@ -313,13 +356,13 @@ export async function getDailyDispatchTasks(
           assignedStaffName: contract.assignedStaffName,
           referenceId: contract.id,
           referenceCode: contract.code,
-          notes: 'Khách hàng đã đặt cọc VNPay thành công, sẵn sàng nhận kho.',
+          notes: '',
           checkinGraceDays: contract.checkinGraceDays ?? activePolicy?.checkinGraceDays ?? 3,
         });
       });
     }
 
-    // 3. Map các hợp đồng chờ kiểm tra trả kho (RETURN)
+    // 3. Map các hợp đồng chờ kiểm tra trả kho (RETURN) - lọc theo ngày tạo yêu cầu trả kho (returnRequestCreatedAt)
     if (Array.isArray(returnContracts)) {
       returnContracts.forEach((contract: any) => {
         let dispatchStatus: DailyDispatchTaskItem['status'] = 'UNASSIGNED';
@@ -335,14 +378,13 @@ export async function getDailyDispatchTasks(
           title: `Nghiệm thu trả kho & hoàn cọc hợp đồng ${contract.code}`,
           facilityId: contract.facilityId || facilityId,
           facilityName: contract.facilityName || 'Kho SmartStorage',
-          unitCode: contract.storageUnitCode || `U-${contract.storageUnitId || contract.id}`,
+          unitCode: contract.storageUnitCode || 'Chưa gán',
           customerName: contract.customerName || 'Khách hàng',
           customerPhone: contract.customerPhone || 'Chưa cập nhật',
-          scheduledDate:
-            contract.requestedReturnDate ||
-            (contract.status === 'PENDING_RETURN'
-              ? new Date().toISOString().split('T')[0]
-              : contract.endDateExclusive || new Date().toISOString().split('T')[0]),
+          scheduledDate: extractCreatedDate(
+            contract.returnRequestCreatedAt || contract.returnNoticeDate || contract.createdAt,
+            contract.code
+          ),
           scheduledTime: contract.appointmentSlot || '14:00 - 16:30',
           priority: 'NORMAL',
           isUrgent: false,
@@ -351,7 +393,7 @@ export async function getDailyDispatchTasks(
           assignedStaffName: contract.assignedStaffName,
           referenceId: contract.id,
           referenceCode: contract.code,
-          notes: 'Khách hàng đã dọn sạch ô kho và gửi yêu cầu nghiệm thu.',
+          notes: '',
         });
       });
     }

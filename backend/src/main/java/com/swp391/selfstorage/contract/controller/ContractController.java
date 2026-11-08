@@ -82,15 +82,27 @@ public class ContractController {
 
     /** T3.6 + T3.7: Xác nhận bàn giao -> Contract ACTIVE, Unit OCCUPIED */
     @PostMapping("/{id}/check-in")
-    @PreAuthorize("hasAnyRole('STAFF', 'MANAGER', 'ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Xác nhận bàn giao kho")
     public ResponseEntity<ApiResponse<CheckInResponse>> checkIn(
             @PathVariable Long id,
             @Valid @RequestBody CheckInRequest request,
             @AuthenticationPrincipal UserPrincipal currentUser) {
-        Long staffId = requireUserId(currentUser);
+        if (currentUser == null) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED);
+        }
+        Long operatorId = requireUserId(currentUser);
         List<Long> facilities = resolveFacilityScope(currentUser, null);
-        CheckInResponse response = contractService.checkIn(id, request, staffId, facilities);
+
+        if (currentUser.getRole() == UserRole.STORAGE_CUSTOMER) {
+            ContractResponse contract = contractService.getContractById(id, List.of());
+            if (!contract.getCustomerId().equals(currentUser.getId())) {
+                throw new CustomException(ErrorCode.ACCESS_DENIED, "Bạn không có quyền check-in hợp đồng này");
+            }
+            facilities = List.of();
+        }
+
+        CheckInResponse response = contractService.checkIn(id, request, operatorId, facilities);
         return ResponseEntity.ok(ApiResponse.success(response, "Bàn giao kho thành công"));
     }
 

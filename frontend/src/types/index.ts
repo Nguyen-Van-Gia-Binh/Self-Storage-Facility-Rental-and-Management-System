@@ -137,6 +137,7 @@ export interface CheckInContract {
   relocationEligible?: boolean;
   isAwaitingRelocation?: boolean;
   originalDefectiveUnitCode?: string;
+  createdAt?: string;
 }
 
 export interface CheckInSubmitRequest {

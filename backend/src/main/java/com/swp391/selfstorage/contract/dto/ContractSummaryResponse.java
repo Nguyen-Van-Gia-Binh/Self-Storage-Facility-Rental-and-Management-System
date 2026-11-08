@@ -8,6 +8,7 @@ import java.time.LocalDate;
 public class ContractSummaryResponse {
     private Long id;
     private String code;
+    private Long reservationId;
     private Long customerId;
     private String customerName;
     private String customerPhone;
@@ -48,5 +49,7 @@ public class ContractSummaryResponse {
     private java.time.LocalTime scheduledEndTime;
     private Integer rescheduleCount;
     private java.time.OffsetDateTime rescheduledAt;
+    private java.time.OffsetDateTime createdAt;
+    private java.time.OffsetDateTime returnRequestCreatedAt;
 }
 

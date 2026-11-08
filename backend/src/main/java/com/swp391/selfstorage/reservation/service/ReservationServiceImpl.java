@@ -793,7 +793,7 @@ public class ReservationServiceImpl implements ReservationService {
                     LocalDate defaultDate = reservation != null && reservation.getStartDate() != null
                             ? reservation.getStartDate()
                             : (contract.getStartDate() != null ? contract.getStartDate() : LocalDate.now());
-                    LocalDate workDate = request.getScheduledDate() != null ? request.getScheduledDate() : defaultDate;
+                    LocalDate workDate = request.getScheduledDate() != null ? request.getScheduledDate() : (defaultDate.isAfter(LocalDate.now()) ? LocalDate.now() : defaultDate);
 
                     StaffDailyAssignment assignment = staffDailyAssignmentRepository
                             .findByReferenceTypeAndReferenceId("CONTRACT", contract.getId())
@@ -945,6 +945,16 @@ public class ReservationServiceImpl implements ReservationService {
         res.setFulfilledAt(r.getFulfilledAt());
         res.setCancelledAt(r.getCancelledAt());
         res.setCancelReason(r.getCancelReason());
+
+        if (r.getId() != null && rentalContractRepository != null) {
+            rentalContractRepository.findByReservationId(r.getId()).ifPresent(contract -> {
+                res.setContractId(contract.getId());
+                res.setContractCode(contract.getCode());
+                if (contract.getStatus() != null) {
+                    res.setContractStatus(contract.getStatus().name());
+                }
+            });
+        }
 
         // Thong tin chuyen khoan VietQR Napas247
         String transferContent = "SMARTSTORAGE " + r.getCode();

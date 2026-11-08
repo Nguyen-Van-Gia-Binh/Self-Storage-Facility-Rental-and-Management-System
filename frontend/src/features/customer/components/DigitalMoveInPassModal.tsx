@@ -22,16 +22,20 @@ import {
   Lock,
   QrCode,
   Info,
+  Loader2,
 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
 import { isStorageUnitAssigned } from '../utils/unitAssignment';
+import { checkInContract } from '@/api/contract';
 import type { MoveInPassData } from '@/types';
 
 export interface DigitalMoveInPassModalProps {
   isOpen: boolean;
   onClose: () => void;
   passData: MoveInPassData | null;
-  onConfirmSignature?: (signatureName: string) => void;
+  contractId?: string | number;
+  onConfirmSignature?: (signatureName: string, activatedPin?: string) => void;
+  onSuccessCheckIn?: (activatedPin: string) => void;
   initialMode?: 'pass' | 'checkin';
 }
 
@@ -39,7 +43,9 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
   isOpen,
   onClose,
   passData,
+  contractId,
   onConfirmSignature,
+  onSuccessCheckIn,
   initialMode = 'pass',
 }) => {
   const navigate = useNavigate();
@@ -59,14 +65,18 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
   const [isSigned, setIsSigned] = useState(false);
   const [copiedPin, setCopiedPin] = useState(false);
   const [signatureError, setSignatureError] = useState<string | null>(null);
+  const [isSubmittingCheckIn, setIsSubmittingCheckIn] = useState(false);
+  const [activatedPin, setActivatedPin] = useState<string | null>(null);
 
   if (!isOpen || !passData) return null;
 
   const hasUnitAssigned = isStorageUnitAssigned(passData.unitNumber);
   const currentTab = hasUnitAssigned ? activeTab : 'pass';
+  const targetContractId = contractId || (passData as any)?.contractId;
 
-  // Giả lập mã PIN 6 số điện tử (sinh ngẫu nhiên ổn định từ mã đơn nếu chưa có)
+  // Mã PIN thông minh: ưu tiên mã kích hoạt từ backend thật, sau đó là passData hoặc fallback tính toán
   const smartLockPin =
+    activatedPin ||
     (passData as any).accessPin ||
     String(
       Math.abs(
@@ -89,7 +99,7 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
     navigate('/customer/my-units');
   };
 
-  const handleSignAndActivatePin = (e: React.FormEvent) => {
+  const handleSignAndActivatePin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!signatureName.trim()) {
       setSignatureError('Vui lòng nhập họ và tên của bạn để ký số xác nhận nhận bàn giao.');
@@ -101,9 +111,39 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
     }
 
     setSignatureError(null);
-    setIsSigned(true);
-    if (onConfirmSignature) {
-      onConfirmSignature(signatureName.trim());
+
+    if (targetContractId) {
+      setIsSubmittingCheckIn(true);
+      try {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const res = await checkInContract(Number(targetContractId), {
+          checkinDate: todayStr,
+          conditionNote: `Khách hàng check-in online 24/7 và ký số điện tử: ${signatureName.trim()}`,
+          customerConfirmed: true,
+        });
+
+        const pinResult = res.accessCode || (res as any)?.pin || (res as any)?.accessPin;
+        if (pinResult) {
+          setActivatedPin(pinResult);
+        }
+        setIsSigned(true);
+        if (onConfirmSignature) {
+          onConfirmSignature(signatureName.trim(), pinResult);
+        }
+        if (onSuccessCheckIn) {
+          onSuccessCheckIn(pinResult);
+        }
+      } catch (err: any) {
+        console.error('Lỗi khi thực hiện check-in online:', err);
+        setSignatureError(err.message || 'Không thể kích hoạt check-in online. Vui lòng thử lại hoặc liên hệ hotline.');
+      } finally {
+        setIsSubmittingCheckIn(false);
+      }
+    } else {
+      setIsSigned(true);
+      if (onConfirmSignature) {
+        onConfirmSignature(signatureName.trim());
+      }
     }
   };
 
@@ -268,10 +308,20 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
                       type="submit"
                       variant="primary"
                       size="sm"
-                      className="w-full py-2.5 text-xs font-bold bg-[#0d6050] hover:bg-[#12836d] text-white flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+                      disabled={isSubmittingCheckIn}
+                      className="w-full py-2.5 text-xs font-bold bg-[#0d6050] hover:bg-[#12836d] text-white flex items-center justify-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                      <KeyRound className="w-4 h-4 text-amber-300" />
-                      <span>Ký số &amp; Kích hoạt mã PIN mở kho 24/7</span>
+                      {isSubmittingCheckIn ? (
+                        <>
+                          <Loader2 className="w-4 h-4 text-amber-300 animate-spin" />
+                          <span>Đang kích hoạt nhận kho &amp; tạo mã PIN...</span>
+                        </>
+                      ) : (
+                        <>
+                          <KeyRound className="w-4 h-4 text-amber-300" />
+                          <span>Ký số &amp; Kích hoạt mã PIN mở kho 24/7</span>
+                        </>
+                      )}
                     </Button>
                   </form>
                 </div>

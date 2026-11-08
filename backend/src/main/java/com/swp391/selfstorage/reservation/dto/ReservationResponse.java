@@ -43,6 +43,9 @@ public class ReservationResponse {
     private String bankAccountNumber;
     private String bankName;
     private String transferContent;
+    private Long contractId;
+    private String contractCode;
+    private String contractStatus;
 
     public ReservationResponse() {}
 
@@ -139,4 +142,13 @@ public class ReservationResponse {
 
     public String getCancelReason() { return cancelReason; }
     public void setCancelReason(String cancelReason) { this.cancelReason = cancelReason; }
+
+    public Long getContractId() { return contractId; }
+    public void setContractId(Long contractId) { this.contractId = contractId; }
+
+    public String getContractCode() { return contractCode; }
+    public void setContractCode(String contractCode) { this.contractCode = contractCode; }
+
+    public String getContractStatus() { return contractStatus; }
+    public void setContractStatus(String contractStatus) { this.contractStatus = contractStatus; }
 }

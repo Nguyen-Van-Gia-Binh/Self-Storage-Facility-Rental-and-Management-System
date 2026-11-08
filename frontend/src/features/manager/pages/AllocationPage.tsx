@@ -17,6 +17,7 @@ import {
 import { fetchMyAssignedFacilities } from '@/api/facility';
 import { assignUnit, listReservations, reassignStaffApi, type ReservationResponse } from '@/api/reservation';
 import { getManagerContracts, reassignStorageUnit } from '@/api/contract';
+import type { ManagerContractItem } from '@/types/contractManager';
 import { getStaffWorkload } from '@/features/manager/api/staffAssignmentApi';
 import type { StaffWorkloadItem } from '@/features/manager/types/staffAssignment';
 import { Badge } from '@/components/ui/Badge';
@@ -115,18 +116,115 @@ export const AllocationPage: React.FC = () => {
     if (isManual) setRefreshing(true);
     else setLoading(true);
     try {
-      // 1. Đơn đặt chỗ mới cần gán ô lần đầu (RESERVATION)
+      // 1. Tải danh sách đơn đặt chỗ đã thanh toán (CONFIRMED) và hợp đồng chờ nhận kho (PENDING_CHECK_IN)
       const rsvRows = await listReservations({ status: 'CONFIRMED', facilityId: id, size: 100 });
+
+      let contracts: ManagerContractItem[] = [];
+      try {
+        const contractsRes = await getManagerContracts({ facilityId: id, status: 'PENDING_CHECK_IN' });
+        contracts = Array.isArray(contractsRes)
+          ? contractsRes
+          : ((contractsRes as unknown as { content?: ManagerContractItem[] })?.content || []);
+      } catch (err) {
+        console.warn('Lỗi khi nạp hợp đồng chờ nhận kho:', err);
+      }
+
+      const matchedRsvIds = new Set<number>();
+      const matchedContractIds = new Set<number>();
+      const matchedContractCodes = new Set<string>();
+
+      for (const c of contracts) {
+        if (c.reservationId != null) matchedRsvIds.add(c.reservationId);
+        if (c.id != null) matchedContractIds.add(c.id);
+        if (c.code) matchedContractCodes.add(c.code);
+
+        // Quét rsvRows để khớp ngược bất kỳ đơn nào cùng hợp đồng hoặc thông tin đặt chỗ
+        const matchedRsv = rsvRows.find(
+          (r) =>
+            (c.reservationId != null && r.id === c.reservationId) ||
+            (r.contractId != null && r.contractId === c.id) ||
+            (r.contractCode != null && r.contractCode === c.code) ||
+            (r.customerId === c.customerId &&
+              r.unitTypeId === c.unitTypeId &&
+              r.startDate === c.startDate)
+        );
+        if (matchedRsv) {
+          matchedRsvIds.add(matchedRsv.id);
+        }
+      }
+
+      // 2. Hợp đồng mới đã thanh toán chờ gán ô kho lần đầu (storageUnitId == null / "Chưa gán", chưa phát sinh sự cố bàn giao)
+      const pendingContractAllocations: AllocationQueueItem[] = contracts
+        .filter((c) => {
+          const isRelocation =
+            Boolean(c.relocationEligible) ||
+            c.status === 'RELOCATION_PENDING' ||
+            c.storageUnitCode === 'Chờ gán lại ô kho';
+          const isUnassigned =
+            c.storageUnitId == null ||
+            c.storageUnitCode === 'Chưa gán' ||
+            c.storageUnitCode === '';
+          return !isRelocation && isUnassigned;
+        })
+        .map((c) => {
+          const matchedRsv = rsvRows.find(
+            (r) =>
+              (c.reservationId != null && r.id === c.reservationId) ||
+              (r.contractId != null && r.contractId === c.id) ||
+              (r.contractCode != null && r.contractCode === c.code) ||
+              (r.storageUnitId == null &&
+                r.customerId === c.customerId &&
+                r.unitTypeId === c.unitTypeId &&
+                r.startDate === c.startDate)
+          );
+          if (matchedRsv) {
+            matchedRsvIds.add(matchedRsv.id);
+          }
+          const resolvedRsvId = c.reservationId ?? matchedRsv?.id;
+          const cust = matchedRsv ? getCustomerInfo(matchedRsv) : null;
+          return {
+            id: resolvedRsvId != null ? `rsv-${resolvedRsvId}` : `ctr-${c.id}`,
+            kind: 'RESERVATION' as const,
+            rawId: resolvedRsvId ?? c.id,
+            reservationId: resolvedRsvId,
+            contractId: c.id,
+            code: c.code,
+            customerId: c.customerId ?? matchedRsv?.customerId,
+            customerName:
+              c.customerName ||
+              cust?.name ||
+              (c.customerId ? `Khách hàng #${c.customerId}` : 'Khách hàng'),
+            customerPhone: c.customerPhone || cust?.phone || '0901234567',
+            customerEmail: c.customerEmail || cust?.email || 'customer@storage.vn',
+            unitTypeId: c.unitTypeId,
+            unitTypeName: c.unitTypeName || matchedRsv?.unitTypeName || '',
+            startDate: c.startDate || matchedRsv?.startDate || new Date().toISOString().split('T')[0],
+            rentalMonths: c.rentalMonths || matchedRsv?.rentalMonths || 1,
+            endDateExclusive: c.endDateExclusive || matchedRsv?.endDateExclusive,
+            assignedStaffId: c.assignedStaffId,
+          };
+        });
+
+      // 3. Fallback cho các đơn CONFIRMED chưa gán ô (chưa nằm trong danh sách hợp đồng trên, chỉ giữ đơn đang PENDING_CHECK_IN)
       const pendingRsv: AllocationQueueItem[] = rsvRows
-        .filter((row) => row.storageUnitId == null)
+        .filter((row) => {
+          if (row.storageUnitId != null) return false;
+          if (matchedRsvIds.has(row.id)) return false;
+          if (row.contractId != null && matchedContractIds.has(row.contractId)) return false;
+          if (row.contractCode && matchedContractCodes.has(row.contractCode)) return false;
+          if (row.contractStatus && row.contractStatus !== 'PENDING_CHECK_IN') return false;
+          if (contracts.length > 0 && !row.contractCode) return false;
+          return true;
+        })
         .map((row) => {
           const cust = getCustomerInfo(row);
           return {
             id: `rsv-${row.id}`,
-            kind: 'RESERVATION',
+            kind: 'RESERVATION' as const,
             rawId: row.id,
             reservationId: row.id,
-            code: row.code,
+            contractId: row.contractId,
+            code: row.contractCode || row.code,
             customerId: row.customerId,
             customerName: cust.name,
             customerPhone: cust.phone,
@@ -140,37 +238,38 @@ export const AllocationPage: React.FC = () => {
           };
         });
 
-      // 2. Hợp đồng chờ đổi ô kho do sự cố lúc bàn giao (CONTRACT_RELOCATION)
-      let relocationContracts: AllocationQueueItem[] = [];
-      try {
-        const contracts = await getManagerContracts({ facilityId: id, status: 'PENDING_CHECK_IN' });
-        relocationContracts = contracts
-          .filter((c) => Boolean(c.relocationEligible) || c.storageUnitCode === 'Chưa gán' || c.storageUnitCode === 'Chờ gán lại ô kho')
-          .map((c) => ({
-            id: `ctr-${c.id}`,
-            kind: 'CONTRACT_RELOCATION',
-            rawId: c.id,
-            contractId: c.id,
-            reservationId: c.reservationId,
-            code: c.code,
-            customerId: c.customerId,
-            customerName: c.customerName || (c.customerId ? `Khách hàng #${c.customerId}` : 'Khách hàng'),
-            customerPhone: c.customerPhone || '0901234567',
-            customerEmail: c.customerEmail || 'customer@storage.vn',
-            unitTypeId: c.unitTypeId,
-            unitTypeName: c.unitTypeName || '',
-            startDate: c.startDate || new Date().toISOString().split('T')[0],
-            rentalMonths: c.rentalMonths || 1,
-            endDateExclusive: c.endDateExclusive,
-            storageUnitId: c.storageUnitId,
-            originalDefectiveUnitCode: c.storageUnitCode,
-            assignedStaffId: c.assignedStaffId,
-          }));
-      } catch (err) {
-        console.warn('Lỗi khi nạp hợp đồng chờ đổi ô:', err);
-      }
+      // 4. Hợp đồng chờ đổi ô kho do sự cố lúc bàn giao (CONTRACT_RELOCATION)
+      const relocationContracts: AllocationQueueItem[] = contracts
+        .filter(
+          (c) =>
+            Boolean(c.relocationEligible) ||
+            c.status === 'RELOCATION_PENDING' ||
+            c.storageUnitCode === 'Chờ gán lại ô kho'
+        )
+        .map((c) => ({
+          id: `ctr-${c.id}`,
+          kind: 'CONTRACT_RELOCATION' as const,
+          rawId: c.id,
+          contractId: c.id,
+          reservationId: c.reservationId,
+          code: c.code,
+          customerId: c.customerId,
+          customerName: c.customerName || (c.customerId ? `Khách hàng #${c.customerId}` : 'Khách hàng'),
+          customerPhone: c.customerPhone || '0901234567',
+          customerEmail: c.customerEmail || 'customer@storage.vn',
+          unitTypeId: c.unitTypeId,
+          unitTypeName: c.unitTypeName || '',
+          startDate: c.startDate || new Date().toISOString().split('T')[0],
+          rentalMonths: c.rentalMonths || 1,
+          endDateExclusive: c.endDateExclusive,
+          storageUnitId: c.storageUnitId,
+          originalDefectiveUnitCode: c.storageUnitCode,
+          assignedStaffId: c.assignedStaffId,
+        }));
 
-      const merged = [...pendingRsv, ...relocationContracts].sort((a, b) => a.startDate.localeCompare(b.startDate));
+      const merged = [...pendingContractAllocations, ...pendingRsv, ...relocationContracts].sort((a, b) =>
+        a.startDate.localeCompare(b.startDate)
+      );
       setQueue(merged);
       setSelectedId((current) => {
         if (current != null && merged.some((row) => row.id === current)) return current;
@@ -351,9 +450,6 @@ export const AllocationPage: React.FC = () => {
                 {queue.length} đơn chờ xử lý
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Chọn đơn đặt chỗ để mở sơ đồ mặt bằng 2D, chọn ô kho vật lý phù hợp và phân công nhân viên tiếp đón
-            </p>
           </div>
         </div>
 
@@ -410,7 +506,7 @@ export const AllocationPage: React.FC = () => {
               <tr>
                 <th className="px-4 py-3">Mã đơn & Khách hàng</th>
                 <th className="px-4 py-3">Hạng kho khách đặt</th>
-                <th className="px-4 py-3">Ngày nhận kho (Khách book)</th>
+                <th className="px-4 py-3">Ngày nhận kho</th>
                 <th className="px-4 py-3">Thời hạn thuê</th>
                 <th className="px-4 py-3">Trạng thái</th>
                 <th className="px-4 py-3 text-right">Thao tác</th>
@@ -527,7 +623,7 @@ export const AllocationPage: React.FC = () => {
                           }`}
                         >
                           <MapPin className="w-3.5 h-3.5 text-white" />
-                          <span>{row.kind === 'CONTRACT_RELOCATION' ? 'Đổi ô kho (Sơ đồ 2D)' : 'Gán ô kho (Sơ đồ 2D)'}</span>
+                          <span>{row.kind === 'CONTRACT_RELOCATION' ? 'Đổi ô kho' : 'Gán ô kho'}</span>
                         </button>
                       </td>
                     </tr>
@@ -635,7 +731,7 @@ export const AllocationPage: React.FC = () => {
 
                 <div className="sm:border-l sm:border-slate-200 sm:pl-4 space-y-1 shrink-0">
                   <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                    Ô kho được chọn (2D)
+                    Ô kho được chọn
                   </span>
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-mono font-bold text-brand-700 text-sm bg-brand-50 px-2.5 py-1 rounded-lg border border-brand-200">

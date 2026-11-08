@@ -69,6 +69,9 @@ export interface ReservationResponse {
   bankAccountNumber?: string;
   bankName?: string;
   transferContent?: string;
+  contractId?: number;
+  contractCode?: string;
+  contractStatus?: string;
 }
 
 export interface AvailabilityResponse {

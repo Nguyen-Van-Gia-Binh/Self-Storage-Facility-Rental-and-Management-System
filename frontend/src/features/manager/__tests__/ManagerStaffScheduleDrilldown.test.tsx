@@ -10,6 +10,8 @@ import { WorkItemCard } from '../components/WorkItemCard';
 import { CheckinChecklist } from '../components/CheckinChecklist';
 import { IncidentFaultDetermination } from '../components/IncidentFaultDetermination';
 import { ReturnInspectionForm } from '../components/ReturnInspectionForm';
+import { extractCreatedDate, filterDispatchTasksByDate } from '../api/staffAssignmentApi';
+import type { DailyDispatchTaskItem } from '../types/staffAssignment';
 import { Sun, Sunset, Moon } from 'lucide-react';
 
 const cleanHtml = (html: string) =>
@@ -253,5 +255,102 @@ describe('Facility Manager - Phân công nhân sự Drill-down (FM-05)', () => {
     expect(html).toContain('800.000 đ'); // Hoàn cọc (1.500k - 700k)
     expect(html).toContain('Xác nhận quyết toán');
     expect(html).toContain('Gửi lại khách xác nhận');
+  });
+
+  // Test 8: Lọc ngày tạo đơn/phiếu (createdAt / mã phiếu) thay vì ngày nhận kho / nghiệm thu
+  it('extractCreatedDate trích xuất đúng ngày tạo đơn từ createdAt hoặc mã hợp đồng CTR-YYYYMMDD-XXXX', () => {
+    expect(extractCreatedDate('2026-11-08T14:37:00+07:00', 'CTR-20261108-6789')).toBe('2026-11-08');
+    // Fallback từ mã hợp đồng khi backend chưa trả createdAt (như CTR-20261108-6789 có startDate 2026-11-14)
+    expect(extractCreatedDate(undefined, 'CTR-20261108-6789')).toBe('2026-11-08');
+    expect(extractCreatedDate(null, 'RSV-20261105-2857')).toBe('2026-11-05');
+  });
+
+  // Test 9: Hiển thị các task tạo trong ngày đang chọn VÀ các task quá khứ chưa thực hiện hoàn tất
+  it('filterDispatchTasksByDate hiển thị task tạo ngày hôm đó và mọi task quá khứ chưa hoàn thành', () => {
+    const tasks: DailyDispatchTaskItem[] = [
+      {
+        id: 1,
+        taskType: 'CHECK_IN',
+        title: 'Task tạo hôm nay chưa gán',
+        facilityId: 1,
+        unitCode: 'Chưa gán',
+        customerName: 'Lê Thanh Tùng',
+        scheduledDate: '2026-11-08',
+        priority: 'NORMAL',
+        isUrgent: false,
+        status: 'UNASSIGNED',
+        referenceCode: 'CTR-20261108-6789',
+      },
+      {
+        id: 2,
+        taskType: 'INCIDENT',
+        title: 'Task tạo hôm nay đã hoàn thành',
+        facilityId: 1,
+        unitCode: 'CT-S101',
+        customerName: 'Nguyễn Văn A',
+        scheduledDate: '2026-11-08',
+        priority: 'URGENT',
+        isUrgent: true,
+        status: 'RESOLVED',
+        referenceCode: 'SR-20261108-001',
+      },
+      {
+        id: 3,
+        taskType: 'RETURN',
+        title: 'Task quá khứ đã gán nhân viên nhưng chưa thực hiện xong',
+        facilityId: 1,
+        unitCode: 'CT-M201',
+        customerName: 'Trần Thị B',
+        scheduledDate: '2026-11-05',
+        priority: 'NORMAL',
+        isUrgent: false,
+        assignedStaffId: 10,
+        assignedStaffName: 'Staff A',
+        status: 'ASSIGNED',
+        referenceCode: 'CTR-20261105-1111',
+      },
+      {
+        id: 4,
+        taskType: 'CHECK_IN',
+        title: 'Task quá khứ chưa gán',
+        facilityId: 1,
+        unitCode: 'CT-L301',
+        customerName: 'Phạm Văn C',
+        scheduledDate: '2026-11-06',
+        priority: 'NORMAL',
+        isUrgent: false,
+        status: 'UNASSIGNED',
+        referenceCode: 'CTR-20261106-2222',
+      },
+      {
+        id: 5,
+        taskType: 'CHECK_IN',
+        title: 'Task quá khứ đã hoàn thành',
+        facilityId: 1,
+        unitCode: 'CT-S102',
+        customerName: 'Hoàng Văn D',
+        scheduledDate: '2026-11-04',
+        priority: 'NORMAL',
+        isUrgent: false,
+        status: 'COMPLETED',
+        referenceCode: 'CTR-20261104-3333',
+      },
+      {
+        id: 6,
+        taskType: 'CHECK_IN',
+        title: 'Task tương lai',
+        facilityId: 1,
+        unitCode: 'CT-S103',
+        customerName: 'Vũ Thị E',
+        scheduledDate: '2026-11-10',
+        priority: 'NORMAL',
+        isUrgent: false,
+        status: 'UNASSIGNED',
+        referenceCode: 'CTR-20261110-4444',
+      },
+    ];
+
+    const filtered = filterDispatchTasksByDate(tasks, '2026-11-08');
+    expect(filtered.map((t) => t.id)).toEqual([1, 2, 3, 4]);
   });
 });

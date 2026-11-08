@@ -516,6 +516,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
         isOpen={showPassModal}
         onClose={() => setShowPassModal(false)}
         initialMode={passMode}
+        contractId={contract.id}
         passData={moveInPassData}
       />
 

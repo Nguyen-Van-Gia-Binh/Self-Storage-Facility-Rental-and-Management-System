@@ -15,7 +15,7 @@ public class HandoverRecord {
     @Column(name = "contract_id", nullable = false)
     private Long contractId;
 
-    @Column(name = "staff_id", nullable = false)
+    @Column(name = "staff_id")
     private Long staffId;
 
     @Column(name = "handover_at", nullable = false)
