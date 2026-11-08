@@ -291,29 +291,12 @@ public class ContractServiceImpl implements ContractService {
 
                 if (isRelocate) {
                         // NHÁNH 1: KHÁCH ĐỒNG Ý ĐỔI Ô KHO
-                        // Giữ nguyên trạng thái PENDING_CHECK_IN để khách tiếp tục thuê
+                        // Giữ nguyên trạng thái PENDING_CHECK_IN để khách tiếp tục thuê sau khi FM gán ô mới
                         contract.setStatus(ContractStatus.PENDING_CHECK_IN);
                         contractRepository.save(contract);
 
-                        // Tự động tạo Ticket Sự Cố (SupportRequest) có relocationRequired = true
-                        if (supportRequestRepository != null) {
-                                SupportRequest ticket = new SupportRequest();
-                                ticket.setCode("INC-HD-" + contract.getId() + "-" + (System.currentTimeMillis() % 100000));
-                                ticket.setContractId(contract.getId());
-                                ticket.setStorageUnitId(oldUnitId);
-                                ticket.setCustomerId(contract.getCustomerId());
-                                ticket.setCategory(SupportCategory.UNIT_DAMAGE);
-                                String detail = (request.getReportedDefects() != null && !request.getReportedDefects().isBlank())
-                                                ? request.getReportedDefects()
-                                                : request.getRejectionReason();
-                                ticket.setDescription("Sự cố bàn giao tiếp đón: " + request.getRejectionReason() + " (" + detail + ")");
-                                ticket.setStatus(SupportStatus.NEW);
-                                ticket.setRelocationRequired(Boolean.TRUE);
-                                ticket.setAssignedStaffId(staffId);
-                                ticket.setCreatedAt(OffsetDateTime.now());
-                                ticket.setUpdatedAt(OffsetDateTime.now());
-                                supportRequestRepository.save(ticket);
-                        }
+                        // Không tạo Ticket Sự Cố (SupportRequest) khi từ chối nhận kho đổi ô tại quầy.
+                        // Hợp đồng sẽ xuất hiện trên Hàng đợi Gán ô kho (Allocation Workbench) của FM để đổi ô trên sơ đồ 2D.
 
                         // Upsert: cập nhật record cũ nếu đã tồn tại, tránh vi phạm uq_handover_record_contract_id
                         HandoverRecord relocateRecord = handoverRecordRepository.findByContractId(contractId)
@@ -495,6 +478,18 @@ public class ContractServiceImpl implements ContractService {
                         }
                 }
 
+                Map<Long, HandoverRecord> handoverByContract = new HashMap<>();
+                if (handoverRecordRepository != null && !contractIds.isEmpty()) {
+                        List<HandoverRecord> handovers = handoverRecordRepository.findByContractIdIn(contractIds);
+                        if (handovers != null) {
+                                for (HandoverRecord hr : handovers) {
+                                        if (hr.getContractId() != null) {
+                                                handoverByContract.putIfAbsent(hr.getContractId(), hr);
+                                        }
+                                }
+                        }
+                }
+
                 Set<Long> userIdsToLoad = new HashSet<>(customerIds);
                 latestReturnRequestByContract.values().forEach(req -> {
                         if (req.getInspectedBy() != null) userIdsToLoad.add(req.getInspectedBy());
@@ -513,9 +508,11 @@ public class ContractServiceImpl implements ContractService {
                                         && !c.getEndDateExclusive().isBefore(now)
                                         && !c.getEndDateExclusive().isAfter(threshold);
 
+                        HandoverRecord hr = handoverByContract.get(c.getId());
                         StorageUnit su = c.getStorageUnitId() != null ? storageUnitMap.get(c.getStorageUnitId()) : null;
                         boolean isRelocating = (c.getStatus() == ContractStatus.PENDING_CHECK_IN || c.getStatus() == ContractStatus.ACTIVE)
                                         && (relocationTickets.get(c.getId()) != null
+                                                        || (hr != null && hr.isRejected())
                                                         || (su != null && su.getStatus() == StorageUnitStatus.MAINTENANCE));
                         String storageCode = (isRelocating && c.getStatus() == ContractStatus.PENDING_CHECK_IN)
                                         ? null
@@ -776,34 +773,13 @@ public class ContractServiceImpl implements ContractService {
                         ticket = supportRequestRepository.findByStorageUnitIdInAndStatusIn(
                                         List.of(contract.getStorageUnitId()), RELOCATION_TICKET_STATUSES).stream().findFirst().orElse(null);
                 }
-                if (ticket == null) {
-                        ticket = new SupportRequest();
-                        ticket.setCode("INC-REASSIGN-" + contract.getId() + "-" + (System.currentTimeMillis() % 100000));
-                        ticket.setContractId(contract.getId());
-                        ticket.setStorageUnitId(contract.getStorageUnitId());
-                        ticket.setCustomerId(contract.getCustomerId());
-                        ticket.setCategory(SupportCategory.UNIT_DAMAGE);
-                        ticket.setDescription("Đổi ô kho sự cố cho hợp đồng " + contract.getCode() + ": " + request.getReason());
-                        ticket.setStatus(SupportStatus.CLOSED);
-                        ticket.setRelocationRequired(Boolean.FALSE);
-                        ticket.setAssignedStaffId(managerId);
-                        ticket.setCreatedAt(OffsetDateTime.now());
-                        ticket.setUpdatedAt(OffsetDateTime.now());
-                        if (supportRequestRepository != null) {
-                                SupportRequest saved = supportRequestRepository.save(ticket);
-                                if (saved != null) {
-                                        ticket = saved;
-                                }
-                        }
-                }
-
                 if (contract.getStatus() == ContractStatus.PENDING_CHECK_IN
                                 && !Boolean.TRUE.equals(request.getCustomerConsent())) {
                         throw new CustomException(ErrorCode.VALIDATION_FAILED,
                                         "Cần ghi nhận khách đã đồng ý đổi ô trước khi nhận kho.");
                 }
                 if (contract.getStatus() == ContractStatus.ACTIVE
-                                && !Boolean.TRUE.equals(ticket.getRelocationRequired())) {
+                                && (ticket == null || !Boolean.TRUE.equals(ticket.getRelocationRequired()))) {
                         throw new CustomException(ErrorCode.VALIDATION_FAILED,
                                         "Phiếu hư hỏng chưa được đánh dấu cần di dời.");
                 }
@@ -892,32 +868,48 @@ public class ContractServiceImpl implements ContractService {
                 }
                 storageUnitRepository.save(newUnit);
 
-                // Sau khi Quản lý hoàn tất đổi ô kho cho hợp đồng theo phiếu sự cố:
-                // 1. Giải tỏa cờ yêu cầu di dời: relocationRequired = FALSE
-                // 2. Chuyển trạng thái phiếu sang CLOSED vì việc đổi ô kho đã hoàn thành
-                ticket.setRelocationRequired(Boolean.FALSE);
-                ticket.setStatus(SupportStatus.CLOSED);
                 OffsetDateTime now = OffsetDateTime.now();
-                if (ticket.getResolvedAt() == null) {
-                        ticket.setResolvedAt(now);
-                }
-                ticket.setCustomerConfirmedAt(now);
-                ticket.setUpdatedAt(now);
+                if (ticket != null) {
+                        // Sau khi Quản lý hoàn tất đổi ô kho cho hợp đồng theo phiếu sự cố:
+                        // 1. Giải tỏa cờ yêu cầu di dời: relocationRequired = FALSE
+                        // 2. Chuyển trạng thái phiếu sang CLOSED vì việc đổi ô kho đã hoàn thành
+                        ticket.setRelocationRequired(Boolean.FALSE);
+                        ticket.setStatus(SupportStatus.CLOSED);
+                        if (ticket.getResolvedAt() == null) {
+                                ticket.setResolvedAt(now);
+                        }
+                        ticket.setCustomerConfirmedAt(now);
+                        ticket.setUpdatedAt(now);
 
-                String oldResolutionNote = ticket.getResolutionNote() != null ? ticket.getResolutionNote() : "";
-                String relocationResolutionInfo = isUpgradeCompensation
-                                ? "\n[Quản lý cơ sở đã nâng hạng đền bù sang ô kho " + newUnit.getCode()
-                                                + (newType != null ? " (" + newType.getName() + ")" : "")
-                                                + " do hết ô cùng loại. Sự cố đã được xử lý và đóng.]"
-                                : "\n[Quản lý cơ sở đã hoàn tất đổi sang ô kho " + newUnit.getCode()
-                                                + ". Sự cố đã được xử lý và đóng.]";
-                ticket.setResolutionNote(oldResolutionNote + relocationResolutionInfo);
+                        String oldResolutionNote = ticket.getResolutionNote() != null ? ticket.getResolutionNote() : "";
+                        String relocationResolutionInfo = isUpgradeCompensation
+                                        ? "\n[Quản lý cơ sở đã nâng hạng đền bù sang ô kho " + newUnit.getCode()
+                                                        + (newType != null ? " (" + newType.getName() + ")" : "")
+                                                        + " do hết ô cùng loại. Sự cố đã được xử lý và đóng.]"
+                                        : "\n[Quản lý cơ sở đã hoàn tất đổi sang ô kho " + newUnit.getCode()
+                                                        + ". Sự cố đã được xử lý và đóng.]";
+                        ticket.setResolutionNote(oldResolutionNote + relocationResolutionInfo);
+
+                        String notice = isUpgradeCompensation
+                                        ? "Cơ sở đã nâng hạng đền bù đổi ô kho từ " + oldCode + " sang " + newUnit.getCode()
+                                                        + (newType != null ? " (" + newType.getName() + ")" : "")
+                                                        + " do hết ô cùng loại. Giá thuê và tiền cọc giữ nguyên."
+                                        : "Cơ sở đã đổi ô kho từ " + oldCode + " sang " + newUnit.getCode()
+                                                        + ". Giá thuê và tiền cọc giữ nguyên.";
+                        if (notice.length() > 500) {
+                                notice = notice.substring(0, 500);
+                        }
+                        ticket.setCustomerNotice(notice);
+                        if (supportRequestRepository != null) {
+                                supportRequestRepository.save(ticket);
+                        }
+                }
 
                 long monthlyPriceSnapshot = contract.getMonthlyPrice();
                 long depositSnapshot = contract.getDepositAmount();
                 contract.setStorageUnitId(newUnit.getId());
                 contract.setUnitTypeId(newUnit.getUnitTypeId());
-                contract.setRelocationSupportRequestId(ticket.getId());
+                contract.setRelocationSupportRequestId(ticket != null ? ticket.getId() : null);
                 contract.setMonthlyPrice(monthlyPriceSnapshot);
                 contract.setDepositAmount(depositSnapshot);
                 contractRepository.save(contract);
@@ -930,19 +922,22 @@ public class ContractServiceImpl implements ContractService {
                         });
                 }
 
-                String notice = isUpgradeCompensation
-                                ? "Cơ sở đã nâng hạng đền bù đổi ô kho từ " + oldCode + " sang " + newUnit.getCode()
-                                                + (newType != null ? " (" + newType.getName() + ")" : "")
-                                                + " do hết ô cùng loại. Giá thuê và tiền cọc giữ nguyên."
-                                : "Cơ sở đã đổi ô kho từ " + oldCode + " sang " + newUnit.getCode()
-                                                + ". Giá thuê và tiền cọc giữ nguyên.";
-                if (notice.length() > 500) {
-                        notice = notice.substring(0, 500);
+                // Dọn dẹp trạng thái từ chối của HandoverRecord (nếu có do từ chối nhận kho trước đó)
+                // để hợp đồng sẵn sàng tiếp đón nhận ô kho mới tại quầy hoặc check-in online
+                if (handoverRecordRepository != null) {
+                        handoverRecordRepository.findByContractId(contractId).ifPresent(hr -> {
+                                if (hr.isRejected()) {
+                                        hr.setRejected(false);
+                                        hr.setRejectionReason(null);
+                                        hr.setConditionNote(null);
+                                        hr.setCustomerConfirmed(false);
+                                        hr.setCustomerConfirmedAt(null);
+                                        handoverRecordRepository.save(hr);
+                                }
+                        });
                 }
-                ticket.setCustomerNotice(notice);
-                supportRequestRepository.save(ticket);
 
-                if (supportRequestRepository != null && contract.getId() != null) {
+                if (ticket != null && supportRequestRepository != null && contract.getId() != null) {
                         List<SupportRequest> otherOpenTickets = supportRequestRepository.findByContractIdInAndStatusIn(
                                         List.of(contract.getId()),
                                         List.of(SupportStatus.NEW, SupportStatus.ASSIGNED, SupportStatus.IN_PROGRESS, SupportStatus.RESOLVED));
@@ -960,11 +955,12 @@ public class ContractServiceImpl implements ContractService {
 
                 if (auditLogService != null) {
                         auditLogService.logAction(managerId, "REASSIGN_UNIT", "RENTAL_CONTRACT", contract.getId(),
-                                        "unit:" + oldUnitId, "unit:" + newUnit.getId() + ",ticket:" + ticket.getId());
+                                        "unit:" + oldUnitId, "unit:" + newUnit.getId() + (ticket != null ? ",ticket:" + ticket.getId() : ""));
                 }
 
-                log.info("Manager {} đã đổi ô kho cho hợp đồng {} từ {} sang {} theo phiếu {}. Lý do: {}",
-                                managerId, contract.getCode(), oldCode, newUnit.getCode(), ticket.getCode(), request.getReason());
+                log.info("Manager {} đã đổi ô kho cho hợp đồng {} từ {} sang {}{}. Lý do: {}",
+                                managerId, contract.getCode(), oldCode, newUnit.getCode(),
+                                (ticket != null ? " theo phiếu " + ticket.getCode() : ""), request.getReason());
 
                 String storageCode = newUnit.getCode();
                 String unitName = (unitTypeRepository != null && contract.getUnitTypeId() != null)
@@ -2563,6 +2559,13 @@ public class ContractServiceImpl implements ContractService {
                                                         && ticket.getStatus() != com.swp391.selfstorage.support.entity.SupportStatus.AUTO_CLOSED) {
                                                 r.setRelocationEligible(true);
                                                 r.setOpenSupportRequestId(ticket.getId());
+                                        }
+                                });
+                        }
+                        if ((r.getRelocationEligible() == null || !r.getRelocationEligible()) && handoverRecordRepository != null) {
+                                handoverRecordRepository.findByContractId(c.getId()).ifPresent(hr -> {
+                                        if (hr.isRejected()) {
+                                                r.setRelocationEligible(true);
                                         }
                                 });
                         }
