@@ -155,11 +155,11 @@ describe('AllocationPage Component (Gán ô kho)', () => {
       expect(screen.getByText('0901234567')).toBeDefined();
       expect(screen.getByText('Kho Máy Lạnh M')).toBeDefined();
       expect(screen.getByText('15/11/2026')).toBeDefined();
-      expect(screen.getByText('Gán ô kho (Sơ đồ 2D)')).toBeDefined();
+      expect(screen.getByText('Gán ô kho')).toBeDefined();
     });
   });
 
-  it('2. Bấm "Gán ô kho (Sơ đồ 2D)" mở sơ đồ 2D, chọn ô cụ thể -> mở form xác nhận', async () => {
+  it('2. Bấm "Gán ô kho" mở sơ đồ 2D, chọn ô cụ thể -> mở form xác nhận', async () => {
     render(<AllocationPage />);
 
     await waitFor(() => {
@@ -167,7 +167,7 @@ describe('AllocationPage Component (Gán ô kho)', () => {
     });
 
     // Bấm nút mở sơ đồ 2D
-    const open2dBtn = screen.getByText('Gán ô kho (Sơ đồ 2D)');
+    const open2dBtn = screen.getByText('Gán ô kho');
     fireEvent.click(open2dBtn);
 
     // Modal sơ đồ 2D hiển thị
@@ -194,7 +194,7 @@ describe('AllocationPage Component (Gán ô kho)', () => {
       expect(screen.getAllByText('RES-20261107-001')[0]).toBeDefined();
     });
 
-    fireEvent.click(screen.getAllByText('Gán ô kho (Sơ đồ 2D)')[0]);
+    fireEvent.click(screen.getAllByText('Gán ô kho')[0]);
     await waitFor(() => expect(screen.getByTestId('select-mock-unit-btn')).toBeDefined());
     fireEvent.click(screen.getByTestId('select-mock-unit-btn'));
 
@@ -325,13 +325,13 @@ describe('AllocationPage Component (Gán ô kho)', () => {
       expect(screen.queryByText('RSV-20261108-2857')).toBeNull();
       expect(screen.queryByText('Sự cố bàn giao')).toBeNull();
       expect(screen.queryByText('Gán lại ô kho')).toBeNull();
-      expect(screen.queryByText('Đổi ô kho (Sơ đồ 2D)')).toBeNull();
+      expect(screen.queryByText('Đổi ô kho')).toBeNull();
       expect(screen.getByText('Chờ gán ô')).toBeDefined();
-      expect(screen.getByText('Gán ô kho (Sơ đồ 2D)')).toBeDefined();
+      expect(screen.getByText('Gán ô kho')).toBeDefined();
     });
   });
 
-  it('6. Hợp đồng thực sự có sự cố bàn giao (relocationEligible = true) vẫn hiển thị "Sự cố bàn giao" và "Đổi ô kho (Sơ đồ 2D)"', async () => {
+  it('6. Hợp đồng thực sự có sự cố bàn giao (relocationEligible = true) vẫn hiển thị "Sự cố bàn giao" và "Đổi ô kho"', async () => {
     vi.mocked(reservationApi.listReservations).mockResolvedValue([]);
     vi.mocked(contractApi.getManagerContracts).mockResolvedValue([
       {
@@ -364,7 +364,7 @@ describe('AllocationPage Component (Gán ô kho)', () => {
       expect(screen.getByText('CTR-20261108-9999')).toBeDefined();
       expect(screen.getByText('Sự cố bàn giao')).toBeDefined();
       expect(screen.getByText('Gán lại ô kho')).toBeDefined();
-      expect(screen.getByText('Đổi ô kho (Sơ đồ 2D)')).toBeDefined();
+      expect(screen.getByText('Đổi ô kho')).toBeDefined();
     });
   });
 });

@@ -431,9 +431,6 @@ export const AllocationPage: React.FC = () => {
                 {queue.length} đơn chờ xử lý
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Chọn đơn đặt chỗ để mở sơ đồ mặt bằng 2D, chọn ô kho vật lý phù hợp và phân công nhân viên tiếp đón
-            </p>
           </div>
         </div>
 
@@ -490,7 +487,7 @@ export const AllocationPage: React.FC = () => {
               <tr>
                 <th className="px-4 py-3">Mã đơn & Khách hàng</th>
                 <th className="px-4 py-3">Hạng kho khách đặt</th>
-                <th className="px-4 py-3">Ngày nhận kho (Khách book)</th>
+                <th className="px-4 py-3">Ngày nhận kho</th>
                 <th className="px-4 py-3">Thời hạn thuê</th>
                 <th className="px-4 py-3">Trạng thái</th>
                 <th className="px-4 py-3 text-right">Thao tác</th>
@@ -607,7 +604,7 @@ export const AllocationPage: React.FC = () => {
                           }`}
                         >
                           <MapPin className="w-3.5 h-3.5 text-white" />
-                          <span>{row.kind === 'CONTRACT_RELOCATION' ? 'Đổi ô kho (Sơ đồ 2D)' : 'Gán ô kho (Sơ đồ 2D)'}</span>
+                          <span>{row.kind === 'CONTRACT_RELOCATION' ? 'Đổi ô kho' : 'Gán ô kho'}</span>
                         </button>
                       </td>
                     </tr>
@@ -715,7 +712,7 @@ export const AllocationPage: React.FC = () => {
 
                 <div className="sm:border-l sm:border-slate-200 sm:pl-4 space-y-1 shrink-0">
                   <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                    Ô kho được chọn (2D)
+                    Ô kho được chọn
                   </span>
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-mono font-bold text-brand-700 text-sm bg-brand-50 px-2.5 py-1 rounded-lg border border-brand-200">
