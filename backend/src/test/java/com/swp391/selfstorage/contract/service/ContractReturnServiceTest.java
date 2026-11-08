@@ -110,6 +110,59 @@ class ContractReturnServiceTest {
         }
 
         @Test
+        @DisplayName("BR-OVD-02 & BR-RET-11: submitReturnNotice cho phép hợp đồng OVERDUE báo trả kho khi không có nợ phạt (D+1..D+3 hoặc đã tất toán)")
+        void testSubmitReturnNotice_OverdueWithZeroFee_Allowed() {
+                RentalContract contract = RentalContract.builder()
+                                .id(501L)
+                                .facilityId(1L)
+                                .status(ContractStatus.OVERDUE)
+                                .overdueFeeAccrued(0L)
+                                .build();
+
+                when(contractRepository.findByIdAndFacilityIdIn(eq(501L), anyList())).thenReturn(Optional.of(contract));
+                when(returnRequestRepository.save(any(ReturnRequest.class))).thenAnswer(i -> {
+                        ReturnRequest r = i.getArgument(0);
+                        r.setId(11L);
+                        return r;
+                });
+
+                ReturnNoticeRequest req = ReturnNoticeRequest.builder()
+                                .intendedReturnDate(LocalDate.now())
+                                .notes("Báo trả kho trong thời gian ân hạn D+1..D+3")
+                                .build();
+
+                ReturnNoticeResponse res = contractService.submitReturnNotice(501L, req, List.of(1L));
+
+                assertNotNull(res);
+                assertEquals(11L, res.getId());
+                assertEquals(501L, res.getContractId());
+                assertEquals(ContractStatus.PENDING_RETURN, contract.getStatus());
+        }
+
+        @Test
+        @DisplayName("BR-OVD-03 & UNH-RET-01: submitReturnNotice chặn hợp đồng OVERDUE báo trả kho khi còn nợ phí phạt tích lũy")
+        void testSubmitReturnNotice_OverdueWithDebt_Blocked() {
+                RentalContract contract = RentalContract.builder()
+                                .id(502L)
+                                .facilityId(1L)
+                                .status(ContractStatus.OVERDUE)
+                                .overdueFeeAccrued(200_000L)
+                                .build();
+
+                when(contractRepository.findByIdAndFacilityIdIn(eq(502L), anyList())).thenReturn(Optional.of(contract));
+
+                ReturnNoticeRequest req = ReturnNoticeRequest.builder()
+                                .intendedReturnDate(LocalDate.now())
+                                .notes("Cố tình báo trả kho khi chưa nộp phạt D+5")
+                                .build();
+
+                CustomException ex = assertThrows(CustomException.class,
+                                () -> contractService.submitReturnNotice(502L, req, List.of(1L)));
+
+                assertEquals(ErrorCode.MUST_SETTLE_OVERDUE_DEBT_FIRST, ex.getErrorCode());
+        }
+
+        @Test
         @DisplayName("FS-04: submitReturnInspection cập nhật PENDING_RETURN và lưu extraCharge nếu có hư hại")
         void testSubmitReturnInspectionWithDamage() {
                 RentalContract contract = RentalContract.builder()

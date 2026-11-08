@@ -150,4 +150,87 @@ class ContractSettlementApprovalTest {
                 assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
                 assertTrue(ex.getMessage().contains("chưa được nhân viên kiểm tra"));
         }
+
+        @Test
+        @DisplayName("BR-CHK-06: getSettlementPreview & approveSettlement hoàn 100% tiền thuê + cọc khi TERMINATED chưa check-in")
+        void testSettlement_TerminatedBeforeCheckIn_FullRefund() {
+                RentalContract contract = RentalContract.builder()
+                                .id(601L)
+                                .customerId(15L)
+                                .facilityId(1L)
+                                .storageUnitId(42L)
+                                .monthlyPrice(1_000_000L)
+                                .rentalMonths(2)
+                                .depositAmount(1_000_000L)
+                                .depositBalance(1_000_000L)
+                                .checkinDate(null)
+                                .status(ContractStatus.TERMINATED)
+                                .build();
+
+                when(contractRepository.findByIdAndFacilityIdIn(eq(601L), anyList())).thenReturn(Optional.of(contract));
+                when(returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(601L))
+                                .thenReturn(Optional.empty());
+
+                SettlementPreviewResponse preview = contractService.getSettlementPreview(601L, List.of(1L));
+                assertNotNull(preview);
+                assertEquals(3_000_000L, preview.getDepositRefundAmount());
+                assertEquals(0L, preview.getPayableAmount());
+
+                StorageUnit unit = StorageUnit.builder().id(42L).status(StorageUnitStatus.OCCUPIED).build();
+                when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(unit));
+                when(returnRequestRepository.save(any(ReturnRequest.class))).thenAnswer(i -> i.getArgument(0));
+
+                SettlementApprovalResponse approval = contractService.approveSettlement(601L,
+                                SettlementApprovalRequest.builder().build(), 99L, List.of(1L));
+                assertEquals(3_000_000L, approval.getDepositRefundAmount());
+                assertEquals(0L, approval.getPayableAmount());
+                assertEquals(ContractStatus.CLOSED, contract.getStatus());
+        }
+
+        @Test
+        @DisplayName("BR-OVD-07: getSettlementPreview & approveSettlement không hoàn tiền thuê khi TERMINATED do quá hạn sau check-in")
+        void testSettlement_TerminatedAfterCheckIn_OverdueTermination_NoRentRefund() {
+                RentalContract contract = RentalContract.builder()
+                                .id(602L)
+                                .customerId(15L)
+                                .facilityId(1L)
+                                .storageUnitId(42L)
+                                .monthlyPrice(1_000_000L)
+                                .rentalMonths(2)
+                                .depositAmount(1_000_000L)
+                                .depositBalance(300_000L)
+                                .overdueFeeAccrued(700_000L)
+                                .checkinDate(LocalDate.now().minusMonths(2))
+                                .status(ContractStatus.TERMINATED)
+                                .build();
+
+                ReturnRequest returnReq = ReturnRequest.builder()
+                                .id(22L)
+                                .contractId(602L)
+                                .damageCost(0L)
+                                .inspectedAt(OffsetDateTime.now())
+                                .build();
+
+                when(contractRepository.findByIdAndFacilityIdIn(eq(602L), anyList())).thenReturn(Optional.of(contract));
+                when(returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(602L))
+                                .thenReturn(Optional.of(returnReq));
+                when(extraChargeRepository.findByContractIdAndStatus(602L, ExtraChargeStatus.UNPAID))
+                                .thenReturn(List.of());
+
+                SettlementPreviewResponse preview = contractService.getSettlementPreview(602L, List.of(1L));
+                assertNotNull(preview);
+                assertEquals(0L, preview.getEarlyRentRefund());
+                assertEquals(300_000L, preview.getDepositRefundAmount());
+                assertEquals(0L, preview.getPayableAmount());
+
+                StorageUnit unit = StorageUnit.builder().id(42L).status(StorageUnitStatus.OCCUPIED).build();
+                when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(unit));
+                when(returnRequestRepository.save(any(ReturnRequest.class))).thenAnswer(i -> i.getArgument(0));
+
+                SettlementApprovalResponse approval = contractService.approveSettlement(602L,
+                                SettlementApprovalRequest.builder().build(), 99L, List.of(1L));
+                assertEquals(300_000L, approval.getDepositRefundAmount());
+                assertEquals(0L, approval.getPayableAmount());
+                assertEquals(ContractStatus.CLOSED, contract.getStatus());
+        }
 }

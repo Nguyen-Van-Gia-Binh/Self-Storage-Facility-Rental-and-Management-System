@@ -17,9 +17,15 @@ export const OverdueAlertBanner: React.FC<OverdueAlertBannerProps> = ({
   onRequestReturn,
 }) => {
   const overdueDays = contract.overdueDays || 1;
-  const dailyPenalty = Math.round((contract.monthlyPrice || 800000) / 30);
-  const accruedFee = contract.accruedOverdueFee || overdueDays * dailyPenalty;
-  const deposit = contract.depositAmount || 0;
+  const deposit = contract.depositAmount || contract.monthlyPrice || 800000;
+  // BR-OVD-03: Phí quá hạn = 10% tiền cọc Deposit / ngày (tính từ D+4 đến D+10, trần 70% cọc)
+  const dailyPenalty = Math.round(deposit * 0.10);
+  const chargeableDays = overdueDays <= 3 ? 0 : Math.min(7, overdueDays - 3);
+  const fallbackFee = chargeableDays * dailyPenalty;
+  const accruedFee =
+    contract.accruedOverdueFee !== undefined && contract.accruedOverdueFee !== null
+      ? contract.accruedOverdueFee
+      : fallbackFee;
   const remainingDeposit = Math.max(0, deposit - accruedFee);
 
   return (
@@ -59,7 +65,9 @@ export const OverdueAlertBanner: React.FC<OverdueAlertBannerProps> = ({
                 {fmt(accruedFee)}
               </span>
               <span className="text-[10px] text-slate-400 block mt-0.5">
-                ({overdueDays} ngày × ~{fmt(dailyPenalty)}/ngày)
+                {chargeableDays === 0
+                  ? '(Đang trong 3 ngày ân hạn - phạt 0 đ)'
+                  : `(${chargeableDays} ngày tính phí × ${fmt(dailyPenalty)}/ngày)`}
               </span>
             </div>
 
