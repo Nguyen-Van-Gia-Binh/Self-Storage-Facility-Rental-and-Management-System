@@ -56,16 +56,20 @@ public class UnitTypeServiceImpl implements UnitTypeService {
     public PageResponse<UnitTypeResponse> getUnitTypesByFacility(Long facilityId, Boolean isActive, Pageable pageable) {
         Page<UnitType> page = unitTypeRepository.findByFacilityIdAndFilter(facilityId, isActive, pageable);
 
-        Map<Long, Long> priceMap = priceRepository.findAllByFacilityId(facilityId).stream()
-                .collect(Collectors.toMap(FacilityUnitTypePrice::getUnitTypeId, FacilityUnitTypePrice::getMonthlyPrice, (a, b) -> a));
+        Map<Long, FacilityUnitTypePrice> priceEntityMap = priceRepository.findAllByFacilityId(facilityId).stream()
+                .collect(Collectors.toMap(FacilityUnitTypePrice::getUnitTypeId, p -> p, (a, b) -> a));
 
         Map<Long, Long> unitCountMap = storageUnitRepository.countUnitsGroupedByUnitType(facilityId).stream()
                 .collect(Collectors.toMap(row -> ((Number) row[0]).longValue(), row -> ((Number) row[1]).longValue(), (a, b) -> a));
 
         List<UnitTypeResponse> content = page.getContent().stream().map(ut -> {
-            Long price = priceMap.getOrDefault(ut.getId(), 0L);
+            FacilityUnitTypePrice priceEntity = priceEntityMap.get(ut.getId());
+            Long price = priceEntity != null && priceEntity.getMonthlyPrice() != null ? priceEntity.getMonthlyPrice() : 0L;
+            Long version = priceEntity != null ? priceEntity.getVersion() : null;
             long totalUnits = unitCountMap.getOrDefault(ut.getId(), 0L);
-            return finish(ut, facilityId, price, totalUnits);
+            UnitTypeResponse res = finish(ut, facilityId, price, totalUnits);
+            res.setPriceVersion(version);
+            return res;
         }).toList();
 
         return new PageResponse<>(content, page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages());
@@ -195,13 +199,6 @@ public class UnitTypeServiceImpl implements UnitTypeService {
     public void deactivateUnitType(Long facilityId, Long unitTypeId) {
         UnitType ut = unitTypeRepository.findById(unitTypeId)
                 .orElseThrow(() -> new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND));
-
-        long inUseUnits = storageUnitRepository.countByUnitTypeIdAndStatusIn(
-                unitTypeId, List.of(StorageUnitStatus.RESERVED, StorageUnitStatus.OCCUPIED));
-
-        if (inUseUnits > 0) {
-            throw new CustomException(ErrorCode.UNIT_TYPE_HAS_ACTIVE_UNITS);
-        }
 
         ut.setActive(false);
         unitTypeRepository.save(ut);

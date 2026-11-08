@@ -17,11 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -63,65 +59,39 @@ public class OverdueProcessingServiceImpl implements OverdueProcessingService {
         // Mỗi hợp đồng dùng đúng phiên bản đã lưu lúc tạo (BR-GEN-02), không lấy bản đang hiệu lực.
         Map<Long, OverdueTerms> termsByPolicyId = new HashMap<>();
 
-        int totalScanned = 0;
         int markedOverdueCount = 0;
         int penalizedCount = 0;
         int terminatedCount = 0;
         long totalPenaltiesAccrued = 0L;
 
-        int page = 0;
-        int size = 100;
-        Page<RentalContract> pageData;
         OverdueProcessingServiceImpl runner = (self != null) ? self : this;
+        // ponytail: single List query, add Page chunking when active+overdue contracts exceed 5,000
+        List<RentalContract> contracts = Optional.ofNullable(
+                rentalContractRepository.findByStatusInAndEndDateExclusiveLessThanEqual(
+                        List.of(ContractStatus.ACTIVE, ContractStatus.OVERDUE, ContractStatus.TERMINATED),
+                        runDate))
+                .orElse(List.of());
 
-        do {
-            pageData = null;
+        int totalScanned = contracts.size();
+
+        for (RentalContract contract : contracts) {
             try {
-                pageData = rentalContractRepository.findByStatusInAndEndDateExclusiveLessThanEqual(
-                        List.of(ContractStatus.ACTIVE, ContractStatus.OVERDUE, ContractStatus.TERMINATED),
-                        runDate,
-                        PageRequest.of(page, size)
-                );
-            } catch (Exception ignored) {
-                // Ignore if method not mocked in unit test
-            }
-
-            // Fallback sang list query cho test suite Mockito truyền thống
-            if (pageData == null) {
-                List<RentalContract> list = rentalContractRepository.findByStatusInAndEndDateExclusiveLessThanEqual(
-                        List.of(ContractStatus.ACTIVE, ContractStatus.OVERDUE, ContractStatus.TERMINATED),
-                        runDate
-                );
-                if (list != null && !list.isEmpty()) {
-                    pageData = new PageImpl<>(list, PageRequest.of(0, list.size()), list.size());
-                } else {
-                    pageData = Page.empty();
+                OverdueSingleResult singleRes = runner.processSingleContract(contract, runDate, termsByPolicyId);
+                if (singleRes.markedOverdue()) {
+                    markedOverdueCount++;
                 }
-            }
-
-            totalScanned += pageData.getNumberOfElements();
-
-            for (RentalContract contract : pageData.getContent()) {
-                try {
-                    OverdueSingleResult singleRes = runner.processSingleContract(contract, runDate, termsByPolicyId);
-                    if (singleRes.markedOverdue()) {
-                        markedOverdueCount++;
-                    }
-                    if (singleRes.penalized()) {
-                        penalizedCount++;
-                    }
-                    if (singleRes.terminated()) {
-                        terminatedCount++;
-                    }
-                    totalPenaltiesAccrued += singleRes.penaltyDelta();
-                } catch (Exception e) {
-                    log.error("[CRON OVERDUE] Lỗi khi xử lý HĐ [{}] (id={}): {}, bỏ qua và chạy tiếp HĐ khác.",
-                            contract.getCode(), contract.getId(), e.getMessage(), e);
+                if (singleRes.penalized()) {
+                    penalizedCount++;
                 }
+                if (singleRes.terminated()) {
+                    terminatedCount++;
+                }
+                totalPenaltiesAccrued += singleRes.penaltyDelta();
+            } catch (Exception e) {
+                log.error("[CRON OVERDUE] Lỗi khi xử lý HĐ [{}] (id={}): {}, bỏ qua và chạy tiếp HĐ khác.",
+                        contract.getCode(), contract.getId(), e.getMessage(), e);
             }
-
-            page++;
-        } while (pageData.hasNext());
+        }
 
         // 4. Tự động giải phóng các ô kho CLEANING sau 5 ngày dọn dẹp (BR-RET-09 / Trả kho hoàn tất)
         releaseCleaningUnits(runDate);
@@ -157,12 +127,7 @@ public class OverdueProcessingServiceImpl implements OverdueProcessingService {
             if (overdueDays >= 15 && contract.getStorageUnitId() != null) {
                 storageUnitRepository.findById(contract.getStorageUnitId()).ifPresent(unit -> {
                     if (unit.getStatus() == StorageUnitStatus.MAINTENANCE || unit.getStatus() == StorageUnitStatus.CLEANING) {
-                        boolean awaitingCheckIn = reservationRepository != null &&
-                                reservationRepository.existsActiveOrFutureReservation(
-                                        unit.getId(), List.of(ReservationStatus.CONFIRMED), runDate);
-                        StorageUnitStatus newStatus = awaitingCheckIn ? StorageUnitStatus.RESERVED : StorageUnitStatus.AVAILABLE;
-                        unit.setStatus(newStatus);
-                        storageUnitRepository.save(unit);
+                        StorageUnitStatus newStatus = releaseUnitToAvailableOrReserved(unit, runDate);
                         log.info("Hợp đồng [{}] chạm mốc D+{} (>=15): Ô kho [{}] tự động hoàn tất bảo trì, chuyển sang {}.",
                                 contract.getCode(), overdueDays, unit.getId(), newStatus);
                     }
@@ -228,12 +193,7 @@ public class OverdueProcessingServiceImpl implements OverdueProcessingService {
             if (contract.getStorageUnitId() != null) {
                 storageUnitRepository.findById(contract.getStorageUnitId()).ifPresent(unit -> {
                     if (overdueDays >= 15) {
-                        boolean awaitingCheckIn = reservationRepository != null &&
-                                reservationRepository.existsActiveOrFutureReservation(
-                                        unit.getId(), List.of(ReservationStatus.CONFIRMED), runDate);
-                        StorageUnitStatus newStatus = awaitingCheckIn ? StorageUnitStatus.RESERVED : StorageUnitStatus.AVAILABLE;
-                        unit.setStatus(newStatus);
-                        storageUnitRepository.save(unit);
+                        StorageUnitStatus newStatus = releaseUnitToAvailableOrReserved(unit, runDate);
                         log.info("Hợp đồng [{}] cưỡng chế tại D+{} (>=15): Ô kho [{}] tự động hoàn tất bảo trì, chuyển sang {}.",
                                 contract.getCode(), overdueDays, unit.getId(), newStatus);
                     } else {
@@ -266,12 +226,7 @@ public class OverdueProcessingServiceImpl implements OverdueProcessingService {
                 if (cleaningStartDate != null) {
                     long cleaningDays = ChronoUnit.DAYS.between(cleaningStartDate, runDate);
                     if (cleaningDays >= 5) {
-                        boolean awaitingCheckIn = reservationRepository != null &&
-                                reservationRepository.existsActiveOrFutureReservation(
-                                        unit.getId(), List.of(ReservationStatus.CONFIRMED), runDate);
-                        StorageUnitStatus newStatus = awaitingCheckIn ? StorageUnitStatus.RESERVED : StorageUnitStatus.AVAILABLE;
-                        unit.setStatus(newStatus);
-                        storageUnitRepository.save(unit);
+                        StorageUnitStatus newStatus = releaseUnitToAvailableOrReserved(unit, runDate);
                         log.info("Ô kho [{}] đã dọn dẹp {} ngày (>= 5 ngày từ {}): Tự động chuyển sang {}.",
                                 unit.getCode(), cleaningDays, cleaningStartDate, newStatus);
                     }
@@ -280,6 +235,16 @@ public class OverdueProcessingServiceImpl implements OverdueProcessingService {
                 log.error("[CRON OVERDUE] Lỗi khi giải phóng ô kho cleaning [{}]: {}", unit.getCode(), e.getMessage());
             }
         }
+    }
+
+    private StorageUnitStatus releaseUnitToAvailableOrReserved(StorageUnit unit, LocalDate runDate) {
+        boolean awaitingCheckIn = reservationRepository != null &&
+                reservationRepository.existsActiveOrFutureReservation(
+                        unit.getId(), List.of(ReservationStatus.CONFIRMED), runDate);
+        StorageUnitStatus newStatus = awaitingCheckIn ? StorageUnitStatus.RESERVED : StorageUnitStatus.AVAILABLE;
+        unit.setStatus(newStatus);
+        storageUnitRepository.save(unit);
+        return newStatus;
     }
 
     private OverdueTerms termsOf(RentalContract contract, Map<Long, OverdueTerms> cache) {

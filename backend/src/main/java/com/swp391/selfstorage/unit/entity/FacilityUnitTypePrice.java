@@ -37,10 +37,18 @@ public class FacilityUnitTypePrice {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
+    @Version
+    @Column(name = "version", nullable = false)
+    @Builder.Default
+    private Long version = 0L;
+
     @PrePersist
     protected void onCreate() {
         createdAt = OffsetDateTime.now();
         updatedAt = OffsetDateTime.now();
+        if (version == null) {
+            version = 0L;
+        }
     }
 
     @PreUpdate

@@ -535,4 +535,108 @@ class SystemReportServiceTest {
         assertTrue(csvContent.contains("# BÁO CÁO DANH SÁCH HỢP ĐỒNG NỢ QUÁ HẠN"));
         assertTrue(csvContent.contains("# Không có dữ liệu trong kỳ báo cáo"));
     }
+
+    @Test
+    @DisplayName("REP-02: Khách đóng trước 6 tháng (12tr) -> Cash Flow +12tr, MRR +2tr")
+    void testSystemRevenueReport_CashFlowVsMrr_6MonthsPrepaid() {
+        LocalDate from = LocalDate.of(2026, 10, 1);
+        LocalDate to = LocalDate.of(2026, 10, 31);
+        when(facilityRepository.findAll()).thenReturn(List.of(facility1));
+
+        RentalContract prepaidContract = RentalContract.builder()
+                .id(601L)
+                .facilityId(1L)
+                .status(ContractStatus.ACTIVE)
+                .rentalMonths(6)
+                .monthlyPrice(2_000_000L)
+                .totalRentalFee(12_000_000L)
+                .depositAmount(0L)
+                .depositBalance(0L)
+                .build();
+        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(List.of(prepaidContract));
+
+        PaymentTransaction initialPaid = PaymentTransaction.builder()
+                .id(61L)
+                .contractId(601L)
+                .amount(12_000_000L)
+                .transactionType("INITIAL_PAYMENT")
+                .status("SUCCESS")
+                .build();
+        initialPaid.setCreatedAt(java.time.Instant.parse("2026-10-10T03:00:00Z"));
+        when(paymentTransactionRepository.findByContractId(601L)).thenReturn(List.of(initialPaid));
+
+        SystemRevenueReportResponse report = systemReportService.getSystemRevenueReport(from, to, null);
+
+        assertEquals(12_000_000L, report.getTotalRevenue(), "Cash Flow tháng này phải ghi nhận đủ +12tr thực thu");
+        assertEquals(2_000_000L, report.getMrr(), "MRR tháng này chỉ ghi nhận +2tr doanh thu định kỳ");
+    }
+
+    @Test
+    @DisplayName("REP-03: Cơ sở có 10 ô, 6 đang thuê, 1 bảo trì (Maintenance) -> Occupancy = 6 / (10 - 1) = 66.7%")
+    void testSystemOccupancyReport_ExcludesMaintenanceFromDenominator() {
+        when(facilityRepository.findAll()).thenReturn(List.of(facility1));
+
+        List<StorageUnit> units = List.of(
+                StorageUnit.builder().id(1L).status(StorageUnitStatus.OCCUPIED).build(),
+                StorageUnit.builder().id(2L).status(StorageUnitStatus.OCCUPIED).build(),
+                StorageUnit.builder().id(3L).status(StorageUnitStatus.OCCUPIED).build(),
+                StorageUnit.builder().id(4L).status(StorageUnitStatus.OCCUPIED).build(),
+                StorageUnit.builder().id(5L).status(StorageUnitStatus.OCCUPIED).build(),
+                StorageUnit.builder().id(6L).status(StorageUnitStatus.OCCUPIED).build(),
+                StorageUnit.builder().id(7L).status(StorageUnitStatus.AVAILABLE).build(),
+                StorageUnit.builder().id(8L).status(StorageUnitStatus.AVAILABLE).build(),
+                StorageUnit.builder().id(9L).status(StorageUnitStatus.AVAILABLE).build(),
+                StorageUnit.builder().id(10L).status(StorageUnitStatus.MAINTENANCE).build());
+        when(storageUnitRepository.findByFacilityId(1L)).thenReturn(units);
+
+        SystemOccupancyReportResponse report = systemReportService.getSystemOccupancyReport(null);
+
+        assertEquals(0.667, report.getOverallOccupancyRate());
+        assertEquals(0.667, report.getFacilities().get(0).getOccupancyRate());
+    }
+
+    @Test
+    @DisplayName("REP-04 (Tech Lead Guardrail #3): Khoản hoàn cọc đang chờ chuyển (PENDING_REFUND) vẫn tính vào Nợ cọc (Deposit Liability)")
+    void testSystemRevenueReport_PendingRefundStillCountsAsDepositLiability() {
+        LocalDate from = LocalDate.of(2026, 10, 1);
+        LocalDate to = LocalDate.of(2026, 10, 31);
+        when(facilityRepository.findAll()).thenReturn(List.of(facility1));
+
+        RentalContract activeContract = RentalContract.builder()
+                .id(701L)
+                .facilityId(1L)
+                .status(ContractStatus.ACTIVE)
+                .rentalMonths(1)
+                .monthlyPrice(2_000_000L)
+                .totalRentalFee(2_000_000L)
+                .depositBalance(30_000_000L)
+                .build();
+
+        RentalContract returnedPendingRefundContract = RentalContract.builder()
+                .id(702L)
+                .facilityId(1L)
+                .status(ContractStatus.RETURNED)
+                .depositBalance(0L)
+                .build();
+
+        when(rentalContractRepository.findByFacilityId(1L))
+                .thenReturn(List.of(activeContract, returnedPendingRefundContract));
+        when(paymentTransactionRepository.findByContractId(701L)).thenReturn(Collections.emptyList());
+
+        PaymentTransaction pendingRefundTxn = PaymentTransaction.builder()
+                .id(71L)
+                .contractId(702L)
+                .amount(10_000_000L)
+                .transactionType("REFUND")
+                .status("PENDING_REFUND")
+                .build();
+        pendingRefundTxn.setCreatedAt(java.time.Instant.parse("2026-10-15T03:00:00Z"));
+        when(paymentTransactionRepository.findByContractId(702L)).thenReturn(List.of(pendingRefundTxn));
+
+        SystemRevenueReportResponse report = systemReportService.getSystemRevenueReport(from, to, null);
+
+        assertEquals(40_000_000L, report.getTotalDepositLiability(),
+                "30tr đang giữ + 10tr PENDING_REFUND chưa chuyển khoản vẫn là Nợ phải trả (40tr)");
+        assertEquals(0L, report.getTotalRevenue(), "Tuyệt đối không cộng tiền cọc vào Doanh thu");
+    }
 }

@@ -13,6 +13,7 @@ import com.swp391.selfstorage.payment.gateway.VnPayGateway;
 import com.swp391.selfstorage.payment.repository.PaymentTransactionRepository;
 import com.swp391.selfstorage.payment.service.PaymentService;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -21,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
  * Điều phối gọi sang PaymentService xử lý độc lập từng đơn hàng theo transaction REQUIRES_NEW.
  */
 @Component
+@RequiredArgsConstructor
 @Slf4j
 public class PaymentReconciliationScheduler {
 
@@ -30,15 +32,6 @@ public class PaymentReconciliationScheduler {
 
     @Value("${app.cron.payment-reconciliation.enabled:true}")
     private boolean enabled;
-
-    public PaymentReconciliationScheduler(
-            PaymentTransactionRepository paymentTransactionRepository,
-            PaymentService paymentService,
-            VnPayGateway vnPayGateway) {
-        this.paymentTransactionRepository = paymentTransactionRepository;
-        this.paymentService = paymentService;
-        this.vnPayGateway = vnPayGateway;
-    }
 
     /**
      * Mặc định quét mỗi 15 phút một lần để đối soát đơn hàng treo.

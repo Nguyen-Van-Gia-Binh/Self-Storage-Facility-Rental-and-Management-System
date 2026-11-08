@@ -88,6 +88,8 @@ export const RenewalPage: React.FC = () => {
     loadingQuote,
     isCapacityConflict,
     setCapacityConflict,
+    isUnitTypeInactive,
+    unitTypeInactiveMessage,
     newEndDate,
     pricing,
   } = useRenewalPricing({ contract, renewalMonths });
@@ -161,7 +163,7 @@ export const RenewalPage: React.FC = () => {
     ? Math.ceil((new Date(contract.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
     : 999;
   const isPastRenewalDeadline = contract?.status === 'ACTIVE' && daysRemaining < 20;
-  const isRenewalBlocked = isTerminated || isPendingReturn || hasUnpaidOverdue || isCapacityConflict || isPastRenewalDeadline;
+  const isRenewalBlocked = isTerminated || isPendingReturn || hasUnpaidOverdue || isCapacityConflict || isPastRenewalDeadline || isUnitTypeInactive;
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
@@ -178,6 +180,41 @@ export const RenewalPage: React.FC = () => {
           Gia Hạn Hợp Đồng Thuê Kho
         </h1>
       </div>
+
+      {isUnitTypeInactive && (
+        <div className="p-4 bg-rose-50 border-2 border-rose-300 rounded-xl flex flex-col sm:flex-row sm:items-start justify-between gap-4 text-rose-900 shadow-xs">
+          <div className="flex items-start gap-3 flex-1">
+            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+            <div className="space-y-1 text-xs">
+              <h4 className="font-bold text-sm text-rose-950">
+                Loại ô kho đã ngừng kinh doanh (Graceful Deactivation)
+              </h4>
+              <p className="leading-relaxed text-rose-800">
+                {unitTypeInactiveMessage || 'Loại kho này đã ngừng kinh doanh, vui lòng liên hệ ban quản lý.'} Hợp đồng hiện tại của Quý khách vẫn được duy trì bình thường đến hết hạn ({contract.endDate}), nhưng không thể tự gia hạn kỳ mới.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <Link
+              to={contract.facilityId ? `/booking/picker?facilityId=${contract.facilityId}` : '/booking/picker'}
+            >
+              <Button variant="primary" size="sm" className="text-xs font-bold flex items-center gap-1.5">
+                <PlusCircle className="w-3.5 h-3.5" />
+                <span>Tìm ô kho mới</span>
+              </Button>
+            </Link>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowReturnModal(true)}
+              className="text-xs font-bold flex items-center gap-1.5 border-rose-300 text-rose-800 hover:bg-rose-100"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Lên lịch trả kho</span>
+            </Button>
+          </div>
+        </div>
+      )}
 
       {isPastRenewalDeadline && (
         <div className="p-4 bg-amber-50 border-2 border-amber-300 rounded-xl flex items-start gap-3 text-amber-900 shadow-xs">

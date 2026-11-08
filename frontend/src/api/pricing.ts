@@ -25,12 +25,14 @@ export interface FacilityPriceItem {
   priceStatus?: string | null;
   scheduledEffectiveFrom?: string | null;
   scheduledPricePerM2?: number | null;
+  version?: number | null;
   updatedAt?: string;
 }
 
 export interface UpdatePricePayload {
   pricePerM2: number;
   effectiveDate?: string;
+  version?: number | null;
   /** Legacy — không dùng từ UI mới */
   monthlyPrice?: number;
 }
@@ -78,11 +80,13 @@ export async function updateUnitTypePrice(
   facilityId: number,
   unitTypeId: number,
   pricePerM2: number,
-  effectiveDate?: string
+  effectiveDate?: string,
+  version?: number | null
 ): Promise<UnitTypeCatalog> {
   const res = await updateUnitPrice(facilityId, unitTypeId, {
     pricePerM2,
     effectiveDate,
+    ...(version != null ? { version } : {}),
   });
   return {
     id: res.unitTypeId || res.id,
@@ -93,6 +97,7 @@ export async function updateUnitTypePrice(
     priceStatus: res.priceStatus,
     scheduledEffectiveFrom: res.scheduledEffectiveFrom ?? null,
     scheduledPricePerM2: res.scheduledPricePerM2 ?? null,
+    priceVersion: res.version ?? null,
     description: '',
     widthM: 0,
     depthM: 0,

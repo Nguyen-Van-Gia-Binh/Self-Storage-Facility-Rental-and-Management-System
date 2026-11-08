@@ -10,6 +10,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
@@ -24,6 +26,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(SystemReportController.class)
 @AutoConfigureMockMvc(addFilters = false)
+@EnableMethodSecurity
+@WithMockUser(roles = "BUSINESS_OPERATIONS_MANAGER")
 class SystemReportControllerTest {
 
     @Autowired
@@ -187,6 +191,17 @@ class SystemReportControllerTest {
                         .string(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, org.hamcrest.Matchers.containsString("attachment; filename=\"report_revenue_")))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
                         .string(org.springframework.http.HttpHeaders.CONTENT_TYPE, org.hamcrest.Matchers.startsWith("text/csv")));
+    }
+
+    @Test
+    @WithMockUser(roles = "STORAGE_CUSTOMER")
+    @DisplayName("SEC-02: Khách hàng (Customer) gọi GET /reports/system/revenue bị chặn 403 Forbidden")
+    void testGetSystemRevenueReport_CustomerForbidden() throws Exception {
+        mockMvc.perform(get("/reports/system/revenue")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.errorCode").value("ACCESS_DENIED"));
     }
 
 }

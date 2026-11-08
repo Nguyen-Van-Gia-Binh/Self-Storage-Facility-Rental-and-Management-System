@@ -30,8 +30,17 @@ public class UpdatePriceRequest {
     /** Ngày hiệu lực; null = hôm nay (Asia/Ho_Chi_Minh). Không được ở quá khứ. */
     private LocalDate effectiveDate;
 
+    /** Phiên bản Optimistic Locking (@Version) tùy chọn để phát hiện xung đột sửa giá đồng thời (CON-01). */
+    private Long version;
+
     /** Giữ constructor 1 tham số để test cũ compile. */
     public UpdatePriceRequest(Long monthlyPrice) {
         this.monthlyPrice = monthlyPrice;
+    }
+
+    public UpdatePriceRequest(Long monthlyPrice, Long pricePerM2, LocalDate effectiveDate) {
+        this.monthlyPrice = monthlyPrice;
+        this.pricePerM2 = pricePerM2;
+        this.effectiveDate = effectiveDate;
     }
 }

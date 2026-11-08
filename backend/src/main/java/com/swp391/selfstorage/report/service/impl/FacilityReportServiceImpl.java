@@ -75,7 +75,7 @@ public class FacilityReportServiceImpl implements FacilityReportService {
         long maintenanceUnits = allUnits.stream().filter(u -> u.getStatus() == StorageUnitStatus.MAINTENANCE).count();
         long outOfServiceUnits = allUnits.stream().filter(u -> u.getStatus() == StorageUnitStatus.OUT_OF_SERVICE).count();
 
-        long exploitableUnits = totalUnits - outOfServiceUnits;
+        long exploitableUnits = totalUnits - outOfServiceUnits - maintenanceUnits;
         double occupancyRate = 0.0;
         if (exploitableUnits > 0) {
             BigDecimal rate = BigDecimal.valueOf((double) occupiedUnits / exploitableUnits)

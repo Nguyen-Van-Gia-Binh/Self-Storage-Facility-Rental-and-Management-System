@@ -565,7 +565,7 @@ private void publishContractRenewalCompleted(PaymentTransaction payment) {
     }
 
     @Override
-    @Transactional
+    @Transactional(noRollbackFor = CustomException.class)
     public PaymentResponse processPayment(CreatePaymentRequest request) {
         log.info("Processing payment for referenceType={}, referenceId={}, amount={}",
                 request.getReferenceType(), request.getReferenceId(), request.getAmount());

@@ -228,13 +228,22 @@ export const BomPricingManagementPage: React.FC = () => {
   ) => {
     setIsUpdatingPrice(true);
     try {
-      await updateUnitTypePrice(selectedFacilityId, unitTypeId, pricePerM2, effectiveDate);
+      await updateUnitTypePrice(
+        selectedFacilityId,
+        unitTypeId,
+        pricePerM2,
+        effectiveDate,
+        priceDrawerUnitType?.priceVersion
+      );
       showToast('Đã cập nhật đơn giá loại ô kho thành công!');
       handleClosePriceDrawer();
       await refreshUnitTypes();
     } catch (err: unknown) {
-      const errorObj = err as { message?: string };
+      const errorObj = err as { status?: number; errorCode?: string; message?: string };
       showToast(errorObj.message || 'Lỗi khi cập nhật giá', 'error');
+      if (errorObj.status === 409 || errorObj.errorCode === 'OPTIMISTIC_LOCK_CONFLICT') {
+        await refreshUnitTypes();
+      }
     } finally {
       setIsUpdatingPrice(false);
     }
@@ -247,16 +256,26 @@ export const BomPricingManagementPage: React.FC = () => {
     setIsUpdatingPrice(true);
     try {
       await Promise.all(
-        updates.map((u) =>
-          updateUnitTypePrice(selectedFacilityId, u.unitTypeId, u.pricePerM2, effectiveDate)
-        )
+        updates.map((u) => {
+          const target = priceDrawerBulkTargets.find((t) => t.id === u.unitTypeId);
+          return updateUnitTypePrice(
+            selectedFacilityId,
+            u.unitTypeId,
+            u.pricePerM2,
+            effectiveDate,
+            target?.priceVersion
+          );
+        })
       );
       showToast(`Đã cập nhật giá thành công cho ${updates.length} loại ô kho!`);
       handleClosePriceDrawer();
       await refreshUnitTypes();
     } catch (err: unknown) {
-      const errorObj = err as { message?: string };
+      const errorObj = err as { status?: number; errorCode?: string; message?: string };
       showToast(errorObj.message || 'Lỗi khi cập nhật giá hàng loạt', 'error');
+      if (errorObj.status === 409 || errorObj.errorCode === 'OPTIMISTIC_LOCK_CONFLICT') {
+        await refreshUnitTypes();
+      }
     } finally {
       setIsUpdatingPrice(false);
     }

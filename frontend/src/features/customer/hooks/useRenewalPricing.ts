@@ -20,6 +20,8 @@ export function useRenewalPricing({ contract, renewalMonths }: UseRenewalPricing
   const [loadingQuote, setLoadingQuote] = useState(false);
   const [isCapacityConflict, setIsCapacityConflict] = useState(false);
   const [capacityConflictMessage, setCapacityConflictMessage] = useState('');
+  const [isUnitTypeInactive, setIsUnitTypeInactive] = useState(false);
+  const [unitTypeInactiveMessage, setUnitTypeInactiveMessage] = useState('');
 
   // Thiết lập Conflict View (dùng cả bởi hook payment khi init VNPay gặp CAPACITY_NOT_AVAILABLE)
   const setCapacityConflict = (message: string) => {
@@ -36,6 +38,7 @@ export function useRenewalPricing({ contract, renewalMonths }: UseRenewalPricing
     const fetchQuote = async () => {
       setLoadingQuote(true);
       setIsCapacityConflict(false);
+      setIsUnitTypeInactive(false);
       try {
         const numId = parseInt(contract.id, 10);
         const rawId = contract.id.replace(/\D/g, '');
@@ -51,6 +54,13 @@ export function useRenewalPricing({ contract, renewalMonths }: UseRenewalPricing
         if (code === 'CAPACITY_NOT_AVAILABLE' || msg.includes('đặt trước') || msg.includes('CAPACITY_NOT_AVAILABLE')) {
           if (isMounted) {
             setCapacityConflict(msg);
+          }
+        } else if (code === 'UNIT_TYPE_INACTIVE' || msg.includes('ngừng kinh doanh') || msg.includes('UNIT_TYPE_INACTIVE')) {
+          if (isMounted) {
+            setIsUnitTypeInactive(true);
+            setUnitTypeInactiveMessage(
+              msg || 'Loại kho này đã ngừng kinh doanh, vui lòng liên hệ ban quản lý.',
+            );
           }
         }
       } finally {
@@ -124,6 +134,8 @@ export function useRenewalPricing({ contract, renewalMonths }: UseRenewalPricing
     isCapacityConflict,
     capacityConflictMessage,
     setCapacityConflict,
+    isUnitTypeInactive,
+    unitTypeInactiveMessage,
     newEndDate,
     pricing,
   };

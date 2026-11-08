@@ -27,11 +27,15 @@ import com.swp391.selfstorage.reservation.entity.ReservationStatus;
 import com.swp391.selfstorage.reservation.repository.ReservationRepository;
 import com.swp391.selfstorage.policy.service.AppliedPriceLookup;
 import com.swp391.selfstorage.unit.entity.FacilityUnitTypePrice;
+import com.swp391.selfstorage.unit.entity.UnitType;
 import com.swp391.selfstorage.unit.repository.FacilityUnitTypePriceRepository;
+import com.swp391.selfstorage.unit.repository.UnitTypeRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class RenewalServiceImpl implements RenewalService {
 
     private final RentalContractRepository rentalContractRepository;
@@ -40,23 +44,10 @@ public class RenewalServiceImpl implements RenewalService {
     private final FacilityUnitTypePriceRepository facilityPriceRepository;
     private final PolicyService policyService;
     private final RenewalMapper renewalMapper;
+    private final UnitTypeRepository unitTypeRepository;
 
     @Autowired(required = false)
     private AppliedPriceLookup appliedPriceLookup;
-
-    public RenewalServiceImpl(RentalContractRepository rentalContractRepository,
-            ContractRenewalRepository contractRenewalRepository,
-            ReservationRepository reservationRepository,
-            FacilityUnitTypePriceRepository facilityPriceRepository,
-            PolicyService policyService,
-            RenewalMapper renewalMapper) {
-        this.rentalContractRepository = rentalContractRepository;
-        this.contractRenewalRepository = contractRenewalRepository;
-        this.reservationRepository = reservationRepository;
-        this.facilityPriceRepository = facilityPriceRepository;
-        this.policyService = policyService;
-        this.renewalMapper = renewalMapper;
-    }
 
     /**
      * 1. Tính toán báo giá xem trước cho khách hàng trước khi thanh toán (Quote).
@@ -183,6 +174,15 @@ public class RenewalServiceImpl implements RenewalService {
     private RentalContract getValidContractForRenewal(Long contractId) {
         RentalContract contract = rentalContractRepository.findById(contractId)
                 .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
+
+        // CAT-04 / BR-BOM-04: Chặn gia hạn nếu loại kho đã bị BOM chuyển sang INACTIVE
+        if (unitTypeRepository != null && contract.getUnitTypeId() != null) {
+            UnitType unitType = unitTypeRepository.findById(contract.getUnitTypeId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND));
+            if (!unitType.isActive()) {
+                throw new CustomException(ErrorCode.UNIT_TYPE_INACTIVE);
+            }
+        }
 
         // Hợp đồng OVERDUE chỉ được gia hạn sau khi đã tất toán toàn bộ nợ phạt (BR-REN-06)
         if (contract.getStatus() == ContractStatus.OVERDUE) {

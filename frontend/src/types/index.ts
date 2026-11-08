@@ -79,6 +79,7 @@ export interface UnitTypeCatalog {
   priceStatus?: string | null;
   scheduledEffectiveFrom?: string | null;
   scheduledPricePerM2?: number | null;
+  priceVersion?: number | null;
 }
 
 export interface AvailabilityResult {

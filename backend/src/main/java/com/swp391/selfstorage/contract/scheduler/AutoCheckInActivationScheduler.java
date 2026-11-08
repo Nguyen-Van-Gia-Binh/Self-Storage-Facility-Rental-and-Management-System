@@ -16,7 +16,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Tác vụ nền tự động kích hoạt hợp đồng và ô kho sau 10 ngày ân hạn nhận kho (BR-CAN-04, BR-CHK-05).
@@ -33,10 +35,11 @@ public class AutoCheckInActivationScheduler {
     private final StorageUnitRepository storageUnitRepository;
     private final ReservationRepository reservationRepository;
 
-    @Scheduled(cron = "${app.scheduler.auto-checkin-cron:0 0 0 * * ?}")
+    @Scheduled(cron = "${app.scheduler.auto-checkin-cron:0 0 0 * * ?}", zone = "Asia/Ho_Chi_Minh")
     @Transactional
     public void scanAndAutoActivateContracts() {
-        LocalDate cutoffDate = LocalDate.now().minusDays(10);
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+        LocalDate cutoffDate = today.minusDays(10);
         List<RentalContract> pendingContracts = contractRepository.findByStatus(ContractStatus.PENDING_CHECK_IN);
 
         for (RentalContract contract : pendingContracts) {
@@ -45,10 +48,10 @@ public class AutoCheckInActivationScheduler {
                         contract.getCode(), contract.getStartDate());
 
                 contract.setStatus(ContractStatus.ACTIVE);
-                contract.setCheckinDate(LocalDate.now());
+                contract.setCheckinDate(today);
 
                 if (contract.getAccessCode() == null || contract.getAccessCode().isBlank()) {
-                    String generatedPin = String.format("%06d", (int) (Math.random() * 900000) + 100000);
+                    String generatedPin = String.format("%06d", ThreadLocalRandom.current().nextInt(100_000, 1_000_000));
                     contract.setAccessCode(generatedPin);
                 }
 

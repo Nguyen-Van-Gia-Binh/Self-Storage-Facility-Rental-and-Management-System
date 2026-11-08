@@ -87,6 +87,4 @@ public interface RentalContractRepository
      * Dùng cho Cronjob quét quá hạn (T4.6).
      */
     List<RentalContract> findByStatusInAndEndDateExclusiveLessThanEqual(List<ContractStatus> statuses, LocalDate date);
-
-    Page<RentalContract> findByStatusInAndEndDateExclusiveLessThanEqual(List<ContractStatus> statuses, LocalDate date, Pageable pageable);
 }
