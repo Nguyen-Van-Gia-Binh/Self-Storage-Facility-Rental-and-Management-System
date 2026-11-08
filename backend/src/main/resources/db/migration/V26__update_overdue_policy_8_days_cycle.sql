@@ -1,5 +1,5 @@
 -- ============================================================================
--- V25: Cập nhật tham số chính sách quá hạn sang chu kỳ 8 ngày khép kín
+-- V26: Cập nhật tham số chính sách quá hạn sang chu kỳ 8 ngày khép kín
 --      (15% lưu kho D+1..D+3 + 40% phạt D+4..D+7 + 45% phí niêm phong Kho Tổng = 100% cọc)
 --      và rút ngắn khoảng đệm an toàn rental_buffer_days từ 15 ngày xuống 8 ngày.
 -- ============================================================================

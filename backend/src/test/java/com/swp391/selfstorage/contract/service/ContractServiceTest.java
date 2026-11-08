@@ -661,11 +661,12 @@ class ContractServiceTest {
 
         assertNotNull(res);
         assertEquals(2, res.getOverdueDays());
-        assertEquals(0L, res.getAccruedOverdueFee());
+        // Chu kỳ 8 ngày: D+1..D+3 thu phí lưu kho 5%/ngày * 2 ngày * 1.000.000đ = 100.000đ
+        assertEquals(100_000L, res.getAccruedOverdueFee());
     }
 
     @Test
-    @DisplayName("BR-OVD-03: getContractById khi qua han D+5 -> overdueDays=5, accruedOverdueFee = 2 ngay phat * 10% = 200.000d")
+    @DisplayName("BR-OVD-03: getContractById khi qua han D+5 -> overdueDays=5, accruedOverdueFee = 3 ngay luu kho 15% + 2 ngay phat 20% = 350.000d")
     void shouldReturnCorrectPenalty_whenOverduePastGracePeriod() {
         RentalContract contract = RentalContract.builder()
                 .id(601L).code("CTR-601").facilityId(1L).storageUnitId(42L).unitTypeId(7L)
@@ -680,8 +681,8 @@ class ContractServiceTest {
 
         assertNotNull(res);
         assertEquals(5, res.getOverdueDays());
-        // 5 - 3 = 2 ngày phạt * 10% * 1.000.000đ = 200.000đ
-        assertEquals(200_000L, res.getAccruedOverdueFee());
+        // 3 ngày lưu kho (15%) + 2 ngày phạt (20%) = 35% * 1.000.000đ = 350.000đ
+        assertEquals(350_000L, res.getAccruedOverdueFee());
     }
 
     @Test
@@ -802,8 +803,8 @@ class ContractServiceTest {
         ContractResponse res = contractService.getContractById(602L, List.of(1L));
 
         assertEquals(5, res.getOverdueDays());
-        // 5 - 1 ngày ân hạn = 4 ngày × 10% × 1.000.000đ. Bản mặc định (ân hạn 3 ngày) chỉ ra 200.000đ.
-        assertEquals(400_000L, res.getAccruedOverdueFee());
+        // 1 ngày lưu kho 5% (50.000đ) + 4 ngày phạt × 10% (400.000đ) = 450.000đ
+        assertEquals(450_000L, res.getAccruedOverdueFee());
         verify(policyVersionRepository, never())
                 .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any());
     }
