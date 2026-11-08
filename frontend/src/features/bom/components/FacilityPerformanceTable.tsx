@@ -293,7 +293,7 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
                 </span>
               </th>
 
-              {/* 3. Phụ phí & Gia hạn */}
+              {/* 3. Gia hạn & Phụ phí */}
               <th
                 scope="col"
                 onClick={() => handleSort('surchargesAndRenewals')}
@@ -302,7 +302,7 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
                 }`}
               >
                 <span className="flex items-center justify-end gap-1">
-                  Phụ phí & Gia hạn {renderSortIcon('surchargesAndRenewals')}
+                  Gia hạn & Phụ phí {renderSortIcon('surchargesAndRenewals')}
                 </span>
               </th>
 
@@ -448,13 +448,13 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
                       )}
                     </td>
 
-                    {/* Cột 7: Ô trống / Tổng */}
+                    {/* Cột 7: Đang thuê / Trống / Khai thác */}
                     <td className="py-3 px-3 text-center font-mono tabular-nums text-xs text-slate-500">
                       {exploitableUnits === 0 ? (
                         <span className="text-slate-400">N/A</span>
                       ) : (
                         <span>
-                          {row.availableUnits} / {exploitableUnits} ô
+                          <strong className="text-slate-800 font-bold">{row.occupiedUnits}</strong> thuê · {row.availableUnits} trống / {exploitableUnits} ô
                         </span>
                       )}
                     </td>
@@ -516,7 +516,7 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
               <td className="bg-slate-100 py-3 px-3 text-center font-mono tabular-nums text-xs text-slate-600">
                 {totalExploitable === 0
                   ? 'N/A'
-                  : `${totalAvailable} trống / ${totalExploitable} ô`}
+                  : `${totalOccupied} thuê · ${totalAvailable} trống / ${totalExploitable} ô`}
               </td>
               <td className="bg-slate-100 py-3 px-3" />
             </tr>

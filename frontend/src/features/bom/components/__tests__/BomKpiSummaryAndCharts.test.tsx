@@ -59,8 +59,12 @@ describe('BomKpiSummary - Tier 1 Macro Financial KPIs', () => {
 
     // 4. Nợ quá hạn (Overdue Bad Debt Risk)
     expect(screen.getByText(/NỢ QUÁ HẠN & RỦI RO/i)).toBeInTheDocument();
-    expect(screen.getByText(/3\.786\.000/i)).toBeInTheDocument();
+    expect(screen.getByText(/^3\.786\.000/i)).toBeInTheDocument();
     expect(screen.getByText(/4 hợp đồng quá hạn/i)).toBeInTheDocument();
+
+    // Đối soát Tiền ra & Thực nhận ròng tại Thẻ 1
+    expect(screen.getByText(/Tiền ra: -5\.000\.000/i)).toBeInTheDocument();
+    expect(screen.getByText(/Ròng: 133\.786\.000/i)).toBeInTheDocument();
   });
 
   it('renders skeleton loading khi isLoading = true', () => {

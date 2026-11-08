@@ -54,13 +54,13 @@ export const BomKpiSummary: React.FC<BomKpiSummaryProps> = ({
           <div className="text-2xl lg:text-3xl font-bold font-mono tabular-nums tracking-tight text-slate-900">
             {formatCurrency(totalRev)}
           </div>
-          <div className="mt-1.5 flex items-center justify-between text-xs text-slate-500">
-            <span>Khớp sao kê thanh toán</span>
-            {refundAmount > 0 && (
-              <span className="text-slate-400 font-mono text-[11px]">
-                Hoàn: {formatCurrency(refundAmount)}
-              </span>
-            )}
+          <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+            <span className="text-rose-600 font-semibold font-mono">
+              Tiền ra: -{formatCurrency(refundAmount)}
+            </span>
+            <span className="text-emerald-700 font-bold font-mono">
+              Ròng: {formatCurrency(Math.max(0, totalRev - refundAmount))}
+            </span>
           </div>
         </div>
       </div>

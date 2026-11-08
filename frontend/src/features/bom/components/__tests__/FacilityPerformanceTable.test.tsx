@@ -83,7 +83,7 @@ describe('FacilityPerformanceTable Component', () => {
     // Tầng 2: Column headers
     expect(screen.getByText(/Cơ sở lưu kho/i)).toBeInTheDocument();
     expect(screen.getByText(/Tiền thuê kho/i)).toBeInTheDocument();
-    expect(screen.getByText(/Phụ phí & Gia hạn/i)).toBeInTheDocument();
+    expect(screen.getByText(/Gia hạn & Phụ phí/i)).toBeInTheDocument();
     expect(screen.getByText(/Phí quá hạn/i)).toBeInTheDocument();
     expect(screen.getByText(/Tổng thực thu/i)).toBeInTheDocument();
     expect(screen.getByText(/Tỷ lệ lấp đầy/i)).toBeInTheDocument();
