@@ -62,3 +62,6 @@ powershell.cmd
 
 #local docs
 docs-local
+
+# Local AI Persona & Personalized Context
+GEMINI.md
