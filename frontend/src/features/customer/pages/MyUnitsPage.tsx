@@ -582,6 +582,7 @@ export const MyUnitsPage: React.FC = () => {
             setSelectedReturnContract(c);
           }}
           onReschedulePeriod={(c) => {
+            if ((c.rescheduleCount ?? 0) >= 1) return;
             setSelectedDetailContract(null);
             setSelectedRescheduleContract(c);
           }}
@@ -618,7 +619,10 @@ export const MyUnitsPage: React.FC = () => {
         onCloseDetailModal={() => setSelectedDetailContract(null)}
         onSelectReturnFromDetail={(c) => setSelectedReturnContract(c)}
         onSelectPinFromDetail={(c) => setSelectedPinContract(c)}
-        onSelectRescheduleFromDetail={(c) => setSelectedRescheduleContract(c)}
+        onSelectRescheduleFromDetail={(c) => {
+          if ((c.rescheduleCount ?? 0) >= 1) return;
+          setSelectedRescheduleContract(c);
+        }}
         selectedRescheduleContract={selectedRescheduleContract}
         onCloseRescheduleModal={() => setSelectedRescheduleContract(null)}
         onRescheduleSuccess={() => {

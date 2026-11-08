@@ -277,7 +277,9 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
             actions.add("SUPPORT_TICKET");
         } else if (contract.getStatus() == ContractStatus.PENDING_CHECK_IN) {
             actions.add("CHECK_IN_INFO");
-            actions.add("RESCHEDULE");
+            if (contract.getRescheduleCount() < 1) {
+                actions.add("RESCHEDULE");
+            }
         } else if (contract.getStatus() == ContractStatus.CLOSED || contract.getStatus() == ContractStatus.TERMINATED) {
             actions.add("VIEW_INSPECTION");
         }
@@ -366,6 +368,8 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
         res.setDepositAmount(contract.getDepositAmount());
         res.setDepositBalance(contract.getDepositBalance());
         res.setStatus(contract.getStatus().name());
+        res.setRescheduleCount(contract.getRescheduleCount());
+        res.setRescheduledAt(contract.getRescheduledAt());
         res.setAccessPinLength(PolicyNumbers.snapshotInt(contract.getPolicySnapshot(), "accessPinLength", 6));
 
         LocalDate now = LocalDate.now();
