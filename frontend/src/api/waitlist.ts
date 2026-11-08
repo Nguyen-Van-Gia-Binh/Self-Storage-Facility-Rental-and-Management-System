@@ -2,6 +2,7 @@ import { apiClient, type ApiResponse } from './client';
 import type {
   CreateWaitlistRequest,
   ConvertWaitlistRequest,
+  ConvertWaitlistToContractRequest,
   RejectWaitlistRequest,
   FollowUpWaitlistRequest,
   WaitlistResponse,
@@ -60,6 +61,17 @@ export async function convertWaitlistToReservation(
   data?: ConvertWaitlistRequest
 ): Promise<WaitlistResponse> {
   const res = await apiClient<ApiResponse<WaitlistResponse>>(`/waitlists/${id}/convert-to-reservation`, {
+    method: 'POST',
+    body: JSON.stringify(data || {}),
+  });
+  return unwrap(res);
+}
+
+export async function convertWaitlistToContract(
+  id: number,
+  data?: ConvertWaitlistToContractRequest
+): Promise<WaitlistResponse> {
+  const res = await apiClient<ApiResponse<WaitlistResponse>>(`/waitlists/${id}/convert-to-contract`, {
     method: 'POST',
     body: JSON.stringify(data || {}),
   });

@@ -11,12 +11,14 @@ import {
   Filter,
   ArrowRight,
   ShieldAlert,
+  FileCheck,
 } from 'lucide-react';
 import { fetchMyAssignedFacilities } from '@/api/facility';
 import {
   fetchFacilityWaitlists,
   startContacting,
   convertWaitlistToReservation,
+  convertWaitlistToContract,
   rejectWaitlist,
   followUpWaitlist,
 } from '@/api/waitlist';
@@ -39,6 +41,13 @@ export const WaitlistInboxPage: React.FC = () => {
   const [convertModalItem, setConvertModalItem] = useState<WaitlistResponse | null>(null);
   const [convertStartDate, setConvertStartDate] = useState<string>('');
   const [convertMonths, setConvertMonths] = useState<number>(1);
+
+  // Direct Contract Modal State
+  const [directModalItem, setDirectModalItem] = useState<WaitlistResponse | null>(null);
+  const [directStartDate, setDirectStartDate] = useState<string>('');
+  const [directMonths, setDirectMonths] = useState<number>(1);
+  const [directPaymentMethod, setDirectPaymentMethod] = useState<string>('CASH');
+  const [directNotes, setDirectNotes] = useState<string>('');
 
   // Rescue Modal State (409 Conflict)
   const [rescueModalItem, setRescueModalItem] = useState<WaitlistResponse | null>(null);
@@ -153,6 +162,45 @@ export const WaitlistInboxPage: React.FC = () => {
         setConvertModalItem(null);
       } else {
         showToast(err.message || 'Không thể tạo đơn đặt cọc', 'error');
+      }
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Open Direct Contract Modal
+  const openDirectContractModal = (item: WaitlistResponse) => {
+    setDirectModalItem(item);
+    const today = new Date().toISOString().split('T')[0];
+    const initialStart = item.targetStartDate >= today ? item.targetStartDate : today;
+    setDirectStartDate(initialStart);
+    setDirectMonths(item.rentalMonths || 1);
+    setDirectPaymentMethod('CASH');
+    setDirectNotes(item.contactNotes || '');
+  };
+
+  // Submit Direct Contract Creation
+  const handleConfirmDirectContract = async () => {
+    if (!directModalItem) return;
+    try {
+      setActionLoading(true);
+      await convertWaitlistToContract(directModalItem.id, {
+        startDate: directStartDate,
+        rentalMonths: directMonths,
+        paymentMethod: directPaymentMethod,
+        notes: directNotes || undefined,
+      });
+      showToast('Tạo hợp đồng trực tiếp thành công!', 'success');
+      setDirectModalItem(null);
+      if (selectedFacilityId) {
+        await loadWaitlists(selectedFacilityId);
+      }
+    } catch (err: any) {
+      if (err?.status === 409 || err?.errorCode === 'CAPACITY_NOT_AVAILABLE') {
+        setDirectModalItem(null);
+        setRescueModalItem(directModalItem);
+      } else {
+        showToast(err.message || 'Lỗi khi tạo hợp đồng trực tiếp', 'error');
       }
     } finally {
       setActionLoading(false);
@@ -447,13 +495,17 @@ export const WaitlistInboxPage: React.FC = () => {
                           <div className="space-y-1">
                             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
                               <CheckCircle className="h-3 w-3" />
-                              Đã chốt cọc (24h)
+                              {item.convertedContractId ? 'Đã tạo HĐ trực tiếp' : 'Đã chốt cọc (24h)'}
                             </span>
-                            {item.convertedReservationCode && (
+                            {item.convertedContractId ? (
+                              <div className="text-xs font-mono text-teal-800 font-semibold">
+                                HĐ #{item.convertedContractId}
+                              </div>
+                            ) : item.convertedReservationCode ? (
                               <div className="text-xs font-mono text-emerald-800">
                                 {item.convertedReservationCode}
                               </div>
-                            )}
+                            ) : null}
                           </div>
                         )}
 
@@ -483,12 +535,21 @@ export const WaitlistInboxPage: React.FC = () => {
                             Bắt đầu tư vấn
                           </button>
                         ) : item.status === 'CONTACTING' && isLockedByMe ? (
-                          /* Case 3: Locked by me -> 3 Actions */
+                          /* Case 3: Locked by me -> Direct contract or Reservation */
                           <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => openDirectContractModal(item)}
+                              disabled={actionLoading}
+                              className="rounded-lg bg-teal-700 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-teal-800"
+                              title="Tạo hợp đồng trực tiếp tại quầy / chốt khách đặt trước dài hạn"
+                            >
+                              Tạo HĐ trực tiếp
+                            </button>
                             <button
                               onClick={() => openConvertModal(item)}
                               disabled={actionLoading}
                               className="rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-emerald-700"
+                              title="Tạo đơn giữ chỗ 24h chờ khách thanh toán online"
                             >
                               Tạo đơn cọc
                             </button>
@@ -514,7 +575,13 @@ export const WaitlistInboxPage: React.FC = () => {
                             </button>
                           </div>
                         ) : item.status === 'CONVERTED' ? (
-                          <span className="text-xs text-emerald-600 font-medium">Chờ thanh toán VNPay</span>
+                          item.convertedContractId ? (
+                            <span className="text-xs text-teal-700 font-semibold bg-teal-50 border border-teal-200 px-2 py-1 rounded-md">
+                              HĐ #{item.convertedContractId} sẵn sàng
+                            </span>
+                          ) : (
+                            <span className="text-xs text-emerald-600 font-medium">Chờ thanh toán VNPay</span>
+                          )
                         ) : null}
                       </td>
                     </tr>
@@ -582,6 +649,103 @@ export const WaitlistInboxPage: React.FC = () => {
                 className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50"
               >
                 Xác nhận Tạo đơn Cọc
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Tạo Hợp Đồng Trực Tiếp từ Waitlist (FM-01 / Telesales Deal) */}
+      {directModalItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-100 text-teal-700">
+                <FileCheck className="h-4 w-4" />
+              </span>
+              Tạo Hợp Đồng Trực Tiếp (Waitlist)
+            </h3>
+            <p className="mt-1 text-xs text-gray-500">
+              Chốt hợp đồng trực tiếp cho khách hàng đặt trước hoặc tư vấn tại quầy. Hợp đồng sinh ra ở trạng thái Chờ nhận kho (PENDING_CHECK_IN).
+            </p>
+
+            <div className="mt-4 space-y-2 rounded-lg bg-gray-50 p-3 border border-gray-200 text-xs">
+              <div className="flex justify-between">
+                <span className="text-gray-500">Khách hàng:</span>
+                <span className="font-semibold text-gray-900">{directModalItem.customerName || `Khách #${directModalItem.customerId}`} ({directModalItem.contactPhone || directModalItem.customerPhone})</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Cơ sở:</span>
+                <span className="font-medium text-gray-800">{directModalItem.facilityName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Hạng kho:</span>
+                <span className="font-semibold text-teal-700">{directModalItem.unitTypeName}</span>
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-gray-700">Ngày bắt đầu thuê</label>
+                <input
+                  type="date"
+                  min={new Date().toISOString().split('T')[0]}
+                  value={directStartDate}
+                  onChange={(e) => setDirectStartDate(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none"
+                />
+                <p className="text-[11px] text-gray-400 mt-0.5">Cho phép chọn bất kỳ ngày nào trong tương lai (kể cả &gt; 30 ngày)</p>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-700">Thời hạn thuê (tháng)</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={12}
+                  value={directMonths}
+                  onChange={(e) => setDirectMonths(Math.max(1, Math.min(12, Number(e.target.value))))}
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-700">Phương thức thanh toán cọc</label>
+                <select
+                  value={directPaymentMethod}
+                  onChange={(e) => setDirectPaymentMethod(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none"
+                >
+                  <option value="CASH">Tiền mặt tại quầy (CASH)</option>
+                  <option value="BANK_TRANSFER">Chuyển khoản trực tiếp (BANK_TRANSFER)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-700">Ghi chú hợp đồng</label>
+                <textarea
+                  rows={2}
+                  value={directNotes}
+                  onChange={(e) => setDirectNotes(e.target.value)}
+                  placeholder="Ghi chú thỏa thuận riêng với khách..."
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-xs focus:border-teal-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => setDirectModalItem(null)}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleConfirmDirectContract}
+                disabled={actionLoading}
+                className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-teal-800 disabled:opacity-50"
+              >
+                Xác nhận Tạo Hợp Đồng
               </button>
             </div>
           </div>

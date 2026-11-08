@@ -33,8 +33,15 @@ import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
 import com.swp391.selfstorage.policy.service.AppliedPriceLookup;
 import com.swp391.selfstorage.policy.service.PolicyNumbers;
 import com.swp391.selfstorage.policy.service.SurchargeAmountCalculator;
+import com.swp391.selfstorage.payment.constant.PaymentStatus;
+import com.swp391.selfstorage.payment.constant.PaymentTransactionType;
 import com.swp391.selfstorage.payment.entity.PaymentTransaction;
 import com.swp391.selfstorage.payment.repository.PaymentTransactionRepository;
+import com.swp391.selfstorage.unit.entity.FacilityUnitTypePrice;
+import com.swp391.selfstorage.unit.repository.FacilityUnitTypePriceRepository;
+import com.swp391.selfstorage.waitlist.entity.Waitlist;
+import com.swp391.selfstorage.waitlist.entity.WaitlistStatus;
+import com.swp391.selfstorage.waitlist.repository.WaitlistRepository;
 import com.swp391.selfstorage.user.entity.UserRole;
 import com.swp391.selfstorage.user.service.AuditLogService;
 import com.swp391.selfstorage.user.service.UserService;
@@ -64,6 +71,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import com.swp391.selfstorage.reservation.dto.CancelReservationRequest;
@@ -122,6 +130,15 @@ public class ContractServiceImpl implements ContractService {
 
         @Autowired(required = false)
         private AuditLogService auditLogService;
+
+        @Autowired(required = false)
+        private WaitlistRepository waitlistRepository;
+
+        @Autowired(required = false)
+        private AppliedPriceLookup appliedPriceLookup;
+
+        @Autowired(required = false)
+        private FacilityUnitTypePriceRepository facilityUnitTypePriceRepository;
 
         private static final List<SupportStatus> RELOCATION_TICKET_STATUSES = List.of(
                         SupportStatus.NEW, SupportStatus.ASSIGNED, SupportStatus.IN_PROGRESS, SupportStatus.RESOLVED, SupportStatus.CLOSED);
@@ -2679,6 +2696,202 @@ public class ContractServiceImpl implements ContractService {
                         }
                 }
                 return PolicyNumbers.snapshotInt(c.getPolicySnapshot(), "checkinGraceDays", 10);
+        }
+
+        @Override
+        @Transactional
+        public ContractResponse createDirectContract(CreateDirectContractRequest request, UserPrincipal currentUser) {
+                if (request == null) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Dữ liệu yêu cầu không hợp lệ");
+                }
+
+                // 1. Kiểm tra phân quyền cơ sở nếu người thực hiện là FM hoặc Staff
+                if (currentUser != null && (currentUser.getRole() == UserRole.FACILITY_MANAGER || currentUser.getRole() == UserRole.FACILITY_STAFF)) {
+                        List<Long> assigned = currentUser.getFacilityIds();
+                        if (assigned == null || !assigned.contains(request.getFacilityId())) {
+                                throw new CustomException(ErrorCode.ACCESS_DENIED, "Bạn không có quyền thao tác trên cơ sở này");
+                        }
+                }
+
+                // 2. Kiểm tra khách hàng tồn tại
+                if (userRepository != null) {
+                        userRepository.findById(request.getCustomerId())
+                                        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "Không tìm thấy khách hàng với ID: " + request.getCustomerId()));
+                }
+
+                // 3. Kiểm tra cơ sở hoạt động
+                var facility = (facilityRepository != null)
+                                ? facilityRepository.findById(request.getFacilityId())
+                                                .orElseThrow(() -> new CustomException(ErrorCode.FACILITY_NOT_FOUND))
+                                : null;
+                if (facility != null && !facility.isActive()) {
+                        throw new CustomException(ErrorCode.FACILITY_INACTIVE, "Cơ sở hiện không hoạt động");
+                }
+
+                // 4. Kiểm tra loại ô kho hoạt động
+                var unitType = (unitTypeRepository != null)
+                                ? unitTypeRepository.findById(request.getUnitTypeId())
+                                                .orElseThrow(() -> new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND))
+                                : null;
+                if (unitType != null && !unitType.isActive()) {
+                        throw new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND, "Loại ô kho hiện không hoạt động");
+                }
+
+                LocalDate startDate = request.getStartDate();
+                if (startDate == null || startDate.isBefore(LocalDate.now())) {
+                        throw new CustomException(ErrorCode.INVALID_START_DATE, "Ngày bắt đầu thuê phải từ hôm nay trở đi");
+                }
+
+                int rentalMonths = Math.max(1, request.getRentalMonths());
+                LocalDate endDateExclusive = startDate.plusMonths(rentalMonths);
+
+                PolicyVersion policy = (policyVersionRepository != null)
+                                ? policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(OffsetDateTime.now(ZoneOffset.UTC)).orElse(null)
+                                : null;
+                int bufferDays = (policy != null && policy.getRentalBufferDays() != null) ? policy.getRentalBufferDays() : 15;
+                Long policyVersionId = policy != null ? policy.getId() : 1L;
+                int checkinGraceDays = (policy != null && policy.getCheckinGraceDays() != null) ? policy.getCheckinGraceDays() : 10;
+                int accessPinLength = (policy != null && policy.getAccessPinLength() != null) ? policy.getAccessPinLength() : 6;
+                String snapshot = String.format("{\"policyVersionId\":%d,\"checkinGraceDays\":%d,\"accessPinLength\":%d}",
+                                policyVersionId, checkinGraceDays, accessPinLength);
+
+                // 5. Kiểm tra tính khả dụng của ô kho (nếu có chỉ định cụ thể) hoặc công suất toàn cơ sở
+                StorageUnit assignedUnit = null;
+                if (request.getStorageUnitId() != null) {
+                        assignedUnit = storageUnitRepository.findById(request.getStorageUnitId())
+                                        .orElseThrow(() -> new CustomException(ErrorCode.STORAGE_UNIT_NOT_FOUND, "Không tìm thấy ô kho đã chọn"));
+                        if (!assignedUnit.getFacilityId().equals(request.getFacilityId()) || !assignedUnit.getUnitTypeId().equals(request.getUnitTypeId())) {
+                                throw new CustomException(ErrorCode.VALIDATION_FAILED, "Ô kho đã chọn không thuộc đúng cơ sở hoặc loại kho đã đăng ký");
+                        }
+                        if (assignedUnit.getStatus() == StorageUnitStatus.MAINTENANCE || assignedUnit.getStatus() == StorageUnitStatus.OUT_OF_SERVICE) {
+                                throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, "Ô kho đã chọn đang trong diện bảo trì hoặc ngừng hoạt động");
+                        }
+                        if (contractRepository.existsOverlappingContractForUnit(request.getStorageUnitId(), startDate, endDateExclusive, bufferDays, 0L)) {
+                                throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, "Ô kho đã chọn đã có lịch thuê hoặc giữ chỗ trong khoảng thời gian này");
+                        }
+                } else if (storageUnitRepository != null) {
+                        // Late-binding: Kiểm tra công suất khả dụng chung
+                        storageUnitRepository.lockExploitableUnitIds(request.getFacilityId(), request.getUnitTypeId());
+                        long exploitable = storageUnitRepository.countExploitableUnits(request.getFacilityId(), request.getUnitTypeId(),
+                                        List.of(StorageUnitStatus.MAINTENANCE, StorageUnitStatus.OUT_OF_SERVICE));
+                        long busy = storageUnitRepository.countBusyUnits(request.getFacilityId(), request.getUnitTypeId(), startDate, endDateExclusive, bufferDays);
+                        long unassigned = reservationRepository.countUnassignedOverlappingReservations(
+                                        request.getFacilityId(), request.getUnitTypeId(), startDate, endDateExclusive,
+                                        OffsetDateTime.now(ZoneOffset.UTC), bufferDays);
+                        if (exploitable - busy - unassigned <= 0) {
+                                throw new CustomException(ErrorCode.CAPACITY_NOT_AVAILABLE, "Cơ sở đã hết công suất trống cho hạng kho này trong khoảng thời gian đã chọn");
+                        }
+                }
+
+                // 6. Tính toán giá thuê và tiền đặt cọc
+                long monthlyPrice = lookupMonthlyPriceDirect(request.getFacilityId(), request.getUnitTypeId());
+                if (monthlyPrice <= 0) {
+                        monthlyPrice = 1_000_000L;
+                }
+                BigDecimal multiplier = (policy != null && policy.getDepositMultiplier() != null) ? policy.getDepositMultiplier() : BigDecimal.ONE;
+                long rawRent = monthlyPrice * rentalMonths;
+                long deposit = Math.round((monthlyPrice * multiplier.doubleValue()) / 1000.0) * 1000;
+                long totalPayable = rawRent + deposit;
+
+                // 7. Tạo bản ghi Reservation CONFIRMED để bảo toàn toàn vẹn schema CSDL
+                String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+                int randomSuffix = ThreadLocalRandom.current().nextInt(1000, 9999);
+                Reservation reservation = new Reservation();
+                reservation.setCode("RSV-" + datePart + "-" + randomSuffix);
+                reservation.setCustomerId(request.getCustomerId());
+                reservation.setFacilityId(request.getFacilityId());
+                reservation.setUnitTypeId(request.getUnitTypeId());
+                reservation.setStorageUnitId(request.getStorageUnitId());
+                reservation.setStartDate(startDate);
+                reservation.setRentalMonths(rentalMonths);
+                reservation.setEndDateExclusive(endDateExclusive);
+                reservation.setMonthlyPriceSnapshot(monthlyPrice);
+                reservation.setPolicyVersionId(policyVersionId);
+                reservation.setDiscountAmount(0L);
+                reservation.setDepositAmount(deposit);
+                reservation.setTotalRentalFee(rawRent);
+                reservation.setTotalPayable(totalPayable);
+                reservation.setStatus(ReservationStatus.CONFIRMED);
+                Reservation savedReservation = reservationRepository.save(reservation);
+
+                // 8. Tạo giao dịch PaymentTransaction đã ghi nhận thanh toán cọc tại quầy
+                PaymentTransaction payment = PaymentTransaction.builder()
+                                .reservationId(savedReservation.getId())
+                                .transactionType(PaymentTransactionType.INITIAL_PAYMENT.name())
+                                .amount(deposit)
+                                .status(PaymentStatus.SUCCESS.name())
+                                .paymentMethod(request.getPaymentMethod() != null ? request.getPaymentMethod() : "CASH")
+                                .providerReference("DIRECT_CONTRACT_DESK")
+                                .orderCode(ThreadLocalRandom.current().nextLong(1_000_000_000L, 9_999_999_999L))
+                                .build();
+                if (paymentTransactionRepository != null) {
+                        payment = paymentTransactionRepository.save(payment);
+                }
+
+                // 9. Tạo RentalContract PENDING_CHECK_IN
+                String contractCode = "CTR-" + datePart + "-" + ThreadLocalRandom.current().nextInt(1000, 9999);
+                RentalContract contract = RentalContract.builder()
+                                .code(contractCode)
+                                .reservationId(savedReservation.getId())
+                                .customerId(request.getCustomerId())
+                                .facilityId(request.getFacilityId())
+                                .unitTypeId(request.getUnitTypeId())
+                                .storageUnitId(request.getStorageUnitId())
+                                .startDate(startDate)
+                                .endDateExclusive(endDateExclusive)
+                                .rentalMonths(rentalMonths)
+                                .monthlyPrice(monthlyPrice)
+                                .totalRentalFee(rawRent)
+                                .depositAmount(deposit)
+                                .depositBalance(deposit)
+                                .status(ContractStatus.PENDING_CHECK_IN)
+                                .policySnapshot(snapshot)
+                                .policyVersionId(policyVersionId)
+                                .build();
+                RentalContract savedContract = contractRepository.save(contract);
+
+                if (payment != null && paymentTransactionRepository != null) {
+                        payment.setContractId(savedContract.getId());
+                        paymentTransactionRepository.save(payment);
+                }
+
+                if (assignedUnit != null) {
+                        assignedUnit.setStatus(StorageUnitStatus.RESERVED);
+                        storageUnitRepository.save(assignedUnit);
+                }
+
+                // 10. Nếu xuất phát từ Waitlist -> Chuyển thành CONVERTED và gán ID hợp đồng
+                if (request.getWaitlistId() != null && waitlistRepository != null) {
+                        waitlistRepository.findById(request.getWaitlistId()).ifPresent(w -> {
+                                w.setStatus(WaitlistStatus.CONVERTED);
+                                w.setConvertedReservationId(savedReservation.getId());
+                                w.setConvertedContractId(savedContract.getId());
+                                w.setContactTimeoutAt(null);
+                                if (request.getNotes() != null && !request.getNotes().isBlank()) {
+                                        w.setContactNotes(request.getNotes());
+                                }
+                                waitlistRepository.save(w);
+                        });
+                }
+
+                log.info("Created direct contract id={}, code={}, customerId={}, facilityId={}, startDate={}",
+                                savedContract.getId(), savedContract.getCode(), request.getCustomerId(), request.getFacilityId(), startDate);
+
+                return toResponse(savedContract);
+        }
+
+        private long lookupMonthlyPriceDirect(Long facilityId, Long unitTypeId) {
+                if (appliedPriceLookup != null) {
+                        return appliedPriceLookup.resolveMonthlyPrice(facilityId, unitTypeId)
+                                        .filter(p -> p > 0)
+                                        .orElse(0L);
+                }
+                if (facilityUnitTypePriceRepository != null) {
+                        return facilityUnitTypePriceRepository.findByFacilityIdAndUnitTypeId(facilityId, unitTypeId)
+                                        .map(FacilityUnitTypePrice::getMonthlyPrice)
+                                        .orElse(0L);
+                }
+                return 0L;
         }
 
         private record OverduePreviewRates(int graceDays, BigDecimal dailyRate, BigDecimal capRate, int terminationDays) {

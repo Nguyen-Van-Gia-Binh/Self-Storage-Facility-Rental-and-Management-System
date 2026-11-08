@@ -3,6 +3,7 @@ package com.swp391.selfstorage.waitlist;
 import com.swp391.selfstorage.common.dto.ApiResponse;
 import com.swp391.selfstorage.auth.service.UserPrincipal;
 import com.swp391.selfstorage.waitlist.dto.ConvertWaitlistRequest;
+import com.swp391.selfstorage.waitlist.dto.ConvertWaitlistToContractRequest;
 import com.swp391.selfstorage.waitlist.dto.CreateWaitlistRequest;
 import com.swp391.selfstorage.waitlist.dto.FollowUpWaitlistRequest;
 import com.swp391.selfstorage.waitlist.dto.RejectWaitlistRequest;
@@ -104,6 +105,17 @@ public class WaitlistController {
             @AuthenticationPrincipal UserPrincipal currentUser) {
         WaitlistResponse response = waitlistService.convertToReservation(id, request, currentUser);
         return ResponseEntity.ok(ApiResponse.success(response, "Chốt đơn thành công! Đã tạo đơn giữ cọc 24 giờ cho khách hàng"));
+    }
+
+    @PostMapping("/waitlists/{id}/convert-to-contract")
+    @PreAuthorize("hasAnyRole('FACILITY_MANAGER', 'BUSINESS_OPERATIONS_MANAGER', 'SYSTEM_ADMINISTRATOR')")
+    @Operation(summary = "Tạo hợp đồng trực tiếp từ đơn chờ", description = "FM tạo hợp đồng trực tiếp PENDING_CHECK_IN cho khách hàng từ danh sách chờ CRM")
+    public ResponseEntity<ApiResponse<WaitlistResponse>> convertToContract(
+            @PathVariable Long id,
+            @RequestBody(required = false) ConvertWaitlistToContractRequest request,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        WaitlistResponse response = waitlistService.convertToContract(id, request, currentUser);
+        return ResponseEntity.ok(ApiResponse.success(response, "Tạo hợp đồng trực tiếp thành công!"));
     }
 
     @PatchMapping("/waitlists/{id}/reject")

@@ -581,3 +581,27 @@ export async function approveSettlementRefund(
     message: res.message || 'Phê duyệt quyết toán và hoàn cọc thành công',
   };
 }
+
+export interface CreateDirectContractRequest {
+  customerId: number;
+  facilityId: number;
+  unitTypeId: number;
+  storageUnitId?: number;
+  startDate: string;
+  rentalMonths?: number;
+  paymentMethod?: string;
+  waitlistId?: number;
+  notes?: string;
+}
+
+/**
+ * Tạo hợp đồng trực tiếp tại quầy / chốt khách đặt trước dài hạn / chốt đơn Waitlist (FM-01, SC-02)
+ * POST /api/v1/contracts/direct
+ */
+export async function createDirectContract(data: CreateDirectContractRequest): Promise<ManagerContractItem> {
+  const res = await apiClient<ApiResponse<ManagerContractItem>>('/contracts/direct', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return res.data;
+}

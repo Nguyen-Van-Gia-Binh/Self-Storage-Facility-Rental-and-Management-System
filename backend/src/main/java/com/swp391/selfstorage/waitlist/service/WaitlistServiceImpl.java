@@ -20,7 +20,10 @@ import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
 import com.swp391.selfstorage.unit.repository.UnitTypeRepository;
 import com.swp391.selfstorage.user.entity.AppUser;
 import com.swp391.selfstorage.user.repository.UserRepository;
+import com.swp391.selfstorage.contract.dto.CreateDirectContractRequest;
+import com.swp391.selfstorage.contract.service.ContractService;
 import com.swp391.selfstorage.waitlist.dto.ConvertWaitlistRequest;
+import com.swp391.selfstorage.waitlist.dto.ConvertWaitlistToContractRequest;
 import com.swp391.selfstorage.waitlist.dto.CreateWaitlistRequest;
 import com.swp391.selfstorage.waitlist.dto.FollowUpWaitlistRequest;
 import com.swp391.selfstorage.waitlist.dto.RejectWaitlistRequest;
@@ -68,6 +71,9 @@ public class WaitlistServiceImpl implements WaitlistService {
     @Autowired(required = false)
     private FacilityUnitTypePriceRepository facilityUnitTypePriceRepository;
 
+    @Autowired(required = false)
+    private ContractService contractService;
+
     @Override
     public WaitlistResponse registerWaitlist(CreateWaitlistRequest request, UserPrincipal currentUser) {
         if (currentUser == null || currentUser.getId() == null) {
@@ -91,6 +97,14 @@ public class WaitlistServiceImpl implements WaitlistService {
             throw new CustomException(ErrorCode.INVALID_START_DATE, "Ngày mong muốn thuê phải từ hôm nay trở đi");
         }
 
+        int rentalMonths = Math.max(1, request.getRentalMonths());
+        LocalDate targetStartDate = request.getTargetStartDate() != null ? request.getTargetStartDate() : LocalDate.now();
+
+        // BR-WAT-01, BR-WAT-06: Tiếp nhận Waitlist cho 2 trường hợp:
+        // 1) Thuê trong vòng 30 ngày nhưng cơ sở đã hết ô kho trống (available == 0 / thời gian bị đặt)
+        // 2) Đặt trước hơn 1 tháng (> 30 ngày) vì cổng online BookingPage bị giới hạn tối đa 30 ngày (BR-RES-01)
+        long daysUntilStart = ChronoUnit.DAYS.between(LocalDate.now(), targetStartDate);
+
         // Chặn trùng lặp đơn chờ đang hiệu lực
         boolean exists = waitlistRepository.existsByCustomerIdAndFacilityIdAndUnitTypeIdAndStatusIn(
                 customerId, request.getFacilityId(), request.getUnitTypeId(),
@@ -100,11 +114,8 @@ public class WaitlistServiceImpl implements WaitlistService {
             throw new CustomException(ErrorCode.WAITLIST_ALREADY_EXISTS);
         }
 
-        int rentalMonths = Math.max(1, request.getRentalMonths());
-        LocalDate targetStartDate = request.getTargetStartDate() != null ? request.getTargetStartDate() : LocalDate.now();
-
-        // Kiểm tra nếu trong 30 ngày tới mà hạng kho vẫn còn capacity trống -> hướng dẫn đặt trực tiếp
-        if (ChronoUnit.DAYS.between(LocalDate.now(), targetStartDate) <= 30 && storageUnitRepository != null) {
+        // Nếu trong vòng 30 ngày tới mà hạng kho vẫn còn capacity trống -> hướng dẫn đặt trực tiếp
+        if (daysUntilStart <= 30 && storageUnitRepository != null) {
             PolicyVersion policy = policyVersionRepository
                     .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(OffsetDateTime.now(ZoneOffset.UTC))
                     .orElse(null);
@@ -290,6 +301,46 @@ public class WaitlistServiceImpl implements WaitlistService {
         Waitlist savedWaitlist = waitlistRepository.save(waitlist);
 
         return enrichResponses(Collections.singletonList(savedWaitlist)).get(0);
+    }
+
+    @Override
+    public WaitlistResponse convertToContract(Long id, ConvertWaitlistToContractRequest request, UserPrincipal currentUser) {
+        Waitlist waitlist = findWaitlistAndVerifyFm(id, currentUser);
+        if (waitlist.getStatus() != WaitlistStatus.CONTACTING && waitlist.getStatus() != WaitlistStatus.WAITING && waitlist.getStatus() != WaitlistStatus.PENDING_FOLLOW_UP) {
+            throw new CustomException(ErrorCode.WAITLIST_NOT_CONTACTING, "Chỉ có thể tạo hợp đồng cho đơn chờ đang ở trạng thái xử lý");
+        }
+
+        LocalDate startDate = (request != null && request.getStartDate() != null)
+                ? request.getStartDate()
+                : waitlist.getTargetStartDate();
+        if (startDate.isBefore(LocalDate.now())) {
+            startDate = LocalDate.now();
+        }
+
+        int months = (request != null && request.getRentalMonths() != null && request.getRentalMonths() > 0)
+                ? request.getRentalMonths()
+                : waitlist.getRentalMonths();
+
+        if (contractService == null) {
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR, "Dịch vụ hợp đồng chưa sẵn sàng");
+        }
+
+        CreateDirectContractRequest directRequest = CreateDirectContractRequest.builder()
+                .customerId(waitlist.getCustomerId())
+                .facilityId(waitlist.getFacilityId())
+                .unitTypeId(waitlist.getUnitTypeId())
+                .storageUnitId(request != null ? request.getStorageUnitId() : null)
+                .startDate(startDate)
+                .rentalMonths(months)
+                .paymentMethod(request != null && request.getPaymentMethod() != null ? request.getPaymentMethod() : "CASH")
+                .waitlistId(waitlist.getId())
+                .notes(request != null ? request.getNotes() : waitlist.getContactNotes())
+                .build();
+
+        contractService.createDirectContract(directRequest, currentUser);
+
+        Waitlist updated = waitlistRepository.findById(id).orElse(waitlist);
+        return enrichResponses(Collections.singletonList(updated)).get(0);
     }
 
     @Override

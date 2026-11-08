@@ -49,4 +49,7 @@ public interface ContractService {
 
     /** Hủy nhận kho và hoàn tiền cho hợp đồng đang ở trạng thái PENDING_CHECK_IN (BR-CAN-01). */
     ContractResponse cancelPendingContract(Long contractId, com.swp391.selfstorage.reservation.dto.CancelReservationRequest request, UserPrincipal currentUser);
+
+    /** Tạo hợp đồng trực tiếp tại quầy / chốt đơn Waitlist / đặt trước dài hạn (> 30 ngày). */
+    ContractResponse createDirectContract(CreateDirectContractRequest request, UserPrincipal currentUser);
 }

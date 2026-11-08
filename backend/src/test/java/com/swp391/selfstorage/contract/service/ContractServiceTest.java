@@ -6,6 +6,12 @@ import com.swp391.selfstorage.contract.dto.*;
 import com.swp391.selfstorage.contract.entity.*;
 import com.swp391.selfstorage.contract.repository.*;
 import com.swp391.selfstorage.contract.service.impl.ContractServiceImpl;
+import com.swp391.selfstorage.auth.service.UserPrincipal;
+import com.swp391.selfstorage.facility.entity.Facility;
+import com.swp391.selfstorage.facility.entity.FacilityStatus;
+import com.swp391.selfstorage.facility.repository.FacilityRepository;
+import com.swp391.selfstorage.payment.entity.PaymentTransaction;
+import com.swp391.selfstorage.payment.repository.PaymentTransactionRepository;
 import com.swp391.selfstorage.policy.entity.PolicyVersion;
 import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
 import com.swp391.selfstorage.reservation.entity.Reservation;
@@ -20,6 +26,13 @@ import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
 import com.swp391.selfstorage.unit.entity.UnitType;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
 import com.swp391.selfstorage.unit.repository.UnitTypeRepository;
+import com.swp391.selfstorage.user.entity.AppUser;
+import com.swp391.selfstorage.user.entity.UserRole;
+import com.swp391.selfstorage.user.entity.UserStatus;
+import com.swp391.selfstorage.user.repository.UserRepository;
+import com.swp391.selfstorage.waitlist.entity.Waitlist;
+import com.swp391.selfstorage.waitlist.entity.WaitlistStatus;
+import com.swp391.selfstorage.waitlist.repository.WaitlistRepository;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -58,6 +71,16 @@ class ContractServiceTest {
     @Mock
     private SupportRequestRepository supportRequestRepository;
     @Mock
+    private UserRepository userRepository;
+    @Mock
+    private FacilityRepository facilityRepository;
+    @Mock
+    private PaymentTransactionRepository paymentTransactionRepository;
+    @Mock
+    private WaitlistRepository waitlistRepository;
+    @Mock
+    private PolicyVersionRepository policyVersionRepository;
+    @Mock
     private org.springframework.context.ApplicationEventPublisher eventPublisher;
     @InjectMocks
     private ContractServiceImpl contractService;
@@ -85,6 +108,10 @@ class ContractServiceTest {
         org.springframework.test.util.ReflectionTestUtils.setField(contractService, "staffDailyAssignmentRepository", staffDailyAssignmentRepository);
         org.springframework.test.util.ReflectionTestUtils.setField(contractService, "supportRequestRepository", supportRequestRepository);
         org.springframework.test.util.ReflectionTestUtils.setField(contractService, "unitTypeRepository", unitTypeRepository);
+        org.springframework.test.util.ReflectionTestUtils.setField(contractService, "facilityRepository", facilityRepository);
+        org.springframework.test.util.ReflectionTestUtils.setField(contractService, "paymentTransactionRepository", paymentTransactionRepository);
+        org.springframework.test.util.ReflectionTestUtils.setField(contractService, "waitlistRepository", waitlistRepository);
+        org.springframework.test.util.ReflectionTestUtils.setField(contractService, "policyVersionRepository", policyVersionRepository);
     }
 
     private SupportRequest openDamageTicket(Long id, Long contractId, Long unitId, boolean relocationRequired) {
@@ -920,5 +947,128 @@ class ContractServiceTest {
         assertEquals(ContractStatus.PENDING_CHECK_IN, contract.getStatus());
         assertEquals(start.plusMonths(2), contract.getEndDateExclusive());
         assertEquals(StorageUnitStatus.RESERVED, newUnit.getStatus());
+    }
+
+    @Test
+    @DisplayName("createDirectContract: Tạo hợp đồng trực tiếp thành công với trạng thái PENDING_CHECK_IN")
+    void createDirectContract_Success() {
+        UserPrincipal fmUser = new UserPrincipal(20L, "fm@smartstorage.vn", "pass", "Quản lý",
+                UserRole.FACILITY_MANAGER, UserStatus.ACTIVE, List.of(1L), List.of());
+
+        Facility facility = new Facility();
+        facility.setId(1L);
+        facility.setStatus(FacilityStatus.ACTIVE);
+
+        UnitType unitType = new UnitType();
+        unitType.setId(7L);
+        unitType.setActive(true);
+
+        StorageUnit unit = StorageUnit.builder()
+                .id(45L)
+                .facilityId(1L)
+                .unitTypeId(7L)
+                .code("U-45")
+                .status(StorageUnitStatus.AVAILABLE)
+                .build();
+
+        org.springframework.test.util.ReflectionTestUtils.setField(contractService, "userRepository", userRepository);
+        when(userRepository.findById(15L)).thenReturn(Optional.of(new AppUser()));
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(facility));
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(unitType));
+        when(storageUnitRepository.findById(45L)).thenReturn(Optional.of(unit));
+        when(contractRepository.existsOverlappingContractForUnit(eq(45L), any(), any(), anyInt(), eq(0L))).thenReturn(false);
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> {
+            Reservation r = inv.getArgument(0);
+            r.setId(777L);
+            return r;
+        });
+        when(contractRepository.save(any(RentalContract.class))).thenAnswer(inv -> {
+            RentalContract c = inv.getArgument(0);
+            c.setId(888L);
+            return c;
+        });
+
+        CreateDirectContractRequest req = CreateDirectContractRequest.builder()
+                .customerId(15L)
+                .facilityId(1L)
+                .unitTypeId(7L)
+                .storageUnitId(45L)
+                .startDate(LocalDate.now().plusDays(2))
+                .rentalMonths(3)
+                .paymentMethod("CASH")
+                .build();
+
+        ContractResponse resp = contractService.createDirectContract(req, fmUser);
+
+        assertNotNull(resp);
+        assertEquals(888L, resp.getId());
+        assertEquals(ContractStatus.PENDING_CHECK_IN, resp.getStatus());
+        assertEquals(StorageUnitStatus.RESERVED, unit.getStatus());
+        verify(reservationRepository).save(any(Reservation.class));
+        verify(contractRepository).save(any(RentalContract.class));
+    }
+
+    @Test
+    @DisplayName("createDirectContract: Chuyển đổi Waitlist thành công khi tạo hợp đồng trực tiếp")
+    void createDirectContract_WithWaitlistId_Success() {
+        UserPrincipal fmUser = new UserPrincipal(20L, "fm@smartstorage.vn", "pass", "Quản lý",
+                UserRole.FACILITY_MANAGER, UserStatus.ACTIVE, List.of(1L), List.of());
+
+        Facility facility = new Facility();
+        facility.setId(1L);
+        facility.setStatus(FacilityStatus.ACTIVE);
+
+        UnitType unitType = new UnitType();
+        unitType.setId(7L);
+        unitType.setActive(true);
+
+        Waitlist waitlist = Waitlist.builder()
+                .customerId(15L)
+                .facilityId(1L)
+                .unitTypeId(7L)
+                .status(WaitlistStatus.CONTACTING)
+                .targetStartDate(LocalDate.now().plusDays(40))
+                .rentalMonths(2)
+                .build();
+        waitlist.setId(99L);
+
+        org.springframework.test.util.ReflectionTestUtils.setField(contractService, "userRepository", userRepository);
+        when(userRepository.findById(15L)).thenReturn(Optional.of(new AppUser()));
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(facility));
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(unitType));
+        when(waitlistRepository.findById(99L)).thenReturn(Optional.of(waitlist));
+        when(storageUnitRepository.lockExploitableUnitIds(1L, 7L)).thenReturn(List.of(1L));
+        when(storageUnitRepository.countExploitableUnits(eq(1L), eq(7L), any())).thenReturn(5L);
+        when(storageUnitRepository.countBusyUnits(eq(1L), eq(7L), any(), any(), anyInt())).thenReturn(1L);
+        when(reservationRepository.countUnassignedOverlappingReservations(eq(1L), eq(7L), any(), any(), any(), anyInt())).thenReturn(0L);
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> {
+            Reservation r = inv.getArgument(0);
+            r.setId(777L);
+            return r;
+        });
+        when(contractRepository.save(any(RentalContract.class))).thenAnswer(inv -> {
+            RentalContract c = inv.getArgument(0);
+            c.setId(888L);
+            return c;
+        });
+
+        CreateDirectContractRequest req = CreateDirectContractRequest.builder()
+                .customerId(15L)
+                .facilityId(1L)
+                .unitTypeId(7L)
+                .startDate(LocalDate.now().plusDays(40))
+                .rentalMonths(2)
+                .paymentMethod("BANK_TRANSFER")
+                .waitlistId(99L)
+                .notes("Hợp đồng chốt từ khách hàng đặt trước 40 ngày")
+                .build();
+
+        ContractResponse resp = contractService.createDirectContract(req, fmUser);
+
+        assertNotNull(resp);
+        assertEquals(ContractStatus.PENDING_CHECK_IN, resp.getStatus());
+        assertEquals(WaitlistStatus.CONVERTED, waitlist.getStatus());
+        assertEquals(888L, waitlist.getConvertedContractId());
+        verify(waitlistRepository).save(waitlist);
     }
 }
