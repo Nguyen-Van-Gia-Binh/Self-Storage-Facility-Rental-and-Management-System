@@ -230,7 +230,20 @@ public class ContractServiceImpl implements ContractService {
                 // Upsert: Cập nhật nếu đã có record trước đó (ví dụ từ chối nhận kho trước khi đổi ô)
                 HandoverRecord checkinRecord = handoverRecordRepository.findByContractId(contractId)
                                 .orElse(HandoverRecord.builder().contractId(contractId).build());
-                checkinRecord.setStaffId(staffId);
+
+                Long effectiveStaffId = staffId;
+                if (staffId != null && staffId.equals(contract.getCustomerId())) {
+                        // Customer self check-in online: retrieve assigned staff if FM had dispatched one
+                        if (staffDailyAssignmentRepository != null) {
+                                effectiveStaffId = staffDailyAssignmentRepository
+                                                .findByReferenceTypeAndReferenceId("CONTRACT", contractId)
+                                                .map(StaffDailyAssignment::getStaffId)
+                                                .orElse(null);
+                        } else {
+                                effectiveStaffId = null;
+                        }
+                }
+                checkinRecord.setStaffId(effectiveStaffId);
                 checkinRecord.setHandoverAt(OffsetDateTime.now());
                 checkinRecord.setConditionNote(conditionText);
                 checkinRecord.setCustomerConfirmed(true);

@@ -603,6 +603,7 @@ export const MyUnitsPage: React.FC = () => {
             setSelectedDetailContract(null);
             setCancellingReservation(r);
           }}
+          onCheckInSuccess={loadContracts}
           renewalNoticeDays={noticeDays > 0 ? noticeDays : undefined}
         />
       )}

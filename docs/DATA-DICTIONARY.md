@@ -341,7 +341,7 @@ Biên bản nghiệm thu bàn giao khi Check-in (`Flow 2`, `BR-CHK-03`).
 | :--- | :--- | :---: | :--- | :--- |
 | `id` | `BIGINT` | Có | `PK`, `IDENTITY(1,1)` | Khóa chính |
 | `contract_id` | `BIGINT` | Có | `FK` $\rightarrow$ `rental_contract(id)`, `UNIQUE` | 1 Hợp đồng có đúng 1 biên bản bàn giao |
-| `staff_id` | `BIGINT` | Có | `FK` $\rightarrow$ `app_user(id)` | Nhân viên phụ trách bàn giao |
+| `staff_id` | `BIGINT` | Không | `FK` $\rightarrow$ `app_user(id)` (NULL khi khách tự Check-in online 24/7) | Nhân viên phụ trách tiếp đón bàn giao (hoặc NULL nếu khách tự làm thủ tục nhận kho trực tuyến) |
 | `condition_note`| `NVARCHAR(1000)`| Không | | Ghi chú hiện trạng ô kho trước khi nhận |
 | `customer_signed_at`| `DATETIMEOFFSET`| Không | | Mốc chữ ký điện tử của khách hàng |
 | `staff_signed_at`| `DATETIMEOFFSET`| Không | | Mốc chữ ký điện tử của nhân viên |

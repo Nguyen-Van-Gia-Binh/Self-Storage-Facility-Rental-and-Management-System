@@ -4,12 +4,17 @@ import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { DigitalMoveInPassModal } from '../DigitalMoveInPassModal';
+import * as contractApi from '@/api/contract';
 import type { MoveInPassData } from '@/types';
 
 // Mock useNavigate from react-router-dom
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
+}));
+
+vi.mock('@/api/contract', () => ({
+  checkInContract: vi.fn(),
 }));
 
 describe('DigitalMoveInPassModal — Tách biệt Vé nhận kho và Check-in online', () => {
@@ -160,5 +165,52 @@ describe('DigitalMoveInPassModal — Tách biệt Vé nhận kho và Check-in on
     // Tuyệt đối KHÔNG hiển thị nút hay tab Check-in online
     expect(screen.queryByRole('button', { name: /Check-in online/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/Check-in online ngay/i)).not.toBeInTheDocument();
+  });
+
+  it('khi có contractId: gọi checkInContract API thật, hiển thị mã PIN trả về từ backend và gọi onSuccessCheckIn', async () => {
+    const onSuccessCheckIn = vi.fn();
+    const onConfirmSignature = vi.fn();
+    vi.mocked(contractApi.checkInContract).mockResolvedValueOnce({
+      contractId: 276,
+      status: 'ACTIVE',
+      checkinDate: '2026-11-08',
+      accessCode: '654321',
+    });
+
+    render(
+      <DigitalMoveInPassModal
+        isOpen={true}
+        onClose={vi.fn()}
+        contractId={276}
+        passData={mockAssignedPassData}
+        initialMode="checkin"
+        onConfirmSignature={onConfirmSignature}
+        onSuccessCheckIn={onSuccessCheckIn}
+      />
+    );
+
+    const nameInput = screen.getByPlaceholderText(/Ví dụ: Nguyễn Phạm Xuân Nhi/i);
+    fireEvent.change(nameInput, { target: { value: 'Lê Thanh Tùng' } });
+
+    const checkbox = screen.getByRole('checkbox');
+    fireEvent.click(checkbox);
+
+    const submitBtn = screen.getByRole('button', { name: /Ký số & Kích hoạt mã PIN/i });
+    fireEvent.click(submitBtn);
+
+    // Chờ xử lý async
+    expect(contractApi.checkInContract).toHaveBeenCalledWith(
+      276,
+      expect.objectContaining({
+        customerConfirmed: true,
+        conditionNote: expect.stringContaining('Lê Thanh Tùng'),
+      })
+    );
+
+    const pinElements = await screen.findAllByText(/654321/);
+    expect(pinElements.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/Đã Ký Số Thành Công/)).toBeInTheDocument();
+    expect(onSuccessCheckIn).toHaveBeenCalledWith('654321');
+    expect(onConfirmSignature).toHaveBeenCalledWith('Lê Thanh Tùng', '654321');
   });
 });

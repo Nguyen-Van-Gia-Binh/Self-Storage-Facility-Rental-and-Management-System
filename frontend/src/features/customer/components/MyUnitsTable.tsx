@@ -47,6 +47,7 @@ export interface MyUnitsTableProps {
   onCancelReturn: (contract: RentedContract) => void;
   onCancelPendingCheckIn: (contract: RentedContract) => void;
   onCancelReservation: (reservation: ReservationResponse) => void;
+  onCheckInSuccess?: () => void;
   renewalNoticeDays?: number;
   pageSize?: number;
 }
@@ -65,6 +66,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
   onCancelReturn,
   onCancelPendingCheckIn,
   onCancelReservation,
+  onCheckInSuccess,
   renewalNoticeDays,
   pageSize = 7,
 }) => {
@@ -776,6 +778,10 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
           isOpen={Boolean(activePassContract)}
           onClose={() => setActivePassContract(null)}
           initialMode={activePassMode}
+          contractId={activePassContract.id}
+          onSuccessCheckIn={() => {
+            onCheckInSuccess?.();
+          }}
           passData={{
             passCode: `PASS-${activePassContract.contractNumber}`,
             reservationId: activePassContract.contractNumber,
