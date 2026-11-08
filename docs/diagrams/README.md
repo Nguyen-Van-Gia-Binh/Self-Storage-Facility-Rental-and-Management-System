@@ -7,7 +7,7 @@
 
 ---
 
-## 📑 Bảng Chỉ mục Tổng hợp 19 Sơ đồ Kỹ thuật Hệ thống
+## 📑 Bảng Chỉ mục Tổng hợp 21 Sơ đồ Kỹ thuật Hệ thống
 
 | Phân hệ / Luồng Nghiệp vụ | Mã Flow | Sơ đồ Trực quan (HTML Standalone) | Phân loại | Người phụ trách chính | Quy tắc Cốt lõi / Điểm neo |
 | :--- | :---: | :--- | :---: | :--- | :--- |
@@ -19,7 +19,7 @@
 | **Renewal T-20 & Overdue Lifecycle** | **Flow 6** | • [flow-6-1-renewal-workflow.html](flow-6-renewal-overdue/flow-6-1-renewal-workflow.html)<br>• [flow-6-2-overdue-lifecycle.html](flow-6-renewal-overdue/flow-6-2-overdue-lifecycle.html) | Workflow<br>Lifecycle | **Nguyễn Phạm Xuân Nhi** (6.1)<br>**Nguyễn Văn Gia Bình** (6.2) | **6.1:** Khóa tự do gia hạn trước T-20 (`BR-REN-01..09`), bảo lưu cọc gốc (`BR-DEP-01`).<br>**6.2:** Ân hạn D+1..D+3 (`BR-OVD-01`), Phạt 10% cọc/ngày D+4..D+9 (`BR-OVD-02`), Khóa PIN D+7 (`BR-OVD-05`), Niêm phong D+10 (`BR-OVD-07`). |
 | **Support Request, Damage & Unit Swap** | **Flow 7** | • [flow7-support-ticket-workflow.html](flow-7-support-incident/flow7-support-ticket-workflow.html)<br>• [flow7-damage-compensation-sequence.html](flow-7-support-incident/flow7-damage-compensation-sequence.html) | Workflow<br>Sequence | **Lê Thanh Tùng**<br>*(WS4: Quản trị & Điều phối)* | Tiếp nhận ticket sự cố 2 nhánh (Lỗi cơ sở: miễn phí; Lỗi khách: thu phí), Cấp lại mã PIN khẩn cấp, Đền bù thiệt hại (Gói mặc định 10M vs Mở rộng 50M `BR-SUP-04`), Quy trình đổi ô kho sự cố. |
 | **JWT Security, RBAC Multi-Facility & Cron** | **Flow SYS** | • [flow-sys-security-architecture.html](flow-sys-security-cron/flow-sys-security-architecture.html)<br>• [flow-sys-cron-schedulers-sequence.html](flow-sys-security-cron/flow-sys-cron-schedulers-sequence.html) | Architecture<br>Sequence | **Lê Thanh Tùng** (Security)<br>**Huỳnh Nhật** (Cron Config) | Chuỗi lọc `JwtAuthenticationFilter -> SecurityContext -> @PreAuthorize`, Cơ chế bảo vệ dữ liệu chống IDOR đa cơ sở `FacilitySecurityService`, Tác vụ nền Auto-Activate T+11 & Overdue Cron 00:00:00. |
-| **Hệ thống & CSDL Vật lý (Database Models)** | **System & DB** | • [database-physical-erd.html](system-and-db/database-physical-erd.html)<br>• [system-architecture.html](system-and-db/system-architecture.html)<br>• [full-database.html](system-and-db/full-database.html) | ERD<br>Architecture | **Nhóm phát triển**<br>*(Team SWP391)* | Sơ đồ Physical ERD toàn diện 30 bảng CSDL (Flyway V1 đến V13), Quan hệ khóa ngoại 1:N / N:N, Kiến trúc phân tầng Clean Architecture 5 tầng của hệ thống. |
+| **Hệ thống, CSDL & Vòng đời Thực thể** | **System & DB** | • [system-architecture.html](system-and-db/system-architecture.html)<br>• [database-physical-erd.html](system-and-db/database-physical-erd.html)<br>• [full-database.html](system-and-db/full-database.html)<br>• [contract-lifecycle.html](system-and-db/contract-lifecycle.html)<br>• [storage-unit-lifecycle.html](system-and-db/storage-unit-lifecycle.html) | Architecture<br>ERD<br>Lifecycle | **Nhóm phát triển**<br>*(Team SWP391)* | Sơ đồ Kiến trúc 5 tầng, Physical ERD 30 bảng CSDL, và 2 sơ đồ State Machine chi tiết: Vòng đời Hợp đồng 9 trạng thái (`ContractStatus`), Vòng đời Ô kho 6 trạng thái (`StorageUnitStatus`). |
 
 ---
 
@@ -60,10 +60,12 @@ docs/diagrams/
 │   ├── flow-sys-security-architecture.html      # Sơ đồ Kiến trúc Bảo mật tầng sâu & Chống IDOR đa cơ sở
 │   ├── flow-sys-cron-schedulers-sequence.html   # Sơ đồ Trình tự thực thi 2 tác vụ nền Auto-Activate & Overdue
 │   └── meta/
-├── system-and-db/                               # Tổng thể Hệ thống & Cơ sở Dữ liệu
+├── system-and-db/                               # Tổng thể Hệ thống, CSDL & Vòng đời Thực thể
+│   ├── system-architecture.html                 # Sơ đồ Kiến trúc Tổng thể 5 tầng của hệ thống
 │   ├── database-physical-erd.html               # Sơ đồ Physical ERD tương tác 30 bảng CSDL thực tế
 │   ├── full-database.html                       # Sơ đồ Database ERD mở rộng toàn diện
-│   ├── system-architecture.html                 # Sơ đồ Kiến trúc Tổng thể 5 tầng của hệ thống
+│   ├── contract-lifecycle.html                  # Sơ đồ Máy trạng thái Vòng đời Hợp đồng (9 states)
+│   ├── storage-unit-lifecycle.html              # Sơ đồ Máy trạng thái Vòng đời Ô kho (6 states)
 │   └── meta/
 └── legacy-drawio/                               # Lưu trữ các bản vẽ Draw.io, PUML và State Machine cũ
     ├── activity-diagram-flow-1-storage-reservation.drawio

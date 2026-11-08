@@ -1,0 +1,372 @@
+{
+  "schema_version": 3,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "Rental Contract Lifecycle State Machine",
+    "subtitle": "Mo hinh Trang thai Vong doi Hop dong Thue kho (100% Backend Source Code)",
+    "locale": "en",
+    "output": ".archify/lifecycle-contract-state-machine-20261108-095430/contract-lifecycle.html",
+    "quality_profile": "showcase",
+    "visual_preset": "signal-flow",
+    "repository": {
+      "url": "https://github.com/Nguyen-Van-Gia-Binh/Self-Storage-Facility-Rental-and-Management-System.git",
+      "revision": "9440ca6636d57d2403edfcb092634ee83a32e915"
+    },
+    "views": [
+      {
+        "id": "happy_path",
+        "label": "Van hanh Tieu chuan",
+        "focus": ["pending_check_in", "active", "pending_return", "returned", "closed"],
+        "note": "Dat coc thanh cong -> Check-in nhan ma PIN -> Bao tra kho -> Nghiem thu hien truong -> FM tat toan hoan coc"
+      },
+      {
+        "id": "overdue_path",
+        "label": "Xu ly Qua han D+1..D+10",
+        "focus": ["active", "overdue", "terminated"],
+        "note": "An han D+1..D+3 -> Phat theo ngay D+4..D+9 -> Khoa PIN D+8 -> Cuong che TERMINATED tai D+10"
+      },
+      {
+        "id": "exception_path",
+        "label": "Tu choi kho & Huy thue",
+        "focus": ["pending_check_in", "cancelled", "terminated"],
+        "note": "Huy trong 48h cooling-off hoan 100%, tu choi nhan kho doi o hoac cham dut hoan phi"
+      },
+      {
+        "id": "emergency_path",
+        "label": "Su co Bat kha khang",
+        "focus": ["active", "emergency_resolution", "closed"],
+        "note": "Thien tai / hoa hoan co so BR-BMP-03: Thoa thuan dieu chuyen co so hoac hoan 100% phi va den bu 1 thang tien thue"
+      }
+    ]
+  },
+  "mainPath": [
+    "pending_check_in",
+    "active",
+    "pending_return",
+    "returned",
+    "closed"
+  ],
+  "states": [
+    {
+      "id": "pending_check_in",
+      "type": "start",
+      "label": "PENDING_CHECK_IN",
+      "sublabel": "Chờ nhận kho (T+10)",
+      "tag": "Khởi tạo",
+      "step": "01",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/contract/service/impl/ContractServiceImpl.java",
+          "line": 159,
+          "end_line": 178,
+          "label": "Khởi tạo HĐ sau thanh toán"
+        },
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/contract/entity/ContractStatus.java",
+          "line": 4,
+          "end_line": 4,
+          "label": "Enum PENDING_CHECK_IN"
+        }
+      ]
+    },
+    {
+      "id": "active",
+      "type": "active",
+      "label": "ACTIVE",
+      "sublabel": "Đang thuê, ô OCCUPIED",
+      "tag": "Đang thuê",
+      "step": "02",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/contract/service/impl/ContractServiceImpl.java",
+          "line": 200,
+          "end_line": 249,
+          "label": "Bàn giao Check-in cấp PIN"
+        },
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/contract/scheduler/AutoCheckInActivationScheduler.java",
+          "line": 36,
+          "end_line": 78,
+          "label": "Kích hoạt tự động T+11"
+        }
+      ]
+    },
+    {
+      "id": "pending_return",
+      "type": "waiting",
+      "label": "PENDING_RETURN",
+      "sublabel": "Chờ nghiệm thu",
+      "tag": "Chờ trả kho",
+      "step": "03",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/contract/service/impl/ContractServiceImpl.java",
+          "line": 1000,
+          "end_line": 1028,
+          "label": "Đăng ký trả kho FS-04"
+        },
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/contract/service/impl/ContractServiceImpl.java",
+          "line": 1032,
+          "end_line": 1075,
+          "label": "Hủy báo trả BR-RET-12"
+        }
+      ]
+    },
+    {
+      "id": "returned",
+      "type": "active",
+      "label": "RETURNED",
+      "sublabel": "Đã nghiệm thu",
+      "tag": "Đã trả kho",
+      "step": "04",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/contract/service/impl/ContractServiceImpl.java",
+          "line": 1079,
+          "end_line": 1184,
+          "label": "Nghiệm thu hiện trường FS-04"
+        },
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/contract/entity/ContractStatus.java",
+          "line": 8,
+          "end_line": 8,
+          "label": "Enum RETURNED"
+        }
+      ]
+    },
+    {
+      "id": "closed",
+      "type": "success",
+      "label": "CLOSED",
+      "sublabel": "Tất toán & hoàn cọc",
+      "tag": "Hoàn tất",
+      "step": "05",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/contract/service/impl/ContractServiceImpl.java",
+          "line": 1285,
+          "end_line": 1370,
+          "label": "FM duyệt quyết toán FM-04"
+        },
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/contract/service/impl/ContractServiceImpl.java",
+          "line": 1413,
+          "end_line": 1460,
+          "label": "Đóng hợp đồng BR-RET-04"
+        }
+      ]
+    },
+    {
+      "id": "overdue",
+      "type": "waiting",
+      "label": "OVERDUE",
+      "sublabel": "Quá hạn D+1..D+9",
+      "tag": "Nợ quá hạn",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/policy/service/impl/OverdueProcessingServiceImpl.java",
+          "line": 186,
+          "end_line": 218,
+          "label": "Quét quá hạn D+1..D+9 BR-OVD"
+        },
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/contract/service/impl/RenewalServiceImpl.java",
+          "line": 141,
+          "end_line": 151,
+          "label": "Gia hạn xóa nợ BR-REN-06"
+        }
+      ]
+    },
+    {
+      "id": "terminated",
+      "type": "failure",
+      "label": "TERMINATED",
+      "sublabel": "Chấm dứt D+10 / Từ chối",
+      "tag": "Chấm dứt",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/policy/service/impl/OverdueProcessingServiceImpl.java",
+          "line": 219,
+          "end_line": 247,
+          "label": "Cưỡng chế D+10 BR-OVD-07"
+        },
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/contract/service/impl/ContractServiceImpl.java",
+          "line": 320,
+          "end_line": 358,
+          "label": "Từ chối nhận kho BR-CHK-06"
+        }
+      ]
+    },
+    {
+      "id": "cancelled",
+      "type": "neutral",
+      "label": "CANCELLED",
+      "sublabel": "Hủy trước check-in",
+      "tag": "Đã hủy",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/contract/service/impl/ContractServiceImpl.java",
+          "line": 1904,
+          "end_line": 2030,
+          "label": "Hủy nhận kho BR-CAN-01"
+        }
+      ]
+    },
+    {
+      "id": "emergency_resolution",
+      "type": "decision",
+      "label": "PENDING_EMERGENCY_RESOLUTION",
+      "sublabel": "Sự cố cơ sở BR-BMP-03",
+      "tag": "Bất khả kháng",
+      "sources": [
+        {
+          "path": "backend/src/main/java/com/swp391/selfstorage/contract/entity/ContractStatus.java",
+          "line": 12,
+          "end_line": 12,
+          "label": "Sự cố bất khả kháng BR-BMP-03"
+        },
+        {
+          "path": "frontend/src/features/customer/pages/MyUnitsPage.tsx",
+          "line": 536,
+          "end_line": 555,
+          "label": "Banner điều phối bồi thường"
+        }
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t_checkin",
+      "from": "pending_check_in",
+      "to": "active",
+      "label": "Check-in"
+    },
+    {
+      "id": "t_return_notice",
+      "from": "active",
+      "to": "pending_return",
+      "label": "Báo trả"
+    },
+    {
+      "id": "t_inspect",
+      "from": "pending_return",
+      "to": "returned",
+      "label": "Nghiệm thu"
+    },
+    {
+      "id": "t_settle_close",
+      "from": "returned",
+      "to": "closed",
+      "label": "Quyết toán",
+      "variant": "emphasis"
+    },
+    {
+      "id": "t_cancel_return_active",
+      "from": "pending_return",
+      "to": "active",
+      "label": "Hủy trả",
+      "variant": "dashed"
+    },
+    {
+      "id": "t_expire_overdue",
+      "from": "active",
+      "to": "overdue",
+      "label": "Quá hạn",
+      "variant": "security"
+    },
+    {
+      "id": "t_renew_overdue",
+      "from": "overdue",
+      "to": "active",
+      "label": "Gia hạn",
+      "variant": "emphasis"
+    },
+    {
+      "id": "t_overdue_terminated",
+      "from": "overdue",
+      "to": "terminated",
+      "label": "Cưỡng chế D+10",
+      "variant": "security"
+    },
+    {
+      "id": "t_reject_handover",
+      "from": "pending_check_in",
+      "to": "terminated",
+      "label": "Từ chối nhận",
+      "variant": "security"
+    },
+    {
+      "id": "t_reassign_restore",
+      "from": "terminated",
+      "to": "pending_check_in",
+      "label": "Đổi ô kho",
+      "variant": "emphasis"
+    },
+    {
+      "id": "t_terminate_close",
+      "from": "terminated",
+      "to": "closed",
+      "label": "Hoàn cọc"
+    },
+    {
+      "id": "t_cancel_checkin",
+      "from": "pending_check_in",
+      "to": "cancelled",
+      "label": "Hủy thuê",
+      "variant": "dashed"
+    },
+    {
+      "id": "t_emergency_trigger",
+      "from": "active",
+      "to": "emergency_resolution",
+      "label": "Sự cố cơ sở",
+      "variant": "security"
+    },
+    {
+      "id": "t_emergency_relocate",
+      "from": "emergency_resolution",
+      "to": "active",
+      "label": "Đổi cơ sở"
+    },
+    {
+      "id": "t_emergency_compensate",
+      "from": "emergency_resolution",
+      "to": "closed",
+      "label": "Bồi thường & Đóng",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Luong Happy Path & Dong bo Kho",
+      "items": [
+        "Sinh hop dong PENDING_CHECK_IN sau khi khach thanh toan coc va tien thue thanh cong",
+        "Check-in ban giao cap ma PIN dien tu 6 so, dong thoi cap nhat StorageUnit sang OCCUPIED",
+        "T+11 tu dong kich hoat qua Cron neu khach khong den (BR-CAN-04, BR-CHK-05) de bao toan doanh thu",
+        "Nghiem thu tra kho yeu cau chu ky khach hang, chuyen o kho sang CLEANING de ve sinh tai lap"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Co che Xu ly Qua han D+1..D+10",
+      "items": [
+        "D+1..D+3: Thoi gian an han BR-OVD-01, khong phat sinh phi phat",
+        "D+4..D+9: Phat theo ngay BR-OVD-03, tinh luy tien phat theo ty le dailyRate * tien coc",
+        "D+8: Tu dong thu hoi va vo hieu hoa ma PIN truy cap o kho theo BR-OVD-05",
+        "D+10: Cham dut cuong che TERMINATED, trich thu coc kich tran, niem phong o kho sang MAINTENANCE"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Nhanh Ngoai le & Bat kha khang",
+      "items": [
+        "Huy nhan kho ap dung chinh sach Cooling-off 48h (hoan 100% coc va tien thue)",
+        "Khach tu choi nhan kho do hu hong: FM phan bo o moi tren so do 2D hoac hoan 100% chi phi",
+        "Su co bat kha khang BR-BMP-03: Thoa thuan dieu chuyen co so (tai tro xe tai) hoac boi thuong 1 thang tien thue"
+      ]
+    }
+  ]
+}
