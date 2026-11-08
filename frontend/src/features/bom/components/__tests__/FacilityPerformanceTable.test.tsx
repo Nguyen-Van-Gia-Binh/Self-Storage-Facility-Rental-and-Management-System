@@ -113,7 +113,6 @@ describe('FacilityPerformanceTable Component', () => {
     expect(screen.getByText('TỔNG CỘNG TOÀN HỆ THỐNG')).toBeInTheDocument();
     // Tổng doanh thu 50M + 25M = 75M
     expect(screen.getByText('75.000.000 ₫')).toBeInTheDocument();
-    expect(screen.getByText('2 cơ sở')).toBeInTheDocument();
   });
 
   it('supports facility search filter', () => {

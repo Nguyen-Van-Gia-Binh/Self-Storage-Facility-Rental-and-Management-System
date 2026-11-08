@@ -485,12 +485,7 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
           <tfoot className="sticky bottom-0 z-10 font-bold border-t-2 border-slate-300 text-slate-900 shadow-sm">
             <tr className="bg-slate-100">
               <td className="bg-slate-100 py-3 px-4 text-xs uppercase tracking-wide">
-                <div className="flex items-center gap-2">
-                  <span>TỔNG CỘNG TOÀN HỆ THỐNG</span>
-                  <span className="text-[10px] font-mono font-normal text-slate-500 bg-slate-200/80 px-1.5 py-0.5 rounded">
-                    {allRows.length} cơ sở
-                  </span>
-                </div>
+                <span>TỔNG CỘNG TOÀN HỆ THỐNG</span>
               </td>
               <td className="bg-slate-100 py-3 px-3 text-right font-mono tabular-nums text-slate-900">
                 {formatCurrency(totalRental)}
@@ -526,9 +521,7 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
                   ? 'N/A'
                   : `${totalAvailable} trống / ${totalExploitable} ô`}
               </td>
-              <td className="bg-slate-100 py-3 px-3 text-center text-slate-400 text-[11px]">
-                Toàn quốc
-              </td>
+              <td className="bg-slate-100 py-3 px-3" />
             </tr>
           </tfoot>
         </table>
