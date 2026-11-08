@@ -145,6 +145,8 @@ Bảng giá niêm yết hiện hành theo Cơ sở $\times$ Loại kho (`US-BM-0
 | `facility_id` | `BIGINT` | Có | `FK` $\rightarrow$ `facility(id)` | Cơ sở áp dụng giá |
 | `unit_type_id` | `BIGINT` | Có | `FK` $\rightarrow$ `unit_type(id)` | Loại ô kho áp dụng |
 | `monthly_price` | `BIGINT` | Có | `CHECK (monthly_price > 0)` | Đơn giá thuê 1 tháng (VND, số nguyên theo `BR-GEN-04`) |
+| `price_per_m2` | `BIGINT` | Không | | Đơn giá thuê theo $\text{m}^2$ / tháng (VND) |
+| `version` | `BIGINT` | Có | `DEFAULT 0` | Số phiên bản Optimistic Locking (`@Version`, `CON-01`) chống sửa giá đồng thời |
 | `created_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Ngày thiết lập giá |
 | `updated_at` | `DATETIMEOFFSET` | Có | `DEFAULT SYSDATETIMEOFFSET()` | Ngày điều chỉnh giá |
 

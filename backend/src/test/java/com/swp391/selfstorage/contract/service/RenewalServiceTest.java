@@ -40,7 +40,9 @@ import com.swp391.selfstorage.policy.dto.PolicyResponse;
 import com.swp391.selfstorage.policy.service.PolicyService;
 import com.swp391.selfstorage.reservation.repository.ReservationRepository;
 import com.swp391.selfstorage.unit.entity.FacilityUnitTypePrice;
+import com.swp391.selfstorage.unit.entity.UnitType;
 import com.swp391.selfstorage.unit.repository.FacilityUnitTypePriceRepository;
+import com.swp391.selfstorage.unit.repository.UnitTypeRepository;
 
 @ExtendWith(MockitoExtension.class)
 class RenewalServiceTest {
@@ -60,6 +62,9 @@ class RenewalServiceTest {
     @Mock
     private PolicyService policyService;
 
+    @Mock
+    private UnitTypeRepository unitTypeRepository;
+
     private final RenewalMapper renewalMapper = new RenewalMapper();
 
     private RenewalService renewalService;
@@ -72,7 +77,10 @@ class RenewalServiceTest {
                 reservationRepository,
                 facilityPriceRepository,
                 policyService,
-                renewalMapper);
+                renewalMapper,
+                unitTypeRepository);
+        org.mockito.Mockito.lenient().when(unitTypeRepository.findById(7L))
+                .thenReturn(Optional.of(UnitType.builder().id(7L).code("UT-S").isActive(true).build()));
     }
 
     private RentalContract buildContract(ContractStatus status) {
@@ -360,5 +368,19 @@ class RenewalServiceTest {
         assertEquals(3, response.getRenewalMonths());
         verify(rentalContractRepository, never()).save(any());
         verify(contractRenewalRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("CAT-04 / BR-BOM-04: Chặn gia hạn khi UnitType đã bị chuyển sang INACTIVE")
+    void testGetRenewalQuote_inactiveUnitType_throwsUnitTypeInactive() {
+        RentalContract contract = buildContract(ContractStatus.ACTIVE);
+        when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
+        when(unitTypeRepository.findById(7L))
+                .thenReturn(Optional.of(UnitType.builder().id(7L).code("UT-S").isActive(false).build()));
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> renewalService.getRenewalQuote(100L, new RenewalRequest(3)));
+
+        assertEquals(ErrorCode.UNIT_TYPE_INACTIVE, ex.getErrorCode());
     }
 }

@@ -30,6 +30,22 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(errorCode.getHttpStatus()).body(response);
     }
 
+    @ExceptionHandler({
+            org.springframework.orm.ObjectOptimisticLockingFailureException.class,
+            jakarta.persistence.OptimisticLockException.class
+    })
+    public ResponseEntity<ApiResponse<Void>> handleOptimisticLockException(Exception ex, HttpServletRequest request) {
+        log.warn("Optimistic lock conflict on {}: {}", request.getRequestURI(), ex.getMessage());
+        ApiResponse<Void> response = ApiResponse.error(
+                409,
+                ErrorCode.OPTIMISTIC_LOCK_CONFLICT.name(),
+                ErrorCode.OPTIMISTIC_LOCK_CONFLICT.getDefaultMessage(),
+                request.getRequestURI(),
+                null
+        );
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CONFLICT).body(response);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidationException(MethodArgumentNotValidException ex, HttpServletRequest request) {
         List<String> details = ex.getBindingResult().getFieldErrors().stream()

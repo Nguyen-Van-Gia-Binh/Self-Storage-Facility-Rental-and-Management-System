@@ -138,8 +138,8 @@ class FacilityReportServiceTest {
         assertEquals(22, response.getOccupiedUnits());
         assertEquals(5, response.getAvailableUnits());
         assertEquals(3, response.getMaintenanceUnits());
-        // 22 / 30 = 0.73333 -> round 0.733
-        assertEquals(0.733, response.getOccupancyRate());
+        // REP-03: exploitableUnits = 30 - 3 (maintenance) = 27 -> 22 / 27 = 0.8148 -> round 0.815
+        assertEquals(0.815, response.getOccupancyRate());
     }
 
     @Test

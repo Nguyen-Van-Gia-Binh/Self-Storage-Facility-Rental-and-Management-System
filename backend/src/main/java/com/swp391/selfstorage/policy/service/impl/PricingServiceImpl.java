@@ -194,6 +194,12 @@ public class PricingServiceImpl implements PricingService {
                 .findByFacilityIdAndUnitTypeId(facilityId, unitTypeId)
                 .orElse(null);
 
+        if (priceEntity != null && request.getVersion() != null
+                && !request.getVersion().equals(priceEntity.getVersion())) {
+            throw new org.springframework.orm.ObjectOptimisticLockingFailureException(
+                    FacilityUnitTypePrice.class, priceEntity.getId());
+        }
+
         if (applyNow) {
             if (priceEntity == null) {
                 priceEntity = FacilityUnitTypePrice.builder()
@@ -204,9 +210,6 @@ public class PricingServiceImpl implements PricingService {
             priceEntity.setMonthlyPrice(monthlyRent);
             priceEntity.setPricePerM2(pricePerM2);
             priceEntity = priceRepository.save(priceEntity);
-        } else if (priceEntity == null) {
-            // Chưa có live price: không ghi giá tương lai vào live row
-            priceEntity = null;
         }
 
         AppliedPriceInfo info = appliedPriceLookup != null

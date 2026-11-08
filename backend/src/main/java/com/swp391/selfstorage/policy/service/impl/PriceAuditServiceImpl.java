@@ -164,7 +164,7 @@ public class PriceAuditServiceImpl implements PriceAuditService {
                         .category(CATEGORY_RENT)
                         .recordedAt(version.getCreatedAt())
                         .actorId(version.getCreatedBy())
-                        .subject("")
+                        .subject(version.getUnitTypeId() == null ? "" : String.valueOf(version.getUnitTypeId()))
                         .facilityId(version.getFacilityId())
                         .changeSummary(arrow("Đơn giá", oldPerM2, newPerM2)
                                 + " · " + arrow("Giá thuê tháng", oldMonthly, newMonthly))
@@ -325,12 +325,6 @@ public class PriceAuditServiceImpl implements PriceAuditService {
                                 (left, right) -> left));
 
         boolean hasRent = entries.stream().anyMatch(entry -> CATEGORY_RENT.equals(entry.getCategory()));
-        Map<Long, Long> rentUnitTypeIds = new HashMap<>();
-        if (hasRent) {
-            for (FacilityUnitTypePriceVersion version : priceVersionRepository.findAll()) {
-                rentUnitTypeIds.put(version.getId(), version.getUnitTypeId());
-            }
-        }
         Map<Long, String> unitTypeNames = hasRent
                 ? unitTypeRepository.findAll().stream()
                         .collect(Collectors.toMap(UnitType::getId, UnitType::getName, (left, right) -> left))
@@ -346,7 +340,9 @@ public class PriceAuditServiceImpl implements PriceAuditService {
                     ? UNKNOWN_ACTOR
                     : actorNames.getOrDefault(entry.getActorId(), UNKNOWN_ACTOR));
             if (CATEGORY_RENT.equals(entry.getCategory())) {
-                Long unitTypeId = rentUnitTypeIds.get(entrySortId(entry));
+                Long unitTypeId = entry.getSubject() == null || entry.getSubject().isBlank()
+                        ? null
+                        : Long.valueOf(entry.getSubject());
                 String unitTypeName = unitTypeId == null
                         ? "Loại ô kho"
                         : unitTypeNames.getOrDefault(unitTypeId, "Loại ô kho #" + unitTypeId);
@@ -564,12 +560,7 @@ public class PriceAuditServiceImpl implements PriceAuditService {
     }
 
     private static String money(Long amount) {
-        if (amount == null) {
-            return "—";
-        }
-        DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
-        symbols.setGroupingSeparator('.');
-        return new DecimalFormat("#,###", symbols).format(amount);
+        return amount == null ? "—" : String.format(Locale.GERMAN, "%,d", amount);
     }
 
     private static String formatFee(Long amount, String feeType) {

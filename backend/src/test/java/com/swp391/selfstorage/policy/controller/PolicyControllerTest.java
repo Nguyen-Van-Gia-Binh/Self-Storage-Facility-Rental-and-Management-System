@@ -11,6 +11,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
@@ -24,6 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(PolicyController.class)
 @AutoConfigureMockMvc(addFilters = false)
+@EnableMethodSecurity
 class PolicyControllerTest {
 
     @Autowired
@@ -36,7 +39,8 @@ class PolicyControllerTest {
     private OverdueProcessingService overdueProcessingService;
 
     @Test
-    @DisplayName("POST /policies/cron/process-overdue - Kích hoạt thủ công cronjob trả về 200 OK")
+    @WithMockUser(roles = "BUSINESS_OPERATIONS_MANAGER")
+    @DisplayName("POST /policies/cron/process-overdue - BOM kích hoạt thủ công cronjob trả về 200 OK")
     void testTriggerOverdueProcessing_Success() throws Exception {
         OverdueProcessingResult mockResult = OverdueProcessingResult.builder()
                 .totalScanned(5)
@@ -59,5 +63,17 @@ class PolicyControllerTest {
                 .andExpect(jsonPath("$.data.markedOverdueCount").value(2))
                 .andExpect(jsonPath("$.data.terminatedCount").value(1))
                 .andExpect(jsonPath("$.data.totalPenaltiesAccrued").value(1_400_000L));
+    }
+
+    @Test
+    @WithMockUser(roles = "STORAGE_CUSTOMER")
+    @DisplayName("SEC-EXTRA: Khách hàng gọi POST /policies/cron/process-overdue bị chặn 403 Forbidden")
+    void testTriggerOverdueProcessing_CustomerForbidden() throws Exception {
+        mockMvc.perform(post("/policies/cron/process-overdue")
+                .param("date", "2099-01-01")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.errorCode").value("ACCESS_DENIED"));
     }
 }

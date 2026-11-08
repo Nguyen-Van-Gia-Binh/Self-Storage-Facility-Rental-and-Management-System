@@ -4,11 +4,14 @@ import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
 import com.swp391.selfstorage.contract.repository.RentalContractRepository;
 import com.swp391.selfstorage.facility.repository.FacilityRepository;
+import com.swp391.selfstorage.payment.entity.PaymentTransaction;
+import com.swp391.selfstorage.payment.repository.PaymentTransactionRepository;
 import com.swp391.selfstorage.reservation.entity.Reservation;
 import com.swp391.selfstorage.reservation.entity.ReservationStatus;
 import com.swp391.selfstorage.reservation.repository.ReservationRepository;
 import com.swp391.selfstorage.unit.entity.StorageUnit;
 import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
+import com.swp391.selfstorage.unit.entity.UnitType;
 import com.swp391.selfstorage.unit.repository.FacilityUnitTypePriceRepository;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
 import com.swp391.selfstorage.unit.repository.UnitTypeRepository;
@@ -16,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -37,6 +41,7 @@ class ReservationConfirmTest {
     @Mock private UnitTypeRepository unitTypeRepository;
     @Mock private FacilityUnitTypePriceRepository facilityUnitTypePriceRepository;
     @Mock private RentalContractRepository rentalContractRepository;
+    @Mock private PaymentTransactionRepository paymentTransactionRepository;
     @InjectMocks private ReservationServiceImpl service;
 
     private Reservation pendingReservation;
@@ -127,5 +132,28 @@ class ReservationConfirmTest {
 
         assertEquals(ReservationStatus.CONFIRMED, pendingReservation.getStatus());
         verify(storageUnitRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("CON-02: BOM vô hiệu hóa UnitType ngay lúc khách thanh toán -> đơn chuyển EXPIRED, tạo REFUND PENDING_REFUND và ném UNIT_TYPE_INACTIVE")
+    void shouldExpireAndTriggerRefund_whenUnitTypeDeactivatedDuringPayment() {
+        pendingReservation.setUnitTypeId(7L);
+        pendingReservation.setTotalPayable(3_000_000L);
+        when(reservationRepository.findByIdWithLock(1042L)).thenReturn(Optional.of(pendingReservation));
+        when(unitTypeRepository.findById(7L))
+                .thenReturn(Optional.of(UnitType.builder().id(7L).code("UT-CHL-S").isActive(false).build()));
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> service.confirmAfterPayment(1042L));
+
+        assertEquals(ErrorCode.UNIT_TYPE_INACTIVE, ex.getErrorCode());
+        assertEquals(ReservationStatus.EXPIRED, pendingReservation.getStatus());
+        verify(reservationRepository).save(pendingReservation);
+
+        ArgumentCaptor<PaymentTransaction> refundCaptor = ArgumentCaptor.forClass(PaymentTransaction.class);
+        verify(paymentTransactionRepository).save(refundCaptor.capture());
+        assertEquals("REFUND", refundCaptor.getValue().getTransactionType());
+        assertEquals("PENDING_REFUND", refundCaptor.getValue().getStatus());
+        assertEquals(3_000_000L, refundCaptor.getValue().getAmount());
     }
 }

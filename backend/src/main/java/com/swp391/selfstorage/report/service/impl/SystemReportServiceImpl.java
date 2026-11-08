@@ -60,15 +60,7 @@ public class SystemReportServiceImpl implements SystemReportService {
         final LocalDate effectiveTo = (to != null) ? to : LocalDate.now();
 
         // 2. Xác định danh sách cơ sở cần báo cáo
-        List<Facility> targetFacilities;
-        if (facilityId != null) {
-            Facility facility = facilityRepository.findById(facilityId)
-                    .orElseThrow(() -> new CustomException(ErrorCode.FACILITY_NOT_FOUND,
-                            "Không tìm thấy cơ sở lưu trữ: " + facilityId));
-            targetFacilities = List.of(facility);
-        } else {
-            targetFacilities = facilityRepository.findAll();
-        }
+        List<Facility> targetFacilities = resolveTargetFacilities(facilityId);
 
         long totalRentalRevenue = 0L;
         long totalSurchargeRevenue = 0L;
@@ -96,8 +88,13 @@ public class SystemReportServiceImpl implements SystemReportService {
             long facRenewalRevenue = 0L;
             long facDeposit = 0L;
             long facRefund = 0L;
+            long facPendingRefundLiability = 0L;
 
             for (RentalContract contract : contractMap.values()) {
+                boolean isContractHoldingDeposit = contract.getStatus() == ContractStatus.PENDING_CHECK_IN
+                        || contract.getStatus() == ContractStatus.ACTIVE
+                        || contract.getStatus() == ContractStatus.OVERDUE
+                        || contract.getStatus() == ContractStatus.PENDING_RETURN;
                 // Gộp thanh toán theo contract_id và reservation_id (INITIAL_PAYMENT thường chỉ có reservationId)
                 List<PaymentTransaction> payments = new ArrayList<>();
                 Set<Long> seenPaymentIds = new HashSet<>();
@@ -132,6 +129,12 @@ public class SystemReportServiceImpl implements SystemReportService {
                     continue;
                 }
                 for (PaymentTransaction payment : payments) {
+                    if (!isContractHoldingDeposit
+                            && payment.getAmount() != null
+                            && payment.getAmount() > 0
+                            && "PENDING_REFUND".equalsIgnoreCase(payment.getStatus())) {
+                        facPendingRefundLiability += payment.getAmount();
+                    }
                     if (payment.getCreatedAt() == null || payment.getAmount() == null) {
                         continue;
                     }
@@ -178,7 +181,7 @@ public class SystemReportServiceImpl implements SystemReportService {
             // Tính Net MRR (sau chiết khấu) & Deposit Liability (Khoản nợ phải trả)
             long facMrr = 0L;
             long facActiveContracts = 0L;
-            long facDepositLiability = 0L;
+            long facDepositLiability = facPendingRefundLiability;
 
             for (RentalContract c : contractMap.values()) {
                 if (c.getStatus() == ContractStatus.ACTIVE) {
@@ -188,7 +191,10 @@ public class SystemReportServiceImpl implements SystemReportService {
                             : c.getMonthlyPrice();
                     facMrr += netMonthlyPrice;
                 }
-                if (c.getStatus() == ContractStatus.ACTIVE || c.getStatus() == ContractStatus.OVERDUE) {
+                if (c.getStatus() == ContractStatus.PENDING_CHECK_IN
+                        || c.getStatus() == ContractStatus.ACTIVE
+                        || c.getStatus() == ContractStatus.OVERDUE
+                        || c.getStatus() == ContractStatus.PENDING_RETURN) {
                     if (c.getDepositBalance() > 0) {
                         facDepositLiability += c.getDepositBalance();
                     }
@@ -244,15 +250,7 @@ public class SystemReportServiceImpl implements SystemReportService {
 
     @Override
     public SystemOccupancyReportResponse getSystemOccupancyReport(Long facilityId) {
-        List<Facility> targetFacilities;
-        if (facilityId != null) {
-            Facility facility = facilityRepository.findById(facilityId)
-                    .orElseThrow(() -> new CustomException(ErrorCode.FACILITY_NOT_FOUND,
-                            "Không tìm thấy cơ sở lưu trữ: " + facilityId));
-            targetFacilities = List.of(facility);
-        } else {
-            targetFacilities = facilityRepository.findAll();
-        }
+        List<Facility> targetFacilities = resolveTargetFacilities(facilityId);
 
         long overallTotalUnits = 0L;
         long overallOccupiedUnits = 0L;
@@ -280,8 +278,8 @@ public class SystemReportServiceImpl implements SystemReportService {
                     ? contracts.stream().filter(c -> c.getStatus() == ContractStatus.OVERDUE).count()
                     : 0L;
 
-            // Usage Rate = Occupied / (Total - OutOfService) (US-BM-04.2 AC-1, AC-4)
-            long exploitableUnits = totalUnits - outOfServiceUnits;
+            // Usage Rate = Occupied / (Total - OutOfService - Maintenance) (REP-03, BR-AVL-01)
+            long exploitableUnits = totalUnits - outOfServiceUnits - maintenanceUnits;
             double occupancyRate = 0.0;
             if (exploitableUnits > 0) {
                 BigDecimal rate = BigDecimal.valueOf((double) occupiedUnits / exploitableUnits)
@@ -447,6 +445,16 @@ public class SystemReportServiceImpl implements SystemReportService {
                 yield CsvReportExportUtil.exportOverdueReport(paged.getContent(), currentUser);
             }
         };
+    }
+
+    private List<Facility> resolveTargetFacilities(Long facilityId) {
+        if (facilityId != null) {
+            Facility facility = facilityRepository.findById(facilityId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.FACILITY_NOT_FOUND,
+                            "Không tìm thấy cơ sở lưu trữ: " + facilityId));
+            return List.of(facility);
+        }
+        return facilityRepository.findAll();
     }
 
 }

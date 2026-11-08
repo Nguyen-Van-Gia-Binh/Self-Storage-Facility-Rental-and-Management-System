@@ -196,13 +196,6 @@ public class UnitTypeServiceImpl implements UnitTypeService {
         UnitType ut = unitTypeRepository.findById(unitTypeId)
                 .orElseThrow(() -> new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND));
 
-        long inUseUnits = storageUnitRepository.countByUnitTypeIdAndStatusIn(
-                unitTypeId, List.of(StorageUnitStatus.RESERVED, StorageUnitStatus.OCCUPIED));
-
-        if (inUseUnits > 0) {
-            throw new CustomException(ErrorCode.UNIT_TYPE_HAS_ACTIVE_UNITS);
-        }
-
         ut.setActive(false);
         unitTypeRepository.save(ut);
     }

@@ -630,7 +630,7 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
-    @Transactional(timeout = 5)
+    @Transactional(timeout = 5, noRollbackFor = CustomException.class)
     public void confirmAfterPayment(Long reservationId) {
         if (reservationHoldExpiryService != null && reservationHoldExpiryService.expireIfElapsed(reservationId)) {
             throw new CustomException(ErrorCode.RESERVATION_EXPIRED);
@@ -647,6 +647,28 @@ public class ReservationServiceImpl implements ReservationService {
                 reservationRepository.save(rsv);
             }
             throw new CustomException(ErrorCode.RESERVATION_EXPIRED);
+        }
+
+        // CON-02: Nếu BOM vừa tắt loại kho (INACTIVE) trong lúc khách đang thanh toán -> chuyển EXPIRED & hoàn tiền
+        if (unitTypeRepository != null && rsv.getUnitTypeId() != null) {
+            UnitType unitType = unitTypeRepository.findById(rsv.getUnitTypeId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND));
+            if (!unitType.isActive()) {
+                rsv.setStatus(ReservationStatus.EXPIRED);
+                reservationRepository.save(rsv);
+                if (paymentTransactionRepository != null && rsv.getTotalPayable() > 0) {
+                    paymentTransactionRepository.save(PaymentTransaction.builder()
+                            .reservationId(rsv.getId())
+                            .transactionType("REFUND")
+                            .amount(rsv.getTotalPayable())
+                            .status("PENDING_REFUND")
+                            .paymentMethod("BANK_TRANSFER")
+                            .providerReference("AUTO-REFUND-INACTIVE-UT-" + rsv.getId())
+                            .orderCode(System.currentTimeMillis())
+                            .build());
+                }
+                throw new CustomException(ErrorCode.UNIT_TYPE_INACTIVE);
+            }
         }
 
         if (rsv.getStorageUnitId() != null) {

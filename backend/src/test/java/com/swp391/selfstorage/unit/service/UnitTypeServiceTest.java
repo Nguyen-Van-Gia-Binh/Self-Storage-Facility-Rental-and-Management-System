@@ -230,24 +230,14 @@ class UnitTypeServiceTest {
     }
 
     @Test
-    @DisplayName("US-FM-01.1: Vô hiệu hóa loại ô kho thành công khi không có ô kho đang active hoặc reserved")
-    void shouldDeactivateUnitType_whenNoActiveOrReservedUnitsExist() {
+    @DisplayName("CAT-03 / BR-BOM-03: Vô hiệu hóa mềm (Graceful Deactivation) thành công ngay cả khi đang có khách thuê")
+    void shouldGracefullyDeactivateUnitType_evenWhenActiveOrReservedUnitsExist() {
         when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(unitType));
-        when(storageUnitRepository.countByUnitTypeIdAndStatusIn(eq(7L), anyCollection())).thenReturn(0L);
 
         unitTypeService.deactivateUnitType(1L, 7L);
 
         assertFalse(unitType.isActive());
         verify(unitTypeRepository).save(unitType);
-    }
-
-    @Test
-    @DisplayName("US-FM-01.1 AC-3: Vô hiệu hóa thất bại khi đang có ô kho active hoặc reserved")
-    void shouldThrowCustomException_whenDeactivatingUnitTypeWithActiveOrReservedUnits() {
-        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(unitType));
-        when(storageUnitRepository.countByUnitTypeIdAndStatusIn(eq(7L), anyCollection())).thenReturn(2L);
-
-        CustomException ex = assertThrows(CustomException.class, () -> unitTypeService.deactivateUnitType(1L, 7L));
-        assertEquals(ErrorCode.UNIT_TYPE_HAS_ACTIVE_UNITS, ex.getErrorCode());
+        verifyNoInteractions(storageUnitRepository);
     }
 }
