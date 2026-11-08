@@ -3,7 +3,6 @@ import {
   TrendingUp,
   BarChart3,
   AlertTriangle,
-  RefreshCw,
   Building2,
   FileSpreadsheet,
   FilterX,
@@ -142,27 +141,6 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
     return () => window.cancelAnimationFrame(frame);
   }, [printRequested, isExportModalOpen, isLoading]);
 
-  const handleRefresh = () => {
-    setIsLoading(true);
-    const monthStr = filters.from.substring(0, 7);
-    Promise.all([
-      getSystemRevenueReport(filters),
-      getSystemOccupancyReport(monthStr, filters.facilityId),
-      getSystemOverdueReport(filters.facilityId),
-    ])
-      .then(([rev, occ, ovd]) => {
-        setRevenueData(rev);
-        setOccupancyData(occ);
-        setOverdueData(ovd);
-        setLastRefreshed(new Date().toLocaleTimeString('vi-VN'));
-        setIsLoading(false);
-      })
-      .catch((err) => {
-        console.error('Lỗi khi làm mới dữ liệu:', err);
-        setIsLoading(false);
-      });
-  };
-
   const handleOpenDetailFromOccupancy = (occ: any) => {
     const rev = revenueData?.byFacility?.find((r) => r.facilityId === occ.facilityId);
     setDrawerFacility({
@@ -213,17 +191,6 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
               Cập nhật lúc: {lastRefreshed}
             </span>
           )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            isLoading={isLoading}
-            className="flex items-center gap-1.5 text-xs py-2 px-3 border-slate-300 hover:bg-slate-50"
-            title="Làm mới số liệu"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            Làm mới
-          </Button>
           <Button
             variant="primary"
             size="sm"
