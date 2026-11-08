@@ -41,15 +41,31 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
   const [isSuccess, setIsSuccess] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
 
-  // Kiểm tra xem có trả sớm hơn ngày kết thúc hợp đồng không (BR-RET-06)
+  const policy = useActivePolicy();
+  const graceDays = policy?.overdueGraceDays ?? 0;
+  const noticeDays = policy?.returnNoticeDays ?? 30;
+
+  // Kiểm tra xem có trả sớm hơn 30 ngày (1 tháng thuê) không (BR-RET-01, BR-RET-06 Best-of-Both)
   const isEarlyReturn = useMemo(() => {
     if (!contract || !returnDate || !contract.endDate) return false;
-    return new Date(returnDate) < new Date(contract.endDate);
-  }, [contract, returnDate]);
+    const retDate = new Date(returnDate);
+    const endDate = new Date(contract.endDate);
+    const diffDays = Math.ceil((endDate.getTime() - retDate.getTime()) / (1000 * 60 * 60 * 24));
+    return diffDays > noticeDays;
+  }, [contract, returnDate, noticeDays]);
+
+  // Kiểm tra xem có trả kho trong tháng cuối không (0 < diffDays <= 30)
+  const isWithinFinalMonth = useMemo(() => {
+    if (!contract || !returnDate || !contract.endDate) return false;
+    const retDate = new Date(returnDate);
+    const endDate = new Date(contract.endDate);
+    const diffDays = Math.ceil((endDate.getTime() - retDate.getTime()) / (1000 * 60 * 60 * 24));
+    return diffDays > 0 && diffDays <= noticeDays;
+  }, [contract, returnDate, noticeDays]);
 
   // Tính số ngày và tiền thuê chưa dùng khi trả sớm (BR-RET-06 & PolicyNumbers backend)
   const unusedRentInfo = useMemo(() => {
-    if (!contract || !isEarlyReturn || !contract.endDate) return { unusedDays: 0, estimatedUnusedRent: 0 };
+    if (!contract || !contract.endDate) return { unusedDays: 0, estimatedUnusedRent: 0 };
     const retDate = new Date(returnDate);
     const endDate = new Date(contract.endDate);
     const diffTime = endDate.getTime() - retDate.getTime();
@@ -59,10 +75,8 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
     const dailyRent = Math.round((contract.monthlyRent / 30) / 1000) * 1000;
     const estimatedUnusedRent = dailyRent * diffDays;
     return { unusedDays: diffDays, estimatedUnusedRent };
-  }, [contract, isEarlyReturn, returnDate]);
+  }, [contract, returnDate]);
 
-  const policy = useActivePolicy();
-  const graceDays = policy?.overdueGraceDays ?? 0;
   const isOverdue = Boolean(contract && contract.status === 'OVERDUE');
   const isGracePeriod = Boolean(
     isOverdue &&
@@ -283,19 +297,29 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
             </div>
           )}
 
-          {/* Lưu ý khi trả kho trước hạn */}
+          {/* Thông báo trả trong tháng cuối: BR-RET-06 Best-of-Both */}
+          {isWithinFinalMonth && !isGracePeriod && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-2.5 text-xs text-blue-900">
+              <ShieldCheck className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+              <span className="leading-snug">
+                <strong>Chính sách tháng cuối hợp đồng:</strong> Hợp đồng còn <strong>{unusedRentInfo.unusedDays} ngày</strong> (hạn: {contract.endDate}). Theo chính sách Best-of-Both, bạn được <strong>hoàn trả 100% tiền cọc ({formatVND(contract.depositHeld)})</strong> và không hoàn tiền lẻ ngày thuê chưa dùng.
+              </span>
+            </div>
+          )}
+
+          {/* Lưu ý khi trả kho trước hạn dài (> 30 ngày) */}
           {isEarlyReturn && (
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-2 text-xs text-amber-900">
               <div className="flex items-start gap-1.5 font-bold text-amber-950">
                 <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                <span>Lưu ý khi trả kho trước hạn:</span>
+                <span>Lưu ý khi trả kho trước hạn dài (&gt; 30 ngày):</span>
               </div>
               <div className="text-[11px] text-amber-900 space-y-1 pl-5">
                 <p>
                   • Hạn hợp đồng đến ngày <strong>{contract.endDate}</strong> (còn <strong>{unusedRentInfo.unusedDays} ngày</strong>).
                 </p>
                 <p>
-                  • <strong>Tiền cọc ({formatVND(contract.depositHeld)}):</strong> Không được hoàn lại khi trả trước hạn.
+                  • <strong>Tiền cọc ({formatVND(contract.depositHeld)}):</strong> Không được hoàn lại khi trả trước hạn (phạt 100% tiền cọc).
                 </p>
                 <p>
                   • <strong>Tiền thuê chưa dùng ({formatVND(unusedRentInfo.estimatedUnusedRent)}):</strong> Được hoàn trả 100%.

@@ -23,7 +23,7 @@ vi.mock('@/api/customerRentals', () => ({
 vi.mock('@/hooks/useActivePolicy', () => ({
   useActivePolicy: () => ({
     overdueGraceDays: 3,
-    returnNoticeDays: 30,
+    returnNoticeDays: 7,
     returnEarlyRefundRate: 1.0,
     returnEarlyPenaltyRate: 1.0,
   }),
@@ -79,7 +79,7 @@ describe('ScheduleReturnModal Component (BR-RET-06 & Compact UI)', () => {
     expect(screen.getByText(/Hoàn tiền thuê chưa dùng/i)).toBeInTheDocument();
 
     // Kiểm tra box cảnh báo quy định
-    expect(screen.getByText(/Lưu ý khi trả kho trước hạn:/i)).toBeInTheDocument();
+    expect(screen.getByText(/Lưu ý khi trả kho trước hạn/i)).toBeInTheDocument();
     expect(screen.getByText(/Không được hoàn lại khi trả trước hạn/i)).toBeInTheDocument();
 
     // Checkbox đồng ý điều khoản trả sớm

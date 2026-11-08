@@ -3,6 +3,7 @@ package com.swp391.selfstorage.policy.service;
 import com.swp391.selfstorage.contract.entity.ContractStatus;
 import com.swp391.selfstorage.contract.entity.RentalContract;
 import com.swp391.selfstorage.contract.repository.RentalContractRepository;
+import com.swp391.selfstorage.payment.repository.PaymentTransactionRepository;
 import com.swp391.selfstorage.policy.dto.OverdueProcessingResult;
 import com.swp391.selfstorage.policy.entity.PolicyVersion;
 import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
@@ -44,6 +45,9 @@ class OverdueProcessingServiceTest {
 
     @Mock
     private ReservationRepository reservationRepository;
+
+    @Mock
+    private PaymentTransactionRepository paymentTransactionRepository;
 
     @InjectMocks
     private OverdueProcessingServiceImpl overdueProcessingService;
@@ -451,5 +455,33 @@ class OverdueProcessingServiceTest {
         assertEquals(2, result.getTotalScanned(), "Cả 2 hợp đồng đều được quét lần lượt");
         assertEquals(2, result.getMarkedOverdueCount(), "Cả 2 hợp đồng đều được chuyển sang OVERDUE");
         verify(rentalContractRepository).findByStatusInAndEndDateExclusiveLessThanEqual(anyList(), eq(runDate));
+    }
+
+    @Test
+    @DisplayName("BR-OVD-08: Khách đóng phạt 40% ở D+7 được mở PIN nhưng không dọn đồ -> D+8 tự khóa lại PIN và chỉ tính thêm 10% ngày mới")
+    void testPaidPenaltyAtD7_ThenStaysToD8_ShouldRelockPinAndChargeOnlyNewDay() {
+        LocalDate runDate = baseEndDate.plusDays(8); // D+8 (tổng 5 ngày tính phạt = 50% = 1.000.000đ)
+
+        RentalContract contract = RentalContract.builder()
+                .id(108L)
+                .code("CTR-008")
+                .status(ContractStatus.OVERDUE)
+                .endDateExclusive(baseEndDate)
+                .depositAmount(2_000_000L)
+                .depositBalance(2_000_000L)
+                .overdueFeeAccrued(0L) // Đã đóng 800.000đ ở D+7 nên nợ tạm thời về 0
+                .accessCode("654321")  // Mã PIN tạm thời được cấp lại ở D+7
+                .build();
+
+        when(rentalContractRepository.findByStatusInAndEndDateExclusiveLessThanEqual(anyList(), eq(runDate)))
+                .thenReturn(List.of(contract));
+        when(paymentTransactionRepository.sumSuccessfulAmountByContractIdAndTransactionType(108L, "OVERDUE_PENALTY"))
+                .thenReturn(800_000L);
+
+        OverdueProcessingResult result = overdueProcessingService.processOverdueContracts(runDate);
+
+        assertEquals(1, result.getPenalizedCount());
+        assertEquals(200_000L, contract.getOverdueFeeAccrued(), "Chỉ thu thêm 1 ngày mới D+8 (200.000đ), không thu trùng 800.000đ đã đóng ở D+7");
+        assertNull(contract.getAccessCode(), "Sang 00:05 D+8 khách chưa báo trả kho thì phải tự động khóa lại mã PIN");
     }
 }
