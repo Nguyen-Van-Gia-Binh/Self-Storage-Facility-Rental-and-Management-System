@@ -63,6 +63,7 @@ public class SecurityConfig {
                                 "/public/**",
                                 "/facilities/**",
                                 "/payments/webhook/**",
+                                "/payments/vnpay/**",
                                 "/policies/active",
                                 "/policies",
                                 "/policies/{id}"

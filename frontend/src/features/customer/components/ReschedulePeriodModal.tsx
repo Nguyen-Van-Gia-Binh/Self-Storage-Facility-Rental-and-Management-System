@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/Button';
 import {
@@ -10,8 +10,11 @@ import {
   Clock,
   Sparkles,
   Info,
+  CreditCard,
+  ArrowLeft,
 } from 'lucide-react';
-import { rescheduleRentalPeriod } from '@/api/customerRentals';
+import { createCheckout, pollPaymentStatus } from '@/api/payment';
+import { VnpayPayLinks } from './VnpayPayLinks';
 import type { RentedContract } from '../types';
 import { formatVND } from '../utils/pricing';
 
@@ -32,6 +35,10 @@ export const ReschedulePeriodModal: React.FC<ReschedulePeriodModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [orderCode, setOrderCode] = useState<number | null>(null);
+
+  // BR-RES-06: Khóa dời lịch nếu hợp đồng đã dời lịch 1 lần
+  const isAlreadyRescheduled = (contract?.rescheduleCount ?? 0) >= 1;
 
   // Kiểm tra điều kiện báo trước 48 giờ
   const hoursUntilStart = useMemo(() => {
@@ -42,7 +49,7 @@ export const ReschedulePeriodModal: React.FC<ReschedulePeriodModalProps> = ({
     return (startMs - nowMs) / (1000 * 60 * 60);
   }, [contract?.startDate]);
 
-  const isEligibleForReschedule = hoursUntilStart >= 48;
+  const isEligibleForReschedule = hoursUntilStart >= 48 && !isAlreadyRescheduled;
 
   // Giới hạn ngày chọn: từ ngày mai (hoặc startDate + 1) đến startDate + 7 ngày
   const { minDateStr, maxDateStr } = useMemo(() => {
@@ -135,9 +142,40 @@ export const ReschedulePeriodModal: React.FC<ReschedulePeriodModalProps> = ({
     }
   };
 
+  // Tự động Polling kiểm tra trạng thái thanh toán VNPay khi có orderCode
+  useEffect(() => {
+    if (!orderCode || isSuccess || !isOpen) return;
+
+    const intervalId = setInterval(async () => {
+      try {
+        const res = await pollPaymentStatus(orderCode);
+        if (res.status === 'PAID' || res.status === 'SUCCESS') {
+          setIsSuccess(true);
+          clearInterval(intervalId);
+          setTimeout(() => {
+            setIsSuccess(false);
+            setOrderCode(null);
+            setNewStartDate('');
+            onClose();
+            onSuccess();
+          }, 1800);
+        }
+      } catch (err) {
+        console.warn('Lỗi kiểm tra trạng thái thanh toán dời ngày:', err);
+      }
+    }, 2500);
+
+    return () => clearInterval(intervalId);
+  }, [orderCode, isSuccess, isOpen, onClose, onSuccess]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!contract || !newStartDate || !isEligibleForReschedule) return;
+
+    if (isAlreadyRescheduled) {
+      setError('Mỗi hợp đồng chỉ được phép dời ngày nhận kho tối đa 1 lần duy nhất (BR-RES-06).');
+      return;
+    }
 
     if (newStartDate === contract.startDate) {
       setError('Ngày bắt đầu mới phải khác với ngày bắt đầu hiện tại.');
@@ -153,17 +191,23 @@ export const ReschedulePeriodModal: React.FC<ReschedulePeriodModalProps> = ({
     setError(null);
 
     try {
-      await rescheduleRentalPeriod(contract.id, newStartDate);
-      setIsSuccess(true);
-      setTimeout(() => {
-        setIsSuccess(false);
-        setNewStartDate('');
-        onClose();
-        onSuccess();
-      }, 1500);
+      // BR-RES-06 Phương án 2: Tạo đơn checkout RESCHEDULE_FEE qua VNPay Sandbox
+      const res = await createCheckout({
+        referenceType: 'RESCHEDULE_FEE',
+        referenceId: Number(contract.id),
+        newStartDate,
+        amount: rescheduleFee,
+        description: `DOI KHO ${contract.unitNumber || contract.id}`.slice(0, 25),
+      });
+
+      if (res && res.orderCode) {
+        setOrderCode(res.orderCode);
+      } else {
+        setError('Không thể khởi tạo mã giao dịch VNPay. Vui lòng thử lại sau.');
+      }
     } catch (err: any) {
-      console.error('Lỗi dời thời gian thuê:', err);
-      setError(err.message || 'Không thể dời thời gian thuê. Vui lòng thử lại hoặc liên hệ hỗ trợ.');
+      console.error('Lỗi khởi tạo dời ngày:', err);
+      setError(err.message || 'Không thể khởi tạo giao dịch dời ngày. Vui lòng thử lại hoặc liên hệ hỗ trợ.');
     } finally {
       setIsSubmitting(false);
     }
@@ -172,6 +216,7 @@ export const ReschedulePeriodModal: React.FC<ReschedulePeriodModalProps> = ({
   const handleClose = () => {
     if (isSubmitting) return;
     setError(null);
+    setOrderCode(null);
     setNewStartDate('');
     setIsSuccess(false);
     onClose();
@@ -204,7 +249,7 @@ export const ReschedulePeriodModal: React.FC<ReschedulePeriodModalProps> = ({
           </div>
           <div>
             <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider block">
-              Điều chỉnh kế hoạch thuê
+              Điều chỉnh kế hoạch thuê (BR-RES-06)
             </span>
             <h3 className="text-lg font-black text-slate-900">Dời ngày nhận kho</h3>
             <p className="text-xs text-slate-500">
@@ -218,15 +263,65 @@ export const ReschedulePeriodModal: React.FC<ReschedulePeriodModalProps> = ({
             <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto animate-bounce">
               <CheckCircle2 className="w-10 h-10" />
             </div>
-            <h4 className="text-lg font-bold text-slate-900">Dời thời gian thành công!</h4>
-            <p className="text-xs text-slate-500 max-w-xs mx-auto">
-              Hệ thống đã cập nhật khung thời gian thuê mới và điều chỉnh lịch nhận kho của bạn.
+            <h4 className="text-lg font-bold text-slate-900">Dời ngày nhận kho thành công!</h4>
+            <p className="text-xs text-slate-600 max-w-xs mx-auto leading-relaxed">
+              Phí dời ngày đã được thanh toán qua VNPay. Hệ thống đã cập nhật ngày nhận kho mới: <strong className="text-emerald-700">{formatDateDisplay(newStartDate)}</strong>.
             </p>
           </div>
+        ) : orderCode ? (
+          /* Bước 2: Thanh toán phí dời ngày qua VNPay Sandbox */
+          <div className="space-y-4">
+            <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-2xl space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <CreditCard className="w-4 h-4 text-emerald-600" />
+                  Thanh toán phí dời ngày nhận kho
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  Đơn #{orderCode}
+                </span>
+              </div>
+              <div className="text-xs text-slate-600">
+                Lịch mới: <strong className="text-slate-900">{formatDateDisplay(newStartDate)}</strong> (Dời {diffDays} ngày)
+              </div>
+              <div className="pt-2 border-t border-emerald-200/80 flex items-center justify-between">
+                <span className="text-xs font-medium text-slate-600">Số tiền cần thanh toán:</span>
+                <span className="text-base font-black text-emerald-700">{formatVND(rescheduleFee)}</span>
+              </div>
+            </div>
+
+            {/* Các tùy chọn thanh toán VNPay Sandbox */}
+            <VnpayPayLinks orderCode={orderCode} />
+
+            <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setOrderCode(null)}
+                className="text-xs font-semibold text-slate-500 hover:text-slate-800 flex items-center gap-1 cursor-pointer transition-colors"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Chọn lại ngày khác</span>
+              </button>
+              <span className="text-[11px] text-slate-400 italic">
+                Hệ thống tự động kích hoạt sau khi thanh toán
+              </span>
+            </div>
+          </div>
         ) : (
+          /* Bước 1: Chọn ngày và tính phí */
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Cảnh báo nếu đã dời lịch 1 lần (BR-RES-06) */}
+            {isAlreadyRescheduled && (
+              <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-900">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div className="leading-relaxed">
+                  <strong>Không thể dời lịch thêm:</strong> Hợp đồng này đã dời ngày nhận kho <strong>1/1 lần</strong>. Theo quy định <strong>BR-RES-06</strong>, mỗi hợp đồng chỉ được phép dời ngày nhận kho tối đa 1 lần duy nhất.
+                </div>
+              </div>
+            )}
+
             {/* Cảnh báo nếu còn dưới 48h */}
-            {!isEligibleForReschedule && (
+            {!isAlreadyRescheduled && !isEligibleForReschedule && (
               <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-900">
                 <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                 <div className="leading-relaxed">
@@ -275,7 +370,7 @@ export const ReschedulePeriodModal: React.FC<ReschedulePeriodModalProps> = ({
                 className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-2xs disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
               />
               <p className="text-[11px] text-slate-500">
-                * Có thể dời từ 1 đến tối đa 7 ngày kể từ ngày bắt đầu ban đầu ({formatDateDisplay(contract.startDate)}).
+                * Có thể dời từ 1 đến tối đa 7 ngày kể từ ngày bắt đầu ban đầu ({formatDateDisplay(contract.startDate)}). Tối đa 1 lần duy nhất.
               </p>
             </div>
 
@@ -309,7 +404,7 @@ export const ReschedulePeriodModal: React.FC<ReschedulePeriodModalProps> = ({
                     <span className="font-semibold">{diffDays} ngày</span>
                   </div>
                   <div className="pt-1.5 border-t border-emerald-300 flex items-center justify-between font-bold text-xs text-emerald-950">
-                    <span>Phí dời ngày cần đóng:</span>
+                    <span>Phí dời ngày cần thanh toán qua VNPay:</span>
                     <span className="text-sm font-black text-emerald-700">{formatVND(rescheduleFee)}</span>
                   </div>
                 </div>
@@ -320,7 +415,7 @@ export const ReschedulePeriodModal: React.FC<ReschedulePeriodModalProps> = ({
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex gap-2 items-start text-[11px] text-slate-600">
               <Info className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
               <div className="leading-relaxed">
-                Toàn bộ tiền thuê và tiền cọc đã đóng sẽ được chuyển trọn vẹn sang thời gian thuê mới. Phí dời ngày được tính theo số ngày dời thực tế để giữ ô kho cho bạn.
+                Toàn bộ tiền thuê và tiền cọc đã đóng sẽ được bảo lưu sang thời gian thuê mới. Phí dời ngày thanh toán qua VNPay Sandbox để giữ ô kho cho bạn.
               </div>
             </div>
 
@@ -351,7 +446,7 @@ export const ReschedulePeriodModal: React.FC<ReschedulePeriodModalProps> = ({
                 disabled={isSubmitting || !newStartDate || !isEligibleForReschedule}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs cursor-pointer shadow-xs"
               >
-                {isSubmitting ? 'Đang cập nhật...' : 'Xác nhận dời ngày'}
+                {isSubmitting ? 'Đang tạo thanh toán...' : 'Xác nhận dời ngày & Thanh toán'}
               </Button>
             </div>
           </form>

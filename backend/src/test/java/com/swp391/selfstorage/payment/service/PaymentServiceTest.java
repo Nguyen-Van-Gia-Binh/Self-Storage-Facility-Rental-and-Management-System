@@ -86,6 +86,9 @@ class PaymentServiceTest {
     @Mock
     private com.swp391.selfstorage.policy.repository.PolicyVersionRepository policyVersionRepository;
 
+    @Mock
+    private org.springframework.beans.factory.ObjectProvider<com.swp391.selfstorage.contract.service.ContractService> contractServiceProvider;
+
     @Spy
     private PaymentMapper paymentMapper = new PaymentMapper();
 
@@ -753,5 +756,75 @@ class PaymentServiceTest {
 
         assertFalse(paymentService.reconcileSingleOrder(1001L), "Phải bỏ qua khi đơn đã được Webhook xử lý");
         verify(paymentTransactionRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("createCheckoutLink (RESCHEDULE_FEE): Khởi tạo giao dịch dời ngày nhận kho hợp lệ và tính đúng phí (BR-RES-06)")
+    void createCheckoutLink_RescheduleFee_Success() {
+        java.time.LocalDate startDate = java.time.LocalDate.now().plusDays(5);
+        java.time.LocalDate newStartDate = startDate.plusDays(3);
+
+        com.swp391.selfstorage.contract.entity.RentalContract contract = com.swp391.selfstorage.contract.entity.RentalContract.builder()
+                .id(80050L)
+                .code("CTR-80050")
+                .status(com.swp391.selfstorage.contract.entity.ContractStatus.PENDING_CHECK_IN)
+                .startDate(startDate)
+                .monthlyPrice(900_000L)
+                .rentalMonths(3)
+                .rescheduleCount(0)
+                .build();
+
+        when(rentalContractRepository.findById(80050L)).thenReturn(Optional.of(contract));
+        when(paymentGateway.createPayment(any())).thenReturn(PaymentCheckoutResult.builder()
+                .orderCode(998877L)
+                .amount(90_000L)
+                .checkoutUrl("https://sandbox.vnpayment.vn/pay/998877")
+                .description("DOI80050D3")
+                .build());
+
+        CheckoutRequest request = CheckoutRequest.builder()
+                .referenceType("RESCHEDULE_FEE")
+                .referenceId(80050L)
+                .newStartDate(newStartDate)
+                .build();
+
+        CheckoutResponse response = paymentService.createCheckoutLink(request);
+
+        assertNotNull(response);
+        assertNotNull(response.getOrderCode());
+
+        ArgumentCaptor<PaymentTransaction> captor = ArgumentCaptor.forClass(PaymentTransaction.class);
+        verify(paymentTransactionRepository).save(captor.capture());
+        PaymentTransaction saved = captor.getValue();
+        assertEquals("RESCHEDULE_FEE", saved.getTransactionType());
+        assertEquals(90_000L, saved.getAmount());
+        assertEquals(newStartDate, saved.getRescheduledStartDate());
+        assertEquals(80050L, saved.getContractId());
+    }
+
+    @Test
+    @DisplayName("createCheckoutLink (RESCHEDULE_FEE): Chặn dời lịch khi hợp đồng đã dời 1 lần (BR-RES-06)")
+    void createCheckoutLink_RescheduleFee_AlreadyRescheduled_ThrowsException() {
+        java.time.LocalDate startDate = java.time.LocalDate.now().plusDays(5);
+        java.time.LocalDate newStartDate = startDate.plusDays(2);
+
+        com.swp391.selfstorage.contract.entity.RentalContract contract = com.swp391.selfstorage.contract.entity.RentalContract.builder()
+                .id(80051L)
+                .code("CTR-80051")
+                .status(com.swp391.selfstorage.contract.entity.ContractStatus.PENDING_CHECK_IN)
+                .startDate(startDate)
+                .rescheduleCount(1)
+                .build();
+
+        when(rentalContractRepository.findById(80051L)).thenReturn(Optional.of(contract));
+
+        CheckoutRequest request = CheckoutRequest.builder()
+                .referenceType("RESCHEDULE_FEE")
+                .referenceId(80051L)
+                .newStartDate(newStartDate)
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class, () -> paymentService.createCheckoutLink(request));
+        assertTrue(ex.getMessage().contains("tối đa 1 lần duy nhất"));
     }
 }

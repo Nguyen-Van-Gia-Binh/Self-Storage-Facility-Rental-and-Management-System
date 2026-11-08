@@ -69,6 +69,8 @@ export interface CustomerRentalSummary {
   status: string; // ACTIVE, PENDING_CHECKIN, OVERDUE, etc.
   accessCode?: string;
   monthlyPrice: number;
+  rescheduleCount?: number;
+  rescheduledAt?: string;
 }
 
 export interface CustomerRentalDetail extends CustomerRentalSummary {

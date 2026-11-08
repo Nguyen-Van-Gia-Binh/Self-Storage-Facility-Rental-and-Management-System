@@ -10,11 +10,12 @@ const STORAGE_PAYMENTS_KEY = 'smartstorage_payments';
 const STORAGE_USER_PASSES_KEY = 'smartstorage_move_in_passes';
 
 export interface CheckoutPayload {
-  referenceType?: 'RESERVATION' | 'CONTRACT_RENEWAL' | 'SETTLEMENT' | 'OVERDUE_PENALTY';
+  referenceType?: 'RESERVATION' | 'CONTRACT_RENEWAL' | 'SETTLEMENT' | 'OVERDUE_PENALTY' | 'RESCHEDULE_FEE';
   referenceId?: number;
   reservationId?: number;
   contractRenewalId?: number;
   renewalMonths?: number;
+  newStartDate?: string;
   amount?: number;
   description?: string;
   cancelUrl?: string;
@@ -113,6 +114,7 @@ export async function createCheckout(payload: CheckoutPayload): Promise<Checkout
     referenceType,
     referenceId,
     renewalMonths: payload.renewalMonths,
+    newStartDate: payload.newStartDate,
     description: payload.description,
     cancelUrl: payload.cancelUrl,
     returnUrl: payload.returnUrl,

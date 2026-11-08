@@ -576,5 +576,39 @@ class CustomerRentalServiceTest {
         assertTrue(Boolean.TRUE.equals(item.getRelocationEligible()));
         assertNull(item.getStorageUnitCode(), "Mã ô kho cũ phải được ẩn/xóa để tránh nhầm lẫn khi đang chờ đổi ô");
     }
+
+    @Test
+    @DisplayName("BR-RES-06: Khi hợp đồng đã dời lịch 1 lần -> getMyRentals & getMyRentalDetail trả về rescheduleCount=1 và khóa RESCHEDULE action")
+    void testGetMyRentals_WhenContractAlreadyRescheduled_ReturnsRescheduleCountAndOmitsRescheduleAction() {
+        OffsetDateTime rescheduledTime = OffsetDateTime.now().minusHours(2);
+        RentalContract contract = new RentalContract();
+        contract.setId(701L);
+        contract.setCode("CTR-202611-701");
+        contract.setCustomerId(15L);
+        contract.setFacilityId(1L);
+        contract.setUnitTypeId(7L);
+        contract.setStatus(ContractStatus.PENDING_CHECK_IN);
+        contract.setStartDate(LocalDate.now().plusDays(5));
+        contract.setEndDateExclusive(LocalDate.now().plusMonths(1).plusDays(5));
+        contract.setMonthlyPrice(500_000L);
+        contract.setDepositAmount(500_000L);
+        contract.setRescheduleCount(1);
+        contract.setRescheduledAt(rescheduledTime);
+
+        when(rentalContractRepository.findByCustomerIdAndStatusNot(eq(15L), eq(ContractStatus.CANCELLED), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(contract)));
+        when(rentalContractRepository.findById(701L)).thenReturn(Optional.of(contract));
+
+        PageResponse<CustomerRentalSummaryResponse> page = customerRentalService.getMyRentals(
+                customerUser, null, PageRequest.of(0, 10));
+        assertEquals(1, page.getContent().size());
+        assertEquals(1, page.getContent().get(0).getRescheduleCount());
+        assertEquals(rescheduledTime, page.getContent().get(0).getRescheduledAt());
+
+        CustomerRentalDetailResponse detail = customerRentalService.getMyRentalDetail(701L, customerUser);
+        assertEquals(1, detail.getRescheduleCount());
+        assertEquals(rescheduledTime, detail.getRescheduledAt());
+        assertFalse(detail.getAllowedActions().contains("RESCHEDULE"), "Đã dời lịch 1 lần thì không được phép có action RESCHEDULE");
+    }
 }
 

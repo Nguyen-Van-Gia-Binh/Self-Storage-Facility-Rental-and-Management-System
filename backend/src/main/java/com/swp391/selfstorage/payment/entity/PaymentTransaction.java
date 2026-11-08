@@ -14,6 +14,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
+
 @Entity
 @Table(name = "payment_transaction")
 @Getter
@@ -55,4 +57,7 @@ public class PaymentTransaction extends BaseEntity {
     @Column(name = "renewal_months")
     private Integer renewalMonths;
 
+    /** Ngày bắt đầu mới khi khách dời lịch nhận kho (RESCHEDULE_FEE). */
+    @Column(name = "rescheduled_start_date")
+    private LocalDate rescheduledStartDate;
 }

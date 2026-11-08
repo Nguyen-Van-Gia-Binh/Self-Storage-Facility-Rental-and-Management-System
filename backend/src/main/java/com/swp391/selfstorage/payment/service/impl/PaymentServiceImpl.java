@@ -2,10 +2,13 @@ package com.swp391.selfstorage.payment.service.impl;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.beans.factory.ObjectProvider;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -69,6 +72,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentGateway paymentGateway;
     private final PolicyVersionRepository policyVersionRepository;
     private final VnPayGateway vnPayGateway;
+    private final ObjectProvider<com.swp391.selfstorage.contract.service.ContractService> contractServiceProvider;
 
     @Autowired(required = false)
     private ReservationHoldExpiryService reservationHoldExpiryService;
@@ -115,6 +119,7 @@ public class PaymentServiceImpl implements PaymentService {
         Long contractId = null;
         String txnType;
         Integer storedRenewalMonths = null;
+        LocalDate storedRescheduledStartDate = null;
 
         if ("RESERVATION".equalsIgnoreCase(request.getReferenceType())) {
             Reservation reservation = reservationRepository.findById(request.getReferenceId())
@@ -233,6 +238,95 @@ public class PaymentServiceImpl implements PaymentService {
             defaultDesc = "PHAT" + contract.getId();
             contractId = contract.getId();
             txnType = "OVERDUE_PENALTY";
+        } else if ("RESCHEDULE_FEE".equalsIgnoreCase(request.getReferenceType())) {
+            com.swp391.selfstorage.contract.entity.RentalContract contract = rentalContractRepository.findById(request.getReferenceId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND,
+                            "Không tìm thấy hợp đồng với ID=" + request.getReferenceId()));
+            assertPayer(null, contract.getId());
+
+            if (contract.getStatus() != com.swp391.selfstorage.contract.entity.ContractStatus.PENDING_CHECK_IN) {
+                throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION,
+                        "Chỉ được dời lịch khi hợp đồng đang ở trạng thái Chờ nhận kho (PENDING_CHECK_IN)");
+            }
+
+            if (contract.getRescheduleCount() >= 1) {
+                throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                        "Mỗi hợp đồng chỉ được phép dời ngày nhận kho tối đa 1 lần duy nhất (BR-RES-06)");
+            }
+
+            LocalDate newStartDate = request.getNewStartDate();
+            if (newStartDate == null) {
+                throw new CustomException(ErrorCode.VALIDATION_FAILED, "Ngày bắt đầu mới không được để trống");
+            }
+
+            LocalDate today = LocalDate.now();
+            if (newStartDate.isBefore(today.plusDays(1))) {
+                throw new CustomException(ErrorCode.VALIDATION_FAILED, "Ngày bắt đầu mới phải từ ngày mai trở đi");
+            }
+
+            if (newStartDate.equals(contract.getStartDate())) {
+                throw new CustomException(ErrorCode.VALIDATION_FAILED, "Ngày bắt đầu mới phải khác ngày bắt đầu hiện tại");
+            }
+
+            if (contract.getStartDate() != null) {
+                long hoursUntilStart = java.time.Duration.between(java.time.LocalDateTime.now(), contract.getStartDate().atStartOfDay()).toHours();
+                if (hoursUntilStart < 48) {
+                    throw new CustomException(ErrorCode.VALIDATION_FAILED, "Yêu cầu dời ngày nhận kho phải gửi trước ít nhất 48 giờ (BR-RES-06)");
+                }
+            }
+
+            long diffDays = java.time.temporal.ChronoUnit.DAYS.between(contract.getStartDate(), newStartDate);
+            if (diffDays > 7 || diffDays < 1) {
+                throw new CustomException(ErrorCode.VALIDATION_FAILED, "Thời gian dời ngày nhận kho chỉ được phép từ 1 đến tối đa 7 ngày (BR-RES-06)");
+            }
+
+            int months = contract.getRentalMonths() > 0 ? contract.getRentalMonths() : 1;
+            LocalDate newEndDate = newStartDate.plusMonths(months);
+
+            if (contractServiceProvider != null) {
+                com.swp391.selfstorage.contract.service.ContractService cs = contractServiceProvider.getIfAvailable();
+                if (cs != null) {
+                    cs.validateRescheduleAvailability(contract.getId(), newStartDate, newEndDate);
+                }
+            }
+
+            long dailyRate = contract.getMonthlyPrice() / 30;
+            amount = diffDays * dailyRate;
+            defaultDesc = "DOI" + contract.getId() + "D" + diffDays;
+            contractId = contract.getId();
+            txnType = "RESCHEDULE_FEE";
+            storedRescheduledStartDate = newStartDate;
+
+            Optional<PaymentTransaction> existingPending = paymentTransactionRepository
+                    .findTopByContractIdAndTransactionTypeOrderByCreatedAtDesc(contract.getId(), "RESCHEDULE_FEE");
+            if (existingPending.isPresent()) {
+                PaymentTransaction txn = existingPending.get();
+                if ("PENDING".equals(txn.getStatus())) {
+                    java.time.Instant expiresAt = txn.getCreatedAt().plus(activeHoldHours(), java.time.temporal.ChronoUnit.HOURS);
+                    if (java.time.Instant.now().isBefore(expiresAt) && newStartDate.equals(txn.getRescheduledStartDate())) {
+                        PaymentCheckoutResult reused = paymentGateway.createPayment(
+                                PaymentCheckoutCommand.builder()
+                                        .orderCode(txn.getOrderCode())
+                                        .amount(txn.getAmount())
+                                        .description(txn.getProviderReference())
+                                        .build());
+                        return CheckoutResponse.builder()
+                                .orderCode(reused.getOrderCode())
+                                .checkoutUrl(reused.getCheckoutUrl())
+                                .qrCode(reused.getQrCode())
+                                .amount(reused.getAmount())
+                                .description(reused.getDescription())
+                                .accountName(reused.getAccountName())
+                                .accountNumber(reused.getAccountNumber())
+                                .bin(reused.getBin())
+                                .status("PENDING")
+                                .build();
+                    } else {
+                        txn.setStatus("FAILED");
+                        paymentTransactionRepository.save(txn);
+                    }
+                }
+            }
         } else {
             throw new CustomException(ErrorCode.VALIDATION_FAILED,
                     "Loại thanh toán không được hỗ trợ: " + request.getReferenceType());
@@ -266,6 +360,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .orderCode(orderCode)
                 .providerReference("SBX-" + orderCode)
                 .renewalMonths(storedRenewalMonths)
+                .rescheduledStartDate(storedRescheduledStartDate)
                 .build();
 
         paymentTransactionRepository.save(payment);
@@ -340,6 +435,8 @@ public class PaymentServiceImpl implements PaymentService {
             info = "DH" + payment.getReservationId();
         } else if ("CONTRACT_RENEWAL".equalsIgnoreCase(payment.getTransactionType()) && payment.getContractId() != null) {
             info = "GH" + payment.getContractId() + (payment.getRenewalMonths() != null ? "T" + payment.getRenewalMonths() : "");
+        } else if ("RESCHEDULE_FEE".equalsIgnoreCase(payment.getTransactionType()) && payment.getContractId() != null) {
+            info = "DOI" + payment.getContractId();
         } else if (payment.getContractId() != null) {
             info = "TT" + payment.getContractId();
         } else {
@@ -384,6 +481,14 @@ public class PaymentServiceImpl implements PaymentService {
                     rentalContractRepository.save(c);
                     log.info("Xóa nợ phạt về 0 cho contractId={}, giữ nguyên trạng thái OVERDUE (BR-OVD-08)", c.getId());
                 });
+            }
+        } else if ("RESCHEDULE_FEE".equalsIgnoreCase(payment.getTransactionType())) {
+            if (payment.getContractId() != null && payment.getRescheduledStartDate() != null && contractServiceProvider != null) {
+                com.swp391.selfstorage.contract.service.ContractService cs = contractServiceProvider.getIfAvailable();
+                if (cs != null) {
+                    cs.applyRescheduledStartDate(payment.getContractId(), payment.getRescheduledStartDate());
+                    log.info("Đã áp dụng dời ngày cho contractId={} sang ngày {}", payment.getContractId(), payment.getRescheduledStartDate());
+                }
             }
         }
 

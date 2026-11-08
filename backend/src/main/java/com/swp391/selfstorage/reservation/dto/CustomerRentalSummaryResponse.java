@@ -66,6 +66,10 @@ public class CustomerRentalSummaryResponse {
     // Trạng thái chờ đổi ô kho do sự cố tiếp đón bàn giao
     private Boolean relocationEligible;
 
+    // Theo dõi dời ngày nhận kho tối đa 1 lần (BR-RES-06)
+    private Integer rescheduleCount;
+    private java.time.OffsetDateTime rescheduledAt;
+
     public CustomerRentalSummaryResponse() {}
 
     // Getters and Setters
@@ -183,4 +187,10 @@ public class CustomerRentalSummaryResponse {
 
     public Boolean getRelocationEligible() { return relocationEligible; }
     public void setRelocationEligible(Boolean relocationEligible) { this.relocationEligible = relocationEligible; }
+
+    public Integer getRescheduleCount() { return rescheduleCount; }
+    public void setRescheduleCount(Integer rescheduleCount) { this.rescheduleCount = rescheduleCount; }
+
+    public java.time.OffsetDateTime getRescheduledAt() { return rescheduledAt; }
+    public void setRescheduledAt(java.time.OffsetDateTime rescheduledAt) { this.rescheduledAt = rescheduledAt; }
 }

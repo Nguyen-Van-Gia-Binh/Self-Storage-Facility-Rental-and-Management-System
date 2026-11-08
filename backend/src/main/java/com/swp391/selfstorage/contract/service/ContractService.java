@@ -41,6 +41,12 @@ public interface ContractService {
     /** Dời thời gian thuê trước khi nhận kho khi ở trạng thái PENDING_CHECK_IN (BR-RES-06). */
     ContractResponse rescheduleRentalPeriod(Long contractId, com.swp391.selfstorage.contract.dto.RescheduleRentalPeriodRequest request, Long currentUserId);
 
+    /** Kiểm tra công suất và khả năng dời lịch trước khi tạo giao dịch thanh toán phí dời ngày (BR-RES-06). */
+    void validateRescheduleAvailability(Long contractId, java.time.LocalDate newStartDate, java.time.LocalDate newEndDate);
+
+    /** Áp dụng ngày bắt đầu mới cho hợp đồng sau khi thanh toán phí dời ngày thành công qua VNPay (BR-RES-06). */
+    ContractResponse applyRescheduledStartDate(Long contractId, java.time.LocalDate newStartDate);
+
     /** Hủy nhận kho và hoàn tiền cho hợp đồng đang ở trạng thái PENDING_CHECK_IN (BR-CAN-01). */
     ContractResponse cancelPendingContract(Long contractId, com.swp391.selfstorage.reservation.dto.CancelReservationRequest request, UserPrincipal currentUser);
 }

@@ -1,5 +1,7 @@
 package com.swp391.selfstorage.payment.dto;
 
+import java.time.LocalDate;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -26,4 +28,7 @@ public class CheckoutRequest {
     private String description;
 
     private Integer renewalMonths;
+
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate newStartDate;
 }

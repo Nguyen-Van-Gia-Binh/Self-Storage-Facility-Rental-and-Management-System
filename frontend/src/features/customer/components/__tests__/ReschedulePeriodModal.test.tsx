@@ -83,4 +83,25 @@ describe('ReschedulePeriodModal — Dời ngày nhận kho có thu phí (BR-RES-
     const submitBtn = screen.getByRole('button', { name: /Xác nhận dời ngày/i });
     expect(submitBtn).toBeDisabled();
   });
+
+  it('hiển thị cảnh báo và khóa hoàn toàn thao tác nếu hợp đồng đã dời ngày 1 lần (BR-RES-06)', () => {
+    const rescheduledContract: RentedContract = {
+      ...mockContract,
+      rescheduleCount: 1,
+      rescheduledAt: '2026-11-06T10:00:00Z',
+    };
+
+    render(
+      <ReschedulePeriodModal
+        isOpen={true}
+        onClose={vi.fn()}
+        contract={rescheduledContract}
+        onSuccess={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText(/1\/1 lần/i)).toBeInTheDocument();
+    const submitBtn = screen.getByRole('button', { name: /Xác nhận dời ngày/i });
+    expect(submitBtn).toBeDisabled();
+  });
 });
