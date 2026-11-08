@@ -66,6 +66,27 @@ public class PaymentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(paymentService.createCheckoutLink(request));
     }
 
+    @PostMapping("/vnpay/mock-complete/{orderCode}")
+    @Operation(summary = "Giả lập thanh toán VNPay thành công tức thì cho môi trường Dev/Test")
+    public ResponseEntity<com.swp391.selfstorage.common.dto.ApiResponse<Void>> mockCompleteVnpay(
+            @PathVariable Long orderCode) {
+        PaymentResponse current = paymentService.getPaymentByOrderCode(orderCode);
+        if ("SUCCESS".equalsIgnoreCase(current.getStatus())) {
+            return ResponseEntity.ok(com.swp391.selfstorage.common.dto.ApiResponse.success(null, "Giao dịch đã được thanh toán trước đó"));
+        }
+        PaymentResponse pending = paymentService.requirePendingPayment(orderCode);
+        boolean ok = paymentService.completeVnpayPayment(
+                orderCode,
+                true,
+                pending.getAmount() * 100L,
+                "MOCK-VNP-" + System.currentTimeMillis(),
+                "NCB");
+        if (!ok) {
+            throw new CustomException(ErrorCode.PAYMENT_PROCESSING_FAILED, "Không thể giả lập thanh toán cho đơn này.");
+        }
+        return ResponseEntity.ok(com.swp391.selfstorage.common.dto.ApiResponse.success(null, "Giả lập thanh toán VNPay thành công"));
+    }
+
     @GetMapping("/vnpay/pay/{orderCode}")
     @Operation(summary = "Chuyển tới VNPay sandbox (VNBANK hoặc INTCARD)")
     public ResponseEntity<Void> vnpayPay(

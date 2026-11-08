@@ -276,7 +276,7 @@ export const ReassignUnitModal: React.FC<ReassignUnitModalProps> = ({
                 onChange={(e) => setCustomerConsent(e.target.checked)}
                 className="mt-0.5 text-amber-600 focus:ring-amber-500"
               />
-              <span>Khách đã đồng ý đổi sang ô cùng loại này. Không có ô cùng loại thì khách có thể hủy để được hoàn 100%.</span>
+              <span>Khách đã đồng ý đổi sang ô kho này (hoặc nhận nâng hạng đền bù). Không đồng ý thì khách có thể hủy để được hoàn tiền 100%.</span>
             </label>
           )}
         </div>

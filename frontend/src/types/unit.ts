@@ -13,6 +13,7 @@ export interface UnitTypeResponse {
   heightM: number;
   areaM2: number;
   volumeM3?: number;
+  environment?: string;
   monthlyPrice: number;
   pricePerM2?: number;
   priceStatus?: string;

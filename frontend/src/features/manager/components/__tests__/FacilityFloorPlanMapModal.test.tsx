@@ -141,4 +141,24 @@ describe('FacilityFloorPlanMapModal component — Sơ đồ Mặt bằng 2D & C�
     expect(html).toContain('Kho Nhỏ (4m²)');
     expect(html).toContain('Đóng sơ đồ');
   });
+
+  it('6. Kích hoạt Chế độ Đền bù Nâng hạng khi cơ sở hết ô trống cùng loại', () => {
+    const rawHtml = renderToString(
+      <FacilityFloorPlanMapModal
+        isOpen={true}
+        onClose={() => {}}
+        facilityId={1}
+        allowedUnitTypeId={99}
+        targetUnitTypeName="Kho Tiêu Chuẩn XS (1m²)"
+        onSelectUnit={() => {}}
+        initialUnits={mockUnits}
+      />
+    );
+    const html = cleanHtml(rawHtml);
+
+    expect(html).toContain('Chế độ Đền bù Nâng hạng đã kích hoạt');
+    expect(html).toContain('Hết ô cùng loại');
+    expect(html).toContain('Nâng hạng đền bù');
+    expect(html).toContain('Nâng hạng');
+  });
 });

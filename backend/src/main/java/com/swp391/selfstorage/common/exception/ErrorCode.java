@@ -74,6 +74,7 @@ public enum ErrorCode {
     SURCHARGE_CODE_ALREADY_EXISTS(HttpStatus.CONFLICT, "Mã phụ phí đã tồn tại"),
     SURCHARGE_NAME_ALREADY_EXISTS(HttpStatus.CONFLICT, "Tên phụ phí đã tồn tại"),
     PAYMENT_FAILED(HttpStatus.CONFLICT, "Thanh toán thất bại ở cổng thanh toán"),
+    PAYMENT_PROCESSING_FAILED(HttpStatus.CONFLICT, "Không thể xử lý giao dịch thanh toán"),
     POLICY_VERSION_ALREADY_EXISTS(HttpStatus.CONFLICT, "Số phiên bản chính sách đã tồn tại"),
     CAPACITY_NOT_AVAILABLE(HttpStatus.CONFLICT, "Không còn sức chứa khả dụng cho loại ô kho này trong khoảng thời gian đã chọn"),
     CONTRACT_OVERDUE(HttpStatus.CONFLICT, "Bạn có hợp đồng đang quá hạn, vui lòng giải quyết trước khi tạo đơn đặt chỗ mới"),

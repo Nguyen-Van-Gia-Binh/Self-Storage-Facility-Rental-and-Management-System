@@ -166,6 +166,7 @@ export function mapBackendRentalToContract(item: BackendRentalSummary): RentedCo
     rentalMonths: item.rentalMonths,
     rescheduleCount: item.rescheduleCount,
     rescheduledAt: item.rescheduledAt,
+    relocationEligible: Boolean(item.relocationEligible),
     createdAt: item.createdAt ? String(item.createdAt) : undefined,
   };
 }

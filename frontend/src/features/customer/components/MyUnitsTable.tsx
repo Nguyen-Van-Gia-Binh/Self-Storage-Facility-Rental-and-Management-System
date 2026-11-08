@@ -477,7 +477,11 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                       <Badge variant={contract.inspectionDone ? 'info' : 'warning'}>
                         {contract.inspectionDone ? 'Đã nghiệm thu' : 'Chờ nghiệm thu'}
                       </Badge>
-                    ) : contract.status === 'CLOSED' || (contract.status as string) === 'TERMINATED' ? (
+                    ) : (contract.status as string) === 'TERMINATED' ? (
+                      <Badge variant="danger" className="bg-rose-50 text-rose-700 border-rose-200">
+                        Đã hủy (Hoàn cọc)
+                      </Badge>
+                    ) : contract.status === 'CLOSED' ? (
                       <Badge variant="default">Đã kết thúc</Badge>
                     ) : (
                       <Badge variant="default">{contract.status}</Badge>

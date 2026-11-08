@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import {
   FileText,
@@ -15,6 +16,8 @@ import {
   Circle,
   Clock,
   AlertTriangle,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
 import { getMyRentalDetail, type CustomerRentalDetail } from '@/api/customerRentals';
@@ -40,9 +43,20 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
 }) => {
   const [detail, setDetail] = useState<CustomerRentalDetail | null>(null);
   const [isClosing, setIsClosing] = useState(false);
+  const [copiedContractNum, setCopiedContractNum] = useState(false);
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedContractNum(true);
+    setTimeout(() => setCopiedContractNum(false), 2000);
+  };
 
   useEffect(() => {
-    if (!isOpen || !contract) return;
+    if (!isOpen || !contract) {
+      setDetail(null);
+      return;
+    }
+    setDetail(null);
     let isMounted = true;
 
     // Tải chi tiết bổ sung từ backend (thông tin khách hàng, biên bản bàn giao, phụ lục đổi kho)
@@ -57,7 +71,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [isOpen, contract]);
+  }, [isOpen, contract?.id]);
 
   if (!isOpen || !contract) return null;
 
@@ -66,6 +80,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
     setTimeout(() => {
       onClose();
       setIsClosing(false);
+      setDetail(null);
     }, 180);
   };
 
@@ -73,55 +88,93 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
     window.print();
   };
 
-  const effectiveContractNumber = detail?.contractCode || contract.contractNumber;
-  const isRelocating = Boolean(contract.relocationEligible || detail?.relocationEligible);
-  const rawUnitNumber = detail?.unitCode || contract.unitNumber;
-  const effectiveUnitNumber = isRelocating && (contract.status === 'PENDING_CHECKIN' || (contract.status as string) === 'PENDING_CHECK_IN')
+  // Chỉ chấp nhận detail khi ID hoặc mã hợp đồng trùng khớp hoàn toàn với contract prop hiện tại (chống stale state giữa các HĐ khác nhau)
+  const isCurrentContractDetail = detail && (String(detail.id) === String(contract.id) || detail.contractCode === contract.contractNumber);
+  const effectiveDetail = isCurrentContractDetail ? detail : null;
+
+  const effectiveContractNumber = contract.contractNumber || effectiveDetail?.contractCode || `CTR-${contract.id}`;
+  const effectiveStatus = (contract.status || effectiveDetail?.status) as string;
+  const isRelocating = Boolean(contract.relocationEligible || effectiveDetail?.relocationEligible);
+  const rawUnitNumber = effectiveDetail?.unitCode || contract.unitNumber;
+  const effectiveUnitNumber = isRelocating && (effectiveStatus === 'PENDING_CHECKIN' || effectiveStatus === 'PENDING_CHECK_IN')
     ? 'Chờ cấp ô mới'
     : rawUnitNumber || 'Chưa gán';
-  const effectiveFacilityName = detail?.facilityName || contract.facilityName;
-  const effectiveFacilityAddress = detail?.facilityAddress || 'Cơ sở trực thuộc Hệ thống Self-Storage';
-  const effectiveFacilityPhone = detail?.facilityPhone || '1900 8888';
-  const effectiveCustomerName = detail?.customerName || contract.customerName || 'Nguyễn Văn Khách';
-  const effectiveCustomerPhone = detail?.customerPhone || contract.customerPhone || '0987654321';
-  const effectiveCustomerIdentity = detail?.customerIdentityNumber || contract.customerIdentityNumber || '079201001234';
-  const effectiveCustomerEmail = detail?.customerEmail || contract.customerEmail || 'khachhang@smartstorage.vn';
-  const effectiveUnitTypeName = detail?.unitTypeName || contract.unitTypeName;
-  const effectiveDimensions = detail?.unitDimensions || contract.unitDimensions || '1.5m x 2.0m x 2.5m';
-  const effectiveFloor = detail?.floor ?? contract.floor ?? 1;
-  const effectivePosition = detail?.position || contract.position || 'Khu A';
+  const effectiveFacilityName = effectiveDetail?.facilityName || contract.facilityName;
+  const effectiveFacilityAddress = effectiveDetail?.facilityAddress || 'Cơ sở trực thuộc Hệ thống Self-Storage';
+  const effectiveFacilityPhone = effectiveDetail?.facilityPhone || '1900 8888';
+  const effectiveCustomerName = effectiveDetail?.customerName || contract.customerName || 'Nguyễn Văn Khách';
+  const effectiveCustomerPhone = effectiveDetail?.customerPhone || contract.customerPhone || '0987654321';
+  const effectiveCustomerIdentity = effectiveDetail?.customerIdentityNumber || contract.customerIdentityNumber || '079201001234';
+  const effectiveCustomerEmail = effectiveDetail?.customerEmail || contract.customerEmail || 'khachhang@smartstorage.vn';
+  const effectiveUnitTypeName = effectiveDetail?.unitTypeName || contract.unitTypeName;
+  const effectiveDimensions = effectiveDetail?.unitDimensions || contract.unitDimensions || '1.5m x 2.0m x 2.5m';
+  const effectiveFloor = effectiveDetail?.floor ?? contract.floor ?? 1;
+  const effectivePosition = effectiveDetail?.position || contract.position || 'Khu A';
 
   const isPendingCheckin =
-    contract.status === 'PENDING_CHECKIN' ||
-    (contract.status as string) === 'PENDING_CHECK_IN';
+    effectiveStatus === 'PENDING_CHECKIN' ||
+    effectiveStatus === 'PENDING_CHECK_IN';
 
   const isHandoverCompleted =
     !isPendingCheckin &&
-    contract.status !== 'TERMINATED' &&
-    (contract.status === 'ACTIVE' ||
-      contract.status === 'OVERDUE' ||
-      contract.status === 'PENDING_RETURN' ||
-      contract.status === 'CLOSED' ||
-      Boolean(detail?.checkinDate || contract.checkinDate || detail?.customerConfirmedAt));
+    effectiveStatus !== 'TERMINATED' &&
+    (effectiveStatus === 'ACTIVE' ||
+      effectiveStatus === 'OVERDUE' ||
+      effectiveStatus === 'PENDING_RETURN' ||
+      effectiveStatus === 'CLOSED' ||
+      Boolean(effectiveDetail?.checkinDate || contract.checkinDate || effectiveDetail?.customerConfirmedAt));
 
   const effectiveCheckinDate = isHandoverCompleted
-    ? (detail?.checkinDate || contract.checkinDate || contract.startDate)
-    : contract.status === 'TERMINATED'
+    ? (effectiveDetail?.checkinDate || contract.checkinDate || contract.startDate)
+    : effectiveStatus === 'TERMINATED'
       ? 'Không nhận kho (Đã hủy hợp đồng do sự cố)'
       : 'Chưa thực hiện (Chờ làm thủ tục nhận kho tại quầy)';
   const effectiveHandoverStaff = isHandoverCompleted
-    ? (detail?.handoverStaffName || contract.handoverStaffName || 'Nhân viên lễ tân cơ sở')
+    ? (effectiveDetail?.handoverStaffName || contract.handoverStaffName || 'Nhân viên lễ tân cơ sở')
     : 'Chờ phân công tiếp đón tại quầy';
   const effectiveHandoverNote = isHandoverCompleted
-    ? (detail?.handoverConditionNote || contract.handoverConditionNote || 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao')
-    : contract.status === 'TERMINATED'
-      ? (detail?.handoverConditionNote || contract.handoverConditionNote || 'Không đạt chuẩn nhận kho do phát sinh sự cố hư hỏng tại chỗ')
-      : contract.relocationEligible
+    ? (effectiveDetail?.handoverConditionNote || contract.handoverConditionNote || 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao')
+    : effectiveStatus === 'TERMINATED'
+      ? (effectiveDetail?.handoverConditionNote || contract.handoverConditionNote || 'Không đạt chuẩn nhận kho do phát sinh sự cố hư hỏng tại chỗ')
+      : isRelocating
         ? 'Ô kho phát sinh sự cố lúc tiếp đón. Cơ sở đang phân bổ lại ô kho mới cùng loại cho quý khách.'
         : 'Đang chờ khách hàng xuất trình CCCD và mã e-Pass tại quầy lễ tân để tiến hành nghiệm thu thực địa.';
-  const relocationId = detail?.relocationSupportRequestId || contract.relocationSupportRequestId;
-  const relocationCode = detail?.relocationSupportRequestCode || contract.relocationSupportRequestCode || 'SUP-202610-0001';
-  const relocationReason = detail?.relocationReason || contract.relocationReason || 'Di dời kho đạt chuẩn kỹ thuật theo sự cố hỗ trợ';
+  const relocationId = effectiveDetail?.relocationSupportRequestId || contract.relocationSupportRequestId;
+  const relocationCode = effectiveDetail?.relocationSupportRequestCode || contract.relocationSupportRequestCode || 'SUP-202610-0001';
+  const relocationReason = effectiveDetail?.relocationReason || contract.relocationReason || 'Di dời kho đạt chuẩn kỹ thuật theo sự cố hỗ trợ';
+
+  const getStatusBadge = () => {
+    switch (effectiveStatus) {
+      case 'ACTIVE':
+        return <Badge variant="success" className="bg-emerald-100 text-emerald-800 border-emerald-300 font-bold">Đang hiệu lực</Badge>;
+      case 'PENDING_CHECKIN':
+      case 'PENDING_CHECK_IN':
+        if (isRelocating) {
+          return (
+            <Badge variant="warning" className="bg-amber-100 text-amber-900 border-amber-300 font-bold">
+              Đang sắp xếp đổi ô kho
+            </Badge>
+          );
+        }
+        return <Badge variant="info" className="bg-sky-100 text-sky-800 border-sky-300 font-bold">Chờ nhận kho</Badge>;
+      case 'PENDING_PAYMENT':
+        return <Badge variant="warning" className="bg-amber-100 text-amber-800 border-amber-300 font-bold">Chờ thanh toán</Badge>;
+      case 'OVERDUE':
+        return <Badge variant="overdue" className="font-bold">Quá hạn</Badge>;
+      case 'PENDING_RETURN':
+        return <Badge variant="warning" className="font-bold">Đang chờ trả kho</Badge>;
+      case 'TERMINATED':
+        return (
+          <Badge variant="danger" className="bg-rose-100 text-rose-800 border-rose-300 font-bold">
+            Hủy do sự cố bàn giao
+          </Badge>
+        );
+      case 'CLOSED':
+        return <Badge variant="default" className="bg-slate-100 text-slate-700 font-bold">Đã kết thúc</Badge>;
+      default:
+        return <Badge variant="default" className="font-bold">{effectiveStatus}</Badge>;
+    }
+  };
 
   return createPortal(
     <>
@@ -137,7 +190,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
         }`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header Thông tin hợp đồng */}
+        {/* Header Thông tin hợp đồng & Trạng thái */}
         <div className="bg-gradient-to-r from-[#0a483c] via-[#0d6050] to-[#14937a] p-5 text-white relative">
           <button
             type="button"
@@ -147,14 +200,30 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
             <X className="w-5 h-5" />
           </button>
 
-          <div className="pr-10">
-            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-200 mb-1">
-              <FileText className="w-3.5 h-3.5 text-amber-300" />
-              HỢP ĐỒNG THUÊ Ô KHO THÔNG MINH & BIÊN BẢN BÀN GIAO ĐIỆN TỬ
-            </p>
-            <h3 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2 mt-0.5">
-              Ô kho {effectiveUnitNumber}
-            </h3>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8 sm:pr-0">
+            <div>
+              <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-200 mb-1">
+                <FileText className="w-3.5 h-3.5 text-amber-300" />
+                HỢP ĐỒNG THUÊ Ô KHO THÔNG MINH & BIÊN BẢN BÀN GIAO ĐIỆN TỬ
+              </p>
+              <h3 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2 mt-0.5">
+                Ô kho {effectiveUnitNumber}
+              </h3>
+            </div>
+            <div className="flex sm:flex-col items-start sm:items-end gap-1.5">
+              {getStatusBadge()}
+              <div className="flex items-center gap-1.5 text-xs font-mono text-emerald-100">
+                <span>Số HĐ: <strong className="text-white font-bold">{effectiveContractNumber}</strong></span>
+                <button
+                  type="button"
+                  onClick={() => handleCopy(effectiveContractNumber)}
+                  className="hover:text-white cursor-pointer ml-1 p-0.5 transition-colors"
+                  title="Sao chép số hợp đồng"
+                >
+                  {copiedContractNum ? <Check className="w-3.5 h-3.5 text-amber-300" /> : <Copy className="w-3.5 h-3.5 text-emerald-300" />}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 

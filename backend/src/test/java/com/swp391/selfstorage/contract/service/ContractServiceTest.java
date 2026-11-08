@@ -17,7 +17,9 @@ import com.swp391.selfstorage.support.entity.SupportStatus;
 import com.swp391.selfstorage.support.repository.SupportRequestRepository;
 import com.swp391.selfstorage.unit.entity.StorageUnit;
 import com.swp391.selfstorage.unit.entity.StorageUnitStatus;
+import com.swp391.selfstorage.unit.entity.UnitType;
 import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
+import com.swp391.selfstorage.unit.repository.UnitTypeRepository;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -45,6 +47,8 @@ class ContractServiceTest {
     private ReservationRepository reservationRepository;
     @Mock
     private StorageUnitRepository storageUnitRepository;
+    @Mock
+    private UnitTypeRepository unitTypeRepository;
     @Mock
     private ReturnRequestRepository returnRequestRepository;
     @Mock
@@ -80,6 +84,7 @@ class ContractServiceTest {
 
         org.springframework.test.util.ReflectionTestUtils.setField(contractService, "staffDailyAssignmentRepository", staffDailyAssignmentRepository);
         org.springframework.test.util.ReflectionTestUtils.setField(contractService, "supportRequestRepository", supportRequestRepository);
+        org.springframework.test.util.ReflectionTestUtils.setField(contractService, "unitTypeRepository", unitTypeRepository);
     }
 
     private SupportRequest openDamageTicket(Long id, Long contractId, Long unitId, boolean relocationRequired) {
@@ -413,16 +418,25 @@ class ContractServiceTest {
     }
 
     @Test
-    @DisplayName("BR-AVL-05: reassignUnit sang Unit Type khac -> tu choi")
+    @DisplayName("BR-AVL-05: reassignUnit sang Unit Type khac khi van con o cung loai -> tu choi")
     void shouldThrow_whenNewUnitTypeDiffers() {
         RentalContract contract = RentalContract.builder()
                 .id(500L).code("CTR-500").facilityId(1L).storageUnitId(42L).unitTypeId(7L)
                 .status(ContractStatus.PENDING_CHECK_IN).build();
+        StorageUnit oldUnit = StorageUnit.builder().id(42L).facilityId(1L).code("U-42").unitTypeId(7L).status(StorageUnitStatus.RESERVED).build();
         StorageUnit newUnit = StorageUnit.builder().id(43L).facilityId(1L).code("U-43").unitTypeId(8L).status(StorageUnitStatus.AVAILABLE).build();
         SupportRequest ticket = openDamageTicket(90L, 500L, 42L, false);
+
+        UnitType oldType = UnitType.builder().id(7L).code("UT-STD-S").name("Kho Tiêu Chuẩn S").environment("STANDARD").widthM(new BigDecimal("1.5")).lengthM(new BigDecimal("2.0")).build();
+        UnitType newType = UnitType.builder().id(8L).code("UT-STD-M").name("Kho Tiêu Chuẩn M").environment("STANDARD").widthM(new BigDecimal("2.0")).lengthM(new BigDecimal("3.0")).build();
+
         when(contractRepository.findByIdAndFacilityIdIn(500L, List.of(1L))).thenReturn(Optional.of(contract));
         when(supportRequestRepository.findById(90L)).thenReturn(Optional.of(ticket));
         when(storageUnitRepository.findById(43L)).thenReturn(Optional.of(newUnit));
+        when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(oldUnit));
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(oldType));
+        when(unitTypeRepository.findById(8L)).thenReturn(Optional.of(newType));
+        when(storageUnitRepository.countByFacilityIdAndUnitTypeIdAndStatus(1L, 7L, StorageUnitStatus.AVAILABLE)).thenReturn(2L);
 
         ReassignUnitRequest req = ReassignUnitRequest.builder()
                 .newStorageUnitId(43L)
@@ -434,6 +448,121 @@ class ContractServiceTest {
         CustomException ex = assertThrows(CustomException.class,
                 () -> contractService.reassignUnit(500L, req, 1L, List.of(1L)));
         assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("Cơ sở vẫn còn"));
+    }
+
+    @Test
+    @DisplayName("SCR-FM-02.2: reassignUnit cho phep nang hang den bu khi het o cung loai va o moi co dien tich lon hon cung moi truong")
+    void shouldAllowUpgradeCompensation_whenSameTypeDepletedAndNewUnitIsLargerSameEnvironment() {
+        RentalContract contract = RentalContract.builder()
+                .id(500L).code("CTR-500").facilityId(1L).storageUnitId(42L).unitTypeId(7L)
+                .monthlyPrice(750_000L).depositAmount(750_000L)
+                .status(ContractStatus.PENDING_CHECK_IN).build();
+        StorageUnit oldUnit = StorageUnit.builder().id(42L).facilityId(1L).code("U-42").unitTypeId(7L).status(StorageUnitStatus.RESERVED).build();
+        StorageUnit newUnit = StorageUnit.builder().id(43L).facilityId(1L).code("U-43").unitTypeId(8L).status(StorageUnitStatus.AVAILABLE).build();
+        SupportRequest ticket = openDamageTicket(90L, 500L, 42L, false);
+
+        // Ô cũ: Size S (3m² - STANDARD), Ô mới: Size M (6m² - STANDARD)
+        UnitType oldType = UnitType.builder().id(7L).code("UT-STD-S").name("Kho Tiêu Chuẩn S").environment("STANDARD").widthM(new BigDecimal("1.5")).lengthM(new BigDecimal("2.0")).build();
+        UnitType newType = UnitType.builder().id(8L).code("UT-STD-M").name("Kho Tiêu Chuẩn M").environment("STANDARD").widthM(new BigDecimal("2.0")).lengthM(new BigDecimal("3.0")).build();
+
+        when(contractRepository.findByIdAndFacilityIdIn(500L, List.of(1L))).thenReturn(Optional.of(contract));
+        when(supportRequestRepository.findById(90L)).thenReturn(Optional.of(ticket));
+        when(storageUnitRepository.findById(43L)).thenReturn(Optional.of(newUnit));
+        when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(oldUnit));
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(oldType));
+        when(unitTypeRepository.findById(8L)).thenReturn(Optional.of(newType));
+        // Cơ sở đã hết ô cùng loại
+        when(storageUnitRepository.countByFacilityIdAndUnitTypeIdAndStatus(1L, 7L, StorageUnitStatus.AVAILABLE)).thenReturn(0L);
+
+        ReassignUnitRequest req = ReassignUnitRequest.builder()
+                .newStorageUnitId(43L)
+                .reason("Khách đồng ý nâng hạng đền bù")
+                .supportRequestId(90L)
+                .customerConsent(true)
+                .build();
+
+        ContractSummaryResponse response = contractService.reassignUnit(500L, req, 1L, List.of(1L));
+
+        assertNotNull(response);
+        assertEquals(43L, contract.getStorageUnitId());
+        assertEquals(8L, contract.getUnitTypeId()); // Đã nâng hạng sang loại mới
+        assertEquals(750_000L, contract.getMonthlyPrice()); // Bảo lưu giá thuê ban đầu
+        assertEquals(750_000L, contract.getDepositAmount()); // Bảo lưu tiền cọc ban đầu
+        assertEquals(StorageUnitStatus.MAINTENANCE, oldUnit.getStatus());
+        assertEquals(StorageUnitStatus.RESERVED, newUnit.getStatus());
+        assertFalse(ticket.getRelocationRequired());
+        assertEquals(SupportStatus.CLOSED, ticket.getStatus());
+    }
+
+    @Test
+    @DisplayName("SCR-FM-02.2: reassignUnit tu choi khi het o cung loai nhung chon o co kich thuoc nho hon")
+    void shouldRejectUpgrade_whenNewUnitIsSmallerSize() {
+        RentalContract contract = RentalContract.builder()
+                .id(500L).code("CTR-500").facilityId(1L).storageUnitId(42L).unitTypeId(8L)
+                .status(ContractStatus.PENDING_CHECK_IN).build();
+        StorageUnit oldUnit = StorageUnit.builder().id(42L).facilityId(1L).code("U-42").unitTypeId(8L).status(StorageUnitStatus.RESERVED).build();
+        StorageUnit newUnit = StorageUnit.builder().id(43L).facilityId(1L).code("U-43").unitTypeId(7L).status(StorageUnitStatus.AVAILABLE).build();
+        SupportRequest ticket = openDamageTicket(90L, 500L, 42L, false);
+
+        // Ô cũ: Size M (6m²), Ô mới: Size S (3m²) -> Nhỏ hơn -> Từ chối!
+        UnitType oldType = UnitType.builder().id(8L).code("UT-STD-M").name("Kho Tiêu Chuẩn M").environment("STANDARD").widthM(new BigDecimal("2.0")).lengthM(new BigDecimal("3.0")).build();
+        UnitType newType = UnitType.builder().id(7L).code("UT-STD-S").name("Kho Tiêu Chuẩn S").environment("STANDARD").widthM(new BigDecimal("1.5")).lengthM(new BigDecimal("2.0")).build();
+
+        when(contractRepository.findByIdAndFacilityIdIn(500L, List.of(1L))).thenReturn(Optional.of(contract));
+        when(supportRequestRepository.findById(90L)).thenReturn(Optional.of(ticket));
+        when(storageUnitRepository.findById(43L)).thenReturn(Optional.of(newUnit));
+        when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(oldUnit));
+        when(unitTypeRepository.findById(8L)).thenReturn(Optional.of(oldType));
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(newType));
+        when(storageUnitRepository.countByFacilityIdAndUnitTypeIdAndStatus(1L, 8L, StorageUnitStatus.AVAILABLE)).thenReturn(0L);
+
+        ReassignUnitRequest req = ReassignUnitRequest.builder()
+                .newStorageUnitId(43L)
+                .reason("Doi sang o nho hon")
+                .supportRequestId(90L)
+                .customerConsent(true)
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> contractService.reassignUnit(500L, req, 1L, List.of(1L)));
+        assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("lớn hơn để nâng hạng đền bù"));
+    }
+
+    @Test
+    @DisplayName("SCR-FM-02.2: reassignUnit tu choi khi doi sang khac moi truong luu tru (Standard vs Climate)")
+    void shouldRejectUpgrade_whenNewUnitIsDifferentEnvironment() {
+        RentalContract contract = RentalContract.builder()
+                .id(500L).code("CTR-500").facilityId(1L).storageUnitId(42L).unitTypeId(7L)
+                .status(ContractStatus.PENDING_CHECK_IN).build();
+        StorageUnit oldUnit = StorageUnit.builder().id(42L).facilityId(1L).code("U-42").unitTypeId(7L).status(StorageUnitStatus.RESERVED).build();
+        StorageUnit newUnit = StorageUnit.builder().id(43L).facilityId(1L).code("U-43").unitTypeId(14L).status(StorageUnitStatus.AVAILABLE).build();
+        SupportRequest ticket = openDamageTicket(90L, 500L, 42L, false);
+
+        // Ô cũ: STANDARD, Ô mới: CLIMATE_CONTROLLED -> Khác môi trường -> Từ chối!
+        UnitType oldType = UnitType.builder().id(7L).code("UT-STD-S").name("Kho Tiêu Chuẩn S").environment("STANDARD").widthM(new BigDecimal("1.5")).lengthM(new BigDecimal("2.0")).build();
+        UnitType newType = UnitType.builder().id(14L).code("UT-AC-M").name("Kho Máy Lạnh M").environment("CLIMATE_CONTROLLED").widthM(new BigDecimal("2.0")).lengthM(new BigDecimal("3.0")).build();
+
+        when(contractRepository.findByIdAndFacilityIdIn(500L, List.of(1L))).thenReturn(Optional.of(contract));
+        when(supportRequestRepository.findById(90L)).thenReturn(Optional.of(ticket));
+        when(storageUnitRepository.findById(43L)).thenReturn(Optional.of(newUnit));
+        when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(oldUnit));
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(oldType));
+        when(unitTypeRepository.findById(14L)).thenReturn(Optional.of(newType));
+        when(storageUnitRepository.countByFacilityIdAndUnitTypeIdAndStatus(1L, 7L, StorageUnitStatus.AVAILABLE)).thenReturn(0L);
+
+        ReassignUnitRequest req = ReassignUnitRequest.builder()
+                .newStorageUnitId(43L)
+                .reason("Doi sang kho lanh")
+                .supportRequestId(90L)
+                .customerConsent(true)
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> contractService.reassignUnit(500L, req, 1L, List.of(1L)));
+        assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("cùng môi trường lưu trữ"));
     }
 
     @Test
