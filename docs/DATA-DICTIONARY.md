@@ -446,6 +446,7 @@ Giao dịch thanh toán cổng điện tử (`Flow 1, 3, 6`, `BR-PAY-*`).
 | `transaction_type`| `VARCHAR(30)` | Có | `CHECK IN ('INITIAL_PAYMENT', 'RENEWAL_PAYMENT', 'CONTRACT_RENEWAL', 'EXTRA_FEE_PAYMENT', 'SETTLEMENT', 'REFUND')` | Mục đích thanh toán |
 | `amount` | `BIGINT` | Có | | Số tiền giao dịch (VND) |
 | `renewal_months` | `INT` | Không | `CHECK (renewal_months IS NULL OR renewal_months > 0)` | Số tháng Renewal đã chốt lúc tạo link thanh toán |
+| `rescheduled_start_date` | `DATE` | Không | NULL | Ngày bắt đầu mới khi khách dời lịch nhận kho (`RESCHEDULE_FEE`, `BR-RES-06`) |
 | `order_code` | `BIGINT` | Không | `UNIQUE` | Mã đơn hàng số nguyên duy nhất từ cổng thanh toán PayOS (V17) |
 | `status` | `VARCHAR(20)` | Có | `DEFAULT 'PENDING'`, `CHECK IN ('PENDING', 'SUCCESS', 'FAILED', 'REFUND_FAILED', 'PENDING_REFUND')` | Trạng thái cổng thanh toán. `PENDING_REFUND` là lệnh hoàn cọc đang chờ chuyển khoản (`BR-RET-05`) |
 | `payment_method` | `NVARCHAR(50)` | Không | | Phương thức (VietQR PayOS, MB Bank, VNPay, Momo) |
