@@ -241,33 +241,9 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
       {/* Bảng dữ liệu với Super-headers (2 tầng Thead) & Sticky Total Footer */}
       <div className="overflow-x-auto max-h-[560px]">
         <table className="w-full text-left text-xs border-collapse">
-          {/* TẦNG 1 & TẦNG 2 CỦA THEAD (SUPER-HEADERS) */}
+          {/* THEAD CỦA BẢNG KÈM SORT */}
           <thead className="sticky top-0 z-20 bg-slate-50 shadow-xs border-b border-slate-200">
-            {/* Tầng 1: Super Header Nhóm */}
-            <tr className="border-b border-slate-200/80 text-[11px] font-bold tracking-wider uppercase text-slate-500 bg-slate-100/70">
-              <th scope="col" className="py-2.5 px-4">
-                Thông tin cơ sở
-              </th>
-              <th
-                scope="col"
-                colSpan={4}
-                className="py-2.5 px-3 text-center text-slate-700 bg-slate-100"
-              >
-                Cơ cấu dòng tiền (₫)
-              </th>
-              <th
-                scope="col"
-                colSpan={2}
-                className="py-2.5 px-3 text-center text-slate-700"
-              >
-                Hiệu suất vận hành
-              </th>
-              <th scope="col" className="py-2.5 px-3 text-center">
-                Thao tác
-              </th>
-            </tr>
-
-            {/* Tầng 2: Chi tiết từng cột kèm Sort */}
+            {/* Chi tiết từng cột kèm Sort */}
             <tr className="text-slate-600 font-semibold uppercase tracking-wider text-[11px]">
               {/* 1. Tên cơ sở */}
               <th

@@ -88,6 +88,12 @@ export const BomFilterBar: React.FC<BomFilterBarProps> = ({
     setLocalPeriod(type);
     setLocalFrom(newFrom);
     setLocalTo(newTo);
+    onChange({
+      periodType: type,
+      from: newFrom,
+      to: newTo,
+      facilityId: localFacilityId,
+    });
   };
 
   const handleFromChange = (newFrom: string) => {

@@ -67,7 +67,7 @@ describe('FacilityPerformanceTable Component', () => {
     cleanup();
   });
 
-  it('renders 2-tier Super-headers correctly', () => {
+  it('renders table column headers correctly', () => {
     render(
       <FacilityPerformanceTable
         revenues={mockRevenues}
@@ -75,12 +75,7 @@ describe('FacilityPerformanceTable Component', () => {
       />
     );
 
-    // Tầng 1: Super-headers
-    expect(screen.getByText('Thông tin cơ sở')).toBeInTheDocument();
-    expect(screen.getByText('Cơ cấu dòng tiền (₫)')).toBeInTheDocument();
-    expect(screen.getByText('Hiệu suất vận hành')).toBeInTheDocument();
-
-    // Tầng 2: Column headers
+    // Column headers
     expect(screen.getByText(/Cơ sở lưu kho/i)).toBeInTheDocument();
     expect(screen.getByText(/Tiền thuê kho/i)).toBeInTheDocument();
     expect(screen.getByText(/Gia hạn & Phụ phí/i)).toBeInTheDocument();
