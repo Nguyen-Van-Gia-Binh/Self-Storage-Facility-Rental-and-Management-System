@@ -495,8 +495,7 @@ test.describe('Flow 3.1: Báo trả kho & Hẹn lịch nghiệm thu', () => {
     await page.goto('/customer/my-units');
     await dismissEarlyRenewalModalIfOpen(page);
 
-    const moreMenuBtn = page.locator('button[title="Thao tác khác"]').first();
-    await moreMenuBtn.click();
+    // Hợp đồng OVERDUE đã tất toán phí quá hạn (overdueFeeAccrued = 0) hiển thị nút "Báo trả kho" trực tiếp ở cột thao tác (BR-OVD-08)
     const scheduleReturnBtn = page.getByRole('button', { name: 'Báo trả kho' }).first();
     await scheduleReturnBtn.click();
 
@@ -511,6 +510,40 @@ test.describe('Flow 3.1: Báo trả kho & Hẹn lịch nghiệm thu', () => {
   });
 
   test('TC-F3-01D: [Negative] Hợp đồng Quá hạn D+4..D+9 còn nợ phạt cố tình báo trả — Chặn lỗi MUST_SETTLE_OVERDUE_DEBT_FIRST', async ({ page }) => {
+    // 1. Mock hợp đồng OVERDUE có nợ phạt quá hạn 200.000đ (D+5)
+    await page.route('**/api/v1/customers/me/rentals*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            content: [
+              {
+                contractId: 504,
+                contractCode: 'CTR-2026-004',
+                facilityId: 1,
+                facilityName: 'Cơ sở Quận 1 (Trụ sở chính)',
+                storageUnitId: 14,
+                storageUnitCode: 'Q7-A104',
+                unitTypeName: 'Kho Tiêu Chuẩn M',
+                startDate: '2026-05-12',
+                endDateExclusive: '2026-11-03',
+                monthlyPrice: 1000000,
+                depositAmount: 1000000,
+                depositBalance: 1000000,
+                status: 'OVERDUE',
+                overdueDays: 5,
+                overdueFeeAccrued: 200000,
+                accessCode: null,
+              },
+            ],
+            totalElements: 1,
+          },
+        }),
+      });
+    });
+
     await page.route('**/api/v1/contracts/504/return-notices', async (route) => {
       await route.fulfill({
         status: 400,
@@ -523,7 +556,23 @@ test.describe('Flow 3.1: Báo trả kho & Hẹn lịch nghiệm thu', () => {
       });
     });
 
-    await page.goto('/');
+    // 2. Vào trang kho của tôi
+    await page.goto('/customer/my-units');
+    await dismissEarlyRenewalModalIfOpen(page);
+
+    // 3. Khẳng định UI: Hiển thị badge Quá hạn và nút "Đóng phí & Mở PIN", KHÔNG có nút "Báo trả kho"
+    await expect(page.locator('text=Q7-A104').first()).toBeVisible();
+    await expect(page.locator('text=Quá hạn D+5').first()).toBeVisible();
+    const payPenaltyBtn = page.getByRole('button', { name: /Đóng phí & Mở PIN/i }).first();
+    await expect(payPenaltyBtn).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Báo trả kho' })).not.toBeVisible();
+
+    // 4. Bấm vào nút "Đóng phí & Mở PIN" -> Mở modal thanh toán VietQR phí quá hạn
+    await payPenaltyBtn.click();
+    await expect(page.getByRole('heading', { name: /Đóng Phí Quá Hạn & Mở PIN Tạm/i })).toBeVisible();
+    await page.locator('button:has(svg.lucide-x)').first().click();
+
+    // 5. Cố tình gọi API bypass giao diện -> Chặn 400 MUST_SETTLE_OVERDUE_DEBT_FIRST
     const result = await page.evaluate(async () => {
       const res = await fetch('/api/v1/contracts/504/return-notices', {
         method: 'POST',
@@ -538,6 +587,38 @@ test.describe('Flow 3.1: Báo trả kho & Hẹn lịch nghiệm thu', () => {
   });
 
   test('TC-F3-01E: [Negative] Hợp đồng sai trạng thái cố tình báo trả — Chặn lỗi nghiệp vụ', async ({ page }) => {
+    // 1. Mock hợp đồng đã kết thúc CLOSED
+    await page.route('**/api/v1/customers/me/rentals*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            content: [
+              {
+                contractId: 505,
+                contractCode: 'CTR-2026-005',
+                facilityId: 1,
+                facilityName: 'Cơ sở Quận 1 (Trụ sở chính)',
+                storageUnitId: 15,
+                storageUnitCode: 'Q7-A105',
+                unitTypeName: 'Kho Tiêu Chuẩn S',
+                startDate: '2026-01-01',
+                endDateExclusive: '2026-06-01',
+                monthlyPrice: 800000,
+                depositAmount: 800000,
+                depositBalance: 0,
+                status: 'CLOSED',
+                accessCode: null,
+              },
+            ],
+            totalElements: 1,
+          },
+        }),
+      });
+    });
+
     await page.route('**/api/v1/contracts/505/return-notices', async (route) => {
       await route.fulfill({
         status: 400,
@@ -550,7 +631,16 @@ test.describe('Flow 3.1: Báo trả kho & Hẹn lịch nghiệm thu', () => {
       });
     });
 
-    await page.goto('/');
+    // 2. Vào trang kho của tôi
+    await page.goto('/customer/my-units');
+    await dismissEarlyRenewalModalIfOpen(page);
+
+    // 3. Khẳng định UI: Hiển thị badge "Đã kết thúc", hoàn toàn không có nút "Báo trả kho"
+    await expect(page.locator('text=Q7-A105').first()).toBeVisible();
+    await expect(page.locator('text=Đã kết thúc').first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Báo trả kho' })).not.toBeVisible();
+
+    // 4. Cố tình gọi API bypass giao diện -> Chặn 400 CONTRACT_NOT_ACTIVE_OR_OVERDUE
     const result = await page.evaluate(async () => {
       const res = await fetch('/api/v1/contracts/505/return-notices', {
         method: 'POST',
@@ -1202,7 +1292,7 @@ test.describe('Flow 3.4: Xem trước & Phê duyệt Quyết toán', () => {
     if (await approveBtn.isVisible()) {
       await approveBtn.click();
       await expect(page.locator('text=+800.000')).toBeVisible();
-      await expect(page.getByRole('button', { name: 'Ghi nhận nợ, chờ khách thanh toán' })).toBeVisible();
+      await expect(page.getByRole('button', { name: /Ghi nhận.*Chờ khách thanh toán/i })).toBeVisible();
     }
   });
 
