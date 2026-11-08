@@ -130,9 +130,26 @@ export const AllocationPage: React.FC = () => {
       }
 
       const matchedRsvIds = new Set<number>();
+      const matchedContractIds = new Set<number>();
+      const matchedContractCodes = new Set<string>();
+
       for (const c of contracts) {
-        if (c.reservationId != null) {
-          matchedRsvIds.add(c.reservationId);
+        if (c.reservationId != null) matchedRsvIds.add(c.reservationId);
+        if (c.id != null) matchedContractIds.add(c.id);
+        if (c.code) matchedContractCodes.add(c.code);
+
+        // Quét rsvRows để khớp ngược bất kỳ đơn nào cùng hợp đồng hoặc thông tin đặt chỗ
+        const matchedRsv = rsvRows.find(
+          (r) =>
+            (c.reservationId != null && r.id === c.reservationId) ||
+            (r.contractId != null && r.contractId === c.id) ||
+            (r.contractCode != null && r.contractCode === c.code) ||
+            (r.customerId === c.customerId &&
+              r.unitTypeId === c.unitTypeId &&
+              r.startDate === c.startDate)
+        );
+        if (matchedRsv) {
+          matchedRsvIds.add(matchedRsv.id);
         }
       }
 
@@ -193,6 +210,8 @@ export const AllocationPage: React.FC = () => {
         .filter((row) => {
           if (row.storageUnitId != null) return false;
           if (matchedRsvIds.has(row.id)) return false;
+          if (row.contractId != null && matchedContractIds.has(row.contractId)) return false;
+          if (row.contractCode && matchedContractCodes.has(row.contractCode)) return false;
           if (row.contractStatus && row.contractStatus !== 'PENDING_CHECK_IN') return false;
           if (contracts.length > 0 && !row.contractCode) return false;
           return true;

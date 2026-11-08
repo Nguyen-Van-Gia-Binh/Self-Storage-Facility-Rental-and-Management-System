@@ -1058,8 +1058,7 @@ public class ContractServiceImpl implements ContractService {
                                 if (!ticketMatchesCurrentUnit(ticket, contract)) {
                                         continue;
                                 }
-                                if (contract.getStatus() == ContractStatus.ACTIVE
-                                                && !Boolean.TRUE.equals(ticket.getRelocationRequired())) {
+                                if (!Boolean.TRUE.equals(ticket.getRelocationRequired())) {
                                         continue;
                                 }
                                 if (best == null || isNewerTicket(ticket, best)) {
