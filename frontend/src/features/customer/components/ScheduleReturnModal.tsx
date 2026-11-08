@@ -41,11 +41,18 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
   const [isSuccess, setIsSuccess] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
 
-  // Kiểm tra xem có trả sớm hơn ngày kết thúc hợp đồng không (BR-RET-06)
+  const policy = useActivePolicy();
+  const graceDays = policy?.overdueGraceDays ?? 0;
+  const noticeDays = policy?.returnNoticeDays ?? 7;
+
+  // Kiểm tra xem có trả sớm hơn khung cuối kỳ (return.notice_days = 7 ngày) không (BR-RET-01, BR-RET-06)
   const isEarlyReturn = useMemo(() => {
     if (!contract || !returnDate || !contract.endDate) return false;
-    return new Date(returnDate) < new Date(contract.endDate);
-  }, [contract, returnDate]);
+    const retDate = new Date(returnDate);
+    const endDate = new Date(contract.endDate);
+    const diffDays = Math.ceil((endDate.getTime() - retDate.getTime()) / (1000 * 60 * 60 * 24));
+    return diffDays > noticeDays;
+  }, [contract, returnDate, noticeDays]);
 
   // Tính số ngày và tiền thuê chưa dùng khi trả sớm (BR-RET-06 & PolicyNumbers backend)
   const unusedRentInfo = useMemo(() => {
@@ -61,8 +68,6 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
     return { unusedDays: diffDays, estimatedUnusedRent };
   }, [contract, isEarlyReturn, returnDate]);
 
-  const policy = useActivePolicy();
-  const graceDays = policy?.overdueGraceDays ?? 0;
   const isOverdue = Boolean(contract && contract.status === 'OVERDUE');
   const isGracePeriod = Boolean(
     isOverdue &&

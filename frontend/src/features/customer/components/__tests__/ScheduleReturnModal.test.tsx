@@ -23,7 +23,7 @@ vi.mock('@/api/customerRentals', () => ({
 vi.mock('@/hooks/useActivePolicy', () => ({
   useActivePolicy: () => ({
     overdueGraceDays: 3,
-    returnNoticeDays: 30,
+    returnNoticeDays: 7,
     returnEarlyRefundRate: 1.0,
     returnEarlyPenaltyRate: 1.0,
   }),

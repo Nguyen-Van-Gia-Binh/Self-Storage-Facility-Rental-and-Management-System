@@ -3,6 +3,7 @@ package com.swp391.selfstorage.policy.service.impl;
 import com.swp391.selfstorage.contract.entity.ContractStatus;
 import com.swp391.selfstorage.contract.entity.RentalContract;
 import com.swp391.selfstorage.contract.repository.RentalContractRepository;
+import com.swp391.selfstorage.payment.repository.PaymentTransactionRepository;
 import com.swp391.selfstorage.policy.dto.OverdueProcessingResult;
 import com.swp391.selfstorage.policy.dto.OverdueSingleResult;
 import com.swp391.selfstorage.policy.entity.PolicyVersion;
@@ -38,6 +39,7 @@ public class OverdueProcessingServiceImpl implements OverdueProcessingService {
     private final PolicyVersionRepository policyVersionRepository;
     private final StorageUnitRepository storageUnitRepository;
     private final ReservationRepository reservationRepository;
+    private final PaymentTransactionRepository paymentTransactionRepository;
 
     @Autowired(required = false)
     @Lazy
@@ -141,7 +143,12 @@ public class OverdueProcessingServiceImpl implements OverdueProcessingService {
         long maxCapFee = Math.round(deposit * terms.capRate().doubleValue());
         long daysToCharge = Math.max(0L, overdueDays - terms.graceDays());
         long accruedByDays = Math.round(deposit * terms.dailyRate().doubleValue() * daysToCharge);
-        long calculatedFee = Math.min(accruedByDays, maxCapFee);
+        long totalCalculatedFee = Math.min(accruedByDays, maxCapFee);
+        long alreadyPaidPenalty = (paymentTransactionRepository != null && contract.getId() != null)
+                ? paymentTransactionRepository.sumSuccessfulAmountByContractIdAndTransactionType(
+                        contract.getId(), "OVERDUE_PENALTY")
+                : 0L;
+        long calculatedFee = Math.max(0L, totalCalculatedFee - alreadyPaidPenalty);
 
         boolean markedOverdue = false;
         boolean penalized = false;

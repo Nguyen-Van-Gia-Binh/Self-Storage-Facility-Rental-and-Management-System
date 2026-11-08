@@ -1076,6 +1076,10 @@ public class ContractServiceImpl implements ContractService {
 
                 ReturnRequest saved = returnRequestRepository.save(returnRequest);
 
+                if (contract.getStatus() == ContractStatus.OVERDUE) {
+                        // BR-OVD-08, BR-RET-10: Khách đang quá hạn bấm Báo trả kho (sau khi đã dọn sạch đồ) -> thu hồi mã PIN ngay
+                        contract.setAccessCode(null);
+                }
                 contract.setStatus(ContractStatus.PENDING_RETURN);
                 contract.setReturnDate(returnDate);
                 contractRepository.save(contract);
@@ -1751,7 +1755,15 @@ public class ContractServiceImpl implements ContractService {
                 if (policyVersionRepository != null && contract.getPolicyVersionId() != null) {
                         policy = policyVersionRepository.findById(contract.getPolicyVersionId()).orElse(null);
                 }
+                int noticeDays = (policy != null && policy.getReturnNoticeDays() != null && policy.getReturnNoticeDays() >= 0)
+                                ? policy.getReturnNoticeDays()
+                                : 7;
                 long unusedDays = java.time.temporal.ChronoUnit.DAYS.between(returnDate, contract.getEndDateExclusive());
+                if (unusedDays <= noticeDays) {
+                        // BR-RET-01, BR-RET-06: Trả kho trong khung cuối kỳ (<= return.notice_days, mặc định 7 ngày)
+                        // được tính là trả kho đúng hạn cuối kỳ -> bảo toàn 100% quyền hoàn cọc Deposit, không tính phạt trả sớm.
+                        return 0L;
+                }
                 long unusedRent = PolicyNumbers.dailyRent(contract.getMonthlyPrice(), policy) * unusedDays;
                 if (policy == null || policy.getReturnEarlyRefundRate() == null) {
                         // BR-RET-06: Hoàn 100% tiền thuê thời gian chưa dùng theo chính sách chuẩn
