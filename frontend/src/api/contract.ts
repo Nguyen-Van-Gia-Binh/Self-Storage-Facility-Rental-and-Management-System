@@ -93,6 +93,7 @@ export function mapBackendSummaryToCheckInContract(item: any): CheckInContract {
     assignedStaffName: item.assignedStaffName,
     relocationEligible: item.relocationEligible === true,
     isAwaitingRelocation: item.relocationEligible === true,
+    createdAt: item.createdAt || undefined,
   };
 }
 
@@ -184,7 +185,9 @@ export function mapBackendSummaryToReturnContract(item: any): ReturnContractDeta
     monthlyPrice: monthlyPrice,
     depositAmount: deposit,
     status: item.status || 'PENDING_RETURN',
-    returnNoticeDate: item.updatedAt ? item.updatedAt.split('T')[0] : new Date().toISOString().split('T')[0],
+    returnNoticeDate: (item.returnRequestCreatedAt || item.updatedAt || item.createdAt)
+      ? String(item.returnRequestCreatedAt || item.updatedAt || item.createdAt).split('T')[0]
+      : new Date().toISOString().split('T')[0],
     requestedReturnDate: item.returnDate || item.endDate || new Date().toISOString().split('T')[0],
     assignedStaffId: item.assignedStaffId,
     assignedStaffName: item.assignedStaffName,
@@ -393,6 +396,9 @@ export function mapBackendToManagerContractItem(c: any): ManagerContractItem {
     nearExpiration: c.nearExpiration ?? nearExpiration,
     assignedStaffId: c.assignedStaffId,
     assignedStaffName: c.assignedStaffName,
+    returnNoticeDate:
+      c.returnNoticeDate ||
+      (c.returnRequestCreatedAt ? String(c.returnRequestCreatedAt).split('T')[0] : undefined),
   };
 }
 

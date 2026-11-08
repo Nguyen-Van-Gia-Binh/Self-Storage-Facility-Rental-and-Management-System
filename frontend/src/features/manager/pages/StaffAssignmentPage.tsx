@@ -20,6 +20,7 @@ import {
   getStaffWorkload,
   getDailyDispatchTasks,
   assignStaffToTask,
+  filterDispatchTasksByDate,
 } from '../api/staffAssignmentApi';
 import { StaffWorkloadCard } from '../components/StaffWorkloadCard';
 import { DailyTasksDispatchBoard } from '../components/DailyTasksDispatchBoard';
@@ -165,16 +166,20 @@ export const StaffAssignmentPage: React.FC = () => {
     setScheduleModalOpen(true);
   };
 
+  const dailyTasks = useMemo(() => {
+    return filterDispatchTasksByDate(tasks, selectedDate);
+  }, [tasks, selectedDate]);
+
   // Thống kê nhanh KPI
   const stats = useMemo(() => {
     const totalStaff = staffList.length;
     const overloadedStaff = staffList.filter((s) => s.status === 'OVERLOADED').length;
     const availableStaff = staffList.filter((s) => s.status === 'AVAILABLE').length;
 
-    const totalTasks = tasks.length;
-    const unassignedTasks = tasks.filter((t) => t.status === 'UNASSIGNED').length;
-    const assignedTasks = tasks.filter((t) => t.status !== 'UNASSIGNED').length;
-    const urgentTasks = tasks.filter((t) => t.isUrgent).length;
+    const totalTasks = dailyTasks.length;
+    const unassignedTasks = dailyTasks.filter((t) => t.status === 'UNASSIGNED').length;
+    const assignedTasks = dailyTasks.filter((t) => t.status !== 'UNASSIGNED').length;
+    const urgentTasks = dailyTasks.filter((t) => t.isUrgent).length;
 
     return {
       totalStaff,
@@ -185,7 +190,7 @@ export const StaffAssignmentPage: React.FC = () => {
       assignedTasks,
       urgentTasks,
     };
-  }, [staffList, tasks]);
+  }, [staffList, dailyTasks]);
 
   return (
     <div className="space-y-6">
@@ -205,10 +210,6 @@ export const StaffAssignmentPage: React.FC = () => {
               Phân công Nhân sự & Điều phối Vận hành
             </h1>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Cân bằng tải ca trực, phân bổ nhiệm vụ Bàn giao nhận kho, Trả kho, Xử lý sự cố và
-            Niêm phong khóa ngoài
-          </p>
         </div>
 
         {/* Toolbar: Facility & Date Selector */}
@@ -341,9 +342,6 @@ export const StaffAssignmentPage: React.FC = () => {
               <Users className="w-4 h-4 text-blue-600" />
               <span>Khối lượng Công việc Nhân sự tại Cơ sở</span>
             </h2>
-            <p className="text-[11px] text-slate-500 mt-0.5">
-              Quan sát số việc đang phụ trách để san sẻ đồng đều, tránh giao dồn việc cho một người
-            </p>
           </div>
           <div className="flex items-center gap-3 text-[11px] font-semibold text-slate-500">
             <span className="flex items-center gap-1">
@@ -382,14 +380,10 @@ export const StaffAssignmentPage: React.FC = () => {
             <Briefcase className="w-4 h-4 text-purple-600" />
             <span>Bàn Điều phối Nhiệm vụ Thực địa trong ngày</span>
           </h2>
-          <p className="text-[11px] text-slate-500 mt-0.5">
-            Phân công và điều chuyển nhân viên cho các lượt hẹn nhận kho, trả kho, sự cố và khóa
-            ngoài
-          </p>
         </div>
 
         <DailyTasksDispatchBoard
-          tasks={tasks}
+          tasks={dailyTasks}
           selectedStaffIdFilter={filteredStaffId}
           onClearStaffFilter={() => setFilteredStaffId(null)}
           onAssignClick={handleOpenAssignModal}

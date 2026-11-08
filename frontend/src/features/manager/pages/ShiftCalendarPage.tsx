@@ -19,8 +19,12 @@ import {
   UserCheck,
 } from 'lucide-react';
 import { fetchMyAssignedFacilities } from '@/api/facility';
-import { getStaffWorkload, getDailyDispatchTasks, assignStaffToTask } from '../api/staffAssignmentApi';
-import { fetchActivePolicy } from '@/api/pricing';
+import {
+  getStaffWorkload,
+  getDailyDispatchTasks,
+  assignStaffToTask,
+  filterDispatchTasksByDate,
+} from '../api/staffAssignmentApi';
 import type { FacilityListItem } from '@/types';
 import type { StaffWorkloadItem, DailyDispatchTaskItem, AssignTaskPayload } from '../types/staffAssignment';
 import { Breadcrumb } from '../components/Breadcrumb';
@@ -41,18 +45,15 @@ export const ShiftCalendarPage: React.FC = () => {
     return tabParam === 'staff' ? 'STAFF' : 'TASKS';
   });
 
-  // Bộ chọn ngày (mặc định là hôm nay YYYY-MM-DD)
+  // Bộ chọn ngày (mặc định là hôm nay YYYY-MM-DD theo múi giờ địa phương)
   const todayStr = useMemo(() => {
     const d = new Date();
-    return d.toISOString().split('T')[0];
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }, []);
 
   const [selectedDate, setSelectedDate] = useState<string>(() => {
     return searchParams.get('date') || todayStr;
   });
-
-  // Số ngày ân hạn nhận kho theo chính sách BOM (BR-CHK-05, mặc định 3 ngày nếu đã cấu hình)
-  const [policyGraceDays, setPolicyGraceDays] = useState<number>(3);
 
   const [facility, setFacility] = useState<FacilityListItem | null>(null);
   const [staffList, setStaffList] = useState<StaffWorkloadItem[]>([]);
@@ -65,7 +66,6 @@ export const ShiftCalendarPage: React.FC = () => {
   const [taskFilter, setTaskFilter] = useState<TaskTabFilter>('ALL');
   const [selectedStaffFilter, setSelectedStaffFilter] = useState<number | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [includeBacklogUnassigned, setIncludeBacklogUnassigned] = useState<boolean>(true);
 
   // Nhân viên đang xem chi tiết ở Tab Nhân sự (Drill-down)
   const [viewingStaffDetail, setViewingStaffDetail] = useState<StaffWorkloadItem | null>(null);
@@ -89,16 +89,11 @@ export const ShiftCalendarPage: React.FC = () => {
       else setLoading(true);
       setError(null);
 
-      const [facRes, staffData, taskData, activePolicy] = await Promise.all([
+      const [facRes, staffData, taskData] = await Promise.all([
         fetchMyAssignedFacilities().catch(() => []),
         getStaffWorkload(Number(facilityId)).catch(() => []),
         getDailyDispatchTasks(Number(facilityId), selectedDate).catch(() => []),
-        fetchActivePolicy().catch(() => null),
       ]);
-
-      if (activePolicy && typeof activePolicy.checkinGraceDays === 'number') {
-        setPolicyGraceDays(activePolicy.checkinGraceDays);
-      }
 
       const currentFac = facRes.find((f) => String(f.id) === String(facilityId));
       if (currentFac) {
@@ -142,9 +137,10 @@ export const ShiftCalendarPage: React.FC = () => {
 
   // Nút chuyển ngày nhanh
   const shiftDay = (days: number) => {
-    const cur = new Date(selectedDate);
-    cur.setDate(cur.getDate() + days);
-    handleDateChange(cur.toISOString().split('T')[0]);
+    const [y, m, d] = selectedDate.split('-').map(Number);
+    const cur = new Date(y, m - 1, d + days);
+    const nextStr = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}-${String(cur.getDate()).padStart(2, '0')}`;
+    handleDateChange(nextStr);
   };
 
   const formatDisplayDate = (dStr: string) => {
@@ -159,41 +155,11 @@ export const ShiftCalendarPage: React.FC = () => {
     }
   };
 
-  // Lọc nhiệm vụ thuộc ngày đang chọn (và đơn Check-in trong thời hạn ân hạn 10 ngày BR-CHK-05)
+  // Lọc nhiệm vụ theo ngày tạo đơn/phiếu yêu cầu:
+  // Hiển thị các nhiệm vụ được tạo trong ngày đang chọn VÀ các nhiệm vụ tạo trong quá khứ nhưng chưa thực hiện hoàn tất
   const dailyTasks = useMemo(() => {
-    return allTasks.filter((t) => {
-      // 1. Task chính xác của ngày được chọn
-      if (t.scheduledDate === selectedDate) return true;
-
-      // 2. BR-CHK-05: Đơn Check-in chưa hoàn thành được phép nhận kho trễ tối đa số ngày ân hạn từ ngày bắt đầu thuê (đồng bộ BOM Policy)
-      if (t.taskType === 'CHECK_IN' && t.status !== 'COMPLETED' && t.scheduledDate) {
-        const startParts = t.scheduledDate.split('-').map(Number);
-        const targetParts = selectedDate.split('-').map(Number);
-        if (startParts.length === 3 && targetParts.length === 3) {
-          const startUtc = Date.UTC(startParts[0], startParts[1] - 1, startParts[2]);
-          const targetUtc = Date.UTC(targetParts[0], targetParts[1] - 1, targetParts[2]);
-          const diffDays = Math.round((targetUtc - startUtc) / (1000 * 60 * 60 * 24));
-          const effectiveGraceDays = t.checkinGraceDays ?? policyGraceDays ?? 3;
-          if (diffDays >= 0 && diffDays <= effectiveGraceDays) {
-            return true;
-          }
-        }
-      }
-
-      // 3. Nếu đang xem ngày hôm nay và bật cờ bao gồm việc chưa gán:
-      if (
-        includeBacklogUnassigned &&
-        selectedDate === todayStr &&
-        (t.status === 'UNASSIGNED' || !t.assignedStaffId) &&
-        t.scheduledDate &&
-        t.scheduledDate <= selectedDate
-      ) {
-        return true;
-      }
-
-      return false;
-    });
-  }, [allTasks, selectedDate, todayStr, includeBacklogUnassigned, policyGraceDays]);
+    return filterDispatchTasksByDate(allTasks, selectedDate);
+  }, [allTasks, selectedDate]);
 
   // Thống kê nhanh công việc trong ngày
   const dailyStats = useMemo(() => {
@@ -482,9 +448,6 @@ export const ShiftCalendarPage: React.FC = () => {
                     {filteredDailyTasks.length} việc
                   </span>
                 </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Đón tiếp khách nhận kho (ân hạn tối đa {policyGraceDays} ngày theo chính sách BOM), kiểm tra trả kho và sửa chữa sự cố kỹ thuật theo ngày.
-                </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
@@ -590,19 +553,6 @@ export const ShiftCalendarPage: React.FC = () => {
                   Sự cố kỹ thuật ({dailyStats.incidents})
                 </button>
               </div>
-
-              {/* Tùy chọn gộp việc tồn đọng */}
-              {selectedDate === todayStr && (
-                <label className="flex items-center gap-1.5 text-[11px] text-slate-500 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={includeBacklogUnassigned}
-                    onChange={(e) => setIncludeBacklogUnassigned(e.target.checked)}
-                    className="rounded text-brand-600 focus:ring-brand-500"
-                  />
-                  <span>Gộp cả đơn chưa gán từ các ngày trước</span>
-                </label>
-              )}
             </div>
 
             {/* Trạng thái tải / lỗi */}
@@ -672,9 +622,6 @@ export const ShiftCalendarPage: React.FC = () => {
                     {staffList.length} nhân viên
                   </span>
                 </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Theo dõi trạng thái, năng suất và phân bổ đều khối lượng công việc thực địa.
-                </p>
               </div>
 
               {viewingStaffDetail && (

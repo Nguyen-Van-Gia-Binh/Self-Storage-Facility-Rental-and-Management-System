@@ -70,6 +70,8 @@ export interface ManagerContractItem {
   isInspected?: boolean;
   relocationEligible?: boolean;
   openSupportRequestId?: number | null;
+  createdAt?: string;
+  returnRequestCreatedAt?: string;
 }
 
 export interface ContractKpiData {

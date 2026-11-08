@@ -550,10 +550,12 @@ public class ContractServiceImpl implements ContractService {
                         Long damageCost = 0L;
                         String damageNotes = null;
                         LocalDate requestedReturnDate = null;
+                        OffsetDateTime returnRequestCreatedAt = null;
                         String appointmentSlot = null;
                         ReturnRequest returnReq = latestReturnRequestByContract.get(c.getId());
                         if (returnReq != null && c.getStatus() != ContractStatus.CLOSED && c.getStatus() != ContractStatus.TERMINATED) {
                                 requestedReturnDate = returnReq.getRequestedReturnDate();
+                                returnRequestCreatedAt = returnReq.getRequestedAt();
                                 appointmentSlot = returnReq.getAppointmentSlot();
                                 if (returnReq.getStatus() == ReturnRequestStatus.PENDING) {
                                         displayStatus = ContractStatus.PENDING_RETURN;
@@ -646,6 +648,8 @@ public class ContractServiceImpl implements ContractService {
                                         .appointmentSlot(appointmentSlot)
                                         .rescheduleCount(c.getRescheduleCount())
                                         .rescheduledAt(c.getRescheduledAt())
+                                        .createdAt(c.getCreatedAt())
+                                        .returnRequestCreatedAt(returnRequestCreatedAt)
                                         .build();
                 }).toList();
 
