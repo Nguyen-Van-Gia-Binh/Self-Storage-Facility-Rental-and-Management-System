@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, Building2, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import type { ReportFilterParams } from '@/types';
 import { Button } from '@/components/ui/Button';
 
@@ -122,8 +122,7 @@ export const BomFilterBar: React.FC<BomFilterBarProps> = ({
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         {/* Bộ nút chọn nhanh kỳ báo cáo */}
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mr-1 flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mr-1">
             Kỳ báo cáo:
           </span>
           {(
@@ -163,10 +162,15 @@ export const BomFilterBar: React.FC<BomFilterBarProps> = ({
               type="date"
               value={currentFrom}
               onChange={(e) => {
-                setCustomFrom(e.target.value);
+                const newFrom = e.target.value;
+                setCustomFrom(newFrom);
+                if (currentTo && newFrom && currentTo < newFrom) {
+                  setDateError('Ngày kết thúc không được nhỏ hơn ngày bắt đầu');
+                  return;
+                }
                 setDateError(null);
-                if (filters.periodType !== 'CUSTOM') {
-                  onChange({ ...filters, periodType: 'CUSTOM', from: e.target.value, to: currentTo });
+                if (newFrom && currentTo) {
+                  onChange({ ...filters, periodType: 'CUSTOM', from: newFrom, to: currentTo });
                 }
               }}
               className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 font-mono focus:outline-none focus:ring-1 focus:ring-brand-500 focus:bg-white"
@@ -179,31 +183,36 @@ export const BomFilterBar: React.FC<BomFilterBarProps> = ({
               type="date"
               value={currentTo}
               onChange={(e) => {
-                setCustomTo(e.target.value);
+                const newTo = e.target.value;
+                setCustomTo(newTo);
+                if (currentFrom && newTo && newTo < currentFrom) {
+                  setDateError('Ngày kết thúc không được nhỏ hơn ngày bắt đầu');
+                  return;
+                }
                 setDateError(null);
-                if (filters.periodType !== 'CUSTOM') {
-                  onChange({ ...filters, periodType: 'CUSTOM', from: currentFrom, to: e.target.value });
+                if (currentFrom && newTo) {
+                  onChange({ ...filters, periodType: 'CUSTOM', from: currentFrom, to: newTo });
                 }
               }}
               className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 font-mono focus:outline-none focus:ring-1 focus:ring-brand-500 focus:bg-white"
             />
           </div>
 
-          {/* Nút áp dụng ngày nếu thay đổi */}
+          {/* Nút áp dụng ngày nếu cần kích hoạt thủ công */}
           {filters.periodType === 'CUSTOM' && (customFrom !== filters.from || customTo !== filters.to) && (
             <Button
               variant="outline"
               size="sm"
               onClick={handleApplyCustomDates}
-              className="text-xs py-1.5 px-3 h-8 text-brand-600 border-brand-300 hover:bg-brand-50"
+              className="text-xs py-1.5 px-3 h-8 text-brand-600 border-brand-300 hover:bg-brand-50 cursor-pointer"
             >
-              Áp dụng ngày
+              Áp dụng
             </Button>
           )}
 
-          {/* Dropdown cơ sở — value rỗng = toàn hệ thống (không gửi facilityId=all) */}
-          <div className="flex items-center gap-2 ml-0 sm:ml-2">
-            <Building2 className="w-3.5 h-3.5 text-slate-400" />
+          {/* Dropdown cơ sở — value rỗng = toàn hệ thống */}
+          <div className="flex items-center gap-1.5 ml-0 sm:ml-2">
+            <span className="text-xs text-slate-500">Cơ sở:</span>
             <select
               value={filters.facilityId ?? ''}
               onChange={(e) => {
@@ -219,7 +228,7 @@ export const BomFilterBar: React.FC<BomFilterBarProps> = ({
               }}
               className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:ring-1 focus:ring-brand-500 focus:bg-white cursor-pointer"
             >
-              <option value="">🏢 Toàn hệ thống (Tất cả cơ sở)</option>
+              <option value="">Toàn hệ thống (Tất cả cơ sở)</option>
               {facilities.map((fac) => (
                 <option key={fac.id} value={fac.id}>
                   {fac.name}
