@@ -86,7 +86,7 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
     }
 
     if (isEarlyReturn && !agreeEarlyTerms) {
-      setError('Bạn phải xác nhận đã hiểu quy định không hoàn cước thuê các tháng chưa sử dụng.');
+      setError('Bạn phải xác nhận đồng ý chính sách hoàn 100% tiền thuê chưa dùng và khấu trừ 100% tiền cọc.');
       return false;
     }
 
@@ -168,8 +168,12 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
               <span className="font-semibold text-slate-800">{contract.endDate}</span>
             </div>
             <div className="flex justify-between items-center border-t border-slate-200/80 pt-1.5">
-              <span className="text-slate-600 font-medium">Tiền cọc dự kiến quyết toán hoàn lại:</span>
-              <span className="font-bold text-emerald-700 text-sm">{formatVND(contract.depositHeld)}</span>
+              <span className="text-slate-600 font-medium">
+                {isEarlyReturn ? 'Chính sách hoàn tiền khi trả kho sớm:' : 'Tiền cọc dự kiến quyết toán hoàn lại:'}
+              </span>
+              <span className={`font-bold text-sm ${isEarlyReturn ? 'text-amber-700' : 'text-emerald-700'}`}>
+                {isEarlyReturn ? 'Hoàn 100% tiền thuê chưa dùng (phạt cọc)' : formatVND(contract.depositHeld)}
+              </span>
             </div>
           </div>
 
@@ -254,12 +258,12 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
             <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl space-y-2 text-xs text-amber-900">
               <div className="flex items-start gap-2 font-bold text-amber-950">
                 <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                <span>Quy định trả kho trước thời hạn hợp đồng:</span>
+                <span>Quy định trả kho trước thời hạn hợp đồng (BR-RET-06):</span>
               </div>
               <p className="text-amber-800 leading-relaxed text-[11px]">
                 Ngày trả kho của bạn sớm hơn ngày kết thúc hợp đồng (<strong>{contract.endDate}</strong>).
-                Khoản tiền cọc <strong>{formatVND(contract.depositHeld)}</strong> vẫn sẽ được hoàn trả 100% sau khi nghiệm thu đạt chuẩn.
-                Lưu ý: <strong>Cước phí thuê các ngày/tháng chưa sử dụng sẽ không được hoàn trả</strong> theo quy định hợp đồng.
+                Theo chính sách Win-Win, bạn được <strong>hoàn lại 100% tiền thuê của các ngày/tháng chưa sử dụng</strong> sau khi nghiệm thu đạt chuẩn.
+                Khoản tiền cọc <strong>{formatVND(contract.depositHeld)}</strong> sẽ được giữ lại làm phí bồi thường vi phạm thời hạn hợp đồng để bù đắp chi phí phòng trống.
               </p>
 
               <label className="flex items-start gap-2 pt-1 cursor-pointer select-none text-xs font-semibold text-amber-950">
@@ -273,7 +277,7 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
                   className="mt-0.5 rounded border-amber-400 text-amber-600 focus:ring-amber-500 h-4 w-4 shrink-0"
                   required
                 />
-                <span>Tôi xác nhận đã hiểu và đồng ý điều khoản không hoàn tiền cước thuê còn lại.</span>
+                <span>Tôi xác nhận đồng ý chính sách hoàn 100% tiền thuê chưa dùng và khấu trừ 100% tiền cọc.</span>
               </label>
             </div>
           )}
