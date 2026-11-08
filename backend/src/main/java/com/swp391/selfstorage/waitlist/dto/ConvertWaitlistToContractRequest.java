@@ -45,3 +45,4 @@ public class ConvertWaitlistToContractRequest {
      */
     private String notes;
 }
+

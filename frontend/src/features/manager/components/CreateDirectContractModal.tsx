@@ -43,6 +43,7 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
   // Customer search & selection
   const [customerSearchKeyword, setCustomerSearchKeyword] = useState<string>('');
   const [customerSearching, setCustomerSearching] = useState<boolean>(false);
+  const [customerSearchError, setCustomerSearchError] = useState<string | null>(null);
   const [customerSearchResults, setCustomerSearchResults] = useState<AppUser[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<AppUser | null>(null);
 
@@ -134,26 +135,32 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
   const handleSearchCustomers = async (kw?: string) => {
     const term = kw !== undefined ? kw : customerSearchKeyword;
     setCustomerSearching(true);
+    setCustomerSearchError(null);
     try {
       const res = await getUsers({
         keyword: term.trim() || undefined,
         role: 'STORAGE_CUSTOMER',
-        size: 10,
+        size: 15,
       });
       setCustomerSearchResults(res.content || []);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Lỗi khi tìm kiếm khách hàng:', err);
+      const msg = err?.message || 'Không thể kết nối đến hệ thống tài khoản';
+      setCustomerSearchError(msg);
+      setCustomerSearchResults([]);
     } finally {
       setCustomerSearching(false);
     }
   };
 
-  // Initial customer search when modal opens
+  // Debounced search when keyword changes
   useEffect(() => {
-    if (isOpen && !selectedCustomer) {
-      handleSearchCustomers('');
-    }
-  }, [isOpen]);
+    if (!isOpen || selectedCustomer) return;
+    const timer = setTimeout(() => {
+      handleSearchCustomers(customerSearchKeyword);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [isOpen, customerSearchKeyword, selectedCustomer]);
 
   // Reset when closed
   const handleClose = () => {
@@ -339,38 +346,54 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
                     type="text"
                     placeholder="Tìm theo tên, số điện thoại hoặc email khách hàng..."
                     value={customerSearchKeyword}
-                    onChange={(e) => {
-                      setCustomerSearchKeyword(e.target.value);
-                      handleSearchCustomers(e.target.value);
+                    onChange={(e) => setCustomerSearchKeyword(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleSearchCustomers(customerSearchKeyword);
+                      }
                     }}
                     className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
                   />
                 </div>
 
                 {customerSearching && (
-                  <div className="p-3 text-center text-xs text-slate-500">Đang tìm khách hàng...</div>
+                  <div className="p-3 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
+                    <div className="w-3.5 h-3.5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+                    <span>Đang tìm khách hàng...</span>
+                  </div>
                 )}
 
-                {!customerSearching && customerSearchResults.length > 0 && (
-                  <div className="max-h-40 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100 bg-white">
+                {customerSearchError && (
+                  <div className="p-3 text-center text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-xl">
+                    {customerSearchError}
+                  </div>
+                )}
+
+                {!customerSearching && !customerSearchError && customerSearchResults.length > 0 && (
+                  <div className="max-h-40 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100 bg-white shadow-2xs">
                     {customerSearchResults.map((cust) => (
                       <div
                         key={cust.id}
                         onClick={() => setSelectedCustomer(cust)}
-                        className="p-2.5 hover:bg-slate-50 cursor-pointer flex items-center justify-between text-xs transition-colors"
+                        className="p-2.5 hover:bg-brand-50/40 cursor-pointer flex items-center justify-between text-xs transition-colors"
                       >
                         <div>
                           <span className="font-semibold text-slate-800">{cust.fullName}</span>
-                          <span className="text-slate-500 ml-2">({cust.phone})</span>
+                          <span className="text-slate-500 ml-2 text-[11px]">
+                            {cust.phone ? `(${cust.phone})` : '(Chưa có SĐT)'}
+                          </span>
                           <div className="text-[11px] text-slate-400">{cust.email}</div>
                         </div>
-                        <span className="text-[11px] font-semibold text-brand-600">Chọn</span>
+                        <span className="text-[11px] font-bold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-md border border-brand-200/60">
+                          Chọn
+                        </span>
                       </div>
                     ))}
                   </div>
                 )}
 
-                {!customerSearching && customerSearchResults.length === 0 && (
+                {!customerSearching && !customerSearchError && customerSearchResults.length === 0 && (
                   <div className="p-3 text-center text-xs text-slate-400 bg-slate-50 rounded-xl">
                     Không tìm thấy khách hàng. Vui lòng kiểm tra từ khóa tìm kiếm.
                   </div>

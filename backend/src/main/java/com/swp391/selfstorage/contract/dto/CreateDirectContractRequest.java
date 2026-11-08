@@ -56,3 +56,4 @@ public class CreateDirectContractRequest {
      */
     private String notes;
 }
+
