@@ -104,9 +104,9 @@ describe('RenewalRevampFlow (Task 10 / Phase 4)', () => {
     };
   };
 
-  it('1. Hợp đồng ACTIVE còn dưới 30 ngày: hiển thị nhắc nhở và nút Gia hạn không bị khóa', () => {
-    const contract = createActiveContract(15);
-    render(
+  it('1. Hợp đồng ACTIVE còn dưới 30 ngày (và >= 20 ngày): hiển thị nhắc nhở và nút Gia hạn; khi < 20 ngày ẩn nút Gia hạn', () => {
+    const contract = createActiveContract(25);
+    const { unmount } = render(
       <BrowserRouter>
         <RentedUnitCard contract={contract} />
       </BrowserRouter>
@@ -119,10 +119,21 @@ describe('RenewalRevampFlow (Task 10 / Phase 4)', () => {
     // Hiển thị badge trạng thái hợp đồng
     expect(screen.getByText(/Sắp hết hạn/i)).toBeInTheDocument();
 
-    // Nút Gia hạn sáng và click được
+    // Nút Gia hạn sáng và click được khi >= 20 ngày
     const renewBtn = screen.getByRole('button', { name: /^Gia hạn$/i });
     expect(renewBtn).toBeInTheDocument();
     expect(renewBtn).not.toBeDisabled();
+
+    unmount();
+
+    // Khi < 20 ngày: Ẩn nút Gia hạn theo BR-REN-01
+    const contractUnder20 = createActiveContract(15);
+    render(
+      <BrowserRouter>
+        <RentedUnitCard contract={contractUnder20} />
+      </BrowserRouter>
+    );
+    expect(screen.queryByRole('button', { name: /^Gia hạn$/i })).not.toBeInTheDocument();
   });
 
   it('2. Hợp đồng OVERDUE đã tất toán nợ phạt: hiển thị nút Gia hạn trực tuyến và nút Báo trả kho', () => {
@@ -133,8 +144,8 @@ describe('RenewalRevampFlow (Task 10 / Phase 4)', () => {
       </BrowserRouter>
     );
 
-    // Hiển thị badge đã tất toán nợ phạt
-    expect(screen.getByText(/Đã tất toán phạt/i)).toBeInTheDocument();
+    // Hiển thị badge đã tất toán nợ phạt (rút ngắn thành Chờ trả kho)
+    expect(screen.getByText(/Chờ trả kho/i)).toBeInTheDocument();
 
     // Hiển thị nút Gia hạn
     const renewBtn = screen.getByRole('button', { name: /^Gia hạn$/i });

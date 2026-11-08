@@ -105,7 +105,9 @@ export function useCustomerContracts() {
     return (
       contracts.find((c) => {
         if (c.status !== 'ACTIVE') return false;
-        return shouldRemindRenewal(calculateDaysRemaining(c.endDate), noticeDays, reminderDays);
+        const days = calculateDaysRemaining(c.endDate);
+        if (days < 20) return false;
+        return shouldRemindRenewal(days, noticeDays, reminderDays);
       }) || null
     );
   }, [contracts, policy, noticeDays, reminderDays]);

@@ -22,6 +22,7 @@ import {
 import { formatVND } from '../utils/pricing';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
 import { isStorageUnitAssigned } from '../utils/unitAssignment';
+import { formatDateVN, isCheckInAllowedToday } from '../utils/unitPickerHelpers';
 import type { RentedContract } from '../types';
 import { DigitalMoveInPassModal } from './DigitalMoveInPassModal';
 import { tokenStorage } from '@/utils/tokenStorage';
@@ -93,6 +94,11 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
 
   const penaltyFee = contract.overdueFee ?? 0;
   const isGracePeriod = contract.status === 'OVERDUE' && penaltyFee === 0 && overdueDays <= 3;
+  // Khóa nút gia hạn khi < 20 ngày theo quy chế BR-REN-01 (đối với ACTIVE)
+  const canRenewOnline =
+    (contract.status === 'ACTIVE' && daysRemaining >= 20) ||
+    (contract.status === 'EXPIRING_SOON' && daysRemaining >= 20) ||
+    (contract.status === 'OVERDUE' && penaltyFee === 0);
 
   const handleOpenModal = () => {
     if (contract.status === 'PENDING_CHECKIN' || (contract.status as string) === 'PENDING_CHECK_IN') {
@@ -141,7 +147,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
         if ((contract as any).relocationEligible) {
           return (
             <Badge variant="warning" className="bg-amber-100 text-amber-900 border-amber-300 font-bold">
-              Đang sắp xếp đổi ô kho
+              Đổi ô kho
             </Badge>
           );
         }
@@ -152,7 +158,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
         if (penaltyFee === 0 && !isGracePeriod) {
           return (
             <Badge variant="warning" className="bg-amber-50 text-amber-800 border-amber-300">
-              Đã tất toán phạt — Chờ dọn kho / trả kho
+              Chờ trả kho
             </Badge>
           );
         }
@@ -173,9 +179,23 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
       case 'CLOSED':
         return <Badge variant="default">Đã kết thúc</Badge>;
       case 'TERMINATED' as any:
+        if (contract.handoverRejected || contract.contractNumber?.includes('REJ') || contract.contractNumber?.includes('REFUND')) {
+          return (
+            <Badge variant="danger" className="bg-rose-100 text-rose-800 border-rose-300 font-bold" title={contract.rejectionReason || 'Từ chối nhận bàn giao tại hiện trường'}>
+              Từ chối nhận kho
+            </Badge>
+          );
+        }
+        if (!isStorageUnitAssigned(contract.unitNumber) || contract.unitNumber === 'Chưa gán ô' || contract.unitNumber === 'Chưa gán ô kho' || contract.contractNumber?.includes('NO-UNIT')) {
+          return (
+            <Badge variant="danger" className="bg-rose-50 text-rose-700 border-rose-200" title="Đã hủy khi chưa phân bổ ô vật lý - Hoàn cọc 100%">
+              Đã hủy
+            </Badge>
+          );
+        }
         return (
-          <Badge variant="danger" className="bg-rose-100 text-rose-800 border-rose-300 font-bold">
-            Hủy do sự cố bàn giao
+          <Badge variant="danger" className="bg-rose-50 text-rose-700 border-rose-200" title="Đã hủy trước ngày nhận kho - Ô vật lý đã được giải phóng">
+            Đã hủy
           </Badge>
         );
       default:
@@ -318,14 +338,24 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
                 <Button
                   variant="primary"
                   size="sm"
+                  disabled={!isCheckInAllowedToday(contract.startDate)}
                   onClick={() => {
+                    if (!isCheckInAllowedToday(contract.startDate)) return;
                     setPassMode('checkin');
                     setShowPassModal(true);
                   }}
-                  className="text-xs font-bold bg-[#0d6050] hover:bg-[#12836d] text-white cursor-pointer shadow-xs"
-                  title="Tự làm thủ tục ký số nhận bàn giao & kích hoạt mã PIN mở kho 24/7"
+                  className={`text-xs font-bold shadow-xs ${
+                    isCheckInAllowedToday(contract.startDate)
+                      ? 'bg-[#0d6050] hover:bg-[#12836d] text-white cursor-pointer'
+                      : 'bg-slate-100 hover:bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60'
+                  }`}
+                  title={
+                    isCheckInAllowedToday(contract.startDate)
+                      ? 'Tự làm thủ tục ký số nhận bàn giao & kích hoạt mã PIN mở kho 24/7'
+                      : `Chưa đến ngày nhận kho (${formatDateVN(contract.startDate)}). Chỉ được check-in vào đúng ngày trên hợp đồng.`
+                  }
                 >
-                  <KeyRound className="w-3.5 h-3.5 mr-1 text-amber-300" />
+                  <KeyRound className={`w-3.5 h-3.5 mr-1 ${isCheckInAllowedToday(contract.startDate) ? 'text-amber-300' : 'text-slate-400'}`} />
                   Check-in online
                 </Button>
               )}
@@ -427,9 +457,7 @@ export const RentedUnitCard: React.FC<RentedUnitCardProps> = ({
           )}
 
           {/* RENEW BUTTON */}
-          {(contract.status === 'ACTIVE' ||
-            contract.status === 'EXPIRING_SOON' ||
-            (contract.status === 'OVERDUE' && penaltyFee === 0)) && (
+          {canRenewOnline && (
             <Link
               to={
                 contract.hasPendingRenewal && contract.pendingRenewalOrderCode

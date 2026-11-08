@@ -30,6 +30,7 @@ import { RenewalReceiptModal } from '../components/RenewalReceiptModal';
 import { ScheduleReturnModal } from '../components/ScheduleReturnModal';
 import { tokenStorage } from '@/utils/tokenStorage';
 import { useActivePolicy } from '@/hooks/useActivePolicy';
+import { calculateDaysRemaining } from '../utils/renewalPricing';
 import { discountTag, termMonthChoices } from '../utils/policyTerms';
 import { useRenewalPricing } from '../hooks/useRenewalPricing';
 import { useRenewalPayment } from '../hooks/useRenewalPayment';
@@ -90,6 +91,8 @@ export const RenewalPage: React.FC = () => {
     setCapacityConflict,
     isUnitTypeInactive,
     unitTypeInactiveMessage,
+    isPastDeadlineFromBackend,
+    deadlineMessage,
     newEndDate,
     pricing,
   } = useRenewalPricing({ contract, renewalMonths });
@@ -159,10 +162,8 @@ export const RenewalPage: React.FC = () => {
   const isTerminated = contract ? (contract.status === 'TERMINATED' || contract.status === 'CLOSED') : false;
   const isPendingReturn = contract ? contract.status === 'PENDING_RETURN' : false;
   const hasUnpaidOverdue = contract ? (contract.status === 'OVERDUE' && (contract.overdueFee ?? 0) > 0) : false;
-  const daysRemaining = contract?.endDate
-    ? Math.ceil((new Date(contract.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-    : 999;
-  const isPastRenewalDeadline = contract?.status === 'ACTIVE' && daysRemaining < 20;
+  const daysRemaining = contract?.endDate ? calculateDaysRemaining(contract.endDate) : 999;
+  const isPastRenewalDeadline = (contract?.status === 'ACTIVE' && daysRemaining < 20) || isPastDeadlineFromBackend;
   const isRenewalBlocked = isTerminated || isPendingReturn || hasUnpaidOverdue || isCapacityConflict || isPastRenewalDeadline || isUnitTypeInactive;
 
   return (
@@ -221,7 +222,7 @@ export const RenewalPage: React.FC = () => {
           <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
           <div className="space-y-1 text-xs flex-1">
             <h4 className="font-bold text-sm text-amber-950">
-              Đã quá thời hạn tự gia hạn Online (trước 20 ngày theo quy chế BR-REN-01)
+              {deadlineMessage || 'Đã quá thời hạn tự gia hạn Online (trước 20 ngày theo quy chế BR-REN-01)'}
             </h4>
             <p className="leading-relaxed text-amber-800">
               Hợp đồng của bạn đã bước vào giai đoạn chốt kế hoạch giải phóng ô kho hoặc ưu tiên cho Danh sách chờ (Waitlist). Nút tự gia hạn Online đã tạm thời bị khóa. Quý khách vui lòng liên hệ trực tiếp Quản lý cơ sở để được kiểm tra dung lượng thực tế và xem xét hỗ trợ gia hạn ngoại lệ!

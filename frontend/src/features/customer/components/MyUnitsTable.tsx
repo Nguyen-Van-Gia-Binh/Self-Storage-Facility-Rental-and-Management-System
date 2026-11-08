@@ -25,7 +25,7 @@ import {
   KeyRound,
 } from 'lucide-react';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
-import { formatDateVN, calculateEndDate } from '../utils/unitPickerHelpers';
+import { formatDateVN, calculateEndDate, isCheckInAllowedToday } from '../utils/unitPickerHelpers';
 import { isStorageUnitAssigned } from '../utils/unitAssignment';
 import type { RentedContract } from '../types';
 import type { ReservationResponse } from '@/api/reservation';
@@ -312,6 +312,10 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
               const penaltyFee = contract.overdueFee ?? 0;
               const isGracePeriod =
                 contract.status === 'OVERDUE' && penaltyFee === 0 && overdueDays <= 3;
+              // Khóa nút gia hạn khi < 20 ngày theo quy chế BR-REN-01 (đối với ACTIVE)
+              const canRenewOnline =
+                (contract.status === 'ACTIVE' && daysRemaining >= 20) ||
+                (contract.status === 'OVERDUE' && penaltyFee === 0);
 
               const isRevealed = Boolean(revealedPins[contract.id]);
               const isMenuOpen = openMenuId === `contract-${contract.id}`;
@@ -347,10 +351,24 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                   {/* Cột 1: Ô & Loại ô (Gộp 2 dòng) */}
                   <td className="py-3 px-4 whitespace-nowrap">
                     <div className="flex flex-col">
-                      {(isRelocating && (contract.status === 'PENDING_CHECKIN' || (contract.status as string) === 'PENDING_CHECK_IN')) || !isStorageUnitAssigned(contract.unitNumber) ? (
-                        <span className="font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded text-xs font-mono self-start">
-                          Chưa gán ô kho
-                        </span>
+                      {contract.relocationEligible ? (
+                        <button
+                          type="button"
+                          onClick={() => onViewDetail(contract)}
+                          className="font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2 py-0.5 rounded text-xs font-mono self-start cursor-pointer transition-colors"
+                          title="Xem chi tiết hợp đồng & Phụ lục đổi ô kho"
+                        >
+                          Chờ đổi ô
+                        </button>
+                      ) : !isStorageUnitAssigned(contract.unitNumber) ? (
+                        <button
+                          type="button"
+                          onClick={() => onViewDetail(contract)}
+                          className="font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2 py-0.5 rounded text-xs font-mono self-start cursor-pointer transition-colors"
+                          title="Xem chi tiết hợp đồng"
+                        >
+                          Chưa gán ô
+                        </button>
                       ) : (
                         <button
                           type="button"
@@ -440,15 +458,25 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                             type="button"
                             variant="primary"
                             size="sm"
+                            disabled={!isCheckInAllowedToday(contract.startDate)}
                             onClick={(e) => {
                               e.stopPropagation();
+                              if (!isCheckInAllowedToday(contract.startDate)) return;
                               setActivePassMode('checkin');
                               setActivePassContract(contract);
                             }}
-                            className="h-7 text-[11px] px-2.5 font-bold bg-[#0d6050] hover:bg-[#12836d] text-white whitespace-nowrap shrink-0 shadow-2xs cursor-pointer"
-                            title="Tự làm thủ tục ký số nhận bàn giao & kích hoạt mã PIN mở kho 24/7"
+                            className={`h-7 text-[11px] px-2.5 font-bold whitespace-nowrap shrink-0 shadow-2xs ${
+                              isCheckInAllowedToday(contract.startDate)
+                                ? 'bg-[#0d6050] hover:bg-[#12836d] text-white cursor-pointer'
+                                : 'bg-slate-100 hover:bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60'
+                            }`}
+                            title={
+                              isCheckInAllowedToday(contract.startDate)
+                                ? 'Tự làm thủ tục ký số nhận bàn giao & kích hoạt mã PIN mở kho 24/7'
+                                : `Chưa đến ngày nhận kho (${formatDateVN(contract.startDate)}). Chỉ được check-in vào đúng ngày trên hợp đồng.`
+                            }
                           >
-                            <KeyRound className="w-3.5 h-3.5 mr-1 text-amber-300" />
+                            <KeyRound className={`w-3.5 h-3.5 mr-1 ${isCheckInAllowedToday(contract.startDate) ? 'text-amber-300' : 'text-slate-400'}`} />
                             Check-in online
                           </Button>
                         )}
@@ -473,9 +501,9 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                       <Badge variant={isGracePeriod ? 'warning' : 'overdue'}>
                         {isGracePeriod ? `Ân hạn D+${overdueDays}` : `Quá hạn D+${overdueDays}`}
                       </Badge>
-                    ) : isRelocating ? (
-                      <Badge variant="warning" className="bg-amber-100 text-amber-900 border-amber-300 font-bold">
-                        Chờ gán lại ô kho
+                    ) : (contract.relocationEligible || isRelocating) ? (
+                      <Badge variant="warning" className="bg-amber-100 text-amber-900 border-amber-300 font-bold" title="Từ chối ô cũ do lỗi hiện trường - Đang chờ bố trí ô kho thay thế">
+                        Đổi ô kho
                       </Badge>
                     ) : contract.status === 'PENDING_CHECKIN' ||
                       (contract.status as string) === 'PENDING_CHECK_IN' ? (
@@ -485,9 +513,19 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                         {contract.inspectionDone ? 'Đã nghiệm thu' : 'Chờ nghiệm thu'}
                       </Badge>
                     ) : (contract.status as string) === 'TERMINATED' ? (
-                      <Badge variant="danger" className="bg-rose-50 text-rose-700 border-rose-200">
-                        Đã hủy (Hoàn cọc)
-                      </Badge>
+                      (contract.handoverRejected || contract.contractNumber?.includes('REJ') || contract.contractNumber?.includes('REFUND')) ? (
+                        <Badge variant="danger" className="bg-rose-100 text-rose-800 border-rose-300 font-bold" title={contract.rejectionReason || 'Từ chối nhận bàn giao tại hiện trường'}>
+                          Từ chối nhận kho
+                        </Badge>
+                      ) : (!isStorageUnitAssigned(contract.unitNumber) || contract.unitNumber === 'Chưa gán ô' || contract.unitNumber === 'Chưa gán ô kho' || contract.contractNumber?.includes('NO-UNIT')) ? (
+                        <Badge variant="danger" className="bg-rose-50 text-rose-700 border-rose-200" title="Đã hủy khi chưa phân bổ ô vật lý - Hoàn cọc 100%">
+                          Đã hủy
+                        </Badge>
+                      ) : (
+                        <Badge variant="danger" className="bg-rose-50 text-rose-700 border-rose-200" title="Đã hủy trước ngày nhận kho - Ô vật lý đã được giải phóng">
+                          Đã hủy
+                        </Badge>
+                      )
                     ) : contract.status === 'CLOSED' ? (
                       <Badge variant="default">Đã kết thúc</Badge>
                     ) : (
@@ -513,7 +551,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                           <CreditCard className="w-3.5 h-3.5 mr-1" />
                           Nộp phạt
                         </Button>
-                      ) : contract.status === 'ACTIVE' && isExpiringSoon ? (
+                      ) : canRenewOnline && isExpiringSoon ? (
                         <Link
                           to={`/customer/renew/${contract.id}`}
                           className="shrink-0"
@@ -607,15 +645,26 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                                     {isStorageUnitAssigned(contract.unitNumber) && (
                                       <button
                                         type="button"
+                                        disabled={!isCheckInAllowedToday(contract.startDate)}
                                         onClick={(e) => {
                                           e.stopPropagation();
+                                          if (!isCheckInAllowedToday(contract.startDate)) return;
                                           setOpenMenuId(null);
                                           setActivePassMode('checkin');
                                           setActivePassContract(contract);
                                         }}
-                                        className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-emerald-50 text-[#0d6050] transition-colors cursor-pointer font-bold"
+                                        title={
+                                          isCheckInAllowedToday(contract.startDate)
+                                            ? 'Tự làm thủ tục ký số nhận bàn giao & kích hoạt mã PIN mở kho 24/7'
+                                            : `Chưa đến ngày nhận kho (${formatDateVN(contract.startDate)}). Chỉ được check-in vào đúng ngày trên hợp đồng.`
+                                        }
+                                        className={`w-full flex items-center gap-2 px-3 py-1.5 text-left transition-colors font-bold ${
+                                          isCheckInAllowedToday(contract.startDate)
+                                            ? 'hover:bg-emerald-50 text-[#0d6050] cursor-pointer'
+                                            : 'opacity-40 cursor-not-allowed text-slate-400 bg-slate-50'
+                                        }`}
                                       >
-                                        <KeyRound className="w-3.5 h-3.5 text-emerald-600" />
+                                        <KeyRound className={`w-3.5 h-3.5 ${isCheckInAllowedToday(contract.startDate) ? 'text-emerald-600' : 'text-slate-400'}`} />
                                         <span>Check-in online (24/7)</span>
                                       </button>
                                     )}
@@ -665,7 +714,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                                 {/* Menu cho ACTIVE */}
                                 {contract.status === 'ACTIVE' && (
                                   <div className="py-0.5">
-                                    {!isExpiringSoon && (
+                                    {canRenewOnline && !isExpiringSoon && (
                                       <Link
                                         to={`/customer/renew/${contract.id}`}
                                         onClick={(e) => {
@@ -780,6 +829,21 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
           initialMode={activePassMode}
           contractId={activePassContract.id}
           onSuccessCheckIn={() => {
+            activePassContract.status = 'ACTIVE';
+            onCheckInSuccess?.();
+          }}
+          onConfirmSignature={() => {
+            activePassContract.status = 'ACTIVE';
+          }}
+          onRejectHandover={(action, reason) => {
+            if (action === 'RELOCATE') {
+              activePassContract.relocationEligible = true;
+              activePassContract.unitNumber = 'Chờ đổi ô';
+            } else {
+              (activePassContract.status as any) = 'TERMINATED';
+              activePassContract.handoverRejected = true;
+              activePassContract.rejectionReason = reason;
+            }
             onCheckInSuccess?.();
           }}
           passData={{

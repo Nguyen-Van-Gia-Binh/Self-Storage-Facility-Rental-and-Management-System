@@ -55,8 +55,8 @@ describe('OverdueClearedAudit: Trạng thái & Cảnh báo Thẻ ô kho sau khi 
     expect(screen.queryByText('Đang hoạt động 24/7')).not.toBeInTheDocument();
     expect(screen.queryByText('Đã nộp phạt (Chờ trả kho)')).not.toBeInTheDocument();
 
-    // Phải có badge cam cảnh báo
-    expect(screen.getByText('Đã tất toán phạt — Chờ dọn kho / trả kho')).toBeInTheDocument();
+    // Phải có badge cam cảnh báo (đã rút ngắn thành Chờ trả kho)
+    expect(screen.getByText('Chờ trả kho')).toBeInTheDocument();
 
     // Banner màu cam nhắc nhở hoàn tất dọn đồ hoặc gia hạn
     expect(screen.getByText(/Bạn đã hoàn tất nộp phạt quá hạn:/i)).toBeInTheDocument();

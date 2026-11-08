@@ -66,6 +66,10 @@ public class CustomerRentalSummaryResponse {
     // Trạng thái chờ đổi ô kho do sự cố tiếp đón bàn giao
     private Boolean relocationEligible;
 
+    // Thông tin từ chối bàn giao lúc Check-in
+    private Boolean handoverRejected;
+    private String rejectionReason;
+
     // Theo dõi dời ngày nhận kho tối đa 1 lần (BR-RES-06)
     private Integer rescheduleCount;
     private java.time.OffsetDateTime rescheduledAt;
@@ -187,6 +191,12 @@ public class CustomerRentalSummaryResponse {
 
     public Boolean getRelocationEligible() { return relocationEligible; }
     public void setRelocationEligible(Boolean relocationEligible) { this.relocationEligible = relocationEligible; }
+
+    public Boolean getHandoverRejected() { return handoverRejected; }
+    public void setHandoverRejected(Boolean handoverRejected) { this.handoverRejected = handoverRejected; }
+
+    public String getRejectionReason() { return rejectionReason; }
+    public void setRejectionReason(String rejectionReason) { this.rejectionReason = rejectionReason; }
 
     public Integer getRescheduleCount() { return rescheduleCount; }
     public void setRescheduleCount(Integer rescheduleCount) { this.rescheduleCount = rescheduleCount; }

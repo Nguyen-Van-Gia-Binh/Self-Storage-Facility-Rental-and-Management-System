@@ -53,6 +53,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -210,6 +211,13 @@ public class ContractServiceImpl implements ContractService {
                         throw new CustomException(ErrorCode.CONTRACT_NOT_PENDING_CHECKIN);
                 if (contract.getStorageUnitId() == null)
                         throw new CustomException(ErrorCode.UNIT_NOT_YET_ALLOCATED);
+
+                // Khách hàng tự check-in online không được check-in trước ngày bắt đầu hợp đồng
+                boolean isCustomerOnlineCheckIn = staffId != null && staffId.equals(contract.getCustomerId());
+                if (isCustomerOnlineCheckIn && contract.getStartDate() != null && LocalDate.now().isBefore(contract.getStartDate())) {
+                        throw new CustomException(ErrorCode.CHECKIN_BEFORE_START_DATE,
+                                        "Chưa đến ngày nhận kho trên hợp đồng (" + contract.getStartDate() + "). Quý khách chỉ có thể check-in online từ ngày bắt đầu hợp đồng.");
+                }
 
                 String pin = generateUniquePin(PolicyNumbers.snapshotInt(contract.getPolicySnapshot(), "accessPinLength", 6));
                 contract.setAccessCode(pin);

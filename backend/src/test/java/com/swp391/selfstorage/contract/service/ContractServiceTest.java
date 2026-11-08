@@ -208,6 +208,27 @@ class ContractServiceTest {
     }
 
     @Test
+    @DisplayName("Nghiệp vụ mới: Khách hàng check-in online trước ngày bắt đầu hợp đồng -> chặn với lỗi CHECKIN_BEFORE_START_DATE")
+    void shouldThrow_whenCustomerCheckInOnline_beforeStartDate() {
+        RentalContract contract = RentalContract.builder()
+                .id(501L).customerId(99L).facilityId(1L).storageUnitId(43L)
+                .status(ContractStatus.PENDING_CHECK_IN)
+                .startDate(LocalDate.now().plusDays(5)).build();
+
+        when(contractRepository.findById(501L)).thenReturn(Optional.of(contract));
+
+        CheckInRequest req = new CheckInRequest();
+        req.setCheckinDate(LocalDate.now());
+        req.setCustomerConfirmed(true);
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> contractService.checkIn(501L, req, 99L, List.of()));
+
+        assertEquals(ErrorCode.CHECKIN_BEFORE_START_DATE, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("Chưa đến ngày nhận kho"));
+    }
+
+    @Test
     @DisplayName("T3.6: checkIn Contract khong PENDING_CHECK_IN -> nem CONTRACT_NOT_PENDING_CHECKIN")
     void shouldThrow_whenContractNotPendingCheckIn() {
         RentalContract active = RentalContract.builder()
