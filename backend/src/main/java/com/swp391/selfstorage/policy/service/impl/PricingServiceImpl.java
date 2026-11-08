@@ -93,6 +93,7 @@ public class PricingServiceImpl implements PricingService {
                     .priceStatus(info != null ? info.getPriceStatus() : null)
                     .scheduledEffectiveFrom(info != null ? info.getScheduledEffectiveFrom() : null)
                     .scheduledPricePerM2(info != null ? info.getScheduledPricePerM2() : null)
+                    .version(price.getVersion())
                     .updatedAt(price.getUpdatedAt())
                     .build();
         }).toList();
@@ -239,6 +240,7 @@ public class PricingServiceImpl implements PricingService {
                 .priceStatus(info != null ? info.getPriceStatus() : null)
                 .scheduledEffectiveFrom(info != null ? info.getScheduledEffectiveFrom() : null)
                 .scheduledPricePerM2(info != null ? info.getScheduledPricePerM2() : null)
+                .version(priceEntity != null ? priceEntity.getVersion() : null)
                 .updatedAt(priceEntity != null ? priceEntity.getUpdatedAt() : null)
                 .build();
     }

@@ -30,10 +30,12 @@ import com.swp391.selfstorage.unit.entity.FacilityUnitTypePrice;
 import com.swp391.selfstorage.unit.entity.UnitType;
 import com.swp391.selfstorage.unit.repository.FacilityUnitTypePriceRepository;
 import com.swp391.selfstorage.unit.repository.UnitTypeRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class RenewalServiceImpl implements RenewalService {
 
     private final RentalContractRepository rentalContractRepository;
@@ -42,39 +44,10 @@ public class RenewalServiceImpl implements RenewalService {
     private final FacilityUnitTypePriceRepository facilityPriceRepository;
     private final PolicyService policyService;
     private final RenewalMapper renewalMapper;
+    private final UnitTypeRepository unitTypeRepository;
 
     @Autowired(required = false)
     private AppliedPriceLookup appliedPriceLookup;
-
-    @Autowired(required = false)
-    private UnitTypeRepository unitTypeRepository;
-
-    public RenewalServiceImpl(RentalContractRepository rentalContractRepository,
-            ContractRenewalRepository contractRenewalRepository,
-            ReservationRepository reservationRepository,
-            FacilityUnitTypePriceRepository facilityPriceRepository,
-            PolicyService policyService,
-            RenewalMapper renewalMapper) {
-        this.rentalContractRepository = rentalContractRepository;
-        this.contractRenewalRepository = contractRenewalRepository;
-        this.reservationRepository = reservationRepository;
-        this.facilityPriceRepository = facilityPriceRepository;
-        this.policyService = policyService;
-        this.renewalMapper = renewalMapper;
-    }
-
-    @Autowired
-    public RenewalServiceImpl(RentalContractRepository rentalContractRepository,
-            ContractRenewalRepository contractRenewalRepository,
-            ReservationRepository reservationRepository,
-            FacilityUnitTypePriceRepository facilityPriceRepository,
-            PolicyService policyService,
-            RenewalMapper renewalMapper,
-            UnitTypeRepository unitTypeRepository) {
-        this(rentalContractRepository, contractRenewalRepository, reservationRepository,
-                facilityPriceRepository, policyService, renewalMapper);
-        this.unitTypeRepository = unitTypeRepository;
-    }
 
     /**
      * 1. Tính toán báo giá xem trước cho khách hàng trước khi thanh toán (Quote).

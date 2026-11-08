@@ -38,4 +38,5 @@ public class UnitTypeResponse {
     private String priceStatus;
     private java.time.LocalDate scheduledEffectiveFrom;
     private Long scheduledPricePerM2;
+    private Long priceVersion;
 }

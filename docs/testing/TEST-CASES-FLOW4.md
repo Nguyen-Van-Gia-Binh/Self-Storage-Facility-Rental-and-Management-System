@@ -59,41 +59,51 @@
 
 ---
 
-## 2. 🎯 3 Câu Hỏi "Grill-Me" Khó Nhất Hội Đồng Sẽ Hỏi Về Flow 4
+## 2. 🎯 5 Câu Hỏi "Grill-Me" Hội Đồng Sẽ Hỏi Về Flow 4
 
-1. **"Tại sao em lại tách biệt MRR và Cash Flow? Sao không cộng gộp hết vào Doanh thu cho nhanh?"**
+1. **"Tại sao em lại cho phép BOM tắt (`INACTIVE`) một loại kho khi vẫn còn khách đang thuê (`CAT-03`)?"**
+   - **Trả lời:** *"Dạ, đây là cơ chế **Graceful Deactivation** chuẩn của doanh nghiệp. BOM cần được quyền dừng kinh doanh một loại kho ngay lập tức nếu có lỗi kỹ thuật hoặc hết vòng đời sản phẩm. Khách hiện tại vẫn được bảo vệ quyền lợi đến hết hợp đồng, nhưng chúng em chặn tất cả các giao dịch đặt mới (`CAT-03`) và gia hạn mới (`CAT-04`) ạ."*
+
+2. **"Làm sao em đảm bảo giá thuê của khách không bị thay đổi khi BOM điều chỉnh bảng giá (`PRI-03`)?"**
+   - **Trả lời:** *"Dạ, nhóm em áp dụng cơ chế **Snapshot (Ảnh chụp dữ liệu bất biến)**. Khi ký hợp đồng, đơn giá thuê tháng và phiên bản chính sách được đóng băng (ghi cứng vào bảng `rental_contract`: `monthly_price`, `total_rental_fee`, `policy_version_id`). Mọi thay đổi từ bảng giá của BOM chỉ cập nhật bảng `facility_unit_type_price` và thêm bản ghi lịch sử `facility_unit_type_price_version` cho các hợp đồng được tạo mới sau đó ạ."*
+
+3. **"Nếu 2 Quản lý (BOM) cùng sửa giá trong 1 giây thì sao (`CON-01`)?"**
+   - **Trả lời:** *"Dạ, em dùng **Optimistic Locking** với annotation `@Version` (Flyway `V22`). Giao dịch của người nào commit DB trước sẽ thắng và tăng `version` lên `1`. Người sau sẽ nhận thông báo `409 Conflict` (`OPTIMISTIC_LOCK_CONFLICT`), giao diện tự động hiển thị Toast cảnh báo và tải lại bảng giá mới nhất để tránh ghi đè dữ liệu của nhau (Lost Update) ạ."*
+
+4. **"Tại sao em lại tách biệt MRR và Cash Flow (`REP-02`)? Sao không cộng gộp hết vào Doanh thu cho nhanh?"**
    - **Trả lời:** *"Dạ, nếu cộng gộp, báo cáo sẽ bị ảo. Ví dụ khách đóng trước 6 tháng (12 triệu), nếu tính hết vào doanh thu tháng này, doanh thu sẽ tăng vọt, nhưng thực tế 5 tháng sau không có tiền thu mới. `Cash Flow` phản ánh dòng tiền mặt thực thu trong kỳ (`+12tr`), còn `Net MRR` (Monthly Recurring Revenue = `total_rental_fee / rental_months = +2tr/tháng`) giúp Ban giám đốc thấy được quy mô doanh thu định kỳ ổn định hàng tháng sau chiết khấu. Đây là chuẩn báo cáo tài chính của các mô hình kinh doanh thuê bao (Subscription / Self-Storage) ạ."*
 
-2. **"Nếu em thay đổi bảng giá, làm sao để những hợp đồng cũ không bị tính lại tiền (ảnh hưởng đến khách)?"**
-   - **Trả lời:** *"Dạ, em áp dụng cơ chế **Snapshot (Ảnh chụp dữ liệu bất biến)**. Khi khách đặt chỗ và ký hợp đồng, đơn giá thuê tháng và phiên bản chính sách được lưu cứng vào bảng `rental_contract` (`monthly_price`, `total_rental_fee`, `policy_version_id`). Mọi thay đổi bảng giá sau đó ở Flow 4 chỉ cập nhật bảng `facility_unit_type_price` và thêm bản ghi lịch sử `facility_unit_type_price_version` cho các hợp đồng tạo mới, tuyệt đối không làm biến đổi các hợp đồng đang hiệu lực ạ."*
-
-3. **"Tại sao ô kho đang bảo trì lại không bị tính vào Tỷ lệ lấp đầy?"**
-   - **Trả lời:** *"Dạ, tỷ lệ lấp đầy (`Occupancy Rate`) dùng để đánh giá hiệu quả khai thác thương mại. Nếu một ô kho đang sửa chữa (`MAINTENANCE`) hoặc ngừng khai thác (`OUT_OF_SERVICE`), nó không nằm trong nhóm tài sản có thể bán (`exploitableUnits`). Công thức chuẩn ngành em áp dụng đồng bộ trên toàn hệ thống là `Occupied / (Total - OutOfService - Maintenance)`. Nhờ vậy, Ban giám đốc sẽ thấy chính xác hiệu suất lấp đầy của phần tài sản đang sẵn sàng vận hành ạ."*
+5. **"Tại sao ô kho đang bảo trì lại không bị tính vào Tỷ lệ lấp đầy (`REP-03`), và việc đổi công thức có làm lệch số liệu báo cáo cũ không?"**
+   - **Trả lời:** *"Dạ, sau khi rà soát lại chuẩn ngành, nhóm em đã cập nhật đồng bộ công thức `Occupancy Rate = Occupied / (Total - OutOfService - Maintenance)` để loại trừ các ô kho đang bảo trì khỏi mẫu số (`exploitableUnits`). Điều này khiến các báo cáo cũ có thể chênh lệch nhẹ (ví dụ từ `60%` lên `66.7%`), nhưng nó phản ánh đúng hiệu suất khai thác thương mại thực tế của phần tài sản đang sẵn sàng vận hành tại cơ sở ạ."*
 
 ---
 
-## 3. 🚀 Hướng Dẫn Demo Trực Tiếp `CAT-03` & `CAT-04` (Graceful Deactivation) Trên Postman
+## 3. 🚀 Hướng Dẫn Smoke Test Thực Tế (Trình Duyệt & Postman)
 
+### Kịch bản 1: Kiểm thử Vòng đời Loại kho (`CAT-03` & `CAT-04`)
 1. **Bước 1 (BOM tắt kinh doanh loại kho đang có người thuê - `CAT-03`):**
-   - Đăng nhập tài khoản **BOM** (`bom@selfstorage.vn`), gọi:
+   - Đăng nhập tài khoản **BOM** (`bom@selfstorage.vn`) hoặc gọi:
      ```http
      PATCH /api/v1/facilities/1/unit-types/7/status?isActive=false
      ```
-     *(Hoặc `DELETE /api/v1/facilities/1/unit-types/7`)*
-   - **Kết quả:** Trả về `200 OK` (hoặc `204 No Content`), trạng thái `isActive = false` dù đang có hợp đồng `ACTIVE` của khách cũ.
+   - **Kết quả:** Trả về `200 OK`, trạng thái `isActive = false` dù đang có hợp đồng `ACTIVE` của khách cũ.
 2. **Bước 2 (Khách hàng mới tìm kho trên trang Booking - `CAT-03`):**
-   - Gọi API tra cứu chỗ trống công khai:
-     ```http
-     GET /api/v1/facilities/1/unit-types/availability?startDate=2026-11-15&months=1
-     ```
+   - Mở trang Đặt kho công khai hoặc gọi `GET /api/v1/facilities/1/unit-types/availability?startDate=2026-11-15&months=1`.
    - **Kết quả:** Loại kho `id=7` hoàn toàn biến mất khỏi danh sách đặt mới; trong khi hợp đồng `ACTIVE` hiện tại của khách cũ vẫn hoạt động bình thường.
-3. **Bước 3 (Khách cũ bấm Gia hạn hợp đồng thuộc loại kho đã `INACTIVE` - `CAT-04`):**
-   - Đăng nhập tài khoản **Customer**, gọi API lấy báo giá gia hạn:
+3. **Bước 3 (Khách cũ mở trang Gia hạn trên trình duyệt & gọi Postman - `CAT-04`):**
+   - Khách mở trang **Gia hạn Hợp đồng** (`/customer/contracts/{id}/renew`): Hệ thống hiển thị ngay **Banner cảnh báo màu đỏ** (*"Loại kho này đã ngừng kinh doanh, vui lòng liên hệ ban quản lý."*) kèm nút **Tìm & Thuê ô kho mới** / **Lên lịch trả kho**, đồng thời **khóa nút tiếp tục gia hạn** (`Đã khóa gia hạn`).
+   - Nếu khách cố tình dùng Postman gọi thẳng API:
      ```http
      POST /api/v1/contracts/{contractId}/renewals/quote
      Content-Type: application/json
 
      { "renewalMonths": 3 }
      ```
-   - **Kết quả:** Hệ thống chặn lại với mã `409 Conflict` (`errorCode: "UNIT_TYPE_INACTIVE"`): *"Loại kho này đã ngừng kinh doanh, vui lòng liên hệ ban quản lý."*
+   - **Kết quả:** Hệ thống chặn lại với mã `409 Conflict` (`errorCode: "UNIT_TYPE_INACTIVE"`).
+
+### Kịch bản 2: Kiểm thử Báo cáo Tỷ lệ lấp đầy (`REP-03`) & Quỹ tiền cọc (`REP-04`)
+1. Mở trang **BOM Dashboard** (`/bom/dashboard`):
+   - Kiểm tra chỉ số **Tỷ lệ lấp đầy (Occupancy Rate)**: Mẫu số `totalExploitableUnits` đã trừ cả `OUT_OF_SERVICE` lẫn `MAINTENANCE` (`Occupied / (Total - OutOfService - Maintenance)`).
+   - Kiểm tra chỉ số **Quỹ ký cược (Deposit Liability)**: Hiển thị tổng tiền cọc đang giữ của các hợp đồng đang mở (`PENDING_CHECK_IN`, `ACTIVE`, `OVERDUE`, `PENDING_RETURN`) cộng với các khoản hoàn cọc đang chờ kế toán chuyển khoản (`PENDING_REFUND`), tách biệt hoàn toàn với cột **Tổng doanh thu (`totalRevenue`)**.
+
 

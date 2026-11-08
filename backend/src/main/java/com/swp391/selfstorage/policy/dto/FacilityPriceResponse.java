@@ -26,5 +26,6 @@ public class FacilityPriceResponse {
     private String priceStatus;
     private LocalDate scheduledEffectiveFrom;
     private Long scheduledPricePerM2;
+    private Long version;
     private OffsetDateTime updatedAt;
 }
