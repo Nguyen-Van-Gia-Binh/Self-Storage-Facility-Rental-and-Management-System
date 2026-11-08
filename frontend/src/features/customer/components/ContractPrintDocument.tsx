@@ -39,15 +39,12 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
     contract.status === 'PENDING_CHECKIN' ||
     (contract.status as string) === 'PENDING_CHECK_IN';
 
-  const isCancelledAtHandover =
-    contract.status === 'TERMINATED' ||
-    (contract.status === 'CLOSED' &&
-      !detail?.checkinDate &&
-      !contract.checkinDate &&
-      (Boolean(detail) || contract.startDate === contract.endDate));
+  const isCancelledAtHandover = contract.status === 'TERMINATED';
+  const isClosed = contract.status === 'CLOSED';
 
   const isRelocating =
     !isCancelledAtHandover &&
+    !isClosed &&
     (contract.status === 'PENDING_CHECKIN' ||
       (contract.status as string) === 'PENDING_CHECK_IN' ||
       contract.status === 'ACTIVE') &&
@@ -55,12 +52,7 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
 
   const isHandoverCompleted =
     !isPendingCheckin &&
-    !isCancelledAtHandover &&
-    (contract.status === 'ACTIVE' ||
-      contract.status === 'OVERDUE' ||
-      contract.status === 'PENDING_RETURN' ||
-      contract.status === 'CLOSED' ||
-      Boolean(detail?.checkinDate || contract.checkinDate || detail?.customerConfirmedAt));
+    !isCancelledAtHandover;
 
   const effectiveCheckinDate = isHandoverCompleted
     ? (detail?.checkinDate || contract.checkinDate || effectiveStartDate)
@@ -70,17 +62,19 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
   const effectiveHandoverStaff = isHandoverCompleted || isCancelledAtHandover
     ? (detail?.handoverStaffName || contract.handoverStaffName || 'Nhân viên lễ tân cơ sở')
     : 'Chờ phân công tiếp đón tại quầy';
-  const effectiveHandoverNote = isHandoverCompleted
-    ? (detail?.handoverConditionNote ||
-      contract.handoverConditionNote ||
-      'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao')
-    : isCancelledAtHandover
-      ? (detail?.handoverConditionNote || contract.handoverConditionNote || 'Không đạt chuẩn nhận kho do phát sinh sự cố hư hỏng tại chỗ')
-      : isRelocating
-        ? 'Ô kho phát sinh sự cố lúc tiếp đón. Cơ sở đang phân bổ lại ô kho mới cùng loại cho quý khách.'
-        : 'Đang chờ khách hàng xuất trình CCCD và mã e-Pass tại quầy lễ tân để tiến hành nghiệm thu thực địa.';
+  const effectiveHandoverNote = isClosed
+    ? 'Đã hoàn tất nghiệm thu và quyết toán hợp đồng'
+    : isHandoverCompleted
+      ? (detail?.handoverConditionNote ||
+        contract.handoverConditionNote ||
+        'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao')
+      : isCancelledAtHandover
+        ? (detail?.handoverConditionNote || contract.handoverConditionNote || 'Không đạt chuẩn nhận kho do phát sinh sự cố hư hỏng tại chỗ')
+        : isRelocating
+          ? 'Ô kho phát sinh sự cố lúc tiếp đón. Cơ sở đang phân bổ lại ô kho mới cùng loại cho quý khách.'
+          : 'Đang chờ khách hàng xuất trình CCCD và mã e-Pass tại quầy lễ tân để tiến hành nghiệm thu thực địa.';
 
-  const relocationCode = isCancelledAtHandover
+  const relocationCode = (isCancelledAtHandover || isClosed)
     ? undefined
     : (detail?.relocationSupportRequestCode || contract.relocationSupportRequestCode);
   const relocationReason = detail?.relocationReason || contract.relocationReason;

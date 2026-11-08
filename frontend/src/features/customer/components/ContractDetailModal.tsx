@@ -85,14 +85,11 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
 
   const effectiveContractNumber = contract.contractNumber || effectiveDetail?.contractCode || `CTR-${contract.id}`;
   const effectiveStatus = (contract.status || effectiveDetail?.status) as string;
-  const isCancelledAtHandover =
-    effectiveStatus === 'TERMINATED' ||
-    (effectiveStatus === 'CLOSED' &&
-      !effectiveDetail?.checkinDate &&
-      !contract.checkinDate &&
-      (Boolean(effectiveDetail) || contract.startDate === contract.endDate));
+  const isCancelledAtHandover = effectiveStatus === 'TERMINATED';
+  const isClosed = effectiveStatus === 'CLOSED';
   const isRelocating =
     !isCancelledAtHandover &&
+    !isClosed &&
     (effectiveStatus === 'PENDING_CHECKIN' ||
       effectiveStatus === 'PENDING_CHECK_IN' ||
       effectiveStatus === 'ACTIVE') &&
@@ -119,29 +116,26 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
 
   const isHandoverCompleted =
     !isPendingCheckin &&
-    !isCancelledAtHandover &&
-    (effectiveStatus === 'ACTIVE' ||
-      effectiveStatus === 'OVERDUE' ||
-      effectiveStatus === 'PENDING_RETURN' ||
-      effectiveStatus === 'CLOSED' ||
-      Boolean(effectiveDetail?.checkinDate || contract.checkinDate || effectiveDetail?.customerConfirmedAt));
+    !isCancelledAtHandover;
 
   const effectiveCheckinDate = isHandoverCompleted
     ? (effectiveDetail?.checkinDate || contract.checkinDate || contract.startDate)
     : isCancelledAtHandover
-      ? 'Không nhận kho (Đã hủy hợp đồng do sự cố)'
+      ? 'Không nhận kho (Đã dừng hợp đồng do sự cố)'
       : 'Chưa thực hiện (Chờ làm thủ tục nhận kho tại quầy)';
   const effectiveHandoverStaff = isHandoverCompleted || isCancelledAtHandover
     ? (effectiveDetail?.handoverStaffName || contract.handoverStaffName || 'Nhân viên lễ tân cơ sở')
     : 'Chờ phân công tiếp đón tại quầy';
-  const effectiveHandoverNote = isHandoverCompleted
-    ? (effectiveDetail?.handoverConditionNote || contract.handoverConditionNote || 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao')
-    : isCancelledAtHandover
-      ? (effectiveDetail?.handoverConditionNote || contract.handoverConditionNote || 'Không đạt chuẩn nhận kho do phát sinh sự cố hư hỏng tại chỗ')
-      : isRelocating
-        ? 'Ô kho phát sinh sự cố lúc tiếp đón. Cơ sở đang phân bổ lại ô kho mới cùng loại cho quý khách.'
-        : 'Đang chờ khách hàng xuất trình CCCD và mã e-Pass tại quầy lễ tân để tiến hành nghiệm thu thực địa.';
-  const relocationId = isCancelledAtHandover
+  const effectiveHandoverNote = isClosed
+    ? 'Đã hoàn tất nghiệm thu và quyết toán hợp đồng'
+    : isHandoverCompleted
+      ? (effectiveDetail?.handoverConditionNote || contract.handoverConditionNote || 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao')
+      : isCancelledAtHandover
+        ? (effectiveDetail?.handoverConditionNote || contract.handoverConditionNote || 'Không đạt chuẩn nhận kho do phát sinh sự cố hư hỏng tại chỗ')
+        : isRelocating
+          ? 'Ô kho phát sinh sự cố lúc tiếp đón. Cơ sở đang phân bổ lại ô kho mới cùng loại cho quý khách.'
+          : 'Đang chờ khách hàng xuất trình CCCD và mã e-Pass tại quầy lễ tân để tiến hành nghiệm thu thực địa.';
+  const relocationId = (isCancelledAtHandover || isClosed)
     ? undefined
     : (effectiveDetail?.relocationSupportRequestId || contract.relocationSupportRequestId);
   const relocationCode = effectiveDetail?.relocationSupportRequestCode || contract.relocationSupportRequestCode || 'SUP-202610-0001';
@@ -272,13 +266,29 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                       <span>HỢP ĐỒNG ĐÃ DỪNG THỦ TỤC NHẬN KHO DO SỰ CỐ KỸ THUẬT</span>
                     </div>
                     <span className="text-[11px] font-mono font-bold bg-rose-200 text-rose-900 px-2 py-0.5 rounded">
-                      {effectiveStatus === 'CLOSED'
-                        ? 'Đã hủy & hoàn cọc 100%'
-                        : 'Hủy do sự cố bàn giao (Chờ hoàn cọc)'}
+                      Hủy do sự cố bàn giao (Chờ hoàn cọc)
                     </span>
                   </div>
                   <p className="text-xs text-rose-900 leading-relaxed">
                     Khách hàng từ chối nhận kho do phát hiện sự cố vật lý không đạt chuẩn. Hợp đồng đã dừng hiệu lực để hoàn tất thủ tục quyết toán hoàn trả 100% chi phí cho khách hàng.
+                  </p>
+                </div>
+              )}
+
+              {/* Banner Hợp đồng đã hoàn tất & tất toán */}
+              {isClosed && (
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5 animate-in fade-in duration-200 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-slate-800 font-extrabold text-xs uppercase tracking-wide">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                      <span>HỢP ĐỒNG ĐÃ KẾT THÚC & HOÀN TẤT TẤT TOÁN</span>
+                    </div>
+                    <span className="text-[11px] font-mono font-bold bg-slate-200/80 text-slate-700 px-2 py-0.5 rounded">
+                      Đã tất toán
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Hợp đồng đã hoàn thành chu kỳ thuê, hoàn tất biên bản bàn giao nghiệm thu và quyết toán toàn bộ các nghĩa vụ tài chính theo quy định.
                   </p>
                 </div>
               )}
@@ -397,6 +407,11 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                     <CheckSquare className="w-4 h-4 text-brand-600" />
                     <span>ĐIỀU 4: BIÊN BẢN BÀN GIAO & NGHIỆM THU TẠI CHỖ</span>
                   </h4>
+                  {isClosed && (
+                    <span className="text-[10px] font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                      Đã nghiệm thu & tất toán
+                    </span>
+                  )}
                   {isPendingCheckin && (
                     <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
                       {isRelocating ? 'Chờ đổi ô kho' : 'Chờ nghiệm thu tại quầy'}
