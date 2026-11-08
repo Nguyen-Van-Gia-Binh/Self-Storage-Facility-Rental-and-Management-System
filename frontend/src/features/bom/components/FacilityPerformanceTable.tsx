@@ -238,13 +238,13 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
         </div>
       </div>
 
-      {/* Bảng dữ liệu với Super-headers (2 tầng Thead) & Sticky Total Footer */}
+      {/* Bảng dữ liệu với Sticky Thead & Sticky Total Footer */}
       <div className="overflow-x-auto max-h-[560px]">
-        <table className="w-full text-left text-xs border-collapse">
+        <table className="w-full min-w-[1150px] text-left text-xs border-collapse whitespace-nowrap">
           {/* THEAD CỦA BẢNG KÈM SORT */}
           <thead className="sticky top-0 z-20 bg-slate-50 shadow-xs border-b border-slate-200">
             {/* Chi tiết từng cột kèm Sort */}
-            <tr className="text-slate-600 font-semibold uppercase tracking-wider text-[11px]">
+            <tr className="text-slate-600 font-semibold uppercase tracking-wider text-[11px] whitespace-nowrap">
               {/* 1. Tên cơ sở */}
               <th
                 scope="col"
@@ -456,7 +456,7 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
 
           {/* DÒNG TỔNG CỘNG TOÀN HỆ THỐNG (STICKY FOOTER NỔI BẬT KHÔNG BỊ ĐÈ) */}
           <tfoot className="sticky bottom-0 z-10 font-bold border-t-2 border-slate-300 text-slate-900 shadow-sm">
-            <tr className="bg-slate-100">
+            <tr className="bg-slate-100 whitespace-nowrap">
               <td className="bg-slate-100 py-3 px-4 text-xs uppercase tracking-wide">
                 <span>TỔNG CỘNG TOÀN HỆ THỐNG</span>
               </td>
