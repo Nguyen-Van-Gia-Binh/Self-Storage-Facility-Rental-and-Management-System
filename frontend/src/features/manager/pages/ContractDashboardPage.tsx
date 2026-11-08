@@ -82,9 +82,7 @@ export const ContractDashboardPage: React.FC = () => {
             c.status === 'PENDING_CHECK_IN' ||
             (c.status as string) === 'INSPECTED'
         ).length;
-        const overdue = facContracts.filter(
-          (c) => c.status === 'OVERDUE' || c.status === 'TERMINATED'
-        ).length;
+        const overdue = facContracts.filter((c) => c.status === 'OVERDUE').length;
 
         newStatsMap[fac.id] = { total, active, pending, overdue };
       });
@@ -111,9 +109,7 @@ export const ContractDashboardPage: React.FC = () => {
   const globalKpis = useMemo(() => {
     const total = allContracts.length;
     const active = allContracts.filter((c) => c.status === 'ACTIVE').length;
-    const overdue = allContracts.filter(
-      (c) => c.status === 'OVERDUE' || c.status === 'TERMINATED'
-    ).length;
+    const overdue = allContracts.filter((c) => c.status === 'OVERDUE').length;
     const pending = allContracts.filter(
       (c) =>
         c.status === 'PENDING_RETURN' ||

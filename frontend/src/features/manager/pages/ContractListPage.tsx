@@ -109,9 +109,7 @@ export const ContractListPage: React.FC = () => {
         c.status === 'RELOCATION_PENDING' ||
         (c.status as string) === 'INSPECTED'
     ).length;
-    const overdue = contracts.filter(
-      (c) => c.status === 'OVERDUE' || c.status === 'TERMINATED'
-    ).length;
+    const overdue = contracts.filter((c) => c.status === 'OVERDUE').length;
     return { total, active, pending, overdue };
   }, [contracts]);
 
