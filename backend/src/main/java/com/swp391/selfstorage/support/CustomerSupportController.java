@@ -13,6 +13,7 @@ import com.swp391.selfstorage.support.service.CustomerSupportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -24,14 +25,11 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/support-requests")
+@RequiredArgsConstructor
 @Tag(name = "Customer Support", description = "Gửi và theo dõi yêu cầu hỗ trợ sự cố của khách hàng (SC-06 / Task T4.7)")
 public class CustomerSupportController {
 
     private final CustomerSupportService customerSupportService;
-
-    public CustomerSupportController(CustomerSupportService customerSupportService) {
-        this.customerSupportService = customerSupportService;
-    }
 
     @PostMapping
     @PreAuthorize("hasRole('STORAGE_CUSTOMER') or hasRole('CUSTOMER')")

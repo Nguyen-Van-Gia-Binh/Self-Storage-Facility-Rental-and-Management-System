@@ -659,6 +659,7 @@ class ContractReturnServiceTest {
         }
 
         @Test
+        @Test
         @DisplayName("BR-RET-01 & BR-RET-06: Trả kho trong 7 ngày cuối hợp đồng (unusedDays <= 7) được tính là trả kho cuối kỳ đúng hạn, hoàn đủ 100% Deposit")
         void testEndOfTermReturnWindow_Within7Days_DoesNotForfeitDeposit() {
                 LocalDate returnDate = LocalDate.of(2026, 12, 7);
@@ -686,5 +687,57 @@ class ContractReturnServiceTest {
                 assertEquals(0L, preview.getEarlyRentRefund(), "Không hoàn tiền thuê lẻ những ngày cuối kỳ");
                 assertEquals(1_200_000L, preview.getDepositRefundAmount(), "Bảo toàn 100% tiền cọc Deposit cho khách");
                 assertEquals(0L, preview.getPayableAmount());
+        }
+
+        @Test
+        @DisplayName("SUP-TC-10 (SUP-07): applyCatalogFee cho phép DAMAGE/CLEANING, phân biệt PAID (thu tại chỗ) và UNPAID (ghi nợ trừ vào Deposit khi quyết toán)")
+        void testApplyCatalogFee_SupportsDamageAndPaidVsUnpaidStatus() {
+                RentalContract contract = RentalContract.builder()
+                                .id(700L)
+                                .facilityId(1L)
+                                .monthlyPrice(1_000_000L)
+                                .depositAmount(1_000_000L)
+                                .depositBalance(1_000_000L)
+                                .status(ContractStatus.ACTIVE)
+                                .build();
+
+                ExtraFeeType damageFee = ExtraFeeType.builder()
+                                .code("DMG-LOCK")
+                                .name("Thay ổ khóa bị gãy")
+                                .category("DAMAGE")
+                                .amount(300_000L)
+                                .feeType("FIXED")
+                                .facilityId(1L)
+                                .isActive(true)
+                                .build();
+                damageFee.setId(15L);
+
+                when(contractRepository.findByIdAndFacilityIdIn(eq(700L), anyList())).thenReturn(Optional.of(contract));
+                when(extraFeeTypeRepository.findById(15L)).thenReturn(Optional.of(damageFee));
+                when(extraChargeRepository.save(any(ContractExtraCharge.class))).thenAnswer(inv -> {
+                        ContractExtraCharge c = inv.getArgument(0);
+                        c.setId(88L);
+                        return c;
+                });
+
+                // 1. Khách chưa trả ngay (paid = false) -> Lưu UNPAID để trừ vào tiền cọc lúc trả kho
+                ApplyCatalogFeeRequest unpaidReq = ApplyCatalogFeeRequest.builder()
+                                .extraFeeTypeId(15L)
+                                .note("Khách chưa trả tại chỗ - ghi nợ vào hợp đồng")
+                                .paid(false)
+                                .build();
+                CatalogFeeChargeResponse unpaidRes = contractService.applyCatalogFee(700L, unpaidReq, 8L, List.of(1L));
+                assertEquals("UNPAID", unpaidRes.getStatus());
+                assertEquals(300_000L, unpaidRes.getAmount());
+
+                // 2. Khách đã trả trực tiếp tại chỗ (paid = true) -> Lưu PAID để không trừ lặp vào tiền cọc
+                ApplyCatalogFeeRequest paidReq = ApplyCatalogFeeRequest.builder()
+                                .extraFeeTypeId(15L)
+                                .note("Khách đã thanh toán tại quầy")
+                                .paid(true)
+                                .build();
+                CatalogFeeChargeResponse paidRes = contractService.applyCatalogFee(700L, paidReq, 8L, List.of(1L));
+                assertEquals("PAID", paidRes.getStatus());
+        }
         }
 }

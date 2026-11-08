@@ -97,18 +97,24 @@ public class StaffAssignmentServiceImpl implements StaffAssignmentService {
                 }
             }
         } else if ("INCIDENT".equals(taskTypeStr) || "SUPPORT".equals(taskTypeStr)) {
-            assignmentType = AssignmentTaskType.SUPPORT;
-            if (rawTaskId != null) {
-                try {
-                    staffSupportService.assignStaff(
-                            rawTaskId,
-                            new AssignStaffRequest(staffId, request.getResolvedInstructions()),
-                            currentUser
-                    );
-                } catch (Exception ex) {
-                    log.warn("Gọi staffSupportService.assignStaff thất bại cho ticket #{}: {}", rawTaskId, ex.getMessage());
-                }
+            if (rawTaskId == null) {
+                throw new CustomException(ErrorCode.VALIDATION_FAILED, "Thiếu mã yêu cầu hỗ trợ cần phân công");
             }
+            staffSupportService.assignStaff(
+                    rawTaskId,
+                    new AssignStaffRequest(staffId, request.getResolvedInstructions()),
+                    currentUser
+            );
+            return TaskAssignmentResponse.builder()
+                    .success(true)
+                    .message("Phân công nhiệm vụ thành công cho nhân viên " + staff.getFullName())
+                    .taskId(rawTaskId)
+                    .taskType(taskTypeStr)
+                    .assignedStaffId(staffId)
+                    .assignedStaffName(staff.getFullName())
+                    .status("ASSIGNED")
+                    .assignedAt(OffsetDateTime.now())
+                    .build();
         }
 
         if (userFacilityAssignmentRepository != null && targetFacilityId != null && targetFacilityId > 0) {

@@ -19,6 +19,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.OffsetDateTime;
@@ -35,6 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(StaffSupportController.class)
 @AutoConfigureMockMvc(addFilters = false)
+@EnableMethodSecurity
 class StaffSupportControllerTest {
 
     @Autowired
@@ -47,6 +50,7 @@ class StaffSupportControllerTest {
     private StaffSupportService staffSupportService;
 
     @Test
+    @WithMockUser(roles = "FACILITY_MANAGER")
     @DisplayName("PATCH /support-requests/{id}/assign trả về 200 OK khi phân công hợp lệ")
     void testAssignStaff_success() throws Exception {
         AssignStaffRequest request = AssignStaffRequest.builder()
@@ -77,6 +81,7 @@ class StaffSupportControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "FACILITY_MANAGER")
     @DisplayName("PATCH /support-requests/{id}/assign trả về 400 Bad Request khi thiếu staffId")
     void testAssignStaff_validationError() throws Exception {
         AssignStaffRequest request = new AssignStaffRequest(null, "Note");
@@ -88,6 +93,7 @@ class StaffSupportControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "FACILITY_STAFF")
     @DisplayName("PATCH /support-requests/{id}/in-progress trả về 200 OK")
     void testStartInProgress_success() throws Exception {
         SupportRequestDetailResponse response = SupportRequestDetailResponse.builder()
@@ -106,6 +112,7 @@ class StaffSupportControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "FACILITY_STAFF")
     @DisplayName("PATCH /support-requests/{id}/resolve trả về 200 OK khi giải quyết sự cố")
     void testResolveSupportRequest_success() throws Exception {
         ResolveSupportRequest request = ResolveSupportRequest.builder()
@@ -134,6 +141,7 @@ class StaffSupportControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "FACILITY_MANAGER")
     @DisplayName("GET /support-requests/staff-workload trả về danh sách tải công việc")
     void testGetStaffWorkload_success() throws Exception {
         StaffWorkloadResponse workload = StaffWorkloadResponse.builder()
@@ -156,6 +164,7 @@ class StaffSupportControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "FACILITY_MANAGER")
     @DisplayName("GET /management/support-requests trả về danh sách phân trang")
     void testGetManagementSupportRequests_success() throws Exception {
         SupportRequestSummaryResponse item = SupportRequestSummaryResponse.builder()
@@ -181,6 +190,7 @@ class StaffSupportControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "FACILITY_MANAGER")
     @DisplayName("GET /management/support-requests với status=OPEN tự động ánh xạ sang SupportStatus.NEW")
     void shouldMapOpenStatusToNewStatusInManagementSupportRequests() throws Exception {
         SupportRequestSummaryResponse item = SupportRequestSummaryResponse.builder()
@@ -202,5 +212,32 @@ class StaffSupportControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.data.content[0].id").value(802L));
+    }
+
+    @Test
+    @WithMockUser(roles = "FACILITY_STAFF")
+    @DisplayName("SUP-TC-09: Chặn FACILITY_STAFF gọi API phân công nhân viên (403 Forbidden)")
+    void shouldForbidFacilityStaffFromAssigningTicket() throws Exception {
+        AssignStaffRequest request = new AssignStaffRequest(8L, "Tự phân công");
+
+        mockMvc.perform(patch("/support-requests/801/assign")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "STORAGE_CUSTOMER")
+    @DisplayName("SUP-TC-09: Chặn STORAGE_CUSTOMER gọi API quản lý sự cố nội bộ (403 Forbidden)")
+    void shouldForbidStorageCustomerFromResolvingOrViewingWorkload() throws Exception {
+        ResolveSupportRequest request = new ResolveSupportRequest("Khách tự đóng ticket", List.of());
+
+        mockMvc.perform(patch("/support-requests/801/resolve")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/support-requests/staff-workload").param("facilityId", "1"))
+                .andExpect(status().isForbidden());
     }
 }

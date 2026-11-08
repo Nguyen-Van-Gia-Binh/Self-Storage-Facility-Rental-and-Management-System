@@ -560,19 +560,6 @@ export const IncidentDetailPage: React.FC = () => {
                 </button>
               )}
 
-              {/* Nút Tiến hành đổi ô kho trực tiếp nếu ticket yêu cầu di dời */}
-              {ticket.relocationRequired && (
-                <button
-                  type="button"
-                  disabled={actionLoading}
-                  onClick={handleOpenReassignModal}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all shrink-0 hover:shadow cursor-pointer"
-                >
-                  <ArrowRightLeft className="w-4 h-4" />
-                  <span>Tiến hành đổi ô kho</span>
-                </button>
-              )}
-
               {/* Nút Đóng sự cố (Chỉ hiển thị khi Staff đã xử lý xong sang RESOLVED) */}
               {ticket.status === 'RESOLVED' && (
                 ticket.relocationRequired ? (

@@ -18,4 +18,11 @@ public class ApplyCatalogFeeRequest {
     private Long extraFeeTypeId;
 
     private String note;
+
+    private Boolean paid;
+
+    public ApplyCatalogFeeRequest(Long extraFeeTypeId, String note) {
+        this.extraFeeTypeId = extraFeeTypeId;
+        this.note = note;
+    }
 }

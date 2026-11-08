@@ -167,11 +167,6 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
       return;
     }
 
-    if (faultParty === 'CUSTOMER' && !isCustomerPaidConfirmed) {
-      setErrorMsg('Khách hàng chưa thanh toán toàn bộ số phí. Vui lòng xác nhận đã thu đủ phí trước khi hoàn tất nghiệm thu.');
-      return;
-    }
-
     if (ticket.ticketId == null) {
       setErrorMsg('Phiếu sự cố không có mã từ hệ thống.');
       return;
@@ -181,20 +176,20 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
     setErrorMsg(null);
 
     try {
-      // Nếu lỗi do khách hàng và có phụ phí chọn + có contractId: ghi nhận phụ phí vào hợp đồng
+      // Nếu lỗi do khách hàng và có phụ phí chọn + có contractId: ghi nhận phụ phí vào hợp đồng (PAID hoặc UNPAID trừ cọc)
       if (faultParty === 'CUSTOMER' && selectedFeeIds.length > 0 && ticket.contractId != null) {
+        const payLabel = isCustomerPaidConfirmed
+          ? 'Khách đã thanh toán tại chỗ'
+          : 'Khách chưa trả — Ghi nợ trừ vào Tiền cọc';
         for (const feeId of selectedFeeIds) {
-          try {
-            const feeItem = allSurcharges.find((f) => f.id === feeId);
-            const feeName = feeItem ? feeItem.name : `Phụ phí #${feeId}`;
-            await applyCatalogFee(
-              ticket.contractId,
-              feeId,
-              `[Sự cố ${ticket.code || `SUP-${ticket.ticketId}`}] ${feeName} - Khách đã thanh toán`,
-            );
-          } catch (feeErr) {
-            console.warn('Lỗi ghi nhận phụ phí vào hợp đồng:', feeErr);
-          }
+          const feeItem = allSurcharges.find((f) => f.id === feeId);
+          const feeName = feeItem ? feeItem.name : `Phụ phí #${feeId}`;
+          await applyCatalogFee(
+            ticket.contractId,
+            feeId,
+            `[Sự cố ${ticket.code || `SUP-${ticket.ticketId}`}] ${feeName} - ${payLabel}`,
+            isCustomerPaidConfirmed,
+          );
         }
       }
 
@@ -217,7 +212,10 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
           .filter((f) => selectedFeeIds.includes(f.id))
           .map((f) => f.name)
           .join(', ');
-        faultSummary = `\n[Trách nhiệm: Lỗi do khách hàng | Phụ phí: ${selectedFeeNames || 'Không phát sinh phụ phí'} | Tổng thu: ${totalFeeAmount.toLocaleString('vi-VN')} đ | Đã thanh toán đầy đủ 100%${relocationText}]`;
+        const paymentStatusText = isCustomerPaidConfirmed
+          ? 'Đã thanh toán trực tiếp 100%'
+          : 'Chưa thanh toán tại chỗ (Ghi nợ UNPAID — Tự động khấu trừ Tiền cọc khi quyết toán)';
+        faultSummary = `\n[Trách nhiệm: Lỗi do khách hàng | Phụ phí: ${selectedFeeNames || 'Không phát sinh phụ phí'} | Tổng phí: ${totalFeeAmount.toLocaleString('vi-VN')} đ | Trạng thái: ${paymentStatusText}${relocationText}]`;
       }
 
       const fullResolutionNote = `${resolutionNote.trim()} ${faultSummary}`;
@@ -263,8 +261,7 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
     submitting ||
     !isAgreed ||
     !resolutionNote.trim() ||
-    faultParty === null ||
-    (faultParty === 'CUSTOMER' && !isCustomerPaidConfirmed);
+    faultParty === null;
 
   return createPortal(
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -619,28 +616,56 @@ export const StaffResolveIncidentModal: React.FC<StaffResolveIncidentModalProps>
                       </span>
                     </div>
 
-                    {/* CHECKBOX MÔ PHỎNG XÁC NHẬN THANH TOÁN BẮT BUỘC */}
-                    <label className="flex items-start gap-2.5 p-3 rounded-lg border border-rose-200 bg-white cursor-pointer hover:bg-rose-50/50 transition">
-                      <input
-                        type="checkbox"
-                        checked={isCustomerPaidConfirmed}
-                        onChange={(e) => setIsCustomerPaidConfirmed(e.target.checked)}
-                        className="mt-0.5 rounded border-rose-300 text-rose-600 focus:ring-rose-500 w-4 h-4 shrink-0"
-                      />
-                      <div className="text-xs">
-                        <span className="font-bold text-rose-900">
-                          Khách hàng đã thanh toán toàn bộ số phí cần phải trả
-                        </span>
-                        {totalFeeAmount > 0 && (
-                          <span className="font-mono font-bold text-rose-700 ml-1">
-                            ({totalFeeAmount.toLocaleString('vi-VN')} đ)
+                    {/* HÌNH THỨC THU PHÍ KHI LỖI DO KHÁCH HÀNG (SUP-07: PAID vs UNPAID) */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <label
+                        className={`flex items-start gap-2.5 p-3 rounded-lg border cursor-pointer transition ${
+                          isCustomerPaidConfirmed
+                            ? 'border-emerald-500 bg-emerald-50/70 ring-1 ring-emerald-500/20'
+                            : 'border-rose-200 bg-white hover:bg-rose-50/40'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="customerFeePaymentMode"
+                          checked={isCustomerPaidConfirmed}
+                          onChange={() => setIsCustomerPaidConfirmed(true)}
+                          className="mt-0.5 text-emerald-600 focus:ring-emerald-500 w-4 h-4 shrink-0"
+                        />
+                        <div className="text-xs">
+                          <span className="font-bold text-slate-900 block">
+                            Đã thu trực tiếp tại chỗ (PAID)
                           </span>
-                        )}
-                        <p className="text-[11px] text-rose-600 mt-0.5 font-normal leading-relaxed">
-                          * Nhân viên bắt buộc thu đủ tiền (tiền mặt / chuyển khoản) và đánh dấu xác nhận vào ô này mới có thể hoàn tất nghiệm thu sự cố.
-                        </p>
-                      </div>
-                    </label>
+                          <p className="text-[11px] text-slate-600 mt-0.5 font-normal leading-relaxed">
+                            Khách đã thanh toán tiền mặt/CK tại quầy. Không trừ lặp vào tiền cọc khi trả kho.
+                          </p>
+                        </div>
+                      </label>
+
+                      <label
+                        className={`flex items-start gap-2.5 p-3 rounded-lg border cursor-pointer transition ${
+                          !isCustomerPaidConfirmed
+                            ? 'border-amber-500 bg-amber-50/80 ring-1 ring-amber-500/20'
+                            : 'border-rose-200 bg-white hover:bg-rose-50/40'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="customerFeePaymentMode"
+                          checked={!isCustomerPaidConfirmed}
+                          onChange={() => setIsCustomerPaidConfirmed(false)}
+                          className="mt-0.5 text-amber-600 focus:ring-amber-500 w-4 h-4 shrink-0"
+                        />
+                        <div className="text-xs">
+                          <span className="font-bold text-slate-900 block">
+                            Khách chưa trả — Ghi nợ trừ Cọc (UNPAID)
+                          </span>
+                          <p className="text-[11px] text-slate-600 mt-0.5 font-normal leading-relaxed">
+                            Ghi nợ vào hợp đồng và tự động khấu trừ vào Tiền cọc (Deposit) khi quyết toán trả kho.
+                          </p>
+                        </div>
+                      </label>
+                    </div>
                   </div>
                 )}
               </div>

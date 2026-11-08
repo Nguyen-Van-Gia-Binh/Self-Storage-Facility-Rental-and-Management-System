@@ -7,8 +7,6 @@ import com.swp391.selfstorage.common.exception.ErrorCode;
 import com.swp391.selfstorage.contract.entity.ContractStatus;
 import com.swp391.selfstorage.contract.entity.RentalContract;
 import com.swp391.selfstorage.contract.repository.RentalContractRepository;
-import com.swp391.selfstorage.policy.entity.PolicyVersion;
-import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
 import com.swp391.selfstorage.facility.entity.Facility;
 import com.swp391.selfstorage.facility.repository.FacilityRepository;
 import com.swp391.selfstorage.support.dto.ConfirmResolutionRequest;
@@ -41,6 +39,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class CustomerSupportServiceImpl implements CustomerSupportService {
 
     private final SupportRequestRepository supportRequestRepository;
@@ -49,25 +48,6 @@ public class CustomerSupportServiceImpl implements CustomerSupportService {
     private final StorageUnitRepository storageUnitRepository;
     private final FacilityRepository facilityRepository;
     private final UserRepository userRepository;
-    private final PolicyVersionRepository policyVersionRepository;
-
-    public CustomerSupportServiceImpl(
-            SupportRequestRepository supportRequestRepository,
-            AttachmentRepository attachmentRepository,
-            RentalContractRepository rentalContractRepository,
-            StorageUnitRepository storageUnitRepository,
-            FacilityRepository facilityRepository,
-            UserRepository userRepository,
-            PolicyVersionRepository policyVersionRepository
-    ) {
-        this.supportRequestRepository = supportRequestRepository;
-        this.attachmentRepository = attachmentRepository;
-        this.rentalContractRepository = rentalContractRepository;
-        this.storageUnitRepository = storageUnitRepository;
-        this.facilityRepository = facilityRepository;
-        this.userRepository = userRepository;
-        this.policyVersionRepository = policyVersionRepository;
-    }
 
     private static final String ENTITY_TYPE_SUPPORT = "SUPPORT_REQUEST";
 
@@ -340,36 +320,33 @@ public class CustomerSupportServiceImpl implements CustomerSupportService {
     // --- Helper mapping methods ---
 
     private SupportRequestSummaryResponse mapToSummaryResponse(SupportRequest ticket) {
-        SupportRequestSummaryResponse dto = new SupportRequestSummaryResponse();
-        dto.setId(ticket.getId());
-        dto.setCode(ticket.getCode());
-        dto.setCustomerId(ticket.getCustomerId());
-        dto.setContractId(ticket.getContractId());
-        dto.setStorageUnitId(ticket.getStorageUnitId());
-        dto.setCategory(ticket.getCategory());
-        dto.setCategoryDisplayName(getCategoryDisplayName(ticket.getCategory()));
-        dto.setDescription(ticket.getDescription());
-        dto.setStatus(ticket.getStatus());
-        dto.setStatusDisplayName(getStatusDisplayName(ticket.getStatus()));
-        dto.setIsUrgent(ticket.isUrgent());
-        dto.setAssignedStaffId(ticket.getAssignedStaffId());
-        dto.setSlaDueAt(ticket.getSlaDueAt());
-        dto.setResolvedAt(ticket.getResolvedAt());
-        dto.setCreatedAt(ticket.getCreatedAt());
-        dto.setUpdatedAt(ticket.getUpdatedAt());
-        dto.setRelocationRequired(Boolean.TRUE.equals(ticket.getRelocationRequired()));
-        dto.setCustomerNotice(ticket.getCustomerNotice());
-        dto.setResolutionNote(ticket.getResolutionNote());
-
-        List<String> summaryResUrls = attachmentRepository
-                .findByEntityTypeAndEntityId("SUPPORT_RESOLUTION", ticket.getId())
-                .stream()
-                .map(Attachment::getFileUrl)
-                .toList();
-        dto.setResolutionAttachmentUrls(summaryResUrls);
-
-        enrichRelationInfo(dto, ticket);
-        return dto;
+        SupportRequestDetailResponse d = mapToDetailResponse(ticket, null);
+        return SupportRequestSummaryResponse.builder()
+                .id(d.getId())
+                .code(d.getCode())
+                .customerId(d.getCustomerId())
+                .contractId(d.getContractId())
+                .contractCode(d.getContractCode())
+                .storageUnitId(d.getStorageUnitId())
+                .storageUnitCode(d.getStorageUnitCode())
+                .facilityName(d.getFacilityName())
+                .category(d.getCategory())
+                .categoryDisplayName(d.getCategoryDisplayName())
+                .description(d.getDescription())
+                .status(d.getStatus())
+                .statusDisplayName(d.getStatusDisplayName())
+                .isUrgent(Boolean.TRUE.equals(d.getIsUrgent()))
+                .assignedStaffId(d.getAssignedStaffId())
+                .assignedStaffName(d.getAssignedStaffName())
+                .slaDueAt(d.getSlaDueAt())
+                .resolvedAt(d.getResolvedAt())
+                .createdAt(d.getCreatedAt())
+                .updatedAt(d.getUpdatedAt())
+                .relocationRequired(Boolean.TRUE.equals(d.getRelocationRequired()))
+                .customerNotice(d.getCustomerNotice())
+                .resolutionNote(d.getResolutionNote())
+                .resolutionAttachmentUrls(d.getResolutionAttachmentUrls())
+                .build();
     }
 
     private SupportRequestDetailResponse mapToDetailResponse(SupportRequest ticket, List<String> attachmentUrls) {
@@ -380,10 +357,10 @@ public class CustomerSupportServiceImpl implements CustomerSupportService {
         detail.setContractId(ticket.getContractId());
         detail.setStorageUnitId(ticket.getStorageUnitId());
         detail.setCategory(ticket.getCategory());
-        detail.setCategoryDisplayName(getCategoryDisplayName(ticket.getCategory()));
+        detail.setCategoryDisplayName(ticket.getCategory() != null ? ticket.getCategory().getDisplayName() : "");
         detail.setDescription(ticket.getDescription());
         detail.setStatus(ticket.getStatus());
-        detail.setStatusDisplayName(getStatusDisplayName(ticket.getStatus()));
+        detail.setStatusDisplayName(ticket.getStatus() != null ? ticket.getStatus().getDisplayName() : "");
         detail.setIsUrgent(ticket.isUrgent());
         detail.setAssignedStaffId(ticket.getAssignedStaffId());
         detail.setSlaDueAt(ticket.getSlaDueAt());
@@ -411,23 +388,6 @@ public class CustomerSupportServiceImpl implements CustomerSupportService {
         return detail;
     }
 
-    private void enrichRelationInfo(SupportRequestSummaryResponse dto, SupportRequest ticket) {
-        if (ticket.getContractId() != null) {
-            rentalContractRepository.findById(ticket.getContractId()).ifPresent(c -> {
-                dto.setContractCode(c.getCode());
-                if (c.getFacilityId() != null) {
-                    facilityRepository.findById(c.getFacilityId()).ifPresent(f -> dto.setFacilityName(f.getName()));
-                }
-            });
-        }
-        if (ticket.getStorageUnitId() != null) {
-            storageUnitRepository.findById(ticket.getStorageUnitId()).ifPresent(u -> dto.setStorageUnitCode(u.getCode()));
-        }
-        if (ticket.getAssignedStaffId() != null) {
-            userRepository.findById(ticket.getAssignedStaffId()).ifPresent(u -> dto.setAssignedStaffName(u.getFullName()));
-        }
-    }
-
     private void enrichRelationInfo(SupportRequestDetailResponse dto, SupportRequest ticket) {
         if (ticket.getContractId() != null) {
             rentalContractRepository.findById(ticket.getContractId()).ifPresent(c -> {
@@ -446,28 +406,5 @@ public class CustomerSupportServiceImpl implements CustomerSupportService {
         if (ticket.getAssignedStaffId() != null) {
             userRepository.findById(ticket.getAssignedStaffId()).ifPresent(u -> dto.setAssignedStaffName(u.getFullName()));
         }
-    }
-
-    private String getCategoryDisplayName(SupportCategory category) {
-        if (category == null) return "";
-        return switch (category) {
-            case UNIT_DAMAGE -> "Hư hại ô kho";
-            case LOCK_ACCESS -> "Sự cố khóa / Mã PIN ra vào";
-            case PAYMENT -> "Vấn đề thanh toán / Tiền cọc";
-            case BELONGINGS -> "Tài sản lưu trữ";
-            case OTHER -> "Sự cố khác";
-        };
-    }
-
-    private String getStatusDisplayName(SupportStatus status) {
-        if (status == null) return "";
-        return switch (status) {
-            case NEW -> "Mới tiếp nhận";
-            case ASSIGNED -> "Đã phân công";
-            case IN_PROGRESS -> "Đang xử lý";
-            case RESOLVED -> "Đã xử lý (Chờ nghiệm thu)";
-            case CLOSED -> "Đã đóng";
-            case AUTO_CLOSED -> "Tự động đóng";
-        };
     }
 }

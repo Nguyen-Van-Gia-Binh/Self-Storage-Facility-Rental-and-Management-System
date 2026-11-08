@@ -25,6 +25,7 @@ import com.swp391.selfstorage.user.entity.UserRole;
 import com.swp391.selfstorage.user.entity.UserStatus;
 import com.swp391.selfstorage.user.repository.UserFacilityAssignmentRepository;
 import com.swp391.selfstorage.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -34,9 +35,11 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class StaffSupportServiceImpl implements StaffSupportService {
 
     private final SupportRequestRepository supportRequestRepository;
@@ -48,39 +51,20 @@ public class StaffSupportServiceImpl implements StaffSupportService {
     private final UserRepository userRepository;
     private final UserFacilityAssignmentRepository userFacilityAssignmentRepository;
 
-    public StaffSupportServiceImpl(
-            SupportRequestRepository supportRequestRepository,
-            StaffDailyAssignmentRepository staffDailyAssignmentRepository,
-            AttachmentRepository attachmentRepository,
-            RentalContractRepository rentalContractRepository,
-            StorageUnitRepository storageUnitRepository,
-            FacilityRepository facilityRepository,
-            UserRepository userRepository,
-            UserFacilityAssignmentRepository userFacilityAssignmentRepository
-    ) {
-        this.supportRequestRepository = supportRequestRepository;
-        this.staffDailyAssignmentRepository = staffDailyAssignmentRepository;
-        this.attachmentRepository = attachmentRepository;
-        this.rentalContractRepository = rentalContractRepository;
-        this.storageUnitRepository = storageUnitRepository;
-        this.facilityRepository = facilityRepository;
-        this.userRepository = userRepository;
-        this.userFacilityAssignmentRepository = userFacilityAssignmentRepository;
-    }
-
     @Override
     public SupportRequestDetailResponse assignStaff(Long requestId, AssignStaffRequest request, UserPrincipal currentUser) {
         SupportRequest ticket = supportRequestRepository.findById(requestId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SUPPORT_REQUEST_NOT_FOUND));
 
-        Long facilityId = resolveFacilityId(ticket);
-
-        // Kiểm tra phân quyền: Facility Manager chỉ được phân công cơ sở của mình
-        if (currentUser.getRole() == UserRole.FACILITY_MANAGER) {
-            if (facilityId != null && (currentUser.getFacilityIds() == null || !currentUser.getFacilityIds().contains(facilityId))) {
-                throw new CustomException(ErrorCode.ACCESS_DENIED, "Bạn không quản lý cơ sở của yêu cầu hỗ trợ này");
-            }
+        if (ticket.getStatus() != SupportStatus.NEW
+                && ticket.getStatus() != SupportStatus.ASSIGNED
+                && ticket.getStatus() != SupportStatus.IN_PROGRESS) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                    "Không thể phân công phiếu hỗ trợ đã xử lý hoặc đã đóng");
         }
+
+        Long facilityId = resolveFacilityId(ticket);
+        validateTicketAccess(ticket, facilityId, currentUser, false);
 
         // Kiểm tra nhân viên được gán
         AppUser staff = userRepository.findById(request.getStaffId())
@@ -109,17 +93,19 @@ public class StaffSupportServiceImpl implements StaffSupportService {
         ticket.setUpdatedAt(OffsetDateTime.now());
         supportRequestRepository.save(ticket);
 
-        // Lưu bảng phân công công việc hằng ngày
-        StaffDailyAssignment dailyAssignment = StaffDailyAssignment.builder()
-                .staffId(staff.getId())
-                .facilityId(facilityId != null ? facilityId : 1L)
-                .workDate(LocalDate.now())
-                .taskType(AssignmentTaskType.SUPPORT)
-                .referenceType("SUPPORT_REQUEST")
-                .referenceId(ticket.getId())
-                .assignedBy(currentUser.getId())
-                .createdAt(OffsetDateTime.now())
-                .build();
+        // Upsert bảng phân công công việc hằng ngày (SUP-02: tránh trùng lặp khi re-assign)
+        StaffDailyAssignment dailyAssignment = staffDailyAssignmentRepository
+                .findByReferenceTypeAndReferenceId("SUPPORT_REQUEST", ticket.getId())
+                .orElseGet(() -> StaffDailyAssignment.builder()
+                        .referenceType("SUPPORT_REQUEST")
+                        .referenceId(ticket.getId())
+                        .createdAt(OffsetDateTime.now())
+                        .build());
+        dailyAssignment.setStaffId(staff.getId());
+        dailyAssignment.setFacilityId(facilityId != null ? facilityId : 1L);
+        dailyAssignment.setWorkDate(LocalDate.now());
+        dailyAssignment.setTaskType(AssignmentTaskType.SUPPORT);
+        dailyAssignment.setAssignedBy(currentUser != null ? currentUser.getId() : 1L);
         staffDailyAssignmentRepository.save(dailyAssignment);
 
         return mapToDetailResponse(ticket);
@@ -130,12 +116,12 @@ public class StaffSupportServiceImpl implements StaffSupportService {
         SupportRequest ticket = supportRequestRepository.findById(requestId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SUPPORT_REQUEST_NOT_FOUND));
 
-        // Kiểm tra phân quyền: Staff chỉ được xử lý ticket phân công cho mình
-        if (currentUser.getRole() == UserRole.FACILITY_STAFF) {
-            if (ticket.getAssignedStaffId() != null && !ticket.getAssignedStaffId().equals(currentUser.getId())) {
-                throw new CustomException(ErrorCode.SUPPORT_REQUEST_NOT_ASSIGNED_TO_STAFF);
-            }
+        if (ticket.getStatus() != SupportStatus.ASSIGNED && ticket.getStatus() != SupportStatus.NEW) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED,
+                    "Chỉ có thể bắt đầu xử lý phiếu đang ở trạng thái Đã phân công");
         }
+
+        validateTicketAccess(ticket, resolveFacilityId(ticket), currentUser, true);
 
         ticket.setStatus(SupportStatus.IN_PROGRESS);
         ticket.setUpdatedAt(OffsetDateTime.now());
@@ -149,17 +135,13 @@ public class StaffSupportServiceImpl implements StaffSupportService {
         SupportRequest ticket = supportRequestRepository.findById(requestId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SUPPORT_REQUEST_NOT_FOUND));
 
-        if (currentUser.getRole() == UserRole.FACILITY_STAFF) {
-            if (ticket.getAssignedStaffId() != null && !ticket.getAssignedStaffId().equals(currentUser.getId())) {
-                throw new CustomException(ErrorCode.SUPPORT_REQUEST_NOT_ASSIGNED_TO_STAFF);
-            }
-        }
-
         if (ticket.getStatus() != SupportStatus.NEW
                 && ticket.getStatus() != SupportStatus.ASSIGNED
                 && ticket.getStatus() != SupportStatus.IN_PROGRESS) {
             throw new CustomException(ErrorCode.VALIDATION_FAILED, "Phiếu sự cố không còn mở nên không đổi được cờ di dời.");
         }
+
+        validateTicketAccess(ticket, resolveFacilityId(ticket), currentUser, true);
 
         ticket.setRelocationRequired(required);
         ticket.setUpdatedAt(OffsetDateTime.now());
@@ -172,19 +154,14 @@ public class StaffSupportServiceImpl implements StaffSupportService {
         SupportRequest ticket = supportRequestRepository.findById(requestId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SUPPORT_REQUEST_NOT_FOUND));
 
-        // Kiểm tra phân quyền
-        if (currentUser.getRole() == UserRole.FACILITY_STAFF) {
-            if (ticket.getAssignedStaffId() != null && !ticket.getAssignedStaffId().equals(currentUser.getId())) {
-                throw new CustomException(ErrorCode.SUPPORT_REQUEST_NOT_ASSIGNED_TO_STAFF);
-            }
-        }
-
         // Cho phép resolve khi ticket ở trạng thái ASSIGNED hoặc IN_PROGRESS (hoặc RESOLVED đối với quản lý muốn đóng ticket)
         if (ticket.getStatus() != SupportStatus.ASSIGNED
                 && ticket.getStatus() != SupportStatus.IN_PROGRESS
                 && ticket.getStatus() != SupportStatus.RESOLVED) {
             throw new CustomException(ErrorCode.SUPPORT_REQUEST_CANNOT_BE_RESOLVED);
         }
+
+        validateTicketAccess(ticket, resolveFacilityId(ticket), currentUser, true);
 
         if (request.getResolutionAttachmentUrls() != null && request.getResolutionAttachmentUrls().size() > 5) {
             throw new CustomException(ErrorCode.VALIDATION_FAILED, "Tối đa 5 ảnh hiện trạng sau sửa chữa");
@@ -256,10 +233,8 @@ public class StaffSupportServiceImpl implements StaffSupportService {
                 long activeTasks = supportRequestRepository.countByAssignedStaffIdAndStatusIn(
                         staff.getId(), List.of(SupportStatus.ASSIGNED, SupportStatus.IN_PROGRESS)
                 );
-                long completedTasks = supportRequestRepository.countByAssignedStaffIdAndStatus(
-                        staff.getId(), SupportStatus.RESOLVED
-                ) + supportRequestRepository.countByAssignedStaffIdAndStatus(
-                        staff.getId(), SupportStatus.CLOSED
+                long completedTasks = supportRequestRepository.countByAssignedStaffIdAndStatusIn(
+                        staff.getId(), List.of(SupportStatus.RESOLVED, SupportStatus.CLOSED, SupportStatus.AUTO_CLOSED)
                 );
 
                 workloadList.add(StaffWorkloadResponse.builder()
@@ -338,15 +313,31 @@ public class StaffSupportServiceImpl implements StaffSupportService {
         SupportRequest ticket = supportRequestRepository.findById(requestId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SUPPORT_REQUEST_NOT_FOUND));
 
-        Long facilityId = resolveFacilityId(ticket);
+        validateTicketAccess(ticket, resolveFacilityId(ticket), currentUser, false);
 
+        return mapToDetailResponse(ticket);
+    }
+
+    private void validateTicketAccess(SupportRequest ticket, Long facilityId, UserPrincipal currentUser, boolean requireAssignedStaff) {
+        if (currentUser == null) {
+            return;
+        }
         if (currentUser.getRole() == UserRole.FACILITY_MANAGER) {
             if (facilityId != null && (currentUser.getFacilityIds() == null || !currentUser.getFacilityIds().contains(facilityId))) {
                 throw new CustomException(ErrorCode.ACCESS_DENIED, "Bạn không quản lý cơ sở của yêu cầu hỗ trợ này");
             }
+        } else if (currentUser.getRole() == UserRole.FACILITY_STAFF) {
+            if (requireAssignedStaff) {
+                if (!Objects.equals(ticket.getAssignedStaffId(), currentUser.getId())) {
+                    throw new CustomException(ErrorCode.SUPPORT_REQUEST_NOT_ASSIGNED_TO_STAFF);
+                }
+            } else if (facilityId != null
+                    && currentUser.getFacilityIds() != null
+                    && !currentUser.getFacilityIds().isEmpty()
+                    && !currentUser.getFacilityIds().contains(facilityId)) {
+                throw new CustomException(ErrorCode.ACCESS_DENIED, "Bạn không thuộc cơ sở của yêu cầu hỗ trợ này");
+            }
         }
-
-        return mapToDetailResponse(ticket);
     }
 
     private Long resolveFacilityId(SupportRequest ticket) {
@@ -477,88 +468,36 @@ public class StaffSupportServiceImpl implements StaffSupportService {
     }
 
     private SupportRequestSummaryResponse mapToSummaryResponse(SupportRequest ticket) {
-        Long facilityId = resolveFacilityId(ticket);
-        String facilityName = null;
-        if (facilityId != null) {
-            facilityName = facilityRepository.findById(facilityId)
-                    .map(Facility::getName).orElse(null);
-        }
-
-        String contractCode = null;
-        if (ticket.getContractId() != null) {
-            RentalContract contract = rentalContractRepository.findById(ticket.getContractId()).orElse(null);
-            if (contract != null) {
-                contractCode = contract.getCode();
-            }
-        }
-
-        String storageUnitCode = null;
-        if (ticket.getStorageUnitId() != null) {
-            StorageUnit unit = storageUnitRepository.findById(ticket.getStorageUnitId()).orElse(null);
-            if (unit != null) {
-                storageUnitCode = unit.getCode();
-            }
-        }
-
-        String assignedStaffName = null;
-        if (ticket.getAssignedStaffId() != null) {
-            AppUser staff = userRepository.findById(ticket.getAssignedStaffId()).orElse(null);
-            if (staff != null) {
-                assignedStaffName = staff.getFullName();
-            }
-        }
-
-        String customerName = null;
-        String customerPhone = null;
-        if (ticket.getCustomerId() != null) {
-            AppUser customer = userRepository.findById(ticket.getCustomerId()).orElse(null);
-            if (customer != null) {
-                customerName = customer.getFullName();
-                customerPhone = customer.getPhone();
-            }
-        }
-
-        List<String> attachmentUrls = attachmentRepository
-                .findByEntityTypeAndEntityId("SUPPORT_REQUEST", ticket.getId())
-                .stream()
-                .map(Attachment::getFileUrl)
-                .toList();
-
-        List<String> resolutionAttachmentUrls = attachmentRepository
-                .findByEntityTypeAndEntityId("SUPPORT_RESOLUTION", ticket.getId())
-                .stream()
-                .map(Attachment::getFileUrl)
-                .toList();
-
+        SupportRequestDetailResponse d = mapToDetailResponse(ticket);
         return SupportRequestSummaryResponse.builder()
-                .id(ticket.getId())
-                .code(ticket.getCode())
-                .customerId(ticket.getCustomerId())
-                .customerName(customerName)
-                .customerPhone(customerPhone)
-                .contractId(ticket.getContractId())
-                .contractCode(contractCode)
-                .storageUnitId(ticket.getStorageUnitId())
-                .storageUnitCode(storageUnitCode)
-                .facilityId(facilityId)
-                .facilityName(facilityName)
-                .category(ticket.getCategory())
-                .categoryDisplayName(ticket.getCategory() != null ? ticket.getCategory().getDisplayName() : null)
-                .description(ticket.getDescription())
-                .status(ticket.getStatus())
-                .statusDisplayName(ticket.getStatus() != null ? ticket.getStatus().getDisplayName() : null)
-                .isUrgent(ticket.isUrgent())
-                .assignedStaffId(ticket.getAssignedStaffId())
-                .assignedStaffName(assignedStaffName)
-                .slaDueAt(ticket.getSlaDueAt())
-                .resolvedAt(ticket.getResolvedAt())
-                .createdAt(ticket.getCreatedAt())
-                .updatedAt(ticket.getUpdatedAt())
-                .relocationRequired(Boolean.TRUE.equals(ticket.getRelocationRequired()))
-                .customerNotice(ticket.getCustomerNotice())
-                .resolutionNote(ticket.getResolutionNote())
-                .resolutionAttachmentUrls(resolutionAttachmentUrls)
-                .attachmentUrls(attachmentUrls)
+                .id(d.getId())
+                .code(d.getCode())
+                .customerId(d.getCustomerId())
+                .customerName(d.getCustomerName())
+                .customerPhone(d.getCustomerPhone())
+                .contractId(d.getContractId())
+                .contractCode(d.getContractCode())
+                .storageUnitId(d.getStorageUnitId())
+                .storageUnitCode(d.getStorageUnitCode())
+                .facilityId(d.getFacilityId())
+                .facilityName(d.getFacilityName())
+                .category(d.getCategory())
+                .categoryDisplayName(d.getCategoryDisplayName())
+                .description(d.getDescription())
+                .status(d.getStatus())
+                .statusDisplayName(d.getStatusDisplayName())
+                .isUrgent(d.isUrgent())
+                .assignedStaffId(d.getAssignedStaffId())
+                .assignedStaffName(d.getAssignedStaffName())
+                .slaDueAt(d.getSlaDueAt())
+                .resolvedAt(d.getResolvedAt())
+                .createdAt(d.getCreatedAt())
+                .updatedAt(d.getUpdatedAt())
+                .relocationRequired(d.isRelocationRequired())
+                .customerNotice(d.getCustomerNotice())
+                .resolutionNote(d.getResolutionNote())
+                .resolutionAttachmentUrls(d.getResolutionAttachmentUrls())
+                .attachmentUrls(d.getAttachmentUrls())
                 .build();
     }
 }

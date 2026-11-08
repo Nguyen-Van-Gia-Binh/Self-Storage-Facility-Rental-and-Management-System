@@ -149,7 +149,7 @@ public class ContractServiceImpl implements ContractService {
 
         private static final String LEGACY_DAMAGE_REASON = "Bồi thường hư hại ô kho";
         private static final Set<String> INSPECTION_FEE_CATEGORIES = Set.of("CLEANING", "DAMAGE");
-        private static final Set<String> RENTAL_FEE_CATEGORIES = Set.of("ACCESS_KEY", "VALUE_ADDED");
+        private static final Set<String> RENTAL_FEE_CATEGORIES = Set.of("ACCESS_KEY", "VALUE_ADDED", "CLEANING", "DAMAGE");
 
         @Override
         @Transactional
@@ -798,6 +798,9 @@ public class ContractServiceImpl implements ContractService {
                 SupportRequest ticket = null;
                 if (request.getSupportRequestId() != null && supportRequestRepository != null) {
                         ticket = supportRequestRepository.findById(request.getSupportRequestId()).orElse(null);
+                        if (ticket != null && ticket.getContractId() != null && !ticket.getContractId().equals(contract.getId())) {
+                                throw new CustomException(ErrorCode.VALIDATION_FAILED, "Phiếu sự cố không thuộc hợp đồng này.");
+                        }
                 }
                 if (ticket == null && supportRequestRepository != null) {
                         ticket = supportRequestRepository.findTopByContractIdOrderByCreatedAtDesc(contractId).orElse(null);
@@ -842,7 +845,8 @@ public class ContractServiceImpl implements ContractService {
                         throw new CustomException(ErrorCode.VALIDATION_FAILED, "Ô kho mới trùng với ô kho hiện tại.");
                 }
 
-                StorageUnit newUnit = storageUnitRepository.findById(request.getNewStorageUnitId())
+                StorageUnit newUnit = storageUnitRepository.findByIdForUpdate(request.getNewStorageUnitId())
+                                .or(() -> storageUnitRepository.findById(request.getNewStorageUnitId()))
                                 .orElseThrow(() -> new CustomException(ErrorCode.STORAGE_UNIT_NOT_FOUND, "Không tìm thấy ô kho mới."));
 
                 if (!newUnit.getFacilityId().equals(contract.getFacilityId())) {
@@ -854,7 +858,8 @@ public class ContractServiceImpl implements ContractService {
                 }
 
                 Long oldUnitId = contract.getStorageUnitId();
-                StorageUnit oldUnit = storageUnitRepository.findById(oldUnitId)
+                StorageUnit oldUnit = storageUnitRepository.findByIdForUpdate(oldUnitId)
+                                .or(() -> storageUnitRepository.findById(oldUnitId))
                                 .orElseThrow(() -> new CustomException(ErrorCode.STORAGE_UNIT_NOT_FOUND, "Không tìm thấy ô kho hiện tại."));
                 String oldCode = oldUnit.getCode() != null ? oldUnit.getCode() : ("U-" + oldUnitId);
 
@@ -1346,13 +1351,16 @@ public class ContractServiceImpl implements ContractService {
                 ExtraFeeType fee = requireApplicableFee(request.getExtraFeeTypeId(), contract, RENTAL_FEE_CATEGORIES);
                 long amount = snapshotFeeAmount(fee, contract.getMonthlyPrice());
                 String note = request.getNote() == null ? "" : request.getNote().trim();
+                ExtraChargeStatus chargeStatus = Boolean.TRUE.equals(request.getPaid())
+                                ? ExtraChargeStatus.PAID
+                                : ExtraChargeStatus.UNPAID;
                 ContractExtraCharge saved = extraChargeRepository.save(ContractExtraCharge.builder()
                                 .contractId(contract.getId())
                                 .extraFeeTypeId(fee.getId())
                                 .amount(amount)
                                 .reason(fee.getCategory() + ": " + fee.getName() + (note.isBlank() ? "" : " — " + note))
                                 .recordedBy(actorId)
-                                .status(ExtraChargeStatus.UNPAID)
+                                .status(chargeStatus)
                                 .build());
                 return CatalogFeeChargeResponse.builder()
                                 .id(saved.getId())

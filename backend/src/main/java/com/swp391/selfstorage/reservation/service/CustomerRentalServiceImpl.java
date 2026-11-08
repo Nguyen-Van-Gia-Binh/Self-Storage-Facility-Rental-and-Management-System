@@ -526,6 +526,12 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
             throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION, "Chỉ có thể đổi mã PIN khi hợp đồng đang kích hoạt hoặc trong hạn cho phép");
         }
 
+        // SUP-01 (BR-OVD-05 & BR-ACC-02): Chặn đổi PIN khi quyền truy cập đã bị đình chỉ ở mốc D+7 (accessCode == null)
+        if (contract.getStatus() == ContractStatus.OVERDUE
+                && (contract.getAccessCode() == null || contract.getAccessCode().isBlank())) {
+            throw new CustomException(ErrorCode.ACCESS_SUSPENDED_OVERDUE);
+        }
+
         int pinLength = PolicyNumbers.snapshotInt(contract.getPolicySnapshot(), "accessPinLength", 6);
         String newPin = request.getNewPin() == null ? "" : request.getNewPin().trim();
         if (!newPin.matches("\\d{" + pinLength + "}")) {
