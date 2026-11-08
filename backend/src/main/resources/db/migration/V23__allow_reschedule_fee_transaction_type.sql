@@ -12,3 +12,4 @@ ALTER TABLE payment_transaction
         'OVERDUE_PENALTY',
         'RESCHEDULE_FEE'
     ));
+
