@@ -31,9 +31,16 @@ export const WaitlistRegistrationModal: React.FC<WaitlistRegistrationModalProps>
 }) => {
   const user = useCurrentUser();
   const todayStr = new Date().toISOString().split('T')[0];
+  const maxWaitlistDate = React.useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    return d.toISOString().split('T')[0];
+  }, []);
 
   const [targetStartDate, setTargetStartDate] = useState<string>(
-    initialStartDate && initialStartDate >= todayStr ? initialStartDate : todayStr
+    initialStartDate && initialStartDate >= todayStr && initialStartDate <= maxWaitlistDate
+      ? initialStartDate
+      : todayStr
   );
   const [rentalMonths, setRentalMonths] = useState<number>(initialRentalMonths || 1);
   const [phoneNumber, setPhoneNumber] = useState<string>(user?.phone || '');
@@ -93,6 +100,10 @@ export const WaitlistRegistrationModal: React.FC<WaitlistRegistrationModalProps>
     const cleanPhone = phoneNumber.trim();
     if (!cleanPhone || !/^0\d{9}$/.test(cleanPhone)) {
       setErrorMsg('Số điện thoại liên hệ không hợp lệ. Vui lòng nhập đúng 10 chữ số bắt đầu bằng số 0.');
+      return;
+    }
+    if (targetStartDate > maxWaitlistDate) {
+      setErrorMsg('Danh sách chờ chỉ áp dụng cho nhu cầu thuê trong vòng 30 ngày tới khi cơ sở hết kho trống. Vui lòng chọn ngày trong vòng 30 ngày.');
       return;
     }
     setErrorMsg(null);
@@ -161,7 +172,7 @@ export const WaitlistRegistrationModal: React.FC<WaitlistRegistrationModalProps>
               </div>
               <div>
                 <h3 className="text-lg font-bold text-slate-900">Đăng ký Danh sách chờ (Waitlist)</h3>
-                <p className="text-xs text-slate-500">Dành cho kho đang hết chỗ hoặc khách hàng, doanh nghiệp muốn đặt trước dài hạn</p>
+                <p className="text-xs text-slate-500">Dành cho khách hàng muốn đặt kho trong vòng 30 ngày tới nhưng cơ sở đã hết chỗ trống</p>
               </div>
             </div>
 
@@ -195,20 +206,12 @@ export const WaitlistRegistrationModal: React.FC<WaitlistRegistrationModalProps>
                   <span>Bạn có thể đóng modal này và bấm <strong>Đặt kho ngay</strong> thay vì phải chờ đợi.</span>
                 </div>
               </div>
-            ) : availableSlots === 0 ? (
+            ) : (
               <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex items-start gap-2">
                 <Info className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" />
                 <div>
                   <strong className="block font-semibold">Hạng kho hiện đang kín chỗ trong đợt này</strong>
                   <span>Yêu cầu của bạn sẽ được ưu tiên xếp vào hàng đợi FIFO. FM sẽ gọi điện ngay khi có ô kho trả sớm.</span>
-                </div>
-              </div>
-            ) : (
-              <div className="p-3 bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-xs flex items-start gap-2">
-                <Info className="w-4 h-4 shrink-0 mt-0.5 text-slate-500" />
-                <div>
-                  <strong className="block font-semibold">Đăng ký lịch thuê trước cho tương lai</strong>
-                  <span>Hệ thống CRM sẽ ghi nhận nhu cầu của bạn/doanh nghiệp để Quản lý cơ sở (FM) liên hệ tư vấn và giữ chỗ sớm nhất.</span>
                 </div>
               </div>
             )}
@@ -241,11 +244,13 @@ export const WaitlistRegistrationModal: React.FC<WaitlistRegistrationModalProps>
                 <input
                   type="date"
                   min={todayStr}
+                  max={maxWaitlistDate}
                   value={targetStartDate}
                   onChange={(e) => setTargetStartDate(e.target.value)}
                   required
                   className="w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none"
                 />
+                <p className="text-[11px] text-slate-500 mt-1">Hệ thống tiếp nhận nhu cầu thuê trong vòng 30 ngày tới khi cơ sở đã kín chỗ.</p>
               </div>
 
               <div>

@@ -91,6 +91,16 @@ public class WaitlistServiceImpl implements WaitlistService {
             throw new CustomException(ErrorCode.INVALID_START_DATE, "Ngày mong muốn thuê phải từ hôm nay trở đi");
         }
 
+        int rentalMonths = Math.max(1, request.getRentalMonths());
+        LocalDate targetStartDate = request.getTargetStartDate() != null ? request.getTargetStartDate() : LocalDate.now();
+
+        // BR-WAT-01, BR-WAT-06: Khống chế Cửa sổ Waitlist tối đa 30 ngày (1 tháng)
+        long daysUntilStart = ChronoUnit.DAYS.between(LocalDate.now(), targetStartDate);
+        if (daysUntilStart > 30) {
+            throw new CustomException(ErrorCode.ADVANCE_BOOKING_LIMIT_EXCEEDED,
+                    "Danh sách chờ chỉ áp dụng cho nhu cầu thuê trong vòng 30 ngày tới khi cơ sở hết kho trống. Vui lòng chọn ngày trong vòng 30 ngày tới.");
+        }
+
         // Chặn trùng lặp đơn chờ đang hiệu lực
         boolean exists = waitlistRepository.existsByCustomerIdAndFacilityIdAndUnitTypeIdAndStatusIn(
                 customerId, request.getFacilityId(), request.getUnitTypeId(),
@@ -100,11 +110,8 @@ public class WaitlistServiceImpl implements WaitlistService {
             throw new CustomException(ErrorCode.WAITLIST_ALREADY_EXISTS);
         }
 
-        int rentalMonths = Math.max(1, request.getRentalMonths());
-        LocalDate targetStartDate = request.getTargetStartDate() != null ? request.getTargetStartDate() : LocalDate.now();
-
         // Kiểm tra nếu trong 30 ngày tới mà hạng kho vẫn còn capacity trống -> hướng dẫn đặt trực tiếp
-        if (ChronoUnit.DAYS.between(LocalDate.now(), targetStartDate) <= 30 && storageUnitRepository != null) {
+        if (storageUnitRepository != null) {
             PolicyVersion policy = policyVersionRepository
                     .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(OffsetDateTime.now(ZoneOffset.UTC))
                     .orElse(null);
@@ -119,7 +126,8 @@ public class WaitlistServiceImpl implements WaitlistService {
                     request.getFacilityId(), request.getUnitTypeId(), targetStartDate, endDateExclusive, OffsetDateTime.now(ZoneOffset.UTC), bufferDays);
             long available = Math.max(0, exploitable - busy - unassigned);
             if (available > 0) {
-                throw new CustomException(ErrorCode.CAPACITY_AVAILABLE_SHOULD_BOOK_NOW);
+                throw new CustomException(ErrorCode.CAPACITY_AVAILABLE_SHOULD_BOOK_NOW,
+                        "Khoảng thời gian này hiện đang còn " + available + " ô kho trống! Quý khách vui lòng đặt trực tiếp thay vì vào danh sách chờ.");
             }
         }
 

@@ -275,7 +275,7 @@ _Đặt chỗ bằng cách chọn cơ sở, loại ô kho, ngày bắt đầu v�
 
 **Acceptance Criteria**
 
-- **AC-1 (Đăng ký miễn phí):** _Given_ một loại kho tại cơ sở có công suất khả dụng bằng 0 (`available = 0`), _when_ tôi bấm "Đăng ký Danh sách chờ" và chọn ngày mong muốn bắt đầu thuê (`target_start_date`), _then_ hệ thống lưu bản ghi hàng đợi miễn phí (0 VNĐ) và xếp tôi theo thứ tự FIFO `BR-WAT-01`.
+- **AC-1 (Đăng ký miễn phí trong Cửa sổ 30 ngày):** _Given_ một loại kho tại cơ sở có công suất khả dụng bằng 0 (`available = 0`) trong cửa sổ 30 ngày tới, _when_ tôi bấm "Đăng ký Danh sách chờ" và chọn ngày mong muốn bắt đầu thuê (`target_start_date` trong vòng 30 ngày), _then_ hệ thống lưu bản ghi hàng đợi miễn phí (0 VNĐ) và xếp tôi theo thứ tự FIFO `BR-WAT-01`. Nếu chọn ngày vượt quá 30 ngày hoặc kho vẫn còn chỗ trống, hệ thống từ chối đăng ký chờ.
 - **AC-2 (Nhận tư vấn độc quyền 2h từ FM):** _Given_ đến lượt tôi trong danh sách chờ khi có kho trống, _when_ FM bấm "Bắt đầu tư vấn", _then_ hệ thống chuyển hồ sơ sang `CONTACTING` và khóa độc quyền 2 giờ cho FM đó hỗ trợ `BR-WAT-02`.
 - **AC-3 (Thanh toán cọc 24h khi chốt thuê):** _Given_ tôi đồng ý thuê sau khi được FM tư vấn, _when_ FM bấm tạo đơn cọc, _then_ hệ thống gửi SMS/Email kèm đơn Reservation (`PENDING_PAYMENT`) để tôi hoàn tất thanh toán cọc trong 24 giờ qua VNPay `BR-WAT-03`.
 - **AC-4 (Nhắc nhở và Gia hạn T-3):** _Given_ đến mốc trước 3 ngày so với `target_start_date` mà chưa có kho, _when_ tôi nhận được thông báo nhắc hẹn, _then_ tôi có thể bấm link gia hạn thêm 15 ngày hoặc để đơn tự hết hạn khi qua ngày mong muốn `BR-WAT-06`.

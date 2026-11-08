@@ -176,6 +176,25 @@ class WaitlistServiceTest {
     }
 
     @Test
+    @DisplayName("registerWaitlist: Từ chối nếu targetStartDate vượt quá cửa sổ 30 ngày (BR-WAT-01, BR-WAT-06)")
+    void registerWaitlist_Exceeds30Days_ThrowsException() {
+        CreateWaitlistRequest request = CreateWaitlistRequest.builder()
+                .facilityId(1L)
+                .unitTypeId(5L)
+                .targetStartDate(LocalDate.now().plusDays(31))
+                .rentalMonths(2)
+                .phoneNumber("0912345678")
+                .build();
+
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(activeFacility));
+        when(unitTypeRepository.findById(5L)).thenReturn(Optional.of(activeUnitType));
+
+        CustomException ex = assertThrows(CustomException.class, () ->
+                waitlistService.registerWaitlist(request, customerUser));
+        assertEquals(ErrorCode.ADVANCE_BOOKING_LIMIT_EXCEEDED, ex.getErrorCode());
+    }
+
+    @Test
     @DisplayName("registerWaitlist: Chặn đăng ký trùng lặp nếu đã có đơn đang chờ")
     void registerWaitlist_Duplicate_ThrowsConflict() {
         CreateWaitlistRequest request = CreateWaitlistRequest.builder()
