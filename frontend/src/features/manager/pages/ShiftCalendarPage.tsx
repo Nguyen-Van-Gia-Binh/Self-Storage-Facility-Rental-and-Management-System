@@ -6,9 +6,7 @@ import {
   Building2,
   RefreshCw,
   AlertCircle,
-  Clock,
   CheckCircle,
-  AlertTriangle,
   Search,
   Check,
   Phone,
@@ -31,7 +29,14 @@ import { Breadcrumb } from '../components/Breadcrumb';
 import { WorkItemCard } from '../components/WorkItemCard';
 import { AssignStaffModal } from '../components/AssignStaffModal';
 
-export type TaskTabFilter = 'ALL' | 'UNASSIGNED' | 'CHECK_IN' | 'RETURN' | 'INCIDENT';
+export type TaskTabFilter =
+  | 'ALL'
+  | 'UNASSIGNED'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'CHECK_IN'
+  | 'RETURN'
+  | 'INCIDENT';
 export type MainViewTab = 'TASKS' | 'STAFF';
 
 export const ShiftCalendarPage: React.FC = () => {
@@ -163,12 +168,19 @@ export const ShiftCalendarPage: React.FC = () => {
 
   // Thống kê nhanh công việc trong ngày
   const dailyStats = useMemo(() => {
+    const isTaskAssigned = (t: DailyDispatchTaskItem) =>
+      Boolean(t.assignedStaffId || t.assignedStaffName);
+    const isTaskCompleted = (t: DailyDispatchTaskItem) =>
+      t.status === 'COMPLETED' || t.status === 'RESOLVED';
+
     const total = dailyTasks.length;
-    const unassigned = dailyTasks.filter((t) => t.status === 'UNASSIGNED' || !t.assignedStaffId).length;
-    const inProgress = dailyTasks.filter(
-      (t) => (t.status === 'ASSIGNED' || t.status === 'IN_PROGRESS') && t.assignedStaffId
+    const unassigned = dailyTasks.filter(
+      (t) => !isTaskCompleted(t) && (t.status === 'UNASSIGNED' || !isTaskAssigned(t))
     ).length;
-    const completed = dailyTasks.filter((t) => t.status === 'COMPLETED' || t.status === 'RESOLVED').length;
+    const inProgress = dailyTasks.filter(
+      (t) => !isTaskCompleted(t) && isTaskAssigned(t) && t.status !== 'UNASSIGNED'
+    ).length;
+    const completed = dailyTasks.filter(isTaskCompleted).length;
 
     const checkIns = dailyTasks.filter((t) => t.taskType === 'CHECK_IN').length;
     const returns = dailyTasks.filter((t) => t.taskType === 'RETURN').length;
@@ -180,8 +192,17 @@ export const ShiftCalendarPage: React.FC = () => {
   // Bộ lọc danh sách nhiệm vụ hiển thị
   const filteredDailyTasks = useMemo(() => {
     return dailyTasks.filter((t) => {
+      const isCompleted = t.status === 'COMPLETED' || t.status === 'RESOLVED';
+      const isAssigned = Boolean(t.assignedStaffId || t.assignedStaffName);
+
       // Lọc theo loại việc / trạng thái
-      if (taskFilter === 'UNASSIGNED' && t.status !== 'UNASSIGNED' && Boolean(t.assignedStaffId)) {
+      if (taskFilter === 'UNASSIGNED' && (isCompleted || (t.status !== 'UNASSIGNED' && isAssigned))) {
+        return false;
+      }
+      if (taskFilter === 'IN_PROGRESS' && (isCompleted || !isAssigned || t.status === 'UNASSIGNED')) {
+        return false;
+      }
+      if (taskFilter === 'COMPLETED' && !isCompleted) {
         return false;
       }
       if (taskFilter === 'CHECK_IN' && t.taskType !== 'CHECK_IN') return false;
@@ -273,9 +294,6 @@ export const ShiftCalendarPage: React.FC = () => {
                 <span className="text-xs font-bold text-brand-600 uppercase tracking-wider">
                   {facility?.code || 'FACILITY'}
                 </span>
-                <span className="text-[11px] font-semibold text-slate-400">
-                  · Quản lý & Điều phối Nhân sự
-                </span>
               </div>
               <h1 className="text-xl font-bold text-slate-900 mt-0.5">
                 {facility?.name || 'Đang tải thông tin cơ sở...'}
@@ -343,112 +361,48 @@ export const ShiftCalendarPage: React.FC = () => {
           </div>
         </div>
 
-        {/* 2 Tabs Chuyển đổi Cấp độ (Tránh dồn ép giao diện) */}
-        <div className="flex items-center gap-2 mt-5 pt-4 border-t border-slate-100">
+        {/* 2 Tabs Chuyển đổi Cấp độ */}
+        <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-100">
           <button
             type="button"
             onClick={() => handleTabChange('TASKS')}
-            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
               mainTab === 'TASKS'
                 ? 'bg-brand-600 text-white shadow-sm shadow-brand-500/20'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
             <ClipboardList className="w-4 h-4" />
-            <span>1. Điều phối công việc trong ngày ({dailyTasks.length})</span>
+            <span>Điều phối công việc</span>
           </button>
 
           <button
             type="button"
             onClick={() => handleTabChange('STAFF')}
-            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
               mainTab === 'STAFF'
                 ? 'bg-brand-600 text-white shadow-sm shadow-brand-500/20'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
             <Users className="w-4 h-4" />
-            <span>2. Đội ngũ nhân sự cơ sở ({staffList.length} nhân viên)</span>
+            <span>Đội ngũ nhân sự ({staffList.length})</span>
           </button>
         </div>
       </div>
 
       {/* ========================================================================= */}
-      {/* TAB 1: ĐIỀU PHỐI CÔNG VIỆC THEO NGÀY (CHÍNH - TẬP TRUNG GIAO VIỆC)      */}
+      {/* TAB 1: ĐIỀU PHỐI CÔNG VIỆC THEO NGÀY                                      */}
       {/* ========================================================================= */}
       {mainTab === 'TASKS' && (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          {/* 4 Thẻ KPI Chỉ số Công việc Ngày này */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold text-slate-500">Nhiệm vụ ngày</p>
-                <p className="text-2xl font-bold text-slate-900 mt-1">{dailyStats.total}</p>
-                <p className="text-[11px] text-slate-400 mt-0.5">Check-in, trả kho, sự cố</p>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600">
-                <ClipboardList className="w-5 h-5" />
-              </div>
-            </div>
-
-            <div
-              onClick={() => setTaskFilter('UNASSIGNED')}
-              className={`bg-white rounded-2xl border shadow-2xs p-4 flex items-center justify-between cursor-pointer transition-all ${
-                taskFilter === 'UNASSIGNED'
-                  ? 'border-amber-400 ring-2 ring-amber-200 bg-amber-50/40'
-                  : 'border-slate-200/90 hover:border-amber-300'
-              }`}
-            >
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <p className="text-xs font-semibold text-amber-700">Chờ phân công</p>
-                  {dailyStats.unassigned > 0 && (
-                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                  )}
-                </div>
-                <p className="text-2xl font-bold text-amber-600 mt-1">{dailyStats.unassigned}</p>
-                <p className="text-[11px] text-amber-600/80 mt-0.5">Cần gán nhân viên phụ trách</p>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-amber-700">
-                <AlertTriangle className="w-5 h-5" />
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold text-blue-700">Đang thực hiện</p>
-                <p className="text-2xl font-bold text-blue-600 mt-1">{dailyStats.inProgress}</p>
-                <p className="text-[11px] text-blue-500 mt-0.5">Đã phân công cho nhân viên</p>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
-                <Clock className="w-5 h-5" />
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold text-emerald-700">Đã hoàn thành</p>
-                <p className="text-2xl font-bold text-emerald-600 mt-1">{dailyStats.completed}</p>
-                <p className="text-[11px] text-emerald-600/80 mt-0.5">Nghiệm thu & bàn giao xong</p>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
-                <CheckCircle className="w-5 h-5" />
-              </div>
-            </div>
-          </div>
-
+        <div className="space-y-4 animate-in fade-in duration-200">
           {/* Bảng Danh sách Nhiệm vụ Ngày */}
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5 space-y-4">
             {/* Header Bảng & Tìm kiếm */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-              <div>
-                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                  <span>Hàng đợi công việc ngày {formatDisplayDate(selectedDate)}</span>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 font-bold border border-brand-200/80">
-                    {filteredDailyTasks.length} việc
-                  </span>
-                </h2>
-              </div>
+              <h2 className="text-base font-bold text-slate-900">
+                Hàng đợi công việc ngày {formatDisplayDate(selectedDate)}
+              </h2>
 
               <div className="flex flex-wrap items-center gap-2">
                 {/* Lọc theo nhân viên */}
@@ -483,76 +437,93 @@ export const ShiftCalendarPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Tab Filters */}
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setTaskFilter('ALL')}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
-                    taskFilter === 'ALL'
-                      ? 'bg-slate-900 text-white shadow-2xs'
-                      : 'bg-slate-100 text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Tất cả ({dailyStats.total})
-                </button>
+            {/* Tab Filters gộp chung trạng thái và loại công việc */}
+            <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-100 pb-3">
+              <button
+                type="button"
+                onClick={() => setTaskFilter('ALL')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                  taskFilter === 'ALL'
+                    ? 'bg-slate-900 text-white shadow-2xs'
+                    : 'bg-slate-100 text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Tất cả ({dailyStats.total})
+              </button>
 
-                <button
-                  type="button"
-                  onClick={() => setTaskFilter('UNASSIGNED')}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
-                    taskFilter === 'UNASSIGNED'
-                      ? 'bg-amber-600 text-white shadow-2xs'
-                      : 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200/60'
-                  }`}
-                >
-                  <span>Chờ phân công</span>
-                  <span
-                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                      taskFilter === 'UNASSIGNED' ? 'bg-amber-700 text-white' : 'bg-amber-200/80 text-amber-900'
-                    }`}
-                  >
-                    {dailyStats.unassigned}
-                  </span>
-                </button>
+              <button
+                type="button"
+                onClick={() => setTaskFilter('UNASSIGNED')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                  taskFilter === 'UNASSIGNED'
+                    ? 'bg-amber-600 text-white shadow-2xs'
+                    : 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200/60'
+                }`}
+              >
+                Chờ phân công ({dailyStats.unassigned})
+              </button>
 
-                <button
-                  type="button"
-                  onClick={() => setTaskFilter('CHECK_IN')}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
-                    taskFilter === 'CHECK_IN'
-                      ? 'bg-emerald-600 text-white shadow-2xs'
-                      : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200/60'
-                  }`}
-                >
-                  Check-in nhận kho ({dailyStats.checkIns})
-                </button>
+              <button
+                type="button"
+                onClick={() => setTaskFilter('IN_PROGRESS')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                  taskFilter === 'IN_PROGRESS'
+                    ? 'bg-blue-600 text-white shadow-2xs'
+                    : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200/60'
+                }`}
+              >
+                Đang thực hiện ({dailyStats.inProgress})
+              </button>
 
-                <button
-                  type="button"
-                  onClick={() => setTaskFilter('RETURN')}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
-                    taskFilter === 'RETURN'
-                      ? 'bg-purple-600 text-white shadow-2xs'
-                      : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200/60'
-                  }`}
-                >
-                  Nghiệm thu trả kho ({dailyStats.returns})
-                </button>
+              <button
+                type="button"
+                onClick={() => setTaskFilter('COMPLETED')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                  taskFilter === 'COMPLETED'
+                    ? 'bg-teal-600 text-white shadow-2xs'
+                    : 'bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200/60'
+                }`}
+              >
+                Đã hoàn thành ({dailyStats.completed})
+              </button>
 
-                <button
-                  type="button"
-                  onClick={() => setTaskFilter('INCIDENT')}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
-                    taskFilter === 'INCIDENT'
-                      ? 'bg-rose-600 text-white shadow-2xs'
-                      : 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200/60'
-                  }`}
-                >
-                  Sự cố kỹ thuật ({dailyStats.incidents})
-                </button>
-              </div>
+              <span className="h-4 w-px bg-slate-200 mx-1 hidden sm:inline-block" />
+
+              <button
+                type="button"
+                onClick={() => setTaskFilter('CHECK_IN')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                  taskFilter === 'CHECK_IN'
+                    ? 'bg-emerald-600 text-white shadow-2xs'
+                    : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200/60'
+                }`}
+              >
+                Check-in ({dailyStats.checkIns})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTaskFilter('RETURN')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                  taskFilter === 'RETURN'
+                    ? 'bg-purple-600 text-white shadow-2xs'
+                    : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200/60'
+                }`}
+              >
+                Trả kho ({dailyStats.returns})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTaskFilter('INCIDENT')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                  taskFilter === 'INCIDENT'
+                    ? 'bg-rose-600 text-white shadow-2xs'
+                    : 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200/60'
+                }`}
+              >
+                Sự cố ({dailyStats.incidents})
+              </button>
             </div>
 
             {/* Trạng thái tải / lỗi */}
@@ -586,10 +557,7 @@ export const ShiftCalendarPage: React.FC = () => {
                 {filteredDailyTasks.length === 0 ? (
                   <div className="py-12 text-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
                     <CheckCircle className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-                    <h4 className="text-sm font-bold text-slate-700">Không có nhiệm vụ nào trong ngày này</h4>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Cơ sở chưa có lịch hẹn tiếp đón hoặc sự cố cần xử lý vào ngày {formatDisplayDate(selectedDate)}.
-                    </p>
+                    <h4 className="text-sm font-bold text-slate-700">Không có nhiệm vụ nào</h4>
                   </div>
                 ) : (
                   filteredDailyTasks.map((t) => (

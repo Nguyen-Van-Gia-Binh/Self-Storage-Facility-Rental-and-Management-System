@@ -305,6 +305,7 @@ export async function getDailyDispatchTasks(
       else if (ticket.status === 'IN_PROGRESS') dispatchStatus = 'IN_PROGRESS';
       else if (ticket.status === 'RESOLVED') dispatchStatus = 'RESOLVED';
       else if (ticket.status === 'CLOSED' || (ticket.status as string) === 'AUTO_CLOSED') dispatchStatus = 'COMPLETED';
+      else if (ticket.assignedStaffId || ticket.assignedStaffName) dispatchStatus = 'ASSIGNED';
 
       tasks.push({
         id: ticket.id,

@@ -49,8 +49,11 @@ export const WorkItemCard: React.FC<WorkItemCardProps> = ({ task, onViewDetails,
     }
   };
 
+  const isAssigned = Boolean(task.assignedStaffId || task.assignedStaffName);
+
   const getStatusBadge = (status: DispatchTaskStatus) => {
-    switch (status) {
+    const effectiveStatus = status === 'UNASSIGNED' && isAssigned ? 'ASSIGNED' : status;
+    switch (effectiveStatus) {
       case 'COMPLETED':
       case 'RESOLVED':
         return (
@@ -122,16 +125,11 @@ export const WorkItemCard: React.FC<WorkItemCardProps> = ({ task, onViewDetails,
             </span>
           </div>
 
-          {/* Hàng 2: Tiêu đề & Ghi chú */}
+          {/* Hàng 2: Tiêu đề */}
           <div>
             <h4 className="text-sm font-bold text-slate-900 group-hover:text-brand-600 transition-colors">
               {task.title}
             </h4>
-            {task.notes && (
-              <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
-                {task.notes}
-              </p>
-            )}
           </div>
 
           {/* Hàng 3: Chi tiết Khách + Ô kho + Giờ + Phụ trách */}
@@ -139,7 +137,9 @@ export const WorkItemCard: React.FC<WorkItemCardProps> = ({ task, onViewDetails,
             <div className="flex items-center gap-1.5">
               <User className="w-3.5 h-3.5 text-slate-400" />
               <span className="font-semibold text-slate-800">{task.customerName}</span>
-              {task.customerPhone && <span className="text-slate-400">({task.customerPhone})</span>}
+              {task.customerPhone && task.customerPhone !== 'Chưa cập nhật' && (
+                <span className="text-slate-400">({task.customerPhone})</span>
+              )}
             </div>
 
             <div className="flex items-center gap-1.5">
@@ -172,7 +172,7 @@ export const WorkItemCard: React.FC<WorkItemCardProps> = ({ task, onViewDetails,
       {/* Cụm button hành động */}
       <div className="shrink-0 flex items-center gap-2 self-end md:self-center pt-2 md:pt-0">
         {onAssign && (
-          task.status === 'UNASSIGNED' || !task.assignedStaffId ? (
+          !isAssigned ? (
             <button
               type="button"
               onClick={() => onAssign(task)}
