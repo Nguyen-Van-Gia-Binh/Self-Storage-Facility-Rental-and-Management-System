@@ -22,6 +22,8 @@ export function useRenewalPricing({ contract, renewalMonths }: UseRenewalPricing
   const [capacityConflictMessage, setCapacityConflictMessage] = useState('');
   const [isUnitTypeInactive, setIsUnitTypeInactive] = useState(false);
   const [unitTypeInactiveMessage, setUnitTypeInactiveMessage] = useState('');
+  const [isPastDeadlineFromBackend, setIsPastDeadlineFromBackend] = useState(false);
+  const [deadlineMessage, setDeadlineMessage] = useState('');
 
   // Thiết lập Conflict View (dùng cả bởi hook payment khi init VNPay gặp CAPACITY_NOT_AVAILABLE)
   const setCapacityConflict = (message: string) => {
@@ -39,6 +41,8 @@ export function useRenewalPricing({ contract, renewalMonths }: UseRenewalPricing
       setLoadingQuote(true);
       setIsCapacityConflict(false);
       setIsUnitTypeInactive(false);
+      setIsPastDeadlineFromBackend(false);
+      setDeadlineMessage('');
       try {
         const numId = parseInt(contract.id, 10);
         const rawId = contract.id.replace(/\D/g, '');
@@ -61,6 +65,11 @@ export function useRenewalPricing({ contract, renewalMonths }: UseRenewalPricing
             setUnitTypeInactiveMessage(
               msg || 'Loại kho này đã ngừng kinh doanh, vui lòng liên hệ ban quản lý.',
             );
+          }
+        } else if (code === 'RENEWAL_DEADLINE_PASSED' || msg.includes('quá thời hạn tự gia hạn') || msg.includes('RENEWAL_DEADLINE_PASSED')) {
+          if (isMounted) {
+            setIsPastDeadlineFromBackend(true);
+            setDeadlineMessage(msg || 'Đã quá thời hạn tự gia hạn Online (trước 20 ngày theo quy chế BR-REN-01).');
           }
         }
       } finally {
@@ -136,6 +145,8 @@ export function useRenewalPricing({ contract, renewalMonths }: UseRenewalPricing
     setCapacityConflict,
     isUnitTypeInactive,
     unitTypeInactiveMessage,
+    isPastDeadlineFromBackend,
+    deadlineMessage,
     newEndDate,
     pricing,
   };

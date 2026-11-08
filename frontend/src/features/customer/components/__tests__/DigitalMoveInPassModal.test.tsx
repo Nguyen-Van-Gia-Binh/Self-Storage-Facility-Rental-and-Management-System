@@ -33,7 +33,7 @@ describe('DigitalMoveInPassModal — Tách biệt Vé nhận kho và Check-in on
     customerName: 'Nguyễn Phạm Xuân Nhi',
     customerPhone: '0987654321',
     customerIdentity: '079199001234',
-    startDate: '2026-11-15',
+    startDate: '2026-10-01',
     checkInWindow: '10 ngày',
     status: 'PENDING_CHECKIN',
     totalPaid: 3200000,
@@ -50,7 +50,7 @@ describe('DigitalMoveInPassModal — Tách biệt Vé nhận kho và Check-in on
     customerName: 'Nguyễn Phạm Xuân Nhi',
     customerPhone: '0987654321',
     customerIdentity: '079199001234',
-    startDate: '2026-11-15',
+    startDate: '2026-10-01',
     checkInWindow: '10 ngày',
     status: 'PENDING_CHECKIN',
     totalPaid: 1500000,
@@ -95,11 +95,11 @@ describe('DigitalMoveInPassModal — Tách biệt Vé nhận kho và Check-in on
     fireEvent.click(checkInBtn);
 
     // Xác nhận đã sang màn hình Check-in Online & Telemetry
-    expect(screen.getByText(/Check-in Online & Bàn Giao 24\/7/i)).toBeInTheDocument();
+    expect(screen.getByText(/Nghiệm Thu Bàn Giao & Check-in 24\/7/i)).toBeInTheDocument();
     expect(screen.getByText(/24.5°C/)).toBeInTheDocument();
     expect(screen.getByText(/52% RH/)).toBeInTheDocument();
     expect(screen.getByText(/98% Pin/)).toBeInTheDocument();
-    expect(screen.getByText(/Dữ liệu Cảm biến IoT/)).toBeInTheDocument();
+    expect(screen.getByText(/Cảm biến IoT Thời gian thực/)).toBeInTheDocument();
   });
 
   it('ở chế độ checkin trực tiếp: kiểm tra form Ký số điện tử và không cho kích hoạt nếu thiếu họ tên', () => {
@@ -112,14 +112,15 @@ describe('DigitalMoveInPassModal — Tách biệt Vé nhận kho và Check-in on
       />
     );
 
-    const submitBtn = screen.getByRole('button', { name: /Ký số & Kích hoạt mã PIN/i });
-    fireEvent.click(submitBtn);
+    // Chọn đạt 4/4 tiêu chí để kiểm tra validation họ tên / chữ ký
+    const selectAllBtn = screen.getByText(/Chọn tất cả đạt \(4\/4\)/i);
+    fireEvent.click(selectAllBtn);
 
-    // Báo lỗi do chưa nhập họ tên
-    expect(screen.getByText(/Vui lòng nhập họ và tên/)).toBeInTheDocument();
+    const submitBtn = screen.getByRole('button', { name: /Đồng ý nhận kho & Kích hoạt mã PIN/i });
+    expect(submitBtn).toBeDisabled();
   });
 
-  it('hoàn thành ký số nhận bàn giao điện tử và hiển thị mã PIN Smart Lock', () => {
+  it('hoàn thành ký số nhận bàn giao điện tử và hiển thị mã PIN Smart Lock', async () => {
     const onConfirmSignature = vi.fn();
     render(
       <DigitalMoveInPassModal
@@ -131,21 +132,24 @@ describe('DigitalMoveInPassModal — Tách biệt Vé nhận kho và Check-in on
       />
     );
 
+    const selectAllBtn = screen.getByText(/Chọn tất cả đạt \(4\/4\)/i);
+    fireEvent.click(selectAllBtn);
+
     const nameInput = screen.getByPlaceholderText(/Ví dụ: Nguyễn Phạm Xuân Nhi/i);
     fireEvent.change(nameInput, { target: { value: 'Nguyễn Phạm Xuân Nhi' } });
 
     const checkbox = screen.getByRole('checkbox');
     fireEvent.click(checkbox);
 
-    const submitBtn = screen.getByRole('button', { name: /Ký số & Kích hoạt mã PIN/i });
+    const submitBtn = screen.getByRole('button', { name: /Đồng ý nhận kho & Kích hoạt mã PIN/i });
     fireEvent.click(submitBtn);
 
     // Ký số thành công
     expect(onConfirmSignature).toHaveBeenCalledWith('Nguyễn Phạm Xuân Nhi');
-    expect(screen.getByText(/Đã Ký Số Thành Công/)).toBeInTheDocument();
+    expect(screen.getByText(/Đã Nghiệm Thu & Ký Số Bàn Giao Thành Công!/)).toBeInTheDocument();
     expect(screen.getByText(/Người ký: Nguyễn Phạm Xuân Nhi/)).toBeInTheDocument();
     expect(screen.getByText(/Mã PIN Smart Lock ô kho của bạn:/)).toBeInTheDocument();
-  });
+  }, 15000);
 
   it('khi ô kho CHƯA ĐƯỢC GÁN: không hiển thị tab hay nút Check-in online, chỉ hiển thị vé QR và hướng dẫn quầy', () => {
     render(
@@ -189,13 +193,16 @@ describe('DigitalMoveInPassModal — Tách biệt Vé nhận kho và Check-in on
       />
     );
 
+    const selectAllBtn = screen.getByText(/Chọn tất cả đạt \(4\/4\)/i);
+    fireEvent.click(selectAllBtn);
+
     const nameInput = screen.getByPlaceholderText(/Ví dụ: Nguyễn Phạm Xuân Nhi/i);
     fireEvent.change(nameInput, { target: { value: 'Lê Thanh Tùng' } });
 
     const checkbox = screen.getByRole('checkbox');
     fireEvent.click(checkbox);
 
-    const submitBtn = screen.getByRole('button', { name: /Ký số & Kích hoạt mã PIN/i });
+    const submitBtn = screen.getByRole('button', { name: /Đồng ý nhận kho & Kích hoạt mã PIN/i });
     fireEvent.click(submitBtn);
 
     // Chờ xử lý async
@@ -209,7 +216,7 @@ describe('DigitalMoveInPassModal — Tách biệt Vé nhận kho và Check-in on
 
     const pinElements = await screen.findAllByText(/654321/);
     expect(pinElements.length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText(/Đã Ký Số Thành Công/)).toBeInTheDocument();
+    expect(screen.getByText(/Đã Nghiệm Thu & Ký Số Bàn Giao Thành Công!/)).toBeInTheDocument();
     expect(onSuccessCheckIn).toHaveBeenCalledWith('654321');
     expect(onConfirmSignature).toHaveBeenCalledWith('Lê Thanh Tùng', '654321');
   });

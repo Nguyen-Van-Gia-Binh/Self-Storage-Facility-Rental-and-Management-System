@@ -233,7 +233,7 @@ describe('E2E Customer Journey: Flow 1 (Reservation & Waitlist CRM) & Sub-flow 6
         customerName: 'Nguyễn Phạm Xuân Nhi',
         customerPhone: '0987654321',
         customerIdentity: '079199001234',
-        startDate: '2026-11-10',
+        startDate: new Date().toISOString().slice(0, 10),
         checkInWindow: '10 ngày',
         status: 'PENDING_CHECKIN',
         totalPaid: 1500000,
@@ -249,13 +249,17 @@ describe('E2E Customer Journey: Flow 1 (Reservation & Waitlist CRM) & Sub-flow 6
       );
 
       // Tiêu đề & khối E-Handover 24/7 hiển thị
-      expect(screen.getByText(/Check-in Online & Bàn Giao 24\/7/i)).toBeInTheDocument();
+      expect(screen.getByText(/Nghiệm Thu Bàn Giao & Check-in 24\/7/i)).toBeInTheDocument();
       expect(screen.getByText(/Xác nhận Ký số Bàn giao Điện tử/i)).toBeInTheDocument();
 
       // Hiển thị chỉ số IoT Telemetry
       expect(screen.getByText(/24\.5°C/i)).toBeInTheDocument();
       expect(screen.getByText(/52% RH/i)).toBeInTheDocument();
       expect(screen.getByText(/98% Pin/i)).toBeInTheDocument();
+
+      // Chọn tất cả 4 tiêu chí nghiệm thu đạt chuẩn
+      const selectAllBtn = screen.getByRole('button', { name: /Chọn tất cả đạt/i });
+      fireEvent.click(selectAllBtn);
 
       // Nhập họ tên ký số và tích chọn cam kết
       const nameInput = screen.getByPlaceholderText(/Nguyễn Phạm Xuân Nhi/i);
@@ -265,12 +269,12 @@ describe('E2E Customer Journey: Flow 1 (Reservation & Waitlist CRM) & Sub-flow 6
       fireEvent.click(termsCheckbox);
 
       // Nút kích hoạt PIN sáng lên
-      const activateBtn = screen.getByRole('button', { name: /Ký số & Kích hoạt mã PIN mở kho 24\/7/i });
+      const activateBtn = screen.getByRole('button', { name: /Đồng ý nhận kho & Kích hoạt mã PIN/i });
       expect(activateBtn).not.toBeDisabled();
       fireEvent.click(activateBtn);
 
       // Kích hoạt thành công: hiển thị mã PIN mở kho
-      expect(screen.getByText(/Đã Ký Số Thành Công · Bàn Giao Điện Tử 24\/7/i)).toBeInTheDocument();
+      expect(screen.getByText(/Đã Nghiệm Thu & Ký Số Bàn Giao Thành Công!/i)).toBeInTheDocument();
       expect(screen.getByText(/Mã PIN Smart Lock ô kho của bạn:/i)).toBeInTheDocument();
     });
   });
@@ -291,7 +295,7 @@ describe('E2E Customer Journey: Flow 1 (Reservation & Waitlist CRM) & Sub-flow 6
         sizeCategory: 'M',
         storageType: 'STANDARD',
         startDate: '2026-05-01',
-        endDate: new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0],
+        endDate: new Date(Date.now() + 25 * 86400000).toISOString().split('T')[0],
         monthlyRent: 2000000,
         depositHeld: 2000000,
         status: 'ACTIVE',

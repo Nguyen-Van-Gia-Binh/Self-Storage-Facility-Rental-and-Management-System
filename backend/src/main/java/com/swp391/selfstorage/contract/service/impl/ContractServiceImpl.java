@@ -44,6 +44,7 @@ import com.swp391.selfstorage.user.repository.UserFacilityAssignmentRepository;
 import com.swp391.selfstorage.user.repository.UserRepository;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -53,6 +54,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -211,6 +213,13 @@ public class ContractServiceImpl implements ContractService {
                 if (contract.getStorageUnitId() == null)
                         throw new CustomException(ErrorCode.UNIT_NOT_YET_ALLOCATED);
 
+                // Khách hàng tự check-in online không được check-in trước ngày bắt đầu hợp đồng
+                boolean isCustomerOnlineCheckIn = staffId != null && Objects.equals(staffId, contract.getCustomerId());
+                if (isCustomerOnlineCheckIn && contract.getStartDate() != null && LocalDate.now().isBefore(contract.getStartDate())) {
+                        throw new CustomException(ErrorCode.CHECKIN_BEFORE_START_DATE,
+                                        "Chưa đến ngày nhận kho trên hợp đồng (" + contract.getStartDate() + "). Quý khách chỉ có thể check-in online từ ngày bắt đầu hợp đồng.");
+                }
+
                 String pin = generateUniquePin(PolicyNumbers.snapshotInt(contract.getPolicySnapshot(), "accessPinLength", 6));
                 contract.setAccessCode(pin);
                 contract.setStatus(ContractStatus.ACTIVE);
@@ -232,7 +241,7 @@ public class ContractServiceImpl implements ContractService {
                                 .orElse(HandoverRecord.builder().contractId(contractId).build());
 
                 Long effectiveStaffId = staffId;
-                if (staffId != null && staffId.equals(contract.getCustomerId())) {
+                if (staffId != null && Objects.equals(staffId, contract.getCustomerId())) {
                         // Customer self check-in online: retrieve assigned staff if FM had dispatched one
                         if (staffDailyAssignmentRepository != null) {
                                 effectiveStaffId = staffDailyAssignmentRepository

@@ -224,6 +224,8 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
                 }
             } else if (contract.getCheckinDate() == null) {
                 handoverRecordRepository.findByContractId(contract.getId()).ifPresent(hr -> {
+                    detail.setHandoverRejected(hr.isRejected());
+                    detail.setRejectionReason(hr.getRejectionReason());
                     String note = hr.getRejectionReason() != null ? hr.getRejectionReason() : "";
                     if (hr.getConditionNote() != null && !hr.getConditionNote().isBlank()) {
                         note = note.isBlank() ? hr.getConditionNote() : (note + " — " + hr.getConditionNote());
@@ -390,6 +392,17 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
         res.setRescheduleCount(contract.getRescheduleCount());
         res.setRescheduledAt(contract.getRescheduledAt());
         res.setAccessPinLength(PolicyNumbers.snapshotInt(contract.getPolicySnapshot(), "accessPinLength", 6));
+
+        // Kiểm tra thông tin từ chối nhận kho (Handover Record)
+        if (handoverRecordRepository != null) {
+            handoverRecordRepository.findByContractId(contract.getId())
+                    .ifPresent(hr -> {
+                        res.setHandoverRejected(hr.isRejected());
+                        if (hr.isRejected()) {
+                            res.setRejectionReason(hr.getRejectionReason());
+                        }
+                    });
+        }
 
         LocalDate now = LocalDate.now();
 

@@ -13,6 +13,54 @@ export function formatDateVN(dateStr: string): string {
 }
 
 /**
+ * Kiểm tra xem ngày hiện tại đã đến ngày bắt đầu hợp đồng để thực hiện Check-in online hay chưa.
+ * Trả về true nếu ngày hiện tại >= ngày bắt đầu trên hợp đồng (tính từ 00:00:00 ngày bắt đầu).
+ * Trả về false nếu ngày hiện tại là ngày trước trên hợp đồng.
+ */
+export function isCheckInAllowedToday(startDateStr?: string): boolean {
+  if (!startDateStr) return false;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  let year: number;
+  let month: number;
+  let day: number;
+
+  if (startDateStr.includes('/')) {
+    // DD/MM/YYYY
+    const parts = startDateStr.split('/').map(Number);
+    if (parts.length >= 3) {
+      day = parts[0];
+      month = parts[1] - 1;
+      year = parts[2];
+    } else {
+      return false;
+    }
+  } else if (startDateStr.includes('-')) {
+    // YYYY-MM-DD
+    const parts = startDateStr.split('-').map(Number);
+    if (parts.length >= 3) {
+      year = parts[0];
+      month = parts[1] - 1;
+      day = parts[2];
+    } else {
+      return false;
+    }
+  } else {
+    const parsed = new Date(startDateStr);
+    if (isNaN(parsed.getTime())) return false;
+    parsed.setHours(0, 0, 0, 0);
+    return today.getTime() >= parsed.getTime();
+  }
+
+  const startDate = new Date(year, month, day);
+  startDate.setHours(0, 0, 0, 0);
+
+  return today.getTime() >= startDate.getTime();
+}
+
+/**
  * Tính ngày kết thúc hợp đồng theo chu kỳ số tháng từ ngày bắt đầu
  */
 export function calculateEndDate(startDate: string, durationMonths: number): string {

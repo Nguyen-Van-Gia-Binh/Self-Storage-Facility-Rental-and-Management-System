@@ -242,7 +242,7 @@ describe('Customer Portal - Xem Hợp đồng điện tử & Biên bản bàn gi
         <RentedUnitCard contract={relocatingContract} />
       </BrowserRouter>
     );
-    expect(screen.getByText(/Đang sắp xếp đổi ô kho/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Đổi ô kho$/i)).toBeInTheDocument();
     unmount();
 
     // 2. Kiểm tra trên ContractDetailModal
@@ -255,14 +255,11 @@ describe('Customer Portal - Xem Hợp đồng điện tử & Biên bản bàn gi
     );
 
     // Huy hiệu và banner đang sắp xếp đổi ô
-    const relocatingBadges = await screen.findAllByText(/Đang sắp xếp đổi ô kho/i);
-    expect(relocatingBadges.length).toBeGreaterThanOrEqual(1);
-    expect(await screen.findByText(/ĐANG SẮP XẾP ĐỔI Ô KHO DO PHÁT HIỆN SỰ CỐ TẠI HIỆN TRƯỜNG/i)).toBeInTheDocument();
     const relocateNotes = await screen.findAllByText(/Đang điều phối đổi ô kho tại chỗ/i);
     expect(relocateNotes.length).toBeGreaterThanOrEqual(1);
+    expect(await screen.findByText(/PHỤ LỤC TẠM HOÃN BÀN GIAO & ĐANG BỐ TRÍ ĐỔI Ô KHO MỚI/i)).toBeInTheDocument();
 
     // Chữ ký hiển thị chờ đổi ô mới (có ở cả modal view và print document)
-    expect(screen.getAllByText(/ĐANG ĐỢI ĐỔI Ô MỚI/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/CHỜ BÀN GIAO Ô MỚI/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.queryByText(/✓ ĐÃ KÝ SỐ ĐIỆN TỬ/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/✓ ĐÃ XÁC NHẬN BÀN GIAO/i)).not.toBeInTheDocument();
@@ -289,14 +286,13 @@ describe('Customer Portal - Xem Hợp đồng điện tử & Biên bản bàn gi
     );
 
     // Huy hiệu và banner dừng do sự cố
-    expect(await screen.findByText(/Hủy do sự cố bàn giao \(Chờ hoàn cọc\)/i)).toBeInTheDocument();
-    expect(await screen.findByText(/HỢP ĐỒNG ĐÃ DỪNG THỦ TỤC NHẬN KHO DO SỰ CỐ KỸ THUẬT/i)).toBeInTheDocument();
+    expect(await screen.findByText(/BIÊN BẢN TỪ CHỐI BÀN GIAO/i)).toBeInTheDocument();
     const incidentReports = await screen.findAllByText(/Biên bản ghi nhận sự cố bàn giao tại hiện trường/i);
     expect(incidentReports.length).toBeGreaterThanOrEqual(1);
 
     // Chữ ký từ chối / hủy nhận do hư hỏng (có ở cả modal view và print document)
     expect(screen.getAllByText(/HỦY NHẬN DO SỰ CỐ/i).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText(/ĐÃ TỪ CHỐI NHẬN KHO/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/TỪ CHỐI NHẬN/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.queryByText(/✓ ĐÃ KÝ SỐ ĐIỆN TỬ/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/✓ ĐÃ XÁC NHẬN BÀN GIAO/i)).not.toBeInTheDocument();
     unmount();

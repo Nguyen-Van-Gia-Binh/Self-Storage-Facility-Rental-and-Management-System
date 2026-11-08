@@ -55,6 +55,8 @@ export interface BackendRentalSummary {
   rescheduleCount?: number;
   rescheduledAt?: string;
   relocationEligible?: boolean;
+  handoverRejected?: boolean;
+  rejectionReason?: string;
   createdAt?: string;
 }
 
@@ -169,6 +171,8 @@ export function mapBackendRentalToContract(item: BackendRentalSummary): RentedCo
     rescheduleCount: item.rescheduleCount,
     rescheduledAt: item.rescheduledAt,
     relocationEligible: Boolean(item.relocationEligible),
+    handoverRejected: Boolean(item.handoverRejected),
+    rejectionReason: item.rejectionReason,
     createdAt: item.createdAt ? String(item.createdAt) : undefined,
   };
 }

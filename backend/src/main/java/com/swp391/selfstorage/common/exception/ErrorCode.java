@@ -92,6 +92,7 @@ public enum ErrorCode {
     RESERVATION_NOT_PAID(HttpStatus.CONFLICT, "Đơn đặt chỗ chưa thanh toán"),
     ASSIGNMENT_WINDOW_CLOSED(HttpStatus.CONFLICT, "Đã tới ngày nhận kho, không còn gán hoặc đổi ô"),
     UNIT_NOT_YET_ALLOCATED(HttpStatus.CONFLICT, "Hợp đồng chưa được gán ô kho"),
+    CHECKIN_BEFORE_START_DATE(HttpStatus.BAD_REQUEST, "Chưa đến ngày nhận kho trên hợp đồng. Quý khách chỉ có thể check-in online từ ngày bắt đầu hợp đồng."),
 
     // 422 Unprocessable Entity
     RETURN_NOTICE_TOO_SHORT(HttpStatus.UNPROCESSABLE_ENTITY,
