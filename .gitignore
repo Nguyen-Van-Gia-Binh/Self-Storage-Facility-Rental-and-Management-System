@@ -35,6 +35,7 @@ docs/superpowers/
 .superpowers/
 .agents/
 .agent/
+.archify/
 
 # Sổ tay ghi chú cá nhân, học tập & làm việc (chỉ giữ ở máy cá nhân)
 docs/*-NOTES.md
