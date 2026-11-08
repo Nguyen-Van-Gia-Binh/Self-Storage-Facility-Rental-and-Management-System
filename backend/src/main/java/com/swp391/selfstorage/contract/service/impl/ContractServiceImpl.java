@@ -1059,6 +1059,10 @@ public class ContractServiceImpl implements ContractService {
                         throw new CustomException(ErrorCode.CONTRACT_NOT_ACTIVE_OR_OVERDUE);
                 }
 
+                if (contract.getStatus() == ContractStatus.OVERDUE && contract.getOverdueFeeAccrued() > 0) {
+                        throw new CustomException(ErrorCode.MUST_SETTLE_OVERDUE_DEBT_FIRST);
+                }
+
                 LocalDate returnDate = request.getIntendedReturnDate() != null
                                 ? request.getIntendedReturnDate()
                                 : LocalDate.now();
@@ -1289,20 +1293,51 @@ public class ContractServiceImpl implements ContractService {
                                 .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
 
                 if (contract.getStatus() == ContractStatus.TERMINATED) {
-                        long rentAmount = contract.getMonthlyPrice() * Math.max(1, contract.getRentalMonths());
-                        long deposit = contract.getDepositAmount();
-                        long totalPaid = rentAmount + deposit;
-                        return SettlementPreviewResponse.builder()
-                                        .contractId(contract.getId())
-                                        .depositAmount(deposit)
-                                        .damageCost(0L)
-                                        .overdueFee(0L)
-                                        .unpaidExtraCharges(0L)
-                                        .depositRefundAmount(totalPaid)
-                                        .payableAmount(0L)
-                                        .earlyRentRefund(rentAmount)
-                                        .earlyReturn(false)
-                                        .build();
+                        if (contract.getCheckinDate() == null) {
+                                // BR-CHK-06: Từ chối bàn giao ở khâu Check-in -> hoàn 100% tiền thuê + 100% cọc
+                                long rentAmount = contract.getMonthlyPrice() * Math.max(1, contract.getRentalMonths());
+                                long deposit = contract.getDepositAmount();
+                                long totalPaid = rentAmount + deposit;
+                                return SettlementPreviewResponse.builder()
+                                                .contractId(contract.getId())
+                                                .depositAmount(deposit)
+                                                .damageCost(0L)
+                                                .overdueFee(0L)
+                                                .unpaidExtraCharges(0L)
+                                                .depositRefundAmount(totalPaid)
+                                                .payableAmount(0L)
+                                                .earlyRentRefund(rentAmount)
+                                                .earlyReturn(false)
+                                                .build();
+                        } else {
+                                // BR-OVD-07: Chấm dứt do quá hạn D+10 sau khi đã nhận kho -> không hoàn tiền thuê
+                                long deposit = contract.getDepositAmount();
+                                long overdue = contract.getOverdueFeeAccrued();
+                                long damage = 0L;
+                                ReturnRequest returnReq = returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(contractId)
+                                                .orElse(null);
+                                if (returnReq != null) {
+                                        damage = returnReq.getDamageCost();
+                                }
+                                List<ContractExtraCharge> unpaidCharges = extraChargeRepository.findByContractIdAndStatus(contractId,
+                                                ExtraChargeStatus.UNPAID);
+                                long totalUnpaid = unpaidChargesOutsideLegacyDamage(unpaidCharges);
+                                long availableBalance = contract.getDepositBalance();
+                                long netDeduction = damage + totalUnpaid;
+                                long refundAmount = Math.max(0, availableBalance - netDeduction);
+                                long payableAmount = Math.max(0, netDeduction - availableBalance);
+                                return SettlementPreviewResponse.builder()
+                                                .contractId(contract.getId())
+                                                .depositAmount(deposit)
+                                                .damageCost(damage)
+                                                .overdueFee(overdue)
+                                                .unpaidExtraCharges(totalUnpaid)
+                                                .depositRefundAmount(refundAmount)
+                                                .payableAmount(payableAmount)
+                                                .earlyRentRefund(0L)
+                                                .earlyReturn(false)
+                                                .build();
+                        }
                 }
 
                 ReturnRequest returnReq = returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(contractId)
@@ -1367,10 +1402,36 @@ public class ContractServiceImpl implements ContractService {
                                                 .build());
 
                 if (contract.getStatus() == ContractStatus.TERMINATED) {
-                        long rentAmount = contract.getMonthlyPrice() * Math.max(1, contract.getRentalMonths());
-                        long depositAmount = contract.getDepositAmount();
-                        long totalRefund = rentAmount + depositAmount;
-                        return closeSettledContract(contract, returnReq, managerId, totalRefund, 0L);
+                        if (contract.getCheckinDate() == null) {
+                                // BR-CHK-06: Từ chối bàn giao ở khâu Check-in -> hoàn 100% tiền thuê + 100% cọc
+                                long rentAmount = contract.getMonthlyPrice() * Math.max(1, contract.getRentalMonths());
+                                long depositAmount = contract.getDepositAmount();
+                                long totalRefund = rentAmount + depositAmount;
+                                return closeSettledContract(contract, returnReq, managerId, totalRefund, 0L);
+                        } else {
+                                // BR-OVD-07: Chấm dứt do quá hạn D+10 sau khi đã nhận kho -> không hoàn tiền thuê
+                                List<ContractExtraCharge> unpaidCharges = extraChargeRepository.findByContractIdAndStatus(contractId,
+                                                ExtraChargeStatus.UNPAID);
+                                long totalUnpaid = unpaidChargesOutsideLegacyDamage(unpaidCharges);
+                                long availableBalance = contract.getDepositBalance();
+                                long netDeduction = returnReq.getDamageCost() + totalUnpaid;
+                                long refundAmount = Math.max(0, availableBalance - netDeduction);
+                                long payableAmount = Math.max(0, netDeduction - availableBalance);
+                                if (payableAmount > 0) {
+                                        returnReq.setDepositRefundAmount(0L);
+                                        returnRequestRepository.save(returnReq);
+                                        contract.setAccessCode(null);
+                                        contractRepository.save(contract);
+                                        return SettlementApprovalResponse.builder()
+                                                        .contractId(contract.getId())
+                                                        .status(contract.getStatus())
+                                                        .depositRefundAmount(0L)
+                                                        .payableAmount(payableAmount)
+                                                        .message("Khách còn phải nộp phần thiếu. Hợp đồng đóng sau khi thanh toán thành công")
+                                                        .build();
+                                }
+                                return closeSettledContract(contract, returnReq, managerId, refundAmount, 0L);
+                        }
                 }
 
                 if (returnReq.getInspectedAt() == null) {

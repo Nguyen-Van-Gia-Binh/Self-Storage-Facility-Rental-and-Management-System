@@ -18,6 +18,8 @@ public enum ErrorCode {
     SUPPORT_REQUEST_CANNOT_BE_RESOLVED(HttpStatus.BAD_REQUEST, "Yêu cầu hỗ trợ chưa được phân công hoặc đã hoàn thành"),
     INVALID_OTP(HttpStatus.BAD_REQUEST, "Mã xác thực OTP không chính xác"),
     OTP_EXPIRED(HttpStatus.BAD_REQUEST, "Mã xác thực OTP đã hết hạn, vui lòng yêu cầu mã mới"),
+    MUST_SETTLE_OVERDUE_DEBT_FIRST(HttpStatus.BAD_REQUEST,
+            "Hợp đồng đang nợ phí phạt quá hạn. Vui lòng thanh toán nợ phạt trước khi báo trả kho"),
 
     // 401 Unauthorized
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "Chưa xác thực hoặc token không hợp lệ"),

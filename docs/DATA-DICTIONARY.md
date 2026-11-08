@@ -201,14 +201,15 @@ Chính sách vận hành có phiên bản đầy đủ tại từng thời đi�
 | `rental_buffer_days` | `INT` | Có | `DEFAULT 15` | Số ngày đệm giữa hai kỳ thuê trên cùng ô kho (`BR-AVL-02`) |
 | `rental_daily_divisor` | `INT` | Có | `DEFAULT 30` | Mẫu số quy đổi giá tháng sang giá ngày (`BR-PRI-03`) |
 | `overdue_grace_days` | `INT` | Có | | Số ngày ân hạn quá hạn trước khi tính phí (`3` ngày - `BR-OVD-01`) |
-| `overdue_daily_rate` | `DECIMAL(5,2)` | Có | | Tỷ lệ phí quá hạn mỗi ngày (`0.05` = 5%/ngày - `BR-OVD-02`) |
-| `overdue_cap_rate` | `DECIMAL(5,2)` | Có | | Trần phí quá hạn tối đa (`0.35` = 35% tiền cọc - `BR-OVD-03`) |
-| `overdue_lock_access_days` | `INT` | Có | | Mốc ngày khóa quyền truy cập (`D+10` - `BR-OVD-05`) |
-| `overdue_notice_days` | `INT` | Có | | Mốc ngày gửi thông báo tính phí (`D+4` - `BR-OVD-04`) |
-| `overdue_termination_days` | `INT` | Có | | Mốc ngày đơn phương chấm dứt hợp đồng (`D+10` - `BR-OVD-05`) |
+| `overdue_daily_rate` | `DECIMAL(5,2)` | Có | | Tỷ lệ phí quá hạn mỗi ngày (`0.10` = 10% Deposit/ngày - `BR-OVD-03`) |
+| `overdue_cap_rate` | `DECIMAL(5,2)` | Có | | Trần phí quá hạn tối đa (`0.70` = 70% tiền cọc Deposit - `BR-OVD-04`) |
+| `overdue_lock_access_days` | `INT` | Có | | Mốc ngày khóa quyền truy cập (`D+7` - `BR-OVD-05`) |
+| `overdue_notice_days` | `INT` | Có | | Mốc ngày gửi thông báo tính phí (`D+4` - `BR-OVD-03`) |
+| `overdue_termination_days` | `INT` | Có | | Mốc ngày đơn phương chấm dứt hợp đồng (`D+10` - `BR-OVD-07`) |
 | `return_notice_days` | `INT` | Có | | Số ngày báo trước khi trả kho (`3` ngày - `BR-RET-01`) |
-| `return_refund_working_days` | `INT` | Có | | Số ngày làm việc hoàn tiền cọc (`3` ngày - `BR-RET-05`) |
-| `return_early_refund_rate` | `DECIMAL(5,2)` | Có | | Tỷ lệ hoàn tiền thuê khi trả kho trước hạn (`1.00` = 100% - `BR-RET-06`, sau khi trừ phạt cọc và hư hỏng) |
+| `return_refund_working_days` | `INT` | Có | | Số ngày làm việc hoàn tiền cọc (`7` ngày làm việc - `BR-RET-05`) |
+| `return_early_refund_rate` | `DECIMAL(5,2)` | Có | | Tỷ lệ hoàn tiền thuê khi trả kho trước hạn (`1.00` = 100% tiền thuê chưa dùng - `BR-RET-06`) |
+| `return_early_penalty_rate` | `DECIMAL(5,2)` | Có | | Tỷ lệ phạt tiền cọc vi phạm hạn hợp đồng khi trả sớm (`1.00` = 100% Deposit - `BR-RET-06`) |
 | `access_pin_length` | `INT` | Có | `DEFAULT 6` | Độ dài mã PIN bảo mật (`BR-ACC-01`) |
 | `support_urgent_sla_hours` | `INT` | Có | | Cam kết SLA xử lý sự cố khẩn (`4` giờ - `BR-SUP-01`) |
 | `support_auto_close_working_days` | `INT` | Có | | Ngày tự động đóng yêu cầu hỗ trợ (`3` ngày - `BR-SUP-03`) |

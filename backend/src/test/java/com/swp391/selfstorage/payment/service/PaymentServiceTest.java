@@ -421,6 +421,34 @@ class PaymentServiceTest {
                 "Hợp đồng PHẢI giữ nguyên OVERDUE sau khi nộp phạt — KHÔNG được chuyển ACTIVE (BR-OVD-08)");
         assertEquals(0L, contract.getOverdueFeeAccrued(),
                 "Nợ phạt phải được xóa về 0 sau khi thanh toán thành công");
+        assertNotNull(contract.getAccessCode(), "Phải cấp lại mã PIN sau khi tất toán nợ phạt (BR-OVD-08)");
+        assertEquals(6, contract.getAccessCode().length(), "Mã PIN cấp lại phải có độ dài 6 chữ số");
+    }
+
+    @Test
+    @DisplayName("BR-OVD-08: Thanh toán nợ phạt khi mã PIN chưa bị khóa (D+4..D+6) giữ nguyên mã PIN cũ")
+    void completeVnpayPayment_OverduePenalty_PreservesExistingAccessCode() {
+        PaymentTransaction txn = PaymentTransaction.builder()
+                .id(1002L).orderCode(99992222L).amount(100_000L)
+                .status("PENDING").transactionType("OVERDUE_PENALTY").contractId(80021L)
+                .build();
+
+        com.swp391.selfstorage.contract.entity.RentalContract contract =
+                new com.swp391.selfstorage.contract.entity.RentalContract();
+        contract.setId(80021L);
+        contract.setStatus(com.swp391.selfstorage.contract.entity.ContractStatus.OVERDUE);
+        contract.setOverdueFeeAccrued(100_000L);
+        contract.setAccessCode("654321"); // Chưa bị khóa tại D+5
+
+        when(paymentTransactionRepository.findByOrderCodeForUpdate(99992222L)).thenReturn(Optional.of(txn));
+        when(rentalContractRepository.findById(80021L)).thenReturn(Optional.of(contract));
+        when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        boolean ok = paymentService.completeVnpayPayment(99992222L, true, 100_000L * 100L, "VNPAY-REF", "NCB");
+
+        assertTrue(ok);
+        assertEquals(0L, contract.getOverdueFeeAccrued());
+        assertEquals("654321", contract.getAccessCode(), "Mã PIN cũ phải được giữ nguyên khi chưa bị xóa");
     }
 
     @Test

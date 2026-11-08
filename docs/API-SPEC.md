@@ -1505,9 +1505,44 @@ Gửi thông báo trả kho — `SC-05`, `BR-RET-01`.
 
 | Status  | errorCode                          | Điều kiện                                                    |
 | ------- | ---------------------------------- | --------------------------------------------------------------- |
+| `400` | `MUST_SETTLE_OVERDUE_DEBT_FIRST`   | Hợp đồng OVERDUE còn nợ phí phạt chưa thanh toán — `BR-OVD-03`, `UNH-RET-01` |
 | `404` | `CONTRACT_NOT_FOUND`             | Hợp đồng không tồn tại                                    |
 | `409` | `CONTRACT_NOT_ACTIVE_OR_OVERDUE` | Hợp đồng không ở trạng thái ACTIVE hoặc OVERDUE         |
 | `422` | `RETURN_NOTICE_TOO_SHORT`        | Ngày trả dự kiến nhỏ hơn ngày hiện tại —`BR-RET-01` |
+
+---
+
+### `POST /api/v1/contracts/{id}/cancel-return`
+
+Khách hàng hủy yêu cầu trả kho khi nhân viên chưa bắt đầu nghiệm thu hiện trường — `BR-RET-12`, `UNH-RET-03`.
+
+**Auth:** `CUSTOMER` (chính chủ sở hữu hợp đồng), `FACILITY_STAFF`, `FACILITY_MANAGER`, `ADMIN`
+
+**Response `200`:**
+
+```json
+{
+  "code": 200,
+  "message": "Hủy yêu cầu trả kho thành công",
+  "data": {
+    "id": 300,
+    "contractId": 500,
+    "intendedReturnDate": "2027-01-01",
+    "status": "CANCELLED",
+    "createdAt": "2026-12-20T09:00:00+07:00"
+  }
+}
+```
+
+**Lỗi:**
+
+| Status  | errorCode                           | Điều kiện                                                         |
+| ------- | ----------------------------------- | ----------------------------------------------------------------- |
+| `403`   | `ACCESS_DENIED`                     | Khách hàng không phải là chủ sở hữu của hợp đồng                  |
+| `404`   | `CONTRACT_NOT_FOUND`                | Không tìm thấy hợp đồng                                           |
+| `404`   | `RETURN_REQUEST_NOT_FOUND`          | Không tìm thấy yêu cầu trả kho tương ứng                          |
+| `409`   | `CONTRACT_NOT_PENDING_RETURN`       | Hợp đồng chưa ở trạng thái PENDING_RETURN để hủy                  |
+| `409`   | `RETURN_INSPECTION_ALREADY_STARTED` | Nhân viên cơ sở đã bắt đầu tiến hành kiểm tra nghiệm thu hiện trường |
 
 ---
 
@@ -1572,6 +1607,40 @@ Xác nhận kiểm tra hiện trạng khi trả kho — `FS-04`, `FM-04`.
   "estimatedDepositRefund": 800000,
   "overdueFee": 0,
   "damageCost": 200000
+}
+```
+
+---
+
+### `POST /api/v1/contracts/{id}/catalog-fees`
+
+Ghi phụ phí danh mục (BOM Catalog Fee) vào hợp đồng đang thuê — `FS-04`, `BR-PRI-04`, `BR-RET-08`.
+
+**Auth:** `FACILITY_STAFF`, `FACILITY_MANAGER`, `ADMIN`
+**Request body:**
+
+```json
+{
+  "extraFeeTypeId": 1,
+  "note": "Khách làm hư hỏng kết cấu bản lề cửa ô kho"
+}
+```
+
+**Response `200`:**
+
+```json
+{
+  "code": 200,
+  "message": "Đã ghi phụ phí vào hợp đồng",
+  "data": {
+    "id": 12,
+    "contractId": 500,
+    "extraFeeTypeId": 1,
+    "name": "Hư hỏng bản lề cửa",
+    "category": "DAMAGE",
+    "amount": 200000,
+    "status": "UNPAID"
+  }
 }
 ```
 
@@ -1642,6 +1711,39 @@ FM phê duyệt quyết toán, hoàn cọc, thu hồi mã truy cập, đưa kho 
 | `404` | `CONTRACT_NOT_FOUND`          | Hợp đồng không tồn tại                                    |
 | `404` | `RETURN_REQUEST_NOT_FOUND`    | Chưa có biên bản nghiệm thu trả kho                       |
 | `409` | `CONTRACT_NOT_PENDING_RETURN` | Hợp đồng không ở trạng thái PENDING_RETURN hoặc OVERDUE |
+
+---
+
+### `POST /api/v1/contracts/{id}/cleaning-complete`
+
+Xác nhận hoàn tất vệ sinh ô kho sau nghiệm thu trả kho — `FS-04`, `BR-RET-09`, `UC-F3-09`.
+
+Khi dọn vệ sinh xong: nếu Storage Unit đang có Reservation ở trạng thái *Confirmed* chờ Check-in thì chuyển ô kho sang `RESERVED`; nếu không có ai đặt thì chuyển ô kho sang `AVAILABLE` để mở bán ngay.
+
+**Auth:** `FACILITY_STAFF`, `FACILITY_MANAGER`, `ADMIN`
+
+**Response `200`:**
+
+```json
+{
+  "code": 200,
+  "message": "Đã hoàn tất dọn ô kho",
+  "data": {
+    "id": 500,
+    "status": "CLOSED",
+    "storageUnitId": 42,
+    "storageUnitCode": "S-101",
+    "unitStatus": "AVAILABLE"
+  }
+}
+```
+
+**Lỗi:**
+
+| Status  | errorCode               | Điều kiện                                      |
+| ------- | ----------------------- | ---------------------------------------------- |
+| `404`   | `CONTRACT_NOT_FOUND`    | Hợp đồng không tồn tại                         |
+| `404`   | `STORAGE_UNIT_NOT_FOUND`| Không tìm thấy ô kho liên kết với hợp đồng     |
 
 ---
 
@@ -1971,6 +2073,31 @@ Lấy phiên bản chính sách đang hiệu lực.
 
 **Auth:** Bất kỳ vai trò đã đăng nhập
 **Response `200`:** Trả về `PolicyResponse` của phiên bản đang hoạt động.
+
+---
+
+### `POST /api/v1/policies/cron/process-overdue`
+
+Kích hoạt thủ công tác vụ quét hợp đồng quá hạn hàng ngày (T4.6 / Sub-flow 6.2) — `BR-OVD-01..11`, `UC-F6-05..11`.
+
+**Auth:** `BUSINESS_OPERATIONS_MANAGER`, `FACILITY_MANAGER`, `SYSTEM_ADMINISTRATOR`
+**Query params:** `date` (tùy chọn, ISO format `YYYY-MM-DD`, mặc định là ngày hiện tại)
+
+**Response `200`:**
+
+```json
+{
+  "code": 200,
+  "message": "Quét quá hạn thành công",
+  "data": {
+    "scanned": 15,
+    "overdue": 3,
+    "penalized": 2,
+    "terminated": 1,
+    "totalPenalty": 750000
+  }
+}
+```
 
 ---
 

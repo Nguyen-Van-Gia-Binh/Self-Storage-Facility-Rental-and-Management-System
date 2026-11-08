@@ -95,6 +95,7 @@ public class PolicyController {
      * Test/Admin).
      */
     @PostMapping("/cron/process-overdue")
+    @PreAuthorize("hasAnyRole('BUSINESS_OPERATIONS_MANAGER', 'FACILITY_MANAGER', 'SYSTEM_ADMINISTRATOR')")
     @Operation(summary = "Kích hoạt thủ công tác vụ quét hợp đồng quá hạn (T4.6)")
     public ResponseEntity<ApiResponse<OverdueProcessingResult>> triggerOverdueProcessing(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {

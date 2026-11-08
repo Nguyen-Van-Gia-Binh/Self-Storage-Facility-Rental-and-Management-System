@@ -376,6 +376,11 @@ public class PaymentServiceImpl implements PaymentService {
             if (payment.getContractId() != null) {
                 rentalContractRepository.findById(payment.getContractId()).ifPresent(c -> {
                     c.setOverdueFeeAccrued(0L);
+                    if (c.getAccessCode() == null || c.getAccessCode().isBlank()) {
+                        String restoredPin = String.format("%06d", (int) (Math.random() * 900000) + 100000);
+                        c.setAccessCode(restoredPin);
+                        log.info("Cấp lại mã PIN mới [{}] cho contractId={} sau khi tất toán nợ phạt (BR-OVD-08)", restoredPin, c.getId());
+                    }
                     rentalContractRepository.save(c);
                     log.info("Xóa nợ phạt về 0 cho contractId={}, giữ nguyên trạng thái OVERDUE (BR-OVD-08)", c.getId());
                 });
