@@ -163,7 +163,9 @@ export const OverduePenaltyPaymentModal: React.FC<OverduePenaltyPaymentModalProp
             </span>
           </div>
           <h2 className="text-lg sm:text-xl font-bold tracking-tight">
-            Đóng Nợ Phạt Ô Kho {unitNumber}
+            {paymentType === 'SETTLEMENT'
+              ? `Tất Toán Công Nợ Quyết Toán Ô Kho ${unitNumber}`
+              : `Đóng Phí Quá Hạn & Mở PIN Tạm Ô Kho ${unitNumber}`}
           </h2>
           <p className="text-xs text-emerald-100/90 mt-0.5">
             {facilityName} {contractId ? `· Hợp đồng #${contractId}` : ''}
@@ -171,20 +173,30 @@ export const OverduePenaltyPaymentModal: React.FC<OverduePenaltyPaymentModalProp
         </div>
 
         <div className="p-5 sm:p-6 space-y-4 max-h-[82vh] overflow-y-auto">
-          {/* Cảnh báo nợ phạt quá hạn */}
+          {/* Cảnh báo nợ phạt quá hạn / quyết toán */}
           <div className="bg-rose-50 border border-rose-200/90 rounded-2xl p-4 flex items-center justify-between gap-3 text-rose-900">
             <div className="flex items-center gap-2.5">
               <Clock className="w-5 h-5 text-rose-600 shrink-0" />
               <div>
-                <span className="text-xs font-bold block">Xử lý nợ quá hạn hợp đồng</span>
-                <span className="text-[11px] text-rose-700">Tất toán nợ phạt để khôi phục quyền Báo trả kho</span>
+                <span className="text-xs font-bold block">
+                  {paymentType === 'SETTLEMENT'
+                    ? 'Tất toán chi phí phát sinh / lưu Kho Tổng'
+                    : 'Mở khóa mã PIN tạm thời & Quyền Báo trả kho (BR-OVD-08)'}
+                </span>
+                <span className="text-[11px] text-rose-700">
+                  {paymentType === 'SETTLEMENT'
+                    ? 'Thanh toán khoản thiếu hụt quyết toán để nhận lại tài sản và đóng hợp đồng'
+                    : 'Tất toán phí quá hạn để nhận Mã PIN tạm đến 23:59 hôm nay và mở nút Báo trả kho'}
+                </span>
               </div>
             </div>
             <div className="text-right shrink-0">
               <span className="font-mono text-base font-extrabold text-rose-700 tracking-wider">
                 {formatVND(totalAmount)}
               </span>
-              <span className="text-[10px] text-rose-600 block">Nợ phạt phát sinh</span>
+              <span className="text-[10px] text-rose-600 block">
+                {paymentType === 'SETTLEMENT' ? 'Công nợ quyết toán' : 'Phí quá hạn lũy kế'}
+              </span>
             </div>
           </div>
 
@@ -194,7 +206,11 @@ export const OverduePenaltyPaymentModal: React.FC<OverduePenaltyPaymentModalProp
           {/* Bảng chi tiết khoản nộp */}
           <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-2 text-xs">
             <div className="flex justify-between text-slate-600">
-              <span>Phí phạt quá hạn tích lũy:</span>
+              <span>
+                {paymentType === 'SETTLEMENT'
+                  ? 'Chi phí phát sinh / lưu Kho Tổng cần thanh toán:'
+                  : 'Phí lưu kho / phạt quá hạn tích lũy:'}
+              </span>
               <span className="font-bold text-rose-600">{formatVND(totalAmount)}</span>
             </div>
             <div className="pt-2 border-t border-slate-200 flex justify-between items-center text-sm">
@@ -207,7 +223,9 @@ export const OverduePenaltyPaymentModal: React.FC<OverduePenaltyPaymentModalProp
           <div className="flex items-start gap-2 text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
             <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
             <span>
-              Hệ thống đối soát tự động qua VNPay. Sau khi thanh toán thành công, nợ phạt sẽ được xóa về 0 và quyền Báo trả kho sẽ được khôi phục ngay lập tức.
+              {paymentType === 'SETTLEMENT'
+                ? 'Hệ thống đối soát tự động qua VNPay/VietQR. Sau khi thanh toán thành công, hợp đồng sẽ được tự động đóng (CLOSED) và bạn có thể nhận lại tài sản tại Kho Tổng.'
+                : 'Hệ thống đối soát tự động qua VNPay/VietQR. Ngay khi thanh toán thành công, nợ quá hạn được xóa về 0, hệ thống cấp Mã PIN tạm thời hiệu lực đến 23:59 hôm nay để bạn vào dọn đồ và mở khóa nút Báo trả kho.'}
             </span>
           </div>
 

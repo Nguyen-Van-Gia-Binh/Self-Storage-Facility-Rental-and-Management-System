@@ -159,6 +159,7 @@ export function mapBackendRentalToContract(item: BackendRentalSummary): RentedCo
     status: mappedStatus,
     overdueDays: item.overdueDays || 0,
     overdueFee: item.overdueFeeAccrued || 0,
+    totalOutstandingDebt: item.totalOutstandingDebt || 0,
     inspectionDone: Boolean(item.inspectionDone),
     hasPendingRenewal: Boolean(item.hasPendingRenewal),
     pendingRenewalOrderCode: item.pendingRenewalOrderCode,

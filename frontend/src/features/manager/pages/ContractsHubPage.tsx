@@ -552,59 +552,64 @@ export const ContractsHubPage: React.FC = () => {
 
                         {activeTab === 'OVERDUE' && (
                           <div className="space-y-1">
-                            {/* Số ngày quá hạn D+ */}
+                            {/* Số ngày quá hạn D+ theo chu trình 8 ngày (BR-OVD-01..07) */}
                             {contract.overdueDays !== undefined && contract.overdueDays <= 3 ? (
                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
-                                Quá hạn D+{contract.overdueDays} ngày (Ân hạn)
+                                Quá hạn D+{contract.overdueDays} ngày (Phí lưu kho 5%/ngày)
                               </span>
                             ) : contract.overdueDays !== undefined && contract.overdueDays <= 6 ? (
                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-orange-100 text-orange-800 border border-orange-300">
                                 Quá hạn D+{contract.overdueDays} ngày (Phạt 10%/ngày)
                               </span>
-                            ) : contract.overdueDays !== undefined && contract.overdueDays <= 10 ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
-                                Quá hạn D+{contract.overdueDays} ngày (Đã khóa PIN D+7)
-                              </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-purple-100 text-purple-900 border border-purple-400">
-                                Quá hạn D+{contract.overdueDays ?? 10} ngày (Niêm phong D+10+)
+                                Quá hạn D+{contract.overdueDays ?? 7} ngày (Niêm phong Kho Tổng D+7)
                               </span>
                             )}
 
                             {/* Cảnh báo chi tiết theo mốc */}
                             {contract.overdueDays !== undefined && contract.overdueDays <= 3 ? (
-                              <span className="block text-[10px] text-amber-800 font-medium flex items-center gap-1">
-                                <Unlock className="w-3 h-3 text-amber-600" />
-                                Trong 3 ngày ân hạn (chưa tính phí phạt · PIN mở bình thường)
-                              </span>
-                            ) : contract.overdueDays !== undefined && contract.overdueDays <= 6 ? (
                               <div className="space-y-0.5">
-                                <span className="block text-[10px] text-orange-700 font-bold flex items-center gap-1">
-                                  <AlertTriangle className="w-3 h-3 text-orange-600" />
-                                  Đang tính phí phạt 10%/ngày • Cảnh báo khóa PIN vào D+7
-                                </span>
+                                {contract.accessCode ? (
+                                  <span className="block text-[10px] text-emerald-700 font-bold flex items-center gap-1">
+                                    <Unlock className="w-3 h-3 text-emerald-600" />
+                                    Đã đóng phí • Cấp PIN tạm ({contract.accessCode}) đến 23:59 để dọn đồ
+                                  </span>
+                                ) : (
+                                  <span className="block text-[10px] text-amber-800 font-bold flex items-center gap-1">
+                                    <Lock className="w-3 h-3 text-amber-600" />
+                                    Đã khóa PIN • Đóng phí lưu kho (5%–15% cọc) để mở PIN tạm & trả kho
+                                  </span>
+                                )}
                                 {contract.accruedOverdueFee && contract.accruedOverdueFee > 0 ? (
-                                  <span className="block text-[10px] text-orange-800 font-semibold">
-                                    Nợ phạt tạm tính: {contract.accruedOverdueFee.toLocaleString('vi-VN')} đ
+                                  <span className="block text-[10px] text-amber-900 font-semibold">
+                                    Phí lưu kho quá hạn: {contract.accruedOverdueFee.toLocaleString('vi-VN')} đ
                                   </span>
                                 ) : null}
                               </div>
-                            ) : contract.overdueDays !== undefined && contract.overdueDays <= 10 ? (
+                            ) : contract.overdueDays !== undefined && contract.overdueDays <= 6 ? (
                               <div className="space-y-0.5">
-                                <span className="block text-[10px] text-rose-700 font-bold flex items-center gap-1">
-                                  <Lock className="w-3 h-3 text-rose-600" />
-                                  Đã khóa mã PIN/QR • Phạt tiếp đến trần 70% cọc
-                                </span>
+                                {contract.accessCode ? (
+                                  <span className="block text-[10px] text-emerald-700 font-bold flex items-center gap-1">
+                                    <Unlock className="w-3 h-3 text-emerald-600" />
+                                    Đã tất toán nợ phạt • Cấp PIN tạm ({contract.accessCode}) đến 23:59
+                                  </span>
+                                ) : (
+                                  <span className="block text-[10px] text-orange-700 font-bold flex items-center gap-1">
+                                    <Lock className="w-3 h-3 text-orange-600" />
+                                    Đã khóa PIN • Lũy kế 25%–45% cọc • Cưỡng chế niêm phong vào D+7
+                                  </span>
+                                )}
                                 {contract.accruedOverdueFee && contract.accruedOverdueFee > 0 ? (
-                                  <span className="block text-[10px] text-rose-800 font-semibold">
-                                    Nợ phạt: {contract.accruedOverdueFee.toLocaleString('vi-VN')} đ (Hạn chót 23:59 D+10)
+                                  <span className="block text-[10px] text-orange-800 font-semibold">
+                                    Nợ phạt tích lũy: {contract.accruedOverdueFee.toLocaleString('vi-VN')} đ
                                   </span>
                                 ) : null}
                               </div>
                             ) : (
                               <span className="block text-[10px] text-purple-900 font-bold flex items-center gap-1">
                                 <ShieldAlert className="w-3 h-3 text-purple-700" />
-                                Đã chấm dứt HĐ • Kích hoạt niêm phong (D+10+)
+                                Khấu trừ 100% cọc (55% quá hạn + 45% niêm phong) • D+8 mở bán lại
                               </span>
                             )}
                           </div>
@@ -612,18 +617,34 @@ export const ContractsHubPage: React.FC = () => {
 
                         {activeTab === 'TERMINATED' && (
                           <div className="space-y-1">
-                            <span
-                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                                contract.status === 'CLOSED'
-                                  ? 'bg-slate-100 text-slate-700 border border-slate-300'
-                                  : 'bg-rose-100 text-rose-800 border border-rose-300'
-                              }`}
-                            >
-                              {contract.status === 'CLOSED' ? 'Đã tất toán & Đóng hợp đồng' : 'Đã chấm dứt • Chờ hoàn tiền 100%'}
-                            </span>
-                            <span className="block text-[10px] text-slate-500">
-                              Ngày kết thúc: <strong className="font-mono text-slate-700">{contract.endDateExclusive || contract.startDate}</strong>
-                            </span>
+                            {(() => {
+                              const isOverdueImpounded =
+                                Boolean(contract.checkinDate) ||
+                                (contract.overdueDays ?? 0) > 0 ||
+                                contract.depositBalance === 0;
+                              return (
+                                <>
+                                  <span
+                                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                                      contract.status === 'CLOSED'
+                                        ? 'bg-slate-100 text-slate-700 border border-slate-300'
+                                        : isOverdueImpounded
+                                        ? 'bg-purple-100 text-purple-900 border border-purple-300'
+                                        : 'bg-rose-100 text-rose-800 border border-rose-300'
+                                    }`}
+                                  >
+                                    {contract.status === 'CLOSED'
+                                      ? 'Đã tất toán & Đóng hợp đồng'
+                                      : isOverdueImpounded
+                                      ? 'Đã cưỡng chế & Niêm phong Kho Tổng (D+7)'
+                                      : 'Đã chấm dứt • Chờ hoàn tiền 100%'}
+                                  </span>
+                                  <span className="block text-[10px] text-slate-500">
+                                    Ngày kết thúc: <strong className="font-mono text-slate-700">{contract.endDateExclusive || contract.startDate}</strong>
+                                  </span>
+                                </>
+                              );
+                            })()}
                           </div>
                         )}
                       </td>
@@ -707,15 +728,21 @@ export const ContractsHubPage: React.FC = () => {
                           <>
                             {contract.status === 'TERMINATED' && (
                               <>
-                                <button
-                                  type="button"
-                                  onClick={() => setFloorPlanReassignContract(contract)}
-                                  className="px-2.5 py-1.5 text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-lg transition-colors inline-flex items-center gap-1 shadow-2xs cursor-pointer"
-                                  title="Đổi ô kho mới trên sơ đồ 2D và khôi phục hợp đồng cho khách"
-                                >
-                                  <Repeat className="w-3 h-3 text-amber-600" />
-                                  <span>Đổi ô kho (2D)</span>
-                                </button>
+                                {!(
+                                  Boolean(contract.checkinDate) ||
+                                  (contract.overdueDays ?? 0) > 0 ||
+                                  contract.depositBalance === 0
+                                ) && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setFloorPlanReassignContract(contract)}
+                                    className="px-2.5 py-1.5 text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-lg transition-colors inline-flex items-center gap-1 shadow-2xs cursor-pointer"
+                                    title="Đổi ô kho mới trên sơ đồ 2D và khôi phục hợp đồng cho khách"
+                                  >
+                                    <Repeat className="w-3 h-3 text-amber-600" />
+                                    <span>Đổi ô kho (2D)</span>
+                                  </button>
+                                )}
                                 <button
                                   type="button"
                                   onClick={() => {
@@ -723,10 +750,22 @@ export const ContractsHubPage: React.FC = () => {
                                     setSettlementModalOpen(true);
                                   }}
                                   className="px-2.5 py-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition-colors inline-flex items-center gap-1 shadow-2xs cursor-pointer"
-                                  title="Duyệt quyết toán và xuất lệnh hoàn trả 100% (cọc + tiền thuê) cho khách hàng"
+                                  title={
+                                    Boolean(contract.checkinDate) ||
+                                    (contract.overdueDays ?? 0) > 0 ||
+                                    contract.depositBalance === 0
+                                      ? 'Quyết toán hợp đồng cưỡng chế D+7 (Nhập phí lưu Kho Tổng hoặc Chốt thanh lý sau 30 ngày)'
+                                      : 'Duyệt quyết toán và xuất lệnh hoàn trả 100% (cọc + tiền thuê) cho khách hàng'
+                                  }
                                 >
                                   <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                                  <span>Duyệt hoàn tiền 100%</span>
+                                  <span>
+                                    {Boolean(contract.checkinDate) ||
+                                    (contract.overdueDays ?? 0) > 0 ||
+                                    contract.depositBalance === 0
+                                      ? 'Quyết toán Kho Tổng'
+                                      : 'Duyệt hoàn tiền 100%'}
+                                  </span>
                                 </button>
                               </>
                             )}

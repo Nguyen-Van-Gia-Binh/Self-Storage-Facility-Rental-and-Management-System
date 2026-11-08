@@ -57,17 +57,19 @@ class OverdueProcessingServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Chính sách chuẩn: ân hạn 3 ngày, phạt 10%/ngày, trần phạt 70%, chấm dứt tại
-        // D+10
+        // Chính sách chuẩn chu kỳ 8 ngày: Giai đoạn 1 (3 ngày, 5%/ngày = 15%),
+        // Giai đoạn 2 (4 ngày D+4..D+7, 10%/ngày = 40%), trần quá hạn 55% (+45% phí niêm phong = 100% cọc),
+        // khóa PIN ngay từ D+1, cưỡng chế chấm dứt tại D+7 (dọn 1 ngày, D+8 mở bán lại).
         mockPolicy = PolicyVersion.builder()
                 .id(1L)
                 .versionNo(1)
                 .effectiveFrom(OffsetDateTime.now().minusMonths(1))
                 .overdueGraceDays(3)
                 .overdueDailyRate(BigDecimal.valueOf(0.10))
-                .overdueCapRate(BigDecimal.valueOf(0.70))
-                .overdueLockAccessDays(7)   // BR-OVD-05: Khóa mã truy cập tại D+7
-                .overdueTerminationDays(10) // BR-OVD-07: Cưỡng chế chấm dứt tại D+10
+                .overdueCapRate(BigDecimal.valueOf(0.55))
+                .overdueLockAccessDays(1)    // BR-OVD-01, BR-OVD-05: Khóa mã truy cập ngay từ D+1 (No Pay, No PIN)
+                .overdueTerminationDays(7)   // BR-OVD-07: Cưỡng chế chấm dứt & niêm phong Kho Tổng tại D+7
+                .rentalBufferDays(8)
                 .build();
 
         baseEndDate = LocalDate.of(2026, 10, 1);
@@ -75,8 +77,8 @@ class OverdueProcessingServiceTest {
     }
 
     @Test
-    @DisplayName("Kịch bản 1: Mốc D+2 (Ân hạn) - Chuyển sang OVERDUE, chưa tính phạt, giữ nguyên accessCode")
-    void testGracePeriod_D2_ShouldMarkOverdueWithZeroFee() {
+    @DisplayName("Kịch bản 1: Mốc D+2 (Giai đoạn 1: 5% cọc/ngày) - Chuyển sang OVERDUE, phí lưu kho 10% cọc (200.000đ), khóa accessCode")
+    void testGracePeriod_D2_ShouldMarkOverdueWithStage1FeeAndLockPin() {
         LocalDate runDate = baseEndDate.plusDays(2); // 2026-10-03 (D+2)
 
         RentalContract contract = RentalContract.builder()
@@ -97,22 +99,21 @@ class OverdueProcessingServiceTest {
 
         assertEquals(1, result.getTotalScanned());
         assertEquals(1, result.getMarkedOverdueCount());
-        assertEquals(0, result.getPenalizedCount());
+        assertEquals(1, result.getPenalizedCount());
         assertEquals(0, result.getTerminatedCount());
-        assertEquals(0L, result.getTotalPenaltiesAccrued());
+        assertEquals(200_000L, result.getTotalPenaltiesAccrued());
 
         assertEquals(ContractStatus.OVERDUE, contract.getStatus());
-        assertEquals(0L, contract.getOverdueFeeAccrued());
-        assertEquals("AC-123456", contract.getAccessCode()); // Khách vẫn mở kho bình thường
+        assertEquals(200_000L, contract.getOverdueFeeAccrued());
+        assertNull(contract.getAccessCode()); // Nguyên tắc No Pay, No PIN ngay từ D+1
     }
 
     @Test
-    @DisplayName("Kịch bản 2: Mốc D+5 (Phạt lũy tiến) - Phạt 2 ngày = 20% tiền cọc (400.000đ)")
+    @DisplayName("Kịch bản 2: Mốc D+5 (Giai đoạn 2: +10% cọc/ngày) - Lũy kế 15% (3 ngày đầu) + 20% (2 ngày phạt) = 35% cọc (700.000đ)")
     void testDailyPenalty_D5_ShouldAccruePenalty() {
         LocalDate runDate = baseEndDate.plusDays(5); // 2026-10-06 (D+5)
 
-        // Quá hạn 5 ngày -> Số ngày tính phạt = 5 - 3 = 2 ngày -> 2 * 10% * 2.000.000 =
-        // 400.000đ
+        // Quá hạn 5 ngày -> 3 ngày đầu (15%) + 2 ngày D+4, D+5 (20%) = 35% * 2.000.000 = 700.000đ
         RentalContract contract = RentalContract.builder()
                 .id(101L)
                 .code("CTR-002")
@@ -131,17 +132,17 @@ class OverdueProcessingServiceTest {
 
         assertEquals(1, result.getTotalScanned());
         assertEquals(1, result.getPenalizedCount());
-        assertEquals(400_000L, result.getTotalPenaltiesAccrued());
+        assertEquals(700_000L, result.getTotalPenaltiesAccrued());
 
         assertEquals(ContractStatus.OVERDUE, contract.getStatus());
-        assertEquals(400_000L, contract.getOverdueFeeAccrued());
-        assertEquals("AC-123456", contract.getAccessCode()); // Vẫn cho phép vào dọn đồ
+        assertEquals(700_000L, contract.getOverdueFeeAccrued());
+        assertNull(contract.getAccessCode());
     }
 
     @Test
-    @DisplayName("Kịch bản 3: Mốc D+10 (Cưỡng chế) - Chốt trần 70% cọc, cấn trừ cọc, khóa accessCode, TERMINATED, kho MAINTENANCE")
-    void testForcedTermination_D10_ShouldTerminateLockAccessAndSetMaintenance() {
-        LocalDate runDate = baseEndDate.plusDays(10); // 2026-10-11 (D+10)
+    @DisplayName("Kịch bản 3: Mốc D+7 (Cưỡng chế & Niêm phong Kho Tổng) - Phí quá hạn 55% cọc + 45% phí niêm phong = khấu trừ 100% cọc (depositBalance = 0), TERMINATED, kho MAINTENANCE")
+    void testForcedTermination_D7_ShouldTerminateDeductFullDepositAndSetMaintenance() {
+        LocalDate runDate = baseEndDate.plusDays(7); // 2026-10-08 (D+7)
 
         RentalContract contract = RentalContract.builder()
                 .id(102L)
@@ -151,7 +152,7 @@ class OverdueProcessingServiceTest {
                 .storageUnitId(55L)
                 .depositAmount(2_000_000L)
                 .depositBalance(2_000_000L)
-                .overdueFeeAccrued(600_000L)
+                .overdueFeeAccrued(900_000L)
                 .accessCode("AC-123456")
                 .build();
 
@@ -169,22 +170,22 @@ class OverdueProcessingServiceTest {
         assertEquals(1, result.getTotalScanned());
         assertEquals(1, result.getTerminatedCount());
 
-        // Phạt trần 70% cọc = 1.400.000đ
-        assertEquals(1_400_000L, contract.getOverdueFeeAccrued());
-        // Cấn trừ cọc: 2.000.000 - 1.400.000 = 600.000đ
-        assertEquals(600_000L, contract.getDepositBalance());
-        // Khóa mã mở cửa
+        // Phí quá hạn chạm trần 55% cọc (15% + 40%) = 1.100.000đ
+        assertEquals(1_100_000L, contract.getOverdueFeeAccrued());
+        // Khấu trừ nốt 45% cọc (900.000đ) làm phí cắt khóa, niêm phong & vận chuyển về Kho Tổng -> depositBalance = 0đ
+        assertEquals(0L, contract.getDepositBalance());
+        // Khóa mã mở cửa vĩnh viễn
         assertNull(contract.getAccessCode());
         // Hợp đồng chuyển sang TERMINATED
         assertEquals(ContractStatus.TERMINATED, contract.getStatus());
-        // Ô kho chuyển sang MAINTENANCE để bảo trì & niêm phong đồ tồn
+        // Ô kho chuyển sang MAINTENANCE (1 ngày) để niêm phong đồ về Kho Tổng & vệ sinh
         assertEquals(StorageUnitStatus.MAINTENANCE, mockUnit.getStatus());
     }
 
     @Test
-    @DisplayName("Kịch bản 3.1: Mốc D+15 (Hết bảo trì) - Tự động chuyển kho sang RESERVED nếu có người đặt trước CONFIRMED")
-    void testAutoReleaseUnit_D15_ShouldSetReserved_WhenConfirmedReservationExists() {
-        LocalDate runDate = baseEndDate.plusDays(15); // D+15
+    @DisplayName("Kịch bản 3.1: Mốc D+8 (Sau 1 ngày dọn dẹp) - Tự động chuyển kho sang RESERVED nếu có người đặt trước CONFIRMED")
+    void testAutoReleaseUnit_D8_ShouldSetReserved_WhenConfirmedReservationExists() {
+        LocalDate runDate = baseEndDate.plusDays(8); // D+8
 
         RentalContract terminatedContract = RentalContract.builder()
                 .id(104L)
@@ -212,9 +213,9 @@ class OverdueProcessingServiceTest {
     }
 
     @Test
-    @DisplayName("Kịch bản 3.2: Mốc D+15 (Hết bảo trì) - Tự động chuyển kho sang AVAILABLE nếu chưa có ai đặt trước")
-    void testAutoReleaseUnit_D15_ShouldSetAvailable_WhenNoReservationExists() {
-        LocalDate runDate = baseEndDate.plusDays(15); // D+15
+    @DisplayName("Kịch bản 3.2: Mốc D+8 (Sau 1 ngày dọn dẹp) - Tự động chuyển kho sang AVAILABLE nếu chưa có ai đặt trước")
+    void testAutoReleaseUnit_D8_ShouldSetAvailable_WhenNoReservationExists() {
+        LocalDate runDate = baseEndDate.plusDays(8); // D+8
 
         RentalContract terminatedContract = RentalContract.builder()
                 .id(105L)
@@ -253,8 +254,8 @@ class OverdueProcessingServiceTest {
                 .endDateExclusive(baseEndDate)
                 .depositAmount(2_000_000L)
                 .depositBalance(2_000_000L)
-                .overdueFeeAccrued(400_000L) // Đã được tính 400.000đ từ lần chạy trước
-                .accessCode("AC-123456")
+                .overdueFeeAccrued(700_000L) // Đã được tính 35% (700.000đ) từ lần chạy trước
+                .accessCode(null)
                 .build();
 
         when(rentalContractRepository.findByStatusInAndEndDateExclusiveLessThanEqual(anyList(), eq(runDate)))
@@ -263,21 +264,21 @@ class OverdueProcessingServiceTest {
         // Chạy lần 2
         OverdueProcessingResult result = overdueProcessingService.processOverdueContracts(runDate);
 
-        // Số tiền phạt vẫn phải là 400.000đ, tuyệt đối không bị cộng thêm thành
-        // 800.000đ
-        assertEquals(400_000L, contract.getOverdueFeeAccrued());
+        // Số tiền phạt vẫn phải là 700.000đ, tuyệt đối không bị cộng thêm
+        assertEquals(700_000L, contract.getOverdueFeeAccrued());
+        assertEquals(0L, result.getTotalPenaltiesAccrued());
         assertEquals(ContractStatus.OVERDUE, contract.getStatus());
     }
 
     @Test
-    @DisplayName("BR-OVD-05: Kịch bản 5 — Mốc D+7 — Khóa mã truy cập (accessCode = null)")
-    void testAccessCodeLock_D7_ShouldSuspendAccessCode() {
-        LocalDate runDate = baseEndDate.plusDays(7); // D+7
+    @DisplayName("BR-OVD-01, BR-OVD-05: Kịch bản 5 — Mốc D+1 — Khóa mã truy cập ngay khi quá hạn (No Pay, No PIN) & thu 5% cọc")
+    void testAccessCodeLock_D1_ShouldSuspendAccessCodeImmediately() {
+        LocalDate runDate = baseEndDate.plusDays(1); // D+1
 
         RentalContract contract = RentalContract.builder()
-                .id(104L).code("CTR-005").status(ContractStatus.OVERDUE)
+                .id(104L).code("CTR-005").status(ContractStatus.ACTIVE)
                 .endDateExclusive(baseEndDate).depositAmount(2_000_000L)
-                .depositBalance(2_000_000L).overdueFeeAccrued(400_000L)
+                .depositBalance(2_000_000L).overdueFeeAccrued(0L)
                 .accessCode("AC-777999").build();
 
         when(rentalContractRepository.findByStatusInAndEndDateExclusiveLessThanEqual(anyList(), eq(runDate)))
@@ -286,20 +287,22 @@ class OverdueProcessingServiceTest {
         overdueProcessingService.processOverdueContracts(runDate);
 
         assertNull(contract.getAccessCode(),
-                "D+7: accessCode phải bị khóa (null) theo BR-OVD-05");
+                "D+1: accessCode phải bị khóa ngay (null) theo nguyên tắc No Pay, No PIN (BR-OVD-05)");
         assertEquals(ContractStatus.OVERDUE, contract.getStatus(),
-                "D+7: hợp đồng vẫn OVERDUE, chưa TERMINATED");
+                "D+1: hợp đồng chuyển sang OVERDUE");
+        assertEquals(100_000L, contract.getOverdueFeeAccrued(),
+                "D+1: phí lưu kho quá hạn 5% cọc = 100.000đ");
     }
 
     @Test
-    @DisplayName("BR-OVD-05: Kịch bản 6 — Mốc D+5 — Chưa đến D+7, accessCode vẫn còn để khách dọn đồ")
-    void testAccessCodeLock_D5_ShouldKeepAccessCode() {
-        LocalDate runDate = baseEndDate.plusDays(5); // D+5
+    @DisplayName("BR-OVD-02: Kịch bản 6 — Mốc D+3 — Kết thúc 3 ngày đầu, tổng phí lưu kho = 15% cọc (300.000đ)")
+    void testStage1End_D3_ShouldAccrue15PercentDeposit() {
+        LocalDate runDate = baseEndDate.plusDays(3); // D+3
 
         RentalContract contract = RentalContract.builder()
                 .id(105L).code("CTR-006").status(ContractStatus.OVERDUE)
                 .endDateExclusive(baseEndDate).depositAmount(2_000_000L)
-                .depositBalance(2_000_000L).overdueFeeAccrued(0L)
+                .depositBalance(2_000_000L).overdueFeeAccrued(200_000L)
                 .accessCode("AC-555111").build();
 
         when(rentalContractRepository.findByStatusInAndEndDateExclusiveLessThanEqual(anyList(), eq(runDate)))
@@ -307,8 +310,8 @@ class OverdueProcessingServiceTest {
 
         overdueProcessingService.processOverdueContracts(runDate);
 
-        assertEquals("AC-555111", contract.getAccessCode(),
-                "D+5: accessCode CHƯA bị khóa — khách vẫn vào được để dọn đồ (BR-OVD-05)");
+        assertNull(contract.getAccessCode());
+        assertEquals(300_000L, contract.getOverdueFeeAccrued());
         assertEquals(ContractStatus.OVERDUE, contract.getStatus());
     }
 
@@ -319,7 +322,7 @@ class OverdueProcessingServiceTest {
                 .id(9L)
                 .overdueGraceDays(0)
                 .overdueDailyRate(BigDecimal.valueOf(0.50))
-                .overdueCapRate(BigDecimal.valueOf(0.70))
+                .overdueCapRate(BigDecimal.valueOf(0.90))
                 .overdueLockAccessDays(1)
                 .overdueTerminationDays(30)
                 .build();
@@ -341,8 +344,8 @@ class OverdueProcessingServiceTest {
 
         overdueProcessingService.processOverdueContracts(runDate);
 
-        assertEquals(400_000L, contract.getOverdueFeeAccrued());
-        assertEquals("AC-000111", contract.getAccessCode());
+        assertEquals(700_000L, contract.getOverdueFeeAccrued());
+        assertNull(contract.getAccessCode());
         verify(policyVersionRepository, never())
                 .findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(any());
     }
@@ -432,7 +435,7 @@ class OverdueProcessingServiceTest {
         assertEquals(2, result.getTotalScanned(), "Cả 2 HĐ đều được quét");
         assertEquals(1, result.getPenalizedCount(), "HĐ bình thường vẫn được tính phạt D+5 thành công");
         assertEquals(ContractStatus.OVERDUE, normalContract.getStatus());
-        assertEquals(400_000L, normalContract.getOverdueFeeAccrued());
+        assertEquals(700_000L, normalContract.getOverdueFeeAccrued());
     }
 
     @Test
@@ -458,9 +461,9 @@ class OverdueProcessingServiceTest {
     }
 
     @Test
-    @DisplayName("BR-OVD-08: Khách đóng phạt 40% ở D+7 được mở PIN nhưng không dọn đồ -> D+8 tự khóa lại PIN và chỉ tính thêm 10% ngày mới")
-    void testPaidPenaltyAtD7_ThenStaysToD8_ShouldRelockPinAndChargeOnlyNewDay() {
-        LocalDate runDate = baseEndDate.plusDays(8); // D+8 (tổng 5 ngày tính phạt = 50% = 1.000.000đ)
+    @DisplayName("BR-OVD-08: Khách đóng phạt 25% ở D+4 được mở PIN nhưng không dọn đồ -> D+5 tự khóa lại PIN và chỉ tính thêm 10% ngày mới")
+    void testPaidPenaltyAtD4_ThenStaysToD5_ShouldRelockPinAndChargeOnlyNewDay() {
+        LocalDate runDate = baseEndDate.plusDays(5); // D+5 (lũy kế 15% + 20% = 35% = 700.000đ)
 
         RentalContract contract = RentalContract.builder()
                 .id(108L)
@@ -469,19 +472,19 @@ class OverdueProcessingServiceTest {
                 .endDateExclusive(baseEndDate)
                 .depositAmount(2_000_000L)
                 .depositBalance(2_000_000L)
-                .overdueFeeAccrued(0L) // Đã đóng 800.000đ ở D+7 nên nợ tạm thời về 0
-                .accessCode("654321")  // Mã PIN tạm thời được cấp lại ở D+7
+                .overdueFeeAccrued(0L) // Đã đóng 500.000đ (25%) ở D+4 nên nợ tạm thời về 0
+                .accessCode("654321")  // Mã PIN tạm thời được cấp lại ở D+4
                 .build();
 
         when(rentalContractRepository.findByStatusInAndEndDateExclusiveLessThanEqual(anyList(), eq(runDate)))
                 .thenReturn(List.of(contract));
         when(paymentTransactionRepository.sumSuccessfulAmountByContractIdAndTransactionType(108L, "OVERDUE_PENALTY"))
-                .thenReturn(800_000L);
+                .thenReturn(500_000L);
 
         OverdueProcessingResult result = overdueProcessingService.processOverdueContracts(runDate);
 
         assertEquals(1, result.getPenalizedCount());
-        assertEquals(200_000L, contract.getOverdueFeeAccrued(), "Chỉ thu thêm 1 ngày mới D+8 (200.000đ), không thu trùng 800.000đ đã đóng ở D+7");
-        assertNull(contract.getAccessCode(), "Sang 00:05 D+8 khách chưa báo trả kho thì phải tự động khóa lại mã PIN");
+        assertEquals(200_000L, contract.getOverdueFeeAccrued(), "Chỉ thu thêm 1 ngày mới D+5 (200.000đ), không thu trùng 500.000đ đã đóng ở D+4");
+        assertNull(contract.getAccessCode(), "Sang 00:05 D+5 khách chưa báo trả kho thì phải tự động khóa lại mã PIN");
     }
 }

@@ -309,13 +309,26 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                   : contract.status === 'OVERDUE'
                   ? 1
                   : 0;
-              const penaltyFee = contract.overdueFee ?? 0;
-              const isGracePeriod =
-                contract.status === 'OVERDUE' && penaltyFee === 0 && overdueDays <= 3;
-              // Khóa nút gia hạn khi < 20 ngày theo quy chế BR-REN-01 (đối với ACTIVE)
-              const canRenewOnline =
-                (contract.status === 'ACTIVE' && daysRemaining >= 20) ||
-                (contract.status === 'OVERDUE' && penaltyFee === 0);
+              const fallbackOverdueFee =
+                contract.status === 'OVERDUE' && !contract.accessPin && (contract.overdueFee ?? 0) === 0
+                  ? Math.min(
+                      Math.round((contract.depositHeld || 0) * 0.55),
+                      Math.round(
+                        (contract.depositHeld || 0) *
+                          (Math.min(overdueDays, 3) * 0.05 + Math.max(0, overdueDays - 3) * 0.1)
+                      )
+                    )
+                  : 0;
+              const penaltyFee = (contract.overdueFee ?? 0) > 0 ? contract.overdueFee! : fallbackOverdueFee;
+              // Khóa nút gia hạn khi < 20 ngày theo quy chế BR-REN-01 (đối với ACTIVE, hợp đồng OVERDUE không thể tự gia hạn trực tuyến)
+              const canRenewOnline = contract.status === 'ACTIVE' && daysRemaining >= 20;
+              // Khách đã thanh toán hết phí quá hạn qua VietQR và được cấp Mã PIN tạm đến 23:59 để dọn đồ & Báo trả kho (BR-OVD-08)
+              const isOverdueUnlocked = contract.status === 'OVERDUE' && penaltyFee === 0;
+              const settlementDeficit =
+                ((contract.status as string) === 'TERMINATED' || contract.status === 'PENDING_RETURN') &&
+                (contract.totalOutstandingDebt ?? 0) > 0
+                  ? contract.totalOutstandingDebt!
+                  : 0;
 
               const isRevealed = Boolean(revealedPins[contract.id]);
               const isMenuOpen = openMenuId === `contract-${contract.id}`;
@@ -481,6 +494,10 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                           </Button>
                         )}
                       </div>
+                    ) : contract.status === 'OVERDUE' ? (
+                      <span className="text-rose-700 text-[11px] font-bold bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                        Đã khóa PIN (Đóng phí để mở)
+                      </span>
                     ) : (
                       <span className="text-slate-300 text-[11px]">—</span>
                     )}
@@ -498,8 +515,12 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                     ) : contract.status === 'ACTIVE' ? (
                       <Badge variant="available">Đang hoạt động</Badge>
                     ) : contract.status === 'OVERDUE' ? (
-                      <Badge variant={isGracePeriod ? 'warning' : 'overdue'}>
-                        {isGracePeriod ? `Ân hạn D+${overdueDays}` : `Quá hạn D+${overdueDays}`}
+                      <Badge variant={isOverdueUnlocked || overdueDays <= 3 ? 'warning' : 'overdue'}>
+                        {isOverdueUnlocked
+                          ? `Đã mở PIN tạm (D+${overdueDays})`
+                          : overdueDays <= 3
+                          ? `Quá hạn D+${overdueDays} (5%/ngày)`
+                          : `Quá hạn D+${overdueDays} (Phạt 10%/ngày)`}
                       </Badge>
                     ) : (contract.relocationEligible || isRelocating) ? (
                       <Badge variant="warning" className="bg-amber-100 text-amber-900 border-amber-300 font-bold" title="Từ chối ô cũ do lỗi hiện trường - Đang chờ bố trí ô kho thay thế">
@@ -513,7 +534,11 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                         {contract.inspectionDone ? 'Đã nghiệm thu' : 'Chờ nghiệm thu'}
                       </Badge>
                     ) : (contract.status as string) === 'TERMINATED' ? (
-                      (contract.handoverRejected || contract.contractNumber?.includes('REJ') || contract.contractNumber?.includes('REFUND')) ? (
+                      (contract.depositHeld === 0 || (contract.overdueDays ?? 0) >= 7) ? (
+                        <Badge variant="danger" className="bg-purple-50 text-purple-800 border-purple-200">
+                          Niêm phong Kho Tổng (D+7)
+                        </Badge>
+                      ) : (contract.handoverRejected || contract.contractNumber?.includes('REJ') || contract.contractNumber?.includes('REFUND')) ? (
                         <Badge variant="danger" className="bg-rose-100 text-rose-800 border-rose-300 font-bold" title={contract.rejectionReason || 'Từ chối nhận bàn giao tại hiện trường'}>
                           Từ chối nhận kho
                         </Badge>
@@ -524,6 +549,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                       ) : (
                         <Badge variant="danger" className="bg-rose-50 text-rose-700 border-rose-200" title="Đã hủy trước ngày nhận kho - Ô vật lý đã được giải phóng">
                           Đã hủy
+                      )
                         </Badge>
                       )
                     ) : contract.status === 'CLOSED' ? (
@@ -544,12 +570,43 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
-                            onOpenOverduePayment(contract);
+                            onOpenOverduePayment({ ...contract, overdueFee: penaltyFee });
                           }}
                           className="h-7 text-xs px-2.5 font-bold bg-rose-600 hover:bg-rose-700 text-white cursor-pointer whitespace-nowrap shrink-0 shadow-xs"
+                          title="Thanh toán phí quá hạn qua VietQR để mở Mã PIN tạm thời (đến 23:59) và mở khóa nút Báo trả kho"
                         >
                           <CreditCard className="w-3.5 h-3.5 mr-1" />
-                          Nộp phạt
+                          Đóng phí & Mở PIN
+                        </Button>
+                      ) : isOverdueUnlocked ? (
+                        <Button
+                          type="button"
+                          variant="primary"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onScheduleReturn(contract);
+                          }}
+                          className="h-7 text-xs px-2.5 font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer whitespace-nowrap shrink-0 shadow-xs"
+                          title="Báo đã dọn xong đồ để Quản lý cơ sở điều phối nhân viên nghiệm thu hiện trạng và hoàn cọc còn lại"
+                        >
+                          <LogOut className="w-3.5 h-3.5 mr-1" />
+                          Báo trả kho
+                        </Button>
+                      ) : settlementDeficit > 0 ? (
+                        <Button
+                          type="button"
+                          variant="danger"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenOverduePayment(contract);
+                          }}
+                          className="h-7 text-xs px-2.5 font-bold bg-purple-600 hover:bg-purple-700 text-white cursor-pointer whitespace-nowrap shrink-0 shadow-xs"
+                          title="Thanh toán chi phí phát sinh / lưu Kho Tổng để nhận lại tài sản và đóng hợp đồng"
+                        >
+                          <CreditCard className="w-3.5 h-3.5 mr-1" />
+                          Thanh toán nhận hàng
                         </Button>
                       ) : canRenewOnline && isExpiringSoon ? (
                         <Link
@@ -620,8 +677,8 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                                   isLastRows ? 'bottom-full mb-1' : 'top-full mt-1'
                                 } w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-40 py-1 text-xs divide-y divide-slate-100 text-left`}
                               >
-                                {/* Xem chi tiết nếu nút chính đang là Gia hạn hoặc Nộp phạt */}
-                                {(isExpiringSoon || (contract.status === 'OVERDUE' && penaltyFee > 0)) && (
+                                {/* Xem chi tiết nếu nút chính đang là Gia hạn, Đóng phí hoặc Báo trả kho */}
+                                {(isExpiringSoon || contract.status === 'OVERDUE' || settlementDeficit > 0) && (
                                   <div className="py-0.5">
                                     <button
                                       type="button"

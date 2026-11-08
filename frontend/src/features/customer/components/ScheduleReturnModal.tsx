@@ -42,7 +42,6 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
   const [isClosing, setIsClosing] = useState(false);
 
   const policy = useActivePolicy();
-  const graceDays = policy?.overdueGraceDays ?? 0;
   const noticeDays = policy?.returnNoticeDays ?? 30;
 
   // Kiểm tra xem có trả sớm hơn 30 ngày (1 tháng thuê) không (BR-RET-01, BR-RET-06 Best-of-Both)
@@ -78,13 +77,6 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
   }, [contract, returnDate]);
 
   const isOverdue = Boolean(contract && contract.status === 'OVERDUE');
-  const isGracePeriod = Boolean(
-    isOverdue &&
-    contract &&
-    contract.overdueDays !== undefined &&
-    contract.overdueDays > 0 &&
-    (graceDays === 0 || contract.overdueDays <= graceDays)
-  );
 
   if (!isOpen || !contract) return null;
 
@@ -286,19 +278,18 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
             </label>
           </div>
 
-          {/* Ưu đãi ân hạn: BR-OVD-02 */}
-          {isGracePeriod && (
+          {/* Thông báo trả kho khi hợp đồng đang OVERDUE và đã tất toán phí quá hạn (BR-OVD-08, BR-RET-11) */}
+          {isOverdue && (
             <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-2.5 text-xs text-emerald-900">
               <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
               <span className="leading-snug">
-                <strong>Chính sách ân hạn:</strong> Hợp đồng đã quá hạn {contract.overdueDays} ngày
-                {graceDays > 0 ? ` (ân hạn ${graceDays} ngày trên chính sách đang hiệu lực)` : ''}. Nhờ bạn hoàn tất dọn đồ và báo trả hôm nay, bạn vẫn được <strong>hoàn trả 100% tiền cọc ({formatVND(contract.depositHeld)})</strong> và được <strong>miễn toàn bộ phí phạt quá hạn</strong>.
+                <strong>Xác nhận trả kho quá hạn (D+{contract.overdueDays || 1}):</strong> Bạn đã tất toán đầy đủ phí lưu kho / phạt quá hạn. Ngay khi gửi Báo trả kho, Mã PIN tạm thời sẽ đóng lại và <strong>Quản lý cơ sở (FM) sẽ điều phối Nhân viên ca trực (FS)</strong> nghiệm thu hiện trạng để hoàn trả <strong>100% số dư tiền cọc ({formatVND(contract.depositHeld)})</strong> (trừ chi phí hư hỏng/vệ sinh nếu có).
               </span>
             </div>
           )}
 
           {/* Thông báo trả trong tháng cuối: BR-RET-06 Best-of-Both */}
-          {isWithinFinalMonth && !isGracePeriod && (
+          {isWithinFinalMonth && !isOverdue && (
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-2.5 text-xs text-blue-900">
               <ShieldCheck className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
               <span className="leading-snug">

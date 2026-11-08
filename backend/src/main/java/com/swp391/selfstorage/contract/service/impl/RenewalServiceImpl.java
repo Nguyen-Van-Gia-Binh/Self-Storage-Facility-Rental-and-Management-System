@@ -184,16 +184,14 @@ public class RenewalServiceImpl implements RenewalService {
             }
         }
 
-        // Hợp đồng OVERDUE chỉ được gia hạn sau khi đã tất toán toàn bộ nợ phạt (BR-REN-06)
+        // BR-REN-02, BR-REN-06: Hợp đồng đã quá hạn (OVERDUE) bị khóa tự gia hạn trực tuyến (máy trạng thái một chiều).
+        // Muốn xin gia hạn ngoại lệ bắt buộc phải liên hệ Quản lý cơ sở (FM).
         if (contract.getStatus() == ContractStatus.OVERDUE) {
-            if (contract.getOverdueFeeAccrued() > 0) {
-                throw new CustomException(ErrorCode.RENEWAL_NOT_ALLOWED,
-                        "Hợp đồng đang có nợ phạt quá hạn. Vui lòng thanh toán nợ phạt trước khi gia hạn.");
-            }
-            // Nếu overdueFeeAccrued == 0, cho phép tiếp tục gia hạn
+            throw new CustomException(ErrorCode.RENEWAL_NOT_ALLOWED,
+                    "Hợp đồng đã quá hạn không thể tự gia hạn trực tuyến. Vui lòng liên hệ Quản lý cơ sở (FM) hoặc hoàn tất thủ tục trả kho.");
         } else if (contract.getStatus() != ContractStatus.ACTIVE) {
             throw new CustomException(ErrorCode.RENEWAL_NOT_ALLOWED,
-                    "Chỉ hợp đồng đang hoạt động (ACTIVE) hoặc đã tất toán nợ phạt quá hạn (OVERDUE) mới được phép gia hạn.");
+                    "Chỉ hợp đồng đang hoạt động (ACTIVE) mới được phép tự gia hạn trực tuyến.");
         }
 
         return contract;

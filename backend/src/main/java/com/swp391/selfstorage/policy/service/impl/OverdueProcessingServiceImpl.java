@@ -124,25 +124,31 @@ public class OverdueProcessingServiceImpl implements OverdueProcessingService {
             return OverdueSingleResult.noop(); // Chưa quá hạn, bỏ qua
         }
 
-        // Hợp đồng đã bị TERMINATED từ trước: Kiểm tra giải phóng bảo trì tại mốc D+15
+        OverdueTerms terms = termsOf(contract, termsByPolicyId);
+        int unitReleaseDay = terms.terminationDays() + 1; // Mặc định D+8 (sau 1 ngày niêm phong & dọn dẹp tại D+7)
+
+        // Hợp đồng đã bị TERMINATED từ trước: Kiểm tra giải phóng bảo trì tại mốc D+8 (terminationDays + 1)
         if (contract.getStatus() == ContractStatus.TERMINATED) {
-            if (overdueDays >= 15 && contract.getStorageUnitId() != null) {
+            if (overdueDays >= unitReleaseDay && contract.getStorageUnitId() != null) {
                 storageUnitRepository.findById(contract.getStorageUnitId()).ifPresent(unit -> {
                     if (unit.getStatus() == StorageUnitStatus.MAINTENANCE || unit.getStatus() == StorageUnitStatus.CLEANING) {
                         StorageUnitStatus newStatus = releaseUnitToAvailableOrReserved(unit, runDate);
-                        log.info("Hợp đồng [{}] chạm mốc D+{} (>=15): Ô kho [{}] tự động hoàn tất bảo trì, chuyển sang {}.",
-                                contract.getCode(), overdueDays, unit.getId(), newStatus);
+                        log.info("Hợp đồng [{}] chạm mốc D+{} (>={}): Ô kho [{}] tự động hoàn tất dọn dẹp, chuyển sang {}.",
+                                contract.getCode(), overdueDays, unitReleaseDay, unit.getId(), newStatus);
                     }
                 });
             }
             return OverdueSingleResult.noop(); // Hợp đồng đã chấm dứt không tính lại phí phạt
         }
 
-        OverdueTerms terms = termsOf(contract, termsByPolicyId);
         long deposit = contract.getDepositAmount();
         long maxCapFee = Math.round(deposit * terms.capRate().doubleValue());
-        long daysToCharge = Math.max(0L, overdueDays - terms.graceDays());
-        long accruedByDays = Math.round(deposit * terms.dailyRate().doubleValue() * daysToCharge);
+        // Giai đoạn 1 (D+1..graceDays): Miễn phạt vi phạm, thu phí lưu kho quá hạn 5% cọc/ngày (3 ngày = 15% cọc)
+        long stage1Days = Math.min(overdueDays, terms.graceDays());
+        // Giai đoạn 2 (sau graceDays..terminationDays): Phạt vi phạm 10% cọc/ngày (4 ngày = 40% cọc)
+        long stage2Days = Math.max(0L, overdueDays - terms.graceDays());
+        double stage1Rate = 0.05;
+        long accruedByDays = Math.round(deposit * (stage1Rate * stage1Days + terms.dailyRate().doubleValue() * stage2Days));
         long totalCalculatedFee = Math.min(accruedByDays, maxCapFee);
         long alreadyPaidPenalty = (paymentTransactionRepository != null && contract.getId() != null)
                 ? paymentTransactionRepository.sumSuccessfulAmountByContractIdAndTransactionType(
@@ -155,21 +161,8 @@ public class OverdueProcessingServiceImpl implements OverdueProcessingService {
         boolean terminated = false;
         long penaltyDelta = 0L;
 
-        if (overdueDays <= terms.graceDays()) {
-            // Mốc D+1..D+3: Ân hạn (BR-OVD-01, BR-OVD-02)
-            if (contract.getStatus() == ContractStatus.ACTIVE) {
-                contract.setStatus(ContractStatus.OVERDUE);
-                markedOverdue = true;
-            }
-            // Luôn reset fee về 0 trong thời gian ân hạn (phòng trường hợp cron chạy không liên tục)
-            if (contract.getOverdueFeeAccrued() != 0L) {
-                contract.setOverdueFeeAccrued(0L);
-            }
-            if (markedOverdue) {
-                log.info("Hợp đồng [{}] chuyển sang OVERDUE (ân hạn D+{}).", contract.getCode(), overdueDays);
-            }
-        } else if (overdueDays < terms.terminationDays()) {
-            // Mốc D+4..D+9: Phạt theo ngày (BR-OVD-03, BR-OVD-04)
+        if (overdueDays < terms.terminationDays()) {
+            // Mốc D+1..D+6: Chuyển OVERDUE, tính phí lưu kho (D+1..D+3: 5%/ngày) & phạt vi phạm (D+4..D+6: +10%/ngày)
             if (contract.getStatus() == ContractStatus.ACTIVE) {
                 contract.setStatus(ContractStatus.OVERDUE);
                 markedOverdue = true;
@@ -178,39 +171,43 @@ public class OverdueProcessingServiceImpl implements OverdueProcessingService {
             penaltyDelta = calculatedFee - contract.getOverdueFeeAccrued();
             contract.setOverdueFeeAccrued(calculatedFee);
             penalized = true;
-            log.info("Hợp đồng [{}] D+{}: Phạt {} ngày = {} đ.", contract.getCode(), overdueDays, daysToCharge, calculatedFee);
 
-            // BR-OVD-05: Khóa mã truy cập theo mốc của phiên bản đã gắn trên hợp đồng
+            // BR-OVD-01, BR-OVD-05: Nguyên tắc "No Pay, No PIN" — Khóa mã truy cập theo lockAccessDays (mặc định D+1)
             int lockAccessDays = terms.lockAccessDays();
             if (overdueDays >= lockAccessDays && contract.getAccessCode() != null) {
                 contract.setAccessCode(null);
                 log.info("Hợp đồng [{}] D+{}: Khóa mã truy cập theo BR-OVD-05 (lockAccessDays={}).",
                         contract.getCode(), overdueDays, lockAccessDays);
             }
+
+            log.info("Hợp đồng [{}] D+{}: Phí quá hạn lũy kế = {} đ (stage1={} ngày, stage2={} ngày).",
+                    contract.getCode(), overdueDays, calculatedFee, stage1Days, stage2Days);
         } else {
-            // Mốc D+10+: Cưỡng chế chấm dứt (BR-OVD-05, BR-OVD-07)
+            // Mốc D+7+ (terminationDays): Cưỡng chế chấm dứt & Niêm phong về Kho Tổng (BR-OVD-04, BR-OVD-07)
+            // Khấu trừ 100% cọc: 55% phí quá hạn (15% + 40%) + 45% phí cắt khóa, kiểm kê, niêm phong & vận chuyển về Kho Tổng -> depositBalance = 0
             penaltyDelta = calculatedFee - contract.getOverdueFeeAccrued();
             contract.setOverdueFeeAccrued(calculatedFee);
-            contract.setDepositBalance(Math.max(0L, deposit - calculatedFee));
-            contract.setAccessCode(null); // Vô hiệu hóa mã truy cập
+            contract.setDepositBalance(0L);
+            contract.setAccessCode(null); // Vô hiệu hóa mã truy cập vĩnh viễn
             contract.setStatus(ContractStatus.TERMINATED);
             terminated = true;
 
-            // Chuyển ô kho vật lý sang trạng thái MAINTENANCE hoặc giải phóng nếu >= D+15
+            // Chuyển ô kho vật lý sang trạng thái MAINTENANCE (1 ngày dọn dẹp tại D+7) hoặc giải phóng nếu >= D+8
             if (contract.getStorageUnitId() != null) {
                 storageUnitRepository.findById(contract.getStorageUnitId()).ifPresent(unit -> {
-                    if (overdueDays >= 15) {
+                    if (overdueDays >= unitReleaseDay) {
                         StorageUnitStatus newStatus = releaseUnitToAvailableOrReserved(unit, runDate);
-                        log.info("Hợp đồng [{}] cưỡng chế tại D+{} (>=15): Ô kho [{}] tự động hoàn tất bảo trì, chuyển sang {}.",
-                                contract.getCode(), overdueDays, unit.getId(), newStatus);
+                        log.info("Hợp đồng [{}] cưỡng chế tại D+{} (>={}): Ô kho [{}] tự động hoàn tất dọn dẹp, chuyển sang {}.",
+                                contract.getCode(), overdueDays, unitReleaseDay, unit.getId(), newStatus);
                     } else {
                         unit.setStatus(StorageUnitStatus.MAINTENANCE);
                         storageUnitRepository.save(unit);
-                        log.info("Ô kho [{}] chuyển sang MAINTENANCE để bảo trì & niêm phong đồ tồn.", unit.getId());
+                        log.info("Ô kho [{}] chuyển sang MAINTENANCE (1 ngày) để niêm phong đồ về Kho Tổng & vệ sinh.", unit.getId());
                     }
                 });
             }
-            log.warn("Hợp đồng [{}] bị CHẤM DỨT cưỡng chế tại D+{}.", contract.getCode(), overdueDays);
+            log.warn("Hợp đồng [{}] bị CHẤM DỨT cưỡng chế tại D+{} (khấu trừ 100% cọc: 55% quá hạn + 45% phí niêm phong Kho Tổng).",
+                    contract.getCode(), overdueDays);
         }
 
         rentalContractRepository.save(contract);
@@ -276,16 +273,16 @@ public class OverdueProcessingServiceImpl implements OverdueProcessingService {
             int terminationDays) {
 
         static OverdueTerms defaults() {
-            return new OverdueTerms(3, BigDecimal.valueOf(0.10), BigDecimal.valueOf(0.70), 7, 10);
+            return new OverdueTerms(3, BigDecimal.valueOf(0.10), BigDecimal.valueOf(0.55), 1, 7);
         }
 
         static OverdueTerms from(PolicyVersion policy) {
             return new OverdueTerms(
                     policy.getOverdueGraceDays() != null ? policy.getOverdueGraceDays() : 3,
                     policy.getOverdueDailyRate() != null ? policy.getOverdueDailyRate() : BigDecimal.valueOf(0.10),
-                    policy.getOverdueCapRate() != null ? policy.getOverdueCapRate() : BigDecimal.valueOf(0.70),
-                    policy.getOverdueLockAccessDays() != null ? policy.getOverdueLockAccessDays() : 7,
-                    policy.getOverdueTerminationDays() != null ? policy.getOverdueTerminationDays() : 10);
+                    policy.getOverdueCapRate() != null ? policy.getOverdueCapRate() : BigDecimal.valueOf(0.55),
+                    policy.getOverdueLockAccessDays() != null ? policy.getOverdueLockAccessDays() : 1,
+                    policy.getOverdueTerminationDays() != null ? policy.getOverdueTerminationDays() : 7);
         }
     }
 }

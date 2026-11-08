@@ -572,7 +572,8 @@ public class ContractServiceImpl implements ContractService {
                                         overdueDays = (int) days;
                                         long accrued = previewOverdueFee(days, c.getDepositAmount(),
                                                         overdueRatesFor(c, overdueRatesByPolicy));
-                                        if (c.getStatus() == ContractStatus.OVERDUE && c.getOverdueFeeAccrued() > 0) {
+                                        if (c.getStatus() == ContractStatus.OVERDUE
+                                                        && (c.getOverdueFeeAccrued() > 0 || c.getAccessCode() != null)) {
                                                 accruedOverdueFee = c.getOverdueFeeAccrued();
                                         } else if (accruedOverdueFee == null || accruedOverdueFee == 0) {
                                                 accruedOverdueFee = accrued;
@@ -590,18 +591,17 @@ public class ContractServiceImpl implements ContractService {
                         OffsetDateTime returnRequestCreatedAt = null;
                         String appointmentSlot = null;
                         ReturnRequest returnReq = latestReturnRequestByContract.get(c.getId());
-                        if (returnReq != null && c.getStatus() != ContractStatus.CLOSED && c.getStatus() != ContractStatus.TERMINATED) {
-                                requestedReturnDate = returnReq.getRequestedReturnDate();
-                                returnRequestCreatedAt = returnReq.getRequestedAt();
-                                appointmentSlot = returnReq.getAppointmentSlot();
-                                if (returnReq.getStatus() == ReturnRequestStatus.PENDING) {
-                                        displayStatus = ContractStatus.PENDING_RETURN;
+                        if (returnReq != null && c.getStatus() != ContractStatus.CLOSED) {
+                                if (c.getStatus() != ContractStatus.TERMINATED) {
+                                        requestedReturnDate = returnReq.getRequestedReturnDate();
+                                        returnRequestCreatedAt = returnReq.getRequestedAt();
+                                        appointmentSlot = returnReq.getAppointmentSlot();
+                                        if (returnReq.getStatus() == ReturnRequestStatus.PENDING) {
+                                                displayStatus = ContractStatus.PENDING_RETURN;
+                                        }
                                 }
-                                if (returnReq.getStatus() == ReturnRequestStatus.PENDING && c.getStatus() != ContractStatus.OVERDUE) {
-                                        displayStatus = ContractStatus.PENDING_RETURN;
-                                }
-                                if (returnReq.getInspectedAt() != null) {
-                                        isInspected = true;
+                                if (returnReq.getInspectedAt() != null || c.getStatus() == ContractStatus.TERMINATED) {
+                                        isInspected = returnReq.getInspectedAt() != null;
                                         damageCost = returnReq.getDamageCost();
                                         damageNotes = returnReq.getConditionNote();
                                 }
@@ -1471,7 +1471,15 @@ public class ContractServiceImpl implements ContractService {
                                 long totalRefund = rentAmount + depositAmount;
                                 return closeSettledContract(contract, returnReq, managerId, totalRefund, 0L);
                         } else {
-                                // BR-OVD-07: Chấm dứt do quá hạn D+10 sau khi đã nhận kho -> không hoàn tiền thuê
+                                // BR-OVD-07, BR-OVD-11: Chấm dứt cưỡng chế do quá hạn D+7 sau khi đã nhận kho (hàng ở Kho Tổng) -> không hoàn tiền thuê.
+                                // Cho phép FM nhập thêm chi phí phát sinh (Lưu kho tổng / Khác) qua adjustedDamageCost khi khách chuộc đồ trong 30 ngày,
+                                // hoặc để 0đ khi chốt thanh lý ngoại tuyến sau 30 ngày.
+                                if (request != null && request.getAdjustedDamageCost() != null) {
+                                        returnReq.setDamageCost(Math.max(0L, request.getAdjustedDamageCost()));
+                                }
+                                if (request != null && request.getApprovedNotes() != null && !request.getApprovedNotes().isBlank()) {
+                                        returnReq.setConditionNote(request.getApprovedNotes().trim());
+                                }
                                 List<ContractExtraCharge> unpaidCharges = extraChargeRepository.findByContractIdAndStatus(contractId,
                                                 ExtraChargeStatus.UNPAID);
                                 long totalUnpaid = unpaidChargesOutsideLegacyDamage(unpaidCharges);
@@ -1484,12 +1492,22 @@ public class ContractServiceImpl implements ContractService {
                                         returnRequestRepository.save(returnReq);
                                         contract.setAccessCode(null);
                                         contractRepository.save(contract);
+
+                                        eventPublisher.publishEvent(ContractSettledEvent.builder()
+                                                        .contractId(contract.getId())
+                                                        .customerId(contract.getCustomerId())
+                                                        .facilityId(contract.getFacilityId())
+                                                        .depositRefundAmount(0L)
+                                                        .payableAmount(payableAmount)
+                                                        .settledAt(OffsetDateTime.now())
+                                                        .build());
+
                                         return SettlementApprovalResponse.builder()
                                                         .contractId(contract.getId())
                                                         .status(contract.getStatus())
                                                         .depositRefundAmount(0L)
                                                         .payableAmount(payableAmount)
-                                                        .message("Khách còn phải nộp phần thiếu. Hợp đồng đóng sau khi thanh toán thành công")
+                                                        .message("Khách còn phải nộp phần thiếu (chi phí lưu Kho Tổng / phát sinh). Hợp đồng đóng sau khi thanh toán thành công")
                                                         .build();
                                 }
                                 return closeSettledContract(contract, returnReq, managerId, refundAmount, 0L);
@@ -1559,7 +1577,8 @@ public class ContractServiceImpl implements ContractService {
                         return;
                 }
                 if (contract.getStatus() != ContractStatus.PENDING_RETURN
-                                && contract.getStatus() != ContractStatus.OVERDUE) {
+                                && contract.getStatus() != ContractStatus.OVERDUE
+                                && contract.getStatus() != ContractStatus.TERMINATED) {
                         throw new CustomException(ErrorCode.CONTRACT_NOT_PENDING_RETURN);
                 }
                 ReturnRequest returnReq = returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(contractId)
@@ -1994,11 +2013,11 @@ public class ContractServiceImpl implements ContractService {
                 Long unitTypeId = contract.getUnitTypeId();
 
                 // Lấy policy buffer days
-                int bufferDays = 15;
+                int bufferDays = 8;
                 if (contract.getPolicyVersionId() != null && policyVersionRepository != null) {
                         bufferDays = policyVersionRepository.findById(contract.getPolicyVersionId())
-                                        .map(p -> p.getRentalBufferDays() != null ? p.getRentalBufferDays() : 15)
-                                        .orElse(15);
+                                        .map(p -> p.getRentalBufferDays() != null ? p.getRentalBufferDays() : 8)
+                                        .orElse(8);
                 }
 
                 OffsetDateTime now = OffsetDateTime.now();
@@ -2136,11 +2155,11 @@ public class ContractServiceImpl implements ContractService {
                 Long facilityId = contract.getFacilityId();
                 Long unitTypeId = contract.getUnitTypeId();
 
-                int bufferDays = 15;
+                int bufferDays = 8;
                 if (contract.getPolicyVersionId() != null && policyVersionRepository != null) {
                         bufferDays = policyVersionRepository.findById(contract.getPolicyVersionId())
-                                        .map(p -> p.getRentalBufferDays() != null ? p.getRentalBufferDays() : 15)
-                                        .orElse(15);
+                                        .map(p -> p.getRentalBufferDays() != null ? p.getRentalBufferDays() : 8)
+                                        .orElse(8);
                 }
 
                 OffsetDateTime now = OffsetDateTime.now();
@@ -2218,11 +2237,11 @@ public class ContractServiceImpl implements ContractService {
                 Long facilityId = contract.getFacilityId();
                 Long unitTypeId = contract.getUnitTypeId();
 
-                int bufferDays = 15;
+                int bufferDays = 8;
                 if (contract.getPolicyVersionId() != null && policyVersionRepository != null) {
                         bufferDays = policyVersionRepository.findById(contract.getPolicyVersionId())
-                                        .map(p -> p.getRentalBufferDays() != null ? p.getRentalBufferDays() : 15)
-                                        .orElse(15);
+                                        .map(p -> p.getRentalBufferDays() != null ? p.getRentalBufferDays() : 8)
+                                        .orElse(8);
                 }
 
                 OffsetDateTime now = OffsetDateTime.now();
@@ -2520,13 +2539,15 @@ public class ContractServiceImpl implements ContractService {
                         }
                 }
 
-                if (returnRequestRepository != null && c.getStatus() != ContractStatus.CLOSED && c.getStatus() != ContractStatus.TERMINATED) {
+                if (returnRequestRepository != null && c.getStatus() != ContractStatus.CLOSED) {
                         returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(c.getId()).ifPresent(req -> {
-                                if (req.getStatus() == ReturnRequestStatus.PENDING && c.getStatus() != ContractStatus.OVERDUE) {
+                                if (c.getStatus() != ContractStatus.TERMINATED
+                                                && req.getStatus() == ReturnRequestStatus.PENDING
+                                                && c.getStatus() != ContractStatus.OVERDUE) {
                                         r.setStatus(ContractStatus.PENDING_RETURN);
                                 }
-                                if (req.getInspectedAt() != null) {
-                                        r.setIsInspected(true);
+                                if (req.getInspectedAt() != null || c.getStatus() == ContractStatus.TERMINATED) {
+                                        r.setIsInspected(req.getInspectedAt() != null);
                                         r.setDamageCost(req.getDamageCost());
                                         r.setDamageNotes(req.getConditionNote());
                                 }
@@ -2569,7 +2590,12 @@ public class ContractServiceImpl implements ContractService {
                         if (days > 0) {
                                 r.setOverdueDays((int) days);
                                 long accrued = previewOverdueFee(days, c.getDepositAmount(), loadOverduePreviewRates(c));
-                                r.setAccruedOverdueFee(c.getOverdueFeeAccrued() > 0 ? c.getOverdueFeeAccrued() : accrued);
+                                if (c.getStatus() == ContractStatus.OVERDUE
+                                                && (c.getOverdueFeeAccrued() > 0 || c.getAccessCode() != null)) {
+                                        r.setAccruedOverdueFee(c.getOverdueFeeAccrued());
+                                } else {
+                                        r.setAccruedOverdueFee(c.getOverdueFeeAccrued() > 0 ? c.getOverdueFeeAccrued() : accrued);
+                                }
                         }
                 } else {
                         r.setAccruedOverdueFee(c.getOverdueFeeAccrued());
@@ -2622,23 +2648,23 @@ public class ContractServiceImpl implements ContractService {
                 BigDecimal dailyRate = policy != null && policy.getOverdueDailyRate() != null
                                 ? policy.getOverdueDailyRate() : BigDecimal.valueOf(0.10);
                 BigDecimal capRate = policy != null && policy.getOverdueCapRate() != null
-                                ? policy.getOverdueCapRate() : BigDecimal.valueOf(0.70);
+                                ? policy.getOverdueCapRate() : BigDecimal.valueOf(0.55);
                 int terminationDays = policy != null && policy.getOverdueTerminationDays() != null
-                                ? policy.getOverdueTerminationDays() : 10;
+                                ? policy.getOverdueTerminationDays() : 7;
                 return new OverduePreviewRates(graceDays, dailyRate, capRate, terminationDays);
         }
 
-        /** Cùng mốc với OverdueProcessingServiceImpl: ân hạn, phạt theo ngày, rồi trần khi tới ngày chấm dứt. */
+        /** Cùng mốc với OverdueProcessingServiceImpl: Giai đoạn 1 (5% cọc/ngày), Giai đoạn 2 (10% cọc/ngày), trần 55% tại D+7. */
         private static long previewOverdueFee(long overdueDays, long deposit, OverduePreviewRates rates) {
-                if (overdueDays <= rates.graceDays) {
+                if (overdueDays <= 0) {
                         return 0L;
                 }
                 long maxCapFee = Math.round(deposit * rates.capRate.doubleValue());
-                if (overdueDays < rates.terminationDays) {
-                        long daysToCharge = overdueDays - rates.graceDays;
-                        return Math.min(Math.round(deposit * rates.dailyRate.doubleValue() * daysToCharge), maxCapFee);
-                }
-                return maxCapFee;
+                long stage1Days = Math.min(overdueDays, rates.graceDays);
+                long stage2Days = Math.max(0L, overdueDays - rates.graceDays);
+                double stage1Rate = 0.05;
+                long accruedByDays = Math.round(deposit * (stage1Rate * stage1Days + rates.dailyRate.doubleValue() * stage2Days));
+                return Math.min(accruedByDays, maxCapFee);
         }
 
         private int resolveCheckinGraceDays(RentalContract c) {
