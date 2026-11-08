@@ -161,41 +161,63 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
         boolean isToday = date.isEqual(today);
 
         // Actionable Inbox (Ponytail):
-        // Nếu là hôm nay: lấy trong cửa sổ ân hạn 10 ngày (BR-CHK-05) đến hôm nay
-        // Nếu là ngày khác: lọc chính xác 100% theo ngày đó
-        List<StaffDailyAssignment> assignments;
+        // Nếu là hôm nay: lấy các việc được tạo hôm nay hoặc tạo trong quá khứ nhưng chưa thực hiện, cùng các việc trong cửa sổ ân hạn 10 ngày
+        // Nếu là ngày khác: lọc chính xác theo ngày đó
+        List<StaffDailyAssignment> assignments = new ArrayList<>();
         if (isToday) {
-            assignments = staffDailyAssignmentRepository.findByStaffIdAndWorkDateBetween(
+            List<StaffDailyAssignment> windowList = staffDailyAssignmentRepository.findByStaffIdAndWorkDateBetween(
                     staffId, today.minusDays(10), today);
+            if (windowList != null) {
+                assignments.addAll(windowList);
+            }
+            List<StaffDailyAssignment> allForStaff = staffDailyAssignmentRepository.findByStaffId(staffId);
+            if (allForStaff != null) {
+                assignments.addAll(allForStaff);
+            }
         } else {
-            assignments = staffDailyAssignmentRepository.findByStaffIdAndWorkDate(staffId, date);
+            List<StaffDailyAssignment> dateList = staffDailyAssignmentRepository.findByStaffIdAndWorkDate(staffId, date);
+            if (dateList != null) {
+                assignments.addAll(dateList);
+            }
         }
 
-        if (assignments != null) {
-            for (StaffDailyAssignment a : assignments) {
-                if (a.getTaskType() == AssignmentTaskType.HANDOVER && a.getReferenceId() != null) {
-                    rentalContractRepository.findById(a.getReferenceId()).ifPresent(c -> {
-                        LocalDate workDate = a.getWorkDate() != null ? a.getWorkDate() : c.getStartDate();
-                        boolean isTodayTask = workDate != null && workDate.isEqual(date);
-                        boolean isLatePending = isToday
+        for (StaffDailyAssignment a : assignments) {
+            if (a.getTaskType() == AssignmentTaskType.HANDOVER && a.getReferenceId() != null) {
+                rentalContractRepository.findById(a.getReferenceId()).ifPresent(c -> {
+                    LocalDate workDate = a.getWorkDate() != null ? a.getWorkDate() : c.getStartDate();
+                    LocalDate createdDate = c.getCreatedAt() != null
+                            ? c.getCreatedAt().atZoneSameInstant(VN_ZONE).toLocalDate()
+                            : null;
+
+                    DailyCheckInTaskDto dto = toCheckInDto(c);
+                    boolean isTodayTask;
+                    boolean isLatePending = false;
+
+                    if (!dto.isCompleted() && c.getStatus() == ContractStatus.PENDING_CHECK_IN) {
+                        isTodayTask = (workDate != null && workDate.isEqual(date))
+                                || (createdDate != null && createdDate.isEqual(date))
+                                || (isToday && createdDate != null && !createdDate.isAfter(date));
+                        isLatePending = isToday
                                 && workDate != null
                                 && workDate.isBefore(date)
-                                && c.getStatus() == ContractStatus.PENDING_CHECK_IN
                                 && isWithinGracePeriod(c, date);
+                    } else {
+                        LocalDate checkinDate = c.getCheckinDate();
+                        isTodayTask = (checkinDate != null && checkinDate.isEqual(date))
+                                || (workDate != null && workDate.isEqual(date) && (checkinDate == null || checkinDate.isEqual(date)));
+                    }
 
-                        if ((isTodayTask || isLatePending) && processedContractIds.add(c.getId())) {
-                            DailyCheckInTaskDto dto = toCheckInDto(c);
-                            if (isLatePending) {
-                                dto.setLate(true);
-                                long diff = java.time.temporal.ChronoUnit.DAYS.between(workDate, date);
-                                dto.setDaysLate((int) diff);
-                            }
-                            if (!onlyPending || !dto.isCompleted()) {
-                                result.add(dto);
-                            }
+                    if ((isTodayTask || isLatePending) && processedContractIds.add(c.getId())) {
+                        if (isLatePending) {
+                            dto.setLate(true);
+                            long diff = java.time.temporal.ChronoUnit.DAYS.between(workDate, date);
+                            dto.setDaysLate((int) diff);
                         }
-                    });
-                }
+                        if (!onlyPending || !dto.isCompleted()) {
+                            result.add(dto);
+                        }
+                    }
+                });
             }
         }
 
@@ -215,36 +237,111 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
         LocalDate today = LocalDate.now(VN_ZONE);
         boolean isToday = date.isEqual(today);
 
-        // Actionable Inbox cho Return / Inspection:
-        // Nếu là hôm nay: nạp cả các task trả kho tồn đọng trong 30 ngày gần nhất
-        // Nếu là ngày khác: lọc chính xác ngày đó
-        List<StaffDailyAssignment> assignments;
+        List<StaffDailyAssignment> assignments = new ArrayList<>();
         if (isToday) {
-            assignments = staffDailyAssignmentRepository.findByStaffIdAndWorkDateBetween(
+            List<StaffDailyAssignment> windowList = staffDailyAssignmentRepository.findByStaffIdAndWorkDateBetween(
                     staffId, today.minusDays(30), today);
+            if (windowList != null) {
+                assignments.addAll(windowList);
+            }
+            List<StaffDailyAssignment> allForStaff = staffDailyAssignmentRepository.findByStaffId(staffId);
+            if (allForStaff != null) {
+                assignments.addAll(allForStaff);
+            }
         } else {
-            assignments = staffDailyAssignmentRepository.findByStaffIdAndWorkDate(staffId, date);
+            List<StaffDailyAssignment> dateList = staffDailyAssignmentRepository.findByStaffIdAndWorkDate(staffId, date);
+            if (dateList != null) {
+                assignments.addAll(dateList);
+            }
         }
 
-        if (assignments != null) {
-            for (StaffDailyAssignment a : assignments) {
-                if ((a.getTaskType() == AssignmentTaskType.RETURN || a.getTaskType() == AssignmentTaskType.INSPECTION)
-                        && a.getReferenceId() != null) {
-                    rentalContractRepository.findById(a.getReferenceId()).ifPresent(c -> {
-                        LocalDate workDate = a.getWorkDate() != null ? a.getWorkDate() : c.getEndDateExclusive();
-                        boolean isTodayTask = workDate != null && workDate.isEqual(date);
-                        boolean isLatePending = isToday
-                                && workDate != null
-                                && workDate.isBefore(date)
-                                && (c.getStatus() == ContractStatus.PENDING_RETURN || c.getStatus() == ContractStatus.OVERDUE);
+        for (StaffDailyAssignment a : assignments) {
+            if (a.getReferenceId() == null) continue;
+            boolean isReturnType = a.getTaskType() == AssignmentTaskType.RETURN
+                    || a.getTaskType() == AssignmentTaskType.INSPECTION;
+            boolean isHandoverFallback = a.getTaskType() == AssignmentTaskType.HANDOVER;
+            if (!isReturnType && !isHandoverFallback) continue;
 
-                        if ((isTodayTask || isLatePending) && processedContractIds.add(c.getId())) {
-                            DailyReturnTaskDto dto = toReturnDto(c);
-                            if (isLatePending && workDate != null) {
-                                dto.setLate(true);
-                                long diff = java.time.temporal.ChronoUnit.DAYS.between(workDate, date);
-                                dto.setDaysLate((int) diff);
-                            }
+            rentalContractRepository.findById(a.getReferenceId()).ifPresent(c -> {
+                if (isHandoverFallback && c.getStatus() != ContractStatus.PENDING_RETURN) {
+                    return;
+                }
+                var reqOpt = returnRequestRepository != null
+                        ? returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(c.getId())
+                        : Optional.<com.swp391.selfstorage.contract.entity.ReturnRequest>empty();
+                if (isHandoverFallback && reqOpt.isPresent()
+                        && reqOpt.get().getInspectedBy() != null
+                        && !reqOpt.get().getInspectedBy().equals(staffId)) {
+                    return;
+                }
+
+                LocalDate workDate = a.getWorkDate() != null ? a.getWorkDate() : c.getEndDateExclusive();
+                LocalDate returnCreatedDate = reqOpt.isPresent() && reqOpt.get().getRequestedAt() != null
+                        ? reqOpt.get().getRequestedAt().atZoneSameInstant(VN_ZONE).toLocalDate()
+                        : c.getReturnDate();
+
+                DailyReturnTaskDto dto = toReturnDto(c);
+                boolean isTodayTask;
+                boolean isLatePending = false;
+
+                if (!dto.isCompleted()) {
+                    isTodayTask = (workDate != null && workDate.isEqual(date))
+                            || (returnCreatedDate != null && returnCreatedDate.isEqual(date))
+                            || (isToday && returnCreatedDate != null && !returnCreatedDate.isAfter(date));
+                    isLatePending = isToday
+                            && workDate != null
+                            && workDate.isBefore(date)
+                            && (c.getStatus() == ContractStatus.PENDING_RETURN || c.getStatus() == ContractStatus.OVERDUE);
+                } else {
+                    LocalDate inspectedDate = reqOpt.isPresent() && reqOpt.get().getInspectedAt() != null
+                            ? reqOpt.get().getInspectedAt().atZoneSameInstant(VN_ZONE).toLocalDate()
+                            : null;
+                    isTodayTask = (inspectedDate != null && inspectedDate.isEqual(date))
+                            || (workDate != null && workDate.isEqual(date) && inspectedDate == null);
+                }
+
+                if ((isTodayTask || isLatePending) && processedContractIds.add(c.getId())) {
+                    if (isLatePending && workDate != null) {
+                        dto.setLate(true);
+                        long diff = java.time.temporal.ChronoUnit.DAYS.between(workDate, date);
+                        dto.setDaysLate((int) diff);
+                    }
+                    if (!onlyPending || !dto.isCompleted()) {
+                        result.add(dto);
+                    }
+                }
+            });
+        }
+
+        if (returnRequestRepository != null) {
+            List<com.swp391.selfstorage.contract.entity.ReturnRequest> assignedReturns =
+                    returnRequestRepository.findByInspectedBy(staffId);
+            if (assignedReturns != null) {
+                for (var req : assignedReturns) {
+                    if (req.getContractId() == null || processedContractIds.contains(req.getContractId())) {
+                        continue;
+                    }
+                    rentalContractRepository.findById(req.getContractId()).ifPresent(c -> {
+                        if (c.getStatus() == ContractStatus.TERMINATED && c.getCheckinDate() == null) {
+                            return;
+                        }
+                        LocalDate returnCreatedDate = req.getRequestedAt() != null
+                                ? req.getRequestedAt().atZoneSameInstant(VN_ZONE).toLocalDate()
+                                : req.getRequestedReturnDate();
+                        LocalDate inspectedDate = req.getInspectedAt() != null
+                                ? req.getInspectedAt().atZoneSameInstant(VN_ZONE).toLocalDate()
+                                : null;
+                        DailyReturnTaskDto dto = toReturnDto(c);
+                        boolean include;
+                        if (!dto.isCompleted()) {
+                            include = returnCreatedDate == null
+                                    || returnCreatedDate.isEqual(date)
+                                    || (isToday && !returnCreatedDate.isAfter(date));
+                        } else {
+                            include = (inspectedDate != null && inspectedDate.isEqual(date))
+                                    || (inspectedDate == null && returnCreatedDate != null && returnCreatedDate.isEqual(date));
+                        }
+                        if (include && processedContractIds.add(c.getId())) {
                             if (!onlyPending || !dto.isCompleted()) {
                                 result.add(dto);
                             }
@@ -260,12 +357,26 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
     private List<DailySupportTaskDto> loadSupportTasks(Long staffId, LocalDate date, boolean onlyPending) {
         List<DailySupportTaskDto> result = new ArrayList<>();
         Set<Long> processedRequestIds = new HashSet<>();
+        LocalDate today = LocalDate.now(VN_ZONE);
+        boolean isToday = date.isEqual(today);
 
         // Sự cố được phân công trực tiếp cho staff
         List<SupportRequest> assignedRequests = supportRequestRepository.findAllByAssignedStaffId(staffId);
         for (SupportRequest sr : assignedRequests) {
-            if (processedRequestIds.add(sr.getId())) {
-                DailySupportTaskDto dto = toSupportDto(sr);
+            DailySupportTaskDto dto = toSupportDto(sr);
+            boolean include = true;
+            if (sr.getCreatedAt() != null) {
+                LocalDate createdDate = sr.getCreatedAt().atZoneSameInstant(VN_ZONE).toLocalDate();
+                LocalDate resolvedDate = sr.getResolvedAt() != null
+                        ? sr.getResolvedAt().atZoneSameInstant(VN_ZONE).toLocalDate()
+                        : null;
+                if (!dto.isCompleted()) {
+                    include = createdDate.isEqual(date) || (isToday && !createdDate.isAfter(date));
+                } else {
+                    include = createdDate.isEqual(date) || (resolvedDate != null && resolvedDate.isEqual(date));
+                }
+            }
+            if (include && processedRequestIds.add(sr.getId())) {
                 if (!onlyPending || !dto.isCompleted()) {
                     result.add(dto);
                 }

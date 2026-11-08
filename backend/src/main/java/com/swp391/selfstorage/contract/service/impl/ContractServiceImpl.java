@@ -321,7 +321,22 @@ public class ContractServiceImpl implements ContractService {
                         // NHÁNH 2: KHÁCH HỦY THUÊ & HOÀN TIỀN 100%
                         contract.setStatus(ContractStatus.TERMINATED);
                         contract.setEndDateExclusive(LocalDate.now()); // Ngày kết thúc chính là ngày check-in!
+                        contract.setRelocationSupportRequestId(null);
                         contractRepository.save(contract);
+
+                        if (supportRequestRepository != null && contractId != null) {
+                                List<SupportRequest> openTickets = supportRequestRepository.findByContractIdInAndStatusIn(
+                                                List.of(contractId),
+                                                List.of(SupportStatus.NEW, SupportStatus.ASSIGNED, SupportStatus.IN_PROGRESS, SupportStatus.RESOLVED));
+                                if (openTickets != null) {
+                                        for (SupportRequest openTicket : openTickets) {
+                                                openTicket.setRelocationRequired(Boolean.FALSE);
+                                                openTicket.setStatus(SupportStatus.CLOSED);
+                                                openTicket.setUpdatedAt(OffsetDateTime.now());
+                                                supportRequestRepository.save(openTicket);
+                                        }
+                                }
+                        }
 
                         if (returnRequestRepository != null) {
                                 returnRequestRepository.save(ReturnRequest.builder()
@@ -486,10 +501,10 @@ public class ContractServiceImpl implements ContractService {
                                         && !c.getEndDateExclusive().isAfter(threshold);
 
                         StorageUnit su = c.getStorageUnitId() != null ? storageUnitMap.get(c.getStorageUnitId()) : null;
-                        boolean isRelocating = relocationTickets.get(c.getId()) != null
-                                        || (su != null && su.getStatus() == StorageUnitStatus.MAINTENANCE
-                                                        && (c.getStatus() == ContractStatus.PENDING_CHECK_IN || c.getStatus() == ContractStatus.ACTIVE || c.getStatus() == ContractStatus.TERMINATED));
-                        String storageCode = (isRelocating && (c.getStatus() == ContractStatus.PENDING_CHECK_IN || c.getStatus() == ContractStatus.TERMINATED))
+                        boolean isRelocating = (c.getStatus() == ContractStatus.PENDING_CHECK_IN || c.getStatus() == ContractStatus.ACTIVE)
+                                        && (relocationTickets.get(c.getId()) != null
+                                                        || (su != null && su.getStatus() == StorageUnitStatus.MAINTENANCE));
+                        String storageCode = (isRelocating && c.getStatus() == ContractStatus.PENDING_CHECK_IN)
                                         ? null
                                         : (su != null ? su.getCode() : (c.getStorageUnitId() != null ? "U-" + c.getStorageUnitId() : "Chưa gán"));
                         Integer floor = su != null ? su.getFloor() : null;
@@ -913,6 +928,22 @@ public class ContractServiceImpl implements ContractService {
                 }
                 ticket.setCustomerNotice(notice);
                 supportRequestRepository.save(ticket);
+
+                if (supportRequestRepository != null && contract.getId() != null) {
+                        List<SupportRequest> otherOpenTickets = supportRequestRepository.findByContractIdInAndStatusIn(
+                                        List.of(contract.getId()),
+                                        List.of(SupportStatus.NEW, SupportStatus.ASSIGNED, SupportStatus.IN_PROGRESS, SupportStatus.RESOLVED));
+                        if (otherOpenTickets != null) {
+                                for (SupportRequest other : otherOpenTickets) {
+                                        if (!Objects.equals(other.getId(), ticket.getId())) {
+                                                other.setRelocationRequired(Boolean.FALSE);
+                                                other.setStatus(SupportStatus.CLOSED);
+                                                other.setUpdatedAt(now);
+                                                supportRequestRepository.save(other);
+                                        }
+                                }
+                        }
+                }
 
                 if (auditLogService != null) {
                         auditLogService.logAction(managerId, "REASSIGN_UNIT", "RENTAL_CONTRACT", contract.getId(),
@@ -1634,6 +1665,24 @@ public class ContractServiceImpl implements ContractService {
                 }
                 returnRequestRepository.save(returnRequest);
 
+                if (staffDailyAssignmentRepository != null && request.getStaffId() != null) {
+                        StaffDailyAssignment assignment = staffDailyAssignmentRepository
+                                        .findByReferenceTypeAndReferenceId("CONTRACT", contractId)
+                                        .orElseGet(() -> StaffDailyAssignment.builder()
+                                                        .facilityId(contract.getFacilityId())
+                                                        .workDate(LocalDate.now())
+                                                        .taskType(AssignmentTaskType.RETURN)
+                                                        .referenceType("CONTRACT")
+                                                        .referenceId(contract.getId())
+                                                        .build());
+                        assignment.setStaffId(request.getStaffId());
+                        assignment.setAssignedBy(managerId != null ? managerId : request.getStaffId());
+                        assignment.setFacilityId(contract.getFacilityId());
+                        assignment.setTaskType(AssignmentTaskType.RETURN);
+                        assignment.setWorkDate(LocalDate.now());
+                        staffDailyAssignmentRepository.save(assignment);
+                }
+
                 return toResponse(contract);
         }
 
@@ -1669,11 +1718,15 @@ public class ContractServiceImpl implements ContractService {
                 }
 
                 if (staffDailyAssignmentRepository != null) {
+                        LocalDate today = LocalDate.now();
+                        LocalDate effectiveWorkDate = (contract.getStartDate() != null && !contract.getStartDate().isAfter(today))
+                                        ? contract.getStartDate()
+                                        : today;
                         StaffDailyAssignment assignment = staffDailyAssignmentRepository
                                         .findByReferenceTypeAndReferenceId("CONTRACT", contractId)
                                         .orElseGet(() -> StaffDailyAssignment.builder()
                                                         .facilityId(contract.getFacilityId())
-                                                        .workDate(contract.getStartDate() != null ? contract.getStartDate() : LocalDate.now())
+                                                        .workDate(effectiveWorkDate)
                                                         .taskType(AssignmentTaskType.HANDOVER)
                                                         .referenceType("CONTRACT")
                                                         .referenceId(contract.getId())
@@ -1682,7 +1735,7 @@ public class ContractServiceImpl implements ContractService {
                         assignment.setStaffId(request.getStaffId());
                         assignment.setAssignedBy(managerId);
                         assignment.setFacilityId(contract.getFacilityId());
-                        assignment.setWorkDate(contract.getStartDate() != null ? contract.getStartDate() : LocalDate.now());
+                        assignment.setWorkDate(effectiveWorkDate);
                         staffDailyAssignmentRepository.save(assignment);
                 }
 
@@ -2489,28 +2542,29 @@ public class ContractServiceImpl implements ContractService {
                         r.setAccruedOverdueFee(c.getOverdueFeeAccrued());
                 }
 
-                if (supportRequestRepository != null) {
-                        supportRequestRepository.findTopByContractIdOrderByCreatedAtDesc(c.getId()).ifPresent(ticket -> {
-                                if (Boolean.TRUE.equals(ticket.getRelocationRequired())
-                                                && ticket.getStatus() != com.swp391.selfstorage.support.entity.SupportStatus.RESOLVED
-                                                && ticket.getStatus() != com.swp391.selfstorage.support.entity.SupportStatus.CLOSED
-                                                && ticket.getStatus() != com.swp391.selfstorage.support.entity.SupportStatus.AUTO_CLOSED) {
-                                        r.setRelocationEligible(true);
-                                        r.setOpenSupportRequestId(ticket.getId());
-                                }
-                        });
-                }
-                if ((r.getRelocationEligible() == null || !r.getRelocationEligible()) && c.getStorageUnitId() != null && storageUnitRepository != null) {
-                        storageUnitRepository.findById(c.getStorageUnitId()).ifPresent(su -> {
-                                if (su.getStatus() == StorageUnitStatus.MAINTENANCE
-                                                && (c.getStatus() == ContractStatus.PENDING_CHECK_IN || c.getStatus() == ContractStatus.ACTIVE || c.getStatus() == ContractStatus.TERMINATED)) {
-                                        r.setRelocationEligible(true);
-                                }
-                        });
+                if (c.getStatus() == ContractStatus.PENDING_CHECK_IN || c.getStatus() == ContractStatus.ACTIVE) {
+                        if (supportRequestRepository != null) {
+                                supportRequestRepository.findTopByContractIdOrderByCreatedAtDesc(c.getId()).ifPresent(ticket -> {
+                                        if (Boolean.TRUE.equals(ticket.getRelocationRequired())
+                                                        && ticket.getStatus() != com.swp391.selfstorage.support.entity.SupportStatus.RESOLVED
+                                                        && ticket.getStatus() != com.swp391.selfstorage.support.entity.SupportStatus.CLOSED
+                                                        && ticket.getStatus() != com.swp391.selfstorage.support.entity.SupportStatus.AUTO_CLOSED) {
+                                                r.setRelocationEligible(true);
+                                                r.setOpenSupportRequestId(ticket.getId());
+                                        }
+                                });
+                        }
+                        if ((r.getRelocationEligible() == null || !r.getRelocationEligible()) && c.getStorageUnitId() != null && storageUnitRepository != null) {
+                                storageUnitRepository.findById(c.getStorageUnitId()).ifPresent(su -> {
+                                        if (su.getStatus() == StorageUnitStatus.MAINTENANCE) {
+                                                r.setRelocationEligible(true);
+                                        }
+                                });
+                        }
                 }
 
                 if (Boolean.TRUE.equals(r.getRelocationEligible())
-                                && (c.getStatus() == ContractStatus.PENDING_CHECK_IN || c.getStatus() == ContractStatus.TERMINATED)) {
+                                && c.getStatus() == ContractStatus.PENDING_CHECK_IN) {
                         r.setStorageUnitCode(null);
                 }
 

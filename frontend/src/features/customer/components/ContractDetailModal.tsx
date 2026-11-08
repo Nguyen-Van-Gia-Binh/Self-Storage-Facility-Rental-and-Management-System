@@ -85,7 +85,18 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
 
   const effectiveContractNumber = contract.contractNumber || effectiveDetail?.contractCode || `CTR-${contract.id}`;
   const effectiveStatus = (contract.status || effectiveDetail?.status) as string;
-  const isRelocating = Boolean(contract.relocationEligible || effectiveDetail?.relocationEligible);
+  const isCancelledAtHandover =
+    effectiveStatus === 'TERMINATED' ||
+    (effectiveStatus === 'CLOSED' &&
+      !effectiveDetail?.checkinDate &&
+      !contract.checkinDate &&
+      (Boolean(effectiveDetail) || contract.startDate === contract.endDate));
+  const isRelocating =
+    !isCancelledAtHandover &&
+    (effectiveStatus === 'PENDING_CHECKIN' ||
+      effectiveStatus === 'PENDING_CHECK_IN' ||
+      effectiveStatus === 'ACTIVE') &&
+    Boolean(contract.relocationEligible || effectiveDetail?.relocationEligible);
   const rawUnitNumber = effectiveDetail?.unitCode || contract.unitNumber;
   const effectiveUnitNumber = isRelocating && (effectiveStatus === 'PENDING_CHECKIN' || effectiveStatus === 'PENDING_CHECK_IN')
     ? 'Chờ cấp ô mới'
@@ -108,7 +119,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
 
   const isHandoverCompleted =
     !isPendingCheckin &&
-    effectiveStatus !== 'TERMINATED' &&
+    !isCancelledAtHandover &&
     (effectiveStatus === 'ACTIVE' ||
       effectiveStatus === 'OVERDUE' ||
       effectiveStatus === 'PENDING_RETURN' ||
@@ -117,20 +128,22 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
 
   const effectiveCheckinDate = isHandoverCompleted
     ? (effectiveDetail?.checkinDate || contract.checkinDate || contract.startDate)
-    : effectiveStatus === 'TERMINATED'
+    : isCancelledAtHandover
       ? 'Không nhận kho (Đã hủy hợp đồng do sự cố)'
       : 'Chưa thực hiện (Chờ làm thủ tục nhận kho tại quầy)';
-  const effectiveHandoverStaff = isHandoverCompleted
+  const effectiveHandoverStaff = isHandoverCompleted || isCancelledAtHandover
     ? (effectiveDetail?.handoverStaffName || contract.handoverStaffName || 'Nhân viên lễ tân cơ sở')
     : 'Chờ phân công tiếp đón tại quầy';
   const effectiveHandoverNote = isHandoverCompleted
     ? (effectiveDetail?.handoverConditionNote || contract.handoverConditionNote || 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao')
-    : effectiveStatus === 'TERMINATED'
+    : isCancelledAtHandover
       ? (effectiveDetail?.handoverConditionNote || contract.handoverConditionNote || 'Không đạt chuẩn nhận kho do phát sinh sự cố hư hỏng tại chỗ')
       : isRelocating
         ? 'Ô kho phát sinh sự cố lúc tiếp đón. Cơ sở đang phân bổ lại ô kho mới cùng loại cho quý khách.'
         : 'Đang chờ khách hàng xuất trình CCCD và mã e-Pass tại quầy lễ tân để tiến hành nghiệm thu thực địa.';
-  const relocationId = effectiveDetail?.relocationSupportRequestId || contract.relocationSupportRequestId;
+  const relocationId = isCancelledAtHandover
+    ? undefined
+    : (effectiveDetail?.relocationSupportRequestId || contract.relocationSupportRequestId);
   const relocationCode = effectiveDetail?.relocationSupportRequestCode || contract.relocationSupportRequestCode || 'SUP-202610-0001';
   const relocationReason = effectiveDetail?.relocationReason || contract.relocationReason || 'Di dời kho đạt chuẩn kỹ thuật theo sự cố hỗ trợ';
 
@@ -205,7 +218,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
               )}
 
               {/* Banner Chờ phân bổ lại ô kho mới khi phát hiện sự cố tiếp đón */}
-              {Boolean(contract.relocationEligible || detail?.relocationEligible) && !relocationId && (
+              {isRelocating && !relocationId && (
                 <div className="p-4 rounded-xl bg-amber-50/90 border-2 border-amber-300 space-y-2 animate-in fade-in duration-200 shadow-xs">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-amber-900 font-extrabold text-xs uppercase tracking-wide">
@@ -228,8 +241,30 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                 </div>
               )}
 
+              {/* Banner Hợp đồng đang báo trả kho & chờ nghiệm thu */}
+              {effectiveStatus === 'PENDING_RETURN' && (
+                <div className="p-4 rounded-xl bg-indigo-50/90 border-2 border-indigo-200 space-y-2 animate-in fade-in duration-200 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-indigo-900 font-extrabold text-xs uppercase tracking-wide">
+                      <Clock className="w-4 h-4 text-indigo-600 flex-shrink-0" />
+                      <span>
+                        {contract.inspectionDone
+                          ? 'ĐÃ NGHIỆM THU TRẢ KHO — CHỜ QUYẾT TOÁN HOÀN CỌC'
+                          : 'ĐANG YÊU CẦU TRẢ KHO & CHỜ NGHIỆM THU'}
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-mono font-bold bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded">
+                      {contract.inspectionDone ? 'Chờ hoàn cọc' : 'Chờ nghiệm thu trả kho'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-indigo-900 leading-relaxed">
+                    Hợp đồng đã gửi thông báo trả kho và đang trong quy trình kiểm tra thực địa, đối soát chi phí và hoàn trả tiền cọc bảo đảm.
+                  </p>
+                </div>
+              )}
+
               {/* Banner Hợp đồng hủy nhận do sự cố bàn giao */}
-              {contract.status === 'TERMINATED' && (
+              {isCancelledAtHandover && (
                 <div className="p-4 rounded-xl bg-rose-50 border-2 border-rose-300 space-y-2 animate-in fade-in duration-200 shadow-xs">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-rose-900 font-extrabold text-xs uppercase tracking-wide">
@@ -237,7 +272,9 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                       <span>HỢP ĐỒNG ĐÃ DỪNG THỦ TỤC NHẬN KHO DO SỰ CỐ KỸ THUẬT</span>
                     </div>
                     <span className="text-[11px] font-mono font-bold bg-rose-200 text-rose-900 px-2 py-0.5 rounded">
-                      Hủy do sự cố bàn giao (Chờ hoàn cọc)
+                      {effectiveStatus === 'CLOSED'
+                        ? 'Đã hủy & hoàn cọc 100%'
+                        : 'Hủy do sự cố bàn giao (Chờ hoàn cọc)'}
                     </span>
                   </div>
                   <p className="text-xs text-rose-900 leading-relaxed">
@@ -362,10 +399,10 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                   </h4>
                   {isPendingCheckin && (
                     <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                      {contract.relocationEligible || detail?.relocationEligible ? 'Chờ đổi ô kho' : 'Chờ nghiệm thu tại quầy'}
+                      {isRelocating ? 'Chờ đổi ô kho' : 'Chờ nghiệm thu tại quầy'}
                     </span>
                   )}
-                  {contract.status === 'TERMINATED' && (
+                  {isCancelledAtHandover && (
                     <span className="text-[10px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
                       Từ chối nhận kho do sự cố
                     </span>
@@ -373,7 +410,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                 </div>
 
                 {isPendingCheckin && (
-                  (contract.relocationEligible || detail?.relocationEligible) ? (
+                  isRelocating ? (
                     <div className="p-3 bg-amber-50/70 rounded-lg border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5">
                       <Clock className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5 animate-pulse" />
                       <div className="space-y-1">
@@ -435,7 +472,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                           <span>Khóa điện tử IoT đã sẵn sàng, cấp mã PIN mở cửa 24/7</span>
                         </div>
                       </div>
-                    ) : contract.status === 'TERMINATED' ? (
+                    ) : isCancelledAtHandover ? (
                       <div className="p-3 bg-rose-50/70 border border-rose-200 rounded-lg text-rose-900 text-xs flex items-start gap-2">
                         <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                         <div>
@@ -445,7 +482,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                           </p>
                         </div>
                       </div>
-                    ) : (contract.relocationEligible || detail?.relocationEligible) ? (
+                    ) : isRelocating ? (
                       <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-lg text-amber-900 text-xs flex items-start gap-2">
                         <Clock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5 animate-pulse" />
                         <div>
@@ -497,14 +534,14 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                         </div>
                         <p className="font-semibold text-slate-700 text-[11px]">{effectiveHandoverStaff}</p>
                       </>
-                    ) : contract.status === 'TERMINATED' ? (
+                    ) : isCancelledAtHandover ? (
                       <>
                         <div className="my-3 py-1 px-2 inline-block border border-dashed border-rose-300 bg-rose-50 rounded text-[11px] font-bold text-rose-700">
                           HỦY NHẬN DO SỰ CỐ
                         </div>
                         <p className="font-semibold text-slate-600 text-[11px]">{effectiveHandoverStaff}</p>
                       </>
-                    ) : (contract.relocationEligible || detail?.relocationEligible) ? (
+                    ) : isRelocating ? (
                       <>
                         <div className="my-3 py-1 px-2 inline-block border border-dashed border-amber-300 bg-amber-50 rounded text-[11px] font-bold text-amber-700">
                           ĐANG ĐỢI ĐỔI Ô MỚI
@@ -531,14 +568,14 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                         </div>
                         <p className="font-semibold text-slate-700 text-[11px]">{effectiveCustomerName}</p>
                       </>
-                    ) : contract.status === 'TERMINATED' ? (
+                    ) : isCancelledAtHandover ? (
                       <>
                         <div className="my-3 py-1 px-2 inline-block border border-dashed border-rose-300 bg-rose-50 rounded text-[11px] font-bold text-rose-700">
                           ĐÃ TỪ CHỐI NHẬN KHO
                         </div>
                         <p className="font-semibold text-slate-700 text-[11px]">{effectiveCustomerName}</p>
                       </>
-                    ) : (contract.relocationEligible || detail?.relocationEligible) ? (
+                    ) : isRelocating ? (
                       <>
                         <div className="my-3 py-1 px-2 inline-block border border-dashed border-amber-300 bg-amber-50 rounded text-[11px] font-bold text-amber-700">
                           CHỜ BÀN GIAO Ô MỚI

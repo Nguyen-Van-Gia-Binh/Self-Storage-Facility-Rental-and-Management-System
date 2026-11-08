@@ -212,20 +212,38 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
 
         // Điền thông tin bàn giao thực tế (Handover Record)
         if (handoverRecordRepository != null) {
-            handoverRecordRepository.findTopByContractIdAndRejectedFalseOrderByHandoverAtDesc(contract.getId())
-                    .ifPresent(hr -> {
-                        detail.setHandoverConditionNote(hr.getConditionNote());
-                        detail.setCustomerConfirmedAt(hr.getCustomerConfirmedAt());
-                        if (hr.getStaffId() != null && userRepository != null) {
-                            userRepository.findById(hr.getStaffId()).ifPresent(staff -> {
-                                detail.setHandoverStaffName(staff.getFullName());
-                            });
-                        }
+            var acceptedHr = handoverRecordRepository.findTopByContractIdAndRejectedFalseOrderByHandoverAtDesc(contract.getId());
+            if (acceptedHr.isPresent()) {
+                var hr = acceptedHr.get();
+                detail.setHandoverConditionNote(hr.getConditionNote());
+                detail.setCustomerConfirmedAt(hr.getCustomerConfirmedAt());
+                if (hr.getStaffId() != null && userRepository != null) {
+                    userRepository.findById(hr.getStaffId()).ifPresent(staff -> {
+                        detail.setHandoverStaffName(staff.getFullName());
                     });
+                }
+            } else if (contract.getCheckinDate() == null) {
+                handoverRecordRepository.findByContractId(contract.getId()).ifPresent(hr -> {
+                    String note = hr.getRejectionReason() != null ? hr.getRejectionReason() : "";
+                    if (hr.getConditionNote() != null && !hr.getConditionNote().isBlank()) {
+                        note = note.isBlank() ? hr.getConditionNote() : (note + " — " + hr.getConditionNote());
+                    }
+                    if (!note.isBlank()) {
+                        detail.setHandoverConditionNote(note);
+                    }
+                    if (hr.getStaffId() != null && userRepository != null) {
+                        userRepository.findById(hr.getStaffId()).ifPresent(staff -> {
+                            detail.setHandoverStaffName(staff.getFullName());
+                        });
+                    }
+                });
+            }
         }
 
-        // Điền thông tin phụ lục điều chuyển kho do sự cố kỹ thuật (nếu có)
-        if (contract.getRelocationSupportRequestId() != null) {
+        // Điền thông tin phụ lục điều chuyển kho do sự cố kỹ thuật (nếu hợp đồng không bị hủy bàn giao trước check-in)
+        boolean cancelledBeforeCheckIn = contract.getStatus() == ContractStatus.TERMINATED
+                || (contract.getStatus() == ContractStatus.CLOSED && contract.getCheckinDate() == null);
+        if (contract.getRelocationSupportRequestId() != null && !cancelledBeforeCheckIn) {
             detail.setRelocationSupportRequestId(contract.getRelocationSupportRequestId());
             if (supportRequestRepository != null) {
                 supportRequestRepository.findById(contract.getRelocationSupportRequestId())
@@ -317,19 +335,20 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
 
         // Kiểm tra xem hợp đồng có đang chờ Quản lý cơ sở đổi ô kho (do sự cố bàn giao) không
         boolean isRelocating = false;
-        if (supportRequestRepository != null) {
-            isRelocating = supportRequestRepository.findTopByContractIdOrderByCreatedAtDesc(contract.getId())
-                    .map(t -> Boolean.TRUE.equals(t.getRelocationRequired())
-                            && t.getStatus() != SupportStatus.RESOLVED
-                            && t.getStatus() != SupportStatus.CLOSED
-                            && t.getStatus() != SupportStatus.AUTO_CLOSED)
-                    .orElse(false);
-        }
-        if (!isRelocating && contract.getStorageUnitId() != null && storageUnitRepository != null) {
-            isRelocating = storageUnitRepository.findById(contract.getStorageUnitId())
-                    .map(su -> su.getStatus() == StorageUnitStatus.MAINTENANCE
-                            && (contract.getStatus() == ContractStatus.PENDING_CHECK_IN || contract.getStatus() == ContractStatus.ACTIVE || contract.getStatus() == ContractStatus.TERMINATED))
-                    .orElse(false);
+        if (contract.getStatus() == ContractStatus.PENDING_CHECK_IN || contract.getStatus() == ContractStatus.ACTIVE) {
+            if (supportRequestRepository != null) {
+                isRelocating = supportRequestRepository.findTopByContractIdOrderByCreatedAtDesc(contract.getId())
+                        .map(t -> Boolean.TRUE.equals(t.getRelocationRequired())
+                                && t.getStatus() != SupportStatus.RESOLVED
+                                && t.getStatus() != SupportStatus.CLOSED
+                                && t.getStatus() != SupportStatus.AUTO_CLOSED)
+                        .orElse(false);
+            }
+            if (!isRelocating && contract.getStorageUnitId() != null && storageUnitRepository != null) {
+                isRelocating = storageUnitRepository.findById(contract.getStorageUnitId())
+                        .map(su -> su.getStatus() == StorageUnitStatus.MAINTENANCE)
+                        .orElse(false);
+            }
         }
         res.setRelocationEligible(isRelocating);
         final boolean effectivelyRelocating = isRelocating;
@@ -338,7 +357,7 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
         res.setStorageUnitId(contract.getStorageUnitId());
         if (contract.getStorageUnitId() != null && storageUnitRepository != null) {
             storageUnitRepository.findById(contract.getStorageUnitId()).ifPresent(u -> {
-                if (effectivelyRelocating && (contract.getStatus() == ContractStatus.PENDING_CHECK_IN || contract.getStatus() == ContractStatus.TERMINATED)) {
+                if (effectivelyRelocating && contract.getStatus() == ContractStatus.PENDING_CHECK_IN) {
                     res.setStorageUnitCode(null);
                 } else {
                     res.setStorageUnitCode(u.getCode());

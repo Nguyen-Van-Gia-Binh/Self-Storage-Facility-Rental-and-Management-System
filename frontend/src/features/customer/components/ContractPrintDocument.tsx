@@ -39,9 +39,23 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
     contract.status === 'PENDING_CHECKIN' ||
     (contract.status as string) === 'PENDING_CHECK_IN';
 
+  const isCancelledAtHandover =
+    contract.status === 'TERMINATED' ||
+    (contract.status === 'CLOSED' &&
+      !detail?.checkinDate &&
+      !contract.checkinDate &&
+      (Boolean(detail) || contract.startDate === contract.endDate));
+
+  const isRelocating =
+    !isCancelledAtHandover &&
+    (contract.status === 'PENDING_CHECKIN' ||
+      (contract.status as string) === 'PENDING_CHECK_IN' ||
+      contract.status === 'ACTIVE') &&
+    Boolean(contract.relocationEligible || detail?.relocationEligible);
+
   const isHandoverCompleted =
     !isPendingCheckin &&
-    contract.status !== 'TERMINATED' &&
+    !isCancelledAtHandover &&
     (contract.status === 'ACTIVE' ||
       contract.status === 'OVERDUE' ||
       contract.status === 'PENDING_RETURN' ||
@@ -50,23 +64,25 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
 
   const effectiveCheckinDate = isHandoverCompleted
     ? (detail?.checkinDate || contract.checkinDate || effectiveStartDate)
-    : contract.status === 'TERMINATED'
+    : isCancelledAtHandover
       ? 'Không nhận kho (Đã hủy hợp đồng do sự cố)'
       : 'Chưa thực hiện (Chờ làm thủ tục nhận kho tại quầy)';
-  const effectiveHandoverStaff = isHandoverCompleted
+  const effectiveHandoverStaff = isHandoverCompleted || isCancelledAtHandover
     ? (detail?.handoverStaffName || contract.handoverStaffName || 'Nhân viên lễ tân cơ sở')
     : 'Chờ phân công tiếp đón tại quầy';
   const effectiveHandoverNote = isHandoverCompleted
     ? (detail?.handoverConditionNote ||
       contract.handoverConditionNote ||
       'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao')
-    : contract.status === 'TERMINATED'
+    : isCancelledAtHandover
       ? (detail?.handoverConditionNote || contract.handoverConditionNote || 'Không đạt chuẩn nhận kho do phát sinh sự cố hư hỏng tại chỗ')
-      : (contract.relocationEligible || detail?.relocationEligible)
+      : isRelocating
         ? 'Ô kho phát sinh sự cố lúc tiếp đón. Cơ sở đang phân bổ lại ô kho mới cùng loại cho quý khách.'
         : 'Đang chờ khách hàng xuất trình CCCD và mã e-Pass tại quầy lễ tân để tiến hành nghiệm thu thực địa.';
 
-  const relocationCode = detail?.relocationSupportRequestCode || contract.relocationSupportRequestCode;
+  const relocationCode = isCancelledAtHandover
+    ? undefined
+    : (detail?.relocationSupportRequestCode || contract.relocationSupportRequestCode);
   const relocationReason = detail?.relocationReason || contract.relocationReason;
 
   // Lấy ngày lập hợp đồng
@@ -273,12 +289,12 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
                 <span>Khóa điện tử thông minh đã sẵn sàng, cấp mã PIN mở cửa 24/7</span>
               </div>
             </div>
-          ) : contract.status === 'TERMINATED' ? (
+          ) : isCancelledAtHandover ? (
             <div className="p-2.5 bg-rose-50 border border-rose-200 rounded text-rose-900 text-[11px] leading-relaxed">
               <span className="font-bold">Biên bản ghi nhận sự cố bàn giao tại hiện trường: </span>
               <span>Ô kho không đạt điều kiện bàn giao do phát sinh sự cố kỹ thuật / hư hỏng vật lý. Hợp đồng đã dừng thực hiện để hoàn trả 100% chi phí cho khách hàng.</span>
             </div>
-          ) : (contract.relocationEligible || detail?.relocationEligible) ? (
+          ) : isRelocating ? (
             <div className="p-2.5 bg-amber-50 border border-amber-200 rounded text-amber-900 text-[11px] leading-relaxed">
               <span className="font-bold">Đang điều phối đổi ô kho tại chỗ: </span>
               <span>Phát hiện sự cố kỹ thuật tại ô kho ban đầu. Đang tiến hành đổi sang ô kho đạt chuẩn khác cùng loại cho quý khách.</span>
@@ -346,7 +362,7 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
                 <div className="text-[10px] text-slate-500">Thời gian ký: {effectiveCheckinDate}</div>
                 <div className="font-semibold text-[11.5px] text-slate-800 mt-1">{effectiveHandoverStaff}</div>
               </>
-            ) : contract.status === 'TERMINATED' ? (
+            ) : isCancelledAtHandover ? (
               <>
                 <div className="my-2 py-1.5 px-3 inline-block border-2 border-dashed border-rose-400 bg-rose-50 rounded text-[11px] font-bold text-rose-700 tracking-wider">
                   HỦY NHẬN DO SỰ CỐ
@@ -354,7 +370,7 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
                 <div className="text-[10px] text-slate-500 italic">Dừng hợp đồng tại quầy</div>
                 <div className="font-semibold text-[11.5px] text-slate-700 mt-1">{effectiveHandoverStaff}</div>
               </>
-            ) : (contract.relocationEligible || detail?.relocationEligible) ? (
+            ) : isRelocating ? (
               <>
                 <div className="my-2 py-1.5 px-3 inline-block border-2 border-dashed border-amber-400 bg-amber-50 rounded text-[11px] font-bold text-amber-800 tracking-wider">
                   ĐANG ĐỢI ĐỔI Ô MỚI
@@ -387,7 +403,7 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
                 <div className="text-[10px] text-slate-500">Thời gian ký: {effectiveCheckinDate}</div>
                 <div className="font-semibold text-[11.5px] text-slate-800 mt-1">{effectiveCustomerName}</div>
               </>
-            ) : contract.status === 'TERMINATED' ? (
+            ) : isCancelledAtHandover ? (
               <>
                 <div className="my-2 py-1.5 px-3 inline-block border-2 border-dashed border-rose-400 bg-rose-50 rounded text-[11px] font-bold text-rose-700 tracking-wider">
                   TỪ CHỐI NHẬN DO HƯ HỎNG
@@ -395,7 +411,7 @@ export const ContractPrintDocument: React.FC<ContractPrintDocumentProps> = ({
                 <div className="text-[10px] text-slate-500 italic">Xác nhận sự cố hiện trường</div>
                 <div className="font-semibold text-[11.5px] text-slate-700 mt-1">{effectiveCustomerName}</div>
               </>
-            ) : (contract.relocationEligible || detail?.relocationEligible) ? (
+            ) : isRelocating ? (
               <>
                 <div className="my-2 py-1.5 px-3 inline-block border-2 border-dashed border-amber-400 bg-amber-50 rounded text-[11px] font-bold text-amber-800 tracking-wider">
                   CHỜ BÀN GIAO Ô MỚI

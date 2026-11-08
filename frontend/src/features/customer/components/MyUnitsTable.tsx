@@ -323,6 +323,11 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                 contract.status === 'OVERDUE';
 
               const isClosed = contract.status === 'CLOSED' || (contract.status as string) === 'TERMINATED';
+              const isRelocating =
+                Boolean(contract.relocationEligible) &&
+                (contract.status === 'PENDING_CHECKIN' ||
+                  (contract.status as string) === 'PENDING_CHECK_IN' ||
+                  contract.status === 'ACTIVE');
 
               return (
                 <tr
@@ -340,7 +345,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                   {/* Cột 1: Ô & Loại ô (Gộp 2 dòng) */}
                   <td className="py-3 px-4 whitespace-nowrap">
                     <div className="flex flex-col">
-                      {contract.relocationEligible || !isStorageUnitAssigned(contract.unitNumber) ? (
+                      {(isRelocating && (contract.status === 'PENDING_CHECKIN' || (contract.status as string) === 'PENDING_CHECK_IN')) || !isStorageUnitAssigned(contract.unitNumber) ? (
                         <span className="font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded text-xs font-mono self-start">
                           Chưa gán ô kho
                         </span>
@@ -406,7 +411,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                           </button>
                         )}
                       </div>
-                    ) : contract.relocationEligible ? (
+                    ) : isRelocating ? (
                       <span className="text-amber-700 text-xs font-semibold bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200">
                         Đang đổi ô kho
                       </span>
@@ -466,7 +471,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                       <Badge variant={isGracePeriod ? 'warning' : 'overdue'}>
                         {isGracePeriod ? `Ân hạn D+${overdueDays}` : `Quá hạn D+${overdueDays}`}
                       </Badge>
-                    ) : contract.relocationEligible ? (
+                    ) : isRelocating ? (
                       <Badge variant="warning" className="bg-amber-100 text-amber-900 border-amber-300 font-bold">
                         Chờ gán lại ô kho
                       </Badge>

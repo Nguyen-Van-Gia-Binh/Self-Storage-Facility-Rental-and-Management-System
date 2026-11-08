@@ -793,7 +793,7 @@ public class ReservationServiceImpl implements ReservationService {
                     LocalDate defaultDate = reservation != null && reservation.getStartDate() != null
                             ? reservation.getStartDate()
                             : (contract.getStartDate() != null ? contract.getStartDate() : LocalDate.now());
-                    LocalDate workDate = request.getScheduledDate() != null ? request.getScheduledDate() : defaultDate;
+                    LocalDate workDate = request.getScheduledDate() != null ? request.getScheduledDate() : (defaultDate.isAfter(LocalDate.now()) ? LocalDate.now() : defaultDate);
 
                     StaffDailyAssignment assignment = staffDailyAssignmentRepository
                             .findByReferenceTypeAndReferenceId("CONTRACT", contract.getId())
