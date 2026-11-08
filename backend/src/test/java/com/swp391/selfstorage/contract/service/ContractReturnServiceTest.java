@@ -110,13 +110,14 @@ class ContractReturnServiceTest {
         }
 
         @Test
-        @DisplayName("BR-OVD-02 & BR-RET-11: submitReturnNotice cho phép hợp đồng OVERDUE báo trả kho khi không có nợ phạt (D+1..D+3 hoặc đã tất toán)")
+        @DisplayName("BR-OVD-02, BR-OVD-08 & BR-RET-10: submitReturnNotice cho phép hợp đồng OVERDUE báo trả kho khi không có nợ phạt và thu hồi mã PIN ngay")
         void testSubmitReturnNotice_OverdueWithZeroFee_Allowed() {
                 RentalContract contract = RentalContract.builder()
                                 .id(501L)
                                 .facilityId(1L)
                                 .status(ContractStatus.OVERDUE)
                                 .overdueFeeAccrued(0L)
+                                .accessCode("654321")
                                 .build();
 
                 when(contractRepository.findByIdAndFacilityIdIn(eq(501L), anyList())).thenReturn(Optional.of(contract));
@@ -137,6 +138,7 @@ class ContractReturnServiceTest {
                 assertEquals(11L, res.getId());
                 assertEquals(501L, res.getContractId());
                 assertEquals(ContractStatus.PENDING_RETURN, contract.getStatus());
+                assertNull(contract.getAccessCode(), "Khách đang OVERDUE bấm Báo trả kho phải bị thu hồi mã PIN tạm thời ngay");
         }
 
         @Test
@@ -654,5 +656,35 @@ class ContractReturnServiceTest {
                 assertTrue(preview.isEarlyReturn());
                 assertEquals(0L, preview.getDepositRefundAmount());
                 assertEquals(500_000L, preview.getPayableAmount(), "1.700.000 hư hại - 1.200.000 tiền thuê = nộp bù 500.000 đ");
+        }
+
+        @Test
+        @DisplayName("BR-RET-01 & BR-RET-06: Trả kho trong 7 ngày cuối hợp đồng (unusedDays <= 7) được tính là trả kho cuối kỳ đúng hạn, hoàn đủ 100% Deposit")
+        void testEndOfTermReturnWindow_Within7Days_DoesNotForfeitDeposit() {
+                LocalDate returnDate = LocalDate.of(2026, 12, 7);
+                LocalDate endDateExclusive = LocalDate.of(2026, 12, 10); // Còn 3 ngày (<= 7 ngày cuối kỳ)
+                RentalContract contract = RentalContract.builder()
+                                .id(604L)
+                                .facilityId(1L)
+                                .monthlyPrice(1_200_000L)
+                                .depositAmount(1_200_000L)
+                                .depositBalance(1_200_000L)
+                                .startDate(LocalDate.of(2026, 10, 10))
+                                .endDateExclusive(endDateExclusive)
+                                .returnDate(returnDate)
+                                .status(ContractStatus.PENDING_RETURN)
+                                .build();
+                ReturnRequest returnReq = ReturnRequest.builder().contractId(604L).damageCost(0L).build();
+
+                when(contractRepository.findByIdAndFacilityIdIn(eq(604L), anyList())).thenReturn(Optional.of(contract));
+                when(returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(604L)).thenReturn(Optional.of(returnReq));
+                when(extraChargeRepository.findByContractIdAndStatus(604L, ExtraChargeStatus.UNPAID)).thenReturn(List.of());
+
+                SettlementPreviewResponse preview = contractService.getSettlementPreview(604L, List.of(1L));
+
+                assertFalse(preview.isEarlyReturn(), "Còn <= 7 ngày cuối kỳ phải được tính là trả kho đúng hạn cuối kỳ, không phải trả sớm");
+                assertEquals(0L, preview.getEarlyRentRefund(), "Không hoàn tiền thuê lẻ những ngày cuối kỳ");
+                assertEquals(1_200_000L, preview.getDepositRefundAmount(), "Bảo toàn 100% tiền cọc Deposit cho khách");
+                assertEquals(0L, preview.getPayableAmount());
         }
 }

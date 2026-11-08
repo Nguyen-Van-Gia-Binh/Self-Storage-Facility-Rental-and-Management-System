@@ -34,4 +34,8 @@ public interface PaymentTransactionRepository
     List<PaymentTransaction> findByStatusOrderByCreatedAtAsc(String status, Pageable pageable);
 
     Optional<PaymentTransaction> findTopByContractIdAndTransactionTypeOrderByCreatedAtDesc(Long contractId, String transactionType);
+
+    @Query("select coalesce(sum(p.amount), 0) from PaymentTransaction p where p.contractId = :contractId and p.transactionType = :transactionType and p.status = 'SUCCESS'")
+    long sumSuccessfulAmountByContractIdAndTransactionType(@Param("contractId") Long contractId,
+            @Param("transactionType") String transactionType);
 }
