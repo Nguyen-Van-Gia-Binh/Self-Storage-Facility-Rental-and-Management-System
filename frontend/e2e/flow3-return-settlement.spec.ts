@@ -19,7 +19,7 @@ const MOCK_ACTIVE_POLICY = {
   versionNo: 1,
   effectiveFrom: '2026-01-01',
   effectiveDate: '2026-01-01',
-  returnNoticeDays: 7,
+  returnNoticeDays: 30,
   overdueGraceDays: 3,
   overdueDailyPenaltyRate: 0.1,
   overdueCapRate: 0.7,
@@ -296,9 +296,9 @@ test.describe('Flow 3.1: Báo trả kho & Hẹn lịch nghiệm thu', () => {
     await setupCommonRoutes(page);
   });
 
-  test('TC-F3-01A: Khách báo trả kho trong khung 7 ngày cuối kỳ — Miễn phạt cọc 100% Deposit', async ({ page }) => {
+  test('TC-F3-01A: Khách báo trả kho trong tháng cuối (unusedDays <= 30) — Miễn phạt cọc 100% Deposit', async ({ page }) => {
     const today = new Date();
-    const endDateIn3Days = new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const endDateIn15Days = new Date(today.getTime() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
     await page.route('**/api/v1/customers/me/rentals*', async (route) => {
       await route.fulfill({
@@ -317,7 +317,7 @@ test.describe('Flow 3.1: Báo trả kho & Hẹn lịch nghiệm thu', () => {
                 storageUnitCode: 'Q7-A101',
                 unitTypeName: 'Kho Tiêu Chuẩn M',
                 startDate: '2026-05-12',
-                endDateExclusive: endDateIn3Days,
+                endDateExclusive: endDateIn15Days,
                 monthlyPrice: 1200000,
                 depositAmount: 1200000,
                 depositBalance: 1200000,
@@ -342,7 +342,7 @@ test.describe('Flow 3.1: Báo trả kho & Hẹn lịch nghiệm thu', () => {
           data: {
             id: 10,
             contractId: 501,
-            intendedReturnDate: returnNoticePayload.intendedReturnDate || endDateIn3Days,
+            intendedReturnDate: returnNoticePayload.intendedReturnDate || endDateIn15Days,
             status: 'PENDING',
           },
         }),
@@ -375,7 +375,7 @@ test.describe('Flow 3.1: Báo trả kho & Hẹn lịch nghiệm thu', () => {
     expect(returnNoticePayload).not.toBeNull();
   });
 
-  test('TC-F3-01B: Khách báo trả sớm Win-Win (unusedDays > 7) — Hoàn 100% tiền thuê dư & Phạt cọc', async ({ page }) => {
+  test('TC-F3-01B: Khách báo trả sớm trước hạn dài (unusedDays > 30) — Hoàn 100% tiền thuê dư & Phạt cọc', async ({ page }) => {
     const today = new Date();
     const endDateIn60Days = new Date(today.getTime() + 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
@@ -1033,7 +1033,7 @@ test.describe('Flow 3.4: Xem trước & Phê duyệt Quyết toán', () => {
     await setupCommonRoutes(page);
   });
 
-  test('TC-F3-04A: Quyết toán trả đúng hạn — Hoàn 100% cọc, hợp đồng đóng CLOSED', async ({ page }) => {
+  test('TC-F3-04A: Quyết toán trả trong tháng cuối — Hoàn 100% cọc, hợp đồng đóng CLOSED', async ({ page }) => {
     await page.route('**/api/v1/contracts/511', async (route) => {
       await route.fulfill({
         status: 200,
@@ -1105,7 +1105,7 @@ test.describe('Flow 3.4: Xem trước & Phê duyệt Quyết toán', () => {
     expect(approved).toBe(true);
   });
 
-  test('TC-F3-04B: Quyết toán trả sớm Win-Win có khấu trừ hư hại BOM — Đóng CLOSED', async ({ page }) => {
+  test('TC-F3-04B: Quyết toán trả sớm trước hạn dài có khấu trừ hư hại BOM — Đóng CLOSED', async ({ page }) => {
     await page.route('**/api/v1/contracts/512', async (route) => {
       await route.fulfill({
         status: 200,

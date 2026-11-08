@@ -553,13 +553,10 @@ _Theo dõi và quản lý một hoặc nhiều ô kho đang thuê._
 
 **Acceptance Criteria**
 
-- **AC-1** — _Given_ Contract của tôi đang _Active_, _when_ tôi đăng ký Return, _then_ hệ thống yêu
-  cầu ngày hẹn cách hiện tại ít nhất `return.notice_days` (7 ngày); nếu ngày đó sau hạn Contract,
-  hệ thống cảnh báo Contract sẽ vào _Overdue_ theo `BR-RET-10`.
+- **AC-1** — _Given_ Contract của tôi đang _Active_, _when_ tôi đăng ký Return, _then_ hệ thống ghi nhận ngày hẹn nghiệm thu trả kho linh hoạt; nếu ngày hẹn sau hạn Contract, hệ thống cảnh báo Contract sẽ vào _Overdue_ theo `BR-RET-10`.
 - **AC-2** — _Given_ tôi chọn ngày trả hợp lệ hoặc bấm "Báo trả kho" sau khi dọn xong đồ, _when_ tôi xác nhận, _then_ hợp đồng chuyển _Pending Return_ và yêu cầu được gửi đến Facility Manager để điều phối Facility Staff xuống trực tiếp nghiệm thu ô kho theo `FS-04`. Nếu ngày hẹn sau ngày kết thúc, Contract vẫn chuyển _Overdue_ từ D+1 theo `BR-RET-10` dù đang _Pending Return_.
 - **AC-3** — _Given_ tôi đăng ký trả kho **sớm** hơn ngày kết thúc hợp đồng, _when_ màn hình xác nhận
-  hiển thị, _then_ hệ thống nêu rõ phần phí thuê chưa dùng **được hoàn 100% nhưng tiền cọc Deposit bị phạt 100% làm phí vi phạm hợp đồng kèm khấu trừ hư hại hiện trường** theo `BR-RET-06`, và
-  tôi phải xác nhận đã đọc.
+  hiển thị, _then_ hệ thống nêu rõ chính sách quyết toán Best-of-Both theo `BR-RET-06`: nếu trả kho trong tháng cuối (`unusedDays <= 30` ngày), tôi được **hoàn 100% tiền cọc Deposit** và không hoàn tiền lẻ ngày thuê dư; nếu trả trước hạn dài (`unusedDays > 30` ngày), tôi được **hoàn 100% tiền thuê chưa dùng nhưng bị phạt 100% tiền cọc Deposit** kèm khấu trừ hư hại hiện trường, và tôi phải xác nhận đồng ý điều khoản.
 - **AC-4** — _Given_ tôi đã đăng ký trả kho, _when_ tôi xem hợp đồng, _then_ tôi thấy số tiền Deposit
   dự kiến được hoàn, kèm ghi chú rằng con số cuối phụ thuộc kết quả kiểm tra hiện trạng theo
   `BR-RET-04`.

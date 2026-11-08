@@ -574,11 +574,11 @@ class ContractReturnServiceTest {
         @DisplayName("BR-RET-06: Trả kho sớm không hư hại -> Phạt 100% cọc, hoàn 100% tiền thuê chưa dùng")
         void testEarlyReturn_SettlementPreview_ForfeitsDepositAndRefundsUnusedRent() {
                 LocalDate returnDate = LocalDate.of(2026, 11, 10);
-                LocalDate endDateExclusive = LocalDate.of(2026, 12, 10); // 30 ngày chưa dùng
+                LocalDate endDateExclusive = LocalDate.of(2027, 1, 9); // 60 ngày chưa dùng (> 30 ngày return.notice_days)
                 RentalContract contract = RentalContract.builder()
                                 .id(601L)
                                 .facilityId(1L)
-                                .monthlyPrice(1_200_000L)
+                                .monthlyPrice(600_000L)
                                 .depositAmount(1_200_000L)
                                 .depositBalance(1_200_000L)
                                 .startDate(LocalDate.of(2026, 10, 10))
@@ -604,11 +604,11 @@ class ContractReturnServiceTest {
         @DisplayName("BR-RET-06: Trả kho sớm có hư hại nhỏ hơn tiền thuê chưa dùng -> Khấu trừ vào tiền thuê hoàn lại")
         void testEarlyReturn_WithDamageLessThanUnusedRent_DeductsFromUnusedRent() {
                 LocalDate returnDate = LocalDate.of(2026, 11, 10);
-                LocalDate endDateExclusive = LocalDate.of(2026, 12, 10); // 30 ngày = 1.200.000 đ
+                LocalDate endDateExclusive = LocalDate.of(2027, 1, 9); // 60 ngày = 1.200.000 đ
                 RentalContract contract = RentalContract.builder()
                                 .id(602L)
                                 .facilityId(1L)
-                                .monthlyPrice(1_200_000L)
+                                .monthlyPrice(600_000L)
                                 .depositAmount(1_200_000L)
                                 .depositBalance(1_200_000L)
                                 .startDate(LocalDate.of(2026, 10, 10))
@@ -633,11 +633,11 @@ class ContractReturnServiceTest {
         @DisplayName("BR-RET-06: Trả kho sớm có hư hại vượt quá tiền thuê chưa dùng -> Khách phải nộp bù thâm hụt")
         void testEarlyReturn_WithDamageExceedingUnusedRent_CustomerPaysDeficit() {
                 LocalDate returnDate = LocalDate.of(2026, 11, 10);
-                LocalDate endDateExclusive = LocalDate.of(2026, 12, 10); // 30 ngày = 1.200.000 đ
+                LocalDate endDateExclusive = LocalDate.of(2027, 1, 9); // 60 ngày = 1.200.000 đ
                 RentalContract contract = RentalContract.builder()
                                 .id(603L)
                                 .facilityId(1L)
-                                .monthlyPrice(1_200_000L)
+                                .monthlyPrice(600_000L)
                                 .depositAmount(1_200_000L)
                                 .depositBalance(1_200_000L)
                                 .startDate(LocalDate.of(2026, 10, 10))
