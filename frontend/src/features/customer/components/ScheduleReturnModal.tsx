@@ -1,26 +1,25 @@
 import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Button } from '@/components/ui/Button';
 import {
   AlertTriangle,
-  ShieldCheck,
   CheckCircle2,
+  ShieldCheck,
   X,
   RotateCcw,
   Sparkles,
-  Clock,
   ArrowRight,
 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
+import { Button } from '@/components/ui/Button';
 import { scheduleContractReturn } from '@/api/customerRentals';
-import { useActivePolicy } from '@/hooks/useActivePolicy';
 import type { RentedContract } from '../types';
+import { useActivePolicy } from '@/hooks/useActivePolicy';
 
 export interface ScheduleReturnModalProps {
   isOpen: boolean;
   onClose: () => void;
   contract: RentedContract | null;
-  onReturnScheduled: (contractId: string, returnDate: string, note: string) => void;
+  onReturnScheduled?: (contractId: string, returnDate: string, note?: string) => void;
 }
 
 export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
@@ -29,46 +28,49 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
   contract,
   onReturnScheduled,
 }) => {
-  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
-  const todayDisplay = useMemo(() => {
-    const d = new Date();
-    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-  }, []);
-
-  const [returnDate] = useState<string>(todayStr);
+  const [returnDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  });
   const [notes, setNotes] = useState('');
   const [isCleaned, setIsCleaned] = useState(false);
   const [isConditionOk, setIsConditionOk] = useState(false);
   const [agreeEarlyTerms, setAgreeEarlyTerms] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
 
   // Kiểm tra xem có trả sớm hơn ngày kết thúc hợp đồng không (BR-RET-06)
   const isEarlyReturn = useMemo(() => {
-    if (!contract || !returnDate) return false;
+    if (!contract || !returnDate || !contract.endDate) return false;
     return new Date(returnDate) < new Date(contract.endDate);
   }, [contract, returnDate]);
 
-  // Ước tính số tiền thuê ngày chưa dùng được hoàn (BR-RET-06 & ContractServiceImpl#earlyRentRefund)
-  const earlyRefundEstimate = useMemo(() => {
-    if (!isEarlyReturn || !contract) return 0;
-    const returnD = new Date(returnDate);
-    const endD = new Date(contract.endDate);
-    const diffTime = endD.getTime() - returnD.getTime();
+  // Tính số ngày và tiền thuê chưa dùng khi trả sớm (BR-RET-06 & PolicyNumbers backend)
+  const unusedRentInfo = useMemo(() => {
+    if (!contract || !isEarlyReturn || !contract.endDate) return { unusedDays: 0, estimatedUnusedRent: 0 };
+    const retDate = new Date(returnDate);
+    const endDate = new Date(contract.endDate);
+    const diffTime = endDate.getTime() - retDate.getTime();
     const diffDays = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
-    const dailyPrice = Math.round((contract.monthlyRent ?? 0) / 30);
-    return dailyPrice * diffDays;
-  }, [isEarlyReturn, contract, returnDate]);
+
+    // dailyRent theo chuẩn PolicyNumbers backend: Math.round((monthlyRent / 30) / 1000) * 1000
+    const dailyRent = Math.round((contract.monthlyRent / 30) / 1000) * 1000;
+    const estimatedUnusedRent = dailyRent * diffDays;
+    return { unusedDays: diffDays, estimatedUnusedRent };
+  }, [contract, isEarlyReturn, returnDate]);
 
   const policy = useActivePolicy();
   const graceDays = policy?.overdueGraceDays ?? 0;
-
-  const isGracePeriod = useMemo(() => {
-    if (!contract) return false;
-    return contract.status === 'OVERDUE' && (contract.overdueFee ?? 0) === 0;
-  }, [contract]);
+  const isOverdue = Boolean(contract && contract.status === 'OVERDUE');
+  const isGracePeriod = Boolean(
+    isOverdue &&
+    contract &&
+    contract.overdueDays !== undefined &&
+    contract.overdueDays > 0 &&
+    (graceDays === 0 || contract.overdueDays <= graceDays)
+  );
 
   if (!isOpen || !contract) return null;
 
@@ -78,39 +80,41 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
       onClose();
       setIsClosing(false);
       setError(null);
+      setIsSuccess(false);
+      setNotes('');
       setIsCleaned(false);
       setIsConditionOk(false);
       setAgreeEarlyTerms(false);
-      setIsSuccess(false);
     }, 180);
   };
 
   const validate = (): boolean => {
     if (!isCleaned) {
-      setError('Vui lòng xác nhận bạn đã dọn sạch toàn bộ đồ đạc và rác thải trong ô kho.');
+      setError('Vui lòng xác nhận đã dọn sạch toàn bộ đồ đạc khỏi ô kho.');
       return false;
     }
 
     if (!isConditionOk) {
-      setError('Vui lòng xác nhận ô kho nguyên vẹn trước khi gửi yêu cầu nghiệm thu.');
+      setError('Vui lòng xác nhận hiện trạng ô kho nguyên vẹn trước khi hoàn tất.');
       return false;
     }
 
     if (isEarlyReturn && !agreeEarlyTerms) {
-      setError('Bạn phải xác nhận đồng ý chính sách hoàn 100% tiền thuê chưa dùng và khấu trừ 100% tiền cọc.');
+      setError('Vui lòng xác nhận bạn đã hiểu và đồng ý điều khoản quyết toán trả kho trước hạn.');
       return false;
     }
 
-    setError(null);
     return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+
     if (!validate()) return;
 
-    setIsSubmitting(true);
     try {
+      setIsSubmitting(true);
       const combinedNotes = `[ĐÃ DỌN ĐỒ XONG] ${notes}`.trim();
       await scheduleContractReturn({
         contractId: contract.id,
@@ -119,22 +123,29 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
       });
 
       setIsSuccess(true);
-      setIsSubmitting(false);
-      onReturnScheduled(contract.id, returnDate, combinedNotes);
-
+      if (onReturnScheduled) {
+        onReturnScheduled(contract.id, returnDate, combinedNotes);
+      }
       setTimeout(() => {
         handleClose();
       }, 1500);
-    } catch (err) {
-      console.error('Lỗi báo trả kho:', err);
-      setError('Không thể gửi yêu cầu trả kho. Vui lòng thử lại hoặc liên hệ quản lý cơ sở.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Có lỗi xảy ra khi gửi yêu cầu trả kho. Vui lòng thử lại.';
+      setError(message);
+    } finally {
       setIsSubmitting(false);
     }
   };
 
+  const todayDisplay = new Date().toLocaleDateString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+
   return createPortal(
     <div
-      className={`fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto ${
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto ${
         isClosing ? 'modal-backdrop-exit' : 'modal-backdrop-enter'
       }`}
       onClick={handleClose}
@@ -146,58 +157,89 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-[#0d6050] to-[#14937a] p-5 text-white relative">
+        <div className="bg-gradient-to-r from-[#0d6050] to-[#14937a] px-5 py-4 text-white relative">
           <button
             type="button"
             onClick={handleClose}
-            className="absolute top-4 right-4 text-white/80 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+            className="absolute top-3.5 right-3.5 text-white/80 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
 
           <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-100 uppercase tracking-wider mb-1">
             <RotateCcw className="w-4 h-4" />
-            <span>{isEarlyReturn ? 'Quy Trình Nghiệm Thu & Quyết Toán Trả Sớm' : 'Quy Trình Nghiệm Thu & Hoàn Cọc'}</span>
+            <span>Quy Trình Nghiệm Thu & Quyết Toán</span>
           </div>
 
-          <h3 className="text-xl font-black text-white">Xác Nhận Đã Dọn Đồ & Báo Trả Kho</h3>
+          <h3 className="text-lg sm:text-xl font-black text-white">Xác Nhận Đã Dọn Đồ & Báo Trả Kho</h3>
           <p className="text-xs text-emerald-100/90 mt-0.5">
             Ô kho <span className="font-bold text-white">{contract.unitNumber}</span> — Cơ sở {contract.facilityName}
           </p>
         </div>
 
         {/* Body */}
-        <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4">
-          {/* Unit Summary Card */}
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2 text-xs">
-            <div className="flex justify-between items-center">
-              <span className="text-slate-500">Mã hợp đồng:</span>
-              <span className="font-mono font-bold text-slate-800">{contract.contractNumber}</span>
+        <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-3.5">
+          {/* Card Tóm tắt hợp đồng + Thời điểm báo trả (gộp 2 cột gọn gàng) */}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2 text-xs">
+            <div className="grid grid-cols-2 gap-2 pb-2 border-b border-slate-200/80">
+              <div>
+                <span className="text-slate-400 block text-[11px]">Mã hợp đồng:</span>
+                <span className="font-mono font-bold text-slate-800">{contract.contractNumber}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[11px]">Hạn hợp đồng:</span>
+                <span className="font-semibold text-slate-800">{contract.endDate}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[11px]">Ô kho bàn giao:</span>
+                <span className="font-bold text-emerald-800">{contract.unitNumber}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[11px]">Thời điểm báo trả:</span>
+                <span className="font-semibold text-slate-800">Hôm nay ({todayDisplay})</span>
+              </div>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-slate-500">Hạn hợp đồng hiện tại:</span>
-              <span className="font-semibold text-slate-800">{contract.endDate}</span>
-            </div>
-            <div className="flex justify-between items-center border-t border-slate-200/80 pt-1.5">
-              <span className="text-slate-600 font-medium">
-                {isEarlyReturn ? 'Chính sách quyết toán khi trả kho sớm:' : 'Tiền cọc dự kiến quyết toán hoàn lại:'}
-              </span>
-              <span className={`font-bold text-sm ${isEarlyReturn ? 'text-amber-700' : 'text-emerald-700'}`}>
-                {isEarlyReturn
-                  ? `Hoàn tiền thuê chưa dùng${earlyRefundEstimate > 0 ? ` (~${formatVND(earlyRefundEstimate)})` : ''} · Phạt 100% cọc`
-                  : formatVND(contract.depositHeld)}
-              </span>
-            </div>
+
+            {/* Chi tiết dự kiến quyết toán tài chính */}
+            {isEarlyReturn ? (
+              <div className="space-y-1.5 pt-0.5">
+                <div className="flex justify-between items-center text-rose-600 text-[11px]">
+                  <span>Phạt trả sớm (100% cọc):</span>
+                  <span className="font-semibold">-{formatVND(contract.depositHeld)}</span>
+                </div>
+                <div className="flex justify-between items-center text-emerald-700 text-[11px]">
+                  <span>Hoàn tiền thuê chưa dùng ({unusedRentInfo.unusedDays} ngày):</span>
+                  <span className="font-semibold">+{formatVND(unusedRentInfo.estimatedUnusedRent)}</span>
+                </div>
+                <div className="flex justify-between items-center border-t border-slate-200 pt-1.5 text-xs">
+                  <span className="font-bold text-slate-700">Dự kiến hoàn trả:</span>
+                  <span className="font-black text-emerald-700 text-sm">
+                    {formatVND(unusedRentInfo.estimatedUnusedRent)}
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-400 italic">
+                  * Tạm tính trước kiểm tra thực tế ô kho.
+                </p>
+              </div>
+            ) : (
+              <div className="flex justify-between items-center pt-0.5">
+                <div>
+                  <span className="text-slate-700 font-medium block">Tiền cọc dự kiến quyết toán hoàn lại:</span>
+                  <span className="text-[10px] text-slate-400 italic">Trừ chi phí khắc phục hư hại sau nghiệm thu (nếu có)</span>
+                </div>
+                <span className="font-bold text-emerald-700 text-sm">{formatVND(contract.depositHeld)}</span>
+              </div>
+            )}
           </div>
 
           {/* Checklist cam kết: Đã dọn sạch đồ đạc */}
-          <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-3">
+          <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-2">
             <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-900">
-              <Sparkles className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+              <Sparkles className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
               <span>Cam kết hiện trạng sau khi dọn (Bắt buộc xác nhận):</span>
             </div>
 
-            <label className="flex items-start gap-2.5 text-xs text-slate-800 cursor-pointer select-none">
+            <label className="flex items-start gap-2 text-xs text-slate-800 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={isCleaned}
@@ -209,11 +251,11 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
                 required
               />
               <span className="leading-snug">
-                <strong>Đã dọn sạch 100% đồ đạc:</strong> Tôi xác nhận đã lấy hết toàn bộ tài sản cá nhân ra khỏi ô kho và không để lại rác thải.
+                <strong>Đã dọn sạch 100% đồ đạc:</strong> Đã lấy hết toàn bộ tài sản cá nhân ra khỏi ô kho và không để lại rác thải.
               </span>
             </label>
 
-            <label className="flex items-start gap-2.5 text-xs text-slate-800 cursor-pointer select-none">
+            <label className="flex items-start gap-2 text-xs text-slate-800 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={isConditionOk}
@@ -225,34 +267,9 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
                 required
               />
               <span className="leading-snug">
-                <strong>Ô kho nguyên vẹn:</strong> Cửa kho, sàn, vách ngăn và ổ khóa không bị hư hại, biến dạng hay vẽ bậy.
+                <strong>Ô kho nguyên vẹn:</strong> Cửa cuốn, sàn, vách ngăn và ổ khóa không bị hư hại, biến dạng hay vẽ bậy.
               </span>
             </label>
-          </div>
-
-          {/* Thời điểm báo trả kho */}
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2 text-slate-600">
-              <Clock className="w-4 h-4 text-emerald-600" />
-              <span>Thời điểm hoàn tất dọn đồ & báo trả:</span>
-            </div>
-            <span className="font-bold text-slate-800 bg-white px-2.5 py-1 rounded-md border border-slate-200 shadow-2xs">
-              Hôm nay ({todayDisplay})
-            </span>
-          </div>
-
-          {/* Ghi chú */}
-          <div>
-            <label className="text-xs font-semibold text-slate-700 block mb-1">
-              Ghi chú thêm cho nhân viên cơ sở (Tùy chọn)
-            </label>
-            <textarea
-              rows={2}
-              placeholder="Ví dụ: Tôi đã dọn xong và đang ở sảnh / Khóa số đã được reset về 0000..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
-            />
           </div>
 
           {/* Ưu đãi ân hạn: BR-OVD-02 */}
@@ -266,20 +283,26 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
             </div>
           )}
 
-          {/* Early Return Warning */}
+          {/* Lưu ý khi trả kho trước hạn */}
           {isEarlyReturn && (
-            <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl space-y-2 text-xs text-amber-900">
-              <div className="flex items-start gap-2 font-bold text-amber-950">
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-2 text-xs text-amber-900">
+              <div className="flex items-start gap-1.5 font-bold text-amber-950">
                 <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                <span>Quy định trả kho trước thời hạn hợp đồng (BR-RET-06):</span>
+                <span>Lưu ý khi trả kho trước hạn:</span>
               </div>
-              <p className="text-amber-800 leading-relaxed text-[11px]">
-                Ngày trả kho của bạn sớm hơn ngày kết thúc hợp đồng (<strong>{contract.endDate}</strong>).
-                Theo chính sách Win-Win, bạn được <strong>hoàn lại 100% tiền thuê của các ngày/tháng chưa sử dụng{earlyRefundEstimate > 0 ? ` (ước tính ~${formatVND(earlyRefundEstimate)})` : ''}</strong> sau khi nghiệm thu đạt chuẩn.
-                Khoản tiền cọc <strong>{formatVND(contract.depositHeld)}</strong> sẽ được giữ lại làm phí bồi thường vi phạm thời hạn hợp đồng để bù đắp chi phí phòng trống.
-              </p>
+              <div className="text-[11px] text-amber-900 space-y-1 pl-5">
+                <p>
+                  • Hạn hợp đồng đến ngày <strong>{contract.endDate}</strong> (còn <strong>{unusedRentInfo.unusedDays} ngày</strong>).
+                </p>
+                <p>
+                  • <strong>Tiền cọc ({formatVND(contract.depositHeld)}):</strong> Không được hoàn lại khi trả trước hạn.
+                </p>
+                <p>
+                  • <strong>Tiền thuê chưa dùng ({formatVND(unusedRentInfo.estimatedUnusedRent)}):</strong> Được hoàn trả 100%.
+                </p>
+              </div>
 
-              <label className="flex items-start gap-2 pt-1 cursor-pointer select-none text-xs font-semibold text-amber-950">
+              <label className="flex items-start gap-2 pt-1 border-t border-amber-200/80 cursor-pointer select-none text-[11px] font-semibold text-amber-950">
                 <input
                   type="checkbox"
                   checked={agreeEarlyTerms}
@@ -290,37 +313,48 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
                   className="mt-0.5 rounded border-amber-400 text-amber-600 focus:ring-amber-500 h-4 w-4 shrink-0"
                   required
                 />
-                <span>Tôi xác nhận đồng ý chính sách hoàn 100% tiền thuê chưa dùng và khấu trừ 100% tiền cọc.</span>
+                <span>Tôi đồng ý không nhận lại tiền cọc và nhận hoàn tiền thuê còn lại.</span>
               </label>
             </div>
           )}
 
-          {/* Quy trình điều phối tiếp theo */}
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
-            <div className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
-              <span>Quy trình xử lý tiếp theo:</span>
-            </div>
-            <div className="grid grid-cols-3 gap-2 text-center text-[11px] pt-1">
-              <div className="p-2 bg-white rounded-lg border border-slate-200/80 shadow-2xs">
-                <div className="font-bold text-emerald-700">1. Gửi báo trả</div>
-                <div className="text-slate-500 text-[10px] mt-0.5">Khách đã dọn đồ</div>
+          {/* Ghi chú */}
+          <div>
+            <label className="text-xs font-semibold text-slate-700 block mb-1">
+              Ghi chú thêm cho nhân viên cơ sở (Tùy chọn)
+            </label>
+            <textarea
+              rows={2}
+              placeholder="Ví dụ: Tôi đã dọn xong và đang ở sảnh / Khóa số đã được reset về 0000..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="w-full text-xs p-2 rounded-lg border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+            />
+          </div>
+
+          {/* Quy trình xử lý tiếp theo: Mini Stepper ngang 1 dòng */}
+          <div className="py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl">
+            <div className="flex items-center justify-between text-[11px]">
+              <div className="flex items-center gap-1.5 font-bold text-emerald-700">
+                <span className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-[10px]">1</span>
+                <span>Gửi báo trả</span>
               </div>
-              <div className="p-2 bg-white rounded-lg border border-slate-200/80 shadow-2xs">
-                <div className="font-bold text-blue-700">2. Nghiệm thu</div>
-                <div className="text-slate-500 text-[10px] mt-0.5">Staff kiểm tra kho</div>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+              <div className="flex items-center gap-1.5 font-bold text-blue-700">
+                <span className="w-4 h-4 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center text-[10px]">2</span>
+                <span>Nghiệm thu kho</span>
               </div>
-              <div className="p-2 bg-white rounded-lg border border-slate-200/80 shadow-2xs">
-                <div className="font-bold text-purple-700">3. Quyết toán</div>
-                <div className="text-slate-500 text-[10px] mt-0.5">
-                  {isEarlyReturn ? 'Hoàn tiền trong 7 ngày làm việc' : 'Hoàn cọc trong 7 ngày làm việc'}
-                </div>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+              <div className="flex items-center gap-1.5 font-bold text-purple-700">
+                <span className="w-4 h-4 rounded-full bg-purple-100 text-purple-800 flex items-center justify-center text-[10px]">3</span>
+                <span>Quyết toán (7 ngày làm việc)</span>
               </div>
             </div>
           </div>
 
           {/* Validation Error */}
           {error && (
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2 text-xs text-rose-800">
+            <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2 text-xs text-rose-800">
               <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
@@ -328,21 +362,20 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
 
           {/* Success Message */}
           {isSuccess && (
-            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-xs text-emerald-800">
+            <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-xs text-emerald-800">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
               <span className="font-bold">Đã gửi yêu cầu trả kho thành công! Quản lý cơ sở đang cử nhân viên xuống kiểm tra.</span>
             </div>
           )}
 
           {/* Action Buttons */}
-          <div className="pt-2 flex items-center justify-end gap-2.5">
+          <div className="pt-1 flex items-center justify-end gap-2.5">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={handleClose}
-              disabled={isSubmitting || isSuccess}
-              className="px-4 cursor-pointer"
+              disabled={isSubmitting}
             >
               Hủy bỏ
             </Button>
@@ -350,17 +383,11 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
               type="submit"
               variant="primary"
               size="sm"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold cursor-pointer"
               disabled={isSubmitting || isSuccess || !isCleaned || !isConditionOk || (isEarlyReturn && !agreeEarlyTerms)}
-              className="px-5 font-bold cursor-pointer shadow-xs bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5"
             >
-              {isSubmitting ? (
-                'Đang gửi yêu cầu...'
-              ) : (
-                <>
-                  <span>Tôi đã dọn xong — Báo trả kho</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
+              {isSubmitting ? 'Đang gửi thông báo...' : 'Tôi đã dọn xong — Báo trả kho'}
+              <ArrowRight className="w-4 h-4 ml-1.5 inline" />
             </Button>
           </div>
         </form>
@@ -369,4 +396,3 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
     document.body
   );
 };
-
