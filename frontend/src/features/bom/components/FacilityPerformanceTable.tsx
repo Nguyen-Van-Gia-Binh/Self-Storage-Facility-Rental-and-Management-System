@@ -196,7 +196,7 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
         <div>
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
-              Ma Trận Doanh Thu & Hiệu Quả Từng Cơ Sở
+              Doanh Thu & Hiệu Quả Từng Cơ Sở
             </h3>
             {isAnyStreamHighlighted && (
               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-medium">
@@ -212,9 +212,6 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
               </div>
             )}
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Bấm vào tên cơ sở để lọc toàn trang, hoặc bấm [Xem] để mở rộng phân tích chi tiết.
-          </p>
         </div>
 
         {/* Thanh tìm kiếm cơ sở */}

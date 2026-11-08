@@ -140,9 +140,6 @@ export const OccupancyComparisonChart: React.FC<OccupancyComparisonChartProps> =
             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
               Hiệu Suất Vận Hành & Tỷ Lệ Lấp Đầy Từng Cơ Sở
             </h3>
-            <p className="text-xs text-slate-500">
-              Công thức: Usage Rate = Số ô Đang thuê / (Tổng ô - Ngừng dùng)
-            </p>
           </div>
         </div>
 
