@@ -25,6 +25,7 @@ import { tokenStorage } from '@/utils/tokenStorage';
 import { Button } from '@/components/ui/Button';
 import { BomFilterBar } from '../components/BomFilterBar';
 import { BomKpiSummary } from '../components/BomKpiSummary';
+import { RevenueTrendCharts } from '../components/RevenueTrendCharts';
 import { RevenueStreamDonut } from '../components/RevenueStreamDonut';
 import { OccupancyComparisonChart } from '../components/OccupancyComparisonChart';
 import { FacilityPerformanceTable } from '../components/FacilityPerformanceTable';
@@ -329,6 +330,15 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
         {/* Tab 1: Cơ cấu Doanh thu & Ma trận chi nhánh */}
         {activeTab === 'REVENUE' && (
           <div className="space-y-6">
+            {/* TẦNG 2: XU HƯỚNG THEO THỜI GIAN (12 THÁNG) */}
+            <div className="print-break-inside-avoid">
+              <RevenueTrendCharts
+                data={revenueData?.monthlyTrends}
+                isLoading={isLoading}
+              />
+            </div>
+
+            {/* TẦNG 3: CƠ CẤU DOANH THU */}
             <div className="print-break-inside-avoid">
               <RevenueStreamDonut
                 revenue={revenueData}
@@ -337,6 +347,8 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
                 isLoading={isLoading}
               />
             </div>
+
+            {/* TẦNG 4: MA TRẬN CHI TIẾT THEO CƠ SỞ */}
             <div className="print-break-inside-avoid">
               <FacilityPerformanceTable
                 revenues={revenueData?.byFacility || []}

@@ -39,6 +39,7 @@ function normalizeRevenueReport(raw: {
   mrr?: unknown;
   activeContractCount?: unknown;
   totalDepositLiability?: unknown;
+  monthlyTrends?: Array<Record<string, unknown>>;
   byFacility?: Array<Record<string, unknown>>;
 }): SystemRevenueReport {
   const facilities = Array.isArray(raw?.byFacility) ? raw.byFacility : [];
@@ -55,6 +56,18 @@ function normalizeRevenueReport(raw: {
     mrr: asMoney(raw?.mrr),
     activeContractCount: Number(raw?.activeContractCount) || 0,
     totalDepositLiability: asMoney(raw?.totalDepositLiability),
+    monthlyTrends: Array.isArray(raw?.monthlyTrends)
+      ? raw.monthlyTrends.map((t) => ({
+          month: String(t.month || ''),
+          monthLabel: String(t.monthLabel || ''),
+          rentalRevenue: asMoney(t.rentalRevenue),
+          surchargeRevenue: asMoney(t.surchargeRevenue),
+          overdueFeeRevenue: asMoney(t.overdueFeeRevenue),
+          renewalRevenue: asMoney(t.renewalRevenue),
+          cashFlow: asMoney(t.cashFlow),
+          mrr: asMoney(t.mrr),
+        }))
+      : [],
     byFacility: facilities.map((facility) => {
       const rentalRevenue = asMoney(facility.rentalRevenue);
       const surchargeRevenue = asMoney(facility.surchargeRevenue);

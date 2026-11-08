@@ -22,4 +22,5 @@ public class SystemRevenueReportResponse {
     private Long activeContractCount;
     private Long totalDepositLiability;
     private List<FacilityRevenueShareDto> byFacility;
+    private List<MonthlyRevenueTrendDto> monthlyTrends;
 }

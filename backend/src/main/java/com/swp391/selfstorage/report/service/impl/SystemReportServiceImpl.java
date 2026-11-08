@@ -32,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -73,6 +74,16 @@ public class SystemReportServiceImpl implements SystemReportService {
         long overallDepositLiability = 0L;
         List<FacilityRevenueShareDto> byFacility = new ArrayList<>();
         ZoneId zone = ZoneId.of("Asia/Ho_Chi_Minh");
+
+        // Chuẩn bị 12 tháng gần nhất cho biểu đồ xu hướng (BM-04)
+        YearMonth endYm = YearMonth.from(effectiveTo);
+        YearMonth startYm = endYm.minusMonths(11);
+        Map<YearMonth, MonthlyAccumulator> trendMap = new LinkedHashMap<>();
+        YearMonth curYm = startYm;
+        while (!curYm.isAfter(endYm)) {
+            trendMap.put(curYm, new MonthlyAccumulator());
+            curYm = curYm.plusMonths(1);
+        }
 
         for (Facility facility : targetFacilities) {
             List<RentalContract> contracts = rentalContractRepository.findByFacilityId(facility.getId());
@@ -129,30 +140,57 @@ public class SystemReportServiceImpl implements SystemReportService {
                     continue;
                 }
                 for (PaymentTransaction payment : payments) {
-                    if (!isContractHoldingDeposit
-                            && payment.getAmount() != null
-                            && payment.getAmount() > 0
-                            && "PENDING_REFUND".equalsIgnoreCase(payment.getStatus())) {
-                        facPendingRefundLiability += payment.getAmount();
-                    }
                     if (payment.getCreatedAt() == null || payment.getAmount() == null) {
                         continue;
                     }
                     LocalDate payDate = payment.getCreatedAt().atZone(zone).toLocalDate();
+                    String type = payment.getTransactionType() == null ? "" : payment.getTransactionType();
+                    long amount = payment.getAmount();
+                    boolean isSuccess = "SUCCESS".equalsIgnoreCase(payment.getStatus());
+                    boolean refund = "REFUND".equalsIgnoreCase(type)
+                            || "PENDING_REFUND".equalsIgnoreCase(payment.getStatus());
+
+                    // 12-tháng xu hướng (BM-04)
+                    YearMonth payYm = YearMonth.from(payDate);
+                    MonthlyAccumulator monthAcc = trendMap.get(payYm);
+                    if (monthAcc != null && isSuccess && !refund) {
+                        if ("CONTRACT_RENEWAL".equalsIgnoreCase(type) || "RENEWAL_PAYMENT".equalsIgnoreCase(type)) {
+                            monthAcc.renewal += amount;
+                        } else if ("EXTRA_FEE_PAYMENT".equalsIgnoreCase(type) || "SETTLEMENT".equalsIgnoreCase(type)) {
+                            monthAcc.surcharge += amount;
+                        } else if ("OVERDUE_PENALTY".equalsIgnoreCase(type)) {
+                            monthAcc.overdueFee += amount;
+                        } else if ("INITIAL_PAYMENT".equalsIgnoreCase(type)) {
+                            long rentCap = contract.getTotalRentalFee();
+                            long depositCap = contract.getDepositAmount();
+                            long rentPart = Math.min(amount, Math.max(0L, rentCap));
+                            long depositPart = Math.min(Math.max(0L, amount - rentPart), Math.max(0L, depositCap));
+                            long extra = amount - rentPart - depositPart;
+                            monthAcc.rental += rentPart;
+                            if (extra > 0) {
+                                monthAcc.surcharge += extra;
+                            }
+                        } else {
+                            monthAcc.rental += amount;
+                        }
+                    }
+
+                    // Tích lũy cho kỳ báo cáo được chọn [effectiveFrom, effectiveTo]
+                    if (!isContractHoldingDeposit
+                            && amount > 0
+                            && "PENDING_REFUND".equalsIgnoreCase(payment.getStatus())) {
+                        facPendingRefundLiability += amount;
+                    }
                     if (payDate.isBefore(effectiveFrom) || payDate.isAfter(effectiveTo)) {
                         continue;
                     }
-                    String type = payment.getTransactionType() == null ? "" : payment.getTransactionType();
-                    boolean refund = "REFUND".equalsIgnoreCase(type)
-                            || "PENDING_REFUND".equalsIgnoreCase(payment.getStatus());
                     if (refund) {
-                        facRefund += payment.getAmount();
+                        facRefund += amount;
                         continue;
                     }
-                    if (!"SUCCESS".equalsIgnoreCase(payment.getStatus())) {
+                    if (!isSuccess) {
                         continue;
                     }
-                    long amount = payment.getAmount();
                     if ("CONTRACT_RENEWAL".equalsIgnoreCase(type) || "RENEWAL_PAYMENT".equalsIgnoreCase(type)) {
                         facRenewalRevenue += amount;
                     } else if ("EXTRA_FEE_PAYMENT".equalsIgnoreCase(type) || "SETTLEMENT".equalsIgnoreCase(type)) {
@@ -190,6 +228,16 @@ public class SystemReportServiceImpl implements SystemReportService {
                             ? (c.getTotalRentalFee() / c.getRentalMonths())
                             : c.getMonthlyPrice();
                     facMrr += netMonthlyPrice;
+
+                    // Tích lũy MRR cho các tháng trong 12 tháng mà hợp đồng ACTIVE này hiệu lực
+                    YearMonth cStart = (c.getStartDate() != null) ? YearMonth.from(c.getStartDate()) : startYm;
+                    YearMonth cEnd = (c.getEndDateExclusive() != null) ? YearMonth.from(c.getEndDateExclusive()) : endYm;
+                    for (Map.Entry<YearMonth, MonthlyAccumulator> entry : trendMap.entrySet()) {
+                        YearMonth ym = entry.getKey();
+                        if (!ym.isBefore(cStart) && !ym.isAfter(cEnd)) {
+                            entry.getValue().mrr += netMonthlyPrice;
+                        }
+                    }
                 }
                 if (c.getStatus() == ContractStatus.PENDING_CHECK_IN
                         || c.getStatus() == ContractStatus.ACTIVE
@@ -231,6 +279,24 @@ public class SystemReportServiceImpl implements SystemReportService {
 
         long totalRevenue = totalRentalRevenue + totalRenewalRevenue + totalSurchargeRevenue + totalOverdueFeeRevenue;
 
+        List<MonthlyRevenueTrendDto> monthlyTrends = new ArrayList<>();
+        for (Map.Entry<YearMonth, MonthlyAccumulator> entry : trendMap.entrySet()) {
+            YearMonth ym = entry.getKey();
+            MonthlyAccumulator acc = entry.getValue();
+            String monthStr = ym.toString();
+            String monthLabel = String.format("T%02d/%s", ym.getMonthValue(), String.valueOf(ym.getYear()).substring(2));
+            monthlyTrends.add(MonthlyRevenueTrendDto.builder()
+                    .month(monthStr)
+                    .monthLabel(monthLabel)
+                    .rentalRevenue(acc.rental)
+                    .surchargeRevenue(acc.surcharge)
+                    .overdueFeeRevenue(acc.overdueFee)
+                    .renewalRevenue(acc.renewal)
+                    .cashFlow(acc.getCashFlow())
+                    .mrr(acc.mrr)
+                    .build());
+        }
+
         return SystemRevenueReportResponse.builder()
                 .from(effectiveFrom.toString())
                 .to(effectiveTo.toString())
@@ -244,6 +310,7 @@ public class SystemReportServiceImpl implements SystemReportService {
                 .mrr(overallMrr)
                 .activeContractCount(overallActiveContracts)
                 .totalDepositLiability(overallDepositLiability)
+                .monthlyTrends(monthlyTrends)
                 .byFacility(byFacility)
                 .build();
     }
@@ -455,6 +522,18 @@ public class SystemReportServiceImpl implements SystemReportService {
             return List.of(facility);
         }
         return facilityRepository.findAll();
+    }
+
+    private static class MonthlyAccumulator {
+        long rental = 0L;
+        long surcharge = 0L;
+        long overdueFee = 0L;
+        long renewal = 0L;
+        long mrr = 0L;
+
+        long getCashFlow() {
+            return rental + surcharge + overdueFee + renewal;
+        }
     }
 
 }

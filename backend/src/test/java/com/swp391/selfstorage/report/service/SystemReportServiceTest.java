@@ -157,6 +157,12 @@ class SystemReportServiceTest {
 
         long sumByFacility = report.getByFacility().stream().mapToLong(f -> f.getRevenue()).sum();
         assertEquals(report.getTotalRevenue(), sumByFacility);
+
+        assertNotNull(report.getMonthlyTrends());
+        assertEquals(12, report.getMonthlyTrends().size());
+        assertEquals("2026-10", report.getMonthlyTrends().get(11).getMonth());
+        assertEquals("T10/26", report.getMonthlyTrends().get(11).getMonthLabel());
+        assertEquals(13_200_000L, report.getMonthlyTrends().get(11).getCashFlow());
     }
 
     @Test

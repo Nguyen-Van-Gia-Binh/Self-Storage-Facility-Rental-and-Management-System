@@ -18,6 +18,17 @@ export interface FacilityRevenueBreakdown {
   depositLiability?: number;
 }
 
+export interface MonthlyRevenueTrend {
+  month: string;           // "2026-01"
+  monthLabel: string;      // "T01/26"
+  rentalRevenue: number;
+  surchargeRevenue: number;
+  overdueFeeRevenue: number;
+  renewalRevenue: number;
+  cashFlow: number;
+  mrr: number;
+}
+
 export interface SystemRevenueReport {
   from: string; // YYYY-MM-DD
   to: string;   // YYYY-MM-DD
@@ -31,6 +42,7 @@ export interface SystemRevenueReport {
   mrr?: number;
   activeContractCount?: number;
   totalDepositLiability?: number;
+  monthlyTrends?: MonthlyRevenueTrend[];
   byFacility: FacilityRevenueBreakdown[];
 }
 

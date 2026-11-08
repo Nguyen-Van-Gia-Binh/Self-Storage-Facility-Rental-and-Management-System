@@ -19,6 +19,18 @@ describe('getSystemRevenueReport - Giữ nguyên mrr, activeContractCount và to
         mrr: 4500000,
         activeContractCount: 3,
         totalDepositLiability: 4800000,
+        monthlyTrends: [
+          {
+            month: '2026-10',
+            monthLabel: 'T10/26',
+            rentalRevenue: 10000000,
+            surchargeRevenue: 1000000,
+            overdueFeeRevenue: 500000,
+            renewalRevenue: 3500000,
+            cashFlow: 15000000,
+            mrr: 4500000,
+          },
+        ],
         byFacility: [
           {
             facilityId: 1,
@@ -46,6 +58,12 @@ describe('getSystemRevenueReport - Giữ nguyên mrr, activeContractCount và to
     expect(report.mrr).toBe(4500000);
     expect(report.activeContractCount).toBe(3);
     expect(report.totalDepositLiability).toBe(4800000);
+
+    expect(report.monthlyTrends).toHaveLength(1);
+    expect(report.monthlyTrends?.[0].month).toBe('2026-10');
+    expect(report.monthlyTrends?.[0].monthLabel).toBe('T10/26');
+    expect(report.monthlyTrends?.[0].cashFlow).toBe(15000000);
+    expect(report.monthlyTrends?.[0].mrr).toBe(4500000);
 
     expect(report.byFacility).toHaveLength(1);
     expect(report.byFacility[0].mrr).toBe(4500000);
