@@ -177,6 +177,41 @@ async function setupCommonRoutes(page: Page) {
       }),
     });
   });
+
+  await page.route('**/api/v1/payments/checkout*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        success: true,
+        data: {
+          checkoutUrl: 'https://sandbox.vnpayment.vn/test',
+          qrCode: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="gray"/></svg>',
+          orderCode: 998899,
+          amount: 200000,
+          description: 'THANH TOAN PHI',
+        },
+      }),
+    });
+  });
+
+  await page.route('**/api/v1/payments/order/*/status*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        success: true,
+        data: {
+          id: 1,
+          orderCode: 998899,
+          amount: 200000,
+          status: 'PENDING',
+          referenceType: 'OVERDUE_PENALTY',
+          referenceId: 504,
+        },
+      }),
+    });
+  });
 }
 
 async function dismissEarlyRenewalModalIfOpen(page: Page) {
