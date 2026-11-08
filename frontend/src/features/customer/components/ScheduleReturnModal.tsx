@@ -51,6 +51,17 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
     return new Date(returnDate) < new Date(contract.endDate);
   }, [contract, returnDate]);
 
+  // Ước tính số tiền thuê ngày chưa dùng được hoàn (BR-RET-06 & ContractServiceImpl#earlyRentRefund)
+  const earlyRefundEstimate = useMemo(() => {
+    if (!isEarlyReturn || !contract) return 0;
+    const returnD = new Date(returnDate);
+    const endD = new Date(contract.endDate);
+    const diffTime = endD.getTime() - returnD.getTime();
+    const diffDays = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+    const dailyPrice = Math.round((contract.monthlyRent ?? 0) / 30);
+    return dailyPrice * diffDays;
+  }, [isEarlyReturn, contract, returnDate]);
+
   const policy = useActivePolicy();
   const graceDays = policy?.overdueGraceDays ?? 0;
 
@@ -146,7 +157,7 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
 
           <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-100 uppercase tracking-wider mb-1">
             <RotateCcw className="w-4 h-4" />
-            <span>Quy Trình Nghiệm Thu & Hoàn Cọc</span>
+            <span>{isEarlyReturn ? 'Quy Trình Nghiệm Thu & Quyết Toán Trả Sớm' : 'Quy Trình Nghiệm Thu & Hoàn Cọc'}</span>
           </div>
 
           <h3 className="text-xl font-black text-white">Xác Nhận Đã Dọn Đồ & Báo Trả Kho</h3>
@@ -169,10 +180,12 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
             </div>
             <div className="flex justify-between items-center border-t border-slate-200/80 pt-1.5">
               <span className="text-slate-600 font-medium">
-                {isEarlyReturn ? 'Chính sách hoàn tiền khi trả kho sớm:' : 'Tiền cọc dự kiến quyết toán hoàn lại:'}
+                {isEarlyReturn ? 'Chính sách quyết toán khi trả kho sớm:' : 'Tiền cọc dự kiến quyết toán hoàn lại:'}
               </span>
               <span className={`font-bold text-sm ${isEarlyReturn ? 'text-amber-700' : 'text-emerald-700'}`}>
-                {isEarlyReturn ? 'Hoàn 100% tiền thuê chưa dùng (phạt cọc)' : formatVND(contract.depositHeld)}
+                {isEarlyReturn
+                  ? `Hoàn tiền thuê chưa dùng${earlyRefundEstimate > 0 ? ` (~${formatVND(earlyRefundEstimate)})` : ''} · Phạt 100% cọc`
+                  : formatVND(contract.depositHeld)}
               </span>
             </div>
           </div>
@@ -262,7 +275,7 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
               </div>
               <p className="text-amber-800 leading-relaxed text-[11px]">
                 Ngày trả kho của bạn sớm hơn ngày kết thúc hợp đồng (<strong>{contract.endDate}</strong>).
-                Theo chính sách Win-Win, bạn được <strong>hoàn lại 100% tiền thuê của các ngày/tháng chưa sử dụng</strong> sau khi nghiệm thu đạt chuẩn.
+                Theo chính sách Win-Win, bạn được <strong>hoàn lại 100% tiền thuê của các ngày/tháng chưa sử dụng{earlyRefundEstimate > 0 ? ` (ước tính ~${formatVND(earlyRefundEstimate)})` : ''}</strong> sau khi nghiệm thu đạt chuẩn.
                 Khoản tiền cọc <strong>{formatVND(contract.depositHeld)}</strong> sẽ được giữ lại làm phí bồi thường vi phạm thời hạn hợp đồng để bù đắp chi phí phòng trống.
               </p>
 
@@ -298,7 +311,9 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
               </div>
               <div className="p-2 bg-white rounded-lg border border-slate-200/80 shadow-2xs">
                 <div className="font-bold text-purple-700">3. Quyết toán</div>
-                <div className="text-slate-500 text-[10px] mt-0.5">Hoàn cọc 7 ngày làm việc</div>
+                <div className="text-slate-500 text-[10px] mt-0.5">
+                  {isEarlyReturn ? 'Hoàn tiền trong 7 ngày làm việc' : 'Hoàn cọc trong 7 ngày làm việc'}
+                </div>
               </div>
             </div>
           </div>
