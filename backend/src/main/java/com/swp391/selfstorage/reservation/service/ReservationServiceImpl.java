@@ -946,6 +946,16 @@ public class ReservationServiceImpl implements ReservationService {
         res.setCancelledAt(r.getCancelledAt());
         res.setCancelReason(r.getCancelReason());
 
+        if (r.getId() != null && rentalContractRepository != null) {
+            rentalContractRepository.findByReservationId(r.getId()).ifPresent(contract -> {
+                res.setContractId(contract.getId());
+                res.setContractCode(contract.getCode());
+                if (contract.getStatus() != null) {
+                    res.setContractStatus(contract.getStatus().name());
+                }
+            });
+        }
+
         // Thong tin chuyen khoan VietQR Napas247
         String transferContent = "SMARTSTORAGE " + r.getCode();
         res.setTransferContent(transferContent);

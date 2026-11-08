@@ -1,13 +1,15 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, waitFor, fireEvent, cleanup } from '@testing-library/react';
 import React from 'react';
 import { AllocationPage } from '../AllocationPage';
 import * as facilityApi from '@/api/facility';
 import * as reservationApi from '@/api/reservation';
+import * as contractApi from '@/api/contract';
 import * as staffAssignmentApi from '@/features/manager/api/staffAssignmentApi';
 import type { FacilityListItem } from '@/types';
 import type { ReservationResponse } from '@/api/reservation';
+import type { ManagerContractItem } from '@/types/contractManager';
 import type { StaffWorkloadItem } from '@/features/manager/types/staffAssignment';
 import type { StorageUnitResponse } from '@/types/unit';
 
@@ -18,6 +20,12 @@ vi.mock('@/api/facility', () => ({
 vi.mock('@/api/reservation', () => ({
   listReservations: vi.fn(),
   assignUnit: vi.fn(),
+  reassignStaffApi: vi.fn(),
+}));
+
+vi.mock('@/api/contract', () => ({
+  getManagerContracts: vi.fn(),
+  reassignStorageUnit: vi.fn(),
 }));
 
 vi.mock('@/features/manager/api/staffAssignmentApi', () => ({
@@ -123,12 +131,17 @@ describe('AllocationPage Component (Gán ô kho)', () => {
     vi.clearAllMocks();
     vi.mocked(facilityApi.fetchMyAssignedFacilities).mockResolvedValue(mockFacilities);
     vi.mocked(reservationApi.listReservations).mockResolvedValue(mockReservations);
+    vi.mocked(contractApi.getManagerContracts).mockResolvedValue([]);
     vi.mocked(staffAssignmentApi.getStaffWorkload).mockResolvedValue(mockStaffList);
     vi.mocked(reservationApi.assignUnit).mockResolvedValue({
       id: 101,
       code: 'RES-20261107-001',
       storageUnitId: 42,
     } as ReservationResponse);
+  });
+
+  afterEach(() => {
+    cleanup();
   });
 
   it('1. Hiển thị danh sách nhiệm vụ gán ô kho từ trên xuống với đầy đủ thông tin đơn & khách hàng', async () => {
@@ -252,6 +265,106 @@ describe('AllocationPage Component (Gán ô kho)', () => {
       expect(screen.getByText('RSV-20261107-4192')).toBeDefined();
       expect(screen.getByText('Nguyễn Phạm Xuân Nhi')).toBeDefined();
       expect(screen.getByText('0967890123')).toBeDefined();
+    });
+  });
+
+  it('5. Hợp đồng mới thanh toán chưa gán ô (storageUnitCode = "Chưa gán", relocationEligible = false) hiển thị mã HĐ (CTR-...), trạng thái "Chờ gán ô", KHÔNG bị gắn nhãn "Sự cố bàn giao" và không bị nhân đôi dòng với RSV-...', async () => {
+    vi.mocked(reservationApi.listReservations).mockResolvedValue([
+      {
+        id: 334,
+        code: 'RSV-20261108-2857',
+        contractId: 309,
+        contractCode: 'CTR-20261108-6789',
+        contractStatus: 'PENDING_CHECK_IN',
+        facilityId: 2,
+        customerId: 11,
+        customerName: 'Lê Thanh Tùng',
+        customerPhone: '0987654321',
+        customerEmail: 'thanhtung22012006@gmail.com',
+        unitTypeId: 3,
+        unitTypeName: 'Kho Tiêu Chuẩn L',
+        startDate: '2026-11-14',
+        rentalMonths: 3,
+        endDateExclusive: '2027-02-14',
+        status: 'CONFIRMED',
+        storageUnitId: undefined,
+      } as unknown as ReservationResponse,
+    ]);
+
+    vi.mocked(contractApi.getManagerContracts).mockResolvedValue([
+      {
+        id: 309,
+        code: 'CTR-20261108-6789',
+        reservationId: 334,
+        facilityId: 2,
+        facilityName: 'Cơ sở Quận 7 - TP.HCM',
+        customerId: 11,
+        customerName: 'Lê Thanh Tùng',
+        customerPhone: '0987654321',
+        customerEmail: 'thanhtung22012006@gmail.com',
+        storageUnitId: null as unknown as number,
+        storageUnitCode: 'Chưa gán',
+        unitTypeId: 3,
+        unitTypeName: 'Kho Tiêu Chuẩn L',
+        startDate: '2026-11-14',
+        endDateExclusive: '2027-02-14',
+        rentalMonths: 3,
+        monthlyPrice: 2400000,
+        depositAmount: 2400000,
+        depositBalance: 2400000,
+        status: 'PENDING_CHECK_IN',
+        relocationEligible: false,
+      } as ManagerContractItem,
+    ]);
+
+    render(<AllocationPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('1 đơn chờ xử lý')).toBeDefined();
+      expect(screen.getByText('CTR-20261108-6789')).toBeDefined();
+      expect(screen.queryByText('RSV-20261108-2857')).toBeNull();
+      expect(screen.queryByText('Sự cố bàn giao')).toBeNull();
+      expect(screen.queryByText('Gán lại ô kho')).toBeNull();
+      expect(screen.queryByText('Đổi ô kho (Sơ đồ 2D)')).toBeNull();
+      expect(screen.getByText('Chờ gán ô')).toBeDefined();
+      expect(screen.getByText('Gán ô kho (Sơ đồ 2D)')).toBeDefined();
+    });
+  });
+
+  it('6. Hợp đồng thực sự có sự cố bàn giao (relocationEligible = true) vẫn hiển thị "Sự cố bàn giao" và "Đổi ô kho (Sơ đồ 2D)"', async () => {
+    vi.mocked(reservationApi.listReservations).mockResolvedValue([]);
+    vi.mocked(contractApi.getManagerContracts).mockResolvedValue([
+      {
+        id: 410,
+        code: 'CTR-20261108-9999',
+        reservationId: 400,
+        facilityId: 2,
+        facilityName: 'Cơ sở Quận 7 - TP.HCM',
+        customerId: 11,
+        customerName: 'Lê Thanh Tùng',
+        customerPhone: '0987654321',
+        storageUnitId: 55,
+        storageUnitCode: '',
+        unitTypeId: 3,
+        unitTypeName: 'Kho Tiêu Chuẩn L',
+        startDate: '2026-11-14',
+        endDateExclusive: '2027-02-14',
+        rentalMonths: 3,
+        monthlyPrice: 2400000,
+        depositAmount: 2400000,
+        depositBalance: 2400000,
+        status: 'RELOCATION_PENDING',
+        relocationEligible: true,
+      } as ManagerContractItem,
+    ]);
+
+    render(<AllocationPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('CTR-20261108-9999')).toBeDefined();
+      expect(screen.getByText('Sự cố bàn giao')).toBeDefined();
+      expect(screen.getByText('Gán lại ô kho')).toBeDefined();
+      expect(screen.getByText('Đổi ô kho (Sơ đồ 2D)')).toBeDefined();
     });
   });
 });

@@ -8,6 +8,7 @@ import java.time.LocalDate;
 public class ContractSummaryResponse {
     private Long id;
     private String code;
+    private Long reservationId;
     private Long customerId;
     private String customerName;
     private String customerPhone;
