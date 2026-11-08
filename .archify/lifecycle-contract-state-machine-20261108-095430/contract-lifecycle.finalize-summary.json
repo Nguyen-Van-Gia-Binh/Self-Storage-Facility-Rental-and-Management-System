@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "lifecycle",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\lifecycle-contract-state-machine-20261108-095430\\candidate.json",
+    "sha256": "0fa65d6eb0411dd44fc2f7ccf5f1373bdf7f595feffe6aec337f21a3a2e5aea6",
+    "bytes": 11370
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\lifecycle-contract-state-machine-20261108-095430\\contract-lifecycle.html",
+    "sha256": "1f6cdcda67da7e17077633aa7c3992c33fdb99cba94a087bb754764a1477742d",
+    "bytes": 860829
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\lifecycle-contract-state-machine-20261108-095430\\contract-lifecycle.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\lifecycle-contract-state-machine-20261108-095430\\contract-lifecycle.finalize-summary.json",
+    "browserCheckReceipt": "C:\\Users\\admin\\Documents\\A_FPT\\Tempory_Project\\Self-Storage-Facility-Rental-and-Management-System\\.archify\\lifecycle-contract-state-machine-20261108-095430\\contract-lifecycle.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-07T20:51:40.485Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 5233,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  },
+  "visualReviewRecommendation": {
+    "action": "inspect-route-readability",
+    "signals": {
+      "resolvedCrossovers": 6
+    },
+    "reason": "Automated gates passed, but crossings or detours still need perceptual review before claiming visual quality.",
+    "affectedRoutes": {
+      "crossings": [
+        {
+          "left": {
+            "id": "t_expire_overdue",
+            "from": "active",
+            "to": "overdue",
+            "label": "Quá hạn",
+            "collectionIndex": 5,
+            "artifactIndex": 6
+          },
+          "right": {
+            "id": "t_reject_handover",
+            "from": "pending_check_in",
+            "to": "terminated",
+            "label": "Từ chối nhận",
+            "collectionIndex": 8,
+            "artifactIndex": 9
+          },
+          "point": [
+            327,
+            246
+          ]
+        },
+        {
+          "left": {
+            "id": "t_expire_overdue",
+            "from": "active",
+            "to": "overdue",
+            "label": "Quá hạn",
+            "collectionIndex": 5,
+            "artifactIndex": 6
+          },
+          "right": {
+            "id": "t_reassign_restore",
+            "from": "terminated",
+            "to": "pending_check_in",
+            "label": "Đổi ô kho",
+            "collectionIndex": 9,
+            "artifactIndex": 10
+          },
+          "point": [
+            327,
+            228
+          ]
+        },
+        {
+          "left": {
+            "id": "t_renew_overdue",
+            "from": "overdue",
+            "to": "active",
+            "label": "Gia hạn",
+            "collectionIndex": 6,
+            "artifactIndex": 7
+          },
+          "right": {
+            "id": "t_reject_handover",
+            "from": "pending_check_in",
+            "to": "terminated",
+            "label": "Từ chối nhận",
+            "collectionIndex": 8,
+            "artifactIndex": 9
+          },
+          "point": [
+            353,
+            246
+          ]
+        },
+        {
+          "left": {
+            "id": "t_renew_overdue",
+            "from": "overdue",
+            "to": "active",
+            "label": "Gia hạn",
+            "collectionIndex": 6,
+            "artifactIndex": 7
+          },
+          "right": {
+            "id": "t_reassign_restore",
+            "from": "terminated",
+            "to": "pending_check_in",
+            "label": "Đổi ô kho",
+            "collectionIndex": 9,
+            "artifactIndex": 10
+          },
+          "point": [
+            353,
+            228
+          ]
+        },
+        {
+          "left": {
+            "id": "t_terminate_close",
+            "from": "terminated",
+            "to": "closed",
+            "label": "Hoàn cọc",
+            "collectionIndex": 10,
+            "artifactIndex": 11
+          },
+          "right": {
+            "id": "t_emergency_trigger",
+            "from": "active",
+            "to": "emergency_resolution",
+            "label": "Sự cố cơ sở",
+            "collectionIndex": 12,
+            "artifactIndex": 13
+          },
+          "point": [
+            648.5,
+            210
+          ]
+        },
+        {
+          "left": {
+            "id": "t_terminate_close",
+            "from": "terminated",
+            "to": "closed",
+            "label": "Hoàn cọc",
+            "collectionIndex": 10,
+            "artifactIndex": 11
+          },
+          "right": {
+            "id": "t_emergency_relocate",
+            "from": "emergency_resolution",
+            "to": "active",
+            "label": "Đổi cơ sở",
+            "collectionIndex": 13,
+            "artifactIndex": 14
+          },
+          "point": [
+            648.5,
+            192
+          ]
+        }
+      ],
+      "detours": [],
+      "truncated": false
+    },
+    "repair": "Advisory only: this mode places or routes these relationships itself. Report them; do not remove relationships or meaning to reduce crossings."
+  }
+}

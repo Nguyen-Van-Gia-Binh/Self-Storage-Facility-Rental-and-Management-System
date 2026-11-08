@@ -33,7 +33,7 @@ Toàn bộ hệ thống tài liệu phục vụ bảo vệ đồ án và vận h
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
 │                   TẦNG 3: KỸ THUẬT & THỰC THI (TECHNICAL & EXECUTION LAYER)                      │
 │  "Hợp đồng công nghệ vững chắc: Traceability 1-1 từ Giao diện ➔ API ➔ Service ➔ Database"        │
-│  • diagrams/README.md : Bản đồ chỉ mục 16+ sơ đồ tương tác Archify HTML (Flow 1–7, SYS, DB)      │
+│  • diagrams/README.md : Bản đồ chỉ mục 21+ sơ đồ tương tác Archify HTML (Flow 1–7, SYS, DB)      │
 │  • WORKFLOWS.md       : Luồng kỹ thuật End-to-End (UI ➔ Controller ➔ Service ➔ DB ➔ Cron Job)    │
 │  • API-SPEC.md        : Hợp đồng REST API (Endpoints, Request/Response Payload, Mã lỗi HTTP)     │
 │  • DATA-DICTIONARY.md : Cấu trúc bảng CSDL (Flyway Migration), khóa ngoại, chỉ mục, enum types   │
@@ -76,7 +76,7 @@ Toàn bộ hệ thống tài liệu phục vụ bảo vệ đồ án và vận h
 
 | Tài liệu | Vai trò cốt lõi | Nội dung chính |
 | :--- | :--- | :--- |
-| [**`docs/diagrams/README.md`**](diagrams/README.md) | **Chỉ mục Sơ đồ Kỹ thuật Tương tác** | • Bản đồ tra cứu nhanh 16+ sơ đồ Archify HTML độc lập: Workflow, Sequence, Lifecycle, Architecture, Tree, Dataflow, ERD<br>• Phân hệ trực quan theo 7 Luồng nghiệp vụ (`Flow 1`–`Flow 7`), hạ tầng `Flow SYS` và `System/DB` |
+| [**`docs/diagrams/README.md`**](diagrams/README.md) | **Chỉ mục Sơ đồ Kỹ thuật Tương tác** | • Bản đồ tra cứu nhanh 21+ sơ đồ Archify HTML độc lập: Workflow, Sequence, Lifecycle, Architecture, Tree, Dataflow, ERD<br>• Phân hệ trực quan theo 7 Luồng nghiệp vụ (`Flow 1`–`Flow 7`), hạ tầng `Flow SYS` và `System/DB` |
 | [**`docs/WORKFLOWS.md`**](WORKFLOWS.md) | **Bản đồ Luồng đi Kỹ thuật** | • Luồng End-to-End: Frontend UI ➔ Controller ➔ Service ➔ Repository / DB ➔ Scheduled Cron Jobs<br>• Phân tích song song Happy Path và Exception Cases; Bảng tra cứu nhanh mã nguồn (Quick Code Index) |
 | [**`docs/API-SPEC.md`**](API-SPEC.md) | **Hợp đồng REST API** | • Đặc tả chi tiết từng endpoint: HTTP Method, URL, Header JWT, Request DTO, Response Body, Mã HTTP (200, 201, 400, 404, 409) |
 | [**`docs/DATA-DICTIONARY.md`**](DATA-DICTIONARY.md) | **Từ điển Cấu trúc CSDL** | • Đồng bộ 100% với Flyway Migration (`V1`..`V45`)<br>• Mô tả chi tiết kiểu dữ liệu, khóa chính, khóa ngoại, chỉ mục (Index) và enum constraints |
@@ -95,7 +95,7 @@ Toàn bộ hệ thống tài liệu phục vụ bảo vệ đồ án và vận h
 | 📌 **Hội đồng hỏi công thức phạt quá hạn, tính cọc, điều kiện hoàn tiền?** | ➔ [**`docs/BUSINESS-RULES.md`**](BUSINESS-RULES.md) | **Tầng 2** |
 | 📌 **Hội đồng hỏi sơ đồ Swimlane liên làn và vòng đời trạng thái kho/hợp đồng?** | ➔ [**`docs/DEFENSE-SPECIFICATION.md`**](DEFENSE-SPECIFICATION.md) | **Tầng 2** |
 | 📌 **Chuẩn bị trả lời các câu hỏi hóc búa, bẫy pháp lý, edge cases của Hội đồng?** | ➔ [**`docs/DEFENSE-EXAMINATION-CRITIQUE.md`**](DEFENSE-EXAMINATION-CRITIQUE.md) | **Tầng 2** |
-| 📌 **Muốn xem toàn bộ 16+ sơ đồ tương tác HTML (Workflow, Sequence, Dataflow, ERD)?** | ➔ [**`docs/diagrams/README.md`**](diagrams/README.md) | **Tầng 3** |
+| 📌 **Muốn xem toàn bộ 21+ sơ đồ tương tác HTML (Workflow, Sequence, Lifecycle, ERD)?** | ➔ [**`docs/diagrams/README.md`**](diagrams/README.md) | **Tầng 3** |
 | 📌 **Hội đồng chỉ vào nút bấm UI và hỏi hàm/controller nào xử lý?** | ➔ [**`docs/WORKFLOWS.md` § 12**](WORKFLOWS.md#12-bảng-tra-cứu-nhanh-mã-nguồn-quick-code-index) | **Tầng 3** |
 | 📌 **Kiểm tra hợp đồng dữ liệu REST API (Request/Response DTO)?** | ➔ [**`docs/API-SPEC.md`**](API-SPEC.md) | **Tầng 3** |
 | 📌 **Kiểm tra cấu trúc bảng database, kiểu dữ liệu và khóa ngoại?** | ➔ [**`docs/DATA-DICTIONARY.md`**](DATA-DICTIONARY.md) | **Tầng 3** |
