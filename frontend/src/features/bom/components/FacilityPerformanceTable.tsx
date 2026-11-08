@@ -240,16 +240,16 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
 
       {/* Bảng dữ liệu với Sticky Thead & Sticky Total Footer */}
       <div className="overflow-x-auto max-h-[560px]">
-        <table className="w-full min-w-[1150px] text-left text-xs border-collapse whitespace-nowrap">
+        <table className="w-full text-left text-xs border-collapse whitespace-nowrap">
           {/* THEAD CỦA BẢNG KÈM SORT */}
           <thead className="sticky top-0 z-20 bg-slate-50 shadow-xs border-b border-slate-200">
-            {/* Chi tiết từng cột kèm Sort */}
+            {/* Chi tiết từng cột kèm Sort & Tỷ lệ chiều rộng */}
             <tr className="text-slate-600 font-semibold uppercase tracking-wider text-[11px] whitespace-nowrap">
               {/* 1. Tên cơ sở */}
               <th
                 scope="col"
                 onClick={() => handleSort('facilityName')}
-                className="py-2.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors"
+                className="w-[24%] py-2.5 px-4 cursor-pointer hover:bg-slate-100 transition-colors"
               >
                 <span className="flex items-center gap-1">
                   Cơ sở lưu kho {renderSortIcon('facilityName')}
@@ -260,7 +260,7 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
               <th
                 scope="col"
                 onClick={() => handleSort('rentalRevenue')}
-                className={`py-2.5 px-3 text-right cursor-pointer hover:bg-slate-100 transition-colors ${
+                className={`w-[13%] py-2.5 px-3 text-right cursor-pointer hover:bg-slate-100 transition-colors ${
                   isRentalHighlighted ? 'bg-emerald-100/60 text-emerald-900 font-bold' : ''
                 }`}
               >
@@ -273,7 +273,7 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
               <th
                 scope="col"
                 onClick={() => handleSort('surchargesAndRenewals')}
-                className={`py-2.5 px-3 text-right cursor-pointer hover:bg-slate-100 transition-colors ${
+                className={`w-[13%] py-2.5 px-3 text-right cursor-pointer hover:bg-slate-100 transition-colors ${
                   isSurchargeHighlighted ? 'bg-indigo-100/60 text-indigo-900 font-bold' : ''
                 }`}
               >
@@ -286,7 +286,7 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
               <th
                 scope="col"
                 onClick={() => handleSort('overdueFeeRevenue')}
-                className={`py-2.5 px-3 text-right cursor-pointer hover:bg-slate-100 transition-colors ${
+                className={`w-[11%] py-2.5 px-3 text-right cursor-pointer hover:bg-slate-100 transition-colors ${
                   isOverdueHighlighted ? 'bg-rose-100/60 text-rose-900 font-bold' : ''
                 }`}
               >
@@ -299,7 +299,7 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
               <th
                 scope="col"
                 onClick={() => handleSort('totalRevenue')}
-                className="py-2.5 px-3 text-right cursor-pointer hover:bg-slate-100 transition-colors bg-slate-50/80"
+                className="w-[14%] py-2.5 px-3 text-right cursor-pointer hover:bg-slate-100 transition-colors bg-slate-50/80"
               >
                 <span className="flex items-center justify-end gap-1">
                   Tổng thực thu {renderSortIcon('totalRevenue')}
@@ -310,7 +310,7 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
               <th
                 scope="col"
                 onClick={() => handleSort('occupancyRate')}
-                className="py-2.5 px-3 text-center cursor-pointer hover:bg-slate-100 transition-colors"
+                className="w-[10%] py-2.5 px-3 text-center cursor-pointer hover:bg-slate-100 transition-colors"
               >
                 <span className="flex items-center justify-center gap-1">
                   Tỷ lệ lấp đầy {renderSortIcon('occupancyRate')}
@@ -320,13 +320,13 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
               {/* 7. Ô trống / Tổng */}
               <th
                 scope="col"
-                className="py-2.5 px-3 text-center font-semibold text-slate-600"
+                className="w-[9%] py-2.5 px-3 text-center font-semibold text-slate-600"
               >
                 Ô trống / Khai thác
               </th>
 
               {/* 8. Thao tác */}
-              <th scope="col" className="py-2.5 px-3 text-center font-semibold text-slate-600">
+              <th scope="col" className="w-[6%] py-2.5 px-3 text-center font-semibold text-slate-600">
                 Chi tiết
               </th>
             </tr>
@@ -424,13 +424,13 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
                       )}
                     </td>
 
-                    {/* Cột 7: Đang thuê / Trống / Khai thác */}
-                    <td className="py-3 px-3 text-center font-mono tabular-nums text-xs text-slate-500">
+                    {/* Cột 7: Ô trống / Khai thác */}
+                    <td className="py-3 px-3 text-center font-mono tabular-nums text-xs text-slate-700">
                       {exploitableUnits === 0 ? (
                         <span className="text-slate-400">N/A</span>
                       ) : (
                         <span>
-                          <strong className="text-slate-800 font-bold">{row.occupiedUnits}</strong> thuê · {row.availableUnits} trống / {exploitableUnits} ô
+                          {row.availableUnits}/{exploitableUnits}
                         </span>
                       )}
                     </td>
@@ -489,10 +489,10 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
                   </span>
                 )}
               </td>
-              <td className="bg-slate-100 py-3 px-3 text-center font-mono tabular-nums text-xs text-slate-600">
+              <td className="bg-slate-100 py-3 px-3 text-center font-mono tabular-nums text-xs text-slate-700">
                 {totalExploitable === 0
                   ? 'N/A'
-                  : `${totalOccupied} thuê · ${totalAvailable} trống / ${totalExploitable} ô`}
+                  : `${totalAvailable}/${totalExploitable}`}
               </td>
               <td className="bg-slate-100 py-3 px-3" />
             </tr>
