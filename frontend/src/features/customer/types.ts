@@ -118,6 +118,10 @@ export interface RentedContract {
   pendingRenewalMonths?: number;
   pendingRenewalAmount?: number;
   pendingRenewalExpiresAt?: string;
+  hasPendingInitialPayment?: boolean;
+  pendingInitialPaymentOrderCode?: number;
+  pendingInitialPaymentAmount?: number;
+  pendingInitialPaymentMethod?: string;
   floor?: number;
   position?: string;
   unitDimensions?: string;

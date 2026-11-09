@@ -50,6 +50,15 @@ export interface ConvertWaitlistRequest {
   rentalMonths?: number;
 }
 
+export interface ConvertWaitlistToContractRequest {
+  startDate?: string;
+  rentalMonths?: number;
+  storageUnitId?: number;
+  paymentMethod?: string;
+  customerPhone?: string;
+  notes?: string;
+}
+
 export interface RejectWaitlistRequest {
   reason?: string;
 }

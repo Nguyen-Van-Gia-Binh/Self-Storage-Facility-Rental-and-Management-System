@@ -57,8 +57,8 @@ public class UserController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('SYSTEM_ADMINISTRATOR')")
-    @Operation(summary = "Lấy danh sách người dùng có phân trang và lọc (Admin)")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMINISTRATOR', 'BUSINESS_OPERATIONS_MANAGER', 'FACILITY_MANAGER', 'FACILITY_STAFF')")
+    @Operation(summary = "Lấy danh sách người dùng có phân trang và lọc (Admin/Manager/Staff)")
     public ResponseEntity<PageResponse<UserResponse>> getUsers(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) UserRole role,

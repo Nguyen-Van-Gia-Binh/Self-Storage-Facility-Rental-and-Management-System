@@ -52,6 +52,10 @@ export interface BackendRentalSummary {
   pendingRenewalMonths?: number;
   pendingRenewalAmount?: number;
   pendingRenewalExpiresAt?: string;
+  hasPendingInitialPayment?: boolean;
+  pendingInitialPaymentOrderCode?: number;
+  pendingInitialPaymentAmount?: number;
+  pendingInitialPaymentMethod?: string;
   rescheduleCount?: number;
   rescheduledAt?: string;
   relocationEligible?: boolean;
@@ -169,6 +173,10 @@ export function mapBackendRentalToContract(item: BackendRentalSummary): RentedCo
     pendingRenewalMonths: item.pendingRenewalMonths,
     pendingRenewalAmount: item.pendingRenewalAmount,
     pendingRenewalExpiresAt: item.pendingRenewalExpiresAt,
+    hasPendingInitialPayment: Boolean(item.hasPendingInitialPayment),
+    pendingInitialPaymentOrderCode: item.pendingInitialPaymentOrderCode,
+    pendingInitialPaymentAmount: item.pendingInitialPaymentAmount,
+    pendingInitialPaymentMethod: item.pendingInitialPaymentMethod,
     reservationId: item.reservationId,
     reservationCode: item.reservationCode,
     rentalMonths: item.rentalMonths,

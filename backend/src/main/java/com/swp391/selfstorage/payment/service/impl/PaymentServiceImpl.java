@@ -327,6 +327,48 @@ public class PaymentServiceImpl implements PaymentService {
                     }
                 }
             }
+        } else if ("CONTRACT_INITIAL".equalsIgnoreCase(request.getReferenceType())
+                || "DIRECT_CONTRACT".equalsIgnoreCase(request.getReferenceType())) {
+            com.swp391.selfstorage.contract.entity.RentalContract contract = rentalContractRepository.findById(request.getReferenceId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND,
+                            "Không tìm thấy hợp đồng với ID=" + request.getReferenceId()));
+            assertPayer(null, contract.getId());
+
+            List<PaymentTransaction> txns = paymentTransactionRepository.findByContractId(contract.getId());
+            Optional<PaymentTransaction> pendingTxn = txns.stream()
+                    .filter(t -> "INITIAL_PAYMENT".equalsIgnoreCase(t.getTransactionType()) && "PENDING".equalsIgnoreCase(t.getStatus()))
+                    .findFirst();
+
+            if (pendingTxn.isEmpty()) {
+                throw new CustomException(ErrorCode.VALIDATION_FAILED, "Hợp đồng không có khoản thanh toán ban đầu đang chờ xử lý");
+            }
+
+            PaymentTransaction txn = pendingTxn.get();
+            if (txn.getOrderCode() != null) {
+                PaymentCheckoutResult reused = paymentGateway.createPayment(
+                        PaymentCheckoutCommand.builder()
+                                .orderCode(txn.getOrderCode())
+                                .amount(txn.getAmount())
+                                .description(txn.getProviderReference() != null ? txn.getProviderReference() : ("HD" + contract.getId()))
+                                .build());
+                return CheckoutResponse.builder()
+                        .orderCode(reused.getOrderCode())
+                        .checkoutUrl(reused.getCheckoutUrl())
+                        .qrCode(reused.getQrCode())
+                        .amount(reused.getAmount())
+                        .description(reused.getDescription())
+                        .accountName(reused.getAccountName())
+                        .accountNumber(reused.getAccountNumber())
+                        .bin(reused.getBin())
+                        .status("PENDING")
+                        .build();
+            }
+
+            amount = txn.getAmount();
+            defaultDesc = "HD" + contract.getId();
+            contractId = contract.getId();
+            reservationId = contract.getReservationId();
+            txnType = "INITIAL_PAYMENT";
         } else {
             throw new CustomException(ErrorCode.VALIDATION_FAILED,
                     "Loại thanh toán không được hỗ trợ: " + request.getReferenceType());

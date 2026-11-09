@@ -62,6 +62,17 @@ public class ContractController {
         return (requestedFacilityId != null) ? List.of(requestedFacilityId) : List.of();
     }
 
+    /** Tạo hợp đồng trực tiếp tại quầy / chốt khách đặt trước dài hạn (> 30 ngày) / chốt Waitlist */
+    @PostMapping("/direct")
+    @PreAuthorize("hasAnyRole('FACILITY_MANAGER', 'BUSINESS_OPERATIONS_MANAGER', 'SYSTEM_ADMINISTRATOR', 'FACILITY_STAFF')")
+    @Operation(summary = "Tạo hợp đồng trực tiếp tại quầy / chốt khách đặt trước dài hạn")
+    public ResponseEntity<ApiResponse<ContractResponse>> createDirectContract(
+            @Valid @RequestBody CreateDirectContractRequest request,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        ContractResponse response = contractService.createDirectContract(request, currentUser);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response, "Tạo hợp đồng trực tiếp thành công"));
+    }
+
     /** T3.5: Chi tiết contract — Staff xác minh khi khách check-in hoặc Customer xem hợp đồng */
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")

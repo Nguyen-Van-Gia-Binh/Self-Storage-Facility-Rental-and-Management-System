@@ -15,6 +15,8 @@ public enum ErrorCode {
     RENEWAL_MONTHS_INVALID(HttpStatus.BAD_REQUEST, "Số tháng gia hạn không nằm trong giới hạn chính sách"),
     STAFF_NOT_IN_FACILITY(HttpStatus.BAD_REQUEST, "Nhân viên không thuộc cơ sở này"),
     STAFF_NOT_ACTIVE(HttpStatus.BAD_REQUEST, "Tài khoản nhân viên đang không hoạt động"),
+    FACILITY_INACTIVE(HttpStatus.BAD_REQUEST, "Cơ sở lưu trữ hiện không hoạt động"),
+    WAITLIST_NOT_CONTACTING(HttpStatus.BAD_REQUEST, "Đơn chờ phải ở trạng thái đang liên hệ để thực hiện thao tác này"),
     SUPPORT_REQUEST_CANNOT_BE_RESOLVED(HttpStatus.BAD_REQUEST, "Yêu cầu hỗ trợ chưa được phân công hoặc đã hoàn thành"),
     INVALID_OTP(HttpStatus.BAD_REQUEST, "Mã xác thực OTP không chính xác"),
     OTP_EXPIRED(HttpStatus.BAD_REQUEST, "Mã xác thực OTP đã hết hạn, vui lòng yêu cầu mã mới"),

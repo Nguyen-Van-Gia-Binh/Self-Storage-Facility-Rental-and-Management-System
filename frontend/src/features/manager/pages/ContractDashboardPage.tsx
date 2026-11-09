@@ -16,6 +16,7 @@ import {
   Compass,
   MapPin,
   Phone,
+  Plus,
 } from 'lucide-react';
 import { fetchMyAssignedFacilities } from '@/api/facility';
 import { getManagerContracts } from '@/api/contract';
@@ -28,6 +29,7 @@ import {
 import { Pagination } from '../components/Pagination';
 import { getFacilityRegion, type RegionFilter } from './FacilityListPage';
 import { getFacilityTheme } from '../utils/facilityTheme';
+import { CreateDirectContractModal } from '../components/CreateDirectContractModal';
 
 const REGION_TABS: { label: string; value: RegionFilter }[] = [
   { label: 'Tất cả', value: 'ALL' },
@@ -54,6 +56,15 @@ export const ContractDashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [showDirectContractModal, setShowDirectContractModal] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
+  const handleDirectContractSuccess = (_newContract: any, message: string) => {
+    setToastMessage({ text: message, type: 'success' });
+    loadData(true);
+    setTimeout(() => setToastMessage(null), 4000);
+  };
 
   const loadData = async (isManual = false) => {
     if (isManual) setRefreshing(true);
@@ -196,6 +207,14 @@ export const ContractDashboardPage: React.FC = () => {
             title="Làm mới"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+          </button>
+
+          <button
+            onClick={() => setShowDirectContractModal(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-teal-700 to-brand-700 hover:from-teal-800 hover:to-brand-800 text-white rounded-xl text-xs font-bold shadow-2xs hover:shadow-md transition-all cursor-pointer shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Tạo HĐ trực tiếp</span>
           </button>
         </div>
       </div>
@@ -456,6 +475,29 @@ export const ContractDashboardPage: React.FC = () => {
           />
         </div>
       )}
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div
+          className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-2xl px-4 py-3 shadow-lg text-xs font-semibold animate-in slide-in-from-bottom-2 duration-200 ${
+            toastMessage.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'
+          }`}
+        >
+          {toastMessage.type === 'success' ? (
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+          ) : (
+            <AlertCircle className="w-4 h-4 shrink-0" />
+          )}
+          <span>{toastMessage.text}</span>
+        </div>
+      )}
+
+      {/* Direct Contract Creation Modal */}
+      <CreateDirectContractModal
+        isOpen={showDirectContractModal}
+        onClose={() => setShowDirectContractModal(false)}
+        onSuccess={handleDirectContractSuccess}
+      />
     </div>
   );
 };

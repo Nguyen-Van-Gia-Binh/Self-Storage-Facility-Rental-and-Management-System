@@ -142,6 +142,13 @@ export const MyUnitsPage: React.FC = () => {
         return true;
       })
       .sort((a, b) => {
+        // Ưu tiên hợp đồng chưa thanh toán ban đầu (cần thanh toán ngay) lên vị trí số 1
+        const aNeedsPayment = Boolean(a.hasPendingInitialPayment);
+        const bNeedsPayment = Boolean(b.hasPendingInitialPayment);
+        if (aNeedsPayment !== bNeedsPayment) {
+          return aNeedsPayment ? -1 : 1;
+        }
+
         // Ưu tiên hợp đồng chưa đóng lên trước, hợp đồng đã đóng (closed) xuống cuối cùng
         const aIsClosed = a.status === 'CLOSED' || a.status === 'TERMINATED';
         const bIsClosed = b.status === 'CLOSED' || b.status === 'TERMINATED';

@@ -38,15 +38,18 @@ vi.mock('@/features/manager/components/FacilityFloorPlanMapModal', () => ({
     isOpen,
     onClose,
     onSelectUnit,
+    highlightUnitId,
   }: {
     isOpen: boolean;
     onClose: () => void;
     onSelectUnit: (unit: StorageUnitResponse) => void;
+    highlightUnitId?: number;
   }) => {
     if (!isOpen) return null;
     return (
       <div data-testid="mock-floor-plan-modal">
         <span>Sơ đồ mặt bằng 2D Modal</span>
+        {highlightUnitId != null && <span data-testid="highlighted-unit-id">{highlightUnitId}</span>}
         <button
           type="button"
           data-testid="select-mock-unit-btn"
@@ -63,6 +66,23 @@ vi.mock('@/features/manager/components/FacilityFloorPlanMapModal', () => ({
           }
         >
           Chọn ô Q7-AC-M101
+        </button>
+        <button
+          type="button"
+          data-testid="select-mock-swap-unit-btn"
+          onClick={() =>
+            onSelectUnit({
+              id: 88,
+              code: 'Q7-AC-M205',
+              facilityId: 2,
+              unitTypeId: 5,
+              floor: 2,
+              position: 'Khu B',
+              status: 'AVAILABLE',
+            } as StorageUnitResponse)
+          }
+        >
+          Chọn ô Q7-AC-M205
         </button>
         <button type="button" onClick={onClose}>
           Đóng sơ đồ
@@ -221,7 +241,7 @@ describe('AllocationPage Component (Gán ô kho)', () => {
     expect(submitBtn.disabled).toBe(true);
 
     // Chọn nhân viên tiếp đón
-    const staffSelect = screen.getByRole('combobox');
+    const staffSelect = screen.getByRole('combobox', { name: /tiếp đón/i });
     expect(staffSelect).toBeDefined();
     expect(screen.getByText('-- Chọn nhân viên tiếp đón (Bắt buộc) --')).toBeDefined();
 
@@ -365,6 +385,218 @@ describe('AllocationPage Component (Gán ô kho)', () => {
       expect(screen.getByText('Sự cố bàn giao')).toBeDefined();
       expect(screen.getByText('Gán lại ô kho')).toBeDefined();
       expect(screen.getByText('Đổi ô kho')).toBeDefined();
+    });
+  });
+
+  it('7. Cho phép chọn Tất cả cơ sở quản lý: hiển thị đồng thời hợp đồng từ cả Cơ sở Quận 7 và Cơ sở Quận 1 kèm nhãn cơ sở', async () => {
+    vi.mocked(facilityApi.fetchMyAssignedFacilities).mockResolvedValue([
+      { id: 2, name: 'Cơ sở Quận 7 - TP.HCM', code: 'FAC-Q7' } as FacilityListItem,
+      { id: 5, name: 'Cơ sở Quận 1 - TP.HCM', code: 'FAC-Q1' } as FacilityListItem,
+    ]);
+
+    vi.mocked(reservationApi.listReservations).mockResolvedValue([]);
+    vi.mocked(contractApi.getManagerContracts).mockResolvedValue([
+      {
+        id: 701,
+        code: 'CTR-20261109-5101',
+        facilityId: 2,
+        facilityName: 'Cơ sở Quận 7 - TP.HCM',
+        customerId: 1,
+        customerName: 'Le Go',
+        customerPhone: '0901234567',
+        storageUnitId: undefined,
+        storageUnitCode: '',
+        unitTypeId: 1,
+        unitTypeName: 'Kho Tiêu Chuẩn S',
+        startDate: '2026-11-09',
+        status: 'PENDING_CHECK_IN',
+      } as ManagerContractItem,
+      {
+        id: 702,
+        code: 'CTR-20261128-6202',
+        facilityId: 5,
+        facilityName: 'Cơ sở Quận 1 - TP.HCM',
+        customerId: 1,
+        customerName: 'Le Go',
+        customerPhone: '0901234567',
+        storageUnitId: undefined,
+        storageUnitCode: '',
+        unitTypeId: 1,
+        unitTypeName: 'Kho Tiêu Chuẩn S',
+        startDate: '2026-11-28',
+        status: 'PENDING_CHECK_IN',
+      } as ManagerContractItem,
+    ]);
+
+    // Giả lập manager chọn 'ALL' (Tất cả cơ sở)
+    localStorage.setItem('manager_selected_facility_id', 'ALL');
+
+    render(<AllocationPage />);
+
+    await waitFor(() => {
+      // Hiển thị cả 2 hợp đồng của Quận 7 và Quận 1
+      expect(screen.getByText('CTR-20261109-5101')).toBeDefined();
+      expect(screen.getByText('CTR-20261128-6202')).toBeDefined();
+      expect(screen.getByText('Cơ sở Quận 7 - TP.HCM')).toBeDefined();
+      expect(screen.getByText('Cơ sở Quận 1 - TP.HCM')).toBeDefined();
+      expect(screen.getByText('2 đơn chờ xử lý')).toBeDefined();
+    });
+  });
+
+  it('8. Đơn đã gán ô kho (isAssigned = true) KHÔNG biến mất khỏi danh sách, hiển thị badge "Ô: ..." và nút "Đổi ô kho"', async () => {
+    vi.mocked(reservationApi.listReservations).mockResolvedValue([]);
+    vi.mocked(contractApi.getManagerContracts).mockResolvedValue([
+      {
+        id: 705,
+        code: 'CTR-20261109-5101',
+        facilityId: 2,
+        facilityName: 'Cơ sở Quận 7 - TP.HCM',
+        customerId: 1,
+        customerName: 'Le Go',
+        customerPhone: '0901234567',
+        storageUnitId: 42,
+        storageUnitCode: 'Q7-AC-M101',
+        unitTypeId: 5,
+        unitTypeName: 'Kho Máy Lạnh M (6m²)',
+        startDate: '2026-11-09',
+        status: 'PENDING_CHECK_IN',
+        assignedStaffName: 'Trần Thị Nhân Viên',
+      } as ManagerContractItem,
+    ]);
+
+    render(<AllocationPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('CTR-20261109-5101')).toBeDefined();
+      expect(screen.getByText('Ô: Q7-AC-M101')).toBeDefined();
+      expect(screen.getByText('NV: Trần Thị Nhân Viên')).toBeDefined();
+      expect(screen.getByText('Đổi ô kho')).toBeDefined();
+    });
+  });
+
+  it('9. Bấm "Đổi ô kho" cho đơn đã gán mở sơ đồ 2D (có highlightUnitId), chọn ô mới và gọi đổi ô thành công theo BR-AVL-04', async () => {
+    vi.mocked(reservationApi.listReservations).mockResolvedValue([
+      {
+        id: 555,
+        code: 'RSV-20261109-5555',
+        contractId: 705,
+        contractCode: 'CTR-20261109-5101',
+        facilityId: 2,
+        storageUnitId: 42,
+        storageUnitCode: 'Q7-AC-M101',
+        unitTypeId: 5,
+        unitTypeName: 'Kho Máy Lạnh M (6m²)',
+        startDate: '2026-11-09',
+        status: 'CONFIRMED',
+        customerName: 'Le Go',
+        customerPhone: '0901234567',
+      } as unknown as ReservationResponse,
+    ]);
+    vi.mocked(contractApi.getManagerContracts).mockResolvedValue([
+      {
+        id: 705,
+        code: 'CTR-20261109-5101',
+        reservationId: 555,
+        facilityId: 2,
+        customerId: 1,
+        customerName: 'Le Go',
+        customerPhone: '0901234567',
+        storageUnitId: 42,
+        storageUnitCode: 'Q7-AC-M101',
+        unitTypeId: 5,
+        unitTypeName: 'Kho Máy Lạnh M (6m²)',
+        startDate: '2026-11-09',
+        status: 'PENDING_CHECK_IN',
+        assignedStaffId: 2,
+        assignedStaffName: 'Trần Thị Nhân Viên',
+      } as ManagerContractItem,
+    ]);
+
+    render(<AllocationPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('CTR-20261109-5101')).toBeDefined();
+    });
+
+    // Bấm nút "Đổi ô kho"
+    const reassignBtn = screen.getByText('Đổi ô kho');
+    fireEvent.click(reassignBtn);
+
+    // Modal sơ đồ 2D hiển thị với highlightUnitId là ô 42
+    await waitFor(() => {
+      expect(screen.getByTestId('mock-floor-plan-modal')).toBeDefined();
+      expect(screen.getByTestId('highlighted-unit-id').textContent).toBe('42');
+    });
+
+    // Chọn ô mới Q7-AC-M205 (ID 88)
+    fireEvent.click(screen.getByTestId('select-mock-swap-unit-btn'));
+
+    // Modal xác nhận đổi ô kho mở ra
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /Xác nhận đổi ô kho trước ngày nhận/i })).toBeDefined();
+      expect(screen.getByText('Q7-AC-M205')).toBeDefined();
+      expect(screen.getByText('Q7-AC-M101')).toBeDefined();
+    });
+
+    // Bấm nút xác nhận đổi sang ô mới
+    const confirmSwapBtn = screen.getByRole('button', { name: /Xác nhận đổi sang ô Q7-AC-M205/i });
+    fireEvent.click(confirmSwapBtn);
+
+    await waitFor(() => {
+      expect(reservationApi.assignUnit).toHaveBeenCalledWith(555, expect.objectContaining({
+        storageUnitId: 88,
+      }));
+    });
+  });
+
+  it('10. Bộ lọc tab: Lọc chính xác giữa "Tất cả", "Chưa gán ô" và "Đã gán ô (Có thể đổi)"', async () => {
+    vi.mocked(reservationApi.listReservations).mockResolvedValue([]);
+    vi.mocked(contractApi.getManagerContracts).mockResolvedValue([
+      {
+        id: 801,
+        code: 'CTR-UNASSIGNED-01',
+        facilityId: 2,
+        storageUnitId: null as unknown as number,
+        storageUnitCode: 'Chưa gán',
+        unitTypeId: 5,
+        unitTypeName: 'Kho Tiêu Chuẩn S',
+        startDate: '2026-11-10',
+        status: 'PENDING_CHECK_IN',
+      } as ManagerContractItem,
+      {
+        id: 802,
+        code: 'CTR-ASSIGNED-02',
+        facilityId: 2,
+        storageUnitId: 99,
+        storageUnitCode: 'Q7-S101',
+        unitTypeId: 5,
+        unitTypeName: 'Kho Tiêu Chuẩn S',
+        startDate: '2026-11-12',
+        status: 'PENDING_CHECK_IN',
+      } as ManagerContractItem,
+    ]);
+
+    render(<AllocationPage />);
+
+    // Mặc định ở tab "Tất cả (2)"
+    await waitFor(() => {
+      expect(screen.getByText('Tất cả (2)')).toBeDefined();
+      expect(screen.getByText('CTR-UNASSIGNED-01')).toBeDefined();
+      expect(screen.getByText('CTR-ASSIGNED-02')).toBeDefined();
+    });
+
+    // Chuyển sang tab "Chưa gán ô (1)"
+    fireEvent.click(screen.getByText('Chưa gán ô (1)'));
+    await waitFor(() => {
+      expect(screen.getByText('CTR-UNASSIGNED-01')).toBeDefined();
+      expect(screen.queryByText('CTR-ASSIGNED-02')).toBeNull();
+    });
+
+    // Chuyển sang tab "Đã gán ô (Có thể đổi) (1)"
+    fireEvent.click(screen.getByText('Đã gán ô (Có thể đổi) (1)'));
+    await waitFor(() => {
+      expect(screen.queryByText('CTR-UNASSIGNED-01')).toBeNull();
+      expect(screen.getByText('CTR-ASSIGNED-02')).toBeDefined();
     });
   });
 });

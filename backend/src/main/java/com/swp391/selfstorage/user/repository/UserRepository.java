@@ -17,6 +17,8 @@ public interface UserRepository extends JpaRepository<AppUser, Long> {
 
     Optional<AppUser> findByEmail(String email);
 
+    Optional<AppUser> findFirstByPhone(String phone);
+
     boolean existsByEmail(String email);
 
     @Query("""

@@ -74,6 +74,12 @@ public class CustomerRentalSummaryResponse {
     private Integer rescheduleCount;
     private java.time.OffsetDateTime rescheduledAt;
 
+    // Thông tin thanh toán ban đầu đang chờ (cho Hợp đồng trực tiếp qua Bank Transfer)
+    private Boolean hasPendingInitialPayment;
+    private Long pendingInitialPaymentOrderCode;
+    private Long pendingInitialPaymentAmount;
+    private String pendingInitialPaymentMethod;
+
     public CustomerRentalSummaryResponse() {}
 
     // Getters and Setters
@@ -203,4 +209,16 @@ public class CustomerRentalSummaryResponse {
 
     public java.time.OffsetDateTime getRescheduledAt() { return rescheduledAt; }
     public void setRescheduledAt(java.time.OffsetDateTime rescheduledAt) { this.rescheduledAt = rescheduledAt; }
+
+    public Boolean getHasPendingInitialPayment() { return hasPendingInitialPayment; }
+    public void setHasPendingInitialPayment(Boolean hasPendingInitialPayment) { this.hasPendingInitialPayment = hasPendingInitialPayment; }
+
+    public Long getPendingInitialPaymentOrderCode() { return pendingInitialPaymentOrderCode; }
+    public void setPendingInitialPaymentOrderCode(Long pendingInitialPaymentOrderCode) { this.pendingInitialPaymentOrderCode = pendingInitialPaymentOrderCode; }
+
+    public Long getPendingInitialPaymentAmount() { return pendingInitialPaymentAmount; }
+    public void setPendingInitialPaymentAmount(Long pendingInitialPaymentAmount) { this.pendingInitialPaymentAmount = pendingInitialPaymentAmount; }
+
+    public String getPendingInitialPaymentMethod() { return pendingInitialPaymentMethod; }
+    public void setPendingInitialPaymentMethod(String pendingInitialPaymentMethod) { this.pendingInitialPaymentMethod = pendingInitialPaymentMethod; }
 }

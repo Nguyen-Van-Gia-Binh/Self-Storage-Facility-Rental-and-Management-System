@@ -17,9 +17,12 @@ import com.swp391.selfstorage.unit.repository.StorageUnitRepository;
 import com.swp391.selfstorage.unit.repository.UnitTypeRepository;
 import com.swp391.selfstorage.user.entity.AppUser;
 import com.swp391.selfstorage.user.entity.UserRole;
+import com.swp391.selfstorage.contract.dto.ContractResponse;
+import com.swp391.selfstorage.contract.service.ContractService;
 import com.swp391.selfstorage.user.entity.UserStatus;
 import com.swp391.selfstorage.user.repository.UserRepository;
 import com.swp391.selfstorage.waitlist.dto.ConvertWaitlistRequest;
+import com.swp391.selfstorage.waitlist.dto.ConvertWaitlistToContractRequest;
 import com.swp391.selfstorage.waitlist.dto.CreateWaitlistRequest;
 import com.swp391.selfstorage.waitlist.dto.FollowUpWaitlistRequest;
 import com.swp391.selfstorage.waitlist.dto.RejectWaitlistRequest;
@@ -68,6 +71,8 @@ class WaitlistServiceTest {
     private PolicyVersionRepository policyVersionRepository;
     @Mock
     private FacilityUnitTypePriceRepository facilityUnitTypePriceRepository;
+    @Mock
+    private ContractService contractService;
 
     @InjectMocks
     private WaitlistServiceImpl waitlistService;
@@ -104,6 +109,7 @@ class WaitlistServiceTest {
         policyVersion.setReservationHoldHours(24);
 
         ReflectionTestUtils.setField(waitlistService, "facilityUnitTypePriceRepository", facilityUnitTypePriceRepository);
+        ReflectionTestUtils.setField(waitlistService, "contractService", contractService);
     }
 
     @Test
@@ -173,6 +179,40 @@ class WaitlistServiceTest {
         CustomException ex = assertThrows(CustomException.class, () ->
                 waitlistService.registerWaitlist(request, customerUser));
         assertEquals(ErrorCode.CAPACITY_AVAILABLE_SHOULD_BOOK_NOW, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("registerWaitlist: Chấp nhận khi targetStartDate vượt quá 30 ngày (đặt trước dài hạn)")
+    void registerWaitlist_Exceeds30Days_Success() {
+        CreateWaitlistRequest request = CreateWaitlistRequest.builder()
+                .facilityId(1L)
+                .unitTypeId(5L)
+                .targetStartDate(LocalDate.now().plusDays(45))
+                .rentalMonths(2)
+                .phoneNumber("0912345678")
+                .build();
+
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(activeFacility));
+        when(unitTypeRepository.findById(5L)).thenReturn(Optional.of(activeUnitType));
+        when(waitlistRepository.existsByCustomerIdAndFacilityIdAndUnitTypeIdAndStatusIn(anyLong(), anyLong(), anyLong(), any()))
+                .thenReturn(false);
+
+        Waitlist mockSaved = Waitlist.builder()
+                .customerId(10L)
+                .facilityId(1L)
+                .unitTypeId(5L)
+                .targetStartDate(LocalDate.now().plusDays(45))
+                .rentalMonths(2)
+                .status(WaitlistStatus.WAITING)
+                .contactPhone("0912345678")
+                .build();
+        mockSaved.setId(99L);
+        when(waitlistRepository.save(any(Waitlist.class))).thenReturn(mockSaved);
+
+        WaitlistResponse response = waitlistService.registerWaitlist(request, customerUser);
+        assertNotNull(response);
+        assertEquals(WaitlistStatus.WAITING, response.getStatus());
+        verify(waitlistRepository).save(any(Waitlist.class));
     }
 
     @Test
@@ -319,6 +359,35 @@ class WaitlistServiceTest {
         // Bảo toàn trạng thái: Không được đổi sang CONVERTED
         assertEquals(WaitlistStatus.CONTACTING, waitlist.getStatus());
         verify(reservationRepository, never()).save(any(Reservation.class));
+    }
+
+    @Test
+    @DisplayName("convertToContract: Thành công khi FM tạo hợp đồng trực tiếp từ đơn chờ")
+    void convertToContract_Success() {
+        Waitlist waitlist = Waitlist.builder()
+                .customerId(10L)
+                .facilityId(1L)
+                .unitTypeId(5L)
+                .targetStartDate(LocalDate.now().plusDays(2))
+                .rentalMonths(3)
+                .status(WaitlistStatus.CONTACTING)
+                .assignedFmId(20L)
+                .build();
+        waitlist.setId(99L);
+
+        when(waitlistRepository.findById(99L)).thenReturn(Optional.of(waitlist));
+        when(contractService.createDirectContract(any(), eq(fmUser))).thenReturn(new ContractResponse());
+
+        ConvertWaitlistToContractRequest convertReq = ConvertWaitlistToContractRequest.builder()
+                .startDate(LocalDate.now().plusDays(2))
+                .rentalMonths(3)
+                .paymentMethod("CASH")
+                .notes("Đã chốt hợp đồng trực tiếp tại quầy")
+                .build();
+
+        WaitlistResponse response = waitlistService.convertToContract(99L, convertReq, fmUser);
+        assertNotNull(response);
+        verify(contractService).createDirectContract(any(), eq(fmUser));
     }
 
     @Test

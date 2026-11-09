@@ -33,8 +33,15 @@ import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
 import com.swp391.selfstorage.policy.service.AppliedPriceLookup;
 import com.swp391.selfstorage.policy.service.PolicyNumbers;
 import com.swp391.selfstorage.policy.service.SurchargeAmountCalculator;
+import com.swp391.selfstorage.payment.constant.PaymentStatus;
+import com.swp391.selfstorage.payment.constant.PaymentTransactionType;
 import com.swp391.selfstorage.payment.entity.PaymentTransaction;
 import com.swp391.selfstorage.payment.repository.PaymentTransactionRepository;
+import com.swp391.selfstorage.unit.entity.FacilityUnitTypePrice;
+import com.swp391.selfstorage.unit.repository.FacilityUnitTypePriceRepository;
+import com.swp391.selfstorage.waitlist.entity.Waitlist;
+import com.swp391.selfstorage.waitlist.entity.WaitlistStatus;
+import com.swp391.selfstorage.waitlist.repository.WaitlistRepository;
 import com.swp391.selfstorage.user.entity.UserRole;
 import com.swp391.selfstorage.user.service.AuditLogService;
 import com.swp391.selfstorage.user.service.UserService;
@@ -49,6 +56,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -64,6 +72,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import com.swp391.selfstorage.reservation.dto.CancelReservationRequest;
@@ -103,6 +112,9 @@ public class ContractServiceImpl implements ContractService {
         private UserRepository userRepository;
 
         @Autowired(required = false)
+        private PasswordEncoder passwordEncoder;
+
+        @Autowired(required = false)
         private UserFacilityAssignmentRepository userFacilityAssignmentRepository;
 
         @Autowired(required = false)
@@ -122,6 +134,15 @@ public class ContractServiceImpl implements ContractService {
 
         @Autowired(required = false)
         private AuditLogService auditLogService;
+
+        @Autowired(required = false)
+        private WaitlistRepository waitlistRepository;
+
+        @Autowired(required = false)
+        private AppliedPriceLookup appliedPriceLookup;
+
+        @Autowired(required = false)
+        private FacilityUnitTypePriceRepository facilityUnitTypePriceRepository;
 
         private static final List<SupportStatus> RELOCATION_TICKET_STATUSES = List.of(
                         SupportStatus.NEW, SupportStatus.ASSIGNED, SupportStatus.IN_PROGRESS, SupportStatus.RESOLVED, SupportStatus.CLOSED);
@@ -2679,6 +2700,279 @@ public class ContractServiceImpl implements ContractService {
                         }
                 }
                 return PolicyNumbers.snapshotInt(c.getPolicySnapshot(), "checkinGraceDays", 10);
+        }
+
+        @Override
+        @Transactional
+        public ContractResponse createDirectContract(CreateDirectContractRequest request, UserPrincipal currentUser) {
+                if (request == null) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Dữ liệu yêu cầu không hợp lệ");
+                }
+
+                // 1. Kiểm tra phân quyền cơ sở nếu người thực hiện là FM hoặc Staff
+                if (currentUser != null && (currentUser.getRole() == UserRole.FACILITY_MANAGER || currentUser.getRole() == UserRole.FACILITY_STAFF)) {
+                        List<Long> assigned = currentUser.getFacilityIds();
+                        if (assigned == null || !assigned.contains(request.getFacilityId())) {
+                                throw new CustomException(ErrorCode.ACCESS_DENIED, "Bạn không có quyền thao tác trên cơ sở này");
+                        }
+                }
+
+                // 2. Xác định hoặc khởi tạo khách hàng
+                final Long customerId = resolveOrRegisterCustomerId(request);
+                if (customerId == null) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Không thể xác định thông tin khách hàng");
+                }
+
+                // 3. Kiểm tra cơ sở hoạt động
+                var facility = (facilityRepository != null)
+                                ? facilityRepository.findById(request.getFacilityId())
+                                                .orElseThrow(() -> new CustomException(ErrorCode.FACILITY_NOT_FOUND))
+                                : null;
+                if (facility != null && !facility.isActive()) {
+                        throw new CustomException(ErrorCode.FACILITY_INACTIVE, "Cơ sở hiện không hoạt động");
+                }
+
+                // 4. Kiểm tra loại ô kho hoạt động
+                var unitType = (unitTypeRepository != null)
+                                ? unitTypeRepository.findById(request.getUnitTypeId())
+                                                .orElseThrow(() -> new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND))
+                                : null;
+                if (unitType != null && !unitType.isActive()) {
+                        throw new CustomException(ErrorCode.UNIT_TYPE_NOT_FOUND, "Loại ô kho hiện không hoạt động");
+                }
+
+                LocalDate startDate = request.getStartDate();
+                if (startDate == null || startDate.isBefore(LocalDate.now())) {
+                        throw new CustomException(ErrorCode.INVALID_START_DATE, "Ngày bắt đầu thuê phải từ hôm nay trở đi");
+                }
+
+                int rentalMonths = Math.max(1, request.getRentalMonths());
+                LocalDate endDateExclusive = startDate.plusMonths(rentalMonths);
+
+                PolicyVersion policy = (policyVersionRepository != null)
+                                ? policyVersionRepository.findTopByEffectiveFromLessThanEqualOrderByEffectiveFromDescVersionNoDesc(OffsetDateTime.now(ZoneOffset.UTC)).orElse(null)
+                                : null;
+                int bufferDays = (policy != null && policy.getRentalBufferDays() != null) ? policy.getRentalBufferDays() : 15;
+                Long policyVersionId = policy != null ? policy.getId() : 1L;
+                int checkinGraceDays = (policy != null && policy.getCheckinGraceDays() != null) ? policy.getCheckinGraceDays() : 10;
+                int accessPinLength = (policy != null && policy.getAccessPinLength() != null) ? policy.getAccessPinLength() : 6;
+                String snapshot = String.format("{\"policyVersionId\":%d,\"checkinGraceDays\":%d,\"accessPinLength\":%d}",
+                                policyVersionId, checkinGraceDays, accessPinLength);
+
+                // 5. Kiểm tra tính khả dụng của ô kho (nếu có chỉ định cụ thể) hoặc công suất toàn cơ sở
+                StorageUnit assignedUnit = null;
+                if (request.getStorageUnitId() != null) {
+                        assignedUnit = storageUnitRepository.findById(request.getStorageUnitId())
+                                        .orElseThrow(() -> new CustomException(ErrorCode.STORAGE_UNIT_NOT_FOUND, "Không tìm thấy ô kho đã chọn"));
+                        if (!assignedUnit.getFacilityId().equals(request.getFacilityId()) || !assignedUnit.getUnitTypeId().equals(request.getUnitTypeId())) {
+                                throw new CustomException(ErrorCode.VALIDATION_FAILED, "Ô kho đã chọn không thuộc đúng cơ sở hoặc loại kho đã đăng ký");
+                        }
+                        if (assignedUnit.getStatus() == StorageUnitStatus.MAINTENANCE || assignedUnit.getStatus() == StorageUnitStatus.OUT_OF_SERVICE) {
+                                throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, "Ô kho đã chọn đang trong diện bảo trì hoặc ngừng hoạt động");
+                        }
+                        if (assignedUnit.getStatus() == StorageUnitStatus.OCCUPIED) {
+                                throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, "Ô kho đã chọn hiện đang có khách thuê sử dụng");
+                        }
+                        if (contractRepository.existsOverlappingContractForUnit(request.getStorageUnitId(), startDate, endDateExclusive, bufferDays, 0L)) {
+                                throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, "Ô kho đã chọn đã có hợp đồng thuê hoạt động trong khoảng thời gian này");
+                        }
+                        // Quy tắc tạo hợp đồng trực tiếp tại quầy / qua FM:
+                        // Miễn là ô kho không có ai đang thuê thực tế và đang AVAILABLE, các đơn giữ chỗ trước
+                        // hoặc dự kiến gia hạn không được chặn hợp đồng trực tiếp của FM.
+                } else if (storageUnitRepository != null) {
+                        // Late-binding: Kiểm tra số lượng ô kho vật lý thực tế chưa bị chiếm bởi hợp đồng đang chạy
+                        storageUnitRepository.lockExploitableUnitIds(request.getFacilityId(), request.getUnitTypeId());
+                        long exploitable = storageUnitRepository.countExploitableUnits(request.getFacilityId(), request.getUnitTypeId(),
+                                        List.of(StorageUnitStatus.MAINTENANCE, StorageUnitStatus.OUT_OF_SERVICE));
+                        long busy = storageUnitRepository.countBusyUnits(request.getFacilityId(), request.getUnitTypeId(), startDate, endDateExclusive, bufferDays);
+                        if (exploitable - busy <= 0) {
+                                throw new CustomException(ErrorCode.CAPACITY_NOT_AVAILABLE, "Cơ sở đã hết ô kho trống cho hạng kho này trong khoảng thời gian đã chọn");
+                        }
+                }
+
+                // 6. Tính toán giá thuê và tiền đặt cọc
+                long monthlyPrice = lookupMonthlyPriceDirect(request.getFacilityId(), request.getUnitTypeId());
+                if (monthlyPrice <= 0) {
+                        monthlyPrice = 1_000_000L;
+                }
+                BigDecimal multiplier = (policy != null && policy.getDepositMultiplier() != null) ? policy.getDepositMultiplier() : BigDecimal.ONE;
+                long rawRent = monthlyPrice * rentalMonths;
+                long deposit = Math.round((monthlyPrice * multiplier.doubleValue()) / 1000.0) * 1000;
+                long totalPayable = rawRent + deposit;
+
+                // 7. Tạo bản ghi Reservation CONFIRMED để bảo toàn toàn vẹn schema CSDL
+                String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+                int randomSuffix = ThreadLocalRandom.current().nextInt(1000, 9999);
+                Reservation reservation = new Reservation();
+                reservation.setCode("RSV-" + datePart + "-" + randomSuffix);
+                reservation.setCustomerId(customerId);
+                reservation.setFacilityId(request.getFacilityId());
+                reservation.setUnitTypeId(request.getUnitTypeId());
+                reservation.setStorageUnitId(request.getStorageUnitId());
+                reservation.setStartDate(startDate);
+                reservation.setRentalMonths(rentalMonths);
+                reservation.setEndDateExclusive(endDateExclusive);
+                reservation.setMonthlyPriceSnapshot(monthlyPrice);
+                reservation.setPolicyVersionId(policyVersionId);
+                reservation.setDiscountAmount(0L);
+                reservation.setDepositAmount(deposit);
+                reservation.setTotalRentalFee(rawRent);
+                reservation.setTotalPayable(totalPayable);
+                reservation.setStatus(ReservationStatus.CONFIRMED);
+                reservation.setHoldExpiresAt(OffsetDateTime.now(ZoneOffset.UTC).plusDays(2));
+                reservation.setConfirmedAt(OffsetDateTime.now(ZoneOffset.UTC));
+                Reservation savedReservation = reservationRepository.save(reservation);
+
+                // 8. Tạo giao dịch PaymentTransaction (nếu CASH: đã thu tại quầy -> SUCCESS; nếu BANK_TRANSFER: PENDING chờ khách thanh toán online)
+                boolean isCash = "CASH".equalsIgnoreCase(request.getPaymentMethod());
+                PaymentTransaction payment = PaymentTransaction.builder()
+                                .reservationId(savedReservation.getId())
+                                .transactionType(PaymentTransactionType.INITIAL_PAYMENT.name())
+                                .amount(totalPayable)
+                                .status(isCash ? PaymentStatus.SUCCESS.name() : PaymentStatus.PENDING.name())
+                                .paymentMethod(request.getPaymentMethod() != null ? request.getPaymentMethod() : "CASH")
+                                .providerReference(isCash ? "DIRECT_CONTRACT_DESK_CASH" : "DIRECT_CONTRACT_BANK_TRANSFER")
+                                .orderCode(ThreadLocalRandom.current().nextLong(1_000_000_000L, 9_999_999_999L))
+                                .build();
+                if (paymentTransactionRepository != null) {
+                        payment = paymentTransactionRepository.save(payment);
+                }
+
+                // 9. Tạo RentalContract PENDING_CHECK_IN
+                String contractCode = "CTR-" + datePart + "-" + ThreadLocalRandom.current().nextInt(1000, 9999);
+                RentalContract contract = RentalContract.builder()
+                                .code(contractCode)
+                                .reservationId(savedReservation.getId())
+                                .customerId(customerId)
+                                .facilityId(request.getFacilityId())
+                                .unitTypeId(request.getUnitTypeId())
+                                .storageUnitId(request.getStorageUnitId())
+                                .startDate(startDate)
+                                .endDateExclusive(endDateExclusive)
+                                .rentalMonths(rentalMonths)
+                                .monthlyPrice(monthlyPrice)
+                                .totalRentalFee(rawRent)
+                                .depositAmount(deposit)
+                                .depositBalance(deposit)
+                                .status(ContractStatus.PENDING_CHECK_IN)
+                                .policySnapshot(snapshot)
+                                .policyVersionId(policyVersionId)
+                                .build();
+                RentalContract savedContract = contractRepository.save(contract);
+
+                if (payment != null && paymentTransactionRepository != null) {
+                        payment.setContractId(savedContract.getId());
+                        paymentTransactionRepository.save(payment);
+                }
+
+                if (assignedUnit != null) {
+                        assignedUnit.setStatus(StorageUnitStatus.RESERVED);
+                        storageUnitRepository.save(assignedUnit);
+
+                        if (reservationRepository != null) {
+                                List<Reservation> lingering = reservationRepository.findOverlappingReservationsForUnit(
+                                                assignedUnit.getId(), startDate, endDateExclusive, OffsetDateTime.now(ZoneOffset.UTC), bufferDays, savedReservation.getId());
+                                for (Reservation oldRsv : lingering) {
+                                        oldRsv.setStatus(ReservationStatus.FULFILLED);
+                                        reservationRepository.save(oldRsv);
+                                }
+                        }
+                }
+
+                // 10. Nếu xuất phát từ Waitlist -> Chuyển thành CONVERTED và gán ID hợp đồng
+                if (request.getWaitlistId() != null && waitlistRepository != null) {
+                        waitlistRepository.findById(request.getWaitlistId()).ifPresent(w -> {
+                                w.setStatus(WaitlistStatus.CONVERTED);
+                                w.setConvertedReservationId(savedReservation.getId());
+                                w.setConvertedContractId(savedContract.getId());
+                                w.setContactTimeoutAt(null);
+                                if (request.getNotes() != null && !request.getNotes().isBlank()) {
+                                        w.setContactNotes(request.getNotes());
+                                }
+                                waitlistRepository.save(w);
+                        });
+                }
+
+                log.info("Created direct contract id={}, code={}, customerId={}, facilityId={}, startDate={}",
+                                savedContract.getId(), savedContract.getCode(), customerId, request.getFacilityId(), startDate);
+
+                return toResponse(savedContract);
+        }
+
+        private Long resolveOrRegisterCustomerId(CreateDirectContractRequest request) {
+                Long customerId = request.getCustomerId();
+                if (customerId != null) {
+                        if (userRepository != null) {
+                                AppUser customer = userRepository.findById(customerId)
+                                                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "Không tìm thấy khách hàng với ID: " + request.getCustomerId()));
+                                if (request.getCustomerPhone() != null && !request.getCustomerPhone().isBlank()) {
+                                        customer.setPhone(request.getCustomerPhone().trim());
+                                }
+                                if (request.getCustomerFullName() != null && !request.getCustomerFullName().isBlank()
+                                                && (customer.getFullName() == null || customer.getFullName().isBlank())) {
+                                        customer.setFullName(request.getCustomerFullName().trim());
+                                }
+                                userRepository.save(customer);
+                        }
+                        return customerId;
+                }
+
+                // Khách vãng lai đến quầy hoặc tìm qua email / SĐT
+                String email = request.getCustomerEmail() != null ? request.getCustomerEmail().trim().toLowerCase() : null;
+                String phone = request.getCustomerPhone() != null ? request.getCustomerPhone().trim() : null;
+                String fullName = (request.getCustomerFullName() != null && !request.getCustomerFullName().isBlank())
+                                ? request.getCustomerFullName().trim()
+                                : "Khách hàng tại quầy";
+
+                if ((email == null || email.isBlank()) && (phone == null || phone.isBlank())) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Vui lòng chọn khách hàng hoặc cung cấp số điện thoại / email của khách");
+                }
+
+                if (userRepository != null) {
+                        AppUser existing = null;
+                        if (email != null && !email.isBlank()) {
+                                existing = userRepository.findByEmail(email).orElse(null);
+                        }
+                        if (existing == null && phone != null && !phone.isBlank()) {
+                                existing = userRepository.findFirstByPhone(phone).orElse(null);
+                        }
+
+                        if (existing != null) {
+                                if (phone != null && !phone.isBlank() && (existing.getPhone() == null || existing.getPhone().isBlank())) {
+                                        existing.setPhone(phone);
+                                }
+                                if (fullName != null && !fullName.isBlank() && ("Khách hàng tại quầy".equals(existing.getFullName()) || existing.getFullName() == null)) {
+                                        existing.setFullName(fullName);
+                                }
+                                existing = userRepository.save(existing);
+                                return existing.getId();
+                        } else {
+                                if (email == null || email.isBlank()) {
+                                        email = "khachhang." + (phone != null ? phone : System.currentTimeMillis()) + "@smartstorage.vn";
+                                }
+                                String encodedPass = (passwordEncoder != null)
+                                                ? passwordEncoder.encode(java.util.UUID.randomUUID().toString())
+                                                : "{noop}secret";
+                                AppUser newUser = new AppUser(email, encodedPass, fullName, phone, null, UserRole.STORAGE_CUSTOMER, UserStatus.ACTIVE);
+                                newUser = userRepository.save(newUser);
+                                return newUser.getId();
+                        }
+                }
+                return null;
+        }
+
+        private long lookupMonthlyPriceDirect(Long facilityId, Long unitTypeId) {
+                if (appliedPriceLookup != null) {
+                        return appliedPriceLookup.resolveMonthlyPrice(facilityId, unitTypeId)
+                                        .filter(p -> p > 0)
+                                        .orElse(0L);
+                }
+                if (facilityUnitTypePriceRepository != null) {
+                        return facilityUnitTypePriceRepository.findByFacilityIdAndUnitTypeId(facilityId, unitTypeId)
+                                        .map(FacilityUnitTypePrice::getMonthlyPrice)
+                                        .orElse(0L);
+                }
+                return 0L;
         }
 
         private record OverduePreviewRates(int graceDays, BigDecimal dailyRate, BigDecimal capRate, int terminationDays) {

@@ -25,6 +25,8 @@ public interface WaitlistService {
 
     WaitlistResponse convertToReservation(Long id, ConvertWaitlistRequest request, UserPrincipal currentUser);
 
+    WaitlistResponse convertToContract(Long id, com.swp391.selfstorage.waitlist.dto.ConvertWaitlistToContractRequest request, UserPrincipal currentUser);
+
     WaitlistResponse reject(Long id, RejectWaitlistRequest request, UserPrincipal currentUser);
 
     WaitlistResponse followUp(Long id, FollowUpWaitlistRequest request, UserPrincipal currentUser);
