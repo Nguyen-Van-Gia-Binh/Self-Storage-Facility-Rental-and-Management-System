@@ -16,5 +16,10 @@ public interface HandoverRecordRepository extends JpaRepository<HandoverRecord, 
      * nhằm tránh vi phạm unique constraint uq_handover_record_contract_id.
      */
     Optional<HandoverRecord> findByContractId(Long contractId);
+
+    /**
+     * Tra cứu hàng loạt bản ghi bàn giao theo danh sách contractId để tối ưu hóa hiệu năng
+     */
+    java.util.List<HandoverRecord> findByContractIdIn(java.util.Collection<Long> contractIds);
 }
 

@@ -90,7 +90,8 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
     contract.handoverRejected ||
     effectiveDetail?.handoverRejected ||
     contract.contractNumber?.includes('REJ') ||
-    contract.contractNumber?.includes('REFUND')
+    contract.contractNumber?.includes('REFUND') ||
+    (effectiveStatus === 'TERMINATED' && !contract.checkinDate && Boolean(contract.handoverConditionNote || contract.rejectionReason))
   );
   const isCancelledAtHandover = isHandoverRejected;
   const isOverdueTerminated =
