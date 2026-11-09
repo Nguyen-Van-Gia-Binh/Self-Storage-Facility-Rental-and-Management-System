@@ -1386,7 +1386,9 @@ public class ContractServiceImpl implements ContractService {
                 if (contract.getStatus() == ContractStatus.TERMINATED) {
                         if (contract.getCheckinDate() == null) {
                                 // BR-CHK-06: Từ chối bàn giao ở khâu Check-in -> hoàn 100% tiền thuê + 100% cọc
-                                long rentAmount = contract.getTotalRentalFee();
+                                long rentAmount = contract.getTotalRentalFee() > 0
+                                                ? contract.getTotalRentalFee()
+                                                : contract.getMonthlyPrice() * Math.max(1, contract.getRentalMonths());
                                 long deposit = contract.getDepositAmount();
                                 long totalPaid = rentAmount + deposit;
                                 return SettlementPreviewResponse.builder()
@@ -1495,7 +1497,9 @@ public class ContractServiceImpl implements ContractService {
                 if (contract.getStatus() == ContractStatus.TERMINATED) {
                         if (contract.getCheckinDate() == null) {
                                 // BR-CHK-06: Từ chối bàn giao ở khâu Check-in -> hoàn 100% tiền thuê + 100% cọc
-                                long rentAmount = contract.getTotalRentalFee();
+                                long rentAmount = contract.getTotalRentalFee() > 0
+                                                ? contract.getTotalRentalFee()
+                                                : contract.getMonthlyPrice() * Math.max(1, contract.getRentalMonths());
                                 long depositAmount = contract.getDepositAmount();
                                 long totalRefund = rentAmount + depositAmount;
                                 return closeSettledContract(contract, returnReq, managerId, totalRefund, 0L);

@@ -204,6 +204,8 @@ class RenewalServiceTest {
         RentalContract contract = buildContract(ContractStatus.OVERDUE);
         contract.setOverdueFeeAccrued(0L);
         when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
+        when(paymentTransactionRepository.findById(777L)).thenReturn(Optional.of(PaymentTransaction.builder()
+                .id(777L).amount(2_400_000L).renewalMonths(3).build()));
 
         CustomException ex = assertThrows(CustomException.class,
                 () -> renewalService.processRenewal(100L, new RenewalRequest(3), 777L));

@@ -659,7 +659,6 @@ class ContractReturnServiceTest {
         }
 
         @Test
-        @Test
         @DisplayName("BR-RET-01 & BR-RET-06: Trả kho trong 7 ngày cuối hợp đồng (unusedDays <= 7) được tính là trả kho cuối kỳ đúng hạn, hoàn đủ 100% Deposit")
         void testEndOfTermReturnWindow_Within7Days_DoesNotForfeitDeposit() {
                 LocalDate returnDate = LocalDate.of(2026, 12, 7);
@@ -738,6 +737,5 @@ class ContractReturnServiceTest {
                                 .build();
                 CatalogFeeChargeResponse paidRes = contractService.applyCatalogFee(700L, paidReq, 8L, List.of(1L));
                 assertEquals("PAID", paidRes.getStatus());
-        }
         }
 }
