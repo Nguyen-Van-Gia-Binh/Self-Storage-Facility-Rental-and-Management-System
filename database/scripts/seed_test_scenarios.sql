@@ -16,72 +16,57 @@
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------
--- BƯỚC 1: DỌN DẸP DỮ LIỆU CŨ CỦA KHÁCH HÀNG NHI (ID 10) & CÁC HỢP ĐỒNG TEST CTR-TEST-%
+-- BƯỚC 1: DỌN DẸP SẠCH TOÀN BỘ DỮ LIỆU GIAO DỊCH (GLOBAL CLEAN SLATE RESET)
+-- Giữ nguyên Dữ liệu Nền tảng (Users, Cơ sở, Loại kho, Bảng giá, Chính sách, BOM phí).
+-- Quét sạch mọi Hợp đồng, Đơn đặt chỗ, Thanh toán, Trả kho, Bàn giao... phát sinh cũ.
 -- -----------------------------------------------------------------------------
 DO $$
 BEGIN
-    -- 1.0 Gỡ liên kết waitlist (nếu có)
-    UPDATE waitlist 
-    SET converted_contract_id = NULL, converted_reservation_id = NULL 
-    WHERE customer_id = 10 
-       OR converted_contract_id IN (SELECT id FROM rental_contract WHERE customer_id = 10 OR code LIKE 'CTR-TEST-%')
-       OR converted_reservation_id IN (SELECT id FROM reservation WHERE customer_id = 10 OR code LIKE 'RES-TEST-%');
+    -- 1.0 Gỡ liên kết waitlist & xóa sạch waitlist
+    UPDATE waitlist SET converted_contract_id = NULL, converted_reservation_id = NULL;
+    DELETE FROM waitlist;
 
-    -- 1.1 Xóa phụ phí phát sinh của customer 10 hoặc CTR-TEST-%
-    DELETE FROM contract_extra_charge 
-    WHERE contract_id IN (SELECT id FROM rental_contract WHERE customer_id = 10 OR code LIKE 'CTR-TEST-%');
+    -- 1.1 Xóa phụ phí phát sinh (contract_extra_charge)
+    DELETE FROM contract_extra_charge;
 
-    -- 1.2 Xóa yêu cầu trả kho của customer 10 hoặc CTR-TEST-%
-    DELETE FROM return_request 
-    WHERE contract_id IN (SELECT id FROM rental_contract WHERE customer_id = 10 OR code LIKE 'CTR-TEST-%');
+    -- 1.2 Xóa yêu cầu trả kho & quyết toán (return_request)
+    DELETE FROM return_request;
 
-    -- 1.3 Xóa gia hạn hợp đồng (nếu có)
-    DELETE FROM contract_renewal
-    WHERE contract_id IN (SELECT id FROM rental_contract WHERE customer_id = 10 OR code LIKE 'CTR-TEST-%');
+    -- 1.3 Xóa gia hạn hợp đồng (contract_renewal)
+    DELETE FROM contract_renewal;
 
-    -- 1.4 Xóa yêu cầu điều chỉnh phí quá hạn (nếu có)
-    DELETE FROM overdue_fee_adjustment_request
-    WHERE contract_id IN (SELECT id FROM rental_contract WHERE customer_id = 10 OR code LIKE 'CTR-TEST-%');
+    -- 1.4 Xóa yêu cầu điều chỉnh phí quá hạn (overdue_fee_adjustment_request)
+    DELETE FROM overdue_fee_adjustment_request;
 
-    -- 1.5 Xóa access_credential & access_log (nếu có)
-    DELETE FROM access_credential
-    WHERE contract_id IN (SELECT id FROM rental_contract WHERE customer_id = 10 OR code LIKE 'CTR-TEST-%');
+    -- 1.5 Xóa access_credential & access_log
+    DELETE FROM access_log;
+    DELETE FROM access_credential;
 
-    DELETE FROM access_log
-    WHERE contract_id IN (SELECT id FROM rental_contract WHERE customer_id = 10 OR code LIKE 'CTR-TEST-%');
+    -- 1.6 Xóa biên bản bàn giao (handover_record)
+    DELETE FROM handover_record;
 
-    -- 1.6 Xóa biên bản bàn giao của customer 10 hoặc CTR-TEST-%
-    DELETE FROM handover_record 
-    WHERE contract_id IN (SELECT id FROM rental_contract WHERE customer_id = 10 OR code LIKE 'CTR-TEST-%');
+    -- 1.7 Xóa file đính kèm & yêu cầu hỗ trợ (attachment & support_request)
+    DELETE FROM attachment;
+    DELETE FROM support_request;
 
-    -- 1.7 Xóa ledger_entry của customer 10 hoặc contract/reservation tương ứng
-    DELETE FROM ledger_entry
-    WHERE contract_id IN (SELECT id FROM rental_contract WHERE customer_id = 10 OR code LIKE 'CTR-TEST-%')
-       OR reservation_id IN (SELECT id FROM reservation WHERE customer_id = 10 OR code LIKE 'RES-TEST-%');
+    -- 1.8 Xóa sổ cái kế toán & lịch sử giao dịch thanh toán (ledger_entry & payment_transaction)
+    DELETE FROM ledger_entry;
+    DELETE FROM payment_transaction;
 
-    -- 1.8 Xóa lịch sử giao dịch thanh toán của customer 10 hoặc contract/reservation tương ứng
-    DELETE FROM payment_transaction 
-    WHERE contract_id IN (SELECT id FROM rental_contract WHERE customer_id = 10 OR code LIKE 'CTR-TEST-%')
-       OR reservation_id IN (SELECT id FROM reservation WHERE customer_id = 10 OR code LIKE 'RES-TEST-%');
+    -- 1.9 Xóa toàn bộ hợp đồng thuê kho (rental_contract)
+    DELETE FROM rental_contract;
 
-    -- 1.9 Xóa support_request của customer 10 hoặc contract tương ứng
-    DELETE FROM support_request
-    WHERE customer_id = 10
-       OR contract_id IN (SELECT id FROM rental_contract WHERE customer_id = 10 OR code LIKE 'CTR-TEST-%');
+    -- 1.10 Xóa toàn bộ đơn đặt chỗ (reservation)
+    DELETE FROM reservation;
 
-    -- 1.10 Xóa hợp đồng cũ của customer 10 và hợp đồng test CTR-TEST-%
-    DELETE FROM rental_contract 
-    WHERE customer_id = 10 OR code LIKE 'CTR-TEST-%';
+    -- 1.11 Đưa TẤT CẢ các ô kho vật lý (storage_unit) toàn hệ thống về trạng thái AVAILABLE
+    UPDATE storage_unit SET status = 'AVAILABLE';
 
-    -- 1.11 Xóa đơn đặt chỗ của customer 10 và đơn đặt chỗ test RES-TEST-%
-    DELETE FROM reservation 
-    WHERE customer_id = 10 OR code LIKE 'RES-TEST-%';
+    -- 1.12 Chuẩn hóa trạng thái cơ sở: Chỉ 3 cơ sở trọng điểm ACTIVE (1: CG, 2: Q7, 5: Q1)
+    UPDATE facility SET status = 'ACTIVE' WHERE id IN (1, 2, 5);
+    UPDATE facility SET status = 'INACTIVE' WHERE id NOT IN (1, 2, 5);
 
-    -- 1.12 Trả lại trạng thái AVAILABLE cho các ô kho trước đây bị chiếm bởi data cũ của khách Nhi
-    UPDATE storage_unit SET status = 'AVAILABLE' 
-    WHERE code IN ('TX-A101', 'CG-S101', 'CG-S102', 'CG-M201', 'Q7-S101', 'Q7-L101');
-
-    RAISE NOTICE '>>> [BUOC 1] Da don dep sach toan bo du lieu hop dong cu cua khach hang Nhi va CTR-TEST thanh cong.';
+    RAISE NOTICE '>>> [BUOC 1] Da thuc hien Global Clean Slate: Quet sach toan bo du lieu giao dich cu va giai phong 100%% o kho ve AVAILABLE thanh cong.';
 END $$;
 
 -- -----------------------------------------------------------------------------
@@ -253,6 +238,12 @@ UPDATE storage_unit SET status = 'OCCUPIED'   WHERE facility_id = 5 AND code IN 
 UPDATE storage_unit SET status = 'CLEANING'   WHERE facility_id = 5 AND code = 'Q1-B201';
 UPDATE storage_unit SET status = 'MAINTENANCE'WHERE facility_id = 5 AND code = 'Q1-XL101';
 UPDATE storage_unit SET status = 'AVAILABLE'  WHERE facility_id = 5 AND code = 'Q1-XS201';
+
+-- Tất cả các ô kho còn lại của Cơ sở 5 (phục vụ khách thuê mới Flow 1, Flow 2) đều ở trạng thái AVAILABLE
+UPDATE storage_unit 
+SET status = 'AVAILABLE' 
+WHERE facility_id = 5 
+  AND code NOT IN ('Q1-A101', 'Q1-A102', 'Q1-A103', 'Q1-C101', 'Q1-XS101', 'Q1-B201', 'Q1-XL101');
 
 -- -----------------------------------------------------------------------------
 -- BƯỚC 6: BẢNG KIỂM TRA ĐỐI SOÁT KẾT QUẢ SAU SEED (VERIFICATION TABLE)

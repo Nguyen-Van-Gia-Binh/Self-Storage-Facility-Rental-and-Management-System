@@ -1,5 +1,6 @@
 package com.swp391.selfstorage.seed;
 
+import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -35,7 +36,32 @@ public class DatabaseSeedRunnerTest {
         String sqlContent = Files.readString(sqlPath);
 
         System.out.println("========================================================================================================================");
-        System.out.println(">>> [SMARTSTORAGE] DANG KET NOI VAO NEON CLOUD DATABASE DE SEED 8 KICH BAN THU NGHIEM VANG...");
+        System.out.println(">>> [SMARTSTORAGE] DANG THUC THI V28 MIGRATION (CHUAN HOA CO SO VA O KHO Q1)...");
+        Path v28Path = Paths.get("src/main/resources/db/migration/V28__focus_three_key_facilities_and_standardize_q1_units.sql");
+        if (!Files.exists(v28Path)) {
+            v28Path = Paths.get("backend/src/main/resources/db/migration/V28__focus_three_key_facilities_and_standardize_q1_units.sql");
+        }
+        if (!Files.exists(v28Path)) {
+            v28Path = Paths.get("../backend/src/main/resources/db/migration/V28__focus_three_key_facilities_and_standardize_q1_units.sql");
+        }
+        assertThat(v28Path).exists();
+        String v28Sql = Files.readString(v28Path);
+
+        try (Connection conn = DriverManager.getConnection(dbUrl, dbUser, dbPass);
+             Statement stmt = conn.createStatement()) {
+            stmt.execute(v28Sql);
+            System.out.println(">>> THUC THI V28 SQL THANH CONG!");
+
+            // Ghi nhan vao flyway_schema_history neu chua co
+            ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM flyway_schema_history WHERE version = '28'");
+            if (rs.next() && rs.getInt(1) == 0) {
+                stmt.execute("INSERT INTO flyway_schema_history (installed_rank, version, description, type, script, checksum, installed_by, installed_on, execution_time, success) " +
+                        "VALUES ((SELECT COALESCE(MAX(installed_rank), 0) + 1 FROM flyway_schema_history), '28', 'focus three key facilities and standardize q1 units', 'SQL', 'V28__focus_three_key_facilities_and_standardize_q1_units.sql', 0, 'neondb_owner', CURRENT_TIMESTAMP, 50, TRUE)");
+                System.out.println(">>> DONG BO BAN GHI V28 VAO FLYWAY_SCHEMA_HISTORY THANH CONG!");
+            }
+        }
+
+        System.out.println(">>> DANG KET NOI VAO NEON CLOUD DATABASE DE SEED 8 KICH BAN THU NGHIEM VANG...");
         System.out.println("========================================================================================================================");
 
         try (Connection conn = DriverManager.getConnection(dbUrl, dbUser, dbPass);
@@ -87,6 +113,68 @@ public class DatabaseSeedRunnerTest {
             System.out.println("   [1] Khach hang (Customer)  : nhi.customer@gmail.com   -> Xem kho cua toi, bao tra kho, nop phat");
             System.out.println("   [2] Quan ly co so (FM)     : fm.q1@smartstorage.vn    -> Nguyen Van Gia Binh (Duyet quyet toan, Kho Tong)");
             System.out.println("   [3] Nhan vien ca truc (FS) : staff.q1@smartstorage.vn -> Tran Van Hung (Nghiem thu hien truong, checklist)");
+            System.out.println("========================================================================================================================");
+
+            System.out.println(">>> [KIEM TRA DOI SOAT 1] TRANG THAI CAC CO SO (FACILITIES):");
+            try (ResultSet rsFac = stmt.executeQuery("SELECT id, code, name, status FROM facility ORDER BY id ASC")) {
+                while (rsFac.next()) {
+                    System.out.printf("   - ID %-2d | %-8s | %-32s | TRANG THAI: %s%n",
+                            rsFac.getInt("id"), rsFac.getString("code"), rsFac.getString("name"), rsFac.getString("status"));
+                }
+            }
+
+            System.out.println(">>> [KIEM TRA DOI SOAT 2] DO PHU 10 LOAI O KHO TAI CO SO QUAN 1 (FAC-Q1 - ID 5):");
+            try (ResultSet rsUnits = stmt.executeQuery(
+                    "SELECT ut.id AS type_id, ut.code AS type_code, ut.name AS type_name, " +
+                    "COUNT(su.id) AS total_units, " +
+                    "COUNT(CASE WHEN su.status = 'AVAILABLE' THEN 1 END) AS available_units, " +
+                    "COUNT(CASE WHEN su.status = 'OCCUPIED' THEN 1 END) AS occupied_units, " +
+                    "COUNT(CASE WHEN su.status = 'CLEANING' THEN 1 END) AS cleaning_units, " +
+                    "COUNT(CASE WHEN su.status = 'MAINTENANCE' THEN 1 END) AS maint_units " +
+                    "FROM unit_type ut " +
+                    "LEFT JOIN storage_unit su ON su.unit_type_id = ut.id AND su.facility_id = 5 " +
+                    "GROUP BY ut.id, ut.code, ut.name " +
+                    "ORDER BY ut.id ASC")) {
+                while (rsUnits.next()) {
+                    System.out.printf("   - [%2d] %-12s | %-20s | TONG: %2d | SAN SANG (AVAILABLE): %2d | OCCUPIED: %2d | CLEANING: %2d | MAINT: %2d%n",
+                            rsUnits.getInt("type_id"), rsUnits.getString("type_code"), rsUnits.getString("type_name"),
+                            rsUnits.getInt("total_units"), rsUnits.getInt("available_units"),
+                            rsUnits.getInt("occupied_units"), rsUnits.getInt("cleaning_units"), rsUnits.getInt("maint_units"));
+                }
+            }
+
+            System.out.println(">>> [KIEM TRA DOI SOAT 3] TONG QUAN DU LIEU GIAO DICH TOAN HE THONG (GLOBAL CLEAN SLATE):");
+            try (ResultSet rsStats = stmt.executeQuery(
+                    "SELECT " +
+                    "(SELECT COUNT(*) FROM rental_contract) AS total_contracts, " +
+                    "(SELECT COUNT(*) FROM reservation) AS total_reservations, " +
+                    "(SELECT COUNT(*) FROM return_request) AS total_returns, " +
+                    "(SELECT COUNT(*) FROM handover_record) AS total_handovers, " +
+                    "(SELECT COUNT(*) FROM payment_transaction) AS total_payments")) {
+                if (rsStats.next()) {
+                    System.out.printf("   - Tong Hop dong: %d | Tong Dat cho: %d | Tong Yeu cau tra: %d | Tong Ban giao: %d | Tong Giao dich: %d%n",
+                            rsStats.getInt("total_contracts"), rsStats.getInt("total_reservations"),
+                            rsStats.getInt("total_returns"), rsStats.getInt("total_handovers"), rsStats.getInt("total_payments"));
+                }
+            }
+
+            System.out.println(">>> [KIEM TRA DOI SOAT 4] TRANG THAI O KHO THEO 3 CO SO ACTIVE:");
+            try (ResultSet rsFacUnits = stmt.executeQuery(
+                    "SELECT f.id, f.code, f.name, " +
+                    "COUNT(su.id) AS total_units, " +
+                    "COUNT(CASE WHEN su.status = 'AVAILABLE' THEN 1 END) AS avail_units, " +
+                    "COUNT(CASE WHEN su.status != 'AVAILABLE' THEN 1 END) AS in_use_units " +
+                    "FROM facility f " +
+                    "LEFT JOIN storage_unit su ON su.facility_id = f.id " +
+                    "WHERE f.status = 'ACTIVE' " +
+                    "GROUP BY f.id, f.code, f.name " +
+                    "ORDER BY f.id ASC")) {
+                while (rsFacUnits.next()) {
+                    System.out.printf("   - %-8s (%-25s) | Tong o kho: %2d | SAN SANG (AVAILABLE): %2d | DANG DUNG (TEST): %2d%n",
+                            rsFacUnits.getString("code"), rsFacUnits.getString("name"),
+                            rsFacUnits.getInt("total_units"), rsFacUnits.getInt("avail_units"), rsFacUnits.getInt("in_use_units"));
+                }
+            }
             System.out.println("========================================================================================================================");
         }
     }
