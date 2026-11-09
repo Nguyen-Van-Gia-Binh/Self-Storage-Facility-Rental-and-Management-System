@@ -65,9 +65,10 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     @Query(value = "SELECT CASE WHEN EXISTS (" +
            "SELECT 1 FROM reservation r " +
+           "LEFT JOIN rental_contract c ON c.reservation_id = r.id " +
            "WHERE r.storage_unit_id = :storageUnitId " +
            "  AND r.id <> :excludeReservationId " +
-           "  AND ((r.status = 'PENDING_PAYMENT' AND r.hold_expires_at > :now) OR r.status = 'CONFIRMED') " +
+           "  AND ((r.status = 'PENDING_PAYMENT' AND r.hold_expires_at > :now) OR (r.status = 'CONFIRMED' AND (c.id IS NULL OR c.status NOT IN ('CLOSED', 'CANCELLED')))) " +
            "  AND r.start_date < (CAST(:endDateExclusive AS DATE) + (:bufferDays * INTERVAL '1 day')) " +
            "  AND (r.end_date_exclusive + (:bufferDays * INTERVAL '1 day')) > :startDate" +
            ") THEN TRUE ELSE FALSE END", nativeQuery = true)
@@ -81,9 +82,10 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     );
 
     @Query(value = "SELECT r.* FROM reservation r " +
+           "LEFT JOIN rental_contract c ON c.reservation_id = r.id " +
            "WHERE r.storage_unit_id = :storageUnitId " +
            "  AND r.id <> :excludeReservationId " +
-           "  AND ((r.status = 'PENDING_PAYMENT' AND r.hold_expires_at > :now) OR r.status = 'CONFIRMED') " +
+           "  AND ((r.status = 'PENDING_PAYMENT' AND r.hold_expires_at > :now) OR (r.status = 'CONFIRMED' AND (c.id IS NULL OR c.status NOT IN ('CLOSED', 'CANCELLED')))) " +
            "  AND r.start_date < (CAST(:endDateExclusive AS DATE) + (:bufferDays * INTERVAL '1 day')) " +
            "  AND (r.end_date_exclusive + (:bufferDays * INTERVAL '1 day')) > :startDate", nativeQuery = true)
     List<Reservation> findOverlappingReservationsForUnit(
@@ -135,9 +137,10 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             @Param("facilityId") Long facilityId);
 
     @Query(value = "SELECT COUNT(*) FROM reservation r " +
+            "LEFT JOIN rental_contract c ON c.reservation_id = r.id " +
             "WHERE r.facility_id = :facilityId AND r.unit_type_id = :unitTypeId " +
             "AND r.storage_unit_id IS NULL " +
-            "AND ((r.status = 'PENDING_PAYMENT' AND r.hold_expires_at > :now) OR r.status = 'CONFIRMED') " +
+            "AND ((r.status = 'PENDING_PAYMENT' AND r.hold_expires_at > :now) OR (r.status = 'CONFIRMED' AND (c.id IS NULL OR c.status NOT IN ('CLOSED', 'CANCELLED')))) " +
             "AND r.start_date < :endDateExclusive " +
             "AND (r.end_date_exclusive + (:bufferDays * INTERVAL '1 day')) > :startDate", nativeQuery = true)
     long countUnassignedOverlappingReservations(

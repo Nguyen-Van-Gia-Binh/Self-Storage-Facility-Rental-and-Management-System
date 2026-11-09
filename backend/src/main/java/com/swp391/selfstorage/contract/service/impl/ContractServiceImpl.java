@@ -2776,21 +2776,17 @@ public class ContractServiceImpl implements ContractService {
                         if (contractRepository.existsOverlappingContractForUnit(request.getStorageUnitId(), startDate, endDateExclusive, bufferDays, 0L)) {
                                 throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, "Ô kho đã chọn đã có hợp đồng thuê hoạt động trong khoảng thời gian này");
                         }
-                        if (reservationRepository != null && reservationRepository.existsOverlappingReservationForUnit(
-                                        request.getStorageUnitId(), startDate, endDateExclusive, OffsetDateTime.now(ZoneOffset.UTC), bufferDays, 0L)) {
-                                throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, "Ô kho đã chọn đang có đơn giữ chỗ trước trong khoảng thời gian này");
-                        }
+                        // Quy tắc tạo hợp đồng trực tiếp tại quầy / qua FM:
+                        // Miễn là ô kho không có ai đang thuê thực tế và đang AVAILABLE, các đơn giữ chỗ trước
+                        // hoặc dự kiến gia hạn không được chặn hợp đồng trực tiếp của FM.
                 } else if (storageUnitRepository != null) {
-                        // Late-binding: Kiểm tra công suất khả dụng chung
+                        // Late-binding: Kiểm tra số lượng ô kho vật lý thực tế chưa bị chiếm bởi hợp đồng đang chạy
                         storageUnitRepository.lockExploitableUnitIds(request.getFacilityId(), request.getUnitTypeId());
                         long exploitable = storageUnitRepository.countExploitableUnits(request.getFacilityId(), request.getUnitTypeId(),
                                         List.of(StorageUnitStatus.MAINTENANCE, StorageUnitStatus.OUT_OF_SERVICE));
                         long busy = storageUnitRepository.countBusyUnits(request.getFacilityId(), request.getUnitTypeId(), startDate, endDateExclusive, bufferDays);
-                        long unassigned = reservationRepository.countUnassignedOverlappingReservations(
-                                        request.getFacilityId(), request.getUnitTypeId(), startDate, endDateExclusive,
-                                        OffsetDateTime.now(ZoneOffset.UTC), bufferDays);
-                        if (exploitable - busy - unassigned <= 0) {
-                                throw new CustomException(ErrorCode.CAPACITY_NOT_AVAILABLE, "Cơ sở đã hết công suất trống cho hạng kho này trong khoảng thời gian đã chọn");
+                        if (exploitable - busy <= 0) {
+                                throw new CustomException(ErrorCode.CAPACITY_NOT_AVAILABLE, "Cơ sở đã hết ô kho trống cho hạng kho này trong khoảng thời gian đã chọn");
                         }
                 }
 
@@ -2871,6 +2867,15 @@ public class ContractServiceImpl implements ContractService {
                 if (assignedUnit != null) {
                         assignedUnit.setStatus(StorageUnitStatus.RESERVED);
                         storageUnitRepository.save(assignedUnit);
+
+                        if (reservationRepository != null) {
+                                List<Reservation> lingering = reservationRepository.findOverlappingReservationsForUnit(
+                                                assignedUnit.getId(), startDate, endDateExclusive, OffsetDateTime.now(ZoneOffset.UTC), bufferDays, savedReservation.getId());
+                                for (Reservation oldRsv : lingering) {
+                                        oldRsv.setStatus(ReservationStatus.FULFILLED);
+                                        reservationRepository.save(oldRsv);
+                                }
+                        }
                 }
 
                 // 10. Nếu xuất phát từ Waitlist -> Chuyển thành CONVERTED và gán ID hợp đồng

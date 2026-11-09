@@ -733,11 +733,13 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
                 </select>
               )}
               <p className="text-[10px] text-slate-400 mt-1">
-                {availableUnits.length} ô kho đang trống sẵn sàng
+                {availableUnits.length > 0
+                  ? `${availableUnits.length} ô kho đang trống sẵn sàng cho thuê`
+                  : 'Hiện chưa có ô kho trống ngay (hợp đồng sẽ phân bổ sau)'}
               </p>
-              {initialWaitlist && initialWaitlist.availableCapacity === 0 && (
+              {availableUnits.length === 0 && (
                 <p className="text-[11px] text-amber-800 bg-amber-50 p-2 rounded-lg border border-amber-200 mt-1.5 leading-snug">
-                  ⚠️ Lưu ý: Hạng kho này hiện đang hết công suất trống (0 ô khả dụng). Nếu cố định tạo hợp đồng vào ngày này hệ thống sẽ chặn vì trùng lịch. Bạn có thể tư vấn khách đổi sang hạng kho khác hoặc lùi ngày bắt đầu.
+                  ⚠️ Lưu ý: Hạng kho này hiện không có sẵn ô trống vật lý. Bạn có thể tư vấn khách đổi sang hạng kho còn trống khác hoặc lập hợp đồng gán ô sau.
                 </p>
               )}
             </div>

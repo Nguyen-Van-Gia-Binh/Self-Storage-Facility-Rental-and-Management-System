@@ -1040,7 +1040,7 @@ class ContractServiceTest {
         when(storageUnitRepository.lockExploitableUnitIds(1L, 7L)).thenReturn(List.of(1L));
         when(storageUnitRepository.countExploitableUnits(eq(1L), eq(7L), any())).thenReturn(5L);
         when(storageUnitRepository.countBusyUnits(eq(1L), eq(7L), any(), any(), anyInt())).thenReturn(1L);
-        when(reservationRepository.countUnassignedOverlappingReservations(eq(1L), eq(7L), any(), any(), any(), anyInt())).thenReturn(0L);
+        lenient().when(reservationRepository.countUnassignedOverlappingReservations(eq(1L), eq(7L), any(), any(), any(), anyInt())).thenReturn(0L);
         when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> {
             Reservation r = inv.getArgument(0);
             r.setId(777L);
