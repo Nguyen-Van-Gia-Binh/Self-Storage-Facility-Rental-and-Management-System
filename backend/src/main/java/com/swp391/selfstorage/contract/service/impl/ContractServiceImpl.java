@@ -2770,8 +2770,15 @@ public class ContractServiceImpl implements ContractService {
                         if (assignedUnit.getStatus() == StorageUnitStatus.MAINTENANCE || assignedUnit.getStatus() == StorageUnitStatus.OUT_OF_SERVICE) {
                                 throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, "Ô kho đã chọn đang trong diện bảo trì hoặc ngừng hoạt động");
                         }
+                        if (assignedUnit.getStatus() == StorageUnitStatus.OCCUPIED) {
+                                throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, "Ô kho đã chọn hiện đang có khách thuê sử dụng");
+                        }
                         if (contractRepository.existsOverlappingContractForUnit(request.getStorageUnitId(), startDate, endDateExclusive, bufferDays, 0L)) {
-                                throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, "Ô kho đã chọn đã có lịch thuê hoặc giữ chỗ trong khoảng thời gian này");
+                                throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, "Ô kho đã chọn đã có hợp đồng thuê hoạt động trong khoảng thời gian này");
+                        }
+                        if (reservationRepository != null && reservationRepository.existsOverlappingReservationForUnit(
+                                        request.getStorageUnitId(), startDate, endDateExclusive, OffsetDateTime.now(ZoneOffset.UTC), bufferDays, 0L)) {
+                                throw new CustomException(ErrorCode.UNIT_NOT_AVAILABLE, "Ô kho đã chọn đang có đơn giữ chỗ trước trong khoảng thời gian này");
                         }
                 } else if (storageUnitRepository != null) {
                         // Late-binding: Kiểm tra công suất khả dụng chung

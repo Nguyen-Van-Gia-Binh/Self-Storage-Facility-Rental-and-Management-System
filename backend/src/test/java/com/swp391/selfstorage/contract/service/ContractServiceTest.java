@@ -1071,4 +1071,94 @@ class ContractServiceTest {
         assertEquals(888L, waitlist.getConvertedContractId());
         verify(waitlistRepository).save(waitlist);
     }
+
+    @Test
+    @DisplayName("createDirectContract: Chặn tạo hợp đồng đè lên ô kho đã có hợp đồng khác thuê trùng lịch")
+    void createDirectContract_ThrowsWhenOverlappingContractExists() {
+        UserPrincipal fmUser = new UserPrincipal(20L, "fm@smartstorage.vn", "pass", "Quản lý",
+                UserRole.FACILITY_MANAGER, UserStatus.ACTIVE, List.of(1L), List.of());
+
+        Facility facility = new Facility();
+        facility.setId(1L);
+        facility.setStatus(FacilityStatus.ACTIVE);
+
+        UnitType unitType = new UnitType();
+        unitType.setId(7L);
+        unitType.setActive(true);
+
+        StorageUnit unit = StorageUnit.builder()
+                .id(45L)
+                .facilityId(1L)
+                .unitTypeId(7L)
+                .code("U-45")
+                .status(StorageUnitStatus.AVAILABLE)
+                .build();
+
+        org.springframework.test.util.ReflectionTestUtils.setField(contractService, "userRepository", userRepository);
+        when(userRepository.findById(15L)).thenReturn(Optional.of(new AppUser()));
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(facility));
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(unitType));
+        when(storageUnitRepository.findById(45L)).thenReturn(Optional.of(unit));
+        // Giả lập ô kho 45 đã có hợp đồng thuê khác trùng khoảng thời gian này
+        when(contractRepository.existsOverlappingContractForUnit(eq(45L), any(), any(), anyInt(), eq(0L))).thenReturn(true);
+
+        CreateDirectContractRequest req = CreateDirectContractRequest.builder()
+                .customerId(15L)
+                .facilityId(1L)
+                .unitTypeId(7L)
+                .storageUnitId(45L)
+                .startDate(LocalDate.now().plusDays(2))
+                .rentalMonths(3)
+                .paymentMethod("CASH")
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class, () -> contractService.createDirectContract(req, fmUser));
+        assertEquals(ErrorCode.UNIT_NOT_AVAILABLE, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("Ô kho đã chọn đã có hợp đồng thuê hoạt động"));
+        verify(contractRepository, never()).save(any(RentalContract.class));
+    }
+
+    @Test
+    @DisplayName("createDirectContract: Chặn tạo hợp đồng khi ô kho đang bị chiếm dụng (OCCUPIED)")
+    void createDirectContract_ThrowsWhenUnitOccupied() {
+        UserPrincipal fmUser = new UserPrincipal(20L, "fm@smartstorage.vn", "pass", "Quản lý",
+                UserRole.FACILITY_MANAGER, UserStatus.ACTIVE, List.of(1L), List.of());
+
+        Facility facility = new Facility();
+        facility.setId(1L);
+        facility.setStatus(FacilityStatus.ACTIVE);
+
+        UnitType unitType = new UnitType();
+        unitType.setId(7L);
+        unitType.setActive(true);
+
+        StorageUnit unit = StorageUnit.builder()
+                .id(45L)
+                .facilityId(1L)
+                .unitTypeId(7L)
+                .code("U-45")
+                .status(StorageUnitStatus.OCCUPIED)
+                .build();
+
+        org.springframework.test.util.ReflectionTestUtils.setField(contractService, "userRepository", userRepository);
+        when(userRepository.findById(15L)).thenReturn(Optional.of(new AppUser()));
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(facility));
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(unitType));
+        when(storageUnitRepository.findById(45L)).thenReturn(Optional.of(unit));
+
+        CreateDirectContractRequest req = CreateDirectContractRequest.builder()
+                .customerId(15L)
+                .facilityId(1L)
+                .unitTypeId(7L)
+                .storageUnitId(45L)
+                .startDate(LocalDate.now().plusDays(2))
+                .rentalMonths(3)
+                .paymentMethod("CASH")
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class, () -> contractService.createDirectContract(req, fmUser));
+        assertEquals(ErrorCode.UNIT_NOT_AVAILABLE, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("đang có khách thuê sử dụng"));
+        verify(contractRepository, never()).save(any(RentalContract.class));
+    }
 }
