@@ -26,9 +26,9 @@ public class DatabaseSeedRunnerTest {
         String dbUser = System.getenv().getOrDefault("DB_USERNAME", DEFAULT_USER);
         String dbPass = System.getenv().getOrDefault("DB_PASSWORD", DEFAULT_PASS);
 
-        Path sqlPath = Paths.get("../database/scripts/seed_test_scenarios_flow3_and_flow6.sql");
+        Path sqlPath = Paths.get("../database/scripts/seed_test_scenarios.sql");
         if (!Files.exists(sqlPath)) {
-            sqlPath = Paths.get("database/scripts/seed_test_scenarios_flow3_and_flow6.sql");
+            sqlPath = Paths.get("database/scripts/seed_test_scenarios.sql");
         }
         assertThat(sqlPath).exists();
 
