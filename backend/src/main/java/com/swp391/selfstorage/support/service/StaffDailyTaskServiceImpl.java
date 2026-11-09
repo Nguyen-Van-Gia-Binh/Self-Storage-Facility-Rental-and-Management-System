@@ -363,6 +363,13 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
         // Sự cố được phân công trực tiếp cho staff
         List<SupportRequest> assignedRequests = supportRequestRepository.findAllByAssignedStaffId(staffId);
         for (SupportRequest sr : assignedRequests) {
+            // Loại bỏ ticket bàn giao tiếp đón (đây là nhiệm vụ đổi ô của FM, không phải task sự cố của staff)
+            if (sr.getCode() != null && (sr.getCode().startsWith("INC-HD-") || sr.getCode().startsWith("INC-REASSIGN-"))) {
+                continue;
+            }
+            if (sr.getDescription() != null && sr.getDescription().startsWith("Sự cố bàn giao tiếp đón")) {
+                continue;
+            }
             DailySupportTaskDto dto = toSupportDto(sr);
             boolean include = true;
             if (sr.getCreatedAt() != null) {
@@ -389,6 +396,12 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
             if (a.getTaskType() == AssignmentTaskType.SUPPORT && a.getReferenceId() != null) {
                 if (processedRequestIds.add(a.getReferenceId())) {
                     supportRequestRepository.findById(a.getReferenceId()).ifPresent(sr -> {
+                        if (sr.getCode() != null && (sr.getCode().startsWith("INC-HD-") || sr.getCode().startsWith("INC-REASSIGN-"))) {
+                            return;
+                        }
+                        if (sr.getDescription() != null && sr.getDescription().startsWith("Sự cố bàn giao tiếp đón")) {
+                            return;
+                        }
                         DailySupportTaskDto dto = toSupportDto(sr);
                         if (!onlyPending || !dto.isCompleted()) {
                             result.add(dto);

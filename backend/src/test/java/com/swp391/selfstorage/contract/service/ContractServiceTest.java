@@ -316,8 +316,8 @@ class ContractServiceTest {
     }
 
     @Test
-    @DisplayName("Nghiep vu moi: rejectHandover voi RELOCATE -> Contract giu PENDING_CHECK_IN, Unit MAINTENANCE, tao SupportRequest")
-    void shouldKeepPendingCheckInAndCreateTicket_whenHandoverRejectedWithRelocate() {
+    @DisplayName("Nghiep vu moi: rejectHandover voi RELOCATE -> Contract giu PENDING_CHECK_IN, Unit MAINTENANCE, KHONG tao SupportRequest cho nhan vien")
+    void shouldKeepPendingCheckInAndNotCreateTicket_whenHandoverRejectedWithRelocate() {
         RentalContract contract = RentalContract.builder()
                 .id(501L).facilityId(1L).storageUnitId(42L).customerId(10L)
                 .status(ContractStatus.PENDING_CHECK_IN).build();
@@ -328,7 +328,6 @@ class ContractServiceTest {
         when(storageUnitRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(handoverRecordRepository.findByContractId(501L)).thenReturn(Optional.empty());
         when(handoverRecordRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-        when(supportRequestRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         HandoverRejectionRequest req = new HandoverRejectionRequest();
         req.setRejectionReason("O kho bi dot nuoc");
@@ -341,11 +340,7 @@ class ContractServiceTest {
         assertEquals(StorageUnitStatus.MAINTENANCE, response.getStorageUnitStatus());
         assertEquals(ContractStatus.PENDING_CHECK_IN, contract.getStatus());
         assertEquals(StorageUnitStatus.MAINTENANCE, unit.getStatus());
-        verify(supportRequestRepository).save(argThat(t ->
-                t.getContractId().equals(501L)
-                && t.getCategory() == SupportCategory.UNIT_DAMAGE
-                && Boolean.TRUE.equals(t.getRelocationRequired())
-        ));
+        verify(supportRequestRepository, never()).save(any());
     }
 
     @Test
@@ -369,7 +364,6 @@ class ContractServiceTest {
         // findByContractId tra ve record cu -> phai UPDATE chu khong INSERT moi
         when(handoverRecordRepository.findByContractId(502L)).thenReturn(Optional.of(existingRecord));
         when(handoverRecordRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-        when(supportRequestRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         HandoverRejectionRequest req = new HandoverRejectionRequest();
         req.setRejectionReason("O kho bi dot nuoc lan 2");
@@ -905,7 +899,6 @@ class ContractServiceTest {
         when(storageUnitRepository.save(any(StorageUnit.class))).thenAnswer(inv -> inv.getArgument(0));
         when(handoverRecordRepository.findByContractId(777L)).thenReturn(Optional.empty());
         when(handoverRecordRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-        when(supportRequestRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         HandoverRejectionRequest req = HandoverRejectionRequest.builder()
                 .rejectionReason("Ô kho bị dột trần")
