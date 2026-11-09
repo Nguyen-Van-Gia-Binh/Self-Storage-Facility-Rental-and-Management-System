@@ -17,34 +17,72 @@
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------
--- BƯỚC 1: DỌN DẸP DỮ LIỆU KIỂM THỬ CŨ (CLEANUP CÁC HỢP ĐỒNG CTR-TEST-%)
+-- BƯỚC 1: DỌN DẸP DỮ LIỆU CŨ CỦA KHÁCH HÀNG NHI (ID 10) & CÁC HỢP ĐỒNG TEST CTR-TEST-%
 -- -----------------------------------------------------------------------------
 DO $$
 BEGIN
-    -- 1.1 Xóa phụ phí phát sinh của các hợp đồng test
+    -- 1.0 Gỡ liên kết waitlist (nếu có)
+    UPDATE waitlist 
+    SET converted_contract_id = NULL, converted_reservation_id = NULL 
+    WHERE customer_id = 10 
+       OR converted_contract_id IN (SELECT id FROM rental_contract WHERE customer_id = 10 OR code LIKE 'CTR-TEST-%')
+       OR converted_reservation_id IN (SELECT id FROM reservation WHERE customer_id = 10 OR code LIKE 'RES-TEST-%');
+
+    -- 1.1 Xóa phụ phí phát sinh của customer 10 hoặc CTR-TEST-%
     DELETE FROM contract_extra_charge 
-    WHERE contract_id IN (SELECT id FROM rental_contract WHERE code LIKE 'CTR-TEST-%');
+    WHERE contract_id IN (SELECT id FROM rental_contract WHERE customer_id = 10 OR code LIKE 'CTR-TEST-%');
 
-    -- 1.2 Xóa yêu cầu trả kho của các hợp đồng test
+    -- 1.2 Xóa yêu cầu trả kho của customer 10 hoặc CTR-TEST-%
     DELETE FROM return_request 
-    WHERE contract_id IN (SELECT id FROM rental_contract WHERE code LIKE 'CTR-TEST-%');
+    WHERE contract_id IN (SELECT id FROM rental_contract WHERE customer_id = 10 OR code LIKE 'CTR-TEST-%');
 
-    -- 1.3 Xóa biên bản bàn giao của các hợp đồng test
+    -- 1.3 Xóa gia hạn hợp đồng (nếu có)
+    DELETE FROM contract_renewal
+    WHERE contract_id IN (SELECT id FROM rental_contract WHERE customer_id = 10 OR code LIKE 'CTR-TEST-%');
+
+    -- 1.4 Xóa yêu cầu điều chỉnh phí quá hạn (nếu có)
+    DELETE FROM overdue_fee_adjustment_request
+    WHERE contract_id IN (SELECT id FROM rental_contract WHERE customer_id = 10 OR code LIKE 'CTR-TEST-%');
+
+    -- 1.5 Xóa access_credential & access_log (nếu có)
+    DELETE FROM access_credential
+    WHERE contract_id IN (SELECT id FROM rental_contract WHERE customer_id = 10 OR code LIKE 'CTR-TEST-%');
+
+    DELETE FROM access_log
+    WHERE contract_id IN (SELECT id FROM rental_contract WHERE customer_id = 10 OR code LIKE 'CTR-TEST-%');
+
+    -- 1.6 Xóa biên bản bàn giao của customer 10 hoặc CTR-TEST-%
     DELETE FROM handover_record 
-    WHERE contract_id IN (SELECT id FROM rental_contract WHERE code LIKE 'CTR-TEST-%');
+    WHERE contract_id IN (SELECT id FROM rental_contract WHERE customer_id = 10 OR code LIKE 'CTR-TEST-%');
 
-    -- 1.4 Xóa lịch sử giao dịch thanh toán của các hợp đồng test
+    -- 1.7 Xóa ledger_entry của customer 10 hoặc contract/reservation tương ứng
+    DELETE FROM ledger_entry
+    WHERE contract_id IN (SELECT id FROM rental_contract WHERE customer_id = 10 OR code LIKE 'CTR-TEST-%')
+       OR reservation_id IN (SELECT id FROM reservation WHERE customer_id = 10 OR code LIKE 'RES-TEST-%');
+
+    -- 1.8 Xóa lịch sử giao dịch thanh toán của customer 10 hoặc contract/reservation tương ứng
     DELETE FROM payment_transaction 
-    WHERE contract_id IN (SELECT id FROM rental_contract WHERE code LIKE 'CTR-TEST-%')
-       OR reservation_id IN (SELECT id FROM reservation WHERE code LIKE 'RES-TEST-%');
+    WHERE contract_id IN (SELECT id FROM rental_contract WHERE customer_id = 10 OR code LIKE 'CTR-TEST-%')
+       OR reservation_id IN (SELECT id FROM reservation WHERE customer_id = 10 OR code LIKE 'RES-TEST-%');
 
-    -- 1.5 Xóa hợp đồng test
-    DELETE FROM rental_contract WHERE code LIKE 'CTR-TEST-%';
+    -- 1.9 Xóa support_request của customer 10 hoặc contract tương ứng
+    DELETE FROM support_request
+    WHERE customer_id = 10
+       OR contract_id IN (SELECT id FROM rental_contract WHERE customer_id = 10 OR code LIKE 'CTR-TEST-%');
 
-    -- 1.6 Xóa đơn đặt chỗ test
-    DELETE FROM reservation WHERE code LIKE 'RES-TEST-%';
+    -- 1.10 Xóa hợp đồng cũ của customer 10 và hợp đồng test CTR-TEST-%
+    DELETE FROM rental_contract 
+    WHERE customer_id = 10 OR code LIKE 'CTR-TEST-%';
 
-    RAISE NOTICE '>>> [BƯỚC 1] Đã dọn dẹp sạch dữ liệu test cũ thành công.';
+    -- 1.11 Xóa đơn đặt chỗ của customer 10 và đơn đặt chỗ test RES-TEST-%
+    DELETE FROM reservation 
+    WHERE customer_id = 10 OR code LIKE 'RES-TEST-%';
+
+    -- 1.12 Trả lại trạng thái AVAILABLE cho các ô kho trước đây bị chiếm bởi data cũ của khách Nhi
+    UPDATE storage_unit SET status = 'AVAILABLE' 
+    WHERE code IN ('TX-A101', 'CG-S101', 'CG-S102', 'CG-M201', 'Q7-S101', 'Q7-L101');
+
+    RAISE NOTICE '>>> [BUOC 1] Da don dep sach toan bo du lieu hop dong cu cua khach hang Nhi va CTR-TEST thanh cong.';
 END $$;
 
 -- -----------------------------------------------------------------------------
@@ -188,6 +226,26 @@ INSERT INTO contract_extra_charge (
 VALUES (
     9004, 3, 500000, 'Phí sửa chữa ổ khóa cửa cuốn (Mã BOM: DAMAGE_MINOR)', 9, 'UNPAID'
 );
+
+-- 4.4 Thêm biên bản bàn giao nhận kho chuẩn (Handover Record) cho các hợp đồng đã check-in
+INSERT INTO handover_record (
+    contract_id, staff_id, condition_note, customer_signed_at, staff_signed_at,
+    status, customer_confirmed, customer_confirmed_at, rejected
+)
+VALUES
+(9001, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao. Đã kích hoạt mã PIN.', CURRENT_TIMESTAMP - INTERVAL '30 day', CURRENT_TIMESTAMP - INTERVAL '30 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '30 day', FALSE),
+(9002, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao. Đã kích hoạt mã PIN.', CURRENT_TIMESTAMP - INTERVAL '80 day', CURRENT_TIMESTAMP - INTERVAL '80 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '80 day', FALSE),
+(9003, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao. Đã kích hoạt mã PIN.', CURRENT_TIMESTAMP - INTERVAL '90 day', CURRENT_TIMESTAMP - INTERVAL '90 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '90 day', FALSE),
+(9004, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao. Đã kích hoạt mã PIN.', CURRENT_TIMESTAMP - INTERVAL '180 day', CURRENT_TIMESTAMP - INTERVAL '180 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '180 day', FALSE),
+(9005, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao. Đã kích hoạt mã PIN.', CURRENT_TIMESTAMP - INTERVAL '92 day', CURRENT_TIMESTAMP - INTERVAL '92 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '92 day', FALSE),
+(9006, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao. Đã kích hoạt mã PIN.', CURRENT_TIMESTAMP - INTERVAL '95 day', CURRENT_TIMESTAMP - INTERVAL '95 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '95 day', FALSE),
+(9007, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao lúc nhận kho ban đầu. Hợp đồng sau đó phát sinh quá hạn D+7.', CURRENT_TIMESTAMP - INTERVAL '98 day', CURRENT_TIMESTAMP - INTERVAL '98 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '98 day', FALSE),
+(9008, 9, 'Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao. Hợp đồng đã hoàn tất chu kỳ thuê.', CURRENT_TIMESTAMP - INTERVAL '135 day', CURRENT_TIMESTAMP - INTERVAL '135 day', 'COMPLETED', TRUE, CURRENT_TIMESTAMP - INTERVAL '135 day', FALSE)
+ON CONFLICT (contract_id) DO UPDATE SET
+    rejected = EXCLUDED.rejected,
+    condition_note = EXCLUDED.condition_note,
+    status = EXCLUDED.status,
+    customer_confirmed = EXCLUDED.customer_confirmed;
 
 -- -----------------------------------------------------------------------------
 -- BƯỚC 5: ĐỒNG BỘ TRẠNG THÁI Ô KHO VẬT LÝ (STORAGE_UNIT)

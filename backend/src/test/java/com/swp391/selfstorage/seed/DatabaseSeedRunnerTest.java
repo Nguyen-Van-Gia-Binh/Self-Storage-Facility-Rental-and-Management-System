@@ -51,6 +51,7 @@ public class DatabaseSeedRunnerTest {
 
             String query = """
                 SELECT 
+                    c.id AS contract_id,
                     c.code AS contract_code,
                     su.code AS unit_code,
                     c.status AS contract_status,
@@ -61,7 +62,7 @@ public class DatabaseSeedRunnerTest {
                     CASE WHEN c.access_code IS NOT NULL THEN 'PIN: ' || c.access_code ELSE 'BI KHOA (LOCKED)' END AS pin_state
                 FROM rental_contract c
                 JOIN storage_unit su ON c.storage_unit_id = su.id
-                WHERE c.code LIKE 'CTR-TEST-%'
+                WHERE c.customer_id = 10
                 ORDER BY c.id ASC;
                 """;
 
