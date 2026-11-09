@@ -631,5 +631,45 @@ class CustomerRentalServiceTest {
         assertEquals(rescheduledTime, detail.getRescheduledAt());
         assertFalse(detail.getAllowedActions().contains("RESCHEDULE"), "Đã dời lịch 1 lần thì không được phép có action RESCHEDULE");
     }
+
+    @Test
+    @DisplayName("Sự cố bàn giao RELOCATE: PENDING_CHECK_IN có HandoverRecord rejected=true -> relocationEligible=true nhưng handoverRejected=false")
+    void testGetMyRentalDetail_WhenPendingCheckInWithRejectedHandoverRecord_SetsHandoverRejectedFalse() {
+        RentalContract contract = new RentalContract();
+        contract.setId(801L);
+        contract.setCode("CTR-202611-801");
+        contract.setCustomerId(15L);
+        contract.setFacilityId(1L);
+        contract.setStorageUnitId(42L);
+        contract.setUnitTypeId(7L);
+        contract.setStatus(ContractStatus.PENDING_CHECK_IN);
+        contract.setStartDate(LocalDate.now());
+        contract.setEndDateExclusive(LocalDate.now().plusMonths(1));
+        contract.setMonthlyPrice(3_500_000L);
+        contract.setDepositAmount(3_500_000L);
+
+        StorageUnit maintenanceUnit = new StorageUnit();
+        maintenanceUnit.setId(42L);
+        maintenanceUnit.setCode("Q7-A101");
+        maintenanceUnit.setStatus(StorageUnitStatus.MAINTENANCE);
+
+        com.swp391.selfstorage.contract.entity.HandoverRecord rejectedHr = com.swp391.selfstorage.contract.entity.HandoverRecord.builder()
+                .contractId(801L)
+                .rejected(true)
+                .rejectionReason("Ô kho bị ẩm ướt / dột nước từ trần kho")
+                .build();
+
+        when(rentalContractRepository.findById(801L)).thenReturn(Optional.of(contract));
+        when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(maintenanceUnit));
+        when(handoverRecordRepository.findTopByContractIdAndRejectedFalseOrderByHandoverAtDesc(801L))
+                .thenReturn(Optional.empty());
+        when(handoverRecordRepository.findByContractId(801L)).thenReturn(Optional.of(rejectedHr));
+
+        CustomerRentalDetailResponse detail = customerRentalService.getMyRentalDetail(801L, customerUser);
+
+        assertTrue(Boolean.TRUE.equals(detail.getRelocationEligible()));
+        assertFalse(Boolean.TRUE.equals(detail.getHandoverRejected()), "PENDING_CHECK_IN chờ đổi ô không được gán handoverRejected=true");
+        assertEquals("Ô kho bị ẩm ướt / dột nước từ trần kho", detail.getRejectionReason());
+    }
 }
 

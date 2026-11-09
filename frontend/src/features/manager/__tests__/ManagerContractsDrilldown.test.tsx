@@ -123,13 +123,12 @@ describe('Giám sát hợp đồng — Kiến trúc Drill-down 3 Cấp độ (FM
     expect(html).toContain('Chi tiết');
   });
 
-  it('4. Cấp 3 (OverdueAlertBanner): Hiển thị cảnh báo ngày D+5, nợ phạt và nút hành động', () => {
+  it('4. Cấp 3 (OverdueAlertBanner): Hiển thị cảnh báo ngày D+5, nợ phạt và nút xem chi tiết công nợ của Quản lý', () => {
     const html = cleanHtml(
       renderToString(
         <OverdueAlertBanner
           contract={mockOverdueContract}
           onPayPenalty={() => {}}
-          onRequestReturn={() => {}}
         />
       )
     );
@@ -137,8 +136,9 @@ describe('Giám sát hợp đồng — Kiến trúc Drill-down 3 Cấp độ (FM
     expect(html).toContain('Cảnh báo quá hạn');
     expect(html).toContain('D+5');
     expect(html).toContain('400.000 đ');
-    expect(html).toContain('Đóng nợ phạt quá hạn');
-    expect(html).toContain('Báo trả kho & Tất toán');
+    expect(html).toContain('Xem chi tiết công nợ & khấu trừ');
+    expect(html).not.toContain('Đóng nợ phạt quá hạn');
+    expect(html).not.toContain('Báo trả kho & Tất toán');
   });
 
   it('5. Cấp 3 (CustomerInfoPanel): Hiển thị thông tin khách hàng đầy đủ', () => {

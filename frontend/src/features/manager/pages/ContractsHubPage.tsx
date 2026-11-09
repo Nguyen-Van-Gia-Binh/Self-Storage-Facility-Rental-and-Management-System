@@ -17,7 +17,6 @@ import {
   UserPlus,
   XCircle,
   MapPin,
-  Repeat,
 } from 'lucide-react';
 import type { ManagerContractItem, ContractKpiData } from '@/types/contractManager';
 import { getManagerContracts, getManagerKpiData, reassignStorageUnit } from '@/api/contract';
@@ -728,21 +727,6 @@ export const ContractsHubPage: React.FC = () => {
                           <>
                             {contract.status === 'TERMINATED' && (
                               <>
-                                {!(
-                                  Boolean(contract.checkinDate) ||
-                                  (contract.overdueDays ?? 0) > 0 ||
-                                  contract.depositBalance === 0
-                                ) && (
-                                  <button
-                                    type="button"
-                                    onClick={() => setFloorPlanReassignContract(contract)}
-                                    className="px-2.5 py-1.5 text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-lg transition-colors inline-flex items-center gap-1 shadow-2xs cursor-pointer"
-                                    title="Đổi ô kho mới trên sơ đồ 2D và khôi phục hợp đồng cho khách"
-                                  >
-                                    <Repeat className="w-3 h-3 text-amber-600" />
-                                    <span>Đổi ô kho (2D)</span>
-                                  </button>
-                                )}
                                 <button
                                   type="button"
                                   onClick={() => {

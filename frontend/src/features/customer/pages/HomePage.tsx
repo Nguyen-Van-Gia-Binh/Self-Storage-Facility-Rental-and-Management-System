@@ -41,6 +41,17 @@ export const HomePage: React.FC = () => {
     return ['Tất cả thành phố', ...Array.from(set)];
   }, [facilities]);
 
+  // Đếm số lượng cơ sở thật theo từng tỉnh thành từ CSDL
+  const cityFacilityCounts = useMemo(() => {
+    const counts: Record<string, number> = {
+      'Tất cả thành phố': facilities.length,
+    };
+    facilities.forEach((f) => {
+      counts[f.city] = (counts[f.city] || 0) + 1;
+    });
+    return counts;
+  }, [facilities]);
+
   // Bộ lọc cơ sở theo thành phố và loại kho
   const filteredFacilities = useMemo(() => {
     return facilities.filter((f) => {
@@ -218,7 +229,7 @@ export const HomePage: React.FC = () => {
                 >
                   {availableCities.map((city) => (
                     <option key={city} value={city}>
-                      {city}
+                      {city} {cityFacilityCounts[city] !== undefined ? `(${cityFacilityCounts[city]})` : ''}
                     </option>
                   ))}
                 </select>

@@ -24,28 +24,21 @@ export const OverdueContractsTable: React.FC<OverdueContractsTableProps> = ({
   const getPolicyAction = (days: number) => {
     if (days <= 3) {
       return {
-        stage: 'D+1..D+3: Ân hạn',
-        desc: 'Phí phạt = 0. Vẫn truy cập ô kho. Nhắc dọn đồ mỗi ngày.',
+        stage: `D+${days}: Khóa PIN & Phí lưu kho 5%/ngày`,
+        desc: 'Khóa Access Code ngay từ D+1 (No Pay, No PIN). Thu phí lưu kho 5% cọc/ngày.',
         badge: 'bg-amber-50 text-amber-700 border-amber-200',
       };
     }
     if (days <= 6) {
       return {
-        stage: `D+${days}: Phạt 10%/ngày`,
-        desc: 'Khóa báo trả kho. Chưa khóa Access Code. Phải đóng nợ phạt trước khi trả kho.',
+        stage: `D+${days}: Phạt quá hạn 10%/ngày`,
+        desc: 'Khóa Access Code & khóa báo trả kho. Phải tất toán phí quá hạn để nhận PIN tạm dọn đồ.',
         badge: 'bg-orange-50 text-orange-800 border-orange-200 font-semibold',
       };
     }
-    if (days <= 9) {
-      return {
-        stage: `D+${days}: Khóa Access Code`,
-        desc: 'Phí 10%/ngày trên tiền cọc, trần 70%. Access Code bị khóa.',
-        badge: 'bg-rose-50 text-rose-700 border-rose-200 font-semibold',
-      };
-    }
     return {
-      stage: 'D+10: Chấm dứt hợp đồng',
-      desc: 'Hợp đồng chấm dứt. Ô kho chuyển sang dọn dẹp và niêm phong đồ.',
+      stage: 'D+7: Cưỡng chế niêm phong về Kho Tổng',
+      desc: 'Khấu trừ 100% cọc (55% phí lưu kho/phạt + 45% phí niêm phong), D+8 mở bán lại ô kho.',
       badge: 'bg-red-100 text-red-800 border-red-300 font-bold',
     };
   };

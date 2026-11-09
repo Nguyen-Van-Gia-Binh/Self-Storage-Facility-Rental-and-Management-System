@@ -224,12 +224,15 @@ describe('Customer Portal - Xem Hợp đồng điện tử & Biên bản bàn gi
     expect(screen.queryByText(/✓ ĐÃ XÁC NHẬN BÀN GIAO/i)).not.toBeInTheDocument();
   });
 
-  it('RentedUnitCard và ContractDetailModal khi PENDING_CHECKIN có relocationEligible hiển thị "Đang sắp xếp đổi ô kho"', async () => {
+  it('RentedUnitCard và ContractDetailModal khi PENDING_CHECKIN có relocationEligible hiển thị "Đang sắp xếp đổi ô kho" và KHÔNG hiển thị đồng thời banner hoàn tiền 100%', async () => {
     const relocatingContract: RentedContract = {
       ...sampleContract,
       id: '888',
       status: 'PENDING_CHECKIN',
       relocationEligible: true,
+      handoverRejected: true,
+      rejectionReason: 'Ô kho bị ẩm ướt / dột nước từ trần kho',
+      unitNumber: 'Chưa gán ô',
       checkinDate: undefined,
       handoverStaffName: undefined,
       handoverConditionNote: undefined,
@@ -258,6 +261,11 @@ describe('Customer Portal - Xem Hợp đồng điện tử & Biên bản bàn gi
     const relocateNotes = await screen.findAllByText(/Đang điều phối đổi ô kho tại chỗ/i);
     expect(relocateNotes.length).toBeGreaterThanOrEqual(1);
     expect(await screen.findByText(/PHỤ LỤC TẠM HOÃN BÀN GIAO & ĐANG BỐ TRÍ ĐỔI Ô KHO MỚI/i)).toBeInTheDocument();
+    expect(screen.getByText(/Ô kho Chờ cấp ô mới/i)).toBeInTheDocument();
+
+    // Tuyệt đối KHÔNG hiển thị đồng thời banner đỏ Từ chối nhận kho & hoàn tiền 100%
+    expect(screen.queryByText(/BIÊN BẢN TỪ CHỐI BÀN GIAO TẠI HIỆN TRƯỜNG & HOÀN TIỀN 100%/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/TỪ CHỐI NHẬN \(HOÀN 100%\)/i)).not.toBeInTheDocument();
 
     // Chữ ký hiển thị chờ đổi ô mới (có ở cả modal view và print document)
     expect(screen.getAllByText(/CHỜ BÀN GIAO Ô MỚI/i).length).toBeGreaterThanOrEqual(1);

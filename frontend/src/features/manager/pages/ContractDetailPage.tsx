@@ -252,9 +252,6 @@ export const ContractDetailPage: React.FC = () => {
         <OverdueAlertBanner
           contract={contract}
           onPayPenalty={() => setFinancialModalOpen(true)}
-          onRequestReturn={() => {
-            alert('Đã ghi nhận yêu cầu trả kho cho hợp đồng quá hạn này.');
-          }}
         />
       )}
 
@@ -344,23 +341,13 @@ export const ContractDetailPage: React.FC = () => {
                 ) : (
                   <>
                     Ô kho <span className="font-mono font-bold text-rose-950">{contract.storageUnitCode}</span> phát sinh sự cố và đã bị khóa bảo trì. Ngày kết thúc thuê chốt tại ngày check-in:{' '}
-                    <strong className="font-mono">{contract.endDateExclusive || contract.startDate}</strong>. Quản lý cơ sở có thể duyệt quyết toán để hoàn tiền 100% cho khách, hoặc đổi sang ô kho mới để khôi phục hợp đồng tiếp tục phục vụ khách.
+                    <strong className="font-mono">{contract.endDateExclusive || contract.startDate}</strong>. Khách hàng đã chọn chấm dứt hợp đồng và yêu cầu hoàn tiền 100% — Quản lý cơ sở vui lòng bấm duyệt quyết toán bên phải để hoàn trả toàn bộ tiền cọc và tiền thuê cho khách.
                   </>
                 )}
               </p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 shrink-0">
-            {!isOverdueTerminated && (
-              <button
-                type="button"
-                onClick={() => setFloorPlanOpen(true)}
-                className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs shrink-0 cursor-pointer flex items-center justify-center gap-1.5"
-              >
-                <Repeat className="w-4 h-4" />
-                <span>Đổi ô kho mới (Sơ đồ 2D)</span>
-              </button>
-            )}
             <button
               type="button"
               onClick={() => setSettlementModalOpen(true)}

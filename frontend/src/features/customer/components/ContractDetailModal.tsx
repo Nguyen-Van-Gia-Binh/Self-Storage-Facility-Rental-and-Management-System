@@ -86,13 +86,17 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
 
   const effectiveContractNumber = contract.contractNumber || effectiveDetail?.contractCode || `CTR-${contract.id}`;
   const effectiveStatus = (contract.status || effectiveDetail?.status) as string;
-  const isHandoverRejected = Boolean(
-    contract.handoverRejected ||
-    effectiveDetail?.handoverRejected ||
-    contract.contractNumber?.includes('REJ') ||
-    contract.contractNumber?.includes('REFUND') ||
-    (effectiveStatus === 'TERMINATED' && !contract.checkinDate && Boolean(contract.handoverConditionNote || contract.rejectionReason))
-  );
+  const isRelocatingFlag = Boolean(contract.relocationEligible || effectiveDetail?.relocationEligible);
+  const isHandoverRejected =
+    effectiveStatus === 'TERMINATED' &&
+    !isRelocatingFlag &&
+    Boolean(
+      contract.handoverRejected ||
+      effectiveDetail?.handoverRejected ||
+      contract.contractNumber?.includes('REJ') ||
+      contract.contractNumber?.includes('REFUND') ||
+      (!contract.checkinDate && Boolean(contract.handoverConditionNote || contract.rejectionReason))
+    );
   const isCancelledAtHandover = isHandoverRejected;
   const isOverdueTerminated =
     effectiveStatus === 'TERMINATED' &&
@@ -269,7 +273,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                     </span>
                   </div>
                   <p className="text-xs text-amber-900 leading-relaxed">
-                    Khách hàng đã kiểm tra thực tế và phát hiện sự cố tại ô kho ban đầu ({contract.rejectionReason || 'Cửa cuốn / khóa cơ bị kẹt, hư hỏng không vận hành được'}). Khách hàng đã chọn <strong>Đổi sang ô kho khác cùng loại</strong>. Quản lý cơ sở (FM) đang điều phối và cấp ô kho mới trên sơ đồ 2D cho quý khách.
+                    Khách hàng đã kiểm tra thực tế và phát hiện sự cố tại ô kho ban đầu ({effectiveDetail?.rejectionReason || contract.rejectionReason || 'Cửa cuốn / khóa cơ bị kẹt, hư hỏng không vận hành được'}). Khách hàng đã chọn <strong>Đổi sang ô kho khác cùng loại</strong>. Quản lý cơ sở (FM) đang điều phối và cấp ô kho mới trên sơ đồ 2D cho quý khách.
                   </p>
                   <div className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 flex items-center gap-1.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />

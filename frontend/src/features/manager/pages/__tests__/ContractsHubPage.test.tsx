@@ -35,12 +35,13 @@ describe('ContractsHubPage & ContractDetailPage Handover Defect & Relocation Int
     expect(content).toMatch(/SettlementApprovalModal/);
   });
 
-  it('ContractDetailPage hiển thị banner sự cố bàn giao, ngày kết thúc chốt tại ngày check-in và nút Duyệt quyết toán hoàn tiền 100%', () => {
+  it('ContractDetailPage hiển thị banner sự cố bàn giao, ngày kết thúc chốt tại ngày check-in và CHỈ hiển thị nút Duyệt quyết toán hoàn tiền 100% (không hiển thị nút Đổi ô kho khi đã TERMINATED)', () => {
     const content = fs.readFileSync(detailPagePath, 'utf-8');
     expect(content).toMatch(/isTerminated/);
     expect(content).toMatch(/Hợp đồng đã chấm dứt do sự cố bàn giao \/ khách từ chối nhận/);
     expect(content).toMatch(/Chờ hoàn tiền 100%/);
     expect(content).toMatch(/Duyệt quyết toán & Hoàn tiền 100%/);
+    expect(content).not.toMatch(/Đổi ô kho mới \(Sơ đồ 2D\)/);
     expect(content).toMatch(/allowedUnitTypeId=\{canRelocate \? contract\.unitTypeId : undefined\}/);
   });
 
