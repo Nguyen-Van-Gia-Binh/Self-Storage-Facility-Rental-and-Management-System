@@ -201,7 +201,7 @@ public class WaitlistServiceImpl implements WaitlistService {
             throw new CustomException(ErrorCode.UNAUTHORIZED);
         }
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-        OffsetDateTime timeoutAt = now.plusHours(2);
+        OffsetDateTime timeoutAt = null; // Không áp đặt giới hạn 2 giờ tư vấn khách hàng
 
         // Guardrail 1 (Tech Lead): Atomic Conditional Update chống Race Condition
         int updated = waitlistRepository.atomicStartContacting(

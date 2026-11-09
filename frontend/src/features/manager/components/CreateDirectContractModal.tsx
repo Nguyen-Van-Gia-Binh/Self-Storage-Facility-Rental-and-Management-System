@@ -23,12 +23,14 @@ import { getUsers, type AppUser } from '@/api/user';
 import { fetchMyAssignedFacilities } from '@/api/facility';
 import type { UnitTypeResponse, StorageUnitResponse } from '@/types/unit';
 import type { FacilityListItem } from '@/types';
+import type { WaitlistResponse } from '@/types/waitlist';
 
 interface CreateDirectContractModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (newContract: any, message: string) => void;
   defaultFacilityId?: number;
+  initialWaitlist?: WaitlistResponse | null;
 }
 
 export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps> = ({
@@ -36,10 +38,14 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
   onClose,
   onSuccess,
   defaultFacilityId,
+  initialWaitlist,
 }) => {
   // Facilities
   const [facilities, setFacilities] = useState<FacilityListItem[]>([]);
   const [selectedFacilityId, setSelectedFacilityId] = useState<number>(defaultFacilityId || 0);
+
+  // Waitlist link
+  const [waitlistId, setWaitlistId] = useState<number | undefined>(undefined);
 
   // Customer search & selection
   const [customerMode, setCustomerMode] = useState<'search' | 'walkin'>('search');
@@ -92,6 +98,46 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
         .catch((err) => console.error('Lỗi khi tải danh sách cơ sở:', err));
     }
   }, [isOpen, defaultFacilityId]);
+
+  // Pre-fill if opened from Waitlist
+  useEffect(() => {
+    if (isOpen && initialWaitlist) {
+      setWaitlistId(initialWaitlist.id);
+      if (initialWaitlist.facilityId) {
+        setSelectedFacilityId(initialWaitlist.facilityId);
+      }
+      if (initialWaitlist.customerId) {
+        setSelectedCustomer({
+          id: initialWaitlist.customerId,
+          fullName: initialWaitlist.customerName || 'Khách hàng',
+          email: initialWaitlist.customerEmail || '',
+          phone: initialWaitlist.contactPhone || initialWaitlist.customerPhone || '',
+          role: 'STORAGE_CUSTOMER',
+          status: 'ACTIVE',
+          active: true,
+          facilityIds: [],
+          createdAt: new Date().toISOString(),
+        });
+        setCustomerPhone(initialWaitlist.contactPhone || initialWaitlist.customerPhone || '');
+      }
+      if (initialWaitlist.unitTypeId) {
+        setSelectedUnitTypeId(initialWaitlist.unitTypeId);
+      }
+      if (initialWaitlist.targetStartDate) {
+        const todayStr = new Date().toISOString().split('T')[0];
+        setStartDate(initialWaitlist.targetStartDate >= todayStr ? initialWaitlist.targetStartDate : todayStr);
+      }
+      if (initialWaitlist.rentalMonths) {
+        setRentalMonths(initialWaitlist.rentalMonths);
+      }
+      if (initialWaitlist.contactNotes) {
+        setNotes(initialWaitlist.contactNotes);
+      }
+      setCustomerMode('search');
+    } else if (isOpen && !initialWaitlist) {
+      setWaitlistId(undefined);
+    }
+  }, [isOpen, initialWaitlist]);
 
   // Load unit types when facility changes
   useEffect(() => {
@@ -190,6 +236,7 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
     setNotes('');
     setStartDate(today);
     setRentalMonths(1);
+    setWaitlistId(undefined);
     onClose();
   };
 
@@ -278,6 +325,7 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
       startDate,
       rentalMonths,
       paymentMethod,
+      waitlistId,
       notes: notes.trim() || undefined,
     };
 
@@ -307,9 +355,20 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
               <FileCheck className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-base font-bold tracking-tight">Tạo Hợp Đồng Trực Tiếp</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold tracking-tight">
+                  {waitlistId ? 'Tạo Hợp Đồng Trực Tiếp (Waitlist CRM)' : 'Tạo Hợp Đồng Trực Tiếp'}
+                </h2>
+                {waitlistId && (
+                  <span className="text-[10px] bg-teal-400/25 text-teal-100 border border-teal-300/40 px-2 py-0.5 rounded-full font-bold">
+                    Đơn Waitlist #{waitlistId}
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-white/80">
-                Lập hợp đồng tại quầy cho khách vãng lai hoặc đặt trước &gt; 30 ngày
+                {waitlistId
+                  ? 'Chốt hợp đồng trực tiếp cho khách hàng từ danh sách chờ telesales CRM'
+                  : 'Lập hợp đồng tại quầy cho khách vãng lai hoặc đặt trước > 30 ngày'}
               </p>
             </div>
           </div>
