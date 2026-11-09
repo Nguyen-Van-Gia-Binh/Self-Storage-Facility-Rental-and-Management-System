@@ -31,7 +31,7 @@
    - 6.2. [Unhappy & Exception Cases: Xung đột ca trực, Bảo trì khẩn cấp & Phân quyền đa cơ sở](#62-unhappy--exception-cases-xung-đột-ca-trực-bảo-trì-khẩn-cấp--phân-quyền-đa-cơ-sở)
 7. [Flow 6 — Contract Lifecycle: Gia hạn hợp đồng & Xử lý Quá hạn (Overdue)](#flow-6--contract-lifecycle-gia-hạn-hợp-đồng--xử-lý-quá-hạn-overdue)
    - 7.1. [Sub-flow 6.1: Gia hạn hợp đồng (Happy & Xung đột lịch)](#71-sub-flow-61-gia-hạn-hợp-đồng-happy--xung-đột-lịch)
-   - 7.2. [Sub-flow 6.2: Xử lý Quá hạn (Chuỗi Unhappy Cases D+1 đến D+10)](#72-sub-flow-62-xử-lý-quá-hạn-chuỗi-unhappy-cases-d1-đến-d10)
+   - 7.2. [Sub-flow 6.2: Xử lý Quá hạn (Vòng đời 8 Ngày Khép kín D+1 đến D+8)](#72-sub-flow-62-xử-lý-quá-hạn-vòng-đời-8-ngày-khép-kín-d1-đến-d8)
 8. [Flow 7 — Support Ticket & Incident: Xử lý Sự cố & Yêu cầu hỗ trợ](#flow-7--support-ticket--incident-xử-lý-sự-cố--yêu-cầu-hỗ-trợ)
    - 8.1. [Happy Path: Báo hỏng hạ tầng & Nhân viên xử lý miễn phí 0đ](#81-happy-path-báo-hỏng-hạ-tầng--nhân-viên-xử-lý-miễn-phí-0đ)
    - 8.2. [Unhappy & Exception Cases: Bồi thường lỗi khách, Điều chuyển kho & Cấp lại mã PIN](#82-unhappy--exception-cases-bồi-thường-lỗi-khách-điều-chuyển-kho--cấp-lại-mã-pin)
@@ -400,40 +400,43 @@ Quy trình hỗ trợ linh hoạt 2 nhánh nhận kho theo chuẩn Contactless S
 
 - **Ngoại lệ Xung đột lịch gia hạn (UNH-REN-01):** Nếu khách để hợp đồng bước sang quá hạn mới bấm gia hạn và ô kho đó đã được một khách hàng mới đặt giữ chỗ cho kỳ tiếp theo (`BR-REN-09`), hệ thống sẽ ném lỗi `409 Conflict` (`RENEWAL_PERIOD_CONFLICT`). Giao diện thông báo: _"Ô kho đã có người đặt trước cho giai đoạn tới, không thể gia hạn tiếp. Vui lòng liên hệ quản lý để đổi ô kho khác."_
 
-### 7.2. Sub-flow 6.2: Xử lý Quá hạn (Chuỗi Unhappy Cases D+1 đến D+10)
+### 7.2. Sub-flow 6.2: Xử lý Quá hạn (Vòng đời 8 Ngày Khép kín D+1 đến D+8)
 
 Khi hợp đồng đến ngày kết thúc (`end_date`) mà khách chưa thanh toán gia hạn hoặc chưa hoàn tất trả kho:
 
 ```
 [00:00:00 HẰNG ĐÊM — Tác vụ OverdueCronJob quét toàn bộ hợp đồng ACTIVE đã quá ngày end_date]
        │
-       ├─► MỐC 1: Ngày D+1 đến D+3 (Giai đoạn Ân hạn — Grace Period) [BR-OVD-01, BR-OVD-02]
+       ├─► MỐC D+1: Kích hoạt Trạng thái Quá hạn & Khóa An ninh ("No Pay, No PIN") [BR-OVD-01, BR-OVD-05, BR-REN-06]
        │   - Trạng thái hợp đồng: OVERDUE
-       │   - Phí phạt phát sinh = 0 VNĐ (Ân hạn hỗ trợ khách hàng)
-       │   - Quyền ra vào kho: Mã PIN vẫn HOẠT ĐỘNG BÌNH THƯỜNG (Khách vào lấy đồ bình thường)
+       │   - Khóa mã PIN ngay từ 00:00 D+1 (accessCode = null) để chống tẩu tán tài sản bỏ trốn
+       │   - Khóa tự gia hạn Online (BR-REN-06)
        │   - Giao diện khách (MyUnitsPage.tsx):
-       │     + HIỆN nút "Báo trả kho" (Khách trả kho xong trong mốc này vẫn được hoàn 100% tiền cọc)
-       │     + ẨN nút "Đóng nợ phạt" (do nợ phạt = 0)
-       │     + KHÓA nút "Gia hạn" (mất quyền ưu tiên giữ chỗ cho đến khi xử lý hợp đồng)
+       │     + Cột mã PIN hiển thị nhãn hồng "Đã khóa PIN (Đóng phí để mở)"
+       │     + HIỆN nút "Đóng phí & Mở PIN" (Quét mã VietQR nộp phạt: POST /api/v1/payments/checkout)
+       │     + ẨN nút "Báo trả kho" (Phải trả hết nợ quá hạn mới mở khóa nút Báo trả kho theo BR-RET-01)
        │
-       ├─► MỐC 2: Ngày D+4 đến D+6 (Bắt đầu tính Phạt lũy tiến) [BR-OVD-03, BR-OVD-04]
-       │   - Tính phí phạt quá hạn cộng dồn hằng đêm: 10%/ngày dựa trên đơn giá thuê ngày của hợp đồng
-       │   - Quyền ra vào kho: Mã PIN vẫn hoạt động bình thường
-       │   - Giao diện khách (MyUnitsPage.tsx):
-       │     + ẨN nút "Báo trả kho" (Bắt buộc phải trả hết nợ phạt mới được mở lại quyền trả kho) [ISS-46]
-       │     + HIỆN nút "Đóng nợ phạt" (Quét mã VietQR nộp phạt: POST /api/v1/customer/contracts/{id}/overdue-payment)
+       ├─► GIAI ĐOẠN 1: Ngày D+1 đến D+3 (Thu phí Lưu kho Quá hạn, Miễn phạt vi phạm) [BR-OVD-02]
+       │   - Phí lưu kho quá hạn: 5% tiền cọc Deposit / ngày (lũy kế 3 ngày = 15% cọc)
+       │   - Miễn phạt vi phạm cam kết hợp đồng (Ân hạn nhân văn)
+       │   - Khách quét VietQR trả hết phí quá hạn -> Nhận mã PIN tạm trong ngày đến 23:59 (BR-OVD-08) và mở nút "Báo trả kho"
        │
-       ├─► MỐC 3: Ngày D+7 đến D+9 (Khóa Quyền truy cập ô kho) [BR-OVD-05, ISS-47]
-       │   - Hệ thống tự động chuyển mã PIN: AccessCredential.status ──► SUSPENDED
-       │   - Khách hàng không thể tự nhập mã PIN mở khóa kho; muốn vào phải liên hệ nhân viên trực quầy
-       │   - Phí phạt tiếp tục tích lũy thêm 10%/ngày
-       │   - Sau khi khách hàng thanh toán hết nợ phạt ──► Mã PIN tự động kích hoạt lại ACTIVE ngay lập tức
+       ├─► GIAI ĐOẠN 2: Ngày D+4 đến D+7 (Phạt vi phạm Hợp đồng +10%/ngày) [BR-OVD-03, BR-OVD-04]
+       │   - Tính phí phạt quá hạn cộng dồn hằng đêm: 10% cọc / ngày trên nền 15% của Giai đoạn 1
+       │   - Mốc D+4 = 25% cọc, D+5 = 35% cọc, D+6 = 45% cọc, D+7 chạm trần tối đa = 55% cọc (BR-OVD-04)
+       │   - Mã PIN tiếp tục bị khóa cho đến khi khách quét VietQR thanh toán đủ 100% nợ quá hạn tích lũy
        │
-       └─► MỐC 4: Ngày D+10 trở đi (Chấm dứt Hợp đồng đơn phương do Quá hạn) [BR-OVD-07, BR-OVD-11]
-           - Trạng thái hợp đồng chuyển thành: TERMINATED_OVERDUE
-           - Quyền truy cập bị thu hồi vĩnh viễn: AccessCredential.status ──► REVOKED
-           - Chốt trần nợ phạt tối đa: Không vượt quá 70% tổng giá trị hợp đồng [BR-OVD-07]
-           - Ô kho chuyển sang MAINTENANCE để nhân viên tiến hành niêm phong, dọn dẹp hoặc thanh lý tài sản bỏ lại [BR-OVD-11]
+       ├─► MỐC D+7: Cưỡng chế Chấm dứt & Niêm phong về Kho Tổng [BR-OVD-07, BR-OVD-11]
+       │   - Trạng thái hợp đồng chuyển thành: TERMINATED
+       │   - Thu hồi mã PIN vĩnh viễn
+       │   - Khấu trừ trọn vẹn 45% tiền cọc còn lại làm chi phí cắt khóa, kiểm kê, niêm phong và vận chuyển về Kho Tổng
+       │     => Tổng tiêu thụ vừa khít 100% tiền cọc: 15% + 40% + 45% = 100% Cọc (depositBalance = 0 VND)
+       │   - Ô kho tại cơ sở chuyển sang trạng thái: MAINTENANCE (1 ngày dọn dẹp vệ sinh)
+       │
+       └─► MỐC D+8: Tự động Giải phóng Ô kho & Tiếp nhận Chuộc đồ 30 ngày tại Kho Tổng [BR-AVL-02, BR-OVD-11]
+           - Đúng ngày D+8 (rental.buffer_days = 8): Ô kho tự động giải phóng về AVAILABLE để đón khách thuê mới
+           - Tại Kho Tổng (D+8 đến D+37): Khách hàng có 30 ngày liên hệ Quản lý cơ sở (FM) nộp phụ phí phát sinh để nhận lại đồ
+           - Sau 30 ngày: Cơ sở tiến hành thanh lý ngoại tuyến tài sản theo hợp đồng và đóng hợp đồng (CLOSED)
 ```
 
 ---
