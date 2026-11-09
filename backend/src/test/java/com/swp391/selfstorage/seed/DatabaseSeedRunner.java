@@ -14,7 +14,7 @@ import java.sql.Statement;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class DatabaseSeedRunnerTest {
+public class DatabaseSeedRunner {
 
     private static final String DEFAULT_DB_URL = "jdbc:postgresql://ep-round-rice-b3raiy2r-pooler.c-4.ap-southeast-1.aws.neon.tech/neondb?sslmode=require";
     private static final String DEFAULT_USER = "neondb_owner";
