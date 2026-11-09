@@ -58,7 +58,6 @@ class OverdueAndRefundIntegrationTest {
     private ExtraFeeTypeRepository extraFeeTypeRepository;
 
     @Autowired
-    @Autowired
     private PolicyVersionRepository policyVersionRepository;
 
     private StorageUnit testUnit;
