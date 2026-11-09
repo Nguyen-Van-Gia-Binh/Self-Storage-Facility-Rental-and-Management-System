@@ -10,6 +10,7 @@ import {
   Calendar,
   CreditCard,
   User,
+  UserPlus,
   AlertCircle,
   CheckCircle2,
   Phone,
@@ -41,11 +42,18 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
   const [selectedFacilityId, setSelectedFacilityId] = useState<number>(defaultFacilityId || 0);
 
   // Customer search & selection
+  const [customerMode, setCustomerMode] = useState<'search' | 'walkin'>('search');
   const [customerSearchKeyword, setCustomerSearchKeyword] = useState<string>('');
   const [customerSearching, setCustomerSearching] = useState<boolean>(false);
   const [customerSearchError, setCustomerSearchError] = useState<string | null>(null);
   const [customerSearchResults, setCustomerSearchResults] = useState<AppUser[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<AppUser | null>(null);
+  const [customerPhone, setCustomerPhone] = useState<string>('');
+
+  // Walk-in customer states
+  const [walkinFullName, setWalkinFullName] = useState<string>('');
+  const [walkinPhone, setWalkinPhone] = useState<string>('');
+  const [walkinEmail, setWalkinEmail] = useState<string>('');
 
   // Unit types & Storage units
   const [unitTypes, setUnitTypes] = useState<UnitTypeResponse[]>([]);
@@ -162,11 +170,22 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
     return () => clearTimeout(timer);
   }, [isOpen, customerSearchKeyword, selectedCustomer]);
 
+  // Select customer handler
+  const handleSelectCustomer = (cust: AppUser) => {
+    setSelectedCustomer(cust);
+    setCustomerPhone(cust.phone || '');
+  };
+
   // Reset when closed
   const handleClose = () => {
     setSelectedCustomer(null);
+    setCustomerPhone('');
     setCustomerSearchKeyword('');
     setCustomerSearchResults([]);
+    setCustomerMode('search');
+    setWalkinFullName('');
+    setWalkinPhone('');
+    setWalkinEmail('');
     setErrorMessage(null);
     setNotes('');
     setStartDate(today);
@@ -195,10 +214,46 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
     e.preventDefault();
     setErrorMessage(null);
 
-    if (!selectedCustomer) {
-      setErrorMessage('Vui lòng chọn khách hàng để tạo hợp đồng.');
-      return;
+    let cleanPhone = '';
+    let customerId: number | undefined = undefined;
+    let customerFullName: string | undefined = undefined;
+    let customerEmail: string | undefined = undefined;
+
+    if (customerMode === 'search') {
+      if (!selectedCustomer) {
+        setErrorMessage('Vui lòng tìm và chọn khách hàng từ danh sách, hoặc chuyển sang tab "Khách vãng lai tại quầy".');
+        return;
+      }
+      cleanPhone = customerPhone.trim();
+      if (!cleanPhone) {
+        setErrorMessage('Vui lòng nhập số điện thoại liên hệ của khách hàng.');
+        return;
+      }
+      if (!/^0\d{9}$/.test(cleanPhone)) {
+        setErrorMessage('Số điện thoại không hợp lệ. Vui lòng nhập đúng 10 chữ số (bắt đầu bằng số 0, ví dụ: 0987654321).');
+        return;
+      }
+      customerId = selectedCustomer.id;
+      customerFullName = selectedCustomer.fullName;
+      customerEmail = selectedCustomer.email;
+    } else {
+      if (!walkinFullName.trim()) {
+        setErrorMessage('Vui lòng nhập họ và tên khách hàng.');
+        return;
+      }
+      cleanPhone = walkinPhone.trim();
+      if (!cleanPhone) {
+        setErrorMessage('Vui lòng nhập số điện thoại liên hệ nhận kho của khách hàng.');
+        return;
+      }
+      if (!/^0\d{9}$/.test(cleanPhone)) {
+        setErrorMessage('Số điện thoại không hợp lệ. Vui lòng nhập đúng 10 chữ số (bắt đầu bằng số 0, ví dụ: 0987654321).');
+        return;
+      }
+      customerFullName = walkinFullName.trim();
+      customerEmail = walkinEmail.trim() || undefined;
     }
+
     if (!selectedFacilityId) {
       setErrorMessage('Vui lòng chọn cơ sở quản lý.');
       return;
@@ -213,7 +268,10 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
     }
 
     const payload: CreateDirectContractRequest = {
-      customerId: selectedCustomer.id,
+      customerId,
+      customerFullName,
+      customerEmail,
+      customerPhone: cleanPhone,
       facilityId: selectedFacilityId,
       unitTypeId: selectedUnitTypeId,
       storageUnitId: selectedStorageUnitId || undefined,
@@ -302,102 +360,247 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
 
           {/* Section 2: Khách hàng */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5 text-brand-600" />
-              2. Khách hàng thuê
-            </label>
-
-            {selectedCustomer ? (
-              <div className="p-3 bg-brand-50/50 border border-brand-200 rounded-2xl flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-xs">
-                    {selectedCustomer.fullName?.charAt(0)?.toUpperCase() || 'K'}
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-slate-900 flex items-center gap-2">
-                      <span>{selectedCustomer.fullName}</span>
-                      <span className="text-[10px] text-slate-500 font-normal">#{selectedCustomer.id}</span>
-                    </div>
-                    <div className="text-[11px] text-slate-600 flex items-center gap-3 mt-0.5">
-                      <span className="flex items-center gap-1">
-                        <Phone className="w-3 h-3 text-slate-400" />
-                        {selectedCustomer.phone}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Mail className="w-3 h-3 text-slate-400" />
-                        {selectedCustomer.email}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5 text-brand-600" />
+                2. Khách hàng thuê
+              </label>
+              <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
                 <button
                   type="button"
-                  onClick={() => setSelectedCustomer(null)}
-                  className="px-2.5 py-1 text-[11px] font-semibold text-brand-700 hover:bg-brand-100 rounded-lg transition-colors cursor-pointer"
+                  onClick={() => setCustomerMode('search')}
+                  className={`px-2.5 py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer flex items-center gap-1 ${
+                    customerMode === 'search'
+                      ? 'bg-white text-brand-700 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
                 >
-                  Đổi khách hàng
+                  <Search className="w-3 h-3" />
+                  <span>Tìm khách hàng có sẵn</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomerMode('walkin');
+                    setSelectedCustomer(null);
+                  }}
+                  className={`px-2.5 py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer flex items-center gap-1 ${
+                    customerMode === 'walkin'
+                      ? 'bg-white text-brand-700 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <UserPlus className="w-3 h-3" />
+                  <span>+ Khách vãng lai tại quầy</span>
                 </button>
               </div>
+            </div>
+
+            {customerMode === 'search' ? (
+              selectedCustomer ? (
+                <div className="space-y-3">
+                  <div className="p-3 bg-brand-50/50 border border-brand-200 rounded-2xl flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-xs">
+                        {selectedCustomer.fullName?.charAt(0)?.toUpperCase() || 'K'}
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                          <span>{selectedCustomer.fullName}</span>
+                          <span className="text-[10px] text-slate-500 font-normal">#{selectedCustomer.id}</span>
+                        </div>
+                        <div className="text-[11px] text-slate-600 flex items-center gap-3 mt-0.5">
+                          <span className="flex items-center gap-1">
+                            <Mail className="w-3 h-3 text-slate-400" />
+                            {selectedCustomer.email}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedCustomer(null);
+                        setCustomerPhone('');
+                      }}
+                      className="px-2.5 py-1 text-[11px] font-semibold text-brand-700 hover:bg-brand-100 rounded-lg transition-colors cursor-pointer"
+                    >
+                      Đổi khách hàng
+                    </button>
+                  </div>
+
+                  {/* Input nhập/xác nhận Số điện thoại */}
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl">
+                    <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Phone className="w-3.5 h-3.5 text-brand-600" />
+                        Số điện thoại liên hệ nhận kho <span className="text-rose-500">*</span>
+                      </span>
+                      {!selectedCustomer.phone && (
+                        <span className="text-[10px] text-amber-600 font-semibold">Tài khoản chưa có SĐT, vui lòng bổ sung</span>
+                      )}
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      pattern="^0\d{9}$"
+                      placeholder="Nhập số điện thoại khách hàng (10 số, ví dụ: 0987654321)..."
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      Số điện thoại này sẽ dùng để gửi thông báo bàn giao, mã PIN mở cửa thông minh và cập nhật vào hồ sơ khách hàng.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="Tìm theo tên, số điện thoại hoặc email khách hàng..."
+                      value={customerSearchKeyword}
+                      onChange={(e) => setCustomerSearchKeyword(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleSearchCustomers(customerSearchKeyword);
+                        }
+                      }}
+                      className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                    />
+                  </div>
+
+                  {customerSearching && (
+                    <div className="p-3 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
+                      <div className="w-3.5 h-3.5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+                      <span>Đang tìm khách hàng...</span>
+                    </div>
+                  )}
+
+                  {customerSearchError && (
+                    <div className="p-3 text-center text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-xl">
+                      {customerSearchError}
+                    </div>
+                  )}
+
+                  {!customerSearching && !customerSearchError && customerSearchResults.length > 0 && (
+                    <div className="max-h-40 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100 bg-white shadow-2xs">
+                      {customerSearchResults.map((cust) => (
+                        <div
+                          key={cust.id}
+                          onClick={() => handleSelectCustomer(cust)}
+                          className="p-2.5 hover:bg-brand-50/40 cursor-pointer flex items-center justify-between text-xs transition-colors"
+                        >
+                          <div>
+                            <span className="font-semibold text-slate-800">{cust.fullName}</span>
+                            <span className="text-slate-500 ml-2 text-[11px]">
+                              {cust.phone ? `(${cust.phone})` : '(Chưa có SĐT)'}
+                            </span>
+                            <div className="text-[11px] text-slate-400">{cust.email}</div>
+                          </div>
+                          <span className="text-[11px] font-bold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-md border border-brand-200/60">
+                            Chọn
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {!customerSearching && !customerSearchError && customerSearchResults.length === 0 && (
+                    <div className="p-3 text-center text-xs text-slate-500 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2">
+                      <p>Không tìm thấy khách hàng nào khớp với từ khóa.</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomerMode('walkin');
+                          if (/^0\d{9}$/.test(customerSearchKeyword.trim())) {
+                            setWalkinPhone(customerSearchKeyword.trim());
+                          } else if (customerSearchKeyword.includes('@')) {
+                            setWalkinEmail(customerSearchKeyword.trim());
+                          } else if (customerSearchKeyword.trim()) {
+                            setWalkinFullName(customerSearchKeyword.trim());
+                          }
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-50 text-brand-700 hover:bg-brand-100 font-bold rounded-lg transition-colors cursor-pointer text-xs"
+                      >
+                        <UserPlus className="w-3.5 h-3.5" />
+                        <span>+ Điền thông tin tạo mới cho khách vãng lai tại quầy</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )
             ) : (
-              <div className="space-y-2">
-                <div className="relative">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              /* TAB 2: Khách vãng lai tại quầy */
+              <div className="p-3.5 bg-teal-50/40 border border-teal-200 rounded-2xl space-y-3">
+                <div className="flex items-center justify-between pb-1 border-b border-teal-100">
+                  <span className="text-xs font-bold text-teal-900 flex items-center gap-1.5">
+                    <UserPlus className="w-3.5 h-3.5 text-teal-600" />
+                    Thông tin khách vãng lai mới tại quầy
+                  </span>
+                  <span className="text-[10px] bg-teal-100 text-teal-800 font-bold px-2 py-0.5 rounded-full">
+                    Tự động tạo tài khoản
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Họ và tên khách hàng <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ví dụ: Lê Thanh Tùng..."
+                      value={walkinFullName}
+                      onChange={(e) => setWalkinFullName(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+                      <span className="flex items-center gap-1">
+                        <Phone className="w-3 h-3 text-brand-600" />
+                        Số điện thoại liên hệ <span className="text-rose-500">*</span>
+                      </span>
+                      <span className="text-[10px] text-slate-400">10 chữ số</span>
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      pattern="^0\d{9}$"
+                      placeholder="Nhập 10 số (ví dụ: 0987654321)..."
+                      value={walkinPhone}
+                      onChange={(e) => setWalkinPhone(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+                    <span className="flex items-center gap-1">
+                      <Mail className="w-3 h-3 text-brand-600" />
+                      Email khách hàng (Tùy chọn)
+                    </span>
+                    <span className="text-[10px] text-slate-400">Tự động sinh theo SĐT nếu để trống</span>
+                  </label>
                   <input
-                    type="text"
-                    placeholder="Tìm theo tên, số điện thoại hoặc email khách hàng..."
-                    value={customerSearchKeyword}
-                    onChange={(e) => setCustomerSearchKeyword(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleSearchCustomers(customerSearchKeyword);
-                      }
-                    }}
-                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                    type="email"
+                    placeholder="Ví dụ: thanhtung@gmail.com (hoặc bỏ trống)..."
+                    value={walkinEmail}
+                    onChange={(e) => setWalkinEmail(e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
                   />
                 </div>
 
-                {customerSearching && (
-                  <div className="p-3 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
-                    <div className="w-3.5 h-3.5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
-                    <span>Đang tìm khách hàng...</span>
-                  </div>
-                )}
-
-                {customerSearchError && (
-                  <div className="p-3 text-center text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-xl">
-                    {customerSearchError}
-                  </div>
-                )}
-
-                {!customerSearching && !customerSearchError && customerSearchResults.length > 0 && (
-                  <div className="max-h-40 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100 bg-white shadow-2xs">
-                    {customerSearchResults.map((cust) => (
-                      <div
-                        key={cust.id}
-                        onClick={() => setSelectedCustomer(cust)}
-                        className="p-2.5 hover:bg-brand-50/40 cursor-pointer flex items-center justify-between text-xs transition-colors"
-                      >
-                        <div>
-                          <span className="font-semibold text-slate-800">{cust.fullName}</span>
-                          <span className="text-slate-500 ml-2 text-[11px]">
-                            {cust.phone ? `(${cust.phone})` : '(Chưa có SĐT)'}
-                          </span>
-                          <div className="text-[11px] text-slate-400">{cust.email}</div>
-                        </div>
-                        <span className="text-[11px] font-bold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-md border border-brand-200/60">
-                          Chọn
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {!customerSearching && !customerSearchError && customerSearchResults.length === 0 && (
-                  <div className="p-3 text-center text-xs text-slate-400 bg-slate-50 rounded-xl">
-                    Không tìm thấy khách hàng. Vui lòng kiểm tra từ khóa tìm kiếm.
-                  </div>
-                )}
+                <p className="text-[10px] text-slate-500 leading-relaxed">
+                  Hệ thống sẽ tự động tạo hồ sơ khách hàng, gán quyền truy cập kho và gửi thông tin mã PIN mở khóa 24/7 tới số điện thoại này.
+                </p>
               </div>
             )}
           </div>

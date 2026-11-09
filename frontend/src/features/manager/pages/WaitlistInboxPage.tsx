@@ -47,6 +47,7 @@ export const WaitlistInboxPage: React.FC = () => {
   const [directStartDate, setDirectStartDate] = useState<string>('');
   const [directMonths, setDirectMonths] = useState<number>(1);
   const [directPaymentMethod, setDirectPaymentMethod] = useState<string>('CASH');
+  const [directCustomerPhone, setDirectCustomerPhone] = useState<string>('');
   const [directNotes, setDirectNotes] = useState<string>('');
 
   // Rescue Modal State (409 Conflict)
@@ -176,6 +177,7 @@ export const WaitlistInboxPage: React.FC = () => {
     setDirectStartDate(initialStart);
     setDirectMonths(item.rentalMonths || 1);
     setDirectPaymentMethod('CASH');
+    setDirectCustomerPhone(item.contactPhone || item.customerPhone || '');
     setDirectNotes(item.contactNotes || '');
   };
 
@@ -188,6 +190,7 @@ export const WaitlistInboxPage: React.FC = () => {
         startDate: directStartDate,
         rentalMonths: directMonths,
         paymentMethod: directPaymentMethod,
+        customerPhone: directCustomerPhone.trim() || undefined,
         notes: directNotes || undefined,
       });
       showToast('Tạo hợp đồng trực tiếp thành công!', 'success');
@@ -719,6 +722,22 @@ export const WaitlistInboxPage: React.FC = () => {
                   <option value="CASH">Tiền mặt tại quầy (CASH)</option>
                   <option value="BANK_TRANSFER">Chuyển khoản trực tiếp (BANK_TRANSFER)</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-700 flex justify-between">
+                  <span>Số điện thoại liên hệ</span>
+                  {!directCustomerPhone && <span className="text-[10px] text-red-500 font-semibold">* Bắt buộc</span>}
+                </label>
+                <input
+                  type="tel"
+                  pattern="^0\d{9}$"
+                  required
+                  placeholder="Nhập số điện thoại khách (10 số, ví dụ: 0987654321)..."
+                  value={directCustomerPhone}
+                  onChange={(e) => setDirectCustomerPhone(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none"
+                />
               </div>
 
               <div>

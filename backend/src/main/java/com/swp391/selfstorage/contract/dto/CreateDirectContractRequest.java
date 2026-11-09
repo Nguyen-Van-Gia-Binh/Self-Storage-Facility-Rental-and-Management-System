@@ -17,8 +17,25 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class CreateDirectContractRequest {
 
-    @NotNull(message = "Mã khách hàng không được để trống")
+    /**
+     * ID khách hàng (nếu đã có tài khoản trên hệ thống)
+     */
     private Long customerId;
+
+    /**
+     * Họ tên khách hàng (nếu khách vãng lai hoặc cập nhật hồ sơ)
+     */
+    private String customerFullName;
+
+    /**
+     * Email khách hàng (nếu khách vãng lai)
+     */
+    private String customerEmail;
+
+    /**
+     * Số điện thoại liên hệ của khách hàng (bổ sung/cập nhật nếu tài khoản chưa có)
+     */
+    private String customerPhone;
 
     @NotNull(message = "Mã cơ sở không được để trống")
     private Long facilityId;

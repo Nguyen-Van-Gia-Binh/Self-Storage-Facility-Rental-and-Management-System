@@ -325,8 +325,13 @@ public class WaitlistServiceImpl implements WaitlistService {
             throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR, "Dịch vụ hợp đồng chưa sẵn sàng");
         }
 
+        String phone = (request != null && request.getCustomerPhone() != null && !request.getCustomerPhone().isBlank())
+                ? request.getCustomerPhone().trim()
+                : waitlist.getContactPhone();
+
         CreateDirectContractRequest directRequest = CreateDirectContractRequest.builder()
                 .customerId(waitlist.getCustomerId())
+                .customerPhone(phone)
                 .facilityId(waitlist.getFacilityId())
                 .unitTypeId(waitlist.getUnitTypeId())
                 .storageUnitId(request != null ? request.getStorageUnitId() : null)

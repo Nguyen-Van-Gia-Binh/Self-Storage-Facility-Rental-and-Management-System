@@ -55,6 +55,7 @@ export interface ConvertWaitlistToContractRequest {
   rentalMonths?: number;
   storageUnitId?: number;
   paymentMethod?: string;
+  customerPhone?: string;
   notes?: string;
 }
 

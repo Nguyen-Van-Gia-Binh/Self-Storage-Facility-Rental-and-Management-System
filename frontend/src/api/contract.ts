@@ -583,7 +583,10 @@ export async function approveSettlementRefund(
 }
 
 export interface CreateDirectContractRequest {
-  customerId: number;
+  customerId?: number;
+  customerFullName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
   facilityId: number;
   unitTypeId: number;
   storageUnitId?: number;

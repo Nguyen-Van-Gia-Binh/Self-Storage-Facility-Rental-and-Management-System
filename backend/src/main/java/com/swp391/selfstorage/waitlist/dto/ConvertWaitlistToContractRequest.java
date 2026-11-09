@@ -41,6 +41,11 @@ public class ConvertWaitlistToContractRequest {
     private String paymentMethod = "CASH";
 
     /**
+     * Số điện thoại liên hệ của khách hàng (bổ sung/cập nhật nếu cần)
+     */
+    private String customerPhone;
+
+    /**
      * Ghi chú tư vấn / thỏa thuận
      */
     private String notes;

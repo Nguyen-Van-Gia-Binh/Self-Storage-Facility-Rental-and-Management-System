@@ -56,6 +56,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -109,6 +110,9 @@ public class ContractServiceImpl implements ContractService {
 
         @Autowired(required = false)
         private UserRepository userRepository;
+
+        @Autowired(required = false)
+        private PasswordEncoder passwordEncoder;
 
         @Autowired(required = false)
         private UserFacilityAssignmentRepository userFacilityAssignmentRepository;
@@ -2713,10 +2717,10 @@ public class ContractServiceImpl implements ContractService {
                         }
                 }
 
-                // 2. Kiểm tra khách hàng tồn tại
-                if (userRepository != null) {
-                        userRepository.findById(request.getCustomerId())
-                                        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "Không tìm thấy khách hàng với ID: " + request.getCustomerId()));
+                // 2. Xác định hoặc khởi tạo khách hàng
+                final Long customerId = resolveOrRegisterCustomerId(request);
+                if (customerId == null) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Không thể xác định thông tin khách hàng");
                 }
 
                 // 3. Kiểm tra cơ sở hoạt động
@@ -2798,7 +2802,7 @@ public class ContractServiceImpl implements ContractService {
                 int randomSuffix = ThreadLocalRandom.current().nextInt(1000, 9999);
                 Reservation reservation = new Reservation();
                 reservation.setCode("RSV-" + datePart + "-" + randomSuffix);
-                reservation.setCustomerId(request.getCustomerId());
+                reservation.setCustomerId(customerId);
                 reservation.setFacilityId(request.getFacilityId());
                 reservation.setUnitTypeId(request.getUnitTypeId());
                 reservation.setStorageUnitId(request.getStorageUnitId());
@@ -2812,6 +2816,8 @@ public class ContractServiceImpl implements ContractService {
                 reservation.setTotalRentalFee(rawRent);
                 reservation.setTotalPayable(totalPayable);
                 reservation.setStatus(ReservationStatus.CONFIRMED);
+                reservation.setHoldExpiresAt(OffsetDateTime.now(ZoneOffset.UTC).plusDays(2));
+                reservation.setConfirmedAt(OffsetDateTime.now(ZoneOffset.UTC));
                 Reservation savedReservation = reservationRepository.save(reservation);
 
                 // 8. Tạo giao dịch PaymentTransaction đã ghi nhận thanh toán cọc tại quầy
@@ -2833,7 +2839,7 @@ public class ContractServiceImpl implements ContractService {
                 RentalContract contract = RentalContract.builder()
                                 .code(contractCode)
                                 .reservationId(savedReservation.getId())
-                                .customerId(request.getCustomerId())
+                                .customerId(customerId)
                                 .facilityId(request.getFacilityId())
                                 .unitTypeId(request.getUnitTypeId())
                                 .storageUnitId(request.getStorageUnitId())
@@ -2875,9 +2881,71 @@ public class ContractServiceImpl implements ContractService {
                 }
 
                 log.info("Created direct contract id={}, code={}, customerId={}, facilityId={}, startDate={}",
-                                savedContract.getId(), savedContract.getCode(), request.getCustomerId(), request.getFacilityId(), startDate);
+                                savedContract.getId(), savedContract.getCode(), customerId, request.getFacilityId(), startDate);
 
                 return toResponse(savedContract);
+        }
+
+        private Long resolveOrRegisterCustomerId(CreateDirectContractRequest request) {
+                Long customerId = request.getCustomerId();
+                if (customerId != null) {
+                        if (userRepository != null) {
+                                AppUser customer = userRepository.findById(customerId)
+                                                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "Không tìm thấy khách hàng với ID: " + request.getCustomerId()));
+                                if (request.getCustomerPhone() != null && !request.getCustomerPhone().isBlank()) {
+                                        customer.setPhone(request.getCustomerPhone().trim());
+                                }
+                                if (request.getCustomerFullName() != null && !request.getCustomerFullName().isBlank()
+                                                && (customer.getFullName() == null || customer.getFullName().isBlank())) {
+                                        customer.setFullName(request.getCustomerFullName().trim());
+                                }
+                                userRepository.save(customer);
+                        }
+                        return customerId;
+                }
+
+                // Khách vãng lai đến quầy hoặc tìm qua email / SĐT
+                String email = request.getCustomerEmail() != null ? request.getCustomerEmail().trim().toLowerCase() : null;
+                String phone = request.getCustomerPhone() != null ? request.getCustomerPhone().trim() : null;
+                String fullName = (request.getCustomerFullName() != null && !request.getCustomerFullName().isBlank())
+                                ? request.getCustomerFullName().trim()
+                                : "Khách hàng tại quầy";
+
+                if ((email == null || email.isBlank()) && (phone == null || phone.isBlank())) {
+                        throw new CustomException(ErrorCode.VALIDATION_FAILED, "Vui lòng chọn khách hàng hoặc cung cấp số điện thoại / email của khách");
+                }
+
+                if (userRepository != null) {
+                        AppUser existing = null;
+                        if (email != null && !email.isBlank()) {
+                                existing = userRepository.findByEmail(email).orElse(null);
+                        }
+                        if (existing == null && phone != null && !phone.isBlank()) {
+                                existing = userRepository.findFirstByPhone(phone).orElse(null);
+                        }
+
+                        if (existing != null) {
+                                if (phone != null && !phone.isBlank() && (existing.getPhone() == null || existing.getPhone().isBlank())) {
+                                        existing.setPhone(phone);
+                                }
+                                if (fullName != null && !fullName.isBlank() && ("Khách hàng tại quầy".equals(existing.getFullName()) || existing.getFullName() == null)) {
+                                        existing.setFullName(fullName);
+                                }
+                                existing = userRepository.save(existing);
+                                return existing.getId();
+                        } else {
+                                if (email == null || email.isBlank()) {
+                                        email = "khachhang." + (phone != null ? phone : System.currentTimeMillis()) + "@smartstorage.vn";
+                                }
+                                String encodedPass = (passwordEncoder != null)
+                                                ? passwordEncoder.encode(java.util.UUID.randomUUID().toString())
+                                                : "{noop}secret";
+                                AppUser newUser = new AppUser(email, encodedPass, fullName, phone, null, UserRole.STORAGE_CUSTOMER, UserStatus.ACTIVE);
+                                newUser = userRepository.save(newUser);
+                                return newUser.getId();
+                        }
+                }
+                return null;
         }
 
         private long lookupMonthlyPriceDirect(Long facilityId, Long unitTypeId) {
