@@ -56,7 +56,7 @@ export const BomKpiSummary: React.FC<BomKpiSummaryProps> = ({
           </div>
           <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
             <span className="text-rose-600 font-semibold font-mono">
-              Tiền ra: -{formatCurrency(refundAmount)}
+              Tiền ra: {refundAmount > 0 ? '-' : ''}{formatCurrency(refundAmount)}
             </span>
             <span className="text-emerald-700 font-bold font-mono">
               Ròng: {formatCurrency(Math.max(0, totalRev - refundAmount))}

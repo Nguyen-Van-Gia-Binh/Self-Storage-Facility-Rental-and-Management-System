@@ -12,6 +12,12 @@ function asMoney(value: unknown): number {
   return Number.isFinite(amount) ? amount : 0;
 }
 
+function asRate(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const amount = Number(value);
+  return Number.isFinite(amount) ? amount : null;
+}
+
 /**
  * Backend ApiResponse dùng `status` + `data` (không có `success`).
  * Cũng chấp nhận payload đã là body thuần hoặc mock có `success`.
@@ -104,13 +110,13 @@ function normalizeOccupancyReport(raw: SystemOccupancyReport & {
   const rows = Array.isArray(rowsCandidate) ? rowsCandidate : [];
   return {
     month: raw?.month || month || '',
-    averageOccupancyRate: asMoney(raw?.averageOccupancyRate ?? raw?.overallOccupancyRate),
+    averageOccupancyRate: asRate(raw?.averageOccupancyRate ?? raw?.overallOccupancyRate),
     totalUnitsSystem: asMoney(raw?.totalUnitsSystem ?? raw?.totalUnits),
     occupiedUnitsSystem: asMoney(raw?.occupiedUnitsSystem ?? raw?.totalOccupiedUnits),
     availableUnitsSystem: asMoney(raw?.availableUnitsSystem ?? raw?.totalAvailableUnits),
     data: rows.map((item) => ({
       ...item,
-      occupancyRate: asMoney(item.occupancyRate),
+      occupancyRate: asRate(item.occupancyRate),
       availableUnits: asMoney(item.availableUnits),
       reservedUnits: asMoney(item.reservedUnits),
       occupiedUnits: asMoney(item.occupiedUnits),

@@ -51,15 +51,17 @@ export const OccupancyComparisonChart: React.FC<OccupancyComparisonChartProps> =
 
         // Filter: Chỉ xem cơ sở dưới chỉ tiêu (< 50%)
         if (filterUnderTarget) {
-          if (item.occupancyRate >= 0.5) return false;
+          if ((item.occupancyRate ?? 0) >= 0.5) return false;
         }
 
         return true;
       })
       .sort((a, b) => {
+        const rateA = a.occupancyRate ?? 0;
+        const rateB = b.occupancyRate ?? 0;
         return sortOrder === 'desc'
-          ? b.occupancyRate - a.occupancyRate
-          : a.occupancyRate - b.occupancyRate;
+          ? rateB - rateA
+          : rateA - rateB;
       });
   }, [data, searchQuery, hideZeroOccupancy, filterUnderTarget, sortOrder]);
 
@@ -253,10 +255,11 @@ export const OccupancyComparisonChart: React.FC<OccupancyComparisonChartProps> =
         ) : (
           filteredData.map((item) => {
             const exploitableUnits = Math.max(0, item.totalUnits - (item.outOfServiceUnits || 0));
-            const rateUnknown = exploitableUnits === 0;
-            const ratePercent = rateUnknown ? 0 : Math.min(item.occupancyRate * 100, 100);
+            const rateUnknown = item.occupancyRate == null || exploitableUnits === 0;
+            const rate = item.occupancyRate ?? 0;
+            const ratePercent = rateUnknown ? 0 : Math.min(rate * 100, 100);
             const { textColor, barColor, isAlarm, isExemplary } = getRateColorMeta(
-              item.occupancyRate,
+              rate,
               rateUnknown
             );
 

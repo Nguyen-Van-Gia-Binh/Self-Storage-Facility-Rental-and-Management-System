@@ -6,6 +6,7 @@ import {
   Building2,
   FileSpreadsheet,
   FilterX,
+  ReceiptText,
 } from 'lucide-react';
 import type {
   ReportFilterParams,
@@ -30,6 +31,7 @@ import { OccupancyComparisonChart } from '../components/OccupancyComparisonChart
 import { FacilityPerformanceTable } from '../components/FacilityPerformanceTable';
 import { FacilityPerformanceDrawer, type FacilityPerformanceData } from '../components/FacilityPerformanceDrawer';
 import { OverdueContractsTable } from '../components/OverdueContractsTable';
+import { TransactionHistoryTable } from '../components/TransactionHistoryTable';
 import { ReportExportModal } from '../components/ReportExportModal';
 import { ExecutivePrintReport } from '../components/ExecutivePrintReport';
 
@@ -63,7 +65,7 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
   const [facilities, setFacilities] = useState<FacilityListItem[]>([]);
   const [filters, setFilters] = useState<ReportFilterParams>(defaultLast30DaysFilter);
 
-  const [activeTab, setActiveTab] = useState<'REVENUE' | 'OCCUPANCY' | 'OVERDUE'>('REVENUE');
+  const [activeTab, setActiveTab] = useState<'REVENUE' | 'OCCUPANCY' | 'OVERDUE' | 'TRANSACTIONS'>('REVENUE');
   const [revenueData, setRevenueData] = useState<SystemRevenueReport | undefined>();
   const [occupancyData, setOccupancyData] = useState<SystemOccupancyReport | undefined>();
   const [overdueData, setOverdueData] = useState<OverdueReportResponse | undefined>();
@@ -276,6 +278,11 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
               icon: AlertTriangle,
               badge: overdueData?.totalOverdueContracts || 0,
             },
+            {
+              id: 'TRANSACTIONS',
+              label: 'Lịch sử giao dịch',
+              icon: ReceiptText,
+            },
           ].map((tab) => {
             const isActive = activeTab === tab.id;
             const Icon = tab.icon;
@@ -283,7 +290,7 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setActiveTab(tab.id as 'REVENUE' | 'OCCUPANCY' | 'OVERDUE')}
+                onClick={() => setActiveTab(tab.id as typeof activeTab)}
                 className={`flex items-center gap-2 py-3 px-1 text-xs sm:text-sm font-semibold border-b-2 transition-all cursor-pointer ${
                   isActive
                     ? 'border-brand-500 text-brand-600'
@@ -363,6 +370,15 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
               isLoading={isLoading}
             />
           </div>
+        )}
+
+        {activeTab === 'TRANSACTIONS' && (
+          <TransactionHistoryTable
+            key={`${filters.from}|${filters.to}|${filters.facilityId ?? ''}`}
+            from={filters.from}
+            to={filters.to}
+            facilityId={filters.facilityId}
+          />
         )}
       </div>
 

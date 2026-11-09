@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useId, useState, useMemo } from 'react';
 import {
   Users,
   Shield,
@@ -59,6 +59,66 @@ const ROLE_BADGES: Record<UserRoleType, { label: string; bg: string; text: strin
 
 interface AdminUsersPageProps {
   defaultRoleFilter?: string;
+}
+
+const VISIBLE_FACILITY_COUNT = 2;
+
+interface AssignedFacilityLabel {
+  id: number;
+  name: string;
+  inactive: boolean;
+}
+
+function facilityLabel(item: AssignedFacilityLabel): string {
+  return item.inactive ? `${item.name} (Tạm dừng)` : item.name;
+}
+
+function AssignedFacilitiesCell({ items }: { items: AssignedFacilityLabel[] }) {
+  const [open, setOpen] = useState(false);
+  const listId = useId();
+  const visible = items.slice(0, VISIBLE_FACILITY_COUNT);
+  const rest = items.slice(VISIBLE_FACILITY_COUNT);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open]);
+
+  return (
+    <div className="max-w-xs text-xs leading-5 text-slate-700">
+      <p>
+        {visible.map((item, index) => (
+          <React.Fragment key={item.id}>
+            {index > 0 ? ', ' : null}
+            {facilityLabel(item)}
+          </React.Fragment>
+        ))}
+        {rest.length > 0 && (
+          <>
+            {' '}
+            <button
+              type="button"
+              className="inline font-medium text-slate-800 underline decoration-slate-300 underline-offset-2 hover:decoration-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 rounded-sm"
+              aria-expanded={open}
+              aria-controls={listId}
+              onClick={() => setOpen((value) => !value)}
+            >
+              +{rest.length} cơ sở
+            </button>
+          </>
+        )}
+      </p>
+      {open && rest.length > 0 && (
+        <p id={listId} className="mt-1 text-slate-600">
+          {rest.map((item) => facilityLabel(item)).join(', ')}
+        </p>
+      )}
+    </div>
+  );
 }
 
 export const AdminUsersPage: React.FC<AdminUsersPageProps> = ({ defaultRoleFilter }) => {
@@ -355,20 +415,6 @@ export const AdminUsersPage: React.FC<AdminUsersPageProps> = ({ defaultRoleFilte
             <option value="ACTIVE">Đang hoạt động</option>
             <option value="INACTIVE">Đã khóa / Vô hiệu</option>
           </select>
-
-          {(selectedRole !== 'ALL' || selectedStatus !== 'ALL' || searchKeyword) && (
-            <button
-              onClick={() => {
-                setSelectedRole('ALL');
-                setSelectedStatus('ALL');
-                setSearchKeyword('');
-                setCurrentPage(0);
-              }}
-              className="text-xs text-amber-600 hover:text-amber-700 underline font-medium px-1"
-            >
-              Đặt lại
-            </button>
-          )}
         </div>
       </div>
 
@@ -465,30 +511,18 @@ export const AdminUsersPage: React.FC<AdminUsersPageProps> = ({ defaultRoleFilte
                       <td className="py-3.5 px-4">
                         {isStaffOrManager ? (
                           user.facilityIds && user.facilityIds.length > 0 ? (
-                            <div className="flex flex-wrap gap-1 max-w-xs">
-                              {user.facilityIds
+                            <AssignedFacilitiesCell
+                              items={user.facilityIds
                                 .filter((fId) => facilityMap.has(fId))
                                 .map((fId) => {
                                   const facility = facilities.find((f) => f.id === fId);
-                                  const isInactive = facility && !facility.isActive;
-                                  return (
-                                    <span
-                                      key={fId}
-                                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium border ${
-                                        isInactive
-                                          ? 'bg-slate-50 text-slate-500 border-slate-200'
-                                          : 'bg-blue-50 text-blue-700 border-blue-200'
-                                      }`}
-                                    >
-                                      <Building2 className={`w-3 h-3 ${isInactive ? 'text-slate-400' : 'text-blue-500'}`} />
-                                      <span>
-                                        {facilityMap.get(fId)}
-                                        {isInactive ? ' (Tạm dừng)' : ''}
-                                      </span>
-                                    </span>
-                                  );
+                                  return {
+                                    id: fId,
+                                    name: facilityMap.get(fId) ?? '',
+                                    inactive: Boolean(facility && !facility.isActive),
+                                  };
                                 })}
-                            </div>
+                            />
                           ) : (
                             <span className="text-xs text-rose-500 italic flex items-center gap-1">
                               <AlertCircle className="w-3.5 h-3.5" />

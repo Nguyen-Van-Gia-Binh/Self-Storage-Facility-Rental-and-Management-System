@@ -46,6 +46,46 @@ export interface PaymentStatusResult {
   transactionRef?: string;
 }
 
+export interface PaymentHistoryItem {
+  id: number;
+  referenceType: string;
+  referenceId: number;
+  amount: number;
+  method: string;
+  status: string;
+  orderCode?: number;
+  transactionRef?: string;
+  paidAt?: string;
+  createdAt?: string;
+  facilityName?: string;
+  customerName?: string;
+}
+
+export interface PaymentHistoryPage {
+  content: PaymentHistoryItem[];
+  page: number;
+  totalElements: number;
+  totalPages: number;
+}
+
+/**
+ * Lịch sử giao dịch toàn hệ thống cho BOM (GET /payments)
+ */
+export async function getPaymentHistory(params: {
+  from?: string;
+  to?: string;
+  facilityId?: number;
+  page: number;
+  size?: number;
+}): Promise<PaymentHistoryPage> {
+  const query = new URLSearchParams({ page: String(params.page), size: String(params.size ?? 20) });
+  if (params.from) query.append('from', params.from);
+  if (params.to) query.append('to', params.to);
+  if (params.facilityId != null) query.append('facilityId', String(params.facilityId));
+  const res = await apiClient<PaymentHistoryPage | { data: PaymentHistoryPage }>(`/payments?${query.toString()}`);
+  return 'data' in res ? res.data : res;
+}
+
 /**
  * Lấy danh sách giao dịch từ localStorage (hoặc mảng rỗng)
  */

@@ -50,7 +50,7 @@ export interface FacilityOccupancyItem {
   facilityId: number;
   facilityName: string;
   month: string; // YYYY-MM
-  occupancyRate: number; // 0.0 -> 1.0 (ví dụ 0.784 = 78.4%)
+  occupancyRate: number | null; // null khi không có ô khai thác (US-BM-04.2 AC-4)
   availableUnits: number;
   reservedUnits: number;
   occupiedUnits: number;
@@ -63,7 +63,7 @@ export interface FacilityOccupancyItem {
 
 export interface SystemOccupancyReport {
   month: string;
-  averageOccupancyRate: number;
+  averageOccupancyRate: number | null;
   totalUnitsSystem: number;
   occupiedUnitsSystem: number;
   availableUnitsSystem: number;

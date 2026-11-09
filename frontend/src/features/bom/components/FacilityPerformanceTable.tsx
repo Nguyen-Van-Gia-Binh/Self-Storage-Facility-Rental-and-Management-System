@@ -129,8 +129,8 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
           bVal = b.totalRevenue;
           break;
         case 'occupancyRate':
-          aVal = a.occupancyRate;
-          bVal = b.occupancyRate;
+          aVal = a.occupancyRate ?? -1;
+          bVal = b.occupancyRate ?? -1;
           break;
       }
 
@@ -343,7 +343,7 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
             ) : (
               sortedRows.map((row) => {
                 const exploitableUnits = exploitableOf(row);
-                const rateUnknown = exploitableUnits === 0;
+                const rateUnknown = row.occupancyRate == null || exploitableUnits === 0;
 
                 return (
                   <tr
@@ -408,18 +408,18 @@ export const FacilityPerformanceTable: React.FC<FacilityPerformanceTableProps> =
                     {/* Cột 6: Tỷ lệ lấp đầy (Semantic text colors) */}
                     <td className="py-3 px-3 text-center font-mono tabular-nums text-xs">
                       {rateUnknown ? (
-                        <span className="text-slate-400 font-normal">N/A</span>
+                        <span className="text-slate-400 font-normal">Không xác định</span>
                       ) : (
                         <span
                           className={
-                            row.occupancyRate < 0.3
+                            (row.occupancyRate ?? 0) < 0.3
                               ? 'text-rose-600 font-bold'
-                              : row.occupancyRate <= 0.7
+                              : (row.occupancyRate ?? 0) <= 0.7
                               ? 'text-amber-600 font-bold'
                               : 'text-emerald-600 font-bold'
                           }
                         >
-                          {formatPercent(row.occupancyRate)}
+                          {formatPercent(row.occupancyRate ?? 0)}
                         </span>
                       )}
                     </td>
