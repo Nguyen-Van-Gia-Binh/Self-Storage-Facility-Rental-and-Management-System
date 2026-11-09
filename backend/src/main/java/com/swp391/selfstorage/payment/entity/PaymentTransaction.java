@@ -14,6 +14,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.Instant;
 import java.time.LocalDate;
 
 @Entity
@@ -60,4 +61,8 @@ public class PaymentTransaction extends BaseEntity {
     /** Ngày bắt đầu mới khi khách dời lịch nhận kho (RESCHEDULE_FEE). */
     @Column(name = "rescheduled_start_date")
     private LocalDate rescheduledStartDate;
+
+    /** Thời điểm tiền vào hoặc hoàn ra. Null khi checkout còn PENDING. */
+    @Column(name = "paid_at")
+    private Instant paidAt;
 }

@@ -20,6 +20,8 @@ import com.swp391.selfstorage.contract.entity.RentalContract;
 import com.swp391.selfstorage.contract.mapper.RenewalMapper;
 import com.swp391.selfstorage.contract.repository.ContractRenewalRepository;
 import com.swp391.selfstorage.contract.repository.RentalContractRepository;
+import com.swp391.selfstorage.payment.entity.PaymentTransaction;
+import com.swp391.selfstorage.payment.repository.PaymentTransactionRepository;
 import com.swp391.selfstorage.contract.service.RenewalService;
 import com.swp391.selfstorage.policy.dto.PolicyResponse;
 import com.swp391.selfstorage.policy.service.PolicyService;
@@ -45,6 +47,7 @@ public class RenewalServiceImpl implements RenewalService {
     private final PolicyService policyService;
     private final RenewalMapper renewalMapper;
     private final UnitTypeRepository unitTypeRepository;
+    private final PaymentTransactionRepository paymentTransactionRepository;
 
     @Autowired(required = false)
     private AppliedPriceLookup appliedPriceLookup;
@@ -125,32 +128,41 @@ public class RenewalServiceImpl implements RenewalService {
             }
         }
 
-        RenewalQuoteResponse quote = getRenewalQuote(contractId, request);
-        RentalContract contract = rentalContractRepository.findById(contractId)
-                .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
+        // shortcut: callback không kiểm tra trùng chỗ lại, checkout đã chặn; kiểm tra lại khi gia hạn có thể mất chỗ sau khi đã trả tiền
+        if (paymentTransactionId == null) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED, "Thiếu giao dịch thanh toán gia hạn");
+        }
+        PaymentTransaction payment = paymentTransactionRepository.findById(paymentTransactionId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
+        RentalContract contract = getValidContractForRenewal(contractId);
+        int months = payment.getRenewalMonths() != null && payment.getRenewalMonths() > 0
+                ? payment.getRenewalMonths()
+                : request.getRenewalMonths();
+        long paid = payment.getAmount() == null ? 0L : payment.getAmount();
+        long monthly = months > 0 ? paid / months : paid;
 
-        // 1. Cập nhật thông tin Hợp đồng
-        contract.setEndDateExclusive(quote.getNewEndDate());
-        contract.setRentalMonths(contract.getRentalMonths() + quote.getRenewalMonths());
+        LocalDate previousEnd = contract.getEndDateExclusive();
+        LocalDate newEnd = previousEnd.plusMonths(months);
+        contract.setEndDateExclusive(newEnd);
+        contract.setRentalMonths(contract.getRentalMonths() + months);
 
-        // Nếu hợp đồng đang quá hạn, khôi phục lại ACTIVE và xóa nợ phạt (BR-REN-06)
         if (contract.getStatus() == ContractStatus.OVERDUE) {
             contract.setStatus(ContractStatus.ACTIVE);
             contract.setOverdueFeeAccrued(0L);
         }
         rentalContractRepository.save(contract);
 
-        // 2. Lưu bản ghi lịch sử gia hạn ContractRenewal
+        long policyVersionId = contract.getPolicyVersionId() == null ? 1L : contract.getPolicyVersionId();
         ContractRenewal renewal = renewalMapper.toEntity(
                 contractId,
-                quote.getPreviousEndDate(),
-                quote.getNewEndDate(),
-                quote.getRenewalMonths(),
-                quote.getMonthlyPriceSnapshot(),
-                quote.getPolicyVersionId(),
-                quote.getOverdueFeeSettled(),
-                quote.getRentalFeeAmount(),
-                quote.getTotalAmount(),
+                previousEnd,
+                newEnd,
+                months,
+                monthly,
+                policyVersionId,
+                0L,
+                paid,
+                paid,
                 paymentTransactionId);
         ContractRenewal savedRenewal = contractRenewalRepository.save(renewal);
 

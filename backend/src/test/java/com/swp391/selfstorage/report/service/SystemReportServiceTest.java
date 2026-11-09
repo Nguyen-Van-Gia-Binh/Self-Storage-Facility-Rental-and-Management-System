@@ -4,8 +4,10 @@ import com.swp391.selfstorage.auth.service.UserPrincipal;
 import com.swp391.selfstorage.common.dto.PageResponse;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
+import com.swp391.selfstorage.contract.entity.ContractRenewal;
 import com.swp391.selfstorage.contract.entity.ContractStatus;
 import com.swp391.selfstorage.contract.entity.RentalContract;
+import com.swp391.selfstorage.contract.repository.ContractRenewalRepository;
 import com.swp391.selfstorage.contract.repository.RentalContractRepository;
 import com.swp391.selfstorage.facility.entity.Facility;
 import com.swp391.selfstorage.facility.entity.FacilityStatus;
@@ -62,6 +64,9 @@ class SystemReportServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private ContractRenewalRepository contractRenewalRepository;
 
     @InjectMocks
     private SystemReportServiceImpl systemReportService;
@@ -157,6 +162,12 @@ class SystemReportServiceTest {
 
         long sumByFacility = report.getByFacility().stream().mapToLong(f -> f.getRevenue()).sum();
         assertEquals(report.getTotalRevenue(), sumByFacility);
+
+        assertNotNull(report.getMonthlyTrends());
+        assertEquals(12, report.getMonthlyTrends().size());
+        assertEquals("2026-10", report.getMonthlyTrends().get(11).getMonth());
+        assertEquals("T10/26", report.getMonthlyTrends().get(11).getMonthLabel());
+        assertEquals(13_200_000L, report.getMonthlyTrends().get(11).getCashFlow());
     }
 
     @Test
@@ -190,12 +201,12 @@ class SystemReportServiceTest {
 
         SystemRevenueReportResponse report = systemReportService.getSystemRevenueReport(from, to, null);
 
-        assertEquals(3_000_000L, report.getRentalRevenue());
+        assertEquals(2_800_000L, report.getRentalRevenue());
         assertEquals(1_000_000L, report.getDepositBalance());
         assertEquals(3_000_000L, report.getRenewalRevenue());
         assertEquals(100_000L, report.getOverdueFeeRevenue());
         assertEquals(200_000L, report.getTotalRefundAmount());
-        assertEquals(6_100_000L, report.getTotalRevenue());
+        assertEquals(5_900_000L, report.getTotalRevenue());
     }
 
     @Test
@@ -395,8 +406,8 @@ class SystemReportServiceTest {
         SystemOccupancyReportResponse report = systemReportService.getSystemOccupancyReport(null);
 
         assertNotNull(report);
-        assertEquals(0.0, report.getOverallOccupancyRate());
-        assertEquals(0.0, report.getFacilities().get(0).getOccupancyRate());
+        assertNull(report.getOverallOccupancyRate());
+        assertNull(report.getFacilities().get(0).getOccupancyRate());
         assertEquals(2, report.getFacilities().get(0).getOutOfServiceUnits());
     }
 
@@ -638,5 +649,114 @@ class SystemReportServiceTest {
         assertEquals(40_000_000L, report.getTotalDepositLiability(),
                 "30tr đang giữ + 10tr PENDING_REFUND chưa chuyển khoản vẫn là Nợ phải trả (40tr)");
         assertEquals(0L, report.getTotalRevenue(), "Tuyệt đối không cộng tiền cọc vào Doanh thu");
+    }
+
+    @Test
+    @DisplayName("MRR sau gia hạn lấy snapshot tháng, không chia tổng tiền thuê cho số tháng đã cộng dồn")
+    void mrrAfterRenewalUsesMonthlySnapshot() {
+        when(facilityRepository.findAll()).thenReturn(List.of(facility1));
+        RentalContract contract = RentalContract.builder()
+                .id(801L)
+                .facilityId(1L)
+                .status(ContractStatus.ACTIVE)
+                .rentalMonths(6)
+                .monthlyPrice(1_000_000L)
+                .totalRentalFee(3_000_000L)
+                .depositAmount(0L)
+                .build();
+        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(List.of(contract));
+        when(contractRenewalRepository.findTopByContractIdOrderByCreatedAtDesc(801L))
+                .thenReturn(Optional.of(ContractRenewal.builder()
+                        .contractId(801L)
+                        .monthlyPriceSnapshot(1_000_000L)
+                        .build()));
+
+        SystemRevenueReportResponse report = systemReportService.getSystemRevenueReport(
+                LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 31), null);
+
+        assertEquals(1_000_000L, report.getMrr());
+    }
+
+    @Test
+    @DisplayName("§14 hủy 26/09: doanh thu thuê 400_000, cọc mất 400_000, REFUND_FAILED không tính, nợ hoàn chỉ phần cọc")
+    void cancelRefundBooksForfeitedDepositAndIgnoresFailedRefund() {
+        when(facilityRepository.findAll()).thenReturn(List.of(facility1));
+        RentalContract contract = RentalContract.builder()
+                .id(901L)
+                .facilityId(1L)
+                .status(ContractStatus.CANCELLED)
+                .totalRentalFee(2_400_000L)
+                .depositAmount(800_000L)
+                .depositBalance(0L)
+                .build();
+        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(List.of(contract));
+
+        PaymentTransaction paid = PaymentTransaction.builder()
+                .id(91L).contractId(901L).amount(3_200_000L)
+                .transactionType("INITIAL_PAYMENT").status("SUCCESS").build();
+        paid.setPaidAt(java.time.Instant.parse("2026-09-20T03:00:00Z"));
+        PaymentTransaction refund = PaymentTransaction.builder()
+                .id(92L).contractId(901L).amount(2_800_000L)
+                .transactionType("REFUND").status("PENDING_REFUND").build();
+        refund.setPaidAt(java.time.Instant.parse("2026-09-26T03:00:00Z"));
+        PaymentTransaction failed = PaymentTransaction.builder()
+                .id(93L).contractId(901L).amount(9_000_000L)
+                .transactionType("REFUND").status("REFUND_FAILED").build();
+        failed.setPaidAt(java.time.Instant.parse("2026-09-26T04:00:00Z"));
+        when(paymentTransactionRepository.findByContractId(901L)).thenReturn(List.of(paid, refund, failed));
+
+        SystemRevenueReportResponse report = systemReportService.getSystemRevenueReport(
+                LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30), null);
+
+        assertEquals(400_000L, report.getRentalRevenue());
+        assertEquals(400_000L, report.getForfeitedDeposit());
+        assertEquals(2_800_000L, report.getTotalRefundAmount());
+        assertEquals(400_000L, report.getTotalDepositLiability());
+    }
+
+    @Test
+    @DisplayName("Nợ quá hạn sau khi đóng phạt là 0, không fallback về giá tháng")
+    void overdueDebtIsZeroAfterPenaltyPaid() {
+        LocalDate today = LocalDate.now();
+        RentalContract contract = RentalContract.builder()
+                .id(1L).code("CTR-PAID").customerId(10L).facilityId(1L).storageUnitId(101L)
+                .endDateExclusive(today.minusDays(2))
+                .overdueFeeAccrued(0L)
+                .monthlyPrice(1_200_000L)
+                .status(ContractStatus.OVERDUE)
+                .build();
+        when(rentalContractRepository.findAll()).thenReturn(List.of(contract));
+        when(userRepository.findAllById(any())).thenReturn(Collections.emptyList());
+        when(storageUnitRepository.findAllById(any())).thenReturn(Collections.emptyList());
+        when(facilityRepository.findAllById(any())).thenReturn(List.of(facility1));
+
+        PageResponse<OverdueContractDetailDto> page = systemReportService.getSystemOverdueContracts(
+                null, null, PageRequest.of(0, 10));
+
+        assertEquals(0L, page.getContent().get(0).getTotalOutstandingDebt());
+    }
+
+    @Test
+    @DisplayName("Doanh thu lọc theo paid_at, không theo ngày tạo checkout")
+    void revenueUsesPaidAtNotCreatedAt() {
+        when(facilityRepository.findAll()).thenReturn(List.of(facility1));
+        RentalContract contract = RentalContract.builder()
+                .id(911L).facilityId(1L).status(ContractStatus.ACTIVE)
+                .totalRentalFee(1_000_000L).depositAmount(0L).build();
+        when(rentalContractRepository.findByFacilityId(1L)).thenReturn(List.of(contract));
+        PaymentTransaction paid = PaymentTransaction.builder()
+                .id(1L).contractId(911L).amount(1_000_000L)
+                .transactionType("INITIAL_PAYMENT").status("SUCCESS").build();
+        paid.setCreatedAt(java.time.Instant.parse("2026-10-31T16:55:00Z"));
+        paid.setPaidAt(java.time.Instant.parse("2026-10-31T17:05:00Z"));
+        when(paymentTransactionRepository.findByContractId(911L)).thenReturn(List.of(paid));
+
+        SystemRevenueReportResponse october = systemReportService.getSystemRevenueReport(
+                LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 31), null);
+        SystemRevenueReportResponse november = systemReportService.getSystemRevenueReport(
+                LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 30), null);
+
+        assertEquals(0L, october.getRentalRevenue());
+        assertEquals(1_000_000L, november.getRentalRevenue());
     }
 }

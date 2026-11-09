@@ -22,7 +22,7 @@ export interface FacilityPerformanceData {
   totalRevenue: number;
   depositBalance: number;
   refundAmount: number;
-  occupancyRate: number;
+  occupancyRate: number | null;
   occupiedUnits: number;
   availableUnits: number;
   outOfServiceUnits: number;
@@ -59,7 +59,7 @@ export const FacilityPerformanceDrawer: React.FC<FacilityPerformanceDrawerProps>
   if (!isOpen || !facility) return null;
 
   const exploitable = Math.max(0, facility.totalUnits - facility.outOfServiceUnits);
-  const rateUnknown = exploitable === 0;
+  const rateUnknown = facility.occupancyRate == null || exploitable === 0;
 
   const streams = [
     {

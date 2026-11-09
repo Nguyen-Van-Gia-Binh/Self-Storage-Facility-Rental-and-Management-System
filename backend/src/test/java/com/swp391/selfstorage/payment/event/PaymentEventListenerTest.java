@@ -46,7 +46,7 @@ class PaymentEventListenerTest {
         PaymentTransaction saved = captor.getValue();
 
         assertEquals(300L, saved.getContractId());
-        assertEquals("REFUND", saved.getTransactionType());
+        assertEquals("DEPOSIT_REFUND", saved.getTransactionType());
         assertEquals("PENDING_REFUND", saved.getStatus());
         assertEquals(1_200_000L, saved.getAmount());
         assertEquals("BANK_TRANSFER", saved.getPaymentMethod());

@@ -18,5 +18,5 @@ public class FacilityOccupancyDetailDto {
     private long maintenanceUnits;
     private long outOfServiceUnits;
     private long overdueContractsCount;
-    private double occupancyRate;
+    private Double occupancyRate;
 }

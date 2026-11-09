@@ -3,10 +3,10 @@ import {
   TrendingUp,
   BarChart3,
   AlertTriangle,
-  RefreshCw,
   Building2,
   FileSpreadsheet,
   FilterX,
+  ReceiptText,
 } from 'lucide-react';
 import type {
   ReportFilterParams,
@@ -25,11 +25,13 @@ import { tokenStorage } from '@/utils/tokenStorage';
 import { Button } from '@/components/ui/Button';
 import { BomFilterBar } from '../components/BomFilterBar';
 import { BomKpiSummary } from '../components/BomKpiSummary';
+import { RevenueTrendCharts } from '../components/RevenueTrendCharts';
 import { RevenueStreamDonut } from '../components/RevenueStreamDonut';
 import { OccupancyComparisonChart } from '../components/OccupancyComparisonChart';
 import { FacilityPerformanceTable } from '../components/FacilityPerformanceTable';
 import { FacilityPerformanceDrawer, type FacilityPerformanceData } from '../components/FacilityPerformanceDrawer';
 import { OverdueContractsTable } from '../components/OverdueContractsTable';
+import { TransactionHistoryTable } from '../components/TransactionHistoryTable';
 import { ReportExportModal } from '../components/ReportExportModal';
 import { ExecutivePrintReport } from '../components/ExecutivePrintReport';
 
@@ -63,7 +65,7 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
   const [facilities, setFacilities] = useState<FacilityListItem[]>([]);
   const [filters, setFilters] = useState<ReportFilterParams>(defaultLast30DaysFilter);
 
-  const [activeTab, setActiveTab] = useState<'REVENUE' | 'OCCUPANCY' | 'OVERDUE'>('REVENUE');
+  const [activeTab, setActiveTab] = useState<'REVENUE' | 'OCCUPANCY' | 'OVERDUE' | 'TRANSACTIONS'>('REVENUE');
   const [revenueData, setRevenueData] = useState<SystemRevenueReport | undefined>();
   const [occupancyData, setOccupancyData] = useState<SystemOccupancyReport | undefined>();
   const [overdueData, setOverdueData] = useState<OverdueReportResponse | undefined>();
@@ -73,6 +75,13 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
   const [drawerFacility, setDrawerFacility] = useState<FacilityPerformanceData | null>(null);
   const [printRequested, setPrintRequested] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<string>('');
+  const [reloadNonce, setReloadNonce] = useState(0);
+
+  const handleFilterChange = (newFilters: ReportFilterParams) => {
+    setIsLoading(true);
+    setFilters(newFilters);
+    setReloadNonce((n) => n + 1);
+  };
 
   // Nạp danh sách cơ sở động từ API (BM-04, BM-05)
   useEffect(() => {
@@ -94,6 +103,7 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
 
   useEffect(() => {
     let ignore = false;
+    setIsLoading(true);
     const monthStr = filters.from.substring(0, 7);
 
     Promise.all([
@@ -107,21 +117,24 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
           setOccupancyData(occ);
           setOverdueData(ovd);
           setLastRefreshed(new Date().toLocaleTimeString('vi-VN'));
-          setIsLoading(false);
         }
       })
       .catch((err) => {
         console.error('Lỗi khi tải dữ liệu báo cáo BOM:', err);
         if (!ignore) {
-          setIsLoading(false);
           setPrintRequested(false);
+        }
+      })
+      .finally(() => {
+        if (!ignore) {
+          setIsLoading(false);
         }
       });
 
     return () => {
       ignore = true;
     };
-  }, [filters]);
+  }, [filters, reloadNonce]);
 
   const handlePrintReport = (facilityId?: number) => {
     setIsExportModalOpen(false);
@@ -140,27 +153,6 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
     });
     return () => window.cancelAnimationFrame(frame);
   }, [printRequested, isExportModalOpen, isLoading]);
-
-  const handleRefresh = () => {
-    setIsLoading(true);
-    const monthStr = filters.from.substring(0, 7);
-    Promise.all([
-      getSystemRevenueReport(filters),
-      getSystemOccupancyReport(monthStr, filters.facilityId),
-      getSystemOverdueReport(filters.facilityId),
-    ])
-      .then(([rev, occ, ovd]) => {
-        setRevenueData(rev);
-        setOccupancyData(occ);
-        setOverdueData(ovd);
-        setLastRefreshed(new Date().toLocaleTimeString('vi-VN'));
-        setIsLoading(false);
-      })
-      .catch((err) => {
-        console.error('Lỗi khi làm mới dữ liệu:', err);
-        setIsLoading(false);
-      });
-  };
 
   const handleOpenDetailFromOccupancy = (occ: any) => {
     const rev = revenueData?.byFacility?.find((r) => r.facilityId === occ.facilityId);
@@ -213,17 +205,6 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
             </span>
           )}
           <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            isLoading={isLoading}
-            className="flex items-center gap-1.5 text-xs py-2 px-3 border-slate-300 hover:bg-slate-50"
-            title="Làm mới số liệu"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            Làm mới
-          </Button>
-          <Button
             variant="primary"
             size="sm"
             onClick={() => setIsExportModalOpen(true)}
@@ -239,7 +220,7 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
       <div className="no-print">
         <BomFilterBar
           filters={filters}
-          onChange={setFilters}
+          onChange={handleFilterChange}
           onOpenExport={() => setIsExportModalOpen(true)}
           facilities={facilities}
           isLoading={isLoading}
@@ -297,6 +278,11 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
               icon: AlertTriangle,
               badge: overdueData?.totalOverdueContracts || 0,
             },
+            {
+              id: 'TRANSACTIONS',
+              label: 'Lịch sử giao dịch',
+              icon: ReceiptText,
+            },
           ].map((tab) => {
             const isActive = activeTab === tab.id;
             const Icon = tab.icon;
@@ -304,7 +290,7 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setActiveTab(tab.id as 'REVENUE' | 'OCCUPANCY' | 'OVERDUE')}
+                onClick={() => setActiveTab(tab.id as typeof activeTab)}
                 className={`flex items-center gap-2 py-3 px-1 text-xs sm:text-sm font-semibold border-b-2 transition-all cursor-pointer ${
                   isActive
                     ? 'border-brand-500 text-brand-600'
@@ -329,6 +315,15 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
         {/* Tab 1: Cơ cấu Doanh thu & Ma trận chi nhánh */}
         {activeTab === 'REVENUE' && (
           <div className="space-y-6">
+            {/* TẦNG 2: XU HƯỚNG THEO THỜI GIAN (12 THÁNG) */}
+            <div className="print-break-inside-avoid">
+              <RevenueTrendCharts
+                data={revenueData?.monthlyTrends}
+                isLoading={isLoading}
+              />
+            </div>
+
+            {/* TẦNG 3: CƠ CẤU DOANH THU */}
             <div className="print-break-inside-avoid">
               <RevenueStreamDonut
                 revenue={revenueData}
@@ -337,6 +332,8 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
                 isLoading={isLoading}
               />
             </div>
+
+            {/* TẦNG 4: MA TRẬN CHI TIẾT THEO CƠ SỞ */}
             <div className="print-break-inside-avoid">
               <FacilityPerformanceTable
                 revenues={revenueData?.byFacility || []}
@@ -373,6 +370,15 @@ export const BomDashboardPage: React.FC<BomDashboardPageProps> = ({
               isLoading={isLoading}
             />
           </div>
+        )}
+
+        {activeTab === 'TRANSACTIONS' && (
+          <TransactionHistoryTable
+            key={`${filters.from}|${filters.to}|${filters.facilityId ?? ''}`}
+            from={filters.from}
+            to={filters.to}
+            facilityId={filters.facilityId}
+          />
         )}
       </div>
 

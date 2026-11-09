@@ -36,19 +36,20 @@ describe('RevenueStreamDonut Component', () => {
     expect(screen.getByText(/- 44\.840\.000/i)).toBeInTheDocument();
   });
 
-  it('renders 4 Mini-KPI cards with accurate metrics and labels', () => {
+  it('renders revenue stream legend items with accurate metrics and labels', () => {
     render(<RevenueStreamDonut revenue={mockRevenue} />);
 
-    // 4 Thẻ KPI: Tiền thuê kho, Phí gia hạn, Tiền cọc giữ chỗ, Tỷ lệ hoàn / Hủy
-    expect(screen.getAllByText('Tiền thuê kho').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('Phí gia hạn').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText('Tiền cọc giữ chỗ')).toBeInTheDocument();
-    expect(screen.getByText('Tỷ lệ hoàn / Hủy')).toBeInTheDocument();
+    // Danh sách chú giải các dòng doanh thu trong Legend
+    expect(screen.getByText('Tiền thuê kho')).toBeInTheDocument();
+    expect(screen.getByText('Phí gia hạn')).toBeInTheDocument();
+    expect(screen.getByText('Cọc giữ chỗ & đảm bảo')).toBeInTheDocument();
+    expect(screen.getByText('Phụ phí dịch vụ')).toBeInTheDocument();
+    expect(screen.getByText('Phí phạt quá hạn')).toBeInTheDocument();
 
-    // Giá trị tiền tệ tương ứng (xuất hiện ở cả Legend và Thẻ KPI)
-    expect(screen.getAllByText('45.390.000 ₫').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('19.200.000 ₫').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('8.050.000 ₫').length).toBeGreaterThanOrEqual(1);
+    // Giá trị tiền tệ tương ứng hiển thị trong Legend
+    expect(screen.getByText('45.390.000 ₫')).toBeInTheDocument();
+    expect(screen.getByText('19.200.000 ₫')).toBeInTheDocument();
+    expect(screen.getByText('8.050.000 ₫')).toBeInTheDocument();
   });
 
   it('calls onSelectStream when clicking a legend item to trigger cross-filtering', () => {

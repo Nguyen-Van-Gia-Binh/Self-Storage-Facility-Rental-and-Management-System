@@ -16,15 +16,13 @@ export interface DisplayFacility {
   activeUnitTypeCount?: number;
 }
 
+// Bộ ảnh cơ sở chất lượng cao theo chuẩn thiết kế SmartStorage Landing Page
 export const FACILITY_IMAGES = [
-  'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1587293852726-70cdb56c2866?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1549194388-f61be84a6e9e?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1565610222536-ef125c59da2c?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=800&q=80',
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuCsKapsB2ejrDJOO8gPa_hVSPJ97EAekXm2e0E-AWZHMITgQ4u1vZjXkIq2ZbDc_b0kVkuiECVjJ2vs8so6MSQq7T11DkcLhnnrpbEUNneFgtxU4UBZRQlCDaV_Kw1Ye642Mf9bOwIZFIQ5eyf-zaWgY7a6W0wUQUY5gnK_lQ42PB6eTjNBSgZdo_eki0q-H3TKAOiIsyFKWcYb85jwKv1l-bB3wch0adlJbfcXQWIj0mve5XGrqcAJhw',
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuCypT2ay6BF8HQheIdaLL-wSMVPbXZz2_eXNqdg2cxZSoroN8zhUqDAuBxiWPtqZJ6m0EgsifbUdMSjHxvahHmy6Gj5_yiesuOP1_kx3MNIE1fr-5mj-ZEOw3ALtz6rS8yswCTe7mb8twqhfbHZn_EjR68ifxWffulq2HwPrL8A-ITPV5L6cyp9nNrfPh9GI4wWznDqVjEbhdmyFmid2NysPjH0JkPH-Ykc7WFFc0HBo3W10ZoA6ziDMw',
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuCT9YIFpWBx9ddblwtI078lGPYsZP6MK810B0je43T083CeUXLXFCDaoERgRHMN251hdDd5xDusj9OZd3Ilq8FvM27eFJ5OL1w83rK2JAfbGSx6IiT_ISp6h9dp48k8UpW5uzWzGO2jFNinuyG4b26lss7EcB6E464wm_uVbHVqqa1yfotVTYWBs068hn13zuCXVeCOhMH4ZjFVUVB2voRXBoPyteD3BNBCxev1FpuB1wYi3jXrfpJoqQ',
+  '/assets/landing/hero-green.jpg',
+  '/assets/landing/facility.jpg',
 ];
 
 /**

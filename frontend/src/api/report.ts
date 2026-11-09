@@ -12,6 +12,12 @@ function asMoney(value: unknown): number {
   return Number.isFinite(amount) ? amount : 0;
 }
 
+function asRate(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const amount = Number(value);
+  return Number.isFinite(amount) ? amount : null;
+}
+
 /**
  * Backend ApiResponse dùng `status` + `data` (không có `success`).
  * Cũng chấp nhận payload đã là body thuần hoặc mock có `success`.
@@ -36,6 +42,10 @@ function normalizeRevenueReport(raw: {
   renewalRevenue?: unknown;
   depositBalance?: unknown;
   totalRefundAmount?: unknown;
+  mrr?: unknown;
+  activeContractCount?: unknown;
+  totalDepositLiability?: unknown;
+  monthlyTrends?: Array<Record<string, unknown>>;
   byFacility?: Array<Record<string, unknown>>;
 }): SystemRevenueReport {
   const facilities = Array.isArray(raw?.byFacility) ? raw.byFacility : [];
@@ -49,6 +59,21 @@ function normalizeRevenueReport(raw: {
     renewalRevenue: asMoney(raw?.renewalRevenue),
     depositBalance: asMoney(raw?.depositBalance),
     totalRefundAmount: asMoney(raw?.totalRefundAmount),
+    mrr: asMoney(raw?.mrr),
+    activeContractCount: Number(raw?.activeContractCount) || 0,
+    totalDepositLiability: asMoney(raw?.totalDepositLiability),
+    monthlyTrends: Array.isArray(raw?.monthlyTrends)
+      ? raw.monthlyTrends.map((t) => ({
+          month: String(t.month || ''),
+          monthLabel: String(t.monthLabel || ''),
+          rentalRevenue: asMoney(t.rentalRevenue),
+          surchargeRevenue: asMoney(t.surchargeRevenue),
+          overdueFeeRevenue: asMoney(t.overdueFeeRevenue),
+          renewalRevenue: asMoney(t.renewalRevenue),
+          cashFlow: asMoney(t.cashFlow),
+          mrr: asMoney(t.mrr),
+        }))
+      : [],
     byFacility: facilities.map((facility) => {
       const rentalRevenue = asMoney(facility.rentalRevenue);
       const surchargeRevenue = asMoney(facility.surchargeRevenue);
@@ -66,6 +91,9 @@ function normalizeRevenueReport(raw: {
         renewalRevenue,
         depositBalance: asMoney(facility.depositBalance),
         refundAmount: asMoney(facility.refundAmount),
+        mrr: asMoney(facility.mrr),
+        activeContractCount: Number(facility.activeContractCount) || 0,
+        depositLiability: asMoney(facility.depositLiability),
       };
     }),
   };
@@ -82,13 +110,13 @@ function normalizeOccupancyReport(raw: SystemOccupancyReport & {
   const rows = Array.isArray(rowsCandidate) ? rowsCandidate : [];
   return {
     month: raw?.month || month || '',
-    averageOccupancyRate: asMoney(raw?.averageOccupancyRate ?? raw?.overallOccupancyRate),
+    averageOccupancyRate: asRate(raw?.averageOccupancyRate ?? raw?.overallOccupancyRate),
     totalUnitsSystem: asMoney(raw?.totalUnitsSystem ?? raw?.totalUnits),
     occupiedUnitsSystem: asMoney(raw?.occupiedUnitsSystem ?? raw?.totalOccupiedUnits),
     availableUnitsSystem: asMoney(raw?.availableUnitsSystem ?? raw?.totalAvailableUnits),
     data: rows.map((item) => ({
       ...item,
-      occupancyRate: asMoney(item.occupancyRate),
+      occupancyRate: asRate(item.occupancyRate),
       availableUnits: asMoney(item.availableUnits),
       reservedUnits: asMoney(item.reservedUnits),
       occupiedUnits: asMoney(item.occupiedUnits),

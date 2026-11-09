@@ -39,7 +39,7 @@ export function formatDate(dateInput: string | Date): string {
  * Định dạng phần trăm (ví dụ: 0.784 -> "78.4%")
  * Xử lý an toàn trường hợp chia cho 0 hoặc NaN theo US-BM-04.2 AC-4
  */
-export function formatPercent(rate: number): string {
+export function formatPercent(rate: number | null | undefined): string {
   if (rate === null || rate === undefined || isNaN(rate) || !isFinite(rate)) {
     return 'Không xác định';
   }

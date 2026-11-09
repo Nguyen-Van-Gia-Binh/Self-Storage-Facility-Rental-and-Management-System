@@ -484,6 +484,9 @@ class ContractServiceTest {
     void shouldThrow_whenActiveTicketNotFlaggedForRelocation() {
         RentalContract contract = RentalContract.builder()
                 .id(500L).code("CTR-500").facilityId(1L).storageUnitId(42L).unitTypeId(7L)
+                .startDate(LocalDate.now().minusDays(15))
+                .endDateExclusive(LocalDate.now().plusDays(15))
+                .monthlyPrice(3000000L)
                 .status(ContractStatus.ACTIVE).build();
         SupportRequest ticket = openDamageTicket(91L, 500L, 42L, false);
         when(contractRepository.findByIdAndFacilityIdIn(500L, List.of(1L))).thenReturn(Optional.of(contract));
@@ -653,6 +656,9 @@ class ContractServiceTest {
     void shouldThrow_whenNewUnitNotAvailable() {
         RentalContract contract = RentalContract.builder()
                 .id(500L).code("CTR-500").facilityId(1L).storageUnitId(42L).unitTypeId(7L)
+                .startDate(LocalDate.now().minusDays(15))
+                .endDateExclusive(LocalDate.now().plusDays(15))
+                .monthlyPrice(3000000L)
                 .status(ContractStatus.ACTIVE).build();
         StorageUnit newUnit = StorageUnit.builder().id(43L).facilityId(1L).code("U-43").unitTypeId(7L).status(StorageUnitStatus.OCCUPIED).build();
         SupportRequest ticket = openDamageTicket(91L, 500L, 42L, true);
@@ -1222,5 +1228,51 @@ class ContractServiceTest {
         assertEquals(ErrorCode.UNIT_NOT_AVAILABLE, ex.getErrorCode());
         assertTrue(ex.getMessage().contains("đang có khách thuê sử dụng"));
         verify(contractRepository, never()).save(any(RentalContract.class));
+    }
+
+    @Test
+    @DisplayName("SUP-TC-07: reassignUnit dùng khóa bi quan findByIdForUpdate và chặn khi supportRequestId thuộc hợp đồng khác")
+    void shouldUsePessimisticLockAndRejectForeignTicket_onReassignUnit() {
+        RentalContract contract = RentalContract.builder()
+                .id(500L).code("CTR-500").facilityId(1L).storageUnitId(42L).unitTypeId(7L)
+                .startDate(LocalDate.now().minusDays(15))
+                .endDateExclusive(LocalDate.now().plusDays(15))
+                .monthlyPrice(3000000L)
+                .status(ContractStatus.ACTIVE).build();
+        SupportRequest foreignTicket = openDamageTicket(99L, 999L, 42L, true); // Thuộc hợp đồng 999L
+
+        when(contractRepository.findByIdAndFacilityIdIn(500L, List.of(1L))).thenReturn(Optional.of(contract));
+        when(supportRequestRepository.findById(99L)).thenReturn(Optional.of(foreignTicket));
+
+        ReassignUnitRequest badReq = ReassignUnitRequest.builder()
+                .newStorageUnitId(43L)
+                .reason("Gắn nhầm phiếu sự cố")
+                .supportRequestId(99L)
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> contractService.reassignUnit(500L, badReq, 1L, List.of(1L)));
+        assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
+
+        // Khi ticket hợp lệ -> phải gọi findByIdForUpdate cho cả ô mới và ô cũ
+        SupportRequest validTicket = openDamageTicket(91L, 500L, 42L, true);
+        StorageUnit oldUnit = StorageUnit.builder().id(42L).facilityId(1L).code("U-42").unitTypeId(7L).status(StorageUnitStatus.OCCUPIED).build();
+        StorageUnit newUnit = StorageUnit.builder().id(43L).facilityId(1L).code("U-43").unitTypeId(7L).status(StorageUnitStatus.AVAILABLE).build();
+
+        when(supportRequestRepository.findById(91L)).thenReturn(Optional.of(validTicket));
+        when(storageUnitRepository.findByIdForUpdate(43L)).thenReturn(Optional.of(newUnit));
+        when(storageUnitRepository.findByIdForUpdate(42L)).thenReturn(Optional.of(oldUnit));
+        when(storageUnitRepository.save(any(StorageUnit.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(contractRepository.save(any(RentalContract.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ReassignUnitRequest validReq = ReassignUnitRequest.builder()
+                .newStorageUnitId(43L)
+                .reason("Đổi kho khẩn cấp có khóa bi quan")
+                .supportRequestId(91L)
+                .build();
+
+        contractService.reassignUnit(500L, validReq, 1L, List.of(1L));
+        verify(storageUnitRepository).findByIdForUpdate(43L);
+        verify(storageUnitRepository).findByIdForUpdate(42L);
     }
 }

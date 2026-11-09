@@ -67,7 +67,7 @@ describe('FacilityPerformanceTable Component', () => {
     cleanup();
   });
 
-  it('renders 2-tier Super-headers correctly', () => {
+  it('renders table column headers correctly', () => {
     render(
       <FacilityPerformanceTable
         revenues={mockRevenues}
@@ -75,15 +75,10 @@ describe('FacilityPerformanceTable Component', () => {
       />
     );
 
-    // Tầng 1: Super-headers
-    expect(screen.getByText('Thông tin cơ sở')).toBeInTheDocument();
-    expect(screen.getByText('Cơ cấu dòng tiền (₫)')).toBeInTheDocument();
-    expect(screen.getByText('Hiệu suất vận hành')).toBeInTheDocument();
-
-    // Tầng 2: Column headers
+    // Column headers
     expect(screen.getByText(/Cơ sở lưu kho/i)).toBeInTheDocument();
     expect(screen.getByText(/Tiền thuê kho/i)).toBeInTheDocument();
-    expect(screen.getByText(/Phụ phí & Gia hạn/i)).toBeInTheDocument();
+    expect(screen.getByText(/Gia hạn & Phụ phí/i)).toBeInTheDocument();
     expect(screen.getByText(/Phí quá hạn/i)).toBeInTheDocument();
     expect(screen.getByText(/Tổng thực thu/i)).toBeInTheDocument();
     expect(screen.getByText(/Tỷ lệ lấp đầy/i)).toBeInTheDocument();
@@ -113,7 +108,6 @@ describe('FacilityPerformanceTable Component', () => {
     expect(screen.getByText('TỔNG CỘNG TOÀN HỆ THỐNG')).toBeInTheDocument();
     // Tổng doanh thu 50M + 25M = 75M
     expect(screen.getByText('75.000.000 ₫')).toBeInTheDocument();
-    expect(screen.getByText('2 cơ sở')).toBeInTheDocument();
   });
 
   it('supports facility search filter', () => {

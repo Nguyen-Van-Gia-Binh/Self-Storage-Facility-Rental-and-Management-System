@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { PieChart, Info, AlertTriangle, RotateCcw } from 'lucide-react';
 import type { SystemRevenueReport } from '@/types';
-import { formatCurrency, formatPercent } from '@/utils/format';
+import { formatCurrency } from '@/utils/format';
 
 export interface RevenueStreamDonutProps {
   revenue?: SystemRevenueReport;
@@ -31,22 +31,15 @@ export const RevenueStreamDonut: React.FC<RevenueStreamDonutProps> = ({
 
   if (isLoading) {
     return (
-      <div className="space-y-4 animate-pulse">
-        <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm space-y-4">
-          <div className="h-5 bg-slate-200 rounded w-1/3" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-            <div className="w-48 h-48 bg-slate-100 rounded-full mx-auto" />
-            <div className="space-y-3">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="h-8 bg-slate-100 rounded" />
-              ))}
-            </div>
+      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm space-y-4 animate-pulse">
+        <div className="h-5 bg-slate-200 rounded w-1/3" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+          <div className="w-48 h-48 bg-slate-100 rounded-full mx-auto" />
+          <div className="space-y-3">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="h-8 bg-slate-100 rounded" />
+            ))}
           </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-20 bg-slate-100 rounded-xl" />
-          ))}
         </div>
       </div>
     );
@@ -140,8 +133,7 @@ export const RevenueStreamDonut: React.FC<RevenueStreamDonutProps> = ({
   const activeStream = activeStreamId ? streams.find((s) => s.id === activeStreamId) : null;
   const activePercent = activeStream && streamSum > 0 ? (activeStream.amount / streamSum) * 100 : null;
 
-  // Tính tỷ lệ tiền hoàn trả so với tổng thu
-  const refundRatio = total > 0 ? refund / total : 0;
+  // Tính dòng tiền thực nhận ròng sau khi trừ các khoản hoàn trả
   const netRevenue = Math.max(0, total - refund);
 
   const handleStreamClick = (streamId: string) => {
@@ -154,10 +146,8 @@ export const RevenueStreamDonut: React.FC<RevenueStreamDonutProps> = ({
   };
 
   return (
-    <div className="space-y-4">
-      {/* KHỐI 1: BIỂU ĐỒ DONUT + CHÚ GIẢI + CẢNH BÁO HOÀN TIỀN */}
-      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm space-y-5">
-        {/* Header khối */}
+    <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm space-y-5">
+      {/* Header khối */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center">
@@ -376,102 +366,6 @@ export const RevenueStreamDonut: React.FC<RevenueStreamDonutProps> = ({
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* KHỐI 2: 4 THẺ SỐ LIỆU NHANH (MINI-KPI CARDS) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* Thẻ 1: Tiền thuê kho */}
-        <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm hover:border-emerald-300 transition-all">
-          <div className="flex items-center justify-between text-xs text-slate-500">
-            <span className="font-semibold uppercase tracking-wider">Tiền thuê kho</span>
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-          </div>
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-lg font-bold font-mono tabular-nums text-slate-900">
-              {formatCurrency(rental)}
-            </span>
-            <span className="text-xs font-mono font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
-              {streamSum > 0 ? `${((rental / streamSum) * 100).toFixed(1)}%` : '0%'}
-            </span>
-          </div>
-          <p className="text-[11px] text-slate-400 mt-1">Chiếm tỷ trọng doanh thu cốt lõi</p>
-        </div>
-
-        {/* Thẻ 2: Phí gia hạn */}
-        <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm hover:border-indigo-300 transition-all">
-          <div className="flex items-center justify-between text-xs text-slate-500">
-            <span className="font-semibold uppercase tracking-wider">Phí gia hạn</span>
-            <span className="w-2 h-2 rounded-full bg-indigo-500" />
-          </div>
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-lg font-bold font-mono tabular-nums text-slate-900">
-              {formatCurrency(renewal)}
-            </span>
-            <span className="text-xs font-mono font-semibold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">
-              {streamSum > 0 ? `${((renewal / streamSum) * 100).toFixed(1)}%` : '0%'}
-            </span>
-          </div>
-          <p className="text-[11px] text-slate-400 mt-1">Doanh thu tái tục từ khách hàng cũ</p>
-        </div>
-
-        {/* Thẻ 3: Tiền cọc giữ chỗ */}
-        <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm hover:border-sky-300 transition-all">
-          <div className="flex items-center justify-between text-xs text-slate-500">
-            <span className="font-semibold uppercase tracking-wider">Tiền cọc giữ chỗ</span>
-            <span className="w-2 h-2 rounded-full bg-sky-500" />
-          </div>
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-lg font-bold font-mono tabular-nums text-slate-900">
-              {formatCurrency(deposit)}
-            </span>
-            <span className="text-xs font-mono font-semibold text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-100">
-              {streamSum > 0 ? `${((deposit / streamSum) * 100).toFixed(1)}%` : '0%'}
-            </span>
-          </div>
-          <p className="text-[11px] text-slate-400 mt-1">Ký quỹ bảo đảm & đặt chỗ trước</p>
-        </div>
-
-        {/* Thẻ 4: Tỷ lệ hoàn / Hủy (Điểm đau tài chính) */}
-        <div
-          className={`bg-white rounded-xl border p-4 shadow-sm transition-all ${
-            refundRatio > 0.15
-              ? 'border-rose-200 bg-rose-50/20'
-              : refundRatio > 0.05
-              ? 'border-amber-200 bg-amber-50/20'
-              : 'border-slate-200/80'
-          }`}
-        >
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-semibold uppercase tracking-wider text-slate-600">
-              Tỷ lệ hoàn / Hủy
-            </span>
-            {refundRatio > 0.15 ? (
-              <span className="flex items-center gap-1 text-[10px] font-bold text-rose-700 bg-rose-100 px-1.5 py-0.5 rounded">
-                <AlertTriangle className="w-3 h-3" /> Cần chú ý
-              </span>
-            ) : refundRatio > 0 ? (
-              <span className="flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
-                Đã xử lý
-              </span>
-            ) : (
-              <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
-                Tốt (0%)
-              </span>
-            )}
-          </div>
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-lg font-bold font-mono tabular-nums text-rose-700">
-              {formatCurrency(refund)}
-            </span>
-            <span className="text-xs font-mono font-bold text-rose-700">
-              {formatPercent(refundRatio)}
-            </span>
-          </div>
-          <p className="text-[11px] text-slate-500 mt-1">
-            Chiếm {formatPercent(refundRatio)} tổng doanh thu gộp
-          </p>
-        </div>
       </div>
     </div>
   );

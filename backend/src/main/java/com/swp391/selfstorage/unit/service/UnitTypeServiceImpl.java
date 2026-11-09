@@ -3,8 +3,11 @@ package com.swp391.selfstorage.unit.service;
 import com.swp391.selfstorage.common.dto.PageResponse;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
+import com.swp391.selfstorage.policy.dto.FacilityPriceResponse;
+import com.swp391.selfstorage.policy.dto.UpdatePriceRequest;
 import com.swp391.selfstorage.policy.service.AppliedPriceInfo;
 import com.swp391.selfstorage.policy.service.AppliedPriceLookup;
+import com.swp391.selfstorage.policy.service.PricingService;
 import com.swp391.selfstorage.unit.dto.CreateUnitTypeRequest;
 import com.swp391.selfstorage.unit.dto.UnitTypeResponse;
 import com.swp391.selfstorage.unit.dto.UpdateUnitTypeRequest;
@@ -39,6 +42,9 @@ public class UnitTypeServiceImpl implements UnitTypeService {
 
     @Autowired(required = false)
     private AppliedPriceLookup appliedPriceLookup;
+
+    @Autowired(required = false)
+    private PricingService pricingService;
 
     public UnitTypeServiceImpl(UnitTypeRepository unitTypeRepository,
                                FacilityUnitTypePriceRepository priceRepository,
@@ -127,11 +133,20 @@ public class UnitTypeServiceImpl implements UnitTypeService {
         long initialPrice = (request.getMonthlyPrice() != null && request.getMonthlyPrice() > 0)
                 ? request.getMonthlyPrice()
                 : 0L;
-        priceRepository.save(FacilityUnitTypePrice.builder()
-                .facilityId(facilityId)
-                .unitTypeId(unitType.getId())
-                .monthlyPrice(initialPrice)
-                .build());
+        if (initialPrice > 0) {
+            if (pricingService == null) {
+                throw new IllegalStateException("pricingService");
+            }
+            FacilityPriceResponse priced = pricingService.updatePrice(facilityId, unitType.getId(),
+                    UpdatePriceRequest.builder().monthlyPrice(initialPrice).build());
+            initialPrice = priced.getMonthlyPrice() != null ? priced.getMonthlyPrice() : initialPrice;
+        } else {
+            priceRepository.save(FacilityUnitTypePrice.builder()
+                    .facilityId(facilityId)
+                    .unitTypeId(unitType.getId())
+                    .monthlyPrice(0L)
+                    .build());
+        }
 
         return finish(unitType, facilityId, initialPrice, 0L);
     }
@@ -159,19 +174,19 @@ public class UnitTypeServiceImpl implements UnitTypeService {
 
         ut = unitTypeRepository.save(ut);
 
+        Long priceVal;
         if (request.getMonthlyPrice() != null && request.getMonthlyPrice() > 0) {
-            FacilityUnitTypePrice price = priceRepository.findByFacilityIdAndUnitTypeId(facilityId, unitTypeId)
-                    .orElseGet(() -> FacilityUnitTypePrice.builder()
-                            .facilityId(facilityId)
-                            .unitTypeId(unitTypeId)
-                            .build());
-            price.setMonthlyPrice(request.getMonthlyPrice());
-            priceRepository.save(price);
+            if (pricingService == null) {
+                throw new IllegalStateException("pricingService");
+            }
+            FacilityPriceResponse priced = pricingService.updatePrice(facilityId, unitTypeId,
+                    UpdatePriceRequest.builder().monthlyPrice(request.getMonthlyPrice()).build());
+            priceVal = priced.getMonthlyPrice() != null ? priced.getMonthlyPrice() : request.getMonthlyPrice();
+        } else {
+            priceVal = priceRepository.findByFacilityIdAndUnitTypeId(facilityId, ut.getId())
+                    .map(FacilityUnitTypePrice::getMonthlyPrice)
+                    .orElse(0L);
         }
-
-        Long priceVal = priceRepository.findByFacilityIdAndUnitTypeId(facilityId, ut.getId())
-                .map(FacilityUnitTypePrice::getMonthlyPrice)
-                .orElse(0L);
         long totalUnits = storageUnitRepository.countByFacilityIdAndUnitTypeId(facilityId, ut.getId());
 
         return finish(ut, facilityId, priceVal, totalUnits);

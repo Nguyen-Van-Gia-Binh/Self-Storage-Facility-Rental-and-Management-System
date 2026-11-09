@@ -289,17 +289,18 @@ export async function submitReturnInspection(
   return res.data;
 }
 
-/** Ghi khoản ACCESS_KEY hoặc VALUE_ADDED đang hiệu lực vào hợp đồng đang thuê. */
+/** Ghi khoản phụ phí danh mục (ACCESS_KEY, VALUE_ADDED, CLEANING, DAMAGE) đang hiệu lực vào hợp đồng đang thuê. */
 export async function applyCatalogFee(
   contractId: number,
   extraFeeTypeId: number,
   note?: string,
-): Promise<{ id: number; amount: number; name: string; category: string }> {
+  paid?: boolean,
+): Promise<{ id: number; amount: number; name: string; category: string; status?: string }> {
   const res = await apiClient<
-    ApiResponse<{ id: number; amount: number; name: string; category: string }>
+    ApiResponse<{ id: number; amount: number; name: string; category: string; status?: string }>
   >(`/contracts/${contractId}/catalog-fees`, {
     method: 'POST',
-    body: JSON.stringify({ extraFeeTypeId, note }),
+    body: JSON.stringify({ extraFeeTypeId, note, paid }),
   });
   return res.data;
 }

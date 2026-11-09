@@ -6,6 +6,7 @@ import com.swp391.selfstorage.support.dto.StaffDailyTasksResponse;
 import com.swp391.selfstorage.support.service.StaffDailyTaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,14 +17,11 @@ import java.time.LocalDate;
 
 @RestController
 @RequestMapping
+@RequiredArgsConstructor
 @Tag(name = "Staff Daily Tasks", description = "Bảng công việc ca trực hằng ngày của nhân viên cơ sở (FS-06, US-FS-06.1, UC-F5-05, API-SPEC § 12)")
 public class StaffDailyTaskController {
 
     private final StaffDailyTaskService staffDailyTaskService;
-
-    public StaffDailyTaskController(StaffDailyTaskService staffDailyTaskService) {
-        this.staffDailyTaskService = staffDailyTaskService;
-    }
 
     @GetMapping("/staff/daily-tasks")
     @PreAuthorize("hasRole('FACILITY_STAFF')")

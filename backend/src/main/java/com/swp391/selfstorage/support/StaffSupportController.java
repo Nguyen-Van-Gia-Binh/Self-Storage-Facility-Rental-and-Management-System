@@ -15,6 +15,7 @@ import com.swp391.selfstorage.support.service.StaffSupportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -27,14 +28,11 @@ import java.util.List;
 
 @RestController
 @RequestMapping
+@RequiredArgsConstructor
 @Tag(name = "Staff Support & Management", description = "Quản lý phân công và cập nhật tiến độ sự cố cho Staff và Management (FM-05, FS-05, T4.8)")
 public class StaffSupportController {
 
     private final StaffSupportService staffSupportService;
-
-    public StaffSupportController(StaffSupportService staffSupportService) {
-        this.staffSupportService = staffSupportService;
-    }
 
     @PatchMapping("/support-requests/{id}/assign")
     @PreAuthorize("hasRole('FACILITY_MANAGER') or hasRole('SYSTEM_ADMINISTRATOR') or hasRole('BUSINESS_OPERATIONS_MANAGER') or hasRole('ADMIN') or hasRole('BUSINESS_MANAGER')")

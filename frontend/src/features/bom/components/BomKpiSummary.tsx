@@ -1,7 +1,7 @@
 import React from 'react';
-import { DollarSign, Layers, FileText, AlertTriangle, TrendingUp, ShieldAlert } from 'lucide-react';
+import { DollarSign, TrendingUp, ShieldCheck, AlertTriangle, Info } from 'lucide-react';
 import type { SystemRevenueReport, SystemOccupancyReport, OverdueReportResponse } from '@/types';
-import { formatCurrency, formatPercent } from '@/utils/format';
+import { formatCurrency } from '@/utils/format';
 
 export interface BomKpiSummaryProps {
   revenue?: SystemRevenueReport;
@@ -12,20 +12,19 @@ export interface BomKpiSummaryProps {
 
 export const BomKpiSummary: React.FC<BomKpiSummaryProps> = ({
   revenue,
-  occupancy,
   overdue,
   isLoading = false,
 }) => {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[1, 2, 3, 4, 5, 6].map((i) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
           <div
             key={i}
             className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm animate-pulse space-y-3"
           >
             <div className="h-4 bg-slate-200 rounded w-1/2" />
-            <div className="h-7 bg-slate-200 rounded w-3/4" />
+            <div className="h-8 bg-slate-200 rounded w-3/4" />
             <div className="h-3 bg-slate-100 rounded w-full" />
           </div>
         ))}
@@ -38,202 +37,104 @@ export const BomKpiSummary: React.FC<BomKpiSummaryProps> = ({
   const netMrr = revenue?.mrr ?? 0;
   const activeContracts = revenue?.activeContractCount ?? 0;
   const depositLiability = revenue?.totalDepositLiability ?? 0;
-
-  const avgOccupancy = occupancy?.averageOccupancyRate ?? 0;
-  const occupiedUnits = occupancy?.occupiedUnitsSystem ?? 0;
   const overdueCount = overdue?.totalOverdueContracts ?? 0;
   const overdueFee = overdue?.totalAccruedFee ?? 0;
-  const occupancyRows = occupancy?.data ?? [];
-  const reservedUnits = occupancyRows.reduce(
-    (sum, row) => sum + (row.reservedUnits || 0),
-    0,
-  );
-  const occupiedForRate = occupancyRows.reduce(
-    (sum, row) => sum + (row.occupiedUnits || 0),
-    0,
-  );
-  const exploitableUnits = occupancyRows.reduce(
-    (sum, row) => sum + Math.max(0, (row.totalUnits || 0) - (row.outOfServiceUnits || 0)),
-    0,
-  );
-  const rateUnknown = exploitableUnits === 0;
-
-  // Đánh giá tỷ lệ lấp đầy
-  const getOccupancyBadge = (rate: number) => {
-    if (rate >= 0.8) {
-      return {
-        label: 'Đạt chỉ tiêu (≥ 80%)',
-        classes: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      };
-    }
-    if (rate >= 0.5) {
-      return {
-        label: 'Mức ổn định (50-79%)',
-        classes: 'bg-sky-50 text-sky-700 border-sky-200',
-      };
-    }
-    return {
-      label: 'Cần đẩy mạnh (< 50%)',
-      classes: 'bg-amber-50 text-amber-700 border-amber-200',
-    };
-  };
-
-  const occBadge = getOccupancyBadge(avgOccupancy);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {/* 1. Dòng tiền thực thu (Cash Flow) */}
-      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:border-brand-300 transition-all">
+      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:border-emerald-300 transition-colors">
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
             Dòng Tiền Thực Thu (Cash)
           </span>
-          <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-            <DollarSign className="w-4 h-4" />
-          </div>
+          <DollarSign className="w-4 h-4 text-emerald-600 stroke-[2]" />
         </div>
-        <div className="mt-2.5">
-          <div className="text-2xl font-bold font-mono tracking-tight text-slate-900">
+        <div className="mt-3">
+          <div className="text-2xl lg:text-3xl font-bold font-mono tabular-nums tracking-tight text-slate-900">
             {formatCurrency(totalRev)}
           </div>
-          <div className="mt-1.5 text-xs text-slate-500">
-            Khớp sao kê • Hoàn cọc {formatCurrency(refundAmount)}
-          </div>
-        </div>
-      </div>
-
-      {/* 2. Doanh thu định kỳ (Net MRR) */}
-      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:border-brand-300 transition-all">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-            Doanh Thu Định Kỳ (Net MRR)
-          </span>
-          <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
-            <TrendingUp className="w-4 h-4" />
-          </div>
-        </div>
-        <div className="mt-2.5">
-          <div className="text-2xl font-bold font-mono tracking-tight text-indigo-700">
-            {formatCurrency(netMrr)}
-            <span className="text-xs font-normal text-slate-500"> /tháng</span>
-          </div>
-          <div className="mt-1.5 text-xs text-slate-500">
-            Đã trừ chiết khấu • <span className="font-semibold text-slate-700">{activeContracts} HĐ</span> đang thuê
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Tiền cọc đang giữ (Deposit Liability) */}
-      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:border-brand-300 transition-all">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-            Tiền Cọc Đang Giữ (Liability)
-          </span>
-          <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-            <ShieldAlert className="w-4 h-4" />
-          </div>
-        </div>
-        <div className="mt-2.5">
-          <div className="text-2xl font-bold font-mono tracking-tight text-slate-900">
-            {formatCurrency(depositLiability)}
-          </div>
-          <div className="mt-1.5 text-xs text-slate-500">
-            Nợ phải trả • Ký quỹ bảo đảm hoàn trả
-          </div>
-        </div>
-      </div>
-
-      {/* 4. Tỷ lệ lấp đầy toàn quốc */}
-      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:border-brand-300 transition-all">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-            Tỷ Lệ Lấp Đầy Hệ Thống
-          </span>
-          <div className="w-8 h-8 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center">
-            <Layers className="w-4 h-4" />
-          </div>
-        </div>
-        <div className="mt-2.5">
-          <div className="text-2xl font-bold font-mono tracking-tight text-slate-900">
-            {rateUnknown ? 'Không xác định' : formatPercent(avgOccupancy)}
-          </div>
-          <div className="mt-1.5 flex items-center gap-2">
-            {rateUnknown ? (
-              <span className="text-xs text-slate-500">Chưa có ô khai thác được</span>
-            ) : (
-              <>
-                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${occBadge.classes}`}>
-                  {occBadge.label}
-                </span>
-                <span className="text-xs text-slate-500">
-                  ({occupiedForRate}/{exploitableUnits} ô)
-                </span>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* 5. Quy mô hợp đồng active & giữ chỗ */}
-      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:border-brand-300 transition-all">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-            Ô đang thuê & Giữ chỗ
-          </span>
-          <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
-            <FileText className="w-4 h-4" />
-          </div>
-        </div>
-        <div className="mt-2.5">
-          <div className="text-2xl font-bold font-mono tracking-tight text-slate-900">
-            {occupiedUnits} <span className="text-sm font-medium text-slate-500">ô</span>
-          </div>
-          <div className="mt-1.5 text-xs text-slate-500">
-            <span className="text-sky-600 font-medium">
-              +{reservedUnits} ô đang giữ chỗ thanh toán
+          <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+            <span className="text-rose-600 font-semibold font-mono">
+              Tiền ra: {refundAmount > 0 ? '-' : ''}{formatCurrency(refundAmount)}
+            </span>
+            <span className="text-emerald-700 font-bold font-mono">
+              Ròng: {formatCurrency(Math.max(0, totalRev - refundAmount))}
             </span>
           </div>
         </div>
       </div>
 
-      {/* 6. Cảnh báo nợ quá hạn */}
-      <div
-        className={`bg-white rounded-xl border p-5 shadow-sm transition-all ${
-          overdueCount > 0 ? 'border-rose-200/80 hover:border-rose-300' : 'border-slate-200/80'
-        }`}
-      >
+      {/* 2. Doanh thu định kỳ (Net MRR) */}
+      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:border-sky-300 transition-colors">
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-            Hợp Đồng Quá Hạn
+            Doanh Thu Định Kỳ (MRR)
           </span>
-          <div
-            className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-              overdueCount > 0 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'
-            }`}
-          >
-            <AlertTriangle className="w-4 h-4" />
+          <TrendingUp className="w-4 h-4 text-sky-600 stroke-[2]" />
+        </div>
+        <div className="mt-3">
+          <div className="text-2xl lg:text-3xl font-bold font-mono tabular-nums tracking-tight text-slate-900">
+            {formatCurrency(netMrr)}
+          </div>
+          <div className="mt-1.5 text-xs text-slate-500">
+            <span className="font-semibold text-slate-700">{activeContracts}</span> hợp đồng ACTIVE đang hiệu lực
           </div>
         </div>
-        <div className="mt-2.5">
-          <div
-            className={`text-2xl font-bold font-mono tracking-tight ${
-              overdueCount > 0 ? 'text-rose-600' : 'text-slate-900'
-            }`}
-          >
-            {overdueCount}{' '}
-            <span className="text-sm font-medium text-slate-500">hợp đồng</span>
+      </div>
+
+      {/* 3. Tiền cọc đang giữ (Deposit Liability) - Nợ Phải Trả */}
+      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:border-slate-300 transition-colors">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              Tiền Cọc Đang Giữ
+            </span>
+            <div className="relative group/tip inline-flex items-center">
+              <Info
+                className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600 cursor-help transition-colors"
+                aria-label="Thông tin khoản nợ ký quỹ"
+              />
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/tip:block z-30 w-60 p-2.5 text-[11px] font-normal leading-relaxed text-white bg-slate-800 rounded-lg shadow-lg pointer-events-none">
+                Khoản tiền ký quỹ khách đã nộp. Đây là khoản <span className="text-amber-300 font-semibold">Nợ phải trả (Liability)</span>, không được tính vào doanh thu doanh nghiệp.
+                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800" />
+              </div>
+            </div>
           </div>
-          <div className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-500">
+          <ShieldCheck className="w-4 h-4 text-slate-400 stroke-[2]" />
+        </div>
+        <div className="mt-3">
+          <div className="text-2xl lg:text-3xl font-bold font-mono tabular-nums tracking-tight text-slate-700">
+            {formatCurrency(depositLiability)}
+          </div>
+          <div className="mt-1.5 text-xs text-slate-400 flex items-center gap-1">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-400" />
+            Nợ phải trả (Không tính vào DT)
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Nợ quá hạn (Overdue Bad Debt Risk) */}
+      <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm hover:border-rose-300 transition-colors">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            Nợ Quá Hạn & Rủi Ro
+          </span>
+          <AlertTriangle className="w-4 h-4 text-rose-500 stroke-[2]" />
+        </div>
+        <div className="mt-3">
+          <div className={`text-2xl lg:text-3xl font-bold font-mono tabular-nums tracking-tight ${
+            overdueFee > 0 ? 'text-rose-600' : 'text-slate-900'
+          }`}>
+            {formatCurrency(overdueFee)}
+          </div>
+          <div className="mt-1.5 text-xs text-slate-500">
             {overdueCount > 0 ? (
-              <>
-                <span className="text-rose-600 font-semibold font-mono">
-                  {formatCurrency(overdueFee)}
-                </span>
-                <span className="text-slate-400">•</span>
-                <span className="text-rose-600">Đôn đốc thu hồi</span>
-              </>
+              <span className="text-rose-600 font-medium">
+                {overdueCount} hợp đồng quá hạn cần thu hồi
+              </span>
             ) : (
-              <span className="text-emerald-600 font-medium">0 rủi ro trễ hạn</span>
+              <span className="text-emerald-600">Không có rủi ro nợ xấu</span>
             )}
           </div>
         </div>

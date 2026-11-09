@@ -175,6 +175,13 @@ public class PaymentController {
         return ResponseEntity.ok(paymentService.getPaymentByOrderCode(orderCode));
     }
 
+    @PostMapping("/{id}/confirm-refund")
+    @PreAuthorize("hasAnyRole('MANAGER', 'BOM', 'ADMIN', 'BUSINESS_OPERATIONS_MANAGER')")
+    @Operation(summary = "Xác nhận đã chuyển khoản hoàn tiền (PENDING_REFUND → SUCCESS)")
+    public ResponseEntity<PaymentResponse> confirmRefundPayout(@PathVariable Long id) {
+        return ResponseEntity.ok(paymentService.confirmRefundPayout(id));
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Xem chi tiết giao dịch thanh toán theo ID")
@@ -183,7 +190,7 @@ public class PaymentController {
     }
 
     @GetMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('BUSINESS_OPERATIONS_MANAGER', 'SYSTEM_ADMINISTRATOR')")
     @Operation(summary = "Danh sách phân trang lịch sử thanh toán kèm bộ lọc")
     public ResponseEntity<PageResponse<PaymentResponse>> getPayments(
             @ModelAttribute PaymentFilterRequest filter,

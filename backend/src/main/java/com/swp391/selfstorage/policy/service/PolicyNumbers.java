@@ -1,6 +1,7 @@
 package com.swp391.selfstorage.policy.service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -71,6 +72,93 @@ public final class PolicyNumbers {
             return 0L;
         }
         return Math.round((monthlyPrice / (double) dailyDivisor(policy)) / 1000.0) * 1000;
+    }
+
+    /** Tổng (giá tháng × số ngày / dailyDivisor) làm tròn lên nghìn. Không làm tròn từng ngày. */
+    public static long prorateTotalUpToThousand(long monthlyPrice, long days, PolicyVersion policy) {
+        if (monthlyPrice <= 0 || days <= 0) {
+            return 0L;
+        }
+        BigDecimal raw = BigDecimal.valueOf(monthlyPrice)
+                .multiply(BigDecimal.valueOf(days))
+                .divide(BigDecimal.valueOf(dailyDivisor(policy)), 0, RoundingMode.CEILING);
+        BigDecimal thousand = BigDecimal.valueOf(1000);
+        return raw.divide(thousand, 0, RoundingMode.CEILING).multiply(thousand).longValueExact();
+    }
+
+    public static int fullRefundDays(PolicyVersion policy) {
+        int days = policy != null && policy.getCancelFullRefundDays() != null
+                ? policy.getCancelFullRefundDays()
+                : 7;
+        return Math.max(1, days);
+    }
+
+    public static BigDecimal midRefundRate(PolicyVersion policy) {
+        if (policy != null && policy.getCancelMidRefundRate() != null) {
+            return policy.getCancelMidRefundRate();
+        }
+        return new BigDecimal("0.50");
+    }
+
+    public static BigDecimal lateRefundRate(PolicyVersion policy) {
+        if (policy != null && policy.getCancelLateRefundRate() != null) {
+            return policy.getCancelLateRefundRate();
+        }
+        return BigDecimal.ZERO;
+    }
+
+    public static final class RefundParts {
+        public final long rent;
+        public final long deposit;
+
+        public RefundParts(long rent, long deposit) {
+            this.rent = rent;
+            this.deposit = deposit;
+        }
+
+        public long total() {
+            return rent + deposit;
+        }
+    }
+
+    /**
+     * Hoàn tiền hủy nhận kho. Cả Reservation và Contract gọi hàm này.
+     * full_refund_days / mid_refund_rate / late_refund_rate và dailyDivisor lấy từ policy.
+     */
+    public static RefundParts cancelRefund(
+            PolicyVersion policy,
+            long rentalFee,
+            long deposit,
+            long monthlyPrice,
+            long hoursUntilStart,
+            boolean withinCoolingOff,
+            boolean beforeStart,
+            long heldDays,
+            int graceDays) {
+        long rent = Math.max(0, rentalFee);
+        long dep = Math.max(0, deposit);
+        int fullHours = fullRefundDays(policy) * 24;
+        int lateHours = policy != null && policy.getCancelFullRefundHours() != null
+                ? policy.getCancelFullRefundHours()
+                : 48;
+        if (withinCoolingOff || (beforeStart && hoursUntilStart >= fullHours)) {
+            return new RefundParts(rent, dep);
+        }
+        if (beforeStart && hoursUntilStart >= lateHours) {
+            return new RefundParts(rent, share(dep, midRefundRate(policy)));
+        }
+        if (beforeStart) {
+            return new RefundParts(rent, share(dep, lateRefundRate(policy)));
+        }
+        if (heldDays > graceDays) {
+            return new RefundParts(0L, 0L);
+        }
+        long daily = dailyRent(monthlyPrice, policy);
+        long rentCharged = Math.min(rent, daily * Math.max(0, heldDays));
+        BigDecimal noShow = policy != null && policy.getCancelNoShowRefundRate() != null
+                ? policy.getCancelNoShowRefundRate()
+                : BigDecimal.ZERO;
+        return new RefundParts(Math.max(0, rent - rentCharged), share(dep, noShow));
     }
 
     public static List<Integer> reminderDays(String raw) {

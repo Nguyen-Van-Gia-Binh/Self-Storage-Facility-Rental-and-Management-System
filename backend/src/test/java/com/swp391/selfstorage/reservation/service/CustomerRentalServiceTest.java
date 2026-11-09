@@ -389,6 +389,27 @@ class CustomerRentalServiceTest {
     }
 
     @Test
+    @DisplayName("SUP-TC-03 (BR-OVD-05 & BR-ACC-02): Chặn đổi mã PIN khi hợp đồng OVERDUE đã bị khóa quyền truy cập ở mốc D+7 (accessCode == null)")
+    void shouldThrowAccessSuspendedOverdue_whenOverdueContractPinIsLockedAtDay7() {
+        RentalContract lockedOverdueContract = new RentalContract();
+        lockedOverdueContract.setId(509L);
+        lockedOverdueContract.setCustomerId(customerUser.getId());
+        lockedOverdueContract.setStatus(ContractStatus.OVERDUE);
+        lockedOverdueContract.setAccessCode(null); // Đã bị khóa tại D+7
+        lockedOverdueContract.setOverdueFeeAccrued(320000L);
+
+        when(rentalContractRepository.findById(509L)).thenReturn(Optional.of(lockedOverdueContract));
+
+        ChangePinRequest req = new ChangePinRequest("654321");
+        CustomException ex = assertThrows(CustomException.class, () ->
+                customerRentalService.changeContractPin(509L, req, customerUser));
+
+        assertEquals(ErrorCode.ACCESS_SUSPENDED_OVERDUE, ex.getErrorCode());
+        verify(rentalContractRepository, never()).save(any());
+        verify(accessLogRepository, never()).save(any());
+    }
+
+    @Test
     @DisplayName("US-SC-05: Lấy danh sách lịch sử ra vào ô kho thành công")
     void shouldReturnAccessLogs_successfully() {
         when(rentalContractRepository.findById(501L)).thenReturn(Optional.of(activeContract));

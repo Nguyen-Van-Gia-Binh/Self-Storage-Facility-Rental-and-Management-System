@@ -126,11 +126,11 @@ class ContractCancelPendingServiceTest {
         assertEquals(ReservationStatus.CANCELLED, reservation.getStatus());
 
         ArgumentCaptor<PaymentTransaction> captor = ArgumentCaptor.forClass(PaymentTransaction.class);
-        verify(paymentTransactionRepository).save(captor.capture());
-        PaymentTransaction txn = captor.getValue();
-        // 100% cọc (1.5tr) + 100% thuê (1.5tr) = 3.0tr
-        assertEquals(3_000_000L, txn.getAmount());
-        assertEquals("REFUND", txn.getTransactionType());
+        verify(paymentTransactionRepository, atLeastOnce()).save(captor.capture());
+        long total = captor.getAllValues().stream().mapToLong(PaymentTransaction::getAmount).sum();
+        assertEquals(3_000_000L, total);
+        assertTrue(captor.getAllValues().stream().anyMatch(t -> "RENT_REFUND".equals(t.getTransactionType())));
+        assertTrue(captor.getAllValues().stream().anyMatch(t -> "DEPOSIT_REFUND".equals(t.getTransactionType())));
     }
 
     @Test
@@ -144,10 +144,9 @@ class ContractCancelPendingServiceTest {
         contractService.cancelPendingContract(100L, req, customerUser);
 
         ArgumentCaptor<PaymentTransaction> captor = ArgumentCaptor.forClass(PaymentTransaction.class);
-        verify(paymentTransactionRepository).save(captor.capture());
-        PaymentTransaction txn = captor.getValue();
-        // Hoàn 100% cả cọc và thuê
-        assertEquals(3_000_000L, txn.getAmount());
+        verify(paymentTransactionRepository, atLeastOnce()).save(captor.capture());
+        long total = captor.getAllValues().stream().mapToLong(PaymentTransaction::getAmount).sum();
+        assertEquals(3_000_000L, total);
     }
 
     @Test
@@ -161,10 +160,9 @@ class ContractCancelPendingServiceTest {
         contractService.cancelPendingContract(100L, req, customerUser);
 
         ArgumentCaptor<PaymentTransaction> captor = ArgumentCaptor.forClass(PaymentTransaction.class);
-        verify(paymentTransactionRepository).save(captor.capture());
-        PaymentTransaction txn = captor.getValue();
-        // 100% thuê (1.5tr) + 50% cọc (750k) = 2.25tr (phạt 750k cọc)
-        assertEquals(2_250_000L, txn.getAmount());
+        verify(paymentTransactionRepository, atLeastOnce()).save(captor.capture());
+        long total = captor.getAllValues().stream().mapToLong(PaymentTransaction::getAmount).sum();
+        assertEquals(2_250_000L, total);
     }
 
     @Test
@@ -226,5 +224,23 @@ class ContractCancelPendingServiceTest {
         CustomException ex = assertThrows(CustomException.class, () ->
                 contractService.cancelPendingContract(100L, req, customerUser));
         assertEquals(ErrorCode.INVALID_STATUS_TRANSITION, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("BR-CAN-02: hủy trước 5 ngày hoàn 2_800_000, không hoàn đủ 3_200_000")
+    void cancelFiveDaysBeforeStartRefundsMidAmount() {
+        contract.setCreatedAt(OffsetDateTime.now().minusDays(10));
+        contract.setStartDate(LocalDate.now().plusDays(5));
+        contract.setTotalRentalFee(2_400_000L);
+        contract.setDepositAmount(800_000L);
+        contract.setMonthlyPrice(800_000L);
+        contract.setRentalMonths(3);
+
+        contractService.cancelPendingContract(100L, new CancelReservationRequest("Hủy trước 5 ngày"), customerUser);
+
+        ArgumentCaptor<PaymentTransaction> captor = ArgumentCaptor.forClass(PaymentTransaction.class);
+        verify(paymentTransactionRepository, atLeastOnce()).save(captor.capture());
+        long total = captor.getAllValues().stream().mapToLong(PaymentTransaction::getAmount).sum();
+        assertEquals(2_800_000L, total);
     }
 }

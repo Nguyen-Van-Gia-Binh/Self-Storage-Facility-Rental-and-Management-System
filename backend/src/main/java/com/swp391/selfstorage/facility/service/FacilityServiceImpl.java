@@ -11,6 +11,11 @@ import com.swp391.selfstorage.facility.entity.Facility;
 import com.swp391.selfstorage.facility.entity.FacilityStatus;
 import com.swp391.selfstorage.facility.mapper.FacilityMapper;
 import com.swp391.selfstorage.facility.repository.FacilityRepository;
+import com.swp391.selfstorage.policy.service.AppliedPriceLookup;
+import com.swp391.selfstorage.unit.entity.FacilityUnitTypePrice;
+import com.swp391.selfstorage.unit.entity.UnitType;
+import com.swp391.selfstorage.unit.repository.FacilityUnitTypePriceRepository;
+import com.swp391.selfstorage.unit.repository.UnitTypeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -34,6 +39,15 @@ public class FacilityServiceImpl implements FacilityService {
     private final FacilityRepository facilityRepository;
     private final FacilityMapper facilityMapper;
     private final UserFacilityAssignmentRepository userFacilityAssignmentRepository;
+
+    @Autowired(required = false)
+    private AppliedPriceLookup appliedPriceLookup;
+
+    @Autowired(required = false)
+    private FacilityUnitTypePriceRepository facilityPriceRepository;
+
+    @Autowired(required = false)
+    private UnitTypeRepository unitTypeRepository;
 
     public FacilityServiceImpl(FacilityRepository facilityRepository, FacilityMapper facilityMapper) {
         this(facilityRepository, facilityMapper, null);
@@ -73,7 +87,7 @@ public class FacilityServiceImpl implements FacilityService {
         return PageResponse.from(page.map(facility -> {
             FacilityResponse resp = facilityMapper.toResponse(facility);
             if (resp != null && resp.getId() != null) {
-                resp.setLowestMonthlyPrice(lowestPriceMap.get(resp.getId()));
+                resp.setLowestMonthlyPrice(lowestAppliedPrice(resp.getId(), lowestPriceMap.get(resp.getId())));
                 resp.setActiveUnitTypeCount(unitTypeCountMap.getOrDefault(resp.getId(), 0));
             }
             return resp;
@@ -102,7 +116,8 @@ public class FacilityServiceImpl implements FacilityService {
 
     private void enrichFacilityMetrics(FacilityResponse resp) {
         if (resp == null || resp.getId() == null) return;
-        resp.setLowestMonthlyPrice(facilityRepository.findLowestMonthlyPriceByFacilityId(resp.getId()));
+        resp.setLowestMonthlyPrice(lowestAppliedPrice(resp.getId(),
+                facilityRepository.findLowestMonthlyPriceByFacilityId(resp.getId())));
         resp.setActiveUnitTypeCount(facilityRepository.countActiveUnitTypesByFacilityId(resp.getId()));
     }
 
@@ -209,11 +224,34 @@ public class FacilityServiceImpl implements FacilityService {
         return facilities.stream().map(facility -> {
             FacilityResponse resp = facilityMapper.toResponse(facility);
             if (resp != null && resp.getId() != null) {
-                resp.setLowestMonthlyPrice(lowestPriceMap.get(resp.getId()));
+                resp.setLowestMonthlyPrice(lowestAppliedPrice(resp.getId(), lowestPriceMap.get(resp.getId())));
                 resp.setActiveUnitTypeCount(unitTypeCountMap.getOrDefault(resp.getId(), 0));
             }
             return resp;
         }).toList();
+    }
+
+    private java.math.BigDecimal lowestAppliedPrice(Long facilityId, java.math.BigDecimal sqlFallback) {
+        if (appliedPriceLookup == null || facilityPriceRepository == null || unitTypeRepository == null) {
+            return sqlFallback;
+        }
+        long min = Long.MAX_VALUE;
+        boolean any = false;
+        for (FacilityUnitTypePrice row : facilityPriceRepository.findAllByFacilityId(facilityId)) {
+            if (row.getUnitTypeId() == null) {
+                continue;
+            }
+            UnitType type = unitTypeRepository.findById(row.getUnitTypeId()).orElse(null);
+            if (type == null || !type.isActive()) {
+                continue;
+            }
+            var price = appliedPriceLookup.resolveMonthlyPrice(facilityId, row.getUnitTypeId());
+            if (price.isPresent() && price.get() > 0 && price.get() < min) {
+                min = price.get();
+                any = true;
+            }
+        }
+        return any ? java.math.BigDecimal.valueOf(min) : sqlFallback;
     }
 
     private static java.math.BigDecimal toBigDecimal(Object val) {

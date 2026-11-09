@@ -89,6 +89,12 @@ class PaymentServiceTest {
     @Mock
     private org.springframework.beans.factory.ObjectProvider<com.swp391.selfstorage.contract.service.ContractService> contractServiceProvider;
 
+    @Mock
+    private com.swp391.selfstorage.facility.repository.FacilityRepository facilityRepository;
+
+    @Mock
+    private com.swp391.selfstorage.user.repository.UserRepository userRepository;
+
     @Spy
     private PaymentMapper paymentMapper = new PaymentMapper();
 
@@ -826,5 +832,51 @@ class PaymentServiceTest {
 
         CustomException ex = assertThrows(CustomException.class, () -> paymentService.createCheckoutLink(request));
         assertTrue(ex.getMessage().contains("tối đa 1 lần duy nhất"));
+    }
+
+    @Test
+    @DisplayName("getPayments: gắn tên cơ sở và khách qua Reservation hoặc RentalContract")
+    @SuppressWarnings("unchecked")
+    void getPayments_FillsFacilityAndCustomerNames() {
+        PaymentTransaction byReservation = PaymentTransaction.builder()
+                .id(1L).reservationId(100L).transactionType("INITIAL_PAYMENT")
+                .amount(3_200_000L).status("SUCCESS").paymentMethod("VNPAY").build();
+        PaymentTransaction byContract = PaymentTransaction.builder()
+                .id(2L).contractId(200L).transactionType("OVERDUE_PENALTY")
+                .amount(150_000L).status("SUCCESS").paymentMethod("VNPAY").build();
+        when(paymentTransactionRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class),
+                any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(byReservation, byContract)));
+
+        mockReservation.setFacilityId(10L);
+        mockReservation.setCustomerId(50L);
+        when(reservationRepository.findAllById(any())).thenReturn(List.of(mockReservation));
+        com.swp391.selfstorage.contract.entity.RentalContract contract = com.swp391.selfstorage.contract.entity.RentalContract.builder()
+                .id(200L).facilityId(11L).customerId(51L).build();
+        when(rentalContractRepository.findAllById(any())).thenReturn(List.of(contract));
+
+        com.swp391.selfstorage.facility.entity.Facility f10 = new com.swp391.selfstorage.facility.entity.Facility();
+        f10.setId(10L);
+        f10.setName("Kho Quận 7");
+        com.swp391.selfstorage.facility.entity.Facility f11 = new com.swp391.selfstorage.facility.entity.Facility();
+        f11.setId(11L);
+        f11.setName("Kho Thủ Đức");
+        when(facilityRepository.findAllById(any())).thenReturn(List.of(f10, f11));
+        com.swp391.selfstorage.user.entity.AppUser u50 = new com.swp391.selfstorage.user.entity.AppUser();
+        u50.setId(50L);
+        u50.setFullName("Nguyễn An");
+        com.swp391.selfstorage.user.entity.AppUser u51 = new com.swp391.selfstorage.user.entity.AppUser();
+        u51.setId(51L);
+        u51.setFullName("Trần Bình");
+        when(userRepository.findAllById(any())).thenReturn(List.of(u50, u51));
+
+        List<PaymentResponse> rows = paymentService.getPayments(
+                new com.swp391.selfstorage.payment.dto.PaymentFilterRequest(),
+                org.springframework.data.domain.PageRequest.of(0, 20)).getContent();
+
+        assertEquals("Kho Quận 7", rows.get(0).getFacilityName());
+        assertEquals("Nguyễn An", rows.get(0).getCustomerName());
+        assertEquals("Kho Thủ Đức", rows.get(1).getFacilityName());
+        assertEquals("Trần Bình", rows.get(1).getCustomerName());
     }
 }

@@ -36,6 +36,8 @@ public enum ErrorCode {
     FACILITY_ACCESS_DENIED(HttpStatus.FORBIDDEN, "Không có quyền truy cập cơ sở này"),
     CONTRACT_ACCESS_DENIED(HttpStatus.FORBIDDEN, "Hợp đồng này không thuộc cơ sở bạn phụ trách"),
     SUPPORT_REQUEST_NOT_ASSIGNED_TO_STAFF(HttpStatus.FORBIDDEN, "Bạn không được phân công xử lý yêu cầu hỗ trợ này"),
+    ACCESS_SUSPENDED_OVERDUE(HttpStatus.FORBIDDEN,
+            "Quyền ra vào kho đã bị khóa do quá hạn từ 7 ngày trở lên. Vui lòng thanh toán phí quá hạn để khôi phục mã PIN."),
 
     // 404 Not Found
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy người dùng"),

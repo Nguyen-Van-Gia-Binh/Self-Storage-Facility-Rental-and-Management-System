@@ -75,6 +75,32 @@ class ContractSettlementApprovalTest {
         }
 
         @Test
+        @DisplayName("BR-CHK-06: chấm dứt trước check-in hoàn totalRentalFee, không hoàn giá niêm yết")
+        void terminatedBeforeCheckInRefundsPaidRent() {
+                RentalContract contract = RentalContract.builder()
+                                .id(77L)
+                                .customerId(15L)
+                                .facilityId(1L)
+                                .status(ContractStatus.TERMINATED)
+                                .checkinDate(null)
+                                .monthlyPrice(1_000_000L)
+                                .rentalMonths(12)
+                                .totalRentalFee(10_800_000L)
+                                .depositAmount(800_000L)
+                                .depositBalance(800_000L)
+                                .build();
+                when(contractRepository.findById(77L)).thenReturn(Optional.of(contract));
+                when(returnRequestRepository.findTopByContractIdOrderByCreatedAtDesc(77L)).thenReturn(Optional.empty());
+                when(returnRequestRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+                when(extraChargeRepository.findByContractIdAndStatus(eq(77L), any())).thenReturn(List.of());
+                when(contractRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+                SettlementApprovalResponse response = contractService.approveSettlement(77L, null, 4L, List.of());
+
+                assertEquals(11_600_000L, response.getDepositRefundAmount());
+        }
+
+        @Test
         @DisplayName("FM-04: approveSettlement chuyển Contract CLOSED, Unit CLEANING và bắn ContractSettledEvent")
         void testApproveSettlement() {
                 RentalContract contract = RentalContract.builder()
@@ -161,6 +187,7 @@ class ContractSettlementApprovalTest {
                                 .storageUnitId(42L)
                                 .monthlyPrice(1_000_000L)
                                 .rentalMonths(2)
+                                .totalRentalFee(2_000_000L)
                                 .depositAmount(1_000_000L)
                                 .depositBalance(1_000_000L)
                                 .checkinDate(null)

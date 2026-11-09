@@ -320,9 +320,11 @@ class StaffSupportServiceTest {
         when(userRepository.findByFilters(isNull(), eq(UserRole.FACILITY_STAFF), eq(UserStatus.ACTIVE), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(sampleStaffEntity)));
 
-        when(supportRequestRepository.countByAssignedStaffIdAndStatusIn(eq(8L), anyCollection()))
+        when(supportRequestRepository.countByAssignedStaffIdAndStatusIn(
+                eq(8L), eq(List.of(SupportStatus.ASSIGNED, SupportStatus.IN_PROGRESS))))
                 .thenReturn(3L);
-        when(supportRequestRepository.countByAssignedStaffIdAndStatus(eq(8L), eq(SupportStatus.RESOLVED)))
+        when(supportRequestRepository.countByAssignedStaffIdAndStatusIn(
+                eq(8L), eq(List.of(SupportStatus.RESOLVED, SupportStatus.CLOSED, SupportStatus.AUTO_CLOSED))))
                 .thenReturn(7L);
 
         List<StaffWorkloadResponse> workload = staffSupportService.getStaffWorkload(1L, managerUser);
@@ -335,5 +337,74 @@ class StaffSupportServiceTest {
         assertEquals(1L, staffW.getFacilityId());
         assertEquals(3L, staffW.getActiveTaskCount());
         assertEquals(7L, staffW.getCompletedTaskCount());
+    }
+
+    @Test
+    @DisplayName("SUP-TC-04: Phân công lại (Re-assign) cập nhật đúng bản ghi StaffDailyAssignment hiện hữu (upsert) và chặn khi ticket đã CLOSED")
+    void shouldUpsertStaffDailyAssignment_whenReassigning_andRejectClosedTicket() {
+        sampleTicket.setStatus(SupportStatus.ASSIGNED);
+        sampleTicket.setAssignedStaffId(5L);
+
+        StaffDailyAssignment existingAssignment = StaffDailyAssignment.builder()
+                .id(77L)
+                .staffId(5L)
+                .facilityId(1L)
+                .referenceType("SUPPORT_REQUEST")
+                .referenceId(801L)
+                .build();
+
+        when(supportRequestRepository.findById(801L)).thenReturn(Optional.of(sampleTicket));
+        when(rentalContractRepository.findById(501L)).thenReturn(Optional.of(sampleContract));
+        when(userRepository.findById(8L)).thenReturn(Optional.of(sampleStaffEntity));
+        when(userFacilityAssignmentRepository.findByUserId(8L))
+                .thenReturn(List.of(new UserFacilityAssignment(8L, 1L)));
+        when(staffDailyAssignmentRepository.findByReferenceTypeAndReferenceId("SUPPORT_REQUEST", 801L))
+                .thenReturn(Optional.of(existingAssignment));
+        when(supportRequestRepository.save(any(SupportRequest.class))).thenAnswer(i -> i.getArgument(0));
+        when(staffDailyAssignmentRepository.save(any(StaffDailyAssignment.class))).thenAnswer(i -> i.getArgument(0));
+
+        staffSupportService.assignStaff(801L, new AssignStaffRequest(8L, "Đổi ca trực"), managerUser);
+
+        assertEquals(77L, existingAssignment.getId());
+        assertEquals(8L, existingAssignment.getStaffId());
+        verify(staffDailyAssignmentRepository).save(existingAssignment);
+
+        // Chặn phân công khi ticket đã CLOSED
+        sampleTicket.setStatus(SupportStatus.CLOSED);
+        CustomException ex = assertThrows(CustomException.class, () ->
+                staffSupportService.assignStaff(801L, new AssignStaffRequest(8L, "Gán lại"), managerUser));
+        assertEquals(ErrorCode.VALIDATION_FAILED, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("SUP-TC-05: Chặn Manager khác cơ sở và Staff chưa được phân công (assignedStaffId == null) thao tác trên ticket")
+    void shouldRejectCrossFacilityManagerAndUnassignedStaff() {
+        UserPrincipal otherManager = new UserPrincipal(
+                3L, "other@storage.vn", "pass", "Nguyễn Quản Lý Q7",
+                UserRole.FACILITY_MANAGER, UserStatus.ACTIVE, List.of(99L), Collections.emptyList()
+        );
+        sampleTicket.setStatus(SupportStatus.ASSIGNED);
+        sampleTicket.setAssignedStaffId(null); // Chưa gán staff cụ thể
+
+        when(supportRequestRepository.findById(801L)).thenReturn(Optional.of(sampleTicket));
+        when(rentalContractRepository.findById(501L)).thenReturn(Optional.of(sampleContract));
+
+        // 1. Manager khác cơ sở bị chặn ACCESS_DENIED khi startInProgress / markRelocationRequired / resolveSupportRequest
+        CustomException ex1 = assertThrows(CustomException.class, () ->
+                staffSupportService.startInProgress(801L, otherManager));
+        assertEquals(ErrorCode.ACCESS_DENIED, ex1.getErrorCode());
+
+        CustomException ex2 = assertThrows(CustomException.class, () ->
+                staffSupportService.markRelocationRequired(801L, true, otherManager));
+        assertEquals(ErrorCode.ACCESS_DENIED, ex2.getErrorCode());
+
+        // 2. Staff chưa được gán (assignedStaffId == null) bị chặn SUPPORT_REQUEST_NOT_ASSIGNED_TO_STAFF
+        CustomException ex3 = assertThrows(CustomException.class, () ->
+                staffSupportService.startInProgress(801L, staffUser));
+        assertEquals(ErrorCode.SUPPORT_REQUEST_NOT_ASSIGNED_TO_STAFF, ex3.getErrorCode());
+
+        CustomException ex4 = assertThrows(CustomException.class, () ->
+                staffSupportService.resolveSupportRequest(801L, new ResolveSupportRequest("Đã xử lý xong", null), staffUser));
+        assertEquals(ErrorCode.SUPPORT_REQUEST_NOT_ASSIGNED_TO_STAFF, ex4.getErrorCode());
     }
 }

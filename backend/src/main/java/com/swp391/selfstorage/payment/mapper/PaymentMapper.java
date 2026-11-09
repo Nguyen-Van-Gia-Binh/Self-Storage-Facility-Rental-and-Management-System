@@ -42,7 +42,7 @@ public class PaymentMapper {
                 .status(entity.getStatus())
                 .orderCode(entity.getOrderCode())
                 .transactionRef(entity.getProviderReference())
-                .paidAt(entity.getUpdatedAt())
+                .paidAt(entity.getPaidAt() != null ? entity.getPaidAt() : entity.getUpdatedAt())
                 .createdAt(entity.getCreatedAt())
                 .transferContent(transferContent)
                 .bankName(DEFAULT_BANK_NAME)

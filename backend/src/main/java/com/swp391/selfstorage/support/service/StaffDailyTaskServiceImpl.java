@@ -519,7 +519,9 @@ public class StaffDailyTaskServiceImpl implements StaffDailyTaskService {
     }
 
     private DailySupportTaskDto toSupportDto(SupportRequest sr) {
-        boolean completed = sr.getStatus() == SupportStatus.RESOLVED || sr.getStatus() == SupportStatus.CLOSED;
+        boolean completed = sr.getStatus() == SupportStatus.RESOLVED
+                || sr.getStatus() == SupportStatus.CLOSED
+                || sr.getStatus() == SupportStatus.AUTO_CLOSED;
 
         String unitCode = null;
         Long facilityId = null;

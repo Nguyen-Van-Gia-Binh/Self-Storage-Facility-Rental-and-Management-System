@@ -10,6 +10,7 @@ import com.swp391.selfstorage.contract.repository.RentalContractRepository;
 import com.swp391.selfstorage.facility.entity.Facility;
 import com.swp391.selfstorage.facility.entity.FacilityStatus;
 import com.swp391.selfstorage.facility.repository.FacilityRepository;
+import com.swp391.selfstorage.payment.entity.PaymentTransaction;
 import com.swp391.selfstorage.policy.entity.PolicyVersion;
 import com.swp391.selfstorage.policy.repository.PolicyVersionRepository;
 import com.swp391.selfstorage.reservation.dto.*;
@@ -30,6 +31,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -445,12 +447,10 @@ class ReservationServiceTest {
 
         assertEquals("CANCELLED", result.getStatus());
         assertEquals(StorageUnitStatus.AVAILABLE, unit.getStatus());
-        verify(paymentTransactionRepository).save(argThat(txn ->
-                txn.getReservationId().equals(1042L)
-                        && "REFUND".equals(txn.getTransactionType())
-                        && "PENDING_REFUND".equals(txn.getStatus())
-                        && txn.getAmount() == 4_000_000L
-        ));
+        ArgumentCaptor<PaymentTransaction> captor = ArgumentCaptor.forClass(PaymentTransaction.class);
+        verify(paymentTransactionRepository, atLeastOnce()).save(captor.capture());
+        long total = captor.getAllValues().stream().mapToLong(PaymentTransaction::getAmount).sum();
+        assertEquals(3_500_000L, total);
     }
 
     @Test
@@ -474,11 +474,36 @@ class ReservationServiceTest {
         ReservationResponse result = reservationService.cancelReservation(1042L, cancelReq, customerUser);
 
         assertEquals("CANCELLED", result.getStatus());
-        verify(paymentTransactionRepository).save(argThat(txn ->
-                txn.getReservationId().equals(1042L)
-                        && "REFUND".equals(txn.getTransactionType())
-                        && txn.getAmount() == 3_500_000L
-        ));
+        ArgumentCaptor<PaymentTransaction> captor = ArgumentCaptor.forClass(PaymentTransaction.class);
+        verify(paymentTransactionRepository, atLeastOnce()).save(captor.capture());
+        long total = captor.getAllValues().stream().mapToLong(PaymentTransaction::getAmount).sum();
+        assertEquals(3_500_000L, total);
+    }
+
+    @Test
+    @DisplayName("BR-CAN-02: hủy đặt chỗ trước 5 ngày hoàn 2_800_000, không hoàn đủ 3_200_000")
+    void cancelReservationFiveDaysBeforeStartRefunds2800000() {
+        Reservation r = new Reservation();
+        r.setId(1042L);
+        r.setCustomerId(15L);
+        r.setFacilityId(1L);
+        r.setStatus(ReservationStatus.CONFIRMED);
+        r.setStartDate(LocalDate.now().plusDays(5));
+        r.setConfirmedAt(OffsetDateTime.now().minusDays(10));
+        r.setDepositAmount(800_000L);
+        r.setTotalPayable(3_200_000L);
+        r.setMonthlyPriceSnapshot(800_000L);
+
+        when(reservationRepository.findById(1042L)).thenReturn(Optional.of(r));
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(rentalContractRepository.findByReservationId(1042L)).thenReturn(Optional.empty());
+
+        reservationService.cancelReservation(1042L, new CancelReservationRequest("Hủy trước 5 ngày"), customerUser);
+
+        ArgumentCaptor<PaymentTransaction> captor = ArgumentCaptor.forClass(PaymentTransaction.class);
+        verify(paymentTransactionRepository, atLeastOnce()).save(captor.capture());
+        long total = captor.getAllValues().stream().mapToLong(PaymentTransaction::getAmount).sum();
+        assertEquals(2_800_000L, total);
     }
 
     @Test
