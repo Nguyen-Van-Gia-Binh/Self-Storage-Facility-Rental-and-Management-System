@@ -20,7 +20,7 @@ public class DatabaseSeedRunnerTest {
     private static final String DEFAULT_PASS = "npg_gpKMC1tJS5lq";
 
     @Test
-    @DisplayName("Nạp lại dữ liệu kiểm thử chuẩn (Seed & Reset Test Scenarios)")
+    @DisplayName("Nap lai du lieu kiem thu chuan (Seed & Reset Test Scenarios)")
     void seedAndResetTestScenarios() throws Exception {
         String dbUrl = System.getenv().getOrDefault("DB_URL", DEFAULT_DB_URL);
         String dbUser = System.getenv().getOrDefault("DB_USERNAME", DEFAULT_USER);
@@ -34,19 +34,19 @@ public class DatabaseSeedRunnerTest {
 
         String sqlContent = Files.readString(sqlPath);
 
-        System.out.println("=============================================================================");
-        System.out.println(">>> ĐANG KẾT NỐI VÀO DATABASE ĐỂ SEED 8 KỊCH BẢN THỬ NGHIỆM VÀNG...");
-        System.out.println("=============================================================================");
+        System.out.println("========================================================================================================================");
+        System.out.println(">>> [SMARTSTORAGE] DANG KET NOI VAO NEON CLOUD DATABASE DE SEED 8 KICH BAN THU NGHIEM VANG...");
+        System.out.println("========================================================================================================================");
 
         try (Connection conn = DriverManager.getConnection(dbUrl, dbUser, dbPass);
              Statement stmt = conn.createStatement()) {
 
             stmt.execute(sqlContent);
 
-            System.out.println(">>> SEED DỮ LIỆU THÀNH CÔNG! DANH SÁCH 8 HỢP ĐỒNG TEST MẪU:");
+            System.out.println(">>> SEED DU LIEU THANH CONG! DANH SACH 8 HOP DONG TEST MAU (CO SO QUAN 1 - FAC-Q1):");
             System.out.println("------------------------------------------------------------------------------------------------------------------------");
-            System.out.printf("%-15s | %-10s | %-15s | %-15s | %-12s | %-12s | %-12s | %-15s%n",
-                    "MÃ HỢP ĐỒNG", "Ô KHO", "TRẠNG THÁI", "KHO VẬT LÝ", "HẾT HẠN", "TIỀN CỌC", "NỢ PHẠT", "MÃ PIN");
+            System.out.printf("%-15s | %-10s | %-15s | %-15s | %-12s | %-15s | %-15s | %-18s%n",
+                    "MA HOP DONG", "O KHO", "TRANG THAI HD", "KHO VAT LY", "HET HAN", "TIEN COC (VND)", "NO PHAT (VND)", "MA PIN");
             System.out.println("------------------------------------------------------------------------------------------------------------------------");
 
             String query = """
@@ -58,7 +58,7 @@ public class DatabaseSeedRunnerTest {
                     c.end_date AS end_date,
                     c.deposit_amount AS deposit,
                     c.overdue_fee_accrued AS overdue_fee,
-                    CASE WHEN c.access_code IS NOT NULL THEN 'PIN: ' || c.access_code ELSE 'BỊ KHÓA' END AS pin_state
+                    CASE WHEN c.access_code IS NOT NULL THEN 'PIN: ' || c.access_code ELSE 'BI KHOA (LOCKED)' END AS pin_state
                 FROM rental_contract c
                 JOIN storage_unit su ON c.storage_unit_id = su.id
                 WHERE c.code LIKE 'CTR-TEST-%'
@@ -69,7 +69,7 @@ public class DatabaseSeedRunnerTest {
                 int count = 0;
                 while (rs.next()) {
                     count++;
-                    System.out.printf("%-15s | %-10s | %-15s | %-15s | %-12s | %-12d | %-12d | %-15s%n",
+                    System.out.printf("%-15s | %-10s | %-15s | %-15s | %-12s | %,15d | %,15d | %-18s%n",
                             rs.getString("contract_code"),
                             rs.getString("unit_code"),
                             rs.getString("contract_status"),
@@ -82,11 +82,11 @@ public class DatabaseSeedRunnerTest {
                 assertThat(count).isEqualTo(8);
             }
             System.out.println("------------------------------------------------------------------------------------------------------------------------");
-            System.out.println(">>> TÀI KHOẢN ĐĂNG NHẬP ĐỂ TEST:");
-            System.out.println("   - Khách hàng (Customer): nhi.customer@gmail.com / password123");
-            System.out.println("   - Quản lý cơ sở (FM)  : fm.q1@smartstorage.vn  / password123 (Nguyễn Văn Gia Bình - Q1)");
-            System.out.println("   - Nhân viên ca trực (FS): staff.q1@smartstorage.vn / password123 (Trần Văn Hùng - Q1)");
-            System.out.println("=============================================================================");
+            System.out.println(">>> TAI KHOAN DANG NHAP DE TEST (MAT KHAU: password123):");
+            System.out.println("   [1] Khach hang (Customer)  : nhi.customer@gmail.com   -> Xem kho cua toi, bao tra kho, nop phat");
+            System.out.println("   [2] Quan ly co so (FM)     : fm.q1@smartstorage.vn    -> Nguyen Van Gia Binh (Duyet quyet toan, Kho Tong)");
+            System.out.println("   [3] Nhan vien ca truc (FS) : staff.q1@smartstorage.vn -> Tran Van Hung (Nghiem thu hien truong, checklist)");
+            System.out.println("========================================================================================================================");
         }
     }
 }
