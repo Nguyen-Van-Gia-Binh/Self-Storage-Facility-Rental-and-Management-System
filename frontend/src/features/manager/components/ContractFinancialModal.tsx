@@ -103,7 +103,7 @@ export const ContractFinancialModal: React.FC<ContractFinancialModalProps> = ({
                   <span className="text-base font-bold text-amber-900">
                     {data.overdueFeeAccrued.toLocaleString('vi-VN')} đ
                   </span>
-                  <span className="text-[11px] text-amber-600 block mt-0.5">Phạt 10%/ngày (từ D+4)</span>
+                  <span className="text-[11px] text-amber-600 block mt-0.5">5%/ngày (D+1..3) • 10%/ngày (D+4..6)</span>
                 </div>
 
                 <div className="p-3 bg-rose-50/70 border border-rose-200 rounded-xl">

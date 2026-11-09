@@ -222,9 +222,9 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
                         detail.setHandoverStaffName(staff.getFullName());
                     });
                 }
-            } else if (contract.getCheckinDate() == null) {
+            } else if (contract.getCheckinDate() == null && (contract.getStatus() == ContractStatus.TERMINATED || Boolean.TRUE.equals(detail.getRelocationEligible()))) {
                 handoverRecordRepository.findByContractId(contract.getId()).ifPresent(hr -> {
-                    detail.setHandoverRejected(hr.isRejected());
+                    detail.setHandoverRejected(hr.isRejected() && contract.getStatus() == ContractStatus.TERMINATED);
                     detail.setRejectionReason(hr.getRejectionReason());
                     String note = hr.getRejectionReason() != null ? hr.getRejectionReason() : "";
                     if (hr.getConditionNote() != null && !hr.getConditionNote().isBlank()) {
@@ -390,10 +390,10 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
         res.setAccessPinLength(PolicyNumbers.snapshotInt(contract.getPolicySnapshot(), "accessPinLength", 6));
 
         // Kiểm tra thông tin từ chối nhận kho (Handover Record)
-        if (handoverRecordRepository != null) {
+        if (handoverRecordRepository != null && (contract.getStatus() == ContractStatus.TERMINATED || effectivelyRelocating)) {
             handoverRecordRepository.findByContractId(contract.getId())
                     .ifPresent(hr -> {
-                        res.setHandoverRejected(hr.isRejected());
+                        res.setHandoverRejected(hr.isRejected() && contract.getStatus() == ContractStatus.TERMINATED);
                         if (hr.isRejected()) {
                             res.setRejectionReason(hr.getRejectionReason());
                         }

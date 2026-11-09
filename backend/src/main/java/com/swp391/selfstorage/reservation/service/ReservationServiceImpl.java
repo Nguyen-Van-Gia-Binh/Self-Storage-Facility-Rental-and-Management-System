@@ -704,7 +704,12 @@ public class ReservationServiceImpl implements ReservationService {
         }
         if (reservation.getStorageUnitId() != null
                 && !LocalDate.now().isBefore(reservation.getStartDate())) {
-            throw new CustomException(ErrorCode.ASSIGNMENT_WINDOW_CLOSED);
+            boolean previousInMaintenance = storageUnitRepository.findById(reservation.getStorageUnitId())
+                    .map(u -> u.getStatus() == StorageUnitStatus.MAINTENANCE)
+                    .orElse(false);
+            if (!previousInMaintenance) {
+                throw new CustomException(ErrorCode.ASSIGNMENT_WINDOW_CLOSED);
+            }
         }
         if (storageUnitId.equals(reservation.getStorageUnitId())) {
             return mapToResponse(reservation);
@@ -744,7 +749,8 @@ public class ReservationServiceImpl implements ReservationService {
             if (previous.getStatus() == StorageUnitStatus.RESERVED) {
                 previous.setStatus(StorageUnitStatus.AVAILABLE);
                 storageUnitRepository.save(previous);
-            } else if (previous.getStatus() != StorageUnitStatus.OCCUPIED) {
+            } else if (previous.getStatus() != StorageUnitStatus.OCCUPIED
+                    && previous.getStatus() != StorageUnitStatus.MAINTENANCE) {
                 throw new CustomException(ErrorCode.UNIT_ASSIGNMENT_FAILED);
             }
         }

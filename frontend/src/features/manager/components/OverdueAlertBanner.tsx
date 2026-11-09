@@ -1,6 +1,6 @@
 // frontend/src/features/manager/components/OverdueAlertBanner.tsx
 import React from 'react';
-import { AlertTriangle, CreditCard, ClipboardList } from 'lucide-react';
+import { AlertTriangle, Receipt, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import type { ManagerContractItem } from '@/types/contractManager';
 
 interface OverdueAlertBannerProps {
@@ -14,7 +14,6 @@ const fmt = (p: number) => new Intl.NumberFormat('vi-VN').format(p) + ' đ';
 export const OverdueAlertBanner: React.FC<OverdueAlertBannerProps> = ({
   contract,
   onPayPenalty,
-  onRequestReturn,
 }) => {
   const overdueDays = contract.overdueDays || 1;
   const deposit = contract.depositAmount || contract.monthlyPrice || 800000;
@@ -27,6 +26,10 @@ export const OverdueAlertBanner: React.FC<OverdueAlertBannerProps> = ({
       ? contract.accruedOverdueFee
       : fallbackFee;
   const remainingDeposit = overdueDays >= 7 ? 0 : Math.max(0, deposit - accruedFee);
+  const isOverduePaid =
+    contract.accruedOverdueFee !== undefined &&
+    contract.accruedOverdueFee !== null &&
+    contract.accruedOverdueFee <= 0;
 
   return (
     <div className="bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 border-2 border-orange-300/80 rounded-2xl p-5 shadow-xs">
@@ -79,27 +82,34 @@ export const OverdueAlertBanner: React.FC<OverdueAlertBannerProps> = ({
             </div>
           </div>
 
-          {/* Action buttons */}
-          <div className="mt-4 flex flex-wrap items-center gap-3">
+          {/* Trạng thái giám sát dành cho Quản lý cơ sở (FM) */}
+          <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-orange-200/70">
+            <div className="flex items-start sm:items-center gap-2 text-xs text-orange-900">
+              {isOverduePaid ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5 sm:mt-0" />
+                  <span>
+                    <strong>Khách hàng đã tất toán nợ quá hạn:</strong> Đã mở Mã PIN tạm (đến 23:59) để khách tự dọn đồ và gửi Báo trả kho trên cổng Khách hàng.
+                  </span>
+                </>
+              ) : (
+                <>
+                  <ShieldAlert className="w-4 h-4 text-orange-700 shrink-0 mt-0.5 sm:mt-0" />
+                  <span>
+                    <strong>Trạng thái chế tài:</strong> Đang khóa PIN tự động. Chờ khách hàng tự đóng phí quá hạn/gia hạn trên cổng Khách hàng (hoặc tự động cưỡng chế niêm phong ở ngày <strong>D+7</strong>).
+                  </span>
+                </>
+              )}
+            </div>
+
             {onPayPenalty && (
               <button
                 type="button"
                 onClick={onPayPenalty}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-orange-100/70 text-orange-950 border border-orange-300 rounded-xl text-xs font-bold shadow-2xs transition-colors cursor-pointer shrink-0"
               >
-                <CreditCard className="w-3.5 h-3.5" />
-                <span>Đóng nợ phạt quá hạn</span>
-              </button>
-            )}
-
-            {onRequestReturn && (
-              <button
-                type="button"
-                onClick={onRequestReturn}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-orange-50 text-orange-900 border border-orange-300 rounded-xl text-xs font-bold transition-colors cursor-pointer"
-              >
-                <ClipboardList className="w-3.5 h-3.5 text-orange-600" />
-                <span>Báo trả kho & Tất toán</span>
+                <Receipt className="w-3.5 h-3.5 text-orange-600" />
+                <span>Xem chi tiết công nợ & khấu trừ</span>
               </button>
             )}
           </div>

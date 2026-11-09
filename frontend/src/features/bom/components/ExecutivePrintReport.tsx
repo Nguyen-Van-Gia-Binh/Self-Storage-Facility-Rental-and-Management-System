@@ -15,10 +15,9 @@ export interface ExecutivePrintReportProps {
 }
 
 function overdueStage(days: number): string {
-  if (days <= 3) return 'D+1..D+3: Ân hạn, phí 0, vẫn vào kho';
-  if (days <= 6) return `D+${days}: Phạt 10%/ngày, khóa báo trả kho`;
-  if (days <= 9) return `D+${days}: Khóa Access Code, trần 70% cọc`;
-  return 'D+10: Chấm dứt hợp đồng, ô kho dọn dẹp';
+  if (days <= 3) return `D+${days}: Khóa PIN, phí lưu kho 5%/ngày`;
+  if (days <= 6) return `D+${days}: Khóa PIN, phạt quá hạn 10%/ngày`;
+  return 'D+7: Cưỡng chế niêm phong về Kho Tổng (khấu trừ 100% cọc)';
 }
 
 export const ExecutivePrintReport: React.FC<ExecutivePrintReportProps> = ({
