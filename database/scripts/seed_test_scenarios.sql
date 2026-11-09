@@ -1,11 +1,10 @@
 -- =============================================================================
--- SCRIPT SEED DỮ LIỆU KIỂM THỬ TOÀN DIỆN CHO FLOW 3 & SUB-FLOW 6.2
--- Đường dẫn: database/scripts/seed_test_scenarios_flow3_and_flow6.sql
+-- SCRIPT SEED DỮ LIỆU KIỂM THỬ TOÀN DIỆN HỆ THỐNG (MASTER TEST SCENARIOS)
+-- Đường dẫn: database/scripts/seed_test_scenarios.sql
 -- Tác giả: Nguyễn Văn Gia Bình (WS2 Lead - SWP391)
 --
--- Mục tiêu: Cung cấp 8 Kịch bản Thử nghiệm Vàng (Golden Test Scenarios)
---           bao phủ 100% các case của Flow 3 (Trả sớm, Trả tháng cuối, Nghiệm thu,
---           Quyết toán cọc) và Sub-flow 6.2 (Vòng đời Quá hạn D+1..D+8 & Kho Tổng).
+-- Mục tiêu: Cung cấp các Kịch bản Thử nghiệm Vàng (Golden Test Scenarios)
+--           bao phủ các Flow nghiệp vụ trọng yếu (Trả kho, Quá hạn, Đặt chỗ, Check-in).
 --
 -- Đặc điểm: IDEMPOTENT (Chạy lại nhiều lần an toàn, tự động dọn dẹp data test cũ).
 --
