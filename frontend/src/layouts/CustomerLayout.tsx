@@ -216,31 +216,33 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
         {children}
       </main>
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 text-slate-600 text-xs mt-24 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Logo showSubtitle={false} size="sm" />
-            <span className="text-slate-400">• © 2026 SmartStorage. Toàn bộ bản quyền được bảo lưu.</span>
-          </div>
+      {/* Footer (Chỉ hiển thị trên các trang nội bộ, trang chủ HomePage có Footer SaaS chuyên dụng) */}
+      {!isHomeActive && (
+        <footer className="bg-white border-t border-slate-200 text-slate-600 text-xs mt-24 py-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <Logo showSubtitle={false} size="sm" />
+              <span className="text-slate-400">• © 2026 SmartStorage. Toàn bộ bản quyền được bảo lưu.</span>
+            </div>
 
-          <div className="flex items-center gap-6 text-slate-500 font-medium">
-            <a href="#" className="hover:text-slate-900">Về chúng tôi</a>
-            <Link to="/customer" className="hover:text-slate-900">Hệ thống cơ sở</Link>
-            <a href="#" className="hover:text-slate-900">Trung tâm trợ giúp</a>
-          </div>
+            <div className="flex items-center gap-6 text-slate-500 font-medium">
+              <a href="#" className="hover:text-slate-900">Về chúng tôi</a>
+              <Link to="/customer" className="hover:text-slate-900">Hệ thống cơ sở</Link>
+              <a href="#" className="hover:text-slate-900">Trung tâm trợ giúp</a>
+            </div>
 
-          <div className="flex items-center gap-5 text-slate-600 font-semibold">
-            <span className="flex items-center gap-1.5">
-              <Phone className="w-3.5 h-3.5 text-brand-500" /> Hotline: <strong className="text-slate-900">1900 8888</strong>
-            </span>
-            <span className="text-slate-300">•</span>
-            <span className="flex items-center gap-1.5">
-              <Mail className="w-3.5 h-3.5 text-brand-500" /> support@smartstorage.vn
-            </span>
+            <div className="flex items-center gap-5 text-slate-600 font-semibold">
+              <span className="flex items-center gap-1.5">
+                <Phone className="w-3.5 h-3.5 text-brand-500" /> Hotline: <strong className="text-slate-900">1900 8888</strong>
+              </span>
+              <span className="text-slate-300">•</span>
+              <span className="flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5 text-brand-500" /> support@smartstorage.vn
+              </span>
+            </div>
           </div>
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   );
 };

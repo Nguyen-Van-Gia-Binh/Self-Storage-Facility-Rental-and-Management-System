@@ -1,80 +1,98 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, MapPin, ArrowRight } from 'lucide-react';
+import { MapPin, ArrowRight, Phone } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
 import type { DisplayFacility } from '../hooks/useFacilityDirectory';
 
 interface HomeFacilityCardProps {
   facility: DisplayFacility;
+  index?: number;
 }
 
 /**
- * Thẻ hiển thị cơ sở kho trên HomePage - Chuẩn Human-Centered UI
- * Toàn bộ card là link bấm được, loại bỏ nút thừa và mã FAC-* kỹ thuật
+ * Thẻ hiển thị cơ sở kho trên HomePage — Chuẩn Dub.co SaaS & Modern Logistics
  */
-export const HomeFacilityCard: React.FC<HomeFacilityCardProps> = ({ facility: fac }) => {
+export const HomeFacilityCard: React.FC<HomeFacilityCardProps> = ({ facility: fac, index = 0 }) => {
+  const isFeatured = index === 1; // Cơ sở trọng điểm (thẻ thứ 2) viền xanh nổi bật theo prototype
+
+  // Quy mô diện tích sàn minh họa theo từng chi nhánh
+  const floorAreas = ['2.400 m²', '4.500 m²', '3.100 m²', '2.800 m²', '3.600 m²', '5.000 m²'];
+  const floorArea = floorAreas[index % floorAreas.length];
+
   return (
-    <Link
-      to={`/customer/units?facility=${fac.id}`}
-      key={fac.id}
-      className="w-full sm:w-[350px] lg:w-[380px] max-w-md bg-white rounded-2xl border border-brand-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group cursor-pointer block"
+    <div
+      className={`bg-white rounded-2xl overflow-hidden transition-all duration-300 flex flex-col justify-between group ${
+        isFeatured
+          ? 'border-2 border-[#57b29a] shadow-md hover:shadow-lg hover:-translate-y-1'
+          : 'border border-slate-200 shadow-sm hover:shadow-md hover:border-[#57b29a]/50 hover:-translate-y-1'
+      }`}
     >
       <div>
-        {/* Khung ảnh & Tag trạng thái thực tế */}
-        <div className="h-48 w-full overflow-hidden bg-slate-100 relative">
+        {/* Khung ảnh */}
+        <div className="relative h-52 overflow-hidden bg-slate-100">
           <img
-            src={fac.image}
+            src={fac.image || '/assets/landing/facility.jpg'}
             alt={fac.name}
-            onError={(e) => {
-              (e.target as HTMLImageElement).src =
-                'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80';
-            }}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
-          
-          {/* Giờ mở cửa */}
-          <div className="absolute top-3 left-3 bg-[#0a1614]/75 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-xs">
-            <Clock className="w-3 h-3 text-brand-400" />
-            <span>{fac.openingHours}</span>
-          </div>
         </div>
 
         {/* Nội dung thông tin cơ sở */}
-        <div className="p-5 space-y-2">
-          <h3 className="text-base font-extrabold text-[#0a1614] group-hover:text-brand-700 transition-colors line-clamp-1">
+        <div className="p-6">
+          <h3 className="font-bold text-base text-[#0a1614] mb-1 group-hover:text-[#57b29a] transition-colors line-clamp-1">
             {fac.name}
           </h3>
 
-          <div className="flex items-start gap-1.5 text-xs text-slate-600 leading-relaxed">
-            <MapPin className="w-4 h-4 text-brand-500 shrink-0 mt-0.5" />
+          <p className="text-xs text-slate-500 flex items-start gap-1.5 mb-3 leading-relaxed">
+            <MapPin className="w-4 h-4 text-[#57b29a] shrink-0 mt-0.5" />
             <span className="line-clamp-2">{fac.address}</span>
+          </p>
+
+          {/* Bảng thông số kỹ thuật (SaaS specs box theo đúng thiết kế landing_page) */}
+          <div className="space-y-1.5 text-xs text-slate-600 bg-[#f2f9f7] p-3.5 rounded-xl mb-4 border border-slate-200/70 font-mono">
+            <div className="flex justify-between items-center">
+              <span className="text-slate-500">Diện tích sàn:</span>
+              <span className="font-semibold text-[#0a1614]">{floorArea}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-slate-500">Loại kho:</span>
+              <span className="font-semibold text-[#0a1614]">Tiêu Chuẩn &amp; Máy Lạnh</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-slate-500">Giờ mở cửa:</span>
+              <span className="font-semibold text-emerald-700">{fac.openingHours || '24/7 Smart Access'}</span>
+            </div>
+            <div className="flex justify-between items-center pt-1 border-t border-slate-200/50">
+              <span className="text-slate-500">Giá thuê từ:</span>
+              <span className="font-bold text-[#57b29a]">
+                {fac.startingPrice ? `${formatVND(fac.startingPrice)}/tháng` : 'Liên hệ tư vấn'}
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Footer: Giá thuê & Lời gọi hành động tinh tế */}
-      <div className="p-5 pt-0">
-        <div className="pt-3 border-t border-brand-100/80 flex items-center justify-between">
-          <div>
-            <span className="text-[11px] text-slate-500 block font-medium">Giá thuê từ</span>
-            {fac.startingPrice != null ? (
-              <div className="flex items-baseline gap-1">
-                <strong className="text-base font-black text-brand-700 font-mono">
-                  {formatVND(fac.startingPrice)}
-                </strong>
-                <span className="text-xs text-slate-500 font-medium">/tháng</span>
-              </div>
-            ) : (
-              <strong className="text-xs font-bold text-slate-500">Liên hệ báo giá</strong>
-            )}
-          </div>
-
-          <div className="inline-flex items-center gap-1 text-xs font-bold text-brand-600 group-hover:text-brand-700 transition-colors">
-            <span>Xem kho trống</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </div>
-        </div>
+      {/* Action buttons chân card: Gọi tư vấn & Thuê kho ngay */}
+      <div className="px-6 pb-6 pt-0 flex gap-2">
+        <a
+          className="flex-1 text-center py-2.5 px-3 border border-slate-200 rounded-xl text-slate-700 text-xs font-semibold hover:bg-slate-50 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+          href={fac.phone ? `tel:${fac.phone}` : 'tel:19008899'}
+        >
+          <Phone className="w-3.5 h-3.5 text-slate-400" />
+          <span>Gọi tư vấn</span>
+        </a>
+        <Link
+          to={`/customer/units?facility=${fac.id}`}
+          className={`flex-1 text-center py-2.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer ${
+            isFeatured
+              ? 'bg-[#57b29a] hover:bg-[#439782] text-white active:scale-[0.98]'
+              : 'bg-[#0a1614] hover:bg-slate-800 text-white active:scale-[0.98]'
+          }`}
+        >
+          <span>Thuê kho ngay</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </Link>
       </div>
-    </Link>
+    </div>
   );
 };
