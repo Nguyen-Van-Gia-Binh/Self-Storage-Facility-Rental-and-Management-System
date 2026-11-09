@@ -9,14 +9,11 @@ import {
   RefreshCw,
   Search,
   Filter,
-  ArrowRight,
-  ShieldAlert,
 } from 'lucide-react';
 import { fetchMyAssignedFacilities } from '@/api/facility';
 import {
   fetchFacilityWaitlists,
   startContacting,
-  convertWaitlistToReservation,
   rejectWaitlist,
   followUpWaitlist,
 } from '@/api/waitlist';
@@ -36,16 +33,8 @@ export const WaitlistInboxPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [toast, setToast] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
-  // Modal States
-  const [convertModalItem, setConvertModalItem] = useState<WaitlistResponse | null>(null);
-  const [convertStartDate, setConvertStartDate] = useState<string>('');
-  const [convertMonths, setConvertMonths] = useState<number>(1);
-
   // Direct Contract Modal State
   const [directModalItem, setDirectModalItem] = useState<WaitlistResponse | null>(null);
-
-  // Rescue Modal State (409 Conflict)
-  const [rescueModalItem, setRescueModalItem] = useState<WaitlistResponse | null>(null);
 
   // Reject & FollowUp Modal State
   const [rejectModalItem, setRejectModalItem] = useState<WaitlistResponse | null>(null);
@@ -103,40 +92,6 @@ export const WaitlistInboxPage: React.FC = () => {
     } catch (err: any) {
       showToast(err.message || 'Khách hàng này đang được nhân viên khác tư vấn', 'error');
       if (selectedFacilityId) loadWaitlists(selectedFacilityId);
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  // Handle Open Convert Modal
-  const openConvertModal = (item: WaitlistResponse) => {
-    setConvertModalItem(item);
-    const today = new Date().toISOString().split('T')[0];
-    const initialStart = item.targetStartDate >= today ? item.targetStartDate : today;
-    setConvertStartDate(initialStart);
-    setConvertMonths(item.rentalMonths || 1);
-  };
-
-  // Submit Convert to Reservation
-  const handleConfirmConvert = async () => {
-    if (!convertModalItem) return;
-    try {
-      setActionLoading(true);
-      await convertWaitlistToReservation(convertModalItem.id, {
-        startDate: convertStartDate,
-        rentalMonths: convertMonths,
-      });
-      showToast('Chốt cọc thành công! Đã tạo đơn giữ chỗ 24h cho khách');
-      setConvertModalItem(null);
-      if (selectedFacilityId) loadWaitlists(selectedFacilityId);
-    } catch (err: any) {
-      if (err.status === 409 || err.errorCode === 'CAPACITY_NOT_AVAILABLE') {
-        // Trigger Rescue Modal (Tech Lead requirement)
-        setRescueModalItem(convertModalItem);
-        setConvertModalItem(null);
-      } else {
-        showToast(err.message || 'Không thể tạo đơn đặt cọc', 'error');
-      }
     } finally {
       setActionLoading(false);
     }
@@ -281,11 +236,11 @@ export const WaitlistInboxPage: React.FC = () => {
 
         <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Đã chốt cọc</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Đã chốt hợp đồng</span>
             <CheckCircle className="h-5 w-5 text-emerald-500" />
           </div>
           <div className="mt-2 text-2xl font-bold text-emerald-600">{countConverted}</div>
-          <p className="mt-1 text-xs text-gray-400">Đơn cọc 24h thành công</p>
+          <p className="mt-1 text-xs text-gray-400">Hợp đồng chuyển đổi từ CRM</p>
         </div>
       </div>
 
@@ -313,7 +268,7 @@ export const WaitlistInboxPage: React.FC = () => {
             <option value="WAITING">Chờ tư vấn (WAITING)</option>
             <option value="CONTACTING">Đang liên hệ (CONTACTING)</option>
             <option value="PENDING_FOLLOW_UP">Hẹn gọi lại (FOLLOW_UP)</option>
-            <option value="CONVERTED">Đã chốt cọc (CONVERTED)</option>
+            <option value="CONVERTED">Đã chốt hợp đồng (CONVERTED)</option>
           </select>
         </div>
       </div>
@@ -478,14 +433,6 @@ export const WaitlistInboxPage: React.FC = () => {
                               Tạo HĐ trực tiếp
                             </button>
                             <button
-                              onClick={() => openConvertModal(item)}
-                              disabled={actionLoading}
-                              className="rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-emerald-700"
-                              title="Tạo đơn giữ chỗ 24h chờ khách thanh toán online"
-                            >
-                              Tạo đơn cọc
-                            </button>
-                            <button
                               onClick={() => {
                                 setFollowUpModalItem(item);
                                 setFollowUpNotes(item.contactNotes || '');
@@ -507,13 +454,9 @@ export const WaitlistInboxPage: React.FC = () => {
                             </button>
                           </div>
                         ) : item.status === 'CONVERTED' ? (
-                          item.convertedContractId ? (
-                            <span className="text-xs text-teal-700 font-semibold bg-teal-50 border border-teal-200 px-2 py-1 rounded-md">
-                              HĐ #{item.convertedContractId} sẵn sàng
-                            </span>
-                          ) : (
-                            <span className="text-xs text-emerald-600 font-medium">Chờ thanh toán VNPay</span>
-                          )
+                          <span className="text-xs text-teal-700 font-semibold bg-teal-50 border border-teal-200 px-2 py-1 rounded-md">
+                            {item.convertedContractId ? `HĐ #${item.convertedContractId} sẵn sàng` : 'Đã tạo HĐ trực tiếp'}
+                          </span>
                         ) : null}
                       </td>
                     </tr>
@@ -524,68 +467,6 @@ export const WaitlistInboxPage: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* MODAL 1: Chốt đơn đặt cọc */}
-      {convertModalItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-bold text-gray-900">Tạo đơn Đặt cọc Giữ chỗ (24 Giờ)</h3>
-            <p className="mt-1 text-xs text-gray-500">
-              Kiểm tra và cập nhật ngày bắt đầu thuê & thời hạn theo thỏa thuận trực tiếp qua điện thoại với khách.
-            </p>
-
-            <div className="mt-4 space-y-3">
-              <div>
-                <label className="text-xs font-semibold text-gray-500">Khách hàng</label>
-                <div className="text-sm font-medium text-gray-800">{convertModalItem.customerName} ({convertModalItem.customerPhone})</div>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-gray-500">Hạng kho yêu cầu</label>
-                <div className="text-sm font-medium text-teal-700">{convertModalItem.unitTypeName}</div>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-gray-700">Ngày bắt đầu thuê</label>
-                <input
-                  type="date"
-                  min={new Date().toISOString().split('T')[0]}
-                  value={convertStartDate}
-                  onChange={(e) => setConvertStartDate(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-gray-700">Số tháng thuê</label>
-                <input
-                  type="number"
-                  min={1}
-                  value={convertMonths}
-                  onChange={(e) => setConvertMonths(Number(e.target.value))}
-                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={() => setConvertModalItem(null)}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleConfirmConvert}
-                disabled={actionLoading}
-                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50"
-              >
-                Xác nhận Tạo đơn Cọc
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* MODAL: Sử dụng chung CreateDirectContractModal hoàn chỉnh */}
       {directModalItem && (
@@ -602,64 +483,6 @@ export const WaitlistInboxPage: React.FC = () => {
           defaultFacilityId={selectedFacilityId ?? undefined}
           initialWaitlist={directModalItem}
         />
-      )}
-
-      {/* MODAL 2: Cứu cánh khi hết kho (409 Conflict) */}
-      {rescueModalItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border-2 border-red-500">
-            <div className="flex items-start gap-4">
-              <div className="rounded-full bg-red-100 p-3 text-red-600">
-                <ShieldAlert className="h-6 w-6" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-gray-900">Rất tiếc, Hạng kho này vừa hết chỗ!</h3>
-                <p className="mt-1 text-sm text-gray-600">
-                  Trong lúc bạn đang gọi điện tư vấn, toàn bộ công suất trống của loại kho{' '}
-                  <span className="font-semibold text-red-600">{rescueModalItem.unitTypeName}</span> đã bị khách hàng
-                  khác đặt trước.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-5 rounded-xl bg-gray-50 p-4 border border-gray-200">
-              <div className="text-xs font-semibold uppercase text-gray-500 mb-2">Phương án xử lý tình huống:</div>
-              <ul className="space-y-2 text-xs text-gray-700">
-                <li className="flex items-center gap-2">
-                  <ArrowRight className="h-3.5 w-3.5 text-teal-600" />
-                  <strong>Phương án 1:</strong> Tư vấn khách nâng hạng kho (Upgrade) sang loại diện tích lớn hơn còn trống.
-                </li>
-                <li className="flex items-center gap-2">
-                  <ArrowRight className="h-3.5 w-3.5 text-teal-600" />
-                  <strong>Phương án 2:</strong> Tư vấn khách thuê tại chi nhánh/cơ sở lân cận của công ty.
-                </li>
-                <li className="flex items-center gap-2">
-                  <ArrowRight className="h-3.5 w-3.5 text-teal-600" />
-                  <strong>Phương án 3:</strong> Giữ khách ở trạng thái Hẹn gọi lại để ưu tiên Top 1 khi có người trả kho.
-                </li>
-              </ul>
-            </div>
-
-            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <button
-                onClick={() => setRescueModalItem(null)}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
-              >
-                Đóng
-              </button>
-              <button
-                onClick={() => {
-                  setFollowUpModalItem(rescueModalItem);
-                  setFollowUpNotes('Hết kho trống lúc tư vấn - Hẹn báo lại khi có kho trống');
-                  setRescueModalItem(null);
-                }}
-                className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-teal-700"
-              >
-                Lưu vào Hẹn gọi lại sau
-              </button>
-            </div>
-          </div>
-        </div>
       )}
 
       {/* MODAL 3: Hẹn gọi lại sau (Follow Up) */}

@@ -10,7 +10,7 @@ const STORAGE_PAYMENTS_KEY = 'smartstorage_payments';
 const STORAGE_USER_PASSES_KEY = 'smartstorage_move_in_passes';
 
 export interface CheckoutPayload {
-  referenceType?: 'RESERVATION' | 'CONTRACT_RENEWAL' | 'SETTLEMENT' | 'OVERDUE_PENALTY' | 'RESCHEDULE_FEE';
+  referenceType?: 'RESERVATION' | 'CONTRACT_RENEWAL' | 'SETTLEMENT' | 'OVERDUE_PENALTY' | 'RESCHEDULE_FEE' | 'DIRECT_CONTRACT' | 'CONTRACT_INITIAL';
   referenceId?: number;
   reservationId?: number;
   contractRenewalId?: number;

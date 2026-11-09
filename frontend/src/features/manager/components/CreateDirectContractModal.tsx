@@ -793,47 +793,57 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
             </label>
             <div className="grid grid-cols-2 gap-3">
               <label
-                className={`p-3 rounded-2xl border text-xs font-semibold flex items-center gap-2.5 cursor-pointer transition-all ${
+                className={`p-3 rounded-2xl border text-xs font-semibold flex flex-col gap-1 cursor-pointer transition-all ${
                   paymentMethod === 'CASH'
                     ? 'border-brand-500 bg-brand-50/50 text-brand-900 ring-2 ring-brand-500/20'
                     : 'border-slate-200 hover:bg-slate-50 text-slate-700'
                 }`}
               >
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="CASH"
-                  checked={paymentMethod === 'CASH'}
-                  onChange={() => setPaymentMethod('CASH')}
-                  className="hidden"
-                />
-                <div className="w-4 h-4 rounded-full border border-current flex items-center justify-center">
-                  {paymentMethod === 'CASH' && <div className="w-2 h-2 rounded-full bg-brand-600" />}
+                <div className="flex items-center gap-2.5">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="CASH"
+                    checked={paymentMethod === 'CASH'}
+                    onChange={() => setPaymentMethod('CASH')}
+                    className="hidden"
+                  />
+                  <div className="w-4 h-4 rounded-full border border-current flex items-center justify-center shrink-0">
+                    {paymentMethod === 'CASH' && <div className="w-2 h-2 rounded-full bg-brand-600" />}
+                  </div>
+                  <span>Tiền mặt tại quầy (CASH)</span>
                 </div>
-                <span>Tiền mặt tại quầy (CASH)</span>
+                <p className="text-[10px] text-slate-500 pl-6.5 font-normal">
+                  Đã thu tiền mặt tại quầy — Hợp đồng kích hoạt sẵn sàng nhận kho.
+                </p>
               </label>
 
               <label
-                className={`p-3 rounded-2xl border text-xs font-semibold flex items-center gap-2.5 cursor-pointer transition-all ${
+                className={`p-3 rounded-2xl border text-xs font-semibold flex flex-col gap-1 cursor-pointer transition-all ${
                   paymentMethod === 'BANK_TRANSFER'
                     ? 'border-brand-500 bg-brand-50/50 text-brand-900 ring-2 ring-brand-500/20'
                     : 'border-slate-200 hover:bg-slate-50 text-slate-700'
                 }`}
               >
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="BANK_TRANSFER"
-                  checked={paymentMethod === 'BANK_TRANSFER'}
-                  onChange={() => setPaymentMethod('BANK_TRANSFER')}
-                  className="hidden"
-                />
-                <div className="w-4 h-4 rounded-full border border-current flex items-center justify-center">
-                  {paymentMethod === 'BANK_TRANSFER' && (
-                    <div className="w-2 h-2 rounded-full bg-brand-600" />
-                  )}
+                <div className="flex items-center gap-2.5">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="BANK_TRANSFER"
+                    checked={paymentMethod === 'BANK_TRANSFER'}
+                    onChange={() => setPaymentMethod('BANK_TRANSFER')}
+                    className="hidden"
+                  />
+                  <div className="w-4 h-4 rounded-full border border-current flex items-center justify-center shrink-0">
+                    {paymentMethod === 'BANK_TRANSFER' && (
+                      <div className="w-2 h-2 rounded-full bg-brand-600" />
+                    )}
+                  </div>
+                  <span>Chuyển khoản trực tiếp (BANK_TRANSFER)</span>
                 </div>
-                <span>Chuyển khoản trực tiếp (BANK_TRANSFER)</span>
+                <p className="text-[10px] text-teal-700 pl-6.5 font-medium">
+                  Hợp đồng xuất hiện ngay trên tài khoản khách hàng để quét VietQR / thanh toán online.
+                </p>
               </label>
             </div>
           </div>
@@ -874,7 +884,7 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
               </span>
             </div>
             <p className="text-[11px] text-slate-500 pt-1">
-              * Hợp đồng sẽ được khởi tạo ở trạng thái <strong className="text-amber-700">PENDING_CHECK_IN (Chờ nhận kho)</strong>. Khách hàng có thể check-in trực tuyến hoặc trực tiếp tại quầy vào ngày bắt đầu thuê.
+              * Hợp đồng được tạo ngay cho khách hàng. Nếu chọn <strong className="text-teal-700">Chuyển khoản</strong>, khách hàng sẽ thấy nút &quot;Thanh toán ngay&quot; trên trang &quot;Kho của tôi&quot; để quét VietQR kích hoạt kho.
             </p>
           </div>
 

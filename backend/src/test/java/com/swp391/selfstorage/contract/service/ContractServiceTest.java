@@ -1009,6 +1009,68 @@ class ContractServiceTest {
     }
 
     @Test
+    @DisplayName("createDirectContract: Thanh toán chuyển khoản BANK_TRANSFER tạo giao dịch PENDING để khách trả sau")
+    void createDirectContract_WithBankTransfer_SetsPaymentPending() {
+        UserPrincipal fmUser = new UserPrincipal(20L, "fm@smartstorage.vn", "pass", "Quản lý",
+                UserRole.FACILITY_MANAGER, UserStatus.ACTIVE, List.of(1L), List.of());
+
+        Facility facility = new Facility();
+        facility.setId(1L);
+        facility.setStatus(FacilityStatus.ACTIVE);
+
+        UnitType unitType = new UnitType();
+        unitType.setId(7L);
+        unitType.setActive(true);
+
+        StorageUnit unit = StorageUnit.builder()
+                .id(45L)
+                .facilityId(1L)
+                .unitTypeId(7L)
+                .code("U-45")
+                .status(StorageUnitStatus.AVAILABLE)
+                .build();
+
+        org.springframework.test.util.ReflectionTestUtils.setField(contractService, "userRepository", userRepository);
+        when(userRepository.findById(15L)).thenReturn(Optional.of(new AppUser()));
+        when(facilityRepository.findById(1L)).thenReturn(Optional.of(facility));
+        when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(unitType));
+        when(storageUnitRepository.findById(45L)).thenReturn(Optional.of(unit));
+        when(contractRepository.existsOverlappingContractForUnit(eq(45L), any(), any(), anyInt(), eq(0L))).thenReturn(false);
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> {
+            Reservation r = inv.getArgument(0);
+            r.setId(777L);
+            return r;
+        });
+        when(contractRepository.save(any(RentalContract.class))).thenAnswer(inv -> {
+            RentalContract c = inv.getArgument(0);
+            c.setId(888L);
+            return c;
+        });
+
+        org.mockito.ArgumentCaptor<com.swp391.selfstorage.payment.entity.PaymentTransaction> captor =
+                org.mockito.ArgumentCaptor.forClass(com.swp391.selfstorage.payment.entity.PaymentTransaction.class);
+
+        CreateDirectContractRequest req = CreateDirectContractRequest.builder()
+                .customerId(15L)
+                .facilityId(1L)
+                .unitTypeId(7L)
+                .storageUnitId(45L)
+                .startDate(LocalDate.now().plusDays(2))
+                .rentalMonths(3)
+                .paymentMethod("BANK_TRANSFER")
+                .build();
+
+        ContractResponse resp = contractService.createDirectContract(req, fmUser);
+
+        assertNotNull(resp);
+        verify(paymentTransactionRepository, atLeastOnce()).save(captor.capture());
+        com.swp391.selfstorage.payment.entity.PaymentTransaction savedTxn = captor.getValue();
+        assertEquals("PENDING", savedTxn.getStatus());
+        assertEquals("BANK_TRANSFER", savedTxn.getPaymentMethod());
+        assertEquals("DIRECT_CONTRACT_BANK_TRANSFER", savedTxn.getProviderReference());
+    }
+
+    @Test
     @DisplayName("createDirectContract: Chuyển đổi Waitlist thành công khi tạo hợp đồng trực tiếp")
     void createDirectContract_WithWaitlistId_Success() {
         UserPrincipal fmUser = new UserPrincipal(20L, "fm@smartstorage.vn", "pass", "Quản lý",

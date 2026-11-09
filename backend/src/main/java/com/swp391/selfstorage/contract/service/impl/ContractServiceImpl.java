@@ -2823,14 +2823,15 @@ public class ContractServiceImpl implements ContractService {
                 reservation.setConfirmedAt(OffsetDateTime.now(ZoneOffset.UTC));
                 Reservation savedReservation = reservationRepository.save(reservation);
 
-                // 8. Tạo giao dịch PaymentTransaction đã ghi nhận thanh toán cọc tại quầy
+                // 8. Tạo giao dịch PaymentTransaction (nếu CASH: đã thu tại quầy -> SUCCESS; nếu BANK_TRANSFER: PENDING chờ khách thanh toán online)
+                boolean isCash = "CASH".equalsIgnoreCase(request.getPaymentMethod());
                 PaymentTransaction payment = PaymentTransaction.builder()
                                 .reservationId(savedReservation.getId())
                                 .transactionType(PaymentTransactionType.INITIAL_PAYMENT.name())
-                                .amount(deposit)
-                                .status(PaymentStatus.SUCCESS.name())
+                                .amount(totalPayable)
+                                .status(isCash ? PaymentStatus.SUCCESS.name() : PaymentStatus.PENDING.name())
                                 .paymentMethod(request.getPaymentMethod() != null ? request.getPaymentMethod() : "CASH")
-                                .providerReference("DIRECT_CONTRACT_DESK")
+                                .providerReference(isCash ? "DIRECT_CONTRACT_DESK_CASH" : "DIRECT_CONTRACT_BANK_TRANSFER")
                                 .orderCode(ThreadLocalRandom.current().nextLong(1_000_000_000L, 9_999_999_999L))
                                 .build();
                 if (paymentTransactionRepository != null) {

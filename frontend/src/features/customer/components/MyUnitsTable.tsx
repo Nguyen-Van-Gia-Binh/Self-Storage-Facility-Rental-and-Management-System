@@ -30,6 +30,7 @@ import { isStorageUnitAssigned } from '../utils/unitAssignment';
 import type { RentedContract } from '../types';
 import type { ReservationResponse } from '@/api/reservation';
 import { DigitalMoveInPassModal } from './DigitalMoveInPassModal';
+import { DirectContractPaymentModal } from './DirectContractPaymentModal';
 import { tokenStorage } from '@/utils/tokenStorage';
 
 export interface MyUnitsTableProps {
@@ -72,6 +73,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
 }) => {
   const [activePassContract, setActivePassContract] = useState<RentedContract | null>(null);
   const [activePassMode, setActivePassMode] = useState<'pass' | 'checkin'>('pass');
+  const [payingContract, setPayingContract] = useState<RentedContract | null>(null);
   const [revealedPins, setRevealedPins] = useState<Record<string, boolean>>({});
   const [copiedPinId, setCopiedPinId] = useState<string | null>(null);
 
@@ -452,6 +454,10 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                       <span className="text-amber-700 text-xs font-semibold bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200">
                         Đang đổi ô kho
                       </span>
+                    ) : contract.hasPendingInitialPayment ? (
+                      <span className="text-amber-700 text-xs font-semibold bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200">
+                        Cần thanh toán ban đầu
+                      </span>
                     ) : contract.status === 'PENDING_CHECKIN' ||
                       (contract.status as string) === 'PENDING_CHECK_IN' ? (
                       <div className="inline-flex items-center gap-1.5">
@@ -530,6 +536,10 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                       <Badge variant="warning" className="bg-amber-100 text-amber-900 border-amber-300 font-bold" title="Từ chối ô cũ do lỗi hiện trường - Đang chờ bố trí ô kho thay thế">
                         Đổi ô kho
                       </Badge>
+                    ) : contract.hasPendingInitialPayment ? (
+                      <Badge variant="warning" className="bg-amber-100 text-amber-900 border-amber-300 font-bold">
+                        Chờ thanh toán cọc & thuê
+                      </Badge>
                     ) : contract.status === 'PENDING_CHECKIN' ||
                       (contract.status as string) === 'PENDING_CHECK_IN' ? (
                       <Badge variant="reserved">Chờ nhận kho</Badge>
@@ -567,7 +577,22 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                   <td className="py-3.5 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
                       {/* 1. Nút hành động chính */}
-                      {contract.status === 'OVERDUE' && penaltyFee > 0 ? (
+                      {contract.hasPendingInitialPayment ? (
+                        <Button
+                          type="button"
+                          variant="primary"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPayingContract(contract);
+                          }}
+                          className="h-7 text-xs px-2.5 font-bold bg-[#0d6050] hover:bg-[#12836d] text-white cursor-pointer whitespace-nowrap shrink-0 shadow-xs"
+                          title="Quét VietQR hoặc thanh toán online tiền cọc & thuê ban đầu"
+                        >
+                          <CreditCard className="w-3.5 h-3.5 mr-1 text-amber-300" />
+                          Thanh toán ngay
+                        </Button>
+                      ) : contract.status === 'OVERDUE' && penaltyFee > 0 ? (
                         <Button
                           type="button"
                           variant="danger"
@@ -703,7 +728,21 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                                 {(contract.status === 'PENDING_CHECKIN' ||
                                   (contract.status as string) === 'PENDING_CHECK_IN') && (
                                   <div className="py-0.5">
-                                    {isStorageUnitAssigned(contract.unitNumber) && (
+                                    {contract.hasPendingInitialPayment && (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setOpenMenuId(null);
+                                          setPayingContract(contract);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-emerald-50 text-[#0d6050] transition-colors cursor-pointer font-bold"
+                                      >
+                                        <CreditCard className="w-3.5 h-3.5 text-emerald-600" />
+                                        <span>Thanh toán ngay</span>
+                                      </button>
+                                    )}
+                                    {!contract.hasPendingInitialPayment && isStorageUnitAssigned(contract.unitNumber) && (
                                       <button
                                         type="button"
                                         disabled={!isCheckInAllowedToday(contract.startDate)}
@@ -923,6 +962,19 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
             status: 'PENDING_CHECKIN',
             totalPaid: (activePassContract.monthlyRent || 0) + (activePassContract.depositHeld || 0),
           }}
+        />
+      )}
+
+      {/* Direct Contract Payment Modal */}
+      {payingContract && (
+        <DirectContractPaymentModal
+          isOpen={Boolean(payingContract)}
+          onClose={() => setPayingContract(null)}
+          onPaymentSuccess={() => {
+            setPayingContract(null);
+            onCheckInSuccess?.();
+          }}
+          contract={payingContract}
         />
       )}
     </>

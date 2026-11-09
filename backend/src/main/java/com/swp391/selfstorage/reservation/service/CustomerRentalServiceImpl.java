@@ -466,6 +466,25 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
 
         // Khởi tạo mặc định
         res.setHasPendingRenewal(false);
+        res.setHasPendingInitialPayment(false);
+
+        // Kiểm tra hợp đồng PENDING_CHECK_IN có giao dịch thanh toán ban đầu (cọc + tiền thuê) đang chờ không
+        if (paymentTransactionRepository != null && contract.getStatus() == ContractStatus.PENDING_CHECK_IN) {
+            List<PaymentTransaction> txns = paymentTransactionRepository.findByContractId(contract.getId());
+            boolean hasPaidInitial = txns.stream()
+                    .anyMatch(t -> "INITIAL_PAYMENT".equalsIgnoreCase(t.getTransactionType()) && "SUCCESS".equalsIgnoreCase(t.getStatus()));
+            Optional<PaymentTransaction> pendingInitial = txns.stream()
+                    .filter(t -> "INITIAL_PAYMENT".equalsIgnoreCase(t.getTransactionType()) && "PENDING".equalsIgnoreCase(t.getStatus()))
+                    .findFirst();
+
+            if (!hasPaidInitial && pendingInitial.isPresent()) {
+                PaymentTransaction p = pendingInitial.get();
+                res.setHasPendingInitialPayment(true);
+                res.setPendingInitialPaymentOrderCode(p.getOrderCode());
+                res.setPendingInitialPaymentAmount(p.getAmount());
+                res.setPendingInitialPaymentMethod(p.getPaymentMethod());
+            }
+        }
 
         // Kiểm tra đơn gia hạn đang chờ
         if (paymentTransactionRepository != null && (contract.getStatus() == ContractStatus.ACTIVE || contract.getStatus() == ContractStatus.OVERDUE)) {
