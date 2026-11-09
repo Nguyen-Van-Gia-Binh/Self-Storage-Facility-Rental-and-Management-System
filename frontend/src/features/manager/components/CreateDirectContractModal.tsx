@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
   X,
@@ -78,8 +78,16 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
   const [notes, setNotes] = useState<string>('');
 
   // Form state
+  const formRef = useRef<HTMLFormElement>(null);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const showError = (msg: string) => {
+    setErrorMessage(msg);
+    setTimeout(() => {
+      formRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 50);
+  };
 
   // Load facilities if needed
   useEffect(() => {
@@ -119,6 +127,12 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
           createdAt: new Date().toISOString(),
         });
         setCustomerPhone(initialWaitlist.contactPhone || initialWaitlist.customerPhone || '');
+        setCustomerMode('search');
+      } else {
+        setCustomerMode('walkin');
+        setWalkinFullName(initialWaitlist.customerName || '');
+        setWalkinPhone(initialWaitlist.contactPhone || initialWaitlist.customerPhone || '');
+        setWalkinEmail(initialWaitlist.customerEmail || '');
       }
       if (initialWaitlist.unitTypeId) {
         setSelectedUnitTypeId(initialWaitlist.unitTypeId);
@@ -133,7 +147,6 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
       if (initialWaitlist.contactNotes) {
         setNotes(initialWaitlist.contactNotes);
       }
-      setCustomerMode('search');
     } else if (isOpen && !initialWaitlist) {
       setWaitlistId(undefined);
     }
@@ -148,7 +161,15 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
           const types = res.content || [];
           setUnitTypes(types);
           if (types.length > 0) {
-            setSelectedUnitTypeId(types[0].id);
+            setSelectedUnitTypeId((prev) => {
+              if (initialWaitlist?.unitTypeId && types.some((t) => t.id === initialWaitlist.unitTypeId)) {
+                return initialWaitlist.unitTypeId;
+              }
+              if (prev && types.some((t) => t.id === prev)) {
+                return prev;
+              }
+              return types[0].id;
+            });
           } else {
             setSelectedUnitTypeId(0);
           }
@@ -268,16 +289,16 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
 
     if (customerMode === 'search') {
       if (!selectedCustomer) {
-        setErrorMessage('Vui lòng tìm và chọn khách hàng từ danh sách, hoặc chuyển sang tab "Khách vãng lai tại quầy".');
+        showError('Vui lòng tìm và chọn khách hàng từ danh sách, hoặc chuyển sang tab "Khách vãng lai tại quầy".');
         return;
       }
       cleanPhone = customerPhone.trim();
       if (!cleanPhone) {
-        setErrorMessage('Vui lòng nhập số điện thoại liên hệ của khách hàng.');
+        showError('Vui lòng nhập số điện thoại liên hệ của khách hàng.');
         return;
       }
       if (!/^0\d{9}$/.test(cleanPhone)) {
-        setErrorMessage('Số điện thoại không hợp lệ. Vui lòng nhập đúng 10 chữ số (bắt đầu bằng số 0, ví dụ: 0987654321).');
+        showError('Số điện thoại không hợp lệ. Vui lòng nhập đúng 10 chữ số (bắt đầu bằng số 0, ví dụ: 0987654321).');
         return;
       }
       customerId = selectedCustomer.id;
@@ -285,16 +306,16 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
       customerEmail = selectedCustomer.email;
     } else {
       if (!walkinFullName.trim()) {
-        setErrorMessage('Vui lòng nhập họ và tên khách hàng.');
+        showError('Vui lòng nhập họ và tên khách hàng.');
         return;
       }
       cleanPhone = walkinPhone.trim();
       if (!cleanPhone) {
-        setErrorMessage('Vui lòng nhập số điện thoại liên hệ nhận kho của khách hàng.');
+        showError('Vui lòng nhập số điện thoại liên hệ nhận kho của khách hàng.');
         return;
       }
       if (!/^0\d{9}$/.test(cleanPhone)) {
-        setErrorMessage('Số điện thoại không hợp lệ. Vui lòng nhập đúng 10 chữ số (bắt đầu bằng số 0, ví dụ: 0987654321).');
+        showError('Số điện thoại không hợp lệ. Vui lòng nhập đúng 10 chữ số (bắt đầu bằng số 0, ví dụ: 0987654321).');
         return;
       }
       customerFullName = walkinFullName.trim();
@@ -302,15 +323,15 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
     }
 
     if (!selectedFacilityId) {
-      setErrorMessage('Vui lòng chọn cơ sở quản lý.');
+      showError('Vui lòng chọn cơ sở quản lý.');
       return;
     }
     if (!selectedUnitTypeId) {
-      setErrorMessage('Vui lòng chọn loại ô kho.');
+      showError('Vui lòng chọn loại ô kho.');
       return;
     }
     if (!startDate) {
-      setErrorMessage('Vui lòng chọn ngày bắt đầu thuê.');
+      showError('Vui lòng chọn ngày bắt đầu thuê.');
       return;
     }
 
@@ -337,7 +358,7 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
     } catch (err: any) {
       console.error('Lỗi khi tạo hợp đồng trực tiếp:', err);
       const msg = err?.message || err?.error || 'Không thể tạo hợp đồng trực tiếp. Vui lòng kiểm tra lại.';
-      setErrorMessage(msg);
+      showError(msg);
     } finally {
       setSubmitting(false);
     }
@@ -381,7 +402,7 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
         </div>
 
         {/* Modal Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
+        <form ref={formRef} onSubmit={handleSubmit} noValidate className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
           {errorMessage && (
             <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-2.5 text-xs text-rose-700">
               <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
@@ -502,7 +523,7 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
                     <input
                       type="tel"
                       required
-                      pattern="^0\d{9}$"
+                      pattern="0[0-9]{9}"
                       placeholder="Nhập số điện thoại khách hàng (10 số, ví dụ: 0987654321)..."
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
@@ -631,7 +652,7 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
                     <input
                       type="tel"
                       required
-                      pattern="^0\d{9}$"
+                      pattern="0[0-9]{9}"
                       placeholder="Nhập 10 số (ví dụ: 0987654321)..."
                       value={walkinPhone}
                       onChange={(e) => setWalkinPhone(e.target.value)}
@@ -714,6 +735,11 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
               <p className="text-[10px] text-slate-400 mt-1">
                 {availableUnits.length} ô kho đang trống sẵn sàng
               </p>
+              {initialWaitlist && initialWaitlist.availableCapacity === 0 && (
+                <p className="text-[11px] text-amber-800 bg-amber-50 p-2 rounded-lg border border-amber-200 mt-1.5 leading-snug">
+                  ⚠️ Lưu ý: Hạng kho này hiện đang hết công suất trống (0 ô khả dụng). Nếu cố định tạo hợp đồng vào ngày này hệ thống sẽ chặn vì trùng lịch. Bạn có thể tư vấn khách đổi sang hạng kho khác hoặc lùi ngày bắt đầu.
+                </p>
+              )}
             </div>
           </div>
 
@@ -851,32 +877,46 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
           </div>
 
           {/* Modal Footer */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={handleClose}
-              disabled={submitting}
-              className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
-            >
-              Hủy bỏ
-            </button>
-            <button
-              type="submit"
-              disabled={submitting || !selectedCustomer}
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-700 to-brand-700 hover:from-teal-800 hover:to-brand-800 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
-            >
-              {submitting ? (
-                <>
-                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Đang khởi tạo...</span>
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Xác nhận Tạo Hợp Đồng</span>
-                </>
-              )}
-            </button>
+          <div className="pt-3 border-t border-slate-100 space-y-3">
+            {errorMessage && (
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2.5 text-xs text-rose-700 animate-in fade-in">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
+                <div className="flex-1 font-medium leading-relaxed">{errorMessage}</div>
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={handleClose}
+                disabled={submitting}
+                className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="submit"
+                disabled={
+                  submitting ||
+                  (customerMode === 'search'
+                    ? !selectedCustomer
+                    : !walkinFullName.trim() || !walkinPhone.trim())
+                }
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-700 to-brand-700 hover:from-teal-800 hover:to-brand-800 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
+              >
+                {submitting ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Đang khởi tạo...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Xác nhận Tạo Hợp Đồng</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </form>
       </div>
