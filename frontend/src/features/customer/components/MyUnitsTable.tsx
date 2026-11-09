@@ -415,7 +415,11 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
 
                   {/* Cột 5: Mã mở khóa */}
                   <td className="py-3.5 px-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                    {contract.accessPin && contract.status !== 'PENDING_CHECKIN' && (contract.status as string) !== 'PENDING_CHECK_IN' ? (
+                    {contract.status === 'OVERDUE' && !isOverdueUnlocked ? (
+                      <span className="text-rose-700 text-[11px] font-bold bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                        Đã khóa PIN (Đóng phí để mở)
+                      </span>
+                    ) : contract.accessPin && contract.status !== 'PENDING_CHECKIN' && (contract.status as string) !== 'PENDING_CHECK_IN' ? (
                       <div className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-50 border border-slate-200 text-xs shadow-2xs">
                         <span className="text-slate-400 text-[10px] font-medium mr-0.5">PIN:</span>
                         <span className="font-mono font-black text-slate-800 tracking-wider">
