@@ -1,5 +1,7 @@
 package com.swp391.selfstorage.payment.event;
 
+import java.time.Instant;
+
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,20 +36,22 @@ public class PaymentEventListener {
         log.info("Xử lý ContractSettledEvent cho contractId={}, refundAmount={}, payableAmount={}",
                 event.getContractId(), event.getDepositRefundAmount(), event.getPayableAmount());
 
-        // 1. Dư cọc sau khi đối trừ -> Tạo giao dịch hoàn tiền
+        // 1. Dư cọc sau khi đối trừ -> Tạo giao dịch hoàn tiền thành công (FM quyết toán chốt hoàn cọc ngay)
         if (event.getDepositRefundAmount() > 0) {
+            Instant paidAt = event.getSettledAt() != null ? event.getSettledAt().toInstant() : Instant.now();
             PaymentTransaction refundTxn = PaymentTransaction.builder()
                     .contractId(event.getContractId())
                     .amount(event.getDepositRefundAmount())
                     .transactionType("DEPOSIT_REFUND")
                     .paymentMethod("BANK_TRANSFER")
-                    .status("PENDING_REFUND")
+                    .status("SUCCESS")
+                    .paidAt(paidAt)
                     .providerReference("Hoàn cọc quyết toán hợp đồng #" + event.getContractId())
                     .orderCode(System.currentTimeMillis())
                     .build();
 
             paymentTransactionRepository.save(refundTxn);
-            log.info("Đã tạo bản ghi DEPOSIT_REFUND PENDING_REFUND cho contractId={}", event.getContractId());
+            log.info("Đã tạo bản ghi DEPOSIT_REFUND SUCCESS cho contractId={}", event.getContractId());
         }
 
         // 2. Nợ thêm do hư hại/quá hạn vượt tiền cọc -> Tạo giao dịch thu nợ

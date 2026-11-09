@@ -1,6 +1,7 @@
 package com.swp391.selfstorage.payment.event;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
 
@@ -28,7 +29,7 @@ class PaymentEventListenerTest {
     private PaymentEventListener paymentEventListener;
 
     @Test
-    @DisplayName("FM-04: handleContractSettled khi có depositRefundAmount > 0 -> Lưu giao dịch REFUND PENDING_REFUND")
+    @DisplayName("FM-04: handleContractSettled khi có depositRefundAmount > 0 -> Lưu giao dịch DEPOSIT_REFUND SUCCESS")
     void handleContractSettled_WhenRefund_ShouldSaveRefundTransaction() {
         ContractSettledEvent event = ContractSettledEvent.builder()
                 .contractId(300L)
@@ -47,7 +48,8 @@ class PaymentEventListenerTest {
 
         assertEquals(300L, saved.getContractId());
         assertEquals("DEPOSIT_REFUND", saved.getTransactionType());
-        assertEquals("PENDING_REFUND", saved.getStatus());
+        assertEquals("SUCCESS", saved.getStatus());
+        assertNotNull(saved.getPaidAt());
         assertEquals(1_200_000L, saved.getAmount());
         assertEquals("BANK_TRANSFER", saved.getPaymentMethod());
     }
