@@ -5,3 +5,4 @@ UPDATE payment_transaction
 SET status = 'PENDING', provider_reference = 'DIRECT_CONTRACT_BANK_TRANSFER'
 WHERE (provider_reference = 'DIRECT_CONTRACT_DESK' OR provider_reference = 'DIRECT_CONTRACT_DESK_CASH')
   AND payment_method = 'BANK_TRANSFER';
+

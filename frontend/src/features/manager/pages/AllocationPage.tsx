@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle,
   Building2,
@@ -69,8 +69,11 @@ export interface AllocationQueueItem {
   rentalMonths: number;
   endDateExclusive?: string;
   storageUnitId?: number;
+  storageUnitCode?: string;
   originalDefectiveUnitCode?: string;
   assignedStaffId?: number;
+  assignedStaffName?: string;
+  isAssigned: boolean;
 }
 
 function getCustomerInfo(row: ReservationResponse) {
@@ -95,6 +98,7 @@ export const AllocationPage: React.FC = () => {
   const [facilities, setFacilities] = useState<FacilityListItem[]>([]);
   const [facilityId, setFacilityId] = useState<number | null>(null);
   const [facilityCounts, setFacilityCounts] = useState<Record<string | number, number>>({});
+  const [filterTab, setFilterTab] = useState<'ALL' | 'UNASSIGNED' | 'ASSIGNED'>('ALL');
   const [queue, setQueue] = useState<AllocationQueueItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeItem, setActiveItem] = useState<AllocationQueueItem | null>(null);
@@ -169,18 +173,14 @@ export const AllocationPage: React.FC = () => {
         }
       }
 
-      // 2. Hợp đồng mới đã thanh toán chờ gán ô kho lần đầu (storageUnitId == null / "Chưa gán", chưa phát sinh sự cố bàn giao)
+      // 2. Hợp đồng chờ nhận kho: Bao gồm cả đơn chưa gán ô lẫn đơn đã gán ô (để FM có thể đổi ô trước ngày nhận theo BR-AVL-04)
       const pendingContractAllocations: AllocationQueueItem[] = contracts
         .filter((c) => {
           const isRelocation =
             Boolean(c.relocationEligible) ||
             c.status === 'RELOCATION_PENDING' ||
             c.storageUnitCode === 'Chờ gán lại ô kho';
-          const isUnassigned =
-            c.storageUnitId == null ||
-            c.storageUnitCode === 'Chưa gán' ||
-            c.storageUnitCode === '';
-          return !isRelocation && isUnassigned;
+          return !isRelocation;
         })
         .map((c) => {
           const matchedRsv = rsvRows.find(
@@ -198,6 +198,12 @@ export const AllocationPage: React.FC = () => {
           }
           const resolvedRsvId = c.reservationId ?? matchedRsv?.id;
           const cust = matchedRsv ? getCustomerInfo(matchedRsv) : null;
+          const isUnassigned =
+            c.storageUnitId == null ||
+            c.storageUnitCode === 'Chưa gán' ||
+            c.storageUnitCode === '';
+          const isAssigned = !isUnassigned;
+
           return {
             id: resolvedRsvId != null ? `rsv-${resolvedRsvId}` : `ctr-${c.id}`,
             kind: 'RESERVATION' as const,
@@ -219,14 +225,17 @@ export const AllocationPage: React.FC = () => {
             startDate: c.startDate || matchedRsv?.startDate || new Date().toISOString().split('T')[0],
             rentalMonths: c.rentalMonths || matchedRsv?.rentalMonths || 1,
             endDateExclusive: c.endDateExclusive || matchedRsv?.endDateExclusive,
+            storageUnitId: isAssigned ? (c.storageUnitId ?? matchedRsv?.storageUnitId) : undefined,
+            storageUnitCode: isAssigned ? (c.storageUnitCode ?? matchedRsv?.storageUnitCode) : undefined,
             assignedStaffId: c.assignedStaffId,
+            assignedStaffName: c.assignedStaffName,
+            isAssigned,
           };
         });
 
-      // 3. Fallback cho các đơn CONFIRMED chưa gán ô (chưa nằm trong danh sách hợp đồng trên, chỉ giữ đơn đang PENDING_CHECK_IN)
+      // 3. Fallback cho các đơn CONFIRMED (chưa nằm trong danh sách hợp đồng trên, chỉ giữ đơn đang PENDING_CHECK_IN)
       const pendingRsv: AllocationQueueItem[] = rsvRows
         .filter((row) => {
-          if (row.storageUnitId != null) return false;
           if (matchedRsvIds.has(row.id)) return false;
           if (row.contractId != null && matchedContractIds.has(row.contractId)) return false;
           if (row.contractCode && matchedContractCodes.has(row.contractCode)) return false;
@@ -236,6 +245,7 @@ export const AllocationPage: React.FC = () => {
         })
         .map((row) => {
           const cust = getCustomerInfo(row);
+          const isAssigned = Boolean(row.storageUnitId && row.storageUnitCode && row.storageUnitCode !== 'Chưa gán');
           return {
             id: `rsv-${row.id}`,
             kind: 'RESERVATION' as const,
@@ -254,7 +264,10 @@ export const AllocationPage: React.FC = () => {
             startDate: row.startDate,
             rentalMonths: row.rentalMonths,
             endDateExclusive: row.endDateExclusive,
+            storageUnitId: isAssigned ? row.storageUnitId : undefined,
+            storageUnitCode: isAssigned ? row.storageUnitCode : undefined,
             assignedStaffId: undefined,
+            isAssigned,
           };
         });
 
@@ -285,8 +298,11 @@ export const AllocationPage: React.FC = () => {
           rentalMonths: c.rentalMonths || 1,
           endDateExclusive: c.endDateExclusive,
           storageUnitId: c.storageUnitId,
+          storageUnitCode: c.storageUnitCode,
           originalDefectiveUnitCode: c.storageUnitCode,
           assignedStaffId: c.assignedStaffId,
+          assignedStaffName: c.assignedStaffName,
+          isAssigned: true,
         }));
 
       const merged = [...pendingContractAllocations, ...pendingRsv, ...relocationContracts]
@@ -300,7 +316,14 @@ export const AllocationPage: React.FC = () => {
           }
           return item;
         })
-        .sort((a, b) => a.startDate.localeCompare(b.startDate));
+        .sort((a, b) => {
+          // Ưu tiên đơn sự cố lên đầu, sau đó đến đơn chưa gán, rồi sắp xếp theo ngày nhận kho
+          if (a.kind === 'CONTRACT_RELOCATION' && b.kind !== 'CONTRACT_RELOCATION') return -1;
+          if (b.kind === 'CONTRACT_RELOCATION' && a.kind !== 'CONTRACT_RELOCATION') return 1;
+          if (!a.isAssigned && b.isAssigned) return -1;
+          if (a.isAssigned && !b.isAssigned) return 1;
+          return a.startDate.localeCompare(b.startDate);
+        });
 
       // Cập nhật số lượng đơn chờ cho từng cơ sở và tổng
       if (id == null) {
@@ -386,6 +409,15 @@ export const AllocationPage: React.FC = () => {
 
   const selected = activeItem || (queue.find((row) => row.id === selectedId) ?? null);
 
+  const unassignedCount = useMemo(() => queue.filter((x) => !x.isAssigned).length, [queue]);
+  const assignedCount = useMemo(() => queue.filter((x) => x.isAssigned).length, [queue]);
+
+  const displayedQueue = useMemo(() => {
+    if (filterTab === 'UNASSIGNED') return queue.filter((x) => !x.isAssigned);
+    if (filterTab === 'ASSIGNED') return queue.filter((x) => x.isAssigned);
+    return queue;
+  }, [queue, filterTab]);
+
   // Mở sơ đồ 2D cho đơn cụ thể
   const handleOpenFloorPlan = (row: AllocationQueueItem) => {
     setSelectedId(row.id);
@@ -396,7 +428,7 @@ export const AllocationPage: React.FC = () => {
   // Mở form xác nhận sau khi chọn ô cụ thể trên sơ đồ 2D
   const openAssignModal = async (unit: StorageUnitResponse) => {
     setModalUnit(unit);
-    // Nếu là đổi ô cho hợp đồng thì ưu tiên giữ lại nhân viên đã được gán trước đó
+    // Nếu là đổi ô cho hợp đồng/đơn đã gán thì ưu tiên giữ lại nhân viên đã được gán trước đó
     setSelectedStaffId(selected?.assignedStaffId ?? null);
     setStaffError(null);
     const targetFacId = selected?.facilityId || facilityId;
@@ -408,7 +440,7 @@ export const AllocationPage: React.FC = () => {
   const handleConfirmAssignment = async () => {
     if (!selected || !modalUnit || assigningUnitId != null) return;
 
-    if (!selectedStaffId && selected.kind === 'RESERVATION') {
+    if (!selectedStaffId && !selected.assignedStaffId && selected.kind === 'RESERVATION') {
       setStaffError('Vui lòng chọn nhân viên tiếp đón khách bàn giao kho.');
       showToast('Vui lòng chọn nhân viên phụ trách tiếp đón', 'error');
       return;
@@ -443,28 +475,52 @@ export const AllocationPage: React.FC = () => {
         }
 
         showToast(`Đã gán lại ô ${modalUnit.code} cho hợp đồng ${selected.code} thành công!`);
-      } else {
-        // Gán ô lần đầu cho đơn đặt chỗ mới hoặc hợp đồng trực tiếp
-        if (selected.reservationId) {
-          await assignUnit(selected.reservationId, {
-            storageUnitId: modalUnit.id,
-            staffId: selectedStaffId!,
-            scheduledDate: selected.startDate,
-            scheduledStartTime: '08:00',
-            scheduledEndTime: '17:00',
-          });
-        } else if (selected.contractId) {
-          await reassignStorageUnit({
-            contractId: selected.contractId,
-            currentUnitId: selected.storageUnitId || 0,
-            newUnitId: modalUnit.id,
-            newUnitCode: modalUnit.code,
-            reason: 'Phân bổ ô kho ban đầu cho hợp đồng trực tiếp',
-            customerConsent: true,
-          });
+      } else if (selected.reservationId) {
+        // Gán hoặc đổi ô kho trước ngày nhận theo BR-AVL-04 qua ReservationService
+        const targetStaffId = selectedStaffId || selected.assignedStaffId || 1;
+        await assignUnit(selected.reservationId, {
+          storageUnitId: modalUnit.id,
+          staffId: targetStaffId,
+          scheduledDate: selected.startDate,
+          scheduledStartTime: '08:00',
+          scheduledEndTime: '17:00',
+        });
+
+        if (selectedStaffId && selected.assignedStaffId && selectedStaffId !== selected.assignedStaffId) {
+          try {
+            await reassignStaffApi(
+              selected.reservationId,
+              selectedStaffId,
+              'Thay đổi nhân viên tiếp đón'
+            );
+          } catch {
+            // Không chặn nếu cập nhật ca tiếp đón thất bại nhẹ
+          }
         }
 
-        showToast(`Đã gán ô ${modalUnit.code} và phân công nhân viên tiếp đón thành công!`);
+        if (selected.isAssigned) {
+          showToast(`Đã đổi thành công sang ô ${modalUnit.code} cho đơn ${selected.code}!`);
+        } else {
+          showToast(`Đã gán ô ${modalUnit.code} và phân công nhân viên tiếp đón thành công!`);
+        }
+      } else if (selected.contractId) {
+        // Hợp đồng trực tiếp không có mã đặt chỗ
+        await reassignStorageUnit({
+          contractId: selected.contractId,
+          currentUnitId: selected.storageUnitId || 0,
+          newUnitId: modalUnit.id,
+          newUnitCode: modalUnit.code,
+          reason: selected.isAssigned
+            ? 'Quản lý cơ sở điều chuyển đổi ô kho trước ngày nhận'
+            : 'Phân bổ ô kho ban đầu cho hợp đồng trực tiếp',
+          customerConsent: true,
+        });
+
+        if (selected.isAssigned) {
+          showToast(`Đã đổi thành công sang ô ${modalUnit.code} cho hợp đồng ${selected.code}!`);
+        } else {
+          showToast(`Đã gán ô ${modalUnit.code} cho hợp đồng thành công!`);
+        }
       }
 
       setModalUnit(null);
@@ -552,14 +608,47 @@ export const AllocationPage: React.FC = () => {
 
       {/* Danh sách nhiệm vụ gán ô kho từ trên xuống (Full-width Vertical Task List) */}
       <section className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs">
-        <div className="px-4 py-3.5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2 bg-slate-50/70">
-          <div className="flex items-center gap-2">
+        <div className="px-4 py-3.5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/70">
+          <div className="flex items-center gap-3 flex-wrap">
             <span className="font-bold text-sm text-slate-800">
-              Danh sách đơn đặt chỗ chờ gán ô
+              Danh sách đơn chờ tiếp đón & gán ô
             </span>
-            <span className="text-xs text-slate-500 font-medium font-mono">
-              ({queue.length} đơn)
-            </span>
+            {/* Bộ lọc phân loại đơn */}
+            <div className="flex items-center bg-slate-200/80 p-0.5 rounded-xl text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setFilterTab('ALL')}
+                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                  filterTab === 'ALL'
+                    ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Tất cả ({queue.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterTab('UNASSIGNED')}
+                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                  filterTab === 'UNASSIGNED'
+                    ? 'bg-white text-amber-900 shadow-2xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Chưa gán ô ({unassignedCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterTab('ASSIGNED')}
+                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                  filterTab === 'ASSIGNED'
+                    ? 'bg-white text-emerald-900 shadow-2xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Đã gán ô (Có thể đổi) ({assignedCount})
+              </button>
+            </div>
           </div>
           <span className="text-xs text-slate-500">
             Cơ sở: <strong className="text-slate-800 font-semibold">{facilityId == null ? 'Tất cả cơ sở quản lý' : (selectedFacility?.name || '---')}</strong>
@@ -588,16 +677,24 @@ export const AllocationPage: React.FC = () => {
                     </div>
                   </td>
                 </tr>
-              ) : queue.length === 0 ? (
+              ) : displayedQueue.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-14 text-center">
                     <div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
                       <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
                         <CheckCircle2 className="w-6 h-6" />
                       </div>
-                      <h4 className="text-sm font-bold text-slate-800 mt-1">Không có đơn nào chờ gán ô</h4>
+                      <h4 className="text-sm font-bold text-slate-800 mt-1">
+                        {filterTab === 'UNASSIGNED'
+                          ? 'Không có đơn nào chưa gán ô'
+                          : filterTab === 'ASSIGNED'
+                          ? 'Chưa có đơn nào đã gán ô'
+                          : 'Không có đơn nào chờ gán ô'}
+                      </h4>
                       <p className="text-xs text-slate-500">
-                        {facilityId == null
+                        {filterTab === 'UNASSIGNED'
+                          ? 'Toàn bộ đơn trong danh sách hiện đã được phân bổ ô kho sẵn sàng.'
+                          : facilityId == null
                           ? 'Toàn bộ đơn đặt chỗ trên các cơ sở quản lý đã được phân bổ ô kho và chỉ định nhân viên hoàn tất.'
                           : `Toàn bộ đơn đặt chỗ tại cơ sở ${selectedFacility?.name} đã được phân bổ ô kho và chỉ định nhân viên hoàn tất.`}
                       </p>
@@ -605,7 +702,7 @@ export const AllocationPage: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                queue.map((row) => {
+                displayedQueue.map((row) => {
                   const urgent = daysUntil(row.startDate) < 3;
                   return (
                     <tr
@@ -678,6 +775,18 @@ export const AllocationPage: React.FC = () => {
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-pulse" />
                             Gán lại ô kho
                           </span>
+                        ) : row.isAssigned ? (
+                          <div className="flex flex-col gap-1 items-start">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                              Ô: {row.storageUnitCode || `ID ${row.storageUnitId}`}
+                            </span>
+                            {row.assignedStaffName && (
+                              <span className="text-[11px] text-slate-500 font-medium">
+                                NV: {row.assignedStaffName}
+                              </span>
+                            )}
+                          </div>
                         ) : (
                           <Badge variant="warning">Chờ gán ô</Badge>
                         )}
@@ -691,11 +800,17 @@ export const AllocationPage: React.FC = () => {
                           className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold shadow-xs hover:shadow-sm transition-all cursor-pointer ${
                             row.kind === 'CONTRACT_RELOCATION'
                               ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                              : row.isAssigned
+                              ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
                               : 'bg-brand-600 hover:bg-brand-700 text-white'
                           }`}
                         >
-                          <MapPin className="w-3.5 h-3.5 text-white" />
-                          <span>{row.kind === 'CONTRACT_RELOCATION' ? 'Đổi ô kho' : 'Gán ô kho'}</span>
+                          {row.isAssigned ? (
+                            <RefreshCw className="w-3.5 h-3.5 text-white" />
+                          ) : (
+                            <MapPin className="w-3.5 h-3.5 text-white" />
+                          )}
+                          <span>{row.kind === 'CONTRACT_RELOCATION' || row.isAssigned ? 'Đổi ô kho' : 'Gán ô kho'}</span>
                         </button>
                       </td>
                     </tr>
@@ -715,6 +830,7 @@ export const AllocationPage: React.FC = () => {
           facilityId={selected.facilityId || facilityId || facilities[0]?.id || 1}
           facilityName={selected.facilityName || selectedFacility?.name}
           allowedUnitTypeId={selected.unitTypeId}
+          highlightUnitId={selected.storageUnitId}
           targetUnitTypeName={cleanUnitTypeName(selected.unitTypeName)}
           onSelectUnit={(unit) => {
             setIsFloorPlanOpen(false);
@@ -735,11 +851,17 @@ export const AllocationPage: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 text-base">
-                    {selected.kind === 'CONTRACT_RELOCATION' ? 'Xác nhận phân bổ lại ô kho (Đổi ô sự cố)' : 'Xác nhận phân bổ ô kho'}
+                    {selected.kind === 'CONTRACT_RELOCATION'
+                      ? 'Xác nhận phân bổ lại ô kho (Đổi ô sự cố)'
+                      : selected.isAssigned
+                      ? 'Xác nhận đổi ô kho trước ngày nhận'
+                      : 'Xác nhận phân bổ ô kho'}
                   </h3>
                   <p className="text-xs text-slate-500">
                     {selected.kind === 'CONTRACT_RELOCATION'
                       ? 'Chỉ định ô vật lý mới trên sơ đồ 2D để nhân viên tiếp tục bàn giao cho khách'
+                      : selected.isAssigned
+                      ? 'Đổi sang ô kho khả dụng khác theo BR-AVL-04. Ô cũ sẽ tự động trở về trạng thái Khả dụng.'
                       : 'Chỉ định ô vật lý và phân công nhân viên cơ sở phụ trách tiếp đón'}
                   </p>
                 </div>
@@ -799,11 +921,16 @@ export const AllocationPage: React.FC = () => {
                       {cleanUnitTypeName(selected.unitTypeName)}
                     </span>
                   </div>
+                  {selected.isAssigned && selected.storageUnitCode && (
+                    <div className="text-[11px] text-slate-500 mt-1">
+                      Ô đang gán hiện tại: <strong className="text-slate-800 font-mono">{selected.storageUnitCode}</strong>
+                    </div>
+                  )}
                 </div>
 
                 <div className="sm:border-l sm:border-slate-200 sm:pl-4 space-y-1 shrink-0">
                   <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                    Ô kho được chọn
+                    {selected.isAssigned ? 'Ô kho mới được chọn' : 'Ô kho được chọn'}
                   </span>
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-mono font-bold text-brand-700 text-sm bg-brand-50 px-2.5 py-1 rounded-lg border border-brand-200">
@@ -853,10 +980,10 @@ export const AllocationPage: React.FC = () => {
                 <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
                     <User className="w-3.5 h-3.5 text-brand-600" />
-                    <span>Nhân viên cơ sở tiếp đón khách {selected.kind === 'RESERVATION' && <span className="text-rose-600">*</span>}</span>
+                    <span>Nhân viên cơ sở tiếp đón khách {selected.kind === 'RESERVATION' && !selected.isAssigned && <span className="text-rose-600">*</span>}</span>
                   </span>
                   <span className="text-[11px] text-slate-400 font-normal">
-                    {selected.kind === 'RESERVATION' ? 'Bắt buộc' : 'Tùy chọn'}
+                    {selected.isAssigned ? 'Tùy chọn (đã có NV phụ trách)' : selected.kind === 'RESERVATION' ? 'Bắt buộc' : 'Tùy chọn'}
                   </span>
                 </label>
 
@@ -874,7 +1001,7 @@ export const AllocationPage: React.FC = () => {
                     if (val) setStaffError(null);
                   }}
                 >
-                  <option value="">-- {selected.kind === 'CONTRACT_RELOCATION' ? 'Giữ nguyên nhân viên hiện tại hoặc chỉ định mới' : 'Chọn nhân viên tiếp đón (Bắt buộc)'} --</option>
+                  <option value="">-- {selected.kind === 'CONTRACT_RELOCATION' || selected.isAssigned ? 'Giữ nguyên nhân viên hiện tại hoặc chỉ định mới' : 'Chọn nhân viên tiếp đón (Bắt buộc)'} --</option>
                   {staffMembers.map((staff) => {
                     const cleanName = (staff.staffName || '').replace(/\s*\(\d+\s*việc[^)]*\)/gi, '').trim();
                     return (
@@ -892,7 +1019,7 @@ export const AllocationPage: React.FC = () => {
                   </p>
                 ) : (
                   <p className="text-[11px] text-slate-500 mt-1.5">
-                    💡 <em>Lưu ý: {selected.kind === 'CONTRACT_RELOCATION' ? 'Sau khi đổi ô kho mới thành công, nhân viên tại quầy sẽ thấy ô mới và tiến hành bàn giao ngay.' : 'Bắt buộc chọn nhân viên phụ trách nhận kho để hệ thống tạo lịch trực.'}</em>
+                    💡 <em>Lưu ý: {selected.kind === 'CONTRACT_RELOCATION' || selected.isAssigned ? 'Sau khi đổi ô kho mới thành công, nhân viên tại quầy sẽ thấy ô mới và tiến hành bàn giao ngay.' : 'Bắt buộc chọn nhân viên phụ trách nhận kho để hệ thống tạo lịch trực.'}</em>
                   </p>
                 )}
               </div>
@@ -911,10 +1038,12 @@ export const AllocationPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleConfirmAssignment}
-                disabled={assigningUnitId != null || (!selectedStaffId && selected.kind === 'RESERVATION')}
+                disabled={assigningUnitId != null || (!selectedStaffId && !selected.assignedStaffId && selected.kind === 'RESERVATION')}
                 className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-xs hover:shadow-sm disabled:opacity-50 transition-all cursor-pointer ${
                   selected.kind === 'CONTRACT_RELOCATION'
                     ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                    : selected.isAssigned
+                    ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
                     : 'bg-brand-600 hover:bg-brand-700 text-white'
                 }`}
               >
@@ -925,6 +1054,8 @@ export const AllocationPage: React.FC = () => {
                   </>
                 ) : selected.kind === 'CONTRACT_RELOCATION' ? (
                   <span>Xác nhận đổi ô kho mới</span>
+                ) : selected.isAssigned ? (
+                  <span>Xác nhận đổi sang ô {modalUnit.code}</span>
                 ) : (
                   <span>Xác nhận phân bổ ô kho</span>
                 )}
