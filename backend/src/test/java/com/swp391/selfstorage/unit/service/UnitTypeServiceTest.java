@@ -3,6 +3,9 @@ package com.swp391.selfstorage.unit.service;
 import com.swp391.selfstorage.common.dto.PageResponse;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
+import com.swp391.selfstorage.policy.dto.FacilityPriceResponse;
+import com.swp391.selfstorage.policy.dto.UpdatePriceRequest;
+import com.swp391.selfstorage.policy.service.PricingService;
 import com.swp391.selfstorage.unit.dto.CreateUnitTypeRequest;
 import com.swp391.selfstorage.unit.dto.UnitTypeResponse;
 import com.swp391.selfstorage.unit.dto.UpdateUnitTypeRequest;
@@ -19,6 +22,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
@@ -36,6 +40,7 @@ class UnitTypeServiceTest {
     @Mock private UnitTypeRepository unitTypeRepository;
     @Mock private FacilityUnitTypePriceRepository priceRepository;
     @Mock private StorageUnitRepository storageUnitRepository;
+    @Mock private PricingService pricingService;
     private final UnitMapper mapper = new UnitMapper();
 
     private UnitTypeService unitTypeService;
@@ -45,6 +50,7 @@ class UnitTypeServiceTest {
     @BeforeEach
     void setUp() {
         unitTypeService = new UnitTypeServiceImpl(unitTypeRepository, priceRepository, storageUnitRepository, mapper);
+        ReflectionTestUtils.setField(unitTypeService, "pricingService", pricingService);
 
         unitType = UnitType.builder()
                 .id(7L)
@@ -128,13 +134,16 @@ class UnitTypeServiceTest {
             ut.setId(8L);
             return ut;
         });
+        when(pricingService.updatePrice(eq(1L), eq(8L), any(UpdatePriceRequest.class)))
+                .thenReturn(FacilityPriceResponse.builder().monthlyPrice(1500000L).build());
 
         UnitTypeResponse res = unitTypeService.createUnitType(1L, request);
 
         assertNotNull(res);
         assertEquals(8L, res.getId());
         assertEquals("UT-M", res.getCode());
-        verify(priceRepository).save(any(FacilityUnitTypePrice.class));
+        verify(pricingService).updatePrice(eq(1L), eq(8L), any(UpdatePriceRequest.class));
+        verify(priceRepository, never()).save(any());
     }
 
     @Test
@@ -186,15 +195,16 @@ class UnitTypeServiceTest {
 
         when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(unitType));
         when(unitTypeRepository.save(any(UnitType.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(priceRepository.findByFacilityIdAndUnitTypeId(1L, 7L)).thenReturn(Optional.of(facilityPrice));
         when(storageUnitRepository.countByFacilityIdAndUnitTypeId(1L, 7L)).thenReturn(10L);
+        when(pricingService.updatePrice(eq(1L), eq(7L), any(UpdatePriceRequest.class)))
+                .thenReturn(FacilityPriceResponse.builder().monthlyPrice(900000L).build());
 
         UnitTypeResponse res = unitTypeService.updateUnitType(1L, 7L, request);
 
         assertNotNull(res);
         assertEquals("Loại S — Sửa tên", res.getName());
-        verify(priceRepository).save(facilityPrice);
-        assertEquals(900000L, facilityPrice.getMonthlyPrice());
+        verify(pricingService).updatePrice(eq(1L), eq(7L), any(UpdatePriceRequest.class));
+        verify(priceRepository, never()).save(any());
     }
 
     @Test
@@ -207,16 +217,15 @@ class UnitTypeServiceTest {
 
         when(unitTypeRepository.findById(7L)).thenReturn(Optional.of(unitType));
         when(unitTypeRepository.save(any(UnitType.class))).thenAnswer(inv -> inv.getArgument(0));
-        // Lần đầu tìm không thấy để tạo mới
-        when(priceRepository.findByFacilityIdAndUnitTypeId(1L, 7L))
-                .thenReturn(Optional.empty())
-                .thenReturn(Optional.of(FacilityUnitTypePrice.builder().monthlyPrice(950000L).build()));
         when(storageUnitRepository.countByFacilityIdAndUnitTypeId(1L, 7L)).thenReturn(10L);
+        when(pricingService.updatePrice(eq(1L), eq(7L), any(UpdatePriceRequest.class)))
+                .thenReturn(FacilityPriceResponse.builder().monthlyPrice(950000L).build());
 
         UnitTypeResponse res = unitTypeService.updateUnitType(1L, 7L, request);
 
         assertNotNull(res);
-        verify(priceRepository).save(any(FacilityUnitTypePrice.class));
+        verify(pricingService).updatePrice(eq(1L), eq(7L), any(UpdatePriceRequest.class));
+        verify(priceRepository, never()).save(any());
     }
 
     @Test

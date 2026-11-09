@@ -36,6 +36,8 @@ import com.swp391.selfstorage.contract.mapper.RenewalMapper;
 import com.swp391.selfstorage.contract.repository.ContractRenewalRepository;
 import com.swp391.selfstorage.contract.repository.RentalContractRepository;
 import com.swp391.selfstorage.contract.service.impl.RenewalServiceImpl;
+import com.swp391.selfstorage.payment.entity.PaymentTransaction;
+import com.swp391.selfstorage.payment.repository.PaymentTransactionRepository;
 import com.swp391.selfstorage.policy.dto.PolicyResponse;
 import com.swp391.selfstorage.policy.service.PolicyService;
 import com.swp391.selfstorage.reservation.repository.ReservationRepository;
@@ -65,6 +67,9 @@ class RenewalServiceTest {
     @Mock
     private UnitTypeRepository unitTypeRepository;
 
+    @Mock
+    private PaymentTransactionRepository paymentTransactionRepository;
+
     private final RenewalMapper renewalMapper = new RenewalMapper();
 
     private RenewalService renewalService;
@@ -78,7 +83,8 @@ class RenewalServiceTest {
                 facilityPriceRepository,
                 policyService,
                 renewalMapper,
-                unitTypeRepository);
+                unitTypeRepository,
+                paymentTransactionRepository);
         org.mockito.Mockito.lenient().when(unitTypeRepository.findById(7L))
                 .thenReturn(Optional.of(UnitType.builder().id(7L).code("UT-S").isActive(true).build()));
     }
@@ -277,11 +283,8 @@ class RenewalServiceTest {
     void testProcessRenewal_success() {
         RentalContract contract = buildContract(ContractStatus.ACTIVE);
         when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
-        when(policyService.getActivePolicy()).thenReturn(buildActivePolicy());
-        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any(), anyInt())).thenReturn(false);
-
-        FacilityUnitTypePrice price = FacilityUnitTypePrice.builder().monthlyPrice(800000L).build();
-        when(facilityPriceRepository.findByFacilityIdAndUnitTypeId(1L, 7L)).thenReturn(Optional.of(price));
+        when(paymentTransactionRepository.findById(555L)).thenReturn(Optional.of(PaymentTransaction.builder()
+                .id(555L).amount(2_400_000L).renewalMonths(3).build()));
 
         when(contractRenewalRepository.save(any(ContractRenewal.class))).thenAnswer(inv -> {
             ContractRenewal cr = inv.getArgument(0);
@@ -302,6 +305,8 @@ class RenewalServiceTest {
         verify(contractRenewalRepository).save(saved.capture());
         assertEquals(555L, saved.getValue().getPaymentTransactionId());
         assertEquals(LocalDate.of(2027, 4, 1), saved.getValue().getNewEndDate());
+        assertEquals(2_400_000L, saved.getValue().getTotalPaid());
+        assertEquals(800_000L, saved.getValue().getMonthlyPriceSnapshot());
     }
 
     @ParameterizedTest(name = "Gia hạn {0} tháng thì hạn mới = hạn cũ cộng đúng {0} tháng")
@@ -309,10 +314,8 @@ class RenewalServiceTest {
     void testProcessRenewal_extendsExactMonths(int months) {
         RentalContract contract = buildContract(ContractStatus.ACTIVE);
         when(rentalContractRepository.findById(100L)).thenReturn(Optional.of(contract));
-        when(policyService.getActivePolicy()).thenReturn(buildActivePolicy());
-        when(reservationRepository.existsOverlappingReservationForUnit(eq(42L), any(), any(), any(), anyInt())).thenReturn(false);
-        when(facilityPriceRepository.findByFacilityIdAndUnitTypeId(1L, 7L))
-                .thenReturn(Optional.of(FacilityUnitTypePrice.builder().monthlyPrice(800000L).build()));
+        when(paymentTransactionRepository.findById(800L + months)).thenReturn(Optional.of(PaymentTransaction.builder()
+                .amount(800_000L * months).renewalMonths(months).build()));
         when(contractRenewalRepository.save(any(ContractRenewal.class))).thenAnswer(inv -> {
             ContractRenewal cr = inv.getArgument(0);
             cr.setId(1L);

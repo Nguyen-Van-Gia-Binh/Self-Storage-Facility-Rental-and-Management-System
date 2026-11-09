@@ -4,9 +4,13 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.ObjectProvider;
 
@@ -23,6 +27,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.swp391.selfstorage.common.dto.PageResponse;
 import com.swp391.selfstorage.common.exception.CustomException;
 import com.swp391.selfstorage.common.exception.ErrorCode;
+import com.swp391.selfstorage.contract.entity.RentalContract;
+import com.swp391.selfstorage.facility.repository.FacilityRepository;
+import com.swp391.selfstorage.user.repository.UserRepository;
 import com.swp391.selfstorage.payment.dto.CheckoutRequest;
 import com.swp391.selfstorage.payment.dto.CheckoutResponse;
 import com.swp391.selfstorage.payment.dto.CreatePaymentRequest;
@@ -73,6 +80,10 @@ public class PaymentServiceImpl implements PaymentService {
     private final PolicyVersionRepository policyVersionRepository;
     private final VnPayGateway vnPayGateway;
     private final ObjectProvider<com.swp391.selfstorage.contract.service.ContractService> contractServiceProvider;
+    private final FacilityRepository facilityRepository;
+    private final UserRepository userRepository;
+
+    private static final ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
     @Autowired(required = false)
     private ReservationHoldExpiryService reservationHoldExpiryService;
@@ -290,8 +301,12 @@ public class PaymentServiceImpl implements PaymentService {
                 }
             }
 
-            long dailyRate = contract.getMonthlyPrice() / 30;
-            amount = diffDays * dailyRate;
+            com.swp391.selfstorage.policy.entity.PolicyVersion feePolicy = null;
+            if (contract.getPolicyVersionId() != null && policyVersionRepository != null) {
+                feePolicy = policyVersionRepository.findById(contract.getPolicyVersionId()).orElse(null);
+            }
+            amount = com.swp391.selfstorage.policy.service.PolicyNumbers
+                    .prorateTotalUpToThousand(contract.getMonthlyPrice(), diffDays, feePolicy);
             defaultDesc = "DOI" + contract.getId() + "D" + diffDays;
             contractId = contract.getId();
             txnType = "RESCHEDULE_FEE";
@@ -493,6 +508,7 @@ public class PaymentServiceImpl implements PaymentService {
             return paymentMapper.toResponse(payment);
         }
         payment.setStatus("SUCCESS");
+        payment.setPaidAt(Instant.now());
         if (providerReference != null) {
             payment.setProviderReference(providerReference);
         }
@@ -656,6 +672,7 @@ private void publishContractRenewalCompleted(PaymentTransaction payment) {
                 .paymentMethod(request.getMethod())
                 .providerReference(request.getTransactionRef() != null ? request.getTransactionRef()
                         : "PAY-" + System.currentTimeMillis())
+                .paidAt(Instant.now())
                 .build();
 
         payment = paymentTransactionRepository.save(payment);
@@ -695,12 +712,65 @@ private void publishContractRenewalCompleted(PaymentTransaction payment) {
                 if (filter.getStatus() != null && !filter.getStatus().isBlank()) {
                     predicates.add(cb.equal(root.get("status"), filter.getStatus()));
                 }
+                // Cùng mốc với báo cáo doanh thu: ngày tiền tới, giao dịch cũ chưa có paid_at dùng created_at
+                jakarta.persistence.criteria.Expression<Instant> moneyAt =
+                        cb.coalesce(root.<Instant>get("paidAt"), root.<Instant>get("createdAt"));
+                if (filter.getFrom() != null) {
+                    predicates.add(cb.greaterThanOrEqualTo(moneyAt,
+                            filter.getFrom().atStartOfDay(VN_ZONE).toInstant()));
+                }
+                if (filter.getTo() != null) {
+                    predicates.add(cb.lessThan(moneyAt,
+                            filter.getTo().plusDays(1).atStartOfDay(VN_ZONE).toInstant()));
+                }
+                if (filter.getFacilityId() != null) {
+                    var rsv = query.subquery(Long.class);
+                    var r = rsv.from(Reservation.class);
+                    rsv.select(r.get("id")).where(cb.equal(r.get("facilityId"), filter.getFacilityId()));
+                    var ctr = query.subquery(Long.class);
+                    var c = ctr.from(RentalContract.class);
+                    ctr.select(c.get("id")).where(cb.equal(c.get("facilityId"), filter.getFacilityId()));
+                    predicates.add(cb.or(root.get("reservationId").in(rsv), root.get("contractId").in(ctr)));
+                }
             }
             return cb.and(predicates.toArray(new Predicate[0]));
         };
 
         Page<PaymentTransaction> page = paymentTransactionRepository.findAll(spec, pageable);
-        return PageResponse.from(page.map(paymentMapper::toResponse));
+        List<PaymentTransaction> rows = page.getContent();
+
+        Map<Long, Reservation> reservations = reservationRepository.findAllById(
+                rows.stream().map(PaymentTransaction::getReservationId).filter(Objects::nonNull).collect(Collectors.toSet()))
+                .stream().collect(Collectors.toMap(Reservation::getId, r -> r));
+        Map<Long, RentalContract> contracts = rentalContractRepository.findAllById(
+                rows.stream().map(PaymentTransaction::getContractId).filter(Objects::nonNull).collect(Collectors.toSet()))
+                .stream().collect(Collectors.toMap(RentalContract::getId, c -> c));
+
+        Map<Long, Long[]> owner = new HashMap<>(); // txId -> {facilityId, customerId}
+        for (PaymentTransaction t : rows) {
+            RentalContract c = contracts.get(t.getContractId());
+            Reservation r = reservations.get(t.getReservationId());
+            if (c != null) owner.put(t.getId(), new Long[] { c.getFacilityId(), c.getCustomerId() });
+            else if (r != null) owner.put(t.getId(), new Long[] { r.getFacilityId(), r.getCustomerId() });
+        }
+        Map<Long, String> facilityNames = new HashMap<>();
+        facilityRepository.findAllById(
+                owner.values().stream().map(o -> o[0]).filter(Objects::nonNull).collect(Collectors.toSet()))
+                .forEach(f -> facilityNames.put(f.getId(), f.getName()));
+        Map<Long, String> customerNames = new HashMap<>();
+        userRepository.findAllById(
+                owner.values().stream().map(o -> o[1]).filter(Objects::nonNull).collect(Collectors.toSet()))
+                .forEach(u -> customerNames.put(u.getId(), u.getFullName()));
+
+        return PageResponse.from(page.map(t -> {
+            PaymentResponse res = paymentMapper.toResponse(t);
+            Long[] o = owner.get(t.getId());
+            if (o != null) {
+                res.setFacilityName(facilityNames.get(o[0]));
+                res.setCustomerName(customerNames.get(o[1]));
+            }
+            return res;
+        }));
     }
 
     @Override
@@ -774,6 +844,25 @@ private void publishContractRenewalCompleted(PaymentTransaction payment) {
             return Boolean.TRUE.equals(result);
         }
         return action.get();
+    }
+
+    @Override
+    @Transactional
+    public PaymentResponse confirmRefundPayout(Long paymentId) {
+        PaymentTransaction payment = paymentTransactionRepository.findById(paymentId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
+        String type = payment.getTransactionType() == null ? "" : payment.getTransactionType();
+        if (!"REFUND".equalsIgnoreCase(type)
+                && !"RENT_REFUND".equalsIgnoreCase(type)
+                && !"DEPOSIT_REFUND".equalsIgnoreCase(type)) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED, "Giao dịch không phải khoản hoàn tiền");
+        }
+        if (!"PENDING_REFUND".equalsIgnoreCase(payment.getStatus())) {
+            throw new CustomException(ErrorCode.VALIDATION_FAILED, "Chỉ xác nhận khoản hoàn đang chờ chuyển");
+        }
+        payment.setStatus("SUCCESS");
+        payment.setPaidAt(Instant.now());
+        return paymentMapper.toResponse(paymentTransactionRepository.save(payment));
     }
 
     private void expireReconciledTransaction(PaymentTransaction txn) {

@@ -56,6 +56,16 @@ public class PolicyVersion {
     @Column(name = "cancel_full_refund_hours", nullable = false)
     private Integer cancelFullRefundHours;
 
+    /** BR-CAN-01: số ngày trước ngày bắt đầu thì hoàn 100% tiền thuê và 100% cọc. */
+    @Column(name = "cancel_full_refund_days", nullable = false)
+    @Builder.Default
+    private Integer cancelFullRefundDays = 7;
+
+    /** BR-CAN-02: tỷ lệ hoàn cọc khi hủy lửng (0.50 = hoàn 50% cọc). */
+    @Column(name = "cancel_mid_refund_rate", nullable = false, precision = 5, scale = 2)
+    @Builder.Default
+    private BigDecimal cancelMidRefundRate = new BigDecimal("0.50");
+
     @Column(name = "cancel_late_refund_rate", nullable = false, precision = 5, scale = 2)
     private BigDecimal cancelLateRefundRate;
 

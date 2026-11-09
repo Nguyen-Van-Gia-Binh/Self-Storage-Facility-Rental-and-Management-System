@@ -33,9 +33,14 @@ public interface FacilityRepository extends JpaRepository<Facility, Long> {
                                Pageable pageable);
 
     @Query(value = """
-        SELECT COUNT(rc.id) FROM rental_contract rc
-        WHERE rc.facility_id = :facilityId
-          AND rc.status IN ('ACTIVE', 'OVERDUE')
+        SELECT
+          (SELECT COUNT(rc.id) FROM rental_contract rc
+            WHERE rc.facility_id = :facilityId
+              AND rc.status IN ('ACTIVE', 'OVERDUE', 'PENDING_CHECK_IN', 'PENDING_RETURN'))
+          +
+          (SELECT COUNT(r.id) FROM reservation r
+            WHERE r.facility_id = :facilityId
+              AND r.status IN ('CONFIRMED', 'PENDING_PAYMENT'))
     """, nativeQuery = true)
     long countActiveContractsByFacilityId(@Param("facilityId") Long facilityId);
 

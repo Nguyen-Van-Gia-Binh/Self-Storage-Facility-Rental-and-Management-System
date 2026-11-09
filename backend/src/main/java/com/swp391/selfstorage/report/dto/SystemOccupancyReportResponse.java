@@ -9,7 +9,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class SystemOccupancyReportResponse {
-    private double overallOccupancyRate;
+    private Double overallOccupancyRate;
     private long totalUnits;
     private long totalOccupiedUnits;
     private long totalAvailableUnits;

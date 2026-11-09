@@ -1386,7 +1386,7 @@ public class ContractServiceImpl implements ContractService {
                 if (contract.getStatus() == ContractStatus.TERMINATED) {
                         if (contract.getCheckinDate() == null) {
                                 // BR-CHK-06: Từ chối bàn giao ở khâu Check-in -> hoàn 100% tiền thuê + 100% cọc
-                                long rentAmount = contract.getMonthlyPrice() * Math.max(1, contract.getRentalMonths());
+                                long rentAmount = contract.getTotalRentalFee();
                                 long deposit = contract.getDepositAmount();
                                 long totalPaid = rentAmount + deposit;
                                 return SettlementPreviewResponse.builder()
@@ -1495,7 +1495,7 @@ public class ContractServiceImpl implements ContractService {
                 if (contract.getStatus() == ContractStatus.TERMINATED) {
                         if (contract.getCheckinDate() == null) {
                                 // BR-CHK-06: Từ chối bàn giao ở khâu Check-in -> hoàn 100% tiền thuê + 100% cọc
-                                long rentAmount = contract.getMonthlyPrice() * Math.max(1, contract.getRentalMonths());
+                                long rentAmount = contract.getTotalRentalFee();
                                 long depositAmount = contract.getDepositAmount();
                                 long totalRefund = rentAmount + depositAmount;
                                 return closeSettledContract(contract, returnReq, managerId, totalRefund, 0L);
@@ -2166,8 +2166,12 @@ public class ContractServiceImpl implements ContractService {
                         }
                 }
 
-                long dailyRate = contract.getMonthlyPrice() / 30;
-                long rescheduleFee = diffDays * dailyRate;
+                PolicyVersion reschedulePolicy = null;
+                if (contract.getPolicyVersionId() != null && policyVersionRepository != null) {
+                        reschedulePolicy = policyVersionRepository.findById(contract.getPolicyVersionId()).orElse(null);
+                }
+                long rescheduleFee = com.swp391.selfstorage.policy.service.PolicyNumbers
+                                .prorateTotalUpToThousand(contract.getMonthlyPrice(), diffDays, reschedulePolicy);
 
                 log.info("Dời thời gian hợp đồng [{}] thành công sang: {} -> {}, ô kho: {}, phí dời ngày: {} đ, lần dời: {}",
                                 contract.getCode(), newStartDate, newEndDate, targetUnitId, rescheduleFee, contract.getRescheduleCount());
@@ -2374,66 +2378,38 @@ public class ContractServiceImpl implements ContractService {
                         cancelPolicy = policyVersionRepository.findById(contract.getPolicyVersionId()).orElse(null);
                 }
 
-                // BR-CAN-01: Cooling-off trong vòng 48h sau thanh toán luôn hoàn 100%
-                int coolingOffHours = 48;
+                int coolingOffHours = cancelPolicy != null && cancelPolicy.getCancelFullRefundHours() != null
+                                ? cancelPolicy.getCancelFullRefundHours()
+                                : 48;
                 OffsetDateTime startDateTime = contract.getStartDate() != null
                                 ? contract.getStartDate().atStartOfDay().atOffset(now.getOffset())
                                 : now;
                 long hoursUntilStart = Duration.between(now, startDateTime).toHours();
-
-                boolean isWithinCoolingOff = false;
-                if (contract.getCreatedAt() != null) {
-                        isWithinCoolingOff = Duration.between(contract.getCreatedAt(), now).toHours() <= coolingOffHours;
-                }
-
-                long deposit = contract.getDepositAmount();
-                long rentalFee = contract.getTotalRentalFee();
-                long totalPaid = deposit + rentalFee;
-                long refundAmount;
-
-                // BR-CAN-01: Hủy sớm >= 7 ngày (>= 168 giờ) hoặc trong 48h sau thanh toán -> Hoàn 100% cọc + 100% tiền thuê
-                if (isWithinCoolingOff || hoursUntilStart >= 168) {
-                        refundAmount = totalPaid;
-                }
-                // BR-CAN-02: Hủy lửng từ 2 đến 6 ngày trước ngày bắt đầu (48h <= hoursUntilStart < 168h) -> Phạt 50% cọc, hoàn 50% cọc + 100% tiền thuê
-                else if (hoursUntilStart >= 48) {
-                        long depositRefund = Math.round(deposit * 0.50);
-                        refundAmount = rentalFee + depositRefund;
-                }
-                // BR-CAN-03: Hủy sát nút dưới 48 giờ trước ngày bắt đầu -> Phạt 100% cọc, hoàn 100% tiền thuê
-                else if (now.isBefore(startDateTime)) {
-                        refundAmount = rentalFee;
-                }
-                // BR-CAN-08: Hủy trong thời gian ân hạn nhận kho (sau ngày bắt đầu) -> Phạt 100% cọc, hoàn tiền thuê trừ số ngày đã chiếm giữ
-                else {
-                        int graceDays = cancelPolicy != null && cancelPolicy.getCheckinGraceDays() != null
-                                        ? cancelPolicy.getCheckinGraceDays()
-                                        : 10;
-                        long heldDays = contract.getStartDate() != null
-                                        ? Math.max(0, ChronoUnit.DAYS.between(contract.getStartDate(), now.toLocalDate()))
-                                        : 0;
-                        if (heldDays > graceDays) {
-                                refundAmount = 0L; // Quá 10 ngày áp dụng Auto-Activation BR-CAN-04, không hủy hoàn tiền
-                        } else {
-                                long daily = contract.getMonthlyPrice() / 30;
-                                long rentCharged = Math.min(rentalFee, daily * heldDays);
-                                refundAmount = Math.max(0, rentalFee - rentCharged);
-                        }
-                }
-
-                if (refundAmount > 0 && paymentTransactionRepository != null) {
-                        PaymentTransaction refundTxn = PaymentTransaction.builder()
-                                        .contractId(contract.getId())
-                                        .reservationId(contract.getReservationId())
-                                        .amount(refundAmount)
-                                        .transactionType("REFUND")
-                                        .paymentMethod("BANK_TRANSFER")
-                                        .status("PENDING_REFUND")
-                                        .providerReference("REFUND CANCEL: " + reason)
-                                        .orderCode(System.currentTimeMillis())
-                                        .build();
-                        paymentTransactionRepository.save(refundTxn);
-                }
+                boolean isWithinCoolingOff = contract.getCreatedAt() != null
+                                && Duration.between(contract.getCreatedAt(), now).toHours() <= coolingOffHours;
+                int graceDays = cancelPolicy != null && cancelPolicy.getCheckinGraceDays() != null
+                                ? cancelPolicy.getCheckinGraceDays()
+                                : 10;
+                long heldDays = contract.getStartDate() != null
+                                ? Math.max(0, ChronoUnit.DAYS.between(contract.getStartDate(), now.toLocalDate()))
+                                : 0;
+                com.swp391.selfstorage.policy.service.PolicyNumbers.RefundParts parts =
+                                com.swp391.selfstorage.policy.service.PolicyNumbers.cancelRefund(
+                                                cancelPolicy,
+                                                contract.getTotalRentalFee(),
+                                                contract.getDepositAmount(),
+                                                contract.getMonthlyPrice(),
+                                                hoursUntilStart,
+                                                isWithinCoolingOff,
+                                                now.isBefore(startDateTime),
+                                                heldDays,
+                                                graceDays);
+                long refundAmount = parts.total();
+                long orderBase = System.currentTimeMillis();
+                savePendingRefund(contract.getId(), contract.getReservationId(), "RENT_REFUND", parts.rent,
+                                "REFUND CANCEL: " + reason, orderBase);
+                savePendingRefund(contract.getId(), contract.getReservationId(), "DEPOSIT_REFUND", parts.deposit,
+                                "REFUND CANCEL: " + reason, orderBase + 1);
 
                 // Cập nhật trạng thái hợp đồng -> CANCELLED
                 contract.setStatus(ContractStatus.CANCELLED);
@@ -2477,6 +2453,23 @@ public class ContractServiceImpl implements ContractService {
         }
 
         /** PIN theo độ dài trong snapshot hợp đồng, không ghim 6 số. */
+        private void savePendingRefund(Long contractId, Long reservationId, String type, long amount, String reason,
+                        long orderCode) {
+                if (amount <= 0 || paymentTransactionRepository == null) {
+                        return;
+                }
+                paymentTransactionRepository.save(PaymentTransaction.builder()
+                                .contractId(contractId)
+                                .reservationId(reservationId)
+                                .amount(amount)
+                                .transactionType(type)
+                                .paymentMethod("BANK_TRANSFER")
+                                .status("PENDING_REFUND")
+                                .providerReference(reason)
+                                .orderCode(orderCode)
+                                .build());
+        }
+
         private String generateUniquePin(int length) {
                 int digits = Math.min(10, Math.max(4, length));
                 int bound = (int) Math.pow(10, digits);

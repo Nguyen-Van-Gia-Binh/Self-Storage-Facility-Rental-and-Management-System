@@ -51,4 +51,9 @@ public interface PaymentService {
      * Hard Timeout 48h tự động chuyển EXPIRED đối với lỗi 99/mạng.
      */
     boolean reconcileSingleOrder(Long orderCode);
+
+    /**
+     * Ghi nhận đã chuyển khoản hoàn tiền: PENDING_REFUND → SUCCESS.
+     */
+    PaymentResponse confirmRefundPayout(Long paymentId);
 }

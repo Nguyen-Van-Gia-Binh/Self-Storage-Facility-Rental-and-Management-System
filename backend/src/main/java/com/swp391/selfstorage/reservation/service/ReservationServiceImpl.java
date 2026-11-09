@@ -369,6 +369,21 @@ public class ReservationServiceImpl implements ReservationService {
         return policy;
     }
 
+    private void savePendingRefund(Long reservationId, String type, long amount, String reason, long orderCode) {
+        if (amount <= 0 || paymentTransactionRepository == null) {
+            return;
+        }
+        paymentTransactionRepository.save(PaymentTransaction.builder()
+                .reservationId(reservationId)
+                .amount(amount)
+                .transactionType(type)
+                .paymentMethod("BANK_TRANSFER")
+                .status("PENDING_REFUND")
+                .providerReference(reason)
+                .orderCode(orderCode)
+                .build());
+    }
+
     private PolicyVersion policyOf(Reservation reservation) {
         if (reservation != null && reservation.getPolicyVersionId() != null && policyVersionRepository != null) {
             return policyVersionRepository.findById(reservation.getPolicyVersionId()).orElse(null);
@@ -468,6 +483,9 @@ public class ReservationServiceImpl implements ReservationService {
         List<RentalContract> linkedContracts = rentalContractRepository != null
                 ? rentalContractRepository.findAllByReservationId(reservation.getId())
                 : List.of();
+        if (linkedContracts == null) {
+            linkedContracts = List.of();
+        }
         boolean hasPendingContract = (pendingContractOpt.isPresent() && pendingContractOpt.get().getStatus() == ContractStatus.PENDING_CHECK_IN)
                 || linkedContracts.stream().anyMatch(c -> c.getStatus() == ContractStatus.PENDING_CHECK_IN);
 
@@ -493,57 +511,39 @@ public class ReservationServiceImpl implements ReservationService {
             OffsetDateTime startDateTime = reservation.getStartDate().atStartOfDay().atOffset(now.getOffset());
             long hoursUntilStart = Duration.between(now, startDateTime).toHours();
             PolicyVersion cancelPolicy = policyOf(reservation);
-            int fullRefundHours = cancelPolicy != null && cancelPolicy.getCancelFullRefundHours() != null
+            int coolingOffHours = cancelPolicy != null && cancelPolicy.getCancelFullRefundHours() != null
                     ? cancelPolicy.getCancelFullRefundHours()
                     : 48;
             long deposit = reservation.getDepositAmount();
             long rentalFee = Math.max(0, reservation.getTotalPayable() - deposit);
-            long refundAmount;
-
             boolean isWithinCoolingOff = false;
             if (reservation.getConfirmedAt() != null) {
-                isWithinCoolingOff = Duration.between(reservation.getConfirmedAt(), now).toHours() <= fullRefundHours;
+                isWithinCoolingOff = Duration.between(reservation.getConfirmedAt(), now).toHours() <= coolingOffHours;
             } else if (reservation.getCreatedAt() != null) {
-                isWithinCoolingOff = Duration.between(reservation.getCreatedAt().atOffset(now.getOffset()), now).toHours() <= fullRefundHours;
+                isWithinCoolingOff = Duration.between(reservation.getCreatedAt().atOffset(now.getOffset()), now).toHours() <= coolingOffHours;
             }
-
-            // Đủ điều kiện hoàn 100% (cả cọc + tiền thuê) nếu:
-            // 1. Hủy trong vòng 48 giờ kể từ khi thanh toán (cooling-off period)
-            // 2. HOẶC hủy trước ngày bắt đầu thuê >= 48 giờ
-            if (isWithinCoolingOff || hoursUntilStart >= fullRefundHours) {
-                refundAmount = reservation.getTotalPayable();
-            } else if (now.isBefore(startDateTime)) {
-                BigDecimal lateRate = cancelPolicy != null ? cancelPolicy.getCancelLateRefundRate() : BigDecimal.ZERO;
-                refundAmount = rentalFee + PolicyNumbers.share(deposit, lateRate);
-            } else {
-                int graceDays = cancelPolicy != null && cancelPolicy.getCheckinGraceDays() != null
-                        ? cancelPolicy.getCheckinGraceDays()
-                        : 10;
-                long heldDays = Math.max(0, java.time.temporal.ChronoUnit.DAYS.between(reservation.getStartDate(), now.toLocalDate()));
-                if (heldDays > graceDays) {
-                    // Quá hạn ân hạn nhận kho (No-show quá hạn theo BR-CAN-04): Không hoàn tiền cả 2 khoản (0đ), chỉ giải phóng ô kho
-                    refundAmount = 0L;
-                    isNoShow = true;
-                } else {
-                    BigDecimal noShowRate = cancelPolicy != null ? cancelPolicy.getCancelNoShowRefundRate() : BigDecimal.ZERO;
-                    long daily = PolicyNumbers.dailyRent(reservation.getMonthlyPriceSnapshot(), cancelPolicy);
-                    long rentCharged = Math.min(rentalFee, daily * heldDays);
-                    refundAmount = Math.max(0, rentalFee - rentCharged) + PolicyNumbers.share(deposit, noShowRate);
-                }
+            int graceDays = cancelPolicy != null && cancelPolicy.getCheckinGraceDays() != null
+                    ? cancelPolicy.getCheckinGraceDays()
+                    : 10;
+            long heldDays = Math.max(0, ChronoUnit.DAYS.between(reservation.getStartDate(), now.toLocalDate()));
+            boolean beforeStart = now.isBefore(startDateTime);
+            if (!beforeStart && heldDays > graceDays) {
+                isNoShow = true;
             }
-
-            if (refundAmount > 0) {
-                PaymentTransaction refundTxn = PaymentTransaction.builder()
-                        .reservationId(reservation.getId())
-                        .amount(refundAmount)
-                        .transactionType("REFUND")
-                        .paymentMethod("BANK_TRANSFER")
-                        .status("PENDING_REFUND")
-                        .providerReference("REFUND: " + reason)
-                        .orderCode(System.currentTimeMillis())
-                        .build();
-                paymentTransactionRepository.save(refundTxn);
-            }
+            PolicyNumbers.RefundParts parts = PolicyNumbers.cancelRefund(
+                    cancelPolicy,
+                    rentalFee,
+                    deposit,
+                    reservation.getMonthlyPriceSnapshot(),
+                    hoursUntilStart,
+                    isWithinCoolingOff,
+                    beforeStart,
+                    heldDays,
+                    graceDays);
+            long refundAmount = parts.total();
+            long orderBase = System.currentTimeMillis();
+            savePendingRefund(reservation.getId(), "RENT_REFUND", parts.rent, "REFUND: " + reason, orderBase);
+            savePendingRefund(reservation.getId(), "DEPOSIT_REFUND", parts.deposit, "REFUND: " + reason, orderBase + 1);
 
             // Hủy hợp đồng ở trạng thái PENDING_CHECK_IN nếu có
             if (rentalContractRepository != null) {
@@ -762,105 +762,105 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     @Transactional
-    public ReservationResponse assignUnit(Long reservationId, AssignUnitRequest request, Long managerId, List<Long> facilityIds) {
-        ReservationResponse response = this.assignUnit(reservationId, request.getStorageUnitId(), facilityIds);
-
-        if (request.getStaffId() != null) {
-            if (userRepository != null) {
-                AppUser staff = userRepository.findById(request.getStaffId())
-                        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "Khong tim thay nhan vien"));
-                if (staff.getRole() != UserRole.FACILITY_STAFF || staff.getStatus() != UserStatus.ACTIVE) {
-                    throw new CustomException(ErrorCode.VALIDATION_FAILED, "Nhan vien tiep don phai co vai tro STAFF va dang hoat dong");
-                }
-            }
-
-            RentalContract contract = rentalContractRepository.findByReservationId(reservationId).orElse(null);
-            if (contract != null) {
-                if (request.getScheduledStartTime() != null) {
-                    contract.setScheduledStartTime(request.getScheduledStartTime());
-                }
-                if (request.getScheduledEndTime() != null) {
-                    contract.setScheduledEndTime(request.getScheduledEndTime());
-                }
-                rentalContractRepository.save(contract);
-
-                if (staffDailyAssignmentRepository != null) {
-                    Reservation reservation = reservationRepository.findById(reservationId)
-                            .or(() -> reservationRepository.findByIdWithLock(reservationId))
-                            .orElse(null);
-
-                    Long facilityId = reservation != null ? reservation.getFacilityId() : contract.getFacilityId();
-                    LocalDate defaultDate = reservation != null && reservation.getStartDate() != null
-                            ? reservation.getStartDate()
-                            : (contract.getStartDate() != null ? contract.getStartDate() : LocalDate.now());
-                    LocalDate workDate = request.getScheduledDate() != null ? request.getScheduledDate() : (defaultDate.isAfter(LocalDate.now()) ? LocalDate.now() : defaultDate);
-
-                    StaffDailyAssignment assignment = staffDailyAssignmentRepository
-                            .findByReferenceTypeAndReferenceId("CONTRACT", contract.getId())
-                            .orElseGet(() -> StaffDailyAssignment.builder()
-                                    .referenceType("CONTRACT")
-                                    .referenceId(contract.getId())
-                                    .facilityId(facilityId)
-                                    .taskType(AssignmentTaskType.HANDOVER)
-                                    .build());
-
-                    assignment.setStaffId(request.getStaffId());
-                    assignment.setAssignedBy(managerId);
-                    assignment.setWorkDate(workDate);
-                    assignment.setFacilityId(facilityId);
-                    assignment.setReferenceType("CONTRACT");
-                    assignment.setReferenceId(contract.getId());
-                    assignment.setTaskType(AssignmentTaskType.HANDOVER);
-                    staffDailyAssignmentRepository.save(assignment);
-                }
-            }
-        }
-
-        return response;
-    }
-
-    @Override
-    @Transactional
-    public ReservationResponse reassignStaff(Long reservationId, Long newStaffId, String reason, Long managerId, List<Long> facilityIds) {
-        Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new CustomException(ErrorCode.RESERVATION_NOT_FOUND));
-
-        if (facilityIds == null || !facilityIds.contains(reservation.getFacilityId())) {
-            throw new CustomException(ErrorCode.FACILITY_ACCESS_DENIED);
-        }
-
-        RentalContract contract = rentalContractRepository.findByReservationId(reservationId)
-                .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
-
-        if (userRepository != null) {
-            AppUser newStaff = userRepository.findById(newStaffId)
-                    .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "Khong tim thay nhan vien"));
-            if (newStaff.getRole() != UserRole.FACILITY_STAFF || newStaff.getStatus() != UserStatus.ACTIVE) {
-                throw new CustomException(ErrorCode.VALIDATION_FAILED, "Nhan vien tiep don phai co vai tro STAFF va dang hoat dong");
-            }
-        }
-
-        if (staffDailyAssignmentRepository != null) {
-            StaffDailyAssignment assignment = staffDailyAssignmentRepository
-                    .findByReferenceTypeAndReferenceId("CONTRACT", contract.getId())
-                    .orElseGet(() -> StaffDailyAssignment.builder()
-                            .referenceType("CONTRACT")
-                            .referenceId(contract.getId())
-                            .facilityId(reservation.getFacilityId())
-                            .workDate(contract.getCheckinDate() != null ? contract.getCheckinDate() : reservation.getStartDate())
-                            .taskType(AssignmentTaskType.HANDOVER)
-                            .build());
-
-            assignment.setStaffId(newStaffId);
-            assignment.setAssignedBy(managerId);
-            staffDailyAssignmentRepository.save(assignment);
-        }
-
-        return mapToResponse(reservation);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
+    public ReservationResponse assignUnit(Long reservationId, AssignUnitRequest request, Long managerId, List<Long> facilityIds) {
+        ReservationResponse response = this.assignUnit(reservationId, request.getStorageUnitId(), facilityIds);
+
+        if (request.getStaffId() != null) {
+            if (userRepository != null) {
+                AppUser staff = userRepository.findById(request.getStaffId())
+                        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "Khong tim thay nhan vien"));
+                if (staff.getRole() != UserRole.FACILITY_STAFF || staff.getStatus() != UserStatus.ACTIVE) {
+                    throw new CustomException(ErrorCode.VALIDATION_FAILED, "Nhan vien tiep don phai co vai tro STAFF va dang hoat dong");
+                }
+            }
+
+            RentalContract contract = rentalContractRepository.findByReservationId(reservationId).orElse(null);
+            if (contract != null) {
+                if (request.getScheduledStartTime() != null) {
+                    contract.setScheduledStartTime(request.getScheduledStartTime());
+                }
+                if (request.getScheduledEndTime() != null) {
+                    contract.setScheduledEndTime(request.getScheduledEndTime());
+                }
+                rentalContractRepository.save(contract);
+
+                if (staffDailyAssignmentRepository != null) {
+                    Reservation reservation = reservationRepository.findById(reservationId)
+                            .or(() -> reservationRepository.findByIdWithLock(reservationId))
+                            .orElse(null);
+
+                    Long facilityId = reservation != null ? reservation.getFacilityId() : contract.getFacilityId();
+                    LocalDate defaultDate = reservation != null && reservation.getStartDate() != null
+                            ? reservation.getStartDate()
+                            : (contract.getStartDate() != null ? contract.getStartDate() : LocalDate.now());
+                    LocalDate workDate = request.getScheduledDate() != null ? request.getScheduledDate() : (defaultDate.isAfter(LocalDate.now()) ? LocalDate.now() : defaultDate);
+
+                    StaffDailyAssignment assignment = staffDailyAssignmentRepository
+                            .findByReferenceTypeAndReferenceId("CONTRACT", contract.getId())
+                            .orElseGet(() -> StaffDailyAssignment.builder()
+                                    .referenceType("CONTRACT")
+                                    .referenceId(contract.getId())
+                                    .facilityId(facilityId)
+                                    .taskType(AssignmentTaskType.HANDOVER)
+                                    .build());
+
+                    assignment.setStaffId(request.getStaffId());
+                    assignment.setAssignedBy(managerId);
+                    assignment.setWorkDate(workDate);
+                    assignment.setFacilityId(facilityId);
+                    assignment.setReferenceType("CONTRACT");
+                    assignment.setReferenceId(contract.getId());
+                    assignment.setTaskType(AssignmentTaskType.HANDOVER);
+                    staffDailyAssignmentRepository.save(assignment);
+                }
+            }
+        }
+
+        return response;
+    }
+
+    @Override
+    @Transactional
+    public ReservationResponse reassignStaff(Long reservationId, Long newStaffId, String reason, Long managerId, List<Long> facilityIds) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESERVATION_NOT_FOUND));
+
+        if (facilityIds == null || !facilityIds.contains(reservation.getFacilityId())) {
+            throw new CustomException(ErrorCode.FACILITY_ACCESS_DENIED);
+        }
+
+        RentalContract contract = rentalContractRepository.findByReservationId(reservationId)
+                .orElseThrow(() -> new CustomException(ErrorCode.CONTRACT_NOT_FOUND));
+
+        if (userRepository != null) {
+            AppUser newStaff = userRepository.findById(newStaffId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "Khong tim thay nhan vien"));
+            if (newStaff.getRole() != UserRole.FACILITY_STAFF || newStaff.getStatus() != UserStatus.ACTIVE) {
+                throw new CustomException(ErrorCode.VALIDATION_FAILED, "Nhan vien tiep don phai co vai tro STAFF va dang hoat dong");
+            }
+        }
+
+        if (staffDailyAssignmentRepository != null) {
+            StaffDailyAssignment assignment = staffDailyAssignmentRepository
+                    .findByReferenceTypeAndReferenceId("CONTRACT", contract.getId())
+                    .orElseGet(() -> StaffDailyAssignment.builder()
+                            .referenceType("CONTRACT")
+                            .referenceId(contract.getId())
+                            .facilityId(reservation.getFacilityId())
+                            .workDate(contract.getCheckinDate() != null ? contract.getCheckinDate() : reservation.getStartDate())
+                            .taskType(AssignmentTaskType.HANDOVER)
+                            .build());
+
+            assignment.setStaffId(newStaffId);
+            assignment.setAssignedBy(managerId);
+            staffDailyAssignmentRepository.save(assignment);
+        }
+
+        return mapToResponse(reservation);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public ReservationResponse lookupForCheckIn(String query, Long facilityId) {
         if (query != null && query.toUpperCase().startsWith("RSV-")) {
             return reservationRepository.findByCodeAndFacilityId(query, facilityId)

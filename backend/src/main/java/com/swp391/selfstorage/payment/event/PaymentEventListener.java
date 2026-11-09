@@ -1,6 +1,8 @@
 package com.swp391.selfstorage.payment.event;
 
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
@@ -27,6 +29,7 @@ public class PaymentEventListener {
      * - Nếu payableAmount > 0: Tạo giao dịch thu nợ phát sinh (SETTLEMENT) ở trạng thái PENDING
      */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleContractSettled(ContractSettledEvent event) {
         log.info("Xử lý ContractSettledEvent cho contractId={}, refundAmount={}, payableAmount={}",
                 event.getContractId(), event.getDepositRefundAmount(), event.getPayableAmount());
@@ -36,7 +39,7 @@ public class PaymentEventListener {
             PaymentTransaction refundTxn = PaymentTransaction.builder()
                     .contractId(event.getContractId())
                     .amount(event.getDepositRefundAmount())
-                    .transactionType("REFUND")
+                    .transactionType("DEPOSIT_REFUND")
                     .paymentMethod("BANK_TRANSFER")
                     .status("PENDING_REFUND")
                     .providerReference("Hoàn cọc quyết toán hợp đồng #" + event.getContractId())
@@ -44,7 +47,7 @@ public class PaymentEventListener {
                     .build();
 
             paymentTransactionRepository.save(refundTxn);
-            log.info("Đã tạo bản ghi REFUND PENDING_REFUND cho contractId={}", event.getContractId());
+            log.info("Đã tạo bản ghi DEPOSIT_REFUND PENDING_REFUND cho contractId={}", event.getContractId());
         }
 
         // 2. Nợ thêm do hư hại/quá hạn vượt tiền cọc -> Tạo giao dịch thu nợ

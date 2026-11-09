@@ -77,7 +77,7 @@ public class CsvReportExportUtil {
         appendMetadataHeader(sb, "BÁO CÁO TỶ LỆ LẤP ĐẦY TOÀN HỆ THỐNG", "Hiện tại", currentUser);
 
         sb.append("TỔNG QUAN HỆ THỐNG\n");
-        sb.append("Tỷ lệ lấp đầy toàn quốc,").append(String.format("%.1f%%", report.getOverallOccupancyRate() * 100))
+        sb.append("Tỷ lệ lấp đầy toàn quốc,").append(formatOccupancy(report.getOverallOccupancyRate()))
                 .append("\n");
         sb.append("Tổng số ô kho,").append(report.getTotalUnits()).append("\n");
         sb.append("Số ô đang thuê (Occupied),").append(report.getTotalOccupiedUnits()).append("\n");
@@ -100,7 +100,7 @@ public class CsvReportExportUtil {
                         .append(f.getMaintenanceUnits()).append(",")
                         .append(f.getOutOfServiceUnits()).append(",")
                         .append(f.getOverdueContractsCount()).append(",")
-                        .append(String.format("%.1f%%", f.getOccupancyRate() * 100)).append("\n");
+                        .append(formatOccupancy(f.getOccupancyRate())).append("\n");
             }
         }
 
@@ -151,6 +151,13 @@ public class CsvReportExportUtil {
         sb.append("# Người xuất: ").append(exporter).append("\n");
         sb.append("# Thời điểm xuất: ").append(LocalDateTime.now(VN_ZONE).format(TIME_FORMATTER))
                 .append(" (Asia/Ho_Chi_Minh)\n\n");
+    }
+
+    private static String formatOccupancy(Double rate) {
+        if (rate == null) {
+            return "Không xác định";
+        }
+        return String.format("%.1f%%", rate * 100);
     }
 
     private static String escapeCsv(String value) {
