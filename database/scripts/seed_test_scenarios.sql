@@ -234,8 +234,7 @@ ON CONFLICT (contract_id) DO UPDATE SET
 -- -----------------------------------------------------------------------------
 -- BƯỚC 5: ĐỒNG BỘ TRẠNG THÁI Ô KHO VẬT LÝ (STORAGE_UNIT)
 -- -----------------------------------------------------------------------------
-UPDATE storage_unit SET status = 'OCCUPIED'   WHERE facility_id = 5 AND code IN ('Q1-A101', 'Q1-A102', 'Q1-A103', 'Q1-C101', 'Q1-XS101');
-UPDATE storage_unit SET status = 'CLEANING'   WHERE facility_id = 5 AND code = 'Q1-B201';
+UPDATE storage_unit SET status = 'OCCUPIED'   WHERE facility_id = 5 AND code IN ('Q1-A101', 'Q1-A102', 'Q1-A103', 'Q1-C101', 'Q1-XS101', 'Q1-B201');
 UPDATE storage_unit SET status = 'MAINTENANCE'WHERE facility_id = 5 AND code = 'Q1-XL101';
 UPDATE storage_unit SET status = 'AVAILABLE'  WHERE facility_id = 5 AND code = 'Q1-XS201';
 
