@@ -221,7 +221,7 @@ describe('AllocationPage Component (Gán ô kho)', () => {
     expect(submitBtn.disabled).toBe(true);
 
     // Chọn nhân viên tiếp đón
-    const staffSelect = screen.getByRole('combobox');
+    const staffSelect = screen.getByRole('combobox', { name: /tiếp đón/i });
     expect(staffSelect).toBeDefined();
     expect(screen.getByText('-- Chọn nhân viên tiếp đón (Bắt buộc) --')).toBeDefined();
 
@@ -365,6 +365,61 @@ describe('AllocationPage Component (Gán ô kho)', () => {
       expect(screen.getByText('Sự cố bàn giao')).toBeDefined();
       expect(screen.getByText('Gán lại ô kho')).toBeDefined();
       expect(screen.getByText('Đổi ô kho')).toBeDefined();
+    });
+  });
+
+  it('7. Cho phép chọn Tất cả cơ sở quản lý: hiển thị đồng thời hợp đồng từ cả Cơ sở Quận 7 và Cơ sở Quận 1 kèm nhãn cơ sở', async () => {
+    vi.mocked(facilityApi.fetchMyAssignedFacilities).mockResolvedValue([
+      { id: 2, name: 'Cơ sở Quận 7 - TP.HCM', code: 'FAC-Q7' } as FacilityListItem,
+      { id: 5, name: 'Cơ sở Quận 1 - TP.HCM', code: 'FAC-Q1' } as FacilityListItem,
+    ]);
+
+    vi.mocked(reservationApi.listReservations).mockResolvedValue([]);
+    vi.mocked(contractApi.getManagerContracts).mockResolvedValue([
+      {
+        id: 701,
+        code: 'CTR-20261109-5101',
+        facilityId: 2,
+        facilityName: 'Cơ sở Quận 7 - TP.HCM',
+        customerId: 1,
+        customerName: 'Le Go',
+        customerPhone: '0901234567',
+        storageUnitId: undefined,
+        storageUnitCode: '',
+        unitTypeId: 1,
+        unitTypeName: 'Kho Tiêu Chuẩn S',
+        startDate: '2026-11-09',
+        status: 'PENDING_CHECK_IN',
+      } as ManagerContractItem,
+      {
+        id: 702,
+        code: 'CTR-20261128-6202',
+        facilityId: 5,
+        facilityName: 'Cơ sở Quận 1 - TP.HCM',
+        customerId: 1,
+        customerName: 'Le Go',
+        customerPhone: '0901234567',
+        storageUnitId: undefined,
+        storageUnitCode: '',
+        unitTypeId: 1,
+        unitTypeName: 'Kho Tiêu Chuẩn S',
+        startDate: '2026-11-28',
+        status: 'PENDING_CHECK_IN',
+      } as ManagerContractItem,
+    ]);
+
+    // Giả lập manager chọn 'ALL' (Tất cả cơ sở)
+    localStorage.setItem('manager_selected_facility_id', 'ALL');
+
+    render(<AllocationPage />);
+
+    await waitFor(() => {
+      // Hiển thị cả 2 hợp đồng của Quận 7 và Quận 1
+      expect(screen.getByText('CTR-20261109-5101')).toBeDefined();
+      expect(screen.getByText('CTR-20261128-6202')).toBeDefined();
+      expect(screen.getByText('Cơ sở Quận 7 - TP.HCM')).toBeDefined();
+      expect(screen.getByText('Cơ sở Quận 1 - TP.HCM')).toBeDefined();
+      expect(screen.getByText('2 đơn chờ xử lý')).toBeDefined();
     });
   });
 });

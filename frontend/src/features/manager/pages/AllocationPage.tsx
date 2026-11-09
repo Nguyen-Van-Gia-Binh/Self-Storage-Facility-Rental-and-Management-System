@@ -57,6 +57,8 @@ export interface AllocationQueueItem {
   contractId?: number;
   reservationId?: number;
   code: string;
+  facilityId: number;
+  facilityName: string;
   customerId?: number;
   customerName: string;
   customerPhone: string;
@@ -92,6 +94,7 @@ function getCustomerInfo(row: ReservationResponse) {
 export const AllocationPage: React.FC = () => {
   const [facilities, setFacilities] = useState<FacilityListItem[]>([]);
   const [facilityId, setFacilityId] = useState<number | null>(null);
+  const [facilityCounts, setFacilityCounts] = useState<Record<string | number, number>>({});
   const [queue, setQueue] = useState<AllocationQueueItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeItem, setActiveItem] = useState<AllocationQueueItem | null>(null);
@@ -112,16 +115,29 @@ export const AllocationPage: React.FC = () => {
     window.setTimeout(() => setToast(null), 4000);
   };
 
-  const loadQueue = useCallback(async (id: number, isManual = false) => {
+  const loadQueue = useCallback(async (id: number | null, isManual = false) => {
     if (isManual) setRefreshing(true);
     else setLoading(true);
     try {
       // 1. Tải danh sách đơn đặt chỗ đã thanh toán (CONFIRMED) và hợp đồng chờ nhận kho (PENDING_CHECK_IN)
-      const rsvRows = await listReservations({ status: 'CONFIRMED', facilityId: id, size: 100 });
+      const rsvParams: { status: string; facilityId?: number; size: number } = {
+        status: 'CONFIRMED',
+        size: 100,
+      };
+      if (id && id > 0) {
+        rsvParams.facilityId = id;
+      }
+      const rsvRows = await listReservations(rsvParams);
 
       let contracts: ManagerContractItem[] = [];
       try {
-        const contractsRes = await getManagerContracts({ facilityId: id, status: 'PENDING_CHECK_IN' });
+        const contractFilter: { facilityId?: number; status: string } = {
+          status: 'PENDING_CHECK_IN',
+        };
+        if (id && id > 0) {
+          contractFilter.facilityId = id;
+        }
+        const contractsRes = await getManagerContracts(contractFilter);
         contracts = Array.isArray(contractsRes)
           ? contractsRes
           : ((contractsRes as unknown as { content?: ManagerContractItem[] })?.content || []);
@@ -189,6 +205,8 @@ export const AllocationPage: React.FC = () => {
             reservationId: resolvedRsvId,
             contractId: c.id,
             code: c.code,
+            facilityId: c.facilityId || (id && id > 0 ? id : 0),
+            facilityName: c.facilityName || '',
             customerId: c.customerId ?? matchedRsv?.customerId,
             customerName:
               c.customerName ||
@@ -225,6 +243,8 @@ export const AllocationPage: React.FC = () => {
             reservationId: row.id,
             contractId: row.contractId,
             code: row.contractCode || row.code,
+            facilityId: row.facilityId || (id && id > 0 ? id : 0),
+            facilityName: row.facilityName || '',
             customerId: row.customerId,
             customerName: cust.name,
             customerPhone: cust.phone,
@@ -253,6 +273,8 @@ export const AllocationPage: React.FC = () => {
           contractId: c.id,
           reservationId: c.reservationId,
           code: c.code,
+          facilityId: c.facilityId || (id && id > 0 ? id : 0),
+          facilityName: c.facilityName || '',
           customerId: c.customerId,
           customerName: c.customerName || (c.customerId ? `Khách hàng #${c.customerId}` : 'Khách hàng'),
           customerPhone: c.customerPhone || '0901234567',
@@ -267,9 +289,30 @@ export const AllocationPage: React.FC = () => {
           assignedStaffId: c.assignedStaffId,
         }));
 
-      const merged = [...pendingContractAllocations, ...pendingRsv, ...relocationContracts].sort((a, b) =>
-        a.startDate.localeCompare(b.startDate)
-      );
+      const merged = [...pendingContractAllocations, ...pendingRsv, ...relocationContracts]
+        .map((item) => {
+          if (!item.facilityName) {
+            const fac = facilities.find((f) => f.id === item.facilityId);
+            return {
+              ...item,
+              facilityName: fac ? fac.name : item.facilityId ? `Cơ sở #${item.facilityId}` : '',
+            };
+          }
+          return item;
+        })
+        .sort((a, b) => a.startDate.localeCompare(b.startDate));
+
+      // Cập nhật số lượng đơn chờ cho từng cơ sở và tổng
+      if (id == null) {
+        const counts: Record<string | number, number> = { ALL: merged.length };
+        for (const item of merged) {
+          if (item.facilityId) {
+            counts[item.facilityId] = (counts[item.facilityId] || 0) + 1;
+          }
+        }
+        setFacilityCounts(counts);
+      }
+
       setQueue(merged);
       setSelectedId((current) => {
         if (current != null && merged.some((row) => row.id === current)) return current;
@@ -280,7 +323,7 @@ export const AllocationPage: React.FC = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [facilities]);
 
   const loadStaff = useCallback(async (id: number) => {
     try {
@@ -301,9 +344,16 @@ export const AllocationPage: React.FC = () => {
         setFacilities(list || []);
         if (list && list.length > 0) {
           const saved = localStorage.getItem('manager_selected_facility_id');
-          const targetId = saved && Number(saved) > 0 ? Number(saved) : list[0].id;
-          const found = list.find((f) => f.id === targetId) ? targetId : list[0].id;
-          setFacilityId(found);
+          if (saved === 'ALL') {
+            setFacilityId(null);
+          } else if (saved && Number(saved) > 0) {
+            const targetId = Number(saved);
+            const found = list.find((f) => f.id === targetId) ? targetId : list[0].id;
+            setFacilityId(found);
+          } else {
+            // Mặc định nạp cơ sở đầu tiên nếu có
+            setFacilityId(list[0].id);
+          }
         }
       } catch (err) {
         if (!active) return;
@@ -317,12 +367,13 @@ export const AllocationPage: React.FC = () => {
 
   // 2. Khi đổi cơ sở: Tải hàng đợi cần gán ô và danh sách nhân viên cơ sở
   useEffect(() => {
-    if (facilityId == null) return;
     let active = true;
     (async () => {
       try {
         await loadQueue(facilityId);
-        await loadStaff(facilityId);
+        if (facilityId != null) {
+          await loadStaff(facilityId);
+        }
       } catch (err) {
         if (!active) return;
         showToast(err instanceof Error ? err.message : 'Không tải được hàng đợi', 'error');
@@ -343,11 +394,15 @@ export const AllocationPage: React.FC = () => {
   };
 
   // Mở form xác nhận sau khi chọn ô cụ thể trên sơ đồ 2D
-  const openAssignModal = (unit: StorageUnitResponse) => {
+  const openAssignModal = async (unit: StorageUnitResponse) => {
     setModalUnit(unit);
     // Nếu là đổi ô cho hợp đồng thì ưu tiên giữ lại nhân viên đã được gán trước đó
     setSelectedStaffId(selected?.assignedStaffId ?? null);
     setStaffError(null);
+    const targetFacId = selected?.facilityId || facilityId;
+    if (targetFacId) {
+      await loadStaff(targetFacId);
+    }
   };
 
   const handleConfirmAssignment = async () => {
@@ -389,23 +444,31 @@ export const AllocationPage: React.FC = () => {
 
         showToast(`Đã gán lại ô ${modalUnit.code} cho hợp đồng ${selected.code} thành công!`);
       } else {
-        // Gán ô lần đầu cho đơn đặt chỗ mới
-        await assignUnit(selected.rawId, {
-          storageUnitId: modalUnit.id,
-          staffId: selectedStaffId!,
-          scheduledDate: selected.startDate,
-          scheduledStartTime: '08:00',
-          scheduledEndTime: '17:00',
-        });
+        // Gán ô lần đầu cho đơn đặt chỗ mới hoặc hợp đồng trực tiếp
+        if (selected.reservationId) {
+          await assignUnit(selected.reservationId, {
+            storageUnitId: modalUnit.id,
+            staffId: selectedStaffId!,
+            scheduledDate: selected.startDate,
+            scheduledStartTime: '08:00',
+            scheduledEndTime: '17:00',
+          });
+        } else if (selected.contractId) {
+          await reassignStorageUnit({
+            contractId: selected.contractId,
+            currentUnitId: selected.storageUnitId || 0,
+            newUnitId: modalUnit.id,
+            newUnitCode: modalUnit.code,
+            reason: 'Phân bổ ô kho ban đầu cho hợp đồng trực tiếp',
+            customerConsent: true,
+          });
+        }
 
         showToast(`Đã gán ô ${modalUnit.code} và phân công nhân viên tiếp đón thành công!`);
       }
 
       setModalUnit(null);
-
-      if (facilityId != null) {
-        await loadQueue(facilityId, true);
-      }
+      await loadQueue(facilityId, true);
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Gán ô kho thất bại', 'error');
     } finally {
@@ -454,19 +517,22 @@ export const AllocationPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0">
-          {facilities.length > 1 && (
+          {facilities.length > 0 && (
             <select
               className="border border-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm bg-white shadow-2xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
-              value={facilityId ?? ''}
+              value={facilityId ?? 'ALL'}
               onChange={(e) => {
-                const newId = Number(e.target.value);
-                setFacilityId(newId);
-                localStorage.setItem('manager_selected_facility_id', String(newId));
+                const val = e.target.value === 'ALL' ? null : Number(e.target.value);
+                setFacilityId(val);
+                localStorage.setItem('manager_selected_facility_id', val != null ? String(val) : 'ALL');
               }}
             >
+              <option value="ALL">
+                🏢 Tất cả cơ sở quản lý {facilityCounts.ALL != null ? `(${facilityCounts.ALL} đơn chờ)` : ''}
+              </option>
               {facilities.map((fac) => (
                 <option key={fac.id} value={fac.id}>
-                  {fac.name}
+                  {fac.name} {facilityCounts[fac.id] != null ? `(${facilityCounts[fac.id]} đơn)` : ''}
                 </option>
               ))}
             </select>
@@ -474,7 +540,7 @@ export const AllocationPage: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => facilityId && loadQueue(facilityId, true)}
+            onClick={() => loadQueue(facilityId, true)}
             disabled={refreshing}
             className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors cursor-pointer shrink-0"
             title="Làm mới danh sách"
@@ -496,7 +562,7 @@ export const AllocationPage: React.FC = () => {
             </span>
           </div>
           <span className="text-xs text-slate-500">
-            Cơ sở: <strong className="text-slate-800 font-semibold">{selectedFacility?.name || '---'}</strong>
+            Cơ sở: <strong className="text-slate-800 font-semibold">{facilityId == null ? 'Tất cả cơ sở quản lý' : (selectedFacility?.name || '---')}</strong>
           </span>
         </div>
 
@@ -531,7 +597,9 @@ export const AllocationPage: React.FC = () => {
                       </div>
                       <h4 className="text-sm font-bold text-slate-800 mt-1">Không có đơn nào chờ gán ô</h4>
                       <p className="text-xs text-slate-500">
-                        Toàn bộ đơn đặt chỗ tại cơ sở {selectedFacility?.name} đã được phân bổ ô kho và chỉ định nhân viên hoàn tất.
+                        {facilityId == null
+                          ? 'Toàn bộ đơn đặt chỗ trên các cơ sở quản lý đã được phân bổ ô kho và chỉ định nhân viên hoàn tất.'
+                          : `Toàn bộ đơn đặt chỗ tại cơ sở ${selectedFacility?.name} đã được phân bổ ô kho và chỉ định nhân viên hoàn tất.`}
                       </p>
                     </div>
                   </td>
@@ -556,6 +624,10 @@ export const AllocationPage: React.FC = () => {
                                 Sự cố bàn giao
                               </span>
                             )}
+                          </div>
+                          <div className="flex items-center gap-1 text-[11px] font-medium text-slate-500 mt-0.5">
+                            <Building2 className="w-3 h-3 text-brand-600 shrink-0" />
+                            <span>{row.facilityName || `Cơ sở #${row.facilityId}`}</span>
                           </div>
                           <div className="flex items-center gap-1.5 text-xs text-slate-800 font-semibold mt-0.5">
                             <User className="w-3.5 h-3.5 text-brand-600 shrink-0" />
@@ -636,12 +708,12 @@ export const AllocationPage: React.FC = () => {
       </section>
 
       {/* Sơ đồ Mặt bằng 2D tương tác: FM bấm vào để trực quan chọn vị trí ô kho */}
-      {facilityId && isFloorPlanOpen && selected && (
+      {isFloorPlanOpen && selected && (
         <FacilityFloorPlanMapModal
           isOpen={isFloorPlanOpen}
           onClose={() => setIsFloorPlanOpen(false)}
-          facilityId={facilityId}
-          facilityName={selectedFacility?.name}
+          facilityId={selected.facilityId || facilityId || facilities[0]?.id || 1}
+          facilityName={selected.facilityName || selectedFacility?.name}
           allowedUnitTypeId={selected.unitTypeId}
           targetUnitTypeName={cleanUnitTypeName(selected.unitTypeName)}
           onSelectUnit={(unit) => {
@@ -789,6 +861,7 @@ export const AllocationPage: React.FC = () => {
                 </label>
 
                 <select
+                  aria-label="Chọn nhân viên tiếp đón"
                   className={`w-full border rounded-xl px-3.5 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 cursor-pointer font-medium transition-all ${
                     staffError
                       ? 'border-rose-400 ring-2 ring-rose-100 text-rose-900'
