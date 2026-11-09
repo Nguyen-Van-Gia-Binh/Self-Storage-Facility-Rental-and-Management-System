@@ -86,7 +86,19 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
 
   const effectiveContractNumber = contract.contractNumber || effectiveDetail?.contractCode || `CTR-${contract.id}`;
   const effectiveStatus = (contract.status || effectiveDetail?.status) as string;
-  const isCancelledAtHandover = effectiveStatus === 'TERMINATED';
+  const isHandoverRejected = Boolean(
+    contract.handoverRejected ||
+    effectiveDetail?.handoverRejected ||
+    contract.contractNumber?.includes('REJ') ||
+    contract.contractNumber?.includes('REFUND')
+  );
+  const isCancelledAtHandover = isHandoverRejected;
+  const isOverdueTerminated =
+    effectiveStatus === 'TERMINATED' &&
+    !isHandoverRejected &&
+    ((effectiveDetail?.depositBalance ?? contract.depositHeld) === 0 ||
+      (effectiveDetail?.overdueDays ?? contract.overdueDays ?? 0) >= 7 ||
+      contract.contractNumber?.startsWith('CTR-TEST-007'));
   const isClosed = effectiveStatus === 'CLOSED';
   const isRelocating =
     !isCancelledAtHandover &&
@@ -118,7 +130,9 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
   // Xác định chữ Watermark tương ứng
   let watermarkText = 'HỢP ĐỒNG HIỆU LỰC';
   if (effectiveStatus === 'TERMINATED') {
-    if (contract.handoverRejected || contract.contractNumber?.includes('REJ') || contract.contractNumber?.includes('REFUND')) {
+    if (isOverdueTerminated) {
+      watermarkText = 'NIÊM PHONG KHO TỔNG (D+7)';
+    } else if (isHandoverRejected) {
       watermarkText = 'TỪ CHỐI NHẬN - HOÀN 100%';
     } else if (!isStorageUnitAssigned(contract.unitNumber) || contract.unitNumber === 'Chưa gán ô kho' || contract.contractNumber?.includes('NO-UNIT')) {
       watermarkText = 'ĐÃ HỦY - HOÀN CỌC 100%';
@@ -287,10 +301,32 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                 </div>
               )}
 
-              {/* 3. Banner Hợp đồng TERMINATED (3 trường hợp phân hóa chuẩn xác) */}
+              {/* 3. Banner Hợp đồng TERMINATED (4 trường hợp phân hóa chuẩn xác) */}
               {(effectiveStatus === 'TERMINATED' || isCancelledAtHandover) && (
-                (contract.handoverRejected || contract.contractNumber?.includes('REJ') || contract.contractNumber?.includes('REFUND') || isCancelledAtHandover) ? (
-                  /* Trường hợp 3A: Từ chối nhận kho tại chỗ -> Hủy & Hoàn 100% */
+                isOverdueTerminated ? (
+                  /* Trường hợp 3A: Quá hạn D+7 cưỡng chế chấm dứt & Niêm phong Kho Tổng (BR-OVD-07, BR-OVD-11) */
+                  <div className="p-4 rounded-xl bg-purple-50 border-2 border-purple-300 space-y-2 animate-in fade-in duration-200 shadow-xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-purple-900 font-extrabold text-xs uppercase tracking-wide">
+                        <AlertTriangle className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                        <span>BIÊN BẢN CƯỠNG CHẾ CHẤM DỨT &amp; NIÊM PHONG VỀ KHO TỔNG (BR-OVD-07)</span>
+                      </div>
+                      <span className="text-[11px] font-mono font-bold bg-purple-200 text-purple-900 px-2 py-0.5 rounded">
+                        Niêm phong Kho Tổng (D+7)
+                      </span>
+                    </div>
+                    <p className="text-xs text-purple-900 leading-relaxed">
+                      Hợp đồng đã quá hạn vượt mốc D+7 và bị cưỡng chế chấm dứt. Toàn bộ tiền cọc bảo đảm ({formatVND(detail?.depositAmount || contract.depositHeld || 2500000)}) đã được khấu trừ để bù đắp phí quá hạn (55% cọc) và chi phí xử lý kiểm kê, niêm phong tài sản về Kho Tổng (45% cọc).
+                    </p>
+                    <div className="text-[11px] font-semibold text-purple-900 bg-purple-100/70 px-3 py-1.5 rounded-lg border border-purple-200 flex items-center gap-1.5">
+                      <AlertTriangle className="w-4 h-4 text-purple-700 flex-shrink-0" />
+                      <span>
+                        Quy chế xử lý tài sản (BR-OVD-11): Quý khách có 30 ngày để liên hệ Quản lý cơ sở thanh toán phụ phí phát sinh và làm thủ tục nhận lại tài sản tại Kho Tổng. Sau 30 ngày, tài sản sẽ được thanh lý ngoại tuyến theo hợp đồng.
+                      </span>
+                    </div>
+                  </div>
+                ) : isHandoverRejected ? (
+                  /* Trường hợp 3B: Từ chối nhận kho tại chỗ -> Hủy & Hoàn 100% */
                   <div className="p-4 rounded-xl bg-rose-50 border-2 border-rose-300 space-y-2 animate-in fade-in duration-200 shadow-xs">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-rose-900 font-extrabold text-xs uppercase tracking-wide">
@@ -312,7 +348,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                     </div>
                   </div>
                 ) : (!isStorageUnitAssigned(contract.unitNumber) || contract.unitNumber === 'Chưa gán ô kho' || contract.contractNumber?.includes('NO-UNIT')) ? (
-                  /* Trường hợp 3B: Chưa gán kho mà đã hủy */
+                  /* Trường hợp 3C: Chưa gán kho mà đã hủy */
                   <div className="p-4 rounded-xl bg-orange-50 border-2 border-orange-300 space-y-2 animate-in fade-in duration-200 shadow-xs">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-orange-900 font-extrabold text-xs uppercase tracking-wide">
@@ -487,6 +523,11 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                   {isClosed && (
                     <span className="text-[10px] font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
                       Đã nghiệm thu & tất toán
+                    </span>
+                  )}
+                  {isOverdueTerminated && (
+                    <span className="text-[10px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+                      Niêm phong Kho Tổng (D+7)
                     </span>
                   )}
                   {isPendingCheckin && (

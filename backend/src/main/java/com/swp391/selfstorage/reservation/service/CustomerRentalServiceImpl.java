@@ -259,16 +259,12 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
         // Hướng dẫn mở cửa kho
         if (contract.getStatus() == ContractStatus.OVERDUE) {
             if (detail.isAccessCodeLocked()) {
-                detail.setInstructionNotes("Mã PIN của quý khách hiện đang tạm khóa an ninh từ mốc D+7 do hợp đồng quá hạn. Vui lòng thanh toán khoản nợ phạt để mở khóa quyền truy cập.");
-            } else if (detail.getOverdueDays() >= 4 && detail.getOverdueDays() < 7) {
-                detail.setInstructionNotes("Hợp đồng đã quá hạn " + detail.getOverdueDays() + " ngày và đang phát sinh phí phạt. Quý khách vui lòng dọn đồ hoặc thanh toán nợ phạt sớm trước mốc D+7 để tránh bị khóa mã cửa.");
-            } else if (detail.getOverdueDays() <= 3) {
-                detail.setInstructionNotes("Hợp đồng đang trong thời gian ân hạn quá hạn 3 ngày. Quý khách vui lòng dọn đồ hoặc gia hạn/thanh toán sớm.");
+                detail.setInstructionNotes("Mã PIN của quý khách hiện đang tạm khóa an ninh (Nguyên tắc No Pay, No PIN) do hợp đồng quá hạn. Vui lòng quét VietQR thanh toán nợ phí quá hạn để nhận mã PIN tạm trong ngày.");
             } else {
-                detail.setInstructionNotes("Hợp đồng đã quá hạn nhưng đã tất toán nợ phạt. Quý khách vui lòng hoàn tất dọn đồ hoặc gia hạn hợp đồng.");
+                detail.setInstructionNotes("Quý khách đã thanh toán phí quá hạn và được cấp mã PIN tạm trong ngày. Vui lòng bấm 'Báo trả kho' hoặc hoàn tất dọn đồ trước 23:59.");
             }
         } else if (detail.isAccessCodeLocked()) {
-            detail.setInstructionNotes("Mã PIN của quý khách hiện đang tạm khóa an ninh từ mốc D+7 do hợp đồng quá hạn. Vui lòng thanh toán khoản nợ phạt để mở khóa quyền truy cập.");
+            detail.setInstructionNotes("Mã PIN của quý khách hiện đang tạm khóa an ninh do hợp đồng quá hạn hoặc chưa hoàn tất thủ tục.");
         } else if (contract.getStatus() == ContractStatus.ACTIVE) {
             detail.setInstructionNotes("Để mở khóa điện tử, quý khách vui lòng nhập mã PIN 6 số tại bảng điều khiển cửa kho rồi bấm phím #.");
         } else if (contract.getStatus() == ContractStatus.PENDING_RETURN) {
@@ -427,7 +423,7 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
             });
         }
 
-        // Xử lý mã Access Code và Quá hạn theo BR-OVD-01..03 & BR-RET-09
+        // Xử lý mã Access Code và Quá hạn theo BR-OVD-01..08 & BR-RET-09 (Nguyên tắc No Pay, No PIN)
         if (contract.getStatus() == ContractStatus.OVERDUE) {
             long overdueDays = 0;
             if (contract.getEndDateExclusive() != null && now.isAfter(contract.getEndDateExclusive())) {
@@ -435,32 +431,18 @@ public class CustomerRentalServiceImpl implements CustomerRentalService {
             }
             res.setOverdueDays(Math.max(1, overdueDays));
 
-            // BR-OVD-01: Trong 3 ngày ân hạn đầu tiên, mã PIN vẫn mở được kho bình thường, chưa tính phí phạt
-            if (overdueDays <= 3) {
+            long fee = contract.getOverdueFeeAccrued();
+            res.setOverdueFeeAccrued(fee);
+            res.setTotalOutstandingDebt(fee);
+
+            // BR-OVD-01, BR-OVD-05: Khóa PIN ngay từ D+1 nếu còn nợ phí quá hạn (fee > 0).
+            // Chỉ khi khách quét VietQR thanh toán hết phí quá hạn (fee == 0) mới được cấp PIN tạm trong ngày (BR-OVD-08).
+            if (fee > 0 || contract.getAccessCode() == null) {
+                res.setAccessCode(null);
+                res.setAccessCodeLocked(true);
+            } else {
                 res.setAccessCode(contract.getAccessCode());
                 res.setAccessCodeLocked(false);
-                res.setOverdueFeeAccrued(0);
-                res.setTotalOutstandingDebt(0);
-            } else {
-                long fee = contract.getOverdueFeeAccrued();
-                res.setOverdueFeeAccrued(fee);
-                res.setTotalOutstandingDebt(fee);
-
-                // BR-OVD-02, BR-OVD-03 & BR-OVD-05:
-                // D+4..D+6: Phí phạt phát sinh nhưng mã mở cửa VẪN BÌNH THƯỜNG để khách vào dọn đồ trả kho.
-                // D+7: Khóa an ninh nếu còn nợ phí phạt (fee > 0). Nếu đã tất toán (fee == 0), mở lại mã PIN để dọn kho.
-                if (overdueDays < 7) {
-                    res.setAccessCode(contract.getAccessCode());
-                    res.setAccessCodeLocked(false);
-                } else {
-                    if (fee > 0) {
-                        res.setAccessCode(null);
-                        res.setAccessCodeLocked(true);
-                    } else {
-                        res.setAccessCode(contract.getAccessCode());
-                        res.setAccessCodeLocked(false);
-                    }
-                }
             }
         } else if (contract.getStatus() == ContractStatus.ACTIVE || contract.getStatus() == ContractStatus.PENDING_RETURN) {
             if (res.isInspectionDone()) {

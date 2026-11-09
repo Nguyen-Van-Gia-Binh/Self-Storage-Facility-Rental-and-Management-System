@@ -97,6 +97,9 @@ export interface CustomerRentalDetail extends CustomerRentalSummary {
   relocationSupportRequestCode?: string;
   relocationReason?: string;
   relocationEligible?: boolean;
+  handoverRejected?: boolean;
+  rejectionReason?: string;
+  overdueDays?: number;
 }
 
 export interface RenewalQuote {
