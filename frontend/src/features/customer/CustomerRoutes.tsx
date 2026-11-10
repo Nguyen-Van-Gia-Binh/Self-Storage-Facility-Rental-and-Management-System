@@ -32,9 +32,9 @@ export const CustomerRoutes: React.FC = () => {
     <CustomerLayout>
       <Routes>
         <Route index element={<HomePage />} />
-        {/* Chuyển hướng các đường dẫn facilities cũ về Trang chủ */}
-        <Route path="facilities" element={<Navigate to="/customer" replace />} />
-        <Route path="facilities/*" element={<Navigate to="/customer" replace />} />
+        {/* Chuyển hướng các đường dẫn facilities cũ về Trang chủ (/) */}
+        <Route path="facilities" element={<Navigate to="/" replace />} />
+        <Route path="facilities/*" element={<Navigate to="/" replace />} />
         {/* WS1 — Customer Booking & Rentals Hub */}
         <Route path="units" element={<UnitPickerPage />} />
         <Route path="booking" element={<BookingPage />} />

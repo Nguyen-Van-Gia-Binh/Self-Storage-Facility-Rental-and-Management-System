@@ -6,7 +6,7 @@ test.describe('Smoke Test: Xác thực 3 Context độc lập', () => {
     staffPage,
     managerPage,
   }) => {
-    await expect(customerPage).toHaveURL(/.*\/customer.*/);
+    await expect(customerPage).toHaveURL(/\/$/);
     await expect(staffPage).toHaveURL(/.*\/staff.*/);
     await expect(managerPage).toHaveURL(/.*\/manager.*/);
   });

@@ -29,9 +29,10 @@ export const AppRoutes: React.FC = () => {
         {/* Cổng thanh toán VNPay Sandbox (Checkout Landing Page) */}
         <Route path="/payment/checkout" element={<SandboxCheckoutPage />} />
 
-        {/* Trang chủ và Portal Khách hàng (WS1) - Công khai */}
-        <Route path="/*" element={<CustomerRoutes />} />
+        {/* Trang chủ và Portal Khách hàng (WS1) - Công khai tại / */}
+        <Route path="/customer" element={<Navigate to="/" replace />} />
         <Route path="/customer/*" element={<CustomerRoutes />} />
+        <Route path="/*" element={<CustomerRoutes />} />
 
         {/* Portal Nhân viên cơ sở (WS2) - Yêu cầu role STAFF hoặc ADMIN */}
         <Route

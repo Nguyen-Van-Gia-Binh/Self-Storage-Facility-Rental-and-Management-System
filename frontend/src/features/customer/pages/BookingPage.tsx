@@ -666,7 +666,7 @@ export const BookingPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-brand-200/60">
         <div>
           <Link
-            to={facility.id ? `/customer/units?facility=${facility.id}&type=${unitType.id}` : '/customer'}
+            to={facility.id ? `/customer/units?facility=${facility.id}&type=${unitType.id}` : '/'}
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-700 hover:text-brand-800 transition-colors mb-1"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
@@ -774,7 +774,7 @@ export const BookingPage: React.FC = () => {
         unavailableModal={unavailableModal}
         onCloseUnavailableModal={() => {
           setUnavailableModal((prev) => ({ ...prev, isOpen: false }));
-          navigate(unavailableModal.actionType === 'NAVIGATE_HOME' ? '/customer' : `/customer/units?facility=${facilityId}`);
+          navigate(unavailableModal.actionType === 'NAVIGATE_HOME' ? '/' : `/customer/units?facility=${facilityId}`);
         }}
         pendingLimitModal={pendingLimitModal}
         onClosePendingLimitModal={() => {

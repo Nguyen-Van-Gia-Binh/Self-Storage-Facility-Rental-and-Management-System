@@ -49,7 +49,7 @@ describe('ISS-81: Đồng bộ Logo Thương Hiệu SmartStorage (Boxes 3 Khối
   it('CustomerLayout sử dụng Logo dùng chung và không còn sử dụng icon đơn Box cho logo', () => {
     const content = fs.readFileSync(customerLayoutPath, 'utf-8');
     expect(content).toMatch(/import \{ Logo \} from '@\/components\/ui\/Logo';/);
-    expect(content).toMatch(/<Logo to="\/customer" subtitle="Self-Storage Solutions" size="md" \/>/);
+    expect(content).toMatch(/<Logo to="\/" subtitle="Self-Storage Solutions" size="md" \/>/);
     expect(content).toMatch(/<Logo showSubtitle=\{false\} size="sm" \/>/);
     expect(content).not.toMatch(/<Box className=/);
   });

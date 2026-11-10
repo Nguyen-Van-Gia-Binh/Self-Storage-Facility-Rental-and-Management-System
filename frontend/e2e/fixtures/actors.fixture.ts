@@ -14,7 +14,7 @@ export const test = base.extend<ActorPages>({
     await page.fill('input[type="email"]', 'customer@storage.vn');
     await page.fill('input[type="password"]', 'password123');
     await page.click('button[type="submit"]');
-    await page.waitForURL(/.*\/customer.*/);
+    await page.waitForURL((url) => url.pathname === '/');
     await use(page);
     await context.close();
   },

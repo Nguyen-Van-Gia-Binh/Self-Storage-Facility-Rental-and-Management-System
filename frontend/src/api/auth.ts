@@ -192,7 +192,7 @@ export function getPortalUrlByRole(role: string): string {
       return '/staff';
     case 'CUSTOMER':
     default:
-      return '/customer';
+      return '/';
   }
 }
 
