@@ -31,6 +31,7 @@ export interface Facility {
   startingPrice: number;
   image: string;
   phone: string;
+  openingHours?: string;
 }
 
 // Loại ô kho (Unit Type - FM-01)

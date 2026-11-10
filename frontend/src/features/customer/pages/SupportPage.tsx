@@ -29,6 +29,7 @@ import { customerApi } from '../api/customerApi';
 import { SupportTicketTable } from '../components/SupportTicketTable';
 import { SupportTicketDetailModal } from '../components/SupportTicketDetailModal';
 import { CreateSupportTicketModal } from '../components/CreateSupportTicketModal';
+import { CancelSupportTicketModal } from '../components/CancelSupportTicketModal';
 
 export type SupportTabKey = 'ALL' | 'ACTIVE' | 'CLOSED';
 
@@ -734,83 +735,21 @@ export const SupportPage: React.FC = () => {
               }}
               className="w-full sm:w-auto font-bold cursor-pointer"
             >
-              Xem chi tiết & Tiến trình
+              Xem chi tiết
             </Button>
           </div>
         </div>
       </Modal>
 
-      {/* Modal Xác nhận Hủy Yêu Cầu Hỗ Trợ (ISS-79) */}
-      <Modal
+      {/* Modal Xác nhận Hủy Yêu Cầu Hỗ Trợ (dùng chung) */}
+      <CancelSupportTicketModal
         isOpen={Boolean(cancellingTicket)}
-        onClose={() => {
-          if (!isCancellingTicket) setCancellingTicket(null);
-        }}
-        className="max-w-md w-full"
-      >
-        <div className="p-5 sm:p-6 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-rose-600" />
-              Xác nhận hủy yêu cầu hỗ trợ
-            </h3>
-            <button
-              type="button"
-              disabled={isCancellingTicket}
-              onClick={() => setCancellingTicket(null)}
-              className="text-slate-400 hover:text-slate-600 font-bold px-1.5 py-0.5 rounded cursor-pointer"
-            >
-              ×
-            </button>
-          </div>
-
-          <div className="flex items-start gap-3 p-3.5 bg-rose-50 rounded-xl border border-rose-100 text-rose-800 text-xs leading-relaxed">
-            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-bold text-rose-900 mb-1">
-                Bạn có chắc chắn muốn hủy vé hỗ trợ {cancellingTicket?.ticketCode}?
-              </p>
-              <p className="text-rose-700">
-                Thao tác này sẽ đóng yêu cầu hỗ trợ và nhân viên cơ sở sẽ không tiếp tục xử lý sự cố này nữa.
-              </p>
-            </div>
-          </div>
-
-          {cancelTicketError && (
-            <p className="text-xs text-rose-600 font-semibold">{cancelTicketError}</p>
-          )}
-
-          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={isCancellingTicket}
-              onClick={() => setCancellingTicket(null)}
-              className="text-slate-700 hover:bg-slate-100 cursor-pointer"
-            >
-              Quay lại (Giữ vé)
-            </Button>
-            <Button
-              type="button"
-              variant="danger"
-              size="sm"
-              disabled={isCancellingTicket}
-              onClick={handleConfirmCancelTicket}
-              className="bg-rose-600 hover:bg-rose-700 text-white font-bold cursor-pointer"
-            >
-              {isCancellingTicket ? (
-                <>
-                  <RotateCw className="w-4 h-4 mr-1.5 animate-spin" />
-                  Đang hủy...
-                </>
-              ) : (
-                'Xác nhận hủy vé'
-              )}
-            </Button>
-          </div>
-        </div>
-      </Modal>
+        ticketCode={cancellingTicket?.ticketCode}
+        isSubmitting={isCancellingTicket}
+        error={cancelTicketError}
+        onClose={() => setCancellingTicket(null)}
+        onConfirm={handleConfirmCancelTicket}
+      />
     </div>
   );
 };

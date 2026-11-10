@@ -116,7 +116,7 @@ describe('DigitalMoveInPassModal — Tách biệt Vé nhận kho và Check-in on
     const selectAllBtn = screen.getByText(/Chọn tất cả đạt \(4\/4\)/i);
     fireEvent.click(selectAllBtn);
 
-    const submitBtn = screen.getByRole('button', { name: /Đồng ý nhận kho & Kích hoạt mã PIN/i });
+    const submitBtn = screen.getByRole('button', { name: /^Đồng ý nhận kho$/i });
     expect(submitBtn).toBeDisabled();
   });
 
@@ -141,7 +141,7 @@ describe('DigitalMoveInPassModal — Tách biệt Vé nhận kho và Check-in on
     const checkbox = screen.getByRole('checkbox');
     fireEvent.click(checkbox);
 
-    const submitBtn = screen.getByRole('button', { name: /Đồng ý nhận kho & Kích hoạt mã PIN/i });
+    const submitBtn = screen.getByRole('button', { name: /^Đồng ý nhận kho$/i });
     fireEvent.click(submitBtn);
 
     // Ký số thành công
@@ -164,7 +164,9 @@ describe('DigitalMoveInPassModal — Tách biệt Vé nhận kho và Check-in on
     // Hiển thị trạng thái Chưa gán số ô
     expect(screen.getByText(/Chưa gán số ô/i)).toBeInTheDocument();
     expect(screen.getByText(/Chờ quầy phân bổ/i)).toBeInTheDocument();
-    expect(screen.getByText(/Ô kho đang được nhân viên cơ sở điều phối/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Ô kho cụ thể của quý khách đang được nhân viên cơ sở điều phối, vui lòng kiểm tra sau/i)
+    ).toBeInTheDocument();
 
     // Tuyệt đối KHÔNG hiển thị nút hay tab Check-in online
     expect(screen.queryByRole('button', { name: /Check-in online/i })).not.toBeInTheDocument();
@@ -202,7 +204,7 @@ describe('DigitalMoveInPassModal — Tách biệt Vé nhận kho và Check-in on
     const checkbox = screen.getByRole('checkbox');
     fireEvent.click(checkbox);
 
-    const submitBtn = screen.getByRole('button', { name: /Đồng ý nhận kho & Kích hoạt mã PIN/i });
+    const submitBtn = screen.getByRole('button', { name: /^Đồng ý nhận kho$/i });
     fireEvent.click(submitBtn);
 
     // Chờ xử lý async

@@ -137,60 +137,68 @@ export const ChangePinModal: React.FC<ChangePinModalProps> = ({
 
         {/* Body */}
         <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4">
-          {/* Current PIN Alert */}
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2 text-slate-600">
-              <Lock className="w-4 h-4 text-brand-600" />
-              <span>Mã PIN hiện hành:</span>
-            </div>
-            <span className="font-mono text-sm font-bold text-slate-900 tracking-wider">
-              {contract.accessPin ? `${contract.accessPin.slice(0, 2)}••` : '••••'}
-            </span>
-          </div>
+          {(() => {
+            const pinLength = contract.accessPinLength && contract.accessPinLength >= 4 ? contract.accessPinLength : 6;
+            const maskedDots = '•'.repeat(Math.max(2, pinLength - 2));
+            return (
+              <>
+                {/* Current PIN Alert */}
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <Lock className="w-4 h-4 text-brand-600" />
+                    <span>Mã PIN hiện hành:</span>
+                  </div>
+                  <span className="font-mono text-sm font-bold text-slate-900 tracking-wider">
+                    {contract.accessPin ? `${contract.accessPin.slice(0, 2)}${maskedDots}` : '•'.repeat(pinLength)}
+                  </span>
+                </div>
 
-          {/* New PIN Inputs */}
-          <div className="space-y-3">
-            <div className="relative">
-              <Input
-                label={`Mã PIN mới (${contract.accessPinLength && contract.accessPinLength >= 4 ? contract.accessPinLength : 6} số)`}
-                type={showNewPin ? 'text' : 'password'}
-                placeholder="Ví dụ: 7892"
-                maxLength={6}
-                value={newPin}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, '');
-                  setNewPin(val);
-                  if (error) setError(null);
-                }}
-                className="font-mono text-center text-lg tracking-widest"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowNewPin(!showNewPin)}
-                className="absolute right-3 top-8 text-slate-400 hover:text-slate-600 cursor-pointer"
-              >
-                {showNewPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
+                {/* New PIN Inputs */}
+                <div className="space-y-3">
+                  <div className="relative">
+                    <Input
+                      label={`Mã PIN mới (${pinLength} số)`}
+                      type={showNewPin ? 'text' : 'password'}
+                      placeholder={`Nhập ${pinLength} chữ số mới`}
+                      maxLength={pinLength}
+                      value={newPin}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        setNewPin(val);
+                        if (error) setError(null);
+                      }}
+                      className="font-mono text-center text-lg tracking-widest"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPin(!showNewPin)}
+                      className="absolute right-3 top-8 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    >
+                      {showNewPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
 
-            <div>
-              <Input
-                label="Xác nhận lại mã PIN mới"
-                type={showNewPin ? 'text' : 'password'}
-                placeholder="Nhập lại mã PIN trên"
-                maxLength={6}
-                value={confirmPin}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, '');
-                  setConfirmPin(val);
-                  if (error) setError(null);
-                }}
-                className="font-mono text-center text-lg tracking-widest"
-                required
-              />
-            </div>
-          </div>
+                  <div>
+                    <Input
+                      label="Xác nhận lại mã PIN mới"
+                      type={showNewPin ? 'text' : 'password'}
+                      placeholder="Nhập lại mã PIN trên"
+                      maxLength={pinLength}
+                      value={confirmPin}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        setConfirmPin(val);
+                        if (error) setError(null);
+                      }}
+                      className="font-mono text-center text-lg tracking-widest"
+                      required
+                    />
+                  </div>
+                </div>
+              </>
+            );
+          })()}
 
           {/* Validation Error */}
           {error && (
@@ -212,7 +220,7 @@ export const ChangePinModal: React.FC<ChangePinModalProps> = ({
           <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-2 text-[11px] text-slate-500">
             <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
             <span>
-              Mã PIN mới sẽ có hiệu lực ngay lập tức tại bàn phím số ô kho và đầu đọc cổng vào cơ sở. Tuyệt đối không chia sẻ mã này cho người lạ.
+              Mã PIN mới có hiệu lực ngay lập tức tại cổng và cửa ô kho. Không chia sẻ mã cho người lạ.
             </span>
           </div>
 

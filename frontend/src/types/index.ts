@@ -427,6 +427,7 @@ export interface MoveInPassData {
   facilityName: string;
   facilityAddress: string;
   facilityPhone: string;
+  facilityOpeningHours?: string;
   customerName: string;
   customerPhone: string;
   customerIdentity: string;

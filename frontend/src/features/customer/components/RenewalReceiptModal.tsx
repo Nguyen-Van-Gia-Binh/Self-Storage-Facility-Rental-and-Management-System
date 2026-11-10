@@ -3,14 +3,11 @@ import { createPortal } from 'react-dom';
 import { 
   CheckCircle2, 
   X, 
-  Printer, 
   Calendar, 
   KeyRound, 
   Building2, 
   Box, 
-  ShieldCheck, 
-  ArrowRight,
-  Receipt
+  ArrowRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { formatVND } from '../utils/pricing';
@@ -42,10 +39,6 @@ export const RenewalReceiptModal: React.FC<RenewalReceiptModalProps> = ({
   const printRef = useRef<HTMLDivElement>(null);
 
   if (!isOpen) return null;
-
-  const handlePrint = () => {
-    window.print();
-  };
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
@@ -141,12 +134,9 @@ export const RenewalReceiptModal: React.FC<RenewalReceiptModalProps> = ({
                 {newEndDate}
               </span>
             </div>
-            <p className="text-[11px] text-emerald-800/90 leading-tight">
-              Hợp đồng của bạn đã được chuyển về trạng thái <strong>ACTIVE (Có hiệu lực)</strong> liên tục mà không bị gián đoạn.
-            </p>
           </div>
 
-          {/* Access PIN Preserved Card (BR-REN-08) */}
+          {/* Access PIN Preserved Card */}
           <div className="p-3.5 rounded-xl bg-sky-50/70 border border-sky-200 flex items-start gap-3">
             <div className="p-2 bg-sky-100 rounded-lg text-sky-700 flex-shrink-0">
               <KeyRound className="w-4 h-4" />
@@ -154,7 +144,7 @@ export const RenewalReceiptModal: React.FC<RenewalReceiptModalProps> = ({
             <div className="space-y-0.5 flex-1">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-sky-950">
-                  Bảo lưu mã PIN mở tủ
+                  Bảo lưu mã PIN mở cửa ô kho
                 </span>
                 {contract.accessPin && (
                   <span className="font-mono font-black text-sm px-2 py-0.5 bg-white border border-sky-300 rounded text-sky-900">
@@ -169,45 +159,18 @@ export const RenewalReceiptModal: React.FC<RenewalReceiptModalProps> = ({
           </div>
 
           {/* Financial Summary */}
-          <div className="space-y-2 border-t border-slate-100 pt-3">
-            <div className="flex items-center justify-between text-slate-600 text-xs">
-              <span className="flex items-center gap-1.5">
-                <Receipt className="w-3.5 h-3.5 text-slate-400" />
-                Hình thức thanh toán:
-              </span>
-              <span className="font-semibold text-slate-800">Cổng VNPay Sandbox</span>
-            </div>
-            <div className="flex items-center justify-between text-slate-600 text-xs">
-              <span>Tiền cọc bảo lưu:</span>
-              <span className="font-semibold text-emerald-600">{formatVND(contract.depositHeld)} (Giữ nguyên)</span>
-            </div>
-            <div className="flex items-center justify-between pt-2 border-t border-slate-200 text-sm">
+          <div className="border-t border-slate-100 pt-3">
+            <div className="flex items-center justify-between text-sm">
               <span className="font-bold text-[#0a1614]">Tổng tiền đã thanh toán:</span>
               <span className="text-base font-extrabold text-brand-600">
                 {formatVND(totalPaid)}
               </span>
             </div>
           </div>
-
-          <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-500 flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-            <span>Biên lai điện tử có giá trị pháp lý tương đương hóa đơn thanh toán trực tiếp tại quầy.</span>
-          </div>
         </div>
 
         {/* Footer Buttons */}
-        <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handlePrint}
-            className="flex items-center gap-1.5 text-xs text-slate-600"
-          >
-            <Printer className="w-3.5 h-3.5" />
-            <span>In biên lai</span>
-          </Button>
-
+        <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3">
           <Button
             type="button"
             variant="primary"

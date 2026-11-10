@@ -249,7 +249,7 @@ export const ReschedulePeriodModal: React.FC<ReschedulePeriodModalProps> = ({
           </div>
           <div>
             <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider block">
-              Điều chỉnh kế hoạch thuê (BR-RES-06)
+              Điều chỉnh kế hoạch thuê
             </span>
             <h3 className="text-lg font-black text-slate-900">Dời ngày nhận kho</h3>
             <p className="text-xs text-slate-500">
@@ -265,7 +265,7 @@ export const ReschedulePeriodModal: React.FC<ReschedulePeriodModalProps> = ({
             </div>
             <h4 className="text-lg font-bold text-slate-900">Dời ngày nhận kho thành công!</h4>
             <p className="text-xs text-slate-600 max-w-xs mx-auto leading-relaxed">
-              Phí dời ngày đã được thanh toán qua VNPay. Hệ thống đã cập nhật ngày nhận kho mới: <strong className="text-emerald-700">{formatDateDisplay(newStartDate)}</strong>.
+              Hệ thống đã cập nhật ngày nhận kho mới: <strong className="text-emerald-700">{formatDateDisplay(newStartDate)}</strong>.
             </p>
           </div>
         ) : orderCode ? (
@@ -310,12 +310,12 @@ export const ReschedulePeriodModal: React.FC<ReschedulePeriodModalProps> = ({
         ) : (
           /* Bước 1: Chọn ngày và tính phí */
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Cảnh báo nếu đã dời lịch 1 lần (BR-RES-06) */}
+            {/* Cảnh báo nếu đã dời lịch 1 lần */}
             {isAlreadyRescheduled && (
               <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-900">
                 <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                 <div className="leading-relaxed">
-                  <strong>Không thể dời lịch thêm:</strong> Hợp đồng này đã dời ngày nhận kho <strong>1/1 lần</strong>. Theo quy định <strong>BR-RES-06</strong>, mỗi hợp đồng chỉ được phép dời ngày nhận kho tối đa 1 lần duy nhất.
+                  <strong>Không thể dời lịch thêm:</strong> mỗi hợp đồng chỉ được phép dời ngày nhận kho tối đa 1 lần duy nhất.
                 </div>
               </div>
             )}
@@ -325,7 +325,7 @@ export const ReschedulePeriodModal: React.FC<ReschedulePeriodModalProps> = ({
               <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-900">
                 <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                 <div className="leading-relaxed">
-                  <strong>Không thể đổi ngày trực tuyến:</strong> Yêu cầu dời ngày nhận kho cần gửi trước ít nhất <strong>48 giờ</strong>. Hợp đồng của bạn hiện còn dưới 48 giờ trước ngày bắt đầu. Vui lòng liên hệ nhân viên cơ sở để được hỗ trợ.
+                  <strong>Không thể đổi ngày trực tuyến:</strong> Yêu cầu dời ngày nhận kho cần gửi trước ít nhất <strong>48 giờ</strong>. Vui lòng liên hệ nhân viên cơ sở để được hỗ trợ.
                 </div>
               </div>
             )}
@@ -370,7 +370,7 @@ export const ReschedulePeriodModal: React.FC<ReschedulePeriodModalProps> = ({
                 className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-2xs disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
               />
               <p className="text-[11px] text-slate-500">
-                * Có thể dời từ 1 đến tối đa 7 ngày kể từ ngày bắt đầu ban đầu ({formatDateDisplay(contract.startDate)}). Tối đa 1 lần duy nhất.
+                * Có thể dời từ 1 đến tối đa 7 ngày kể từ ngày bắt đầu ({formatDateDisplay(contract.startDate)}).
               </p>
             </div>
 
@@ -415,7 +415,7 @@ export const ReschedulePeriodModal: React.FC<ReschedulePeriodModalProps> = ({
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex gap-2 items-start text-[11px] text-slate-600">
               <Info className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
               <div className="leading-relaxed">
-                Toàn bộ tiền thuê và tiền cọc đã đóng sẽ được bảo lưu sang thời gian thuê mới. Phí dời ngày thanh toán qua VNPay Sandbox để giữ ô kho cho bạn.
+                Toàn bộ tiền thuê và tiền cọc đã đóng sẽ được bảo lưu sang thời gian thuê mới. Phí dời ngày thanh toán qua VNPay để giữ ô kho cho bạn.
               </div>
             </div>
 

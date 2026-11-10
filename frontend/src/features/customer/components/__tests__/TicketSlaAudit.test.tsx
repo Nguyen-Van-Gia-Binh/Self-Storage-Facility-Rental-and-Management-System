@@ -40,21 +40,14 @@ describe('CreateSupportTicketModal - SLA Audit', () => {
 
     // Should not have the old SLA 2h text
     expect(screen.queryByText(/Cam kết SLA xử lý tại chỗ trong vòng 2 giờ/i)).not.toBeInTheDocument();
-    
-    // Check if notice replaced it
-    expect(screen.getByText(/Quản lý cơ sở sẽ tiếp nhận/i)).toBeInTheDocument();
 
     // Select LOCK_ACCESS
     const lockAccessOption = screen.getByText('Khóa & Mã PIN');
     fireEvent.click(lockAccessOption);
 
-    // Smart PIN Hint banner should appear
-    expect(screen.getByText(/Kẹt chốt cơ, hỏng bàn phím điện tử, cửa không nhận tín hiệu/i)).toBeInTheDocument();
-    // Wait, the hint banner text is not specified exactly but should be an info banner.
-    // Let's just check for the Info icon or some text if we know it. We'll verify it in the test.
-
-    // Fill the description
-    const descInput = screen.getByPlaceholderText(/Mô tả cụ thể hiện tượng gặp phải/i);
+    // Fill the description (no placeholder per UI streamline)
+    const textboxes = screen.getAllByRole('textbox');
+    const descInput = textboxes[textboxes.length - 1];
     fireEvent.change(descInput, { target: { value: 'Cửa kho không mở được bằng mã PIN' } });
 
     // Submit

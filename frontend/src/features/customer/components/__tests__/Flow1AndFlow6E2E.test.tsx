@@ -119,7 +119,7 @@ describe('E2E Customer Journey: Flow 1 (Reservation & Waitlist CRM) & Sub-flow 6
       );
 
       // Kiểm tra thông tin hiển thị trên modal
-      expect(screen.getByText('Đăng ký Danh sách chờ (Waitlist)')).toBeInTheDocument();
+      expect(screen.getByText('Đăng ký Danh sách chờ')).toBeInTheDocument();
       expect(screen.getByText('Kho Lạnh M')).toBeInTheDocument();
 
       // Nhập số điện thoại hợp lệ theo placeholder
@@ -141,10 +141,10 @@ describe('E2E Customer Journey: Flow 1 (Reservation & Waitlist CRM) & Sub-flow 6
         );
       });
 
-      // Màn hình thành công hiển thị giải thích hàng đợi FIFO
+      // Màn hình thành công hiển thị thông báo ưu tiên theo thứ tự đăng ký
       await waitFor(() => {
         expect(screen.getByText('Đăng ký Danh sách chờ thành công!')).toBeInTheDocument();
-        expect(screen.getByText(/hệ thống ưu tiên \(FIFO\)/i)).toBeInTheDocument();
+        expect(screen.getByText(/ưu tiên theo thứ tự đăng ký/i)).toBeInTheDocument();
       });
       expect(handleSuccess).toHaveBeenCalled();
     });
@@ -269,7 +269,7 @@ describe('E2E Customer Journey: Flow 1 (Reservation & Waitlist CRM) & Sub-flow 6
       fireEvent.click(termsCheckbox);
 
       // Nút kích hoạt PIN sáng lên
-      const activateBtn = screen.getByRole('button', { name: /Đồng ý nhận kho & Kích hoạt mã PIN/i });
+      const activateBtn = screen.getByRole('button', { name: /^Đồng ý nhận kho$/i });
       expect(activateBtn).not.toBeDisabled();
       fireEvent.click(activateBtn);
 

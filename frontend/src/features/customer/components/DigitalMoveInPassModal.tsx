@@ -30,10 +30,10 @@ import {
   RefreshCw,
   XCircle,
 } from 'lucide-react';
-import { formatVND } from '../utils/pricing';
 import { isStorageUnitAssigned } from '../utils/unitAssignment';
 import { formatDateVN, isCheckInAllowedToday } from '../utils/unitPickerHelpers';
 import { checkInContract } from '@/api/contract';
+import { fetchFacilityById } from '@/api/facility';
 import { SignaturePad } from '@/features/staff/components/SignaturePad';
 import type { MoveInPassData } from '@/types';
 
@@ -72,20 +72,40 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
   const navigate = useNavigate();
   const [isClosing, setIsClosing] = useState(false);
   const [activeTab, setActiveTab] = useState<'pass' | 'checkin'>(initialMode);
+  const [resolvedOpeningHours, setResolvedOpeningHours] = useState<string>(
+    passData?.facilityOpeningHours || ''
+  );
 
-  // Synchronize activeTab whenever modal opens or initialMode changes
+  // Synchronize activeTab & fetch live openingHours from facility API when needed
   useEffect(() => {
-    if (isOpen) {
-      if (initialMode === 'checkin' && !isCheckInAllowedToday(passData?.startDate)) {
-        setActiveTab('pass');
-      } else {
-        setActiveTab(initialMode);
-      }
-      setShowRejectionView(false);
-      setRejectionResult(null);
-      setSignatureDataUrl(null);
+    if (!isOpen) return;
+    if (initialMode === 'checkin' && !isCheckInAllowedToday(passData?.startDate)) {
+      setActiveTab('pass');
+    } else {
+      setActiveTab(initialMode);
     }
-  }, [isOpen, initialMode, passData?.startDate]);
+    setShowRejectionView(false);
+    setRejectionResult(null);
+    setSignatureDataUrl(null);
+    setResolvedOpeningHours(passData?.facilityOpeningHours || '');
+
+    const numericFacId = Number(passData?.facilityId);
+    if (!passData?.facilityOpeningHours && numericFacId > 0 && !Number.isNaN(numericFacId)) {
+      let isMounted = true;
+      fetchFacilityById(numericFacId)
+        .then((fac) => {
+          if (isMounted && fac?.openingHours) {
+            setResolvedOpeningHours(fac.openingHours);
+          }
+        })
+        .catch(() => {
+          // bỏ qua nếu không gọi được API chi tiết cơ sở
+        });
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [isOpen, initialMode, passData?.startDate, passData?.facilityId, passData?.facilityOpeningHours]);
 
   // 4 Tiêu chí nghiệm thu vật lý hiện trường theo BR-CHK-02
   const [criteria, setCriteria] = useState({
@@ -194,7 +214,7 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
         const todayStr = new Date().toISOString().split('T')[0];
         const res = await checkInContract(Number(targetContractId), {
           checkinDate: todayStr,
-          conditionNote: `Khách hàng check-in online 24/7 và ký số điện tử (Đạt 4/4 tiêu chí BR-CHK-02): ${finalSignerName}`,
+          conditionNote: `Khách hàng check-in online và ký số điện tử (Đạt 4/4 tiêu chí): ${finalSignerName}`,
           customerConfirmed: true,
         });
 
@@ -298,13 +318,13 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
               'Thẻ Nhận Kho Điện Tử'
             )}
           </h2>
-          <p className="text-xs text-emerald-100/90 mt-1">
-            {showRejectionView
-              ? 'Ghi nhận hiện trường không đạt chuẩn và chọn hướng xử lý thỏa đáng'
-              : currentTab === 'checkin'
-              ? `Biên bản nghiệm thu 4 tiêu chí BR-CHK-02 cho ô kho ${passData.unitNumber}`
-              : 'Mã QR quét tại cổng cơ sở &amp; Thông tin lịch nhận bàn giao ô kho'}
-          </p>
+          {!showRejectionView && (
+            <p className="text-xs text-emerald-100/90 mt-1">
+              {currentTab === 'checkin'
+                ? `Biên bản nghiệm thu 4 tiêu chí cho ô kho ${passData.unitNumber}`
+                : 'Mã QR quét tại cổng cơ sở & Thông tin lịch nhận bàn giao ô kho'}
+            </p>
+          )}
         </div>
 
         <div className="p-5 sm:p-6 space-y-4 max-h-[78vh] overflow-y-auto">
@@ -336,8 +356,8 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
                       </h4>
                       <p className="leading-relaxed opacity-90">
                         {rejectionResult.action === 'RELOCATE'
-                          ? `Hệ thống đã tạm dừng bàn giao ô kho ${passData.unitNumber}. Yêu cầu cấp ô mới đã được gửi tới Quản lý cơ sở để lựa chọn ô kho thay thế đạt chuẩn trên sơ đồ 2D. Đơn giá thuê và toàn bộ tiền cọc được bảo lưu 100%.`
-                          : `Hợp đồng đối với ô kho ${passData.unitNumber} đã được chấm dứt do sự cố bàn giao tại hiện trường. Hệ thống sẽ tiến hành hoàn trả 100% chi phí (bao gồm tiền cọc và tiền thuê) về tài khoản của quý khách theo quy định.`}
+                          ? 'Yêu cầu cấp ô mới đã được gửi đi. Đơn giá thuê và toàn bộ tiền cọc của bạn được bảo lưu 100%.'
+                          : 'Hệ thống sẽ hoàn trả 100% chi phí về tài khoản của quý khách theo quy định.'}
                       </p>
                       <div className="pt-2 text-[11px] font-semibold">
                         <span>Lý do ghi nhận: </span>
@@ -390,59 +410,49 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {/* Hướng 1: Đổi ô kho */}
                     <label
-                      className={`p-3 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
+                      className={`p-3 rounded-2xl border-2 cursor-pointer transition-all flex items-center ${
                         rejectionAction === 'RELOCATE'
                           ? 'border-amber-500 bg-amber-50/70 text-amber-950 shadow-xs ring-2 ring-amber-400/20'
                           : 'border-slate-200 hover:bg-slate-50 text-slate-700'
                       }`}
                     >
-                      <div className="flex items-start gap-2">
+                      <div className="flex items-center gap-2">
                         <input
                           type="radio"
                           name="customerRejectionAction"
                           value="RELOCATE"
                           checked={rejectionAction === 'RELOCATE'}
                           onChange={() => setRejectionAction('RELOCATE')}
-                          className="mt-0.5 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                          className="text-amber-600 focus:ring-amber-500 cursor-pointer"
                         />
-                        <div>
-                          <span className="font-bold block flex items-center gap-1 text-xs">
-                            <RefreshCw className="w-3.5 h-3.5 text-amber-600 inline shrink-0" />
-                            Đổi ô kho khác cùng loại
-                          </span>
-                          <span className="text-[11px] text-slate-500 leading-tight block mt-1">
-                            Bảo lưu 100% tiền thuê &amp; tiền cọc. Quản lý cơ sở sẽ bố trí đổi sang ô kho đạt chuẩn khác trên sơ đồ 2D.
-                          </span>
-                        </div>
+                        <span className="font-bold flex items-center gap-1.5 text-xs">
+                          <RefreshCw className="w-3.5 h-3.5 text-amber-600 inline shrink-0" />
+                          Đổi ô kho khác cùng loại
+                        </span>
                       </div>
                     </label>
 
                     {/* Hướng 2: Hủy & hoàn 100% */}
                     <label
-                      className={`p-3 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
+                      className={`p-3 rounded-2xl border-2 cursor-pointer transition-all flex items-center ${
                         rejectionAction === 'TERMINATE_REFUND'
                           ? 'border-rose-500 bg-rose-50/70 text-rose-950 shadow-xs ring-2 ring-rose-400/20'
                           : 'border-slate-200 hover:bg-slate-50 text-slate-700'
                       }`}
                     >
-                      <div className="flex items-start gap-2">
+                      <div className="flex items-center gap-2">
                         <input
                           type="radio"
                           name="customerRejectionAction"
                           value="TERMINATE_REFUND"
                           checked={rejectionAction === 'TERMINATE_REFUND'}
                           onChange={() => setRejectionAction('TERMINATE_REFUND')}
-                          className="mt-0.5 text-rose-600 focus:ring-rose-500 cursor-pointer"
+                          className="text-rose-600 focus:ring-rose-500 cursor-pointer"
                         />
-                        <div>
-                          <span className="font-bold block flex items-center gap-1 text-xs">
-                            <XCircle className="w-3.5 h-3.5 text-rose-600 inline shrink-0" />
-                            Hủy hợp đồng &amp; Hoàn tiền 100%
-                          </span>
-                          <span className="text-[11px] text-slate-500 leading-tight block mt-1">
-                            Không muốn đổi kho. Chấm dứt hợp đồng ngay tại hiện trường và nhận hoàn trả 100% tiền thuê + cọc.
-                          </span>
-                        </div>
+                        <span className="font-bold flex items-center gap-1.5 text-xs">
+                          <XCircle className="w-3.5 h-3.5 text-rose-600 inline shrink-0" />
+                          Hủy hợp đồng &amp; Hoàn tiền 100%
+                        </span>
                       </div>
                     </label>
                   </div>
@@ -602,81 +612,69 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
                   {/* Tiêu chí 1 */}
                   <div
                     onClick={() => setCriteria((prev) => ({ ...prev, cleanAndEmpty: !prev.cleanAndEmpty }))}
-                    className={`p-2.5 rounded-xl border flex items-start gap-2.5 cursor-pointer transition-all ${
+                    className={`p-2.5 rounded-xl border flex items-center gap-2.5 cursor-pointer transition-all ${
                       criteria.cleanAndEmpty
                         ? 'border-emerald-500 bg-emerald-50/60 text-emerald-950 font-semibold shadow-2xs'
                         : 'border-slate-200 hover:border-slate-300 bg-slate-50/40 text-slate-700'
                     }`}
                   >
                     {criteria.cleanAndEmpty ? (
-                      <CheckSquare className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      <CheckSquare className="w-4 h-4 text-emerald-600 shrink-0" />
                     ) : (
-                      <Square className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                      <Square className="w-4 h-4 text-slate-400 shrink-0" />
                     )}
-                    <div>
-                      <span className="font-bold block text-[11.5px]">Kho sạch sẽ &amp; trống hoàn toàn</span>
-                      <span className="text-[10.5px] text-slate-500 leading-tight block">Không có rác thải, bụi bẩn hoặc đồ đạc cũ</span>
-                    </div>
+                    <span className="font-bold text-[11.5px]">Kho sạch sẽ &amp; trống hoàn toàn</span>
                   </div>
 
                   {/* Tiêu chí 2 */}
                   <div
                     onClick={() => setCriteria((prev) => ({ ...prev, doorWorking: !prev.doorWorking }))}
-                    className={`p-2.5 rounded-xl border flex items-start gap-2.5 cursor-pointer transition-all ${
+                    className={`p-2.5 rounded-xl border flex items-center gap-2.5 cursor-pointer transition-all ${
                       criteria.doorWorking
                         ? 'border-emerald-500 bg-emerald-50/60 text-emerald-950 font-semibold shadow-2xs'
                         : 'border-slate-200 hover:border-slate-300 bg-slate-50/40 text-slate-700'
                     }`}
                   >
                     {criteria.doorWorking ? (
-                      <CheckSquare className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      <CheckSquare className="w-4 h-4 text-emerald-600 shrink-0" />
                     ) : (
-                      <Square className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                      <Square className="w-4 h-4 text-slate-400 shrink-0" />
                     )}
-                    <div>
-                      <span className="font-bold block text-[11.5px]">Cửa cuốn kéo êm, không kẹt</span>
-                      <span className="text-[10.5px] text-slate-500 leading-tight block">Khóa cơ và thanh ray trơn tru, không móp méo</span>
-                    </div>
+                    <span className="font-bold text-[11.5px]">Cửa cuốn kéo êm, không kẹt</span>
                   </div>
 
                   {/* Tiêu chí 3 */}
                   <div
                     onClick={() => setCriteria((prev) => ({ ...prev, dryWallsFloor: !prev.dryWallsFloor }))}
-                    className={`p-2.5 rounded-xl border flex items-start gap-2.5 cursor-pointer transition-all ${
+                    className={`p-2.5 rounded-xl border flex items-center gap-2.5 cursor-pointer transition-all ${
                       criteria.dryWallsFloor
                         ? 'border-emerald-500 bg-emerald-50/60 text-emerald-950 font-semibold shadow-2xs'
                         : 'border-slate-200 hover:border-slate-300 bg-slate-50/40 text-slate-700'
                     }`}
                   >
                     {criteria.dryWallsFloor ? (
-                      <CheckSquare className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      <CheckSquare className="w-4 h-4 text-emerald-600 shrink-0" />
                     ) : (
-                      <Square className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                      <Square className="w-4 h-4 text-slate-400 shrink-0" />
                     )}
-                    <div>
-                      <span className="font-bold block text-[11.5px]">Sàn và vách ngăn khô ráo</span>
-                      <span className="text-[10.5px] text-slate-500 leading-tight block">Không có vết thấm dột, trần kho nguyên vẹn</span>
-                    </div>
+                    <span className="font-bold text-[11.5px]">Sàn và vách ngăn khô ráo</span>
                   </div>
 
                   {/* Tiêu chí 4 */}
                   <div
                     onClick={() => setCriteria((prev) => ({ ...prev, smartLockReady: !prev.smartLockReady }))}
-                    className={`p-2.5 rounded-xl border flex items-start gap-2.5 cursor-pointer transition-all ${
+                    className={`p-2.5 rounded-xl border flex items-center gap-2.5 cursor-pointer transition-all ${
                       criteria.smartLockReady
                         ? 'border-emerald-500 bg-emerald-50/60 text-emerald-950 font-semibold shadow-2xs'
                         : 'border-slate-200 hover:border-slate-300 bg-slate-50/40 text-slate-700'
                     }`}
                   >
                     {criteria.smartLockReady ? (
-                      <CheckSquare className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      <CheckSquare className="w-4 h-4 text-emerald-600 shrink-0" />
                     ) : (
-                      <Square className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                      <Square className="w-4 h-4 text-slate-400 shrink-0" />
                     )}
-                    <div>
-                      <span className="font-bold block text-[11.5px]">Khóa thông minh sẵn sàng</span>
-                      <span className="text-[10.5px] text-slate-500 leading-tight block">Đèn báo sáng tốt, bàn phím số nhạy bén</span>
-                    </div>
+                    <span className="font-bold text-[11.5px]">Khóa thông minh sẵn sàng</span>
                   </div>
                 </div>
               </div>
@@ -686,11 +684,11 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
                 <div className="bg-gradient-to-br from-slate-50 to-emerald-50/40 border border-slate-200 rounded-2xl p-4 space-y-3">
                   <div className="flex items-center gap-2 text-slate-900 font-bold text-xs">
                     <FileSignature className="w-4 h-4 text-[#0d6050] shrink-0" />
-                    <span>2. Xác nhận Ký số Bàn giao Điện tử (E-Handover 24/7)</span>
+                    <span>2. Xác nhận Ký số Bàn giao Điện tử</span>
                   </div>
 
                   <form onSubmit={handleSignAndActivatePin} className="space-y-3 text-xs">
-                    {/* BẢNG KÝ TAY TRỰC TIẾP GIỐNG STAFF */}
+                    {/* BẢNG KÝ TAY TRỰC TIẾP */}
                     <div className="space-y-1 bg-white p-2.5 rounded-xl border border-slate-200">
                       <SignaturePad onSignatureChange={setSignatureDataUrl} />
                     </div>
@@ -724,19 +722,17 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
                       <p className="text-[11px] text-rose-600 font-medium">{signatureError}</p>
                     )}
 
-                    {/* 2 NÚT HÀNH ĐỘNG CHÍNH: (1) NHẬN KHO KÍCH HOẠT PIN VS (2) PHÁT HIỆN SỰ CỐ TỪ CHỐI NHẬN */}
+                    {/* 2 NÚT HÀNH ĐỘNG CHÍNH */}
                     <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
-                      {/* Nút Đỏ: Phát hiện sự cố / Không nhận kho */}
                       <button
                         type="button"
                         onClick={() => setShowRejectionView(true)}
                         className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all cursor-pointer shrink-0"
                       >
                         <AlertOctagon className="w-4 h-4 shrink-0" />
-                        <span>Phát hiện sự cố / Không nhận kho</span>
+                        <span>Không nhận kho</span>
                       </button>
 
-                      {/* Nút Xanh: Đồng ý nhận kho & Kích hoạt mã PIN */}
                       <Button
                         type="submit"
                         disabled={!canSubmitAcceptance || isSubmittingCheckIn}
@@ -747,12 +743,12 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
                         {isSubmittingCheckIn ? (
                           <>
                             <Loader2 className="w-4 h-4 text-amber-300 animate-spin" />
-                            <span>Đang kích hoạt nhận kho...</span>
+                            <span>Đang kích hoạt...</span>
                           </>
                         ) : (
                           <>
                             <KeyRound className="w-4 h-4 text-amber-300" />
-                            <span>Đồng ý nhận kho &amp; Kích hoạt mã PIN</span>
+                            <span>Đồng ý nhận kho</span>
                           </>
                         )}
                       </Button>
@@ -806,10 +802,6 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
                       )}
                     </button>
                   </div>
-
-                  <p className="text-[11px] text-emerald-800 leading-relaxed">
-                    👉 <strong>Cách mở khóa:</strong> Tại cửa ô kho <strong>{passData.unitNumber}</strong>, nhập mã PIN <strong>{smartLockPin}</strong> rồi bấm phím <strong>#</strong> để mở cửa kho 24/7.
-                  </p>
                 </div>
               )}
             </>
@@ -867,7 +859,7 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
                       </div>
                       <div className="flex items-center gap-1.5">
                         <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span>Bắt đầu từ: <strong className="text-slate-800">{passData.startDate}</strong></span>
+                        <span>Bắt đầu từ: <strong className="text-slate-800">{formatDateVN(passData.startDate)}</strong></span>
                       </div>
                     </div>
                   </div>
@@ -879,20 +871,22 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
                     <MapPin className="w-4 h-4 text-brand-600 shrink-0" />
                     <span>{passData.facilityName}</span>
                   </div>
-                  <p className="text-slate-500 pl-5 leading-relaxed text-[11px]">{passData.facilityAddress}</p>
-                  <div className="flex items-center gap-3 pl-5 pt-1 text-[11px] text-slate-500">
-                    <span className="flex items-center gap-1">
-                      <Phone className="w-3 h-3 text-slate-400" />
-                      {passData.facilityPhone}
-                    </span>
-                    <span>• Giờ mở cửa: 07:00 – 22:00 hàng ngày</span>
-                  </div>
-                </div>
-
-                {/* Financial Summary */}
-                <div className="flex justify-between items-center bg-emerald-50/90 px-3.5 py-2 rounded-xl text-xs border border-emerald-100">
-                  <span className="text-emerald-800 font-semibold">Tổng tiền đã thanh toán:</span>
-                  <span className="text-sm font-black text-emerald-700">{formatVND(passData.totalPaid)}</span>
+                  {passData.facilityAddress && (
+                    <p className="text-slate-500 pl-5 leading-relaxed text-[11px]">{passData.facilityAddress}</p>
+                  )}
+                  {(passData.facilityPhone || resolvedOpeningHours) && (
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-5 pt-1 text-[11px] text-slate-500">
+                      {passData.facilityPhone && (
+                        <span className="flex items-center gap-1">
+                          <Phone className="w-3 h-3 text-slate-400" />
+                          {passData.facilityPhone}
+                        </span>
+                      )}
+                      {resolvedOpeningHours && (
+                        <span>• Giờ mở cửa: {resolvedOpeningHours}</span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -927,7 +921,7 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
                     >
                       {isCheckInAvailable
                         ? 'Quý khách có thể tự kiểm tra 4 tiêu chuẩn nghiệm thu và nhận mã PIN mở cửa ngay.'
-                        : `Chưa đến ngày nhận kho trên hợp đồng. Quý khách chỉ có thể check-in online vào đúng ngày bắt đầu hợp đồng (${formatDateVN(passData.startDate)}).`}
+                        : 'Quý khách chỉ có thể check-in online vào đúng ngày bắt đầu hợp đồng.'}
                     </p>
                   </div>
                   <Button
@@ -947,7 +941,7 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
                     title={
                       isCheckInAvailable
                         ? 'Tự làm thủ tục ký số nhận bàn giao & kích hoạt mã PIN mở kho 24/7'
-                        : `Chưa đến ngày nhận kho (${formatDateVN(passData.startDate)}). Chỉ được check-in vào đúng ngày trên hợp đồng.`
+                        : `Chưa đến ngày nhận kho (${formatDateVN(passData.startDate)}).`
                     }
                   >
                     <KeyRound
@@ -959,14 +953,11 @@ export const DigitalMoveInPassModal: React.FC<DigitalMoveInPassModalProps> = ({
                   </Button>
                 </div>
               ) : (
-                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 flex items-start gap-2.5 text-xs text-amber-900 shadow-2xs">
-                  <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold block">Ô kho đang được nhân viên cơ sở điều phối</span>
-                    <p className="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
-                      Ô kho cụ thể của quý khách sẽ được nhân viên quầy kiểm tra và hoàn tất phân bổ khi quý khách đến cơ sở. Vui lòng xuất trình mã QR trên tại quầy lễ tân để nhận kho.
-                    </p>
-                  </div>
+                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 flex items-center gap-2.5 text-xs text-amber-900 shadow-2xs">
+                  <Info className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span className="font-medium">
+                    Ô kho cụ thể của quý khách đang được nhân viên cơ sở điều phối, vui lòng kiểm tra sau.
+                  </span>
                 </div>
               )}
             </>

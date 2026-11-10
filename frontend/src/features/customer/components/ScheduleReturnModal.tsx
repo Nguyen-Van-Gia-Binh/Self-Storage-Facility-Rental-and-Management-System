@@ -177,17 +177,18 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
             <span>Quy Trình Nghiệm Thu & Quyết Toán</span>
           </div>
 
-          <h3 className="text-lg sm:text-xl font-black text-white">Xác Nhận Đã Dọn Đồ & Báo Trả Kho</h3>
+          <h3 className="text-lg sm:text-xl font-black text-white">Xác Nhận Đã Dọn Đồ &amp; Báo Trả Kho</h3>
           <p className="text-xs text-emerald-100/90 mt-0.5">
-            Ô kho <span className="font-bold text-white">{contract.unitNumber}</span> — Cơ sở {contract.facilityName}
+            Ô kho <span className="font-bold text-white">{contract.unitNumber}</span> — Cơ sở{' '}
+            {contract.facilityName.replace(/^Cơ sở\s+/i, '')}
           </p>
         </div>
 
         {/* Body */}
         <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-3.5">
-          {/* Card Tóm tắt hợp đồng + Thời điểm báo trả (gộp 2 cột gọn gàng) */}
+          {/* Card Tóm tắt hợp đồng */}
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2 text-xs">
-            <div className="grid grid-cols-2 gap-2 pb-2 border-b border-slate-200/80">
+            <div className="grid grid-cols-3 gap-2 pb-2 border-b border-slate-200/80">
               <div>
                 <span className="text-slate-400 block text-[11px]">Mã hợp đồng:</span>
                 <span className="font-mono font-bold text-slate-800">{contract.contractNumber}</span>
@@ -195,10 +196,6 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
               <div>
                 <span className="text-slate-400 block text-[11px]">Hạn hợp đồng:</span>
                 <span className="font-semibold text-slate-800">{contract.endDate}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block text-[11px]">Ô kho bàn giao:</span>
-                <span className="font-bold text-emerald-800">{contract.unitNumber}</span>
               </div>
               <div>
                 <span className="text-slate-400 block text-[11px]">Thời điểm báo trả:</span>
@@ -229,10 +226,7 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
               </div>
             ) : (
               <div className="flex justify-between items-center pt-0.5">
-                <div>
-                  <span className="text-slate-700 font-medium block">Tiền cọc dự kiến quyết toán hoàn lại:</span>
-                  <span className="text-[10px] text-slate-400 italic">Trừ chi phí khắc phục hư hại sau nghiệm thu (nếu có)</span>
-                </div>
+                <span className="text-slate-700 font-medium">Tiền cọc dự kiến hoàn lại (trừ hư hại nếu có):</span>
                 <span className="font-bold text-emerald-700 text-sm">{formatVND(contract.depositHeld)}</span>
               </div>
             )}
@@ -257,7 +251,7 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
                 required
               />
               <span className="leading-snug">
-                <strong>Đã dọn sạch 100% đồ đạc:</strong> Đã lấy hết toàn bộ tài sản cá nhân ra khỏi ô kho và không để lại rác thải.
+                <strong>Đã dọn sạch 100% đồ đạc</strong> và không để lại rác thải.
               </span>
             </label>
 
@@ -273,27 +267,27 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
                 required
               />
               <span className="leading-snug">
-                <strong>Ô kho nguyên vẹn:</strong> Cửa cuốn, sàn, vách ngăn và ổ khóa không bị hư hại, biến dạng hay vẽ bậy.
+                <strong>Ô kho nguyên vẹn:</strong> Cửa, sàn, vách ngăn và ổ khóa không hư hại.
               </span>
             </label>
           </div>
 
-          {/* Thông báo trả kho khi hợp đồng đang OVERDUE và đã tất toán phí quá hạn (BR-OVD-08, BR-RET-11) */}
+          {/* Thông báo trả kho khi hợp đồng đang OVERDUE và đã tất toán phí quá hạn */}
           {isOverdue && (
             <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-2.5 text-xs text-emerald-900">
               <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
               <span className="leading-snug">
-                <strong>Xác nhận trả kho quá hạn (D+{contract.overdueDays || 1}):</strong> Bạn đã tất toán đầy đủ phí lưu kho / phạt quá hạn. Ngay khi gửi Báo trả kho, Mã PIN tạm thời sẽ đóng lại và <strong>Quản lý cơ sở (FM) sẽ điều phối Nhân viên ca trực (FS)</strong> nghiệm thu hiện trạng để hoàn trả <strong>100% số dư tiền cọc ({formatVND(contract.depositHeld)})</strong> (trừ chi phí hư hỏng/vệ sinh nếu có).
+                <strong>Xác nhận trả kho quá hạn (D+{contract.overdueDays || 1}):</strong> Bạn đã tất toán đầy đủ phí lưu kho / phạt quá hạn. Mã PIN tạm thời sẽ đóng lại và nhân viên sẽ nghiệm thu hiện trạng để hoàn trả tiền.
               </span>
             </div>
           )}
 
-          {/* Thông báo trả trong tháng cuối: BR-RET-06 Best-of-Both */}
+          {/* Thông báo trả trong tháng cuối */}
           {isWithinFinalMonth && !isOverdue && (
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-2.5 text-xs text-blue-900">
               <ShieldCheck className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
               <span className="leading-snug">
-                <strong>Chính sách tháng cuối hợp đồng:</strong> Hợp đồng còn <strong>{unusedRentInfo.unusedDays} ngày</strong> (hạn: {contract.endDate}). Theo chính sách Best-of-Both, bạn được <strong>hoàn trả 100% tiền cọc ({formatVND(contract.depositHeld)})</strong> và không hoàn tiền lẻ ngày thuê chưa dùng.
+                Hợp đồng còn <strong>{unusedRentInfo.unusedDays} ngày</strong> (hạn: {contract.endDate}). Bạn được hoàn trả <strong>100% tiền cọc ({formatVND(contract.depositHeld)})</strong> và không hoàn tiền lẻ ngày chưa dùng.
               </span>
             </div>
           )}
@@ -340,7 +334,6 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
             </label>
             <textarea
               rows={2}
-              placeholder="Ví dụ: Tôi đã dọn xong và đang ở sảnh / Khóa số đã được reset về 0000..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="w-full text-xs p-2 rounded-lg border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
@@ -379,7 +372,7 @@ export const ScheduleReturnModal: React.FC<ScheduleReturnModalProps> = ({
           {isSuccess && (
             <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-xs text-emerald-800">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-              <span className="font-bold">Đã gửi yêu cầu trả kho thành công! Quản lý cơ sở đang cử nhân viên xuống kiểm tra.</span>
+              <span className="font-bold">Đã gửi yêu cầu trả kho thành công!</span>
             </div>
           )}
 

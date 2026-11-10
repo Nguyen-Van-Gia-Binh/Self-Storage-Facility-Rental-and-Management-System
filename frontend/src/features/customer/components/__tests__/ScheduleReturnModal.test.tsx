@@ -103,7 +103,7 @@ describe('ScheduleReturnModal Component (BR-RET-06 & Compact UI)', () => {
 
     // Không hiển thị cảnh báo phạt trả sớm
     expect(screen.queryByText(/Lưu ý khi trả kho trước hạn/i)).not.toBeInTheDocument();
-    expect(screen.getByText(/Tiền cọc dự kiến quyết toán hoàn lại:/i)).toBeInTheDocument();
+    expect(screen.getByText(/Tiền cọc dự kiến hoàn lại/i)).toBeInTheDocument();
   });
 
   it('bắt buộc xác nhận điều khoản trả trước hạn trước khi gửi', async () => {

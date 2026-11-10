@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { isStorageUnitAssigned } from '../utils/unitAssignment';
@@ -70,37 +70,38 @@ export const UnitPickerModals: React.FC<UnitPickerModalsProps> = ({
 
       {/* 2. Modal cảnh báo ô kho không khả dụng */}
       <Modal isOpen={unitUnavailableModal.isOpen} onClose={onCloseUnitUnavailable}>
-        <div className="p-6 max-w-md w-full text-center space-y-4">
+        <div className="relative p-6 max-w-md w-full text-center space-y-4">
+          <button
+            type="button"
+            onClick={onCloseUnitUnavailable}
+            aria-label="Đóng"
+            className="absolute top-4 right-4 p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
           <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
             <AlertTriangle className="w-6 h-6" />
           </div>
           <div className="space-y-1.5">
             <h3 className="text-lg font-bold text-slate-900">{unitUnavailableModal.title}</h3>
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              {unitUnavailableModal.message}
-            </p>
+            {unitUnavailableModal.message && (
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                {unitUnavailableModal.message}
+              </p>
+            )}
           </div>
           <div className="pt-2">
             {unitUnavailableModal.title === 'Hết chỗ' && onOpenWaitlist ? (
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Button
-                  variant="outline"
-                  className="flex-1 justify-center py-2.5 text-xs sm:text-sm font-semibold text-slate-700"
-                  onClick={onCloseUnitUnavailable}
-                >
-                  Chọn hạng kho khác
-                </Button>
-                <Button
-                  variant="primary"
-                  className="flex-1 justify-center py-2.5 text-xs sm:text-sm font-bold bg-brand-600 hover:bg-brand-700 text-white"
-                  onClick={() => {
-                    onCloseUnitUnavailable();
-                    onOpenWaitlist();
-                  }}
-                >
-                  Đăng ký Danh sách chờ
-                </Button>
-              </div>
+              <Button
+                variant="primary"
+                className="w-full justify-center py-2.5 text-xs sm:text-sm font-bold bg-brand-600 hover:bg-brand-700 text-white"
+                onClick={() => {
+                  onCloseUnitUnavailable();
+                  onOpenWaitlist();
+                }}
+              >
+                Đăng ký Danh sách chờ
+              </Button>
             ) : (
               <Button
                 variant="primary"

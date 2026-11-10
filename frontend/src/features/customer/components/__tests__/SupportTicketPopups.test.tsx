@@ -24,17 +24,23 @@ describe('ISS-79: Support Ticket Success Modal & Cancel Confirmation Modal', () 
     expect(content).toMatch(/setCreatedSuccessTicket/);
     expect(content).toMatch(/Gửi yêu cầu hỗ trợ thành công!/);
     expect(content).toMatch(/Mã vé:\s*\{createdSuccessTicket\?\.ticketCode\}/);
-    expect(content).toMatch(/Xem chi tiết & Tiến trình/);
+    expect(content).toMatch(/Xem chi tiết/);
   });
 
-  it('SupportPage định nghĩa state cancellingTicket và hiển thị Modal xác nhận hủy vé trước khi gọi API', () => {
+  it('SupportPage định nghĩa state cancellingTicket và dùng CancelSupportTicketModal trước khi gọi API', () => {
     const content = fs.readFileSync(supportPagePath, 'utf-8');
+    const sharedCancelPath = path.resolve(
+      process.cwd(),
+      'src/features/customer/components/CancelSupportTicketModal.tsx'
+    );
+    const sharedContent = fs.readFileSync(sharedCancelPath, 'utf-8');
     expect(content).toMatch(/cancellingTicket/);
     expect(content).toMatch(/setCancellingTicket/);
     expect(content).toMatch(/handleConfirmCancelTicket/);
-    expect(content).toMatch(/Xác nhận hủy yêu cầu hỗ trợ/);
-    expect(content).toMatch(/Quay lại \(Giữ vé\)/);
-    expect(content).toMatch(/Xác nhận hủy vé/);
+    expect(content).toMatch(/CancelSupportTicketModal/);
+    expect(sharedContent).toMatch(/Xác nhận hủy yêu cầu hỗ trợ/);
+    expect(sharedContent).toMatch(/Quay lại/);
+    expect(sharedContent).toMatch(/Xác nhận hủy vé/);
   });
 
   it('SupportTicketCard truyền ticket vào callback onCancel khi nhấn Hủy yêu cầu', () => {
@@ -43,7 +49,7 @@ describe('ISS-79: Support Ticket Success Modal & Cancel Confirmation Modal', () 
     expect(content).toMatch(/Hủy yêu cầu/);
   });
 
-  it('SupportTicketDetailModal không còn dùng window.confirm và tích hợp Modal xác nhận hủy vé', () => {
+  it('SupportTicketDetailModal không còn dùng window.confirm và tích hợp CancelSupportTicketModal', () => {
     const detailModalPath = path.resolve(
       process.cwd(),
       'src/features/customer/components/SupportTicketDetailModal.tsx'
@@ -52,6 +58,6 @@ describe('ISS-79: Support Ticket Success Modal & Cancel Confirmation Modal', () 
     expect(content).not.toMatch(/window\.confirm/);
     expect(content).toMatch(/showCancelConfirm/);
     expect(content).toMatch(/handleConfirmCancel/);
-    expect(content).toMatch(/Xác nhận hủy yêu cầu hỗ trợ/);
+    expect(content).toMatch(/CancelSupportTicketModal/);
   });
 });

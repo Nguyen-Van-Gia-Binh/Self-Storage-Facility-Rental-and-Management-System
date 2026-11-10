@@ -146,7 +146,8 @@ describe('CreateSupportTicketModal - Lọc hợp đồng hợp lệ', () => {
     );
 
     // Nhập mô tả hợp lệ (>= 10 ký tự)
-    const textarea = screen.getByPlaceholderText(/Mô tả cụ thể hiện tượng/i);
+    const textboxes = screen.getAllByRole('textbox');
+    const textarea = textboxes[textboxes.length - 1];
     fireEvent.change(textarea, { target: { value: 'Khóa cửa kho bị kẹt không mở được bằng mã PIN' } });
 
     // Submit form

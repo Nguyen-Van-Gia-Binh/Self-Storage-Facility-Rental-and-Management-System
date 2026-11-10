@@ -71,30 +71,16 @@ describe('calculateCancellationRefund — Chính sách hủy đặt chỗ 3 tầ
     expect(result.totalRefund).toBe(3200000);
   });
 
-  it('Hủy trong 10 ngày ân hạn (BR-CAN-08) ➔ Mất 100% cọc + Trừ tiền ngày đã giữ kho', () => {
-    // startDate là 2026-11-03 (đã quá 3 ngày)
+  it('Chỉ còn 3 tầng chính sách (bỏ Tier 4 & 5), trường hợp < 48h hoặc sát giờ rơi vào LATE_NO_DEPOSIT (Phạt 100% cọc)', () => {
     const result = calculateCancellationRefund({
       ...baseParams,
-      startDateStr: '2026-11-03',
+      startDateStr: '2026-11-06',
     });
 
-    expect(result.tier).toBe('IN_GRACE_PERIOD');
-    expect(result.heldDays).toBe(3);
+    expect(result.tier).toBe('LATE_NO_DEPOSIT');
     expect(result.depositRefund).toBe(0);
-    expect(result.rentCharged).toBeGreaterThan(0); // Đã trừ tiền 3 ngày
-    expect(result.totalRefund).toBe(result.refundableRentalFee);
-  });
-
-  it('Quá hạn No-show 10 ngày (BR-CAN-04) ➔ Không hoàn tiền (0đ)', () => {
-    // startDate là 2026-10-20 (đã quá 17 ngày > 10 ngày)
-    const result = calculateCancellationRefund({
-      ...baseParams,
-      startDateStr: '2026-10-20',
-    });
-
-    expect(result.tier).toBe('NO_SHOW_OVERDUE');
-    expect(result.heldDays).toBeGreaterThan(10);
-    expect(result.totalRefund).toBe(0);
+    expect(result.refundableRentalFee).toBe(2400000);
+    expect(result.tierBadge).toBe('Phạt 100% cọc');
   });
 });
 

@@ -148,7 +148,7 @@ export const WaitlistRegistrationModal: React.FC<WaitlistRegistrationModalProps>
             <div className="space-y-1.5">
               <h3 className="text-xl font-bold text-slate-900">Đăng ký Danh sách chờ thành công!</h3>
               <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-sm mx-auto">
-                Yêu cầu của bạn đã được ghi nhận vào hệ thống ưu tiên (FIFO). Khi có ô kho trống, Quản lý cơ sở sẽ trực tiếp gọi điện tư vấn và giữ chỗ cho bạn.
+                Yêu cầu của bạn đã được ghi nhận ưu tiên theo thứ tự đăng ký. Khi có ô kho trống, Quản lý cơ sở sẽ gọi điện tư vấn và giữ chỗ cho bạn.
               </p>
             </div>
             <div className="pt-3">
@@ -168,8 +168,8 @@ export const WaitlistRegistrationModal: React.FC<WaitlistRegistrationModalProps>
                 <Clock className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-900">Đăng ký Danh sách chờ (Waitlist)</h3>
-                <p className="text-xs text-slate-500">Dành cho kho đang hết chỗ hoặc khách hàng muốn đặt trước dài hạn (&gt; 30 ngày)</p>
+                <h3 className="text-lg font-bold text-slate-900">Đăng ký Danh sách chờ</h3>
+                <p className="text-xs text-slate-500">Dành cho kho đang hết chỗ hoặc đặt trước dài hạn (&gt; 30 ngày)</p>
               </div>
             </div>
 
@@ -199,8 +199,8 @@ export const WaitlistRegistrationModal: React.FC<WaitlistRegistrationModalProps>
               <div className="p-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-xl text-xs flex items-start gap-2">
                 <Info className="w-4 h-4 shrink-0 mt-0.5 text-blue-600" />
                 <div>
-                  <strong className="block font-semibold">Đăng ký đặt lịch thuê trước cho tương lai (&gt; 30 ngày)</strong>
-                  <span>Hệ thống tiếp nhận nhu cầu đặt trước dài hạn để Quản lý cơ sở (FM) liên hệ tư vấn và chốt hợp đồng giữ chỗ cho bạn.</span>
+                  <strong className="block font-semibold">Đăng ký đặt lịch thuê trước (&gt; 30 ngày)</strong>
+                  <span>Quản lý cơ sở sẽ liên hệ tư vấn và chốt lịch giữ chỗ cho bạn.</span>
                 </div>
               </div>
             ) : availableSlots !== null && availableSlots > 0 ? (
@@ -208,23 +208,23 @@ export const WaitlistRegistrationModal: React.FC<WaitlistRegistrationModalProps>
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
                 <div>
                   <strong className="block font-semibold">Khoảng thời gian này hiện còn {availableSlots} ô trống!</strong>
-                  <span>Bạn có thể đóng modal này và bấm <strong>Đặt kho ngay</strong> thay vì phải chờ đợi.</span>
+                  <span>Bạn có thể đóng thông báo này và bấm <strong>Đặt kho ngay</strong>.</span>
                 </div>
               </div>
             ) : availableSlots === 0 ? (
               <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex items-start gap-2">
                 <Info className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" />
                 <div>
-                  <strong className="block font-semibold">Hạng kho hiện đang kín chỗ trong đợt này</strong>
-                  <span>Yêu cầu của bạn sẽ được ưu tiên xếp vào hàng đợi FIFO. FM sẽ gọi điện ngay khi có ô kho trả sớm.</span>
+                  <strong className="block font-semibold">Hạng kho hiện đang kín chỗ</strong>
+                  <span>Yêu cầu của bạn được ưu tiên theo thứ tự đăng ký. Quản lý cơ sở sẽ gọi ngay khi có ô trống.</span>
                 </div>
               </div>
             ) : (
               <div className="p-3 bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-xs flex items-start gap-2">
                 <Info className="w-4 h-4 shrink-0 mt-0.5 text-slate-500" />
                 <div>
-                  <strong className="block font-semibold">Đăng ký lịch thuê trước cho tương lai</strong>
-                  <span>Hệ thống CRM sẽ ghi nhận nhu cầu của bạn/doanh nghiệp để Quản lý cơ sở (FM) liên hệ tư vấn và giữ chỗ sớm nhất.</span>
+                  <strong className="block font-semibold">Đăng ký lịch thuê trước</strong>
+                  <span>Quản lý cơ sở sẽ ghi nhận nhu cầu và liên hệ tư vấn giữ chỗ sớm nhất.</span>
                 </div>
               </div>
             )}
@@ -247,7 +247,7 @@ export const WaitlistRegistrationModal: React.FC<WaitlistRegistrationModalProps>
                   />
                   <Phone className="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" />
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1">FM sẽ dùng số này để gọi trực tiếp tư vấn và chốt giữ cọc cho bạn.</p>
+                <p className="text-[11px] text-slate-500 mt-1">Nhân viên tư vấn sẽ dùng số này để liên hệ giữ chỗ cho bạn.</p>
               </div>
 
               <div>
@@ -262,7 +262,7 @@ export const WaitlistRegistrationModal: React.FC<WaitlistRegistrationModalProps>
                   required
                   className="w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none"
                 />
-                <p className="text-[11px] text-slate-500 mt-1">Được phép chọn bất kỳ ngày nào trong tương lai. Nhu cầu &gt; 30 ngày sẽ được FM liên hệ chốt lịch riêng.</p>
+                <p className="text-[11px] text-slate-500 mt-1">Nhu cầu đặt trước &gt; 30 ngày sẽ được nhân viên tư vấn chốt lịch riêng.</p>
               </div>
 
               <div>

@@ -4,10 +4,8 @@ import { Button } from '@/components/ui/Button';
 import {
   Clock,
   Check,
-  ShieldCheck,
   RefreshCw,
   X,
-  CreditCard,
 } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
 import {
@@ -156,13 +154,7 @@ export const OverduePenaltyPaymentModal: React.FC<OverduePenaltyPaymentModalProp
           >
             <X className="w-4 h-4" />
           </button>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
-              <CreditCard className="w-3 h-3" />
-              VNPay Sandbox
-            </span>
-          </div>
-          <h2 className="text-lg sm:text-xl font-bold tracking-tight">
+          <h2 className="text-lg sm:text-xl font-bold tracking-tight pr-8">
             {paymentType === 'SETTLEMENT'
               ? `Tất Toán Công Nợ Quyết Toán Ô Kho ${unitNumber}`
               : `Đóng Phí Quá Hạn & Mở PIN Tạm Ô Kho ${unitNumber}`}
@@ -181,7 +173,7 @@ export const OverduePenaltyPaymentModal: React.FC<OverduePenaltyPaymentModalProp
                 <span className="text-xs font-bold block">
                   {paymentType === 'SETTLEMENT'
                     ? 'Tất toán chi phí phát sinh / lưu Kho Tổng'
-                    : 'Mở khóa mã PIN tạm thời & Quyền Báo trả kho (BR-OVD-08)'}
+                    : 'Mở khóa mã PIN tạm thời & Quyền Báo trả kho'}
                 </span>
                 <span className="text-[11px] text-rose-700">
                   {paymentType === 'SETTLEMENT'
@@ -195,58 +187,23 @@ export const OverduePenaltyPaymentModal: React.FC<OverduePenaltyPaymentModalProp
                 {formatVND(totalAmount)}
               </span>
               <span className="text-[10px] text-rose-600 block">
-                {paymentType === 'SETTLEMENT' ? 'Công nợ quyết toán' : 'Phí quá hạn lũy kế'}
+                {paymentType === 'SETTLEMENT' ? 'Công nợ quyết toán' : 'Phí quá hạn'}
               </span>
             </div>
           </div>
 
-          {/* Component chọn cổng VNPay */}
-          {!isPaid && <VnpayPayLinks orderCode={orderCode} />}
-
-          {/* Bảng chi tiết khoản nộp */}
-          <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-2 text-xs">
-            <div className="flex justify-between text-slate-600">
-              <span>
+          {isPaid ? (
+            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3 text-emerald-900 text-xs">
+              <Check className="w-5 h-5 text-emerald-600 shrink-0" />
+              <span className="font-bold">
                 {paymentType === 'SETTLEMENT'
-                  ? 'Chi phí phát sinh / lưu Kho Tổng cần thanh toán:'
-                  : 'Phí lưu kho / phạt quá hạn tích lũy:'}
-              </span>
-              <span className="font-bold text-rose-600">{formatVND(totalAmount)}</span>
-            </div>
-            <div className="pt-2 border-t border-slate-200 flex justify-between items-center text-sm">
-              <span className="font-bold text-slate-900">Tổng tiền cần thanh toán:</span>
-              <span className="font-extrabold text-base text-rose-600">{formatVND(totalAmount)}</span>
-            </div>
-          </div>
-
-          {/* Bảo mật */}
-          <div className="flex items-start gap-2 text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-            <span>
-              {paymentType === 'SETTLEMENT'
-                ? 'Hệ thống đối soát tự động qua VNPay/VietQR. Sau khi thanh toán thành công, hợp đồng sẽ được tự động đóng (CLOSED) và bạn có thể nhận lại tài sản tại Kho Tổng.'
-                : 'Hệ thống đối soát tự động qua VNPay/VietQR. Ngay khi thanh toán thành công, nợ quá hạn được xóa về 0, hệ thống cấp Mã PIN tạm thời hiệu lực đến 23:59 hôm nay để bạn vào dọn đồ và mở khóa nút Báo trả kho.'}
-            </span>
-          </div>
-
-          {/* Trạng thái đối soát tự động */}
-          <div className="flex items-center justify-between gap-3 p-3 bg-emerald-50/80 border border-emerald-200 rounded-xl text-xs text-emerald-900">
-            <div className="flex items-center gap-2">
-              <RefreshCw className={`w-4 h-4 text-emerald-600 ${isPaid ? '' : 'animate-spin'}`} />
-              <span className="font-medium">
-                {isPaid
-                  ? 'Thanh toán nợ phạt thành công!'
-                  : isInitializing
-                  ? 'Đang kết nối cổng VNPay...'
-                  : 'Đang chờ VNPay xác nhận thanh toán.'}
+                  ? 'Thanh toán công nợ quyết toán thành công!'
+                  : 'Thanh toán phí quá hạn thành công! Mã PIN tạm đã được mở khóa.'}
               </span>
             </div>
-            {orderCode && (
-              <span className="font-mono text-[11px] text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded font-bold shrink-0">
-                Mã: #{orderCode}
-              </span>
-            )}
-          </div>
+          ) : (
+            <VnpayPayLinks orderCode={orderCode} />
+          )}
 
           {/* Thông báo nếu có lỗi */}
           {paymentNotice && (
