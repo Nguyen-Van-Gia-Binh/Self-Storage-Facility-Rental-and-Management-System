@@ -66,7 +66,7 @@ const ROLE_HOME_PATH: Record<UserRole, string> = {
   MANAGER:  '/manager',
   STAFF:    '/staff',
   BOM:      '/bom/facilities',
-  CUSTOMER: '/customer',
+  CUSTOMER: '/',
 };
 
 function getInitials(fullName?: string): string {

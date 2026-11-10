@@ -6,49 +6,33 @@ import type { DisplayFacility } from '../hooks/useFacilityDirectory';
 
 interface HomeFacilityCardProps {
   facility: DisplayFacility;
-  preselectedStorageType?: string;
-  preselectedSize?: string;
 }
 
 /**
  * Thẻ hiển thị cơ sở kho thực tế từ API — minh bạch giờ mở cửa, giá khởi điểm và số hạng kho.
  */
-export const HomeFacilityCard: React.FC<HomeFacilityCardProps> = ({
-  facility: fac,
-  preselectedStorageType,
-  preselectedSize,
-}) => {
-  const unitPickerParams = new URLSearchParams({
-    facility: String(fac.id),
-  });
-  if (preselectedStorageType && preselectedStorageType !== 'all') {
-    unitPickerParams.set('storageType', preselectedStorageType);
-  }
-  if (preselectedSize && preselectedSize !== 'all') {
-    unitPickerParams.set('size', preselectedSize);
-  }
-
-  const unitPickerHref = `/customer/units?${unitPickerParams.toString()}`;
+export const HomeFacilityCard: React.FC<HomeFacilityCardProps> = ({ facility: fac }) => {
+  const unitPickerHref = `/customer/units?facility=${String(fac.id)}`;
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-[#57b29a]/60 hover:-translate-y-0.5 transition-all duration-300 flex flex-col justify-between overflow-hidden group">
       <div>
         {/* Ảnh cơ sở + Nhãn khu vực */}
-        <div className="relative h-48 overflow-hidden bg-slate-100">
+        <div className="relative h-36 overflow-hidden bg-slate-100">
           <img
             src={fac.image || '/assets/landing/facility.jpg'}
             alt={fac.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
           <div className="absolute top-3 left-3 flex items-center gap-1.5">
-            <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white/95 text-[#0a1614] shadow-xs backdrop-blur-sm">
+            <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white/95 text-[#125449] shadow-xs backdrop-blur-sm">
               {fac.city}
             </span>
           </div>
           {fac.activeUnitTypeCount !== undefined && fac.activeUnitTypeCount > 0 && (
-            <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-[#0a1614]/80 text-white backdrop-blur-sm">
-              <Layers className="w-3 h-3 text-[#57b29a]" />
+            <span className="absolute bottom-2.5 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-[#125449]/85 text-white backdrop-blur-sm">
+              <Layers className="w-3 h-3 text-emerald-200" />
               {fac.activeUnitTypeCount} hạng kho đang mở
             </span>
           )}

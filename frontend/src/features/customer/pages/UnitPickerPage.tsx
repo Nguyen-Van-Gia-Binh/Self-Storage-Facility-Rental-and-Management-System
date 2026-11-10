@@ -189,7 +189,7 @@ export const UnitPickerPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-brand-200/60">
         <div>
           <Link
-            to="/customer"
+            to="/"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-700 hover:text-brand-800 transition-colors mb-1"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
@@ -302,7 +302,7 @@ export const UnitPickerPage: React.FC = () => {
       {/* 3 MODALS AN NINH (ISS-75, ISS-76, ISS-99) */}
       <UnitPickerModals
         facilityInactiveModalOpen={facilityInactiveModalOpen}
-        onCloseFacilityInactive={() => navigate('/customer')}
+        onCloseFacilityInactive={() => navigate('/')}
         unitUnavailableModal={unitUnavailableModal}
         onCloseUnitUnavailable={() => setUnitUnavailableModal((prev) => ({ ...prev, isOpen: false }))}
         pendingLimitModal={pendingLimitModal}

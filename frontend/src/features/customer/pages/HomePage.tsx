@@ -1,24 +1,27 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { fetchUnitTypes } from '@/api/unit';
+import type { UnitTypeResponse } from '@/types/unit';
+import { useActivePolicy } from '@/hooks/useActivePolicy';
 import { useFacilityDirectory } from '../hooks/useFacilityDirectory';
 import { HomeHeroSection } from '../components/HomeHeroSection';
-import { HomeSizeGuideSection } from '../components/HomeSizeGuideSection';
 import { HomeBranchesSection } from '../components/HomeBranchesSection';
+import { HomeSizeGuideSection } from '../components/HomeSizeGuideSection';
 import { HomeProcessAndFaqSection } from '../components/HomeProcessAndFaqSection';
 import { HomeFooter } from '../components/HomeFooter';
 
 /**
  * Trang chủ Khách hàng (Landing Page) SmartStorage:
- * - Tập trung trải nghiệm đặt kho thực tế: ước lượng kích thước, lọc chi nhánh & chuyển thẳng tới UnitPickerPage
- * - Nội dung 100% sát quy định nghiệp vụ hệ thống (48h hold, VNPay, PIN 6 số, hủy 3 tầng, trả kho 30 ngày)
+ * Hero + Ước lượng 3D thật -> Mạng lưới Chi nhánh & Tìm theo khu vực ->
+ * So sánh 2 dòng kho (Tiêu chuẩn & Máy lạnh) -> Quy trình 3 bước & FAQ -> Footer.
  */
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { facilities, isLoading } = useFacilityDirectory();
+  const policy = useActivePolicy();
 
+  const [unitTypes, setUnitTypes] = useState<UnitTypeResponse[]>([]);
   const [selectedCity, setSelectedCity] = useState<string>('Tất cả thành phố');
-  const [selectedStorageType, setSelectedStorageType] = useState<string>('all');
-  const [selectedSize, setSelectedSize] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const pageSize = 6;
 
@@ -58,6 +61,27 @@ export const HomePage: React.FC = () => {
 
   const primaryFacilityId = filteredFacilities[0]?.id ?? facilities[0]?.id;
 
+  // Tải danh sách hạng kho thật của cơ sở ưu tiên để đồng bộ giá & kích thước 3D
+  useEffect(() => {
+    const numericId = Number(primaryFacilityId);
+    if (!numericId || Number.isNaN(numericId)) return;
+
+    let active = true;
+    fetchUnitTypes(numericId, { size: 50, isActive: true })
+      .then((res) => {
+        if (active && res?.content) {
+          setUnitTypes(res.content);
+        }
+      })
+      .catch(() => {
+        // Giữ thông số mặc định V16 nếu chưa kết nối API
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [primaryFacilityId]);
+
   const scrollToId = (id: string) => {
     const elem = document.getElementById(id);
     if (elem) {
@@ -65,61 +89,38 @@ export const HomePage: React.FC = () => {
     }
   };
 
-  // Xử lý tìm kho: Nếu khu vực đã chọn chỉ có 1 cơ sở -> nhảy thẳng vào chọn ô kho kèm bộ lọc
+  // Xử lý tìm kho: Nếu khu vực đã chọn chỉ có 1 cơ sở -> nhảy thẳng vào chọn ô kho
   const handleSearchSubmit = () => {
     if (filteredFacilities.length === 1) {
-      const params = new URLSearchParams({
-        facility: String(filteredFacilities[0].id),
-      });
-      if (selectedStorageType !== 'all') {
-        params.set('storageType', selectedStorageType);
-      }
-      if (selectedSize !== 'all') {
-        params.set('size', selectedSize);
-      }
-      navigate(`/customer/units?${params.toString()}`);
+      navigate(`/customer/units?facility=${String(filteredFacilities[0].id)}`);
       return;
     }
-    scrollToId('branches');
+    scrollToId('branches-grid');
   };
 
   const handleResetFilters = () => {
     setSelectedCity('Tất cả thành phố');
-    setSelectedStorageType('all');
-    setSelectedSize('all');
   };
 
   return (
     <div className="bg-[#f2f9f7] text-[#0a1614] antialiased font-sans selection:bg-[#57b29a] selection:text-white">
+      {/* 1. Hero + Mô hình 3D Ước lượng */}
       <HomeHeroSection
         primaryFacilityId={primaryFacilityId}
         facilitiesCount={facilities.length}
+        unitTypes={unitTypes}
         onScrollToId={scrollToId}
-        selectedCity={selectedCity}
-        onSelectCity={setSelectedCity}
-        availableCities={availableCities}
-        cityFacilityCounts={cityFacilityCounts}
-        totalFacilitiesCount={facilities.length}
-        selectedStorageType={selectedStorageType}
-        onSelectStorageType={setSelectedStorageType}
-        selectedSize={selectedSize}
-        onSelectSize={setSelectedSize}
-        onSearchSubmit={handleSearchSubmit}
       />
 
-      <HomeSizeGuideSection
-        primaryFacilityId={primaryFacilityId}
-        onScrollToBranches={() => scrollToId('branches')}
-      />
-
+      {/* 2. Mạng lưới Chi nhánh thực tế & Ô tìm kiếm khu vực */}
       <HomeBranchesSection
         isLoading={isLoading}
         availableCities={availableCities}
         cityFacilityCounts={cityFacilityCounts}
+        totalFacilitiesCount={facilities.length}
         selectedCity={selectedCity}
         onSelectCity={setSelectedCity}
-        selectedStorageType={selectedStorageType}
-        selectedSize={selectedSize}
+        onSearchSubmit={handleSearchSubmit}
         onResetFilters={handleResetFilters}
         paginatedFacilities={paginatedFacilities}
         currentPage={currentPage}
@@ -130,11 +131,21 @@ export const HomePage: React.FC = () => {
         }}
       />
 
-      <HomeProcessAndFaqSection
+      {/* 3. So sánh 2 dòng kho tối giản */}
+      <HomeSizeGuideSection
         primaryFacilityId={primaryFacilityId}
+        unitTypes={unitTypes}
         onScrollToBranches={() => scrollToId('branches')}
       />
 
+      {/* 4. Quy trình 3 bước & FAQ sát Policy thực tế */}
+      <HomeProcessAndFaqSection
+        primaryFacilityId={primaryFacilityId}
+        policy={policy}
+        onScrollToBranches={() => scrollToId('branches')}
+      />
+
+      {/* 5. Footer */}
       <HomeFooter facilities={facilities} onScrollToId={scrollToId} />
     </div>
   );

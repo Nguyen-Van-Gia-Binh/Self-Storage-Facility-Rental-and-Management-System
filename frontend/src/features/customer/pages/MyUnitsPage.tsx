@@ -526,7 +526,7 @@ export const MyUnitsPage: React.FC = () => {
           </Button>
 
           {/* Nút Thuê Thêm Ô Kho */}
-          <Link to="/customer">
+          <Link to="/">
             <Button
               variant="primary"
               size="sm"

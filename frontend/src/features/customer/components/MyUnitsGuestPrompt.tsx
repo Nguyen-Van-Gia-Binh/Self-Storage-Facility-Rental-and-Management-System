@@ -34,7 +34,7 @@ export const MyUnitsGuestPrompt: React.FC = () => {
             Đăng ký tài khoản
           </Button>
         </Link>
-        <Link to="/customer" className="w-full sm:w-auto">
+        <Link to="/" className="w-full sm:w-auto">
           <Button variant="outline" size="md" className="w-full font-bold text-xs flex items-center justify-center gap-2 text-brand-600 border-brand-200 hover:bg-brand-50">
             <Plus className="w-4 h-4" />
             Tìm ô kho mới

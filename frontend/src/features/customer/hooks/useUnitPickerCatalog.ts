@@ -64,7 +64,7 @@ export function useUnitPickerCatalog({
   // 1. Tải danh mục cơ sở & ô kho ban đầu khi facilityParam thay đổi
   useEffect(() => {
     if (!facilityParam) {
-      navigate('/customer', { replace: true });
+      navigate('/', { replace: true });
       return;
     }
 

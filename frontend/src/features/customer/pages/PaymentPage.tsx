@@ -251,7 +251,7 @@ export const PaymentPage: React.FC = () => {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
       {/* Breadcrumbs */}
       <nav className="flex items-center gap-2 text-xs text-slate-500">
-        <Link to="/customer" className="hover:text-brand-600 transition-colors">
+        <Link to="/" className="hover:text-brand-600 transition-colors">
           Trang chủ
         </Link>
         <ChevronRight className="w-3 h-3 text-slate-400" />

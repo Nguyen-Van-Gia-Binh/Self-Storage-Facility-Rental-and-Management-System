@@ -68,7 +68,7 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
     tokenStorage.clearSession();
     setUser(null);
     setIsDropdownOpen(false);
-    navigate('/customer');
+    navigate('/');
   };
 
   const getInitials = (name?: string) => {
@@ -88,12 +88,12 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
       <header className="sticky top-0 z-30 bg-white border-b border-slate-200/90 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
           {/* Logo */}
-          <Logo to="/customer" subtitle="Self-Storage Solutions" size="md" />
+          <Logo to="/" subtitle="Self-Storage Solutions" size="md" />
 
           {/* Navigation links */}
           <nav className="hidden md:flex items-center gap-8 text-sm font-semibold">
             <Link 
-              to="/customer" 
+              to="/" 
               className={`py-6 transition-colors border-b-2 ${
                 isHomeActive 
                   ? 'border-brand-500 text-slate-900 font-bold' 
@@ -227,7 +227,7 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
 
             <div className="flex items-center gap-6 text-slate-500 font-medium">
               <a href="#" className="hover:text-slate-900">Về chúng tôi</a>
-              <Link to="/customer" className="hover:text-slate-900">Hệ thống cơ sở</Link>
+              <Link to="/" className="hover:text-slate-900">Hệ thống cơ sở</Link>
               <a href="#" className="hover:text-slate-900">Trung tâm trợ giúp</a>
             </div>
 

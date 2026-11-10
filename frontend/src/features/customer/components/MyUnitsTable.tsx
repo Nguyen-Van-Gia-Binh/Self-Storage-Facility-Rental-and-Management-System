@@ -152,7 +152,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
             Xóa bộ lọc
           </Button>
         ) : (
-          <Link to="/customer">
+          <Link to="/">
             <Button variant="primary" size="sm" className="mt-1 text-xs font-bold cursor-pointer">
               Khám phá và thuê ô kho mới
             </Button>
