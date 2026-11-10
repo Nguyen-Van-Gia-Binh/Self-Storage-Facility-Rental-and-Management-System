@@ -102,6 +102,140 @@
   animation: modalPopOut 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* ========== Auth Hero 3D Living Animation (Steady, GPU-only, 0-lag) ========== */
+@keyframes heroSubtleBreath {
+  0%, 100% {
+    transform: scale(1.0) translate3d(0, 0, 0);
+  }
+  50% {
+    transform: scale(1.025) translate3d(0, 0, 0);
+  }
+}
+
+@keyframes heroLightSheen {
+  0%, 45% {
+    transform: translate3d(-140%, 0, 0) skewX(-22deg);
+    opacity: 0;
+  }
+  58% {
+    opacity: 0.35;
+  }
+  82% {
+    opacity: 0.28;
+  }
+  100% {
+    transform: translate3d(250%, 0, 0) skewX(-22deg);
+    opacity: 0;
+  }
+}
+
+@keyframes heroQrLaser {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.85;
+  }
+  50% {
+    transform: translate3d(0, 16px, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes heroNeonPulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes heroUnitGlow {
+  0%, 100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@keyframes heroParticleRise {
+  0% {
+    transform: translate3d(0, 8px, 0) scale(0.7);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.75;
+  }
+  75% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate3d(0, -34px, 0) scale(1.05);
+    opacity: 0;
+  }
+}
+
+.hero-ken-burns {
+  will-change: transform;
+  animation: heroSubtleBreath 12s ease-in-out infinite;
+}
+
+.hero-steady-tilt {
+  will-change: transform;
+  transform: perspective(1000px) rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg));
+  transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.hero-light-sheen {
+  will-change: transform, opacity;
+  animation: heroLightSheen 5.2s ease-in-out infinite;
+}
+
+.hero-qr-laser {
+  will-change: transform, opacity;
+  animation: heroQrLaser 2.2s ease-in-out infinite;
+}
+
+.hero-neon-pulse {
+  will-change: transform, opacity;
+  animation: heroNeonPulse 2.8s ease-in-out infinite;
+}
+
+.hero-unit-glow {
+  will-change: opacity;
+  animation: heroUnitGlow 3.6s ease-in-out infinite;
+}
+
+.hero-particle-1 {
+  will-change: transform, opacity;
+  animation: heroParticleRise 4.2s ease-in-out infinite;
+}
+
+.hero-particle-2 {
+  will-change: transform, opacity;
+  animation: heroParticleRise 5.2s ease-in-out 1.4s infinite;
+}
+
+.hero-particle-3 {
+  will-change: transform, opacity;
+  animation: heroParticleRise 4.6s ease-in-out 2.5s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-ken-burns,
+  .hero-light-sheen,
+  .hero-qr-laser,
+  .hero-neon-pulse,
+  .hero-unit-glow,
+  .hero-particle-1,
+  .hero-particle-2,
+  .hero-particle-3 {
+    animation: none !important;
+  }
+}
+
 /* Bản in BOM: chỉ in biểu mẫu, cho phép nhiều trang A4 */
 .bom-print-stack {
   display: none;
