@@ -24,12 +24,10 @@ interface StorageUnit3DPreviewProps {
 
 const COS30 = 0.8660254;
 const SIN30 = 0.5;
-const SCALE = 25; // 25px = 1 mét thực tế
 
 /**
- * Mô hình 3D Isometric tỉ lệ 1:1 theo kích thước thực tế trong CSDL (V16):
- * XS (1×1×2.5m) → S (1.5×2×2.5m) → M (2×3×2.5m) → L (2.5×4×2.5m) → XL (3×5×3m).
- * Hiển thị đa kích thước thùng carton (S/M/L), vali, tủ lạnh và sofa xếp không chồng chéo.
+ * Mô hình 3D Isometric tỉ lệ thực tế (V16), tự căn zoom rộng thoáng theo cỡ ô XS..XL,
+ * phân biệt rõ màu sắc & ký hiệu từng cỡ thùng carton S / M / L.
  */
 export const StorageUnit3DPreview: React.FC<StorageUnit3DPreviewProps> = ({
   spec,
@@ -52,13 +50,22 @@ export const StorageUnit3DPreview: React.FC<StorageUnit3DPreviewProps> = ({
     return Math.max(1, Math.min(100, Math.round((packResult.totalVolumeM3 / practicalVol) * 100)));
   }, [hasCustomItems, packResult.totalVolumeM3, spec.areaM2]);
 
-  // Căn giữa mô hình tự động trong viewBox 340×214 theo tỉ lệ kích thước thật
-  const originX = 185 - ((L - W) / 2) * SCALE * COS30;
-  const originY = 112 - ((L + W) / 2) * SCALE * SIN30 + (H / 2) * SCALE;
+  // Tự động phóng to khung 3D lấp đầy sân khấu 360×236, cân đối cho cả ô nhỏ lẫn ô lớn
+  const unitIsoW = (L + W) * COS30;
+  const unitIsoH = H + (L + W) * SIN30;
+  const scale = Math.min(296 / unitIsoW, 186 / unitIsoH);
+
+  const rawMinX = -W * scale * COS30;
+  const rawMaxX = L * scale * COS30;
+  const rawMinY = -H * scale;
+  const rawMaxY = (L + W) * scale * SIN30;
+
+  const originX = 180 - (rawMinX + rawMaxX) / 2;
+  const originY = 120 - (rawMinY + rawMaxY) / 2;
 
   const p = (u: number, v: number, z: number): [number, number] => [
-    originX + (u - v) * SCALE * COS30,
-    originY + (u + v) * SCALE * SIN30 - z * SCALE,
+    originX + (u - v) * scale * COS30,
+    originY + (u + v) * scale * SIN30 - z * scale,
   ];
 
   const pts = (coords: [number, number][]) =>
@@ -82,10 +89,6 @@ export const StorageUnit3DPreview: React.FC<StorageUnit3DPreviewProps> = ({
     gridLines.push({ x1, y1, x2, y2 });
   }
 
-  // Vị trí bóng người tham chiếu cao 1.7m đứng phía trước bên trái
-  const [hx, hy] = p(0.15, W + 0.45, 0);
-  const humanH = 1.7 * SCALE;
-
   // Điểm đo kích thước
   const [lStartX, lStartY] = p(0, W, 0);
   const [lEndX, lEndY] = p(L, W, 0);
@@ -98,14 +101,14 @@ export const StorageUnit3DPreview: React.FC<StorageUnit3DPreviewProps> = ({
   const isOverflow = hasCustomItems && packResult.overflowCount > 0;
 
   return (
-    <div className="relative w-full bg-[#f4faf8] rounded-xl border border-teal-200/70 overflow-hidden">
+    <div className="relative w-full bg-[#f3f8fc] rounded-2xl border border-sky-200/80 overflow-hidden">
       {/* Thông số góc trên trái */}
-      <div className="absolute top-2.5 left-3 z-10 flex items-center gap-1.5">
-        <span className="px-2 py-0.5 rounded-md bg-white/95 border border-teal-200 text-[11px] font-bold text-[#125449] shadow-2xs">
+      <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5">
+        <span className="px-2.5 py-1 rounded-lg bg-white/95 border border-sky-200 text-xs font-bold text-[#0c5a8a] shadow-2xs">
           {spec.areaM2} m² · {spec.volumeM3} m³
         </span>
         {isClimate && (
-          <span className="px-2 py-0.5 rounded-md bg-sky-50 border border-sky-200 text-[10px] font-semibold text-sky-700">
+          <span className="px-2.5 py-1 rounded-lg bg-sky-100/90 border border-sky-200 text-xs font-semibold text-sky-900">
             20–25°C
           </span>
         )}
@@ -113,17 +116,17 @@ export const StorageUnit3DPreview: React.FC<StorageUnit3DPreviewProps> = ({
 
       {/* Độ lấp đầy hoặc cảnh báo vượt cỡ nếu có món đồ */}
       {hasCustomItems && (
-        <div className="absolute top-2.5 right-3 z-10 flex items-center gap-1">
+        <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
           {isOverflow ? (
             <>
-              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold border bg-amber-50 border-amber-300 text-amber-800">
+              <span className="px-2.5 py-1 rounded-lg text-xs font-bold border bg-amber-50 border-amber-300 text-amber-900">
                 Chưa vừa hết (+{packResult.overflowCount})
               </span>
               {recommendedSize && recommendedSize !== spec.code && onSelectSize && (
                 <button
                   type="button"
                   onClick={() => onSelectSize(recommendedSize)}
-                  className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#125449] text-white hover:bg-[#0e4239] cursor-pointer shadow-2xs"
+                  className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#0c5a8a] text-white hover:bg-[#084369] cursor-pointer shadow-2xs"
                 >
                   Đổi sang {recommendedSize}
                 </button>
@@ -131,10 +134,10 @@ export const StorageUnit3DPreview: React.FC<StorageUnit3DPreviewProps> = ({
             </>
           ) : (
             <span
-              className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${
                 fillPercent > 78
-                  ? 'bg-amber-50 border-amber-300 text-amber-700'
-                  : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                  ? 'bg-amber-50 border-amber-300 text-amber-800'
+                  : 'bg-sky-50 border-sky-200 text-[#0c5a8a]'
               }`}
             >
               Lấp đầy ~{fillPercent}%
@@ -144,8 +147,8 @@ export const StorageUnit3DPreview: React.FC<StorageUnit3DPreviewProps> = ({
       )}
 
       <svg
-        viewBox="0 0 340 214"
-        className="w-full h-[188px] sm:h-[204px] select-none"
+        viewBox="0 0 360 236"
+        className="w-full h-[250px] sm:h-[296px] select-none"
         role="img"
         data-item-count={packResult.boxes.length}
         aria-label={`Mô hình 3D kho cỡ ${spec.code} kích thước ${L}m x ${W}m x ${H}m`}
@@ -153,8 +156,8 @@ export const StorageUnit3DPreview: React.FC<StorageUnit3DPreviewProps> = ({
         {/* Sàn kho */}
         <polygon
           points={floorPts}
-          fill={isClimate ? '#e0f2fe' : '#e1f2ed'}
-          stroke="#57b29a"
+          fill={isClimate ? '#dbeafe' : '#e0f0fb'}
+          stroke="#3898cf"
           strokeWidth="1.2"
         />
 
@@ -166,7 +169,7 @@ export const StorageUnit3DPreview: React.FC<StorageUnit3DPreviewProps> = ({
             y1={ln.y1}
             x2={ln.x2}
             y2={ln.y2}
-            stroke={isClimate ? '#bae6fd' : '#bce3d7'}
+            stroke={isClimate ? '#bfdbfe' : '#c5e2f8'}
             strokeWidth="0.9"
           />
         ))}
@@ -174,16 +177,16 @@ export const StorageUnit3DPreview: React.FC<StorageUnit3DPreviewProps> = ({
         {/* Tường sau bên trái */}
         <polygon
           points={leftWallPts}
-          fill={isClimate ? '#f0f9ff' : '#f8fbfa'}
-          stroke="#75beaa"
+          fill={isClimate ? '#eff6ff' : '#f7fbff'}
+          stroke="#60aad8"
           strokeWidth="1.1"
         />
 
         {/* Tường sau bên phải */}
         <polygon
           points={rightWallPts}
-          fill={isClimate ? '#e6f4fe' : '#eef7f4'}
-          stroke="#75beaa"
+          fill={isClimate ? '#e5f0fd' : '#edf6fc'}
+          stroke="#60aad8"
           strokeWidth="1.1"
         />
 
@@ -239,29 +242,31 @@ export const StorageUnit3DPreview: React.FC<StorageUnit3DPreviewProps> = ({
             b.renderType === 'suitcase'
               ? p(b.u + b.du * 0.65, b.v + b.dv * 0.5, b.z + b.dz + 0.06)
               : null;
+          const badgeCenter =
+            b.badge ? p(b.u + b.du * 0.5, b.v + b.dv * 0.5, b.z + b.dz) : null;
 
           return (
-            <g key={i}>
+            <g key={`${b.renderType}-${i}`} className="pixel-drop-in">
               <polygon
                 points={leftFace}
                 fill={b.left}
-                stroke="#0f3d35"
+                stroke="#1e293b"
                 strokeWidth="0.45"
-                strokeOpacity="0.35"
+                strokeOpacity="0.32"
               />
               <polygon
                 points={rightFace}
                 fill={b.right}
-                stroke="#0f3d35"
+                stroke="#1e293b"
                 strokeWidth="0.45"
-                strokeOpacity="0.35"
+                strokeOpacity="0.32"
               />
               <polygon
                 points={topFace}
                 fill={b.top}
-                stroke="#0f3d35"
+                stroke="#1e293b"
                 strokeWidth="0.45"
-                strokeOpacity="0.35"
+                strokeOpacity="0.32"
               />
               {tapeStart && tapeEnd && (
                 <line
@@ -269,10 +274,23 @@ export const StorageUnit3DPreview: React.FC<StorageUnit3DPreviewProps> = ({
                   y1={tapeStart[1]}
                   x2={tapeEnd[0]}
                   y2={tapeEnd[1]}
-                  stroke="#925b19"
-                  strokeWidth="1.2"
-                  strokeOpacity="0.45"
+                  stroke="#334155"
+                  strokeWidth="1.1"
+                  strokeOpacity="0.25"
                 />
+              )}
+              {badgeCenter && b.badge && (
+                <text
+                  x={badgeCenter[0]}
+                  y={badgeCenter[1] + 2.1}
+                  textAnchor="middle"
+                  fontSize={b.badge === 'S' ? 6 : b.badge === 'M' ? 7 : 8}
+                  fontWeight="800"
+                  fill="#0f172a"
+                  opacity="0.78"
+                >
+                  {b.badge}
+                </text>
               )}
               {doorL1 && doorL2 && doorR2 && (
                 <polyline
@@ -289,7 +307,7 @@ export const StorageUnit3DPreview: React.FC<StorageUnit3DPreviewProps> = ({
                   y1={handleL[1]}
                   x2={handleR[0]}
                   y2={handleR[1]}
-                  stroke="#125449"
+                  stroke="#0c5a8a"
                   strokeWidth="1.4"
                   strokeLinecap="round"
                 />
@@ -304,7 +322,7 @@ export const StorageUnit3DPreview: React.FC<StorageUnit3DPreviewProps> = ({
           y1={p(0, W, H)[1]}
           x2={p(L, W, H)[0]}
           y2={p(L, W, H)[1]}
-          stroke="#57b29a"
+          stroke="#3898cf"
           strokeWidth="0.9"
           strokeDasharray="3 3"
           opacity="0.7"
@@ -314,7 +332,7 @@ export const StorageUnit3DPreview: React.FC<StorageUnit3DPreviewProps> = ({
           y1={p(L, 0, H)[1]}
           x2={p(L, W, H)[0]}
           y2={p(L, W, H)[1]}
-          stroke="#57b29a"
+          stroke="#3898cf"
           strokeWidth="0.9"
           strokeDasharray="3 3"
           opacity="0.7"
@@ -324,49 +342,30 @@ export const StorageUnit3DPreview: React.FC<StorageUnit3DPreviewProps> = ({
           y1={p(L, W, 0)[1]}
           x2={p(L, W, H)[0]}
           y2={p(L, W, H)[1]}
-          stroke="#57b29a"
+          stroke="#3898cf"
           strokeWidth="0.9"
           strokeDasharray="3 3"
           opacity="0.7"
         />
 
-        {/* Bóng người 1.7m làm thước đo tỷ lệ thật */}
-        <g transform={`translate(${hx}, ${hy})`} opacity="0.65">
-          <circle cx="0" cy={-humanH + 5} r="4" fill="#125449" />
-          <path
-            d={`M -4 ${-humanH + 10} L 4 ${-humanH + 10} L 3 -14 L 4 0 L 1.2 0 L 0 -13 L -1.2 0 L -4 0 L -3 -14 Z`}
-            fill="#125449"
-          />
-          <text
-            x="0"
-            y="10"
-            textAnchor="middle"
-            fontSize="7.5"
-            fontWeight="600"
-            fill="#367969"
-          >
-            1.7m
-          </text>
-        </g>
-
         {/* Nhãn đo kích thước thực tế Dài × Rộng × Cao */}
         <text
           x={(lStartX + lEndX) / 2 - 4}
-          y={(lStartY + lEndY) / 2 + 12}
+          y={(lStartY + lEndY) / 2 + 13}
           textAnchor="middle"
-          fontSize="9"
+          fontSize="9.5"
           fontWeight="700"
-          fill="#125449"
+          fill="#0c5a8a"
         >
           {L.toFixed(1)}m
         </text>
         <text
           x={(lEndX + wEndX) / 2 + 10}
-          y={(lEndY + wEndY) / 2 + 11}
+          y={(lEndY + wEndY) / 2 + 12}
           textAnchor="middle"
-          fontSize="9"
+          fontSize="9.5"
           fontWeight="700"
-          fill="#125449"
+          fill="#0c5a8a"
         >
           {W.toFixed(1)}m
         </text>
@@ -374,13 +373,29 @@ export const StorageUnit3DPreview: React.FC<StorageUnit3DPreviewProps> = ({
           x={hBotX + 14}
           y={(hBotY + hTopY) / 2 + 3}
           textAnchor="start"
-          fontSize="9"
+          fontSize="9.5"
           fontWeight="700"
-          fill="#367969"
+          fill="#0284c7"
         >
           ↕ {H.toFixed(1)}m
         </text>
       </svg>
+
+      {/* Chú thích phân biệt cỡ thùng ngay dưới đáy mô hình */}
+      <div className="px-3.5 pb-2.5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] font-medium text-slate-600">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-[2px] bg-[#facc15] border border-black/15" />
+          Thùng S
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-[2px] bg-[#fb923c] border border-black/15" />
+          Thùng M
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-[2px] bg-[#38bdf8] border border-black/15" />
+          Thùng L
+        </span>
+      </div>
     </div>
   );
 };

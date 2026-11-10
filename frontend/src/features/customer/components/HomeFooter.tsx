@@ -50,24 +50,24 @@ export const HomeFooter: React.FC<HomeFooterProps> = ({ facilities, onScrollToId
 
   return (
     <>
-      <footer className="bg-gradient-to-b from-[#125449] to-[#0e3f37] text-teal-100/80 border-t border-teal-700/50">
-        <div className="w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-12 grid grid-cols-1 md:grid-cols-4 gap-8 text-xs">
+      <footer className="bg-[#082f49] text-sky-100/90 border-t border-sky-800/60">
+        <div className="w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-12 grid grid-cols-1 md:grid-cols-4 gap-8 text-[13px]">
           {/* Cột 1: Thương hiệu */}
           <div className="space-y-3.5">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-white/15 border border-white/20 flex items-center justify-center text-emerald-200">
+              <div className="w-8 h-8 rounded-lg bg-white/15 border border-white/20 flex items-center justify-center text-sky-200">
                 <Warehouse className="w-4 h-4" />
               </div>
               <span className="font-bold text-base tracking-tight text-white">
-                SmartStorage<span className="text-emerald-200">.vn</span>
+                SmartStorage<span className="text-sky-300">.vn</span>
               </span>
             </div>
-            <p className="text-teal-100/80 text-xs leading-relaxed">
-              Hệ thống cho thuê kho tự quản sạch đẹp, minh bạch giá cước và quản lý hợp đồng trực tuyến tại Hà Nội &amp; TP. Hồ Chí Minh.
+            <p className="text-sky-100/85 text-[13px] leading-relaxed">
+              Hệ thống cho thuê kho tự quản sạch đẹp, minh bạch giá cước tại Hà Nội &amp; TP. Hồ Chí Minh.
             </p>
-            <div className="flex items-center gap-2 text-[11px] text-emerald-100/90">
-              <ShieldCheck className="w-4 h-4 text-emerald-300 shrink-0" />
-              <span>Bảo vệ hàng hóa cơ bản 10tr · Mở rộng 50tr</span>
+            <div className="flex items-center gap-2 text-xs text-sky-100">
+              <ShieldCheck className="w-4 h-4 text-sky-300 shrink-0" />
+              <span>Bảo vệ hàng hóa 10tr · Mở rộng 50tr</span>
             </div>
           </div>
 
@@ -76,7 +76,7 @@ export const HomeFooter: React.FC<HomeFooterProps> = ({ facilities, onScrollToId
             <h4 className="font-semibold text-white text-xs uppercase tracking-wider">
               Mạng lưới cơ sở
             </h4>
-            <ul className="space-y-2 text-xs">
+            <ul className="space-y-2 text-[13px]">
               {facilities.length > 0 ? (
                 facilities.slice(0, 4).map((fac) => (
                   <li key={fac.id}>
@@ -193,12 +193,12 @@ export const HomeFooter: React.FC<HomeFooterProps> = ({ facilities, onScrollToId
                 </button>
               </li>
             </ul>
-            <div className="pt-2 text-xs space-y-1.5 border-t border-teal-700/50">
+            <div className="pt-2 text-xs space-y-1.5 border-t border-sky-800/60">
               <a
                 href="tel:19008888"
                 className="flex items-center gap-1.5 hover:text-white transition-colors"
               >
-                <Phone className="w-3.5 h-3.5 text-emerald-300" />
+                <Phone className="w-3.5 h-3.5 text-sky-300" />
                 <span>
                   Hotline: <strong className="text-white">1900 8888</strong>
                 </span>
@@ -207,15 +207,15 @@ export const HomeFooter: React.FC<HomeFooterProps> = ({ facilities, onScrollToId
                 href="mailto:support@smartstorage.vn"
                 className="flex items-center gap-1.5 hover:text-white transition-colors"
               >
-                <Mail className="w-3.5 h-3.5 text-emerald-300" />
+                <Mail className="w-3.5 h-3.5 text-sky-300" />
                 <span>support@smartstorage.vn</span>
               </a>
             </div>
           </div>
         </div>
 
-        <div className="border-t border-teal-700/50 py-5">
-          <div className="w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-3 text-[11px] text-teal-200/75">
+        <div className="border-t border-sky-800/60 py-5">
+          <div className="w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-sky-100/80">
             <p>© 2026 SmartStorage Vietnam. Hệ thống quản lý &amp; cho thuê kho tự quản.</p>
             <div className="flex gap-4">
               <button
@@ -251,17 +251,17 @@ export const HomeFooter: React.FC<HomeFooterProps> = ({ facilities, onScrollToId
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-3">
-              <h3 className="text-base font-bold text-[#0a1614]">{activePolicyContent.title}</h3>
+              <h3 className="text-lg font-bold text-[#0a1614]">{activePolicyContent.title}</h3>
               <button
                 type="button"
                 onClick={() => setPolicyModal(null)}
                 aria-label="Đóng"
-                className="p-1 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 cursor-pointer"
+                className="p-1 text-slate-500 hover:text-slate-800 rounded-lg hover:bg-slate-100 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <ul className="space-y-2.5 text-xs text-slate-600 leading-relaxed list-disc pl-4">
+            <ul className="space-y-2.5 text-sm text-slate-700 leading-relaxed list-disc pl-4">
               {activePolicyContent.bullets.map((line) => (
                 <li key={line}>{line}</li>
               ))}
@@ -270,7 +270,7 @@ export const HomeFooter: React.FC<HomeFooterProps> = ({ facilities, onScrollToId
               <button
                 type="button"
                 onClick={() => setPolicyModal(null)}
-                className="px-4 py-2 rounded-xl bg-[#57b29a] hover:bg-[#439782] text-white text-xs font-semibold cursor-pointer"
+                className="px-5 py-2.5 rounded-xl bg-[#0c5a8a] hover:bg-[#084369] text-white text-sm font-semibold cursor-pointer"
               >
                 Đã hiểu
               </button>

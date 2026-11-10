@@ -1,4 +1,6 @@
+import type { StorageUnitResponse } from '@/types/unit';
 import type { UnitSpec3D } from '../components/StorageUnit3DPreview';
+import { resolveSizeCategory } from './unitPickerHelpers';
 
 export type EstimatorItemKey =
   | 'boxS'
@@ -23,6 +25,7 @@ export interface EstimatorItemMeta {
   key: EstimatorItemKey;
   label: string;
   sizeLabel: string;
+  badge?: 'S' | 'M' | 'L';
   du: number; // mét
   dv: number; // mét
   dz: number; // mét
@@ -41,37 +44,40 @@ export const STORAGE_ESTIMATOR_ITEMS: EstimatorItemMeta[] = [
     key: 'boxS',
     label: 'Thùng nhỏ (S)',
     sizeLabel: '40×30×30 cm',
+    badge: 'S',
     du: 0.4,
     dv: 0.3,
     dz: 0.3,
     volM3: 0.036,
     kind: 'carton',
     maxStackM: 1.8,
-    colors: { top: '#f8e3ba', left: '#e6c281', right: '#cca154' },
+    colors: { top: '#fef08a', left: '#facc15', right: '#ca8a04' },
   },
   {
     key: 'boxM',
     label: 'Thùng vừa (M)',
     sizeLabel: '50×40×40 cm',
+    badge: 'M',
     du: 0.5,
     dv: 0.4,
     dz: 0.4,
     volM3: 0.08,
     kind: 'carton',
     maxStackM: 1.8,
-    colors: { top: '#f0c784', left: '#d8a454', right: '#b88233' },
+    colors: { top: '#fed7aa', left: '#fb923c', right: '#c2410c' },
   },
   {
     key: 'boxL',
     label: 'Thùng lớn (L)',
     sizeLabel: '60×50×50 cm',
+    badge: 'L',
     du: 0.6,
     dv: 0.5,
     dz: 0.5,
     volM3: 0.15,
     kind: 'carton',
     maxStackM: 1.8,
-    colors: { top: '#e2ab62', left: '#c4893b', right: '#9f6820' },
+    colors: { top: '#bae6fd', left: '#38bdf8', right: '#0284c7' },
   },
   {
     key: 'suitcase',
@@ -83,7 +89,7 @@ export const STORAGE_ESTIMATOR_ITEMS: EstimatorItemMeta[] = [
     volM3: 0.095,
     kind: 'suitcase',
     maxStackM: 1.45,
-    colors: { top: '#75beaa', left: '#439782', right: '#2c6155' },
+    colors: { top: '#99f6e4', left: '#2dd4bf', right: '#0f766e' },
   },
   {
     key: 'appliance',
@@ -95,7 +101,7 @@ export const STORAGE_ESTIMATOR_ITEMS: EstimatorItemMeta[] = [
     volM3: 0.613,
     kind: 'appliance',
     maxStackM: 1.8,
-    colors: { top: '#e2e8f0', left: '#cbd5e1', right: '#94a3b8' },
+    colors: { top: '#f1f5f9', left: '#cbd5e1', right: '#94a3b8' },
   },
   {
     key: 'sofa',
@@ -107,7 +113,7 @@ export const STORAGE_ESTIMATOR_ITEMS: EstimatorItemMeta[] = [
     volM3: 0.9,
     kind: 'sofa',
     maxStackM: 1.8,
-    colors: { top: '#9cc7bb', left: '#6ea394', right: '#4d7c6f' },
+    colors: { top: '#c7d2fe', left: '#818cf8', right: '#4f46e5' },
   },
 ];
 
@@ -140,6 +146,7 @@ export interface PlacedIsoBox {
   top: string;
   left: string;
   right: string;
+  badge?: 'S' | 'M' | 'L';
   renderType: 'carton' | 'suitcase' | 'appliance' | 'sofa-base' | 'sofa-back';
 }
 
@@ -318,9 +325,9 @@ export function packItemsIntoUnit(spec: UnitSpec3D, counts: EstimatorItemCounts)
           du: alignAlongUWall ? 0.22 : du,
           dv: alignAlongUWall ? dv : 0.22,
           dz: dz - seatH,
-          top: '#8abdb0',
-          left: '#5b9485',
-          right: '#437165',
+          top: '#b3c0fb',
+          left: '#6a75eb',
+          right: '#4338ca',
           renderType: 'sofa-back',
         });
       } else {
@@ -332,6 +339,7 @@ export function packItemsIntoUnit(spec: UnitSpec3D, counts: EstimatorItemCounts)
           dv,
           dz,
           ...meta.colors,
+          badge: meta.badge,
           renderType: meta.kind,
         });
       }
@@ -461,4 +469,22 @@ export function recommendUnitSize(
 
   return 'XL';
 }
+
+export type SizeAvailabilityMap = Record<UnitSpec3D['code'], number>;
+
+/**
+ * Đếm số ô kho đang trống (AVAILABLE & active) theo từng cỡ XS..XL từ dữ liệu thật Backend.
+ */
+export function countAvailableUnitsBySize(units: StorageUnitResponse[]): SizeAvailabilityMap {
+  const counts: SizeAvailabilityMap = { XS: 0, S: 0, M: 0, L: 0, XL: 0 };
+  units.forEach((u) => {
+    if (u.status !== 'AVAILABLE' || u.isActive === false) return;
+    const code = resolveSizeCategory(u.unitTypeCode || u.unitTypeName || '') as UnitSpec3D['code'];
+    if (code in counts) {
+      counts[code] += 1;
+    }
+  });
+  return counts;
+}
+
 

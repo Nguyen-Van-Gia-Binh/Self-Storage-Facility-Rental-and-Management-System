@@ -38,7 +38,6 @@ vi.mock('../../hooks/useFacilityDirectory', () => ({
         openingHours: '06:00–22:00',
         image: '/assets/landing/hero-green.jpg',
         phone: '024-3795-8888',
-        activeUnitTypeCount: 10,
       },
       {
         id: 5,
@@ -51,7 +50,6 @@ vi.mock('../../hooks/useFacilityDirectory', () => ({
         openingHours: '24/7',
         image: '/assets/landing/facility.jpg',
         phone: '028-3822-9999',
-        activeUnitTypeCount: 10,
       },
     ],
   }),
@@ -170,22 +168,62 @@ describe('HomePage Redesign (3D Sizing, Real Data & Section Order)', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/customer/units?facility=1');
   });
 
-  it('mở modal chính sách từ Footer và lược bỏ các đoạn chữ/ảnh thừa theo yêu cầu', () => {
+  it('thẻ chi nhánh hiển thị gọn thông tin, link bản đồ, bỏ số lượng ô trống và nhãn placeholder lặp', () => {
     const { container } = render(
       <MemoryRouter>
         <HomePage />
       </MemoryRouter>
     );
 
+    const branches = container.querySelector('#branches') as HTMLElement;
+    expect(branches.innerHTML).not.toContain('Tình trạng ô kho hiện tại');
+    expect(branches.innerHTML).not.toContain('hạng kho đang mở');
+    expect(branches.innerHTML).not.toMatch(/\b(XS|S|M|L|XL):\s*\d+\s*trống/i);
+    const mapLinks = within(branches)
+      .getAllByRole('link', { name: /Bản đồ/i })
+      .map((a) => a.getAttribute('href'));
+    expect(mapLinks.length).toBeGreaterThan(0);
+    expect(mapLinks[0]).toMatch(/^https:\/\/www\.google\.com\/maps\/search\/\?api=1&query=/);
+  });
+
+  it('bỏ hình người 1.7m, bỏ section cam kết chính sách riêng, giữ modal footer và dọn chữ thừa', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
+
+    expect(container.querySelector('#rent-now')).not.toBeInTheDocument();
+    expect(screen.queryByText('1.7m')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Hỗ trợ xe đẩy miễn phí/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Chọn kho Máy lạnh/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Xem ô kho Tiêu chuẩn/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Xem các ô kho phù hợp/i)).not.toBeInTheDocument();
+    expect(container.innerHTML).not.toMatch(/0[1-6]\s*·/);
+    expect(container.innerHTML).not.toMatch(/BƯỚC\s*0[1-3]/i);
+    expect(container.innerHTML).not.toMatch(/NHU CẦU\s*0[1-3]/i);
     expect(container.innerHTML).not.toContain('lh3.googleusercontent.com');
     expect(container.innerHTML).not.toContain('SMARTVN40');
     expect(container.innerHTML).not.toContain('1900 8899');
     expect(container.innerHTML).not.toContain('/assets/landing/unit-lanh.jpg');
     expect(container.innerHTML).not.toMatch(/xe máy/i);
+    expect(container.innerHTML).not.toContain('Shop Online &amp; B2B');
     expect(container.innerHTML).not.toContain('Chọn cỡ kho hoặc thêm đồ đạc để xem sức chứa thực');
     expect(container.innerHTML).not.toContain(
       'Dữ liệu chi nhánh, giá thuê và số lượng ô trống được cập nhật trực tiếp từ hệ thống.'
     );
+    expect(screen.getByText(/Kinh doanh & Lưu hồ sơ/i)).toBeInTheDocument();
+    expect(screen.getByText(/Tại sao chọn SmartStorage/i)).toBeInTheDocument();
+    expect(
+      screen.getByAltText(/Không gian lưu trữ tự quản SmartStorage tại công viên xanh/i)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByAltText(/Không gian giải đáp câu hỏi thường gặp SmartStorage/i)
+    ).toBeInTheDocument();
+    expect(screen.getByAltText(/Minh họa Chuyển nhà & Sửa nhà/i)).toBeInTheDocument();
+    expect(screen.getByAltText(/Minh họa Kinh doanh & Lưu hồ sơ/i)).toBeInTheDocument();
+    expect(screen.getByAltText(/Minh họa Đồ giá trị, nhạy ẩm/i)).toBeInTheDocument();
+    expect(screen.getByAltText(/Ảnh đại diện Chị Minh Thư/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Chính sách hủy & hoàn tiền cọc' }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
