@@ -1,20 +1,48 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle2, ArrowRight, Thermometer, Warehouse, Camera } from 'lucide-react';
+import {
+  CheckCircle2,
+  ArrowRight,
+  Thermometer,
+  Warehouse,
+  Home,
+  ShoppingBag,
+  ShieldCheck,
+} from 'lucide-react';
+import type { UnitTypeResponse } from '@/types/unit';
+import { formatVND } from '../utils/pricing';
+import { isClimateUnitType } from '../utils/unitPickerHelpers';
 
 interface HomeSizeGuideSectionProps {
   primaryFacilityId?: number | string;
+  unitTypes?: UnitTypeResponse[];
   onScrollToBranches: () => void;
 }
 
 /**
- * Giới thiệu 2 dòng kho thực tế (Tiêu chuẩn & Máy lạnh) và 3 tình huống gửi đồ phổ biến.
- * Toàn bộ hình ảnh lấy từ local assets và nút CTA trỏ đúng tới cơ sở khả dụng kèm bộ lọc.
+ * So sánh 2 dòng kho thực tế (Tiêu chuẩn & Máy lạnh) theo phong cách tối giản, ít chữ,
+ * không dùng ảnh công nghiệp lớn gây nặng mắt. Dữ liệu giá lấy trực tiếp từ Backend API.
  */
 export const HomeSizeGuideSection: React.FC<HomeSizeGuideSectionProps> = ({
   primaryFacilityId,
+  unitTypes = [],
   onScrollToBranches,
 }) => {
+  const { minStandardPrice, minClimatePrice } = useMemo(() => {
+    let stdMin = 350000;
+    let acMin = 500000;
+    const stdPrices = unitTypes
+      .filter((ut) => !isClimateUnitType(ut) && (ut.monthlyPrice ?? 0) > 0)
+      .map((ut) => ut.monthlyPrice as number);
+    const acPrices = unitTypes
+      .filter((ut) => isClimateUnitType(ut) && (ut.monthlyPrice ?? 0) > 0)
+      .map((ut) => ut.monthlyPrice as number);
+
+    if (stdPrices.length > 0) stdMin = Math.min(...stdPrices);
+    if (acPrices.length > 0) acMin = Math.min(...acPrices);
+    return { minStandardPrice: stdMin, minClimatePrice: acMin };
+  }, [unitTypes]);
+
   const buildUnitLink = (storageType: 'standard' | 'climate', size?: string) => {
     if (!primaryFacilityId) return '#branches';
     const params = new URLSearchParams({
@@ -54,232 +82,182 @@ export const HomeSizeGuideSection: React.FC<HomeSizeGuideSectionProps> = ({
   };
 
   return (
-    <section className="py-14 sm:py-16 bg-[#f2f9f7] border-b border-slate-200/80" id="unit-types">
-      <div className="w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 space-y-14">
-        {/* Phần A: So sánh 2 dòng kho thực tế */}
+    <section className="py-12 sm:py-14 bg-[#f2f9f7] border-b border-slate-200/80" id="unit-types">
+      <div className="w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+        {/* Phần A: So sánh tối giản 2 dòng kho */}
         <div>
-          <div className="text-center max-w-2xl mx-auto mb-10">
-            <span className="text-[#439782] text-xs font-bold uppercase tracking-wider block mb-1.5">
-              2 Dòng Kho Chuyên Biệt
+          <div className="text-center max-w-xl mx-auto mb-8">
+            <span className="text-[#439782] text-xs font-bold uppercase tracking-wider block mb-1">
+              2 Dòng Kho Tại SmartStorage
             </span>
             <h2 className="text-2xl sm:text-3xl font-bold text-[#0a1614] tracking-tight">
-              Chọn đúng môi trường bảo quản cho đồ đạc của bạn
+              Chọn đúng môi trường bảo quản
             </h2>
-            <p className="text-sm text-slate-600 mt-2">
-              Đầy đủ các cỡ từ 1m² (XS) đến 15m² (XL) với cửa khóa PIN riêng và giám sát camera 24/7.
-            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto items-stretch">
             {/* CARD 1: Kho Tiêu Chuẩn */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden hover:shadow-md transition-all">
-              <div className="relative h-52 overflow-hidden bg-slate-100">
-                <img
-                  alt="Hành lang ô kho tiêu chuẩn sạch sẽ"
-                  className="w-full h-full object-cover"
-                  src="/assets/landing/unit-nho.png"
-                />
-                <div className="absolute top-3 left-3">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-[#0a1614]/85 text-white backdrop-blur-sm">
-                    <Warehouse className="w-3 h-3 text-[#57b29a]" />
-                    Kho Tiêu Chuẩn
-                  </span>
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+              <div>
+                <div className="flex items-start justify-between gap-3 mb-4">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="w-11 h-11 rounded-xl bg-[#f2f9f7] border border-slate-200/80 flex items-center justify-center text-[#439782] shrink-0">
+                      <Warehouse className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-lg text-[#0a1614] leading-snug">
+                        Kho Tiêu Chuẩn
+                      </h3>
+                      <span className="text-xs text-slate-500 block mt-0.5 whitespace-nowrap">
+                        5 cỡ XS – XL (1m² – 15m²)
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0 whitespace-nowrap">
+                    <span className="text-[11px] text-slate-400 block">Giá từ</span>
+                    <span className="font-bold text-base text-[#125449]">
+                      {formatVND(minStandardPrice)}
+                      <span className="text-xs font-normal text-slate-500">/tháng</span>
+                    </span>
+                  </div>
                 </div>
+
+                <p className="text-xs text-slate-600 mb-4 leading-relaxed">
+                  Phù hợp nội thất gia đình, vali, đồ dọn nhà và hàng đóng thùng thông thường.
+                </p>
+
+                <ul className="space-y-2 text-xs text-slate-700 mb-6">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-[#57b29a] shrink-0" />
+                    Thông gió tự nhiên, khô ráo và PCCC tự động
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-[#57b29a] shrink-0" />
+                    Khóa mã PIN 6 số riêng tư, giám sát camera 24/7
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-[#57b29a] shrink-0" />
+                    Tiết kiệm chi phí nhất cho gửi đồ ngắn &amp; dài hạn
+                  </li>
+                </ul>
               </div>
 
-              <div className="p-6 flex-1 flex flex-col justify-between">
-                <div>
-                  <div className="flex justify-between items-baseline mb-2 gap-2">
-                    <h3 className="font-bold text-lg text-[#0a1614]">Kho Tiêu Chuẩn</h3>
-                    <span className="text-xs font-semibold text-slate-500">Kích thước 1m² – 15m²</span>
-                  </div>
-                  <p className="text-xs text-slate-600 mb-4 leading-relaxed">
-                    Phù hợp lưu trữ nội thất gia đình, xe máy, đồ dọn sửa nhà, vali hành lý và hàng hóa đóng thùng thông thường.
-                  </p>
-                  <ul className="space-y-2.5 text-xs text-slate-700 mb-6">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-[#57b29a] shrink-0" />
-                      Ô kho thép kín đáo, thông gió tự nhiên khô ráo quanh năm
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-[#57b29a] shrink-0" />
-                      Trang bị hệ thống báo cháy &amp; chữa cháy tự động đạt chuẩn PCCC
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-[#57b29a] shrink-0" />
-                      Mã PIN 6 số riêng tư, tự do thay đổi mã trên cổng khách hàng
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-[#57b29a] shrink-0" />
-                      Giảm giá tự động khi đăng ký kỳ hạn thuê dài từ 3, 6, 12 tháng
-                    </li>
-                  </ul>
-                </div>
-                <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-xs text-slate-500 font-medium">Tiết kiệm chi phí nhất</span>
-                  {renderCta('Xem ô kho Tiêu chuẩn', 'standard', 'secondary')}
-                </div>
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-xs text-slate-500">Kèm bảo vệ cơ bản 10tr</span>
+                {renderCta('Xem ô kho Tiêu chuẩn', 'standard', 'secondary')}
               </div>
             </div>
 
             {/* CARD 2: Kho Máy Lạnh */}
-            <div className="bg-white rounded-2xl border-2 border-[#57b29a] shadow-md flex flex-col overflow-hidden relative">
-              <div className="bg-[#57b29a] text-white text-center py-1.5 text-[11px] tracking-wide font-semibold">
-                Kiểm soát nhiệt độ 20°C – 25°C chống ẩm mốc 24/7
-              </div>
-              <div className="relative h-52 overflow-hidden bg-slate-100">
-                <img
-                  alt="Kho máy lạnh sạch sẽ kiểm soát nhiệt độ"
-                  className="w-full h-full object-cover"
-                  src="/assets/landing/unit-lanh.jpg"
-                />
-                <div className="absolute top-3 left-3">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-[#57b29a] text-white shadow-sm">
-                    <Thermometer className="w-3 h-3" />
-                    Kho Máy Lạnh
-                  </span>
+            <div className="bg-white rounded-2xl border-2 border-[#57b29a] p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between relative">
+              <div>
+                <div className="flex items-start justify-between gap-3 mb-4">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="w-11 h-11 rounded-xl bg-[#57b29a] flex items-center justify-center text-white shadow-xs shrink-0">
+                      <Thermometer className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-lg text-[#0a1614] leading-snug">
+                        Kho Máy Lạnh
+                      </h3>
+                      <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                        <span className="text-xs text-slate-500 whitespace-nowrap">
+                          5 cỡ XS – XL
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#f2f9f7] text-[#125449] border border-[#57b29a]/30 whitespace-nowrap">
+                          20°C – 25°C
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0 whitespace-nowrap">
+                    <span className="text-[11px] text-slate-400 block">Giá từ</span>
+                    <span className="font-bold text-base text-[#125449]">
+                      {formatVND(minClimatePrice)}
+                      <span className="text-xs font-normal text-slate-500">/tháng</span>
+                    </span>
+                  </div>
                 </div>
+
+                <p className="text-xs text-slate-600 mb-4 leading-relaxed">
+                  Dành cho mỹ phẩm, đồ gỗ quý, đồ da, nhạc cụ, thiết bị điện tử và hồ sơ nhạy cảm ẩm.
+                </p>
+
+                <ul className="space-y-2 text-xs text-slate-700 mb-6">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-[#57b29a] shrink-0" />
+                    Điều hòa duy trì 20°C – 25°C ngày đêm, chống ẩm mốc
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-[#57b29a] shrink-0" />
+                    Khóa mã PIN 6 số riêng tư, giám sát camera 24/7
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-[#57b29a] shrink-0" />
+                    Tùy chọn nâng cấp gói bảo vệ hàng hóa tới 50 triệu đồng
+                  </li>
+                </ul>
               </div>
 
-              <div className="p-6 flex-1 flex flex-col justify-between">
-                <div>
-                  <div className="flex justify-between items-baseline mb-2 gap-2">
-                    <h3 className="font-bold text-lg text-[#0a1614]">Kho Máy Lạnh</h3>
-                    <span className="text-xs font-semibold text-[#439782]">Kích thước 1m² – 15m²</span>
-                  </div>
-                  <p className="text-xs text-slate-600 mb-4 leading-relaxed">
-                    Dành riêng cho mỹ phẩm, dược phẩm, đồ gỗ cao cấp, đồ da, nhạc cụ, thiết bị điện tử và hồ sơ chứng từ nhạy cảm với độ ẩm.
-                  </p>
-                  <ul className="space-y-2.5 text-xs text-slate-700 mb-6">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-[#57b29a] shrink-0" />
-                      Điều hòa vận hành ổn định 20°C – 25°C, ngăn ngừa ẩm mốc hiệu quả
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-[#57b29a] shrink-0" />
-                      Sàn sạch chống bụi, vách cách nhiệt khép kín từng khu vực
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-[#57b29a] shrink-0" />
-                      Mã PIN 6 số riêng tư, an ninh camera giám sát hành lang 24/7
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-[#57b29a] shrink-0" />
-                      Tùy chọn gói bảo vệ hàng hóa mở rộng lên tới 50.000.000đ
-                    </li>
-                  </ul>
-                </div>
-                <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-xs text-[#439782] font-semibold">Bảo vệ đồ giá trị cao</span>
-                  {renderCta('Chọn kho Máy lạnh', 'climate', 'primary')}
-                </div>
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-xs text-[#439782] font-semibold">Bảo quản tối ưu</span>
+                {renderCta('Chọn kho Máy lạnh', 'climate', 'primary')}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Phần B: 3 Tình huống thực tế & An ninh vận hành */}
-        <div>
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8">
-            <div>
-              <span className="text-[#439782] text-xs font-bold uppercase tracking-wider block mb-1">
-                Giải pháp theo nhu cầu thực tế
-              </span>
-              <h3 className="text-xl sm:text-2xl font-bold text-[#0a1614] tracking-tight">
-                SmartStorage giúp ích thế nào cho bạn?
-              </h3>
+        {/* Phần B: 3 Tình huống gợi ý gọn nhẹ (Không nhồi ảnh công nghiệp) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl mx-auto">
+          <Link
+            to={buildUnitLink('standard', 'M')}
+            className="bg-white rounded-xl border border-slate-200 p-4 hover:border-[#57b29a] hover:shadow-sm transition-all flex items-center gap-3.5 group"
+          >
+            <div className="w-10 h-10 rounded-lg bg-[#f2f9f7] text-[#439782] flex items-center justify-center shrink-0">
+              <Home className="w-5 h-5" />
             </div>
-            <div className="inline-flex items-center gap-2 text-xs text-slate-600 mt-2 md:mt-0">
-              <Camera className="w-4 h-4 text-[#57b29a]" />
-              <span>Hỗ trợ xe đẩy hàng miễn phí &amp; camera an ninh tại mọi cơ sở</span>
+            <div className="min-w-0 flex-1">
+              <h4 className="font-bold text-xs sm:text-sm text-[#0a1614] group-hover:text-[#439782] transition-colors">
+                Chuyển &amp; sửa nhà
+              </h4>
+              <p className="text-[11px] text-slate-500 truncate">Sofa, nệm, tủ lạnh · Gợi ý Cỡ M</p>
             </div>
-          </div>
+            <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-[#57b29a] shrink-0" />
+          </Link>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-md transition-all flex flex-col justify-between">
-              <div>
-                <div className="h-44 overflow-hidden bg-slate-100">
-                  <img
-                    alt="Khách hàng sử dụng xe đẩy chuyển đồ vào kho khi dọn nhà"
-                    className="w-full h-full object-cover"
-                    src="/assets/landing/use-chuyen-nha.png"
-                  />
-                </div>
-                <div className="p-5">
-                  <span className="inline-block text-[11px] font-semibold text-[#439782] bg-[#f2f9f7] px-2.5 py-0.5 rounded-full mb-2">
-                    Gia đình &amp; Cá nhân
-                  </span>
-                  <h4 className="font-bold text-base text-[#0a1614] mb-1.5">
-                    Chuyển nhà &amp; Sửa chữa nhà ở
-                  </h4>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    Gửi trọn bộ sofa, giường nệm, thiết bị gia dụng trong thời gian thi công nội thất hoặc chờ nhận nhà mới.
-                  </p>
-                </div>
-              </div>
-              <div className="px-5 pb-5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className="text-slate-500">Gợi ý: Kho M (6m²)</span>
-                {renderCta('Chọn cỡ M', 'standard', 'secondary', 'M')}
-              </div>
+          <Link
+            to={buildUnitLink('standard', 'L')}
+            className="bg-white rounded-xl border border-slate-200 p-4 hover:border-[#57b29a] hover:shadow-sm transition-all flex items-center gap-3.5 group"
+          >
+            <div className="w-10 h-10 rounded-lg bg-[#f2f9f7] text-[#439782] flex items-center justify-center shrink-0">
+              <ShoppingBag className="w-5 h-5" />
             </div>
+            <div className="min-w-0 flex-1">
+              <h4 className="font-bold text-xs sm:text-sm text-[#0a1614] group-hover:text-[#439782] transition-colors">
+                Shop Online &amp; B2B
+              </h4>
+              <p className="text-[11px] text-slate-500 truncate">Hàng hóa, hồ sơ · Gợi ý Cỡ L</p>
+            </div>
+            <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-[#57b29a] shrink-0" />
+          </Link>
 
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-md transition-all flex flex-col justify-between">
-              <div>
-                <div className="h-44 overflow-hidden bg-slate-100">
-                  <img
-                    alt="Chủ shop sắp xếp thùng hàng hóa lên kệ trong ô kho"
-                    className="w-full h-full object-cover"
-                    src="/assets/landing/use-mua.png"
-                  />
-                </div>
-                <div className="p-5">
-                  <span className="inline-block text-[11px] font-semibold text-[#439782] bg-[#f2f9f7] px-2.5 py-0.5 rounded-full mb-2">
-                    Shop Online &amp; Doanh nghiệp
-                  </span>
-                  <h4 className="font-bold text-base text-[#0a1614] mb-1.5">
-                    Lưu trữ hàng hóa &amp; Hồ sơ
-                  </h4>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    Giảm chi phí thuê mặt bằng đắt đỏ nhờ kho trung tâm quận nội thành, dễ dàng sắp xếp kệ và xuất nhập hàng.
-                  </p>
-                </div>
-              </div>
-              <div className="px-5 pb-5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className="text-slate-500">Gợi ý: Kho L (10m²)</span>
-                {renderCta('Chọn cỡ L', 'standard', 'secondary', 'L')}
-              </div>
+          <Link
+            to={buildUnitLink('climate', 'S')}
+            className="bg-white rounded-xl border border-slate-200 p-4 hover:border-[#57b29a] hover:shadow-sm transition-all flex items-center gap-3.5 group"
+          >
+            <div className="w-10 h-10 rounded-lg bg-[#f2f9f7] text-[#439782] flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-5 h-5" />
             </div>
-
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-md transition-all flex flex-col justify-between">
-              <div>
-                <div className="h-44 overflow-hidden bg-slate-100">
-                  <img
-                    alt="Hệ thống camera an ninh giám sát 24/7 tại kho"
-                    className="w-full h-full object-cover"
-                    src="/assets/landing/camera.png"
-                  />
-                </div>
-                <div className="p-5">
-                  <span className="inline-block text-[11px] font-semibold text-[#439782] bg-[#f2f9f7] px-2.5 py-0.5 rounded-full mb-2">
-                    An tâm tuyệt đối
-                  </span>
-                  <h4 className="font-bold text-base text-[#0a1614] mb-1.5">
-                    Đồ nhạy cảm ẩm &amp; Tài sản quý
-                  </h4>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    Kho máy lạnh ổn định 20–25°C kết hợp camera giám sát 24/7 và gói bảo vệ tài sản lên tới 50 triệu đồng.
-                  </p>
-                </div>
-              </div>
-              <div className="px-5 pb-5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className="text-slate-500">Gợi ý: Kho Máy Lạnh</span>
-                {renderCta('Xem kho lạnh', 'climate', 'secondary', 'S')}
-              </div>
+            <div className="min-w-0 flex-1">
+              <h4 className="font-bold text-xs sm:text-sm text-[#0a1614] group-hover:text-[#439782] transition-colors">
+                Đồ giá trị, nhạy ẩm
+              </h4>
+              <p className="text-[11px] text-slate-500 truncate">Mỹ phẩm, máy ảnh · Kho Máy lạnh</p>
             </div>
-          </div>
+            <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-[#57b29a] shrink-0" />
+          </Link>
         </div>
       </div>
     </section>
   );
 };
-

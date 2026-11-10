@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, within } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { HomePage } from '../../pages/HomePage';
@@ -14,6 +14,14 @@ vi.mock('react-router-dom', async () => {
     useNavigate: () => mockNavigate,
   };
 });
+
+vi.mock('@/api/unit', () => ({
+  fetchUnitTypes: vi.fn().mockResolvedValue({ content: [] }),
+}));
+
+vi.mock('@/hooks/useActivePolicy', () => ({
+  useActivePolicy: () => null,
+}));
 
 vi.mock('../../hooks/useFacilityDirectory', () => ({
   useFacilityDirectory: () => ({
@@ -54,7 +62,7 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe('HomePage Redesign (Customer UX & Real Flow Verification)', () => {
+describe('HomePage Redesign (3D Sizing, Real Data & Section Order)', () => {
   it('mọi nút CTA đặt kho đều gắn kèm ?facility= hợp lệ, không bị đá ngược về trang chủ', () => {
     render(
       <MemoryRouter>
@@ -71,44 +79,98 @@ describe('HomePage Redesign (Customer UX & Real Flow Verification)', () => {
     }
   });
 
-  it('thẻ Ước lượng nhanh chuyển đổi kích thước XS..XL và cập nhật link đặt kho', () => {
-    render(
-      <MemoryRouter>
-        <HomePage />
-      </MemoryRouter>
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: /L\s*10 m²/i }));
-    const link = screen.getByRole('link', { name: /Tìm ô kho cỡ L \(10 m²\)/i });
-    expect(link).toHaveAttribute('href', '/customer/units?facility=1&size=L');
-  });
-
-  it('bộ lọc Hero kết nối thật: chọn Hà Nội + Máy lạnh + Vừa (6m²) điều hướng thẳng tới UnitPickerPage', () => {
+  it('sắp xếp đúng thứ tự: Hero -> Mạng lưới Chi nhánh (#branches) -> So sánh 2 dòng kho (#unit-types)', () => {
     const { container } = render(
       <MemoryRouter>
         <HomePage />
       </MemoryRouter>
     );
 
-    // Mở custom dropdown chọn Hà Nội
-    const trigger = container.querySelector('#city-dropdown-trigger');
-    expect(trigger).toBeInTheDocument();
-    if (trigger) fireEvent.click(trigger);
-    fireEvent.click(screen.getByRole('option', { name: /Hà Nội/i }));
+    const branchesSection = container.querySelector('#branches');
+    const unitTypesSection = container.querySelector('#unit-types');
+    expect(branchesSection).toBeInTheDocument();
+    expect(unitTypesSection).toBeInTheDocument();
 
-    // Chọn Máy lạnh & Vừa (6m²)
-    fireEvent.click(screen.getByRole('button', { name: 'Máy lạnh' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Vừa (6m²)' }));
-
-    // Bấm tìm kho trống
-    fireEvent.click(screen.getByRole('button', { name: 'Tìm kho trống' }));
-
-    expect(mockNavigate).toHaveBeenCalledWith(
-      '/customer/units?facility=1&storageType=climate&size=M'
-    );
+    if (branchesSection && unitTypesSection) {
+      const relation = branchesSection.compareDocumentPosition(unitTypesSection);
+      // DOCUMENT_POSITION_FOLLOWING = 4 -> unitTypesSection nằm SAU branchesSection
+      expect(relation & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
   });
 
-  it('mở modal chính sách từ Footer và không chứa thông tin ảo cũ', () => {
+  it('mô hình 3D ước lượng kích thước thật (V16) hỗ trợ nhiều cỡ thùng, nút Đặt lại làm trống kho 100% và bỏ thanh giá/CTA dưới card', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
+
+    const hero = container.querySelector('section') as HTMLElement;
+    expect(within(hero).queryByText(/Xe máy/i)).not.toBeInTheDocument();
+    expect(within(hero).queryByRole('link', { name: /Tìm ô kho cỡ/i })).not.toBeInTheDocument();
+
+    // Khi mới tải có bộ đồ mẫu đồng bộ với bộ đếm, bấm Đặt lại hàng hóa -> kho trống hoàn toàn (0 đồ)
+    fireEvent.click(within(hero).getByRole('button', { name: /Đặt lại hàng hóa/i }));
+    const emptySvg = within(hero).getByRole('img', { name: /Mô hình 3D kho cỡ M/i });
+    expect(emptySvg).toHaveAttribute('data-item-count', '0');
+    expect(within(hero).queryByText(/Lấp đầy ~/i)).not.toBeInTheDocument();
+
+    // Chuyển sang XL (3.0m x 5.0m x 3.0m) -> kiểm tra nhãn SVG vẫn trống
+    fireEvent.click(within(hero).getByRole('button', { name: /XL\s*15 m²/i }));
+    const xlSvg = within(hero).getByRole('img', {
+      name: /Mô hình 3D kho cỡ XL kích thước 5m x 3m x 3m/i,
+    });
+    expect(xlSvg).toHaveAttribute('data-item-count', '0');
+
+    // Chọn 3 cỡ thùng khác nhau S/M/L -> vừa gọn cỡ XS (1 m²)
+    fireEvent.click(within(hero).getByRole('button', { name: 'Tăng Thùng nhỏ (S)' }));
+    fireEvent.click(within(hero).getByRole('button', { name: 'Tăng Thùng vừa (M)' }));
+    fireEvent.click(within(hero).getByRole('button', { name: 'Tăng Thùng lớn (L)' }));
+    expect(within(hero).getByRole('button', { name: /XS\s*1 m²/i })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+
+    // Thêm Sofa & Tủ lạnh -> tự nâng lên S rồi M khi thêm đồ lớn
+    fireEvent.click(within(hero).getByRole('button', { name: 'Tăng Sofa / Nệm' }));
+    fireEvent.click(within(hero).getByRole('button', { name: 'Tăng Tủ lạnh / Giặt' }));
+    expect(within(hero).getByRole('button', { name: /S\s*3 m²/i })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+
+    fireEvent.click(within(hero).getByRole('button', { name: 'Tăng Sofa / Nệm' }));
+    expect(within(hero).getByRole('button', { name: /M\s*6 m²/i })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    expect(within(hero).getByText(/Lấp đầy ~/i)).toBeInTheDocument();
+  });
+
+  it('ô tìm kiếm chỉ giữ khu vực tìm kho nằm dưới tiêu đề Hệ thống chi nhánh (bỏ Loại kho và Kích thước dự kiến)', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
+
+    const branchesSection = container.querySelector('#branches') as HTMLElement;
+    const filterBar = container.querySelector('#filter-bar') as HTMLElement;
+    expect(branchesSection).toBeInTheDocument();
+    expect(filterBar).toBeInTheDocument();
+    expect(branchesSection.contains(filterBar)).toBe(true);
+    expect(within(filterBar).queryByText('Loại kho')).not.toBeInTheDocument();
+    expect(within(filterBar).queryByText('Kích thước dự kiến')).not.toBeInTheDocument();
+
+    const trigger = within(filterBar).getByRole('button', { name: /Tất cả thành phố/i });
+    fireEvent.click(trigger);
+    fireEvent.click(within(filterBar).getByRole('option', { name: /Hà Nội/i }));
+    fireEvent.click(within(filterBar).getByRole('button', { name: 'Tìm kho trống' }));
+
+    expect(mockNavigate).toHaveBeenCalledWith('/customer/units?facility=1');
+  });
+
+  it('mở modal chính sách từ Footer và lược bỏ các đoạn chữ/ảnh thừa theo yêu cầu', () => {
     const { container } = render(
       <MemoryRouter>
         <HomePage />
@@ -118,6 +180,12 @@ describe('HomePage Redesign (Customer UX & Real Flow Verification)', () => {
     expect(container.innerHTML).not.toContain('lh3.googleusercontent.com');
     expect(container.innerHTML).not.toContain('SMARTVN40');
     expect(container.innerHTML).not.toContain('1900 8899');
+    expect(container.innerHTML).not.toContain('/assets/landing/unit-lanh.jpg');
+    expect(container.innerHTML).not.toMatch(/xe máy/i);
+    expect(container.innerHTML).not.toContain('Chọn cỡ kho hoặc thêm đồ đạc để xem sức chứa thực');
+    expect(container.innerHTML).not.toContain(
+      'Dữ liệu chi nhánh, giá thuê và số lượng ô trống được cập nhật trực tiếp từ hệ thống.'
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Chính sách hủy & hoàn tiền cọc' }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();

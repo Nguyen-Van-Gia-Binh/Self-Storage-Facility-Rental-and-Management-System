@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, ChevronDown, MapPin, Check, Thermometer, Box } from 'lucide-react';
+import { Search, ChevronDown, MapPin, Check } from 'lucide-react';
 
 export interface HomeSearchBarProps {
   selectedCity: string;
@@ -7,29 +7,11 @@ export interface HomeSearchBarProps {
   availableCities: string[];
   cityFacilityCounts: Record<string, number>;
   totalFacilitiesCount: number;
-  selectedStorageType: string;
-  onSelectStorageType: (type: string) => void;
-  selectedSize: string;
-  onSelectSize: (size: string) => void;
   onSearchSubmit: () => void;
 }
 
-const STORAGE_TYPE_OPTIONS = [
-  { value: 'all', label: 'Tất cả' },
-  { value: 'standard', label: 'Tiêu chuẩn' },
-  { value: 'climate', label: 'Máy lạnh' },
-];
-
-const SIZE_OPTIONS = [
-  { value: 'all', label: 'Mọi size' },
-  { value: 'S', label: 'Nhỏ (1–3m²)' },
-  { value: 'M', label: 'Vừa (6m²)' },
-  { value: 'L', label: 'Lớn (10–15m²)' },
-];
-
 /**
- * Thanh tìm kiếm nhanh tại Hero: chọn Khu vực (Custom Dropdown chuẩn ARIA),
- * Loại kho và Kích thước mong muốn để chuyển ngay sang chọn ô kho phù hợp.
+ * Thanh tìm kiếm chi nhánh theo Khu vực / Thành phố (Custom Dropdown chuẩn ARIA).
  */
 export const HomeSearchBar: React.FC<HomeSearchBarProps> = ({
   selectedCity,
@@ -37,10 +19,6 @@ export const HomeSearchBar: React.FC<HomeSearchBarProps> = ({
   availableCities,
   cityFacilityCounts,
   totalFacilitiesCount,
-  selectedStorageType,
-  onSelectStorageType,
-  selectedSize,
-  onSelectSize,
   onSearchSubmit,
 }) => {
   const [isCityDropdownOpen, setIsCityDropdownOpen] = useState(false);
@@ -63,11 +41,11 @@ export const HomeSearchBar: React.FC<HomeSearchBarProps> = ({
         e.preventDefault();
         onSearchSubmit();
       }}
-      className="bg-white rounded-2xl p-4 sm:p-5 shadow-xl border border-slate-200/90"
+      className="bg-white rounded-2xl p-3.5 sm:p-4 shadow-sm border border-slate-200/90"
     >
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
-        {/* 1. Khu vực / Thành phố — Custom Dropdown */}
-        <div ref={cityDropdownRef} className="relative lg:col-span-3">
+      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
+        {/* Khu vực / Thành phố — Custom Dropdown */}
+        <div ref={cityDropdownRef} className="relative flex-1 min-w-0">
           <span className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 mb-1.5">
             <MapPin className="w-3.5 h-3.5 text-[#57b29a]" />
             Khu vực tìm kho
@@ -84,9 +62,7 @@ export const HomeSearchBar: React.FC<HomeSearchBarProps> = ({
                 : 'bg-[#f2f9f7]/60 border-slate-200 hover:border-[#57b29a]/50'
             }`}
           >
-            <span className="text-xs font-bold text-[#0a1614] truncate">
-              {selectedCity}
-            </span>
+            <span className="text-xs font-bold text-[#0a1614] truncate">{selectedCity}</span>
             <ChevronDown
               className={`w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 ${
                 isCityDropdownOpen ? 'rotate-180 text-[#57b29a]' : ''
@@ -124,9 +100,7 @@ export const HomeSearchBar: React.FC<HomeSearchBarProps> = ({
                   >
                     <span className="truncate">
                       {city}{' '}
-                      <span className="text-[11px] font-normal text-slate-400">
-                        ({count})
-                      </span>
+                      <span className="text-[11px] font-normal text-slate-400">({count})</span>
                     </span>
                     {isSelected && <Check className="w-3.5 h-3.5 text-[#57b29a] shrink-0" />}
                   </button>
@@ -136,70 +110,14 @@ export const HomeSearchBar: React.FC<HomeSearchBarProps> = ({
           )}
         </div>
 
-        {/* 2. Loại kho — Segmented Pills */}
-        <div className="lg:col-span-3">
-          <span className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 mb-1.5">
-            <Thermometer className="w-3.5 h-3.5 text-[#57b29a]" />
-            Loại kho
-          </span>
-          <div className="grid grid-cols-3 gap-1 p-1 bg-[#f2f9f7]/80 border border-slate-200 rounded-xl">
-            {STORAGE_TYPE_OPTIONS.map((opt) => {
-              const active = selectedStorageType === opt.value;
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => onSelectStorageType(opt.value)}
-                  className={`py-1.5 px-2 rounded-lg text-[11px] font-semibold transition-all cursor-pointer truncate ${
-                    active
-                      ? 'bg-white text-[#0a1614] shadow-xs border border-slate-200/80'
-                      : 'text-slate-500 hover:text-slate-800'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* 3. Nhu cầu kích thước — Segmented Pills */}
-        <div className="lg:col-span-4">
-          <span className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 mb-1.5">
-            <Box className="w-3.5 h-3.5 text-[#57b29a]" />
-            Kích thước dự kiến
-          </span>
-          <div className="grid grid-cols-4 gap-1 p-1 bg-[#f2f9f7]/80 border border-slate-200 rounded-xl">
-            {SIZE_OPTIONS.map((opt) => {
-              const active = selectedSize === opt.value;
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => onSelectSize(opt.value)}
-                  className={`py-1.5 px-1.5 rounded-lg text-[11px] font-semibold transition-all cursor-pointer truncate ${
-                    active
-                      ? 'bg-white text-[#0a1614] shadow-xs border border-slate-200/80'
-                      : 'text-slate-500 hover:text-slate-800'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* 4. CTA Search */}
-        <div className="lg:col-span-2">
-          <button
-            type="submit"
-            className="w-full py-2.5 px-4 rounded-xl bg-[#57b29a] hover:bg-[#439782] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.98] cursor-pointer"
-          >
-            <Search className="w-4 h-4" />
-            <span>Tìm kho trống</span>
-          </button>
-        </div>
+        {/* CTA Search */}
+        <button
+          type="submit"
+          className="sm:w-auto px-6 py-2.5 rounded-xl bg-[#57b29a] hover:bg-[#439782] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.98] cursor-pointer shrink-0 h-[38px]"
+        >
+          <Search className="w-4 h-4" />
+          <span>Tìm kho trống</span>
+        </button>
       </div>
     </form>
   );
