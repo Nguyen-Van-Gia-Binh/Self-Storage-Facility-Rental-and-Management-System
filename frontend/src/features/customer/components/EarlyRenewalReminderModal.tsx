@@ -6,12 +6,10 @@ import {
   Clock,
   Sparkles,
   ShieldCheck,
-  AlertTriangle,
   ArrowRight,
   X,
   Calendar,
   Box,
-  Tag,
 } from 'lucide-react';
 import type { RentedContract } from '../types';
 import { calculateDaysRemaining } from '../utils/renewalPricing';
@@ -29,7 +27,7 @@ export const EarlyRenewalReminderModal: React.FC<EarlyRenewalReminderModalProps>
   onClose,
   contract,
   noticeDays = 0,
-  reminderDays = [],
+  reminderDays: _reminderDays = [],
 }) => {
   const [isClosing, setIsClosing] = useState(false);
 
@@ -117,33 +115,19 @@ export const EarlyRenewalReminderModal: React.FC<EarlyRenewalReminderModalProps>
             </div>
           </div>
 
-          {/* Explanation Notice */}
-          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-start gap-2.5">
-            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Chính sách đang hiệu lực nhắc gia hạn trước ngày hết hạn <strong>{noticeDays} ngày</strong>
-              {reminderDays.length > 0 ? <>, các mốc nhắc là <strong>{reminderDays.join(', ')}</strong> ngày</> : null}
-              . Nút gia hạn vẫn dùng được khi ô kho chưa có người khác đặt trước.
-            </p>
-          </div>
-
           {/* Key Advantages */}
           <div className="space-y-2 pt-1">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
               Quyền lợi khi gia hạn ngay:
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-              <div className="flex items-center gap-2 p-2 rounded-lg bg-emerald-50 text-emerald-900 border border-emerald-100">
+              <div className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-50 text-emerald-900 border border-emerald-100">
                 <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span className="font-semibold">Giữ nguyên ngăn & mã PIN</span>
+                <span className="font-semibold">Giữ nguyên ô kho &amp; mã PIN</span>
               </div>
-              <div className="flex items-center gap-2 p-2 rounded-lg bg-sky-50 text-sky-900 border border-sky-100">
+              <div className="flex items-center gap-2 p-2.5 rounded-lg bg-sky-50 text-sky-900 border border-sky-100">
                 <ShieldCheck className="w-4 h-4 text-sky-600 shrink-0" />
                 <span className="font-semibold">Bảo lưu 100% tiền cọc</span>
-              </div>
-              <div className="flex items-center gap-2 p-2 rounded-lg bg-indigo-50 text-indigo-900 border border-indigo-100 col-span-1 sm:col-span-2">
-                <Tag className="w-4 h-4 text-indigo-600 shrink-0" />
-                <span>Chiết khấu <strong>5% (6 tháng)</strong> và <strong>10% (12 tháng)</strong></span>
               </div>
             </div>
           </div>
@@ -167,7 +151,7 @@ export const EarlyRenewalReminderModal: React.FC<EarlyRenewalReminderModalProps>
               disabled
               className="w-full sm:w-auto px-5 py-2.5 bg-slate-100 text-slate-400 font-bold text-xs cursor-not-allowed"
             >
-              <span>Đã qua mốc T-20 (Liên hệ Hotline: 1900-2026)</span>
+              <span>Đã hết hạn ưu tiên gia hạn — Liên hệ Hotline: 1900-2026</span>
             </Button>
           ) : (
             <Link

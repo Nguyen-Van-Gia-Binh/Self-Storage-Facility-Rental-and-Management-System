@@ -181,7 +181,6 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
     ? undefined
     : (effectiveDetail?.relocationSupportRequestId || contract.relocationSupportRequestId);
   const relocationCode = effectiveDetail?.relocationSupportRequestCode || contract.relocationSupportRequestCode || 'SUP-202610-0001';
-  const relocationReason = effectiveDetail?.relocationReason || contract.relocationReason || 'Di dời kho đạt chuẩn kỹ thuật theo sự cố hỗ trợ';
 
   return createPortal(
     <>
@@ -236,56 +235,97 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
             </div>
 
             <div className="space-y-4 text-xs relative z-10">
-              {/* 1. Banner Phụ lục điều chuyển ô kho do sự cố kỹ thuật (nếu đã điều chuyển xong) */}
-              {relocationId && (
-                <div className="p-4 rounded-xl bg-amber-50/90 border-2 border-amber-300 space-y-2 animate-in fade-in duration-200 shadow-xs">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-amber-900 font-extrabold text-xs uppercase tracking-wide">
-                      <ShieldCheck className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                      <span>PHỤ LỤC ĐIỀU CHUYỂN Ô KHO (SỰ CỐ KỸ THUẬT)</span>
+              {/* Chỉ hiển thị 1 banner trạng thái quan trọng nhất tại 1 thời điểm */}
+              {(effectiveStatus === 'TERMINATED' || isCancelledAtHandover) ? (
+                isOverdueTerminated ? (
+                  /* Trường hợp 3A: Quá hạn D+7 cưỡng chế chấm dứt & Niêm phong Kho Tổng */
+                  <div className="p-4 rounded-xl bg-purple-50 border-2 border-purple-300 space-y-2 animate-in fade-in duration-200 shadow-xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-purple-900 font-extrabold text-xs uppercase tracking-wide">
+                        <AlertTriangle className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                        <span>Biên bản chấm dứt hợp đồng &amp; niêm phong Kho Tổng</span>
+                      </div>
+                      <span className="text-[11px] font-mono font-bold bg-purple-200 text-purple-900 px-2 py-0.5 rounded">
+                        Niêm phong Kho Tổng (D+7)
+                      </span>
                     </div>
-                    <span className="text-[11px] font-mono font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded">
-                      {relocationCode}
-                    </span>
-                  </div>
-                  <p className="text-xs text-amber-900 leading-relaxed">
-                    Ô kho đã được Ban Quản lý cơ sở điều chuyển từ ô ban đầu sang <strong>Ô KHO MỚI: {effectiveUnitNumber}</strong> theo Phiếu xử lý sự cố số <strong>{relocationCode}</strong> ({relocationReason}).
-                  </p>
-                  <div className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                    <span>
-                      Bảo lưu toàn bộ quyền lợi khách hàng: Đơn giá thuê ({formatVND(detail?.monthlyPrice || contract.monthlyRent)}/tháng) và tiền cọc bảo đảm ban đầu ({formatVND(detail?.depositAmount || contract.depositHeld)}) được giữ nguyên vẹn.
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* 2. Banner Chờ phân bổ lại ô kho mới khi khách từ chối ô cũ và chọn Đổi ô kho */}
-              {(isRelocating || Boolean(contract.relocationEligible || detail?.relocationEligible)) && !relocationId && (
-                <div className="p-4 rounded-xl bg-amber-50/90 border-2 border-amber-300 space-y-2 animate-in fade-in duration-200 shadow-xs">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-amber-900 font-extrabold text-xs uppercase tracking-wide">
-                      <Clock className="w-4 h-4 text-amber-600 flex-shrink-0 animate-pulse" />
-                      <span>PHỤ LỤC TẠM HOÃN BÀN GIAO &amp; ĐANG BỐ TRÍ ĐỔI Ô KHO MỚI</span>
+                    <p className="text-xs text-purple-900 leading-relaxed">
+                      Hợp đồng đã quá hạn vượt mốc D+7 và bị chấm dứt. Toàn bộ tiền cọc bảo đảm ({formatVND(detail?.depositAmount || contract.depositHeld || 2500000)}) đã được khấu trừ để bù đắp phí quá hạn (55% cọc) và chi phí kiểm kê, niêm phong tài sản về Kho Tổng (45% cọc).
+                    </p>
+                    <div className="text-[11px] font-semibold text-purple-900 bg-purple-100/70 px-3 py-1.5 rounded-lg border border-purple-200 flex items-center gap-1.5">
+                      <AlertTriangle className="w-4 h-4 text-purple-700 flex-shrink-0" />
+                      <span>
+                        Quý khách có 30 ngày để liên hệ Quản lý cơ sở thanh toán phụ phí phát sinh và nhận lại tài sản tại Kho Tổng. Sau 30 ngày, tài sản sẽ được thanh lý theo quy định hợp đồng.
+                      </span>
                     </div>
-                    <span className="text-[11px] font-mono font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded">
-                      Chờ cấp ô mới
+                  </div>
+                ) : isHandoverRejected ? (
+                  /* Trường hợp 3B: Từ chối nhận kho tại chỗ -> Hủy & Hoàn 100% */
+                  <div className="p-4 rounded-xl bg-rose-50 border-2 border-rose-300 space-y-2 animate-in fade-in duration-200 shadow-xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-rose-900 font-extrabold text-xs uppercase tracking-wide">
+                        <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                        <span>Biên bản từ chối bàn giao &amp; hoàn tiền 100%</span>
+                      </div>
+                      <span className="text-[11px] font-mono font-bold bg-rose-200 text-rose-900 px-2 py-0.5 rounded">
+                        Hoàn tiền 100%
+                      </span>
+                    </div>
+                    <p className="text-xs text-rose-900 leading-relaxed">
+                      Do phát sinh khiếm khuyết tại hiện trường (<strong>{contract.rejectionReason || 'Ô kho bị ẩm ướt / có dấu hiệu thấm dột từ trần kho'}</strong>), khách hàng đã <strong>từ chối nhận bàn giao</strong> và yêu cầu chấm dứt hợp đồng. Hoàn trả 100% tiền cọc ({formatVND(detail?.depositAmount || contract.depositHeld)}) và tiền thuê đã đóng ({formatVND(detail?.monthlyPrice || contract.monthlyRent)}).
+                    </p>
+                  </div>
+                ) : (!isStorageUnitAssigned(contract.unitNumber) || contract.unitNumber === 'Chưa gán ô kho' || contract.contractNumber?.includes('NO-UNIT')) ? (
+                  /* Trường hợp 3C: Chưa gán kho mà đã hủy */
+                  <div className="p-4 rounded-xl bg-orange-50 border-2 border-orange-300 space-y-2 animate-in fade-in duration-200 shadow-xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-orange-900 font-extrabold text-xs uppercase tracking-wide">
+                        <AlertTriangle className="w-4 h-4 text-orange-600 flex-shrink-0" />
+                        <span>Biên bản hủy đặt chỗ kho</span>
+                      </div>
+                      <span className="text-[11px] font-mono font-bold bg-orange-200 text-orange-950 px-2 py-0.5 rounded">
+                        Hoàn cọc 100%
+                      </span>
+                    </div>
+                    <p className="text-xs text-orange-900 leading-relaxed">
+                      Khách hàng đã hủy giao dịch trước khi phân bổ ô kho vật lý. Số tiền cọc {formatVND(detail?.depositAmount || contract.depositHeld)} được hoàn trả đầy đủ.
+                    </p>
+                  </div>
+                ) : (
+                  /* Trường hợp 3D: Đã gán ô nhưng hủy trước nhận kho (giải phóng ô) */
+                  <div className="p-4 rounded-xl bg-rose-50 border-2 border-rose-300 space-y-2 animate-in fade-in duration-200 shadow-xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-rose-900 font-extrabold text-xs uppercase tracking-wide">
+                        <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                        <span>Biên bản hủy giữ chỗ &amp; giải phóng ô kho</span>
+                      </div>
+                      <span className="text-[11px] font-mono font-bold bg-rose-200 text-rose-900 px-2 py-0.5 rounded">
+                        Đã giải phóng ô kho
+                      </span>
+                    </div>
+                    <p className="text-xs text-rose-900 leading-relaxed">
+                      Khách hàng đã hủy đơn trước ngày nhận kho. Ô kho <strong>{effectiveUnitNumber}</strong> đã được trả về trạng thái trống và tiền cọc được quyết toán theo chính sách hợp đồng.
+                    </p>
+                  </div>
+                )
+              ) : isClosed ? (
+                /* Banner Hợp đồng đã hoàn tất & tất toán */
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5 animate-in fade-in duration-200 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-slate-800 font-extrabold text-xs uppercase tracking-wide">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                      <span>Hợp đồng đã kết thúc &amp; hoàn tất tất toán</span>
+                    </div>
+                    <span className="text-[11px] font-mono font-bold bg-slate-200/80 text-slate-700 px-2 py-0.5 rounded">
+                      Đã tất toán
                     </span>
                   </div>
-                  <p className="text-xs text-amber-900 leading-relaxed">
-                    Khách hàng đã kiểm tra thực tế và phát hiện sự cố tại ô kho ban đầu ({effectiveDetail?.rejectionReason || contract.rejectionReason || 'Cửa cuốn / khóa cơ bị kẹt, hư hỏng không vận hành được'}). Khách hàng đã chọn <strong>Đổi sang ô kho khác cùng loại</strong>. Quản lý cơ sở (FM) đang điều phối và cấp ô kho mới trên sơ đồ 2D cho quý khách.
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Hợp đồng đã hoàn thành chu kỳ thuê, nghiệm thu và quyết toán toàn bộ nghĩa vụ tài chính.
                   </p>
-                  <div className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                    <span>
-                      Bảo lưu 100% quyền lợi: Đơn giá thuê ({formatVND(detail?.monthlyPrice || contract.monthlyRent)}/tháng) và tiền cọc đã thanh toán ({formatVND(detail?.depositAmount || contract.depositHeld)}) được giữ nguyên 100%.
-                    </span>
-                  </div>
                 </div>
-              )}
-
-              {/* Banner Hợp đồng đang báo trả kho & chờ nghiệm thu */}
-              {effectiveStatus === 'PENDING_RETURN' && (
+              ) : effectiveStatus === 'PENDING_RETURN' ? (
+                /* Banner Hợp đồng đang báo trả kho & chờ nghiệm thu */
                 <div className="p-4 rounded-xl bg-indigo-50/90 border-2 border-indigo-200 space-y-2 animate-in fade-in duration-200 shadow-xs">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-indigo-900 font-extrabold text-xs uppercase tracking-wide">
@@ -301,115 +341,42 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                     </span>
                   </div>
                   <p className="text-xs text-indigo-900 leading-relaxed">
-                    Hợp đồng đã gửi thông báo trả kho và đang trong quy trình kiểm tra thực địa, đối soát chi phí và hoàn trả tiền cọc bảo đảm.
+                    Ô kho của bạn đang trong quy trình nghiệm thu.
                   </p>
                 </div>
-              )}
-
-              {/* 3. Banner Hợp đồng TERMINATED (4 trường hợp phân hóa chuẩn xác) */}
-              {(effectiveStatus === 'TERMINATED' || isCancelledAtHandover) && (
-                isOverdueTerminated ? (
-                  /* Trường hợp 3A: Quá hạn D+7 cưỡng chế chấm dứt & Niêm phong Kho Tổng (BR-OVD-07, BR-OVD-11) */
-                  <div className="p-4 rounded-xl bg-purple-50 border-2 border-purple-300 space-y-2 animate-in fade-in duration-200 shadow-xs">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-purple-900 font-extrabold text-xs uppercase tracking-wide">
-                        <AlertTriangle className="w-4 h-4 text-purple-600 flex-shrink-0" />
-                        <span>BIÊN BẢN CƯỠNG CHẾ CHẤM DỨT &amp; NIÊM PHONG VỀ KHO TỔNG (BR-OVD-07)</span>
-                      </div>
-                      <span className="text-[11px] font-mono font-bold bg-purple-200 text-purple-900 px-2 py-0.5 rounded">
-                        Niêm phong Kho Tổng (D+7)
-                      </span>
-                    </div>
-                    <p className="text-xs text-purple-900 leading-relaxed">
-                      Hợp đồng đã quá hạn vượt mốc D+7 và bị cưỡng chế chấm dứt. Toàn bộ tiền cọc bảo đảm ({formatVND(detail?.depositAmount || contract.depositHeld || 2500000)}) đã được khấu trừ để bù đắp phí quá hạn (55% cọc) và chi phí xử lý kiểm kê, niêm phong tài sản về Kho Tổng (45% cọc).
-                    </p>
-                    <div className="text-[11px] font-semibold text-purple-900 bg-purple-100/70 px-3 py-1.5 rounded-lg border border-purple-200 flex items-center gap-1.5">
-                      <AlertTriangle className="w-4 h-4 text-purple-700 flex-shrink-0" />
-                      <span>
-                        Quy chế xử lý tài sản (BR-OVD-11): Quý khách có 30 ngày để liên hệ Quản lý cơ sở thanh toán phụ phí phát sinh và làm thủ tục nhận lại tài sản tại Kho Tổng. Sau 30 ngày, tài sản sẽ được thanh lý ngoại tuyến theo hợp đồng.
-                      </span>
-                    </div>
-                  </div>
-                ) : isHandoverRejected ? (
-                  /* Trường hợp 3B: Từ chối nhận kho tại chỗ -> Hủy & Hoàn 100% */
-                  <div className="p-4 rounded-xl bg-rose-50 border-2 border-rose-300 space-y-2 animate-in fade-in duration-200 shadow-xs">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-rose-900 font-extrabold text-xs uppercase tracking-wide">
-                        <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
-                        <span>BIÊN BẢN TỪ CHỐI BÀN GIAO TẠI HIỆN TRƯỜNG &amp; HOÀN TIỀN 100% (BR-CHK-02)</span>
-                      </div>
-                      <span className="text-[11px] font-mono font-bold bg-rose-200 text-rose-900 px-2 py-0.5 rounded">
-                        Hoàn tiền 100%
-                      </span>
-                    </div>
-                    <p className="text-xs text-rose-900 leading-relaxed">
-                      Tại buổi bàn giao, khách hàng và nhân viên cơ sở đã tiến hành đối soát 4 tiêu chí nghiệm thu vật lý. Do phát sinh khiếm khuyết vật lý tại hiện trường (<strong>{contract.rejectionReason || 'Ô kho bị ẩm ướt / có dấu hiệu thấm dột từ trần kho'}</strong>), khách hàng đã <strong>từ chối nhận bàn giao</strong> và yêu cầu chấm dứt hợp đồng.
-                    </p>
-                    <div className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                      <span>
-                        Quyết toán bồi hoàn: Hoàn trả 100% tiền cọc ({formatVND(detail?.depositAmount || contract.depositHeld)}) và 100% tiền thuê đã trả trước ({formatVND(detail?.monthlyPrice || contract.monthlyRent)}) về tài khoản ngân hàng của khách hàng.
-                      </span>
-                    </div>
-                  </div>
-                ) : (!isStorageUnitAssigned(contract.unitNumber) || contract.unitNumber === 'Chưa gán ô kho' || contract.contractNumber?.includes('NO-UNIT')) ? (
-                  /* Trường hợp 3C: Chưa gán kho mà đã hủy */
-                  <div className="p-4 rounded-xl bg-orange-50 border-2 border-orange-300 space-y-2 animate-in fade-in duration-200 shadow-xs">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-orange-900 font-extrabold text-xs uppercase tracking-wide">
-                        <AlertTriangle className="w-4 h-4 text-orange-600 flex-shrink-0" />
-                        <span>BIÊN BẢN HỦY ĐẶT CHỖ KHO (CHƯA PHÂN BỔ Ô VẬT LÝ)</span>
-                      </div>
-                      <span className="text-[11px] font-mono font-bold bg-orange-200 text-orange-950 px-2 py-0.5 rounded">
-                        Hoàn cọc 100%
-                      </span>
-                    </div>
-                    <p className="text-xs text-orange-900 leading-relaxed">
-                      Khách hàng đã hủy giao dịch trước khi cơ sở phân bổ ô kho vật lý cụ thể. Hợp đồng đặt trước được chấm dứt hiệu lực theo thỏa thuận tự nguyện giữa hai bên.
-                    </p>
-                    <div className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                      <span>
-                        Hoàn cọc 100%: Số tiền cọc bảo đảm {formatVND(detail?.depositAmount || contract.depositHeld)} đã được hoàn trả đầy đủ cho khách hàng.
-                      </span>
-                    </div>
-                  </div>
-                ) : (
-                  /* Trường hợp 3C: Đã gán ô nhưng hủy trước nhận kho (giải phóng ô) */
-                  <div className="p-4 rounded-xl bg-rose-50 border-2 border-rose-300 space-y-2 animate-in fade-in duration-200 shadow-xs">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-rose-900 font-extrabold text-xs uppercase tracking-wide">
-                        <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
-                        <span>BIÊN BẢN HỦY GIỮ CHỖ &amp; GIẢI PHÓNG Ô KHO VẬT LÝ</span>
-                      </div>
-                      <span className="text-[11px] font-mono font-bold bg-rose-200 text-rose-900 px-2 py-0.5 rounded">
-                        Đã giải phóng ô kho
-                      </span>
-                    </div>
-                    <p className="text-xs text-rose-900 leading-relaxed">
-                      Khách hàng đã thông báo hủy đơn trước ngày nhận kho. Ô kho <strong>{effectiveUnitNumber}</strong> đã được hoàn trả ngay lập tức về trạng thái Trống (AVAILABLE) trên sơ đồ cơ sở để phục vụ khách hàng khác. Tiền cọc đã được quyết toán theo chính sách hợp đồng.
-                    </p>
-                  </div>
-                )
-              )}
-
-              {/* Banner Hợp đồng đã hoàn tất & tất toán */}
-              {isClosed && (
-                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5 animate-in fade-in duration-200 shadow-xs">
+              ) : (isRelocating || Boolean(contract.relocationEligible || detail?.relocationEligible)) && !relocationId ? (
+                /* Banner Chờ phân bổ lại ô kho mới khi khách từ chối ô cũ và chọn Đổi ô kho */
+                <div className="p-4 rounded-xl bg-amber-50/90 border-2 border-amber-300 space-y-2 animate-in fade-in duration-200 shadow-xs">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-slate-800 font-extrabold text-xs uppercase tracking-wide">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                      <span>HỢP ĐỒNG ĐÃ KẾT THÚC & HOÀN TẤT TẤT TOÁN</span>
+                    <div className="flex items-center gap-2 text-amber-900 font-extrabold text-xs uppercase tracking-wide">
+                      <Clock className="w-4 h-4 text-amber-600 flex-shrink-0 animate-pulse" />
+                      <span>ĐANG BỐ TRÍ ĐỔI Ô KHO MỚI</span>
                     </div>
-                    <span className="text-[11px] font-mono font-bold bg-slate-200/80 text-slate-700 px-2 py-0.5 rounded">
-                      Đã tất toán
+                    <span className="text-[11px] font-mono font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded">
+                      Chờ cấp ô mới
                     </span>
                   </div>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    Hợp đồng đã hoàn thành chu kỳ thuê, hoàn tất biên bản bàn giao nghiệm thu và quyết toán toàn bộ các nghĩa vụ tài chính theo quy định.
+                  <p className="text-xs text-amber-900 leading-relaxed">
+                    Quản lý cơ sở đang điều phối và cấp ô kho mới cho quý khách ({effectiveDetail?.rejectionReason || contract.rejectionReason || 'Sự cố kỹ thuật tại ô ban đầu'}).
                   </p>
                 </div>
-              )}
+              ) : relocationId ? (
+                /* Banner Phụ lục điều chuyển ô kho do sự cố kỹ thuật (nếu đã điều chuyển xong) */
+                <div className="p-4 rounded-xl bg-amber-50/90 border-2 border-amber-300 space-y-2 animate-in fade-in duration-200 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-amber-900 font-extrabold text-xs uppercase tracking-wide">
+                      <ShieldCheck className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                      <span>PHỤ LỤC ĐIỀU CHUYỂN Ô KHO (SỰ CỐ KỸ THUẬT)</span>
+                    </div>
+                    <span className="text-[11px] font-mono font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded">
+                      {relocationCode}
+                    </span>
+                  </div>
+                  <p className="text-xs text-amber-900 leading-relaxed">
+                    Ô kho đã được Ban Quản lý cơ sở điều chuyển từ ô ban đầu sang <strong>Ô KHO MỚI: {effectiveUnitNumber}</strong>.
+                  </p>
+                </div>
+              ) : null}
 
               {/* Điều 1: Các bên tham gia hợp đồng */}
               <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
@@ -547,28 +514,16 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                   )}
                 </div>
 
-                {isPendingCheckin && (
-                  isRelocating ? (
-                    <div className="p-3 bg-amber-50/70 rounded-lg border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5">
-                      <Clock className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5 animate-pulse" />
-                      <div className="space-y-1">
-                        <p className="font-semibold text-amber-900">Đang điều phối đổi ô kho tại chỗ</p>
-                        <p className="text-[11px] text-amber-800 leading-relaxed">
-                          Ô kho ban đầu phát sinh sự cố kỹ thuật lúc tiếp đón. Nhân viên lễ tân đang liên hệ Quản lý cơ sở để bố trí đổi sang ô kho đạt chuẩn khác cùng loại cho quý khách.
-                        </p>
-                      </div>
+                {isPendingCheckin && !isRelocating && (
+                  <div className="p-3 bg-amber-50/70 rounded-lg border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5">
+                    <Clock className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <p className="font-semibold text-amber-900">Ô kho đang ở trạng thái Chờ nhận kho</p>
+                      <p className="text-[11px] text-amber-800 leading-relaxed">
+                        Quý khách vui lòng xuất trình CCCD và thẻ nhận kho điện tử tại quầy lễ tân cơ sở để đồng kiểm 4 tiêu chí nghiệm thu thực địa.
+                      </p>
                     </div>
-                  ) : (
-                    <div className="p-3 bg-amber-50/70 rounded-lg border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5">
-                      <Clock className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                      <div className="space-y-1">
-                        <p className="font-semibold text-amber-900">Ô kho đang ở trạng thái Chờ nhận kho</p>
-                        <p className="text-[11px] text-amber-800 leading-relaxed">
-                          Quý khách vui lòng xuất trình CCCD và thẻ nhận kho điện tử tại quầy lễ tân cơ sở. Nhân viên trực sẽ hướng dẫn kiểm tra 4 tiêu chí nghiệm thu thực địa và cùng quý khách xác nhận bàn giao.
-                        </p>
-                      </div>
-                    </div>
-                  )
+                  </div>
                 )}
 
                 <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-2 text-[11px]">
@@ -611,24 +566,14 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                         </div>
                       </div>
                     ) : isCancelledAtHandover ? (
-                      <div className="p-3 bg-rose-50/70 border border-rose-200 rounded-lg text-rose-900 text-xs flex items-start gap-2">
-                        <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-                        <div>
-                          <p className="font-bold text-rose-800">Biên bản ghi nhận sự cố bàn giao tại hiện trường:</p>
-                          <p className="text-[11px] text-rose-700 mt-0.5 leading-relaxed">
-                            Ô kho không đạt chuẩn nghiệm thu do phát sinh khiếm khuyết vật lý / sự cố kỹ thuật. Hợp đồng đã dừng thủ tục nhận kho để xử lý hoàn cọc và tiền thuê cho quý khách.
-                          </p>
-                        </div>
+                      <div className="p-2.5 bg-rose-50/70 border border-rose-200 rounded-lg text-rose-800 text-[11px] font-semibold flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                        <span>Biên bản tạm dừng nhận kho do sự cố tại hiện trường.</span>
                       </div>
                     ) : isRelocating ? (
-                      <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-lg text-amber-900 text-xs flex items-start gap-2">
-                        <Clock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5 animate-pulse" />
-                        <div>
-                          <p className="font-bold text-amber-800">Đang điều phối đổi ô kho tại chỗ:</p>
-                          <p className="text-[11px] text-amber-700 mt-0.5 leading-relaxed">
-                            Phát hiện sự cố kỹ thuật tại ô kho ban đầu. Nhân viên tiếp đón đang phối hợp Quản lý cơ sở để đổi sang ô kho đạt chuẩn khác cùng loại cho quý khách.
-                          </p>
-                        </div>
+                      <div className="p-2.5 bg-amber-50/70 border border-amber-200 rounded-lg text-amber-800 text-[11px] font-semibold flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-amber-600 shrink-0 animate-pulse" />
+                        <span>Đang điều phối đổi sang ô kho đạt chuẩn khác cùng loại.</span>
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-slate-600 font-medium">
@@ -807,7 +752,7 @@ export const ContractDetailModal: React.FC<ContractDetailModalProps> = ({
                 }}
                 title={
                   (effectiveDetail?.rescheduleCount ?? contract.rescheduleCount ?? 0) >= 1
-                    ? 'Mỗi hợp đồng chỉ được phép dời lịch nhận kho tối đa 1 lần duy nhất (BR-RES-06)'
+                    ? 'Mỗi hợp đồng chỉ được phép dời lịch nhận kho tối đa 1 lần duy nhất'
                     : 'Yêu cầu dời ngày bắt đầu nhận kho'
                 }
                 className={`flex items-center gap-1.5 px-3 text-xs font-semibold ${

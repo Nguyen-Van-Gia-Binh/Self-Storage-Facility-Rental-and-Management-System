@@ -13,7 +13,8 @@ import {
 import { Logo } from '@/components/ui/Logo';
 import { loginUser, loginWithGoogle, getPortalUrlByRole } from '@/api/auth';
 import type { UserRoleType } from '@/api/user';
-import authHeroImg from '@/assets/images/auth-hero-3d.jpg';
+import { SmartStorageHeroCard } from '../components/SmartStorageHeroCard';
+import { DemoQuickLoginBar } from '../components/DemoQuickLoginBar';
 
 declare global {
   interface Window {
@@ -146,7 +147,7 @@ export const LoginPage: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-[#f2f9f7] text-slate-900">
       {/* CỘT TRÁI: Hero Showcase (Ẩn trên màn hình rất nhỏ, hiện từ lg trở lên) */}
-      <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 overflow-hidden bg-gradient-to-br from-[#125449] via-[#1c6e60] to-[#11473e] border-r border-teal-600/30">
+      <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-8 xl:p-11 overflow-hidden bg-gradient-to-br from-[#125449] via-[#1c6e60] to-[#11473e] border-r border-teal-600/30">
         {/* Decorative Glow Elements - Ánh sáng Aurora tươi tắn, rạng rỡ */}
         <div className="absolute -top-24 -left-24 w-[420px] h-[420px] bg-brand-300/40 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-[420px] h-[420px] bg-teal-200/35 rounded-full blur-3xl pointer-events-none" />
@@ -164,7 +165,7 @@ export const LoginPage: React.FC = () => {
         </div>
 
         {/* Center Content: Slogan & 3D SmartStorage Visual Asset */}
-        <div className="relative z-10 my-auto py-6 space-y-6 max-w-lg">
+        <div className="relative z-10 my-auto py-3 space-y-4 max-w-md">
           <div className="space-y-3">
             <h1 className="text-3xl sm:text-4xl font-extrabold text-white leading-tight tracking-tight">
               An toàn lưu trữ, <br />
@@ -177,24 +178,8 @@ export const LoginPage: React.FC = () => {
             </p>
           </div>
 
-          {/* 3D Visual Asset Card: Mô hình SmartStorage bo góc gọn gàng */}
-          <div className="relative rounded-2xl overflow-hidden border border-white/25 bg-white/10 shadow-2xl backdrop-blur-md group">
-            <img
-              src={authHeroImg}
-              alt="Mô hình dịch vụ kho tự quản SmartStorage"
-              className="w-full h-44 sm:h-52 object-cover object-center group-hover:scale-[1.02] transition-transform duration-500"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0e3f37]/85 via-transparent to-transparent pointer-events-none" />
-            <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-xs text-white">
-              <span className="font-semibold flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/20 text-[11px]">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
-                Cơ sở mở cửa 24/7
-              </span>
-              <span className="text-[11px] text-teal-100 bg-teal-900/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-teal-400/30 font-medium">
-                Hệ thống Smart Lock
-              </span>
-            </div>
-          </div>
+          {/* 3D Visual Asset Card: Mô hình SmartStorage chuyển động mượt 60fps */}
+          <SmartStorageHeroCard />
 
           {/* 3 Compact Feature Highlights */}
           <div className="grid grid-cols-3 gap-2.5">
@@ -227,8 +212,8 @@ export const LoginPage: React.FC = () => {
       </div>
 
       {/* CỘT PHẢI: Form Đăng Nhập */}
-      <div className="flex-1 flex flex-col justify-center items-center p-6 sm:p-12 lg:p-16 bg-[#f2f9f7] lg:bg-white relative">
-        <div className="w-full max-w-md space-y-7">
+      <div className="flex-1 flex flex-col justify-center items-center p-6 sm:p-10 lg:p-12 bg-[#f2f9f7] lg:bg-white relative">
+        <div className="w-full max-w-md space-y-5">
           {/* Mobile Header */}
           <div className="lg:hidden mb-4">
             <Logo 
@@ -239,14 +224,21 @@ export const LoginPage: React.FC = () => {
           </div>
 
           {/* Form Header */}
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
               Đăng nhập tài khoản
             </h2>
-            <p className="text-xs sm:text-sm text-slate-500">
-              Nhập email và mật khẩu của bạn để truy cập vào cổng làm việc.
-            </p>
           </div>
+
+          {/* Thanh điền nhanh 5 vai trò phục vụ Demo */}
+          <DemoQuickLoginBar
+            selectedEmail={email}
+            onSelectAccount={(demoEmail, demoPassword) => {
+              setEmail(demoEmail);
+              setPassword(demoPassword);
+              setErrorMsg(null);
+            }}
+          />
 
           {/* Error / Success Alerts */}
           {errorMsg && (

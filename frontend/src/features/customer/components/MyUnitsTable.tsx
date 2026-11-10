@@ -780,7 +780,7 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                                       }}
                                       title={
                                         (contract.rescheduleCount ?? 0) >= 1
-                                          ? 'Mỗi hợp đồng chỉ được phép dời lịch nhận kho tối đa 1 lần duy nhất (BR-RES-06)'
+                                          ? 'Mỗi hợp đồng chỉ được phép dời lịch nhận kho tối đa 1 lần duy nhất'
                                           : 'Dời ngày nhận kho'
                                       }
                                       className={`w-full flex items-center gap-2 px-3 py-1.5 text-left transition-colors font-medium ${
@@ -796,18 +796,22 @@ export const MyUnitsTable: React.FC<MyUnitsTableProps> = ({
                                           : 'Dời ngày nhận kho'}
                                       </span>
                                     </button>
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setOpenMenuId(null);
-                                        onCancelPendingCheckIn(contract);
-                                      }}
-                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-rose-50 text-rose-600 transition-colors cursor-pointer font-medium"
-                                    >
-                                      <X className="w-3.5 h-3.5 text-rose-500" />
-                                      <span>Hủy nhận kho</span>
-                                    </button>
+                                    {(!contract.startDate ||
+                                      new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }) <=
+                                        contract.startDate.slice(0, 10)) && (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setOpenMenuId(null);
+                                          onCancelPendingCheckIn(contract);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-rose-50 text-rose-600 transition-colors cursor-pointer font-medium"
+                                      >
+                                        <X className="w-3.5 h-3.5 text-rose-500" />
+                                        <span>Hủy nhận kho</span>
+                                      </button>
+                                    )}
                                   </div>
                                 )}
 

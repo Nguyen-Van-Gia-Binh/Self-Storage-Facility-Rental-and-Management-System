@@ -257,10 +257,10 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
         <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
           <div>
             <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
-              <span>Gửi Yêu Cầu Trợ Giúp & Hỗ Trợ Kỹ Thuật</span>
+              <span>Gửi Yêu Cầu Hỗ Trợ Kỹ Thuật</span>
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Đội ngũ kỹ thuật và nhân viên trực cơ sở sẽ hỗ trợ bạn kịp thời
+              Đội ngũ kỹ thuật và nhân viên cơ sở sẽ hỗ trợ bạn kịp thời
             </p>
           </div>
           <button
@@ -281,10 +281,10 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
             </div>
           )}
 
-          {/* 1. Chọn ô kho / hợp đồng */}
+          {/* Chọn ô kho / hợp đồng */}
           <div>
             <label className="block text-xs font-bold text-slate-800 uppercase tracking-wide mb-1.5">
-              1. Chọn ô kho đang thuê liên quan <span className="text-rose-500">*</span>
+              Chọn ô kho đang thuê liên quan <span className="text-rose-500">*</span>
             </label>
             {activeRentals.length > 0 ? (
               <select
@@ -306,10 +306,10 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
             )}
           </div>
 
-          {/* 2. Chọn loại sự cố */}
+          {/* Chọn loại sự cố */}
           <div>
             <label className="block text-xs font-bold text-slate-800 uppercase tracking-wide mb-2">
-              2. Vấn đề bạn cần hỗ trợ <span className="text-rose-500">*</span>
+              Vấn đề bạn cần hỗ trợ <span className="text-rose-500">*</span>
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {CATEGORIES.map((cat) => {
@@ -319,7 +319,7 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
                   <div
                     key={cat.key}
                     onClick={() => handleSelectCategory(cat.key)}
-                    className={`p-3 rounded-xl border cursor-pointer transition-all flex items-start gap-3 ${
+                    className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-3 ${
                       isSelected
                         ? 'border-brand-500 bg-brand-50/40 ring-1 ring-brand-400'
                         : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
@@ -328,39 +328,33 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
                     <div className={`p-2 rounded-lg shrink-0 ${isSelected ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
                       <Icon className="w-4 h-4" />
                     </div>
-                    <div>
-                      <h4 className={`text-xs font-bold ${isSelected ? 'text-brand-900' : 'text-slate-800'}`}>
-                        {cat.label}
-                      </h4>
-                      <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                        {cat.desc}
-                      </p>
-                    </div>
+                    <h4 className={`text-xs font-bold ${isSelected ? 'text-brand-900' : 'text-slate-800'}`}>
+                      {cat.label}
+                    </h4>
                   </div>
                 );
               })}
             </div>
           </div>
 
-          {/* 3. Tiêu đề tóm tắt */}
+          {/* Tiêu đề tóm tắt */}
           <div>
             <label className="block text-xs font-bold text-slate-800 uppercase tracking-wide mb-1.5">
-              3. Tiêu đề ngắn gọn (Tùy chọn)
+              Tiêu đề ngắn gọn (Tùy chọn)
             </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ví dụ: Kẹt khóa điện tử ô A-108, Đèn trần bị chập..."
               className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
-          {/* 4. Chi tiết sự cố */}
+          {/* Chi tiết sự cố */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
-                4. Mô tả chi tiết vấn đề <span className="text-rose-500">*</span>
+                Mô tả chi tiết vấn đề <span className="text-rose-500">*</span>
               </label>
               <span className={`text-[11px] ${description.length < 10 ? 'text-rose-500' : 'text-slate-400'}`}>
                 {description.length} / 1000 ký tự (tối thiểu 10)
@@ -370,21 +364,15 @@ export const CreateSupportTicketModal: React.FC<CreateSupportTicketModalProps> =
               rows={4}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Mô tả cụ thể hiện tượng gặp phải, thời gian xảy ra, các thao tác đã thử..."
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
-          {/* Thông tin xử lý (ẩn trực quan để modal gọn gàng theo yêu cầu UX) */}
-          <span className="sr-only">
-            Quản lý cơ sở sẽ tiếp nhận và đánh giá mức độ khẩn cấp của sự cố để điều phối nhân viên kỹ thuật có mặt hỗ trợ trong thời gian sớm nhất.
-          </span>
-
-          {/* 6. Đính kèm ảnh */}
+          {/* Đính kèm ảnh */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
-                5. Hình ảnh minh chứng (Tối đa 5 ảnh, &lt; 5MB/ảnh)
+                Hình ảnh minh chứng (Tối đa 5 ảnh, &lt; 5MB/ảnh)
               </label>
               <span className="text-[11px] text-slate-400">
                 {attachments.length} / 5 ảnh

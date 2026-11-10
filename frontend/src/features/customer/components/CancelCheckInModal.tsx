@@ -111,20 +111,12 @@ export const CancelCheckInModal: React.FC<CancelCheckInModalProps> = ({
           refundText: 'text-amber-700',
         };
       case 'LATE_NO_DEPOSIT':
-      case 'IN_GRACE_PERIOD':
+      default:
         return {
           bg: 'bg-orange-50/80 border-orange-200',
           badge: 'bg-orange-100 text-orange-800 border-orange-300',
           text: 'text-orange-900',
           refundText: 'text-orange-700',
-        };
-      case 'NO_SHOW_OVERDUE':
-      default:
-        return {
-          bg: 'bg-rose-50/80 border-rose-200',
-          badge: 'bg-rose-100 text-rose-800 border-rose-300',
-          text: 'text-rose-900',
-          refundText: 'text-rose-700',
         };
     }
   };
@@ -177,10 +169,6 @@ export const CancelCheckInModal: React.FC<CancelCheckInModalProps> = ({
               {calc.tierBadge}
             </span>
           </div>
-
-          <p className="text-[11px] text-slate-600 leading-relaxed">
-            {calc.explanation}
-          </p>
 
           <div className="space-y-1 pt-2 border-t border-slate-200/60 text-xs">
             <div className="flex justify-between text-slate-600">

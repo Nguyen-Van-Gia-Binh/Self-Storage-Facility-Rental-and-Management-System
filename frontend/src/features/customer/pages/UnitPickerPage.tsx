@@ -24,6 +24,8 @@ export const UnitPickerPage: React.FC = () => {
 
   const facilityParam = searchParams.get('facility');
   const initialTypeId = searchParams.get('type');
+  const initialStorageType = searchParams.get('storageType');
+  const initialSize = searchParams.get('size');
   const initialMonthsParam = parseInt(searchParams.get('months') || '', 10);
   const initialStartDateParam = searchParams.get('startDate');
 
@@ -71,6 +73,8 @@ export const UnitPickerPage: React.FC = () => {
   } = useUnitPickerCatalog({
     facilityParam,
     initialTypeId,
+    initialStorageType,
+    initialSize,
     startDate,
     durationMonths,
   });
@@ -120,7 +124,7 @@ export const UnitPickerPage: React.FC = () => {
       setUnitUnavailableModal({
         isOpen: true,
         title: 'Vui lòng chọn loại kho',
-        message: 'Quý khách vui lòng chọn một hạng kho đã niêm yết giá trước khi đặt.',
+        message: '',
       });
       return;
     }
@@ -128,7 +132,7 @@ export const UnitPickerPage: React.FC = () => {
       setUnitUnavailableModal({
         isOpen: true,
         title: 'Loại ô kho chưa niêm yết giá',
-        message: 'Loại ô kho này chưa được niêm yết giá chính thức nên tạm thời chưa thể đặt chỗ. Quý khách vui lòng chọn loại kho khác.',
+        message: 'Loại kho này đang cập nhật bảng giá, vui lòng chọn loại khác.',
       });
       return;
     }

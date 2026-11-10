@@ -13,26 +13,24 @@ describe('ISS-79: Custom Modal Confirmation for Cancel Return Flow (BR-RET-12)',
     process.cwd(),
     'src/features/customer/components/RentedUnitCard.tsx'
   );
+  const myUnitsModalsPath = path.resolve(
+    process.cwd(),
+    'src/features/customer/components/MyUnitsModals.tsx'
+  );
 
-  it('RentedUnitCard không còn sử dụng window.confirm native của trình duyệt', () => {
+  it('RentedUnitCard không còn sử dụng window.confirm native và không duplicate modal hủy trả kho', () => {
     const content = fs.readFileSync(rentedUnitCardPath, 'utf-8');
     expect(content).not.toMatch(/window\.confirm/);
+    expect(content).not.toMatch(/showCancelReturnModal/);
+    expect(content).toMatch(/onCancelReturn\(contract\)/);
   });
 
-  it('RentedUnitCard định nghĩa state showCancelReturnModal và handler handleConfirmCancelReturn', () => {
-    const content = fs.readFileSync(rentedUnitCardPath, 'utf-8');
-    expect(content).toMatch(/showCancelReturnModal/);
-    expect(content).toMatch(/setShowCancelReturnModal\(true\)/);
-    expect(content).toMatch(/handleConfirmCancelReturn/);
-    expect(content).toMatch(/cancelContractReturn\(contract\.id\)/);
-  });
-
-  it('RentedUnitCard tích hợp Modal xác nhận hủy trả kho với tiêu đề, cảnh báo và 2 nút hành động', () => {
-    const content = fs.readFileSync(rentedUnitCardPath, 'utf-8');
+  it('MyUnitsModals tích hợp Modal xác nhận hủy yêu cầu trả kho với tiêu đề, cảnh báo và 2 nút hành động', () => {
+    const content = fs.readFileSync(myUnitsModalsPath, 'utf-8');
+    expect(content).toMatch(/selectedCancelReturnContract/);
     expect(content).toMatch(/Xác nhận hủy yêu cầu trả kho/);
-    expect(content).toMatch(/Lịch hẹn nghiệm thu bàn giao ô kho sẽ được bãi bỏ/);
-    expect(content).toMatch(/Quay lại \(Giữ lịch trả\)/);
-    expect(content).toMatch(/Xác nhận hủy trả kho/);
+    expect(content).toMatch(/Sau khi hủy, hợp đồng sẽ tiếp tục được duy trì hoạt động bình thường/);
+    expect(content).toMatch(/Xác nhận hủy yêu cầu/);
   });
 
   it('Nút Hủy yêu cầu trả kho chỉ hiển thị khi PENDING_RETURN và chưa nghiệm thu', () => {

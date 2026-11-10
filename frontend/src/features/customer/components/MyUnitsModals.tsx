@@ -203,14 +203,9 @@ export const MyUnitsModals: React.FC<MyUnitsModalsProps> = ({
             </button>
           </div>
 
-          <div className="flex items-start gap-3 p-3.5 bg-rose-50 rounded-xl border border-rose-100 text-rose-800 text-xs leading-relaxed">
-            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-bold text-rose-900 mb-1">Bạn có chắc chắn muốn hủy giữ chỗ?</p>
-              <p className="text-rose-700">
-                Sau khi hủy, ô kho <strong>{cancellingReservation?.storageUnitCode || cancellingReservation?.unitTypeName}</strong> sẽ được giải phóng ngay lập tức trên hệ thống và bạn cần tạo đơn mới nếu muốn thuê lại.
-              </p>
-            </div>
+          <div className="flex items-center gap-3 p-3.5 bg-rose-50 rounded-xl border border-rose-100 text-rose-800 text-xs leading-relaxed">
+            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0" />
+            <p className="font-bold text-rose-900">Bạn có chắc chắn muốn hủy giữ chỗ?</p>
           </div>
 
           {cancelError && (
@@ -226,7 +221,7 @@ export const MyUnitsModals: React.FC<MyUnitsModalsProps> = ({
               onClick={onCloseCancelReservationModal}
               className="text-slate-700 hover:bg-slate-100"
             >
-              Quay lại (Giữ đơn)
+              Quay lại
             </Button>
             <Button
               type="button"

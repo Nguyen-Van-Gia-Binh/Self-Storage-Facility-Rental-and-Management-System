@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useScrollLock } from '@/hooks/useScrollLock';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { Modal } from '@/components/ui/Modal';
+import { CancelSupportTicketModal } from './CancelSupportTicketModal';
 import { 
   X, 
   Clock, 
@@ -15,14 +15,10 @@ import {
   MessageSquare,
   ExternalLink,
   ClipboardCheck,
-  ShieldCheck,
   CheckCircle2,
-  Receipt,
   Camera,
-  AlertTriangle,
-  RotateCw,
 } from 'lucide-react';
-import type { SupportTicket, SupportStatus } from '../types';
+import type { SupportTicket } from '../types';
 import { getCategoryMeta, getStatusMeta } from './SupportTicketCard';
 
 export interface SupportTicketDetailModalProps {
@@ -109,30 +105,6 @@ export function parseResolutionNote(rawNote?: string): ResolutionReportInfo {
   };
 }
 
-const TIMELINE_STEPS: { key: SupportStatus; label: string; desc: string }[] = [
-  { key: 'NEW', label: '1. Tiếp nhận', desc: 'Hệ thống ghi nhận vé' },
-  { key: 'ASSIGNED', label: '2. Phân công', desc: 'Điều phối nhân viên' },
-  { key: 'IN_PROGRESS', label: '3. Xử lý hiện trường', desc: 'Kiểm tra & khắc phục' },
-  { key: 'CLOSED', label: '4. Hoàn tất', desc: 'Nghiệm thu & đóng vé' },
-];
-
-const getStepIndex = (status: SupportStatus): number => {
-  switch (status) {
-    case 'NEW':
-      return 0;
-    case 'ASSIGNED':
-      return 1;
-    case 'IN_PROGRESS':
-      return 2;
-    case 'RESOLVED':
-    case 'CLOSED':
-    case 'AUTO_CLOSED':
-      return 3;
-    default:
-      return 0;
-  }
-};
-
 export const SupportTicketDetailModal: React.FC<SupportTicketDetailModalProps> = ({
   ticket,
   isOpen,
@@ -165,7 +137,6 @@ export const SupportTicketDetailModal: React.FC<SupportTicketDetailModalProps> =
 
   const catMeta = getCategoryMeta(ticket.category);
   const statusMeta = getStatusMeta(ticket.status);
-  const currentStep = getStepIndex(ticket.status);
   const isResolved = ticket.status === 'RESOLVED' || ticket.status === 'CLOSED' || ticket.status === 'AUTO_CLOSED' || Boolean(ticket.resolutionNote);
   const resInfo = parseResolutionNote(ticket.resolutionNote);
 
@@ -224,47 +195,6 @@ export const SupportTicketDetailModal: React.FC<SupportTicketDetailModalProps> =
 
         {/* Modal Scrollable Body */}
         <div className="p-6 overflow-y-auto space-y-6 flex-1 text-slate-700 text-xs sm:text-sm">
-          {/* Status Timeline Bar */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-brand-600" />
-                Tiến trình xử lý yêu cầu
-              </span>
-              <span className="text-[11px] text-slate-500">
-                Cập nhật lần cuối: {new Date(ticket.updatedAt || ticket.createdAt).toLocaleString('vi-VN')}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-4 gap-2">
-              {TIMELINE_STEPS.map((step, idx) => {
-                const isPassed = idx < currentStep;
-                const isCurrent = idx === currentStep;
-                return (
-                  <div key={step.key} className="text-center">
-                    <div 
-                      className={`h-2 rounded-full mb-1.5 transition-all ${
-                        isPassed
-                          ? 'bg-emerald-500'
-                          : isCurrent
-                          ? 'bg-brand-600 ring-2 ring-brand-200'
-                          : 'bg-slate-200'
-                      }`} 
-                    />
-                    <p className={`text-[11px] font-bold truncate ${
-                      isCurrent ? 'text-brand-700' : isPassed ? 'text-emerald-700' : 'text-slate-400'
-                    }`}>
-                      {step.label}
-                    </p>
-                    <p className="text-[9px] text-slate-400 hidden sm:block truncate">
-                      {step.desc}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
           {/* Unit & Facility Info Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="p-3.5 rounded-xl border border-slate-200 bg-white space-y-1.5">
@@ -356,13 +286,10 @@ export const SupportTicketDetailModal: React.FC<SupportTicketDetailModalProps> =
                 </div>
                 <div>
                   <span className="text-[10px] font-bold text-sky-700 uppercase tracking-wider">
-                    Nhân viên cơ sở phụ trách xử lý
+                    Nhân viên phụ trách
                   </span>
                   <p className="text-sm font-extrabold text-slate-900">
                     {ticket.assignedStaffName}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    Nhân viên vận hành tại cơ sở
                   </p>
                 </div>
               </div>
@@ -379,7 +306,7 @@ export const SupportTicketDetailModal: React.FC<SupportTicketDetailModalProps> =
             </div>
           )}
 
-          {/* BIÊN BẢN NGHIỆM THU & KẾT QUẢ KHẮC PHỤC SỰ CỐ (Dành cho vé đã xử lý xong hoặc đã đóng) */}
+          {/* BIÊN BẢN NGHIỆM THU & KHẮC PHỤC SỰ CỐ */}
           {isResolved && (
             <div className="rounded-2xl border border-emerald-200 bg-linear-to-b from-emerald-50/70 to-white overflow-hidden shadow-xs space-y-4 p-5">
               {/* Header biên bản */}
@@ -388,14 +315,9 @@ export const SupportTicketDetailModal: React.FC<SupportTicketDetailModalProps> =
                   <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs shrink-0">
                     <ClipboardCheck className="w-4.5 h-4.5" />
                   </div>
-                  <div>
-                    <h5 className="font-extrabold text-emerald-950 text-sm tracking-wide uppercase">
-                      Biên bản nghiệm thu & Khắc phục sự cố
-                    </h5>
-                    <p className="text-[11px] text-emerald-700 font-medium">
-                      Ghi nhận chính thức từ nhân viên kỹ thuật cơ sở
-                    </p>
-                  </div>
+                  <h5 className="font-extrabold text-emerald-950 text-sm tracking-wide uppercase">
+                    Biên bản nghiệm thu &amp; khắc phục sự cố
+                  </h5>
                 </div>
 
                 {ticket.resolvedAt && (
@@ -406,117 +328,48 @@ export const SupportTicketDetailModal: React.FC<SupportTicketDetailModalProps> =
                 )}
               </div>
 
-              {/* Phân định trách nhiệm & Chi phí phụ phí */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {/* Box 1: Trách nhiệm lỗi */}
-                <div className={`p-3.5 rounded-xl border flex flex-col justify-between ${
-                  resInfo.faultParty === 'COMPANY'
-                    ? 'bg-emerald-50/80 border-emerald-300 text-emerald-950'
-                    : resInfo.faultParty === 'CUSTOMER'
-                    ? 'bg-amber-50/80 border-amber-300 text-amber-950'
-                    : 'bg-slate-50 border-slate-200 text-slate-800'
-                }`}>
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
-                      Phân định trách nhiệm sự cố
-                    </span>
-                    <div className="flex items-start gap-2">
-                      {resInfo.faultParty === 'COMPANY' ? (
-                        <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                      ) : resInfo.faultParty === 'CUSTOMER' ? (
-                        <UserCheck className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                      ) : (
-                        <CheckCircle2 className="w-4 h-4 text-slate-600 shrink-0 mt-0.5" />
-                      )}
-                      <div>
-                        <p className="font-extrabold text-xs sm:text-sm">
-                          {resInfo.faultParty === 'COMPANY'
-                            ? 'Lỗi do thiết bị / Cơ sở (Phía Công ty)'
-                            : resInfo.faultParty === 'CUSTOMER'
-                            ? 'Lỗi phát sinh do quá trình khách hàng sử dụng'
-                            : 'Đã hoàn tất xử lý theo quy trình vận hành'}
-                        </p>
-                        <p className="text-[11px] mt-1 text-slate-600 leading-relaxed">
-                          {resInfo.faultParty === 'COMPANY'
-                            ? '100% chi phí kiểm tra và linh kiện do công ty chi trả. Khách hàng không phải chịu bất kỳ khoản phí nào.'
-                            : resInfo.faultParty === 'CUSTOMER'
-                            ? 'Sự cố phát sinh từ thao tác sử dụng của khách hàng. Các phụ phí vật tư/thay thế được áp dụng theo biểu phí niêm yết.'
-                            : 'Nhân viên kỹ thuật cơ sở đã trực tiếp đến kiểm tra, sửa chữa và nghiệm thu hoạt động bình thường.'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+              {/* Trách nhiệm & Chi phí rút gọn */}
+              {resInfo.faultParty === 'COMPANY' ? (
+                <div className="p-3.5 rounded-xl border border-emerald-300 bg-emerald-50/80 flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-emerald-950">
+                    Lỗi thiết bị / cơ sở (Phía Công ty)
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Miễn phí (0 đ)
+                  </span>
                 </div>
-
-                {/* Box 2: Phụ phí & Thanh toán */}
-                <div className={`p-3.5 rounded-xl border flex flex-col justify-between ${
-                  resInfo.faultParty === 'COMPANY'
-                    ? 'bg-emerald-50/80 border-emerald-300'
-                    : resInfo.faultParty === 'CUSTOMER'
-                    ? 'bg-sky-50/80 border-sky-300'
-                    : 'bg-slate-50 border-slate-200'
-                }`}>
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
-                      Chi phí & Tình trạng thanh toán
+              ) : resInfo.faultParty === 'CUSTOMER' ? (
+                <div className="p-3.5 rounded-xl border border-amber-300 bg-amber-50/70 space-y-1.5 text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="font-bold text-amber-950">Phát sinh trong quá trình sử dụng</span>
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                        resInfo.isPaidFully
+                          ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                          : 'bg-amber-100 text-amber-800 border-amber-300'
+                      }`}
+                    >
+                      {resInfo.isPaidFully ? 'Đã thanh toán' : 'Đã xác nhận biên bản'}
                     </span>
-                    <div className="flex items-start gap-2">
-                      <Receipt className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
-                      <div className="space-y-1 w-full">
-                        {resInfo.faultParty === 'COMPANY' ? (
-                          <>
-                            <p className="font-extrabold text-xs sm:text-sm text-emerald-900">
-                              Khách hàng: Miễn phí hoàn toàn (0 đ)
-                            </p>
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                              <CheckCircle2 className="w-3 h-3" /> Công ty chi trả 100%
-                            </span>
-                          </>
-                        ) : resInfo.faultParty === 'CUSTOMER' ? (
-                          <>
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-slate-600">Phụ phí phát sinh:</span>
-                              <strong className="text-slate-800 font-bold">{resInfo.surchargesText || 'Theo biểu phí BOM'}</strong>
-                            </div>
-                            {resInfo.totalCollected && (
-                              <div className="flex items-center justify-between text-xs pt-1 border-t border-sky-200/60">
-                                <span className="text-slate-600">Tổng thu phụ phí:</span>
-                                <strong className="text-sky-900 font-mono font-black text-sm">{resInfo.totalCollected}</strong>
-                              </div>
-                            )}
-                            <div className="pt-1.5">
-                              {resInfo.isPaidFully ? (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                                  <CheckCircle2 className="w-3 h-3" /> Khách hàng đã thanh toán 100% tại hiện trường
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
-                                  Đã xác nhận biên bản
-                                </span>
-                              )}
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <p className="font-extrabold text-xs sm:text-sm text-slate-800">
-                              Chi phí sửa chữa: Đã hoàn tất
-                            </p>
-                            <span className="text-[11px] text-slate-500 block">
-                              Không ghi nhận khoản phụ phí ngoài danh mục.
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
                   </div>
+                  <div className="flex items-center justify-between text-slate-700">
+                    <span>Phụ phí:</span>
+                    <strong>{resInfo.surchargesText || 'Theo biểu phí niêm yết'}</strong>
+                  </div>
+                  {resInfo.totalCollected && (
+                    <div className="flex items-center justify-between pt-1 border-t border-amber-200/70">
+                      <span className="text-slate-700">Tổng thu:</span>
+                      <strong className="font-mono font-black text-slate-900">{resInfo.totalCollected}</strong>
+                    </div>
+                  )}
                 </div>
-              </div>
+              ) : null}
 
-              {/* Chi tiết nội dung xử lý của nhân viên kỹ thuật */}
+              {/* Chi tiết nội dung xử lý */}
               <div className="p-3.5 rounded-xl bg-white border border-emerald-200 space-y-1.5">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-1">
                   <FileText className="w-3.5 h-3.5 text-emerald-600" />
-                  Nội dung khắc phục & Biện pháp kỹ thuật
+                  Nội dung khắc phục
                 </span>
                 <p className="text-xs text-slate-800 leading-relaxed font-medium whitespace-pre-line bg-slate-50/70 p-2.5 rounded-lg border border-slate-200/60">
                   {resInfo.technicalNote}
@@ -605,77 +458,15 @@ export const SupportTicketDetailModal: React.FC<SupportTicketDetailModalProps> =
           </div>
         )}
 
-        {/* Modal Xác nhận Hủy Yêu Cầu Hỗ Trợ từ Modal Chi Tiết (ISS-79) */}
-        <Modal
+        {/* Modal Xác nhận Hủy Yêu Cầu Hỗ Trợ (dùng chung) */}
+        <CancelSupportTicketModal
           isOpen={showCancelConfirm}
-          onClose={() => {
-            if (!submitting) setShowCancelConfirm(false);
-          }}
-          className="max-w-md w-full"
-        >
-          <div className="p-5 sm:p-6 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-rose-600" />
-                Xác nhận hủy yêu cầu hỗ trợ
-              </h3>
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={() => setShowCancelConfirm(false)}
-                className="text-slate-400 hover:text-slate-600 font-bold px-1.5 py-0.5 rounded cursor-pointer"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="flex items-start gap-3 p-3.5 bg-rose-50 rounded-xl border border-rose-100 text-rose-800 text-xs leading-relaxed text-left">
-              <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-              <div>
-                <p className="font-bold text-rose-900 mb-1">
-                  Bạn có chắc chắn muốn hủy vé hỗ trợ {ticket.ticketCode}?
-                </p>
-                <p className="text-rose-700">
-                  Thao tác này sẽ đóng yêu cầu hỗ trợ và nhân viên cơ sở sẽ không tiếp tục xử lý sự cố này nữa.
-                </p>
-              </div>
-            </div>
-
-            {cancelError && (
-              <p className="text-xs text-rose-600 font-semibold text-left">{cancelError}</p>
-            )}
-
-            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={submitting}
-                onClick={() => setShowCancelConfirm(false)}
-                className="text-slate-700 hover:bg-slate-100 cursor-pointer"
-              >
-                Quay lại (Giữ vé)
-              </Button>
-              <Button
-                type="button"
-                variant="danger"
-                size="sm"
-                disabled={submitting}
-                onClick={handleConfirmCancel}
-                className="bg-rose-600 hover:bg-rose-700 text-white font-bold cursor-pointer"
-              >
-                {submitting ? (
-                  <>
-                    <RotateCw className="w-4 h-4 mr-1.5 animate-spin" />
-                    Đang hủy...
-                  </>
-                ) : (
-                  'Xác nhận hủy vé'
-                )}
-              </Button>
-            </div>
-          </div>
-        </Modal>
+          ticketCode={ticket.ticketCode}
+          isSubmitting={submitting}
+          error={cancelError}
+          onClose={() => setShowCancelConfirm(false)}
+          onConfirm={handleConfirmCancel}
+        />
       </div>
     </div>,
     document.body

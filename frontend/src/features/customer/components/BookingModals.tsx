@@ -74,7 +74,7 @@ export const BookingModals: React.FC<BookingModalsProps> = ({
           <div className="space-y-1.5">
             <h3 className="text-lg font-bold text-slate-900">Xác nhận hủy giữ chỗ</h3>
             <p className="text-xs sm:text-sm text-slate-600">
-              Nếu hủy đơn, ô kho đang giữ chỗ sẽ được giải phóng ngay lập tức trên hệ thống cho khách hàng khác.
+              Nếu hủy đơn, ô kho đang giữ chỗ sẽ được giải phóng ngay lập tức trên hệ thống.
             </p>
           </div>
           {cancelError && (
@@ -207,11 +207,11 @@ export const BookingModals: React.FC<BookingModalsProps> = ({
             <div className="space-y-1.5">
               <h3 className="text-lg font-bold text-slate-900">Tài khoản tạm khóa chức năng đặt kho</h3>
               <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Bạn đã hủy hoặc bỏ thanh toán quá 5 lần trong ngày hôm nay. Để bảo vệ tính công bằng cho toàn hệ thống, chức năng đặt kho tạm thời bị khóa trong ngày.
+                Chức năng đặt kho tạm thời bị khóa trong ngày vì bạn đã hủy hoặc bỏ thanh toán quá 5 lần trong hôm nay.
               </p>
             </div>
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-left text-xs space-y-1">
-              <span className="font-semibold text-amber-900">Liên hệ Quản lý cơ sở (FM) để được hỗ trợ:</span>
+              <span className="font-semibold text-amber-900">Liên hệ Quản lý cơ sở để được hỗ trợ:</span>
               <div className="flex items-center justify-between text-slate-700 pt-1">
                 <span>Hotline Quản lý:</span>
                 <a

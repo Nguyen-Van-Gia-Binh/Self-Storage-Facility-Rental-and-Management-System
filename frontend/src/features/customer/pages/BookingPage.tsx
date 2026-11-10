@@ -146,7 +146,7 @@ export const BookingPage: React.FC = () => {
           setUnavailableModal({
             isOpen: true,
             title: 'Cơ sở lưu trữ tạm ngừng hoạt động',
-            message: 'Cơ sở lưu trữ bạn đang chọn hiện đã tạm dừng phục vụ hoặc không tồn tại trên hệ thống.',
+            message: 'Cơ sở lưu trữ này hiện tạm ngừng phục vụ.',
             actionType: 'NAVIGATE_HOME',
           });
           return;
@@ -163,6 +163,7 @@ export const BookingPage: React.FC = () => {
           startingPrice: matched.lowestMonthlyPrice && matched.lowestMonthlyPrice > 0 ? matched.lowestMonthlyPrice : 0,
           image: '',
           phone: matched.phone || '1900 6868',
+          openingHours: matched.openingHours || '',
         });
 
         const numericId = typeof matched.id === 'number' ? matched.id : Number(matched.id);
@@ -216,7 +217,7 @@ export const BookingPage: React.FC = () => {
             setUnavailableModal({
               isOpen: true,
               title: 'Loại ô kho chưa niêm yết giá',
-              message: 'Loại ô kho bạn đang chọn hiện chưa được ban hành giá niêm yết chính thức. Vui lòng chọn loại ô kho khác.',
+              message: 'Loại kho này đang cập nhật bảng giá, vui lòng chọn loại khác.',
               actionType: 'NAVIGATE_UNITS',
             });
             return;
@@ -646,7 +647,7 @@ export const BookingPage: React.FC = () => {
           isOpen: true,
           title: 'Ô kho không còn khả dụng',
           message:
-            'Ô kho bạn chọn hiện đã có khách hàng khác đặt chỗ hoặc đang được thuê trong khoảng thời gian này. Vui lòng quay lại sơ đồ để chọn ô kho khác.',
+            'Ô kho bạn chọn hiện không còn khả dụng trong khoảng thời gian này. Vui lòng quay lại để chọn ô kho khác.',
           actionType: 'NAVIGATE_UNITS',
         });
         return;

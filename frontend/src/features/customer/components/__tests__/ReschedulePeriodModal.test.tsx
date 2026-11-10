@@ -79,12 +79,13 @@ describe('ReschedulePeriodModal — Dời ngày nhận kho có thu phí (BR-RES-
       />
     );
 
-    expect(screen.getByText(/dưới 48 giờ/i)).toBeInTheDocument();
+    expect(screen.getByText(/Không thể đổi ngày trực tuyến:/i)).toBeInTheDocument();
+    expect(screen.getByText(/gửi trước ít nhất/i)).toHaveTextContent(/48 giờ/i);
     const submitBtn = screen.getByRole('button', { name: /Xác nhận dời ngày/i });
     expect(submitBtn).toBeDisabled();
   });
 
-  it('hiển thị cảnh báo và khóa hoàn toàn thao tác nếu hợp đồng đã dời ngày 1 lần (BR-RES-06)', () => {
+  it('hiển thị cảnh báo và khóa hoàn toàn thao tác nếu hợp đồng đã dời ngày 1 lần', () => {
     const rescheduledContract: RentedContract = {
       ...mockContract,
       rescheduleCount: 1,
@@ -100,7 +101,7 @@ describe('ReschedulePeriodModal — Dời ngày nhận kho có thu phí (BR-RES-
       />
     );
 
-    expect(screen.getByText(/1\/1 lần/i)).toBeInTheDocument();
+    expect(screen.getByText(/tối đa 1 lần duy nhất/i)).toBeInTheDocument();
     const submitBtn = screen.getByRole('button', { name: /Xác nhận dời ngày/i });
     expect(submitBtn).toBeDisabled();
   });

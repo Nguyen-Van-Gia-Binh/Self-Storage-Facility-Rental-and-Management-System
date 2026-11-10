@@ -20,6 +20,7 @@ import {
   pollPaymentStatus,
   generateMoveInPass,
 } from '@/api/payment';
+import { fetchFacilityById } from '@/api/facility';
 import { DigitalMoveInPassModal } from '../components/DigitalMoveInPassModal';
 import { VnpayPayLinks } from '../components/VnpayPayLinks';
 import type { MoveInPassData } from '@/types';
@@ -45,6 +46,27 @@ export const PaymentPage: React.FC = () => {
   const facilityName = searchParams.get('facilityName') || 'Cơ sở lưu trữ';
   const facilityAddress = searchParams.get('facilityAddress') || '';
   const facilityPhone = searchParams.get('facilityPhone') || '';
+  const [facilityOpeningHours, setFacilityOpeningHours] = useState<string>(
+    searchParams.get('openingHours') || ''
+  );
+
+  useEffect(() => {
+    const numericFacId = Number(facilityId);
+    if (!numericFacId || Number.isNaN(numericFacId)) return;
+    let isMounted = true;
+    fetchFacilityById(numericFacId)
+      .then((fac) => {
+        if (isMounted && fac?.openingHours) {
+          setFacilityOpeningHours(fac.openingHours);
+        }
+      })
+      .catch(() => {
+        // giữ giá trị mặc định nếu không lấy được
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [facilityId]);
   const rentalMonths = Number(searchParams.get('months')) || 1;
   const monthlyPrice = Number(searchParams.get('monthlyPrice')) || 0;
   const depositFromQuery = searchParams.get('depositAmount');
@@ -152,6 +174,7 @@ export const PaymentPage: React.FC = () => {
             facilityName,
             facilityAddress,
             facilityPhone,
+            facilityOpeningHours,
             customerName,
             customerPhone,
             customerIdentity: customerIdCard,
@@ -173,9 +196,11 @@ export const PaymentPage: React.FC = () => {
     orderCode,
     isPaid,
     unitNumber,
+    facilityId,
     facilityName,
     facilityAddress,
     facilityPhone,
+    facilityOpeningHours,
     customerName,
     customerPhone,
     customerIdCard,
@@ -194,10 +219,11 @@ export const PaymentPage: React.FC = () => {
         const pass = generateMoveInPass({
           reservationId: `RES-${orderCode}`,
           unitNumber,
-          facilityId: 'FAC-D7-01',
+          facilityId: facilityId || '',
           facilityName,
           facilityAddress,
           facilityPhone,
+          facilityOpeningHours,
           customerName,
           customerPhone,
           customerIdentity: customerIdCard,

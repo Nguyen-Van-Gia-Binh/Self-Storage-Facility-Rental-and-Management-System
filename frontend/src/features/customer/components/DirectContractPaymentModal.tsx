@@ -288,7 +288,7 @@ export const DirectContractPaymentModal: React.FC<DirectContractPaymentModalProp
                 }`}
               >
                 <CreditCard className="w-4 h-4 text-emerald-600" />
-                <span>Cổng VNPay Sandbox</span>
+                <span>VNPay (ATM / Visa)</span>
               </button>
             </div>
 
@@ -366,12 +366,12 @@ export const DirectContractPaymentModal: React.FC<DirectContractPaymentModalProp
 
                 <div className="text-[11px] text-slate-500 text-center flex items-center justify-center gap-1.5 font-medium">
                   <RefreshCw className="w-3.5 h-3.5 text-teal-600 animate-spin" />
-                  <span>Hệ thống đang tự động kiểm tra giao dịch (Auto-polling mỗi 3s)...</span>
+                  <span>Hệ thống tự động xác nhận ngay sau khi bạn chuyển khoản.</span>
                 </div>
               </div>
             )}
 
-            {/* TAB 2: VNPAY SANDBOX */}
+            {/* TAB 2: VNPAY */}
             {activeTab === 'VNPAY' && (
               <div className="space-y-4">
                 <VnpayPayLinks orderCode={orderCode} />
@@ -388,10 +388,10 @@ export const DirectContractPaymentModal: React.FC<DirectContractPaymentModalProp
             onClick={handleMockPay}
             disabled={isMocking || isPaid || !orderCode}
             className="flex items-center gap-1.5 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-300 px-3 py-2 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
-            title="Giả lập thanh toán thành công tức thì cho môi trường thử nghiệm"
+            title="Giả lập thanh toán thành công tức thì"
           >
             <Zap className={`w-3.5 h-3.5 text-amber-600 ${isMocking ? 'animate-bounce' : ''}`} />
-            <span>⚡ Giả lập thanh toán thành công (Test)</span>
+            <span>⚡ Giả lập thanh toán thành công</span>
           </button>
 
           <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">

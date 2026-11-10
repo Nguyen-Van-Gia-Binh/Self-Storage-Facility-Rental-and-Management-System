@@ -14,11 +14,9 @@ export interface CancellationParams {
 }
 
 export type CancellationTierType =
-  | 'EARLY_FULL'        // BR-CAN-01: Hủy sớm ≥ 7 ngày (hoàn 100% cọc + 100% tiền thuê)
-  | 'MID_PARTIAL'       // BR-CAN-02: Hủy lửng 2 - 6 ngày (phạt 50% cọc, hoàn 50% cọc + 100% tiền thuê)
-  | 'LATE_NO_DEPOSIT'   // BR-CAN-03: Hủy sát nút < 48h (phạt 100% cọc, hoàn 100% tiền thuê)
-  | 'IN_GRACE_PERIOD'   // BR-CAN-08: Hủy trong 10 ngày ân hạn sau khi quá ngày bắt đầu
-  | 'NO_SHOW_OVERDUE';  // BR-CAN-04: Quá 10 ngày ân hạn (No-show, không hoàn tiền)
+  | 'EARLY_FULL'        // Hủy trong 48h sau thanh toán hoặc trước >= 7 ngày (hoàn 100% cọc + 100% tiền thuê)
+  | 'MID_PARTIAL'       // Hủy trước 2 - 6 ngày (phạt 50% cọc, hoàn 100% tiền thuê)
+  | 'LATE_NO_DEPOSIT';  // Hủy sát giờ < 48h (phạt 100% cọc, hoàn 100% tiền thuê)
 
 export interface CancellationCalculation {
   tier: CancellationTierType;
@@ -54,9 +52,7 @@ export function calculateCancellationRefund(params: CancellationParams): Cancell
   const todayZero = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const startZero = new Date(startDateTime.getFullYear(), startDateTime.getMonth(), startDateTime.getDate());
 
-  // Số ngày kể từ ngày bắt đầu (nếu >= 0 là đã đến/qua ngày nhận kho)
-  const diffFromStartDays = Math.floor((todayZero.getTime() - startZero.getTime()) / (1000 * 60 * 60 * 24));
-  const heldDays = Math.max(0, diffFromStartDays);
+  const heldDays = 0;
 
   // Số ngày còn lại đến ngày bắt đầu nhận kho (nếu > 0 là trước ngày nhận kho)
   const daysUntilStart = Math.ceil((startZero.getTime() - todayZero.getTime()) / (1000 * 60 * 60 * 24));
@@ -69,77 +65,44 @@ export function calculateCancellationRefund(params: CancellationParams): Cancell
   const isWithin48hAfterPayment = hoursSincePayment <= 48;
 
   const totalRentalFee = monthlyRent * rentalMonths;
-  const graceDays = 10;
 
   let tier: CancellationTierType;
   let tierName = '';
   let tierBadge = '';
   let depositRefund = 0;
   let depositPenalty = 0;
-  let rentCharged = 0;
-  let refundableRentalFee = totalRentalFee;
+  const rentCharged = 0;
+  const refundableRentalFee = totalRentalFee;
   let explanation = '';
 
-  // 1. Nếu hủy trong 48h sau khi thanh toán (Cooling-off) hoặc trước ≥ 7 ngày
+  // 1. Hủy trong 48h sau thanh toán (Cooling-off) hoặc trước >= 7 ngày
   if (isWithin48hAfterPayment || daysUntilStart >= 7) {
     tier = 'EARLY_FULL';
     depositRefund = depositAmount;
     depositPenalty = 0;
-    refundableRentalFee = totalRentalFee;
-    rentCharged = 0;
     tierName = isWithin48hAfterPayment
       ? 'Hủy trong 48 giờ đầu sau thanh toán'
       : 'Hủy sớm (trước ≥ 7 ngày)';
     tierBadge = 'Hoàn 100% Cọc & Tiền thuê';
-    explanation = isWithin48hAfterPayment
-      ? 'Hủy trong vòng 48 giờ sau khi thanh toán: Hoàn lại 100% tiền thuê và tiền cọc.'
-      : 'Hủy trước ngày hẹn từ 7 ngày trở lên: Hoàn lại 100% tiền thuê và 100% tiền cọc.';
+    explanation = '';
   }
-  // 2. Hủy lửng: từ 2 đến 6 ngày trước ngày nhận kho
+  // 2. Hủy trước 2 – 6 ngày
   else if (daysUntilStart >= 2) {
     tier = 'MID_PARTIAL';
     depositRefund = Math.round(depositAmount * 0.5);
     depositPenalty = depositAmount - depositRefund;
-    refundableRentalFee = totalRentalFee;
-    rentCharged = 0;
     tierName = `Hủy trước ${daysUntilStart} ngày`;
-    tierBadge = 'Phạt 50% cọc (Hoàn 50% cọc)';
-    explanation = 'Hủy trước 2 – 6 ngày: Hoàn 100% tiền thuê và 50% tiền cọc (khấu trừ 50% cọc phí giữ chỗ).';
+    tierBadge = 'Phạt 50% cọc';
+    explanation = '';
   }
-  // 3. Hủy sát nút: dưới 48 giờ trước ngày nhận kho (hoặc đúng ngày bắt đầu nhưng chưa quá hạn)
-  else if (heldDays === 0) {
+  // 3. Hủy sát giờ (< 48 giờ)
+  else {
     tier = 'LATE_NO_DEPOSIT';
     depositRefund = 0;
     depositPenalty = depositAmount;
-    refundableRentalFee = totalRentalFee;
-    rentCharged = 0;
     tierName = 'Hủy sát giờ (dưới 48 giờ)';
-    tierBadge = 'Phạt 100% cọc (Hoàn 0% cọc)';
-    explanation = 'Hủy sát ngày nhận (< 48 giờ): Hoàn 100% tiền thuê, giữ lại tiền cọc để bù chi phí chuẩn bị kho.';
-  }
-  // 4. Hủy trong hạn nhận kho 10 ngày (đã quá ngày startDate)
-  else if (heldDays <= graceDays) {
-    tier = 'IN_GRACE_PERIOD';
-    depositRefund = 0;
-    depositPenalty = depositAmount;
-    // Tính tiền thuê trừ theo ngày thực tế đã giữ kho
-    const dailyRent = Math.round(totalRentalFee / Math.max(1, rentalMonths * 30));
-    rentCharged = Math.min(totalRentalFee, dailyRent * heldDays);
-    refundableRentalFee = Math.max(0, totalRentalFee - rentCharged);
-    tierName = `Hủy sau ngày bắt đầu (${heldDays} ngày)`;
-    tierBadge = 'Phạt 100% cọc + Trừ ngày đã giữ';
-    explanation = `Đã qua ngày hẹn nhận kho (${heldDays} ngày): Giữ lại tiền cọc và trừ tiền thuê thực tế ${heldDays} ngày đã giữ.`;
-  }
-  // 5. Quá hạn 10 ngày No-show
-  else {
-    tier = 'NO_SHOW_OVERDUE';
-    depositRefund = 0;
-    depositPenalty = depositAmount;
-    rentCharged = totalRentalFee;
-    refundableRentalFee = 0;
-    tierName = 'Quá hạn nhận kho (Vắng mặt)';
-    tierBadge = 'Không hoàn tiền';
-    explanation = `Đã quá hạn nhận kho quá ${graceDays} ngày: Toàn bộ tiền đã đóng không được hoàn lại.`;
+    tierBadge = 'Phạt 100% cọc';
+    explanation = '';
   }
 
   const totalRefund = refundableRentalFee + depositRefund;

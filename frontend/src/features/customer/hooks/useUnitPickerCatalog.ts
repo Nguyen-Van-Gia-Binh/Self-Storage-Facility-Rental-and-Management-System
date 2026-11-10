@@ -11,13 +11,33 @@ import { findFirstAvailableUnit } from '../utils/pricing';
 interface UseUnitPickerCatalogParams {
   facilityParam: string | null;
   initialTypeId: string | null;
+  initialStorageType?: string | null;
+  initialSize?: string | null;
   startDate: string;
   durationMonths: number;
+}
+
+const VALID_SIZES: UnitSizeCategory[] = ['XS', 'S', 'M', 'L', 'XL'];
+
+function resolveInitialStorageType(raw?: string | null): StorageType | null {
+  if (!raw) return null;
+  const norm = raw.trim().toLowerCase();
+  if (norm === 'climate' || norm === 'climate_controlled') return 'CLIMATE_CONTROLLED';
+  if (norm === 'standard') return 'STANDARD';
+  return null;
+}
+
+function resolveInitialSize(raw?: string | null): UnitSizeCategory | null {
+  if (!raw) return null;
+  const upper = raw.trim().toUpperCase() as UnitSizeCategory;
+  return VALID_SIZES.includes(upper) ? upper : null;
 }
 
 export function useUnitPickerCatalog({
   facilityParam,
   initialTypeId,
+  initialStorageType,
+  initialSize,
   startDate,
   durationMonths,
 }: UseUnitPickerCatalogParams) {
@@ -110,18 +130,39 @@ export function useUnitPickerCatalog({
           });
           setUnitTypes(mappedUTs);
 
-          if (initialTypeId) {
+          const parsedStorageType =
+            resolveInitialStorageType(initialStorageType) ||
+            resolveInitialStorageType(initialTypeId);
+          const parsedSize = resolveInitialSize(initialSize);
+
+          if (initialTypeId && !resolveInitialStorageType(initialTypeId)) {
             const found = mappedUTs.find((ut) => ut.id === initialTypeId || ut.code === initialTypeId);
             if (found && found.baseMonthlyPrice > 0) {
               setSelectedTypeId(found.id);
               setSelectedSize(found.sizeCategory);
               setStorageType(found.storageType);
             }
+          } else if (parsedStorageType || parsedSize) {
+            const targetStorageType: StorageType = parsedStorageType ?? 'STANDARD';
+            setStorageType(targetStorageType);
+            if (parsedSize) {
+              setSelectedSize(parsedSize);
+              const matchedBySize = mappedUTs.find(
+                (ut) =>
+                  ut.baseMonthlyPrice > 0 &&
+                  ut.storageType === targetStorageType &&
+                  ut.sizeCategory === parsedSize
+              );
+              if (matchedBySize) {
+                setSelectedTypeId(matchedBySize.id);
+                setExpandedTypeId(matchedBySize.id);
+              }
+            }
           } else {
-            // Khi không truyền initialTypeId từ URL: không auto-select để khách hàng chủ động click chọn loại kho
+            // Khi không truyền filter từ URL: giữ storageType = null để khách hàng chủ động click chọn
             const firstListed = mappedUTs.find((ut) => ut.baseMonthlyPrice > 0);
             if (firstListed) {
-              // Giữ storageType = null để khách hàng tự click chọn Kho Tiêu Chuẩn hay Kho Máy Lạnh
+              // Sẵn sàng danh mục đã niêm yết giá
             }
           }
         }
@@ -142,7 +183,7 @@ export function useUnitPickerCatalog({
     return () => {
       isMounted = false;
     };
-  }, [facilityParam, initialTypeId, navigate]);
+  }, [facilityParam, initialTypeId, initialStorageType, initialSize, navigate]);
 
   // 2. Tải sức chứa ô kho thực tế theo khoảng thời gian khách chọn
   useEffect(() => {

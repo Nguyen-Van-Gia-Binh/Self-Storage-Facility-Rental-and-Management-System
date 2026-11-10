@@ -180,11 +180,11 @@ describe('Customer Portal - Xem Hợp đồng điện tử & Biên bản bàn gi
     const noteElements = await screen.findAllByText(/Đạt đầy đủ 4 tiêu chí nghiệm thu vật lý bàn giao/i);
     expect(noteElements.length).toBeGreaterThanOrEqual(1);
 
-    // Banner Phụ lục điều chuyển ô kho do sự cố kỹ thuật (BR-AVL-05, BR-SUP-02)
+    // Banner Phụ lục điều chuyển ô kho do sự cố kỹ thuật
     expect(await screen.findByText(/PHỤ LỤC ĐIỀU CHUYỂN Ô KHO/i)).toBeInTheDocument();
     const relocationElements = await screen.findAllByText(/SUP-202610-0001/i);
     expect(relocationElements.length).toBeGreaterThanOrEqual(1);
-    expect(await screen.findByText(/Bảo lưu toàn bộ quyền lợi khách hàng/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Ô KHO MỚI: U-102/i)).toBeInTheDocument();
 
     // Nút in hợp đồng
     expect(screen.getByRole('button', { name: /In hợp đồng/i })).toBeInTheDocument();
@@ -258,9 +258,9 @@ describe('Customer Portal - Xem Hợp đồng điện tử & Biên bản bàn gi
     );
 
     // Huy hiệu và banner đang sắp xếp đổi ô
-    const relocateNotes = await screen.findAllByText(/Đang điều phối đổi ô kho tại chỗ/i);
+    const relocateNotes = await screen.findAllByText(/Đang điều phối đổi sang ô kho đạt chuẩn khác cùng loại/i);
     expect(relocateNotes.length).toBeGreaterThanOrEqual(1);
-    expect(await screen.findByText(/PHỤ LỤC TẠM HOÃN BÀN GIAO & ĐANG BỐ TRÍ ĐỔI Ô KHO MỚI/i)).toBeInTheDocument();
+    expect(await screen.findByText(/^ĐANG BỐ TRÍ ĐỔI Ô KHO MỚI$/i)).toBeInTheDocument();
     expect(screen.getByText(/Ô kho Chờ cấp ô mới/i)).toBeInTheDocument();
 
     // Tuyệt đối KHÔNG hiển thị đồng thời banner đỏ Từ chối nhận kho & hoàn tiền 100%
@@ -294,8 +294,8 @@ describe('Customer Portal - Xem Hợp đồng điện tử & Biên bản bàn gi
     );
 
     // Huy hiệu và banner dừng do sự cố
-    expect(await screen.findByText(/BIÊN BẢN TỪ CHỐI BÀN GIAO/i)).toBeInTheDocument();
-    const incidentReports = await screen.findAllByText(/Biên bản ghi nhận sự cố bàn giao tại hiện trường/i);
+    expect(await screen.findByText(/Biên bản từ chối bàn giao & hoàn tiền 100%/i)).toBeInTheDocument();
+    const incidentReports = await screen.findAllByText(/Biên bản tạm dừng nhận kho do sự cố tại hiện trường/i);
     expect(incidentReports.length).toBeGreaterThanOrEqual(1);
 
     // Chữ ký từ chối / hủy nhận do hư hỏng (có ở cả modal view và print document)
