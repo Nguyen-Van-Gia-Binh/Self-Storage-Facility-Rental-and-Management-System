@@ -12,8 +12,6 @@ export interface DisplayFacility {
   openingHours: string;
   image: string;
   phone: string;
-  description?: string;
-  activeUnitTypeCount?: number;
 }
 
 // Bộ ảnh cơ sở nội bộ tải tức thì, ổn định 100% khi demo
@@ -82,8 +80,6 @@ export function useFacilityDirectory() {
             openingHours: f.openingHours || 'Mở cửa 24/7',
             image: FACILITY_IMAGES[idx % FACILITY_IMAGES.length],
             phone: f.phone || '',
-            description: f.description,
-            activeUnitTypeCount: f.activeUnitTypeCount || 4,
           }));
           setFacilities(mapped);
           setIsLoading(false);

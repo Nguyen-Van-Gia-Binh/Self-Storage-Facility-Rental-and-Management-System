@@ -223,6 +223,75 @@
   animation: heroParticleRise 4.6s ease-in-out 2.5s infinite;
 }
 
+/* ========== Landing Page Pixel-Art & 3D Diorama Animations (60fps GPU) ========== */
+@keyframes pixelDropIn {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -10px, 0) scale(0.92);
+  }
+  70% {
+    opacity: 1;
+    transform: translate3d(0, 1.5px, 0) scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes pixelCoolFloat {
+  0% {
+    opacity: 0;
+    transform: translate3d(-4px, -4px, 0);
+  }
+  30% {
+    opacity: 0.85;
+  }
+  80% {
+    opacity: 0.65;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(18px, 12px, 0);
+  }
+}
+
+@keyframes pixelBeacon {
+  0%, 100% {
+    opacity: 0.45;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+}
+
+.pixel-drop-in {
+  will-change: transform, opacity;
+  animation: pixelDropIn 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.pixel-cool-float-1 {
+  will-change: transform, opacity;
+  animation: pixelCoolFloat 3.4s linear infinite;
+}
+
+.pixel-cool-float-2 {
+  will-change: transform, opacity;
+  animation: pixelCoolFloat 3.8s linear 1.2s infinite;
+}
+
+.pixel-cool-float-3 {
+  will-change: transform, opacity;
+  animation: pixelCoolFloat 3.2s linear 2.3s infinite;
+}
+
+.pixel-beacon {
+  will-change: transform, opacity;
+  animation: pixelBeacon 2s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-ken-burns,
   .hero-light-sheen,
@@ -231,7 +300,12 @@
   .hero-unit-glow,
   .hero-particle-1,
   .hero-particle-2,
-  .hero-particle-3 {
+  .hero-particle-3,
+  .pixel-drop-in,
+  .pixel-cool-float-1,
+  .pixel-cool-float-2,
+  .pixel-cool-float-3,
+  .pixel-beacon {
     animation: none !important;
   }
 }

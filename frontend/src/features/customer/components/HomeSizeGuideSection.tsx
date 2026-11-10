@@ -1,32 +1,50 @@
 import React, { useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import {
-  CheckCircle2,
-  ArrowRight,
-  Thermometer,
-  Warehouse,
-  Home,
-  ShoppingBag,
-  ShieldCheck,
-} from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 import type { UnitTypeResponse } from '@/types/unit';
+import pixelStandardImg from '@/assets/images/pixel-standard-unit.jpg';
+import pixelClimateImg from '@/assets/images/pixel-climate-unit.jpg';
+import pixelUsecaseHomeImg from '@/assets/images/pixel-usecase-1-home.png';
+import pixelUsecaseBusinessImg from '@/assets/images/pixel-usecase-2-business.png';
+import pixelUsecaseValuablesImg from '@/assets/images/pixel-usecase-3-valuables.png';
 import { formatVND } from '../utils/pricing';
 import { isClimateUnitType } from '../utils/unitPickerHelpers';
 
 interface HomeSizeGuideSectionProps {
-  primaryFacilityId?: number | string;
   unitTypes?: UnitTypeResponse[];
-  onScrollToBranches: () => void;
 }
 
+const USE_CASES = [
+  {
+    code: 'GIA ĐÌNH',
+    title: 'Chuyển nhà & Sửa nhà',
+    desc: 'Gửi gọn sofa, tủ lạnh và thùng đồ chờ ngày về nhà mới.',
+    tag: 'Gợi ý Cỡ M (6 m²)',
+    imageSrc: pixelUsecaseHomeImg,
+  },
+  {
+    code: 'KINH DOANH',
+    title: 'Kinh doanh & Lưu hồ sơ',
+    desc: 'Lưu hàng đóng kiện & chứng từ cần ra vào lấy thường xuyên.',
+    tag: 'Gợi ý Cỡ L (10 m²)',
+    imageSrc: pixelUsecaseBusinessImg,
+  },
+  {
+    code: 'ĐỒ GIÁ TRỊ',
+    title: 'Đồ giá trị, nhạy ẩm',
+    desc: 'Mỹ phẩm, máy ảnh, đồ da, tranh ảnh cần giữ ổn định 20°C–25°C.',
+    tag: 'Kho Máy Lạnh · Cỡ S',
+    imageSrc: pixelUsecaseValuablesImg,
+  },
+];
+
 /**
- * So sánh 2 dòng kho thực tế (Tiêu chuẩn & Máy lạnh) theo phong cách tối giản, ít chữ,
- * không dùng ảnh công nghiệp lớn gây nặng mắt. Dữ liệu giá lấy trực tiếp từ Backend API.
+ * Bento Grid bất đối xứng (phong cách Cofounder) kết hợp minh họa Pixel-Art:
+ * - Nền viền cây xanh & hoa cỏ nhẹ hai bên lề (#eef5fb)
+ * - Hàng trên: 2 khối lớn so sánh Kho Máy Lạnh (7/12) & Kho Tiêu Chuẩn (5/12) lấy giá thật từ API.
+ * - Hàng dưới: 3 khối gợi ý theo nhu cầu thực tế kèm minh họa Pixel-Art riêng biệt.
  */
 export const HomeSizeGuideSection: React.FC<HomeSizeGuideSectionProps> = ({
-  primaryFacilityId,
   unitTypes = [],
-  onScrollToBranches,
 }) => {
   const { minStandardPrice, minClimatePrice } = useMemo(() => {
     let stdMin = 350000;
@@ -43,219 +61,156 @@ export const HomeSizeGuideSection: React.FC<HomeSizeGuideSectionProps> = ({
     return { minStandardPrice: stdMin, minClimatePrice: acMin };
   }, [unitTypes]);
 
-  const buildUnitLink = (storageType: 'standard' | 'climate', size?: string) => {
-    if (!primaryFacilityId) return '#branches';
-    const params = new URLSearchParams({
-      facility: String(primaryFacilityId),
-      storageType,
-    });
-    if (size) params.set('size', size);
-    return `/customer/units?${params.toString()}`;
-  };
-
-  const renderCta = (
-    label: string,
-    storageType: 'standard' | 'climate',
-    variant: 'primary' | 'secondary',
-    size?: string
-  ) => {
-    const className =
-      variant === 'primary'
-        ? 'px-4 py-2.5 bg-[#57b29a] hover:bg-[#439782] text-white font-semibold rounded-xl transition-colors text-xs inline-flex items-center gap-1.5 shadow-xs'
-        : 'px-4 py-2.5 bg-[#f2f9f7] hover:bg-[#57b29a] hover:text-white text-[#0a1614] font-semibold rounded-xl transition-colors text-xs border border-slate-200 inline-flex items-center gap-1.5';
-
-    if (!primaryFacilityId) {
-      return (
-        <button type="button" onClick={onScrollToBranches} className={`${className} cursor-pointer`}>
-          <span>{label}</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </button>
-      );
-    }
-
-    return (
-      <Link to={buildUnitLink(storageType, size)} className={className}>
-        <span>{label}</span>
-        <ArrowRight className="w-3.5 h-3.5" />
-      </Link>
-    );
-  };
-
   return (
-    <section className="py-12 sm:py-14 bg-[#f2f9f7] border-b border-slate-200/80" id="unit-types">
-      <div className="w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-        {/* Phần A: So sánh tối giản 2 dòng kho */}
-        <div>
-          <div className="text-center max-w-xl mx-auto mb-8">
-            <span className="text-[#439782] text-xs font-bold uppercase tracking-wider block mb-1">
-              2 Dòng Kho Tại SmartStorage
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-bold text-[#0a1614] tracking-tight">
-              Chọn đúng môi trường bảo quản
-            </h2>
-          </div>
+    <section
+      className="py-16 sm:py-20 bg-[#f3f8fc] border-b border-sky-200/70 scroll-mt-16"
+      id="unit-types"
+    >
+      <div className="w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        <div className="text-center max-w-2xl mx-auto">
+          <span className="font-mono text-[#0c5a8a] text-xs font-bold uppercase tracking-wider block mb-2">
+            Hai Dòng Kho
+          </span>
+          <h2 className="text-2xl sm:text-4xl font-bold text-[#0a1614] tracking-tight">
+            Chọn môi trường bảo quản
+          </h2>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto items-stretch">
-            {/* CARD 1: Kho Tiêu Chuẩn */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+        {/* Hàng trên: Bento Grid bất đối xứng 7/12 + 5/12 */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+          {/* BENTO 1 (7 cột): Kho Máy Lạnh kèm Pixel-Art Diorama 60fps */}
+          <div className="lg:col-span-7 bg-white rounded-3xl border border-sky-200/90 shadow-xs overflow-hidden grid grid-cols-1 sm:grid-cols-12">
+            <div className="sm:col-span-6 p-6 sm:p-7 flex flex-col justify-center gap-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="font-bold text-xl text-[#0a1614]">Kho Máy Lạnh</h3>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#e8f4fc] text-[#0c5a8a] border border-sky-200 whitespace-nowrap">
+                  20°C – 25°C
+                </span>
+              </div>
+
               <div>
-                <div className="flex items-start justify-between gap-3 mb-4">
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div className="w-11 h-11 rounded-xl bg-[#f2f9f7] border border-slate-200/80 flex items-center justify-center text-[#439782] shrink-0">
-                      <Warehouse className="w-5 h-5" />
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="font-bold text-lg text-[#0a1614] leading-snug">
-                        Kho Tiêu Chuẩn
-                      </h3>
-                      <span className="text-xs text-slate-500 block mt-0.5 whitespace-nowrap">
-                        5 cỡ XS – XL (1m² – 15m²)
-                      </span>
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0 whitespace-nowrap">
-                    <span className="text-[11px] text-slate-400 block">Giá từ</span>
-                    <span className="font-bold text-base text-[#125449]">
-                      {formatVND(minStandardPrice)}
-                      <span className="text-xs font-normal text-slate-500">/tháng</span>
-                    </span>
-                  </div>
-                </div>
-
-                <p className="text-xs text-slate-600 mb-4 leading-relaxed">
-                  Phù hợp nội thất gia đình, vali, đồ dọn nhà và hàng đóng thùng thông thường.
-                </p>
-
-                <ul className="space-y-2 text-xs text-slate-700 mb-6">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#57b29a] shrink-0" />
-                    Thông gió tự nhiên, khô ráo và PCCC tự động
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#57b29a] shrink-0" />
-                    Khóa mã PIN 6 số riêng tư, giám sát camera 24/7
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#57b29a] shrink-0" />
-                    Tiết kiệm chi phí nhất cho gửi đồ ngắn &amp; dài hạn
-                  </li>
-                </ul>
+                <span className="text-[13px] text-slate-600 block">Giá thuê từ</span>
+                <span className="font-bold text-2xl text-[#0c5a8a]">
+                  {formatVND(minClimatePrice)}
+                  <span className="text-sm font-medium text-slate-600">/tháng</span>
+                </span>
               </div>
 
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                <span className="text-xs text-slate-500">Kèm bảo vệ cơ bản 10tr</span>
-                {renderCta('Xem ô kho Tiêu chuẩn', 'standard', 'secondary')}
-              </div>
+              <p className="text-sm text-slate-700 leading-relaxed">
+                Kiểm soát nhiệt ẩm 24/7 cho mỹ phẩm, đồ da, máy ảnh và hồ sơ.
+              </p>
+
+              <ul className="space-y-2 text-[13px] text-slate-700 font-medium">
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-[#0284c7] shrink-0" />
+                  Điều hòa ổn định 24/7, chống ẩm mốc
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-[#0284c7] shrink-0" />
+                  Tùy chọn bảo vệ tài sản tới 50 triệu
+                </li>
+              </ul>
             </div>
 
-            {/* CARD 2: Kho Máy Lạnh */}
-            <div className="bg-white rounded-2xl border-2 border-[#57b29a] p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between relative">
-              <div>
-                <div className="flex items-start justify-between gap-3 mb-4">
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div className="w-11 h-11 rounded-xl bg-[#57b29a] flex items-center justify-center text-white shadow-xs shrink-0">
-                      <Thermometer className="w-5 h-5" />
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="font-bold text-lg text-[#0a1614] leading-snug">
-                        Kho Máy Lạnh
-                      </h3>
-                      <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
-                        <span className="text-xs text-slate-500 whitespace-nowrap">
-                          5 cỡ XS – XL
-                        </span>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#f2f9f7] text-[#125449] border border-[#57b29a]/30 whitespace-nowrap">
-                          20°C – 25°C
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0 whitespace-nowrap">
-                    <span className="text-[11px] text-slate-400 block">Giá từ</span>
-                    <span className="font-bold text-base text-[#125449]">
-                      {formatVND(minClimatePrice)}
-                      <span className="text-xs font-normal text-slate-500">/tháng</span>
-                    </span>
-                  </div>
+            <div className="sm:col-span-6 bg-[#eff8fb] relative min-h-[240px] flex items-center justify-center overflow-hidden border-t sm:border-t-0 sm:border-l border-slate-200/80">
+              <img
+                src={pixelClimateImg}
+                alt="Minh họa Pixel-Art kho máy lạnh 20-25 độ SmartStorage"
+                className="w-full h-full object-cover object-center hero-ken-burns"
+              />
+              {/* 3 hạt pixel khí mát thổi ra từ điều hòa */}
+              <span
+                aria-hidden="true"
+                style={{ left: '34%', top: '30%' }}
+                className="absolute w-1.5 h-1.5 bg-sky-400 pixel-cool-float-1 pointer-events-none"
+              />
+              <span
+                aria-hidden="true"
+                style={{ left: '38%', top: '32%' }}
+                className="absolute w-1.5 h-1.5 bg-cyan-300 pixel-cool-float-2 pointer-events-none"
+              />
+              <span
+                aria-hidden="true"
+                style={{ left: '32%', top: '34%' }}
+                className="absolute w-1.5 h-1.5 bg-sky-300 pixel-cool-float-3 pointer-events-none"
+              />
+            </div>
+          </div>
+
+          {/* BENTO 2 (5 cột): Kho Tiêu Chuẩn kèm Pixel-Art Diorama */}
+          <div className="lg:col-span-5 bg-white rounded-3xl border border-slate-200/95 shadow-xs overflow-hidden flex flex-col justify-between">
+            <div className="h-48 bg-[#eff6fc] relative overflow-hidden border-b border-slate-200/80">
+              <img
+                src={pixelStandardImg}
+                alt="Minh họa Pixel-Art kho tiêu chuẩn SmartStorage"
+                className="w-full h-full object-cover object-center hero-ken-burns"
+              />
+              {/* Đèn PIN cửa kho nhấp nháy nhẹ */}
+              <span
+                aria-hidden="true"
+                style={{ left: '42.1%', top: '56.2%' }}
+                className="absolute w-2.5 h-2.5 rounded-xs bg-sky-400/90 blur-[1px] pixel-beacon pointer-events-none"
+              />
+            </div>
+
+            <div className="p-6 sm:p-7 flex-1 flex flex-col justify-center gap-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="font-bold text-xl text-[#0a1614]">Kho Tiêu Chuẩn</h3>
+                  <span className="text-[13px] text-slate-600 block mt-0.5 whitespace-nowrap">
+                    5 cỡ XS – XL (1m² – 15m²)
+                  </span>
                 </div>
-
-                <p className="text-xs text-slate-600 mb-4 leading-relaxed">
-                  Dành cho mỹ phẩm, đồ gỗ quý, đồ da, nhạc cụ, thiết bị điện tử và hồ sơ nhạy cảm ẩm.
-                </p>
-
-                <ul className="space-y-2 text-xs text-slate-700 mb-6">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#57b29a] shrink-0" />
-                    Điều hòa duy trì 20°C – 25°C ngày đêm, chống ẩm mốc
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#57b29a] shrink-0" />
-                    Khóa mã PIN 6 số riêng tư, giám sát camera 24/7
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#57b29a] shrink-0" />
-                    Tùy chọn nâng cấp gói bảo vệ hàng hóa tới 50 triệu đồng
-                  </li>
-                </ul>
+                <div className="text-right shrink-0 whitespace-nowrap">
+                  <span className="text-[13px] text-slate-600 block">Giá từ</span>
+                  <span className="font-bold text-xl text-[#0c5a8a]">
+                    {formatVND(minStandardPrice)}
+                    <span className="text-xs font-medium text-slate-600">/tháng</span>
+                  </span>
+                </div>
               </div>
 
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                <span className="text-xs text-[#439782] font-semibold">Bảo quản tối ưu</span>
-                {renderCta('Chọn kho Máy lạnh', 'climate', 'primary')}
+              <p className="text-sm text-slate-700 leading-relaxed">
+                Thông gió khô ráo, PCCC tự động — tối ưu cho nội thất, vali và hàng đóng thùng.
+              </p>
+
+              <div className="flex items-center gap-2 text-[13px] font-medium text-slate-700 pt-1">
+                <CheckCircle2 className="w-4 h-4 text-[#0284c7] shrink-0" />
+                <span>Tích hợp sẵn gói bảo vệ cơ bản 10 triệu</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Phần B: 3 Tình huống gợi ý gọn nhẹ (Không nhồi ảnh công nghiệp) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl mx-auto">
-          <Link
-            to={buildUnitLink('standard', 'M')}
-            className="bg-white rounded-xl border border-slate-200 p-4 hover:border-[#57b29a] hover:shadow-sm transition-all flex items-center gap-3.5 group"
-          >
-            <div className="w-10 h-10 rounded-lg bg-[#f2f9f7] text-[#439782] flex items-center justify-center shrink-0">
-              <Home className="w-5 h-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h4 className="font-bold text-xs sm:text-sm text-[#0a1614] group-hover:text-[#439782] transition-colors">
-                Chuyển &amp; sửa nhà
-              </h4>
-              <p className="text-[11px] text-slate-500 truncate">Sofa, nệm, tủ lạnh · Gợi ý Cỡ M</p>
-            </div>
-            <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-[#57b29a] shrink-0" />
-          </Link>
+        {/* Hàng dưới: 3 Khối Nhu Cầu Trọng Tâm kèm minh họa Pixel-Art */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {USE_CASES.map((uc) => (
+            <div
+              key={uc.code}
+              className="bg-white/95 backdrop-blur-xs rounded-2xl border border-sky-200/80 p-5 sm:p-6 shadow-2xs space-y-3.5 flex flex-col justify-between"
+            >
+              <div className="h-40 rounded-2xl bg-[#f4f9fe] border border-sky-100/90 flex items-center justify-center p-3 overflow-hidden">
+                <img
+                  src={uc.imageSrc}
+                  alt={`Minh họa ${uc.title}`}
+                  className="h-full w-auto object-contain"
+                />
+              </div>
 
-          <Link
-            to={buildUnitLink('standard', 'L')}
-            className="bg-white rounded-xl border border-slate-200 p-4 hover:border-[#57b29a] hover:shadow-sm transition-all flex items-center gap-3.5 group"
-          >
-            <div className="w-10 h-10 rounded-lg bg-[#f2f9f7] text-[#439782] flex items-center justify-center shrink-0">
-              <ShoppingBag className="w-5 h-5" />
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-mono text-xs font-bold text-[#0c5a8a] tracking-wider">
+                    {uc.code}
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#e8f4fc] text-[#0c5a8a] border border-sky-200/80">
+                    {uc.tag}
+                  </span>
+                </div>
+                <h3 className="font-bold text-lg text-[#0a1614]">{uc.title}</h3>
+                <p className="text-sm text-slate-700 leading-relaxed">{uc.desc}</p>
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <h4 className="font-bold text-xs sm:text-sm text-[#0a1614] group-hover:text-[#439782] transition-colors">
-                Shop Online &amp; B2B
-              </h4>
-              <p className="text-[11px] text-slate-500 truncate">Hàng hóa, hồ sơ · Gợi ý Cỡ L</p>
-            </div>
-            <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-[#57b29a] shrink-0" />
-          </Link>
-
-          <Link
-            to={buildUnitLink('climate', 'S')}
-            className="bg-white rounded-xl border border-slate-200 p-4 hover:border-[#57b29a] hover:shadow-sm transition-all flex items-center gap-3.5 group"
-          >
-            <div className="w-10 h-10 rounded-lg bg-[#f2f9f7] text-[#439782] flex items-center justify-center shrink-0">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h4 className="font-bold text-xs sm:text-sm text-[#0a1614] group-hover:text-[#439782] transition-colors">
-                Đồ giá trị, nhạy ẩm
-              </h4>
-              <p className="text-[11px] text-slate-500 truncate">Mỹ phẩm, máy ảnh · Kho Máy lạnh</p>
-            </div>
-            <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-[#57b29a] shrink-0" />
-          </Link>
+          ))}
         </div>
       </div>
     </section>

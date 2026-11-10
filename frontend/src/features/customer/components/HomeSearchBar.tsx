@@ -46,8 +46,8 @@ export const HomeSearchBar: React.FC<HomeSearchBarProps> = ({
       <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
         {/* Khu vực / Thành phố — Custom Dropdown */}
         <div ref={cityDropdownRef} className="relative flex-1 min-w-0">
-          <span className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 mb-1.5">
-            <MapPin className="w-3.5 h-3.5 text-[#57b29a]" />
+          <span className="flex items-center gap-1.5 text-[13px] font-semibold text-slate-700 mb-1.5">
+            <MapPin className="w-4 h-4 text-[#0284c7]" />
             Khu vực tìm kho
           </span>
           <button
@@ -56,16 +56,16 @@ export const HomeSearchBar: React.FC<HomeSearchBarProps> = ({
             onClick={() => setIsCityDropdownOpen((prev) => !prev)}
             aria-haspopup="listbox"
             aria-expanded={isCityDropdownOpen}
-            className={`w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+            className={`w-full flex items-center justify-between gap-2 px-4 py-2.5 rounded-xl border text-left transition-all cursor-pointer ${
               isCityDropdownOpen
-                ? 'bg-[#f2f9f7] border-[#57b29a] ring-2 ring-[#57b29a]/20'
-                : 'bg-[#f2f9f7]/60 border-slate-200 hover:border-[#57b29a]/50'
+                ? 'bg-[#eff7fd] border-[#0284c7] ring-2 ring-[#0284c7]/20'
+                : 'bg-[#f4f9fe] border-slate-300 hover:border-[#0284c7]'
             }`}
           >
-            <span className="text-xs font-bold text-[#0a1614] truncate">{selectedCity}</span>
+            <span className="text-sm font-bold text-[#0a1614] truncate">{selectedCity}</span>
             <ChevronDown
-              className={`w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                isCityDropdownOpen ? 'rotate-180 text-[#57b29a]' : ''
+              className={`w-4 h-4 text-slate-600 transition-transform duration-200 shrink-0 ${
+                isCityDropdownOpen ? 'rotate-180 text-[#0c5a8a]' : ''
               }`}
             />
           </button>
@@ -92,17 +92,17 @@ export const HomeSearchBar: React.FC<HomeSearchBarProps> = ({
                       onSelectCity(city);
                       setIsCityDropdownOpen(false);
                     }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-[13px] transition-colors cursor-pointer ${
                       isSelected
-                        ? 'bg-[#f2f9f7] text-[#439782] font-bold'
+                        ? 'bg-[#e8f4fc] text-[#0c5a8a] font-bold'
                         : 'text-slate-700 hover:bg-slate-50 font-medium'
                     }`}
                   >
                     <span className="truncate">
                       {city}{' '}
-                      <span className="text-[11px] font-normal text-slate-400">({count})</span>
+                      <span className="text-xs font-normal text-slate-500">({count})</span>
                     </span>
-                    {isSelected && <Check className="w-3.5 h-3.5 text-[#57b29a] shrink-0" />}
+                    {isSelected && <Check className="w-4 h-4 text-[#0c5a8a] shrink-0" />}
                   </button>
                 );
               })}
@@ -113,7 +113,7 @@ export const HomeSearchBar: React.FC<HomeSearchBarProps> = ({
         {/* CTA Search */}
         <button
           type="submit"
-          className="sm:w-auto px-6 py-2.5 rounded-xl bg-[#57b29a] hover:bg-[#439782] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.98] cursor-pointer shrink-0 h-[38px]"
+          className="sm:w-auto px-6 py-2.5 rounded-xl bg-[#0c5a8a] hover:bg-[#084369] text-white font-bold text-[13px] flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.98] cursor-pointer shrink-0 h-[42px]"
         >
           <Search className="w-4 h-4" />
           <span>Tìm kho trống</span>

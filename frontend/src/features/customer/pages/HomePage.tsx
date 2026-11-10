@@ -11,9 +11,8 @@ import { HomeProcessAndFaqSection } from '../components/HomeProcessAndFaqSection
 import { HomeFooter } from '../components/HomeFooter';
 
 /**
- * Trang chủ Khách hàng (Landing Page) SmartStorage:
- * Hero + Ước lượng 3D thật -> Mạng lưới Chi nhánh & Tìm theo khu vực ->
- * So sánh 2 dòng kho (Tiêu chuẩn & Máy lạnh) -> Quy trình 3 bước & FAQ -> Footer.
+ * Trang chủ Khách hàng (Landing Page) SmartStorage tại /:
+ * Cofounder Sky-Blue Pixel Aesthetic + Mô hình 3D kích thước thật từ Backend API & Policy.
  */
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -103,8 +102,11 @@ export const HomePage: React.FC = () => {
   };
 
   return (
-    <div className="bg-[#f2f9f7] text-[#0a1614] antialiased font-sans selection:bg-[#57b29a] selection:text-white">
-      {/* 1. Hero + Mô hình 3D Ước lượng */}
+    <div
+      style={{ fontFamily: "'Be Vietnam Pro', 'Plus Jakarta Sans', sans-serif" }}
+      className="bg-white text-[#0a1614] antialiased selection:bg-[#0c5a8a] selection:text-white"
+    >
+      {/* 1. Hero Phong cách Cofounder + Công cụ Ước lượng 3D */}
       <HomeHeroSection
         primaryFacilityId={primaryFacilityId}
         facilitiesCount={facilities.length}
@@ -112,7 +114,7 @@ export const HomePage: React.FC = () => {
         onScrollToId={scrollToId}
       />
 
-      {/* 2. Mạng lưới Chi nhánh thực tế & Ô tìm kiếm khu vực */}
+      {/* 2. Mạng lưới Chi nhánh */}
       <HomeBranchesSection
         isLoading={isLoading}
         availableCities={availableCities}
@@ -131,19 +133,11 @@ export const HomePage: React.FC = () => {
         }}
       />
 
-      {/* 3. So sánh 2 dòng kho tối giản */}
-      <HomeSizeGuideSection
-        primaryFacilityId={primaryFacilityId}
-        unitTypes={unitTypes}
-        onScrollToBranches={() => scrollToId('branches')}
-      />
+      {/* 3. Hai dòng kho & Nhu cầu */}
+      <HomeSizeGuideSection unitTypes={unitTypes} />
 
-      {/* 4. Quy trình 3 bước & FAQ sát Policy thực tế */}
-      <HomeProcessAndFaqSection
-        primaryFacilityId={primaryFacilityId}
-        policy={policy}
-        onScrollToBranches={() => scrollToId('branches')}
-      />
+      {/* 4. Quy trình, Lý do chọn SmartStorage, Feedback & FAQ */}
+      <HomeProcessAndFaqSection policy={policy} />
 
       {/* 5. Footer */}
       <HomeFooter facilities={facilities} onScrollToId={scrollToId} />
