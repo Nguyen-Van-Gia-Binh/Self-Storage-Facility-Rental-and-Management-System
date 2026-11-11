@@ -76,14 +76,15 @@ describe('WaitlistInboxPage (FM Telesales CRM)', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText(/Danh sách Chờ & Hộp thư Tư vấn/i)).toBeDefined();
+    expect(screen.getByText(/Danh sách Chờ \(Waitlist\)/i)).toBeDefined();
 
     await waitFor(() => {
       expect(screen.getByText('Nguyễn Văn A')).toBeDefined();
       expect(screen.getByText('Trần Thị B')).toBeDefined();
       expect(screen.getByText('Kho Lớn (15m2)')).toBeDefined();
-      expect(screen.getByText(/Còn 2 ô trống/i)).toBeDefined();
-      expect(screen.getByText(/Hết công suất \(0\)/i)).toBeDefined();
+      // Nút Tạo HĐ trực tiếp và Gỡ / Lưu trữ hiển thị trực tiếp cho mọi đơn
+      expect(screen.getAllByText(/Tạo HĐ trực tiếp/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/Gỡ \/ Lưu trữ/i).length).toBeGreaterThan(0);
     });
   });
 

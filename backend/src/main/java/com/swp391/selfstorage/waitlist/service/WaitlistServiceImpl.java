@@ -421,11 +421,13 @@ public class WaitlistServiceImpl implements WaitlistService {
         }
         Waitlist waitlist = waitlistRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.WAITLIST_NOT_FOUND));
-        if (waitlist.getStatus() != WaitlistStatus.CONTACTING) {
-            throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION, "Thao tác chỉ hợp lệ khi đang ở trạng thái CONTACTING");
+        if (waitlist.getStatus() != WaitlistStatus.WAITING
+                && waitlist.getStatus() != WaitlistStatus.CONTACTING
+                && waitlist.getStatus() != WaitlistStatus.PENDING_FOLLOW_UP) {
+            throw new CustomException(ErrorCode.INVALID_STATUS_TRANSITION, "Đơn chờ đã được xử lý hoặc đã kết thúc");
         }
-        if (waitlist.getAssignedFmId() != null && !waitlist.getAssignedFmId().equals(currentUser.getId())) {
-            throw new CustomException(ErrorCode.ACCESS_DENIED, "Bạn không phải nhân sự đang giữ quyền tư vấn đơn này");
+        if (waitlist.getAssignedFmId() == null) {
+            waitlist.setAssignedFmId(currentUser.getId());
         }
         return waitlist;
     }
