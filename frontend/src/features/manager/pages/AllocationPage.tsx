@@ -606,28 +606,6 @@ export const AllocationPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Priority Banner for unassigned reservations */}
-      {unassignedCount > 0 && (
-        <div className="rounded-2xl border border-amber-300 bg-amber-50/90 p-4 text-amber-950 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-start gap-3">
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-200 text-amber-900 font-bold text-sm shrink-0 mt-0.5">
-              ⭐
-            </span>
-            <div>
-              <h4 className="text-sm font-bold text-amber-950">
-                Hàng đợi phân bổ ưu tiên: Đang có {unassignedCount} đơn đặt chỗ chờ gán ô kho
-              </h4>
-              <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">
-                Khách đặt trước online đã thanh toán cọc được ưu tiên giữ chỗ tuyệt đối. Hoàn tất gán ô kho cho các đơn này để mở khóa phân bổ cho Danh sách chờ (Waitlist).
-              </p>
-            </div>
-          </div>
-          <span className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl bg-amber-200/80 text-amber-900 border border-amber-300/80 self-start sm:self-center">
-            Ưu tiên giải quyết #1
-          </span>
-        </div>
-      )}
-
       {/* Danh sách nhiệm vụ gán ô kho từ trên xuống (Full-width Vertical Task List) */}
       <section className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs">
         <div className="px-4 py-3.5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/70">
