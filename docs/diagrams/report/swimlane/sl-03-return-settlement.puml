@@ -64,7 +64,7 @@ if (Net Balance > 0 (Refund to Customer)?) then (refund)
 else if (Net Balance < 0 (Customer owes money)?) then (debt)
   :Generate outstanding payment link for customer to pay shortfall;
   |Storage Customer|
-  :Pay outstanding balance via VietQR;
+  :Pay outstanding balance via VNPay Sandbox;
   |System|
 endif
 
@@ -80,3 +80,4 @@ endif
 :Receive final settlement statement & contract closure receipt;
 stop
 @enduml
+

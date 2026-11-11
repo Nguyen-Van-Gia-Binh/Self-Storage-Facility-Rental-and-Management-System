@@ -65,7 +65,6 @@ export interface ReservationResponse {
   customerPhone?: string;
   customerEmail?: string;
   holdExpiresAt: string;
-  vietQrPayload?: string;
   bankAccountNumber?: string;
   bankName?: string;
   transferContent?: string;

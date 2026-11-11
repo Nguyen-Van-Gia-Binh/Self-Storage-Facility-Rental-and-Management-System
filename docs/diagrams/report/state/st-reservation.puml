@@ -8,7 +8,7 @@ title State Machine Diagram — Reservation Entity (6 States)
 
 [*] --> PENDING_PAYMENT : Customer selects unit type & submits booking\n[Capacity reserved in 30-day window]\n/ ReservationService#createReservation (BR-RES-01)
 
-PENDING_PAYMENT --> CONFIRMED : Customer completes VietQR transfer within 48 hours\n[PaymentTransaction SUCCESS]\n/ PaymentService#handleWebhook (BR-PAY-02, BR-DEP-03)
+PENDING_PAYMENT --> CONFIRMED : Customer completes VNPay payment within 48 hours\n[PaymentTransaction SUCCESS]\n/ PaymentService#completeVnpayPayment (BR-PAY-02, BR-DEP-03)
 PENDING_PAYMENT --> EXPIRED : 48 hours pass without payment\n/ ReservationExpiryScheduler (BR-RES-02)
 PENDING_PAYMENT --> CANCELLED : Customer manually cancels reservation draft\n/ ReservationService#cancelPendingReservation
 
@@ -21,3 +21,4 @@ CANCELLED --> [*]
 FULFILLED --> [*]
 NO_SHOW --> [*]
 @enduml
+

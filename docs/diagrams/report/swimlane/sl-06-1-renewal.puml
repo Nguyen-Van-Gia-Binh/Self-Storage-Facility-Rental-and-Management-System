@@ -24,10 +24,10 @@ if (Unit has no future booking conflict?) then (no conflict)
   |System|
   :Calculate renewal fee based on current facility pricing;
   :Preserve original security deposit (no duplicate deposit charged) (BR-DEP-01);
-  :Generate VietQR payment invoice for renewal fee;
+  :Generate VNPay checkout URL for renewal fee;
 
   |Storage Customer|
-  :Review renewal quotation and pay via VietQR;
+  :Review renewal quotation and pay via VNPay;
 
   |System|
   :Verify payment transaction SUCCESS;
@@ -47,7 +47,7 @@ else (conflict - future reservation exists)
     :Clear conflict on current customer unit;
     :Proceed with current customer renewal payment invoice;
     |Storage Customer|
-    :Complete renewal payment via VietQR;
+    :Complete renewal payment via VNPay;
     |System|
     :Extend current contract end date (BR-REN-05);
     stop
@@ -60,3 +60,4 @@ else (conflict - future reservation exists)
   endif
 endif
 @enduml
+

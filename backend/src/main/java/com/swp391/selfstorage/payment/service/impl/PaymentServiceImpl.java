@@ -413,7 +413,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .transactionType(txnType)
                 .amount(amount)
                 .status("PENDING")
-                .paymentMethod("SANDBOX_VIETQR")
+                .paymentMethod("VNPAY")
                 .orderCode(orderCode)
                 .providerReference("SBX-" + orderCode)
                 .renewalMonths(storedRenewalMonths)

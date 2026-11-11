@@ -16,7 +16,7 @@ start
 :Hold capacity slot for 48 hours (BR-DEP-03, BR-RES-02);
 
 |Storage Customer|
-:Review quote & pay deposit and first month via VietQR (BR-PAY-01);
+:Review quote & pay deposit and first month via VNPay Sandbox (BR-PAY-01);
 
 |System|
 :Verify payment & mark Reservation CONFIRMED;
@@ -74,3 +74,4 @@ endif
 :Receive final settlement statement & deposit refund;
 stop
 @enduml
+

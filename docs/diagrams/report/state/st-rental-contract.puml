@@ -24,7 +24,7 @@ OVERDUE --> TERMINATED : Overdue past D+10 & 48h final notice expires\n[Default 
 PENDING_RETURN --> RETURNED : Staff checkout inspection complete\n[Unit clean, damages assessed, protocol signed]\n/ ReturnService#completeInspection (BR-RET-07)
 PENDING_RETURN --> ACTIVE : Customer cancels return request before inspection\n/ ReturnService#cancelReturnRequest (BR-RET-03)
 
-RETURNED --> CLOSED : Final settlement approved & deposit refunded/settled\n[Net balance paid / refunded via VietQR]\n/ SettlementService#approveSettlement (BR-RET-08)
+RETURNED --> CLOSED : Final settlement approved & deposit refunded/settled\n[Net balance paid / refunded via VNPay / Bank Transfer]\n/ SettlementService#approveSettlement (BR-RET-08)
 
 PENDING_EMERGENCY_RESOLUTION --> ACTIVE : Emergency resolved or unit swapped\n/ SupportService#resolveEmergency
 PENDING_EMERGENCY_RESOLUTION --> TERMINATED : Facility closed or irreparable damage\n/ SupportService#terminateEmergency
@@ -33,3 +33,4 @@ CANCELLED --> [*]
 CLOSED --> [*]
 TERMINATED --> [*]
 @enduml
+

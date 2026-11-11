@@ -23,3 +23,4 @@ RESOLVED --> IN_PROGRESS : Customer reports issue unresolved (reopens ticket)\n/
 CLOSED --> [*]
 AUTO_CLOSED --> [*]
 @enduml
+

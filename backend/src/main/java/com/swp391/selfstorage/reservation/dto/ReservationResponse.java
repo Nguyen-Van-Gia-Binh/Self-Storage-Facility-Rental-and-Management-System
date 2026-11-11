@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
 /**
- * Phản hồi chi tiết thông tin đơn đặt chỗ và thanh toán VietQR.
+ * Phản hồi chi tiết thông tin đơn đặt chỗ và thanh toán trực tuyến VNPay.
  */
 public class ReservationResponse {
 
@@ -39,7 +39,6 @@ public class ReservationResponse {
     private OffsetDateTime fulfilledAt;
     private OffsetDateTime cancelledAt;
     private String cancelReason;
-    private String vietQrPayload;
     private String bankAccountNumber;
     private String bankName;
     private String transferContent;
@@ -103,9 +102,6 @@ public class ReservationResponse {
 
     public OffsetDateTime getHoldExpiresAt() { return holdExpiresAt; }
     public void setHoldExpiresAt(OffsetDateTime holdExpiresAt) { this.holdExpiresAt = holdExpiresAt; }
-
-    public String getVietQrPayload() { return vietQrPayload; }
-    public void setVietQrPayload(String vietQrPayload) { this.vietQrPayload = vietQrPayload; }
 
     public String getBankAccountNumber() { return bankAccountNumber; }
     public void setBankAccountNumber(String bankAccountNumber) { this.bankAccountNumber = bankAccountNumber; }

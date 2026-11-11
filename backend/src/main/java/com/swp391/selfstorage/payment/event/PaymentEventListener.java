@@ -60,7 +60,7 @@ public class PaymentEventListener {
                     .contractId(event.getContractId())
                     .amount(event.getPayableAmount())
                     .transactionType("SETTLEMENT")
-                    .paymentMethod("VIETQR_PAYOS")
+                    .paymentMethod("VNPAY")
                     .status("PENDING")
                     .providerReference("Thu nợ thanh lý hợp đồng #" + event.getContractId())
                     .orderCode(System.currentTimeMillis())

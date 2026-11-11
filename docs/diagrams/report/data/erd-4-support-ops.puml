@@ -75,3 +75,4 @@ app_user ||--o{ staff_daily_assignment : "staff_id"
 app_user |o--o{ attachment : "uploaded_by"
 
 @enduml
+

@@ -199,7 +199,7 @@ class PaymentServiceTest {
                             .accountNumber("0888567999")
                             .bin("970422")
                             .checkoutUrl("http://localhost:5173/payment/checkout?orderCode=" + cmd.getOrderCode())
-                            .qrCode("https://img.vietqr.io/image/970422-0888567999-compact2.png")
+                            .qrCode("http://localhost:5173/payment/checkout?orderCode=" + cmd.getOrderCode())
                             .build();
                 });
 
@@ -216,7 +216,7 @@ class PaymentServiceTest {
         assertNotNull(resp);
         assertNotNull(resp.getOrderCode());
         assertEquals("http://localhost:5173/payment/checkout?orderCode=" + resp.getOrderCode(), resp.getCheckoutUrl());
-        assertEquals("https://img.vietqr.io/image/970422-0888567999-compact2.png", resp.getQrCode());
+        assertEquals(resp.getCheckoutUrl(), resp.getQrCode());
         assertEquals(3_200_000L, resp.getAmount());
         assertEquals("PENDING", resp.getStatus());
 
@@ -225,7 +225,7 @@ class PaymentServiceTest {
         PaymentTransaction savedTxn = txnCaptor.getValue();
         assertEquals(100L, savedTxn.getReservationId());
         assertEquals("PENDING", savedTxn.getStatus());
-        assertEquals("SANDBOX_VIETQR", savedTxn.getPaymentMethod());
+        assertEquals("VNPAY", savedTxn.getPaymentMethod());
         assertEquals(resp.getOrderCode(), savedTxn.getOrderCode());
     }
 
@@ -337,8 +337,8 @@ class PaymentServiceTest {
         when(paymentGateway.createPayment(any(PaymentCheckoutCommand.class)))
                 .thenReturn(PaymentCheckoutResult.builder()
                         .orderCode(12345678L)
-                        .checkoutUrl("https://payos.vn/checkout/12345678")
-                        .qrCode("vietqr://250000/PHAT80017")
+                        .checkoutUrl("https://sandbox.vnpayment.vn/paymentv2/vpcpay.html")
+                        .qrCode("https://sandbox.vnpayment.vn/paymentv2/vpcpay.html")
                         .amount(250_000L)
                         .build());
         when(paymentTransactionRepository.save(any(PaymentTransaction.class)))
@@ -604,7 +604,7 @@ class PaymentServiceTest {
                 .amount(1_000L)
                 .status("PENDING")
                 .transactionType("INITIAL_PAYMENT")
-                .paymentMethod("SANDBOX_VIETQR")
+                .paymentMethod("VNPAY")
                 .build();
         when(paymentTransactionRepository.findByOrderCodeForUpdate(123L)).thenReturn(Optional.of(pending));
 

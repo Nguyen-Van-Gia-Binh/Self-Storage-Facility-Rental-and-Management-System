@@ -171,3 +171,4 @@ storage_unit ||--o{ access_log : "storage_unit_id"
 rental_contract |o--o{ access_log : "contract_id"
 
 @enduml
+

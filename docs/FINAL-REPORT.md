@@ -54,7 +54,7 @@ The Self-Storage Facility Rental and Management System provides a multi-role dig
 
 - **Participating Actors:** Storage Customer, Facility Staff, Facility Manager, Automated System Schedulers.
 - **Workflow Trigger:** Customer seeks secure storage space across multi-city facility network.
-- **Primary Operational Path:** The customer selects a unit type and books via the portal, holding a capacity slot for 48 hours. Following VietQR deposit payment confirmation, the Facility Manager allocates a specific physical unit. Upon customer arrival, Facility Staff performs a 4-point handover inspection, after which a 6-digit Smart Lock PIN is issued. During active occupancy, the customer may renew online (T-20 window) or submit a return request. Unrenewed expired contracts transition to Overdue under daily penalty escalation. Upon exit, staff verifies unit integrity and the manager approves final deposit settlement.
+- **Primary Operational Path:** The customer selects a unit type and books via the portal, holding a capacity slot for 48 hours. Following VNPay Sandbox deposit payment confirmation, the Facility Manager allocates a specific physical unit. Upon customer arrival, Facility Staff performs a 4-point handover inspection, after which a 6-digit Smart Lock PIN is issued. During active occupancy, the customer may renew online (T-20 window) or submit a return request. Unrenewed expired contracts transition to Overdue under daily penalty escalation. Upon exit, staff verifies unit integrity and the manager approves final deposit settlement.
 - **Governing Business Rules:** `BR-GEN-03`, `BR-DEP-01`, `BR-AVL-01`, `BR-CHK-01..03`, `BR-REN-01`, `BR-OVD-01..02`, `BR-RET-06..09`.
 
 ---
@@ -65,7 +65,7 @@ The Self-Storage Facility Rental and Management System provides a multi-role dig
 
 - **Participating Actors:** Storage Customer, Facility Manager, Payment Gateway / System Webhook.
 - **Workflow Trigger:** Customer accesses self-service portal to reserve storage capacity.
-- **Primary Operational Path:** The customer filters facilities and evaluates unit types. The system checks capacity across a 30-day advance booking window (`BR-RES-01`). If capacity exists, a `PENDING_PAYMENT` reservation holds quota for 48 hours (`BR-RES-02`). Upon scanning the VietQR code, the payment webhook validates funds and transitions the reservation to `CONFIRMED`. The Facility Manager assigns a physical unit before check-in (`BR-AVL-04`), generating a Digital Move-in Pass. If capacity is exhausted, the customer enters a FIFO Waitlist queue (`BR-WAT-01`), allowing the manager to conduct outbound sales with a 2-hour exclusive booking lock (`BR-WAT-02`).
+- **Primary Operational Path:** The customer filters facilities and evaluates unit types. The system checks capacity across a 30-day advance booking window (`BR-RES-01`). If capacity exists, a `PENDING_PAYMENT` reservation holds quota for 48 hours (`BR-RES-02`). Upon completing VNPay payment (VNBANK / INTCARD / Mock Pay), the gateway return callback validates transaction status and transitions the reservation to `CONFIRMED`. The Facility Manager assigns a physical unit before check-in (`BR-AVL-04`), generating a Digital Move-in Pass. If capacity is exhausted, the customer enters a FIFO Waitlist queue (`BR-WAT-01`), allowing the manager to conduct outbound sales with a 2-hour exclusive booking lock (`BR-WAT-02`).
 - **Governing Business Rules:** `BR-RES-01..04`, `BR-DEP-01..03`, `BR-AVL-01..04`, `BR-WAT-01..03`, `BR-SPAM-01`.
 
 ---
@@ -201,7 +201,7 @@ The `Reservation` entity coordinates advance capacity allocation across 6 states
 | Current State | Target State | Trigger & Condition | Triggering Actor / Job | Guard / Rule Code | Backend Code Reference |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `[*]` | `PENDING_PAYMENT`| Customer submits reservation request online | Storage Customer | `BR-RES-01`, `BR-DEP-03` | `ReservationServiceImpl#create` |
-| `PENDING_PAYMENT` | `CONFIRMED` | VietQR webhook received with correct deposit amount| Payment Gateway | `BR-PAY-02`, `BR-DEP-03` | `PaymentServiceImpl#handleWebhook` |
+| `PENDING_PAYMENT` | `CONFIRMED` | VNPay payment return received with correct deposit amount | Payment Gateway | `BR-PAY-02`, `BR-DEP-03` | `PaymentServiceImpl#completeVnpayPayment` |
 | `PENDING_PAYMENT` | `EXPIRED` | 48-hour payment window passes without payment | Expiry Scheduler | `BR-RES-02` | `ReservationExpiryScheduler` |
 | `CONFIRMED` | `FULFILLED` | Handover complete and rental contract activated | Facility Staff | `BR-CHK-03` | `HandoverServiceImpl#completeCheckIn` |
 | `CONFIRMED` | `CANCELLED` | Customer cancels reservation prior to move-in | Customer | `BR-CAN-01..03` | `ReservationServiceImpl#cancel` |
@@ -251,7 +251,7 @@ The `PaymentTransaction` entity governs financial transaction states across 5 st
 
 | Current State | Target State | Trigger & Condition | Triggering Actor / Job | Guard / Rule Code | Backend Code Reference |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `[*]` | `PENDING` | Payment order created (VietQR payment link) | System / Gateway | `BR-PAY-01` | `PaymentServiceImpl#createTransaction` |
+| `[*]` | `PENDING` | Payment order created (VNPay checkout URL generated) | System / Gateway | `BR-PAY-01` | `PaymentServiceImpl#createCheckoutLink` |
 | `PENDING` | `SUCCESS` | Bank transfer webhook received and validated | Payment Gateway | `BR-PAY-02` | `PaymentServiceImpl#handleWebhook` |
 | `PENDING` | `EXPIRED` | Payment window passes without receipt | Expiry Scheduler | `BR-PAY-03` | `PaymentExpiryScheduler` |
 | `SUCCESS` | `PENDING_REFUND`| Return settlement or cancellation entitles refund | Facility Manager | `BR-RET-08`, `BR-CAN-02` | `SettlementServiceImpl#initiateRefund` |
@@ -282,7 +282,7 @@ The Conceptual Data Model abstracts the core business concepts into 17 high-leve
 | | **ContractRenewal** | Contract lease extension recording renewed duration and agreed future end dates. |
 | | **HandoverRecord** | Electronic inspection protocol verifying physical unit condition upon move-in. |
 | | **ReturnRequest** | Checkout request governing return inspection, damage assessment, and settlement. |
-| **Finance & Policy** | **PaymentTransaction** | Gateway payment record tracking VietQR banking transfers, receipts, and refunds. |
+| **Finance & Policy** | **PaymentTransaction** | Gateway payment record tracking VNPay banking transfers, receipts, and refunds. |
 | | **ContractExtraCharge** | Ledger charge recording damages, cleaning penalties, or overdue fees. |
 | | **PolicyVersion** | Immutable system governance policy snapshot dictating grace periods and penalties. |
 | | **DiscountProgram** | Marketing promotion providing percentage discounts on eligible rental durations. |
@@ -317,7 +317,7 @@ The complete PostgreSQL database schema encompasses **30 relational tables** man
 
 ![Physical ERD Part 3](diagrams/report/data/erd-3-finance-policy.png)
 
-- **Domain Scope:** VietQR payment transactions, double-entry financial ledger entries, contract extra charges, overdue fee adjustment requests, system operating policies, and promotional discount programs.
+- **Domain Scope:** VNPay payment transactions, double-entry financial ledger entries, contract extra charges, overdue fee adjustment requests, system operating policies, and promotional discount programs.
 - **Included Tables (8):** `payment_transaction`, `ledger_entry`, `contract_extra_charge`, `overdue_fee_adjustment_request`, `policy_version`, `extra_fee_type`, `extra_fee_version`, `discount_program`.
 
 ---
@@ -366,7 +366,7 @@ The complete PostgreSQL database schema encompasses **30 relational tables** man
 | :--- | :--- | :--- |
 | **SC-01** — View Service & Unit Catalog | **BR-PRI-01**: Master unit type dimensions and standardized base rate catalog.<br>**BR-PRI-02**: Facility-specific location surcharge / pricing adjustments.<br>**BR-AVL-01**: Real-time capacity computation across active booking windows. | `FacilityController#getAllActiveFacilities`<br>`StorageUnitRepository#countAvailableUnits`<br>`MonthlyRentCalculator#calculateMonthlyRent` |
 | **SC-02** — Unit Reservation & Waitlist | **BR-RES-01**: 30-day maximum advance booking window for online self-service reservations.<br>**BR-RES-02**: Capacity slot hold for 48 hours without immediate physical unit allocation.<br>**BR-DEP-03**: Temporary quota reservation released automatically after 48h unpaid.<br>**BR-WAT-01**: Free entry into FIFO Waitlist queue when facility unit type capacity is zero.<br>**BR-SPAM-01**: Maximum 3 active pending draft reservations allowed per customer account. | `ReservationServiceImpl#createReservation`<br>`ReservationExpiryScheduler#expireUnpaidReservations`<br>`WaitlistServiceImpl#registerWaitlist`<br>`ReservationRepository#countActivePendingByUser` |
-| **SC-03** — Payment Processing | **BR-DEP-01**: Security deposit equals exactly 1.0x monthly rental rate.<br>**BR-PAY-01**: Initial invoice requires payment of 1 month deposit plus selected rental duration.<br>**BR-PAY-02**: Instant automated verification via VietQR / VNPay webhook with amount validation.<br>**BR-PAY-03**: Payment links expire after 48h (deposit) or 15 minutes (dynamic QR). | `PaymentServiceImpl#createInitialPaymentLink`<br>`PaymentServiceImpl#handleWebhook`<br>`PaymentTransactionRepository#findByTransactionCode`<br>`VietQrService#generateQrCodeUrl` |
+| **SC-03** — Payment Processing | **BR-DEP-01**: Security deposit equals exactly 1.0x monthly rental rate.<br>**BR-PAY-01**: Initial invoice requires payment of 1 month deposit plus selected rental duration.<br>**BR-PAY-02**: Instant automated verification via VNPay gateway return / mock-complete callback with amount validation.<br>**BR-PAY-03**: Payment orders expire after 48h (deposit) or 15 minutes (VNPay session timeout). | `PaymentServiceImpl#createCheckoutLink`<br>`PaymentServiceImpl#completeVnpayPayment`<br>`PaymentTransactionRepository#findByOrderCode`<br>`VnPayGateway#buildPayUrl` |
 | **SC-04** — Check-in & Handover | **BR-CHK-01**: Identity verification matching registered citizen ID / passport.<br>**BR-CHK-02**: 4-point handover inspection checklist (lock, cleanliness, lighting, climate).<br>**BR-CHK-03**: Secure 6-digit Smart Lock PIN generated and activated immediately upon signature.<br>**BR-CAN-04 / BR-CHK-05**: Auto-activation safety scheduler activates contract at T+11 23:59:59.<br>**BR-RES-06**: Customer may postpone check-in start date once by up to 7 days with daily fee. | `HandoverServiceImpl#completeCheckIn`<br>`ContractServiceImpl#rescheduleCheckIn`<br>`AutoCheckInActivationScheduler#scanAndActivate`<br>`AccessCredentialService#generatePin` |
 | **SC-05** — Manage Active Leases | **BR-GEN-03**: Rental duration structured in whole integer months.<br>**BR-RET-01**: Customer schedules return appointment through self-service portal.<br>**BR-RET-06**: Win-Win Early Return policy: 100% refund of unused rent, 100% forfeit of initial deposit.<br>**BR-REN-01**: Renewal window opens at T-20 days prior to contract expiration.<br>**BR-REN-03**: Minimum renewal extension is 1 month; maximum is 12 months. | `ContractServiceImpl#requestReturn`<br>`ContractServiceImpl#previewEarlyReturnSettlement`<br>`RenewalServiceImpl#checkRenewalEligibility`<br>`RenewalServiceImpl#requestRenewal` |
 | **SC-06** — Submit Support Tickets | **BR-SUP-01**: Ticket creation categorized by issue type (lock, leakage, billing, damage).<br>**BR-SUP-03**: Emergency 24-hour temporary PIN re-issuance for forgotten/malfunctioning locks.<br>**BR-SUP-04**: Liability protection limits: 10,000,000 VND default vs 50,000,000 VND extended package.<br>**BR-SUP-05**: Support ticket automatically closed 72 hours post-resolution if unrated. | `CustomerSupportServiceImpl#createTicket`<br>`CustomerSupportServiceImpl#reissueEmergencyPin`<br>`CustomerSupportServiceImpl#resolveTicket`<br>`SupportAutoCloseScheduler#autoCloseResolvedTickets` |
@@ -411,3 +411,4 @@ The complete PostgreSQL database schema encompasses **30 relational tables** man
 
 ---
 *Report compiled and verified by Antigravity Technical Lead for SWP391 Final Defense.*
+

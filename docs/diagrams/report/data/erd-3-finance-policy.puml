@@ -143,3 +143,4 @@ app_user ||--o{ overdue_fee_adjustment_request : "requested_by"
 app_user |o--o{ overdue_fee_adjustment_request : "reviewed_by"
 
 @enduml
+

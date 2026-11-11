@@ -880,7 +880,7 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
                   <span>Chuyển khoản trực tiếp (BANK_TRANSFER)</span>
                 </div>
                 <p className="text-[10px] text-teal-700 pl-6.5 font-medium">
-                  Hợp đồng xuất hiện ngay trên tài khoản khách hàng để quét VietQR / thanh toán online.
+                  Hợp đồng xuất hiện ngay trên tài khoản khách hàng để thanh toán trực tuyến VNPay.
                 </p>
               </label>
             </div>
@@ -922,7 +922,7 @@ export const CreateDirectContractModal: React.FC<CreateDirectContractModalProps>
               </span>
             </div>
             <p className="text-[11px] text-slate-500 pt-1">
-              * Hợp đồng được tạo ngay cho khách hàng. Nếu chọn <strong className="text-teal-700">Chuyển khoản</strong>, khách hàng sẽ thấy nút &quot;Thanh toán ngay&quot; trên trang &quot;Kho của tôi&quot; để quét VietQR kích hoạt kho.
+              * Hợp đồng được tạo ngay cho khách hàng. Nếu chọn <strong className="text-teal-700">Chuyển khoản</strong>, khách hàng sẽ thấy nút &quot;Thanh toán ngay&quot; trên trang &quot;Kho của tôi&quot; để thanh toán VNPay kích hoạt kho.
             </p>
           </div>
 

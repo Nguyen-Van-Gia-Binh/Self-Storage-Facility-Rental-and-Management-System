@@ -311,7 +311,7 @@ class ContractSettlementApprovalTest {
                 assertEquals(ContractStatus.TERMINATED, contract.getStatus()); // Chờ khách nộp bù 300k
                 verify(eventPublisher).publishEvent(any(ContractSettledEvent.class));
 
-                // 2. Khách thanh toán 300k qua VNPay/VietQR (SETTLEMENT) -> đóng hợp đồng sang CLOSED
+                // 2. Khách thanh toán 300k qua VNPay (SETTLEMENT) -> đóng hợp đồng sang CLOSED
                 StorageUnit unit = StorageUnit.builder().id(42L).status(StorageUnitStatus.AVAILABLE).build();
                 when(storageUnitRepository.findById(42L)).thenReturn(Optional.of(unit));
 

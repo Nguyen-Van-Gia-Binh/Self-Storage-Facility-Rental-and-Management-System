@@ -47,7 +47,7 @@ class PaymentControllerTest {
     private VnPayGateway vnPayGateway;
 
     @Test
-    @DisplayName("POST /payments/checkout - Tạo link thanh toán PayOS VietQR thành công (201 Created)")
+    @DisplayName("POST /payments/checkout - Tạo link thanh toán VNPay Sandbox thành công (201 Created)")
     void testCreateCheckout_Success() throws Exception {
         CheckoutRequest request = CheckoutRequest.builder()
                 .referenceType("RESERVATION")

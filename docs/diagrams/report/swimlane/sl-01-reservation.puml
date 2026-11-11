@@ -20,10 +20,10 @@ if (Capacity available?) then (yes)
   :Calculate deposit (1 month) + initial rental fee (BR-DEP-01);
   :Generate reservation record with status PENDING_PAYMENT;
   :Hold capacity quota for 48 hours (BR-DEP-03, BR-RES-02);
-  :Generate VietQR payment link;
+  :Generate VNPay checkout URL;
 
   |Storage Customer|
-  :Scan VietQR & complete bank transfer;
+  :Select VNBANK / INTCARD & complete VNPay payment;
 
   |System|
   :Receive payment webhook notification (BR-PAY-02);
@@ -74,3 +74,4 @@ else (no capacity - fully booked)
   endif
 endif
 @enduml
+

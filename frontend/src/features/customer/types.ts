@@ -257,7 +257,7 @@ export interface RenewContractRequest {
   months: number;
   newEndDate: string;
   totalAmount: number;
-  paymentMethod?: 'VIETQR' | 'BANK_TRANSFER' | 'CARD';
+  paymentMethod?: 'VNPAY' | 'BANK_TRANSFER' | 'CARD';
   transactionReference?: string;
 }
 

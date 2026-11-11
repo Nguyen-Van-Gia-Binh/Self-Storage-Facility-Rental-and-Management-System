@@ -160,3 +160,4 @@ unit_type ||--o{ facility_unit_type_price_version : "unit_type_id"
 app_user |o--o{ facility_unit_type_price_version : "created_by"
 
 @enduml
+

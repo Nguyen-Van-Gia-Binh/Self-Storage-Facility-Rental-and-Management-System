@@ -32,3 +32,4 @@ OUT_OF_SERVICE --> AVAILABLE : Reconditioned and certified safe for rental\n/ St
 
 OUT_OF_SERVICE --> [*] : Physical unit demolished / permanently removed
 @enduml
+

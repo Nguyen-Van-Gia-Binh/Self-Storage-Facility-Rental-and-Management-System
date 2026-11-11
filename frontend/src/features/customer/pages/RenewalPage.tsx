@@ -710,7 +710,7 @@ export const RenewalPage: React.FC = () => {
         </div>
       )}
 
-      {/* STEP 3: THANH TOÁN VIETQR NAPAS247 ĐỘNG & TỰ ĐỘNG GIA HẠN */}
+      {/* STEP 3: THANH TOÁN VNPAY SANDBOX & TỰ ĐỘNG GIA HẠN */}
       {currentStep === 3 && (
         <div className="max-w-4xl mx-auto space-y-6">
           <Card className="p-6 bg-white border border-slate-200/90 rounded-2xl shadow-xs space-y-5">
