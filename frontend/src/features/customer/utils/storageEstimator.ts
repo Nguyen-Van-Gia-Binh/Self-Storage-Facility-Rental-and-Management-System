@@ -1,6 +1,4 @@
-import type { StorageUnitResponse } from '@/types/unit';
 import type { UnitSpec3D } from '../components/StorageUnit3DPreview';
-import { resolveSizeCategory } from './unitPickerHelpers';
 
 export type EstimatorItemKey =
   | 'boxS'
@@ -468,23 +466,6 @@ export function recommendUnitSize(
   }
 
   return 'XL';
-}
-
-export type SizeAvailabilityMap = Record<UnitSpec3D['code'], number>;
-
-/**
- * Đếm số ô kho đang trống (AVAILABLE & active) theo từng cỡ XS..XL từ dữ liệu thật Backend.
- */
-export function countAvailableUnitsBySize(units: StorageUnitResponse[]): SizeAvailabilityMap {
-  const counts: SizeAvailabilityMap = { XS: 0, S: 0, M: 0, L: 0, XL: 0 };
-  units.forEach((u) => {
-    if (u.status !== 'AVAILABLE' || u.isActive === false) return;
-    const code = resolveSizeCategory(u.unitTypeCode || u.unitTypeName || '') as UnitSpec3D['code'];
-    if (code in counts) {
-      counts[code] += 1;
-    }
-  });
-  return counts;
 }
 
 

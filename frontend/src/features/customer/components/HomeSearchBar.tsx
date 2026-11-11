@@ -113,7 +113,7 @@ export const HomeSearchBar: React.FC<HomeSearchBarProps> = ({
         {/* CTA Search */}
         <button
           type="submit"
-          className="sm:w-auto px-6 py-2.5 rounded-xl bg-[#0c5a8a] hover:bg-[#084369] text-white font-bold text-[13px] flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.98] cursor-pointer shrink-0 h-[42px]"
+          className="btn-tactile sm:w-auto px-6 py-2.5 rounded-xl bg-[#0c5a8a] hover:bg-[#084369] text-white font-bold text-[13px] flex items-center justify-center gap-2 cursor-pointer shrink-0 h-[42px]"
         >
           <Search className="w-4 h-4" />
           <span>Tìm kho trống</span>

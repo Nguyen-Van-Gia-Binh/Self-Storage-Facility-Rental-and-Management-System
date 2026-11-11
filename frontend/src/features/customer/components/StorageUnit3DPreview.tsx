@@ -114,34 +114,73 @@ export const StorageUnit3DPreview: React.FC<StorageUnit3DPreviewProps> = ({
         )}
       </div>
 
-      {/* Độ lấp đầy hoặc cảnh báo vượt cỡ nếu có món đồ */}
+      {/* Độ lấp đầy kiểu thanh XP hoặc cảnh báo vượt cỡ nếu có món đồ */}
       {hasCustomItems && (
-        <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
+        <div className="absolute top-3 right-3 z-10 flex flex-wrap items-center justify-end gap-1.5">
           {isOverflow ? (
             <>
-              <span className="px-2.5 py-1 rounded-lg text-xs font-bold border bg-amber-50 border-amber-300 text-amber-900">
-                Chưa vừa hết (+{packResult.overflowCount})
-              </span>
+              <div
+                data-testid="xp-capacity-bar"
+                className="inline-flex items-center gap-2 px-2.5 py-1 rounded-xl bg-amber-50/95 border border-amber-300 shadow-2xs"
+              >
+                <span className="font-pixel text-[11px] uppercase text-amber-800 leading-none">
+                  Đầy kho
+                </span>
+                <span className="text-xs font-bold text-amber-900">
+                  Chưa vừa hết (+{packResult.overflowCount})
+                </span>
+              </div>
               {recommendedSize && recommendedSize !== spec.code && onSelectSize && (
                 <button
                   type="button"
                   onClick={() => onSelectSize(recommendedSize)}
-                  className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#0c5a8a] text-white hover:bg-[#084369] cursor-pointer shadow-2xs"
+                  className="btn-tactile px-2.5 py-1 rounded-lg text-xs font-bold bg-[#0c5a8a] text-white hover:bg-[#084369] cursor-pointer"
                 >
                   Đổi sang {recommendedSize}
                 </button>
               )}
             </>
           ) : (
-            <span
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${
-                fillPercent > 78
-                  ? 'bg-amber-50 border-amber-300 text-amber-800'
-                  : 'bg-sky-50 border-sky-200 text-[#0c5a8a]'
+            <div
+              data-testid="xp-capacity-bar"
+              className={`inline-flex items-center gap-2 px-2.5 py-1.5 rounded-xl border bg-white/95 shadow-2xs ${
+                fillPercent > 78 ? 'border-amber-300' : 'border-sky-200'
               }`}
             >
-              Lấp đầy ~{fillPercent}%
-            </span>
+              <span className="font-pixel text-[11px] uppercase text-[#0c5a8a] leading-none">
+                Lấp đầy
+              </span>
+              <div
+                className="flex items-center gap-[2px] p-[2px] rounded-md bg-slate-100 border border-slate-200/90"
+                aria-hidden="true"
+              >
+                {Array.from({ length: 10 }, (_, idx) => {
+                  const filledSegments = Math.max(1, Math.round(fillPercent / 10));
+                  const isFilled = idx < filledSegments;
+                  const fillClass =
+                    fillPercent > 78
+                      ? 'bg-amber-500'
+                      : idx >= 7
+                        ? 'bg-emerald-500'
+                        : 'bg-[#0284c7]';
+                  return (
+                    <span
+                      key={idx}
+                      className={`w-1.5 h-2.5 rounded-[1px] transition-colors ${
+                        isFilled ? fillClass : 'bg-slate-200/90'
+                      }`}
+                    />
+                  );
+                })}
+              </div>
+              <span
+                className={`text-xs font-bold tabular-nums ${
+                  fillPercent > 78 ? 'text-amber-800' : 'text-[#0c5a8a]'
+                }`}
+              >
+                ~{fillPercent}%
+              </span>
+            </div>
           )}
         </div>
       )}

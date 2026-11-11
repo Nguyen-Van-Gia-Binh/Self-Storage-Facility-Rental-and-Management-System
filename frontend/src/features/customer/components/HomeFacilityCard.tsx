@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, ArrowRight, Phone, Clock, Navigation } from 'lucide-react';
+import { MapPin, ArrowRight, Clock, Navigation } from 'lucide-react';
 import { formatVND } from '../utils/pricing';
 import type { DisplayFacility } from '../hooks/useFacilityDirectory';
 
@@ -69,28 +69,20 @@ export const HomeFacilityCard: React.FC<HomeFacilityCardProps> = ({ facility: fa
       </div>
 
       {/* Action buttons */}
-      <div className="px-5 pb-5 pt-0 flex gap-2">
+      <div className="px-5 pb-5 pt-0 flex gap-2.5">
         <a
           href={mapsHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="py-2.5 px-3 border border-slate-300 rounded-xl text-slate-700 text-[13px] font-semibold hover:bg-slate-50 transition-colors flex items-center justify-center gap-1.5"
+          className="py-2.5 px-3.5 border border-slate-300 rounded-xl text-slate-700 text-[13px] font-semibold hover:bg-slate-50 transition-colors flex items-center justify-center gap-1.5"
           title="Mở chỉ đường trên Google Maps"
         >
           <Navigation className="w-3.5 h-3.5 text-[#0284c7]" />
           <span>Bản đồ</span>
         </a>
-        <a
-          className="py-2.5 px-3 border border-slate-300 rounded-xl text-slate-700 text-[13px] font-semibold hover:bg-slate-50 transition-colors flex items-center justify-center gap-1.5"
-          href={fac.phone ? `tel:${fac.phone}` : 'tel:19008888'}
-          title={`Gọi ${fac.phone || '1900 8888'}`}
-        >
-          <Phone className="w-3.5 h-3.5 text-slate-500" />
-          <span>Gọi</span>
-        </a>
         <Link
           to={unitPickerHref}
-          className="flex-1 text-center py-2.5 px-3.5 rounded-xl text-[13px] font-bold bg-[#0c5a8a] hover:bg-[#084369] text-white transition-all flex items-center justify-center gap-1.5 shadow-xs active:scale-[0.98]"
+          className="btn-tactile flex-1 text-center py-2.5 px-3.5 rounded-xl text-[13px] font-bold bg-[#0c5a8a] hover:bg-[#084369] text-white flex items-center justify-center gap-1.5"
         >
           <span>Chọn ô kho</span>
           <ArrowRight className="w-3.5 h-3.5" />

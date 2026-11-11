@@ -68,7 +68,7 @@ export const HomeSizeGuideSection: React.FC<HomeSizeGuideSectionProps> = ({
     >
       <div className="w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="text-center max-w-2xl mx-auto">
-          <span className="font-mono text-[#0c5a8a] text-xs font-bold uppercase tracking-wider block mb-2">
+          <span className="font-pixel text-[#0c5a8a] text-[13px] font-medium uppercase tracking-wider block mb-2">
             Hai Dòng Kho
           </span>
           <h2 className="text-2xl sm:text-4xl font-bold text-[#0a1614] tracking-tight">
@@ -107,7 +107,7 @@ export const HomeSizeGuideSection: React.FC<HomeSizeGuideSectionProps> = ({
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-[#0284c7] shrink-0" />
-                  Tùy chọn bảo vệ tài sản tới 50 triệu
+                  Khóa mã PIN 6 số riêng, tự đổi mã trên web
                 </li>
               </ul>
             </div>
@@ -137,19 +137,13 @@ export const HomeSizeGuideSection: React.FC<HomeSizeGuideSectionProps> = ({
             </div>
           </div>
 
-          {/* BENTO 2 (5 cột): Kho Tiêu Chuẩn kèm Pixel-Art Diorama */}
+          {/* BENTO 2 (5 cột): Kho Tiêu Chuẩn kèm minh họa rõ nét vừa khung */}
           <div className="lg:col-span-5 bg-white rounded-3xl border border-slate-200/95 shadow-xs overflow-hidden flex flex-col justify-between">
-            <div className="h-48 bg-[#eff6fc] relative overflow-hidden border-b border-slate-200/80">
+            <div className="h-56 sm:h-60 bg-[#ecf7ef] flex items-center justify-center p-2 border-b border-slate-200/80">
               <img
                 src={pixelStandardImg}
-                alt="Minh họa Pixel-Art kho tiêu chuẩn SmartStorage"
-                className="w-full h-full object-cover object-center hero-ken-burns"
-              />
-              {/* Đèn PIN cửa kho nhấp nháy nhẹ */}
-              <span
-                aria-hidden="true"
-                style={{ left: '42.1%', top: '56.2%' }}
-                className="absolute w-2.5 h-2.5 rounded-xs bg-sky-400/90 blur-[1px] pixel-beacon pointer-events-none"
+                alt="Minh họa kho tiêu chuẩn SmartStorage"
+                className="h-full w-auto object-contain"
               />
             </div>
 
@@ -176,7 +170,7 @@ export const HomeSizeGuideSection: React.FC<HomeSizeGuideSectionProps> = ({
 
               <div className="flex items-center gap-2 text-[13px] font-medium text-slate-700 pt-1">
                 <CheckCircle2 className="w-4 h-4 text-[#0284c7] shrink-0" />
-                <span>Tích hợp sẵn gói bảo vệ cơ bản 10 triệu</span>
+                <span>Camera an ninh 24/7 &amp; PCCC tự động đạt chuẩn</span>
               </div>
             </div>
           </div>
@@ -199,7 +193,7 @@ export const HomeSizeGuideSection: React.FC<HomeSizeGuideSectionProps> = ({
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-xs font-bold text-[#0c5a8a] tracking-wider">
+                  <span className="font-pixel text-[13px] font-medium text-[#0c5a8a] tracking-wider">
                     {uc.code}
                   </span>
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#e8f4fc] text-[#0c5a8a] border border-sky-200/80">

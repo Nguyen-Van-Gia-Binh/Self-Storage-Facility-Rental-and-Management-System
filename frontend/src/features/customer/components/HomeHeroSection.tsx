@@ -1,8 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowRight, KeyRound, Thermometer, MapPin, Plus, Minus, RotateCcw } from 'lucide-react';
+import { ArrowRight, Plus, Minus, RotateCcw } from 'lucide-react';
 import type { UnitTypeResponse } from '@/types/unit';
-import pixelCofounderHeroImg from '@/assets/images/pixel-hero-cofounder.jpg';
+import heroCofounderImg from '@/assets/images/hero-cofounder-clean.webp';
 import { resolveSizeCategory } from '../utils/unitPickerHelpers';
 import { StorageUnit3DPreview, type UnitSpec3D } from './StorageUnit3DPreview';
 import {
@@ -28,9 +27,27 @@ const DEFAULT_UNIT_SPECS: Record<SizeCode, UnitSpec3D> = {
 
 const SIZE_ORDER: SizeCode[] = ['XS', 'S', 'M', 'L', 'XL'];
 
+const DRIFT_CLOUDS = [
+  { left: '46%', top: '7%', width: '132px', duration: '34s', delay: '-6s' },
+  { left: '61%', top: '17%', width: '104px', duration: '42s', delay: '-21s' },
+];
+
+const FLOATING_LEAVES = [
+  { left: '72%', top: '16%', size: 12, color: '#a3e635', duration: '9.5s', delay: '-1.5s' },
+  { left: '84%', top: '13%', size: 11, color: '#bef264', duration: '11s', delay: '-4.8s' },
+  { left: '91%', top: '24%', size: 13, color: '#84cc16', duration: '10.2s', delay: '-7.2s' },
+  { left: '78%', top: '28%', size: 10, color: '#fde047', duration: '12s', delay: '-3.1s' },
+  { left: '88%', top: '34%', size: 11, color: '#65a30d', duration: '9.8s', delay: '-8.4s' },
+];
+
+const RIVER_GLINTS = [
+  { left: '7%', top: '63%', width: '22px', delay: '0s' },
+  { left: '15%', top: '66%', width: '28px', delay: '-1.4s' },
+  { left: '23%', top: '62%', width: '18px', delay: '-2.3s' },
+  { left: '11%', top: '68%', width: '20px', delay: '-0.8s' },
+];
+
 interface HomeHeroSectionProps {
-  primaryFacilityId?: number | string;
-  facilitiesCount: number;
   unitTypes?: UnitTypeResponse[];
   onScrollToId: (id: string) => void;
 }
@@ -39,11 +56,9 @@ interface HomeHeroSectionProps {
  * Hero phong cách Keytail × Cofounder:
  * - Phần đầu nền xanh ngọc sâu chuyển sắc mượt xuống nền trắng sáng
  * - Tiêu đề lớn 1 màu trắng dứt khoát, không lặp thẻ icon nhỏ
- * - Sân khấu nổi gồm Diorama Pixel-Art sống động 60fps + Mô hình 3D kích thước thực tế V16
+ * - Sân khấu nổi gồm Diorama sống động 60fps + Mô hình 3D kích thước thực tế V16
  */
 export const HomeHeroSection: React.FC<HomeHeroSectionProps> = ({
-  primaryFacilityId,
-  facilitiesCount,
   unitTypes = [],
   onScrollToId,
 }) => {
@@ -86,11 +101,7 @@ export const HomeHeroSection: React.FC<HomeHeroSectionProps> = ({
   const handleItemDelta = (key: EstimatorItemKey, delta: number) => {
     setItemCounts((prev) => {
       const nextVal = Math.max(0, Math.min(99, prev[key] + delta));
-      const next = { ...prev, [key]: nextVal };
-      if (sumItemCounts(next) > 0) {
-        setActiveSize(recommendUnitSize(resolvedSpecs, next));
-      }
-      return next;
+      return { ...prev, [key]: nextVal };
     });
   };
 
@@ -102,15 +113,103 @@ export const HomeHeroSection: React.FC<HomeHeroSectionProps> = ({
 
   return (
     <section className="relative bg-white overflow-hidden border-b border-slate-200/80">
-      {/* 1. Hero Full-Bleed Phong cách Cofounder (Bầu trời xanh thoáng góc trái + Công viên SmartStorage Pixel-Art) */}
-      <div className="relative bg-gradient-to-b from-[#0b73d8] via-[#128df2] to-[#1398fd] md:bg-none">
+      {/* 1. Hero Full-Bleed Phong cách Cofounder (Bầu trời mượt + Lớp gradient tối tăng tương phản vùng chữ) */}
+      <div className="relative bg-gradient-to-b from-[#072e5a] via-[#0b4b8a] to-[#0f6dc2] md:bg-none">
         <div className="relative w-full md:aspect-[16/9] md:min-h-[500px] lg:min-h-[580px] md:max-h-[740px] overflow-hidden border-b border-emerald-950/10 flex flex-col-reverse md:block">
-          {/* Nền tranh Pixel-Art 16:9 sắc nét */}
-          <div className="relative w-full aspect-[16/9] md:aspect-auto md:absolute md:inset-0">
+          {/* Nền tranh minh họa sắc nét 16:9 (không sọc ngang) + chuyển động mây & lá cây 60fps */}
+          <div className="relative w-full aspect-[16/9] md:aspect-auto md:absolute md:inset-0 overflow-hidden">
             <img
-              src={pixelCofounderHeroImg}
+              src={heroCofounderImg}
               alt="Không gian lưu trữ tự quản SmartStorage tại công viên xanh"
-              className="w-full h-full object-cover object-[72%_100%] md:object-bottom select-none"
+              className="w-full h-full object-cover object-[72%_100%] md:object-bottom select-none hero-scene-breathe"
+            />
+
+            {/* Các lớp chuyển động tự nhiên (mây bay, nắng xuyên tán cây, lá rơi nhẹ, gợn nước) */}
+            <div
+              data-testid="hero-ambient-motion"
+              aria-hidden="true"
+              className="absolute inset-0 pointer-events-none overflow-hidden"
+            >
+              {/* Tia nắng vàng nhẹ xuyên qua tán cây bên phải */}
+              <div
+                className="hidden sm:block absolute -top-12 right-0 w-[44%] h-[78%] hero-sunbeam-sway"
+                style={{
+                  background:
+                    'linear-gradient(125deg, rgba(254, 249, 195, 0.32) 0%, rgba(254, 240, 138, 0.14) 36%, transparent 72%)',
+                  clipPath: 'polygon(52% 0%, 100% 0%, 100% 62%, 14% 100%, 4% 80%)',
+                }}
+              />
+
+              {/* Mây trôi nhẹ phía bầu trời bên phải (không che chữ bên trái) */}
+              {DRIFT_CLOUDS.map((cloud, idx) => (
+                <svg
+                  key={idx}
+                  viewBox="0 0 120 44"
+                  style={{
+                    left: cloud.left,
+                    top: cloud.top,
+                    width: cloud.width,
+                    animationDuration: cloud.duration,
+                    animationDelay: cloud.delay,
+                  }}
+                  className="hidden md:block absolute hero-cloud-drift drop-shadow-[0_2px_6px_rgba(255,255,255,0.2)]"
+                >
+                  <path
+                    d="M18 36h80c10 0 16-6 16-13 0-6-5-11-12-12-2-7-9-11-17-11-6 0-12 3-15 8-3-2-6-3-10-3-8 0-14 5-15 12-5 1-9 5-9 10 0 5 5 9 12 9z"
+                    fill="rgba(255, 255, 255, 0.72)"
+                  />
+                </svg>
+              ))}
+
+              {/* Lá cây khẽ bay xuống từ tán cây công viên bên phải */}
+              {FLOATING_LEAVES.map((leaf, idx) => (
+                <svg
+                  key={idx}
+                  viewBox="0 0 16 16"
+                  style={{
+                    left: leaf.left,
+                    top: leaf.top,
+                    width: `${leaf.size}px`,
+                    height: `${leaf.size}px`,
+                    animationDuration: leaf.duration,
+                    animationDelay: leaf.delay,
+                  }}
+                  className="absolute hero-leaf-float"
+                >
+                  <path
+                    d="M13.5 2.5C8 2.5 3.5 5.5 2.5 11.5c5.5-0.5 9.5-3.5 11-9z"
+                    fill={leaf.color}
+                    stroke="#3f6212"
+                    strokeWidth="0.6"
+                    strokeOpacity="0.45"
+                  />
+                </svg>
+              ))}
+
+              {/* Gợn nắng lấp lánh nhẹ trên mặt sông bên trái */}
+              {RIVER_GLINTS.map((glint, idx) => (
+                <span
+                  key={idx}
+                  style={{
+                    left: glint.left,
+                    top: glint.top,
+                    width: glint.width,
+                    animationDelay: glint.delay,
+                  }}
+                  className="hidden sm:block absolute h-[2px] rounded-full bg-white/80 hero-water-sparkle"
+                />
+              ))}
+            </div>
+
+            {/* Lớp gradient tối bên trái & góc trên-trái để chữ trắng + mô tả đọc rõ trên nền trời & mây sáng */}
+            <div
+              data-testid="hero-text-scrim"
+              aria-hidden="true"
+              className="hidden md:block absolute inset-0 pointer-events-none bg-gradient-to-r from-[#041b35]/85 via-[#072d57]/58 via-45% to-transparent"
+            />
+            <div
+              aria-hidden="true"
+              className="hidden md:block absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_top_left,rgba(4,24,48,0.55)_0%,transparent_65%)]"
             />
 
             {/* Nhịp sáng nhẹ trên màn tablet QR & mã PIN ở góc phải dưới */}
@@ -126,20 +225,20 @@ export const HomeHeroSection: React.FC<HomeHeroSectionProps> = ({
             </div>
           </div>
 
-          {/* Nội dung Hero duy nhất: Mobile xếp trên ảnh; Desktop nằm gọn trong vùng trời xanh bên trái mây trắng */}
+          {/* Nội dung Hero duy nhất: Mobile xếp trên ảnh nền xanh đậm; Desktop nằm trên vùng scrim tối góc trái */}
           <div className="relative z-10 w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-10 pt-8 pb-6 md:pt-10 lg:pt-12 xl:pt-14 md:pb-0">
             <div
               style={{ fontFamily: "'Be Vietnam Pro', 'Plus Jakarta Sans', sans-serif" }}
               className="max-w-xl lg:max-w-[580px] space-y-4"
             >
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 backdrop-blur-xs border border-white/30 text-xs font-medium uppercase tracking-[0.08em] text-white shadow-2xs">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#041f3d]/45 backdrop-blur-xs border border-white/35 text-xs font-medium uppercase tracking-[0.08em] text-white shadow-2xs">
                 <span className="w-2 h-2 rounded-full bg-emerald-300 pixel-beacon" />
-                <span>SmartStorage Việt Nam</span>
+                <span className="font-pixel text-[13px] tracking-[0.06em]">SmartStorage Việt Nam</span>
               </div>
 
               <h1
-                style={{ lineHeight: 1.34, letterSpacing: '-0.005em' }}
-                className="text-3xl sm:text-4xl lg:text-[2.35rem] xl:text-[2.55rem] font-semibold text-white drop-shadow-[0_2px_12px_rgba(6,45,98,0.22)]"
+                style={{ lineHeight: 1.32, letterSpacing: '-0.005em' }}
+                className="text-3xl sm:text-4xl lg:text-[2.35rem] xl:text-[2.55rem] font-semibold text-white drop-shadow-[0_2px_14px_rgba(3,20,44,0.55)]"
               >
                 Không gian lưu trữ tự quản
                 <br className="hidden sm:inline" /> hiện đại và an toàn
@@ -147,37 +246,29 @@ export const HomeHeroSection: React.FC<HomeHeroSectionProps> = ({
 
               <p
                 style={{ lineHeight: 1.65, letterSpacing: '0.005em' }}
-                className="text-sm sm:text-[15px] text-white/95 max-w-[410px] font-normal drop-shadow-[0_1px_6px_rgba(6,45,98,0.2)]"
+                className="text-sm sm:text-[15px] text-white max-w-[440px] font-normal drop-shadow-[0_2px_10px_rgba(3,20,44,0.65)]"
               >
                 Gửi đồ cá nhân, nội thất và hàng hóa linh hoạt theo nhu cầu — đặt giữ chỗ trực tuyến nhanh gọn, chủ động ra vào mỗi ngày.
               </p>
 
               <div className="flex flex-wrap items-center gap-3 pt-1">
-                {primaryFacilityId ? (
-                  <Link
-                    to={`/customer/units?facility=${String(primaryFacilityId)}`}
-                    className="px-6 py-3 rounded-full bg-white text-[#0c5a8a] font-bold text-sm hover:bg-sky-50 transition-all shadow-lg inline-flex items-center gap-2 active:scale-[0.98]"
-                  >
-                    <span>Đặt kho ngay</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => onScrollToId('branches')}
-                    className="px-6 py-3 rounded-full bg-white text-[#0c5a8a] font-bold text-sm hover:bg-sky-50 transition-all shadow-lg inline-flex items-center gap-2 cursor-pointer"
-                  >
-                    <span>Xem chi nhánh</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                )}
-
                 <button
                   type="button"
                   onClick={() => onScrollToId('branches')}
-                  className="px-6 py-3 rounded-full bg-[#09478d]/35 hover:bg-[#09478d]/55 backdrop-blur-xs border border-white/40 text-white font-semibold text-sm transition-all cursor-pointer"
+                  style={{ ['--tactile-shadow' as string]: '#93c5fd' }}
+                  className="btn-tactile px-6 py-3 rounded-full bg-white text-[#0c5a8a] font-bold text-sm hover:bg-sky-50 inline-flex items-center gap-2 cursor-pointer"
                 >
-                  Xem {facilitiesCount > 0 ? `${facilitiesCount} cơ sở` : 'các cơ sở'}
+                  <span>Đặt kho ngay</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onScrollToId('size-estimator')}
+                  style={{ ['--tactile-shadow' as string]: 'rgba(3, 21, 44, 0.7)' }}
+                  className="btn-tactile px-6 py-3 rounded-full bg-[#041f3d]/60 hover:bg-[#041f3d]/80 backdrop-blur-xs border border-white/50 text-white font-semibold text-sm cursor-pointer"
+                >
+                  Ước lượng cỡ kho 3D
                 </button>
               </div>
             </div>
@@ -186,24 +277,11 @@ export const HomeHeroSection: React.FC<HomeHeroSectionProps> = ({
       </div>
 
       {/* 2. Dải công cụ Ước lượng không gian 3D thực tế (V16) ngay bên dưới bức tranh */}
-      <div className="bg-gradient-to-b from-[#eff6fc] to-white py-8 sm:py-10">
-        <div className="w-full max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
-          {/* Thanh tóm tắt 3 tiêu chuẩn nổi bật */}
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-1 text-[13px] sm:text-sm font-medium text-[#0c5a8a]">
-            <span className="inline-flex items-center gap-1.5">
-              <KeyRound className="w-4 h-4 text-[#0284c7]" />
-              Mã PIN 6 số riêng tư
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <Thermometer className="w-4 h-4 text-[#0284c7]" />
-              Máy lạnh 20–25°C
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <MapPin className="w-4 h-4 text-[#0284c7]" />
-              Hà Nội &amp; TP.HCM
-            </span>
-          </div>
-
+      <div
+        id="size-estimator"
+        className="bg-gradient-to-b from-[#eff6fc] to-white py-8 sm:py-10 scroll-mt-16"
+      >
+        <div className="w-full max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
           {/* Card Ước lượng 3D cân đối 2 cột */}
           <div className="bg-white rounded-3xl border border-sky-200/80 shadow-[0_18px_48px_-18px_rgba(12,90,138,0.14)] p-5 sm:p-7 space-y-5 text-[#0a1614]">
             {/* Header + Chuyển dòng kho */}
@@ -262,10 +340,13 @@ export const HomeHeroSection: React.FC<HomeHeroSectionProps> = ({
                         type="button"
                         aria-pressed={isActive}
                         onClick={() => setActiveSize(code)}
-                        className={`py-2 px-1 rounded-lg text-center transition-all cursor-pointer ${
+                        style={{
+                          ['--tactile-shadow' as string]: isActive ? '#06324d' : '#cbd5e1',
+                        }}
+                        className={`btn-tactile py-2 px-1 rounded-lg text-center cursor-pointer ${
                           isActive
-                            ? 'bg-[#0c5a8a] text-white shadow-xs font-bold'
-                            : 'text-slate-700 hover:bg-white font-semibold'
+                            ? 'bg-[#0c5a8a] text-white font-bold'
+                            : 'bg-white/75 text-slate-700 hover:bg-white font-semibold'
                         }`}
                       >
                         <span className="block text-sm leading-tight">{code}</span>
@@ -334,7 +415,7 @@ export const HomeHeroSection: React.FC<HomeHeroSectionProps> = ({
                               type="button"
                               aria-label={`Tăng ${item.label}`}
                               onClick={() => handleItemDelta(item.key, 1)}
-                              className="w-6 h-6 rounded-md bg-[#0c5a8a] text-white flex items-center justify-center hover:bg-[#084369] cursor-pointer"
+                              className="btn-tactile w-6 h-6 rounded-md bg-[#0c5a8a] text-white flex items-center justify-center hover:bg-[#084369] cursor-pointer"
                             >
                               <Plus className="w-3 h-3" />
                             </button>

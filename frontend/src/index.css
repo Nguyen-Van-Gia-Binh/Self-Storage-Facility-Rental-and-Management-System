@@ -292,6 +292,128 @@
   animation: pixelBeacon 2s ease-in-out infinite;
 }
 
+/* Font pixel nhẹ cho các nhãn nhỏ trang trí (Tiny5 hỗ trợ đầy đủ tiếng Việt) */
+.font-pixel {
+  font-family: 'Tiny5', 'Be Vietnam Pro', monospace;
+  letter-spacing: 0.04em;
+}
+
+/* Hiệu ứng nhấn nổi nhẹ tay cho nút hành động */
+.btn-tactile {
+  box-shadow: 0 3px 0 0 var(--tactile-shadow, #084369);
+  transition:
+    transform 140ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 140ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 140ms ease;
+}
+
+.btn-tactile:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 0 0 var(--tactile-shadow, #084369);
+}
+
+.btn-tactile:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 0 var(--tactile-shadow, #084369);
+}
+
+@keyframes heroSceneBreathe {
+  0%, 100% {
+    transform: scale(1.01) translate3d(0, 0, 0);
+  }
+  50% {
+    transform: scale(1.04) translate3d(-0.5%, -0.35%, 0);
+  }
+}
+
+@keyframes heroCloudDrift {
+  0% {
+    opacity: 0;
+    transform: translate3d(-40px, 0, 0) scale(0.98);
+  }
+  15% {
+    opacity: 0.42;
+  }
+  80% {
+    opacity: 0.36;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(130px, -6px, 0) scale(1.03);
+  }
+}
+
+@keyframes heroSunbeamSway {
+  0%, 100% {
+    opacity: 0.24;
+    transform: rotate(-1deg) scale(1);
+  }
+  50% {
+    opacity: 0.48;
+    transform: rotate(1.8deg) scale(1.03);
+  }
+}
+
+@keyframes heroLeafFloat {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -10px, 0) rotate(-14deg);
+  }
+  15% {
+    opacity: 0.92;
+  }
+  45% {
+    opacity: 0.88;
+    transform: translate3d(-28px, 46px, 0) rotate(22deg);
+  }
+  75% {
+    opacity: 0.65;
+    transform: translate3d(-10px, 98px, 0) rotate(-16deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(-42px, 148px, 0) rotate(32deg);
+  }
+}
+
+@keyframes heroWaterSparkle {
+  0%, 100% {
+    opacity: 0.15;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.15);
+  }
+}
+
+.hero-scene-breathe {
+  will-change: transform;
+  transform-origin: center bottom;
+  animation: heroSceneBreathe 22s ease-in-out infinite;
+}
+
+.hero-cloud-drift {
+  will-change: transform, opacity;
+  animation: heroCloudDrift 36s linear infinite;
+}
+
+.hero-sunbeam-sway {
+  will-change: transform, opacity;
+  transform-origin: top right;
+  animation: heroSunbeamSway 10s ease-in-out infinite;
+}
+
+.hero-leaf-float {
+  will-change: transform, opacity;
+  animation: heroLeafFloat 10s ease-in-out infinite;
+}
+
+.hero-water-sparkle {
+  will-change: transform, opacity;
+  animation: heroWaterSparkle 3.8s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-ken-burns,
   .hero-light-sheen,
@@ -305,7 +427,12 @@
   .pixel-cool-float-1,
   .pixel-cool-float-2,
   .pixel-cool-float-3,
-  .pixel-beacon {
+  .pixel-beacon,
+  .hero-scene-breathe,
+  .hero-cloud-drift,
+  .hero-sunbeam-sway,
+  .hero-leaf-float,
+  .hero-water-sparkle {
     animation: none !important;
   }
 }
